@@ -4,6 +4,22 @@
 		"selected_items":
 		[
 			[
+				"tem",
+				"template"
+			],
+			[
+				"temp",
+				"templateIf"
+			],
+			[
+				"fil",
+				"filename"
+			],
+			[
+				"ifn",
+				"ifNoName"
+			],
+			[
 				"rs",
 				"result2"
 			],
@@ -114,10 +130,6 @@
 			[
 				"return",
 				"returnContent"
-			],
-			[
-				"fil",
-				"file"
 			],
 			[
 				"fun",
@@ -344,13 +356,15 @@
 	},
 	"file_history":
 	[
+		"/Volumes/Repository/nodejs/partial.js/index.js",
+		"/Volumes/Repository/nodejs/partial.js/lib/index.js",
+		"/Volumes/Repository/nodejs/partial.js/lib/template.js",
 		"/Volumes/Repository/nodejs/partial.js/readme.md",
 		"/Volumes/Repository/nodejs/partial.js/example/controllers/global.js",
 		"/Volumes/Repository/nodejs/partial.js/example/public/data/p.js",
 		"/Volumes/Repository/nodejs/partial.js/example/resources/dictionary.json",
 		"/Volumes/Repository/nodejs/partial.js/example/templates/products.html",
 		"/Volumes/Repository/nodejs/partial.js/example/views/homepage.html",
-		"/Volumes/Repository/nodejs/partial.js/index.js",
 		"/Volumes/Repository/nodejs/partial.js/package.json",
 		"/Users/petersirka/Desktop/partial.js/readme.md",
 		"/Users/petersirka/Desktop/partial.js/package.json",
@@ -469,9 +483,7 @@
 		"/Volumes/Repository/Work/nodejs/partial/framework/template.js",
 		"/Volumes/Repository/Work/nodejs/partial/controllers/uzivatel.js",
 		"/Users/petersirka/Desktop/partial /index.js",
-		"/Users/petersirka/Desktop/partial /framework/index.js",
-		"/Users/petersirka/Desktop/partial /framework/utils.js",
-		"/Users/petersirka/Desktop/partial /framework/template.js"
+		"/Users/petersirka/Desktop/partial /framework/index.js"
 	],
 	"find":
 	{
