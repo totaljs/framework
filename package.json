@@ -6,9 +6,13 @@
   "engines": {
     "node": "0.8.x"
   },
-  "repository": "git://github.com/petersirka/partial.js.git",
   "readmeFilename": "readme.md",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "",
   "author": "Peter Širka",
+  "license": "BSD",
   "_from": "partial.js",
   "directories": {
     "test": "test"
