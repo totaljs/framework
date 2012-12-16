@@ -10,7 +10,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/petersirka/partial.js.git"
+  },
   "author": "Peter Širka",
   "license": "BSD",
   "_from": "partial.js",
