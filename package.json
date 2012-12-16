@@ -1,6 +1,6 @@
 {
   "name": "partial.js",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Simple web framework",
   "main": "./index.js",
   "engines": {

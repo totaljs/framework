@@ -356,6 +356,7 @@
 	},
 	"file_history":
 	[
+		"/Volumes/Repository/nodejs/partial.js/.npmignore",
 		"/Volumes/Repository/nodejs/partial.js/index.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/index.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/template.js",
@@ -482,8 +483,7 @@
 		"/Volumes/Repository/Work/nodejs/partial/framework/utils.js",
 		"/Volumes/Repository/Work/nodejs/partial/framework/template.js",
 		"/Volumes/Repository/Work/nodejs/partial/controllers/uzivatel.js",
-		"/Users/petersirka/Desktop/partial /index.js",
-		"/Users/petersirka/Desktop/partial /framework/index.js"
+		"/Users/petersirka/Desktop/partial /index.js"
 	],
 	"find":
 	{
