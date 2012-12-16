@@ -1,7 +1,5 @@
 exports.init = function(partial) {
 	partial.route("/", homepage);
-	partial.route("/", homepage, ['json']);
-	partial.route("/user/", homepage, ["logged"]);
 	partial.route("#401", error401);
 	partial.route("#404", error404);
 	partial.route("#500", error500);

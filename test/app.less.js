@@ -3,6 +3,7 @@ var app = require('../lib/');
 var less = require('../lib/less');
 
 var buffer = [];
+//buffer.push('@radius(a){ border-radius:@a @a @a @a; -moz-border-radius:@a @a @a @a; }');
 buffer.push('@radius(a,b,c,d){ border-radius:@a @b @c @d; -moz-border-radius:@a @b @c @d; }');
 buffer.push('@transition(property,duration){ transition-property:@property; transition-duration: @duration; }');
 buffer.push("@font-face { font-family: 'Dosis'; font-style: normal; font-weight: 400; src: local('Dosis Regular'), local('Dosis-Regular'), url(http://themes.googleusercontent.com/static/fonts/dosis/v1/7L9_zC5qZfwiKVyE9UcfBqCWcynf_cDxXwCLxiixG1c.woff) format('woff');}");
