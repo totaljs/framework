@@ -343,6 +343,14 @@
 	},
 	"buffers":
 	[
+		{
+			"file": "lib/index.js",
+			"settings":
+			{
+				"buffer_size": 19356,
+				"line_ending": "Unix"
+			}
+		}
 	],
 	"build_system": "Packages/User/nodejs.sublime-build",
 	"command_palette":
@@ -372,20 +380,21 @@
 	},
 	"file_history":
 	[
+		"/Volumes/Repository/nodejs/partial.js/readme.md",
+		"/Volumes/Repository/nodejs/partial.js/package.json",
+		"/Volumes/Repository/nodejs/partial.js/.npmignore",
+		"/Volumes/Repository/nodejs/partial.js/lib/less.js",
+		"/Volumes/Repository/nodejs/partial.js/lib/javascript.js",
+		"/Volumes/Repository/nodejs/partial.js/lib/index.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/template.js",
 		"/Volumes/Repository/nodejs/partial.js/example/controllers/global.js",
-		"/Volumes/Repository/nodejs/partial.js/lib/index.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/utils.js",
 		"/Volumes/Repository/nodejs/partial.js/index.js",
 		"/Volumes/Repository/nodejs/inprogress/testovanie.js",
-		"/Volumes/Repository/nodejs/partial.js/lib/javascript.js",
 		"/Volumes/Repository/nodejs/rozpracované/testovanie.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/prototypes.js",
 		"/Volumes/Repository/nodejs/rozpracované/markdown.cs",
 		"/Volumes/Repository/nodejs/partial.js/lib/markdown.js",
-		"/Volumes/Repository/nodejs/partial.js/package.json",
-		"/Volumes/Repository/nodejs/partial.js/.npmignore",
-		"/Volumes/Repository/nodejs/partial.js/readme.md",
 		"/Volumes/Repository/nodejs/partial.js/example/public/data/p.js",
 		"/Volumes/Repository/nodejs/partial.js/example/resources/dictionary.json",
 		"/Volumes/Repository/nodejs/partial.js/example/templates/products.html",
@@ -498,8 +507,7 @@
 		"/Users/petersirka/Desktop/TMP/2012-10-26-16.25.jpg",
 		"/Users/petersirka/Desktop/TMP/upload",
 		"/Users/petersirka/Desktop/TMP/skuska.txt",
-		"/Users/petersirka/Desktop/skuska.txt",
-		"/Users/petersirka/Desktop/bb"
+		"/Users/petersirka/Desktop/skuska.txt"
 	],
 	"find":
 	{
@@ -517,6 +525,10 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			" == ",
+			"index.js",
+			" == ",
+			"==",
 			"controller",
 			"utils.",
 			"parseInt",
@@ -640,11 +652,7 @@
 			"build",
 			"{\n    \"cmd\": [\"node\", \"$file\"],\n    \"selector\" : \"source.js\",\n    \"path\" : \"/usr/local/bin\"\nbuilder",
 			"b.curCss",
-			"b.currCsss",
-			"38",
-			"Komárňanská",
-			"Štefánikova",
-			"Jókaiho"
+			"b.currCsss"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -669,8 +677,36 @@
 	"groups":
 	[
 		{
+			"selected": 0,
 			"sheets":
 			[
+				{
+					"buffer": 0,
+					"file": "lib/index.js",
+					"settings":
+					{
+						"buffer_size": 19356,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4247,
+								4247
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
 			]
 		}
 	],
