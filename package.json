@@ -1,7 +1,7 @@
 {
   "name": "partial.js",
-  "version": "1.0.2",
-  "description": "Simple web framework",
+  "version": "1.0.3",
+  "description": "web application framework for node.js",
   "main": "./index.js",
   "engines": {
     "node": "0.8.x"
@@ -15,7 +15,6 @@
     "url": "https://github.com/petersirka/partial.js.git"
   },
   "author": "Peter Širka",
-  "license": "BSD",
   "_from": "partial.js",
   "directories": {
     "test": "test"
