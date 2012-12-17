@@ -343,14 +343,6 @@
 	},
 	"buffers":
 	[
-		{
-			"file": "lib/index.js",
-			"settings":
-			{
-				"buffer_size": 19356,
-				"line_ending": "Unix"
-			}
-		}
 	],
 	"build_system": "Packages/User/nodejs.sublime-build",
 	"command_palette":
@@ -381,14 +373,14 @@
 	"file_history":
 	[
 		"/Volumes/Repository/nodejs/partial.js/readme.md",
+		"/Volumes/Repository/nodejs/partial.js/lib/index.js",
+		"/Volumes/Repository/nodejs/partial.js/lib/utils.js",
 		"/Volumes/Repository/nodejs/partial.js/package.json",
 		"/Volumes/Repository/nodejs/partial.js/.npmignore",
 		"/Volumes/Repository/nodejs/partial.js/lib/less.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/javascript.js",
-		"/Volumes/Repository/nodejs/partial.js/lib/index.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/template.js",
 		"/Volumes/Repository/nodejs/partial.js/example/controllers/global.js",
-		"/Volumes/Repository/nodejs/partial.js/lib/utils.js",
 		"/Volumes/Repository/nodejs/partial.js/index.js",
 		"/Volumes/Repository/nodejs/inprogress/testovanie.js",
 		"/Volumes/Repository/nodejs/rozpracované/testovanie.js",
@@ -677,36 +669,8 @@
 	"groups":
 	[
 		{
-			"selected": 0,
 			"sheets":
 			[
-				{
-					"buffer": 0,
-					"file": "lib/index.js",
-					"settings":
-					{
-						"buffer_size": 19356,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								4247,
-								4247
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				}
 			]
 		}
 	],
