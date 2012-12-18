@@ -5,6 +5,7 @@ Makefile
 example/
 support/
 test/
+bk/
 *.DS_Store
 *.sublime-project
 *.sublime-workspace
