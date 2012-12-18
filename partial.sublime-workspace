@@ -372,11 +372,13 @@
 	},
 	"file_history":
 	[
+		"/Volumes/Repository/nodejs/partial.js/package.json",
+		"/Volumes/Repository/nodejs/partial.js/partial.sublime-project",
+		"/Volumes/Repository/nodejs/partial.js/.gitignore",
+		"/Volumes/Repository/nodejs/partial.js/.npmignore",
 		"/Volumes/Repository/nodejs/partial.js/readme.md",
 		"/Volumes/Repository/nodejs/partial.js/lib/index.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/utils.js",
-		"/Volumes/Repository/nodejs/partial.js/package.json",
-		"/Volumes/Repository/nodejs/partial.js/.npmignore",
 		"/Volumes/Repository/nodejs/partial.js/lib/less.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/javascript.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/template.js",
@@ -497,9 +499,7 @@
 		"/Users/petersirka/Desktop/dd.js",
 		"/Volumes/Repository/Work/nodejs/partial/framework/index.js",
 		"/Users/petersirka/Desktop/TMP/2012-10-26-16.25.jpg",
-		"/Users/petersirka/Desktop/TMP/upload",
-		"/Users/petersirka/Desktop/TMP/skuska.txt",
-		"/Users/petersirka/Desktop/skuska.txt"
+		"/Users/petersirka/Desktop/TMP/upload"
 	],
 	"find":
 	{
