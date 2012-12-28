@@ -1,18 +1,22 @@
+var framework = require('./lib');
 var http = require('http');	
-var app = require('partial.js');
-var port = 8008;
-var util = require('util');
 
-app.config.name = 'My First partial.js';
-app.config.debug = true;
 
-var server = app.init(http).listen(port);
-
-app.onAuthorize = function (req, res) {
-	//req.session = {};
-	return false;
+// Options -> global
+var optionsGlobal = {
+	debug: true,
+	name: 'partial.js'
 };
 
-require('./controllers/global.js').init(app);
+// Options –> user
+var optionsUser = {
+	name: 'Value'
+};
 
-console.log("http://127.0.0.1:" + port + "/");
+var port = 8004;
+var server = framework.init(http, optionsGlobal, optionsUser).listen(port);
+
+// Initialize controllers
+framework.controller('global');
+
+console.log("http://127.0.0.1:{0}/".format(port));
