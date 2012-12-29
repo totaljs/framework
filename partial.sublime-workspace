@@ -376,10 +376,11 @@
 	},
 	"file_history":
 	[
-		"/Volumes/Repository/nodejs/partial.js/lib/utils.js",
-		"/Volumes/Repository/nodejs/partial.js/lib/index.js",
-		"/Volumes/Repository/nodejs/partial.js/lib/template.js",
+		"/Volumes/Repository/nodejs/partial.js/lib/cache.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/controller.js",
+		"/Volumes/Repository/nodejs/partial.js/lib/index.js",
+		"/Volumes/Repository/nodejs/partial.js/lib/utils.js",
+		"/Volumes/Repository/nodejs/partial.js/lib/template.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/view.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/prototypes.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/markdown.js",
@@ -392,7 +393,6 @@
 		"/Volumes/Repository/nodejs/partial.js/utils.js",
 		"/Volumes/Repository/nodejs/partial.js/package.json",
 		"/Volumes/Repository/nodejs/partial.js/lib/less.js",
-		"/Volumes/Repository/nodejs/partial.js/lib/cache.js",
 		"/Volumes/Repository/nodejs/partial.js/test/app.routing.js",
 		"/Volumes/Repository/nodejs/partial.js/example/index.js",
 		"/Volumes/Repository/nodejs/partial.js/test/app.less.js",
