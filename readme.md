@@ -9,6 +9,7 @@ web application framework for node.js
 * simple cache
 * simple directory structure
 * simple code structure
+* support file upload
 * support debug mode without cache
 * support JavaScript compress
 * support simple CSS LESS (with compress)

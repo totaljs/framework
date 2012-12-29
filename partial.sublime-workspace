@@ -376,6 +376,8 @@
 	},
 	"file_history":
 	[
+		"/Volumes/Repository/nodejs/partial.js/readme.md",
+		"/Volumes/Repository/nodejs/partial.js/package.json",
 		"/Volumes/Repository/nodejs/partial.js/lib/utils.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/cache.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/controller.js",
@@ -391,7 +393,6 @@
 		"/Volumes/Repository/web/eshop/node_modules/partial.js/utils.js",
 		"/Volumes/Repository/nodejs/partial.js/markdown.js",
 		"/Volumes/Repository/nodejs/partial.js/utils.js",
-		"/Volumes/Repository/nodejs/partial.js/package.json",
 		"/Volumes/Repository/nodejs/partial.js/lib/less.js",
 		"/Volumes/Repository/nodejs/partial.js/test/app.routing.js",
 		"/Volumes/Repository/nodejs/partial.js/example/index.js",
@@ -400,7 +401,6 @@
 		"/Volumes/Repository/nodejs/partial.js/.npmignore",
 		"/Volumes/Repository/nodejs/partial.js/.gitignore",
 		"/Volumes/Repository/nodejs/partial.js/partial.sublime-project",
-		"/Volumes/Repository/nodejs/partial.js/readme.md",
 		"/Volumes/Repository/nodejs/inprogress/testovanie.js",
 		"/Volumes/Repository/nodejs/rozpracované/testovanie.js",
 		"/Volumes/Repository/nodejs/rozpracované/markdown.cs",
