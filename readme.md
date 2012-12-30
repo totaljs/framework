@@ -15,6 +15,7 @@ web application framework for node.js
 * support simple CSS LESS (with compress)
 * support Markdown parser
 * support resources
+* support prefixes for mobile device
 * and much more ...
 
 ... in progress ...
