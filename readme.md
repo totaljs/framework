@@ -19,3 +19,7 @@ web application framework for node.js
 * and much more ...
 
 ... in progress ...
+
+***
+
+Slovak documentation: <https://github.com/petersirka/partial.js/wiki>
