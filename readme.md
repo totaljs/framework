@@ -35,18 +35,7 @@ http://petersirka.sk/partial-js/eshop.zip
 
 ***
 
-## Install framework partial.js
-
-- create on your desktop empty directory with name: website
-- create file index.js
-- open terminal and find this directory: cd /Desktop/website/
-- write and run on terminal:
-
-```text
-npm install partial.js
-```
-
-OR
+## Run your web site:
 
 - download empty website project
 - open terminal and find website directory
@@ -57,3 +46,14 @@ node index.js
 ```
 
 ***
+
+## NPM partial.js
+
+- create on your desktop empty directory with name: website
+- create file index.js
+- open terminal and find this directory: cd /Desktop/website/
+- write and run on terminal:
+
+```text
+npm install partial.js
+```
