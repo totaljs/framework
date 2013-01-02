@@ -20,16 +20,6 @@ web application framework for node.js
 
 ***
 
-## Install framework
-
-```text
-
-npm install partial.js
-
-```
-
-***
-
 ## Simple documentation
 Slovak documentation: <https://github.com/petersirka/partial.js/wiki>
 
@@ -42,3 +32,28 @@ http://petersirka.sk/partial-js/new-web-site.zip
 
 ## Simple eshop example
 http://petersirka.sk/partial-js/eshop.zip
+
+***
+
+## Install framework partial.js
+
+- create on your desktop empty directory with name: website
+- create file index.js
+- open terminal and find this directory: cd /Desktop/website/
+- write and run on terminal:
+
+```text
+npm install partial.js
+```
+
+OR
+
+- download empty website project
+- open terminal and find website directory
+- write and run on terminal:
+
+```text
+node index.js
+```
+
+***
