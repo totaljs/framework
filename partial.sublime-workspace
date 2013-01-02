@@ -384,11 +384,12 @@
 	},
 	"file_history":
 	[
+		"/Volumes/Repository/nodejs/partial.js/lib/markdown.js",
+		"/Volumes/Repository/nodejs/partial.js/lib/index.js",
+		"/Volumes/Repository/nodejs/partial.js/package.json",
 		"/Volumes/Repository/nodejs/partial.js/lib/utils.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/prototypes.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/controller.js",
-		"/Volumes/Repository/nodejs/partial.js/lib/index.js",
-		"/Volumes/Repository/nodejs/partial.js/package.json",
 		"/Volumes/Repository/nodejs/partial.js/lib/template.js",
 		"/Volumes/Repository/nodejs/partial.js/readme.md",
 		"/Volumes/Repository/nodejs/partial.js/example/views/_layout.html",
@@ -399,7 +400,6 @@
 		"/Volumes/Repository/nodejs/partial.js/lib/internal.js",
 		"/Volumes/Repository/nodejs/partial.js/example/public/data/p.css",
 		"/Volumes/Repository/nodejs/partial.js/lib/cache.js",
-		"/Volumes/Repository/nodejs/partial.js/lib/markdown.js",
 		"/Volumes/Repository/nodejs/partial.js/lib/javascript.js",
 		"/Volumes/Repository/nodejs/partial.js/example/controllers/global.js",
 		"/Volumes/Repository/web/eshop/node_modules/partial.js/utils.js",
