@@ -1,7 +1,7 @@
-![partial.js logo](http://petersirka.sk/files/92.png)
+![partial.js logo](http://petersirka.sk/partial-js/logo.png)
 
 web application framework for node.js
-==================================================
+=====================================
 
 * async web framework
 * simple view system
@@ -18,8 +18,27 @@ web application framework for node.js
 * support prefixes for mobile device
 * and much more ...
 
-... in progress ...
+***
+
+## Install framework
+
+```text
+
+npm install partial.js
+
+```
 
 ***
 
+## Simple documentation
 Slovak documentation: <https://github.com/petersirka/partial.js/wiki>
+
+***
+
+## Empty website project
+http://petersirka.sk/partial-js/new-web-site.zip
+
+***
+
+## Simple eshop example
+http://petersirka.sk/partial-js/eshop.zip
