@@ -57,3 +57,8 @@ node index.js
 ```text
 npm install partial.js
 ```
+
+
+## Contact
+
+<http://www.petersirka.sk>
