@@ -60,6 +60,9 @@ node index.js
 npm install partial.js
 ```
 
+### Tips:
+
+- node.js cluster: <http://petersirka.sk/development/spustenie-partial-js-v-module-cluster/>
 
 ## Contact
 
