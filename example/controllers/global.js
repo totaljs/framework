@@ -1,5 +1,5 @@
 exports.init = function() {
-	this.route('/', homepage);
+	this.route('/', viewHomepage);
 	this.route('#403', error403);
 	this.route('#404', error404);
 	this.route('#431', error431)
@@ -34,7 +34,7 @@ function error500() {
 	this.view('500');
 }
 
-function homepage() {
+function viewHomepage() {
 	this.repository.title = 'Welcome';
 	this.view('homepage');
 }
