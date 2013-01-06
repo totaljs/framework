@@ -47,7 +47,7 @@ http://petersirka.eu01.aws.af.cm/
 - write and run on terminal:
 
 ```text
-node index.js
+$ node index.js
 ```
 
 ***
@@ -60,12 +60,13 @@ node index.js
 - write and run on terminal:
 
 ```text
-npm install partial.js
+$ npm install partial.js
 ```
 
 ### Tips:
 
 - node.js cluster: <http://petersirka.sk/development/spustenie-partial-js-v-module-cluster/>
+- install nginx: <http://www.petersirka.sk/ostatok/instalacia-na-osx-lion-nginx-a-nastavenie-sublime-do-termin/>
 
 ### Sublime 2 Syntax partial.js HTML Highlighter
 
