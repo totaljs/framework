@@ -71,7 +71,7 @@ npm install partial.js
 
 ![Sublime Text 2 Syntax Highlighter](http://petersirka.sk/partial-js/syntax-highlight.gif)
 
-> Download and copy to Sublime Text 2 Packgages
+> Download / extract and copy to Sublime Text 2 Packgages
 
 http://petersirka.sk/partial-js/Packages.zip
 
