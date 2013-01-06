@@ -67,6 +67,14 @@ npm install partial.js
 
 - node.js cluster: <http://petersirka.sk/development/spustenie-partial-js-v-module-cluster/>
 
+### Sublime 2 Syntax partial.js HTML Highlighter
+
+![Sublime Text 2 Syntax Highlighter](http://petersirka.sk/partial-js/syntax-highlight.gif)
+
+> Download and copy to Sublime Text 2 Packgages
+
+http://petersirka.sk/partial-js/Packages.zip
+
 ## Contact
 
 <http://www.petersirka.sk>
