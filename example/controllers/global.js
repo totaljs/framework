@@ -4,7 +4,7 @@ exports.init = function() {
 	this.route('#404', error404);
 	this.route('#431', error431)
 	this.route('#500', error500);
-}
+};
 
 // Forbidden
 function error403() {
