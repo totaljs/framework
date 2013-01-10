@@ -18,6 +18,7 @@ web application framework for node.js
 * support Markdown parser
 * support resources
 * support prefixes for mobile device
+# support simple CouchDB provider
 * and much more ...
 
 ***
@@ -75,6 +76,12 @@ $ npm install partial.js
 > Download / extract and copy to Sublime Text 2 Packgages
 
 http://petersirka.sk/partial-js/Packages.zip
+
+## Plans
+
+- native SMTP mail sender
+- native image processing ([ImageMagick]: http://www.imagemagick.org or [GraphicsMagic]: http://www.graphicsmagick.org)
+- native RIAK provider <http://docs.basho.com>
 
 ## Contact
 

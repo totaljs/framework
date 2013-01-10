@@ -19,18 +19,4 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-var http = require('http');
-
-var request = http.IncomingMessage.prototype;
-request.data = { get: {}, post: {}, files: {} };
-request.buffer = {};
-request.isAjax = false;
-request.uri = {};
-request.ip = '';
-request.flags = [];
-request.session = {};
-request.prefix = '';
-request.subdomain = [];
-
-var response = http.ServerResponse.prototype;
-response.isFlush = false;
+module.exports = require("./lib/couchdb");
