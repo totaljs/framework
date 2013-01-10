@@ -18,7 +18,7 @@ web application framework for node.js
 * support Markdown parser
 * support resources
 * support prefixes for mobile device
-# support simple CouchDB provider
+* support simple CouchDB provider
 * and much more ...
 
 ***
@@ -81,7 +81,7 @@ http://petersirka.sk/partial-js/Packages.zip
 
 - native SMTP mail sender
 - native image processing (ImageMagick (http://www.imagemagick.org) or GraphicsMagic (http://www.graphicsmagick.org))
-- native RIAK DB provider <http://docs.basho.com>
+- native RIAK DB  provider <http://docs.basho.com>
 
 ## Contact
 
