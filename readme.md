@@ -36,8 +36,8 @@ http://petersirka.sk/partial-js/new-web-site.zip
 ## Simple eshop example
 http://petersirka.sk/partial-js/eshop.zip
 
-Preview eshop:
-http://petersirka.eu01.aws.af.cm/
+Preview node.js eshop:
+http://nodejs-eshop.eu01.aws.af.cm
 
 ***
 
