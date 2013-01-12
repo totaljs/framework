@@ -18,8 +18,9 @@ web application framework for node.js
 * support Markdown parser
 * support resources
 * support prefixes for mobile device
+* support HTTP-RDBMS
+* support simple ORM
 * support simple CouchDB provider
-* and much more ...
 
 ***
 
