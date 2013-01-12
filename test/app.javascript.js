@@ -1,5 +1,4 @@
 var assert = require('assert');
-var app = require('../lib/');
 var javascript = require('../lib/javascript');
 
 var buffer = [];
