@@ -17,7 +17,8 @@ web application framework for node.js
 * support simple CSS LESS (with compress)
 * support Markdown parser
 * support resources
-* support prefixes for mobile device
+* support prefixes for mobile devices
+* support simple SMTP mail sender
 * support HTTP-RDBMS
 * support simple ORM
 * support simple CouchDB provider
