@@ -93,6 +93,10 @@ var rdbms = new requiere('partial.js/rdbms');
 
 var db = new rdbms.SQLServer('http://myrdbms/sqlserver/', 'Data Source=;Database=;Uid=;Pwd=;');
 
+// or
+
+var db = new rdbms.MySQL('http://myrdbms/mysql/', 'Server=;Database=;Uid=;Pwd=;');
+
 builders.schema('tbl_user', {
 	Id: 'int',
 	FirstName: 'string(50)',
@@ -124,6 +128,24 @@ db.findTop(10, 'tbl_user', where, order, function(data) {
 });
 
 db.execute('UPDATE tbl_user SET DateUpdated=GETDATE() WHERE Id BETWEEN {{a}} AND {{b}}', { a: 10, b: 20 });
+
+db.scalar('SELECT COUNT(*) FROM tbl_user', null, null, function(data) {
+	console.log(data);
+});
+
+// multiple records
+db.reader('SELECT Id, LastName FORM tbl_user; SELECT Id, FirstName FROM tbl_user', function(d) {
+	// d[0] == []
+	// d[1] == []
+});
+
+db.count('tbl_user', function(d) {
+	// d.value
+});
+
+db.count('tbl_user', where, function(d) {
+	// d.value
+});
 
 ```
 
