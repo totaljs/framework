@@ -133,7 +133,7 @@ db.scalar('SELECT COUNT(*) FROM tbl_user', null, null, function(data) {
 	console.log(data);
 });
 
-// multiple records
+// multiple recordset
 db.reader('SELECT Id, LastName FORM tbl_user; SELECT Id, FirstName FROM tbl_user', function(d) {
 	// d[0] == []
 	// d[1] == []
