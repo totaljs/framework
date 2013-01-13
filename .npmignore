@@ -9,3 +9,4 @@ bk/
 *.DS_Store
 *.sublime-project
 *.sublime-workspace
+test.js
