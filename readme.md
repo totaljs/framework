@@ -81,9 +81,8 @@ http://petersirka.sk/partial-js/Packages.zip
 
 ## Plans
 
-- native SMTP mail sender
-- native image processing (ImageMagick (http://www.imagemagick.org) or GraphicsMagic (http://www.graphicsmagick.org))
-- native RIAK DB  provider <http://docs.basho.com>
+- native simple image processing (ImageMagick (http://www.imagemagick.org) or GraphicsMagic (http://www.graphicsmagick.org))
+- native sipmle RIAK DB provider <http://docs.basho.com>
 
 ## Simple ORM via HTTP-RDBMS
 
