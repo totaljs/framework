@@ -6,6 +6,20 @@ exports.init = function() {
 	this.route('#500', error500);
 };
 
+/*
+exports.bindings = function() {
+
+};
+
+exports.models = function() {
+
+};
+
+exports.functions = function() {
+
+};
+*/
+
 // Forbidden
 function error403() {
 	this.repository.title = 'Forbidden (403)';
