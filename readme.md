@@ -22,6 +22,7 @@ web application framework for node.js
 * support HTTP-RDBMS
 * support simple ORM
 * support simple CouchDB provider
+* about 600 lines of JavaScript code
 * __no any dependencies__
 
 ***
