@@ -1,20 +1,12 @@
-var framework = require('./lib');
-var http = require('http');	
+var framework = require('partial.js');
+var http = require('http');
 
-
-// Options -> global
-var optionsGlobal = {
-	debug: true,
-	name: 'partial.js'
-};
-
-// Options –> user
-var optionsUser = {
+var options = {
 	name: 'Value'
 };
 
 var port = 8004;
-var server = framework.init(http, optionsGlobal, optionsUser).listen(port);
+var server = framework.init(http, { debug: true }, options).listen(port);
 
 // Initialize controllers
 framework.controller('global');

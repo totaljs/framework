@@ -1,6 +1,6 @@
 {
   "name": "partial.js",
-  "version": "1.1.3-9",
+  "version": "1.1.4-0",
   "description": "web application framework for node.js",
   "main": "./index.js",
   "engines": {
@@ -20,7 +20,5 @@
   "_from": "partial.js",
   "directories": {
     "test": "test"
-  },
-  "readme": "![partial.js logo](http://petersirka.sk/partial-js/logo.png)\n\nweb application framework for node.js\n=====================================\n\n![passing](http://petersirka.sk/files/96.png)\n\n* async web framework\n* simple view system\n* simple routing\n* simple cache\n* simple directory structure\n* simple code structure\n* support file upload\n* support debug mode without cache\n* support JavaScript compress\n* support simple CSS LESS (with compress)\n* support Markdown parser\n* support resources\n* support prefixes for mobile device\n* and much more ...\n\n***\n\n## Simple documentation\nSlovak documentation: <https://github.com/petersirka/partial.js/wiki>\n\n***\n\n## Empty website project\nhttp://petersirka.sk/partial-js/new-web-site.zip\n\n***\n\n## Simple eshop example\nhttp://petersirka.sk/partial-js/eshop.zip\n\nPreview eshop:\nhttp://petersirka.eu01.aws.af.cm/\n\n***\n\n## Run your web site:\n\n- download empty website project\n- open terminal and find website directory\n- write and run on terminal:\n\n```text\n$ node index.js\n```\n\n***\n\n## NPM partial.js\n\n- create on your desktop empty directory with name: website\n- create file index.js\n- open terminal and find this directory: cd /Desktop/website/\n- write and run on terminal:\n\n```text\n$ npm install partial.js\n```\n\n### Tips:\n\n- node.js cluster: <http://petersirka.sk/development/spustenie-partial-js-v-module-cluster/>\n- install nginx: <http://www.petersirka.sk/ostatok/instalacia-na-osx-lion-nginx-a-nastavenie-sublime-do-termin/>\n\n### Sublime 2 Syntax partial.js HTML Highlighter\n\n![Sublime Text 2 Syntax Highlighter](http://petersirka.sk/partial-js/syntax-highlight.gif)\n\n> Download / extract and copy to Sublime Text 2 Packgages\n\nhttp://petersirka.sk/partial-js/Packages.zip\n\n## Contact\n\n<http://www.petersirka.sk>",
-  "_id": "partial.js@1.1.3-8"
+  }
 }

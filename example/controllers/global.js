@@ -1,3 +1,5 @@
+// var yourcode = require('../code/yourcode');
+
 exports.init = function() {
 	this.route('/', viewHomepage);
 	this.route('#403', error403);
@@ -7,10 +9,6 @@ exports.init = function() {
 };
 
 /*
-exports.bindings = function() {
-
-};
-
 exports.models = function() {
 
 };

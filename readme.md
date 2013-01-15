@@ -22,6 +22,7 @@ web application framework for node.js
 * support HTTP-RDBMS
 * support simple ORM
 * support simple CouchDB provider
+* __no any dependencies__
 
 ***
 
