@@ -183,9 +183,7 @@ function viewHomepage() {
 > views / homepage.html
 
 ```html
-
 Welcome @{model.name}!
-
 ```
 
 > RESULT
