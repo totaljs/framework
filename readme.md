@@ -150,7 +150,7 @@ function error500() {
 
 function viewHomepage() {
 	this.repository.title = 'Welcome';
-	this.view('homepage');
+	this.view('homepage', { name: 'Peter' });
 }
 ```
 
@@ -185,6 +185,34 @@ function viewHomepage() {
 ```html
 
 Welcome @{model.name}!
+
+```
+
+> RESULT
+
+```html
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome</title>
+    <meta charset="utf-8" />
+	<meta http-equiv="content-language" content="sk" />
+	<meta http-equiv="X-UA-Compatible" content="IE=10" />
+	<meta name="format-detection" content="telephone=no"/>
+	<meta name="viewport" content="width=1024, user-scalable=yes" />
+	<meta name="robots" content="all,follow" />
+	<link rel="stylesheet" href="/data/p.css" />
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+	<script type="text/javascript" src="/data/p.js" ></script>
+</head>
+<body>
+	<div class="content">
+		<h1>Welcome</h1>
+		Welcome Peter!
+	</div>
+</body>
+</html>
 
 ```
 
