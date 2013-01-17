@@ -89,6 +89,7 @@ http://petersirka.sk/partial-js/Packages.zip
 ## Simple example
 
 > initialization script
+
 ```js
 var framework = require('partial.js');
 var http = require('http');
@@ -107,6 +108,7 @@ console.log("http://127.0.0.1:{0}/".format(port));
 ```
 
 > controller
+
 ```js
 exports.init = function() {
 	this.route('/', viewHomepage);
@@ -150,7 +152,8 @@ function viewHomepage() {
 }
 ```
 
-> view / _layout
+> views / _layout.html
+
 ```html
 <!DOCTYPE html>
 <html>
@@ -175,7 +178,8 @@ function viewHomepage() {
 </html>
 ```
 
-> view / homepage
+> views / homepage.html
+
 ```html
 Welcome partial.js developer!
 ```
