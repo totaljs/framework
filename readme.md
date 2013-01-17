@@ -11,6 +11,8 @@ web application framework for node.js
 * simple cache
 * simple directory structure
 * simple code structure
+* run controller in controller
+* share controller functions over framework
 * support file upload
 * support debug mode without cache
 * support JavaScript compress
@@ -88,7 +90,7 @@ http://petersirka.sk/partial-js/Packages.zip
 
 ## Simple example
 
-> initialization script
+> index.js
 
 ```js
 var framework = require('partial.js');
@@ -107,7 +109,7 @@ framework.controller('global');
 console.log("http://127.0.0.1:{0}/".format(port));
 ```
 
-> controller
+> controllers / global.js
 
 ```js
 exports.init = function() {
@@ -181,8 +183,11 @@ function viewHomepage() {
 > views / homepage.html
 
 ```html
-Welcome partial.js developer!
+
+Welcome @{model.name}!
+
 ```
+
 
 ## Simple ORM via HTTP-RDBMS
 
