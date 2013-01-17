@@ -11,18 +11,23 @@ web application framework for node.js
 * simple cache
 * simple directory structure
 * simple code structure
-* run controller in controller
-* share controller functions over framework
-* support file upload
+* simple view system
+* simple error handling
+* simple listing via templates
+* render controller in controller
+* share controller functions and models over framework
 * support debug mode without cache
+* support file upload
+* support form data validation
 * support JavaScript compress
-* support simple CSS LESS (with compress)
+* support JavaScript dynamic compress in views
+* support simple LESS CSS (with compress)
 * support Markdown parser
-* support resources
+* support resources (for multilanguage pages)
 * support prefixes for mobile devices
 * support simple SMTP mail sender
-* support HTTP-RDBMS
-* support simple ORM
+* support simple ORM (via HTTP-RDBMS)
+* support HTTP-RDBMS provider (MySQL, SQL Server, OleDB, ODBC), more on https://github.com/petersirka/http-rdbms/
 * support simple CouchDB provider
 * about 6 000 lines of JavaScript code
 * __no any dependencies__
@@ -214,8 +219,15 @@ Welcome @{model.name}!
 
 ```
 
+***
 
 ## Simple ORM via HTTP-RDBMS
+
+- support parameters (resolve for SQL injection)
+- support schema builder
+- support query builder
+- support order builder
+- support paging
 
 ```js
 
@@ -253,29 +265,35 @@ var order = new builders.OrderBuilder();
 
 order.asc('Id').desc('FistName');
 where.addValue('Id', '>', 10).addOperator('AND').addValue('FistName', '=', 'Peter');
+// Query:
+// SQL Server: Id > @a AND FirstName = @b
+// MySQL: Id > ? AND FirstName = ?
 
 db.findTop(10, 'tbl_user', where, order, function(data) {
 	console.log(data);
 });
 
-db.execute('UPDATE tbl_user SET DateUpdated=GETDATE() WHERE Id BETWEEN {{a}} AND {{b}}', { a: 10, b: 20 });
+db.execute('UPDATE tbl_user SET Price=20 WHERE Id BETWEEN {a} AND {b}', { a: 10, b: 20 });
+// Query:
+// SQL Server: UPDATE tbl_user SET Price=20 WHERE Id BETWEEN @a AND @b
+// MySQL: UPDATE tbl_user SET Price=20 WHERE Id BETWEEN ? AND ?
 
-db.scalar('SELECT COUNT(*) FROM tbl_user', null, null, function(data) {
+db.scalar('SELECT COUNT(*) FROM tbl_user', null, null, function(err, data) {
 	console.log(data);
 });
 
 // multiple recordset
-db.reader('SELECT Id, LastName FORM tbl_user; SELECT Id, FirstName FROM tbl_user', function(d) {
-	// d[0] == []
-	// d[1] == []
+db.reader('SELECT Id, LastName FORM tbl_user; SELECT Id, FirstName FROM tbl_user', function(err, data) {
+	// data[0] == []
+	// data[1] == []
 });
 
-db.count('tbl_user', function(d) {
-	// d.value
+db.count('tbl_user', function(err, data) {
+	// data.value
 });
 
-db.count('tbl_user', where, function(d) {
-	// d.value
+db.count('tbl_user', where, function(err, data) {
+	// data.value
 });
 
 ```
