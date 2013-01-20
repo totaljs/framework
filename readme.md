@@ -3,8 +3,6 @@
 web application framework for node.js
 =====================================
 
-![passing](http://petersirka.sk/files/96.png)
-
 * async web framework
 * simple view system
 * simple routing (+ support flags ['ajax', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug'])

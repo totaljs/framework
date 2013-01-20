@@ -2,7 +2,8 @@
 *.md
 .git*
 Makefile
-example/
+empty-project/
+examples/
 support/
 test/
 bk/
