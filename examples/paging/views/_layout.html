@@ -12,17 +12,13 @@
 	<style type="text/css">
 		body { padding: 50px; margin: 0; font:normal 12px Arial; color: gray }
 		.paging { font-size: 11px; height: 20px }
-		.paging a { float: left; margin-right: 5px; }
+		.paging a { float: left; padding: 3px 5px; }
 		.paging div { float: right; }
+		.selected { background-color: black; color: white; }
 		.mb5 { margin-bottom: 5px; }
 	</style>
 </head>
 <body>
-
-	<div>
-		<div>Category:</div>
-		@{template('menu', global.database.category)}
-	</div>
 
 	@{body}
 

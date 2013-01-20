@@ -6,7 +6,6 @@ exports.init = function() {
 
 function viewHomepage() {
 	var self = this;
-	
 	self.repository.title = 'Templates';
 	self.view('homepage');
 }

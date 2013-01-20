@@ -28,7 +28,7 @@ var itemsPaging = [
 	{ url: '/?p=2', name: '2' },
 	{ url: '/?p=3', name: '3' },
 	{ url: '/?p=4', name: '4' },
-	{ url: '/?p=5', name: '5' },
+	{ url: '/?p=5', name: '5' }
 ];
 
 var itemsInformation = {
@@ -36,5 +36,19 @@ var itemsInformation = {
 	items: 1023
 };
 
+var items = [
+	{ name: 'Product 01', price: 30.32 },
+	{ name: 'Product 02', price: 31.32 },
+	{ name: 'Product 03', price: 32.32 },
+	{ name: 'Product 04', price: 33.32 },
+	{ name: 'Product 05', price: 34.32 },
+	{ name: 'Product 06', price: 35.32 },
+	{ name: 'Product 07', price: 36.32 },
+	{ name: 'Product 08', price: 37.32 },
+	{ name: 'Product 09', price: 38.32 },
+	{ name: 'Product 10', price: 39.32 }
+];
+
 global.database.itemsPaging = itemsPaging;
 global.database.itemsInformation = itemsInformation;
+global.database.items = items;
