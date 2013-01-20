@@ -29,6 +29,7 @@ web application framework for node.js
 * support simple CouchDB provider
 * about 6 000 lines of JavaScript code
 * __no any dependencies__
+* see in action https://github.com/petersirka/partial.js/tree/master/examples
 
 ***
 
