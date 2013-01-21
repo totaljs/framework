@@ -1,7 +1,9 @@
+// run in terminal: $ sudo node index
+
 var framework = require('partial.js');
 var http = require('http');
 
-var port = 8004;
+var port = 80;
 var server = framework.init(http, { debug: true }).listen(port);
 
 // Initialize controllers

@@ -1,5 +1,4 @@
 var framework = require('partial.js');
-var couchdb = require('partial.js/couchdb');
 var http = require('http');
 
 var port = 8004;
