@@ -1,16 +1,16 @@
 var utils = require('partial.js/utils');
 
 exports.init = function() {
-	this.route('/', rss);
+	this.route('/', xml);
 }
 
-function rss() {
+function xml() {
 	
 	var self = this;
 	var data = ['A', 'B', 'C', 'D', 'E'];
 	
 	var newline = '\n';	
-	self.raw('text/rss', function(fn) {
+	self.raw('text/xml', function(fn) {
 		fn('<?xml version="1.0" encoding="utf-8"?>' + newline);
 		fn('<items>' + newline);
 		
