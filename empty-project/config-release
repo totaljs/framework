@@ -1,0 +1,21 @@
+name							: partial.js
+secret							: skuska
+ETagVersion						:
+directoryControllers			: /controllers/
+directoryViews					: /views/
+directoryTMP					: /tmp/
+directoryTemplates				: /templates/
+directoryResources				: /resources/
+directoryPublic					: /public/
+staticUrl						:
+staticUrlJS						: /data/
+staticUrlCSS					: /data/
+staticUrlImage					: /image/
+staticUrlVideo					: /video/
+staticUrlFont					: /font/
+staticUrlDocument				: /upload/
+staticAccept					: .jpg,.png,.gif,.ico,.js,.css,.txt,.xml,.woff,.ttf,.eot,.svg,.zip,.rar,.pdf,.docx,.xlsx,.doc,.xls,.html,.htm
+defaultLayout					: _layout
+httpCompress					: false
+httpCache						: false
+defaultMaxRequestLength			: 6000

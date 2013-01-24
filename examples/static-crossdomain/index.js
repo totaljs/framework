@@ -9,7 +9,6 @@ var options = {
 	staticUrlImage: 'http://static.yourdomain.com/image/'
 };
 
-
 var port = 8004;
 var server = framework.init(http, options).listen(port);
 
