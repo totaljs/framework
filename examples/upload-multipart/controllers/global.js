@@ -2,7 +2,7 @@ var utils = require('partial.js/utils');
 
 exports.init = function() {
 	this.route('/', viewHomepage);
-	this.route('/', viewHomepage, ['upload'], 1024 * 1000);
+	this.route('/', viewHomepage, ['upload'], 1024 * 1000 * 1000);
 };
 
 function viewHomepage() {
