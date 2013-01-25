@@ -1,4 +1,3 @@
-
 var utils = require('partial.js/utils');
 
 exports.init = function() {
