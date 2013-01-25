@@ -3,7 +3,19 @@ var http = require('http');
 
 var port = 8004;
 var debug = true;
+
 var server = framework.init(http, debug).listen(port);
+
+// if debug == true
+// 	  framework.load(config-debug);
+// else
+//    frmaework.load(config-release);
+//
+// config will refresh every 20 minutes
+//
+// or
+//
+// var server = framework.init(http, { debug: true, name: 'TEST' }).listen(port);
 
 // Initialize controllers
 framework.controller('global');

@@ -1,16 +1,9 @@
 var framework = require('partial.js');
 var http = require('http');
 
-var options = {
-	debug: true,
-	staticUrl: 'http://static.yourdomain.com',
-	staticUrlJS: 'http://static.yourdomain.com/scripts/',
-	staticUrlCSS: 'http://static.yourdomain.com/styles/',
-	staticUrlImage: 'http://static.yourdomain.com/image/'
-};
-
 var port = 8004;
-var server = framework.init(http, options).listen(port);
+var debug = true;
+var server = framework.init(http, debug).listen(port);
 
 // Initialize controllers
 framework.controller('global');

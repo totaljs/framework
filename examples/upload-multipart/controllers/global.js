@@ -2,6 +2,8 @@ var utils = require('partial.js/utils');
 
 exports.init = function() {
 	this.route('/', viewHomepage);
+
+	// the number is maximum data receive
 	this.route('/', viewHomepage, ['upload'], 1024 * 1000 * 1000);
 };
 

@@ -2,7 +2,8 @@ var framework = require('partial.js');
 var http = require('http');
 
 var port = 8004;
-var server = framework.init(http, { debug: true }).listen(port);
+var debug = true;
+var server = framework.init(http, debug).listen(port);
 
 framework.onPrefix = function(req) {
 	var userAgent = req.headers['user-agent'];

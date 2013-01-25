@@ -1,0 +1,21 @@
+name							: partial.js
+secret							: secret-key-for-web
+ETagVersion						:
+directoryControllers			: /controllers/
+directoryViews					: /views/
+directoryTemp					: /tmp/
+directoryTemplates				: /templates/
+directoryResources				: /resources/
+directoryPublic					: /public/
+staticUrl						: http://static.yourdomain.com
+staticUrlJS						: http://static.yourdomain.com/js/
+staticUrlCSS					: http://static.yourdomain.com/css/
+staticUrlImage					: http://static.yourdomain.com/img/
+staticUrlVideo					: http://static.yourdomain.com/video/
+staticUrlFont					: http://static.yourdomain.com/font/
+staticUrlDocument				: http://static.yourdomain.com/upload/
+staticAccepts					: .jpg,.png,.gif,.ico,.js,.css,.txt,.xml,.woff,.ttf,.eot,.svg,.zip,.rar,.pdf,.docx,.xlsx,.doc,.xls,.html,.htm
+defaultLayout					: _layout
+httpCompress					: false
+httpCache						: false
+defaultMaxRequestLength			: 6000

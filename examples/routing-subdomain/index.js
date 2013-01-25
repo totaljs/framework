@@ -4,7 +4,8 @@ var framework = require('partial.js');
 var http = require('http');
 
 var port = 80;
-var server = framework.init(http, { debug: true }).listen(port);
+var debug = true;
+var server = framework.init(http, debug).listen(port);
 
 // Initialize controllers
 framework.controller('global');

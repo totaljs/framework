@@ -3,7 +3,8 @@ var couchdb = require('partial.js/couchdb');
 var http = require('http');
 
 var port = 8004;
-var server = framework.init(http, { debug: true }, { cookie: '__user' }).listen(port);
+var debug = true;
+var server = framework.init(http, debug).listen(port);
 
 // Initialize controllers
 framework.controller('global');
@@ -34,7 +35,7 @@ framework.onAuthorize = function(req, res, callback) {
 
 	var self = this;
 
-	var cookie = req.cookie(self.options.user.cookie);
+	var cookie = req.cookie(self.options.cookie);
 	if (cookie === null || cookie.length < 10) {
 		callback(false);
 		return;
