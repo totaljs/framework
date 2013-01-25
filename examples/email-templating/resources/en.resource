@@ -1,0 +1,3 @@
+mail				:<!DOCTYPE html><html><head><title>Mail template</title><meta charset="utf-8" /><meta name="format-detection" content="telephone=no"/><meta name="viewport" content="width=1100, user-scalable=yes" /></head><body style="padding:15px;font:normal 12px Arial;color:gray;background-color:#F0F0F0"><div style="width:600px;margin:0 auto;background-color:white;padding:5px"><div style="line-height:15px;padding:15px">{body}</div></div></body></html>
+mail-hello			:Hello {name},<br />this is mail message.
+mail-registration	:First name: {firstName}<br />Last name: {lastName}<br />Age: {age}
