@@ -3,33 +3,33 @@
 web application framework for node.js
 =====================================
 
-* async web framework
-* simple view system
-* simple routing (+ support flags ['ajax', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug'])
-* simple cache
-* simple directory structure
-* simple code structure
-* simple view system
-* simple error handling
-* simple listing via templates
-* render controller in controller
-* share controller functions and models over framework
-* support debug mode without cache
-* support file upload
-* support form data validation
-* support JavaScript compress
-* support JavaScript dynamic compress in views
-* support simple LESS CSS (with compress)
-* support Markdown parser
-* support resources (for multilanguage pages)
-* support prefixes for mobile devices
-* support simple SMTP mail sender
-* support simple ORM (via HTTP-RDBMS)
-* support HTTP-RDBMS provider (MySQL, SQL Server, OleDB, ODBC), more on https://github.com/petersirka/http-rdbms/
-* support simple CouchDB provider
-* about 6 000 lines of JavaScript code
-* __no any dependencies__
-* see in action https://github.com/petersirka/partial.js/tree/master/examples
+* Async web framework
+* Simple view system
+* Simple routing (+ support flags ['ajax', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug'])
+* Simple cacheing
+* Simple directory structure
+* Simple code structure
+* Simple view system
+* Simple error handling
+* Simple listing via templates
+* Render controller in controller
+* Share controller functions and models over framework
+* Supports debug mode without cache
+* Supports file upload
+* Supports form data validation
+* Supports JavaScript compress
+* Supports JavaScript dynamic compress in views
+* Supports simple LESS CSS (with compress)
+* Supports Markdown parser
+* Supports resources (for multilanguage pages)
+* Supports prefixes for mobile devices
+* Supports simple SMTP mail sender
+* Supports simple ORM (via HTTP-RDBMS)
+* Supports HTTP-RDBMS provider (MySQL, SQL Server, OleDB, ODBC), more on https://github.com/petersirka/http-rdbms/
+* Supports simple CouchDB provider
+* About 6 000 lines of JavaScript code
+* __No dependencies__
+* [Demo](https://github.com/petersirka/partial.js/tree/master/examples)
 
 ***
 
