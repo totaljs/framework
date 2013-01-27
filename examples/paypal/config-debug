@@ -1,0 +1,7 @@
+paypal-user						: ****.gmail.com
+paypal-password					: ****
+paypal-signature				: ****.aukr21sQc0PkYL4KZRuxVd
+
+// domain MUST EXISTS !!!!!
+paypal-return					: http://yourdomain.com/paypal/ok/
+paypal-cancel					: http://yourdomain.com/paypal/no/
