@@ -1,7 +1,7 @@
 var utils = require('partial.js/utils');
 
-// $ npm install paypal
-var paypal = require('paypal');
+// $ npm install payment-paypal
+var paypal = require('payment-paypal');
 
 exports.init = function() {
 	this.route('/', viewHomepage);
