@@ -38,7 +38,7 @@ function paymentOK() {
 	var self = this;
 	var payment = paypal.init(self.options['paypal-user'], self.options['paypal-password'], self.options['paypal-signature'], self.options['paypal-return'], self.options['paypal-cancel'], self.options.debug);
 	
-	payment.detail(self.get.token, self.get.PayerID, function(err, data) {
+	payment.detail(self, function(err, data) {
 		
 		if (err) {
 			self.view500(err);
