@@ -27,7 +27,7 @@ web application framework for node.js
 * Supports simple ORM (via HTTP-RDBMS)
 * Supports HTTP-RDBMS provider (MySQL, SQL Server, OleDB, ODBC), more on https://github.com/petersirka/http-rdbms/
 * Supports simple CouchDB provider
-* Supports simple picture processing with GraphicsMagick or ImageMagick
+* Supports simple image/picture (resize, crop, scale, blur, sepia, grayscale, atď.) processing with GraphicsMagick or ImageMagick
 * About 6 500 lines of JavaScript code
 * __No dependencies__
 * [Examples](https://github.com/petersirka/partial.js/tree/master/examples)
