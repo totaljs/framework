@@ -75,6 +75,10 @@ $ node index.js
 $ npm install partial.js
 ```
 
+## 
+
+> I want perfect and stability web application framework. Currently is framework in testing mode and stable version will be in the short time.
+
 ### Tips:
 
 - node.js cluster: <http://petersirka.sk/development/spustenie-partial-js-v-module-cluster/>
