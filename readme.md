@@ -75,7 +75,7 @@ $ node index.js
 $ npm install partial.js
 ```
 
-## 
+## Plans
 
 > I want perfect and stability web application framework. Currently is framework in testing mode and stable version will be in the short time.
 
