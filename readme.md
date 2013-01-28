@@ -27,9 +27,10 @@ web application framework for node.js
 * Supports simple ORM (via HTTP-RDBMS)
 * Supports HTTP-RDBMS provider (MySQL, SQL Server, OleDB, ODBC), more on https://github.com/petersirka/http-rdbms/
 * Supports simple CouchDB provider
-* About 6 000 lines of JavaScript code
+* Supports simple picture processing with GraphicsMagick or ImageMagick
+* About 6 500 lines of JavaScript code
 * __No dependencies__
-* [Demo](https://github.com/petersirka/partial.js/tree/master/examples)
+* [Examples](https://github.com/petersirka/partial.js/tree/master/examples)
 
 ***
 
@@ -86,11 +87,6 @@ $ npm install partial.js
 > Download / extract and copy to Sublime Text 2 Packgages
 
 http://petersirka.sk/partial-js/Packages.zip
-
-## Plans
-
-- native simple image processing (ImageMagick (http://www.imagemagick.org) or GraphicsMagic (http://www.graphicsmagick.org))
-- native sipmle RIAK DB provider <http://docs.basho.com>
 
 ## Simple example
 

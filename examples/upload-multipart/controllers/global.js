@@ -16,6 +16,6 @@ function viewHomepage() {
 
 	if (self.files.length > 0)
 		model.info = self.files[0].fileName + ' ({0} kB)'.format(Math.floor(self.files[0].fileSize / 1024, 2));
-
+	
 	self.view('homepage', model);
 }
