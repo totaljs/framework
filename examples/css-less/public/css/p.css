@@ -1,0 +1,11 @@
+@radius(radius) { -moz-border-radius:@radius; border-radius:@radius; -webkit-border-radius:@radius }
+@shadow(x,y,size,color) { -moz-box-shadow:@x @y @size @color; -webkit-box-shadow:@x @y @size @color; box-shadow:@x @y @size @color }
+@shadow-inset(x,y,size,color) { -moz-box-shadow:inset @x @y @size @color; -webkit-box-shadow:inset @x @y @size @color; box-shadow:inset @x @y @size @color }
+@radius-all(a,b,c,d) { -moz-border-radius:@a @b @c @d; -webkit-border-radius:@a @b @c @d; border-radius:@a @b @c @d }
+@transition(property,duration,easing) { -webkit-transition: @property @duration @easing; -moz-transition: @property @duration @easing; -o-transition: @property @duration @easing; -ms-transition: @property @duration @easing; }
+@noselect { -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -o-user-select:none; user-select:none }
+
+body { margin:50px; background-color: #E0E0E0; }
+
+div { @shadow(10px, 10px, 5px, silver); @radius('10px 10px 10px 10px'); background-color: white; padding:10px; }
+p { @radius(5px); }

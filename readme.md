@@ -22,8 +22,8 @@ web application framework for node.js
 * Supports form data validation - [example](https://github.com/petersirka/partial.js/tree/master/examples/validation)
 * Supports static files
 * Supports JavaScript compress
-* Supports JavaScript dynamic compress in views
-* Supports simple LESS CSS (with compress)
+* Supports JavaScript dynamic compress in views - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-javascript-compress)
+* Supports simple LESS CSS (with compress) - [example](https://github.com/petersirka/partial.js/tree/master/examples/css-less)
 * Supports Markdown parser - [example](https://github.com/petersirka/partial.js/tree/master/examples/markdown)
 * Supports resources (for multilanguage pages) - [example](https://github.com/petersirka/partial.js/tree/master/examples/localization-resources)
 * __Supports prefixes for mobile devices__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/mobile)

@@ -1,4 +1,5 @@
 var couchdb = require('partial.js/couchdb');
+var utils = require('partial.js/utils');
 
 // ==================================================
 // in this file, you can rewrite framework prototypes
@@ -9,6 +10,14 @@ console.log('# is running');
 
 exports.onError = function(err, name, uri, code) {
 	console.log('!ERROR!');
+};
+
+exports.onSettings = function() {
+
+	if (arguments.length > 0)
+		return '<script type="text/javascript">document.title="{0}";</script>'.format(arguments[0]);
+
+	return '';
 };
 
 exports.onMeta = function onMeta() {
