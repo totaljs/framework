@@ -20,6 +20,7 @@ web application framework for node.js
 * Supports copy&paste custom code between projects - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-custom)
 * __Supports modules__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
 * Supports form data validation - [example](https://github.com/petersirka/partial.js/tree/master/examples/validation)
+* Supports simple logs -  [example](https://github.com/petersirka/partial.js/tree/master/examples/logs)
 * Supports static files
 * Supports JavaScript compress
 * Supports JavaScript dynamic compress in views - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-javascript-compress)
