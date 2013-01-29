@@ -84,9 +84,8 @@ http://petersirka.sk/partial-js/new-web-site.zip
 
 ## Simple documentation
 
-Slovak documentation: <https://github.com/petersirka/partial.js/wiki>
-English documentation: ... in progress ...
-
+English documentation will be in short time
+[Slovak documentation](https://github.com/petersirka/partial.js/wiki)
 [Examples](https://github.com/petersirka/partial.js/tree/master/examples)
 
 ***
