@@ -83,8 +83,11 @@ http://petersirka.sk/partial-js/new-web-site.zip
 ***
 
 ## Simple documentation
+
 Slovak documentation: <https://github.com/petersirka/partial.js/wiki>
 English documentation: ... in progress ...
+
+[Examples](https://github.com/petersirka/partial.js/tree/master/examples)
 
 ***
 
