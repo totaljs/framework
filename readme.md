@@ -13,7 +13,7 @@ web application framework for node.js
 * Simple cookie manipulation - [example](https://github.com/petersirka/partial.js/tree/master/examples/cookies)
 * Simple listing via templates - [example](https://github.com/petersirka/partial.js/tree/master/examples/templating)
 * Render controller in controller
-* Share controller functions and models over framework
+* Share controller functions and models over framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
 * Supports controller sharing between other controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
 * Supports debug mode with custom settings without cache - [example](https://github.com/petersirka/partial.js/tree/master/examples/config-debug-release)
 * Supports file upload - [example](https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart)
