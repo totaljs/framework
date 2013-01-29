@@ -2,7 +2,7 @@ var utils = require('partial.js/utils');
 
 exports.init = function() {
 	this.route('/', viewHomepage);
-	this.route('/controller/', viewHomepageSettingsController);
+	this.route('/controller/', viewHomepageMetaController);
 };
 
 function viewHomepage() {
@@ -10,14 +10,16 @@ function viewHomepage() {
 	self.view('homepage');
 }
 
-function viewHomepageSettingsController() {
+function viewHomepageMetaController() {
 	var self = this;
 	
-	self.settings('title');
+	self.meta('title controller', 'description controller', 'keywords controller');
 	
-	// you can write own settings render
+	// self.meta('title controller', 'description controller', 'meta image_src');
 	//
-	// framework.onSettings = function() {
+	// you can write own meta render
+	//
+	// framework.onMeta = function() {
 	//    arguments.forEach(function(o) {
 	//       ...
 	//	  });
