@@ -7,6 +7,7 @@ directoryTemp					: /tmp/
 directoryTemplates				: /templates/
 directoryResources				: /resources/
 directoryPublic					: /public/
+directoryModules				: /modules/
 staticUrl						:
 staticUrlJS						: /js/
 staticUrlCSS					: /css/

@@ -3,44 +3,45 @@
 web application framework for node.js
 =====================================
 
-* Async web framework
-* Simple view system
-* Simple routing (+ support flags ['ajax', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug'])
-* Simple cacheing
+* Async web framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/async)
+* Simple view system - [example](https://github.com/petersirka/partial.js/tree/master/examples/views)
+* Simple routing (+ support flags ['ajax', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug']) - [example](https://github.com/petersirka/partial.js/tree/master/examples/routing)
+* Simple cacheing - [http cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-http), [partial cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-partial)
 * Simple directory structure
 * Simple code structure
-* Simple view system
 * Simple error handling
-* Simple listing via templates
+* Simple cookie manipulation - [example](https://github.com/petersirka/partial.js/tree/master/examples/cookies)
+* Simple listing via templates - [example](https://github.com/petersirka/partial.js/tree/master/examples/templating)
 * Render controller in controller
 * Share controller functions and models over framework
-* Supports debug mode without cache
-* Supports file upload
-* Supports form data validation
+* Supports controller sharing between other controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
+* Supports debug mode with custom settings without cache - [example](https://github.com/petersirka/partial.js/tree/master/examples/config-debug-release)
+* Supports file upload - [example](https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart)
+* Supports copy&paste custom code between projects - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-custom)
+* __Supports modules__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
+* Supports form data validation - [example](https://github.com/petersirka/partial.js/tree/master/examples/validation)
+* Supports static files
 * Supports JavaScript compress
 * Supports JavaScript dynamic compress in views
 * Supports simple LESS CSS (with compress)
-* Supports Markdown parser
-* Supports resources (for multilanguage pages)
-* Supports prefixes for mobile devices
+* Supports Markdown parser - [example](https://github.com/petersirka/partial.js/tree/master/examples/markdown)
+* Supports resources (for multilanguage pages) - [example](https://github.com/petersirka/partial.js/tree/master/examples/localization-resources)
+* __Supports prefixes for mobile devices__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/mobile)
 * Supports simple SMTP mail sender
+* Supports simple mail templating - [example](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
 * Supports simple ORM (via HTTP-RDBMS)
+* Supports custom authorization - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
 * Supports HTTP-RDBMS provider (MySQL, SQL Server, OleDB, ODBC), more on https://github.com/petersirka/http-rdbms/
-* Supports simple CouchDB provider
-* Supports simple image/picture (resize, crop, blur, sepia, grayscale, etc.) processing with GraphicsMagick or ImageMagick
+* Supports simple CouchDB provider - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
+* Supports simple image/picture processing (resize, crop, blur, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
+* Easy adding dynamic META tags in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-meta)
+* Easy adding dynamic Settings in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-settings)
+* Simple use paypal payment with [node-paypal](https://github.com/petersirka/node-paypal) - [example](https://github.com/petersirka/partial.js/tree/master/examples/paypal)
+* Supports simple paging builder - [example](https://github.com/petersirka/partial.js/tree/master/examples/paging)
+* Supports live usage information - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-usage)
 * About 6 500 lines of JavaScript code
 * __No dependencies__
-* [Examples](https://github.com/petersirka/partial.js/tree/master/examples)
-
-***
-
-## Simple documentation
-Slovak documentation: <https://github.com/petersirka/partial.js/wiki>
-
-***
-
-## Empty website project
-http://petersirka.sk/partial-js/new-web-site.zip
+* [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
 
 ***
 
@@ -74,6 +75,17 @@ $ node index.js
 ```text
 $ npm install partial.js
 ```
+
+## Empty website project
+http://petersirka.sk/partial-js/new-web-site.zip
+
+***
+
+## Simple documentation
+Slovak documentation: <https://github.com/petersirka/partial.js/wiki>
+English documentation: ... in progress ...
+
+***
 
 ## Plans
 
