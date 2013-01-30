@@ -4,7 +4,7 @@ web application framework for node.js
 =====================================
 
 * Async web framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/async)
-* Simple view system - [example](https://github.com/petersirka/partial.js/tree/master/examples/views)
+* Simple view engine - [example](https://github.com/petersirka/partial.js/tree/master/examples/views)
 * Simple routing (+ support flags ['ajax', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug']) - [example](https://github.com/petersirka/partial.js/tree/master/examples/routing)
 * Simple cacheing - [http cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-http), [partial cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-partial)
 * Simple directory structure (controllers, modules, public, logs, tmp, templates, views, resources)
@@ -14,6 +14,7 @@ web application framework for node.js
 * Simple listing via templates - [example](https://github.com/petersirka/partial.js/tree/master/examples/templating)
 * Render controller in controller
 * Share controller functions and models over framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
+* Supports TESTING - [example](https://github.com/petersirka/partial.js/tree/master/examples/testing)
 * Supports controller sharing between other controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
 * Supports debug mode with custom settings without cache - [example](https://github.com/petersirka/partial.js/tree/master/examples/config-debug-release)
 * Supports file upload - [example](https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart)
