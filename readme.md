@@ -41,6 +41,7 @@ web application framework for node.js
 * Simple use paypal payment with [node-paypal](https://github.com/petersirka/node-paypal) - [example](https://github.com/petersirka/partial.js/tree/master/examples/paypal)
 * Supports simple paging builder - [example](https://github.com/petersirka/partial.js/tree/master/examples/paging)
 * Supports live usage information - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-usage)
+* Supports dynamic stop server - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
 * About 6 500 lines of JavaScript code
 * __No dependencies__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
