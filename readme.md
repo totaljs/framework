@@ -56,7 +56,7 @@ http://nodejs-eshop.eu01.aws.af.cm
 
 ***
 
-## Run your web site:
+## Run your website:
 
 - download empty website project
 - open terminal and find website directory
