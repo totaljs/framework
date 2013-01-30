@@ -118,7 +118,7 @@ var http = require('http');
 var port = 8004;
 var debug = true;
 
-ramework.init(http, debug, port);
+framework.init(http, debug, port);
 
 // Initialize controllers
 framework.controller('global');
