@@ -12,7 +12,7 @@ web application framework for node.js
 * Simple error handling
 * Simple cookie manipulation - [example](https://github.com/petersirka/partial.js/tree/master/examples/cookies)
 * Simple listing via templates - [example](https://github.com/petersirka/partial.js/tree/master/examples/templating)
-* Render controller in controller
+* XSS protection
 * Share controller functions and models over framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
 * __Assertion Testing__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/testing)
 * Supports controller sharing between other controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
@@ -37,6 +37,7 @@ web application framework for node.js
 * Supports HTTP-RDBMS provider (MySQL, SQL Server, OleDB, ODBC), more on https://github.com/petersirka/http-rdbms/
 * Supports simple CouchDB provider - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
 * Supports simple image processing (resize, crop, blur, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
+* Supports render controller in controller
 * Easy adding dynamic META tags in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-meta)
 * Easy adding dynamic Settings in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-settings)
 * Simple use paypal payment with [node-paypal](https://github.com/petersirka/node-paypal) - [example](https://github.com/petersirka/partial.js/tree/master/examples/paypal)
