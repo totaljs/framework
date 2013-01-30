@@ -7,7 +7,7 @@ web application framework for node.js
 * Simple view system - [example](https://github.com/petersirka/partial.js/tree/master/examples/views)
 * Simple routing (+ support flags ['ajax', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug']) - [example](https://github.com/petersirka/partial.js/tree/master/examples/routing)
 * Simple cacheing - [http cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-http), [partial cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-partial)
-* Simple directory structure
+* Simple directory structure (controllers, modules, public, logs, tmp, templates, views, resources)
 * Simple code structure
 * Simple error handling
 * Simple cookie manipulation - [example](https://github.com/petersirka/partial.js/tree/master/examples/cookies)
@@ -21,15 +21,15 @@ web application framework for node.js
 * __Supports modules__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
 * Supports form data validation - [example](https://github.com/petersirka/partial.js/tree/master/examples/validation)
 * Supports simple log writer - [example](https://github.com/petersirka/partial.js/tree/master/examples/logs)
+* Supports simple restrictions [example](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
 * Supports static files
 * Supports JavaScript compress
-* Supports simple restrictions [example](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
 * Supports JavaScript dynamic compress in views - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-javascript-compress)
 * Supports simple LESS CSS (with compress) - [example](https://github.com/petersirka/partial.js/tree/master/examples/css-less)
 * Supports Markdown parser - [example](https://github.com/petersirka/partial.js/tree/master/examples/markdown)
 * Supports resources (for multilanguage pages) - [example](https://github.com/petersirka/partial.js/tree/master/examples/localization-resources)
 * __Supports prefixes for mobile devices__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/mobile)
-* Supports simple SMTP mail sender
+* Supports simple SMTP mail sender - [example](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
 * Supports simple mail templating - [example](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
 * Supports simple ORM (via HTTP-RDBMS)
 * Supports custom authorization - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
