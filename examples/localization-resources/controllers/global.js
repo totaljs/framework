@@ -5,7 +5,7 @@ exports.init = function() {
 	this.route('/en/', viewEN);
 	this.route('/sk/', viewSK);
 	this.route('/cz/', viewCZ);
-	this.route('/{language}/message/', viewMessage, ['ajax']);
+	this.route('/{language}/message/', viewMessage, ['xhr']);
 };
 
 function viewAuto() {

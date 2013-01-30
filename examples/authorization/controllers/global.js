@@ -4,7 +4,7 @@ var builders = require('partial.js/builders');
 exports.init = function() {
 	this.route('/', viewIsLogged, ['logged']);
 	this.route('/', viewHomepage, ['unlogged']);
-	this.route('/', viewHomepage, ['unlogged', 'ajax', 'post']);
+	this.route('/', viewHomepage, ['unlogged', 'xhr', 'post']);
 };
 
 function viewIsLogged() {
@@ -14,7 +14,7 @@ function viewIsLogged() {
 function viewHomepage() {
 	var self = this;
 	
-	if (!self.isAjax) {
+	if (!self.isXHR) {
 		self.repository.title = 'Login example';
 		self.layout('');
 		self.view('homepage', { LoginName: '@' });
