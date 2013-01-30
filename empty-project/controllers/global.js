@@ -1,11 +1,12 @@
 // var yourcode = require('../code/yourcode');
 
 exports.init = function() {
-	this.route('/', viewHomepage);
-	this.route('#403', error403);
-	this.route('#404', error404);
-	this.route('#431', error431)
-	this.route('#500', error500);
+	var self = this;
+	self.route('/', viewHomepage);
+	self.route('#403', error403);
+	self.route('#404', error404);
+	self.route('#431', error431)
+	self.route('#500', error500);
 };
 
 /*
@@ -20,33 +21,38 @@ exports.functions = function() {
 
 // Forbidden
 function error403() {
-	this.repository.title = 'Forbidden (403)';
-	this.statusCode = 403;
-	this.view('403');
+	var self = this;
+	self.meta('Forbidden (403)');
+	self.statusCode = 403;
+	self.view('403');
 }
 
 // Not Found
 function error404() {
-	this.repository.title = 'Not Found (404)';
-	this.statusCode = 404;
-	this.view('404');
+	var self = this;
+	self.meta('Not Found (404)');
+	self.statusCode = 404;
+	self.view('404');
 }
 
 // Request Header Fields Too Large
 function error431() {
-	this.repository.title = 'Request Header Fields Too Large (431)';
-	this.statusCode = 431;
-	this.view('431');
+	var self = this;
+	self.meta('Request Header Fields Too Large (431)');
+	self.statusCode = 431;
+	self.view('431');
 }
 
 // Internal Server Error
 function error500() {
-	this.repository.title = 'Internal Server Error (500)';
-	this.statusCode = 500;
-	this.view('500');
+	var self = this;
+	self.meta('Internal Server Error (500)');
+	self.statusCode = 500;
+	self.view('500');
 }
 
 function viewHomepage() {
-	this.repository.title = 'Welcome';
-	this.view('homepage');
+	var self = this;
+	self.meta('Welcome');
+	self.view('homepage');
 }
