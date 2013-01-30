@@ -5,7 +5,7 @@ web application framework for node.js
 
 * Async web framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/async)
 * Simple view engine - [example](https://github.com/petersirka/partial.js/tree/master/examples/views)
-* Simple routing (+ support flags ['ajax', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug']) - [example](https://github.com/petersirka/partial.js/tree/master/examples/routing)
+* Simple routing + support flags ['xhr', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug'] - [example](https://github.com/petersirka/partial.js/tree/master/examples/routing)
 * Simple cacheing - [http cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-http), [partial cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-partial)
 * Simple directory structure (controllers, modules, public, logs, tmp, templates, views, resources)
 * Simple code structure
