@@ -3,8 +3,11 @@ var http = require('http');
 
 var port = 8004;
 var debug = true;
-var server = framework.init(http, debug).listen(port);
 
+framework.init(http, debug, port);
+
+// Initialize controllers
+framework.controller('global');
 
 framework.onVersion = function(name) {
 
@@ -12,7 +15,7 @@ framework.onVersion = function(name) {
 		case 'script.js':
 			return 'script023.js';
 		case 'style.css':
-			return 'style001.css';
+			return this.options['version-style'];
 		case 'logo.png':
 			return 'logo003.png';
 
@@ -23,8 +26,5 @@ framework.onVersion = function(name) {
 
 	return name;
 };
-
-// Initialize controllers
-framework.controller('global');
 
 console.log("http://127.0.0.1:{0}/".format(port));

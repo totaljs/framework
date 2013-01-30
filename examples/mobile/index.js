@@ -3,7 +3,11 @@ var http = require('http');
 
 var port = 8004;
 var debug = true;
-var server = framework.init(http, debug).listen(port);
+
+framework.init(http, debug, port);
+
+// Initialize controllers
+framework.controller('global');
 
 framework.onPrefix = function(req) {
 	var userAgent = req.headers['user-agent'];
@@ -16,8 +20,5 @@ framework.onPrefix = function(req) {
 
 	return '';
 };
-
-// Initialize controllers
-framework.controller('global');
 
 console.log("http://127.0.0.1:{0}/".format(port));

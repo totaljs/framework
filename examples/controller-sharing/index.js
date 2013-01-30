@@ -3,7 +3,8 @@ var http = require('http');
 
 var port = 8004;
 var debug = true;
-var server = framework.init(http, debug).listen(port);
+
+framework.init(http, debug, port);
 
 // Initialize controllers
 framework.controller('global');
