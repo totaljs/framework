@@ -35,7 +35,7 @@ function viewMarkdown() {
 
 		switch (type) {
 			case 'javascript':
-				return '<pre>{0}</pre>'.format(value.join('\n').htmlEncode());			
+				return '<pre>{0}</pre>'.format(value.join('\n').htmlEncode());
 			case '>':
 			case '|':
 				return '<p>{0}</p>'.format(value.join('<br />'));
@@ -100,5 +100,5 @@ function viewMarkdown() {
 		}
 
 		self.view('reader', { body: markdown.load(data.toString()) });
-	});	
+	});
 }
