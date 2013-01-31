@@ -237,11 +237,11 @@ Welcome @{model.name}!
 
 ## Simple ORM via HTTP-RDBMS
 
-- support parameters (resolve for SQL injection)
-- support schema builder
-- support query builder
-- support order builder
-- support paging
+- supports parameters (resolve for SQL injection)
+- supports schema builder
+- supports query builder
+- supports order builder
+- supports paging
 
 ```js
 
