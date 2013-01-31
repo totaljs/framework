@@ -9,8 +9,8 @@ function viewHomepage() {
 	var builder = [];
 	var self = this;
 
-	Object.keys(self.options).forEach(function(o) {
-		var value = self.options[o];
+	Object.keys(self.config).forEach(function(o) {
+		var value = self.config[o];
 		builder.push('{0} : {1}'.format(o.padRight(30, ' '), value instanceof Array ? value.join(', ') : value));
 	});
 

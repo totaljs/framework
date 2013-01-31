@@ -15,7 +15,7 @@ framework.onVersion = function(name) {
 		case 'script.js':
 			return 'script023.js';
 		case 'style.css':
-			return this.options['version-style'];
+			return this.config['version-style'];
 		case 'logo.png':
 			return 'logo003.png';
 

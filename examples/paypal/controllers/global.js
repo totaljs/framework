@@ -18,7 +18,7 @@ function viewHomepage() {
 
 function redirectPay() {
 	var self = this;
-	var payment = paypal.init(self.options['paypal-user'], self.options['paypal-password'], self.options['paypal-signature'], self.options['paypal-return'], self.options['paypal-cancel'], self.options.debug);
+	var payment = paypal.init(self.config['paypal-user'], self.config['paypal-password'], self.config['paypal-signature'], self.config['paypal-return'], self.config['paypal-cancel'], self.config.debug);
 
 	var orderNumber = 100;
 	var price = 12.23;
@@ -36,7 +36,7 @@ function redirectPay() {
 
 function paymentOK() {
 	var self = this;
-	var payment = paypal.init(self.options['paypal-user'], self.options['paypal-password'], self.options['paypal-signature'], self.options['paypal-return'], self.options['paypal-cancel'], self.options.debug);
+	var payment = paypal.init(self.config['paypal-user'], self.config['paypal-password'], self.config['paypal-signature'], self.config['paypal-return'], self.config['paypal-cancel'], self.config.debug);
 	
 	payment.detail(self, function(err, data) {
 		

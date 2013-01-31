@@ -50,7 +50,7 @@ function viewHomepage() {
 			return;
 		}
 		
-		self.res.cookie(self.options.cookie, self.app.stringEncode({ id: user.value._id, ip: self.req.ip }, 'user'), new Date().add('m', 5));
+		self.res.cookie(self.config.cookie, self.app.stringEncode({ id: user.value._id, ip: self.req.ip }, 'user'), new Date().add('m', 5));
 		self.json({ r: true });
 	});
 }

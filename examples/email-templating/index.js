@@ -33,7 +33,7 @@ framework.mail = function(email, name, params) {
 
 	// mail.send(smtp, mailFrom, mailTo, mailCC, subject, body, [senderName], [mailReply], [userName], [userPassword]);
 	// mail.debug = true;
-	mail.send(self.options['mail-smtp'], self.options['mail-from'], email, null, subject, template, self.options['mail-from-name']);
+	mail.send(self.config['mail-smtp'], self.config['mail-from'], email, null, subject, template, self.config['mail-from-name']);
 	return true;
 };
 

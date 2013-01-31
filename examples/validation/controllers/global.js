@@ -3,13 +3,13 @@ var builders = require('partial.js/builders');
 
 exports.init = function() {
 	this.route('/', viewHomepage);
-	this.route('/', viewHomepage, ['ajax', 'post']);
+	this.route('/', viewHomepage, ['xhr', 'post']);
 };
 
 function viewHomepage() {
 	var self = this;
 	
-	if (!self.isAjax) {
+	if (!self.isXHR) {
 		self.repository.title = 'Validation example';
 		self.view('homepage', { LoginName: '@' });
 		return;

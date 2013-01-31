@@ -30,7 +30,7 @@ exports.onAuthorize = function(req, res, callback) {
 
 	var self = this;
 
-	var cookie = req.cookie(self.options.cookie);
+	var cookie = req.cookie(self.config.cookie);
 	if (cookie === null || cookie.length < 10) {
 		callback(false);
 		return;
