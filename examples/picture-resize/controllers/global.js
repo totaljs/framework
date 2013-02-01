@@ -31,7 +31,7 @@ function viewHomepage() {
 		if (file.isImage()) {
 			
 			var fileName = self.pathPublic('upload.jpg');
-			var picture = file.picture();
+			var picture = file.picture(); // this is equivalent to require('partail.js/picture').init(false);
 
 			// require('partial.js/picture').init(fileName, [isImageMagick]);
 			// file.picture([isImageMagick]);
