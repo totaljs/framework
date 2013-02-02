@@ -9,6 +9,7 @@ directoryResources				: /resources/
 directoryPublic					: /public/
 directoryModules				: /modules/
 directoryLogs					: /logs/
+directoryTests					: /tests/
 staticUrl						:
 staticUrlJS						: /js/
 staticUrlCSS					: /css/

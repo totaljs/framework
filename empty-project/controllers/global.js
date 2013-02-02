@@ -1,5 +1,3 @@
-// var yourcode = require('../code/yourcode');
-
 exports.init = function() {
 	var self = this;
 	self.route('/', viewHomepage);
