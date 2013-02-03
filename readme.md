@@ -105,7 +105,7 @@ English documentation will be in short time. [Look at examples](https://github.c
 
 ![Sublime Text 2 Syntax Highlighter](http://petersirka.sk/partial-js/syntax-highlight.gif)
 
-> Download / extract and copy to Sublime Text 2 Packgages
+> Download / extract and copy to Sublime Text 2 Packages
 
 http://petersirka.sk/partial-js/Packages.zip
 
