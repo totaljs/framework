@@ -2,9 +2,10 @@ var utils = require('partial.js/utils');
 var builders = require('partial.js/builders');
 
 exports.init = function() {
-	this.route('/', viewIsLogged, ['logged']);
-	this.route('/', viewHomepage, ['unlogged']);
-	this.route('/', viewHomepage, ['unlogged', 'xhr', 'post']);
+	var self = this;
+	self.route('/', viewIsLogged, ['logged']);
+	self.route('/', viewHomepage, ['unlogged']);
+	self.route('/', viewHomepage, ['unlogged', 'xhr', 'post']);
 };
 
 function viewIsLogged() {
@@ -42,15 +43,15 @@ function viewHomepage() {
 			return;
 		}
 
-		var user = data.rows[0];
+		var user = data.rows[0];		
 
-		if (user.value.password != self.post.LoginPassword.toSHA1()) {
+		if (typeof(user) === 'undefined' || user.value.password != self.post.LoginPassword.toSHA1()) {
 			errorBuilder.add('LoginError');
 			self.json(errorBuilder);
 			return;
 		}
 		
-		self.res.cookie(self.config.cookie, self.app.stringEncode({ id: user.value._id, ip: self.req.ip }, 'user'), new Date().add('m', 5));
+		self.res.cookie(self.config.cookie, self.app.encode({ id: user.value._id, ip: self.req.ip }, 'user'), new Date().add('m', 5));
 		self.json({ r: true });
 	});
 }

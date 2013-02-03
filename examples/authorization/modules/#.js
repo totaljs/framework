@@ -36,7 +36,7 @@ exports.onAuthorize = function(req, res, callback) {
 		return;
 	}
 
-	var obj = self.stringDecode(cookie, 'user');
+	var obj = self.decode(cookie, 'user');
 
 	if (obj.ip != req.ip) {
 		callback(false);
