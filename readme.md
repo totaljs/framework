@@ -91,9 +91,6 @@ $ node index.js
 $ npm install partial.js
 ```
 
-## Empty website project
-http://petersirka.sk/partial-js/new-web-site.zip
-
 ***
 
 ## Plans
