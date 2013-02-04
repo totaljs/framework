@@ -3,6 +3,8 @@
 web application framework for node.js
 =====================================
 
+http://partialjs.com
+
 * Async web framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/async)
 * Simple view engine - [example](https://github.com/petersirka/partial.js/tree/master/examples/views)
 * Simple routing + support flags ['xhr', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug'] - [example](https://github.com/petersirka/partial.js/tree/master/examples/routing)
@@ -51,11 +53,18 @@ web application framework for node.js
 
 ***
 
-## Simple eshop example
-http://petersirka.sk/partial-js/eshop.zip
+> I am still improving my english. Please do not hesitate to contact me in any contradictions.
 
-Preview node.js eshop:
-http://nodejs-eshop.eu01.aws.af.cm
+***
+
+## Simple eshop example
+http://eshop.partialjs.com
+
+## partial.js homepage
+http://partialjs.com
+
+## partial.js documentation
+http://partialjs.com/documentation/
 
 ***
 
@@ -87,28 +96,9 @@ http://petersirka.sk/partial-js/new-web-site.zip
 
 ***
 
-## Simple documentation
-
-English documentation will be in short time. [Look at examples](https://github.com/petersirka/partial.js/tree/master/examples)
-
-***
-
 ## Plans
 
 > I want perfect and stability web application framework. Currently is framework in testing mode and stable version will be in short time.
-
-### Tips:
-
-- node.js cluster: <http://petersirka.sk/development/spustenie-partial-js-v-module-cluster/>
-- install nginx: <http://www.petersirka.sk/ostatok/instalacia-na-osx-lion-nginx-a-nastavenie-sublime-do-termin/>
-
-### Sublime 2 Syntax partial.js HTML Highlighter
-
-![Sublime Text 2 Syntax Highlighter](http://petersirka.sk/partial-js/syntax-highlight.gif)
-
-> Download / extract and copy to Sublime Text 2 Packages
-
-http://petersirka.sk/partial-js/Packages.zip
 
 ## Simple example
 
@@ -133,44 +123,34 @@ console.log("http://127.0.0.1:{0}/".format(port));
 
 ```js
 exports.init = function() {
-	this.route('/', viewHomepage);
-	this.route('#403', error403);
-	this.route('#404', error404);
-	this.route('#431', error431)
-	this.route('#500', error500);
-	// this.route('/registration/', viewRegistration, ['ajax', 'post']);
-	// this.route('/products/{category}/', viewProducts);
-	// this.route('/products/{category}/{subcategory}/', viewProducts);
-	// this.route('/user/', viewUser, ['logged']);
+	var self = this;
+	self.route('/', viewHomepage);
+	self.route('#404', error404);
+	self.route('#500', error500);
+	// self.route('/registration/', viewRegistration, ['ajax', 'post']);
+	// self.route('/products/{category}/', viewProducts);
+	// self.route('/products/{category}/{subcategory}/', viewProducts);
+	// self.route('/user/', viewUser, ['logged']);
 };
-
-// Forbidden
-function error403() {
-	this.repository.title = 'Forbidden (403)';
-	this.view('403');
-}
 
 // Not Found
 function error404() {
-	this.repository.title = 'Not Found (404)';
-	this.view('404');
-}
-
-// Request Header Fields Too Large
-function error431() {
-	this.repository.title = 'Request Header Fields Too Large (431)';
-	this.view('431');
+	var self = this;
+	self.statusCode = 404;
+	self.view('404');
 }
 
 // Internal Server Error
 function error500() {
-	this.repository.title = 'Internal Server Error (500)';
-	this.view('500');
+	var self = this;
+	self.statusCode = 500;
+	self.view('500');
 }
 
 function viewHomepage() {
-	this.repository.title = 'Welcome';
-	this.view('homepage', { name: 'Peter' });
+	var self = this;
+	self.repository.title = 'Web application framework';
+	self.view('homepage', { name: 'Peter' });
 }
 ```
 
@@ -180,7 +160,7 @@ function viewHomepage() {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>@{repository.title}</title>
+    @{meta}
     <meta charset="utf-8" />
 	<meta http-equiv="content-language" content="sk" />
 	<meta http-equiv="X-UA-Compatible" content="IE=10" />
@@ -193,7 +173,6 @@ function viewHomepage() {
 </head>
 <body>
 	<div class="content">
-		<h1>@{repository.title}</h1>
 		@{body}
 	</div>
 </body>
@@ -203,6 +182,9 @@ function viewHomepage() {
 > views / homepage.html
 
 ```html
+@{meta('My Homepage', 'My Homepage description', 'My Homepage keywords')}
+
+<h1>@{repository.title}</h1>
 Welcome @{model.name}!
 ```
 
@@ -213,7 +195,9 @@ Welcome @{model.name}!
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Welcome</title>
+    <title>My Homepage</title>
+    <meta name="description" content="My Homepage description" />
+    <meta name="keywords" content="My Homepage keywords" />
     <meta charset="utf-8" />
 	<meta http-equiv="content-language" content="sk" />
 	<meta http-equiv="X-UA-Compatible" content="IE=10" />
@@ -226,7 +210,7 @@ Welcome @{model.name}!
 </head>
 <body>
 	<div class="content">
-		<h1>Welcome</h1>
+		<h1>Web application framework</h1>		
 		Welcome Peter!
 	</div>
 </body>
@@ -245,7 +229,6 @@ Welcome @{model.name}!
 - supports paging
 
 ```js
-
 var builders = new requiere('partial.js/builders');
 var rdbms = new requiere('partial.js/rdbms');
 
