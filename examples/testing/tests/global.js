@@ -3,7 +3,7 @@ var assert = require('assert');
 
 exports.init = function(framework, name) {
 
-	console.log('run {0}'.format(name));
+	console.log('run test: {0}'.format(name));
 	console.log('');
 
 	/*
@@ -34,12 +34,4 @@ exports.init = function(framework, name) {
 		assert.ok(code === 200 && data === '3', name);
 		console.log('3');
 	});
-
-	/*
-		RUN TEST
-
-		@stop {Boolean} :: stop server?
-		@callback {Function}
-	*/
-	framework.test(true);
 };

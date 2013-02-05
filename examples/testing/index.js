@@ -9,7 +9,15 @@ framework.init(http, debug, port);
 // Initialize controllers
 framework.controller('global');
 
-// run test from file /tests/global.js
-framework.makeTest('global');
+/*
+	Make a tests
+	@stop {Boolean} :: stop framework (default true)
+	@names {String array} :: only tests in names (optional)
+	@callback {Functions} :: on complete test handler (optional)
+	return {Framework}
+*/
+framework.test(true, function() {
+	console.log('SUCCESSS');
+});
 
 console.log("http://127.0.0.1:{0}/".format(port));
