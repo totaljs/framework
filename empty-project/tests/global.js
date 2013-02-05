@@ -1,3 +1,6 @@
+var assert = require('assert');
+var utils = require('partial.js/utils');
+
 exports.init = function init(framework) {
 
 	/*
