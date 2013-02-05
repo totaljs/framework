@@ -17,12 +17,4 @@ exports.init = function init(framework) {
 		assert.ok(code === 200 && data === '1', name);
 		console.log('1');
 	});
-	
-	/*
-		RUN TEST
-
-		@stop {Boolean} :: stop server?
-		@callback {Function}
-	*/
-	framework.test(true);
 };
