@@ -1,6 +1,7 @@
 name							: partial.js
 secret							: secret-key-for-web
 ETagVersion						:
+directoryContents				: /contents/
 directoryControllers			: /controllers/
 directoryViews					: /views/
 directoryTemp					: /tmp/

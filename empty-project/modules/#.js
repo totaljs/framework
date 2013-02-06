@@ -1,4 +1,5 @@
 // your custom framework prototypes
+// this code it run automatically
 
 /*
 	Authorize handler
