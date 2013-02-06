@@ -1,6 +1,6 @@
 {
     "name": "partial.js",
-    "version": "1.1.7-2",
+    "version": "1.1.7-3",
     "versionDifference": "1.1.7-0",
     "description": "web application framework for node.js",
     "main": "./index.js",
