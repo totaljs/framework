@@ -10,6 +10,12 @@ function test1() {
 }
 
 function test2() {
+
+	/*
+	if (this.isTest)
+		console.log('THIS IS TESTED');
+	*/
+
 	this.plain('2');
 }
 

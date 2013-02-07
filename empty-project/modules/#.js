@@ -2,6 +2,16 @@
 // this code it run automatically
 
 /*
+	Error Handler
+	@err {Error}
+	@name {String} :: name of Controller (optional)
+	@uri {Uri} :: optional
+
+	[default: console.log(err)]
+	exports.onError = function(err, name, uri) {}
+*/
+
+/*
 	Authorize handler
 	@req {ServerRequest}
 	@res {ServerResponse}

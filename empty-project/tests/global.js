@@ -18,6 +18,5 @@ exports.init = function init(framework) {
 
 	framework.assert('Test URL 1', '/1/', function response (error, data, name, code, headers) {
 		assert.ok(code === 200 && data === '1', name);
-		console.log('1');
 	});
 };
