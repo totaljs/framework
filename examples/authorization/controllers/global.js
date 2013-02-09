@@ -38,12 +38,12 @@ function viewHomepage() {
 	db.view('admin', 'users', { key: self.post.LoginName }, function(err, data) {
 
 		if (err) {
-			errorBuilder.add('LoginName');
+			errorBuilder.add('LoginError');
 			self.json(errorBuilder);
 			return;
 		}
 
-		var user = data.rows[0];		
+		var user = data.rows[0];
 
 		if (typeof(user) === 'undefined' || user.value.password != self.post.LoginPassword.toSHA1()) {
 			errorBuilder.add('LoginError');
@@ -59,8 +59,8 @@ function viewHomepage() {
 function onValidation(name, value) {
 	switch (name) {
 		case 'LoginName':
-			return utils.isValid(utils.isMail(value));
+			return utils.isEmail(value);
 		case 'LoginPassword':
-			return utils.isValid(value.length > 0);
+			return value.length > 0;
 	};
 }

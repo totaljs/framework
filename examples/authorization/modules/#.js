@@ -26,7 +26,7 @@ exports.db = function() {
 // AUTHORIZATION
 // ================================================
 
-exports.onAuthorize = function(req, res, callback) {
+exports.onAuthorize = function(req, res, flags, callback) {
 
 	var self = this;
 
