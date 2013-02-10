@@ -21,7 +21,7 @@ http://partialjs.com
 * Supports debug mode with custom settings without cache - [example](https://github.com/petersirka/partial.js/tree/master/examples/config-debug-release)
 * Supports file upload - [example](https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart)
 * Supports copy&paste custom code between projects - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-custom)
-* __Supports modules__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
+* __Supports modules__ (module can create route, view, template, content, resource or static CSS/JS file) - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
 * Supports form data validation - [example](https://github.com/petersirka/partial.js/tree/master/examples/validation)
 * Supports simple log writer - [example](https://github.com/petersirka/partial.js/tree/master/examples/logs)
 * Supports simple restrictions [example](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
