@@ -299,4 +299,4 @@ createDirectory(dir);
 console.log('creating files');
 createFiles(dir);
 
-console.log(':: success'));
+console.log(':: success');
