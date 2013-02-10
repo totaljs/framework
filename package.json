@@ -18,6 +18,7 @@
     "author": {
         "name": "Peter Širka"
     },
+    "bin": { "partial": "./bin/partial" },
     "_from": "partial.js",
     "directories": {
         "test": "test"

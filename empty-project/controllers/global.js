@@ -3,7 +3,7 @@ exports.init = function() {
 	self.route('/', viewHomepage);
 	self.route('#403', error403);
 	self.route('#404', error404);
-	self.route('#431', error431)
+	self.route('#431', error431);
 	self.route('#500', error500);
 };
 

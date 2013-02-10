@@ -1,0 +1,302 @@
+#!/usr/bin/env node
+
+var exec = require('child_process').exec
+var fs = require('fs');
+var path = require('path');
+var os = require('os');
+
+var root = '/users/petersirka/desktop/aaa/';
+var EOF = os.platform() === 'win32' ? '\r\n' : '\n';
+
+function createDirectory(directory) {
+	var arr = [];
+
+	arr.push('views');
+	arr.push('templates');
+	arr.push('controllers');
+	arr.push('tests');
+	arr.push('contents');
+	arr.push('public');
+	arr.push('logs');
+	arr.push('resources');
+	arr.push('tmp');
+	arr.push('modules');
+
+	arr.forEach(function(o) {
+		var dir = path.join(directory, o);
+		if (!fs.existsSync(dir))
+			fs.mkdirSync(dir);
+	});	
+};
+
+function createFiles(directory) {
+	createFileIndex(directory);
+	createFileRun(directory);
+	createFileConfig(directory);
+	createFileViews(directory);
+	createFileResource(directory);
+	createFilePublic(directory);
+	createFileTest(directory);
+	createFileModules(directory);
+	createFileController(directory);
+}
+
+//createFileRun(root);
+
+function createFileIndex(directory) {
+	var buffer = [];
+	buffer.push("var framework = require('partial.js');");
+	buffer.push("var http = require('http');");
+	buffer.push("");
+	buffer.push("var port = parseInt(process.argv[2] || '8000');");
+	buffer.push("var debug = true;");
+	buffer.push("");
+	buffer.push("framework.init(http, debug, port);");
+	buffer.push("");
+	buffer.push("// Initialize controllers");
+	buffer.push("framework.controller('global');");
+	buffer.push("");
+	buffer.push("// framework.test(true);");
+	buffer.push("");
+	buffer.push("console.log('http://127.0.0.1:{0}/'.format(port));");
+	fs.writeFileSync(path.join(directory, 'index.js'), buffer.join(EOF));
+}
+
+function createFileConfig(directory) {
+	var buffer = [];
+
+	buffer.push("name				: partial.js");
+	buffer.push("secret				: secret-key-for-web");
+	buffer.push("httpCompress		: true");
+	buffer.push("httpCompress		: true");
+
+	fs.writeFileSync(path.join(directory, 'config-release'), buffer.join(EOF));
+	fs.writeFileSync(path.join(directory, 'config-debug'), buffer.join(EOF).replace(/true/g, 'false'));
+}
+
+function createFileRun(directory) {
+	var buffer = [];
+
+	buffer.push('#!/bin/bash');
+	buffer.push('');
+	buffer.push('DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"');
+	buffer.push('');
+	buffer.push('eval "cd $DIR"');
+	buffer.push('eval "supervisor -- index.js $@"');
+	
+	var fileName = path.join(directory, 'run');
+
+	fs.writeFileSync(fileName, buffer.join(EOF));
+	fs.chmodSync(fileName, '555');
+}
+
+function createFileViews(directory) {
+	var buffer = [];
+	var dir = path.join(directory, 'views');
+
+	if (!fs.existsSync(dir))
+		fs.mkdirSync(dir);
+
+	fs.writeFileSync(path.join(dir, '401.html'), '401');
+	fs.writeFileSync(path.join(dir, '403.html'), '403');
+	fs.writeFileSync(path.join(dir, '404.html'), '404');
+	fs.writeFileSync(path.join(dir, '431.html'), '431');
+	fs.writeFileSync(path.join(dir, '500.html'), '500');
+	fs.writeFileSync(path.join(dir, 'homepage.html'), 'Welcome partial.js developer!');
+
+	buffer.push('<!DOCTYPE html>');
+	buffer.push('<html>');
+	buffer.push('<head>');
+	buffer.push('    @{meta}');
+	buffer.push('    <meta charset="utf-8" />');
+	buffer.push('    <meta http-equiv="content-language" content="sk" />');
+	buffer.push('    <meta http-equiv="X-UA-Compatible" content="IE=10" />');
+	buffer.push('    <meta name="format-detection" content="telephone=no" />');
+	buffer.push('    <meta name="viewport" content="width=1024, user-scalable=yes" />');
+	buffer.push('    <meta name="robots" content="all,follow" />');
+	buffer.push('    <link rel="stylesheet" href="@{routeCSS(\'p.css\')}" />');
+	buffer.push('    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>');
+	buffer.push('    <script type="text/javascript" src="@{routeJS(\'p.js\')}" ></script>');
+	buffer.push('<head>');
+	buffer.push('<body>');
+	buffer.push('');
+	buffer.push('    @{body}');
+	buffer.push('');
+	buffer.push('<body>');
+	buffer.push('<html>');
+
+	fs.writeFileSync(path.join(dir, '_layout.html'), buffer.join(EOF));
+}
+
+function createFileResource(directory) {
+	var dir = path.join(directory, 'resources');
+	fs.writeFileSync(path.join(dir, 'default.resource'), 'name 			: value' + EOF);
+}
+
+function createFilePublic(directory) {
+	
+	var dir = path.join(directory, 'public');
+
+	var css = path.join(dir, 'css');
+	var js = path.join(dir, 'js');
+	var img = path.join(dir, 'img');
+
+	if (!fs.existsSync(js))
+		fs.mkdirSync(js);
+
+	if (!fs.existsSync(css))
+		fs.mkdirSync(css);
+
+	if (!fs.existsSync(img))
+		fs.mkdirSync(img);
+
+	var buffer = [];
+	buffer.push('User-agent: *');
+	buffer.push('Allow: /');
+	buffer.push('');
+
+	fs.writeFileSync(path.join(dir, 'robots.txt'), buffer.join(EOF));
+
+	buffer = [];
+	buffer.push('@radius(radius) { -moz-border-radius:@radius; border-radius:@radius; -webkit-border-radius:@radius }');
+	buffer.push('@shadow(prop) { -moz-box-shadow:@prop; -webkit-box-shadow:@prop; box-shadow:@prop }');
+	buffer.push('@transition(property,duration,easing) { -webkit-transition: @property @duration @easing; -moz-transition: @property @duration @easing; -o-transition: @property @duration @easing; -ms-transition: @property @duration @easing }');
+	buffer.push('@noselect { -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -o-user-select:none; user-select:none }');
+	buffer.push('@gradient(prop) { background-image: linear-gradient(@prop); background-image: -o-linear-gradient(@prop); background-image: -moz-linear-gradient(@prop); background-image: -webkit-linear-gradient(@prop); background-image: -ms-linear-gradient(@prop) }');
+	buffer.push('');
+	buffer.push('body { padding:20px; margin:0; font:normal 12px Arial; color:#505050; }');
+
+	fs.writeFileSync(path.join(css, 'p.css'), buffer.join(EOF));
+
+	buffer = [];
+	buffer.push('$(document).ready(function() {');
+    buffer.push('');
+    buffer.push('});');
+
+	fs.writeFileSync(path.join(js, 'p.js'), buffer.join(EOF));
+}
+
+function createFileModules(directory) {
+
+	var dir = path.join(directory, 'modules');
+
+	var buffer = [];
+	buffer.push('exports.yourcode = function () {');
+	buffer.push('    return \'Hello World\';');
+	buffer.push('}');
+
+	fs.writeFileSync(path.join(dir, 'yourcode.js'), buffer.join(EOF));
+	
+	buffer = [];
+	buffer.push('// your custom framework prototypes - https://github.com/petersirka/partial.js/blob/master/empty-project/modules/%23.js');
+	buffer.push('// this code it run automatically');
+	buffer.push('');
+	buffer.push('// exports.onError = function(err, name, uri) {}');
+	buffer.push('// exports.onAuthorize = function(req, res, callback) { callback(false); };');
+	buffer.push('// exports.onPrefix = function(req) { return \'\'; };');
+	buffer.push('// exports.onVersion = function(name) { return name; };');
+	buffer.push('// exports.onRoute = function(req, res) {};');
+	buffer.push('// exports.onController = function(name) {};')
+	buffer.push('// exports.onSettings = function() { return \'\'; };');
+	buffer.push('// exports.onMeta = function onMeta() { return \'\'; };');
+	buffer.push('// exports.onPictureDimension = function(dimension) {};');
+	buffer.push('// exports.onPictureUrl = function(dimension, id, width, height, alt) {};');
+	fs.writeFileSync(path.join(dir, '#.js'), buffer.join(EOF));
+}
+
+function createFileController(directory) {
+
+	var dir = path.join(directory, 'controllers');
+	var buffer = [];
+
+	buffer.push('exports.init = function() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.route(\'/\', viewHomepage);');
+	buffer.push('    self.route(\'#403\', error403);');
+	buffer.push('    self.route(\'#404\', error404);');
+	buffer.push('    self.route(\'#431\', error431);');
+	buffer.push('    self.route(\'#500\', error500);');
+	buffer.push('};');
+	buffer.push('');
+	buffer.push('/*');
+	buffer.push('exports.models = function() {');
+	buffer.push('');
+	buffer.push('};');
+	buffer.push('*/');
+	buffer.push('');
+	buffer.push('/*');
+	buffer.push('exports.functions = function() {');
+	buffer.push('');
+	buffer.push('};');
+	buffer.push('*/');
+	buffer.push('');
+	buffer.push('// Forbidden');
+	buffer.push('function error403() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.meta(\'Forbidden (403)\');');
+	buffer.push('    self.statusCode = 403;');
+	buffer.push('    self.view(\'403\');');
+	buffer.push('}');
+	buffer.push('');
+	buffer.push('// Not Found');
+	buffer.push('function error404() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.meta(\'Not Found (404)\');');
+	buffer.push('    self.statusCode = 404;');
+	buffer.push('    self.view(\'404\');');
+	buffer.push('}');
+	buffer.push('');
+	buffer.push('// Request Header Fields Too Large');
+	buffer.push('function error431() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.meta(\'Request Header Fields Too Large (431)\');');
+	buffer.push('    self.statusCode = 431;');
+	buffer.push('    self.view(\'431\');');
+	buffer.push('}');
+	buffer.push('');
+	buffer.push('// Internal Server Error');
+	buffer.push('function error500() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.meta(\'Internal Server Error (500)\');');
+	buffer.push('    self.statusCode = 500;');
+	buffer.push('    self.view(\'500\');');
+	buffer.push('}');
+	buffer.push('');
+	buffer.push('function viewHomepage() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.meta(\'Welcome\');');
+	buffer.push('    self.view(\'homepage\');');
+	buffer.push('}');
+
+	fs.writeFileSync(path.join(dir, 'global.js'), buffer.join(EOF));
+}
+
+function createFileTest(directory) {
+	var dir = path.join(directory, 'tests');
+	var buffer = [];
+
+	buffer.push("var assert = require('assert');");
+	buffer.push("var utils = require('partial.js/utils');");
+	buffer.push("");
+	buffer.push("exports.init = function init(framework) {");
+	buffer.push("");
+	buffer.push("    framework.assert('Test URL 1', '/1/', function response (error, data, name, code, headers) {");
+	buffer.push("        assert.ok(code === 200, name);");
+	buffer.push("    });");
+	buffer.push("");
+	buffer.push("};");
+
+	fs.writeFileSync(path.join(dir, 'global.js'), buffer.join(EOF));
+}
+
+var dir = process.argv[1];
+if (process.argv.length === 3)
+	dir = process.argv[2];
+
+console.log('creating directories');
+createDirectory(dir);
+
+console.log('creating files');
+createFiles(dir);
+
+console.log(':: success'));
