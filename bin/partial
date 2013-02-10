@@ -289,7 +289,7 @@ function createFileTest(directory) {
 	fs.writeFileSync(path.join(dir, 'global.js'), buffer.join(EOF));
 }
 
-var dir = process.argv[1];
+var dir = process.cwd();
 if (process.argv.length === 3)
 	dir = process.argv[2];
 
