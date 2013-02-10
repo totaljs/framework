@@ -47,7 +47,7 @@ http://partialjs.com
 * Supports live usage information - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-usage)
 * Supports dynamic stop server - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
 * Supports verification of framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
-* About 6 500 lines of JavaScript code
+* About 8 000 lines of JavaScript code
 * __No dependencies__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
 
