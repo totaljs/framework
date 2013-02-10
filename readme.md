@@ -91,6 +91,12 @@ $ node index.js
 $ npm install partial.js
 ```
 
+## Create empty project from terminal
+
+```text
+$ partial.js
+```
+
 ***
 
 ## Plans

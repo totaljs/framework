@@ -1,6 +1,6 @@
 {
     "name": "partial.js",
-    "version": "1.1.8-1",
+    "version": "1.1.8-2",
     "versionDifference": "1.1.7-3",
     "description": "web application framework for node.js",
     "main": "./index.js",
@@ -18,7 +18,7 @@
     "author": {
         "name": "Peter Širka"
     },
-    "bin": { "partial": "./bin/partial" },
+    "bin": { "partial.js": "./bin/partial" },
     "_from": "partial.js",
     "directories": {
         "test": "test"
