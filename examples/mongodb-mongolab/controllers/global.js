@@ -10,7 +10,7 @@ function viewDatabase() {
 	var self = this;
 	var db = self.app.db();
 
-	db.all(function(err, data) {
+	db.collections(function(err, data) {
 
 		if (err) {
 			self.plain(err.toString());
@@ -19,11 +19,11 @@ function viewDatabase() {
 
 		var rows = [];
 		data.forEach(function(o) {
-			rows.push('database -> ' + o);
+			rows.push('collection -> ' + o);
 		});
 
 		// Documentation: http://www.partialjs.com/documentation/mongodb/
-		db.insert('FET', { name: 'Peter', age: 25 }, function(err, data) {
+		db.insert('users', { name: 'Peter', age: 25 }, function(err, data) {
 			// DONE
 		});		
 
