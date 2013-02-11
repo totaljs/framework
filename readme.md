@@ -39,7 +39,7 @@ http://partialjs.com
 * Supports custom authorization - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
 * Supports HTTP-RDBMS provider (MySQL, SQL Server, OleDB, ODBC), more on https://github.com/petersirka/http-rdbms/
 * Supports simple CouchDB provider - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
-* Supports REST API MongoDB via https://mongolab.com - [example](https://github.com/petersirka/partial.js/tree/master/examples/mongodb)
+* Supports REST API MongoDB via https://mongolab.com - [example](https://github.com/petersirka/partial.js/tree/master/examples/mongodb-mongolab)
 * Supports simple image processing (resize, crop, blur, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
 * Supports render controller in controller
 * Easy adding dynamic META tags in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-meta)
