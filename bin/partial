@@ -5,7 +5,6 @@ var fs = require('fs');
 var path = require('path');
 var os = require('os');
 
-var root = '/users/petersirka/desktop/aaa/';
 var EOF = os.platform() === 'win32' ? '\r\n' : '\n';
 
 function createDirectory(directory) {
@@ -40,8 +39,6 @@ function createFiles(directory) {
 	createFileModules(directory);
 	createFileController(directory);
 }
-
-//createFileRun(root);
 
 function createFileIndex(directory) {
 	var buffer = [];
@@ -80,6 +77,14 @@ function createFileRun(directory) {
 	buffer.push('#!/bin/bash');
 	buffer.push('');
 	buffer.push('DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"');
+	buffer.push('');
+	buffer.push('PORT="$@"');
+	buffer.push('');
+	buffer.push('if [ "$PORT" = "" ]; then');
+	buffer.push('    PORT="8000"');
+	buffer.push('fi');
+	buffer.push('');
+	buffer.push('open "http://127.0.0.1:$PORT"');
 	buffer.push('');
 	buffer.push('eval "cd $DIR"');
 	buffer.push('eval "supervisor -- index.js $@"');
@@ -158,11 +163,12 @@ function createFilePublic(directory) {
 	fs.writeFileSync(path.join(dir, 'robots.txt'), buffer.join(EOF));
 
 	buffer = [];
-	buffer.push('@radius(radius) { -moz-border-radius:@radius; border-radius:@radius; -webkit-border-radius:@radius }');
-	buffer.push('@shadow(prop) { -moz-box-shadow:@prop; -webkit-box-shadow:@prop; box-shadow:@prop }');
-	buffer.push('@transition(property,duration,easing) { -webkit-transition: @property @duration @easing; -moz-transition: @property @duration @easing; -o-transition: @property @duration @easing; -ms-transition: @property @duration @easing }');
+	buffer.push('@radius(property) { -moz-border-radius:@property; border-radius:@property; -webkit-border-radius:@property }');
+	buffer.push('@shadow(property) { -moz-box-shadow:@property; -webkit-box-shadow:@property; box-shadow:@property }');
+	buffer.push('@transition(property) { -webkit-transition: @property; -moz-transition: @property; -o-transition: @property; -ms-transition: @property }');
+	buffer.push('@gradient-linear(property) { background-image: linear-gradient(@property); background-image: -o-linear-gradient(@property); background-image: -moz-linear-gradient(@property); background-image: -webkit-linear-gradient(@prop); background-image: -ms-linear-gradient(@prop) }');
+	buffer.push('@gradient-radial(property) { background-image: radial-gradient(@property); background-image: -o-radial-gradient(@property); background-image: -moz-radial-gradient(@property); background-image: -webkit-radial-gradient(@prop); background-image: -ms-radial-gradient(@prop) }');
 	buffer.push('@noselect { -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -o-user-select:none; user-select:none }');
-	buffer.push('@gradient(prop) { background-image: linear-gradient(@prop); background-image: -o-linear-gradient(@prop); background-image: -moz-linear-gradient(@prop); background-image: -webkit-linear-gradient(@prop); background-image: -ms-linear-gradient(@prop) }');
 	buffer.push('');
 	buffer.push('body { padding:20px; margin:0; font:normal 12px Arial; color:#505050; }');
 
@@ -278,9 +284,9 @@ function createFileTest(directory) {
 	buffer.push("var assert = require('assert');");
 	buffer.push("var utils = require('partial.js/utils');");
 	buffer.push("");
-	buffer.push("exports.init = function init(framework) {");
+	buffer.push("exports.init = function(framework) {");
 	buffer.push("");
-	buffer.push("    framework.assert('Test URL 1', '/1/', function response (error, data, name, code, headers) {");
+	buffer.push("    framework.assert('Homepage', '/1/', function response(error, data, name, code, headers) {");
 	buffer.push("        assert.ok(code === 200, name);");
 	buffer.push("    });");
 	buffer.push("");
@@ -293,10 +299,16 @@ var dir = process.cwd();
 if (process.argv.length === 3)
 	dir = process.argv[2];
 
-console.log('creating directories');
+
+if (!fs.existsSync(dir)) {
+	console.log('partial.js: error / directory not exists');
+	return;
+}
+
+console.log('partial.js: creating directories');
 createDirectory(dir);
 
-console.log('creating files');
+console.log('partial.js: creating files');
 createFiles(dir);
 
-console.log(':: success');
+console.log('partial.js: success');
