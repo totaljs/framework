@@ -10,7 +10,7 @@ function viewDatabase() {
 	var self = this;
 	var db = self.app.db();
 
-	db.all({ limit: 10 }, function(err, data) {
+	db.all(function(err, data) {
 
 		if (err) {
 			self.plain(err.toString());
@@ -18,18 +18,16 @@ function viewDatabase() {
 		}
 
 		var rows = [];
-		data.rows.forEach(function(o) {
-			rows.push(o.id);
+		data.forEach(function(o) {
+			rows.push('collection -> ' + o);
 		});
+
+		// Documentation: http://www.partialjs.com/documentation/mongodb/
+		db.insert('FET', { name: 'Peter', age: 25 }, function(err, data) {
+			// DONE
+		});		
 
 		// return all rows
 		self.plain(rows.join('\n'));
-
-		// insert
-		// @doc {Object}
-		// @callback {Functions} :: optional
-		db.insert({ name: 'Peter', age: 28 });
-
-		// https://github.com/petersirka/partial.js/wiki/SK.framework.couchdb
 	});
 }
