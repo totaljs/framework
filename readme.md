@@ -94,7 +94,14 @@ $ npm install partial.js
 ## Create empty project from terminal
 
 ```text
+$ cd newproject
 $ partial.js
+```
+
+or
+
+```text
+$ partial.js /users/petersirka/desktop/newproject/
 ```
 
 ***
