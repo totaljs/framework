@@ -19,7 +19,7 @@ function viewDatabase() {
 
 		var rows = [];
 		data.forEach(function(o) {
-			rows.push('collection -> ' + o);
+			rows.push('database -> ' + o);
 		});
 
 		// Documentation: http://www.partialjs.com/documentation/mongodb/
