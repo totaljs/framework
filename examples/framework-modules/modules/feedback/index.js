@@ -22,6 +22,10 @@ exports.install = function (framework) {
 	// framework.createResource('feedback', 'hello	: welcome in feedback resource');
 	// framework.resource('feedback', 'hello');
 
+	// get directory path
+	// framework.path(framework.config.directoryPublic, 'module-public-directory');
+	// .. or get file path ..
+	// framework.path(framework.config.directoryPublic, 'module-public-directory', 'image.jpg');
 };
 
 function feedback() {
