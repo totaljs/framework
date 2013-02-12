@@ -4,7 +4,7 @@ web application framework for node.js
 =====================================
 
 - Homepage / [www.partialjs.com](http://partialjs.com)
-- Twitter / Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
+- Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
 
 ***
 
@@ -233,86 +233,6 @@ Welcome @{model.name}!
 
 ```
 
-***
-
-## Simple ORM via HTTP-RDBMS
-
-- supports parameters (resolve for SQL injection)
-- supports schema builder
-- supports query builder
-- supports order builder
-- supports paging
-
-```js
-var builders = new requiere('partial.js/builders');
-var rdbms = new requiere('partial.js/rdbms');
-
-var db = new rdbms.SQLServer('http://myrdbms/sqlserver/', 'Data Source=;Database=;Uid=;Pwd=;');
-
-// or
-
-var db = new rdbms.MySQL('http://myrdbms/mysql/', 'Server=;Database=;Uid=;Pwd=;');
-
-builders.schema('tbl_user', {
-	Id: 'int',
-	FirstName: 'string(50)',
-	LastName: 'string(50)',
-	Age: 'int'
-}, 'Id');
-
-var newUser = {
-	FirstName: 'Peter',
-	LastName: 'Sirka',
-	Age: 28
-};
-
-db.insert('tbl_user', newUser, function(data) {
-
-	console.log(data.Id);
-	db.delete('tbl_user', newUser);
-
-});
-
-var where = new builders.QueryBuilder();
-var order = new builders.OrderBuilder();
-
-order.asc('Id').desc('FistName');
-where.addValue('Id', '>', 10).addOperator('AND').addValue('FistName', '=', 'Peter');
-// Query:
-// SQL Server: Id > @a AND FirstName = @b
-// MySQL: Id > ? AND FirstName = ?
-
-db.findTop(10, 'tbl_user', where, order, function(data) {
-	console.log(data);
-});
-
-db.execute('UPDATE tbl_user SET Price=20 WHERE Id BETWEEN {a} AND {b}', { a: 10, b: 20 });
-// Query:
-// SQL Server: UPDATE tbl_user SET Price=20 WHERE Id BETWEEN @a AND @b
-// MySQL: UPDATE tbl_user SET Price=20 WHERE Id BETWEEN ? AND ?
-
-db.scalar('SELECT COUNT(*) FROM tbl_user', null, null, function(err, data) {
-	console.log(data);
-});
-
-// multiple recordset
-db.reader('SELECT Id, LastName FORM tbl_user; SELECT Id, FirstName FROM tbl_user', function(err, data) {
-	// data[0] == []
-	// data[1] == []
-});
-
-db.count('tbl_user', function(err, data) {
-	// data.value
-});
-
-db.count('tbl_user', where, function(err, data) {
-	// data.value
-});
-
-```
-
-***
-
 ## Contact
 
-<http://www.petersirka.sk>
+[www.petersirka.sk]<http://www.petersirka.sk>
