@@ -2,3 +2,7 @@
 @{template('products', global.database.items)}
 <br />
 @{template('paging', global.database.itemsPaging, global.database.itemsInformation)}
+<br />
+<h2>Raw array template</h2>
+<br />
+@{template('array', [1, 2, 3, '<b>BOLD</b>', 5])}

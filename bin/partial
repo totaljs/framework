@@ -305,6 +305,11 @@ if (!fs.existsSync(dir)) {
 	return;
 }
 
+if (fs.readdirSync(dir).length > 0) {
+	console.log('partial.js: error / directory is not empty');
+	return;	
+}
+
 console.log('partial.js: creating directories');
 createDirectory(dir);
 
