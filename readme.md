@@ -236,4 +236,4 @@ Welcome @{model.name}!
 
 ## Contact
 
-[www.petersirka.sk]<http://www.petersirka.sk>
+[www.petersirka.sk](http://www.petersirka.sk)
