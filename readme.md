@@ -124,7 +124,7 @@ $ partial.js /users/petersirka/desktop/newproject/
 var framework = require('partial.js');
 var http = require('http');
 
-var port = 8004;
+var port = parseInt(process.argv[2] || '8000');
 var debug = true;
 
 framework.init(http, debug, port);
@@ -143,7 +143,7 @@ exports.init = function() {
 	self.route('/', viewHomepage);
 	self.route('#404', error404);
 	self.route('#500', error500);
-	// self.route('/registration/', viewRegistration, ['ajax', 'post']);
+	// self.route('/registration/', viewRegistration, ['xhr', 'post']);
 	// self.route('/products/{category}/', viewProducts);
 	// self.route('/products/{category}/{subcategory}/', viewProducts);
 	// self.route('/user/', viewUser, ['logged']);
