@@ -299,15 +299,26 @@ var dir = process.cwd();
 if (process.argv.length === 3)
 	dir = process.argv[2];
 
-
 if (!fs.existsSync(dir)) {
 	console.log('partial.js: error / directory not exists');
 	return;
 }
 
-if (fs.readdirSync(dir).length > 0) {
-	console.log('partial.js: error / directory is not empty');
-	return;	
+var files = fs.readdirSync(dir);
+if (files.length > 0) {
+
+	var can = true;
+	for (var i = 0; i < files.length; i++) {
+		var name = files[i];
+		if (name[0] === '.')
+			continue;
+		can = false;
+	}
+
+	if (!can) {
+		console.log('partial.js: error / directory is not empty');
+		return;	
+	}
 }
 
 console.log('partial.js: creating directories');
