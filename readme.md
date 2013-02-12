@@ -3,7 +3,8 @@
 web application framework for node.js
 =====================================
 
-http://partialjs.com
+- Homepage / [www.partialjs.com](http://partialjs.com)
+- Twitter / Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
 
 * Async web framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/async)
 * Simple view engine - [example](https://github.com/petersirka/partial.js/tree/master/examples/views)
