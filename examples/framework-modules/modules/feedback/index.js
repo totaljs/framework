@@ -28,6 +28,10 @@ exports.install = function (framework) {
 	// framework.path(framework.config.directoryPublic, 'module-public-directory', 'image.jpg');
 };
 
+exports.onRequest = function() {
+	// this method is called every request to route
+};
+
 function feedback() {
 	this.json({ message: helper.toUpper('Thanks!') });
 }
