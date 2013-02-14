@@ -1,4 +1,5 @@
 var helper = require('./helper');
+var greeting = '';
 
 exports.install = function (framework) {
 	framework.route('/feedback/', feedback, ['xhr', 'post']);
@@ -32,6 +33,10 @@ exports.onRequest = function() {
 	// this method is called every request to route
 };
 
+exports.greeting = function(value) {
+	greeting = value;
+};
+
 function feedback() {
-	this.json({ message: helper.toUpper('Thanks!') });
+	this.json({ message: helper.toUpper(greeting) });
 }
