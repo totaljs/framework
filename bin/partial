@@ -166,8 +166,8 @@ function createFilePublic(directory) {
 	buffer.push('@radius(property) { -moz-border-radius:@property; border-radius:@property; -webkit-border-radius:@property }');
 	buffer.push('@shadow(property) { -moz-box-shadow:@property; -webkit-box-shadow:@property; box-shadow:@property }');
 	buffer.push('@transition(property) { -webkit-transition: @property; -moz-transition: @property; -o-transition: @property; -ms-transition: @property }');
-	buffer.push('@gradient-linear(property) { background-image: linear-gradient(@property); background-image: -o-linear-gradient(@property); background-image: -moz-linear-gradient(@property); background-image: -webkit-linear-gradient(@prop); background-image: -ms-linear-gradient(@prop) }');
-	buffer.push('@gradient-radial(property) { background-image: radial-gradient(@property); background-image: -o-radial-gradient(@property); background-image: -moz-radial-gradient(@property); background-image: -webkit-radial-gradient(@prop); background-image: -ms-radial-gradient(@prop) }');
+	buffer.push('@gradient-linear(property) { background-image: linear-gradient(@property); background-image: -o-linear-gradient(@property); background-image: -moz-linear-gradient(@property); background-image: -webkit-linear-gradient(@property); background-image: -ms-linear-gradient(@property) }');
+	buffer.push('@gradient-radial(property) { background-image: radial-gradient(@property); background-image: -o-radial-gradient(@property); background-image: -moz-radial-gradient(@property); background-image: -webkit-radial-gradient(@property); background-image: -ms-radial-gradient(@property) }');
 	buffer.push('@noselect { -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -o-user-select:none; user-select:none }');
 	buffer.push('');
 	buffer.push('body { padding:20px; margin:0; font:normal 12px Arial; color:#505050; }');
