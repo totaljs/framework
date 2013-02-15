@@ -2,6 +2,7 @@ var helper = require('./helper');
 var greeting = '';
 
 exports.install = function (framework) {
+
 	framework.route('/feedback/', feedback, ['xhr', 'post']);
 
 	// create client side JavaScript
@@ -27,10 +28,24 @@ exports.install = function (framework) {
 	// framework.path(framework.config.directoryPublic, 'module-public-directory');
 	// .. or get file path ..
 	// framework.path(framework.config.directoryPublic, 'module-public-directory', 'image.jpg');
+
+	/*
+	
+	framework.on('loaded', function() {
+		// all controllers and modules is loaded
+	});
+
+	framework.on('controller', function(controller, name) {
+		// every request to controller call this event
+		console.log(controller.req.ip);
+	});
+
+	*/
+	
 };
 
 exports.onRequest = function() {
-	// this method is called every request to route
+	// this method is called every request to route /feedback/
 };
 
 exports.greeting = function(value) {
