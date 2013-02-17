@@ -2,3 +2,5 @@
 *.sublime-workspace
 test.js
 .DS_Store
+
+*.log

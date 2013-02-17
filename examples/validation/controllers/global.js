@@ -32,13 +32,13 @@ function viewHomepage() {
 function onValidation(name, value) {
 	switch (name) {
 		case 'Email':
-			return utils.isValid(utils.isMail(value));
+			return utils.isMail(value);
 		case 'Age':
 			return utils.isValid(utils.parseInt(value) > 0, 'Fill fucking age');
 		case 'Terms':
-			return utils.isValid(value === '1');
+			return value === '1';
 		case 'FirstName':
 		case 'LastName':
-			return utils.isValid(value.length > 0);
+			return value.length > 0;
 	};
 }
