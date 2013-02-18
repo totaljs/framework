@@ -32,7 +32,7 @@ function viewHomepage() {
 function onValidation(name, value) {
 	switch (name) {
 		case 'Email':
-			return utils.isMail(value);
+			return utils.isEmail(value);
 		case 'Age':
 			return utils.isValid(utils.parseInt(value) > 0, 'Fill fucking age');
 		case 'Terms':

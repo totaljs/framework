@@ -13,7 +13,7 @@ function viewHomepage() {
 function viewHomepageSettingsController() {
 	var self = this;
 	
-	self.settings('title');
+	self.settings('title controller');
 	
 	// you can write own settings render
 	//

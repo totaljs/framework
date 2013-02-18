@@ -15,7 +15,6 @@ function viewHomepage() {
 
 function view1() {
 	var self = this;
-
 	self.repository.sitemap.push({ url: '/1/', name: '1' });
 	self.view('homepage');
 }

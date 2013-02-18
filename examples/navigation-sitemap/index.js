@@ -9,13 +9,11 @@ framework.init(http, debug, port);
 // Initialize controllers
 framework.controller('global');
 
-framework.onController = function(name) {
-	var self = this;
-	
+framework.on('controller', function(self, name) {	
 	// set default value for each request to controller
 	self.repository.title = 'Sitemap';
 	self.repository.sitemap = [{ url: '/', name: 'Homepage' }];
 	self.layout('');
-};
+});
 
 console.log("http://127.0.0.1:{0}/".format(port));
