@@ -1,0 +1,37 @@
+<div><strong>Registration</strong></div>
+<br />
+
+@{contentVisible(this.repository.isSuccess, 'success')}
+
+<form action="/" method="POST">
+
+	<div>Registration type:</div>
+	<div>
+		<select name="type">
+			@{options(this.repository.type, model.type, 'name', 'id')}
+		</select>
+	</div>
+	<br />
+	<div>Name:</div>
+	<div><input type="text" name="name" value="@{model.name}" /></div>
+	<br />
+	<div>E-mail:</div>
+	<div><input type="text" name="email" value="@{model.email}" /></div>
+	<br />
+	<div>Phone:</div>
+	<div><input type="text" name="phone" value="@{model.phone}" /></div>
+	<br />
+	<div>Password:</div>
+	<div><input type="password" name="password" value="@{model.password}" /></div>
+	<br />
+	<div>Country:</div>
+	<div>
+		<select name="country">
+			@{options(this.repository.country, model.country)}
+		</select>
+	</div>
+	<br />
+	<hr />
+	<br />
+	<div><button>SUBMIT</button></div>
+</form>
