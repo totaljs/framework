@@ -63,9 +63,9 @@ function createFileConfig(directory) {
 	var buffer = [];
 
 	buffer.push("name				: partial.js");
-	buffer.push("secret				: secret-key-for-web");
+	buffer.push("secret				: your-secret-key");
 	buffer.push("httpCompress		: true");
-	buffer.push("httpCompress		: true");
+	buffer.push("httpCache			: true");
 
 	fs.writeFileSync(path.join(directory, 'config-release'), buffer.join(EOF));
 	fs.writeFileSync(path.join(directory, 'config-debug'), buffer.join(EOF).replace(/true/g, 'false'));
