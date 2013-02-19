@@ -296,6 +296,12 @@ function createFileTest(directory) {
 	fs.writeFileSync(path.join(dir, 'global.js'), buffer.join(EOF));
 }
 
+function install(directory) {
+	exec('npm install partial.js', { cwd: directory }, function (error, stdout, stderr) {
+
+	});
+}
+
 var dir = process.cwd();
 if (process.argv.length === 3)
 	dir = process.argv[2];
@@ -327,5 +333,8 @@ createDirectory(dir);
 
 console.log('partial.js: creating files');
 createFiles(dir);
+
+console.log('partial.js: install framework');
+install(dir);
 
 console.log('partial.js: success');
