@@ -1,11 +1,24 @@
 var utils = require('partial.js/utils');
 
 exports.init = function() {
+	this.route('/', viewHomepage);
 	this.route('/dynamic/date/', viewDynamicModified);
 	this.route('/dynamic/etag/', viewDynamicEtag);
 	this.route('/date/', viewModified);
 	this.route('/etag/', viewEtag);
 };
+
+function viewHomepage() {
+	var self = this;
+	var builder = [];
+	builder.push('Run location:');
+	builder.push('');
+	builder.push(self.req.hostname('/date/'));
+	builder.push(self.req.hostname('/etag/'));
+	builder.push(self.req.hostname('/dynamic/date/'));
+	builder.push(self.req.hostname('/dynamic/etag/'));
+	self.plain(builder.join('\n'));
+}
 
 function viewDynamicModified() {
 	var self = this;
