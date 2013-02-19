@@ -36,6 +36,7 @@ function viewHomepage() {
 			// require('partial.js/picture').init(fileName, [isImageMagick]);
 			// file.picture([isImageMagick]);
 
+			// picture.identify(function(err, info) { info.width, info.heigth });
 			// picture.resize(w, h, options);
 			// picture.resizeCenter(w, h); :: resize(w, h, '^').align('center center').crop(w, h);
 			// picture.crop(w, h, x, y);
