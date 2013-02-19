@@ -2,7 +2,8 @@
 @shadow(prop) { -moz-box-shadow:@prop; -webkit-box-shadow:@prop; box-shadow:@prop }
 @transition(property,duration,easing) { -webkit-transition: @property @duration @easing; -moz-transition: @property @duration @easing; -o-transition: @property @duration @easing; -ms-transition: @property @duration @easing }
 @noselect { -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -o-user-select:none; user-select:none }
-@gradient(prop) { background-image: linear-gradient(@prop); background-image: -o-linear-gradient(@prop); background-image: -moz-linear-gradient(@prop); background-image: -webkit-linear-gradient(@prop); background-image: -ms-linear-gradient(@prop) }
+@gradient-linear(property) { background-image: linear-gradient(@property); background-image: -o-linear-gradient(@property); background-image: -moz-linear-gradient(@property); background-image: -webkit-linear-gradient(@property); background-image: -ms-linear-gradient(@property) }
+@gradient-radial(property) { background-image: radial-gradient(@property); background-image: -o-radial-gradient(@property); background-image: -moz-radial-gradient(@property); background-image: -webkit-radial-gradient(@property); background-image: -ms-radial-gradient(@property) }
 
 body { padding:20px; margin:0; font:normal 12px Arial; color:#505050; }
 
