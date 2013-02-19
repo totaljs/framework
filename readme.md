@@ -20,6 +20,7 @@ web application framework for node.js
 * XSS protection
 * Share controller functions and models over framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
 * __Assertion Testing__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/testing)
+* Supports custom helpers - [example](https://github.com/petersirka/partial.js/tree/master/examples/View-custom-helper)
 * Supports routing to static file for dynamic creating static file - [example](https://github.com/petersirka/partial.js/tree/master/examples/routing)
 * Supports controller sharing between other controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
 * Supports debug mode with custom settings without cache - [example](https://github.com/petersirka/partial.js/tree/master/examples/config-debug-release)
