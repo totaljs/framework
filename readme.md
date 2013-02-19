@@ -44,7 +44,6 @@ web application framework for node.js
 * Supports simple CouchDB provider - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
 * Supports REST API MongoDB via https://mongolab.com - [example](https://github.com/petersirka/partial.js/tree/master/examples/mongodb-mongolab)
 * Supports simple image processing (resize, crop, blur, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
-* Supports render controller in controller
 * Easy adding dynamic META tags in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-meta)
 * Easy adding dynamic Settings in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-settings)
 * Simple use paypal payment with [node-paypal](https://github.com/petersirka/node-paypal) - [example](https://github.com/petersirka/partial.js/tree/master/examples/paypal)
