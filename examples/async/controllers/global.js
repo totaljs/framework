@@ -13,6 +13,10 @@ function viewHomepage() {
 		utils.request('https://www.google.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.google.com -> ' + output);
+
+			// skip next steps?
+			// self.skip(2);
+
 			self.next();
 		});
 	});
@@ -21,6 +25,10 @@ function viewHomepage() {
 		utils.request('https://www.github.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.github.com -> ' + output);
+
+			// skip next?
+			// self.skip();
+
 			self.next();
 		});
 	});
