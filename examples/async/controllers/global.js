@@ -2,6 +2,7 @@ var utils = require('partial.js/utils');
 
 exports.init = function() {
 	this.route('/', viewHomepage);
+	this.route('/', viewHomepage, ['xhr']);
 };
 
 function viewHomepage() {
@@ -32,14 +33,6 @@ function viewHomepage() {
 		});
 	});
 
-	self.wait(function() {
-		utils.request('https://www.facebook.com', 'GET', null, function(err, data) {
-			var output = err ? 'error' : data.length.toString();
-			builder.push('www.facebook.com -> ' + output);
-			self.next();
-		});
-	});
-
 	/*
 		self.completed(function() {
 			self.view('homepage', builder);
@@ -48,5 +41,8 @@ function viewHomepage() {
 		or ...
 	*/
 
-	self.viewAsync('homepage', builder);
+	if (self.xhr)
+		self.jsonAsync(builder);
+	else
+		self.viewAsync('homepage', builder);
 }
