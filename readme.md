@@ -141,27 +141,11 @@ console.log("http://127.0.0.1:{0}/".format(port));
 exports.init = function() {
 	var self = this;
 	self.route('/', viewHomepage);
-	self.route('#404', error404);
-	self.route('#500', error500);
 	// self.route('/registration/', viewRegistration, ['xhr', 'post']);
 	// self.route('/products/{category}/', viewProducts);
 	// self.route('/products/{category}/{subcategory}/', viewProducts);
 	// self.route('/user/', viewUser, ['logged']);
 };
-
-// Not Found
-function error404() {
-	var self = this;
-	self.statusCode = 404;
-	self.view('404');
-}
-
-// Internal Server Error
-function error500() {
-	var self = this;
-	self.statusCode = 500;
-	self.view('500');
-}
 
 function viewHomepage() {
 	var self = this;
