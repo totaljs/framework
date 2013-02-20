@@ -16,7 +16,8 @@ function viewRegistration() {
 		email: '@',
 		password: '',
 		phone: '+421',
-		country: 'SK'
+		country: 'SK',
+		terms: true
 	};
 
 	self.repository.country = ['', 'SK', 'CZ', 'EN', 'DE', 'AU', 'HU', 'PL', 'FR'];
