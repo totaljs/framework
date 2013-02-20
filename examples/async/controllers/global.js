@@ -40,5 +40,13 @@ function viewHomepage() {
 		});
 	});
 
+	/*
+		self.completed(function() {
+			self.view('homepage', builder);
+		});
+
+		or ...
+	*/
+
 	self.viewAsync('homepage', builder);
 }
