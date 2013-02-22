@@ -1,7 +1,5 @@
 var assert = require('assert');
-
 var markdown = require('../lib/markdown').init();
-
 
 markdown.onLine = function(type, value) {
 	return value;	
