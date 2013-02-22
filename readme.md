@@ -167,9 +167,9 @@ function viewHomepage() {
 	<meta name="format-detection" content="telephone=no"/>
 	<meta name="viewport" content="width=1024, user-scalable=yes" />
 	<meta name="robots" content="all,follow" />
-	<link rel="stylesheet" href="@{routeCSS('p.css')}" />
+	<link rel="stylesheet" href="@{routeCSS('style.css')}" />
 	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-	<script type="text/javascript" src="@{routeJS('p.js')}" ></script>
+	<script type="text/javascript" src="@{routeJS('script.js')}" ></script>
 </head>
 <body>
 	<div class="content">
@@ -204,9 +204,9 @@ Welcome @{model.name}!
 	<meta name="format-detection" content="telephone=no"/>
 	<meta name="viewport" content="width=1024, user-scalable=yes" />
 	<meta name="robots" content="all,follow" />
-	<link rel="stylesheet" href="/data/p.css" />
+	<link rel="stylesheet" href="/css/style.css" />
 	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-	<script type="text/javascript" src="/data/p.js" ></script>
+	<script type="text/javascript" src="/js/script.js" ></script>
 </head>
 <body>
 	<div class="content">
