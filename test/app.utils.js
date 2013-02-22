@@ -141,6 +141,9 @@ function prototypeString() {
 	assert.ok(str.padRight(5) === '12345', 'string.padRight(10): ' + str);
 	assert.ok(str.padRight(10, '-') === '12345-----', 'string.padRight(10, "-"): ' + str);
 
+	str = 'Date: {now | dd.MM.yyyy HH:mm:ss}. Currency: {number | ###,###,###.##} and encoded: {name} and raw: {!name}';	
+	assert.ok(str.params({now: new Date(), number: 23034.34, name: '<b>Peter</b>'}).length === 106, 'string.params(): ' + str);
+
 	str = 'Peter Širka Linker & - you known';
 	assert.ok(str.link() === 'peter-sirka-linker-you-known', 'string.link(): ' + str);
 	assert.ok(str.link(11) === 'peter-sirka', 'string.link(): ' + str);
@@ -279,4 +282,9 @@ function others() {
 prototypeNumber();
 prototypeString();
 prototypeArray();
-others();
+// others();
+
+console.log('================================================');
+console.log('success - OK');
+console.log('================================================');
+console.log('');
