@@ -42,7 +42,7 @@ function viewHomepage() {
 	});
 
 	/*
-		self.completed(function() {
+		self.complete(function() {
 			self.view('homepage', builder);
 		});
 
