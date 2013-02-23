@@ -1,25 +1,16 @@
-var couchdb = require('partial-couchdb');
 var utils = require('partial.js/utils');
+var builders = require('partial.js/builders');
 
 // ==================================================
 // in this file, you can rewrite framework prototypes
 // this file call framework automatically
 // ==================================================
 
-exports.db = function() {
-
-	/*
-	{
-	   "_id": "0854153caee4db8e7298769ffb000a04",
-	   "_rev": "70-842ca2825b8dc0972d6f20da060b1b72",
-	   "alias": "Peter Širka",
-	   "password": "7c4a8d09ca3762af61e59520943dc26494f8941b",
-	   "roles": "all",
-	   "email": "petersirka@gmail.com"
-	}
-	*/
-
-	return couchdb.init('http://127.0.0.1:5984/cms/');
+exports.onLoaded = function(framework) {
+	
+	// create database schema	
+	builders.schema('tbl_user', { id: Number, email: String, password: String, countLogin: Number }, 'id', false);	
+	
 };
 
 // ================================================
@@ -38,35 +29,34 @@ exports.onAuthorize = function(req, res, flags, callback) {
 
 	var obj = self.decode(cookie, 'user');
 
-	if (obj.ip != req.ip) {
+	if (obj.ip !== req.ip) {
 		callback(false);
 		return;
 	}
 
 	var user = self.cache.read('user_' + obj.id);
-	if (user != null) {
+	if (user !== null) {
 		req.session = user;
 		callback(true);
 		return;
 	}
 	
 	// autologin by cookie
-	var db = self.db();
+	var db = self.database('users');
 
-	db.find(obj.id, function(err, data) {
+	db.findPK('tbl_user', obj.id, function(err, user) {
 
-		if (err) {
+		if (user === null) {
 			callback(false);
 			return;
 		}
 
-		user = { id: data._id,
-				 alias: data.alias,
-				 email: data.email };
+
+		user.countLogin++;
+		db.update('tbl_user', user);
 
 		self.cache.write('user_' + user.id, user, new Date().add('m', 5));
 		req.session = user;
 		callback(true);
-
 	});
 };

@@ -4,6 +4,11 @@ var http = require('http');
 var port = 8004;
 var debug = true;
 
+console.log('===================================================================');
+console.log('WARNING: you must have installed node-sqlite3 / npm install sqlite3');
+console.log('===================================================================');
+console.log('');
+
 framework.init(http, debug, port);
 
 // Initialize controllers

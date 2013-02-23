@@ -9,21 +9,20 @@ exports.init = function() {
 };
 
 function viewIsLogged() {
-	this.plain('You are logged. To unlogged remove cookie __user');
+	var self = this;
+	self.plain('You are logged as {0} ({1}x). To unlogged remove cookie __user'.format(self.session.email, self.session.countLogin));
 }
 
 function viewHomepage() {
 	var self = this;
 	
-	if (!self.isXHR) {
-		self.repository.title = 'Login example';
-		self.layout('');
+	if (!self.xhr) {
 		self.view('homepage', { LoginName: '@' });
 		return;
 	}
 
 	var resource = function(name) {
-		return self.resource('en', name);
+		return self.resource(name);
 	};
 
 	var errorBuilder = new builders.ErrorBuilder(resource);
@@ -33,25 +32,23 @@ function viewHomepage() {
 		return;
 	}
 
-	var db = self.app.db();
+	var db = self.database('users');
+	var query = new builders.QueryBuilder();
+
+	query.addValue('email', '=', self.post.LoginName).addOperator('AND').addValue('password', '=', self.post.LoginPassword.toSHA1());
 	
-	db.view('admin', 'users', { key: self.post.LoginName }, function(err, data) {
+	db.findOne('tbl_user', query, function(err, user) {
 
-		if (err) {
+		if (user === null) {
 			errorBuilder.add('LoginError');
 			self.json(errorBuilder);
 			return;
 		}
 
-		var user = data.rows[0];
+		// save to cookie
+		self.res.cookie(self.config.cookie, self.app.encode({ id: user.id, ip: self.req.ip }, 'user'), new Date().add('m', 5));
 
-		if (typeof(user) === 'undefined' || user.value.password != self.post.LoginPassword.toSHA1()) {
-			errorBuilder.add('LoginError');
-			self.json(errorBuilder);
-			return;
-		}
-		
-		self.res.cookie(self.config.cookie, self.app.encode({ id: user.value._id, ip: self.req.ip }, 'user'), new Date().add('m', 5));
+		// return result
 		self.json({ r: true });
 	});
 }
