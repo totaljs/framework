@@ -1,4 +1,3 @@
-var couchdb = require('partial.js/couchdb');
 var utils = require('partial.js/utils');
 
 // ==================================================
@@ -59,8 +58,4 @@ exports.onPrefix = function(req) {
 		return 'android';
 
 	return '';
-};
-
-exports.db = function(db) {
-	return couchdb.init('http://127.0.0.1:5984/cms/');
 };
