@@ -41,9 +41,6 @@ web application framework for node.js
 * Supports simple mail templating - [example](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
 * Supports simple ORM (via HTTP-RDBMS)
 * Supports custom authorization - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
-* Supports HTTP-RDBMS provider (MySQL, SQL Server, OleDB, ODBC), more on https://github.com/petersirka/http-rdbms/
-* Supports simple CouchDB provider - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
-* Supports REST API MongoDB via https://mongolab.com - [example](https://github.com/petersirka/partial.js/tree/master/examples/mongodb-mongolab)
 * Supports simple image processing (resize, crop, blur, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
 * Easy adding dynamic META tags in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-meta)
 * Easy adding dynamic Settings in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-settings)
@@ -52,11 +49,16 @@ web application framework for node.js
 * Supports live usage information - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-usage)
 * Supports dynamic stop server - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
 * Supports verification of framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
+* Supports simple SQLite ORM, must be installed [note-sqlite3](https://github.com/developmentseed/node-sqlite3)
 * About 8 000 lines of JavaScript code
 * __No dependencies__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
 
 ***
+
+* CouchDB client for node.js - https://github.com/petersirka/node-couchdb
+* MongoDB (www.mongolab.com) REST client for node.js - https://github.com/petersirka/node-mongolab
+* HTTP-RDBMS REST node.js client for partial.js (MySQL, SQL Server, OleDB, ODBC) - https://github.com/petersirka/node-rdbms
 
 > I am still improving my english. Please do not hesitate to contact me in any contradictions.
 
