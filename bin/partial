@@ -13,6 +13,7 @@ function createDirectory(directory) {
 	arr.push('views');
 	arr.push('templates');
 	arr.push('controllers');
+	arr.push('databases');
 	arr.push('tests');
 	arr.push('contents');
 	arr.push('public');
