@@ -1,5 +1,5 @@
-var mongodb = require('partial.js/mongodb');
 var utils = require('partial.js/utils');
+var mongodb = require('partial-mongolab');
 
 // ==================================================
 // in this file, you can rewrite framework prototypes

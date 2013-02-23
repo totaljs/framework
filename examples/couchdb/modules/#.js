@@ -1,5 +1,5 @@
-var couchdb = require('partial.js/couchdb');
 var utils = require('partial.js/utils');
+var couchdb = require('partial-couchdb');
 
 // ==================================================
 // in this file, you can rewrite framework prototypes
