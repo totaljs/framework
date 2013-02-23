@@ -170,7 +170,6 @@ function prototypeArray() {
 };
 
 function others() {
-
 	var obj = {};
 
 	utils.extend(obj, { name: 'Peter', age: 25 });
@@ -282,7 +281,7 @@ function others() {
 prototypeNumber();
 prototypeString();
 prototypeArray();
-// others();
+others();
 
 console.log('================================================');
 console.log('success - OK');
