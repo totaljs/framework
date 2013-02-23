@@ -18,7 +18,6 @@ exports.init = function(framework, name) {
 	// @headers {Object} :: optional custom headers
 
 	// framework.assert(name, url, callback, [method], [data], [headers])
-
 	framework.assert('Test URL 1', '/1/', function response (error, data, name, code, headers) {
 		assert.ok(code === 200 && data === '1', name);
 		console.log('1');
