@@ -1,12 +1,12 @@
 {
     "name": "partial.js",
-    "version": "1.1.9-8",
-    "versionDifference": "1.1.7-3",
+    "version": "1.1.9-9",
+    "versionDifference": "1.1.9-9",
     "description": "web application framework for node.js",
     "main": "./index.js",
-    "keywords": [ "partial", "framework", "web", "webpage", "mvc", "controller", "view", "couchDB", "mongoDB", "rdbms", "upload", "picture", "graphicsmagick", "imagemagick"],
+    "keywords": [ "partial", "framework", "web", "webpage", "mvc", "controller", "view", "sqlite", "rdbms", "upload", "picture", "graphicsmagick", "imagemagick"],
     "engines": {
-        "node": "0.8.x"
+        "node": ">=0.6.0"
     },
     "readmeFilename": "readme.md",
     "scripts": {
