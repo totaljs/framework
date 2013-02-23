@@ -1,4 +1,4 @@
-var couchdb = require('partial.js/couchdb');
+var couchdb = require('partial-couchdb');
 var utils = require('partial.js/utils');
 
 // ==================================================
