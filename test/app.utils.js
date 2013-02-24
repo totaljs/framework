@@ -276,12 +276,42 @@ function others() {
 	utils.request('http://xxxxxxx.yyy', 'GET', null, function(err, data, code) {
 		assert.ok(err !== null, 'utils.requiest (error)')
 	});
+
+	var resource = function(name) {
+		return 'resource-' + name;
+	};
+
+	var error = utils.validation({}, ['firstName', 'lastName', 'age'], onValidation, resource);
+
+	assert.ok(error.hasError(), 'validation - hasError()');
+
+	error.prepare();
+
+	assert.ok(error.builder[0].name === 'firstName' || error.builder[0].error === 'resource-firstName', 'validation - return boolean');
+	assert.ok(error.builder[1].name === 'lastName' || error.builder[1].error === 'lastName-error', 'validation - return string');
+	assert.ok(error.builder[2].name === 'age' || error.builder[2].error === 'age-error', 'validation - return utils.isValid()');
+
+	error.clear();
+	assert.ok(error.hasError(), 'validation - clear() & hasError()');
+};
+
+
+function onValidation(name, value) {
+	switch (name) {
+		case 'firstName':
+			return value.length > 0;
+		case 'lastName':
+			return 'lastName-error';
+		case 'age':
+			return utils.isValid(utils.parseInt(value) > 0, 'age-error')
+	}
 };
 
 prototypeNumber();
 prototypeString();
 prototypeArray();
 others();
+
 
 console.log('================================================');
 console.log('success - OK');
