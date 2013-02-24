@@ -2,43 +2,33 @@ var utils = require('partial.js/utils');
 var builders = require('partial.js/builders');
 
 exports.init = function() {
-	this.route('/', viewHomepage);
-	this.route('/', viewHomepage, ['xhr', 'post']);
+	var self = this;
+	self.route('/', viewHomepage);
+	self.route('/', viewHomepage, ['xhr', 'post']);
 };
 
 function viewHomepage() {
 	var self = this;
 	
 	if (!self.isXHR) {
-		self.repository.title = 'Validation example';
+		self.meta('Validation example');
 		self.view('homepage', { LoginName: '@' });
 		return;
 	}
 
-	var resource = function(name) {
-		return self.resource('en', name);
-	};
-
-	var errorBuilder = new builders.ErrorBuilder(resource);
-
-	if (utils.validation(self.post, ['FirstName', 'LastName', 'Age', 'Email', 'Terms'], onValidation, errorBuilder).hasError()) {
-		self.json(errorBuilder);
+	/*
+		Global validation
+		@model {Object}
+		@properties {String array}
+		@prefix :: optional, default empty
+		@resource name :: optional, default = default.resource
+		return {ErrorBuilder}
+	*/
+	var result = self.validation(self.post, ['FirstName', 'LastName', 'Age', 'Email', 'Terms'], 'Form');
+	if (result.hasError()) {
+		self.json(result);
 		return;
 	}
 
 	self.json({ r: true });
-}
-
-function onValidation(name, value) {
-	switch (name) {
-		case 'Email':
-			return utils.isEmail(value);
-		case 'Age':
-			return utils.isValid(utils.parseInt(value) > 0, 'Fill fucking age');
-		case 'Terms':
-			return value === '1';
-		case 'FirstName':
-		case 'LastName':
-			return value.length > 0;
-	};
 }
