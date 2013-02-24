@@ -292,9 +292,8 @@ function others() {
 	assert.ok(error.builder[2].name === 'age' || error.builder[2].error === 'age-error', 'validation - return utils.isValid()');
 
 	error.clear();
-	assert.ok(error.hasError(), 'validation - clear() & hasError()');
+	assert.ok(!error.hasError(), 'validation - clear() & hasError()');
 };
-
 
 function onValidation(name, value) {
 	switch (name) {
@@ -311,7 +310,6 @@ prototypeNumber();
 prototypeString();
 prototypeArray();
 others();
-
 
 console.log('================================================');
 console.log('success - OK');
