@@ -1,11 +1,9 @@
-var utils = require('partial.js/utils');
-var builders = require('partial.js/builders');
-
 exports.init = function() {
-	this.route('/', viewHomepage);
-	this.route('/1/', view1);
-	this.route('/1/2/', view2);
-	this.route('/1/2/3/', view3);
+	var self = this;
+	self.route('/', viewHomepage);
+	self.route('/1/', view1);
+	self.route('/1/2/', view2);
+	self.route('/1/2/3/', view3);
 };
 
 function viewHomepage() {
@@ -15,21 +13,21 @@ function viewHomepage() {
 
 function view1() {
 	var self = this;
-	self.repository.sitemap.push({ url: '/1/', name: '1' });
+	self.sitemap('1', '/1/');
 	self.view('homepage');
 }
 
 function view2() {
 	var self = this;
-	self.repository.sitemap.push({ url: '/1/', name: '1' });
-	self.repository.sitemap.push({ url: '/1/2/', name: '2' });
+	self.sitemap('1', '/1/');
+	self.sitemap('2', '/1/2/');
 	self.view('homepage');
 }
 
 function view3() {
 	var self = this;
-	self.repository.sitemap.push({ url: '/1/', name: '1' });
-	self.repository.sitemap.push({ url: '/1/2/', name: '2' });
-	self.repository.sitemap.push({ url: '/1/2/3/', name: '3' });
+	self.sitemap('1', '/1/');
+	self.sitemap('2', '/1/2/');
+	self.sitemap('3', '/1/2/3/');
 	self.view('homepage');
 }

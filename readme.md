@@ -30,7 +30,7 @@ web application framework for node.js
 * Supports form data validation - [example](https://github.com/petersirka/partial.js/tree/master/examples/validation)
 * Supports simple log writer - [example](https://github.com/petersirka/partial.js/tree/master/examples/logs)
 * Supports simple restrictions [example](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
-* Supports static files
+* Supports serve static files
 * Supports JavaScript compress
 * Supports JavaScript dynamic compress in views - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-javascript-compress)
 * Supports simple LESS CSS (with compress) - [example](https://github.com/petersirka/partial.js/tree/master/examples/css-less)
@@ -39,7 +39,6 @@ web application framework for node.js
 * __Supports prefixes for mobile devices__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/mobile)
 * Supports simple SMTP mail sender - [example](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
 * Supports simple mail templating - [example](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
-* Supports simple ORM (via HTTP-RDBMS)
 * Supports custom authorization - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
 * Supports simple image processing (resize, crop, blur, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
 * Easy adding dynamic META tags in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-meta)
