@@ -50,10 +50,6 @@ function createFileIndex(directory) {
 	buffer.push("var debug = true;");
 	buffer.push("");
 	buffer.push("framework.init(http, debug, port);");
-	buffer.push("");
-	buffer.push("// Initialize controllers");
-	buffer.push("framework.controller('global');");
-	buffer.push("");
 	buffer.push("// framework.test(true);");
 	buffer.push("");
 	buffer.push("console.log('http://127.0.0.1:{0}/'.format(port));");
