@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.2.0-3
 - updated QueryBuilder (builders), add == addQuery
 
 - fixed framework.clear() (added clear framework.static)
+- fixed framework.usage() (fixed temporary directory size)
 
 
 ======= 1.2.0-2
