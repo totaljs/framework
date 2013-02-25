@@ -5,6 +5,7 @@ web application framework for node.js
 
 - Homepage / [www.partialjs.com](http://partialjs.com)
 - Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
+- E-shop example: [e-shop written in partial.js and SQLite3](http://eshop.partialjs.com)
 
 ***
 
@@ -129,10 +130,6 @@ var port = parseInt(process.argv[2] || '8000');
 var debug = true;
 
 framework.init(http, debug, port);
-
-// Initialize controllers
-framework.controller('global');
-
 console.log("http://127.0.0.1:{0}/".format(port));
 ```
 
