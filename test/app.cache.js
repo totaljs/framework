@@ -2,7 +2,7 @@ var assert = require('assert');
 var utils = require('../lib/utils');
 var cache = require('../lib/cache').init({});
 
-cache.init(100);
+cache.init(6000);
 
 cache.write('NAME', 'VALUE', new Date().add('s', 5));
 cache.write('REMOVE', 'VALUE', new Date().add('s', 10));
