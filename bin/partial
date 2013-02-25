@@ -162,7 +162,8 @@ function createFilePublic(directory) {
 	buffer = [];
 	buffer.push('@radius(property) { -moz-border-radius:@property; border-radius:@property; -webkit-border-radius:@property }');
 	buffer.push('@shadow(property) { -moz-box-shadow:@property; -webkit-box-shadow:@property; box-shadow:@property }');
-	buffer.push('@transition(property) { -webkit-transition: @property; -moz-transition: @property; -o-transition: @property; -ms-transition: @property }');
+	buffer.push('@transition(property) { -webkit-transition: @property; -moz-transition: @property; -o-transition: @property; -ms-transition: @property; transition: @property }');
+	buffer.push('@transform(property) { -webkit-transform: @property; -moz-transform: @property; -o-transform: @property; -ms-transform: @property; transform: @property }');
 	buffer.push('@gradient-linear(property) { background-image: linear-gradient(@property); background-image: -o-linear-gradient(@property); background-image: -moz-linear-gradient(@property); background-image: -webkit-linear-gradient(@property); background-image: -ms-linear-gradient(@property) }');
 	buffer.push('@gradient-radial(property) { background-image: radial-gradient(@property); background-image: -o-radial-gradient(@property); background-image: -moz-radial-gradient(@property); background-image: -webkit-radial-gradient(@property); background-image: -ms-radial-gradient(@property) }');
 	buffer.push('@noselect { -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -o-user-select:none; user-select:none }');
@@ -186,7 +187,7 @@ function createFileModules(directory) {
 	var buffer = [];
 	buffer.push('exports.yourcode = function () {');
 	buffer.push('    return \'Hello World\';');
-	buffer.push('}');
+	buffer.push('};');
 
 	fs.writeFileSync(path.join(dir, 'yourcode.js'), buffer.join(EOF));
 	
@@ -194,8 +195,8 @@ function createFileModules(directory) {
 	buffer.push('// your custom framework prototypes - https://github.com/petersirka/partial.js/blob/master/empty-project/modules/%23.js');
 	buffer.push('// this code it run automatically');
 	buffer.push('');
-	buffer.push('// exports.onLoaded = function(self) {}');
-	buffer.push('// exports.onError = function(err, name, uri) {}');
+	buffer.push('// exports.onLoaded = function(self) {};');
+	buffer.push('// exports.onError = function(err, name, uri) {};');
 	buffer.push('// exports.onAuthorize = function(req, res, callback) { callback(false); };');
 	buffer.push('// exports.onPrefix = function(req) { return \'\'; };');
 	buffer.push('// exports.onVersion = function(name) { return name; };');
@@ -205,6 +206,7 @@ function createFileModules(directory) {
 	buffer.push('// exports.onMeta = function onMeta() { return \'\'; };');
 	buffer.push('// exports.onPictureDimension = function(dimension) {};');
 	buffer.push('// exports.onPictureUrl = function(dimension, id, width, height, alt) {};');
+	buffer.push('// exports.onValidation = function(name, value) {};');
 	fs.writeFileSync(path.join(dir, '#.js'), buffer.join(EOF));
 }
 
