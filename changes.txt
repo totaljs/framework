@@ -1,3 +1,11 @@
+IN DEVELOPMENT ======= 1.2.0-3
+
+- added controller.url :: {String}, relative url
+- updated QueryBuilder (builders), add == addQuery
+
+- fixed framework.clear() (added clear framework.static)
+
+
 ======= 1.2.0-2
 
 - added auto-initialization controllers
