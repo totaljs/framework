@@ -11,8 +11,8 @@
 - added new examples
 - updated documentations
 
-- remove partial.js/couchdb
-- remove partial.js/mongodb
-- remove partial.js/rdmbs
+- remove partial.js/couchdb (https://github.com/petersirka/node-couchdb)
+- remove partial.js/mongodb (https://github.com/petersirka/node-mongolab)
+- remove partial.js/rdmbs (https://github.com/petersirka/node-rdbms)
 
 - fixed problems
