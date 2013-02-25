@@ -1,0 +1,18 @@
+======= 1.2.0-2
+
+- added auto-initialization controllers
+- added SQLite simple ORM - partial.js/sqlite
+- added framework.database();
+- added controller.database();
+- added controller.sitemap();
+- added framework.onValidation();
+- added controller.validation();
+- added utils Async class
+- added new examples
+- updated documentations
+
+- remove partial.js/couchdb
+- remove partial.js/mongodb
+- remove partial.js/rdmbs
+
+- fixed problems
