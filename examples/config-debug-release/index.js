@@ -17,7 +17,4 @@ framework.init(http, debug, port);
 //
 // framework.init(http, { debug: true, name: 'TEST' }, port);
 
-// Initialize controllers
-framework.controller('global');
-
 console.log("http://127.0.0.1:{0}/".format(port));

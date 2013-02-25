@@ -19,9 +19,6 @@ function end() {
 	framework.stop();
 }
 
-framework.controller('test');
-framework.controller('share');
-
 function test_controller_functions(next) {	
 	utils.request(url, 'GET', null, function(error, data, code, headers) {
 		assert.ok(code === 404, 'controller: statusCode');
@@ -33,7 +30,6 @@ function test_controller_functions(next) {
 		next();
 	});
 }
-
 
 setTimeout(function() {
 	test_controller_functions(function() {

@@ -7,9 +7,6 @@ var debug = true;
 
 framework.init(http, debug, port);
 
-// Initialize controllers
-framework.controller('global');
-
 framework.mail = function(email, name, params) {
 
 	var self = this;

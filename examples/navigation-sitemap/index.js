@@ -6,9 +6,6 @@ var debug = true;
 
 framework.init(http, debug, port);
 
-// Initialize controllers
-framework.controller('global');
-
 framework.on('controller', function(self, name) {	
 	// set default value for each request to controller
 	self.repository.title = 'Sitemap';

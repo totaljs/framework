@@ -6,9 +6,6 @@ var debug = true;
 
 framework.init(http, debug, port);
 
-// Initialize controllers
-framework.controller('global');
-
 /*
 	Make a tests
 	@stop {Boolean} :: stop framework (default true)

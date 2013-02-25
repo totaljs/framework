@@ -6,9 +6,6 @@ var debug = true;
 
 framework.init(http, debug, port);
 
-// Initialize controllers
-framework.controller('global');
-
 framework.onRoute = function (req, res) {
 
 	/*	
