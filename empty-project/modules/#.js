@@ -22,6 +22,15 @@
 */
 
 /*
+	Global framework validation
+	@name {String}
+	@value {String}
+	return {Boolean or utils.isValid() or StringErrorMessage};
+
+	exports.onValidation = function(name, value) {};
+*/
+
+/*
 	Prefix handler
 	@req {ServerRequest}
 	return {String}; :: return prefix (default return empty string)
