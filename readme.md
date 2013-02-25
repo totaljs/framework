@@ -63,7 +63,7 @@ web application framework for node.js
 
 ***
 
-## Simple eshop example
+## Simple eshop example with partial.js and SQLite 3
 http://eshop.partialjs.com
 
 ## partial.js homepage
