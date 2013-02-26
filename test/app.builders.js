@@ -184,6 +184,9 @@ function test_ErrorBuilder() {
 
 	builder.add(new builders.ErrorBuilder().add('age'));
 	assert.ok(builder.json() === '[{"name":"name","error":"name"},{"name":"age","error":"age"}]', name + 'add(ErrorBuilder)');
+
+	assert.ok(builder.read('name') === 'name', name + 'read()');
+	assert.ok(builder.hasError('name'), name + 'hasError(name)');
 };
 
 test_PageBuilder();
