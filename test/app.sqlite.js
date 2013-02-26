@@ -24,20 +24,24 @@ function test_orm(next) {
 		user.name = 'Lucka';
 		db.update('user', user, function(err, user) {
 			assert.ok(user.id === 1 && user.name === 'Lucka', 'db.update()');
-			db.delete('user', user, function(err, user) {
-				db.findPK('user', user.id, function(err, user) {
-					assert.ok(user === null, 'db.delete()');
-					db.insert('user', { name: '1' });	
-					db.insert('user', { name: '2' });
-					db.insert('user', { name: '3' });
-					db.insert('user', { name: '4' });
-					db.insert('user', { name: '5' }, function() {
-						db.all('user', function(err, rows) {
-							assert.ok(rows.length === 5, 'all');
-							next && next();
+			user.name = '     Peter      ';
+			db.update('user', user, function(err, user) {
+				assert.ok(user.id === 1 && user.name === 'Peter', 'trim string');
+				db.delete('user', user, function(err, user) {
+						db.findPK('user', user.id, function(err, user) {
+							assert.ok(user === null, 'db.delete()');
+							db.insert('user', { name: '1' });
+							db.insert('user', { name: '2' });
+							db.insert('user', { name: '3' });
+							db.insert('user', { name: '4' });
+							db.insert('user', { name: '5' }, function() {
+								db.all('user', function(err, rows) {
+									assert.ok(rows.length === 5, 'all');
+									next && next();
+								});
+							});
 						});
 					});
-				});
 			});
 		});
 	});
