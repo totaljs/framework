@@ -1,8 +1,10 @@
 var assert = require('assert');
+var utils = require('../../lib/utils');
 
 exports.init = function() {
 	var self = this;
 	self.route('/', viewIndex);
+	self.route('/views/', viewViews);
 };
 
 function viewIndex() {
@@ -65,6 +67,54 @@ function viewIndex() {
 	assert.ok(self.content('test') === 'EMPTY', name + 'content');
 	assert.ok(self.url === '/', name + 'url');
 
+	var error = self.validation({ A: 'B' }, ['A']);	
+	assert.ok(error.hasError() && error.read('A') === 'AB', 'framework.onValidation & contrller.validation');
+
 	self.statusCode = 404;
 	self.plain('OK');
 }
+
+function viewViews() {
+
+	var name = 'views: ';
+	var self = this;
+
+	self.repository.arr = ['Q', 'R', 'S'];
+	self.repository.title = 'TEST';
+	self.repository.tag = '<b>A</b>';
+	self.repository.optionsEmpty = [{ name: 'A', value: 'A' }, { name: 'B', value: 'B' }];
+	self.repository.options = [{ k: 'C', v: 'C' }, { k: 'D', v: 'D' }];
+	self.repository.template = [{ name: 'A', price: 10 }, { name: 'B', price: 10.5 }];
+
+	var output = self.view('a', { a: 'A', b: 'B', arr: ['1', '2', '3'] }, true);
+	
+	assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
+	assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');
+	assert.ok(output.contains('#helper-property-OK#'), name + 'helper property');
+	assert.ok(output.contains('#helper-fn-A#'), name + 'helper function');
+	assert.ok(output.contains('#readonly readonly="readonly"#'), name + 'isReadonly()');
+	assert.ok(output.contains('#checked checked="checked"#'), name + 'isChecked()');
+	assert.ok(output.contains('#selected selected="selected"#'), name + 'isSelected()');
+	assert.ok(output.contains('#disabled disabled="disabled"#'), name + 'isDisabled()');
+	assert.ok(output.contains('#resourcedefault#'), name + 'resource()');
+	assert.ok(output.contains('#options-empty<option value="A">A</option><option value="B" selected="selected">B</option>#'), name + 'options() - without property name and value');
+	assert.ok(output.contains('#options<option value="C" selected="selected">C</option><option value="D">D</option>#'), name + 'options() - with property name and value');
+	assert.ok(output.contains('#view#bmodel##'), name + 'view() with model');
+	assert.ok(output.contains('#view-if#bmodel-if##'), name + 'viewIf()');
+	assert.ok(output.contains('#view-visible#'), name + 'viewVisible()');
+	assert.ok(output.contains('#contentEMPTY#'), name + 'content');
+	assert.ok(output.contains('#content-ifBBB#'), name + 'contentIf');
+	assert.ok(output.contains('#content-visible#'), name + 'contentVisible');
+	assert.ok(output.contains('#picture<img src="small-1.jpg" width="128" height="96" alt="" border="0" />#'), name + 'picture');
+	assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>10.50</div><div>10.5</div>#'), name + 'template() - one');
+	assert.ok(output.contains('#template-more<ul><li>A</li><li>B</li></ul>#'), name + 'template() - more');
+	assert.ok(output.contains('#template-emptyEMPTY#'), name + 'template() - empty');
+	assert.ok(output.contains('#template-visible#'), name + 'templateVisible()');
+	assert.ok(output.contains('#template-if<ul><li>A</li><li>B</li></ul>#'), name + 'templateIf()');
+	assert.ok(!output.contains('<!--'), name + 'minify html');
+	assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
+
+	self.json({ r: true });
+}
+
+

@@ -28,8 +28,16 @@ exports.onLoaded = function() {
 		return self;
 	};
 
+	self.helpers.property = 'OK';
+	self.helpers.fn = function(a) {
+		return a;
+	};
 };
 
 exports.onPictureUrl = function(dimension, id, width, height, alt) {
 	return dimension + '-' + id + '.jpg';
+};
+
+exports.onValidation = function(name, value) {
+	return name + value;
 };

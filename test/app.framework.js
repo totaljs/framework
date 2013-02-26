@@ -19,7 +19,7 @@ function end() {
 	framework.stop();
 }
 
-function test_controller_functions(next) {	
+function test_controller_functions(next) {
 	utils.request(url, 'GET', null, function(error, data, code, headers) {
 		assert.ok(code === 404, 'controller: statusCode');
 
@@ -31,8 +31,17 @@ function test_controller_functions(next) {
 	});
 }
 
+function test_view_functions(next) {
+	utils.request(url + 'views/', 'GET', null, function(error, data, code, headers) {
+		assert.ok(data === '{"r":true}', 'json');
+		next();
+	});
+};
+
 setTimeout(function() {
 	test_controller_functions(function() {
-		end();
+		test_view_functions(function() {
+			end();
+		});
 	});
 }, 500);

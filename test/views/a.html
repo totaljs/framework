@@ -1,0 +1,26 @@
+
+#tag-encode@{repository.tag}#
+#tag-raw@{!repository.tag}#
+#helper-property-@{property}#
+#helper-fn-@{fn('A')}#
+<!--- MINIFY -->
+#readonly@{isReadonly(true)}#
+#checked@{isChecked(true)}#
+#selected@{isSelected(true)}#
+#disabled@{isDisabled(true)}#
+#resource@{resource('name')}#
+#options-empty@{options(repository.optionsEmpty, 'B')}#
+#options@{options(repository.options, 'C', 'k', 'v')}#
+#view@{view('b', 'model')}#
+#view-if@{viewIf(true, 'b', 'c', 'model-if')}#
+#view-visible@{viewVisible(false, 'b')}#
+#content@{content('test')}#
+#content-if@{contentIf(true, 'b', 'test')}#
+#content-visible@{contentVisible(false, 'b')}#
+#picture@{picture(1, 'small')}#
+#template-one@{template('one', repository.template)}#
+#template-more@{template('more', repository.template)}#
+#template-empty@{template('more', [], 'test')}#
+#template-visible@{templateVisible(false, 'more', [])}#
+#template-if@{templateIf(false, 'one', 'more', repository.template)}#
+#routejs-@{routeJS('p.js')}#

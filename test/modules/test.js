@@ -9,3 +9,7 @@ exports.install = function(framework) {
 exports.message = function() {
 	return 'message';
 };
+
+exports.usage = function(detailed) {
+	return 'usage';
+};
