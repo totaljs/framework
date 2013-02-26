@@ -1,11 +1,14 @@
 IN DEVELOPMENT ======= 1.2.0-3
 
 - added controller.url :: {String}, relative url
+- added automatic minify HTML
+- added auto trimming string values to SQLite ORM - insert/update
+- added module usage
 - updated QueryBuilder (builders), add == addQuery
+- updated config, added @httpMinify {Boolean}, optional - default true
 
 - fixed framework.clear() (added clear framework.static)
 - fixed framework.usage() (fixed temporary directory size)
-
 
 ======= 1.2.0-2
 
