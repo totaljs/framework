@@ -1,30 +1,33 @@
-IN DEVELOPMENT ======= 1.2.0-3
+======= 1.2.0-3
 
-- added controller.url :: {String}, relative url
-- added automatic minify HTML
-- added auto trimming string values to SQLite ORM - insert/update
-- added module usage
-- updated QueryBuilder (builders), add == addQuery
-- updated config, added @httpMinify {Boolean}, optional - default true
+- added: controller.url :: {String}, property return relative url
+- added: automatic minify HTML
+- added: CSS minification is enabled in debug mode
+- added: auto trimming string values to SQLite ORM - insert/update
+- added: module usage
 
-- fixed framework.clear() (added clear framework.static)
-- fixed framework.usage() (fixed temporary directory size)
+- updated: QueryBuilder (builders), add == addQuery
+- updated: config, added @httpMinify {Boolean}, optional - default true
+
+- fixed: framework.clear() (added clear framework.static)
+- fixed: framework.usage() (fixed temporary directory size)
 
 ======= 1.2.0-2
 
-- added auto-initialization controllers
-- added SQLite simple ORM - partial.js/sqlite
-- added framework.database();
-- added controller.database();
-- added controller.sitemap();
-- added framework.onValidation();
-- added controller.validation();
-- added utils Async class
-- added new examples
-- updated documentations
+- added: auto-initialization controllers
+- added: SQLite simple ORM - partial.js/sqlite
+- added: framework.database();
+- added: controller.database();
+- added: controller.sitemap();
+- added: framework.onValidation();
+- added: controller.validation();
+- added: utils Async class
+- added: new examples
 
-- remove partial.js/couchdb (https://github.com/petersirka/node-couchdb)
-- remove partial.js/mongodb (https://github.com/petersirka/node-mongolab)
-- remove partial.js/rdmbs (https://github.com/petersirka/node-rdbms)
+- updated: documentations
 
-- fixed problems
+- removed: partial.js/couchdb (https://github.com/petersirka/node-couchdb)
+- removed: partial.js/mongodb (https://github.com/petersirka/node-mongolab)
+- removed: partial.js/rdmbs (https://github.com/petersirka/node-rdbms)
+
+- fixed: problems
