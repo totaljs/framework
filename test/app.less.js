@@ -15,11 +15,9 @@ buffer.push('@keyframes {}');
 
 var css = buffer.join('\n');
 
-var result1 = "@font-face { font-family: 'Dosis'; font-style: normal; font-weight: 400; src: local('Dosis Regular'), local('Dosis-Regular'), url(http://themes.googleusercontent.com/static/fonts/dosis/v1/7L9_zC5qZfwiKVyE9UcfBqCWcynf_cDxXwCLxiixG1c.woff) format('woff');}\n\ndiv { border-radius:4px 4px 4px 4px;-moz-border-radius:4px 4px 4px 4px; @font-face; }\na:hover { transition-property:left,top;transition-duration: 2s; }\nli:hover { transition-property:left, top;transition-duration: 1s; }\ndiv { border-radius:4px 4px 4px 4px;-moz-border-radius:4px 4px 4px 4px; }\n@keyframes {}";
-var result2 = "@font-face{font-family:'Dosis';font-style:normal;font-weight:400;src:local('Dosis Regular'), local('Dosis-Regular'), url(http://themes.googleusercontent.com/static/fonts/dosis/v1/7L9_zC5qZfwiKVyE9UcfBqCWcynf_cDxXwCLxiixG1c.woff) format('woff');}div{border-radius:4px 4px 4px 4px;-moz-border-radius:4px 4px 4px 4px;@font-face;}a:hover{transition-property:left,top;transition-duration:2s;}li:hover{transition-property:left, top;transition-duration:1s;}div{border-radius:4px 4px 4px 4px;-moz-border-radius:4px 4px 4px 4px;}@keyframes{}";
+var result = "@font-face{font-family:'Dosis';font-style:normal;font-weight:400;src:local('Dosis Regular'), local('Dosis-Regular'), url(http://themes.googleusercontent.com/static/fonts/dosis/v1/7L9_zC5qZfwiKVyE9UcfBqCWcynf_cDxXwCLxiixG1c.woff) format('woff');}div{border-radius:4px 4px 4px 4px;-moz-border-radius:4px 4px 4px 4px;@font-face;}a:hover{transition-property:left,top;transition-duration:2s;}li:hover{transition-property:left, top;transition-duration:1s;}div{border-radius:4px 4px 4px 4px;-moz-border-radius:4px 4px 4px 4px;}@keyframes{}";
 
-assert.ok(less.compile(css, false) === result1, 'less – compress=false');
-assert.ok(less.compile(css, true) === result2, 'less – compress=true');
+assert.ok(less.compile(css, true) === result, 'less – compress=true');
 
 console.log('================================================');
 console.log('success - OK');
