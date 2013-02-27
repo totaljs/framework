@@ -32,6 +32,7 @@ web application framework for node.js
 * Supports simple log writer - [example](https://github.com/petersirka/partial.js/tree/master/examples/logs)
 * Supports simple restrictions [example](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
 * Supports serve static files
+* Supports HTML minification
 * Supports JavaScript compress
 * Supports JavaScript dynamic compress in views - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-javascript-compress)
 * Supports simple LESS CSS (with compress) - [example](https://github.com/petersirka/partial.js/tree/master/examples/css-less)
@@ -160,7 +161,6 @@ function viewHomepage() {
 <head>
     @{meta}
     <meta charset="utf-8" />
-	<meta http-equiv="content-language" content="sk" />
 	<meta http-equiv="X-UA-Compatible" content="IE=10" />
 	<meta name="format-detection" content="telephone=no"/>
 	<meta name="viewport" content="width=1024, user-scalable=yes" />
