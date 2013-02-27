@@ -1,3 +1,4 @@
+======= 1.2.0-5
 ======= 1.2.0-4
 
 - updated: view compiler (improvement)
