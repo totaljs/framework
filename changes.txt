@@ -1,3 +1,10 @@
+IN DEVELOPMENT ======= 1.2.0-4
+
+- updated: view compiler
+- updated: template compiler
+
+- fixed: problem with framework.clear();
+
 ======= 1.2.0-3
 
 - added: controller.url :: {String}, property return relative url
