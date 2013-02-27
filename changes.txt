@@ -1,4 +1,12 @@
+======= 1.2.0-6
+
+- updated: rename framework.statics to framework.static;
+- clean code
+
 ======= 1.2.0-5
+
+- fixed: problem with template compiler
+
 ======= 1.2.0-4
 
 - updated: view compiler (improvement)
