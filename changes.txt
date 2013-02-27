@@ -1,7 +1,7 @@
-IN DEVELOPMENT ======= 1.2.0-4
+======= 1.2.0-4
 
-- updated: view compiler
-- updated: template compiler
+- updated: view compiler (improvement)
+- updated: template compiler (improvement)
 
 - fixed: problem with framework.clear();
 
