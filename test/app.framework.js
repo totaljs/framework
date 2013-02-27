@@ -6,8 +6,8 @@ var http = require('http');
 var url = 'http://127.0.0.1:8000/';
 framework.init(http, true, 8000);
 
-framework.onError = function(error) {
-	console.log(error);
+framework.onError = function(error, name) {
+	console.log(error, name);
 	framework.stop();
 };
 
