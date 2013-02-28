@@ -1,6 +1,6 @@
-exports.init = function() {
-	this.route('/read/', cookieRead);
-	this.route('/write/', cookieWrite);
+exports.install = function(framework) {
+	framework.route('/read/', cookieRead);
+	framework.route('/write/', cookieWrite);
 }
 
 function cookieRead() {

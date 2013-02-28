@@ -1,5 +1,5 @@
-exports.init = function() {
-	this.route('/', viewHomepage);
+exports.install = function(framework) {
+	framework.route('/', viewHomepage);
 };
 
 function viewHomepage() {

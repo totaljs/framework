@@ -1,8 +1,8 @@
 var utils = require('partial.js/utils');
 
-exports.init = function() {
-	this.route('/', viewRegistration);
-	this.route('/', formRegistration, ['post']);
+exports.install = function(framework) {
+	framework.route('/', viewRegistration);
+	framework.route('/', formRegistration, ['post']);
 };
 
 function viewRegistration() {

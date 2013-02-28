@@ -1,9 +1,8 @@
-exports.init = function() {
-	var self = this;
-	self.route('/', viewHomepage);
-	self.route('/1/', view1);
-	self.route('/1/2/', view2);
-	self.route('/1/2/3/', view3);
+exports.install = function(framework) {
+	framework.route('/', viewHomepage);
+	framework.route('/1/', view1);
+	framework.route('/1/2/', view2);
+	framework.route('/1/2/3/', view3);
 };
 
 function viewHomepage() {

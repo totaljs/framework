@@ -3,10 +3,10 @@ var utils = require('partial.js/utils');
 // $ npm install payment-paypal
 var paypal = require('payment-paypal');
 
-exports.init = function() {
-	this.route('/', viewHomepage);
-	this.route('/pay/', redirectPay);
-	this.route('/paypal/ok/', paymentOK);
+exports.install = function(framework) {
+	framework.route('/', viewHomepage);
+	framework.route('/pay/', redirectPay);
+	framework.route('/paypal/ok/', paymentOK);
 };
 
 function viewHomepage() {

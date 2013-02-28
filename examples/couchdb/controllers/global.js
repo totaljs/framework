@@ -1,8 +1,8 @@
 var utils = require('partial.js/utils');
 var builders = require('partial.js/builders');
 
-exports.init = function() {
-	this.route('/', viewDatabase);
+exports.install = function(framework) {
+	framework.route('/', viewDatabase);
 };
 
 function viewDatabase() {

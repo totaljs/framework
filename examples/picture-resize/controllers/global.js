@@ -1,11 +1,11 @@
 var utils = require('partial.js/utils');
 var path = require('path');
 
-exports.init = function() {
-	this.route('/', viewHomepage);
+exports.install = function(framework) {
+	framework.route('/', viewHomepage);
 
 	// the number is maximum data receive
-	this.route('/', viewHomepage, ['upload'], 1024 * 1000 * 1000);
+	framework.route('/', viewHomepage, ['upload'], 1024 * 1000 * 1000);
 };
 
 function viewHomepage() {

@@ -1,8 +1,7 @@
-exports.init = function() {
-	var self = this
-	self.route('/1/', test1);	
-	self.route('/2/', test2);
-	self.route('/3/', test3);
+exports.install = function(framework) {
+	framework.route('/1/', test1);
+	framework.route('/2/', test2);
+	framework.route('/3/', test3);
 };
 
 function test1() {

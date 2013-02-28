@@ -1,11 +1,11 @@
 var utils = require('partial.js/utils');
 
-exports.init = function() {
-	this.route('/', viewHomepage);
-	this.route('/dynamic/date/', viewDynamicModified);
-	this.route('/dynamic/etag/', viewDynamicEtag);
-	this.route('/date/', viewModified);
-	this.route('/etag/', viewEtag);
+exports.install = function(framework) {
+	framework.route('/', viewHomepage);
+	framework.route('/dynamic/date/', viewDynamicModified);
+	framework.route('/dynamic/etag/', viewDynamicEtag);
+	framework.route('/date/', viewModified);
+	framework.route('/etag/', viewEtag);
 };
 
 function viewHomepage() {

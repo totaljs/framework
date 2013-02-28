@@ -1,11 +1,11 @@
 var utils = require('partial.js/utils');
 
-exports.init = function() {
-	this.route('/', viewAuto);
-	this.route('/en/', viewEN);
-	this.route('/sk/', viewSK);
-	this.route('/cz/', viewCZ);
-	this.route('/{language}/message/', viewMessage, ['xhr']);
+exports.install = function(framework) {
+	framework.route('/', viewAuto);
+	framework.route('/en/', viewEN);
+	framework.route('/sk/', viewSK);
+	framework.route('/cz/', viewCZ);
+	framework.route('/{language}/message/', viewMessage, ['xhr']);
 };
 
 function viewAuto() {

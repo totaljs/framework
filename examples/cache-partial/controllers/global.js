@@ -1,8 +1,8 @@
 var utils = require('partial.js/utils');
 
-exports.init = function() {
-	this.route('/', viewHomepageCached);
-	this.route('/notcached/', viewHomepageNotCached);
+exports.install = function(framework) {
+	framework.route('/', viewHomepageCached);
+	framework.route('/notcached/', viewHomepageNotCached);
 };
 
 function viewHomepageCached() {

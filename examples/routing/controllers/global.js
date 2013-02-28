@@ -1,12 +1,12 @@
 var utils = require('partial.js/utils');
 
-exports.init = function() {
-	this.route('/contact/', contact);
-	this.route('/products/', products);
-	this.route('/products/{category}/', products);
-	this.route('/products/{category}/{subcategory}/', products);
-	this.route('/', homepage);
-	this.route('/{category}/', homepage);
+exports.init = function(framework) {
+	framework.route('/contact/', contact);
+	framework.route('/products/', products);
+	framework.route('/products/{category}/', products);
+	framework.route('/products/{category}/{subcategory}/', products);
+	framework.route('/', homepage);
+	framework.route('/{category}/', homepage);
 
 	// Route to file
 	// this.routeFile(name, funcValidation, funcExecute);
@@ -14,7 +14,7 @@ exports.init = function() {
 	// @funcValidation {Function} :: params: {req}, {res}, return {Boolean};
 	// @funcExecute {Function} :: params: {req}, {res};	
 
-	this.routeFile('my route file for .txt', function onValidation(req, res) {
+	framework.routeFile('my route file for .txt', function onValidation(req, res) {
 		
 		// valid request
 		return req.url.indexOf('.txt') !== -1;
@@ -22,6 +22,7 @@ exports.init = function() {
 	}, function onExecute(req, res) {
 		
 		// generate response
+		// this === framework
 		this.returnContent(req, res, 200, 'Server time: ' + new Date().toString(), 'text/plain');
 
 	});

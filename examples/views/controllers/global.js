@@ -1,8 +1,8 @@
 var utils = require('partial.js/utils');
 
-exports.init = function() {
-	this.route('/', viewHomepage);
-	this.route('/new/', viewHomepage2);
+exports.install = function(framework) {
+	framework.route('/', viewHomepage);
+	framework.route('/new/', viewHomepage2);
 };
 
 function viewHomepage() {

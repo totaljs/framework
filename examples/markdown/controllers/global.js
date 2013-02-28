@@ -2,8 +2,8 @@ var md = require('partial.js/markdown');
 var utils = require('partial.js/utils');
 var fs = require('fs');
 
-exports.init = function() {
-	this.route('/', viewMarkdown);
+exports.install = function(framework) {
+	framework.route('/', viewMarkdown);
 }
 
 function viewMarkdown() {

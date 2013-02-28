@@ -1,11 +1,10 @@
 var utils = require('partial.js/utils');
 var builders = require('partial.js/builders');
 
-exports.init = function() {
-	var self = this;
-	self.route('/', viewIsLogged, ['logged']);
-	self.route('/', viewHomepage, ['unlogged']);
-	self.route('/', viewHomepage, ['unlogged', 'xhr', 'post']);
+exports.install = function(framework) {
+	framework.route('/', viewIsLogged, ['logged']);
+	framework.route('/', viewHomepage, ['unlogged']);
+	framework.route('/', viewHomepage, ['unlogged', 'xhr', 'post']);
 };
 
 function viewIsLogged() {

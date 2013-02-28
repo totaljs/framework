@@ -1,5 +1,5 @@
-exports.init = function() {
-	this.route('/', stop);
+exports.install = function(framework) {
+	framework.route('/', stop);
 };
 
 function stop() {

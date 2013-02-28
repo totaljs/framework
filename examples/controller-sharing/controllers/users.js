@@ -1,7 +1,7 @@
 var utils = require('partial.js/utils');
 
-exports.init = function() {
-	this.route('/users/', viewUsers);
+exports.install = function(framework) {
+	framework.route('/users/', viewUsers);
 };
 
 exports.models = {

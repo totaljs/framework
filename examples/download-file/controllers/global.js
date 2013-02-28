@@ -1,7 +1,7 @@
 var utils = require('partial.js/utils');
 
-exports.init = function() {
-	this.route('/', download);
+exports.install = function(framework) {
+	framework.route('/', download);
 };
 
 function download() {
