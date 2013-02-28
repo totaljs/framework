@@ -3,7 +3,9 @@
 - added: framework.utils array.prototype.take(count), array.prototype.skip(count)
 - added: sqlite.schemaCreate(schema), sqlite.schemaDrop(schema)
 - added: controller.cancel()
+- added: controller.install
 
+- updated: controller.init is now obsolete
 - updated: framework.createResource(name, {String or Object});
 
 - fixed: framework.decode()
