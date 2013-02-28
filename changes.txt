@@ -7,6 +7,7 @@
 - updated: framework.createResource(name, {String or Object});
 
 - fixed: framework.decode()
+- fixed: problem with routing priority
 
 ======= 1.2.0-6
 
