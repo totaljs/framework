@@ -9,10 +9,6 @@ builders.schema('user', {
 	name: 'text(5)'
 }, 'id');
 
-db.serialize();
-db.run('CREATE TABLE user (id INTEGER PRIMARY KEY NOT NULL, name TEXT(5))');
-db.parallelize();
-
 function test_orm(next) {
 
 	var model = {
@@ -77,7 +73,10 @@ function test_execute(next) {
 
 			db.scalar('SELECT COUNT(*) AS Count FROM user', function(err, data) {
 				assert.ok(data.Count, 'scalar');
-				next && next();
+				db.schemaDrop('user', function(isDeleted) {
+					assert.ok(isDeleted, 'schemaDrop');
+					next && next();
+				});
 			});
 		});
 	});
@@ -90,10 +89,12 @@ function end() {
 	console.log('');
 }
 
-test_orm(function() {
-	test_orm_find(function() {
-		test_execute(function() {
-			end();
+db.schemaCreate('user', function(err, data) {
+	test_orm(function() {
+		test_orm_find(function() {
+			test_execute(function() {
+				end();
+			});
 		});
 	});
 });
