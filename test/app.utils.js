@@ -167,6 +167,10 @@ function prototypeArray() {
 	});
 
 	assert.ok(arr.length === 3, 'array.remove()');
+
+	arr = [1, 2, 3, 4, 5];
+	assert.ok(arr.skip(3).join('') === '45', 'array.skip()');
+	assert.ok(arr.take(3).join('') === '123', 'array.take()');
 };
 
 function others() {
