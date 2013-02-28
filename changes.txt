@@ -1,3 +1,12 @@
+======= 1.2.0-7
+
+- added: framework.utils array.prototype.take(count), array.prototype.skip(count)
+- added: sqlite.schemaCreate(schema), sqlite.schemaDrop(schema)
+
+- updated: framework.createResource(name, {String or Object});
+
+- fixed: framework.decode()
+
 ======= 1.2.0-6
 
 - updated: rename framework.statics to framework.static;
