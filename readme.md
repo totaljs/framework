@@ -137,13 +137,12 @@ console.log("http://127.0.0.1:{0}/".format(port));
 > controllers / global.js
 
 ```js
-exports.init = function() {
-	var self = this;
-	self.route('/', viewHomepage);
-	// self.route('/registration/', viewRegistration, ['xhr', 'post']);
-	// self.route('/products/{category}/', viewProducts);
-	// self.route('/products/{category}/{subcategory}/', viewProducts);
-	// self.route('/user/', viewUser, ['logged']);
+exports.install = function(framework) {
+	framework.route('/', viewHomepage);
+	// framework.route('/registration/', viewRegistration, ['xhr', 'post']);
+	// framework.route('/products/{category}/', viewProducts);
+	// framework.route('/products/{category}/{subcategory}/', viewProducts);
+	// framework.route('/user/', viewUser, ['logged']);
 };
 
 function viewHomepage() {
