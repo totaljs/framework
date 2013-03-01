@@ -147,6 +147,12 @@ exports.install = function(framework) {
 
 function viewHomepage() {
 	var self = this;
+	
+	if (self.xhr) {
+		self.json({ greeting: 'Hello world!' });
+		return;
+	}
+
 	self.repository.title = 'Web application framework';
 	self.view('homepage', { name: 'Peter' });
 }
