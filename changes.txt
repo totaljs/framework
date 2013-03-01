@@ -1,3 +1,7 @@
+======= 1.2.0-8
+
+- updated: rename returnFile, returnContent, returnStatic, return404, return500: responseFile, responseContent, etc..
+
 ======= 1.2.0-7
 
 - added: framework.utils array.prototype.take(count), array.prototype.skip(count)
