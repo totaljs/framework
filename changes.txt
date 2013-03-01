@@ -2,6 +2,7 @@ IN DEVELOPMENT ======= 1.2.0-8
 
 - added: sqlite ORM supports blob type
 - added: framework.on('exit')
+- added: markdown.load(text, name), @name parameter (such as helper to parser)
 
 - updated: rename returnFile, returnContent, returnStatic, return404, return500: responseFile, responseContent, etc..
 - updated: auto added first property name as primary key in builders schema (note: if not defined primary key)
