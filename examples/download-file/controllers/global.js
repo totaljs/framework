@@ -5,6 +5,6 @@ exports.install = function(framework) {
 };
 
 function download() {
+	// documentation: http://www.partialjs.com/documentation/controller/
 	this.file('company-profile.pdf', 'about-us.pdf');
-	// file in public, download name
 }

@@ -14,6 +14,7 @@ exports.init = function(framework) {
 	// @funcValidation {Function} :: params: {req}, {res}, return {Boolean};
 	// @funcExecute {Function} :: params: {req}, {res};	
 
+	// route: all txt files
 	framework.routeFile('my route file for .txt', function onValidation(req, res) {
 		
 		// valid request
@@ -23,7 +24,7 @@ exports.init = function(framework) {
 		
 		// generate response
 		// this === framework
-		this.returnContent(req, res, 200, 'Server time: ' + new Date().toString(), 'text/plain');
+		this.responseContent(req, res, 200, 'Server time: ' + new Date().toString(), 'text/plain');
 
 	});
 }
