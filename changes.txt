@@ -8,6 +8,9 @@ IN DEVELOPMENT ======= 1.2.0-8
 - updated: auto added first property name as primary key in builders schema (note: if not defined primary key)
 - updated: clean code
 
+- fixed: error message / view not found, content not found, template not found
+- fixed: error message in SQLite ORM
+
 ======= 1.2.0-7
 
 - added: framework.utils array.prototype.take(count), array.prototype.skip(count)
