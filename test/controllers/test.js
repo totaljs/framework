@@ -5,6 +5,7 @@ exports.init = function() {
 	var self = this;
 	self.route('/', viewIndex);
 	self.route('/views/', viewViews);
+	self.route('/view-notfound/', viewError);
 };
 
 function viewIndex() {
@@ -117,4 +118,9 @@ function viewViews() {
 	self.json({ r: true });
 }
 
-
+function viewError() {
+	var self = this;
+	assert.ok(self.template('asdljsald', [1, 2, 3]) === '', 'template: not found problem');
+	assert.ok(self.content('asdasd') === '', 'content: not found problem');
+	self.view('asdlkjasl');
+}

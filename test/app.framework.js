@@ -4,11 +4,35 @@ var framework = require('../lib/index');
 var http = require('http');
 
 var url = 'http://127.0.0.1:8000/';
+var errorStatus = 0;
+
 framework.init(http, true, 8000);
 
 framework.onError = function(error, name, uri) {
-	console.log(error, name, uri);
-	framework.stop();
+	if (errorStatus === 0) {
+		console.log(error, name, uri);
+		framework.stop();
+		return;
+	}
+
+	if (errorStatus === 1) {
+		assert.ok(error.toString().indexOf('not found') !== -1, 'view: not found problem');
+		errorStatus = 2;
+		return;
+	}
+
+	if (errorStatus === 2) {
+		assert.ok(error.toString().indexOf('not found') !== -1, 'template: not found problem');
+		errorStatus = 3;
+		return;
+	}
+
+	if (errorStatus === 3) {
+		assert.ok(error.toString().indexOf('not found') !== -1, 'content: not found problem');
+		errorStatus = 0;
+		return;
+	}
+
 };
 
 function end() {
@@ -38,10 +62,19 @@ function test_view_functions(next) {
 	});
 };
 
+function test_view_error(next) {
+	errorStatus = 1;
+	utils.request(url + 'view-notfound/', 'GET', null, function(error, data, code, headers) {
+		next();
+	});	
+}
+
 setTimeout(function() {
 	test_controller_functions(function() {
 		test_view_functions(function() {
-			end();
+			test_view_error(function() {
+				end();
+			});
 		});
 	});
 }, 500);
