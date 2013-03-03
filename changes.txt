@@ -16,6 +16,7 @@ IN DEVELOPMENT ======= 1.2.0-8
 - fixed: problem with insert, update in SQLite ORM (fix without properties)
 - fixed: framework.clear()
 - fixed: problem with upload and readSync & read (framework waits until the stream is closed)
+- fixed: install controller & module - framework load only *.js files
 
 ======= 1.2.0-7
 
