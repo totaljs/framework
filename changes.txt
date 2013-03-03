@@ -7,6 +7,7 @@ IN DEVELOPMENT ======= 1.2.0-8
 - updated: rename returnFile, returnContent, returnStatic, return404, return500: responseFile, responseContent, etc..
 - updated: auto added first property name as primary key in builders schema (note: if not defined primary key)
 - updated: clean code
+- updated: SQLite ORM: delete callback return params: @err {Error} and @isDeleted {Boolean}
 
 - fixed: error message / view not found, content not found, template not found
 - fixed: error message in SQLite ORM
