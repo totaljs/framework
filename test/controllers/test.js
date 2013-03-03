@@ -93,10 +93,10 @@ function viewViews() {
 	assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');
 	assert.ok(output.contains('#helper-property-OK#'), name + 'helper property');
 	assert.ok(output.contains('#helper-fn-A#'), name + 'helper function');
-	assert.ok(output.contains('#readonly readonly="readonly"#'), name + 'isReadonly()');
-	assert.ok(output.contains('#checked checked="checked"#'), name + 'isChecked()');
-	assert.ok(output.contains('#selected selected="selected"#'), name + 'isSelected()');
-	assert.ok(output.contains('#disabled disabled="disabled"#'), name + 'isDisabled()');
+	assert.ok(output.contains('#readonly readonly="readonly"#'), name + 'readonly()');
+	assert.ok(output.contains('#checked checked="checked"#'), name + 'checked()');
+	assert.ok(output.contains('#selected selected="selected"#'), name + 'selected()');
+	assert.ok(output.contains('#disabled disabled="disabled"#'), name + 'disabled()');
 	assert.ok(output.contains('#resourcedefault#'), name + 'resource()');
 	assert.ok(output.contains('#options-empty<option value="A">A</option><option value="B" selected="selected">B</option>#'), name + 'options() - without property name and value');
 	assert.ok(output.contains('#options<option value="C" selected="selected">C</option><option value="D">D</option>#'), name + 'options() - with property name and value');

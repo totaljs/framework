@@ -1,14 +1,14 @@
 <div><strong>Registration</strong></div>
 <br />
 
-@{contentVisible(this.repository.isSuccess, 'success')}
+@{contentVisible(repository.isSuccess, 'success')}
 
 <form action="/" method="POST">
 
 	<div>Registration type:</div>
 	<div>
 		<select name="type">
-			@{options(this.repository.type, model.type, 'name', 'id')}
+			@{options(repository.type, model.type, 'name', 'id')}
 		</select>
 	</div>
 	<br />
@@ -27,12 +27,12 @@
 	<div>Country:</div>
 	<div>
 		<select name="country">
-			@{options(this.repository.country, model.country)}
+			@{options(repository.country, model.country)}
 		</select>
 	</div>
 	<br />
 	<div>
-		<label><input type="checkbox" name="terms"@{isChecked(model.terms)} /> I agree</label>
+		<label><input type="checkbox" name="terms"@{checked(model.terms)} /> I agree</label>
 	</div>
 	<br />
 	<hr />
