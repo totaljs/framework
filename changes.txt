@@ -10,6 +10,7 @@ IN DEVELOPMENT ======= 1.2.0-8
 - updated: SQLite ORM: delete callback return params: @err {Error} and @isDeleted {Boolean}
 - updated: Markdown link parser
 - updated: rename view helpers (isReadonly, isDisabled, isChecked, isSelected for readonly, disabled, checked, selected)
+- updated: improvement Markdown parser
 
 - fixed: error message / view not found, content not found, template not found
 - fixed: error message in SQLite ORM
