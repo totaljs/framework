@@ -73,7 +73,7 @@ function test_execute(next) {
 
 			db.scalar('SELECT COUNT(*) AS Count FROM user', function(err, data) {
 				assert.ok(data.Count, 'scalar');
-				db.schemaDrop('user', function(isDeleted) {
+				db.deleteSchema('user', function(isDeleted) {
 					assert.ok(isDeleted, 'schemaDrop');
 					next && next();
 				});
@@ -89,7 +89,7 @@ function end() {
 	console.log('');
 }
 
-db.schemaCreate('user', function(err, data) {
+db.createSchema('user', function(err, data) {
 	test_orm(function() {
 		test_orm_find(function() {
 			test_execute(function() {
