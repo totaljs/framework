@@ -5,6 +5,7 @@ IN DEVELOPMENT ======= 1.2.0-9
 
 - fixed: utils.extend()
 - fixed: install module
+- fixed: req.hostname(), problem with uri.port
 
 ======= 1.2.0-8
 
