@@ -2,6 +2,8 @@ IN DEVELOPMENT ======= 1.2.0-9
 
 - updated: SQLite schemaCreate, schemaDrop, renamed to: createSchema, deleteSchema
 
+- fixed: install module
+
 ======= 1.2.0-8
 
 - added: sqlite ORM supports blob type
