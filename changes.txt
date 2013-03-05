@@ -1,7 +1,7 @@
 IN DEVELOPMENT ======= 1.2.0-9
 
 - updated: SQLite schemaCreate, schemaDrop, renamed to: createSchema, deleteSchema
-- updated: markdown delegates
+- updated: markdown delegates + added new function markdown.parse() (it is same as markdown.load())
 
 - fixed: utils.extend()
 - fixed: install module
