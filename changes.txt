@@ -3,6 +3,7 @@ IN DEVELOPMENT ======= 1.2.0-9
 - updated: SQLite schemaCreate, schemaDrop, renamed to: createSchema, deleteSchema
 - updated: markdown delegates
 
+- fixed: utils.extend()
 - fixed: install module
 
 ======= 1.2.0-8
