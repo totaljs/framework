@@ -1,5 +1,6 @@
 IN DEVELOPMENT ======= 1.2.0-9
 
+- updated: framework.cache, added cache.removeAll(search)
 - updated: SQLite schemaCreate, schemaDrop, renamed to: createSchema, deleteSchema
 - updated: markdown delegates + added new function markdown.parse() (it is same as markdown.load())
 
