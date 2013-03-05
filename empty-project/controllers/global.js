@@ -1,4 +1,4 @@
-exports.init = function() {
+exports.install = function() {
 	var self = this;
 	self.route('/', viewHomepage);
 	self.route('#403', error403);

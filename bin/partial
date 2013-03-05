@@ -215,13 +215,12 @@ function createFileController(directory) {
 	var dir = path.join(directory, 'controllers');
 	var buffer = [];
 
-	buffer.push('exports.init = function() {');
-	buffer.push('    var self = this;');
-	buffer.push('    self.route(\'/\', viewHomepage);');
-	buffer.push('    self.route(\'#403\', error403);');
-	buffer.push('    self.route(\'#404\', error404);');
-	buffer.push('    self.route(\'#431\', error431);');
-	buffer.push('    self.route(\'#500\', error500);');
+	buffer.push('exports.install = function(framework) {');
+	buffer.push('    framework.route(\'/\', viewHomepage);');
+	buffer.push('    framework.route(\'#403\', error403);');
+	buffer.push('    framework.route(\'#404\', error404);');
+	buffer.push('    framework.route(\'#431\', error431);');
+	buffer.push('    framework.route(\'#500\', error500);');
 	buffer.push('};');
 	buffer.push('');
 	buffer.push('/*');
