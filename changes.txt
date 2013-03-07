@@ -1,4 +1,8 @@
-IN DEVELOPMENT ======= 1.2.0-9
+IN DEVELOPMENT ======= 1.2.1-0
+
+- fixed: markdown parse link and image
+
+======= 1.2.0-9
 
 - updated: framework.cache, added cache.removeAll(search)
 - updated: SQLite schemaCreate, schemaDrop, renamed to: createSchema, deleteSchema
