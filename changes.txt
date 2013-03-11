@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.2.1-0
 
 - fixed: markdown parse link and image
+- fixed: template repository
 
 ======= 1.2.0-9
 
