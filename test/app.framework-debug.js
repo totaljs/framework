@@ -3,12 +3,13 @@ var assert = require('assert');
 var framework = require('../lib/index');
 var http = require('http');
 
-var url = 'http://127.0.0.1:8000/';
+var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 
-framework.init(http, true, 8000);
+framework.init(http, true, 8001);
 
 framework.onError = function(error, name, uri) {
+
 	if (errorStatus === 0) {
 		console.log(error, name, uri);
 		framework.stop();
@@ -45,7 +46,7 @@ function end() {
 
 function test_controller_functions(next) {
 	utils.request(url, 'GET', null, function(error, data, code, headers) {
-		
+		console.log(error);
 		if (error)
 			assert.ok(false, 'test_controller_functions: ' + error.toString());
 

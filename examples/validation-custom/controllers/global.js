@@ -2,7 +2,7 @@ var utils = require('partial.js/utils');
 var builders = require('partial.js/builders');
 
 exports.install = function(framework) {
-framework	framework.route('/', viewHomepage);
+	framework.route('/', viewHomepage);
 	framework.route('/', viewHomepage, ['xhr', 'post']);
 };
 

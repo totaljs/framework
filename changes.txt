@@ -1,5 +1,9 @@
 IN DEVELOPMENT ======= 1.2.1-0
 
+note: in node v0.10.0 problem with framework testing and SQLite3
+
+- added: node v0.10.0
+
 - fixed: markdown parse link and image
 - fixed: template repository
 
