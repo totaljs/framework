@@ -46,7 +46,7 @@ function end() {
 
 function test_controller_functions(next) {
 	utils.request(url, 'GET', null, function(error, data, code, headers) {
-		console.log(error);
+
 		if (error)
 			assert.ok(false, 'test_controller_functions: ' + error.toString());
 
