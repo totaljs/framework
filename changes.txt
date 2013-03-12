@@ -1,8 +1,6 @@
-IN DEVELOPMENT ======= 1.2.1-0
+======= 1.2.1-0
 
-note: in node v0.10.0 problem SQLite3
-
-- added: node v0.10.0
+- added: node v0.10.0 compatibility
 - added: framework - process SIGINT event
 
 - fixed: markdown parse link and image
