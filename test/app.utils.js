@@ -235,8 +235,10 @@ function others() {
 	});
 
 	async.wait(function() {
-		value.push(2);
-		async.skip();
+		setTimeout(function() {
+			value.push(2);
+			async.skip();
+		}, 2000);
 	});
 
 	async.wait(function() {
