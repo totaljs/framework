@@ -277,11 +277,6 @@ function others() {
 		assert.ok(code === 200, 'utils.request (success)');
 	});
 
-	utils.request('http://127.0.0.1:8002/', 'GET', null, function(err, data, code) {
-		console.log(err);
-		assert.ok(code === 200, 'utils.request (success)');
-	});
-
 	utils.request('http://xxxxxxx.yyy', 'GET', null, function(err, data, code) {
 		assert.ok(err !== null, 'utils.requiest (error)');
 	});
