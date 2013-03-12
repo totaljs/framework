@@ -75,7 +75,6 @@ function viewIndex() {
 }
 
 function viewViews() {
-
 	var name = 'views: ';
 	var self = this;
 
