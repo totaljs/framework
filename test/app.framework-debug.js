@@ -5,6 +5,7 @@ var http = require('http');
 
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
+var max = 1000;
 
 framework.init(http, true, 8001);
 
@@ -80,12 +81,23 @@ function test_view_error(next) {
 	});	
 }
 
-setTimeout(function() {
+function run() {
+
+	if (max <= 0) {
+		end();
+		return;
+	}
+
+	max--;
 	test_controller_functions(function() {
 		test_view_functions(function() {
 			test_view_error(function() {
-				end();
+				run();
 			});
 		});
-	});
+	});	
+}
+
+setTimeout(function() {
+	run();
 }, 500);

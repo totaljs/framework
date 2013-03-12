@@ -3,12 +3,14 @@ var assert = require('assert');
 var framework = require('../lib/index');
 var http = require('http');
 
-var url = 'http://127.0.0.1:8000/';
+var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
+var max = 1000;
 
-framework.init(http, false, 8000);
+framework.init(http, false, 8001);
 
 framework.onError = function(error, name, uri) {
+
 	if (errorStatus === 0) {
 		console.log(error, name, uri);
 		framework.stop();
@@ -79,12 +81,23 @@ function test_view_error(next) {
 	});	
 }
 
-setTimeout(function() {
+function run() {
+
+	if (max <= 0) {
+		end();
+		return;
+	}
+
+	max--;
 	test_controller_functions(function() {
 		test_view_functions(function() {
 			test_view_error(function() {
-				end();
+				run();
 			});
 		});
-	});
+	});	
+}
+
+setTimeout(function() {
+	run();
 }, 500);
