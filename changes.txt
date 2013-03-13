@@ -1,3 +1,7 @@
+======= 1.2.1-2
+
+- fixed: file upload
+
 ======= 1.2.1-1
 
 - added: condition to view engine @{if model.a === model.b} TRUE @{else} FALSE @{endif} (doesnt support nested condition)
