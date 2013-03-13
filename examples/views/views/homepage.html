@@ -2,3 +2,14 @@
 <div>partial.html in view &rarr; @{view('partial')}</div>
 
 @{viewVisible(new Date().getSeconds() % 2 == 0, 'dynamic')}
+
+@{if (1 === 1)}
+
+	VIEW ENGINE
+	<div>Title: @{repository.title}</div>
+
+@{else}
+
+	HA HA HA
+
+@{endif}

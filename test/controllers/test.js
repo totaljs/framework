@@ -6,6 +6,7 @@ exports.init = function() {
 	self.route('/', viewIndex);
 	self.route('/views/', viewViews);
 	self.route('/view-notfound/', viewError);
+	self.route('/views-if/', viewViewsIf);
 };
 
 function viewIndex() {
@@ -113,8 +114,18 @@ function viewViews() {
 	assert.ok(!output.contains('<!--'), name + 'minify html');
 	assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
 
+	self.repository.A = 'A';
+	output = self.view('c', { a: 'A', b: 'B' }, true);
+	assert.ok(output.contains('#ACAXXX#'), name + 'if');
 	self.json({ r: true });
 }
+
+function viewViewsIf() {
+	var self = this;
+	self.layout('');
+	self.repository.A = 'A';
+	self.view('c', { a: 'A', b: 'B' });
+};
 
 function viewError() {
 	var self = this;
