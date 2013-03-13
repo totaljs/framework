@@ -1,6 +1,6 @@
-IN DEVELOPMENT ======= 1.2.1-1
+======= 1.2.1-1
 
-- added: condition to view engine @{if model.a === model.b} TRUE @{else} FALSE @{endif} (nested condition doesnt support)
+- added: condition to view engine @{if model.a === model.b} TRUE @{else} FALSE @{endif} (doesnt support nested condition)
 
 ======= 1.2.1-0
 
