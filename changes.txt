@@ -1,6 +1,7 @@
 ======= 1.2.1-3
 
 - added: builders.default(schemaName)
+- added: utils.noop()
 
 - updated: clean code
 
