@@ -154,6 +154,7 @@ function test_Schema() {
 	builders.schema('tbl_user', { Id: Number, Name: String }, 'Id', false);
 	assert.ok(builders.schema('tbl_user').Id instanceof Function, name + 'schema write & read');
 	assert.ok(builders.primaryKey('tbl_user').name === 'Id', name + 'schema primary key');
+	assert.ok(JSON.stringify(builders.defaults('tbl_user')) === '{"Name":null,"Id":0}', name + 'schema defaults');
 };
 
 function test_ErrorBuilder() {
