@@ -2,6 +2,7 @@
 
 - added: builders.default(schemaName)
 - added: utils.noop()
+- added: string.count('search text')
 
 - updated: clean code
 
