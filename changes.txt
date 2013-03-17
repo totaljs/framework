@@ -4,8 +4,11 @@
 - added: utils.noop()
 - added: string.count('search text')
 - added: string.parseDate()
+- added: string.urlEncode()
+- added: string.urlDecode()
 
 - updated: clean code
+- updated: decrease time expiration in views and templates
 
 - fixed: string.htmlEncode(), utils.htmlEncode()
 
