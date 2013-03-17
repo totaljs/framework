@@ -32,7 +32,7 @@ function prototypeString() {
 	assert.ok(str.contains(['p', 'X']), 'string.contains(all=false)');
 	assert.ok(str.contains(['p', 'X'], true) === false, 'string.contains(all=true)');
 	assert.ok('{0}={1}'.format('name', 'value') === 'name=value', 'string.format()');
-	assert.ok('<b>partial.js</b>'.htmlEncode() === '&lt;b&gt;partial.js&lt;/b&gt;', 'string.htmlEncode()');
+	assert.ok('<b>partial.js</b>"'.htmlEncode() === '&lt;b&gt;partial.js&lt;/b&gt;&quot;', 'string.htmlEncode()');
 	assert.ok('&lt;b&gt;partial.js&lt;/b&gt;'.htmlDecode() === '<b>partial.js</b>', 'string.htmlDecode()');
 
 	str = 'abcdefgh ijklmnop';
