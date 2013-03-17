@@ -6,6 +6,8 @@
 
 - updated: clean code
 
+- fixed: string.htmlEncode(), utils.htmlEncode()
+
 ======= 1.2.1-2
 
 - fixed: file upload
