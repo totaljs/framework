@@ -3,6 +3,7 @@
 - added: builders.default(schemaName)
 - added: utils.noop()
 - added: string.count('search text')
+- added: string.parseDate()
 
 - updated: clean code
 
