@@ -10,6 +10,7 @@ IN DEVELOPMENT ======= 1.2.1-3
 - updated: clean code
 - updated: decrease time expiration in views and templates
 
+- fixed: LESS @import
 - fixed: string.htmlEncode(), utils.htmlEncode()
 
 ======= 1.2.1-2
