@@ -97,7 +97,11 @@ function run() {
 		});
 	});	
 }
-
+/*
 setTimeout(function() {
 	run();
 }, 500);
+*/
+test_view_functions(function() {
+	framework.stop();
+});
