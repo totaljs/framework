@@ -1,4 +1,16 @@
-======= 1.2.1-4
+IN DEVELOPMENT ======= 1.2.1-4
+
+- added: @routeFav
+
+- added: @style('style.css')
+- added: @script('script.js')
+- added: @image('image.jpg', @width {Number}, @height {Number}, @alt {String}, className {String})
+- added: @favicon('favicon.png')
+- added: @json(@obj {Object}, @name {String | Optional})
+
+- updated: @routeJS
+- updated: @routeCSS
+- updated: @routeImage
 
 - fixed: @if
 
