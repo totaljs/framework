@@ -11,6 +11,7 @@ IN DEVELOPMENT ======= 1.2.1-4
 - updated: @routeJS
 - updated: @routeCSS
 - updated: @routeImage
+- updated: partial.js binary
 
 - fixed: @if
 

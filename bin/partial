@@ -111,14 +111,14 @@ function createFileViews(directory) {
 	buffer.push('<head>');
 	buffer.push('    @{meta}');
 	buffer.push('    <meta charset="utf-8" />');
-	buffer.push('    <meta http-equiv="content-language" content="sk" />');
 	buffer.push('    <meta http-equiv="X-UA-Compatible" content="IE=10" />');
 	buffer.push('    <meta name="format-detection" content="telephone=no" />');
 	buffer.push('    <meta name="viewport" content="width=1024, user-scalable=yes" />');
 	buffer.push('    <meta name="robots" content="all,follow" />');
-	buffer.push('    <link rel="stylesheet" href="@{routeCSS(\'p.css\')}" />');
+	buffer.push('    @{css(\'default.css\')}');
 	buffer.push('    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>');
-	buffer.push('    <script type="text/javascript" src="@{routeJS(\'p.js\')}" ></script>');
+	buffer.push('    @{script(\'default.js\')}');
+	buffer.push('    @{favicon(\'favicon.png\')}');
 	buffer.push('<head>');
 	buffer.push('<body>');
 	buffer.push('');
@@ -170,14 +170,14 @@ function createFilePublic(directory) {
 	buffer.push('');
 	buffer.push('body { padding:20px; margin:0; font:normal 12px Arial; color:#505050; }');
 
-	fs.writeFileSync(path.join(css, 'p.css'), buffer.join(EOF));
+	fs.writeFileSync(path.join(css, 'default.css'), buffer.join(EOF));
 
 	buffer = [];
 	buffer.push('$(document).ready(function() {');
     buffer.push('');
     buffer.push('});');
 
-	fs.writeFileSync(path.join(js, 'p.js'), buffer.join(EOF));
+	fs.writeFileSync(path.join(js, 'default.js'), buffer.join(EOF));
 }
 
 function createFileModules(directory) {
