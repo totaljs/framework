@@ -1,6 +1,6 @@
 IN DEVELOPMENT ======= 1.2.1-4
 
-- added: @style('style.css')
+- added: @css('style.css')
 - added: @script('script.js')
 - added: @image('image.jpg', @width {Number}, @height {Number}, @alt {String}, className {String})
 - added: @favicon('favicon.png')
