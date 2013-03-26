@@ -1,7 +1,5 @@
 IN DEVELOPMENT ======= 1.2.1-4
 
-- added: @routeFav
-
 - added: @style('style.css')
 - added: @script('script.js')
 - added: @image('image.jpg', @width {Number}, @height {Number}, @alt {String}, className {String})
