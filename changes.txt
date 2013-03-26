@@ -1,15 +1,19 @@
 IN DEVELOPMENT ======= 1.2.1-4
 
+- IMPORTANT: partial.js/picture renamed to partial.js/image
+
 - added: @css('style.css')
 - added: @script('script.js')
 - added: @image('image.jpg', @width {Number}, @height {Number}, @alt {String}, className {String})
 - added: @favicon('favicon.png')
 - added: @json(@obj {Object}, @name {String | Optional})
+- added: Number.padLeft(), Number.padRight()
 
 - updated: @routeJS
 - updated: @routeCSS
 - updated: @routeImage
 - updated: partial.js binary
+- updated: String.padLeft(), String.padRight() - default char is ' '
 
 - fixed: minify HTML
 - fixed: @if
