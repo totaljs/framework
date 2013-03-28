@@ -18,6 +18,7 @@ IN DEVELOPMENT ======= 1.2.1-4
 - fixed: minify HTML
 - fixed: @if
 - fixed: problem with empty view
+- fixed: ETagVersion
 
 ======= 1.2.1-3
 
