@@ -159,16 +159,16 @@ function test_Schema() {
 	builders.schema('test', { Id: Number, Name: String, Male: Boolean, Dt: Date, Price: 'decimal' });
 	
 	var model = { Name: 23, Male: '1', Dt: 'ADASD', Price: 1.13 };
-	var output = builders.pair('test', model);
+	var output = builders.prepare('test', model);
 
-	name = 'Schema.pair: ';
+	name = 'Schema.prepare: ';
 	assert.ok(output.Price === 1.13, name + 'decimal');
 	assert.ok(output.Name === '23', name + 'string');
 	assert.ok(output.Male, name + 'boolean = true');
 	assert.ok(output.Dt === null, name + 'date (invalid)');
 
 	model = { Dt: '2012-12-12', Male: false };
-	output = builders.pair('test', model);
+	output = builders.prepare('test', model);
 	
 	assert.ok(output.Dt.getDate() === 12 && output.Dt.getMonth() === 11 && output.Dt.getFullYear() === 2012, name + 'date');
 	assert.ok(!output.Male, name + 'boolean = false');
