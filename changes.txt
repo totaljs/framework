@@ -22,10 +22,12 @@ IN DEVELOPMENT ======= 1.2.1-4
 
 - renamed: utils.Etag and ETagVersion to: utils.etag() and config.etagVersion
 
+- fixed: static files
 - fixed: minify HTML
-- fixed: @if
+- fixed: @{if condition} @{endif}
 - fixed: problem with empty view
-- fixed: ETagVersion
+- fixed: etagversion
+- fixed: template engine parser (problem with date format)
 
 ======= 1.2.1-3
 
