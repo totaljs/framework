@@ -38,6 +38,8 @@ function viewMarkdown() {
 				return '<pre>{0}</pre>'.format(value.join('\n').htmlEncode());
 			case '>':
 			case '|':
+			case '//':
+			case '\\\\':
 				return '<p>{0}</p>'.format(value.join('<br />'));
 		}		
 		return '';
@@ -83,7 +85,7 @@ function viewMarkdown() {
 
 	markdown.onKeyword = function(type, name, value) {
 
-		switch (name) {
+		switch (type) {
 			case '[]':
 			case '{}':
 				return '<span>{0}</span>'.format(name);
