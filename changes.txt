@@ -7,7 +7,7 @@ IN DEVELOPMENT ======= 1.2.1-4
 - added: @{image('image.jpg', @width {Number}, @height {Number}, @alt {String}, className {String})}
 - added: @{favicon('favicon.png')}
 - added: @{json(@obj {Object}, @name {String | Optional})}
-- added: Number.padLeft(), Number.padRight()
+- added: Number.padLeft(), Number.padRight()  - default char is '0'
 - added: @{text()}, @{hidden()}, @{checkbox()}, @{radio()}, @{textarea()}, @{password()}
 - added: builders.prepare('schemaName', model); return new object by the schema
 
