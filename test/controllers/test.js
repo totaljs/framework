@@ -40,10 +40,7 @@ function viewIndex() {
 
 	assert.ok(self.resource('name') === 'default' && self.resource('default', 'name') === 'default', name + 'resource(default)');
 	assert.ok(self.resource('test', 'name') === 'test', name + 'resource(test.resource)');
-
-	var picture = self.picture(1, 'small', 'photo');
-	assert.ok(picture.id === 1 && picture.url === 'small-1.jpg' && picture.width === 128 && picture.height === 96, name + 'picture()');
-
+	
 	self.log('test');
 
 	self.setModified('123456');
@@ -105,7 +102,6 @@ function viewViews() {
 	assert.ok(output.contains('#contentEMPTY#'), name + 'content');
 	assert.ok(output.contains('#content-ifBBB#'), name + 'contentIf');
 	assert.ok(output.contains('#content-visible#'), name + 'contentVisible');
-	assert.ok(output.contains('#picture<img src="small-1.jpg" width="128" height="96" alt="" border="0" />#'), name + 'picture');
 	assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>10.50</div><div>10.5</div>#'), name + 'template() - one');
 	assert.ok(output.contains('#template-more<ul><li>A</li><li>B</li></ul>#'), name + 'template() - more');
 	assert.ok(output.contains('#template-emptyEMPTY#'), name + 'template() - empty');
