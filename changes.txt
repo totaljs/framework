@@ -9,6 +9,7 @@ IN DEVELOPMENT ======= 1.2.1-4
 - added: @{json(@obj {Object}, @name {String | Optional})}
 - added: Number.padLeft(), Number.padRight()
 - added: @{text()}, @{hidden()}, @{checkbox()}, @{radio()}, @{textarea()}, @{password()}
+- added: builders.prepare('schemaName', model); return new object by the schema
 
 - updated: htmlEncode, htmlDecode (& = &amp;)
 - updated: improvement View engine parser
