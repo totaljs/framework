@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.1-4
+======= 1.2.1-4
 
 - IMPORTANT: this is stable version
 - IMPORTANT: partial.js/picture renamed to partial.js/image
