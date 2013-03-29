@@ -20,6 +20,7 @@ IN DEVELOPMENT ======= 1.2.1-4
 - updated: @routeImage
 - updated: partial.js binary
 - updated: String.padLeft(), String.padRight() - default char is ' '
+- updated: utils.etag(filename, version)
 
 - renamed: utils.Etag and ETagVersion to: utils.etag() and config.etagVersion
 
