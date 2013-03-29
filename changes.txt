@@ -10,6 +10,7 @@ IN DEVELOPMENT ======= 1.2.1-4
 - added: Number.padLeft(), Number.padRight()  - default char is '0'
 - added: @{text()}, @{hidden()}, @{checkbox()}, @{radio()}, @{textarea()}, @{password()}
 - added: builders.prepare('schemaName', model); return new object by the schema
+- added: markdown - new paragraph // and \\
 
 - updated: htmlEncode, htmlDecode (& = &amp;)
 - updated: improvement View engine parser

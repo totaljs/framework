@@ -45,6 +45,8 @@ markdown.onImage = function(alt, url, width, height) {
 
 assert.ok(markdown.load('> 1\n> 2') === '<p>12</p>', 'paragraph > parser error');
 assert.ok(markdown.load('| 1\n| 2') === '<p>12</p>', 'paragraph | parser error');
+assert.ok(markdown.load('// 1\n// 2') === '<p>12</p>', 'paragraph // parser error');
+assert.ok(markdown.load('\\\\ 1\n\\\\ 2') === '<p>12</p>', 'paragraph \\\\ parser error');
 assert.ok(markdown.load('- 1\n- 2') === '<ul><li>1</li><li>2</li></ul>', 'ul parser error');
 assert.ok(markdown.load('kontrola obrazka ![Test](http://google.sk/logo.png#300x200) a neviem ...') === 'kontrola obrazka <img src="http://google.sk/logo.png" alt="Test" width="300" height="200" /> a neviem ...', 'img parser error');
 assert.ok(markdown.load('<www.google.sk> a [Google.sk]: http://google.sk. [partial.js](www.partialjs.com)') === '<a href="www.google.sk">www.google.sk</a> a <a href="http://google.sk">Google.sk</a>. <a href="www.partialjs.com">partial.js</a>', 'link parser');
