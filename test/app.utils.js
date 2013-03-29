@@ -32,8 +32,8 @@ function prototypeString() {
 	assert.ok(str.contains(['p', 'X']), 'string.contains(all=false)');
 	assert.ok(str.contains(['p', 'X'], true) === false, 'string.contains(all=true)');
 	assert.ok('{0}={1}'.format('name', 'value') === 'name=value', 'string.format()');
-	assert.ok('<b>partial.js</b>"'.htmlEncode() === '&lt;b&gt;partial.js&lt;/b&gt;&quot;', 'string.htmlEncode()');
-	assert.ok('&lt;b&gt;partial.js&lt;/b&gt;'.htmlDecode() === '<b>partial.js</b>', 'string.htmlDecode()');
+	assert.ok('<b>partial.js</b>"&nbsp;'.htmlEncode() === '&lt;b&gt;partial.js&lt;/b&gt;&quot;&amp;nbsp;', 'string.htmlEncode()');
+	assert.ok('&lt;b&gt;partial.js&lt;/b&gt;&amp;nbsp;'.htmlDecode() === '<b>partial.js</b>&nbsp;', 'string.htmlDecode()');
 
 	str = 'abcdefgh ijklmnop';
 	assert.ok(str.maxLength(5, '---') === 'ab---', 'string.maxLength(5, "---")');
@@ -134,12 +134,16 @@ function prototypeString() {
 	assert.ok(str.isNumber(true) === true, 'string.isNumber(true): ' + str);
 
 	str = '12345';
-	assert.ok(str.padLeft(10) === '0000012345', 'string.padLeft(10): ' + str);
+	assert.ok(str.padLeft(10) === '     12345', 'string.padLeft(10): ' + str);
 	assert.ok(str.padLeft(5) === '12345', 'string.padLeft(10): ' + str);
 	assert.ok(str.padLeft(10, '-') === '-----12345', 'string.padLeft(10, "-"): ' + str);
-	assert.ok(str.padRight(10) === '1234500000', 'string.padRight(10): ' + str);
+	assert.ok(str.padRight(10) === '12345     ', 'string.padRight(10): ' + str);
 	assert.ok(str.padRight(5) === '12345', 'string.padRight(10): ' + str);
 	assert.ok(str.padRight(10, '-') === '12345-----', 'string.padRight(10, "-"): ' + str);
+
+	var num = 12345;
+	assert.ok(num.padLeft(10) === '0000012345', 'number.padLeft(10): ' + num);
+	assert.ok(num.padRight(10) === '1234500000', 'number.padRight(10): ' + num);
 
 	str = 'Date: {now | dd.MM.yyyy HH:mm:ss}. Currency: {number | ###,###,###.##} and encoded: {name} and raw: {!name}';	
 	assert.ok(str.params({now: new Date(), number: 23034.34, name: '<b>Peter</b>'}).length === 106, 'string.params(): ' + str);
@@ -209,13 +213,13 @@ function others() {
 	assert.ok(utils.getContentType(str) === 'application/octet-stream', 'utils.getContentType(): ' + str);
 
 	str = 'logo.jpg';
-	assert.ok(utils.Etag(str) === '800', 'utils.Etag(): ' + str);
+	assert.ok(utils.etag(str) === '800', 'utils.etag(): ' + str);
 
 	str = 'logo.jpg?=1';
-	assert.ok(utils.Etag(str) === '973', 'utils.Etag(): ' + str);
+	assert.ok(utils.etag(str) === '973', 'utils.etag(): ' + str);
 
 	str = 'logo.jpg?=2';
-	assert.ok(utils.Etag(str) === '974', 'utils.Etag(): ' + str);
+	assert.ok(utils.etag(str) === '974', 'utils.etag(): ' + str);
 
 	str = '/logo';
 	assert.ok(utils.path(str) === '/logo/', 'utils.path(): ' + str);

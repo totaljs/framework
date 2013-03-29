@@ -2,13 +2,16 @@ IN DEVELOPMENT ======= 1.2.1-4
 
 - IMPORTANT: partial.js/picture renamed to partial.js/image
 
-- added: @css('style.css')
-- added: @script('script.js')
-- added: @image('image.jpg', @width {Number}, @height {Number}, @alt {String}, className {String})
-- added: @favicon('favicon.png')
-- added: @json(@obj {Object}, @name {String | Optional})
+- added: @{css('default.css')}
+- added: @{script('default.js')}
+- added: @{image('image.jpg', @width {Number}, @height {Number}, @alt {String}, className {String})}
+- added: @{favicon('favicon.png')}
+- added: @{json(@obj {Object}, @name {String | Optional})}
 - added: Number.padLeft(), Number.padRight()
+- added: @{text()}, @{hidden()}, @{checkbox()}, @{radio()}, @{textarea()}, @{password()}
 
+- updated: htmlEncode, htmlDecode (& = &amp;)
+- updated: improvement View engine parser
 - updated: @routeJS
 - updated: @routeCSS
 - updated: @routeImage

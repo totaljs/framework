@@ -13,16 +13,17 @@
 	</div>
 	<br />
 	<div>Name:</div>
-	<div><input type="text" name="name" value="@{model.name}" /></div>
+	<div>@{text('name')}</div>
 	<br />
 	<div>E-mail:</div>
-	<div><input type="text" name="email" value="@{model.email}" /></div>
+	<div>@{text('email')}</div>
 	<br />
+	<!-- OR your custom definition -->
 	<div>Phone:</div>
 	<div><input type="text" name="phone" value="@{model.phone}" /></div>
 	<br />
 	<div>Password:</div>
-	<div><input type="password" name="password" value="@{model.password}" /></div>
+	<div>@{password('password')}</div>
 	<br />
 	<div>Country:</div>
 	<div>
@@ -32,7 +33,7 @@
 	</div>
 	<br />
 	<div>
-		<label><input type="checkbox" name="terms"@{checked(model.terms)} /> I agree</label>
+		@{checkbox('terms', 'I agree')}
 	</div>
 	<br />
 	<hr />
