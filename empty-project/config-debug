@@ -1,25 +1,2 @@
 name							: partial.js
 secret							: secret-key-for-web
-ETagVersion						:
-directoryContents				: /contents/
-directoryControllers			: /controllers/
-directoryViews					: /views/
-directoryTemp					: /tmp/
-directoryTemplates				: /templates/
-directoryResources				: /resources/
-directoryPublic					: /public/
-directoryModules				: /modules/
-directoryLogs					: /logs/
-directoryTests					: /tests/
-staticUrl						:
-staticUrlJS						: /js/
-staticUrlCSS					: /css/
-staticUrlImage					: /img/
-staticUrlVideo					: /video/
-staticUrlFont					: /font/
-staticUrlDocument				: /upload/
-staticAccepts					: .jpg,.png,.gif,.ico,.js,.css,.txt,.xml,.woff,.ttf,.eot,.svg,.zip,.rar,.pdf,.docx,.xlsx,.doc,.xls,.html,.htm
-defaultLayout					: _layout
-httpCompress					: false
-httpCache						: false
-defaultMaxRequestLength			: 6000

@@ -51,6 +51,5 @@ function error500() {
 
 function viewHomepage() {
 	var self = this;
-	self.meta('Welcome');
 	self.view('homepage');
 }
