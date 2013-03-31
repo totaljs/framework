@@ -1,10 +1,9 @@
-exports.install = function() {
-	var self = this;
-	self.route('/', viewHomepage);
-	self.route('#403', error403);
-	self.route('#404', error404);
-	self.route('#431', error431);
-	self.route('#500', error500);
+exports.install = function(framework) {
+	framework.route('/', viewHomepage);
+	framework.route('#403', error403);
+	framework.route('#404', error404);
+	framework.route('#431', error431);
+	framework.route('#500', error500);
 };
 
 /*
