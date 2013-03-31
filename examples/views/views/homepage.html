@@ -1,7 +1,7 @@
 <div><strong>Welcome!</strong></div>
 <div>partial.html in view &rarr; @{view('partial')}</div>
 
-@{viewVisible(new Date().getSeconds() % 2 == 0, 'dynamic')}
+@{viewToggle(new Date().getSeconds() % 2 == 0, 'dynamic')}
 
 @{if (1 === 1)}
 

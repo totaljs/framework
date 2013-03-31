@@ -1,3 +1,8 @@
+IN DEVELOPMENT ======= 1.2.1-5
+
+- IMPORTANT: removed @{viewIf},  @{templateIf},  @{contentIf}
+- IMPORTANT: renamed @{viewVisible to viewToggle}, @{templateVisible to templateToggle}, @{contentVisible to contentToggle}
+
 ======= 1.2.1-4
 
 - IMPORTANT: partial.js/picture renamed to partial.js/image
