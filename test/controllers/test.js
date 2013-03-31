@@ -97,16 +97,13 @@ function viewViews() {
 	assert.ok(output.contains('#options-empty<option value="A">A</option><option value="B" selected="selected">B</option>#'), name + 'options() - without property name and value');
 	assert.ok(output.contains('#options<option value="C" selected="selected">C</option><option value="D">D</option>#'), name + 'options() - with property name and value');
 	assert.ok(output.contains('#view#bmodel##'), name + 'view() with model');
-	assert.ok(output.contains('#view-if#bmodel-if##'), name + 'viewIf()');
-	assert.ok(output.contains('#view-visible#'), name + 'viewVisible()');
+	assert.ok(output.contains('#view-toggle#'), name + 'viewToggle()');
 	assert.ok(output.contains('#contentEMPTY#'), name + 'content');
-	assert.ok(output.contains('#content-ifBBB#'), name + 'contentIf');
-	assert.ok(output.contains('#content-visible#'), name + 'contentVisible');
+	assert.ok(output.contains('#content-toggle#'), name + 'contentToggle');
 	assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>10.50</div><div>10.5</div>#'), name + 'template() - one');
 	assert.ok(output.contains('#template-more<ul><li>A</li><li>B</li></ul>#'), name + 'template() - more');
 	assert.ok(output.contains('#template-emptyEMPTY#'), name + 'template() - empty');
-	assert.ok(output.contains('#template-visible#'), name + 'templateVisible()');
-	assert.ok(output.contains('#template-if<ul><li>A</li><li>B</li></ul>#'), name + 'templateIf()');
+	assert.ok(output.contains('#template-toggle#'), name + 'templateToggle()');
 	assert.ok(!output.contains('<!--'), name + 'minify html');
 	assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
 

@@ -12,14 +12,11 @@
 #options-empty@{options(repository.optionsEmpty, 'B')}#
 #options@{options(repository.options, 'C', 'k', 'v')}#
 #view@{view('b', 'model')}#
-#view-if@{viewIf(true, 'b', 'c', 'model-if')}#
-#view-visible@{viewVisible(false, 'b')}#
+#view-toggle@{viewToggle(false, 'b')}#
 #content@{content('test')}#
-#content-if@{contentIf(true, 'b', 'test')}#
-#content-visible@{contentVisible(false, 'b')}#
+#content-toggle@{contentToggle(false, 'b')}#
 #template-one@{template('one', repository.template)}#
 #template-more@{template('more', repository.template)}#
 #template-empty@{template('more', [], 'test')}#
-#template-visible@{templateVisible(false, 'more', [])}#
-#template-if@{templateIf(false, 'one', 'more', repository.template)}#
+#template-toggle@{templateToggle(false, 'more', [])}#
 #routejs-@{routeJS('p.js')}#

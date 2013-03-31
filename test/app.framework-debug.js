@@ -34,7 +34,7 @@ framework.onError = function(error, name, uri) {
 		errorStatus = 0;
 		return;
 	}
-
+	
 };
 
 function end() {
