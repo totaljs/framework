@@ -59,11 +59,10 @@ function createFileIndex(directory) {
 function createFileConfig(directory) {
 	var buffer = [];
 
-	buffer.push("name				: partial.js");
+	buffer.push("name				: my web site");
+	buffer.push("version			: 1.01");
 	buffer.push("secret				: your-secret-key");
-	buffer.push("httpCompress		: true");
-	buffer.push("httpCache			: true");
-
+	
 	fs.writeFileSync(path.join(directory, 'config-release'), buffer.join(EOF));
 	fs.writeFileSync(path.join(directory, 'config-debug'), buffer.join(EOF).replace(/true/g, 'false'));
 }
@@ -99,11 +98,10 @@ function createFileViews(directory) {
 	if (!fs.existsSync(dir))
 		fs.mkdirSync(dir);
 
-	fs.writeFileSync(path.join(dir, '401.html'), '401');
-	fs.writeFileSync(path.join(dir, '403.html'), '403');
-	fs.writeFileSync(path.join(dir, '404.html'), '404');
-	fs.writeFileSync(path.join(dir, '431.html'), '431');
-	fs.writeFileSync(path.join(dir, '500.html'), '500');
+	fs.writeFileSync(path.join(dir, '403.html'), '@{meta(\'403 - Forbidden\')}\n\n403');
+	fs.writeFileSync(path.join(dir, '404.html'), '@{meta(\'404 - Page not found\')}\n\n404');
+	fs.writeFileSync(path.join(dir, '431.html'), '@{meta(\'431 - Request header fields too large\')}\n\n431');
+	fs.writeFileSync(path.join(dir, '500.html'), '@{meta(\'500 - Internal server error\')}\n\n500');
 	fs.writeFileSync(path.join(dir, 'homepage.html'), 'Welcome partial.js developer!');
 
 	buffer.push('<!DOCTYPE html>');
@@ -204,8 +202,6 @@ function createFileModules(directory) {
 	buffer.push('// exports.onController = function(name) {};')
 	buffer.push('// exports.onSettings = function() { return \'\'; };');
 	buffer.push('// exports.onMeta = function onMeta() { return \'\'; };');
-	buffer.push('// exports.onPictureDimension = function(dimension) {};');
-	buffer.push('// exports.onPictureUrl = function(dimension, id, width, height, alt) {};');
 	buffer.push('// exports.onValidation = function(name, value) {};');
 	fs.writeFileSync(path.join(dir, '#.js'), buffer.join(EOF));
 }
@@ -238,7 +234,6 @@ function createFileController(directory) {
 	buffer.push('// Forbidden');
 	buffer.push('function error403() {');
 	buffer.push('    var self = this;');
-	buffer.push('    self.meta(\'Forbidden (403)\');');
 	buffer.push('    self.statusCode = 403;');
 	buffer.push('    self.view(\'403\');');
 	buffer.push('}');
@@ -246,7 +241,6 @@ function createFileController(directory) {
 	buffer.push('// Not Found');
 	buffer.push('function error404() {');
 	buffer.push('    var self = this;');
-	buffer.push('    self.meta(\'Not Found (404)\');');
 	buffer.push('    self.statusCode = 404;');
 	buffer.push('    self.view(\'404\');');
 	buffer.push('}');
@@ -254,7 +248,6 @@ function createFileController(directory) {
 	buffer.push('// Request Header Fields Too Large');
 	buffer.push('function error431() {');
 	buffer.push('    var self = this;');
-	buffer.push('    self.meta(\'Request Header Fields Too Large (431)\');');
 	buffer.push('    self.statusCode = 431;');
 	buffer.push('    self.view(\'431\');');
 	buffer.push('}');
@@ -262,14 +255,12 @@ function createFileController(directory) {
 	buffer.push('// Internal Server Error');
 	buffer.push('function error500() {');
 	buffer.push('    var self = this;');
-	buffer.push('    self.meta(\'Internal Server Error (500)\');');
 	buffer.push('    self.statusCode = 500;');
 	buffer.push('    self.view(\'500\');');
 	buffer.push('}');
 	buffer.push('');
 	buffer.push('function viewHomepage() {');
 	buffer.push('    var self = this;');
-	buffer.push('    self.meta(\'Welcome\');');
 	buffer.push('    self.view(\'homepage\');');
 	buffer.push('}');
 

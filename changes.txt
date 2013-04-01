@@ -9,6 +9,7 @@ IN DEVELOPMENT ======= 1.2.1-5
 
 - updated: decrease time expiration for static cache (5 minutes)
 - updated: framework.usage()
+- updated: binary
 
 - removed: config.httpCache
 - removed: config.httpMinify
