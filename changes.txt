@@ -5,12 +5,15 @@ IN DEVELOPMENT ======= 1.2.1-5
 - IMPORTANT: renamed config keys
 
 - added: config.version
+- added: controller.usage function
 
 - updated: decrease time expiration for static cache (5 minutes)
+- updated: framework.usage()
 
 - removed: config.httpCache
 - removed: config.httpMinify
 - removed: config.httpCompress
+- removed: detailed parameter from module.usage() function
 
 ======= 1.2.1-4
 
