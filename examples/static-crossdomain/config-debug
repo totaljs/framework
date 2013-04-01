@@ -1,7 +1,7 @@
-staticUrl						: http://static.yourdomain.com
-staticUrlJS						: http://static.yourdomain.com/js/
-staticUrlCSS					: http://static.yourdomain.com/css/
-staticUrlImage					: http://static.yourdomain.com/img/
-staticUrlVideo					: http://static.yourdomain.com/video/
-staticUrlFont					: http://static.yourdomain.com/font/
-staticUrlDocument				: http://static.yourdomain.com/upload/
+static-url						: http://static.yourdomain.com
+static-url-js					: http://static.yourdomain.com/js/
+static-url-css					: http://static.yourdomain.com/css/
+static-url-image				: http://static.yourdomain.com/img/
+static-url-video				: http://static.yourdomain.com/video/
+static-url-font					: http://static.yourdomain.com/font/
+static-url-upload				: http://static.yourdomain.com/upload/

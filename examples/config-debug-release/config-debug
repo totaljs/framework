@@ -1,23 +1,22 @@
 name							: partial.js (DEBUG)
+version 						: 1.01
 secret							: secret-key-for-web
-ETagVersion						:
-directoryControllers			: /controllers/
-directoryViews					: /views/
-directoryTemp					: /tmp/
-directoryTemplates				: /templates/
-directoryResources				: /resources/
-directoryPublic					: /public/
-directoryModules				: /modules/
-directoryLogs					: /logs/
-staticUrl						:
-staticUrlJS						: /js/
-staticUrlCSS					: /css/
-staticUrlImage					: /img/
-staticUrlVideo					: /video/
-staticUrlFont					: /font/
-staticUrlDocument				: /upload/
-staticAccepts					: .jpg,.png,.gif,.ico,.js,.css,.txt,.xml,.woff,.ttf,.eot,.svg,.zip,.rar,.pdf,.docx,.xlsx,.doc,.xls,.html,.htm
-defaultLayout					: _layout
-httpCompress					: false
-httpCache						: false
-defaultMaxRequestLength			: 6000
+etag-version					:
+directory-controllers			: /controllers/
+directory-views					: /views/
+directory-temp					: /tmp/
+directory-templates				: /templates/
+directory-resources				: /resources/
+directory-public				: /public/
+directory-dodules				: /modules/
+directory-logs					: /logs/
+static-url						:
+static-url-js					: /js/
+static-url-css					: /css/
+static-url-image				: /img/
+static-url-video				: /video/
+static-url-font					: /font/
+static-url-document				: /upload/
+static-accepts					: .jpg,.png,.gif,.ico,.js,.css,.txt,.xml,.woff,.ttf,.eot,.svg,.zip,.rar,.pdf,.docx,.xlsx,.doc,.xls,.html,.htm
+default-layout					: _layout
+default-request-length			: 6000

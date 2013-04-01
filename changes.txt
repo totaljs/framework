@@ -2,6 +2,11 @@ IN DEVELOPMENT ======= 1.2.1-5
 
 - IMPORTANT: removed @{viewIf},  @{templateIf},  @{contentIf}
 - IMPORTANT: renamed @{viewVisible to viewToggle}, @{templateVisible to templateToggle}, @{contentVisible to contentToggle}
+- IMPORTANT: renamed config keys
+
+- removed: config.httpCache
+- removed: config.httpMinify
+- removed: config.httpCompress
 
 - updated: decrease time expiration for static cache (5 minutes)
 
