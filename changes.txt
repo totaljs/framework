@@ -4,11 +4,13 @@ IN DEVELOPMENT ======= 1.2.1-5
 - IMPORTANT: renamed @{viewVisible to viewToggle}, @{templateVisible to templateToggle}, @{contentVisible to contentToggle}
 - IMPORTANT: renamed config keys
 
+- added: config.version
+
+- updated: decrease time expiration for static cache (5 minutes)
+
 - removed: config.httpCache
 - removed: config.httpMinify
 - removed: config.httpCompress
-
-- updated: decrease time expiration for static cache (5 minutes)
 
 ======= 1.2.1-4
 
