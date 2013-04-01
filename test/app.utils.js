@@ -230,6 +230,10 @@ function others() {
 	assert.ok(utils.GUID(40).length === 40, 'utils.GUID(40)');
 	assert.ok(utils.combine('1', '2', 'logo.jpg') === '.1/2/logo.jpg', 'utils.combine()');
 
+	obj = { a: '  1  ', b: { a: '    2 '}};
+	utils.trim(obj);
+	assert.ok(JSON.stringify(obj) === '{"a":"1","b":{"a":"2"}}', 'utils.trim()')
+
 	var async = new utils.Async();
 	var value = [];
 
