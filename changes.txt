@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.1-5
+======= 1.2.1-5
 
 - IMPORTANT: removed @{viewIf},  @{templateIf},  @{contentIf}
 - IMPORTANT: renamed @{viewVisible to viewToggle}, @{templateVisible to templateToggle}, @{contentVisible to contentToggle}
