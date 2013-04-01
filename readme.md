@@ -130,7 +130,7 @@ var http = require('http');
 var port = parseInt(process.argv[2] || '8000');
 var debug = true;
 
-framework.init(http, debug, port);
+framework.run(http, debug, port);
 console.log("http://127.0.0.1:{0}/".format(port));
 ```
 
@@ -170,9 +170,10 @@ function viewHomepage() {
 	<meta name="format-detection" content="telephone=no"/>
 	<meta name="viewport" content="width=1024, user-scalable=yes" />
 	<meta name="robots" content="all,follow" />
-	<link rel="stylesheet" href="@{routeCSS('style.css')}" />
-	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-	<script type="text/javascript" src="@{routeJS('script.js')}" ></script>
+	@{css('default.css')}
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	@{js('default.js')}
+	@{favicon('favicon.png')}
 </head>
 <body>
 	<div class="content">
@@ -206,9 +207,11 @@ Welcome @{model.name}!
 	<meta name="format-detection" content="telephone=no"/>
 	<meta name="viewport" content="width=1024, user-scalable=yes" />
 	<meta name="robots" content="all,follow" />
-	<link rel="stylesheet" href="/css/style.css" />
-	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-	<script type="text/javascript" src="/js/script.js" ></script>
+	<link rel="stylesheet" href="/css/default.css" />
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	<script type="text/javascript" src="/js/default.js" ></script>
+	<link rel="shortcut icon" href="/favicon.png" type="image/png" />
+	<link rel="icon" href="/favicon.png" type="image/png" />
 </head>
 <body>
 	<div class="content">

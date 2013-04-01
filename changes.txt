@@ -6,6 +6,7 @@ IN DEVELOPMENT ======= 1.2.1-5
 
 - added: config.version
 - added: controller.usage function
+- added: framework.run() / alias for framework.init();
 
 - updated: decrease time expiration for static cache (5 minutes)
 - updated: framework.usage()

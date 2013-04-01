@@ -4,7 +4,7 @@ var http = require('http');
 var port = 8004;
 var debug = true;
 
-framework.init(http, debug, port);
+framework.run(http, debug, port);
 
 // if debug == true
 // 	  framework load config-debug
@@ -15,6 +15,6 @@ framework.init(http, debug, port);
 //
 // or
 //
-// framework.init(http, { debug: true, name: 'TEST' }, port);
+// framework.run(http, { debug: true, name: 'TEST' }, port);
 
 console.log("http://127.0.0.1:{0}/".format(port));

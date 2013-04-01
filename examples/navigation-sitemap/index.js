@@ -4,7 +4,7 @@ var http = require('http');
 var port = 8004;
 var debug = true;
 
-framework.init(http, debug, port);
+framework.run(http, debug, port);
 
 framework.on('controller', function(self, name) {	
 	// set default value for each request to controller

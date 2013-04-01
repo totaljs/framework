@@ -49,7 +49,7 @@ function createFileIndex(directory) {
 	buffer.push("var port = parseInt(process.argv[2] || '8000');");
 	buffer.push("var debug = true;");
 	buffer.push("");
-	buffer.push("framework.init(http, debug, port);");
+	buffer.push("framework.run(http, debug, port);");
 	buffer.push("// framework.test(true);");
 	buffer.push("");
 	buffer.push("console.log('http://127.0.0.1:{0}/'.format(port));");

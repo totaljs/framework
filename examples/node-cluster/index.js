@@ -16,7 +16,7 @@ if (cluster.isMaster) {
 } else {
 	
 	var framework = require('partial.js');
-	framework.init(http, debug, port);
+	framework.run(http, debug, port);
 	
     console.log("http://127.0.0.1:{0}".format(port)); 
 }

@@ -6,5 +6,5 @@ var http = require('http');
 var port = 80;
 var debug = true;
 
-framework.init(http, debug, port);
+framework.run(http, debug, port);
 console.log("http://127.0.0.1:{0}/".format(port));

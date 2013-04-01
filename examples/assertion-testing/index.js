@@ -4,7 +4,7 @@ var http = require('http');
 var port = 8004;
 var debug = true;
 
-framework.init(http, debug, port);
+framework.run(http, debug, port);
 
 /*
 	Make a tests
