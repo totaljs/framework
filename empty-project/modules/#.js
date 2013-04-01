@@ -89,24 +89,3 @@
 	[default: return '<Title', '<meta Description', '<meta Keyword']
 	exports.onMeta = function onMeta() {}
 */
-
-/*
-	Return size of dimension
-	@dimension {String} :: small, large
-	return { width: Number, height: Number }
-
-	exports.onPictureDimension = function(dimension) {}
-*/
-
-/*
-	Return picture URL
-	@dimension {String} :: small, large
-	@id {String}
-	@width {Number}
-	@height {Number}
-	@alt {String}
-	return {String} :: picture URL adress
-
-	[default: return URL address]
-	exports.onPictureUrl = function(dimension, id, width, height, alt) {};	
-*/
