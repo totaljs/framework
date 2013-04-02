@@ -51,6 +51,7 @@ function createFileIndex(directory) {
 	buffer.push("");
 	buffer.push("framework.run(http, debug, port);");
 	buffer.push("// framework.test(true);");
+	buffer.push("// framework.backup();");
 	buffer.push("");
 	buffer.push("console.log('http://127.0.0.1:{0}/'.format(port));");
 	fs.writeFileSync(path.join(directory, 'index.js'), buffer.join(EOF));

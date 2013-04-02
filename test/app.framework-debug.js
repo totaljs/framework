@@ -2,6 +2,7 @@ var utils = require('../lib/utils');
 var assert = require('assert');
 var framework = require('../lib/index');
 var http = require('http');
+var fs = require('fs');
 
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
@@ -38,11 +39,19 @@ framework.onError = function(error, name, uri) {
 };
 
 function end() {
-	console.log('================================================');
-	console.log('success - OK');
-	console.log('================================================');
-	console.log('');
-	framework.stop();
+	framework.backup(function(file) {
+		try
+		{
+			fs.unlinkSync(file);
+		} catch (ex) {
+			assert.ok(false, 'framework.backup(): ' + ex.toString());
+		}
+		console.log('================================================');
+		console.log('success - OK');
+		console.log('================================================');
+		console.log('');
+		framework.stop();
+	});
 }
 
 function test_controller_functions(next) {
