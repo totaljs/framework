@@ -6,5 +6,6 @@ var debug = true;
 
 framework.run(http, debug, port);
 //framework.test(true);
+//framework.backup();
 
 console.log("http://127.0.0.1:{0}/".format(port));

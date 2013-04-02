@@ -38,7 +38,7 @@ framework.onError = function(error, name, uri) {
 };
 
 function end() {
-	framework.backup(function(file) {
+	framework.backup(function(err, file) {
 		try
 		{
 			fs.unlinkSync(file);
