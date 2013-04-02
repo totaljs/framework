@@ -5,6 +5,7 @@ IN DEVELOPMENT ======= 1.2.1-6
 
 - updated: framework.usage(), added: backup directory size
 - updated: terminal executable
+- updated: decrease time expiration for views, contents, templates (5 minutes)
 
 ======= 1.2.1-5
 
