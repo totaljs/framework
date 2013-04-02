@@ -51,6 +51,7 @@ web application framework for node.js
 * Supports dynamic stop server - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
 * Supports verification of framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
 * Supports simple SQLite ORM, must be installed [note-sqlite3](https://github.com/developmentseed/node-sqlite3)
+* __Supports backup and restore website__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore)
 * About 8 000 lines of JavaScript code, all files have 260 kB
 * __No dependencies__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
