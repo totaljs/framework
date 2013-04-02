@@ -11,7 +11,7 @@ IN DEVELOPMENT ======= 1.2.1-6
 - IMPORTANT: renamed @{viewVisible to viewToggle}, @{templateVisible to templateToggle}, @{contentVisible to contentToggle}
 - IMPORTANT: renamed config keys
 
-- added: config.version
+- added: config.version (web site version)
 - added: controller.usage function
 - added: framework.run() / alias for framework.init();
 - added: new parameter @controller {Controller} to controller.onRequest()
@@ -19,7 +19,7 @@ IN DEVELOPMENT ======= 1.2.1-6
 
 - updated: decrease time expiration for static cache (5 minutes)
 - updated: framework.usage()
-- updated: binary
+- updated: binary / executables
 
 - removed: config.httpCache
 - removed: config.httpMinify
