@@ -52,9 +52,10 @@ web application framework for node.js
 * Supports verification of framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
 * Supports simple SQLite ORM, must be installed [note-sqlite3](https://github.com/developmentseed/node-sqlite3)
 * __Supports backup and restore website__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore)
-* About 8 000 lines of JavaScript code, all files have 260 kB
+* About 8 000 lines of JavaScript code, all files have 300 kB
 * __No dependencies__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
+* [Documentation](http://www.partialjs.com/documentation/)
 
 ***
 
