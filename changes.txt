@@ -3,6 +3,8 @@ IN DEVELOPMENT ======= 1.2.1-6
 - added: config['directory-backup']
 - added: backup & restore website
 
+- updated: framework.usage(), added: backup directory size
+
 ======= 1.2.1-5
 
 - IMPORTANT: removed @{viewIf},  @{templateIf},  @{contentIf}
