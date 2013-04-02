@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.2.1-6
 - added: backup & restore website
 
 - updated: framework.usage(), added: backup directory size
+- updated: terminal executable
 
 ======= 1.2.1-5
 

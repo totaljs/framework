@@ -14,6 +14,7 @@ function createDirectory(directory) {
 	arr.push('templates');
 	arr.push('controllers');
 	arr.push('databases');
+	arr.push('backup');
 	arr.push('tests');
 	arr.push('contents');
 	arr.push('public');
@@ -50,6 +51,7 @@ function createFileIndex(directory) {
 	buffer.push("var debug = true;");
 	buffer.push("");
 	buffer.push("framework.run(http, debug, port);");
+	buffer.push("");
 	buffer.push("// framework.test(true);");
 	buffer.push("// framework.backup();");
 	buffer.push("");
