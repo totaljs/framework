@@ -136,7 +136,7 @@ function createFileViews(directory) {
 	buffer.push('    @{css(\'default.css\')}');
 	buffer.push('    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>');
 	buffer.push('    @{js(\'default.js\')}');
-	buffer.push('    @{favicon(\'favicon.png\')}');
+	buffer.push('    @{favicon(\'favicon.ico\')}');
 	buffer.push('<head>');
 	buffer.push('<body>');
 	buffer.push('');
@@ -195,6 +195,7 @@ function createFilePublic(directory) {
     buffer.push('');
     buffer.push('});');
 
+	fs.writeFileSync(path.join(dir, 'favicon.ico'), 'AAABAAEAICAAAAAAIACoEAAAFgAAACgAAAAgAAAAQAAAAAEAIAAAAAAAgBAAAAAAAAAAAAAAAAAAAAAAAAD///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B5eXlE+bm5n3m5uZ35ubmD////wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B5ubmCebm5lvDzuXbcJfi/7TE5P3l5ebX5ubmU+bm5gf///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Aebm5j3T2ea9fJ/j/RNX3/8ASt3/ClHf/16K4v/P1ub75ebmt+bm5jXj4+MD////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wGIn9wHfqDjvSdl4P8ASt3/AErd/wBK3f8ASt3/AErd/xZZ3/+Co+T/3uHm9ebm5pfn5+cX////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////AeXl5RHj4+MN////AQBI2yUASuHVAErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8mZOD/nrXk/+Tk5u3m5uZ35ubmD////wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Aejo6Anm5uZf1drl2+Xl5sfm5uYl////AQBI3R8ASt/TAErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8DTd//Q3jh/7bG5f3l5ebR5ubmU+fn5wX///8B////Af///wH///8B////Af///wH///8B5eXlB+Li4gXl5eUj1Nrmu3eb4/0fYOD/ep3j/+Lj5sXl5eUD////AQBK3UUASt77AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/C1Le/2OO4v/N1eb75+fns+fn5zP///8B////Af///wH///8B////Aebm5lHm5ubL5ebmwVWE4YEUWODrAEre/wBK3f8CTN7/j6vk/+fn5yn///8BAEnYCQBK3s8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/xVZ3/+FpOP/3eDmz////wH///8B////Af///wGampoTbW1t5zc3N/9nZ2f/wsnX4QZP36cASt3/AErd/wBK3f8zbeD/5+fnOf///wH///8BAErfnwBK3f8ASt7zAErevQBK34kAStxpAEjbZQBK3osASt7bAErd/wBK3f8ASt3/AErd/wBK3f9pkeHR////Af///wH///8B////AQYGBk8BAQH/AAAA/wAAAP9xcXHjV4PfGQBK3+0ASt3/AErd/yBg4P/n5+c5////Af///wEAS+CTLWng90d53jEASdwF////Aebm5g/k5OQJ////AQBH2BMASt+zAErd/wBK3f8ASt3/AErd/2aP4dH///8B////Af///wH///8BAAAAYQAAAP8AAAD/AAAA/x8fH6n///8BAkvfxwBK3f8ASt3/IGDg/+fn5zn///8B////AQBL4JNEeOHz3N7jG+bm5j3k5eah3uDm3eXl5rfn5+cL////AQBJ2yEASt7tAErd/wBK3f8ASt3/Zo/h0f///wH///8B////Af///wEAAAAfAAAA4wAAAP8AAAD1AAAAQ+Dg5SEYW9/xAErd/wBK3f8gYOD/5+fnOf///wH///8BAEvgk0l84fng4ubDorjk+05/4v8oZeD/bJTku+Xl5QX///8B////AQBK4L0ASt3/AErd/wBK3f9mj+HR////Af///wH///8B////Af///wEAAAATAAAAQxwcHCXl5eaNk67j7wBL3v8ASt3/AErd/yBg4P/n5+c5////Af///wEAS+CTJmTf/ypn4f8ASt7/AErd/wBK3/cASd9d////Af///wHm5uYDE1jhxwBK3f8ASt3/AErd/2aP4dH///8B////Af///wH///8B////Af///wH///8BGVnaI0J34OkJUd7/AErd/wBK3f8ASt3/IGDg/+fn5zn///8B////AQBL4JMASt3/AErd/wBK3vMASt6fAEngMQBE2wP///8B4+PjCb3K5XkTV9/7AErd/wBK3f8ASt3/Zo/h0f///wH///8B////Af///wH///8B5eXlL+bm5jUBSts7AEre/QBK3f8ASt3/AErd/wBK3f8gYOD/5+fnOf///wH///8BAEvgkwBK3f8ASt7jAEncQwBG2AP///8B5+fnCeXl5VXT2ebDTH7i/QBK3f8ASt3/AErd/wBK3f9mj+HR////Af///wH///8B////Af///wH///8B////AQVN3D0BS979AErd/wBK3f8ASt3/AErd/yBg4P/n5+c5////Af///wEAS+CTAErd/zlx32v///8B////Aebm5gfX3Oariafj/SRj4P8ASt3/AErd/wBK3f8ASt3/AErd/2aP4dH///8B////Af///wH///8B////Af///wH///8BAEjWPQBK3P0ASt3/AErd/wBK3f8ASt3/IGDg/+fn5zn///8B////AQBL4JMUWOD/u8nlW////wH///8BHVzaKRpc4PMASt7/AEre+wBK37sASt6zAErd/wBK3f8ASt3/Zo/h0f///wH///8B////Af///wH///8B////Af///wEBS9w7AEre/QBK3f8ASt3/AErd/wBK3f8gYOD/5+fnOf///wH///8BAEvgkxRY4P/P1uWt4uLiBf///wEASdw1AErgvwBK35UASd83AEnZBwBL3X0ASt7/AErd/wBK3f9mj+HR////Af///wH///8B////Af///wH///8B////AQFL3DsASt79AErd/wBK3f8ASt3/AErd/yBg4P/m5uY95ubmBebm5gUDTeCVAUve/6O45Pvm5uaD5+fnEf///wEAOtgD1trkA+bm5hHm5uZLVoThxQBK3v8ASt3/AErd/2aP4dH///8B////Af///wH///8B////Af///wH///8BAUvcOwBK3v0ASt3/AErd/wBK3f8ASt3/IGDg/+bm5tHm5ubD5ubmw1SD4+UASt3/IGDf/7nI5f/m5ubf5ubmp+bm5pfm5uaz3N/m5Zy04/8ybOD/AErd/wBK3f8ASt3/Zo/h0f///wH///8B////Af///wH///8B////Af///wEASdw7AEre+wBK3f8ASt3/AErd/wBK3f8KUd7/R3rg/0Z64P9GeuD/Hl/f/wBK3f8ASt3/BU7f/0B24f9vluP/bpXj/0R54f8NU9//AEre/wBK3f8ASt3/AErd/wBK3f9FeeCl////Af///wH///8B////Af///wH///8B////AQBI2ycASt/ZAErd/wBK3f8ASt3/AErd/wBK3v8ASt7/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AEre5wBJ3k3///8B////Af///wH///8B////Af///wH///8B////AQBI2hcASd+BAEre7wBK3f0ASt/FAEnedQBL318ASt6BAEre1wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AEre9QBL358ASNwh////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wEAR9onAEnfYQBL2gf///8B////Af///wEASNsRAEretwBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AEre/wBK378ASd47////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wHm5uYX5ubmiefn58fm5ubD5ubmeeTk5A0ARtwhAEre+QBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK39kASt9XAErWBf///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B4eHhB7DC5bthjOL/RHrk/1qI4v+yw+X95eXmnbLE6AMASt7TAErd/wBK3f8ASt3/AErd/wBK3+kASd1/AEfdE////wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wFZhd9BFVng+wBK3f8ASt3/AErd/w5U4P+qveTv5ubmHQBK3skASt3/AErd/wBK3vkASuCfAEnfJ////wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////AQZP34kASt3/AErd/wBK3f8ASt3/AErd/0l84vnn5+czAErglwBK3/sASt/FAErfQf///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8BAEndpwBK3f8ASt3/AErd/wBK3f8ASt3/I2Lg8d7h5R3///8BAErdIwBG2AX///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wEASuCBAErd/wBK3f8ASt3/AErd/wBK3f8OVeDB////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////AQBJ2icASt/pAErd/wBK3f8ASt3/AErf9wBK3lH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////AQBJ3zUASt+nAErd2QBK3rsASuBTAEnbA////wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', 'base64');
 	fs.writeFileSync(path.join(js, 'default.js'), buffer.join(EOF));
 }
 
@@ -308,6 +309,8 @@ function createFileTest(directory) {
 function install(directory) {
 	exec('npm install partial.js', { cwd: directory }, function (error, stdout, stderr) {
 
+	}).on('exit', function() {
+		console.log('partial.js: success');
 	});
 }
 
@@ -343,7 +346,5 @@ createDirectory(dir);
 console.log('partial.js: creating files');
 createFiles(dir);
 
-console.log('partial.js: install framework');
+console.log('partial.js: install current version partial.js');
 install(dir);
-
-console.log('partial.js: success');
