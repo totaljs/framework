@@ -1,7 +1,7 @@
 var utils = require('partial.js/utils');
 var assert = require('assert');
 
-exports.init = function(framework, name) {
+exports.run = function(framework, name) {
 
 	console.log('run test: {0}'.format(name));
 	console.log('');
