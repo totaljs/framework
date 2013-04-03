@@ -3,6 +3,9 @@ var utils = require('partial.js/utils');
 // Global validation
 // this delegate replace framework.onValidation
 exports.onValidation = function(name, value) {
+
+	// this == controller
+
 	switch (name) {
 		case 'Email':
 			return utils.isEmail(value);
