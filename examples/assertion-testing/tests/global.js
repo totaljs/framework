@@ -1,6 +1,9 @@
 var utils = require('partial.js/utils');
 var assert = require('assert');
 
+// exports.run  supports partial.js >= v1216
+// exports.init supports partial.js <= v1216
+
 exports.run = function(framework, name) {
 
 	console.log('run test: {0}'.format(name));
