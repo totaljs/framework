@@ -1,5 +1,6 @@
 var framework = require('partial.js');
 var http = require('http');
+var os = require('os');
 
 var index = process.argv.indexOf('backup');
 if (index !== -1) {

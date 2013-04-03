@@ -46,6 +46,7 @@ function createFileIndex(directory) {
 	var buffer = [];
 	buffer.push("var framework = require('partial.js');");
 	buffer.push("var http = require('http');");
+	buffer.push("var os = require('os');");
 	buffer.push("");
 	buffer.push("var index = process.argv.indexOf('backup');");
 	buffer.push("if (index !== -1) {");
