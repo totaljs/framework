@@ -3,6 +3,7 @@
 - added: config['directory-backup']
 - added: backup & restore website
 
+- updated: controlller.validation() - now, owner is controller
 - updated: assertion-testing added new "init" alias "run"
 - updated: framework.usage(), added: backup directory size
 - updated: decrease time expiration for views, contents, templates (5 minutes)
