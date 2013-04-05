@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.2.1-8
+
+- fixed: problem in Windows with path to file or directory
+
 ======= 1.2.1-7
 
 - added: framework.onFilterBackup(@path)
