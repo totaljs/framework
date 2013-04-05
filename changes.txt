@@ -1,6 +1,9 @@
 IN DEVELOPMENT ======= 1.2.1-8
 
-- added: keepalive.js to empty-project and executables
+- added: keepalive.js (supports commands: reset, restart, stop, backup and restore)
+- added: process.send() for child_process.fork();
+- added: framework.cache.clear();
+
 - fixed: problem in Windows with path to file or directory
 
 ======= 1.2.1-7
