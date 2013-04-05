@@ -5,29 +5,10 @@ var directory = process.cwd();
 var framework = null;
 var skip = false;
 var name = 'keepalive';
+var arg = [];
 
-function run() {
-	framework = fork('index');
-	framework.on('message', function(msg) {
-
-		if (msg.substring(0, 5) === 'name:') {
-			process.title = 'keepalive: ' + msg.substring(6);
-			return;
-		}
-
-		if (msg === 'restart') {
-			restart();
-			return;
-		}
-	});
-
-	framework.on('error', function(msg) {
-		skip = true;
-		process.kill(framework.pid);
-		framework = null;
-		restart();
-	});
-}
+for (var i = 2; i < process.argv.length; i++)
+	arg.push(process.argv[i]);
 
 process.on('SIGTERM', function() {
 	if (framework === null) {
@@ -59,30 +40,52 @@ process.on('exit', function() {
 	framework = null;
 });
 
-function command(msg) {
-	
-	console.log(name + ': ' + msg);
+/*
+	Run partial.js
+*/
+function run() {
+	framework = fork('index', arg);
+	framework.on('message', function(msg) {
 
-	if (framework === null)
-		return;
+		if (msg.substring(0, 5) === 'name:') {
+			process.title = 'keepalive: ' + msg.substring(6);
+			return;
+		}
 
-	framework.send(msg);
+		if (msg === 'restart') {
+			restart();
+			return;
+		}
+	});
+
+	framework.on('error', function(msg) {
+		skip = true;
+		process.kill(framework.pid);
+		framework = null;
+		restart(5000);
+	});
 }
 
-function restart() {
+/*
+	Restart partial.js
+*/
+function restart(timeout) {
 
 	console.log(name + ': restart');
 
 	if (framework === null) {
-		setTimeout(run, 1000);
+		setTimeout(run, timeout || 1000);
 		return;
 	}
 
 	process.kill(framework.pid);
 	framework = null;
-	setTimeout(run, 1000);
+	setTimeout(run, timeout || 1000);
 }
 
+/*
+	Operation / this function monitor these files: stop, restart, backup, restore
+*/
 function operation() {
 	
 	var filenameStop = path.join(directory, 'stop');
@@ -97,8 +100,9 @@ function operation() {
 
 		fs.unlink(filenameStop, function(err) {
 
+			console.log(name + ': stop');
+
 			if (framework !== null) {
-				console.log(name + ': stop');
 				process.kill(framework.pid);
 				framework = null;
 			}
@@ -145,6 +149,24 @@ function operation() {
 
 	});
 }
+
+/*
+	Send command to partial.js
+	@msg {String}
+*/
+function command(msg) {
+	
+	console.log(name + ': ' + msg);
+
+	if (framework === null)
+		return;
+
+	framework.send(msg);
+}
+
+// ===========================================================================
+// RUN
+// ===========================================================================
 
 run();
 
