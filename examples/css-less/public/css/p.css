@@ -9,3 +9,4 @@ body { margin:50px; background-color: #E0E0E0; }
 
 div { @shadow(10px, 10px, 5px, silver); @radius('10px 10px 10px 10px'); background-color: white; padding:10px; }
 p { @radius(5px); }
+span { @radius('10px 5px 8px 5px'); }
