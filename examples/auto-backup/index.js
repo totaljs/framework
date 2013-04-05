@@ -16,4 +16,18 @@ framework.on('service', function(minutes) {
 	
 });
 
+/*
+	=======================
+	Backup & Restore filter
+	=======================
+
+	framework.onFilterBackup = function(path) {
+		return path.indexOf('vide-1GB.avi') === -1;
+	};
+
+	famework.onFilterRestore = function(path) {
+		return path.indexOf('logo.png') === -1;
+	};
+*/
+
 console.log("http://127.0.0.1:{0}/".format(port));
