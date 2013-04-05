@@ -1,5 +1,6 @@
 IN DEVELOPMENT ======= 1.2.1-8
 
+- added: keepalive.js to empty-project and executables
 - fixed: problem in Windows with path to file or directory
 
 ======= 1.2.1-7
