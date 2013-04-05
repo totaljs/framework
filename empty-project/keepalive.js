@@ -6,6 +6,7 @@ var path = require('path');
 var directory = process.cwd();
 var framework = null;
 var skip = false;
+var restarting = false;
 var name = 'keepalive';
 var arg = [];
 
@@ -86,6 +87,8 @@ process.on('exit', function() {
 	Run partial.js
 */
 function run() {
+
+	restarting = false;
 	framework = fork(FILENAME, arg);
 	framework.on('message', function(msg) {
 
@@ -94,7 +97,7 @@ function run() {
 			return;
 		}
 
-		if (msg === 'stop') {
+		if (msg === 'stop' && !restarting) {
 			process.kill(framework.pid);
 			process.exit(0);
 			framework = null;
@@ -201,6 +204,7 @@ function operation() {
 		if (!exists)
 			return;
 
+		restarting = true;
 		fs.unlink(filenameRestart, function(err) {
 			restart();
 		});
