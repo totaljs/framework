@@ -98,17 +98,25 @@ function run() {
 		}
 
 		if (msg === 'stop' && !restarting) {
-			process.kill(framework.pid);
+			if (framework && framework.pid > 0) {
+				try
+				{
+					process.kill(framework.pid);
+				} catch (ex) {
+					// skip
+				}
+			}
 			process.exit(0);
 			framework = null;
 			return;
 		}
 
 		if (msg === 'restore') {
-			setTimeout(function() { 				
-				restart();				
+			setTimeout(function() {
+				restarting = true;
+				restart();
 			}, 3000);
-			return;			
+			return;
 		}
 
 		if (msg === 'restart') {
