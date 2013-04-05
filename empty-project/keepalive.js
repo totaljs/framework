@@ -1,3 +1,5 @@
+var FILENAME = 'index';
+
 var fork = require('child_process').fork;
 var fs = require('fs');
 var path = require('path');
@@ -84,11 +86,18 @@ process.on('exit', function() {
 	Run partial.js
 */
 function run() {
-	framework = fork('index', arg);
+	framework = fork(FILENAME, arg);
 	framework.on('message', function(msg) {
 
 		if (msg.substring(0, 5) === 'name:') {
 			process.title = 'keepalive: ' + msg.substring(6);
+			return;
+		}
+
+		if (msg === 'stop') {
+			process.kill(framework.pid);
+			process.exit(0);
+			framework = null;
 			return;
 		}
 

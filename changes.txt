@@ -3,6 +3,7 @@ IN DEVELOPMENT ======= 1.2.1-8
 - added: keepalive.js (supports commands: reset, restart, stop, backup and restore)
 - added: process.send() for child_process.fork();
 - added: framework.cache.clear();
+- added: to markdown: image with link ![alt](src)(url)
 
 - fixed: problem in Windows with path to file or directory
 
