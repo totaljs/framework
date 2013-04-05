@@ -7,6 +7,46 @@ var skip = false;
 var name = 'keepalive';
 var arg = [];
 
+/*
+	PROCESS ARGUMENTS
+*/
+
+if (process.argv.indexOf('reset') !== -1) {
+	console.log(name + ': reset');
+	fs.writeFileSync(path.join(directory, 'keepalive-reset'), '');
+	return;
+}
+
+if (process.argv.indexOf('restart') !== -1) {
+	console.log(name + ': restart');
+	fs.writeFileSync(path.join(directory, 'keepalive-restart'), '');
+	return;
+}
+
+if (process.argv.indexOf('stop') !== -1) {
+	console.log(name + ': stop');
+	fs.writeFileSync(path.join(directory, 'keepalive-stop'), '');
+	return;
+}
+
+if (process.argv.indexOf('backup') !== -1) {
+	console.log(name + ': backup');
+	fs.writeFileSync(path.join(directory, 'keepalive-backup'), '');
+	return;
+}
+
+var index = process.argv.indexOf('restore');
+if (index !== -1) {
+	var date = process.argv[index + 1] || '';
+	console.log(name + ': restore ' + date);
+	fs.writeFileSync(path.join(directory, 'keepalive-restore'), date);
+	return;
+}
+
+/*
+	PROCESS EVENTS
+*/
+
 for (var i = 2; i < process.argv.length; i++)
 	arg.push(process.argv[i]);
 
