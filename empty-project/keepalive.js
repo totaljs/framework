@@ -88,10 +88,11 @@ function restart(timeout) {
 */
 function operation() {
 	
-	var filenameStop = path.join(directory, 'stop');
-	var filenameRestart = path.join(directory, 'restart');
-	var filenameBackup = path.join(directory, 'backup');
-	var filenameRestore = path.join(directory, 'restore');
+	var filenameStop = path.join(directory, 'keepalive-stop');
+	var filenameRestart = path.join(directory, 'keepalive-restart');
+	var filenameBackup = path.join(directory, 'keepalive-backup');
+	var filenameRestore = path.join(directory, 'keepalive-restore');
+	var filenameReset = path.join(directory, 'keepalive-reset');
 	
 	fs.exists(filenameStop, function(exists) {
 
@@ -112,14 +113,22 @@ function operation() {
 
 	});
 
+	fs.exists(filenameReset, function(exists) {
+
+		if (!exists)
+			return;
+		
+		fs.unlink(filenameReset, function(err) {
+			command('reset');
+		});
+
+	});	
+
 	fs.exists(filenameBackup, function(exists) {
 
 		if (!exists)
 			return;
-
-		if (!fs.statSync(filenameBackup).isDirectory())
-			return;
-
+		
 		fs.unlink(filenameBackup, function(err) {
 			command('backup');
 		});
