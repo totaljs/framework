@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.1-8
+======= 1.2.1-8
 
 - added: keepalive.js (supports commands: reset, restart, stop, backup and restore)
 - added: process.send() for child_process.fork();
