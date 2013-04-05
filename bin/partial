@@ -32,7 +32,6 @@ function createDirectory(directory) {
 
 function createFiles(directory) {
 	createFileIndex(directory);
-	createFileRun(directory);
 	createFileConfig(directory);
 	createFileViews(directory);
 	createFileResource(directory);
@@ -86,30 +85,6 @@ function createFileConfig(directory) {
 	
 	fs.writeFileSync(path.join(directory, 'config-release'), buffer.join(EOF));
 	fs.writeFileSync(path.join(directory, 'config-debug'), buffer.join(EOF).replace(/true/g, 'false'));
-}
-
-function createFileRun(directory) {
-	var buffer = [];
-
-	buffer.push('#!/bin/bash');
-	buffer.push('');
-	buffer.push('DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"');
-	buffer.push('');
-	buffer.push('PORT="$@"');
-	buffer.push('');
-	buffer.push('if [ "$PORT" = "" ]; then');
-	buffer.push('    PORT="8000"');
-	buffer.push('fi');
-	buffer.push('');
-	buffer.push('open "http://127.0.0.1:$PORT"');
-	buffer.push('');
-	buffer.push('eval "cd $DIR"');
-	buffer.push('eval "supervisor -- index.js $@"');
-	
-	var fileName = path.join(directory, 'run');
-
-	fs.writeFileSync(fileName, buffer.join(EOF));
-	fs.chmodSync(fileName, '555');
 }
 
 function createFileViews(directory) {
