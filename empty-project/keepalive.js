@@ -104,6 +104,13 @@ function run() {
 			return;
 		}
 
+		if (msg === 'restore') {
+			setTimeout(function() { 				
+				restart();				
+			}, 3000);
+			return;			
+		}
+
 		if (msg === 'restart') {
 			restart();
 			return;
