@@ -67,10 +67,6 @@ web application framework for node.js
 
 ***
 
-[![ScreenShot](https://raw.github.com/GabLeRoux/WebMole/master/ressources/WebMole_Youtube_Video.png)](http://youtu.be/vt5fpE0bzSY)
-
-***
-
 ## Simple eshop example with partial.js and SQLite 3
 http://eshop.partialjs.com
 
