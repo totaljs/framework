@@ -90,7 +90,7 @@ $ node keepalive 8080
 $ open http://127.0.0.1:8080
 ```
 
-[![partial.js example](http://partialjs.com/img/video.jpg)(http://www.youtube.com/watch?v=3GMQJki82Lo)
+[![partial.js example](http://partialjs.com/img/video.jpg)](http://www.youtube.com/watch?v=3GMQJki82Lo)
 
 ## The MIT License
 
