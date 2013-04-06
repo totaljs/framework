@@ -6,6 +6,7 @@ web application framework for node.js
 - Homepage / [www.partialjs.com](http://partialjs.com)
 - Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
 - E-shop example: [e-shop written in partial.js and SQLite3](http://eshop.partialjs.com)
+- Documentation: [partial.js documentation](http://partialjs.com/documentation/)
 
 ***
 
@@ -59,17 +60,6 @@ web application framework for node.js
 
 ***
 
-## Simple eshop example with partial.js and SQLite 3
-http://eshop.partialjs.com
-
-## partial.js homepage
-http://partialjs.com
-
-## partial.js documentation
-http://partialjs.com/documentation/
-
-***
-
 ## partial.js presentation
 
 [![partial.js example](http://partialjs.com/img/video.jpg)](http://www.youtube.com/watch?v=3GMQJki82Lo)
@@ -84,11 +74,7 @@ $ sudo npm install -g partial.js
 ```
 ```
 $ mkdir mywebsite
-```
-```
 $ cd mywebsite
-```
-```
 $ partial.js
 ```
 ```
@@ -100,6 +86,8 @@ $ open http://127.0.0.1:8080
 
 ## Interesting modules
 
+* Simple __Backup/Restore__ module for node.js - https://github.com/petersirka/backup
+* __PayPal__ Express Checkout for node.js - https://github.com/petersirka/node-payment-paypal
 * CouchDB client for node.js - https://github.com/petersirka/node-couchdb
 * MongoDB (www.mongolab.com) REST client for node.js - https://github.com/petersirka/node-mongolab
 * HTTP-RDBMS REST node.js client for partial.js (MySQL, SQL Server, OleDB, ODBC) - https://github.com/petersirka/node-rdbms
