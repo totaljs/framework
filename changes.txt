@@ -1,5 +1,6 @@
 ======= 1.2.2-2
 
+- updated: backup & restore (added clear directory)
 - updated: markdown image parser
 
 ======= 1.2.2-1
