@@ -1,6 +1,6 @@
 {
     "name": "partial.js",
-    "version": "1.2.2-0",
+    "version": "1.2.2-1",
     "versionDifference": "1.2.1-5",
     "description": "web application framework (MVC) for node.js",
     "main": "./index.js",
