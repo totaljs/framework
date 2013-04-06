@@ -59,14 +59,6 @@ web application framework for node.js
 
 ***
 
-* CouchDB client for node.js - https://github.com/petersirka/node-couchdb
-* MongoDB (www.mongolab.com) REST client for node.js - https://github.com/petersirka/node-mongolab
-* HTTP-RDBMS REST node.js client for partial.js (MySQL, SQL Server, OleDB, ODBC) - https://github.com/petersirka/node-rdbms
-
-> I am still improving my english. Please do not hesitate to contact me in any contradictions.
-
-***
-
 ## Simple eshop example with partial.js and SQLite 3
 http://eshop.partialjs.com
 
@@ -77,6 +69,13 @@ http://partialjs.com
 http://partialjs.com/documentation/
 
 ***
+
+## partial.js presentation
+
+[![partial.js example](http://partialjs.com/img/video.jpg)](http://www.youtube.com/watch?v=3GMQJki82Lo)
+
+***
+
 
 ## Install step by step partial.js
 
@@ -99,9 +98,15 @@ $ node keepalive 8080
 $ open http://127.0.0.1:8080
 ```
 
-## partial.js presentation
+## Interesting modules
 
-[![partial.js example](http://partialjs.com/img/video.jpg)](http://www.youtube.com/watch?v=3GMQJki82Lo)
+* CouchDB client for node.js - https://github.com/petersirka/node-couchdb
+* MongoDB (www.mongolab.com) REST client for node.js - https://github.com/petersirka/node-mongolab
+* HTTP-RDBMS REST node.js client for partial.js (MySQL, SQL Server, OleDB, ODBC) - https://github.com/petersirka/node-rdbms
+
+*** 
+
+> I am still improving my english. Please do not hesitate to contact me in any contradictions.
 
 ## The MIT License
 
