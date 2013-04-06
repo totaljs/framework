@@ -78,152 +78,19 @@ http://partialjs.com/documentation/
 
 ***
 
-## Run your website:
 
-- download empty website project
-- open terminal and find website directory
-- write and run on terminal:
+## Install partial.js
 
-```text
-$ node index.js
 ```
-
-***
-
-## NPM partial.js
-
-- create on your desktop empty directory with name: website
-- create file index.js
-- open terminal and find this directory: cd /Desktop/website/
-- write and run on terminal:
-
-```text
-$ npm install partial.js
-```
-
-## Create empty project from terminal
-
-```text
-$ mkdir newproject
-$ cd newproject
+$ sudo npm install -g partial.js
+$ mkdir mywebsite
+$ cd mywebsite
 $ partial.js
+$ node keepalive 8080
+$ open http://127.0.0.1:8080
 ```
 
-or
-
-```text
-$ partial.js /users/petersirka/desktop/newproject/
-```
-
-***
-
-## Plans
-
-> I want perfect and stability web application framework. Currently is framework in testing mode and stable version will be in short time.
-
-## Simple example
-
-> index.js
-
-```js
-var framework = require('partial.js');
-var http = require('http');
-
-var port = parseInt(process.argv[2] || '8000');
-var debug = true;
-
-framework.run(http, debug, port);
-console.log("http://127.0.0.1:{0}/".format(port));
-```
-
-> controllers / global.js
-
-```js
-exports.install = function(framework) {
-	framework.route('/', viewHomepage);
-	// framework.route('/registration/', viewRegistration, ['xhr', 'post']);
-	// framework.route('/products/{category}/', viewProducts);
-	// framework.route('/products/{category}/{subcategory}/', viewProducts);
-	// framework.route('/user/', viewUser, ['logged']);
-};
-
-function viewHomepage() {
-	var self = this;
-	
-	if (self.xhr) {
-		self.json({ greeting: 'Hello world!' });
-		return;
-	}
-
-	self.repository.title = 'Web application framework';
-	self.view('homepage', { name: 'Peter' });
-}
-```
-
-> views / _layout.html
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    @{meta}
-    <meta charset="utf-8" />
-	<meta http-equiv="X-UA-Compatible" content="IE=10" />
-	<meta name="format-detection" content="telephone=no"/>
-	<meta name="viewport" content="width=1024, user-scalable=yes" />
-	<meta name="robots" content="all,follow" />
-	@{css('default.css')}
-	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-	@{js('default.js')}
-	@{favicon('favicon.png')}
-</head>
-<body>
-	<div class="content">
-		@{body}
-	</div>
-</body>
-</html>
-```
-
-> views / homepage.html
-
-```html
-@{meta('My Homepage', 'My Homepage description', 'My Homepage keywords')}
-
-<h1>@{repository.title}</h1>
-Welcome @{model.name}!
-```
-
-> RESULT
-
-```html
-
-<!DOCTYPE html>
-<html>
-<head>
-    <title>My Homepage</title>
-    <meta name="description" content="My Homepage description" />
-    <meta name="keywords" content="My Homepage keywords" />
-    <meta charset="utf-8" />
-	<meta http-equiv="X-UA-Compatible" content="IE=10" />
-	<meta name="format-detection" content="telephone=no"/>
-	<meta name="viewport" content="width=1024, user-scalable=yes" />
-	<meta name="robots" content="all,follow" />
-	<link rel="stylesheet" href="/css/default.css" />
-	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-	<script type="text/javascript" src="/js/default.js" ></script>
-	<link rel="shortcut icon" href="/favicon.png" type="image/png" />
-	<link rel="icon" href="/favicon.png" type="image/png" />
-</head>
-<body>
-	<div class="content">
-		<h1>Web application framework</h1>		
-		Welcome Peter!
-	</div>
-</body>
-</html>
-
-```
+![partial.js example](http://partialjs.com/img/video.jpg)(http://www.youtube.com/watch?v=3GMQJki82Lo)
 
 ## The MIT License
 
