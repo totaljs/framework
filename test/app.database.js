@@ -8,9 +8,9 @@ if (fs.existsSync(dbfile))
 	fs.unlinkSync(dbfile);
 
 for (var i = 0; i < 10; i++)
-	db.write({ name: String.fromCharCode(i + 65), index: i });
+	db.insert({ name: String.fromCharCode(i + 65), index: i });
 
-db.writeBulk([{ name: '0', index: 0 }, { name: '1', index: 1 }, { name: '2', index: 2 }], function(err, count) {
+db.bulk([{ name: '0', index: 0 }, { name: '1', index: 1 }, { name: '2', index: 2 }], function(err, count) {
 	assert.ok(count === 3, 'bulk insert problem')
 });
 
@@ -30,6 +30,13 @@ function read() {
 		return o.index > 2;
 	}, function(err, count) {
 		assert.ok(count === 7, 'remove problem');
+	});
+
+	db.update(function(o) {
+		o.name = 'X';
+		return o;
+	}, function(err, count) {
+		assert.ok(count === 6, 'update problem');
 	});
 
 }

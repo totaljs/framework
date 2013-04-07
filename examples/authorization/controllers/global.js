@@ -42,7 +42,7 @@ function viewHomepage() {
 			return;
 		}
 
-		self.database('users-logs').write({ id: user.id, email: user.email, ip: self.req.ip, date: new Date() });
+		self.database('users-logs').insert({ id: user.id, email: user.email, ip: self.req.ip, date: new Date() });
 
 		// save to cookie
 		self.res.cookie(self.config.cookie, self.app.encode({ id: user.id, ip: self.req.ip }, 'user'), new Date().add('m', 5));

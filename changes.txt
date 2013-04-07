@@ -1,6 +1,10 @@
+======= 1.2.2-3
+
+- updated: nosql embedded database
+
 ======= 1.2.2-2
 
-- added: nosql embed database (via https://github.com/petersirka/nosql)
+- added: nosql embedded database (via https://github.com/petersirka/nosql)
 - added: new namespace partial.js/nosql
 
 - updated: backup & restore (added clear directory)

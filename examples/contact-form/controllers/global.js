@@ -30,7 +30,7 @@ function jsonForm() {
 	self.post.ip = self.req.ip;
 
 	var db = self.database('forms');
-	db.write(self.post);
+	db.insert(self.post);
 
 	// send mail
 	// look to example: [email-templating]
