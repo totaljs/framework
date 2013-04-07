@@ -12,6 +12,7 @@
 - removed: ParameterBuilder
 - rmeoved: OrderBuilder
 
+- fixed: problem with older node.js version (setImmediate)
 - fixed: problem with controller validation onResource
 
 ======= 1.2.2-1
