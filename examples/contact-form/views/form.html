@@ -1,0 +1,67 @@
+@{layout('')}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contanct form</title>
+    <meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=10" />
+	<meta name="format-detection" content="telephone=no"/>
+	<meta name="viewport" content="width=1024, user-scalable=yes" />
+	<meta name="robots" content="all,follow" />
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+	<style type="text/css">
+		body { padding: 50px; margin: 0; font:normal 12px Arial; color: gray }
+		#error { display: none; background-color: black; color: white; margin: 20px 0 0 0; }
+		#error > div { border-bottom: 1px solid gray; padding: 3px 5px; }
+	</style>
+</head>
+<body>
+
+	<h1>Contanct form</h1>
+	<form action="#" method="POST" id="f">
+		<div>
+			<div>E-mail:</div>
+			<div>@{text('Email')}</div>
+		</div>
+		<br />
+		<div>
+			<div>Phone:</div>
+			<div>@{text('Phone')}</div>
+		</div>
+		<br />
+		<div>
+			<div>Message:</div>
+			<div>@{textarea('Message')}</div>
+		</div>
+		<div id="error"></div>
+	</form>
+	<br />
+	<button>Submit</button>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$('button').bind('click', function() {
+				$.post('/', $('#f').serialize(), function(d) {
+					var err = $('#error');
+				
+					if (d instanceof Array) {
+
+						err.empty();
+						d.forEach(function(o) {
+							err.append('<div>' + o.error + '</div>');
+						});
+						err.show();
+						return;
+					};
+
+					err.empty();
+					err.show().html('THANKS! Look to /databases/ directory')
+				
+				});
+			});
+		});
+	</script>
+
+</body>
+</html>
