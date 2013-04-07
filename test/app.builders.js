@@ -64,91 +64,6 @@ function test_UrlBuilder() {
 	assert.ok(builder.hasValue(['A', 'B']) === true, name + 'hasValues()');
 }
 
-function test_OrderBuilder() {
-	var name = 'OrderBuilder: ';
-	var builder = new builders.OrderBuilder();
-
-	builder.asc('A');
-	builder.desc('B');
-
-	assert.ok(builder.hasValue(), name + 'hasValue()');	
-	assert.ok(builder.builder.length === 2, name + 'builder empty');
-	assert.ok(builder.builder[1].type === 'desc', name + 'builder type');
-
-	builder.clear();
-	assert.ok(builder.builder.length === 0, name + 'builder clear');
-};
-
-function test_QueryBuilder() {
-	var name = 'QueryBuilder: ';
-	var builder = new builders.QueryBuilder();
-
-	builder.addOperator('AND');
-	builder.addValue('Id', '=', 10, true);
-
-	assert.ok(builder.toString() === 'Id=10', name + 'add');
-
-	builder.addOperator('AND').addBuilder(new builders.QueryBuilder().addValue('Id', '=', 20, true));
-	assert.ok(builder.toString() === 'Id=10 AND Id=20', name + 'addBuilder');
-
-	builder.clear();
-	assert.ok(builder.toString() === '', name + 'clear');
-
-	builder.addValue('Id', '=', 10);
-
-	var param = Object.keys(builder.params)[0];
-	assert.ok(builder.toString().indexOf(param) !== -1, name + 'addValue');
-
-	builder.clear();
-	builder.addBetween('Id', 10, 20, true);
-	
-	Object.keys(builder.params).forEach(function(o) {
-		assert.ok(builder.toString().indexOf(o) !== -1, name + 'addBetween');
-	});
-
-	builder.clear();
-	builder.addParameter('name', 10);
-
-	param = Object.keys(builder.params)[0];
-	assert.ok(param === 'name', name + 'addParameter');
-
-	builder.add('COUNT(*)');
-	assert.ok(builder.toString().indexOf('COUNT(*)') !== -1, name + ' dd');
-
-	assert.ok(builder.hasParameter(), name + 'hasParameter');
-	assert.ok(builder.hasValue(), name + 'hasValue');
-
-	builder.clear();
-	builder.addOperator('AND');
-	assert.ok(builder.toString() === '', name + 'addOperator');
-
-	builder.clear();
-	builder.addBuilder(new builders.ParameterBuilder().add('name', 'value'));
-	param = Object.keys(builder.params)[0];
-	assert.ok(param === 'name', name + 'addParameter');	
-};
-
-function test_ParameterBuilder() {
-	var name = 'ParameterBuilder: ';
-	var builder = new builders.ParameterBuilder();
-
-	builder.add('A', 10);
-	builder.add('B', 20);
-
-	assert.ok(builder.read('B') === 20, name + 'read');
-
-	builder.update('B', 10);
-	assert.ok(builder.read('B') === 10, name + 'update');
-
-	assert.ok(builder.hasValue(), name + 'hasValue');
-
-	builder.clear();
-	assert.ok(!builder.hasValue(), name + 'clear');
-
-	builder.add({ C: 40, D: 50 });
-	assert.ok(builder.read('C') === 40 && builder.read('D') === 50, 'add - name as object');
-};
-
 function test_Schema() {
 	var name = 'Schema: ';
 	builders.schema('tbl_user', { Id: Number, Name: String }, 'Id', false);
@@ -209,9 +124,6 @@ function test_ErrorBuilder() {
 
 test_PageBuilder();
 test_UrlBuilder();
-test_OrderBuilder();
-test_QueryBuilder();
-test_ParameterBuilder();
 test_Schema();
 test_ErrorBuilder();
 

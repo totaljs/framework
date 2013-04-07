@@ -1,7 +1,16 @@
 ======= 1.2.2-2
 
+- added: nosql embed database (via https://github.com/petersirka/nosql)
+- added: new namespace partial.js/nosql
+
 - updated: backup & restore (added clear directory)
 - updated: markdown image parser
+- updated: framework.database()
+
+- removed: sqlite3
+- removed: QueryBuilder
+- removed: ParameterBuilder
+- rmeoved: OrderBuilder
 
 ======= 1.2.2-1
 ======= 1.2.2-0

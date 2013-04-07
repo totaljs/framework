@@ -6,13 +6,6 @@ var builders = require('partial.js/builders');
 // this file call framework automatically
 // ==================================================
 
-exports.onLoaded = function(framework) {
-	
-	// create database schema	
-	builders.schema('tbl_user', { id: Number, email: String, password: String, countLogin: Number }, 'id', false);	
-	
-};
-
 // ================================================
 // AUTHORIZATION
 // ================================================
@@ -44,19 +37,16 @@ exports.onAuthorize = function(req, res, flags, callback) {
 	// autologin by cookie
 	var db = self.database('users');
 
-	db.findPK('tbl_user', obj.id, function(err, user) {
+	db.one('doc.id === {0}'.format(obj.id), function(err, user) {
 
 		if (user === null) {
 			callback(false);
 			return;
 		}
 
-
-		user.countLogin++;
-		db.update('tbl_user', user);
-
 		self.cache.write('user_' + user.id, user, new Date().add('m', 5));
 		req.session = user;
 		callback(true);
 	});
+
 };

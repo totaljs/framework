@@ -4,10 +4,5 @@ var http = require('http');
 var port = 8004;
 var debug = true;
 
-console.log('===================================================================');
-console.log('WARNING: you must have installed node-sqlite3 / npm install sqlite3');
-console.log('===================================================================');
-console.log('');
-
 framework.run(http, debug, port);
 console.log("http://127.0.0.1:{0}/".format(port));

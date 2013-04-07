@@ -32,11 +32,9 @@ function viewHomepage() {
 	}
 
 	var db = self.database('users');
-	var query = new builders.QueryBuilder();
+	var filter = function(o) { return o.email === self.post.LoginName && o.password == self.post.LoginPassword; };
 
-	query.addValue('email', '=', self.post.LoginName).addOperator('AND').addValue('password', '=', self.post.LoginPassword.toSHA1());
-	
-	db.findOne('tbl_user', query, function(err, user) {
+	db.one(filter, function(err, user) {
 
 		if (user === null) {
 			errorBuilder.add('LoginError');
@@ -44,12 +42,15 @@ function viewHomepage() {
 			return;
 		}
 
+		self.database('users-logs').write({ id: user.id, email: user.email, ip: self.req.ip, date: new Date() });
+
 		// save to cookie
 		self.res.cookie(self.config.cookie, self.app.encode({ id: user.id, ip: self.req.ip }, 'user'), new Date().add('m', 5));
 
 		// return result
-		self.json({ r: true });
+		self.json({ r: true });		
 	});
+
 }
 
 function onValidation(name, value) {

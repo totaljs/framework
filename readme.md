@@ -44,6 +44,7 @@ web application framework for node.js
 * Supports simple mail templating - [example](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
 * Supports custom authorization - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
 * Supports simple image processing (resize, crop, blur, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
+* __Supports internal nosql embed database__ - [nosql](https://github.com/petersirka/nosql)
 * Easy adding dynamic META tags in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-meta)
 * Easy adding dynamic Settings in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-settings)
 * Simple use paypal payment with [node-paypal](https://github.com/petersirka/node-paypal) - [example](https://github.com/petersirka/partial.js/tree/master/examples/paypal)
@@ -51,7 +52,6 @@ web application framework for node.js
 * Supports live usage information - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-usage)
 * Supports dynamic stop server - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
 * Supports verification of framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
-* Supports simple SQLite ORM, must be installed [note-sqlite3](https://github.com/developmentseed/node-sqlite3)
 * __Supports backup and restore website__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
 * About 8 000 lines of JavaScript code, all files have 300 kB
 * __No dependencies__
