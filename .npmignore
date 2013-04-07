@@ -2,7 +2,6 @@ Makefile
 empty-project/
 examples/
 support/
-keepalive-command/
 test/
 bk/
 *.markdown
