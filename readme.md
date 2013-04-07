@@ -44,7 +44,7 @@ web application framework for node.js
 * Supports simple mail templating - [example](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
 * Supports custom authorization - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
 * Supports simple image processing (resize, crop, blur, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
-* __Supports internal nosql embedded database__ - [authorization](https://github.com/petersirka/partial.js/tree/master/examples/authorization), [contact form](https://github.com/petersirka/partial.js/tree/master/examples/contact-form), for more information please visit [NoSQL module on GitHub](https://github.com/petersirka/nosql)
+* __Supports internal nosql embedded database__ - [authorization](https://github.com/petersirka/partial.js/tree/master/examples/authorization) or [contact form](https://github.com/petersirka/partial.js/tree/master/examples/contact-form)
 * Easy adding dynamic META tags in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-meta)
 * Easy adding dynamic Settings in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-settings)
 * Simple use paypal payment with [node-paypal](https://github.com/petersirka/node-paypal) - [example](https://github.com/petersirka/partial.js/tree/master/examples/paypal)
