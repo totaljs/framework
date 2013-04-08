@@ -63,7 +63,7 @@ web application framework for node.js
 
 [![NoSQL embedded database](http://partialjs.com/exports/nosql-logo.png)](https://github.com/petersirka/nosql)
 
-* Small and effective
+* Small and simple data storage for small web site
 * Written in JavaScript
 * Asynchronous insert, read, update, remove
 * Easy filtering documents
@@ -76,6 +76,7 @@ web application framework for node.js
 
 [![Backup & Restore](http://partialjs.com/exports/backup-logo.png)](https://github.com/petersirka/backup)
 
+* Written in JavaScript
 * Easy backup & Easy Restore
 * Small and effective
 * Backup file is text file and all files are compressed via GZIP
