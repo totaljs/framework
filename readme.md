@@ -61,6 +61,8 @@ web application framework for node.js
 
 ## partial.js NoSQL embedded database
 
+[![NoSQL embedded database](http://partialjs.com/exports/nosql-logo.png)](https://github.com/petersirka/nosql)
+
 * Small and effective
 * Written in JavaScript
 * Asynchronous insert, read, update, remove
@@ -68,10 +70,10 @@ web application framework for node.js
 * __No dependencies__
 * [NoSQL embedded database project on GitHub](https://github.com/petersirka/nosql)
 
-[![NoSQL embedded database](http://partialjs.com/exports/nosql-logo.png)](https://github.com/petersirka/nosql)
-
 
 ## partial.js Backup & Restore
+
+[![Backup & Restore](http://partialjs.com/exports/backup-logo.png)](https://github.com/petersirka/backup)
 
 * Small and effection
 * Backup file is text file
@@ -79,8 +81,6 @@ web application framework for node.js
 * Easy manipulation
 * __No dependencies__
 * [Backup & Restore project on GitHub](https://github.com/petersirka/backup)
-
-[![Backup & Restore](http://partialjs.com/exports/backup-logo.png)](https://github.com/petersirka/backup)
 
 
 ***
