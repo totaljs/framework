@@ -1,9 +1,9 @@
-IN DEVELOPMENT ======= 1.2.2-4
+======= 1.2.2-4
 
 - updated: @{meta} / added after title " - " + config['name'] (without homepage url)
 - updated: binary –> default controller name: default.js
 - updated: empty project –> default controller name: default.js
-- updated: nosql embedded database
+- updated: nosql embedded database (new version)
 
 ======= 1.2.2-3
 
