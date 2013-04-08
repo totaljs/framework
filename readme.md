@@ -59,16 +59,29 @@ web application framework for node.js
 * __Supports internal NoSQL embedded database__ - [example: authorization](https://github.com/petersirka/partial.js/tree/master/examples/authorization) or [example: contact form](https://github.com/petersirka/partial.js/tree/master/examples/contact-form)
 
 
-## NoSQL embedded database
+## partial.js NoSQL embedded database
 
-* small and effective
-* written in JavaScript
-* asynchronous insert, read, update, remove
-* easy filtering documents
-* __no dependencies__
-* [NoSQL embedded database on GitHub](https://github.com/petersirka/nosql)
+* Small and effective
+* Written in JavaScript
+* Asynchronous insert, read, update, remove
+* Easy filtering documents
+* __No dependencies__
+* [NoSQL embedded database project on GitHub](https://github.com/petersirka/nosql)
 
 [![NoSQL embedded database](http://partialjs.com/exports/nosql-logo.png)](https://github.com/petersirka/nosql)
+
+
+## partial.js Backup & Restore
+
+* Small and effection
+* Backup file is text file
+* Simple filtering files and directories
+* Easy manipulation
+* __No dependencies__
+* [Backup & Restore project on GitHub](https://github.com/petersirka/backup)
+
+[![Backup & Restore](http://partialjs.com/exports/backup-logo.png)](https://github.com/petersirka/backup)
+
 
 ***
 
@@ -106,7 +119,7 @@ $ open http://127.0.0.1:8080
 
 *** 
 
-> I am still improving my english. Please do not hesitate to contact me in any contradictions.
+> I am still improving my english.
 
 ## The MIT License
 
