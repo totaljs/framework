@@ -10,48 +10,48 @@ web application framework for node.js
 
 ***
 
-* Async web framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/async)
-* Simple view engine - [example](https://github.com/petersirka/partial.js/tree/master/examples/views)
-* Simple routing + support flags ['xhr', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug'] - [example](https://github.com/petersirka/partial.js/tree/master/examples/routing)
+* Async web framework - [example: async methods](https://github.com/petersirka/partial.js/tree/master/examples/async)
+* Simple view engine - [example: view engine](https://github.com/petersirka/partial.js/tree/master/examples/views)
+* Simple routing + support flags ['xhr', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug'] - [example: flags](https://github.com/petersirka/partial.js/tree/master/examples/routing)
 * Simple cacheing - [http cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-http), [partial cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-partial)
 * Simple directory structure (controllers, modules, public, logs, tmp, templates, views, resources)
 * Simple code structure
 * Simple error handling
-* Simple cookie manipulation - [example](https://github.com/petersirka/partial.js/tree/master/examples/cookies)
-* Simple listing via templates - [example](https://github.com/petersirka/partial.js/tree/master/examples/templating)
+* Simple cookie manipulation - [example: cookies](https://github.com/petersirka/partial.js/tree/master/examples/cookies)
+* Simple listing via templates - [example: listing via templates](https://github.com/petersirka/partial.js/tree/master/examples/templating)
 * XSS protection
 * Share controller functions and models over framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
-* __Assertion Testing__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/testing)
-* Supports custom helpers - [example](https://github.com/petersirka/partial.js/tree/master/examples/View-custom-helper)
-* Supports routing to static file for dynamic creating static file - [example](https://github.com/petersirka/partial.js/tree/master/examples/routing)
+* __Assertion Testing__ - [example: testing](https://github.com/petersirka/partial.js/tree/master/examples/testing)
+* Supports custom helpers - [example: custom helpers](https://github.com/petersirka/partial.js/tree/master/examples/View-custom-helper)
+* Supports routing to static file for dynamic creating static file - [example: routing](https://github.com/petersirka/partial.js/tree/master/examples/routing)
 * Supports controller sharing between other controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
-* Supports debug mode with custom settings without cache - [example](https://github.com/petersirka/partial.js/tree/master/examples/config-debug-release)
-* Supports file upload - [example](https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart)
+* Supports debug mode with custom settings without cache - [example: debug mode](https://github.com/petersirka/partial.js/tree/master/examples/config-debug-release)
+* Supports file upload - [example: file upload](https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart)
 * Supports copy&paste custom code between projects - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-custom)
-* __Supports modules__ (module can create route, view, template, content, resource or static CSS/JS file) - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
-* Supports form data validation - [example](https://github.com/petersirka/partial.js/tree/master/examples/validation)
-* Supports simple log writer - [example](https://github.com/petersirka/partial.js/tree/master/examples/logs)
-* Supports simple restrictions [example](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
+* __Supports modules__ (module can create route, view, template, content, resource or static CSS/JS file) - [example: module](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
+* Supports form data validation - [example: validation](https://github.com/petersirka/partial.js/tree/master/examples/validation)
+* Supports simple log writer - [example: logs](https://github.com/petersirka/partial.js/tree/master/examples/logs)
+* Supports simple restrictions [example: restriction](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
 * Supports serve static files
 * Supports HTML minification
 * Supports JavaScript compress
-* Supports JavaScript dynamic compress in views - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-javascript-compress)
-* Supports simple LESS CSS (with compress) - [example](https://github.com/petersirka/partial.js/tree/master/examples/css-less)
-* Supports Markdown parser - [example](https://github.com/petersirka/partial.js/tree/master/examples/markdown)
-* Supports resources (for multilanguage pages) - [example](https://github.com/petersirka/partial.js/tree/master/examples/localization-resources)
-* __Supports prefixes for mobile devices__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/mobile)
-* Supports simple SMTP mail sender - [example](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
-* Supports simple mail templating - [example](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
-* Supports custom authorization - [example](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
-* Supports simple image processing (resize, crop, blur, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
-* Easy adding dynamic META tags in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-meta)
-* Easy adding dynamic Settings in views or controllers - [example](https://github.com/petersirka/partial.js/tree/master/examples/views-settings)
-* Simple use paypal payment with [node-paypal](https://github.com/petersirka/node-paypal) - [example](https://github.com/petersirka/partial.js/tree/master/examples/paypal)
-* Supports simple paging builder - [example](https://github.com/petersirka/partial.js/tree/master/examples/paging)
-* Supports live usage information - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-usage)
-* Supports dynamic stop server - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
-* Supports verification of framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
-* __Supports backup and restore website__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
+* Supports JavaScript dynamic compress in views - [example: dynamic JavaScript compress](https://github.com/petersirka/partial.js/tree/master/examples/views-javascript-compress)
+* Supports simple LESS CSS (with compress) - [example: LESS CSS](https://github.com/petersirka/partial.js/tree/master/examples/css-less)
+* Supports Markdown parser - [example: Markdown](https://github.com/petersirka/partial.js/tree/master/examples/markdown)
+* Supports resources (for multilanguage pages) - [example: resources](https://github.com/petersirka/partial.js/tree/master/examples/localization-resources)
+* __Supports prefixes for mobile devices__ - [example: prefixes](https://github.com/petersirka/partial.js/tree/master/examples/mobile)
+* Supports simple SMTP mail sender - [example: SMTP mail sender](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
+* Supports simple mail templating - [example: mail templating](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
+* Supports custom authorization - [example: authorization](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
+* Supports simple image processing (resize, crop, blur, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example: image manipulation](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
+* Easy adding dynamic META tags in views or controllers - [example: meta tags](https://github.com/petersirka/partial.js/tree/master/examples/views-meta)
+* Easy adding dynamic Settings in views or controllers - [example: view settings](https://github.com/petersirka/partial.js/tree/master/examples/views-settings)
+* Simple use paypal payment with [node-paypal project](https://github.com/petersirka/node-paypal) - [example: paypal](https://github.com/petersirka/partial.js/tree/master/examples/paypal)
+* Supports simple pagination builder - [example: pagination builder](https://github.com/petersirka/partial.js/tree/master/examples/paging)
+* Supports live usage information - [example: framework usage](https://github.com/petersirka/partial.js/tree/master/examples/framework-usage)
+* Supports dynamic stop server - [example: stop server](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
+* Supports verification of framework - [example: verification](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
+* __Supports backup and restore website__ - [example: backup & restore](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
 * About 8 000 lines of JavaScript code, all files have 300 kB
 * __No dependencies__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
@@ -79,7 +79,7 @@ web application framework for node.js
 * Easy backup & Easy Restore
 * Small and effective
 * Backup file is text file and all files are compressed via GZIP
-* [partial.js example](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [partial.js auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
+* [partial.js backup & restore example](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [partial.js auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
 * __No dependencies__
 * [Backup & Restore project on GitHub](https://github.com/petersirka/backup)
 
