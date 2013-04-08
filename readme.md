@@ -58,6 +58,18 @@ web application framework for node.js
 * [Documentation](http://www.partialjs.com/documentation/)
 * __Supports internal nosql embedded database__ - [example: authorization](https://github.com/petersirka/partial.js/tree/master/examples/authorization) or [example: contact form](https://github.com/petersirka/partial.js/tree/master/examples/contact-form)
 
+***
+
+## Implemented: NoSQL embedded database
+
+* written in JavaScript
+* easy use
+* insert, update, read, remove
+* easy filtering documents
+* asynchronous write & read
+* __no dependencies__
+* [NoSQL on GitHub](https://github.com/petersirka/nosql)
+
 [![NoSQL embedded database](http://partialjs.com/exports/nosql-logo.png)](https://github.com/petersirka/nosql)
 
 ***
