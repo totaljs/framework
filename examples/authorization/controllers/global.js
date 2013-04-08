@@ -34,7 +34,7 @@ function viewHomepage() {
 	var db = self.database('users');
 	var filter = function(o) { return o.email === self.post.LoginName && o.password == self.post.LoginPassword; };
 
-	db.one(filter, function(err, user) {
+	db.one(filter, function(user) {
 
 		if (user === null) {
 			errorBuilder.add('LoginError');

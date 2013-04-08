@@ -1,3 +1,12 @@
+IN DEVELOPMENT ======= 1.2.2-4
+
+- added: utils.lambda() and string.lambda();
+
+- updated: @{meta} / added after title " - " + config['name'] (without homepage url)
+- updated: binary –> default controller name: default.js
+- updated: empty project –> default controller name: default.js
+- updated: nosql embedded database
+
 ======= 1.2.2-3
 
 - updated: nosql embedded database

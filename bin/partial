@@ -261,7 +261,7 @@ function createFileController(directory) {
 	buffer.push('    self.view(\'homepage\');');
 	buffer.push('}');
 
-	fs.writeFileSync(path.join(dir, 'global.js'), buffer.join(EOF));
+	fs.writeFileSync(path.join(dir, 'default.js'), buffer.join(EOF));
 }
 
 function createFileTest(directory) {

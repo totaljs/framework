@@ -37,7 +37,7 @@ exports.onAuthorize = function(req, res, flags, callback) {
 	// autologin by cookie
 	var db = self.database('users');
 
-	db.one('doc.id === {0}'.format(obj.id), function(err, user) {
+	db.one('doc.id === {0}'.format(obj.id), function(user) {
 
 		if (user === null) {
 			callback(false);
