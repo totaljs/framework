@@ -67,6 +67,7 @@ web application framework for node.js
 * Written in JavaScript
 * Asynchronous insert, read, update, remove
 * Easy filtering documents
+* [partial.js example: authorization](https://github.com/petersirka/partial.js/tree/master/examples/authorization) or [partial.js example: contact form](https://github.com/petersirka/partial.js/tree/master/examples/contact-form)
 * __No dependencies__
 * [NoSQL embedded database project on GitHub](https://github.com/petersirka/nosql)
 
@@ -75,10 +76,11 @@ web application framework for node.js
 
 [![Backup & Restore](http://partialjs.com/exports/backup-logo.png)](https://github.com/petersirka/backup)
 
-* Small and effection
-* Backup file is text file
+* Easy backup & Easy Restore
+* Small and effective
+* Backup file is text file and all files are compressed via GZIP
 * Simple filtering files and directories
-* Easy manipulation
+* [partial.js example](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [partial.js auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
 * __No dependencies__
 * [Backup & Restore project on GitHub](https://github.com/petersirka/backup)
 
