@@ -151,9 +151,6 @@ function prototypeString() {
 	str = 'Peter Širka Linker & - you known';
 	assert.ok(str.link() === 'peter-sirka-linker-you-known', 'string.link(): ' + str);
 	assert.ok(str.link(11) === 'peter-sirka', 'string.link(): ' + str);
-
-	str = 'a === b.toString()';
-	assert.ok(str.lambda({ a: '1', b: 1 })(), 'string.lambda(): ' + str);
 };
 
 function prototypeArray() {
@@ -182,8 +179,6 @@ function prototypeArray() {
 
 function others() {
 	var obj = {};
-
-	assert.ok(utils.lambda('a === b', { a: 2, b: 2 })() === true, 'utils.lambda()');
 
 	utils.extend(obj, { name: 'Peter', age: 25 });
 	assert.ok(obj.name === 'Peter' && obj.age === 25, 'utils.extend()');
