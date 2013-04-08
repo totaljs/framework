@@ -79,7 +79,6 @@ web application framework for node.js
 * Easy backup & Easy Restore
 * Small and effective
 * Backup file is text file and all files are compressed via GZIP
-* Simple filtering files and directories
 * [partial.js example](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [partial.js auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
 * __No dependencies__
 * [Backup & Restore project on GitHub](https://github.com/petersirka/backup)
