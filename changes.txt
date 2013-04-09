@@ -1,3 +1,7 @@
+======= 1.2.2-5
+
+- updated: nosql embedded database
+
 ======= 1.2.2-4
 
 - updated: @{meta} / added after title " - " + config['name'] (without homepage url)
