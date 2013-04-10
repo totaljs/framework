@@ -1,3 +1,8 @@
+======= 1.2.2-6
+
+- updated: framework.usage(), added: databases directory size
+- updated: clean code
+
 ======= 1.2.2-5
 
 - updated: nosql embedded database (new version)
