@@ -1,7 +1,8 @@
 IN DEVELOPMENT ======= 1.2.2-5
 
-- updated: nosql embedded database
+- updated: nosql embedded database (new version)
 - updated: clean code
+- updated: backup
 
 - fixed: try -> catch to emit load event and #.onLoaded
 
@@ -22,7 +23,7 @@ IN DEVELOPMENT ======= 1.2.2-5
 - added: new namespace partial.js/nosql
 
 - updated: backup & restore (added clear directory)
-- updated: markdown image parser
+- updated: markdown image parser, added new parser tag: [![alt](src)](url)
 - updated: framework.database()
 
 - removed: sqlite3
