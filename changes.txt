@@ -1,4 +1,4 @@
-======= 1.2.2-6
+IN DEVELOPMENT ======= 1.2.2-6
 
 - updated: framework.usage(), added: databases directory size
 - updated: clean code
