@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.2-5
+======= 1.2.2-5
 
 - updated: nosql embedded database (new version)
 - updated: clean code
