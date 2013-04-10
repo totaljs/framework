@@ -33,6 +33,7 @@ web application framework for node.js
 * Supports simple log writer - [example: logs](https://github.com/petersirka/partial.js/tree/master/examples/logs)
 * Supports simple restrictions [example: restriction](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
 * Supports serve static files
+* __Supports streaming static files__ - implemented Accept-Ranges
 * Supports HTML minification
 * Supports JavaScript compress
 * Supports JavaScript dynamic compress in views - [example: dynamic JavaScript compress](https://github.com/petersirka/partial.js/tree/master/examples/views-javascript-compress)
