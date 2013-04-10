@@ -10,7 +10,7 @@ if (fs.existsSync(dbfile))
 for (var i = 0; i < 10; i++)
 	db.insert({ name: String.fromCharCode(i + 65), index: i });
 
-db.bulk([{ name: '0', index: 0 }, { name: '1', index: 1 }, { name: '2', index: 2 }], function(count) {
+db.insert([{ name: '0', index: 0 }, { name: '1', index: 1 }, { name: '2', index: 2 }], function(count) {
 	assert.ok(count === -1, 'bulk insert problem')
 });
 
