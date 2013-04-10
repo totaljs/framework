@@ -1,6 +1,9 @@
-INDEVELOPMENT ======= 1.2.2-5
+IN DEVELOPMENT ======= 1.2.2-5
 
 - updated: nosql embedded database
+- updated: clean code
+
+- fixed: try -> catch to emit load event and #.onLoaded
 
 ======= 1.2.2-4
 
