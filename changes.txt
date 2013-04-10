@@ -2,7 +2,7 @@ IN DEVELOPMENT ======= 1.2.2-6
 
 - added: supports Accept-Ranges for streaming
 
-- updated: framework.usage(), added: databases directory size
+- updated: framework.usage(), added: databases directory size and added: staticsRange
 - updated: clean code
 
 ======= 1.2.2-5
