@@ -8,7 +8,7 @@ var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
 
-framework.init(http, true, 8001);
+framework.run(http, true, 8001);
 
 framework.onError = function(error, name, uri) {
 
