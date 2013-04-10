@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.2.2-6
 
 - added: supports Accept-Ranges for streaming
+- added: new config item: static-accepts-custom: .mp3, .flv, etc.
 
 - updated: framework.usage(), added: databases directory size and added: staticsRange
 - updated: clean code
