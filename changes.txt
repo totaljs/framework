@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.2.2-7
 - added: framework.global = {} - this is global object
 - added: controller.global == framework.global
 - added: @{global.property} and @{!global.property}
+- added: framework.pathTemp(name), framework.pathPublic(name)
 
 - updated: controller.view403(), controller.view403() and controller.view500()
 - updated: nosql (supports binary files)
