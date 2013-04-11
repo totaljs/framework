@@ -1,3 +1,7 @@
+======= 1.2.2-7
+
+- updated: nosql (supports binary files)
+
 ======= 1.2.2-6
 
 - added: supports Accept-Ranges for streaming
