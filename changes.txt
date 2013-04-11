@@ -1,4 +1,6 @@
-======= 1.2.2-7
+IN DEVELOPMENT ======= 1.2.2-7
+
+- added: framework.on('error', error, name, uri);
 
 - updated: controller.view403(), controller.view403() and controller.view500()
 - updated: nosql (supports binary files)
