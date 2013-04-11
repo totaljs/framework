@@ -1,5 +1,6 @@
 ======= 1.2.2-7
 
+- updated: controller.view403(), controller.view403() and controller.view500()
 - updated: nosql (supports binary files)
 
 ======= 1.2.2-6
