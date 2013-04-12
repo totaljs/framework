@@ -307,6 +307,9 @@ function others() {
 
 	error.clear();
 	assert.ok(!error.hasError(), 'validation - clear() & hasError()');
+
+	assert.ok(expression('a.id === b', ['a', 'b'], { id: 1 }, 1)(), 'expression error (true)');
+	assert.ok(!expression('a.id === b', ['a', 'b'], { id: 1 })(), 'expression error (false)');
 };
 
 function onValidation(name, value) {
