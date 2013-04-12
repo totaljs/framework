@@ -9,6 +9,7 @@ IN DEVELOPMENT ======= 1.2.2-7
 - updated: controller.view403(), controller.view403() and controller.view500()
 - updated: nosql (supports binary files)
 
+- fixed: view condition @{if condition} @{endif}
 - fixed: framework.onLoaded error
 
 ======= 1.2.2-6
