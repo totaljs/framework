@@ -5,7 +5,7 @@ web application framework for node.js
 
 - Homepage / [www.partialjs.com](http://partialjs.com)
 - Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
-- E-shop example: [older sample e-shop written in partial.js and SQLite3](http://eshop.partialjs.com)
+- E-shop example: [new example of e-shop written in partial.js and NoSQL embedded database (without installation)](http://eshop.partialjs.com)
 - Documentation: [partial.js documentation](http://partialjs.com/documentation/)
 
 ***

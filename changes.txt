@@ -1,7 +1,7 @@
 IN DEVELOPMENT ======= 1.2.2-7
 
-- added: utils.expression() / global.expression()
-- added: @{global.property} and @{!global.property}
+- added: utils.expression() / global.expression(), read documentation -> utils / expression
+- added: @{global.property} and @{!global.property}, read documentation -> framework
 - added: controller.global == framework.global
 - added: framework.global = {} - this is global object
 - added: framework.pathTemp(name), framework.pathPublic(name)
@@ -12,7 +12,7 @@ IN DEVELOPMENT ======= 1.2.2-7
 - updated: nosql (supports binary files)
 
 - fixed: view condition @{if condition} @{endif}
-- fixed: framework.onLoaded error
+- fixed: framework.onLoaded throwing error
 
 ======= 1.2.2-6
 
