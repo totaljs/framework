@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.2-7
+======= 1.2.2-7
 
 - added: utils.expression() / global.expression(), read documentation -> utils / expression
 - added: @{global.property} and @{!global.property}, read documentation -> framework
