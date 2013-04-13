@@ -5,6 +5,7 @@ IN DEVELOPMENT ======= 1.2.2-7
 - added: @{global.property} and @{!global.property}
 - added: framework.pathTemp(name), framework.pathPublic(name)
 - added: utils.expression() / global.expression()
+- added: framework.ifNotModified(req, res, value, [strict]) and framework.setModified(req, res, value)
 
 - updated: controller.view403(), controller.view403() and controller.view500()
 - updated: nosql (supports binary files)
