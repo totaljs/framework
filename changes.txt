@@ -1,3 +1,7 @@
+======= 1.2.2-8
+
+- updated: rename framework.onAuthorize to framework.onAuthorization
+
 ======= 1.2.2-7
 
 - added: utils.expression() / global.expression(), read documentation -> utils / expression

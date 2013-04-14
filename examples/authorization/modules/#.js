@@ -10,7 +10,7 @@ var builders = require('partial.js/builders');
 // AUTHORIZATION
 // ================================================
 
-exports.onAuthorize = function(req, res, flags, callback) {
+exports.onAuthorization = function(req, res, flags, callback) {
 
 	var self = this;
 

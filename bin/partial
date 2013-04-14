@@ -192,7 +192,7 @@ function createFileModules(directory) {
 	buffer.push('');
 	buffer.push('// exports.onLoaded = function(self) {};');
 	buffer.push('// exports.onError = function(err, name, uri) {};');
-	buffer.push('// exports.onAuthorize = function(req, res, callback) { callback(false); };');
+	buffer.push('// exports.onAuthorization = function(req, res, callback) { callback(false); };');
 	buffer.push('// exports.onPrefix = function(req) { return \'\'; };');
 	buffer.push('// exports.onVersion = function(name) { return name; };');
 	buffer.push('// exports.onRoute = function(req, res) {};');

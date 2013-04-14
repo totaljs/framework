@@ -9,7 +9,7 @@ exports.install = function(framework) {
 
 function viewIsLogged() {
 	var self = this;
-	self.plain('You are logged as {0} ({1}x). To unlogged remove cookie __user'.format(self.session.email, self.session.countLogin));
+	self.plain('You are logged as {0}. To unlogged remove cookie __user'.format(self.session.email));
 }
 
 function viewHomepage() {
