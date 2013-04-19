@@ -1,5 +1,7 @@
 IN DEVELOPMENT ======= 1.2.3-0
 
+- added: controller.stream(filename, stream, [downloadName], [headers]);
+
 - updated: utils.async, controller.async
 - updated: nosql
 
