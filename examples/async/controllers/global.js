@@ -9,36 +9,44 @@ function viewHomepage() {
 	var self = this;
 	var builder = [];
 	
-	self.wait(function() {
+	self.await(function(complete) {
 		utils.request('https://www.google.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.google.com -> ' + output);
-
-			// skip next steps?
-			// self.skip(2);
-
-			self.next();
+			complete();
 		});
 	});
 
-	self.wait(function() {
+	self.await(function(complete) {
 		utils.request('https://www.github.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.github.com -> ' + output);
-
-			// skip next?
-			// self.skip();
-
-			self.next();
+			complete();
 		});
 	});
 
-	self.wait(function() {
+	self.await(function(complete) {
 		utils.request('http://www.yahoo.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.yahoo.com -> ' + output);
-			self.next();
+			complete();
 		});
+	});
+
+	self.await('partial', function(complete) {
+		utils.request('http://www.partialjs.com', 'GET', null, function(err, data) {
+			var output = err ? 'error' : data.length.toString();
+			builder.push('www.partialjs.com -> ' + output);
+			complete();
+		});
+	});
+	
+	// waiting for await('partial')
+	self.wait('waiting', 'partial', function(complete) {
+		console.log('www.partialjs.com completed');
+		setTimeout(function() {
+			complete();
+		}, 1000);
 	});
 
 	/*
