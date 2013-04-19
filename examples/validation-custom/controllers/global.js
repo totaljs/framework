@@ -22,7 +22,7 @@ function viewHomepage() {
 	var errorBuilder = new builders.ErrorBuilder(resource);
 
 	// Documentation: http://www.partialjs.com/documentation/utils/
-	if (utils.validation(self.post, ['FirstName', 'LastName', 'Age', 'Email', 'Terms'], onValidation, errorBuilder).hasError()) {
+	if (utils.validate(self.post, ['FirstName', 'LastName', 'Age', 'Email', 'Terms'], onValidation, errorBuilder).hasError()) {
 		self.json(errorBuilder);
 		return;
 	}

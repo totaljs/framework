@@ -23,7 +23,7 @@ function viewHomepage() {
 		@resource name :: optional, default = default.resource
 		return {ErrorBuilder}
 	*/
-	var result = self.validation(self.post, ['FirstName', 'LastName', 'Age', 'Email', 'Terms'], 'Form');
+	var result = self.validate(self.post, ['FirstName', 'LastName', 'Age', 'Email', 'Terms'], 'Form');
 	if (result.hasError()) {
 		self.json(result);
 		return;

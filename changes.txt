@@ -1,10 +1,13 @@
 IN DEVELOPMENT ======= 1.2.3-0
 
 - added: controller.stream(filename, stream, [downloadName], [headers]);
+- added: controller.validate() - controller.validation() is alias
 
 - updated: utils.async, controller.async
 - updated: nosql
 - updated: controller.template()
+
+- renamed: utils.validation() to utils.validate()
 
 ======= 1.2.2-9
 

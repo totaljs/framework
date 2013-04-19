@@ -26,7 +26,7 @@ function viewHomepage() {
 
 	var errorBuilder = new builders.ErrorBuilder(resource);
 
-	if (utils.validation(self.post, ['LoginName', 'LoginPassword'], onValidation, errorBuilder).hasError()) {
+	if (utils.validate(self.post, ['LoginName', 'LoginPassword'], onValidation, errorBuilder).hasError()) {
 		self.json(errorBuilder);
 		return;
 	}
