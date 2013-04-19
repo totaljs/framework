@@ -1,3 +1,8 @@
+IN DEVELOPMENT ======= 1.2.3-0
+
+- updated: utils.async, controller.async
+- updated: nosql
+
 ======= 1.2.2-9
 
 - fixed: problem with nosql/view–>create
