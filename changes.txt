@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.2.3-0
 
 - updated: utils.async, controller.async
 - updated: nosql
+- updated: controller.template()
 
 ======= 1.2.2-9
 
