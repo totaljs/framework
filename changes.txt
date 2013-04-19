@@ -9,6 +9,8 @@ IN DEVELOPMENT ======= 1.2.3-0
 
 - renamed: utils.validation() to utils.validate()
 
+- fixed: template engine
+
 ======= 1.2.2-9
 
 - fixed: problem with nosql/view–>create
