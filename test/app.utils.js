@@ -237,50 +237,63 @@ function others() {
 	var async = new utils.Async();
 	var value = [];
 
-	async.wait(function() {
+	async.wait('1', 'a', function(next) {
 		value.push(1);
-		async.next();
+		next();
 	});
 
-	async.wait(function() {
+	async.wait('2', '1', function(next) {
 		setTimeout(function() {
 			value.push(2);
-			async.skip();
+			next();
 		}, 2000);
 	});
 
-	async.wait(function() {
+	async.wait('3', '2', function(next) {
 		value.push(3);
-		async.next();
+		next();
 	});
 
-	async.wait(function() {
+	async.wait('4', '5', function(next) {
 		value.push(4);
-		async.next();
+		next();
 	});
 
-	async.wait(function() {
+	async.wait('5', '3', function(next) {
 		value.push(5);
-		async.skip(2);
+		next();
 	});
 
-	async.wait(function() {
+	async.wait('6', '5', function(next) {
 		value.push(6);
-		async.next();
+		next();
 	});
 
-	async.wait(function() {
+	async.wait('7', '6', function(next) {
 		value.push(7);
-		async.next();
+		next();
 	});	
 
-	async.wait(function() {
+	async.wait('8', '7', function(next) {
 		value.push(8);
-		async.next();
+		next();
+	});
+
+	async.await('a', function(next) {
+		value.push(9);
+		next();
+	});
+
+	async.await(function(next) {
+		next();
+	});
+
+	async.await(function(next) {
+		next();
 	});
 
 	async.complete(function() {
-		assert.ok(value.length === 5, 'async');
+		assert.ok(value.join(',') === '9,1,2,3,5,4,6,7,8', 'async');
 	});
 
 	utils.request('http://www.yahoo.com', 'GET', null, function(err, data, code) {
