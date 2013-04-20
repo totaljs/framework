@@ -11,6 +11,7 @@ IN DEVELOPMENT ======= 1.2.3-0
 
 - fixed: template engine
 - fixed: view engine
+- fixed: routing priority
 
 ======= 1.2.2-9
 
