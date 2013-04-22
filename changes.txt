@@ -5,6 +5,7 @@ IN DEVELOPMENT ======= 1.2.3-0
 
 - updated: utils.async, controller.async
 - updated: nosql (new version)
+- updated: content types
 
 - renamed: utils.validation() to utils.validate()
 - renamed: JavaScript content type renamed to text/javascript (from application/x-javascript)
