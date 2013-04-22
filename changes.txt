@@ -1,13 +1,13 @@
 IN DEVELOPMENT ======= 1.2.3-0
 
-- added: controller.stream(filename, stream, [downloadName], [headers]);
+- added: controller.stream(contentType, stream, [downloadName], [headers]);
 - added: controller.validate() - controller.validation() is alias
 
 - updated: utils.async, controller.async
-- updated: nosql
-- updated: controller.template()
+- updated: nosql (new version)
 
 - renamed: utils.validation() to utils.validate()
+- renamed: JavaScript content type renamed to text/javascript (from application/x-javascript)
 
 - fixed: template engine
 - fixed: view engine
