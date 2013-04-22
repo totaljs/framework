@@ -308,7 +308,7 @@ function others() {
 		return 'resource-' + name;
 	};
 
-	var error = utils.validation({}, ['firstName', 'lastName', 'age'], onValidation, resource);
+	var error = utils.validate({}, ['firstName', 'lastName', 'age'], onValidation, resource);
 
 	assert.ok(error.hasError(), 'validation - hasError()');
 
