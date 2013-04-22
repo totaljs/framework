@@ -42,12 +42,20 @@ function viewHomepage() {
 	});
 	
 	// waiting for await('partial')
-	self.wait('waiting', 'partial', function(complete) {
-		console.log('www.partialjs.com completed');
+	self.wait('waiting 1', 'partial', function(complete) {
+		console.log('waiting 1 complete');
 		setTimeout(function() {
 			complete();
 		}, 1000);
 	});
+
+	// waiting for wait('waiting')
+	self.wait('waiting 2', 'waiting 1', function(complete) {
+		console.log('waiting 2 complete');
+		setTimeout(function() {
+			complete();
+		}, 1000);
+	});	
 
 	/*
 		self.complete(function() {
