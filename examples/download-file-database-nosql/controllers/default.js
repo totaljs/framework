@@ -39,6 +39,6 @@ function static_image(req, res) {
         self.setModified(req, res, id);
 
         // req, res, filename, stream, [downloadname], [headers]
-        self.responseStream(req, res, id + '.png', stream);
+        self.responseStream(req, res, 'image/png', stream);
     });
 }
