@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.3-0
+======= 1.2.3-0
 
 - added: controller.stream(contentType, stream, [downloadName], [headers]);
 - added: controller.validate() - controller.validation() is alias
