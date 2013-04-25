@@ -2,6 +2,8 @@ IN DEVELOPMENT ======= 1.2.3-1
 
 - updated: nosql (new version, supports changes)
 
+- fixed: routing to static files
+
 ======= 1.2.3-0
 
 - added: controller.stream(contentType, stream, [downloadName], [headers]);
