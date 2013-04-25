@@ -3,6 +3,7 @@ IN DEVELOPMENT ======= 1.2.3-1
 - updated: nosql (new version, supports changes)
 
 - fixed: routing to static files
+- fixed: routing to controllers
 
 ======= 1.2.3-0
 
