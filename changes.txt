@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.2.3-1
 
 - fixed: routing to static files
 - fixed: routing to controllers
+- fixed: stop framework when "EADDRINUSE"
 
 ======= 1.2.3-0
 
