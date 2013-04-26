@@ -1,3 +1,6 @@
+// https://developer.paypal.com/webapps/developer/applications/accounts
+// click to e-mail and then click to profile (under e-mail address) and click to API credentials
+
 paypal-user						: ****.gmail.com
 paypal-password					: ****
 paypal-signature				: ****.aukr21sQc0PkYL4KZRuxVd
