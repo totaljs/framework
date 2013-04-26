@@ -7,6 +7,10 @@ exports.init = function() {
 	self.route('/views/', viewViews);
 	self.route('/view-notfound/', viewError);
 	self.route('/views-if/', viewViewsIf);
+	self.route('/{a}/', viewRouteA);
+	self.route('/{a}/{b}/', viewRouteAB);
+	self.route('/a/{a}/', viewRouteAA);
+	self.route('/a/b/c/', viewRouteABC);
 };
 
 function viewIndex() {
@@ -132,4 +136,29 @@ function viewError() {
 	assert.ok(self.template('asdljsald', [1, 2, 3]) === '', 'template: not found problem');
 	assert.ok(self.content('asdasd') === '', 'content: not found problem');
 	self.view('asdlkjasl');
-}
+};
+
+function viewRouteA() {
+	var self = this;
+	assert.ok(self.url === '/a/', 'routing: viewRouteA');
+	self.plain('OK');
+};
+
+function viewRouteAB() {
+	var self = this;
+	assert.ok(self.url === '/c/b/', 'routing: viewRouteAB');
+	self.plain('OK');
+};
+
+function viewRouteAA(a) {
+	var self = this;
+	assert.ok(a === 'aaa', 'routing: viewRouteAA');
+	assert.ok(self.url === '/a/aaa/', 'routing: viewRouteAA');
+	self.plain('OK');
+};
+
+function viewRouteABC() {
+	var self = this;
+	assert.ok(self.url === '/a/b/c/', 'routing: viewRouteABC');
+	self.plain('OK');
+};

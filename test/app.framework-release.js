@@ -89,6 +89,47 @@ function test_view_error(next) {
 	});	
 }
 
+function test_routing(next) {
+
+	var async = new utils.Async();
+
+	async.await('a', function(complete) {
+		utils.request(url + 'a/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			complete();
+		});
+	});
+
+	async.await('a/aaa', function(complete) {
+		utils.request(url + 'a/aaa/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			complete();
+		});
+	});
+
+	async.await('a/b', function(complete) {
+		utils.request(url + 'c/b/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			complete();
+		});
+	});
+
+	async.await('a/b/c/', function(complete) {
+		utils.request(url + 'a/b/c/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			complete();
+		});
+	});	
+
+	async.complete(function() {
+		next && next();
+	});
+};
+
 function run() {
 
 	if (max <= 0) {
@@ -100,7 +141,9 @@ function run() {
 	test_controller_functions(function() {
 		test_view_functions(function() {
 			test_view_error(function() {
-				run();
+				test_routing(function() {
+					run();
+				});
 			});
 		});
 	});	
