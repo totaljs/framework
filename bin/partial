@@ -79,9 +79,9 @@ function createFileIndex(directory) {
 function createFileConfig(directory) {
 	var buffer = [];
 
-	buffer.push("name				: my web site");
-	buffer.push("version			: 1.01");
-	buffer.push("secret				: your-secret-key");
+	buffer.push("name         : my web site");
+	buffer.push("version      : 1.01");
+	buffer.push("secret       : your-secret-key");
 	
 	fs.writeFileSync(path.join(directory, 'config-release'), buffer.join(EOF));
 	fs.writeFileSync(path.join(directory, 'config-debug'), buffer.join(EOF).replace(/true/g, 'false'));
