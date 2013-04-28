@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.3-1
+======= 1.2.3-1
 
 - updated: nosql (new version, supports changes)
 
