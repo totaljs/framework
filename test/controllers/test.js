@@ -3,6 +3,7 @@ var utils = require('../../lib/utils');
 
 exports.init = function() {
 	var self = this;
+	self.route('/js/', viewJS);
 	self.route('/', viewIndex);
 	self.route('/views/', viewViews);
 	self.route('/view-notfound/', viewError);
@@ -162,3 +163,9 @@ function viewRouteABC() {
 	assert.ok(self.url === '/a/b/c/', 'routing: viewRouteABC');
 	self.plain('OK');
 };
+
+function viewJS() {
+	var self = this;
+	self.layout('');
+	self.view('d');
+}

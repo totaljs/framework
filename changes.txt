@@ -5,6 +5,7 @@ IN DEVELOPMENT ======= 1.2.3-1
 - fixed: routing to static files
 - fixed: routing to controllers
 - fixed: stop framework when "EADDRINUSE"
+- fixed: JavaScript compressor (problem with "\n" in views)
 
 ======= 1.2.3-0
 
