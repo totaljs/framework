@@ -13,14 +13,14 @@ web application framework for node.js
 
 * Async web framework - [example: async methods](https://github.com/petersirka/partial.js/tree/master/examples/async)
 * Simple view engine - [example: view engine](https://github.com/petersirka/partial.js/tree/master/examples/views)
-* Simple routing + support flags ['xhr', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug'] - [example: flags](https://github.com/petersirka/partial.js/tree/master/examples/routing)
+* Simple routing + support flags ['xhr', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug', 'xss', '!custom-flag'] - [example: flags](https://github.com/petersirka/partial.js/tree/master/examples/routing-flags)
 * Simple cacheing - [http cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-http), [partial cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-partial)
 * Simple directory structure (controllers, modules, public, logs, tmp, templates, views, resources)
 * Simple code structure
 * Simple error handling
 * Simple cookie manipulation - [example: cookies](https://github.com/petersirka/partial.js/tree/master/examples/cookies)
 * Simple listing via templates - [example: listing via templates](https://github.com/petersirka/partial.js/tree/master/examples/templating)
-* XSS protection
+* XSS protection [example: XSS](https://github.com/petersirka/partial.js/tree/master/examples/framework-xss-protection)
 * Share controller functions and models over framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
 * __Assertion Testing__ - [example: testing](https://github.com/petersirka/partial.js/tree/master/examples/testing)
 * Supports custom helpers - [example: custom helpers](https://github.com/petersirka/partial.js/tree/master/examples/View-custom-helper)
