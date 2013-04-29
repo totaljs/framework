@@ -13,10 +13,13 @@ exports.install = function(framework) {
 	framework.route('/put/', put_homepage, ['put']);
 	framework.route('/delete/', delete_homepage, ['delete']);
 
+	// Disable XSS protection
+	framework.route('/xss/', xss_homepage, ['xss']);
+
 	// This route is enabled in debug mode 
 	framework.route('/debug/', debug_homepage, ['debug']);
 
-	// Prefix flag
+	// Prefix as the flag
 	framework.route('/', android_homepage, ['#android']);
 
 	// https://github.com/petersirka/partial.js/tree/master/examples/authorization
@@ -69,4 +72,8 @@ function delete_homepage() {
 // flags: PUT
 function put_homepage() {
 	this.plain('PUT - homepage');
+}
+
+function xss_homepage() {
+	this.plain('XSS - homepage');
 }
