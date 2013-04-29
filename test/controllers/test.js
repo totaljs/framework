@@ -17,7 +17,7 @@ exports.init = function() {
 function viewIndex() {
 	var self = this;
 	var name = 'controller: ';
-
+	
 	assert.ok(self.pathPublic('file.txt') === './public/file.txt', name + 'pathPublic');
 	assert.ok(self.pathLog('file.txt') === './logs/file.txt', name + 'pathLog');
 	assert.ok(self.pathTemp('file.txt') === './tmp/file.txt', name + 'pathTemp');
@@ -64,10 +64,11 @@ function viewIndex() {
 	assert.ok(self.routeFont('p.woff') === '/font/p.woff', name + 'routeFont()');
 	assert.ok(self.routeDocument('p.pdf') === '/upload/p.pdf', name + 'routeDocument()');
 	assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
+
 	assert.ok(self.template('test', ['A', 'B']) === '<div>AB</div>{name | 1}', name + 'template - no repository');	
 	assert.ok(self.template('test', ['A', 'B'], '', { name: 'ABCDEFG' }) === '<div>AB</div>A...', name + 'template - repository');
 	assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');
-	assert.ok(self.view('test', null, true) === 'partial.js', name + 'view');		
+	assert.ok(self.view('test', null, true) === 'partial.js', name + 'view');
 	assert.ok(self.content('test') === 'EMPTY', name + 'content');
 	assert.ok(self.url === '/', name + 'url');
 
@@ -112,7 +113,7 @@ function viewViews() {
 	assert.ok(output.contains('#template-toggle#'), name + 'templateToggle()');
 	assert.ok(!output.contains('<!--'), name + 'minify html');
 	assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
-
+	
 	self.repository.A = 'A';
 	output = self.view('c', { a: 'A', b: 'B', c: true, d: 'hidden<b>' }, true);
 
@@ -122,7 +123,7 @@ function viewViews() {
 	assert.ok(output.contains('<textarea name="b" id="b" class="myarea">B</textarea>'), name + 'textarea');
 	assert.ok(output.contains('#ACAXXX#'), name + 'if');
 	assert.ok(output.contains('<label><input type="radio" name="a" checked="checked" value="A" /> <span>test label</span></label>'), name + 'radio');
-
+	
 	self.json({ r: true });
 }
 

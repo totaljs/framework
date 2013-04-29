@@ -6,7 +6,7 @@ var fs = require('fs');
 
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
-var max = 100;
+var max = 200;
 
 framework.run(http, false, 8001);
 
@@ -148,6 +148,16 @@ function run() {
 		});
 	});	
 }
+
+var mem = require('memwatch');
+
+mem.on('leak', function(info) {
+	console.log('LEAK ->', info);
+});
+
+mem.on('stats', function(info) {
+	console.log('STATS ->', JSON.stringify(info));
+});
 
 setTimeout(function() {
 	run();
