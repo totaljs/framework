@@ -5,6 +5,8 @@ IN DEVELOPMENT ======= 1.2.3-2
 
 - updated: nosql (new version, fixed problem with db.remove())
 
+- fixed: utils.isJSON()
+
 ======= 1.2.3-1
 
 - updated: nosql (new version, supports changes)
