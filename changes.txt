@@ -2,6 +2,7 @@ IN DEVELOPMENT ======= 1.2.3-2
 
 - added: auto-detector: potentially dangerous in Request (inspired by ASP.NET)
 - added: new route flag: "xss"
+- added: Controller.flags[]
 
 - updated: nosql (new version, fixed problem with db.remove())
 

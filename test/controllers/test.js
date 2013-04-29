@@ -42,6 +42,7 @@ function viewIndex() {
 
 	assert.ok(!self.xhr, name + 'xhr');
 	assert.ok(!self.isXHR, name + 'isXHR');
+	assert.ok(self.flags.indexOf('get') !== -1, name + 'flags')
 
 	assert.ok(self.resource('name') === 'default' && self.resource('default', 'name') === 'default', name + 'resource(default)');
 	assert.ok(self.resource('test', 'name') === 'test', name + 'resource(test.resource)');

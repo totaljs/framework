@@ -22,9 +22,24 @@ exports.install = function(framework) {
 	// Prefix as the flag
 	framework.route('/', android_homepage, ['#android']);
 
+	framework.route('/myflag/', myflag_homepage, ['!myflag']);
+
 	// https://github.com/petersirka/partial.js/tree/master/examples/authorization
 	// framework.route('/user/registration/', user_registration, ['unlogged']);
 	// framework.route('/user/profile/', user_profile, ['logged']);
+};
+
+// flags: !myflag
+function myflag_homepage() {
+
+	var self = this;
+
+	if (self.flags.indexOf('!myflag') !== -1) {
+		self.plain('MYFLAG - homepage');
+		return;
+	}
+
+	self.view404();
 };
 
 function view_homepage() {
