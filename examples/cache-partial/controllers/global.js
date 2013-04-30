@@ -3,6 +3,7 @@ var utils = require('partial.js/utils');
 exports.install = function(framework) {
 	framework.route('/', viewHomepageCached);
 	framework.route('/notcached/', viewHomepageNotCached);
+	framework.route('/fn/', viewFnCached);
 };
 
 function viewHomepageCached() {
@@ -28,4 +29,24 @@ function viewHomepageNotCached() {
 
 	// press 15x refresh browser
 	self.plain(item);
+}
+
+function viewFnCached() {
+
+	var self = this;
+
+	var fnCallback = function(value) {
+		self.plain(value);
+	};
+
+	self.cache.fn('cache-name', function(fnSave) {
+
+		var dt = new Date();
+
+		// Save to cache
+		// @value {Object}
+		// @expire {Date}
+		fnSave(dt.format('dd.MM.yyyy - HH:mm:ss'), dt.add('m', 2));
+
+	}, fnCallback);
 }
