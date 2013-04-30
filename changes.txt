@@ -1,6 +1,7 @@
-IN DEVELOPMENT ======= 1.2.3-3
+======= 1.2.3-3
 
 - added: cache.fn();
+
 - updated: nosql (new version, removed streams)
 
 ======= 1.2.3-2
