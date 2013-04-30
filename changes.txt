@@ -4,6 +4,8 @@
 
 - updated: nosql (new version, removed streams)
 
+- fixed: utils.request()
+
 ======= 1.2.3-2
 
 - added: auto-detector: XSS in Request (inspired by ASP.NET)
