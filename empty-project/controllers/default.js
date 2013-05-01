@@ -1,5 +1,5 @@
 exports.install = function(framework) {
-	framework.route('/', viewHomepage);
+	framework.route('/', view_homepage);
 	framework.route('#403', error403);
 	framework.route('#404', error404);
 	framework.route('#431', error431);
@@ -48,7 +48,7 @@ function error500() {
 	self.view('500');
 }
 
-function viewHomepage() {
+function view_homepage() {
 	var self = this;
 	self.view('homepage');
 }
