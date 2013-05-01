@@ -1,6 +1,7 @@
 ======= 1.2.3-3
 
 - added: cache.fn();
+- added: utils.getContentType() - *.appcache
 
 - updated: nosql (new version, removed streams)
 
