@@ -5,6 +5,7 @@
 
 - updated: nosql (new version, removed streams)
 
+- fixed: utils.isStaticFile()
 - fixed: utils.request()
 
 ======= 1.2.3-2
