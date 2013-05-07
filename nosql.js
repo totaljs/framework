@@ -46,7 +46,7 @@ var MAX_BUFFER_SIZE = 1024 * 4;
 var BINARY_HEADER_LENGTH = 2000;
 
 if (typeof(setImmediate) === 'undefined') {
-	setImmediate = function(cb) {
+	global.setImmediate = function(cb) {
 		process.nextTick(cb);
 	};
 }

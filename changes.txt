@@ -1,10 +1,17 @@
-IN DEVELOPMENT ======= 1.2.4
+======= 1.2.4
+
+- added: new alias for framework.routeFile() = framework.file()
+- added: new examples
+
+- updated: nosql (new version)
 
 - removed: custom route validation (route to controller)
+- removed: unnecessary files
 
 - fixed: String.isEmail()
 - fixed: String.isJSON()
 - fixed: XSS protection
+- fixed: setImmediate()
 
 - clean code
 

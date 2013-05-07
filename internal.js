@@ -28,7 +28,7 @@ var multipart = require('./multipart');
 var encoding = 'utf8';
 
 if (typeof(setImmediate) === 'undefined') {
-	setImmediate = function(cb) {
+	global.setImmediate = function(cb) {
 		process.nextTick(cb);
 	};
 }
