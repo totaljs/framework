@@ -37,7 +37,6 @@ var bk = require('./backup');
 var encoding = 'utf8';
 var directory = process.cwd();
 var nosql = require('./nosql');
-var regXSS = /[<].*?[>]/g;
 var _controller = '';
 
 require('./prototypes');
@@ -618,7 +617,8 @@ Framework.prototype.onXSS = function(data) {
 	if (data === null || data.length === 0)
 		return false;
 
-	return regXSS.test(decodeURIComponent(data));
+	data = decodeURIComponent(data);
+	return (data.indexOf('<') !== -1 && data.indexOf('>') !== -1);
 };
 
 /*
@@ -1862,12 +1862,6 @@ Framework.prototype._request = function(req, res) {
 	else
 		req.ip = req.connection.remoteAddress;
 
-   	if (req.uri.query && req.uri.query.length > 0) {
-   		req.data.get = qs.parse(req.uri.query);
-   		if (self.onXSS !== null && self.onXSS(req.uri.query))
-   			isXSS = true;
-   	}
-
    	// if is static file, return file
    	if (utils.isStaticFile(req.uri.pathname)) {
    		
@@ -1895,6 +1889,15 @@ Framework.prototype._request = function(req, res) {
 		req.resume();
 	   	return;
 	}
+
+
+   	if (req.uri.query && req.uri.query.length > 0) {
+
+   		if (self.onXSS !== null)
+   			isXSS = self.onXSS(req.uri.query);
+
+   		req.data.get = qs.parse(req.uri.query);
+   	}
 
 	if (self.onRoute !== null) {
 		try
@@ -2015,6 +2018,8 @@ Framework.prototype._request = function(req, res) {
 
 			req.data.post = qs.parse(data);
 		}
+
+   		self.request(req, res, flags, req.uri.pathname);
     });
 
 	req.resume();
@@ -2587,6 +2592,9 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 
 	var self = this;	
 	var isSystem = url[0] === '#';
+
+	if (isSystem)
+		req.path = [url];
 
 	var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
 

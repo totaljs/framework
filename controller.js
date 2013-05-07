@@ -1468,7 +1468,6 @@ Controller.prototype._clear = function() {
 	self.model = null;
 	self.req = null;
 	self.res = null;
-	self.internal = null;
 	self.controllers = null;
 	self.framework = null;
 	self.global = null;

@@ -34,4 +34,8 @@ framework.mail = function(email, name, params) {
 	return true;
 };
 
+mail.on('error', function(error) {
+	console.log('ERROR --->', error);
+});
+
 console.log("http://127.0.0.1:{0}/".format(port));

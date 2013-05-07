@@ -183,7 +183,11 @@ function SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, se
 	message.push('Content-Transfer-Encoding: base64');
 
 	message.push(CRLF);
-	message.push(new Buffer(body.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n')).toString('base64'));
+
+	var buffer = new Buffer(body.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+	message.push(buffer).toString('base64'));
+
+	buffer = null;
 
 	this.socket.on('line', function(line) {
 
@@ -223,6 +227,7 @@ function SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, se
 				write(message.join(CRLF));
 				write('');
 				write('.');
+				message = null;
 				break;
 
 			default:
@@ -231,7 +236,6 @@ function SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, se
 					mailer.emit('error', line, addressFrom, addressTo);
 				}
 				break;
-
 		};
 	});
 
@@ -244,6 +248,7 @@ function SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, se
 	this.socket.on('timeout', function () {
 		mailer.emit('error', new Error('timeout'), addressFrom, addressTo);
 		self.socket.destroy();
+		self.socket = null;
 	});	
 
 	var self = this;

@@ -22,6 +22,8 @@ function view404() {
 function xss_form() {
 	var self = this;
 
+	console.log('Allow XSS - ' + self.req.method);
+
 	self.repository.unknown = (self.req.method === 'GET' ? self.get.unknown : self.post.unknown) || '';
 	self.view('form');
 }

@@ -33,6 +33,7 @@ function viewRegistration() {
 }
 
 // SEND FORM VIA XHR, THIS IS BAD EXAMPLE
+// METHOD: POST
 function formRegistration() {
 	var self = this;
 

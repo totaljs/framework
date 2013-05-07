@@ -301,7 +301,7 @@ function compile_eval(generator, model) {
 		}
 
 		if (typeof(val) === 'function')
-			val = val(j);
+			val = val(i);
 
 		if (typeof(val) === 'undefined' || val === null)
 			val = '';

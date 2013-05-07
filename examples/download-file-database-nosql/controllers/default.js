@@ -6,7 +6,7 @@ exports.install = function(framework) {
 	//db.insert({ file: db.binary.insert('logo.png', 'image/png', require('fs').readFileSync('/users/petersirka/desktop/logo.png')) });
 	
 	framework.route('/', viewHomepage);
-    framework.routeFile('load image from database', expression('req.url.indexOf(".png") !== -1', ['req']), static_image);
+    framework.file('load image from database', expression('req.url.indexOf(".png") !== -1', ['req']), static_image);
 };
 
 function viewHomepage() {

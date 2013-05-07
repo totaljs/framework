@@ -8,8 +8,10 @@ exports.install = function(framework) {
 	framework.route('/', viewIndex);
 	
 	// file route
-	framework.routeFile('*.pdf counter', function(req) {
+	framework.file('*.pdf counter', function(req) {
+		
 		return req.url.toLowerCase().substring(req.url.length - 4) === '.pdf';
+
 	}, download);	
 
 };
@@ -29,5 +31,5 @@ function download(req, res) {
 
 	// framework documentation: http://www.partialjs.com/documentation/framework/
 	// response file
-	self.responseFile(req, res, self.path(self.config.directoryPublic, filename), filename);
+	self.responseFile(req, res, self.pathPublic(filename), filename);
 };

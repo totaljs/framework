@@ -10,7 +10,7 @@ console.log("http://127.0.0.1:{0}/".format(port));
 
 // Init temporary database
 
-global.database = {};
+framework.global.database = {};
 
 var category = [
 	{ url: '/', name: 'Shoes' },
@@ -19,7 +19,7 @@ var category = [
 	{ url: '/', name: 'Accessories' }
 ];
 
-global.database.category = category;
+framework.global.database.category = category;
 
 var itemsPaging = [
 	{ url: '/?p=1', name: '1' },
@@ -47,6 +47,6 @@ var items = [
 	{ name: 'Product 10', price: 39.32, date: new Date().add('month', -9), example: { name: '0' }, fn: function() { return 'function 0'; }}
 ];
 
-global.database.itemsPaging = itemsPaging;
-global.database.itemsInformation = itemsInformation;
-global.database.items = items;
+framework.global.database.itemsPaging = itemsPaging;
+framework.global.database.itemsInformation = itemsInformation;
+framework.global.database.items = items;
