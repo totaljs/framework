@@ -1,3 +1,10 @@
+IN DEVELOPMENT ======= 1.2.4
+
+- removed: custom route validation (route to controller)
+
+- fixed: String.isEmail()
+- clean code
+
 ======= 1.2.3-3
 
 - added: cache.fn();
