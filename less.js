@@ -19,6 +19,8 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+"use strict";
+
 var utils = require('./utils');
 
 function LessParam() {
@@ -319,6 +321,10 @@ Less.prototype.compile = function(value) {
 	var reg3 = /\s?\}\s{1,}/g;
 	var reg4 = /\s?\:\s{1,}/g;
 	var reg5 = /\s?\;\s{1,}/g;
+
+	arr = null;
+	less = null;
+
 	return value.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
 };
 

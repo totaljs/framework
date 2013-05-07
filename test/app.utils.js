@@ -1,5 +1,5 @@
 var assert = require('assert');
-var utils = require('../lib/utils');
+var utils = require('../utils');
 
 // test: number prototype
 function prototypeNumber() {

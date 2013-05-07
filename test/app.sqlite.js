@@ -1,6 +1,6 @@
 var assert = require('assert');
-var sqlite = require('../lib/sqlite');
-var builders = require('../lib/builders');
+var sqlite = require('../sqlite');
+var builders = require('../builders');
 
 var db = sqlite.init(':memory:');
 

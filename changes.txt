@@ -3,6 +3,8 @@ IN DEVELOPMENT ======= 1.2.4
 - removed: custom route validation (route to controller)
 
 - fixed: String.isEmail()
+- fixed: String.isJSON()
+
 - clean code
 
 ======= 1.2.3-3

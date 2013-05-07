@@ -1,5 +1,5 @@
 var assert = require('assert');
-var builders = require('../lib/builders');
+var builders = require('../builders');
 
 function test_PageBuilder () {
 

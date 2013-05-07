@@ -1,6 +1,6 @@
 var assert = require('assert');
-var utils = require('../lib/utils');
-var cache = require('../lib/cache').init({});
+var utils = require('../utils');
+var cache = require('../cache').init({});
 
 cache.init(6000);
 

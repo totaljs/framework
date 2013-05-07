@@ -1,5 +1,5 @@
 var assert = require('assert');
-var javascript = require('../lib/javascript');
+var javascript = require('../javascript');
 
 var buffer = [];
 buffer.push('<script type="text/javascript">');

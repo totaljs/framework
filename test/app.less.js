@@ -1,5 +1,5 @@
 var assert = require('assert');
-var less = require('../lib/less');
+var less = require('../less');
 
 var buffer = [];
 //buffer.push('@radius(a){ border-radius:@a @a @a @a; -moz-border-radius:@a @a @a @a; }');

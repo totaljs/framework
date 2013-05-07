@@ -19,6 +19,8 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+"use strict";
+
 var utils = require('./utils');
 var javascript = require('./javascript');
 var fs = require('fs');
@@ -69,6 +71,7 @@ function parse(html, controller) {
 	var plus = '';
 	var beg = '';
 	var end = '';
+	var name = '';
 
 	while (index < cache.length) {
 
@@ -95,7 +98,6 @@ function parse(html, controller) {
 				count--;
 			else {
 				copy = false;
-				countParser = 0;
 
 				var other = cache.substring(indexBeg + code.length + 2);
 

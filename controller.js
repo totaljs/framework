@@ -19,6 +19,8 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+"use strict";
+
 var utils = require('./utils');
 var builders = require('./builders');
 var generatorView = require('./view');
@@ -1057,6 +1059,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 		return self.$contentToggle(true, contentBody);
 
 	self.framework.responseContent(self.req, self.res, self.statusCode, contentBody, contentType || 'text/plain', true, headers);
+	self._clear();
 	return self;
 };
 
@@ -1072,7 +1075,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	var self = this;
 	var res = self.res;
 
-	if (res.isFlush)
+	if (res.success)
 		return self;
 
 	var returnHeaders = {};
@@ -1090,7 +1093,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 
 	returnHeaders['Content-Type'] = contentType;
 
-	res.isFlush = true;
+	res.success = true;
 	res.writeHead(self.statusCode, returnHeaders);
 	
 	onWrite(function(chunk, encoding) {
@@ -1098,6 +1101,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	});
 
 	res.end();
+	self._clear();
 	return self;
 };
 
@@ -1110,6 +1114,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 Controller.prototype.plain = function(contentBody, headers) {
 	var self = this;
 	self.framework.responseContent(self.req, self.res, self.statusCode, typeof(contentBody) === 'string' ? contentBody : contentBody.toString(), 'text/plain', true, headers);
+	self._clear();
 	return self;
 };
 
@@ -1124,6 +1129,7 @@ Controller.prototype.file = function(fileName, downloadName, headers) {
 	var self = this;	
 	fileName = utils.combine(self.framework.config['directory-public'], fileName);
 	self.framework.responseFile(self.req, self.res, fileName, downloadName, headers);
+	self._clear();
 	return self;
 };
 
@@ -1156,9 +1162,9 @@ Controller.prototype.fileAsync = function(fileName, downloadName, headers) {
 Controller.prototype.stream = function(contentType, stream, downloadName, headers) {
 	var self = this;
 	self.framework.responseStream(self.req, self.res, contentType, stream, downloadName, headers);
+	self._clear();
 	return self;
 };
-
 
 /*
 	Response 404
@@ -1166,7 +1172,9 @@ Controller.prototype.stream = function(contentType, stream, downloadName, header
 */
 Controller.prototype.view404 = function() {
 	var self = this;
-	self.framework.execute(self.req, self.res, [], self.framework.lookup(null, '#404'), 404);
+	self.req.path = [];
+	self.framework.execute(self.req, self.res, self.framework.lookup(self.req, '#404', []), 404);
+	self._clear();
 	return self;
 };
 
@@ -1176,7 +1184,9 @@ Controller.prototype.view404 = function() {
 */
 Controller.prototype.view403 = function() {
 	var self = this;
-	self.framework.execute(self.req, self.res, [], self.framework.lookup(null, '#403'), 403);
+	self.req.path = [];
+	self.framework.execute(self.req, self.res, self.framework.lookup(self.req, '#403', []), 403);
+	self._clear();
 	return self;
 };
 
@@ -1188,7 +1198,9 @@ Controller.prototype.view403 = function() {
 Controller.prototype.view500 = function(error) {
 	var self = this;
 	self.framework.error(error, self.name, self.req.uri);
-	self.framework.execute(self.req, self.res, [], self.framework.lookup(null, '#500'), 500);
+	self.req.path = [];
+	self.framework.execute(self.req, self.res, self.framework.lookup(self.req, '#500', []), 500);
+	self._clear();
 	return self;
 };
 
@@ -1201,13 +1213,13 @@ Controller.prototype.view500 = function(error) {
 Controller.prototype.redirect = function(url, permament) {
 	var self = this;
 
-	if (self.res.isFlush)
+	if (self.res.success)
 		return self;
 
-	self.res.isFlush = true;
+	self.res.success = true;
 	self.res.writeHead(permament ? 301 : 302, { 'Location': url });
 	self.res.end();
-
+	self._clear();
 	return self;
 };
 
@@ -1272,7 +1284,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		
 		if (isPartial)
 			return '';
-		
+
 		self.view500('View "' + name + '" not found.');
 		return;
 	}
@@ -1432,6 +1444,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (self.isLayout || utils.isNullOrEmpty(self.internal.layout)) {
 		// end response and end request
 		self.framework.responseContent(self.req, self.res, self.statusCode, value, self.internal.contentType, true, headers);
+		self._clear();
 		return self;
 	}
 
@@ -1439,6 +1452,29 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	self.isLayout = true;
 	self.view(self.internal.layout, null, headers);
 
+	return self;
+};
+
+Controller.prototype._clear = function() {
+	var self = this;
+	self.repository = null;
+	self.config = null;
+	self.session = null;
+	self.output = null;
+	self.sitemap = null;
+	self.get = null;
+	self.post = null;
+	self.files = null;
+	self.model = null;
+	self.req = null;
+	self.res = null;
+	self.internal = null;
+	self.controllers = null;
+	self.framework = null;
+	self.global = null;
+	self.app = null;
+	self.flags = null;
+	self.cache = null;
 	return self;
 };
 

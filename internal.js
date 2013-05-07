@@ -19,6 +19,8 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+"use strict";
+
 var utils = require('./utils');
 var fs = require('fs');
 var image = require('./image');
@@ -332,7 +334,7 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 exports.routeParam = function(routeUrl, route) {
 	var arr = [];
 	
-	if (route === null)
+	if (!route || !routeUrl)
 		return arr;
 
 	if (route.param.length === 0)

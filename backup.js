@@ -19,6 +19,8 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+"use strict";
+
 var fs = require('fs');
 var ph = require('path');
 var zlib = require('zlib');
@@ -252,6 +254,7 @@ Backup.prototype.restore = function(fileName, path, callback, filter) {
 	if (callback) {
 		stream.on('end', function() {
 			callback(null, path);
+			stream = null;
 		});
 	}
 
@@ -278,8 +281,10 @@ Backup.prototype.restoreFile = function(key, value) {
 			self.createDirectory(path);
 	}
 
-	zlib.gunzip(new Buffer(value, 'base64'), function(err, data) {
+	var buffer = new Buffer(value, 'base64');
+	zlib.gunzip(buffer, function(err, data) {
 		fs.writeFileSync(ph.join(self.path, key), data);
+		buffer = null;
 	});
 };
 

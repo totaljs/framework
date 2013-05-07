@@ -1,4 +1,4 @@
-var framework = require('../lib/index');
+var framework = require('../index');
 var assert = require('assert');
 var db = framework.database('users');
 var fs = require('fs');
