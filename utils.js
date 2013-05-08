@@ -807,7 +807,7 @@ String.prototype.urlDecode = function() {
 };
 
 /*
-	Simple templating :: Hellow {name}, your score: {score}, your price: {price | ### ###.##}, date: {date | dd.MM.yyyy}
+	Simple templating :: Hello {name}, your score: {score}, your price: {price | ### ###.##}, date: {date | dd.MM.yyyy}
 	@obj {Object}
 	return {String}
 */
