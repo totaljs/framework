@@ -259,7 +259,8 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize) {
 			flags[i] = flags[i].toString().toLowerCase();
 
 		priority += (flags.length * 2);
-	}
+ 	} else
+ 		flags = ['get'];
 
 	var routeURL = internal.routeSplit(url.trim());
 	var arr = [];
