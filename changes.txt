@@ -1,6 +1,8 @@
 IN DEVELOPMENT ======= 1.2.5
 
 - fixed: route flags
+- fixed: utils.validate()
+- fixed: controller.validate()
 
 - clean code
 

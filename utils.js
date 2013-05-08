@@ -537,7 +537,7 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 		var value = (type === 'function' ? model[name]() : model[name]) || '';
 
 		if (type === 'object') {
-			error.add(exports.validation(value, properties, prepare, error, builder, resource));
+			error.add(exports.validate(value, properties, prepare, error, builder, resource));
 			continue;
 		};
 
