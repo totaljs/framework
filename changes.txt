@@ -2,6 +2,8 @@ IN DEVELOPMENT ======= 1.2.5
 
 - fixed: route flags
 
+- clean code
+
 ======= 1.2.4
 
 - added: new alias for framework.routeFile() = framework.file()

@@ -1451,7 +1451,7 @@ Array.prototype.random = function() {
 /*
 	Async class
 */
-function Async(owner) {
+function Async() {
 	this.onComplete = null;
 	this.count = 0;
 	this.pending = {};
