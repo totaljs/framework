@@ -157,7 +157,7 @@ exports.defaults = function(name) {
 			item[property] = new Date();
 			return;
 		}
-		
+
 		if (value.contains(['int', 'number', 'decimal', 'byte', 'float', 'double'])) {
 			item[property] = 0;
 			return;
@@ -217,7 +217,7 @@ exports.prepare = function(name, model) {
 			if (value === Date) {
 
 				var tmp = null;
-				
+
 				switch (typeval) {
 					case 'object':
 						if (utils.isDate(val))
@@ -229,7 +229,7 @@ exports.prepare = function(name, model) {
 						tmp = new Date(val);
 						break;
 
-					case 'string':					
+					case 'string':
 						if (val === '')
 							tmp = null;
 						else
@@ -279,17 +279,17 @@ exports.prepare = function(name, model) {
 		}
 
 		if (value.contains(['date', 'time'])) {
-			
+
 			if (typeval === 'date')
 				return item[property] = val;
-				
+
 			if (typeval === 'string')
 				return item[property] = val.parseDate();
 
 			if (typeval === 'number')
 				return item[property] = new Date(val);
-			
-			item[property] = null;			
+
+			item[property] = null;
 			return;
 		}
 
@@ -297,7 +297,7 @@ exports.prepare = function(name, model) {
 			item[property] = utils.parseInt(val);
 			return;
 		}
-		
+
 		if (value.contains(['decimal', 'number', 'float', 'double'])) {
 			item[property] = utils.parseFloat(val);
 			return;
@@ -343,7 +343,7 @@ ErrorBuilder.prototype.add = function(name, error) {
 		name.builder.forEach(function(o) {
 			self.builder.push(o);
 		});
-		
+
 		self.length = self.builder.length;
 		return self;
 	};
@@ -389,7 +389,7 @@ ErrorBuilder.prototype.hasError = function(name) {
 	return {String}
 */
 ErrorBuilder.prototype.read = function(name) {
-	
+
 	var error = this.builder.find(function(o) {
 		return o.name === name;
 	});
@@ -463,7 +463,7 @@ PageBuilder.prototype.refresh = function(items, page, max) {
 
 	self.count = Math.floor(items / max) + (items % max > 0 ? 1 : 0);
 	self.page = page - 1;
-	
+
 	if (self.page < 0)
 		self.page = 0;
 
@@ -617,7 +617,7 @@ UrlBuilder.prototype.hasValue = function(keys) {
     return {String}
 */
 UrlBuilder.prototype.toOne = function(keys, divider) {
-	
+
 	var self = this;
 	var builder = [];
 

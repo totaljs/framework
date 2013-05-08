@@ -37,7 +37,7 @@ var path = require('path');
 	return {Controller};
 */
 function Controller(name, framework, req, res, internal) {
-	
+
 	this.name = name;
 	this.cache = framework.cache;
 	this.app = framework;
@@ -217,9 +217,9 @@ Controller.prototype.meta = function() {
 	@index {Number}
 	return {Controller};
 */
-Controller.prototype.sitemap = function(name, url, index) {	
+Controller.prototype.sitemap = function(name, url, index) {
 	var self = this;
-	
+
 	if (typeof(name) === 'undefined')
 		return self.repository.sitemap || [];
 
@@ -230,7 +230,7 @@ Controller.prototype.sitemap = function(name, url, index) {
 		self.repository.sitemap = [];
 
 	self.repository.sitemap.push({ name: name, url: url, index: index || self.repository.sitemap.length });
-	
+
 	if (typeof(index) !== 'undefined' && self.sitemap.length > 1) {
 		self.repository.sitemap.sort(function(a, b) {
 			if (a.index < b.index)
@@ -579,7 +579,7 @@ Controller.prototype.$textarea = function(model, name, className, maxLength, req
 		return builder.join(' ') + '</textarea>';
 
 	var value = model[name] || '';
-	return builder.join(' ') + '>' + value.toString().htmlEncode() + '</textarea>'; 
+	return builder.join(' ') + '>' + value.toString().htmlEncode() + '</textarea>';
 };
 
 /*
@@ -642,7 +642,7 @@ Controller.prototype.$input = function(model, type, name, className, maxLength, 
 		}
 
 		if (type === 'radio') {
-			
+
 			val = (val || '').toString();
 
 			if (value.toString() === val)
@@ -650,7 +650,7 @@ Controller.prototype.$input = function(model, type, name, className, maxLength, 
 
 			value = val || '';
 		}
-		
+
 		if (typeof(value) !== 'undefined')
 			builder.push('value="#"'.replace(reg, value.toString().htmlEncode()));
 	}
@@ -674,12 +674,12 @@ Controller.prototype.$input = function(model, type, name, className, maxLength, 
 Controller.prototype.$isValue = function(bool, charBeg, charEnd, value) {
 	if (!bool)
 		return '';
-	
+
 	charBeg = charBeg || ' ';
 	charEnd = charEnd || '';
-	
+
 	return charBeg + value + charEnd;
-};	
+};
 
 /*
 	Internal function for views
@@ -687,11 +687,11 @@ Controller.prototype.$isValue = function(bool, charBeg, charEnd, value) {
 	return {String} :: empty string
 */
 Controller.prototype.$modified = function(value) {
-	
+
 	var self = this;
 	var type = typeof(value);
 	var date;
-	
+
 	if (type === 'number') {
 		date = new Date(value);
 	} else if (type === 'string') {
@@ -721,7 +721,7 @@ Controller.prototype.$modified = function(value) {
 
 	if (typeof(date) === 'undefined')
 		return '';
-	
+
 	self.setModified(date);
 	return '';
 };
@@ -754,25 +754,25 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		arr = [arr];
 
 	selected = selected || '';
-	
+
 	var options = '';
 
 	if (typeof(value) === 'undefined')
 		value = value || name || 'value';
-	
+
 	if (typeof(name) === 'undefined')
 		name = name || 'name';
 
 	var isSelected = false;
 	arr.forEach(function(o, index) {
-	
+
 		var type = typeof(o);
 		var text = '';
 		var val = '';
 		var sel = false;
 
 		if (type === 'object') {
-			
+
 			text = (o[name] || '');
 			val = (o[value] || '');
 
@@ -794,7 +794,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 
 		options += '<option value="' + val.toString().htmlEncode() + '"'+ (sel ? ' selected="selected"' : '') + '>' + text.toString().htmlEncode() + '</option>';
 	});
-	
+
 	return options;
 };
 
@@ -1022,7 +1022,7 @@ Controller.prototype.json = function(obj, headers) {
 		obj = obj.json();
 	else
 		obj = JSON.stringify(obj || {});
-	
+
 	self.framework.responseContent(self.req, self.res, self.statusCode, obj, 'application/json', true, headers);
 	return self;
 };
@@ -1071,7 +1071,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 	return {Controller};
 */
 Controller.prototype.raw = function(contentType, onWrite, headers) {
-	
+
 	var self = this;
 	var res = self.res;
 
@@ -1095,7 +1095,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 
 	res.success = true;
 	res.writeHead(self.statusCode, returnHeaders);
-	
+
 	onWrite(function(chunk, encoding) {
 		res.write(chunk, encoding);
 	});
@@ -1126,7 +1126,7 @@ Controller.prototype.plain = function(contentBody, headers) {
 	return {Controller};
 */
 Controller.prototype.file = function(fileName, downloadName, headers) {
-	var self = this;	
+	var self = this;
 	fileName = utils.combine(self.framework.config['directory-public'], fileName);
 	self.framework.responseFile(self.req, self.res, fileName, downloadName, headers);
 	self._clear();
@@ -1142,7 +1142,7 @@ Controller.prototype.file = function(fileName, downloadName, headers) {
 */
 Controller.prototype.fileAsync = function(fileName, downloadName, headers) {
 	var self = this;
-	
+
 	var fn = function() {
 		self.file(fileName, downloadName, headers);
 	};
@@ -1281,14 +1281,14 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var generator = generatorView.generate(self, name);
 
 	if (generator === null) {
-		
+
 		if (isPartial)
 			return '';
 
 		self.view500('View "' + name + '" not found.');
 		return;
 	}
-	
+
 	var values = [];
 	var repository = self.repository;
 	var config = self.config;
@@ -1312,7 +1312,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var condition = false;
 
 	for (var i = 0; i < generator.execute.length; i++) {
-	
+
 		var execute = generator.execute[i];
 		var isEncode = execute.isEncode;
 		var run = execute.run;
@@ -1386,9 +1386,9 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			case 'post':
 				value = eval(run);
 				break;
-			
+
 			default:
-				
+
 				if (!execute.isDeclared) {
 					if (typeof(helper[execute.name]) === 'undefined') {
 						self.app.error(new Error('Helper "' + execute.name + '" is not defined.'), 'view -> ' + name, self.req.uri);
@@ -1407,7 +1407,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		}
 
 		if (evl) {
-			try			
+			try
 			{
 				value = eval(run);
 			} catch (ex) {

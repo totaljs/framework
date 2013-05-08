@@ -130,7 +130,7 @@ Image.prototype.identify = function(cb) {
 			width: utils.parseInt(size[0]),
 			height: utils.parseInt(size[1])
 		};
-		
+
 		cb(null, obj);
 	});
 
@@ -165,7 +165,7 @@ Image.prototype.resize = function(w, h, options) {
 	if (w && h)
 		size = w + 'x' + h;
     else if (w && !h)
-      size = w 
+      size = w
     else if (!w && h)
       size = 'x' + h;
 
@@ -195,7 +195,7 @@ Image.prototype.scale = function(w, h, options) {
 	if (w && h)
 		size = w + 'x' + h;
     else if (w && !h)
-      size = w 
+      size = w
     else if (!w && h)
       size = 'x' + h;
 

@@ -197,7 +197,7 @@ function $clean(text) {
     return {Number}
 */
 function $charCount(text, c) {
-    
+
     var count = 0;
 
     for (var i = 0; i < text.length; i++) {
@@ -292,7 +292,7 @@ function $parse(self, text) {
         var match = text.match(regFormat);
         if (match !== null) {
             match.forEach(function(o) {
-                
+
                 if (o === null)
                     return;
 
@@ -307,7 +307,7 @@ function $parse(self, text) {
                 switch (m[0]) {
                     case '*':
                         isMax = m.substring(0, 2) === '**';
-                        
+
                         if (isMax)
                             max = m.length > 3 ? 4 : m.length;
 
@@ -387,7 +387,7 @@ function $parseLink(line, callback) {
             output = output.replace(o, callback(url, url));
         });
     }
-    
+
     matches = line.match(regLink2);
 
     if (matches === null)
@@ -451,7 +451,7 @@ function $parseImage(line, callback) {
 
         if (o.substring(0, 3) === '[![')
             indexBeg = 3;
-        
+
         var index = o.indexOf(']');
         if (index === -1)
             return;
@@ -462,7 +462,7 @@ function $parseImage(line, callback) {
         var first = url[0];
         if (first !== '(')
             return;
-    
+
         index = o.lastIndexOf(')');
         if (index === -1)
             return;
@@ -527,7 +527,7 @@ Markdown.prototype.load = function(text, name) {
     var lines = text.split('\n');
 
     self.name = name;
-    
+
     var read = function read(i) {
         return $clean(lines[i] || '');
     };
@@ -623,7 +623,7 @@ Markdown.prototype.load = function(text, name) {
         if (m.length > 1) {
 
             if (c === '|' && m[1] === '-' && m[m.length - 1] === '|') {
-                
+
                 isTable = !isTable;
                 if (isTable)
                 {
@@ -683,7 +683,7 @@ Markdown.prototype.load = function(text, name) {
 
             var value = m;
             var a = c;
-            
+
             if ($isWhite(c)) {
                 a = $nearest(m);
                 value = value.substring(value.indexOf(a));
@@ -716,7 +716,7 @@ Markdown.prototype.load = function(text, name) {
 
             if (!$isParagraph(c, cn))
                 flushParagraph(i);
-            
+
             continue;
         }
 
@@ -749,7 +749,7 @@ Markdown.prototype.load = function(text, name) {
     lines = null;
     tmp = null;
     tmpUL = null;
-    
+
     return buffer;
 };
 

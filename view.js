@@ -77,7 +77,7 @@ function parse(html, controller) {
 
 		var current = cache[index];
 		var next = cache[index + 1];
-		
+
 		index++;
 
 		if (!copy && current === '@' && next === '{') {
@@ -92,7 +92,7 @@ function parse(html, controller) {
 			if (count <= 1)
 				continue;
 		}
-		
+
 		if (copy && current === '}') {
 			if (count > 1)
 				count--;
@@ -159,7 +159,7 @@ function parse(html, controller) {
 
 				if (a === -1)
 					a = b;
-				
+
 				if (b === -1)
 					b = a;
 
@@ -212,7 +212,7 @@ function parse(html, controller) {
 							code = 'self.$' + exports.appendModel(code);
 							beg = 'return ';
 							break;
-			
+
 						case 'js':
 						case 'script':
 						case 'css':
@@ -256,7 +256,7 @@ function parse(html, controller) {
 						case 'meta':
 						case 'sitemap':
 						case 'settings':
-						case 'layout':							
+						case 'layout':
 
 							if (code.indexOf('(') !== -1) {
 								beg = 'self.';
@@ -275,12 +275,12 @@ function parse(html, controller) {
 								code = 'self.$' + code;
 							else
 								code = 'url';
-							
+
 							beg = 'return ';
 							isDeclared = true;
 							break;
 					}
-					
+
 					if (isCondition && condition === 0)
 						code = '(function(){' + beg + code + end + ';})';
 
@@ -306,7 +306,7 @@ function parse(html, controller) {
 	condition = 0;
 
 	for (var i = 0; i < builder.length; i++) {
-		
+
 		var str = builder[i];
 
 		if (str === '')
@@ -367,7 +367,7 @@ function parse(html, controller) {
 }
 
 function removeCondition(text, beg) {
-	
+
 	if (beg) {
 		if (text[0] === '+')
 			return text.substring(1, text.length);
@@ -400,7 +400,7 @@ function compressJS(html, index) {
 
 	var js = html.substring(indexBeg, indexEnd + strTo.length);
 	var compiled = javascript.compile(js).replace(/\\n/g, "'+(String.fromCharCode(13)+String.fromCharCode(10))+'");
-	
+
 	html = html.replace(js, compiled.dollar());
 
 	// voláme znova funkciu v prípade
@@ -433,7 +433,7 @@ function minifyHTML(html) {
 
 		var beg = html.indexOf(tagBeg);
 		var end = 0;
-		
+
 		while (beg !== -1) {
 
 			end = html.indexOf(tagEnd, beg + 3);
@@ -446,14 +446,14 @@ function minifyHTML(html) {
 			html = html.replace(value, key);
 			beg = html.indexOf(tagBeg, end + o.length);
 		}
-	});	
+	});
 
 	html = html.replace(reg1, '').replace(reg2, '');
 
 	Object.keys(cache).forEach(function(o) {
 		html = html.replace(o, cache[o]);
 	});
-	
+
 	return html;
 }
 
@@ -467,7 +467,7 @@ function removeComments(html) {
 	var tagEnd = '-->';
 	var beg = html.indexOf(tagBeg);
 	var end = 0;
-	
+
 	while (beg !== -1) {
 		end = html.indexOf(tagEnd, beg + 4);
 
@@ -523,7 +523,7 @@ View.prototype.load = function(name, prefix) {
 
 	if (generator !== null)
 		return generator;
-	
+
 	generator = self.read(name + (isPrefix ? '#' + prefix : ''));
 
 	if (generator === null && isPrefix)
@@ -577,7 +577,7 @@ Content.prototype.load = function(name, prefix) {
 
 	if (content !== null)
 		return content;
-	
+
 	content = self.read(name + (isPrefix ? '#' + prefix : ''));
 
 	if (content === null && isPrefix)

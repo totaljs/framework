@@ -68,7 +68,7 @@ Walker.prototype.walk = function(path) {
 	});
 };
 
-Walker.prototype.stat = function(path) {	
+Walker.prototype.stat = function(path) {
 	var self = this;
 
 	fs.stat(path, function(err, stats) {
@@ -237,7 +237,7 @@ Backup.prototype.restore = function(fileName, path, callback, filter) {
 	var self = this;
 	self.createDirectory(path, true);
 
-	var stream = fs.createReadStream(fileName);	
+	var stream = fs.createReadStream(fileName);
 	var key = '';
 	var value = '';
 	var status = 0;
@@ -386,7 +386,7 @@ Backup.prototype.removeDirectory = function() {
 		self.complete();
 		return;
 	}
-	
+
 	fs.rmdir(directory, function() {
 		self.removeDirectory();
 	});

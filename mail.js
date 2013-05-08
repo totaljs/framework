@@ -58,10 +58,10 @@ function resolveMx(domain, callback) {
         });
 
         function tryConnect(index) {
-            
+
             if (index >= data.length) {
               callback(new Error('Cannot connect to any SMTP server.'));
-              return;  
+              return;
             }
 
             var sock = net.createConnection(25, data[index].exchange);
@@ -110,7 +110,7 @@ function SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, se
 	this.options = { port: 25, contentType: contentType || 'text/html' };
 
 	this.socket.on('data', function(data) {
-		
+
 		self.data += data.toString();
 
 		var index = self.data.indexOf('\r\n');
@@ -130,7 +130,7 @@ function SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, se
 	message.push('From: ' + (senderName.length > 0 ? '"' + senderName + '"' : '') + ' <' + addressFrom + '>');
 
 	if (util.isArray(addressTo)) {
-		
+
 		addressTo.forEach(function(o) {
 			to.push(o);
 		});
@@ -167,7 +167,7 @@ function SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, se
 	buffer.push('DATA');
 	buffer.push('QUIT');
 	buffer.push('');
-    
+
     if (cc.length > 0)
 		message.push('Cc:' + cc.join(', '));
 
@@ -214,7 +214,7 @@ function SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, se
     	        	mailer.emit('success', addressFrom, addressTo);
 
 				break;
-			
+
 			case 334: // LOGIN
 				if (userName.length > 0 && userPassword.length > 0) {
 					write(new Buffer(userName + '\0' + userName + '\0' + userPassword).toString('base64'));
@@ -249,7 +249,7 @@ function SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, se
 		mailer.emit('error', new Error('timeout'), addressFrom, addressTo);
 		self.socket.destroy();
 		self.socket = null;
-	});	
+	});
 
 	var self = this;
 };
@@ -257,7 +257,7 @@ function SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, se
 /*
 	@address {String}
 */
-function getHostName(address) {   
+function getHostName(address) {
     return address.substring(address.indexOf('@') + 1);
 };
 
@@ -281,7 +281,7 @@ Mailer.prototype = new events.EventEmitter;
 	@userPassword {String} :: optional
 */
 Mailer.prototype.send = function(smtp, addressFrom, addressTo, addressCc, subject, body, senderName, addressReply, userName, userPassword) {
-	
+
 	var self = this;
 
 	if (smtp === null || smtp === '') {
@@ -310,8 +310,8 @@ Mailer.prototype.send = function(smtp, addressFrom, addressTo, addressCc, subjec
 	});
 
     socket.on('connect', function() {
-        new SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, senderName, addressReply, userName, userPassword);	
-    });		
+        new SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, senderName, addressReply, userName, userPassword);
+    });
 };
 
 // ======================================================

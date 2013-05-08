@@ -55,17 +55,17 @@ function Less() {};
 	return {String}
 */
 LessValue.prototype.getValue = function(less) {
-	
+
 	var self = this;
 
 	if (less === null)
 		return '';
-	
+
 	if (self.isVariable)
 		return '';
 
 	var value = '';
-	
+
 	if (!self.isFunction) {
 		value = less.value.substring(less.name.length).trim();
 
@@ -217,14 +217,14 @@ Less.prototype.getValue = function(prev, value) {
     		var next = val !== 0;
 
     		if (charindex === 123) {
-    			
+
     			if (val === 0)
     				less.isVariable = true;
 
     			val++;
     			next = true;
     		} else if (charindex === 125) {
-    
+
     			if (val === 0) {
     				index++;
     				continue;
@@ -249,7 +249,7 @@ Less.prototype.getValue = function(prev, value) {
     	if (beg && copy)
     		sb.push(c);
     	else if(beg) {
-    		
+
     		if (copy)
     			sb.push(c);
 
@@ -266,7 +266,7 @@ Less.prototype.getValue = function(prev, value) {
 
 			if (without.indexOf(invalid[0]) > -1)
 				less.isProblem = true;
-		
+
 			return less;
     	}
 

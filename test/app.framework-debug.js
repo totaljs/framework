@@ -62,7 +62,7 @@ function test_controller_functions(next) {
 		assert.ok(code === 404, 'controller: statusCode ' + code);
 		assert.ok(headers['etag'] === '123456:1', 'controller: setModified(etag)');
 		assert.ok(headers['last-modified'].toString().indexOf('1984') !== -1, 'controller: setModified(date)');
-		assert.ok(headers['expires'].toString().indexOf('1984') !== -1, 'controller: setExpires(date)');		
+		assert.ok(headers['expires'].toString().indexOf('1984') !== -1, 'controller: setExpires(date)');
 		next();
 	});
 }
@@ -86,7 +86,7 @@ function test_view_error(next) {
 			assert.ok(false, 'test_view_error: ' + error.toString());
 
 		next();
-	});	
+	});
 }
 
 
@@ -124,7 +124,7 @@ function test_routing(next) {
 				throw error;
 			complete();
 		});
-	});	
+	});
 
 	async.complete(function() {
 		next && next();
@@ -147,7 +147,7 @@ function run() {
 				});
 			});
 		});
-	});	
+	});
 }
 
 var mem = require('memwatch');

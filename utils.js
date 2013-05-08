@@ -51,7 +51,7 @@ function expression(query, params) {
 	var fn = eval('(function(' + name +'){' + (query.indexOf('return') === -1 ? 'return ' : '') + query + '})');
 
 	var values = [];
-	
+
 	for (var i = 2; i < arguments.length; i++)
 		values.push(arguments[i]);
 
@@ -71,7 +71,7 @@ function expression(query, params) {
 require('./prototypes');
 global.expression = expression;
 
-/*	
+/*
 	Send request to URL
 	@url {String}
 	@method {String}
@@ -94,7 +94,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 
 	if (isJSON)
 		h['Content-Type'] = 'application/json';
-	
+
 	util._extend(h, headers);
 
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
@@ -145,7 +145,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 exports.trim = function(obj) {
 
 	var type = typeof(obj);
-	
+
 	if (type === 'string')
 		return obj.trim();
 
@@ -154,7 +154,7 @@ exports.trim = function(obj) {
 
 	Object.keys(obj).forEach(function(name) {
 		var val = obj[name];
-		
+
 		if (typeof(val) === 'object') {
 			exports.trim(val);
 			return;
@@ -182,7 +182,7 @@ exports.noop = function() {}
 	return {Object}
 */
 exports.extend = function(source, add, rewrite) {
-	
+
 	if (source === null || add === null)
 		return source;
 
@@ -206,7 +206,7 @@ exports.extend = function(source, add, rewrite) {
 
 		source[key] = add[key];
 	}
-	
+
 	return source;
 };
 
@@ -222,7 +222,7 @@ exports.reduce = function(source, prop) {
 		return source;
 
 	var type = typeof(prop);
-	
+
 	if (type === 'array') {
 		Object.keys(source).forEach(function(o) {
 			if (prop.indexOf(o) === -1)
@@ -329,7 +329,7 @@ exports.isNullOrEmpty = function(str) {
 */
 exports.parseInt = function(obj, def) {
 	var type = typeof(obj);
-	
+
 	if (type === 'undefined')
 		return def || 0;
 
@@ -377,7 +377,7 @@ exports.isDate = function(obj) {
 	return {String}
 */
 exports.getContentType = function(ext) {
-	
+
 	if (ext[0] === '.')
 		ext = ext.substring(1);
 
@@ -513,7 +513,7 @@ exports.GUID = function(max) {
 	return {ErrorBuilder}
 */
 exports.validate = function(model, properties, prepare, builder, resource) {
-	
+
 	if (typeof(builder) === 'function' && typeof(resource) === 'undefined') {
 		resource = builder;
 		builder = null;
@@ -531,7 +531,7 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 		model = {};
 
 	for (var i = 0; i < properties.length; i++) {
-		
+
 		var type = typeof(value);
 		var name = properties[i].toString();
 		var value = (type === 'function' ? model[name]() : model[name]) || '';
@@ -541,7 +541,7 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 			continue;
 		};
 
-		var result = prepare(name, value);	
+		var result = prepare(name, value);
 
 		if (typeof(result) === 'undefined')
 			continue;
@@ -562,7 +562,7 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 		if (result.isValid === false)
 			error.add(name, result.error);
 	};
-	
+
 	return error;
 };
 
@@ -632,7 +632,7 @@ exports.removeDiacritics = function(str) {
 
         buf.push(c);
     }
-    return buf.join('');	
+    return buf.join('');
 };
 
 /*
@@ -690,7 +690,7 @@ Date.prototype.add = function(type, value) {
 */
 Date.prototype.format = function(format) {
 	var self = this;
-	
+
 	var h = self.getHours();
 	var m = self.getMinutes().toString();
 	var s = self.getSeconds().toString();
@@ -717,7 +717,7 @@ Date.prototype.format = function(format) {
 	var mm = m.padLeft(2, '0');
 	var ss = s.padLeft(2, '0');
 	var MM = M.padLeft(2, '0');
-	var dd = d.padLeft(2, '0');	
+	var dd = d.padLeft(2, '0');
 	var yy = yyyy.substring(2);
 
 	return format.replace(/yyyy/g, yyyy).replace(/yy/g, yy).replace(/MM/g, MM).replace(/M/g, M).replace(/dd/g, dd).replace(/d/g, d).replace(/HH/g, HH).replace(/H/g, H).replace(/hh/g, hh).replace(/h/g, h).replace(/mm/g, mm).replace(/m/g, m).replace(/ss/g, ss).replace(/s/g, ss).replace(/a/g, a);
@@ -736,7 +736,7 @@ String.prototype.count = function(text) {
     var index = 0;
     var count = 0;
     do {
-        
+
         index = this.indexOf(text, index + text.length);
 
         if (index > 0)
@@ -853,7 +853,7 @@ String.prototype.params = function(obj) {
 
 		} else
 			val = name.length === 0 ? obj : obj[name];
-		
+
 		if (typeof(val) === 'function')
 			val = val(index);
 
@@ -908,7 +908,7 @@ String.prototype.isURL = function() {
 
 String.prototype.isEmail = function() {
 	var str = this.toString();
-	if (str.length <= 4) 
+	if (str.length <= 4)
 		return false;
 
 	if (str[0] === '.' || str[str.length - 1] === '.')
@@ -943,7 +943,7 @@ String.prototype.parseInt = function(def) {
 String.prototype.parseFloat = function(def) {
 	var num = 0;
     var str = this.toString();
-	    
+
     if (str.substring(0, 1) === '0')
         num = parseFloat(str.replace(/\s/g, '').substring(1).replace(',', '.'));
     else
@@ -967,7 +967,7 @@ String.prototype.toUnicode = function() {
 };
 
 String.prototype.fromUnicode = function() {
-	
+
 	var str = this.replace(/\\u([\d\w]{4})/gi, function (match, v) {
 		return String.fromCharCode(parseInt(v, 16));
 	});
@@ -1022,7 +1022,7 @@ String.prototype.encode = function(key, isUnique) {
 	return {String}
 */
 String.prototype.decode = function(key) {
-	
+
 	var values = this.toString().replace(/\-/g, '/').replace(/\_/g, '+');
 	var mod = values.length % 4;
 
@@ -1092,7 +1092,7 @@ String.prototype.base64ToFile = function(fileName, callback) {
 */
 String.prototype.base64ContentType = function() {
 	var self = this.toString();
-	
+
 	var index = self.indexOf(';');
 	if (index === -1)
 		return '';
@@ -1121,7 +1121,7 @@ String.prototype.indent = function(max, c) {
 	return {Boolean}
 */
 String.prototype.isNumber = function(isDecimal) {
-	
+
 	var self = this.toString();
 
 	if (self.length === 0)
@@ -1142,7 +1142,7 @@ String.prototype.isNumber = function(isDecimal) {
 		if (ascii < 48 || ascii > 57)
 			return false;
 	}
-	
+
 	return true;
 };
 
@@ -1276,7 +1276,7 @@ Number.prototype.format = function(format) {
 
 	if (typeof(format) === 'string') {
 
-		var d = false;		
+		var d = false;
 
 		for (var i = 0; i < format.length; i++) {
 			var c = format[i];
@@ -1295,7 +1295,7 @@ Number.prototype.format = function(format) {
 		var strEnd = '';
 
 		index = num.indexOf('.');
-		
+
 		if (index !== -1) {
 			strBeg = num.substring(0, index);
 			strEnd = num.substring(index + 1);
@@ -1321,11 +1321,11 @@ Number.prototype.format = function(format) {
 
 		d = false;
 		index = 0;
-		
+
 		var skip = true;
 
 		for (var i = 0; i < format.length; i++) {
-			
+
 			var c = format[i];
 
 			if (c !== '#') {
@@ -1365,7 +1365,7 @@ Number.prototype.format = function(format) {
 
 	if (max > 0) {
 		output += '.';
-		for (var i = 0; i < max; i++) 
+		for (var i = 0; i < max; i++)
 			output += '#';
 	}
 
@@ -1471,10 +1471,10 @@ Async.prototype._complete = function(name, waiting) {
 	var self = this;
 
 	if (!waiting) {
-		
+
 		if (typeof(self.pending[name]) === 'undefined')
 			return self;
-		
+
 		delete self.pending[name];
 	}
 
@@ -1540,7 +1540,7 @@ Async.prototype.wait = function(name, waitingFor, fn) {
 	var self = this;
 	self.count++;
 
-	if (typeof(waitingFor) === 'function') {		
+	if (typeof(waitingFor) === 'function') {
 		fn = waitingFor;
 		waitingFor = name;
 		name = exports.GUID(5);
@@ -1567,11 +1567,11 @@ Async.prototype.wait = function(name, waitingFor, fn) {
 	return {Async}
 */
 Async.prototype.complete = function(fn) {
-	
+
 	var self = this;
 	self.onComplete = fn;
 	self.isRunning = true;
-	
+
 	Object.keys(self.pending).forEach(function(name) {
 		self.emit('begin', name);
 		self.pending[name]();

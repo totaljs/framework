@@ -40,13 +40,13 @@ if (typeof(setImmediate) === 'undefined') {
 	return {String array}
 */
 exports.parsePOST = function(req, maximumSize) {
-	
-	req.setEncoding(encoding);	
+
+	req.setEncoding(encoding);
 	req.buffer.isData = true;
 	req.buffer.isExceeded = false;
 
 	req.on('data', function(chunk) {
-		
+
 		if (req.buffer.isExceeded)
 			return;
 
@@ -74,7 +74,7 @@ exports.parsePOST = function(req, maximumSize) {
 	return {String array}
 */
 exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, onXSS, callback) {
-  	
+
   	var parser = new multipart.MultipartParser();
   	var boundary = contentType.split(';')[1];
   	var isFile = false;
@@ -86,7 +86,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 	var isXSS = false;
 
   	boundary = boundary.substring(boundary.indexOf('=') + 1);
-  	
+
   	req.buffer.isExceeded = false;
   	req.buffer.isData = true;
 
@@ -98,9 +98,9 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		tmp.step = 0;
 		tmp.isFile = false;
     };
-    
+
     parser.onHeaderValue = function(buffer, start, end) {
-    	
+
     	if (req.buffer.isExceeded || tmp.step > 1)
     		return;
 
@@ -116,7 +116,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
     	}
 
     	if (tmp.step === 0) {
-	    	
+
 	    	tmp.name = arr[1].substring(arr[1].indexOf('=') + 2);
     		tmp.name = tmp.name.substring(0, tmp.name.length - 1);
     		tmp.step = 1;
@@ -133,7 +133,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
     		return;
     	}
     };
-    
+
     parser.onPartData = function(buffer, start, end) {
 
 		if (req.buffer.isExceeded)
@@ -160,11 +160,11 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		stream.write(data);
 		tmp.fileSize += length;
     };
-    
+
     parser.onPartEnd = function() {
-		
+
 		if (stream !== null) {
-			
+
 			stream.on('close', function() {
 				close--;
 			});
@@ -191,7 +191,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		req.data.post[tmp.name] = tmp.value;
     };
 
-    parser.onEnd = function() {	
+    parser.onEnd = function() {
 
 		var cb = function cb () {
 
@@ -209,7 +209,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
     	cb();
     };
-	
+
     req.on('data', function(chunk) {
     	parser.write(chunk);
     });
@@ -217,7 +217,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 /*
 	Internal function / Split string (url) to array
-	@url {String}	
+	@url {String}
 	return {String array}
 */
 exports.routeSplit = function(url) {
@@ -245,7 +245,7 @@ exports.routeSplit = function(url) {
 	return {Boolean}
 */
 exports.routeCompare = function(url, route, isSystem) {
-	
+
 	if (route.length !== url.length)
 		return false;
 
@@ -287,7 +287,7 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
 	return {Number}
 */
 exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
-	
+
 	var isXSS = false;
 
 	for (var i = 0; i < arr2.length; i++) {
@@ -333,7 +333,7 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 */
 exports.routeParam = function(routeUrl, route) {
 	var arr = [];
-	
+
 	if (!route || !routeUrl)
 		return arr;
 

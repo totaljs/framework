@@ -59,7 +59,7 @@ Cache.prototype = new events.EventEmitter;
 */
 Cache.prototype.init = function(interval) {
 	var self = this;
-	
+
 	self.interval = setInterval(function() {
 		self.recycle();
 	}, interval || 1000 * 60);
@@ -88,7 +88,7 @@ Cache.prototype.clear = function() {
 	return {Cache}
 */
 Cache.prototype.recycle = function() {
-	
+
 	var self = this;
 	var repository = self.repository;
 	var keys = Object.keys(repository);
@@ -97,14 +97,14 @@ Cache.prototype.recycle = function() {
 		self.emit('service', self.count++);
 		return self;
 	}
-	
+
 	var expire = new Date();
-	
+
 	keys.forEach(function(o) {
 		if (repository[o].expire < expire)
 			delete repository[o];
 	});
-	
+
 	self.emit('service', self.count++);
 	return self;
 };
@@ -132,9 +132,9 @@ Cache.prototype.write = function(name, value, expire) {
 	return {Object}
 */
 Cache.prototype.read = function(name) {
-	var self = this;	
+	var self = this;
 	var value = self.repository[name] || null;
-	
+
 	if (value === null)
 		return null;
 
@@ -166,7 +166,7 @@ Cache.prototype.setExpires = function(name, expire) {
 Cache.prototype.remove = function(name) {
 	var self = this;
 	var value = self.repository[name] || null;
-	
+
 	delete self.repository[name];
 	return value;
 };
@@ -186,7 +186,7 @@ Cache.prototype.removeAll = function(search) {
 			count++;
 		}
 	});
-	
+
 	return count;
 };
 

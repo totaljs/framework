@@ -75,7 +75,7 @@ Template.prototype.parse = function(html, isRepository) {
 	var indexBeg = 0;
 	var indexer = 0;
 	var index = 0;
-	
+
 	var builder = [];
 	var property = [];
 	var keys = {};
@@ -98,7 +98,7 @@ Template.prototype.parse = function(html, isRepository) {
 		builder.push(b);
 
 		indexBeg = indexEnd + name.length;
-		
+
 		if (index !== -1) {
 			format = name.substring(index + 1, name.length - 1).trim();
 			name = name.substring(1, index);
@@ -133,7 +133,7 @@ Template.prototype.parse = function(html, isRepository) {
 
 		var key = name + format;
 		var indexer = keys[key];
-		
+
 		if (typeof(indexer) === 'undefined') {
 			property.push(name.trim());
 			indexer = property.length - 1;
@@ -148,7 +148,7 @@ Template.prototype.parse = function(html, isRepository) {
 
 	var fn = [];
 	for (var i = 0; i < builder.length; i++) {
-		
+
 		var str = builder[i];
 
 		if (i % 2 !== 0)
@@ -204,7 +204,7 @@ Template.prototype.load = function(name, prefix) {
 
 	var generator = self.cache.read(key);
 
-	if (generator !== null) 
+	if (generator !== null)
 		return generator;
 
 	generator = self.read(name + (isPrefix ? '#' + prefix : ''));
@@ -230,7 +230,7 @@ Template.prototype.render = function(name) {
 
 	var self = this;
 	var generator = self.load(name, self.prefix);
-	
+
 	if (generator === null)
 		return '';
 
@@ -296,7 +296,7 @@ function compile_eval(generator, model) {
 					val = model[arr[0]][arr[1]][arr[3]][arr[4]];
 				else if (arr.length === 5)
 					val = model[arr[0]][arr[1]][arr[3]][arr[4]][arr[5]];
-			} else 
+			} else
 				val = model[property];
 		}
 

@@ -42,12 +42,12 @@ var _controller = '';
 require('./prototypes');
 
 function Framework() {
-	this.version = 1234;
+	this.version = 1235;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.config = {
 		debug: false,
-		
+
 		name: 'partial.js',
 		version: '1.01',
 		secret: os.hostname() + '-' + os.platform() + '-' + os.arch(),
@@ -113,7 +113,7 @@ function Framework() {
 		var self = this.app;
 
 		if (self.config.debug) {
-			
+
 			// every minute clear the resource
 			self.resources = {};
 
@@ -162,9 +162,9 @@ Framework.prototype.controller = function(name) {
 
 	// initialize controller
 	var obj = require(path.join(directory, self.config['directory-controllers'], name + '.js'));
-	
+
 	self.controllers[name] = obj;
-	
+
 	if (obj.install) {
 		obj.install.call(self, self);
 		return self;
@@ -188,7 +188,7 @@ Framework.prototype.routeSort = function() {
 			return 1;
 
 		return 0;
-	});	
+	});
 	return self;
 };
 
@@ -247,7 +247,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize) {
 	var subdomain = null;
 
 	priority = url.count('/');
-	
+
 	if (index > 0) {
 		subdomain = url.substring(1, index).trim().toLowerCase().split(',');
 		url = url.substring(index + 1);
@@ -264,7 +264,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize) {
 
 	var routeURL = internal.routeSplit(url.trim());
 	var arr = [];
-	
+
 	if (url.indexOf('{') !== -1) {
 		routeURL.forEach(function(o, i) {
 			if (o.substring(0, 1) === '{')
@@ -374,11 +374,11 @@ Framework.prototype.module = function(name) {
 
 	if (typeof(module) !== 'undefined')
 		return module;
-	
+
 	var fileName = path.join(directory, self.config['directory-modules'], name + '.js');
 
 	if (!fs.existsSync(fileName)) {
-		
+
 		fileName = path.join(directory, self.config['directory-modules'], name, 'index.js');
 		if (fs.existsSync(fileName))
 			module = require(fileName);
@@ -388,7 +388,7 @@ Framework.prototype.module = function(name) {
 
 	if (typeof(module) === 'undefined')
 		module = null;
-	
+
 	_controller = '#module-' + name;
 
 	if (module !== null && typeof(module.directory) === 'undefined')
@@ -414,7 +414,7 @@ Framework.prototype.install = function() {
 			var ext = path.extname(o);
 			if (ext.toLowerCase() !== '.js')
 				return;
-			
+
 			self.controller(o.substring(0, o.length - 3));
 		});
 	}
@@ -521,10 +521,10 @@ Framework.prototype.restore = function(date, callback, restorePath) {
 	var fileName = path.join(dir, self.config['directory-backup'], date + (date.indexOf('.backup') === -1 ? '.backup' : ''));
 
 	var cb = function(err, path) {
-		
+
 		if (typeof(process.send) === 'function')
 			process.send('restore');
-		
+
 		callback && callback(err, path);
 	};
 
@@ -553,7 +553,7 @@ Framework.prototype.restore = function(date, callback, restorePath) {
 	backup.clear(dir, function() {
 		backup.restore(fileName, dir, cb, filter);
 	}, filterClear);
-	
+
 	return self;
 };
 
@@ -661,7 +661,7 @@ Framework.prototype.onFilterRestore = function(path) {
 	return {String}
 */
 Framework.prototype.onMeta = function() {
-	
+
 	var self = this;
 	var builder = '';
 
@@ -700,7 +700,7 @@ Framework.prototype.onMeta = function() {
 */
 Framework.prototype.createCSS = function(name, content, rewrite, append) {
 
-	var self = this;	
+	var self = this;
 
 	if ((content || '').length === 0)
 		return false;
@@ -1024,10 +1024,10 @@ Framework.prototype.usage = function(detailed) {
 		fs.readdirSync(dir).forEach(function(o) {
 			sizeBackup += fs.statSync(utils.combine(self.config['directory-backup'], o)).size;
 		});
-	}	
+	}
 
 	dir = '.' + self.config['directory-databases'];
-	
+
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(function(o) {
 			sizeDatabase += fs.statSync(utils.combine(self.config['directory-databases'], o)).size;
@@ -1070,7 +1070,7 @@ Framework.prototype.usage = function(detailed) {
 
 		builder.push('');
 		builder.push('[' + o + ']');
-		
+
 		var controller = self.controllers[o];
 
 		if (typeof(controller.usage) === 'undefined')
@@ -1178,7 +1178,7 @@ Framework.prototype.compileStatic = function(req, fileName) {
 		case '.js':
 			output = javascript.compile(output, self);
 			break;
-		
+
 		case '.css':
 			output = less.compile(output);
 
@@ -1208,7 +1208,7 @@ Framework.prototype.compileStatic = function(req, fileName) {
 	return {Framework}
 */
 Framework.prototype.responseStatic = function(req, res) {
-	
+
 	var self = this;
 
 	if (res.success)
@@ -1260,7 +1260,7 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 	}
 
 	var etag = utils.etag(req.url, self.config['etag-version']);
-	
+
 	if (!self.config.debug) {
 		if (req.headers['if-none-match'] === etag) {
 			res.success = true;
@@ -1292,7 +1292,7 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 			name = self.compileStatic(req, fileName);
 			self.static[fileName] = name;
 		}
-		
+
 		self.static[fileName] = name;
 
 		if (self.config.debug)
@@ -1337,7 +1337,7 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 			stream.pipe(res);
 			stream = null;
 			res = null;
-			req = null;			
+			req = null;
 			return self;
 		}
 
@@ -1351,7 +1351,7 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 			res = null;
 			req = null;
 			return self;
-		}			
+		}
 	}
 
 	res.writeHead(200, returnHeaders);
@@ -1427,7 +1427,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 			return self;
 		}
 	}
-	
+
 	stream.on('error', function() {
 		self.response404(req, res);
 	});
@@ -1466,7 +1466,7 @@ Framework.prototype.responseRange = function(name, range, headers, res) {
 
 	if (end === 0)
 		end = total - 1;
-	
+
 	var length = (end - beg) + 1;
 
 	headers['Content-Length'] = length;
@@ -1493,7 +1493,7 @@ Framework.prototype.responseRange = function(name, range, headers, res) {
 	return {Controller};
 */
 Framework.prototype.setModified = function(req, res, value) {
-	
+
 	var self = this;
 	var isEtag = typeof(value) === 'string';
 
@@ -1524,7 +1524,7 @@ Framework.prototype.setModified = function(req, res, value) {
 	return {Controller};
 */
 Framework.prototype.ifNotModified = function(req, res, compare, strict) {
-	
+
 	var self = this;
 	var isEtag = typeof(compare) === 'string';
 
@@ -1549,7 +1549,7 @@ Framework.prototype.ifNotModified = function(req, res, compare, strict) {
 
 
 		if (strict)
- 		{			
+ 		{
 			if (new Date(Date.parse(val)) === new Date(date))
 				return false;
 		} else {
@@ -1572,12 +1572,12 @@ Framework.prototype.ifNotModified = function(req, res, compare, strict) {
 	return {Framework}
 */
 Framework.prototype.response404 = function(req, res) {
-	
+
 	if (res.success)
 		return this;
 
 	req.clear();
-	
+
 	res.success = true;
 	res.writeHead(404, { 'Content-Type': 'text/plain' });
 	res.end('File not found (404).');
@@ -1629,7 +1629,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 			var buffer = new Buffer(contentBody);
 
 			zlib.gzip(buffer, function(err, data) {
-				
+
 				if (err) {
 					req.connection.destroy();
 					return;
@@ -1654,7 +1654,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 			var buffer = new Buffer(contentBody);
 
 			zlib.deflate(buffer, function(err, data) {
-				
+
 				if (err) {
 					req.connection.destroy();
 					return;
@@ -1761,7 +1761,7 @@ Framework.prototype.init = function(http, config, port) {
 	});
 
 	process.on('exit', function () {
-		
+
 		if (self.onExit)
 			self.onExit(self);
 
@@ -1814,7 +1814,7 @@ Framework.prototype.init = function(http, config, port) {
 	} catch (err) {
 		self.error(err, 'Framework :: loaded event');
 	}
-	
+
 	if (typeof(process.send) === 'function')
 		process.send('name: ' + self.config.name);
 
@@ -1823,7 +1823,7 @@ Framework.prototype.init = function(http, config, port) {
 
 Framework.prototype._request = function(req, res) {
 	var self = this;
-	
+
 	res.setHeader('X-Powered-By', 'partial.js v' + self.version);
 
     if (self.config.debug)
@@ -1851,7 +1851,7 @@ Framework.prototype._request = function(req, res) {
    	req.path = internal.routeSplit(req.uri.pathname);
 
 	var subdomain = req.uri.host.toLowerCase().split('.');
-	
+
 	if (subdomain.length > 2)
 		req.subdomain = subdomain.slice(0, subdomain.length - 2); // example: [subdomain].domain.com
 
@@ -1865,7 +1865,7 @@ Framework.prototype._request = function(req, res) {
 
    	// if is static file, return file
    	if (utils.isStaticFile(req.uri.pathname)) {
-   		
+
 	    req.on('end', function () {
 	    	var files = self.routesFile;
 			if (files.length > 0) {
@@ -1902,9 +1902,9 @@ Framework.prototype._request = function(req, res) {
 
 	if (self.onRoute !== null) {
 		try
-		{				
+		{
 			if (!self.onRoute(req, res)) {
-				
+
 				if (!res.success)
 					req.connection.destroy();
 
@@ -1974,7 +1974,7 @@ Framework.prototype._request = function(req, res) {
 				self.request(req, res, req.flags, req.uri.pathname);
 			});
 
-			req.resume();				
+			req.resume();
 			return;
 
    		} else {
@@ -2033,7 +2033,7 @@ Framework.prototype.run = function(http, config, port) {
 
 /*
 	Test request to controller
-	
+
 	@url {String}
 	@callback {Functions} :: function(error, data, statusCode, headers);
 	@method {String} :: default GET
@@ -2044,7 +2044,7 @@ Framework.prototype.run = function(http, config, port) {
 	return {Framework}
 */
 Framework.prototype.assert = function(name, url, callback, method, data, headers, xhr) {
-	
+
 	var self = this;
 
 	if (typeof(headers) === 'boolean') {
@@ -2062,7 +2062,7 @@ Framework.prototype.assert = function(name, url, callback, method, data, headers
 
 	if (xhr)
 		obj.headers['X-Requested-With'] = 'XMLHttpRequest';
-	
+
 	obj.headers['assertion-testing'] = '1';
 	self.tests[name] = obj;
 
@@ -2071,7 +2071,7 @@ Framework.prototype.assert = function(name, url, callback, method, data, headers
 
 /*
 	Internal test function for assertion testing
-	
+
 	@stop {Boolean} :: stop framework (default true)
 	@callback {Functions} :: on complete test handler
 
@@ -2106,7 +2106,7 @@ Framework.prototype.testing = function(stop, callback) {
 		{
 			test.callback.call(self, error, data, key, code, headers);
 		} catch (ex) {
-			
+
 			setTimeout(function() {
 				self.stop();
 			}, 500);
@@ -2130,7 +2130,7 @@ Framework.prototype.testing = function(stop, callback) {
 	return {Framework}
 */
 Framework.prototype.test = function(stop, names, cb) {
-	
+
 	var self = this;
 
 	if (typeof(names) === 'function') {
@@ -2188,7 +2188,7 @@ Framework.prototype.clear = function() {
 		return self;
 
 	fs.readdir(dir, function(err, files) {
-		
+
 		if (err)
 			return;
 
@@ -2214,7 +2214,7 @@ Framework.prototype.encode = function(value, key, isUnique) {
 
 	var self = this;
 	var type = typeof(value);
-	
+
 	if (type === 'undefined')
 		return '';
 
@@ -2271,7 +2271,7 @@ Framework.prototype.resource = function(name, key) {
 
 	var fileName = utils.combine(self.config['directory-resources'], name + '.resource');
 	var obj = {};
-	
+
 	if (!fs.existsSync(fileName))
 		return '';
 
@@ -2289,7 +2289,7 @@ Framework.prototype.resource = function(name, key) {
 		obj[str.substring(0, index).trim()] = str.substring(index + 1).trim();
 	}
 
-	self.resources[name] = obj;	
+	self.resources[name] = obj;
 	return obj[key] || '';
 };
 
@@ -2298,7 +2298,7 @@ Framework.prototype.resource = function(name, key) {
 	return {Framework}
 */
 Framework.prototype.configure = function() {
-	
+
 	var self = this;
 	var fileName = utils.combine('/', 'config-' + (self.config.debug ? 'debug' : 'release'));
 
@@ -2322,7 +2322,7 @@ Framework.prototype.configure = function() {
 		var name = str.substring(0, index).trim();
 
 		if (name === 'debug' || name === 'resources')
-			continue; 
+			continue;
 
 		var value = str.substring(index + 1).trim();
 
@@ -2339,7 +2339,7 @@ Framework.prototype.configure = function() {
 			default:
 				obj[name] = value.isNumber() ? utils.parseInt(value) : value.isNumber(true) ? utils.parseFloat(value) : value;
 				break;
-		}		
+		}
 	}
 
 	utils.extend(self.config, obj, true);
@@ -2351,7 +2351,7 @@ Framework.prototype.configure = function() {
 				self.config.config['static-accepts'].push(accept);
 		});
 	}
-	
+
 	return self;
 };
 
@@ -2383,10 +2383,10 @@ Framework.prototype.verification = function(cb) {
 
 	self.verify = [];
 	self.verifyError = [];
-	
+
 	self.verify.push(function verifyVersion() {
 		utils.request('https://raw.github.com/petersirka/partial.js/master/package.json', 'GET', '', function(err, data) {
-			
+
 			if (!err) {
 				var obj = JSON.parse(data);
 				var git = utils.parseInt(obj.version.replace(/[\.\-]/g, ''));
@@ -2560,7 +2560,7 @@ Framework.prototype.routeStaticSync = function(name, directory) {
 	return {Framework}
 */
 Framework.prototype.request = function(req, res, flags, url) {
-	
+
 	var self = this;
 
 	if (self.onAuthorization === null) {
@@ -2591,7 +2591,7 @@ Framework.prototype.request = function(req, res, flags, url) {
 
 Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 
-	var self = this;	
+	var self = this;
 	var isSystem = url[0] === '#';
 
 	if (isSystem)
@@ -2624,7 +2624,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 			if (flags.indexOf('xss') !== -1)
 				continue;
 		}
-		
+
 		return route;
 	}
 
@@ -2644,7 +2644,7 @@ Framework.prototype.execute = function(req, res, route, status) {
 	var $controller = controller.init(name, self, req, res);
 
 	try
-	{	
+	{
 		self.emit('controller', $controller, name);
 
 		var isModule = name[0] === '#' && name[1] === 'm';
