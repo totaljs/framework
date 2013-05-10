@@ -107,26 +107,27 @@ Template.prototype.parse = function(html, isRepository) {
 			if (format.indexOf('#') !== -1) {
 				format = ".format('" + format + "')";
 			} else {
-				var count = utils.parseInt(format);
-				if (count === 0) {
-					format = ".format('" + format + "')";
-				} else {
-					format = ".maxLength(" + (count + 3) + ",'...')";
-					if (isEncode) {
-						format += '.htmlEncode()';
-						isEncode = false;
-					}
-				}
+
+				var condition = parseCondition(format);
+				if (condition.length === 0) {
+					var count = utils.parseInt(format);
+					if (count === 0) {
+						format = ".format('" + format + "')";
+					} else
+						format = ".maxLength(" + (count + 3) + ",'...')";
+				} else
+					format = ".condition(" + condition + ")";
 			}
 		}
-		else {
+		else
 			name = name.substring(1, name.length - 1);
-		}
 
 		if (name[0] === '!') {
 			name = name.substring(1);
 			isEncode = false;
 		}
+
+		name = name.trim();
 
 		if (isEncode)
 			format += '.toString().htmlEncode()';
@@ -171,6 +172,27 @@ Template.prototype.parse = function(html, isRepository) {
 	} catch (ex) {
 		self.controller.app.error(ex, 'Template compiler', self.controller.req.uri);
 	}
+};
+
+function parseCondition(value) {
+
+	value = value.trim();
+
+	var condition = value[0];
+	if (condition !== '"' && condition !== '\'')
+		return '';
+
+	var index = value.indexOf(condition, 1);
+	if (index === -1)
+		return '';
+
+	var a = value.substring(1, index).replace(/\'/g, "\\'");
+	index = value.indexOf(condition, index + 2);
+
+	if (index === -1)
+		return "'{0}'".format(a);
+
+	return "'{0}','{1}'".format(a, value.substring(index + 1, value.length - 1).replace(/\'/g, "\\'"));
 };
 
 /*

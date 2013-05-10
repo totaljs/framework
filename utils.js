@@ -1383,6 +1383,14 @@ Number.prototype.hex = function(length) {
     return str;
 };
 
+Number.prototype.condition = function(ifTrue, ifFalse) {
+	return (this % 2 === 0 ? ifTrue : ifFalse) || '';
+};
+
+Boolean.prototype.condition = function(ifTrue, ifFalse) {
+	return (this ? ifTrue : ifFalse) || '';
+};
+
 /*
     @count {Number}
 	return {Array}

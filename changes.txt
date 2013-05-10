@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.2.6
+
+- added: template condition
+
 ======= 1.2.5
 
 - fixed: route flags

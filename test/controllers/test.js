@@ -12,6 +12,12 @@ exports.init = function() {
 	self.route('/{a}/{b}/', viewRouteAB);
 	self.route('/a/{a}/', viewRouteAA);
 	self.route('/a/b/c/', viewRouteABC);
+	self.route('/test/', viewTest);
+};
+
+function viewTest() {
+	this.layout('');
+	this.view('e');
 };
 
 function viewIndex() {
