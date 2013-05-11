@@ -30,7 +30,7 @@ web application framework for node.js
 * Supports file upload - [example: file upload](https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart)
 * Supports copy&paste custom code between projects - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-custom)
 * __Supports modules__ (module can create route, view, template, content, resource or static CSS/JS file) - [example: module](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
-* __Supports inject module from URL__ [example: module inject](https://github.com/petersirka/partial.js/tree/master/examples/framework-inject
+* __Supports inject module from URL__ [example: module inject](https://github.com/petersirka/partial.js/tree/master/examples/framework-inject)
 * Supports form data validation - [example: validation](https://github.com/petersirka/partial.js/tree/master/examples/validation)
 * Supports simple log writer - [example: logs](https://github.com/petersirka/partial.js/tree/master/examples/logs)
 * Supports simple restrictions [example: restriction](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
