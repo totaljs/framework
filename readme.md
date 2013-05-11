@@ -123,7 +123,7 @@ $ open http://127.0.0.1:8080
 * MongoDB (www.mongolab.com) REST client for node.js - https://github.com/petersirka/node-mongolab
 * HTTP-RDBMS REST node.js client for partial.js (MySQL, SQL Server, OleDB, ODBC) - https://github.com/petersirka/node-rdbms
 
-*** 
+***
 
 > I am still improving my english.
 

@@ -36,7 +36,7 @@ var fs = require('fs');
 	return {ServerResponse}
 */
 http.ServerResponse.prototype.cookie = function(name, value, expire, path, domain, httpOnly, secure) {
-	
+
 	httpOnly = httpOnly || false;
 	secure = secure || false;
 	domain = domain || '';
@@ -55,7 +55,7 @@ http.ServerResponse.prototype.cookie = function(name, value, expire, path, domai
 	return {String}
 */
 http.IncomingMessage.prototype.cookie = function(name) {
-	
+
 	var self = this;
 
 	if (typeof(self.cookies) === 'undefined') {
@@ -70,7 +70,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
  	}
 
 	var value = self.cookies[name];
-	
+
 	if (typeof(value) === 'undefined')
 		return null;
 

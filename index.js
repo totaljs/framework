@@ -150,7 +150,7 @@ Framework.prototype = new events.EventEmitter;
 /*
 	Refresh framework internal information
 	@clear {Boolean} || optional, default true - clear TMP direcotry
-	return {Framework} 
+	return {Framework}
 */
 Framework.prototype.refresh = function(clear) {
 	var self = this;
@@ -483,7 +483,7 @@ Framework.prototype.install = function() {
 Framework.prototype.inject = function(name, url) {
 	var self = this;
 	var framework = self;
-	
+
 	utils.request(url, 'GET', '', function(error, data) {
 
 		if (error) {
