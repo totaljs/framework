@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.6
+======= 1.2.3-6
 
 - added: template condition (https://github.com/petersirka/partial.js/tree/master/examples/templating)
 - added: new mark to template = {#} - return current array index (https://github.com/petersirka/partial.js/tree/master/examples/templating)
@@ -12,7 +12,7 @@ IN DEVELOPMENT ======= 1.2.6
 
 - clean code
 
-======= 1.2.5
+======= 1.2.3-5
 
 - fixed: route flags
 - fixed: utils.validate()
@@ -20,7 +20,7 @@ IN DEVELOPMENT ======= 1.2.6
 
 - clean code
 
-======= 1.2.4
+======= 1.2.3-4
 
 - added: new alias for framework.routeFile() = framework.file()
 - added: new examples
