@@ -21,7 +21,7 @@ web application framework for node.js
 * Simple cookie manipulation - [example: cookies](https://github.com/petersirka/partial.js/tree/master/examples/cookies)
 * Simple listing via templates - [example: listing via templates](https://github.com/petersirka/partial.js/tree/master/examples/templating)
 * XSS protection [example: XSS](https://github.com/petersirka/partial.js/tree/master/examples/framework-xss-protection)
-* Share controller functions and models over framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
+* Share controller functions and models over the framework - [example](https://github.com/petersirka/partial.js/tree/master/examples/controller-sharing)
 * __Assertion Testing__ - [example: testing](https://github.com/petersirka/partial.js/tree/master/examples/testing)
 * Supports custom helpers - [example: custom helpers](https://github.com/petersirka/partial.js/tree/master/examples/View-custom-helper)
 * Supports routing to static file for dynamic creating static file - [example: routing](https://github.com/petersirka/partial.js/tree/master/examples/routing)
@@ -30,6 +30,7 @@ web application framework for node.js
 * Supports file upload - [example: file upload](https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart)
 * Supports copy&paste custom code between projects - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-custom)
 * __Supports modules__ (module can create route, view, template, content, resource or static CSS/JS file) - [example: module](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
+* __Supports inject module from URL__ [example: module inject](https://github.com/petersirka/partial.js/tree/master/examples/framework-inject
 * Supports form data validation - [example: validation](https://github.com/petersirka/partial.js/tree/master/examples/validation)
 * Supports simple log writer - [example: logs](https://github.com/petersirka/partial.js/tree/master/examples/logs)
 * Supports simple restrictions [example: restriction](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
@@ -54,8 +55,8 @@ web application framework for node.js
 * Supports dynamic stop server - [example: stop server](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
 * Supports verification of framework - [example: verification](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
 * __Supports backup and restore website__ - [example: backup & restore](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
-* About 8 000 lines of JavaScript code, all files have 300 kB
-* __No dependencies__
+* About 8 000 lines of JavaScript code, all files have 310 kB
+* __NO DEPENDENCIES *** NO DEPENDENCIES *** NO DEPENDENCIES__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
 * [Documentation](http://www.partialjs.com/documentation/)
 * __Supports internal NoSQL embedded database__ - [example: authorization](https://github.com/petersirka/partial.js/tree/master/examples/authorization) or [example: contact form](https://github.com/petersirka/partial.js/tree/master/examples/contact-form)
