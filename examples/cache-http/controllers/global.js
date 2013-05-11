@@ -33,7 +33,7 @@ function viewDynamicModified() {
 	//
 	// ifNotModified([date], [strict])
 
-	if (self.ifNotModified())
+	if (self.notModified())
 		return;
 
 	self.layout('');
@@ -54,7 +54,7 @@ function viewModified() {
 	//
 	// ifNotModified([date], [strict])
 
-	if (self.ifNotModified())
+	if (self.notModified())
 		return;
 
 	// if (self.ifNotModified(new Date().add('minute', 5)))
@@ -72,7 +72,7 @@ function viewModified() {
 function viewDynamicEtag() {
 	var self = this;
 
-	if (self.ifNotModified('123456'))
+	if (self.notModified('123456'))
 		return;
 
 	self.layout('');
@@ -84,7 +84,7 @@ function viewEtag() {
 	var self = this;
 	var etag = 'abc123456';
 
-	if (self.ifNotModified(etag))
+	if (self.notModified(etag))
 		return;
 
 	// if value == string then framework uses Etag else Last-Modified
