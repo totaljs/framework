@@ -305,11 +305,15 @@ Controller.prototype.functions = function(name) {
 
 	return {Controller};
 */
-Controller.prototype.ifNotModified = function(compare, strict) {
+Controller.prototype.notModified = function(compare, strict) {
 	var self = this;
-	return self.app.ifNotModified(self.req, self.res, compare, strict);
+	return self.app.notModified(self.req, self.res, compare, strict);
 };
 
+Controller.prototype.ifNotModified = function(compare, strict) {
+	var self = this;
+	return self.app.notModified(self.req, self.res, compare, strict);
+};
 /*
 	Set last modified header or Etag
 	@value {String or Date}

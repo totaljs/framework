@@ -83,7 +83,8 @@ function Framework() {
 
 		// default maximum request size / length
 		// default 5 kB
-		'default-request-length': 1024 * 5
+		'default-request-length': 1024 * 5,
+		'gzip': true
 	};
 
 	this.global = {};
@@ -144,6 +145,23 @@ function Framework() {
 // ======================================================
 
 Framework.prototype = new events.EventEmitter;
+
+
+/*
+	Refresh framework internal information
+	@clear {Boolean} || optional, default true - clear TMP direcotry
+	return {Framework} 
+*/
+Framework.prototype.refresh = function(clear) {
+	var self = this;
+	self.resources = {};
+	self.databases = {};
+	self.configure();
+	self.static = {};
+	self.staticRange = {};
+	(clear || true) && self.clear();
+	return self;
+};
 
 /*
 	Add/Register a new controller
@@ -453,6 +471,41 @@ Framework.prototype.install = function() {
 	});
 
 	self.routeSort();
+	return self;
+};
+
+/*
+	Inject module / script
+	@name {String} :: name of module or script
+	@url {String}
+	return {Framework}
+*/
+Framework.prototype.inject = function(name, url) {
+	var self = this;
+	var framework = self;
+	
+	utils.request(url, 'GET', '', function(error, data) {
+		try
+		{
+
+			var result = eval('(new (function(framework){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
+			_controller = '#module-' + name;
+
+			self.routes = self.routes.remove(function(route) {
+				return route.name === _controller;
+			});
+
+			if (typeof(result.install) !== 'undefined')
+				result.install(self);
+
+			self.modules[name] = result;
+			self.routeSort();
+
+		} catch (ex) {
+			self.error(ex, 'inject - ' + name, null);
+		}
+	});
+
 	return self;
 };
 
@@ -1229,15 +1282,6 @@ Framework.prototype.responseStatic = function(req, res) {
 	Response file
 	@req {ServerRequest}
 	@res {ServerResponse}
-	@filename {String}
-	@downloadName {String} :: optional
-	@headers {Object} :: optional key/value
-	return {Framework}
-*/
-/*
-	Response file
-	@req {ServerRequest}
-	@res {ServerResponse}
 	@fileName {String}
 	@downloadName {String} :: optional
 	@headers {Object} :: optional key/value
@@ -1299,7 +1343,7 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 			delete self.static[fileName];
 	}
 
-	var compress = ['js', 'css', 'txt'].indexOf(extension) !== -1;
+	var compress = self.config.gzip && ['js', 'css', 'txt'].indexOf(extension) !== -1;
 	var accept = req.headers['accept-encoding'] || '';
 	var returnHeaders = {};
 
@@ -1360,6 +1404,7 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 	stream = null;
 	res = null;
 	req = null;
+	returnHeaders = null;
 	return self;
 };
 
@@ -1523,7 +1568,7 @@ Framework.prototype.setModified = function(req, res, value) {
 
 	return {Controller};
 */
-Framework.prototype.ifNotModified = function(req, res, compare, strict) {
+Framework.prototype.notModified = function(req, res, compare, strict) {
 
 	var self = this;
 	var isEtag = typeof(compare) === 'string';
@@ -1564,6 +1609,12 @@ Framework.prototype.ifNotModified = function(req, res, compare, strict) {
 
 	return true;
 };
+
+Framework.prototype.ifNotModified = function(req, res, compare, strict) {
+	console.log('OBSOLETE FUNCTION > framework.ifNotModified, use: framework.notModified');
+	return this.notModified(req, res, compare, strict);
+}
+
 
 /*
 	Response with 404 error
