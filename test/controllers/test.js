@@ -38,9 +38,7 @@ function viewIndex() {
 	assert.ok(self.repository['$settings'] === 'BA', name + 'settings() - write');
 
 	assert.ok(self.module('hatatitla') === null, name + 'module(not exists) - read');
-	console.log(self.module('share'));
 	assert.ok(self.module('test').message() === 'message', name + 'module(exists) - read');
-	console.log('OK2');
 
 	self.layout('test');
 	assert.ok(self.internal.layout === 'test', name + 'layout()');
@@ -115,7 +113,7 @@ function viewViews() {
 	assert.ok(output.contains('#view-toggle#'), name + 'viewToggle()');
 	assert.ok(output.contains('#contentEMPTY#'), name + 'content');
 	assert.ok(output.contains('#content-toggle#'), name + 'contentToggle');
-	assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>10.50</div><div>10.5</div>#'), name + 'template() - one');
+	assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>A</div><div>10.50</div><div>10.5</div><div>B</div>#'), name + 'template() - one');
 	assert.ok(output.contains('#template-more<ul><li>A</li><li>B</li></ul>#'), name + 'template() - more');
 	assert.ok(output.contains('#template-emptyEMPTY#'), name + 'template() - empty');
 	assert.ok(output.contains('#template-toggle#'), name + 'templateToggle()');

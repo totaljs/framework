@@ -32,6 +32,7 @@ exports.onLoaded = function() {
 	self.helpers.fn = function(a) {
 		return a;
 	};
+
 };
 
 exports.onPictureUrl = function(dimension, id, width, height, alt) {
