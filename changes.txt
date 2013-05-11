@@ -1,6 +1,9 @@
 IN DEVELOPMENT ======= 1.2.6
 
-- added: template condition
+- added: template condition (https://github.com/petersirka/partial.js/tree/master/examples/templating)
+- added: new mark to template = {#} - return current array index (https://github.com/petersirka/partial.js/tree/master/examples/templating)
+
+- fixed: LESS CSS (problem with @media)
 
 ======= 1.2.5
 
