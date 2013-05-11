@@ -34,15 +34,15 @@ var events = require('events');
 var internal = require('./internal');
 var controller = require('./controller');
 var bk = require('./backup');
+var nosql = require('./nosql');
 var encoding = 'utf8';
 var directory = process.cwd();
-var nosql = require('./nosql');
 var _controller = '';
 
 require('./prototypes');
 
 function Framework() {
-	this.version = 1235;
+	this.version = 1236;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.config = {
