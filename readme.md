@@ -8,6 +8,7 @@ web application framework for node.js
 - __Blog example__: [new example - blog written in partial.js and NoSQL embedded database (without installation)](http://blog.partialjs.com)
 - __E-shop example__: [new example - e-shop written in partial.js and NoSQL embedded database (without installation)](http://eshop.partialjs.com)
 - Documentation: [partial.js documentation](http://partialjs.com/documentation/)
+- [Changelog](https://github.com/petersirka/partial.js/blob/master/changes.txt)
 
 ***
 
