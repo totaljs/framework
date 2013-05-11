@@ -485,9 +485,14 @@ Framework.prototype.inject = function(name, url) {
 	var framework = self;
 	
 	utils.request(url, 'GET', '', function(error, data) {
+
+		if (error) {
+			self.error(error, 'inject - ' + name, null);
+			return;
+		}
+
 		try
 		{
-
 			var result = eval('(new (function(framework){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
 			_controller = '#module-' + name;
 

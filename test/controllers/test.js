@@ -38,7 +38,9 @@ function viewIndex() {
 	assert.ok(self.repository['$settings'] === 'BA', name + 'settings() - write');
 
 	assert.ok(self.module('hatatitla') === null, name + 'module(not exists) - read');
+	console.log(self.module('share'));
 	assert.ok(self.module('test').message() === 'message', name + 'module(exists) - read');
+	console.log('OK2');
 
 	self.layout('test');
 	assert.ok(self.internal.layout === 'test', name + 'layout()');
