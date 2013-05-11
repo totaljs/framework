@@ -284,9 +284,9 @@ function compile(generator, obj, plain) {
 			obj = [obj];
 
 		for (var j = 0; j < obj.length; j++)
-			html += compile_eval(generator, obj[j]);
+			html += compile_eval(generator, obj[j], j);
 	} else
-		html = compile_eval(generator, obj);
+		html = compile_eval(generator, obj, 0);
 
 	return plain ? html : generator.beg + html + generator.end;
 };
@@ -297,7 +297,7 @@ function compile(generator, obj, plain) {
     @model {Object}
     return {String}
 */
-function compile_eval(generator, model) {
+function compile_eval(generator, model, indexer) {
 
 	var params = [];
 	for (var i = 0; i < generator.property.length; i++) {
@@ -305,9 +305,8 @@ function compile_eval(generator, model) {
 		var property = generator.property[i];
 		var val;
 
-		if (property === '') {
-			val = model;
-		} else {
+		if (property !== '') {
+
 			if (property.indexOf('.') !== -1) {
 				var arr = property.split('.');
 				if (arr.length === 2)
@@ -318,9 +317,12 @@ function compile_eval(generator, model) {
 					val = model[arr[0]][arr[1]][arr[3]][arr[4]];
 				else if (arr.length === 5)
 					val = model[arr[0]][arr[1]][arr[3]][arr[4]][arr[5]];
-			} else
+			} else if (property === '#')
+				val = indexer;
+			else
 				val = model[property];
-		}
+		} else
+			val = model;
 
 		if (typeof(val) === 'function')
 			val = val(i);
