@@ -197,7 +197,7 @@ Less.prototype.getValue = function(prev, value) {
 
     var sb = [];
     var less = new LessValue(self);
-    var without = ['@import', '@font-face', '@keyframes', '@-moz-keyframes', '@-webkit-keyframes', '@-o-keyframes', '@-ms-keyframes'];
+    var without = ['@import', '@font-face', '@keyframes', '@-moz-keyframes', '@-webkit-keyframes', '@-o-keyframes', '@-ms-keyframes', '@media'];
 
     while (index < value.length) {
 
