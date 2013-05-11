@@ -2,8 +2,15 @@ IN DEVELOPMENT ======= 1.2.6
 
 - added: template condition (https://github.com/petersirka/partial.js/tree/master/examples/templating)
 - added: new mark to template = {#} - return current array index (https://github.com/petersirka/partial.js/tree/master/examples/templating)
+- added: framework.inject(name, url) - for injecting scripts
+- added: framework.refresh([clear]) - refresh all internal information
+- added: framework.config.gzip - default true
+
+- rename: [framework/controller].ifNotModified() to [framework/controller].notModified()
 
 - fixed: LESS CSS (problem with @media)
+
+- clean code
 
 ======= 1.2.5
 
