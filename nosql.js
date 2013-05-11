@@ -231,9 +231,13 @@ Database.prototype.insert = function(arr, fnCallback, changes) {
 
 		self.changelog.insert(builderChanges);
 
-		if (fnCallback)
-			setImmediate(function() { fnCallback(builder.length); });
+		if (fnCallback) {
+			var length = builder.length;
+			setImmediate(function() { fnCallback(length); });
+		}
 
+		builder = null;
+		builderChanges = null;
 	});
 
 	return self;
