@@ -99,30 +99,30 @@ Template.prototype.parse = function(html, isRepository) {
 
 		indexBeg = indexEnd + name.length;
 
-		if (index !== -1) {
-			format = name.substring(index + 1, name.length - 1).trim();
-			name = name.substring(1, index);
+        if (index !== -1) {
 
-			// format number
-			if (format.indexOf('#') === -1) {
-				var pluralize = parsePluralize(format);
-				if (pluralize.length === 0) {
-					var condition = parseCondition(format);
-					if (condition.length === 0) {
-						var count = utils.parseInt(format);
-						if (count === 0) {
-							format = ".format('" + format + "')";
-						} else
-							format = ".maxLength(" + (count + 3) + ",'...')";
-					} else
-						format = ".condition(" + condition + ")";
-				} else
-					format = pluralize;
-			} else
-				format = ".format('" + format + "')";
-		}
-		else
-			name = name.substring(1, name.length - 1);
+            format = name.substring(index + 1, name.length - 1).trim();
+            name = name.substring(1, index);
+
+            var pluralize = parsePluralize(format);
+            if (pluralize.length === 0) {
+                if (format.indexOf('#') === -1) {
+                    var condition = parseCondition(format);
+                    if (condition.length === 0) {
+                        var count = utils.parseInt(format);
+                        if (count === 0) {
+                            format = ".format('" + format + "')";
+                        } else
+                            format = ".maxLength(" + (count + 3) + ",'...')";
+                    } else
+                        format = ".condition(" + condition + ")";
+                } else
+                    format = ".format('" + format + "')";
+            } else
+                format = pluralize;
+        }
+        else
+            name = name.substring(1, name.length - 1);
 
 		if (name[0] === '!') {
 			name = name.substring(1);
