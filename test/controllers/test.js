@@ -13,7 +13,12 @@ exports.init = function() {
 	self.route('/a/{a}/', viewRouteAA);
 	self.route('/a/b/c/', viewRouteABC);
 	self.route('/test/', viewTest);
+	self.route('/login/google/callback/', aa);
 };
+
+function aa() {	
+	this.json(this.get);
+}
 
 function viewTest() {
 	this.layout('');
@@ -113,11 +118,10 @@ function viewViews() {
 	assert.ok(output.contains('#view-toggle#'), name + 'viewToggle()');
 	assert.ok(output.contains('#contentEMPTY#'), name + 'content');
 	assert.ok(output.contains('#content-toggle#'), name + 'contentToggle');
-	assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>A</div><div>10.50</div><div>10.5</div><div>B</div>#'), name + 'template() - one');
+	assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>A</div><div>zero</div><div>10.50</div><div>10.5</div><div>B</div><div>one</div>#'), name + 'template() - one');
 	assert.ok(output.contains('#template-more<ul><li>A</li><li>B</li></ul>#'), name + 'template() - more');
 	assert.ok(output.contains('#template-emptyEMPTY#'), name + 'template() - empty');
 	assert.ok(output.contains('#template-toggle#'), name + 'templateToggle()');
-	assert.ok(!output.contains('<!--'), name + 'minify html');
 	assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
 	
 	self.repository.A = 'A';

@@ -56,7 +56,7 @@ Template.prototype.parse = function(html, isRepository) {
 
 	var self = this;
 	var indexBeg = html.indexOf('<!--');
-	var indexEnd = html.lastIndexOf('-->')
+	var indexEnd = html.lastIndexOf('-->');
 
 	var beg = '';
 	var end = '';
@@ -104,20 +104,22 @@ Template.prototype.parse = function(html, isRepository) {
 			name = name.substring(1, index);
 
 			// format number
-			if (format.indexOf('#') !== -1) {
-				format = ".format('" + format + "')";
-			} else {
-
-				var condition = parseCondition(format);
-				if (condition.length === 0) {
-					var count = utils.parseInt(format);
-					if (count === 0) {
-						format = ".format('" + format + "')";
+			if (format.indexOf('#') === -1) {
+				var pluralize = parsePluralize(format);
+				if (pluralize.length === 0) {
+					var condition = parseCondition(format);
+					if (condition.length === 0) {
+						var count = utils.parseInt(format);
+						if (count === 0) {
+							format = ".format('" + format + "')";
+						} else
+							format = ".maxLength(" + (count + 3) + ",'...')";
 					} else
-						format = ".maxLength(" + (count + 3) + ",'...')";
+						format = ".condition(" + condition + ")";
 				} else
-					format = ".condition(" + condition + ")";
-			}
+					format = pluralize;
+			} else
+				format = ".format('" + format + "')";
 		}
 		else
 			name = name.substring(1, name.length - 1);
@@ -193,6 +195,49 @@ function parseCondition(value) {
 		return "'{0}'".format(a);
 
 	return "'{0}','{1}'".format(a, value.substring(index + 1, value.length - 1).replace(/\'/g, "\\'"));
+};
+
+function parsePluralize(value) {
+
+	value = value.trim();
+
+	var condition = value[0];
+	if (condition !== '"' && condition !== '\'')
+		return '';
+
+	var index = value.indexOf(condition, 1);
+	if (index === -1)
+		return '';
+
+	var a = value.substring(1, index).replace(/\'/g, "\\'");
+	var b = '';
+	var c = '';
+	var d = '';
+
+	var beg = value.indexOf(condition, index + 1);
+
+	if (beg === -1)
+		return '';
+
+	index = value.indexOf(condition, beg + 1);
+	b = value.substring(beg + 1, index).replace(/\'/g, "\\'");
+	c = '';
+
+	beg = value.indexOf(condition, index + 1);
+	if (beg === -1)
+		return '';
+
+	index = value.indexOf(condition, beg + 1);
+	c = value.substring(beg + 1, index).replace(/\'/g, "\\'");
+
+	beg = value.indexOf(condition, index + 1);
+	if (beg === -1)
+		return -1;
+
+	index = value.indexOf(condition, beg + 1);
+	d = value.substring(beg + 1, index).replace(/\'/g, "\\'");
+
+	return ".pluralize('{0}','{1}','{2}', '{3}')".format(a, b, c, d);
 };
 
 /*

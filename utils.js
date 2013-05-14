@@ -1235,6 +1235,11 @@ String.prototype.link = function(max) {
 	return builder.join('');
 };
 
+String.prototype.pluralize = function(zero, one, few, other) {
+	var str = this.toString();
+	return str.parseInt().pluralize(zer, one, few, other)
+};
+
 /*
 	@decimals {Number}
 	return {Number}
@@ -1370,6 +1375,38 @@ Number.prototype.format = function(format) {
 	}
 
 	return this.format(output);
+};
+
+/*
+	Pluralize number
+	zero {String}
+	one {String}
+	few {String}
+	other {String}
+	return {String}
+*/
+Number.prototype.pluralize = function(zero, one, few, other) {
+
+	var num = this;
+	var value = '';
+
+	if (num === 0)
+		value = zero || '';
+	else if (num === 1)
+		value = one || '';
+	else if (num > 1 && num < 5)
+		value = few || '';
+	else
+		value = other;
+
+	var beg = value.indexOf('#');
+	var end = value.lastIndexOf('#');
+
+	if (beg === -1)
+		return value;
+
+	var format = value.substring(beg, end + 1);
+	return num.format(format) + value.replace(format, '');
 };
 
 /*
