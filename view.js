@@ -425,7 +425,6 @@ function minifyHTML(html) {
 	var cache = {};
 	var indexer = 0;
 
-	html = removeComments(html);
 	tags.forEach(function(o) {
 
 		var tagBeg = '<' + o;
@@ -453,29 +452,6 @@ function minifyHTML(html) {
 	Object.keys(cache).forEach(function(o) {
 		html = html.replace(o, cache[o]);
 	});
-
-	return html;
-}
-
-/*
-	Remove HTML comments
-    @html {String}
-    return {String}
-*/
-function removeComments(html) {
-	var tagBeg = '<!--';
-	var tagEnd = '-->';
-	var beg = html.indexOf(tagBeg);
-	var end = 0;
-
-	while (beg !== -1) {
-		end = html.indexOf(tagEnd, beg + 4);
-
-		if (end === -1)
-			break;
-
-		html = html.replace(html.substring(beg, end + 3), '');
-	}
 
 	return html;
 }
