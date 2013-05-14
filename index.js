@@ -1924,8 +1924,9 @@ Framework.prototype._request = function(req, res) {
 
 	    req.on('end', function () {
 	    	var files = self.routesFile;
-			if (files.length > 0) {
-				for (var i = 0; i < files.length; i++) {
+	    	var filesLength = files.length;
+			if (filesLength > 0) {
+				for (var i = 0; i < filesLength; i++) {
 					var file = files[i];
 					try
 					{
@@ -2654,8 +2655,9 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 		req.path = [url];
 
 	var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
+	var length = self.routes.length;
 
-	for (var i = 0; i < self.routes.length; i++) {
+	for (var i = 0; i < length; i++) {
 
 		var route = self.routes[i];
 

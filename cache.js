@@ -83,10 +83,6 @@ Cache.prototype.clear = function() {
 	Internal function
 	return {Cache}
 */
-/*
-	Internal function
-	return {Cache}
-*/
 Cache.prototype.recycle = function() {
 
 	var self = this;
