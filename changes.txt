@@ -1,3 +1,10 @@
+IN DEVELOPMENT ======= 1.2.3-7
+
+- added: template pluralize
+
+- updated: allow HTML comments in views
+- clean code
+
 ======= 1.2.3-6
 
 - added: template condition (https://github.com/petersirka/partial.js/tree/master/examples/templating)
