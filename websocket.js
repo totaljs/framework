@@ -211,12 +211,16 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 
     var origin = req.headers['origin'] || '';
 
-    if (allow.length > 0 && allow.indexOf('*') === -1) {
-        if (allow.indexOf(origin) === -1)
-            return false;
+    if (allow.length > 0) {
+
+        if (allow.indexOf('*') === -1) {
+            if (allow.indexOf(origin) === -1)
+                return false;
+        }
+
     } else {
 
-        if (req.headers.host.indexOf(origin) === -1)
+        if (origin.indexOf(req.headers.host) === -1)
             return false;
     }
 

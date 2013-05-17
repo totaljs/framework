@@ -3,6 +3,7 @@ var utils = require('../../utils');
 
 exports.init = function() {
 	var self = this;
+	self.route('/f/', viewSocket);
 	self.route('/js/', viewJS);
 	self.route('/', viewIndex);
 	self.route('/views/', viewViews);
@@ -23,6 +24,10 @@ exports.init = function() {
 	// maximumSize
 	self.websocket('/', socket);
 };
+
+function viewSocket() {
+	this.view('f');
+}
 
 function socket(self, framework) {
 	console.log('OK');
