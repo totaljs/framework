@@ -1,8 +1,11 @@
 IN DEVELOPMENT ======= 1.2.3-7
 
 - added: template pluralize
+- added: basic sending and recieving messages through websocket (Standard - RFC 6455 Support)
+- added: websocket routing
 
 - updated: allow HTML comments in views
+
 - clean code
 
 ======= 1.2.3-6

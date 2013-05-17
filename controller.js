@@ -37,7 +37,6 @@ var path = require('path');
 	return {Controller};
 */
 function Controller(name, framework, req, res, internal) {
-
 	this.name = name;
 	this.cache = framework.cache;
 	this.app = framework;
@@ -69,8 +68,6 @@ function Controller(name, framework, req, res, internal) {
 
 	// render output
 	this.output = '';
-
-	// v request.prefix je uložený prefix z handlera onPrefix
 	this.prefix = req.prefix;
 
 	if (typeof(this.prefix) === 'undefined' || this.prefix.length === 0)

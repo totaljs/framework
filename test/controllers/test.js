@@ -14,7 +14,39 @@ exports.init = function() {
 	self.route('/a/b/c/', viewRouteABC);
 	self.route('/test/', viewTest);
 	self.route('/login/google/callback/', aa);
+
+	// url
+	// function
+	// flags [json, logged, unlogged]
+	// protocols []
+	// allow []
+	// maximumSize
+	self.websocket('/', socket);
 };
+
+function socket(self, framework) {
+	console.log('OK');
+
+	self.on('open', function (client) {
+		console.log('open ->', client.id);
+		console.log(client.get);
+	});
+
+	self.on('close', function (client) {
+		console.log('close ->', client.id);		
+	});
+
+	self.on('message', function (client, message) {
+		console.log('message ->', client.id, message);
+
+		if (message === 'disconnect')
+			client.close();
+	});
+
+	self.on('error', function(error, client) {
+		console.log('error –>', error);
+	});
+}
 
 function aa() {	
 	this.json(this.get);

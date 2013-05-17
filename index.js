@@ -37,6 +37,7 @@ var bk = require('./backup');
 var nosql = require('./nosql');
 var encoding = 'utf8';
 var directory = process.cwd();
+var ws = require('./websocket');
 var _controller = '';
 
 require('./prototypes');
@@ -44,6 +45,12 @@ require('./prototypes');
 function Framework() {
 	this.version = 1236;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
+
+	this.handlers = {
+		onrequest: this._request.bind(this),
+		onxss: this.onXSS(this),
+		onupgrade: this._upgrade.bind(this)
+	};
 
 	this.config = {
 		debug: false,
@@ -84,17 +91,24 @@ function Framework() {
 		// default maximum request size / length
 		// default 5 kB
 		'default-request-length': 1024 * 5,
-		'gzip': true
+		'default-websocket-request-length': 1024 * 5,
+		'allow-gzip': true,
+		'allow-websocket': true
 	};
 
 	this.global = {};
 	this.resources = {};
+	this.connections = {};
 
 	// routing to controllers
 	this.routes = [];
 
 	// routing to handlers
 	this.routesFile = [];
+
+	// routing to websocket
+	this.routesWebSocket = [];
+
 	this.helpers = {};
 	this.modules = {};
 	this.controllers = {};
@@ -197,7 +211,9 @@ Framework.prototype.controller = function(name) {
 };
 
 Framework.prototype.routeSort = function() {
+
 	var self = this;
+
 	self.routes.sort(function(a, b) {
 		if (a.priority > b.priority)
 			return -1;
@@ -207,6 +223,17 @@ Framework.prototype.routeSort = function() {
 
 		return 0;
 	});
+
+	self.routesWebSocket.sort(function(a, b) {
+		if (a.priority > b.priority)
+			return -1;
+
+		if (a.priority < b.priority)
+			return 1;
+
+		return 0;
+	});
+
 	return self;
 };
 
@@ -308,6 +335,51 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize) {
 };
 
 /*
+	Add a new websocket route
+	@url {String}
+	@funcInitialize {Function}
+	@flags {String Array} :: optional
+	@protocols {String Array} :: optional, websocket-allow-protocols
+	@allow {String Array} :: optional, allow origin
+	@maximumSize {Number} :: optional, maximum size length
+	return {Framework}
+*/
+Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, maximumSize) {
+
+	if (_controller === '')
+		throw new Error('Websocket route must be defined in controller.');
+
+	if (url.indexOf('{') !== -1)
+		throw new Error('Websocket url cannot contain dynamic path.');
+
+	var self = this;
+	var priority = 0;
+	var routeURL = internal.routeSplit(url.trim());
+	var index = url.indexOf(']');
+	var subdomain = null;
+
+	priority = url.count('/');
+
+	if (index > 0) {
+		subdomain = url.substring(1, index).trim().toLowerCase().split(',');
+		url = url.substring(index + 1);
+		priority += 2;
+	}
+
+	if (typeof(allow) === 'string')
+		allow = allow[allow];
+
+	if (typeof(protocols) === 'string')
+		protocols = protocols[protocols];
+
+	if (typeof(flags) === 'string')
+		flags = flags[flags];
+
+	self.routesWebSocket.push({ url: routeURL, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: maximumSize || self.config['default-websocket-request-length'] });
+	return self;
+};
+
+/*
 	Add a new file route
 	@name {String}
 	@funcValidation {Function} :: params: {req}, {res}, return {Boolean};
@@ -315,6 +387,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize) {
 	return {Framework}
 */
 Framework.prototype.routeFile = function(name, funcValidation, funcExecute) {
+	console.log('OBSOLETE FUNCTION > framework.routeFile, use: framework.file');
 	var self = this;
 	self.routesFile.push({ controller: _controller, name: name, onValidation: funcValidation, onExecute: funcExecute });
 	return self;
@@ -1348,7 +1421,7 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 			delete self.static[fileName];
 	}
 
-	var compress = self.config.gzip && ['js', 'css', 'txt'].indexOf(extension) !== -1;
+	var compress = self.config['allow-gzip'] && ['js', 'css', 'txt'].indexOf(extension) !== -1;
 	var accept = req.headers['accept-encoding'] || '';
 	var returnHeaders = {};
 
@@ -1620,7 +1693,6 @@ Framework.prototype.ifNotModified = function(req, res, compare, strict) {
 	return this.notModified(req, res, compare, strict);
 }
 
-
 /*
 	Response with 404 error
 	@req {ServerRequest}
@@ -1848,9 +1920,10 @@ Framework.prototype.init = function(http, config, port) {
 		}
 	});
 
-    self.server = http.createServer(function(req, res) {
-		self._request(req, res);
-	});
+    self.server = http.createServer(self.handlers.onrequest);
+
+    if (self.config['allow-websocket'])
+		self.server.on('upgrade', self.handlers.onupgrade);
 
 	self.port = port || 8000;
 	self.server.listen(self.port);
@@ -1875,6 +1948,75 @@ Framework.prototype.init = function(http, config, port) {
 		process.send('name: ' + self.config.name);
 
 	return self;
+};
+
+Framework.prototype._upgrade = function(req, socket, head) {
+
+    if (req.headers.upgrade !== 'websocket')
+        return;
+
+	var self = this;
+    var socket = new ws.WebSocketClient(req, socket, head);
+    var path = utils.path(req.uri.pathname);
+	var subdomain = req.uri.host.toLowerCase().split('.');
+
+	req.subdomain = null;
+   	req.path = internal.routeSplit(req.uri.pathname);
+
+	if (subdomain.length > 2)
+		req.subdomain = subdomain.slice(0, subdomain.length - 2);
+
+    var route = self.lookup_websocket(req, socket.uri.pathname);
+    if (route === null) {
+    	socket.close(404);
+    	return;
+    }
+
+    if (self.onAuthorization === null) {
+	    self._upgrade_continue(route, req, socket, path);
+    	return;
+    }
+
+	var logged = route.flags.indexOf('logged') !== -1;
+	if (logged || route.flags.indexOf('unlogged')) {
+
+		self.onAuthorization.call(self, req, null, route.flags, function(isLogged) {
+
+			if (logged && !isLogged) {
+				socket.close(403);
+				return;
+			}
+
+			if (!logged && isLogged) {
+				socket.close(403);
+				return;
+			}
+
+			self._upgrade_continue(route, req, socket, path);
+		});
+
+		return;
+	}
+
+	self._upgrade_continue(route, req, socket, path);
+};
+
+Framework.prototype._upgrade_continue = function(route, req, socket, path) {
+
+	var self = this;
+
+    if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version)) {
+    	socket.close(404);
+        return;
+    }
+
+    if (typeof(self.connections[path]) === 'undefined') {
+    	var connection = new ws.WebSocket(self, path);
+        self.connections[path] = connection;
+        route.onInitialize.call(connection, connection, self);
+    }
+
+    socket.upgrade(self.connections[path]);
 };
 
 Framework.prototype._request = function(req, res) {
@@ -2017,17 +2159,7 @@ Framework.prototype._request = function(req, res) {
         		return;
    			}
 
-   			var fnXSS = function(data) {
-   				return false;
-   			};
-
-   			if (self.onXSS !== null) {
-   				fnXSS = function(data) {
-   					return self.onXSS(data);
-   				};
-   			}
-
-			internal.parseMULTIPART(req, multipart, route.maximumSize, self.config['directory-temp'], fnXSS, function() {
+			internal.parseMULTIPART(req, multipart, route.maximumSize, self.config['directory-temp'], self.handlers.onxss, function() {
 				self.request(req, res, req.flags, req.uri.pathname);
 			});
 
@@ -2393,6 +2525,9 @@ Framework.prototype.configure = function() {
 			case 'static-accepts':
 				obj[name] = value.replace(/\s/g, '').split(',');
 				break;
+			case 'allow-gzip':
+			case 'allow-websocket':
+				obj[name] = value.toLowerCase() == 'true' || value === '1';
 			default:
 				obj[name] = value.isNumber() ? utils.parseInt(value) : value.isNumber(true) ? utils.parseFloat(value) : value;
 				break;
@@ -2682,6 +2817,28 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 			if (flags.indexOf('xss') !== -1)
 				continue;
 		}
+
+		return route;
+	}
+
+	return null;
+};
+
+Framework.prototype.lookup_websocket = function(req, url) {
+
+	var self = this;
+	var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
+	var length = self.routesWebSocket.length;
+
+	for (var i = 0; i < length; i++) {
+
+		var route = self.routesWebSocket[i];
+
+		if (!internal.routeCompareSubdomain(subdomain, route.subdomain))
+			continue;
+
+		if (!internal.routeCompare(req.path, route.url, false))
+			continue;
 
 		return route;
 	}
