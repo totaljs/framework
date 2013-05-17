@@ -7,7 +7,7 @@ IN DEVELOPMENT ======= 1.2.3-7
 
 - updated: allow HTML comments in views
 - updated: framework.usage()
-- updated: performance
+- updated: framework performance
 
 - removed: obsolete functions (framework/controller ifNotModified)
 - removed: framework.lastError

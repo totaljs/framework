@@ -12,6 +12,7 @@ web application framework for node.js
 
 ***
 
+* **NEW** SUPPORTS WEBSOCKET - [example: websocket](https://github.com/petersirka/partial.js/tree/master/examples/websocket)
 * Async web framework - [example: async methods](https://github.com/petersirka/partial.js/tree/master/examples/async)
 * Simple view engine - [example: view engine](https://github.com/petersirka/partial.js/tree/master/examples/views)
 * Simple routing + support flags ['xhr', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug', 'xss', '!custom-flag'] - [example: flags](https://github.com/petersirka/partial.js/tree/master/examples/routing-flags)
@@ -56,7 +57,7 @@ web application framework for node.js
 * Supports dynamic stop server - [example: stop server](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
 * Supports verification of framework - [example: verification](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
 * __Supports backup and restore website__ - [example: backup & restore](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
-* About 8 000 lines of JavaScript code, all files have 310 kB
+* About 8 000 lines of JavaScript code, all files have 330 kB
 * __NO DEPENDENCIES *** NO DEPENDENCIES *** NO DEPENDENCIES__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
 * [Documentation](http://www.partialjs.com/documentation/)
