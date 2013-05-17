@@ -113,7 +113,6 @@ function Framework() {
 	this.modules = {};
 	this.controllers = {};
 	this.tests = {};
-	this.lastError = null;
 	this.errors = [];
 	this.server = null;
 	this.port = 0;
@@ -412,7 +411,7 @@ Framework.prototype.file = function(name, funcValidation, funcExecute) {
 Framework.prototype.error = function(err, name, uri) {
 	var self = this;
 
-	self.errors.push({ error: err, name: name, uri: uri });
+	self.errors.push({ error: err, name: name, uri: uri, date: new Date() });
 
 	if (self.errors.length > 50)
 		self.errors.shift();
@@ -1226,12 +1225,14 @@ Framework.prototype.usage = function(detailed) {
 
 	});
 
-	builder.push('');
-	builder.push('============ [WebSocket connections]');
-	builder.push('');
-	connections.forEach(function(o) {
-		builder.push('Path: ' + o);
-	});
+	if (connections.length > 0) {
+		builder.push('');
+		builder.push('============ [WebSocket connections]');
+		builder.push('');
+		connections.forEach(function(o) {
+			builder.push('Path: {0} (online {1}x)'.format(o, self.connections[o].online));
+		});
+	}
 
 	if (modules.length > 0) {
 		builder.push('');

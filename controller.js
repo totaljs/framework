@@ -117,7 +117,7 @@ Subscribe.prototype.execute = function(status) {
 	} catch (err) {
 		$controller = null;
 		self.framework.error(err, name, self.req.uri);
-		self.route = self.lookup(self.req, '#500', []);
+		self.route = self.framework.lookup(self.req, '#500', []);
 		self.execute(500);
 	}
 };

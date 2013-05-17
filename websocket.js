@@ -27,6 +27,8 @@ var qs = require('querystring');
 var parser = require('url');
 var utils = require('./utils');
 
+require('./prototypes');
+
 var NEWLINE              = '\r\n';
 var SOCKET_RESPONSE      = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\n\r\n';
 var SOCKET_HASH          = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
@@ -36,6 +38,7 @@ var SOCKET_ALLOW_VERSION = [13];
 function WebSocket(framework, path) {
     this._keys = [];
     this.path = path;
+    this.online = 0;
     this.connections = {};
     this.framework = framework;
 };
@@ -54,12 +57,12 @@ WebSocket.prototype.send = function(message, names, blacklist) {
     blacklist = blacklist || [];
 
     if (typeof(names) === 'undefined' || names === null || names.length === 0) {
-
+        var length = blacklist.length;
         keys.forEach(function(_id) {
 
             var conn = self.connections[_id];
 
-            if (blacklist.indexOf(conn.id) !== -1)
+            if (length > 0 && blacklist.indexOf(conn.id) !== -1)
                 return;
 
             conn.send(message);
@@ -133,6 +136,7 @@ WebSocket.prototype.destroy = function() {
 WebSocket.prototype._refresh = function() {
     var self = this;
     self._keys = Object.keys(self.connections);
+    self.online = self._keys.length;
     return self;
 };
 
@@ -187,6 +191,7 @@ function WebSocketClient(req, socket, head) {
     this.uri = req.uri;
     this.isJSON = false;
     this.length = 0;
+    this.cookie = req.cookie.bind(req);
 };
 
 WebSocketClient.prototype = new events.EventEmitter;
@@ -265,6 +270,10 @@ WebSocketClient.prototype.upgrade = function(container) {
     var self = this;
     self.container = container;
 
+    self.socket.setTimeout(0);
+    self.socket.setNoDelay(true);
+    self.socket.setKeepAlive(true, 0);
+
     self.socket.on('data', self.handlers.ondata);
     self.socket.on('error', self.handlers.onerror);
     self.socket.on('close', self.handlers.onclose);
@@ -291,6 +300,14 @@ WebSocketClient.prototype._ondata = function(data) {
     }
 
     var message = decode_WS(data);
+    if (message === null)
+        return;
+
+    if (message === '') {
+        // websocket.close() send empty string
+        self.close(444);
+        return;
+    }
 
     if (self.isJSON) {
         if (message.isJSON())
