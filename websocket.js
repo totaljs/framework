@@ -25,7 +25,7 @@ var crypto = require('crypto');
 var events = require('events');
 var qs = require('querystring');
 var parser = require('url');
-var utils = require('partial.js/utils');
+var utils = require('./utils');
 
 var NEWLINE              = '\r\n';
 var SOCKET_RESPONSE      = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\n\r\n';

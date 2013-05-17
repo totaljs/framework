@@ -6,7 +6,7 @@ var fs = require('fs');
 
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
-var max = 100;
+var max = 1000;
 
 framework.run(http, false, 8001);
 
