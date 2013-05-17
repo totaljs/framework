@@ -49,6 +49,14 @@ function WebSocket(framework, path) {
 // on('error', function(error, client) {});
 
 WebSocket.prototype = new events.EventEmitter;
+
+/*
+    Send message
+    @message {String or Object}
+    @names {String Array}
+    @blacklist {String Array}
+    return {WebSocket}
+*/
 WebSocket.prototype.send = function(message, names, blacklist) {
 
     var self = this;
@@ -114,6 +122,25 @@ WebSocket.prototype.close = function(names) {
 
     self._refresh();
     return self;
+};
+
+/*
+    Find connection
+    @name {String}
+    return {WebSocketClient}
+*/
+WebSocket.prototype.find = function(name) {
+    var self = this;
+    var keys = self._keys;
+    var length = keys.length;
+
+    for (var i = 0; i < length; i++) {
+        var connection = self.connections[keys[i]];
+        if (connection.id === name)
+            return connection;
+    }
+
+    return null;
 };
 
 /*
@@ -220,8 +247,10 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
     if (allow.length > 0) {
 
         if (allow.indexOf('*') === -1) {
-            if (allow.indexOf(origin) === -1)
-                return false;
+            for (var i = 0; i < allow.length; i++) {
+                if (origin.indexOf(allow[i]) === -1)
+                    return false;
+            }
         }
 
     } else {

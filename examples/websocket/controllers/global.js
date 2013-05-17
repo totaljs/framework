@@ -19,6 +19,14 @@ exports.install = function(framework) {
 
 	*/
 	framework.websocket('/', socket_homepage, ['json']);
+
+	// framework.websocket('/chat/', socket_homepage, ['json'], ['chat']);
+
+	// framework.websocket('/chat/private/', socket_homepage, ['json'], ['privatechat'], ['*']);
+	// framework.websocket('/chat/private/', socket_homepage, ['json'], ['privatechat', 'sexchat'], ['www.partialjs.com', 'eshop.partialjs.com', 'blog.partialjs.com']);
+
+	// client side:
+	// new WebSocket('ws://127.0.0.1:8004/', 'privatechat');
 };
 
 function view_usage() {
@@ -40,7 +48,7 @@ function socket_homepage(connection, framework) {
     // client.ip               : IP
     // client.session          : empty object, you can modify this property
 
-    // client.cookie(name)	   :
+    // client.cookie(name)	   : value
     // client.send(value)      : send message
     // client.close(status)    : disconnect client (status {Number} :: optional, default undefined)
 
@@ -70,6 +78,19 @@ function socket_homepage(connection, framework) {
     	Destroy websocket
     */
     // connection.destroy();
+
+    /*
+    	Get online count
+    	return {Number}
+    */
+    // connection.online;
+
+    /*
+    	Find a client
+    	@name {String}
+    	return {Client}
+    */
+    // connection.find(name);
 
 	connection.on('open', function(client) {
 
@@ -109,7 +130,5 @@ function socket_homepage(connection, framework) {
 	});
 
 	// how many connections?
-
-	// NUMBER
-	connection.online;
+	// connection.online;
 }
