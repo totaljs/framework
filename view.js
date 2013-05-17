@@ -508,6 +508,7 @@ View.prototype.load = function(name, prefix) {
 	if (generator !== null && !self.controller.isDebug)
 		self.cache.write(key, generator, new Date().add('minute', 5));
 
+	self.dispose();
 	return generator;
 };
 
@@ -565,6 +566,7 @@ Content.prototype.load = function(name, prefix) {
 	if (content !== null && !self.controller.isDebug)
 		self.cache.write(key, content, new Date().add('minute', 5));
 
+	self.dispose();
 	return content;
 };
 

@@ -3,8 +3,14 @@ IN DEVELOPMENT ======= 1.2.3-7
 - added: template pluralize
 - added: basic sending and recieving messages through websocket (Standard - RFC 6455 Support)
 - added: websocket routing
+- added: framework.errors (Array, last 50 errors)
 
 - updated: allow HTML comments in views
+- updated: framework.usage()
+- updated: performance
+
+- removed: obsolete functions (framework/controller ifNotModified)
+- removed: framework.lastError
 
 - clean code
 

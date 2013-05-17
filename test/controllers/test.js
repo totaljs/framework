@@ -65,7 +65,7 @@ function viewTest() {
 function viewIndex() {
 	var self = this;
 	var name = 'controller: ';
-	
+
 	assert.ok(self.pathPublic('file.txt') === './public/file.txt', name + 'pathPublic');
 	assert.ok(self.pathLog('file.txt') === './logs/file.txt', name + 'pathLog');
 	assert.ok(self.pathTemp('file.txt') === './tmp/file.txt', name + 'pathTemp');

@@ -340,5 +340,7 @@ Less.prototype.compile = function(value) {
 */
 exports.compile = function(value, minify) {
 	var less = new Less();
-	return less.compile(value, minify);
+	var value = less.compile(value, minify);
+	less.dispose();
+	return value;
 };

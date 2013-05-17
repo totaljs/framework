@@ -108,6 +108,10 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 
 		res.on('end', function() {
 			callback(null, buffer, res.statusCode, res.headers);
+			res = null;
+			buffer = null;
+			data = null;
+			options = null;
 		});
 
 		res.resume();
@@ -123,10 +127,14 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 
 		req.on('error', function(error) {
 	  		callback(error, null, {});
+	  		req = null;
+	  		options = null;
 		});
 
 		req.setTimeout(timeout || 10000, function() {
 			callback(408, null, {});
+	  		req = null;
+	  		options = null;
 		});
 
 		if (isPOST)

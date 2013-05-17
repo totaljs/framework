@@ -23,9 +23,193 @@
 
 var utils = require('./utils');
 var builders = require('./builders');
+var internal = require('./internal');
 var generatorView = require('./view');
 var generatorTemplate = require('./template');
 var path = require('path');
+var qs = require('querystring');
+
+function Subscribe(framework, req, res) {
+	this.framework = framework;
+
+	this.handlers = {
+		_authorization: this._authorization.bind(this),
+		_end: this._end.bind(this),
+		_parsepost: this._parsepost.bind(this)
+	};
+
+	this.req = req;
+	this.res = res;
+	this.route = null;
+};
+
+Subscribe.prototype.multipart = function(header) {
+
+	var self = this;
+	self.route = self.framework.lookup(self.req, self.req.uri.pathname, self.req.flags, true);
+
+	if (self.route === null) {
+		self.req.connection.destroy();
+		self.dispose();
+		return;
+	}
+
+	internal.parseMULTIPART(self.req, header, self.route.maximumSize, self.framework.config['directory-temp'], self.framework.handlers.onxss, self.handlers._end);
+};
+
+Subscribe.prototype.urlencoded = function() {
+
+	var self = this;
+	self.route = self.framework.lookup(self.req, self.req.uri.pathname, self.req.flags, true);
+
+	if (self.route === null) {
+		self.req.clear();
+		self.req.connection.destroy();
+		self.dispose();
+		return;
+	}
+
+	self.req.buffer.isData = true;
+	self.req.buffer.isExceeded = false;
+	self.req.on('data', self.handlers._parsepost);
+	self.end();
+};
+
+Subscribe.prototype.end = function() {
+	var self = this;
+	self.req.on('end', self.handlers._end);
+	self.req.resume();
+};
+
+Subscribe.prototype.execute = function(status) {
+
+	var self = this;
+
+	if (self.route === null) {
+		self.framework.responseContent(self.req, self.res, status || 404, (status || 404).toString(), 'text/plain', true);
+		return self;
+	}
+
+	var name = self.route.name;
+	var $controller = new Controller(name, self.framework, self.req, self.res, self);
+
+	try
+	{
+		self.framework.emit('controller', $controller, name);
+
+		var isModule = name[0] === '#' && name[1] === 'm';
+		var o = isModule ? self.framework.modules[name.substring(8)] : self.framework.controllers[name];
+
+		if (typeof(o.onRequest) !== 'undefined')
+			o.onRequest.call($controller, $controller);
+
+	} catch (err) {
+		self.framework.error(err, name, self.req.uri);
+	}
+
+	try
+	{
+		if (!$controller.internal.cancel)
+			self.route.onExecute.apply($controller, internal.routeParam(self.req.path, self.route));
+
+		self.route = null;
+
+	} catch (err) {
+		$controller = null;
+		self.framework.error(err, name, self.req.uri);
+		self.route = self.lookup(self.req, '#500', []);
+		self.execute(500);
+	}
+};
+
+Subscribe.prototype.controller = function(flags, url) {
+
+	var self = this;
+
+	if (self.framework.onAuthorization !== null) {
+		self.framework.onAuthorization(self.req, self.res, flags, self.handlers._authorization);
+		return;
+	}
+
+	if (self.route === null)
+		self.route = self.framework.lookup(self.req, self.req.buffer.isExceeded ? '#431' : url || self.req.uri.pathname, flags);
+
+	if (self.route === null)
+		self.route = self.framework.lookup(self.req, '#404', []);
+
+	self.execute(self.req.buffer.isExceeded ? 431 : 404);
+};
+
+Subscribe.prototype._authorization = function(isLogged) {
+	var self = this;
+
+	self.req.flags.push(isLogged ? 'logged' : 'unlogged');
+	self.route = self.framework.lookup(self.req, self.req.buffer.isExceeded ? '#431' : self.req.uri.pathname, self.req.flags);
+
+	if (self.route === null)
+		self.route = self.framework.lookup(self.req, '#404', []);
+
+	self.execute(self.req.buffer.isExceeded ? 431 : 404);
+};
+
+Subscribe.prototype._end = function() {
+
+	var self = this;
+
+	if (self.req.buffer.isExceeded) {
+		self.req.clear();
+		self.req.connection.destroy();
+		self.dispose();
+		return;
+	}
+
+	if (self.req.buffer.data.length === 0) {
+		self.controller(self.req.flags, self.req.uri.pathname);
+		return;
+	}
+
+	if (self.route.flags.indexOf('json') !== -1) {
+
+		try
+		{
+			self.req.data.post = self.req.buffer.data.isJSON() ? JSON.parse(self.req.buffer.data) : null;
+			self.req.buffer.data = null;
+		} catch (err) {
+			self.req.data.post = null;
+		}
+
+	} else {
+
+		if (self.framework.onXSS !== null && self.framework.onXSS(self.req.buffer.data)) {
+			if (self.req.flags.indexOf('xss') === -1) {
+				self.req.flags.push('xss');
+				self.route = null;
+			}
+		}
+
+		self.req.data.post = qs.parse(self.req.buffer.data);
+		self.req.buffer.data = null;
+	}
+
+	self.controller(self.req.flags, self.req.uri.pathname);
+};
+
+Subscribe.prototype._parsepost = function(chunk) {
+
+	var self = this;
+
+	if (self.req.buffer.isExceeded)
+		return;
+
+	if (!self.req.buffer.isExceeded)
+		self.req.buffer.data += chunk.toString();
+
+	if (self.req.buffer.data.length < self.route.maximumSize)
+		return;
+
+	self.req.buffer.isExceeded = true;
+	self.req.buffer.data = '';
+};
 
 /*
 	Controller class
@@ -36,7 +220,8 @@ var path = require('path');
 	@internal {Object} :: internal options
 	return {Controller};
 */
-function Controller(name, framework, req, res, internal) {
+function Controller(name, framework, req, res, subscribe) {
+	this.subscribe = subscribe;
 	this.name = name;
 	this.cache = framework.cache;
 	this.app = framework;
@@ -59,8 +244,6 @@ function Controller(name, framework, req, res, internal) {
 	this.isDebug = framework.config.debug;
 	this.global = framework.global;
 	this.flags = req.flags;
-
-	utils.extend(this.internal, internal, true);
 
 	// dočasné úložisko
 	this.repository = {};
@@ -1019,12 +1202,16 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 Controller.prototype.json = function(obj, headers) {
 	var self = this;
 
+	if (self.framework === null)
+		return self;
+
 	if (obj instanceof builders.ErrorBuilder)
 		obj = obj.json();
 	else
 		obj = JSON.stringify(obj || {});
 
 	self.framework.responseContent(self.req, self.res, self.statusCode, obj, 'application/json', true, headers);
+	self._dispose();
 	return self;
 };
 
@@ -1056,11 +1243,14 @@ Controller.prototype.jsonAsync = function(obj, headers) {
 Controller.prototype.content = function(contentBody, contentType, headers) {
 	var self = this;
 
+	if (self.framework === null)
+		return self;
+
 	if (typeof(contentType) === 'undefined')
 		return self.$contentToggle(true, contentBody);
 
 	self.framework.responseContent(self.req, self.res, self.statusCode, contentBody, contentType || 'text/plain', true, headers);
-	self._clear();
+	self._dispose();
 	return self;
 };
 
@@ -1078,6 +1268,9 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 
 	if (res.success)
 		return self;
+
+	if (self.framework === null)
+		return self;	
 
 	var returnHeaders = {};
 
@@ -1102,7 +1295,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	});
 
 	res.end();
-	self._clear();
+	self._dispose();
 	return self;
 };
 
@@ -1114,8 +1307,12 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 */
 Controller.prototype.plain = function(contentBody, headers) {
 	var self = this;
+
+	if (self.framework === null)
+		return self;
+
 	self.framework.responseContent(self.req, self.res, self.statusCode, typeof(contentBody) === 'string' ? contentBody : contentBody.toString(), 'text/plain', true, headers);
-	self._clear();
+	self._dispose();
 	return self;
 };
 
@@ -1128,9 +1325,13 @@ Controller.prototype.plain = function(contentBody, headers) {
 */
 Controller.prototype.file = function(fileName, downloadName, headers) {
 	var self = this;
+
+	if (self.framework === null)
+		return self;
+
 	fileName = utils.combine(self.framework.config['directory-public'], fileName);
 	self.framework.responseFile(self.req, self.res, fileName, downloadName, headers);
-	self._clear();
+	self._dispose();
 	return self;
 };
 
@@ -1163,7 +1364,7 @@ Controller.prototype.fileAsync = function(fileName, downloadName, headers) {
 Controller.prototype.stream = function(contentType, stream, downloadName, headers) {
 	var self = this;
 	self.framework.responseStream(self.req, self.res, contentType, stream, downloadName, headers);
-	self._clear();
+	self._dispose();
 	return self;
 };
 
@@ -1174,8 +1375,9 @@ Controller.prototype.stream = function(contentType, stream, downloadName, header
 Controller.prototype.view404 = function() {
 	var self = this;
 	self.req.path = [];
-	self.framework.execute(self.req, self.res, self.framework.lookup(self.req, '#404', []), 404);
-	self._clear();
+	self.subscribe.route = self.framework.lookup(self.req, '#404', []);
+	self.subscribe.execute(404);
+	self._dispose();
 	return self;
 };
 
@@ -1186,8 +1388,9 @@ Controller.prototype.view404 = function() {
 Controller.prototype.view403 = function() {
 	var self = this;
 	self.req.path = [];
-	self.framework.execute(self.req, self.res, self.framework.lookup(self.req, '#403', []), 403);
-	self._clear();
+	self.subscribe.route = self.framework.lookup(self.req, '#403', []);
+	self.subscribe.execute(403);
+	self._dispose();
 	return self;
 };
 
@@ -1198,10 +1401,11 @@ Controller.prototype.view403 = function() {
 */
 Controller.prototype.view500 = function(error) {
 	var self = this;
-	self.framework.error(error, self.name, self.req.uri);
 	self.req.path = [];
-	self.framework.execute(self.req, self.res, self.framework.lookup(self.req, '#500', []), 500);
-	self._clear();
+	self.framework.error(error, self.name, self.req.uri);
+	self.subscribe.route = self.framework.lookup(self.req, '#500', []);
+	self.subscribe.execute(500);
+	self._dispose();
 	return self;
 };
 
@@ -1219,8 +1423,8 @@ Controller.prototype.redirect = function(url, permament) {
 
 	self.res.success = true;
 	self.res.writeHead(permament ? 301 : 302, { 'Location': url });
-	self.res.end();
-	self._clear();
+	self.res.end();	
+	self._dispose();
 	return self;
 };
 
@@ -1267,6 +1471,13 @@ Controller.prototype.viewAsync = function(name, model, headers) {
 */
 Controller.prototype.database = function(name) {
 	return this.app.database(name);
+};
+
+Controller.prototype._dispose = function() {
+	var self = this;
+	var cancel = self.internal.cancel;
+	self.dispose();	
+	self.internal = { cancel: cancel };
 };
 
 /*
@@ -1443,38 +1654,14 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		return value;
 
 	if (self.isLayout || utils.isNullOrEmpty(self.internal.layout)) {
-		// end response and end request
 		self.framework.responseContent(self.req, self.res, self.statusCode, value, self.internal.contentType, true, headers);
-		self._clear();
+		self._dispose();
 		return self;
 	}
 
 	self.output = value;
 	self.isLayout = true;
 	self.view(self.internal.layout, null, headers);
-
-	return self;
-};
-
-Controller.prototype._clear = function() {
-	var self = this;
-	self.repository = null;
-	self.config = null;
-	self.session = null;
-	self.output = null;
-	self.sitemap = null;
-	self.get = null;
-	self.post = null;
-	self.files = null;
-	self.model = null;
-	self.req = null;
-	self.res = null;
-	self.controllers = null;
-	self.framework = null;
-	self.global = null;
-	self.app = null;
-	self.flags = null;
-	self.cache = null;
 	return self;
 };
 
@@ -1482,15 +1669,4 @@ Controller.prototype._clear = function() {
 // EXPORTS
 // ======================================================
 
-/*
-	Controller init
-	@name {String}
-	@framework {Framework}
-	@req {ServerRequest}
-	@res {ServerResponse}
-	@options {Object}
-	return {Controller};
-*/
-exports.init = function(name, framework, req, res, options) {
-	return new Controller(name, framework, req, res, options);
-};
+exports.Subscribe = Subscribe;

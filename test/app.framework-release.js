@@ -6,7 +6,7 @@ var fs = require('fs');
 
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
-var max = 1000;
+var max = 1500;
 
 framework.run(http, false, 8001);
 
@@ -133,6 +133,12 @@ function test_routing(next) {
 function run() {
 
 	if (max <= 0) {
+		console.log('Max   :', memMax);
+		console.log('Leak  :', memLeak);
+		console.timeEnd('new');
+		console.log('');
+		console.log('----------------------------');
+		console.log('');
 		end();
 		return;
 	}
@@ -150,15 +156,20 @@ function run() {
 }
 
 var mem = require('memwatch');
+var memMax = 0;
+var memLeak = 0;
 
 mem.on('leak', function(info) {
-	console.log('LEAK ->', info);
+	memLeak++;
+	//console.log('LEAK ->', info);
 });
 
 mem.on('stats', function(info) {
-	console.log('STATS ->', JSON.stringify(info));
+	memMax = Math.max(memMax, info.max);
+	//console.log('STATS ->', JSON.stringify(info));
 });
 
 setTimeout(function() {
+	console.time('new');
 	run();
 }, 500);

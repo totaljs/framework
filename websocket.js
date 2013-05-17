@@ -123,6 +123,7 @@ WebSocket.prototype.destroy = function() {
     self._keys = null;
     delete self.framework.connections[self.path];
     self.emit('destroy');
+    self.dispose();
 };
 
 /*
@@ -317,6 +318,7 @@ WebSocketClient.prototype._onclose = function() {
     self.container._remove(self._id);
     self.container._refresh();
     self.container.emit('close', self);
+    self.dispose();
 };
 
 /*

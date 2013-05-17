@@ -32,12 +32,12 @@ var parser = require('url');
 var utils = require('./utils');
 var events = require('events');
 var internal = require('./internal');
-var controller = require('./controller');
 var bk = require('./backup');
 var nosql = require('./nosql');
 var encoding = 'utf8';
 var directory = process.cwd();
 var ws = require('./websocket');
+var Subscribe =  require('./controller').Subscribe;
 var _controller = '';
 
 require('./prototypes');
@@ -103,7 +103,7 @@ function Framework() {
 	// routing to controllers
 	this.routes = [];
 
-	// routing to handlers
+	// routing to file handlers
 	this.routesFile = [];
 
 	// routing to websocket
@@ -114,6 +114,7 @@ function Framework() {
 	this.controllers = {};
 	this.tests = {};
 	this.lastError = null;
+	this.errors = [];
 	this.server = null;
 	this.port = 0;
 	this.static = {};
@@ -410,7 +411,12 @@ Framework.prototype.file = function(name, funcValidation, funcExecute) {
 */
 Framework.prototype.error = function(err, name, uri) {
 	var self = this;
-	self.lastError = name + ' | ' + err + ' | ' + (uri ? uri.href : '');
+
+	self.errors.push({ error: err, name: name, uri: uri });
+
+	if (self.errors.length > 50)
+		self.errors.shift();
+
 	self.onError(err, name, uri);
 	return self;
 };
@@ -1133,6 +1139,7 @@ Framework.prototype.usage = function(detailed) {
 	var cache = Object.keys(self.cache.repository);
 	var resources = Object.keys(self.resources);
 	var controllers = Object.keys(self.controllers);
+	var connections = Object.keys(self.connections);
 	var modules = Object.keys(self.modules);
 	var helpers = Object.keys(self.helpers);
 	var staticFiles = Object.keys(self.static);
@@ -1179,6 +1186,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Temporary directory: {0} kB'.format((size / 1024).floor(2)));
 	builder.push('Backup directory: {0} kB'.format((sizeBackup / 1024).floor(2)));
 	builder.push('Databases directory: {0} kB'.format((sizeDatabase / 1024).floor(2)));
+	builder.push('WebSocket connections: {0}'.format(connections.length));
 	builder.push('Controller count: {0}'.format(controllers.length));
 	builder.push('Module count: {0}'.format(modules.length));
 	builder.push('Cache: {0} items'.format(cache.length, self.cache.count));
@@ -1188,12 +1196,19 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Static files count: {0}'.format(staticFiles.length));
 	builder.push('Static files / streaming count: {0}'.format(staticRange.length));
 	builder.push('-------------------------------------------------------');
-	builder.push('Last error: {0}'.format(self.lastError));
+
+	if (self.errors.length > 0) {
+		builder.push('');
+		builder.push('============ [Errors]');
+		builder.push('');
+		self.errors.forEach(function(error) {
+			builder.push(error.error.toString());
+		});
+	}
 
 	if (!detailed)
 		return builder.join('\n');
 
-	builder.push('-------------------------------------------------------');
 	builder.push('');
 	builder.push('============ [Controllers]');
 
@@ -1209,6 +1224,13 @@ Framework.prototype.usage = function(detailed) {
 
 		builder.push((controller.usage() || '').toString());
 
+	});
+
+	builder.push('');
+	builder.push('============ [WebSocket connections]');
+	builder.push('');
+	connections.forEach(function(o) {
+		builder.push('Path: ' + o);
 	});
 
 	if (modules.length > 0) {
@@ -1532,10 +1554,13 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		if (accept.indexOf('gzip') !== -1) {
 			returnHeaders['Content-Encoding'] = 'gzip';
 			res.writeHead(200, returnHeaders);
-			stream.pipe(zlib.createGzip()).pipe(res);
+			var gzip = zlib.createGzip();
+			stream.pipe(gzip).pipe(res);
 			stream = null;
 			req = null;
 			res = null;
+			gzip = null;
+			returnHeaders = null;
 			return self;
 		}
 
@@ -1543,10 +1568,13 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		if (accept.indexOf('deflate') !== -1) {
 			returnHeaders['Content-Encoding'] = 'deflate';
 			res.writeHead(200, returnHeaders);
-			stream.pipe(zlib.createDeflate()).pipe(res);
+			var deflate = zlib.createDeflate();
+			stream.pipe(deflate).pipe(res);
 			stream = null;
+			returnHeaders = null;
 			req = null;
 			res = null;
+			gzip = null;
 			return self;
 		}
 	}
@@ -1601,6 +1629,7 @@ Framework.prototype.responseRange = function(name, range, headers, res) {
 	stream = null;
 	res = null;
 	req = null;
+	headers = null;
 	return self;
 };
 
@@ -1687,11 +1716,6 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 
 	return true;
 };
-
-Framework.prototype.ifNotModified = function(req, res, compare, strict) {
-	console.log('OBSOLETE FUNCTION > framework.ifNotModified, use: framework.notModified');
-	return this.notModified(req, res, compare, strict);
-}
 
 /*
 	Response with 404 error
@@ -2078,7 +2102,6 @@ Framework.prototype._request = function(req, res) {
 						}
 					} catch (err) {
 						self.error(err, file.controller + ' :: ' + file.name, req.uri);
-
 						return;
 					}
 				}
@@ -2090,9 +2113,7 @@ Framework.prototype._request = function(req, res) {
 	   	return;
 	}
 
-
    	if (req.uri.query && req.uri.query.length > 0) {
-
    		if (self.onXSS !== null)
    			isXSS = self.onXSS(req.uri.query);
 
@@ -2146,73 +2167,16 @@ Framework.prototype._request = function(req, res) {
 	self.emit('request', req, res);
 
    	if (req.method === 'POST' || req.method === 'PUT') {
-
-   		var route;
-
    		if (multipart.length > 0) {
-
-   			// kontrola či Controller obsahuje flag Upload
-			route = self.lookup(req, req.uri.pathname, req.flags, true);
-
-   			if (route === null) {
-	    		req.connection.destroy();
-        		return;
-   			}
-
-			internal.parseMULTIPART(req, multipart, route.maximumSize, self.config['directory-temp'], self.handlers.onxss, function() {
-				self.request(req, res, req.flags, req.uri.pathname);
-			});
-
-			req.resume();
-			return;
-
+   			new Subscribe(self, req, res).multipart(multipart);
+   			return;
    		} else {
-
-   			// (req, url, path, flags, noLoggedUnlogged)
-   			route = self.lookup(req, req.uri.pathname, req.flags, true);
-
-   			if (route === null) {
-    			req.connection.destroy();
-				return;
-   			}
-
-   			// get data from Request BODY, get POST data
-			internal.parsePOST(req, route.maximumSize);
+   			new Subscribe(self, req, res).urlencoded();
+   			return;
    		}
    	};
 
-    req.on('end', function() {
-
-    	if (req.buffer.isExceeded || req.buffer.data.length === 0) {
-    		self.request(req, res, flags, req.uri.pathname);
-    		return;
-    	}
-
-		var data = req.buffer.data;
-
-		if (route.flags.indexOf('json') !== -1) {
-
-			try
-			{
-				req.data.post = data.isJSON() ? JSON.parse(data) : null;
-			} catch (err) {
-				req.data.post = null;
-			}
-
-		} else {
-
-    		if (self.onXSS !== null && self.onXSS(data)) {
-    			if (req.flags.indexOf('xss') === -1)
-    				req.flags.push('xss');
-    		}
-
-			req.data.post = qs.parse(data);
-		}
-
-   		self.request(req, res, flags, req.uri.pathname);
-    });
-
-	req.resume();
+	new Subscribe(self, req, res).end();
 };
 
 // Alias for framework.init
@@ -2743,44 +2707,6 @@ Framework.prototype.routeStaticSync = function(name, directory) {
 	return directory + fileName;
 };
 
-/*
-	Per Request handler
-	@req {ServerRequest}
-	@res {ServerResponse}
-	@flags {String array}
-	@url {String}
-	return {Framework}
-*/
-Framework.prototype.request = function(req, res, flags, url) {
-
-	var self = this;
-
-	if (self.onAuthorization === null) {
-
-		var route = self.lookup(req, req.buffer.isExceeded ? '#431' : url || req.uri.pathname, flags);
-
-		if (route === null)
-			route = self.lookup(req, '#404', []);
-
-		self.execute(req, res, route, req.buffer.isExceeded ? 431 : 404);
-		return self;
-	}
-
-	self.onAuthorization(req, res, flags, function (isLogged) {
-
-		flags.push(isLogged ? 'logged' : 'unlogged');
-
-		var route = self.lookup(req, req.buffer.isExceeded ? '#431' : url || req.uri.pathname, flags);
-
-		if (route === null)
-			route = self.lookup(req, '#404', []);
-
-		self.execute(req, res, route, req.buffer.isExceeded ? 431 : 404);
-	});
-
-	return self;
-};
-
 Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 
 	var self = this;
@@ -2844,44 +2770,6 @@ Framework.prototype.lookup_websocket = function(req, url) {
 	}
 
 	return null;
-};
-
-Framework.prototype.execute = function(req, res, route, status) {
-
-	var self = this;
-
-	if (route === null) {
-		self.responseContent(req, res, status || 404, (status || 404).toString(), 'text/plain', true);
-		return self;
-	}
-
-	var name = route.name;
-	var $controller = controller.init(name, self, req, res);
-
-	try
-	{
-		self.emit('controller', $controller, name);
-
-		var isModule = name[0] === '#' && name[1] === 'm';
-		var o = isModule ? self.modules[name.substring(8)] : self.controllers[name];
-
-		if (typeof(o.onRequest) !== 'undefined')
-			o.onRequest.call($controller, $controller);
-
-	} catch (err) {
-		self.error(err, name, req.uri);
-	}
-
-	try
-	{
-		if (!$controller.internal.cancel)
-			route.onExecute.apply($controller, internal.routeParam(req.path, route));
-
-	} catch (err) {
-		$controller = null;
-		self.error(err, name, req.uri);
-		self.execute(req, res, self.lookup(req, '#500', []), 500);
-	}
 };
 
 module.exports = new Framework();

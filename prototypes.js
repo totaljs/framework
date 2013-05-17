@@ -24,6 +24,11 @@
 var http = require('http');
 var fs = require('fs');
 
+Object.prototype.dispose = function() {
+	for (var m in this)
+		this[m] = null;
+};
+
 /*
 	Write cookie
 	@name {String}

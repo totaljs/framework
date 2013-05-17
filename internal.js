@@ -36,36 +36,6 @@ if (typeof(setImmediate) === 'undefined') {
 /*
 	Internal function / Parse data from Request
 	@req {ServerRequest}
-	@maximumSize {Number}
-	return {String array}
-*/
-exports.parsePOST = function(req, maximumSize) {
-
-	req.setEncoding(encoding);
-	req.buffer.isData = true;
-	req.buffer.isExceeded = false;
-
-	req.on('data', function(chunk) {
-
-		if (req.buffer.isExceeded)
-			return;
-
-		if (!req.buffer.isExceeded)
-			req.buffer.data += chunk.toString();
-
-		if (req.buffer.data.length < maximumSize)
-			return;
-
-		req.buffer.isExceeded = true;
-		req.buffer.data = '';
-	});
-
-	return req;
-};
-
-/*
-	Internal function / Parse data from Request
-	@req {ServerRequest}
 	@contentType {String}
 	@maximumSize {Number}
 	@tmpDirectory {String}
@@ -197,6 +167,13 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 			if (close <= 0) {
 
+				parser.dispose();
+				parser = null;
+				boundary = null;
+				stream = null;
+				tmp = null;
+				ip = null;
+
 				if (isXSS && req.flags.indexOf('xss') === -1)
 					req.flags.push('xss');
 
@@ -210,9 +187,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
     	cb();
     };
 
-    req.on('data', function(chunk) {
-    	parser.write(chunk);
-    });
+    req.on('data', parser.write.bind(parser));
 };
 
 /*
