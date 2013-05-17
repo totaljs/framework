@@ -1,7 +1,7 @@
 IN DEVELOPMENT ======= 1.2.3-7
 
-- added: template pluralize
-- added: basic sending and recieving messages through websocket (Standard - RFC 6455 Support)
+- added: template pluralize (https://github.com/petersirka/partial.js/tree/master/examples/templating)
+- added: basic sending and recieving messages through websocket (Standard - RFC 6455 Support) - https://github.com/petersirka/partial.js/tree/master/examples/websocket
 - added: websocket routing
 - added: framework.errors (Array, last 50 errors)
 

@@ -22,8 +22,8 @@ exports.install = function(framework) {
 
 	// framework.websocket('/chat/', socket_homepage, ['json'], ['chat']);
 
-	// framework.websocket('/chat/private/', socket_homepage, ['json'], ['privatechat'], ['*']);
-	// framework.websocket('/chat/private/', socket_homepage, ['json'], ['privatechat', 'sexchat'], ['www.partialjs.com', 'eshop.partialjs.com', 'blog.partialjs.com']);
+	// framework.websocket('/chat/private/', socket_private_homepage, ['json'], ['privatechat'], ['*']);
+	// framework.websocket('/chat/private/sex/', socket_sex_homepage, ['json'], ['privatechat', 'sexchat'], ['www.partialjs.com', 'eshop.partialjs.com', 'blog.partialjs.com']);
 
 	// client side:
 	// new WebSocket('ws://127.0.0.1:8004/', 'privatechat');
@@ -40,17 +40,6 @@ function view_homepage() {
 }
 
 function socket_homepage(connection, framework) {
-
-    // client.id               : client identifiactor, you can modify this property, default is random string
-    // client.socket           : socket (internal)
-    // client.req              : request
-    // client.uri              : URI
-    // client.ip               : IP
-    // client.session          : empty object, you can modify this property
-
-    // client.cookie(name)	   : value
-    // client.send(value)      : send message
-    // client.close(status)    : disconnect client (status {Number} :: optional, default undefined)
 
     /*
     	Send message to all
@@ -91,6 +80,20 @@ function socket_homepage(connection, framework) {
     	return {Client}
     */
     // connection.find(name);
+
+    // ============================================================
+
+    // client.id               : client identifiactor, you can modify this property, default contain random string
+    // client.socket           : socket (internal)
+    // client.req              : request
+    // client.uri              : URI
+    // client.ip               : IP
+    // client.session          : empty object, you can modify this property
+
+    // client.cookie(name)	   : value
+    // client.send(value)      : send message
+    // client.close(status)    : disconnect client (status {Number} :: optional, default undefined)
+
 
 	connection.on('open', function(client) {
 
