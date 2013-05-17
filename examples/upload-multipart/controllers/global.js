@@ -4,7 +4,7 @@ exports.install = function(framework) {
 	framework.route('/', viewHomepage);
 
 	// the number is maximum data receive
-	framework.route('/', viewHomepage, ['upload'], 1024 * 1000 * 1000);
+	framework.route('/', viewHomepage, ['upload'], 1024 * 20);
 };
 
 function viewHomepage() {

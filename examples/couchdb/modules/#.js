@@ -1,5 +1,7 @@
 var utils = require('partial.js/utils');
-var couchdb = require('partial-couchdb');
+
+// $ sudo npm install -g coucher
+var couchdb = require('coucher');
 
 // ==================================================
 // in this file, you can rewrite framework prototypes
