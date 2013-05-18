@@ -1966,7 +1966,9 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
     var route = self.lookup_websocket(req, socket.uri.pathname);
     if (route === null) {
-    	socket.close(404);
+    	socket.close(403);
+    	socket.dispose();
+    	socket = null;
     	return;
     }
 
@@ -1981,12 +1983,20 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		self.onAuthorization.call(self, req, socket, route.flags, function(isLogged) {
 
 			if (logged && !isLogged) {
-				socket.close(403);
+		    	socket.close(403);
+		    	socket.dispose();
+		    	socket = null;
+		    	req = null;
+		    	route = null;
 				return;
 			}
 
 			if (!logged && isLogged) {
-				socket.close(403);
+		    	socket.close(403);
+		    	socket.dispose();
+		    	socket = null;
+		    	req = null;
+		    	route = null;
 				return;
 			}
 
@@ -2004,11 +2014,15 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 	var self = this;
 
     if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version)) {
-    	socket.close(404);
+    	socket.close(403);
+    	socket.dispose();
+    	socket = null;
+    	req = null;
+    	route = null;
         return;
     }
 
-    if (typeof(self.connections[path]) === 'undefined') {		
+    if (typeof(self.connections[path]) === 'undefined') {
     	var connection = new ws.WebSocket(self, path, route.name);
         self.connections[path] = connection;
         route.onInitialize.call(connection, connection, self);

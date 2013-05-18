@@ -29,11 +29,12 @@ var utils = require('./utils');
 
 require('./prototypes');
 
-var NEWLINE              = '\r\n';
-var SOCKET_RESPONSE      = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\n\r\n';
-var SOCKET_HASH          = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
-var SOCKET_STATUS        = { 200: 'OK', 400: 'Bad Request', 401: 'Unauthorized', 402: 'Payment Required', 403: 'Forbidden', 404: 'Not Found', 406: 'Not Acceptable', 407: 'Proxy Authorization Required', 408: 'Request Timeout', 409: 'Conflict', 410: 'Gone', 411: 'Length Required', 412: 'Precondition Failed', 413: 'Request Entity Too Long', 414: 'Request-URI Too Long', 415: 'Unsupported Media Type', 416: 'Requested Range Not Satisfiable', 417: 'Expectation Failed', 426: 'Upgrade Required', 444: 'Disconnect', 500: 'Internal Server Error', 501: 'Not Implemented', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout', 505: 'HTTP Version Not Supported' };
-var SOCKET_ALLOW_VERSION = [13];
+var NEWLINE                = '\r\n';
+var SOCKET_RESPONSE        = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\n\r\n';
+var SOCKET_RESPONSE_ERROR  = 'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nX-WebSocket-Reject-Reason: 403 Forbidden\r\n\r\n';
+var SOCKET_HASH            = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+var SOCKET_STATUS          = { 200: 'OK', 400: 'Bad Request', 401: 'Unauthorized', 402: 'Payment Required', 403: 'Forbidden', 404: 'Not Found', 406: 'Not Acceptable', 407: 'Proxy Authorization Required', 408: 'Request Timeout', 409: 'Conflict', 410: 'Gone', 411: 'Length Required', 412: 'Precondition Failed', 413: 'Request Entity Too Long', 414: 'Request-URI Too Long', 415: 'Unsupported Media Type', 416: 'Requested Range Not Satisfiable', 417: 'Expectation Failed', 426: 'Upgrade Required', 444: 'Disconnect', 500: 'Internal Server Error', 501: 'Not Implemented', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout', 505: 'HTTP Version Not Supported' };
+var SOCKET_ALLOW_VERSION   = [13];
 
 /*
     WebSocket
@@ -479,6 +480,10 @@ WebSocketClient.prototype.upgrade = function(container) {
     var self = this;
     self.container = container;
 
+    //self.socket.setTimeout(0);
+    //self.socket.setNoDelay(true);
+    //self.socket.setKeepAlive(true, 0);
+
     self.socket.on('data', self.handlers.ondata);
     self.socket.on('error', self.handlers.onerror);
     self.socket.on('close', self.handlers.onclose);
@@ -571,7 +576,8 @@ WebSocketClient.prototype.close = function(status) {
 
     self.isClosed = true;
     status = status || 444;
-    self.socket.end(new Buffer('HTTP/1.1 ' + status + ' ' + SOCKET_STATUS[status] + NEWLINE + 'Connection: close' + NEWLINE + NEWLINE, 'binary'));
+
+    self.socket.end(new Buffer(SOCKET_RESPONSE_ERROR, 'binary'));
     return self;
 };
 
