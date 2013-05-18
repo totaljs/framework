@@ -35,12 +35,19 @@ function Subscribe(framework, req, res) {
 	this.handlers = {
 		_authorization: this._authorization.bind(this),
 		_end: this._end.bind(this),
+		_endfile: this._endfile.bind(this),
 		_parsepost: this._parsepost.bind(this)
 	};
 
 	this.req = req;
 	this.res = res;
 	this.route = null;
+};
+
+Subscribe.prototype.file = function() {
+	var self = this;
+	self.req.on('end', self.handlers._endfile);
+	self.req.resume();
 };
 
 Subscribe.prototype.multipart = function(header) {
@@ -192,6 +199,39 @@ Subscribe.prototype._end = function() {
 	}
 
 	self.controller(self.req.flags, self.req.uri.pathname);
+};
+
+Subscribe.prototype._endfile = function() {
+
+	var self = this;
+	var files = self.framework.routes.files;
+	var length = files.length;
+
+	if (length === 0) {
+		self.onStatic(self.req, self.res);
+		return;
+	}
+
+	for (var i = 0; i < length; i++) {
+		var file = files[i];
+		try
+		{
+
+			if (file.onValidation.call(self.framework, self.req, self.res)) {
+				file.onExecute.call(self.framework, self.req, self.res);
+				self.dispose();
+				return;
+			}
+
+		} catch (err) {
+			self.error(err, file.controller + ' :: ' + file.name, self.req.uri);
+			self.dispose();
+			return;
+		}
+	}
+
+	self.framework.onStatic(self.req, self.res);
+	self.dispose();
 };
 
 Subscribe.prototype._parsepost = function(chunk) {
@@ -1270,7 +1310,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 		return self;
 
 	if (self.framework === null)
-		return self;	
+		return self;
 
 	var returnHeaders = {};
 
@@ -1423,7 +1463,7 @@ Controller.prototype.redirect = function(url, permament) {
 
 	self.res.success = true;
 	self.res.writeHead(permament ? 301 : 302, { 'Location': url });
-	self.res.end();	
+	self.res.end();
 	self._dispose();
 	return self;
 };
@@ -1476,7 +1516,7 @@ Controller.prototype.database = function(name) {
 Controller.prototype._dispose = function() {
 	var self = this;
 	var cancel = self.internal.cancel;
-	self.dispose();	
+	self.dispose();
 	self.internal = { cancel: cancel };
 };
 
