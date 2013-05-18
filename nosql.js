@@ -238,6 +238,7 @@ Database.prototype.insert = function(arr, fnCallback, changes) {
 
 		builder = null;
 		builderChanges = null;
+		arr = null;
 	});
 
 	return self;
@@ -854,7 +855,7 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 		}
 
 		completed = true;
-		fnWrite(null, lines.length > 0);
+		fnWrite(null, true);
 	});
 
 	return self;
