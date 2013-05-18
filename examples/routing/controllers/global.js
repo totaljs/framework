@@ -15,7 +15,7 @@ exports.init = function(framework) {
 	// @funcExecute {Function} :: params: {req}, {res};	
 
 	// route: all txt files
-	framework.routeFile('my route file for .txt', function onValidation(req, res) {
+	framework.file('my route file for .txt', function onValidation(req, res) {
 		
 		// valid request
 		return req.url.indexOf('.txt') !== -1;
