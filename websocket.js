@@ -35,6 +35,13 @@ var SOCKET_HASH          = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 var SOCKET_STATUS        = { 200: 'OK', 400: 'Bad Request', 401: 'Unauthorized', 402: 'Payment Required', 403: 'Forbidden', 404: 'Not Found', 406: 'Not Acceptable', 407: 'Proxy Authorization Required', 408: 'Request Timeout', 409: 'Conflict', 410: 'Gone', 411: 'Length Required', 412: 'Precondition Failed', 413: 'Request Entity Too Long', 414: 'Request-URI Too Long', 415: 'Unsupported Media Type', 416: 'Requested Range Not Satisfiable', 417: 'Expectation Failed', 426: 'Upgrade Required', 444: 'Disconnect', 500: 'Internal Server Error', 501: 'Not Implemented', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout', 505: 'HTTP Version Not Supported' };
 var SOCKET_ALLOW_VERSION = [13];
 
+/*
+    WebSocket
+    @framework {partial.js}
+    @path {String}
+    @name {String} :: Controller name
+    return {WebSocket}
+*/
 function WebSocket(framework, path, name) {
     this._keys = [];
     this.path = path;
