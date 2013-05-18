@@ -380,7 +380,6 @@ Controller.prototype.cancel = function() {
 	return self;
 };
 
-
 /*
 	Get path
 	@name {String} :: filename
@@ -1507,7 +1506,7 @@ Controller.prototype.viewAsync = function(name, model, headers) {
 /*
 	Return database
 	@name {String}
-	return {Controller};
+	return {Database};
 */
 Controller.prototype.database = function(name) {
 	return this.app.database(name);
