@@ -25,7 +25,7 @@ function static_image(req, res) {
     // check client cache via etag
     // if not modified - framework send automatically 304
     // id === etag
-    if (self.ifNotModified(req, res, id))
+    if (self.notModified(req, res, id))
         return;
 
     db.binary.read(id, function(err, stream, header) {
