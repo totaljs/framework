@@ -534,7 +534,7 @@ WebSocketClient.prototype._ondata = function(data) {
 */
 WebSocketClient.prototype._onerror = function(error) {
     var self = this;
-    self.container.emit('error', e, self);
+    self.container.emit('error', error, self);
 };
 
 /*
