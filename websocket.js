@@ -510,18 +510,23 @@ WebSocketClient.prototype._ondata = function(data) {
     }
 
     var message = decode_WS(data);
-    if (message === null)
-        return;
-
-    if (message === '') {
+    if (message === '' || message === null) {
         // websocket.close() send empty string
         self.close(444);
         return;
     }
 
     if (self.isJSON) {
-        if (message.isJSON())
-            message = JSON.parse(message);
+        if (message.isJSON()) {
+            try
+            {
+                message = JSON.parse(message);
+            } catch (ex) {
+                message = null;
+                self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
+                return;
+            }
+        }
         else
             message = null;
     }
