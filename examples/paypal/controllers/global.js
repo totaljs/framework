@@ -1,7 +1,7 @@
 var utils = require('partial.js/utils');
 
-// $ npm install payment-paypal
-var paypal = require('payment-paypal');
+// $ npm install paypal-express-checkout
+var paypal = require('paypal-express-checkout');
 
 exports.install = function(framework) {
 	framework.route('/', viewHomepage);

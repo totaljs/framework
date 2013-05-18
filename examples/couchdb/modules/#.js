@@ -1,5 +1,3 @@
-var utils = require('partial.js/utils');
-
 // $ sudo npm install -g coucher
 var couchdb = require('coucher');
 

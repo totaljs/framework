@@ -1,5 +1,6 @@
-var utils = require('partial.js/utils');
-var mongodb = require('partial-mongolab');
+
+// $ sudo npm install -g mongolab
+var mongodb = require('mongolab');
 
 // ==================================================
 // in this file, you can rewrite framework prototypes

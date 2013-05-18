@@ -39,7 +39,7 @@ function view_homepage() {
 	self.view('homepage');
 }
 
-function socket_homepage(connection, framework) {
+function socket_homepage(controller, framework) {
 
     /*
     	Send message to all
@@ -51,7 +51,7 @@ function socket_homepage(connection, framework) {
 			message send to all users
 
     */
-    // connection.send(value, names, blacklist);
+    // controller.send(value, names, blacklist);
 
     /*
     	Close connection
@@ -61,25 +61,25 @@ function socket_homepage(connection, framework) {
 			close/disconnect all users
 
     */
-    // connection.close(names);
+    // controller.close(names);
 
 	/*
     	Destroy websocket
     */
-    // connection.destroy();
+    // controller.destroy();
 
     /*
     	Get online count
     	return {Number}
     */
-    // connection.online;
+    // controller.online;
 
     /*
     	Find a client
     	@name {String}
     	return {Client}
     */
-    // connection.find(name);
+    // controller.find(name);
 
     // ============================================================
 
@@ -95,43 +95,43 @@ function socket_homepage(connection, framework) {
     // client.close(status)    : disconnect client (status {Number} :: optional, default undefined)
 
 
-	connection.on('open', function(client) {
+	controller.on('open', function(client) {
 
-		console.log('Connect / Online:', connection.online);
+		console.log('Connect / Online:', controller.online);
 
 		client.send({ message: 'Hello {0}'.format(client.id) });
-		connection.send({ message: 'Connect new user: {0}\nOnline: {1}'.format(client.id, connection.online) }, [], [client.id]);
+		controller.send({ message: 'Connect new user: {0}\nOnline: {1}'.format(client.id, controller.online) }, [], [client.id]);
 
 	});
 
-	connection.on('close', function(client) {
+	controller.on('close', function(client) {
 
-		console.log('Disconnect / Online:', connection.online);
-		connection.send({ message: 'Disconnect user: {0}\nOnline: {1}'.format(client.id, connection.online) });
+		console.log('Disconnect / Online:', controller.online);
+		controller.send({ message: 'Disconnect user: {0}\nOnline: {1}'.format(client.id, controller.online) });
 
 	});
 
-	connection.on('message', function(client, message) {
+	controller.on('message', function(client, message) {
 
 		if (typeof(message.username) !== 'undefined') {
 			var old = client.id;
 			client.id = message.username;
-			connection.send({ message: 'rename: ' + old + ', new: ' + client.id });
+			controller.send({ message: 'rename: ' + old + ', new: ' + client.id });
 			return;
 		}
 
 		// send to all without this client
 		message.message = client.id + ': ' + message.message;
-		connection.send(message);
+		controller.send(message);
 
 	});
 
-	connection.on('error', function(error, client) {
+	controller.on('error', function(error, client) {
 
-		framework.error(error, 'websocket', connection.uri);
+		framework.error(error, 'websocket', controller.uri);
 
 	});
 
 	// how many connections?
-	// connection.online;
+	// controller.online;
 }
