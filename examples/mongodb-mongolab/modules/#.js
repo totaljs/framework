@@ -1,6 +1,6 @@
 
-// $ sudo npm install -g mongolab
-var mongodb = require('mongolab');
+// $ sudo npm install -g mongolab-provider
+var mongodb = require('mongolab-provider');
 
 // ==================================================
 // in this file, you can rewrite framework prototypes
