@@ -43,13 +43,14 @@ var _controller = '';
 require('./prototypes');
 
 function Framework() {
-	this.version = 1236;
+	this.version = 1237;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
 		onrequest: this._request.bind(this),
 		onxss: this.onXSS(this),
-		onupgrade: this._upgrade.bind(this)
+		onupgrade: this._upgrade.bind(this),
+		onservice: this._service.bind(this)
 	};
 
 	this.config = {
@@ -100,14 +101,11 @@ function Framework() {
 	this.resources = {};
 	this.connections = {};
 
-	// routing to controllers
-	this.routes = [];
-
-	// routing to file handlers
-	this.routesFile = [];
-
-	// routing to websocket
-	this.routesWebSocket = [];
+	this.routes = {
+		web: [],
+		files: [],
+		websockets: []
+	};
 
 	this.helpers = {};
 	this.modules = {};
@@ -120,36 +118,15 @@ function Framework() {
 	this.staticRange = {};
 	this.databases = {};
 
+	this.stats = {
+		web: 0,
+		files: 0,
+		websockets: 0
+	};
+
 	// intialize cache
 	this.cache = require('./cache').init(this);
-
-	this.cache.on('service', function(count) {
-
-		var self = this.app;
-
-		if (self.config.debug) {
-
-			// every minute clear the resource
-			self.resources = {};
-
-		} else {
-
-			// every 20 minute clear resources and reconfigure framework
-			if (count % 20 === 0) {
-				self.resources = {};
-				self.databases = {};
-				self.configure();
-			}
-
-			// every 5 minute clear static cache
-			if (count % 5 === 0) {
-				self.static = {};
-				self.staticRange = {};
-			}
-		}
-
-		self.emit('service', count);
-	});
+	this.cache.on('service', this.handlers.onservice);
 
 	var self = this;
 };
@@ -214,7 +191,7 @@ Framework.prototype.routeSort = function() {
 
 	var self = this;
 
-	self.routes.sort(function(a, b) {
+	self.routes.web.sort(function(a, b) {
 		if (a.priority > b.priority)
 			return -1;
 
@@ -224,7 +201,7 @@ Framework.prototype.routeSort = function() {
 		return 0;
 	});
 
-	self.routesWebSocket.sort(function(a, b) {
+	self.routes.websockets.sort(function(a, b) {
 		if (a.priority > b.priority)
 			return -1;
 
@@ -330,7 +307,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize) {
 			flags[i] = flags[i].toLowerCase();
 	}
 
-	self.routes.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'] });
+	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'] });
 	return self;
 };
 
@@ -375,21 +352,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (typeof(flags) === 'string')
 		flags = flags[flags];
 
-	self.routesWebSocket.push({ url: routeURL, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: maximumSize || self.config['default-websocket-request-length'] });
-	return self;
-};
-
-/*
-	Add a new file route
-	@name {String}
-	@funcValidation {Function} :: params: {req}, {res}, return {Boolean};
-	@funcExecute {Function} :: params: {req}, {res};
-	return {Framework}
-*/
-Framework.prototype.routeFile = function(name, funcValidation, funcExecute) {
-	console.log('OBSOLETE FUNCTION > framework.routeFile, use: framework.file');
-	var self = this;
-	self.routesFile.push({ controller: _controller, name: name, onValidation: funcValidation, onExecute: funcExecute });
+	self.routes.websockets.push({ url: routeURL, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: maximumSize || self.config['default-websocket-request-length'] });
 	return self;
 };
 
@@ -398,7 +361,7 @@ Framework.prototype.routeFile = function(name, funcValidation, funcExecute) {
 */
 Framework.prototype.file = function(name, funcValidation, funcExecute) {
 	var self = this;
-	self.routesFile.push({ controller: _controller, name: name, onValidation: funcValidation, onExecute: funcExecute });
+	self.routes.files.push({ controller: _controller, name: name, onValidation: funcValidation, onExecute: funcExecute });
 	return self;
 };
 
@@ -574,7 +537,7 @@ Framework.prototype.inject = function(name, url) {
 			var result = eval('(new (function(framework){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
 			_controller = '#module-' + name;
 
-			self.routes = self.routes.remove(function(route) {
+			self.routes.web = self.routes.web.remove(function(route) {
 				return route.name === _controller;
 			});
 
@@ -1190,10 +1153,17 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Module count: {0}'.format(modules.length));
 	builder.push('Cache: {0} items'.format(cache.length, self.cache.count));
 	builder.push('Resource count: {0}'.format(resources.length));
-	builder.push('Route count: {0}'.format(self.routes.length));
+	builder.push('Web route count: {0}'.format(self.routes.web.length));
+	builder.push('WebSocket route count: {0}'.format(self.routes.websockets.length));
+	builder.push('File route count: {0}'.format(self.routes.files.length));
 	builder.push('Helper count: {0}'.format(helpers.length));
 	builder.push('Static files count: {0}'.format(staticFiles.length));
 	builder.push('Static files / streaming count: {0}'.format(staticRange.length));
+	builder.push('-------------------------------------------------------');
+	builder.push('Last 10 minutes ...');
+	builder.push('Request stats - web        : {0}x'.format(self.stats.web.format('### ### ###')));
+	builder.push('Request stats - files      : {0}x'.format(self.stats.files.format('### ### ###')));
+	builder.push('Request stats - websockets : {0}x'.format(self.stats.websockets.format('### ### ###')));
 	builder.push('-------------------------------------------------------');
 
 	if (self.errors.length > 0) {
@@ -1980,6 +1950,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
     if (req.headers.upgrade !== 'websocket')
         return;
 
+	self.stats.websockets++;
+
 	var self = this;
     var socket = new ws.WebSocketClient(req, socket, head);
     var path = utils.path(req.uri.pathname);
@@ -2044,6 +2016,34 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
     socket.upgrade(self.connections[path]);
 };
 
+Framework.prototype._service = function(count) {
+	var self = this;
+
+	if (count % 10 === 0) {
+		self.stats.websockets = 0;
+		self.stats.web = 0;
+		self.stats.files = 0;
+	}
+
+	if (self.config.debug)
+		self.resources = {};
+
+	// every 20 minute clear resources and reconfigure framework
+	if (count % 20 === 0) {
+		self.resources = {};
+		self.databases = {};
+		self.configure();
+	}
+
+	// every 5 minute clear static cache
+	if (count % 5 === 0) {
+		self.static = {};
+		self.staticRange = {};
+	}
+
+	self.emit('service', count);
+};
+
 Framework.prototype._request = function(req, res) {
 	var self = this;
 
@@ -2088,31 +2088,12 @@ Framework.prototype._request = function(req, res) {
 
    	// if is static file, return file
    	if (utils.isStaticFile(req.uri.pathname)) {
-
-	    req.on('end', function () {
-	    	var files = self.routesFile;
-	    	var filesLength = files.length;
-			if (filesLength > 0) {
-				for (var i = 0; i < filesLength; i++) {
-					var file = files[i];
-					try
-					{
-						if (file.onValidation.call(self, req, res)) {
-							file.onExecute.call(self, req, res);
-							return;
-						}
-					} catch (err) {
-						self.error(err, file.controller + ' :: ' + file.name, req.uri);
-						return;
-					}
-				}
-			}
-			self.onStatic(req, res);
-	   	});
-
-		req.resume();
-	   	return;
+		new Subscribe(self, req, res).file();
+		self.stats.files++;
+		return;
 	}
+
+	self.stats.web++;
 
    	if (req.uri.query && req.uri.query.length > 0) {
    		if (self.onXSS !== null)
@@ -2482,6 +2463,7 @@ Framework.prototype.configure = function() {
 
 		switch (name) {
 			case 'default-request-length':
+			case 'default-websocket-request-length':
 				obj[name] = utils.parseInt(value);
 				break;
 			case 'static-accepts-custom':
@@ -2717,11 +2699,11 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 		req.path = [url];
 
 	var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
-	var length = self.routes.length;
+	var length = self.routes.web.length;
 
 	for (var i = 0; i < length; i++) {
 
-		var route = self.routes[i];
+		var route = self.routes.web[i];
 
 		if (!internal.routeCompareSubdomain(subdomain, route.subdomain))
 			continue;
@@ -2755,11 +2737,11 @@ Framework.prototype.lookup_websocket = function(req, url) {
 
 	var self = this;
 	var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
-	var length = self.routesWebSocket.length;
+	var length = self.routes.websockets.length;
 
 	for (var i = 0; i < length; i++) {
 
-		var route = self.routesWebSocket[i];
+		var route = self.routes.websockets[i];
 
 		if (!internal.routeCompareSubdomain(subdomain, route.subdomain))
 			continue;
