@@ -225,7 +225,7 @@ Subscribe.prototype._endfile = function() {
 			}
 
 		} catch (err) {
-			self.error(err, file.controller + ' :: ' + file.name, self.req.uri);
+			self.framework.error(err, file.controller + ' :: ' + file.name, self.req.uri);
 			self.framework.responseContent(self.req, self.res, 500, '500 - internal servere error', 'text/plain', true);
 			self.dispose();
 			return;
