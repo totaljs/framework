@@ -3,7 +3,7 @@ exports.install = function(framework) {
 	framework.route('#403', error403);
 	framework.route('#404', error404);
 	framework.route('#431', error431);
-	framework.route('#500', error500);
+	framework.route('#500', error500);	
 };
 
 /*
