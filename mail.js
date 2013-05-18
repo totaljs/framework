@@ -183,11 +183,7 @@ function SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, se
 	message.push('Content-Transfer-Encoding: base64');
 
 	message.push(CRLF);
-
-	var buffer = new Buffer(body.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-	message.push(buffer).toString('base64'));
-
-	buffer = null;
+	message.push(new Buffer(body.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n')).toString('base64'));
 
 	this.socket.on('line', function(line) {
 

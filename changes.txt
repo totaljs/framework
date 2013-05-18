@@ -10,13 +10,15 @@
 - updated: allow HTML comments in views
 - updated: framework.usage() (added new features)
 - updated: framework performance
-- updated: nosql embedded database (fixed small problems)
 
 - removed: obsolete functions (framework/controller ifNotModified)
 - removed: obsolete functions (framework/controller routeFile)
 - removed: framework.lastError
 
 - renamed: config-release, config-debug: "gzip" to "allow-gzip"
+
+- fixed: NoSQL embedded database
+- fixed: SMTP mail
 
 - clean code
 
