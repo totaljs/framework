@@ -137,6 +137,8 @@ function run() {
 		console.log('Leak  :', memLeak);
 		console.timeEnd('new');
 		console.log('');
+		console.log(framework.stats);
+		console.log('');
 		console.log('----------------------------');
 		console.log('');
 		end();

@@ -135,6 +135,7 @@ function run() {
 
 	if (max <= 0) {
 		end();
+		console.log(framework.stats);
 		return;
 	}
 
