@@ -35,12 +35,19 @@ var SOCKET_HASH          = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 var SOCKET_STATUS        = { 200: 'OK', 400: 'Bad Request', 401: 'Unauthorized', 402: 'Payment Required', 403: 'Forbidden', 404: 'Not Found', 406: 'Not Acceptable', 407: 'Proxy Authorization Required', 408: 'Request Timeout', 409: 'Conflict', 410: 'Gone', 411: 'Length Required', 412: 'Precondition Failed', 413: 'Request Entity Too Long', 414: 'Request-URI Too Long', 415: 'Unsupported Media Type', 416: 'Requested Range Not Satisfiable', 417: 'Expectation Failed', 426: 'Upgrade Required', 444: 'Disconnect', 500: 'Internal Server Error', 501: 'Not Implemented', 502: 'Bad Gateway', 503: 'Service Unavailable', 504: 'Gateway Timeout', 505: 'HTTP Version Not Supported' };
 var SOCKET_ALLOW_VERSION = [13];
 
-function WebSocket(framework, path) {
+function WebSocket(framework, path, name) {
     this._keys = [];
     this.path = path;
     this.online = 0;
     this.connections = {};
     this.framework = framework;
+    this.global = framework.global;
+    this.config = framework.config;
+    this.repository = {};
+    this.name = name;
+    this.isDebug = framework.config.debug;
+    this.url = utils.path(req.uri.pathname);
+    this.async = new utils.Async(this);
 };
 
 // on('open', function(client) {});
@@ -125,17 +132,35 @@ WebSocket.prototype.close = function(names) {
 };
 
 /*
+    All connections (forEach)
+    @fn {Function} :: function(client, index) {}
+    return {WebSocketClient};
+*/
+WebSocket.prototype.all = function(fn) {
+
+    var self = this;
+    var length = self._keys.length;
+    
+    for (var i = 0; i < length; i++) {
+        var id = self._keys[i];
+        if (fn(self.connections[id], i))
+            break;
+    }
+
+    return self;
+};
+
+/*
     Find connection
     @name {String}
     return {WebSocketClient}
 */
 WebSocket.prototype.find = function(name) {
     var self = this;
-    var keys = self._keys;
-    var length = keys.length;
+    var length = self._keys.length;
 
     for (var i = 0; i < length; i++) {
-        var connection = self.connections[keys[i]];
+        var connection = self.connections[self._keys[i]];
         if (connection.id === name)
             return connection;
     }
@@ -186,6 +211,153 @@ WebSocket.prototype._remove = function(id) {
 WebSocket.prototype._add = function(client) {
     var self = this;
     self.connections[client._id] = client;
+    return self;
+};
+
+/*
+    Module caller
+    @name {String}
+    return {Module};
+*/
+WebSocket.prototype.module = function(name) {
+    return this.framework.module(name);
+};
+
+/*
+    Controller models reader
+    @name {String} :: name of controller
+    return {Object};
+*/
+WebSocket.prototype.models = function(name) {
+    return (this.framework.controllers[name] || {}).models;
+};
+
+/*
+    Controller functions reader
+    @name {String} :: name of controller
+    return {Object};
+*/
+WebSocket.prototype.functions = function(name) {
+    return (this.framework.controllers[name] || {}).functions;
+};
+
+/*
+    Return database
+    @name {String}
+    return {Database};
+*/
+WebSocket.prototype.database = function(name) {
+    return this.framework.database(name);
+};
+
+/*
+    Resource reader
+    @name {String} :: filename
+    @key {String}
+    return {String};
+*/
+WebSocket.prototype.resource = function(name, key) {
+    return this.framework.resource(name, key);
+};
+
+/*
+    Log
+    @arguments {Object array}
+    return {WebSocket};
+*/
+WebSocket.prototype.log = function() {
+    var self = this;
+    self.framework.log.apply(self.framework, arguments);
+    return self;
+};
+
+/*
+    Get path
+    @name {String} :: filename
+    return {String};
+*/
+WebSocket.prototype.pathPublic = function(name) {
+    return utils.combine(this.framework.config['directory-public'], name).replace(/\\/g, '/');
+};
+
+/*
+    Get path
+    @name {String} :: filename
+    return {String};
+*/
+WebSocket.prototype.pathLog = function(name) {
+    return utils.combine(this.framework.config['directory-logs'], name).replace(/\\/g, '/');
+};
+
+/*
+    Get path
+    @name {String} :: filename
+    return {String};
+*/
+WebSocket.prototype.pathTemp = function(name) {
+    return utils.combine(this.framework.config['directory-temp'], name).replace(/\\/g, '/');
+};
+
+/*
+    Validation / alias for validate
+    return {ErrorBuilder}
+*/
+WebSocket.prototype.validation = function(model, properties, prefix, name) {
+    return this.validate(model, properties, prefix, name);
+};
+
+/*
+    Validation object
+    @model {Object} :: object to validate
+    @properties {String array} : what properties?
+    @prefix {String} :: prefix for resource = prefix + model name
+    @name {String} :: name of resource
+    return {ErrorBuilder}
+*/
+WebSocket.prototype.validate = function(model, properties, prefix, name) {
+
+    var self = this;
+
+    var resource = function(key) {
+        return self.resource(name || 'default', (prefix || '') + key);
+    };
+
+    var error = new builders.ErrorBuilder(resource);
+    return utils.validate.call(self, model, properties, self.framework.onValidation, error);
+};
+
+/*
+    Add function to async wait list
+    @name {String}
+    @waitingFor {String} :: name of async function
+    @fn {Function}
+    return {WebSocket}
+*/
+WebSocket.prototype.wait = function(name, waitingFor, fn) {
+    var self = this;
+    self.async.wait(name, waitingFor, fn);
+    return self;
+};
+
+/*
+    Run async functions
+    @callback {Function}
+    return {WebSocket}
+*/
+WebSocket.prototype.complete = function(callback) {
+    var self = this;
+    return self.complete(callback);
+};
+
+/*
+    Add function to async list
+    @name {String}
+    @fn {Function}
+    return {WebSocket}
+*/
+WebSocket.prototype.await = function(name, fn) {
+    var self = this;
+    self.async.await(name, fn);
     return self;
 };
 

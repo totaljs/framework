@@ -352,7 +352,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (typeof(flags) === 'string')
 		flags = flags[flags];
 
-	self.routes.websockets.push({ url: routeURL, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: maximumSize || self.config['default-websocket-request-length'] });
+	self.routes.websockets.push({ name: _controller, url: routeURL, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: maximumSize || self.config['default-websocket-request-length'] });
 	return self;
 };
 
@@ -671,7 +671,7 @@ Framework.prototype.onError = function(err, name, uri) {
 /*
 	Authorization handler
 	@req {ServerRequest}
-	@res {ServerResponse}
+	@res {ServerResponse} OR {WebSocketClient}
 	@flags {String array}
 	@callback {Function} - @callback(Boolean), true if logged and false if unlogged
 */
@@ -1977,7 +1977,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	var logged = route.flags.indexOf('logged') !== -1;
 	if (logged || route.flags.indexOf('unlogged')) {
 
-		self.onAuthorization.call(self, req, null, route.flags, function(isLogged) {
+		self.onAuthorization.call(self, req, socket, route.flags, function(isLogged) {
 
 			if (logged && !isLogged) {
 				socket.close(403);
@@ -2008,7 +2008,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
     }
 
     if (typeof(self.connections[path]) === 'undefined') {
-    	var connection = new ws.WebSocket(self, path);
+    	var connection = new ws.WebSocket(self, path, route.name);
         self.connections[path] = connection;
         route.onInitialize.call(connection, connection, self);
     }
