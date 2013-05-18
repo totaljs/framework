@@ -4,13 +4,18 @@ IN DEVELOPMENT ======= 1.2.3-7
 - added: basic sending and recieving messages through websocket (Standard - RFC 6455 Support) - https://github.com/petersirka/partial.js/tree/master/examples/websocket
 - added: websocket routing
 - added: framework.errors (Array, last 50 errors)
+- added: config-release, config-debug: allow-websocket
+- added: framework.stats
 
 - updated: allow HTML comments in views
-- updated: framework.usage()
+- updated: framework.usage() (added new features)
 - updated: framework performance
 
 - removed: obsolete functions (framework/controller ifNotModified)
+- removed: obsolete functions (framework/controller routeFile)
 - removed: framework.lastError
+
+- renamed: config-release, config-debug: "gzip" to "allow-gzip"
 
 - clean code
 
@@ -22,7 +27,7 @@ IN DEVELOPMENT ======= 1.2.3-7
 - added: framework.refresh([clear]) - refresh all internal information
 - added: framework.config.gzip - default true
 
-- rename: [framework/controller].ifNotModified() to [framework/controller].notModified()
+- renamed: [framework/controller].ifNotModified() to [framework/controller].notModified()
 
 - fixed: LESS CSS (problem with @media)
 
