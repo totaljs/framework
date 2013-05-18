@@ -53,7 +53,7 @@ function WebSocket(framework, path, name) {
     this.repository = {};
     this.name = name;
     this.isDebug = framework.config.debug;
-    this.url = utils.path(req.uri.pathname);
+    this.url = utils.path(path);
     this.async = new utils.Async(this);
 };
 
@@ -147,7 +147,7 @@ WebSocket.prototype.all = function(fn) {
 
     var self = this;
     var length = self._keys.length;
-    
+
     for (var i = 0; i < length; i++) {
         var id = self._keys[i];
         if (fn(self.connections[id], i))
@@ -393,7 +393,9 @@ function WebSocketClient(req, socket, head) {
     this.session = {};
     this.ip = '';
     this.protocol = (req.headers['sec-websocket-protocol'] || '').replace(/\s/g, '').split(',');
+
     req.uri = parser.parse('ws://' + req.headers['host'] + req.url);
+
     this.uri = req.uri;
     this.isJSON = false;
     this.length = 0;
@@ -412,7 +414,6 @@ WebSocketClient.prototype = new events.EventEmitter;
 WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, version) {
 
     var self = this;
-    var req = self.req;
     var socket = self.socket;
 
     flags = flags || [];
@@ -421,7 +422,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 
     self.length = length;
 
-    var origin = req.headers['origin'] || '';
+    var origin = self.req.headers['origin'] || '';
 
     if (allow.length > 0) {
 
@@ -434,7 +435,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 
     } else {
 
-        if (origin.indexOf(req.headers.host) === -1)
+        if (origin.indexOf(self.req.headers.host) === -1)
             return false;
     }
 
@@ -449,14 +450,14 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
         return false;
 
     self.socket = socket;
-    self.socket.write(new Buffer(SOCKET_RESPONSE.format('partial.js v' + version, self._request_accept_key(req)), 'binary'));
+    self.socket.write(new Buffer(SOCKET_RESPONSE.format('partial.js v' + version, self._request_accept_key(self.req)), 'binary'));
 
-    var proxy = req.headers['x-forwarded-for'];
+    var proxy = self.req.headers['x-forwarded-for'];
 
     if (typeof(proxy) !== 'undefined')
-        self.ip = proxy.split(',', 1)[0] || req.connection.remoteAddress;
+        self.ip = proxy.split(',', 1)[0] || self.req.connection.remoteAddress;
     else
-        self.ip = req.connection.remoteAddress;
+        self.ip = self.req.connection.remoteAddress;
 
     if (self.uri.query && self.uri.query.length > 0)
         self.get = qs.parse(self.uri.query);
@@ -477,10 +478,6 @@ WebSocketClient.prototype.upgrade = function(container) {
 
     var self = this;
     self.container = container;
-
-    self.socket.setTimeout(0);
-    self.socket.setNoDelay(true);
-    self.socket.setKeepAlive(true, 0);
 
     self.socket.on('data', self.handlers.ondata);
     self.socket.on('error', self.handlers.onerror);

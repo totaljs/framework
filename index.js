@@ -1950,9 +1950,10 @@ Framework.prototype._upgrade = function(req, socket, head) {
     if (req.headers.upgrade !== 'websocket')
         return;
 
+	var self = this;
+
 	self.stats.websockets++;
 
-	var self = this;
     var socket = new ws.WebSocketClient(req, socket, head);
     var path = utils.path(req.uri.pathname);
 	var subdomain = req.uri.host.toLowerCase().split('.');
@@ -2007,7 +2008,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
         return;
     }
 
-    if (typeof(self.connections[path]) === 'undefined') {
+    if (typeof(self.connections[path]) === 'undefined') {		
     	var connection = new ws.WebSocket(self, path, route.name);
         self.connections[path] = connection;
         route.onInitialize.call(connection, connection, self);

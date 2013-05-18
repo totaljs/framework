@@ -208,7 +208,8 @@ Subscribe.prototype._endfile = function() {
 	var length = files.length;
 
 	if (length === 0) {
-		self.onStatic(self.req, self.res);
+		self.framework.onStatic(self.req, self.res);
+		self.dispose();
 		return;
 	}
 
@@ -225,6 +226,7 @@ Subscribe.prototype._endfile = function() {
 
 		} catch (err) {
 			self.error(err, file.controller + ' :: ' + file.name, self.req.uri);
+			self.framework.responseContent(self.req, self.res, 500, '500 - internal servere error', 'text/plain', true);
 			self.dispose();
 			return;
 		}
