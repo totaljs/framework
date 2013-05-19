@@ -114,6 +114,7 @@ function Framework() {
 	this.errors = [];
 	this.server = null;
 	this.port = 0;
+	this.ip = '';
 	this.static = {};
 	this.staticRange = {};
 	this.databases = {};
@@ -1838,7 +1839,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 	@port {Number}
 	return {Framework}
 */
-Framework.prototype.init = function(http, config, port) {
+Framework.prototype.init = function(http, config, port, ip) {
 
 	var self = this;
 
@@ -1921,7 +1922,8 @@ Framework.prototype.init = function(http, config, port) {
 		self.server.on('upgrade', self.handlers.onupgrade);
 
 	self.port = port || 8000;
-	self.server.listen(self.port);
+	self.ip = ip || '127.0.0.1';
+	self.server.listen(self.port, self.ip);
 
 	if (module !== null && typeof(module.onLoaded) !== 'undefined') {
 		try
@@ -1943,6 +1945,11 @@ Framework.prototype.init = function(http, config, port) {
 		process.send('name: ' + self.config.name);
 
 	return self;
+};
+
+// Alias for framework.init
+Framework.prototype.run = function(http, config, port, ip) {
+	return this.init(http, config, port, ip);
 };
 
 Framework.prototype._upgrade = function(req, socket, head) {
@@ -2174,11 +2181,6 @@ Framework.prototype._request = function(req, res) {
    	};
 
 	new Subscribe(self, req, res).end();
-};
-
-// Alias for framework.init
-Framework.prototype.run = function(http, config, port) {
-	return this.init(http, config, port);
 };
 
 /*
