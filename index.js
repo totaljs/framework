@@ -2728,6 +2728,9 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 		if (!internal.routeCompare(req.path, route.url, isSystem))
 			continue;
 
+		if (isSystem)
+			return route;
+
 		if (route.flags !== null && route.flags.length > 0) {
 
 			var result = internal.routeCompareFlags(flags, route.flags, noLoggedUnlogged);
