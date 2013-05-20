@@ -93,6 +93,7 @@ function Framework() {
 		// default 5 kB
 		'default-request-length': 1024 * 5,
 		'default-websocket-request-length': 1024 * 5,
+		'default-request-timeout': 3000,
 		'allow-gzip': true,
 		'allow-websocket': true
 	};
@@ -104,7 +105,8 @@ function Framework() {
 	this.routes = {
 		web: [],
 		files: [],
-		websockets: []
+		websockets: [],
+		partial: {}
 	};
 
 	this.helpers = {};
@@ -259,10 +261,16 @@ Framework.prototype.stop = function(code) {
 	@maximumSize {Number}
 	return {Framework}
 */
-Framework.prototype.route = function(url, funcExecute, flags, maximumSize) {
+Framework.prototype.route = function(url, funcExecute, flags, maximumSize, partial, timeout) {
 
 	if (_controller === '')
 		throw new Error('Route must be defined in controller.');
+
+
+	if (utils.isArray(maximumSize)) {
+		partial = maximumSize;
+		maximumSize = null;
+	}
 
 	var self = this;
 	var priority = 0;
@@ -308,7 +316,19 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize) {
 			flags[i] = flags[i].toLowerCase();
 	}
 
-	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'] });
+	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'], partial: partial || [], timeout: timeout || self.config['default-request-timeout'] });
+	return self;
+};
+
+/*
+	Add a new partial route
+	@name {String}
+	@funcExecute {Function}
+	return {Framework}
+*/
+Framework.prototype.partial = function(name, funcExecute) {
+	var self = this;
+	self.routes.partial[name] = funcExecute;
 	return self;
 };
 
@@ -2481,6 +2501,7 @@ Framework.prototype.configure = function() {
 		switch (name) {
 			case 'default-request-length':
 			case 'default-websocket-request-length':
+			case 'default-request-timeout':
 				obj[name] = utils.parseInt(value);
 				break;
 			case 'static-accepts-custom':

@@ -36,12 +36,25 @@ function Subscribe(framework, req, res) {
 		_authorization: this._authorization.bind(this),
 		_end: this._end.bind(this),
 		_endfile: this._endfile.bind(this),
-		_parsepost: this._parsepost.bind(this)
+		_parsepost: this._parsepost.bind(this),
+		_execute: this._execute.bind(this),
+		_cancel: this._cancel.bind(this),
+		_partial: this._partial.bind(this)
 	};
 
+	this.controller = null;
 	this.req = req;
 	this.res = res;
 	this.route = null;
+	this.timeout = null;
+	this.isCanceled = false;
+};
+
+Subscribe.prototype.success = function() {
+	var self = this;
+	clearTimeout(self.timeout);
+	self.timeout = null;
+	self.isCanceled = true;
 };
 
 Subscribe.prototype.file = function() {
@@ -98,38 +111,38 @@ Subscribe.prototype.execute = function(status) {
 	}
 
 	var name = self.route.name;
-	var $controller = new Controller(name, self.framework, self.req, self.res, self);
+	self.controller = new Controller(name, self.framework, self.req, self.res, self);
 
-	try
-	{
-		self.framework.emit('controller', $controller, name);
+	if (!self.isCanceled)
+		self.timeout = setTimeout(self.handlers._cancel, self.route.timeout);
 
-		var isModule = name[0] === '#' && name[1] === 'm';
-		var o = isModule ? self.framework.modules[name.substring(8)] : self.framework.controllers[name];
-
-		if (typeof(o.onRequest) !== 'undefined')
-			o.onRequest.call($controller, $controller);
-
-	} catch (err) {
-		self.framework.error(err, name, self.req.uri);
+	var length = self.route.partial.length;
+	if (length === 0) {
+		self.handlers._execute();
+		return self;
 	}
 
-	try
-	{
-		if (!$controller.internal.cancel)
-			self.route.onExecute.apply($controller, internal.routeParam(self.req.path, self.route));
+	var async = new utils.Async();
+	var count = 0;
 
-		self.route = null;
-
-	} catch (err) {
-		$controller = null;
-		self.framework.error(err, name, self.req.uri);
-		self.route = self.framework.lookup(self.req, '#500', []);
-		self.execute(500);
+	for (var i = 0; i < length; i++) {
+		var partialName = self.route.partial[i];
+		var partialFn = self.framework.routes.partial[partialName];
+		if (partialFn) {
+			count++;
+			async.await(partialName, partialFn.bind(self.controller));
+		}
 	}
+
+	if (count === 0)
+		self.handlers._execute();
+	else
+		async.complete(self.handlers._execute);
+
+	return self;
 };
 
-Subscribe.prototype.controller = function(flags, url) {
+Subscribe.prototype.prepare = function(flags, url) {
 
 	var self = this;
 
@@ -145,6 +158,48 @@ Subscribe.prototype.controller = function(flags, url) {
 		self.route = self.framework.lookup(self.req, '#404', []);
 
 	self.execute(self.req.buffer.isExceeded ? 431 : 404);
+};
+
+Subscribe.prototype._partial = function() {
+
+	var self = this;
+
+};
+
+Subscribe.prototype._execute = function() {
+
+	var self = this;
+	var name = self.route.name;
+
+	self.controller.isCanceled = false;
+
+	try
+	{
+		self.framework.emit('controller', self.controller, name);
+
+		var isModule = name[0] === '#' && name[1] === 'm';
+		var o = isModule ? self.framework.modules[name.substring(8)] : self.framework.controllers[name];
+
+		if (typeof(o.onRequest) !== 'undefined')
+			o.onRequest.call(self.controller, self.controller);
+
+	} catch (err) {
+		self.framework.error(err, name, self.req.uri);
+	}
+
+	try
+	{
+		if (!self.controller.isCanceled)
+			self.route.onExecute.apply(self.controller, internal.routeParam(self.req.path, self.route));
+
+		self.route = null;
+
+	} catch (err) {
+		self.controller = null;
+		self.framework.error(err, name, self.req.uri);
+		self.route = self.framework.lookup(self.req, '#500', []);
+		self.execute(500);
+	}
 };
 
 Subscribe.prototype._authorization = function(isLogged) {
@@ -171,7 +226,7 @@ Subscribe.prototype._end = function() {
 	}
 
 	if (self.req.buffer.data.length === 0) {
-		self.controller(self.req.flags, self.req.uri.pathname);
+		self.prepare(self.req.flags, self.req.uri.pathname);
 		return;
 	}
 
@@ -198,7 +253,7 @@ Subscribe.prototype._end = function() {
 		self.req.buffer.data = null;
 	}
 
-	self.controller(self.req.flags, self.req.uri.pathname);
+	self.prepare(self.req.flags, self.req.uri.pathname);
 };
 
 Subscribe.prototype._endfile = function() {
@@ -253,6 +308,15 @@ Subscribe.prototype._parsepost = function(chunk) {
 	self.req.buffer.data = '';
 };
 
+Subscribe.prototype._cancel = function() {
+	var self = this;
+	clearTimeout(self.timeout);
+	self.timeout = null;
+	self.controller.isCanceled = true;
+	self.route = self.framework.lookup(self.req, '#408', []);
+	self.execute(408);
+};
+
 /*
 	Controller class
 	@name {String}
@@ -263,6 +327,7 @@ Subscribe.prototype._parsepost = function(chunk) {
 	return {Controller};
 */
 function Controller(name, framework, req, res, subscribe) {
+
 	this.subscribe = subscribe;
 	this.name = name;
 	this.cache = framework.cache;
@@ -278,12 +343,14 @@ function Controller(name, framework, req, res, subscribe) {
 	this.isXHR = req.isXHR;
 	this.xhr = req.isXHR;
 	this.config = framework.config;
-	this.internal = { layout: framework.config['default-layout'], contentType: 'text/html', cancel: false };
+	this.internal = { layout: framework.config['default-layout'], contentType: 'text/html' };
 	this.statusCode = 200;
 	this.controllers = framework.controllers;
 	this.url = utils.path(req.uri.pathname);
 	this.isTest = req.headers['assertion-testing'] === '1';
 	this.isDebug = framework.config.debug;
+	this.isCanceled = false;
+
 	this.global = framework.global;
 	this.flags = req.flags;
 
@@ -378,7 +445,7 @@ Controller.prototype.await = function(name, fn) {
 */
 Controller.prototype.cancel = function() {
 	var self = this;
-	self.internal.cancel = true;
+	self.isCanceled = true;
 	return self;
 };
 
@@ -1214,6 +1281,9 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 
 	var self = this;
 
+	if (self.isCanceled || self.res.success)
+		return '';
+
 	if (typeof(nameEmpty) === 'object') {
 		repository = nameEmpty;
 		nameEmpty = '';
@@ -1239,7 +1309,7 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 Controller.prototype.json = function(obj, headers) {
 	var self = this;
 
-	if (self.framework === null)
+	if (self.isCanceled || self.res.success)
 		return self;
 
 	if (obj instanceof builders.ErrorBuilder)
@@ -1247,6 +1317,7 @@ Controller.prototype.json = function(obj, headers) {
 	else
 		obj = JSON.stringify(obj || {});
 
+	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.statusCode, obj, 'application/json', true, headers);
 	self._dispose();
 	return self;
@@ -1280,12 +1351,13 @@ Controller.prototype.jsonAsync = function(obj, headers) {
 Controller.prototype.content = function(contentBody, contentType, headers) {
 	var self = this;
 
-	if (self.framework === null)
-		return self;
+	if (self.isCanceled || self.res.success)
+		return typeof(contentType) === 'undefined' ? '' : self;
 
 	if (typeof(contentType) === 'undefined')
 		return self.$contentToggle(true, contentBody);
 
+	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.statusCode, contentBody, contentType || 'text/plain', true, headers);
 	self._dispose();
 	return self;
@@ -1303,12 +1375,10 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	var self = this;
 	var res = self.res;
 
-	if (res.success)
+	if (self.isCanceled || self.res.success)
 		return self;
 
-	if (self.framework === null)
-		return self;
-
+	self.subscribe.success();
 	var returnHeaders = {};
 
 	returnHeaders['Cache-Control'] = 'private';
@@ -1328,7 +1398,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	res.writeHead(self.statusCode, returnHeaders);
 
 	onWrite(function(chunk, encoding) {
-		res.write(chunk, encoding);
+		res.write(chunk, encoding || 'utf8');
 	});
 
 	res.end();
@@ -1345,9 +1415,10 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 Controller.prototype.plain = function(contentBody, headers) {
 	var self = this;
 
-	if (self.framework === null)
+	if (self.isCanceled || self.res.success)
 		return self;
 
+	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.statusCode, typeof(contentBody) === 'string' ? contentBody : contentBody.toString(), 'text/plain', true, headers);
 	self._dispose();
 	return self;
@@ -1363,10 +1434,12 @@ Controller.prototype.plain = function(contentBody, headers) {
 Controller.prototype.file = function(fileName, downloadName, headers) {
 	var self = this;
 
-	if (self.framework === null)
+	if (self.isCanceled || self.res.success)
 		return self;
 
 	fileName = utils.combine(self.framework.config['directory-public'], fileName);
+
+	self.subscribe.success();
 	self.framework.responseFile(self.req, self.res, fileName, downloadName, headers);
 	self._dispose();
 	return self;
@@ -1400,6 +1473,11 @@ Controller.prototype.fileAsync = function(fileName, downloadName, headers) {
 */
 Controller.prototype.stream = function(contentType, stream, downloadName, headers) {
 	var self = this;
+
+	if (self.isCanceled || self.res.success)
+		return self;
+
+	self.subscribe.success();
 	self.framework.responseStream(self.req, self.res, contentType, stream, downloadName, headers);
 	self._dispose();
 	return self;
@@ -1411,7 +1489,12 @@ Controller.prototype.stream = function(contentType, stream, downloadName, header
 */
 Controller.prototype.view404 = function() {
 	var self = this;
+
+	if (self.isCanceled || self.res.success)
+		return self;
+
 	self.req.path = [];
+	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#404', []);
 	self.subscribe.execute(404);
 	self._dispose();
@@ -1424,7 +1507,12 @@ Controller.prototype.view404 = function() {
 */
 Controller.prototype.view403 = function() {
 	var self = this;
+
+	if (self.isCanceled || self.res.success)
+		return self;
+
 	self.req.path = [];
+	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#403', []);
 	self.subscribe.execute(403);
 	self._dispose();
@@ -1438,8 +1526,13 @@ Controller.prototype.view403 = function() {
 */
 Controller.prototype.view500 = function(error) {
 	var self = this;
+
+	if (self.isCanceled || self.res.success)
+		return self;
+
 	self.req.path = [];
 	self.framework.error(error, self.name, self.req.uri);
+	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#500', []);
 	self.subscribe.execute(500);
 	self._dispose();
@@ -1455,9 +1548,10 @@ Controller.prototype.view500 = function(error) {
 Controller.prototype.redirect = function(url, permament) {
 	var self = this;
 
-	if (self.res.success)
+	if (self.isCanceled || self.res.success)
 		return self;
 
+	self.subscribe.success();
 	self.res.success = true;
 	self.res.writeHead(permament ? 301 : 302, { 'Location': url });
 	self.res.end();
@@ -1512,9 +1606,9 @@ Controller.prototype.database = function(name) {
 
 Controller.prototype._dispose = function() {
 	var self = this;
-	var cancel = self.internal.cancel;
+	var cancel = self.isCanceled;
 	self.dispose();
-	self.internal = { cancel: cancel };
+	self.isCanceled = cancel;
 };
 
 /*
@@ -1527,6 +1621,10 @@ Controller.prototype._dispose = function() {
 */
 Controller.prototype.view = function(name, model, headers, isPartial) {
 	var self = this;
+
+	if (self.isCanceled || self.res.success)
+		return isPartial ? '' : self;
+
 	var generator = generatorView.generate(self, name);
 
 	if (generator === null) {
@@ -1691,6 +1789,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		return value;
 
 	if (self.isLayout || utils.isNullOrEmpty(self.internal.layout)) {
+		self.subscribe.success();
 		self.framework.responseContent(self.req, self.res, self.statusCode, value, self.internal.contentType, true, headers);
 		self._dispose();
 		return self;
