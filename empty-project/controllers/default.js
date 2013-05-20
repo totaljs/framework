@@ -2,6 +2,7 @@ exports.install = function(framework) {
 	framework.route('/', view_homepage);
 	framework.route('#403', error403);
 	framework.route('#404', error404);
+	framework.route('#408', error408);
 	framework.route('#431', error431);
 	framework.route('#500', error500);	
 };
@@ -30,6 +31,14 @@ function error404() {
 	self.meta('Not Found (404)');
 	self.statusCode = 404;
 	self.view('404');
+}
+
+// Request Timeout
+function error408() {
+	var self = this;
+	self.meta('Not Found (408)');
+	self.statusCode = 408;
+	self.view('408');
 }
 
 // Request Header Fields Too Large
