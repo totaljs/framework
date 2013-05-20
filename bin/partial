@@ -6,22 +6,36 @@ var path = require('path');
 var os = require('os');
 
 var EOF = os.platform() === 'win32' ? '\r\n' : '\n';
+var $type = 0;
+
+// $type == 0 - full
+// $type == 1 - normal
+// $type == 2 - minimum
 
 function createDirectory(directory) {
 	var arr = [];
 
-	arr.push('views');
-	arr.push('templates');
 	arr.push('controllers');
-	arr.push('databases');
-	arr.push('backup');
-	arr.push('tests');
-	arr.push('contents');
-	arr.push('public');
-	arr.push('logs');
-	arr.push('resources');
-	arr.push('tmp');
-	arr.push('modules');
+
+	if ($type < 2) {
+
+		arr.push('views');
+		arr.push('templates');
+		arr.push('databases');
+
+		if ($type == 0) {
+			arr.push('backup');
+			arr.push('tests');
+			arr.push('contents');
+			arr.push('logs');
+			arr.push('modules');
+		}
+
+		arr.push('resources');
+		arr.push('public');
+
+		arr.push('tmp');
+	}
 
 	arr.forEach(function(o) {
 		var dir = path.join(directory, o);
@@ -33,11 +47,18 @@ function createDirectory(directory) {
 function createFiles(directory) {
 	createFileIndex(directory);
 	createFileConfig(directory);
-	createFileViews(directory);
-	createFileResource(directory);
-	createFilePublic(directory);
-	createFileTest(directory);
-	createFileModules(directory);
+
+	if ($type < 2) {
+		createFileViews(directory);
+		createFileResource(directory);
+		createFilePublic(directory);
+	}
+
+	if ($type === 0) {
+		createFileTest(directory);
+		createFileModules(directory);
+	}
+
 	createFileController(directory);
 	createFileKeepalive(directory);
 }
@@ -295,8 +316,36 @@ function install(directory) {
 }
 
 var dir = process.cwd();
-if (process.argv.length === 3)
-	dir = process.argv[2];
+
+for (var i = 0; i < process.argv.length; i++) {
+	var arg = process.argv[i];
+
+	if (arg === '-f' || arg === '-full')
+		continue;
+
+	if (arg === '-m' || arg === '-minimum') {
+		$type = 2;
+		continue;
+	}
+
+	if (arg === '-n' || arg === '-normal') {
+		$type = 1;
+		continue;
+	}
+
+	if (arg === '-h' || arg === '-help') {
+		console.log('');
+		console.log('-n       = normal');
+		console.log('-m       = minimum');
+		console.log('-f       = full (default)');
+		console.log('/path/   = target (default current directory)');
+		console.log('');
+		return;
+	}
+
+	dir = arg;
+}
+
 
 if (!fs.existsSync(dir)) {
 	console.log('partial.js: error / directory not exists');
