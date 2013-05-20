@@ -35,10 +35,12 @@ var internal = require('./internal');
 var bk = require('./backup');
 var nosql = require('./nosql');
 var encoding = 'utf8';
-var directory = process.cwd();
+var directory = path.dirname(process.argv[1]);
 var ws = require('./websocket');
 var Subscribe =  require('./controller').Subscribe;
 var _controller = '';
+
+process.chdir(directory);
 
 require('./prototypes');
 
