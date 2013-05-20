@@ -1597,11 +1597,11 @@ Framework.prototype.responseRange = function(name, range, headers, res) {
 
 	res.writeHead(206, headers);
 	var stream = fs.createReadStream(name, { start: beg, end: end });
-	stream.pipe(res);
+	stream.pipe(res);	
 	stream = null;
 	res = null;
-	req = null;
 	headers = null;
+
 	return self;
 };
 
