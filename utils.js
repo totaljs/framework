@@ -1539,17 +1539,19 @@ Async.prototype._complete = function(name, waiting) {
 	if (self.count === 0) {
 		self.onComplete && self.onComplete();
 		self.emit('complete');
+		self.dispose();
+		return;
 	}
 
-	if (typeof(self.waiting[name]) !== 'undefined') {
+	if (typeof(self.waiting[name]) === 'undefined')
+		return self;
 
-		var fn = self.waiting[name];
-		delete self.waiting[name];
+	var fn = self.waiting[name];
+	delete self.waiting[name];
 
-		fn.forEach(function(f) {
-			f();
-		});
-	}
+	fn.forEach(function(f) {
+		f();
+	});
 
 	return self;
 };
