@@ -106,7 +106,8 @@ function Framework() {
 		web: [],
 		files: [],
 		websockets: [],
-		partial: {}
+		partial: {},
+		partialGlobal: []
 	};
 
 	this.helpers = {};
@@ -324,11 +325,17 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	Add a new partial route
 	@name {String}
 	@funcExecute {Function}
+	@isGlobal {Booelan} :: optional, default false
 	return {Framework}
 */
-Framework.prototype.partial = function(name, funcExecute) {
+Framework.prototype.partial = function(name, funcExecute, isGlobal) {
 	var self = this;
-	self.routes.partial[name] = funcExecute;
+
+	if (isGlobal)
+		self.routes.partial[name] = funcExecute;
+	else
+		self.routes.partialGlobal.push(funcExecute);
+
 	return self;
 };
 
