@@ -117,6 +117,7 @@ function createFileViews(directory) {
 
 	fs.writeFileSync(path.join(dir, '403.html'), '@{meta(\'403 - Forbidden\')}\n\n403');
 	fs.writeFileSync(path.join(dir, '404.html'), '@{meta(\'404 - Page not found\')}\n\n404');
+	fs.writeFileSync(path.join(dir, '408.html'), '@{meta(\'408 - Request Timeout\')}\n\n408');
 	fs.writeFileSync(path.join(dir, '431.html'), '@{meta(\'431 - Request header fields too large\')}\n\n431');
 	fs.writeFileSync(path.join(dir, '500.html'), '@{meta(\'500 - Internal server error\')}\n\n500');
 	fs.writeFileSync(path.join(dir, 'homepage.html'), 'Welcome partial.js developer!');
@@ -233,6 +234,7 @@ function createFileController(directory) {
 	buffer.push('    framework.route(\'/\', view_homepage);');
 	buffer.push('    framework.route(\'#403\', error403);');
 	buffer.push('    framework.route(\'#404\', error404);');
+	buffer.push('    framework.route(\'#408\', error408);');
 	buffer.push('    framework.route(\'#431\', error431);');
 	buffer.push('    framework.route(\'#500\', error500);');
 	buffer.push('};');
@@ -261,6 +263,13 @@ function createFileController(directory) {
 	buffer.push('    var self = this;');
 	buffer.push('    self.statusCode = 404;');
 	buffer.push('    self.view(\'404\');');
+	buffer.push('}');
+	buffer.push('');
+	buffer.push('// Request Timeout');
+	buffer.push('function error408() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.statusCode = 408;');
+	buffer.push('    self.view(\'408\');');
 	buffer.push('}');
 	buffer.push('');
 	buffer.push('// Request Header Fields Too Large');
