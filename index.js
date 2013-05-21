@@ -271,8 +271,9 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 
 
 	if (utils.isArray(maximumSize)) {
+		var tmp = partial;
 		partial = maximumSize;
-		maximumSize = null;
+		maximumSize = tmp;
 	}
 
 	var self = this;
