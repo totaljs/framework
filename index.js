@@ -331,12 +331,19 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	return {Framework}
 */
 Framework.prototype.partial = function(name, funcExecute, isGlobal) {
+
 	var self = this;
 
+	if (typeof(funcExecute) === 'boolean') {
+		var tmp = funcExecute;
+		funcExecute = isGlobal;
+		isGlobal = true
+	}
+
 	if (isGlobal)
-		self.routes.partial[name] = funcExecute;
+		self.routes.partialGlobal.push({ name: name, fn: funcExecute });
 	else
-		self.routes.partialGlobal.push(funcExecute);
+		self.routes.partial[name] = funcExecute;
 
 	return self;
 };

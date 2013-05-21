@@ -137,8 +137,8 @@ Subscribe.prototype.execute = function(status) {
 	}
 
 	for (var i = 0; i < lengthGlobal; i++) {
-		var partialFn = self.framework.routes.partialGlobal[i];
-		async.await(partialName, partialFn.bind(self.controller));
+		var partial = self.framework.routes.partialGlobal[i];
+		async.await(partial.name, partial.fn.bind(self.controller));
 	}
 
 	if (count === 0 && lengthGlobal === 0)
