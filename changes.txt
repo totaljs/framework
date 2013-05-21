@@ -6,6 +6,8 @@ IN DEVELOPMENT ======= 1.2.3-8
 - added: new system route #408 (Request Timeout)
 - added: framework.config['default-request-timeout']
 
+- fixed: problem with path
+
 ======= 1.2.3-7
 
 - added: template pluralize (https://github.com/petersirka/partial.js/tree/master/examples/templating)
