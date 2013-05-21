@@ -126,7 +126,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 		var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
 
 		req.on('error', function(error) {
-	  		callback(error, null, {});
+	  		callback(error, null);
 	  		req = null;
 	  		options = null;
 		});

@@ -7,6 +7,7 @@ IN DEVELOPMENT ======= 1.2.3-8
 - added: framework.config['default-request-timeout']
 
 - fixed: problem with path
+- fixed: utils.request()
 
 ======= 1.2.3-7
 
