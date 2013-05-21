@@ -33,6 +33,19 @@ exports.onLoaded = function() {
 		return a;
 	};
 
+	self.global.header = 0;
+	self.global.partial = 0;
+	self.global.timeout = 0;
+
+	self.partial('header', true, function(next) {
+		self.global.header++;
+		next();
+	});
+
+	self.partial('partial', function(next) {
+		self.global.partial++;
+		next();
+	});
 };
 
 exports.onPictureUrl = function(dimension, id, width, height, alt) {

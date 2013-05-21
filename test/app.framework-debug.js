@@ -126,6 +126,13 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('timeout', function(complete) {
+		utils.request(url + 'timeout/', 'GET', null, function(error, data, code, headers) {
+			assert(data === '408', 'timeout problem');
+			complete();
+		});
+	});
+
 	async.complete(function() {
 		next && next();
 	});
@@ -134,6 +141,11 @@ function test_routing(next) {
 function run() {
 
 	if (max <= 0) {
+
+		assert.ok(framework.global.header > 0, 'partial - global');
+		assert.ok(framework.global.partial > 0, 'partial - partial');
+		assert.ok(framework.global.timeout > 0, 'timeout');
+
 		end();
 		console.log(framework.stats);
 		return;

@@ -6,7 +6,7 @@ exports.init = function() {
 	self.route('/f/', viewSocket);
 	self.route('/js/', viewJS);
 	self.route('/', viewIndex);
-	self.route('/views/', viewViews);
+	self.route('/views/', viewViews, [], ['partial']);
 	self.route('/view-notfound/', viewError);
 	self.route('/views-if/', viewViewsIf);
 	self.route('/{a}/', viewRouteA);
@@ -15,6 +15,13 @@ exports.init = function() {
 	self.route('/a/b/c/', viewRouteABC);
 	self.route('/test/', viewTest);
 	self.route('/login/google/callback/', aa);
+	self.route('/timeout/', function() {}, [], null, [], 200);
+
+	self.route('#408', function() { 
+		var self = this;
+		self.global.timeout++;
+		self.plain('408');
+	}, []);
 
 	// url
 	// function

@@ -55,14 +55,14 @@ function end() {
 
 function test_controller_functions(next) {
 	utils.request(url, 'GET', null, function(error, data, code, headers) {
-		
+
 		if (error)
 			assert.ok(false, 'test_controller_functions: ' + error.toString());
 
 		assert.ok(code === 404, 'controller: statusCode ' + code);
 		assert.ok(headers['etag'] === '123456:1', 'controller: setModified(etag)');
 		assert.ok(headers['last-modified'].toString().indexOf('1984') !== -1, 'controller: setModified(date)');
-		assert.ok(headers['expires'].toString().indexOf('1984') !== -1, 'controller: setExpires(date)');		
+		assert.ok(headers['expires'].toString().indexOf('1984') !== -1, 'controller: setExpires(date)');
 		next();
 	});
 }
@@ -86,7 +86,7 @@ function test_view_error(next) {
 			assert.ok(false, 'test_view_error: ' + error.toString());
 
 		next();
-	});	
+	});
 }
 
 function test_routing(next) {
@@ -123,7 +123,14 @@ function test_routing(next) {
 				throw error;
 			complete();
 		});
-	});	
+	});
+
+	async.await('timeout', function(complete) {
+		utils.request(url + 'timeout/', 'GET', null, function(error, data, code, headers) {
+			assert(data === '408', 'timeout problem');
+			complete();
+		});
+	});
 
 	async.complete(function() {
 		next && next();
@@ -133,6 +140,10 @@ function test_routing(next) {
 function run() {
 
 	if (max <= 0) {
+
+		assert.ok(framework.global.header > 0, 'partial - global');
+		assert.ok(framework.global.partial > 0, 'partial - partial');
+
 		console.log('Max   :', memMax);
 		console.log('Leak  :', memLeak);
 		console.timeEnd('new');
@@ -154,7 +165,7 @@ function run() {
 				});
 			});
 		});
-	});	
+	});
 }
 
 var mem = require('memwatch');
