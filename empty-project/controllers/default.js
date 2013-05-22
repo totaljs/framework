@@ -22,7 +22,7 @@ function error403() {
 	var self = this;
 	self.meta('Forbidden (403)');
 	self.statusCode = 403;
-	self.view('403');
+	self.plain('403 - Forbidden');
 }
 
 // Not Found
@@ -30,15 +30,15 @@ function error404() {
 	var self = this;
 	self.meta('Not Found (404)');
 	self.statusCode = 404;
-	self.view('404');
+	self.plain('404 - Not Found');
 }
 
 // Request Timeout
 function error408() {
 	var self = this;
-	self.meta('Not Found (408)');
+	self.meta('Request Timeout (408)');
 	self.statusCode = 408;
-	self.view('408');
+	self.plain('408 - Request Timeout');
 }
 
 // Request Header Fields Too Large
@@ -46,7 +46,7 @@ function error431() {
 	var self = this;
 	self.meta('Request Header Fields Too Large (431)');
 	self.statusCode = 431;
-	self.view('431');
+	self.plain('431 - Request Header Fields Too Large');
 }
 
 // Internal Server Error
@@ -54,7 +54,7 @@ function error500() {
 	var self = this;
 	self.meta('Internal Server Error (500)');
 	self.statusCode = 500;
-	self.view('500');
+	self.plain('500 - Internal Server Error');
 }
 
 function view_homepage() {

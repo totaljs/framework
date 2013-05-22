@@ -41,7 +41,7 @@ function createDirectory(directory) {
 		var dir = path.join(directory, o);
 		if (!fs.existsSync(dir))
 			fs.mkdirSync(dir);
-	});	
+	});
 };
 
 function createFiles(directory) {
@@ -103,7 +103,7 @@ function createFileConfig(directory) {
 	buffer.push("name         : my web site");
 	buffer.push("version      : 1.01");
 	buffer.push("secret       : your-secret-key");
-	
+
 	fs.writeFileSync(path.join(directory, 'config-release'), buffer.join(EOF));
 	fs.writeFileSync(path.join(directory, 'config-debug'), buffer.join(EOF).replace(/true/g, 'false'));
 }
@@ -115,11 +115,6 @@ function createFileViews(directory) {
 	if (!fs.existsSync(dir))
 		fs.mkdirSync(dir);
 
-	fs.writeFileSync(path.join(dir, '403.html'), '@{meta(\'403 - Forbidden\')}\n\n403');
-	fs.writeFileSync(path.join(dir, '404.html'), '@{meta(\'404 - Page not found\')}\n\n404');
-	fs.writeFileSync(path.join(dir, '408.html'), '@{meta(\'408 - Request Timeout\')}\n\n408');
-	fs.writeFileSync(path.join(dir, '431.html'), '@{meta(\'431 - Request header fields too large\')}\n\n431');
-	fs.writeFileSync(path.join(dir, '500.html'), '@{meta(\'500 - Internal server error\')}\n\n500');
 	fs.writeFileSync(path.join(dir, 'homepage.html'), 'Welcome partial.js developer!');
 
 	buffer.push('<!DOCTYPE html>');
@@ -152,7 +147,7 @@ function createFileResource(directory) {
 }
 
 function createFilePublic(directory) {
-	
+
 	var dir = path.join(directory, 'public');
 
 	var css = path.join(dir, 'css');
@@ -207,7 +202,7 @@ function createFileModules(directory) {
 	buffer.push('};');
 
 	fs.writeFileSync(path.join(dir, 'yourcode.js'), buffer.join(EOF));
-	
+
 	buffer = [];
 	buffer.push('// your custom framework prototypes - https://github.com/petersirka/partial.js/blob/master/empty-project/modules/%23.js');
 	buffer.push('// this code it run automatically');
@@ -255,38 +250,38 @@ function createFileController(directory) {
 	buffer.push('function error403() {');
 	buffer.push('    var self = this;');
 	buffer.push('    self.statusCode = 403;');
-	buffer.push('    self.view(\'403\');');
+	buffer.push('    self.plain(\'403 - Forbidden\');');
 	buffer.push('}');
 	buffer.push('');
 	buffer.push('// Not Found');
 	buffer.push('function error404() {');
 	buffer.push('    var self = this;');
 	buffer.push('    self.statusCode = 404;');
-	buffer.push('    self.view(\'404\');');
+	buffer.push('    self.plain(\'404 - Not Found\');');
 	buffer.push('}');
 	buffer.push('');
 	buffer.push('// Request Timeout');
 	buffer.push('function error408() {');
 	buffer.push('    var self = this;');
 	buffer.push('    self.statusCode = 408;');
-	buffer.push('    self.view(\'408\');');
+	buffer.push('    self.plain(\'408 - Request Timeout\');');
 	buffer.push('}');
 	buffer.push('');
 	buffer.push('// Request Header Fields Too Large');
 	buffer.push('function error431() {');
 	buffer.push('    var self = this;');
 	buffer.push('    self.statusCode = 431;');
-	buffer.push('    self.view(\'431\');');
+	buffer.push('    self.plain(\'431 - Request Header Fields Too Large\');');
 	buffer.push('}');
 	buffer.push('');
 	buffer.push('// Internal Server Error');
 	buffer.push('function error500() {');
 	buffer.push('    var self = this;');
 	buffer.push('    self.statusCode = 500;');
-	buffer.push('    self.view(\'500\');');
+	buffer.push('    self.plain(\'500 - Internal Server Error\');');
 	buffer.push('}');
 	buffer.push('');
-	buffer.push('function view_homepage() {');
+	buffer.push('function plain_homepage() {');
 	buffer.push('    var self = this;');
 	buffer.push('    self.view(\'homepage\');');
 	buffer.push('}');
@@ -314,7 +309,7 @@ function createFileTest(directory) {
 
 function createFileKeepalive(directory) {
 	fs.writeFileSync(path.join(directory, 'keepalive.js'), 'dmFyIEZJTEVOQU1FID0gJ2luZGV4JzsNCg0KdmFyIGZvcmsgPSByZXF1aXJlKCdjaGlsZF9wcm9jZXNzJykuZm9yazsNCnZhciBmcyA9IHJlcXVpcmUoJ2ZzJyk7DQp2YXIgcGF0aCA9IHJlcXVpcmUoJ3BhdGgnKTsNCnZhciBkaXJlY3RvcnkgPSBwcm9jZXNzLmN3ZCgpOw0KdmFyIGZyYW1ld29yayA9IG51bGw7DQp2YXIgc2tpcCA9IGZhbHNlOw0KdmFyIHJlc3RhcnRpbmcgPSBmYWxzZTsNCnZhciBuYW1lID0gJ2tlZXBhbGl2ZSc7DQp2YXIgYXJnID0gW107DQoNCi8qDQoJUFJPQ0VTUyBBUkdVTUVOVFMNCiovDQoNCmlmIChwcm9jZXNzLmFyZ3YuaW5kZXhPZigncmVzZXQnKSAhPT0gLTEpIHsNCgljb25zb2xlLmxvZyhuYW1lICsgJzogcmVzZXQnKTsNCglmcy53cml0ZUZpbGVTeW5jKHBhdGguam9pbihkaXJlY3RvcnksICdrZWVwYWxpdmUtcmVzZXQnKSwgJycpOw0KCXJldHVybjsNCn0NCg0KaWYgKHByb2Nlc3MuYXJndi5pbmRleE9mKCdyZXN0YXJ0JykgIT09IC0xKSB7DQoJY29uc29sZS5sb2cobmFtZSArICc6IHJlc3RhcnQnKTsNCglmcy53cml0ZUZpbGVTeW5jKHBhdGguam9pbihkaXJlY3RvcnksICdrZWVwYWxpdmUtcmVzdGFydCcpLCAnJyk7DQoJcmV0dXJuOw0KfQ0KDQppZiAocHJvY2Vzcy5hcmd2LmluZGV4T2YoJ3N0b3AnKSAhPT0gLTEpIHsNCgljb25zb2xlLmxvZyhuYW1lICsgJzogc3RvcCcpOw0KCWZzLndyaXRlRmlsZVN5bmMocGF0aC5qb2luKGRpcmVjdG9yeSwgJ2tlZXBhbGl2ZS1zdG9wJyksICcnKTsNCglyZXR1cm47DQp9DQoNCmlmIChwcm9jZXNzLmFyZ3YuaW5kZXhPZignYmFja3VwJykgIT09IC0xKSB7DQoJY29uc29sZS5sb2cobmFtZSArICc6IGJhY2t1cCcpOw0KCWZzLndyaXRlRmlsZVN5bmMocGF0aC5qb2luKGRpcmVjdG9yeSwgJ2tlZXBhbGl2ZS1iYWNrdXAnKSwgJycpOw0KCXJldHVybjsNCn0NCg0KdmFyIGluZGV4ID0gcHJvY2Vzcy5hcmd2LmluZGV4T2YoJ3Jlc3RvcmUnKTsNCmlmIChpbmRleCAhPT0gLTEpIHsNCgl2YXIgZGF0ZSA9IHByb2Nlc3MuYXJndltpbmRleCArIDFdIHx8ICcnOw0KCWNvbnNvbGUubG9nKG5hbWUgKyAnOiByZXN0b3JlICcgKyBkYXRlKTsNCglmcy53cml0ZUZpbGVTeW5jKHBhdGguam9pbihkaXJlY3RvcnksICdrZWVwYWxpdmUtcmVzdG9yZScpLCBkYXRlKTsNCglyZXR1cm47DQp9DQoNCi8qDQoJUFJPQ0VTUyBFVkVOVFMNCiovDQoNCmZvciAodmFyIGkgPSAyOyBpIDwgcHJvY2Vzcy5hcmd2Lmxlbmd0aDsgaSsrKQ0KCWFyZy5wdXNoKHByb2Nlc3MuYXJndltpXSk7DQoNCnByb2Nlc3Mub24oJ1NJR1RFUk0nLCBmdW5jdGlvbigpIHsNCglpZiAoZnJhbWV3b3JrID09PSBudWxsKSB7DQoJCXByb2Nlc3MuZXhpdCgwKTsNCgkJcmV0dXJuOw0KCX0NCg0KCXByb2Nlc3Mua2lsbChmcmFtZXdvcmsucGlkKTsNCglmcmFtZXdvcmsgPSBudWxsOw0KCXByb2Nlc3MuZXhpdCgwKTsNCn0pOw0KDQpwcm9jZXNzLm9uKCdTSUdJTlQnLCBmdW5jdGlvbigpIHsNCglpZiAoZnJhbWV3b3JrID09PSBudWxsKSB7DQoJCXByb2Nlc3MuZXhpdCgwKTsNCgkJcmV0dXJuOw0KCX0NCg0KCXByb2Nlc3Mua2lsbChmcmFtZXdvcmsucGlkKTsNCglmcmFtZXdvcmsgPSBudWxsOw0KCXByb2Nlc3MuZXhpdCgwKTsNCn0pOw0KDQpwcm9jZXNzLm9uKCdleGl0JywgZnVuY3Rpb24oKSB7DQoJaWYgKGZyYW1ld29yayA9PT0gbnVsbCkNCgkJcmV0dXJuOw0KDQoJcHJvY2Vzcy5raWxsKGZyYW1ld29yay5waWQpOw0KCWZyYW1ld29yayA9IG51bGw7DQp9KTsNCg0KLyoNCglSdW4gcGFydGlhbC5qcw0KKi8NCmZ1bmN0aW9uIHJ1bigpIHsNCg0KCXJlc3RhcnRpbmcgPSBmYWxzZTsNCglmcmFtZXdvcmsgPSBmb3JrKEZJTEVOQU1FLCBhcmcpOw0KCWZyYW1ld29yay5vbignbWVzc2FnZScsIGZ1bmN0aW9uKG1zZykgew0KDQoJCWlmIChtc2cuc3Vic3RyaW5nKDAsIDUpID09PSAnbmFtZTonKSB7DQoJCQlwcm9jZXNzLnRpdGxlID0gJ2tlZXBhbGl2ZTogJyArIG1zZy5zdWJzdHJpbmcoNik7DQoJCQlyZXR1cm47DQoJCX0NCg0KCQlpZiAobXNnID09PSAnc3RvcCcgJiYgIXJlc3RhcnRpbmcpIHsNCgkJCWlmIChmcmFtZXdvcmsgJiYgZnJhbWV3b3JrLnBpZCA+IDApIHsNCgkJCQl0cnkNCgkJCQl7DQoJCQkJCXByb2Nlc3Mua2lsbChmcmFtZXdvcmsucGlkKTsNCgkJCQl9IGNhdGNoIChleCkgew0KCQkJCQkvLyBza2lwDQoJCQkJfQ0KCQkJfQ0KCQkJcHJvY2Vzcy5leGl0KDApOw0KCQkJZnJhbWV3b3JrID0gbnVsbDsNCgkJCXJldHVybjsNCgkJfQ0KDQoJCWlmIChtc2cgPT09ICdyZXN0b3JlJykgew0KCQkJc2V0VGltZW91dChmdW5jdGlvbigpIHsNCgkJCQlyZXN0YXJ0aW5nID0gdHJ1ZTsNCgkJCQlyZXN0YXJ0KCk7DQoJCQl9LCAzMDAwKTsNCgkJCXJldHVybjsNCgkJfQ0KDQoJCWlmIChtc2cgPT09ICdyZXN0YXJ0Jykgew0KCQkJcmVzdGFydCgpOw0KCQkJcmV0dXJuOw0KCQl9DQoJfSk7DQoNCglmcmFtZXdvcmsub24oJ2Vycm9yJywgZnVuY3Rpb24obXNnKSB7DQoJCXNraXAgPSB0cnVlOw0KCQlwcm9jZXNzLmtpbGwoZnJhbWV3b3JrLnBpZCk7DQoJCWZyYW1ld29yayA9IG51bGw7DQoJCXJlc3RhcnQoNTAwMCk7DQoJfSk7DQp9DQoNCi8qDQoJUmVzdGFydCBwYXJ0aWFsLmpzDQoqLw0KZnVuY3Rpb24gcmVzdGFydCh0aW1lb3V0KSB7DQoNCgljb25zb2xlLmxvZyhuYW1lICsgJzogcmVzdGFydCcpOw0KDQoJaWYgKGZyYW1ld29yayA9PT0gbnVsbCkgew0KCQlzZXRUaW1lb3V0KHJ1biwgdGltZW91dCB8fCAxMDAwKTsNCgkJcmV0dXJuOw0KCX0NCg0KCXByb2Nlc3Mua2lsbChmcmFtZXdvcmsucGlkKTsNCglmcmFtZXdvcmsgPSBudWxsOw0KCXNldFRpbWVvdXQocnVuLCB0aW1lb3V0IHx8IDEwMDApOw0KfQ0KDQovKg0KCU9wZXJhdGlvbiAvIHRoaXMgZnVuY3Rpb24gbW9uaXRvciB0aGVzZSBmaWxlczogc3RvcCwgcmVzdGFydCwgYmFja3VwLCByZXN0b3JlDQoqLw0KZnVuY3Rpb24gb3BlcmF0aW9uKCkgew0KCQ0KCXZhciBmaWxlbmFtZVN0b3AgPSBwYXRoLmpvaW4oZGlyZWN0b3J5LCAna2VlcGFsaXZlLXN0b3AnKTsNCgl2YXIgZmlsZW5hbWVSZXN0YXJ0ID0gcGF0aC5qb2luKGRpcmVjdG9yeSwgJ2tlZXBhbGl2ZS1yZXN0YXJ0Jyk7DQoJdmFyIGZpbGVuYW1lQmFja3VwID0gcGF0aC5qb2luKGRpcmVjdG9yeSwgJ2tlZXBhbGl2ZS1iYWNrdXAnKTsNCgl2YXIgZmlsZW5hbWVSZXN0b3JlID0gcGF0aC5qb2luKGRpcmVjdG9yeSwgJ2tlZXBhbGl2ZS1yZXN0b3JlJyk7DQoJdmFyIGZpbGVuYW1lUmVzZXQgPSBwYXRoLmpvaW4oZGlyZWN0b3J5LCAna2VlcGFsaXZlLXJlc2V0Jyk7DQoJDQoJZnMuZXhpc3RzKGZpbGVuYW1lU3RvcCwgZnVuY3Rpb24oZXhpc3RzKSB7DQoNCgkJaWYgKCFleGlzdHMpDQoJCQlyZXR1cm47DQoNCgkJZnMudW5saW5rKGZpbGVuYW1lU3RvcCwgZnVuY3Rpb24oZXJyKSB7DQoNCgkJCWNvbnNvbGUubG9nKG5hbWUgKyAnOiBzdG9wJyk7DQoNCgkJCWlmIChmcmFtZXdvcmsgIT09IG51bGwpIHsNCgkJCQlwcm9jZXNzLmtpbGwoZnJhbWV3b3JrLnBpZCk7DQoJCQkJZnJhbWV3b3JrID0gbnVsbDsNCgkJCX0NCg0KCQkJcHJvY2Vzcy5leGl0KDApOw0KCQl9KTsNCg0KCX0pOw0KDQoJZnMuZXhpc3RzKGZpbGVuYW1lUmVzZXQsIGZ1bmN0aW9uKGV4aXN0cykgew0KDQoJCWlmICghZXhpc3RzKQ0KCQkJcmV0dXJuOw0KCQkNCgkJZnMudW5saW5rKGZpbGVuYW1lUmVzZXQsIGZ1bmN0aW9uKGVycikgew0KCQkJY29tbWFuZCgncmVzZXQnKTsNCgkJfSk7DQoNCgl9KTsJDQoNCglmcy5leGlzdHMoZmlsZW5hbWVCYWNrdXAsIGZ1bmN0aW9uKGV4aXN0cykgew0KDQoJCWlmICghZXhpc3RzKQ0KCQkJcmV0dXJuOw0KCQkNCgkJZnMudW5saW5rKGZpbGVuYW1lQmFja3VwLCBmdW5jdGlvbihlcnIpIHsNCgkJCWNvbW1hbmQoJ2JhY2t1cCcpOw0KCQl9KTsNCg0KCX0pOw0KDQoJZnMuZXhpc3RzKGZpbGVuYW1lUmVzdG9yZSwgZnVuY3Rpb24oZXhpc3RzKSB7DQoNCgkJaWYgKCFleGlzdHMpDQoJCQlyZXR1cm47DQoNCgkJdmFyIHJlc3RvcmUgPSBmcy5yZWFkRmlsZVN5bmMoZmlsZW5hbWVSZXN0b3JlLCAndXRmOCcpLnRvU3RyaW5nKCk7DQoNCgkJZnMudW5saW5rKGZpbGVuYW1lUmVzdG9yZSwgZnVuY3Rpb24oZXJyKSB7DQoJCQljb21tYW5kKCdyZXN0b3JlICcgKyByZXN0b3JlKTsNCgkJfSk7DQoNCgl9KTsJDQoNCglmcy5leGlzdHMoZmlsZW5hbWVSZXN0YXJ0LCBmdW5jdGlvbihleGlzdHMpIHsNCgkJaWYgKCFleGlzdHMpDQoJCQlyZXR1cm47DQoNCgkJcmVzdGFydGluZyA9IHRydWU7DQoJCWZzLnVubGluayhmaWxlbmFtZVJlc3RhcnQsIGZ1bmN0aW9uKGVycikgew0KCQkJcmVzdGFydCgpOw0KCQl9KTsNCg0KCX0pOw0KfQ0KDQovKg0KCVNlbmQgY29tbWFuZCB0byBwYXJ0aWFsLmpzDQoJQG1zZyB7U3RyaW5nfQ0KKi8NCmZ1bmN0aW9uIGNvbW1hbmQobXNnKSB7DQoJDQoJY29uc29sZS5sb2cobmFtZSArICc6ICcgKyBtc2cpOw0KDQoJaWYgKGZyYW1ld29yayA9PT0gbnVsbCkNCgkJcmV0dXJuOw0KDQoJZnJhbWV3b3JrLnNlbmQobXNnKTsNCn0NCg0KLy8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09DQovLyBSVU4NCi8vID09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQ0KDQpydW4oKTsNCg0Kc2V0SW50ZXJ2YWwoZnVuY3Rpb24oKSB7DQoNCglpZiAoc2tpcCkgew0KCQlza2lwID0gZmFsc2U7DQoJCXJldHVybjsNCgl9DQoNCglvcGVyYXRpb24oKTsNCn0sIDEwMDAwKTs=', 'base64');
-}  
+}
 
 function install(directory) {
 	exec('npm install partial.js', { cwd: directory }, function (error, stdout, stderr) {
@@ -374,7 +369,7 @@ if (files.length > 0) {
 
 	if (!can) {
 		console.log('partial.js: error / directory is not empty');
-		return;	
+		return;
 	}
 }
 
