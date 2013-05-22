@@ -74,12 +74,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
 		}
  	}
 
-	var value = self.cookies[name];
-
-	if (typeof(value) === 'undefined')
-		return null;
-
-	return value;
+	return self.cookies[name] || null;
 };
 
 /*
@@ -99,7 +94,7 @@ http.IncomingMessage.prototype.clear = function() {
 		});
 	});
 
-	self.data.files = [];
+	self.data.files = null;
 	return self;
 };
 
