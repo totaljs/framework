@@ -37,8 +37,7 @@ function viewSocket() {
 }
 
 function socket(self, framework) {
-	console.log('OK');
-
+	
 	self.on('open', function (client) {
 		console.log('open ->', client.id);
 		console.log(client.get);
