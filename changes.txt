@@ -1,7 +1,8 @@
-IN DEVELOPMENT ======= 1.2.3-8
+======= 1.2.3-8
 
-- added: controller timeout (framework.route(url, flags, maximumSize, [partial], [timeout]))
-- added: partial content (framework.route(url, flags, maximumSize, [partial], [timeout]))
+- added: partial content routing - framework.partial(name, fnExecute, [isGlobal])
+- added: partial content to controller routing - framework.route(url, flags, maximumSize, [partial], [timeout])
+- added: controller timeout - framework.route(url, flags, maximumSize, [partial], [timeout])
 - added: controller.isCanceled;
 - added: new system route #408 (Request Timeout)
 - added: framework.config['default-request-timeout']
