@@ -92,9 +92,9 @@ web application framework for node.js
 
 ***
 
-## partial.js presentation
+## WebSocket (Real-time) HTML5 Chat in 5 minutes
 
-[![partial.js example](http://partialjs.com/img/video.jpg)](http://www.youtube.com/watch?v=3GMQJki82Lo)
+[![partial.js example](http://partialjs.com/img/video.jpg)](http://www.youtube.com/watch?v=lW1vsKMUaKg)
 
 ***
 
