@@ -45,7 +45,7 @@ process.chdir(directory);
 require('./prototypes');
 
 function Framework() {
-	this.version = 1237;
+	this.version = 1238;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
@@ -326,23 +326,15 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 
 /*
 	Add a new partial route
-	@name {String}
+	@name {String or Function} :: if @name is function, route will be a global partial content
 	@funcExecute {Function}
-	@isGlobal {Booelan} :: optional, default false
 	return {Framework}
 */
-Framework.prototype.partial = function(name, funcExecute, isGlobal) {
-
+Framework.prototype.partial = function(name, funcExecute) {
 	var self = this;
 
-	if (typeof(funcExecute) === 'boolean') {
-		var tmp = funcExecute;
-		funcExecute = isGlobal;
-		isGlobal = true
-	}
-
-	if (isGlobal)
-		self.routes.partialGlobal.push({ name: name, fn: funcExecute });
+	if (typeof(name) === 'function')
+		self.routes.partialGlobal.push(name);
 	else
 		self.routes.partial[name] = funcExecute;
 

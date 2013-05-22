@@ -127,6 +127,11 @@ Subscribe.prototype.execute = function(status) {
 	var async = new utils.Async();
 	var count = 0;
 
+	for (var i = 0; i < lengthGlobal; i++) {
+		var partial = self.framework.routes.partialGlobal[i];
+		async.await('global' + i, partial.bind(self.controller));
+	}
+
 	for (var i = 0; i < lengthPrivate; i++) {
 		var partialName = self.route.partial[i];
 		var partialFn = self.framework.routes.partial[partialName];
@@ -134,11 +139,6 @@ Subscribe.prototype.execute = function(status) {
 			count++;
 			async.await(partialName, partialFn.bind(self.controller));
 		}
-	}
-
-	for (var i = 0; i < lengthGlobal; i++) {
-		var partial = self.framework.routes.partialGlobal[i];
-		async.await(partial.name, partial.fn.bind(self.controller));
 	}
 
 	if (count === 0 && lengthGlobal === 0)
