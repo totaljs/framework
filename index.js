@@ -327,7 +327,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 /*
 	Add a new partial route
 	@name {String or Function} :: if @name is function, route will be a global partial content
-	@funcExecute {Function}
+	@funcExecute {Function} :: optional
 	return {Framework}
 */
 Framework.prototype.partial = function(name, funcExecute) {
