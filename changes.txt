@@ -1,6 +1,11 @@
 ======= 1.2.3-8
 
-- added: partial content routing - framework.partial(name, fnExecute, [isGlobal])
+NEW EXAMPLES:
+
+- https://github.com/petersirka/partial.js/tree/master/examples/routing-partial (partial routing)
+- https://github.com/petersirka/partial.js/tree/master/examples/routing-timeout (new system route #408)
+
+- added: partial content routing - framework.partial(name, [fnExecute])
 - added: partial content to controller routing - framework.route(url, flags, maximumSize, [partial], [timeout])
 - added: controller timeout - framework.route(url, flags, maximumSize, [partial], [timeout])
 - added: controller.isCanceled;
@@ -9,6 +14,8 @@
 
 - fixed: problem with path
 - fixed: utils.request()
+
+- clean code
 
 ======= 1.2.3-7
 
