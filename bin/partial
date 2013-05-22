@@ -327,7 +327,7 @@ for (var i = 0; i < process.argv.length; i++) {
 	if (arg === '-f' || arg === '-full')
 		continue;
 
-	if (arg === '-m' || arg === '-minimum') {
+	if (arg === '-m' || arg === '-minimal') {
 		$type = 2;
 		continue;
 	}
@@ -339,8 +339,8 @@ for (var i = 0; i < process.argv.length; i++) {
 
 	if (arg === '-h' || arg === '-help') {
 		console.log('');
+		console.log('-m       = minimal');
 		console.log('-n       = normal');
-		console.log('-m       = minimum');
 		console.log('-f       = full (default)');
 		console.log('/path/   = target (default current directory)');
 		console.log('');
