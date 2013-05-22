@@ -37,7 +37,7 @@ exports.onLoaded = function() {
 	self.global.partial = 0;
 	self.global.timeout = 0;
 
-	self.partial('header', true, function(next) {
+	self.partial(function(next) {
 		self.global.header++;
 		next();
 	});
