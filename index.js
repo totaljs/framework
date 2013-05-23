@@ -1622,6 +1622,11 @@ Framework.prototype.responseRange = function(name, range, headers, res) {
 	if (end === 0)
 		end = total - 1;
 
+	if (beg > end) {
+		beg = 0;
+		end = total - 1;
+	}
+
 	var length = (end - beg) + 1;
 
 	headers['Content-Length'] = length;
@@ -2537,7 +2542,7 @@ Framework.prototype.configure = function() {
 	if (accepts !== null && accepts.length > 0) {
 		accepts.forEach(function(accept) {
 			if (self.config['static-accepts'].indexOf(accept) === -1)
-				self.config.config['static-accepts'].push(accept);
+				self.config['static-accepts'].push(accept);
 		});
 	}
 
