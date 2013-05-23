@@ -696,7 +696,7 @@ Framework.prototype.restore = function(date, callback, restorePath) {
 	@uri {Uri} :: optional
 */
 Framework.prototype.onError = function(err, name, uri) {
-	console.log(err, name, uri);
+	console.log(err.toString(), err.stack);
 	console.log('--------------------------------------------------------------------');
 	return this;
 };
