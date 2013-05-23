@@ -9,6 +9,7 @@
 
 - fixed: problem with path
 - fixed: utils.request()
+- fixed: problem Content-Range - Streaming
 
 - clean code
 
