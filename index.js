@@ -1192,21 +1192,13 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Helper count: {0}'.format(helpers.length));
 	builder.push('Static files count: {0}'.format(staticFiles.length));
 	builder.push('Static files / streaming count: {0}'.format(staticRange.length));
+	builder.push('Errors: {0}'.format(self.errors.length));
 	builder.push('-------------------------------------------------------');
 	builder.push('Last 10 minutes ...');
 	builder.push('Request stats - web        : {0}x'.format(self.stats.web.format('### ### ###')));
 	builder.push('Request stats - files      : {0}x'.format(self.stats.files.format('### ### ###')));
 	builder.push('Request stats - websockets : {0}x'.format(self.stats.websockets.format('### ### ###')));
 	builder.push('-------------------------------------------------------');
-
-	if (self.errors.length > 0) {
-		builder.push('');
-		builder.push('============ [Errors]');
-		builder.push('');
-		self.errors.forEach(function(error) {
-			builder.push(error.error.toString());
-		});
-	}
 
 	if (!detailed)
 		return builder.join('\n');
@@ -1297,6 +1289,15 @@ Framework.prototype.usage = function(detailed) {
 
 		staticRange.forEach(function(o) {
 			builder.push('{0} / {1}'.format(o, (self.staticRange[o] / 1024).floor(2)).indent(4));
+		});
+	}
+
+	if (self.errors.length > 0) {
+		builder.push('');
+		builder.push('============ [Errors]');
+		builder.push('');
+		self.errors.forEach(function(error) {
+			builder.push(error.date.format('yyyy-MM-dd / HH:mm:ss - ') + error.error.toString() + ' - ' + error.error.stack + '\n');
 		});
 	}
 

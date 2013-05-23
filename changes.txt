@@ -7,6 +7,8 @@
 - added: new system route #408 (Request Timeout)
 - added: framework.config['default-request-timeout']
 
+- updated: framework.usage()
+
 - fixed: problem with path
 - fixed: utils.request()
 - fixed: problem Content-Range - Streaming
