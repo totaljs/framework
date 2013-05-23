@@ -12,11 +12,10 @@ if (cluster.isMaster) {
     
     for (var i = 0; i < numCPUs; i++)
         cluster.fork();
-  
-} else {
-	
-	var framework = require('partial.js');
-	framework.run(http, debug, port);
-	
-    console.log("http://127.0.0.1:{0}".format(port)); 
+ 
+ 	return; 
 }
+
+var framework = require('partial.js');
+framework.run(http, debug, port);
+console.log("http://127.0.0.1:{0}".format(port)); 
