@@ -527,8 +527,11 @@ WebSocketClient.prototype._ondata = function(data) {
                 return;
             }
         }
-        else
+        else {
             message = null;
+            self.close(444);
+            return;
+        }
     }
 
     self.container.emit('message', self, message);
