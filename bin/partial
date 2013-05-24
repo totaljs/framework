@@ -324,6 +324,11 @@ var dir = process.cwd();
 for (var i = 0; i < process.argv.length; i++) {
 	var arg = process.argv[i];
 
+	if (arg === '-v' || arg === '-version') {
+		console.log(require('partial.js').version);
+		return;
+	}
+
 	if (arg === '-f' || arg === '-full')
 		continue;
 
@@ -339,10 +344,11 @@ for (var i = 0; i < process.argv.length; i++) {
 
 	if (arg === '-h' || arg === '-help') {
 		console.log('');
-		console.log('-m       = minimal');
-		console.log('-n       = normal');
-		console.log('-f       = full (default)');
-		console.log('/path/   = target (default current directory)');
+		console.log('-m or -minimal   = minimal');
+		console.log('-n or -normal    = normal');
+		console.log('-f or -full      = full (default)');
+		console.log('-v or -version   = partial.js version');
+		console.log('/path/           = target (default current directory)');
 		console.log('');
 		return;
 	}
