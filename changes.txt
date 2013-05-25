@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.2.3-9
 
 - added: CSS auto vendor prefixer
+- added: new route flag '+xhr' (usefull for both request - XHR and non XHR)
 
 - updated: empty-project (added to default.css @#auto-vendor-prefix#@)
 - updated: binary (executable)

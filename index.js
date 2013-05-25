@@ -2197,8 +2197,11 @@ Framework.prototype._request = function(req, res) {
 	if (multipart.length > 0)
 		flags.push('upload');
 
-	if (req.isXHR)
+	if (req.isXHR) {
+		flags.push('+xhr');
 		flags.push('xhr');
+	} else
+		flags.push('+xhr');
 
 	if (isXSS)
 		flags.push('xss');
