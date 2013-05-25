@@ -523,7 +523,7 @@ Content.prototype.read = function(name) {
 	var fileName = utils.combine(config['directory-contents'], name + '.html');
 
 	if (fs.existsSync(fileName))
-		return fs.readFileSync(fileName).toString('utf8');
+		return minifyHTML(fs.readFileSync(fileName).toString('utf8'));
 
 	return null;
 };

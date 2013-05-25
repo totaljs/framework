@@ -5,6 +5,8 @@ IN DEVELOPMENT ======= 1.2.3-9
 - updated: empty-project (added to default.css @#auto-vendor-prefix#@)
 - updated: binary (executable)
 
+- fixed: minify "Content"
+
 ======= 1.2.3-8
 
 - added: partial content routing - framework.partial(name, [fnExecute])
