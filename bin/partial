@@ -281,7 +281,7 @@ function createFileController(directory) {
 	buffer.push('    self.plain(\'500 - Internal Server Error\');');
 	buffer.push('}');
 	buffer.push('');
-	buffer.push('function plain_homepage() {');
+	buffer.push('function view_homepage() {');
 	buffer.push('    var self = this;');
 	buffer.push('    self.view(\'homepage\');');
 	buffer.push('}');
@@ -319,7 +319,22 @@ function install(directory) {
 	});
 }
 
+function display_help() {
+		console.log('');
+		console.log('-m or -minimal   = minimal');
+		console.log('-n or -normal    = normal');
+		console.log('-f or -full      = full (default)');
+		console.log('-v or -version   = partial.js version');
+		console.log('/path/           = target (default current directory)');
+		console.log('');
+}
+
 var dir = process.cwd();
+
+if (process.argv.length <= 2) {
+	display_help();
+	return;
+}
 
 for (var i = 0; i < process.argv.length; i++) {
 	var arg = process.argv[i];
@@ -343,13 +358,7 @@ for (var i = 0; i < process.argv.length; i++) {
 	}
 
 	if (arg === '-h' || arg === '-help') {
-		console.log('');
-		console.log('-m or -minimal   = minimal');
-		console.log('-n or -normal    = normal');
-		console.log('-f or -full      = full (default)');
-		console.log('-v or -version   = partial.js version');
-		console.log('/path/           = target (default current directory)');
-		console.log('');
+		display_help();
 		return;
 	}
 
