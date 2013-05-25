@@ -38,8 +38,7 @@ function Subscribe(framework, req, res) {
 		_endfile: this._endfile.bind(this),
 		_parsepost: this._parsepost.bind(this),
 		_execute: this._execute.bind(this),
-		_cancel: this._cancel.bind(this),
-		_partial: this._partial.bind(this)
+		_cancel: this._cancel.bind(this)
 	};
 
 	this.controller = null;
@@ -165,12 +164,6 @@ Subscribe.prototype.prepare = function(flags, url) {
 		self.route = self.framework.lookup(self.req, '#404', []);
 
 	self.execute(self.req.buffer.isExceeded ? 431 : 404);
-};
-
-Subscribe.prototype._partial = function() {
-
-	var self = this;
-
 };
 
 Subscribe.prototype._execute = function() {
