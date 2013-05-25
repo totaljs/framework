@@ -171,15 +171,13 @@ function createFilePublic(directory) {
 	fs.writeFileSync(path.join(dir, 'robots.txt'), buffer.join(EOF));
 
 	buffer = [];
-	buffer.push('@radius(property) { -moz-border-radius:@property; border-radius:@property; -webkit-border-radius:@property }');
-	buffer.push('@shadow(property) { -moz-box-shadow:@property; -webkit-box-shadow:@property; box-shadow:@property }');
-	buffer.push('@transition(property) { -webkit-transition: @property; -moz-transition: @property; -o-transition: @property; -ms-transition: @property; transition: @property }');
-	buffer.push('@transform(property) { -webkit-transform: @property; -moz-transform: @property; -o-transform: @property; -ms-transform: @property; transform: @property }');
-	buffer.push('@gradient-linear(property) { background-image: linear-gradient(@property); background-image: -o-linear-gradient(@property); background-image: -moz-linear-gradient(@property); background-image: -webkit-linear-gradient(@property); background-image: -ms-linear-gradient(@property) }');
-	buffer.push('@gradient-radial(property) { background-image: radial-gradient(@property); background-image: -o-radial-gradient(@property); background-image: -moz-radial-gradient(@property); background-image: -webkit-radial-gradient(@property); background-image: -ms-radial-gradient(@property) }');
-	buffer.push('@noselect { -webkit-user-select:none; -khtml-user-select:none; -moz-user-select:none; -o-user-select:none; user-select:none }');
+	buffer.push('@#auto-vendor-prefix#@');
 	buffer.push('');
-	buffer.push('body { padding:20px; margin:0; font:normal 12px Arial; color:#505050; }');
+	buffer.push('@constant{ color:#505050 }');
+	buffer.push('@function(property){ color:@property }');
+	buffer.push('');
+	buffer.push('body { padding:20px; margin:0; font:normal 12px Arial; @constant; }');
+	buffer.push('div { @function(\'red\'); }');
 
 	fs.writeFileSync(path.join(css, 'default.css'), buffer.join(EOF));
 
@@ -331,12 +329,7 @@ function display_help() {
 
 var dir = process.cwd();
 
-if (process.argv.length <= 2) {
-	display_help();
-	return;
-}
-
-for (var i = 0; i < process.argv.length; i++) {
+for (var i = 2; i < process.argv.length; i++) {
 	var arg = process.argv[i];
 
 	if (arg === '-v' || arg === '-version') {
@@ -361,10 +354,10 @@ for (var i = 0; i < process.argv.length; i++) {
 		display_help();
 		return;
 	}
-
+	
 	dir = arg;
+	break;
 }
-
 
 if (!fs.existsSync(dir)) {
 	console.log('partial.js: error / directory not exists');
@@ -394,5 +387,5 @@ createDirectory(dir);
 console.log('partial.js: creating files');
 createFiles(dir);
 
-console.log('partial.js: install current version partial.js');
+console.log('partial.js: installing current version partial.js');
 install(dir);

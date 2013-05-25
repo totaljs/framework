@@ -1,3 +1,10 @@
+IN DEVELOPMENT ======= 1.2.3-9
+
+- added: CSS auto vendor prefixer
+
+- updated: empty-project (added to default.css @#auto-vendor-prefix#@)
+- updated: binary (executable)
+
 ======= 1.2.3-8
 
 - added: partial content routing - framework.partial(name, [fnExecute])

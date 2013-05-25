@@ -45,7 +45,7 @@ process.chdir(directory);
 require('./prototypes');
 
 function Framework() {
-	this.version = 1238;
+	this.version = 1239;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
