@@ -7,12 +7,14 @@ web application framework for node.js
 - Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
 - __Blog example__: [new example - blog written in partial.js and NoSQL embedded database (without installation)](http://blog.partialjs.com)
 - __E-shop example__: [new example - e-shop written in partial.js and NoSQL embedded database (without installation)](http://eshop.partialjs.com)
+- __WebSocket chat__: [new example - websocket (Real-time) HTML5 Chat in 5 minutes - node.js & partial.js](http://www.youtube.com/watch?v=lW1vsKMUaKg)
 - Documentation: [partial.js documentation](http://partialjs.com/documentation/)
 - [Changelog](https://github.com/petersirka/partial.js/blob/master/changes.txt)
 
 ***
 
-* **NEW** SUPPORTS WEBSOCKET - [example: websocket](https://github.com/petersirka/partial.js/tree/master/examples/websocket)
+* **NEW** - SUPPORTS AUTO VENDOR PREFIXES - [example: websocket](https://github.com/petersirka/partial.js/tree/master/examples/websocket)
+* **NEW** - SUPPORTS WEBSOCKET - [read the benefits](http://www.partialjs.com/benefits/)
 * Async web framework - [example: async methods](https://github.com/petersirka/partial.js/tree/master/examples/async)
 * Simple view engine - [example: view engine](https://github.com/petersirka/partial.js/tree/master/examples/views)
 * Simple routing + support flags ['xhr', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'unlogged', 'debug', 'xss', '!custom-flag'] - [example: flags](https://github.com/petersirka/partial.js/tree/master/examples/routing-flags)
