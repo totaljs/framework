@@ -17,7 +17,7 @@ web application framework for node.js
 * **NEW** - SUPPORTS WEBSOCKET - [read the benefits](http://www.partialjs.com/benefits/)
 * Async web framework - [example: async methods](https://github.com/petersirka/partial.js/tree/master/examples/async)
 * Simple view engine - [example: view engine](https://github.com/petersirka/partial.js/tree/master/examples/views)
-* Simple routing + support flags ['xhr', 'post', 'get', 'put', 'delete', 'upload', 'json', 'logged', 'debug', ... etc.] - [example: flags](https://github.com/petersirka/partial.js/tree/master/examples/routing-flags)
+* Simple routing + support flags ['xhr', 'post', 'put', 'delete', 'upload', 'json', 'logged', ... etc.] - [example: routing flags](https://github.com/petersirka/partial.js/tree/master/examples/routing-flags)
 * Simple cacheing - [http cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-http), [partial cache example](https://github.com/petersirka/partial.js/tree/master/examples/cache-partial)
 * Simple directory structure (controllers, modules, public, logs, tmp, templates, views, resources)
 * Simple code structure
