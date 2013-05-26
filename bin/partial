@@ -336,26 +336,27 @@ var dir = process.cwd();
 
 for (var i = 2; i < process.argv.length; i++) {
 	var arg = process.argv[i];
+	var cmd = arg.toLowerCase();
 
-	if (arg === '-v' || arg === '-version') {
+	if (cmd === '-v' || cmd === '-version') {
 		console.log(require('partial.js').version);
 		return;
 	}
 
-	if (arg === '-f' || arg === '-full')
+	if (cmd === '-f' || cmd === '-full')
 		continue;
 
-	if (arg === '-m' || arg === '-minimal') {
+	if (cmd === '-m' || cmd === '-minimal' || cmd === '-minimum') {
 		$type = 2;
 		continue;
 	}
 
-	if (arg === '-n' || arg === '-normal') {
+	if (cmd === '-n' || cmd === '-normal') {
 		$type = 1;
 		continue;
 	}
 
-	if (arg === '-h' || arg === '-help') {
+	if (cmd === '-h' || cmd === '-help') {
 		display_help();
 		return;
 	}
