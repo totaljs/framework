@@ -13,8 +13,8 @@ web application framework for node.js
 
 ***
 
-* **NEW** - SUPPORTS AUTO VENDOR PREFIXES - [example: websocket](https://github.com/petersirka/partial.js/tree/master/examples/websocket)
-* **NEW** - SUPPORTS WEBSOCKET - [read the benefits](http://www.partialjs.com/benefits/)
+* **NEW** - SUPPORTS CSS AUTO VENDOR PREFIXES - [read the benefits](http://www.partialjs.com/benefits/)
+* **NEW** - SUPPORTS WEBSOCKET - [example: websocket](https://github.com/petersirka/partial.js/tree/master/examples/websocket)
 * Async web framework - [example: async methods](https://github.com/petersirka/partial.js/tree/master/examples/async)
 * Simple view engine - [example: view engine](https://github.com/petersirka/partial.js/tree/master/examples/views)
 * Simple routing + support flags ['xhr', 'post', 'put', 'delete', 'upload', 'json', 'logged', ... etc.] - [example: routing flags](https://github.com/petersirka/partial.js/tree/master/examples/routing-flags)
