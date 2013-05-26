@@ -9,6 +9,7 @@ web application framework for node.js
 - __E-shop example__: [new example - e-shop written in partial.js and NoSQL embedded database (without installation)](http://eshop.partialjs.com)
 - __WebSocket chat__: [new example - websocket (Real-time) HTML5 Chat in 5 minutes - node.js & partial.js](http://www.youtube.com/watch?v=lW1vsKMUaKg)
 - Documentation: [partial.js documentation](http://partialjs.com/documentation/)
+- [Framework benefits](http://www.partialjs.com/benefits/)
 - [Changelog](https://github.com/petersirka/partial.js/blob/master/changes.txt)
 
 ***
@@ -65,33 +66,6 @@ web application framework for node.js
 * [Documentation](http://www.partialjs.com/documentation/)
 * __Supports internal NoSQL embedded database__ - [example: authorization](https://github.com/petersirka/partial.js/tree/master/examples/authorization) or [example: contact form](https://github.com/petersirka/partial.js/tree/master/examples/contact-form)
 
-
-## partial.js NoSQL embedded database
-
-[![NoSQL embedded database](http://partialjs.com/exports/nosql-logo.png)](https://github.com/petersirka/nosql)
-
-* Small and simple data storage for small web site
-* Written in JavaScript
-* Asynchronous insert, read, update, remove
-* Easy filtering documents
-* [partial.js example: authorization](https://github.com/petersirka/partial.js/tree/master/examples/authorization) or [partial.js example: contact form](https://github.com/petersirka/partial.js/tree/master/examples/contact-form)
-* __No dependencies__
-* [NoSQL embedded database project on GitHub](https://github.com/petersirka/nosql)
-
-
-## partial.js Backup & Restore
-
-[![Backup & Restore](http://partialjs.com/exports/backup-logo.png)](https://github.com/petersirka/backup)
-
-* Written in JavaScript
-* Easy backup & Easy Restore
-* Small and effective
-* Backup file is text file and all files are compressed via GZIP
-* [partial.js backup & restore example](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [partial.js auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
-* __No dependencies__
-* [Backup & Restore project on GitHub](https://github.com/petersirka/backup)
-
-
 ***
 
 ## WebSocket (Real-time) HTML5 Chat in 5 minutes
@@ -121,10 +95,9 @@ $ open http://127.0.0.1:8080
 ## Interesting modules
 
 * Simple __Backup/Restore__ module for node.js - https://github.com/petersirka/backup
-* __PayPal__ Express Checkout for node.js - https://github.com/petersirka/node-payment-paypal
-* CouchDB client for node.js - https://github.com/petersirka/node-couchdb
-* MongoDB (www.mongolab.com) REST client for node.js - https://github.com/petersirka/node-mongolab
-* HTTP-RDBMS REST node.js client for partial.js (MySQL, SQL Server, OleDB, ODBC) - https://github.com/petersirka/node-rdbms
+* __PayPal Express Checkout__ for node.js - https://github.com/petersirka/node-payment-paypal
+* __CouchDB client__ for node.js - https://github.com/petersirka/node-couchdb
+* __MongoDB (www.mongolab.com)__ REST client for node.js - https://github.com/petersirka/node-mongolab
 
 ***
 
