@@ -2095,7 +2095,7 @@ Framework.prototype._service = function(count) {
 		self.configure();
 	}
 
-	// every 5 minute service clear static cache
+	// every 5 minute service clears static cache
 	if (count % 5 === 0) {
 		self.static = {};
 		self.staticRange = {};
