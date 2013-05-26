@@ -423,7 +423,6 @@ function autoprefixer (value) {
 		var property = builder[i].property;
 		var plus = property;
 		var delimiter = ';';
-		var before = '';
 
 		if (name === 'keyframes') {
 			plus = plus.substring(1);
