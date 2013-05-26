@@ -281,7 +281,12 @@ function createFileController(directory) {
 	buffer.push('');
 	buffer.push('function view_homepage() {');
 	buffer.push('    var self = this;');
-	buffer.push('    self.view(\'homepage\');');
+
+	if ($type !== 2)
+		buffer.push('    self.view(\'homepage\');');
+	else
+		buffer.push('    self.plain(\'homepage\');');
+	
 	buffer.push('}');
 
 	fs.writeFileSync(path.join(dir, 'default.js'), buffer.join(EOF));
