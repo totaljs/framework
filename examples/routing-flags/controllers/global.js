@@ -1,28 +1,32 @@
 var utils = require('partial.js/utils');
 
 exports.install = function(framework) {
+
 	framework.route('/', view_homepage);
+
+	// [+xhr] - you can execute "view_subpage" with request type: XMLHttpRequest or classic GET/HTTP
+	framework.route('/sub/', view_subpage, ['+xhr']);
 	
-	framework.route('/xhr/', xhr_homepage, ['xhr']);
-	framework.route('/xhr/post/', xhr_homepage, ['xhr', 'post']);
+	framework.route('/xhr/', xhr_example, ['xhr']);
+	framework.route('/xhr/post/', xhr_example, ['xhr', 'post']);
 
-	framework.route('/post/', form_homepage, ['post']);
-	framework.route('/json/', json_homepage, ['json']);
-	framework.route('/upload/', upload_homepage, ['upload']);
+	framework.route('/post/', form_example, ['post']);
+	framework.route('/json/', json_example, ['json']);
+	framework.route('/upload/', upload_example, ['upload']);
 
-	framework.route('/put/', put_homepage, ['put']);
-	framework.route('/delete/', delete_homepage, ['delete']);
+	framework.route('/put/', put_example, ['put']);
+	framework.route('/delete/', delete_example, ['delete']);
 
 	// Disable XSS protection
-	framework.route('/xss/', xss_homepage, ['xss']);
+	framework.route('/xss/', xss_example, ['xss']);
 
 	// This route is enabled in debug mode 
-	framework.route('/debug/', debug_homepage, ['debug']);
+	framework.route('/debug/', debug_example, ['debug']);
 
 	// Prefix as the flag
-	framework.route('/', android_homepage, ['#android']);
+	framework.route('/', android_example, ['#android']);
 
-	framework.route('/myflag/', myflag_homepage, ['!myflag']);
+	framework.route('/myflag/', myflag_example, ['!myflag']);
 
 	// https://github.com/petersirka/partial.js/tree/master/examples/authorization
 	// framework.route('/user/registration/', user_registration, ['unlogged']);
@@ -30,7 +34,7 @@ exports.install = function(framework) {
 };
 
 // flags: !myflag
-function myflag_homepage() {
+function myflag_example() {
 
 	var self = this;
 
@@ -46,49 +50,55 @@ function view_homepage() {
 	this.plain('GET - homepage');
 }
 
-// flags: POST
-function form_homepage() {
+// flags: +xhr
+function view_subpage() {
+	this.plain('SUBPAGE CONTENT');
+}
+
+// flags: post
+function form_example() {
 	this.plain('POST - homepage');
 }
 
-// flags: XHR
+// flags: xhr
 // Request header must contains XMLHttpRequest
-function xhr_homepage() {
+function xhr_example() {
 	this.plain('XHR - homepage');	
 }
 
-// flags: JSON
+// flags: json
 // Request content must be a JSON
-function json_homepage() {
+function json_example() {
 	this.plain('JSON - homepage');
 }
 
-// flags: UPLOAD
+// flags: upload
 // POST (MULTIPART)
-function upload_homepage() {
+function upload_example() {
 	this.plain('UPLOAD - homepage');
 }
 
 // flags: debug
-function debug_homepage() {
+function debug_example() {
 	this.plain('DEBUG MODE');
 }
 
 // flags: #android
-function android_homepage() {
+function android_example() {
 	this.plain('ANDROID');	
 }
 
-// flags: DELETE
-function delete_homepage() {
+// flags: delete
+function delete_example() {
 	this.plain('DELETE - homepage');
 }
 
-// flags: PUT
-function put_homepage() {
+// flags: put
+function put_example() {
 	this.plain('PUT - homepage');
 }
 
-function xss_homepage() {
+// flags: xss
+function xss_example() {
 	this.plain('XSS - homepage');
 }
