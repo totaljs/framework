@@ -2088,14 +2088,14 @@ Framework.prototype._service = function(count) {
 	if (self.config.debug)
 		self.resources = {};
 
-	// every 20 minute clear resources and reconfigure framework
+	// every 20 minute service clears resources and reconfigure framework
 	if (count % 20 === 0) {
 		self.resources = {};
 		self.databases = {};
 		self.configure();
 	}
 
-	// every 5 minute clear static cache
+	// every 5 minute service clear static cache
 	if (count % 5 === 0) {
 		self.static = {};
 		self.staticRange = {};
