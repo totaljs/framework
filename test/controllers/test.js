@@ -15,7 +15,7 @@ exports.init = function() {
 	self.route('/a/b/c/', viewRouteABC);
 	self.route('/test/', viewTest);
 	self.route('/login/google/callback/', aa);
-	self.route('/timeout/', function() {}, [], null, [], 200);
+	self.route('/timeout/', function() {}, [], null, [], 50);
 
 	self.route('#408', function() { 
 		var self = this;
@@ -166,6 +166,11 @@ function viewViews() {
 	assert.ok(output.contains('#template-emptyEMPTY#'), name + 'template() - empty');
 	assert.ok(output.contains('#template-toggle#'), name + 'templateToggle()');
 	assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
+
+	assert.ok(output.contains('<link rel="dns-prefetch" href="//fonts.googleapis.com" />'), name + 'dns');
+	assert.ok(output.contains('<link rel="prefetch" href="http://daker.me/2013/05/hello-world.html" />'), name + 'prefetch');
+	assert.ok(output.contains('<link rel="prerender" href="http://daker.me/2013/05/hello-world.html" />'), name + 'prerender');
+	assert.ok(output.contains('<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>'), name + 'head');
 	
 	self.repository.A = 'A';
 	output = self.view('c', { a: 'A', b: 'B', c: true, d: 'hidden<b>' }, true);

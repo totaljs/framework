@@ -1,4 +1,7 @@
-
+@{dns('//fonts.googleapis.com')}
+@{prefetch('http://daker.me/2013/05/hello-world.html')}
+@{prerender('http://daker.me/2013/05/hello-world.html')}
+@{head('//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js')}
 #tag-encode@{repository.tag}#
 #tag-raw@{!repository.tag}#
 #helper-property-@{property}#
@@ -19,3 +22,4 @@
 #template-empty@{template('more', [], 'test')}#
 #template-toggle@{templateToggle(false, 'more', [])}#
 #routejs-@{routeJS('p.js')}#
+#@{head}#
