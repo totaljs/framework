@@ -631,7 +631,6 @@ Controller.prototype.setExpires = function(date) {
 
 /*
 	Internal function for views
-	@id {String}
 	@name {String} :: filename
 	@model {Object}
 	return {String};
@@ -642,7 +641,6 @@ Controller.prototype.$view = function(name, model) {
 
 /*
 	Internal function for views
-	@id {String}
 	@visible {Boolean}
 	@name {String} :: filename
 	@model {Object}
@@ -652,6 +650,54 @@ Controller.prototype.$viewToggle = function(visible, name, model) {
 	if (!visible)
 		return '';
 	return this.view(name, model, null, true);
+};
+
+/*
+	Internal function for views
+	@arguments {String}
+	return {String};
+*/
+Controller.prototype.$dns = function(value) {
+	
+	var template = '<link rel="dns-prefetch" href="{0}" />';
+	var builder = '';
+
+	for (var i = 0; i < arguments.length; i++)
+		builder += template.format((arguments[i] || '').toString());
+
+	return builder;
+};
+
+/*
+	Internal function for views
+	@arguments {String}
+	return {String};
+*/
+Controller.prototype.$prefetch = function() {
+	
+	var template = '<link rel="prefetch" href="{0}" />';
+	var builder = '';
+
+	for (var i = 0; i < arguments.length; i++)
+		builder += template.format((arguments[i] || '').toString());
+
+	return builder;
+};
+
+/*
+	Internal function for views
+	@arguments {String}
+	return {String};
+*/
+Controller.prototype.$prerender = function(value) {
+	
+	var template = '<link rel="prerender" href="{0}" />';
+	var builder = '';
+
+	for (var i = 0; i < arguments.length; i++)
+		builder += template.format((arguments[i] || '').toString());
+
+	return builder;
 };
 
 /*

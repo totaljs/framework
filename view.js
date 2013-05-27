@@ -186,6 +186,9 @@ function parse(html, controller) {
 						case 'modified':
 						case 'image':
 						case 'json':
+						case 'dns':
+						case 'prefetch':
+						case 'prerender':
 							isEncode = false;
 							isDeclared = true;
 							code = 'self.$' + code;
