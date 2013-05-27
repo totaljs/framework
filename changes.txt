@@ -7,6 +7,8 @@
 - added: @{prerender('http://daker.me/2013/05/hello-world.html')}
 - added: @{head('//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js')} and @{head}
 
+- added: new example: https://github.com/petersirka/partial.js/tree/master/examples/views-head
+
 - updated: auto CSS vendor prefixes
 - updated: websocket - client.close() - removed @status
 
