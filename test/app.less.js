@@ -19,6 +19,15 @@ var result = "@font-face{font-family:'Dosis';font-style:normal;font-weight:400;s
 
 assert.ok(less.compile(css, true) === result, 'less – compress=true');
 
+buffer = [];
+buffer.push('@#auto-vendor-prefix#@');
+buffer.push('a{border-radius:5px}');
+buffer.push('a{text-overflow:ellipsis}');
+buffer.push('@keyframes test{border-radius:5px}');
+
+css = buffer.join('\n');
+assert.ok(less.compile(css, true) === 'a{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}a{text-overflow:ellipsis;-ms-text-overflow:ellipsis}keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-webkit-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-moz-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-o-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}', 'automated CSS vendor prefixes');
+
 console.log('================================================');
 console.log('success - OK');
 console.log('================================================');

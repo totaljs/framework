@@ -335,13 +335,13 @@ Less.prototype.compile = function(value) {
 */
 function autoprefixer (value) {
 
-	var prefix = ['appearance', 'box-shadow', 'border-radius', 'border-image', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-origin', 'transition', 'user-select', 'animation', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image'];
+	var prefix = ['appearance', 'box-shadow', 'border-radius', 'border-image', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-origin', 'transition', 'user-select', 'animation', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'text-overflow'];
 	var id = '@#auto-vendor-prefix#@';
 
 	if (value.indexOf(id) === -1)
 		return value;
 
-	value = value.replace(id, '');
+	value = autoprefixer_keyframes(value.replace(id, ''));
 
 	var builder = [];
 	var index = 0;
@@ -358,11 +358,13 @@ function autoprefixer (value) {
 
 			if (index === -1)
 				continue;
-
+	
 			var a = value.indexOf(';', index);
 			var b = value.indexOf('}', index);
 
 			var end = Math.min(a, b);
+			if (end === -1)
+				end = Math.max(a, b);
 
 			if (end === -1)
 				continue;
@@ -372,7 +374,6 @@ function autoprefixer (value) {
 				continue;
 
 			var css = value.substring(index, end);
-
 			end = css.indexOf(':');
 
 			if (end === -1)
@@ -384,9 +385,95 @@ function autoprefixer (value) {
 			builder.push({ name: property, property: css });
 		}
 	}
+	
+	var output = [];
 
-	// search @keyframes
-	index = 0;
+	for (var i = 0; i < builder.length; i++) {
+
+		var name = builder[i].name;
+		var property = builder[i].property;
+
+		var plus = property;
+		var delimiter = ';';
+		var updated = plus + delimiter;
+
+		if (name === 'opacity') {
+
+			var opacity = parseFloat(plus.replace('opacity', '').replace(':', '').replace(/\s/g, ''));
+			if (isNaN(opacity))
+				continue;
+
+			updated += 'filter:alpha(opacity='+Math.floor(opacity * 100)+')';
+
+			value = value.replace(property, '@[[' + output.length + ']]');
+			output.push(updated);
+			continue;
+		}
+
+		if (name === 'background' || name === 'background-image') {
+
+			if (property.indexOf('linear-gradient') === -1)
+				continue;
+
+			updated = plus + delimiter;
+			updated += plus.replace('linear-', '-webkit-linear-') + delimiter;
+			updated += plus.replace('linear-', '-moz-linear-') + delimiter;
+			updated += plus.replace('linear-', '-o-linear-') + delimiter;
+			updated += plus.replace('linear-', '-ms-linear-');
+
+			value = value.replace(property, '@[[' + output.length + ']]');
+			output.push(updated);
+			continue;
+		}
+
+		if (name === 'text-overflow') {
+			updated = plus + delimiter;
+			updated += plus.replace('text-overflow', '-ms-text-overflow');
+			value = value.replace(property, '@[[' + output.length + ']]');
+			output.push(updated);
+			continue;
+		}
+
+		if (name === 'display') {
+
+			if (property.indexOf('box') === -1)
+				continue;
+
+			updated = plus + delimiter;
+			updated += plus.replace('box', '-webkit-box') + delimiter;
+			updated += plus.replace('box', '-moz-box');
+
+			value = value.replace(property, '@[[' + output.length + ']]');
+			output.push(updated);
+			continue;
+		}
+
+		updated += '-webkit-' + plus + delimiter;
+		updated += '-moz-' + plus;
+
+		if (name !== 'box-shadow' && name !== 'border-radius') {
+			updated += delimiter + '-ms-' + plus;
+			updated += delimiter + '-o-' + plus;
+		}
+
+		value = value.replace(property, '@[[' + output.length + ']]');
+		output.push(updated);
+	};
+
+	for (var i = 0; i < output.length; i++)
+		value = value.replace('@[[' + i + ']]', output[i]);
+
+	output = null;
+	builder = null;
+	prefix = null;
+
+	return value;
+};
+
+function autoprefixer_keyframes (value) {
+
+	var builder = [];
+	var index = 0;
 
 	while (index !== -1) {
 
@@ -427,87 +514,28 @@ function autoprefixer (value) {
 
 		var name = builder[i].name;
 		var property = builder[i].property;
-		var plus = property;
-		var delimiter = ';';
 
-		if (name === 'keyframes') {
-			plus = plus.substring(1);
-			delimiter = '\n';
-		}
+		if (name !== 'keyframes')
+			continue;
+
+		var plus = property.substring(1);
+		var delimiter = '\n';
 
 		var updated = plus + delimiter;
 
-		if (name === 'keyframes') {
-			updated += '@-webkit-' + plus + delimiter;
-			updated += '@-moz-' + plus + delimiter;
-			updated += '@-ms-' + plus + delimiter;
-			updated += '@-o-' + plus;
-			output.push(updated);
-			value = value.replace(property, '@[[' + output.length + ']]');
-			continue;
-		}
+		updated += '@-webkit-' + plus + delimiter;
+		updated += '@-moz-' + plus + delimiter;
+		updated += '@-o-' + plus;
 
-		if (name === 'opacity') {
-
-			var opacity = parseFloat(plus.replace('opacity', '').replace(':', '').replace(/\s/g, ''));
-			if (isNaN(opacity))
-				continue;
-
-			updated += 'filter:alpha(opacity='+Math.floor(opacity * 100)+')';
-
-			output.push(updated);
-			value = value.replace(property, '@[[' + output.length + ']]');
-			continue;
-		}
-
-		if (name === 'background' || name === 'background-image') {
-
-			if (property.indexOf('linear-gradient') === -1)
-				continue;
-
-			updated = plus + delimiter;
-			updated += plus.replace('linear-', '-webkit-linear-') + delimiter;
-			updated += plus.replace('linear-', '-moz-linear-') + delimiter;
-			updated += plus.replace('linear-', '-o-linear-') + delimiter;
-			updated += plus.replace('linear-', '-ms-linear-');
-
-			output.push(updated);
-			value = value.replace(property, '@[[' + output.length + ']]');
-			continue;
-		}
-
-		if (name === 'display') {
-
-			if (property.indexOf('box') === -1)
-				continue;
-
-			updated = plus + delimiter;
-			updated += plus.replace('box', '-webkit-box') + delimiter;
-			updated += plus.replace('box', '-moz-box');
-
-			output.push(updated);
-			value = value.replace(property, '@[[' + output.length + ']]');
-			continue;
-		}
-
-		updated += '-webkit-' + plus + delimiter;
-		updated += '-moz-' + plus;
-
-		if (name !== 'box-shadow' && name !== 'border-radius') {
-			updated += delimiter + '-ms-' + plus;
-			updated += delimiter + '-o-' + plus;
-		}
-
-		output.push(updated);
 		value = value.replace(property, '@[[' + output.length + ']]');
-	};
+		output.push(updated);
+	}
 
 	for (var i = 0; i < output.length; i++)
 		value = value.replace('@[[' + i + ']]', output[i]);
 
-	output = null;
 	builder = null;
-	prefix = null;
+	output = null;
 
 	return value;
 };

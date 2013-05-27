@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.4-0
+======= 1.2.4-0
 
 // HTML 5 features http://daker.me/2013/05/5-html5-features-you-need-to-know.html
 
