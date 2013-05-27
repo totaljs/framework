@@ -1046,26 +1046,33 @@ Controller.prototype.$prerender = function(value) {
 };
 
 /*
-	Interna function for views
-	@value {String} :: optional
+	Internal function for views
+	@arguments {String}
 	return {String};
 */
-Controller.prototype.head = function(value) {
+Controller.prototype.head = function() {
 
 	var self = this;
 
-	if (typeof(value) === 'undefined')
+	if (arguments.length === 0)
 		return self.repository[REPOSITORY_HEAD] || '';
 
-	if (value.indexOf('<') === -1) {
+	var output = '';
 
-		if (value.indexOf('.js') !== -1)
-			value = '<script type="text/javascript" src="' + value + '"></script>';
-		else if (value.indexOf('.css') !== -1)
-			value = '<link type="text/css" rel="stylesheet" href="' + value + '" />';
+	for (var i = 0; i < arguments.length; i++) {
+		
+		var val = arguments[i];
+
+		if (val.indexOf('<') === -1) {
+			if (val.indexOf('.js') !== -1)
+				output += '<script type="text/javascript" src="' + val + '"></script>';
+			else if (val.indexOf('.css') !== -1)
+				output += '<link type="text/css" rel="stylesheet" href="' + val + '" />';
+		} else
+			output += val;
 	}
 
-	var header = (self.repository[REPOSITORY_HEAD] || '') + value;
+	var header = (self.repository[REPOSITORY_HEAD] || '') + output;
 	self.repository[REPOSITORY_HEAD] = header;
 	return '';
 };
