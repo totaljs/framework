@@ -1,3 +1,10 @@
+IN DEVELOPMENT ======= 1.2.4-0
+
+- updated: auto CSS vendor prefixes
+- updated: websocket - client.close()
+
+- clean code
+
 ======= 1.2.3-9
 
 - added: CSS auto vendor prefixes
