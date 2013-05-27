@@ -19,7 +19,7 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-"use strict";
+'use strict';
 
 var utils = require('./utils');
 
@@ -367,6 +367,10 @@ function autoprefixer (value) {
 			if (end === -1)
 				continue;
 
+			// text-transform
+			if (property === 'transform' && value.substring(index - 1, index) === '-')
+				continue;
+
 			var css = value.substring(index, end);
 
 			end = css.indexOf(':');
@@ -417,6 +421,8 @@ function autoprefixer (value) {
 		builder.push({ name: 'keyframes', property: css });
 	}
 
+	var output = [];
+
 	for (var i = 0; i < builder.length; i++) {
 
 		var name = builder[i].name;
@@ -436,7 +442,8 @@ function autoprefixer (value) {
 			updated += '@-moz-' + plus + delimiter;
 			updated += '@-ms-' + plus + delimiter;
 			updated += '@-o-' + plus;
-			value = value.replace(property, updated);
+			output.push(updated);
+			value = value.replace(property, '@[[' + output.length + ']]');
 			continue;
 		}
 
@@ -447,7 +454,9 @@ function autoprefixer (value) {
 				continue;
 
 			updated += 'filter:alpha(opacity='+Math.floor(opacity * 100)+')';
-			value = value.replace(property, updated);
+
+			output.push(updated);
+			value = value.replace(property, '@[[' + output.length + ']]');
 			continue;
 		}
 
@@ -461,7 +470,9 @@ function autoprefixer (value) {
 			updated += plus.replace('linear-', '-moz-linear-') + delimiter;
 			updated += plus.replace('linear-', '-o-linear-') + delimiter;
 			updated += plus.replace('linear-', '-ms-linear-');
-			value = value.replace(property, updated);
+
+			output.push(updated);
+			value = value.replace(property, '@[[' + output.length + ']]');
 			continue;
 		}
 
@@ -474,7 +485,8 @@ function autoprefixer (value) {
 			updated += plus.replace('box', '-webkit-box') + delimiter;
 			updated += plus.replace('box', '-moz-box');
 
-			value = value.replace(property, updated);
+			output.push(updated);
+			value = value.replace(property, '@[[' + output.length + ']]');
 			continue;
 		}
 
@@ -486,8 +498,16 @@ function autoprefixer (value) {
 			updated += delimiter + '-o-' + plus;
 		}
 
-		value = value.replace(property, updated);
+		output.push(updated);
+		value = value.replace(property, '@[[' + output.length + ']]');
 	};
+
+	for (var i = 0; i < output.length; i++)
+		value = value.replace('@[[' + i + ']]', output[i]);
+
+	output = null;
+	builder = null;
+	prefix = null;
 
 	return value;
 };
