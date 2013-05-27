@@ -256,6 +256,7 @@ function parse(html, controller) {
 							beg = 'return self.';
 							break;
 
+						case 'head':
 						case 'meta':
 						case 'sitemap':
 						case 'settings':

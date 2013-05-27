@@ -29,6 +29,9 @@ var generatorTemplate = require('./template');
 var path = require('path');
 var qs = require('querystring');
 
+var REPOSITORY_HEAD = '$head';
+var REPOSITORY_META = '$meta';
+
 function Subscribe(framework, req, res) {
 	this.framework = framework;
 
@@ -310,8 +313,13 @@ Subscribe.prototype._parsepost = function(chunk) {
 
 Subscribe.prototype._cancel = function() {
 	var self = this;
+
 	clearTimeout(self.timeout);
 	self.timeout = null;
+
+	if (self.controller === null)
+		return;
+
 	self.controller.isCanceled = true;
 	self.route = self.framework.lookup(self.req, '#408', []);
 	self.execute(408);
@@ -494,7 +502,7 @@ Controller.prototype.log = function() {
 */
 Controller.prototype.meta = function() {
 	var self = this;
-	self.repository['$meta'] = self.app.onMeta.apply(this, arguments);
+	self.repository[REPOSITORY_META] = self.app.onMeta.apply(this, arguments);
 	return self;
 };
 
@@ -654,54 +662,6 @@ Controller.prototype.$viewToggle = function(visible, name, model) {
 
 /*
 	Internal function for views
-	@arguments {String}
-	return {String};
-*/
-Controller.prototype.$dns = function(value) {
-	
-	var template = '<link rel="dns-prefetch" href="{0}" />';
-	var builder = '';
-
-	for (var i = 0; i < arguments.length; i++)
-		builder += template.format((arguments[i] || '').toString());
-
-	return builder;
-};
-
-/*
-	Internal function for views
-	@arguments {String}
-	return {String};
-*/
-Controller.prototype.$prefetch = function() {
-	
-	var template = '<link rel="prefetch" href="{0}" />';
-	var builder = '';
-
-	for (var i = 0; i < arguments.length; i++)
-		builder += template.format((arguments[i] || '').toString());
-
-	return builder;
-};
-
-/*
-	Internal function for views
-	@arguments {String}
-	return {String};
-*/
-Controller.prototype.$prerender = function(value) {
-	
-	var template = '<link rel="prerender" href="{0}" />';
-	var builder = '';
-
-	for (var i = 0; i < arguments.length; i++)
-		builder += template.format((arguments[i] || '').toString());
-
-	return builder;
-};
-
-/*
-	Internal function for views
 	@name {String} :: filename
 	return {String};
 */
@@ -820,6 +780,16 @@ Controller.prototype.$readonly = function(bool, charBeg, charEnd) {
 	return {String};
 */
 Controller.prototype.$text = function(model, name, className, maxLength, required, disabled, pattern, autocomplete) {
+
+	if (typeof(className) === 'object') {
+		maxLength = className.maxlength || 0;
+		required = className.required || false;
+		disabled = className.disabled || false;
+		pattern = className.pattern || '';
+		autocomplete = className.autocomplete || false;
+		className = className.class || '';
+	}
+
 	return this.$input(model, 'text', name, className, maxLength, required, disabled, pattern, autocomplete);
 };
 
@@ -836,6 +806,16 @@ Controller.prototype.$text = function(model, name, className, maxLength, require
 	return {String};
 */
 Controller.prototype.$password = function(model, name, className, maxLength, required, disabled, pattern, autocomplete) {
+
+	if (typeof(className) === 'object') {
+		maxLength = className.maxlength || 0;
+		required = className.required || false;
+		disabled = className.disabled || false;
+		pattern = className.pattern || '';
+		autocomplete = className.autocomplete || false;
+		className = className.class || '';
+	}
+
 	return this.$input(model, 'password', name, className, maxLength, required, disabled, pattern, autocomplete);
 };
 
@@ -870,7 +850,7 @@ Controller.prototype.$radio = function(model, name, value, label, required, disa
 	@label {String}
 	@required {Boolean}
 	@disabled {Boolean}
-	return {String};
+	return {String}
 */
 Controller.prototype.$checkbox = function(model, name, label, required, disabled) {
 	return this.$input(model, 'checkbox', name, '', 0, required, disabled, '', null, label, '1');
@@ -880,40 +860,60 @@ Controller.prototype.$checkbox = function(model, name, label, required, disabled
 	Internal function for views
 	@model {Object}
 	@name {String}
-	@className {String}
+	@className {String or Object}
 	@maxLength {Number}
 	@required {Boolean}
 	@disabled {Boolean}
 	@pattern {String}
-	return {String};
+	return {String}
 */
 Controller.prototype.$textarea = function(model, name, className, maxLength, required, disabled, pattern) {
 
-	var builder = ['<textarea'];
-	var reg = new RegExp('#', 'g');
+	var cols = 0;
+	var rows = 0;
 
-	builder.push('name="#" id="#"'.replace(reg, name));
+	if (typeof(className) === 'object') {
+		maxLength = className.maxlength || 0;
+		required = className.required || false;
+		disabled = className.disabled || false;
+		pattern = className.pattern || '';
+		autocomplete = className.autocomplete || false;
+		cols = className.cols || 0;
+		rows = className.rows || 0;
+		className = className.class || '';
+	}
+
+	var builder = '<textarea';
+	var attrEnd = '"';
+
+	builder += ' name="' + name + '" id="' + name + attrEnd;
 
 	if (className && className.length > 0)
-		builder.push('class="#"'.replace(reg, className));
+		builder += ' class="' + className + attrEnd;
 
 	if (maxLength > 0)
-		builder.push('maxlength="#"'.replace(reg, maxLength.toString()));
+		builder += ' maxlength="'+ maxLength + attrEnd;
 
 	if (required)
-		builder.push('required="required"');
+		builder += ' required="required"';
 
 	if (disabled)
-		builder.push('disabled="disabled"');
+		builder += ' disabled="disabled"';
+
+	if (cols > 0)
+		builder += ' cols="' + cols + attrEnd;
+
+	if (rows > 0)
+		builder += ' rows="' + rows + attrEnd;
 
 	if (pattern && pattern.length > 0)
-		builder.push('pattern="#"'.replace(reg, pattern));
+		builder += ' pattern="' + pattern + attrEnd;
 
 	if (typeof(model) === 'undefined')
-		return builder.join(' ') + '</textarea>';
+		return builder + '></textarea>';
 
 	var value = model[name] || '';
-	return builder.join(' ') + '>' + value.toString().htmlEncode() + '</textarea>';
+	return builder + '>' + value.toString().htmlEncode() + '</textarea>';
 };
 
 /*
@@ -934,35 +934,35 @@ Controller.prototype.$textarea = function(model, name, className, maxLength, req
 Controller.prototype.$input = function(model, type, name, className, maxLength, required, disabled, pattern, autocomplete, label, val) {
 
 	var builder = ['<input'];
-	var reg = new RegExp('#', 'g');
+	var attrEnd = '"';
 
-	builder.push('type="#"'.replace(reg, type));
+	builder += ' type="' + type + attrEnd;
 
 	if (type === 'radio')
-		builder.push('name="#"'.replace(reg, name));
+		builder += ' name="' + name + attrEnd;
 	else
-		builder.push('name="#" id="#"'.replace(reg, name));
+		builder += ' name="' + name + '" id="' + name + attrEnd;
 
 	if (className && className.length > 0)
-		builder.push('class="#"'.replace(reg, className));
+		builder += ' class="' + className + attrEnd;
 
 	if (maxLength > 0)
-		builder.push('maxlength="#"'.replace(reg, maxLength.toString()));
+		builder += ' maxlength="' + maxLength + attrEnd;
 
 	if (required)
-		builder.push('required="required"');
+		builder += ' required="required"';
 
 	if (disabled)
-		builder.push('disabled="disabled"');
+		builder += ' disabled="disabled"';
 
 	if (pattern && pattern.length > 0)
-		builder.push('pattern="#"'.replace(reg, pattern));
+		builder += ' pattern="' + pattern + attrEnd;
 
 	if (typeof(autocomplete) === 'boolean') {
 		if (autocomplete)
-			builder.push('autocomplete="on"');
+			builder += ' autocomplete="on"';
 		else
-			builder.push('autocomplete="off"');
+			builder += ' autocomplete="off"';
 	}
 
 	if (typeof(model) !== 'undefined') {
@@ -970,7 +970,7 @@ Controller.prototype.$input = function(model, type, name, className, maxLength, 
 
 		if (type === 'checkbox') {
 			if (value === '1' || value === 'true' || value === true)
-				builder.push('checked="checked"');
+				builder += ' checked="checked"';
 
 			value = val || '1';
 		}
@@ -980,21 +980,94 @@ Controller.prototype.$input = function(model, type, name, className, maxLength, 
 			val = (val || '').toString();
 
 			if (value.toString() === val)
-				builder.push('checked="checked"');
+				builder += ' checked="checked"';
 
 			value = val || '';
 		}
 
 		if (typeof(value) !== 'undefined')
-			builder.push('value="#"'.replace(reg, value.toString().htmlEncode()));
+			builder += ' value="' + value.toString().htmlEncode() + attrEnd;
 	}
 
-	builder.push('/>');
+	builder += ' />';
 
 	if (label)
-		return '<label>' + builder.join(' ') + ' <span>#</span></label>'.replace(reg, label);
+		return '<label>' + builder + ' <span>' + label + '</span></label>';
 
-	return builder.join(' ');
+	return builder;
+};
+
+/*
+	Internal function for views
+	@arguments {String}
+	return {String};
+*/
+Controller.prototype.$dns = function(value) {
+
+	var builder = '';
+
+	for (var i = 0; i < arguments.length; i++)
+		builder += '<link rel="dns-prefetch" href="' + (arguments[i] || '') + '" />';
+
+	this.head(builder);
+	return '';
+};
+
+/*
+	Internal function for views
+	@arguments {String}
+	return {String};
+*/
+Controller.prototype.$prefetch = function() {
+
+	var builder = '';
+
+	for (var i = 0; i < arguments.length; i++)
+		builder += '<link rel="prefetch" href="' + (arguments[i] || '') + '" />';
+
+	this.head(builder);
+	return '';
+};
+
+/*
+	Internal function for views
+	@arguments {String}
+	return {String};
+*/
+Controller.prototype.$prerender = function(value) {
+
+	var builder = '';
+
+	for (var i = 0; i < arguments.length; i++)
+		builder += '<link rel="prerender" href="' + (arguments[i] || '') + '" />';
+
+	this.head(builder);
+	return '';
+};
+
+/*
+	Interna function for views
+	@value {String} :: optional
+	return {String};
+*/
+Controller.prototype.head = function(value) {
+
+	var self = this;
+
+	if (typeof(value) === 'undefined')
+		return self.repository[REPOSITORY_HEAD] || '';
+
+	if (value.indexOf('<') === -1) {
+
+		if (value.indexOf('.js') !== -1)
+			value = '<script type="text/javascript" src="' + value + '"></script>';
+		else if (value.indexOf('.css') !== -1)
+			value = '<link type="text/css" rel="stylesheet" href="' + value + '" />';
+	}
+
+	var header = (self.repository[REPOSITORY_HEAD] || '') + value;
+	self.repository[REPOSITORY_HEAD] = header;
+	return '';
 };
 
 /*
@@ -1176,7 +1249,7 @@ Controller.prototype.$json = function(obj, name) {
 	if (!name)
 		return JSON.stringify(obj);
 
-	return '<script type="application/json" id="{0}">{1}</script>'.format(name, JSON.stringify(obj));
+	return '<script type="application/json" id="' + name + '">' + JSON.stringify(obj) + '</script>';
 };
 
 /*
@@ -1191,7 +1264,7 @@ Controller.prototype.routeJS = function(name, tag) {
 	if (typeof(name) === 'undefined')
 		name = 'default.js';
 
-	return tag ? '<script type="text/javascript" src="{0}"></script>'.format(self.app.routeJS(name)) : self.app.routeJS(name);
+	return tag ? '<script type="text/javascript" src="' + self.app.routeJS(name) + '"></script>' : self.app.routeJS(name);
 };
 
 /*
@@ -1206,7 +1279,7 @@ Controller.prototype.routeCSS = function(name, tag) {
 	if (typeof(name) === 'undefined')
 		name = 'default.css';
 
-	return tag ? '<link type="text/css" rel="stylesheet" href="{0}" />'.format(self.app.routeCSS(name)) : self.app.routeCSS(name);
+	return tag ? '<link type="text/css" rel="stylesheet" href="' + self.app.routeCSS(name) + '" />' : self.app.routeCSS(name);
 };
 
 /*
@@ -1227,7 +1300,9 @@ Controller.prototype.$favicon = function(name) {
 	if (name.indexOf('.gif') !== -1)
 		contentType = 'image/gif';
 
-	return '<link rel="shortcut icon" href="{0}" type="{1}" /><link rel="icon" href="{0}" type="{1}" />'.format(self.app.routeStatic('/' + name), contentType)
+	name = self.app.routeStatic('/' + name)
+
+	return '<link rel="shortcut icon" href="' + name + '" type="' + contentType + '" /><link rel="icon" href="' + name + '" type="' + contentType + '" />';
 };
 
 /*
@@ -1754,6 +1829,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 				break;
 
 			case 'meta':
+			case 'head':
 			case 'sitemap':
 			case 'settings':
 			case 'layout':
@@ -1778,6 +1854,14 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			case 'get':
 			case 'post':
 				value = eval(run);
+				evl = false;
+				break;
+
+			case 'dns':
+			case 'prerender':
+			case 'prefetch':
+				value = eval(run);
+				evl = false;
 				break;
 
 			default:
