@@ -92,8 +92,7 @@ function socket_homepage(controller, framework) {
 
     // client.cookie(name)	   : value
     // client.send(value)      : send message
-    // client.close(status)    : disconnect client (status {Number} :: optional, default undefined)
-
+    // client.close()          : disconnect client
 
 	controller.on('open', function(client) {
 
