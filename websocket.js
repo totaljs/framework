@@ -511,7 +511,7 @@ WebSocketClient.prototype._ondata = function(data) {
     var message = decode_WS(data);
     if (message === '' || message === null) {
         // websocket.close() send empty string
-        self.close(444);
+        self.close();
         return;
     }
 
@@ -528,7 +528,7 @@ WebSocketClient.prototype._ondata = function(data) {
         }
         else {
             message = null;
-            self.close(444);
+            self.close();
             return;
         }
     }
