@@ -2,9 +2,10 @@ IN DEVELOPMENT ======= 1.2.4-0
 
 // HTML 5 features http://daker.me/2013/05/5-html5-features-you-need-to-know.html
 
-- added: views.dns('//fonts.googleapis.com', '//google-analytics.com')
-- added: views.prefetch('http://daker.me/2013/05/hello-world.html')
-- added: views.prerender('http://daker.me/2013/05/hello-world.html')
+- added: @{dns('//fonts.googleapis.com', '//google-analytics.com')}
+- added: @{prefetch('http://daker.me/2013/05/hello-world.html')}
+- added: @{prerender('http://daker.me/2013/05/hello-world.html')}
+- added: @{head('//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js')} and @{head}
 
 - updated: auto CSS vendor prefixes
 - updated: websocket - client.close() - removed @status
