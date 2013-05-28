@@ -15,7 +15,9 @@
 
 - added: new example: https://github.com/petersirka/partial.js/tree/master/examples/views-head
 
+// http://www.partialjs.com/documentation/views/
 - updated: views: @{text}, @{hidden}, @{checkbox}, @{radio}, @{textarea}
+
 - updated: auto CSS vendor prefixes
 - updated: websocket - client.close() - removed @status
 
