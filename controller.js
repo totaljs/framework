@@ -31,6 +31,9 @@ var qs = require('querystring');
 
 var REPOSITORY_HEAD = '$head';
 var REPOSITORY_META = '$meta';
+var REPOSITORY_META_TITLE = '$title';
+var REPOSITORY_META_DESCRIPTION = '$description';
+var REPOSITORY_META_KEYWORDS = '$keywords';
 
 function Subscribe(framework, req, res) {
 	this.framework = framework;
@@ -502,6 +505,9 @@ Controller.prototype.log = function() {
 */
 Controller.prototype.meta = function() {
 	var self = this;
+	self.repository[REPOSITORY_META_TITLE] = arguments[0] || '';
+	self.repository[REPOSITORY_META_DESCRIPTION] = arguments[1] || '';
+	self.repository[REPOSITORY_META_KEYWORDS] = arguments[2] || '';
 	self.repository[REPOSITORY_META] = self.app.onMeta.apply(this, arguments);
 	return self;
 };
@@ -1849,6 +1855,12 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 				isEncode = false;
 				evl = false;
 				value = self.output;
+				break;
+
+			case 'title':
+			case 'description':
+			case 'keywords':
+				run = 'self.repository["$'+ execute.name + '"]';
 				break;
 
 			case 'meta':

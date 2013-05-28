@@ -264,6 +264,9 @@ function parse(html, controller) {
 						case 'sitemap':
 						case 'settings':
 						case 'layout':
+						case 'title':
+						case 'description':
+						case 'keywords':
 
 							if (code.indexOf('(') !== -1) {
 								beg = 'self.';
