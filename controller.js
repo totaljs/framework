@@ -771,148 +771,108 @@ Controller.prototype.$readonly = function(bool, charBeg, charEnd) {
 	Internal function for views
 	@model {Object}
 	@name {String}
-	@className {String}
-	@maxLength {Number}
-	@required {Boolean}
-	@disabled {Boolean}
-	@pattern {String}
-	@autocomplete {Boolean}
-	return {String};
-*/
-Controller.prototype.$text = function(model, name, className, maxLength, required, disabled, pattern, autocomplete) {
-
-	if (typeof(className) === 'object') {
-		maxLength = className.maxlength || 0;
-		required = className.required || false;
-		disabled = className.disabled || false;
-		pattern = className.pattern || '';
-		autocomplete = className.autocomplete || false;
-		className = className.class || '';
-	}
-
-	return this.$input(model, 'text', name, className, maxLength, required, disabled, pattern, autocomplete);
-};
-
-/*
-	Internal function for views
-	@model {Object}
-	@name {String}
-	@className {String}
-	@maxLength {Number}
-	@required {Boolean}
-	@disabled {Boolean}
-	@pattern {String}
-	@autocomplete {Boolean}
-	return {String};
-*/
-Controller.prototype.$password = function(model, name, className, maxLength, required, disabled, pattern, autocomplete) {
-
-	if (typeof(className) === 'object') {
-		maxLength = className.maxlength || 0;
-		required = className.required || false;
-		disabled = className.disabled || false;
-		pattern = className.pattern || '';
-		autocomplete = className.autocomplete || false;
-		className = className.class || '';
-	}
-
-	return this.$input(model, 'password', name, className, maxLength, required, disabled, pattern, autocomplete);
-};
-
-/*
-	Internal function for views
-	@model {Object}
-	@name {String}
-	return {String};
-*/
-Controller.prototype.$hidden = function(model, name) {
-	return this.$input(model, 'hidden', name);
-};
-
-/*
-	Internal function for views
-	@model {Object}
-	@name {String}
-	@value {String}
-	@label {String}
-	@required {Boolean}
-	@disabled {Boolean}
-	return {String};
-*/
-Controller.prototype.$radio = function(model, name, value, label, required, disabled) {
-	return this.$input(model, 'radio', name, '', 0, required, disabled, '', null, label, value);
-};
-
-/*
-	Internal function for views
-	@model {Object}
-	@name {String}
-	@label {String}
-	@required {Boolean}
-	@disabled {Boolean}
+	@attr {Object} :: optional
 	return {String}
 */
-Controller.prototype.$checkbox = function(model, name, label, required, disabled) {
-	return this.$input(model, 'checkbox', name, '', 0, required, disabled, '', null, label, '1');
+Controller.prototype.$text = function(model, name, attr) {
+	return this.$input(model, 'text', name, attr);
+};
+
+/*
+	Internal function for views
+	@model {Object}
+	@name {String} :: optional
+	@attr {Object} :: optional
+	return {String}
+*/
+Controller.prototype.$password = function(model, name, attr) {
+	return this.$input(model, 'password', name, attr);
 };
 
 /*
 	Internal function for views
 	@model {Object}
 	@name {String}
-	@className {String or Object}
-	@maxLength {Number}
-	@required {Boolean}
-	@disabled {Boolean}
-	@pattern {String}
+	@attr {Object} :: optional
 	return {String}
 */
-Controller.prototype.$textarea = function(model, name, className, maxLength, required, disabled, pattern) {
+Controller.prototype.$hidden = function(model, name, attr) {
+	return this.$input(model, 'hidden', name, attr);
+};
 
-	var cols = 0;
-	var rows = 0;
+/*
+	Internal function for views
+	@model {Object}
+	@name {String}
+	@attr {Object} :: optional
+	return {String}
+*/
+Controller.prototype.$radio = function(model, name, value, attr) {
 
-	if (typeof(className) === 'object') {
-		maxLength = className.maxlength || 0;
-		required = className.required || false;
-		disabled = className.disabled || false;
-		pattern = className.pattern || '';
-		autocomplete = className.autocomplete || false;
-		cols = className.cols || 0;
-		rows = className.rows || 0;
-		className = className.class || '';
-	}
+	if (typeof(attr) === 'string')
+		attr = { label: attr };
+
+	attr.value = value;
+	return this.$input(model, 'radio', name, attr);
+};
+
+/*
+	Internal function for views
+	@model {Object}
+	@name {String}
+	@attr {Object} :: optional
+	return {String}
+*/
+Controller.prototype.$checkbox = function(model, name, attr) {
+
+	if (typeof(attr) === 'string')
+		attr = { label: attr };
+
+	return this.$input(model, 'checkbox', name, attr);
+};
+
+/*
+	Internal function for views
+	@model {Object}
+	@name {String}
+	@attr {Object} :: optional	
+	return {String}
+*/
+Controller.prototype.$textarea = function(model, name, attr) {
 
 	var builder = '<textarea';
 	var attrEnd = '"';
 
 	builder += ' name="' + name + '" id="' + name + attrEnd;
 
-	if (className && className.length > 0)
-		builder += ' class="' + className + attrEnd;
+	if (attr.class)
+		builder += ' class="' + attr.class + attrEnd;
 
-	if (maxLength > 0)
-		builder += ' maxlength="'+ maxLength + attrEnd;
+	if (attr.maxlength > 0)
+		builder += ' maxlength="'+ attr.maxLength + attrEnd;
 
-	if (required)
+	if (attr.required === true)
 		builder += ' required="required"';
 
-	if (disabled)
+	if (attr.disabled === true)
 		builder += ' disabled="disabled"';
 
-	if (cols > 0)
-		builder += ' cols="' + cols + attrEnd;
+	if (attr.cols > 0)
+		builder += ' cols="' + attr.cols + attrEnd;
 
-	if (rows > 0)
-		builder += ' rows="' + rows + attrEnd;
+	if (attr.rows > 0)
+		builder += ' rows="' + attr.rows + attrEnd;
 
-	if (pattern && pattern.length > 0)
+	if (attr.style)
+		builder += ' style="' + attr.style + attrEnd;
+
+	if (attr.pattern)
 		builder += ' pattern="' + pattern + attrEnd;
 
 	if (typeof(model) === 'undefined')
 		return builder + '></textarea>';
 
-	var value = model[name] || '';
+	var value = (model[name] || attr.value) || '';
 	return builder + '>' + value.toString().htmlEncode() + '</textarea>';
 };
 
@@ -921,52 +881,76 @@ Controller.prototype.$textarea = function(model, name, className, maxLength, req
 	@model {Object}
 	@type {String}
 	@name {String}
-	@className {String}
-	@maxLength {Number}
-	@required {Boolean}
-	@disabled {Boolean}
-	@pattern {String}
-	@autocomplete {Boolean}
-	@label {String}
-	@val {String}
-	return {String};
+	@attr {Object} :: optional
+	return {String}
 */
-Controller.prototype.$input = function(model, type, name, className, maxLength, required, disabled, pattern, autocomplete, label, val) {
+Controller.prototype.$input = function(model, type, name, attr) {
 
 	var builder = ['<input'];
 	var attrEnd = '"';
+
+	if (typeof(attr) !== 'object')
+		attr = {};
+
+	var val = attr.value || '';
 
 	builder += ' type="' + type + attrEnd;
 
 	if (type === 'radio')
 		builder += ' name="' + name + attrEnd;
 	else
-		builder += ' name="' + name + '" id="' + name + attrEnd;
+		builder += ' name="' + name + '" id="' + (attr.id || name) + attrEnd;
 
-	if (className && className.length > 0)
-		builder += ' class="' + className + attrEnd;
+	if (attr.class)
+		builder += ' class="' + attr.class + attrEnd;
 
-	if (maxLength > 0)
-		builder += ' maxlength="' + maxLength + attrEnd;
+	if (attr.style)
+		builder += ' style="' + attr.style + attrEnd;
 
-	if (required)
+	if (attr.maxlength)
+		builder += ' maxlength="' + attr.maxlength + attrEnd;
+
+	if (attr.max)
+		builder += ' max="' + attr.max + attrEnd;
+
+	if (attr.step)
+		builder += ' step="' + attr.step + attrEnd;
+
+	if (attr.min)
+		builder += ' min="' + attr.min + attrEnd;
+
+	if (attr.readonly === true)
+		builder += ' readonly="readonly"';
+
+	if (attr.placeholder)
+		builder += ' placeholder"' + (attr.placeholder || '').toString().htmlEncode() + attrEnd;
+
+	if (attr.autofocus === true)
+		builder += ' autofocus="autofocus"';
+
+	if (attr.list)
+		builder += ' list="' + attr.list + attrEnd;
+
+	if (attr.required === true)
 		builder += ' required="required"';
 
-	if (disabled)
+	if (attr.disabled === true)
 		builder += ' disabled="disabled"';
 
-	if (pattern && pattern.length > 0)
-		builder += ' pattern="' + pattern + attrEnd;
+	if (attr.pattern && attr.pattern.length > 0)
+		builder += ' pattern="' + attr.pattern + attrEnd;
 
-	if (typeof(autocomplete) === 'boolean') {
-		if (autocomplete)
+	if (attr.autocomplete) {
+		if (attr.autocomplete === true || attr.autocomplete === 'on')
 			builder += ' autocomplete="on"';
 		else
 			builder += ' autocomplete="off"';
 	}
 
+	var value = '';
+
 	if (typeof(model) !== 'undefined') {
-		var value = model[name] || '';
+		value = model[name];
 
 		if (type === 'checkbox') {
 			if (value === '1' || value === 'true' || value === true)
@@ -984,15 +968,17 @@ Controller.prototype.$input = function(model, type, name, className, maxLength, 
 
 			value = val || '';
 		}
-
-		if (typeof(value) !== 'undefined')
-			builder += ' value="' + value.toString().htmlEncode() + attrEnd;
 	}
+
+	if (typeof(value) !== 'undefined')
+		builder += ' value="' + value.toString().htmlEncode() + attrEnd;
+	else
+		builder += ' value="' + (options.value || '').toString().htmlEncode() + attrEnd;
 
 	builder += ' />';
 
-	if (label)
-		return '<label>' + builder + ' <span>' + label + '</span></label>';
+	if (attr.label)
+		return '<label>' + builder + ' <span>' + attr.label + '</span></label>';
 
 	return builder;
 };
@@ -1208,8 +1194,8 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		name = name || 'name';
 
 	var isSelected = false;
-	arr.forEach(function(o, index) {
-
+	for (var i = 0; i < arr.length; i++) {
+		var o = arr[i];
 		var type = typeof(o);
 		var text = '';
 		var val = '';
@@ -1221,10 +1207,10 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 			val = (o[value] || '');
 
 			if (typeof(text) === 'function')
-				text = text(index);
+				text = text(i);
 
 			if (typeof(val) === 'function')
-				val = val(index, text);
+				val = val(i, text);
 
 		} else {
 			text = o;
@@ -1237,7 +1223,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		}
 
 		options += '<option value="' + val.toString().htmlEncode() + '"'+ (sel ? ' selected="selected"' : '') + '>' + text.toString().htmlEncode() + '</option>';
-	});
+	}
 
 	return options;
 };

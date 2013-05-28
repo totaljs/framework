@@ -177,7 +177,7 @@ function viewViews() {
 
 	self.repository.A = 'A';
 	output = self.view('c', { a: 'A', b: 'B', c: true, d: 'hidden<b>' }, true);
-
+	
 	assert.ok(output.contains('<input type="text" name="a" id="a" class="bootstrap" value="A" />'), name + 'text');
 	assert.ok(output.contains('<input type="hidden" name="d" id="d" value="hidden&lt;b&gt;" />'), name + 'hidden');
 	assert.ok(output.contains('<label><input type="checkbox" name="c" id="c" checked="checked" value="1" /> <span>test label</span></label>'), name + 'checkbox');
