@@ -835,7 +835,7 @@ Controller.prototype.$checkbox = function(model, name, attr) {
 	Internal function for views
 	@model {Object}
 	@name {String}
-	@attr {Object} :: optional	
+	@attr {Object} :: optional
 	return {String}
 */
 Controller.prototype.$textarea = function(model, name, attr) {
