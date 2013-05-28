@@ -452,7 +452,10 @@ function autoprefixer (value) {
 		updated += '-moz-' + plus;
 
 		if (name !== 'box-shadow' && name !== 'border-radius') {
-			updated += delimiter + '-ms-' + plus;
+			
+			if (name.indexOf('animation') === -1)
+				updated += delimiter + '-ms-' + plus;
+
 			updated += delimiter + '-o-' + plus;
 		}
 
