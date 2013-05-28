@@ -1047,6 +1047,36 @@ Controller.prototype.$prerender = function(value) {
 
 /*
 	Internal function for views
+	@value {String}
+	return {String};
+*/
+Controller.prototype.$next = function(value) {
+	this.head('<link rel="next" href="' + (value || '') + '" />');
+	return '';
+};
+
+/*
+	Internal function for views
+	@arguments {String}
+	return {String};
+*/
+Controller.prototype.$prev = function(value) {
+	this.head('<link rel="prev" href="' + (value || '') + '" />');
+	return '';
+};
+
+/*
+	Internal function for views
+	@arguments {String}
+	return {String};
+*/
+Controller.prototype.$canonical = function(value) {
+	this.head('<link rel="canonical" href="' + (value || '') + '" />');
+	return '';
+};
+
+/*
+	Internal function for views
 	@arguments {String}
 	return {String};
 */
@@ -1060,7 +1090,7 @@ Controller.prototype.head = function() {
 	var output = '';
 
 	for (var i = 0; i < arguments.length; i++) {
-		
+
 		var val = arguments[i];
 
 		if (val.indexOf('<') === -1) {
@@ -1860,15 +1890,12 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			case 'config':
 			case 'get':
 			case 'post':
-				value = eval(run);
-				evl = false;
-				break;
-
 			case 'dns':
+			case 'next':
+			case 'prev':
 			case 'prerender':
 			case 'prefetch':
-				value = eval(run);
-				evl = false;
+			case 'canonical':
 				break;
 
 			default:

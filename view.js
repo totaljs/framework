@@ -189,6 +189,9 @@ function parse(html, controller) {
 						case 'dns':
 						case 'prefetch':
 						case 'prerender':
+						case 'next':
+						case 'prev':
+						case 'canonical':
 							isEncode = false;
 							isDeclared = true;
 							code = 'self.$' + code;

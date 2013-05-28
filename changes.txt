@@ -1,11 +1,17 @@
 ======= 1.2.4-0
 
 // HTML 5 features http://daker.me/2013/05/5-html5-features-you-need-to-know.html
-
 - added: @{dns('//fonts.googleapis.com', '//google-analytics.com')}
 - added: @{prefetch('http://daker.me/2013/05/hello-world.html')}
 - added: @{prerender('http://daker.me/2013/05/hello-world.html')}
 - added: @{head('//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js')} and @{head}
+
+// http://googlewebmastercentral.blogspot.sk/2011/09/pagination-with-relnext-and-relprev.html
+- added: @{next('/page/3/')}
+- added: @{prev('/page/1/')}
+
+// http://googlewebmastercentral.blogspot.sk/2009/02/specify-your-canonical.html
+- added: @{canonical('/original/12345-product/')}
 
 - added: new example: https://github.com/petersirka/partial.js/tree/master/examples/views-head
 
