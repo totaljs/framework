@@ -18,8 +18,9 @@
 - added: @{title}, @{description}, @{keywords}
 
 // http://www.partialjs.com/documentation/views/
-- updated: views: @{text}, @{hidden}, @{checkbox}, @{radio}, @{textarea}
+- updated: @{text}, @{hidden}, @{checkbox}, @{radio}, @{textarea}
 
+- updated: @{image('url', { width: 200, height: 200, class: 'CLASS' })} or @{image('url', 200, 200, 'ALT', 'CLASS')}
 - updated: auto CSS vendor prefixes
 - updated: websocket - client.close() - removed @status
 

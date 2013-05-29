@@ -463,7 +463,7 @@ Controller.prototype.cancel = function() {
 /*
 	Get path
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.pathPublic = function(name) {
 	return utils.combine(this.app.config['directory-public'], name).replace(/\\/g, '/');
@@ -472,7 +472,7 @@ Controller.prototype.pathPublic = function(name) {
 /*
 	Get path
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.pathLog = function(name) {
 	return utils.combine(this.app.config['directory-logs'], name).replace(/\\/g, '/');
@@ -481,7 +481,7 @@ Controller.prototype.pathLog = function(name) {
 /*
 	Get path
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.pathTemp = function(name) {
 	return utils.combine(this.app.config['directory-temp'], name).replace(/\\/g, '/');
@@ -647,7 +647,7 @@ Controller.prototype.setExpires = function(date) {
 	Internal function for views
 	@name {String} :: filename
 	@model {Object}
-	return {String};
+	return {String}
 */
 Controller.prototype.$view = function(name, model) {
 	return this.$viewToggle(true, name, model);
@@ -658,7 +658,7 @@ Controller.prototype.$view = function(name, model) {
 	@visible {Boolean}
 	@name {String} :: filename
 	@model {Object}
-	return {String};
+	return {String}
 */
 Controller.prototype.$viewToggle = function(visible, name, model) {
 	if (!visible)
@@ -669,7 +669,7 @@ Controller.prototype.$viewToggle = function(visible, name, model) {
 /*
 	Internal function for views
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.$content = function(name) {
 	return this.$contentToggle(true, name);
@@ -679,7 +679,7 @@ Controller.prototype.$content = function(name) {
 	Internal function for views
 	@visible {Boolean}
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.$contentToggle = function(visible, name) {
 
@@ -849,6 +849,9 @@ Controller.prototype.$textarea = function(model, name, attr) {
 	var builder = '<textarea';
 	var attrEnd = '"';
 
+	if (typeof(attr) !== 'object')
+		attr = {};
+
 	builder += ' name="' + name + '" id="' + name + attrEnd;
 
 	if (attr.class)
@@ -979,7 +982,7 @@ Controller.prototype.$input = function(model, type, name, attr) {
 	if (typeof(value) !== 'undefined')
 		builder += ' value="' + value.toString().htmlEncode() + attrEnd;
 	else
-		builder += ' value="' + (options.value || '').toString().htmlEncode() + attrEnd;
+		builder += ' value="' + (attr.value || '').toString().htmlEncode() + attrEnd;
 
 	builder += ' />';
 
@@ -992,7 +995,7 @@ Controller.prototype.$input = function(model, type, name, attr) {
 /*
 	Internal function for views
 	@arguments {String}
-	return {String};
+	return {String}
 */
 Controller.prototype.$dns = function(value) {
 
@@ -1008,7 +1011,7 @@ Controller.prototype.$dns = function(value) {
 /*
 	Internal function for views
 	@arguments {String}
-	return {String};
+	return {String}
 */
 Controller.prototype.$prefetch = function() {
 
@@ -1024,7 +1027,7 @@ Controller.prototype.$prefetch = function() {
 /*
 	Internal function for views
 	@arguments {String}
-	return {String};
+	return {String}
 */
 Controller.prototype.$prerender = function(value) {
 
@@ -1040,7 +1043,7 @@ Controller.prototype.$prerender = function(value) {
 /*
 	Internal function for views
 	@value {String}
-	return {String};
+	return {String}
 */
 Controller.prototype.$next = function(value) {
 	this.head('<link rel="next" href="' + (value || '') + '" />');
@@ -1050,7 +1053,7 @@ Controller.prototype.$next = function(value) {
 /*
 	Internal function for views
 	@arguments {String}
-	return {String};
+	return {String}
 */
 Controller.prototype.$prev = function(value) {
 	this.head('<link rel="prev" href="' + (value || '') + '" />');
@@ -1060,7 +1063,7 @@ Controller.prototype.$prev = function(value) {
 /*
 	Internal function for views
 	@arguments {String}
-	return {String};
+	return {String}
 */
 Controller.prototype.$canonical = function(value) {
 	this.head('<link rel="canonical" href="' + (value || '') + '" />');
@@ -1070,7 +1073,7 @@ Controller.prototype.$canonical = function(value) {
 /*
 	Internal function for views
 	@arguments {String}
-	return {String};
+	return {String}
 */
 Controller.prototype.head = function() {
 
@@ -1237,7 +1240,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 /*
 	Append <script> TAG
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.$script = function(name) {
 	return this.routeJS(name, true);
@@ -1250,7 +1253,7 @@ Controller.prototype.$js = function(name) {
 /*
 	Appedn style <link> TAG
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.$css = function(name) {
 	return this.routeCSS(name, true);
@@ -1263,10 +1266,39 @@ Controller.prototype.$css = function(name) {
 	@height {Number} :: optional
 	@alt {String} :: optional
 	@className {String} :: optional
-	return {String};
+	return {String}
 */
 Controller.prototype.$image = function(name, width, height, alt, className) {
-	return this.routeImage(name, true, width, height, alt, className);
+
+	var attrEnd = '"';
+	var style = '';
+
+	if (typeof(width) === 'object') {
+		height = width.height;
+		alt = width.alt;
+		className = width.class;
+		style = width.style;
+		width = width.width;
+	}
+
+	var builder = '<img src="' + this.routeImage(name) + attrEnd;
+
+	if (width > 0)
+		builder += ' width="' + width + attrEnd;
+
+	if (height > 0)
+		builder += ' height="' + height + attrEnd;
+
+	if (alt)
+		builder += ' alt="' + alt.htmlEncode() + attrEnd;
+
+	if (className)
+		builder += ' class="' + className + attrEnd;
+
+	if (style)
+		builder += ' style="' + style + attrEnd;
+
+	return builder + ' border="0" />';
 };
 
 /*
@@ -1285,7 +1317,7 @@ Controller.prototype.$json = function(obj, name) {
 	Static file routing
 	@name {String} :: filename
 	@tag {Boolean} :: optional, append tag? default: false
-	return {String};
+	return {String}
 */
 Controller.prototype.routeJS = function(name, tag) {
 	var self = this;
@@ -1300,7 +1332,7 @@ Controller.prototype.routeJS = function(name, tag) {
 	Static file routing
 	@name {String} :: filename
 	@tag {Boolean} :: optional, append tag? default: false
-	return {String};
+	return {String}
 */
 Controller.prototype.routeCSS = function(name, tag) {
 	var self = this;
@@ -1314,7 +1346,7 @@ Controller.prototype.routeCSS = function(name, tag) {
 /*
 	Append favicon TAG
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.$favicon = function(name) {
 	var self = this;
@@ -1337,40 +1369,16 @@ Controller.prototype.$favicon = function(name) {
 /*
 	Static file routing
 	@name {String} :: filename
-	@tag {Boolean} :: optional, append tag? default: false
-	@width {Number} :: optional
-	@height {Number} :: optional
-	@alt {String} :: optional
-	@className {String} :: optional
-	return {String};
+	return {String}
 */
-Controller.prototype.routeImage = function(name, tag, width, height, alt, className) {
-	var self = this;
-
-	if (!tag)
-		return self.app.routeImage(name);
-
-	var builder = '<img src="{0}" border="0" ';
-
-	if (width > 0)
-		builder += 'width="{0}" '.format(width);
-
-	if (height > 0)
-		builder += 'height="{0}" '.format(height);
-
-	if (alt)
-		builder += 'alt="{0}" '.format(alt);
-
-	if (className)
-		builder += 'class="{0}" '.format(className);
-
-	return builder.format(self.app.routeImage(name)) + '/>';
+Controller.prototype.routeImage = function(name) {
+	return this.app.routeImage(name);
 };
 
 /*
 	Static file routing
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.routeVideo = function(name) {
 	var self = this;
@@ -1380,7 +1388,7 @@ Controller.prototype.routeVideo = function(name) {
 /*
 	Static file routing
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.routeFont = function(name) {
 	var self = this;
@@ -1390,7 +1398,7 @@ Controller.prototype.routeFont = function(name) {
 /*
 	Static file routing
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.routeDocument = function(name) {
 	var self = this;
@@ -1400,7 +1408,7 @@ Controller.prototype.routeDocument = function(name) {
 /*
 	Static file routing
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Controller.prototype.routeStatic = function(name) {
 	var self = this;
@@ -1411,7 +1419,7 @@ Controller.prototype.routeStatic = function(name) {
 	Resource reader
 	@name {String} :: filename
 	@key {String}
-	return {String};
+	return {String}
 */
 Controller.prototype.resource = function(name, key) {
 	var self = this;
@@ -1425,7 +1433,7 @@ Controller.prototype.resource = function(name, key) {
 	@nameEmpty {String} :: filename for empty Contents
 	@repository {Object}
 	@cb {Function} :: callback(string)
-	return {String};
+	return {String}
 */
 Controller.prototype.template = function(name, model, nameEmpty, repository) {
 
