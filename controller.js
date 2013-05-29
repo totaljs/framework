@@ -932,7 +932,7 @@ Controller.prototype.$input = function(model, type, name, attr) {
 		builder += ' readonly="readonly"';
 
 	if (attr.placeholder)
-		builder += ' placeholder"' + (attr.placeholder || '').toString().htmlEncode() + attrEnd;
+		builder += ' placeholder="' + (attr.placeholder || '').toString().htmlEncode() + attrEnd;
 
 	if (attr.autofocus === true)
 		builder += ' autofocus="autofocus"';
