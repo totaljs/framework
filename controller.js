@@ -1689,7 +1689,7 @@ Controller.prototype.view500 = function(error) {
 		return self;
 
 	self.req.path = [];
-	self.framework.error(error, self.name, self.req.uri);
+	self.framework.error(new Error(error), self.name, self.req.uri);
 	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#500', []);
 	self.subscribe.execute(500);
