@@ -858,7 +858,7 @@ Controller.prototype.$textarea = function(model, name, attr) {
 		builder += ' class="' + attr.class + attrEnd;
 
 	if (attr.maxlength > 0)
-		builder += ' maxlength="'+ attr.maxLength + attrEnd;
+		builder += ' maxlength="'+ attr.maxlength + attrEnd;
 
 	if (attr.required === true)
 		builder += ' required="required"';
