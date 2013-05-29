@@ -852,7 +852,7 @@ Controller.prototype.$textarea = function(model, name, attr) {
 	if (typeof(attr) !== 'object')
 		attr = {};
 
-	builder += ' name="' + name + '" id="' + name + attrEnd;
+	builder += ' name="' + name + '" id="' + (attr.id || name) + attrEnd;
 
 	if (attr.class)
 		builder += ' class="' + attr.class + attrEnd;
