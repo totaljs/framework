@@ -281,7 +281,7 @@ Mailer.prototype.send = function(smtp, addressFrom, addressTo, addressCc, subjec
 	var self = this;
 
 	if (smtp === null || smtp === '') {
-		smtp = getHostName(addressFrom);
+		smtp = getHostName(addressTo);
 
 		resolveMx(smtp, function(err, socket) {
 
