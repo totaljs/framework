@@ -142,8 +142,8 @@ function createFileViews(directory) {
 	buffer.push('');
 	buffer.push('    @{body}');
 	buffer.push('');
-	buffer.push('<body>');
-	buffer.push('<html>');
+	buffer.push('</body>');
+	buffer.push('</html>');
 
 	fs.writeFileSync(path.join(dir, '_layout.html'), buffer.join(EOF));
 }

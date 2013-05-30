@@ -24,6 +24,8 @@
 - updated: auto CSS vendor prefixes
 - updated: websocket - client.close() - removed @status
 
+- fixed: binary (executable)
+
 - clean code
 
 ======= 1.2.3-9
