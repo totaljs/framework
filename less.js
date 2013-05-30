@@ -487,7 +487,7 @@ function autoprefixer_keyframes (value) {
 		var counter = 0;
 		var end = -1;
 
-		for (var indexer = index + 15; indexer < value.length; indexer++) {
+		for (var indexer = index + 10; indexer < value.length; indexer++) {
 
 			if (value[indexer] === '{')
 				counter++;

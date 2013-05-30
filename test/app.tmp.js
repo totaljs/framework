@@ -1,4 +1,4 @@
-var utils = require('partial.js/utils');
+var utils = require('../utils');
 
 var fs = require('fs');
 
