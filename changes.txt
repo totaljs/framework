@@ -14,7 +14,6 @@
 - added: @{canonical('/original/12345-product/')}
 
 - added: new example: https://github.com/petersirka/partial.js/tree/master/examples/views-head
-
 - added: @{title}, @{description}, @{keywords}
 
 // http://www.partialjs.com/documentation/views/
