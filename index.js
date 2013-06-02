@@ -713,22 +713,29 @@ Framework.prototype.onAuthorization = null;
 /*
 	Prefix delegate
 	@req {ServerRequest}
-	return {String}; :: return prefix (default return empty string)
+	return {String} :: return prefix (default return empty string)
 */
 Framework.prototype.onPrefix = null;
 
 /*
 	Versioning static files (this delegate call LESS CSS by the background property)
 	@name {String} :: name of static file (style.css or script.js)
-	return {String}; :: return new name of static file (style-new.css or script-new.js)
+	return {String} :: return new name of static file (style-new.css or script-new.js)
 */
 Framework.prototype.onVersion = null;
+
+/*
+	Skipper delegate
+	@name {String}
+	return {Boolean}
+*/
+Framework.prototype.onSkip = null;
 
 /*
 	Route validator / Request restriction
 	@req {ServerRequest}
 	@res {ServerResponse}
-	return {Boolean};
+	return {Boolean}
 */
 Framework.prototype.onRoute = null;
 
@@ -1438,8 +1445,10 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 
 		// compile JavaScript and CSS
 		if (['js', 'css'].indexOf(extension) !== -1) {
-			name = self.compileStatic(req, fileName);
-			self.static[fileName] = name;
+			if (name.indexOf('.min.') === -1 && name.indexOf('-min.') === -1) {
+				name = self.compileStatic(req, name);
+				self.static[fileName] = name;
+			}
 		}
 
 		self.static[fileName] = name;
