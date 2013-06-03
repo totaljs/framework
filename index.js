@@ -2437,7 +2437,7 @@ Framework.prototype.encode = function(value, key, isUnique) {
 	@value {String}
 	@key {String}
 	@jsonConvert {Boolean} :: optional (convert string to JSON)
-	return {String or Object};
+	return {String or Object}
 */
 Framework.prototype.decode = function(value, key, jsonConvert) {
 
@@ -2456,7 +2456,7 @@ Framework.prototype.decode = function(value, key, jsonConvert) {
 	Resource reader
 	@name {String} :: filename of resource
 	@key {String}
-	return {String};
+	return {String}
 */
 Framework.prototype.resource = function(name, key) {
 
@@ -2562,6 +2562,11 @@ Framework.prototype.configure = function() {
 	return self;
 };
 
+/*
+	Verification
+	@cb {Function} :: param @errors {String array}
+	return {Framework}
+*/
 Framework.prototype.verification = function(cb) {
 
 	var self = this;
@@ -2576,16 +2581,16 @@ Framework.prototype.verification = function(cb) {
 		if (self.verify.length > 0) {
 			var test = self.verify.shift();
 			test();
-			return;
+			return self;
 		}
 
 		if (self.verify.length === 0) {
 			self.verify = null;
 			cb.call(this, self.verifyError);
-			return;
+			return self;
 		}
 
-		return;
+		return self;
 	}
 
 	self.verify = [];
@@ -2671,7 +2676,7 @@ Framework.prototype.verification = function(cb) {
 /*
 	Static file routing
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Framework.prototype.routeJS = function(name) {
 	var self = this;
@@ -2685,7 +2690,7 @@ Framework.prototype.routeJS = function(name) {
 /*
 	Static file routing
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Framework.prototype.routeCSS = function(name) {
 	var self = this;
@@ -2699,7 +2704,7 @@ Framework.prototype.routeCSS = function(name) {
 /*
 	Static file routing
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Framework.prototype.routeImage = function(name) {
 	var self = this;
@@ -2709,7 +2714,7 @@ Framework.prototype.routeImage = function(name) {
 /*
 	Static file routing
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Framework.prototype.routeVideo = function(name) {
 	var self = this;
@@ -2719,7 +2724,7 @@ Framework.prototype.routeVideo = function(name) {
 /*
 	Static file routing
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Framework.prototype.routeFont = function(name) {
 	var self = this;
@@ -2729,7 +2734,7 @@ Framework.prototype.routeFont = function(name) {
 /*
 	Static file routing
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Framework.prototype.routeDocument = function(name) {
 	var self = this;
@@ -2739,7 +2744,7 @@ Framework.prototype.routeDocument = function(name) {
 /*
 	Static file routing
 	@name {String} :: filename
-	return {String};
+	return {String}
 */
 Framework.prototype.routeStatic = function(name) {
 	var self = this;
@@ -2750,7 +2755,7 @@ Framework.prototype.routeStatic = function(name) {
 	Internal static file routing
 	@name {String} :: filename
 	@directory {String} :: directory
-	return {String};
+	return {String}
 */
 Framework.prototype.routeStaticSync = function(name, directory) {
 	var self = this;
@@ -2758,6 +2763,14 @@ Framework.prototype.routeStaticSync = function(name, directory) {
 	return directory + fileName;
 };
 
+/*
+	Internal function
+	@req {HttpRequest}
+	@url {String}
+	@flags {String Array}
+	@noLoggedUnlogged {Boolean} :: optional, default false
+	return {ControllerRoute}
+*/
 Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 
 	var self = this;
@@ -2804,6 +2817,12 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 	return null;
 };
 
+/*
+	Internal function
+	@req {HttpRequest}
+	@url {String}
+	return {WebSocketRoute}
+*/
 Framework.prototype.lookup_websocket = function(req, url) {
 
 	var self = this;
