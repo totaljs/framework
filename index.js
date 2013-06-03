@@ -2020,7 +2020,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
     var route = self.lookup_websocket(req, socket.uri.pathname);
     if (route === null) {
-    	socket.close(403);
+    	socket.close();
     	socket.dispose();
     	socket = null;
     	return;
@@ -2037,7 +2037,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		self.onAuthorization.call(self, req, socket, route.flags, function(isLogged) {
 
 			if (logged && !isLogged) {
-		    	socket.close(403);
+		    	socket.close();
 		    	socket.dispose();
 		    	socket = null;
 		    	req = null;
@@ -2046,7 +2046,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 			}
 
 			if (!logged && isLogged) {
-		    	socket.close(403);
+		    	socket.close();
 		    	socket.dispose();
 		    	socket = null;
 		    	req = null;
@@ -2068,7 +2068,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 	var self = this;
 
     if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version)) {
-    	socket.close(403);
+    	socket.close();
     	socket.dispose();
     	socket = null;
     	req = null;

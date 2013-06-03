@@ -572,7 +572,6 @@ WebSocketClient.prototype.send = function(message) {
 
 /*
     Close connection
-    @status {Number} :: HTTP Status, optional, default undefined
     return {WebSocketClient}
 */
 WebSocketClient.prototype.close = function() {
