@@ -100,7 +100,7 @@ function Framework() {
 		'default-request-timeout': 3000,
 
 		'allow-gzip': true,
-		'allow-websocket': true
+		'allow-websocket': true,
 	};
 
 	this.global = {};
@@ -145,7 +145,6 @@ function Framework() {
 // ======================================================
 
 Framework.prototype = new events.EventEmitter;
-
 
 /*
 	Refresh framework internal information
@@ -244,6 +243,7 @@ Framework.prototype.database = function(name, changes) {
 
 /*
 	Stop the server and exit
+	@code {Number} :: optional, exit code - default 0
 	return {Framework}
 */
 Framework.prototype.stop = function(code) {
@@ -263,8 +263,10 @@ Framework.prototype.stop = function(code) {
 	Add a new route
 	@url {String}
 	@funcExecute {Function}
-	@flags {String array}
-	@maximumSize {Number}
+	@flags {String array} :: optional, default []
+	@maximumSize {Number} :: optional, default by the config
+	@partial {String Array} :: optional, partial content
+	@timeout {Number} :: optional, default by the config
 	return {Framework}
 */
 Framework.prototype.route = function(url, funcExecute, flags, maximumSize, partial, timeout) {
@@ -351,7 +353,7 @@ Framework.prototype.partial = function(name, funcExecute) {
 	@flags {String Array} :: optional
 	@protocols {String Array} :: optional, websocket-allow-protocols
 	@allow {String Array} :: optional, allow origin
-	@maximumSize {Number} :: optional, maximum size length
+	@maximumSize {Number} :: optional, default by the config
 	return {Framework}
 */
 Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, maximumSize) {
@@ -401,7 +403,8 @@ Framework.prototype.file = function(name, funcValidation, funcExecute) {
 /*
 	Error caller
 	@err {Error}
-	@name {String} :: name of controller
+	@name {String} :: controller name
+	@uri {URI} :: optional
 	return {Framework}
 */
 Framework.prototype.error = function(err, name, uri) {
@@ -971,7 +974,7 @@ Framework.prototype.createResource = function(name, content, rewrite, append) {
 };
 
 /*
-	Create file with content
+	Internal :: Create file with content
 	@fileName {String}
 	@content {String}
 	@append {Boolean}
@@ -1007,7 +1010,7 @@ Framework.prototype.createFile = function(fileName, content, append, rewrite) {
 };
 
 /*
-	Delete file of CSS
+	Delete file - CSS
 	@name {String}
 	return {Boolean}
 */
@@ -1022,7 +1025,7 @@ Framework.prototype.deleteCSS = function(name) {
 };
 
 /*
-	Delete file of JS
+	Delete file - JS
 	@name {String}
 	return {Boolean}
 */
@@ -1037,7 +1040,7 @@ Framework.prototype.deleteJS = function(name) {
 };
 
 /*
-	Delete file of view
+	Delete file - View
 	@name {String}
 	return {Boolean}
 */
@@ -1052,7 +1055,7 @@ Framework.prototype.deleteView = function(name) {
 };
 
 /*
-	Delete file of content
+	Delete file - Content
 	@name {String}
 	return {Boolean}
 */
@@ -1067,7 +1070,7 @@ Framework.prototype.deleteContent = function(name) {
 };
 
 /*
-	Delete file of template
+	Delete file - Template
 	@name {String}
 	return {Boolean}
 */
@@ -1082,7 +1085,7 @@ Framework.prototype.deleteTemplate = function(name) {
 };
 
 /*
-	Delete file of resource
+	Delete file - Resource
 	@name {String}
 	return {Boolean}
 */
@@ -1097,7 +1100,7 @@ Framework.prototype.deleteResource = function(name) {
 };
 
 /*
-	Delete file
+	Internal :: Delete file
 	@name {String}
 	return {Boolean}
 */
@@ -1367,7 +1370,7 @@ Framework.prototype.compileStatic = function(req, fileName) {
 };
 
 /*
-	Automatic serve static files
+	Serve static files
 	@req {ServerRequest}
 	@res {ServerResponse}
 	return {Framework}
@@ -1396,7 +1399,7 @@ Framework.prototype.responseStatic = function(req, res) {
 	@res {ServerResponse}
 	@fileName {String}
 	@downloadName {String} :: optional
-	@headers {Object} :: optional key/value
+	@headers {Object} :: optional
 	return {Framework}
 */
 Framework.prototype.responseFile = function(req, res, fileName, downloadName, headers) {
@@ -1529,7 +1532,7 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 	@contentType {String}
 	@stream {ReadStream}
 	@downloadName {String} :: optional
-	@headers {Object} :: optional key/value
+	@headers {Object} :: optional
 	return {Framework}
 */
 Framework.prototype.responseStream = function(req, res, contentType, stream, downloadName, headers) {
@@ -1599,7 +1602,6 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 	res.writeHead(200, returnHeaders);
 	stream.pipe(res);
-
 	stream = null;
 	req = null;
 	res = null;
