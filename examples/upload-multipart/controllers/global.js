@@ -9,8 +9,7 @@ exports.install = function(framework) {
 
 function viewHomepage() {
 	var self = this;	
-	
-	self.repository.title = 'Templates';
+	self.repository.title = 'File upload';
 
 	var model = { info: '...' };
 
