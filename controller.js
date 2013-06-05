@@ -34,6 +34,7 @@ var REPOSITORY_META = '$meta';
 var REPOSITORY_META_TITLE = '$title';
 var REPOSITORY_META_DESCRIPTION = '$description';
 var REPOSITORY_META_KEYWORDS = '$keywords';
+var BOUNDARY = 'partialjs';
 
 function Subscribe(framework, req, res) {
 	this.framework = framework;
@@ -379,6 +380,12 @@ function Controller(name, framework, req, res, subscribe) {
 		this.prefix = this.prefix;
 
 	this.async = new utils.Async(this);
+	this.live = new Mixed(this);
+};
+
+function Mixed(controller) {
+	this.controller = controller;
+	this.isOpened = false;
 };
 
 // ======================================================
@@ -1969,6 +1976,59 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	self.isLayout = true;
 	self.view(self.internal.layout, null, headers);
 	return self;
+};
+
+Mixed.prototype.beg = function() {
+	var self = this;
+
+	if (self.isOpened)
+		return self.controller;
+
+	var res = self.controller.res;
+
+	res.success = true;
+	res.writeHead(self.statusCode, { 'MIME-Version', '1.0', 'Content-type': 'multipart/x-mixed-replace; boundary=' + BOUNDARY });
+
+	return self.controller;
+};
+
+Mixed.prototype.end = function() {
+	var self = this;
+
+	if (!self.isOpened)
+		return self.controller;
+
+	self.isOpened = false;
+	self.controller.res.end();
+	return self.controller;
+};
+
+/*
+	Send file
+	@filename {String}
+	@contentType {String}
+	@{stream} {Stream} :: optional, if undefined then framework reads by the filename file from disk
+*/
+Midex.prototype.write = function(filename, stream) {
+
+	var self = this;
+
+	if (!self.isOpened)
+		return self.controller;
+
+	self.res.write('Content-Type': utils.getContentType(filename));
+
+	if (typeof(stream) !== 'undefined') {
+		stream.pipe(res, { end: false });
+		self.res.write('--' + BOUNDARY);
+		return self.controller;
+	}
+
+	var stream = fs.createReadStream(filename);
+	stream.pipe(res, { end: false });
+	self.res.write('--' + BOUNDARY);
+
+	return self.controller;
 };
 
 // ======================================================

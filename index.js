@@ -1388,8 +1388,8 @@ Framework.prototype.responseStatic = function(req, res) {
 	if (index !== -1)
 		name = name.substring(0, index);
 
-	var fileName = utils.combine(self.config['directory-public'], name);
-	self.responseFile(req, res, fileName, '');
+	var filename = utils.combine(self.config['directory-public'], name);
+	self.responseFile(req, res, filename, '');
 	return self;
 };
 
@@ -1397,12 +1397,12 @@ Framework.prototype.responseStatic = function(req, res) {
 	Response file
 	@req {ServerRequest}
 	@res {ServerResponse}
-	@fileName {String}
+	@filename {String}
 	@downloadName {String} :: optional
 	@headers {Object} :: optional
 	return {Framework}
 */
-Framework.prototype.responseFile = function(req, res, fileName, downloadName, headers) {
+Framework.prototype.responseFile = function(req, res, filename, downloadName, headers) {
 
 	var self = this;
 
@@ -1411,7 +1411,7 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 
 	req.clear();
 
-	var name = self.static[fileName];
+	var name = self.static[filename];
 
 	if (name === null) {
 		self.response404(req, res);
@@ -1429,7 +1429,7 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 		}
 	}
 
-	var extension = path.extname(fileName).substring(1);
+	var extension = path.extname(filename).substring(1);
 
 	if (self.config['static-accepts'].indexOf('.' + extension) === -1) {
 		self.response404(req, res);
@@ -1438,26 +1438,26 @@ Framework.prototype.responseFile = function(req, res, fileName, downloadName, he
 
 	if (typeof(name) === 'undefined') {
 
-		if (!fs.existsSync(fileName)) {
-			self.static[fileName] = null;
+		if (!fs.existsSync(filename)) {
+			self.static[filename] = null;
 			self.response404(req, res);
 			return self;
 		}
 
-		name = fileName;
+		name = filename;
 
 		// compile JavaScript and CSS
 		if (['js', 'css'].indexOf(extension) !== -1) {
 			if (name.indexOf('.min.') === -1 && name.indexOf('-min.') === -1) {
 				name = self.compileStatic(req, name);
-				self.static[fileName] = name;
+				self.static[filename] = name;
 			}
 		}
 
-		self.static[fileName] = name;
+		self.static[filename] = name;
 
 		if (self.config.debug)
-			delete self.static[fileName];
+			delete self.static[filename];
 	}
 
 	var compress = self.config['allow-gzip'] && ['js', 'css', 'txt'].indexOf(extension) !== -1;
