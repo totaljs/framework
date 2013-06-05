@@ -17,6 +17,8 @@ exports.init = function() {
 	self.route('/login/google/callback/', aa);
 	self.route('/timeout/', function() {}, [], null, [], 50);
 
+	self.route('/live/', viewLive);
+
 	self.route('#408', function() { 
 		var self = this;
 		self.global.timeout++;
@@ -126,7 +128,7 @@ function viewIndex() {
 	assert.ok(self.content('test') === 'EMPTY', name + 'content');
 	assert.ok(self.url === '/', name + 'url');
 
-	var error = self.validation({ A: 'B' }, ['A']);	
+	var error = self.validate({ A: 'B' }, ['A']);	
 	assert.ok(error.hasError() && error.read('A') === 'AB', 'framework.onValidation & contrller.validation');
 
 	self.statusCode = 404;
@@ -232,3 +234,17 @@ function viewJS() {
 	self.layout('');
 	self.view('d');
 }
+
+function viewLive() {
+
+	var self = this;
+
+	self.mixed.beg();
+
+	self.mixed.send('/users/petersirka/desktop/zombie1.png');
+
+	setTimeout(function() {
+		self.mixed.send('/users/petersirka/desktop/zombie2.png', self.mixed.end.bind(self));		
+	}, 3000);
+
+};

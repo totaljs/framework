@@ -126,6 +126,7 @@ function Framework() {
 	this.static = {};
 	this.staticRange = {};
 	this.databases = {};
+	this.directory = directory;
 
 	this.stats = {
 		web: 0,

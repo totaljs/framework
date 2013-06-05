@@ -1,6 +1,8 @@
-IN DEVELOPMENT ======= 1.2.4-1
+======= 1.2.4-1
 
 - added: auto skipping minified JS or CSS - filename must contain scriptname[-min.js(.css)] or scriptname[.min.js(.css)]
+- added: file streaming via multipart/mixed-replace (https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
+
 - clean code
 
 ======= 1.2.4-0

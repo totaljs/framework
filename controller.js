@@ -28,13 +28,14 @@ var generatorView = require('./view');
 var generatorTemplate = require('./template');
 var path = require('path');
 var qs = require('querystring');
+var fs = require('fs');
 
 var REPOSITORY_HEAD = '$head';
 var REPOSITORY_META = '$meta';
 var REPOSITORY_META_TITLE = '$title';
 var REPOSITORY_META_DESCRIPTION = '$description';
 var REPOSITORY_META_KEYWORDS = '$keywords';
-var BOUNDARY = 'partialjs';
+var BOUNDARY = '--partialjs';
 
 function Subscribe(framework, req, res) {
 	this.framework = framework;
@@ -380,7 +381,7 @@ function Controller(name, framework, req, res, subscribe) {
 		this.prefix = this.prefix;
 
 	this.async = new utils.Async(this);
-	this.live = new Mixed(this);
+	this.mixed = new Mixed(this);
 };
 
 function Mixed(controller) {
@@ -394,6 +395,10 @@ function Mixed(controller) {
 
 /*
 	Validation / alias for validate
+	@model {Object}
+	@properties {String Array}
+	@prefix {String} :: optional - prefix in a resource
+	@name {String} :: optional - a resource name
 	return {ErrorBuilder}
 */
 Controller.prototype.validation = function(model, properties, prefix, name) {
@@ -401,11 +406,11 @@ Controller.prototype.validation = function(model, properties, prefix, name) {
 };
 
 /*
-	Validation object
-	@model {Object} :: object to validate
-	@properties {String array} : what properties?
-	@prefix {String} :: prefix for resource = prefix + model name
-	@name {String} :: name of resource
+	Validation / alias for validate
+	@model {Object}
+	@properties {String Array}
+	@prefix {String} :: optional - prefix in a resource
+	@name {String} :: optional - a resource name
 	return {ErrorBuilder}
 */
 Controller.prototype.validate = function(model, properties, prefix, name) {
@@ -1484,7 +1489,6 @@ Controller.prototype.json = function(obj, headers) {
 
 	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.statusCode, obj, 'application/json', true, headers);
-	self._dispose();
 	return self;
 };
 
@@ -1524,7 +1528,6 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 
 	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.statusCode, contentBody, contentType || 'text/plain', true, headers);
-	self._dispose();
 	return self;
 };
 
@@ -1567,7 +1570,6 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	});
 
 	res.end();
-	self._dispose();
 	return self;
 };
 
@@ -1585,43 +1587,41 @@ Controller.prototype.plain = function(contentBody, headers) {
 
 	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.statusCode, typeof(contentBody) === 'string' ? contentBody : contentBody.toString(), 'text/plain', true, headers);
-	self._dispose();
 	return self;
 };
 
 /*
 	Response file
-	@fileName {String}
+	@filename {String}
 	@downloadName {String} :: optional
 	@headers {Object} :: optional
 	return {Controller};
 */
-Controller.prototype.file = function(fileName, downloadName, headers) {
+Controller.prototype.file = function(filename, downloadName, headers) {
 	var self = this;
 
 	if (self.isCanceled || self.res.success)
 		return self;
 
-	fileName = utils.combine(self.framework.config['directory-public'], fileName);
+	filename = utils.combine(self.framework.config['directory-public'], filename);
 
 	self.subscribe.success();
-	self.framework.responseFile(self.req, self.res, fileName, downloadName, headers);
-	self._dispose();
+	self.framework.responseFile(self.req, self.res, filename, downloadName, headers);
 	return self;
 };
 
 /*
 	Response Async file
-	@fileName {String}
+	@filename {String}
 	@downloadName {String} :: optional
 	@headers {Object} :: optional
 	return {Controller};
 */
-Controller.prototype.fileAsync = function(fileName, downloadName, headers) {
+Controller.prototype.fileAsync = function(filename, downloadName, headers) {
 	var self = this;
 
 	var fn = function() {
-		self.file(fileName, downloadName, headers);
+		self.file(filename, downloadName, headers);
 	};
 
 	self.async.complete(fn);
@@ -1644,7 +1644,6 @@ Controller.prototype.stream = function(contentType, stream, downloadName, header
 
 	self.subscribe.success();
 	self.framework.responseStream(self.req, self.res, contentType, stream, downloadName, headers);
-	self._dispose();
 	return self;
 };
 
@@ -1662,7 +1661,6 @@ Controller.prototype.view404 = function() {
 	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#404', []);
 	self.subscribe.execute(404);
-	self._dispose();
 	return self;
 };
 
@@ -1680,7 +1678,6 @@ Controller.prototype.view403 = function() {
 	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#403', []);
 	self.subscribe.execute(403);
-	self._dispose();
 	return self;
 };
 
@@ -1700,7 +1697,6 @@ Controller.prototype.view500 = function(error) {
 	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#500', []);
 	self.subscribe.execute(500);
-	self._dispose();
 	return self;
 };
 
@@ -1720,7 +1716,6 @@ Controller.prototype.redirect = function(url, permament) {
 	self.res.success = true;
 	self.res.writeHead(permament ? 301 : 302, { 'Location': url });
 	self.res.end();
-	self._dispose();
 	return self;
 };
 
@@ -1767,13 +1762,6 @@ Controller.prototype.viewAsync = function(name, model, headers) {
 */
 Controller.prototype.database = function(name) {
 	return this.app.database(name);
-};
-
-Controller.prototype._dispose = function() {
-	var self = this;
-	var cancel = self.isCanceled;
-	self.dispose();
-	self.isCanceled = cancel;
 };
 
 /*
@@ -1968,7 +1956,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (self.isLayout || utils.isNullOrEmpty(self.internal.layout)) {
 		self.subscribe.success();
 		self.framework.responseContent(self.req, self.res, self.statusCode, value, self.internal.contentType, true, headers);
-		self._dispose();
+
 		return self;
 	}
 
@@ -1981,13 +1969,18 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 Mixed.prototype.beg = function() {
 	var self = this;
 
+	if (self instanceof Controller)
+		self = self.mixed;
+
 	if (self.isOpened)
 		return self.controller;
 
 	var res = self.controller.res;
 
+	self.controller.subscribe.success();
+	self.isOpened = true;
 	res.success = true;
-	res.writeHead(self.statusCode, { 'MIME-Version', '1.0', 'Content-type': 'multipart/x-mixed-replace; boundary=' + BOUNDARY });
+	res.writeHead(self.controller.statusCode, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + BOUNDARY });
 
 	return self.controller;
 };
@@ -1995,39 +1988,63 @@ Mixed.prototype.beg = function() {
 Mixed.prototype.end = function() {
 	var self = this;
 
+	if (self instanceof Controller)
+		self = self.mixed;
+
 	if (!self.isOpened)
 		return self.controller;
 
 	self.isOpened = false;
+	self.controller.res.write(BOUNDARY + '--');
 	self.controller.res.end();
 	return self.controller;
 };
 
 /*
-	Send file
+	Send a file or stream
 	@filename {String}
 	@contentType {String}
 	@{stream} {Stream} :: optional, if undefined then framework reads by the filename file from disk
 */
-Midex.prototype.write = function(filename, stream) {
+Mixed.prototype.send = function(filename, stream, cb) {
 
 	var self = this;
+
+	if (self instanceof Controller)
+		self = self.mixed;
+
+	var type = typeof(stream);
+
+	if (type === 'function') {
+		cb = stream;
+		stream = null;
+	}
 
 	if (!self.isOpened)
 		return self.controller;
 
-	self.res.write('Content-Type': utils.getContentType(filename));
+	var res = self.controller.res;
+	res.write(BOUNDARY + '\nContent-Type: ' + utils.getContentType(path.extname(filename)) + '\n\n');
 
-	if (typeof(stream) !== 'undefined') {
+	if (typeof(stream) !== 'undefined' && stream !== null) {
+
+		stream.on('end', function() {
+			self = null;
+			cb && cb();
+		});
+
 		stream.pipe(res, { end: false });
-		self.res.write('--' + BOUNDARY);
 		return self.controller;
 	}
 
-	var stream = fs.createReadStream(filename);
-	stream.pipe(res, { end: false });
-	self.res.write('--' + BOUNDARY);
+	stream = fs.createReadStream(filename);
 
+	stream.on('end', function() {
+		self = null;
+		cb && cb();
+	});
+
+	stream.pipe(res, { end: false });
 	return self.controller;
 };
 
