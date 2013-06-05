@@ -14,7 +14,9 @@ web application framework for node.js
 
 ***
 
-* **NEW** - SUPPORTS live streaming__ via multipart/mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
+* IN DEVELOPMENT **NEW** - SUPPORTS live streaming__ via multipart/x-mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
+* IN DEVELOPMENT **NEW** - SUPPORTS UPLOAD multipart/x-mixed-replace
+
 * **NEW** - SUPPORTS CSS AUTO VENDOR PREFIXES - [read the benefits](http://www.partialjs.com/benefits/)
 * **NEW** - SUPPORTS WEBSOCKET - [example: websocket](https://github.com/petersirka/partial.js/tree/master/examples/websocket)
 * Async web framework - [example: async methods](https://github.com/petersirka/partial.js/tree/master/examples/async)

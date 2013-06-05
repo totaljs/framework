@@ -191,6 +191,121 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 };
 
 /*
+	Internal function / Parse MIXED data
+	@req {ServerRequest}
+	@contentType {String}
+	@tmpDirectory {String}
+	@callback {Function}
+	return {String array}
+*/
+exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, callback) {
+
+  	var parser = new multipart.MultipartParser();
+  	var boundary = contentType.split(';')[1];
+  	var isFile = false;
+  	var stream = null;
+  	var tmp = { name: '', contentType: '', fileName: '', fileNameTmp: '', fileSize: 0, isFile: false, step: 0 };
+	var ip = req.ip.replace(/\./g, '');
+	var close = 0;
+
+  	boundary = boundary.substring(boundary.indexOf('=') + 1);
+
+  	req.buffer.isExceeded = false;
+  	req.buffer.isData = true;
+
+  	parser.initWithBoundary(boundary);
+
+	parser.onPartBegin = function() {
+		tmp.fileSize = 0;
+		tmp.step = 0;
+		tmp.isFile = false;
+    };
+
+    parser.onHeaderValue = function(buffer, start, end) {
+    	if (req.buffer.isExceeded || tmp.step > 1)
+    		return;
+
+    	var arr = buffer.slice(start, end).toString(encoding).split(';');
+
+    	if (tmp.step === 1) {
+    		tmp.contentType = arr[0];
+    		tmp.step = 2;
+    		return;
+    	}
+
+    	if (tmp.step === 0) {
+
+	    	tmp.name = arr[1].substring(arr[1].indexOf('=') + 2);
+    		tmp.name = tmp.name.substring(0, tmp.name.length - 1);
+    		tmp.step = 1;
+
+    		if (arr.length !== 3)
+    			return;
+
+    		tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
+			tmp.fileName = tmp.fileName.substring(0, tmp.fileName.length - 1);
+			tmp.isFile = true;
+			tmp.fileNameTmp = utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + utils.random(100000) + '.upload');
+			stream = fs.createWriteStream(tmp.fileNameTmp, { flags: 'w' });
+			close++;
+    		return;
+    	}
+    };
+
+    parser.onPartData = function(buffer, start, end) {
+		var data = buffer.slice(start, end);
+		var length = data.length;
+
+		if (!tmp.isFile)
+			return;
+
+		stream.write(data);
+		tmp.fileSize += length;
+    };
+
+    parser.onPartEnd = function() {
+		if (stream !== null) {
+
+			stream.on('close', function() {
+				close--;
+			});
+
+			stream.end();
+			stream.destroy();
+			stream = null;
+		}
+
+		if (!tmp.isFile)
+			return;
+
+		onFile(new HttpFile(tmp.name, tmp.fileName, tmp.fileNameTmp, tmp.fileSize, tmp.contentType));
+    };
+
+    parser.onEnd = function() {
+		var cb = function cb () {
+
+			if (close <= 0) {
+
+				parser.dispose();
+				parser = null;
+				boundary = null;
+				stream = null;
+				tmp = null;
+				ip = null;
+				callback();
+				return;
+			}
+
+			setImmediate(cb);
+		};
+
+    	cb();
+    };
+
+    req.on('data', parser.write.bind(parser));
+};
+
+/*
 	Internal function / Split string (url) to array
 	@url {String}
 	return {String array}
@@ -280,7 +395,6 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 		}
 
 		var index = arr1.indexOf(value);
-		//console.log(index, value);
 
 		if (index === -1 && value === 'xss') {
 			isXSS = true;

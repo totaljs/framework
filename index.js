@@ -273,8 +273,7 @@ Framework.prototype.stop = function(code) {
 Framework.prototype.route = function(url, funcExecute, flags, maximumSize, partial, timeout) {
 
 	if (_controller === '')
-		throw new Error('Route must be defined in controller.');
-
+		throw new Error('Route must be defined in a controller.');
 
 	if (utils.isArray(maximumSize)) {
 		var tmp = partial;
@@ -302,6 +301,14 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		priority += (flags.length * 2);
  	} else
  		flags = ['get'];
+
+ 	var isMixed = flags.indexOf('mixed') !== -1;
+
+	if (isMixed && url.indexOf('{') !== -1)
+		throw new Error('Mixed route cannot contain dynamic path');
+
+	if (isMixed && flags.indexOf('upload') !== -1)
+		throw new Error('Multipart mishmash: mixed vs. upload');
 
 	var routeURL = internal.routeSplit(url.trim());
 	var arr = [];
@@ -2124,7 +2131,7 @@ Framework.prototype._request = function(req, res) {
     if (self.config.debug)
     	res.setHeader('Mode', 'debug');
 
-	res.success = false;
+    res.success = false;
 
 	req.data = { get: {}, post: {}, files: [] };
 	req.buffer = { data: '', isExceeded: false, isData: false };
@@ -2192,8 +2199,12 @@ Framework.prototype._request = function(req, res) {
 	var flags = [req.method.toLowerCase()];
     var multipart = req.headers['content-type'] || '';
 
-    if (multipart.indexOf('multipart/form-data') === -1)
-    	multipart = '';
+    if (multipart.indexOf('multipart/form-data') === -1) {
+    	if (multipart.indexOf('mixed') === -1)
+    		multipart = '';
+    	else
+    		flags.push('mixed');
+    }
 
 	flags.push(protocol);
 

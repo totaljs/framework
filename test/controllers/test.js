@@ -18,6 +18,7 @@ exports.init = function() {
 	self.route('/timeout/', function() {}, [], null, [], 50);
 
 	self.route('/live/', viewLive);
+	self.route('/live/incoming/', viewLiveIncoming, ['mixed']);
 
 	self.route('#408', function() { 
 		var self = this;
@@ -33,6 +34,10 @@ exports.init = function() {
 	// maximumSize
 	self.websocket('/', socket);
 };
+
+function viewLiveIncoming(file) {
+	console.log(file);
+}
 
 function viewSocket() {
 	this.view('f');

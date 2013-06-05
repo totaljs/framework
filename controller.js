@@ -55,6 +55,8 @@ function Subscribe(framework, req, res) {
 	this.route = null;
 	this.timeout = null;
 	this.isCanceled = false;
+	this.isMixed = false;
+	this.header = '';
 };
 
 Subscribe.prototype.success = function() {
@@ -74,6 +76,7 @@ Subscribe.prototype.multipart = function(header) {
 
 	var self = this;
 	self.route = self.framework.lookup(self.req, self.req.uri.pathname, self.req.flags, true);
+	self.header = header;
 
 	if (self.route === null) {
 		self.req.connection.destroy();
@@ -81,7 +84,13 @@ Subscribe.prototype.multipart = function(header) {
 		return;
 	}
 
-	internal.parseMULTIPART(self.req, header, self.route.maximumSize, self.framework.config['directory-temp'], self.framework.handlers.onxss, self.handlers._end);
+	if (header.indexOf('mixed') === -1) {
+		internal.parseMULTIPART(self.req, header, self.route.maximumSize, self.framework.config['directory-temp'], self.framework.handlers.onxss, self.handlers._end);
+		return;
+	}
+
+	self.isMixed = true;
+	self.execute();
 };
 
 Subscribe.prototype.urlencoded = function() {
@@ -120,7 +129,7 @@ Subscribe.prototype.execute = function(status) {
 	var name = self.route.name;
 	self.controller = new Controller(name, self.framework, self.req, self.res, self);
 
-	if (!self.isCanceled)
+	if (!self.isCanceled && !self.isMixed)
 		self.timeout = setTimeout(self.handlers._cancel, self.route.timeout);
 
 	var lengthPrivate = self.route.partial.length;
@@ -197,10 +206,17 @@ Subscribe.prototype._execute = function() {
 
 	try
 	{
-		if (!self.controller.isCanceled)
-			self.route.onExecute.apply(self.controller, internal.routeParam(self.req.path, self.route));
 
-		self.route = null;
+		if (!self.controller.isCanceled) {
+			if (self.isMixed) {
+				internal.parseMULTIPART_MIXED(self.req, self.header, self.framework.config['directory-temp'], function(file) {
+					self.route.onExecute.call(self.controller, file);
+				}, self.handlers._end);
+			} else {
+				self.route.onExecute.apply(self.controller, internal.routeParam(self.req.path, self.route));
+				self.route = null;
+			}
+		}
 
 	} catch (err) {
 		self.controller = null;
@@ -225,6 +241,14 @@ Subscribe.prototype._authorization = function(isLogged) {
 Subscribe.prototype._end = function() {
 
 	var self = this;
+
+	if (self.isMixed) {
+		self.req.clear();
+		self.res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'cache-control': 'private, max-age=0' });
+		self.res.end('END');
+		self.dispose();
+		return;
+	}
 
 	if (self.req.buffer.isExceeded) {
 		self.req.clear();
@@ -1980,7 +2004,7 @@ Mixed.prototype.beg = function() {
 	self.controller.subscribe.success();
 	self.isOpened = true;
 	res.success = true;
-	res.writeHead(self.controller.statusCode, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + BOUNDARY });
+	res.writeHead(self.controller.statusCode, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + BOUNDARY, 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
 
 	return self.controller;
 };
@@ -1995,7 +2019,7 @@ Mixed.prototype.end = function() {
 		return self.controller;
 
 	self.isOpened = false;
-	self.controller.res.write(BOUNDARY + '--');
+	self.controller.res.write('\r\n\r\n--' + BOUNDARY + '--');
 	self.controller.res.end();
 	return self.controller;
 };
@@ -2024,7 +2048,7 @@ Mixed.prototype.send = function(filename, stream, cb) {
 		return self.controller;
 
 	var res = self.controller.res;
-	res.write(BOUNDARY + '\nContent-Type: ' + utils.getContentType(path.extname(filename)) + '\n\n');
+	res.write('--' + BOUNDARY + '\r\nContent-Type: ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
 
 	if (typeof(stream) !== 'undefined' && stream !== null) {
 

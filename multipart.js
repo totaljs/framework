@@ -93,6 +93,7 @@ MultipartParser.prototype.initWithBoundary = function(str) {
 };
 
 MultipartParser.prototype.write = function(buffer) {
+
   var self = this,
       i = 0,
       len = buffer.length,
