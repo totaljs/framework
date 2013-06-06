@@ -31,5 +31,5 @@ function download(req, res) {
 
 	// framework documentation: http://www.partialjs.com/documentation/framework/
 	// response file
-	self.responseFile(req, res, self.pathPublic(filename), filename);
+	self.responseFile(req, res, self.path.public(filename), filename);
 };
