@@ -2,8 +2,8 @@ IN DEVELOPMENT ======= 1.2.4-1
 
 - added: auto skipping minified JS or CSS - filename must contain scriptname[-min.js(.css)] or scriptname[.min.js(.css)]
 - added: file streaming via multipart/x-mixed-replace (https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
-- added: multipart/x-mixed-replace upload
-- added: new test flag "mixed" for incommning multipart/x-mixed-replace content
+- added: multipart/x-mixed-replace upload (https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
+- added: new test flag "mixed" for incommning multipart/x-mixed-replace content (https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
 
 - added: framework.fs.create.css(), framework.fs.create.js(), etc.
 - added: framework.fs.rm.css(), framework.fs.rm.js(), etc.
