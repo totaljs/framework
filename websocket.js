@@ -55,6 +55,8 @@ function WebSocket(framework, path, name) {
     this.isDebug = framework.config.debug;
     this.url = utils.path(path);
     this.async = new utils.Async(this);
+    this.path = subscribe.framework.path;
+    this.fs = subscribe.framework.fs;
 };
 
 // on('open', function(client) {});
@@ -275,33 +277,6 @@ WebSocket.prototype.log = function() {
     var self = this;
     self.framework.log.apply(self.framework, arguments);
     return self;
-};
-
-/*
-    Get path
-    @name {String} :: filename
-    return {String};
-*/
-WebSocket.prototype.pathPublic = function(name) {
-    return utils.combine(this.framework.config['directory-public'], name).replace(/\\/g, '/');
-};
-
-/*
-    Get path
-    @name {String} :: filename
-    return {String};
-*/
-WebSocket.prototype.pathLog = function(name) {
-    return utils.combine(this.framework.config['directory-logs'], name).replace(/\\/g, '/');
-};
-
-/*
-    Get path
-    @name {String} :: filename
-    return {String};
-*/
-WebSocket.prototype.pathTemp = function(name) {
-    return utils.combine(this.framework.config['directory-temp'], name).replace(/\\/g, '/');
 };
 
 /*
