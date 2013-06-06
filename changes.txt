@@ -18,6 +18,7 @@ IN DEVELOPMENT ======= 1.2.4-1
 - removed: framework.pathPublic, framework.pathTemp, etc.
 
 - updated: framework.verification(), added new checking for write and read files
+- updated: framework.usage(), better formatting
 
 - fixed: controller.cancel()
 

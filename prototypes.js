@@ -96,7 +96,7 @@ http.IncomingMessage.prototype.clear = function() {
 				if (exists)
 					fs.unlink(filename);
 			});
-		})(files[i]);
+		})(files[i].filenameTMP);
 	}
 
 	self.data.files = null;
