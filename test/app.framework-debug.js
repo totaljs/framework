@@ -164,7 +164,7 @@ function run() {
 	});
 }
 
-/*
+
 var mem = require('memwatch');
 
 mem.on('leak', function(info) {
@@ -174,7 +174,6 @@ mem.on('leak', function(info) {
 mem.on('stats', function(info) {
 	console.log('STATS ->', JSON.stringify(info));
 });
-*/
 
 setTimeout(function() {
 	run();

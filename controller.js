@@ -35,7 +35,6 @@ var REPOSITORY_META = '$meta';
 var REPOSITORY_META_TITLE = '$title';
 var REPOSITORY_META_DESCRIPTION = '$description';
 var REPOSITORY_META_KEYWORDS = '$keywords';
-var BOUNDARY = '--partialjs';
 
 function Subscribe(framework, req, res) {
 	this.framework = framework;
@@ -384,7 +383,7 @@ function Controller(name, req, res, subscribe) {
 	this.isXHR = req.isXHR;
 	this.xhr = req.isXHR;
 	this.config = subscribe.framework.config;
-	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html' };
+	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: '----partialjs' };
 	this.statusCode = 200;
 	this.controllers = subscribe.framework.controllers;
 	this.url = utils.path(req.uri.pathname);
@@ -1970,10 +1969,11 @@ Mixed.prototype.beg = function() {
 
 	var res = self.controller.res;
 
+	self.controller.internal.boundary += utils.GUID(5); 
 	self.controller.subscribe.success();
 	self.isOpened = true;
 	res.success = true;
-	res.writeHead(self.controller.statusCode, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + BOUNDARY, 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
+	res.writeHead(self.controller.statusCode, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + self.controller.internal.boundary, 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
 
 	return self.controller;
 };
@@ -1988,7 +1988,7 @@ Mixed.prototype.end = function() {
 		return self.controller;
 
 	self.isOpened = false;
-	self.controller.res.write('\r\n\r\n--' + BOUNDARY + '--');
+	self.controller.res.write('\r\n\r\n--' + self.controller.internal.boundary + '--');
 	self.controller.res.end();
 	return self.controller;
 };
@@ -2017,7 +2017,7 @@ Mixed.prototype.send = function(filename, stream, cb) {
 		return self.controller;
 
 	var res = self.controller.res;
-	res.write('--' + BOUNDARY + '\r\nContent-Type: ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
+	res.write('--' + self.controller.internal.boundary + '\r\nContent-Type: ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
 
 	if (typeof(stream) !== 'undefined' && stream !== null) {
 
