@@ -3,6 +3,10 @@
 web application framework for node.js
 =====================================
 
+[![Flattr this](http://api.flattr.com/button/flattr-badge-large.png)](http://flattr.com/thing/1436218/partial-js-web-application-framework-for-node-js)
+[![partial.js on Twitter](http://www.partialjs.com/exports/twitter-partial.png)](https://twitter.com/partialjs)
+[![partial.js on Google+](http://www.partialjs.com/exports/google-partial.png)](https://plus.google.com/u/0/b/113175077493180148081/113175077493180148081/posts)
+
 - Homepage / [www.partialjs.com](http://partialjs.com)
 - Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
 - __Blog example__: [new example - blog written in partial.js and NoSQL embedded database (without installation)](http://blog.partialjs.com)
