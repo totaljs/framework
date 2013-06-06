@@ -62,7 +62,7 @@ function Framework() {
 		version: '1.01',
 		secret: os.hostname() + '-' + os.platform() + '-' + os.arch(),
 
-		'etag-version': '1',
+		'etag-version': '',
 
 		'directory-contents': '/contents/',
 		'directory-controllers': '/controllers/',
@@ -2242,6 +2242,10 @@ Framework.prototype.configure = function() {
 	}
 
 	utils.extend(self.config, obj, true);
+
+	if (self.config['etag-version'] === '')
+		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');
+
 	process.title = self.config.name;
 
 	if (accepts !== null && accepts.length > 0) {
