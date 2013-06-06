@@ -2,7 +2,7 @@ var framework = require('../index');
 var assert = require('assert');
 var db = framework.database('users');
 var fs = require('fs');
-var dbfile = framework.path(framework.config['directory-databases'], 'users.nosql');
+var dbfile = framework.path.root(framework.config['directory-databases'] + 'users.nosql');
 
 if (fs.existsSync(dbfile))
 	fs.unlinkSync(dbfile);
@@ -20,18 +20,6 @@ db.on('error', function(err) {
 
 function read() {
 
-	db.all('doc.name === "A" || doc.index === 2', function(selected) {
-
-		console.log('–––>', selected);
-
-		var a = '';		
-		selected.forEach(function(o) {
-			a += o.name;
-		});
-
-		assert.ok(a === 'AC2', 'read problem');
-	});
-
 	db.remove(function(o) {
 		return o.index > 2;
 	}, function() {
@@ -45,6 +33,17 @@ function read() {
 
 	});
 
+	db.all('doc.name === "A" || doc.index === 2', function(selected) {
+
+		console.log('–––>', selected);
+
+		var a = '';		
+		selected.forEach(function(o) {
+			a += o.name;
+		});
+
+		assert.ok(a === 'AC2', 'read problem');
+	});
 }
 
 setTimeout(function() {
@@ -52,7 +51,7 @@ setTimeout(function() {
 }, 1000);
 
 setTimeout(function() {
-	fs.unlinkSync(framework.path(framework.config['directory-databases'], 'users.nosql'));
+	fs.unlinkSync(framework.path.root(framework.config['directory-databases'] + 'users.nosql'));
 	console.log('================================================');
 	console.log('success - OK');
 	console.log('================================================');

@@ -246,10 +246,10 @@ function viewLive() {
 
 	self.mixed.beg();
 
-	self.mixed.send('/users/petersirka/desktop/zombie1.png');
+	self.mixed.send('/users/petersirka/desktop/aaaaa/1.jpg');
 
 	setTimeout(function() {
-		self.mixed.send('/users/petersirka/desktop/zombie2.png', self.mixed.end.bind(self));		
+		self.mixed.send('/users/petersirka/desktop/aaaaa/2.jpg', self.mixed.end.bind(self));		
 	}, 3000);
 
 };
