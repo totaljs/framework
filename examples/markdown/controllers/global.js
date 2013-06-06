@@ -94,7 +94,7 @@ function viewMarkdown() {
 		return '';
 	};
 
-	fs.readFile(self.pathPublic('readme.md'), function(err, data) {
+	fs.readFile(self.path.public('readme.md'), function(err, data) {
 		
 		if (err) {
 			self.view404();

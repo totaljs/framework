@@ -17,5 +17,5 @@ function timeout() {
 }
 
 function view_408() {
-	this.plain('REQUEST TIMEOUT');
+	this.plain('RESPONSE TIMEOUT');
 }
