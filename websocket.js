@@ -55,8 +55,8 @@ function WebSocket(framework, path, name) {
     this.isDebug = framework.config.debug;
     this.url = utils.path(path);
     this.async = new utils.Async(this);
-    this.path = subscribe.framework.path;
-    this.fs = subscribe.framework.fs;
+    this.path = framework.path;
+    this.fs = framework.fs;
 };
 
 // on('open', function(client) {});
