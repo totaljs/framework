@@ -5,18 +5,21 @@ IN DEVELOPMENT ======= 1.2.4-1
 - added: multipart/x-mixed-replace upload (https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
 - added: new test flag "mixed" for incommning multipart/x-mixed-replace content (https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
 
-- added: new view tag @{download(filename, [downloadName])}
-
 - added: framework.fs.create.css(), framework.fs.create.js(), etc.
 - added: framework.fs.rm.css(), framework.fs.rm.js(), etc.
 - added: framework.fs alias to controller.fs
 - added: framework.path.public(), framework.path.temp(), etc.
 - added: framework.path alias to controller.path
 
+- added: new view tag @{download(filename, [downloadName])}
+
 - removed: framework.deleteCSS, framework.deleteJS, etc.
 - removed: framework.createCSS, framework.createJS, etc.
 - removed: framework.pathPublic, framework.pathTemp, etc.
 
+- renamed: HttpFile.fileName -> HttpFile.filename, HttpFile.fileSize -> HttpFile.size
+
+- updated: framework.config.etag-version, if etag-version is empty then default etag-version will be framework.config.version
 - updated: framework.verification(), added new checking for write and read files
 - updated: framework.usage(), better formatting
 
