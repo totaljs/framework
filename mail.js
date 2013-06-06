@@ -280,7 +280,7 @@ Mailer.prototype.send = function(smtp, addressFrom, addressTo, addressCc, subjec
 
 	var self = this;
 
-	if (typeof(smtp) === 'object') {
+	if (smtp !== null && typeof(smtp) === 'object') {
 		addressFrom = smtp.from;
 		addressTo = smtp.to;
 		addressCc = smtp.cc;
