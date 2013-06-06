@@ -24,6 +24,7 @@ IN DEVELOPMENT ======= 1.2.4-1
 - updated: framework.usage(), better formatting
 
 - fixed: controller.cancel()
+- fixed: framework.version
 
 - clean code
 

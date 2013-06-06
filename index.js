@@ -45,7 +45,7 @@ process.chdir(directory);
 require('./prototypes');
 
 function Framework() {
-	this.version = 1240;
+	this.version = 1241;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
@@ -2235,6 +2235,9 @@ Framework.prototype.configure = function() {
 			case 'allow-gzip':
 			case 'allow-websocket':
 				obj[name] = value.toLowerCase() == 'true' || value === '1';
+			case 'version':
+				obj[name] = value;
+				break;
 			default:
 				obj[name] = value.isNumber() ? utils.parseInt(value) : value.isNumber(true) ? utils.parseFloat(value) : value;
 				break;
