@@ -13,11 +13,7 @@ function viewForm() {
 function jsonForm() {
 	var self = this;
 	
-	var resource = function(name) {
-		return self.resource(name);
-	};
-
-	var error = self.validation(self.post, ['Email', 'Message'])
+	var error = self.validate(self.post, ['Email', 'Message'])
 
 	if (error.hasError()) {
 		self.json(error);
