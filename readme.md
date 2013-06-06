@@ -3,7 +3,7 @@
 web application framework for node.js
 =====================================
 
-[![Flattr this](http://api.flattr.com/button/flattr-badge-large.png)](http://flattr.com/thing/1436218/partial-js-web-application-framework-for-node-js)
+[![Flattr this](http://www.partialjs.com/exports/flattr-partial.png)](http://flattr.com/thing/1436218/partial-js-web-application-framework-for-node-js)
 [![partial.js on Twitter](http://www.partialjs.com/exports/twitter-partial.png)](https://twitter.com/partialjs)
 [![partial.js on Google+](http://www.partialjs.com/exports/google-partial.png)](https://plus.google.com/u/0/b/113175077493180148081/113175077493180148081/posts)
 
