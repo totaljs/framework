@@ -10,7 +10,7 @@ exports.install = function(framework) {
 
 function viewHomepage() {
 
-	var self = this;	
+	var self = this;
 	var model = { info: '...' };
 
 	self.repository.title = 'Templates';
@@ -18,22 +18,22 @@ function viewHomepage() {
 	if (self.files.length > 0) {
 
 		var file = self.files[0];
-		model.info = file.fileName + ' ({0} kB)'.format(Math.floor(file.fileSize / 1024, 2));
+		model.info = file.filename + ' ({0} kB)'.format(Math.floor(file.size / 1024, 2));
 
 		// =============================
 		// $ brew install graphicsmagick
 		// =============================
 
 		// file.isAudio();
-		// file.isVideo();		
+		// file.isVideo();
 		// file.isImage();
 
 		if (file.isImage()) {
-			
-			var fileName = self.pathPublic('upload.jpg');
+
+			var filename = self.path.public('upload.jpg');
 			var image = file.image(); // this is equivalent to require('partail.js/image').init(false);
 
-			// require('partial.js/image').init(fileName, [isImageMagick]);
+			// require('partial.js/image').init(filename, [isImageMagick]);
 			// file.image([isImageMagick]);
 
 			// image.identify(function(err, info) { info.width, info.heigth });
@@ -53,10 +53,9 @@ function viewHomepage() {
 			// image.background(color);
 			// image.sepia();
 			// image.command(command, [priority]);
+			image.resizeCenter(300, 300).save(filename, function(err, filename) {
 
-			image.resizeCenter(300, 300).save(fileName, function(err, fileName) {
-				
-				model.url = '<div><img src="/{0}" width="300" height="300" alt="Uploaded image" /></div><br />'.format(path.basename(fileName));
+				model.url = '<div><img src="/{0}" width="300" height="300" alt="Uploaded image" /></div><br />'.format(path.basename(filename));
 				self.view('homepage', model);
 
 			});

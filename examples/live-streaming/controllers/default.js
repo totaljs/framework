@@ -29,7 +29,7 @@ function viewLive() {
 		// Params:
 		// @filename {String}
 		// @stream {ReadStream} :: optional, default undefined
-		self.mixed.send(self.pathPublic('img/' + index + '.jpg'));
+		self.mixed.send(self.path.public('img/' + index + '.jpg'));
 
 		// or
 		// self.mixed.send('live.jpg', require('fs').createReadStream(self.pathPublic('img/' + index + '.jpg')));
