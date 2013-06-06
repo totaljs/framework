@@ -917,38 +917,40 @@ Framework.prototype.usage = function(detailed) {
 		});
 	}
 
-	builder.push('Platform: {0}'.format(process.platform));
-	builder.push('Processor: {0}'.format(process.arch));
-	builder.push('PID: {0}'.format(process.pid));
-	builder.push('Node version: {0}'.format(process.version));
-	builder.push('Framework version: {0}'.format(self.version));
-	builder.push('Current directory: {0}'.format(process.cwd));
-	builder.push('Service run: {0}x'.format(self.cache.count));
-	builder.push('-------------------------------------------------------');
-	builder.push('Uptime: {0} minutes'.format(Math.floor(process.uptime() / 60)));
-	builder.push('Memory usage: total {0} MB, used {1} MB'.format((memory.heapTotal / 1024 / 1024).floor(2), (memory.heapUsed / 1024 / 1024).floor(2)));
-	builder.push('-------------------------------------------------------');
-	builder.push('Temporary directory: {0} kB'.format((size / 1024).floor(2)));
-	builder.push('Backup directory: {0} kB'.format((sizeBackup / 1024).floor(2)));
-	builder.push('Databases directory: {0} kB'.format((sizeDatabase / 1024).floor(2)));
-	builder.push('WebSocket connections: {0}'.format(connections.length));
-	builder.push('Controller count: {0}'.format(controllers.length));
-	builder.push('Module count: {0}'.format(modules.length));
-	builder.push('Cache: {0} items'.format(cache.length, self.cache.count));
-	builder.push('Resource count: {0}'.format(resources.length));
-	builder.push('Web route count: {0}'.format(self.routes.web.length));
-	builder.push('WebSocket route count: {0}'.format(self.routes.websockets.length));
-	builder.push('File route count: {0}'.format(self.routes.files.length));
-	builder.push('Helper count: {0}'.format(helpers.length));
-	builder.push('Static files count: {0}'.format(staticFiles.length));
-	builder.push('Static files / streaming count: {0}'.format(staticRange.length));
-	builder.push('Errors: {0}'.format(self.errors.length));
-	builder.push('-------------------------------------------------------');
+	var delimiter = '----------------------------------------------------------------------------------';
+
+	builder.push('Platform                        : {0}'.format(process.platform));
+	builder.push('Processor                       : {0}'.format(process.arch));
+	builder.push('PID                             : {0}'.format(process.pid));
+	builder.push('Node version                    : {0}'.format(process.version));
+	builder.push('Framework version               : {0}'.format(self.version));
+	builder.push('Current directory               : {0}'.format(process.cwd));
+	builder.push('Service ran                     : {0}x'.format(self.cache.count));
+	builder.push(delimiter);
+	builder.push('Uptime                          : {0} minutes'.format(Math.floor(process.uptime() / 60)));
+	builder.push('Memory usage                    : total {0} MB, used {1} MB'.format((memory.heapTotal / 1024 / 1024).floor(2), (memory.heapUsed / 1024 / 1024).floor(2)));
+	builder.push(delimiter);
+	builder.push('Temporary directory             : {0} kB'.format((size / 1024).floor(2)));
+	builder.push('Backup directory                : {0} kB'.format((sizeBackup / 1024).floor(2)));
+	builder.push('Databases directory             : {0} kB'.format((sizeDatabase / 1024).floor(2)));
+	builder.push('Resource count                  : {0}'.format(resources.length));
+	builder.push('Controller count                : {0}'.format(controllers.length));
+	builder.push('Module count                    : {0}'.format(modules.length));
+	builder.push('Cache                           : {0} items'.format(cache.length, self.cache.count));
+	builder.push('WebSocket connections           : {0}'.format(connections.length));
+	builder.push('Count of routes to webpage      : {0}'.format(self.routes.web.length));
+	builder.push('Count of routes to websocket    : {0}'.format(self.routes.websockets.length));
+	builder.push('Count of routes to file         : {0}'.format(self.routes.files.length));
+	builder.push('Count of helpers                : {0}'.format(helpers.length));
+	builder.push('Static files count              : {0}'.format(staticFiles.length));
+	builder.push('Static files / streaming count  : {0}'.format(staticRange.length));
+	builder.push('Error count                     : {0}'.format(self.errors.length));
+	builder.push(delimiter);
 	builder.push('Last 10 minutes ...');
-	builder.push('Request stats - web        : {0}x'.format(self.stats.web.format('### ### ###')));
-	builder.push('Request stats - files      : {0}x'.format(self.stats.files.format('### ### ###')));
-	builder.push('Request stats - websockets : {0}x'.format(self.stats.websockets.format('### ### ###')));
-	builder.push('-------------------------------------------------------');
+	builder.push('Request stats - webpage         : {0}x'.format(self.stats.web.format('### ### ###')));
+	builder.push('Request stats - websockets      : {0}x'.format(self.stats.websockets.format('### ### ###')));
+	builder.push('Request stats - files           : {0}x'.format(self.stats.files.format('### ### ###')));
+	builder.push(delimiter);
 
 	if (!detailed)
 		return builder.join('\n');
@@ -2337,7 +2339,7 @@ Framework.prototype.verification = function(cb) {
 	});
 
 	self.verify.push(function() {
-		var filename = self.path.temp('verify');
+		var filename = self.path.temp('verify.tmp');
 		try
 		{
 			fs.writeFileSync(filename, 'OK');
