@@ -167,13 +167,6 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 			if (close <= 0) {
 
-				parser.dispose();
-				parser = null;
-				boundary = null;
-				stream = null;
-				tmp = null;
-				ip = null;
-
 				if (isXSS && req.flags.indexOf('xss') === -1)
 					req.flags.push('xss');
 
@@ -285,13 +278,6 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 		var cb = function cb () {
 
 			if (close <= 0) {
-
-				parser.dispose();
-				parser = null;
-				boundary = null;
-				stream = null;
-				tmp = null;
-				ip = null;
 				callback();
 				return;
 			}

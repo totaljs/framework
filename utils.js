@@ -1539,7 +1539,6 @@ Async.prototype._complete = function(name, waiting) {
 	if (self.count === 0) {
 		self.onComplete && self.onComplete();
 		self.emit('complete');
-		self.dispose();
 		return;
 	}
 

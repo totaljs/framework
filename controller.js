@@ -80,7 +80,6 @@ Subscribe.prototype.multipart = function(header) {
 
 	if (self.route === null) {
 		self.req.connection.destroy();
-		self.dispose();
 		return;
 	}
 
@@ -101,7 +100,6 @@ Subscribe.prototype.urlencoded = function() {
 	if (self.route === null) {
 		self.req.clear();
 		self.req.connection.destroy();
-		self.dispose();
 		return;
 	}
 
@@ -246,14 +244,12 @@ Subscribe.prototype._end = function() {
 		self.req.clear();
 		self.res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'cache-control': 'private, max-age=0' });
 		self.res.end('END');
-		self.dispose();
 		return;
 	}
 
 	if (self.req.buffer.isExceeded) {
 		self.req.clear();
 		self.req.connection.destroy();
-		self.dispose();
 		return;
 	}
 
@@ -296,7 +292,6 @@ Subscribe.prototype._endfile = function() {
 
 	if (length === 0) {
 		self.framework.onStatic(self.req, self.res);
-		self.dispose();
 		return;
 	}
 
@@ -307,20 +302,17 @@ Subscribe.prototype._endfile = function() {
 
 			if (file.onValidation.call(self.framework, self.req, self.res)) {
 				file.onExecute.call(self.framework, self.req, self.res);
-				self.dispose();
 				return;
 			}
 
 		} catch (err) {
 			self.framework.error(err, file.controller + ' :: ' + file.name, self.req.uri);
 			self.framework.responseContent(self.req, self.res, 500, '500 - internal servere error', 'text/plain', true);
-			self.dispose();
 			return;
 		}
 	}
 
 	self.framework.onStatic(self.req, self.res);
-	self.dispose();
 };
 
 Subscribe.prototype._parsepost = function(chunk) {

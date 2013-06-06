@@ -390,7 +390,5 @@ function compile_eval(generator, model, indexer) {
 */
 exports.generate = function(controller, name, model, repository) {
 	var template = new Template(controller, model, repository);
-	var value = template.render(name);
-	template.dispose();
-	return value;
+	return template.render(name);
 };

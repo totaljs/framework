@@ -555,8 +555,5 @@ function autoprefixer_keyframes (value) {
 */
 exports.compile = function(value, minify) {
 	var less = new Less();
-	var value = less.compile(autoprefixer(value), minify);
-	less.dispose();
-	less = null;
-	return value;
+	return less.compile(autoprefixer(value), minify);
 };

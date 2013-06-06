@@ -1504,9 +1504,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.writeHead(200, returnHeaders);
 			var stream = fs.createReadStream(name).pipe(zlib.createGzip());
 			stream.pipe(res);
-			stream = null;
-			res = null;
-			req = null;
 			return self;
 		}
 
@@ -1516,9 +1513,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.writeHead(200, returnHeaders);
 			var stream = fs.createReadStream(name).pipe(zlib.createDeflate());
 			stream.pipe(res);
-			stream = null;
-			res = null;
-			req = null;
 			return self;
 		}
 	}
@@ -1526,10 +1520,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	res.writeHead(200, returnHeaders);
 	var stream = fs.createReadStream(name);
 	stream.pipe(res);
-	stream = null;
-	res = null;
-	req = null;
-	returnHeaders = null;
 	return self;
 };
 
@@ -1581,11 +1571,6 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 			res.writeHead(200, returnHeaders);
 			var gzip = zlib.createGzip();
 			stream.pipe(gzip).pipe(res);
-			stream = null;
-			req = null;
-			res = null;
-			gzip = null;
-			returnHeaders = null;
 			return self;
 		}
 
@@ -1595,11 +1580,6 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 			res.writeHead(200, returnHeaders);
 			var deflate = zlib.createDeflate();
 			stream.pipe(deflate).pipe(res);
-			stream = null;
-			returnHeaders = null;
-			req = null;
-			res = null;
-			gzip = null;
 			return self;
 		}
 	}
@@ -1610,10 +1590,6 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 	res.writeHead(200, returnHeaders);
 	stream.pipe(res);
-	stream = null;
-	req = null;
-	res = null;
-
 	return self;
 };
 
@@ -1655,10 +1631,6 @@ Framework.prototype.responseRange = function(name, range, headers, res) {
 	res.writeHead(206, headers);
 	var stream = fs.createReadStream(name, { start: beg, end: end });
 	stream.pipe(res);
-	stream = null;
-	res = null;
-	headers = null;
-
 	return self;
 };
 
@@ -1821,10 +1793,6 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 				res.writeHead(code, returnHeaders);
 				res.end(data, encoding);
-				buffer = null;
-				contentBody = null;
-				res = null;
-				req = null;
 			});
 
 			return self;
@@ -1846,10 +1814,6 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 				res.writeHead(code, returnHeaders);
 				res.end(data, encoding);
-				buffer = null;
-				contentBody = null;
-				res = null;
-				req = null;
 			});
 
 			return self;
@@ -1859,9 +1823,6 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	returnHeaders['Content-Type'] = contentType;
 	res.writeHead(code, returnHeaders);
 	res.end(contentBody, encoding);
-	contentBody = null;
-	res = null;
-	req = null;
 	return self;
 };
 
@@ -1883,9 +1844,6 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 	res.success = true;
 	res.writeHead(permament ? 301 : 302, { 'Location': url });
 	res.end();
-	res = null;
-	req = null;
-
 	return self;
 };
 
@@ -2031,8 +1989,6 @@ Framework.prototype._upgrade = function(req, socket, head) {
     var route = self.lookup_websocket(req, socket.uri.pathname);
     if (route === null) {
     	socket.close();
-    	socket.dispose();
-    	socket = null;
     	return;
     }
 
@@ -2048,19 +2004,11 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 			if (logged && !isLogged) {
 		    	socket.close();
-		    	socket.dispose();
-		    	socket = null;
-		    	req = null;
-		    	route = null;
 				return;
 			}
 
 			if (!logged && isLogged) {
 		    	socket.close();
-		    	socket.dispose();
-		    	socket = null;
-		    	req = null;
-		    	route = null;
 				return;
 			}
 
@@ -2079,10 +2027,6 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 
     if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version)) {
     	socket.close();
-    	socket.dispose();
-    	socket = null;
-    	req = null;
-    	route = null;
         return;
     }
 
