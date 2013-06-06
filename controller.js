@@ -493,36 +493,6 @@ Controller.prototype.cancel = function() {
 };
 
 /*
-	Get path
-	@name {String} :: filename
-	return {String}
-*/
-Controller.prototype.pathPublic = function(name) {
-	console.log('OBSOLETE - pathPublic, path.public()');
-	return utils.combine(this.app.config['directory-public'], name).replace(/\\/g, '/');
-};
-
-/*
-	Get path
-	@name {String} :: filename
-	return {String}
-*/
-Controller.prototype.pathLog = function(name) {
-	console.log('OBSOLETE - pathLog, path.log()');
-	return utils.combine(this.app.config['directory-logs'], name).replace(/\\/g, '/');
-};
-
-/*
-	Get path
-	@name {String} :: filename
-	return {String}
-*/
-Controller.prototype.pathTemp = function(name) {
-	console.log('OBSOLETE - pathTemp, path.temp()');
-	return utils.combine(this.app.config['directory-temp'], name).replace(/\\/g, '/');
-};
-
-/*
 	Log
 	@arguments {Object array}
 	return {Controller};

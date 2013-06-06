@@ -265,7 +265,7 @@ Mailer.prototype = new events.EventEmitter;
 
 /*
 	Send mail through SMTP server
-	@smtp {String}
+	@smtp {String or Object}
 	@addressFrom {String}
 	@addressTo {String or String array}
 	@addressCc {String or String array}
@@ -279,6 +279,19 @@ Mailer.prototype = new events.EventEmitter;
 Mailer.prototype.send = function(smtp, addressFrom, addressTo, addressCc, subject, body, senderName, addressReply, userName, userPassword) {
 
 	var self = this;
+
+	if (typeof(smtp) === 'object') {
+		addressFrom = smtp.from;
+		addressTo = smtp.to;
+		addressCc = smtp.cc;
+		subject = smtp.subject;
+		body = smtp.body;
+		senderName = smtp.sender || smtp.senderName;
+		addressReply = smtp.reply;
+		userName = smtp.userName;
+		userPassword = smtp.userPassword;
+		smtp = smtp.smtp || null;
+	}
 
 	if (smtp === null || smtp === '') {
 		smtp = getHostName(addressTo);

@@ -480,24 +480,6 @@ Framework.prototype.path = function() {
 };
 
 /*
-	Get path
-	@name {String}
-	return {String}
-*/
-Framework.prototype.pathTemp = function(name) {
-	return utils.combine(this.config['directory-temp'], name).replace(/\\/g, '/');
-};
-
-/*
-	Get path
-	@name {String}
-	return {String}
-*/
-Framework.prototype.pathPublic = function(name) {
-	return utils.combine(this.config['directory-public'], name).replace(/\\/g, '/');
-};
-
-/*
 	Module caller
 	@name {String}
 	return {Object} :: framework return require();
@@ -2878,6 +2860,14 @@ FrameworkPath.prototype.logs = function(filename) {
 */
 FrameworkPath.prototype.temp = function(filename) {
 	return utils.combine(this.config['directory-temp'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.backup = function(filename) {
+	return utils.combine(this.config['directory-backup'], filename || '').replace(/\\/g, '/');
 };
 
 /*
