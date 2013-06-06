@@ -173,6 +173,7 @@ function viewViews() {
 	assert.ok(output.contains('#template-emptyEMPTY#'), name + 'template() - empty');
 	assert.ok(output.contains('#template-toggle#'), name + 'templateToggle()');
 	assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
+	assert.ok(output.contains('#<a href="/upload/test.pdf" download="test">content</a>#'), name + 'download');
 
 	assert.ok(output.contains('<link rel="dns-prefetch" href="//fonts.googleapis.com" />'), name + 'dns');
 	assert.ok(output.contains('<link rel="prefetch" href="http://daker.me/2013/05/hello-world.html" />'), name + 'prefetch');

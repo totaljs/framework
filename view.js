@@ -185,6 +185,7 @@ function parse(html, controller) {
 						case 'etag':
 						case 'modified':
 						case 'image':
+						case 'download':
 						case 'json':
 						case 'dns':
 						case 'prefetch':

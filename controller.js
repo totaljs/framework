@@ -35,6 +35,7 @@ var REPOSITORY_META = '$meta';
 var REPOSITORY_META_TITLE = '$title';
 var REPOSITORY_META_DESCRIPTION = '$description';
 var REPOSITORY_META_KEYWORDS = '$keywords';
+var ATTR_END = '"';
 
 function Subscribe(framework, req, res) {
 	this.framework = framework;
@@ -383,7 +384,7 @@ function Controller(name, req, res, subscribe) {
 	this.isXHR = req.isXHR;
 	this.xhr = req.isXHR;
 	this.config = subscribe.framework.config;
-	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: '----partialjs' };
+	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null };
 	this.statusCode = 200;
 	this.controllers = subscribe.framework.controllers;
 	this.url = utils.path(req.uri.pathname);
@@ -851,18 +852,17 @@ Controller.prototype.$checkbox = function(model, name, attr) {
 Controller.prototype.$textarea = function(model, name, attr) {
 
 	var builder = '<textarea';
-	var attrEnd = '"';
 
 	if (typeof(attr) !== 'object')
 		attr = {};
 
-	builder += ' name="' + name + '" id="' + (attr.id || name) + attrEnd;
+	builder += ' name="' + name + '" id="' + (attr.id || name) + ATTR_END;
 
 	if (attr.class)
-		builder += ' class="' + attr.class + attrEnd;
+		builder += ' class="' + attr.class + ATTR_END;
 
 	if (attr.maxlength > 0)
-		builder += ' maxlength="'+ attr.maxlength + attrEnd;
+		builder += ' maxlength="'+ attr.maxlength + ATTR_END;
 
 	if (attr.required === true)
 		builder += ' required="required"';
@@ -871,16 +871,16 @@ Controller.prototype.$textarea = function(model, name, attr) {
 		builder += ' disabled="disabled"';
 
 	if (attr.cols > 0)
-		builder += ' cols="' + attr.cols + attrEnd;
+		builder += ' cols="' + attr.cols + ATTR_END;
 
 	if (attr.rows > 0)
-		builder += ' rows="' + attr.rows + attrEnd;
+		builder += ' rows="' + attr.rows + ATTR_END;
 
 	if (attr.style)
-		builder += ' style="' + attr.style + attrEnd;
+		builder += ' style="' + attr.style + ATTR_END;
 
 	if (attr.pattern)
-		builder += ' pattern="' + pattern + attrEnd;
+		builder += ' pattern="' + pattern + ATTR_END;
 
 	if (typeof(model) === 'undefined')
 		return builder + '></textarea>';
@@ -900,49 +900,48 @@ Controller.prototype.$textarea = function(model, name, attr) {
 Controller.prototype.$input = function(model, type, name, attr) {
 
 	var builder = ['<input'];
-	var attrEnd = '"';
 
 	if (typeof(attr) !== 'object')
 		attr = {};
 
 	var val = attr.value || '';
 
-	builder += ' type="' + type + attrEnd;
+	builder += ' type="' + type + ATTR_END;
 
 	if (type === 'radio')
-		builder += ' name="' + name + attrEnd;
+		builder += ' name="' + name + ATTR_END;
 	else
-		builder += ' name="' + name + '" id="' + (attr.id || name) + attrEnd;
+		builder += ' name="' + name + '" id="' + (attr.id || name) + ATTR_END;
 
 	if (attr.class)
-		builder += ' class="' + attr.class + attrEnd;
+		builder += ' class="' + attr.class + ATTR_END;
 
 	if (attr.style)
-		builder += ' style="' + attr.style + attrEnd;
+		builder += ' style="' + attr.style + ATTR_END;
 
 	if (attr.maxlength)
-		builder += ' maxlength="' + attr.maxlength + attrEnd;
+		builder += ' maxlength="' + attr.maxlength + ATTR_END;
 
 	if (attr.max)
-		builder += ' max="' + attr.max + attrEnd;
+		builder += ' max="' + attr.max + ATTR_END;
 
 	if (attr.step)
-		builder += ' step="' + attr.step + attrEnd;
+		builder += ' step="' + attr.step + ATTR_END;
 
 	if (attr.min)
-		builder += ' min="' + attr.min + attrEnd;
+		builder += ' min="' + attr.min + ATTR_END;
 
 	if (attr.readonly === true)
 		builder += ' readonly="readonly"';
 
 	if (attr.placeholder)
-		builder += ' placeholder="' + (attr.placeholder || '').toString().htmlEncode() + attrEnd;
+		builder += ' placeholder="' + (attr.placeholder || '').toString().htmlEncode() + ATTR_END;
 
 	if (attr.autofocus === true)
 		builder += ' autofocus="autofocus"';
 
 	if (attr.list)
-		builder += ' list="' + attr.list + attrEnd;
+		builder += ' list="' + attr.list + ATTR_END;
 
 	if (attr.required === true)
 		builder += ' required="required"';
@@ -951,7 +950,7 @@ Controller.prototype.$input = function(model, type, name, attr) {
 		builder += ' disabled="disabled"';
 
 	if (attr.pattern && attr.pattern.length > 0)
-		builder += ' pattern="' + attr.pattern + attrEnd;
+		builder += ' pattern="' + attr.pattern + ATTR_END;
 
 	if (attr.autocomplete) {
 		if (attr.autocomplete === true || attr.autocomplete === 'on')
@@ -984,9 +983,9 @@ Controller.prototype.$input = function(model, type, name, attr) {
 	}
 
 	if (typeof(value) !== 'undefined')
-		builder += ' value="' + value.toString().htmlEncode() + attrEnd;
+		builder += ' value="' + value.toString().htmlEncode() + ATTR_END;
 	else
-		builder += ' value="' + (attr.value || '').toString().htmlEncode() + attrEnd;
+		builder += ' value="' + (attr.value || '').toString().htmlEncode() + ATTR_END;
 
 	builder += ' />';
 
@@ -1274,7 +1273,6 @@ Controller.prototype.$css = function(name) {
 */
 Controller.prototype.$image = function(name, width, height, alt, className) {
 
-	var attrEnd = '"';
 	var style = '';
 
 	if (typeof(width) === 'object') {
@@ -1285,24 +1283,44 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
 		width = width.width;
 	}
 
-	var builder = '<img src="' + this.routeImage(name) + attrEnd;
+	var builder = '<img src="' + this.routeImage(name) + ATTR_END;
 
 	if (width > 0)
-		builder += ' width="' + width + attrEnd;
+		builder += ' width="' + width + ATTR_END;
 
 	if (height > 0)
-		builder += ' height="' + height + attrEnd;
+		builder += ' height="' + height + ATTR_END;
 
 	if (alt)
-		builder += ' alt="' + alt.htmlEncode() + attrEnd;
+		builder += ' alt="' + alt.htmlEncode() + ATTR_END;
 
 	if (className)
-		builder += ' class="' + className + attrEnd;
+		builder += ' class="' + className + ATTR_END;
 
 	if (style)
-		builder += ' style="' + style + attrEnd;
+		builder += ' style="' + style + ATTR_END;
 
 	return builder + ' border="0" />';
+};
+
+/*
+	Append <a> TAG
+	@filename {String}
+	@innerHTML {String}
+	@downloadName {String}
+	@className {String} :: optional
+	return {String}
+*/
+Controller.prototype.$download = function(filename, innerHTML, downloadName, className) {
+	var builder = '<a href="' + this.app.routeDocument(filename) + ATTR_END;
+
+	if (downloadName)
+		builder += ' download="' + downloadName + ATTR_END;
+
+	if (className)
+		builder += ' class="' + className + ATTR_END;
+
+	return builder + '>' + (innerHTML || filename) + '</a>';
 };
 
 /*
@@ -1443,7 +1461,7 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 
 	var self = this;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return '';
 
 	if (typeof(nameEmpty) === 'object') {
@@ -1471,7 +1489,7 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 Controller.prototype.json = function(obj, headers) {
 	var self = this;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return self;
 
 	if (obj instanceof builders.ErrorBuilder)
@@ -1512,7 +1530,7 @@ Controller.prototype.jsonAsync = function(obj, headers) {
 Controller.prototype.content = function(contentBody, contentType, headers) {
 	var self = this;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return typeof(contentType) === 'undefined' ? '' : self;
 
 	if (typeof(contentType) === 'undefined')
@@ -1535,7 +1553,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	var self = this;
 	var res = self.res;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return self;
 
 	self.subscribe.success();
@@ -1574,7 +1592,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 Controller.prototype.plain = function(contentBody, headers) {
 	var self = this;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return self;
 
 	self.subscribe.success();
@@ -1592,7 +1610,7 @@ Controller.prototype.plain = function(contentBody, headers) {
 Controller.prototype.file = function(filename, downloadName, headers) {
 	var self = this;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return self;
 
 	filename = utils.combine(self.framework.config['directory-public'], filename);
@@ -1631,7 +1649,7 @@ Controller.prototype.fileAsync = function(filename, downloadName, headers) {
 Controller.prototype.stream = function(contentType, stream, downloadName, headers) {
 	var self = this;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return self;
 
 	self.subscribe.success();
@@ -1646,7 +1664,7 @@ Controller.prototype.stream = function(contentType, stream, downloadName, header
 Controller.prototype.view404 = function() {
 	var self = this;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return self;
 
 	self.req.path = [];
@@ -1663,7 +1681,7 @@ Controller.prototype.view404 = function() {
 Controller.prototype.view403 = function() {
 	var self = this;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return self;
 
 	self.req.path = [];
@@ -1681,7 +1699,7 @@ Controller.prototype.view403 = function() {
 Controller.prototype.view500 = function(error) {
 	var self = this;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return self;
 
 	self.req.path = [];
@@ -1701,7 +1719,7 @@ Controller.prototype.view500 = function(error) {
 Controller.prototype.redirect = function(url, permament) {
 	var self = this;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return self;
 
 	self.subscribe.success();
@@ -1767,7 +1785,7 @@ Controller.prototype.database = function(name) {
 Controller.prototype.view = function(name, model, headers, isPartial) {
 	var self = this;
 
-	if (self.isCanceled || self.res.success)
+	if (self.res.success)
 		return isPartial ? '' : self;
 
 	var generator = generatorView.generate(self, name);
@@ -1969,7 +1987,7 @@ Mixed.prototype.beg = function() {
 
 	var res = self.controller.res;
 
-	self.controller.internal.boundary += utils.GUID(5); 
+	self.controller.internal.boundary = '----partialjs' + utils.GUID(10);
 	self.controller.subscribe.success();
 	self.isOpened = true;
 	res.success = true;
