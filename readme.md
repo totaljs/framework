@@ -9,6 +9,7 @@ web application framework for node.js
 
 - Homepage / [www.partialjs.com](http://partialjs.com)
 - Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
+- [__Download empty project__](http://www.partialjs.com/upload/empty-project.zip) 
 - __Blog example__: [new example - blog written in partial.js and NoSQL embedded database (without installation)](http://blog.partialjs.com)
 - __E-shop example__: [new example - e-shop written in partial.js and NoSQL embedded database (without installation)](http://eshop.partialjs.com)
 - __WebSocket chat__: [new example - websocket (Real-time) HTML5 Chat in 5 minutes - node.js & partial.js](http://www.youtube.com/watch?v=lW1vsKMUaKg)
@@ -18,8 +19,8 @@ web application framework for node.js
 
 ***
 
-* IN DEVELOPMENT **NEW** - __Supports live streaming__ via multipart/x-mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
-* IN DEVELOPMENT **NEW** - Supports uploading via multipart/x-mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
+* **NEW** - __Supports live streaming__ via multipart/x-mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
+* **NEW** - Supports uploading via multipart/x-mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
 * **NEW** - Supports CSS auto vendor prefixes - [read the benefits](http://www.partialjs.com/benefits/)
 * **NEW** - Supports Websocket (Standard - RFC 6455) - [example: websocket](https://github.com/petersirka/partial.js/tree/master/examples/websocket)
 * Async web framework - [example: async methods](https://github.com/petersirka/partial.js/tree/master/examples/async)
