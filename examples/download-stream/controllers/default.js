@@ -9,5 +9,5 @@ function download() {
 	var self = this;
 	// documentation: http://www.partialjs.com/documentation/controller/
 	// @contentType {String}, @stream {Stream}, [@downloadName] {String}, [@headers] {Options}
-	self.stream('application/pdf', fs.createReadStream(self.pathPublic('company-profile.pdf')), 'about-us.pdf');
+	self.stream('application/pdf', fs.createReadStream(self.path.public('company-profile.pdf')), 'about-us.pdf');
 }
