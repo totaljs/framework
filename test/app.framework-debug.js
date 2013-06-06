@@ -14,6 +14,7 @@ framework.onError = function(error, name, uri) {
 
 	if (errorStatus === 0) {
 		console.log(error, name, uri);
+		console.log(error.stack);
 		framework.stop();
 		return;
 	}
@@ -163,6 +164,7 @@ function run() {
 	});
 }
 
+/*
 var mem = require('memwatch');
 
 mem.on('leak', function(info) {
@@ -172,6 +174,7 @@ mem.on('leak', function(info) {
 mem.on('stats', function(info) {
 	console.log('STATS ->', JSON.stringify(info));
 });
+*/
 
 setTimeout(function() {
 	run();

@@ -79,9 +79,9 @@ function viewIndex() {
 	var self = this;
 	var name = 'controller: ';
 
-	assert.ok(self.pathPublic('file.txt') === './public/file.txt', name + 'pathPublic');
-	assert.ok(self.pathLog('file.txt') === './logs/file.txt', name + 'pathLog');
-	assert.ok(self.pathTemp('file.txt') === './tmp/file.txt', name + 'pathTemp');
+	assert.ok(self.path.public('file.txt') === './public/file.txt', name + 'path.public');
+	assert.ok(self.path.logs('file.txt') === './logs/file.txt', name + 'path.logs');
+	assert.ok(self.path.temp('file.txt') === './tmp/file.txt', name + 'path.temp');
 
 	self.meta('A', 'B');
 	assert.ok(self.repository['$meta'] === 'AB', name + 'meta() - write');

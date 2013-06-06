@@ -72,6 +72,9 @@ Subscribe.prototype.file = function() {
 	self.req.resume();
 };
 
+/*
+	@header {String} :: Content-Type
+*/
 Subscribe.prototype.multipart = function(header) {
 
 	var self = this;
@@ -115,6 +118,9 @@ Subscribe.prototype.end = function() {
 	self.req.resume();
 };
 
+/*
+	@status {Number} :: HTTP status
+*/
 Subscribe.prototype.execute = function(status) {
 
 	var self = this;
@@ -125,7 +131,7 @@ Subscribe.prototype.execute = function(status) {
 	}
 
 	var name = self.route.name;
-	self.controller = new Controller(name, self.framework, self.req, self.res, self);
+	self.controller = new Controller(name, self.req, self.res, self);
 
 	if (!self.isCanceled && !self.isMixed)
 		self.timeout = setTimeout(self.handlers._cancel, self.route.timeout);
@@ -163,6 +169,10 @@ Subscribe.prototype.execute = function(status) {
 	return self;
 };
 
+/*
+	@flags {String Array}
+	@url {String}
+*/
 Subscribe.prototype.prepare = function(flags, url) {
 
 	var self = this;
@@ -224,6 +234,9 @@ Subscribe.prototype._execute = function() {
 	}
 };
 
+/*
+	@isLogged {Boolean}
+*/
 Subscribe.prototype._authorization = function(isLogged) {
 	var self = this;
 
@@ -349,19 +362,18 @@ Subscribe.prototype._cancel = function() {
 /*
 	Controller class
 	@name {String}
-	@framework {Framework}
 	@req {ServerRequest}
 	@res {ServerResponse}
-	@internal {Object} :: internal options
+	@substribe {Object}
 	return {Controller};
 */
-function Controller(name, framework, req, res, subscribe) {
+function Controller(name, req, res, subscribe) {
 
 	this.subscribe = subscribe;
 	this.name = name;
-	this.cache = framework.cache;
-	this.app = framework;
-	this.framework = framework;
+	this.cache = subscribe.framework.cache;
+	this.app = subscribe.framework;
+	this.framework = subscribe.framework;
 	this.req = req;
 	this.res = res;
 	this.session = req.session;
@@ -371,19 +383,19 @@ function Controller(name, framework, req, res, subscribe) {
 	this.isLayout = false;
 	this.isXHR = req.isXHR;
 	this.xhr = req.isXHR;
-	this.config = framework.config;
-	this.internal = { layout: framework.config['default-layout'], contentType: 'text/html' };
+	this.config = subscribe.framework.config;
+	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html' };
 	this.statusCode = 200;
-	this.controllers = framework.controllers;
+	this.controllers = subscribe.framework.controllers;
 	this.url = utils.path(req.uri.pathname);
 	this.isTest = req.headers['assertion-testing'] === '1';
-	this.isDebug = framework.config.debug;
+	this.isDebug = subscribe.framework.config.debug;
 	this.isCanceled = false;
-
-	this.global = framework.global;
+	this.global = subscribe.framework.global;
 	this.flags = req.flags;
+	this.path = subscribe.framework.path;
+	this.fs = subscribe.framework.fs;
 
-	// dočasné úložisko
 	this.repository = {};
 	this.model = null;
 
@@ -421,14 +433,6 @@ Controller.prototype.validation = function(model, properties, prefix, name) {
 	return this.validate(model, properties, prefix, name);
 };
 
-/*
-	Validation / alias for validate
-	@model {Object}
-	@properties {String Array}
-	@prefix {String} :: optional - prefix in a resource
-	@name {String} :: optional - a resource name
-	return {ErrorBuilder}
-*/
 Controller.prototype.validate = function(model, properties, prefix, name) {
 
 	var self = this;
@@ -494,6 +498,7 @@ Controller.prototype.cancel = function() {
 	return {String}
 */
 Controller.prototype.pathPublic = function(name) {
+	console.log('OBSOLETE - pathPublic, path.public()');
 	return utils.combine(this.app.config['directory-public'], name).replace(/\\/g, '/');
 };
 
@@ -503,6 +508,7 @@ Controller.prototype.pathPublic = function(name) {
 	return {String}
 */
 Controller.prototype.pathLog = function(name) {
+	console.log('OBSOLETE - pathLog, path.log()');
 	return utils.combine(this.app.config['directory-logs'], name).replace(/\\/g, '/');
 };
 
@@ -512,6 +518,7 @@ Controller.prototype.pathLog = function(name) {
 	return {String}
 */
 Controller.prototype.pathTemp = function(name) {
+	console.log('OBSOLETE - pathTemp, path.temp()');
 	return utils.combine(this.app.config['directory-temp'], name).replace(/\\/g, '/');
 };
 

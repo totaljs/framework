@@ -138,7 +138,39 @@ function Framework() {
 	this.cache = require('./cache').init(this);
 	this.cache.on('service', this.handlers.onservice);
 
+	this.fs = new FrameworkFileSystem(this);
+	this.path = new FrameworkPath(this);
+
 	var self = this;
+};
+
+function FrameworkFileSystem(framework) {
+	this.framework = framework;
+	this.config = framework.config;
+
+	this.create = {
+		css: this.createCSS,
+		js: this.createJS,
+		view: this.createView,
+		content: this.createContent,
+		template: this.createTemplate,
+		resource: this.createResource,
+		file: this.createFile
+	};
+
+	this.rm = {
+		css: this.deleteCSS,
+		js: this.deleteJS,
+		view: this.deleteView,
+		content: this.deleteContent,
+		template: this.deleteTemplate,
+		resource: this.deleteResource,
+		file: this.deleteFile
+	};
+};
+
+function FrameworkPath(framework) {
+	this.config = framework.config;
 };
 
 // ======================================================
@@ -196,7 +228,7 @@ Framework.prototype.controller = function(name) {
 	return self;
 };
 
-Framework.prototype.routeSort = function() {
+Framework.prototype._routeSort = function() {
 
 	var self = this;
 
@@ -525,7 +557,7 @@ Framework.prototype.install = function() {
 	dir = path.join(directory, self.config['directory-modules']);
 
 	if (!fs.existsSync(dir)) {
-		self.routeSort();
+		self._routeSort();
 		return self;
 	}
 
@@ -555,7 +587,7 @@ Framework.prototype.install = function() {
 		}
 	});
 
-	self.routeSort();
+	self._routeSort();
 	return self;
 };
 
@@ -589,7 +621,7 @@ Framework.prototype.inject = function(name, url) {
 				result.install(self);
 
 			self.modules[name] = result;
-			self.routeSort();
+			self._routeSort();
 
 		} catch (ex) {
 			self.error(ex, 'inject - ' + name, null);
@@ -838,288 +870,6 @@ Framework.prototype.onMeta = function() {
 	}
 
 	return builder;
-};
-
-/*
-	Create file with CSS (client side)
-	@name {String}
-	@content {String}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-Framework.prototype.createCSS = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if ((content || '').length === 0)
-		return false;
-
-	if (name.indexOf('.css') === -1)
-		name += '.css';
-
-	var fileName = utils.combine(self.config['directory-public'], self.config['static-url-css'], name);
-	return self.createFile(fileName, content, append, rewrite);
-};
-
-/*
-	Create file with JavaScript (client side)
-	@name {String}
-	@content {String}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-Framework.prototype.createJS = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if ((content || '').length === 0)
-		return false;
-
-	if (name.indexOf('.js') === -1)
-		name += '.js';
-
-	var fileName = utils.combine(self.config['directory-public'], self.config['static-url-js'], name);
-	return self.createFile(fileName, content, append, rewrite);
-};
-
-/*
-	Create file with template
-	@name {String}
-	@content {String}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-Framework.prototype.createTemplate = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if ((content || '').length === 0)
-		return false;
-
-	if (name.indexOf('.html') === -1)
-		name += '.html';
-
-	var fileName = utils.combine(self.config['directory-templates'], name);
-	return self.createFile(fileName, content, append, rewrite);
-};
-
-/*
-	Create file with view
-	@name {String}
-	@content {String}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-Framework.prototype.createView = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if ((content || '').length === 0)
-		return false;
-
-	if (name.indexOf('.html') === -1)
-		name += '.html';
-
-	var fileName = utils.combine(self.config['directory-views'], name);
-	return self.createFile(fileName, content, append, rewrite);
-};
-
-/*
-	Create file with content
-	@name {String}
-	@content {String}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-Framework.prototype.createContent = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if ((content || '').length === 0)
-		return false;
-
-	if (name.indexOf('.html') === -1)
-		name += '.html';
-
-	var fileName = utils.combine(self.config['directory-contents'], name);
-	return self.createFile(fileName, content, append, rewrite);
-};
-
-/*
-	Create file with resource
-	@name {String}
-	@content {String or Object}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-Framework.prototype.createResource = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if ((content || '').length === 0)
-		return false;
-
-	if (name.indexOf('.resource') === -1)
-		name += '.resource';
-
-	var builder = content;
-
-	if (typeof(content) === 'object') {
-		builder = '';
-		Object.keys(content).forEach(function(o) {
-			builder += o.padRight(20, ' ') + ': ' + content[o] + '\n';
-		});
-	}
-
-	var fileName = utils.combine(self.config['directory-resources'], name);
-	return self.createFile(fileName, builder, append, rewrite);
-};
-
-/*
-	Internal :: Create file with content
-	@fileName {String}
-	@content {String}
-	@append {Boolean}
-	@rewrite {Boolean}
-	return {Boolean}
-*/
-Framework.prototype.createFile = function(fileName, content, append, rewrite) {
-
-	var self = this;
-
-	if ((content || '').length === 0)
-		return false;
-
-	var exists = fs.existsSync(fileName);
-
-	if (exists && append)
-	{
-		var data = fs.readFileSync(fileName).toString(encoding);
-
-		if (data.indexOf(content) === -1) {
-			fs.appendFileSync(fileName, '\n' + content);
-			return true;
-		}
-
-		return false;
-	}
-
-	if (exists && !rewrite)
-		return false;
-
-	fs.writeFileSync(fileName, content, encoding);
-	return true;
-};
-
-/*
-	Delete file - CSS
-	@name {String}
-	return {Boolean}
-*/
-Framework.prototype.deleteCSS = function(name) {
-	var self = this;
-
-	if (name.indexOf('.css') === -1)
-		name += '.css';
-
-	var fileName = utils.combine(self.config['directory-public'], self.config['static-url-css'], name);
-	return self.deleteFile(fileName);
-};
-
-/*
-	Delete file - JS
-	@name {String}
-	return {Boolean}
-*/
-Framework.prototype.deleteJS = function(name) {
-	var self = this;
-
-	if (name.indexOf('.js') === -1)
-		name += '.js';
-
-	var fileName = utils.combine(self.config['directory-public'], self.config['static-url-js'], name);
-	return self.deleteFile(fileName);
-};
-
-/*
-	Delete file - View
-	@name {String}
-	return {Boolean}
-*/
-Framework.prototype.deleteView = function(name) {
-	var self = this;
-
-	if (name.indexOf('.html') === -1)
-		name += '.html';
-
-	var fileName = utils.combine(self.config['directory-views'], name);
-	return self.deleteFile(fileName);
-};
-
-/*
-	Delete file - Content
-	@name {String}
-	return {Boolean}
-*/
-Framework.prototype.deleteContent = function(name) {
-	var self = this;
-
-	if (name.indexOf('.html') === -1)
-		name += '.html';
-
-	var fileName = utils.combine(self.config['directory-contents'], name);
-	return self.deleteFile(fileName);
-};
-
-/*
-	Delete file - Template
-	@name {String}
-	return {Boolean}
-*/
-Framework.prototype.deleteTemplate = function(name) {
-	var self = this;
-
-	if (name.indexOf('.html') === -1)
-		name += '.html';
-
-	var fileName = utils.combine(self.config['directory-templates'], name);
-	return self.deleteFile(fileName);
-};
-
-/*
-	Delete file - Resource
-	@name {String}
-	return {Boolean}
-*/
-Framework.prototype.deleteResource = function(name) {
-	var self = this;
-
-	if (name.indexOf('.resource') === -1)
-		name += '.resource';
-
-	var fileName = utils.combine(self.config['directory-resources'], name);
-	return self.deleteFile(fileName);
-};
-
-/*
-	Internal :: Delete file
-	@name {String}
-	return {Boolean}
-*/
-Framework.prototype.deleteFile = function(fileName) {
-	var self = this;
-
-	if (!fs.existsSync(fileName))
-		return false;
-
-	fs.unlink(fileName);
-	return true;
 };
 
 // @arguments {Object params}
@@ -2604,7 +2354,20 @@ Framework.prototype.verification = function(cb) {
 		self.verification.call(self, cb);
 	});
 
-	self.verify.push(function verifyGraphicsMagick() {
+	self.verify.push(function() {
+		var filename = self.path.temp('verify');
+		try
+		{
+			fs.writeFileSync(filename, 'OK');
+			fs.readFileSync(filename);
+			fs.unlinkSync(filename);
+		} catch (ex) {
+			self.verifyError.push('Writing/Readings files: ' + ex.toString());
+		}
+		self.verification.call(self, cb);
+	});
+
+	self.verify.push(function() {
 		var exec = require('child_process').exec;
 
 		exec('gm', function(error, stdout, stderr) {
@@ -2616,7 +2379,7 @@ Framework.prototype.verification = function(cb) {
 		});
 	});
 
-	self.verify.push(function verifyGraphicsMagick() {
+	self.verify.push(function () {
 		var exec = require('child_process').exec;
 
 		exec('convert', function(error, stdout, stderr) {
@@ -2642,7 +2405,7 @@ Framework.prototype.routeJS = function(name) {
 	if (name.indexOf('.js') === -1)
 		name += '.js';
 
-	return self.routeStaticSync(name, self.config['static-url-js']);
+	return self._routeStatic(name, self.config['static-url-js']);
 };
 
 /*
@@ -2656,7 +2419,7 @@ Framework.prototype.routeCSS = function(name) {
 	if (name.indexOf('.css') === -1)
 		name += '.css';
 
-	return self.routeStaticSync(name, self.config['static-url-css']);
+	return self._routeStatic(name, self.config['static-url-css']);
 };
 
 /*
@@ -2666,7 +2429,7 @@ Framework.prototype.routeCSS = function(name) {
 */
 Framework.prototype.routeImage = function(name) {
 	var self = this;
-	return self.routeStaticSync(name, self.config['static-url-image']);
+	return self._routeStatic(name, self.config['static-url-image']);
 };
 
 /*
@@ -2676,7 +2439,7 @@ Framework.prototype.routeImage = function(name) {
 */
 Framework.prototype.routeVideo = function(name) {
 	var self = this;
-	return self.routeStaticSync(name, self.config['static-url-video']);
+	return self._routeStatic(name, self.config['static-url-video']);
 };
 
 /*
@@ -2686,7 +2449,7 @@ Framework.prototype.routeVideo = function(name) {
 */
 Framework.prototype.routeFont = function(name) {
 	var self = this;
-	return self.routeStaticSync(name, self.config['static-url-font']);
+	return self._routeStatic(name, self.config['static-url-font']);
 };
 
 /*
@@ -2696,7 +2459,7 @@ Framework.prototype.routeFont = function(name) {
 */
 Framework.prototype.routeDocument = function(name) {
 	var self = this;
-	return self.routeStaticSync(name, self.config['static-url-document']);
+	return self._routeStatic(name, self.config['static-url-document']);
 };
 
 /*
@@ -2706,7 +2469,7 @@ Framework.prototype.routeDocument = function(name) {
 */
 Framework.prototype.routeStatic = function(name) {
 	var self = this;
-	return self.routeStaticSync(name, self.config['static-url']);
+	return self._routeStatic(name, self.config['static-url']);
 };
 
 /*
@@ -2715,7 +2478,7 @@ Framework.prototype.routeStatic = function(name) {
 	@directory {String} :: directory
 	return {String}
 */
-Framework.prototype.routeStaticSync = function(name, directory) {
+Framework.prototype._routeStatic = function(name, directory) {
 	var self = this;
 	var fileName = self.onVersion === null ? name : self.onVersion(name) || name;
 	return directory + fileName;
@@ -2801,6 +2564,328 @@ Framework.prototype.lookup_websocket = function(req, url) {
 	}
 
 	return null;
+};
+
+// ===========================================================================
+// FrameworkFileSystem
+// ===========================================================================
+
+/*
+	Delete a file - CSS
+	@name {String}
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.deleteCSS = function(name) {
+	var self = this;
+
+	if (name.indexOf('.css') === -1)
+		name += '.css';
+
+	var filename = utils.combine(self.config['directory-public'], self.config['static-url-css'], name);
+	return self.deleteFile(filename);
+};
+
+/*
+	Delete a file - JS
+	@name {String}
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.deleteJS = function(name) {
+	var self = this;
+
+	if (name.indexOf('.js') === -1)
+		name += '.js';
+
+	var filename = utils.combine(self.config['directory-public'], self.config['static-url-js'], name);
+	return self.deleteFile(filename);
+};
+
+/*
+	Delete a file - View
+	@name {String}
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.deleteView = function(name) {
+	var self = this;
+
+	if (name.indexOf('.html') === -1)
+		name += '.html';
+
+	var filename = utils.combine(self.config['directory-views'], name);
+	return self.deleteFile(filename);
+};
+
+/*
+	Delete a file - Content
+	@name {String}
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.deleteContent = function(name) {
+	var self = this;
+
+	if (name.indexOf('.html') === -1)
+		name += '.html';
+
+	var filename = utils.combine(self.config['directory-contents'], name);
+	return self.deleteFile(filename);
+};
+
+/*
+	Delete a file - Template
+	@name {String}
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.deleteTemplate = function(name) {
+	var self = this;
+
+	if (name.indexOf('.html') === -1)
+		name += '.html';
+
+	var filename = utils.combine(self.config['directory-templates'], name);
+	return self.deleteFile(filename);
+};
+
+/*
+	Delete a file - Resource
+	@name {String}
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.deleteResource = function(name) {
+	var self = this;
+
+	if (name.indexOf('.resource') === -1)
+		name += '.resource';
+
+	var filename = utils.combine(self.config['directory-resources'], name);
+	return self.deleteFile(filename);
+};
+
+/*
+	Internal :: Delete a file
+	@name {String}
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.deleteFile = function(filename) {
+	var self = this;
+
+	if (!fs.existsSync(filename))
+		return false;
+
+	fs.unlink(filename);
+	return true;
+};
+
+/*
+	Create a file with the CSS
+	@name {String}
+	@content {String}
+	@rewrite {Boolean} :: optional (default false)
+	@append {Boolean} :: optional (default false)
+	return {Boolean}
+*/
+Framework.prototype.createCSS = function(name, content, rewrite, append) {
+
+	var self = this;
+
+	if ((content || '').length === 0)
+		return false;
+
+	if (name.indexOf('.css') === -1)
+		name += '.css';
+
+	var filename = utils.combine(self.config['directory-public'], self.config['static-url-css'], name);
+	return self.createFile(filename, content, append, rewrite);
+};
+
+/*
+	Create a file with the JavaScript
+	@name {String}
+	@content {String}
+	@rewrite {Boolean} :: optional (default false)
+	@append {Boolean} :: optional (default false)
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.createJS = function(name, content, rewrite, append) {
+
+	var self = this;
+
+	if ((content || '').length === 0)
+		return false;
+
+	if (name.indexOf('.js') === -1)
+		name += '.js';
+
+	var filename = utils.combine(self.config['directory-public'], self.config['static-url-js'], name);
+	return self.createFile(filename, content, append, rewrite);
+};
+
+/*
+	Create a file with the template
+	@name {String}
+	@content {String}
+	@rewrite {Boolean} :: optional (default false)
+	@append {Boolean} :: optional (default false)
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.createTemplate = function(name, content, rewrite, append) {
+
+	var self = this;
+
+	if ((content || '').length === 0)
+		return false;
+
+	if (name.indexOf('.html') === -1)
+		name += '.html';
+
+	var filename = utils.combine(self.config['directory-templates'], name);
+	return self.createFile(filename, content, append, rewrite);
+};
+
+/*
+	Create a file with the view
+	@name {String}
+	@content {String}
+	@rewrite {Boolean} :: optional (default false)
+	@append {Boolean} :: optional (default false)
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.createView = function(name, content, rewrite, append) {
+
+	var self = this;
+
+	if ((content || '').length === 0)
+		return false;
+
+	if (name.indexOf('.html') === -1)
+		name += '.html';
+
+	var filename = utils.combine(self.config['directory-views'], name);
+	return self.createFile(filename, content, append, rewrite);
+};
+
+/*
+	Create a file with the content
+	@name {String}
+	@content {String}
+	@rewrite {Boolean} :: optional (default false)
+	@append {Boolean} :: optional (default false)
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.createContent = function(name, content, rewrite, append) {
+
+	var self = this;
+
+	if ((content || '').length === 0)
+		return false;
+
+	if (name.indexOf('.html') === -1)
+		name += '.html';
+
+	var filename = utils.combine(self.config['directory-contents'], name);
+	return self.createFile(filename, content, append, rewrite);
+};
+
+/*
+	Create a file with the resource
+	@name {String}
+	@content {String or Object}
+	@rewrite {Boolean} :: optional (default false)
+	@append {Boolean} :: optional (default false)
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, append) {
+
+	var self = this;
+
+	if ((content || '').length === 0)
+		return false;
+
+	if (name.indexOf('.resource') === -1)
+		name += '.resource';
+
+	var builder = content;
+
+	if (typeof(content) === 'object') {
+		builder = '';
+		Object.keys(content).forEach(function(o) {
+			builder += o.padRight(20, ' ') + ': ' + content[o] + '\n';
+		});
+	}
+
+	var filename = utils.combine(self.config['directory-resources'], name);
+	return self.createFile(filename, builder, append, rewrite);
+};
+
+/*
+	Internal :: Create a file with the content
+	@filename {String}
+	@content {String}
+	@append {Boolean}
+	@rewrite {Boolean}
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.createFile = function(filename, content, append, rewrite) {
+
+	var self = this;
+
+	if ((content || '').length === 0)
+		return false;
+
+	var exists = fs.existsSync(filename);
+
+	if (exists && append)
+	{
+		var data = fs.readFileSync(filename).toString(encoding);
+
+		if (data.indexOf(content) === -1) {
+			fs.appendFileSync(filename, '\n' + content);
+			return true;
+		}
+
+		return false;
+	}
+
+	if (exists && !rewrite)
+		return false;
+
+	fs.writeFileSync(filename, content, encoding);
+	return true;
+};
+
+// ===========================================================================
+// FrameworkPath
+// ===========================================================================
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.public = function(filename) {
+	return utils.combine(this.config['directory-public'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.logs = function(filename) {
+	return utils.combine(this.config['directory-logs'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.temp = function(filename) {
+	return utils.combine(this.config['directory-temp'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.root = function(filename) {
+	return utils.combine(directory, filename || '');
 };
 
 module.exports = new Framework();

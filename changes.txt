@@ -5,6 +5,18 @@ IN DEVELOPMENT ======= 1.2.4-1
 - added: multipart/x-mixed-replace upload
 - added: new test flag "mixed" for incommning multipart/x-mixed-replace content
 
+- added: framework.fs.create.css(), framework.fs.create.js(), etc.
+- added: framework.fs.rm.css(), framework.fs.rm.js(), etc.
+- added: framework.fs alias to controller.fs
+- added: framework.path.public(), framework.path.temp(), etc.
+- added: framework.path alias to controller.path
+
+- removed: framework.deleteCSS, framework.deleteJS, etc.
+- removed: framework.createCSS, framework.createJS, etc.
+- removed: framework.pathPublic, framework.pathTemp, etc.
+
+- updated: framework.verification(), added new checking for write and read files
+
 - clean code
 
 ======= 1.2.4-0
