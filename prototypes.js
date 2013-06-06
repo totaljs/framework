@@ -84,15 +84,20 @@ http.IncomingMessage.prototype.cookie = function(name) {
 http.IncomingMessage.prototype.clear = function() {
 	var self = this;
 
-	if (self.data.files.length === 0)
+	var files = self.data.files;
+	var length = files.length;
+
+	if (length === 0)
 		return self;
 
-	self.data.files.forEach(function(o) {
-		fs.exists(o.fileNameTmp, function(exists) {
-			if (exists)
-				fs.unlink(o.fileNameTmp);
-		});
-	});
+	for (var i = 0; i < length; i++) {
+		(function(filename) {
+			fs.exists(filename, function(exists) {
+				if (exists)
+					fs.unlink(filename);
+			});
+		})(files[i]);
+	}
 
 	self.data.files = null;
 	return self;

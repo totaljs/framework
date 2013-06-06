@@ -188,6 +188,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 	@req {ServerRequest}
 	@contentType {String}
 	@tmpDirectory {String}
+	@onFile {Function} :: this function is called when is a file downloaded
 	@callback {Function}
 	return {String array}
 */
@@ -412,28 +413,16 @@ exports.routeParam = function(routeUrl, route) {
 	if (!route || !routeUrl)
 		return arr;
 
-	if (route.param.length === 0)
+	var length = route.param.length;
+	if (length === 0)
 		return arr;
 
-	route.param.forEach(function(o) {
-		var value = routeUrl[o];
+	for (var i = 0; i < length; i++) {
+		var value = routeUrl[route.param[i]];
 		arr.push(value === '/' ? '' : value);
-	});
+	}
 
 	return arr;
-};
-
-/*
-	Clear all uploaded files :: Internal function
-	@req {ServerRequest}
-	return {ServerRequest}
-*/
-exports.multipartClear = function(req) {
-	req.data.files.forEach(function(o) {
-		if (fs.existsSync(o.fileNameTmp))
-			fs.unlink(o.fileNameTmp);
-	});
-	return req;
 };
 
 /*
