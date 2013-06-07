@@ -20,13 +20,9 @@ function viewHomepage() {
 		return;
 	}
 
-	var resource = function(name) {
-		return self.resource(name);
-	};
+	var errorBuilder = self.validate(self.post, ['LoginName', 'LoginPassword']);
 
-	var errorBuilder = new builders.ErrorBuilder(resource);
-
-	if (utils.validate(self.post, ['LoginName', 'LoginPassword'], onValidation, errorBuilder).hasError()) {
+	if (errorBuilder.hasError()) {
 		self.json(errorBuilder);
 		return;
 	}
@@ -51,13 +47,4 @@ function viewHomepage() {
 		self.json({ r: true });		
 	});
 
-}
-
-function onValidation(name, value) {
-	switch (name) {
-		case 'LoginName':
-			return utils.isEmail(value);
-		case 'LoginPassword':
-			return value.length > 0;
-	};
 }

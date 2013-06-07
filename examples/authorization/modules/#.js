@@ -22,7 +22,7 @@ exports.onAuthorization = function(req, res, flags, callback) {
 
 	var obj = self.decode(cookie, 'user');
 
-	if (obj.ip !== req.ip) {
+	if (obj === null || obj === '' || obj.ip !== req.ip) {
 		callback(false);
 		return;
 	}
@@ -50,3 +50,13 @@ exports.onAuthorization = function(req, res, flags, callback) {
 	});
 
 };
+
+
+exports.onValidation = function(name, value) {
+	switch (name) {
+		case 'LoginName':
+			return utils.isEmail(value);
+		case 'LoginPassword':
+			return value.length > 0;
+	};
+}
