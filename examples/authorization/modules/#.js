@@ -34,9 +34,9 @@ exports.onAuthorization = function(req, res, flags, callback) {
 		return;
 	}
 	
-	// autologin by cookie
 	var db = self.database('users');
 
+	// find the user in database
 	db.one('doc.id === {0}'.format(obj.id), function(user) {
 
 		if (user === null) {
