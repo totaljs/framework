@@ -410,9 +410,15 @@ function Controller(name, req, res, subscribe) {
 
 	this.async = new utils.Async(this);
 	this.mixed = new Mixed(this);
+	this.sse = new SSE(this);
 };
 
 function Mixed(controller) {
+	this.controller = controller;
+	this.isOpened = false;
+};
+
+function SSE(controller) {
 	this.controller = controller;
 	this.isOpened = false;
 };
@@ -2016,6 +2022,8 @@ Mixed.prototype.end = function() {
 	@filename {String}
 	@contentType {String}
 	@{stream} {Stream} :: optional, if undefined then framework reads by the filename file from disk
+	@cb {Function} :: callback if stream is sended
+	return {Controller}	
 */
 Mixed.prototype.send = function(filename, stream, cb) {
 
@@ -2056,6 +2064,57 @@ Mixed.prototype.send = function(filename, stream, cb) {
 	});
 
 	stream.pipe(res, { end: false });
+	return self.controller;
+};
+
+SSE.prototype.beg = function() {
+	var self = this;
+
+	if (self instanceof Controller)
+		self = self.sse;
+
+	if (self.isOpened)
+		return self.controller;
+
+	var res = self.controller.res;
+
+	self.controller.subscribe.success();
+	self.isOpened = true;
+	res.success = true;
+	res.writeHead(self.controller.statusCode, { 'Content-type': 'text/event-stream', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
+
+	return self.controller;
+};
+
+SSE.prototype.end = function() {
+	var self = this;
+
+	if (self instanceof Controller)
+		self = self.sse;
+
+	if (!self.isOpened)
+		return self.controller;
+
+	self.isOpened = false;
+	self.controller.res.end();
+	return self.controller;
+};
+
+/*
+	Write data to client
+	@data {String}
+	return {Controller}
+*/
+SSE.prototype.write = function(data) {
+
+	var self = this;
+
+	if (self instanceof Controller)
+		self = self.sse;
+
+	var res = self.controller.res;
+	res.write(data);
+
 	return self.controller;
 };
 

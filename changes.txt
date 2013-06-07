@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.2.4-2
+
+- added: Server-Sent Events - One Way Messaging (http://www.w3schools.com/html/html5_serversentevents.asp)
+
 ======= 1.2.4-1
 
 - added: auto skipping minified JS or CSS - filename must contain scriptname[-min.js(.css)] or scriptname[.min.js(.css)]
