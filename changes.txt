@@ -1,6 +1,9 @@
 IN DEVELOPMENT ======= 1.2.4-2
 
+- added: new route flag "sse"
 - added: Server-Sent Events - One Way Messaging (http://www.w3schools.com/html/html5_serversentevents.asp)
+- added: controller.sse(data, [eventname], [id], [retry]);
+- added: controller.close()
 
 ======= 1.2.4-1
 

@@ -1825,6 +1825,7 @@ Framework.prototype._request = function(req, res) {
 	var isXSS = false;
 	var header = req.headers;
 	var protocol = req.connection.encrypted ? 'https' : 'http';
+	var accept = header['accept'];
 
    	req.host = header['host'];
    	req.uri = parser.parse(protocol + '://' + req.host + req.url);
@@ -1883,6 +1884,9 @@ Framework.prototype._request = function(req, res) {
     	else
     		flags.push('mixed');
     }
+
+    if (accept === 'text/event-stream')
+    	flags.push('sse');
 
 	flags.push(protocol);
 
