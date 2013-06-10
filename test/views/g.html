@@ -1,0 +1,31 @@
+@{layout('')}
+
+<!DOCTYPE html>
+<head>
+</head>
+<body>
+
+	<script type="text/javascript">
+
+		function init() {
+			var es = new EventSource('/sse/');
+
+		  es.onmessage = function(ev) {
+		  	console.log('OK');
+		  	console.log(ev.data);
+		  };
+
+		  es.addEventListener('end', function() {
+		  	console.log('END');
+		  }, true);
+
+		  es.onerror = function(e) {
+		  	console.log(e);
+		  	console.log('ERROR');
+		  };
+		}
+
+	</script>
+
+</body>
+</html>

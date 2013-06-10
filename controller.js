@@ -384,7 +384,7 @@ function Controller(name, req, res, subscribe) {
 	this.isXHR = req.isXHR;
 	this.xhr = req.isXHR;
 	this.config = subscribe.framework.config;
-	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null };
+	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null, _sse: false };
 	this.statusCode = 200;
 	this.controllers = subscribe.framework.controllers;
 	this.url = utils.path(req.uri.pathname);
@@ -395,6 +395,7 @@ function Controller(name, req, res, subscribe) {
 	this.flags = req.flags;
 	this.path = subscribe.framework.path;
 	this.fs = subscribe.framework.fs;
+	this.lastEventID = req.headers['Last-Event-ID'];
 
 	this.repository = {};
 	this.model = null;
@@ -410,15 +411,9 @@ function Controller(name, req, res, subscribe) {
 
 	this.async = new utils.Async(this);
 	this.mixed = new Mixed(this);
-	this.sse = new SSE(this);
 };
 
 function Mixed(controller) {
-	this.controller = controller;
-	this.isOpened = false;
-};
-
-function SSE(controller) {
 	this.controller = controller;
 	this.isOpened = false;
 };
@@ -1772,6 +1767,68 @@ Controller.prototype.viewAsync = function(name, model, headers) {
 };
 
 /*
+	Send data via Server-Sent Events
+	@data {String or Object}
+	@eventname {String} :: optional
+	@id {String} :: optional
+	@retry {Number} :: optional, reconnection in milliseconds
+	return {Controller};
+*/
+Controller.prototype.sse = function(data, eventname, id, retry) {
+
+	var self = this;
+	var res = self.res;
+
+	if (!self.internal._sse) {
+
+		self.internal._sse = true;
+		self.subscribe.success();
+
+		res.success = true;
+		res.writeHead(self.statusCode, { 'Content-type': 'text/event-stream', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
+
+		if (typeof(retry) === 'undefined')
+			retry = self.subscribe.route.timeout;
+	}
+
+	if (typeof(data) === 'object')
+		data = JSON.stringify(data);
+	else
+		data = data.replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+
+	var newline = '\n';
+	var builder = '';
+
+	if (eventname)
+		builder = 'event: ' + eventname + newline;
+
+	builder += 'data: ' + data + newline;
+
+	if (id)
+		builder += 'id: ' + id + newline;
+
+	if (retry && retry > 0)
+		builder += 'retry: ' + retry + newline;
+
+	builder += newline;
+	res.write(builder);
+
+	return self;
+};
+
+Controller.prototype.close = function() {
+	var self = this;
+
+	if (!self.internal._sse)
+		return self;
+
+	self.internal._sse = false;
+	self.res.end();
+
+	return self;
+};
+
+/*
 	Return database
 	@name {String}
 	return {Database};
@@ -2023,7 +2080,7 @@ Mixed.prototype.end = function() {
 	@contentType {String}
 	@{stream} {Stream} :: optional, if undefined then framework reads by the filename file from disk
 	@cb {Function} :: callback if stream is sended
-	return {Controller}	
+	return {Controller}
 */
 Mixed.prototype.send = function(filename, stream, cb) {
 
@@ -2064,57 +2121,6 @@ Mixed.prototype.send = function(filename, stream, cb) {
 	});
 
 	stream.pipe(res, { end: false });
-	return self.controller;
-};
-
-SSE.prototype.beg = function() {
-	var self = this;
-
-	if (self instanceof Controller)
-		self = self.sse;
-
-	if (self.isOpened)
-		return self.controller;
-
-	var res = self.controller.res;
-
-	self.controller.subscribe.success();
-	self.isOpened = true;
-	res.success = true;
-	res.writeHead(self.controller.statusCode, { 'Content-type': 'text/event-stream', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
-
-	return self.controller;
-};
-
-SSE.prototype.end = function() {
-	var self = this;
-
-	if (self instanceof Controller)
-		self = self.sse;
-
-	if (!self.isOpened)
-		return self.controller;
-
-	self.isOpened = false;
-	self.controller.res.end();
-	return self.controller;
-};
-
-/*
-	Write data to client
-	@data {String}
-	return {Controller}
-*/
-SSE.prototype.write = function(data) {
-
-	var self = this;
-
-	if (self instanceof Controller)
-		self = self.sse;
-
-	var res = self.controller.res;
-	res.write(data);
-
 	return self.controller;
 };
 

@@ -3,6 +3,8 @@ var utils = require('../../utils');
 
 exports.init = function() {
 	var self = this;
+	self.route('/sse/', viewSSE_html);
+	self.route('/sse/', viewSSE, ['sse']);
 	self.route('/f/', viewSocket);
 	self.route('/js/', viewJS);
 	self.route('/', viewIndex);
@@ -34,6 +36,15 @@ exports.init = function() {
 	// maximumSize
 	self.websocket('/', socket);
 };
+
+function viewSSE_html() {
+	this.view('g');
+}
+
+function viewSSE() {
+	var self = this;
+	self.sse('TEST\n\nTEST');
+}
 
 function viewLiveIncoming(file) {
 	console.log(file);
