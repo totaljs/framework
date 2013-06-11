@@ -86,7 +86,7 @@ Subscribe.prototype.multipart = function(header) {
 		return;
 	}
 
-	if (header.indexOf('mmr') === -1) {
+	if (header.indexOf('mixed') === -1) {
 		internal.parseMULTIPART(self.req, header, self.route.maximumSize, self.framework.config['directory-temp'], self.framework.handlers.onxss, self.handlers._end);
 		return;
 	}

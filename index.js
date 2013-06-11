@@ -1879,7 +1879,7 @@ Framework.prototype._request = function(req, res) {
     var multipart = req.headers['content-type'] || '';
 
     if (multipart.indexOf('multipart/form-data') === -1) {
-    	if (multipart.indexOf('mmr') === -1)
+    	if (multipart.indexOf('mixed') === -1)
     		multipart = '';
     	else
     		flags.push('mmr');
