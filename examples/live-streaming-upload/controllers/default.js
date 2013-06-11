@@ -4,4 +4,8 @@ exports.install = function(framework) {
 
 function upload(file) {
 	console.log(file);
+
+	// cancel upload
+	// this.close();
+	
 }
