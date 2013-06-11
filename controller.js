@@ -1895,7 +1895,6 @@ Controller.prototype.close = function() {
 
 	self.res.end();
 	self.internal.type = 0;
-	console.log('closed');
 
 	return self;
 };
