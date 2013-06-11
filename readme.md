@@ -19,7 +19,7 @@ web application framework for node.js
 
 ***
 
-* IN DEVELOPMENT Supports Server-Sent Events - One Way Messaging (http://www.w3schools.com/html/html5_serversentevents.asp)
+* IN DEVELOPMENT Supports [Server-Sent Events - One Way Messaging](http://www.w3schools.com/html/html5_serversentevents.asp)
 
 ***
 
@@ -62,7 +62,7 @@ web application framework for node.js
 * Supports simple SMTP mail sender - [example: SMTP mail sender](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
 * Supports simple mail templating - [example: mail templating](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
 * Supports custom authorization - [example: authorization](https://github.com/petersirka/partial.js/tree/master/examples/authorization)
-* Supports simple image processing (resize, crop, blur, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
+* Supports simple image processing (resize, crop, sepia, grayscale, etc.)  with GraphicsMagick or ImageMagick - [example](https://github.com/petersirka/partial.js/tree/master/examples/picture-resize)
 * Easy adding dynamic META tags in views or controllers - [example: meta tags](https://github.com/petersirka/partial.js/tree/master/examples/views-meta)
 * Easy adding dynamic Settings in views or controllers - [example: view settings](https://github.com/petersirka/partial.js/tree/master/examples/views-settings)
 * Simple use paypal payment with [node-paypal project](https://github.com/petersirka/node-paypal) - [example: paypal](https://github.com/petersirka/partial.js/tree/master/examples/paypal)

@@ -6,7 +6,7 @@ IN DEVELOPMENT ======= 1.2.4-2
 - added: controller.mmr(filename, [stream], [callback]) - multipart/x-mixed-replace
 - added: controller.close()
 
-IMPORTANT
+!!! IMPORTANT !!!
 
 - removed: controller.mixed
 
