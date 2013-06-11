@@ -220,10 +220,8 @@ Subscribe.prototype._execute = function() {
 				internal.parseMULTIPART_MIXED(self.req, self.header, self.framework.config['directory-temp'], function(file) {
 					self.route.onExecute.call(self.controller, file);
 				}, self.handlers._end);
-			} else {
+			} else
 				self.route.onExecute.apply(self.controller, internal.routeParam(self.req.path, self.route));
-				self.route = null;
-			}
 		}
 
 	} catch (err) {
@@ -399,7 +397,7 @@ function Controller(name, req, res, subscribe) {
 	this.global = subscribe.framework.global;
 	this.flags = req.flags;
 
-	this.lastID = req.headers['last-event-id'] || null;
+	this.lastEventID = req.headers['last-event-id'] || null;
 
 	this.repository = {};
 	this.model = null;
@@ -1788,13 +1786,14 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 	if (self.internal.type === 0) {
 
 		self.internal.type = 1;
+
+		if (typeof(retry) === 'undefined')
+			retry = self.subscribe.route.timeout;
+
 		self.subscribe.success();
 
 		res.success = true;
 		res.writeHead(self.statusCode, { 'Content-type': 'text/event-stream', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
-
-		if (typeof(retry) === 'undefined')
-			retry = self.subscribe.route.timeout;
 	}
 
 	if (typeof(data) === 'object')
@@ -1805,12 +1804,12 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 	var newline = '\n';
 	var builder = '';
 
-	if (eventname)
+	if (eventname && eventname.length > 0)
 		builder = 'event: ' + eventname + newline;
 
 	builder += 'data: ' + data + newline;
 
-	if (id)
+	if (id && id.toString().length > 0)
 		builder += 'id: ' + id + newline;
 
 	if (retry && retry > 0)
