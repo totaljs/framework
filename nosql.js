@@ -1028,6 +1028,20 @@ Views.prototype.all = function(name, fnCallback, itemSkip, itemTake, fnFilter) {
 		self.views[name] = view;
 	}
 
+	var type = typeof(itemSkip);
+
+	if (type === 'function' || type === 'string') {
+		fnFilter = itemSkip;
+		itemSkip = 0;
+		itemTake = 0;
+	} else {
+		type = typeof(itemTake);
+		if (type === 'function' || type === 'string') {
+			fnFilter = itemTake;
+			itemTake = 0;
+		}
+	}
+
 	if (typeof(fnFilter) === 'string')
 		fnFilter = filterPrepare(fnFilter);
 
