@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.4-2
+======= 1.2.4-2
 
 - added: Server-Sent Events - One Way Messaging (http://www.w3schools.com/html/html5_serversentevents.asp)
 - added: new route flag "sse" - [s]erver [s]ent [e]vents
@@ -6,7 +6,8 @@ IN DEVELOPMENT ======= 1.2.4-2
 - added: controller.sse(data, [eventname], [id], [retry]) - Server-sent events
 - added: controller.lastEventID (server-sent events - Last-Event-ID)
 - added: controller.mmr(filename, [stream], [callback]) - multipart/x-mixed-replace
-- added: controller.close()
+- added: controller.close() - close opened connection
+- added: new Server sent events example (https://github.com/petersirka/partial.js/tree/master/examples/server-sent-events)
 
 !!! IMPORTANT !!!
 
