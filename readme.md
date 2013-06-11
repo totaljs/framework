@@ -19,6 +19,17 @@ web application framework for node.js
 
 ***
 
+Videos on YouTube
+-----------------
+
+- [HTML 5 Server-Sent Events (JavaScript) via partial.js & node.js](http://www.youtube.com/watch?v=XoWIv3xGxR4)
+- [node.js / partial.js - Live streaming via multipart/x-mixed-replace + CSS auto vendor prefix](http://www.youtube.com/watch?v=qZqO4c4Fw2k)
+- [Deployment of partial.js / node.js website on appfog.com (freehosting)](http://www.youtube.com/watch?v=kZvCCyR6iBI)
+- [WebSocket (Real-time) HTML5 Chat in 5 minutes - node.js & partial.js](http://www.youtube.com/watch?v=lW1vsKMUaKg)
+- [partial.js / web application framework for node.js](http://www.youtube.com/watch?v=3GMQJki82Lo)
+
+***
+
 * **NEW** - __Supports server sent events__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/server-sent-events)
 * **NEW** - __Supports live streaming__ via multipart/x-mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
 * **NEW** - Supports uploading via multipart/x-mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
