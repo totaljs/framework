@@ -5,6 +5,7 @@ IN DEVELOPMENT ======= 1.2.4-2
 - added: controller.sse(data, [eventname], [id], [retry]) - Server-sent events
 - added: controller.mmr(filename, [stream], [callback]) - multipart/x-mixed-replace
 - added: controller.close()
+- added: controller.lastID (server-sent events - Last-Event-ID)
 
 !!! IMPORTANT !!!
 

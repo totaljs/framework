@@ -384,6 +384,11 @@ function Controller(name, req, res, subscribe) {
 	this.isXHR = req.isXHR;
 	this.xhr = req.isXHR;
 	this.config = subscribe.framework.config;
+
+	// controller.internal.type === 0 - classic
+	// controller.internal.type === 1 - server sent events
+	// controller.internal.type === 2 - multipart/x-mixed-replace
+
 	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null, type: 0 };
 	this.statusCode = 200;
 	this.controllers = subscribe.framework.controllers;
@@ -393,9 +398,8 @@ function Controller(name, req, res, subscribe) {
 	this.isCanceled = false;
 	this.global = subscribe.framework.global;
 	this.flags = req.flags;
-	this.path = subscribe.framework.path;
-	this.fs = subscribe.framework.fs;
-	this.lastEventID = req.headers['Last-Event-ID'];
+
+	this.lastID = req.headers['last-event-id'] || null;
 
 	this.repository = {};
 	this.model = null;
@@ -409,6 +413,8 @@ function Controller(name, req, res, subscribe) {
 	else
 		this.prefix = this.prefix;
 
+	this.path = subscribe.framework.path;
+	this.fs = subscribe.framework.fs;
 	this.async = new utils.Async(this);
 };
 
@@ -1761,7 +1767,7 @@ Controller.prototype.viewAsync = function(name, model, headers) {
 };
 
 /*
-	Send data via Server-Sent Events
+	Send data via [S]erver-[s]ent [e]vents
 	@data {String or Object}
 	@eventname {String} :: optional
 	@id {String} :: optional
@@ -1817,7 +1823,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 };
 
 /*
-	Send a file or stream via multipart/x-mixed-replace
+	Send a file or stream via [m]ultipart/x-[m]ixed-[r]eplace
 	@filename {String}
 	@contentType {String}
 	@{stream} {Stream} :: optional, if undefined then framework reads by the filename file from disk
