@@ -4,7 +4,7 @@ IN DEVELOPMENT ======= 1.2.4-2
 - added: new route flag "sse" - [s]erver [s]ent [e]vents
 - added: new route flag "mmr" - [m]ultipart/x-[m]ixed-[r]eplace
 - added: controller.sse(data, [eventname], [id], [retry]) - Server-sent events
-- added: controller.lastID (server-sent events - Last-Event-ID)
+- added: controller.lastEventID (server-sent events - Last-Event-ID)
 - added: controller.mmr(filename, [stream], [callback]) - multipart/x-mixed-replace
 - added: controller.close()
 
