@@ -215,14 +215,17 @@ Subscribe.prototype._execute = function() {
 	try
 	{
 
-		if (!self.controller.isCanceled) {
-			if (self.isMixed) {
-				internal.parseMULTIPART_MIXED(self.req, self.header, self.framework.config['directory-temp'], function(file) {
-					self.route.onExecute.call(self.controller, file);
-				}, self.handlers._end);
-			} else
-				self.route.onExecute.apply(self.controller, internal.routeParam(self.req.path, self.route));
+		if (self.controller.isCanceled)
+			return;
+
+		if (!self.isMixed) {
+			self.route.onExecute.apply(self.controller, internal.routeParam(self.req.path, self.route));
+			return;
 		}
+
+		internal.parseMULTIPART_MIXED(self.req, self.header, self.framework.config['directory-temp'], function(file) {
+			self.route.onExecute.call(self.controller, file);
+		}, self.handlers._end);
 
 	} catch (err) {
 		self.controller = null;
