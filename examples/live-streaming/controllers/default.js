@@ -15,8 +15,6 @@ function viewLive() {
 	var index = 0;
 	var count = 0;
 
-	self.mixed.beg();
-
 	var interval = setInterval(function() {
 
 		index++;
@@ -29,14 +27,16 @@ function viewLive() {
 		// Params:
 		// @filename {String}
 		// @stream {ReadStream} :: optional, default undefined
-		self.mixed.send(self.path.public('img/' + index + '.jpg'));
+		self.mmr(self.path.public('img/' + index + '.jpg'));
 
 		// or
-		// self.mixed.send('live.jpg', require('fs').createReadStream(self.pathPublic('img/' + index + '.jpg')));
+		// self.mmr('live.jpg', require('fs').createReadStream(self.pathPublic('img/' + index + '.jpg')));
 
 		if (count > 5) {
-			self.mixed.end();
-			clearInterval(count);
+			clearInterval(interval);
+
+			// close connection
+			self.close();
 		}
 
 	}, 500);
