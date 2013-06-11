@@ -41,5 +41,10 @@ function viewSSE() {
 
 	}, 1000);
 
+	/*
+	self.res.on('close', function() {
+		console.log('CLIENT DISCONNECT');
+	});
+	*/
 
 }
