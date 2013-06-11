@@ -334,13 +334,13 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
  	} else
  		flags = ['get'];
 
- 	var isMixed = flags.indexOf('mixed') !== -1;
+ 	var isMixed = flags.indexOf('mmr') !== -1;
 
 	if (isMixed && url.indexOf('{') !== -1)
 		throw new Error('Mixed route cannot contain dynamic path');
 
 	if (isMixed && flags.indexOf('upload') !== -1)
-		throw new Error('Multipart mishmash: mixed vs. upload');
+		throw new Error('Multipart mishmash: mmr vs. upload');
 
 	var routeURL = internal.routeSplit(url.trim());
 	var arr = [];
@@ -1879,10 +1879,10 @@ Framework.prototype._request = function(req, res) {
     var multipart = req.headers['content-type'] || '';
 
     if (multipart.indexOf('multipart/form-data') === -1) {
-    	if (multipart.indexOf('mixed') === -1)
+    	if (multipart.indexOf('mmr') === -1)
     		multipart = '';
     	else
-    		flags.push('mixed');
+    		flags.push('mmr');
     }
 
     if (accept === 'text/event-stream')
