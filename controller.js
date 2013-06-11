@@ -1833,14 +1833,13 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 Controller.prototype.mmr = function(filename, stream, cb) {
 
 	var self = this;
+	var res = self.res;
 
 	if (self.internal.type === 0 && res.success)
 		throw new Error('Response was sent.');
 
 	if (self.internal.type > 0 && self.internal.type !== 2)
 		throw new Error('Response was used.');
-
-	var res = self.res;
 
 	if (self.internal.type === 0) {
 		self.internal.type = 2;
@@ -1896,6 +1895,7 @@ Controller.prototype.close = function() {
 
 	self.res.end();
 	self.internal.type = 0;
+	console.log('closed');
 
 	return self;
 };
