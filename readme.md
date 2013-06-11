@@ -19,10 +19,7 @@ web application framework for node.js
 
 ***
 
-* IN DEVELOPMENT Supports [Server-Sent Events - One Way Messaging](http://www.w3schools.com/html/html5_serversentevents.asp)
-
-***
-
+* **NEW** - __Supports server sent events__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/server-sent-events)
 * **NEW** - __Supports live streaming__ via multipart/x-mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
 * **NEW** - Supports uploading via multipart/x-mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
 * **NEW** - Supports CSS auto vendor prefixes - [read the benefits](http://www.partialjs.com/benefits/)
