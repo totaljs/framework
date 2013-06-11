@@ -1,5 +1,5 @@
 exports.install = function(framework) {
-	framework.route('/', upload, ['mixed']);
+	framework.route('/', upload, ['mmr']);
 };
 
 function upload(file) {
