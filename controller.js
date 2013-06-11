@@ -384,7 +384,7 @@ function Controller(name, req, res, subscribe) {
 	this.isXHR = req.isXHR;
 	this.xhr = req.isXHR;
 	this.config = subscribe.framework.config;
-	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null, _sse: false };
+	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null, type: 0 };
 	this.statusCode = 200;
 	this.controllers = subscribe.framework.controllers;
 	this.url = utils.path(req.uri.pathname);
@@ -410,12 +410,6 @@ function Controller(name, req, res, subscribe) {
 		this.prefix = this.prefix;
 
 	this.async = new utils.Async(this);
-	this.mixed = new Mixed(this);
-};
-
-function Mixed(controller) {
-	this.controller = controller;
-	this.isOpened = false;
 };
 
 // ======================================================
@@ -1779,9 +1773,15 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 	var self = this;
 	var res = self.res;
 
-	if (!self.internal._sse) {
+	if (self.internal.type === 0 && res.success)
+		throw new Error('Response was sent.');
 
-		self.internal._sse = true;
+	if (self.internal.type > 0 && self.internal.type !== 1)
+		throw new Error('Response was used.');
+
+	if (self.internal.type === 0) {
+
+		self.internal.type = 1;
 		self.subscribe.success();
 
 		res.success = true;
@@ -1816,14 +1816,80 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 	return self;
 };
 
+/*
+	Send a file or stream via multipart/x-mixed-replace
+	@filename {String}
+	@contentType {String}
+	@{stream} {Stream} :: optional, if undefined then framework reads by the filename file from disk
+	@cb {Function} :: callback if stream is sent
+	return {Controller}
+*/
+Controller.prototype.mmr = function(filename, stream, cb) {
+
+	var self = this;
+
+	if (self.internal.type === 0 && res.success)
+		throw new Error('Response was sent.');
+
+	if (self.internal.type > 0 && self.internal.type !== 2)
+		throw new Error('Response was used.');
+
+	var res = self.res;
+
+	if (self.internal.type === 0) {
+		self.internal.type = 2;
+		self.internal.boundary = '----partialjs' + utils.GUID(10);
+		self.subscribe.success();
+		res.success = true;
+		res.writeHead(self.statusCode, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + self.internal.boundary, 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
+	}
+
+	var type = typeof(stream);
+
+	if (type === 'function') {
+		cb = stream;
+		stream = null;
+	}
+
+	res.write('--' + self.internal.boundary + '\r\nContent-Type: ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
+
+	if (typeof(stream) !== 'undefined' && stream !== null) {
+
+		stream.on('end', function() {
+			self = null;
+			cb && cb();
+		});
+
+		stream.pipe(res, { end: false });
+		return self;
+	}
+
+	stream = fs.createReadStream(filename);
+
+	stream.on('end', function() {
+		self = null;
+		cb && cb();
+	});
+
+	stream.pipe(res, { end: false });
+	return self;
+};
+
+/*
+	Close Response
+	return {Controller}
+*/
 Controller.prototype.close = function() {
 	var self = this;
 
-	if (!self.internal._sse)
+	if (self.internal.type === 0 && self.res.success)
 		return self;
 
-	self.internal._sse = false;
+	if (self.internal.type === 2)
+		self.res.write('\r\n\r\n--' + self.internal.boundary + '--');
+
 	self.res.end();
+	self.internal.type = 0;
 
 	return self;
 };
@@ -2039,90 +2105,6 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	return self;
 };
 
-Mixed.prototype.beg = function() {
-	var self = this;
-
-	if (self instanceof Controller)
-		self = self.mixed;
-
-	if (self.isOpened)
-		return self.controller;
-
-	var res = self.controller.res;
-
-	self.controller.internal.boundary = '----partialjs' + utils.GUID(10);
-	self.controller.subscribe.success();
-	self.isOpened = true;
-	res.success = true;
-	res.writeHead(self.controller.statusCode, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + self.controller.internal.boundary, 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
-
-	return self.controller;
-};
-
-Mixed.prototype.end = function() {
-	var self = this;
-
-	if (self instanceof Controller)
-		self = self.mixed;
-
-	if (!self.isOpened)
-		return self.controller;
-
-	self.isOpened = false;
-	self.controller.res.write('\r\n\r\n--' + self.controller.internal.boundary + '--');
-	self.controller.res.end();
-	return self.controller;
-};
-
-/*
-	Send a file or stream
-	@filename {String}
-	@contentType {String}
-	@{stream} {Stream} :: optional, if undefined then framework reads by the filename file from disk
-	@cb {Function} :: callback if stream is sended
-	return {Controller}
-*/
-Mixed.prototype.send = function(filename, stream, cb) {
-
-	var self = this;
-
-	if (self instanceof Controller)
-		self = self.mixed;
-
-	var type = typeof(stream);
-
-	if (type === 'function') {
-		cb = stream;
-		stream = null;
-	}
-
-	if (!self.isOpened)
-		return self.controller;
-
-	var res = self.controller.res;
-	res.write('--' + self.controller.internal.boundary + '\r\nContent-Type: ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
-
-	if (typeof(stream) !== 'undefined' && stream !== null) {
-
-		stream.on('end', function() {
-			self = null;
-			cb && cb();
-		});
-
-		stream.pipe(res, { end: false });
-		return self.controller;
-	}
-
-	stream = fs.createReadStream(filename);
-
-	stream.on('end', function() {
-		self = null;
-		cb && cb();
-	});
-
-	stream.pipe(res, { end: false });
-	return self.controller;
-};
 
 // ======================================================
 // EXPORTS
