@@ -12,7 +12,6 @@ web application framework for node.js
 - [__Download empty project__](http://www.partialjs.com/upload/empty-project.zip) 
 - __Blog example__: [new example - blog written in partial.js and NoSQL embedded database (without installation)](http://blog.partialjs.com)
 - __E-shop example__: [new example - e-shop written in partial.js and NoSQL embedded database (without installation)](http://eshop.partialjs.com)
-- __WebSocket chat__: [new example - websocket (Real-time) HTML5 Chat in 5 minutes - node.js & partial.js](http://www.youtube.com/watch?v=lW1vsKMUaKg)
 - Documentation: [partial.js documentation](http://partialjs.com/documentation/)
 - [Framework benefits](http://www.partialjs.com/benefits/)
 - [Changelog](https://github.com/petersirka/partial.js/blob/master/changes.txt)
