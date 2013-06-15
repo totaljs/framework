@@ -5,11 +5,12 @@ exports.install = function(framework) {
 	framework.route('/', viewIsLogged, ['logged']);
 	framework.route('/', viewHomepage, ['unlogged']);
 	framework.route('/', viewHomepage, ['unlogged', 'xhr', 'post']);
+	framework.route('/logout', logout, ['logged', 'get']);
 };
 
 function viewIsLogged() {
 	var self = this;
-	self.plain('You are logged as {0}. To unlogged remove cookie __user'.format(self.session.email));
+	self.plain('You are logged as {0}. To unlogged remove cookie __user or click <a href="/logout">logout</a>.'.format(self.session.email));
 }
 
 function viewHomepage() {
@@ -47,4 +48,11 @@ function viewHomepage() {
 		self.json({ r: true });		
 	});
 
+}
+
+function logout() {
+	var self = this;
+
+	self.res.cookie(self.config.cookie, self.app.encode({ id: self.session.id, ip: self.req.ip }, 'user'), new Date());
+	self.redirect('/');
 }
