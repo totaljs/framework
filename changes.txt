@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.4-3
+======= 1.2.4-3
 
 - added: controller.isConnected - indicating whether the client is still connected to the server
 
