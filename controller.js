@@ -396,7 +396,10 @@ function Controller(name, req, res, subscribe) {
 	this.url = utils.path(req.uri.pathname);
 	this.isTest = req.headers['assertion-testing'] === '1';
 	this.isDebug = subscribe.framework.config.debug;
+
 	this.isCanceled = false;
+	this.isConnected = true;
+
 	this.global = subscribe.framework.global;
 	this.flags = req.flags;
 
@@ -417,6 +420,9 @@ function Controller(name, req, res, subscribe) {
 	this.path = subscribe.framework.path;
 	this.fs = subscribe.framework.fs;
 	this.async = new utils.Async(this);
+
+	var self = this;
+	req.on('close', function() { self.isConnected = false; });
 };
 
 // ======================================================
@@ -1794,7 +1800,6 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 			retry = self.subscribe.route.timeout;
 
 		self.subscribe.success();
-
 		res.success = true;
 		res.writeHead(self.statusCode, { 'Content-type': 'text/event-stream', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
 	}
@@ -1888,6 +1893,9 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 */
 Controller.prototype.close = function() {
 	var self = this;
+
+	if (!self.isConnected)
+		return self;
 
 	if (self.internal.type === 0 && self.res.success)
 		return self;

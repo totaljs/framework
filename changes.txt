@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.2.4-3
+
+- controller.isConnected - indicating whether the client is still connected to the server
+
 ======= 1.2.4-2
 
 - added: Server-Sent Events - One Way Messaging (http://www.w3schools.com/html/html5_serversentevents.asp)
