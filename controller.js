@@ -1497,7 +1497,7 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 Controller.prototype.json = function(obj, headers) {
 	var self = this;
 
-	if (self.res.success)
+	if (self.res.success || !self.isConnected)
 		return self;
 
 	if (obj instanceof builders.ErrorBuilder)
@@ -1538,11 +1538,11 @@ Controller.prototype.jsonAsync = function(obj, headers) {
 Controller.prototype.content = function(contentBody, contentType, headers) {
 	var self = this;
 
-	if (self.res.success)
-		return typeof(contentType) === 'undefined' ? '' : self;
-
 	if (typeof(contentType) === 'undefined')
 		return self.$contentToggle(true, contentBody);
+
+	if (self.res.success || !self.isConnected)
+		return self;
 
 	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.statusCode, contentBody, contentType || 'text/plain', true, headers);
@@ -1561,7 +1561,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	var self = this;
 	var res = self.res;
 
-	if (self.res.success)
+	if (self.res.success || !self.isConnected)
 		return self;
 
 	self.subscribe.success();
@@ -1600,7 +1600,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 Controller.prototype.plain = function(contentBody, headers) {
 	var self = this;
 
-	if (self.res.success)
+	if (self.res.success || !self.isConnected)
 		return self;
 
 	self.subscribe.success();
@@ -1618,7 +1618,7 @@ Controller.prototype.plain = function(contentBody, headers) {
 Controller.prototype.file = function(filename, downloadName, headers) {
 	var self = this;
 
-	if (self.res.success)
+	if (self.res.success || !self.isConnected)
 		return self;
 
 	filename = utils.combine(self.framework.config['directory-public'], filename);
@@ -1657,7 +1657,7 @@ Controller.prototype.fileAsync = function(filename, downloadName, headers) {
 Controller.prototype.stream = function(contentType, stream, downloadName, headers) {
 	var self = this;
 
-	if (self.res.success)
+	if (self.res.success || !self.isConnected)
 		return self;
 
 	self.subscribe.success();
@@ -1672,7 +1672,7 @@ Controller.prototype.stream = function(contentType, stream, downloadName, header
 Controller.prototype.view404 = function() {
 	var self = this;
 
-	if (self.res.success)
+	if (self.res.success || !self.isConnected)
 		return self;
 
 	self.req.path = [];
@@ -1689,7 +1689,7 @@ Controller.prototype.view404 = function() {
 Controller.prototype.view403 = function() {
 	var self = this;
 
-	if (self.res.success)
+	if (self.res.success || !self.isConnected)
 		return self;
 
 	self.req.path = [];
@@ -1707,7 +1707,7 @@ Controller.prototype.view403 = function() {
 Controller.prototype.view500 = function(error) {
 	var self = this;
 
-	if (self.res.success)
+	if (self.res.success || !self.isConnected)
 		return self;
 
 	self.req.path = [];
@@ -1727,7 +1727,7 @@ Controller.prototype.view500 = function(error) {
 Controller.prototype.redirect = function(url, permament) {
 	var self = this;
 
-	if (self.res.success)
+	if (self.res.success || !self.isConnected)
 		return self;
 
 	self.subscribe.success();
@@ -1786,6 +1786,9 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 	var self = this;
 	var res = self.res;
 
+	if (!self.isConnected)
+		return self;
+
 	if (self.internal.type === 0 && res.success)
 		throw new Error('Response was sent.');
 
@@ -1841,6 +1844,9 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 
 	var self = this;
 	var res = self.res;
+
+	if (!self.isConnected)
+		return self;
 
 	if (self.internal.type === 0 && res.success)
 		throw new Error('Response was sent.');
@@ -2108,8 +2114,11 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		return value;
 
 	if (self.isLayout || utils.isNullOrEmpty(self.internal.layout)) {
+
 		self.subscribe.success();
-		self.framework.responseContent(self.req, self.res, self.statusCode, value, self.internal.contentType, true, headers);
+
+		if (self.isConnected)
+			self.framework.responseContent(self.req, self.res, self.statusCode, value, self.internal.contentType, true, headers);
 
 		return self;
 	}
