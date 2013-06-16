@@ -24,6 +24,11 @@ function viewLive() {
 			count++;
 		}
 
+		if (!self.isConnected) {
+			clearInterval(interval);
+			return;
+		}
+
 		// Params:
 		// @filename {String}
 		// @stream {ReadStream} :: optional, default undefined

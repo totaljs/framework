@@ -20,6 +20,11 @@ function viewSSE() {
 
 	var interval = setInterval(function() {
 
+		if (!self.isConnected) {
+			clearInterval(interval);
+			return;
+		}
+
 		/*
 			Send data to client - One way messaging
 
