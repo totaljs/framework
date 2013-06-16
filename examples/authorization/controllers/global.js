@@ -10,7 +10,7 @@ exports.install = function(framework) {
 
 function viewIsLogged() {
 	var self = this;
-	self.plain('You are logged as {0}. To unlogged remove cookie __user or click <a href="/logout">logout</a>.'.format(self.session.email));
+	self.plain('You are logged as {0}. To unlogged remove cookie __user or click http://{1}:{2}/logout/'.format(self.session.email, self.framework.ip, self.framework.port));
 }
 
 function viewHomepage() {
@@ -53,6 +53,6 @@ function viewHomepage() {
 function logout() {
 	var self = this;
 
-	self.res.cookie(self.config.cookie, self.app.encode({ id: self.session.id, ip: self.req.ip }, 'user'), new Date());
+	self.res.cookie(self.config.cookie, '', new Date().add('y', -1));
 	self.redirect('/');
 }
