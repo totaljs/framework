@@ -1,8 +1,10 @@
 IN DEVELOPMENT ======= 1.2.4-3
 
-- controller.isConnected - indicating whether the client is still connected to the server
+- added: controller.isConnected - indicating whether the client is still connected to the server
 
-- fixed: avoid response exception (if is client disconnected)
+- updated: examples (server-sent-events, live-streaming)
+
+- fixed: avoid response exception (if is a client disconnected)
 
 ======= 1.2.4-2
 
