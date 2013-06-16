@@ -923,16 +923,16 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Processor                       : {0}'.format(process.arch));
 	builder.push('PID                             : {0}'.format(process.pid));
 	builder.push('Node version                    : {0}'.format(process.version));
-	builder.push('Framework version               : {0}'.format(self.version));
+	builder.push('Framework version               : v{0}'.format(self.version));
 	builder.push('Current directory               : {0}'.format(process.cwd));
 	builder.push('Service ran                     : {0}x'.format(self.cache.count));
 	builder.push(delimiter);
 	builder.push('Uptime                          : {0} minutes'.format(Math.floor(process.uptime() / 60)));
-	builder.push('Memory usage                    : total {0} MB, used {1} MB'.format((memory.heapTotal / 1024 / 1024).floor(2), (memory.heapUsed / 1024 / 1024).floor(2)));
+	builder.push('Memory usage                    : total {0} MB, used {1} MB'.format((memory.heapTotal / 1024 / 1024).format('### ### ###.##'), (memory.heapUsed / 1024 / 1024).format('### ### ###.##')));
 	builder.push(delimiter);
-	builder.push('Temporary directory             : {0} kB'.format((size / 1024).floor(2)));
-	builder.push('Backup directory                : {0} kB'.format((sizeBackup / 1024).floor(2)));
-	builder.push('Databases directory             : {0} kB'.format((sizeDatabase / 1024).floor(2)));
+	builder.push('Temporary directory             : {0} kB'.format((size / 1024).format('### ### ###.##')));
+	builder.push('Backup directory                : {0} kB'.format((sizeBackup / 1024).format('### ### ###.##')));
+	builder.push('Databases directory             : {0} kB'.format((sizeDatabase / 1024).format('### ### ###.##')));
 	builder.push('Resource count                  : {0}'.format(resources.length));
 	builder.push('Controller count                : {0}'.format(controllers.length));
 	builder.push('Module count                    : {0}'.format(modules.length));
@@ -948,7 +948,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push(delimiter);
 	builder.push('Last 10 minutes ...');
 	builder.push('Request stats - webpage         : {0}x'.format(self.stats.web.format('### ### ###')));
-	builder.push('Request stats - websockets      : {0}x'.format(self.stats.websockets.format('### ### ###')));
+	builder.push('Request stats - websocket       : {0}x'.format(self.stats.websockets.format('### ### ###')));
 	builder.push('Request stats - files           : {0}x'.format(self.stats.files.format('### ### ###')));
 	builder.push(delimiter);
 

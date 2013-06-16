@@ -2,7 +2,11 @@ IN DEVELOPMENT ======= 1.2.4-3
 
 - added: controller.isConnected - indicating whether the client is still connected to the server
 
+- updated: framework.usage()
 - updated: examples (server-sent-events, live-streaming)
+- updated: nosql
+
+- removed: Object.dispose(), conflict with rethinkdb (www.rethinkdb.com)
 
 - fixed: avoid response exception (if is a client disconnected)
 
