@@ -8,6 +8,7 @@ web application framework for node.js
 [![partial.js on Google+](http://www.partialjs.com/exports/google-partial.png)](https://plus.google.com/u/0/b/113175077493180148081/113175077493180148081/posts)
 
 - Homepage / [www.partialjs.com](http://partialjs.com)
+- [__GET STARTED__](http://www.partialjs.com/get-started/)
 - Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
 - [__Download empty project__](http://www.partialjs.com/upload/empty-project.zip) 
 - __Blog example__: [new example - blog written in partial.js (without installation)](http://blog.partialjs.com)
@@ -78,7 +79,7 @@ Videos on YouTube
 * Supports dynamic stop server - [example: stop server](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
 * Supports verification of framework - [example: verification](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
 * __Supports backup and restore website__ - [example: backup & restore](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
-* About 8 000 lines of JavaScript code, all files have 330 kB
+* About 9 000 lines of JavaScript code, all files have 330 kB
 * __NO DEPENDENCIES *** NO DEPENDENCIES *** NO DEPENDENCIES__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
 * [Documentation](http://www.partialjs.com/documentation/)
