@@ -21,7 +21,6 @@
 
 'use strict';
 
-var utils = require('./utils');
 var schema = {};
 var schemaPrimary = {};
 

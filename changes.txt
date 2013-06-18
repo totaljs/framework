@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.2.4-4
 - added: partial.js/builders is global object ... applies everywhere: builders.[method]
 - added: auto verifying directories
 
+- reduced code
 - clean code
 
 ======= 1.2.4-3
