@@ -1,3 +1,10 @@
+IN DEVELOPMENT ======= 1.2.4-4
+
+- added: partial.js/utils is global object ... applies everywhere: utils.[method]
+- added: auto verifying directories
+
+- clean code
+
 ======= 1.2.4-3
 
 - added: controller.isConnected - indicating whether the client is still connected to the server
