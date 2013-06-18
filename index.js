@@ -171,6 +171,7 @@ function FrameworkFileSystem(framework) {
 };
 
 function FrameworkPath(framework) {
+	this.framework = framework;
 	this.config = framework.config;
 };
 
@@ -1712,6 +1713,9 @@ Framework.prototype._verify_directory = function(name) {
 	if (!self.static[prop]) {
 
 		var dir = self.config['directory-' + name];
+		
+		if (dir[0] !== '.')
+			dir = '.' + dir;
 
 		if (!fs.existsSync(dir))
 			fs.mkdirSync(dir);
@@ -2882,7 +2886,7 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 */
 FrameworkPath.prototype.public = function(filename) {
 	var self = this;
-	self._verify_directory('public');
+	self.framework._verify_directory('public');
 	return utils.combine(self.config['directory-public'], filename || '').replace(/\\/g, '/');
 };
 
@@ -2892,7 +2896,7 @@ FrameworkPath.prototype.public = function(filename) {
 */
 FrameworkPath.prototype.logs = function(filename) {
 	var self = this;
-	self._verify_directory('log');
+	self.framework._verify_directory('logs');
 	return utils.combine(self.config['directory-logs'], filename || '').replace(/\\/g, '/');
 };
 
@@ -2902,7 +2906,7 @@ FrameworkPath.prototype.logs = function(filename) {
 */
 FrameworkPath.prototype.temp = function(filename) {
 	var self = this;
-	self._verify_directory('temp');
+	self.framework._verify_directory('temp');
 	return utils.combine(self.config['directory-temp'], filename || '').replace(/\\/g, '/');
 };
 
@@ -2912,7 +2916,7 @@ FrameworkPath.prototype.temp = function(filename) {
 */
 FrameworkPath.prototype.backup = function(filename) {
 	var self = this;
-	self._verify_directory('backup');
+	self.framework._verify_directory('backup');
 	return utils.combine(self.config['directory-backup'], filename || '').replace(/\\/g, '/');
 };
 
