@@ -44,7 +44,7 @@ global.utils = require('./utils');
 process.chdir(directory);
 
 function Framework() {
-	this.version = 1243;
+	this.version = 1244;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
