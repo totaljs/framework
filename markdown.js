@@ -21,7 +21,6 @@
 
 'use strict';
 
-var utils = require('./utils');
 var regEmpty = new RegExp(/^\s/);
 var regFormat = /\*{1,2}.*?\*{1,2}|_{1,3}.*?_{1,3}/g;
 var regKeyword = /(\[.*?\]|\{.*?\})/g;

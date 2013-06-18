@@ -1,3 +1,5 @@
+global.utils = require('../utils');
+
 var assert = require('assert');
 var markdown = require('../markdown').init();
 

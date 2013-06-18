@@ -1,5 +1,4 @@
 var assert = require('assert');
-var utils = require('../../utils');
 
 exports.init = function() {
 	var self = this;

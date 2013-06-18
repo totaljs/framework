@@ -28,7 +28,6 @@ var util = require('util');
 var path = require('path');
 var fs = require('fs');
 var events = require('events');
-var builders = require('./builders');
 var crypto = require('crypto');
 var regexpMail = RegExp('^[a-zA-Z0-9-_.]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
@@ -68,7 +67,6 @@ function expression(query, params) {
 	});
 }
 
-require('./prototypes');
 global.expression = expression;
 
 /*
@@ -641,6 +639,60 @@ exports.removeDiacritics = function(str) {
         buf.push(c);
     }
     return buf.join('');
+};
+
+// Author: Haribabu Pasupathy
+// http://stackoverflow.com/users/1679439/haribabu-pasupathy
+exports.encode_WS = function(data){
+
+    var bytesFormatted = [];
+    bytesFormatted[0] = 129;
+
+    if (data.length <= 125) {
+        bytesFormatted[1] = data.length;
+    } else if (data.length >= 126 && data.length <= 65535) {
+        bytesFormatted[1] = 126;
+        bytesFormatted[2] = (data.length >> 8) & 255;
+        bytesFormatted[3] = (data.length) & 255;
+    } else {
+        bytesFormatted[1] = 127;
+        bytesFormatted[2] = (data.length >> 56) & 255;
+        bytesFormatted[3] = (data.length >> 48) & 255;
+        bytesFormatted[4] = (data.length >> 40) & 255;
+        bytesFormatted[5] = (data.length >> 32) & 255;
+        bytesFormatted[6] = (data.length >> 24) & 255;
+        bytesFormatted[7] = (data.length >> 16) & 255;
+        bytesFormatted[8] = (data.length >> 8) & 255;
+        bytesFormatted[9] = (data.length) & 255;
+    }
+
+    for (var i = 0; i < data.length; i++)
+        bytesFormatted.push(data.charCodeAt(i));
+
+    return bytesFormatted;
+};
+
+// Author: Haribabu Pasupathy
+// http://stackoverflow.com/users/1679439/haribabu-pasupathy
+exports.decode_WS = function(data) {
+
+    var datalength = data[1] & 127;
+    var indexFirstMask = 2;
+
+    if (datalength === 126)
+        indexFirstMask = 4;
+    else if (datalength === 127)
+        indexFirstMask = 10;
+
+    var masks = data.slice(indexFirstMask, indexFirstMask + 4);
+    var i = indexFirstMask + 4;
+    var index = 0;
+    var output = '';
+
+    while (i < data.length)
+        output += String.fromCharCode(data[i++] ^ masks[index++ % 4]);
+
+    return output;
 };
 
 /*

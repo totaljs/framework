@@ -24,7 +24,6 @@
 var fs = require('fs');
 var ph = require('path');
 var zlib = require('zlib');
-var utils = require('./utils');
 var padding = 120;
 
 function Backup() {

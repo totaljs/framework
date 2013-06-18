@@ -22,7 +22,6 @@
 'use strict';
 
 var exec = require('child_process').exec;
-var utils = require('./utils');
 
 /*
 	Image class

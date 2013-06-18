@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.2.4-4
 
 - added: partial.js/utils is global object ... applies everywhere: utils.[method]
+- added: partial.js/builders is global object ... applies everywhere: builders.[method]
 - added: auto verifying directories
 
 - clean code

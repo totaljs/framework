@@ -1,3 +1,5 @@
+global.builders = require('../builders');
+
 var assert = require('assert');
 var utils = require('../utils');
 
