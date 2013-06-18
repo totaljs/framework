@@ -29,17 +29,18 @@ var fs = require('fs');
 var zlib = require('zlib');
 var path = require('path');
 var parser = require('url');
-var utils = require('./utils');
 var events = require('events');
 var internal = require('./internal');
 var bk = require('./backup');
 var nosql = require('./nosql');
-var encoding = 'utf8';
-var directory = path.dirname(process.argv[1]);
 var ws = require('./websocket');
 var Subscribe =  require('./controller').Subscribe;
-var _controller = '';
 
+var directory = path.dirname(process.argv[1]);
+var _controller = '';
+var encoding = 'utf8';
+
+global.utils = require('./utils');
 process.chdir(directory);
 
 require('./prototypes');
@@ -135,7 +136,7 @@ function Framework() {
 	};
 
 	// intialize cache
-	this.cache = require('./cache').init(this);
+	this.cache = new FrameworkCache(this);
 	this.cache.on('service', this.handlers.onservice);
 
 	this.fs = new FrameworkFileSystem(this);
@@ -1105,6 +1106,8 @@ Framework.prototype.compileStatic = function(req, fileName) {
 			break;
 	}
 
+	self._verify_directory('temp');
+
 	var fileComiled = utils.combine(self.config['directory-temp'], req.url.replace(/\//g, '-').substring(1));
 	fs.writeFileSync(fileComiled, output);
 
@@ -1699,6 +1702,22 @@ Framework.prototype.init = function(http, config, port, ip) {
 // Alias for framework.init
 Framework.prototype.run = function(http, config, port, ip) {
 	return this.init(http, config, port, ip);
+};
+
+Framework.prototype._verify_directory = function(name) {
+
+	var self = this;
+	var prop = '$directory-' + name;
+
+	if (!self.static[prop]) {
+
+		var dir = self.config['directory-' + name];
+
+		if (!fs.existsSync(dir))
+			fs.mkdirSync(dir);
+
+		self.static[prop] = true;
+	}
 };
 
 Framework.prototype._upgrade = function(req, socket, head) {
@@ -2561,9 +2580,12 @@ Framework.prototype.lookup_websocket = function(req, url) {
 	return null;
 };
 
-// ===========================================================================
-// FrameworkFileSystem
-// ===========================================================================
+// *********************************************************************************
+// =================================================================================
+// Framework File System
+// 1.01
+// =================================================================================
+// *********************************************************************************
 
 /*
 	Delete a file - CSS
@@ -2847,16 +2869,21 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 	return true;
 };
 
-// ===========================================================================
-// FrameworkPath
-// ===========================================================================
+// *********************************************************************************
+// =================================================================================
+// Framework path
+// 1.02
+// =================================================================================
+// *********************************************************************************
 
 /*
 	@filename {String} :: optional
 	return {String}
 */
 FrameworkPath.prototype.public = function(filename) {
-	return utils.combine(this.config['directory-public'], filename || '').replace(/\\/g, '/');
+	var self = this;
+	self._verify_directory('public');
+	return utils.combine(self.config['directory-public'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -2864,7 +2891,9 @@ FrameworkPath.prototype.public = function(filename) {
 	return {String}
 */
 FrameworkPath.prototype.logs = function(filename) {
-	return utils.combine(this.config['directory-logs'], filename || '').replace(/\\/g, '/');
+	var self = this;
+	self._verify_directory('log');
+	return utils.combine(self.config['directory-logs'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -2872,7 +2901,9 @@ FrameworkPath.prototype.logs = function(filename) {
 	return {String}
 */
 FrameworkPath.prototype.temp = function(filename) {
-	return utils.combine(this.config['directory-temp'], filename || '').replace(/\\/g, '/');
+	var self = this;
+	self._verify_directory('temp');
+	return utils.combine(self.config['directory-temp'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -2880,7 +2911,9 @@ FrameworkPath.prototype.temp = function(filename) {
 	return {String}
 */
 FrameworkPath.prototype.backup = function(filename) {
-	return utils.combine(this.config['directory-backup'], filename || '').replace(/\\/g, '/');
+	var self = this;
+	self._verify_directory('backup');
+	return utils.combine(self.config['directory-backup'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -2889,6 +2922,184 @@ FrameworkPath.prototype.backup = function(filename) {
 */
 FrameworkPath.prototype.root = function(filename) {
 	return utils.combine(directory, filename || '');
+};
+
+// *********************************************************************************
+// =================================================================================
+// Cache declaration
+// 1.02
+// =================================================================================
+// *********************************************************************************
+
+/*
+	Cache class
+	@application {Framework}
+*/
+function FrameworkCache(application) {
+	this.repository = {};
+	this.app = application;
+	this.count = 1;
+	this.interval = null;
+};
+
+FrameworkCache.prototype = new events.EventEmitter;
+
+/*
+	Cache init
+	return {Cache}
+*/
+FrameworkCache.prototype.init = function(interval) {
+	var self = this;
+
+	self.interval = setInterval(function() {
+		self.recycle();
+	}, interval || 1000 * 60);
+
+	return self;
+};
+
+FrameworkCache.prototype.stop = function() {
+	var self = this;
+	clearTimeout(self.interval);
+	return self;
+};
+
+FrameworkCache.prototype.clear = function() {
+	var self = this;
+	self.repository = {};
+	return self;
+};
+
+/*
+	Internal function
+	return {Cache}
+*/
+FrameworkCache.prototype.recycle = function() {
+
+	var self = this;
+	var repository = self.repository;
+	var keys = Object.keys(repository);
+
+	if (keys.length === 0) {
+		self.emit('service', self.count++);
+		return self;
+	}
+
+	var expire = new Date();
+
+	keys.forEach(function(o) {
+		if (repository[o].expire < expire)
+			delete repository[o];
+	});
+
+	self.emit('service', self.count++);
+	return self;
+};
+
+/*
+	Add item to cache
+	@name {String}
+	@value {Object}
+	@expire {Date}
+	return @value
+*/
+FrameworkCache.prototype.write = function(name, value, expire) {
+	var self = this;
+
+	if (typeof(expire) === 'undefined')
+		expire = new Date().add('m', 5);
+
+	self.repository[name] = { value: value, expire: expire };
+	return value;
+};
+
+/*
+	Read item from cache
+	@name {String}
+	return {Object}
+*/
+FrameworkCache.prototype.read = function(name) {
+	var self = this;
+	var value = self.repository[name] || null;
+
+	if (value === null)
+		return null;
+
+	return value.value;
+};
+
+/*
+	Update cache item expiration
+	@name {String}
+	@expire {Date}
+	return {Cache}
+*/
+FrameworkCache.prototype.setExpires = function(name, expire) {
+	var self = this;
+	var obj = self.repository[name];
+
+	if (typeof(obj) === 'undefined')
+		return self;
+
+	obj.expire = expire;
+	return self;
+};
+
+/*
+	Remove item from cache
+	@name {String}
+	return {Object} :: return value;
+*/
+FrameworkCache.prototype.remove = function(name) {
+	var self = this;
+	var value = self.repository[name] || null;
+
+	delete self.repository[name];
+	return value;
+};
+
+/*
+	Remove all
+	@search {String}
+	return {Number}
+*/
+FrameworkCache.prototype.removeAll = function(search) {
+	var self = this;
+	var count = 0;
+
+	Object.keys(self.repository).forEach(function(o) {
+		if (o.indexOf(search) !== -1) {
+			self.remove(o);
+			count++;
+		}
+	});
+
+	return count;
+};
+
+/*
+	Cache function value
+	@name {String}
+	@fnCache {Function} :: params, @value {Object}, @expire {Date}
+	@fnCallback {Function} :: params, @value {Object}
+	return {Cache}
+*/
+FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
+
+	var self = this;
+	var value = self.read(name);
+
+	if (value !== null) {
+		fnCallback(value);
+		return self;
+	}
+
+	fnCache(function(value, expire) {
+		self.write(name, value, expire);
+		fnCallback(value);
+	});
+
+	return self;
 };
 
 module.exports = new Framework();
