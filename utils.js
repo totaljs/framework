@@ -106,10 +106,6 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 
 		res.on('end', function() {
 			callback(null, buffer, res.statusCode, res.headers);
-			res = null;
-			buffer = null;
-			data = null;
-			options = null;
 		});
 
 		res.resume();
@@ -125,14 +121,10 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 
 		req.on('error', function(error) {
 	  		callback(error, null);
-	  		req = null;
-	  		options = null;
 		});
 
 		req.setTimeout(timeout || 10000, function() {
 			callback(408, null, {});
-	  		req = null;
-	  		options = null;
 		});
 
 		if (isPOST)
@@ -303,28 +295,15 @@ exports.isStaticFile = function(url) {
 };
 
 /*
-	load content from file
-	@fileName {String}
-	@cb {function}
-	@def {String}
-*/
-exports.loadFromFile = function(fileName, cb, def) {
-	if (fs.existsSync(fileName))
-		cb(fs.readFileSync(fileName));
-	else
-		cb(def);
-};
-
-/*
 	@str {String}
 	return {Boolean}
 */
 exports.isNullOrEmpty = function(str) {
 
-	if (typeof(str) === 'undefined')
+	if (typeof(str) !== 'string')
 		return true;
 
-	return str === null || str.length === 0;
+	return str.length === 0;
 };
 
 /*
@@ -469,16 +448,16 @@ exports.etag = function(text, version) {
 };
 
 /*
-	Add @c to end of @path
+	Add @delimiter to end of @path
 	@path {String} :: filename
-	@c {String} :: optional, default /
+	@delimiter {String} :: optional, default /
 	return {String}
 */
-exports.path = function(path, c) {
-	c = c || '/';
-	if (path[path.length - 1] === c)
+exports.path = function(path, delimiter) {
+	delimiter = delimiter || '/';
+	if (path[path.length - 1] === delimiter)
 		return path;
-	return path + c;
+	return path + delimiter;
 };
 
 /*
