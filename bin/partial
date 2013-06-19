@@ -134,7 +134,7 @@ function createFileViews(directory) {
 	buffer.push('    <meta name="robots" content="all,follow" />');	
 	buffer.push('    @{head}');
 	buffer.push('    @{css(\'default.css\')}');
-	buffer.push('    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>');
+	buffer.push('    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>');
 	buffer.push('    @{js(\'default.js\')}');
 	buffer.push('    @{favicon(\'favicon.ico\')}');
 	buffer.push('<head>');

@@ -4,6 +4,8 @@ IN DEVELOPMENT ======= 1.2.4-4
 - added: partial.js/builders is a global object ... applies everywhere: builders.[method]
 - added: auto verifying directories
 
+- updated: jQuery CDN in empty-project
+
 - removed: utils.loadFromFile()
 
 
