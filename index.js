@@ -5746,7 +5746,9 @@ WebSocketClient.prototype.close = function() {
         return self;
 
     self.isClosed = true;
-    self.socket.end(new Buffer(SOCKET_RESPONSE_ERROR, 'binary'));
+
+    // removed: end(new Buffer(SOCKET_RESPONSE_ERROR, 'binary'));
+    self.socket.end();
 
     return self;
 };
