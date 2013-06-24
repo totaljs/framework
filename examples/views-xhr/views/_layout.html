@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Site</title>
+    <meta charset="utf-8" />
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript">
+	function loadPanel(choice) {
+		$.ajax({
+			type: 'post',
+			url: '/loadPanel',
+			data: {
+				choice: choice
+			},
+			success: function(server) {
+				$('#panel').html(server);
+				console.log(server);
+			},
+			dataType: 'html'
+		});
+	}
+    </script>
+</head>
+<body>
+	<div id="menu">
+		<a onclick="loadPanel('company')" href="#">company</a> 
+		<a onclick="loadPanel('product')" href="#">product</a> 
+		<a onclick="loadPanel('contact')" href="#">contact</a> 
+	</div>
+	<hr />
+	<div id="panel">@{body}</div>
+</body>
+</html>
