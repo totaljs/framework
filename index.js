@@ -26,6 +26,7 @@ var os = require('os');
 var fs = require('fs');
 var zlib = require('zlib');
 var path = require('path');
+var crypto = require('crypto');
 var parser = require('url');
 var events = require('events');
 var internal = require('./internal');
