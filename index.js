@@ -33,7 +33,6 @@ var internal = require('./internal');
 var bk = require('./backup');
 var nosql = require('./nosql');
 var http = require('http');
-var internal = require('./internal');
 var directory = path.dirname(process.argv[1]);
 
 var _controller = '';
@@ -1664,7 +1663,7 @@ Framework.prototype.init = function(http, config, port, ip) {
 	}
 
 	if (typeof(process.send) === 'function')
-		process.send('name: ' + self.config.name);
+		process.send('name: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-'));
 
 	return self;
 };
