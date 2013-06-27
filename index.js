@@ -1663,7 +1663,7 @@ Framework.prototype.init = function(http, config, port, ip) {
 	}
 
 	if (typeof(process.send) === 'function')
-		process.send('name: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-'));
+		process.send('name: ' + self.config.name);
 
 	return self;
 };
@@ -2244,7 +2244,7 @@ Framework.prototype.configure = function() {
 	if (self.config['etag-version'] === '')
 		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');
 
-	process.title = self.config.name;
+	process.title = self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-');
 
 	if (accepts !== null && accepts.length > 0) {
 		accepts.forEach(function(accept) {
