@@ -462,16 +462,16 @@ Framework.prototype.module = function(name) {
 	if (typeof(module) !== 'undefined')
 		return module;
 
-	var fileName = path.join(directory, self.config['directory-modules'], name + '.js');
+	var filename = path.join(directory, self.config['directory-modules'], name + '.js');
 
-	if (!fs.existsSync(fileName)) {
+	if (!fs.existsSync(filename)) {
 
-		fileName = path.join(directory, self.config['directory-modules'], name, 'index.js');
-		if (fs.existsSync(fileName))
-			module = require(fileName);
+		filename = path.join(directory, self.config['directory-modules'], name, 'index.js');
+		if (fs.existsSync(filename))
+			module = require(filename);
 
 	} else
-		module = require(fileName);
+		module = require(filename);
 
 	if (typeof(module) === 'undefined')
 		module = null;
@@ -1057,24 +1057,23 @@ Framework.prototype.onCompileJS = null;
 /*
 	Compile JavaScript and CSS
 	@req {ServerRequest}
-	@fileName {String}
+	@filename {String}
 	return {String or NULL};
 */
-Framework.prototype.compileStatic = function(req, fileName) {
+Framework.prototype.compileStatic = function(req, filename) {
 
-	if (!fs.existsSync(fileName))
+	if (!fs.existsSync(filename))
 		return null;
 
 	var self = this;
-	var index = fileName.lastIndexOf('.');
-	var ext = fileName.substring(index).toLowerCase();
-	var output = fs.readFileSync(fileName).toString(encoding);
+	var index = filename.lastIndexOf('.');
+	var ext = filename.substring(index).toLowerCase();
+	var output = fs.readFileSync(filename).toString(encoding);
 
 	switch (ext) {
 		case '.js':
 			output = self.onCompileJS === null ? internal.compile_javascript(output, self) : self.onCompileJS(filename, output);
 			break;
-
 		case '.css':
 			output = self.onCompileCSS === null ? internal.compile_less(output) : self.onCompileCSS(filename, output);
 
