@@ -1696,7 +1696,7 @@ Framework.prototype._verify_directory = function(name) {
 	if (!self.static[prop]) {
 
 		var dir = self.config['directory-' + name];
-		
+
 		if (dir[0] !== '.')
 			dir = '.' + dir;
 
@@ -2575,7 +2575,7 @@ Framework.prototype.lookup_websocket = function(req, url) {
 // *********************************************************************************
 
 function FrameworkFileSystem(framework) {
-	
+
 	this.framework = framework;
 	this.config = framework.config;
 
@@ -5577,9 +5577,14 @@ function WebSocketClient(req, socket, head) {
     req.uri = parser.parse('ws://' + req.headers['host'] + req.url);
 
     this.uri = req.uri;
-    this.isJSON = false;
     this.length = 0;
     this.cookie = req.cookie.bind(req);
+
+    // 1 = raw
+    // 2 = plain
+    // 3 = JSON
+
+    this.type = 2;
 };
 
 WebSocketClient.prototype = new events.EventEmitter;
@@ -5644,7 +5649,11 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 
     self._id = self.ip.replace(/\./g, '') + utils.GUID(20);
     self.id = self._id;
-    self.isJSON = flags.indexOf('json') !== -1;
+    
+    if (flags.indexOf('binary') !== -1)
+    	self.type = 1;
+    else if (flags.indexOf('json') !== -1)
+    	self.type = 3;
 
     return true;
 };
@@ -5688,30 +5697,46 @@ WebSocketClient.prototype._ondata = function(data) {
         return;
     }
 
-    var message = utils.decode_WS(data);
-    if (message === '' || message === null) {
-        // websocket.close() send empty string
-        self.close();
-        return;
-    }
+    var message = null;
 
-    if (self.isJSON) {
-        if (message.isJSON()) {
-            try
-            {
-                message = JSON.parse(message);
-            } catch (ex) {
-                message = null;
-                self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
-                return;
-            }
-        }
-        else {
-            message = null;
-            self.close();
-            return;
-        }
-    }
+    if (self.type === 1) {
+    	
+    	if (utils.empty_WS(data)) {
+	        self.close();
+	        return;    		
+    	}
+
+    	message = data;
+	}
+
+    if (self.type > 1) {
+
+	    message = utils.decode_WS(data);
+	    
+	    if (message === '' || message === null) {
+	        // websocket.close() send empty string
+	        self.close();
+	        return;
+	    }
+
+	    if (self.type === 3) {
+	        if (message.isJSON()) {
+	            try
+	            {
+	                message = JSON.parse(message);
+	            } catch (ex) {
+	                message = null;
+	                self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
+	                return;
+	            }
+	        }
+	        else {
+	            message = null;
+	            self.close();
+	            return;
+	        }
+	    }
+	}
 
     self.container.emit('message', self, message);
 };
@@ -5745,7 +5770,11 @@ WebSocketClient.prototype.send = function(message) {
     if (self.isClosed)
         return;
 
-    self.socket.write(new Buffer(utils.encode_WS(self.isJSON ? JSON.stringify(message) : (message || '').toString()), 'binary'));
+    if (self.type === 1)
+    	self.socket.write(message);
+    else
+    	self.socket.write(new Buffer(utils.encode_WS(self.type === 3 ? JSON.stringify(message) : (message || '').toString()), 'binary'));
+
     return self;
 };
 

@@ -674,6 +674,19 @@ exports.decode_WS = function(data) {
     return output;
 };
 
+exports.empty_WS = function(data) {
+
+    var datalength = data[1] & 127;
+    var indexFirstMask = 2;
+
+    if (datalength === 126)
+        indexFirstMask = 4;
+    else if (datalength === 127)
+        indexFirstMask = 10;
+
+    return (indexFirstMask + 4) >= data.length;
+};
+
 /*
 	@type {String}
 	@value {Number}
