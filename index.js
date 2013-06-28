@@ -5580,7 +5580,7 @@ function WebSocketClient(req, socket, head) {
     this.length = 0;
     this.cookie = req.cookie.bind(req);
 
-    // 1 = raw
+    // 1 = raw - not implemented
     // 2 = plain
     // 3 = JSON
 
@@ -5649,7 +5649,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 
     self._id = self.ip.replace(/\./g, '') + utils.GUID(20);
     self.id = self._id;
-    
+
     if (flags.indexOf('binary') !== -1)
     	self.type = 1;
     else if (flags.indexOf('json') !== -1)
@@ -5697,46 +5697,34 @@ WebSocketClient.prototype._ondata = function(data) {
         return;
     }
 
-    var message = null;
+	var message = utils.decode_WS(data);
 
-    if (self.type === 1) {
-    	
-    	if (utils.empty_WS(data)) {
-	        self.close();
-	        return;    		
-    	}
+    if (message === '' || message === null) {
+        // websocket.close() send empty string
+        self.close();
+        return;
+    }
 
-    	message = data;
-	}
+    if (self.type !== 3) {
+    	self.container.emit('message', self, message);
+    	return;
+    }
 
-    if (self.type > 1) {
-
-	    message = utils.decode_WS(data);
-	    
-	    if (message === '' || message === null) {
-	        // websocket.close() send empty string
-	        self.close();
-	        return;
-	    }
-
-	    if (self.type === 3) {
-	        if (message.isJSON()) {
-	            try
-	            {
-	                message = JSON.parse(message);
-	            } catch (ex) {
-	                message = null;
-	                self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
-	                return;
-	            }
-	        }
-	        else {
-	            message = null;
-	            self.close();
-	            return;
-	        }
-	    }
-	}
+    if (message.isJSON()) {
+        try
+        {
+            message = JSON.parse(message);
+        } catch (ex) {
+            message = null;
+            self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
+            return;
+        }
+    }
+    else {
+        message = null;
+        self.close();
+        return;
+    }
 
     self.container.emit('message', self, message);
 };
@@ -5770,11 +5758,7 @@ WebSocketClient.prototype.send = function(message) {
     if (self.isClosed)
         return;
 
-    if (self.type === 1)
-    	self.socket.write(message);
-    else
-    	self.socket.write(new Buffer(utils.encode_WS(self.type === 3 ? JSON.stringify(message) : (message || '').toString()), 'binary'));
-
+   	self.socket.write(new Buffer(utils.encode_WS(self.type === 3 ? JSON.stringify(message) : (message || '').toString()), 'binary'));
     return self;
 };
 
