@@ -3,6 +3,8 @@ IN DEVELOPMENT ======= 1.2.4-4
 - added: partial.js/utils is a global object ... applies everywhere: utils.[method]
 - added: partial.js/builders is a global object ... applies everywhere: builders.[method]
 - added: auto verifying directories
+- added: framework.onCompileCSS(filename, output) :: must return {String} (if is declared then auto-vendor-prefixes and internal LESS CSS are disabled)
+- added: framework.onCompileJS(filename, output) :: must return {String} (if is declared then internal JavaScript minificator is disabled)
 
 - updated: process.name
 - updated: jQuery CDN in empty-project

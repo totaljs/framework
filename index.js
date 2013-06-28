@@ -1039,6 +1039,22 @@ Framework.prototype.onStatic = function(req, res) {
 };
 
 /*
+	3rd CSS compiler (Sync)
+	@filename {String}
+	@content {String} :: Content of CSS file
+	return {String}
+*/
+Framework.prototype.onCompileCSS = null;
+
+/*
+	3rd JavaScript compiler (Sync)
+	@filename {String}
+	@content {String} :: Content of JavaScript file
+	return {String}
+*/
+Framework.prototype.onCompileJS = null;
+
+/*
 	Compile JavaScript and CSS
 	@req {ServerRequest}
 	@fileName {String}
@@ -1056,11 +1072,11 @@ Framework.prototype.compileStatic = function(req, fileName) {
 
 	switch (ext) {
 		case '.js':
-			output = internal.compile_javascript(output, self);
+			output = self.onCompileJS === null ? internal.compile_javascript(output, self) : self.onCompileJS(filename, output);
 			break;
 
 		case '.css':
-			output = internal.compile_less(output);
+			output = self.onCompileCSS === null ? internal.compile_less(output) : self.onCompileCSS(filename, output);
 
 			if (self.onVersion !== null) {
 				var matches = output.match(/url\(.*?\)/g);
