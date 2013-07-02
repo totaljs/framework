@@ -7,7 +7,7 @@ IN DEVELOPMENT ======= 1.2.4-4
 - added: framework.onCompileJS(filename, output) :: must return {String} (if is declared then internal JavaScript minificator is disabled)
 
 - updated: process.name
-- updated: jQuery CDN in empty-project
+- updated: empty-project and NPM executable
 
 - removed: utils.loadFromFile()
 

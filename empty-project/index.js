@@ -26,4 +26,4 @@ framework.run(http, debug, port);
 
 // framework.test(true);
 
-console.log('http://127.0.0.1:{0}/'.format(port));
+console.log('http://{0}:{1}/'.format(framework.ip, framework.port));
