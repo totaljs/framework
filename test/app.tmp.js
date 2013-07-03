@@ -6,6 +6,7 @@ var path = require('path');
 var fs = require('fs');
 var events = require('events');
 var crypto = require('crypto');
+var framework = require('../index');
 
 var BOUNDARY = '----' + Math.random().toString(16).substring(2);
 
@@ -17,7 +18,7 @@ function send(url) {
 
 	h['Content-Type'] = 'multipart/x-mixed-replace; boundary=' + BOUNDARY;
 	//h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
-	
+
 	var options = { protocol: uri.protocol, auth: uri.auth, method: 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
@@ -63,13 +64,56 @@ function send(url) {
 		}
 
 		setTimeout(function() {
-			sendfile('/users/petersirka/desktop/aaaaa/' + indexer + '.jpg', run);	
+			sendfile('/users/petersirka/desktop/aaaaa/' + indexer + '.jpg', run);
 		}, 500);
-		
+
 	}
 
 	run();
 };
 
 //send('http://127.0.0.1:8004/');
-send('http://127.0.0.1:8001/live/incoming/');
+//send('http://127.0.0.1:8001/live/incoming/');
+
+function arrayFindAll(arr, filter) {
+
+	var length = arr.length;
+	var selected = [];
+
+	for (var i = 0; i < length; i++) {
+		var value = arr[i];
+		if (filter(value))
+			selected.push(value);
+	}
+
+	return selected;
+};
+
+function arrayFindAllWithIndex(arr, filter) {
+
+	var length = arr.length;
+	var selected = [];
+
+	for (var i = 0; i < length; i++) {
+		var value = arr[i];
+		// i === index
+		if (filter(value, i))
+			selected.push(value);
+	}
+
+	return selected;
+};
+
+
+console.log(arrayFindAll([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > 5', ['value'])));
+console.log(arrayFindAll([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > myvalue && value < myvalue + 5', ['value', 'myvalue'], 3)));
+
+// We must add index param
+console.log(arrayFindAllWithIndex([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > 5', ['value', 'index'])));
+console.log(arrayFindAllWithIndex([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > myvalue && value < myvalue + 5', ['value', 'index', 'myvalue'], 3)));
+
+// BAD!!!!
+console.log(arrayFindAllWithIndex([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > 5', ['value'])));
+console.log(arrayFindAllWithIndex([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > myvalue && value < myvalue + 5', ['value', 'myvalue'], 3)));
+
+

@@ -8,6 +8,7 @@ IN DEVELOPMENT ======= 1.2.4-4
 
 - updated: process.name
 - updated: empty-project and NPM executable
+- updated: expression() - added internal cache
 
 - removed: utils.loadFromFile()
 

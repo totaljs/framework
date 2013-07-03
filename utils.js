@@ -31,6 +31,7 @@ var events = require('events');
 var crypto = require('crypto');
 var regexpMail = RegExp('^[a-zA-Z0-9-_.]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
+var expressionCache = {};
 
 if (typeof(setImmediate) === 'undefined') {
 	global.setImmediate = function(cb) {
@@ -46,8 +47,14 @@ if (typeof(setImmediate) === 'undefined') {
 	return {Function}
 */
 function expression(query, params) {
+
 	var name = params.join(',');
-	var fn = eval('(function(' + name +'){' + (query.indexOf('return') === -1 ? 'return ' : '') + query + '})');
+	var fn = expressionCache[query + '-' + name];
+
+	if (!fn) {
+		fn = eval('(function(' + name +'){' + (query.indexOf('return') === -1 ? 'return ' : '') + query + '})');
+		expressionCache[query + name] = fn;
+	}
 
 	var values = [];
 
