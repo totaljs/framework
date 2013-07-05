@@ -39,6 +39,7 @@ var EXTENSION_VIEW = '.nosql';
 var EXTENSION_BINARY = '.nosql-binary';
 var EXTENSION_TMP = '.nosql-tmp';
 var EXTENSION_CHANGES = '.changes';
+var EXTENSION_STORED = '.nosql-stored';
 
 var MAX_WRITESTREAM = 2;
 var MAX_READSTREAM = 4;
@@ -86,6 +87,7 @@ function Database(filename, directory, changes) {
 	this.filename = filename + EXTENSION;
 	this.filenameTemp = filename + EXTENSION_TMP;
 	this.filenameChanges = filename + EXTENSION_CHANGES;
+	this.filenameStored = filename + EXTENSION_STORED;
 	this.name = path.basename(filename);
 
 	this.directory = path.dirname(filename);
@@ -94,6 +96,7 @@ function Database(filename, directory, changes) {
 	this.binary = (directory || '').length === 0 ? null : new Binary(this, directory);
 	this.changelog = new Changelog(this, this.filenameChanges);
 	this.file = new FileReader(this);
+	this.stored = new Stored(this, this.filenameStored);
 };
 
 /*
@@ -121,6 +124,18 @@ function View(db, name, filename) {
 	this.name = name;
 	this.emit = db.emit;
 	this.file = new FileReader(db);
+};
+
+
+/*
+	@db {Database}
+*/
+function Stored(db, filename) {
+	this.filename = filename;
+	this.db = db;
+	this.stored = {};
+	this.cache = {};
+	this.isReaded = false;
 };
 
 /*
@@ -1439,6 +1454,194 @@ View.prototype.next = function() {
 };
 
 // ========================================================================
+// STORED PROTOTYPE
+// ========================================================================
+
+/*
+	Create a new stored function
+	@name {String}
+	@fn {Function}
+	@fnCallback {Function} :: optional
+	@changes {String} :: optional
+	return {Database}
+*/
+Stored.prototype.create = function(name, fn, fnCallback, changes) {
+
+	if (typeof(fn) === 'function')
+		fn = fn.toString();
+
+	var self = this;
+
+	self._load(function() {
+		self.stored[name] = fn;
+		self._save(fnCallback, changes, name);
+	});
+
+	return self.db;
+};
+
+/*
+	Remove a stored function
+	@name {String}
+	@fnCallback {Function} :: optional
+	@changes {String} :: optional
+	return {Database}
+*/
+Stored.prototype.remove = function(name, fnCallback, changes) {
+	var self = this;
+
+	self._load(function() {
+		delete self.stored[name];
+		self._save(fnCallback, changes, name);
+	});
+
+	return self.db;
+};
+
+/*
+	Clear all stored functions
+	@fnCallback {Function} :: optional
+	@changes {String} :: optional
+	return {Database}
+*/
+Stored.prototype.clear = function(fnCallback, changes) {
+
+	var self = this;
+	var filename = self.filename;
+
+	fs.exists(filename, function(exists) {
+
+		if (changes)
+			self.db.changelog.insert(changes);
+
+		self.db.emit('stored/clear');
+
+		if (!exists) {
+			fnCallback && fnCallback.call(self.db);
+			return;
+		}
+
+		fs.unlink(filename, function() {
+			fnCallback && fnCallback.call(self.db);
+		});
+	});
+
+	return self.db;
+};
+
+Stored.prototype._save = function(fnCallback, changes, name) {
+	var self = this;
+	var filename = self.filename;
+
+	if (typeof(fnCallback) === 'string') {
+		var tmp = changes;
+		changes = fnCallback;
+		fnCallback = tmp;
+	}
+
+	fs.writeFile(filename, JSON.stringify(self.stored), function(err) {
+
+		if (err)
+			self.db.emit('error', err, 'stored/save', name);
+
+		if (changes)
+			self.db.changelog.insert(changes);
+
+		self.db.emit('stored/save', name);
+		fnCallback && fnCallback.call(self.db);
+	});
+
+	self.isReaded = false;
+};
+
+Stored.prototype._load = function(fnCallback) {
+	var self = this;
+	var filename = self.filename;
+
+	fs.exists(filename, function(exists) {
+
+		self.isReaded = true;
+		self.cache = {};
+
+		if (!exists)
+			return fnCallback({});
+
+		fs.readFile(filename, function (err, data) {
+
+			if (err) {
+				self.db.emit('error', ex, 'stored/load');
+				fnCallback && fnCallback.call(self.db);
+				return;
+			}
+
+			try
+			{
+				self.stored = JSON.parse(data);
+			} catch (ex) {
+				self.db.emit('error', ex, 'stored/load');
+			}
+
+			if (self.stored === null)
+				self.stored = {};
+
+			fnCallback && fnCallback.call(self.db);
+		});
+	});
+};
+
+/*
+	Execute a stored function
+	@name {String}
+	@fnCallback {Function} :: optional
+	@changes {String} :: optional
+	return {Database}
+*/
+Stored.prototype.execute = function (name, fnCallback, changes) {
+
+	var self = this;
+
+	if (!self.isReaded) {
+
+		self._load(function() {
+			self.execute(name, fnCallback, changes);
+		});
+
+		return;
+	}
+
+	if (typeof(fnCallback) === 'string') {
+		var tmp = changes;
+		changes = fnCallback;
+		fnCallback = tmp;
+	}
+
+	if (changes)
+		self.db.changelog.insert(changes);
+
+	var fn = self.stored[name];
+	var cache = self.cache[name];
+
+	self.db.emit('stored', name);
+
+	if (typeof(fn) === 'undefined') {
+		fnCallback && fnCallback();
+		return;
+	}
+
+	if (typeof(cache) === 'undefined') {
+		fn = eval('(' + fn + ')');
+		self.cache[name] = fn;
+	} else
+		fn = cache;
+
+	if (typeof(fnCallback) === 'undefined')
+		fnCallback = function() {};
+
+	fn.call(self.db, self.db, fnCallback);
+	return self.db;
+};
+
+// ========================================================================
 // BINARY PROTOTYPE
 // ========================================================================
 
@@ -1492,6 +1695,9 @@ Binary.prototype.read = function(id, callback) {
 
 	var self = this;
 
+	if (id.indexOf('#') === -1)
+		id = self.db.name + '#' + id;
+
 	var filename = path.join(self.directory, id + EXTENSION_BINARY);
 	var stream = fs.createReadStream(filename, { start: 0, end: BINARY_HEADER_LENGTH - 1 });
 
@@ -1517,6 +1723,10 @@ Binary.prototype.read = function(id, callback) {
 */
 Binary.prototype.remove = function(id, fnCallback, changes) {
 	var self = this;
+
+	if (id.indexOf('#') === -1)
+		id = self.db.name + '#' + id;
+
 	var filename = path.join(self.directory, id + EXTENSION_BINARY);
 
 	if (typeof(fnCallback) === 'string') {

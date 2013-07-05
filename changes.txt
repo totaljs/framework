@@ -9,6 +9,7 @@ IN DEVELOPMENT ======= 1.2.4-4
 - updated: process.name
 - updated: empty-project and NPM executable
 - updated: expression() - added internal cache
+- updated: nosql embedded database (supports stored functions)
 
 - removed: utils.loadFromFile()
 
