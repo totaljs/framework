@@ -112,7 +112,7 @@ message.subject = 'Nový e-mail';
 
 //message.to('sirka@wsd-europe.com');
 message.to('petersirka@gmail.com');
-message.bcc('petersirka@me.com');
+message.reply('sirka@wsd.sk');
 
 message.sender('sirka@wsd-europe.com');
 message.attachment('/users/petersirka/desktop/wall.png');
