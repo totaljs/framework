@@ -47,8 +47,8 @@ function Mailer() {
 
 Mailer.prototype = new events.EventEmitter;
 
-Mailer.prototype.create = function() {
-	return new Message();
+Mailer.prototype.create = function(subject, body) {
+	return new Message(subject, body);
 };
 
 /*
@@ -96,9 +96,9 @@ function resolveMx(domain, callback) {
     });
 };
 
-function Message() {
-	this.subject = '';
-	this.body = '';
+function Message(subject, body) {
+	this.subject = subject || '';
+	this.body = body || '';
 	this.files = [];
 	this.addressTo = [];
 	this.addressReply = [];
