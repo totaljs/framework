@@ -6,7 +6,7 @@ IN DEVELOPMENT ======= 1.2.4-4
 - added: framework.onCompileCSS(filename, output) :: must return {String} (if is declared then auto-vendor-prefixes and internal LESS CSS are disabled)
 - added: framework.onCompileJS(filename, output) :: must return {String} (if is declared then internal JavaScript minificator is disabled)
 - added: utils.copy(target, source, rewrite);
-- added: partial.js/mail attachment
+- added: partial.js/mail attachments
 
 - updated: process.name
 - updated: empty-project and NPM executable
