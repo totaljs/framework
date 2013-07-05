@@ -181,38 +181,70 @@ exports.noop = function() {}
 
 /*
 	Extend object
+	@target {Object}
 	@source {Object}
-	@add {Object}
 	@rewrite {Boolean} :: option, default false
 	return {Object}
 */
-exports.extend = function(source, add, rewrite) {
+exports.extend = function(target, source, rewrite) {
 
-	if (source === null || add === null)
-		return source;
+	if (target === null || source === null)
+		return target;
 
-	if (typeof(source) !== 'object' || typeof(add) !== 'object')
-		return source;
+	if (typeof(target) !== 'object' || typeof(source) !== 'object')
+		return target;
 
-	var keys = Object.keys(add);
+	var keys = Object.keys(source);
 	var i = keys.length;
 
 	while (i--) {
 
 		var key = keys[i];
 
+		if (rewrite || typeof(target[key]) === 'undefined')
+			target[key] = source[key];
+	}
+
+	return target;
+};
+
+/*
+	Copy values
+	@target {Object}
+	@source {Object}
+	@rewrite {Boolean} :: option, default true
+	return {Object}
+*/
+exports.copy = function(target, source, rewrite) {
+
+	if (target === null || source === null)
+		return target;
+
+	if (typeof(target) !== 'object' || typeof(source) !== 'object')
+		return target;
+
+	if (typeof(rewrite) === 'undefined')
+		rewrite = true;
+
+	var keys = Object.keys(source);
+	var i = keys.length;
+
+	while (i--) {
+
+		var key = keys[i];
+
+		if (typeof(target[key]) === 'undefined')
+			continue;
+
 		if (rewrite) {
-			source[key] = add[key];
+			target[key] = source[key];
 			continue;
 		}
 
-		if (typeof(source[key]) !== 'undefined')
-			continue;
-
-		source[key] = add[key];
+		target[key] = source[key];
 	}
 
-	return source;
+	return target;
 };
 
 /*
