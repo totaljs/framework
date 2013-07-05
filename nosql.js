@@ -1566,7 +1566,7 @@ Stored.prototype._load = function(fnCallback) {
 		if (!exists)
 			return fnCallback({});
 
-		fs.readFile(filename, function (err, data) {
+		fs.readFile(filename, function(err, data) {
 
 			if (err) {
 				self.db.emit('error', ex, 'stored/load');
@@ -1592,21 +1592,30 @@ Stored.prototype._load = function(fnCallback) {
 /*
 	Execute a stored function
 	@name {String}
+	@params {Object} :: params
 	@fnCallback {Function} :: optional
 	@changes {String} :: optional
 	return {Database}
 */
-Stored.prototype.execute = function (name, fnCallback, changes) {
+Stored.prototype.execute = function(name, params, fnCallback, changes) {
 
 	var self = this;
 
 	if (!self.isReaded) {
 
 		self._load(function() {
-			self.execute(name, fnCallback, changes);
+			self.execute(name, params, fnCallback, changes);
 		});
 
 		return;
+	}
+
+	var type = typeof(params);
+
+	if (type === 'function') {
+		changes = fnCallback;
+		fnCallback = params;
+		params = null;
 	}
 
 	if (typeof(fnCallback) === 'string') {
@@ -1637,7 +1646,7 @@ Stored.prototype.execute = function (name, fnCallback, changes) {
 	if (typeof(fnCallback) === 'undefined')
 		fnCallback = function() {};
 
-	fn.call(self.db, self.db, fnCallback);
+	fn.call(self.db, self.db, fnCallback, params || null);
 	return self.db;
 };
 
