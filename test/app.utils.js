@@ -182,6 +182,9 @@ function prototypeArray() {
 function others() {
 	var obj = {};
 
+	utils.copy(obj, { name: 'Peter', age: 25 });
+	assert.ok(!obj.name, 'utils.copy()');
+
 	utils.extend(obj, { name: 'Peter', age: 25 });
 	assert.ok(obj.name === 'Peter' && obj.age === 25, 'utils.extend()');
 

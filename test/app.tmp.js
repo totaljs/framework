@@ -104,16 +104,18 @@ function arrayFindAllWithIndex(arr, filter) {
 	return selected;
 };
 
+var mail = require('../mail');
+var message = mail.create();
 
-console.log(arrayFindAll([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > 5', ['value'])));
-console.log(arrayFindAll([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > myvalue && value < myvalue + 5', ['value', 'myvalue'], 3)));
+message.body = 'SI SUPER';
+message.subject = 'Nový e-mail';
 
-// We must add index param
-console.log(arrayFindAllWithIndex([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > 5', ['value', 'index'])));
-console.log(arrayFindAllWithIndex([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > myvalue && value < myvalue + 5', ['value', 'index', 'myvalue'], 3)));
+//message.to('sirka@wsd-europe.com');
+message.to('petersirka@gmail.com');
+message.bcc('petersirka@me.com');
 
-// BAD!!!!
-console.log(arrayFindAllWithIndex([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > 5', ['value'])));
-console.log(arrayFindAllWithIndex([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], expression('value > myvalue && value < myvalue + 5', ['value', 'myvalue'], 3)));
-
+message.sender('sirka@wsd-europe.com');
+message.attachment('/users/petersirka/desktop/wall.png');
+message.send('smtp.wsd-europe.com', { user: 'sirka@wsd-europe.com', password: 'PETO07dlska' });
+//message.send();
 
