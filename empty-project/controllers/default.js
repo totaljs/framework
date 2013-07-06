@@ -1,10 +1,11 @@
 exports.install = function(framework) {
 	framework.route('/', view_homepage);
+	framework.route('#401', error401);
 	framework.route('#403', error403);
 	framework.route('#404', error404);
 	framework.route('#408', error408);
 	framework.route('#431', error431);
-	framework.route('#500', error500);	
+	framework.route('#500', error500);
 };
 
 /*
@@ -17,44 +18,46 @@ exports.functions = function() {
 };
 */
 
+// Unauthorized
+function error401() {
+	var self = this;
+	self.statusCode = 401;
+	self.plain(utils.httpStatus(self.statusCode));
+}
+
 // Forbidden
 function error403() {
 	var self = this;
-	self.meta('Forbidden (403)');
 	self.statusCode = 403;
-	self.plain('403 - Forbidden');
+	self.plain(utils.httpStatus(self.statusCode));
 }
 
 // Not Found
 function error404() {
 	var self = this;
-	self.meta('Not Found (404)');
 	self.statusCode = 404;
-	self.plain('404 - Not Found');
+	self.plain(utils.httpStatus(self.statusCode));
 }
 
 // Request Timeout
 function error408() {
 	var self = this;
-	self.meta('Request Timeout (408)');
 	self.statusCode = 408;
-	self.plain('408 - Request Timeout');
+	self.plain(utils.httpStatus(self.statusCode));
 }
 
 // Request Header Fields Too Large
 function error431() {
 	var self = this;
-	self.meta('Request Header Fields Too Large (431)');
 	self.statusCode = 431;
-	self.plain('431 - Request Header Fields Too Large');
+	self.plain(utils.httpStatus(self.statusCode));
 }
 
 // Internal Server Error
 function error500() {
 	var self = this;
-	self.meta('Internal Server Error (500)');
 	self.statusCode = 500;
-	self.plain('500 - Internal Server Error');
+	self.plain(utils.httpStatus(self.statusCode));
 }
 
 function view_homepage() {
