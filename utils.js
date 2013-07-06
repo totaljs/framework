@@ -127,11 +127,11 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 		var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
 
 		req.on('error', function(error) {
-	  		callback(error, null);
+	  		callback(error, null, 0, {});
 		});
 
 		req.setTimeout(timeout || 10000, function() {
-			callback(408, null, {});
+			callback(new Error(utils.httpStatus(408)), null, 0, {});
 		});
 
 		if (isPOST)
@@ -1591,13 +1591,30 @@ Array.prototype.skip = function(count) {
 };
 
 /*
+	@cb {Function} :: return true / false
+	return {Array}
+*/
+Array.prototype.where = function(cb) {
+
+	var self = this;
+	var selected = [];
+
+	for (var i = 0; i < self.length; i++) {
+		if (cb.call(self, self[i], i))
+			selected.push(self[i]);
+	}
+
+	return selected;
+};
+
+/*
 	@cb {Function} :: return true if is finded
 	return {Array item}
 */
 Array.prototype.find = function(cb) {
 	var self = this;
 	for (var i = 0; i < self.length; i++) {
-		if (cb(self[i], i))
+		if (cb.call(self, self[i], i))
 			return self[i];
 	}
 	return null;
@@ -1611,7 +1628,7 @@ Array.prototype.remove = function(cb) {
 	var self = this;
 	var arr = [];
 	for (var i = 0; i < self.length; i++) {
-		if (!cb(self[i], i))
+		if (!cb.call(self, self[i], i))
 			arr.push(self[i]);
 	}
 	return arr;
@@ -1624,6 +1641,43 @@ Array.prototype.remove = function(cb) {
 Array.prototype.random = function() {
 	var self = this;
 	return self[exports.random(self.length - 1)];
+};
+
+/*
+	Randomize array
+	Return {Array}
+*/
+Array.prototype.randomize = function() {
+
+	var self = this;
+	var random = (Math.floor(Math.random() * 100000000) * 10).toString();
+	var index = 0;
+	var old = 0;
+
+	self.sort(function(a, b) {
+
+		var c = random[index++];
+
+		if (typeof(c) === 'undefined') {
+			c = random[0];
+			index = 0;
+		}
+
+		if (old > c) {
+			old = c;
+			return -1;
+		}
+		
+		if (old === c) {
+			old = c;
+			return 0;
+		}
+
+		old = c;
+		return 1;
+	});
+
+	return self;
 };
 
 /*
