@@ -222,6 +222,7 @@ exports.httpStatus = function(code, addCode) {
 		case 415: return plus + 'Unsupported Media Type';
 		case 416: return plus + 'Requested Range Not Satisfiable';
 		case 417: return plus + 'Expectation Failed';
+		case 431: return plus + 'Request Header Fields Too Large';
 		case 500: return plus + 'Internal Server Error';
 		case 501: return plus + 'Not Implemented';
 		case 502: return plus + 'Bad Gateway';
