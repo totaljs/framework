@@ -212,9 +212,10 @@ Message.prototype.attachment = function(filename, name) {
 	Send e-mail
 	@smtp {String}
 	@options {Object} :: optional, @port {Number}, @timeout {Number}, @user {String}, @password {String}
+	@fnCallback {Function} :: optional
 	return {Message}
 */
-Message.prototype.send = function(smtp, options) {
+Message.prototype.send = function(smtp, options, fnCallback) {
 
 	var self = this;
 	smtp = smtp || null;
@@ -250,6 +251,9 @@ Message.prototype.send = function(smtp, options) {
     socket.on('connect', function() {
     	self._send(socket, options);
     });
+
+    if (fnCallback)
+    	socket.on('close', fnCallback);
 
     return self;
 };
