@@ -5497,6 +5497,39 @@ WebSocket.prototype.destroy = function() {
 };
 
 /*
+	Send proxy request
+	@url {String}
+	@obj {Object}
+	@fnCallback {Function} :: optional
+	return {Controller}
+*/
+WebSocket.prototype.proxy = function(url, obj, fnCallback) {
+
+	var self = this;
+	var headers = { 'X-Proxy': 'partial.js', 'Content-Type': 'application/json' };
+
+	if (typeof(obj) === 'function') {
+		var tmp = fnCallback;
+		fnCallback = obj;
+		obj = tmp;
+	}
+
+	utils.request(url, 'POST', obj, function(error, data, code, headers) {
+
+		if (!fnCallback)
+			return;
+		
+		if ((headers['content-type'] || '').indexOf('application/json') !== -1)
+			data = JSON.parse(data);
+
+		fnCallback.call(self, error, data, code, headers);
+
+	}, headers);
+
+	return self;
+};
+
+/*
     Internal function
     return {WebSocket}
 */
