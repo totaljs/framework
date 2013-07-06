@@ -5437,6 +5437,17 @@ WebSocket.prototype.close = function(names) {
 };
 
 /*
+	Error
+	@err {Error}
+	return {Framework}
+*/
+WebSocket.prototype.error = function(err) {
+	var self = this;
+	self.framework.error(err, self.name, self.path);
+	return self;
+};
+
+/*
     All connections (forEach)
     @fn {Function} :: function(client, index) {}
     return {WebSocketClient};
