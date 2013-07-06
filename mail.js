@@ -528,6 +528,8 @@ Mailer.prototype.send = function(smtp, addressFrom, addressTo, addressCc, subjec
 
 	var self = this;
 
+	console.log('OBSOLETE: use Message.send()');
+
 	if (smtp !== null && typeof(smtp) === 'object') {
 		addressFrom = smtp.from;
 		addressTo = smtp.to;
