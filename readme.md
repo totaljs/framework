@@ -30,9 +30,10 @@ Videos on YouTube
 
 ***
 
-* **NEW** - __Supports server sent events__ - [example](https://github.com/petersirka/partial.js/tree/master/examples/server-sent-events)
-* **NEW** - __Supports live streaming__ via multipart/x-mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
-* **NEW** - Supports uploading via multipart/x-mixed-replace - [example](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
+* **NEW** - __Controller PROXY__ - [example: proxy](https://github.com/petersirka/partial.js/tree/master/examples/controller-proxy)
+* **NEW** - __Supports server sent events__ - [example: sse](https://github.com/petersirka/partial.js/tree/master/examples/server-sent-events)
+* **NEW** - __Supports live streaming__ via multipart/x-mixed-replace - [example: mmr](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
+* **NEW** - Supports uploading via multipart/x-mixed-replace - [example: mmr](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
 * **NEW** - Supports CSS auto vendor prefixes - [read the benefits](http://www.partialjs.com/benefits/)
 * **NEW** - Supports Websocket (Standard - RFC 6455) - [example: websocket](https://github.com/petersirka/partial.js/tree/master/examples/websocket)
 * Async web framework - [example: async methods](https://github.com/petersirka/partial.js/tree/master/examples/async)
