@@ -46,7 +46,7 @@ framework.mail = function(email, name, params) {
 	// message.attachmet('/users/desktop/petersirka/filename.txt', 'name.txt');
 	// message.send(smtp, options);
 
-	message.send(self.config['mail-smtp'], { user: '', password: ''});
+	message.send(self.config['mail-smtp'], { user: '', password: '' });
 	return true;
 };
 
