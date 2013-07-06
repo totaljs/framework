@@ -10,7 +10,7 @@ web application framework for node.js
 - Homepage / [www.partialjs.com](http://partialjs.com)
 - [__GET STARTED__](http://www.partialjs.com/get-started/)
 - Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
-- [__Download empty project__](http://www.partialjs.com/upload/empty-project.zip) 
+- [__Download empty project__](http://www.partialjs.com/upload/empty-project.zip)
 - __Blog example__: [new example - blog written in partial.js (without installation)](http://blog.partialjs.com)
 - __E-shop example__: [new example - e-shop written in partial.js (without installation)](http://eshop.partialjs.com)
 - Documentation: [partial.js documentation](http://partialjs.com/documentation/)
