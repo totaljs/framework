@@ -328,6 +328,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		priority--;
 
 	if (typeof(flags) !== 'undefined') {
+
+		if (flags.indexOf('proxy') !== -1 && flags.indexOf('json') === -1)
+			flags.push('json');
+
 		if (flags.indexOf('json') !== -1 && flags.indexOf('post') === -1)
 			flags.push('post');
 
@@ -1832,7 +1836,8 @@ Framework.prototype._request = function(req, res) {
 	var header = req.headers;
 	var protocol = req.connection.encrypted ? 'https' : 'http';
 	var accept = header['accept'];
-
+	
+	req.isProxy = header['x-proxy'] === 'partial.js';
    	req.host = header['host'];
    	req.uri = parser.parse(protocol + '://' + req.host + req.url);
    	req.path = internal.routeSplit(req.uri.pathname);
@@ -1890,6 +1895,9 @@ Framework.prototype._request = function(req, res) {
     	else
     		flags.push('mmr');
     }
+
+    if (req.isProxy)
+    	flags.push('proxy');
 
     if (accept === 'text/event-stream')
     	flags.push('sse');
@@ -3483,6 +3491,7 @@ function Controller(name, req, res, subscribe) {
 	this.files = req.data.files;
 	this.isLayout = false;
 	this.isXHR = req.isXHR;
+	this.isProxy = req.isProxy;
 	this.xhr = req.isXHR;
 	this.config = subscribe.framework.config;
 
@@ -3551,6 +3560,17 @@ Controller.prototype.validate = function(model, properties, prefix, name) {
 
 	var error = new builders.ErrorBuilder(resource);
 	return utils.validate.call(self, model, properties, self.app.onValidation, error);
+};
+
+/*
+	Error
+	@err {Error}
+	return {Framework}
+*/
+Controller.prototype.error = function(err) {
+	var self = this;
+	self.framework.error(err, self.name, self.uri);
+	return self;
 };
 
 /*
@@ -5048,6 +5068,39 @@ Controller.prototype.close = function() {
 
 	self.res.end();
 	self.internal.type = 0;
+
+	return self;
+};
+
+/*
+	Send proxy request
+	@url {String}
+	@obj {Object}
+	@fnCallback {Function} :: optional
+	return {Controller}
+*/
+Controller.prototype.proxy = function(url, obj, fnCallback) {
+
+	var self = this;
+	var headers = { 'X-Proxy': 'partial.js', 'Content-Type': 'application/json' };
+
+	if (typeof(obj) === 'function') {
+		var tmp = fnCallback;
+		fnCallback = obj;
+		obj = tmp;
+	}
+
+	utils.request(url, 'POST', obj, function(error, data, code, headers) {
+
+		if (!fnCallback)
+			return;
+		
+		if ((headers['content-type'] || '').indexOf('application/json') !== -1)
+			data = JSON.parse(data);
+
+		fnCallback.call(self, error, data, code, headers);
+
+	}, headers);
 
 	return self;
 };
