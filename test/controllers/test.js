@@ -27,6 +27,8 @@ exports.init = function() {
 		self.plain('408');
 	}, []);
 
+	self.route('/basic/', viewBAA);
+
 	// url
 	// function
 	// flags [json, logged, unlogged]
@@ -35,6 +37,16 @@ exports.init = function() {
 	// maximumSize
 	self.websocket('/', socket);
 };
+
+function viewBAA() {
+	
+	var user = this.baa();
+
+	if (user === null)
+		return;
+
+	this.json(user);
+}
 
 function viewSSE_html() {
 	this.view('g');
