@@ -1667,7 +1667,7 @@ Array.prototype.randomize = function() {
 			old = c;
 			return -1;
 		}
-		
+
 		if (old === c) {
 			old = c;
 			return 0;
