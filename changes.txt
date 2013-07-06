@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.4-4
+======= 1.2.4-4
 
 - added: partial.js/utils is a global object ... applies everywhere: utils.[method]
 - added: partial.js/builders is a global object ... applies everywhere: builders.[method]
@@ -14,6 +14,7 @@ IN DEVELOPMENT ======= 1.2.4-4
 - added: controller.proxy(url, obj, callback);
 - added: controller.error(err);
 - added: new route flag: "proxy"
+- added: utils.httpStatus(code);
 
 - updated: dynamic compress CSS and JS by the framework.onCompileCSS and framework.onCompileJS in views
 - updated: process.name
