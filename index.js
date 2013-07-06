@@ -1836,7 +1836,7 @@ Framework.prototype._request = function(req, res) {
 	var header = req.headers;
 	var protocol = req.connection.encrypted ? 'https' : 'http';
 	var accept = header['accept'];
-	
+
 	req.isProxy = header['x-proxy'] === 'partial.js';
    	req.host = header['host'];
    	req.uri = parser.parse(protocol + '://' + req.host + req.url);
@@ -3569,7 +3569,7 @@ Controller.prototype.validate = function(model, properties, prefix, name) {
 */
 Controller.prototype.error = function(err) {
 	var self = this;
-	self.framework.error(err, self.name, self.uri);
+	self.framework.error(typeof(err) === 'string' ? new Error(err) : err, self.name, self.uri);
 	return self;
 };
 
@@ -5094,7 +5094,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback) {
 
 		if (!fnCallback)
 			return;
-		
+
 		if ((headers['content-type'] || '').indexOf('application/json') !== -1)
 			data = JSON.parse(data);
 
@@ -5443,7 +5443,7 @@ WebSocket.prototype.close = function(names) {
 */
 WebSocket.prototype.error = function(err) {
 	var self = this;
-	self.framework.error(err, self.name, self.path);
+	self.framework.error(typeof(err) === 'string' ? new Error(err) : err, self.name, self.path);
 	return self;
 };
 
@@ -5518,7 +5518,7 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 
 		if (!fnCallback)
 			return;
-		
+
 		if ((headers['content-type'] || '').indexOf('application/json') !== -1)
 			data = JSON.parse(data);
 
