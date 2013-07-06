@@ -15,6 +15,7 @@ IN DEVELOPMENT ======= 1.2.4-4
 - added: controller.error(err);
 - added: new route flag: "proxy"
 
+- updated: dynamic compress CSS and JS by the framework.onCompileCSS and framework.onCompileJS in views
 - updated: process.name
 - updated: empty-project and NPM executable
 - updated: expression() - added internal cache
@@ -29,6 +30,8 @@ IN DEVELOPMENT ======= 1.2.4-4
 
 - clean code
 
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/external-compile-sass
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/external-compile-uglifyjs
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/controller-proxy
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/email-templating
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/authorization-www-basic

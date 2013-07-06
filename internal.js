@@ -1032,7 +1032,11 @@ function autoprefixer_keyframes (value) {
 	return value;
 };
 
-exports.compile_less = function(value, minify) {
+exports.compile_less = function(value, minify, framework) {
+	if (framework) {
+		if (framework.onCompileCSS !== null)
+			return framework.onCompileCSS('', value);
+	}
 	return new Less().compile(autoprefixer(value), minify);
 };
 
@@ -1353,6 +1357,12 @@ function JavaScript(source) {
 exports.compile_javascript = function(source, framework) {
     try
     {
+    	if (framework)
+    	{
+    		if (framework.onCompileJS !== null)
+    			return framework.onCompileJS('', source);
+    	}
+
         return JavaScript(source);
     } catch (ex) {
 
@@ -1753,9 +1763,9 @@ function parse(html, controller) {
 	var count = 0;
 
 	var copy = false;
-
+	var framework = controller.framework;
 	var code = '';
-	var cache = compressJS(html);
+	var cache = compressCSS(compressJS(html, 0, framework), 0, framework);
 	var minify = true;
 
 	var indexBeg = 0;
@@ -2092,7 +2102,7 @@ function removeCondition(text, beg) {
     @index {Number}
     return {String}
 */
-function compressJS(html, index) {
+function compressJS(html, index, framework) {
 
 	var strFrom = '<script type="text/javascript">';
 	var strTo = '</script>';
@@ -2105,13 +2115,37 @@ function compressJS(html, index) {
 	if (indexEnd === -1)
 		return html;
 
-	var js = html.substring(indexBeg, indexEnd + strTo.length);
-	var compiled = exports.compile_javascript(js).replace(/\\n/g, "'+(String.fromCharCode(13)+String.fromCharCode(10))+'");
+	var js = html.substring(indexBeg, indexEnd + strTo.length).trim();
+	var val = js.substring(strFrom.length, js.length - strTo.length).trim();
+	var compiled = exports.compile_javascript(val, framework).replace(/\\n/g, "'+(String.fromCharCode(13)+String.fromCharCode(10))+'");
 
-	html = html.replace(js, compiled.dollar());
+	html = html.replace(js, (strFrom + compiled.dollar() + strTo).trim());
 
 	// voláme znova funkciu v prípade
-	return compressJS(html, indexBeg + compiled.length);
+	return compressJS(html, indexBeg + compiled.length, framework);
+}
+
+function compressCSS(html, index, framework) {
+	var strFrom = '<style type="text/css">';
+	var strTo = '</style>';
+
+	var indexBeg = html.indexOf(strFrom, index || 0);
+	if (indexBeg === -1)
+		return html;
+
+	var indexEnd = html.indexOf(strTo, indexBeg + strFrom.length);
+	if (indexEnd === -1)
+		return html;
+
+	var css = html.substring(indexBeg, indexEnd + strTo.length);
+	var val = css.substring(strFrom.length, css.length - strTo.length).trim();
+	var compiled = exports.compile_less(val, true, framework);
+
+	html = html.replace(css, (strFrom + compiled + strTo).trim());
+
+	// voláme znova funkciu v prípade
+	return compressCSS(html, indexBeg + compiled.length, framework);
+
 }
 
 /*
