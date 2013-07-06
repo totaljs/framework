@@ -3220,7 +3220,7 @@ Subscribe.prototype.execute = function(status) {
 	var self = this;
 
 	if (self.route === null) {
-		self.framework.responseContent(self.req, self.res, status || 404, (status || 404).toString(), 'text/plain', true);
+		self.framework.responseContent(self.req, self.res, status || 404, utils.httpStatus(status || 404), 'text/plain', true);
 		return self;
 	}
 
@@ -4783,6 +4783,23 @@ Controller.prototype.view404 = function() {
 };
 
 /*
+	Response 401
+	return {Controller};
+*/
+Controller.prototype.view401 = function() {
+	var self = this;
+
+	if (self.res.success || !self.isConnected)
+		return self;
+
+	self.req.path = [];
+	self.subscribe.success();
+	self.subscribe.route = self.framework.lookup(self.req, '#401', []);
+	self.subscribe.execute(401);
+	return self;
+};
+
+/*
 	Response 403
 	return {Controller};
 */
@@ -4853,6 +4870,26 @@ Controller.prototype.redirectAsync = function(url, permament) {
 
 	self.async.complete(fn);
 	return self;
+};
+
+/*
+	Basic access authentication (baa)
+	@name {String} :: optional, default Administration
+	return {Object} :: if null then user is not authenticated else return { name: {String}, password: {String} };
+*/
+Controller.prototype.baa = function(name) {
+
+	var self = this;
+	var authorization = self.req.headers['authorization'] || '';
+
+	if (authorization === '') {
+		self.res.setHeader('WWW-Authenticate', 'Basic realm="' + (name || 'Administration') + '"');
+		self.view401();
+		return null;
+	}
+
+	var arr = new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString('utf8').split(':');
+	return { name: arr[0] || '', password: arr[1] || '' };
 };
 
 /*

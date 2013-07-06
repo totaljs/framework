@@ -7,6 +7,7 @@ IN DEVELOPMENT ======= 1.2.4-4
 - added: framework.onCompileJS(filename, output) :: must return {String} (if is declared then internal JavaScript minificator is disabled)
 - added: utils.copy(target, source, rewrite);
 - added: partial.js/mail attachments
+- added: controller.baa() - Basic access authentication (WWW-Authenticate)
 
 - updated: process.name
 - updated: empty-project and NPM executable
@@ -20,6 +21,9 @@ IN DEVELOPMENT ======= 1.2.4-4
 - removed: utils.loadFromFile()
 
 - clean code
+
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/email-templating
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/authorization-www-basic
 
 ======= 1.2.4-3
 
