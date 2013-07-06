@@ -269,7 +269,10 @@ Message.prototype._send = function(socket, options) {
 	var authType = '';
 	var auth = [];
 
+	mailer.emit('sending', self);
+
 	socket.setTimeout(options.timeout, function() {
+		mailer.emit('error', new Error(utils.httpStatus(408)), self);
 		socket.end();
 	});
 
@@ -411,7 +414,7 @@ Message.prototype._send = function(socket, options) {
 				write(buffer.shift());
 
 	            if (buffer.length === 0)
-    	        	mailer.emit('success', mail);
+    	        	mailer.emit('success', self);
 
 				break;
 
@@ -476,7 +479,7 @@ Message.prototype._writeAttachment = function(write, boundary) {
 	fs.readFile(attachment.filename, 'base64', function(err, data) {
 
 		if (err) {
-			self.error('error', err, self);
+			mailer.error('error', err, self);
 			self._writeAttachment(write, boundary);
 			return;
 		}
