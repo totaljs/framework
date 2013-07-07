@@ -3563,6 +3563,120 @@ Controller.prototype.validate = function(model, properties, prefix, name) {
 };
 
 /*
+	Set response header
+	@name {String}
+	@value {String}
+	return {Controller}
+*/
+Controller.prototype.header = function(name, value) {
+	var self = this;
+	self.res.setHeader(name, value);
+	return self;
+};
+
+/*
+	Cross-origin resource sharing
+	@allow {String Array}
+	@method {String Array} :: optional, default null
+	@header {String Array} :: optional, default null
+	@credentials {Boolean} :: optional, default false
+	return {Boolean}
+*/
+Controller.prototype.cors = function(allow, method, header, credentials) {
+
+	var self = this;
+	var origin = self.req.headers['origin'];
+
+	if (typeof(origin) === 'undefined')
+		return true;
+
+	if (typeof(allow) === 'undefined')
+		allow = '*';
+
+	if (typeof(method) === 'Boolean') {
+		credentials = method;
+		method = null;
+	}
+
+	if (typeof(header) === 'Boolean') {
+		credentials = header;
+		header = null;
+	}
+
+	if (!utils.isArray(allow))
+		allow = [allow];
+
+	var isAllowed = false;
+	var isAll = false;
+
+	if (header) {
+
+		if (!utils.isArray(header))
+			header = [header];
+
+		for (var i = 0; i < header.length; i++) {
+			if (self.req.headers[header[i].toLowerCase()]) {
+				isAllowed = true;
+				break;
+			}
+		}
+
+		if (!isAllowed)
+			return false;
+
+		isAllowed = false;
+	}
+
+	if (method) {
+
+		if (!utils.isArray(method))
+			method = [method];
+
+		for (var i = 0; i < method.length; i++) {
+
+			var value = method[i].toUpperCase();
+			method[i] = value;
+
+			if (value === self.req.method)
+				isAllowed = true;
+		}
+
+		if (!isAllowed)
+			return false;
+
+		isAllowed = false;
+	}
+
+	for (var i = 0; i < allow.length; i++) {
+
+		var value = allow[i];
+
+		if (value === '*' || origin.indexOf(value) !== -1) {
+			isAll = value === '*';
+			isAllowed = true;
+			break;
+		}
+
+	}
+
+	if (!isAllowed)
+		return false;
+
+	self.res.setHeader('Access-Control-Allow-Origin', isAll ? '*' : origin);
+
+	if (credentials)
+		self.res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+	if (method)
+		self.res.setHeader('Access-Control-Allow-Methods', method.join(', '));
+
+	if (header)
+		self.res.setHeader('Access-Control-Allow-Headers', header.join(', '));
+
+	return true;
+};
+
+/*
 	Error
 	@err {Error}
 	return {Framework}
