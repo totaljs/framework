@@ -22,6 +22,7 @@
 'use strict';
 
 var net = require('net');
+var tls = require('tls');
 var util = require('util');
 var events = require('events');
 var dns = require('dns');
@@ -220,7 +221,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 	var self = this;
 	smtp = smtp || null;
 
-	options = utils.copy({ port: 25, user: '', password: '', timeout: 10000 }, options, true);
+	options = utils.copy({ secure: false, port: 25, user: '', password: '', timeout: 10000 }, options, true);
 
 	if (smtp === null || smtp === '') {
 
@@ -242,10 +243,14 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 		return self;
 	}
 
-	var socket = net.createConnection(options.port, smtp);
+	var socket = options.secure ? tls.connect(options.port, smtp) : net.createConnection(options.port, smtp);
 
 	socket.on('error', function(err) {
 		mailer.emit('error', err, self);
+	});
+
+	socket.on('secureConnect', function() {
+    	self._send(socket, options);
 	});
 
     socket.on('connect', function() {
@@ -360,6 +365,7 @@ Message.prototype._send = function(socket, options) {
 	length = self.files.length;
 
 	socket.on('data', function(data) {
+
 		var response = data.toString().split(CRLF);
 		var length = response.length;
 
@@ -380,20 +386,30 @@ Message.prototype._send = function(socket, options) {
 
 		var code = parseInt(line.match(/\d+/)[0]);
 
-		if (line.substring(3, 4) === '-') {
-			// help
-			return;
-		}
-
 		if (code === 250 && !isAuthorization) {
 
 			if (line.indexOf('AUTH LOGIN PLAIN') !== -1) {
 				authType = 'plain';
 				isAuthorization = true;
-				auth.push(new Buffer(options.user).toString('base64'));
-				auth.push(new Buffer(options.password).toString('base64'));
+				
+				if (line.indexOf('XOAUTH') !== -1) {
+					auth.push('AUTH PLAIN ' + new Buffer('\0'+ options.user + '\0' + options.password).toString('base64'));
+				} else {
+					auth.push('AUTH LOGIN');
+					auth.push(new Buffer(options.user).toString('base64'));
+					auth.push(new Buffer(options.password).toString('base64'));
+				}
 			}
+		}
 
+		if (line.substring(3, 4) === '-') {
+			// help
+			return;
+		}
+
+		if (!isAuthenticated && isAuthorization) {
+			isAuthenticated = true;
+			code = 334;
 		}
 
 		switch (code) {
@@ -408,12 +424,6 @@ Message.prototype._send = function(socket, options) {
             case 250: // OPERATION
             case 251: // FORWARD
             case 235: // VERIFY
-
-				if (isAuthorization && !isAuthenticated) {
-					isAuthenticated = true;
-					write('AUTH LOGIN');
-					return;
-				}
 
 				write(buffer.shift());
 

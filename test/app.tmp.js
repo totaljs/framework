@@ -1,5 +1,6 @@
 var urlParser = require('url');
 var http = require('http');
+var tls = require('tls');
 var https = require('https');
 var util = require('util');
 var path = require('path');
@@ -105,6 +106,12 @@ function arrayFindAllWithIndex(arr, filter) {
 };
 
 var mail = require('../mail');
+mail.debug = false;
+
+mail.on('error', function(err) {
+	console.log('error -->', err);
+});
+
 var message = mail.create();
 
 message.body = 'SI SUPER';
@@ -115,7 +122,12 @@ message.to('petersirka@gmail.com');
 message.reply('sirka@wsd.sk');
 
 message.sender('sirka@wsd-europe.com');
-message.attachment('/users/petersirka/desktop/wall.png');
+// message.attachment('/users/petersirka/desktop/wall.png');
+
 message.send('smtp.wsd-europe.com', { user: 'sirka@wsd-europe.com', password: 'PETO07dlska' });
+//message.send('smtp.gmail.com', { port: 465, secure: true, user: 'petersirka@gmail.com', password: 'plisBB12' });
 //message.send();
+
+//var socket = new tls.connect(465, 'smtp.gmail.com');
+//var isSended = false;
 
