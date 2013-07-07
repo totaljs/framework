@@ -1894,6 +1894,7 @@ function parse(html, controller) {
 						case 'download':
 						case 'json':
 						case 'dns':
+						case 'header':
 						case 'prefetch':
 						case 'prerender':
 						case 'next':

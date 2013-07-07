@@ -4022,6 +4022,17 @@ Controller.prototype.$readonly = function(bool, charBeg, charEnd) {
 
 /*
 	Internal function for views
+	@name {String}
+	@value {String}
+	return {String}
+*/
+Controller.prototype.$header = function(name, value) {
+	this.header(name, value);
+	return '';
+};
+
+/*
+	Internal function for views
 	@model {Object}
 	@name {String}
 	@attr {Object} :: optional
@@ -5356,6 +5367,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			case 'get':
 			case 'post':
 			case 'dns':
+			case 'header':
 			case 'next':
 			case 'prev':
 			case 'prerender':
