@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.2.4-5
 - added: controller.header(name, value) - set response header
 
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/cors
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/custom-headers
 
 ======= 1.2.4-4
 
