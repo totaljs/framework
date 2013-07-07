@@ -1,3 +1,10 @@
+IN DEVELOPMENT ======= 1.2.4-5
+
+- added: controller.cors(allow, method, header, credentials) - return {Boolean}
+- added: controller.header(name, value) - set response header
+
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/cors
+
 ======= 1.2.4-4
 
 - added: partial.js/utils is a global object ... applies everywhere: utils.[method]
