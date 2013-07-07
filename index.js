@@ -5202,12 +5202,19 @@ Controller.prototype.close = function() {
 	@url {String}
 	@obj {Object}
 	@fnCallback {Function} :: optional
+	@timeout {Number} :: optional
 	return {Controller}
 */
-Controller.prototype.proxy = function(url, obj, fnCallback) {
+Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 
 	var self = this;
 	var headers = { 'X-Proxy': 'partial.js', 'Content-Type': 'application/json' };
+
+	if (typeof(fnCallback) === 'number') {
+		var tmp = timeout;
+		timeout = fnCallback;
+		fnCallback = tmp;
+	}
 
 	if (typeof(obj) === 'function') {
 		var tmp = fnCallback;
@@ -5225,7 +5232,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback) {
 
 		fnCallback.call(self, error, data, code, headers);
 
-	}, headers);
+	}, headers, 'utf8', timeout || 10000);
 
 	return self;
 };

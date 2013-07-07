@@ -92,6 +92,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 	var h = {};
 	var isJSON = typeof(data) === 'object';
 
+	encoding = encoding || 'utf8';
 	method = (method || '').toString().toUpperCase();
 
 	if (method !== 'GET')
@@ -108,7 +109,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 		var buffer = '';
 
 		res.on('data', function(chunk) {
-			buffer += chunk.toString('utf8');
+			buffer += chunk.toString(encoding);
 		});
 
 		res.on('end', function() {
@@ -135,7 +136,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 		});
 
 		if (isPOST)
-			req.end(isJSON ? JSON.stringify(data) : (data || '').toString(), encoding || 'utf8');
+			req.end(isJSON ? JSON.stringify(data) : (data || '').toString(), encoding);
 
 	} catch (ex) {
 		callback(ex, null, 0, {});

@@ -3,6 +3,10 @@ IN DEVELOPMENT ======= 1.2.4-5
 - added: controller.cors(allow, method, header, credentials) - return {Boolean}
 - added: controller.header(name, value) - set response header
 
+- updated: controller.proxy() - added timeout
+
+- fixed: utils.request() - encoding
+
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/cors
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/custom-headers
 
