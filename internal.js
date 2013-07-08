@@ -1900,6 +1900,11 @@ function parse(html, controller) {
 						case 'next':
 						case 'prev':
 						case 'canonical':
+						case 'currentJS':
+						case 'currentCSS':
+						case 'currentImage':
+						case 'currentUpload':
+						case 'currentVideo':
 							isEncode = false;
 							isDeclared = true;
 							code = 'self.$' + code;
@@ -1942,7 +1947,7 @@ function parse(html, controller) {
 						case 'routeCSS':
 						case 'routeImage':
 						case 'routeFont':
-						case 'routeDocument':
+						case 'routeUpload':
 						case 'routeVideo':
 						case 'routeStatic':
 							isEncode = false;

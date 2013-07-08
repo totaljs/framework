@@ -44,7 +44,7 @@ global.utils = require('./utils');
 process.chdir(directory);
 
 function Framework() {
-	this.version = 1244;
+	this.version = 1245;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
@@ -83,7 +83,7 @@ function Framework() {
 		'static-url-image': '/img/',
 		'static-url-video': '/video/',
 		'static-url-font': '/font/',
-		'static-url-document': '/upload/',
+		'static-url-upload': '/upload/',
 		'static-accepts': ['.jpg', '.png', '.gif', '.ico', '.js', '.css', '.txt', '.xml', '.woff', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache'],
 
 		// 'static-accepts-custom': [],
@@ -2466,9 +2466,9 @@ Framework.prototype.routeFont = function(name) {
 	@name {String} :: filename
 	return {String}
 */
-Framework.prototype.routeDocument = function(name) {
+Framework.prototype.routeUpload = function(name) {
 	var self = this;
-	return self._routeStatic(name, self.config['static-url-document']);
+	return self._routeStatic(name, self.config['static-url-upload']);
 };
 
 /*
@@ -3532,6 +3532,12 @@ function Controller(name, req, res, subscribe) {
 
 	var self = this;
 	req.on('close', function() { self.isConnected = false; });
+
+	this._currentImage = '';
+	this._currentUpload = '';
+	this._currentVideo = '';
+	this._currentJS = '';
+	this._currentCSS = '';
 };
 
 // ======================================================
@@ -4565,7 +4571,7 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
 	return {String}
 */
 Controller.prototype.$download = function(filename, innerHTML, downloadName, className) {
-	var builder = '<a href="' + this.app.routeDocument(filename) + ATTR_END;
+	var builder = '<a href="' + this.app.routeUpload(filename) + ATTR_END;
 
 	if (downloadName)
 		builder += ' download="' + downloadName + ATTR_END;
@@ -4586,36 +4592,6 @@ Controller.prototype.$json = function(obj, name) {
 		return JSON.stringify(obj);
 
 	return '<script type="application/json" id="' + name + '">' + JSON.stringify(obj) + '</script>';
-};
-
-/*
-	Static file routing
-	@name {String} :: filename
-	@tag {Boolean} :: optional, append tag? default: false
-	return {String}
-*/
-Controller.prototype.routeJS = function(name, tag) {
-	var self = this;
-
-	if (typeof(name) === 'undefined')
-		name = 'default.js';
-
-	return tag ? '<script type="text/javascript" src="' + self.app.routeJS(name) + '"></script>' : self.app.routeJS(name);
-};
-
-/*
-	Static file routing
-	@name {String} :: filename
-	@tag {Boolean} :: optional, append tag? default: false
-	return {String}
-*/
-Controller.prototype.routeCSS = function(name, tag) {
-	var self = this;
-
-	if (typeof(name) === 'undefined')
-		name = 'default.css';
-
-	return tag ? '<link type="text/css" rel="stylesheet" href="' + self.app.routeCSS(name) + '" />' : self.app.routeCSS(name);
 };
 
 /*
@@ -4644,10 +4620,41 @@ Controller.prototype.$favicon = function(name) {
 /*
 	Static file routing
 	@name {String} :: filename
+	@tag {Boolean} :: optional, append tag? default: false
+	return {String}
+*/
+Controller.prototype.routeJS = function(name, tag) {
+	var self = this;
+
+	if (typeof(name) === 'undefined')
+		name = 'default.js';
+
+	return tag ? '<script type="text/javascript" src="' + self.app.routeJS(self.currentJS + name) + '"></script>' : self.app.routeJS(self.currentJS + name);
+};
+
+/*
+	Static file routing
+	@name {String} :: filename
+	@tag {Boolean} :: optional, append tag? default: false
+	return {String}
+*/
+Controller.prototype.routeCSS = function(name, tag) {
+	var self = this;
+
+	if (typeof(name) === 'undefined')
+		name = 'default.css';
+
+	return tag ? '<link type="text/css" rel="stylesheet" href="' + self.app.routeCSS(self.currentCSS + name) + '" />' : self.app.routeCSS(self.currentCSS + name);
+};
+
+/*
+	Static file routing
+	@name {String} :: filename
 	return {String}
 */
 Controller.prototype.routeImage = function(name) {
-	return this.app.routeImage(name);
+	var self = this;
+	return self.app.routeImage(self._currentImage + name);
 };
 
 /*
@@ -4657,7 +4664,7 @@ Controller.prototype.routeImage = function(name) {
 */
 Controller.prototype.routeVideo = function(name) {
 	var self = this;
-	return self.app.routeVideo(name);
+	return self.app.routeVideo(self._currentVideo + name);
 };
 
 /*
@@ -4675,9 +4682,9 @@ Controller.prototype.routeFont = function(name) {
 	@name {String} :: filename
 	return {String}
 */
-Controller.prototype.routeDocument = function(name) {
+Controller.prototype.routeUpload = function(name) {
 	var self = this;
-	return self.app.routeDocument(name);
+	return self.app.routeUpload(self._currentUpload + name);
 };
 
 /*
@@ -4688,6 +4695,116 @@ Controller.prototype.routeDocument = function(name) {
 Controller.prototype.routeStatic = function(name) {
 	var self = this;
 	return self.app.routeStatic(name);
+};
+
+/*
+	Internal
+	@path {String} :: add path to route path
+	return {String}
+*/
+Controller.prototype.$currentJS = function(path) {
+	this.currentJS = path.length > 0 ? utils.path(path) : '';
+	return '';
+};
+
+/*
+	Internal
+	@path {String} :: add path to route path
+	return {String}
+*/
+Controller.prototype.$currentCSS = function(path) {
+	this.currentCSS = path.length > 0 ? utils.path(path) : '';
+	return '';
+};
+
+/*
+	Internal
+	@path {String} :: add path to route path
+	return {String}
+*/
+Controller.prototype.$currentImage = function(path) {
+	this._currentImage = path.length > 0 ? utils.path(path) : '';
+	return '';
+};
+
+/*
+	Internal
+	@path {String} :: add path to route path
+	return {String}
+*/
+Controller.prototype.$currentVideo = function(path) {
+	this._currentVideo = path.length > 0 ? utils.path(path) : '';
+	return '';
+};
+
+/*
+	Internal
+	@path {String} :: add path to route path
+	return {String}
+*/
+Controller.prototype.$currentUpload = function(path) {
+	this._currentUpload = path.length > 0 ? utils.path(path) : '';
+	return '';
+};
+
+/*
+	Set current image path
+	@path {String}
+	return {Controller}
+*/
+Controller.prototype.currentImage = function(path) {
+	var self = this;
+	self.$currentImage(path);
+	self._defaultImage = self._currentImage;
+	return self;
+};
+
+/*
+	Set current upload path
+	@path {String}
+	return {Controller}
+*/
+Controller.prototype.currentUpload = function(path) {
+	var self = this;
+	self.$currentUpload(path);
+	self._defaultUpload = self._currentUpload;
+	return self;
+};
+
+/*
+	Set current CSS path
+	@path {String}
+	return {Controller}
+*/
+Controller.prototype.currentCSS = function(path) {
+	var self = this;
+	self.$currentCSS(path);
+	self._defaultCSS = self._currentCSS;
+	return self;
+};
+
+/*
+	Set current JS path
+	@path {String}
+	return {Controller}
+*/
+Controller.prototype.currentJS = function(path) {
+	var self = this;
+	self.$currentJS(path);
+	self._defaultJS = self._currentJS;
+	return self;
+};
+
+/*
+	Set current video path
+	@path {String}
+	return {Controller}
+*/
+Controller.prototype.currentVideo = function(path) {
+	var self = this;
+	self.$currentVideo(path);
+	self._defaultVideo = self._currentVideo;
+	return self;
 };
 
 /*
@@ -5292,6 +5409,14 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	}
 
 	var condition = false;
+
+	if (self.isLayout) {
+		self._currentCSS = self._defaultCSS || '';
+		self._currentJS = self._defaultJS || '';
+		self._currentUpload = self._defaultUpload || '';
+		self._currentVideo = self._defaultVideo || '';
+		self._currentImage = self._defaultImage || '';
+	}
 
 	for (var i = 0; i < generator.execute.length; i++) {
 

@@ -2,13 +2,22 @@ IN DEVELOPMENT ======= 1.2.4-5
 
 - added: controller.cors(allow, method, header, credentials) - return {Boolean}
 - added: controller.header(name, value) - set response header
+- added: @header(name, value) - set response header
+- added: controller.currentImage(), .currentCSS(), .currentJS(), .currentUpload(), .currentVideo()
+- added: @currentImage(), @currentCSS(), @currentJS(), @currentUpload(), @currentVideo()
+- added: routeUpload(), @routeUpload()
+- added: config['static-url-upload']
 
 - updated: controller.proxy() - added timeout
+
+- removed: routeDocument(), @routeDocument()
+- removed: config['static-url-document']
 
 - fixed: utils.request() - encoding
 
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/cors
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/custom-headers
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/views-route-file
 
 ======= 1.2.4-4
 
