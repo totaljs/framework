@@ -7,6 +7,7 @@ IN DEVELOPMENT ======= 1.2.4-5
 - added: @currentImage(), @currentCSS(), @currentJS(), @currentUpload(), @currentVideo()
 - added: routeUpload(), @routeUpload()
 - added: config['static-url-upload']
+- added: auto-removing comments from "views"
 
 - updated: controller.proxy() - added timeout
 

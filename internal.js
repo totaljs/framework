@@ -2102,6 +2102,24 @@ function removeCondition(text, beg) {
 	return text;
 }
 
+function removeComments(html) {
+	var tagBeg = '<!--';
+	var tagEnd = '-->';
+	var beg = html.indexOf(tagBeg);
+	var end = 0;
+
+	while (beg !== -1) {
+		end = html.indexOf(tagEnd, beg + 4);
+
+		if (end === -1)
+			break;
+
+		html = html.replace(html.substring(beg, end + 3), '');
+	}
+
+	return html;
+}
+
 /*
 	Dynamic JavaScript compress
     @html {String}
@@ -2163,6 +2181,8 @@ function minifyHTML(html) {
 
 	if (html === null || html === '')
 		return html;
+
+	html = removeComments(html);
 
 	var reg1 = new RegExp(/[\n\r\t]+/g);
 	var reg2 = new RegExp(/\s{2,}/g);
