@@ -4956,7 +4956,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 /*
 	Response plain text
 	@contentBody {String}
-	@headers {Object}
+	@headers {Object} :: optional
 	return {Controller};
 */
 Controller.prototype.plain = function(contentBody, headers) {
@@ -4967,6 +4967,22 @@ Controller.prototype.plain = function(contentBody, headers) {
 
 	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.statusCode, typeof(contentBody) === 'string' ? contentBody : contentBody.toString(), 'text/plain', true, headers);
+	return self;
+};
+
+/*
+	Response empty content
+	@headers {Object} :: optional
+	return {Controller};
+*/
+Controller.prototype.empty = function(headers) {
+	var self = this;
+
+	if (self.res.success || !self.isConnected)
+		return self;
+
+	self.subscribe.success();
+	self.framework.responseContent(self.req, self.res, self.statusCode, '', 'text/plain', false, headers);
 	return self;
 };
 

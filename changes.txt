@@ -8,6 +8,7 @@ IN DEVELOPMENT ======= 1.2.4-5
 - added: routeUpload(), @routeUpload()
 - added: config['static-url-upload']
 - added: auto-removing comments from "views"
+- added: controller.empty(); - response empty body
 
 - updated: controller.proxy() - added timeout
 
