@@ -6,5 +6,5 @@ exports.install = function(framework) {
 
 function viewHomepage() {
 	var self = this;
-	self.view('homepage');
+	self.view('homepage', { name: "Peter Sirka" });
 }
