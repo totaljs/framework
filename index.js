@@ -4629,7 +4629,7 @@ Controller.prototype.routeJS = function(name, tag) {
 	if (typeof(name) === 'undefined')
 		name = 'default.js';
 
-	return tag ? '<script type="text/javascript" src="' + self.app.routeJS(self.currentJS + name) + '"></script>' : self.app.routeJS(self.currentJS + name);
+	return tag ? '<script type="text/javascript" src="' + self.app.routeJS(self._currentJS + name) + '"></script>' : self.app.routeJS(self._currentJS + name);
 };
 
 /*
@@ -4644,7 +4644,7 @@ Controller.prototype.routeCSS = function(name, tag) {
 	if (typeof(name) === 'undefined')
 		name = 'default.css';
 
-	return tag ? '<link type="text/css" rel="stylesheet" href="' + self.app.routeCSS(self.currentCSS + name) + '" />' : self.app.routeCSS(self.currentCSS + name);
+	return tag ? '<link type="text/css" rel="stylesheet" href="' + self.app.routeCSS(self._currentCSS + name) + '" />' : self.app.routeCSS(self._currentCSS + name);
 };
 
 /*
@@ -4703,7 +4703,7 @@ Controller.prototype.routeStatic = function(name) {
 	return {String}
 */
 Controller.prototype.$currentJS = function(path) {
-	this.currentJS = path.length > 0 ? utils.path(path) : '';
+	this._currentJS = path.length > 0 ? utils.path(path) : '';
 	return '';
 };
 
@@ -4713,7 +4713,7 @@ Controller.prototype.$currentJS = function(path) {
 	return {String}
 */
 Controller.prototype.$currentCSS = function(path) {
-	this.currentCSS = path.length > 0 ? utils.path(path) : '';
+	this._currentCSS = path.length > 0 ? utils.path(path) : '';
 	return '';
 };
 
