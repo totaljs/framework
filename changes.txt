@@ -15,6 +15,7 @@ IN DEVELOPMENT ======= 1.2.4-5
 - removed: routeDocument(), @routeDocument()
 - removed: config['static-url-document']
 
+- fixed: CSS auto vendor prefixes (fixed IE opacity)
 - fixed: utils.request() - encoding
 
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/cors

@@ -892,7 +892,7 @@ function autoprefixer (value) {
 			if (isNaN(opacity))
 				continue;
 
-			updated += 'filter:alpha(opacity='+Math.floor(opacity * 100)+')';
+			updated += 'filter:alpha(opacity='+Math.floor(opacity * 100)+');';
 
 			value = value.replace(property, '@[[' + output.length + ']]');
 			output.push(updated);
