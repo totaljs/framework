@@ -23,6 +23,7 @@
 
 var schema = {};
 var schemaPrimary = {};
+var UNDEFINED = 'undefined';
 
 /*
     @onResource {Function} :: function(name, key) return {String}
@@ -65,13 +66,13 @@ function PageBuilder(items, page, max) {
 */
 exports.schema = function(name, obj, primaryKey, insert) {
 
-	if (typeof(obj) === 'undefined')
+	if (typeof(obj) === UNDEFINED)
 		return schema[name] || null;
 
-	if (typeof(primaryKey) === 'undefined')
+	if (typeof(primaryKey) === UNDEFINED)
 		primaryKey = Object.keys(obj)[0];
 
-	if (typeof(primaryKey) !== 'undefined')
+	if (typeof(primaryKey) !== UNDEFINED)
 		exports.primaryKey(name, primaryKey, insert);
 
 	schema[name] = obj;
@@ -317,7 +318,7 @@ exports.prepare = function(name, model) {
 */
 exports.primaryKey = function(schema, name, insert) {
 
-	if (typeof(name) === 'undefined')
+	if (typeof(name) === UNDEFINED)
 		return schemaPrimary[schema] || null;
 
 	schemaPrimary[schema] = { name: name, insert: insert || false };
@@ -489,7 +490,7 @@ PageBuilder.prototype.render = function(fn, max) {
 	var self = this;
 	var builder = [];
 
-	if (typeof(max) === 'undefined') {
+	if (typeof(max) === UNDEFINED) {
 		for (var i = 1; i < self.count + 1; i++)
 			builder.push(fn(i, i === self.page));
 		return builder;
@@ -592,7 +593,7 @@ UrlBuilder.prototype.toString = function() {
 */
 UrlBuilder.prototype.hasValue = function(keys) {
 
-	if (typeof(keys) === 'undefined')
+	if (typeof(keys) === UNDEFINED)
 		return false;
 
 	var self = this;
@@ -602,7 +603,7 @@ UrlBuilder.prototype.hasValue = function(keys) {
 
 	for (var i = 0; i < keys.length; i++) {
 		var val = self.builder[keys[i]];
-		if (typeof(val) === 'undefined' || val === null)
+		if (typeof(val) === UNDEFINED || val === null)
 			return false;
 	}
 

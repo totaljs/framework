@@ -20,6 +20,10 @@ IN DEVELOPMENT ======= 1.2.4-5
 - fixed: CSS auto vendor prefixes (fixed IE opacity)
 - fixed: utils.request() - encoding
 
+- renamed: framework.onLoaded to framework.onLoad;
+- renamed: module.onLoaded to module.onLoad;
+- renamed: controller.onLoaded to controller.onLoad;
+
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/cors
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/custom-headers
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/views-route-file

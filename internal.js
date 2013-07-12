@@ -32,8 +32,9 @@
 var fs = require('fs');
 var image = require('./image');
 var encoding = 'utf8';
+var UNDEFINED = 'undefined';
 
-if (typeof(setImmediate) === 'undefined') {
+if (typeof(setImmediate) === UNDEFINED) {
 	global.setImmediate = function(cb) {
 		process.nextTick(cb);
 	};
@@ -1815,7 +1816,7 @@ function parse(html, controller) {
 				var indexer = keys[code];
 				var push = false;
 
-				if (typeof(indexer) === 'undefined') {
+				if (typeof(indexer) === UNDEFINED) {
 					indexer = execute.length;
 					keys[code] = indexer;
 					push = true;
@@ -2405,7 +2406,7 @@ function Template(controller, model, repository) {
 	this.prefix = controller.prefix;
 	this.cache = controller.cache;
 
-	if (typeof(model) === 'undefined')
+	if (typeof(model) === UNDEFINED)
 		model = '';
 
 	if (model !== null && !utils.isArray(model))
@@ -2503,7 +2504,7 @@ Template.prototype.parse = function(html, isRepository) {
 		var key = name + format;
 		var indexer = keys[key];
 
-		if (typeof(indexer) === 'undefined') {
+		if (typeof(indexer) === UNDEFINED) {
 			property.push(name.trim());
 			indexer = property.length - 1;
 			keys[key] = indexer;
@@ -2738,7 +2739,7 @@ function compile_eval(generator, model, indexer) {
 		if (typeof(val) === 'function')
 			val = val(i);
 
-		if (typeof(val) === 'undefined' || val === null)
+		if (typeof(val) === UNDEFINED || val === null)
 			val = '';
 
 		params.push(val);

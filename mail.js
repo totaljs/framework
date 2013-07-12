@@ -29,6 +29,7 @@ var dns = require('dns');
 var fs = require('fs');
 var path = require('path');
 var CRLF = '\r\n';
+var UNDEFINED = 'undefined';
 
 var errors = {
 	notvalid: 'e-mail address is not valid',
@@ -201,7 +202,7 @@ Message.prototype.attachment = function(filename, name) {
 
 	var self = this;
 
-	if (typeof(name) === 'undefined')
+	if (typeof(name) === UNDEFINED)
 		name = path.basename(filename);
 
 	self.files.push({ name: name, filename: filename, contentType: utils.getContentType(path.extname(name)) });
@@ -436,7 +437,7 @@ Message.prototype._send = function(socket, options) {
 
 				var value = auth.shift();
 
-				if (typeof(value) === 'undefined') {
+				if (typeof(value) === UNDEFINED) {
 					mailer.error('error', new Error('Forbidden'), self);
 					socket.end();
 					socket = null;
@@ -481,7 +482,7 @@ Message.prototype._writeAttachment = function(write, boundary) {
 	var self = this;
 	var attachment = self.files.shift();
 
-	if (typeof(attachment) === 'undefined') {
+	if (typeof(attachment) === UNDEFINED) {
 		write('--' + boundary + '--');
 		write('');
 		write('.');

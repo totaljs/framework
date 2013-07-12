@@ -145,7 +145,7 @@ function viewIndex() {
 	assert.ok(self.routeImage('p.jpg') === '/img/p.jpg', name + 'routeImage()');
 	assert.ok(self.routeVideo('p.avi') === '/video/p.avi', name + 'routeVideo()');
 	assert.ok(self.routeFont('p.woff') === '/font/p.woff', name + 'routeFont()');
-	assert.ok(self.routeDocument('p.pdf') === '/upload/p.pdf', name + 'routeDocument()');
+	assert.ok(self.routeUpload('p.pdf') === '/upload/p.pdf', name + 'routeUpload()');
 	assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
 
 	assert.ok(self.template('test', ['A', 'B']) === '<div>AB</div>{name | 1}', name + 'template - no repository');	

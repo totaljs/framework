@@ -33,7 +33,9 @@ var regexpMail = RegExp('^[a-zA-Z0-9-_.]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 var expressionCache = {};
 
-if (typeof(setImmediate) === 'undefined') {
+var UNDEFINED = 'undefined';
+
+if (typeof(setImmediate) === UNDEFINED) {
 	global.setImmediate = function(cb) {
 		process.nextTick(cb);
 	};
@@ -257,7 +259,7 @@ exports.extend = function(target, source, rewrite) {
 
 		var key = keys[i];
 
-		if (rewrite || typeof(target[key]) === 'undefined')
+		if (rewrite || typeof(target[key]) === UNDEFINED)
 			target[key] = source[key];
 	}
 
@@ -279,7 +281,7 @@ exports.copy = function(target, source, rewrite) {
 	if (typeof(target) !== 'object' || typeof(source) !== 'object')
 		return target;
 
-	if (typeof(rewrite) === 'undefined')
+	if (typeof(rewrite) === UNDEFINED)
 		rewrite = true;
 
 	var keys = Object.keys(source);
@@ -289,7 +291,7 @@ exports.copy = function(target, source, rewrite) {
 
 		var key = keys[i];
 
-		if (typeof(target[key]) === 'undefined')
+		if (typeof(target[key]) === UNDEFINED)
 			continue;
 
 		if (rewrite) {
@@ -352,7 +354,7 @@ exports.htmlEncode = function(str) {
 
 	var type = typeof(str);
 
-	if (type === 'undefined')
+	if (type === UNDEFINED)
 		return '';
 
 	if (type !== 'string')
@@ -370,7 +372,7 @@ exports.htmlDecode = function(str) {
 
 	var type = typeof(str);
 
-	if (type === 'undefined')
+	if (type === UNDEFINED)
 		return '';
 
 	if (type !== 'string')
@@ -410,7 +412,7 @@ exports.isNullOrEmpty = function(str) {
 exports.parseInt = function(obj, def) {
 	var type = typeof(obj);
 
-	if (type === 'undefined')
+	if (type === UNDEFINED)
 		return def || 0;
 
 	var str = type !== 'string' ? obj.toString() : obj;
@@ -426,7 +428,7 @@ exports.parseInt = function(obj, def) {
 exports.parseFloat = function(obj, def) {
 	var type = typeof(obj);
 
-	if (type === 'undefined')
+	if (type === UNDEFINED)
 		return def || 0;
 
 	var str = type !== 'string' ? obj.toString() : obj;
@@ -594,7 +596,7 @@ exports.GUID = function(max) {
 */
 exports.validate = function(model, properties, prepare, builder, resource) {
 
-	if (typeof(builder) === 'function' && typeof(resource) === 'undefined') {
+	if (typeof(builder) === 'function' && typeof(resource) === UNDEFINED) {
 		resource = builder;
 		builder = null;
 	}
@@ -607,7 +609,7 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 	if (typeof(properties) === 'string')
 		properties = properties.replace(/\s/g, '').split(',');
 
-	if (typeof(model) === 'undefined' || model === null)
+	if (typeof(model) === UNDEFINED || model === null)
 		model = {};
 
 	for (var i = 0; i < properties.length; i++) {
@@ -623,7 +625,7 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 
 		var result = prepare(name, value);
 
-		if (typeof(result) === 'undefined')
+		if (typeof(result) === UNDEFINED)
 			continue;
 
 		type = typeof(result);
@@ -948,7 +950,7 @@ String.prototype.urlDecode = function() {
 String.prototype.params = function(obj) {
     var formatted = this.toString();
 
-    if (typeof(obj) === 'undefined' || obj === null)
+    if (typeof(obj) === UNDEFINED || obj === null)
     	return formatted;
 
 	var reg = /\{[^}\n]*\}/g;
@@ -991,7 +993,7 @@ String.prototype.params = function(obj) {
 		if (typeof(val) === 'function')
 			val = val(index);
 
-		if (typeof(val) === 'undefined')
+		if (typeof(val) === UNDEFINED)
 			return;
 
 		if (format.length > 0) {
@@ -1659,7 +1661,7 @@ Array.prototype.randomize = function() {
 
 		var c = random[index++];
 
-		if (typeof(c) === 'undefined') {
+		if (typeof(c) === UNDEFINED) {
 			c = random[0];
 			index = 0;
 		}
@@ -1705,7 +1707,7 @@ Async.prototype._complete = function(name, waiting) {
 
 	if (!waiting) {
 
-		if (typeof(self.pending[name]) === 'undefined')
+		if (typeof(self.pending[name]) === UNDEFINED)
 			return self;
 
 		delete self.pending[name];
@@ -1722,7 +1724,7 @@ Async.prototype._complete = function(name, waiting) {
 		return;
 	}
 
-	if (typeof(self.waiting[name]) === 'undefined')
+	if (typeof(self.waiting[name]) === UNDEFINED)
 		return self;
 
 	var fn = self.waiting[name];
@@ -1780,7 +1782,7 @@ Async.prototype.wait = function(name, waitingFor, fn) {
 		name = exports.GUID(5);
 	}
 
-	if (typeof(self.waiting[waitingFor]) === 'undefined')
+	if (typeof(self.waiting[waitingFor]) === UNDEFINED)
 		self.waiting[waitingFor] = [];
 
 	var run = function() {

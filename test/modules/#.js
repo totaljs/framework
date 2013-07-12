@@ -20,7 +20,7 @@ exports.onPictureDimension = function(dimension) {
 	return null;
 };
 
-exports.onLoaded = function() {
+exports.onLoad = function() {
 	var self = this;
 
 	self.log = function(value) {

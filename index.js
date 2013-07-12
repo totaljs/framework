@@ -35,8 +35,10 @@ var nosql = require('./nosql');
 var http = require('http');
 var directory = path.dirname(process.argv[1]);
 
+var ENCODING = 'utf8';
+var UNDEFINED = 'undefined';
+
 var _controller = '';
-var encoding = 'utf8';
 
 global.builders = require('./builders');
 global.utils = require('./utils');
@@ -235,7 +237,7 @@ Framework.prototype.database = function(name, changes) {
 	var self = this;
 
 	var db = self.databases[name];
-	if (typeof(db) !== 'undefined')
+	if (typeof(db) !== UNDEFINED)
 		return db;
 
 	db = nosql.load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), changes);
@@ -327,7 +329,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (url.indexOf('#') !== -1)
 		priority--;
 
-	if (typeof(flags) !== 'undefined') {
+	if (typeof(flags) !== UNDEFINED) {
 
 		if (flags.indexOf('proxy') !== -1 && flags.indexOf('json') === -1)
 			flags.push('json');
@@ -463,7 +465,7 @@ Framework.prototype.module = function(name) {
 	var self = this;
 	var module = self.modules[name];
 
-	if (typeof(module) !== 'undefined')
+	if (typeof(module) !== UNDEFINED)
 		return module;
 
 	var filename = path.join(directory, self.config['directory-modules'], name + '.js');
@@ -477,12 +479,12 @@ Framework.prototype.module = function(name) {
 	} else
 		module = require(filename);
 
-	if (typeof(module) === 'undefined')
+	if (typeof(module) === UNDEFINED)
 		module = null;
 
 	_controller = '#module-' + name;
 
-	if (module !== null && typeof(module.directory) === 'undefined')
+	if (module !== null && typeof(module.directory) === UNDEFINED)
 		module.directory = path.join(directory, self.config['directory-modules']);
 
 	self.modules[name] = module;
@@ -532,7 +534,7 @@ Framework.prototype.install = function() {
 
 		var module = self.module(name);
 
-		if (module === null || typeof(module.install) === 'undefined')
+		if (module === null || typeof(module.install) === UNDEFINED)
 			return;
 
 		try
@@ -573,7 +575,7 @@ Framework.prototype.inject = function(name, url) {
 				return route.name === _controller;
 			});
 
-			if (typeof(result.install) !== 'undefined')
+			if (typeof(result.install) !== UNDEFINED)
 				result.install(self);
 
 			self.modules[name] = result;
@@ -939,7 +941,7 @@ Framework.prototype.usage = function(detailed) {
 
 		var controller = self.controllers[o];
 
-		if (typeof(controller.usage) === 'undefined')
+		if (typeof(controller.usage) === UNDEFINED)
 			return;
 
 		builder.push((controller.usage() || '').toString());
@@ -966,7 +968,7 @@ Framework.prototype.usage = function(detailed) {
 
 			var module = self.modules[o];
 
-			if (module === null || typeof(module.usage) === 'undefined')
+			if (module === null || typeof(module.usage) === UNDEFINED)
 				return;
 
 			builder.push((module.usage() || '').toString());
@@ -1072,7 +1074,7 @@ Framework.prototype.compileStatic = function(req, filename) {
 	var self = this;
 	var index = filename.lastIndexOf('.');
 	var ext = filename.substring(index).toLowerCase();
-	var output = fs.readFileSync(filename).toString(encoding);
+	var output = fs.readFileSync(filename).toString(ENCODING);
 
 	switch (ext) {
 		case '.js':
@@ -1142,7 +1144,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (res.success)
 		return self;
 
-	req.clear();
+	req.clear(true);
 
 	var name = self.static[filename];
 
@@ -1169,7 +1171,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return self;
 	}
 
-	if (typeof(name) === 'undefined') {
+	if (typeof(name) === UNDEFINED) {
 
 		if (!fs.existsSync(filename)) {
 			self.static[filename] = null;
@@ -1265,7 +1267,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (res.success)
 		return self;
 
-	req.clear();
+	req.clear(true);
 
 	if (contentType.indexOf('/') === -1)
 		contentType = utils.getContentType(contentType);
@@ -1410,7 +1412,7 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 
 	if (isEtag) {
 
-		if (typeof(val) === 'undefined')
+		if (typeof(val) === UNDEFINED)
 			return false;
 
 		var myetag = compare + ':' + self.config['etag-version'];
@@ -1420,10 +1422,10 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 
 	} else {
 
-		if (typeof(val) === 'undefined')
+		if (typeof(val) === UNDEFINED)
 			return false;
 
-		var date = typeof(compare) === 'undefined' ? new Date().toUTCString() : compare.toUTCString();
+		var date = typeof(compare) === UNDEFINED ? new Date().toUTCString() : compare.toUTCString();
 
 
 		if (strict)
@@ -1454,7 +1456,7 @@ Framework.prototype.response404 = function(req, res) {
 	if (res.success)
 		return this;
 
-	req.clear();
+	req.clear(true);
 
 	res.success = true;
 	res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -1480,7 +1482,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	if (res.success)
 		return self;
 
-	req.clear();
+	req.clear(true);
 	res.success = true;
 
 	var accept = req.headers['accept-encoding'] || '';
@@ -1517,7 +1519,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 				returnHeaders['Content-Encoding'] = 'gzip';
 
 				res.writeHead(code, returnHeaders);
-				res.end(data, encoding);
+				res.end(data, ENCODING);
 			});
 
 			return self;
@@ -1538,7 +1540,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 				returnHeaders['Content-Encoding'] = 'deflate';
 
 				res.writeHead(code, returnHeaders);
-				res.end(data, encoding);
+				res.end(data, ENCODING);
 			});
 
 			return self;
@@ -1547,7 +1549,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 	returnHeaders['Content-Type'] = contentType;
 	res.writeHead(code, returnHeaders);
-	res.end(contentBody, encoding);
+	res.end(contentBody, ENCODING);
 	return self;
 };
 
@@ -1599,7 +1601,7 @@ Framework.prototype.init = function(http, config, port, ip) {
 	var module = self.module('#');
 	if (module !== null) {
 		Object.keys(module).forEach(function(o) {
-			if (o === 'onLoaded' || o === 'usage')
+			if (o === 'onLoad' || o === 'usage' || o === 'onLoaded')
 				return;
 			self[o] = module[o];
 		});
@@ -1665,20 +1667,35 @@ Framework.prototype.init = function(http, config, port, ip) {
 	self.ip = ip || '127.0.0.1';
 	self.server.listen(self.port, self.ip);
 
-	if (module !== null && typeof(module.onLoaded) !== 'undefined') {
-		try
-		{
-			module.onLoaded.call(self, self);
-		} catch (err) {
-			self.error(err, 'Framework :: global module');
+	if (module !== null) {
+		if (typeof(module.onLoad) !== UNDEFINED) {
+			try
+			{
+				module.onLoad.call(self, self);
+			} catch (err) {
+				self.error(err, 'Framework :: global module onLoad()');
+			}
+		}
+
+		// OBSOLETE
+		if (typeof(module.onLoaded) !== UNDEFINED) {
+			try
+			{
+				module.onLoaded.call(self, self);
+			} catch (err) {
+				self.error(err, 'Framework :: global module onLoad()');
+			}
 		}
 	}
 
 	try
 	{
+		self.emit('load', self);
+
+		// OBSOLETE
 		self.emit('loaded', self);
 	} catch (err) {
-		self.error(err, 'Framework :: loaded event');
+		self.error(err, 'Framework :: load event');
 	}
 
 	if (typeof(process.send) === 'function')
@@ -1774,7 +1791,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
         return;
     }
 
-    if (typeof(self.connections[path]) === 'undefined') {
+    if (typeof(self.connections[path]) === UNDEFINED) {
     	var connection = new WebSocket(self, path, route.name);
         self.connections[path] = connection;
         route.onInitialize.call(connection, connection, self);
@@ -1853,7 +1870,7 @@ Framework.prototype._request = function(req, res) {
 	var proxy = header['x-forwarded-for'];
 
 	//  x-forwarded-for: client, proxy1, proxy2, ...
-	if (typeof(proxy) !== 'undefined')
+	if (typeof(proxy) !== UNDEFINED)
 		req.ip = proxy.split(',', 1)[0] || req.connection.remoteAddress;
 	else
 		req.ip = req.connection.remoteAddress;
@@ -1994,7 +2011,7 @@ Framework.prototype.assert = function(name, url, callback, method, data, headers
 */
 Framework.prototype.testing = function(stop, callback) {
 
-	if (typeof(stop) === 'undefined')
+	if (typeof(stop) === UNDEFINED)
 		stop = true;
 
 	var self = this;
@@ -2068,9 +2085,9 @@ Framework.prototype.test = function(stop, names, cb) {
 
 		try
 		{
-			var isRun = typeof(test.run) !== 'undefined';
-			var isInit = typeof(test.init) !== 'undefined';
-			var isLoad = typeof(test.load) !== 'undefined';
+			var isRun = typeof(test.run) !== UNDEFINED;
+			var isInit = typeof(test.init) !== UNDEFINED;
+			var isLoad = typeof(test.load) !== UNDEFINED;
 
 			if (isRun)
 				test.run(self, name);
@@ -2130,7 +2147,7 @@ Framework.prototype.encode = function(value, key, isUnique) {
 	var self = this;
 	var type = typeof(value);
 
-	if (type === 'undefined')
+	if (type === UNDEFINED)
 		return '';
 
 	if (type === 'function')
@@ -2173,7 +2190,7 @@ Framework.prototype.decode = function(value, key, jsonConvert) {
 */
 Framework.prototype.resource = function(name, key) {
 
-	if (typeof(key) === 'undefined' || name.length === 0) {
+	if (typeof(key) === UNDEFINED || name.length === 0) {
 		key = name;
 		name = 'default';
 	}
@@ -2181,7 +2198,7 @@ Framework.prototype.resource = function(name, key) {
 	var self = this;
 	var res = self.resources[name];
 
-	if (typeof(res) !== 'undefined')
+	if (typeof(res) !== UNDEFINED)
 		return res[key];
 
 	var fileName = utils.combine(self.config['directory-resources'], name + '.resource');
@@ -2190,7 +2207,7 @@ Framework.prototype.resource = function(name, key) {
 	if (!fs.existsSync(fileName))
 		return '';
 
-	var arr = fs.readFileSync(fileName).toString(encoding).split('\n');
+	var arr = fs.readFileSync(fileName).toString(ENCODING).split('\n');
 	for (var i = 0; i < arr.length; i++) {
 		var str = arr[i];
 
@@ -2221,7 +2238,7 @@ Framework.prototype.configure = function() {
 		return self;
 
 	var obj = {};
-	var arr = fs.readFileSync(fileName).toString(encoding).split('\n');
+	var arr = fs.readFileSync(fileName).toString(ENCODING).split('\n');
 	var accepts = null;
 
 	for (var i = 0; i < arr.length; i++) {
@@ -2291,7 +2308,7 @@ Framework.prototype.verification = function(cb) {
 
 	var self = this;
 
-	if (typeof(self.verify) === 'undefined') {
+	if (typeof(self.verify) === UNDEFINED) {
 		self.configure();
 		self.verify = null;
 	}
@@ -2876,7 +2893,7 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 
 	if (exists && append)
 	{
-		var data = fs.readFileSync(filename).toString(encoding);
+		var data = fs.readFileSync(filename).toString(ENCODING);
 
 		if (data.indexOf(content) === -1) {
 			fs.appendFileSync(filename, '\n' + content);
@@ -2889,7 +2906,7 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 	if (exists && !rewrite)
 		return false;
 
-	fs.writeFileSync(filename, content, encoding);
+	fs.writeFileSync(filename, content, ENCODING);
 	return true;
 };
 
@@ -3033,7 +3050,7 @@ FrameworkCache.prototype.recycle = function() {
 FrameworkCache.prototype.write = function(name, value, expire) {
 	var self = this;
 
-	if (typeof(expire) === 'undefined')
+	if (typeof(expire) === UNDEFINED)
 		expire = new Date().add('m', 5);
 
 	self.repository[name] = { value: value, expire: expire };
@@ -3065,7 +3082,7 @@ FrameworkCache.prototype.setExpires = function(name, expire) {
 	var self = this;
 	var obj = self.repository[name];
 
-	if (typeof(obj) === 'undefined')
+	if (typeof(obj) === UNDEFINED)
 		return self;
 
 	obj.expire = expire;
@@ -3206,7 +3223,7 @@ Subscribe.prototype.urlencoded = function() {
 	self.route = self.framework.lookup(self.req, self.req.uri.pathname, self.req.flags, true);
 
 	if (self.route === null) {
-		self.req.clear();
+		self.req.clear(true);
 		self.req.connection.destroy();
 		return;
 	}
@@ -3310,7 +3327,7 @@ Subscribe.prototype._execute = function() {
 		var isModule = name[0] === '#' && name[1] === 'm';
 		var o = isModule ? self.framework.modules[name.substring(8)] : self.framework.controllers[name];
 
-		if (typeof(o.onRequest) !== 'undefined')
+		if (typeof(o.onRequest) !== UNDEFINED)
 			o.onRequest.call(self.controller, self.controller);
 
 	} catch (err) {
@@ -3360,14 +3377,14 @@ Subscribe.prototype._end = function() {
 	var self = this;
 
 	if (self.isMixed) {
-		self.req.clear();
+		self.req.clear(true);
 		self.res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'cache-control': 'private, max-age=0' });
 		self.res.end('END');
 		return;
 	}
 
 	if (self.req.buffer.isExceeded) {
-		self.req.clear();
+		self.req.clear(true);
 		self.req.connection.destroy();
 		return;
 	}
@@ -3492,9 +3509,6 @@ function Controller(name, req, res, subscribe) {
 	this.get = req.data.get;
 	this.post = req.data.post;
 	this.files = req.data.files;
-	this.isLayout = false;
-	this.isXHR = req.isXHR;
-	this.isProxy = req.isProxy;
 	this.xhr = req.isXHR;
 	this.config = subscribe.framework.config;
 
@@ -3502,13 +3516,16 @@ function Controller(name, req, res, subscribe) {
 	// controller.internal.type === 1 - server sent events
 	// controller.internal.type === 2 - multipart/x-mixed-replace
 
-	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null, type: 0 };
+	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null, type: 0, directory: '' };
 	this.statusCode = 200;
 	this.controllers = subscribe.framework.controllers;
 	this.url = utils.path(req.uri.pathname);
+	
+	this.isXHR = req.isXHR;
+	this.isProxy = req.isProxy;
+	this.isLayout = false;
 	this.isTest = req.headers['assertion-testing'] === '1';
 	this.isDebug = subscribe.framework.config.debug;
-
 	this.isCanceled = false;
 	this.isConnected = true;
 
@@ -3524,7 +3541,7 @@ function Controller(name, req, res, subscribe) {
 	this.output = '';
 	this.prefix = req.prefix;
 
-	if (typeof(this.prefix) === 'undefined' || this.prefix.length === 0)
+	if (typeof(this.prefix) === UNDEFINED || this.prefix.length === 0)
 		this.prefix = '';
 	else
 		this.prefix = this.prefix;
@@ -3596,10 +3613,10 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 	var self = this;
 	var origin = self.req.headers['origin'];
 
-	if (typeof(origin) === 'undefined')
+	if (typeof(origin) === UNDEFINED)
 		return true;
 
-	if (typeof(allow) === 'undefined')
+	if (typeof(allow) === UNDEFINED)
 		allow = '*';
 
 	if (typeof(method) === 'Boolean') {
@@ -3778,18 +3795,18 @@ Controller.prototype.meta = function() {
 Controller.prototype.sitemap = function(name, url, index) {
 	var self = this;
 
-	if (typeof(name) === 'undefined')
+	if (typeof(name) === UNDEFINED)
 		return self.repository.sitemap || [];
 
-	if (typeof(url) === 'undefined')
+	if (typeof(url) === UNDEFINED)
 		url = self.req.url;
 
-	if (typeof(self.repository.sitemap) === 'undefined')
+	if (typeof(self.repository.sitemap) === UNDEFINED)
 		self.repository.sitemap = [];
 
 	self.repository.sitemap.push({ name: name, url: url, index: index || self.repository.sitemap.length });
 
-	if (typeof(index) !== 'undefined' && self.sitemap.length > 1) {
+	if (typeof(index) !== UNDEFINED && self.sitemap.length > 1) {
 		self.repository.sitemap.sort(function(a, b) {
 			if (a.index < b.index)
 				return -1;
@@ -3892,7 +3909,7 @@ Controller.prototype.setModified = function(value) {
 Controller.prototype.setExpires = function(date) {
 	var self = this;
 
-	if (typeof(date) === 'undefined')
+	if (typeof(date) === UNDEFINED)
 		return self;
 
 	self.res.setHeader('Expires', date.toUTCString());
@@ -4144,7 +4161,7 @@ Controller.prototype.$textarea = function(model, name, attr) {
 	if (attr.pattern)
 		builder += ' pattern="' + pattern + ATTR_END;
 
-	if (typeof(model) === 'undefined')
+	if (typeof(model) === UNDEFINED)
 		return builder + '></textarea>';
 
 	var value = (model[name] || attr.value) || '';
@@ -4223,7 +4240,7 @@ Controller.prototype.$input = function(model, type, name, attr) {
 
 	var value = '';
 
-	if (typeof(model) !== 'undefined') {
+	if (typeof(model) !== UNDEFINED) {
 		value = model[name];
 
 		if (type === 'checkbox') {
@@ -4244,7 +4261,7 @@ Controller.prototype.$input = function(model, type, name, attr) {
 		}
 	}
 
-	if (typeof(value) !== 'undefined')
+	if (typeof(value) !== UNDEFINED)
 		builder += ' value="' + value.toString().htmlEncode() + ATTR_END;
 	else
 		builder += ' value="' + (attr.value || '').toString().htmlEncode() + ATTR_END;
@@ -4423,7 +4440,7 @@ Controller.prototype.$modified = function(value) {
 	} else if (utils.isDate(value))
 		date = value;
 
-	if (typeof(date) === 'undefined')
+	if (typeof(date) === UNDEFINED)
 		return '';
 
 	self.setModified(date);
@@ -4451,7 +4468,7 @@ Controller.prototype.$etag = function(value) {
 Controller.prototype.$options = function(arr, selected, name, value) {
 	var self = this;
 
-	if (arr === null || typeof(arr) === 'undefined')
+	if (arr === null || typeof(arr) === UNDEFINED)
 		return '';
 
 	if (!utils.isArray(arr))
@@ -4461,10 +4478,10 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 
 	var options = '';
 
-	if (typeof(value) === 'undefined')
+	if (typeof(value) === UNDEFINED)
 		value = value || name || 'value';
 
-	if (typeof(name) === 'undefined')
+	if (typeof(name) === UNDEFINED)
 		name = name || 'name';
 
 	var isSelected = false;
@@ -4606,7 +4623,7 @@ Controller.prototype.$favicon = function(name) {
 	var self = this;
 	var contentType = 'image/x-icon';
 
-	if (typeof(name) === 'undefined')
+	if (typeof(name) === UNDEFINED)
 		name = 'favicon.ico';
 
 	if (name.indexOf('.png') !== -1)
@@ -4629,7 +4646,7 @@ Controller.prototype.$favicon = function(name) {
 Controller.prototype.routeJS = function(name, tag) {
 	var self = this;
 
-	if (typeof(name) === 'undefined')
+	if (typeof(name) === UNDEFINED)
 		name = 'default.js';
 
 	return tag ? '<script type="text/javascript" src="' + self.app.routeJS(self._currentJS + name) + '"></script>' : self.app.routeJS(self._currentJS + name);
@@ -4644,7 +4661,7 @@ Controller.prototype.routeJS = function(name, tag) {
 Controller.prototype.routeCSS = function(name, tag) {
 	var self = this;
 
-	if (typeof(name) === 'undefined')
+	if (typeof(name) === UNDEFINED)
 		name = 'default.css';
 
 	return tag ? '<link type="text/css" rel="stylesheet" href="' + self.app.routeCSS(self._currentCSS + name) + '" />' : self.app.routeCSS(self._currentCSS + name);
@@ -4842,9 +4859,9 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 		nameEmpty = '';
 	}
 
-	if (typeof(model) === 'undefined' || model === null || model.length === 0) {
+	if (typeof(model) === UNDEFINED || model === null || model.length === 0) {
 
-		if (typeof(nameEmpty) !== 'undefined' && nameEmpty.length > 0)
+		if (typeof(nameEmpty) !== UNDEFINED && nameEmpty.length > 0)
 			return self.$content(nameEmpty);
 
 		return '';
@@ -4903,7 +4920,7 @@ Controller.prototype.jsonAsync = function(obj, headers) {
 Controller.prototype.content = function(contentBody, contentType, headers) {
 	var self = this;
 
-	if (typeof(contentType) === 'undefined')
+	if (typeof(contentType) === UNDEFINED)
 		return self.$contentToggle(true, contentBody);
 
 	if (self.res.success || !self.isConnected)
@@ -4948,8 +4965,8 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	res.success = true;
 	res.writeHead(self.statusCode, returnHeaders);
 
-	onWrite(function(chunk, encoding) {
-		res.write(chunk, encoding || 'utf8');
+	onWrite(function(chunk, ENCODING) {
+		res.write(chunk, ENCODING || 'utf8');
 	});
 
 	res.end();
@@ -5217,7 +5234,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 
 		self.internal.type = 1;
 
-		if (typeof(retry) === 'undefined')
+		if (typeof(retry) === UNDEFINED)
 			retry = self.subscribe.route.timeout;
 
 		self.subscribe.success();
@@ -5289,7 +5306,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 
 	res.write('--' + self.internal.boundary + '\r\nContent-Type: ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
 
-	if (typeof(stream) !== 'undefined' && stream !== null) {
+	if (typeof(stream) !== UNDEFINED && stream !== null) {
 
 		stream.on('end', function() {
 			self = null;
@@ -5422,7 +5439,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	self.model = model;
 
-	if (typeof(isPartial) === 'undefined' && typeof(headers) === 'boolean') {
+	if (typeof(isPartial) === UNDEFINED && typeof(headers) === 'boolean') {
 		isPartial = headers;
 		headers = null;
 	}
@@ -5529,7 +5546,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			default:
 
 				if (!execute.isDeclared) {
-					if (typeof(helper[execute.name]) === 'undefined') {
+					if (typeof(helper[execute.name]) === UNDEFINED) {
 						self.app.error(new Error('Helper "' + execute.name + '" is not defined.'), 'view -> ' + name, self.req.uri);
 						evl = false;
 					}
@@ -5564,7 +5581,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 		var type = typeof(value);
 
-		if (type === 'undefined')
+		if (type === UNDEFINED)
 			value = '';
 		else if (type !== 'string')
 			value = value.toString();
@@ -5653,7 +5670,7 @@ WebSocket.prototype.send = function(message, names, blacklist) {
 
     blacklist = blacklist || [];
 
-    if (typeof(names) === 'undefined' || names === null || names.length === 0) {
+    if (typeof(names) === UNDEFINED || names === null || names.length === 0) {
         var length = blacklist.length;
         keys.forEach(function(_id) {
 
@@ -5691,7 +5708,7 @@ WebSocket.prototype.close = function(names) {
     var self = this;
     var keys = self._keys;
 
-    if (typeof(names) === 'undefined' || names === null || names.length === 0) {
+    if (typeof(names) === UNDEFINED || names === null || names.length === 0) {
         keys.forEach(function(_id) {
             self.connections[_id].close();
             self._remove(_id);
@@ -6050,7 +6067,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 
     var proxy = self.req.headers['x-forwarded-for'];
 
-    if (typeof(proxy) !== 'undefined')
+    if (typeof(proxy) !== UNDEFINED)
         self.ip = proxy.split(',', 1)[0] || self.req.connection.remoteAddress;
     else
         self.ip = self.req.connection.remoteAddress;
@@ -6237,7 +6254,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
 
 	var self = this;
 
-	if (typeof(self.cookies) === 'undefined') {
+	if (typeof(self.cookies) === UNDEFINED) {
 		self.cookies = {};
 	    var cookie = self.headers['cookie'] || '';
         if (cookie.length > 0) {
@@ -6253,12 +6270,20 @@ http.IncomingMessage.prototype.cookie = function(name) {
 
 /*
 	Clear all uploaded files
+	@isAuto {Booelan} :: system, internal, optional default false
 	return {ServerRequest}
 */
-http.IncomingMessage.prototype.clear = function() {
-	var self = this;
-
+http.IncomingMessage.prototype.clear = function(isAuto) {
+	
+	var self = this;	
 	var files = self.data.files;
+
+	if (isAuto && self._manual)
+		return self;
+
+	if (!files)
+		return self;
+
 	var length = files.length;
 
 	if (length === 0)
@@ -6292,7 +6317,7 @@ http.IncomingMessage.prototype.hostname = function(path) {
 	if (path[0] !== '/')
 		path = '/' + path;
 
-	return uri.protocol + '//' + uri.hostname + (typeof(uri.port) !== 'undefined' && uri.port !== 80 ? ':' + uri.port : '') + path;
+	return uri.protocol + '//' + uri.hostname + (typeof(uri.port) !== UNDEFINED && uri.port !== 80 ? ':' + uri.port : '') + path;
 };
 
 module.exports = new Framework();
