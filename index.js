@@ -37,6 +37,11 @@ var directory = path.dirname(process.argv[1]);
 
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
+var STRING = 'string';
+var FUNCTION = 'function';
+var NUMBER = 'number';
+var OBJECT = 'object';
+var BOOLEAN = 'boolean';
 
 var _controller = '';
 
@@ -254,7 +259,7 @@ Framework.prototype.database = function(name, changes) {
 Framework.prototype.stop = function(code) {
 	var self = this;
 
-	if (typeof(process.send) === 'function')
+	if (typeof(process.send) === FUNCTION)
 		process.send('stop');
 
 	self.cache.stop();
@@ -354,7 +359,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 Framework.prototype.partial = function(name, funcExecute) {
 	var self = this;
 
-	if (typeof(name) === 'function')
+	if (typeof(name) === FUNCTION)
 		self.routes.partialGlobal.push(name);
 	else
 		self.routes.partial[name] = funcExecute;
@@ -394,13 +399,13 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		priority += 2;
 	}
 
-	if (typeof(allow) === 'string')
+	if (typeof(allow) === STRING)
 		allow = allow[allow];
 
-	if (typeof(protocols) === 'string')
+	if (typeof(protocols) === STRING)
 		protocols = protocols[protocols];
 
-	if (typeof(flags) === 'string')
+	if (typeof(flags) === STRING)
 		flags = flags[flags];
 
 	self.routes.websockets.push({ name: _controller, url: routeURL, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: maximumSize || self.config['default-websocket-request-length'] });
@@ -655,7 +660,7 @@ Framework.prototype.restore = function(date, callback, restorePath) {
 
 	var cb = function(err, path) {
 
-		if (typeof(process.send) === 'function')
+		if (typeof(process.send) === FUNCTION)
 			process.send('restore');
 
 		callback && callback(err, path);
@@ -1375,7 +1380,7 @@ Framework.prototype.responseRange = function(name, range, headers, res) {
 Framework.prototype.setModified = function(req, res, value) {
 
 	var self = this;
-	var isEtag = typeof(value) === 'string';
+	var isEtag = typeof(value) === STRING;
 
 	if (isEtag) {
 		res.setHeader('Etag', value + ':' + self.config['etag-version']);
@@ -1406,7 +1411,7 @@ Framework.prototype.setModified = function(req, res, value) {
 Framework.prototype.notModified = function(req, res, compare, strict) {
 
 	var self = this;
-	var isEtag = typeof(compare) === 'string';
+	var isEtag = typeof(compare) === STRING;
 
 	var val = req.headers[isEtag ? 'if-none-match' : 'if-modified-since'];
 
@@ -1588,9 +1593,9 @@ Framework.prototype.init = function(http, config, port, ip) {
 	if (self.server !== null)
 		return;
 
-	if (typeof(config) === 'boolean')
+	if (typeof(config) === BOOLEAN)
 		self.config.debug = config;
-	else if (typeof(config) === 'object')
+	else if (typeof(config) === OBJECT)
 		utils.extend(self.config, config, true);
 
 	self.configure();
@@ -1611,7 +1616,7 @@ Framework.prototype.init = function(http, config, port, ip) {
 		self.error(e, '', null);
 
 		if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
-			if (typeof(process.send) === 'function')
+			if (typeof(process.send) === FUNCTION)
 				process.send('stop');
 			process.exit(0);
 		}
@@ -1698,7 +1703,7 @@ Framework.prototype.init = function(http, config, port, ip) {
 		self.error(err, 'Framework :: load event');
 	}
 
-	if (typeof(process.send) === 'function')
+	if (typeof(process.send) === FUNCTION)
 		process.send('name: ' + self.config.name);
 
 	return self;
@@ -1979,7 +1984,7 @@ Framework.prototype.assert = function(name, url, callback, method, data, headers
 
 	var self = this;
 
-	if (typeof(headers) === 'boolean') {
+	if (typeof(headers) === BOOLEAN) {
 		xhr = headers;
 		headers = {};
 	}
@@ -2065,7 +2070,7 @@ Framework.prototype.test = function(stop, names, cb) {
 
 	var self = this;
 
-	if (typeof(names) === 'function') {
+	if (typeof(names) === FUNCTION) {
 		cb = names;
 		names = [];
 	} else
@@ -2150,13 +2155,13 @@ Framework.prototype.encode = function(value, key, isUnique) {
 	if (type === UNDEFINED)
 		return '';
 
-	if (type === 'function')
+	if (type === FUNCTION)
 		value = value();
 
-	if (type === 'number')
+	if (type === NUMBER)
 		value = value.toString();
 
-	if (type === 'object')
+	if (type === OBJECT)
 		value = JSON.stringify(value);
 
 	return value.encode(self.config.secret + '=' + key, isUnique || true);
@@ -2863,7 +2868,7 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
 
 	var builder = content;
 
-	if (typeof(content) === 'object') {
+	if (typeof(content) === OBJECT) {
 		builder = '';
 		Object.keys(content).forEach(function(o) {
 			builder += o.padRight(20, ' ') + ': ' + content[o] + '\n';
@@ -3327,7 +3332,7 @@ Subscribe.prototype._execute = function() {
 		var isModule = name[0] === '#' && name[1] === 'm';
 		var o = isModule ? self.framework.modules[name.substring(8)] : self.framework.controllers[name];
 
-		if (typeof(o.onRequest) !== UNDEFINED)
+		if (o.onRequest)
 			o.onRequest.call(self.controller, self.controller);
 
 	} catch (err) {
@@ -3619,12 +3624,12 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 	if (typeof(allow) === UNDEFINED)
 		allow = '*';
 
-	if (typeof(method) === 'Boolean') {
+	if (typeof(method) === BOOLEAN) {
 		credentials = method;
 		method = null;
 	}
 
-	if (typeof(header) === 'Boolean') {
+	if (typeof(header) === BOOLEAN) {
 		credentials = header;
 		header = null;
 	}
@@ -3709,7 +3714,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 */
 Controller.prototype.error = function(err) {
 	var self = this;
-	self.framework.error(typeof(err) === 'string' ? new Error(err) : err, self.name, self.uri);
+	self.framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.uri);
 	return self;
 };
 
@@ -4099,7 +4104,7 @@ Controller.prototype.$hidden = function(model, name, attr) {
 */
 Controller.prototype.$radio = function(model, name, value, attr) {
 
-	if (typeof(attr) === 'string')
+	if (typeof(attr) === STRING)
 		attr = { label: attr };
 
 	attr.value = value;
@@ -4115,7 +4120,7 @@ Controller.prototype.$radio = function(model, name, value, attr) {
 */
 Controller.prototype.$checkbox = function(model, name, attr) {
 
-	if (typeof(attr) === 'string')
+	if (typeof(attr) === STRING)
 		attr = { label: attr };
 
 	return this.$input(model, 'checkbox', name, attr);
@@ -4132,7 +4137,7 @@ Controller.prototype.$textarea = function(model, name, attr) {
 
 	var builder = '<textarea';
 
-	if (typeof(attr) !== 'object')
+	if (typeof(attr) !== OBJECT)
 		attr = {};
 
 	builder += ' name="' + name + '" id="' + (attr.id || name) + ATTR_END;
@@ -4180,7 +4185,7 @@ Controller.prototype.$input = function(model, type, name, attr) {
 
 	var builder = ['<input'];
 
-	if (typeof(attr) !== 'object')
+	if (typeof(attr) !== OBJECT)
 		attr = {};
 
 	var val = attr.value || '';
@@ -4413,9 +4418,9 @@ Controller.prototype.$modified = function(value) {
 	var type = typeof(value);
 	var date;
 
-	if (type === 'number') {
+	if (type === NUMBER) {
 		date = new Date(value);
-	} else if (type === 'string') {
+	} else if (type === STRING) {
 
 		var d = value.split(' ');
 
@@ -4492,15 +4497,15 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		var val = '';
 		var sel = false;
 
-		if (type === 'object') {
+		if (type === OBJECT) {
 
 			text = (o[name] || '');
 			val = (o[value] || '');
 
-			if (typeof(text) === 'function')
+			if (typeof(text) === FUNCTION)
 				text = text(i);
 
-			if (typeof(val) === 'function')
+			if (typeof(val) === FUNCTION)
 				val = val(i, text);
 
 		} else {
@@ -4554,7 +4559,7 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
 
 	var style = '';
 
-	if (typeof(width) === 'object') {
+	if (typeof(width) === OBJECT) {
 		height = width.height;
 		alt = width.alt;
 		className = width.class;
@@ -4854,7 +4859,7 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 	if (self.res.success)
 		return '';
 
-	if (typeof(nameEmpty) === 'object') {
+	if (typeof(nameEmpty) === OBJECT) {
 		repository = nameEmpty;
 		nameEmpty = '';
 	}
@@ -4986,7 +4991,7 @@ Controller.prototype.plain = function(contentBody, headers) {
 		return self;
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.statusCode, typeof(contentBody) === 'string' ? contentBody : contentBody.toString(), 'text/plain', true, headers);
+	self.framework.responseContent(self.req, self.res, self.statusCode, typeof(contentBody) === STRING ? contentBody : contentBody.toString(), 'text/plain', true, headers);
 	return self;
 };
 
@@ -5242,7 +5247,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 		res.writeHead(self.statusCode, { 'Content-type': 'text/event-stream', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
 	}
 
-	if (typeof(data) === 'object')
+	if (typeof(data) === OBJECT)
 		data = JSON.stringify(data);
 	else
 		data = data.replace(/\n/g, '\\n').replace(/\r/g, '\\r');
@@ -5299,7 +5304,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 
 	var type = typeof(stream);
 
-	if (type === 'function') {
+	if (type === FUNCTION) {
 		cb = stream;
 		stream = null;
 	}
@@ -5363,13 +5368,13 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 	var self = this;
 	var headers = { 'X-Proxy': 'partial.js', 'Content-Type': 'application/json' };
 
-	if (typeof(fnCallback) === 'number') {
+	if (typeof(fnCallback) === NUMBER) {
 		var tmp = timeout;
 		timeout = fnCallback;
 		fnCallback = tmp;
 	}
 
-	if (typeof(obj) === 'function') {
+	if (typeof(obj) === FUNCTION) {
 		var tmp = fnCallback;
 		fnCallback = obj;
 		obj = tmp;
@@ -5445,7 +5450,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	self.model = model;
 
-	if (typeof(isPartial) === UNDEFINED && typeof(headers) === 'boolean') {
+	if (typeof(isPartial) === UNDEFINED && typeof(headers) === BOOLEAN) {
 		isPartial = headers;
 		headers = null;
 	}
@@ -5577,7 +5582,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			}
 		}
 
-		if (typeof(value) === 'function') {
+		if (typeof(value) === FUNCTION) {
 			values[i] = value;
 			continue;
 		}
@@ -5589,7 +5594,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 		if (type === UNDEFINED)
 			value = '';
-		else if (type !== 'string')
+		else if (type !== STRING)
 			value = value.toString();
 
 		if (isEncode)
@@ -5743,7 +5748,7 @@ WebSocket.prototype.close = function(names) {
 */
 WebSocket.prototype.error = function(err) {
 	var self = this;
-	self.framework.error(typeof(err) === 'string' ? new Error(err) : err, self.name, self.path);
+	self.framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.path);
 	return self;
 };
 
@@ -5808,7 +5813,7 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 	var self = this;
 	var headers = { 'X-Proxy': 'partial.js', 'Content-Type': 'application/json' };
 
-	if (typeof(obj) === 'function') {
+	if (typeof(obj) === FUNCTION) {
 		var tmp = fnCallback;
 		fnCallback = obj;
 		obj = tmp;

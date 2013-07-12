@@ -31,8 +31,10 @@
 
 var fs = require('fs');
 var image = require('./image');
-var encoding = 'utf8';
+
+var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
+var FUNCTION = 'function';
 
 if (typeof(setImmediate) === UNDEFINED) {
 	global.setImmediate = function(cb) {
@@ -84,7 +86,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		if (isXSS)
 			return;
 
-    	var arr = buffer.slice(start, end).toString(encoding).split(';');
+    	var arr = buffer.slice(start, end).toString(ENCODING).split(';');
 
     	if (tmp.step === 1) {
     		tmp.contentType = arr[0];
@@ -130,7 +132,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		}
 
 		if (!tmp.isFile) {
-			tmp.value += data.toString(encoding);
+			tmp.value += data.toString(ENCODING);
 			return;
 		}
 
@@ -226,7 +228,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
     	if (req.buffer.isExceeded || tmp.step > 1)
     		return;
 
-    	var arr = buffer.slice(start, end).toString(encoding).split(';');
+    	var arr = buffer.slice(start, end).toString(ENCODING).split(';');
 
     	if (tmp.step === 1) {
     		tmp.contentType = arr[0];
@@ -2736,7 +2738,7 @@ function compile_eval(generator, model, indexer) {
 		} else
 			val = model;
 
-		if (typeof(val) === 'function')
+		if (typeof(val) === FUNCTION)
 			val = val(i);
 
 		if (typeof(val) === UNDEFINED || val === null)

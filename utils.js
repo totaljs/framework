@@ -33,7 +33,13 @@ var regexpMail = RegExp('^[a-zA-Z0-9-_.]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 var expressionCache = {};
 
+var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
+var STRING = 'string';
+var FUNCTION = 'function';
+var NUMBER = 'number';
+var OBJECT = 'object';
+var BOOLEAN = 'boolean';
 
 if (typeof(setImmediate) === UNDEFINED) {
 	global.setImmediate = function(cb) {
@@ -92,9 +98,9 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 
 	var uri = urlParser.parse(url);
 	var h = {};
-	var isJSON = typeof(data) === 'object';
+	var isJSON = typeof(data) === OBJECT;
 
-	encoding = encoding || 'utf8';
+	encoding = encoding || ENCODING;
 	method = (method || '').toString().toUpperCase();
 
 	if (method !== 'GET')
@@ -154,21 +160,21 @@ exports.trim = function(obj) {
 
 	var type = typeof(obj);
 
-	if (type === 'string')
+	if (type === STRING)
 		return obj.trim();
 
-	if (type !== 'object')
+	if (type !== OBJECT)
 		return obj;
 
 	Object.keys(obj).forEach(function(name) {
 		var val = obj[name];
 
-		if (typeof(val) === 'object') {
+		if (typeof(val) === OBJECT) {
 			exports.trim(val);
 			return;
 		}
 
-		if (typeof(val) !== 'string')
+		if (typeof(val) !== STRING)
 			return;
 
 		obj[name] = val.trim();
@@ -249,7 +255,7 @@ exports.extend = function(target, source, rewrite) {
 	if (target === null || source === null)
 		return target;
 
-	if (typeof(target) !== 'object' || typeof(source) !== 'object')
+	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
 		return target;
 
 	var keys = Object.keys(source);
@@ -278,7 +284,7 @@ exports.copy = function(target, source, rewrite) {
 	if (target === null || source === null)
 		return target;
 
-	if (typeof(target) !== 'object' || typeof(source) !== 'object')
+	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
 		return target;
 
 	if (typeof(rewrite) === UNDEFINED)
@@ -325,7 +331,7 @@ exports.reduce = function(source, prop) {
 		});
 	}
 
-	if (type === 'object') {
+	if (type === OBJECT) {
 		var obj = Object.keys(prop);
 		Object.keys(source).forEach(function(o) {
 			if (obj.indexOf(o) === -1)
@@ -357,7 +363,7 @@ exports.htmlEncode = function(str) {
 	if (type === UNDEFINED)
 		return '';
 
-	if (type !== 'string')
+	if (type !== STRING)
 		str = str.toString();
 
 	return str.htmlEncode();
@@ -375,7 +381,7 @@ exports.htmlDecode = function(str) {
 	if (type === UNDEFINED)
 		return '';
 
-	if (type !== 'string')
+	if (type !== STRING)
 		str = str.toString();
 
 	return str.htmlDecode();
@@ -397,7 +403,7 @@ exports.isStaticFile = function(url) {
 */
 exports.isNullOrEmpty = function(str) {
 
-	if (typeof(str) !== 'string')
+	if (typeof(str) !== STRING)
 		return true;
 
 	return str.length === 0;
@@ -415,7 +421,7 @@ exports.parseInt = function(obj, def) {
 	if (type === UNDEFINED)
 		return def || 0;
 
-	var str = type !== 'string' ? obj.toString() : obj;
+	var str = type !== STRING ? obj.toString() : obj;
     return str.parseInt(def);
 };
 
@@ -431,7 +437,7 @@ exports.parseFloat = function(obj, def) {
 	if (type === UNDEFINED)
 		return def || 0;
 
-	var str = type !== 'string' ? obj.toString() : obj;
+	var str = type !== STRING ? obj.toString() : obj;
     return str.parseFloat(def);
 };
 
@@ -596,7 +602,7 @@ exports.GUID = function(max) {
 */
 exports.validate = function(model, properties, prepare, builder, resource) {
 
-	if (typeof(builder) === 'function' && typeof(resource) === UNDEFINED) {
+	if (typeof(builder) === FUNCTION && typeof(resource) === UNDEFINED) {
 		resource = builder;
 		builder = null;
 	}
@@ -606,7 +612,7 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 	if (!(error instanceof builders.ErrorBuilder))
 		error = new builders.ErrorBuilder(resource);
 
-	if (typeof(properties) === 'string')
+	if (typeof(properties) === STRING)
 		properties = properties.replace(/\s/g, '').split(',');
 
 	if (typeof(model) === UNDEFINED || model === null)
@@ -616,9 +622,9 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 
 		var type = typeof(value);
 		var name = properties[i].toString();
-		var value = (type === 'function' ? model[name]() : model[name]) || '';
+		var value = (type === FUNCTION ? model[name]() : model[name]) || '';
 
-		if (type === 'object') {
+		if (type === OBJECT) {
 			error.add(exports.validate(value, properties, prepare, error, builder, resource));
 			continue;
 		};
@@ -630,12 +636,12 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 
 		type = typeof(result);
 
-		if (type === 'string') {
+		if (type === STRING) {
 			error.add(name, result);
 			continue;
 		}
 
-		if (type === 'boolean') {
+		if (type === BOOLEAN) {
 			if (!result)
 				error.add(name, '@');
 			continue;
@@ -896,7 +902,7 @@ String.prototype.contains = function(value, mustAll) {
 
 	var str = this.toString();
 
-	if (typeof(value) === 'string')
+	if (typeof(value) === STRING)
 		return str.indexOf(value) !== -1;
 
 	for (var i = 0; i < value.length; i++) {
@@ -990,7 +996,7 @@ String.prototype.params = function(obj) {
 		} else
 			val = name.length === 0 ? obj : obj[name];
 
-		if (typeof(val) === 'function')
+		if (typeof(val) === FUNCTION)
 			val = val(index);
 
 		if (typeof(val) === UNDEFINED)
@@ -999,12 +1005,12 @@ String.prototype.params = function(obj) {
 		if (format.length > 0) {
 
 			var type = typeof(val);
-			if (type === 'string') {
+			if (type === STRING) {
 				var max = parseInt(format);
 				if (!isNaN(max))
 					val = val.maxLength(max + 3, '...');
 
-			} else if (type === 'number' || util.isDate(val))
+			} else if (type === NUMBER || util.isDate(val))
 				val = val.format(format);
 		}
 
@@ -1113,13 +1119,13 @@ String.prototype.fromUnicode = function() {
 
 String.prototype.toSHA1 = function() {
   	var hash = crypto.createHash('sha1');
-  	hash.update(this.toString(), 'utf8');
+  	hash.update(this.toString(), ENCODING);
   	return hash.digest('hex');
 };
 
 String.prototype.toMD5 = function() {
   	var hash = crypto.createHash('md5');
-  	hash.update(this.toString(), 'utf8');
+  	hash.update(this.toString(), ENCODING);
   	return hash.digest('hex');
 };
 
@@ -1145,7 +1151,7 @@ String.prototype.encode = function(key, isUnique) {
         values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
     }
 
-    var hash = new Buffer(counter + '=' + values.join(''), 'utf8').toString('base64').replace(/\//g, '-').replace(/\+/g, '_');
+    var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(/\//g, '-').replace(/\+/g, '_');
     var index = hash.indexOf('=');
     if (index > 0)
     	return hash.substring(0, index);
@@ -1167,7 +1173,7 @@ String.prototype.decode = function(key) {
 			values += '=';
 	}
 
-	values = new Buffer(values, 'base64').toString('utf8');
+	values = new Buffer(values, 'base64').toString(ENCODING);
 
 	var index = values.indexOf('=');
 	if (index == -1)
@@ -1415,7 +1421,7 @@ Number.prototype.format = function(format) {
 	var end = 0;
 	var output = '';
 
-	if (typeof(format) === 'string') {
+	if (typeof(format) === STRING) {
 
 		var d = false;
 
@@ -1747,7 +1753,7 @@ Async.prototype.await = function(name, fn) {
 	var self = this;
 	self.count++;
 
-	if (typeof(name) === 'function') {
+	if (typeof(name) === FUNCTION) {
 		fn = name;
 		name = exports.GUID(5);
 	}
@@ -1776,7 +1782,7 @@ Async.prototype.wait = function(name, waitingFor, fn) {
 	var self = this;
 	self.count++;
 
-	if (typeof(waitingFor) === 'function') {
+	if (typeof(waitingFor) === FUNCTION) {
 		fn = waitingFor;
 		waitingFor = name;
 		name = exports.GUID(5);
