@@ -1790,6 +1790,7 @@ Framework.prototype._service = function(count) {
 		self.stats.websockets = 0;
 		self.stats.web = 0;
 		self.stats.files = 0;
+		self.emit('clear', 'stats');
 	}
 
 	if (self.config.debug)
@@ -1800,12 +1801,14 @@ Framework.prototype._service = function(count) {
 		self.resources = {};
 		self.databases = {};
 		self.configure();
+		self.emit('clear', 'resources');
 	}
 
 	// every 5 minute service clears static cache
 	if (count % 5 === 0) {
 		self.static = {};
 		self.staticRange = {};
+		self.emit('clear', 'static');
 	}
 
 	self.emit('service', count);
