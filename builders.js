@@ -32,6 +32,8 @@ function ErrorBuilder(onResource) {
 	this.builder = [];
 	this.onResource = onResource || null;
 	this.length = 0;
+	this.replacer = [];
+	this.isPrepared = false;
 };
 
 function UrlBuilder() {
@@ -337,6 +339,7 @@ exports.primaryKey = function(schema, name, insert) {
 */
 ErrorBuilder.prototype.add = function(name, error) {
 	var self = this;
+	self.isPrepared = false;
 
 	if (name instanceof ErrorBuilder) {
 
@@ -360,9 +363,11 @@ ErrorBuilder.prototype.add = function(name, error) {
 */
 ErrorBuilder.prototype.remove = function(name) {
 	var self = this;
+
 	self.builder = self.builder.remove(function(o) {
 		return o.name === name;
 	});
+
 	self.length = self.builder.length;
 	return self;
 };
@@ -390,7 +395,12 @@ ErrorBuilder.prototype.hasError = function(name) {
 */
 ErrorBuilder.prototype.read = function(name) {
 
-	var error = this.builder.find(function(o) {
+	var self = this;
+
+	if (!self.isPrepared)
+		self.prepare();
+
+	var error = self.builder.find(function(o) {
 		return o.name === name;
 	});
 
@@ -408,6 +418,19 @@ ErrorBuilder.prototype.clear = function() {
 	var self = this;
 	self.builder = [];
 	self.length = 0;
+	return self;
+};
+
+/*
+	Add a replace rule
+	@search {String}
+	@newvale {String}
+    return {ErrorBuilder}
+*/
+ErrorBuilder.prototype.replace = function(search, newvalue) {
+	var self = this;
+	self.isPrepared = false;
+	self.replacer[search] = newvalue;
 	return self;
 };
 
@@ -431,22 +454,61 @@ ErrorBuilder.prototype.JSON = function() {
 	Prepare builder with Resources
     return {ErrorBuilder}
 */
-ErrorBuilder.prototype.prepare = function() {
+ErrorBuilder.prototype._prepare = function() {
 	var self = this;
 
 	if (self.onResource === null)
 		return self;
 
-	self.builder.forEach(function(o) {
+	var builder = self.builder;
+	var length = builder.length;
+
+	for (var i = 0; i < length; i++) {
+
+		var o = builder[i];
 
 		if (o.error[0] !== '@')
-			return;
+			continue;
 
 		if (o.error.length === 1)
 			o.error = self.onResource(o.name);
 		else
 			o.error = self.onResource(o.error.substring(1));
-	});
+	}
+
+	return self;
+};
+
+ErrorBuilder.prototype._prepareReplace = function() {
+
+	var self = this;
+	var builder = self.builder;
+	var lengthBuilder = builder.length;
+	var keys = Object.keys(self.replacer);
+	var lengthKeys = keys.length;
+
+	if (lengthBuilder === 0 || lengthKeys === 0)
+		return self;
+
+	for (var i = 0; i < lengthBuilder; i++) {
+		var o = builder[i];
+		for (var j = 0; j < lengthKeys; j++) {
+			var key = keys[j];
+			o.error = o.error.replace(key, self.replacer[key]);
+		}
+	}
+
+	return self;
+};
+
+ErrorBuilder.prototype.prepare = function() {
+	var self = this;
+
+	if (self.isPrepared)
+		return self;
+
+	self._prepare()._prepareReplace();
+	self.isPrepared = true;
 
 	return self;
 };

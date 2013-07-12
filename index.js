@@ -3516,11 +3516,11 @@ function Controller(name, req, res, subscribe) {
 	// controller.internal.type === 1 - server sent events
 	// controller.internal.type === 2 - multipart/x-mixed-replace
 
-	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null, type: 0, directory: '' };
+	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null, type: 0 };
 	this.statusCode = 200;
 	this.controllers = subscribe.framework.controllers;
 	this.url = utils.path(req.uri.pathname);
-	
+
 	this.isXHR = req.isXHR;
 	this.isProxy = req.isProxy;
 	this.isLayout = false;
@@ -5396,7 +5396,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 	return {Database};
 */
 Controller.prototype.database = function(name) {
-	return this.app.database(name);
+	return this.framework.database(name);
 };
 
 /*
@@ -5412,6 +5412,12 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	if (self.res.success)
 		return isPartial ? '' : self;
+
+	if (!self.isLayout && name[0] !== '/')
+	{
+		if (self.name !== 'default')
+			name = '/' + self.name + '/' + name;
+	}
 
 	var generator = internal.generateView(self, name);
 
@@ -6274,8 +6280,8 @@ http.IncomingMessage.prototype.cookie = function(name) {
 	return {ServerRequest}
 */
 http.IncomingMessage.prototype.clear = function(isAuto) {
-	
-	var self = this;	
+
+	var self = this;
 	var files = self.data.files;
 
 	if (isAuto && self._manual)

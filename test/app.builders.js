@@ -25,7 +25,7 @@ function test_PageBuilder () {
 	assert.ok(output.length === 6, name + 'render - max 6');
 
 	builder.refresh(100, 5, 12);
-	
+
 	assert.ok(builder.isPrev, name + 'isPrev (50)');
 	assert.ok(builder.isNext, name + 'isNext (50)');
 
@@ -33,10 +33,10 @@ function test_PageBuilder () {
 		return page;
 	}, 5);
 
-	assert.ok(output.join('') === '34567', name + 'render - max 5');	
+	assert.ok(output.join('') === '34567', name + 'render - max 5');
 };
 
-function test_UrlBuilder() {	
+function test_UrlBuilder() {
 	var name = 'UrlBuilder: ';
 	var builder = new builders.UrlBuilder();
 
@@ -54,7 +54,7 @@ function test_UrlBuilder() {
 
 	assert.ok(builder.toString() === 'A=5&C=%203%20', name + 'toString()');
 	builder.add('C', '3');
-	
+
 	assert.ok(builder.toOne(['A', 'B', 'C'], 'X') === '5XX3', name + 'toOne()');
 
 	builder.clear();
@@ -74,7 +74,7 @@ function test_Schema() {
 	assert.ok(JSON.stringify(builders.defaults('tbl_user')) === '{"Name":null,"Id":0}', name + 'schema defaults');
 
 	builders.schema('test', { Id: Number, Name: String, Male: Boolean, Dt: Date, Price: 'decimal' });
-	
+
 	var model = { Name: 23, Male: '1', Dt: 'ADASD', Price: 1.13 };
 	var output = builders.prepare('test', model);
 
@@ -86,7 +86,7 @@ function test_Schema() {
 
 	model = { Dt: '2012-12-12', Male: false };
 	output = builders.prepare('test', model);
-	
+
 	assert.ok(output.Dt.getDate() === 12 && output.Dt.getMonth() === 11 && output.Dt.getFullYear() === 2012, name + 'date');
 	assert.ok(!output.Male, name + 'boolean = false');
 };
@@ -122,6 +122,10 @@ function test_ErrorBuilder() {
 
 	assert.ok(builder.read('name') === 'name', name + 'read()');
 	assert.ok(builder.hasError('name'), name + 'hasError(name)');
+
+	builder.replace('name', 'FET');
+
+	assert.ok(builder.read('name') === 'FET', name + 'replace()');
 };
 
 test_PageBuilder();

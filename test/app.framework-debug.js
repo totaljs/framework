@@ -95,6 +95,15 @@ function test_routing(next) {
 
 	var async = new utils.Async();
 
+	async.await('0', function(complete) {
+		utils.request(url + 'share/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(data === 'OK', 'controller view directory');
+			complete();
+		});
+	});
+
 	async.await('a', function(complete) {
 		utils.request(url + 'a/', 'GET', null, function(error, data, code, headers) {
 			if (error)

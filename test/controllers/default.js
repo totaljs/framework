@@ -1,33 +1,32 @@
 var assert = require('assert');
 
-exports.init = function() {
-	var self = this;
-	self.route('/sse/', viewSSE_html);
-	self.route('/sse/', viewSSE, ['sse']);
-	self.route('/f/', viewSocket);
-	self.route('/js/', viewJS);
-	self.route('/', viewIndex);
-	self.route('/views/', viewViews, [], ['partial']);
-	self.route('/view-notfound/', viewError);
-	self.route('/views-if/', viewViewsIf);
-	self.route('/{a}/', viewRouteA);
-	self.route('/{a}/{b}/', viewRouteAB);
-	self.route('/a/{a}/', viewRouteAA);
-	self.route('/a/b/c/', viewRouteABC);
-	self.route('/test/', viewTest);
-	self.route('/login/google/callback/', aa);
-	self.route('/timeout/', function() {}, [], null, [], 50);
+exports.install = function(framework) {
+	framework.route('/sse/', viewSSE_html);
+	framework.route('/sse/', viewSSE, ['sse']);
+	framework.route('/f/', viewSocket);
+	framework.route('/js/', viewJS);
+	framework.route('/', viewIndex);
+	framework.route('/views/', viewViews, [], ['partial']);
+	framework.route('/view-notfound/', viewError);
+	framework.route('/views-if/', viewViewsIf);
+	framework.route('/{a}/', viewRouteA);
+	framework.route('/{a}/{b}/', viewRouteAB);
+	framework.route('/a/{a}/', viewRouteAA);
+	framework.route('/a/b/c/', viewRouteABC);
+	framework.route('/test/', viewTest);
+	framework.route('/login/google/callback/', aa);
+	framework.route('/timeout/', function() {}, [], null, [], 50);
 
-	self.route('/live/', viewLive);
-	self.route('/live/incoming/', viewLiveIncoming, ['mixed']);
+	framework.route('/live/', viewLive);
+	framework.route('/live/incoming/', viewLiveIncoming, ['mixed']);
 
-	self.route('#408', function() { 
+	framework.route('#408', function() { 
 		var self = this;
 		self.global.timeout++;
 		self.plain('408');
 	}, []);
 
-	self.route('/basic/', viewBAA);
+	framework.route('/basic/', viewBAA);
 
 	// url
 	// function
@@ -35,7 +34,7 @@ exports.init = function() {
 	// protocols []
 	// allow []
 	// maximumSize
-	self.websocket('/', socket);
+	framework.websocket('/', socket);
 };
 
 function viewBAA() {
