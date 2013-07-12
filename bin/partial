@@ -212,7 +212,7 @@ function createFileModules(directory) {
 	buffer.push('// your custom framework prototypes - https://github.com/petersirka/partial.js/blob/master/empty-project/modules/%23.js');
 	buffer.push('// this code it run automatically');
 	buffer.push('');
-	buffer.push('// exports.onLoaded = function(self) {};');
+	buffer.push('// exports.onLoad = function(self) {};');
 	buffer.push('// exports.onError = function(err, name, uri) {};');
 	buffer.push('// exports.onAuthorization = function(req, res, callback) { callback(false); };');
 	buffer.push('// exports.onPrefix = function(req) { return \'\'; };');
