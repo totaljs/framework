@@ -1,6 +1,8 @@
 var assert = require('assert');
 
 exports.install = function(framework) {
+	framework.route('/homepage/', view_homepage);
+	framework.route('/usage/', view_usage);
 	framework.route('/sse/', viewSSE_html);
 	framework.route('/sse/', viewSSE, ['sse']);
 	framework.route('/f/', viewSocket);
@@ -36,6 +38,14 @@ exports.install = function(framework) {
 	// maximumSize
 	framework.websocket('/', socket);
 };
+
+function view_homepage() {
+	this.view('homepage');
+}
+
+function view_usage() {
+	this.plain(this.framework.usage(true));
+}
 
 function viewBAA() {
 	

@@ -4,11 +4,12 @@ var framework = require('../index');
 var http = require('http');
 var fs = require('fs');
 
-var url = 'http://127.0.0.1:8001/';
+var port = parseInt(process.argv[2] || '8001');;
+var url = 'http://127.0.0.1:' + port + '/';
 var errorStatus = 0;
 var max = 1500;
 
-framework.run(http, false, 8001);
+framework.run(http, false, port);
 
 framework.onError = function(error, name, uri) {
 
