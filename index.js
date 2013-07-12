@@ -1799,7 +1799,7 @@ Framework.prototype._service = function(count) {
 	// every 20 minute service clears resources and reconfigure framework
 	if (count % 20 === 0) {
 		self.resources = {};
-		self.databases = {};
+		// self.databases = {};
 		self.configure();
 		self.emit('clear', 'resources');
 	}
