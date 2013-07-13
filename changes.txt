@@ -25,6 +25,7 @@ IMPORTANT:
 - updated: controller.proxy() - added timeout
 - updated: framework.stats;
 - updated: framework.usage()
+- updated: all examples
 
 - removed: routeDocument(), @routeDocument()
 - removed: config['static-url-document']
@@ -38,6 +39,7 @@ IMPORTANT:
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/cors
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/custom-headers
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/views-route-file
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/email-templating-view
 
 ======= 1.2.4-4
 
