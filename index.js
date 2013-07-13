@@ -959,9 +959,9 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Error count                     : {0}'.format(self.errors.length));
 	builder.push(delimiter);
 	builder.push('Request statistics / The last 10 minutes');
-	builder.push('Request to controller		      : {0}x'.format(self.stats.request.web.format('### ### ###')));
+	builder.push('Request to controller           : {0}x'.format(self.stats.request.web.format('### ### ###')));
 	builder.push('Request to websocket            : {0}x'.format(self.stats.request.websocket.format('### ### ###')));
-	builder.push('Request to file                 : {0}x'.format(self.stats.request.files.format('### ### ###')));
+	builder.push('Request to file                 : {0}x'.format(self.stats.request.file.format('### ### ###')));
 	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr.format('### ### ###')));
 	builder.push('Request GET                     : {0}x'.format(self.stats.request.get.format('### ### ###')));
 	builder.push('Request POST                    : {0}x'.format(self.stats.request.post.format('### ### ###')));
@@ -969,21 +969,21 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss.format('### ### ###')));
 	builder.push(delimiter);
 	builder.push('Response statistics / The last 10 minutes');
-	builder.push('Response view		              : {0}x'.format(self.stats.response.view.format('### ### ###')));
-	builder.push('Response JSON		              : {0}x'.format(self.stats.response.json.format('### ### ###')));
+	builder.push('Response view                   : {0}x'.format(self.stats.response.view.format('### ### ###')));
+	builder.push('Response JSON                   : {0}x'.format(self.stats.response.json.format('### ### ###')));
 	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain.format('### ### ###')));
-	builder.push('Response empty	              : {0}x'.format(self.stats.response.empty.format('### ### ###')));
-	builder.push('Response redirect	              : {0}x'.format(self.stats.response.redirect.format('### ### ###')));
-	builder.push('Response file		              : {0}x'.format(self.stats.response.file.format('### ### ###')));
+	builder.push('Response empty                  : {0}x'.format(self.stats.response.empty.format('### ### ###')));
+	builder.push('Response redirect               : {0}x'.format(self.stats.response.redirect.format('### ### ###')));
+	builder.push('Response file                   : {0}x'.format(self.stats.response.file.format('### ### ###')));
 	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr.format('### ### ###')));
 	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse.format('### ### ###')));
 	builder.push('Response websocket message      : {0}x'.format(self.stats.response.websocket.format('### ### ###')));
-	builder.push('Response 401   	              : {0}x'.format(self.stats.response.error401.format('### ### ###')));
-	builder.push('Response 403   	              : {0}x'.format(self.stats.response.error403.format('### ### ###')));
-	builder.push('Response 404   	              : {0}x'.format(self.stats.response.error404.format('### ### ###')));
-	builder.push('Response 408   	              : {0}x'.format(self.stats.response.error408.format('### ### ###')));
-	builder.push('Response 431   	              : {0}x'.format(self.stats.response.error431.format('### ### ###')));
-	builder.push('Response 500   	              : {0}x'.format(self.stats.response.error500.format('### ### ###')));
+	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401.format('### ### ###')));
+	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403.format('### ### ###')));
+	builder.push('Response 404                    : {0}x'.format(self.stats.response.error404.format('### ### ###')));
+	builder.push('Response 408                    : {0}x'.format(self.stats.response.error408.format('### ### ###')));
+	builder.push('Response 431                    : {0}x'.format(self.stats.response.error431.format('### ### ###')));
+	builder.push('Response 500                    : {0}x'.format(self.stats.response.error500.format('### ### ###')));
 	builder.push(delimiter);
 
 	if (!detailed)
@@ -1045,7 +1045,7 @@ Framework.prototype.usage = function(detailed) {
 
 	if (cache.length > 0) {
 		builder.push('');
-		builder.push('============ [Cache items]');
+		builder.push('============ [Cached items]');
 
 		cache.forEach(function(o) {
 			builder.push('{0}'.format(o).indent(4));
