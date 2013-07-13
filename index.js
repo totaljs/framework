@@ -2982,11 +2982,11 @@ FrameworkPath.prototype.root = function(filename) {
 
 /*
 	Cache class
-	@application {Framework}
+	@framework {Framework}
 */
-function FrameworkCache(application) {
+function FrameworkCache(framework) {
 	this.repository = {};
-	this.app = application;
+	this.framework = framework;
 	this.count = 1;
 	this.interval = null;
 };
@@ -3028,18 +3028,23 @@ FrameworkCache.prototype.recycle = function() {
 	var self = this;
 	var repository = self.repository;
 	var keys = Object.keys(repository);
+	var length = keys.length;
 
-	if (keys.length === 0) {
+	if (length === 0) {
 		self.emit('service', self.count++);
 		return self;
 	}
 
 	var expire = new Date();
 
-	keys.forEach(function(o) {
-		if (repository[o].expire < expire)
+	for (var i = 0; i < length; i++) {
+		var o = keys[i];
+		var value = repository[o];
+		if (value.expire < expire) {
+			self.framework.emit('expire', o, value.value);
 			delete repository[o];
-	});
+		}
+	}
 
 	self.emit('service', self.count++);
 	return self;

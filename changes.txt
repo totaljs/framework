@@ -14,6 +14,7 @@ IMPORTANT:
 - added: controller.empty(); - response empty body
 - added: new event framework.on('clear', name)
 - added: ErrorBuilder.replace(search, value)
+- added: new event framework.on('expire', name, value);
 
 - updated: controller.proxy() - added timeout
 
