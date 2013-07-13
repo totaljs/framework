@@ -1,6 +1,3 @@
-var utils = require('partial.js/utils');
-var builders = require('partial.js/builders');
-
 // ==================================================
 // in this file, you can rewrite framework prototypes
 // this file call framework automatically
@@ -33,7 +30,7 @@ exports.onAuthorization = function(req, res, flags, callback) {
 		callback(true);
 		return;
 	}
-	
+
 	var db = self.database('users');
 
 	// find the user in database

@@ -1,6 +1,4 @@
-
-
-exports.onLoaded = function(framework) {
+exports.onLoad = function(framework) {
 	
 	framework.on('controller', function(controller, name) {
 

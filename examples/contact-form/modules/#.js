@@ -1,8 +1,8 @@
 var utils = require('partial.js/utils');
 
 // ==================================================
-// in this file, you can rewrite framework prototypes
-// this file call framework automatically
+// In this file, you can rewrite framework prototypes
+// This file call framework automatically
 // ==================================================
 
 exports.onValidation = function(name, value) {

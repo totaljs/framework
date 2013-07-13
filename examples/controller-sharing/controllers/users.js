@@ -1,7 +1,5 @@
-var utils = require('partial.js/utils');
-
 exports.install = function(framework) {
-	framework.route('/users/', viewUsers);
+	framework.route('/users/', view_users);
 };
 
 exports.models = {
@@ -14,6 +12,6 @@ exports.functions = {
 	}
 };
 
-function viewUsers() {
+function view_users() {
 	this.plain(JSON.stringify(exports.models.users));
 }

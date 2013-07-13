@@ -1,13 +1,12 @@
-
 exports.install = function(framework) {
-	framework.route('/', viewIndex);
-	framework.route('/cancel/', viewCancel);
+	framework.route('/', view_homepage);
+	framework.route('/cancel/', view_cancel);
 };
 
-function viewCancel() {
-	this.plain('viewCancel');
-};
+function view_homepage() {
+	this.plain('view_homepage');
+}
 
-function viewIndex() {
-	this.plain('viewIndex');
-};
+function view_cancel() {
+	this.plain('view_cancel');
+}

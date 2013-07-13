@@ -1,8 +1,8 @@
 exports.install = function(framework) {
-	framework.route('/', viewHomepage);
+	framework.route('/', view_homepage);
 };
 
-function viewHomepage() {
+function view_homepage() {
 	var self = this;
 	self.plain('copy one file from /keepalive-command/ directory to his parent directory');
 }

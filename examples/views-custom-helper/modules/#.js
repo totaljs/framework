@@ -1,6 +1,6 @@
 var utils = require('partial.js/utils');
 
-exports.onLoaded = function (framework) {
+exports.onLoad = function (framework) {
 
 	framework.helpers.now = function() {		
 		// this === controller		

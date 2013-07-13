@@ -1,4 +1,4 @@
-exports.onLoaded = function() {
+exports.onLoad = function() {
 
 	var self = this;
 

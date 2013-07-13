@@ -1,16 +1,14 @@
-var utils = require('partial.js/utils');
-
 exports.install = function(framework) {
-	framework.route('/', viewHomepage);
-	framework.route('/one-way-messaging/', viewSSE, ['sse']);
+	framework.route('/', view_homepage);
+	framework.route('/one-way-messaging/', view_SSE, ['sse']);
 };
 
-function viewHomepage() {
+function view_homepage() {
 	var self = this;
 	self.view('homepage');
 }
 
-function viewSSE() {
+function view_SSE() {
 
 	var self = this;
 	var indexer = 0;

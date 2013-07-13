@@ -1,14 +1,14 @@
 exports.install = function(framework) {
-	framework.route('/', landingPage);
-	framework.route('/loadPanel', loadPanel, ['xhr']);
+	framework.route('/', view_homepage);
+	framework.route('/xhr/', xhr_panel, ['xhr']);
 };
 
-function landingPage() {
+function view_homepage() {
 	var self = this;
 	self.view('company');
 }
 
-function loadPanel() {
+function xhr_panel() {
 	var self = this;
 	self.view(self.post.choice);
 }

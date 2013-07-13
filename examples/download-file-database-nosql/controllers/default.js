@@ -1,16 +1,15 @@
-var utils = require('partial.js/utils');
-
 exports.install = function(framework) {
 
 	//var db = framework.database('images');
 	//db.insert({ file: db.binary.insert('logo.png', 'image/png', require('fs').readFileSync('/users/petersirka/desktop/logo.png')) });
 	
-	framework.route('/', viewHomepage);
-    framework.file('load image from database', expression('req.url.indexOf(".png") !== -1', ['req']), static_image);
+	framework.route('/', view_homepage);
+    framework.file('load image from database', function(req) { return req.url.indexOf(".png") !== -1; }, static_image);
 };
 
-function viewHomepage() {
-	this.plain('http://127.0.0.1:8004/13658557803674rjurf6r.png');
+function view_homepage() {
+    var self = this;
+	self.plain('http://{0}:{1}/13658557803674rjurf6r.png'.format(self.framework.ip, self.framework.port));
 }
 
 // Serve image from database products

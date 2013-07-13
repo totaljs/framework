@@ -1,5 +1,3 @@
-var utils = require('partial.js/utils');
-
 // =====================================================
 // In this file you can rewrite all framework prototypes
 // Framework call this file automatically
@@ -9,6 +7,7 @@ console.log('# is running');
 
 exports.onError = function(err, name, uri, code) {
 	console.log('!ERROR!');
+	console.log(err);
 };
 
 exports.onSettings = function() {
@@ -19,7 +18,7 @@ exports.onSettings = function() {
 	return '';
 };
 
-exports.onMeta = function onMeta() {
+exports.onMeta = function() {
 	
 	var builder = '';
 	
