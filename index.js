@@ -2144,7 +2144,7 @@ Framework.prototype.clear = function() {
 	Cryptography (encode)
 	@value {String}
 	@key {String}
-	@isUniqe {Boolean} :: optional
+	@isUniqe {Boolean} :: optional, default true
 	return {Framework}
 */
 Framework.prototype.encode = function(value, key, isUnique) {
@@ -6336,4 +6336,4 @@ http.IncomingMessage.prototype.hostname = function(path) {
 	return uri.protocol + '//' + uri.hostname + (typeof(uri.port) !== UNDEFINED && uri.port !== 80 ? ':' + uri.port : '') + path;
 };
 
-module.exports = new Framework();
+global.framework = module.exports = new Framework();

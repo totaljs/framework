@@ -3,6 +3,7 @@ IN DEVELOPMENT ======= 1.2.4-5
 IMPORTANT:
 - updated: controller.view() - view('my-view-name') -> /controller-name/my-view-name.html (except default.js controller)
 
+- added: partial.js is a global object ... applies everywhere: framework.[method]
 - added: controller.cors(allow, method, header, credentials) - return {Boolean}
 - added: controller.header(name, value) - set response header
 - added: @header(name, value) - set response header
@@ -28,6 +29,8 @@ IMPORTANT:
 - renamed: framework.onLoaded to framework.onLoad;
 - renamed: module.onLoaded to module.onLoad;
 - renamed: controller.onLoaded to controller.onLoad;
+
+- NEW MODULE: https://github.com/petersirka/partial.js/tree/master/modules/authorization
 
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/cors
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/custom-headers
