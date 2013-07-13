@@ -49,6 +49,7 @@ global.builders = require('./builders');
 global.utils = require('./utils');
 
 process.chdir(directory);
+process.maxTickDepth = 300;
 
 function Framework() {
 	this.version = 1245;
@@ -129,15 +130,45 @@ function Framework() {
 	this.server = null;
 	this.port = 0;
 	this.ip = '';
-	this.static = {};
-	this.staticRange = {};
+
 	this.databases = {};
 	this.directory = directory;
 
+	this.temporary = {
+		path: {},
+		range: {}
+	};
+
 	this.stats = {
-		web: 0,
-		files: 0,
-		websockets: 0
+
+		request: {
+			web: 0,
+			xhr: 0,
+			file: 0,
+			websocket: 0,
+			get: 0,
+			post: 0,
+			upload: 0,
+			xss: 0
+		},
+
+		response: {
+			view: 0,
+			json: 0,
+			websocket: 0,
+			file: 0,
+			plain: 0,
+			empty: 0,
+			redirect: 0,
+			mmr: 0,
+			sse: 0,
+			error401: 0,
+			error403: 0,
+			error404: 0,
+			error408: 0,
+			error431: 0,
+			error500: 0
+		}
 	};
 
 	// intialize cache
@@ -166,8 +197,8 @@ Framework.prototype.refresh = function(clear) {
 	self.resources = {};
 	self.databases = {};
 	self.configure();
-	self.static = {};
-	self.staticRange = {};
+	self.temporary.path = {};
+	self.temporary.range = {};
 	(clear || true) && self.clear();
 	return self;
 };
@@ -868,8 +899,8 @@ Framework.prototype.usage = function(detailed) {
 	var connections = Object.keys(self.connections);
 	var modules = Object.keys(self.modules);
 	var helpers = Object.keys(self.helpers);
-	var staticFiles = Object.keys(self.static);
-	var staticRange = Object.keys(self.staticRange);
+	var staticFiles = Object.keys(self.temporary.path);
+	var staticRange = Object.keys(self.temporary.range);
 
 	var size = 0;
 	var sizeBackup = 0;
@@ -923,14 +954,36 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Count of routes to websocket    : {0}'.format(self.routes.websockets.length));
 	builder.push('Count of routes to file         : {0}'.format(self.routes.files.length));
 	builder.push('Count of helpers                : {0}'.format(helpers.length));
-	builder.push('Static files count              : {0}'.format(staticFiles.length));
-	builder.push('Static files / streaming count  : {0}'.format(staticRange.length));
+	builder.push('Static cache files              : {0}'.format(staticFiles.length));
+	builder.push('Static cache files / range      : {0}'.format(staticRange.length));
 	builder.push('Error count                     : {0}'.format(self.errors.length));
 	builder.push(delimiter);
-	builder.push('Last 10 minutes ...');
-	builder.push('Request stats - webpage         : {0}x'.format(self.stats.web.format('### ### ###')));
-	builder.push('Request stats - websocket       : {0}x'.format(self.stats.websockets.format('### ### ###')));
-	builder.push('Request stats - files           : {0}x'.format(self.stats.files.format('### ### ###')));
+	builder.push('Request statistics / The last 10 minutes');
+	builder.push('Request to controller		      : {0}x'.format(self.stats.request.web.format('### ### ###')));
+	builder.push('Request to websocket            : {0}x'.format(self.stats.request.websocket.format('### ### ###')));
+	builder.push('Request to file                 : {0}x'.format(self.stats.request.files.format('### ### ###')));
+	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr.format('### ### ###')));
+	builder.push('Request GET                     : {0}x'.format(self.stats.request.get.format('### ### ###')));
+	builder.push('Request POST                    : {0}x'.format(self.stats.request.post.format('### ### ###')));
+	builder.push('Request MULTIPART (upload)      : {0}x'.format(self.stats.request.upload.format('### ### ###')));
+	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss.format('### ### ###')));
+	builder.push(delimiter);
+	builder.push('Response statistics / The last 10 minutes');
+	builder.push('Response view		              : {0}x'.format(self.stats.response.view.format('### ### ###')));
+	builder.push('Response JSON		              : {0}x'.format(self.stats.response.json.format('### ### ###')));
+	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain.format('### ### ###')));
+	builder.push('Response empty	              : {0}x'.format(self.stats.response.empty.format('### ### ###')));
+	builder.push('Response redirect	              : {0}x'.format(self.stats.response.redirect.format('### ### ###')));
+	builder.push('Response file		              : {0}x'.format(self.stats.response.file.format('### ### ###')));
+	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr.format('### ### ###')));
+	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse.format('### ### ###')));
+	builder.push('Response websocket message      : {0}x'.format(self.stats.response.websocket.format('### ### ###')));
+	builder.push('Response 401   	              : {0}x'.format(self.stats.response.error401.format('### ### ###')));
+	builder.push('Response 403   	              : {0}x'.format(self.stats.response.error403.format('### ### ###')));
+	builder.push('Response 404   	              : {0}x'.format(self.stats.response.error404.format('### ### ###')));
+	builder.push('Response 408   	              : {0}x'.format(self.stats.response.error408.format('### ### ###')));
+	builder.push('Response 431   	              : {0}x'.format(self.stats.response.error431.format('### ### ###')));
+	builder.push('Response 500   	              : {0}x'.format(self.stats.response.error500.format('### ### ###')));
 	builder.push(delimiter);
 
 	if (!detailed)
@@ -976,6 +1029,7 @@ Framework.prototype.usage = function(detailed) {
 			if (module === null || typeof(module.usage) === UNDEFINED)
 				return;
 
+			builder.push('');
 			builder.push((module.usage() || '').toString());
 		});
 	}
@@ -1009,7 +1063,7 @@ Framework.prototype.usage = function(detailed) {
 
 	if (staticFiles.length > 0) {
 		builder.push('');
-		builder.push('============ [Static files]');
+		builder.push('============ [Cache of static files]');
 
 		staticFiles.forEach(function(o) {
 			builder.push('{0}'.format(o).indent(4));
@@ -1018,10 +1072,10 @@ Framework.prototype.usage = function(detailed) {
 
 	if (staticRange.length > 0) {
 		builder.push('');
-		builder.push('============ [Static files / Streaming]');
+		builder.push('============ [Cache of static files / range]');
 
 		staticRange.forEach(function(o) {
-			builder.push('{0} / {1}'.format(o, (self.staticRange[o] / 1024).floor(2)).indent(4));
+			builder.push('{0} / {1}'.format(o, (self.temporary.range[o] / 1024).floor(2)).indent(4));
 		});
 	}
 
@@ -1151,7 +1205,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	req.clear(true);
 
-	var name = self.static[filename];
+	var name = self.temporary.path[filename];
 
 	if (name === null) {
 		self.response404(req, res);
@@ -1179,7 +1233,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (typeof(name) === UNDEFINED) {
 
 		if (!fs.existsSync(filename)) {
-			self.static[filename] = null;
+			self.temporary.path[filename] = null;
 			self.response404(req, res);
 			return self;
 		}
@@ -1190,14 +1244,14 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		if (['js', 'css'].indexOf(extension) !== -1) {
 			if (name.indexOf('.min.') === -1 && name.indexOf('-min.') === -1) {
 				name = self.compileStatic(req, name);
-				self.static[filename] = name;
+				self.temporary.path[filename] = name;
 			}
 		}
 
-		self.static[filename] = name;
+		self.temporary.path[filename] = name;
 
 		if (self.config.debug)
-			delete self.static[filename];
+			delete self.temporary.path[filename];
 	}
 
 	var compress = self.config['allow-gzip'] && ['js', 'css', 'txt'].indexOf(extension) !== -1;
@@ -1339,12 +1393,12 @@ Framework.prototype.responseRange = function(name, range, headers, res) {
 	var arr = range.replace(/bytes=/, '').split('-');
 	var beg = parseInt(arr[0] || '0');
 	var end = parseInt(arr[1] || '0');
-	var total = self.staticRange[name] || 0;
+	var total = self.temporary.range[name] || 0;
 
 	if (total === 0) {
 		// sync
 		total = fs.statSync(name).size;
-		self.staticRange[name] = total;
+		self.temporary.range[name] = total;
 	}
 
 	if (end === 0)
@@ -1457,9 +1511,10 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 	return {Framework}
 */
 Framework.prototype.response404 = function(req, res) {
+	var self = this;
 
 	if (res.success)
-		return this;
+		return self;
 
 	req.clear(true);
 
@@ -1467,7 +1522,8 @@ Framework.prototype.response404 = function(req, res) {
 	res.writeHead(404, { 'Content-Type': 'text/plain' });
 	res.end('File not found (404).');
 
-	return this;
+	self.stats.response.error404++;
+	return self;
 };
 
 /*
@@ -1606,7 +1662,7 @@ Framework.prototype.init = function(http, config, port, ip) {
 	var module = self.module('#');
 	if (module !== null) {
 		Object.keys(module).forEach(function(o) {
-			if (o === 'onLoad' || o === 'usage' || o === 'onLoaded')
+			if (o === 'onLoad' || o === 'usage')
 				return;
 			self[o] = module[o];
 		});
@@ -1678,17 +1734,7 @@ Framework.prototype.init = function(http, config, port, ip) {
 			{
 				module.onLoad.call(self, self);
 			} catch (err) {
-				self.error(err, 'Framework :: global module onLoad()');
-			}
-		}
-
-		// OBSOLETE
-		if (typeof(module.onLoaded) !== UNDEFINED) {
-			try
-			{
-				module.onLoaded.call(self, self);
-			} catch (err) {
-				self.error(err, 'Framework :: global module onLoad()');
+				self.error(err, '#.onLoad()');
 			}
 		}
 	}
@@ -1696,11 +1742,8 @@ Framework.prototype.init = function(http, config, port, ip) {
 	try
 	{
 		self.emit('load', self);
-
-		// OBSOLETE
-		self.emit('loaded', self);
 	} catch (err) {
-		self.error(err, 'Framework :: load event');
+		self.error(err, 'framework.on("load")');
 	}
 
 	if (typeof(process.send) === FUNCTION)
@@ -1719,18 +1762,19 @@ Framework.prototype._verify_directory = function(name) {
 	var self = this;
 	var prop = '$directory-' + name;
 
-	if (!self.static[prop]) {
+	if (self.temporary.path[prop])
+		return self;
 
-		var dir = self.config['directory-' + name];
+	var dir = self.config['directory-' + name];
 
-		if (dir[0] !== '.')
-			dir = '.' + dir;
+	if (dir[0] !== '.')
+		dir = '.' + dir;
 
-		if (!fs.existsSync(dir))
-			fs.mkdirSync(dir);
+	if (!fs.existsSync(dir))
+		fs.mkdirSync(dir);
 
-		self.static[prop] = true;
-	}
+	self.temporary.path[prop] = true;
+	return self;
 };
 
 Framework.prototype._upgrade = function(req, socket, head) {
@@ -1740,7 +1784,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 	var self = this;
 
-	self.stats.websockets++;
+	self.stats.request.websocket++;
 
     var socket = new WebSocketClient(req, socket, head);
     var path = utils.path(req.uri.pathname);
@@ -1809,10 +1853,30 @@ Framework.prototype._service = function(count) {
 	var self = this;
 
 	if (count % 10 === 0) {
-		self.stats.websockets = 0;
-		self.stats.web = 0;
-		self.stats.files = 0;
-		self.emit('clear', 'stats');
+		self.emit('clear', 'stats', self.stats);
+		self.stats.request.web = 0;
+		self.stats.request.xhr = 0;
+		self.stats.request.file = 0;
+		self.stats.request.websocket = 0;
+		self.stats.request.get = 0;
+		self.stats.request.post = 0;
+		self.stats.request.upload = 0;
+		self.stats.request.xss = 0;
+		self.stats.response.view = 0;
+		self.stats.response.json = 0;
+		self.stats.response.websocket = 0;
+		self.stats.response.file = 0;
+		self.stats.response.plain = 0;
+		self.stats.response.empty = 0;
+		self.stats.response.redirect = 0;
+		self.stats.response.mmr = 0;
+		self.stats.response.sse = 0;
+		self.stats.response.error401 = 0;
+		self.stats.response.error403 = 0;
+		self.stats.response.error404 = 0;
+		self.stats.response.error408 = 0;
+		self.stats.response.error431 = 0;
+		self.stats.response.error500 = 0;
 	}
 
 	if (self.config.debug)
@@ -1820,17 +1884,17 @@ Framework.prototype._service = function(count) {
 
 	// every 20 minute service clears resources and reconfigure framework
 	if (count % 20 === 0) {
+		self.emit('clear', 'resources');
 		self.resources = {};
 		// self.databases = {};
 		self.configure();
-		self.emit('clear', 'resources');
 	}
 
 	// every 5 minute service clears static cache
 	if (count % 5 === 0) {
-		self.static = {};
-		self.staticRange = {};
-		self.emit('clear', 'static');
+		self.emit('clear', 'static', self.temporary);
+		self.temporary.path = {};
+		self.temporary.range = {};
 	}
 
 	self.emit('service', count);
@@ -1883,11 +1947,11 @@ Framework.prototype._request = function(req, res) {
    	// if is static file, return file
    	if (utils.isStaticFile(req.uri.pathname)) {
 		new Subscribe(self, req, res).file();
-		self.stats.files++;
+		self.stats.request.file++;
 		return;
 	}
 
-	self.stats.web++;
+	self.stats.request.web++;
 
    	if (req.uri.query && req.uri.query.length > 0) {
    		if (self.onXSS !== null)
@@ -1907,7 +1971,7 @@ Framework.prototype._request = function(req, res) {
 				return;
 			}
 		} catch(err) {
-			self.app.error(err, 'Framework :: onRoute', req.uri);
+			self.app.error(err, 'framework.onRoute()', req.uri);
 		}
 	}
 
@@ -1942,13 +2006,16 @@ Framework.prototype._request = function(req, res) {
 		flags.push('upload');
 
 	if (req.isXHR) {
+		self.stats.request.xhr++;
 		flags.push('+xhr');
 		flags.push('xhr');
 	} else
 		flags.push('+xhr');
 
-	if (isXSS)
+	if (isXSS) {
 		flags.push('xss');
+		self.stats.request.xss++;
+	}
 
 	req.flags = flags;
 
@@ -1957,13 +2024,16 @@ Framework.prototype._request = function(req, res) {
 
    	if (req.method === 'POST' || req.method === 'PUT') {
    		if (multipart.length > 0) {
+   			self.stats.request.upload++;
    			new Subscribe(self, req, res).multipart(multipart);
    			return;
    		} else {
+   			self.stats.request.post++;
    			new Subscribe(self, req, res).urlencoded();
    			return;
    		}
-   	};
+   	} else
+   		self.stats.request.get++;
 
 	new Subscribe(self, req, res).end();
 };
@@ -2136,7 +2206,8 @@ Framework.prototype.clear = function() {
 	});
 
 	// clear static cache
-	self.static = {};
+	self.temporary.path = {};
+	self.temporary.range = {};
 	return self;
 };
 
@@ -3256,6 +3327,21 @@ Subscribe.prototype.end = function() {
 Subscribe.prototype.execute = function(status) {
 
 	var self = this;
+
+	if (status > 400 && (self.route === null || self.route.name[0] === '#')) {
+		if (status === 401)
+			self.framework.stats.response.error401++;
+		else if (status === 403)
+			self.framework.stats.response.error403++;
+		else if (status === 404)
+			self.framework.stats.response.error404++;
+		else if (status === 408)
+			self.framework.stats.response.error408++;
+		else if (status === 431)
+			self.framework.stats.response.error431++;
+		else if (status === 500)
+			self.framework.stats.response.error500++;
+	}
 
 	if (self.route === null) {
 		self.framework.responseContent(self.req, self.res, status || 404, utils.httpStatus(status || 404), 'text/plain', true);
@@ -4899,6 +4985,8 @@ Controller.prototype.json = function(obj, headers) {
 
 	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.statusCode, obj, 'application/json', true, headers);
+	self.framework.stats.response.json++;
+
 	return self;
 };
 
@@ -4997,6 +5085,8 @@ Controller.prototype.plain = function(contentBody, headers) {
 
 	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.statusCode, typeof(contentBody) === STRING ? contentBody : contentBody.toString(), 'text/plain', true, headers);
+	self.framework.stats.response.plain++;
+
 	return self;
 };
 
@@ -5013,6 +5103,8 @@ Controller.prototype.empty = function(headers) {
 
 	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.statusCode, '', 'text/plain', false, headers);
+	self.framework.stats.response.empty++;
+
 	return self;
 };
 
@@ -5033,6 +5125,8 @@ Controller.prototype.file = function(filename, downloadName, headers) {
 
 	self.subscribe.success();
 	self.framework.responseFile(self.req, self.res, filename, downloadName, headers);
+	self.framework.stats.response.file++;
+
 	return self;
 };
 
@@ -5159,6 +5253,8 @@ Controller.prototype.redirect = function(url, permament) {
 	self.res.success = true;
 	self.res.writeHead(permament ? 301 : 302, { 'Location': url });
 	self.res.end();
+	self.framework.stats.response.redirect++;
+
 	return self;
 };
 
@@ -5273,6 +5369,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 
 	builder += newline;
 	res.write(builder);
+	self.framework.stats.response.sse++;
 
 	return self;
 };
@@ -5324,6 +5421,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 		});
 
 		stream.pipe(res, { end: false });
+		self.framework.stats.response.mmr++;
 		return self;
 	}
 
@@ -5335,6 +5433,8 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 	});
 
 	stream.pipe(res, { end: false });
+	self.framework.stats.response.mmr++;
+
 	return self;
 };
 
@@ -5617,8 +5717,10 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 		self.subscribe.success();
 
-		if (self.isConnected)
+		if (self.isConnected) {
 			self.framework.responseContent(self.req, self.res, self.statusCode, value, self.internal.contentType, true, headers);
+			self.framework.stats.response.view++;
+		}
 
 		return self;
 	}
@@ -5683,32 +5785,45 @@ WebSocket.prototype.send = function(message, names, blacklist) {
 
     var self = this;
     var keys = self._keys;
+    var length = keys.length;
+
+    if (length === 0)
+    	return self;
 
     blacklist = blacklist || [];
 
     if (typeof(names) === UNDEFINED || names === null || names.length === 0) {
-        var length = blacklist.length;
-        keys.forEach(function(_id) {
 
+        var isBlacklist = blacklist.length > 0;
+
+        for (var i = 0; i < length; i++) {
+
+        	var _id = keys[i];
             var conn = self.connections[_id];
 
-            if (length > 0 && blacklist.indexOf(conn.id) !== -1)
-                return;
+            if (isBlacklist && blacklist.indexOf(conn.id) !== -1)
+                continue;
 
             conn.send(message);
-        });
+            self.framework.stats.response.websocket++;
+        }
 
         self.emit('send', message);
         return self;
     }
 
-    keys.forEach(function(_id) {
+    for (var i = 0; i < length; i++) {
+
+        var _id = keys[i];
+
         if (names.indexOf(_id) === -1)
-            return;
+            continue;
 
         var conn = self.connections[_id];
         conn.send(message);
-    });
+        self.framework.stats.response.websocket++;
+
+    }
 
     self.emit('send', message, names, blacklist);
     return self;
@@ -5723,24 +5838,32 @@ WebSocket.prototype.close = function(names) {
 
     var self = this;
     var keys = self._keys;
+    var length = keys.length;
+
+    if (length === 0)
+    	return self;
 
     if (typeof(names) === UNDEFINED || names === null || names.length === 0) {
-        keys.forEach(function(_id) {
+    	for (var i = 0; i < length; i++) {
+			var _id = keys[i];
             self.connections[_id].close();
             self._remove(_id);
-        });
+    	}
         self._refresh();
         return self;
     }
 
-    keys.forEach(function(_id) {
+	for (var i = 0; i < length; i++) {
+
+		var _id = keys[i];
         var conn = self.connections[_id];
+
         if (names.indexOf(conn.name) === -1)
-            return;
+            continue;
 
         conn.close();
         self._remove(_id);
-    });
+	}
 
     self._refresh();
     return self;
@@ -6270,18 +6393,22 @@ http.IncomingMessage.prototype.cookie = function(name) {
 
 	var self = this;
 
-	if (typeof(self.cookies) === UNDEFINED) {
-		self.cookies = {};
-	    var cookie = self.headers['cookie'] || '';
-        if (cookie.length > 0) {
-			cookie.split(';').forEach(function(o) {
-	        	var c = o.trim().split('=');
-				self.cookies[c[0]] = c[1];
-			});
-		}
- 	}
+	if (typeof(self.cookies) !== UNDEFINED)
+		return self.cookies[name] || '';
 
-	return self.cookies[name] || null;
+	self.cookies = {};
+
+    var cookie = self.headers['cookie'] || '';
+    if (cookie.length > 0) {
+		var arr = cookie.split(';');
+		var length = arr.length;
+		for (var i = 0; i < length; i++) {
+        	var c = arr[i].trim().split('=');
+			self.cookies[c[0]] = c[1];
+		}
+	}
+
+	return self.cookies[name] || '';
 };
 
 /*
