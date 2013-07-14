@@ -2118,6 +2118,7 @@ function removeComments(html) {
 			break;
 
 		html = html.replace(html.substring(beg, end + 3), '');
+		beg = html.indexOf(tagBeg);
 	}
 
 	return html;
@@ -2244,10 +2245,23 @@ View.prototype.render = function(name) {
 View.prototype.read = function(name) {
 	var self = this;
 	var config = self.controller.config;
-	var fileName = utils.combine(config['directory-views'], name + '.html');
+	var filename = utils.combine(config['directory-views'], name + '.html');
 
-	if (fs.existsSync(fileName))
-		return parse(fs.readFileSync(fileName).toString('utf8'), self.controller);
+	if (fs.existsSync(filename))
+		return parse(fs.readFileSync(filename).toString('utf8'), self.controller);
+
+	var index = name.lastIndexOf('/');
+	if (index === -1)
+		return null;
+
+	name = name.substring(index + 1);
+	if (name.indexOf('#') !== -1)
+		return null;
+
+	filename = utils.combine(config['directory-views'], name + '.html');
+
+	if (fs.existsSync(filename))
+		return parse(fs.readFileSync(filename).toString('utf8'), self.controller);
 
 	return null;
 };

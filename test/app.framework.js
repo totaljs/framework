@@ -8,6 +8,5 @@ var errorStatus = 0;
 var max = 1000;
 
 framework.init(http, false, 8001);
-var url = 'http://127.0.0.1:8001/';
 
 console.log(url);
