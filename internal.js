@@ -2195,14 +2195,17 @@ function minifyHTML(html) {
 	var id = '[' + new Date().getTime() + ']#';
 	var cache = {};
 	var indexer = 0;
+	var length = tags.length;
 
-	tags.forEach(function(o) {
+	for (var i = 0; i < length; i++) {
+		var o = tags[i];
 
 		var tagBeg = '<' + o;
 		var tagEnd = '</' + o;
 
 		var beg = html.indexOf(tagBeg);
 		var end = 0;
+		var len = tagEnd.length;
 
 		while (beg !== -1) {
 
@@ -2211,12 +2214,12 @@ function minifyHTML(html) {
 				break;
 
 			var key = id + (indexer++);
-			var value = html.substring(beg, end);
+			var value = html.substring(beg, end + len);
 			cache[key] = value;
 			html = html.replace(value, key);
-			beg = html.indexOf(tagBeg, end + o.length);
+			beg = html.indexOf(tagBeg);
 		}
-	});
+	}
 
 	html = html.replace(reg1, '').replace(reg2, '');
 
