@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.4-5
+======= 1.2.4-5
 
 IMPORTANT:
 - updated: controller.view() - view('my-view-name') -> /controller-name/my-view-name.html (except default.js controller)
