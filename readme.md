@@ -16,6 +16,7 @@ web application framework for node.js
 - Documentation: [partial.js documentation](http://partialjs.com/documentation/)
 - [Framework benefits](http://www.partialjs.com/benefits/)
 - [Changelog](https://github.com/petersirka/partial.js/blob/master/changes.txt)
+- [__Download partial.js modules__](https://github.com/petersirka/partial.js-modules/)
 
 ***
 
