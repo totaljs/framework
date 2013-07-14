@@ -1892,7 +1892,7 @@ Framework.prototype._service = function(count) {
 
 	// every 5 minute service clears static cache
 	if (count % 5 === 0) {
-		self.emit('clear', 'static', self.temporary);
+		self.emit('clear', 'temporary', self.temporary);
 		self.temporary.path = {};
 		self.temporary.range = {};
 	}
