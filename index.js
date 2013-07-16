@@ -6374,13 +6374,22 @@ WebSocketClient.prototype._request_accept_key = function(req) {
 	Write cookie
 	@name {String}
 	@value {String}
-	@expires {Date}
-	@options {Object} :: options.path, options.domain, options.secure, options.httpOnly
+	@expires {Date} :: optional
+	@options {Object} :: options.path, options.domain, options.secure, options.httpOnly, options.expires
 	return {ServerResponse}
 */
 http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 
 	var builder = [name + '=' + encodeURIComponent(value)];
+
+	if (expires && !utils.isDate(expires) && typeof(expires) === 'object') {
+		options = expires;
+		expires = options.expires || options.expire || null;
+	}
+
+	if (!options)
+		options = {};
+
 	options.path = options.path || '/';
 
 	if (expires)

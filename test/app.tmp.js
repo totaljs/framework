@@ -124,7 +124,7 @@ message.reply('sirka@wsd.sk');
 message.sender('sirka@wsd-europe.com');
 // message.attachment('/users/petersirka/desktop/wall.png');
 
-message.send('smtp.wsd-europe.com', { user: 'sirka@wsd-europe.com', password: 'PETO07dlska' });
+//message.send('smtp.wsd-europe.com', { user: 'sirka@wsd-europe.com', password: 'PETO07dlska' });
 //message.send('smtp.gmail.com', { port: 465, secure: true, user: 'petersirka@gmail.com', password: 'plisBB12' });
 //message.send();
 
