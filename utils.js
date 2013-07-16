@@ -1117,13 +1117,13 @@ String.prototype.fromUnicode = function() {
 	return unescape(str);
 };
 
-String.prototype.toSHA1 = function() {
+String.prototype.sha1 = function() {
   	var hash = crypto.createHash('sha1');
   	hash.update(this.toString(), ENCODING);
   	return hash.digest('hex');
 };
 
-String.prototype.toMD5 = function() {
+String.prototype.md5 = function() {
   	var hash = crypto.createHash('md5');
   	hash.update(this.toString(), ENCODING);
   	return hash.digest('hex');

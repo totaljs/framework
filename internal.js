@@ -306,9 +306,10 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 	@url {String}
 	return {String array}
 */
-exports.routeSplit = function(url) {
+exports.routeSplit = function(url, noLower) {
 
-	url = url.toLowerCase();
+	if (!noLower)
+		url = url.toLowerCase();
 
 	if (url[0] === '/')
 		url = url.substring(1);
@@ -1992,6 +1993,18 @@ function parse(html, controller) {
 								end = '"]';
 							}
 
+							break;
+
+						case 'host':
+							isEncode = false;
+
+							if (code.contains('('))
+								code = 'self.' + code;
+							else
+								code = 'self.host()';
+
+							beg = 'return ';
+							isDeclared = true;
 							break;
 
 						case 'url':

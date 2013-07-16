@@ -52,7 +52,7 @@ process.chdir(directory);
 process.maxTickDepth = 300;
 
 function Framework() {
-	this.version = 1245;
+	this.version = 1246;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
@@ -3437,7 +3437,7 @@ Subscribe.prototype._execute = function() {
 			return;
 
 		if (!self.isMixed) {
-			self.route.onExecute.apply(self.controller, internal.routeParam(self.req.path, self.route));
+			self.route.onExecute.apply(self.controller, internal.routeParam(self.route.param.length > 0 ? internal.routeSplit(self.req.uri.pathname, true) : self.req.path, self.route));
 			return;
 		}
 
@@ -3607,6 +3607,7 @@ function Controller(name, req, res, subscribe) {
 	this.files = req.data.files;
 	this.xhr = req.isXHR;
 	this.config = subscribe.framework.config;
+	this.ip = req.ip;
 
 	// controller.internal.type === 0 - classic
 	// controller.internal.type === 1 - server sent events
@@ -3694,6 +3695,16 @@ Controller.prototype.header = function(name, value) {
 	var self = this;
 	self.res.setHeader(name, value);
 	return self;
+};
+
+/*
+	Get host name
+	@path {String} :: optional
+	return {String}
+*/
+Controller.prototype.host = function(path) {
+	var self = this;
+	return self.req.hostname(path);
 };
 
 /*
@@ -5230,7 +5241,7 @@ Controller.prototype.view500 = function(error) {
 		return self;
 
 	self.req.path = [];
-	self.framework.error(new Error(error), self.name, self.req.uri);
+	self.framework.error(typeof(error) === 'string' ? new Error(error) : error, self.name, self.req.uri);
 	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#500', []);
 	self.subscribe.execute(500);
@@ -6363,24 +6374,33 @@ WebSocketClient.prototype._request_accept_key = function(req) {
 	Write cookie
 	@name {String}
 	@value {String}
-	@expire {Date}
-	@path {String}
-	@domain {String}
-	@httpOnly {Boolean},
-	@secure {Boolean}
+	@expires {Date}
+	@options {Object} :: options.path, options.domain, options.secure, options.httpOnly
 	return {ServerResponse}
 */
-http.ServerResponse.prototype.cookie = function(name, value, expire, path, domain, httpOnly, secure) {
+http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 
-	httpOnly = httpOnly || false;
-	secure = secure || false;
-	domain = domain || '';
+	var builder = [name + '=' + encodeURIComponent(value)];
+	options.path = options.path || '/';
 
-	var isExpire = expire || false;
-    var cookie = (!isExpire ? '{0}={1}; path={3}' : '{0}={1}; expires={2}; path={3}') + (domain.length > 0 ? '; domain={4}' : '') + (secure ? '; secure' : '') + (httpOnly ? '; httpOnly' : '');
+	if (expires)
+		builder.push('Expires=' + expires.toUTCString());
+
+	if (options.domain)
+		builder.push('Domain=' + options.domain);
+
+	if (options.path)
+		builder.push('Path=' + options.path);
+
+	if (options.secure)
+		builder.push('Secure');
+
+	if (options.httpOnly || options.httponly || options.HttpOnly)
+		builder.push('HttpOnly');
+
     var self = this;
+	self.setHeader('Set-Cookie', builder.join('; '));
 
-	self.setHeader('Set-Cookie', cookie.format(name, value, isExpire ? expire.toUTCString() : '', path || '/', domain));
 	return self;
 };
 
@@ -6394,7 +6414,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
 	var self = this;
 
 	if (typeof(self.cookies) !== UNDEFINED)
-		return self.cookies[name] || '';
+		return decodeURIComponent(self.cookies[name] || '');
 
 	self.cookies = {};
 
@@ -6408,7 +6428,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
 		}
 	}
 
-	return self.cookies[name] || '';
+	return decodeURIComponent(self.cookies[name] || '');
 };
 
 /*
