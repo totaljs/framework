@@ -12,6 +12,8 @@ IN DEVELOPMENT ======= 1.2.4-6
 - fixed: route dynamic params
 - fixed: controller.view500()
 
+clean code
+
 ======= 1.2.4-5
 
 IMPORTANT:

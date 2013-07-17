@@ -1034,10 +1034,11 @@ String.prototype.maxLength = function(max, chars) {
 };
 
 String.prototype.isJSON = function() {
-	if (this.length <= 1)
+	var self = this;
+	if (self.length <= 1)
 		return false;
-	var a = this[0];
-	var b = this[this.length - 1];
+	var a = self[0];
+	var b = self[self.length - 1];
 	return (a === '"' && b === '"') || (a === '[' && b === ']') || (a === '{' && b === '}');
 };
 
@@ -1099,11 +1100,12 @@ String.prototype.parseFloat = function(def) {
 
 String.prototype.toUnicode = function() {
     var result = '';
-    for(var i = 0; i < this.length; ++i){
-        if(this.charCodeAt(i) > 126 || this.charCodeAt(i) < 32)
-            result += '\\u' + this.charCodeAt(i).hex(4);
+    var self = this;
+    for(var i = 0; i < self.length; ++i){
+        if(self.charCodeAt(i) > 126 || self.charCodeAt(i) < 32)
+            result += '\\u' + self.charCodeAt(i).hex(4);
         else
-            result += this[i];
+            result += self[i];
     }
     return result;
 };
@@ -1207,11 +1209,11 @@ String.prototype.decode = function(key) {
 
 /*
 	Convert value from base64 and save to file
-	@fileName {String}
+	@filename {String}
 	@callback {Function} :: optional
 	return {String}
 */
-String.prototype.base64ToFile = function(fileName, callback) {
+String.prototype.base64ToFile = function(filename, callback) {
 	var self = this.toString();
 
 	var index = self.indexOf(',');
@@ -1221,9 +1223,9 @@ String.prototype.base64ToFile = function(fileName, callback) {
 		index++;
 
 	if (callback)
-		fs.writeFile(fileName, self.substring(index), 'base64', callback);
+		fs.writeFile(filename, self.substring(index), 'base64', callback);
 	else
-		fs.writeFileSync(fileName, self.substring(index), 'base64');
+		fs.writeFileSync(filename, self.substring(index), 'base64');
 
 	return this;
 };
