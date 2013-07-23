@@ -4,7 +4,7 @@ IN DEVELOPMENT ======= 1.2.4-6
 - added: controller.host([path])
 - added: @{host([path])}
 
-- updated: response.cookie(name, value, expires, options)
+- updated: response.cookie(name, value, expire, options)
 
 - renamed: String.toSHA1() to String.sha1()
 - renamed: String.toMD5() to String.md5()
