@@ -107,7 +107,7 @@ function Framework() {
 		'default-request-timeout': 3000,
 
 		'allow-gzip': true,
-		'allow-websocket': true,
+		'allow-websocket': true
 	};
 
 	this.global = {};
@@ -179,13 +179,13 @@ function Framework() {
 	this.path = new FrameworkPath(this);
 
 	var self = this;
-};
+}
 
 // ======================================================
 // PROTOTYPES
 // ======================================================
 
-Framework.prototype = new events.EventEmitter;
+Framework.prototype = new events.EventEmitter();
 
 /*
 	Refresh framework internal information
@@ -199,7 +199,10 @@ Framework.prototype.refresh = function(clear) {
 	self.configure();
 	self.temporary.path = {};
 	self.temporary.range = {};
-	(clear || true) && self.clear();
+
+	if (clear || true)
+		self.clear();
+
 	return self;
 };
 
@@ -339,10 +342,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 			flags[i] = flags[i].toString().toLowerCase();
 
 		priority += (flags.length * 2);
- 	} else
- 		flags = ['get'];
+	} else
+		flags = ['get'];
 
- 	var isMixed = flags.indexOf('mmr') !== -1;
+	var isMixed = flags.indexOf('mmr') !== -1;
 
 	if (isMixed && url.indexOf('{') !== -1)
 		throw new Error('Mixed route cannot contain dynamic path');
@@ -694,7 +697,8 @@ Framework.prototype.restore = function(date, callback, restorePath) {
 		if (typeof(process.send) === FUNCTION)
 			process.send('restore');
 
-		callback && callback(err, path);
+		if (callback)
+			callback(err, path);
 	};
 
 	if (!fs.existsSync(fileName))
@@ -1392,8 +1396,8 @@ Framework.prototype.responseRange = function(name, range, headers, res) {
 
 	var self = this;
 	var arr = range.replace(/bytes=/, '').split('-');
-	var beg = parseInt(arr[0] || '0');
-	var end = parseInt(arr[1] || '0');
+	var beg = parseInt(arr[0] || '0', 10);
+	var end = parseInt(arr[1] || '0', 10);
 	var total = self.temporary.range[name] || 0;
 
 	if (total === 0) {
@@ -1488,8 +1492,7 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 		var date = typeof(compare) === UNDEFINED ? new Date().toUTCString() : compare.toUTCString();
 
 
-		if (strict)
- 		{
+		if (strict) {
 			if (new Date(Date.parse(val)) === new Date(date))
 				return false;
 		} else {
@@ -1682,11 +1685,11 @@ Framework.prototype.init = function(http, config, port, ip) {
 	});
 
 	process.on('SIGTERM', function() {
-	    self.stop();
+		self.stop();
 	});
 
 	process.on('SIGINT', function() {
-	    self.stop();
+		self.stop();
 	});
 
 	process.on('exit', function () {
@@ -1794,20 +1797,20 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	var subdomain = req.uri.host.toLowerCase().split('.');
 
 	req.subdomain = null;
-   	req.path = internal.routeSplit(req.uri.pathname);
+	req.path = internal.routeSplit(req.uri.pathname);
 
 	if (subdomain.length > 2)
 		req.subdomain = subdomain.slice(0, subdomain.length - 2);
 
     var route = self.lookup_websocket(req, socket.uri.pathname);
     if (route === null) {
-    	socket.close();
-    	return;
-    }
+		socket.close();
+		return;
+	}
 
     if (self.onAuthorization === null) {
-	    self._upgrade_continue(route, req, socket, path);
-    	return;
+		self._upgrade_continue(route, req, socket, path);
+		return;
     }
 
 	var logged = route.flags.indexOf('logged') !== -1;
@@ -1816,12 +1819,12 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		self.onAuthorization.call(self, req, socket, route.flags, function(isLogged) {
 
 			if (logged && !isLogged) {
-		    	socket.close();
+				socket.close();
 				return;
 			}
 
 			if (!logged && isLogged) {
-		    	socket.close();
+				socket.close();
 				return;
 			}
 
@@ -1839,14 +1842,14 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 	var self = this;
 
     if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version)) {
-    	socket.close();
+		socket.close();
         return;
     }
 
     if (typeof(self.connections[path]) === UNDEFINED) {
-    	var connection = new WebSocket(self, path, route.name);
-        self.connections[path] = connection;
-        route.onInitialize.call(connection, connection, self);
+		var connection = new WebSocket(self, path, route.name);
+		self.connections[path] = connection;
+		route.onInitialize.call(connection, connection, self);
     }
 
     socket.upgrade(self.connections[path]);
@@ -1909,7 +1912,7 @@ Framework.prototype._request = function(req, res) {
 	res.setHeader('X-Powered-By', 'partial.js v' + self.version);
 
     if (self.config.debug)
-    	res.setHeader('Mode', 'debug');
+		res.setHeader('Mode', 'debug');
 
     res.success = false;
 
@@ -1930,9 +1933,9 @@ Framework.prototype._request = function(req, res) {
 	var accept = header.accept;
 
 	req.isProxy = header['x-proxy'] === 'partial.js';
-   	req.host = header.host;
-   	req.uri = parser.parse(protocol + '://' + req.host + req.url);
-   	req.path = internal.routeSplit(req.uri.pathname);
+	req.host = header.host;
+	req.uri = parser.parse(protocol + '://' + req.host + req.url);
+	req.path = internal.routeSplit(req.uri.pathname);
 
 	var subdomain = req.uri.host.toLowerCase().split('.');
 
@@ -1947,8 +1950,8 @@ Framework.prototype._request = function(req, res) {
 	else
 		req.ip = req.connection.remoteAddress;
 
-   	// if is static file, return file
-   	if (utils.isStaticFile(req.uri.pathname)) {
+	// if is static file, return file
+	if (utils.isStaticFile(req.uri.pathname)) {
 		new Subscribe(self, req, res).file();
 		self.stats.request.file++;
 		return;
@@ -1956,12 +1959,12 @@ Framework.prototype._request = function(req, res) {
 
 	self.stats.request.web++;
 
-   	if (req.uri.query && req.uri.query.length > 0) {
-   		if (self.onXSS !== null)
-   			isXSS = self.onXSS(req.uri.query);
+	if (req.uri.query && req.uri.query.length > 0) {
+		if (self.onXSS !== null)
+			isXSS = self.onXSS(req.uri.query);
 
-   		req.data.get = qs.parse(req.uri.query);
-   	}
+		req.data.get = qs.parse(req.uri.query);
+	}
 
 	if (self.onRoute !== null) {
 		try
@@ -1982,17 +1985,17 @@ Framework.prototype._request = function(req, res) {
     var multipart = req.headers['content-type'] || '';
 
     if (multipart.indexOf('multipart/form-data') === -1) {
-    	if (multipart.indexOf('mixed') === -1)
-    		multipart = '';
-    	else
-    		flags.push('mmr');
+		if (multipart.indexOf('mixed') === -1)
+			multipart = '';
+		else
+			flags.push('mmr');
     }
 
     if (req.isProxy)
-    	flags.push('proxy');
+		flags.push('proxy');
 
     if (accept === 'text/event-stream')
-    	flags.push('sse');
+		flags.push('sse');
 
 	flags.push(protocol);
 
@@ -2025,18 +2028,18 @@ Framework.prototype._request = function(req, res) {
 	// call event request
 	self.emit('request', req, res);
 
-   	if (req.method === 'POST' || req.method === 'PUT') {
-   		if (multipart.length > 0) {
-   			self.stats.request.upload++;
-   			new Subscribe(self, req, res).multipart(multipart);
-   			return;
-   		} else {
-   			self.stats.request.post++;
-   			new Subscribe(self, req, res).urlencoded();
-   			return;
-   		}
-   	} else
-   		self.stats.request.get++;
+	if (req.method === 'POST' || req.method === 'PUT') {
+		if (multipart.length > 0) {
+			self.stats.request.upload++;
+			new Subscribe(self, req, res).multipart(multipart);
+			return;
+		} else {
+			self.stats.request.post++;
+			new Subscribe(self, req, res).urlencoded();
+			return;
+		}
+	} else
+		self.stats.request.get++;
 
 	new Subscribe(self, req, res).end();
 };
@@ -2104,7 +2107,7 @@ Framework.prototype.testing = function(stop, callback) {
 			self.stop();
 
 		return self;
-	};
+	}
 
 	var key = keys[0];
 	var test = self.tests[key];
@@ -2205,7 +2208,7 @@ Framework.prototype.clear = function() {
 		files.forEach(function(file) {
 			var fileName = utils.combine(self.config['directory-temp'], file);
 			fs.unlink(fileName);
-    	});
+		});
 	});
 
 	// clear static cache
@@ -2706,7 +2709,7 @@ function FrameworkFileSystem(framework) {
 		resource: this.deleteResource,
 		file: this.deleteFile
 	};
-};
+}
 
 /*
 	Delete a file - CSS
@@ -2999,7 +3002,7 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 function FrameworkPath(framework) {
 	this.framework = framework;
 	this.config = framework.config;
-};
+}
 
 /*
 	@filename {String} :: optional
@@ -3064,9 +3067,9 @@ function FrameworkCache(framework) {
 	this.framework = framework;
 	this.count = 1;
 	this.interval = null;
-};
+}
 
-FrameworkCache.prototype = new events.EventEmitter;
+FrameworkCache.prototype = new events.EventEmitter();
 
 /*
 	Cache init
@@ -3264,7 +3267,7 @@ function Subscribe(framework, req, res) {
 	this.isCanceled = false;
 	this.isMixed = false;
 	this.header = '';
-};
+}
 
 Subscribe.prototype.success = function() {
 	var self = this;
@@ -3659,7 +3662,7 @@ function Controller(name, req, res, subscribe) {
 	this._currentVideo = '';
 	this._currentJS = '';
 	this._currentCSS = '';
-};
+}
 
 // ======================================================
 // PROTOTYPES
@@ -3745,6 +3748,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 
 	var isAllowed = false;
 	var isAll = false;
+	var value;
 
 	if (header) {
 
@@ -3771,7 +3775,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 
 		for (var i = 0; i < method.length; i++) {
 
-			var value = method[i].toUpperCase();
+			value = method[i].toUpperCase();
 			method[i] = value;
 
 			if (value === self.req.method)
@@ -3786,7 +3790,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 
 	for (var i = 0; i < allow.length; i++) {
 
-		var value = allow[i];
+		value = allow[i];
 
 		if (value === '*' || origin.indexOf(value) !== -1) {
 			isAll = value === '*';
@@ -4743,7 +4747,7 @@ Controller.prototype.$favicon = function(name) {
 	if (name.indexOf('.gif') !== -1)
 		contentType = 'image/gif';
 
-	name = self.app.routeStatic('/' + name)
+	name = self.app.routeStatic('/' + name);
 
 	return '<link rel="shortcut icon" href="' + name + '" type="' + contentType + '" /><link rel="icon" href="' + name + '" type="' + contentType + '" />';
 };
@@ -5432,7 +5436,8 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 
 		stream.on('end', function() {
 			self = null;
-			cb && cb();
+			if (cb)
+				cb();
 		});
 
 		stream.pipe(res, { end: false });
@@ -5444,7 +5449,8 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 
 	stream.on('end', function() {
 		self = null;
-		cb && cb();
+		if (cb)
+			cb();
 	});
 
 	stream.pipe(res, { end: false });
@@ -5568,6 +5574,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var url = self.url;
 	var empty = '';
 	var global = self.app.global;
+	var value = '';
 
 	self.model = model;
 
@@ -5592,7 +5599,6 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		var isEncode = execute.isEncode;
 		var run = execute.run;
 		var evl = true;
-		var value = '';
 
 		if (execute.name === 'if') {
 			values[i] = eval(run);
@@ -5781,14 +5787,14 @@ function WebSocket(framework, path, name) {
     this.async = new utils.Async(this);
     this.path = framework.path;
     this.fs = framework.fs;
-};
+}
 
 // on('open', function(client) {});
 // on('close', function(client) {});
 // on('message', function(client, message) {});
 // on('error', function(error, client) {});
 
-WebSocket.prototype = new events.EventEmitter;
+WebSocket.prototype = new events.EventEmitter();
 
 /*
     Send message
@@ -5804,7 +5810,7 @@ WebSocket.prototype.send = function(message, names, blacklist) {
     var length = keys.length;
 
     if (length === 0)
-    	return self;
+		return self;
 
     blacklist = blacklist || [];
 
@@ -5814,7 +5820,7 @@ WebSocket.prototype.send = function(message, names, blacklist) {
 
         for (var i = 0; i < length; i++) {
 
-        	var _id = keys[i];
+			var _id = keys[i];
             var conn = self.connections[_id];
 
             if (isBlacklist && blacklist.indexOf(conn.id) !== -1)
@@ -5830,7 +5836,7 @@ WebSocket.prototype.send = function(message, names, blacklist) {
 
     for (var i = 0; i < length; i++) {
 
-        var _id = keys[i];
+		var _id = keys[i];
 
         if (names.indexOf(_id) === -1)
             continue;
@@ -5857,14 +5863,14 @@ WebSocket.prototype.close = function(names) {
     var length = keys.length;
 
     if (length === 0)
-    	return self;
+		return self;
 
     if (typeof(names) === UNDEFINED || names === null || names.length === 0) {
-    	for (var i = 0; i < length; i++) {
+		for (var i = 0; i < length; i++) {
 			var _id = keys[i];
             self.connections[_id].close();
             self._remove(_id);
-    	}
+		}
         self._refresh();
         return self;
     }
@@ -6168,9 +6174,9 @@ function WebSocketClient(req, socket, head) {
     // 3 = JSON
 
     this.type = 2;
-};
+}
 
-WebSocketClient.prototype = new events.EventEmitter;
+WebSocketClient.prototype = new events.EventEmitter();
 
 /*
     Internal function
@@ -6234,9 +6240,9 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
     self.id = self._id;
 
     if (flags.indexOf('binary') !== -1)
-    	self.type = 1;
+		self.type = 1;
     else if (flags.indexOf('json') !== -1)
-    	self.type = 3;
+		self.type = 3;
 
     return true;
 };
@@ -6289,8 +6295,8 @@ WebSocketClient.prototype._ondata = function(data) {
     }
 
     if (self.type !== 3) {
-    	self.container.emit('message', self, message);
-    	return;
+		self.container.emit('message', self, message);
+		return;
     }
 
     if (message.isJSON()) {
@@ -6341,7 +6347,7 @@ WebSocketClient.prototype.send = function(message) {
     if (self.isClosed)
         return;
 
-   	self.socket.write(new Buffer(utils.encode_WS(self.type === 3 ? JSON.stringify(message) : (message || '').toString()), 'binary'));
+	self.socket.write(new Buffer(utils.encode_WS(self.type === 3 ? JSON.stringify(message) : (message || '').toString()), 'binary'));
     return self;
 };
 
@@ -6437,7 +6443,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
 		var arr = cookie.split(';');
 		var length = arr.length;
 		for (var i = 0; i < length; i++) {
-        	var c = arr[i].trim().split('=');
+			var c = arr[i].trim().split('=');
 			self.cookies[c[0]] = c[1];
 		}
 	}

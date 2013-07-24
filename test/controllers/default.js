@@ -138,7 +138,7 @@ function viewIndex() {
 
 	assert.ok(self.resource('name') === 'default' && self.resource('default', 'name') === 'default', name + 'resource(default)');
 	assert.ok(self.resource('test', 'name') === 'test', name + 'resource(test.resource)');
-	
+
 	self.log('test');
 
 	self.setModified('123456');

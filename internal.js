@@ -54,22 +54,22 @@ if (typeof(setImmediate) === UNDEFINED) {
 */
 exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, onXSS, callback) {
 
-  	var parser = new MultipartParser();
-  	var boundary = contentType.split(';')[1];
-  	var isFile = false;
-  	var size = 0;
-  	var stream = null;
-  	var tmp = { name: '', value: '', contentType: '', fileName: '', fileNameTmp: '', fileSize: 0, isFile: false, step: 0 };
+	var parser = new MultipartParser();
+	var boundary = contentType.split(';')[1];
+	var isFile = false;
+	var size = 0;
+	var stream = null;
+	var tmp = { name: '', value: '', contentType: '', fileName: '', fileNameTmp: '', fileSize: 0, isFile: false, step: 0 };
 	var ip = req.ip.replace(/\./g, '');
 	var close = 0;
 	var isXSS = false;
 
-  	boundary = boundary.substring(boundary.indexOf('=') + 1);
+	boundary = boundary.substring(boundary.indexOf('=') + 1);
 
-  	req.buffer.isExceeded = false;
-  	req.buffer.isData = true;
+	req.buffer.isExceeded = false;
+	req.buffer.isData = true;
 
-  	parser.initWithBoundary(boundary);
+	parser.initWithBoundary(boundary);
 
 	parser.onPartBegin = function() {
 		tmp.value = '';
@@ -80,37 +80,37 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
     parser.onHeaderValue = function(buffer, start, end) {
 
-    	if (req.buffer.isExceeded || tmp.step > 1)
-    		return;
+		if (req.buffer.isExceeded || tmp.step > 1)
+			return;
 
 		if (isXSS)
 			return;
 
-    	var arr = buffer.slice(start, end).toString(ENCODING).split(';');
+		var arr = buffer.slice(start, end).toString(ENCODING).split(';');
 
-    	if (tmp.step === 1) {
-    		tmp.contentType = arr[0];
-    		tmp.step = 2;
-    		return;
-    	}
+		if (tmp.step === 1) {
+			tmp.contentType = arr[0];
+			tmp.step = 2;
+			return;
+		}
 
-    	if (tmp.step === 0) {
+		if (tmp.step === 0) {
 
-	    	tmp.name = arr[1].substring(arr[1].indexOf('=') + 2);
-    		tmp.name = tmp.name.substring(0, tmp.name.length - 1);
-    		tmp.step = 1;
+			tmp.name = arr[1].substring(arr[1].indexOf('=') + 2);
+			tmp.name = tmp.name.substring(0, tmp.name.length - 1);
+			tmp.step = 1;
 
-    		if (arr.length !== 3)
-    			return;
+			if (arr.length !== 3)
+				return;
 
-    		tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
+			tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
 			tmp.fileName = tmp.fileName.substring(0, tmp.fileName.length - 1);
 			tmp.isFile = true;
 			tmp.fileNameTmp = utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + utils.random(100000) + '.upload');
 			stream = fs.createWriteStream(tmp.fileNameTmp, { flags: 'w' });
 			close++;
-    		return;
-    	}
+			return;
+		}
     };
 
     parser.onPartData = function(buffer, start, end) {
@@ -153,8 +153,8 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 			stream = null;
 		}
 
-    	if (req.buffer.isExceeded)
-    		return;
+		if (req.buffer.isExceeded)
+			return;
 
 		if (isXSS)
 			return;
@@ -186,7 +186,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 			setImmediate(cb);
 		};
 
-    	cb();
+		cb();
     };
 
     req.on('data', parser.write.bind(parser));
@@ -203,19 +203,19 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 */
 exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, callback) {
 
-  	var parser = new MultipartParser();
-  	var boundary = contentType.split(';')[1];
-  	var stream = null;
-  	var tmp = { name: '', contentType: '', fileName: '', fileNameTmp: '', fileSize: 0, isFile: false, step: 0 };
+	var parser = new MultipartParser();
+	var boundary = contentType.split(';')[1];
+	var stream = null;
+	var tmp = { name: '', contentType: '', fileName: '', fileNameTmp: '', fileSize: 0, isFile: false, step: 0 };
 	var ip = req.ip.replace(/\./g, '');
 	var close = 0;
 
-  	boundary = boundary.substring(boundary.indexOf('=') + 1);
+	boundary = boundary.substring(boundary.indexOf('=') + 1);
 
-  	req.buffer.isExceeded = false;
-  	req.buffer.isData = true;
+	req.buffer.isExceeded = false;
+	req.buffer.isData = true;
 
-  	parser.initWithBoundary(boundary);
+	parser.initWithBoundary(boundary);
 
 	parser.onPartBegin = function() {
 		tmp.fileSize = 0;
@@ -224,34 +224,34 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
     };
 
     parser.onHeaderValue = function(buffer, start, end) {
-    	if (req.buffer.isExceeded || tmp.step > 1)
-    		return;
+		if (req.buffer.isExceeded || tmp.step > 1)
+			return;
 
-    	var arr = buffer.slice(start, end).toString(ENCODING).split(';');
+		var arr = buffer.slice(start, end).toString(ENCODING).split(';');
 
-    	if (tmp.step === 1) {
-    		tmp.contentType = arr[0];
-    		tmp.step = 2;
-    		return;
-    	}
+		if (tmp.step === 1) {
+			tmp.contentType = arr[0];
+			tmp.step = 2;
+			return;
+		}
 
-    	if (tmp.step === 0) {
+		if (tmp.step === 0) {
 
-	    	tmp.name = arr[1].substring(arr[1].indexOf('=') + 2);
-    		tmp.name = tmp.name.substring(0, tmp.name.length - 1);
-    		tmp.step = 1;
+			tmp.name = arr[1].substring(arr[1].indexOf('=') + 2);
+			tmp.name = tmp.name.substring(0, tmp.name.length - 1);
+			tmp.step = 1;
 
-    		if (arr.length !== 3)
-    			return;
+			if (arr.length !== 3)
+				return;
 
-    		tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
+			tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
 			tmp.fileName = tmp.fileName.substring(0, tmp.fileName.length - 1);
 			tmp.isFile = true;
 			tmp.fileNameTmp = utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + utils.random(100000) + '.upload');
 			stream = fs.createWriteStream(tmp.fileNameTmp, { flags: 'w' });
 			close++;
-    		return;
-    	}
+			return;
+		}
     };
 
     parser.onPartData = function(buffer, start, end) {
@@ -263,7 +263,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 
 		stream.write(data);
 		tmp.fileSize += length;
-    };
+	};
 
     parser.onPartEnd = function() {
 		if (stream !== null) {
@@ -294,7 +294,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 			setImmediate(cb);
 		};
 
-    	cb();
+		cb();
     };
 
     req.on('data', parser.write.bind(parser));
@@ -449,7 +449,7 @@ function HttpFile(name, filename, filenameTMP, size, contentType) {
 	this.size = size;
 	this.contentType = contentType;
 	this.filenameTMP = filenameTMP;
-};
+}
 
 /*
 	Read file to byte array
@@ -522,7 +522,7 @@ HttpFile.prototype.image = function(imageMagick) {
 function LessParam() {
 	this.name = '';
 	this.value = '';
-};
+}
 
 /*
 	Internal class
@@ -693,62 +693,62 @@ Less.prototype.getValue = function(prev, value) {
 
     while (index < value.length) {
 
-    	var c = value[index];
-    	if (c === '@' && !less.isFunction) {
-    		beg = true;
-    		copy = true;
-    		less.index = index;
-    	} else if (beg) {
-    		var charindex = value.charCodeAt(index);
+		var c = value[index];
+		if (c === '@' && !less.isFunction) {
+			beg = true;
+			copy = true;
+			less.index = index;
+		} else if (beg) {
+			var charindex = value.charCodeAt(index);
 
-    		if (charindex === 40)
-    			param++;
-    		else if (charindex === 41)
-    			param--;
+			if (charindex === 40)
+				param++;
+			else if (charindex === 41)
+				param--;
 
-    		var next = val !== 0;
+			var next = val !== 0;
 
-    		if (charindex === 123) {
+			if (charindex === 123) {
 
-    			if (val === 0)
-    				less.isVariable = true;
+				if (val === 0)
+					less.isVariable = true;
 
-    			val++;
-    			next = true;
-    		} else if (charindex === 125) {
+				val++;
+				next = true;
+			} else if (charindex === 125) {
 
-    			if (val === 0) {
-    				index++;
-    				continue;
-    			}
-    			val--;
-    			next = true;
-    		}
+				if (val === 0) {
+					index++;
+					continue;
+				}
+				val--;
+				next = true;
+			}
 
-    		if (charindex === 32 || charindex === 41)
-    			next = true;
-    		else if (param === 0 && val === 0 && !next)
-    			next = (charindex >= 65 && charindex <= 90) || (charindex >= 97 && charindex <= 122) || charindex === 45;
-     		else if (param > 0 && val === 0) {
-    			next = charindex !== 41;
-    			less.isFunction = true;
-    		} else if (val > 0 && param === 0)
-    			next = true;
+			if (charindex === 32 || charindex === 41)
+				next = true;
+			else if (param === 0 && val === 0 && !next)
+				next = (charindex >= 65 && charindex <= 90) || (charindex >= 97 && charindex <= 122) || charindex === 45;
+			else if (param > 0 && val === 0) {
+				next = charindex !== 41;
+				less.isFunction = true;
+			} else if (val > 0 && param === 0)
+				next = true;
 
-    		copy = next;
-    	}
+			copy = next;
+		}
 
-    	if (beg && copy)
-    		sb.push(c);
-    	else if(beg) {
+		if (beg && copy)
+			sb.push(c);
+		else if(beg) {
 
-    		if (copy)
-    			sb.push(c);
+			if (copy)
+				sb.push(c);
 
-    		less.value = sb.join('').trim();
+			less.value = sb.join('').trim();
 
-    		if (less.isFunction)
-    			less.name = less.value.substring(0, less.value.indexOf('(')).trim();
+			if (less.isFunction)
+				less.name = less.value.substring(0, less.value.indexOf('(')).trim();
 			else if (less.isVariable)
 				less.name = less.value.substring(0, less.value.indexOf('{')).trim();
 			else
@@ -760,10 +760,10 @@ Less.prototype.getValue = function(prev, value) {
 				less.isProblem = true;
 
 			return less;
-    	}
+		}
 
-    	index++;
-    };
+		index++;
+    }
 
     return null;
 };
@@ -782,7 +782,7 @@ Less.prototype.compile = function(value) {
 	while (less !== null) {
 		arr.push(less);
 		less = self.getValue(less, value);
-	};
+	}
 
 	if (arr.length > 0) {
 
@@ -837,11 +837,12 @@ function autoprefixer (value) {
 
 	var builder = [];
 	var index = 0;
+	var property;
 
 	// properties
 	for (var i = 0; i < prefix.length; i++) {
 
-		var property = prefix[i];
+		property = prefix[i];
 		index = 0;
 
 		while (index !== -1) {
@@ -883,7 +884,7 @@ function autoprefixer (value) {
 	for (var i = 0; i < builder.length; i++) {
 
 		var name = builder[i].name;
-		var property = builder[i].property;
+		property = builder[i].property;
 
 		var plus = property;
 		var delimiter = ';';
@@ -953,7 +954,7 @@ function autoprefixer (value) {
 
 		value = value.replace(property, '@[[' + output.length + ']]');
 		output.push(updated);
-	};
+	}
 
 	for (var i = 0; i < output.length; i++)
 		value = value.replace('@[[' + i + ']]', output[i]);
@@ -963,7 +964,7 @@ function autoprefixer (value) {
 	prefix = null;
 
 	return value;
-};
+}
 
 function autoprefixer_keyframes (value) {
 
@@ -994,7 +995,7 @@ function autoprefixer_keyframes (value) {
 
 			end = indexer;
 			break;
-		};
+		}
 
 		if (end === -1)
 			continue;
@@ -1033,7 +1034,7 @@ function autoprefixer_keyframes (value) {
 	output = null;
 
 	return value;
-};
+}
 
 exports.compile_less = function(value, minify, framework) {
 	if (framework) {
@@ -1094,102 +1095,68 @@ function JavaScript(source) {
             switch (theA)
             {
                 case 32:
-                    {
-                        if (isAlphanum(theB))
-                        {
-                            action(1);
-                        }
-                        else
-                        {
-                            action(2);
-                        }
-                        break;
-                    }
+                    if (isAlphanum(theB))
+                        action(1);
+                    else
+                        action(2);
+                    break;
                 case 13:
+                    switch (theB)
                     {
-                        switch (theB)
-                        {
-                            case 123:
-                            case 91:
-                            case 40:
-                            case 43:
-                            case 45:
-                                {
-                                    action(1);
-                                    break;
-                                }
-                            case 32:
-                                {
-                                    action(3);
-                                    break;
-                                }
-                            default:
-                                {
-                                    if (isAlphanum(theB))
-                                    {
-                                        action(1);
-                                    }
-                                    else
-                                    {
-                                        action(2);
-                                    }
-                                    break;
-                                }
-                        }
-                        break;
+                        case 123:
+                        case 91:
+                        case 40:
+                        case 43:
+                        case 45:
+                            action(1);
+                            break;
+                        case 32:
+                            action(3);
+                            break;
+                        default:
+                            if (isAlphanum(theB))
+                                action(1);
+                            else
+                                action(2);
+                            break;
                     }
+                    break;
                 default:
+                    switch (theB)
                     {
-                        switch (theB)
-                        {
-                            case 32:
-                                {
-                                    if (isAlphanum(theA))
-                                    {
+                        case 32:
+                            if (isAlphanum(theA)) {
+                                action(1);
+                                break;
+                            }
+                            action(3);
+                            break;
+
+                        case 13:
+                            switch (theA)
+                            {
+                                case 125:
+                                case 93:
+                                case 41:
+                                case 43:
+                                case 45:
+                                case 34:
+                                case 92:
                                         action(1);
                                         break;
-                                    }
-                                    action(3);
+                                default:
+                                    if (isAlphanum(theA))
+                                        action(1);
+                                    else
+                                        action(3);
                                     break;
-                                }
-                            case 13:
-                                {
-                                    switch (theA)
-                                    {
-                                        case 125:
-                                        case 93:
-                                        case 41:
-                                        case 43:
-                                        case 45:
-                                        case 34:
-                                        case 92:
-                                            {
-                                                action(1);
-                                                break;
-                                            }
-                                        default:
-                                            {
-                                                if (isAlphanum(theA))
-                                                {
-                                                    action(1);
-                                                }
-                                                else
-                                                {
-                                                    action(3);
-                                                }
-                                                break;
-                                            }
-                                    }
-                                    break;
-                                }
-                            default:
-                                {
-                                    action(1);
-                                    break;
-                                }
-                        }
-                        break;
+                            }
+                            break;
+                        default:
+                            action(1);
+                            break;
                     }
+                    break;
             }
         }
     }
@@ -1265,51 +1232,43 @@ function JavaScript(source) {
     function next()
     {
         var c = get();
-        if (c === 47)
+
+        if (c !== 47)
+			return c;
+
+        switch (peek())
         {
-            switch (peek())
-            {
-                case 47:
-                    {
-                        for (; ; )
-                        {
-                            c = get();
-                            if (c <= 13)
-                            {
-                                return c;
-                            }
-                        }
-                    }
-                case 42:
-                    {
-                        get();
-                        for (; ; )
-                        {
-                            switch (get())
-                            {
-                                case 42:
-                                    {
-                                        if (peek() === 47)
-                                        {
-                                            get();
-                                            return 32;
-                                        }
-                                        break;
-                                    }
-                                case EOF:
-                                    {
-                                        c = EOF;
-                                        return;
-                                    }
-                            }
-                        }
-                    }
-                default:
-                    {
+            case 47:
+                for (; ; )
+                {
+                    c = get();
+                    if (c <= 13)
                         return c;
+                }
+                break;
+            case 42:
+                get();
+                for (; ; )
+                {
+                    switch (get())
+                    {
+                        case 42:
+                            if (peek() === 47)
+                            {
+                                get();
+                                return 32;
+                            }
+                            break;
+                        case EOF:
+                            c = EOF;
+                            return;
                     }
-            }
+                }
+                break;
+            default:
+                return c;
         }
+
         return c;
     }
 
@@ -1355,22 +1314,21 @@ function JavaScript(source) {
 
     jsmin();
     return sb.join('');
-};
+}
 
 exports.compile_javascript = function(source, framework) {
     try
     {
-    	if (framework)
-    	{
-    		if (framework.onCompileJS !== null)
-    			return framework.onCompileJS('', source);
-    	}
+		if (framework) {
+			if (framework.onCompileJS !== null)
+				return framework.onCompileJS('', source);
+		}
 
-        return JavaScript(source);
+        return new JavaScript(source);
     } catch (ex) {
 
-    	if (framework)
-        	framework.error(ex, 'JavaScript compressor');
+		if (framework)
+			framework.error(ex, 'JavaScript compressor');
 
         return source;
     }
@@ -1439,9 +1397,8 @@ var Buffer = require('buffer').Buffer,
       return c | 0x20;
     };
 
-for (s in S) {
-  exports[s] = S[s];
-}
+for (s in S)
+	exports[s] = S[s];
 
 function MultipartParser() {
   this.boundary = null;
@@ -1451,7 +1408,7 @@ function MultipartParser() {
 
   this.index = null;
   this.flags = 0;
-};
+}
 
 MultipartParser.stateToString = function(stateNumber) {
   for (var state in S) {
@@ -1530,6 +1487,7 @@ MultipartParser.prototype.write = function(buffer) {
       case S.START:
         index = 0;
         state = S.START_BOUNDARY;
+        break;
       case S.START_BOUNDARY:
         if (index == boundary.length - 2) {
           if (c != CR) {
@@ -1558,6 +1516,7 @@ MultipartParser.prototype.write = function(buffer) {
         state = S.HEADER_FIELD;
         mark('headerField');
         index = 0;
+        break;
       case S.HEADER_FIELD:
         if (c == CR) {
           clear('headerField');
@@ -1592,6 +1551,8 @@ MultipartParser.prototype.write = function(buffer) {
 
         mark('headerValue');
         state = S.HEADER_VALUE;
+        break;
+
       case S.HEADER_VALUE:
         if (c == CR) {
           dataCallback('headerValue', true);
@@ -1616,24 +1577,28 @@ MultipartParser.prototype.write = function(buffer) {
       case S.PART_DATA_START:
         state = S.PART_DATA;
         mark('partData');
+        break;
+
       case S.PART_DATA:
         prevIndex = index;
 
-        if (index == 0) {
+        if (index === 0) {
           // boyer-moore derrived algorithm to safely skip non-boundary data
           i += boundaryEnd;
-          while (i < bufferLength && !(buffer[i] in boundaryChars)) {
+
+          while (i < bufferLength && !(buffer[i] in boundaryChars))
             i += boundaryLength;
-          }
+
           i -= boundaryEnd;
           c = buffer[i];
         }
 
         if (index < boundary.length) {
           if (boundary[index] == c) {
-            if (index == 0) {
+
+            if (index === 0)
               dataCallback('partData', true);
-            }
+
             index++;
           } else {
             index = 0;
@@ -1715,7 +1680,8 @@ MultipartParser.prototype.end = function() {
       self[callbackSymbol]();
     }
   };
-  if ((this.state == S.HEADER_FIELD_START && this.index == 0) ||
+
+  if ((this.state == S.HEADER_FIELD_START && this.index === 0) ||
       (this.state == S.PART_DATA && this.index == this.boundary.length)) {
     callback(this, 'partEnd');
     callback(this, 'end');
@@ -1743,7 +1709,7 @@ function View(controller) {
 	this.controller = controller;
 	this.cache = controller.cache;
 	this.prefix = controller.prefix;
-};
+}
 
 /*
 	Content class
@@ -1754,7 +1720,7 @@ function Content(controller) {
 	this.controller = controller;
 	this.cache = controller.cache;
 	this.prefix = controller.prefix;
-};
+}
 
 /*
 	Parse HTML
@@ -2040,7 +2006,7 @@ function parse(html, controller) {
 	builder.push(minify ? minifyHTML(cache.replace(/\n/g, '\\n')) : cache.replace(/\n/g, '\\n'));
 
 	var fn = '';
-	var plus = true;
+	var isPlus = true;
 	condition = 0;
 
 	for (var i = 0; i < builder.length; i++) {
@@ -2053,13 +2019,13 @@ function parse(html, controller) {
 		if (condition === 1 && str[0] === ':') {
 			condition = 2;
 			fn += ' : ';
-			plus = false;
+			isPlus = false;
 			continue;
 		}
 
 		if (condition !== 0 && str[0] === ')') {
 
-			plus = true;
+			isPlus = true;
 
 			if (condition !== 2)
 				fn += ' : empty';
@@ -2069,11 +2035,11 @@ function parse(html, controller) {
 			continue;
 		}
 
-		if (plus && fn.length > 0)
+		if (isPlus && fn.length > 0)
 			fn += '+';
 
-		if (!plus)
-			plus = true;
+		if (!isPlus)
+			isPlus = true;
 
 		if (str.substring(0, 4) === '(arr') {
 
@@ -2083,7 +2049,7 @@ function parse(html, controller) {
 				break;
 			}
 
-			plus = false;
+			isPlus = false;
 			condition = 1;
 		}
 
@@ -2442,7 +2408,7 @@ function Template(controller, model, repository) {
 
 	if (model !== null && !utils.isArray(model))
 		this.model = [model];
-};
+}
 
 /*
     Parse HTML
@@ -2470,7 +2436,7 @@ Template.prototype.parse = function(html, isRepository) {
 	end = minifyHTML(end);
 	template = minifyHTML(template);
 
-	var indexBeg = 0;
+	indexBeg = 0;
 	var indexer = 0;
 	var index = 0;
 
@@ -2533,7 +2499,7 @@ Template.prototype.parse = function(html, isRepository) {
 			format += '.toString().htmlEncode()';
 
 		var key = name + format;
-		var indexer = keys[key];
+		indexer = keys[key];
 
 		if (typeof(indexer) === UNDEFINED) {
 			property.push(name.trim());
@@ -2593,7 +2559,7 @@ function parseCondition(value) {
 		return "'{0}'".format(a);
 
 	return "'{0}','{1}'".format(a, value.substring(index + 1, value.length - 1).replace(/\'/g, "\\'"));
-};
+}
 
 function parsePluralize(value) {
 
@@ -2636,7 +2602,7 @@ function parsePluralize(value) {
 	d = value.substring(beg + 1, index).replace(/\'/g, "\\'");
 
 	return ".pluralize('{0}','{1}','{2}', '{3}')".format(a, b, c, d);
-};
+}
 
 /*
     Read from file
@@ -2732,7 +2698,7 @@ function compile(generator, obj, plain) {
 		html = compile_eval(generator, obj, 0);
 
 	return plain ? html : generator.beg + html + generator.end;
-};
+}
 
 /*
 	Eval parsed code

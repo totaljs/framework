@@ -4,7 +4,7 @@ var framework = require('../index');
 var http = require('http');
 var fs = require('fs');
 
-var port = parseInt(process.argv[2] || '8001');;
+var port = parseInt(process.argv[2] || '8001');
 var url = 'http://127.0.0.1:' + port + '/';
 var errorStatus = 0;
 var max = 1500;
