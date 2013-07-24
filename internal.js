@@ -1324,7 +1324,7 @@ exports.compile_javascript = function(source, framework) {
 				return framework.onCompileJS('', source);
 		}
 
-        return new JavaScript(source);
+        return JavaScript(source);
     } catch (ex) {
 
 		if (framework)
