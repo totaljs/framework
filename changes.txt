@@ -5,6 +5,7 @@ IN DEVELOPMENT ======= 1.2.4-6
 - added: @{host([path])}
 
 - updated: response.cookie(name, value, expire, options)
+- updated: session is null as default
 
 - renamed: String.toSHA1() to String.sha1()
 - renamed: String.toMD5() to String.md5()
