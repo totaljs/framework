@@ -45,9 +45,9 @@ function Mailer() {
 	this.debug = false;
 	this.Message = Message;
 	this.Mail = Message;
-};
+}
 
-Mailer.prototype = new events.EventEmitter;
+Mailer.prototype = new events.EventEmitter();
 
 Mailer.prototype.create = function(subject, body) {
 	return new Message(subject, body);
@@ -96,7 +96,7 @@ function resolveMx(domain, callback) {
 
         tryConnect(0);
     });
-};
+}
 
 function Message(subject, body) {
 	this.subject = subject || '';
@@ -107,7 +107,7 @@ function Message(subject, body) {
 	this.addressCC = [];
 	this.addressBCC = [];
 	this.from = { name: '', address: '' };
-};
+}
 
 /*
 	Set sender address and name
@@ -251,15 +251,15 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 	});
 
 	socket.on('secureConnect', function() {
-    	self._send(socket, options);
+		self._send(socket, options);
 	});
 
     socket.on('connect', function() {
-    	self._send(socket, options);
+		self._send(socket, options);
     });
 
     if (fnCallback)
-    	socket.on('close', fnCallback);
+		socket.on('close', fnCallback);
 
     return self;
 };
@@ -385,14 +385,14 @@ Message.prototype._send = function(socket, options) {
 		if (mailer.debug)
 			console.log('–––>', line);
 
-		var code = parseInt(line.match(/\d+/)[0]);
+		var code = parseInt(line.match(/\d+/)[0], 10);
 
 		if (code === 250 && !isAuthorization) {
 
 			if (line.indexOf('AUTH LOGIN PLAIN') !== -1) {
 				authType = 'plain';
 				isAuthorization = true;
-				
+
 				if (line.indexOf('XOAUTH') !== -1) {
 					auth.push('AUTH PLAIN ' + new Buffer('\0'+ options.user + '\0' + options.password).toString('base64'));
 				} else {
@@ -428,8 +428,8 @@ Message.prototype._send = function(socket, options) {
 
 				write(buffer.shift());
 
-	            if (buffer.length === 0)
-    	        	mailer.emit('success', self);
+				if (buffer.length === 0)
+					mailer.emit('success', self);
 
 				break;
 
@@ -472,7 +472,7 @@ Message.prototype._send = function(socket, options) {
 				}
 
 				break;
-		};
+		}
 	});
 
 };
@@ -520,7 +520,7 @@ Message.prototype._writeAttachment = function(write, boundary) {
 */
 function getHostName(address) {
     return address.substring(address.indexOf('@') + 1);
-};
+}
 
 // ======================================================
 // EXPORTS

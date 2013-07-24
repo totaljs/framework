@@ -37,7 +37,7 @@ function Table(columnCount, width) {
     this.columnCount = columnCount || 0;
     this.width = width || 0;
     this.rows = [];
-};
+}
 
 /*
     Row class
@@ -46,7 +46,7 @@ function Table(columnCount, width) {
 function Row(index) {
     this.index = index || 0;
     this.columns = [];
-};
+}
 
 /*
     Column class
@@ -58,7 +58,7 @@ function Column(index, size, value) {
     this.index = index || 0;
     this.size = size || 0;
     this.value = value || '';
-};
+}
 
 /*
     UL class
@@ -72,7 +72,7 @@ function UL(type, index, indent, value) {
     this.index = index || 0;
     this.indent = indent || 0;
     this.value = value || '';
-};
+}
 
 function Markdown() {
     this.block = '===';
@@ -145,7 +145,7 @@ function Markdown() {
         return {String} :: tag
     */
     this.onImage = null;
-};
+}
 
 // ======================================================
 // FUNCTIONS
@@ -163,7 +163,7 @@ function $isFill(text, c) {
             return false;
     }
     return true;
-};
+}
 
 /*
     Internal function
@@ -187,7 +187,7 @@ function $clean(text) {
     }
 
     return buffer;
-};
+}
 
 /*
     Internal function
@@ -205,7 +205,7 @@ function $charCount(text, c) {
     }
 
     return count;
-};
+}
 
 /*
     Internal function
@@ -219,7 +219,7 @@ function $nearest(text) {
         return ' ';
 
     return c.toString();
-};
+}
 
 /*
     Internal function
@@ -228,7 +228,7 @@ function $nearest(text) {
 */
 function $firstChar(text) {
     return text[0] || '\0';
-};
+}
 
 /*
     Internal function
@@ -237,7 +237,7 @@ function $firstChar(text) {
 */
 function $isParagraph(c, cn) {
     return c === '>' || c === '|' || (c === '/' && cn === '/') || (c === '\\' && cn === '\\');
-};
+}
 
 /*
     Internal function
@@ -246,7 +246,7 @@ function $isParagraph(c, cn) {
 */
 function $isWhite(c) {
     return regEmpty.test(c);
-};
+}
 
 /*
     Internal function
@@ -263,7 +263,7 @@ function $isUL(text) {
         c = $nearest(text);
 
     return (c === '-' || c === 'x' || c === '+') && text.indexOf(' ') > -1;
-};
+}
 
 /*
     Internal function
@@ -329,7 +329,7 @@ function $parse(self, text) {
     }
 
     return text.trim();
-};
+}
 
 /*
     Internal function
@@ -367,7 +367,7 @@ function $parseKeyword(line, callback) {
     });
 
     return output;
-};
+}
 
 /*
     Internal function
@@ -428,7 +428,7 @@ function $parseLink(line, callback) {
     });
 
     return output;
-};
+}
 
 /*
     Internal function
@@ -490,11 +490,11 @@ function $parseImage(line, callback) {
         else
             url = '';
 
-        output = output.replace(find, callback(text, src, parseInt(dimension[0] || '0'), parseInt(dimension[1] || '0'), url));
+        output = output.replace(find, callback(text, src, parseInt(dimension[0] || '0', 10), parseInt(dimension[1] || '0', 10), url));
     });
 
     return output;
-};
+}
 
 // ======================================================
 // PROTOTYPES
@@ -742,7 +742,7 @@ Markdown.prototype.load = function(text, name) {
         }
 
         buffer += self.onLine(null, $parse(self, m), i) || '';
-    };
+    }
 
     text = null;
     lines = null;

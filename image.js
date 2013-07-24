@@ -25,17 +25,17 @@ var exec = require('child_process').exec;
 
 /*
 	Image class
-	@fileName {String}
+	@filename {String}
 	@imageMagick {Boolean} :: default false
 */
-function Image(fileName, imageMagick) {
+function Image(filename, imageMagick) {
 	this.builder = [];
-	this.fileName = fileName;
+	this.filename = filename;
 	this.isIM = imageMagick || false;
 
-	if (!fileName)
+	if (!filename)
 		throw new Error('Image filename is undefined.');
-};
+}
 
 /*
 	Clear all filter
@@ -49,22 +49,22 @@ Image.prototype.clear = function() {
 
 /*
 	Execute all filters and save image
-	@fileName {String}
+	@filename {String}
 	@callback {Function} :: optional
 	return {Image}
 */
-Image.prototype.save = function(fileName, callback) {
+Image.prototype.save = function(filename, callback) {
 
 	var self = this;
 
-	if (typeof(fileName) === 'function') {
-		callback = fileName;
-		fileName = null;
+	if (typeof(filename) === 'function') {
+		callback = filename;
+		filename = null;
 	}
 
-	fileName = fileName || self.fileName;
+	filename = filename || self.filename;
 
-	var command = self.cmd(self.fileName, fileName);
+	var command = self.cmd(self.filename, filename);
 	if (self.builder.length > 0) {
 		exec(command, function(error, stdout, stderr) {
 			self.clear();
@@ -72,23 +72,23 @@ Image.prototype.save = function(fileName, callback) {
 				if (error)
 					callback(error, '');
 				else
-					callback(null, fileName);
-			};
-		 });
+					callback(null, filename);
+			}
+		});
 	} else {
 		if (callback)
-			callback(null, fileName);
+			callback(null, filename);
 	}
 	return self;
 };
 
 /*
 	Internal function
-	@fileNameFrom {String}
-	@fileNameTo {String}
+	@filenameFrom {String}
+	@filenameTo {String}
 	return {String}
 */
-Image.prototype.cmd = function(fileNameFrom, fileNameTo) {
+Image.prototype.cmd = function(filenameFrom, filenameTo) {
 
 	var self = this;
 	var cmd = '';
@@ -104,7 +104,7 @@ Image.prototype.cmd = function(fileNameFrom, fileNameTo) {
 		cmd += (cmd.length > 0 ? ' ' : '') + o.cmd;
 	});
 
-	return (self.isIM ? 'convert' : 'gm -convert') + ' "' + fileNameFrom + '"' + ' ' + cmd + ' "' + fileNameTo + '"';
+	return (self.isIM ? 'convert' : 'gm -convert') + ' "' + filenameFrom + '"' + ' ' + cmd + ' "' + filenameTo + '"';
 };
 
 /*
@@ -164,11 +164,11 @@ Image.prototype.resize = function(w, h, options) {
 	if (w && h)
 		size = w + 'x' + h;
     else if (w && !h)
-      size = w
+		size = w;
     else if (!w && h)
-      size = 'x' + h;
+		size = 'x' + h;
 
-  	return self.push('-resize', size + options, 1);
+	return self.push('-resize', size + options, 1);
 };
 
 /*
@@ -194,11 +194,11 @@ Image.prototype.scale = function(w, h, options) {
 	if (w && h)
 		size = w + 'x' + h;
     else if (w && !h)
-      size = w
+		size = w;
     else if (!w && h)
-      size = 'x' + h;
+		size = 'x' + h;
 
-  	return self.push('-scale', size + options, 1);
+	return self.push('-scale', size + options, 1);
 };
 
 /*
@@ -242,27 +242,27 @@ Image.prototype.align = function(type) {
 			break;
 		case 'right bottom':
 		case 'bottom right':
-			output = 'SouthEast'
+			output = 'SouthEast';
 			break;
 		case 'left center':
 		case 'center left':
 		case 'left':
-			output = 'West'
+			output = 'West';
 			break;
 		case 'right center':
 		case 'center right':
 		case 'right':
-			output = 'East'
+			output = 'East';
 			break;
 		case 'bottom center':
 		case 'center bottom':
 		case 'bottom':
-			output = 'South'
+			output = 'South';
 			break;
 		case 'top center':
 		case 'center top':
 		case 'top':
-			output = 'North'
+			output = 'North';
 			break;
 		case 'center center':
 		case 'center':
@@ -346,13 +346,13 @@ exports.Picture = Image;
 
 /*
 	Init image class
-	@fileName {String}
+	@filename {String}
 	@imageMagick {Boolean} :: default false
 */
-exports.init = function(fileName, imageMagick) {
-	return new Image(fileName, imageMagick);
+exports.init = function(filename, imageMagick) {
+	return new Image(filename, imageMagick);
 };
 
-exports.load = function(fileName, imageMagick) {
-	return new Image(fileName, imageMagick);
+exports.load = function(filename, imageMagick) {
+	return new Image(filename, imageMagick);
 };

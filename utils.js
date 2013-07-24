@@ -136,7 +136,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 		var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
 
 		req.on('error', function(error) {
-	  		callback(error, null, 0, {});
+			callback(error, null, 0, {});
 		});
 
 		req.setTimeout(timeout || 10000, function() {
@@ -186,7 +186,7 @@ exports.trim = function(obj) {
 /*
 	Empty function
 */
-exports.noop = function() {}
+exports.noop = function() {};
 
 /*
 	Get HTTP Status description
@@ -422,7 +422,7 @@ exports.parseInt = function(obj, def) {
 		return def || 0;
 
 	var str = type !== STRING ? obj.toString() : obj;
-    return str.parseInt(def);
+    return str.parseInt(def, 10);
 };
 
 /*
@@ -586,7 +586,7 @@ exports.GUID = function(max) {
 
     var str = '';
     for (var i = 0; i < (max / 4) + 1; i++)
-    	str += rnd();
+		str += rnd();
 
     return str.substring(0, max);
 };
@@ -627,7 +627,7 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 		if (type === OBJECT) {
 			error.add(exports.validate(value, properties, prepare, error, builder, resource));
 			continue;
-		};
+		}
 
 		var result = prepare(name, value);
 
@@ -649,7 +649,7 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 
 		if (result.isValid === false)
 			error.add(name, result.error);
-	};
+	}
 
 	return error;
 };
@@ -957,7 +957,7 @@ String.prototype.params = function(obj) {
     var formatted = this.toString();
 
     if (typeof(obj) === UNDEFINED || obj === null)
-    	return formatted;
+		return formatted;
 
 	var reg = /\{[^}\n]*\}/g;
 
@@ -1006,7 +1006,7 @@ String.prototype.params = function(obj) {
 
 			var type = typeof(val);
 			if (type === STRING) {
-				var max = parseInt(format);
+				var max = parseInt(format, 10);
 				if (!isNaN(max))
 					val = val.maxLength(max + 3, '...');
 
@@ -1047,7 +1047,7 @@ String.prototype.isURL = function() {
 	if (str.length <= 7)
 		return false;
 	return regexpUrl.test(str);
-}
+};
 
 String.prototype.isEmail = function() {
 	var str = this.toString();
@@ -1069,9 +1069,9 @@ String.prototype.parseInt = function(def) {
     var str = this.toString();
 
     if (str.substring(0, 1) === '0')
-        num = parseInt(str.replace(/\s/g, '').substring(1));
+		num = parseInt(str.replace(/\s/g, '').substring(1), 10);
     else
-        num = parseInt(str.replace(/\s/g, ''));
+		num = parseInt(str.replace(/\s/g, ''), 10);
 
     if (isNaN(num))
         return def || 0;
@@ -1120,15 +1120,15 @@ String.prototype.fromUnicode = function() {
 };
 
 String.prototype.sha1 = function() {
-  	var hash = crypto.createHash('sha1');
-  	hash.update(this.toString(), ENCODING);
-  	return hash.digest('hex');
+	var hash = crypto.createHash('sha1');
+	hash.update(this.toString(), ENCODING);
+	return hash.digest('hex');
 };
 
 String.prototype.md5 = function() {
-  	var hash = crypto.createHash('md5');
-  	hash.update(this.toString(), ENCODING);
-  	return hash.digest('hex');
+	var hash = crypto.createHash('md5');
+	hash.update(this.toString(), ENCODING);
+	return hash.digest('hex');
 };
 
 /*
@@ -1150,14 +1150,14 @@ String.prototype.encode = function(key, isUnique) {
     var counter = this.length + key.length;
 
     for (var i = count - 1; i > 0; i--) {
-    	index = str.charCodeAt(i % data_count);
-        values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
+		index = str.charCodeAt(i % data_count);
+		values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
     }
 
     var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(/\//g, '-').replace(/\+/g, '_');
     index = hash.indexOf('=');
     if (index > 0)
-    	return hash.substring(0, index);
+		return hash.substring(0, index);
 
     return hash;
 };
@@ -1182,7 +1182,7 @@ String.prototype.decode = function(key) {
 	if (index == -1)
 		return '';
 
-	var counter = parseInt(values.substring(0, index));
+	var counter = parseInt(values.substring(0, index), 10);
 	if (isNaN(counter))
 		return '';
 
@@ -1197,7 +1197,7 @@ String.prototype.decode = function(key) {
 
 	for (var i = data_count - 1; i > 0; i--) {
 		index = values.charCodeAt(i) ^ (random ^ key.charCodeAt(i % key_count));
-	    decrypt_data[i] = String.fromCharCode(index);
+		decrypt_data[i] = String.fromCharCode(index);
 	}
 
 	var val = decrypt_data.join('');
@@ -1382,7 +1382,7 @@ String.prototype.link = function(max) {
 
 String.prototype.pluralize = function(zero, one, few, other) {
 	var str = this.toString();
-	return str.parseInt().pluralize(zero, one, few, other)
+	return str.parseInt().pluralize(zero, one, few, other);
 };
 
 /*
@@ -1582,11 +1582,11 @@ Array.prototype.take = function(count) {
 	var arr = [];
 	var self = this;
 	for (var i = 0; i < self.length; i++) {
-    	arr.push(self[i]);
-    	if (arr.length >= count)
-    		return arr;
-  	}
-  	return arr;
+		arr.push(self[i]);
+		if (arr.length >= count)
+			return arr;
+	}
+	return arr;
 };
 
 /*
@@ -1702,9 +1702,9 @@ function Async() {
 	this.pending = {};
 	this.waiting = {};
 	this.isRunning = false;
-};
+}
 
-Async.prototype = new events.EventEmitter;
+Async.prototype = new events.EventEmitter();
 
 /*
 	Internal function
@@ -1729,7 +1729,10 @@ Async.prototype._complete = function(name, waiting) {
 	self.emit('end', name);
 
 	if (self.count === 0) {
-		self.onComplete && self.onComplete();
+
+		if (self.onComplete)
+			self.onComplete();
+
 		self.emit('complete');
 		return;
 	}

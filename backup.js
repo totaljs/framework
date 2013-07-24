@@ -38,7 +38,7 @@ function Backup() {
 	this.filter = function(path) {
 		return true;
 	};
-};
+}
 
 function Walker(addDirectory) {
 	this.pending = [];
@@ -47,7 +47,7 @@ function Walker(addDirectory) {
 	this.file = [];
 	this.complete = null;
 	this.addDirectory = addDirectory || false;
-};
+}
 
 Walker.prototype.walk = function(path) {
 	var self = this;

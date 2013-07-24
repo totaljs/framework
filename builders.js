@@ -34,11 +34,11 @@ function ErrorBuilder(onResource) {
 	this.length = 0;
 	this.replacer = [];
 	this.isPrepared = false;
-};
+}
 
 function UrlBuilder() {
 	this.builder = {};
-};
+}
 
 /*
     @items {Number}
@@ -56,7 +56,7 @@ function PageBuilder(items, page, max) {
 	this.max = 0;
 	this.visible = false;
 	this.refresh(items, page, max);
-};
+}
 
 /*
 	Create object schema
@@ -283,14 +283,20 @@ exports.prepare = function(name, model) {
 
 		if (value.contains(['date', 'time'])) {
 
-			if (typeval === 'date')
-				return item[property] = val;
+			if (typeval === 'date') {
+				item[property] = val;
+				return;
+			}
 
-			if (typeval === 'string')
-				return item[property] = val.parseDate();
+			if (typeval === 'string') {
+				item[property] = val.parseDate();
+				return;
+			}
 
-			if (typeval === 'number')
-				return item[property] = new Date(val);
+			if (typeval === 'number') {
+				item[property] = new Date(val);
+				return;
+			}
 
 			item[property] = null;
 			return;
@@ -350,7 +356,7 @@ ErrorBuilder.prototype.add = function(name, error) {
 
 		self.length = self.builder.length;
 		return self;
-	};
+	}
 
 	self.builder.push({ name : name, error: error || '@' });
 	self.length = self.builder.length;
@@ -631,7 +637,7 @@ UrlBuilder.prototype.clear = function() {
 	var self = this;
 	self.builder = {};
 	return self;
-}
+};
 
 /*
 	Create URL

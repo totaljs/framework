@@ -97,7 +97,7 @@ function Database(filename, directory, changes) {
 	this.changelog = new Changelog(this, this.filenameChanges);
 	this.file = new FileReader(this);
 	this.stored = new Stored(this, this.filenameStored);
-};
+}
 
 /*
 	@db {Database}
@@ -107,7 +107,7 @@ function Views(db) {
 	this.db = db;
 	this.directory = db.directory;
 	this.emit = db.emit;
-};
+}
 
 /*
 	@db {Database}
@@ -124,8 +124,7 @@ function View(db, name, filename) {
 	this.name = name;
 	this.emit = db.emit;
 	this.file = new FileReader(db);
-};
-
+}
 
 /*
 	@db {Database}
@@ -136,7 +135,7 @@ function Stored(db, filename) {
 	this.stored = {};
 	this.cache = {};
 	this.isReaded = false;
-};
+}
 
 /*
 	@db {Database}
@@ -153,7 +152,7 @@ function Binary(db, directory) {
 		return;
 
 	fs.mkdirSync(directory);
-};
+}
 
 /*
 	@db {Database}
@@ -162,20 +161,20 @@ function Binary(db, directory) {
 function Changelog(db, filename) {
 	this.filename = filename;
 	this.db = db;
-};
+}
 
 /*
 	@db {Database}
 */
 function FileReader(db) {
 	this.db = db;
-};
+}
 
 /*
 	PROTOTYPES
 */
 
-Database.prototype = new events.EventEmitter;
+Database.prototype = new events.EventEmitter();
 
 /*
 	Insert data into database
@@ -559,7 +558,8 @@ Database.prototype.clear = function(fnCallback, changes) {
 		if (changes)
 			self.changelog.insert(changes);
 
-		fnCallback && fnCallback();
+		if (fnCallback)
+			fnCallback();
 	});
 
 	if (self.status !== STATUS_UNKNOWN)
@@ -586,7 +586,8 @@ Database.prototype.clear = function(fnCallback, changes) {
 			setImmediate(function() {
 				self.emit('clear', false, true);
 				operation.forEach(function(fn) {
-					fn && fn();
+					if (fn)
+						fn();
 				});
 			});
 
@@ -603,7 +604,8 @@ Database.prototype.clear = function(fnCallback, changes) {
 			setImmediate(function() {
 				self.emit('clear', false, err === null);
 				operation.forEach(function(fn) {
-					fn && fn(err === null);
+					if (fn)
+						fn(err === null);
 				});
 			});
 		});
@@ -652,7 +654,8 @@ Database.prototype.drop = function(fnCallback) {
 			setImmediate(function() {
 				self.emit('drop', false, true);
 				operation.forEach(function(fn) {
-					fn && fn();
+					if (fn)
+						fn();
 				});
 			});
 
@@ -669,7 +672,8 @@ Database.prototype.drop = function(fnCallback) {
 			setImmediate(function() {
 				self.emit('drop', false, err === null);
 				operation.forEach(function(fn) {
-					fn && fn(err === null);
+					if (fn)
+						fn(err === null);
 				});
 			});
 		});
@@ -1160,8 +1164,13 @@ Views.prototype.drop = function(name, fnCallback, changes) {
 				self.db.changelog.insert(changes);
 
 			if (!exists) {
-				fnCallback && fnCallback(true);
-				cb && cb();
+
+				if (fnCallback)
+					fnCallback(true);
+
+				if (cb)
+					cb();
+
 				return;
 			}
 
@@ -1170,8 +1179,11 @@ Views.prototype.drop = function(name, fnCallback, changes) {
 				if (err)
 					self.db.emit('error', err, 'view/drop');
 
-				fnCallback && fnCallback(true);
-				cb && cb();
+				if (fnCallback)
+					fnCallback(true);
+
+				if (cb)
+					cb();
 			});
 		});
 	});
@@ -1230,8 +1242,11 @@ Views.prototype.create = function(name, fnFilter, fnSort, fnCallback, fnUpdate, 
 					if (changes)
 						self.db.changelog.insert(changes);
 
-					fnCallback && setImmediate(function() { fnCallback(count); });
-					cb && cb();
+					if (fnCallback)
+						setImmediate(function() { fnCallback(count); });
+
+					if (cb)
+						cb();
 
 				});
 			};
@@ -1247,12 +1262,15 @@ Views.prototype.create = function(name, fnFilter, fnSort, fnCallback, fnUpdate, 
 
 					if (err) {
 						self.db.emit('error', err, 'view/create');
-						cb & cb();
+
+						if (cb)
+							cb();
+
 						return;
 					}
 
 					fnAppend();
-				})
+				});
 			});
 
 		});
@@ -1517,12 +1535,16 @@ Stored.prototype.clear = function(fnCallback, changes) {
 		self.db.emit('stored/clear');
 
 		if (!exists) {
-			fnCallback && fnCallback.call(self.db);
+
+			if (fnCallback)
+				fnCallback.call(self.db);
+
 			return;
 		}
 
 		fs.unlink(filename, function() {
-			fnCallback && fnCallback.call(self.db);
+			if (fnCallback)
+				fnCallback.call(self.db);
 		});
 	});
 
@@ -1548,7 +1570,10 @@ Stored.prototype._save = function(fnCallback, changes, name) {
 			self.db.changelog.insert(changes);
 
 		self.db.emit('stored/save', name);
-		fnCallback && fnCallback.call(self.db);
+
+		if (fnCallback)
+			fnCallback.call(self.db);
+
 	});
 
 	self.isReaded = false;
@@ -1569,8 +1594,11 @@ Stored.prototype._load = function(fnCallback) {
 		fs.readFile(filename, function(err, data) {
 
 			if (err) {
-				self.db.emit('error', ex, 'stored/load');
-				fnCallback && fnCallback.call(self.db);
+				self.db.emit('error', err, 'stored/load');
+
+				if (fnCallback)
+					fnCallback.call(self.db);
+
 				return;
 			}
 
@@ -1584,7 +1612,9 @@ Stored.prototype._load = function(fnCallback) {
 			if (self.stored === null)
 				self.stored = {};
 
-			fnCallback && fnCallback.call(self.db);
+			if (fnCallback)
+				fnCallback.call(self.db);
+
 		});
 	});
 };
@@ -1633,7 +1663,10 @@ Stored.prototype.execute = function(name, params, fnCallback, changes) {
 	self.db.emit('stored', name);
 
 	if (typeof(fn) === 'undefined') {
-		fnCallback && fnCallback();
+
+		if (fnCallback)
+			fnCallback();
+
 		return;
 	}
 
@@ -1690,7 +1723,9 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
 	if (changes)
 		self.db.changelog.insert(changes);
 
-	fnCallback && fnCallback(id, header);
+	if (fnCallback)
+		fnCallback(id, header);
+
 	return id;
 };
 
@@ -1749,12 +1784,16 @@ Binary.prototype.remove = function(id, fnCallback, changes) {
 			self.db.changelog.insert(changes);
 
 		if (!exists) {
-			fnCallback && fnCallback(false);
+
+			if (fnCallback)
+				fnCallback(false);
+
 			return;
 		}
 
 		fs.unlink(filename, function() {
-			fnCallback && fnCallback(true);
+			if (fnCallback)
+				fnCallback(true);
 		});
 	});
 
@@ -1866,18 +1905,26 @@ Changelog.prototype.clear = function(fnCallback) {
 	fs.exists(self.filename, function(exist) {
 
 		if (!exist) {
-			fnCallback && fnCallback(false);
+
+			if (fnCallback)
+				fnCallback(false);
+
 			return;
 		}
 
 		fs.unlink(self.filename, function(err, data) {
 
 			if (err) {
-				fnCallback && fnCallback(false);
+
+				if (fnCallback)
+					fnCallback(false);
+
 				return;
 			}
 
-			fnCallback && fnCallback(true);
+			if (fnCallback)
+				fnCallback(true);
+
 		});
 
 	});
@@ -1892,12 +1939,12 @@ FileReader.prototype.open = function(filename, size, fnBuffer, fnCallback) {
 	var self = this;
 	fs.open(filename, 'r', function(err, fd) {
 
-	    if (err) {
-	        fnCallback(false);
-	        return;
-	    }
+		if (err) {
+			fnCallback(false);
+			return;
+		}
 
-	    size = size || 1024;
+		size = size || 1024;
 
 		var next = function next(cancel, position) {
 
@@ -1911,7 +1958,7 @@ FileReader.prototype.open = function(filename, size, fnBuffer, fnCallback) {
 			self.read(fd, position + size, size, fnBuffer, next);
 		};
 
-	    self.read(fd, 0, size, fnBuffer, next);
+		self.read(fd, 0, size, fnBuffer, next);
 	});
 };
 
@@ -1920,22 +1967,22 @@ FileReader.prototype.read = function(fd, position, size, fnBuffer, next) {
 
     fs.read(fd, buffer, 0, size, position, function(err, num) {
 
-    	var cancel = num !== size;
-    	var data = buffer.toString('utf8', 0, num);
+		var cancel = num !== size;
+		var data = buffer.toString('utf8', 0, num);
 
-    	if (cancel) {
-    		fnBuffer(data);
-    		next(true);
-    		return;
-    	}
+		if (cancel) {
+			fnBuffer(data);
+			next(true);
+			return;
+		}
 
-    	try {
-    		cancel = !fnBuffer(data);
-    	} catch (err) {
-    		cancel = true;
-    	}
+		try {
+			cancel = !fnBuffer(data);
+		} catch (err) {
+			cancel = true;
+		}
 
-    	next(cancel, position, size);
+		next(cancel, position, size);
     });
 };
 
@@ -1951,8 +1998,8 @@ FileReader.prototype.read = function(fd, position, size, fnBuffer, next) {
 function filterPrepare(fnFilter) {
 	if (fnFilter.length === 0)
 		return function() { return true; };
-	return eval('(function(doc){' + (fnFilter.indexOf('return ') === -1 ? 'return ' : '') + fnFilter + '})')
-};
+	return eval('(function(doc){' + (fnFilter.indexOf('return ') === -1 ? 'return ' : '') + fnFilter + '})');
+}
 
 /*
 	Buffer reader (internal function)
@@ -1979,7 +2026,7 @@ function onBuffer(buffer, fnItem, fnBuffer) {
 	}
 
 	onBuffer(buffer.substring(index + 1), fnItem, fnBuffer);
-};
+}
 
 /*
 	Append multiple documents to file
@@ -2003,7 +2050,7 @@ function appendFile(filename, arr, fnCallback) {
 	fs.appendFile(filename, lines, function(err) {
 		appendFile(filename, arr.slice(30), fnCallback);
 	});
-};
+}
 
 /*
 	Create default object for updating database (internal function)
@@ -2017,7 +2064,7 @@ function updatePrepare(fnUpdate, fnCallback, changes, type) {
 		fnUpdate = filterPrepare(fnUpdate);
 
 	return { filter: fnUpdate, callback: fnCallback, count: 0, type: type, changes: changes };
-};
+}
 
 exports.database = Database;
 exports.load = exports.open = exports.nosql = exports.init = function(filename, directory, changes) {
