@@ -66,7 +66,7 @@ function resolveMx(domain, callback) {
             return;
         }
 
-        if (!data || data.length == 0) {
+        if (!data || data.length === 0) {
             callback(new Error(errors.resolve + domain));
             return;
         }
@@ -520,72 +520,6 @@ Message.prototype._writeAttachment = function(write, boundary) {
 */
 function getHostName(address) {
     return address.substring(address.indexOf('@') + 1);
-};
-
-// ======================================================
-// PROTOTYPES
-// ======================================================
-
-/*
-	Send mail through SMTP server
-	@smtp {String or Object}
-	@addressFrom {String}
-	@addressTo {String or String array}
-	@addressCc {String or String array}
-	@subject {String}
-	@body {String}
-	@senderName {String} :: optional
-	@addressReply {String} :: optional
-	@userName {String} :: optional
-	@userPassword {String} :: optional
-*/
-Mailer.prototype.send = function(smtp, addressFrom, addressTo, addressCc, subject, body, senderName, addressReply, userName, userPassword) {
-
-	var self = this;
-
-	console.log('OBSOLETE: use Message.send()');
-
-	if (smtp !== null && typeof(smtp) === 'object') {
-		addressFrom = smtp.from;
-		addressTo = smtp.to;
-		addressCc = smtp.cc;
-		subject = smtp.subject;
-		body = smtp.body;
-		senderName = smtp.sender || smtp.senderName;
-		addressReply = smtp.reply;
-		userName = smtp.userName;
-		userPassword = smtp.userPassword;
-		smtp = smtp.smtp || null;
-	}
-
-	if (smtp === null || smtp === '') {
-		smtp = getHostName(addressTo);
-
-		resolveMx(smtp, function(err, socket) {
-
-			if (err) {
-				self.emit('error', err);
-				return;
-			}
-
-			socket.on('error', function(err) {
-				self.emit('error', err, addressFrom, addressTo);
-			});
-
-			new SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, senderName, addressReply, userName, userPassword);
-		});
-		return;
-	}
-
-	var socket = net.createConnection(25, smtp);
-
-	socket.on('error', function(err) {
-		self.emit('error', err, addressFrom, addressTo);
-	});
-
-    socket.on('connect', function() {
-        new SMTPSender(socket, addressFrom, addressTo, addressCc, subject, body, senderName, addressReply, userName, userPassword);
-    });
 };
 
 // ======================================================

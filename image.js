@@ -330,7 +330,7 @@ Image.prototype.background = function(color) {
 };
 
 Image.prototype.sepia = function() {
-	return this.push('-modulate 115,0,100 \ -colorize 7,21,50', null, 10);
+	return this.push('-modulate 115,0,100 \\ -colorize 7,21,50', null, 10);
 };
 
 /*

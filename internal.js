@@ -205,7 +205,6 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 
   	var parser = new MultipartParser();
   	var boundary = contentType.split(';')[1];
-  	var isFile = false;
   	var stream = null;
   	var tmp = { name: '', contentType: '', fileName: '', fileNameTmp: '', fileSize: 0, isFile: false, step: 0 };
 	var ip = req.ip.replace(/\./g, '');

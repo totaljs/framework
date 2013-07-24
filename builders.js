@@ -186,6 +186,7 @@ exports.prepare = function(name, model) {
 
 	var item = utils.extend({}, obj, true);
 	var properties = Object.keys(item);
+	var tmp;
 
 	properties.forEach(function(property) {
 
@@ -206,7 +207,7 @@ exports.prepare = function(name, model) {
 			}
 
 			if (value === Boolean) {
-				var tmp = val.toString();
+				tmp = val.toString();
 				item[property] = tmp === 'true' || tmp === '1';
 				return;
 			}
@@ -218,7 +219,7 @@ exports.prepare = function(name, model) {
 
 			if (value === Date) {
 
-				var tmp = null;
+				tmp = null;
 
 				switch (typeval) {
 					case 'object':
@@ -256,7 +257,7 @@ exports.prepare = function(name, model) {
 		}
 
 		if (type === 'boolean') {
-			var tmp = val.toString();
+			tmp = val.toString();
 			item[property] = tmp === 'true' || tmp === '1';
 			return;
 		}
@@ -269,13 +270,13 @@ exports.prepare = function(name, model) {
 		value = value.toLowerCase();
 
 		if (value.contains('bool')) {
-			var tmp = val.toString();
+			tmp = val.toString();
 			item[property] = tmp === 'true' || tmp === '1';
 			return;
 		}
 
 		if (value.contains(['text', 'varchar', 'nvarchar'])) {
-			var tmp = val.toString();
+			tmp = val.toString();
 			item[property] = tmp === 'true' || tmp === '1';
 			return;
 		}

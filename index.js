@@ -1277,6 +1277,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	returnHeaders['Content-Type'] = utils.getContentType(extension);
 
+	var stream;
 	var range = req.headers['range'] || '';
 	res.success = true;
 
@@ -1288,7 +1289,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		if (accept.indexOf('gzip') !== -1) {
 			returnHeaders['Content-Encoding'] = 'gzip';
 			res.writeHead(200, returnHeaders);
-			var stream = fs.createReadStream(name).pipe(zlib.createGzip());
+			stream = fs.createReadStream(name).pipe(zlib.createGzip());
 			stream.pipe(res);
 			return self;
 		}
@@ -1297,14 +1298,14 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		if (accept.indexOf('deflate') !== -1) {
 			returnHeaders['Content-Encoding'] = 'deflate';
 			res.writeHead(200, returnHeaders);
-			var stream = fs.createReadStream(name).pipe(zlib.createDeflate());
+			stream = fs.createReadStream(name).pipe(zlib.createDeflate());
 			stream.pipe(res);
 			return self;
 		}
 	}
 
 	res.writeHead(200, returnHeaders);
-	var stream = fs.createReadStream(name);
+	stream = fs.createReadStream(name);
 	stream.pipe(res);
 	return self;
 };
@@ -1548,6 +1549,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 	var accept = req.headers['accept-encoding'] || '';
 	var returnHeaders = {};
+	var buffer;
 
 	returnHeaders['Cache-Control'] = 'private';
 	returnHeaders['Vary'] = 'Accept-Encoding';
@@ -1567,7 +1569,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	if (compress) {
 
 		if (accept.indexOf('gzip') !== -1) {
-			var buffer = new Buffer(contentBody);
+			buffer = new Buffer(contentBody);
 
 			zlib.gzip(buffer, function(err, data) {
 
@@ -1588,7 +1590,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 		// problém pri IE, deflate nefunguje
 		if (accept.indexOf('deflate') !== -1) {
-			var buffer = new Buffer(contentBody);
+			buffer = new Buffer(contentBody);
 
 			zlib.deflate(buffer, function(err, data) {
 
@@ -1786,7 +1788,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 	self.stats.request.websocket++;
 
-    var socket = new WebSocketClient(req, socket, head);
+    socket = new WebSocketClient(req, socket, head);
+
     var path = utils.path(req.uri.pathname);
 	var subdomain = req.uri.host.toLowerCase().split('.');
 
@@ -1924,10 +1927,10 @@ Framework.prototype._request = function(req, res) {
 	var isXSS = false;
 	var header = req.headers;
 	var protocol = req.connection.encrypted ? 'https' : 'http';
-	var accept = header['accept'];
+	var accept = header.accept;
 
 	req.isProxy = header['x-proxy'] === 'partial.js';
-   	req.host = header['host'];
+   	req.host = header.host;
    	req.uri = parser.parse(protocol + '://' + req.host + req.url);
    	req.path = internal.routeSplit(req.uri.pathname);
 
@@ -2349,6 +2352,7 @@ Framework.prototype.configure = function() {
 			case 'allow-gzip':
 			case 'allow-websocket':
 				obj[name] = value.toLowerCase() == 'true' || value === '1';
+				break;
 			case 'version':
 				obj[name] = value;
 				break;
@@ -4266,7 +4270,7 @@ Controller.prototype.$textarea = function(model, name, attr) {
 		builder += ' style="' + attr.style + ATTR_END;
 
 	if (attr.pattern)
-		builder += ' pattern="' + pattern + ATTR_END;
+		builder += ' pattern="' + attr.pattern + ATTR_END;
 
 	if (typeof(model) === UNDEFINED)
 		return builder + '></textarea>';
@@ -4526,7 +4530,7 @@ Controller.prototype.$modified = function(value) {
 
 		var d = value.split(' ');
 
-		var date = d[0].split('-');
+		date = d[0].split('-');
 		var time = (d[1] || '').split(':');
 
 		var year = utils.parseInt(date[0] || '');
@@ -5483,15 +5487,16 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 
 	var self = this;
 	var headers = { 'X-Proxy': 'partial.js', 'Content-Type': 'application/json' };
+	var tmp;
 
 	if (typeof(fnCallback) === NUMBER) {
-		var tmp = timeout;
+		tmp = timeout;
 		timeout = fnCallback;
 		fnCallback = tmp;
 	}
 
 	if (typeof(obj) === FUNCTION) {
-		var tmp = fnCallback;
+		tmp = fnCallback;
 		fnCallback = obj;
 		obj = tmp;
 	}
@@ -5719,7 +5724,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		values[i] = value;
 	}
 
-	var value = fn.call(self, values, self, repository, model, session, sitemap, get, post, url, empty, global, helper).replace(/\\n/g, '\n');
+	value = fn.call(self, values, self, repository, model, session, sitemap, get, post, url, empty, global, helper).replace(/\\n/g, '\n');
 
 	if (isPartial)
 		return value;
@@ -6152,7 +6157,7 @@ function WebSocketClient(req, socket, head) {
     this.ip = '';
     this.protocol = (req.headers['sec-websocket-protocol'] || '').replace(/\s/g, '').split(',');
 
-    req.uri = parser.parse('ws://' + req.headers['host'] + req.url);
+    req.uri = parser.parse('ws://' + req.headers.host + req.url);
 
     this.uri = req.uri;
     this.length = 0;

@@ -29,7 +29,7 @@ var path = require('path');
 var fs = require('fs');
 var events = require('events');
 var crypto = require('crypto');
-var regexpMail = RegExp('^[a-zA-Z0-9-_.]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
+var regexpMail = new RegExp('^[a-zA-Z0-9-_.]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 var expressionCache = {};
 
@@ -140,7 +140,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 		});
 
 		req.setTimeout(timeout || 10000, function() {
-			callback(new Error(utils.httpStatus(408)), null, 0, {});
+			callback(new Error(exports.httpStatus(408)), null, 0, {});
 		});
 
 		if (isPOST)
@@ -1144,17 +1144,18 @@ String.prototype.encode = function(key, isUnique) {
     var random = isUnique || true ? exports.random(120) + 40 : 65;
     var count = data_count + (random % key_count);
     var values = [];
+    var index = 0;
 
     values[0] = String.fromCharCode(random);
     var counter = this.length + key.length;
 
     for (var i = count - 1; i > 0; i--) {
-    	var index = str.charCodeAt(i % data_count);
+    	index = str.charCodeAt(i % data_count);
         values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
     }
 
     var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(/\//g, '-').replace(/\+/g, '_');
-    var index = hash.indexOf('=');
+    index = hash.indexOf('=');
     if (index > 0)
     	return hash.substring(0, index);
 
@@ -1195,7 +1196,7 @@ String.prototype.decode = function(key) {
 	var decrypt_data = [];
 
 	for (var i = data_count - 1; i > 0; i--) {
-		var index = values.charCodeAt(i) ^ (random ^ key.charCodeAt(i % key_count));
+		index = values.charCodeAt(i) ^ (random ^ key.charCodeAt(i % key_count));
 	    decrypt_data[i] = String.fromCharCode(index);
 	}
 
@@ -1256,7 +1257,7 @@ String.prototype.removeDiacritics = function() {
 */
 String.prototype.indent = function(max, c) {
 	var self = this.toString();
-	return Array(max + 1).join(c || ' ') + self;
+	return new Array(max + 1).join(c || ' ') + self;
 };
 
 /*
@@ -1297,7 +1298,7 @@ String.prototype.isNumber = function(isDecimal) {
 */
 String.prototype.padLeft = function(max, c) {
 	var self = this.toString();
-	return Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
+	return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
 };
 
 /*
@@ -1307,7 +1308,7 @@ String.prototype.padLeft = function(max, c) {
 */
 String.prototype.padRight = function(max, c) {
 	var self = this.toString();
-	return self + Array(Math.max(0, max - self.length + 1)).join(c || ' ');
+	return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
 };
 
 /*
@@ -1381,7 +1382,7 @@ String.prototype.link = function(max) {
 
 String.prototype.pluralize = function(zero, one, few, other) {
 	var str = this.toString();
-	return str.parseInt().pluralize(zer, one, few, other)
+	return str.parseInt().pluralize(zero, one, few, other)
 };
 
 /*
@@ -1421,6 +1422,7 @@ Number.prototype.format = function(format) {
 	var num = this.toString();
 	var beg = 0;
 	var end = 0;
+	var max = 0;
 	var output = '';
 
 	if (typeof(format) === STRING) {
@@ -1451,7 +1453,7 @@ Number.prototype.format = function(format) {
 		}
 
 		if (strBeg.length > beg) {
-			var max = strBeg.length - beg;
+			max = strBeg.length - beg;
 			var tmp = '';
 			for (var i = 0; i < max; i++)
 				tmp += '#';
@@ -1506,8 +1508,8 @@ Number.prototype.format = function(format) {
 	}
 
 	output = '### ### ###';
-	var beg = num.indexOf('.');
-	var max = format || 0;
+	beg = num.indexOf('.');
+	max = format || 0;
 
 	if (max === 0 && num != -1)
 		max = num.length - (beg + 1);
