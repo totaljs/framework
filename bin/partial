@@ -86,7 +86,7 @@ function createFileIndex(directory) {
 	buffer.push("	return;");
 	buffer.push("}");
 	buffer.push("");
-	buffer.push("var port = parseInt(process.argv[2] || '8000');");
+	buffer.push("var port = parseInt(process.argv[2] || '8000', 10);");
 	buffer.push("var debug = true;");
 	buffer.push("");
 	buffer.push("framework.run(http, debug, port);");

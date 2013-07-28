@@ -19,7 +19,7 @@ if (index !== -1) {
 	return;
 }
 
-var port = parseInt(process.argv[2] || '8000');
+var port = parseInt(process.argv[2] || '8000', 10);
 var debug = true;
 
 framework.run(http, debug, port);
