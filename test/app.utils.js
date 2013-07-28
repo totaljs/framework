@@ -25,12 +25,12 @@ function prototypeNumber() {
 	assert.ok(number.floor(4) === 10.1034, 'floor number: 4 decimals');
 	assert.ok(number.floor(0) === 10, 'floor number: 0 decimals');
 	assert.ok(number.hex() === 'A.1A7AB75643028', 'number to hex');
-};
+}
 
 // test: string prototype
-function prototypeString() {	
+function prototypeString() {
 	var str = ' partial.js    ';
-	assert.ok(str.trim() === 'partial.js', 'string.trim()');	
+	assert.ok(str.trim() === 'partial.js', 'string.trim()');
 	assert.ok(str.contains(['p', 'X']), 'string.contains(all=false)');
 	assert.ok(str.contains(['p', 'X'], true) === false, 'string.contains(all=true)');
 	assert.ok('{0}={1}'.format('name', 'value') === 'name=value', 'string.format()');
@@ -52,13 +52,13 @@ function prototypeString() {
 
 	str = 'www.google.sk';
 	assert.ok(str.isURL() === true, 'string.isURL(): ' + str);
-	
+
 	str = 'google.sk';
 	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
 
 	str = 'google';
 	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
-	
+
 	str = 'http://google.com';
 	assert.ok(str.isURL() === true, 'string.isURL(): ' + str);
 
@@ -104,9 +104,9 @@ function prototypeString() {
 	str = '.';
 	assert.ok(str.parseFloat() === 0, 'string.parseFloat(): ' + str);
 
-	str = '123456'
-	assert.ok(str.toSHA1() === '7c4a8d09ca3762af61e59520943dc26494f8941b', 'string.toSHA1(): ' + str);
-	assert.ok(str.toMD5() === 'e10adc3949ba59abbe56e057f20f883e', 'string.toMD5(): ' + str);
+	str = '123456';
+	assert.ok(str.sha1() === '7c4a8d09ca3762af61e59520943dc26494f8941b', 'string.sha1(): ' + str);
+	assert.ok(str.md5() === 'e10adc3949ba59abbe56e057f20f883e', 'string.md5(): ' + str);
 
 	var value = str.encode('key', false);
 	assert.ok(value.decode('key') === str, 'string.encode() & string.decode() = unique=false: ' + str);
@@ -147,13 +147,13 @@ function prototypeString() {
 	assert.ok(num.padLeft(10) === '0000012345', 'number.padLeft(10): ' + num);
 	assert.ok(num.padRight(10) === '1234500000', 'number.padRight(10): ' + num);
 
-	str = 'Date: {now | dd.MM.yyyy HH:mm:ss}. Currency: {number | ###,###,###.##} and encoded: {name} and raw: {!name}';	
+	str = 'Date: {now | dd.MM.yyyy HH:mm:ss}. Currency: {number | ###,###,###.##} and encoded: {name} and raw: {!name}';
 	assert.ok(str.params({now: new Date(), number: 23034.34, name: '<b>Peter</b>'}).length === 106, 'string.params(): ' + str);
 
 	str = 'Peter Širka Linker & - you known';
 	assert.ok(str.link() === 'peter-sirka-linker-you-known', 'string.link(): ' + str);
 	assert.ok(str.link(11) === 'peter-sirka', 'string.link(): ' + str);
-};
+}
 
 function prototypeArray() {
 
@@ -177,7 +177,7 @@ function prototypeArray() {
 	arr = [1, 2, 3, 4, 5];
 	assert.ok(arr.skip(3).join('') === '45', 'array.skip()');
 	assert.ok(arr.take(3).join('') === '123', 'array.take()');
-};
+}
 
 function others() {
 	var obj = {};
@@ -193,8 +193,8 @@ function others() {
 
 	var str = 'http://www.google.sk';
 	assert.ok(utils.isRelative(str) === false, 'utils.isRelative(): ' + str);
-	
-	str = '/img/logo.jpg'
+
+	str = '/img/logo.jpg';
 	assert.ok(utils.isRelative(str) === true, 'utils.isRelative(): ' + str);
 
 	assert.ok(utils.isStaticFile(str) === true, 'utils.isStaticFile(): ' + str);
@@ -237,7 +237,7 @@ function others() {
 
 	obj = { a: '  1  ', b: { a: '    2 '}};
 	utils.trim(obj);
-	assert.ok(JSON.stringify(obj) === '{"a":"1","b":{"a":"2"}}', 'utils.trim()')
+	assert.ok(JSON.stringify(obj) === '{"a":"1","b":{"a":"2"}}', 'utils.trim()');
 
 	var async = new utils.Async();
 	var value = [];
@@ -277,7 +277,7 @@ function others() {
 	async.wait('7', '6', function(next) {
 		value.push(7);
 		next();
-	});	
+	});
 
 	async.wait('8', '7', function(next) {
 		value.push(8);
@@ -328,7 +328,7 @@ function others() {
 
 	assert.ok(expression('a.id === b', ['a', 'b'], { id: 1 }, 1)(), 'expression error (true)');
 	assert.ok(!expression('a.id === b', ['a', 'b'], { id: 1 })(), 'expression error (false)');
-};
+}
 
 function onValidation(name, value) {
 	switch (name) {
@@ -337,9 +337,9 @@ function onValidation(name, value) {
 		case 'lastName':
 			return 'lastName-error';
 		case 'age':
-			return utils.isValid(utils.parseInt(value) > 0, 'age-error')
+			return utils.isValid(utils.parseInt(value) > 0, 'age-error');
 	}
-};
+}
 
 prototypeNumber();
 prototypeString();

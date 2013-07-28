@@ -960,8 +960,15 @@ String.prototype.params = function(obj) {
 		return formatted;
 
 	var reg = /\{[^}\n]*\}/g;
+	var match = formatted.match(reg);
 
-	formatted.match(reg).forEach(function(prop) {
+	if (match === null)
+		return formatted;
+
+	var length = match.length;
+
+	for (var i = 0; i < length; i++) {
+		var prop = match[i];
 
 		var isEncode = false;
 		var name = prop.substring(1, prop.length - 1).trim();
@@ -1016,7 +1023,7 @@ String.prototype.params = function(obj) {
 
 		val = val.toString().dollar();
 		formatted = formatted.replace(prop, isEncode ? exports.htmlEncode(val) : val);
-	});
+	}
 
     return formatted;
 };
