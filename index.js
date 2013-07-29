@@ -3470,7 +3470,7 @@ Subscribe.prototype._authorization = function(isLogged) {
 	self.route = self.framework.lookup(self.req, self.req.buffer.isExceeded ? '#431' : self.req.uri.pathname, self.req.flags);
 
 	if (self.route === null)
-		self.route = self.framework.lookup(self.req, '#401', []);
+		self.route = self.framework.lookup(self.req, self.req.isAuthorized ? '#404' : '#401', []);
 
 	self.execute(self.req.buffer.isExceeded ? 431 : 404);
 };
