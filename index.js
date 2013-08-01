@@ -1678,6 +1678,8 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 	if (res.success)
 		return self;
 
+	req.clear(true);
+
 	res.success = true;
 	res.writeHead(permament ? 301 : 302, { 'Location': url });
 	res.end();
@@ -5320,6 +5322,7 @@ Controller.prototype.redirect = function(url, permament) {
 		return self;
 
 	self.subscribe.success();
+	self.req.clear(true);
 	self.res.success = true;
 	self.res.writeHead(permament ? 301 : 302, { 'Location': url });
 	self.res.end();
