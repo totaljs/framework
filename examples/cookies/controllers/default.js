@@ -13,6 +13,12 @@ function cookieWrite() {
 	var value = 'VALUE';
 	
 	self.res.cookie('test', value, new Date().add('day', 1));
+
+	// options.domain
+	// options.path
+	// options.secure
+	// options.httponly
+	// self.res.cookie(name, value, expire, [options]);
 	
 	//self.plain('Cookie example, write: ' + value);
 	self.redirect('/read/');

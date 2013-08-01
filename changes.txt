@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.4-6
+======= 1.2.4-6
 
 - added: controller.ip;
 - added: controller.host([path])
