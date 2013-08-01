@@ -1509,6 +1509,50 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 };
 
 /*
+	Response with 401 error
+	@req {ServerRequest}
+	@res {ServerResponse}
+	return {Framework}
+*/
+Framework.prototype.response401 = function(req, res) {
+	var self = this;
+
+	if (res.success)
+		return self;
+
+	req.clear(true);
+
+	res.success = true;
+	res.writeHead(401, { 'Content-Type': 'text/plain' });
+	res.end(utils.httpStatus(401));
+
+	self.stats.response.error401++;
+	return self;
+};
+
+/*
+	Response with 403 error
+	@req {ServerRequest}
+	@res {ServerResponse}
+	return {Framework}
+*/
+Framework.prototype.response403 = function(req, res) {
+	var self = this;
+
+	if (res.success)
+		return self;
+
+	req.clear(true);
+
+	res.success = true;
+	res.writeHead(403, { 'Content-Type': 'text/plain' });
+	res.end(utils.httpStatus(403));
+
+	self.stats.response.error403++;
+	return self;
+};
+
+/*
 	Response with 404 error
 	@req {ServerRequest}
 	@res {ServerResponse}
@@ -1524,7 +1568,7 @@ Framework.prototype.response404 = function(req, res) {
 
 	res.success = true;
 	res.writeHead(404, { 'Content-Type': 'text/plain' });
-	res.end('File not found (404).');
+	res.end(utils.httpStatus(404));
 
 	self.stats.response.error404++;
 	return self;

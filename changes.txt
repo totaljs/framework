@@ -3,6 +3,8 @@ IN DEVELOPMENT ======= 1.2.4-6
 - added: controller.ip;
 - added: controller.host([path])
 - added: @{host([path])}
+- added: framework.response401(req, res)
+- added: framework.response403(req, res)
 
 - updated: response.cookie(name, value, expire, options)
 - updated: session is null as default
