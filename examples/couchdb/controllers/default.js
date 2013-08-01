@@ -1,26 +1,21 @@
 exports.install = function(framework) {
-	framework.route('/', viewDatabase);
+	framework.route('/', view_database);
 };
 
-function viewDatabase() {
-	
+function view_database() {
+
 	var self = this;
 	var db = self.framework.db();
 
-	db.all({ limit: 10 }, function(err, data) {
+	db.all({ limit: 10 }, function(err, rows, total, offset) {
 
 		if (err) {
 			self.plain(err.toString());
 			return;
 		}
 
-		var rows = [];
-		data.rows.forEach(function(o) {
-			rows.push(o.id);
-		});
-
 		// return all rows
-		self.plain(rows.join('\n'));
+		self.json(rows);
 
 		// insert
 		// @doc {Object}
