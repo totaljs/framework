@@ -3531,8 +3531,15 @@ Subscribe.prototype._end = function() {
 	}
 
 	if (self.req.buffer.isExceeded) {
-		self.req.clear(true);
-		self.req.connection.destroy();
+		self.route = self.framework.lookup(self.req, '#431', []);
+
+		if (self.route === null) {
+			self.req.clear(true);
+			self.req.connection.destroy();
+			return;
+		}
+
+		self.execute(431);
 		return;
 	}
 
