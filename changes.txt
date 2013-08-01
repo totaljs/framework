@@ -14,8 +14,11 @@ IN DEVELOPMENT ======= 1.2.4-6
 
 - fixed: route dynamic params
 - fixed: controller.view500()
+- fixed: clearing temporary files
 
 clean code
+
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart-filestorage
 
 ======= 1.2.4-5
 
@@ -57,7 +60,7 @@ IMPORTANT:
 
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/cors
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/custom-headers
-- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/views-route-file
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/views-route-to-file
 - NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/email-templating-view
 
 ======= 1.2.4-4
