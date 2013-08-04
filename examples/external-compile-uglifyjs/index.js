@@ -6,7 +6,6 @@ var port = 8004;
 var debug = true;
 
 framework.onCompileJS = function (filename, content) {
-	console.log(content);
 	return uglify.minify(content, { fromString: true }).code;
 };
 
