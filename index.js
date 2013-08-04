@@ -5193,7 +5193,10 @@ Controller.prototype.file = function(filename, downloadName, headers) {
 	if (self.res.success || !self.isConnected)
 		return self;
 
-	filename = utils.combine(self.framework.config['directory-public'], filename);
+	if (filename[0] === '~')
+		filename =  '.' + filename.substring(1);
+	else
+		filename = utils.combine(self.framework.config['directory-public'], filename);
 
 	self.subscribe.success();
 	self.framework.responseFile(self.req, self.res, filename, downloadName, headers);
@@ -6340,7 +6343,7 @@ WebSocketClient.prototype._ondata = function(data) {
         return;
     }
 
-	var message = utils.decode_WS(data);
+	var message = decodeURIComponent(utils.decode_WS(data));
 
     if (message === '' || message === null) {
         // websocket.close() send empty string
@@ -6401,7 +6404,8 @@ WebSocketClient.prototype.send = function(message) {
     if (self.isClosed)
         return;
 
-	self.socket.write(new Buffer(utils.encode_WS(self.type === 3 ? JSON.stringify(message) : (message || '').toString()), 'binary'));
+    message = encodeURIComponent(message);
+	self.socket.write(new Buffer(utils.encode_WS(self.type === 3 ? JSON.stringify(message) : (message || '').toString())), 'binary');
     return self;
 };
 

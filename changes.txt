@@ -1,3 +1,8 @@
+IN DEVELOPMENT ======= 1.2.4-7
+
+- added: encodeURIcomponent & decodeURIcomponent to WebSocket
+- added: ~ to controller.file()
+
 ======= 1.2.4-6
 
 - added: controller.ip;
