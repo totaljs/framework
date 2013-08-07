@@ -116,6 +116,7 @@ $ open http://127.0.0.1:8080
 
 ## Interesting modules
 
+* __FileStorage__ REST client for node.js - https://github.com/petersirka/node-filestorage
 * Simple __Backup/Restore__ module for node.js - https://github.com/petersirka/backup
 * __PayPal Express Checkout__ for node.js - https://github.com/petersirka/node-payment-paypal
 * __CouchDB client__ for node.js - https://github.com/petersirka/node-couchdb

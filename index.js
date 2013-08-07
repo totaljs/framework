@@ -6343,9 +6343,9 @@ WebSocketClient.prototype._ondata = function(data) {
         return;
     }
 
-	var message = decodeURIComponent(utils.decode_WS(data));
+	var message = decodeURIComponent(utils.decode_WS(data) || '');
 
-    if (message === '' || message === null) {
+    if (message === '') {
         // websocket.close() send empty string
         self.close();
         return;
@@ -6404,8 +6404,7 @@ WebSocketClient.prototype.send = function(message) {
     if (self.isClosed)
         return;
 
-    message = encodeURIComponent(message);
-	self.socket.write(new Buffer(utils.encode_WS(self.type === 3 ? JSON.stringify(message) : (message || '').toString())), 'binary');
+	self.socket.write(new Buffer(utils.encode_WS(encodeURIComponent(self.type === 3 ? JSON.stringify(message) : (message || '').toString())), 'binary'));
     return self;
 };
 
