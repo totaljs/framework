@@ -107,7 +107,9 @@ function Framework() {
 		'default-request-timeout': 3000,
 
 		'allow-gzip': true,
-		'allow-websocket': true
+		'allow-websocket': true,
+		'allow-compile-js': true,
+		'allow-compile-css': true
 	};
 
 	this.global = {};
@@ -1141,11 +1143,11 @@ Framework.prototype.compileStatic = function(req, filename) {
 
 	switch (ext) {
 		case '.js':
-			output = self.onCompileJS === null ? internal.compile_javascript(output, self) : self.onCompileJS(filename, output);
+			output = self.config['allow-compile-js'] ? self.onCompileJS === null ? internal.compile_javascript(output, self) : self.onCompileJS(filename, output) : output;
 			break;
-		case '.css':
-			output = self.onCompileCSS === null ? internal.compile_less(output) : self.onCompileCSS(filename, output);
 
+		case '.css':
+			output = self.config['allow-compile-css'] ? self.onCompileCSS === null ? internal.compile_less(output) : self.onCompileCSS(filename, output) : output;
 			if (self.onVersion !== null) {
 				var matches = output.match(/url\(.*?\)/g);
 				if (matches !== null) {
@@ -2400,6 +2402,8 @@ Framework.prototype.configure = function() {
 				break;
 			case 'allow-gzip':
 			case 'allow-websocket':
+			case 'allow-compile-css':
+			case 'allow-compile-js':
 				obj[name] = value.toLowerCase() == 'true' || value === '1';
 				break;
 			case 'version':

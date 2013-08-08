@@ -2,6 +2,8 @@ IN DEVELOPMENT ======= 1.2.4-7
 
 - added: encodeURIcomponent & decodeURIcomponent to WebSocket
 - added: ~ to controller.file()
+- added: framework.config['allow-compile-js'] {Boolean} (default true)
+- added: framework.config['allow-compile-css'] {Boolean} (default true)
 
 ======= 1.2.4-6
 
