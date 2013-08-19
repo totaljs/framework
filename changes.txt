@@ -5,6 +5,8 @@
 - added: framework.config['allow-compile-js'] {Boolean} (default true)
 - added: framework.config['allow-compile-css'] {Boolean} (default true)
 - added: request.user (default null)
+- added: new view tag: @{user} (default null)
+- added: controller.user (default null)
 
 ======= 1.2.4-6
 

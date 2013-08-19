@@ -1819,7 +1819,7 @@ function parse(html, controller) {
 				} else {
 
 					if (isCondition)
-						param = '( ' + param + '(self,repository,model,session,sitemap,get,post,url,empty,global,helper) || \'\')';
+						param = '( ' + param + '(self,repository,model,session,sitemap,get,post,url,empty,global,helper,user) || \'\')';
 
 					builder.push(param);
 				}
@@ -1935,6 +1935,7 @@ function parse(html, controller) {
 						case 'model':
 						case 'repository':
 						case 'session':
+						case 'user':
 						case 'config':
 						case 'get':
 						case 'post':
@@ -2059,7 +2060,7 @@ function parse(html, controller) {
 			fn += "'" + str.replace(/\'/g, "\\'") + "'";
 	}
 
-	fn = '(function(arr,self,repository,model,session,sitemap,get,post,url,empty,global,helper){return ' + (fn.length === 0 ? 'empty' : fn) + ';})';
+	fn = '(function(arr,self,repository,model,session,sitemap,get,post,url,empty,global,helper,user){return ' + (fn.length === 0 ? 'empty' : fn) + ';})';
 
 	try
 	{

@@ -3667,6 +3667,7 @@ function Controller(name, req, res, subscribe) {
 	this.req = req;
 	this.res = res;
 	this.session = req.session;
+	this.user = req.user;
 	this.get = req.data.get;
 	this.post = req.data.post;
 	this.files = req.data.files;
@@ -5630,6 +5631,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var get = self.get;
 	var post = self.post;
 	var session = self.session;
+	var user = self.user;
 	var helper = self.app.helpers;
 	var fn = generator.generator;
 	var sitemap = null;
@@ -5792,7 +5794,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		values[i] = value;
 	}
 
-	value = fn.call(self, values, self, repository, model, session, sitemap, get, post, url, empty, global, helper).replace(/\\n/g, '\n');
+	value = fn.call(self, values, self, repository, model, session, sitemap, get, post, url, empty, global, helper, user).replace(/\\n/g, '\n');
 
 	if (isPartial)
 		return value;
