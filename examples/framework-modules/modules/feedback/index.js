@@ -58,6 +58,7 @@ exports.onRequest = function() {
 };
 
 exports.greeting = function(value) {
+	console.log('From greeting(): ' + value);
 	greeting = value;
 };
 
