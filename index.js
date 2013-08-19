@@ -52,7 +52,7 @@ process.chdir(directory);
 process.maxTickDepth = 300;
 
 function Framework() {
-	this.version = 1246;
+	this.version = 1247;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
@@ -1971,6 +1971,7 @@ Framework.prototype._request = function(req, res) {
 	req.ip = '';
 	req.flags = [];
 	req.session = null;
+	req.user = null;
 	req.prefix = '';
 	req.subdomain = [];
 	req.isAuthorized = true;
