@@ -3778,6 +3778,26 @@ function Controller(name, req, res, subscribe) {
 	this._currentVideo = '';
 	this._currentJS = '';
 	this._currentCSS = '';
+
+	//Object.defineProperty(this, 'session', { get: function() { console.log('get'); return this.req.session; }, set: function(value) { console.log('set'); this.req.session = value; }, configurable: true, enumerable: true	});
+}
+
+Controller.prototype = {
+	get session() {
+		return this.req.session;
+	},
+
+	set session(value) {
+		this.req.session = value;
+	},
+
+	get user() {
+		return this.req.user;
+	},
+
+	set user(value) {
+		this.req.user = value;
+	}
 }
 
 // ======================================================
