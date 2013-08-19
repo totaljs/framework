@@ -8,6 +8,7 @@
 - added: new view tag: @{user} (default null)
 - added: controller.user (default null)
 - added: framework.on('close', req, res) - close a response
+- added: utils.isEmpty(obj)
 
 - updated: framework.responseRange()
 - renamed: framework.on('request') - framework.on('open', req, res)

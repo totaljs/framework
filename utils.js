@@ -47,6 +47,8 @@ if (typeof(setImmediate) === UNDEFINED) {
 	};
 }
 
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
 /*
 	Expression declaration
 	@query {String}
@@ -83,6 +85,29 @@ function expression(query, params) {
 }
 
 global.expression = expression;
+
+
+/*
+	@obj {Object}
+*/
+exports.isEmpty = function(obj) {
+
+	if (obj === null)
+		return true;
+
+	if (obj.length && obj.length > 0)
+		return false;
+
+	if (obj.length === 0)
+		return true;
+
+	for (var key in obj) {
+		if (hasOwnProperty.call(obj, key))
+		return false;
+	}
+	return true;
+};
+
 
 /*
 	Send request to URL
