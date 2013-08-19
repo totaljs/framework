@@ -1,4 +1,6 @@
-======= 1.2.4-7
+======= 1.2.5
+
+- please visit: https://github.com/petersirka/partial.js-modules
 
 - added: encodeURIcomponent & decodeURIcomponent to WebSocket
 - added: ~ to controller.file()

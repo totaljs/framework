@@ -52,7 +52,7 @@ process.chdir(directory);
 process.maxTickDepth = 300;
 
 function Framework() {
-	this.version = 1247;
+	this.version = 1250;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
