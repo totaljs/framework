@@ -26,7 +26,7 @@ exports.onAuthorization = function(req, res, flags, callback) {
 
 	var user = self.cache.read('user_' + obj.id);
 	if (user !== null) {
-		req.session = user;
+		req.user = user;
 		callback(true);
 		return;
 	}
@@ -42,7 +42,7 @@ exports.onAuthorization = function(req, res, flags, callback) {
 		}
 
 		self.cache.write('user_' + user.id, user, new Date().add('m', 5));
-		req.session = user;
+		req.user = user;
 		callback(true);
 	});
 

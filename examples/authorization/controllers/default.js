@@ -7,7 +7,7 @@ exports.install = function(framework) {
 
 function view_logged() {
 	var self = this;
-	self.plain('You are logged as {0}. To unlogged remove cookie __user or click http://{1}:{2}/logout/'.format(self.session.email, self.framework.ip, self.framework.port));
+	self.plain('You are logged as {0}. To unlogged remove cookie __user or click http://{1}:{2}/logout/'.format(self.user.email, self.framework.ip, self.framework.port));
 }
 
 function view_homepage() {
