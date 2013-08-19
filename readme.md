@@ -7,6 +7,7 @@ web application framework for node.js
 [![partial.js on Twitter](http://www.partialjs.com/exports/twitter-partial.png)](https://twitter.com/partialjs)
 [![partial.js on Google+](http://www.partialjs.com/exports/google-partial.png)](https://plus.google.com/u/0/b/113175077493180148081/113175077493180148081/posts)
 
+- [__Download partial.js modules__](https://github.com/petersirka/partial.js-modules/)
 - Homepage / [www.partialjs.com](http://partialjs.com)
 - [__GET STARTED__](http://www.partialjs.com/get-started/)
 - Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
@@ -16,7 +17,6 @@ web application framework for node.js
 - Documentation: [partial.js documentation](http://partialjs.com/documentation/)
 - [Framework benefits](http://www.partialjs.com/benefits/)
 - [Changelog](https://github.com/petersirka/partial.js/blob/master/changes.txt)
-- [__Download partial.js modules__](https://github.com/petersirka/partial.js-modules/)
 
 ***
 
