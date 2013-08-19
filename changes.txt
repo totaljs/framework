@@ -1,6 +1,6 @@
 ======= 1.2.5
 
-- I believe that this is the final version. From now I'll writing only documentation.
+- I believe that this is the final version. From now I'll writing only documentation and some tutorials.
 - please visit: https://github.com/petersirka/partial.js-modules
 
 - added: encodeURIcomponent & decodeURIcomponent to WebSocket
