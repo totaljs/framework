@@ -9,4 +9,8 @@ var max = 1000;
 
 framework.init(http, false, 8001);
 
+framework.on('close', function() {
+	console.log('close');
+});
+
 console.log(url);

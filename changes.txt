@@ -9,7 +9,10 @@
 - added: controller.user (default null)
 - added: framework.on('close', req, res) - close a response
 
+- updated: framework.responseRange()
 - renamed: framework.on('request') - framework.on('open', req, res)
+
+clean code
 
 ======= 1.2.4-6
 
