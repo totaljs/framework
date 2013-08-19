@@ -1297,6 +1297,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.writeHead(200, returnHeaders);
 			stream = fs.createReadStream(name).pipe(zlib.createGzip());
 			stream.pipe(res);
+			self.emit('close', req, res);
 			return self;
 		}
 
@@ -1306,6 +1307,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.writeHead(200, returnHeaders);
 			stream = fs.createReadStream(name).pipe(zlib.createDeflate());
 			stream.pipe(res);
+			self.emit('close', req, res);
 			return self;
 		}
 	}
@@ -1313,6 +1315,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	res.writeHead(200, returnHeaders);
 	stream = fs.createReadStream(name);
 	stream.pipe(res);
+	self.emit('close', req, res);
+
 	return self;
 };
 
@@ -1364,6 +1368,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 			res.writeHead(200, returnHeaders);
 			var gzip = zlib.createGzip();
 			stream.pipe(gzip).pipe(res);
+			self.emit('close', req, res);
 			return self;
 		}
 
@@ -1373,6 +1378,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 			res.writeHead(200, returnHeaders);
 			var deflate = zlib.createDeflate();
 			stream.pipe(deflate).pipe(res);
+			self.emit('close', req, res);
 			return self;
 		}
 	}
@@ -1383,6 +1389,8 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 	res.writeHead(200, returnHeaders);
 	stream.pipe(res);
+	self.emit('close', req, res);
+
 	return self;
 };
 
@@ -1424,6 +1432,8 @@ Framework.prototype.responseRange = function(name, range, headers, res) {
 	res.writeHead(206, headers);
 	var stream = fs.createReadStream(name, { start: beg, end: end });
 	stream.pipe(res);
+	self.emit('close', req, res);
+
 	return self;
 };
 
@@ -1507,6 +1517,7 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 	res.writeHead(304);
 	res.end();
 
+	self.emit('close', req, res);
 	return true;
 };
 
@@ -1527,6 +1538,7 @@ Framework.prototype.response401 = function(req, res) {
 	res.success = true;
 	res.writeHead(401, { 'Content-Type': 'text/plain' });
 	res.end(utils.httpStatus(401));
+	self.emit('close', req, res);
 
 	self.stats.response.error401++;
 	return self;
@@ -1549,6 +1561,7 @@ Framework.prototype.response403 = function(req, res) {
 	res.success = true;
 	res.writeHead(403, { 'Content-Type': 'text/plain' });
 	res.end(utils.httpStatus(403));
+	self.emit('close', req, res);
 
 	self.stats.response.error403++;
 	return self;
@@ -1571,6 +1584,7 @@ Framework.prototype.response404 = function(req, res) {
 	res.success = true;
 	res.writeHead(404, { 'Content-Type': 'text/plain' });
 	res.end(utils.httpStatus(404));
+	self.emit('close', req, res);
 
 	self.stats.response.error404++;
 	return self;
@@ -1632,6 +1646,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 				res.writeHead(code, returnHeaders);
 				res.end(data, ENCODING);
+				self.emit('close', req, res);
 			});
 
 			return self;
@@ -1653,6 +1668,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 				res.writeHead(code, returnHeaders);
 				res.end(data, ENCODING);
+				self.emit('close', req, res);
 			});
 
 			return self;
@@ -1662,6 +1678,8 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	returnHeaders['Content-Type'] = contentType;
 	res.writeHead(code, returnHeaders);
 	res.end(contentBody, ENCODING);
+	self.emit('close', req, res);
+
 	return self;
 };
 
@@ -1685,6 +1703,8 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 	res.success = true;
 	res.writeHead(permament ? 301 : 302, { 'Location': url });
 	res.end();
+	self.emit('close', req, res);
+
 	return self;
 };
 
@@ -2075,7 +2095,7 @@ Framework.prototype._request = function(req, res) {
 	req.flags = flags;
 
 	// call event request
-	self.emit('request', req, res);
+	self.emit('open', req, res);
 
 	if (req.method === 'POST' || req.method === 'PUT') {
 		if (multipart.length > 0) {
@@ -3534,6 +3554,7 @@ Subscribe.prototype._end = function() {
 		self.req.clear(true);
 		self.res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'cache-control': 'private, max-age=0' });
 		self.res.end('END');
+		self.framework.emit('close', self.req, self.res);
 		return;
 	}
 
@@ -5146,6 +5167,8 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	});
 
 	res.end();
+	self.framework.emit('close', self.res, self.req);
+
 	return self;
 };
 
@@ -5335,6 +5358,7 @@ Controller.prototype.redirect = function(url, permament) {
 	self.res.success = true;
 	self.res.writeHead(permament ? 301 : 302, { 'Location': url });
 	self.res.end();
+	self.framework.emit('close', self.res, self.req);
 	self.framework.stats.response.redirect++;
 
 	return self;
@@ -5450,6 +5474,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 		builder += 'retry: ' + retry + newline;
 
 	builder += newline;
+
 	res.write(builder);
 	self.framework.stats.response.sse++;
 
@@ -5539,6 +5564,7 @@ Controller.prototype.close = function() {
 		self.res.write('\r\n\r\n--' + self.internal.boundary + '--');
 
 	self.res.end();
+	self.framework.emit('close', self.req, self.res);
 	self.internal.type = 0;
 
 	return self;

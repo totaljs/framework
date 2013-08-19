@@ -97,7 +97,7 @@ function socket(self, framework) {
 	});
 }
 
-function aa() {	
+function aa() {
 	this.json(this.get);
 }
 
@@ -244,7 +244,7 @@ function viewError() {
 function viewRouteA() {
 	var self = this;
 	assert.ok(self.url === '/a/', 'routing: viewRouteA');
-	self.plain('OK');
+	self.plain('OK');	
 };
 
 function viewRouteAB() {

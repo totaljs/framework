@@ -7,6 +7,9 @@
 - added: request.user (default null)
 - added: new view tag: @{user} (default null)
 - added: controller.user (default null)
+- added: framework.on('close', req, res) - close a response
+
+- renamed: framework.on('request') - framework.on('open', req, res)
 
 ======= 1.2.4-6
 
