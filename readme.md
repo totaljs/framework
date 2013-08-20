@@ -14,9 +14,13 @@ web application framework for node.js
 - [__Download empty project__](http://www.partialjs.com/upload/empty-project.zip)
 - __Blog example__: [new example - blog written in partial.js (without installation)](http://blog.partialjs.com)
 - __E-shop example__: [new example - e-shop written in partial.js (without installation)](http://eshop.partialjs.com)
-- Documentation: [partial.js documentation](http://partialjs.com/documentation/)
 - [Framework benefits](http://www.partialjs.com/benefits/)
 - [Changelog](https://github.com/petersirka/partial.js/blob/master/changes.txt)
+
+Documentation
+-------------
+- [English documentation](http://partialjs.com/documentation/)
+- [Turkish documentation](https://github.com/KiPSOFT/partial.js-turkish-doc/blob/master/baslangic.md) by [KiP Software](http://www.kip-software.org/)
 
 ***
 
