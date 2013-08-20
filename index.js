@@ -3243,6 +3243,18 @@ FrameworkCache.prototype.recycle = function() {
 	return @value
 */
 FrameworkCache.prototype.write = function(name, value, expire) {
+	console.log('OBSOLETE cache.write() - use cache.add()');
+	return this.add(name, value, expire);
+};
+
+/*
+	Add item to cache
+	@name {String}
+	@value {Object}
+	@expire {Date}
+	return @value
+*/
+FrameworkCache.prototype.add = function(name, value, expire) {
 	var self = this;
 
 	if (typeof(expire) === UNDEFINED)
@@ -3274,6 +3286,17 @@ FrameworkCache.prototype.read = function(name) {
 	return {Cache}
 */
 FrameworkCache.prototype.setExpires = function(name, expire) {
+	console.log('OBSOLETE cache.setExpires() - use cache.setExpire()');
+	return this.setExpire(name, expire);
+};
+
+/*
+	Update cache item expiration
+	@name {String}
+	@expire {Date}
+	return {Cache}
+*/
+FrameworkCache.prototype.setExpire = function(name, expire) {
 	var self = this;
 	var obj = self.repository[name];
 
@@ -3334,7 +3357,7 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 	}
 
 	fnCache(function(value, expire) {
-		self.write(name, value, expire);
+		self.add(name, value, expire);
 		fnCallback(value);
 	});
 

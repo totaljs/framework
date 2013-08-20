@@ -16,6 +16,9 @@
 - updated: framework.responseRange()
 
 - renamed: framework.on('request') - framework.on('request-begin', req, res)
+- renamed: framework.cache.write() - to - framework.cache.add()
+- renamed: framework.cache.setExpires() - to - framework.cache.setExpire()
+
 - removed: controller.isXHR (use controller.xhr)
 - removed: req.isXHR (use req.xhr)
 

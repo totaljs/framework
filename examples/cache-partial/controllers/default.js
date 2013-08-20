@@ -10,11 +10,11 @@ function view_homepage_cached() {
 	var key = 'my-cache-key';
 
 	var item = self.cache.read(key);
-	
+
 	if (item === null) {
 		var date = new Date();
 		item = date.toString();
-		self.cache.write(key, item, date.add('minute', 5));	
+		self.cache.add(key, item, date.add('minute', 5));
 	}
 
 	// press 15x refresh browser

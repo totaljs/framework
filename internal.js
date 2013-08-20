@@ -2272,7 +2272,7 @@ View.prototype.load = function(name, prefix) {
 		generator = self.read(name);
 
 	if (generator !== null && !self.controller.isDebug)
-		self.cache.write(key, generator, new Date().add('minute', 5));
+		self.cache.add(key, generator, new Date().add('minute', 5));
 
 	return generator;
 };
@@ -2329,7 +2329,7 @@ Content.prototype.load = function(name, prefix) {
 		self.controller.framework.error('Content "' + name + '" not found.', self.controller.name, self.controller.uri);
 
 	if (content !== null && !self.controller.isDebug)
-		self.cache.write(key, content, new Date().add('minute', 5));
+		self.cache.add(key, content, new Date().add('minute', 5));
 
 	return content;
 };
@@ -2648,7 +2648,7 @@ Template.prototype.load = function(name, prefix) {
 		self.controller.framework.error('Template "' + name + '" not found.', self.controller.name, self.controller.uri);
 
 	if (generator !== null && !self.controller.isDebug)
-		self.cache.write(key, generator, new Date().add('minute', 5));
+		self.cache.add(key, generator, new Date().add('minute', 5));
 
 	return generator;
 };
