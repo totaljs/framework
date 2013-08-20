@@ -22,7 +22,7 @@ exports.install = function(framework) {
 	framework.route('/live/', viewLive);
 	framework.route('/live/incoming/', viewLiveIncoming, ['mixed']);
 
-	framework.route('#408', function() { 
+	framework.route('#408', function() {
 		var self = this;
 		self.global.timeout++;
 		self.plain('408');
@@ -48,7 +48,7 @@ function view_usage() {
 }
 
 function viewBAA() {
-	
+
 	var user = this.baa();
 
 	if (user === null)
@@ -75,14 +75,14 @@ function viewSocket() {
 }
 
 function socket(self, framework) {
-	
+
 	self.on('open', function (client) {
 		console.log('open ->', client.id);
 		console.log(client.get);
 	});
 
 	self.on('close', function (client) {
-		console.log('close ->', client.id);		
+		console.log('close ->', client.id);
 	});
 
 	self.on('message', function (client, message) {
@@ -133,7 +133,6 @@ function viewIndex() {
 	assert.ok(self.models('share').user.name === 'Peter', name + 'models()');
 
 	assert.ok(!self.xhr, name + 'xhr');
-	assert.ok(!self.isXHR, name + 'isXHR');
 	assert.ok(self.flags.indexOf('get') !== -1, name + 'flags')
 
 	assert.ok(self.resource('name') === 'default' && self.resource('default', 'name') === 'default', name + 'resource(default)');
@@ -157,14 +156,14 @@ function viewIndex() {
 	assert.ok(self.routeUpload('p.pdf') === '/upload/p.pdf', name + 'routeUpload()');
 	assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
 
-	assert.ok(self.template('test', ['A', 'B']) === '<div>AB</div>{name | 1}', name + 'template - no repository');	
+	assert.ok(self.template('test', ['A', 'B']) === '<div>AB</div>{name | 1}', name + 'template - no repository');
 	assert.ok(self.template('test', ['A', 'B'], '', { name: 'ABCDEFG' }) === '<div>AB</div>A...', name + 'template - repository');
 	assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');
 	assert.ok(self.view('test', null, true) === 'partial.js', name + 'view');
 	assert.ok(self.content('test') === 'EMPTY', name + 'content');
 	assert.ok(self.url === '/', name + 'url');
 
-	var error = self.validate({ A: 'B' }, ['A']);	
+	var error = self.validate({ A: 'B' }, ['A']);
 	assert.ok(error.hasError() && error.read('A') === 'AB', 'framework.onValidation & contrller.validation');
 
 	self.statusCode = 404;
@@ -183,7 +182,7 @@ function viewViews() {
 	self.repository.template = [{ name: 'A', price: 10 }, { name: 'B', price: 10.5 }];
 
 	var output = self.view('a', { a: 'A', b: 'B', arr: ['1', '2', '3'] }, true);
-	
+
 	assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
 	assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');
 	assert.ok(output.contains('#helper-property-OK#'), name + 'helper property');
@@ -216,14 +215,14 @@ function viewViews() {
 
 	self.repository.A = 'A';
 	output = self.view('c', { a: 'A', b: 'B', c: true, d: 'hidden<b>' }, true);
-	
+
 	assert.ok(output.contains('<input type="text" name="a" id="a" class="bootstrap" value="A" />'), name + 'text');
 	assert.ok(output.contains('<input type="hidden" name="d" id="d" value="hidden&lt;b&gt;" />'), name + 'hidden');
 	assert.ok(output.contains('<label><input type="checkbox" name="c" id="c" checked="checked" value="1" /> <span>test label</span></label>'), name + 'checkbox');
 	assert.ok(output.contains('<textarea name="b" id="b" class="myarea">B</textarea>'), name + 'textarea');
 	assert.ok(output.contains('#ACAXXX#'), name + 'if');
 	assert.ok(output.contains('<label><input type="radio" name="a" checked="checked" value="A" /> <span>test label</span></label>'), name + 'radio');
-	
+
 	self.json({ r: true });
 }
 
@@ -244,7 +243,7 @@ function viewError() {
 function viewRouteA() {
 	var self = this;
 	assert.ok(self.url === '/a/', 'routing: viewRouteA');
-	self.plain('OK');	
+	self.plain('OK');
 };
 
 function viewRouteAB() {
@@ -281,7 +280,7 @@ function viewLive() {
 	self.mixed.send('/users/petersirka/desktop/aaaaa/1.jpg');
 
 	setTimeout(function() {
-		self.mixed.send('/users/petersirka/desktop/aaaaa/2.jpg', self.mixed.end.bind(self));		
+		self.mixed.send('/users/petersirka/desktop/aaaaa/2.jpg', self.mixed.end.bind(self));
 	}, 3000);
 
 };

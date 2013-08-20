@@ -2045,7 +2045,7 @@ function parse(html, controller) {
 		if (str.substring(0, 4) === '(arr') {
 
 			if (condition !== 0) {
-				controller.app.error(new Error('View engine doesnt support nested condition.'), 'View compiler', controller.req.uri);
+				controller.framework.error(new Error('View engine doesnt support nested condition.'), 'View compiler', controller.req.uri);
 				fn = '';
 				break;
 			}
@@ -2066,7 +2066,7 @@ function parse(html, controller) {
 	{
 		return { generator: eval(fn), execute: execute };
 	} catch (ex) {
-		controller.app.error(ex, 'View compiler', controller.req.uri);
+		controller.framework.error(ex, 'View compiler', controller.req.uri);
 		return null;
 	}
 }
@@ -2326,7 +2326,7 @@ Content.prototype.load = function(name, prefix) {
 		content = self.read(name);
 
 	if (content === null)
-		self.controller.app.error('Content "' + name + '" not found.', self.controller.name, self.controller.uri);
+		self.controller.framework.error('Content "' + name + '" not found.', self.controller.name, self.controller.uri);
 
 	if (content !== null && !self.controller.isDebug)
 		self.cache.write(key, content, new Date().add('minute', 5));
@@ -2537,7 +2537,7 @@ Template.prototype.parse = function(html, isRepository) {
 	{
 		return { generator: eval('(function(prop){return ' + fn.join('+') + ';})'), beg: beg, end: end, property: property, repositoryBeg: repositoryBeg, repositoryEnd: repositoryEnd };
 	} catch (ex) {
-		self.controller.app.error(ex, 'Template compiler', self.controller.req.uri);
+		self.controller.framework.error(ex, 'Template compiler', self.controller.req.uri);
 	}
 };
 
@@ -2645,7 +2645,7 @@ Template.prototype.load = function(name, prefix) {
 		generator = self.read(name);
 
 	if (generator === null)
-		self.controller.app.error('Template "' + name + '" not found.', self.controller.name, self.controller.uri);
+		self.controller.framework.error('Template "' + name + '" not found.', self.controller.name, self.controller.uri);
 
 	if (generator !== null && !self.controller.isDebug)
 		self.cache.write(key, generator, new Date().add('minute', 5));

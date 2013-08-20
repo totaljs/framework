@@ -10,11 +10,14 @@
 - added: request.user (default null)
 - added: new view tag: @{user} (default null)
 - added: controller.user (default null)
-- added: framework.on('close', req, res) - close a response
+- added: framework.on('request-end', req, res) - close a request / response
 - added: utils.isEmpty(obj)
 
 - updated: framework.responseRange()
-- renamed: framework.on('request') - framework.on('open', req, res)
+
+- renamed: framework.on('request') - framework.on('request-begin', req, res)
+- removed: controller.isXHR (use controller.xhr)
+- removed: req.isXHR (use req.xhr)
 
 clean code
 

@@ -6,6 +6,7 @@ var utils = require('../utils');
 // test: number prototype
 function prototypeNumber() {
 	var format = '';
+
 	assert.ok((10000).format(2) === '10 000.00', 'format number with decimal parameter');
 
 	format = '### ### ###.###';
@@ -181,6 +182,9 @@ function prototypeArray() {
 
 function others() {
 	var obj = {};
+
+	assert.ok(utils.isEmpty({}), 'utils.isEmpty() - is empty');
+	assert.ok(!utils.isEmpty({ a: 1 }), 'utils.isEmpty() - not empty');
 
 	utils.copy(obj, { name: 'Peter', age: 25 });
 	assert.ok(!obj.name, 'utils.copy()');

@@ -1227,7 +1227,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.end();
 
 			if (!req.isStaticFile)
-				self.emit('close', req, res);
+				self.emit('request-end', req, res);
 
 			return self;
 		}
@@ -1303,7 +1303,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			stream.pipe(res);
 
 			if (!req.isStaticFile)
-				self.emit('close', req, res);
+				self.emit('request-end', req, res);
 
 			return self;
 		}
@@ -1316,7 +1316,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			stream.pipe(res);
 
 			if (!req.isStaticFile)
-				self.emit('close', req, res);
+				self.emit('request-end', req, res);
 
 			return self;
 		}
@@ -1327,7 +1327,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	stream.pipe(res);
 
 	if (!req.isStaticFile)
-		self.emit('close', req, res);
+		self.emit('request-end', req, res);
 
 	return self;
 };
@@ -1382,7 +1382,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 			stream.pipe(gzip).pipe(res);
 
 			if (!req.isStaticFile)
-				self.emit('close', req, res);
+				self.emit('request-end', req, res);
 
 			return self;
 		}
@@ -1395,7 +1395,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 			stream.pipe(deflate).pipe(res);
 
 			if (!req.isStaticFile)
-				self.emit('close', req, res);
+				self.emit('request-end', req, res);
 
 			return self;
 		}
@@ -1405,7 +1405,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	stream.pipe(res);
 
 	if (!req.isStaticFile)
-		self.emit('close', req, res);
+		self.emit('request-end', req, res);
 
 	return self;
 };
@@ -1451,7 +1451,7 @@ Framework.prototype.responseRange = function(name, range, headers, res, req) {
 	stream.pipe(res);
 
 	if (!req.isStaticFile)
-		self.emit('close', req, res);
+		self.emit('request-end', req, res);
 
 	return self;
 };
@@ -1537,7 +1537,7 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 	res.end();
 
 	if (!req.isStaticFile)
-		self.emit('close', req, res);
+		self.emit('request-end', req, res);
 
 	return true;
 };
@@ -1559,7 +1559,7 @@ Framework.prototype.response401 = function(req, res) {
 	res.success = true;
 	res.writeHead(401, { 'Content-Type': 'text/plain' });
 	res.end(utils.httpStatus(401));
-	self.emit('close', req, res);
+	self.emit('request-end', req, res);
 
 	self.stats.response.error401++;
 	return self;
@@ -1584,7 +1584,7 @@ Framework.prototype.response403 = function(req, res) {
 	res.end(utils.httpStatus(403));
 
 	if (!req.isStaticFile)
-		self.emit('close', req, res);
+		self.emit('request-end', req, res);
 
 	self.stats.response.error403++;
 	return self;
@@ -1609,7 +1609,7 @@ Framework.prototype.response404 = function(req, res) {
 	res.end(utils.httpStatus(404));
 
 	if (!req.isStaticFile)
-		self.emit('close', req, res);
+		self.emit('request-end', req, res);
 
 	self.stats.response.error404++;
 	return self;
@@ -1673,7 +1673,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 				res.end(data, ENCODING);
 
 				if (!req.isStaticFile)
-					self.emit('close', req, res);
+					self.emit('request-end', req, res);
 
 			});
 
@@ -1698,7 +1698,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 				res.end(data, ENCODING);
 
 				if (!req.isStaticFile)
-					self.emit('close', req, res);
+					self.emit('request-end', req, res);
 
 			});
 
@@ -1711,7 +1711,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	res.end(contentBody, ENCODING);
 
 	if (!req.isStaticFile)
-		self.emit('close', req, res);
+		self.emit('request-end', req, res);
 
 	return self;
 };
@@ -1738,7 +1738,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 	res.end();
 
 	if (!req.isStaticFile)
-		self.emit('close', req, res);
+		self.emit('request-end', req, res);
 
 	return self;
 };
@@ -2021,7 +2021,7 @@ Framework.prototype._request = function(req, res) {
 
 	req.data = { get: {}, post: {}, files: [] };
 	req.buffer = { data: '', isExceeded: false, isData: false };
-	req.isXHR = false;
+	req.xhr = false;
 	req.uri = {};
 	req.ip = '';
 	req.flags = [];
@@ -2082,7 +2082,7 @@ Framework.prototype._request = function(req, res) {
 				return;
 			}
 		} catch(err) {
-			self.app.error(err, 'framework.onRoute()', req.uri);
+			self.framework.error(err, 'framework.onRoute()', req.uri);
 		}
 	}
 
@@ -2107,7 +2107,7 @@ Framework.prototype._request = function(req, res) {
 	if (self.config.debug)
 		flags.push('debug');
 
-	req.isXHR = header['x-requested-with'] === 'XMLHttpRequest';
+	req.xhr = header['x-requested-with'] === 'XMLHttpRequest';
 	req.prefix = self.onPrefix === null ? '' : self.onPrefix(req) || '';
 
 	if (req.prefix.length > 0)
@@ -2116,7 +2116,7 @@ Framework.prototype._request = function(req, res) {
 	if (multipart.length > 0)
 		flags.push('upload');
 
-	if (req.isXHR) {
+	if (req.xhr) {
 		self.stats.request.xhr++;
 		flags.push('+xhr');
 		flags.push('xhr');
@@ -2131,7 +2131,7 @@ Framework.prototype._request = function(req, res) {
 	req.flags = flags;
 
 	// call event request
-	self.emit('open', req, res);
+	self.emit('request-begin', req, res);
 
 	if (req.method === 'POST' || req.method === 'PUT') {
 		if (multipart.length > 0) {
@@ -3590,7 +3590,7 @@ Subscribe.prototype._end = function() {
 		self.req.clear(true);
 		self.res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'cache-control': 'private, max-age=0' });
 		self.res.end('END');
-		self.framework.emit('close', self.req, self.res);
+		self.framework.emit('request-end', self.req, self.res);
 		return;
 	}
 
@@ -3719,16 +3719,15 @@ function Controller(name, req, res, subscribe) {
 	this.subscribe = subscribe;
 	this.name = name;
 	this.cache = subscribe.framework.cache;
-	this.app = subscribe.framework;
 	this.framework = subscribe.framework;
 	this.req = req;
 	this.res = res;
-	this.session = req.session;
-	this.user = req.user;
+	this.session = null;
+	this.user = null;
 	this.get = req.data.get;
 	this.post = req.data.post;
 	this.files = req.data.files;
-	this.xhr = req.isXHR;
+	this.xhr = req.xhr;
 	this.config = subscribe.framework.config;
 	this.ip = req.ip;
 
@@ -3741,7 +3740,6 @@ function Controller(name, req, res, subscribe) {
 	this.controllers = subscribe.framework.controllers;
 	this.url = utils.path(req.uri.pathname);
 
-	this.isXHR = req.isXHR;
 	this.isProxy = req.isProxy;
 	this.isLayout = false;
 	this.isTest = req.headers['assertion-testing'] === '1';
@@ -3769,9 +3767,6 @@ function Controller(name, req, res, subscribe) {
 	this.path = subscribe.framework.path;
 	this.fs = subscribe.framework.fs;
 	this.async = new utils.Async(this);
-
-	var self = this;
-	req.on('close', function() { self.isConnected = false; });
 
 	this._currentImage = '';
 	this._currentUpload = '';
@@ -3823,7 +3818,7 @@ Controller.prototype.validate = function(model, properties, prefix, name) {
 	};
 
 	var error = new builders.ErrorBuilder(resource);
-	return utils.validate.call(self, model, properties, self.app.onValidation, error);
+	return utils.validate.call(self, model, properties, self.framework.onValidation, error);
 };
 
 /*
@@ -4016,7 +4011,7 @@ Controller.prototype.cancel = function() {
 */
 Controller.prototype.log = function() {
 	var self = this;
-	self.app.log.apply(self.app, arguments);
+	self.framework.log.apply(self.framework, arguments);
 	return self;
 };
 
@@ -4030,7 +4025,7 @@ Controller.prototype.meta = function() {
 	self.repository[REPOSITORY_META_TITLE] = arguments[0] || '';
 	self.repository[REPOSITORY_META_DESCRIPTION] = arguments[1] || '';
 	self.repository[REPOSITORY_META_KEYWORDS] = arguments[2] || '';
-	self.repository[REPOSITORY_META] = self.app.onMeta.apply(this, arguments);
+	self.repository[REPOSITORY_META] = self.framework.onMeta.apply(this, arguments);
 	return self;
 };
 
@@ -4075,7 +4070,7 @@ Controller.prototype.sitemap = function(name, url, index) {
 */
 Controller.prototype.settings = function() {
 	var self = this;
-	self.repository['$settings'] = self.app.onSettings.apply(this, arguments);
+	self.repository['$settings'] = self.framework.onSettings.apply(this, arguments);
 	return self;
 };
 
@@ -4085,7 +4080,7 @@ Controller.prototype.settings = function() {
 	return {Module};
 */
 Controller.prototype.module = function(name) {
-	return this.app.module(name);
+	return this.framework.module(name);
 };
 
 /*
@@ -4131,7 +4126,7 @@ Controller.prototype.functions = function(name) {
 */
 Controller.prototype.notModified = function(compare, strict) {
 	var self = this;
-	return self.app.notModified(self.req, self.res, compare, strict);
+	return self.framework.notModified(self.req, self.res, compare, strict);
 };
 
 /*
@@ -4145,7 +4140,7 @@ Controller.prototype.notModified = function(compare, strict) {
 */
 Controller.prototype.setModified = function(value) {
 	var self = this;
-	self.app.setModified(self.req, self.res, value);
+	self.framework.setModified(self.req, self.res, value);
 	return self;
 };
 
@@ -4840,7 +4835,7 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
 	return {String}
 */
 Controller.prototype.$download = function(filename, innerHTML, downloadName, className) {
-	var builder = '<a href="' + this.app.routeUpload(filename) + ATTR_END;
+	var builder = '<a href="' + this.framework.routeUpload(filename) + ATTR_END;
 
 	if (downloadName)
 		builder += ' download="' + downloadName + ATTR_END;
@@ -4881,7 +4876,7 @@ Controller.prototype.$favicon = function(name) {
 	if (name.indexOf('.gif') !== -1)
 		contentType = 'image/gif';
 
-	name = self.app.routeStatic('/' + name);
+	name = self.framework.routeStatic('/' + name);
 
 	return '<link rel="shortcut icon" href="' + name + '" type="' + contentType + '" /><link rel="icon" href="' + name + '" type="' + contentType + '" />';
 };
@@ -4898,7 +4893,7 @@ Controller.prototype.routeJS = function(name, tag) {
 	if (typeof(name) === UNDEFINED)
 		name = 'default.js';
 
-	return tag ? '<script type="text/javascript" src="' + self.app.routeJS(self._currentJS + name) + '"></script>' : self.app.routeJS(self._currentJS + name);
+	return tag ? '<script type="text/javascript" src="' + self.framework.routeJS(self._currentJS + name) + '"></script>' : self.framework.routeJS(self._currentJS + name);
 };
 
 /*
@@ -4913,7 +4908,7 @@ Controller.prototype.routeCSS = function(name, tag) {
 	if (typeof(name) === UNDEFINED)
 		name = 'default.css';
 
-	return tag ? '<link type="text/css" rel="stylesheet" href="' + self.app.routeCSS(self._currentCSS + name) + '" />' : self.app.routeCSS(self._currentCSS + name);
+	return tag ? '<link type="text/css" rel="stylesheet" href="' + self.framework.routeCSS(self._currentCSS + name) + '" />' : self.framework.routeCSS(self._currentCSS + name);
 };
 
 /*
@@ -4923,7 +4918,7 @@ Controller.prototype.routeCSS = function(name, tag) {
 */
 Controller.prototype.routeImage = function(name) {
 	var self = this;
-	return self.app.routeImage(self._currentImage + name);
+	return self.framework.routeImage(self._currentImage + name);
 };
 
 /*
@@ -4933,7 +4928,7 @@ Controller.prototype.routeImage = function(name) {
 */
 Controller.prototype.routeVideo = function(name) {
 	var self = this;
-	return self.app.routeVideo(self._currentVideo + name);
+	return self.framework.routeVideo(self._currentVideo + name);
 };
 
 /*
@@ -4943,7 +4938,7 @@ Controller.prototype.routeVideo = function(name) {
 */
 Controller.prototype.routeFont = function(name) {
 	var self = this;
-	return self.app.routeFont(name);
+	return self.framework.routeFont(name);
 };
 
 /*
@@ -4953,7 +4948,7 @@ Controller.prototype.routeFont = function(name) {
 */
 Controller.prototype.routeUpload = function(name) {
 	var self = this;
-	return self.app.routeUpload(self._currentUpload + name);
+	return self.framework.routeUpload(self._currentUpload + name);
 };
 
 /*
@@ -4963,7 +4958,7 @@ Controller.prototype.routeUpload = function(name) {
 */
 Controller.prototype.routeStatic = function(name) {
 	var self = this;
-	return self.app.routeStatic(name);
+	return self.framework.routeStatic(name);
 };
 
 /*
@@ -5084,7 +5079,7 @@ Controller.prototype.currentVideo = function(path) {
 */
 Controller.prototype.resource = function(name, key) {
 	var self = this;
-	return self.app.resource(name, key);
+	return self.framework.resource(name, key);
 };
 
 /*
@@ -5115,7 +5110,6 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 
 		return '';
 	}
-
 	return internal.generateTemplate(self, name, model, repository);
 };
 
@@ -5221,7 +5215,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	});
 
 	res.end();
-	self.framework.emit('close', self.res, self.req);
+	self.framework.emit('request-end', self.req, self.res);
 
 	return self;
 };
@@ -5412,7 +5406,7 @@ Controller.prototype.redirect = function(url, permament) {
 	self.res.success = true;
 	self.res.writeHead(permament ? 301 : 302, { 'Location': url });
 	self.res.end();
-	self.framework.emit('close', self.res, self.req);
+	self.framework.emit('request-end', self.req, self.res);
 	self.framework.stats.response.redirect++;
 
 	return self;
@@ -5618,7 +5612,7 @@ Controller.prototype.close = function() {
 		self.res.write('\r\n\r\n--' + self.internal.boundary + '--');
 
 	self.res.end();
-	self.framework.emit('close', self.req, self.res);
+	self.framework.emit('request-end', self.req, self.res);
 	self.internal.type = 0;
 
 	return self;
@@ -5712,12 +5706,12 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var post = self.post;
 	var session = self.session;
 	var user = self.user;
-	var helper = self.app.helpers;
+	var helper = self.framework.helpers;
 	var fn = generator.generator;
 	var sitemap = null;
 	var url = self.url;
 	var empty = '';
-	var global = self.app.global;
+	var global = self.framework.global;
 	var value = '';
 
 	self.model = model;
@@ -5829,7 +5823,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 				if (!execute.isDeclared) {
 					if (typeof(helper[execute.name]) === UNDEFINED) {
-						self.app.error(new Error('Helper "' + execute.name + '" is not defined.'), 'view -> ' + name, self.req.uri);
+						self.framework.error(new Error('Helper "' + execute.name + '" is not defined.'), 'view -> ' + name, self.req.uri);
 						evl = false;
 					}
 					else {
@@ -5849,7 +5843,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			{
 				value = eval(run);
 			} catch (ex) {
-				self.app.error(ex, 'View error "' + name + '", problem with: ' + execute.name, self.req.uri);
+				self.framework.error(ex, 'View error "' + name + '", problem with: ' + execute.name, self.req.uri);
 			}
 		}
 
