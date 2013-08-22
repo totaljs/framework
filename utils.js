@@ -1417,6 +1417,10 @@ String.prototype.pluralize = function(zero, one, few, other) {
 	return str.parseInt().pluralize(zero, one, few, other);
 };
 
+String.prototype.isBoolean = function() {
+	return (this == 'true' || this == 'false') ? true : false;
+}
+
 /*
 	@decimals {Number}
 	return {Number}
