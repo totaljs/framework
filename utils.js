@@ -1211,7 +1211,7 @@ String.prototype.decode = function(key) {
 	values = new Buffer(values, 'base64').toString(ENCODING);
 
 	var index = values.indexOf('=');
-	if (index == -1)
+	if (index === -1)
 		return '';
 
 	var counter = parseInt(values.substring(0, index), 10);
@@ -1310,7 +1310,7 @@ String.prototype.isNumber = function(isDecimal) {
 		var ascii = self.charCodeAt(i);
 
 		if (isDecimal) {
-			if (ascii === 44 || ascii == 46) {
+			if (ascii === 44 || ascii === 46) {
 				isDecimal = false;
 				continue;
 			}
@@ -1418,8 +1418,9 @@ String.prototype.pluralize = function(zero, one, few, other) {
 };
 
 String.prototype.isBoolean = function() {
-	return (this == 'true' || this == 'false') ? true : false;
-}
+	var self = this.toString().toLowerCase();
+	return (self === 'true' || self === 'false') ? true : false;
+};
 
 /*
 	@decimals {Number}

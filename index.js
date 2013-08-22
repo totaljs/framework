@@ -2461,13 +2461,13 @@ Framework.prototype.configure = function() {
 			case 'allow-websocket':
 			case 'allow-compile-css':
 			case 'allow-compile-js':
-				obj[name] = value.toLowerCase() == 'true' || value === '1';
+				obj[name] = value.toLowerCase() === 'true' || value === '1';
 				break;
 			case 'version':
 				obj[name] = value;
 				break;
 			default:
-				obj[name] = value.isNumber() ? utils.parseInt(value) : value.isNumber(true) ? utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() == 'true' || value === '1' : value;
+				obj[name] = value.isNumber() ? utils.parseInt(value) : value.isNumber(true) ? utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
 				break;
 		}
 	}
@@ -4776,7 +4776,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		}
 
 		if (!isSelected) {
-			sel = val == selected;
+			sel = val === selected;
 			isSelected = sel;
 		}
 
