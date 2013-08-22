@@ -2467,7 +2467,7 @@ Framework.prototype.configure = function() {
 				obj[name] = value;
 				break;
 			default:
-				obj[name] = value.isNumber() ? utils.parseInt(value) : value.isNumber(true) ? utils.parseFloat(value) : value;
+				obj[name] = value.isNumber() ? utils.parseInt(value) : value.isNumber(true) ? utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() == 'true' || value === '1' : value;
 				break;
 		}
 	}
