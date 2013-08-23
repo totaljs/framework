@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.2.6 
+
+- renamed: [backup] directory to [backups] 
+
 ======= 1.2.5
 
 - I believe that this is the final version. From now I'll writing only documentation and some tutorials.

@@ -82,7 +82,7 @@ function Framework() {
 		'directory-logs': '/logs/',
 		'directory-tests': '/tests/',
 		'directory-databases': '/databases/',
-		'directory-backup': '/backup/',
+		'directory-backup': '/backups/',
 
 		// all HTTP static request are routed to directory-public
 		'static-url': '',
