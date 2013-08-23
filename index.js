@@ -4904,6 +4904,22 @@ Controller.prototype.$favicon = function(name) {
 	return '<link rel="shortcut icon" href="' + name + '" type="' + contentType + '" /><link rel="icon" href="' + name + '" type="' + contentType + '" />';
 };
 
+Controller.prototype._routeHelper = function(current, name, fn) {
+
+	var self = this;
+
+	if (current.length === 0)
+		return fn.call(self.framework, name);
+
+	if (current.substring(0, 2) === '//' || current.substring(0, 6) === 'http:/' || current.substring(0, 7) === 'https:/')
+		return fn.call(self.framework, current + name);
+
+	if (current[0] === '~')
+		return fn.call(self.framework, current.substring(1) + name);
+
+	return fn.call(self.framework, name);
+};
+
 /*
 	Static file routing
 	@name {String} :: filename
@@ -4916,7 +4932,8 @@ Controller.prototype.routeJS = function(name, tag) {
 	if (typeof(name) === UNDEFINED)
 		name = 'default.js';
 
-	return tag ? '<script type="text/javascript" src="' + self.framework.routeJS(self._currentJS + name) + '"></script>' : self.framework.routeJS(self._currentJS + name);
+	var url = self._routeHelper(self._currentJS, name, self.framework.routeJS);
+	return tag ? '<script type="text/javascript" src="' + url + '"></script>' : url;
 };
 
 /*
@@ -4931,7 +4948,8 @@ Controller.prototype.routeCSS = function(name, tag) {
 	if (typeof(name) === UNDEFINED)
 		name = 'default.css';
 
-	return tag ? '<link type="text/css" rel="stylesheet" href="' + self.framework.routeCSS(self._currentCSS + name) + '" />' : self.framework.routeCSS(self._currentCSS + name);
+	var url = self._routeHelper(self._currentCSS, name, self.framework.routeCSS);
+	return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
 
 /*
@@ -4941,7 +4959,7 @@ Controller.prototype.routeCSS = function(name, tag) {
 */
 Controller.prototype.routeImage = function(name) {
 	var self = this;
-	return self.framework.routeImage(self._currentImage + name);
+	return self._routeHelper(self._currentImage, name, self.framework.routeImage);
 };
 
 /*
@@ -4951,7 +4969,7 @@ Controller.prototype.routeImage = function(name) {
 */
 Controller.prototype.routeVideo = function(name) {
 	var self = this;
-	return self.framework.routeVideo(self._currentVideo + name);
+	return self._routeHelper(self._currentVideo, name, self.framework.routeVideo);
 };
 
 /*
@@ -4971,7 +4989,7 @@ Controller.prototype.routeFont = function(name) {
 */
 Controller.prototype.routeUpload = function(name) {
 	var self = this;
-	return self.framework.routeUpload(self._currentUpload + name);
+	return self._routeHelper(self._currentUpload, name, self.framework.routeUpload);
 };
 
 /*
@@ -4990,7 +5008,7 @@ Controller.prototype.routeStatic = function(name) {
 	return {String}
 */
 Controller.prototype.$currentJS = function(path) {
-	this._currentJS = path.length > 0 ? utils.path(path) : '';
+	this._currentJS = path && path.length > 0 ? path : '';
 	return '';
 };
 
@@ -5000,7 +5018,7 @@ Controller.prototype.$currentJS = function(path) {
 	return {String}
 */
 Controller.prototype.$currentCSS = function(path) {
-	this._currentCSS = path.length > 0 ? utils.path(path) : '';
+	this._currentCSS = path && path.length > 0 ? path : '';
 	return '';
 };
 
@@ -5010,7 +5028,7 @@ Controller.prototype.$currentCSS = function(path) {
 	return {String}
 */
 Controller.prototype.$currentImage = function(path) {
-	this._currentImage = path.length > 0 ? utils.path(path) : '';
+	this._currentImage = path && path.length > 0 ? path : '';
 	return '';
 };
 
@@ -5020,7 +5038,7 @@ Controller.prototype.$currentImage = function(path) {
 	return {String}
 */
 Controller.prototype.$currentVideo = function(path) {
-	this._currentVideo = path.length > 0 ? utils.path(path) : '';
+	this._currentVideo = path && path.length > 0 ? path : '';
 	return '';
 };
 
@@ -5030,7 +5048,7 @@ Controller.prototype.$currentVideo = function(path) {
 	return {String}
 */
 Controller.prototype.$currentUpload = function(path) {
-	this._currentUpload = path.length > 0 ? utils.path(path) : '';
+	this._currentUpload = path && path.length > 0 ? path : '';
 	return '';
 };
 
