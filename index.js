@@ -4915,9 +4915,9 @@ Controller.prototype._routeHelper = function(current, name, fn) {
 		return fn.call(self.framework, current + name);
 
 	if (current[0] === '~')
-		return fn.call(self.framework, current.substring(1) + name);
+		return fn.call(self.framework, utils.path(current.substring(1) + name));
 
-	return fn.call(self.framework, name);
+	return fn.call(self.framework, utils.path(name));
 };
 
 /*
