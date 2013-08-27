@@ -1833,7 +1833,7 @@ Framework.prototype.init = function(http, config, port, ip) {
 		self.server.on('upgrade', self.handlers.onupgrade);
 
 	self.port = port || 8000;
-	self.ip = ip || '127.0.0.1';
+	self.ip = ip || null;
 	self.server.listen(self.port, self.ip);
 
 	if (module !== null) {
