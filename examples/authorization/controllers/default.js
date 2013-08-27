@@ -39,7 +39,7 @@ function json_homepage() {
 		self.database('users-logs').insert({ id: user.id, email: user.email, ip: self.req.ip, date: new Date() });
 
 		// save to cookie
-		self.res.cookie(self.config.cookie, self.app.encode({ id: user.id, ip: self.req.ip }, 'user'), new Date().add('m', 5));
+		self.res.cookie(self.config.cookie, self.framework.encode({ id: user.id, ip: self.req.ip }, 'user'), new Date().add('m', 5));
 
 		// return result
 		self.json({ r: true });
