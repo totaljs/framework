@@ -1748,9 +1748,10 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 	@http {HTTP or HTTPS}
 	@config {Boolean or Object}
 	@port {Number}
+	@options {Object}
 	return {Framework}
 */
-Framework.prototype.init = function(http, config, port, ip) {
+Framework.prototype.init = function(http, config, port, ip, options) {
 
 	var self = this;
 
@@ -1827,7 +1828,10 @@ Framework.prototype.init = function(http, config, port, ip) {
 		}
 	});
 
-    self.server = http.createServer(self.handlers.onrequest);
+	if (options)
+		self.server = http.createServer(options, self.handlers.onrequest);
+	else
+    	self.server = http.createServer(self.handlers.onrequest);
 
     if (self.config['allow-websocket'])
 		self.server.on('upgrade', self.handlers.onupgrade);
@@ -1861,8 +1865,8 @@ Framework.prototype.init = function(http, config, port, ip) {
 };
 
 // Alias for framework.init
-Framework.prototype.run = function(http, config, port, ip) {
-	return this.init(http, config, port, ip);
+Framework.prototype.run = function(http, config, port, ip, options) {
+	return this.init(http, config, port, ip, options);
 };
 
 Framework.prototype._verify_directory = function(name) {

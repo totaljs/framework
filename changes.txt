@@ -1,5 +1,7 @@
 IN DEVELOPMENT ======= 1.2.6 
 
+- added: new options parameter - framework.run(http/https, debug, [port], [ip], [options])
+
 - fixed: views current routing
 
 - renamed: [backup] directory to [backups] 
