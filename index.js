@@ -6342,7 +6342,8 @@ function WebSocketClient(req, socket, head) {
     this.req = req;
     this.isClosed = false;
     this.get = {};
-    this.session = {};
+    this.session = null;
+    this.user = null;
     this.ip = '';
     this.protocol = (req.headers['sec-websocket-protocol'] || '').replace(/\s/g, '').split(',');
 
