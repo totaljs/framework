@@ -3,6 +3,7 @@ IN DEVELOPMENT ======= 1.2.6
 - added: new options parameter - framework.run(http/https, debug, [port], [ip], [options])
 - added: static-accepts - .map, .ogg, .mp3, .webp, .swf
 
+- updated: framework.route() and framework.websocket(), Example: framework.route('/', fn, { flags: [], length: 3430, timeout: 3400 });
 - updated: utils.getContentType() - .webp
 - updated: nosql
 

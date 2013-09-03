@@ -309,7 +309,7 @@ Framework.prototype.stop = function(code) {
 	Add a new route
 	@url {String}
 	@funcExecute {Function}
-	@flags {String array} :: optional, default []
+	@flags {String array or Object} :: optional, default []
 	@maximumSize {Number} :: optional, default by the config
 	@partial {String Array} :: optional, partial content
 	@timeout {Number} :: optional, default by the config
@@ -324,6 +324,13 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		var tmp = partial;
 		partial = maximumSize;
 		maximumSize = tmp;
+	}
+
+	if (!utils.isArray(flags) && typeof(flags) === 'object') {
+		maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
+		partial = flags['partial'];
+		timeout = flags['timeout'];
+		flags = flags['flags'];
 	}
 
 	var self = this;
@@ -407,7 +414,7 @@ Framework.prototype.partial = function(name, funcExecute) {
 	Add a new websocket route
 	@url {String}
 	@funcInitialize {Function}
-	@flags {String Array} :: optional
+	@flags {String Array or Object} :: optional
 	@protocols {String Array} :: optional, websocket-allow-protocols
 	@allow {String Array} :: optional, allow origin
 	@maximumSize {Number} :: optional, default by the config
@@ -420,6 +427,13 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
 	if (url.indexOf('{') !== -1)
 		throw new Error('Websocket url cannot contain dynamic path.');
+
+	if (!utils.isArray(flags) && typeof(flags) === 'object') {
+		protocols = flags['protocols'] || flags['protocol'];
+		allow = flags['allow'];
+		maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
+		flags = flags['flags'];
+	}
 
 	var self = this;
 	var priority = 0;
