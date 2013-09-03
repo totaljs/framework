@@ -41,7 +41,6 @@ function read() {
 		selected.forEach(function(o) {
 			a += o.name;
 		});
-
 		assert.ok(a === 'AC2', 'read problem');
 	});
 }

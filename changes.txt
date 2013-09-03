@@ -2,6 +2,8 @@ IN DEVELOPMENT ======= 1.2.6
 
 - added: new options parameter - framework.run(http/https, debug, [port], [ip], [options])
 
+- updated: nosql
+
 - fixed: views current routing
 - fixed: websocket session and user
 - fixed: controller.session and controller.user

@@ -253,7 +253,7 @@ Database.prototype.insert = function(arr, fnCallback, changes) {
 		builder = null;
 		builderChanges = null;
 		arr = null;
-	});
+	}, self);
 
 	return self;
 };
@@ -1248,7 +1248,7 @@ Views.prototype.create = function(name, fnFilter, fnSort, fnCallback, fnUpdate, 
 					if (cb)
 						cb();
 
-				});
+				}, self.db);
 			};
 
 			fs.exists(filename, function(exists) {
@@ -1991,6 +1991,34 @@ FileReader.prototype.read = function(fd, position, size, fnBuffer, next) {
 // ========================================================================
 
 /*
+	Append multiple documents to file
+	@filename {String}
+	@arr {Array of Object}
+	@fnCallback {Function}
+*/
+function appendFile(filename, arr, fnCallback, db) {
+
+	if (arr.length === 0) {
+		fnCallback();
+		return;
+	}
+
+	var lines = '';
+
+	arr.slice(0, 30).forEach(function(o) {
+		lines += JSON.stringify(o) + NEWLINE;
+	});
+
+	fs.appendFile(filename, lines, function(err) {
+
+		if (err)
+			db.emit('error', err);
+
+		appendFile(filename, arr.slice(30), fnCallback, db);
+	});
+}
+
+/*
 	Eval string and return function
 	@fnFilter {String}
 	return {Function}
@@ -2026,30 +2054,6 @@ function onBuffer(buffer, fnItem, fnBuffer) {
 	}
 
 	onBuffer(buffer.substring(index + 1), fnItem, fnBuffer);
-}
-
-/*
-	Append multiple documents to file
-	@filename {String}
-	@arr {Array of Object}
-	@fnCallback {Function}
-*/
-function appendFile(filename, arr, fnCallback) {
-
-	if (arr.length === 0) {
-		fnCallback();
-		return;
-	}
-
-	var lines = '';
-
-	arr.slice(0, 30).forEach(function(o) {
-		lines += JSON.stringify(o) + NEWLINE;
-	});
-
-	fs.appendFile(filename, lines, function(err) {
-		appendFile(filename, arr.slice(30), fnCallback);
-	});
 }
 
 /*
