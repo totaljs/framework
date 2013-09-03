@@ -3749,8 +3749,8 @@ function Controller(name, req, res, subscribe) {
 	this.framework = subscribe.framework;
 	this.req = req;
 	this.res = res;
-	this.session = null;
-	this.user = null;
+	this.session = req.session;
+	this.user = req.user;
 	this.get = req.data.get;
 	this.post = req.data.post;
 	this.files = req.data.files;
