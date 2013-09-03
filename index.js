@@ -1851,8 +1851,10 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 		self.server.on('upgrade', self.handlers.onupgrade);
 
 	self.port = port || 8000;
-	self.ip = ip || null;
+	self.ip = ip;
 	self.server.listen(self.port, self.ip);
+
+	self.ip = self.ip || 'localhost';
 
 	if (module !== null) {
 		if (typeof(module.onLoad) !== UNDEFINED) {
