@@ -547,6 +547,7 @@ exports.getContentType = function(ext) {
 		'tiff': 'image/tiff',
 		'txt': 'text/plain',
 		'wav': 'audio/x-wav',
+		'webp': 'image/webp',
 		'woff': 'font/woff',
 		'xht': 'application/xhtml+xml',
 		'xhtml': 'application/xhtml+xml',
