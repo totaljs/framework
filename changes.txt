@@ -1,7 +1,7 @@
 IN DEVELOPMENT ======= 1.2.6
 
 - added: new options parameter - framework.run(http/https, debug, [port], [ip], [options])
-- added: static-accepts - .map, .ogg, .mp3, .webp
+- added: static-accepts - .map, .ogg, .mp3, .webp, .swf
 
 - updated: utils.getContentType() - .webp
 - updated: nosql
