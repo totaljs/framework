@@ -10,6 +10,12 @@ var max = 100;
 
 framework.run(http, true, 8001);
 
+framework.onAuthorization = function(req, res, flags, cb) {
+	req.user = { alias: 'Peter Širka' };
+	req.session = { ready: true };
+	cb(true);
+};
+
 framework.onError = function(error, name, uri) {
 
 	if (errorStatus === 0) {
@@ -133,8 +139,16 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			complete();
-		});
+		});		
 	});
+
+	async.await('logged', function(complete) {
+		utils.request(url + 'logged/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			complete();
+		});
+	});	
 
 	async.await('timeout', function(complete) {
 		utils.request(url + 'timeout/', 'GET', null, function(error, data, code, headers) {
