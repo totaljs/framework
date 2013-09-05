@@ -1432,6 +1432,13 @@ Number.prototype.floor = function(decimals) {
 };
 
 /*
+	return {Number}
+*/
+Number.prototype.trunc = Number.prototype.truncate =  function() {
+	return this | 0;
+}
+
+/*
 	@max {Number}
 	@c {String} :: optional
 	return {String}
