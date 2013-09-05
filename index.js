@@ -1850,7 +1850,7 @@ Framework.prototype.init = function(http, config, port, ip, options) {
     if (self.config['allow-websocket'])
 		self.server.on('upgrade', self.handlers.onupgrade);
 
-	self.port = port || 8000;
+	self.port = port || process.env.PORT || 8000;
 	self.ip = ip;
 	self.server.listen(self.port, self.ip);
 

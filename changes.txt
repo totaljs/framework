@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.2.7
+
+- updated: default port: port || process.env.PORT || 8000;
+
 ======= 1.2.6
 
 - added: new options parameter - framework.run(http/https, debug, [port], [ip], [options])
