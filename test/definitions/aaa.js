@@ -1,0 +1,1 @@
+framework.config.isDefinition = true;

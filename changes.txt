@@ -1,6 +1,16 @@
 IN DEVELOPMENT ======= 1.2.7
 
+- added: download content from URL in framework.fs.create...
+- added: definitions
+- added: framework.injectDefinition()
+
 - updated: default port: port || process.env.PORT || 8000;
+
+- fixed: FrameworkFileSystem class
+
+!!! IMPORTANT !!!
+
+- renamed: framework.inject() to framework.injectModule()
 
 ======= 1.2.6
 

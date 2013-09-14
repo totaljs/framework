@@ -74,6 +74,7 @@ function Framework() {
 		'directory-contents': '/contents/',
 		'directory-controllers': '/controllers/',
 		'directory-views': '/views/',
+		'directory-definitions': '/definitions/',
 		'directory-temp': '/tmp/',
 		'directory-templates': '/templates/',
 		'directory-resources': '/resources/',
@@ -554,7 +555,21 @@ Framework.prototype.module = function(name) {
 Framework.prototype.install = function() {
 
 	var self = this;
-	var dir = path.join(directory, self.config['directory-controllers']);
+	var dir = path.join(directory, self.config['directory-definitions']);
+	var framework = self;
+
+	if (fs.existsSync(dir)) {
+		fs.readdirSync(dir).forEach(function(o) {
+
+			var ext = path.extname(o);
+			if (ext.toLowerCase() !== '.js')
+				return;
+
+			eval(fs.readFileSync(path.join(directory, self.config['directory-definitions'], o), 'utf8').toString());
+		});
+	}
+
+	dir = path.join(directory, self.config['directory-controllers']);
 
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(function(o) {
@@ -605,19 +620,20 @@ Framework.prototype.install = function() {
 };
 
 /*
-	Inject module / script
-	@name {String} :: name of module or script
+	Inject module from URL
+	@name {String} :: name of module
 	@url {String}
 	return {Framework}
 */
-Framework.prototype.inject = function(name, url) {
+Framework.prototype.injectModule = function(name, url) {
+
 	var self = this;
 	var framework = self;
 
 	utils.request(url, 'GET', '', function(error, data) {
 
 		if (error) {
-			self.error(error, 'inject - ' + name, null);
+			self.error(error, 'injectModule - ' + name, null);
 			return;
 		}
 
@@ -630,14 +646,43 @@ Framework.prototype.inject = function(name, url) {
 				return route.name === _controller;
 			});
 
-			if (typeof(result.install) !== UNDEFINED)
+			if (typeof(result.install) !== UNDEFINED) {
 				result.install(self);
+				self._routeSort();
+			}
 
 			self.modules[name] = result;
-			self._routeSort();
 
 		} catch (ex) {
-			self.error(ex, 'inject - ' + name, null);
+			self.error(ex, 'injectModule - ' + name, null);
+		}
+	});
+
+	return self;
+};
+
+/*
+	Inject definition from URL
+	@url {String}
+	return {Framework}
+*/
+Framework.prototype.injectDefinition = function(url) {
+
+	var self = this;
+	var framework = self;
+
+	utils.request(url, 'GET', '', function(error, data) {
+
+		if (error) {
+			self.error(error, 'injectDefinition - ' + url, null);
+			return;
+		}
+
+		try
+		{
+			eval(data);
+		} catch (ex) {
+			self.error(ex, 'injectDefinition - ' + url, null);
 		}
 	});
 
@@ -2818,23 +2863,23 @@ function FrameworkFileSystem(framework) {
 	this.config = framework.config;
 
 	this.create = {
-		css: this.createCSS,
-		js: this.createJS,
-		view: this.createView,
-		content: this.createContent,
-		template: this.createTemplate,
-		resource: this.createResource,
-		file: this.createFile
+		css: this.createCSS.bind(this),
+		js: this.createJS.bind(this),
+		view: this.createView.bind(this),
+		content: this.createContent.bind(this),
+		template: this.createTemplate.bind(this),
+		resource: this.createResource.bind(this),
+		file: this.createFile.bind(this)
 	};
 
 	this.rm = {
-		css: this.deleteCSS,
-		js: this.deleteJS,
-		view: this.deleteView,
-		content: this.deleteContent,
-		template: this.deleteTemplate,
-		resource: this.deleteResource,
-		file: this.deleteFile
+		css: this.deleteCSS.bind(this),
+		js: this.deleteJS.bind(this),
+		view: this.deleteView.bind(this),
+		content: this.deleteContent.bind(this),
+		template: this.deleteTemplate.bind(this),
+		resource: this.deleteResource.bind(this),
+		file: this.deleteFile.bind(this)
 	};
 }
 
@@ -2951,7 +2996,7 @@ FrameworkFileSystem.prototype.deleteFile = function(filename) {
 	@append {Boolean} :: optional (default false)
 	return {Boolean}
 */
-Framework.prototype.createCSS = function(name, content, rewrite, append) {
+FrameworkFileSystem.prototype.createCSS = function(name, content, rewrite, append) {
 
 	var self = this;
 
@@ -3090,11 +3135,27 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
 	@content {String}
 	@append {Boolean}
 	@rewrite {Boolean}
+	@callback {Function} :: optional
 	return {Boolean}
 */
-FrameworkFileSystem.prototype.createFile = function(filename, content, append, rewrite) {
+FrameworkFileSystem.prototype.createFile = function(filename, content, append, rewrite, callback) {
 
 	var self = this;
+
+	if (content.substring(0, 7) === 'http://' || content.substring(0, 8) === 'https://') {
+
+		utils.request(content, 'GET', null, function(err, data) {
+
+			if (!err)
+				self.createFile(filename, data, append, rewrite);
+
+			if (typeof(callback) === FUNCTION)
+				callback(err, filename);
+
+		});
+
+		return true;
+	}
 
 	if ((content || '').length === 0)
 		return false;
@@ -3117,6 +3178,10 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 		return false;
 
 	fs.writeFileSync(filename, content, ENCODING);
+
+	if (typeof(callback) === FUNCTION)
+		callback(null, filename);
+
 	return true;
 };
 

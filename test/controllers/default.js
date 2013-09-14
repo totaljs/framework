@@ -140,6 +140,8 @@ function viewIndex() {
 	assert.ok(self.functions('share').message() === 'message', name + 'functions()');
 	assert.ok(self.models('share').user.name === 'Peter', name + 'models()');
 
+	assert.ok(self.config.isDefinition === true, 'definitions()');
+
 	assert.ok(!self.xhr, name + 'xhr');
 	assert.ok(self.flags.indexOf('get') !== -1, name + 'flags')
 

@@ -156,6 +156,8 @@ function run() {
 
 	if (max <= 0) {
 
+		framework.fs.rm.view('fromURL');
+
 		assert.ok(framework.global.header > 0, 'partial - global');
 		assert.ok(framework.global.partial > 0, 'partial - partial');
 
@@ -196,6 +198,8 @@ mem.on('stats', function(info) {
 	memMax = Math.max(memMax, info.max);
 	//console.log('STATS ->', JSON.stringify(info));
 });
+
+framework.fs.create.view('fromURL', 'http://partialjs.com/framework/test.html');
 
 setTimeout(function() {
 	console.time('new');

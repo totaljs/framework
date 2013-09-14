@@ -166,6 +166,8 @@ function run() {
 
 	if (max <= 0) {
 
+		framework.fs.rm.view('fromURL');
+
 		assert.ok(framework.global.header > 0, 'partial - global');
 		assert.ok(framework.global.partial > 0, 'partial - partial');
 		assert.ok(framework.global.timeout > 0, 'timeout');
@@ -197,6 +199,8 @@ mem.on('stats', function(info) {
 	console.log('STATS ->', JSON.stringify(info));
 });
 
-setTimeout(function() {
+framework.fs.create.view('fromURL', 'http://partialjs.com/framework/test.html');
+
+setTimeout(function() {	
 	run();
 }, 500);
