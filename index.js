@@ -197,6 +197,9 @@ Framework.prototype = new events.EventEmitter();
 */
 Framework.prototype.refresh = function(clear) {
 	var self = this;
+
+	self.emit('clear', 'refresh');
+
 	self.resources = {};
 	self.databases = {};
 	self.configure();
