@@ -17,6 +17,7 @@ exports.install = function(framework) {
 	framework.route('/a/{a}/', viewRouteAA);
 	framework.route('/a/b/c/', viewRouteABC);
 	framework.route('/test/', viewTest);
+	framework.route('/test-view/', view_test_view);
 	framework.route('/login/google/callback/', aa);
 	framework.route('/timeout/', function() {}, [], null, [], 50);
 
@@ -80,6 +81,10 @@ function viewLiveIncoming(file) {
 
 function viewSocket() {
 	this.view('f');
+}
+
+function view_test_view() {
+	this.view('test');
 }
 
 function socket(self, framework) {

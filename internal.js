@@ -1831,12 +1831,19 @@ function parse(html, controller) {
 
 				var a = code.indexOf('.');
 				var b = code.indexOf('(');
+				var c = code.indexOf('[');
 
 				if (a === -1)
 					a = b;
 
 				if (b === -1)
 					b = a;
+
+				if (a === -1)
+					a = c;
+
+				if (b === -1)
+					b = c;
 
 				index = Math.min(a, b);
 

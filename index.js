@@ -914,16 +914,16 @@ Framework.prototype.onMeta = function() {
 
 		switch (i) {
 			case 0:
-				builder += '<title>{0}</title>'.format(arg + (self.url !== '/' ? ' - ' + self.config['name'] : ''));
+				builder += '<title>' + (arg + (self.url !== '/' ? ' - ' + self.config['name'] : '')) + '</title>';
 				break;
 			case 1:
-				builder += '<meta name="description" content="{0}" />'.format(arg);
+				builder += '<meta name="description" content="' + arg + '" />';
 				break;
 			case 2:
-				builder += '<meta name="keywords" content="{0}" />'.format(arg);
+				builder += '<meta name="keywords" content="' + arg + '" />';
 				break;
 			case 3:
-				builder += '<link rel="image_src" type="image/jpeg" href="{0}" />'.format(arg);
+				builder += '<link rel="image_src" type="image/jpeg" href="' + arg + '" /><meta property="og:image" content="' + arg + '" /><meta name="twitter:image" content="' + arg + '" />';
 				break;
 		}
 	}
