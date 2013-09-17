@@ -274,18 +274,18 @@ Framework.prototype._routeSort = function() {
 
 /*
 	@name {String} :: file name of database
-	@changes {Boolean} :: optional, default true
 	return {nosql}
 */
-Framework.prototype.database = function(name, changes) {
+Framework.prototype.database = function(name) {
 
 	var self = this;
 
 	var db = self.databases[name];
+
 	if (typeof(db) !== UNDEFINED)
 		return db;
 
-	db = nosql.load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), changes);
+	db = nosql.load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), true);
 	self.databases[name] = db;
 
 	return db;
