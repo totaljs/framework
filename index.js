@@ -495,26 +495,6 @@ Framework.prototype.error = function(err, name, uri) {
 };
 
 /*
-	Return path to web application directory
-	@arguments {String params}
-	return {String}
-*/
-Framework.prototype.path = function() {
-	var self = this;
-
-	if (arguments.length === 0)
-		return directory;
-
-	var params = [];
-	params.push(directory);
-
-	for (var i = 0; i < arguments.length; i++)
-		params.push(arguments[i]);
-
-	return path.join.apply(self, params).replace(/\\/g, '/');
-};
-
-/*
 	Module caller
 	@name {String}
 	return {Object} :: framework return require();
