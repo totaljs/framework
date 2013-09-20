@@ -2198,8 +2198,9 @@ Framework.prototype._request = function(req, res) {
 };
 
 /*
-	Test request to controller
+	A test request into the controller
 
+	@name {String}
 	@url {String}
 	@callback {Functions} :: function(error, data, statusCode, headers);
 	@method {String} :: default GET
