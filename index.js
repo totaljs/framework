@@ -1396,7 +1396,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (contentType.indexOf('/') === -1)
 		contentType = utils.getContentType(contentType);
 
-	var compress = ['text/plain', 'text/javascript', 'text/css', 'application/x-javascript', 'text/html'].indexOf(contentType) !== -1;
+	var compress = self.config['allow-gzip'] && ['text/plain', 'text/javascript', 'text/css', 'application/x-javascript', 'text/html'].indexOf(contentType) !== -1;
 	var accept = req.headers['accept-encoding'] || '';
 	var returnHeaders = {};
 
