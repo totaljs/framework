@@ -944,6 +944,35 @@ String.prototype.contains = function(value, mustAll) {
 	return mustAll ? true : false;
 };
 
+/*
+	Parse configuration from string
+	return {Object}
+*/
+String.prototype.configuration = function() {
+
+	var arr = this.split('\n');
+	var length = arr.length;
+	var obj = {};
+
+	for (var i = 0; i < length; i++) {
+
+		var str = arr[i];
+
+		if (str === '')
+			continue;
+
+		if (str.substring(0, 2) === '//')
+			continue;
+
+		var index = str.indexOf(':');
+		if (index === -1)
+			continue;
+
+		obj[str.substring(0, index).trim()] = str.substring(index + 1).trim();
+	}
+
+	return obj;
+};
 
 /*
 	@arguments {Object array}

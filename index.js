@@ -1658,6 +1658,31 @@ Framework.prototype.response404 = function(req, res) {
 };
 
 /*
+	Response with 501 error
+	@req {ServerRequest}
+	@res {ServerResponse}
+	return {Framework}
+*/
+Framework.prototype.response501 = function(req, res) {
+	var self = this;
+
+	if (res.success)
+		return self;
+
+	req.clear(true);
+
+	res.success = true;
+	res.writeHead(501, { 'Content-Type': 'text/plain' });
+	res.end(utils.httpStatus(501));
+
+	if (!req.isStaticFile)
+		self.emit('request-end', req, res);
+
+	self.stats.response.error404++;
+	return self;
+};
+
+/*
 	Response content
 	@req {ServerRequest}
 	@res {ServerResponse}
@@ -5496,6 +5521,23 @@ Controller.prototype.view500 = function(error) {
 	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#500', []);
 	self.subscribe.execute(500);
+	return self;
+};
+
+/*
+	Response 501
+	return {Controller};
+*/
+Controller.prototype.view501 = function() {
+	var self = this;
+
+	if (self.res.success || !self.isConnected)
+		return self;
+
+	self.req.path = [];
+	self.subscribe.success();
+	self.subscribe.route = self.framework.lookup(self.req, '#501', []);
+	self.subscribe.execute(501);
 	return self;
 };
 

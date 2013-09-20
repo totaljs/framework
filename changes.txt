@@ -3,6 +3,8 @@ IN DEVELOPMENT ======= 1.2.7
 - added: download content from URL in framework.fs.create...
 - added: definitions
 - added: framework.injectDefinition()
+- added: framework.response501() and controller.view501() - 501 Not Implemented
+- added: parse resource/configuration from a string - string.configuration()
 
 - updated: default port: port || process.env.PORT || 8000;
 - updated: default framework.onMeta();
