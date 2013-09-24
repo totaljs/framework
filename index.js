@@ -3251,6 +3251,96 @@ FrameworkPath.prototype.backups = function(filename) {
 	@filename {String} :: optional
 	return {String}
 */
+FrameworkPath.prototype.views = function(filename) {
+	var self = this;
+	self.framework._verify_directory('views');
+	return utils.combine(self.config['directory-views'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.templates = function(filename) {
+	var self = this;
+	self.framework._verify_directory('templates');
+	return utils.combine(self.config['directory-templates'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.databases = function(filename) {
+	var self = this;
+	self.framework._verify_directory('databases');
+	return utils.combine(self.config['directory-databases'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.contents = function(filename) {
+	var self = this;
+	self.framework._verify_directory('contents');
+	return utils.combine(self.config['directory-contents'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.modules = function(filename) {
+	var self = this;
+	self.framework._verify_directory('modules');
+	return utils.combine(self.config['directory-modules'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.controllers = function(filename) {
+	var self = this;
+	self.framework._verify_directory('controllers');
+	return utils.combine(self.config['directory-controllers'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.definitions = function(filename) {
+	var self = this;
+	self.framework._verify_directory('definitions');
+	return utils.combine(self.config['directory-definitions'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.tests = function(filename) {
+	var self = this;
+	self.framework._verify_directory('tests');
+	return utils.combine(self.config['directory-tests'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.resources = function(filename) {
+	var self = this;
+	self.framework._verify_directory('resources');
+	return utils.combine(self.config['directory-resources'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
 FrameworkPath.prototype.root = function(filename) {
 	return utils.combine(directory, filename || '');
 };
