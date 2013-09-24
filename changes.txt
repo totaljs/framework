@@ -16,6 +16,7 @@ IN DEVELOPMENT ======= 1.2.7
 !!! IMPORTANT !!!
 
 - renamed: framework.inject() to framework.injectModule()
+- renamed: framework.path.backup() -> framework.path.backups()
 
 clean code
 

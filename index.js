@@ -83,7 +83,7 @@ function Framework() {
 		'directory-logs': '/logs/',
 		'directory-tests': '/tests/',
 		'directory-databases': '/databases/',
-		'directory-backup': '/backups/',
+		'directory-backups': '/backups/',
 
 		// all HTTP static request are routed to directory-public
 		'static-url': '',
@@ -683,13 +683,13 @@ Framework.prototype.backup = function(callback) {
 
 	var filter = function(path) {
 
-		if (path === '/tmp/' || path === '/backup/')
+		if (path === '/tmp/' || path === '/backups/')
 			return true;
 
 		if (path.indexOf('.DS_Store') !== -1)
 			return false;
 
-		if (path.indexOf('/backup/') === 0)
+		if (path.indexOf('/backups/') === 0)
 			return false;
 
 		if (path.indexOf('/tmp/') === 0)
@@ -704,10 +704,10 @@ Framework.prototype.backup = function(callback) {
 		return self.onFilterBackup(path);
 	};
 
-	backup.directory.push('/backup/');
+	backup.directory.push('/backups/');
 	backup.directory.push('/tmp/');
 
-	var directoryBackup = path.join(directory, self.config['directory-backup']);
+	var directoryBackup = path.join(directory, self.config['directory-backups']);
 
 	if (!fs.existsSync(directoryBackup))
 		fs.mkdirSync(directoryBackup);
@@ -733,7 +733,7 @@ Framework.prototype.restore = function(date, callback, restorePath) {
 	if (!fs.existsSync(tmpDirectory))
 		fs.mkdirSync(tmpDirectory);
 
-	var fileName = path.join(dir, self.config['directory-backup'], date + (date.indexOf('.backup') === -1 ? '.backup' : ''));
+	var fileName = path.join(dir, self.config['directory-backups'], date + (date.indexOf('.backup') === -1 ? '.backup' : ''));
 
 	var cb = function(err, path) {
 
@@ -749,17 +749,17 @@ Framework.prototype.restore = function(date, callback, restorePath) {
 
 	var filter = function(path) {
 
-		if (path === '/tmp/' || path === '/backup/')
+		if (path === '/tmp/' || path === '/backups/')
 			return true;
 
-		if (path.indexOf('/backup/') === 0)
+		if (path.indexOf('/backups/') === 0)
 			return false;
 
 		return self.onFilterRestore(path);
 	};
 
 	var filterClear = function(path) {
-		if (path === '/tmp/' || path === '/backup/')
+		if (path === '/tmp/' || path === '/backups/')
 			return false;
 		return;
 	};
@@ -3241,7 +3241,7 @@ FrameworkPath.prototype.temp = function(filename) {
 	@filename {String} :: optional
 	return {String}
 */
-FrameworkPath.prototype.backup = function(filename) {
+FrameworkPath.prototype.backups = function(filename) {
 	var self = this;
 	self.framework._verify_directory('backup');
 	return utils.combine(self.config['directory-backup'], filename || '').replace(/\\/g, '/');
