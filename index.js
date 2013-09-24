@@ -176,7 +176,6 @@ function Framework() {
 
 	// intialize cache
 	this.cache = new FrameworkCache(this);
-	this.cache.on('service', this.handlers.onservice);
 
 	this.fs = new FrameworkFileSystem(this);
 	this.path = new FrameworkPath(this);
@@ -1832,7 +1831,10 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 
 	self.configure();
 	self.clear();
+
 	self.cache.init();
+	self.on('service', self.handlers.onservice);
+	
 	self.install();
 
 	var module = self.module('#');
@@ -3270,8 +3272,6 @@ function FrameworkCache(framework) {
 	this.interval = null;
 }
 
-FrameworkCache.prototype = new events.EventEmitter();
-
 /*
 	Cache init
 	return {Cache}
@@ -3310,7 +3310,7 @@ FrameworkCache.prototype.recycle = function() {
 	var length = keys.length;
 
 	if (length === 0) {
-		self.emit('service', self.count++);
+		self.framework.emit('service', self.count++);
 		return self;
 	}
 
@@ -3325,7 +3325,7 @@ FrameworkCache.prototype.recycle = function() {
 		}
 	}
 
-	self.emit('service', self.count++);
+	self.framework.emit('service', self.count++);
 	return self;
 };
 
@@ -3446,13 +3446,15 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 	var value = self.read(name);
 
 	if (value !== null) {
-		fnCallback(value);
+		if (fnCallback)
+			fnCallback(value);
 		return self;
 	}
 
 	fnCache(function(value, expire) {
 		self.add(name, value, expire);
-		fnCallback(value);
+		if (fnCallback)
+			fnCallback(value);
 	});
 
 	return self;
