@@ -2465,25 +2465,11 @@ Framework.prototype.resource = function(name, key) {
 		return res[key];
 
 	var fileName = utils.combine(self.config['directory-resources'], name + '.resource');
-	var obj = {};
 
 	if (!fs.existsSync(fileName))
 		return '';
 
-	var arr = fs.readFileSync(fileName).toString(ENCODING).split('\n');
-	for (var i = 0; i < arr.length; i++) {
-		var str = arr[i];
-
-		if (str === '')
-			continue;
-
-		var index = str.indexOf(':');
-		if (index === -1)
-			continue;
-
-		obj[str.substring(0, index).trim()] = str.substring(index + 1).trim();
-	}
-
+	var obj = fs.readFileSync(fileName).toString(ENCODING).configuration();
 	self.resources[name] = obj;
 	return obj[key] || '';
 };
