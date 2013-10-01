@@ -433,7 +433,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
 	if (!utils.isArray(flags) && typeof(flags) === 'object') {
 		protocols = flags['protocols'] || flags['protocol'];
-		allow = flags['allow'];
+		allow = flags['allow'] || flags['origin'];
 		maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
 		flags = flags['flags'];
 	}
