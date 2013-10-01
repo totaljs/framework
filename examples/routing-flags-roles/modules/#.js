@@ -11,7 +11,7 @@ exports.onAuthorization = function(req, res, flags, callback) {
 	if (get.user === 'admin' || get.user === 'moderator') {
 
 		// I add role flag
-		flags.push('#' + get.user);
+		flags.push('@' + get.user);
 
 		callback(true);
 	}
