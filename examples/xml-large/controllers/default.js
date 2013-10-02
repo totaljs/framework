@@ -21,6 +21,6 @@ function xml() {
 	// .... 
 	// }
 	self.res.write('</xml>')
-	self.res.end();
+	self.close();
 }
 	
