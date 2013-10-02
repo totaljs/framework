@@ -1834,7 +1834,7 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 
 	self.cache.init();
 	self.on('service', self.handlers.onservice);
-	
+
 	self.install();
 
 	var module = self.module('#');
@@ -5826,7 +5826,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 };
 
 /*
-	Close Response
+	Close a response
 	return {Controller}
 */
 Controller.prototype.close = function() {
@@ -5835,12 +5835,21 @@ Controller.prototype.close = function() {
 	if (!self.isConnected)
 		return self;
 
-	if (self.internal.type === 0 && self.res.success)
+	if (self.internal.type === 0) {
+
+		if (!self.res.success) {
+			self.res.success = true;
+			self.res.end();
+			self.framework.emit('request-end', self.req, self.res);
+		}
+
 		return self;
+	}
 
 	if (self.internal.type === 2)
 		self.res.write('\r\n\r\n--' + self.internal.boundary + '--');
 
+	self.res.subdomain = true;
 	self.res.end();
 	self.framework.emit('request-end', self.req, self.res);
 	self.internal.type = 0;
