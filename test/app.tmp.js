@@ -105,23 +105,28 @@ function arrayFindAllWithIndex(arr, filter) {
 	return selected;
 };
 
-var mail = require('../mail');
-mail.debug = false;
+function Obj() {
+}
 
-mail.on('error', function(err) {
-	console.log('error -->', err);
-});
+Obj.prototype = {
+	get async() {
 
-var message = mail.create();
+		if (typeof(this._async) === 'undefined') {
+			this._async = new utils.Async(this);
+			console.log('create');
+		}
 
-message.body = 'SI SUPER';
-message.subject = 'Nový e-mail';
+		return this._async;
+	}
+}
 
-//message.to('sirka@wsd-europe.com');
-message.to('petersirka@gmail.com');
-message.reply('sirka@wsd.sk');
+Obj.prototype.__proto__ = new events.EventEmitter();
 
-message.sender('sirka@wsd-europe.com');
+var obj = new Obj();
+console.log(obj.async);
+console.log(obj.async);
+console.log(obj.async);
+
 // message.attachment('/users/petersirka/desktop/wall.png');
 
 //message.send('smtp.wsd-europe.com', { user: 'sirka@wsd-europe.com', password: 'PETO07dlska' });

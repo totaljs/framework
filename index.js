@@ -3913,18 +3913,9 @@ function Controller(name, req, res, subscribe) {
 
 	this.subscribe = subscribe;
 	this.name = name;
-	this.cache = subscribe.framework.cache;
 	this.framework = subscribe.framework;
 	this.req = req;
 	this.res = res;
-	this.session = req.session;
-	this.user = req.user;
-	this.get = req.data.get;
-	this.post = req.data.post;
-	this.files = req.data.files;
-	this.xhr = req.xhr;
-	this.config = subscribe.framework.config;
-	this.ip = req.ip;
 
 	// controller.internal.type === 0 - classic
 	// controller.internal.type === 1 - server sent events
@@ -3932,20 +3923,10 @@ function Controller(name, req, res, subscribe) {
 
 	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null, type: 0 };
 	this.statusCode = 200;
-	this.controllers = subscribe.framework.controllers;
-	this.url = utils.path(req.uri.pathname);
 
-	this.isProxy = req.isProxy;
 	this.isLayout = false;
-	this.isTest = req.headers['assertion-testing'] === '1';
-	this.isDebug = subscribe.framework.config.debug;
 	this.isCanceled = false;
 	this.isConnected = true;
-
-	this.global = subscribe.framework.global;
-	this.flags = req.flags;
-
-	this.lastEventID = req.headers['last-event-id'] || null;
 
 	this.repository = {};
 	this.model = null;
@@ -3959,10 +3940,6 @@ function Controller(name, req, res, subscribe) {
 	else
 		this.prefix = this.prefix;
 
-	this.path = subscribe.framework.path;
-	this.fs = subscribe.framework.fs;
-	this.async = new utils.Async(this);
-
 	this._currentImage = '';
 	this._currentUpload = '';
 	this._currentVideo = '';
@@ -3971,6 +3948,71 @@ function Controller(name, req, res, subscribe) {
 }
 
 Controller.prototype = {
+
+	get sseID() {
+		return this.req.headers['last-event-id'] || null;
+	},
+
+	get flags() {
+		return this.req.flags;
+	},
+
+	get path() {
+		return this.framework.path;
+	},
+
+	get fs() {
+		return this.framework.fs;
+	},
+
+	get get() {
+		return this.req.data.get;
+	},
+
+	get post() {
+		return this.req.data.post;
+	},
+
+	get files() {
+		return this.req.data.files;
+	},
+
+	get ip() {
+		return this.req.ip;
+	},
+
+	get xhr() {
+		return this.req.xhr;
+	},
+
+	get url() {
+		return utils.path(this.req.uri.pathname);
+	},
+
+	get cache() {
+		return this.framework.cache;
+	},
+
+	get config() {
+		return this.framework.config;
+	},
+
+	get controllers() {
+		return this.framework.controllers;
+	},
+
+	get isProxy() {
+		return this.req.isProxy;
+	},
+
+	get isDebug() {
+		return this.framework.config.debug;
+	},
+
+	get isTest() {
+		return this.req.headers['assertion-testing'] === '1';
+	},
+
 	get session() {
 		return this.req.session;
 	},
@@ -3985,6 +4027,24 @@ Controller.prototype = {
 
 	set user(value) {
 		this.req.user = value;
+	},
+
+	get global() {
+		return this.framework.global;
+	},
+
+	set global(value) {
+		this.framework.global = value;
+	},
+
+	get async() {
+
+		var self = this;
+
+		if (typeof(self._async) === UNDEFINED)
+			self._async = new utils.Async(self);
+
+		return self._async;
 	}
 };
 
@@ -6151,19 +6211,45 @@ var SOCKET_ALLOW_VERSION   = [13];
 */
 function WebSocket(framework, path, name) {
     this._keys = [];
-    this.path = path;
     this.online = 0;
     this.connections = {};
     this.framework = framework;
-    this.global = framework.global;
-    this.config = framework.config;
     this.repository = {};
     this.name = name;
-    this.isDebug = framework.config.debug;
     this.url = utils.path(path);
-    this.async = new utils.Async(this);
-    this.path = framework.path;
-    this.fs = framework.fs;
+}
+
+WebSocket.prototype = {
+
+	get global() {
+		return this.framework.global;
+	},
+
+	get config() {
+		return this.framework.config;
+	},
+
+	get isDebug() {
+		return this.framework.config.debug;
+	},
+
+	get path() {
+		return this.framework.path;
+	},
+
+	get fs() {
+		return this.framework.fs;
+	},
+
+	get async() {
+
+		var self = this;
+
+		if (typeof(self._async) === UNDEFINED)
+			self._async = new utils.Async(self);
+
+		return self._async;
+	}
 }
 
 // on('open', function(client) {});
@@ -6171,7 +6257,7 @@ function WebSocket(framework, path, name) {
 // on('message', function(client, message) {});
 // on('error', function(error, client) {});
 
-WebSocket.prototype = new events.EventEmitter();
+WebSocket.prototype.__proto__ = new events.EventEmitter();
 
 /*
     Send message
