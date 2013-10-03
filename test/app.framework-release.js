@@ -8,6 +8,7 @@ var port = parseInt(process.argv[2] || '8001');
 var url = 'http://127.0.0.1:' + port + '/';
 var errorStatus = 0;
 var max = 1500;
+var async = new utils.Async();
 
 framework.run(http, false, port);
 
@@ -20,12 +21,15 @@ framework.onAuthorization = function(req, res, flags, cb) {
 framework.onError = function(error, name, uri) {
 
 	if (errorStatus === 0) {
-		console.log(error, name, uri);
+		console.log(error, name, uri, max);
+		//console.log(async);
 		framework.stop();
 		return;
 	}
 
 	if (errorStatus === 1) {
+		if (error.toString().indexOf('not found') === -1)
+			console.log(error);
 		assert.ok(error.toString().indexOf('not found') !== -1, 'view: not found problem');
 		errorStatus = 2;
 		return;
@@ -61,6 +65,7 @@ function end() {
 }
 
 function test_controller_functions(next) {
+
 	utils.request(url, 'GET', null, function(error, data, code, headers) {
 
 		if (error)
@@ -97,8 +102,6 @@ function test_view_error(next) {
 }
 
 function test_routing(next) {
-
-	var async = new utils.Async();
 
 	async.await('a', function(complete) {
 		utils.request(url + 'a/', 'GET', null, function(error, data, code, headers) {
@@ -138,7 +141,7 @@ function test_routing(next) {
 				throw error;
 			complete();
 		});
-	});		
+	});
 
 	async.await('timeout', function(complete) {
 		utils.request(url + 'timeout/', 'GET', null, function(error, data, code, headers) {
@@ -180,6 +183,7 @@ function run() {
 				test_routing(function() {
 					run();
 				});
+				run();
 			});
 		});
 	});
@@ -191,7 +195,6 @@ var memLeak = 0;
 
 mem.on('leak', function(info) {
 	memLeak++;
-	//console.log('LEAK ->', info);
 });
 
 mem.on('stats', function(info) {

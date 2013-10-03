@@ -139,14 +139,14 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
-		var buffer = '';
+		res._buffer = '';
 
 		res.on('data', function(chunk) {
-			buffer += chunk.toString(encoding);
+			this._buffer += chunk.toString(encoding);
 		});
 
 		res.on('end', function() {
-			callback(null, buffer, res.statusCode, res.headers);
+			callback(null, this._buffer, res.statusCode, res.headers);
 		});
 
 		res.resume();

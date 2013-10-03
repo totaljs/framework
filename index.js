@@ -1906,7 +1906,7 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 		self.server.on('upgrade', self.handlers.onupgrade);
 
 	self.port = port || process.env.PORT || 8000;
-	self.ip = ip;
+	self.ip = ip || '127.0.0.1';
 	self.server.listen(self.port, self.ip);
 
 	self.ip = self.ip || 'localhost';
