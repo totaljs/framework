@@ -182,7 +182,7 @@ function viewIndex() {
 	var error = self.validate({ A: 'B' }, ['A']);
 	assert.ok(error.hasError() && error.read('A') === 'AB', 'framework.onValidation & controller.validation');
 
-	self.statusCode = 404;
+	self.status = 404;
 	self.plain('OK');
 }
 

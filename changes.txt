@@ -20,6 +20,7 @@ IN DEVELOPMENT ======= 1.2.7
 - renamed: controller.lastEventID -> contrlloler.sseID
 - renamed: framework.inject() to framework.injectModule()
 - renamed: framework.path.backup() -> framework.path.backups()
+- renamed: controller.statusCode –> controller.status
 
 improvements
 clean code

@@ -3925,7 +3925,7 @@ function Controller(name, req, res, subscribe) {
 	// controller.internal.type === 2 - multipart/x-mixed-replace
 
 	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null, type: 0 };
-	this.statusCode = 200;
+	this.status = 200;
 
 	this.isLayout = false;
 	this.isCanceled = false;
@@ -5407,7 +5407,7 @@ Controller.prototype.json = function(obj, headers) {
 		obj = JSON.stringify(obj || {});
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.statusCode, obj, 'application/json', true, headers);
+	self.framework.responseContent(self.req, self.res, self.status, obj, 'application/json', true, headers);
 	self.framework.stats.response.json++;
 
 	return self;
@@ -5448,7 +5448,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 		return self;
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.statusCode, contentBody, contentType || 'text/plain', true, headers);
+	self.framework.responseContent(self.req, self.res, self.status, contentBody, contentType || 'text/plain', true, headers);
 	return self;
 };
 
@@ -5484,7 +5484,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	returnHeaders['Content-Type'] = contentType;
 
 	res.success = true;
-	res.writeHead(self.statusCode, returnHeaders);
+	res.writeHead(self.status, returnHeaders);
 
 	onWrite(function(chunk, ENCODING) {
 		res.write(chunk, ENCODING || 'utf8');
@@ -5509,7 +5509,7 @@ Controller.prototype.plain = function(contentBody, headers) {
 		return self;
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.statusCode, typeof(contentBody) === STRING ? contentBody : contentBody.toString(), 'text/plain', true, headers);
+	self.framework.responseContent(self.req, self.res, self.status, typeof(contentBody) === STRING ? contentBody : contentBody.toString(), 'text/plain', true, headers);
 	self.framework.stats.response.plain++;
 
 	return self;
@@ -5527,7 +5527,7 @@ Controller.prototype.empty = function(headers) {
 		return self;
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.statusCode, '', 'text/plain', false, headers);
+	self.framework.responseContent(self.req, self.res, self.status, '', 'text/plain', false, headers);
 	self.framework.stats.response.empty++;
 
 	return self;
@@ -5792,7 +5792,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 
 		self.subscribe.success();
 		res.success = true;
-		res.writeHead(self.statusCode, { 'Content-type': 'text/event-stream', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
+		res.writeHead(self.status, { 'Content-type': 'text/event-stream', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
 	}
 
 	if (typeof(data) === OBJECT)
@@ -5849,7 +5849,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 		self.internal.boundary = '----partialjs' + utils.GUID(10);
 		self.subscribe.success();
 		res.success = true;
-		res.writeHead(self.statusCode, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + self.internal.boundary, 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
+		res.writeHead(self.status, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + self.internal.boundary, 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
 	}
 
 	var type = typeof(stream);
@@ -6180,7 +6180,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		self.subscribe.success();
 
 		if (self.isConnected) {
-			self.framework.responseContent(self.req, self.res, self.statusCode, value, self.internal.contentType, true, headers);
+			self.framework.responseContent(self.req, self.res, self.status, value, self.internal.contentType, true, headers);
 			self.framework.stats.response.view++;
 		}
 
