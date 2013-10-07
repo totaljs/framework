@@ -7,7 +7,7 @@ var fs = require('fs');
 var port = parseInt(process.argv[2] || '8001');
 var url = 'http://127.0.0.1:' + port + '/';
 var errorStatus = 0;
-var max = 1500;
+var max = 1000;
 var async = new utils.Async();
 
 framework.run(http, false, port);

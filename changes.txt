@@ -13,6 +13,7 @@ IN DEVELOPMENT ======= 1.2.7
 - fixed: FrameworkFileSystem class
 - fixed: view render
 - fixed: FrameworkCache.fn()
+- fixed: FrameworkCache.recycle()
 
 !!! IMPORTANT !!!
 
