@@ -1817,6 +1817,19 @@ Async.prototype._complete = function(name, waiting) {
 	return self;
 };
 
+Async.prototype.cancel = function() {
+
+	var self = this;
+
+	self.pending = {};
+	self.count = 0;
+	self.waiting = {};
+	self.isRunning = false;
+
+	self.emit('cancel');
+	return self;
+};
+
 /*
 	Add function to async list
 	@name {String}

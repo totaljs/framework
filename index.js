@@ -4216,7 +4216,7 @@ Controller.prototype.error = function(err) {
 };
 
 /*
-	Add function to async wait list
+	Add function to async waiting list
 	@name {String}
 	@waitingFor {String} :: name of async function
 	@fn {Function}
@@ -4226,16 +4226,6 @@ Controller.prototype.wait = function(name, waitingFor, fn) {
 	var self = this;
 	self.async.wait(name, waitingFor, fn);
 	return self;
-};
-
-/*
-	Run async functions
-	@callback {Function}
-	return {Controller}
-*/
-Controller.prototype.complete = function(callback) {
-	var self = this;
-	return self.complete(callback);
 };
 
 /*
@@ -4251,6 +4241,16 @@ Controller.prototype.await = function(name, fn) {
 };
 
 /*
+	Run async functions
+	@callback {Function}
+	return {Controller}
+*/
+Controller.prototype.complete = function(callback) {
+	var self = this;
+	return self.async.complete(callback);
+};
+
+/*
 	Cancel execute controller function
 	Note: you can cancel controller function execute in on('controller') or controller.onRequest();
 
@@ -4258,6 +4258,10 @@ Controller.prototype.await = function(name, fn) {
 */
 Controller.prototype.cancel = function() {
 	var self = this;
+
+	if (typeof(self._async) !== UNDEFINED)
+		self._async.cancel();
+
 	self.isCanceled = true;
 	return self;
 };
@@ -6232,6 +6236,10 @@ WebSocket.prototype = {
 		return this.framework.config;
 	},
 
+	get cache() {
+		return this.framework.cache;
+	},
+
 	get isDebug() {
 		return this.framework.config.debug;
 	},
@@ -6388,7 +6396,7 @@ WebSocket.prototype.all = function(fn) {
 };
 
 /*
-    Find connection
+    Find a connection
     @name {String}
     return {WebSocketClient}
 */
@@ -6406,7 +6414,7 @@ WebSocket.prototype.find = function(name) {
 };
 
 /*
-    Destroy websocket
+    Destroy a websocket
 */
 WebSocket.prototype.destroy = function() {
     var self = this;
@@ -6749,7 +6757,7 @@ WebSocketClient.prototype._ondata = function(data) {
     var self = this;
 
     if (data.length > self.length) {
-        self.container.emit('error', new Error('Maximum request length exceeded'), self);
+        self.container.emit('error', new Error('Maximum request length exceeded.'), self);
         return;
     }
 
