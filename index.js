@@ -1833,7 +1833,7 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 	self.clear();
 
 	self.cache.init();
-	self.on('service', self.handlers.onservice);
+	//self.on('service', self.handlers.onservice);
 
 	self.install();
 
@@ -3353,18 +3353,19 @@ function FrameworkCache(framework) {
 	return {Cache}
 */
 FrameworkCache.prototype.init = function(interval) {
+
 	var self = this;
 
 	self.interval = setInterval(function() {
-		self.recycle();
-	}, interval || 1000 * 60);
+		framework.cache.recycle();
+	}, interval || 1000 * 10);
 
 	return self;
 };
 
 FrameworkCache.prototype.stop = function() {
 	var self = this;
-	clearTimeout(self.interval);
+	clearInterval(self.interval);
 	return self;
 };
 
@@ -3385,8 +3386,10 @@ FrameworkCache.prototype.recycle = function() {
 	var keys = Object.keys(repository);
 	var length = keys.length;
 
+	self.count++;
+
 	if (length === 0) {
-		self.framework.emit('service', self.count++);
+		self.framework.handlers.onservice(self.count);
 		return self;
 	}
 
@@ -3401,7 +3404,7 @@ FrameworkCache.prototype.recycle = function() {
 		}
 	}
 
-	self.framework.emit('service', self.count++);
+	self.framework.handlers.onservice(self.count);
 	return self;
 };
 

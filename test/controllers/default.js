@@ -120,6 +120,7 @@ function viewTest() {
 };
 
 function viewIndex() {
+
 	var self = this;
 	var name = 'controller: ';
 
@@ -179,7 +180,7 @@ function viewIndex() {
 	assert.ok(self.url === '/', name + 'url');
 
 	var error = self.validate({ A: 'B' }, ['A']);
-	assert.ok(error.hasError() && error.read('A') === 'AB', 'framework.onValidation & contrller.validation');
+	assert.ok(error.hasError() && error.read('A') === 'AB', 'framework.onValidation & controller.validation');
 
 	self.statusCode = 404;
 	self.plain('OK');

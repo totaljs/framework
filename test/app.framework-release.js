@@ -22,7 +22,7 @@ framework.onError = function(error, name, uri) {
 
 	if (errorStatus === 0) {
 		console.log(error, name, uri, max);
-		//console.log(async);
+		console.log(async);
 		framework.stop();
 		return;
 	}
