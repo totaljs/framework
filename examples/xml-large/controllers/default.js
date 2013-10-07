@@ -20,7 +20,10 @@ function xml() {
 	// .... 
 	// .... 
 	// }
-	self.res.write('</xml>')
+	self.res.write('</xml>');
+
+	// IMPORTANT!!!
+	// this prevent a timeout and update internal stats
 	self.close();
 }
 	
