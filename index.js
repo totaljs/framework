@@ -6285,7 +6285,7 @@ WebSocket.prototype.__proto__ = new events.EventEmitter();
     @blacklist {String Array}
     return {WebSocket}
 */
-WebSocket.prototype.send = function(message, names, blacklist) {
+WebSocket.prototype.send = function(message, id, blacklist) {
 
     var self = this;
     var keys = self._keys;
@@ -6296,7 +6296,7 @@ WebSocket.prototype.send = function(message, names, blacklist) {
 
     blacklist = blacklist || [];
 
-    if (typeof(names) === UNDEFINED || names === null || names.length === 0) {
+    if (typeof(id) === UNDEFINED || id === null || id.length === 0) {
 
         var isBlacklist = blacklist.length > 0;
 
@@ -6320,7 +6320,7 @@ WebSocket.prototype.send = function(message, names, blacklist) {
 
 		var _id = keys[i];
 
-        if (names.indexOf(_id) === -1)
+        if (id.indexOf(_id) === -1)
             continue;
 
         var conn = self.connections[_id];
@@ -6329,16 +6329,16 @@ WebSocket.prototype.send = function(message, names, blacklist) {
 
     }
 
-    self.emit('send', message, names, blacklist);
+    self.emit('send', message, id, blacklist);
     return self;
 };
 
 /*
     Close connection
-    @names {String Array} :: optional, default null
+    @id {String Array} :: optional, default null
     return {WebSocket}
 */
-WebSocket.prototype.close = function(names) {
+WebSocket.prototype.close = function(id) {
 
     var self = this;
     var keys = self._keys;
@@ -6347,7 +6347,7 @@ WebSocket.prototype.close = function(names) {
     if (length === 0)
 		return self;
 
-    if (typeof(names) === UNDEFINED || names === null || names.length === 0) {
+    if (typeof(id) === UNDEFINED || id === null || id.length === 0) {
 		for (var i = 0; i < length; i++) {
 			var _id = keys[i];
             self.connections[_id].close();
@@ -6362,7 +6362,7 @@ WebSocket.prototype.close = function(names) {
 		var _id = keys[i];
         var conn = self.connections[_id];
 
-        if (names.indexOf(conn.name) === -1)
+        if (id.indexOf(_id) === -1)
             continue;
 
         conn.close();
@@ -6405,16 +6405,16 @@ WebSocket.prototype.all = function(fn) {
 
 /*
     Find a connection
-    @name {String}
+    @id {String}
     return {WebSocketClient}
 */
-WebSocket.prototype.find = function(name) {
+WebSocket.prototype.find = function(id) {
     var self = this;
     var length = self._keys.length;
 
     for (var i = 0; i < length; i++) {
         var connection = self.connections[self._keys[i]];
-        if (connection.id === name)
+        if (connection.id === id)
             return connection;
     }
 
@@ -6633,7 +6633,6 @@ function WebSocketClient(req, socket, head) {
         onclose: this._onclose.bind(this)
     };
 
-    this.limit = 0;
     this.container = null;
     this._id = null;
     this.id = '';
@@ -6750,7 +6749,7 @@ WebSocketClient.prototype.upgrade = function(container) {
 
     self.container._add(self);
     self.container._refresh();
-    self.container.framework.emit('websocket-connection', self.container, self);
+    self.container.framework.emit('websocket-begin', self.container, self);
     self.container.emit('open', self);
 
     return self;
@@ -6817,6 +6816,7 @@ WebSocketClient.prototype._onclose = function() {
     self.container._remove(self._id);
     self.container._refresh();
     self.container.emit('close', self);
+    self.container.framework.emit('websocket-end', self.container, self);
 };
 
 /*
