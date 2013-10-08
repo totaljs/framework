@@ -5820,7 +5820,6 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 /*
 	Send a file or stream via [m]ultipart/x-[m]ixed-[r]eplace
 	@filename {String}
-	@contentType {String}
 	@{stream} {Stream} :: optional, if undefined then framework reads by the filename file from disk
 	@cb {Function} :: callback if stream is sent
 	return {Controller}
