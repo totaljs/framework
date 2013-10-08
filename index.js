@@ -1529,7 +1529,7 @@ Framework.prototype.setModified = function(req, res, value) {
 	@req {ServerRequest}
 	@res {ServerResponse}
 	@compare {String or Date}
-	@strict {Boolean} :: if strict then use equal date else use great then date (default: false)
+	@strict {Boolean} :: if strict then use equal date else use great than date (default: false)
 
 	if @compare === {String} compare if-none-match
 	if @compare === {Date} compare if-modified-since
@@ -1537,12 +1537,21 @@ Framework.prototype.setModified = function(req, res, value) {
 	this method automatically flush response (if not modified)
 	--> response 304
 
-	return {Controller};
+	return {Boolean};
 */
 Framework.prototype.notModified = function(req, res, compare, strict) {
 
 	var self = this;
-	var isEtag = typeof(compare) === STRING;
+	var type = typeof(compare);
+
+	if (type === BOOLEAN) {
+		var tmp = compare;
+		compare = strict;
+		strict = tmp;
+		type = typeof(compare);
+	}
+
+	var isEtag = type === STRING;
 
 	var val = req.headers[isEtag ? 'if-none-match' : 'if-modified-since'];
 
@@ -4379,12 +4388,12 @@ Controller.prototype.functions = function(name) {
 /*
 	Check if ETag or Last Modified has modified
 	@compare {String or Date}
-	@strict {Boolean} :: if strict then use equal date else use great then date (default: false)
+	@strict {Boolean} :: if strict then use equal date else use great than date (default: false)
 
 	if @compare === {String} compare if-none-match
 	if @compare === {Date} compare if-modified-since
 
-	return {Controller};
+	return {Boolean};
 */
 Controller.prototype.notModified = function(compare, strict) {
 	var self = this;
@@ -5748,24 +5757,6 @@ Controller.prototype.baa = function(name) {
 };
 
 /*
-	Response Async View
-	@name {String}
-	@model {Object} :: optional
-	@headers {Object} :: optional
-	return {Controller};
-*/
-Controller.prototype.viewAsync = function(name, model, headers) {
-	var self = this;
-
-	var fn = function() {
-		self.view(name, model, headers);
-	};
-
-	self.async.complete(fn);
-	return self;
-};
-
-/*
 	Send data via [S]erver-[s]ent [e]vents
 	@data {String or Object}
 	@eventname {String} :: optional
@@ -6194,6 +6185,24 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	self.output = value;
 	self.isLayout = true;
 	self.view(self.internal.layout, null, headers);
+	return self;
+};
+
+/*
+	Response Async View
+	@name {String}
+	@model {Object} :: optional
+	@headers {Object} :: optional
+	return {Controller};
+*/
+Controller.prototype.viewAsync = function(name, model, headers) {
+	var self = this;
+
+	var fn = function() {
+		self.view(name, model, headers);
+	};
+
+	self.async.complete(fn);
 	return self;
 };
 
