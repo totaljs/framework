@@ -1,13 +1,16 @@
 IN DEVELOPMENT ======= 1.2.7
 
-- added: download content from URL in framework.fs.create...
 - added: definitions
 - added: framework.injectDefinition()
 - added: framework.response501() and controller.view501() - 501 Not Implemented
+- added: framework.redirect(oldHost, newHost, withPath, permament)
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/redirect-host
+- added: download content from URL in framework.fs.create...
 - added: parse resource/configuration from a string - string.configuration()
 - added: async.cancel()
 - added: framework.on('websocket-begin')
 - added: framework.on('websocket-end')
+- added: controller.uri
 
 - updated: default port: port || process.env.PORT || 8000
 - updated: default framework.onMeta()

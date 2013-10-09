@@ -63,6 +63,7 @@ function Framework() {
 	};
 
 	this.config = {
+
 		debug: false,
 
 		name: 'partial.js',
@@ -113,6 +114,8 @@ function Framework() {
 		'allow-compile-css': true
 	};
 
+	this._redirectPath = false;
+
 	this.global = {};
 	this.resources = {};
 	this.connections = {};
@@ -122,7 +125,8 @@ function Framework() {
 		files: [],
 		websockets: [],
 		partial: {},
-		partialGlobal: []
+		partialGlobal: [],
+		redirect: {}
 	};
 
 	this.helpers = {};
@@ -305,6 +309,29 @@ Framework.prototype.stop = function(code) {
 	self.server.close();
 
 	process.exit(code || 0);
+	return self;
+};
+
+/*
+	Add a redirect route
+	@host {String} :: domain with protocol
+	@hostNew {String} :: domain with protocol
+	@withPath {Boolean} :: copy path (default: true)
+	@permament {Boolean} :: Permament redirect (302) (default: false)
+	return {Framework}
+*/
+Framework.prototype.redirect = function(host, newHost, withPath, permament) {
+	var self = this;
+
+	if (host[host.length - 1] === '/')
+		host = host.substring(0, host.length - 1);
+
+	if (newHost[newHost.length - 1] === '/')
+		newHost = newHost.substring(0, newHost.length - 1);
+
+	self.routes.redirect[host] = { url: newHost, path: withPath, permament: permament };
+	self._redirectPath = true;
+
 	return self;
 };
 
@@ -2098,6 +2125,18 @@ Framework.prototype._request = function(req, res) {
 
 	res.setHeader('X-Powered-By', 'partial.js v' + self.version);
 
+	var header = req.headers;
+	var protocol = req.connection.encrypted ? 'https' : 'http';
+	req.host = header.host;
+
+	if (self._redirectPath) {
+		var redirect = self.routes.redirect[protocol +'://' + req.host];
+		if (redirect) {
+			self.responseRedirect(req, res, redirect.url + (redirect.path ? req.url : ''), redirect.permament);
+			return self;
+		}
+	}
+
     if (self.config.debug)
 		res.setHeader('Mode', 'debug');
 
@@ -2116,12 +2155,9 @@ Framework.prototype._request = function(req, res) {
 	req.isAuthorized = true;
 
 	var isXSS = false;
-	var header = req.headers;
-	var protocol = req.connection.encrypted ? 'https' : 'http';
 	var accept = header.accept;
 
 	req.isProxy = header['x-proxy'] === 'partial.js';
-	req.host = header.host;
 	req.uri = parser.parse(protocol + '://' + req.host + req.url);
 	req.path = internal.routeSplit(req.uri.pathname);
 
@@ -3999,6 +4035,10 @@ Controller.prototype = {
 
 	get url() {
 		return utils.path(this.req.uri.pathname);
+	},
+
+	get uri() {
+		return this.req.uri;
 	},
 
 	get cache() {
@@ -6942,6 +6982,10 @@ http.IncomingMessage.prototype.cookie = function(name) {
 http.IncomingMessage.prototype.clear = function(isAuto) {
 
 	var self = this;
+
+	if (!self.data)
+		return self;
+
 	var files = self.data.files;
 
 	if (isAuto && self._manual)
