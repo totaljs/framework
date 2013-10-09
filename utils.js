@@ -173,7 +173,10 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 
 	} catch (ex) {
 		callback(ex, null, 0, {});
+		return false;
 	}
+
+	return true;
 };
 
 /*
@@ -349,7 +352,7 @@ exports.reduce = function(source, prop) {
 
 	var type = typeof(prop);
 
-	if (type === 'array') {
+	if (prop instanceof Array) {
 		Object.keys(source).forEach(function(o) {
 			if (prop.indexOf(o) === -1)
 				delete source[o];
@@ -590,11 +593,15 @@ exports.path = function(path, delimiter) {
 };
 
 /*
+	Get random number
 	@max {Number}
+	@min {Number}
 	return {Number}
 */
-exports.random = function(max) {
-	return Math.floor(Math.random() * (max + 1));
+exports.random = function(max, min) {
+	max = (max || 100000);
+	min = (min || 0);
+	return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
 /*
@@ -1288,7 +1295,7 @@ String.prototype.base64ToFile = function(filename, callback) {
 	if (callback)
 		fs.writeFile(filename, self.substring(index), 'base64', callback);
 	else
-		fs.writeFileSync(filename, self.substring(index), 'base64');
+		fs.writeFile(filename, self.substring(index), 'base64', exports.noop);
 
 	return this;
 };

@@ -16,11 +16,15 @@ IN DEVELOPMENT ======= 1.2.7
 - updated: default framework.onMeta()
 - updated: framework.init() - default IP is 127.0.0.1
 - updated: controller.cancel() (added async.cancel)
+- updated: utils.request() (added return Boolean)
+- updated: utils.random(max, min)
 
 - fixed: FrameworkFileSystem class
 - fixed: view render
 - fixed: FrameworkCache.fn()
 - fixed: FrameworkCache.recycle()
+- fixed: utils.reduce()
+- fixed: utils.base64ToFile()
 
 !!! IMPORTANT !!!
 
