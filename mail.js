@@ -106,7 +106,7 @@ function Message(subject, body) {
 	this.addressReply = [];
 	this.addressCC = [];
 	this.addressBCC = [];
-	this.from = { name: '', address: '' };
+	this.addressFrom = { name: '', address: '' };
 }
 
 /*
@@ -116,14 +116,24 @@ function Message(subject, body) {
 	return {Message}
 */
 Message.prototype.sender = function(address, name) {
+	return this.from(address, name);
+};
+
+/*
+	Set from address and name
+	@address {String}
+	@name {String} :: optional
+	return {Message}
+*/
+Message.prototype.from = function(address, name) {
 
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
 
 	var self = this;
 
-	self.from.name = name || '';
-	self.from.address = address;
+	self.addressFrom.name = name || '';
+	self.addressFrom.address = address;
 	return self;
 
 };
@@ -226,7 +236,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	if (smtp === null || smtp === '') {
 
-		smtp = getHostName(self.from.address);
+		smtp = getHostName(self.addressFrom.address);
 		resolveMx(smtp, function(err, socket) {
 
 			if (err) {
@@ -270,7 +280,7 @@ Message.prototype._send = function(socket, options) {
 	var command = '';
 	var buffer = [];
 	var message = [];
-	var host = getHostName(self.from.address);
+	var host = getHostName(self.addressFrom.address);
 	var date = new Date();
 	var timestamp = date.getTime();
 	var boundary = '----partialjs' + timestamp;
@@ -296,8 +306,8 @@ Message.prototype._send = function(socket, options) {
 		socket.write(line + CRLF);
 	};
 
-	buffer.push('MAIL FROM: <' + self.from.address + '>');
-	message.push('From: ' + (self.from.name.length > 0 ? '"' + self.from.name + '" ' + '<' + self.from.address + '>' : self.from.address));
+	buffer.push('MAIL FROM: <' + self.addressFrom.address + '>');
+	message.push('From: ' + (self.addressFrom.name.length > 0 ? '"' + self.addressFrom.name + '" ' + '<' + self.addressFrom.address + '>' : self.addressFrom.address));
 
 	var length = self.addressTo.length;
 	var builder = '';
