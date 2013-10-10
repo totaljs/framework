@@ -275,9 +275,17 @@ exports.prepare = function(name, model) {
 			return;
 		}
 
-		if (value.contains(['text', 'varchar', 'nvarchar'])) {
+		if (value.contains(['text', 'varchar', 'nvarchar', 'string'])) {
 			tmp = val.toString();
-			item[property] = tmp === 'true' || tmp === '1';
+
+			var beg = value.indexOf('(');
+			if (beg === -1) {
+				item[property] = tmp;
+				return;
+			}
+
+			var size = value.substring(beg + 1, value.length - 1).parseInt();
+			item[property] = tmp.maxLength(size, '...');
 			return;
 		}
 
@@ -682,10 +690,10 @@ UrlBuilder.prototype.hasValue = function(keys) {
 /*
 	Render parameter
 	@keys {String array} :: what parameter
-	@divider {String}
+	@delimiter {String}
     return {String}
 */
-UrlBuilder.prototype.toOne = function(keys, divider) {
+UrlBuilder.prototype.toOne = function(keys, delimiter) {
 
 	var self = this;
 	var builder = [];
@@ -694,7 +702,7 @@ UrlBuilder.prototype.toOne = function(keys, divider) {
 		builder.push(self.builder[o] || '');
 	});
 
-	return builder.join(divider);
+	return builder.join(delimiter || '&');
 };
 
 // ======================================================

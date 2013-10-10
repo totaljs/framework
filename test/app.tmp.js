@@ -105,27 +105,8 @@ function arrayFindAllWithIndex(arr, filter) {
 	return selected;
 };
 
-function Obj() {
-}
+builders.schema('tbl_user', { Id: Number, Name: 'string(5)' }, 'Id', false);
 
-Obj.prototype = {
-	get async() {
-
-		if (typeof(this._async) === 'undefined') {
-			this._async = new utils.Async(this);
-			console.log('create');
-		}
-
-		return this._async;
-	}
-}
-
-Obj.prototype.__proto__ = new events.EventEmitter();
-
-var obj = new Obj();
-console.log(obj.async);
-console.log(obj.async);
-console.log(obj.async);
 
 // message.attachment('/users/petersirka/desktop/wall.png');
 
