@@ -105,7 +105,10 @@ function arrayFindAllWithIndex(arr, filter) {
 	return selected;
 };
 
+builders.validation('tbl_user', ['Name']);
 builders.schema('tbl_user', { Id: Number, Name: 'string(5)' }, 'Id', false);
+
+console.log(builders.validation('tbl_user'));
 
 
 // message.attachment('/users/petersirka/desktop/wall.png');

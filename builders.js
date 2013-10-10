@@ -22,6 +22,7 @@
 'use strict';
 
 var schema = {};
+var schemaValidation = {};
 var schemaPrimary = {};
 var UNDEFINED = 'undefined';
 
@@ -79,6 +80,20 @@ exports.schema = function(name, obj, primaryKey, insert) {
 
 	schema[name] = obj;
 	return obj;
+};
+
+/*
+	Create schema validation
+	@name {String},
+	@arr {String Array}
+	return {String Array}
+*/
+exports.validation = function(name, arr) {
+	if (typeof(arr) === UNDEFINED)
+		return schemaValidation[name] || [];
+
+	schemaValidation[name] = arr;
+	return arr;
 };
 
 /*

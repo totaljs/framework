@@ -627,7 +627,7 @@ exports.GUID = function(max) {
 /*
 	Validate
 	@model {Object} :: object to validate
-	@properties {String array} : what properties?
+	@properties {String array}
 	@prepare {Function} : return utils.isValid() OR {Boolean} :: true is valid
 	@builder {ErrorBuilder}
 	@resource {Function} :: function(key) return {String}
@@ -645,8 +645,13 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 	if (!(error instanceof builders.ErrorBuilder))
 		error = new builders.ErrorBuilder(resource);
 
-	if (typeof(properties) === STRING)
-		properties = properties.replace(/\s/g, '').split(',');
+	if (typeof(properties) === STRING) {
+		var schema = builders.validation(properties);
+		if (schema.length === 0)
+			properties = properties.replace(/\s/g, '').split(',');
+		else
+			properties = schema;
+	}
 
 	if (typeof(model) === UNDEFINED || model === null)
 		model = {};
