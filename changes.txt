@@ -27,6 +27,7 @@ IN DEVELOPMENT ======= 1.2.7
 - fixed: FrameworkCache.recycle()
 - fixed: utils.reduce()
 - fixed: utils.base64ToFile()
+- fixed: @{canonical}, @{next}, @{prev}, @{prefetch}, @{prerender}
 
 !!! IMPORTANT !!!
 

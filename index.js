@@ -4837,11 +4837,12 @@ Controller.prototype.$input = function(model, type, name, attr) {
 Controller.prototype.$dns = function(value) {
 
 	var builder = '';
+	var self = this;
 
 	for (var i = 0; i < arguments.length; i++)
-		builder += '<link rel="dns-prefetch" href="' + (arguments[i] || '') + '" />';
+		builder += '<link rel="dns-prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
 
-	this.head(builder);
+	self.head(builder);
 	return '';
 };
 
@@ -4853,11 +4854,12 @@ Controller.prototype.$dns = function(value) {
 Controller.prototype.$prefetch = function() {
 
 	var builder = '';
+	var self = this;
 
 	for (var i = 0; i < arguments.length; i++)
-		builder += '<link rel="prefetch" href="' + (arguments[i] || '') + '" />';
+		builder += '<link rel="prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
 
-	this.head(builder);
+	self.head(builder);
 	return '';
 };
 
@@ -4869,11 +4871,12 @@ Controller.prototype.$prefetch = function() {
 Controller.prototype.$prerender = function(value) {
 
 	var builder = '';
+	var self = this;
 
 	for (var i = 0; i < arguments.length; i++)
-		builder += '<link rel="prerender" href="' + (arguments[i] || '') + '" />';
+		builder += '<link rel="prerender" href="' + self._prepareHost(arguments[i] || '') + '" />';
 
-	this.head(builder);
+	self.head(builder);
 	return '';
 };
 
@@ -4883,7 +4886,8 @@ Controller.prototype.$prerender = function(value) {
 	return {String}
 */
 Controller.prototype.$next = function(value) {
-	this.head('<link rel="next" href="' + (value || '') + '" />');
+	var self = this;
+	self.head('<link rel="next" href="' + self._prepareHost(value || '') + '" />');
 	return '';
 };
 
@@ -4893,7 +4897,8 @@ Controller.prototype.$next = function(value) {
 	return {String}
 */
 Controller.prototype.$prev = function(value) {
-	this.head('<link rel="prev" href="' + (value || '') + '" />');
+	var self = this;
+	self.head('<link rel="prev" href="' + self._prepareHost(value || '') + '" />');
 	return '';
 };
 
@@ -4903,8 +4908,20 @@ Controller.prototype.$prev = function(value) {
 	return {String}
 */
 Controller.prototype.$canonical = function(value) {
-	this.head('<link rel="canonical" href="' + (value || '') + '" />');
+	var self = this;
+	self.head('<link rel="canonical" href="' + self._prepareHost(value || '') + '" />');
 	return '';
+};
+
+Controller.prototype._prepareHost = function(value) {
+	var tmp = value.substring(0, 5);
+
+	if (tmp !== 'http:' && tmp !== 'https://') {
+		if (tmp[0] !== '/' || tmp[1] !== '/')
+			value = this.host(value);
+	}
+
+	return value;
 };
 
 /*
