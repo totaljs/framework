@@ -6035,11 +6035,17 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (self.res.success)
 		return isPartial ? '' : self;
 
-	if (!self.isLayout && name[0] !== '/')
+	var first = name[0];
+	var skip = first === '~';
+
+	if (!self.isLayout && first !== '/' && !skip)
 	{
 		if (self.name !== 'default')
 			name = '/' + self.name + '/' + name;
 	}
+
+	if (skip)
+		name = name.substring(1);
 
 	var generator = internal.generateView(self, name);
 
