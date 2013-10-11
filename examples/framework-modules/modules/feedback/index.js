@@ -53,7 +53,7 @@ exports.install = function (framework) {
 	
 };
 
-exports.onRequest = function() {
+exports.request = function() {
 	// this method is called every request to route /feedback/
 };
 

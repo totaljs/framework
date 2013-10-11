@@ -3780,8 +3780,8 @@ Subscribe.prototype._execute = function() {
 		var isModule = name[0] === '#' && name[1] === 'm';
 		var o = isModule ? self.framework.modules[name.substring(8)] : self.framework.controllers[name];
 
-		if (o.onRequest)
-			o.onRequest.call(self.controller, self.controller);
+		if (o.request)
+			o.request.call(self.controller, self.controller);
 
 	} catch (err) {
 		self.framework.error(err, name, self.req.uri);
@@ -4301,7 +4301,7 @@ Controller.prototype.complete = function(callback) {
 
 /*
 	Cancel execute controller function
-	Note: you can cancel controller function execute in on('controller') or controller.onRequest();
+	Note: you can cancel controller function execute in on('controller') or controller.request();
 
 	return {Controller}
 */
