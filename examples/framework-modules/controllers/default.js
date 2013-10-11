@@ -8,6 +8,7 @@ function view_homepage() {
 
 	// call module
 	var now = self.module('utils').now();
+	var greeting = self.module('feedback').greeting('Thanks');
 
-	self.plain('From module utils -> {0}'.format(now));
+	self.plain('From module utils -> {0} ({1})'.format(now, greeting));
 }
