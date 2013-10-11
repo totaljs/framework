@@ -236,12 +236,12 @@ Framework.prototype.controller = function(name) {
 	self.controllers[name] = obj;
 
 	if (obj.install) {
-		obj.install.call(self, self);
+		obj.install.call(self, self, name);
 		return self;
 	}
 
 	if (obj.init) {
-		obj.init.call(self, self);
+		obj.init.call(self, self, name);
 		return self;
 	}
 
@@ -618,7 +618,7 @@ Framework.prototype.install = function() {
 
 		try
 		{
-			module.install(self);
+			module.install(self, self, name);
 		} catch (err) {
 			self.error(err, name);
 		}
@@ -656,7 +656,7 @@ Framework.prototype.injectModule = function(name, url) {
 			});
 
 			if (typeof(result.install) !== UNDEFINED) {
-				result.install(self);
+				result.install(self, name);
 				self._routeSort();
 			}
 
@@ -6040,7 +6040,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	if (!self.isLayout && first !== '/' && !skip)
 	{
-		if (self.name !== 'default')
+		if (self.name !== 'default' && self.name[0] !== '#')
 			name = '/' + self.name + '/' + name;
 	}
 
