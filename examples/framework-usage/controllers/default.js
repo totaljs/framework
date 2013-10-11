@@ -9,6 +9,6 @@ exports.usage = function() {
 function viewHomepage() {
 	var self = this;
 
-	// self.app.usage([detailed:bool default false])
+	// self.framework.usage([detailed:bool default false])
 	self.plain(self.framework.usage(true));
 }
