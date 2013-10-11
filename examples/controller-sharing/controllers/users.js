@@ -7,11 +7,11 @@ exports.models = {
 };
 
 exports.functions = {
-	exists: function(name) {	
+	exists: function(name) {
 		return exports.models.users.indexOf(name) > -1;
 	}
 };
 
 function view_users() {
-	this.plain(JSON.stringify(exports.models.users));
+	this.json(exports.models.users);
 }
