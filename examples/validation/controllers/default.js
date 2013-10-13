@@ -6,7 +6,7 @@ exports.install = function(framework) {
 function view_homepage() {
 	var self = this;
 	
-	if (!self.isXHR) {
+	if (!self.xhr) {
 		self.meta('Validation example');
 		self.view('homepage', { LoginName: '@' });
 		return;
@@ -22,6 +22,7 @@ function view_homepage() {
 	*/
 	var result = self.validate(self.post, ['FirstName', 'LastName', 'Age', 'Email', 'Terms'], 'Form');
 	if (result.hasError()) {
+		result.replace('Email', self.post.Email);
 		self.json(result);
 		return;
 	}

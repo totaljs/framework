@@ -1,6 +1,6 @@
 // Global validation
 // this delegate replace framework.onValidation
-exports.onValidation = function(name, value) {
+framework.onValidation = function(name, value) {
 
 	// this == controller
 
