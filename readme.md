@@ -1,5 +1,11 @@
 ![partial.js logo](http://petersirka.sk/partial-js/logo-new.png)
 
+NEW!!! NEW!!! I'M PREPARING
+===========================
+
+- New complete documentation this week
+- LTS version of partial.js
+
 web application framework for node.js
 =====================================
 
