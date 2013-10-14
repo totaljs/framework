@@ -45,6 +45,13 @@ AsyncTask.prototype.run = function() {
 	return self;
 };
 
+AsyncTask.prototype.cancel = function() {
+	var self = this;
+	self.owner.emit('cancel', self.name);
+	self.fn = null;
+	self.cb = null;
+};
+
 AsyncTask.prototype.complete = function() {
 
 	var item = this;
@@ -67,9 +74,9 @@ AsyncTask.prototype.complete = function() {
 
 function Async(owner) {
 
+	this._max = 0;
 	this._count = 0;
 	this._isRunning = false;
-	this._isNew = false;
 
 	this.owner = owner;
 	this.onComplete = [];
@@ -82,6 +89,11 @@ function Async(owner) {
 Async.prototype = {
 	get count() {
 		return this._count;
+	},
+
+	get percentage() {
+		var self = this;
+		return 100 - (self._count * 100) / self._max;
 	}
 }
 
@@ -90,7 +102,33 @@ Async.prototype.__proto__ = new events.EventEmitter();
 Async.prototype.reload = function() {
 	var self = this;
 	self.tasksAll = Object.keys(self.tasksPending);
+	self.emit('percentage', self.percentage);
 	return self;
+};
+
+Async.prototype.cancel = function(name) {
+
+	var self = this;
+
+	if (typeof(name) !== UNDEFINED) {
+
+		var task = self.tasksPending[name];
+
+		if (!task)
+			return false;
+
+		delete self.tasksPending[name];
+		delete self.tasksWaiting[name];
+
+		task.cancel();
+		self.reload();
+		self.refresh();
+
+		return true;
+
+	}
+
+	return false;
 };
 
 Async.prototype.await = function(name, fn, cb) {
@@ -106,8 +144,8 @@ Async.prototype.await = function(name, fn, cb) {
 	if (typeof(self.tasksPending[name]) !== UNDEFINED)
 		return false;
 
-	self._count++;
 	self.tasksPending[name] = new AsyncTask(self, name, fn, cb, null);
+	self._max++;
 	self.reload();
 	self.refresh();
 
@@ -128,8 +166,8 @@ Async.prototype.wait = function(name, waitingFor, fn, cb) {
 	if (typeof(self.tasksPending[name]) !== UNDEFINED)
 		return false;
 
-	self._count++;
 	self.tasksPending[name] = new AsyncTask(self, name, fn, cb, waitingFor);
+	self._max++;
 	self.reload();
 	self.refresh();
 
@@ -173,6 +211,14 @@ Async.prototype.isWaiting = function(name) {
 	return task.isRunning === 0;
 };
 
+Async.prototype.isPending = function(name) {
+	var self = this;
+	var task = self.tasksPending[name];
+	if (!task)
+		return false;
+	return true;
+};
+
 Async.prototype.refresh = function(name) {
 
 	var self = this;
@@ -180,9 +226,9 @@ Async.prototype.refresh = function(name) {
 	if (!self._isRunning)
 		return self;
 
-	var length = self.tasksAll.length;
+	self._count = self.tasksAll.length;
 
-	for (var i = 0; i < length; i++) {
+	for (var i = 0; i < self._count; i++) {
 
 		var task = self.tasksPending[self.tasksAll[i]];
 
@@ -195,9 +241,10 @@ Async.prototype.refresh = function(name) {
 		task.run();
 	}
 
-	if (length === 0) {
+	if (self._count === 0) {
 		self._isRunning = false;
 		self.emit('complete');
+		self._max = 0;
 		length = self.onComplete.length;
 		for (var i = 0; i < length; i++)
 			self.onComplete[i]();
@@ -225,6 +272,10 @@ async.wait('2', '1', function(next) {
 
 async.on('begin', function(name) {
 	console.log('BEGIN', name);
+});
+
+async.on('percentage', function(percentage) {
+	console.log(percentage);
 });
 
 async.on('end', function(name) {

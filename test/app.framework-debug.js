@@ -139,7 +139,7 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			complete();
-		});		
+		});
 	});
 
 	async.await('logged', function(complete) {
@@ -148,7 +148,7 @@ function test_routing(next) {
 				throw error;
 			complete();
 		});
-	});	
+	});
 
 	async.await('timeout', function(complete) {
 		utils.request(url + 'timeout/', 'GET', null, function(error, data, code, headers) {
@@ -201,6 +201,6 @@ mem.on('stats', function(info) {
 
 framework.fs.create.view('fromURL', 'http://partialjs.com/framework/test.html');
 
-setTimeout(function() {	
+setTimeout(function() {
 	run();
 }, 500);

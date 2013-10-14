@@ -1775,148 +1775,252 @@ Array.prototype.randomize = function() {
 /*
 	Async class
 */
-function Async() {
-	this.onComplete = null;
-	this.count = 0;
-	this.pending = {};
-	this.waiting = {};
-	this.isRunning = false;
+function AsyncTask(owner, name, fn, cb, waiting) {
+
+	this.handlers = {
+		oncomplete: this.complete.bind(this)
+	};
+
+	this.isRunning = 0;
+	this.owner = owner;
+	this.name = name;
+	this.fn = fn;
+	this.cb = cb;
+	this.waiting = waiting;
 }
 
-Async.prototype = new events.EventEmitter();
-
-/*
-	Internal function
-	@name {String}
-	@waiting {Boolean}
-	return {Async}
-*/
-Async.prototype._complete = function(name, waiting) {
+AsyncTask.prototype.run = function() {
 	var self = this;
-
-	if (!waiting) {
-
-		if (typeof(self.pending[name]) === UNDEFINED)
-			return self;
-
-		delete self.pending[name];
+	try
+	{
+		self.isRunning = 1;
+		self.owner.tasksWaiting[self.name] = true;
+		self.owner.emit('begin', self.name);
+		self.fn(self.handlers.oncomplete);
+	} catch (ex) {
+		self.owner.emit('error', self.name, ex);
+		self.complete();
 	}
+	return self;
+};
 
-	if (self.count > 0)
-		self.count--;
+AsyncTask.prototype.cancel = function() {
+	var self = this;
+	self.owner.emit('cancel', self.name);
+	self.fn = null;
+	self.cb = null;
+};
 
-	self.emit('end', name);
+AsyncTask.prototype.complete = function() {
 
-	if (self.count === 0) {
+	var item = this;
+	var self = item.owner;
 
-		if (self.onComplete)
-			self.onComplete();
+	item.isRunning = 2;
 
-		self.emit('complete');
-		return;
+	delete self.tasksPending[item.name];
+	delete self.tasksWaiting[item.name];
+
+	self.reload();
+	self.refresh();
+	try
+	{
+		self.emit('end', item.name);
+
+		if (item.cb)
+			item.cb();
+
+	} catch (ex) {
+		self.emit('error', ex, item.name);
 	}
-
-	if (typeof(self.waiting[name]) === UNDEFINED)
-		return self;
-
-	var fn = self.waiting[name];
-	delete self.waiting[name];
-
-	fn.forEach(function(f) {
-		f();
-	});
 
 	return self;
 };
 
-Async.prototype.cancel = function() {
+function Async(owner) {
 
+	this._max = 0;
+	this._count = 0;
+	this._isRunning = false;
+
+	this.owner = owner;
+	this.onComplete = [];
+
+	this.tasksPending = {};
+	this.tasksWaiting = {};
+	this.tasksAll = [];
+}
+
+Async.prototype = {
+	get count() {
+		return this._count;
+	},
+
+	get percentage() {
+		var self = this;
+		return 100 - (self._count * 100) / self._max;
+	}
+}
+
+Async.prototype.__proto__ = new events.EventEmitter();
+
+Async.prototype.reload = function() {
 	var self = this;
-
-	self.pending = {};
-	self.count = 0;
-	self.waiting = {};
-	self.isRunning = false;
-
-	self.emit('cancel');
+	self.tasksAll = Object.keys(self.tasksPending);
+	self.emit('percentage', self.percentage);
 	return self;
 };
 
-/*
-	Add function to async list
-	@name {String}
-	@fn {Function}
-	return {Async}
-*/
-Async.prototype.await = function(name, fn) {
+Async.prototype.cancel = function(name) {
+
 	var self = this;
-	self.count++;
+
+	if (typeof(name) !== UNDEFINED) {
+
+		var task = self.tasksPending[name];
+
+		if (!task)
+			return false;
+
+		delete self.tasksPending[name];
+		delete self.tasksWaiting[name];
+
+		task.cancel();
+		self.reload();
+		self.refresh();
+
+		return true;
+
+	}
+
+	return false;
+};
+
+Async.prototype.await = function(name, fn, cb) {
+
+	var self = this;
 
 	if (typeof(name) === FUNCTION) {
+		cb = fn;
 		fn = name;
-		name = exports.GUID(5);
+		name = exports.GUID(6);
 	}
 
-	self.pending[name] = function() {
-		fn(function() {
-			self._complete(name);
-		});
-	};
+	if (typeof(self.tasksPending[name]) !== UNDEFINED)
+		return false;
 
-	if (self.isRunning)
-		self.pending[name]();
+	self.tasksPending[name] = new AsyncTask(self, name, fn, cb, null);
+	self._max++;
+	self.reload();
+	self.refresh();
 
-	return self;
+	return true;
 };
 
-/*
-	Add function to async wait list
-	@name {String}
-	@waitingFor {String} :: name of async function
-	@fn {Function}
-	return {Async}
-*/
-Async.prototype.wait = function(name, waitingFor, fn) {
+Async.prototype.wait = function(name, waitingFor, fn, cb) {
 
 	var self = this;
-	self.count++;
 
 	if (typeof(waitingFor) === FUNCTION) {
+		cb = fn;
 		fn = waitingFor;
 		waitingFor = name;
-		name = exports.GUID(5);
+		name = exports.GUID(6);
 	}
 
-	if (typeof(self.waiting[waitingFor]) === UNDEFINED)
-		self.waiting[waitingFor] = [];
+	if (typeof(self.tasksPending[name]) !== UNDEFINED)
+		return false;
 
-	var run = function() {
-		self.emit('begin', name);
+	self.tasksPending[name] = new AsyncTask(self, name, fn, cb, waitingFor);
+	self._max++;
+	self.reload();
+	self.refresh();
 
-		fn(function() {
-			self._complete(name, true);
-		});
-	};
+	return true;
 
-	self.waiting[waitingFor].push(run);
+};
+
+Async.prototype.complete = function(fn) {
+	return this.run(fn);
+};
+
+Async.prototype.run = function(fn) {
+	var self = this;
+	self._isRunning = true;
+	self.onComplete.push(fn);
+	self.refresh();
 	return self;
 };
 
-/*
-	Run async functions
-	@fn {Function} :: callback
-	return {Async}
-*/
-Async.prototype.complete = function(fn) {
+Async.prototype.isRunning = function(name) {
 
 	var self = this;
-	self.onComplete = fn;
-	self.isRunning = true;
 
-	Object.keys(self.pending).forEach(function(name) {
-		self.emit('begin', name);
-		self.pending[name]();
-	});
+	if (!name)
+		return self._isRunning;
+
+	var task = self.tasksPending[name];
+	if (!task)
+		return false;
+
+	return task.isRunning === 1;
+};
+
+Async.prototype.isWaiting = function(name) {
+	var self = this;
+
+	var task = self.tasksPending[name];
+	if (!task)
+		return false;
+
+	return task.isRunning === 0;
+};
+
+Async.prototype.isPending = function(name) {
+	var self = this;
+	var task = self.tasksPending[name];
+	if (!task)
+		return false;
+	return true;
+};
+
+Async.prototype.refresh = function(name) {
+
+	var self = this;
+
+	if (!self._isRunning)
+		return self;
+
+	self._count = self.tasksAll.length;
+
+	for (var i = 0; i < self._count; i++) {
+
+		var task = self.tasksPending[self.tasksAll[i]];
+
+		if (task.isRunning !== 0)
+			continue;
+
+		if (task.waiting !== null && typeof(self.tasksWaiting[task.waiting]) !== UNDEFINED)
+			continue;
+
+		task.run();
+	}
+
+	if (self._count === 0) {
+		self._isRunning = false;
+		self.emit('complete');
+		self._max = 0;
+		var length = self.onComplete.length;
+		for (var i = 0; i < length; i++) {
+			try
+			{
+				self.onComplete[i]();
+			} catch (ex) {
+				self.emit('error', ex);
+			}
+		}
+		self.onComplete = [];
+	}
 
 	return self;
 };

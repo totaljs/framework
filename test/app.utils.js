@@ -246,7 +246,16 @@ function others() {
 	var async = new utils.Async();
 	var value = [];
 
-	async.wait('1', 'a', function(next) {
+	async.on('error', function(err, name) {
+		console.log('ERROR', err, name);
+	});
+
+	async.await('0', function(next) {
+		value.push(9);
+		next();
+	});
+
+	async.wait('1', '0', function(next) {
 		value.push(1);
 		next();
 	});
@@ -287,12 +296,7 @@ function others() {
 		value.push(8);
 		next();
 	});
-
-	async.await('a', function(next) {
-		value.push(9);
-		next();
-	});
-
+	
 	async.await(function(next) {
 		next();
 	});
@@ -302,7 +306,17 @@ function others() {
 	});
 
 	async.complete(function() {
-		assert.ok(value.join(',') === '9,1,2,3,5,4,6,7,8', 'async');
+		
+		value.sort(function(a, b) {
+			if (a > b)
+				return 1;
+			else
+				return -1;
+		});
+
+		console.log('SOM TU');
+		console.log(value.join(','));
+		assert.ok(value.join(',') === '1,2,3,4,5,6,7,8,9', 'async');
 	});
 
 	utils.request('http://www.yahoo.com', 'GET', null, function(err, data, code) {

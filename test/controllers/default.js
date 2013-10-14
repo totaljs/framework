@@ -251,7 +251,8 @@ function viewViewsIf() {
 
 function viewError() {
 	var self = this;
-	assert.ok(self.template('asdljsald', [1, 2, 3]) === '', 'template: not found problem');
+	var template = self.template('asdljsald', [1, 2, 3]);
+	assert.ok(template === '', 'template: not found problem');
 	assert.ok(self.content('asdasd') === '', 'content: not found problem');
 	self.view('asdlkjasl');
 };

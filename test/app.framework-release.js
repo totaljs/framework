@@ -22,7 +22,6 @@ framework.onError = function(error, name, uri) {
 
 	if (errorStatus === 0) {
 		console.log(error, name, uri, max);
-		console.log(async);
 		framework.stop();
 		return;
 	}
@@ -183,7 +182,6 @@ function run() {
 				test_routing(function() {
 					run();
 				});
-				run();
 			});
 		});
 	});
@@ -199,7 +197,7 @@ mem.on('leak', function(info) {
 
 mem.on('stats', function(info) {
 	memMax = Math.max(memMax, info.max);
-	//console.log('STATS ->', JSON.stringify(info));
+	console.log('STATS ->', JSON.stringify(info));
 });
 
 framework.fs.create.view('fromURL', 'http://partialjs.com/framework/test.html');

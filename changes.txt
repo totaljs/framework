@@ -21,6 +21,7 @@ IN DEVELOPMENT ======= 1.2.7
 - updated: controller.cancel() (added async.cancel)
 - updated: utils.request() (added return Boolean)
 - updated: utils.random(max, min)
+- updated: completely rewritten utils.async()
 
 - fixed: FrameworkFileSystem class
 - fixed: view render
