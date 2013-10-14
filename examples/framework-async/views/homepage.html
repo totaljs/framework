@@ -1,0 +1,33 @@
+<div id="percentage" style="font-size:20px;font-weight:bold">0%</div>
+<br />
+<div style="float:left">@{image('pic1.jpg', 160, 100, 'pic1')}</div>
+<div style="float:left">@{image('pic2.jpg', 160, 100, 'pic2')}</div>
+<div style="float:left">@{image('pic3.jpg', 160, 100, 'pic3')}</div>
+<div style="float:left">@{image('pic4.jpg', 160, 100, 'pic4')}</div>
+<div style="float:left">@{image('pic5.jpg', 160, 100, 'pic5')}</div>
+<div style="float:left">@{image('pic6.jpg', 160, 100, 'pic6')}</div>
+<div style="clear:both">&nbsp;</div>
+
+<script type="text/javascript">
+
+	var interval = null;
+
+	$(document).ready(function() {
+
+		interval = setInterval(function() {
+
+			$.get('/?ts=' + new Date().getTime(), function(d) {
+				if (d.percentage === null) {
+					clearInterval(interval);
+					d.percentage = 100;
+				}
+
+				$('#percentage').html(d.percentage + '%');
+			});
+
+		}, 1000);
+
+	});
+
+
+</script>
