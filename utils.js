@@ -1787,6 +1787,8 @@ function AsyncTask(owner, name, fn, cb, waiting) {
 	this.fn = fn;
 	this.cb = cb;
 	this.waiting = waiting;
+	this.interval = null;
+	this.isCanceled = false;
 }
 
 AsyncTask.prototype.run = function() {
@@ -1796,6 +1798,11 @@ AsyncTask.prototype.run = function() {
 		self.isRunning = 1;
 		self.owner.tasksWaiting[self.name] = true;
 		self.owner.emit('begin', self.name);
+
+		var timeout = self.owner.tasksTimeout[self.name];
+		if (timeout > 0)
+			self.interval = setTimeout(self.timeout.bind(self), timeout);
+
 		self.fn(self.handlers.oncomplete);
 	} catch (ex) {
 		self.owner.emit('error', self.name, ex);
@@ -1804,9 +1811,35 @@ AsyncTask.prototype.run = function() {
 	return self;
 };
 
-AsyncTask.prototype.cancel = function() {
+AsyncTask.prototype.timeout = function(timeout) {
 	var self = this;
-	self.owner.emit('cancel', self.name);
+
+	if (timeout > 0) {
+		clearTimeout(self.interval);
+		setTimeout(self.timeout.bind(self), timeout);
+		return self;
+	}
+
+	if (timeout <= 0) {
+		clearTimeout(self.interval);
+		setTimeout(self.timeout.bind(self), timeout);
+		return self;
+	}
+
+	self.cancel(true);
+	return self;
+};
+
+AsyncTask.prototype.cancel = function(isTimeout) {
+	var self = this;
+
+	self.isCanceled = true;
+
+	if (isTimeout)
+		self.owner.emit('timeout', self.name);
+	else
+		self.owner.emit('cancel', self.name);
+
 	self.fn = null;
 	self.cb = null;
 };
@@ -1821,18 +1854,21 @@ AsyncTask.prototype.complete = function() {
 	delete self.tasksPending[item.name];
 	delete self.tasksWaiting[item.name];
 
+	if (!item.isCanceled) {
+		try
+		{
+			self.emit('end', item.name);
+
+			if (item.cb)
+				item.cb();
+
+		} catch (ex) {
+			self.emit('error', ex, item.name);
+		}
+	}
+
 	self.reload();
 	self.refresh();
-	try
-	{
-		self.emit('end', item.name);
-
-		if (item.cb)
-			item.cb();
-
-	} catch (ex) {
-		self.emit('error', ex, item.name);
-	}
 
 	return self;
 };
@@ -1849,6 +1885,7 @@ function Async(owner) {
 	this.tasksPending = {};
 	this.tasksWaiting = {};
 	this.tasksAll = [];
+	this.tasksTimeout = {};
 }
 
 Async.prototype = {
@@ -1875,25 +1912,27 @@ Async.prototype.cancel = function(name) {
 
 	var self = this;
 
-	if (typeof(name) !== UNDEFINED) {
+	if (typeof(name) === UNDEFINED) {
 
-		var task = self.tasksPending[name];
-
-		if (!task)
-			return false;
-
-		delete self.tasksPending[name];
-		delete self.tasksWaiting[name];
-
-		task.cancel();
-		self.reload();
-		self.refresh();
+		for (var i = 0; i < self._count; i++)
+			self.cancel(tasksAll[i]);
 
 		return true;
-
 	}
 
-	return false;
+	var task = self.tasksPending[name];
+
+	if (!task)
+		return false;
+
+	delete self.tasksPending[name];
+	delete self.tasksWaiting[name];
+
+	task.cancel();
+	self.reload();
+	self.refresh();
+
+	return true;
 };
 
 Async.prototype.await = function(name, fn, cb) {
@@ -1984,6 +2023,19 @@ Async.prototype.isPending = function(name) {
 	return true;
 };
 
+Async.prototype.timeout = function(name, timeout) {
+
+	var self = this;
+
+	if (timeout <= 0 || typeof(timeout) === UNDEFINED) {
+		delete self.tasksTimeout[name];
+		return self;
+	}
+
+	self.tasksTimeout[name] = timeout;
+	return self;
+};
+
 Async.prototype.refresh = function(name) {
 
 	var self = this;
@@ -2009,6 +2061,7 @@ Async.prototype.refresh = function(name) {
 	if (self._count === 0) {
 		self._isRunning = false;
 		self.emit('complete');
+		self.emit('percentage', 100);
 		self._max = 0;
 		var length = self.onComplete.length;
 		for (var i = 0; i < length; i++) {
