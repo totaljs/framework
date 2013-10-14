@@ -7,6 +7,7 @@ IN DEVELOPMENT ======= 1.2.7
 - added: framework.redirect(oldHost, newHost, withPath, permament)
 - added: new example https://github.com/petersirka/partial.js/tree/master/examples/redirect-host
 - added: new example https://github.com/petersirka/partial.js/tree/master/examples/scheduler
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-async
 - added: download content from URL in framework.fs.create...
 - added: parse resource/configuration from a string - string.configuration()
 - added: async.cancel()

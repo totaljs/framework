@@ -1895,7 +1895,7 @@ Async.prototype = {
 
 	get percentage() {
 		var self = this;
-		return 100 - (self._count * 100) / self._max;
+		return 100 - Math.floor((self._count * 100) / self._max);
 	}
 }
 
@@ -1986,7 +1986,10 @@ Async.prototype.complete = function(fn) {
 Async.prototype.run = function(fn) {
 	var self = this;
 	self._isRunning = true;
-	self.onComplete.push(fn);
+
+	if (fn)
+		self.onComplete.push(fn);
+
 	self.refresh();
 	return self;
 };
