@@ -191,7 +191,20 @@ function Framework() {
 // PROTOTYPES
 // ======================================================
 
-Framework.prototype = new events.EventEmitter();
+Framework.prototype = {
+
+	get async() {
+
+		var self = this;
+
+		if (typeof(self._async) === UNDEFINED)
+			self._async = new utils.Async(self);
+
+		return self._async;
+	}
+}
+
+Framework.prototype.__proto__ = new events.EventEmitter();
 
 /*
 	Refresh framework internal information
