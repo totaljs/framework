@@ -39,6 +39,7 @@ IN DEVELOPMENT ======= 1.2.7
 - renamed: framework.inject() to framework.injectModule()
 - renamed: framework.path.backup() -> framework.path.backups()
 - renamed: controller.statusCode –> controller.status
+- renamed: String.prototype.maxLength() -> String.prototype.max()
 
 improvements
 clean code

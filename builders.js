@@ -300,7 +300,7 @@ exports.prepare = function(name, model) {
 			}
 
 			var size = value.substring(beg + 1, value.length - 1).parseInt();
-			item[property] = tmp.maxLength(size, '...');
+			item[property] = tmp.max(size, '...');
 			return;
 		}
 

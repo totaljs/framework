@@ -2485,7 +2485,7 @@ Template.prototype.parse = function(html, isRepository) {
                         if (count === 0) {
                             format = ".format('" + format + "')";
                         } else
-                            format = ".maxLength(" + (count + 3) + ",'...')";
+                            format = ".max(" + (count + 3) + ",'...')";
                     } else
                         format = ".condition(" + condition + ")";
                 } else

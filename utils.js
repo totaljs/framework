@@ -1082,7 +1082,7 @@ String.prototype.params = function(obj) {
 			if (type === STRING) {
 				var max = parseInt(format, 10);
 				if (!isNaN(max))
-					val = val.maxLength(max + 3, '...');
+					val = val.max(max + 3, '...');
 
 			} else if (type === NUMBER || util.isDate(val))
 				val = val.format(format);
@@ -1097,14 +1097,19 @@ String.prototype.params = function(obj) {
 
 /*
 	Set max length of string
-	@max {Number}
+	@length {Number}
 	@chars {String} :: optional, default ...
 	return {String}
 */
-String.prototype.maxLength = function(max, chars) {
+String.prototype.max = function(length, chars) {
 	var str = this.toString();
 	chars = chars || '...';
-    return str.length > max ? str.substring(0, max - chars.length) + chars : str;
+    return str.length > length ? str.substring(0, length - chars.length) + chars : str;
+};
+
+String.prototype.maxLength = function(max, chars) {
+	console.log('OBSOLETE - String.prototype.maxLength(). Use String.prototype.max()');
+	return this.max(max, chars);
 };
 
 String.prototype.isJSON = function() {
