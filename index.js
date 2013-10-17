@@ -183,6 +183,7 @@ function Framework() {
 
 	this.fs = new FrameworkFileSystem(this);
 	this.path = new FrameworkPath(this);
+	this.restrictions = new FrameworkRestrictions(this);
 
 	var self = this;
 }
@@ -2181,6 +2182,44 @@ Framework.prototype._request = function(req, res) {
 		}
 	}
 
+	var proxy = header['x-forwarded-for'];
+
+	//  x-forwarded-for: client, proxy1, proxy2, ...
+	if (typeof(proxy) !== UNDEFINED)
+		req.ip = proxy.split(',', 1)[0] || req.connection.remoteAddress;
+	else
+		req.ip = req.connection.remoteAddress;
+
+	if (self.restrictions.isRestrictions) {
+		if (self.restrictions.isAllowedIP) {
+			if (self.restrictions.allowedIP.indexOf(req.ip) === -1) {
+				req.connection.destroy();
+				return self;
+			}
+		}
+
+		if (self.restrictions.isBlockedIP) {
+			if (self.restrictions.blockedIP.indexOf(req.ip) !== -1) {
+				req.connection.destroy();
+				return self;
+			}
+		}
+
+		if (self.restrictions.isAllowedCustom) {
+			if (!self.restrictions._allowedCustom(header)) {
+				req.connection.destroy();
+				return self;
+			}
+		}
+
+		if (self.restrictions.isBlockedCustom) {
+			if (self.restrictions._blockedCustom(header)) {
+				req.connection.destroy();
+				return self;
+			}
+		}
+	}
+
     if (self.config.debug)
 		res.setHeader('Mode', 'debug');
 
@@ -2190,7 +2229,6 @@ Framework.prototype._request = function(req, res) {
 	req.buffer = { data: '', isExceeded: false, isData: false };
 	req.xhr = false;
 	req.uri = {};
-	req.ip = '';
 	req.flags = [];
 	req.session = null;
 	req.user = null;
@@ -2209,14 +2247,6 @@ Framework.prototype._request = function(req, res) {
 
 	if (subdomain.length > 2)
 		req.subdomain = subdomain.slice(0, subdomain.length - 2); // example: [subdomain].domain.com
-
-	var proxy = header['x-forwarded-for'];
-
-	//  x-forwarded-for: client, proxy1, proxy2, ...
-	if (typeof(proxy) !== UNDEFINED)
-		req.ip = proxy.split(',', 1)[0] || req.connection.remoteAddress;
-	else
-		req.ip = req.connection.remoteAddress;
 
 	// if is static file, return file
 	if (utils.isStaticFile(req.uri.pathname)) {
@@ -2946,6 +2976,178 @@ Framework.prototype.lookup_websocket = function(req, url) {
 	}
 
 	return null;
+};
+
+// *********************************************************************************
+// =================================================================================
+// Framework Restrictions
+// 1.01
+// =================================================================================
+// *********************************************************************************
+
+function FrameworkRestrictions(framework) {
+	this.framework = framework;
+	this.isRestrictions = false;
+	this.isAllowedIP = false;
+	this.isBlockedIP = false;
+	this.isAllowedCustom = false;
+	this.isBlockedCustom = false;
+	this.allowedIP = [];
+	this.blockedIP = [];
+	this.allowedCustom = {};
+	this.blockedCustom = {};
+	this.allowedCustomKeys = [];
+	this.blockedCustomKeys = [];
+};
+
+/*
+	Allow IP or custom header
+	@name {String} :: IP or Header name
+	@value {RegExp} :: optional, header value
+	return {Framework}
+*/
+FrameworkRestrictions.prototype.allow = function(name, value) {
+
+	var self = this;
+
+	// IP address
+	if (typeof(value) === UNDEFINED) {
+		self.allowedIP.push(name);
+		self.refresh();
+		return self.framework;
+	}
+
+	// Custom header
+	if (typeof(self.allowedCustom[name]) === UNDEFINED)
+		self.allowedCustom[name] = [value];
+	else
+		self.allowedCustom[name].push(value);
+
+	self.refresh();
+	return self.framework;
+
+};
+
+/*
+	Disallow IP or custom header
+	@name {String} :: IP or Header name
+	@value {RegExp} :: optional, header value
+	return {Framework}
+*/
+FrameworkRestrictions.prototype.disallow = function(name, value) {
+
+	var self = this;
+
+	// IP address
+	if (typeof(value) === UNDEFINED) {
+		self.blockedIP.push(name);
+		self.refresh();
+		return self.framework;
+	}
+
+	// Custom header
+	if (typeof(self.blockedCustom[name]) === UNDEFINED)
+		self.blockedCustom[name] = [value];
+	else
+		self.blockedCustom[name].push(value);
+
+	self.refresh();
+	return self.framework;
+
+};
+
+/*
+	INTERNAL: Refresh internal informations
+	return {Framework}
+*/
+FrameworkRestrictions.prototype.refresh = function() {
+
+	var self = this;
+
+	self.isAllowedIP = self.allowedIP.length > 0;
+	self.isBlockedIP = self.blockedIP.length > 0;
+
+	self.isAllowedCustom = utils.isEmpty(self.allowedCustom);
+	self.isBlockedCustom = utils.isEmpty(self.blockedCustom);
+
+	self.allowedCustomKeys = Object.keys(self.allowedCustom);
+	self.blockedCustomKeys = Object.keys(self.blockedCustom);
+
+	self.isRestrictions = self.isAllowedIP || self.isBlockedIP || self.isAllowedCustom || self.isBlockedCustom;
+
+	return self.framework;
+};
+
+/*
+	Clear all restrictions for IP
+	return {Framework}
+*/
+FrameworkRestrictions.prototype.clearIP = function() {
+	var self = this;
+	self.allowedIP = [];
+	self.blockedIP = [];
+	self.refresh();
+	return self.framework;
+}
+
+/*
+	Clear all restrictions for custom headers
+	return {Framework}
+*/
+FrameworkRestrictions.prototype.clearHeaders = function() {
+	var self = this;
+	self.allowedCustom = {};
+	self.blockedCustom = {};
+	self.allowedCustomKeys = [];
+	self.blockedCustomKeys = [];
+	self.refresh();
+	return self.framework;
+}
+
+/*
+	INTERNAL: Restrictions using
+	return {Framework}
+*/
+FrameworkRestrictions.prototype._allowedCustom = function(headers) {
+
+	var self = this;
+	var length = self.allowedCustomKeys.length;
+
+	for (var i = 0; i < length; i++) {
+
+		var key = self.allowedCustomKeys[i];
+		var value = headers[key];
+		if (typeof(value) === UNDEFINED)
+			return false;
+
+		if (!self.allowedCustom[key].test(value))
+			return false;
+	}
+
+	return true;
+};
+
+/*
+	INTERNAL: Restrictions using
+	return {Framework}
+*/
+FrameworkRestrictions.prototype._blockedCustom = function(headers) {
+
+	var self = this;
+	var length = self.blockedCustomKeys.length;
+
+	for (var i = 0; i < length; i++) {
+
+		var key = self.blockedCustomKeys[i];
+		var value = headers[key];
+		if (typeof(value) === UNDEFINED)
+			return false;
+
+		if (self.blockedCustom[key].test(value))
+			return true;
+	}
+
+	return false;
 };
 
 // *********************************************************************************

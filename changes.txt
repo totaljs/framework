@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.2.7
 
 - added: definitions
+- added: framework.restrictions class
 - added: framework.async class
 - added: framework.injectConfig()
 - added: framework.injectDefinition()
