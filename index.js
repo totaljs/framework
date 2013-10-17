@@ -232,6 +232,7 @@ Framework.prototype.refresh = function(clear) {
 /*
 	Add/Register a new controller
 	@name {String}
+	return {Framework}
 */
 Framework.prototype.controller = function(name) {
 
@@ -700,6 +701,14 @@ Framework.prototype.injectModule = function(name, url) {
 				return route.name === _controller;
 			});
 
+			self.routes.files = self.routes.files.remove(function(route) {
+				return route.name === _controller;
+			});
+
+			self.routes.websockets = self.routes.websockets.remove(function(route) {
+				return route.name === _controller;
+			});
+
 			if (typeof(result.install) !== UNDEFINED) {
 				result.install(self, name);
 				self._routeSort();
@@ -715,6 +724,49 @@ Framework.prototype.injectModule = function(name, url) {
 	return self;
 };
 
+Framework.prototype.injectController = function(name, url) {
+
+	var self = this;
+
+	utils.request(url, 'GET', '', function(error, data) {
+
+		if (error) {
+			self.error(error, 'injectController - ' + name, null);
+			return;
+		}
+
+		try
+		{
+			var result = eval('(new (function(framework){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
+			_controller = name;
+
+			self.routes.web = self.routes.web.remove(function(route) {
+				return route.name === _controller;
+			});
+
+			self.routes.files = self.routes.files.remove(function(route) {
+				return route.name === _controller;
+			});
+
+			self.routes.websockets = self.routes.websockets.remove(function(route) {
+				return route.name === _controller;
+			});
+
+			if (typeof(result.install) !== UNDEFINED) {
+				result.install(self, name);
+				self._routeSort();
+			}
+
+			self.controllers[name] = result;
+
+		} catch (ex) {
+			self.error(ex, 'injectController - ' + name, null);
+		}
+	});
+
+
+	return self;
+};
 /*
 	Inject definition from URL
 	@url {String}
