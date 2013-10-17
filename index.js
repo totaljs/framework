@@ -642,6 +642,37 @@ Framework.prototype.install = function() {
 };
 
 /*
+	Inject configuration from URL
+	@url {String}
+	@debug {Boolean} :: optional, is debug configuration
+	@rewrite {Boolean} :: optional (default true), rewrite all values or append new values only
+	return {Framework}
+*/
+Framework.prototype.injectConfig = function(url, debug, rewrite) {
+
+	var self = this;
+
+	if (typeof(debug) !== UNDEFINED && self.config.debug !== debug)
+		return self;
+
+	if (typeof(rewrite) === UNDEFINED)
+		rewrite = true;
+
+	utils.request(url, 'GET', '', function(error, data) {
+
+		if (error) {
+			self.error(error, 'injectConfig - ' + url, null);
+			return;
+		}
+
+		self.configure(data.split('\n'), rewrite);
+
+	});
+
+	return self;
+};
+
+/*
 	Inject module from URL
 	@name {String} :: name of module
 	@url {String}
@@ -2533,19 +2564,31 @@ Framework.prototype.resource = function(name, key) {
 };
 
 /*
-	Configuration from file
+	INTERNAL: Framework configure
+	@arr {String Array} :: optional
+	@rewrite {Boolean} :: optional, default true
 	return {Framework}
 */
-Framework.prototype.configure = function() {
+Framework.prototype.configure = function(arr, rewrite) {
 
 	var self = this;
-	var fileName = utils.combine('/', 'config-' + (self.config.debug ? 'debug' : 'release'));
 
-	if (!fs.existsSync(fileName))
+	if (typeof(arr) === UNDEFINED) {
+		var filename = utils.combine('/', 'config-' + (self.config.debug ? 'debug' : 'release'));
+
+		if (!fs.existsSync(filename))
+			return self;
+
+		arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
+	}
+
+	if (!arr instanceof Array)
 		return self;
 
+	if (typeof(rewrite) === UNDEFINED)
+		rewrite = true;
+
 	var obj = {};
-	var arr = fs.readFileSync(fileName).toString(ENCODING).split('\n');
 	var accepts = null;
 
 	for (var i = 0; i < arr.length; i++) {
@@ -2592,7 +2635,7 @@ Framework.prototype.configure = function() {
 		}
 	}
 
-	utils.extend(self.config, obj, true);
+	utils.extend(self.config, obj, rewrite);
 
 	if (self.config['etag-version'] === '')
 		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');

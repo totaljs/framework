@@ -2,6 +2,7 @@ IN DEVELOPMENT ======= 1.2.7
 
 - added: definitions
 - added: framework.async class
+- added: framework.injectConfig()
 - added: framework.injectDefinition()
 - added: framework.response501() and controller.view501() - 501 Not Implemented
 - added: framework.redirect(oldHost, newHost, withPath, permament)
