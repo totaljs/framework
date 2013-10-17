@@ -744,6 +744,25 @@ Framework.prototype.injectDefinition = function(url) {
 };
 
 /*
+	Eval script
+	@script {String}
+	return {Framework}
+*/
+Framework.prototype.eval = function(script) {
+
+	var self = this;
+	var framework = self;
+
+	try
+	{
+		eval(script);
+	} catch (ex) {
+		self.error(ex, 'eval - ' + script, null);
+	}
+
+	return self;
+};
+/*
 	Backup website directory
 	@callback {Function} :: optional, param: param: @err {Error}, @filename {String}
 	return {Framework}
