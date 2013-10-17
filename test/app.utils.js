@@ -39,8 +39,8 @@ function prototypeString() {
 	assert.ok('&lt;b&gt;partial.js&lt;/b&gt;&amp;nbsp;'.htmlDecode() === '<b>partial.js</b>&nbsp;', 'string.htmlDecode()');
 
 	str = 'abcdefgh ijklmnop';
-	assert.ok(str.maxLength(5, '---') === 'ab---', 'string.maxLength(5, "---")');
-	assert.ok(str.maxLength(5) === 'ab...', 'string.maxLength(5)');
+	assert.ok(str.max(5, '---') === 'ab---', 'string.maxLength(5, "---")');
+	assert.ok(str.max(5) === 'ab...', 'string.maxLength(5)');
 
 	assert.ok(str.isJSON() === false, 'string.isJSON()');
 	assert.ok('[]'.isJSON() === true, 'string.isJSON([])');
@@ -314,8 +314,6 @@ function others() {
 				return -1;
 		});
 
-		console.log('SOM TU');
-		console.log(value.join(','));
 		assert.ok(value.join(',') === '1,2,3,4,5,6,7,8,9', 'async');
 	});
 
