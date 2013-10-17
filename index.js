@@ -6138,8 +6138,7 @@ Controller.prototype.baa = function(name) {
 		return null;
 	}
 
-	var arr = new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString('utf8').split(':');
-	return { name: arr[0] || '', password: arr[1] || '' };
+	return self.req.authorization;
 };
 
 /*
@@ -7300,7 +7299,7 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 };
 
 /*
-	Read cookie
+	Read a cookie
 	@name {String}
 	return {String}
 */
@@ -7324,6 +7323,22 @@ http.IncomingMessage.prototype.cookie = function(name) {
 	}
 
 	return decodeURIComponent(self.cookies[name] || '');
+};
+
+/*
+	Read authorization header
+	return {Object}
+*/
+http.IncomingMessage.prototype.authorization = function() {
+
+	var self = this;
+	var authorization = self.headers['authorization'] || '';
+
+	if (authorization === '')
+		return { name: '', password: '' };
+
+	new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString('utf8').split(':')
+	return { name: arr[0] || '', password: arr[1] || '' };
 };
 
 /*
