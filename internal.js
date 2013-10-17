@@ -2052,7 +2052,7 @@ function parse(html, controller) {
 		if (str.substring(0, 4) === '(arr') {
 
 			if (condition !== 0) {
-				controller.framework.error(new Error('View engine doesnt support nested condition.'), 'View compiler', controller.req.uri);
+				controller.framework.error(new Error('View engine doesn\'t support nested condition.'), 'View compiler', controller.req.uri);
 				fn = '';
 				break;
 			}
