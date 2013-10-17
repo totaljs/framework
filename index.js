@@ -68,6 +68,7 @@ function Framework() {
 
 		name: 'partial.js',
 		version: '1.01',
+		author: '',
 		secret: os.hostname() + '-' + os.platform() + '-' + os.arch(),
 
 		'etag-version': '',
@@ -5359,7 +5360,7 @@ Controller.prototype.head = function() {
 	var self = this;
 
 	if (arguments.length === 0)
-		return self.repository[REPOSITORY_HEAD] || '';
+		return (self.repository[REPOSITORY_HEAD] || '') + (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '');
 
 	var output = '';
 
