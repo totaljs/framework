@@ -6583,7 +6583,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 						evl = false;
 					}
 				} else
-					run = 'self.repository["$'+ execute.name + '"]';
+					run = execute.name === 'head' ? 'self.head()' : 'self.repository["$'+ execute.name + '"]';
 
 				break;
 

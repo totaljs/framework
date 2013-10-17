@@ -20,6 +20,7 @@ IN DEVELOPMENT ======= 1.2.7
 - added: controller.uri
 - added: MailMessage.from() alias for MailMessage.sender()
 - added: HttpRequest.authorization()
+- added: config.author
 
 - updated: framework.usage()
 - updated: default port: port || process.env.PORT || 8000
@@ -29,6 +30,7 @@ IN DEVELOPMENT ======= 1.2.7
 - updated: utils.request() (added return Boolean)
 - updated: utils.random(max, min)
 - updated: completely rewritten utils.async()
+- updated: @{head} (added author (if not empty) from config)
 
 - fixed: FrameworkFileSystem class
 - fixed: view render
