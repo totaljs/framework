@@ -68,10 +68,14 @@ function test_UrlBuilder() {
 
 function test_Schema() {
 	var name = 'Schema: ';
-	builders.schema('tbl_user', { Id: Number, Name: String }, 'Id', false);
+
+	builders.schema('tbl_user', { Id: Number, Name: String, date: Date }, function(name) {	
+		if (name === 'date')
+			return 'OK';
+	});
+
 	assert.ok(builders.schema('tbl_user').Id instanceof Function, name + 'schema write & read');
-	assert.ok(builders.primaryKey('tbl_user').name === 'Id', name + 'schema primary key');
-	assert.ok(JSON.stringify(builders.defaults('tbl_user')) === '{"Name":null,"Id":0}', name + 'schema defaults');
+	assert.ok(JSON.stringify(builders.defaults('tbl_user')) === '{"date":"OK","Name":null,"Id":0}', name + 'schema defaults');
 
 	builders.schema('test', { Id: Number, Name: String, Male: Boolean, Dt: Date, Price: 'decimal' });
 

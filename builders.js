@@ -23,8 +23,9 @@
 
 var schema = {};
 var schemaValidation = {};
-var schemaPrimary = {};
+var schemaDefaults = {};
 var UNDEFINED = 'undefined';
+var FUNCTION = 'function';
 
 /*
     @onResource {Function} :: function(name, key) return {String}
@@ -63,20 +64,16 @@ function PageBuilder(items, page, max) {
 	Create object schema
     @name {String}
     @obj {Number}
-    @primaryKey {Boolean}
-    @insert {Boolean} :: optional (insert primary key?)
+    @defaults {Function}
     return {Object}
 */
-exports.schema = function(name, obj, primaryKey, insert) {
+exports.schema = function(name, obj, defaults) {
 
 	if (typeof(obj) === UNDEFINED)
 		return schema[name] || null;
 
-	if (typeof(primaryKey) === UNDEFINED)
-		primaryKey = Object.keys(obj)[0];
-
-	if (typeof(primaryKey) !== UNDEFINED)
-		exports.primaryKey(name, primaryKey, insert);
+	if (typeof(defaults) === FUNCTION)
+		schemaDefaults[name] = defaults;
 
 	schema[name] = obj;
 	return obj;
@@ -110,12 +107,20 @@ exports.defaults = function(name) {
 
 	var item = utils.extend({}, obj, true);
 	var properties = Object.keys(item);
+	var defaults = schemaDefaults[name];
 
 	properties.forEach(function(property) {
 
 		var value = item[property];
-		var def = null;
 		var type = typeof(value);
+
+		if (defaults) {
+			var def = defaults(property);
+			if (typeof(def) !== UNDEFINED) {
+				item[property] = def;
+				return;
+			}
+		}
 
 		if (type === 'function') {
 
@@ -339,22 +344,6 @@ exports.prepare = function(name, model) {
 	});
 
 	return item;
-};
-
-/*
-	Set primary key
-    @schema {String}
-    @name {String}
-    @insert {Boolean} :: optional (insert primary key?)
-    return {Exports}
-*/
-exports.primaryKey = function(schema, name, insert) {
-
-	if (typeof(name) === UNDEFINED)
-		return schemaPrimary[schema] || null;
-
-	schemaPrimary[schema] = { name: name, insert: insert || false };
-	return exports;
 };
 
 // ======================================================
