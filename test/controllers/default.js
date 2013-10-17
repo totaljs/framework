@@ -24,6 +24,8 @@ exports.install = function(framework) {
 	framework.route('/live/', viewLive);
 	framework.route('/live/incoming/', viewLiveIncoming, ['mixed']);
 
+	framework.redirect('http://www.google.sk', 'http://www.petersirka.sk');
+
 	framework.route('#408', function() {
 		var self = this;
 		self.global.timeout++;
@@ -42,7 +44,15 @@ exports.install = function(framework) {
 };
 
 function view_homepage() {
-	this.view('homepage');
+	/*
+	framework.server.getConnections(function(a, b, c) {
+		console.log(a, b, c);
+	});*/
+
+	//console.log(framework.server._connection);
+
+	//this.view('homepage');
+	this.plain(this.framework.usage(true));
 }
 
 function view_usage() {
