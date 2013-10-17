@@ -126,7 +126,7 @@ function Framework() {
 		websockets: [],
 		partial: {},
 		partialGlobal: [],
-		redirect: {}
+		redirects: {}
 	};
 
 	this.helpers = {};
@@ -174,7 +174,8 @@ function Framework() {
 			error404: 0,
 			error408: 0,
 			error431: 0,
-			error500: 0
+			error500: 0,
+			error501: 0
 		}
 	};
 
@@ -344,7 +345,7 @@ Framework.prototype.redirect = function(host, newHost, withPath, permament) {
 	if (newHost[newHost.length - 1] === '/')
 		newHost = newHost.substring(0, newHost.length - 1);
 
-	self.routes.redirect[host] = { url: newHost, path: withPath, permament: permament };
+	self.routes.redirects[host] = { url: newHost, path: withPath, permament: permament };
 	self._redirectPath = true;
 
 	return self;
@@ -764,7 +765,6 @@ Framework.prototype.injectController = function(name, url) {
 		}
 	});
 
-
 	return self;
 };
 /*
@@ -1091,7 +1091,7 @@ Framework.prototype.usage = function(detailed) {
 	var helpers = Object.keys(self.helpers);
 	var staticFiles = Object.keys(self.temporary.path);
 	var staticRange = Object.keys(self.temporary.range);
-
+	var redirects = Object.keys(self.routes.redirects);
 	var size = 0;
 	var sizeBackup = 0;
 	var sizeDatabase = 0;
@@ -1119,46 +1119,58 @@ Framework.prototype.usage = function(detailed) {
 		});
 	}
 
-	var delimiter = '----------------------------------------------------------------------------------';
-
+	builder.push('## Basic informations');
+	builder.push('');
+	builder.push('Node version                    : {0}'.format(process.version));
+	builder.push('Framework version               : v{0}'.format(self.version));
 	builder.push('Platform                        : {0}'.format(process.platform));
 	builder.push('Processor                       : {0}'.format(process.arch));
 	builder.push('PID                             : {0}'.format(process.pid));
-	builder.push('Node version                    : {0}'.format(process.version));
-	builder.push('Framework version               : v{0}'.format(self.version));
-	builder.push('Current directory               : {0}'.format(process.cwd));
-	builder.push('Service ran                     : {0}x'.format(self.cache.count));
-	builder.push(delimiter);
+	builder.push('Service call                    : {0}x'.format(self.cache.count));
 	builder.push('Uptime                          : {0} minutes'.format(Math.floor(process.uptime() / 60)));
 	builder.push('Memory usage                    : total {0} MB, used {1} MB'.format((memory.heapTotal / 1024 / 1024).format('### ### ###.##'), (memory.heapUsed / 1024 / 1024).format('### ### ###.##')));
-	builder.push(delimiter);
+	builder.push('');
+	builder.push('## Directories');
+	builder.push('');
+	builder.push('Current directory               : {0}'.format(process.cwd));
 	builder.push('Temporary directory             : {0} kB'.format((size / 1024).format('### ### ###.##')));
 	builder.push('Backup directory                : {0} kB'.format((sizeBackup / 1024).format('### ### ###.##')));
 	builder.push('Databases directory             : {0} kB'.format((sizeDatabase / 1024).format('### ### ###.##')));
+	builder.push('');
+	builder.push('## Counter');
+	builder.push('');
 	builder.push('Resource count                  : {0}'.format(resources.length));
 	builder.push('Controller count                : {0}'.format(controllers.length));
 	builder.push('Module count                    : {0}'.format(modules.length));
 	builder.push('Cache                           : {0} items'.format(cache.length, self.cache.count));
 	builder.push('WebSocket connections           : {0}'.format(connections.length));
-	builder.push('Count of routes to webpage      : {0}'.format(self.routes.web.length));
-	builder.push('Count of routes to websocket    : {0}'.format(self.routes.websockets.length));
-	builder.push('Count of routes to file         : {0}'.format(self.routes.files.length));
-	builder.push('Count of helpers                : {0}'.format(helpers.length));
-	builder.push('Static cache files              : {0}'.format(staticFiles.length));
-	builder.push('Static cache files / range      : {0}'.format(staticRange.length));
+	builder.push('');
+	builder.push('## Routing');
+	builder.push('');
+	builder.push('Routes to webpage               : {0}'.format(self.routes.web.length));
+	builder.push('Routes to websocket             : {0}'.format(self.routes.websockets.length));
+	builder.push('Routes to file                  : {0}'.format(self.routes.files.length));
+	builder.push('Partial content (custom)        : {0}'.format(Object.keys(self.routes.partial).length));
+	builder.push('Partial content (global)        : {0}'.format(self.routes.partialGlobal.length));
+	builder.push('Redirects                       : {0}'.format(redirects.length));
+	builder.push('Helpers                         : {0}'.format(helpers.length));
+	builder.push('File handling informations      : {0}'.format(staticFiles.length));
+	builder.push('Streaming informations          : {0}'.format(staticRange.length));
 	builder.push('Error count                     : {0}'.format(self.errors.length));
-	builder.push(delimiter);
-	builder.push('Request statistics / The last 10 minutes');
-	builder.push('Request to controller           : {0}x'.format(self.stats.request.web.format('### ### ###')));
-	builder.push('Request to websocket            : {0}x'.format(self.stats.request.websocket.format('### ### ###')));
+	builder.push('');
+	builder.push('## Requests statistic');
+	builder.push('');
+	builder.push('Request to webpage              : {0}x'.format(self.stats.request.web.format('### ### ###')));
+	builder.push('Request to Websocket            : {0}x'.format(self.stats.request.websocket.format('### ### ###')));
 	builder.push('Request to file                 : {0}x'.format(self.stats.request.file.format('### ### ###')));
 	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr.format('### ### ###')));
 	builder.push('Request GET                     : {0}x'.format(self.stats.request.get.format('### ### ###')));
 	builder.push('Request POST                    : {0}x'.format(self.stats.request.post.format('### ### ###')));
-	builder.push('Request MULTIPART (upload)      : {0}x'.format(self.stats.request.upload.format('### ### ###')));
+	builder.push('Request Multipart (upload)      : {0}x'.format(self.stats.request.upload.format('### ### ###')));
 	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss.format('### ### ###')));
-	builder.push(delimiter);
-	builder.push('Response statistics / The last 10 minutes');
+	builder.push('');
+	builder.push('## Responses statistic');
+	builder.push('');
 	builder.push('Response view                   : {0}x'.format(self.stats.response.view.format('### ### ###')));
 	builder.push('Response JSON                   : {0}x'.format(self.stats.response.json.format('### ### ###')));
 	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain.format('### ### ###')));
@@ -1167,30 +1179,82 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Response file                   : {0}x'.format(self.stats.response.file.format('### ### ###')));
 	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr.format('### ### ###')));
 	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse.format('### ### ###')));
-	builder.push('Response websocket message      : {0}x'.format(self.stats.response.websocket.format('### ### ###')));
+	builder.push('Response Websocket message      : {0}x'.format(self.stats.response.websocket.format('### ### ###')));
 	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401.format('### ### ###')));
 	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403.format('### ### ###')));
 	builder.push('Response 404                    : {0}x'.format(self.stats.response.error404.format('### ### ###')));
 	builder.push('Response 408                    : {0}x'.format(self.stats.response.error408.format('### ### ###')));
 	builder.push('Response 431                    : {0}x'.format(self.stats.response.error431.format('### ### ###')));
 	builder.push('Response 500                    : {0}x'.format(self.stats.response.error500.format('### ### ###')));
-	builder.push(delimiter);
+	builder.push('Response 501                    : {0}x'.format(self.stats.response.error501.format('### ### ###')));
+	builder.push('');
+
+	if (redirects.length > 0) {
+		builder.push('## Redirects');
+		builder.push('');
+		redirects.forEach(function(o) {
+			builder.push('- ' + o);
+		});
+		builder.push('');
+	}
+
+	if (self.restrictions.isRestrictions) {
+		builder.push('## Restrictions');
+
+		if (self.restrictions.isAllowedIP) {
+			builder.push('');
+			builder.push('### Allowed IP');
+			builder.push('');
+			self.restrictions.allowedIP.forEach(function(o) {
+				builder.push('- ' + o);
+			});
+		}
+
+		if (self.restrictions.isBlockedIP) {
+			builder.push('');
+			builders.push('### Blocked IP');
+			builder.push('');
+			self.restrictions.blockedIP.forEach(function(o) {
+				builder.push('- ' + o);
+			});
+		}
+
+		if (self.restrictions.isAllowedCustom) {
+			builder.push('');
+			builders.push('### Allowed headers');
+			builder.push('');
+			self.restrionctions.allowedCustomKeys.forEach(function(o) {
+				builder.push('- ' + o);
+			});
+		}
+
+		if (self.restrictions.isBlockedCustom) {
+			builder.push('');
+			builders.push('### Blocked headers');
+			builder.push('');
+			self.restrictions.blockedCustomKeys.forEach(function(o) {
+				builder.push('- ' + o);
+			});
+		}
+	}
 
 	if (!detailed)
 		return builder.join('\n');
 
-	builder.push('');
-	builder.push('============ [Controllers]');
+	builder.push('## Controllers');
 
 	controllers.forEach(function(o) {
 
 		builder.push('');
-		builder.push('[' + o + ']');
+		builder.push('### ' + o);
+		builder.push('');
 
 		var controller = self.controllers[o];
 
-		if (typeof(controller.usage) === UNDEFINED)
+		if (typeof(controller.usage) === UNDEFINED) {
+			builder.push('> undefined');
 			return;
+		}
 
 		builder.push((controller.usage() || '').toString());
 
@@ -1198,83 +1262,85 @@ Framework.prototype.usage = function(detailed) {
 
 	if (connections.length > 0) {
 		builder.push('');
-		builder.push('============ [WebSocket connections]');
+		builder.push('## WebSocket connections');
 		builder.push('');
 		connections.forEach(function(o) {
-			builder.push('Path: {0} (online {1}x)'.format(o, self.connections[o].online));
+			builder.push('- {0} (online {1}x)'.format(o, self.connections[o].online));
 		});
 	}
 
 	if (modules.length > 0) {
 		builder.push('');
-		builder.push('============ [Modules]');
+		builder.push('## Modules');
 
 		modules.forEach(function(o) {
 
 			builder.push('');
-			builder.push('[' + o + ']');
+			builder.push('### ' + (o === '#' ? 'Global module (#)' : o));
+			builder.push('');
 
 			var module = self.modules[o];
 
-			if (module === null || typeof(module.usage) === UNDEFINED)
+			if (module === null || typeof(module.usage) === UNDEFINED) {
+				builder.push('> undefined');
 				return;
+			}
 
-			builder.push('');
 			builder.push((module.usage() || '').toString());
 		});
 	}
 
 	if (helpers.length > 0) {
 		builder.push('');
-		builder.push('============ [Helpers]');
-
+		builder.push('## View helpers');
+		builder.push('');
 		helpers.forEach(function(o) {
-			builder.push('{0}'.format(o).indent(4));
+			builder.push('- @{0}'.format(o));
 		});
 	}
 
 	if (cache.length > 0) {
 		builder.push('');
-		builder.push('============ [Cached items]');
-
+		builder.push('## Cached items');
+		builder.push('');
 		cache.forEach(function(o) {
-			builder.push('{0}'.format(o).indent(4));
+			builder.push('- {0}'.format(o));
 		});
 	}
 
 	if (resources.length > 0) {
 		builder.push('');
-		builder.push('============ [Resources]');
-
+		builder.push('## Resources');
+		builder.push('');
 		resources.forEach(function(o) {
-			builder.push('{0}.resource'.format(o).indent(4));
+			builder.push('- {0}.resource'.format(o));
 		});
 	}
 
 	if (staticFiles.length > 0) {
 		builder.push('');
-		builder.push('============ [Cache of static files]');
-
+		builder.push('## Cache of static files');
+		builder.push('');
 		staticFiles.forEach(function(o) {
-			builder.push('{0}'.format(o).indent(4));
+			builder.push('- {0}'.format(o));
 		});
 	}
 
 	if (staticRange.length > 0) {
 		builder.push('');
-		builder.push('============ [Cache of static files / range]');
-
+		builder.push('## Cache of static files / range');
+		builder.push('');
 		staticRange.forEach(function(o) {
-			builder.push('{0} / {1}'.format(o, (self.temporary.range[o] / 1024).floor(2)).indent(4));
+			builder.push('- {0} / {1}'.format(o, self.temporary.range[o] / 1024).floor(2));
 		});
 	}
 
 	if (self.errors.length > 0) {
 		builder.push('');
-		builder.push('============ [Errors]');
+		builder.push('## Errors');
 		builder.push('');
 		self.errors.forEach(function(error) {
-			builder.push(error.date.format('yyyy-MM-dd / HH:mm:ss - ') + error.error.toString() + ' - ' + error.error.stack + '\n');
+			builder.push('- ' + error.date.format('yyyy-MM-dd / HH:mm:ss - ') + error.error.toString() + ' - ' + error.error.stack + '\n');
 		});
 	}
 
@@ -1809,6 +1875,35 @@ Framework.prototype.response404 = function(req, res) {
 };
 
 /*
+	Response with 500 error
+	@req {ServerRequest}
+	@res {ServerResponse}
+	@error {Error}
+	return {Framework}
+*/
+Framework.prototype.response500 = function(req, res, error) {
+	var self = this;
+
+	if (res.success)
+		return self;
+
+	req.clear(true);
+
+	if (error)
+		framework.error(error, null, req.uri);
+
+	res.success = true;
+	res.writeHead(500, { 'Content-Type': 'text/plain' });
+	res.end(utils.httpStatus(500));
+
+	if (!req.isStaticFile)
+		self.emit('request-end', req, res);
+
+	self.stats.response.error500++;
+	return self;
+};
+
+/*
 	Response with 501 error
 	@req {ServerRequest}
 	@res {ServerResponse}
@@ -1829,7 +1924,7 @@ Framework.prototype.response501 = function(req, res) {
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
 
-	self.stats.response.error404++;
+	self.stats.response.error501++;
 	return self;
 };
 
@@ -2187,7 +2282,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 
 Framework.prototype._service = function(count) {
 	var self = this;
-
+	/*
 	if (count % 10 === 0) {
 		self.emit('clear', 'stats', self.stats);
 		self.stats.request.web = 0;
@@ -2213,7 +2308,8 @@ Framework.prototype._service = function(count) {
 		self.stats.response.error408 = 0;
 		self.stats.response.error431 = 0;
 		self.stats.response.error500 = 0;
-	}
+		self.stats.response.error501 = 0;
+	}*/
 
 	if (self.config.debug)
 		self.resources = {};
@@ -2246,7 +2342,7 @@ Framework.prototype._request = function(req, res) {
 	req.host = header.host;
 
 	if (self._redirectPath) {
-		var redirect = self.routes.redirect[protocol +'://' + req.host];
+		var redirect = self.routes.redirects[protocol +'://' + req.host];
 		if (redirect) {
 			self.responseRedirect(req, res, redirect.url + (redirect.path ? req.url : ''), redirect.permament);
 			return self;
