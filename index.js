@@ -739,7 +739,7 @@ Framework.prototype.injectController = function(name, url) {
 
 		try
 		{
-			var result = eval('(new (function(){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
+			var result = eval('(new (function(framework){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
 			_controller = name;
 
 			self.routes.web = self.routes.web.remove(function(route) {
@@ -1213,7 +1213,7 @@ Framework.prototype.usage = function(detailed) {
 
 		if (self.restrictions.isBlockedIP) {
 			builder.push('');
-			builders.push('### Blocked IP');
+			builder.push('### Blocked IP');
 			builder.push('');
 			self.restrictions.blockedIP.forEach(function(o) {
 				builder.push('- ' + o);
@@ -1222,16 +1222,16 @@ Framework.prototype.usage = function(detailed) {
 
 		if (self.restrictions.isAllowedCustom) {
 			builder.push('');
-			builders.push('### Allowed headers');
+			builder.push('### Allowed headers');
 			builder.push('');
-			self.restrionctions.allowedCustomKeys.forEach(function(o) {
+			self.restrictions.allowedCustomKeys.forEach(function(o) {
 				builder.push('- ' + o);
 			});
 		}
 
 		if (self.restrictions.isBlockedCustom) {
 			builder.push('');
-			builders.push('### Blocked headers');
+			builder.push('### Blocked headers');
 			builder.push('');
 			self.restrictions.blockedCustomKeys.forEach(function(o) {
 				builder.push('- ' + o);
@@ -3235,8 +3235,8 @@ FrameworkRestrictions.prototype.refresh = function() {
 	self.isAllowedIP = self.allowedIP.length > 0;
 	self.isBlockedIP = self.blockedIP.length > 0;
 
-	self.isAllowedCustom = utils.isEmpty(self.allowedCustom);
-	self.isBlockedCustom = utils.isEmpty(self.blockedCustom);
+	self.isAllowedCustom = !utils.isEmpty(self.allowedCustom);
+	self.isBlockedCustom = !utils.isEmpty(self.blockedCustom);
 
 	self.allowedCustomKeys = Object.keys(self.allowedCustom);
 	self.blockedCustomKeys = Object.keys(self.blockedCustom);
@@ -3288,8 +3288,15 @@ FrameworkRestrictions.prototype._allowedCustom = function(headers) {
 		if (typeof(value) === UNDEFINED)
 			return false;
 
-		if (!self.allowedCustom[key].test(value))
-			return false;
+		var arr = self.allowedCustom[key];
+		var max = arr.length;
+
+		for (var j = 0; j < max; j++) {
+
+			if (!arr[j].test(value))
+				return false;
+
+		}
 	}
 
 	return true;
@@ -3311,8 +3318,17 @@ FrameworkRestrictions.prototype._blockedCustom = function(headers) {
 		if (typeof(value) === UNDEFINED)
 			return false;
 
-		if (self.blockedCustom[key].test(value))
-			return true;
+
+		var arr = self.blockedCustom[key];
+		var max = arr.length;
+
+		for (var j = 0; j < max; j++) {
+
+			if (arr[j].test(value))
+				return true;
+
+		}
+
 	}
 
 	return false;
