@@ -665,6 +665,9 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 	if (typeof(model) === UNDEFINED || model === null)
 		model = {};
 
+	if (typeof(prepare) !== FUNCTION)
+		throw new Error('Validate hasn\'t any method to validate properties.\nDefine delegate: framework.onValidate ...');
+
 	for (var i = 0; i < properties.length; i++) {
 
 		var type = typeof(value);
