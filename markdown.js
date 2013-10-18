@@ -265,6 +265,41 @@ function $isUL(text) {
     return (c === '-' || c === 'x' || c === '+') && text.indexOf(' ') > -1;
 }
 
+function $isKeyValue(text) {
+
+    var index = text.indexOf(':');
+    if (index === -1)
+        return false;
+
+    var countSpace = 0;
+    var countTab = 0;
+
+    var key = line.substring(0, index);
+    var length = key.length;
+
+    for (var i = 0; i < length; i++) {
+
+        var m = key[i];
+
+        if (m === '\t') {
+            countTab = 1;
+            break;
+        }
+
+        if (m !== ' ') {
+            countSpace = 0;
+            continue;
+        }
+
+        countSpace++;
+
+        if (countSpace > 2)
+            break;
+    }
+
+    return countSpace > 2 || countTab > 1;
+}
+
 /*
     Internal function
     @self {Markdown}
