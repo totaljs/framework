@@ -206,13 +206,13 @@ exports.prepare = function(name, model) {
 
 	var item = utils.extend({}, obj, true);
 	var properties = Object.keys(item);
+	var defaults = schemaDefaults[name];
 	var tmp;
 
 	properties.forEach(function(property) {
 
 		var val = model[property] || '';
 		var value = item[property];
-		var def = null;
 		var type = typeof(value);
 		var typeval = typeof(val);
 
@@ -260,14 +260,14 @@ exports.prepare = function(name, model) {
 						break;
 				}
 
-				if (typeof(tmp) === 'object' && tmp.toString() === 'Invalid Date')
+				if (tmp !== null && typeof(tmp) === 'object' && tmp.toString() === 'Invalid Date')
 					tmp = null;
 
-				item[property] = tmp;
+				item[property] = tmp || defaults(property) || null;
 				return;
 			}
 
-			item[property] = null;
+			item[property] = defaults(property) || null;
 			return;
 		}
 
@@ -326,7 +326,7 @@ exports.prepare = function(name, model) {
 				return;
 			}
 
-			item[property] = null;
+			item[property] = defaults(property) || null;
 			return;
 		}
 
@@ -340,7 +340,7 @@ exports.prepare = function(name, model) {
 			return;
 		}
 
-		item[property] = null;
+		item[property] = defaults(property) || null;
 	});
 
 	return item;
