@@ -23,6 +23,7 @@ IN DEVELOPMENT ======= 1.2.7
 - added: config.author
 
 - updated: framework.usage()
+- updated: CSS auto-vendor-prefixes (added font-smoothing)
 - updated: default port: port || process.env.PORT || 8000
 - updated: default framework.onMeta()
 - updated: framework.init() - default IP is 127.0.0.1

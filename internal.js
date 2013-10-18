@@ -827,7 +827,7 @@ Less.prototype.compile = function(value) {
 */
 function autoprefixer (value) {
 
-	var prefix = ['appearance', 'box-shadow', 'border-radius', 'border-image', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-origin', 'transition', 'user-select', 'animation', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'text-overflow'];
+	var prefix = ['appearance', 'box-shadow', 'border-radius', 'border-image', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-origin', 'transition', 'user-select', 'animation', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'text-overflow', 'font-smoothing'];
 	var id = '@#auto-vendor-prefix#@';
 
 	if (value.indexOf(id) === -1)
