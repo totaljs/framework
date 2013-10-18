@@ -12,6 +12,13 @@ IN DEVELOPMENT ======= 1.2.7
 - added: new example https://github.com/petersirka/partial.js/tree/master/examples/redirect-host
 - added: new example https://github.com/petersirka/partial.js/tree/master/examples/scheduler
 - added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-async
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-eval
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-module
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-controller
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-config
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-definition
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-restrictions
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-schema
 - added: download content from URL in framework.fs.create...
 - added: parse resource/configuration from a string - string.configuration()
 - added: async.cancel()
