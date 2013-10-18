@@ -30,7 +30,7 @@ IN DEVELOPMENT ======= 1.2.7
 - updated: utils.request() (added return Boolean)
 - updated: utils.random(max, min)
 - updated: completely rewritten utils.async()
-- updated: @{head} (added author (if not empty) from config)
+- updated: @{head} (added author meta tag (if not empty) from config)
 
 - fixed: FrameworkFileSystem class
 - fixed: view render
