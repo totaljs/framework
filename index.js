@@ -696,7 +696,7 @@ Framework.prototype.injectModule = function(name, url) {
 
 		try
 		{
-			var result = eval('(new (function(framework){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
+			var result = eval('(new (function(){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
 			_controller = '#module-' + name;
 
 			self.routes.web = self.routes.web.remove(function(route) {
@@ -739,7 +739,7 @@ Framework.prototype.injectController = function(name, url) {
 
 		try
 		{
-			var result = eval('(new (function(framework){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
+			var result = eval('(new (function(){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
 			_controller = name;
 
 			self.routes.web = self.routes.web.remove(function(route) {
