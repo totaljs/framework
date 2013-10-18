@@ -139,6 +139,12 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
+
+		if (!callback) {
+			res.resume();
+			return;
+		}
+
 		res._buffer = '';
 
 		res.on('data', function(chunk) {
@@ -160,19 +166,22 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 		var isPOST = method === 'POST' || method === 'PUT';
 		var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
 
-		req.on('error', function(error) {
-			callback(error, null, 0, {});
-		});
+		if (callback) {
+			req.on('error', function(error) {
+				callback(error, null, 0, {});
+			});
 
-		req.setTimeout(timeout || 10000, function() {
-			callback(new Error(exports.httpStatus(408)), null, 0, {});
-		});
+			req.setTimeout(timeout || 10000, function() {
+				callback(new Error(exports.httpStatus(408)), null, 0, {});
+			});
+		}
 
 		if (isPOST)
 			req.end(isJSON ? JSON.stringify(data) : (data || '').toString(), encoding);
 
 	} catch (ex) {
-		callback(ex, null, 0, {});
+		if (callback)
+			callback(ex, null, 0, {});
 		return false;
 	}
 
