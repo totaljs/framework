@@ -1,0 +1,33 @@
+@{layout('')}
+
+<!DOCTYPE html>
+<html>
+<head>
+    @{meta}
+    <meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=10" />
+	<meta name="format-detection" content="telephone=no" />
+	<meta name="viewport" content="width=1024, user-scalable=yes" />
+	<meta name="robots" content="all,follow" />
+	@{head}
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+</head>
+<body>
+
+	<div>Show node.js console:</div>
+	<br />
+	<form id="f">
+		@{textarea('text', { style: "width:600px;height:200px;font:normal 12px 'Consolas', 'Courier New'" })}		
+	</form>
+	<button>EVAL on the server</button>
+
+	<script type="text/javascript">
+
+	$('button').bind('click', function () {			
+		$.post('/eval/', $('#f').serialize(), function(d) {});
+	});
+
+	</script>
+
+</body>
+</html>
