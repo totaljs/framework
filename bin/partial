@@ -22,6 +22,7 @@ function createDirectory(directory) {
 		arr.push('views');
 		arr.push('templates');
 		arr.push('databases');
+		arr.push('definitions');
 
 		if ($type == 0) {
 			arr.push('backup');
@@ -103,6 +104,7 @@ function createFileConfig(directory) {
 	buffer.push("name         : my web site");
 	buffer.push("version      : 1.01");
 	buffer.push("secret       : your-secret-key");
+	buffer.push("author       : Your company name");
 
 	fs.writeFileSync(path.join(directory, 'config-release'), buffer.join(EOF));
 	fs.writeFileSync(path.join(directory, 'config-debug'), buffer.join(EOF).replace(/true/g, 'false'));
@@ -207,22 +209,6 @@ function createFileModules(directory) {
 	buffer.push('};');
 
 	fs.writeFileSync(path.join(dir, 'yourcode.js'), buffer.join(EOF));
-
-	buffer = [];
-	buffer.push('// your custom framework prototypes - https://github.com/petersirka/partial.js/blob/master/empty-project/modules/%23.js');
-	buffer.push('// this code it run automatically');
-	buffer.push('');
-	buffer.push('// exports.onLoad = function(self) {};');
-	buffer.push('// exports.onError = function(err, name, uri) {};');
-	buffer.push('// exports.onAuthorization = function(req, res, callback) { callback(false); };');
-	buffer.push('// exports.onPrefix = function(req) { return \'\'; };');
-	buffer.push('// exports.onVersion = function(name) { return name; };');
-	buffer.push('// exports.onRoute = function(req, res) {};');
-	buffer.push('// exports.onController = function(name) {};')
-	buffer.push('// exports.onSettings = function() { return \'\'; };');
-	buffer.push('// exports.onMeta = function onMeta() { return \'\'; };');
-	buffer.push('// exports.onValidation = function(name, value) {};');
-	fs.writeFileSync(path.join(dir, '#.js'), buffer.join(EOF));
 }
 
 function createFileController(directory) {
