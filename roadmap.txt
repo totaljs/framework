@@ -1,0 +1,16 @@
+ROADMAP
+
+Writing partial.js documentation
+0% [===============================================================================80%                    ] 100%
+
+Rewriting Markdown module
+0% [=====================================================================70%                              ] 100%
+
+Publish LTS (long support version) version
+0% [=====================================================================70%                              ] 100%
+
+Writing new module Fulltext search (npm fulltext)
+0% [                                                                                                      ] 100%
+
+Writing new module DataStorage search (npm datastorage)
+0% [                                                                                                      ] 100%
