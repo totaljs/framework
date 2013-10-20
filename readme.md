@@ -1,31 +1,37 @@
 ![partial.js logo](http://petersirka.sk/partial-js/logo-new.png)
 
-NEW!!! NEW!!! I'M PREPARING
-===========================
-
-- New complete documentation this week
-- LTS version of partial.js
-
 web application framework for node.js
 =====================================
 
-[![Flattr this](http://www.partialjs.com/exports/flattr-partial.png)](http://flattr.com/thing/1436218/partial-js-web-application-framework-for-node-js)
-[![partial.js on Twitter](http://www.partialjs.com/exports/twitter-partial.png)](https://twitter.com/partialjs)
-[![partial.js on Google+](http://www.partialjs.com/exports/google-partial.png)](https://plus.google.com/u/0/b/113175077493180148081/113175077493180148081/posts)
-
-- [__Download partial.js modules__](https://github.com/petersirka/partial.js-modules/)
-- Homepage / [www.partialjs.com](http://partialjs.com)
-- [__GET STARTED__](http://www.partialjs.com/get-started/)
-- Follow partial.js on Twitter [@partialjs](https://twitter.com/partialjs)
-- [__Download empty project__](http://www.partialjs.com/upload/empty-project.zip)
-- __Blog example__: [new example - blog written in partial.js (without installation)](http://blog.partialjs.com)
-- __E-shop example__: [new example - e-shop written in partial.js (without installation)](http://eshop.partialjs.com)
-- [Framework benefits](http://www.partialjs.com/benefits/)
+- [partial.js homepage - www.partialjs.com](http://partialjs.com)
+- [__Documentation__](http://docs.partialjs.com)
 - [Changelog](https://github.com/petersirka/partial.js/blob/master/changes.txt)
+- [__Roadmap__](https://github.com/petersirka/partial.js/blob/master/roadmap.txt)
+
+__Interesting__:
+
+- [__express.js vs partial.js__](http://www.partialjs.com/benefits/)
+- [Tutorial](http://docs.partialjs.com/tutorial/)
+- [Download partial.js modules](https://github.com/petersirka/partial.js-modules/)
+- [Download empty project](http://www.partialjs.com/upload/empty-project.zip)
+
+__Social networks__:
+
+- [Flattr partial.js](http://flattr.com/thing/1436218/partial-js-web-application-framework-for-node-js)
+- [Follow partial.js on GitHub](https://github.com/petersirka/partial.js)
+- [Follow partial.js on Twitter - __@partialjs__](https://twitter.com/partialjs)
+- [Follow partial.js on Facebook](https://www.facebook.com/partialjs)
+- [Follow partial.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
+
+__Examples__:
+
+- [More than 50 examples](https://github.com/petersirka/partial.js/tree/master/examples)
+- Older code: [blog written in partial.js (without installation)](http://blog.partialjs.com)
+- Older code: [e-shop written in partial.js (without installation)](http://eshop.partialjs.com)
 
 Documentation
 -------------
-- [English documentation](http://partialjs.com/documentation/)
+- [English documentation](http://docs.partialjs.com/)
 - [Turkish documentation](https://github.com/KiPSOFT/partial.js-turkish-doc/blob/master/baslangic.md) by [KiP Software](http://www.kip-software.org/)
 
 ***
@@ -41,12 +47,14 @@ Videos on YouTube
 
 ***
 
-* **NEW** - __Controller proxy__ - [example: proxy](https://github.com/petersirka/partial.js/tree/master/examples/controller-proxy)
-* **NEW** - Supports server sent events - [example: sse](https://github.com/petersirka/partial.js/tree/master/examples/server-sent-events)
-* **NEW** - Supports live streaming via multipart/x-mixed-replace - [example: mmr](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
-* **NEW** - Supports uploading via multipart/x-mixed-replace - [example: mmr](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
-* **NEW** - Supports CSS auto vendor prefixes - [read the benefits](http://www.partialjs.com/benefits/)
-* **NEW** - Supports Websocket (Standard - RFC 6455) - [example: websocket](https://github.com/petersirka/partial.js/tree/master/examples/websocket)
+* **NEW** - Supports redirects - [example: host redirect](https://github.com/petersirka/partial.js/tree/master/examples/redirect-host)
+* **NEW** - Supports restrictions - [example: restrictions](https://github.com/petersirka/partial.js/tree/master/examples/framework-restrictions)
+* __Controller proxy__ - [example: proxy](https://github.com/petersirka/partial.js/tree/master/examples/controller-proxy)
+* Supports server sent events - [example: sse](https://github.com/petersirka/partial.js/tree/master/examples/server-sent-events)
+* Supports live streaming via multipart/x-mixed-replace - [example: mmr](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
+* Supports uploading via multipart/x-mixed-replace - [example: mmr](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
+* Supports CSS auto vendor prefixes - [read the benefits](http://www.partialjs.com/benefits/)
+* Supports Websocket (Standard - RFC 6455) - [example: websocket](https://github.com/petersirka/partial.js/tree/master/examples/websocket)
 * Async web framework - [example: async methods](https://github.com/petersirka/partial.js/tree/master/examples/async)
 * Simple view engine - [example: view engine](https://github.com/petersirka/partial.js/tree/master/examples/views)
 * Simple routing + support flags ['xhr', 'post', 'put', 'delete', 'upload', 'logged', etc.] - [example: routing flags](https://github.com/petersirka/partial.js/tree/master/examples/routing-flags)
@@ -106,7 +114,6 @@ Videos on YouTube
 
 ***
 
-
 ## Install step by step partial.js
 
 ```
@@ -123,18 +130,6 @@ $ node keepalive 8080
 ```
 $ open http://127.0.0.1:8080
 ```
-
-## Interesting modules
-
-* __FileStorage__ REST client for node.js - https://github.com/petersirka/node-filestorage
-* Simple __Backup/Restore__ module for node.js - https://github.com/petersirka/backup
-* __PayPal Express Checkout__ for node.js - https://github.com/petersirka/node-payment-paypal
-* __CouchDB client__ for node.js - https://github.com/petersirka/node-couchdb
-* __MongoDB (www.mongolab.com)__ REST client for node.js - https://github.com/petersirka/node-mongolab
-
-***
-
-> I am still improving my english.
 
 ## The MIT License
 
