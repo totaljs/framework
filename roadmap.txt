@@ -9,6 +9,9 @@ Rewriting Markdown module
 Publish LTS (long support version) version
 0% [=====================================================================70%                              ] 100%
 
+Writing new partial.js module: ShoppingCart
+0% [                                                                                                      ] 100%
+
 Writing new module Fulltext search (npm fulltext)
 0% [                                                                                                      ] 100%
 
