@@ -6,6 +6,12 @@ const EMBEDDED = 101;
 const LIST = 102;
 const KEYVALUE = 103;
 
+const REG_LINK_1 = /\<.*?\>+/g;
+const REG_LINK_2 = /(!)?\[[^\]]+\][\:\s\(]+.*?[^)\s$]+/g;
+const REG_IMAGE = /(\[)?\!\[[^\]]+\][\:\s\(]+.*?[^\s$]+/g;
+const REG_FORMAT = /\*{1,2}.*?\*{1,2}|_{1,3}.*?_{1,3}/g;
+const REG_KEYWORD = /(\[.*?\]|\{.*?\})/g;
+
 var noop = function() {};
 
 function Markdown() {
@@ -72,6 +78,8 @@ Markdown.prototype.load = function(text) {
 
 	if (self.status !== EMPTY)
 		self.flush();
+
+	return self.output;
 };
 
 Markdown.prototype.parseEmbedded = function(line) {
@@ -278,41 +286,139 @@ Markdown.prototype.parseTitle = function(line, next) {
 	return true;
 };
 
-Markdown.prototype.formatting = function(line) {
+Markdown.prototype.parseFormat = function(line) {
 
 
 };
 
-Markdown.prototype.parseLink = function(line) {
+Markdown.prototype.parseLink = function(text) {
 
-	var self = this;
-	var length = line.length;
+    var matches = text.match(REG_LINK_1);
+    var output = text;
+    var length = 0;
+    var self = this;
 
-	var beg = line.indexOf('[');
-	var end = line.indexOf(')', beg);
+    if (matches !== null) {
+    	length = matches.length;
+        for (var i = 0; i < length; i++) {
+        	var o = matches[i];
+            var url = o.substring(1, o.length - 1);
+            output = output.replace(o, self.onLink(url, url));
+        }
+    }
 
-	var index = 0;
+    matches = text.match(REG_LINK_2);
 
-	while (beg !== -1) {
+    if (matches === null)
+        return output;
 
-		index++;
-		if (index > 100)
-			break;
+    length = matches.length;
 
-		if (end === -1)
-			break;
+    for (var i = 0; i < length; i++) {
 
-		console.log(line.substring(beg, end + 1));
+    	var o = matches[i];
 
-		beg = line.indexOf('[', beg + 1);
+        if (o.substring(0, 3) === '[![')
+            continue;
 
-		if (beg === -1)
-			break;
+        var index = o.indexOf(']');
+        if (index === -1)
+            continue;
 
-		end = line.indexOf(')', beg);
-	}
+        if (o[0] === '!')
+            continue;
 
+        var text = o.substring(1, index).trim();
+        var url = o.substring(index + 1).trim();
+
+        var first = url[0];
+
+        if (first === '(' || first === '(' || first === ':')
+            url = url.substring(1).trim();
+        else
+            continue;
+
+        if (first === '(')
+            o += ')';
+
+        var last = url[url.length - 1];
+
+        if (last === ',' || last === '.' || last === ' ')
+            url = url.substring(0, url.length - 1);
+        else
+            last = '';
+
+        output = output.replace(o, self.onLink(text, url) + last);
+    }
+
+    return output;
 };
+
+Markdown.prototype.parseImage = function(text) {
+
+    var output = text;
+    var matches = text.match(REG_IMAGE);
+
+    if (matches === null)
+        return output;
+
+    var self = this;
+
+    var length = matches.length;
+
+    for (var i = 0; i < length; i++) {
+
+    	var o = matches[i];
+        var indexBeg = 2;
+
+        if (o.substring(0, 3) === '[![')
+            indexBeg = 3;
+
+        var index = o.indexOf(']');
+        if (index === -1)
+            continue;
+
+        var text = o.substring(indexBeg, index).trim();
+        var url = o.substring(index + 1).trim();
+
+        var first = url[0];
+        if (first !== '(')
+            continue;
+
+        index = o.lastIndexOf(')');
+        if (index === -1)
+            continue;
+
+        var find = o.substring(0, index + 1);
+
+        url = url.substring(1, index + 1);
+        index = url.indexOf('#');
+        indexBeg = index;
+
+        var src = '';
+        var indexEnd = url.indexOf(')', index);
+
+        var dimension = [];
+
+        if (index > 0) {
+            dimension = url.substring(indexBeg + 1, indexEnd).split('x');
+            src = url.substring(0, index);
+        } else
+        	src = url.substring(0, indexEnd);
+
+        indexBeg = url.indexOf('(', indexEnd);
+        indexEnd = url.lastIndexOf(')');
+
+        if (indexBeg !== -1 && indexBeg > index)
+            url = url.substring(indexBeg + 1, indexEnd);
+        else
+            url = '';
+
+        output = output.replace(find, self.onImage(text, src, parseInt(dimension[0] || '0', 10), parseInt(dimension[1] || '0', 10), url));
+    }
+
+    return output;	
+}
 
 Markdown.prototype.flush = function() {
 
@@ -320,20 +426,31 @@ Markdown.prototype.flush = function() {
 
 	switch (self.status) {
 		case EMBEDDED:
-			console.log('EMBEDDED:');
-			console.log(JSON.stringify(self.current));
+
+			if (self.onEmbedded !== null)
+				self.output += self.onEmbedded(self.current);
+
 			break;
+
 		case LIST:
-			console.log('LIST:');
-			console.log(JSON.stringify(self.current));
+
+			if (self.onList !== null)
+				self.output += self.onList(self.current);
+
 			break;
+
 		case KEYVALUE:
-			console.log('KEYVALUE:');
-			console.log(JSON.stringify(self.current));
+
+			if (self.onKeyValue !== null)
+				self.output += self.onKeyValue(self.current);
+
 			break;
+
 		case PARAGRAPH:
-			console.log('PARAGRAPH:');
-			console.log(JSON.stringify(self.current));
+
+			if (self.onParagraph !== null)
+				self.output += self.onParagraph(self.current);
+
 			break;
 	}
 
@@ -353,5 +470,17 @@ md.onTitle = function(type, text) {
 	console.log('onTitle', type, text);
 };
 
-//md.load('## WELCOME\n=== js\na\n===\n\n\n- asd\n- asdasd\nkey    : value \n> asdsa');
-md.parseLink('asda sd asd [Google](www.google.sk). www.partialjs.com alebo <http://www.azet.sk>, [Zoznam.sk](https://www.zoznam.sk)');
+md.onLink = function(text, url) {
+	return '<a>' + text + '</a>';
+};
+
+md.onLine = function(text) {
+	return text;
+}
+
+md.onImage = function(text, src, width, height, url) {
+	console.log(text, src, width, height, url);
+};
+
+// md.load('## WELCOME\n=== js\na\n===\n\n\n- asd\n- asdasd\nkey    : value \n> asdsa');
+console.log(md.load('asda sd asd ![Google](http://www.google.sk). www.partialjs.com alebo <http://www.azet.sk>, [Zoznam.sk](https://www.zoznam.sk)'));
