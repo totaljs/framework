@@ -1,43 +1,157 @@
-var utils = require('partial.js/utils');
+var utils = require('../utils');
 
 const EMPTY = 0;
 const PARAGRAPH = 100;
 const EMBEDDED = 101;
 const LIST = 102;
 const KEYVALUE = 103;
+const TMP = '@##';
 
 const REG_LINK_1 = /\<.*?\>+/g;
 const REG_LINK_2 = /(!)?\[[^\]]+\][\:\s\(]+.*?[^)\s$]+/g;
+const REG_LINK_3 = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+const REG_LINK_4 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
 const REG_IMAGE = /(\[)?\!\[[^\]]+\][\:\s\(]+.*?[^\s$]+/g;
 const REG_FORMAT = /\*{1,2}.*?\*{1,2}|_{1,3}.*?_{1,3}/g;
 const REG_KEYWORD = /(\[.*?\]|\{.*?\})/g;
-
-var noop = function() {};
 
 function Markdown() {
 
 	this.embedded = '===';
 
-	this.onLine = noop;
-	this.onParagraph = noop;
-	this.onLink = noop;
-	this.onKeyValue = noop;
-	this.onFormatting = noop;
-	this.onKeyword = noop;
-	this.onImage = noop;
-	this.onList = noop;
-	this.onEmbedded = noop;
-	this.onBreak = noop;
-	this.onTitle = noop;
+	this.onEmbedded = function(type, lines) {
+		return lines.join('\n');
+	};
+
+	this.onKeyword = function(type, value) {
+		return '<span>' + value + '</span>';
+	};
+
+	this.onParagraph = function(type, lines) {
+
+		var self = this;
+		var cls = '';
+
+		switch (type)
+		{
+			case '>':
+			case '|':
+				cls = 'quote';
+				break;
+
+			case '//':
+				cls = 'comment';
+				break;
+		}
+
+		return '<p class="' + cls +'">' + lines.join('<br />') + '</p>';
+	};
+
+	this.onLine = function(line) {
+		return '<p class="line">' + line + '</p>';
+	};
+
+	this.onFormat = function(type, value) {
+
+		switch (type) {
+			case '**':
+				return '<em>' + value + '</em>';
+			case '*':
+				return '<i>' + value + '</i>';
+			case '__':
+				return '<strong>' + value + '</strong>';
+			case '_':
+				return '<b>' + value + '</b>';
+		}
+
+		return value;
+	};
+
+	this.onLink = function(text, url) {
+
+		if (url.substring(0, 7) !== 'http://' && url.substring(0, 8) !== 'https://')
+			url = 'http://' + url;
+
+		return '<a href="' + url + '>' + text + '</a>';
+	};
+
+	this.onImage = function(alt, src, width, height, url) {
+		var tag = '<img src="' + src + '"' + (width ? ' width="' + width + '"' : '') + (height ? ' height="' + height + '"' : '') + ' alt="' + alt +'" border="0" />';
+
+		if (url)
+			return '<a href="' + url + '">' + tag + '</a>';
+
+		return img;
+	};
+
+	this.onList = function(items) {
+
+		var length = items.length;
+		var output = '';
+
+		for (var i = 0; i < length; i++) {
+			var item = items[i];
+			output += '<li>' + item.value + '</li>';
+		}
+
+		return '<ul>' + output + '</ul>';
+
+	};
+
+	this.onKeyValue = function(items) {
+
+		var length = items.length;
+		var output = '';
+
+		for (var i = 0; i < length; i++) {
+			var item = items[i];
+			output += '<dt>' + item.key + '</dt><dd>' + item.value + '</dd>';
+		}
+
+		return '<dl>' + output + '</dl>';
+	};
+
+	this.onBreak = function(type) {
+
+		switch (type) {
+			case '\n':
+				return '<br />';
+			case '***':
+			case '---':
+				return '<hr />';
+		}
+
+		return '<br />';
+	};
+
+	this.onTitle = function(type, text) {
+
+		switch (type) {
+			case '#':
+				return '<h1>' + text + '</h1>'
+			case '##':
+				return '<h2>' + text + '</h2>'
+			case '###':
+				return '<h3>' + text + '</h3>'
+			case '####':
+				return '<h4>' + text + '</h4>'
+			case '#####':
+				return '<h5>' + text + '</h5>'
+		}
+
+		return type + ' ' + text;
+	};
 
 	this.current = [];
 	this.status = 0;
 	this.command = '';
 	this.skip = false;
 	this.output = '';
+	this.tmp = [];
+	this.id = '';
 }
 
-Markdown.prototype.load = function(text) {
+Markdown.prototype.load = function(text, id) {
 
 	var self = this;
 	var arr = text.split('\n');
@@ -73,7 +187,7 @@ Markdown.prototype.load = function(text) {
 			continue;
 
 		if (self.onLine !== null)
-			self.onLine(line);
+			self.output += self.onLine(self.parseOther(line));
 	}
 
 	if (self.status !== EMPTY)
@@ -155,7 +269,7 @@ Markdown.prototype.parseList = function(line) {
 		self.status = LIST;
 	}
 
-	self.current.push({ type: first, value: line.substring(3) });
+	self.current.push({ type: first, value: self.parseOther(line.substring(3)) });
 	return true;
 };
 
@@ -200,7 +314,7 @@ Markdown.prototype.parseKeyValue = function(line) {
 		self.status = KEYVALUE;
 	}
 
-	self.current.push({ key: tmp.trim(), value: line.substring(index + 1).trim() });
+	self.current.push({ key: self.parseOther(tmp.trim()), value: self.parseOther(line.substring(index + 1).trim()) });
 	return true;
 };
 
@@ -243,7 +357,8 @@ Markdown.prototype.parseParagraph = function(line) {
 		status = PARAGRAPH;
 	}
 
-	self.current.push(line.substring(index).trim());
+	self.current.push(self.parseOther(line.substring(index).trim()));
+
 	return true;
 };
 
@@ -281,14 +396,66 @@ Markdown.prototype.parseTitle = function(line, next) {
 		self.flush();
 
 	if (self.onTitle !== null)
-		self.output += self.onTitle(type, self.skip ? line : line.substring(type.length + 1)) || '';
+		self.output += self.onTitle(type, self.parseOther(self.skip ? line : line.substring(type.length + 1))) || '';
 
 	return true;
 };
 
-Markdown.prototype.parseFormat = function(line) {
+Markdown.prototype.parseOther = function(line) {
 
+	var self = this;
 
+	if (self.tmp.length > 0)
+		self.tmp = [];
+
+	// link
+	line = self.parseLink(line);
+
+	// image
+	line = self.parseImage(line);
+
+	// other
+	line = self.parseFormat(line);
+
+	// inline linke
+	line = self.parseLinkInline(line);
+
+	if (self.tmp.length > 0) {
+		var length = self.tmp.length;
+		for (var i = 0; i < length; i++) {
+			var item = self.tmp[i];
+			line = line.replace(item.k, item.v);
+		}
+	}
+
+	return line;
+};
+
+Markdown.prototype.parseFormat = function(text, flush) {
+
+	var matches = text.match(REG_FORMAT);
+	if (matches === null)
+		return text;
+
+	var self = this;
+	var length = matches.length;
+
+	for (var i = 0; i < length; i++) {
+
+		var o = matches[i];
+		var isAsterix = o[0] === '*';
+		var value = '';
+
+		if (isAsterix) {
+			value = self.onFormat(o[1] === '*' ? '**' : '*', o.replace(/^\*{1,2}|\*{1,2}$/g, ''));
+			text = text.replace(o, flush ? value : self.getReplace(o, value));
+		} else {
+			value = self.onFormat(o[1] === '_' ? '__' : '_', o.replace(/^_{1,2}|_{1,2}$/g, ''));
+			text = text.replace(o, flush ? value : self.getReplace(o, value));
+		}
+	}
+
+	return text;
 };
 
 Markdown.prototype.parseLink = function(text) {
@@ -303,7 +470,7 @@ Markdown.prototype.parseLink = function(text) {
         for (var i = 0; i < length; i++) {
         	var o = matches[i];
             var url = o.substring(1, o.length - 1);
-            output = output.replace(o, self.onLink(url, url));
+            output = output.replace(o, self.getReplace(o, self.onLink(url, url)));
         }
     }
 
@@ -348,10 +515,41 @@ Markdown.prototype.parseLink = function(text) {
         else
             last = '';
 
-        output = output.replace(o, self.onLink(text, url) + last);
+       	output = output.replace(o, self.getReplace(o, self.onLink(self.parseFormat(text, true), url) + last));
     }
 
     return output;
+};
+
+Markdown.prototype.parseLinkInline = function(text) {
+
+	var matches = text.match(REG_LINK_3);
+	var length = 0;
+	var self = this;
+
+	if (matches !== null) {
+
+		length = matches.length;
+		for (var i = 0; i < length; i++) {
+			var o = matches[i].trim();
+			text = text.replace(o, self.getReplace(o, self.onLink(o, o)));
+		}
+
+	}
+
+	matches = text.match(REG_LINK_4);
+
+	if (matches !== null) {
+
+		length = matches.length;
+		for (var i = 0; i < length; i++) {
+			var o = matches[i].trim();
+			text = text.replace(o, self.getReplace(o, self.onLink(o, o)));
+		}
+
+	}
+
+	return text;
 };
 
 Markdown.prototype.parseImage = function(text) {
@@ -414,11 +612,47 @@ Markdown.prototype.parseImage = function(text) {
         else
             url = '';
 
-        output = output.replace(find, self.onImage(text, src, parseInt(dimension[0] || '0', 10), parseInt(dimension[1] || '0', 10), url));
+        output = output.replace(find, self.getReplace(find, self.onImage(text, src, parseInt(dimension[0] || '0', 10), parseInt(dimension[1] || '0', 10), url)));
     }
 
-    return output;	
+    return output;
 }
+
+Markdown.prototype.parseKeyword = function(text) {
+    var matches = text.match(REG_KEYWORD);
+    var length = 0;
+    var self = this;
+
+    if (matches === null)
+    	return text;
+
+	length = matches.length;
+    for (var i = 0; i < length; i++) {
+    	var o = matches[i];
+    	var type = '[]';
+
+    	if (o[0] === '{')
+    		type = '{}';
+
+    	var value = o;
+
+    	if (type === '{}')
+    		value = value.replace(/^\{{}|(\}|]){1}$/g, '');
+    	else
+    		value = value.replace(/^\[{}|(\]|]){1}$/g, '');    		
+
+        text = text.replace(o, self.getReplace(o, value));
+    }
+
+    return text;
+};
+
+Markdown.prototype.getReplace = function(find, value) {
+	var self = this;
+	var key = TMP + self.tmp.length + ';'
+    self.tmp.push({ k: key, v: value });
+	return key;
+};
 
 Markdown.prototype.flush = function() {
 
@@ -428,7 +662,7 @@ Markdown.prototype.flush = function() {
 		case EMBEDDED:
 
 			if (self.onEmbedded !== null)
-				self.output += self.onEmbedded(self.current);
+				self.output += self.onEmbedded(self.command, self.current);
 
 			break;
 
@@ -449,7 +683,7 @@ Markdown.prototype.flush = function() {
 		case PARAGRAPH:
 
 			if (self.onParagraph !== null)
-				self.output += self.onParagraph(self.current);
+				self.output += self.onParagraph(self.command, self.current);
 
 			break;
 	}
@@ -462,25 +696,6 @@ Markdown.prototype.flush = function() {
 var md = new Markdown();
 
 
-md.onBreak = function(line) {
-	console.log('onBreak', line === '\n' ? '\\n' : line);
-};
-
-md.onTitle = function(type, text) {
-	console.log('onTitle', type, text);
-};
-
-md.onLink = function(text, url) {
-	return '<a>' + text + '</a>';
-};
-
-md.onLine = function(text) {
-	return text;
-}
-
-md.onImage = function(text, src, width, height, url) {
-	console.log(text, src, width, height, url);
-};
-
 // md.load('## WELCOME\n=== js\na\n===\n\n\n- asd\n- asdasd\nkey    : value \n> asdsa');
-console.log(md.load('asda sd asd ![Google](http://www.google.sk). www.partialjs.com alebo <http://www.azet.sk>, [Zoznam.sk](https://www.zoznam.sk)'));
+console.log(md.load('asda __sd__ asd [keyword] [![Google](http://www.google.sk)](http://www.kokotar.com). www.partialjs.com alebo <http://www.azet.sk>, [_Zoznam.sk_](https://www.zoznam.sk)'));
+
