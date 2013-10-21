@@ -1,5 +1,8 @@
 IN DEVELOPMENT ======= 1.2.8
 
+- added: framework.stats.request.web.delete
+- added: framework.stats.request.web.put
+
 - updated: complete rewrited markdown parser (more than 50% better performance)
 - updated: complete rewrited markdown example
 

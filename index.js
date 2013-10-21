@@ -156,6 +156,8 @@ function Framework() {
 			websocket: 0,
 			get: 0,
 			post: 0,
+			put: 0,
+			'delete': 0,
 			upload: 0,
 			xss: 0
 		},
@@ -1167,6 +1169,8 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr.format('### ### ###')));
 	builder.push('Request GET                     : {0}x'.format(self.stats.request.get.format('### ### ###')));
 	builder.push('Request POST                    : {0}x'.format(self.stats.request.post.format('### ### ###')));
+	builder.push('Request PUT                     : {0}x'.format(self.stats.request.put.format('### ### ###')));
+	builder.push('Request DELETE                  : {0}x'.format(self.stats.request['delete'].format('### ### ###')));
 	builder.push('Request Multipart (upload)      : {0}x'.format(self.stats.request.upload.format('### ### ###')));
 	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss.format('### ### ###')));
 	builder.push('');
@@ -2497,16 +2501,28 @@ Framework.prototype._request = function(req, res) {
 
 	if (req.method === 'POST' || req.method === 'PUT') {
 		if (multipart.length > 0) {
+
 			self.stats.request.upload++;
 			new Subscribe(self, req, res).multipart(multipart);
 			return;
+
 		} else {
-			self.stats.request.post++;
+
+			if (req.method === 'PUT')
+				self.stats.request.put++;
+			else
+				self.stats.request.post++;
+
 			new Subscribe(self, req, res).urlencoded();
 			return;
+
 		}
-	} else
-		self.stats.request.get++;
+	} else {
+		if (req.method === 'DELETE')
+			self.stats.request['delete']++;
+		else
+			self.stats.request.get++;
+	}
 
 	new Subscribe(self, req, res).end();
 };
