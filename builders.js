@@ -263,7 +263,7 @@ exports.prepare = function(name, model) {
 				if (tmp !== null && typeof(tmp) === 'object' && tmp.toString() === 'Invalid Date')
 					tmp = null;
 
-				item[property] = tmp || defaults(property) || null;
+				item[property] = tmp || (defaults ? defaults(property) || null : null);
 				return;
 			}
 
@@ -340,7 +340,7 @@ exports.prepare = function(name, model) {
 			return;
 		}
 
-		item[property] = defaults(property) || null;
+		item[property] = (defaults ? defaults(property) || null : null);
 	});
 
 	return item;

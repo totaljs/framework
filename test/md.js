@@ -692,10 +692,22 @@ Markdown.prototype.flush = function() {
 	self.command = '';
 };
 
+// ======================================================
+// EXPORTS
+// ======================================================
 
-var md = new Markdown();
+exports.init = function() {
+    return new Markdown();
+};
 
+exports.load = function() {
+    return new Markdown();
+};
 
-// md.load('## WELCOME\n=== js\na\n===\n\n\n- asd\n- asdasd\nkey    : value \n> asdsa');
-console.log(md.load('asda __sd__ asd [keyword] [![Google](http://www.google.sk)](http://www.kokotar.com). www.partialjs.com alebo <http://www.azet.sk>, [_Zoznam.sk_](https://www.zoznam.sk)'));
+exports.markdown = function() {
+    return new Markdown();
+};
 
+exports.md = function() {
+    return new Markdown();
+};

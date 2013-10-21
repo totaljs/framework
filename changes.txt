@@ -1,4 +1,11 @@
-IN DEVELOPMENT ======= 1.2.7
+IN DEVELOPMENT ======= 1.2.8
+
+- updated: complete rewrited markdown parser (more than 50% better performance)
+- updated: complete rewrited markdown example
+
+- fixed: builders.schema (default declaration)
+
+======= 1.2.7
 
 - added: definitions
 - added: framework.restrictions class

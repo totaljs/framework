@@ -6,95 +6,118 @@ exports.install = function(framework) {
 }
 
 function view_markdown() {
-	
+
 	var self = this;
 	var markdown = md.init();
-	
-	markdown.onLine = function(type, value) {
 
-		switch (type) {
-			case '#':
-				return '<h1>{0}</h1>'.format(value);
-			case '##':
-				return '<h2>{0}</h2>'.format(value);
-			case '###':
-				return '<h3>{0}</h3>'.format(value);
-			case '*':
-			case '-':
-				return '<hr />';
-		};
-
-		if (value === '\n')
-			return '<br />';
-
-		return value;
-	};
-
-	markdown.onLines = function(type, value) {
-
-		switch (type) {
+	markdown.onEmbedded = function(name, value) {
+		switch (name) {
 			case 'javascript':
 				return '<pre>{0}</pre>'.format(value.join('\n').htmlEncode());
-			case '>':
-			case '|':
-			case '//':
-			case '\\\\':
-				return '<p>{0}</p>'.format(value.join('<br />'));
-		}		
-		return '';
-	};
+		}
+	}
 
-	markdown.onUL = function(ul) {
+	// Below delegates are defined in markdown class as default
+	
+	markdown.onList = function(items) {
 
-		var builder = [];
-		builder.push('<ul>');
+        var length = items.length;
+        var output = '';
 
-		ul.forEach(function(o) {
-			builder.push('<li>{0}</li>'.format(o.value).indent(4));
-		});
+        for (var i = 0; i < length; i++) {
+            var item = items[i];
+            output += '<li>' + item.value + '</li>';
+        }
 
-		builder.push('</ul>');
+        return '<ul>' + output + '</ul>';
 
-		return builder.join('\n');
-	};
+    };
 
-	markdown.onLink = function(name, url) {
-		return '<a href="{0}">{1}</a>'.format(url.indexOf('http') === -1 ? 'http://' + url : url, name);
-	};
+    markdown.onKeyValue = function(items) {
+
+        var length = items.length;
+        var output = '';
+
+        for (var i = 0; i < length; i++) {
+            var item = items[i];
+            output += '<dt>' + item.key + '</dt><dd>' + item.value + '</dd>';
+        }
+
+        return '<dl>' + output + '</dl>';
+    };
+
+    markdown.onLine = function(line) {
+        return '<p>' + line + '</p>';
+    };
+
+    markdown.onParagraph = function(type, lines) {
+        return '<p class="paragraph">' + lines.join('<br />') + '</p>';
+    };
+
+    markdown.onBreak = function(type) {
+
+    	switch (type) {
+
+    		case '\n':
+    			return '<br />';
+    		case '***':
+    		case '---':
+    			return '<hr />';
+    	}
+
+    	return '';
+    };
+
+	markdown.onTitle = function(type, value) {
+		switch (type) {
+			case '#':
+				return '<h1>' + value + '</h1>';
+			case '##':
+				return '<h2>' + value + '</h2>';
+			case '###':
+				return '<h3>' + value + '</h3>';
+			case '####':
+				return '<h4>' + value + '</h4>';
+			case '#####':
+				return '<h5>' + value + '</h5>';
+		}
+	}
+
+	markdown.onImage = function(alt, src, width, height, url) {
+        var tag = '<img src="' + src + '"' + (width ? ' width="' + width + '"' : '') + (height ? ' height="' + height + '"' : '') + ' alt="' + alt +'" border="0" />';
+
+        if (url)
+            return '<a href="' + url + '">' + tag + '</a>';
+
+        return tag;
+	}
 
 	markdown.onFormat = function(type, value) {
 
-		switch (type) {
-			case '__':
-				return '<strong>{0}</strong>'.format(value);
-			case '_':
-				return '<b>{0}</b>'.format(value);
-			case '**':
-				return '<em>{0}</em>'.format(value);
-			case '*':
-				return '<i>{0}</i>'.format(value);
-		};
+        switch (type) {
+            case '**':
+                return '<em>' + value + '</em>';
+            case '*':
+                return '<i>' + value + '</i>';
+            case '__':
+                return '<strong>' + value + '</strong>';
+            case '_':
+                return '<b>' + value + '</b>';
+        }
 
-		return '';
-	};
+        return value;
+    };
 
-	markdown.onImage = function(alt, url, width, height) {
-		return '<img src="{0}" width="{1}" height="{2}" alt="{3}" />'.format(url, width, height, alt);
-	};
+    markdown.onLink = function(text, url) {
 
-	markdown.onKeyword = function(type, name, value) {
+        if (url.substring(0, 7) !== 'http://' && url.substring(0, 8) !== 'https://')
+            url = 'http://' + url;
 
-		switch (type) {
-			case '[]':
-			case '{}':
-				return '<span>{0}</span>'.format(name);
-		}
-
-		return '';
-	};
+        return '<a href="' + url + '">' + text + '</a>';
+    };
 
 	fs.readFile(self.path.public('readme.md'), function(err, data) {
-		
+
 		if (err) {
 			self.view404();
 			return;
