@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.8
+IN DEVELOPMENT ======= 1.2.7-1
 
 - added: framework.stats.request.web.delete
 - added: framework.stats.request.web.put
