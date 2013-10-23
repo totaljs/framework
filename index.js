@@ -2573,6 +2573,9 @@ Framework.prototype._request_stats = function(beg, isStaticFile) {
 	else
 		self.stats.request.pending--;
 
+	if (self.stats.request.pending < 0)
+		self.stats.request.pending = 0;
+
 	return self;
 };
 
