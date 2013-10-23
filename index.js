@@ -1132,14 +1132,14 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('PID                             : {0}'.format(process.pid));
 	builder.push('Service call                    : {0}x'.format(self.cache.count));
 	builder.push('Uptime                          : {0} minutes'.format(Math.floor(process.uptime() / 60)));
-	builder.push('Memory usage                    : total {0} MB, used {1} MB'.format((memory.heapTotal / 1024 / 1024).format('### ### ###.##'), (memory.heapUsed / 1024 / 1024).format('### ### ###.##')));
+	builder.push('Memory usage                    : total {0} MB, used {1} MB'.format((memory.heapTotal / 1024 / 1024).format('#######.##'), (memory.heapUsed / 1024 / 1024).format('#######.##')));
 	builder.push('');
 	builder.push('## Directories');
 	builder.push('');
 	builder.push('Current directory               : {0}'.format(process.cwd));
-	builder.push('Temporary directory             : {0} kB'.format((size / 1024).format('### ### ###.##')));
-	builder.push('Backup directory                : {0} kB'.format((sizeBackup / 1024).format('### ### ###.##')));
-	builder.push('Databases directory             : {0} kB'.format((sizeDatabase / 1024).format('### ### ###.##')));
+	builder.push('Temporary directory             : {0} kB'.format((size / 1024).format('#########.##')));
+	builder.push('Backup directory                : {0} kB'.format((sizeBackup / 1024).format('#########.##')));
+	builder.push('Databases directory             : {0} kB'.format((sizeDatabase / 1024).format('#########.##')));
 	builder.push('');
 	builder.push('## Counter');
 	builder.push('');
@@ -1164,36 +1164,36 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('');
 	builder.push('## Requests statistic');
 	builder.push('');
-	builder.push('Pending requests                : {0}x'.format(self.stats.request.pending.format('### ### ###')));
-	builder.push('Request to webpage              : {0}x'.format(self.stats.request.web.format('### ### ###')));
-	builder.push('Request to Websocket            : {0}x'.format(self.stats.request.websocket.format('### ### ###')));
-	builder.push('Request to file                 : {0}x'.format(self.stats.request.file.format('### ### ###')));
-	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr.format('### ### ###')));
-	builder.push('Request GET                     : {0}x'.format(self.stats.request.get.format('### ### ###')));
-	builder.push('Request POST                    : {0}x'.format(self.stats.request.post.format('### ### ###')));
-	builder.push('Request PUT                     : {0}x'.format(self.stats.request.put.format('### ### ###')));
-	builder.push('Request DELETE                  : {0}x'.format(self.stats.request['delete'].format('### ### ###')));
-	builder.push('Request Multipart (upload)      : {0}x'.format(self.stats.request.upload.format('### ### ###')));
-	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss.format('### ### ###')));
+	builder.push('Pending requests                : {0}x'.format(self.stats.request.pending.format('########')));
+	builder.push('Request to webpage              : {0}x'.format(self.stats.request.web.format('########')));
+	builder.push('Request to Websocket            : {0}x'.format(self.stats.request.websocket.format('########')));
+	builder.push('Request to file                 : {0}x'.format(self.stats.request.file.format('########')));
+	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr.format('########')));
+	builder.push('Request GET                     : {0}x'.format(self.stats.request.get.format('########')));
+	builder.push('Request POST                    : {0}x'.format(self.stats.request.post.format('########')));
+	builder.push('Request PUT                     : {0}x'.format(self.stats.request.put.format('########')));
+	builder.push('Request DELETE                  : {0}x'.format(self.stats.request['delete'].format('########')));
+	builder.push('Request Multipart (upload)      : {0}x'.format(self.stats.request.upload.format('########')));
+	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss.format('########')));
 	builder.push('');
 	builder.push('## Responses statistic');
 	builder.push('');
-	builder.push('Response view                   : {0}x'.format(self.stats.response.view.format('### ### ###')));
-	builder.push('Response JSON                   : {0}x'.format(self.stats.response.json.format('### ### ###')));
-	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain.format('### ### ###')));
-	builder.push('Response empty                  : {0}x'.format(self.stats.response.empty.format('### ### ###')));
-	builder.push('Response redirect               : {0}x'.format(self.stats.response.redirect.format('### ### ###')));
-	builder.push('Response file                   : {0}x'.format(self.stats.response.file.format('### ### ###')));
-	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr.format('### ### ###')));
-	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse.format('### ### ###')));
-	builder.push('Response Websocket message      : {0}x'.format(self.stats.response.websocket.format('### ### ###')));
-	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401.format('### ### ###')));
-	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403.format('### ### ###')));
-	builder.push('Response 404                    : {0}x'.format(self.stats.response.error404.format('### ### ###')));
-	builder.push('Response 408                    : {0}x'.format(self.stats.response.error408.format('### ### ###')));
-	builder.push('Response 431                    : {0}x'.format(self.stats.response.error431.format('### ### ###')));
-	builder.push('Response 500                    : {0}x'.format(self.stats.response.error500.format('### ### ###')));
-	builder.push('Response 501                    : {0}x'.format(self.stats.response.error501.format('### ### ###')));
+	builder.push('Response view                   : {0}x'.format(self.stats.response.view.format('########')));
+	builder.push('Response JSON                   : {0}x'.format(self.stats.response.json.format('########')));
+	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain.format('########')));
+	builder.push('Response empty                  : {0}x'.format(self.stats.response.empty.format('########')));
+	builder.push('Response redirect               : {0}x'.format(self.stats.response.redirect.format('########')));
+	builder.push('Response file                   : {0}x'.format(self.stats.response.file.format('########')));
+	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr.format('########')));
+	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse.format('########')));
+	builder.push('Response Websocket message      : {0}x'.format(self.stats.response.websocket.format('########')));
+	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401.format('########')));
+	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403.format('########')));
+	builder.push('Response 404                    : {0}x'.format(self.stats.response.error404.format('########')));
+	builder.push('Response 408                    : {0}x'.format(self.stats.response.error408.format('########')));
+	builder.push('Response 431                    : {0}x'.format(self.stats.response.error431.format('########')));
+	builder.push('Response 500                    : {0}x'.format(self.stats.response.error500.format('########')));
+	builder.push('Response 501                    : {0}x'.format(self.stats.response.error501.format('########')));
 	builder.push('');
 
 	if (redirects.length > 0) {
@@ -2447,7 +2447,7 @@ Framework.prototype._request = function(req, res) {
 		req.isStaticFile = true;
 		self._request_stats(true, true);
 		new Subscribe(self, req, res).file();
-		self.stats.request.file++;		
+		self.stats.request.file++;
 		return;
 	}
 
@@ -2556,7 +2556,7 @@ Framework.prototype._request = function(req, res) {
 Framework.prototype._request_stats = function(beg, isStaticFile) {
 
 	var self = this;
-	
+
 	if (beg)
 		self.stats.request.pending++;
 	else
