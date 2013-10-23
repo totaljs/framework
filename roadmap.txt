@@ -1,4 +1,4 @@
-ROADMAP
+ROADMAP FRAMEWORK:
 
 Writing partial.js documentation
 0% [=========================================================================================90%          ] 100%
@@ -6,8 +6,15 @@ Writing partial.js documentation
 Rewriting Markdown module
 0% [==================================================================================================100%] 100%
 
+Rewriting NoSQL module
+0% [==========10%                                                                                         ] 100%
+
 Publish LTS (long support version) version
 0% [===============================================================================80%                    ] 100%
+
+
+
+ROADMAP MODULES:
 
 Writing new partial.js module: Login with Facebook
 0% [==================================================================================================100%] 100%
@@ -18,5 +25,5 @@ Writing new partial.js module: ShoppingCart
 Writing new module Fulltext search (npm fulltext)
 0% [                                                                                                      ] 100%
 
-Writing new module DataStorage search (npm datastorage)
+Writing new module DataStorage (npm datastorage)
 0% [==========10%                                                                                         ] 100%
