@@ -6289,7 +6289,7 @@ Controller.prototype.redirect = function(url, permament) {
 	self.res.success = true;
 	self.res.writeHead(permament ? 301 : 302, { 'Location': url });
 	self.res.end();
-	self._request_stats(false, false);
+	self.framework._request_stats(false, false);
 	self.framework.emit('request-end', self.req, self.res);
 	self.framework.stats.response.redirect++;
 
@@ -6475,7 +6475,7 @@ Controller.prototype.close = function() {
 			self.isConnected = false;
 			self.res.success = true;
 			self.res.end();
-			self._request_stats(false, false);
+			self.framework._request_stats(false, false);
 			self.framework.emit('request-end', self.req, self.res);
 		}
 
@@ -6488,7 +6488,7 @@ Controller.prototype.close = function() {
 	self.isConnected = false;
 	self.res.subdomain = true;
 	self.res.end();
-	self._request_stats(false, false);
+	self.framework._request_stats(false, false);
 	self.framework.emit('request-end', self.req, self.res);
 	self.internal.type = 0;
 
