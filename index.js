@@ -1556,36 +1556,20 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (range.length > 0)
 		return self.responseRange(name, range, returnHeaders, req, res);
 
-	if (compress) {
+	if (compress && accept.indexOf('gzip') !== -1) {
 
-		if (accept.indexOf('gzip') !== -1) {
-			returnHeaders['Content-Encoding'] = 'gzip';
-			res.writeHead(200, returnHeaders);
-			stream = fs.createReadStream(name).pipe(zlib.createGzip());
-			stream.pipe(res);
+		returnHeaders['Content-Encoding'] = 'gzip';
+		res.writeHead(200, returnHeaders);
+		stream = fs.createReadStream(name).pipe(zlib.createGzip());
+		stream.pipe(res);
 
-			self._request_stats(false, req.isStaticFile);
+		self._request_stats(false, req.isStaticFile);
 
-			if (!req.isStaticFile)
-				self.emit('request-end', req, res);
+		if (!req.isStaticFile)
+			self.emit('request-end', req, res);
 
-			return self;
-		}
+		return self;
 
-		// IE problem
-		if (accept.indexOf('deflate') !== -1) {
-			returnHeaders['Content-Encoding'] = 'deflate';
-			res.writeHead(200, returnHeaders);
-			stream = fs.createReadStream(name).pipe(zlib.createDeflate());
-			stream.pipe(res);
-
-			self._request_stats(false, req.isStaticFile);
-
-			if (!req.isStaticFile)
-				self.emit('request-end', req, res);
-
-			return self;
-		}
 	}
 
 	res.writeHead(200, returnHeaders);
@@ -1640,36 +1624,19 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 	returnHeaders['Content-Type'] = contentType;
 
-	if (compress) {
+	if (compress && accept.indexOf('gzip') !== -1) {
 
-		if (accept.indexOf('gzip') !== -1) {
-			returnHeaders['Content-Encoding'] = 'gzip';
-			res.writeHead(200, returnHeaders);
-			var gzip = zlib.createGzip();
-			stream.pipe(gzip).pipe(res);
+		returnHeaders['Content-Encoding'] = 'gzip';
+		res.writeHead(200, returnHeaders);
+		var gzip = zlib.createGzip();
+		stream.pipe(gzip).pipe(res);
 
-			self._request_stats(false, req.isStaticFile);
+		self._request_stats(false, req.isStaticFile);
 
-			if (!req.isStaticFile)
-				self.emit('request-end', req, res);
+		if (!req.isStaticFile)
+			self.emit('request-end', req, res);
 
-			return self;
-		}
-
-		// IE problem
-		if (accept.indexOf('deflate') !== -1) {
-			returnHeaders['Content-Encoding'] = 'deflate';
-			res.writeHead(200, returnHeaders);
-			var deflate = zlib.createDeflate();
-			stream.pipe(deflate).pipe(res);
-
-			self._request_stats(false, req.isStaticFile);
-
-			if (!req.isStaticFile)
-				self.emit('request-end', req, res);
-
-			return self;
-		}
+		return self;
 	}
 
 	res.writeHead(200, returnHeaders);
@@ -1974,7 +1941,6 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	if (res.success)
 		return self;
 
-	self._request_stats(false, req.isStaticFile);
 	req.clear(true);
 	res.success = true;
 
@@ -1997,17 +1963,13 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	if ((/text|application/).test(contentType))
 		contentType += '; charset=utf-8';
 
-	if (compress) {
+	if (compress && accept.indexOf('gzip') !== -1) {
 
-		if (accept.indexOf('gzip') !== -1) {
-			buffer = new Buffer(contentBody);
+		buffer = new Buffer(contentBody);
 
-			zlib.gzip(buffer, function(err, data) {
+		zlib.gzip(buffer, function(err, data) {
 
-				if (err) {
-					req.connection.destroy();
-					return;
-				}
+			if (!err) {
 
 				returnHeaders['Content-Type'] = contentType;
 				returnHeaders['Content-Encoding'] = 'gzip';
@@ -2015,43 +1977,24 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 				res.writeHead(code, returnHeaders);
 				res.end(data, ENCODING);
 
-				if (!req.isStaticFile)
-					self.emit('request-end', req, res);
+			} else
+				req.connection.destroy();
 
-			});
+			self._request_stats(false, req.isStaticFile);
 
-			return self;
-		}
+			if (!req.isStaticFile)
+				self.emit('request-end', req, res);
 
-		// problém pri IE, deflate nefunguje
-		if (accept.indexOf('deflate') !== -1) {
-			buffer = new Buffer(contentBody);
+		});
 
-			zlib.deflate(buffer, function(err, data) {
-
-				if (err) {
-					req.connection.destroy();
-					return;
-				}
-
-				returnHeaders['Content-Type'] = contentType;
-				returnHeaders['Content-Encoding'] = 'deflate';
-
-				res.writeHead(code, returnHeaders);
-				res.end(data, ENCODING);
-
-				if (!req.isStaticFile)
-					self.emit('request-end', req, res);
-
-			});
-
-			return self;
-		}
+		return self;
 	}
 
 	returnHeaders['Content-Type'] = contentType;
 	res.writeHead(code, returnHeaders);
 	res.end(contentBody, ENCODING);
+
+	self._request_stats(false, req.isStaticFile);
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -4153,6 +4096,7 @@ Subscribe.prototype.multipart = function(header) {
 	self.header = header;
 
 	if (self.route === null) {
+		self._request_stats(false, false);
 		self.framework.stats.request.blocked++;
 		self.req.connection.destroy();
 		return;
@@ -4175,6 +4119,7 @@ Subscribe.prototype.urlencoded = function() {
 	if (self.route === null) {
 		self.req.clear(true);
 		self.framework.stats.request.blocked++;
+		self._request_stats(false, false);
 		self.req.connection.destroy();
 		return;
 	}
@@ -4346,6 +4291,7 @@ Subscribe.prototype._end = function() {
 		self.req.clear(true);
 		self.res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'cache-control': 'private, max-age=0' });
 		self.res.end('END');
+		self._request_stats(false, false);
 		self.framework.emit('request-end', self.req, self.res);
 		return;
 	}
@@ -4356,6 +4302,7 @@ Subscribe.prototype._end = function() {
 		if (self.route === null) {
 			self.req.clear(true);
 			self.framework.stats.request.blocked++;
+			self._request_stats(false, false);
 			self.req.connection.destroy();
 			return;
 		}
