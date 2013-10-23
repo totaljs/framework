@@ -2,7 +2,9 @@ IN DEVELOPMENT ======= 1.2.7-1
 
 - added: framework.stats.request.delete
 - added: framework.stats.request.put
+- added: framework.stats.request.blocked
 - added: framework.stats.request.pending
+- added: framework.stats.response.forwarding (host redirecting)
 - added: controller.run() - to run async tasks
 
 - updated: complete rewrited markdown parser (more than 50% better performance)

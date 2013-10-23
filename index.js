@@ -158,9 +158,10 @@ function Framework() {
 			get: 0,
 			post: 0,
 			put: 0,
-			'delete': 0,
 			upload: 0,
-			xss: 0
+			xss: 0,
+			blocked: 0,
+			'delete': 0
 		},
 
 		response: {
@@ -171,6 +172,8 @@ function Framework() {
 			plain: 0,
 			empty: 0,
 			redirect: 0,
+			forwarding: 0,
+			restriction: 0,
 			mmr: 0,
 			sse: 0,
 			error401: 0,
@@ -185,7 +188,6 @@ function Framework() {
 
 	// intialize cache
 	this.cache = new FrameworkCache(this);
-
 	this.fs = new FrameworkFileSystem(this);
 	this.path = new FrameworkPath(this);
 	this.restrictions = new FrameworkRestrictions(this);
@@ -1165,6 +1167,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('## Requests statistic');
 	builder.push('');
 	builder.push('Pending requests                : {0}x'.format(self.stats.request.pending.format('########')));
+	builder.push('Blocked requests                : {0}x'.format(self.stats.request.xss.format('########')));
 	builder.push('Request to webpage              : {0}x'.format(self.stats.request.web.format('########')));
 	builder.push('Request to Websocket            : {0}x'.format(self.stats.request.websocket.format('########')));
 	builder.push('Request to file                 : {0}x'.format(self.stats.request.file.format('########')));
@@ -1173,7 +1176,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Request POST                    : {0}x'.format(self.stats.request.post.format('########')));
 	builder.push('Request PUT                     : {0}x'.format(self.stats.request.put.format('########')));
 	builder.push('Request DELETE                  : {0}x'.format(self.stats.request['delete'].format('########')));
-	builder.push('Request Multipart (upload)      : {0}x'.format(self.stats.request.upload.format('########')));
+	builder.push('Request multipart               : {0}x'.format(self.stats.request.upload.format('########')));
 	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss.format('########')));
 	builder.push('');
 	builder.push('## Responses statistic');
@@ -1183,10 +1186,12 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain.format('########')));
 	builder.push('Response empty                  : {0}x'.format(self.stats.response.empty.format('########')));
 	builder.push('Response redirect               : {0}x'.format(self.stats.response.redirect.format('########')));
+	builder.push('Response forwarding             : {0}x'.format(self.stats.response.forwarding.format('########')));
 	builder.push('Response file                   : {0}x'.format(self.stats.response.file.format('########')));
 	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr.format('########')));
 	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse.format('########')));
 	builder.push('Response Websocket message      : {0}x'.format(self.stats.response.websocket.format('########')));
+	builder.push('Response restriction            : {0}x'.format(self.stats.response.restriction.format('########')));
 	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401.format('########')));
 	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403.format('########')));
 	builder.push('Response 404                    : {0}x'.format(self.stats.response.error404.format('########')));
@@ -2371,6 +2376,7 @@ Framework.prototype._request = function(req, res) {
 	if (self._redirectPath) {
 		var redirect = self.routes.redirects[protocol +'://' + req.host];
 		if (redirect) {
+			self.stats.response.forwarding++;
 			self.responseRedirect(req, res, redirect.url + (redirect.path ? req.url : ''), redirect.permament);
 			return self;
 		}
@@ -2387,6 +2393,7 @@ Framework.prototype._request = function(req, res) {
 	if (self.restrictions.isRestrictions) {
 		if (self.restrictions.isAllowedIP) {
 			if (self.restrictions.allowedIP.indexOf(req.ip) === -1) {
+				self.stats.response.restriction++;
 				req.connection.destroy();
 				return self;
 			}
@@ -2394,6 +2401,7 @@ Framework.prototype._request = function(req, res) {
 
 		if (self.restrictions.isBlockedIP) {
 			if (self.restrictions.blockedIP.indexOf(req.ip) !== -1) {
+				self.stats.response.restriction++;
 				req.connection.destroy();
 				return self;
 			}
@@ -2401,6 +2409,7 @@ Framework.prototype._request = function(req, res) {
 
 		if (self.restrictions.isAllowedCustom) {
 			if (!self.restrictions._allowedCustom(header)) {
+				self.stats.response.restriction++;
 				req.connection.destroy();
 				return self;
 			}
@@ -2408,6 +2417,7 @@ Framework.prototype._request = function(req, res) {
 
 		if (self.restrictions.isBlockedCustom) {
 			if (self.restrictions._blockedCustom(header)) {
+				self.stats.response.restriction++;
 				req.connection.destroy();
 				return self;
 			}
@@ -2468,6 +2478,7 @@ Framework.prototype._request = function(req, res) {
 
 				if (!res.success) {
 					self._request_stats(false, false);
+					self.stats.request.blocked++;
 					req.connection.destroy();
 				}
 
@@ -2560,7 +2571,7 @@ Framework.prototype._request_stats = function(beg, isStaticFile) {
 	if (beg)
 		self.stats.request.pending++;
 	else
-		self.stats.request.pending++;
+		self.stats.request.pending--;
 
 	return self;
 };
@@ -4139,6 +4150,7 @@ Subscribe.prototype.multipart = function(header) {
 	self.header = header;
 
 	if (self.route === null) {
+		self.framework.stats.request.blocked++;
 		self.req.connection.destroy();
 		return;
 	}
@@ -4159,6 +4171,7 @@ Subscribe.prototype.urlencoded = function() {
 
 	if (self.route === null) {
 		self.req.clear(true);
+		self.framework.stats.request.blocked++;
 		self.req.connection.destroy();
 		return;
 	}
@@ -4339,6 +4352,7 @@ Subscribe.prototype._end = function() {
 
 		if (self.route === null) {
 			self.req.clear(true);
+			self.framework.stats.request.blocked++;
 			self.req.connection.destroy();
 			return;
 		}
