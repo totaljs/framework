@@ -150,6 +150,7 @@ function Framework() {
 	this.stats = {
 
 		request: {
+			pending: 0,
 			web: 0,
 			xhr: 0,
 			file: 0,
@@ -1163,6 +1164,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('');
 	builder.push('## Requests statistic');
 	builder.push('');
+	builder.push('Pending requests                : {0}x'.format(self.stats.request.pending.format('### ### ###')));
 	builder.push('Request to webpage              : {0}x'.format(self.stats.request.web.format('### ### ###')));
 	builder.push('Request to Websocket            : {0}x'.format(self.stats.request.websocket.format('### ### ###')));
 	builder.push('Request to file                 : {0}x'.format(self.stats.request.file.format('### ### ###')));
@@ -1547,7 +1549,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	res.success = true;
 
 	if (range.length > 0)
-		return self.responseRange(name, range, returnHeaders, res, req);
+		return self.responseRange(name, range, returnHeaders, req, res);
 
 	if (compress) {
 
@@ -1556,6 +1558,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.writeHead(200, returnHeaders);
 			stream = fs.createReadStream(name).pipe(zlib.createGzip());
 			stream.pipe(res);
+
+			self._request_stats(false, req.isStaticFile);
 
 			if (!req.isStaticFile)
 				self.emit('request-end', req, res);
@@ -1570,6 +1574,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			stream = fs.createReadStream(name).pipe(zlib.createDeflate());
 			stream.pipe(res);
 
+			self._request_stats(false, req.isStaticFile);
+
 			if (!req.isStaticFile)
 				self.emit('request-end', req, res);
 
@@ -1580,6 +1586,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	res.writeHead(200, returnHeaders);
 	stream = fs.createReadStream(name);
 	stream.pipe(res);
+	self._request_stats(false, req.isStaticFile);
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -1636,6 +1643,8 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 			var gzip = zlib.createGzip();
 			stream.pipe(gzip).pipe(res);
 
+			self._request_stats(false, req.isStaticFile);
+
 			if (!req.isStaticFile)
 				self.emit('request-end', req, res);
 
@@ -1649,6 +1658,8 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 			var deflate = zlib.createDeflate();
 			stream.pipe(deflate).pipe(res);
 
+			self._request_stats(false, req.isStaticFile);
+
 			if (!req.isStaticFile)
 				self.emit('request-end', req, res);
 
@@ -1658,6 +1669,8 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 	res.writeHead(200, returnHeaders);
 	stream.pipe(res);
+
+	self._request_stats(false, req.isStaticFile);
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -1674,7 +1687,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	@req {ServerRequest}
 	return {Framework}
 */
-Framework.prototype.responseRange = function(name, range, headers, res, req) {
+Framework.prototype.responseRange = function(name, range, headers, req, res) {
 
 	var self = this;
 	var arr = range.replace(/bytes=/, '').split('-');
@@ -1704,6 +1717,8 @@ Framework.prototype.responseRange = function(name, range, headers, res, req) {
 	res.writeHead(206, headers);
 	var stream = fs.createReadStream(name, { start: beg, end: end });
 	stream.pipe(res);
+
+	self._request_stats(false, req.isStaticFile);
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -1818,6 +1833,7 @@ Framework.prototype.response401 = function(req, res) {
 	if (res.success)
 		return self;
 
+	self._request_stats(false, req.isStaticFile);
 	req.clear(true);
 
 	res.success = true;
@@ -1841,6 +1857,7 @@ Framework.prototype.response403 = function(req, res) {
 	if (res.success)
 		return self;
 
+	self._request_stats(false, req.isStaticFile);
 	req.clear(true);
 
 	res.success = true;
@@ -1866,6 +1883,7 @@ Framework.prototype.response404 = function(req, res) {
 	if (res.success)
 		return self;
 
+	self._request_stats(false, req.isStaticFile);
 	req.clear(true);
 
 	res.success = true;
@@ -1892,6 +1910,7 @@ Framework.prototype.response500 = function(req, res, error) {
 	if (res.success)
 		return self;
 
+	self._request_stats(false, req.isStaticFile);
 	req.clear(true);
 
 	if (error)
@@ -1920,8 +1939,8 @@ Framework.prototype.response501 = function(req, res) {
 	if (res.success)
 		return self;
 
+	self._request_stats(false, req.isStaticFile);
 	req.clear(true);
-
 	res.success = true;
 	res.writeHead(501, { 'Content-Type': 'text/plain' });
 	res.end(utils.httpStatus(501));
@@ -1950,6 +1969,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	if (res.success)
 		return self;
 
+	self._request_stats(false, req.isStaticFile);
 	req.clear(true);
 	res.success = true;
 
@@ -2049,8 +2069,9 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 	if (res.success)
 		return self;
 
-	req.clear(true);
+	self._request_stats(false, req.isStaticFile);
 
+	req.clear(true);
 	res.success = true;
 	res.writeHead(permament ? 301 : 302, { 'Location': url });
 	res.end();
@@ -2344,6 +2365,7 @@ Framework.prototype._request = function(req, res) {
 
 	var header = req.headers;
 	var protocol = req.connection.encrypted ? 'https' : 'http';
+
 	req.host = header.host;
 
 	if (self._redirectPath) {
@@ -2423,11 +2445,13 @@ Framework.prototype._request = function(req, res) {
 	// if is static file, return file
 	if (utils.isStaticFile(req.uri.pathname)) {
 		req.isStaticFile = true;
+		self._request_stats(true, true);
 		new Subscribe(self, req, res).file();
-		self.stats.request.file++;
+		self.stats.request.file++;		
 		return;
 	}
 
+	self._request_stats(true, false);
 	self.stats.request.web++;
 
 	if (req.uri.query && req.uri.query.length > 0) {
@@ -2442,8 +2466,10 @@ Framework.prototype._request = function(req, res) {
 		{
 			if (!self.onRoute(req, res)) {
 
-				if (!res.success)
+				if (!res.success) {
+					self._request_stats(false, false);
 					req.connection.destroy();
+				}
 
 				return;
 			}
@@ -2526,6 +2552,19 @@ Framework.prototype._request = function(req, res) {
 
 	new Subscribe(self, req, res).end();
 };
+
+Framework.prototype._request_stats = function(beg, isStaticFile) {
+
+	var self = this;
+	
+	if (beg)
+		self.stats.request.pending++;
+	else
+		self.stats.request.pending++;
+
+	return self;
+};
+
 
 /*
 	A test request into the controller
@@ -6019,6 +6058,7 @@ Controller.prototype.raw = function(contentType, onWrite, headers) {
 	});
 
 	res.end();
+	self.framework._request_stats(false, false);
 	self.framework.emit('request-end', self.req, self.res);
 
 	return self;
@@ -6227,6 +6267,7 @@ Controller.prototype.redirect = function(url, permament) {
 	self.res.success = true;
 	self.res.writeHead(permament ? 301 : 302, { 'Location': url });
 	self.res.end();
+	self._request_stats(false, false);
 	self.framework.emit('request-end', self.req, self.res);
 	self.framework.stats.response.redirect++;
 
@@ -6409,8 +6450,10 @@ Controller.prototype.close = function() {
 	if (self.internal.type === 0) {
 
 		if (!self.res.success) {
+			self.isConnected = false;
 			self.res.success = true;
 			self.res.end();
+			self._request_stats(false, false);
 			self.framework.emit('request-end', self.req, self.res);
 		}
 
@@ -6420,8 +6463,10 @@ Controller.prototype.close = function() {
 	if (self.internal.type === 2)
 		self.res.write('\r\n\r\n--' + self.internal.boundary + '--');
 
+	self.isConnected = false;
 	self.res.subdomain = true;
 	self.res.end();
+	self._request_stats(false, false);
 	self.framework.emit('request-end', self.req, self.res);
 	self.internal.type = 0;
 
