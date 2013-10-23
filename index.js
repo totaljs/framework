@@ -4796,6 +4796,11 @@ Controller.prototype.complete = function(callback) {
 	return self.async.complete(callback);
 };
 
+Controller.prototype.run = function(callback) {
+	var self = this;
+	return self.async.complete(callback);
+};
+
 /*
 	Cancel execute controller function
 	Note: you can cancel controller function execute in on('controller') or controller.request();
