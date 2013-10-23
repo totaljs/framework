@@ -17,6 +17,7 @@ __Interesting__:
 
 __Social networks__:
 
+- [Discussion forum](https://groups.google.com/forum/#!forum/partialjs)
 - [Flattr partial.js](http://flattr.com/thing/1436218/partial-js-web-application-framework-for-node-js)
 - [Follow partial.js on GitHub](https://github.com/petersirka/partial.js)
 - [Follow partial.js on Twitter - __@partialjs__](https://twitter.com/partialjs)
