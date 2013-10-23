@@ -11,6 +11,7 @@
 - updated: complete rewrited markdown example
 - updated: framework.usage informations
 
+- fixed: request.hostname()
 - fixed: builders.schema (default declaration)
 
 ======= 1.2.7

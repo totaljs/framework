@@ -7590,7 +7590,7 @@ http.IncomingMessage.prototype.hostname = function(path) {
 	if (path[0] !== '/')
 		path = '/' + path;
 
-	return uri.protocol + '//' + uri.hostname + (typeof(uri.port) !== UNDEFINED && uri.port !== 80 ? ':' + uri.port : '') + path;
+	return uri.protocol + '//' + uri.hostname + (uri.port !== null && typeof(uri.port) !== UNDEFINED && uri.port !== 80 ? ':' + uri.port : '') + path;
 };
 
 global.framework = module.exports = new Framework();
