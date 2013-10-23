@@ -5,6 +5,7 @@ web application framework for node.js
 
 - [partial.js homepage - www.partialjs.com](http://partialjs.com)
 - [__Documentation__](http://docs.partialjs.com)
+- [Discussion forum](https://groups.google.com/forum/#!forum/partialjs)
 - [Changelog](https://github.com/petersirka/partial.js/blob/master/changes.txt)
 - [__Roadmap__](https://github.com/petersirka/partial.js/blob/master/roadmap.txt)
 
@@ -17,7 +18,7 @@ __Interesting__:
 
 __Social networks__:
 
-- [Discussion forum](https://groups.google.com/forum/#!forum/partialjs)
+- [__Discussion forum__](https://groups.google.com/forum/#!forum/partialjs)
 - [Flattr partial.js](http://flattr.com/thing/1436218/partial-js-web-application-framework-for-node-js)
 - [Follow partial.js on GitHub](https://github.com/petersirka/partial.js)
 - [Follow partial.js on Twitter - __@partialjs__](https://twitter.com/partialjs)
