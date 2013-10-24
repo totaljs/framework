@@ -168,6 +168,7 @@ function Framework() {
 			view: 0,
 			json: 0,
 			websocket: 0,
+			timeout: 0,
 			file: 0,
 			plain: 0,
 			empty: 0,
@@ -1484,9 +1485,11 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	if (!self.config.debug) {
 		if (req.headers['if-none-match'] === etag) {
+
 			res.success = true;
 			res.writeHead(304);
 			res.end();
+			self._request_stats(false, req.isStaticFile);
 
 			if (!req.isStaticFile)
 				self.emit('request-end', req, res);
@@ -1786,6 +1789,8 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 	res.success = true;
 	res.writeHead(304);
 	res.end();
+
+	self._request_stats(false, req.isStaticFile);
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -4393,6 +4398,7 @@ Subscribe.prototype._parsepost = function(chunk) {
 Subscribe.prototype._cancel = function() {
 	var self = this;
 
+	self.framework.stats.response.timeout++;
 	clearTimeout(self.timeout);
 	self.timeout = null;
 
