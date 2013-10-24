@@ -83,6 +83,7 @@ function test_Schema() {
 	var output = builders.prepare('test', model);
 
 	name = 'Schema.prepare: ';
+	assert.ok(builders.prepare('tbl_user', {}).date === 'OK', name + 'defaults');
 	assert.ok(output.Price === 1.13, name + 'decimal');
 	assert.ok(output.Name === '23', name + 'string');
 	assert.ok(output.Male, name + 'boolean = true');

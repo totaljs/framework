@@ -213,7 +213,7 @@ exports.prepare = function(name, model) {
 
 		var val = model[property];
 
-		if (typeof(val) === UNDEFINED)
+		if (typeof(val) === UNDEFINED && defaults)
 			val = defaults(property, false);
 
 		if (typeof(val) === UNDEFINED)
