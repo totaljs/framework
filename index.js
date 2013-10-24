@@ -1187,6 +1187,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain.format('########')));
 	builder.push('Response empty                  : {0}x'.format(self.stats.response.empty.format('########')));
 	builder.push('Response redirect               : {0}x'.format(self.stats.response.redirect.format('########')));
+	builder.push('Response timeout                : {0}x'.format(self.stats.response.timeout.format('########')));
 	builder.push('Response forwarding             : {0}x'.format(self.stats.response.forwarding.format('########')));
 	builder.push('Response file                   : {0}x'.format(self.stats.response.file.format('########')));
 	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr.format('########')));
