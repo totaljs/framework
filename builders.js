@@ -135,7 +135,7 @@ exports.defaults = function(name) {
 			}
 
 			if (value === String) {
-				item[property] = null;
+				item[property] = '';
 				return;
 			}
 
@@ -170,8 +170,13 @@ exports.defaults = function(name) {
 			return;
 		}
 
-		if (value.contains(['text', 'varchar', 'nvarchar', 'binary', 'data', 'base64'])) {
+		if (value.contains(['binary', 'data', 'base64'])) {
 			item[property] = null;
+			return;
+		}
+
+		if (value.contains(['text', 'varchar', 'nvarchar', 'binary', 'data', 'base64', 'string'])) {
+			item[property] = '';
 			return;
 		}
 

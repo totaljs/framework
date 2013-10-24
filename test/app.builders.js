@@ -94,6 +94,13 @@ function test_Schema() {
 
 	assert.ok(output.Dt.getDate() === 12 && output.Dt.getMonth() === 11 && output.Dt.getFullYear() === 2012, name + 'date');
 	assert.ok(!output.Male, name + 'boolean = false');
+
+	output = builders.defaults('test');
+
+	assert.ok(output.Id === 0, name + 'defaults (int)');
+	assert.ok(output.Name === '', name + 'defaults (String)');
+	assert.ok(output.Male === false, name + 'defaults (Boolean)');
+
 };
 
 function test_ErrorBuilder() {
