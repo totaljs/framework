@@ -6637,6 +6637,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			case 'model':
 			case 'repository':
 			case 'session':
+			case 'user':
 			case 'config':
 			case 'get':
 			case 'post':
