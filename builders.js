@@ -211,7 +211,14 @@ exports.prepare = function(name, model) {
 
 	properties.forEach(function(property) {
 
-		var val = model[property] || '';
+		var val = model[property];
+
+		if (typeof(val) === UNDEFINED)
+			val = defaults(property, false);
+
+		if (typeof(val) === UNDEFINED)
+			val = '';
+
 		var value = item[property];
 		var type = typeof(value);
 		var typeval = typeof(val);
