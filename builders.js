@@ -115,7 +115,7 @@ exports.defaults = function(name) {
 		var type = typeof(value);
 
 		if (defaults) {
-			var def = defaults(property);
+			var def = defaults(property, true);
 			if (typeof(def) !== UNDEFINED) {
 				item[property] = def;
 				return;
@@ -340,7 +340,7 @@ exports.prepare = function(name, model) {
 			return;
 		}
 
-		item[property] = (defaults ? defaults(property) || null : null);
+		item[property] = (defaults ? defaults(property, false) || null : null);
 	});
 
 	return item;
