@@ -1490,8 +1490,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.success = true;
 			res.writeHead(304);
 			res.end();
+			
+			self.framework.stats.response.file++;
 			self._request_stats(false, req.isStaticFile);
-
+			
 			if (!req.isStaticFile)
 				self.emit('request-end', req, res);
 
@@ -1567,6 +1569,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		stream = fs.createReadStream(name).pipe(zlib.createGzip());
 		stream.pipe(res);
 
+		self.framework.stats.response.file++;
 		self._request_stats(false, req.isStaticFile);
 
 		if (!req.isStaticFile)
@@ -1579,6 +1582,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	res.writeHead(200, returnHeaders);
 	stream = fs.createReadStream(name);
 	stream.pipe(res);
+	self.framework.stats.response.file++;
 	self._request_stats(false, req.isStaticFile);
 
 	if (!req.isStaticFile)
@@ -6097,7 +6101,6 @@ Controller.prototype.file = function(filename, downloadName, headers) {
 
 	self.subscribe.success();
 	self.framework.responseFile(self.req, self.res, filename, downloadName, headers);
-	self.framework.stats.response.file++;
 
 	return self;
 };
