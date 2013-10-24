@@ -5283,7 +5283,7 @@ Controller.prototype.$input = function(model, type, name, attr) {
 	}
 
 	if (typeof(value) !== UNDEFINED)
-		builder += ' value="' + value.toString().htmlEncode() + ATTR_END;
+		builder += ' value="' + (value || '').toString().htmlEncode() + ATTR_END;
 	else
 		builder += ' value="' + (attr.value || '').toString().htmlEncode() + ATTR_END;
 
