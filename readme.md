@@ -13,8 +13,9 @@ __Interesting__:
 
 - [__express.js vs partial.js__](http://www.partialjs.com/benefits/)
 - [Tutorial](http://docs.partialjs.com/tutorial/)
-- [Download partial.js modules](https://github.com/petersirka/partial.js-modules/)
+- [Download __partial.js modules__](https://github.com/petersirka/partial.js-modules/)
 - [Download empty project](http://www.partialjs.com/upload/empty-project.zip)
+- Framework supports [NoSQL Embedded database](https://github.com/petersirka/nosql) for max. 20 000 documents per database
 
 __Social networks__:
 
