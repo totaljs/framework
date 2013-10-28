@@ -17,46 +17,28 @@ var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
 
-var async = new utils.Async();
+var tmp = "template('more', price.asda, 'asdsa', repository['asdasd'])";
 
-async.await('1', function(next) {
-	setTimeout(function() {
-		console.log('RESULT: 1');
-		next();
-	}, 2000)
-});
 
-async.timeout('1', 1000);
+function params(tmp, replace) {
 
-async.wait('2', '1', function(next) {
-	setTimeout(function() {
-		console.log('RESULT: 2');
-		next();
-	}, 500)
-});
+	var isCopy = false;
+	
+	var index = tmp.indexOf('(');
+	if (index === -1)
+		return false;
 
-async.on('begin', function(name) {
-	console.log('BEGIN --->', name);
-});
+	tmp = tmp.substring(index + 1, tmp.length - 1).replace(/\s/g, '').split(',');
+	var length = tmp.length;
 
-async.on('percentage', function(percentage) {
-	console.log(percentage);
-});
+	for (var i = 0; i < length; i++)
+		replace(tmp[i], i);
 
-async.on('end', function(name) {
-	console.log('END --->', name);
-});
+	return true;
+}
 
-async.run(function() {
-	console.log('COMPLETED');
-});
-
-async.on('timeout', function(name) {
-	console.log('TIMEOUT --->', name);
-});
-
-async.on('cancel', function(name) {
-	console.log('CANCEL --->', name);
+params(tmp, function(key, index) {
+	console.log(key, index);
 });
 
 

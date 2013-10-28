@@ -2452,7 +2452,7 @@ Template.prototype.parse = function(html, isRepository) {
 	var property = [];
 	var keys = {};
 
-	var tmp = template.match(/\{[^}\n]*\}/g);
+	var tmp = template.match(/(@)?\{[^}\n]*\}/g);
 
 	if (tmp === null)
 		tmp = [];
@@ -2463,59 +2463,112 @@ Template.prototype.parse = function(html, isRepository) {
 		var name = tmp[i];
 		var isEncode = true;
 
-		index = name.indexOf('|');
+		var isView = name[0] === '@';
+
 		indexEnd = template.indexOf(name, indexBeg);
 
 		var b = template.substring(indexBeg, indexEnd);
 		builder.push(b);
-
 		indexBeg = indexEnd + name.length;
 
-        if (index !== -1) {
+		if (!isView) {
+			index = name.indexOf('|');
+	        if (index !== -1) {
 
-            format = name.substring(index + 1, name.length - 1).trim();
-            name = name.substring(1, index);
+	            format = name.substring(index + 1, name.length - 1).trim();
+	            name = name.substring(1, index);
 
-            var pluralize = parsePluralize(format);
-            if (pluralize.length === 0) {
-                if (format.indexOf('#') === -1) {
-                    var condition = parseCondition(format);
-                    if (condition.length === 0) {
-                        var count = utils.parseInt(format);
-                        if (count === 0) {
-                            format = ".format('" + format + "')";
-                        } else
-                            format = ".max(" + (count + 3) + ",'...')";
-                    } else
-                        format = ".condition(" + condition + ")";
-                } else
-                    format = ".format('" + format + "')";
-            } else
-                format = pluralize;
-        }
-        else
-            name = name.substring(1, name.length - 1);
+	            var pluralize = parsePluralize(format);
+	            if (pluralize.length === 0) {
+	                if (format.indexOf('#') === -1) {
+	                    var condition = parseCondition(format);
+	                    if (condition.length === 0) {
+	                        var count = utils.parseInt(format);
+	                        if (count === 0) {
+	                            format = ".format('" + format + "')";
+	                        } else
+	                            format = ".max(" + (count + 3) + ",'...')";
+	                    } else
+	                        format = ".condition(" + condition + ")";
+	                } else
+	                    format = ".format('" + format + "')";
+	            } else
+	                format = pluralize;
+	        }
+	        else
+	            name = name.substring(1, name.length - 1);
 
-		if (name[0] === '!') {
-			name = name.substring(1);
-			isEncode = false;
+			if (name[0] === '!') {
+				name = name.substring(1);
+				isEncode = false;
+			}
+
+			name = name.trim();
 		}
-
-		name = name.trim();
 
 		if (isEncode)
 			format += '.toString().htmlEncode()';
 
-		var key = name + format;
-		indexer = keys[key];
+		var controller = '';
 
-		if (typeof(indexer) === UNDEFINED) {
-			property.push(name.trim());
-			indexer = property.length - 1;
-			keys[key] = indexer;
+		if (isView) {
+
+			isEncode = false;
+
+			name = name.substring(2, name.length - 1);
+
+			if (name.substring(0, 8) === 'template') {
+				controller = 'controller.' + parseParams(name, function(prop, index) {
+
+					if (index === 1 || index === 3) {
+						indexer = keys[prop];
+						if (typeof(indexer) === UNDEFINED) {
+							property.push(prop);
+							indexer = property.length - 1;
+							keys[key] = indexer;
+						}
+						return 'prop[' + indexer + ']';
+					}
+
+					return prop;
+				});
+			} else if (name.substring(0, 4) === 'view') {
+
+				var counter = 0;
+				controller = 'controller.' + parseParams(name, function(prop, index) {
+					counter++;
+					if (index === 1) {
+						indexer = keys[prop];
+						if (typeof(indexer) === UNDEFINED) {
+							property.push(prop);
+							indexer = property.length - 1;
+							keys[key] = indexer;
+						}
+						return 'prop[' + indexer + ']';
+					}
+
+					return prop;
+				});
+
+				if (counter === 1)
+					controller = controller.substring(0, controller.length - 1) + ',null,true)';
+				else if (counter === 2)
+					controller = controller.substring(0, controller.length - 1) + ',true)';
+			}
 		}
 
-		builder.push('prop[' + indexer + ']' + format);
+		if (!isView) {
+			var key = name + format;
+			indexer = keys[key];
+
+			if (typeof(indexer) === UNDEFINED) {
+				property.push(name.trim());
+				indexer = property.length - 1;
+				keys[key] = indexer;
+			}
+			builder.push('prop[' + indexer + ']' + format);
+		} else
+			builder.push(controller);
 	}
 
 	if (indexBeg !== template.length)
@@ -2542,11 +2595,28 @@ Template.prototype.parse = function(html, isRepository) {
 
 	try
 	{
-		return { generator: eval('(function(prop){return ' + fn.join('+') + ';})'), beg: beg, end: end, property: property, repositoryBeg: repositoryBeg, repositoryEnd: repositoryEnd };
+		return { generator: eval('(function(prop, controller){return ' + fn.join('+') + ';})'), beg: beg, end: end, property: property, repositoryBeg: repositoryBeg, repositoryEnd: repositoryEnd };
 	} catch (ex) {
 		self.controller.framework.error(ex, 'Template compiler', self.controller.req.uri);
 	}
 };
+
+function parseParams(tmp, rp) {
+
+	var isCopy = false;
+
+	var index = tmp.indexOf('(');
+	if (index === -1)
+		return tmp;
+
+	var arr = tmp.substring(index + 1, tmp.length - 1).replace(/\s/g, '').split(',');
+	var length = arr.length;
+
+	for (var i = 0; i < length; i++)
+		tmp = tmp.replace(arr[i], rp(arr[i], i));
+
+	return tmp;
+}
 
 function parseCondition(value) {
 
@@ -2673,10 +2743,10 @@ Template.prototype.render = function(name) {
 	if (generator === null)
 		return '';
 
-	var mid = compile(generator, self.model, true);
+	var mid = compile(generator, self.model, true, self.controller);
 
-	var beg = generator.repositoryBeg !== null ? compile(generator.repositoryBeg, self.repository) : generator.beg;
-	var end = generator.repositoryEnd !== null ? compile(generator.repositoryEnd, self.repository) : generator.end;
+	var beg = generator.repositoryBeg !== null ? compile(generator.repositoryBeg, self.repository, self.controller) : generator.beg;
+	var end = generator.repositoryEnd !== null ? compile(generator.repositoryEnd, self.repository, self.controller) : generator.end;
 
 	if (name !== 'comments')
 		return beg + mid + end;
@@ -2691,7 +2761,7 @@ Template.prototype.render = function(name) {
     @plain {Boolean} :: internal property
     return {String}
 */
-function compile(generator, obj, plain) {
+function compile(generator, obj, plain, controller) {
 
 	var html = '';
 
@@ -2701,9 +2771,9 @@ function compile(generator, obj, plain) {
 			obj = [obj];
 
 		for (var j = 0; j < obj.length; j++)
-			html += compile_eval(generator, obj[j], j);
+			html += compile_eval(generator, obj[j], j, controller);
 	} else
-		html = compile_eval(generator, obj, 0);
+		html = compile_eval(generator, obj, 0, controller);
 
 	return plain ? html : generator.beg + html + generator.end;
 }
@@ -2714,7 +2784,7 @@ function compile(generator, obj, plain) {
     @model {Object}
     return {String}
 */
-function compile_eval(generator, model, indexer) {
+function compile_eval(generator, model, indexer, controller) {
 
 	var params = [];
 	for (var i = 0; i < generator.property.length; i++) {
@@ -2750,7 +2820,7 @@ function compile_eval(generator, model, indexer) {
 		params.push(val);
 	}
 
-	return generator.generator.call(null, params);
+	return generator.generator.call(null, params, controller);
 }
 
 /*

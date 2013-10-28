@@ -1,6 +1,7 @@
-======= 1.2.8
+IN DEVELEPMENT ======= 1.2.8
 
 - added: framework.stats.timeout
+- added: template supports rendering of other templates or views
 
 - updated: NoSQL v2.0.0
 - updated: builders.schema(), builders.defaults()
