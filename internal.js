@@ -2613,8 +2613,9 @@ function parseParams(tmp, rp) {
 	var length = arr.length;
 
 	for (var i = 0; i < length; i++)
-		tmp = tmp.replace(arr[i], rp(arr[i], i));
+		arr[i] = rp(arr[i], i);
 
+	tmp = tmp.substring(0, index + 1) + arr.join(',') + ')';
 	return tmp;
 }
 
