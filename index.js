@@ -1494,10 +1494,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.success = true;
 			res.writeHead(304);
 			res.end();
-			
+
 			self.stats.response.file++;
 			self._request_stats(false, req.isStaticFile);
-			
+
 			if (!req.isStaticFile)
 				self.emit('request-end', req, res);
 
@@ -6327,6 +6327,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 			retry = self.subscribe.route.timeout;
 
 		self.subscribe.success();
+		self.req.on('close', self.close.bind(self));
 		res.success = true;
 		res.writeHead(self.status, { 'Content-type': 'text/event-stream', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
 	}
@@ -6384,6 +6385,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 		self.internal.boundary = '----partialjs' + utils.GUID(10);
 		self.subscribe.success();
 		res.success = true;
+		self.req.on('close', self.close.bind(self));
 		res.writeHead(self.status, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + self.internal.boundary, 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
 	}
 
@@ -6435,8 +6437,9 @@ Controller.prototype.close = function() {
 
 	if (self.internal.type === 0) {
 
+		self.isConnected = false;
+
 		if (!self.res.success) {
-			self.isConnected = false;
 			self.res.success = true;
 			self.res.end();
 			self.framework._request_stats(false, false);
