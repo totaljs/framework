@@ -8,6 +8,7 @@ IN DEVELEPMENT ======= 1.2.8
 
 - fixed: framework.stats
 - fixed: @{user}
+- fixed: FrameworkRestrictions
 
 ======= 1.2.7-1
 

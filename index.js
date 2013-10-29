@@ -3322,7 +3322,7 @@ FrameworkRestrictions.prototype._allowedCustom = function(headers) {
 
 		for (var j = 0; j < max; j++) {
 
-			if (!arr[j].test(value))
+			if (value.search(arr[j]) !== -1)
 				return false;
 
 		}
@@ -3344,18 +3344,16 @@ FrameworkRestrictions.prototype._blockedCustom = function(headers) {
 
 		var key = self.blockedCustomKeys[i];
 		var value = headers[key];
+
 		if (typeof(value) === UNDEFINED)
 			return false;
-
 
 		var arr = self.blockedCustom[key];
 		var max = arr.length;
 
 		for (var j = 0; j < max; j++) {
-
-			if (arr[j].test(value))
+			if (value.search(arr[j]) !== -1)
 				return true;
-
 		}
 
 	}
