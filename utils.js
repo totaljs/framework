@@ -915,9 +915,11 @@ Date.prototype.format = function(format) {
 	return format.replace(/yyyy/g, yyyy).replace(/yy/g, yy).replace(/MM/g, MM).replace(/M/g, M).replace(/dd/g, dd).replace(/d/g, d).replace(/HH/g, HH).replace(/H/g, H).replace(/hh/g, hh).replace(/h/g, h).replace(/mm/g, mm).replace(/m/g, m).replace(/ss/g, ss).replace(/s/g, ss).replace(/a/g, a);
 };
 
-String.prototype.trim = function() {
-	return this.replace(/^[\s]+|[\s]+$/g, '');
-};
+if (!String.prototype.trim) {
+	String.prototype.trim = function() {
+		return this.replace(/^[\s]+|[\s]+$/g, '');
+	};
+}
 
 /*
 	Count text in string
