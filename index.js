@@ -170,6 +170,8 @@ function Framework() {
 			websocket: 0,
 			timeout: 0,
 			file: 0,
+			stream: 0,
+			streaming: 0,
 			plain: 0,
 			empty: 0,
 			redirect: 0,
@@ -1167,40 +1169,42 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('');
 	builder.push('## Requests statistic');
 	builder.push('');
-	builder.push('Pending requests                : {0}x'.format(self.stats.request.pending.format('########')));
-	builder.push('Blocked requests                : {0}x'.format(self.stats.request.xss.format('########')));
-	builder.push('Request to webpage              : {0}x'.format(self.stats.request.web.format('########')));
-	builder.push('Request to Websocket            : {0}x'.format(self.stats.request.websocket.format('########')));
-	builder.push('Request to file                 : {0}x'.format(self.stats.request.file.format('########')));
-	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr.format('########')));
-	builder.push('Request GET                     : {0}x'.format(self.stats.request.get.format('########')));
-	builder.push('Request POST                    : {0}x'.format(self.stats.request.post.format('########')));
-	builder.push('Request PUT                     : {0}x'.format(self.stats.request.put.format('########')));
-	builder.push('Request DELETE                  : {0}x'.format(self.stats.request['delete'].format('########')));
-	builder.push('Request multipart               : {0}x'.format(self.stats.request.upload.format('########')));
-	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss.format('########')));
+	builder.push('Pending requests                : {0}x'.format(self.stats.request.pending.format('##########')));
+	builder.push('Blocked requests                : {0}x'.format(self.stats.request.xss.format('##########')));
+	builder.push('Request to webpage              : {0}x'.format(self.stats.request.web.format('##########')));
+	builder.push('Request to Websocket            : {0}x'.format(self.stats.request.websocket.format('##########')));
+	builder.push('Request to file                 : {0}x'.format(self.stats.request.file.format('##########')));
+	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr.format('##########')));
+	builder.push('Request GET                     : {0}x'.format(self.stats.request.get.format('##########')));
+	builder.push('Request POST                    : {0}x'.format(self.stats.request.post.format('##########')));
+	builder.push('Request PUT                     : {0}x'.format(self.stats.request.put.format('##########')));
+	builder.push('Request DELETE                  : {0}x'.format(self.stats.request['delete'].format('##########')));
+	builder.push('Request multipart               : {0}x'.format(self.stats.request.upload.format('##########')));
+	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss.format('##########')));
 	builder.push('');
 	builder.push('## Responses statistic');
 	builder.push('');
-	builder.push('Response view                   : {0}x'.format(self.stats.response.view.format('########')));
-	builder.push('Response JSON                   : {0}x'.format(self.stats.response.json.format('########')));
-	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain.format('########')));
-	builder.push('Response empty                  : {0}x'.format(self.stats.response.empty.format('########')));
-	builder.push('Response redirect               : {0}x'.format(self.stats.response.redirect.format('########')));
-	builder.push('Response timeout                : {0}x'.format(self.stats.response.timeout.format('########')));
-	builder.push('Response forwarding             : {0}x'.format(self.stats.response.forwarding.format('########')));
-	builder.push('Response file                   : {0}x'.format(self.stats.response.file.format('########')));
-	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr.format('########')));
-	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse.format('########')));
-	builder.push('Response Websocket message      : {0}x'.format(self.stats.response.websocket.format('########')));
-	builder.push('Response restriction            : {0}x'.format(self.stats.response.restriction.format('########')));
-	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401.format('########')));
-	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403.format('########')));
-	builder.push('Response 404                    : {0}x'.format(self.stats.response.error404.format('########')));
-	builder.push('Response 408                    : {0}x'.format(self.stats.response.error408.format('########')));
-	builder.push('Response 431                    : {0}x'.format(self.stats.response.error431.format('########')));
-	builder.push('Response 500                    : {0}x'.format(self.stats.response.error500.format('########')));
-	builder.push('Response 501                    : {0}x'.format(self.stats.response.error501.format('########')));
+	builder.push('Response view                   : {0}x'.format(self.stats.response.view.format('##########')));
+	builder.push('Response JSON                   : {0}x'.format(self.stats.response.json.format('##########')));
+	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain.format('##########')));
+	builder.push('Response empty                  : {0}x'.format(self.stats.response.empty.format('##########')));
+	builder.push('Response redirect               : {0}x'.format(self.stats.response.redirect.format('##########')));
+	builder.push('Response timeout                : {0}x'.format(self.stats.response.timeout.format('##########')));
+	builder.push('Response forwarding             : {0}x'.format(self.stats.response.forwarding.format('##########')));
+	builder.push('Response file                   : {0}x'.format(self.stats.response.file.format('##########')));
+	builder.push('Response stream                 : {0}x'.format(self.stats.response.stream.format('##########')));
+	builder.push('Response streaming              : {0}x'.format(self.stats.response.streaming.format('##########')));
+	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr.format('##########')));
+	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse.format('##########')));
+	builder.push('Response Websocket message      : {0}x'.format(self.stats.response.websocket.format('##########')));
+	builder.push('Response restriction            : {0}x'.format(self.stats.response.restriction.format('##########')));
+	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401.format('##########')));
+	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403.format('##########')));
+	builder.push('Response 404                    : {0}x'.format(self.stats.response.error404.format('##########')));
+	builder.push('Response 408                    : {0}x'.format(self.stats.response.error408.format('##########')));
+	builder.push('Response 431                    : {0}x'.format(self.stats.response.error431.format('##########')));
+	builder.push('Response 500                    : {0}x'.format(self.stats.response.error500.format('##########')));
+	builder.push('Response 501                    : {0}x'.format(self.stats.response.error501.format('##########')));
 	builder.push('');
 
 	if (redirects.length > 0) {
@@ -1491,7 +1495,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.writeHead(304);
 			res.end();
 			
-			self.framework.stats.response.file++;
+			self.stats.response.file++;
 			self._request_stats(false, req.isStaticFile);
 			
 			if (!req.isStaticFile)
@@ -1639,6 +1643,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		var gzip = zlib.createGzip();
 		stream.pipe(gzip).pipe(res);
 
+		self.stats.response.stream++;
 		self._request_stats(false, req.isStaticFile);
 
 		if (!req.isStaticFile)
@@ -1650,6 +1655,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	res.writeHead(200, returnHeaders);
 	stream.pipe(res);
 
+	self.stats.response.stream++;
 	self._request_stats(false, req.isStaticFile);
 
 	if (!req.isStaticFile)
@@ -1698,6 +1704,7 @@ Framework.prototype.responseRange = function(name, range, headers, req, res) {
 	var stream = fs.createReadStream(name, { start: beg, end: end });
 	stream.pipe(res);
 
+	self.stats.response.streaming++;
 	self._request_stats(false, req.isStaticFile);
 
 	if (!req.isStaticFile)
@@ -4106,7 +4113,7 @@ Subscribe.prototype.multipart = function(header) {
 	self.header = header;
 
 	if (self.route === null) {
-		self._request_stats(false, false);
+		self.framework._request_stats(false, false);
 		self.framework.stats.request.blocked++;
 		self.req.connection.destroy();
 		return;
@@ -4129,7 +4136,7 @@ Subscribe.prototype.urlencoded = function() {
 	if (self.route === null) {
 		self.req.clear(true);
 		self.framework.stats.request.blocked++;
-		self._request_stats(false, false);
+		self.framework._request_stats(false, false);
 		self.req.connection.destroy();
 		return;
 	}
@@ -4301,7 +4308,7 @@ Subscribe.prototype._end = function() {
 		self.req.clear(true);
 		self.res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'cache-control': 'private, max-age=0' });
 		self.res.end('END');
-		self._request_stats(false, false);
+		self.framework._request_stats(false, false);
 		self.framework.emit('request-end', self.req, self.res);
 		return;
 	}
@@ -4312,7 +4319,7 @@ Subscribe.prototype._end = function() {
 		if (self.route === null) {
 			self.req.clear(true);
 			self.framework.stats.request.blocked++;
-			self._request_stats(false, false);
+			self.framework._request_stats(false, false);
 			self.req.connection.destroy();
 			return;
 		}

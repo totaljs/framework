@@ -6,6 +6,7 @@ IN DEVELEPMENT ======= 1.2.8
 - updated: NoSQL v2.0.0
 - updated: builders.schema(), builders.defaults()
 
+- fixed: framework.stats
 - fixed: @{user}
 
 ======= 1.2.7-1
