@@ -9,6 +9,7 @@ IN DEVELEPMENT ======= 1.2.8
 - fixed: framework.stats
 - fixed: @{user}
 - fixed: FrameworkRestrictions
+- fixed: template ' character
 
 ======= 1.2.7-1
 

@@ -2582,7 +2582,7 @@ Template.prototype.parse = function(html, isRepository) {
 		if (i % 2 !== 0)
 			fn.push(str);
 		else
-			fn.push("'" + str.replace(/\'/g, "\'").replace(/\n/g, '\\n') + "'");
+			fn.push("'" + str.replace(/\'/g, "\\'").replace(/\n/g, '\\n') + "'");
 	}
 
 	var repositoryBeg = null;
