@@ -12,6 +12,7 @@ IN DEVELEPMENT ======= 1.2.8
 - fixed: FrameworkRestrictions
 - fixed: template ' character
 - fixed: utils.Async - onComplete calling
+- fixed: stability
 
 ======= 1.2.7-1
 
