@@ -16,6 +16,7 @@ var pid = '';
 var pidInterval = null;
 var prefix = '------------> ';
 var walker = new Walker();
+var isLoaded = false;
 
 walker.onFilter = function(path) {
 	return path.indexOf('.js') !== -1;
@@ -43,8 +44,10 @@ walker.onComplete = function() {
 
 		for (var i = 0; i < length; i++) {
 			var name = self.file[i];
-			if (!files[name])
-				files[name] = null;
+			if (!files[name]) {
+				files[name] = isLoaded ? 0 : null;
+				console.log(files[name], name);
+			}
 		}
 
 		refresh();
@@ -59,7 +62,6 @@ function refresh() {
 	 for (var i = 0; i < length; i++) {
 
 	 	var filename = filenames[i];
-
 	 	(function(filename) {
 
 	 		async.await(function(next) {
@@ -70,7 +72,7 @@ function refresh() {
 			 			var ticks = stat.mtime.getTime();
 
 			 			if (files[filename] !== null && files[filename] !== ticks) {
-			 				changes.push(prefix + filename.replace(directory, '') + ' (modified)');
+			 				changes.push(prefix + filename.replace(directory, '') +  (files[filename] === 0 ? ' (added)' : ' (modified)'));
 			 				force = true;
 			 			}
 
@@ -91,6 +93,7 @@ function refresh() {
 
 	 async.complete(function() {
 
+	 	isLoaded = true;
 	 	setTimeout(refresh_directory, 2000);
 
 	 	if (status !== 1)
@@ -108,7 +111,6 @@ function refresh() {
 
 	 	changes = [];
 	 	force = false;
-
 	 });
 
 }
