@@ -40,28 +40,50 @@ function Backup() {
 	};
 }
 
-function Walker(addDirectory) {
+function Walker() {
 	this.pending = [];
 	this.pendingDirectory = [];
 	this.directory = [];
 	this.file = [];
-	this.complete = null;
-	this.addDirectory = addDirectory || false;
+	this.options = { sort: true, addEmptyDirectory: false };
+	this.onComplete = null;
+	this.onFilter = null;
 }
 
-Walker.prototype.walk = function(path) {
+Walker.prototype.reset = function() {
 	var self = this;
+	self.file = [];
+	self.directory = [];
+	self.pendingDirectory = [];
+};
+
+Walker.prototype.walk = function(path) {
+
+	var self = this;
+
+	if (path instanceof Array) {
+		var length = path.length;
+
+		for (var i = 0; i < length; i++)
+			self.pendingDirectory.push(path[i]);
+
+		self.next();
+		return;
+	}
+
 	fs.readdir(path, function(err, arr) {
 
 		if (err)
 			return self.next();
 
-		if (arr.length === 0 || self.addDirectory)
-			self.directory.push(path);
+		if (arr.length === 0 || self.options.addEmptyDirectory) {
+			if (self.onFilter === null || self.onFilter(path))
+				self.directory.push(path);
+		}
 
-		arr.forEach(function(o) {
-			self.pending.push(ph.join(path, o));
-		});
+		var length = arr.length;
+		for (var i = 0; i < length; i++)
+			self.pending.push(ph.join(path, arr[i]));
 
 		self.next();
 	});
@@ -77,7 +99,7 @@ Walker.prototype.stat = function(path) {
 
 		if (stats.isDirectory())
 			self.pendingDirectory.push(path);
-		else
+		else if (self.onFilter === null || self.onFilter(path))
 			self.file.push(path);
 
 		self.next();
@@ -99,11 +121,13 @@ Walker.prototype.next = function() {
 		return;
 	}
 
-	self.file.sort(function(a, b) {
-		return a.localeCompare(b);
-	});
+	if (self.options.sort) {
+		self.file.sort(function(a, b) {
+			return a.localeCompare(b);
+		});
+	}
 
-	self.complete(self.directory, self.file);
+	self.onComplete(self.directory, self.file);
 };
 
 Backup.prototype.backup = function(path, fileName, callback, filter) {
@@ -123,7 +147,7 @@ Backup.prototype.backup = function(path, fileName, callback, filter) {
 	if (filter)
 		self.filter = filter;
 
-	walker.complete = function(directory, files) {
+	walker.onComplete = function(directory, files) {
 		self.directory = directory;
 		self.file = files;
 		self.$compress();
@@ -137,13 +161,17 @@ Backup.prototype.$compress = function() {
 
 	var self = this;
 	var length = self.path.length;
+	var len = 0;
 
 	if (self.directory.length > 0) {
 
-		self.directory.forEach(function(o) {
+		len = self.directory.length;
+
+		for (var i = 0; i < len; i++) {
+			var o = self.directory[i];
 			if (self.filter(o.substring(length)))
 				fs.appendFileSync(self.fileName, (o.replace(self.path, '').replace(/\\/g, '/') + '/').padRight(padding) + ':#\n');
-		});
+		}
 
 		self.directory = [];
 	}
@@ -298,11 +326,12 @@ Backup.prototype.createDirectory = function(path, root) {
 	var arr = path.split('/');
 	var directory = '';
 	var self = this;
+	var length = arr.length;
 
-	arr.forEach(function(name) {
+	for (var i = 0; i < length; i++) {
 
+		var name = arr[i];
 		directory += (directory.length > 0 ? '/' : '') + name;
-
 		var dir = ph.join(self.path, directory);
 
 		if (root)
@@ -312,13 +341,14 @@ Backup.prototype.createDirectory = function(path, root) {
 			return;
 
 		fs.mkdirSync(dir);
-	});
+	}
 };
 
 Backup.prototype.clear = function(path, callback, filter) {
 
 	var self = this;
-	var walker = new Walker(true);
+	var walker = new Walker();
+	walker.options.addEmptyDirectory = true;
 
 	if (callback)
 		self.complete = callback;
@@ -326,7 +356,7 @@ Backup.prototype.clear = function(path, callback, filter) {
 	if (filter)
 		self.filter = filter;
 
-	walker.complete = function(directory, files) {
+	walker.onComplete = function(directory, files) {
 
 		self.file = [];
 		self.directory = [];
@@ -334,19 +364,25 @@ Backup.prototype.clear = function(path, callback, filter) {
 		if (typeof(filter) !== 'function')
 			filter = function(o) { return true; };
 
-		files.forEach(function(o) {
+		var length = files.length;
+
+		for (var i = 0; i < length; i++) {
+			var o = files[i];
 			if (filter(o))
 				self.file.push(o);
-		});
+		}
 
-		directory.forEach(function(o) {
+		length = directory.length;
+		for (var i = 0; i < length; i++) {
+
+			var o = files[i];
 
 			if (o === path)
 				return;
 
 			if (filter(o))
 				self.directory.push(o);
-		});
+		}
 
 		self.directory.sort(function(a, b) {
 			if (a.length < b.length)
@@ -410,4 +446,5 @@ exports.restore = function(fileName, path, callback, filter) {
 	backup.restore(fileName, path, callback, filter);
 };
 
+exports.Walker = Walker;
 exports.Backup = Backup;
