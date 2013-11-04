@@ -243,7 +243,6 @@ Backup.prototype.restoreValue = function(data) {
 	}
 
 	read.value += data.substring(0, index);
-
 	self.restoreFile(read.key.replace(/\s/g, ''), read.value.replace(/\s/g, ''));
 
 	read.status = 0;
@@ -253,18 +252,19 @@ Backup.prototype.restoreValue = function(data) {
 	self.restoreKey(data.substring(index + 1));
 };
 
-Backup.prototype.restore = function(fileName, path, callback, filter) {
+Backup.prototype.restore = function(filename, path, callback, filter) {
 
-	if (!fs.existsSync(fileName)) {
+	if (!fs.existsSync(filename)) {
 		if (callback)
 			callback(new Error('Backup file not found.'), path);
 		return;
 	}
 
 	var self = this;
+	self.filter = filter;
 	self.createDirectory(path, true);
 
-	var stream = fs.createReadStream(fileName);
+	var stream = fs.createReadStream(filename);
 	var key = '';
 	var value = '';
 	var status = 0;
@@ -431,9 +431,9 @@ Backup.prototype.removeDirectory = function() {
 // EXPORTS
 // ===========================================================================
 
-exports.backup = function(path, fileName, callback, filter) {
+exports.backup = function(path, filename, callback, filter) {
 	var backup = new Backup();
-	backup.backup(path, fileName, callback, filter);
+	backup.backup(path, filename, callback, filter);
 };
 
 exports.clear = function(path, callback, filter) {
@@ -441,9 +441,9 @@ exports.clear = function(path, callback, filter) {
 	backup.clear(path, callback, filter);
 };
 
-exports.restore = function(fileName, path, callback, filter) {
+exports.restore = function(filename, path, callback, filter) {
 	var backup = new Backup();
-	backup.restore(fileName, path, callback, filter);
+	backup.restore(filename, path, callback, filter);
 };
 
 exports.Walker = Walker;
