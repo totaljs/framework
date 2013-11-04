@@ -19,7 +19,7 @@ function view_database() {
 			rows.push('collection -> ' + o);
 		});
 
-		// Documentation: http://www.partialjs.com/documentation/mongodb/
+		// Bad documentation: https://github.com/petersirka/node-mongolab
 		db.insert('users', { name: 'Peter', age: 25 }, function(err, data) {
 			// DONE
 		});		
