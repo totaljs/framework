@@ -2085,16 +2085,17 @@ Async.prototype.refresh = function(name) {
 		self.emit('complete');
 		self.emit('percentage', 100);
 		self._max = 0;
-		var length = self.onComplete.length;
+		var complete = self.onComplete;
+		var length = complete.length;
+		self.onComplete = [];
 		for (var i = 0; i < length; i++) {
 			try
 			{
-				self.onComplete[i]();
+				complete[i]();
 			} catch (ex) {
 				self.emit('error', ex);
 			}
 		}
-		self.onComplete = [];
 	}
 
 	return self;
