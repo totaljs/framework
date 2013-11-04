@@ -1,5 +1,6 @@
 IN DEVELEPMENT ======= 1.2.8
 
+- added: debugging.js
 - added: framework.stats.timeout
 - added: template supports rendering of other templates or views
 
