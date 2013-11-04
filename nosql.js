@@ -1091,7 +1091,7 @@ Database.prototype.description = function(value) {
 		return self.meta.description;
 
 	self.meta.description = (value || '').toString();
-	self.meta._metaSave();
+	self._metaSave();
 	return self;
 };
 
@@ -1102,7 +1102,7 @@ Database.prototype.custom = function(value) {
 		return self.meta.custom;
 
 	self.meta.custom = value;
-	self.meta._metaSave();
+	self._metaSave();
 	return self;
 };
 
