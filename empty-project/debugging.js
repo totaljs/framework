@@ -44,10 +44,8 @@ walker.onComplete = function() {
 
 		for (var i = 0; i < length; i++) {
 			var name = self.file[i];
-			if (!files[name]) {
+			if (!files[name])
 				files[name] = isLoaded ? 0 : null;
-				console.log(files[name], name);
-			}
 		}
 
 		refresh();
