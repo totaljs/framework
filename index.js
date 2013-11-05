@@ -2491,6 +2491,11 @@ Framework.prototype._request = function(req, res) {
 		self.stats.request.xss++;
 	}
 
+	var referer = header['referer'] || '';
+
+	if (referer !== '' && referer.indexOf(header['host']) !== -1)
+		flags.push('referer');
+
 	req.flags = flags;
 
 	// call event request
