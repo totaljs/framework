@@ -122,7 +122,7 @@ exports.defaults = function(name) {
 			}
 		}
 
-		if (type === 'function') {
+		if (type === FUNCTION) {
 
 			if (value === Number) {
 				item[property] = 0;
@@ -228,10 +228,10 @@ exports.prepare = function(name, model) {
 		var type = typeof(value);
 		var typeval = typeof(val);
 
-		if (typeval === 'function')
+		if (typeval === FUNCTION)
 			val = val();
 
-		if (type === 'function') {
+		if (type === FUNCTION) {
 
 			if (value === Number) {
 				item[property] = utils.parseFloat(val);
