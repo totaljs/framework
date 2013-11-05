@@ -175,6 +175,7 @@ function Framework() {
 			redirect: 0,
 			forwarding: 0,
 			restriction: 0,
+			notModified: 0,
 			mmr: 0,
 			sse: 0,
 			error401: 0,
@@ -1200,6 +1201,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Response timeout                : {0}x'.format(self.stats.response.timeout.format('##########')));
 	builder.push('Response forwarding             : {0}x'.format(self.stats.response.forwarding.format('##########')));
 	builder.push('Response file                   : {0}x'.format(self.stats.response.file.format('##########')));
+	builder.push('Response not modified           : {0}x'.format(self.stats.response.notModified.format('##########')));
 	builder.push('Response stream                 : {0}x'.format(self.stats.response.stream.format('##########')));
 	builder.push('Response streaming              : {0}x'.format(self.stats.response.streaming.format('##########')));
 	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr.format('##########')));
@@ -1510,7 +1512,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.writeHead(304);
 			res.end();
 
-			self.stats.response.file++;
+			self.stats.response.notModified++;
 			self._request_stats(false, req.isStaticFile);
 
 			if (!req.isStaticFile)
@@ -1817,6 +1819,7 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 	res.writeHead(304);
 	res.end();
 
+	self.stats.response.notModified++;
 	self._request_stats(false, req.isStaticFile);
 
 	if (!req.isStaticFile)
@@ -2288,34 +2291,6 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 
 Framework.prototype._service = function(count) {
 	var self = this;
-	/*
-	if (count % 10 === 0) {
-		self.emit('clear', 'stats', self.stats);
-		self.stats.request.web = 0;
-		self.stats.request.xhr = 0;
-		self.stats.request.file = 0;
-		self.stats.request.websocket = 0;
-		self.stats.request.get = 0;
-		self.stats.request.post = 0;
-		self.stats.request.upload = 0;
-		self.stats.request.xss = 0;
-		self.stats.response.view = 0;
-		self.stats.response.json = 0;
-		self.stats.response.websocket = 0;
-		self.stats.response.file = 0;
-		self.stats.response.plain = 0;
-		self.stats.response.empty = 0;
-		self.stats.response.redirect = 0;
-		self.stats.response.mmr = 0;
-		self.stats.response.sse = 0;
-		self.stats.response.error401 = 0;
-		self.stats.response.error403 = 0;
-		self.stats.response.error404 = 0;
-		self.stats.response.error408 = 0;
-		self.stats.response.error431 = 0;
-		self.stats.response.error500 = 0;
-		self.stats.response.error501 = 0;
-	}*/
 
 	if (self.config.debug)
 		self.resources = {};

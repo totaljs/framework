@@ -1,7 +1,8 @@
 IN DEVELEPMENT ======= 1.2.8
 
 - added: debugging.js
-- added: framework.stats.timeout
+- added: framework.stats.response.timeout
+- added: framework.stats.response.notModified
 - added: template supports rendering of other templates or views
 - added: referer flag
 - added: Number.prototype.VAT
@@ -11,6 +12,7 @@ IN DEVELEPMENT ======= 1.2.8
 
 - updated: NoSQL v2.0.0
 - updated: builders.schema(), builders.defaults()
+- updated: framework.usage()
 
 - fixed: framework.stats
 - fixed: @{user}
