@@ -13,6 +13,7 @@ IN DEVELEPMENT ======= 1.2.8
 - updated: NoSQL v2.0.0
 - updated: builders.schema(), builders.defaults()
 - updated: framework.usage()
+- updated: utils.getContentType()
 
 - fixed: framework.stats
 - fixed: @{user}

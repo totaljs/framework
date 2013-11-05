@@ -602,6 +602,8 @@ exports.getContentType = function(ext) {
 		'bin': 'application/octet-stream',
 		'bmp': 'image/bmp',
 		'css': 'text/css',
+		'less': 'text/css',
+		'sass': 'text/css',
 		'csv': 'text/csv',
 		'doc': 'application/msword',
 		'docx': 'application/msword',
