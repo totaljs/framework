@@ -115,8 +115,6 @@ function Framework() {
 		'allow-compile-css': true
 	};
 
-	this._redirectPath = false;
-
 	this.global = {};
 	this.resources = {};
 	this.connections = {};
@@ -194,6 +192,10 @@ function Framework() {
 	this.fs = new FrameworkFileSystem(this);
 	this.path = new FrameworkPath(this);
 	this.restrictions = new FrameworkRestrictions(this);
+
+	this._request_check_redirect = false;
+	this._request_check_referer = false;
+	this._request_check_POST = false;
 
 	var self = this;
 }
@@ -355,7 +357,7 @@ Framework.prototype.redirect = function(host, newHost, withPath, permament) {
 		newHost = newHost.substring(0, newHost.length - 1);
 
 	self.routes.redirects[host] = { url: newHost, path: withPath, permament: permament };
-	self._redirectPath = true;
+	self._request_check_redirect = true;
 
 	return self;
 };
@@ -443,6 +445,12 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		for (var i = 0; i < flags.length; i++)
 			flags[i] = flags[i].toLowerCase();
 	}
+
+	if (flags.indexOf('referer') !== -1)
+		self._request_check_referer = true;
+
+	if (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1)
+		self._request_check_POST = true;
 
 	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'], partial: partial || [], timeout: timeout || self.config['default-request-timeout'] });
 	return self;
@@ -2333,7 +2341,7 @@ Framework.prototype._request = function(req, res) {
 
 	req.host = header.host;
 
-	if (self._redirectPath) {
+	if (self._request_check_redirect) {
 		var redirect = self.routes.redirects[protocol +'://' + req.host];
 		if (redirect) {
 			self.stats.response.forwarding++;
@@ -2415,9 +2423,9 @@ Framework.prototype._request = function(req, res) {
 	// if is static file, return file
 	if (utils.isStaticFile(req.uri.pathname)) {
 		req.isStaticFile = true;
+		self.stats.request.file++;
 		self._request_stats(true, true);
 		new Subscribe(self, req, res).file();
-		self.stats.request.file++;
 		return;
 	}
 
@@ -2427,7 +2435,6 @@ Framework.prototype._request = function(req, res) {
 	if (req.uri.query && req.uri.query.length > 0) {
 		if (self.onXSS !== null)
 			isXSS = self.onXSS(req.uri.query);
-
 		req.data.get = qs.parse(req.uri.query);
 	}
 
@@ -2479,54 +2486,57 @@ Framework.prototype._request = function(req, res) {
 	if (multipart.length > 0)
 		flags.push('upload');
 
+	flags.push('+xhr');
+
 	if (req.xhr) {
 		self.stats.request.xhr++;
-		flags.push('+xhr');
 		flags.push('xhr');
-	} else
-		flags.push('+xhr');
+	}
 
 	if (isXSS) {
 		flags.push('xss');
 		self.stats.request.xss++;
 	}
 
-	var referer = header['referer'] || '';
-
-	if (referer !== '' && referer.indexOf(header['host']) !== -1)
-		flags.push('referer');
+	if (self._request_check_referer) {
+		var referer = header['referer'] || '';
+		if (referer !== '' && referer.indexOf(header['host']) !== -1)
+			flags.push('referer');
+	}
 
 	req.flags = flags;
 
 	// call event request
 	self.emit('request-begin', req, res);
 
-	if (req.method === 'POST' || req.method === 'PUT') {
-		if (multipart.length > 0) {
-
-			self.stats.request.upload++;
-			new Subscribe(self, req, res).multipart(multipart);
-			return;
-
-		} else {
-
-			if (req.method === 'PUT')
-				self.stats.request.put++;
-			else
-				self.stats.request.post++;
-
-			new Subscribe(self, req, res).urlencoded();
-			return;
-
-		}
-	} else {
+	if (req.method === 'GET' || req.method === 'DELETE' || req.method === 'OPTIONS') {
 		if (req.method === 'DELETE')
 			self.stats.request['delete']++;
 		else
 			self.stats.request.get++;
+
+		new Subscribe(self, req, res).end();
+		return;
 	}
 
-	new Subscribe(self, req, res).end();
+	if (self._request_check_POST && (req.method === 'POST' || req.method === 'PUT')) {
+		if (multipart.length > 0) {
+			self.stats.request.upload++;
+			new Subscribe(self, req, res).multipart(multipart);
+		} else {
+			if (req.method === 'PUT')
+				self.stats.request.put++;
+			else
+				self.stats.request.post++;
+			new Subscribe(self, req, res).urlencoded();
+		}
+		return;
+	}
+
+	self.emit('request-end', req, res);
+	self._request_stats(false, false);
+	self.stats.request.blocked++;
+	req.connection.destroy();
 };
 
 Framework.prototype._request_stats = function(beg, isStaticFile) {
@@ -4095,7 +4105,10 @@ function Subscribe(framework, req, res) {
 
 Subscribe.prototype.success = function() {
 	var self = this;
-	clearTimeout(self.timeout);
+
+	if (self.timeout)
+		clearTimeout(self.timeout);
+
 	self.timeout = null;
 	self.isCanceled = true;
 };
@@ -4217,7 +4230,7 @@ Subscribe.prototype.execute = function(status) {
 	if (count === 0 && lengthGlobal === 0)
 		self.handlers._execute();
 	else
-		async.complete(self.handlers._execute);
+		async.run(self.handlers._execute);
 
 	return self;
 };
