@@ -4,6 +4,8 @@ IN DEVELEPMENT ======= 1.2.8
 - added: framework.stats.timeout
 - added: template supports rendering of other templates or views
 - added: referer flag
+- added: Number.prototype.VAT
+- added: Number.prototype.discount
 
 - updated: NoSQL v2.0.0
 - updated: builders.schema(), builders.defaults()

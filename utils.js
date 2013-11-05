@@ -1664,8 +1664,57 @@ Number.prototype.hex = function(length) {
     return str;
 };
 
+/*
+	Internal function
+*/
 Number.prototype.condition = function(ifTrue, ifFalse) {
 	return (this % 2 === 0 ? ifTrue : ifFalse) || '';
+};
+
+/*
+	VAT
+	@percentage {Number}
+	@decimals {Number}, optional, default 2,
+	@includedVAT {Boolean}, optional, default true
+	return {Number}
+*/
+Number.prototype.VAT = function(percentage, decimals, includedVAT) {
+	var num = this;
+	var type = typeof(decimals);
+
+	if (type === BOOLEAN) {
+		var tmp = includedVAT;
+		includedVAT = decimals;
+		decimals = tmp;
+		type = typeof(decimals);
+	}
+
+	if (type === UNDEFINED)
+		decimals = 2;
+
+	if (typeof(includedVAT) === UNDEFINED)
+		includedVAT = true;
+
+	if (percentage === 0 || num === 0)
+		return num;
+
+	return includedVAT ? (num / ((percentage / 100) + 1)).floor(decimals) : (num * ((percentage / 100) + 1)).floor(decimals);
+};
+
+/*
+	Discount
+	@percentage {Number}
+	@decimals {Number}, optional, default 2
+	return {Number}
+*/
+Number.prototype.discount = function(percentage, decimals) {
+	var num = this;
+	var type = typeof(decimals);
+
+	if (type === UNDEFINED)
+		decimals = 2;
+
+	return (num - (num / 100) * percentage).floor(decimals);
 };
 
 Boolean.prototype.condition = function(ifTrue, ifFalse) {
