@@ -32,6 +32,13 @@ __Examples__:
 - Older code: [blog written in partial.js (without installation)](http://blog.partialjs.com)
 - Older code: [e-shop written in partial.js (without installation)](http://eshop.partialjs.com)
 
+__Modules__:
+
+- [Authorization](https://github.com/petersirka/partial.js-modules/tree/master/authorization)
+- [Session (in-memory, redis or memcached)](https://github.com/petersirka/partial.js-modules/tree/master/session)
+- [Login with Facebok](https://github.com/petersirka/partial.js-modules/tree/master/facebook)
+- [Less CSS - lesscss.org](https://github.com/petersirka/partial.js-modules/tree/master/less)
+
 Documentation
 -------------
 - [English documentation](http://docs.partialjs.com/)
