@@ -1469,6 +1469,13 @@ Framework.prototype.responseStatic = function(req, res) {
 	return self;
 };
 
+Framework.prototype.isProcessed = function(filename) {
+	var name = this.temporary.path[filename];
+	if (name === null)
+		return true;
+	return false;
+};
+
 /*
 	Response file
 	@req {ServerRequest}
