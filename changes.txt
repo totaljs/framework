@@ -6,6 +6,7 @@ IN DEVELEPMENT ======= 1.2.8
 - added: referer flag
 - added: Number.prototype.VAT
 - added: Number.prototype.discount
+- added: utils.sendfile(filename, url, [callback], [headers], [name])
 
 - updated: NoSQL v2.0.0
 - updated: builders.schema(), builders.defaults()
