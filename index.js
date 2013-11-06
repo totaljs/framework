@@ -3964,18 +3964,6 @@ FrameworkCache.prototype.recycle = function() {
 	@expire {Date}
 	return @value
 */
-FrameworkCache.prototype.write = function(name, value, expire) {
-	console.log('OBSOLETE cache.write() - use cache.add()');
-	return this.add(name, value, expire);
-};
-
-/*
-	Add item to cache
-	@name {String}
-	@value {Object}
-	@expire {Date}
-	return @value
-*/
 FrameworkCache.prototype.add = function(name, value, expire) {
 	var self = this;
 
@@ -3999,17 +3987,6 @@ FrameworkCache.prototype.read = function(name) {
 		return null;
 
 	return value.value;
-};
-
-/*
-	Update cache item expiration
-	@name {String}
-	@expire {Date}
-	return {Cache}
-*/
-FrameworkCache.prototype.setExpires = function(name, expire) {
-	console.log('OBSOLETE cache.setExpires() - use cache.setExpire()');
-	return this.setExpire(name, expire);
 };
 
 /*
