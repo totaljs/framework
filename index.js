@@ -1304,7 +1304,7 @@ Framework.prototype.usage = function(detailed) {
 		modules.forEach(function(o) {
 
 			builder.push('');
-			builder.push('### ' + (o === '#' ? 'Global module (#)' : o));
+			builder.push('### ' + (o === '#' ? 'Global module (#)' : o));
 			builder.push('');
 
 			var module = self.modules[o];
