@@ -896,18 +896,18 @@ Framework.prototype.backup = function(callback, url) {
 
 	backup.backup(directory, path.join(directoryBackup, new Date().format('yyyy-MM-dd') + '.backup'), function(err, filename) {
 
-		if (!err) {
+		if (err) {
 			if (callback)
 				callback(err, filename);
 			return;
 		}
 
-		if (!callback)
-			return;
-
-		if (url)
+		if (url) {
 			utils.sendfile(filename, url, callback);
-		else
+			return;
+		}
+
+		if (callback)
 			callback(err, callback);
 
 	}, filter);
