@@ -846,12 +846,19 @@ Framework.prototype.eval = function(script) {
 /*
 	Backup website directory
 	@callback {Function} :: optional, param: param: @err {Error}, @filename {String}
+	@url {String} :: optional, send backup file via HTTP
 	return {Framework}
 */
-Framework.prototype.backup = function(callback) {
+Framework.prototype.backup = function(callback, url) {
 
 	var self = this;
 	var backup = new bk.Backup();
+
+	if (typeof(callback) === STRING) {
+		var tmp = url;
+		url = callback;
+		callback = tmp;
+	}
 
 	var filter = function(path) {
 
@@ -873,6 +880,9 @@ Framework.prototype.backup = function(callback) {
 		if (path === '/keepalive.js')
 			return false;
 
+		if (path === '/debugging.js')
+			return false;
+
 		return self.onFilterBackup(path);
 	};
 
@@ -884,7 +894,24 @@ Framework.prototype.backup = function(callback) {
 	if (!fs.existsSync(directoryBackup))
 		fs.mkdirSync(directoryBackup);
 
-	backup.backup(directory, path.join(directoryBackup, new Date().format('yyyy-MM-dd') + '.backup'), callback, filter);
+	backup.backup(directory, path.join(directoryBackup, new Date().format('yyyy-MM-dd') + '.backup'), function(err, filename) {
+
+		if (!err) {
+			if (callback)
+				callback(err, filename);
+			return;
+		}
+
+		if (!callback)
+			return;
+
+		if (url)
+			utils.sendfile(filename, url, callback);
+		else
+			callback(err, callback);
+
+	}, filter);
+
 	return self;
 };
 
