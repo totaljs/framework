@@ -28,6 +28,8 @@ IN DEVELEPMENT ======= 1.2.8
 - fixed: stability
 - fixed: markdown parser
 
+- removed: keepalive.js from empty-projects
+
 ======= 1.2.7-1
 
 - added: framework.stats.request.delete
