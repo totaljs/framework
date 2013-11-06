@@ -9,8 +9,8 @@ IN DEVELEPMENT ======= 1.2.8
 - added: framework.isProcessed()
 - added: Number.prototype.VAT
 - added: Number.prototype.discount
-- added: utils.sendfile(filename, url, [callback], [headers], [name], [method])
-- added: utils.sendstream(name, stream, url, [callback], [headers], [method]))
+- added: utils.send(name, [stream or filename], url, [callback], [headers], [method])
+- added: utils.download(url, callback, [headers], [method], [params], [encoding])
 
 - updated: framework.backup([callback], [url]);
 - updated: NoSQL v2.0.0

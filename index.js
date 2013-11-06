@@ -903,7 +903,7 @@ Framework.prototype.backup = function(callback, url) {
 		}
 
 		if (url) {
-			utils.sendfile(filename, url, callback);
+			utils.send(filename, filename, url, callback);
 			return;
 		}
 

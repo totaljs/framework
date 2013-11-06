@@ -109,7 +109,6 @@ exports.isEmpty = function(obj) {
 	return true;
 };
 
-
 /*
 	Send request to URL
 	@url {String}
@@ -190,90 +189,47 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 	return true;
 };
 
-/*
-	Send a file through HTTP
-	@filename {String}
-	@url {String}
-	@fnCallback {Function} :: optional, params: @err {Error}, @response {String}
-	@headers {Object} :: optional, additional headers,
-	@name {String} :: optional, default name = filename
-	@method {String} :: optional, default POST
-*/
-exports.sendfile = function(filename, url, fnCallback, headers, name, method) {
+exports.download = function(url, fnCallback, headers, method, params, encoding) {
 
-	var self = this;
+	var uri = urlParser.parse(url);
+	var h = {};
 
-	if (typeof(fnCallback) === 'object') {
-		var tmp = headers;
-		fnCallback = headers;
-		headers = tmp;
+	method = (method || '').toString().toUpperCase();
+	encoding = encoding || ENCODING;
+
+	util._extend(h, headers);
+	h['X-Powered-By'] = 'partial.js v' + framework.version;
+	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
+
+	var response = function(res) {
+		fnCallback(null, res);
+		res.resume();
+	};
+
+	var con = options.protocol === 'https:' ? https : http;
+
+	try
+	{
+
+		var isPOST = method === 'POST' || method === 'PUT';
+		var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
+
+		if (callback) {
+			req.on('error', function(error) {
+				callback(error, null);
+			});
+		}
+
+		if (isPOST)
+			req.end((params || '').toString(), ENCODING);
+
+	} catch (ex) {
+		if (callback)
+			callback(ex, null);
+		return false;
 	}
 
-	var BOUNDARY = '----' + Math.random().toString(16).substring(2);
-
-	fs.stat(filename, function(err, stat) {
-
-		if (err) {
-			if (fnCallback)
-				fnCallback(err, null);
-			return;
-		}
-
-		var h = {};
-
-		if (headers)
-			util._extend(h, headers);
-
-		if (!name)
-			name = path.basename(filename);
-		else
-			name = path.basename(name);
-
-		h['Cache-Control'] = 'max-age=0';
-		h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
-		h['X-Powered-By'] = 'partial.js v' + framework.version;
-
-		var uri = urlParser.parse(url);
-		var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
-
-		var response = function(res) {
-
-			if (!fnCallback)
-				return;
-
-			res.body = '';
-			res.on('data', function(chunk) {
-				this.body += chunk.toString(ENCODING);
-			});
-
-			res.on('end', function() {
-				fnCallback(null, res.body);
-			});
-
-		};
-
-		var connection = options.protocol === 'https:' ? https : http;
-		var req = connection.request(options, response);
-
-		if (fnCallback) {
-			req.on('error', function(err) {
-				fnCallback(err, null);
-			});
-		}
-
-		var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + utils.getContentType(path.extname(filename)) + NEWLINE + NEWLINE;
-		var stream = fs.createReadStream(filename);
-
-		req.write(header);
-
-		stream.on('end', function() {
-			req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
-		});
-
-		stream.pipe(req, { end: false });
-	});
-
-	return self;
+	return true;
 };
 
 /*
@@ -285,7 +241,7 @@ exports.sendfile = function(filename, url, fnCallback, headers, name, method) {
 	@headers {Object} :: optional, additional headers
 	@method {String} :: optional, default POST
 */
-exports.sendstream = function(name, stream, url, fnCallback, headers, method) {
+exports.send = function(name, stream, url, fnCallback, headers, method) {
 
 	var self = this;
 
@@ -294,6 +250,9 @@ exports.sendstream = function(name, stream, url, fnCallback, headers, method) {
 		fnCallback = headers;
 		headers = tmp;
 	}
+
+	if (typeof(stream) === STRING)
+		stream = fs.createReadStream(stream, { flags: 'r' });
 
 	var BOUNDARY = '----' + Math.random().toString(16).substring(2);
 	var h = {};
@@ -337,8 +296,6 @@ exports.sendstream = function(name, stream, url, fnCallback, headers, method) {
 
 	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + utils.getContentType(path.extname(name)) + NEWLINE + NEWLINE;
 	req.write(header);
-
-	var stream = fs.createReadStream(filename);
 
 	stream.on('end', function() {
 		req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
