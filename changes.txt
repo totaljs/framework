@@ -1,4 +1,4 @@
-IN DEVELEPMENT ======= 1.2.8
+======= 1.2.8
 
 - added: referer flag
 - added: debugging.js
