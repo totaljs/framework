@@ -189,6 +189,15 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 	return true;
 };
 
+/*
+	Download content from URL
+	@url {String}
+	@callback {Function} :: optional, params: @err {Error}, @response {Response}
+	@headers {Object} :: optional, additional headers
+	@method {String} :: optional, default POST,
+	@params {String} :: optional custom params (for POST or PUT method)
+	@encoding {String} :: optional, default utf8
+*/
 exports.download = function(url, callback, headers, method, params, encoding) {
 
 	var uri = urlParser.parse(url);
