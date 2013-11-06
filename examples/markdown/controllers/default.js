@@ -3,6 +3,7 @@ var fs = require('fs');
 
 exports.install = function(framework) {
 	framework.route('/', view_markdown);
+    framework.route('/usage/', view_usage);
 }
 
 function view_markdown() {
@@ -125,4 +126,9 @@ function view_markdown() {
 
 		self.view('reader', { body: markdown.load(data.toString()) });
 	});
+}
+
+function view_usage() {
+    var markdown = md.init();
+    self.view('reader', { body: markdown.load(framework.usage(true)) });
 }
