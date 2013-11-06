@@ -15,6 +15,7 @@ IN DEVELEPMENT ======= 1.2.8
 - updated: builders.schema(), builders.defaults()
 - updated: framework.usage()
 - updated: utils.getContentType()
+- updated: framework.eval() - framework can eval Function in its context
 
 - fixed: framework.stats
 - fixed: @{user}

@@ -815,13 +815,23 @@ Framework.prototype.injectDefinition = function(url) {
 
 /*
 	Eval script
-	@script {String}
+	@script {String or Function}
 	return {Framework}
 */
 Framework.prototype.eval = function(script) {
 
 	var self = this;
 	var framework = self;
+
+	if (typeof(script) === FUNCTION) {
+		try
+		{
+			eval('(' + script.toString() + ')()');
+		} catch (ex) {
+			self.error(ex, 'eval - ' + script.toString(), null);
+		}
+		return self;
+	}
 
 	try
 	{
@@ -832,6 +842,7 @@ Framework.prototype.eval = function(script) {
 
 	return self;
 };
+
 /*
 	Backup website directory
 	@callback {Function} :: optional, param: param: @err {Error}, @filename {String}
