@@ -18,6 +18,7 @@ IN DEVELEPMENT ======= 1.2.8
 - updated: framework.usage()
 - updated: utils.getContentType()
 - updated: framework.eval() - framework can eval Function in its context
+- updated: binary
 
 - fixed: framework.usage()
 - fixed: framework.stats
