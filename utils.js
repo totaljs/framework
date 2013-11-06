@@ -137,6 +137,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 
 	util._extend(h, headers);
 
+	h['X-Powered-By'] = 'partial.js v' + framework.version;
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
@@ -230,13 +231,10 @@ exports.sendfile = function(filename, url, fnCallback, headers, name, method) {
 
 		h['Cache-Control'] = 'max-age=0';
 		h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
-		h['X-Powered-By'] ='partial.js v' + framework.version;
+		h['X-Powered-By'] = 'partial.js v' + framework.version;
 
-		var options = parser.parse(url);
-
-		options.agent = false;
-		options.method = method || 'POST';
-		options.headers = h;
+		var uri = urlParser.parse(url);
+		var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 		var response = function(res) {
 
@@ -264,9 +262,9 @@ exports.sendfile = function(filename, url, fnCallback, headers, name, method) {
 		}
 
 		var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + utils.getContentType(path.extname(filename)) + NEWLINE + NEWLINE;
-		req.write(header);
-
 		var stream = fs.createReadStream(filename);
+
+		req.write(header);
 
 		stream.on('end', function() {
 			req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
@@ -307,13 +305,10 @@ exports.sendstream = function(name, stream, url, fnCallback, headers, method) {
 
 	h['Cache-Control'] = 'max-age=0';
 	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
-	h['X-Powered-By'] ='partial.js v' + framework.version;
+	h['X-Powered-By'] = 'partial.js v' + framework.version;
 
-	var options = parser.parse(url);
-
-	options.agent = false;
-	options.method = method || 'POST';
-	options.headers = h;
+	var uri = urlParser.parse(url);
+	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
 
@@ -1287,11 +1282,6 @@ String.prototype.max = function(length, chars) {
 	var str = this.toString();
 	chars = chars || '...';
     return str.length > length ? str.substring(0, length - chars.length) + chars : str;
-};
-
-String.prototype.maxLength = function(max, chars) {
-	console.log('OBSOLETE - String.prototype.maxLength(). Use String.prototype.max()');
-	return this.max(max, chars);
 };
 
 String.prototype.isJSON = function() {
