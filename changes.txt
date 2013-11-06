@@ -22,6 +22,7 @@ IN DEVELEPMENT ======= 1.2.8
 - fixed: template ' character
 - fixed: utils.Async - onComplete calling
 - fixed: stability
+- fixed: markdown parser
 
 ======= 1.2.7-1
 

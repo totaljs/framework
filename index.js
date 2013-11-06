@@ -222,7 +222,7 @@ Framework.prototype.__proto__ = new events.EventEmitter();
 
 /*
 	Refresh framework internal information
-	@clear {Boolean} || optional, default true - clear TMP direcotry
+	@clear {Boolean} || optional, default true - clear TMP directory
 	return {Framework}
 */
 Framework.prototype.refresh = function(clear) {
@@ -1148,7 +1148,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Uptime                          : {0} minutes'.format(Math.floor(process.uptime() / 60)));
 	builder.push('Memory usage                    : total {0} MB, used {1} MB'.format((memory.heapTotal / 1024 / 1024).format('#######.##'), (memory.heapUsed / 1024 / 1024).format('#######.##')));
 	builder.push('');
-	builder.push('## Directories');
+	builder.push('## Directories');
 	builder.push('');
 	builder.push('Current directory               : {0}'.format(process.cwd));
 	builder.push('Temporary directory             : {0} kB'.format((size / 1024).format('#########.##')));

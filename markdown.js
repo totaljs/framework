@@ -374,6 +374,9 @@ Markdown.prototype.parseParagraph = function(line) {
 
 Markdown.prototype.parseTitle = function(line, next) {
 
+    if (typeof(line[0]) === 'undefined')
+        return false;
+
     var self = this;
     var has = line[0] === '#';
     var type = '';
