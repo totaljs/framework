@@ -12,9 +12,9 @@ function view_SSE() {
 
 	var self = this;
 	var indexer = 0;
-	var counter = parseInt(self.lastEventID || '0');
+	var counter = parseInt(self.sseID || '0');
 
-	console.log('Last event ID:', self.lastEventID);
+	console.log('Last event ID:', self.sseID);
 
 	var interval = setInterval(function() {
 
