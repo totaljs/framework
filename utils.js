@@ -196,8 +196,9 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 	@fnCallback {Function} :: optional, params: @err {Error}, @response {String}
 	@headers {Object} :: optional, additional headers,
 	@name {String} :: optional, default name = filename
+	@method {String} :: optional, default POST
 */
-exports.sendfile = function(filename, url, fnCallback, headers, name) {
+exports.sendfile = function(filename, url, fnCallback, headers, name, method) {
 
 	var self = this;
 
@@ -234,7 +235,7 @@ exports.sendfile = function(filename, url, fnCallback, headers, name) {
 		var options = parser.parse(url);
 
 		options.agent = false;
-		options.method = 'POST';
+		options.method = method || 'POST';
 		options.headers = h;
 
 		var response = function(res) {
@@ -273,6 +274,82 @@ exports.sendfile = function(filename, url, fnCallback, headers, name) {
 
 		stream.pipe(req, { end: false });
 	});
+
+	return self;
+};
+
+/*
+	Send a stream through HTTP
+	@name {String} :: filename with extension
+	@stream {ReadableStream}
+	@url {String}
+	@fnCallback {Function} :: optional, params: @err {Error}, @response {String}
+	@headers {Object} :: optional, additional headers
+	@method {String} :: optional, default POST
+*/
+exports.sendstream = function(name, stream, url, fnCallback, headers, method) {
+
+	var self = this;
+
+	if (typeof(fnCallback) === 'object') {
+		var tmp = headers;
+		fnCallback = headers;
+		headers = tmp;
+	}
+
+	var BOUNDARY = '----' + Math.random().toString(16).substring(2);
+	var h = {};
+
+	if (headers)
+		util._extend(h, headers);
+
+	name = path.basename(name);
+
+	h['Cache-Control'] = 'max-age=0';
+	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
+	h['X-Powered-By'] ='partial.js v' + framework.version;
+
+	var options = parser.parse(url);
+
+	options.agent = false;
+	options.method = method || 'POST';
+	options.headers = h;
+
+	var response = function(res) {
+
+		if (!fnCallback)
+			return;
+
+		res.body = '';
+		res.on('data', function(chunk) {
+			this.body += chunk.toString(ENCODING);
+		});
+
+		res.on('end', function() {
+			fnCallback(null, res.body);
+		});
+
+	};
+
+	var connection = options.protocol === 'https:' ? https : http;
+	var req = connection.request(options, response);
+
+	if (fnCallback) {
+		req.on('error', function(err) {
+			fnCallback(err, null);
+		});
+	}
+
+	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + utils.getContentType(path.extname(name)) + NEWLINE + NEWLINE;
+	req.write(header);
+
+	var stream = fs.createReadStream(filename);
+
+	stream.on('end', function() {
+		req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
+	});
+
+	stream.pipe(req, { end: false });
 
 	return self;
 };
