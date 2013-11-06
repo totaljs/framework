@@ -17,6 +17,7 @@ IN DEVELEPMENT ======= 1.2.8
 - updated: utils.getContentType()
 - updated: framework.eval() - framework can eval Function in its context
 
+- fixed: framework.usage()
 - fixed: framework.stats
 - fixed: @{user}
 - fixed: FrameworkRestrictions

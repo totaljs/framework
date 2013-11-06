@@ -28,7 +28,7 @@ __Social networks__:
 
 __Examples__:
 
-- [More than 50 examples](https://github.com/petersirka/partial.js/tree/master/examples)
+- [More than 80 examples](https://github.com/petersirka/partial.js/tree/master/examples)
 - Older code: [blog written in partial.js (without installation)](http://blog.partialjs.com)
 - Older code: [e-shop written in partial.js (without installation)](http://eshop.partialjs.com)
 
@@ -90,8 +90,8 @@ Videos on YouTube
 * Supports form data validation - [example: validation](https://github.com/petersirka/partial.js/tree/master/examples/validation)
 * Supports simple log writer - [example: logs](https://github.com/petersirka/partial.js/tree/master/examples/logs)
 * Supports simple restrictions [example: restriction](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
-* Supports serve static files
-* __Supports streaming static files__ - implemented Accept-Ranges
+* Supports serve static files []
+* __Supports streaming static files__ - implemented Accept-Ranges [example: video-streaming](https://github.com/petersirka/partial.js/tree/master/examples/video-streaming)
 * Supports HTML minification
 * Supports JavaScript compress
 * Supports JavaScript dynamic compress in views - [example: dynamic JavaScript compress](https://github.com/petersirka/partial.js/tree/master/examples/views-javascript-compress)
