@@ -189,7 +189,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 	return true;
 };
 
-exports.download = function(url, fnCallback, headers, method, params, encoding) {
+exports.download = function(url, callback, headers, method, params, encoding) {
 
 	var uri = urlParser.parse(url);
 	var h = {};
@@ -202,8 +202,7 @@ exports.download = function(url, fnCallback, headers, method, params, encoding) 
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
-		fnCallback(null, res);
-		res.resume();
+		callback(null, res);
 	};
 
 	var con = options.protocol === 'https:' ? https : http;
@@ -235,19 +234,19 @@ exports.download = function(url, fnCallback, headers, method, params, encoding) 
 /*
 	Send a stream through HTTP
 	@name {String} :: filename with extension
-	@stream {ReadableStream}
+	@stream {ReadableStream or String (filename)}
 	@url {String}
-	@fnCallback {Function} :: optional, params: @err {Error}, @response {String}
+	@callback {Function} :: optional, params: @err {Error}, @response {String}
 	@headers {Object} :: optional, additional headers
 	@method {String} :: optional, default POST
 */
-exports.send = function(name, stream, url, fnCallback, headers, method) {
+exports.send = function(name, stream, url, callback, headers, method) {
 
 	var self = this;
 
-	if (typeof(fnCallback) === 'object') {
+	if (typeof(callback) === 'object') {
 		var tmp = headers;
-		fnCallback = headers;
+		callback = headers;
 		headers = tmp;
 	}
 
@@ -271,7 +270,7 @@ exports.send = function(name, stream, url, fnCallback, headers, method) {
 
 	var response = function(res) {
 
-		if (!fnCallback)
+		if (!callback)
 			return;
 
 		res.body = '';
@@ -280,7 +279,7 @@ exports.send = function(name, stream, url, fnCallback, headers, method) {
 		});
 
 		res.on('end', function() {
-			fnCallback(null, res.body);
+			callback(null, res.body);
 		});
 
 	};
@@ -288,9 +287,9 @@ exports.send = function(name, stream, url, fnCallback, headers, method) {
 	var connection = options.protocol === 'https:' ? https : http;
 	var req = connection.request(options, response);
 
-	if (fnCallback) {
+	if (callback) {
 		req.on('error', function(err) {
-			fnCallback(err, null);
+			callback(err, null);
 		});
 	}
 
