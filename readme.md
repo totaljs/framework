@@ -29,6 +29,7 @@ __Social networks__:
 __Examples__:
 
 - [More than 80 examples](https://github.com/petersirka/partial.js/tree/master/examples)
+- [HTML 5 full website example](http://www.partialjs.com/get-started/)
 - Older code: [blog written in partial.js (without installation)](http://blog.partialjs.com)
 - Older code: [e-shop written in partial.js (without installation)](http://eshop.partialjs.com)
 
@@ -50,6 +51,7 @@ Documentation
 Videos on YouTube
 -----------------
 
+- VIDEO: [Node.js / partial.js debugging of web applications](http://www.youtube.com/watch?v=4wLq_bJ_sfs)
 - VIDEO: [partial.js / node.js - balancing of requests](http://www.youtube.com/watch?v=1VOJ7cWoboo)
 - VIDEO: [HTML 5 Server-Sent Events (JavaScript) via partial.js & node.js](http://www.youtube.com/watch?v=XoWIv3xGxR4)
 - VIDEO: [node.js / partial.js - Live streaming via multipart/x-mixed-replace + CSS auto vendor prefix](http://www.youtube.com/watch?v=qZqO4c4Fw2k)
