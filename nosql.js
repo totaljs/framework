@@ -1,51 +1,32 @@
-// Copyright Peter Širka, Web Site Design s.r.o. (www.petersirka.sk)
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
+'use strict';
 
 var fs = require('fs');
 var path = require('path');
 var util = require('util');
 var events = require('events');
 
-const VERSION = 'v2.0.1';
-const STATUS_UNKNOWN = 0;
-const STATUS_READING = 1;
-const STATUS_WRITING = 2;
-const STATUS_LOCKING = 3;
-const STATUS_PENDING = 4;
-const EXTENSION = '.nosql';
-const EXTENSION_VIEW = '.nosql';
-const EXTENSION_BINARY = '.nosql-binary';
-const EXTENSION_TMP = '.nosql-tmp';
-const EXTENSION_CHANGES = '.changes';
-const EXTENSION_STORED = '.nosql-stored';
-const EXTENSION_META = '.meta';
-const MAX_WRITESTREAM = 2;
-const MAX_READSTREAM = 4;
-const MAX_BUFFER_SIZE = 1024 * 4;
-const BINARY_HEADER_LENGTH = 2000;
-const NEWLINE = '\n';
-const STRING = 'string';
-const FUNCTION = 'function';
-const UNDEFINED = 'undefined';
-const BOOLEAN = 'boolean';
+var VERSION = 'v2.0.2';
+var STATUS_UNKNOWN = 0;
+var STATUS_READING = 1;
+var STATUS_WRITING = 2;
+var STATUS_LOCKING = 3;
+var STATUS_PENDING = 4;
+var EXTENSION = '.nosql';
+var EXTENSION_VIEW = '.nosql';
+var EXTENSION_BINARY = '.nosql-binary';
+var EXTENSION_TMP = '.nosql-tmp';
+var EXTENSION_CHANGES = '.changes';
+var EXTENSION_STORED = '.nosql-stored';
+var EXTENSION_META = '.meta';
+var MAX_WRITESTREAM = 2;
+var MAX_READSTREAM = 4;
+var MAX_BUFFER_SIZE = 1024 * 4;
+var BINARY_HEADER_LENGTH = 2000;
+var NEWLINE = '\n';
+var STRING = 'string';
+var FUNCTION = 'function';
+var UNDEFINED = 'undefined';
+var BOOLEAN = 'boolean';
 
 if (typeof(setImmediate) === UNDEFINED) {
 	global.setImmediate = function(cb) {
