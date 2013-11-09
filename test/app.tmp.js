@@ -37,10 +37,7 @@ function params(tmp, replace) {
 	return true;
 }
 
-params(tmp, function(key, index) {
-	console.log(key, index);
-});
-
+console.log((1).pluralize('zero', 'one', 'few', 'other'));
 
 // message.attachment('/users/petersirka/desktop/wall.png');
 

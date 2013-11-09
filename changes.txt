@@ -1,7 +1,11 @@
 IN DEVELOPMENT ======= 1.2.9
 
 - updated: binary/empty-project minified debugging.js
-- updated: NoSQL v2.0.1 (added: binary.update())
+- updated: NoSQL v2.0.2 (added: binary.update())
+- updated: license
+
+- fixed: framework.backup()
+- clean code
 
 ======= 1.2.8
 

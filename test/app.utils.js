@@ -1,4 +1,5 @@
 global.builders = require('../builders');
+global.framework = { version: '' };
 
 var assert = require('assert');
 var utils = require('../utils');

@@ -9,6 +9,7 @@ exports.install = function(framework) {
 	framework.route('/f/', viewSocket);
 	framework.route('/js/', viewJS);
 	framework.route('/', viewIndex);
+	framework.route('/custom/', viewCustomTesting);
 	framework.route('/views/', viewViews, [], ['partial']);
 	framework.route('/view-notfound/', viewError);
 	framework.route('/views-if/', viewViewsIf);
@@ -95,6 +96,10 @@ function viewSocket() {
 
 function view_test_view() {
 	this.view('test');
+}
+
+function viewCustomTesting() {
+	this.plain(this.template('one', [{ name: 'A', price: 10 }, { name: 'B', price: 10.5 }]));
 }
 
 function socket(self, framework) {
@@ -224,6 +229,8 @@ function viewViews() {
 	assert.ok(output.contains('#view-toggle#'), name + 'viewToggle()');
 	assert.ok(output.contains('#contentEMPTY#'), name + 'content');
 	assert.ok(output.contains('#content-toggle#'), name + 'contentToggle');
+//	template-one<div>10.00</div><div>10</div><div>A</div><div>other</div><div>10.50</div><div>10.5</div><div>B</div><div>other</div>
+//	template-one<div>10.00</div><div>10</div><div>A</div><div>zero</div><div>10.50</div><div>10.5</div><div>B</div><div>one</div>
 	assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>A</div><div>zero</div><div>10.50</div><div>10.5</div><div>B</div><div>one</div>#'), name + 'template() - one');
 	assert.ok(output.contains('#template-more<ul><li>A</li><li>B</li></ul>#'), name + 'template() - more');
 	assert.ok(output.contains('#template-emptyEMPTY#'), name + 'template() - empty');
