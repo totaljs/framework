@@ -1835,6 +1835,9 @@ Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) 
 	var size = buffer.length;
 	var dimension = { width: 0, height: 0 };
 
+	if (id.indexOf('#') === -1)
+		id = self.db.name + '#' + id;
+
 	if (name.indexOf('.gif') !== -1)
 		dimension = dimensionGIF(buffer);
 	else if (name.indexOf('.png') !== -1)
