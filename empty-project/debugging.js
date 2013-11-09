@@ -1,3 +1,9 @@
+// ===================================================
+// IMPORTANT: only for debugging mode
+// partial.js - web application framework for node.js
+// http://www.partialjs.com
+// ===================================================
+
 var fork = require('child_process').fork;
 var fs = require('fs');
 var path = require('path');
