@@ -186,7 +186,6 @@ function viewIndex() {
 	assert.ok(self.routeFont('p.woff') === '/font/p.woff', name + 'routeFont()');
 	assert.ok(self.routeUpload('p.pdf') === '/upload/p.pdf', name + 'routeUpload()');
 	assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
-
 	assert.ok(self.template('test', ['A', 'B']) === '<div>AB</div>{name | 1}', name + 'template - no repository');
 	assert.ok(self.template('test', ['A', 'B'], '', { name: 'ABCDEFG' }) === '<div>AB</div>A...', name + 'template - repository');
 	assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');

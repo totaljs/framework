@@ -804,7 +804,7 @@ Less.prototype.compile = function(value) {
 	@value {String} :: Raw CSS
 	return {String}
 */
-function autoprefixer (value) {
+function autoprefixer(value) {
 
 	var prefix = ['appearance', 'box-shadow', 'border-radius', 'border-image', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-origin', 'transition', 'user-select', 'animation', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'text-overflow', 'font-smoothing'];
 	var id = '@#auto-vendor-prefix#@';
@@ -945,7 +945,7 @@ function autoprefixer (value) {
 	return value;
 }
 
-function autoprefixer_keyframes (value) {
+function autoprefixer_keyframes(value) {
 
 	var builder = [];
 	var index = 0;
@@ -2723,10 +2723,10 @@ Template.prototype.render = function(name) {
 	if (generator === null)
 		return '';
 
-	var mid = compile(generator, self.model, true, self.controller);
+	var mid = compile(generator, self.model, true, self.controller, false);
 
-	var beg = generator.repositoryBeg !== null ? compile(generator.repositoryBeg, self.repository, self.controller) : generator.beg;
-	var end = generator.repositoryEnd !== null ? compile(generator.repositoryEnd, self.repository, self.controller) : generator.end;
+	var beg = generator.repositoryBeg !== null ? compile(generator.repositoryBeg, self.repository, false, self.controller) : generator.beg;
+	var end = generator.repositoryEnd !== null ? compile(generator.repositoryEnd, self.repository, false, self.controller) : generator.end;
 
 	if (name !== 'comments')
 		return beg + mid + end;

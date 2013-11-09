@@ -5,6 +5,7 @@ IN DEVELOPMENT ======= 1.2.9
 - updated: license
 
 - fixed: framework.backup()
+- fixed: template repository
 - clean code
 
 ======= 1.2.8
