@@ -1376,7 +1376,7 @@ Framework.prototype.usage = function(detailed) {
 		builder.push('## Cache of static files / range');
 		builder.push('');
 		staticRange.forEach(function(o) {
-			builder.push('- {0} / {1}'.format(o, self.temporary.range[o] / 1024).floor(2));
+			builder.push('- {0} / {1}'.format(o, (self.temporary.range[o] / 1024).floor(2)));
 		});
 	}
 
