@@ -1,0 +1,398 @@
+#!/usr/bin/env node
+
+var exec = require('child_process').exec
+var fs = require('fs');
+var path = require('path');
+var os = require('os');
+
+var EOF = os.platform() === 'win32' ? '\r\n' : '\n';
+var $type = 0;
+
+// $type == 0 - full
+// $type == 1 - normal
+// $type == 2 - minimum
+
+function createDirectory(directory) {
+	var arr = [];
+
+	arr.push('controllers');
+
+	if ($type < 2) {
+
+		arr.push('views');
+		arr.push('templates');
+		arr.push('databases');
+		arr.push('definitions');
+
+		if ($type == 0) {
+			arr.push('backup');
+			arr.push('tests');
+			arr.push('contents');
+			arr.push('logs');
+			arr.push('modules');
+		}
+
+		arr.push('resources');
+		arr.push('public');
+
+		arr.push('tmp');
+	}
+
+	arr.forEach(function(o) {
+		var dir = path.join(directory, o);
+		if (!fs.existsSync(dir))
+			fs.mkdirSync(dir);
+	});
+};
+
+function createFiles(directory) {
+	createFileIndex(directory);
+	createFileConfig(directory);
+
+	if ($type < 2) {
+		createFileViews(directory);
+		createFileResource(directory);
+		createFilePublic(directory);
+	}
+
+	if ($type === 0) {
+		createFileTest(directory);
+		createFileModules(directory);
+	}
+
+	createFileController(directory);
+	createFileDebugging(directory);
+}
+
+function createFileIndex(directory) {
+	var buffer = [];
+	buffer.push("var framework = require('partial.js');");
+	buffer.push("var http = require('http');");
+	buffer.push("var os = require('os');");
+	buffer.push("");
+	buffer.push("var index = process.argv.indexOf('backup');");
+	buffer.push("if (index !== -1) {");
+	buffer.push("	framework.backup(function(err, path) {");
+	buffer.push("		console.log('Backup: ' + (err ? err.toString() : path));");
+	buffer.push("	});");
+	buffer.push("	return;");
+	buffer.push("}");
+	buffer.push("");
+	buffer.push("index = process.argv.indexOf('restore');");
+	buffer.push("if (index !== -1) {");
+	buffer.push("	var restore = process.argv[index + 1] || '';");
+	buffer.push("	framework.restore(restore, function(err, path) {");
+	buffer.push("		console.log('Restore: ' + (err ? err.toString() : path));");
+	buffer.push("	});");
+	buffer.push("	return;");
+	buffer.push("}");
+	buffer.push("");
+	buffer.push("var port = parseInt(process.argv[2] || '8000', 10);");
+	buffer.push("var debug = true;");
+	buffer.push("");
+	buffer.push("framework.run(http, debug, port);");
+	buffer.push("");
+	buffer.push("// framework.test(true);");
+	buffer.push("");
+	buffer.push("console.log('http://{0}:{1}/'.format(framework.ip, framework.port));");
+	fs.writeFileSync(path.join(directory, 'index.js'), buffer.join(EOF));
+}
+
+function createFileConfig(directory) {
+	var buffer = [];
+
+	buffer.push("name               : my web site");
+	buffer.push("version            : 1.01");
+	buffer.push("secret             : your-secret-key");
+	buffer.push("author             : Your company name");
+
+	fs.writeFileSync(path.join(directory, 'config-release'), buffer.join(EOF));
+	fs.writeFileSync(path.join(directory, 'config-debug'), buffer.join(EOF).replace(/true/g, 'false'));
+}
+
+function createFileViews(directory) {
+	var buffer = [];
+	var dir = path.join(directory, 'views');
+
+	if (!fs.existsSync(dir))
+		fs.mkdirSync(dir);
+
+	buffer.push("@{meta('title', 'description', 'keywords')}");
+	buffer.push("");
+	buffer.push('<div>Hello world!</div>');
+
+	fs.writeFileSync(path.join(dir, 'homepage.html'), buffer.join('\n'));
+
+	buffer = [];
+
+	buffer.push('<!DOCTYPE html>');
+	buffer.push('<html>');
+	buffer.push('<head>');
+	buffer.push('    @{meta}');
+	buffer.push('    <meta charset="utf-8" />');
+	buffer.push('    <meta http-equiv="X-UA-Compatible" content="IE=10" />');
+	buffer.push('    <meta name="format-detection" content="telephone=no" />');
+	buffer.push('    <meta name="viewport" content="width=1024, user-scalable=yes" />');
+	buffer.push('    <meta name="robots" content="all,follow" />');	
+	buffer.push('    @{head}');
+	buffer.push('    @{css(\'default.css\')}');
+	buffer.push('    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>');
+	buffer.push('    @{js(\'default.js\')}');
+	buffer.push('    @{favicon(\'favicon.ico\')}');
+	buffer.push('<head>');
+	buffer.push('<body>');
+	buffer.push('');
+	buffer.push('    @{body}');
+	buffer.push('');
+	buffer.push('</body>');
+	buffer.push('</html>');
+
+	fs.writeFileSync(path.join(dir, '_layout.html'), buffer.join(EOF));
+}
+
+function createFileResource(directory) {
+	var dir = path.join(directory, 'resources');
+	fs.writeFileSync(path.join(dir, 'default.resource'), 'name                : value' + EOF);
+}
+
+function createFilePublic(directory) {
+
+	var dir = path.join(directory, 'public');
+
+	var css = path.join(dir, 'css');
+	var js = path.join(dir, 'js');
+	var img = path.join(dir, 'img');
+
+	if (!fs.existsSync(js))
+		fs.mkdirSync(js);
+
+	if (!fs.existsSync(css))
+		fs.mkdirSync(css);
+
+	if (!fs.existsSync(img))
+		fs.mkdirSync(img);
+
+	var buffer = [];
+	buffer.push('User-agent: *');
+	buffer.push('Allow: /');
+	buffer.push('');
+
+	fs.writeFileSync(path.join(dir, 'robots.txt'), buffer.join(EOF));
+
+	buffer = [];
+	buffer.push('@#auto-vendor-prefix#@');
+	buffer.push('');
+	buffer.push('@constant{ color:#505050 }');
+	buffer.push('@function(property){ color:@property }');
+	buffer.push('');
+	buffer.push('body { padding:20px; margin:0; font:normal 12px Arial; @constant; }');
+	buffer.push('div { @function(\'red\'); }');
+
+	fs.writeFileSync(path.join(css, 'default.css'), buffer.join(EOF));
+
+	buffer = [];
+	buffer.push('$(document).ready(function() {');
+    buffer.push('');
+    buffer.push('});');
+
+	fs.writeFileSync(path.join(dir, 'favicon.ico'), 'AAABAAEAICAAAAAAIACoEAAAFgAAACgAAAAgAAAAQAAAAAEAIAAAAAAAgBAAAAAAAAAAAAAAAAAAAAAAAAD///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B5eXlE+bm5n3m5uZ35ubmD////wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B5ubmCebm5lvDzuXbcJfi/7TE5P3l5ebX5ubmU+bm5gf///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Aebm5j3T2ea9fJ/j/RNX3/8ASt3/ClHf/16K4v/P1ub75ebmt+bm5jXj4+MD////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wGIn9wHfqDjvSdl4P8ASt3/AErd/wBK3f8ASt3/AErd/xZZ3/+Co+T/3uHm9ebm5pfn5+cX////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////AeXl5RHj4+MN////AQBI2yUASuHVAErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8mZOD/nrXk/+Tk5u3m5uZ35ubmD////wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Aejo6Anm5uZf1drl2+Xl5sfm5uYl////AQBI3R8ASt/TAErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8DTd//Q3jh/7bG5f3l5ebR5ubmU+fn5wX///8B////Af///wH///8B////Af///wH///8B5eXlB+Li4gXl5eUj1Nrmu3eb4/0fYOD/ep3j/+Lj5sXl5eUD////AQBK3UUASt77AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/C1Le/2OO4v/N1eb75+fns+fn5zP///8B////Af///wH///8B////Aebm5lHm5ubL5ebmwVWE4YEUWODrAEre/wBK3f8CTN7/j6vk/+fn5yn///8BAEnYCQBK3s8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/xVZ3/+FpOP/3eDmz////wH///8B////Af///wGampoTbW1t5zc3N/9nZ2f/wsnX4QZP36cASt3/AErd/wBK3f8zbeD/5+fnOf///wH///8BAErfnwBK3f8ASt7zAErevQBK34kAStxpAEjbZQBK3osASt7bAErd/wBK3f8ASt3/AErd/wBK3f9pkeHR////Af///wH///8B////AQYGBk8BAQH/AAAA/wAAAP9xcXHjV4PfGQBK3+0ASt3/AErd/yBg4P/n5+c5////Af///wEAS+CTLWng90d53jEASdwF////Aebm5g/k5OQJ////AQBH2BMASt+zAErd/wBK3f8ASt3/AErd/2aP4dH///8B////Af///wH///8BAAAAYQAAAP8AAAD/AAAA/x8fH6n///8BAkvfxwBK3f8ASt3/IGDg/+fn5zn///8B////AQBL4JNEeOHz3N7jG+bm5j3k5eah3uDm3eXl5rfn5+cL////AQBJ2yEASt7tAErd/wBK3f8ASt3/Zo/h0f///wH///8B////Af///wEAAAAfAAAA4wAAAP8AAAD1AAAAQ+Dg5SEYW9/xAErd/wBK3f8gYOD/5+fnOf///wH///8BAEvgk0l84fng4ubDorjk+05/4v8oZeD/bJTku+Xl5QX///8B////AQBK4L0ASt3/AErd/wBK3f9mj+HR////Af///wH///8B////Af///wEAAAATAAAAQxwcHCXl5eaNk67j7wBL3v8ASt3/AErd/yBg4P/n5+c5////Af///wEAS+CTJmTf/ypn4f8ASt7/AErd/wBK3/cASd9d////Af///wHm5uYDE1jhxwBK3f8ASt3/AErd/2aP4dH///8B////Af///wH///8B////Af///wH///8BGVnaI0J34OkJUd7/AErd/wBK3f8ASt3/IGDg/+fn5zn///8B////AQBL4JMASt3/AErd/wBK3vMASt6fAEngMQBE2wP///8B4+PjCb3K5XkTV9/7AErd/wBK3f8ASt3/Zo/h0f///wH///8B////Af///wH///8B5eXlL+bm5jUBSts7AEre/QBK3f8ASt3/AErd/wBK3f8gYOD/5+fnOf///wH///8BAEvgkwBK3f8ASt7jAEncQwBG2AP///8B5+fnCeXl5VXT2ebDTH7i/QBK3f8ASt3/AErd/wBK3f9mj+HR////Af///wH///8B////Af///wH///8B////AQVN3D0BS979AErd/wBK3f8ASt3/AErd/yBg4P/n5+c5////Af///wEAS+CTAErd/zlx32v///8B////Aebm5gfX3Oariafj/SRj4P8ASt3/AErd/wBK3f8ASt3/AErd/2aP4dH///8B////Af///wH///8B////Af///wH///8BAEjWPQBK3P0ASt3/AErd/wBK3f8ASt3/IGDg/+fn5zn///8B////AQBL4JMUWOD/u8nlW////wH///8BHVzaKRpc4PMASt7/AEre+wBK37sASt6zAErd/wBK3f8ASt3/Zo/h0f///wH///8B////Af///wH///8B////Af///wEBS9w7AEre/QBK3f8ASt3/AErd/wBK3f8gYOD/5+fnOf///wH///8BAEvgkxRY4P/P1uWt4uLiBf///wEASdw1AErgvwBK35UASd83AEnZBwBL3X0ASt7/AErd/wBK3f9mj+HR////Af///wH///8B////Af///wH///8B////AQFL3DsASt79AErd/wBK3f8ASt3/AErd/yBg4P/m5uY95ubmBebm5gUDTeCVAUve/6O45Pvm5uaD5+fnEf///wEAOtgD1trkA+bm5hHm5uZLVoThxQBK3v8ASt3/AErd/2aP4dH///8B////Af///wH///8B////Af///wH///8BAUvcOwBK3v0ASt3/AErd/wBK3f8ASt3/IGDg/+bm5tHm5ubD5ubmw1SD4+UASt3/IGDf/7nI5f/m5ubf5ubmp+bm5pfm5uaz3N/m5Zy04/8ybOD/AErd/wBK3f8ASt3/Zo/h0f///wH///8B////Af///wH///8B////Af///wEASdw7AEre+wBK3f8ASt3/AErd/wBK3f8KUd7/R3rg/0Z64P9GeuD/Hl/f/wBK3f8ASt3/BU7f/0B24f9vluP/bpXj/0R54f8NU9//AEre/wBK3f8ASt3/AErd/wBK3f9FeeCl////Af///wH///8B////Af///wH///8B////AQBI2ycASt/ZAErd/wBK3f8ASt3/AErd/wBK3v8ASt7/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AEre5wBJ3k3///8B////Af///wH///8B////Af///wH///8B////AQBI2hcASd+BAEre7wBK3f0ASt/FAEnedQBL318ASt6BAEre1wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AEre9QBL358ASNwh////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wEAR9onAEnfYQBL2gf///8B////Af///wEASNsRAEretwBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK3f8ASt3/AEre/wBK378ASd47////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wHm5uYX5ubmiefn58fm5ubD5ubmeeTk5A0ARtwhAEre+QBK3f8ASt3/AErd/wBK3f8ASt3/AErd/wBK39kASt9XAErWBf///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B4eHhB7DC5bthjOL/RHrk/1qI4v+yw+X95eXmnbLE6AMASt7TAErd/wBK3f8ASt3/AErd/wBK3+kASd1/AEfdE////wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wFZhd9BFVng+wBK3f8ASt3/AErd/w5U4P+qveTv5ubmHQBK3skASt3/AErd/wBK3vkASuCfAEnfJ////wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////AQZP34kASt3/AErd/wBK3f8ASt3/AErd/0l84vnn5+czAErglwBK3/sASt/FAErfQf///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8BAEndpwBK3f8ASt3/AErd/wBK3f8ASt3/I2Lg8d7h5R3///8BAErdIwBG2AX///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wEASuCBAErd/wBK3f8ASt3/AErd/wBK3f8OVeDB////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////AQBJ2icASt/pAErd/wBK3f8ASt3/AErf9wBK3lH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////AQBJ3zUASt+nAErd2QBK3rsASuBTAEnbA////wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8B////Af///wH///8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', 'base64');
+	fs.writeFileSync(path.join(js, 'default.js'), buffer.join(EOF));
+}
+
+function createFileModules(directory) {
+
+	var dir = path.join(directory, 'modules');
+
+	var buffer = [];
+	buffer.push('exports.yourcode = function () {');
+	buffer.push('    return \'Hello World\';');
+	buffer.push('};');
+
+	fs.writeFileSync(path.join(dir, 'yourcode.js'), buffer.join(EOF));
+}
+
+function createFileController(directory) {
+
+	var dir = path.join(directory, 'controllers');
+	var buffer = [];
+
+	buffer.push('exports.install = function(framework) {');
+	buffer.push('    framework.route(\'/\', view_homepage);');
+	buffer.push('    framework.route(\'#401\', error401);');
+	buffer.push('    framework.route(\'#403\', error403);');
+	buffer.push('    framework.route(\'#404\', error404);');
+	buffer.push('    framework.route(\'#408\', error408);');
+	buffer.push('    framework.route(\'#431\', error431);');
+	buffer.push('    framework.route(\'#500\', error500);');
+	buffer.push('};');
+	buffer.push('');
+	buffer.push('/*');
+	buffer.push('exports.models = function() {');
+	buffer.push('');
+	buffer.push('};');
+	buffer.push('*/');
+	buffer.push('');
+	buffer.push('/*');
+	buffer.push('exports.functions = function() {');
+	buffer.push('');
+	buffer.push('};');
+	buffer.push('*/');
+	buffer.push('');
+	buffer.push('// Unauthorized');
+	buffer.push('function error401() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.statusCode = 401;');
+	buffer.push('    self.plain(utils.httpStatus(self.statusCode));');
+	buffer.push('}');
+	buffer.push('');
+	buffer.push('// Forbidden');
+	buffer.push('function error403() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.statusCode = 403;');
+	buffer.push('    self.plain(utils.httpStatus(self.statusCode));');
+	buffer.push('}');
+	buffer.push('');
+	buffer.push('// Not Found');
+	buffer.push('function error404() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.statusCode = 404;');
+	buffer.push('    self.plain(utils.httpStatus(self.statusCode));');
+	buffer.push('}');
+	buffer.push('');
+	buffer.push('// Request Timeout');
+	buffer.push('function error408() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.statusCode = 408;');
+	buffer.push('    self.plain(utils.httpStatus(self.statusCode));');
+	buffer.push('}');
+	buffer.push('');
+	buffer.push('// Request Header Fields Too Large');
+	buffer.push('function error431() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.statusCode = 431;');
+	buffer.push('    self.plain(utils.httpStatus(self.statusCode));');
+	buffer.push('}');
+	buffer.push('');
+	buffer.push('// Internal Server Error');
+	buffer.push('function error500() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.statusCode = 500;');
+	buffer.push('    self.plain(utils.httpStatus(self.statusCode));');
+	buffer.push('}');
+	buffer.push('');
+	buffer.push('function view_homepage() {');
+	buffer.push('    var self = this;');
+
+	if ($type !== 2)
+		buffer.push('    self.view(\'homepage\');');
+	else
+		buffer.push('    self.plain(\'homepage\');');
+	
+	buffer.push('}');
+
+	fs.writeFileSync(path.join(dir, 'default.js'), buffer.join(EOF));
+}
+
+function createFileTest(directory) {
+	var dir = path.join(directory, 'tests');
+	var buffer = [];
+
+	buffer.push("var assert = require('assert');");
+	buffer.push("var utils = require('partial.js/utils');");
+	buffer.push("");
+	buffer.push("exports.run = function(framework) {");
+	buffer.push("");
+	buffer.push("    framework.assert('Homepage', '/1/', function response(error, data, name, code, headers) {");
+	buffer.push("        assert.ok(code === 200, name);");
+	buffer.push("    });");
+	buffer.push("");
+	buffer.push("};");
+
+	fs.writeFileSync(path.join(dir, 'global.js'), buffer.join(EOF));
+}
+
+function createFileDebugging(directory) {
+	fs.writeFileSync(path.join(directory, 'debugging.js'), 'Ly8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09DQovLyBJTVBPUlRBTlQ6IG9ubHkgZm9yIGRlYnVnZ2luZyBtb2RlDQovLyBwYXJ0aWFsLmpzIC0gd2ViIGFwcGxpY2F0aW9uIGZyYW1ld29yayBmb3Igbm9kZS5qcw0KLy8gaHR0cDovL3d3dy5wYXJ0aWFsanMuY29tDQovLyA9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0NCg0KdmFyIGZvcms9cmVxdWlyZSgnY2hpbGRfcHJvY2VzcycpLmZvcms7dmFyIGZzPXJlcXVpcmUoJ2ZzJyk7dmFyIHBhdGg9cmVxdWlyZSgncGF0aCcpO3ZhciBkaXJlY3Rvcnk9cHJvY2Vzcy5jd2QoKTt2YXIgdXRpbHM9cmVxdWlyZSgncGFydGlhbC5qcy91dGlscycpO3ZhciBXYWxrZXI9cmVxdWlyZSgncGFydGlhbC5qcy9iYWNrdXAnKS5XYWxrZXI7dmFyIGRpcmVjdG9yaWVzPVtkaXJlY3RvcnkrJy9jb250cm9sbGVycycsZGlyZWN0b3J5KycvZGVmaW5pdGlvbnMnLGRpcmVjdG9yeSsnL21vZHVsZXMnXTt2YXIgZmlsZXM9e307dmFyIGZvcmNlPWZhbHNlO3ZhciBjaGFuZ2VzPVtdO3ZhciBhcHA9bnVsbDt2YXIgc3RhdHVzPTA7dmFyIGFzeW5jPW5ldyB1dGlscy5Bc3luYygpO3ZhciBwaWQ9Jyc7dmFyIHBpZEludGVydmFsPW51bGw7dmFyIHByZWZpeD0nLS0tLS0tLS0tLS0tPiAnO3ZhciB3YWxrZXI9bmV3IFdhbGtlcigpO3ZhciBpc0xvYWRlZD1mYWxzZTt3YWxrZXIub25GaWx0ZXI9ZnVuY3Rpb24ocGF0aCl7cmV0dXJuIHBhdGguaW5kZXhPZignLmpzJykhPT0tMTt9O3dhbGtlci5vbkNvbXBsZXRlPWZ1bmN0aW9uKCl7dmFyIHNlbGY9dGhpcztmcy5yZWFkZGlyKGRpcmVjdG9yeSxmdW5jdGlvbihlcnIsYXJyKXt2YXIgbGVuZ3RoPWFyci5sZW5ndGg7Zm9yKHZhciBpPTA7aTxsZW5ndGg7aSsrKXt2YXIgbmFtZT1hcnJbaV07aWYobmFtZT09PSdkZWJ1Z2dpbmcuanMnfHxuYW1lPT09J2tlZXBhbGl2ZS5qcycpIGNvbnRpbnVlO2lmKG5hbWU9PT0nY29uZmlnLWRlYnVnJ3x8bmFtZT09PSdjb25maWctcmVsZWFzZSd8fG5hbWUuaW5kZXhPZignLmpzJykhPT0tMSkgc2VsZi5maWxlLnB1c2gobmFtZSk7fSBsZW5ndGg9c2VsZi5maWxlLmxlbmd0aDtmb3IodmFyIGk9MDtpPGxlbmd0aDtpKyspe3ZhciBuYW1lPXNlbGYuZmlsZVtpXTtpZighZmlsZXNbbmFtZV0pIGZpbGVzW25hbWVdPWlzTG9hZGVkPzA6bnVsbDt9IHJlZnJlc2goKTt9KTt9O2Z1bmN0aW9uIHJlZnJlc2goKXt2YXIgZmlsZW5hbWVzPU9iamVjdC5rZXlzKGZpbGVzKTt2YXIgbGVuZ3RoPWZpbGVuYW1lcy5sZW5ndGg7Zm9yKHZhciBpPTA7aTxsZW5ndGg7aSsrKXt2YXIgZmlsZW5hbWU9ZmlsZW5hbWVzW2ldOyhmdW5jdGlvbihmaWxlbmFtZSl7YXN5bmMuYXdhaXQoZnVuY3Rpb24obmV4dCl7ZnMuc3RhdChmaWxlbmFtZSxmdW5jdGlvbihlcnIsc3RhdCl7aWYoIWVycil7dmFyIHRpY2tzPXN0YXQubXRpbWUuZ2V0VGltZSgpO2lmKGZpbGVzW2ZpbGVuYW1lXSE9PW51bGwmJmZpbGVzW2ZpbGVuYW1lXSE9PXRpY2tzKXtjaGFuZ2VzLnB1c2gocHJlZml4K2ZpbGVuYW1lLnJlcGxhY2UoZGlyZWN0b3J5LCcnKSsoZmlsZXNbZmlsZW5hbWVdPT09MD8nIChhZGRlZCknOicgKG1vZGlmaWVkKScpKTtmb3JjZT10cnVlO30gZmlsZXNbZmlsZW5hbWVdPXRpY2tzO30gZWxzZXtkZWxldGUgZmlsZXNbZmlsZW5hbWVdO2NoYW5nZXMucHVzaChwcmVmaXgrZmlsZW5hbWUucmVwbGFjZShkaXJlY3RvcnksJycpKycgKHJlbW92ZWQpJyk7Zm9yY2U9dHJ1ZTt9IG5leHQoKTt9KTt9KTt9KShmaWxlbmFtZSk7fSBhc3luYy5jb21wbGV0ZShmdW5jdGlvbigpe2lzTG9hZGVkPXRydWU7c2V0VGltZW91dChyZWZyZXNoX2RpcmVjdG9yeSwyMDAwKTtpZihzdGF0dXMhPT0xKSByZXR1cm47aWYoIWZvcmNlKSByZXR1cm47cmVzdGFydCgpO3ZhciBsZW5ndGg9Y2hhbmdlcy5sZW5ndGg7Zm9yKHZhciBpPTA7aTxsZW5ndGg7aSsrKSBjb25zb2xlLmxvZyhjaGFuZ2VzW2ldKTtjaGFuZ2VzPVtdO2ZvcmNlPWZhbHNlO30pO30gZnVuY3Rpb24gcmVmcmVzaF9kaXJlY3RvcnkoKXt3YWxrZXIucmVzZXQoKTt3YWxrZXIud2FsayhkaXJlY3Rvcmllcyk7fSBmdW5jdGlvbiByZXN0YXJ0KCl7aWYoYXBwIT09bnVsbCl7dHJ5IHtwcm9jZXNzLmtpbGwoYXBwLnBpZCk7fWNhdGNoKGVycil7fSBhcHA9bnVsbDt9IGFwcD1mb3JrKHBhdGguam9pbihkaXJlY3RvcnksJ2luZGV4LmpzJykpO2FwcC5vbignbWVzc2FnZScsZnVuY3Rpb24obXNnKXtpZihtc2cuc3Vic3RyaW5nKDAsNSk9PT0nbmFtZTonKXtwcm9jZXNzLnRpdGxlPSdkZWJ1ZzogJyttc2cuc3Vic3RyaW5nKDYpO3JldHVybjt9fSk7YXBwLm9uKCdleGl0JyxmdW5jdGlvbigpe2lmKHN0YXR1cyE9PTI1NSkgcmV0dXJuO2FwcD1udWxsO30pO3N0YXR1cz0xO30gcHJvY2Vzcy5vbignU0lHVEVSTScsZnVuY3Rpb24oKXtmcy51bmxpbmsocGlkLG5vb3ApO2lmKGFwcD09PW51bGwpe3Byb2Nlc3MuZXhpdCgwKTtyZXR1cm47fSBwcm9jZXNzLmtpbGwoYXBwLnBpZCk7YXBwPW51bGw7cHJvY2Vzcy5leGl0KDApO30pO3Byb2Nlc3Mub24oJ1NJR0lOVCcsZnVuY3Rpb24oKXtmcy51bmxpbmsocGlkLG5vb3ApO2lmKGFwcD09PW51bGwpe3Byb2Nlc3MuZXhpdCgwKTtyZXR1cm47fSBwcm9jZXNzLmtpbGwoYXBwLnBpZCk7YXBwPW51bGw7cHJvY2Vzcy5leGl0KDApO30pO3Byb2Nlc3Mub24oJ2V4aXQnLGZ1bmN0aW9uKCl7ZnMudW5saW5rKHBpZCxub29wKTtpZihhcHA9PT1udWxsKSByZXR1cm47cHJvY2Vzcy5raWxsKGFwcC5waWQpO2FwcD1udWxsO30pO2Z1bmN0aW9uIG5vb3AoKXt9IGlmKHByb2Nlc3MucGlkPjApe2NvbnNvbGUubG9nKHByZWZpeCsnUElEOiAnK3Byb2Nlc3MucGlkKTtwaWQ9cGF0aC5qb2luKGRpcmVjdG9yeSwnZGVidWdnaW5nLnBpZCcpO2ZzLndyaXRlRmlsZVN5bmMocGlkLHByb2Nlc3MucGlkKTtwaWRJbnRlcnZhbD1zZXRJbnRlcnZhbChmdW5jdGlvbigpe2ZzLmV4aXN0cyhwaWQsZnVuY3Rpb24oZXhpc3Qpe2lmKGV4aXN0KSByZXR1cm47ZnMudW5saW5rKHBpZCxub29wKTtpZihhcHAhPT1udWxsKSBwcm9jZXNzLmtpbGwoYXBwLnBpZCk7cHJvY2Vzcy5leGl0KDApO30pO30sMjAwMCk7fSByZXN0YXJ0KCk7cmVmcmVzaF9kaXJlY3RvcnkoKTs=', 'base64');
+}
+
+function install(directory) {
+	exec('npm install partial.js', { cwd: directory }, function (error, stdout, stderr) {
+
+	}).on('exit', function() {
+		console.log('partial.js: success');
+	});
+}
+
+function display_help() {
+		console.log('');
+		console.log('-m or -minimal   = minimal');
+		console.log('-n or -normal    = normal');
+		console.log('-f or -full      = full (default)');
+		console.log('-v or -version   = partial.js version');
+		console.log('/path/           = target (default current directory)');
+		console.log('');
+}
+
+var dir = process.cwd();
+
+for (var i = 2; i < process.argv.length; i++) {
+	var arg = process.argv[i];
+	var cmd = arg.toLowerCase();
+
+	if (cmd === '-v' || cmd === '-version') {
+		console.log(require('partial.js').version);
+		return;
+	}
+
+	if (cmd === '-f' || cmd === '-full')
+		continue;
+
+	if (cmd === '-m' || cmd === '-minimal' || cmd === '-minimum') {
+		$type = 2;
+		continue;
+	}
+
+	if (cmd === '-n' || cmd === '-normal') {
+		$type = 1;
+		continue;
+	}
+
+	if (cmd === '-h' || cmd === '-help') {
+		display_help();
+		return;
+	}
+	
+	dir = arg;
+	break;
+}
+
+if (!fs.existsSync(dir)) {
+	console.log('partial.js: error / directory not exists');
+	return;
+}
+
+var files = fs.readdirSync(dir);
+if (files.length > 0) {
+
+	var can = true;
+	for (var i = 0; i < files.length; i++) {
+		var name = files[i];
+		if (name[0] === '.')
+			continue;
+		can = false;
+	}
+
+	if (!can) {
+		console.log('partial.js: error / directory is not empty');
+		return;
+	}
+}
+
+console.log('partial.js: creating directories');
+createDirectory(dir);
+
+console.log('partial.js: creating files');
+createFiles(dir);
+
+console.log('partial.js: installing current version partial.js');
+install(dir);

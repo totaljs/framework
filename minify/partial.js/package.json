@@ -1,0 +1,27 @@
+{
+    "name": "partial.js",
+    "version": "1.2.8",
+    "versionDifference": "1.2.7-0",
+    "description": "web application framework (MVC) for node.js",
+    "main": "./index.js",
+    "keywords": [ "partial", "framework", "web", "webpage", "mvc", "controller", "view", "sqlite", "rdbms", "upload", "picture", "graphicsmagick", "imagemagick", "eshop", "blog", "forum", "chat", "game", "nosql", "database", "streaming", "live", "server sent events", "sse", "multipart", "x-mixed-replace"],
+    "engines": {
+        "node": ">=0.8.0"
+    },
+    "readmeFilename": "readme.md",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/petersirka/partial.js.git"
+    },
+    "author": {
+        "name": "Peter Širka"
+    },
+    "bin": { "partial.js": "./bin/partial" },
+    "_from": "partial.js",
+    "directories": {
+        "test": "test"
+    }
+}
