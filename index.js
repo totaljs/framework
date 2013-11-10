@@ -6435,10 +6435,14 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 
 /*
 	Close a response
+	@end {Boolean} :: end response? - default true
 	return {Controller}
 */
-Controller.prototype.close = function() {
+Controller.prototype.close = function(end) {
 	var self = this;
+
+	if (typeof(end) === UNDEFINED)
+		end = true;
 
 	if (!self.isConnected)
 		return self;
@@ -6448,8 +6452,12 @@ Controller.prototype.close = function() {
 		self.isConnected = false;
 
 		if (!self.res.success) {
+
 			self.res.success = true;
-			self.res.end();
+
+			if (end)
+				self.res.end();
+
 			self.framework._request_stats(false, false);
 			self.framework.emit('request-end', self.req, self.res);
 		}
@@ -6461,8 +6469,11 @@ Controller.prototype.close = function() {
 		self.res.write('\r\n\r\n--' + self.internal.boundary + '--');
 
 	self.isConnected = false;
-	self.res.subdomain = true;
-	self.res.end();
+	self.res.success = true;
+	
+	if (end)
+		self.res.end();
+
 	self.framework._request_stats(false, false);
 	self.framework.emit('request-end', self.req, self.res);
 	self.internal.type = 0;
