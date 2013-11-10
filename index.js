@@ -5966,13 +5966,18 @@ Controller.prototype.json = function(obj, headers) {
 	return {Boolean}
 */
 Controller.prototype.custom = function() {
+
 	if (self.res.success || !self.isConnected)
 		return false;
 
 	self.subscribe.success();
+	self.res.success = true;
 	self.framework.stats.response.custom++;
+	self.framework._request_stats(false, false);
+	self.framework.emit('request-end', self.req, self.res);
 
 	return true;
+
 };
 
 /*
@@ -6470,7 +6475,7 @@ Controller.prototype.close = function(end) {
 
 	self.isConnected = false;
 	self.res.success = true;
-	
+
 	if (end)
 		self.res.end();
 
