@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.3.0
+
+- added: controller.custom()
+
 ======= 1.2.9
 
 - updated: utils.getContentType()

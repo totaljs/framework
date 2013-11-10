@@ -146,6 +146,7 @@ function Framework() {
 			json: 0,
 			websocket: 0,
 			timeout: 0,
+			custom: 0,
 			file: 0,
 			stream: 0,
 			streaming: 0,
@@ -1214,6 +1215,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Response JSON                   : {0}x'.format(self.stats.response.json.format('##########')));
 	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain.format('##########')));
 	builder.push('Response empty                  : {0}x'.format(self.stats.response.empty.format('##########')));
+	builder.push('Response custom                 : {0}x'.format(self.stats.response.custom.format('##########')));
 	builder.push('Response redirect               : {0}x'.format(self.stats.response.redirect.format('##########')));
 	builder.push('Response timeout                : {0}x'.format(self.stats.response.timeout.format('##########')));
 	builder.push('Response forwarding             : {0}x'.format(self.stats.response.forwarding.format('##########')));
@@ -5957,6 +5959,20 @@ Controller.prototype.json = function(obj, headers) {
 	self.framework.stats.response.json++;
 
 	return self;
+};
+
+/*
+	Set custom response
+	return {Boolean}
+*/
+Controller.prototype.custom = function() {
+	if (self.res.success || !self.isConnected)
+		return false;
+
+	self.subscribe.success();
+	self.framework.stats.response.custom++;
+
+	return true;
 };
 
 /*
