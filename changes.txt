@@ -1,5 +1,6 @@
 IN DEVELOPMENT ======= 1.3.0
 
+- added: builders.schema supports join models
 - added: controller.custom()
 
 - updated: builders.schema()
@@ -9,7 +10,6 @@ IN DEVELOPMENT ======= 1.3.0
 - updated: utils.validate()
 - updated: req.hostname()
 - updated: controller.close([end])
-
 
 ======= 1.2.9
 

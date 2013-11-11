@@ -89,9 +89,9 @@ exports.defaults = function(name) {
 	if (obj === null)
 		return null;
 
+	var defaults = schemaDefaults[name];
 	var item = utils.extend({}, obj, true);
 	var properties = Object.keys(item);
-	var defaults = schemaDefaults[name];
 	var length = properties.length;
 
 	for (var i = 0; i < length; i++) {
@@ -164,50 +164,54 @@ exports.defaults = function(name) {
 			continue;
 		}
 
-		var index = value.indexOf('#');
-		if (index !== -1) {
-			item[property] = exports.defaults(value.substring(index + 1));
-			continue;
-		}
+		var isArray = value[0] === '[';
 
-		value = value.toLowerCase();
+		if (isArray)
+			value = value.substring(1, value.length - 1);
 
-		if (value.contains([STRING, 'text', 'varchar', 'nvarchar', 'binary', 'data', 'base64'])) {
-			item[property] = '';
-			continue;
-		}
-
-		if (value.contains(['int', NUMBER, 'decimal', 'byte', 'float', 'double'])) {
-			item[property] = 0;
-			continue;
-		}
-
-		if (value.contains('bool')) {
-			item[property] = false;
-			continue;
-		}
-
-		if (value.contains(['date', 'time'])) {
-			item[property] = new Date();
-			continue;
-		}
-
-		if (value.contains(['object'])) {
-			item[property] = {};
-			continue;
-		}
-
-		if (value.contains(['array'])) {
+		if (isArray) {
 			item[property] = [];
 			continue;
 		}
 
-		if (value.contains(['binary', 'data', 'base64'])) {
+		var lower = value.toLowerCase();
+
+		if (lower.contains([STRING, 'text', 'varchar', 'nvarchar', 'binary', 'data', 'base64'])) {
+			item[property] = '';
+			continue;
+		}
+
+		if (lower.contains(['int', NUMBER, 'decimal', 'byte', 'float', 'double'])) {
+			item[property] = 0;
+			continue;
+		}
+
+		if (lower.contains('bool')) {
+			item[property] = false;
+			continue;
+		}
+
+		if (lower.contains(['date', 'time'])) {
+			item[property] = new Date();
+			continue;
+		}
+
+		if (lower.contains(['object'])) {
+			item[property] = {};
+			continue;
+		}
+
+		if (lower.contains(['array'])) {
+			item[property] = [];
+			continue;
+		}
+
+		if (lower.contains(['binary', 'data', 'base64'])) {
 			item[property] = null;
 			continue;
 		}
 
-		item[property] = null;
+		item[property] = exports.defaults(value);
 	}
 
 	return item;
@@ -226,10 +230,10 @@ exports.prepare = function(name, model) {
 	if (obj === null)
 		return null;
 
+	var tmp;
 	var item = utils.extend({}, obj, true);
 	var properties = Object.keys(item);
 	var defaults = schemaDefaults[name];
-	var tmp;
 	var length = properties.length;
 
 	for (var i = 0; i < length; i++) {
@@ -294,11 +298,11 @@ exports.prepare = function(name, model) {
 				if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
 					tmp = null;
 
-				item[property] = tmp || (defaults ? defaults(property) || null : null);
+				item[property] = tmp || (defaults ? isUndefined(defaults(property), null) : null);
 				continue;
 			}
 
-			item[property] = defaults(property) || null;
+			item[property] = isUndefined(defaults(property), null);
 			continue;
 		}
 
@@ -318,45 +322,44 @@ exports.prepare = function(name, model) {
 			continue;
 		}
 
-		var index = value.indexOf('#');
-		if (index !== -1) {
-			item[property] = exports.prepare(value.substring(index + 1), model[property]);
-			continue;
-		}
+		var isArray = value[0] === '[';
 
-		value = value.toLowerCase();
+		if (isArray)
+			value = value.substring(1, value.length - 1);
 
-		if (value.contains([STRING, 'text', 'varchar', 'nvarchar'])) {
+		var lower = value.toLowerCase();
+
+		if (lower.contains([STRING, 'text', 'varchar', 'nvarchar'])) {
 			tmp = val.toString();
 
-			var beg = value.indexOf('(');
+			var beg = lower.indexOf('(');
 			if (beg === -1) {
 				item[property] = tmp;
 				continue;
 			}
 
-			var size = value.substring(beg + 1, value.length - 1).parseInt();
+			var size = lower.substring(beg + 1, lower.length - 1).parseInt();
 			item[property] = tmp.max(size, '...');
 			continue;
 		}
 
-		if (value.contains(['int', 'byte'])) {
+		if (lower.contains(['int', 'byte'])) {
 			item[property] = utils.parseInt(val);
 			continue;
 		}
 
-		if (value.contains(['decimal', 'number', 'float', 'double'])) {
+		if (lower.contains(['decimal', NUMBER, 'float', 'double'])) {
 			item[property] = utils.parseFloat(val);
 			continue;
 		}
 
-		if (value.contains('bool')) {
+		if (lower.contains('bool', BOOLEAN)) {
 			tmp = val.toString();
 			item[property] = tmp === 'true' || tmp === '1';
 			continue;
 		}
 
-		if (value.contains(['date', 'time'])) {
+		if (lower.contains(['date', 'time'])) {
 
 			if (typeval === 'date') {
 				item[property] = val;
@@ -373,15 +376,36 @@ exports.prepare = function(name, model) {
 				continue;
 			}
 
-			item[property] = defaults(property) || null;
+			item[property] = isUndefined(defaults(property));
 			continue;
 		}
 
-		item[property] = (defaults ? defaults(property, false) || null : null);
+		if (isArray) {
+
+			if (!(val instanceof Array))
+				return (defaults ? isUndefined(defaults(property, false), []) : []);
+
+			item[property] = [];
+			var sublength = val.length;
+			for (var j = 0; j < sublength; j++) {
+				item[property][j] = exports.prepare(value, model[property][j]);
+			}
+			
+			continue;
+		}
+
+		item[property] = exports.prepare(value, model[property]);
+		//item[property] = (defaults ? defaults(property, false) || null : null);
 	}
 
 	return item;
 };
+
+function isUndefined(value, def) {
+	if (typeof(value) === UNDEFINED)
+		return def;
+	return value;
+}
 
 // ======================================================
 // PROTOTYPES
