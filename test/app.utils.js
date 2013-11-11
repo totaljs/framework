@@ -330,6 +330,7 @@ function others() {
 		return 'resource-' + name;
 	};
 
+
 	var error = utils.validate({}, ['firstName', 'lastName', 'age'], onValidation, resource);
 
 	assert.ok(error.hasError(), 'validation - hasError()');
@@ -345,9 +346,21 @@ function others() {
 
 	assert.ok(expression('a.id === b', ['a', 'b'], { id: 1 }, 1)(), 'expression error (true)');
 	assert.ok(!expression('a.id === b', ['a', 'b'], { id: 1 })(), 'expression error (false)');
+
+
+	builders.schema('1', { name: 'string', join: '#2' });
+	builders.schema('2', { age: Number }, function(name) {
+		if (name === 'age')
+			return -1;
+	});
+
+	builders.validation('1', ['name', 'join']);
+	builders.validation('2', ['age']);
+
+	utils.validate({ name: 'Name', join: { age: 3 }}, '1', onValidation, resource);
 }
 
-function onValidation(name, value) {
+function onValidation(name, value, path) {
 	switch (name) {
 		case 'firstName':
 			return value.length > 0;

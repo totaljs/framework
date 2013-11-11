@@ -750,7 +750,7 @@ exports.GUID = function(max) {
 	@resource {Function} :: function(key) return {String}
 	return {ErrorBuilder}
 */
-exports.validate = function(model, properties, prepare, builder, resource) {
+exports.validate = function(model, properties, prepare, builder, resource, path) {
 
 	if (typeof(builder) === FUNCTION && typeof(resource) === UNDEFINED) {
 		resource = builder;
@@ -758,16 +758,21 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 	}
 
 	var error = builder;
+	var current = typeof(path) === UNDEFINED ? '' : path + '.';
+	var isSchema = false;
+	var schemaName = '';
 
 	if (!(error instanceof builders.ErrorBuilder))
 		error = new builders.ErrorBuilder(resource);
 
 	if (typeof(properties) === STRING) {
 		var schema = builders.validation(properties);
-		if (schema.length === 0)
-			properties = properties.replace(/\s/g, '').split(',');
-		else
+		if (schema.length !== 0) {
+			schemaName = properties;
 			properties = schema;
+			isSchema = true;
+		} else 
+			properties = properties.replace(/\s/g, '').split(',');		
 	}
 
 	if (typeof(model) === UNDEFINED || model === null)
@@ -778,16 +783,32 @@ exports.validate = function(model, properties, prepare, builder, resource) {
 
 	for (var i = 0; i < properties.length; i++) {
 
-		var type = typeof(value);
 		var name = properties[i].toString();
-		var value = (type === FUNCTION ? model[name]() : model[name]) || '';
+		var value = model[name];
+		var type = typeof(value);
+
+		value = (type === FUNCTION ? model[name]() : model[name]) || '';
 
 		if (type === OBJECT) {
-			error.add(exports.validate(value, properties, prepare, error, builder, resource));
+
+			if (isSchema) {
+				var schema = builders.schema(schemaName) || null;
+				if (schema !== null) {
+					schema = schema[name] || null;
+					if (schema !== null) {
+						if (schema[0] === '#') {
+							error.add(exports.validate(value, schema.substring(1), prepare, error, resource, current + name));
+							continue;
+						}
+					}
+				}
+			}
+
+			error.add(exports.validate(value, properties, prepare, error, resource, current + name));
 			continue;
 		}
 
-		var result = prepare(name, value);
+		var result = prepare(name, value, current + name);
 
 		if (typeof(result) === UNDEFINED)
 			continue;

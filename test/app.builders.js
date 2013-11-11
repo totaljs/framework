@@ -101,6 +101,14 @@ function test_Schema() {
 	assert.ok(output.Name === '', name + 'defaults (String)');
 	assert.ok(output.Male === false, name + 'defaults (Boolean)');
 
+	builders.schema('1', { name: 'string', join: '#2' });
+	builders.schema('2', { age: Number }, function(name) {
+		if (name === 'age')
+			return -1;
+	});
+
+	console.log(builders.defaults('1', { name: 'Peter', age: 30, join: { name: 20 }}));
+
 };
 
 function test_ErrorBuilder() {

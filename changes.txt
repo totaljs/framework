@@ -2,6 +2,11 @@ IN DEVELOPMENT ======= 1.3.0
 
 - added: controller.custom()
 
+- updated: builders.schema()
+- updated: builders.defaults()
+- updated: builders.prepare()
+- updated: controller.validate()
+- updated: utils.validate()
 - updated: req.hostname()
 - updated: controller.close([end])
 
