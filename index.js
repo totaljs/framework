@@ -7577,12 +7577,12 @@ http.IncomingMessage.prototype.hostname = function(path) {
 	var self = this;
 	var uri = self.uri;
 
-	path = path || '';
+	if (typeof(path) === UNDEFINED) {
+		if (path[0] !== '/')
+			path = '/' + path;
+	}
 
-	if (path[0] !== '/')
-		path = '/' + path;
-
-	return uri.protocol + '//' + uri.hostname + (uri.port !== null && typeof(uri.port) !== UNDEFINED && uri.port !== 80 ? ':' + uri.port : '') + path;
+	return uri.protocol + '//' + uri.hostname + (uri.port !== null && typeof(uri.port) !== UNDEFINED && uri.port !== 80 ? ':' + uri.port : '') + (path || '');
 };
 
 global.framework = module.exports = new Framework();
