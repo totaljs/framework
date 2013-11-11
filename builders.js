@@ -417,7 +417,7 @@ function isUndefined(value, def) {
 	@error {String} :: default value @ (for resources)
     return {ErrorBuilder}
 */
-ErrorBuilder.prototype.add = function(name, error) {
+ErrorBuilder.prototype.add = function(name, error, path) {
 	var self = this;
 	self.isPrepared = false;
 
@@ -431,7 +431,7 @@ ErrorBuilder.prototype.add = function(name, error) {
 		return self;
 	}
 
-	self.builder.push({ name : name, error: error || '@' });
+	self.builder.push({ name : name, error: error || '@', path: path });
 	self.length = self.builder.length;
 	return self;
 };

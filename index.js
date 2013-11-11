@@ -7577,7 +7577,7 @@ http.IncomingMessage.prototype.hostname = function(path) {
 	var self = this;
 	var uri = self.uri;
 
-	if (typeof(path) === UNDEFINED) {
+	if (typeof(path) !== UNDEFINED) {
 		if (path[0] !== '/')
 			path = '/' + path;
 	}

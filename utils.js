@@ -771,8 +771,8 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
 			schemaName = properties;
 			properties = schema;
 			isSchema = true;
-		} else 
-			properties = properties.replace(/\s/g, '').split(',');		
+		} else
+			properties = properties.replace(/\s/g, '').split(',');
 	}
 
 	if (typeof(model) === UNDEFINED || model === null)
@@ -796,15 +796,33 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
 				if (schema !== null) {
 					schema = schema[name] || null;
 					if (schema !== null) {
-						if (schema[0] === '#') {
-							error.add(exports.validate(value, schema.substring(1), prepare, error, resource, current + name));
+
+						var isArray = schema[0] === '[';
+
+						if (isArray)
+							schema = schema.substring(1, schema.length - 1);
+
+						if (isArray) {
+
+							if (!(value instanceof Array)) {
+								error.add(name, '@');
+								continue;
+							}
+
+							var sublength = value.length;
+							for (var j = 0; j < sublength; j++)
+								exports.validate(value[j], schema, prepare, error, resource, current + name);
+
 							continue;
 						}
+
+						exports.validate(value, schema, prepare, error, resource, current + name);
+						continue;
 					}
 				}
 			}
 
-			error.add(exports.validate(value, properties, prepare, error, resource, current + name));
+			exports.validate(value, properties, prepare, error, resource, current + name);
 			continue;
 		}
 
@@ -816,18 +834,18 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
 		type = typeof(result);
 
 		if (type === STRING) {
-			error.add(name, result);
+			error.add(name, result, current + name);
 			continue;
 		}
 
 		if (type === BOOLEAN) {
 			if (!result)
-				error.add(name, '@');
+				error.add(name, '@', current + name);
 			continue;
 		}
 
 		if (result.isValid === false)
-			error.add(name, result.error);
+			error.add(name, result.error, current + name);
 	}
 
 	return error;
