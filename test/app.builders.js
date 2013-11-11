@@ -108,7 +108,8 @@ function test_Schema() {
 	});
 
 	//console.log(builders.defaults('1', { name: 'Peter', age: 30, join: { name: 20 }}));
-	console.log(builders.prepare('1', { name: 'Peter', join: [{ name: 'TEST' }, { age: 20, kokot: 'PICA' }]}));
+	output = builders.prepare('1', { name: 'Peter', join: [{ name: 'TEST' }, { age: 20, kokot: 'PICA' }]});
+	assert.ok(output.join[0].age === -1 && output.join[1].age === 20, name + 'schema - joining models');
 
 };
 

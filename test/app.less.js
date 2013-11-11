@@ -28,7 +28,7 @@ buffer.push('a{text-overflow:ellipsis}');
 buffer.push('@keyframes test{border-radius:5px}');
 
 css = buffer.join('\n');
-assert.ok(less.compile_less(css, true) === 'b{border-radius:1px;-webkit-border-radius:1px;-moz-border-radius:1px}a{border-radius:1px 2px 3px 4px;-webkit-border-radius:1px 2px 3px 4px;-moz-border-radius:1px 2px 3px 4px}a{text-overflow:ellipsis;-ms-text-overflow:ellipsis}keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-webkit-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-moz-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-o-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}', 'automated CSS vendor prefixes');
+assert.ok(less.compile_less(css, true) === 'b{border-radius:1px;-webkit-border-radius:1px;-moz-border-radius:1px}a{border-radius:1px 2px 3px 4px;-webkit-border-radius:1px 2px 3px 4px;-moz-border-radius:1px 2px 3px 4px}a{text-overflow:ellipsis}@keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-webkit-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-moz-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-o-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}', 'automated CSS vendor prefixes');
 
 console.log('================================================');
 console.log('success - OK');
