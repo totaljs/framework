@@ -691,7 +691,8 @@ exports.getContentType = function(ext) {
 */
 exports.etag = function(text, version) {
 	var sum = 0;
-	for (var i = 0; i < text.length; i++)
+	var length = text.length;
+	for (var i = 0; i < length; i++)
 		sum += text.charCodeAt(i);
 	return sum.toString() + (version ? ':' + version : '');
 };
@@ -895,8 +896,9 @@ exports.combine = function() {
 exports.removeDiacritics = function(str) {
     var dictionaryA = ['á', 'ä', 'č', 'ď', 'é', 'ě', 'ť', 'ž', 'ú', 'ů', 'ü', 'í', 'ï', 'ô', 'ó', 'ö', 'š', 'ľ', 'ĺ', 'ý', 'ÿ', 'č', 'ř'];
     var dictionaryB = ['a', 'a', 'c', 'd', 'e', 'e', 't', 'z', 'u', 'u', 'u', 'i', 'i', 'o', 'o', 'o', 's', 'l', 'l', 'y', 'y', 'c', 'r'];
-    var buf = [];
-    for (var i = 0; i < str.length; i++) {
+    var buf = '';
+    var length = str.length;
+    for (var i = 0; i < length; i++) {
         var c = str[i];
         var isUpper = false;
 
@@ -907,7 +909,7 @@ exports.removeDiacritics = function(str) {
         }
 
         if (index === -1) {
-            buf.push(c);
+            buf += c;
             continue;
         }
 
@@ -915,9 +917,9 @@ exports.removeDiacritics = function(str) {
         if (isUpper)
             c = c.toUpperCase();
 
-        buf.push(c);
+        buf += c;
     }
-    return buf.join('');
+    return buf;
 };
 
 // Author: Haribabu Pasupathy
@@ -945,7 +947,8 @@ exports.encode_WS = function(data){
         bytesFormatted[9] = (data.length) & 255;
     }
 
-    for (var i = 0; i < data.length; i++)
+    var length = data.length;
+    for (var i = 0; i < length; i++)
         bytesFormatted.push(data.charCodeAt(i));
 
     return bytesFormatted;
@@ -967,8 +970,9 @@ exports.decode_WS = function(data) {
     var i = indexFirstMask + 4;
     var index = 0;
     var output = '';
+    var length = data.length;
 
-    while (i < data.length)
+    while (i < length)
         output += String.fromCharCode(data[i++] ^ masks[index++ % 4]);
 
     return output;
@@ -1104,7 +1108,8 @@ String.prototype.contains = function(value, mustAll) {
 	if (typeof(value) === STRING)
 		return str.indexOf(value) !== -1;
 
-	for (var i = 0; i < value.length; i++) {
+	var length = value.length;
+	for (var i = 0; i < length; i++) {
 		var exists = str.indexOf(value[i]) !== -1;
 
 		if (mustAll) {
@@ -1153,7 +1158,8 @@ String.prototype.configuration = function() {
 */
 String.prototype.format = function() {
     var formatted = this;
-    for (var i = 0; i < arguments.length; i++) {
+    var length = arguments.length;
+    for (var i = 0; i < length; i++) {
         var regexp = new RegExp('\\{' + i + '\\}', 'gi');
         formatted = formatted.replace(regexp, arguments[i]);
     }
@@ -1335,8 +1341,9 @@ String.prototype.parseFloat = function(def) {
 
 String.prototype.toUnicode = function() {
     var result = '';
-    var self = this;
-    for(var i = 0; i < self.length; ++i){
+    var self = this.toString();
+    var length = self.length;
+    for(var i = 0; i < length; ++i){
         if(self.charCodeAt(i) > 126 || self.charCodeAt(i) < 32)
             result += '\\u' + self.charCodeAt(i).hex(4);
         else
@@ -1503,13 +1510,14 @@ String.prototype.indent = function(max, c) {
 String.prototype.isNumber = function(isDecimal) {
 
 	var self = this.toString();
+	var length = self.length;
 
-	if (self.length === 0)
+	if (length === 0)
 		return false;
 
 	isDecimal = isDecimal || false;
 
-	for (var i = 0; i < self.length; i++) {
+	for (var i = 0; i < length; i++) {
 		var ascii = self.charCodeAt(i);
 
 		if (isDecimal) {
@@ -1581,10 +1589,11 @@ String.prototype.dollar = function() {
 String.prototype.link = function(max) {
 	max = max || 60;
 
-	var self = this.toString().trim().removeDiacritics().toLowerCase();
-	var builder = [];
+	var self = this.toString().trim().toLowerCase().removeDiacritics();
+	var builder = '';
+	var length = self.length;
 
-	for (var i = 0; i < self.length; i++) {
+	for (var i = 0; i < length; i++) {
 		var c = self[i];
 		var code = self.charCodeAt(i);
 
@@ -1596,23 +1605,23 @@ String.prototype.link = function(max) {
 			if (builder[builder.length - 1] === '-')
 				continue;
 
-			builder.push('-');
+			builder += '-';
 			continue;
 		}
 
 		if (code > 47 && code < 58) {
-			builder.push(c);
+			builder += c;
 			continue;
 		}
 
 		if (code > 94 && code < 123) {
-			builder.push(c);
+			builder += c;
 			continue;
 		}
 
 	}
 
-	return builder.join('');
+	return builder;
 };
 
 String.prototype.pluralize = function(zero, one, few, other) {
@@ -1714,8 +1723,9 @@ Number.prototype.format = function(format) {
 		index = 0;
 
 		var skip = true;
+		var length = format.length;
 
-		for (var i = 0; i < format.length; i++) {
+		for (var i = 0; i < length; i++) {
 
 			var c = format[i];
 
@@ -1870,7 +1880,8 @@ Boolean.prototype.condition = function(ifTrue, ifFalse) {
 Array.prototype.take = function(count) {
 	var arr = [];
 	var self = this;
-	for (var i = 0; i < self.length; i++) {
+	var length = self.length;
+	for (var i = 0; i < length; i++) {
 		arr.push(self[i]);
 		if (arr.length >= count)
 			return arr;
@@ -1885,7 +1896,8 @@ Array.prototype.take = function(count) {
 Array.prototype.skip = function(count) {
 	var arr = [];
 	var self = this;
-	for (var i = 0; i < self.length; i++) {
+	var length = self.length;
+	for (var i = 0; i < length; i++) {
 		if (i >= count)
 			arr.push(self[i]);
 	}
@@ -1900,8 +1912,9 @@ Array.prototype.where = function(cb) {
 
 	var self = this;
 	var selected = [];
+	var length = self.length;
 
-	for (var i = 0; i < self.length; i++) {
+	for (var i = 0; i < length; i++) {
 		if (cb.call(self, self[i], i))
 			selected.push(self[i]);
 	}
@@ -1915,7 +1928,8 @@ Array.prototype.where = function(cb) {
 */
 Array.prototype.find = function(cb) {
 	var self = this;
-	for (var i = 0; i < self.length; i++) {
+	var length = self.length;
+	for (var i = 0; i < length; i++) {
 		if (cb.call(self, self[i], i))
 			return self[i];
 	}
@@ -1929,7 +1943,8 @@ Array.prototype.find = function(cb) {
 Array.prototype.remove = function(cb) {
 	var self = this;
 	var arr = [];
-	for (var i = 0; i < self.length; i++) {
+	var length = self.length;
+	for (var i = 0; i < length; i++) {
 		if (!cb.call(self, self[i], i))
 			arr.push(self[i]);
 	}
