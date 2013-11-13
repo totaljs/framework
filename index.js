@@ -2718,10 +2718,10 @@ Framework.prototype.clear = function() {
 		if (err)
 			return;
 
-		files.forEach(function(file) {
-			var fileName = utils.combine(self.config['directory-temp'], file);
-			fs.unlink(fileName);
-		});
+		var length = files.length;
+		for (var i = 0; i < length; i++)
+			fs.unlink(utils.combine(self.config['directory-temp'], files[i]), utils.noop);
+
 	});
 
 	// clear static cache
@@ -2833,8 +2833,9 @@ Framework.prototype.configure = function(arr, rewrite) {
 
 	var obj = {};
 	var accepts = null;
+	var length = arr.length;
 
-	for (var i = 0; i < arr.length; i++) {
+	for (var i = 0; i < length; i++) {
 		var str = arr[i];
 
 		if (str === '')
