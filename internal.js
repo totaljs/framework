@@ -311,12 +311,14 @@ exports.routeSplit = function(url, noLower) {
 */
 exports.routeCompare = function(url, route, isSystem) {
 
-	if (route.length !== url.length)
+	var length = url.length;
+
+	if (route.length !== length)
 		return false;
 
-	var skip = url.length === 1 && url[0] === '/';
+	var skip = length === 1 && url[0] === '/';
 
-	for (var i = 0; i < url.length; i++) {
+	for (var i = 0; i < length; i++) {
 
 		var value = route[i];
 
@@ -354,8 +356,9 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
 exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
 	var isXSS = false;
+	var length = arr2.length;
 
-	for (var i = 0; i < arr2.length; i++) {
+	for (var i = 0; i < length; i++) {
 		var value = arr2[i];
 
 		if (value[0] === '!')
@@ -859,8 +862,9 @@ function autoprefixer(value) {
 	}
 
 	var output = [];
+	var length = buffer.length;
 
-	for (var i = 0; i < builder.length; i++) {
+	for (var i = 0; i < length; i++) {
 
 		var name = builder[i].name;
 		property = builder[i].property;
@@ -935,7 +939,8 @@ function autoprefixer(value) {
 		output.push(updated);
 	}
 
-	for (var i = 0; i < output.length; i++)
+	length = output.length;
+	for (var i = 0; i < length; i++)
 		value = value.replace('@[[' + i + ']]', output[i]);
 
 	output = null;
@@ -984,8 +989,9 @@ function autoprefixer_keyframes(value) {
 	}
 
 	var output = [];
+	var length = builder.length;
 
-	for (var i = 0; i < builder.length; i++) {
+	for (var i = 0; i < length; i++) {
 
 		var name = builder[i].name;
 		var property = builder[i].property;
@@ -1006,7 +1012,9 @@ function autoprefixer_keyframes(value) {
 		output.push(updated);
 	}
 
-	for (var i = 0; i < output.length; i++)
+	length = output.length;
+
+	for (var i = 0; i < length; i++)
 		value = value.replace('@[[' + i + ']]', output[i]);
 
 	builder = null;
@@ -1278,16 +1286,14 @@ function JavaScript(source) {
         return 32;
     }
 
-    function put(c)
-    {
+    function put(c) {
         if (c === 13 || c === 10)
             sb.push(' ');
         else
             sb.push(String.fromCharCode(c));
     }
 
-    function isAlphanum(c)
-    {
+    function isAlphanum(c) {
         return ((c >= 97 && c <= 122) || (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || c === 95 || c === 36 || c === 92 || c > 126);
     }
 
@@ -1726,8 +1732,9 @@ function parse(html, controller) {
 	var beg = '';
 	var end = '';
 	var name = '';
+	var length = cache.length;
 
-	while (index < cache.length) {
+	while (index < length) {
 
 		var current = cache[index];
 		var next = cache[index + 1];
@@ -1996,7 +2003,9 @@ function parse(html, controller) {
 	var isPlus = true;
 	condition = 0;
 
-	for (var i = 0; i < builder.length; i++) {
+	length = builder.length;
+
+	for (var i = 0; i < length; i++) {
 
 		var str = builder[i];
 
@@ -2436,7 +2445,9 @@ Template.prototype.parse = function(html, isRepository) {
 	if (tmp === null)
 		tmp = [];
 
-	for (var i = 0; i < tmp.length; i++) {
+	var length = tmp.length;
+
+	for (var i = 0; i < length; i++) {
 
 		var format = '';
 		var name = tmp[i];
@@ -2554,7 +2565,8 @@ Template.prototype.parse = function(html, isRepository) {
 		builder.push(template.substring(indexBeg));
 
 	var fn = [];
-	for (var i = 0; i < builder.length; i++) {
+	var length = builder.length;
+	for (var i = 0; i < length; i++) {
 
 		var str = builder[i];
 
@@ -2750,8 +2762,11 @@ function compile(generator, obj, plain, controller) {
 		if (!utils.isArray(obj))
 			obj = [obj];
 
-		for (var j = 0; j < obj.length; j++)
+		var length = obj.length;
+
+		for (var j = 0; j < length; j++)
 			html += compile_eval(generator, obj[j], j, controller);
+
 	} else
 		html = compile_eval(generator, obj, 0, controller);
 
@@ -2767,7 +2782,9 @@ function compile(generator, obj, plain, controller) {
 function compile_eval(generator, model, indexer, controller) {
 
 	var params = [];
-	for (var i = 0; i < generator.property.length; i++) {
+	var length = generator.property.length;
+
+	for (var i = 0; i < length; i++) {
 
 		var property = generator.property[i];
 		var val;

@@ -1066,8 +1066,9 @@ Framework.prototype.onMeta = function() {
 
 	var self = this;
 	var builder = '';
+	var length = arguments.length;
 
-	for (var i = 0; i < arguments.length; i++) {
+	for (var i = 0; i < length; i++) {
 
 		var arg = utils.htmlEncode(arguments[i]);
 		if (arg === null || arg.length === 0)
@@ -1100,8 +1101,9 @@ Framework.prototype.log = function() {
 	var fileName = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padLeft(2, '0') + '-' + now.getDate().toString().padLeft(2, '0');
 	var time = now.getHours().toString().padLeft(2, '0') + ':' + now.getMinutes().toString().padLeft(2, '0') + ':' + now.getSeconds().toString().padLeft(2, '0');
 	var str = '';
+	var length = arguments.length;
 
-	for (var i = 0; i < arguments.length; i++)
+	for (var i = 0; i < length; i++)
 		str += (str.length > 0 ? ' ' : '') +  (arguments[i] || '');
 
 	fs.appendFile(utils.combine(self.config['directory-logs'], fileName + '.log'), time + ' | ' + str + '\n');
@@ -1661,7 +1663,6 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	returnHeaders['Expires'] = new Date().add('d', 15);
 	returnHeaders['Vary'] = 'Accept-Encoding';
 
-	// možnosť odoslať vlastné hlavičky
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
 
