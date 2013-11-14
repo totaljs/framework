@@ -13,6 +13,7 @@ var bk = require('./backup');
 var nosql = require('./nosql');
 var http = require('http');
 var directory = path.dirname(process.argv[1]);
+var child = require('child_process');
 
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
@@ -2995,7 +2996,7 @@ Framework.prototype.verification = function(cb) {
 	});
 
 	self.verify.push(function() {
-		var exec = require('child_process').exec;
+		var exec = child.exec;
 
 		exec('gm', function(error, stdout, stderr) {
 
@@ -3007,7 +3008,7 @@ Framework.prototype.verification = function(cb) {
 	});
 
 	self.verify.push(function () {
-		var exec = require('child_process').exec;
+		var exec = child.exec;
 
 		exec('convert', function(error, stdout, stderr) {
 

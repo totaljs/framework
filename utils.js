@@ -20,6 +20,7 @@ var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
 var NEWLINE = '\r\n';
+var VERSION = (typeof(framework) !== UNDEFINED ? 'v' + framework.version : '');
 
 if (typeof(setImmediate) === UNDEFINED) {
 	global.setImmediate = function(cb) {
@@ -115,7 +116,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 
 	util._extend(h, headers);
 
-	h['X-Powered-By'] = 'partial.js v' + framework.version;
+	h['X-Powered-By'] = 'partial.js' + VERSION;
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
@@ -186,7 +187,7 @@ exports.download = function(url, callback, headers, method, params, encoding) {
 	encoding = encoding || ENCODING;
 
 	util._extend(h, headers);
-	h['X-Powered-By'] = 'partial.js v' + framework.version;
+	h['X-Powered-By'] = 'partial.js' + VERSION;
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
@@ -251,7 +252,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 
 	h['Cache-Control'] = 'max-age=0';
 	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
-	h['X-Powered-By'] = 'partial.js v' + framework.version;
+	h['X-Powered-By'] = 'partial.js' + VERSION;
 
 	var uri = urlParser.parse(url);
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
@@ -337,52 +338,7 @@ exports.noop = function() {};
 	return {String}
 */
 exports.httpStatus = function(code, addCode) {
-
-	var plus = addCode || true ? code + ': ' : '';
-	switch(code) {
-		case 200: return plus + 'OK';
-		case 201: return plus + 'Created';
-		case 202: return plus + 'Accepted';
-		case 203: return plus + 'Non-Authoritative Information';
-		case 204: return plus + 'No Content';
-		case 205: return plus + 'Reset Content';
-		case 206: return plus + 'Partial Content';
-		case 300: return plus + 'Multiple Choices';
-		case 301: return plus + 'Moved Permanently';
-		case 302: return plus + 'Found';
-		case 303: return plus + 'See Other';
-		case 304: return plus + 'Not Modified';
-		case 306: return plus + 'Switch Proxy';
-		case 307: return plus + 'Temporary Redirect';
-		case 308: return plus + 'Resume Incomplete';
-		case 400: return plus + 'Bad Request';
-		case 401: return plus + 'Unauthorized';
-		case 402: return plus + 'Payment Required';
-		case 403: return plus + 'Forbidden';
-		case 404: return plus + 'Not Found';
-		case 405: return plus + 'Method Not Allowed';
-		case 406: return plus + 'Not Acceptable';
-		case 407: return plus + 'Proxy Authentication Required';
-		case 408: return plus + 'Request Timeout';
-		case 409: return plus + 'Conflict';
-		case 410: return plus + 'Gone';
-		case 411: return plus + 'Length Required';
-		case 412: return plus + 'Precondition Failed';
-		case 413: return plus + 'Request Entity Too Large';
-		case 414: return plus + 'Request-URI Too Long';
-		case 415: return plus + 'Unsupported Media Type';
-		case 416: return plus + 'Requested Range Not Satisfiable';
-		case 417: return plus + 'Expectation Failed';
-		case 431: return plus + 'Request Header Fields Too Large';
-		case 500: return plus + 'Internal Server Error';
-		case 501: return plus + 'Not Implemented';
-		case 502: return plus + 'Bad Gateway';
-		case 503: return plus + 'Service Unavailable';
-		case 504: return plus + 'Gateway Timeout';
-		case 505: return plus + 'HTTP Version Not Supported';
-		case 511: return plus + 'Network Authentication Required';
-	}
-	return null;
+	return (addCode || true ? code + ': ' : '') + http.STATUS_CODES[code];
 };
 
 /*

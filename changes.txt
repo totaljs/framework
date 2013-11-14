@@ -11,6 +11,7 @@ IN DEVELOPMENT ======= 1.3.0
 - updated: utils.validate()
 - updated: req.hostname()
 - updated: controller.close([end])
+- updated: utils.httpStatus()
 
 - improvements: utils.js
 
