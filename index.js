@@ -9,8 +9,6 @@ var crypto = require('crypto');
 var parser = require('url');
 var events = require('events');
 var internal = require('./internal');
-var bk = require('./backup');
-var nosql = require('./nosql');
 var http = require('http');
 var directory = path.dirname(process.argv[1]);
 var child = require('child_process');
@@ -297,7 +295,7 @@ Framework.prototype.database = function(name) {
 	if (typeof(db) !== UNDEFINED)
 		return db;
 
-	db = nosql.load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), true);
+	db = require('./nosql').load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), true);
 	self.databases[name] = db;
 
 	return db;
@@ -833,6 +831,7 @@ Framework.prototype.eval = function(script) {
 Framework.prototype.backup = function(callback, url) {
 
 	var self = this;
+	var bk = require('./backup');
 	var backup = new bk.Backup();
 
 	if (typeof(callback) === STRING) {
@@ -944,7 +943,8 @@ Framework.prototype.restore = function(date, callback, restorePath) {
 		return;
 	};
 
-	var backup = new bk.Backup();
+	var bk = new require('./backup');
+	var backup = bk.Backup();
 
 	backup.clear(dir, function() {
 		backup.restore(fileName, dir, cb, filter);

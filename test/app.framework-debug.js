@@ -1,5 +1,4 @@
 var utils = require('../utils');
-
 var assert = require('assert');
 var framework = require('../index');
 var http = require('http');
@@ -172,7 +171,7 @@ function run() {
 		assert.ok(framework.global.header > 0, 'partial - global');
 		assert.ok(framework.global.partial > 0, 'partial - partial');
 		assert.ok(framework.global.timeout > 0, 'timeout');
-
+		
 		end();
 		console.log(framework.stats);
 		return;

@@ -7,7 +7,7 @@ var fs = require('fs');
 var port = parseInt(process.argv[2] || '8001');
 var url = 'http://127.0.0.1:' + port + '/';
 var errorStatus = 0;
-var max = 1000;
+var max = 5000;
 var async = new utils.Async();
 
 framework.run(http, false, port);
@@ -172,6 +172,10 @@ function run() {
 		console.log('----------------------------');
 		console.log('');
 		end();
+
+		var diff = hd.end();
+		console.log(JSON.stringify(diff, null, '\t'));
+
 		return;
 	}
 
@@ -201,6 +205,12 @@ mem.on('stats', function(info) {
 });
 
 framework.fs.create.view('fromURL', 'http://partialjs.com/framework/test.html');
+
+var hd = null;
+
+setTimeout(function() {
+	hd = new mem.HeapDiff();
+}, 2000);
 
 setTimeout(function() {
 	console.time('new');
