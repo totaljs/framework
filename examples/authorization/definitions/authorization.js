@@ -1,13 +1,8 @@
-// ==================================================
-// in this file, you can rewrite framework prototypes
-// this file call framework automatically
-// ==================================================
-
 // ================================================
 // AUTHORIZATION
 // ================================================
 
-exports.onAuthorization = function(req, res, flags, callback) {
+framework.onAuthorization = function(req, res, flags, callback) {
 
 	var self = this;
 
@@ -41,7 +36,7 @@ exports.onAuthorization = function(req, res, flags, callback) {
 			return;
 		}
 
-		self.cache.write('user_' + user.id, user, new Date().add('m', 5));
+		self.cache.add('user_' + user.id, user, new Date().add('m', 5));
 		req.user = user;
 		callback(true);
 	});
@@ -49,7 +44,7 @@ exports.onAuthorization = function(req, res, flags, callback) {
 };
 
 
-exports.onValidation = function(name, value) {
+framework.onValidation = function(name, value) {
 	switch (name) {
 		case 'LoginName':
 			return utils.isEmail(value);
