@@ -579,9 +579,13 @@ function find_keywords(content, alternative, count, max, min) {
 	return keys;
 }
 
-module.exports = Fulltext;
+exports.Fulltext = Fulltext;
 exports.keywords = find_keywords;
 
 exports.load = function(name, directory, documents) {
+	return new Fulltext(name, directory, documents);
+};
+
+exports.init = function(name, directory, documents) {
 	return new Fulltext(name, directory, documents);
 };

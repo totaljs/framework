@@ -314,8 +314,9 @@ Framework.prototype.fulltext = function(name) {
 		return db;
 
 	var docs = path.join(directory, this.config['directory-databases'], name);
+	var Fulltext = require('./fulltext').Fulltext;
 
-	db = require('./fulltext').load(name, path.join(directory, this.config['directory-databases']), docs);
+	db = new Fulltext(name, path.join(directory, this.config['directory-databases']), docs);
 	self.databases['fulltext-' + name] = db;
 
 	if (fs.existsSync(docs))

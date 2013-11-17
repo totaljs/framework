@@ -28,9 +28,10 @@ __Social networks__:
 
 __Examples__:
 
+- __NEW__ - [Sushi website example](http://sushi.partialjs.com)
 - __NEW__ - [TODO list example](http://todo.partialjs.com)
 - [More than 80 examples](https://github.com/petersirka/partial.js/tree/master/examples)
-- [HTML 5 full websixe example](http://www.partialjs.com/get-started/)
+- [HTML 5 full website example](http://www.partialjs.com/get-started/)
 - Older code: [blog written in partial.js (without installation)](http://blog.partialjs.com)
 - Older code: [e-shop written in partial.js (without installation)](http://eshop.partialjs.com)
 

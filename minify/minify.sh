@@ -16,6 +16,8 @@ ECHO "....... markdown.js"
 uglifyjs markdown.js -o minify/partial.js/markdown.js
 ECHO "....... nosql.js"
 uglifyjs nosql.js -o minify/partial.js/nosql.js
+ECHO "....... fulltext.js"
+uglifyjs fulltext.js -o minify/partial.js/fulltext.js
 ECHO "....... utils.js"
 uglifyjs utils.js -o minify/partial.js/utils.js
 
