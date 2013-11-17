@@ -2,6 +2,7 @@ IN DEVELOPMENT ======= 1.3.0
 
 - added: builders.schema supports join models
 - added: controller.custom()
+- added: controller.clear()
 
 - updated: nosql (extended buffer)
 - updated: builders.schema()

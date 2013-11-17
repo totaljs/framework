@@ -4592,6 +4592,12 @@ Controller.prototype.validation = function(model, properties, prefix, name) {
 	return this.validate(model, properties, prefix, name);
 };
 
+Controller.prototype.clear = function() {
+	var self = this;
+	self.req.clear();
+	return self;
+};
+
 Controller.prototype.validate = function(model, properties, prefix, name) {
 
 	var self = this;
