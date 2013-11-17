@@ -1,6 +1,5 @@
 var net = require('net');
 var tls = require('tls');
-var util = require('util');
 var events = require('events');
 var dns = require('dns');
 var fs = require('fs');
@@ -219,6 +218,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 			if (err) {
 				mailer.emit('error', err, self);
+				fnCallback();
 				return;
 			}
 
@@ -236,6 +236,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	socket.on('error', function(err) {
 		mailer.emit('error', err, self);
+		fnCallback();
 	});
 
 	socket.on('secureConnect', function() {
