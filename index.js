@@ -6578,7 +6578,8 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 	return {NoSQL};
 */
 Controller.prototype.database = function(name) {
-	return this.framework.database(name);
+	var self = this;
+	return self.framework.database.apply(self, arguments);
 };
 
 /*

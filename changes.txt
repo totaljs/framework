@@ -17,6 +17,7 @@ IN DEVELOPMENT ======= 1.3.0
 - updated: controller.close([end])
 - updated: utils.httpStatus()
 
+- fixed: controller.database()
 - fixed: mail.send();
 
 - improvements: utils.js
