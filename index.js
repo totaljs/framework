@@ -2403,7 +2403,6 @@ Framework.prototype._request = function(req, res) {
 	req.data = { get: {}, post: {}, files: [] };
 	req.buffer = { data: '', isExceeded: false, isData: false };
 	req.xhr = false;
-	req.uri = {};
 	req.flags = [];
 	req.session = null;
 	req.user = null;
