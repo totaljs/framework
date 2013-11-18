@@ -6039,51 +6039,6 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 };
 
 /*
-	Response raw content
-	@contentType {String}
-	@onWrite {Function} :: function(fn) { fn.write('CONTENT'); }
-	@headers {Object}
-	return {Controller};
-*/
-Controller.prototype.raw = function(contentType, onWrite, headers) {
-
-	var self = this;
-	var res = self.res;
-
-	if (self.res.success || !self.isConnected)
-		return self;
-
-	self.subscribe.success();
-	var returnHeaders = {};
-
-	returnHeaders['Cache-Control'] = 'private';
-
-	if (headers)
-		utils.extend(returnHeaders, headers, true);
-
-	if (contentType === null)
-		contentType = 'text/plain';
-
-	if ((/text|application/).test(contentType))
-		contentType += '; charset=utf-8';
-
-	returnHeaders['Content-Type'] = contentType;
-
-	res.success = true;
-	res.writeHead(self.status, returnHeaders);
-
-	onWrite(function(chunk, ENCODING) {
-		res.write(chunk, ENCODING || 'utf8');
-	});
-
-	res.end();
-	self.framework._request_stats(false, false);
-	self.framework.emit('request-end', self.req, self.res);
-
-	return self;
-};
-
-/*
 	Response plain text
 	@contentBody {String}
 	@headers {Object} :: optional
