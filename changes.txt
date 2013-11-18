@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.3.0
 - added: controller.custom()
 - added: controller.clear()
 - added: controller.noClear()
+- added: HttpFile.stream()
 
 - updated: nosql (extended buffer)
 - updated: builders.schema()
