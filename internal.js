@@ -862,7 +862,7 @@ function autoprefixer(value) {
 	}
 
 	var output = [];
-	var length = buffer.length;
+	var length = builder.length;
 
 	for (var i = 0; i < length; i++) {
 
