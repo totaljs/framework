@@ -420,27 +420,27 @@ exports.routeParam = function(routeUrl, route) {
 	HttpFile class
 	@name {String}
 	@filename {String}
-	@filenameTMP {String}
-	@fileSize {Number}
+	@path {String}
+	@length {Number}
 	@contentType {String}
 	return {HttpFile}
 */
-function HttpFile(name, filename, filenameTMP, size, contentType) {
+function HttpFile(name, filename, path, length, contentType) {
 	this.name = name;
 	this.filename = filename;
-	this.size = size;
+	this.length = length;
 	this.contentType = contentType;
-	this.filenameTMP = filenameTMP;
+	this.path = path;
 }
 
 /*
 	Read file to byte array
-	@fileName {String} :: new filename
+	@filename {String} :: new filename
 	return {HttpFile}
 */
 HttpFile.prototype.copy = function(filename) {
 	var self = this;
-	fs.createReadStream(self.filenameTMP).pipe(fs.createWriteStream(filename));
+	fs.createReadStream(self.path).pipe(fs.createWriteStream(filename));
 	return self;
 };
 
@@ -449,7 +449,7 @@ HttpFile.prototype.copy = function(filename) {
 	return {Buffer}
 */
 HttpFile.prototype.readSync = function() {
-	return fs.readFileSync(this.filenameTMP);
+	return fs.readFileSync(this.path);
 };
 
 /*
@@ -459,8 +459,17 @@ HttpFile.prototype.readSync = function() {
 */
 HttpFile.prototype.read = function(callback) {
 	var self = this;
-	fs.readFile(self.filenameTMP, callback);
+	fs.readFile(self.path, callback);
 	return self;
+};
+
+/*
+	Get a stream
+	return {Stream}
+*/
+HttpFile.prototype.stream = function(options) {
+	var self = this;
+	return fs.createReadStream(self.path, options);
 };
 
 /*
@@ -492,7 +501,7 @@ HttpFile.prototype.isAudio = function() {
 	return {Image} :: look at ./lib/image.js
 */
 HttpFile.prototype.image = function(imageMagick) {
-	return image.init(this.filenameTMP, imageMagick);
+	return image.init(this.path, imageMagick);
 };
 
 // *********************************************************************************
