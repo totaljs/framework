@@ -302,31 +302,6 @@ Framework.prototype.database = function(name) {
 };
 
 /*
-	@name {String} :: name of fulltext database
-	return {fulltext}
-*/
-Framework.prototype.fulltext = function(name) {
-
-	var self = this;
-	var db = self.databases['fulltext-' + name];
-
-	if (typeof(db) !== UNDEFINED)
-		return db;
-
-	var docs = path.join(directory, this.config['directory-databases'], name);
-	var Fulltext = require('./fulltext').Fulltext;
-
-	db = new Fulltext(name, path.join(directory, this.config['directory-databases']), docs);
-	self.databases['fulltext-' + name] = db;
-
-	if (fs.existsSync(docs))
-		return;
-
-	fs.mkdirSync(docs);
-	return db;
-};
-
-/*
 	Stop the server and exit
 	@code {Number} :: optional, exit code - default 0
 	return {Framework}
@@ -6580,15 +6555,6 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 Controller.prototype.database = function(name) {
 	var self = this;
 	return self.framework.database.apply(self, arguments);
-};
-
-/*
-	Return fulltext
-	@name {String}
-	return {Fulltext};
-*/
-Controller.prototype.fulltext = function(name) {
-	return this.framework.fulltext(name);
 };
 
 /*
