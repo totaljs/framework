@@ -64,6 +64,7 @@ function Framework() {
 		'directory-tests': '/tests/',
 		'directory-databases': '/databases/',
 		'directory-backups': '/backups/',
+		'directory-workers': '/workers/',
 
 		// all HTTP static request are routed to directory-public
 		'static-url': '',
@@ -115,6 +116,7 @@ function Framework() {
 	this.port = 0;
 	this.ip = '';
 
+	this.workers = {};
 	this.databases = {};
 	this.directory = directory;
 
@@ -964,6 +966,14 @@ Framework.prototype.onError = function(err, name, uri) {
 	console.log('--------------------------------------------------------------------');
 	return this;
 };
+
+/*
+	Authorization handler
+	@req {ServerRequest}
+	@res {ServerResponse}
+	return {Boolean}
+*/
+Framework.prototype.onRequest = null;
 
 /*
 	Authorization handler
@@ -2335,7 +2345,11 @@ Framework.prototype._service = function(count) {
 };
 
 Framework.prototype._request = function(req, res) {
+
 	var self = this;
+
+	if (self.onRequest !== null && self.onRequest(req, res))
+		return;
 
 	res.setHeader('X-Powered-By', 'partial.js v' + self.version);
 
@@ -3191,6 +3205,46 @@ Framework.prototype.lookup_websocket = function(req, url) {
 	}
 
 	return null;
+};
+
+/*
+	@name {String}
+	@id {String} :: optional, Id process
+	@timeout {Number} :: optional, timeout - default undefined (none)
+	return {Worker(fork)}
+*/
+Framework.prototype.worker = function(name, id, timeout) {
+
+	var self = this;
+	var fork = null;
+
+	if (typeof(id) === STRING)
+		fork = self.workers[id] || null;
+
+	if (fork !== null)
+		return fork;
+
+	fork = child.fork('./' + name + '.js', { cwd: directory });
+	id = name + '_' + new Date().getTime();
+	fork._id = id;
+	self.workers[id] = fork;
+
+	fork.on('exit', function() {
+		delete self.workers[this._id];
+	});
+
+	if (typeof(timeout) !== NUMBER)
+		return fork;
+
+	setTimeout(function() {
+
+		delete self.workers[fork._id];
+		fork.kill();
+		fork = null;
+
+	}, timeout);
+
+	return self;
 };
 
 // *********************************************************************************
