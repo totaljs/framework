@@ -37,7 +37,13 @@ function params(tmp, replace) {
 	return true;
 }
 
-console.log((1).pluralize('zero', 'one', 'few', 'other'));
+//console.log((1).pluralize('zero', 'one', 'few', 'other'));
+
+fs.createReadStream('/users/petersirka/desktop/sql.sql').on('data', function(data) {
+	
+	console.log(data);
+
+});
 
 // message.attachment('/users/petersirka/desktop/wall.png');
 

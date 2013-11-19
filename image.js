@@ -2,6 +2,74 @@
 
 var exec = require('child_process').exec;
 
+// INTERNAL
+var sof = {
+	0xc0: true,
+	0xc1: true,
+	0xc2: true,
+	0xc3: true,
+	0xc5: true,
+	0xc6: true,
+	0xc7: true,
+	0xc9: true,
+	0xca: true,
+	0xcb: true,
+	0xcd: true,
+	0xce: true,
+	0xcf: true
+};
+
+function u16(buf, o) {
+	return buf[o] << 8 | buf[o + 1];
+}
+
+function u32(buf, o) {
+	return buf[o] << 24 | buf[o + 1] << 16 | buf[o + 2] << 8 | buf[o + 3];
+}
+
+exports.measureGIF = function(buffer) {
+	return { width: buffer[6], height: buffer[8] };
+};
+
+// MIT
+// Written by TJ Holowaychuk
+// visionmedia
+exports.measureJPG = function(buffer) {
+
+	var len = buffer.length;
+	var o = 0;
+
+	var jpeg = 0xff == buffer[0] && 0xd8 == buffer[1];
+	if (!jpeg)
+		return;
+
+	o += 2;
+
+	while (o < len) {
+		while (0xff != buffer[o]) o++;
+		while (0xff == buffer[o]) o++;
+
+		if (!sof[buffer[o]]) {
+	        o += u16(buffer, ++o);
+	        continue;
+		}
+
+		var w = u16(buffer, o + 6);
+		var h = u16(buffer, o + 4);
+
+		return { width: w, height: h };
+	}
+
+	return null;
+};
+
+// MIT
+// Written by TJ Holowaychuk
+// visionmedia
+exports.measurePNG = function(buffer) {
+	return { width: u32(buffer, 16), height: u32(buffer, 16 + 4) };
+};
+
 /*
 	Image class
 	@filename {String}
@@ -23,6 +91,38 @@ function Image(filename, imageMagick) {
 Image.prototype.clear = function() {
 	var self = this;
 	self.builder = [];
+	return self;
+};
+
+Image.prototype.measure = function(callback) {
+
+	var self = this;
+	var index = self.filename.lastIndexOf('.');
+
+	if (index === -1) {
+		callback(new Error('This type of file is not supported.'));
+		return;
+	}
+
+	var extension = self.filename.substring(index).toLowerCase();
+	var stream = require('fs').createReadStream(self.filename, { start:0, end: extension === '.jpg' ? 1000 : 100 });
+
+	stream.on('data', function (buffer) {
+		switch (extension) {
+			case '.jpg':
+				callback(null, exports.measureJPG(buffer));
+				return;
+			case '.gif':
+				callback(null, exports.measureGIF(buffer));
+				return;
+			case '.png':
+				callback(null, exports.measurePNG(buffer));
+				return;
+		}
+		callback(new Error('This type of file is not supported.'));
+	});
+
+	stream.on('error', callback);
 	return self;
 };
 

@@ -9,7 +9,6 @@
 'use strict';
 
 var fs = require('fs');
-var image = require('./image');
 
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
@@ -445,6 +444,40 @@ HttpFile.prototype.copy = function(filename) {
 };
 
 /*
+	Measure picture
+	@callback {Function} :: @err {Error}, @size {Object}
+	return {HttpFile}
+*/
+HttpFile.prototype.measure = function(callback) {
+
+	var self = this;
+
+	if (!self.isImage()) {
+		callback('This type of file is not supported.');
+		return;
+	}
+
+	var stream = fs.createReadStream(self.path, { start:0, end: self.contentType === 'image/jpeg' ? 1000 : 100 });
+	stream.on('data', function (buffer) {
+		switch (self.contentType) {
+			case 'image/jpeg':
+				callback(null, require('./image').measureJPG(buffer));
+				return;
+			case 'image/gif':
+				callback(null, require('./image').measureGIF(buffer));
+				return;
+			case 'image/png':
+				callback(null, require('./image').measurePNG(buffer));
+				return;
+		}
+		callback(new Error('This type of file is not supported.'));
+	});
+
+	stream.on('error', callback);
+	return self;
+};
+
+/*
 	Read file to buffer (SYNC)
 	return {Buffer}
 */
@@ -501,7 +534,7 @@ HttpFile.prototype.isAudio = function() {
 	return {Image} :: look at ./lib/image.js
 */
 HttpFile.prototype.image = function(imageMagick) {
-	return image.init(this.path, imageMagick);
+	return require('./image').init(this.path, imageMagick);
 };
 
 // *********************************************************************************
