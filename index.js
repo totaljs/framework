@@ -2427,7 +2427,7 @@ Framework.prototype._request = function(req, res) {
 		req.isStaticFile = true;
 		self.stats.request.file++;
 		self._request_stats(true, true);
-		new Subscribe(self, req, res).file();
+		new Subscribe(self, req, res, 3).file();
 		return;
 	}
 
@@ -2517,20 +2517,20 @@ Framework.prototype._request = function(req, res) {
 		else
 			self.stats.request.get++;
 
-		new Subscribe(self, req, res).end();
+		new Subscribe(self, req, res, 0).end();
 		return;
 	}
 
 	if (self._request_check_POST && (req.method === 'POST' || req.method === 'PUT')) {
 		if (multipart.length > 0) {
 			self.stats.request.upload++;
-			new Subscribe(self, req, res).multipart(multipart);
+			new Subscribe(self, req, res, 2).multipart(multipart);
 		} else {
 			if (req.method === 'PUT')
 				self.stats.request.put++;
 			else
 				self.stats.request.post++;
-			new Subscribe(self, req, res).urlencoded();
+			new Subscribe(self, req, res, 1).urlencoded();
 		}
 		return;
 	}
@@ -4061,17 +4061,29 @@ var REPOSITORY_META_DESCRIPTION = '$description';
 var REPOSITORY_META_KEYWORDS = '$keywords';
 var ATTR_END = '"';
 
-function Subscribe(framework, req, res) {
+function Subscribe(framework, req, res, type) {
 	this.framework = framework;
 
 	this.handlers = {
-		_authorization: this._authorization.bind(this),
-		_end: this._end.bind(this),
-		_endfile: this._endfile.bind(this),
-		_parsepost: this._parsepost.bind(this),
 		_execute: this._execute.bind(this),
-		_cancel: this._cancel.bind(this)
+		_cancel: this._cancel.bind(this),
+		_end: this._end.bind(this)
 	};
+
+	// type = 0 - GET, DELETE
+	// type = 1 - POST, PUT
+	// type = 2 - POST MULTIPART
+	// type = 3 - file routing
+
+	// OPTIMALIZATION: saving memory and processor
+	if (framework.onAuthorization !== null)
+		this.handlers._authorization = this._authorization.bind(this);
+
+	if (type === 3)
+		this.handlers._endfile = this._endfile.bind(this);
+
+	if (type === 1)
+		this.handlers._parsepost = this._parsepost.bind(this);
 
 	this.controller = null;
 	this.req = req;
@@ -4157,18 +4169,29 @@ Subscribe.prototype.execute = function(status) {
 	var self = this;
 
 	if (status > 400 && (self.route === null || self.route.name[0] === '#')) {
-		if (status === 401)
-			self.framework.stats.response.error401++;
-		else if (status === 403)
-			self.framework.stats.response.error403++;
-		else if (status === 404)
-			self.framework.stats.response.error404++;
-		else if (status === 408)
-			self.framework.stats.response.error408++;
-		else if (status === 431)
-			self.framework.stats.response.error431++;
-		else if (status === 500)
-			self.framework.stats.response.error500++;
+		switch (status) {
+			case 401:
+				self.framework.stats.response.error401++;
+				break;
+			case 403:
+				self.framework.stats.response.error403++;
+				break;
+			case 404:
+				self.framework.stats.response.error404++;
+				break;
+			case 408:
+				self.framework.stats.response.error408++;
+				break;
+			case 431:
+				self.framework.stats.response.error431++;
+				break;
+			case 500:
+				self.framework.stats.response.error500++;
+				break;
+			case 501:
+				self.framework.stats.response.error501++;
+				break;
+		}
 	}
 
 	if (self.route === null) {
@@ -4444,7 +4467,7 @@ function Controller(name, req, res, subscribe) {
 	// controller.internal.type === 1 - server sent events
 	// controller.internal.type === 2 - multipart/x-mixed-replace
 
-	this.internal = { layout: subscribe.framework.config['default-layout'], contentType: 'text/html', boundary: null, type: 0 };
+	this.internal = { layout: subscribe.framework.config['default-layout'], boundary: null, type: 0 };
 	this.status = 200;
 
 	this.isLayout = false;
@@ -6728,7 +6751,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		self.subscribe.success();
 
 		if (self.isConnected) {
-			self.framework.responseContent(self.req, self.res, self.status, value, self.internal.contentType, true, headers);
+			self.framework.responseContent(self.req, self.res, self.status, value, 'text/html', true, headers);
 			self.framework.stats.response.view++;
 		}
 
