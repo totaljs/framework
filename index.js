@@ -3217,34 +3217,44 @@ Framework.prototype.worker = function(name, id, timeout) {
 
 	var self = this;
 	var fork = null;
+	var type = typeof(id);
 
-	if (typeof(id) === STRING)
+	if (type === NUMBER && typeof(timeout) === UNDEFINED) {
+		timeout = id;
+		id = null;
+		type = UNDEFINED;
+	}
+
+	if (type === STRING)
 		fork = self.workers[id] || null;
 
 	if (fork !== null)
 		return fork;
 
-	fork = child.fork('./' + name + '.js', { cwd: directory });
+	fork = child.fork(utils.combine(self.config['directory-workers'], name + '.js'), { cwd: directory });
 	id = name + '_' + new Date().getTime();
-	fork._id = id;
+	fork.__id = id;
 	self.workers[id] = fork;
 
 	fork.on('exit', function() {
-		delete self.workers[this._id];
+		var self = this;
+		if (self.__timeout)
+			clearTimeout(self.__timeout);
+
+		delete framework.workers[self.__id];
 	});
 
 	if (typeof(timeout) !== NUMBER)
 		return fork;
 
-	setTimeout(function() {
+	fork.__timeout = setTimeout(function() {
 
-		delete self.workers[fork._id];
 		fork.kill();
 		fork = null;
 
 	}, timeout);
 
-	return self;
+	return fork;
 };
 
 // *********************************************************************************
