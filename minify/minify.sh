@@ -1,5 +1,6 @@
 ECHO "[COMPILING]"
 cd ..
+mkdir minify/partial.js/bin/
 ECHO "....... backup.js"
 uglifyjs backup.js -o minify/partial.js/backup.js
 ECHO "....... builders.js"
@@ -18,13 +19,12 @@ ECHO "....... nosql.js"
 uglifyjs nosql.js -o minify/partial.js/nosql.js
 ECHO "....... utils.js"
 uglifyjs utils.js -o minify/partial.js/utils.js
+ECHO "....... binary"
+uglifyjs bin/partial -o minify/partial.js/bin/partial
 
 cp readme.md minify/partial.js/readme.md
 cp package.json minify/partial.js/package.json
 cp license.txt minify/partial.js/license.txt
-
-mkdir minify/partial.js/bin/
-cp bin/partial minify/partial.js/bin
 
 cd minify
 node minify.js

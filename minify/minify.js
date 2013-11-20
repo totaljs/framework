@@ -11,3 +11,6 @@ fs.readdirSync(dir).forEach(function(name) {
 	console.log('....... LINCENSE: ' + name);
 	fs.writeFileSync(filename, license + fs.readFileSync(filename, 'utf8'), 'utf8');
 });
+
+var binary = path.join(dir, 'bin', 'partial');
+fs.writeFileSync(binary, '#!/usr/bin/env node\n\n' + license + fs.readFileSync(binary, 'utf8'), 'utf8');
