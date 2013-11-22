@@ -159,6 +159,7 @@ function Framework() {
 			notModified: 0,
 			mmr: 0,
 			sse: 0,
+			error400: 0,
 			error401: 0,
 			error403: 0,
 			error404: 0,
@@ -421,11 +422,8 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		if (flags.indexOf('proxy') !== -1 && flags.indexOf('json') === -1)
 			flags.push('json');
 
-		if (flags.indexOf('json') !== -1 && flags.indexOf('post') === -1)
+		if ((flags.indexOf('json') !== -1 || flags.indexOf('raw') !== -1) && flags.indexOf('post') === -1)
 			flags.push('post');
-
-		for (var i = 0; i < flags.length; i++)
-			flags[i] = flags[i].toLowerCase();
 	}
 
 	if (flags.indexOf('referer') !== -1)
@@ -434,7 +432,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1)
 		self._request_check_POST = true;
 
-	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'], partial: partial || [], timeout: timeout || self.config['default-request-timeout'] });
+	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'], partial: partial || [], timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: flags.indexOf('raw') !== -1 });
 	return self;
 };
 
@@ -1240,6 +1238,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse.format('##########')));
 	builder.push('Response Websocket message      : {0}x'.format(self.stats.response.websocket.format('##########')));
 	builder.push('Response restriction            : {0}x'.format(self.stats.response.restriction.format('##########')));
+	builder.push('Response 400                    : {0}x'.format(self.stats.response.error400.format('##########')));
 	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401.format('##########')));
 	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403.format('##########')));
 	builder.push('Response 404                    : {0}x'.format(self.stats.response.error404.format('##########')));
@@ -1860,6 +1859,30 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 };
 
 /*
+	Response with 400 error
+	@req {ServerRequest}
+	@res {ServerResponse}
+	return {Framework}
+*/
+Framework.prototype.response400 = function(req, res) {
+	var self = this;
+
+	if (res.success)
+		return self;
+
+	self._request_stats(false, req.isStaticFile);
+	req.clear(true);
+
+	res.success = true;
+	res.writeHead(400, { 'Content-Type': 'text/plain' });
+	res.end(utils.httpStatus(400));
+	self.emit('request-end', req, res);
+
+	self.stats.response.error400++;
+	return self;
+};
+
+/*
 	Response with 401 error
 	@req {ServerRequest}
 	@res {ServerResponse}
@@ -2353,10 +2376,8 @@ Framework.prototype._request = function(req, res) {
 
 	res.setHeader('X-Powered-By', 'partial.js v' + self.version);
 
-	var header = req.headers;
+	var headers = req.headers;
 	var protocol = req.connection.encrypted ? 'https' : 'http';
-
-	req.host = header.host;
 
 	if (self._request_check_redirect) {
 		var redirect = self.routes.redirects[protocol +'://' + req.host];
@@ -2366,14 +2387,6 @@ Framework.prototype._request = function(req, res) {
 			return self;
 		}
 	}
-
-	var proxy = header['x-forwarded-for'];
-
-	//  x-forwarded-for: client, proxy1, proxy2, ...
-	if (typeof(proxy) !== UNDEFINED)
-		req.ip = proxy.split(',', 1)[0] || req.connection.remoteAddress;
-	else
-		req.ip = req.connection.remoteAddress;
 
 	if (self.restrictions.isRestrictions) {
 		if (self.restrictions.isAllowedIP) {
@@ -2393,7 +2406,7 @@ Framework.prototype._request = function(req, res) {
 		}
 
 		if (self.restrictions.isAllowedCustom) {
-			if (!self.restrictions._allowedCustom(header)) {
+			if (!self.restrictions._allowedCustom(headers)) {
 				self.stats.response.restriction++;
 				req.connection.destroy();
 				return self;
@@ -2401,7 +2414,7 @@ Framework.prototype._request = function(req, res) {
 		}
 
 		if (self.restrictions.isBlockedCustom) {
-			if (self.restrictions._blockedCustom(header)) {
+			if (self.restrictions._blockedCustom(headers)) {
 				self.stats.response.restriction++;
 				req.connection.destroy();
 				return self;
@@ -2421,20 +2434,14 @@ Framework.prototype._request = function(req, res) {
 	req.session = null;
 	req.user = null;
 	req.prefix = '';
-	req.subdomain = [];
 	req.isAuthorized = true;
 
 	var isXSS = false;
-	var accept = header.accept;
+	var accept = headers.accept;
 
-	req.isProxy = header['x-proxy'] === 'partial.js';
+	req.isProxy = headers['x-proxy'] === 'partial.js';
 	req.uri = parser.parse(protocol + '://' + req.host + req.url);
 	req.path = internal.routeSplit(req.uri.pathname);
-
-	var subdomain = req.uri.host.toLowerCase().split('.');
-
-	if (subdomain.length > 2)
-		req.subdomain = subdomain.slice(0, subdomain.length - 2); // example: [subdomain].domain.com
 
 	// if is static file, return file
 	if (utils.isStaticFile(req.uri.pathname)) {
@@ -2493,7 +2500,7 @@ Framework.prototype._request = function(req, res) {
 	if (self.config.debug)
 		flags.push('debug');
 
-	req.xhr = header['x-requested-with'] === 'XMLHttpRequest';
+	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	req.prefix = self.onPrefix === null ? '' : self.onPrefix(req) || '';
 
 	if (req.prefix.length > 0)
@@ -2515,8 +2522,8 @@ Framework.prototype._request = function(req, res) {
 	}
 
 	if (self._request_check_referer) {
-		var referer = header['referer'] || '';
-		if (referer !== '' && referer.indexOf(header['host']) !== -1)
+		var referer = headers['referer'] || '';
+		if (referer !== '' && referer.indexOf(headers['host']) !== -1)
 			flags.push('referer');
 	}
 
@@ -2540,10 +2547,12 @@ Framework.prototype._request = function(req, res) {
 			self.stats.request.upload++;
 			new Subscribe(self, req, res, 2).multipart(multipart);
 		} else {
+
 			if (req.method === 'PUT')
 				self.stats.request.put++;
 			else
 				self.stats.request.post++;
+
 			new Subscribe(self, req, res, 1).urlencoded();
 		}
 		return;
@@ -4232,8 +4241,11 @@ Subscribe.prototype.execute = function(status) {
 
 	var self = this;
 
-	if (status > 400 && (self.route === null || self.route.name[0] === '#')) {
+	if (status > 399 && (self.route === null || self.route.name[0] === '#')) {
 		switch (status) {
+			case 400:
+				self.framework.stats.response.error400++;
+				break;
 			case 401:
 				self.framework.stats.response.error401++;
 				break;
@@ -4416,29 +4428,36 @@ Subscribe.prototype._end = function() {
 		return;
 	}
 
-	if (self.route.flags.indexOf('json') !== -1) {
-
+	if (self.route.isJSON) {
 		try
 		{
-			self.req.data.post = self.req.buffer.data.isJSON() ? JSON.parse(self.req.buffer.data) : null;
-			self.req.buffer.data = null;
-		} catch (err) {
-			self.req.data.post = null;
-		}
-
-	} else {
-
-		if (self.framework.onXSS !== null && self.framework.onXSS(self.req.buffer.data)) {
-			if (self.req.flags.indexOf('xss') === -1) {
-				self.req.flags.push('xss');
-				self.route = null;
+			if (self.req.buffer.data.isJSON()) {
+				self.req.data.post = JSON.parse(self.req.buffer.data);
+				self.req.buffer.data = null;
+				self.prepare(self.req.flags, self.req.uri.pathname);
+				return;
 			}
-		}
 
-		self.req.data.post = qs.parse(self.req.buffer.data);
-		self.req.buffer.data = null;
+		} catch (err) {
+			self.route = self.framework.lookup(self.req, '#400', []);
+			self.execute(400);
+			return;
+		}
 	}
 
+	if (self.framework.onXSS !== null && self.framework.onXSS(self.req.buffer.data)) {
+		if (self.req.flags.indexOf('xss') === -1) {
+			self.req.flags.push('xss');
+			self.route = null;
+		}
+	}
+
+	if (self.route !== null && self.route.isRAW)
+		self.req.data.post = self.req.buffer.data;
+	else
+		self.req.data.post = qs.parse(self.req.buffer.data);
+
+	self.req.buffer.data = null;
 	self.prepare(self.req.flags, self.req.uri.pathname);
 };
 
@@ -6224,10 +6243,10 @@ Controller.prototype.stream = function(contentType, stream, downloadName, header
 };
 
 /*
-	Response 404
+	Response 400
 	return {Controller};
 */
-Controller.prototype.view404 = function() {
+Controller.prototype.view400 = function() {
 	var self = this;
 
 	if (self.res.success || !self.isConnected)
@@ -6235,8 +6254,8 @@ Controller.prototype.view404 = function() {
 
 	self.req.path = [];
 	self.subscribe.success();
-	self.subscribe.route = self.framework.lookup(self.req, '#404', []);
-	self.subscribe.execute(404);
+	self.subscribe.route = self.framework.lookup(self.req, '#400', []);
+	self.subscribe.execute(400);
 	return self;
 };
 
@@ -6271,6 +6290,23 @@ Controller.prototype.view403 = function() {
 	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#403', []);
 	self.subscribe.execute(403);
+	return self;
+};
+
+/*
+	Response 404
+	return {Controller};
+*/
+Controller.prototype.view404 = function() {
+	var self = this;
+
+	if (self.res.success || !self.isConnected)
+		return self;
+
+	self.req.path = [];
+	self.subscribe.success();
+	self.subscribe.route = self.framework.lookup(self.req, '#404', []);
+	self.subscribe.execute(404);
 	return self;
 };
 
@@ -7547,6 +7583,34 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 
 	return self;
 };
+
+var _tmp = http.IncomingMessage.prototype;
+
+http.IncomingMessage.prototype = {
+
+	get ip() {
+		var self = this;
+		var proxy = self.headers['x-forwarded-for'];
+		//  x-forwarded-for: client, proxy1, proxy2, ...
+		if (typeof(proxy) !== UNDEFINED)
+			return proxy.split(',', 1)[0] || self.connection.remoteAddress;
+		return self.connection.remoteAddress;
+	},
+
+	get subdomain() {
+		var subdomain = this.uri.host.toLowerCase().split('.');
+		if (subdomain.length > 2)
+			return subdomain.slice(0, subdomain.length - 2); // example: [subdomain].domain.com
+		return null;
+	},
+
+	get host() {
+		return this.headers['host'];
+	}
+
+}
+
+http.IncomingMessage.prototype.__proto__ = _tmp;
 
 /*
 	Read a cookie
