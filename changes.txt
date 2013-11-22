@@ -24,6 +24,7 @@ IN DEVELOPMENT ======= 1.3.0
 
 - fixed: controller.database()
 - fixed: mail.send()
+- fixed: json flag
 
 - improvements: saving of memory
 - improvements: utils.js
