@@ -105,7 +105,7 @@ Image.prototype.measure = function(callback) {
 	}
 
 	var extension = self.filename.substring(index).toLowerCase();
-	var stream = require('fs').createReadStream(self.filename, { start:0, end: extension === '.jpg' ? 1000 : 100 });
+	var stream = require('fs').createReadStream(self.filename, { start:0, end: extension === '.jpg' ? 1000 : 24 });
 
 	stream.on('data', function (buffer) {
 		switch (extension) {
