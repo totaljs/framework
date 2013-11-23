@@ -2215,8 +2215,8 @@ Framework.prototype.init = function(http, config, port, ip, options) {
     if (self.config['allow-websocket'])
 		self.server.on('upgrade', self.handlers.onupgrade);
 
-	self.port = port || process.env.PORT || 8000;
-	self.ip = ip || '127.0.0.1';
+	self.port = port || process.env.PORT || self.config.port || 8000;
+	self.ip = ip || self.config.ip || '127.0.0.1';
 	self.server.listen(self.port, self.ip);
 
 	self.ip = self.ip || 'localhost';
@@ -2248,6 +2248,22 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 // Alias for framework.init
 Framework.prototype.run = function(http, config, port, ip, options) {
 	return this.init(http, config, port, ip, options);
+};
+
+Framework.prototype.reconnect = function() {
+	var self = this;
+
+	if (typeof(self.config.port) !== UNDEFINED)
+		self.port = self.config.port;
+
+	if (typeof(self.config.ip) !== UNDEFINED)
+		self.ip = self.config.ip;
+
+	self.server.close(function() {
+		self.server.listen(self.port, self.ip);
+	});
+
+	return self;
 };
 
 Framework.prototype._verify_directory = function(name) {
