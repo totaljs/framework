@@ -13,6 +13,8 @@ IN DEVELOPMENT ======= 1.3.0
 - added: supports 400 (Bad request)
 - added: config.ip, config.port
 - added: framework.reconnect()
+- added: framework.on('ready')
+- added: Number.parseDate()
 
 - updated: nosql (extended buffer)
 - updated: builders.schema()

@@ -2219,8 +2219,6 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 	self.ip = ip || self.config.ip || '127.0.0.1';
 	self.server.listen(self.port, self.ip);
 
-	self.ip = self.ip || 'localhost';
-
 	if (module !== null) {
 		if (typeof(module.onLoad) !== UNDEFINED) {
 			try
@@ -2237,6 +2235,13 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 		self.emit('load', self);
 	} catch (err) {
 		self.error(err, 'framework.on("load")');
+	}
+
+	try
+	{
+		self.emit('ready', self);
+	} catch (err) {
+		self.error(err, 'framework.on("ready")');
 	}
 
 	if (typeof(process.send) === FUNCTION)
