@@ -19,6 +19,7 @@ IN DEVELOPMENT ======= 1.3.0
 - added: framework.fs.rm.temporary(name)
 - added: dynamic render View and Template from string
 
+- updated: FrameworkImage supports stream (image.pipe() and new Image(stream or filename))
 - updated: nosql (extended buffer)
 - updated: builders.schema()
 - updated: builders.defaults()

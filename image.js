@@ -1,6 +1,8 @@
 'use strict';
 
-var exec = require('child_process').exec;
+var child = require('child_process');
+var exec = child.exec;
+var spawn = child.spawn;
 
 // INTERNAL
 var sof = {
@@ -76,8 +78,12 @@ exports.measurePNG = function(buffer) {
 	@imageMagick {Boolean} :: default false
 */
 function Image(filename, imageMagick) {
+
+	var type = typeof(filename);
+
 	this.builder = [];
-	this.filename = filename;
+	this.filename = type === 'string' ? filename : null;
+	this.stream = type === 'object' ? filename : null;
 	this.isIM = imageMagick || false;
 
 	if (!filename)
@@ -98,6 +104,11 @@ Image.prototype.measure = function(callback) {
 
 	var self = this;
 	var index = self.filename.lastIndexOf('.');
+
+	if (!self.filename) {
+		callback(new Error('Measure does not support stream.'));
+		return;
+	}
 
 	if (index === -1) {
 		callback(new Error('This type of file is not supported.'));
@@ -141,24 +152,52 @@ Image.prototype.save = function(filename, callback) {
 		filename = null;
 	}
 
-	filename = filename || self.filename;
+	filename = filename || self.filename || '';
 
-	var command = self.cmd(self.filename, filename);
-	if (self.builder.length > 0) {
-		exec(command, function(error, stdout, stderr) {
-			self.clear();
-			if (callback) {
-				if (error)
-					callback(error, '');
-				else
-					callback(null, filename);
-			}
-		});
-	} else {
+	var command = self.cmd(self.filename === null ? '-' : self.filename, filename);
+
+	if (self.builder.length === 0) {
 		if (callback)
 			callback(null, filename);
+		return;
 	}
+
+	var cmd = exec(command, function(error, stdout, stderr) {
+		self.clear();
+		if (callback) {
+			if (error)
+				callback(error, '');
+			else
+				callback(null, filename);
+		}
+	});
+
+	if (self.stream)
+		self.stream.pipe(cmd.stdin);
+
 	return self;
+};
+
+Image.prototype.pipe = function(stream) {
+
+	var self = this;
+
+	if (self.builder.length === 0)
+		return;
+
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, '-'));
+
+	cmd.stderr.on('data', stream.emit.bind(stream, 'error'));
+	cmd.stdout.on('data', stream.emit.bind(stream, 'data'));
+	cmd.stdout.on('end', stream.emit.bind(stream, 'end'));
+	cmd.on('error', stream.emit.bind(stream, 'error'));
+	cmd.stdout.pipe(stream);
+
+	if (self.stream)
+		self.stream.pipe(cmd.stdin);
+
+	return self;
+
 };
 
 /*
@@ -184,6 +223,46 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 	});
 
 	return (self.isIM ? 'convert' : 'gm -convert') + ' "' + filenameFrom + '"' + ' ' + cmd + ' "' + filenameTo + '"';
+};
+
+/*
+	Internal function
+	@filenameFrom {String}
+	@filenameTo {String}
+	return {String}
+*/
+Image.prototype.arg = function(first, last) {
+
+	var self = this;
+	var arr = [];
+
+	if (!self.isIM)
+		arr.push('-convert');
+
+	if (first)
+		arr.push(first);
+
+	self.builder.sort(function(a, b) {
+		if (a.priority > b.priority)
+			return 1;
+		else
+			return -1;
+	});
+
+	self.builder.forEach(function(o) {
+		var index = o.cmd.indexOf(' ');
+		if (index === -1)
+			arr.push(o.cmd);
+		else {
+			arr.push(o.cmd.substring(0, index));
+			arr.push(o.cmd.substring(index + 1).replace(/\"/g, ''));
+		}
+	});
+
+	if (last)
+		arr.push(last);
+
+	return arr;
 };
 
 /*

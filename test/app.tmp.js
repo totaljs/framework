@@ -5,6 +5,8 @@ var https = require('https');
 var util = require('util');
 var path = require('path');
 var utils = require('../utils');
+var exec = require('child_process').exec;
+var Image = require('../image');
 var fs = require('fs');
 var events = require('events');
 var crypto = require('crypto');
@@ -39,11 +41,24 @@ function params(tmp, replace) {
 
 //console.log((1).pluralize('zero', 'one', 'few', 'other'));
 
-fs.createReadStream('/users/petersirka/desktop/sql.sql').on('data', function(data) {
-	
-	console.log(data);
+var Stream = require('stream');
+var writer = fs.createWriteStream('/users/petersirka/desktop/kokotar.zip')
+var reader = fs.createReadStream('/users/petersirka/desktop/user.zip');
 
+reader.pipe(writer);
+//console.log(writer);
+
+var image = Image.load('/users/petersirka/desktop/a.jpg', false);
+image.resize(100, 100);
+image.pipe(fs.createWriteStream('/users/petersirka/desktop/c.jpg'));
+
+/*
+var p = exec('gm -convert - -resize 10% "/users/petersirka/desktop/b.jpg"', function(err, stdout) {
+	console.log('OK');
 });
+
+fs.createReadStream('/users/petersirka/desktop/a.jpg').pipe(p.stdin);
+*/
 
 // message.attachment('/users/petersirka/desktop/wall.png');
 
