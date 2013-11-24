@@ -1825,6 +1825,10 @@ Number.prototype.discount = function(percentage, decimals) {
 	return (num - (num / 100) * percentage).floor(decimals);
 };
 
+Number.prototype.parseDate = function(plus) {
+	return new Date(this + (plus || 0));
+};
+
 Boolean.prototype.condition = function(ifTrue, ifFalse) {
 	return (this ? ifTrue : ifFalse) || '';
 };
