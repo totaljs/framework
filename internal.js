@@ -2294,6 +2294,11 @@ View.prototype.read = function(name) {
 View.prototype.load = function(name, prefix) {
 
 	var self = this;
+
+	// Is dynamic content?
+	if (name.indexOf('@{') !== -1 || name.indexOf('<') !== -1)
+		return self.dynamic(name);
+
 	var isPrefix = (prefix || '').length > 0;
 
 	var key = 'view.' + name + (isPrefix ? '#' + prefix : '');
@@ -2314,6 +2319,27 @@ View.prototype.load = function(name, prefix) {
 	return generator;
 };
 
+/*
+	Compile dynamic view
+	@content {String}
+	return {Object} :: return parsed HTML
+*/
+View.prototype.dynamic = function(content) {
+
+	var self = this;
+	var key = content.md5();
+	var generator = self.cache.read(key);
+
+	if (generator !== null)
+		return generator;
+
+	generator = parse(content, self.controller);
+
+	if (generator !== null && !self.controller.isDebug)
+		self.cache.add(key, generator, new Date().add('minute', 5));
+
+	return generator;
+};
 /*
 	Read content
     @name {String}
@@ -2741,6 +2767,11 @@ Template.prototype.read = function(name) {
 Template.prototype.load = function(name, prefix) {
 
 	var self = this;
+
+	// Is dynamic content?
+	if (name.indexOf('{') !== -1 && name.indexOf('}') !== -1)
+		return self.dynamic(name);
+
 	var isPrefix = (prefix || '').length > 0;
 
 	var key = 'template.' + name + (isPrefix ? '#' + prefix : '') + (self.repository !== null ? '.repository' : '');
@@ -2757,6 +2788,28 @@ Template.prototype.load = function(name, prefix) {
 
 	if (generator === null)
 		self.controller.framework.error('Template "' + name + '" not found.', self.controller.name, self.controller.uri);
+
+	if (generator !== null && !self.controller.isDebug)
+		self.cache.add(key, generator, new Date().add('minute', 5));
+
+	return generator;
+};
+
+/*
+	Compile dynamic template
+	@content {String}
+	return {Object} :: return parsed HTML
+*/
+Template.prototype.dynamic = function(content) {
+
+	var self = this;
+	var key = content.md5();
+	var generator = self.cache.read(key);
+
+	if (generator !== null)
+		return generator;
+
+	generator = self.parse(content);
 
 	if (generator !== null && !self.controller.isDebug)
 		self.cache.add(key, generator, new Date().add('minute', 5));

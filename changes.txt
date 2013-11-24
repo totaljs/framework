@@ -14,7 +14,10 @@ IN DEVELOPMENT ======= 1.3.0
 - added: config.ip, config.port
 - added: framework.reconnect()
 - added: framework.on('ready')
-- added: Number.parseDate()
+- added: Number.parseDate([plus])
+- added: framework.fs.create.temporary(name, stream, [callback])
+- added: framework.fs.rm.temporary(name)
+- added: dynamic render View and Template from string
 
 - updated: nosql (extended buffer)
 - updated: builders.schema()
@@ -38,6 +41,7 @@ IN DEVELOPMENT ======= 1.3.0
 - documentation (upd) How do "views" work?
 - documentation (upd) How does authorization work?
 - documentation (upd) FrameworkController
+- documentation (upd) FrameworkFileSystem
 - documentation (upd) FrameworkViews
 - documentation (upd) FrameworkController
 - documentation (upd) Request.prototype

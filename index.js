@@ -410,7 +410,6 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 			if (o.substring(0, 1) === '{')
 				arr.push(i);
 		});
-
 		priority -= arr.length;
 	}
 
@@ -3239,7 +3238,7 @@ Framework.prototype.lookup_websocket = function(req, url) {
 
 /*
 	@name {String}
-	@id {String} :: optional, Id process
+	@id {String} :: optional, Id of process
 	@timeout {Number} :: optional, timeout - default undefined (none)
 	return {Worker(fork)}
 */
@@ -3492,6 +3491,7 @@ function FrameworkFileSystem(framework) {
 		content: this.createContent.bind(this),
 		template: this.createTemplate.bind(this),
 		resource: this.createResource.bind(this),
+		temporary: this.createTemporary.bind(this),
 		file: this.createFile.bind(this)
 	};
 
@@ -3502,6 +3502,7 @@ function FrameworkFileSystem(framework) {
 		content: this.deleteContent.bind(this),
 		template: this.deleteTemplate.bind(this),
 		resource: this.deleteResource.bind(this),
+		temporary: this.deleteTemporary.bind(this),
 		file: this.deleteFile.bind(this)
 	};
 }
@@ -3597,6 +3598,17 @@ FrameworkFileSystem.prototype.deleteResource = function(name) {
 };
 
 /*
+	Delete a file - Temporary
+	@name {String}
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.deleteTemporary = function(name) {
+	var self = this;
+	var filename = utils.combine(self.config['directory-temp'], name);
+	return self.deleteFile(filename);
+};
+
+/*
 	Internal :: Delete a file
 	@name {String}
 	return {Boolean}
@@ -3604,10 +3616,12 @@ FrameworkFileSystem.prototype.deleteResource = function(name) {
 FrameworkFileSystem.prototype.deleteFile = function(filename) {
 	var self = this;
 
-	if (!fs.existsSync(filename))
-		return false;
+	fs.exists(filename, function(exist) {
+		if (!exist)
+			return;
+		fs.unlink(filename);
+	});
 
-	fs.unlink(filename);
 	return true;
 };
 
@@ -3750,6 +3764,31 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
 
 	var filename = utils.combine(self.config['directory-resources'], name);
 	return self.createFile(filename, builder, append, rewrite);
+};
+
+/*
+	Create a temporary file
+	@name {String}
+	@stream {Stream}
+	@callback {Function} :: function(err, filename) {}
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.createTemporary = function(name, stream, callback) {
+	var self = this;
+	var filename = utils.combine(self.config['directory-temp'], name);
+	var writer = fs.createWriteStream(filename);
+
+	if (callback) {
+		writer.on('error', function(err) {
+			callback(err, filename);
+		});
+		writer.on('end', function() {
+			callback(null, filename);
+		});
+	}
+
+	stream.pipe(writer);
+	return self;
 };
 
 /*
@@ -4197,12 +4236,14 @@ Subscribe.prototype.success = function() {
 
 	self.timeout = null;
 	self.isCanceled = true;
+	return self;
 };
 
 Subscribe.prototype.file = function() {
 	var self = this;
 	self.req.on('end', self.handlers._endfile);
 	self.req.resume();
+	return sefl;
 };
 
 /*

@@ -6,6 +6,7 @@ exports.install = function(framework) {
 	framework.route('/usage/', view_usage);
 	framework.route('/sse/', viewSSE_html);
 	framework.route('/sse/', viewSSE, ['sse']);
+	framework.route('/dynamic/', viewDynamic);
 	framework.route('/f/', viewSocket);
 	framework.route('/js/', viewJS);
 	framework.route('/', viewIndex);
@@ -132,7 +133,11 @@ function aa() {
 function viewTest() {
 	this.layout('');
 	this.view('e');
-};
+}
+
+function viewDynamic() {
+	this.view('<b>@{model.name}</b>', { name: 'Peter' });
+}
 
 function viewIndex() {
 
