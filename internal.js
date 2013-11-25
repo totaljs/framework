@@ -2502,6 +2502,7 @@ function Template(controller, model, repository) {
 	this.repository = repository || null;
 	this.prefix = controller.prefix;
 	this.cache = controller.cache;
+	this.name = '';
 
 	if (typeof(model) === UNDEFINED)
 		model = '';
@@ -2648,7 +2649,8 @@ Template.prototype.parse = function(html, isRepository) {
 					controller = controller.substring(0, controller.length - 1) + ',null,true)';
 				else if (counter === 2)
 					controller = controller.substring(0, controller.length - 1) + ',true)';
-			}
+			} else
+				throw new Error('Template "' + self.name + '" contains an illegal tag "' + tmp[i] + '".');
 		}
 
 		if (!isView) {
@@ -2674,8 +2676,10 @@ Template.prototype.parse = function(html, isRepository) {
 
 		var str = builder[i];
 
-		if (i % 2 !== 0)
-			fn.push(str);
+		if (i % 2 !== 0) {
+			if (str.length > 0)
+				fn.push(str);
+		}
 		else
 			fn.push("'" + str.replace(/\'/g, "\\'").replace(/\n/g, '\\n') + "'");
 	}
@@ -2786,10 +2790,10 @@ function parsePluralize(value) {
 Template.prototype.read = function(name) {
 	var self = this;
 	var config = self.controller.config;
-	var fileName = utils.combine(config['directory-templates'], name + '.html');
+	var filename = utils.combine(config['directory-templates'], name + '.html');
 
-	if (fs.existsSync(fileName))
-		return self.parse(fs.readFileSync(fileName).toString('utf8'));
+	if (fs.existsSync(filename))
+		return self.parse(fs.readFileSync(filename).toString('utf8'));
 
 	return null;
 };
@@ -2805,13 +2809,15 @@ Template.prototype.load = function(name, prefix) {
 	var self = this;
 
 	// Is dynamic content?
-	if (name.indexOf('{') !== -1 && name.indexOf('}') !== -1)
+	if (name.indexOf('{') !== -1 && name.indexOf('}') !== -1) {
+		self.name = '<dynamic>';
 		return self.dynamic(name);
+	}
+
+	self.name = name + (isPrefix ? '#' + prefix : '');
 
 	var isPrefix = (prefix || '').length > 0;
-
 	var key = 'template.' + name + (isPrefix ? '#' + prefix : '') + (self.repository !== null ? '.repository' : '');
-
 	var generator = self.cache.read(key);
 
 	if (generator !== null)
