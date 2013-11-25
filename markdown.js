@@ -364,7 +364,7 @@ Markdown.prototype.parseTitle = function(line, next) {
 
     if (!has) {
         var first = (next || '')[0] || '';
-        has = line[0].charCodeAt(0) > 64 && (first === '=' || first === '-');
+        has = line[0].charCodeAt(0) > 32 && (first === '=' || first === '-');
 
         if (has)
             has = line.length === next.length;

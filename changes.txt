@@ -40,6 +40,7 @@ IN DEVELOPMENT ======= 1.3.0
 - fixed: mail.send()
 - fixed: json flag
 - fixed: framework.clear(), request.clear()
+- fixed: FrameworkMarkdown - parsing of title
 
 - improvements: saving of memory
 - improvements: utils.js
