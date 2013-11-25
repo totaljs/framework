@@ -2398,7 +2398,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
     socket = new WebSocketClient(req, socket, head);
 
     var path = utils.path(req.uri.pathname);
-	var subdomain = req.uri.host.toLowerCase().split('.');
+	var subdomain = req.uri.host.toLowerCase().replace('www.', '').split('.');
 
 	req.subdomain = null;
 	req.path = internal.routeSplit(req.uri.pathname);

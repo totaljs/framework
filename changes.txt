@@ -38,6 +38,7 @@ IN DEVELOPMENT ======= 1.3.0
 - updated: utils.httpStatus()
 - updated: binary
 
+- fixed: subdomain routing [www is automatically removed]
 - fixed: controller.database()
 - fixed: mail.send()
 - fixed: json flag
