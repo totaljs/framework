@@ -10,7 +10,7 @@ IN DEVELOPMENT ======= 1.3.0
 - added: HttpFile.stream()
 - added: HttpFile.measure(callback)
 - added: framework.onRequest(req, res)
-- added: framework.worker()
+- added: framework.worker(name, [id], [timeout])
 - added: framework.workers
 - added: supports 400 (Bad request)
 - added: config.ip, config.port
@@ -52,6 +52,9 @@ IN DEVELOPMENT ======= 1.3.0
 - documentation (upd) FrameworkViews
 - documentation (upd) FrameworkController
 - documentation (upd) Request.prototype
+
+- example (upd): https://github.com/petersirka/partial.js/tree/master/examples/routing
+- example (add): https://github.com/petersirka/partial.js/tree/master/examples/workers
 
 ======= 1.2.9
 
