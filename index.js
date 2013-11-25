@@ -1643,6 +1643,102 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 };
 
 /*
+	Response image
+	@req {ServerRequest}
+	@res {ServerResponse}
+	@filename {String or Stream}
+	@fnProcess {Function} :: function(FrameworkImage) {}
+	@headers {Object} :: optional, additional headers
+	@isIM {Boolean} :: optional, use ImageMagick (otherwise is used GraphicsMagick), default false
+	return {Framework}
+*/
+Framework.prototype.responseImage = function(req, res, filename, fnProcess, headers, isIM) {
+
+	var self = this;
+	var stream = null;
+
+	if (typeof(filename) === OBJECT) {
+		stream = filename;
+		filename = req.url;
+	}
+
+	var name = self.temporary.path[filename];
+
+	if (name === null) {
+		self.response404(req, res);
+		return self;
+	}
+
+	if (typeof(name) !== UNDEFINED) {
+		self.responseFile(req, res, filename, '', headers);
+		return self;
+	}
+
+	var Image = require('./image');
+	name = self.path.temp(filename.replace(/\//g, '-').substring(2));
+
+	// STREAM
+	if (stream !== null) {
+
+		fs.exists(name, function(exist) {
+
+			if (exist) {
+				self.temporary.path[filename] = name;
+				sefl.responseFile(req, res, filename, '', headers);
+				return;
+			}
+
+			var image = Image.load(stream, isIM);
+
+			fnProcess(image);
+
+			image.save(name, function(err) {
+
+				if (err) {
+					self.temporary.path[filename] = null;
+					self.response500(req, res, err);
+					return;
+				}
+
+				self.temporary.path[filename] = name;
+				self.responseFile(req, res, filename, '', headers);
+			});
+
+		});
+
+		return self;
+	}
+
+	// FILENAME
+	fs.exists(filename, function(exist) {
+
+		if (!exist) {
+			self.temporary.path[filename] = null;
+			self.response404(req, res);
+			return;
+		}
+
+		var image = Image.load(filename, isIM);
+
+		fnProcess(image);
+
+		image.save(name, function(err) {
+
+			if (err) {
+				self.temporary.path[filename] = null;
+				self.response500(req, res, err);
+				return;
+			}
+
+			self.temporary.path[filename] = name;
+			self.responseFile(req, res, filename, '', headers);
+		});
+
+	});
+	return self;
+};
+
+/*
 	Response stream
 	@req {ServerRequest}
 	@res {ServerResponse}
@@ -2758,14 +2854,15 @@ Framework.prototype.clear = function() {
 		return self;
 
 	fs.readdir(dir, function(err, files) {
-
 		if (err)
 			return;
 
+		var arr = [];
 		var length = files.length;
 		for (var i = 0; i < length; i++)
-			fs.unlink(utils.combine(self.config['directory-temp'], files[i]), utils.noop);
+			arr.push(utils.combine(self.config['directory-temp'], files[i]));
 
+		self._clear(arr);
 	});
 
 	// clear static cache
@@ -2773,6 +2870,23 @@ Framework.prototype.clear = function() {
 	self.temporary.range = {};
 	return self;
 };
+
+/*
+	INTERNAL: Force remove files
+	return {Framework}
+*/
+Framework.prototype._clear = function(arr) {
+	var self = this;
+
+	if (arr.length === 0)
+		return;
+
+	fs.unlink(arr.shift(), function() {
+		self._clear(arr);
+	});
+
+	return self;
+}
 
 /*
 	Cryptography (encode)
@@ -3888,6 +4002,10 @@ FrameworkPath.prototype.temp = function(filename) {
 	return utils.combine(self.config['directory-temp'], filename || '').replace(/\\/g, '/');
 };
 
+FrameworkPath.prototype.temporary = function(filename) {
+	return this.temp(filename);
+};
+
 /*
 	@filename {String} :: optional
 	return {String}
@@ -4243,7 +4361,7 @@ Subscribe.prototype.file = function() {
 	var self = this;
 	self.req.on('end', self.handlers._endfile);
 	self.req.resume();
-	return sefl;
+	return self;
 };
 
 /*
@@ -6244,7 +6362,7 @@ Controller.prototype.empty = function(headers) {
 };
 
 /*
-	Response file
+	Response a file
 	@filename {String}
 	@downloadName {String} :: optional
 	@headers {Object} :: optional
@@ -6263,6 +6381,33 @@ Controller.prototype.file = function(filename, downloadName, headers) {
 
 	self.subscribe.success();
 	self.framework.responseFile(self.req, self.res, filename, downloadName, headers);
+
+	return self;
+};
+
+/*
+	Response an image
+	@filename {String or Stream}
+	@fnProcess {Function} :: function(FrameworkImage) {}
+	@headers {Object} :: optional, additional headers
+	@isIM {Boolean} :: optional, use ImageMagick (otherwise is used GraphicsMagick), default false
+	return {Framework}
+*/
+Controller.prototype.image = function(filename, fnProcess, headers, isIM) {
+	var self = this;
+
+	if (self.res.success || !self.isConnected)
+		return self;
+
+	if (typeof(filename) === STRING) {
+		if (filename[0] === '~')
+			filename =  '.' + filename.substring(1);
+		else
+			filename = utils.combine(self.framework.config['directory-public'], filename);
+	}
+
+	self.subscribe.success();
+	self.framework.responseImage(self.req, self.res, filename, fnProcess, headers, isIM);
 
 	return self;
 };
@@ -7742,15 +7887,11 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
 	if (length === 0)
 		return self;
 
-	for (var i = 0; i < length; i++) {
-		(function(filename) {
-			fs.exists(filename, function(exists) {
-				if (exists)
-					fs.unlink(filename);
-			});
-		})(files[i].filenameTMP);
-	}
+	var arr = [];
+	for (var i = 0; i < length; i++)
+		arr.push(files[i].filenameTMP);
 
+	framework._clear(arr);
 	self.data.files = null;
 	return self;
 };
