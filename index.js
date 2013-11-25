@@ -996,13 +996,6 @@ Framework.prototype.onPrefix = null;
 Framework.prototype.onVersion = null;
 
 /*
-	Skipper delegate
-	@name {String}
-	return {Boolean}
-*/
-Framework.prototype.onSkip = null;
-
-/*
 	Route validator / Request restriction
 	@req {ServerRequest}
 	@res {ServerResponse}
