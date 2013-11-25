@@ -42,15 +42,19 @@ function params(tmp, replace) {
 //console.log((1).pluralize('zero', 'one', 'few', 'other'));
 
 var Stream = require('stream');
-var writer = fs.createWriteStream('/users/petersirka/desktop/kokotar.zip')
-var reader = fs.createReadStream('/users/petersirka/desktop/user.zip');
+//var writer = fs.createWriteStream('/users/petersirka/desktop/kokotar.zip')
+//var reader = fs.createReadStream('/users/petersirka/desktop/user.zip');
 
-reader.pipe(writer);
+//reader.pipe(writer);
 //console.log(writer);
 
-var image = Image.load('/users/petersirka/desktop/a.jpg', false);
+var image = Image.load('/users/petersirka/desktop/test.jpg', false);
 image.resize(100, 100);
-image.pipe(fs.createWriteStream('/users/petersirka/desktop/c.jpg'));
+image.quality(90);
+image.clean();
+image.save('/users/petersirka/desktop/c.jpg');
+
+//image.pipe(fs.createWriteStream('/users/petersirka/desktop/c.jpg'));
 
 /*
 var p = exec('gm -convert - -resize 10% "/users/petersirka/desktop/b.jpg"', function(err, stdout) {

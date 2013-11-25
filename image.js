@@ -329,6 +329,10 @@ Image.prototype.resize = function(w, h, options) {
 	return self.push('-resize', size + options, 1);
 };
 
+Image.prototype.clean = function() {
+	return this.push('+profile',  '*');
+};
+
 /*
 	@w {Number}
 	@h {Number}
@@ -495,7 +499,7 @@ Image.prototype.sepia = function() {
 	@cmd {String}
 	@priority {Number}
 */
-Image.prototype.command = function(cmd, priority) {
+Image.prototype.command = function(key, value, priority) {
 	return this.push(cmd, null, priority || 10);
 };
 
