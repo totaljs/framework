@@ -8,6 +8,7 @@
 
 'use strict';
 
+var crypto = require('crypto');
 var fs = require('fs');
 
 var ENCODING = 'utf8';
@@ -493,6 +494,32 @@ HttpFile.prototype.readSync = function() {
 HttpFile.prototype.read = function(callback) {
 	var self = this;
 	fs.readFile(self.path, callback);
+	return self;
+};
+
+/*
+	Create MD5 hash from a file
+	@callback {Function} :: function(error, hash);
+	return {HttpFile}
+*/
+HttpFile.prototype.md5 = function(callback) {
+
+	var self = this;
+	var md5 = crypto.createHash('md5');
+	var stream = fs.createReadStream(self.path);
+
+	stream.on('data', function(buffer) {
+		md5.update(buffer);
+	});
+
+	stream.on('error', function(error) {
+		callback(error, null);
+	});
+
+	stream.on('end', function() {
+		callback(null, md5.digest('hex'));
+	});
+
 	return self;
 };
 
