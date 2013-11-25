@@ -506,6 +506,15 @@ HttpFile.prototype.stream = function(options) {
 };
 
 /*
+	Pipe a stream
+	return {Stream}
+*/
+HttpFile.prototype.pipe = function(stream) {
+	var self = this;
+	return fs.createReadStream(self.path, options).pipe(stream);
+};
+
+/*
 	return {Boolean}
 */
 HttpFile.prototype.isImage = function() {
