@@ -718,6 +718,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
 	var current = typeof(path) === UNDEFINED ? '' : path + '.';
 	var isSchema = false;
 	var schemaName = '';
+	var definition = null;
 
 	if (!(error instanceof builders.ErrorBuilder))
 		error = new builders.ErrorBuilder(resource);
@@ -728,6 +729,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
 			schemaName = properties;
 			properties = schema;
 			isSchema = true;
+			definition = builders.schema(schemaName);
 		} else
 			properties = properties.replace(/\s/g, '').split(',');
 	}
@@ -746,6 +748,11 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
 
 		value = (type === FUNCTION ? model[name]() : model[name]) || '';
 
+		if (type !== OBJECT && isSchema) {
+			if (builders.isJoin(definition[name]))
+				type = OBJECT;
+		}
+
 		if (type === OBJECT) {
 
 			if (isSchema) {
@@ -753,7 +760,6 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
 				if (schema !== null) {
 					schema = schema[name] || null;
 					if (schema !== null) {
-
 						var isArray = schema[0] === '[';
 
 						if (isArray)
@@ -934,7 +940,7 @@ exports.decode_WS = function(data) {
     return output;
 };
 
-exports.distance = function(lat1, lon1, lat2, lon2) {    
+exports.distance = function(lat1, lon1, lat2, lon2) {
     var R = 6371;
     var dLat = (lat2 - lat1).toRad();
     var dLon = (lon2 - lon1).toRad();

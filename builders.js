@@ -10,6 +10,7 @@ var OBJECT = 'object';
 var STRING = 'string';
 var NUMBER = 'number';
 var BOOLEAN = 'boolean';
+var REQUIRED = 'The field "@" is required.';
 
 /*
     @onResource {Function} :: function(name, key) return {String}
@@ -61,6 +62,14 @@ exports.schema = function(name, obj, defaults) {
 
 	schema[name] = obj;
 	return obj;
+};
+
+exports.isJoin = function(value) {
+	if (!value)
+		return false;
+	if (value[0] === '[')
+		return true;
+	return typeof(schema[value]) !== UNDEFINED;
 };
 
 /*
@@ -382,15 +391,17 @@ exports.prepare = function(name, model) {
 
 		if (isArray) {
 
-			if (!(val instanceof Array))
-				return (defaults ? isUndefined(defaults(property, false), []) : []);
+			if (!(val instanceof Array)) {
+				item[property] = (defaults ? isUndefined(defaults(property, false), []) : []);
+				continue;
+			}
 
 			item[property] = [];
 			var sublength = val.length;
 			for (var j = 0; j < sublength; j++) {
 				item[property][j] = exports.prepare(value, model[property][j]);
 			}
-			
+
 			continue;
 		}
 
@@ -554,6 +565,9 @@ ErrorBuilder.prototype._prepare = function() {
 			o.error = self.onResource(o.name);
 		else
 			o.error = self.onResource(o.error.substring(1));
+
+		if (typeof(o.error) === UNDEFINED)
+			o.error = REQUIRED.replace('@', o.name);
 	}
 
 	return self;
