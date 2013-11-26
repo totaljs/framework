@@ -14,5 +14,5 @@ framework.onValidation = function(name, value) {
 		case 'FirstName':
 		case 'LastName':
 			return value.length > 0;
-	};
-};
+	}
+}
