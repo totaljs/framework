@@ -12,6 +12,7 @@ IN DEVELOPMENT ======= 1.3.0
 - added: framework.fs.rm.temporary(name)
 - added: framework.on('ready')
 - added: framework.on('reconfigure')
+- added: framework.injectVersions(url, [rewrite])
 - added: controller.image(filename/stream, fnProcess, [headers], [isIM])
 - added: controller.subdomain (alias -> req.subdomain)
 - added: controller.custom()
