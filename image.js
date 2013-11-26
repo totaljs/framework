@@ -329,10 +329,6 @@ Image.prototype.resize = function(w, h, options) {
 	return self.push('-resize', size + options, 1);
 };
 
-Image.prototype.clean = function() {
-	return this.push('+profile',  '*');
-};
-
 /*
 	@w {Number}
 	@h {Number}
@@ -475,9 +471,8 @@ Image.prototype.flop = function() {
 	return this.push('-flop', null, 10);
 };
 
-// http://www.graphicsmagick.org/GraphicsMagick.html
 Image.prototype.minify = function() {
-	return this.push('-minify', null, 10);
+	return this.push('+profile',  '*');
 };
 
 Image.prototype.grayscale = function() {

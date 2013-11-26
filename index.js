@@ -4745,8 +4745,8 @@ Subscribe.prototype._endfile = function() {
 		try
 		{
 
-			if (file.onValidation.call(self.framework, self.req, self.res)) {
-				file.onExecute.call(self.framework, self.req, self.res);
+			if (file.onValidation.call(self.framework, self.req, self.res, true)) {
+				file.onExecute.call(self.framework, self.req, self.res, false);
 				return;
 			}
 
