@@ -1537,9 +1537,10 @@ Framework.prototype.isProcessed = function(filename) {
 	@filename {String}
 	@downloadName {String} :: optional
 	@headers {Object} :: optional
+	@filepath {String} :: path to file (INTERNAL)
 	return {Framework}
 */
-Framework.prototype.responseFile = function(req, res, filename, downloadName, headers) {
+Framework.prototype.responseFile = function(req, res, filename, downloadName, headers, key) {
 
 	var self = this;
 
@@ -1548,7 +1549,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	req.clear(true);
 
-	var name = self.temporary.path[filename];
+	key = key || filename;
+	var name = self.temporary.path[key];
 
 	if (name === null) {
 		self.response404(req, res);
@@ -1584,7 +1586,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (typeof(name) === UNDEFINED) {
 
 		if (!fs.existsSync(filename)) {
-			self.temporary.path[filename] = null;
+			self.temporary.path[key] = null;
 			self.response404(req, res);
 			return self;
 		}
@@ -1595,14 +1597,14 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		if (['js', 'css'].indexOf(extension) !== -1) {
 			if (name.indexOf('.min.') === -1 && name.indexOf('-min.') === -1) {
 				name = self.compileStatic(req, name);
-				self.temporary.path[filename] = name;
+				self.temporary.path[key] = name;
 			}
 		}
 
-		self.temporary.path[filename] = name;
+		self.temporary.path[key] = name;
 
 		if (self.config.debug)
-			delete self.temporary.path[filename];
+			delete self.temporary.path[key];
 	}
 
 	var compress = self.config['allow-gzip'] && ['js', 'css', 'txt'].indexOf(extension) !== -1;
@@ -1618,9 +1620,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
 
-	downloadName = downloadName || '';
-
-	if (downloadName.length > 0)
+	if (downloadName && downloadName.length > 0)
 		returnHeaders['Content-Disposition'] = 'attachment; filename=' + downloadName;
 
 	if (etag.length > 0)
@@ -1679,12 +1679,11 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	var self = this;
 	var stream = null;
 
-	if (typeof(filename) === OBJECT) {
+	if (typeof(filename) === OBJECT)
 		stream = filename;
-		filename = req.url;
-	}
 
-	var name = self.temporary.path[filename];
+	var key = req.url;
+	var name = self.temporary.path[key];
 
 	if (name === null) {
 		self.response404(req, res);
@@ -1692,12 +1691,12 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	}
 
 	if (typeof(name) !== UNDEFINED) {
-		self.responseFile(req, res, filename, '', headers);
+		self.responseFile(req, res, filename, '', headers, key);
 		return self;
 	}
 
 	var Image = require('./image');
-	name = self.path.temp(filename.replace(/\//g, '-').substring(2));
+	name = self.path.temp(key.replace(/\//g, '-').substring(1));
 
 	// STREAM
 	if (stream !== null) {
@@ -1705,8 +1704,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		fs.exists(name, function(exist) {
 
 			if (exist) {
-				self.temporary.path[filename] = name;
-				self.responseFile(req, res, filename, '', headers);
+				self.temporary.path[key] = name;
+				self.responseFile(req, res, filename, '', headers, key);
 				return;
 			}
 
@@ -1717,13 +1716,13 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			image.save(name, function(err) {
 
 				if (err) {
-					self.temporary.path[filename] = null;
+					self.temporary.path[key] = null;
 					self.response500(req, res, err);
 					return;
 				}
 
-				self.temporary.path[filename] = name;
-				self.responseFile(req, res, filename, '', headers);
+				self.temporary.path[key] = name;
+				self.responseFile(req, res, filename, '', headers, key);
 			});
 
 		});
@@ -1735,7 +1734,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	fs.exists(filename, function(exist) {
 
 		if (!exist) {
-			self.temporary.path[filename] = null;
+			self.temporary.path[key] = null;
 			self.response404(req, res);
 			return;
 		}
@@ -1747,13 +1746,13 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		image.save(name, function(err) {
 
 			if (err) {
-				self.temporary.path[filename] = null;
+				self.temporary.path[key] = null;
 				self.response500(req, res, err);
 				return;
 			}
 
-			self.temporary.path[filename] = name;
-			self.responseFile(req, res, filename, '', headers);
+			self.temporary.path[key] = name;
+			self.responseFile(req, res, filename, '', headers, key);
 		});
 
 	});
