@@ -2393,11 +2393,13 @@ Framework.prototype._upgrade = function(req, socket, head) {
     var path = utils.path(req.uri.pathname);
 	var subdomain = req.uri.host.toLowerCase().replace('www.', '').split('.');
 
-	req.subdomain = null;
+	//req.subdomain = null;
 	req.path = internal.routeSplit(req.uri.pathname);
 
+	/*
 	if (subdomain.length > 2)
 		req.subdomain = subdomain.slice(0, subdomain.length - 2);
+	*/
 
     var route = self.lookup_websocket(req, socket.uri.pathname);
     if (route === null) {
@@ -4777,6 +4779,10 @@ Controller.prototype = {
 
 	get files() {
 		return this.req.data.files;
+	},
+
+	get subdomain() {
+		return this.req.subdomain;
 	},
 
 	get ip() {
@@ -7798,10 +7804,19 @@ http.IncomingMessage.prototype = {
 	},
 
 	get subdomain() {
-		var subdomain = this.uri.host.toLowerCase().split('.');
+
+		var self = this;
+
+		if (self._subdomain)
+			return self._subdomain;
+
+		var subdomain = self.uri.host.toLowerCase().replace('www.', '').split('.');
 		if (subdomain.length > 2)
-			return subdomain.slice(0, subdomain.length - 2); // example: [subdomain].domain.com
-		return null;
+			self._subdomain = subdomain.slice(0, subdomain.length - 2); // example: [subdomain].domain.com
+		else
+			self._subdomain = null;
+
+		return self._subdomain;
 	},
 
 	get host() {

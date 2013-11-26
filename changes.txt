@@ -24,6 +24,7 @@ IN DEVELOPMENT ======= 1.3.0
 - added: dynamic render View and Template from string
 - added: framework.responseImage(req, res, filename/stream, fnProcess, [headers], [isIM])
 - added: controller.image(filename/stream, fnProcess, [headers], [isIM])
+- added: controller.subdomain (alias -> req.subdomain)
 
 - updated: FrameworkImage supports stream (image.pipe() and new Image(stream or filename))
 - updated: FrameworkImage.command(name, value, [priority])
