@@ -1,5 +1,7 @@
 exports.install = function(framework) {
 	
+	// IMPORTANT: www. is removed automatically
+
 	// add to host:
 	// 127.0.0.1	website.debug
 	// 127.0.0.1	subdomain.website.debug
@@ -7,6 +9,11 @@ exports.install = function(framework) {
 
 	framework.route('[subdomain]/', subdomain);
 	framework.route('/', root);
+
+	// 127.0.0.1	subdomain.website.debug
+	// 127.0.0.1	eshop.website.debug
+	// 127.0.0.1	blog.website.debug
+	framework.route('[subdomain,eshop,blog]/', subdomain);
 
 	// show for all subdomain
 	framework.route('/all/', all);

@@ -91,12 +91,14 @@ function Framework() {
 		'allow-gzip': true,
 		'allow-websocket': true,
 		'allow-compile-js': true,
-		'allow-compile-css': true
+		'allow-compile-css': true,
+		'allow-reconfigure': true
 	};
 
 	this.global = {};
 	this.resources = {};
 	this.connections = {};
+	this.versions = null;
 
 	this.routes = {
 		web: [],
@@ -215,8 +217,10 @@ Framework.prototype.refresh = function(clear) {
 	self.resources = {};
 	self.databases = {};
 	self.configure();
+	self.configureMapping();
 	self.temporary.path = {};
 	self.temporary.range = {};
+	self.emit('reconfigure');
 
 	if (clear || true)
 		self.clear();
@@ -665,6 +669,33 @@ Framework.prototype.injectConfig = function(url, debug, rewrite) {
 		}
 
 		self.configure(data.split('\n'), rewrite);
+
+	});
+
+	return self;
+};
+
+/*
+	Inject versions mapping
+	@url {String}
+	@rewrite {Boolean} :: optional (default true), rewrite all values or append (+ rewrite old) values (default false)
+	return {Framework}
+*/
+Framework.prototype.injectVersions = function(url, rewrite) {
+
+	var self = this;
+
+	if (typeof(rewrite) === UNDEFINED)
+		rewrite = false;
+
+	utils.request(url, 'GET', '', function(error, data) {
+
+		if (error) {
+			self.error(error, 'injectVersions - ' + url, null);
+			return;
+		}
+
+		self.configureMapping(data, rewrite);
 
 	});
 
@@ -1449,14 +1480,12 @@ Framework.prototype.compileStatic = function(req, filename) {
 
 		case '.css':
 			output = self.config['allow-compile-css'] ? self.onCompileCSS === null ? internal.compile_less(output) : self.onCompileCSS(filename, output) : output;
-			if (self.onVersion !== null) {
-				var matches = output.match(/url\(.*?\)/g);
-				if (matches !== null) {
-					matches.forEach(function(o) {
-						var url = o.substring(4, o.length - 1);
-						output = output.replace(o, 'url('+ self.onVersion(url) +')');
-					});
-				}
+			var matches = output.match(/url\(.*?\)/g);
+			if (matches !== null) {
+				matches.forEach(function(o) {
+					var url = o.substring(4, o.length - 1);
+					output = output.replace(o, 'url('+ self._version(url) +')');
+				});
 			}
 
 			break;
@@ -1677,7 +1706,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
 			if (exist) {
 				self.temporary.path[filename] = name;
-				sefl.responseFile(req, res, filename, '', headers);
+				self.responseFile(req, res, filename, '', headers);
 				return;
 			}
 
@@ -2228,6 +2257,7 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 		utils.extend(self.config, config, true);
 
 	self.configure();
+	self.configureMapping();
 	self.clear();
 
 	self.cache.init();
@@ -2460,12 +2490,15 @@ Framework.prototype._service = function(count) {
 	if (self.config.debug)
 		self.resources = {};
 
-	// every 20 minute service clears resources and reconfigure framework
+	// every 20 minute service clears resources and reconfigure the framework
 	if (count % 20 === 0) {
 		self.emit('clear', 'resources');
 		self.resources = {};
-		// self.databases = {};
-		self.configure();
+		if (self.config['allow-reconfigure']) {
+			self.configure();
+			self.configureMapping();
+			self.emit('reconfigure');
+		}
 	}
 
 	// every 5 minute service clears static cache
@@ -2959,6 +2992,50 @@ Framework.prototype.resource = function(name, key) {
 	return obj[key] || '';
 };
 
+Framework.prototype.configureMapping = function(content, rewrite) {
+
+	var self = this;
+	var filename = utils.combine('/', 'versions');
+
+	if (typeof(rewrite) === UNDEFINED)
+		rewrite = true;
+
+	if (!fs.existsSync(filename)) {
+		self.versions = null;
+		return;
+	}
+
+	content = (typeof(content) !== STRING ? fs.readFileSync(filename).toString(ENCODING) : content);
+
+	if (content.length === 0) {
+		self.versions = null;
+		return self;
+	}
+
+	var mapping = content.configuration();
+	var arr = Object.keys(mapping);
+
+	if (rewrite) {
+		self.versions = arr.length === 0 ? null : mapping;
+		return self;
+	}
+
+	if (arr.length === 0)
+		return self;
+
+	if (self.versions === null)
+		self.versions = {};
+
+	var length = arr.length;
+
+	for (var i = 0; i < length; i++) {
+		var key = arr[i];
+		self.versions[key] = mapping[key];
+	}
+
+	return self;
+};
+
 /*
 	INTERNAL: Framework configure
 	@arr {String Array} :: optional
@@ -3060,6 +3137,7 @@ Framework.prototype.verification = function(cb) {
 
 	if (typeof(self.verify) === UNDEFINED) {
 		self.configure();
+		self.configureMapping();
 		self.verify = null;
 	}
 
@@ -3258,9 +3336,24 @@ Framework.prototype.routeStatic = function(name) {
 	return {String}
 */
 Framework.prototype._routeStatic = function(name, directory) {
+	return directory + this._version(name);
+};
+
+/*
+	Internal mapping function
+	@name {String} :: filename
+	return {String}
+*/
+Framework.prototype._version = function(name) {
 	var self = this;
-	var fileName = self.onVersion === null ? name : self.onVersion(name) || name;
-	return directory + fileName;
+
+	if (self.versions !== null)
+		name = self.versions[name] || name;
+
+	if (self.onVersion !== null)
+		name = self.onVersion(name) || name;
+
+	return name;
 };
 
 /*

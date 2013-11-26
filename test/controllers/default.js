@@ -10,6 +10,7 @@ exports.install = function(framework) {
 	framework.route('/f/', viewSocket);
 	framework.route('/js/', viewJS);
 	framework.route('/', viewIndex);
+	framework.route('/layout/', view_layout);
 	framework.route('/custom/', viewCustomTesting);
 	framework.route('/views/', viewViews, [], ['partial']);
 	framework.route('/view-notfound/', viewError);
@@ -67,6 +68,10 @@ function view_homepage() {
 
 	//this.view('homepage');
 	this.plain(this.framework.usage(true));
+}
+
+function view_layout() {
+	this.view('test');
 }
 
 function view_usage() {
