@@ -513,7 +513,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 */
 Framework.prototype.file = function(name, funcValidation, funcExecute) {
 	var self = this;
-	self.routes.files.push({ controller: _controller, name: name, onValidation: funcValidation, onExecute: funcExecute });
+	self.routes.files.push({ controller: _controller, name: name, onValidation: funcValidation, onExecute: funcExecute || funcValidation });
 	return self;
 };
 
