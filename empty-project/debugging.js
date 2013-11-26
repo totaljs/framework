@@ -42,7 +42,7 @@ walker.onComplete = function() {
 			if (name === 'debugging.js' || name === 'keepalive.js')
 				continue;
 
-			if (name === 'config-debug' || name === 'config-release' || name.indexOf('.js') !== -1)
+			if (name === 'config-debug' || name === 'config-release' || name === 'versions' || name.indexOf('.js') !== -1)
 				self.file.push(name);
 		}
 
