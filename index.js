@@ -6358,6 +6358,7 @@ Controller.prototype.json = function(obj, headers) {
 */
 Controller.prototype.custom = function() {
 
+	var self = this;
 	if (self.res.success || !self.isConnected)
 		return false;
 
