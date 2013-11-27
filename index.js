@@ -996,7 +996,7 @@ Framework.prototype.onError = function(err, name, uri) {
 };
 
 /*
-	Authorization handler
+	Pre-request handler
 	@req {ServerRequest}
 	@res {ServerResponse}
 	return {Boolean}
@@ -6709,7 +6709,7 @@ Controller.prototype.baa = function(name) {
 		return null;
 	}
 
-	return self.req.authorization;
+	return self.req.authorization();
 };
 
 /*
@@ -7965,7 +7965,7 @@ http.IncomingMessage.prototype.authorization = function() {
 	if (authorization === '')
 		return { name: '', password: '' };
 
-	new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString('utf8').split(':')
+	var arr = new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString('utf8').split(':');
 	return { name: arr[0] || '', password: arr[1] || '' };
 };
 

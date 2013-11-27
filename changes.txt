@@ -50,6 +50,8 @@ IN DEVELOPMENT ======= 1.3.0
 
 - fixed: subdomain routing [www is automatically removed]
 - fixed: controller.database()
+- fixed: controller.baa()
+- fixed: HttpRequest.authorization()
 - fixed: mail.send()
 - fixed: json flag
 - fixed: framework.clear(), request.clear()
