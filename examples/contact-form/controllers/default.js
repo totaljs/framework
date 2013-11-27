@@ -4,26 +4,29 @@ exports.install = function(framework) {
 };
 
 function view_form() {
-	this.view('form', { Email: '@' });
+	this.view('form', builders.defaults('contactform'));
 }
 
 function json_form() {
-	var self = this;
-	
-	var error = self.validate(self.post, ['Email', 'Message'])
+
+	var self = this;	
+	var model = self.post;
+
+	// Documentation: http://docs.partialjs.com/FrameworkController/#controller.validation
+	var error = self.validation(model, 'contactform');
 
 	if (error.hasError()) {
 		self.json(error);
 		return;
 	}
 
+	// Documentatation: http://docs.partialjs.com/Builders.SchemaBuilder/#builders.prepare
+	model = builders.prepare('contactform', model);
+	model.Ip = self.ip;
+
 	// save to database
-
-	self.post.date = new Date();
-	self.post.ip = self.req.ip;
-
 	var db = self.database('forms');
-	db.insert(self.post);
+	db.insert(model);
 
 	// send mail
 	// look to example: [email-templating]
