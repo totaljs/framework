@@ -4472,6 +4472,7 @@ Subscribe.prototype.multipart = function(header) {
 	}
 
 	if (header.indexOf('mixed') === -1) {
+		self.framework._verify_directory('temp');
 		internal.parseMULTIPART(self.req, header, self.route.maximumSize, self.framework.config['directory-temp'], self.framework.handlers.onxss, self.handlers._end);
 		return;
 	}
@@ -4639,6 +4640,7 @@ Subscribe.prototype._execute = function() {
 			return;
 		}
 
+		self.framework._verify_directory('temp');
 		internal.parseMULTIPART_MIXED(self.req, self.header, self.framework.config['directory-temp'], function(file) {
 			self.route.onExecute.call(self.controller, file);
 		}, self.handlers._end);
