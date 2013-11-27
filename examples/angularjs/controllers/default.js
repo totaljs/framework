@@ -4,5 +4,5 @@ exports.install = function(framework) {
 
 function view_homepage() {
     var self = this;
-    self.view('todo');
+    self.view('homepage');
 }
