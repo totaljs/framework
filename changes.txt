@@ -6,6 +6,7 @@ IN DEVELOPMENT ======= 1.3.0
 - added: framework.onRequest(req, res)
 - added: framework.worker(name, [id], [timeout])
 - added: framework.workers
+- added: framework.versions
 - added: framework.reconnect()
 - added: framework.responseImage(req, res, filename/stream, fnProcess, [headers], [isIM])
 - added: framework.fs.create.temporary(name, stream, [callback])
@@ -77,6 +78,7 @@ IN DEVELOPMENT ======= 1.3.0
 - example (upd): https://github.com/petersirka/partial.js/tree/master/examples/static-version
 - example (upd): https://github.com/petersirka/partial.js/tree/master/examples/framework-schema
 - example (upd): https://github.com/petersirka/partial.js/tree/master/examples/validation
+- example (upd): https://github.com/petersirka/partial.js/tree/master/examples/mongodb-mongolab
 
 
 ======= 1.2.9
