@@ -1,5 +1,3 @@
-var utils = require('partial.js/utils');
-
 exports.install = function(framework) {
 	framework.route('/', viewHomepage, ['+xhr']);
 };
@@ -8,7 +6,10 @@ function viewHomepage() {
 	var self = this;
 	var builder = [];
 	
+	// Documentation: http://docs.partialjs.com/Async/
 	self.await(function(complete) {
+
+		// Documentation: http://docs.partialjs.com/FrameworkUtils/#utils.request
 		utils.request('https://www.google.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.google.com -> ' + output);
@@ -17,6 +18,8 @@ function viewHomepage() {
 	});
 
 	self.await(function(complete) {
+
+		// Documentation: http://docs.partialjs.com/FrameworkUtils/#utils.request
 		utils.request('https://www.github.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.github.com -> ' + output);
@@ -25,6 +28,8 @@ function viewHomepage() {
 	});
 
 	self.await(function(complete) {
+
+		// Documentation: http://docs.partialjs.com/FrameworkUtils/#utils.request
 		utils.request('http://www.yahoo.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.yahoo.com -> ' + output);
@@ -33,6 +38,8 @@ function viewHomepage() {
 	});
 
 	self.await('partial', function(complete) {
+
+		// Documentation: http://docs.partialjs.com/FrameworkUtils/#utils.request
 		utils.request('http://www.partialjs.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.partialjs.com -> ' + output);
