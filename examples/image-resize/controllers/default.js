@@ -38,10 +38,10 @@ function view_homepage() {
 
 
 	var filename = self.path.public('upload.jpg');
-	var image = file.image(); // this is equivalent to require('partail.js/image').init(false);
+	var image = file.image(); // this is equivalent to require('partail.js/image').init([useImageMagick]);
 
-	// require('partial.js/image').init(filename, [isImageMagick]);
-	// file.image([isImageMagick]);
+	// require('partial.js/image').init(filename, [useImageMagick]);
+	// file.image([useImageMagick]);
 
 	// image.identify(function(err, info) { info.width, info.heigth });
 	// image.resize(w, h, options);
@@ -60,6 +60,9 @@ function view_homepage() {
 	// image.background(color);
 	// image.sepia();
 	// image.command(command, [priority]);
+
+	// IMPORTANT: see here https://github.com/petersirka/partial.js/tree/master/examples/routing
+
 	image.resizeCenter(300, 300).save(filename, function(err, filename) {
 
 		model.url = '<div><img src="/{0}?ts={1}" width="300" height="300" alt="Uploaded image" /></div><br />'.format(path.basename(filename), new Date().getTime());
