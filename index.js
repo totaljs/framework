@@ -372,7 +372,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 
 	if (!utils.isArray(flags) && typeof(flags) === 'object') {
 		maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
-		partial = flags['partial'];
+		partial = flags['partials'] || flags['partial'];
 		timeout = flags['timeout'];
 		flags = flags['flags'];
 	}
@@ -432,7 +432,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (flags.indexOf('referer') !== -1)
 		self._request_check_referer = true;
 
-	if (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1)
+	if (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1)
 		self._request_check_POST = true;
 
 	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'], partial: partial || [], timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: flags.indexOf('raw') !== -1 });
@@ -1682,7 +1682,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	if (typeof(filename) === OBJECT)
 		stream = filename;
 
-	var key = req.url;
+	var key = 'image-' + req.url.substring(1);
 	var name = self.temporary.path[key];
 
 	if (name === null) {
@@ -1696,7 +1696,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	}
 
 	var Image = require('./image');
-	name = self.path.temp(key.replace(/\//g, '-').substring(1));
+	name = self.path.temp(key.replace(/\//g, '-'));
 
 	// STREAM
 	if (stream !== null) {
@@ -1705,7 +1705,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
 			if (exist) {
 				self.temporary.path[key] = name;
-				self.responseFile(req, res, filename, '', headers, key);
+				self.responseFile(req, res, name, '', headers, key);
 				return;
 			}
 
@@ -1722,7 +1722,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				}
 
 				self.temporary.path[key] = name;
-				self.responseFile(req, res, filename, '', headers, key);
+				self.responseFile(req, res, name, '', headers, key);
 			});
 
 		});
@@ -2908,7 +2908,11 @@ Framework.prototype._clear = function(arr) {
 	if (arr.length === 0)
 		return;
 
-	fs.unlink(arr.shift(), function() {
+	var filename = arr.shift();
+	if (!filename)
+		return;
+
+	fs.unlink(filename, function() {
 		self._clear(arr);
 	});
 
@@ -7996,7 +8000,7 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
 
 	var arr = [];
 	for (var i = 0; i < length; i++)
-		arr.push(files[i].filenameTMP);
+		arr.push(files[i].path);
 
 	framework._clear(arr);
 	self.data.files = null;

@@ -178,14 +178,14 @@ Image.prototype.save = function(filename, callback) {
 	return self;
 };
 
-Image.prototype.pipe = function(stream) {
+Image.prototype.pipe = function(stream, type) {
 
 	var self = this;
 
 	if (self.builder.length === 0)
 		return;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, '-'));
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, (type ? type + ':' : '') + '-'));
 
 	cmd.stderr.on('data', stream.emit.bind(stream, 'error'));
 	cmd.stdout.on('data', stream.emit.bind(stream, 'data'));
