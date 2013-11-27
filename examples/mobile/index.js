@@ -5,17 +5,4 @@ var port = 8004;
 var debug = true;
 
 framework.run(http, debug, port);
-
-framework.onPrefix = function(req) {
-	var userAgent = req.headers['user-agent'];
-
-	if ((/\iPhone|iPad/gi).test(userAgent))
-		return 'ios';
-
-	if ((/\Android/gi).test(userAgent))
-		return 'android';
-
-	return '';
-};
-
 console.log("http://{0}:{1}/".format(framework.ip, framework.port));

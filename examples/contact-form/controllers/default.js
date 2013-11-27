@@ -12,8 +12,8 @@ function json_form() {
 	var self = this;	
 	var model = self.post;
 
-	// Documentation: http://docs.partialjs.com/FrameworkController/#controller.validation
-	var error = self.validation(model, 'contactform');
+	// Documentation: http://docs.partialjs.com/FrameworkController/#controller.validate
+	var error = self.validate(model, 'contactform');
 
 	if (error.hasError()) {
 		self.json(error);

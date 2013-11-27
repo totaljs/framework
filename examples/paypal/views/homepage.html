@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>@{repository.title}</title>
+    @{meta}
     <meta charset="utf-8" />
 	<meta http-equiv="X-UA-Compatible" content="IE=10" />
 	<meta name="format-detection" content="telephone=no"/>
@@ -12,7 +12,7 @@
 
 	
 	<div>
-		<a href="/pay/"><img src="@{routeImage('button.gif')}" width="68" height="23" alt="Buy Now" />
+		<a href="/pay/">@{image('button.gif', 68, 23, 'Buy Now')}</a>
 	</div>
 
 </body>

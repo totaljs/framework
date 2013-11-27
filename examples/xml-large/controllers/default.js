@@ -5,6 +5,7 @@ exports.install = function(framework) {
 function xml() {
 	var self = this;
 
+	// IMPORTANT:
 	self.custom();
 
 	self.res.writeHead(200, { 'Content-Type': 'text/xml' });

@@ -6,7 +6,6 @@ exports.install = function(framework) {
 
 function file_download() {
 	var self = this;
-	// documentation: http://www.partialjs.com/documentation/controller/
-	// @contentType {String}, @stream {Stream}, [@downloadName] {String}, [@headers] {Options}
+	// Documentation: http://docs.partialjs.com/Framework/#framework.responseStream
 	self.stream('application/pdf', fs.createReadStream(self.path.public('company-profile.pdf')), 'about-us.pdf');
 }

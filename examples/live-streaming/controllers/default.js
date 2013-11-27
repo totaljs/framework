@@ -29,9 +29,7 @@ function view_live() {
 			return;
 		}
 
-		// Params:
-		// @filename {String}
-		// @stream {ReadStream} :: optional, default undefined
+		// Documentation: http://docs.partialjs.com/FrameworkController/#controller.mmr
 		self.mmr(self.path.public('img/' + index + '.jpg'));
 
 		// or
@@ -41,6 +39,7 @@ function view_live() {
 			clearInterval(interval);
 
 			// close connection
+			// Documentation: http://docs.partialjs.com/FrameworkController/#controller.close
 			self.close();
 		}
 

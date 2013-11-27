@@ -17,7 +17,7 @@ function send(url) {
 	var indexer = 0;
 
 	h['Content-Type'] = 'multipart/x-mixed-replace; boundary=' + BOUNDARY;
-	
+
 	var options = { protocol: uri.protocol, auth: uri.auth, method: 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
@@ -61,17 +61,19 @@ function send(url) {
 
 		setTimeout(function() {
 			var file = files.shift() || '';
+			console.log('–---->', file);
 			if (file.length > 0)
 				sendfile(file, run);
 		}, 500);
-		
+
 	}
 
 	run();
 };
 
 fs.readdirSync(directory).forEach(function(filename){
-	files.push(path.join(directory, filename));
+	if (filename.indexOf('.DS_Store') === -1)
+		files.push(path.join(directory, filename));
 });
 
 console.log(files);

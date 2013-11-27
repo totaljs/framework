@@ -1,5 +1,6 @@
+
 // Global validation
-// this delegate replace framework.onValidation
+// Look here: https://github.com/petersirka/partial.js/tree/master/examples/framework-schema
 framework.onValidation = function(name, value) {
 
 	// this == controller

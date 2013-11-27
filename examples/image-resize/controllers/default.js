@@ -30,14 +30,15 @@ function view_homepage() {
 	// file.isVideo();
 	// file.isImage();
 
-	model.info = file.filename + ' ({0} kB)'.format(Math.floor(file.size / 1024, 2));
+	model.info = file.filename + ' ({0} kB)'.format(Math.floor(file.length / 1024, 2));
 
 	// =============================
 	// $ brew install graphicsmagick
 	// =============================
 
-
 	var filename = self.path.public('upload.jpg');
+
+	// Documentation: http://docs.partialjs.com/FrameworkImage/
 	var image = file.image(); // this is equivalent to require('partail.js/image').init([useImageMagick]);
 
 	// require('partial.js/image').init(filename, [useImageMagick]);

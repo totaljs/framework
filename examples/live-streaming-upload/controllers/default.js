@@ -1,5 +1,5 @@
 exports.install = function(framework) {
-	framework.route('/', upload, ['mmr']);
+	framework.route('/', upload, { flags: ['mmr'], length: 100000 });
 };
 
 function upload(file) {

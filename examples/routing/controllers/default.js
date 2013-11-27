@@ -16,29 +16,31 @@ exports.init = function(framework) {
 	// route: all txt files
 	// Documentation: http://docs.partialjs.com/Framework/#framework.file
 	// Try: http://127.0.0.4/test.txt
-	framework.file('.txt', function(req, res) {
-		// valid request
-		return req.url.indexOf('.txt') !== -1;
-	}, static_txt);
+	framework.file('.txt', static_txt);
 
 	// route: all jpg files
 	// all images will resized about 50%
 	// Documentation: http://docs.partialjs.com/Framework/#framework.file
 	// Try: http://127.0.0.4/header.jpg
-	framework.file('.jpg', function(req, res) {
-		// valid request
-		return req.url.indexOf('.jpg') !== -1;
-	}, static_jpg);
+	framework.file('.jpg', static_jpg);
 }
 
-function static_txt(req, res) {
+function static_txt(req, res, isValidation) {
+
+	if (isValidation)
+		return req.url.indexOf('.txt') !== -1;
+
 	// generate response
 	// this === framework
 	// Documentation: http://docs.partialjs.com/Framework/#framework.responsContent
 	this.responseContent(req, res, 200, 'Server time: ' + new Date().toString(), 'text/plain');
 }
 
-function static_jpg(req, res) {
+function static_jpg(req, res, isValidation) {
+
+	if (isValidation)
+		return req.url.indexOf('.jpg') !== -1;
+
 	// generate response
 	// this === framework
 	// Documentation: http://docs.partialjs.com/Framework/#framework.responseImage
@@ -49,7 +51,7 @@ function static_jpg(req, res) {
 
 		image.resize('50%');
 		image.quality(80);
-		image.clean();
+		image.minify();
 
 	});
 }

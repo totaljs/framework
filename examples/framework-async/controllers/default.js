@@ -1,11 +1,8 @@
 exports.install = function(framework) {
 	
 	framework.route('/', view_homepage);
-	framework.route('/', xhr_percentage, ['xhr']);
-	
-	framework.file('*.jpg', function(req) {
-		return req.url.indexOf('pic') !== -1;
-	}, static_file);
+	framework.route('/', xhr_percentage, ['xhr']);	
+	framework.file('*.jpg', static_file);
 };
 
 function view_homepage() {
@@ -20,7 +17,10 @@ function xhr_percentage() {
 
 }
 
-function static_file(req, res) {
+function static_file(req, res, isValidation) {
+
+	if (isValidation)
+		return req.url.indexOf('pic') !== -1;
 
 	var self = this;
 	

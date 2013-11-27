@@ -16,9 +16,10 @@ function view_homepage() {
 		return self.resource('en', name);
 	};
 
+	// Documentation: http://docs.partialjs.com/Builders.ErrorBuilder/
 	var errorBuilder = new builders.ErrorBuilder(resource);
 
-	// Documentation: http://www.partialjs.com/documentation/utils/
+	// Documentation: http://docs.partialjs.com/FrameworkUtils/#utils.validate
 	if (utils.validate(self.post, ['FirstName', 'LastName', 'Age', 'Email', 'Terms'], onValidation, errorBuilder).hasError()) {
 		self.json(errorBuilder);
 		return;

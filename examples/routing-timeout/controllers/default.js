@@ -1,10 +1,9 @@
 exports.init = function(framework) {
 
-	// timeout by framework.config['default-request-timeout']
+	// Documentation: http://docs.partialjs.com/Framework/#framework.route
 	framework.route('/', timeout);
 
-	// @url, @fn, @flags, @length, @partial, @timeout
-	framework.route('/quick/', timeout, [], null, [], 100);
+	framework.route('/quick/', timeout, { timeout: 100 });
 
 	// Request timeout
 	framework.route('#408', view_408)

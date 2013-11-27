@@ -1,6 +1,6 @@
 exports.install = function(framework) {
 	framework.route('/', view_homepage);
-	framework.route('/xhr/', xhr_panel, ['xhr']);
+	framework.route('/xhr/', xhr_panel, ['xhr', 'post']);
 };
 
 function view_homepage() {

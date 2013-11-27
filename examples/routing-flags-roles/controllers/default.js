@@ -20,5 +20,5 @@ function view_moderator() {
 }
 
 function error_401() {
-	this.plain('401:UNAUTHORIZED');
+	this.plain('401:UNAUTHORIZED\n\nhttp://127.0.0.1:8004/?user=admin\nhttp://127.0.0.1:8004/?user=moderator');
 }

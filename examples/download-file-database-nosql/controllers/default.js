@@ -4,7 +4,7 @@ exports.install = function(framework) {
 	//db.insert({ file: db.binary.insert('logo.png', 'image/png', require('fs').readFileSync('/users/petersirka/desktop/logo.png')) });
 	
 	framework.route('/', view_homepage);
-    framework.file('load image from database', function(req) { return req.url.indexOf(".png") !== -1; }, static_image);
+    framework.file('load image from database', static_image);
 };
 
 function view_homepage() {
@@ -13,8 +13,11 @@ function view_homepage() {
 }
 
 // Serve image from database products
-function static_image(req, res) {
+function static_image(req, res, isValidation) {
     
+    if (isValidation)
+        return req.url.indexOf('.png') !== -1;
+
     // this === framework
     var self = this;
 
@@ -34,10 +37,17 @@ function static_image(req, res) {
             return;
         }
 
-        // set client cache via etag
+        // Set HTTP cache via etag
+        // Documentation: http://docs.partialjs.com/Framework/#framework.setModified
         self.setModified(req, res, id);
 
-        // req, res, filename, stream, [downloadname], [headers]
-        self.responseStream(req, res, 'image/png', stream);
+        // Documentation: http://docs.partialjs.com/Framework/#framework.responseStream
+        // self.responseStream(req, res, 'image/png', stream);
+
+        // Documentation: http://docs.partialjs.com/Framework/#framework.responseImage
+        self.responseImage(req, res, stream, function(image) {
+            image.resize('50%');
+            image.minify(); 
+        });
     });
 }

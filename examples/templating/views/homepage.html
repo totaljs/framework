@@ -11,3 +11,6 @@
 <h2>Length === 0</h2>
 <br />
 @{template('array', [], 'empty')}
+<br />
+<h2>Dynamic template</h2>
+@{template('<div><b>{name}</b></div>', global.database.items)}

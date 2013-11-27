@@ -14,5 +14,8 @@
 
 @{endif}
 
+<H2>Dynamic view</h2>
+@{view('Current date: @{model.format(\'dd.MM.yyyy HH:mm\')}', new Date())}
+
 <br />
 <br />

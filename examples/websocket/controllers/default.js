@@ -2,20 +2,7 @@ exports.install = function(framework) {
 	framework.route('/', view_homepage);
 	framework.route('/usage/', view_usage);
 
-	/*
-		Add a new websocket route
-		@url {String}
-		@funcInitialize {Function}
-		@flags {String Array} :: optional
-		@protocols {String Array} :: optional, websocket-allow-protocols
-		@allow {String Array} :: optional, allow origin
-		@maximumSize {Number} :: optional, maximum size length
-		return {Framework}
-
-		flags: json, logged, unlogged
-		[logged, unlogged] https://github.com/petersirka/partial.js/tree/master/examples/authorization
-
-	*/
+	// Documentation: http://docs.partialjs.com/Framework/#framework.websocket
 	framework.websocket('/', socket_homepage, ['json']);
 
 	// framework.websocket('/chat/', socket_homepage, ['json'], ['chat']);

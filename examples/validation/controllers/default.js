@@ -12,17 +12,13 @@ function view_homepage() {
 		return;
 	}
 
-	/*
-		Global validation
-		@model {Object}
-		@properties {String array}
-		@prefix :: optional, default empty
-		@resource name :: optional, default = default.resource
-		return {ErrorBuilder}
-	*/
+	// Look here: https://github.com/petersirka/partial.js/tree/master/examples/framework-schema
+	// Documentation: http://docs.partialjs.com/FrameworkController/#controller.validate
 	var result = self.validate(self.post, ['FirstName', 'LastName', 'Age', 'Email', 'Terms'], 'Form');
-	if (result.hasError()) {
-		result.replace('Email', self.post.Email);
+
+	// Documentation: http://docs.partialjs.com/Builders.ErrorBuilder/
+	if (result.hasError()) {		
+		result.replace('@Email', self.post.Email);
 		self.json(result);
 		return;
 	}
