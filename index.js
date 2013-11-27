@@ -6402,9 +6402,16 @@ Controller.prototype.jsonAsync = function(obj, headers) {
 	return {Controller or String}; :: return String when contentType is undefined
 */
 Controller.prototype.content = function(contentBody, contentType, headers) {
-	var self = this;
 
-	if (typeof(contentType) === UNDEFINED)
+	var self = this;
+	var type = typeof(contentType);
+
+	if (type === UNDEFINED) {
+		self.content(self.$contentToggle(true, contentBody), 'text/html', headers);
+		return;
+	}
+
+	if (type === BOOLEAN)
 		return self.$contentToggle(true, contentBody);
 
 	if (self.res.success || !self.isConnected)

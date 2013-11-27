@@ -40,6 +40,7 @@ IN DEVELOPMENT ======= 1.3.0
 - updated: builders.prepare()
 - updated: controller.validate()
 - updated: controller.close([end])
+- updated: controller.content(name, [contentType/return content], [headers])
 - updated: utils.validate()
 - updated: utils.httpStatus()
 - updated: nosql (extended buffer)

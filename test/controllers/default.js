@@ -212,7 +212,7 @@ function viewIndex() {
 	assert.ok(self.template('test', ['A', 'B'], '', { name: 'ABCDEFG' }) === '<div>AB</div>A...', name + 'template - repository');
 	assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');
 	assert.ok(self.view('test', null, true) === 'partial.js', name + 'view');
-	assert.ok(self.content('test') === 'EMPTY', name + 'content');
+	assert.ok(self.content('test', true) === 'EMPTY', name + 'content');
 	assert.ok(self.url === '/', name + 'url');
 
 	var error = self.validate({ A: 'B' }, ['A']);
