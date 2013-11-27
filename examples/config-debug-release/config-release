@@ -2,21 +2,5 @@ name							: partial.js (RELEASE)
 version 						: 1.01
 secret							: secret-key-for-web
 etag-version					:
-directory-controllers			: /controllers/
-directory-views					: /views/
-directory-temp					: /tmp/
-directory-templates				: /templates/
-directory-resources				: /resources/
-directory-public				: /public/
-directory-dodules				: /modules/
-directory-logs					: /logs/
-static-url						:
-static-url-js					: /js/
-static-url-css					: /css/
-static-url-image				: /img/
-static-url-video				: /video/
-static-url-font					: /font/
-static-url-document				: /upload/
-static-accepts					: .jpg,.png,.gif,.ico,.js,.css,.txt,.xml,.woff,.ttf,.eot,.svg,.zip,.rar,.pdf,.docx,.xlsx,.doc,.xls,.html,.htm
-default-layout					: _layout
-default-request-length			: 6000
+custom-value-1					: custom 1
+custom-value-2					: custom 2
