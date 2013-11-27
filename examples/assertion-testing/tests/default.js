@@ -1,26 +1,13 @@
 var utils = require('partial.js/utils');
 var assert = require('assert');
 
-// exports.run  supports partial.js >= v1216
-// exports.init supports partial.js <= v1216
-
 exports.run = function(framework, name) {
 
 	console.log('run test: {0}'.format(name));
 	console.log('');
 
-	/*
-		ADD TO TEST
-	*/
-
-	// @name {String} :: name of test
-	// @url {String}
-	// @callback {Function} :: function params @error {Error}, @data {String}, @name {String}, @statusCode {Number}, @headers {Object}
-	// @method {String} :: optional default GET
-	// @data {String} :: optional default empty string
-	// @headers {Object} :: optional custom headers
-
-	// framework.assert(name, url, callback, [method], [data], [headers])
+	// Documentation: http://docs.partialjs.com/Framework/#framework.assert
+	
 	framework.assert('Test URL 1', '/1/', function response (error, data, name, code, headers) {
 		assert.ok(code === 200 && data === '1', name);
 		console.log('1');

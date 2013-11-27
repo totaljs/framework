@@ -11,7 +11,7 @@ function test1() {
 function test2() {
 	/*
 	if (this.isTest)
-		console.log('THIS IS TESTED');
+		console.log('IS TEST');
 	*/
 	this.plain('2');
 }
