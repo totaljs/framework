@@ -1671,10 +1671,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	@filename {String or Stream}
 	@fnProcess {Function} :: function(FrameworkImage) {}
 	@headers {Object} :: optional, additional headers
-	@isIM {Boolean} :: optional, use ImageMagick (otherwise is used GraphicsMagick), default false
+	@useImageMagick {Boolean} :: optional, use ImageMagick (otherwise is used GraphicsMagick), default false
 	return {Framework}
 */
-Framework.prototype.responseImage = function(req, res, filename, fnProcess, headers, isIM) {
+Framework.prototype.responseImage = function(req, res, filename, fnProcess, headers, useImageMagick) {
 
 	var self = this;
 	var stream = null;
@@ -1709,7 +1709,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				return;
 			}
 
-			var image = Image.load(stream, isIM);
+			var image = Image.load(stream, useImageMagick);
 
 			fnProcess(image);
 
@@ -1739,7 +1739,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			return;
 		}
 
-		var image = Image.load(filename, isIM);
+		var image = Image.load(filename, useImageMagick);
 
 		fnProcess(image);
 
@@ -6488,10 +6488,10 @@ Controller.prototype.file = function(filename, downloadName, headers) {
 	@filename {String or Stream}
 	@fnProcess {Function} :: function(FrameworkImage) {}
 	@headers {Object} :: optional, additional headers
-	@isIM {Boolean} :: optional, use ImageMagick (otherwise is used GraphicsMagick), default false
+	@useImageMagick {Boolean} :: optional, use ImageMagick (otherwise is used GraphicsMagick), default false
 	return {Framework}
 */
-Controller.prototype.image = function(filename, fnProcess, headers, isIM) {
+Controller.prototype.image = function(filename, fnProcess, headers, useImageMagick) {
 	var self = this;
 
 	if (self.res.success || !self.isConnected)
@@ -6505,7 +6505,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, isIM) {
 	}
 
 	self.subscribe.success();
-	self.framework.responseImage(self.req, self.res, filename, fnProcess, headers, isIM);
+	self.framework.responseImage(self.req, self.res, filename, fnProcess, headers, useImageMagick);
 
 	return self;
 };

@@ -5,8 +5,9 @@ exports.install = function(framework) {
 function view_database() {
 
 	var self = this;
-	var db = self.framework.db();
+	var db = self.database('my-database');
 
+		// https://github.com/petersirka/node-couchdb
 	db.all({ limit: 10 }, function(err, rows, total, offset) {
 
 		if (err) {
@@ -22,6 +23,5 @@ function view_database() {
 		// @callback {Functions} :: optional
 		db.insert({ name: 'Peter', age: 28 });
 
-		// https://github.com/petersirka/partial.js/wiki/SK.framework.couchdb
 	});
 }

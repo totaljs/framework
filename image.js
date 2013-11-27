@@ -75,16 +75,16 @@ exports.measurePNG = function(buffer) {
 /*
 	Image class
 	@filename {String}
-	@imageMagick {Boolean} :: default false
+	@useImageMagick {Boolean} :: default false
 */
-function Image(filename, imageMagick) {
+function Image(filename, useImageMagick) {
 
 	var type = typeof(filename);
 
 	this.builder = [];
 	this.filename = type === 'string' ? filename : null;
 	this.stream = type === 'object' ? filename : null;
-	this.isIM = imageMagick || false;
+	this.isIM = useImageMagick || false;
 
 	if (!filename)
 		throw new Error('Image filename is undefined.');
