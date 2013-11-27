@@ -1,4 +1,4 @@
-exports.init = function(framework) {
+exports.install = function(framework) {
 	// Documentation: http://docs.partialjs.com/Framework/#framework.route
 	framework.route('/contact/', view_contact);
 	framework.route('/products/', view_products);
@@ -6,12 +6,6 @@ exports.init = function(framework) {
 	framework.route('/products/{category}/{subcategory}/', view_products);
 	framework.route('/', view_homepage);
 	framework.route('/{category}/', view_homepage);
-
-	// Route to file
-	// this.routeFile(name, funcValidation, funcExecute);
-	// @name {String}
-	// @funcValidation {Function} :: params: {req}, {res}, return {Boolean};
-	// @funcExecute {Function} :: params: {req}, {res};
 
 	// route: all txt files
 	// Documentation: http://docs.partialjs.com/Framework/#framework.file
