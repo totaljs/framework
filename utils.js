@@ -940,6 +940,14 @@ exports.decode_WS = function(data) {
     return output;
 };
 
+/*
+	Get distance (KM) between two coordinates
+	@lat1 {Number}
+	@lot1 {Number}
+	@lat2 {Number}
+	@lot1 {Number}
+	return {Number}
+*/
 exports.distance = function(lat1, lon1, lat2, lon2) {
     var R = 6371;
     var dLat = (lat2 - lat1).toRad();
