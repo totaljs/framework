@@ -525,6 +525,7 @@ HttpFile.prototype.md5 = function(callback) {
 
 /*
 	Get a stream
+	@options {Object} :: optional
 	return {Stream}
 */
 HttpFile.prototype.stream = function(options) {
@@ -534,11 +535,13 @@ HttpFile.prototype.stream = function(options) {
 
 /*
 	Pipe a stream
+	@stream {Stream}
+	@options {Object} :: optional
 	return {Stream}
 */
-HttpFile.prototype.pipe = function(stream) {
+HttpFile.prototype.pipe = function(stream, options) {
 	var self = this;
-	return fs.createReadStream(self.path, options).pipe(stream);
+	return fs.createReadStream(self.path, options).pipe(stream, options);
 };
 
 /*

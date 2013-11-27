@@ -178,9 +178,21 @@ Image.prototype.save = function(filename, callback) {
 	return self;
 };
 
-Image.prototype.pipe = function(stream, type) {
+/*
+	Pipe stream
+	@stream {Stream}
+	@type {String} :: optional, image type (png, jpg, gif)
+	@options {Object} :: Stream object
+	return {Image}
+*/
+Image.prototype.pipe = function(stream, type, options) {
 
 	var self = this;
+
+	if (typeof(type) === 'object') {
+		options = type;
+		type = null;
+	}
 
 	if (self.builder.length === 0)
 		return;
@@ -191,7 +203,7 @@ Image.prototype.pipe = function(stream, type) {
 	cmd.stdout.on('data', stream.emit.bind(stream, 'data'));
 	cmd.stdout.on('end', stream.emit.bind(stream, 'end'));
 	cmd.on('error', stream.emit.bind(stream, 'error'));
-	cmd.stdout.pipe(stream);
+	cmd.stdout.pipe(stream, options);
 
 	if (self.stream)
 		self.stream.pipe(cmd.stdin);
