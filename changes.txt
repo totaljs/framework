@@ -55,6 +55,7 @@ IN DEVELOPMENT ======= 1.3.0
 - fixed: HttpRequest.authorization()
 - fixed: mail.send()
 - fixed: json flag
+- fixed: put flag
 - fixed: framework.clear(), request.clear()
 - fixed: FrameworkMarkdown - parsing of title
 - fixed: templates (throwing of exception by the illegal tags)

@@ -363,10 +363,10 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
 		if (value[0] === '!')
 			continue;
-
+/*
 		if (value === 'json')
 			value = 'post';
-
+*/
 		if (noLoggedUnlogged) {
 			if (value === 'logged' || value === 'unlogged')
 				continue;

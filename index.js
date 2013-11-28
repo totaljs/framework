@@ -425,7 +425,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		if (flags.indexOf('proxy') !== -1 && flags.indexOf('json') === -1)
 			flags.push('json');
 
-		if ((flags.indexOf('json') !== -1 || flags.indexOf('raw') !== -1) && flags.indexOf('post') === -1)
+		if ((flags.indexOf('json') !== -1 || flags.indexOf('raw') !== -1) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1))
 			flags.push('post');
 	}
 
@@ -2626,11 +2626,18 @@ Framework.prototype._request = function(req, res) {
     var multipart = req.headers['content-type'] || '';
 
     if (multipart.indexOf('multipart/form-data') === -1) {
+
+	    if (multipart.indexOf('application/json') !== -1)
+	    	flags.push('json');
+
 		if (multipart.indexOf('mixed') === -1)
 			multipart = '';
 		else
 			flags.push('mmr');
     }
+
+	if (multipart.length > 0)
+		flags.push('upload');
 
     if (req.isProxy)
 		flags.push('proxy');
@@ -2648,9 +2655,6 @@ Framework.prototype._request = function(req, res) {
 
 	if (req.prefix.length > 0)
 		flags.push('#' + req.prefix);
-
-	if (multipart.length > 0)
-		flags.push('upload');
 
 	flags.push('+xhr');
 
@@ -4704,18 +4708,22 @@ Subscribe.prototype._end = function() {
 	if (self.route.isJSON) {
 		try
 		{
-			if (self.req.buffer.data.isJSON()) {
-				self.req.data.post = JSON.parse(self.req.buffer.data);
-				self.req.buffer.data = null;
-				self.prepare(self.req.flags, self.req.uri.pathname);
+			if (!self.req.buffer.data.isJSON()) {
+				self.route = self.framework.lookup(self.req, '#400', []);
+				self.execute(400);
 				return;
 			}
+
+			self.req.data.post = JSON.parse(self.req.buffer.data);
+			self.req.buffer.data = null;
+			self.prepare(self.req.flags, self.req.uri.pathname);
 
 		} catch (err) {
 			self.route = self.framework.lookup(self.req, '#400', []);
 			self.execute(400);
-			return;
 		}
+
+		return;
 	}
 
 	if (self.framework.onXSS !== null && self.framework.onXSS(self.req.buffer.data)) {
