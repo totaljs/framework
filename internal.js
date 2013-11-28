@@ -2246,7 +2246,7 @@ function minifyHTML(html) {
 	var reg1 = new RegExp(/[\n\r\t]+/g);
 	var reg2 = new RegExp(/\s{2,}/g);
 
-	var tags =['textarea', 'pre', 'code', 'script'];
+	var tags =['script', 'textarea', 'pre', 'code'];
 	var id = '[' + new Date().getTime() + ']#';
 	var cache = {};
 	var indexer = 0;
@@ -2270,6 +2270,17 @@ function minifyHTML(html) {
 
 			var key = id + (indexer++);
 			var value = html.substring(beg, end + len);
+
+			if (i === 0) {
+				end = value.indexOf('>');
+				len = value.indexOf('type="text/template"');
+				if (len < end)
+					break;
+				len = value.indexOf('type="text/html"');
+				if (len < end)
+					break;
+			}
+
 			cache[key] = value;
 			html = html.replace(value, key);
 			beg = html.indexOf(tagBeg);

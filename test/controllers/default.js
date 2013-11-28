@@ -235,6 +235,7 @@ function viewViews() {
 
 	var output = self.view('a', { a: 'A', b: 'B', arr: ['1', '2', '3'] }, true);
 
+	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>', name + ' minify html'));
 	assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
 	assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');
 	assert.ok(output.contains('#helper-property-OK#'), name + 'helper property');
