@@ -20,7 +20,7 @@ function json_form() {
 		return;
 	}
 
-	// Documentatation: http://docs.partialjs.com/Builders.SchemaBuilder/#builders.prepare
+	// Documentation: http://docs.partialjs.com/Builders.SchemaBuilder/#builders.prepare
 	model = builders.prepare('contactform', model);
 	model.Ip = self.ip;
 
