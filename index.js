@@ -2332,8 +2332,8 @@ Framework.prototype.init = function(http, config, port, ip, options) {
     if (self.config['allow-websocket'])
 		self.server.on('upgrade', self.handlers.onupgrade);
 
-	self.port = port || process.env.PORT || self.config.port || 8000;
-	self.ip = ip || self.config.ip || '127.0.0.1';
+	self.port = port || process.env.PORT || self.config['default-port'] || 8000;
+	self.ip = ip || self.config['default-ip'] || '127.0.0.1';
 	self.server.listen(self.port, self.ip);
 
 	if (module !== null) {
@@ -2375,11 +2375,11 @@ Framework.prototype.run = function(http, config, port, ip, options) {
 Framework.prototype.reconnect = function() {
 	var self = this;
 
-	if (typeof(self.config.port) !== UNDEFINED)
-		self.port = self.config.port;
+	if (typeof(self.config['default-port']) !== UNDEFINED)
+		self.port = self.config['default-port'];
 
-	if (typeof(self.config.ip) !== UNDEFINED)
-		self.ip = self.config.ip;
+	if (typeof(self.config['default-ip']) !== UNDEFINED)
+		self.ip = self.config['default-ip'];
 
 	self.server.close(function() {
 		self.server.listen(self.port, self.ip);
