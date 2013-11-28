@@ -3050,7 +3050,7 @@ Framework.prototype.configure = function(arr, rewrite) {
 	var self = this;
 
 	if (typeof(arr) === UNDEFINED) {
-		var filename = utils.combine('/', 'config-' + (self.config.debug ? 'debug' : 'release'));
+		var filename = utils.combine('/config/', 'config-' + (self.config.debug ? 'debug' : 'release'));
 
 		if (!fs.existsSync(filename))
 			return self;
