@@ -30,7 +30,7 @@ process.chdir(directory);
 // process.maxTickDepth = 300;
 
 function Framework() {
-	this.version = 1290;
+	this.version = 1300;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
@@ -177,6 +177,7 @@ function Framework() {
 	this.fs = new FrameworkFileSystem(this);
 	this.path = new FrameworkPath(this);
 	this.restrictions = new FrameworkRestrictions(this);
+	this.state = new FrameworkState(this);
 
 	this._request_check_redirect = false;
 	this._request_check_referer = false;
@@ -1086,6 +1087,14 @@ Framework.prototype.onFilterRestore = function(path) {
 	return true;
 };
 
+Framework.prototype.onStateRead = function() {
+
+};
+
+Framework.prototype.onStateWrite = function() {
+
+};
+
 /*
 	Render HTML for views
 	@argument {String params}
@@ -1204,7 +1213,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('');
 	builder.push('Current directory               : {0}'.format(process.cwd));
 	builder.push('Temporary directory             : {0} kB'.format((size / 1024).format('#########.##')));
-	builder.push('Backup directory                : {0} kB'.format((sizeBackup / 1024).format('#########.##')));
+	builder.push('Backups directory               : {0} kB'.format((sizeBackup / 1024).format('#########.##')));
 	builder.push('Databases directory             : {0} kB'.format((sizeDatabase / 1024).format('#########.##')));
 	builder.push('');
 	builder.push('## Counter');
@@ -1230,45 +1239,45 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('');
 	builder.push('## Requests statistic');
 	builder.push('');
-	builder.push('Pending requests                : {0}x'.format(self.stats.request.pending.format('##########')));
-	builder.push('Blocked requests                : {0}x'.format(self.stats.request.xss.format('##########')));
-	builder.push('Request to webpage              : {0}x'.format(self.stats.request.web.format('##########')));
-	builder.push('Request to Websocket            : {0}x'.format(self.stats.request.websocket.format('##########')));
-	builder.push('Request to file                 : {0}x'.format(self.stats.request.file.format('##########')));
-	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr.format('##########')));
-	builder.push('Request GET                     : {0}x'.format(self.stats.request.get.format('##########')));
-	builder.push('Request POST                    : {0}x'.format(self.stats.request.post.format('##########')));
-	builder.push('Request PUT                     : {0}x'.format(self.stats.request.put.format('##########')));
-	builder.push('Request DELETE                  : {0}x'.format(self.stats.request['delete'].format('##########')));
-	builder.push('Request multipart               : {0}x'.format(self.stats.request.upload.format('##########')));
-	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss.format('##########')));
+	builder.push('Pending requests                : {0}x'.format(self.stats.request.pending));
+	builder.push('Blocked requests                : {0}x'.format(self.stats.request.xss));
+	builder.push('Request to webpage              : {0}x'.format(self.stats.request.web));
+	builder.push('Request to Websocket            : {0}x'.format(self.stats.request.websocket));
+	builder.push('Request to file                 : {0}x'.format(self.stats.request.file));
+	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr));
+	builder.push('Request GET                     : {0}x'.format(self.stats.request.get));
+	builder.push('Request POST                    : {0}x'.format(self.stats.request.post));
+	builder.push('Request PUT                     : {0}x'.format(self.stats.request.put));
+	builder.push('Request DELETE                  : {0}x'.format(self.stats.request['delete']));
+	builder.push('Request multipart               : {0}x'.format(self.stats.request.upload));
+	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss));
 	builder.push('');
 	builder.push('## Responses statistic');
 	builder.push('');
-	builder.push('Response view                   : {0}x'.format(self.stats.response.view.format('##########')));
-	builder.push('Response JSON                   : {0}x'.format(self.stats.response.json.format('##########')));
-	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain.format('##########')));
-	builder.push('Response empty                  : {0}x'.format(self.stats.response.empty.format('##########')));
-	builder.push('Response custom                 : {0}x'.format(self.stats.response.custom.format('##########')));
-	builder.push('Response redirect               : {0}x'.format(self.stats.response.redirect.format('##########')));
-	builder.push('Response timeout                : {0}x'.format(self.stats.response.timeout.format('##########')));
-	builder.push('Response forwarding             : {0}x'.format(self.stats.response.forwarding.format('##########')));
-	builder.push('Response file                   : {0}x'.format(self.stats.response.file.format('##########')));
-	builder.push('Response not modified           : {0}x'.format(self.stats.response.notModified.format('##########')));
-	builder.push('Response stream                 : {0}x'.format(self.stats.response.stream.format('##########')));
-	builder.push('Response streaming              : {0}x'.format(self.stats.response.streaming.format('##########')));
-	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr.format('##########')));
-	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse.format('##########')));
-	builder.push('Response Websocket message      : {0}x'.format(self.stats.response.websocket.format('##########')));
-	builder.push('Response restriction            : {0}x'.format(self.stats.response.restriction.format('##########')));
-	builder.push('Response 400                    : {0}x'.format(self.stats.response.error400.format('##########')));
-	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401.format('##########')));
-	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403.format('##########')));
-	builder.push('Response 404                    : {0}x'.format(self.stats.response.error404.format('##########')));
-	builder.push('Response 408                    : {0}x'.format(self.stats.response.error408.format('##########')));
-	builder.push('Response 431                    : {0}x'.format(self.stats.response.error431.format('##########')));
-	builder.push('Response 500                    : {0}x'.format(self.stats.response.error500.format('##########')));
-	builder.push('Response 501                    : {0}x'.format(self.stats.response.error501.format('##########')));
+	builder.push('Response view                   : {0}x'.format(self.stats.response.view));
+	builder.push('Response JSON                   : {0}x'.format(self.stats.response.json));
+	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain));
+	builder.push('Response empty                  : {0}x'.format(self.stats.response.empty));
+	builder.push('Response custom                 : {0}x'.format(self.stats.response.custom));
+	builder.push('Response redirect               : {0}x'.format(self.stats.response.redirect));
+	builder.push('Response timeout                : {0}x'.format(self.stats.response.timeout));
+	builder.push('Response forwarding             : {0}x'.format(self.stats.response.forwarding));
+	builder.push('Response file                   : {0}x'.format(self.stats.response.file));
+	builder.push('Response not modified           : {0}x'.format(self.stats.response.notModified));
+	builder.push('Response stream                 : {0}x'.format(self.stats.response.stream));
+	builder.push('Response streaming              : {0}x'.format(self.stats.response.streaming));
+	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr));
+	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse));
+	builder.push('Response Websocket message      : {0}x'.format(self.stats.response.websocket));
+	builder.push('Response restriction            : {0}x'.format(self.stats.response.restriction));
+	builder.push('Response 400                    : {0}x'.format(self.stats.response.error400));
+	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401));
+	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403));
+	builder.push('Response 404                    : {0}x'.format(self.stats.response.error404));
+	builder.push('Response 408                    : {0}x'.format(self.stats.response.error408));
+	builder.push('Response 431                    : {0}x'.format(self.stats.response.error431));
+	builder.push('Response 500                    : {0}x'.format(self.stats.response.error500));
+	builder.push('Response 501                    : {0}x'.format(self.stats.response.error501));
 	builder.push('');
 
 	if (redirects.length > 0) {
@@ -3497,6 +3506,51 @@ Framework.prototype.worker = function(name, id, timeout) {
 
 // *********************************************************************************
 // =================================================================================
+// Framework State
+// 1.01
+// =================================================================================
+// *********************************************************************************
+
+function FrameworkState(framework) {
+
+	this.framework = framework;
+
+	this.add = function(name, value) {
+		var self = this;
+		self.framework.onStateWrite(self.framework.temporary.state);
+		return value;
+	};
+
+	this.read = function(name, def) {
+		var value = this.framework.temporary.state[name];
+		return typeof(value) === UNDEFINED ? def : value;
+	};
+
+	this.remove = function(name) {
+		var self = this;
+		delete self.framework.temporary.state[name];
+		self.framework.onStateWrite(self.framework.temporary.state);
+		return self;
+	};
+
+	this.removeAll = function() {
+		var self = this;
+		self.framework.state = {};
+		self.framework.onStateWrite(self.framework.temporary.state);
+		return self;
+	};
+
+	this.refresh = function() {
+		var self = this;
+		self.framework.onStateRead(function(state) {
+			self.framework.temporary.state = state;
+		});
+		return self;
+	};
+}
+
+// *********************************************************************************
+// =================================================================================
 // Framework Restrictions
 // 1.01
 // =================================================================================
@@ -4937,6 +4991,10 @@ Controller.prototype = {
 
 	set session(value) {
 		this.req.session = value;
+	},
+
+	get state() {
+		return this.framework.state;
 	},
 
 	get user() {
