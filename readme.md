@@ -59,11 +59,11 @@ Do not miss
 
 - [node.js - FileStorage](https://github.com/petersirka/node-filestorage) - storing of uploaded files (tip for partial.js)
 - [node.js - Fulltext search](https://github.com/petersirka/node-fulltext) - fulltext search engine for web application (tip for partial.js)
-- [node.js - Coucher](https://github.com/petersirka/node-couchdb) - CouchDB database provider (tip for partial.js)
 - [node.js - PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout) (tip for partial.js)
-- [node.js - Backup / Restore](https://github.com/petersirka/node-backup) - Backup / Restore solution
+- [node.js - Coucher](https://github.com/petersirka/node-couchdb) - CouchDB database provider (tip for partial.js)
 - [node.js - MongoLab provider](https://github.com/petersirka/node-mongolab) - MongoLab client (tip for partial.js)
 - [node.js - NoSQL embedded database](https://github.com/petersirka/nosql)
+- [node.js - Backup / Restore](https://github.com/petersirka/node-backup) - Backup / Restore solution
 
 ***
 
@@ -176,4 +176,4 @@ THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## Contact
 
-[www.petersirka.sk](http://www.petersirka.sk)
+[www.petersirka.sk](http://www.petersirka.sk) - <petersirka@gmail.com>
