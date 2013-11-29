@@ -57,13 +57,13 @@ Documentation
 Do not miss
 -----------
 
-- [node.js - FileStorage](https://github.com/petersirka/node-filestorage) - storing of uploaded files
-- [node.js - Fulltext search](https://github.com/petersirka/node-fulltext) - fulltext search engine for web application
-- [node.js - NoSql embedded database](https://github.com/petersirka/nosql)
-- [node.js - Coucher](https://github.com/petersirka/node-couchdb) - CouchDB database provider
-- [node.js - PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
+- [node.js - FileStorage](https://github.com/petersirka/node-filestorage) - storing of uploaded files (tip for partial.js)
+- [node.js - Fulltext search](https://github.com/petersirka/node-fulltext) - fulltext search engine for web application (tip for partial.js)
+- [node.js - Coucher](https://github.com/petersirka/node-couchdb) - CouchDB database provider (tip for partial.js)
+- [node.js - PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout) (tip for partial.js)
 - [node.js - Backup / Restore](https://github.com/petersirka/node-backup) - Backup / Restore solution
-- [node.js - MongoLab provider](https://github.com/petersirka/node-mongolab) - MongoLab client
+- [node.js - MongoLab provider](https://github.com/petersirka/node-mongolab) - MongoLab client (tip for partial.js)
+- [node.js - NoSQL embedded database](https://github.com/petersirka/nosql)
 
 ***
 
