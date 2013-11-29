@@ -61,7 +61,8 @@ IN DEVELOPMENT ======= 1.3.0
 - fixed: FrameworkMarkdown - parsing of title
 - fixed: templates (throwing of exception by the illegal tags)
 
-- (IMPORTANT) removed: framework.backup(), framework.restore() (will be replaced for module)
+- (IMPORTANT) removed: framework.backup(), framework.restore() (will be replaced for a module)
+- (IMPORTANT) removed: markdown (will be replaced for a module)
 
 - improvements: saving of memory
 - improvements: utils.js

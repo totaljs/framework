@@ -11,8 +11,6 @@ ECHO "....... internal.js"
 uglifyjs internal.js -o minify/partial.js/internal.js
 ECHO "....... mail.js"
 uglifyjs mail.js -o minify/partial.js/mail.js
-ECHO "....... markdown.js"
-uglifyjs markdown.js -o minify/partial.js/markdown.js
 ECHO "....... nosql.js"
 uglifyjs nosql.js -o minify/partial.js/nosql.js
 ECHO "....... utils.js"
