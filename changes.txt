@@ -10,6 +10,8 @@ IN DEVELOPMENT ======= 1.3.0
 - added: framework.responseImage(req, res, filename/stream, fnProcess, [headers], [isIM])
 - added: framework.fs.create.temporary(name, stream, [callback])
 - added: framework.fs.rm.temporary(name)
+- added: framework.fs.create.worker(name, content, [rewrite], [append])
+- added: framework.fs.rm.worker(name)
 - added: framework.on('ready')
 - added: framework.on('reconfigure')
 - added: framework.injectVersions(url, [rewrite])

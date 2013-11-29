@@ -3543,6 +3543,7 @@ function FrameworkFileSystem(framework) {
 		template: this.createTemplate.bind(this),
 		resource: this.createResource.bind(this),
 		temporary: this.createTemporary.bind(this),
+		worker: this.createWorker.bind(this),
 		file: this.createFile.bind(this)
 	};
 
@@ -3554,6 +3555,7 @@ function FrameworkFileSystem(framework) {
 		template: this.deleteTemplate.bind(this),
 		resource: this.deleteResource.bind(this),
 		temporary: this.deleteTemporary.bind(this),
+		worker: this.deleteWorker.bind(this),
 		file: this.deleteFile.bind(this)
 	};
 }
@@ -3615,6 +3617,21 @@ FrameworkFileSystem.prototype.deleteContent = function(name) {
 		name += '.html';
 
 	var filename = utils.combine(self.config['directory-contents'], name);
+	return self.deleteFile(filename);
+};
+
+/*
+	Delete a file - Worker
+	@name {String}
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.deleteWorker = function(name) {
+	var self = this;
+
+	if (name.indexOf('.js') === -1)
+		name += '.js';
+
+	var filename = utils.combine(self.config['directory-workers'], name);
 	return self.deleteFile(filename);
 };
 
@@ -3783,6 +3800,28 @@ FrameworkFileSystem.prototype.createContent = function(name, content, rewrite, a
 		name += '.html';
 
 	var filename = utils.combine(self.config['directory-contents'], name);
+	return self.createFile(filename, content, append, rewrite);
+};
+
+/*
+	Create a file with the worker
+	@name {String}
+	@content {String}
+	@rewrite {Boolean} :: optional (default false)
+	@append {Boolean} :: optional (default false)
+	return {Boolean}
+*/
+FrameworkFileSystem.prototype.createWorker = function(name, content, rewrite, append) {
+
+	var self = this;
+
+	if ((content || '').length === 0)
+		return false;
+
+	if (name.indexOf('.js') === -1)
+		name += '.js';
+
+	var filename = utils.combine(self.config['directory-workers'], name);
 	return self.createFile(filename, content, append, rewrite);
 };
 
@@ -3961,6 +4000,16 @@ FrameworkPath.prototype.templates = function(filename) {
 	var self = this;
 	self.framework._verify_directory('templates');
 	return utils.combine(self.config['directory-templates'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.workers = function(filename) {
+	var self = this;
+	self.framework._verify_directory('workers');
+	return utils.combine(self.config['directory-workers'], filename || '').replace(/\\/g, '/');
 };
 
 /*

@@ -48,6 +48,9 @@ exports.install = function(framework) {
 	// allow []
 	// maximumSize
 	framework.websocket('/', socket);
+
+	framework.fs.rm.worker('partial');
+
 };
 
 function resize_image(req, res) {
