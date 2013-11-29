@@ -42,6 +42,8 @@ __Modules__:
 - [Login with Facebook](https://github.com/petersirka/partial.js-modules/tree/master/facebook)
 - [Less CSS - lesscss.org](https://github.com/petersirka/partial.js-modules/tree/master/less)
 - [Jade view engine](https://github.com/petersirka/partial.js-modules/tree/master/jade)
+- [Live storage](https://github.com/petersirka/partial.js-modules/tree/master/storage)
+- [Markdown parser](https://github.com/petersirka/partial.js-modules/tree/master/markdown)
 
 Documentation
 -------------
@@ -89,7 +91,7 @@ Videos on YouTube
 * Supports debug mode with custom settings without cache - [example: debug mode](https://github.com/petersirka/partial.js/tree/master/examples/config-debug-release)
 * Supports file upload - [example: file upload](https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart)
 * Supports copy&paste custom code between projects - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-custom)
-* __Supports modules__ (module can create a route, view, template, content, resource, etc.) - [example: module](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
+* __Supports modules__ (module can create a route, view, template, resource, etc.) - [example: module](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
 * __Supports inject module from URL__ [example: module inject](https://github.com/petersirka/partial.js/tree/master/examples/framework-inject)
 * Supports form data validation - [example: validation](https://github.com/petersirka/partial.js/tree/master/examples/validation)
 * Supports simple log writer - [example: logs](https://github.com/petersirka/partial.js/tree/master/examples/logs)
@@ -100,7 +102,6 @@ Videos on YouTube
 * Supports JavaScript compress
 * Supports JavaScript dynamic compress in views - [example: dynamic JavaScript compress](https://github.com/petersirka/partial.js/tree/master/examples/views-javascript-compress)
 * Supports simple LESS CSS (with compress) - [example: LESS CSS](https://github.com/petersirka/partial.js/tree/master/examples/css-less)
-* Supports Markdown parser - [example: Markdown](https://github.com/petersirka/partial.js/tree/master/examples/markdown)
 * Supports resources (for multilanguage pages) - [example: resources](https://github.com/petersirka/partial.js/tree/master/examples/localization-resources)
 * __Supports prefixes for mobile devices__ - [example: prefixes](https://github.com/petersirka/partial.js/tree/master/examples/mobile)
 * Supports SMTP mail sender (attachment, HTML, basic authentication) - [example: SMTP mail sender](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
@@ -115,7 +116,6 @@ Videos on YouTube
 * Supports live usage information - [example: framework usage](https://github.com/petersirka/partial.js/tree/master/examples/framework-usage)
 * Supports dynamic stop server - [example: stop server](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
 * Supports verification of framework - [example: verification](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
-* __Supports backup and restore website__ - [example: backup & restore](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
 * About 9 000 lines of JavaScript code, all files have 330 kB
 * __NO DEPENDENCIES *** NO DEPENDENCIES *** NO DEPENDENCIES__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
