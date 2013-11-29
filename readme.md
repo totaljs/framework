@@ -54,6 +54,17 @@ Documentation
 - [English documentation](http://docs.partialjs.com/)
 - [Turkish documentation](https://github.com/KiPSOFT/partial.js-turkish-doc/blob/master/baslangic.md) by [KiP Software](http://www.kip-software.org/)
 
+Do not miss
+-----------
+
+- [node.js - FileStorage](https://github.com/petersirka/node-filestorage) - storing of uploaded files
+- [node.js - Fulltext search](https://github.com/petersirka/node-fulltext) - fulltext search engine for web application
+- [node.js - NoSql embedded database](https://github.com/petersirka/nosql)
+- [node.js - Coucher](https://github.com/petersirka/node-couchdb) - CouchDB database provider
+- [node.js - PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
+- [node.js - Backup / Restore](https://github.com/petersirka/node-backup) - Backup / Restore solution
+- [node.js - MongoLab provider](https://github.com/petersirka/node-mongolab) - MongoLab client
+
 ***
 
 Videos on YouTube
