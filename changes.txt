@@ -32,10 +32,6 @@ IN DEVELOPMENT ======= 1.3.0
 - added: simply static files versioning (example: static-version)
 - added: utils.distance(lat1, lng1, lat2, lng2)
 - added: utils.ls(path, callback, [filter])
-- added: framework.storage.set(name, value)
-- added: framework.storage.get(name, [default])
-- added: framework.storage.clear();
-- added: @{storage(name, [default])}
 
 - updated: FrameworkImage supports stream (image.pipe() and new Image(stream or filename))
 - updated: FrameworkImage.minify()

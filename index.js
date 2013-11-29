@@ -123,9 +123,7 @@ function Framework() {
 
 	this.temporary = {
 		path: {},
-		range: {},
-		storage: {},
-		storageTimeout: null
+		range: {}
 	};
 
 	this.stats = {
@@ -178,7 +176,6 @@ function Framework() {
 	this.fs = new FrameworkFileSystem(this);
 	this.path = new FrameworkPath(this);
 	this.restrictions = new FrameworkRestrictions(this);
-	this.storage = new FrameworkStorage(this);
 
 	this._request_check_redirect = false;
 	this._request_check_referer = false;
@@ -222,7 +219,6 @@ Framework.prototype.refresh = function(clear) {
 	self.configureMapping();
 	self.temporary.path = {};
 	self.temporary.range = {};
-	self.onStorageLoad();
 	self.emit('reconfigure');
 
 	if (clear || true)
@@ -938,23 +934,6 @@ Framework.prototype.onXSS = function(data) {
 */
 Framework.prototype.onSettings = function() {
 	return '';
-};
-
-Framework.prototype.onStorageLoad = function() {
-	var self = this;
-	fs.readFile(this.path.root('storage'), function(err, data) {
-		if (err)
-			return;
-		try
-		{
-			self.temporary.storage = JSON.parse(data);
-		} catch(err) {};
-	});
-};
-
-Framework.prototype.onStorageSave = function() {
-	var self = this;
-	fs.writeFile(self.path.root('storage'), JSON.stringify(self.temporary.storage), utils.noop);
 };
 
 /*
@@ -2181,7 +2160,6 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 		if (msg === 'reconfigure') {
 			self.configure();
 			self.configureMapping();
-			self.onStorageLoad();
 			self.emit(msg);
 			return;
 		}
@@ -2194,11 +2172,6 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 
 		if (msg === 'stop' || msg === 'exit') {
 			self.stop();
-			return;
-		}
-
-		if (msg === 'storage') {
-			self.onStorageLoad();
 			return;
 		}
 
@@ -2226,8 +2199,6 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 			}
 		}
 	}
-
-	self.onStorageLoad();
 
 	try
 	{
@@ -3555,62 +3526,6 @@ FrameworkRestrictions.prototype._blockedCustom = function(headers) {
 	}
 
 	return false;
-};
-
-// *********************************************************************************
-// =================================================================================
-// Framework Storage
-// 1.01
-// =================================================================================
-// *********************************************************************************
-
-function FrameworkStorage(framework) {
-	this.framework = framework;
-}
-
-FrameworkStorage.prototype.set = function(name, value) {
-	var self = this;
-	self.framework.temporary.storage[name] = value;
-	self._save();
-	return self;
-};
-
-FrameworkStorage.prototype.get = function(name, def) {
-	return this.framework.temporary[name] || def;
-};
-
-FrameworkStorage.prototype.remove = function(name) {
-	var self = this;
-	delete self.framework.temporary.storage[name];
-	self._save();
-	return self;
-};
-
-FrameworkStorage.prototype.clear = function() {
-	var self = this;
-	self.framework.temporary.storage = {};
-	self._save();
-	return self;
-};
-
-FrameworkStorage.prototype.refresh = function() {
-	var self = this;
-	clearTimeout(self.framework.temporary.storageTimeout);
-	self.framework.onStorageLoad();
-	return self;
-};
-
-FrameworkStorage.prototype._save = function() {
-	var self = this.framework;
-	clearTimeout(self.temporary.storageTimeout);
-	self.temporary.storageTimeout = setTimeout(function() {
-		self.onStorageSave();
-		if (typeof(process.send) === FUNCTION) {
-			setTimeout(function() {
-				process.send('storage');
-			}, 1000);
-		}
-	}, 500);	
 };
 
 // *********************************************************************************
