@@ -1955,7 +1955,6 @@ function parse(html, controller) {
 							break;
 
 						case 'view':
-						case 'storage':
 						case 'viewToggle':
 						case 'content':
 						case 'contentToggle':

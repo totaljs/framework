@@ -4776,10 +4776,6 @@ Controller.prototype = {
 		this.req.session = value;
 	},
 
-	get storage() {
-		return this.framework.storage;
-	},
-
 	get user() {
 		return this.req.user;
 	},
@@ -6027,16 +6023,6 @@ Controller.prototype.routeStatic = function(name) {
 
 /*
 	Internal
-	@name {String} :: property name
-	@def {Object} :: default value
-	return {String}
-*/
-Controller.prototype.$storage = function(name, def) {
-	return this.framework.storage.get(name, def);
-};
-
-/*
-	Internal
 	@path {String} :: add path to route path
 	return {String}
 */
@@ -6906,13 +6892,11 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			case 'contentToggle':
 			case 'template':
 			case 'templateToggle':
-			case 'storage':
 
 				if (run.indexOf('sitemap') !== -1)
 					sitemap = self.sitemap();
 
-				if (execute.name !== 'storage')
-					isEncode = false;
+				isEncode = false;
 
 				if (!condition)
 					run = 'self.$' + run;
