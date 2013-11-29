@@ -2150,7 +2150,7 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 		self.emit('exit');
 	});
 
-	process.on('message', function(msg) {
+	process.on('message', function(msg, h) {
 
 		if (msg === 'reconnect') {
 			self.reconnect();
@@ -2175,6 +2175,7 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 			return;
 		}
 
+		self.emit('message', msg, h);
 	});
 
 	if (options)
