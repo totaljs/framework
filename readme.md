@@ -3,6 +3,10 @@
 web application framework for node.js
 =====================================
 
+```
+$ npm install partial.js
+```
+
 - [partial.js homepage - www.partialjs.com](http://partialjs.com)
 - [__Documentation__](http://docs.partialjs.com)
 - [Discussion forum](https://groups.google.com/forum/#!forum/partialjs)
@@ -132,7 +136,7 @@ Videos on YouTube
 
 ***
 
-## Install step by step partial.js
+## Install partial.js step by step
 
 ```
 $ sudo npm install -g partial.js
