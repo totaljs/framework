@@ -1,6 +1,5 @@
 IN DEVELOPMENT ======= 1.3.0
 
-- added: framework.config['allow-reconfigure']
 - added: framework.config['default-ip'] (set the ip address from a configuration)
 - added: framework.config['default-port'] (set the port from a configuration)
 - added: framework.onRequest(req, res)

@@ -90,8 +90,7 @@ function Framework() {
 		'allow-gzip': true,
 		'allow-websocket': true,
 		'allow-compile-js': true,
-		'allow-compile-css': true,
-		'allow-reconfigure': false
+		'allow-compile-css': true
 	};
 
 	this.global = {};
@@ -2335,15 +2334,10 @@ Framework.prototype._service = function(count) {
 	if (self.config.debug)
 		self.resources = {};
 
-	// every 20 minute service clears resources and reconfigure the framework
+	// every 20 minute service clears resources
 	if (count % 20 === 0) {
 		self.emit('clear', 'resources');
 		self.resources = {};
-		if (self.config['allow-reconfigure']) {
-			self.configure();
-			self.configureMapping();
-			self.emit('reconfigure');
-		}
 	}
 
 	// every 5 minute service clears static cache
