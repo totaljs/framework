@@ -63,7 +63,6 @@ function Framework() {
 		'directory-logs': '/logs/',
 		'directory-tests': '/tests/',
 		'directory-databases': '/databases/',
-		'directory-backups': '/backups/',
 		'directory-workers': '/workers/',
 
 		// all HTTP static request are routed to directory-public
@@ -92,7 +91,7 @@ function Framework() {
 		'allow-websocket': true,
 		'allow-compile-js': true,
 		'allow-compile-css': true,
-		'allow-reconfigure': true
+		'allow-reconfigure': false
 	};
 
 	this.global = {};
@@ -124,7 +123,9 @@ function Framework() {
 
 	this.temporary = {
 		path: {},
-		range: {}
+		range: {},
+		storage: {},
+		storageTimeout: null
 	};
 
 	this.stats = {
@@ -177,7 +178,7 @@ function Framework() {
 	this.fs = new FrameworkFileSystem(this);
 	this.path = new FrameworkPath(this);
 	this.restrictions = new FrameworkRestrictions(this);
-	this.state = new FrameworkState(this);
+	this.storage = new FrameworkStorage(this);
 
 	this._request_check_redirect = false;
 	this._request_check_referer = false;
@@ -221,6 +222,7 @@ Framework.prototype.refresh = function(clear) {
 	self.configureMapping();
 	self.temporary.path = {};
 	self.temporary.range = {};
+	self.onStorageLoad();
 	self.emit('reconfigure');
 
 	if (clear || true)
@@ -854,137 +856,6 @@ Framework.prototype.eval = function(script) {
 };
 
 /*
-	Backup website directory
-	@callback {Function} :: optional, param: param: @err {Error}, @filename {String}
-	@url {String} :: optional, send backup file via HTTP
-	return {Framework}
-*/
-Framework.prototype.backup = function(callback, url) {
-
-	var self = this;
-	var bk = require('./backup');
-	var backup = new bk.Backup();
-
-	if (typeof(callback) === STRING) {
-		var tmp = url;
-		url = callback;
-		callback = tmp;
-	}
-
-	var filter = function(path) {
-
-		if (path === '/tmp/' || path === '/backups/')
-			return true;
-
-		if (path.indexOf('.DS_Store') !== -1)
-			return false;
-
-		if (path.indexOf('/backups/') === 0)
-			return false;
-
-		if (path.indexOf('/tmp/') === 0)
-			return false;
-
-		if (path.indexOf('.nosql-tmp') !== -1)
-			return false;
-
-		if (path === '/keepalive.js')
-			return false;
-
-		if (path === '/debugging.js')
-			return false;
-
-		return self.onFilterBackup(path);
-	};
-
-	backup.directory.push('/backups/');
-	backup.directory.push('/tmp/');
-
-	var directoryBackup = path.join(directory, self.config['directory-backups']);
-
-	if (!fs.existsSync(directoryBackup))
-		fs.mkdirSync(directoryBackup);
-
-	backup.backup(directory, path.join(directoryBackup, new Date().format('yyyy-MM-dd') + '.backup'), function(err, filename) {
-
-		if (err) {
-			if (callback)
-				callback(err, filename);
-			return;
-		}
-
-		if (url) {
-			utils.send(filename, filename, url, callback);
-			return;
-		}
-
-		if (callback)
-			callback(err, filename);
-
-	}, filter);
-
-	return self;
-};
-
-/*
-	Restore website directory
-	@date {String} :: yyyy-MM-dd
-	@callback {Function} :: optional, param: @err {Error}, @path {String}
-	@restorePath {String} :: optional, path to restore website
-	return {Framework}
-*/
-Framework.prototype.restore = function(date, callback, restorePath) {
-
-	var self = this;
-	var dir = restorePath || directory;
-
-	var tmpDirectory = path.join(dir, self.config['directory-temp']);
-
-	if (!fs.existsSync(tmpDirectory))
-		fs.mkdirSync(tmpDirectory);
-
-	var fileName = path.join(dir, self.config['directory-backups'], date + (date.indexOf('.backup') === -1 ? '.backup' : ''));
-
-	var cb = function(err, path) {
-
-		if (typeof(process.send) === FUNCTION)
-			process.send('restore');
-
-		if (callback)
-			callback(err, path);
-	};
-
-	if (!fs.existsSync(fileName))
-		return cb(new Error('Backup file not found.'), dir);
-
-	var filter = function(path) {
-
-		if (path === '/tmp/' || path === '/backups/')
-			return true;
-
-		if (path.indexOf('/backups/') === 0)
-			return false;
-
-		return self.onFilterRestore(path);
-	};
-
-	var filterClear = function(path) {
-		if (path === '/tmp/' || path === '/backups/')
-			return false;
-		return;
-	};
-
-	var bk = new require('./backup');
-	var backup = bk.Backup();
-
-	backup.clear(dir, function() {
-		backup.restore(fileName, dir, cb, filter);
-	}, filterClear);
-
-	return self;
-};
-
-/*
 	Error Handler
 	@err {Error}
 	@name {String} :: name of Controller (optional)
@@ -1069,30 +940,21 @@ Framework.prototype.onSettings = function() {
 	return '';
 };
 
-/*
-	Backup Filter
-	@path {String}
-	return {Boolean}
-*/
-Framework.prototype.onFilterBackup = function(path) {
-	return true;
+Framework.prototype.onStorageLoad = function() {
+	var self = this;
+	fs.readFile(this.path.root('storage'), function(err, data) {
+		if (err)
+			return;
+		try
+		{
+			self.temporary.storage = JSON.parse(data);
+		} catch(err) {};
+	});
 };
 
-/*
-	Restore Filter
-	@path {String}
-	return {Boolean}
-*/
-Framework.prototype.onFilterRestore = function(path) {
-	return true;
-};
-
-Framework.prototype.onStateRead = function() {
-
-};
-
-Framework.prototype.onStateWrite = function() {
-
+Framework.prototype.onStorageSave = function() {
+	var self = this;
+	fs.writeFile(self.path.root('storage'), JSON.stringify(self.temporary.storage), utils.noop);
 };
 
 /*
@@ -1172,21 +1034,12 @@ Framework.prototype.usage = function(detailed) {
 	var staticRange = Object.keys(self.temporary.range);
 	var redirects = Object.keys(self.routes.redirects);
 	var size = 0;
-	var sizeBackup = 0;
 	var sizeDatabase = 0;
 	var dir = '.' + self.config['directory-temp'];
 
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(function(o) {
 			size += fs.statSync(utils.combine(self.config['directory-temp'], o)).size;
-		});
-	}
-
-	dir = '.' + self.config['directory-backup'];
-
-	if (fs.existsSync(dir)) {
-		fs.readdirSync(dir).forEach(function(o) {
-			sizeBackup += fs.statSync(utils.combine(self.config['directory-backup'], o)).size;
 		});
 	}
 
@@ -1213,7 +1066,6 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('');
 	builder.push('Current directory               : {0}'.format(process.cwd));
 	builder.push('Temporary directory             : {0} kB'.format((size / 1024).format('#########.##')));
-	builder.push('Backups directory               : {0} kB'.format((sizeBackup / 1024).format('#########.##')));
 	builder.push('Databases directory             : {0} kB'.format((sizeDatabase / 1024).format('#########.##')));
 	builder.push('');
 	builder.push('## Counter');
@@ -2256,6 +2108,16 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 
 	var self = this;
 
+	if (typeof(port) === OBJECT) {
+		var tmp = options;
+		options = port;
+		port = tmp;
+	} else if (typeof(ip) === OBJECT) {
+		var tmp = options;
+		options = ip;
+		ip = tmp;
+	}
+
 	if (self.server !== null)
 		return;
 
@@ -2311,8 +2173,16 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 
 	process.on('message', function(msg) {
 
-		if (msg === 'backup') {
-			self.backup();
+		if (msg === 'reconnect') {
+			self.reconnect();
+			return;
+		}
+
+		if (msg === 'reconfigure') {
+			self.configure();
+			self.configureMapping();
+			self.onStorageLoad();
+			self.emit(msg);
 			return;
 		}
 
@@ -2327,10 +2197,11 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 			return;
 		}
 
-		if (msg.indexOf('restore') !== -1) {
-			self.restore(msg.substring(7).trim());
+		if (msg === 'storage') {
+			self.onStorageLoad();
 			return;
 		}
+
 	});
 
 	if (options)
@@ -2356,6 +2227,8 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 		}
 	}
 
+	self.onStorageLoad();
+
 	try
 	{
 		self.emit('load', self);
@@ -2369,9 +2242,6 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 	} catch (err) {
 		self.error(err, 'framework.on("ready")');
 	}
-
-	if (typeof(process.send) === FUNCTION)
-		process.send('name: ' + self.config.name);
 
 	return self;
 };
@@ -2433,11 +2303,6 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 	//req.subdomain = null;
 	req.path = internal.routeSplit(req.uri.pathname);
-
-	/*
-	if (subdomain.length > 2)
-		req.subdomain = subdomain.slice(0, subdomain.length - 2);
-	*/
 
     var route = self.lookup_websocket(req, socket.uri.pathname);
     if (route === null) {
@@ -2734,7 +2599,6 @@ Framework.prototype._request_stats = function(beg, isStaticFile) {
 
 	return self;
 };
-
 
 /*
 	A test request into the controller
@@ -3224,6 +3088,9 @@ Framework.prototype.verification = function(cb) {
 		if (!fs.existsSync('.' + self.config['directory-logs']))
 			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-logs']);
 
+		if (!fs.existsSync('.' + self.config['directory-workers']))
+			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-workers']);
+
 		self.verification.call(self, cb);
 	});
 
@@ -3506,51 +3373,6 @@ Framework.prototype.worker = function(name, id, timeout) {
 
 // *********************************************************************************
 // =================================================================================
-// Framework State
-// 1.01
-// =================================================================================
-// *********************************************************************************
-
-function FrameworkState(framework) {
-
-	this.framework = framework;
-
-	this.add = function(name, value) {
-		var self = this;
-		self.framework.onStateWrite(self.framework.temporary.state);
-		return value;
-	};
-
-	this.read = function(name, def) {
-		var value = this.framework.temporary.state[name];
-		return typeof(value) === UNDEFINED ? def : value;
-	};
-
-	this.remove = function(name) {
-		var self = this;
-		delete self.framework.temporary.state[name];
-		self.framework.onStateWrite(self.framework.temporary.state);
-		return self;
-	};
-
-	this.removeAll = function() {
-		var self = this;
-		self.framework.state = {};
-		self.framework.onStateWrite(self.framework.temporary.state);
-		return self;
-	};
-
-	this.refresh = function() {
-		var self = this;
-		self.framework.onStateRead(function(state) {
-			self.framework.temporary.state = state;
-		});
-		return self;
-	};
-}
-
-// *********************************************************************************
-// =================================================================================
 // Framework Restrictions
 // 1.01
 // =================================================================================
@@ -3733,6 +3555,62 @@ FrameworkRestrictions.prototype._blockedCustom = function(headers) {
 	}
 
 	return false;
+};
+
+// *********************************************************************************
+// =================================================================================
+// Framework Storage
+// 1.01
+// =================================================================================
+// *********************************************************************************
+
+function FrameworkStorage(framework) {
+	this.framework = framework;
+}
+
+FrameworkStorage.prototype.set = function(name, value) {
+	var self = this;
+	self.framework.temporary.storage[name] = value;
+	self._save();
+	return self;
+};
+
+FrameworkStorage.prototype.get = function(name, def) {
+	return this.framework.temporary[name] || def;
+};
+
+FrameworkStorage.prototype.remove = function(name) {
+	var self = this;
+	delete self.framework.temporary.storage[name];
+	self._save();
+	return self;
+};
+
+FrameworkStorage.prototype.clear = function() {
+	var self = this;
+	self.framework.temporary.storage = {};
+	self._save();
+	return self;
+};
+
+FrameworkStorage.prototype.refresh = function() {
+	var self = this;
+	clearTimeout(self.framework.temporary.storageTimeout);
+	self.framework.onStorageLoad();
+	return self;
+};
+
+FrameworkStorage.prototype._save = function() {
+	var self = this.framework;
+	clearTimeout(self.temporary.storageTimeout);
+	self.temporary.storageTimeout = setTimeout(function() {
+		self.onStorageSave();
+		if (typeof(process.send) === FUNCTION) {
+			setTimeout(function() {
+				process.send('storage');
+			}, 1000);
+		}
+	}, 500);	
 };
 
 // *********************************************************************************
@@ -4159,16 +4037,6 @@ FrameworkPath.prototype.temporary = function(filename) {
 	@filename {String} :: optional
 	return {String}
 */
-FrameworkPath.prototype.backups = function(filename) {
-	var self = this;
-	self.framework._verify_directory('backup');
-	return utils.combine(self.config['directory-backup'], filename || '').replace(/\\/g, '/');
-};
-
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.views = function(filename) {
 	var self = this;
 	self.framework._verify_directory('views');
@@ -4260,7 +4128,7 @@ FrameworkPath.prototype.resources = function(filename) {
 	return {String}
 */
 FrameworkPath.prototype.root = function(filename) {
-	return utils.combine(directory, filename || '');
+	return path.join(directory, filename || '');
 };
 
 // *********************************************************************************
@@ -4993,8 +4861,8 @@ Controller.prototype = {
 		this.req.session = value;
 	},
 
-	get state() {
-		return this.framework.state;
+	get storage() {
+		return this.framework.storage;
 	},
 
 	get user() {
@@ -6244,6 +6112,16 @@ Controller.prototype.routeStatic = function(name) {
 
 /*
 	Internal
+	@name {String} :: property name
+	@def {Object} :: default value
+	return {String}
+*/
+Controller.prototype.$storage = function(name, def) {
+	return this.framework.storage.get(name, def);
+};
+
+/*
+	Internal
 	@path {String} :: add path to route path
 	return {String}
 */
@@ -7113,13 +6991,16 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			case 'contentToggle':
 			case 'template':
 			case 'templateToggle':
+			case 'storage':
 
 				if (run.indexOf('sitemap') !== -1)
 					sitemap = self.sitemap();
 
-				isEncode = false;
+				if (execute.name !== 'storage')
+					isEncode = false;
+
 				if (!condition)
-					run = 'self.$'+ run;
+					run = 'self.$' + run;
 
 				break;
 

@@ -9,7 +9,6 @@ var fs = require('fs');
 var path = require('path');
 var directory = process.cwd();
 var utils = require('partial.js/utils');
-var Walker = require('partial.js/backup').Walker;
 
 var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules'];
 var files = {};
@@ -21,14 +20,13 @@ var async = new utils.Async();
 var pid = '';
 var pidInterval = null;
 var prefix = '------------> ';
-var walker = new Walker();
 var isLoaded = false;
 
-walker.onFilter = function(path) {
-	return path.indexOf('.js') !== -1;
+function onFilter(path, isDirectory) {
+	return isDirectory ? true : path.indexOf('.js') !== -1;
 };
 
-walker.onComplete = function() {
+function onComplete() {
 
 	var self = this;
 
@@ -120,8 +118,7 @@ function refresh() {
 }
 
 function refresh_directory() {
-	walker.reset();
-	walker.walk(directories);
+	utils.ls(directories, onComplete, onFilter);
 }
 
 function restart() {

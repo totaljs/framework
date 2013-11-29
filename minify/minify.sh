@@ -1,8 +1,6 @@
 ECHO "[COMPILING]"
 cd ..
 mkdir minify/partial.js/bin/
-ECHO "....... backup.js"
-uglifyjs backup.js -o minify/partial.js/backup.js
 ECHO "....... builders.js"
 uglifyjs builders.js -o minify/partial.js/builders.js
 ECHO "....... image.js"

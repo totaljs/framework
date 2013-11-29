@@ -48,19 +48,11 @@ framework.onError = function(error, name, uri) {
 };
 
 function end() {
-	framework.backup(function(err, file) {
-		try
-		{
-			fs.unlinkSync(file);
-		} catch (ex) {
-			assert.ok(false, 'framework.backup(): ' + ex.toString());
-		}
-		console.log('================================================');
-		console.log('success - OK');
-		console.log('================================================');
-		console.log('');
-		framework.stop();
-	});
+	console.log('================================================');
+	console.log('success - OK');
+	console.log('================================================');
+	console.log('');
+	framework.stop();
 }
 
 function test_controller_functions(next) {

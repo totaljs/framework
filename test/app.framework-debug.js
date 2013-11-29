@@ -8,8 +8,6 @@ var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
 
-framework.run(http, true, 8001);
-
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
@@ -45,19 +43,11 @@ framework.onError = function(error, name, uri) {
 };
 
 function end() {
-	framework.backup(function(err, file) {
-		try
-		{
-			fs.unlinkSync(file);
-		} catch (ex) {
-			assert.ok(false, 'framework.backup(): ' + ex.toString());
-		}
-		console.log('================================================');
-		console.log('success - OK');
-		console.log('================================================');
-		console.log('');
-		framework.stop();
-	});
+	console.log('================================================');
+	console.log('success - OK');
+	console.log('================================================');
+	console.log('');
+	framework.stop();
 }
 
 function test_controller_functions(next) {
@@ -171,7 +161,7 @@ function run() {
 		assert.ok(framework.global.header > 0, 'partial - global');
 		assert.ok(framework.global.partial > 0, 'partial - partial');
 		assert.ok(framework.global.timeout > 0, 'timeout');
-		
+
 		end();
 		console.log(framework.stats);
 		return;
@@ -201,6 +191,8 @@ mem.on('stats', function(info) {
 
 framework.fs.create.view('fromURL', 'http://partialjs.com/framework/test.html');
 
-setTimeout(function() {
+framework.on('ready', function() {
 	run();
-}, 500);
+});
+
+framework.run(http, true, 8001);

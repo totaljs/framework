@@ -958,6 +958,19 @@ exports.distance = function(lat1, lon1, lat2, lon2) {
 };
 
 /*
+	Get file and directory list
+	@path {String}
+	@callback {Function} :: function(files, directories)
+	@filter {Function} :: function(path, isDirectory) - must return Boolean
+*/
+exports.ls = function(path, callback, filter) {
+	var filelist = new FileList();
+	filelist.onComplete = callback;
+	filelist.onFilter = filter || null;
+	filelist.walk(path);
+};
+
+/*
 	@type {String}
 	@value {Number}
 	return {Date}
@@ -2294,6 +2307,87 @@ Async.prototype.refresh = function(name) {
 	}
 
 	return self;
+};
+
+function FileList() {
+	this.pending = [];
+	this.pendingDirectory = [];
+	this.directory = [];
+	this.file = [];
+	this.onComplete = null;
+	this.onFilter = null;
+}
+
+FileList.prototype.reset = function() {
+	var self = this;
+	self.file = [];
+	self.directory = [];
+	self.pendingDirectory = [];
+};
+
+FileList.prototype.walk = function(directory) {
+
+	var self = this;
+
+	if (directory instanceof Array) {
+		var length = directory.length;
+
+		for (var i = 0; i < length; i++)
+			self.pendingDirectory.push(directory[i]);
+
+		self.next();
+		return;
+	}
+
+	fs.readdir(directory, function(err, arr) {
+
+		if (err)
+			return self.next();
+
+		var length = arr.length;
+		for (var i = 0; i < length; i++)
+			self.pending.push(path.join(directory, arr[i]));
+
+		self.next();
+	});
+};
+
+FileList.prototype.stat = function(path) {
+	var self = this;
+
+	fs.stat(path, function(err, stats) {
+
+		if (err)
+			return self.next();
+
+		if (stats.isDirectory() && (self.onFilter === null || self.onFilter(path, true))) {
+			self.pendingDirectory.push(path);
+			self.directory.push(path);
+		}
+
+		if (self.onFilter === null || self.onFilter(path, false))
+			self.file.push(path);
+
+		self.next();
+	});
+};
+
+FileList.prototype.next = function() {
+	var self = this;
+
+	if (self.pending.length > 0) {
+		var item = self.pending.shift();
+		self.stat(item);
+		return;
+	}
+
+	if (self.pendingDirectory.length > 0) {
+		var directory = self.pendingDirectory.shift();
+		self.walk(directory);
+		return;
+	}
+
+	self.onComplete(self.file, self.directory);
 };
 
 exports.Async = Async;

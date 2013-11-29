@@ -47,12 +47,13 @@ var Stream = require('stream');
 
 //reader.pipe(writer);
 //console.log(writer);
-
+/*
 var image = Image.load('/users/petersirka/desktop/header.jpg', false);
 image.resize('20%');
 image.quality(90);
 image.minify();
 image.save('/users/petersirka/desktop/c.jpg');
+*/
 
 //image.pipe(fs.createWriteStream('/users/petersirka/desktop/c.jpg'));
 
