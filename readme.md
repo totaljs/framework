@@ -65,9 +65,11 @@ Videos on YouTube
 
 ***
 
-* **NEW** - Supports redirects - [example: host redirect](https://github.com/petersirka/partial.js/tree/master/examples/redirect-host)
-* **NEW** - Supports restrictions - [example: restrictions](https://github.com/petersirka/partial.js/tree/master/examples/framework-restrictions)
-* __Controller proxy__ - [example: proxy](https://github.com/petersirka/partial.js/tree/master/examples/controller-proxy)
+* **NEW** Supports workers - [example: workers](https://github.com/petersirka/partial.js/tree/master/examples/workers)
+* **NEW** Supports versioning of static files - [example: static-version](https://github.com/petersirka/partial.js/tree/master/examples/static-version)
+* Supports redirects - [example: host redirect](https://github.com/petersirka/partial.js/tree/master/examples/redirect-host)
+* Supports restrictions - [example: restrictions](https://github.com/petersirka/partial.js/tree/master/examples/framework-restrictions)
+* Controller proxy - [example: proxy](https://github.com/petersirka/partial.js/tree/master/examples/controller-proxy)
 * Supports server sent events - [example: sse](https://github.com/petersirka/partial.js/tree/master/examples/server-sent-events)
 * Supports live streaming via multipart/x-mixed-replace - [example: mmr](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
 * Supports uploading via multipart/x-mixed-replace - [example: mmr](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
