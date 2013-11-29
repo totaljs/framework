@@ -41,6 +41,7 @@ __Examples__:
 
 __Modules__:
 
+- [Fulltext search engine](https://github.com/petersirka/partial.js-modules/tree/master/fulltext)
 - [Authorization](https://github.com/petersirka/partial.js-modules/tree/master/authorization)
 - [Session (in-memory, redis or memcached)](https://github.com/petersirka/partial.js-modules/tree/master/session)
 - [Login with Facebook](https://github.com/petersirka/partial.js-modules/tree/master/facebook)
