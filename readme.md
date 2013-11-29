@@ -1,4 +1,4 @@
-![partial.js logo](http://petersirka.sk/partial-js/logo-new.png)
+![partial.js logo](http://www.partialjs.com/upload/logo.png)
 
 web application framework for node.js
 =====================================
