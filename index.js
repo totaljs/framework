@@ -122,6 +122,7 @@ function Framework() {
 
 	this.temporary = {
 		path: {},
+		processing: {},
 		range: {}
 	};
 
@@ -1332,10 +1333,10 @@ Framework.prototype.compileStatic = function(req, filename) {
 
 	self._verify_directory('temp');
 
-	var fileComiled = utils.combine(self.config['directory-temp'], req.url.replace(/\//g, '-').substring(1));
-	fs.writeFileSync(fileComiled, output);
+	var fileCompiled = utils.combine(self.config['directory-temp'], req.url.replace(/\//g, '-').substring(1));
+	fs.writeFileSync(fileCompiled, output);
 
-	return fileComiled;
+	return fileCompiled;
 };
 
 /*
@@ -1369,6 +1370,13 @@ Framework.prototype.isProcessed = function(filename) {
 	return false;
 };
 
+Framework.prototype.isProcessing = function(filename) {
+	var name = this.temporary.processing[filename];
+	if (typeof(name) === UNDEFINED)
+		return false;
+	return true;
+};
+
 /*
 	Response file
 	@req {ServerRequest}
@@ -1396,29 +1404,27 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return self;
 	}
 
-	var etag = utils.etag(req.url, self.config['etag-version']);
-
-	if (!self.config.debug) {
-		if (req.headers['if-none-match'] === etag) {
-
-			res.success = true;
-			res.writeHead(304);
-			res.end();
-
-			self.stats.response.notModified++;
-			self._request_stats(false, req.isStaticFile);
-
-			if (!req.isStaticFile)
-				self.emit('request-end', req, res);
-
-			return self;
-		}
-	}
-
 	var extension = path.extname(filename).substring(1);
 
 	if (self.config['static-accepts'].indexOf('.' + extension) === -1) {
 		self.response404(req, res);
+		return self;
+	}
+
+	var etag = utils.etag(req.url, self.config['etag-version']);
+
+	if (!self.config.debug && req.headers['if-none-match'] === etag) {
+
+		res.success = true;
+		res.writeHead(304);
+		res.end();
+
+		self.stats.response.notModified++;
+		self._request_stats(false, req.isStaticFile);
+
+		if (!req.isStaticFile)
+			self.emit('request-end', req, res);
+
 		return self;
 	}
 
@@ -1534,8 +1540,27 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		return self;
 	}
 
+	if (self.isProcessing(key)) {
+
+		if (req.processing > self.config['default-request-timeout']) {
+			// timeout
+			self.response408(req, res);
+			return;
+		}
+
+		req.processing += 500;
+
+		setTimeout(function() {
+			self.responseImage(req, res, filename, fnProcess, headers, useImageMagick);
+		}, 500);
+
+		return;
+	}
+
 	var Image = require('./image');
 	name = self.path.temp(key.replace(/\//g, '-'));
+
+	self.temporary.processing[key] = true;
 
 	// STREAM
 	if (stream !== null) {
@@ -1543,6 +1568,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		fs.exists(name, function(exist) {
 
 			if (exist) {
+				delete self.temporary.processing[key];
 				self.temporary.path[key] = name;
 				self.responseFile(req, res, name, '', headers, key);
 				return;
@@ -1553,6 +1579,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			fnProcess(image);
 
 			image.save(name, function(err) {
+
+				delete self.temporary.processing[key];
 
 				if (err) {
 					self.temporary.path[key] = null;
@@ -1573,6 +1601,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	fs.exists(filename, function(exist) {
 
 		if (!exist) {
+			delete self.temporary.processing[key];
 			self.temporary.path[key] = null;
 			self.response404(req, res);
 			return;
@@ -1583,6 +1612,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		fnProcess(image);
 
 		image.save(name, function(err) {
+
+			delete self.temporary.processing[key];
 
 			if (err) {
 				self.temporary.path[key] = null;
@@ -1910,6 +1941,32 @@ Framework.prototype.response404 = function(req, res) {
 		self.emit('request-end', req, res);
 
 	self.stats.response.error404++;
+	return self;
+};
+
+/*
+	Response with 408 error
+	@req {ServerRequest}
+	@res {ServerResponse}
+	return {Framework}
+*/
+Framework.prototype.response408 = function(req, res) {
+	var self = this;
+
+	if (res.success)
+		return self;
+
+	self._request_stats(false, req.isStaticFile);
+	req.clear(true);
+
+	res.success = true;
+	res.writeHead(408, { 'Content-Type': 'text/plain' });
+	res.end(utils.httpStatus(408));
+
+	if (!req.isStaticFile)
+		self.emit('request-end', req, res);
+
+	self.stats.response.error408++;
 	return self;
 };
 
@@ -2418,6 +2475,7 @@ Framework.prototype._request = function(req, res) {
 	req.user = null;
 	req.prefix = '';
 	req.isAuthorized = true;
+	req.processing = 0;
 
 	var isXSS = false;
 	var accept = headers.accept;

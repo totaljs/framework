@@ -1,7 +1,11 @@
-![partial.js logo](http://petersirka.sk/partial-js/logo-new.png)
+![partial.js logo](http://www.partialjs.com/upload/logo.png)
 
 web application framework for node.js
 =====================================
+
+```
+$ npm install partial.js
+```
 
 - [partial.js homepage - www.partialjs.com](http://partialjs.com)
 - [__Documentation__](http://docs.partialjs.com)
@@ -37,16 +41,30 @@ __Examples__:
 
 __Modules__:
 
+- [Fulltext search engine](https://github.com/petersirka/partial.js-modules/tree/master/fulltext)
 - [Authorization](https://github.com/petersirka/partial.js-modules/tree/master/authorization)
 - [Session (in-memory, redis or memcached)](https://github.com/petersirka/partial.js-modules/tree/master/session)
 - [Login with Facebook](https://github.com/petersirka/partial.js-modules/tree/master/facebook)
 - [Less CSS - lesscss.org](https://github.com/petersirka/partial.js-modules/tree/master/less)
 - [Jade view engine](https://github.com/petersirka/partial.js-modules/tree/master/jade)
+- [Live storage](https://github.com/petersirka/partial.js-modules/tree/master/storage)
+- [Markdown parser](https://github.com/petersirka/partial.js-modules/tree/master/markdown)
 
 Documentation
 -------------
 - [English documentation](http://docs.partialjs.com/)
 - [Turkish documentation](https://github.com/KiPSOFT/partial.js-turkish-doc/blob/master/baslangic.md) by [KiP Software](http://www.kip-software.org/)
+
+Do not miss
+-----------
+
+- [node.js - FileStorage](https://github.com/petersirka/node-filestorage) - storing of uploaded files (tip for partial.js)
+- [node.js - Fulltext search](https://github.com/petersirka/node-fulltext) - fulltext search engine for web application (tip for partial.js)
+- [node.js - PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout) (tip for partial.js)
+- [node.js - Coucher](https://github.com/petersirka/node-couchdb) - CouchDB database provider (tip for partial.js)
+- [node.js - MongoLab provider](https://github.com/petersirka/node-mongolab) - MongoLab client (tip for partial.js)
+- [node.js - NoSQL embedded database](https://github.com/petersirka/nosql)
+- [node.js - Backup / Restore](https://github.com/petersirka/node-backup) - Backup / Restore solution
 
 ***
 
@@ -63,9 +81,11 @@ Videos on YouTube
 
 ***
 
-* **NEW** - Supports redirects - [example: host redirect](https://github.com/petersirka/partial.js/tree/master/examples/redirect-host)
-* **NEW** - Supports restrictions - [example: restrictions](https://github.com/petersirka/partial.js/tree/master/examples/framework-restrictions)
-* __Controller proxy__ - [example: proxy](https://github.com/petersirka/partial.js/tree/master/examples/controller-proxy)
+* **NEW** Supports workers - [example: workers](https://github.com/petersirka/partial.js/tree/master/examples/workers)
+* **NEW** Supports versioning of static files - [example: static-version](https://github.com/petersirka/partial.js/tree/master/examples/static-version)
+* Supports redirects - [example: host redirect](https://github.com/petersirka/partial.js/tree/master/examples/redirect-host)
+* Supports restrictions - [example: restrictions](https://github.com/petersirka/partial.js/tree/master/examples/framework-restrictions)
+* Controller proxy - [example: proxy](https://github.com/petersirka/partial.js/tree/master/examples/controller-proxy)
 * Supports server sent events - [example: sse](https://github.com/petersirka/partial.js/tree/master/examples/server-sent-events)
 * Supports live streaming via multipart/x-mixed-replace - [example: mmr](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
 * Supports uploading via multipart/x-mixed-replace - [example: mmr](https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
@@ -89,7 +109,7 @@ Videos on YouTube
 * Supports debug mode with custom settings without cache - [example: debug mode](https://github.com/petersirka/partial.js/tree/master/examples/config-debug-release)
 * Supports file upload - [example: file upload](https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart)
 * Supports copy&paste custom code between projects - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-custom)
-* __Supports modules__ (module can create a route, view, template, content, resource, etc.) - [example: module](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
+* __Supports modules__ (module can create a route, view, template, resource, etc.) - [example: module](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
 * __Supports inject module from URL__ [example: module inject](https://github.com/petersirka/partial.js/tree/master/examples/framework-inject)
 * Supports form data validation - [example: validation](https://github.com/petersirka/partial.js/tree/master/examples/validation)
 * Supports simple log writer - [example: logs](https://github.com/petersirka/partial.js/tree/master/examples/logs)
@@ -100,7 +120,6 @@ Videos on YouTube
 * Supports JavaScript compress
 * Supports JavaScript dynamic compress in views - [example: dynamic JavaScript compress](https://github.com/petersirka/partial.js/tree/master/examples/views-javascript-compress)
 * Supports simple LESS CSS (with compress) - [example: LESS CSS](https://github.com/petersirka/partial.js/tree/master/examples/css-less)
-* Supports Markdown parser - [example: Markdown](https://github.com/petersirka/partial.js/tree/master/examples/markdown)
 * Supports resources (for multilanguage pages) - [example: resources](https://github.com/petersirka/partial.js/tree/master/examples/localization-resources)
 * __Supports prefixes for mobile devices__ - [example: prefixes](https://github.com/petersirka/partial.js/tree/master/examples/mobile)
 * Supports SMTP mail sender (attachment, HTML, basic authentication) - [example: SMTP mail sender](https://github.com/petersirka/partial.js/tree/master/examples/email-templating)
@@ -115,7 +134,6 @@ Videos on YouTube
 * Supports live usage information - [example: framework usage](https://github.com/petersirka/partial.js/tree/master/examples/framework-usage)
 * Supports dynamic stop server - [example: stop server](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
 * Supports verification of framework - [example: verification](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
-* __Supports backup and restore website__ - [example: backup & restore](https://github.com/petersirka/partial.js/tree/master/examples/backup-restore), [auto-backup example](https://github.com/petersirka/partial.js/tree/master/examples/auto-backup)
 * About 9 000 lines of JavaScript code, all files have 330 kB
 * __NO DEPENDENCIES *** NO DEPENDENCIES *** NO DEPENDENCIES__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
@@ -130,7 +148,7 @@ Videos on YouTube
 
 ***
 
-## Install step by step partial.js
+## Install partial.js step by step
 
 ```
 $ sudo npm install -g partial.js
@@ -159,4 +177,4 @@ THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## Contact
 
-[www.petersirka.sk](http://www.petersirka.sk)
+[www.petersirka.sk](http://www.petersirka.sk) - <petersirka@gmail.com>
