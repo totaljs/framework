@@ -4668,7 +4668,9 @@ Subscribe.prototype._end = function() {
 	if (self.framework.onXSS !== null && self.framework.onXSS(self.req.buffer.data)) {
 		if (self.req.flags.indexOf('xss') === -1) {
 			self.req.flags.push('xss');
-			self.route = null;
+			self.route = self.framework.lookup(self.req, '#400', []);
+			self.execute(400);
+			return;
 		}
 	}
 
