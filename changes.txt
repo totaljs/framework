@@ -34,6 +34,7 @@ IN DEVELOPMENT ======= 1.3.0
 - added: utils.distance(lat1, lng1, lat2, lng2)
 - added: utils.ls(path, callback, [filter])
 - added: Array.prototype.waiting(onItem, [callback])
+- added: default accepts *.otf
 
 - updated: XSS is routed to 400 (BAD REQUEST)
 - updated: FrameworkImage supports stream (image.pipe() and new Image(stream or filename))
