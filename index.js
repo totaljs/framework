@@ -4546,7 +4546,7 @@ Subscribe.prototype.prepare = function(flags, url) {
 		self.route = self.framework.lookup(self.req, self.req.buffer.isExceeded ? '#431' : url || self.req.uri.pathname, flags);
 
 	if (self.route === null)
-		self.route = self.framework.lookup(self.req, '#404', []);
+		self.route = self.framework.lookup(self.req, self.req.flags.indexOf('xss') === -1 ? '#404' : '#400', []);
 
 	self.execute(self.req.buffer.isExceeded ? 431 : 404);
 };

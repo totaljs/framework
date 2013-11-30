@@ -3,7 +3,7 @@ exports.install = function(framework) {
 	framework.route('/', post_form, ['post']);
 	framework.route('/xss/', xss_form, ['xss']);
 	framework.route('/xss/', xss_form, ['xss', 'post']);
-	framework.route('#400', view404);
+	framework.route('#400', view400);
 };
 
 function view400() {
