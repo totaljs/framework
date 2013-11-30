@@ -1963,6 +1963,29 @@ Array.prototype.random = function() {
 };
 
 /*
+	Waiting list - function remove each item
+	@callback {Function} :: function(next) {}
+	@complete {Function} :: optional
+*/
+Array.prototype.waiting = function(onItem, callback) {
+
+	var self = this;
+	var item = self.shift();
+	
+	if (typeof(item) === UNDEFINED) {
+		if (callback)
+			callback();
+		return;
+	}
+
+	onItem.call(self, item, function() {
+		self.waiting(onItem, callback);
+	});
+
+	return self;
+};
+
+/*
 	Randomize array
 	Return {Array}
 */
