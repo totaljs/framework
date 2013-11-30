@@ -3,14 +3,14 @@ exports.install = function(framework) {
 	framework.route('/', post_form, ['post']);
 	framework.route('/xss/', xss_form, ['xss']);
 	framework.route('/xss/', xss_form, ['xss', 'post']);
-	framework.route('#404', view404);
+	framework.route('#400', view404);
 };
 
-function view404() {
+function view400() {
 	var self = this;
 
 	if (self.flags.indexOf('xss') === -1) {
-		self.plain('404');
+		self.plain('400');
 		return;
 	}
 
