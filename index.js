@@ -6890,9 +6890,9 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 	@name {String}
 	return {NoSQL};
 */
-Controller.prototype.database = function(name) {
-	var self = this;
-	return self.framework.database.apply(self, arguments);
+Controller.prototype.database = function() {
+	var self = this.framework;
+	return self.database.apply(self, arguments);
 };
 
 /*
