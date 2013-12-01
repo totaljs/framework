@@ -55,6 +55,7 @@ THIS VERSION IS RELEASE CANDIDATE 1 (RC 1)
 - updated: req.hostname()
 - updated: binary
 
+- fixed: WebSocket - Safari disconnect()
 - fixed: minify HTML
 - fixed: subdomain routing [www is automatically removed]
 - fixed: controller.database()

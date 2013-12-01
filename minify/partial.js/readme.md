@@ -163,6 +163,8 @@ Videos on YouTube
 
 ## Install partial.js step by step
 
+![partial.js on NPM](https://nodei.co/npm/partial.js.png?downloads=true)
+
 ```
 $ sudo npm install -g partial.js
 ```

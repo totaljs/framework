@@ -7251,7 +7251,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
             self.framework.stats.response.websocket++;
         }
 
-        self.emit('send', message);
+        self.emit('send', message, null, []);
         return self;
     }
 
@@ -7595,6 +7595,7 @@ function WebSocketClient(req, socket, head) {
     // 3 = JSON
 
     this.type = 2;
+    this._isClosed = false;
 }
 
 WebSocketClient.prototype = new events.EventEmitter();
@@ -7685,6 +7686,7 @@ WebSocketClient.prototype.upgrade = function(container) {
     self.socket.on('data', self.handlers.ondata);
     self.socket.on('error', self.handlers.onerror);
     self.socket.on('close', self.handlers.onclose);
+    self.socket.on('end', self.handlers.onclose);
 
     self.container._add(self);
     self.container._refresh();
@@ -7752,6 +7754,12 @@ WebSocketClient.prototype._onerror = function(error) {
 */
 WebSocketClient.prototype._onclose = function() {
     var self = this;
+
+    if (self._isClosed)
+    	return;
+
+    self._isClosed = true;
+
     self.container._remove(self._id);
     self.container._refresh();
     self.container.emit('close', self);
