@@ -176,7 +176,7 @@ $ partial.js
 ```
 $ node debugging
 
-// OR
+# OR
 
 $ node index 8080
 ```
