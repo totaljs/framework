@@ -4175,7 +4175,7 @@ FrameworkCache.prototype.init = function(interval) {
 
 	self.interval = setInterval(function() {
 		framework.cache.recycle();
-	}, interval || 1000 * 10);
+	}, interval || 1000 * 60);
 
 	return self;
 };
