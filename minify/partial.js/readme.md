@@ -147,7 +147,7 @@ Videos on YouTube
 * Supports live usage information - [example: framework usage](https://github.com/petersirka/partial.js/tree/master/examples/framework-usage)
 * Supports dynamic stop server - [example: stop server](https://github.com/petersirka/partial.js/tree/master/examples/framework-stop)
 * Supports verification of framework - [example: verification](https://github.com/petersirka/partial.js/tree/master/examples/framework-verification)
-* About 9 000 lines of JavaScript code, all files have 330 kB
+* About 9 000 lines of JavaScript code, all files have 270 kB
 * __NO DEPENDENCIES *** NO DEPENDENCIES *** NO DEPENDENCIES__
 * [More examples](https://github.com/petersirka/partial.js/tree/master/examples)
 * [Documentation](http://www.partialjs.com/documentation/)
