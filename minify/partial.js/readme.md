@@ -174,10 +174,14 @@ $ cd mywebsite
 $ partial.js
 ```
 ```
-$ node keepalive 8080
+$ node debugging
+
+# OR
+
+$ node index 8080
 ```
 ```
-$ open http://127.0.0.1:8080
+$ open http://127.0.0.1:8000
 ```
 
 ## The MIT License
