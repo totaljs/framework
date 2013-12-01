@@ -3,7 +3,7 @@
 web application framework for node.js
 =====================================
 
-| Current version (v1.3.0) is Release candidate 1 (RC 1)
+> Current version (v1.3.0) is Release Candidate 1 (RC 1)
 
 ```
 $ npm install partial.js
@@ -15,12 +15,18 @@ $ npm install partial.js
 - [Changelog](https://github.com/petersirka/partial.js/blob/master/changes.txt)
 - [__Roadmap__](https://github.com/petersirka/partial.js/blob/master/roadmap.txt)
 
+__Development__:
+
+- [Download empty project](http://www.partialjs.com/upload/empty-project.zip)
+- [__Documentation__: Website testing on the internet (tunnel between localhost and internet)](http://docs.partialjs.com/#ngrok)
+- [__Documentation__: Publish a website - REVERSE PROXY](http://docs.partialjs.com/#publish)
+- [__Documentation__: partial.js for Sublime Text 2 Editor](http://docs.partialjs.com/#sublime)
+
 __Interesting__:
 
 - [__express.js vs partial.js__](http://www.partialjs.com/benefits/)
 - [Tutorial](http://docs.partialjs.com/tutorial/)
 - [Download __partial.js modules__](https://github.com/petersirka/partial.js-modules/)
-- [Download empty project](http://www.partialjs.com/upload/empty-project.zip)
 - Framework supports [NoSQL Embedded database](https://github.com/petersirka/nosql) for max. 20 000 documents per database
 
 __Social networks__:
@@ -113,7 +119,10 @@ Videos on YouTube
 * Supports file upload - [example: file upload](https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart)
 * Supports copy&paste custom code between projects - [example](https://github.com/petersirka/partial.js/tree/master/examples/framework-custom)
 * __Supports modules__ (module can create a route, view, template, resource, etc.) - [example: module](https://github.com/petersirka/partial.js/tree/master/examples/framework-modules)
-* __Supports inject module from URL__ [example: module inject](https://github.com/petersirka/partial.js/tree/master/examples/framework-inject)
+* __Supports inject config from URL__ [example: config inject](https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-config)
+* __Supports inject module from URL__ [example: module inject](https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-module)
+* __Supports inject controller from URL__ [example: controller inject](https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-controller)
+* __Supports inject definition from URL__ [example: definition inject](https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-definition)
 * Supports form data validation - [example: validation](https://github.com/petersirka/partial.js/tree/master/examples/validation)
 * Supports simple log writer - [example: logs](https://github.com/petersirka/partial.js/tree/master/examples/logs)
 * Supports simple restrictions [example: restriction](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
