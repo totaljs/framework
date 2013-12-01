@@ -3,6 +3,8 @@
 web application framework for node.js
 =====================================
 
+| Current version (v1.3.0) is Release candidate 1 (RC 1)
+
 ```
 $ npm install partial.js
 ```
