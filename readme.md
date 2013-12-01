@@ -18,6 +18,7 @@ $ npm install partial.js
 __Development__:
 
 - [Download empty project](http://www.partialjs.com/upload/empty-project.zip)
+- [Download empty project (Visual Studio / Windows)](http://www.partialjs.com/upload/empty-project-visualstudio.zip)
 - [__Documentation__: Website testing on the internet (tunnel between localhost and internet)](http://docs.partialjs.com/#ngrok)
 - [__Documentation__: Publish a website - REVERSE PROXY](http://docs.partialjs.com/#publish)
 - [__Documentation__: partial.js for Sublime Text 2 Editor](http://docs.partialjs.com/#sublime)
