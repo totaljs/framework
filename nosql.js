@@ -5,7 +5,7 @@ var path = require('path');
 var util = require('util');
 var events = require('events');
 
-var VERSION = 'v2.0.2';
+var VERSION = 'v2.0.3';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -1103,11 +1103,19 @@ Database.prototype._metaLoad = function(callback) {
 
 	fs.readFile(self.filenameMeta, function(err, data) {
 
+		var isReady = self.isReady;
 		self.isReady = true;
 
 		if (err) {
+
+			if (!isReady) {
+				self.emit('ready');
+				self.emit('load');
+			}
+
 			if (callback)
 				callback(false, self.meta);
+
 			return;
 		}
 
@@ -1119,8 +1127,14 @@ Database.prototype._metaLoad = function(callback) {
 		for (var i = 0; i < length; i++)
 			self.meta.views[keys[i]].isReady = true;
 
+		if (!isReady) {
+			self.emit('ready');
+			self.emit('load');
+		}
+
 		if (callback)
 			callback(true, self.meta);
+
 	});
 
 	return self;
