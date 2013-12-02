@@ -10,7 +10,7 @@ var path = require('path');
 var directory = process.cwd();
 var utils = require('partial.js/utils');
 
-var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules'];
+var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules', directory + '/resources'];
 var files = {};
 var force = false;
 var changes = [];
@@ -23,7 +23,7 @@ var prefix = '------------> ';
 var isLoaded = false;
 
 function onFilter(path, isDirectory) {
-	return isDirectory ? true : path.indexOf('.js') !== -1;
+	return isDirectory ? true : path.indexOf('.js') !== -1 || path.indexOf('.resource') !== -1;
 };
 
 function onComplete() {
@@ -40,7 +40,7 @@ function onComplete() {
 			if (name === 'debugging.js' || name === 'keepalive.js')
 				continue;
 
-			if (name === 'config-debug' || name === 'config-release' || name === 'versions' || name.indexOf('.js') !== -1)
+			if (name === 'config-debug' || name === 'config-release' || name === 'versions' || name.indexOf('.js') !== -1 || name.indexOf('.resource') !== -1)
 				self.file.push(name);
 		}
 
