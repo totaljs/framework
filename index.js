@@ -592,21 +592,8 @@ Framework.prototype.module = function(name) {
 Framework.prototype.install = function() {
 
 	var self = this;
-	var dir = path.join(directory, self.config['directory-definitions']);
+	var dir = path.join(directory, self.config['directory-controllers']);
 	var framework = self;
-
-	if (fs.existsSync(dir)) {
-		fs.readdirSync(dir).forEach(function(o) {
-
-			var ext = path.extname(o);
-			if (ext.toLowerCase() !== '.js')
-				return;
-
-			eval(fs.readFileSync(path.join(directory, self.config['directory-definitions'], o), 'utf8').toString());
-		});
-	}
-
-	dir = path.join(directory, self.config['directory-controllers']);
 
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(function(o) {
@@ -653,6 +640,19 @@ Framework.prototype.install = function() {
 	});
 
 	self._routeSort();
+
+	dir = path.join(directory, self.config['directory-definitions']);
+
+	if (fs.existsSync(dir)) {
+		fs.readdirSync(dir).forEach(function(o) {
+
+			var ext = path.extname(o);
+			if (ext.toLowerCase() !== '.js')
+				return;
+
+			eval(fs.readFileSync(path.join(directory, self.config['directory-definitions'], o), 'utf8').toString());
+		});
+	}	
 	return self;
 };
 
