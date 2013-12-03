@@ -10,7 +10,8 @@ var parser = require('url');
 var events = require('events');
 var internal = require('./internal');
 var http = require('http');
-var directory = path.dirname(process.argv[1]);
+//var directory = path.dirname(process.argv[1]);
+var directory = process.cwd();
 var child = require('child_process');
 
 var ENCODING = 'utf8';
@@ -26,7 +27,7 @@ var _controller = '';
 global.builders = require('./builders');
 global.utils = require('./utils');
 
-process.chdir(directory);
+// process.chdir(directory);
 // process.maxTickDepth = 300;
 
 function Framework() {
