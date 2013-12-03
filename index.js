@@ -608,36 +608,33 @@ Framework.prototype.install = function() {
 
 	dir = path.join(directory, self.config['directory-modules']);
 
-	if (!fs.existsSync(dir)) {
-		self._routeSort();
-		return self;
+	if (fs.existsSync(dir)) {
+		fs.readdirSync(dir).forEach(function(o) {
+
+			var ext = path.extname(o);
+
+			var isDirectory = fs.statSync(path.join(dir + o)).isDirectory();
+			if (!isDirectory && ext.toLowerCase() !== '.js')
+				return;
+
+			var name = o.replace(ext, '');
+
+			if (name === '#')
+				return;
+
+			var module = self.module(name);
+
+			if (module === null || typeof(module.install) === UNDEFINED)
+				return;
+
+			try
+			{
+				module.install(self, self, name);
+			} catch (err) {
+				self.error(err, name);
+			}
+		});
 	}
-
-	fs.readdirSync(dir).forEach(function(o) {
-
-		var ext = path.extname(o);
-
-		var isDirectory = fs.statSync(path.join(dir + o)).isDirectory();
-		if (!isDirectory && ext.toLowerCase() !== '.js')
-			return;
-
-		var name = o.replace(ext, '');
-
-		if (name === '#')
-			return;
-
-		var module = self.module(name);
-
-		if (module === null || typeof(module.install) === UNDEFINED)
-			return;
-
-		try
-		{
-			module.install(self, self, name);
-		} catch (err) {
-			self.error(err, name);
-		}
-	});
 
 	self._routeSort();
 
@@ -652,7 +649,7 @@ Framework.prototype.install = function() {
 
 			eval(fs.readFileSync(path.join(directory, self.config['directory-definitions'], o), 'utf8').toString());
 		});
-	}	
+	}
 	return self;
 };
 
