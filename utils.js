@@ -1665,12 +1665,14 @@ Number.prototype.format = function(format) {
 	var end = 0;
 	var max = 0;
 	var output = '';
+	var length = 0;
 
 	if (typeof(format) === STRING) {
 
 		var d = false;
+		length = format.length;
 
-		for (var i = 0; i < format.length; i++) {
+		for (var i = 0; i < length; i++) {
 			var c = format[i];
 			if (c === '#') {
 				if (d)
@@ -1715,7 +1717,7 @@ Number.prototype.format = function(format) {
 		index = 0;
 
 		var skip = true;
-		var length = format.length;
+		length = format.length;
 
 		for (var i = 0; i < length; i++) {
 

@@ -470,8 +470,10 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (_controller === '')
 		throw new Error('Websocket route must be defined in controller.');
 
+/*
 	if (url.indexOf('{') !== -1)
-		throw new Error('Websocket url cannot contain dynamic path.');
+		throw new Error('Websocket url cannot contains dynamic path.');
+*/
 
 	if (!utils.isArray(flags) && typeof(flags) === 'object') {
 		protocols = flags['protocols'] || flags['protocol'];
