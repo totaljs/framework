@@ -31,7 +31,7 @@ global.utils = require('./utils');
 // process.maxTickDepth = 300;
 
 function Framework() {
-	this.version = 1300;
+	this.version = 1301;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
