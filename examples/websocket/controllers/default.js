@@ -24,7 +24,9 @@ function view_homepage() {
 	self.view('homepage');
 }
 
-function socket_homepage(controller, framework) {
+function socket_homepage() {
+
+	var controller = this;
 
     /*
     	Send message to all

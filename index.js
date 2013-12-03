@@ -497,6 +497,16 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		priority += 2;
 	}
 
+	var arr = [];
+
+	if (url.indexOf('{') !== -1) {
+		routeURL.forEach(function(o, i) {
+			if (o.substring(0, 1) === '{')
+				arr.push(i);
+		});
+		priority -= arr.length;
+	}
+
 	if (typeof(allow) === STRING)
 		allow = allow[allow];
 
@@ -506,7 +516,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (typeof(flags) === STRING)
 		flags = flags[flags];
 
-	self.routes.websockets.push({ name: _controller, url: routeURL, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: maximumSize || self.config['default-websocket-request-length'] });
+	self.routes.websockets.push({ name: _controller, url: routeURL, param: arr, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: maximumSize || self.config['default-websocket-request-length'] });
 	return self;
 };
 
@@ -2382,7 +2392,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
     if (typeof(self.connections[path]) === UNDEFINED) {
 		var connection = new WebSocket(self, path, route.name);
 		self.connections[path] = connection;
-		route.onInitialize.call(connection, connection, self);
+		route.onInitialize.apply(connection, internal.routeParam(route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, route));
     }
 
     socket.upgrade(self.connections[path]);
