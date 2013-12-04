@@ -127,7 +127,7 @@ Videos on YouTube
 * Supports form data validation - [example: validation](https://github.com/petersirka/partial.js/tree/master/examples/validation)
 * Supports simple log writer - [example: logs](https://github.com/petersirka/partial.js/tree/master/examples/logs)
 * Supports simple restrictions [example: restriction](https://github.com/petersirka/partial.js/tree/master/examples/restrictions-ip)
-* Supports serve static files []
+* Supports serve static files and custom handling static files [static-file-handling](https://github.com/petersirka/partial.js/tree/master/examples/static-file-handling)
 * __Supports streaming static files__ - implemented Accept-Ranges [example: video-streaming](https://github.com/petersirka/partial.js/tree/master/examples/video-streaming)
 * Supports HTML minification
 * Supports JavaScript compress
