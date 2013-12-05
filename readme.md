@@ -50,6 +50,7 @@ __Examples__:
 
 __Modules__:
 
+- [Online counter](https://github.com/petersirka/partial.js-modules/tree/master/online)
 - [FileStorage](https://github.com/petersirka/partial.js-modules/tree/master/filestorage)
 - [Fulltext search engine](https://github.com/petersirka/partial.js-modules/tree/master/fulltext)
 - [Authorization](https://github.com/petersirka/partial.js-modules/tree/master/authorization)
