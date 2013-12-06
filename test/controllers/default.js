@@ -206,7 +206,7 @@ function viewIndex() {
 	assert.ok(self.routeImage('p.jpg') === '/img/p.jpg', name + 'routeImage()');
 	assert.ok(self.routeVideo('p.avi') === '/video/p.avi', name + 'routeVideo()');
 	assert.ok(self.routeFont('p.woff') === '/font/p.woff', name + 'routeFont()');
-	assert.ok(self.routeUpload('p.pdf') === '/upload/p.pdf', name + 'routeUpload()');
+	assert.ok(self.routeDownload('p.pdf') === '/download/p.pdf', name + 'routeDownload()');
 	assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
 	assert.ok(self.template('test', ['A', 'B']) === '<div>AB</div>{name | 1}', name + 'template - no repository');
 	assert.ok(self.template('test', ['A', 'B'], '', { name: 'ABCDEFG' }) === '<div>AB</div>A...', name + 'template - repository');
@@ -258,7 +258,7 @@ function viewViews() {
 	assert.ok(output.contains('#template-emptyEMPTY#'), name + 'template() - empty');
 	assert.ok(output.contains('#template-toggle#'), name + 'templateToggle()');
 	assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
-	assert.ok(output.contains('#<a href="/upload/test.pdf" download="test">content</a>#'), name + 'download');
+	assert.ok(output.contains('#<a href="/download/test.pdf" download="test">content</a>#'), name + 'download');
 
 	assert.ok(output.contains('<link rel="dns-prefetch" href="//fonts.googleapis.com" />'), name + 'dns');
 	assert.ok(output.contains('<link rel="prefetch" href="http://daker.me/2013/05/hello-world.html" />'), name + 'prefetch');

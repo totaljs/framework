@@ -73,7 +73,7 @@ function Framework() {
 		'static-url-image': '/img/',
 		'static-url-video': '/video/',
 		'static-url-font': '/font/',
-		'static-url-upload': '/upload/',
+		'static-url-download': '/download/',
 		'static-accepts': ['.jpg', '.png', '.gif', '.ico', '.js', '.css', '.txt', '.xml', '.woff', '.otf', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache', '.map', '.ogg', '.mp4', '.mp3', '.webp', '.swf'],
 
 		// 'static-accepts-custom': [],
@@ -3105,9 +3105,9 @@ Framework.prototype.routeFont = function(name) {
 	@name {String} :: filename
 	return {String}
 */
-Framework.prototype.routeUpload = function(name) {
+Framework.prototype.routeDownload = function(name) {
 	var self = this;
-	return self._routeStatic(name, self.config['static-url-upload']);
+	return self._routeStatic(name, self.config['static-url-download']);
 };
 
 /*
@@ -4689,7 +4689,7 @@ function Controller(name, req, res, subscribe) {
 		this.prefix = this.prefix;
 
 	this._currentImage = '';
-	this._currentUpload = '';
+	this._currentDownload = '';
 	this._currentVideo = '';
 	this._currentJS = '';
 	this._currentCSS = '';
@@ -5878,7 +5878,7 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
 	return {String}
 */
 Controller.prototype.$download = function(filename, innerHTML, downloadName, className) {
-	var builder = '<a href="' + this.framework.routeUpload(filename) + ATTR_END;
+	var builder = '<a href="' + this.framework.routeDownload(filename) + ATTR_END;
 
 	if (downloadName)
 		builder += ' download="' + downloadName + ATTR_END;
@@ -6007,9 +6007,9 @@ Controller.prototype.routeFont = function(name) {
 	@name {String} :: filename
 	return {String}
 */
-Controller.prototype.routeUpload = function(name) {
+Controller.prototype.routeDownload = function(name) {
 	var self = this;
-	return self._routeHelper(self._currentUpload, name, self.framework.routeUpload);
+	return self._routeHelper(self._currentDownload, name, self.framework.routeDownload);
 };
 
 /*
@@ -6067,8 +6067,8 @@ Controller.prototype.$currentVideo = function(path) {
 	@path {String} :: add path to route path
 	return {String}
 */
-Controller.prototype.$currentUpload = function(path) {
-	this._currentUpload = path && path.length > 0 ? path : '';
+Controller.prototype.$currentDownload = function(path) {
+	this._currentDownload = path && path.length > 0 ? path : '';
 	return '';
 };
 
@@ -6085,14 +6085,14 @@ Controller.prototype.currentImage = function(path) {
 };
 
 /*
-	Set current upload path
+	Set current download path
 	@path {String}
 	return {Controller}
 */
-Controller.prototype.currentUpload = function(path) {
+Controller.prototype.currentDownload = function(path) {
 	var self = this;
-	self.$currentUpload(path);
-	self._defaultUpload = self._currentUpload;
+	self.$currentDownload(path);
+	self._defaultDownload = self._currentDownload;
 	return self;
 };
 
@@ -6856,7 +6856,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (self.isLayout) {
 		self._currentCSS = self._defaultCSS || '';
 		self._currentJS = self._defaultJS || '';
-		self._currentUpload = self._defaultUpload || '';
+		self._currentDownload = self._defaultDownload || '';
 		self._currentVideo = self._defaultVideo || '';
 		self._currentImage = self._defaultImage || '';
 	}
