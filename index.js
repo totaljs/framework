@@ -302,6 +302,8 @@ Framework.prototype.database = function(name) {
 	if (typeof(db) !== UNDEFINED)
 		return db;
 
+	self._verify_directory('databases');
+
 	db = require('./nosql').load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), true);
 	self.databases[name] = db;
 
@@ -990,7 +992,7 @@ Framework.prototype.log = function() {
 
 	var self = this;
 	var now = new Date();
-	var fileName = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padLeft(2, '0') + '-' + now.getDate().toString().padLeft(2, '0');
+	var filename = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padLeft(2, '0') + '-' + now.getDate().toString().padLeft(2, '0');
 	var time = now.getHours().toString().padLeft(2, '0') + ':' + now.getMinutes().toString().padLeft(2, '0') + ':' + now.getSeconds().toString().padLeft(2, '0');
 	var str = '';
 	var length = arguments.length;
@@ -998,8 +1000,8 @@ Framework.prototype.log = function() {
 	for (var i = 0; i < length; i++)
 		str += (str.length > 0 ? ' ' : '') +  (arguments[i] || '');
 
-	fs.appendFile(utils.combine(self.config['directory-logs'], fileName + '.log'), time + ' | ' + str + '\n');
-
+	self._verify_directory('logs');
+	fs.appendFile(utils.combine(self.config['directory-logs'], filename + '.log'), time + ' | ' + str + '\n');
 	return self;
 };
 
@@ -3823,6 +3825,8 @@ FrameworkFileSystem.prototype.createTemplate = function(name, content, rewrite, 
 	if (name.indexOf('.html') === -1)
 		name += '.html';
 
+	self.framework._verify_directory('templates');
+
 	var filename = utils.combine(self.config['directory-templates'], name);
 	return self.createFile(filename, content, append, rewrite);
 };
@@ -3844,6 +3848,8 @@ FrameworkFileSystem.prototype.createView = function(name, content, rewrite, appe
 
 	if (name.indexOf('.html') === -1)
 		name += '.html';
+
+	self.framework._verify_directory('views');
 
 	var filename = utils.combine(self.config['directory-views'], name);
 	return self.createFile(filename, content, append, rewrite);
@@ -3867,6 +3873,8 @@ FrameworkFileSystem.prototype.createContent = function(name, content, rewrite, a
 	if (name.indexOf('.html') === -1)
 		name += '.html';
 
+	self.framework._verify_directory('contents');
+
 	var filename = utils.combine(self.config['directory-contents'], name);
 	return self.createFile(filename, content, append, rewrite);
 };
@@ -3888,6 +3896,8 @@ FrameworkFileSystem.prototype.createWorker = function(name, content, rewrite, ap
 
 	if (name.indexOf('.js') === -1)
 		name += '.js';
+
+	self.framework._verify_directory('workers');
 
 	var filename = utils.combine(self.config['directory-workers'], name);
 	return self.createFile(filename, content, append, rewrite);
@@ -3920,6 +3930,8 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
 		});
 	}
 
+	self.framework._verify_directory('resources');
+
 	var filename = utils.combine(self.config['directory-resources'], name);
 	return self.createFile(filename, builder, append, rewrite);
 };
@@ -3933,6 +3945,9 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
 */
 FrameworkFileSystem.prototype.createTemporary = function(name, stream, callback) {
 	var self = this;
+
+	self.framework._verify_directory('temp');
+
 	var filename = utils.combine(self.config['directory-temp'], name);
 	var writer = fs.createWriteStream(filename);
 

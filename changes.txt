@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.3.1
+
+- added: auto-creating directories when are needed (logs, databases)
+
 ======= 1.3.0-1
 
 - updated: NoSQL version v2.0.3 (added new event on('load'))
