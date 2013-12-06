@@ -1026,7 +1026,7 @@ Framework.prototype.usage = function(detailed) {
 	var redirects = Object.keys(self.routes.redirects);
 	var size = 0;
 	var sizeDatabase = 0;
-	var dir = '.' + self.config['directory-temp'];
+	var dir = utils.combine(self.config['directory-temp']);
 
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(function(o) {
@@ -1034,7 +1034,7 @@ Framework.prototype.usage = function(detailed) {
 		});
 	}
 
-	dir = '.' + self.config['directory-databases'];
+	dir = utils.combine(self.config['directory-databases']);
 
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(function(o) {
@@ -2318,10 +2318,7 @@ Framework.prototype._verify_directory = function(name) {
 	if (self.temporary.path[prop])
 		return self;
 
-	var dir = self.config['directory-' + name];
-
-	if (dir[0] !== '.')
-		dir = '.' + dir;
+	var dir = utils.combine(self.config['directory-' + name]);
 
 	if (!fs.existsSync(dir))
 		fs.mkdirSync(dir);
@@ -2748,7 +2745,7 @@ Framework.prototype.test = function(stop, names, cb) {
 	} else
 		names = names || [];
 
-	fs.readdirSync('.' + self.config['directory-tests']).forEach(function(name) {
+	fs.readdirSync(utils.combine(self.config['directory-tests'])).forEach(function(name) {
 
 		var fileName = path.join(directory, self.config['directory-tests'], name);
 
@@ -3043,134 +3040,6 @@ Framework.prototype.configure = function(arr, rewrite) {
 	}
 
 	return self;
-};
-
-/*
-	Verification
-	@cb {Function} :: param @errors {String array}
-	return {Framework}
-*/
-Framework.prototype.verification = function(cb) {
-
-	var self = this;
-
-	if (typeof(self.verify) === UNDEFINED) {
-		self.configure();
-		self.configureMapping();
-		self.verify = null;
-	}
-
-	if (self.verify !== null) {
-
-		if (self.verify.length > 0) {
-			var test = self.verify.shift();
-			test();
-			return self;
-		}
-
-		if (self.verify.length === 0) {
-			self.verify = null;
-			cb.call(this, self.verifyError);
-			return self;
-		}
-
-		return self;
-	}
-
-	self.verify = [];
-	self.verifyError = [];
-
-	self.verify.push(function verifyVersion() {
-		utils.request('https://raw.github.com/petersirka/partial.js/master/package.json', 'GET', '', function(err, data) {
-
-			if (!err) {
-				var obj = JSON.parse(data);
-				var git = utils.parseInt(obj.version.replace(/[\.\-]/g, ''));
-				var gitFrom = utils.parseInt(obj.versionDifference.replace(/[\.\-]/g, ''));
-				if (self.version < git)
-					self.verifyError.push('FrameworkVersion: partial.js has a new version v' + git + (self.version >= gitFrom ? ' (trouble-free installation)' : ' (many changes in code)'));
-			}
-
-			self.verification.call(self, cb);
-		});
-	});
-
-	self.verify.push(function verifyDirectory() {
-
-		if (!fs.existsSync('.' + self.config['directory-controllers']))
-			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-controllers']);
-
-		if (!fs.existsSync('.' + self.config['directory-views']))
-			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-views']);
-
-		if (!fs.existsSync('.' + self.config['directory-contents']))
-			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-contents']);
-
-		if (!fs.existsSync('.' + self.config['directory-temp']))
-			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-temp']);
-
-		if (!fs.existsSync('.' + self.config['directory-templates']))
-			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-templates']);
-
-		if (!fs.existsSync('.' + self.config['directory-resources']))
-			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-resources']);
-
-		if (!fs.existsSync('.' + self.config['directory-public']))
-			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-public']);
-
-		if (!fs.existsSync('.' + self.config['directory-modules']))
-			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-modules']);
-
-		if (!fs.existsSync('.' + self.config['directory-databases']))
-			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-databases']);
-
-		if (!fs.existsSync('.' + self.config['directory-logs']))
-			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-logs']);
-
-		if (!fs.existsSync('.' + self.config['directory-workers']))
-			self.verifyError.push('DirectoryNotFound: ' + self.config['directory-workers']);
-
-		self.verification.call(self, cb);
-	});
-
-	self.verify.push(function() {
-		var filename = self.path.temp('verify.tmp');
-		try
-		{
-			fs.writeFileSync(filename, 'OK');
-			fs.readFileSync(filename);
-			fs.unlinkSync(filename);
-		} catch (ex) {
-			self.verifyError.push('Writing/Readings files: ' + ex.toString());
-		}
-		self.verification.call(self, cb);
-	});
-
-	self.verify.push(function() {
-		var exec = child.exec;
-
-		exec('gm', function(error, stdout, stderr) {
-
-			if (stderr.length !== 0)
-				self.verifyError.push('GraphicsMagickError: ' + stderr);
-
-			self.verification.call(self, cb);
-		});
-	});
-
-	self.verify.push(function () {
-		var exec = child.exec;
-
-		exec('convert', function(error, stdout, stderr) {
-
-			if (stderr.length !== 0)
-				self.verifyError.push('ImageMagickError: ' + stderr);
-
-			self.verification.call(self, cb);
-		});
-	});
-
-	self.verification.call(self, cb);
 };
 
 /*

@@ -848,7 +848,15 @@ exports.isURL = function(str) {
 	return {String}
 */
 exports.combine = function() {
-	return '.' + path.join.apply(this, arguments);
+
+	var self = this;
+
+	if (arguments[0][0] === '~') {
+		arguments[0] = arguments[0].substring(1);
+		return path.join.apply(self, arguments);
+	}
+
+	return '.' + path.join.apply(self, arguments);
 };
 
 /*
