@@ -1586,6 +1586,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				return;
 			}
 
+			self._verify_directory('temp');
 			var image = Image.load(stream, useImageMagick);
 
 			fnProcess(image);
@@ -1619,6 +1620,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			return;
 		}
 
+		self._verify_directory('temp');
+		
 		var image = Image.load(filename, useImageMagick);
 
 		fnProcess(image);
