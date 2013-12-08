@@ -985,45 +985,47 @@ exports.ls = function(path, callback, filter) {
 */
 Date.prototype.add = function(type, value) {
 	var self = this;
+	var dt = new Date(self.getTime());
+
 	switch(type) {
 		case 's':
 		case 'ss':
 		case 'second':
 		case 'seconds':
-			self.setSeconds(self.getSeconds() + value);
-			return self;
+			dt.setSeconds(dt.getSeconds() + value);
+			return dt;
 		case 'm':
 		case 'mm':
 		case 'minute':
 		case 'minutes':
-			self.setMinutes(self.getMinutes() + value);
-			return self;
+			dt.setMinutes(dt.getMinutes() + value);
+			return dt;
 		case 'h':
 		case 'hh':
 		case 'hour':
 		case 'hours':
-			self.setHours(self.getHours() + value);
-			return self;
+			dt.setHours(dt.getHours() + value);
+			return dt;
 		case 'd':
 		case 'dd':
 		case 'day':
 		case 'days':
-			self.setDate(self.getDate() + value);
-			return self;
+			dt.setDate(dt.getDate() + value);
+			return dt;
 		case 'M':
 		case 'MM':
 		case 'month':
 		case 'months':
-			self.setMonth(self.getMonth() + value);
-			return self;
+			dt.setMonth(dt.getMonth() + value);
+			return dt;
 		case 'y':
 		case 'yyyy':
 		case 'year':
 		case 'years':
-			self.setFullYear(self.getFullYear() + value);
-			return self;
+			dt.setFullYear(dt.getFullYear() + value);
+			return dt;
 	}
-	return self;
+	return dt;
 };
 
 /*

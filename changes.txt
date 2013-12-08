@@ -7,6 +7,7 @@ IN DEVELOPMENT ======= 1.3.1
 - added: controller.currentDownload()
 - added: @{currentDownload}
 
+- fixed: increment/decrement Date/Time
 - fixed: paths (~ char is changing the relative path to the absolute path)
 
 - removed: framework.config['directory-upload']
