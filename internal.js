@@ -15,6 +15,9 @@ var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
 var FUNCTION = 'function';
 
+var REG_1 = /[\n\r\t]+/g;
+var REG_2 = /\s{2,}/g;
+
 if (typeof(setImmediate) === UNDEFINED) {
 	global.setImmediate = function(cb) {
 		process.nextTick(cb);
@@ -1835,239 +1838,244 @@ function parse(html, controller) {
 		}
 
 		if (copy && current === '}') {
-			if (count > 1)
+
+			if (count > 1) {
 				count--;
-			else {
-				
-				copy = false;
+		
+				if (copy)
+					code += current;
 
-				var other = cache.substring(indexBeg + code.length + 2);
-
-				code = code.trim();
-
-				var indexer = keys[code];
-				var push = false;
-
-				if (typeof(indexer) === UNDEFINED) {
-					indexer = execute.length;
-					keys[code] = indexer;
-					push = true;
-				}
-
-				var value = cache.substring(0, indexBeg - 1);
-
-				condition = code.substring(0, 2) === 'if' ? 1 : code.substring(0, 5) === 'endif' ? 3 : code.substring(0, 4) === 'else' ? 2 : 0;
-				builder.push(minifyHTML(value).replace(/\n/g, '\\n'));
-
-				var param = 'arr[' + indexer + ']';
-
-				if (condition > 0) {
-
-					switch (condition) {
-						case 1:
-							isCondition = true;
-							name = 'if';
-							builder.push('({0} ? '.format(param));
-							code = code.substring(2).trim();
-							break;
-						case 2:
-							builder.push(':');
-							break;
-						case 3:
-							isCondition = false;
-							builder.push(')');
-							break;
-					}
-
-				} else {
-
-					if (isCondition)
-						param = '( ' + param + '(self,repository,model,session,sitemap,get,post,url,empty,global,helper,user) || \'\')';
-
-					builder.push(param);
-				}
-
-				var isEncode = code[0] !== '!';
-
-				if (!isEncode)
-					code = code.substring(1);
-
-				var a = code.indexOf('.');
-				var b = code.indexOf('(');
-				var c = code.indexOf('[');
-
-				if (a === -1)
-					a = b;
-
-				if (b === -1)
-					b = a;
-
-				if (a === -1)
-					a = c;
-
-				if (b === -1)
-					b = c;
-
-				index = Math.min(a, b);
-
-				if (index === -1)
-					index = code.length;
-
-				if (condition !== 1)
-					name = code.substring(0, index);
-
-				if (push) {
-					beg = '';
-					end = '';
-					var isDeclared = false;
-					switch (name) {
-
-						case 'options':
-						case 'readonly':
-						case 'selected':
-						case 'disabled':
-						case 'checked':
-						case 'etag':
-						case 'modified':
-						case 'image':
-						case 'download':
-						case 'json':
-						case 'dns':
-						case 'header':
-						case 'prefetch':
-						case 'prerender':
-						case 'next':
-						case 'prev':
-						case 'canonical':
-						case 'currentJS':
-						case 'currentCSS':
-						case 'currentImage':
-						case 'currentUpload':
-						case 'currentVideo':
-							isEncode = false;
-							isDeclared = true;
-							code = 'self.$' + code;
-							beg = 'return ';
-							break;
-
-						case 'view':
-						case 'viewToggle':
-						case 'content':
-						case 'contentToggle':
-						case 'template':
-						case 'templateToggle':
-							beg = 'return self.$';
-							break;
-
-						case 'radio':
-						case 'text':
-						case 'checkbox':
-						case 'hidden':
-						case 'textarea':
-						case 'password':
-							isEncode = false;
-							isDeclared = true;
-							code = 'self.$' + exports.appendModel(code);
-							beg = 'return ';
-							break;
-
-						case 'js':
-						case 'script':
-						case 'css':
-						case 'favicon':
-							beg = '';
-							isEncode = false;
-							isDeclared = true;
-							code = 'self.$' + code + (code.indexOf('(') === -1 ? '()' : '');
-							beg = 'return ';
-							break;
-
-						case 'routeJS':
-						case 'routeCSS':
-						case 'routeImage':
-						case 'routeFont':
-						case 'routeUpload':
-						case 'routeVideo':
-						case 'routeStatic':
-							isEncode = false;
-							isDeclared = true;
-							code = 'self.' + code;
-							beg = 'return ';
-							break;
-
-						case 'resource':
-							code = 'self.' + code;
-							isDeclared = true;
-							beg = 'return ';
-							break;
-
-						case 'global':
-						case 'model':
-						case 'repository':
-						case 'session':
-						case 'user':
-						case 'config':
-						case 'get':
-						case 'post':
-							beg = 'return self.';
-							break;
-
-						case 'head':
-						case 'meta':
-						case 'sitemap':
-						case 'settings':
-						case 'layout':
-						case 'title':
-						case 'description':
-						case 'keywords':
-
-							if (code.indexOf('(') !== -1) {
-								beg = 'self.';
-								end = ';return \'\'';
-							} else {
-								beg = 'return self.repository["$';
-								end = '"]';
-							}
-
-							break;
-
-						case 'host':
-							isEncode = false;
-
-							if (code.contains('('))
-								code = 'self.' + code;
-							else
-								code = 'self.host()';
-
-							beg = 'return ';
-							isDeclared = true;
-							break;
-
-						case 'url':
-							isEncode = false;
-
-							if (code.contains('('))
-								code = 'self.$' + code;
-							else
-								code = 'url';
-
-							beg = 'return ';
-							isDeclared = true;
-							break;
-					}
-
-					if (isCondition && condition === 0)
-						code = '(function(){' + beg + code + end + ';})';
-
-					execute.push({ run: code, name: name, isEncode: isEncode, isDeclared: isDeclared });
-				}
-
-				cache = other;
-
-				index = 0;
-				code = '';
 				continue;
 			}
+
+			copy = false;
+
+			var other = cache.substring(indexBeg + code.length + 2);
+
+			code = code.trim();
+
+			var indexer = keys[code];
+			var push = false;
+
+			if (typeof(indexer) === UNDEFINED) {
+				indexer = execute.length;
+				keys[code] = indexer;
+				push = true;
+			}
+
+			var value = cache.substring(0, indexBeg - 1);
+
+			condition = code.substring(0, 2) === 'if' ? 1 : code.substring(0, 5) === 'endif' ? 3 : code.substring(0, 4) === 'else' ? 2 : 0;
+			builder.push(minifyHTML(value).replace(/\n/g, '\\n'));
+
+			var param = 'arr[' + indexer + ']';
+
+			if (condition > 0) {
+
+				switch (condition) {
+					case 1:
+						isCondition = true;
+						name = 'if';
+						builder.push('({0} ? '.format(param));
+						code = code.substring(2).trim();
+						break;
+					case 2:
+						builder.push(':');
+						break;
+					case 3:
+						isCondition = false;
+						builder.push(')');
+						break;
+				}
+
+			} else {
+
+				if (isCondition)
+					param = '( ' + param + '(self,repository,model,session,sitemap,get,post,url,empty,global,helper,user) || \'\')';
+
+				builder.push(param);
+			}
+
+			var isEncode = code[0] !== '!';
+
+			if (!isEncode)
+				code = code.substring(1);
+
+			var a = code.indexOf('.');
+			var b = code.indexOf('(');
+			var c = code.indexOf('[');
+
+			if (a === -1)
+				a = b;
+
+			if (b === -1)
+				b = a;
+
+			if (a === -1)
+				a = c;
+
+			if (b === -1)
+				b = c;
+
+			index = Math.min(a, b);
+
+			if (index === -1)
+				index = code.length;
+
+			if (condition !== 1)
+				name = code.substring(0, index);
+
+			if (push) {
+				beg = '';
+				end = '';
+				var isDeclared = false;
+				switch (name) {
+
+					case 'options':
+					case 'readonly':
+					case 'selected':
+					case 'disabled':
+					case 'checked':
+					case 'etag':
+					case 'modified':
+					case 'image':
+					case 'download':
+					case 'json':
+					case 'dns':
+					case 'header':
+					case 'prefetch':
+					case 'prerender':
+					case 'next':
+					case 'prev':
+					case 'canonical':
+					case 'currentJS':
+					case 'currentCSS':
+					case 'currentImage':
+					case 'currentUpload':
+					case 'currentVideo':
+						isEncode = false;
+						isDeclared = true;
+						code = 'self.$' + code;
+						beg = 'return ';
+						break;
+
+					case 'view':
+					case 'viewToggle':
+					case 'content':
+					case 'contentToggle':
+					case 'template':
+					case 'templateToggle':
+						beg = 'return self.$';
+						break;
+
+					case 'radio':
+					case 'text':
+					case 'checkbox':
+					case 'hidden':
+					case 'textarea':
+					case 'password':
+						isEncode = false;
+						isDeclared = true;
+						code = 'self.$' + exports.appendModel(code);
+						beg = 'return ';
+						break;
+
+					case 'js':
+					case 'script':
+					case 'css':
+					case 'favicon':
+						beg = '';
+						isEncode = false;
+						isDeclared = true;
+						code = 'self.$' + code + (code.indexOf('(') === -1 ? '()' : '');
+						beg = 'return ';
+						break;
+
+					case 'routeJS':
+					case 'routeCSS':
+					case 'routeImage':
+					case 'routeFont':
+					case 'routeUpload':
+					case 'routeVideo':
+					case 'routeStatic':
+						isEncode = false;
+						isDeclared = true;
+						code = 'self.' + code;
+						beg = 'return ';
+						break;
+
+					case 'resource':
+						code = 'self.' + code;
+						isDeclared = true;
+						beg = 'return ';
+						break;
+
+					case 'global':
+					case 'model':
+					case 'repository':
+					case 'session':
+					case 'user':
+					case 'config':
+					case 'get':
+					case 'post':
+						beg = 'return self.';
+						break;
+
+					case 'head':
+					case 'meta':
+					case 'sitemap':
+					case 'settings':
+					case 'layout':
+					case 'title':
+					case 'description':
+					case 'keywords':
+
+						if (code.indexOf('(') !== -1) {
+							beg = 'self.';
+							end = ';return \'\'';
+						} else {
+							beg = 'return self.repository["$';
+							end = '"]';
+						}
+
+						break;
+
+					case 'host':
+						isEncode = false;
+
+						if (code.contains('('))
+							code = 'self.' + code;
+						else
+							code = 'self.host()';
+
+						beg = 'return ';
+						isDeclared = true;
+						break;
+
+					case 'url':
+						isEncode = false;
+
+						if (code.contains('('))
+							code = 'self.$' + code;
+						else
+							code = 'url';
+
+						beg = 'return ';
+						isDeclared = true;
+						break;
+				}
+
+				if (isCondition && condition === 0)
+					code = '(function(){' + beg + code + end + ';})';
+
+				execute.push({ run: code, name: name, isEncode: isEncode, isDeclared: isDeclared });
+			}
+
+			cache = other;
+
+			index = 0;
+			code = '';
+			continue;
 		}
 
 		if (copy)
@@ -2242,9 +2250,6 @@ function minifyHTML(html) {
 
 	html = removeComments(html);
 
-	var reg1 = new RegExp(/[\n\r\t]+/g);
-	var reg2 = new RegExp(/\s{2,}/g);
-
 	var tags =['script', 'textarea', 'pre', 'code'];
 	var id = '[' + new Date().getTime() + ']#';
 	var cache = {};
@@ -2286,11 +2291,15 @@ function minifyHTML(html) {
 		}
 	}
 
-	html = html.replace(reg1, '').replace(reg2, '');
+	html = html.replace(REG_1, '').replace(REG_2, '');
 
-	Object.keys(cache).forEach(function(o) {
-		html = html.replace(o, cache[o]);
-	});
+	var keys = Object.keys(cache);
+	length = keys.length;
+
+	for (var i = 0; i < length; i++) {
+		var key = keys[i];
+		html = html.replace(key, cache[key]);
+	}
 
 	return html;
 }

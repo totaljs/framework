@@ -18,6 +18,8 @@ IN DEVELOPMENT ======= 1.3.1
 - removed: controller.currentUpload()
 - removed: @{currentUpload())
 
+- improvements: compiling views (fixed )
+
 ======= 1.3.0-1
 
 - updated: NoSQL version v2.0.3 (added new event on('load'))
