@@ -1838,11 +1838,11 @@ function parse(html, controller) {
 			if (count > 1)
 				count--;
 			else {
+				
 				copy = false;
 
 				var other = cache.substring(indexBeg + code.length + 2);
 
-				other = minifyHTML(other);
 				code = code.trim();
 
 				var indexer = keys[code];
@@ -2074,7 +2074,7 @@ function parse(html, controller) {
 			code += current;
 	}
 
-	builder.push(minifyHTML(cache.replace(/\n/g, '\\n')));
+	builder.push(minifyHTML(cache));
 
 	var fn = '';
 	var isPlus = true;
@@ -2280,7 +2280,7 @@ function minifyHTML(html) {
 					break;
 			}
 
-			cache[key] = value;
+			cache[key] = value.replace(/\n/g, '\\n');
 			html = html.replace(value, key);
 			beg = html.indexOf(tagBeg, beg + tagBeg.length);
 		}
