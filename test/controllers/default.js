@@ -235,6 +235,11 @@ function viewViews() {
 
 	var output = self.view('a', { a: 'A', b: 'B', arr: ['1', '2', '3'] }, true);
 
+	//console.log(output);
+
+	//self.framework.stop();
+	//return;
+
 	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>', name + ' minify html'));
 	assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
 	assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');

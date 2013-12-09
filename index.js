@@ -6975,6 +6975,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			{
 				value = eval(run);
 			} catch (ex) {
+				console.log(run);
 				self.framework.error(ex, 'View error "' + name + '", problem with: ' + execute.name, self.req.uri);
 			}
 		}

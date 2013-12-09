@@ -1801,7 +1801,6 @@ function parse(html, controller) {
 	var framework = controller.framework;
 	var code = '';
 	var cache = compressCSS(compressJS(html, 0, framework), 0, framework);
-	var minify = true;
 
 	var indexBeg = 0;
 	var builder = [];
@@ -1843,9 +1842,7 @@ function parse(html, controller) {
 
 				var other = cache.substring(indexBeg + code.length + 2);
 
-				if (minify)
-					other = minifyHTML(other);
-
+				other = minifyHTML(other);
 				code = code.trim();
 
 				var indexer = keys[code];
@@ -1860,8 +1857,7 @@ function parse(html, controller) {
 				var value = cache.substring(0, indexBeg - 1);
 
 				condition = code.substring(0, 2) === 'if' ? 1 : code.substring(0, 5) === 'endif' ? 3 : code.substring(0, 4) === 'else' ? 2 : 0;
-
-				builder.push(minify ? minifyHTML(value).replace(/\n/g, '\\n') : value.replace(/\n/g, '\\n'));
+				builder.push(minifyHTML(value).replace(/\n/g, '\\n'));
 
 				var param = 'arr[' + indexer + ']';
 
@@ -2078,7 +2074,7 @@ function parse(html, controller) {
 			code += current;
 	}
 
-	builder.push(minify ? minifyHTML(cache.replace(/\n/g, '\\n')) : cache.replace(/\n/g, '\\n'));
+	builder.push(minifyHTML(cache.replace(/\n/g, '\\n')));
 
 	var fn = '';
 	var isPlus = true;
@@ -2191,8 +2187,12 @@ function compressJS(html, index, framework) {
 	var strTo = '</script>';
 
 	var indexBeg = html.indexOf(strFrom, index || 0);
-	if (indexBeg === -1)
-		return html;
+	if (indexBeg === -1) {
+		strFrom = '<script>';
+		indexBeg = html.indexOf(strFrom, index || 0);
+		if (indexBeg === -1)
+			return html;
+	}
 
 	var indexEnd = html.indexOf(strTo, indexBeg + strFrom.length);
 	if (indexEnd === -1)
@@ -2202,9 +2202,7 @@ function compressJS(html, index, framework) {
 	var val = js.substring(strFrom.length, js.length - strTo.length).trim();
 	var compiled = exports.compile_javascript(val, framework).replace(/\\n/g, "'+(String.fromCharCode(13)+String.fromCharCode(10))+'");
 
-	html = html.replace(js, (strFrom + compiled.dollar() + strTo).trim());
-
-	// voláme znova funkciu v prípade
+	html = html.replace(js, (strFrom + compiled.dollar().trim() + strTo).trim());
 	return compressJS(html, indexBeg + compiled.length, framework);
 }
 
@@ -2213,8 +2211,12 @@ function compressCSS(html, index, framework) {
 	var strTo = '</style>';
 
 	var indexBeg = html.indexOf(strFrom, index || 0);
-	if (indexBeg === -1)
-		return html;
+	if (indexBeg === -1) {
+		strFrom = '<style>';
+		indexBeg = html.indexOf(strFrom, index || 0);
+		if (indexBeg === -1)
+			return html;
+	}
 
 	var indexEnd = html.indexOf(strTo, indexBeg + strFrom.length);
 	if (indexEnd === -1)
@@ -2223,10 +2225,7 @@ function compressCSS(html, index, framework) {
 	var css = html.substring(indexBeg, indexEnd + strTo.length);
 	var val = css.substring(strFrom.length, css.length - strTo.length).trim();
 	var compiled = exports.compile_less(val, true, framework);
-
-	html = html.replace(css, (strFrom + compiled + strTo).trim());
-
-	// voláme znova funkciu v prípade
+	html = html.replace(css, (strFrom + compiled.trim() + strTo).trim());
 	return compressCSS(html, indexBeg + compiled.length, framework);
 
 }
@@ -2274,16 +2273,16 @@ function minifyHTML(html) {
 			if (i === 0) {
 				end = value.indexOf('>');
 				len = value.indexOf('type="text/template"');
-				if (len < end)
+				if (len < end && len !== -1)
 					break;
 				len = value.indexOf('type="text/html"');
-				if (len < end)
+				if (len < end && len !== -1)
 					break;
 			}
 
 			cache[key] = value;
 			html = html.replace(value, key);
-			beg = html.indexOf(tagBeg);
+			beg = html.indexOf(tagBeg, beg + tagBeg.length);
 		}
 	}
 
