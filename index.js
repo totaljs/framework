@@ -7117,7 +7117,7 @@ WebSocket.prototype.__proto__ = new events.EventEmitter();
 /*
     Send message
     @message {String or Object}
-    @names {String Array}
+    @id {String Array}
     @blacklist {String Array}
     return {WebSocket}
 */
