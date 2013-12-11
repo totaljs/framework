@@ -66,6 +66,8 @@ function view_homepage() {
 
 	//console.log(framework.server._connection);
 
+	console.log(this.hash('sha1', '123456', false));
+
 	//this.view('homepage');
 	this.plain(this.framework.usage(true));
 }

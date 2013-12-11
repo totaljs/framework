@@ -36,8 +36,8 @@ function prototypeString() {
 	assert.ok(str.contains(['p', 'X']), 'string.contains(all=false)');
 	assert.ok(str.contains(['p', 'X'], true) === false, 'string.contains(all=true)');
 	assert.ok('{0}={1}'.format('name', 'value') === 'name=value', 'string.format()');
-	assert.ok('<b>partial.js</b>"&nbsp;'.htmlEncode() === '&lt;b&gt;partial.js&lt;/b&gt;&quot;&amp;nbsp;', 'string.htmlEncode()');
-	assert.ok('&lt;b&gt;partial.js&lt;/b&gt;&amp;nbsp;'.htmlDecode() === '<b>partial.js</b>&nbsp;', 'string.htmlDecode()');
+	assert.ok('<b>partial.js</b>"&nbsp;'.encode() === '&lt;b&gt;partial.js&lt;/b&gt;&quot;&amp;nbsp;', 'string.encode()');
+	assert.ok('&lt;b&gt;partial.js&lt;/b&gt;&amp;nbsp;'.decode() === '<b>partial.js</b>&nbsp;', 'string.decode()');
 
 	str = 'abcdefgh ijklmnop';
 	assert.ok(str.max(5, '---') === 'ab---', 'string.maxLength(5, "---")');
@@ -108,13 +108,15 @@ function prototypeString() {
 
 	str = '123456';
 	assert.ok(str.sha1() === '7c4a8d09ca3762af61e59520943dc26494f8941b', 'string.sha1(): ' + str);
+	assert.ok(str.sha256() === '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'string.sha256(): ' + str);
 	assert.ok(str.md5() === 'e10adc3949ba59abbe56e057f20f883e', 'string.md5(): ' + str);
+	assert.ok(str.sha512() === 'ba3253876aed6bc22d4a6ff53d8406c6ad864195ed144ab5c87621b6c233b548baeae6956df346ec8c17f5ea10f35ee3cbc514797ed7ddd3145464e2a0bab413', 'string.md5(): ' + str);
 
-	var value = str.encode('key', false);
-	assert.ok(value.decode('key') === str, 'string.encode() & string.decode() = unique=false: ' + str);
+	var value = str.encrypt('key', false);
+	assert.ok(value.decrypt('key') === str, 'string.encode() & string.decode() = unique=false: ' + str);
 
-	value = str.encode('key', true);
-	assert.ok(value.decode('key') === str, 'string.encode() & string.decode() = unique=true: ' + str);
+	value = str.encrypt('key', true);
+	assert.ok(value.decrypt('key') === str, 'string.encode() & string.decode() = unique=true: ' + str);
 
 	str = 'data:image/gif;base64,R0lGODdhAQABAIAAAF5eXgAAACwAAAAAAQABAAACAkQBADs=';
 	assert.ok(str.base64ContentType() === 'image/gif', 'string.base64ContentType(): ' + str);
@@ -154,7 +156,7 @@ function prototypeString() {
 
 	str = 'Peter Širka Linker & - you known';
 	assert.ok(str.link() === 'peter-sirka-linker-you-known', 'string.link(): ' + str);
-	assert.ok(str.link(11) === 'peter-sirka', 'string.link(): ' + str);
+	assert.ok(str.link(11) === 'peter-sirka', 'string.link(): ' + str);	
 }
 
 function prototypeArray() {

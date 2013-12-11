@@ -454,7 +454,7 @@ exports.isRelative = function(url) {
 	@str {String}
 	return {String}
 */
-exports.htmlEncode = function(str) {
+exports.encode = function(str) {
 
 	var type = typeof(str);
 
@@ -464,7 +464,7 @@ exports.htmlEncode = function(str) {
 	if (type !== STRING)
 		str = str.toString();
 
-	return str.htmlEncode();
+	return str.encode();
 };
 
 /*
@@ -472,7 +472,7 @@ exports.htmlEncode = function(str) {
 	@str {String}
 	return {String}
 */
-exports.htmlDecode = function(str) {
+exports.decode = function(str) {
 
 	var type = typeof(str);
 
@@ -1094,7 +1094,7 @@ String.prototype.count = function(text) {
 };
 
 String.prototype.parseDate = function() {
-	return new Date(this.toString());
+	return new Date(this);
 };
 
 /*
@@ -1105,7 +1105,7 @@ String.prototype.parseDate = function() {
 */
 String.prototype.contains = function(value, mustAll) {
 
-	var str = this.toString();
+	var str = this;
 
 	if (typeof(value) === STRING)
 		return str.indexOf(value) !== -1;
@@ -1168,11 +1168,11 @@ String.prototype.format = function() {
     return formatted;
 };
 
-String.prototype.htmlEncode = function() {
+String.prototype.encode = function() {
 	return this.replace(/\&/g, '&amp;').replace(/\>/g, '&gt;').replace(/\</g, '&lt;').replace(/\"/g, '&quot;');
 };
 
-String.prototype.htmlDecode = function() {
+String.prototype.decode = function() {
 	return this.replace(/&gt;/g, '>').replace(/\&lt;/g, '<').replace(/\&quot;/g, '"').replace(/&amp;/g, '&');
 };
 
@@ -1190,7 +1190,7 @@ String.prototype.urlDecode = function() {
 	return {String}
 */
 String.prototype.params = function(obj) {
-    var formatted = this.toString();
+    var formatted = this;
 
     if (typeof(obj) === UNDEFINED || obj === null)
 		return formatted;
@@ -1258,7 +1258,7 @@ String.prototype.params = function(obj) {
 		}
 
 		val = val.toString().dollar();
-		formatted = formatted.replace(prop, isEncode ? exports.htmlEncode(val) : val);
+		formatted = formatted.replace(prop, isEncode ? exports.encode(val) : val);
 	}
 
     return formatted;
@@ -1271,7 +1271,7 @@ String.prototype.params = function(obj) {
 	return {String}
 */
 String.prototype.max = function(length, chars) {
-	var str = this.toString();
+	var str = this;
 	chars = chars || '...';
     return str.length > length ? str.substring(0, length - chars.length) + chars : str;
 };
@@ -1286,14 +1286,14 @@ String.prototype.isJSON = function() {
 };
 
 String.prototype.isURL = function() {
-	var str = this.toString();
+	var str = this;
 	if (str.length <= 7)
 		return false;
 	return regexpUrl.test(str);
 };
 
 String.prototype.isEmail = function() {
-	var str = this.toString();
+	var str = this;
 	if (str.length <= 4)
 		return false;
 
@@ -1309,7 +1309,7 @@ String.prototype.isEmail = function() {
 */
 String.prototype.parseInt = function(def) {
     var num = 0;
-    var str = this.toString();
+    var str = this;
 
     if (str.substring(0, 1) === '0')
 		num = parseInt(str.replace(/\s/g, '').substring(1), 10);
@@ -1328,7 +1328,7 @@ String.prototype.parseInt = function(def) {
 */
 String.prototype.parseFloat = function(def) {
 	var num = 0;
-    var str = this.toString();
+    var str = this;
 
     if (str.substring(0, 1) === '0')
         num = parseFloat(str.replace(/\s/g, '').substring(1).replace(',', '.'));
@@ -1343,7 +1343,7 @@ String.prototype.parseFloat = function(def) {
 
 String.prototype.toUnicode = function() {
     var result = '';
-    var self = this.toString();
+    var self = this;
     var length = self.length;
     for(var i = 0; i < length; ++i){
         if(self.charCodeAt(i) > 126 || self.charCodeAt(i) < 32)
@@ -1363,15 +1363,27 @@ String.prototype.fromUnicode = function() {
 	return unescape(str);
 };
 
-String.prototype.sha1 = function() {
+String.prototype.sha1 = function(salt) {
 	var hash = crypto.createHash('sha1');
-	hash.update(this.toString(), ENCODING);
+	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
-String.prototype.md5 = function() {
+String.prototype.sha256 = function(salt) {
+	var hash = crypto.createHash('sha256');
+	hash.update(this + (salt || ''), ENCODING);
+	return hash.digest('hex');
+};
+
+String.prototype.sha512 = function(salt) {
+	var hash = crypto.createHash('sha512');
+	hash.update(this + (salt || ''), ENCODING);
+	return hash.digest('hex');
+};
+
+String.prototype.md5 = function(salt) {
 	var hash = crypto.createHash('md5');
-	hash.update(this.toString(), ENCODING);
+	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
@@ -1380,12 +1392,12 @@ String.prototype.md5 = function() {
 	@isUnique {Boolean}
 	return {String}
 */
-String.prototype.encode = function(key, isUnique) {
-	var str = '0' + this.toString();
+String.prototype.encrypt = function(key, isUnique) {
+	var str = '0' + this;
     var data_count = str.length;
     var key_count = key.length;
     var change = str[data_count - 1];
-    var random = isUnique || true ? exports.random(120) + 40 : 65;
+    var random = isUnique ? exports.random(120) + 40 : 65;
     var count = data_count + (random % key_count);
     var values = [];
     var index = 0;
@@ -1410,9 +1422,9 @@ String.prototype.encode = function(key, isUnique) {
 	@key {String}
 	return {String}
 */
-String.prototype.decode = function(key) {
+String.prototype.decrypt = function(key) {
 
-	var values = this.toString().replace(/\-/g, '/').replace(/\_/g, '+');
+	var values = this.replace(/\-/g, '/').replace(/\_/g, '+');
 	var mod = values.length % 4;
 
 	if (mod > 0) {
@@ -1459,7 +1471,7 @@ String.prototype.decode = function(key) {
 	return {String}
 */
 String.prototype.base64ToFile = function(filename, callback) {
-	var self = this.toString();
+	var self = this;
 
 	var index = self.indexOf(',');
 	if (index === -1)
@@ -1480,7 +1492,7 @@ String.prototype.base64ToFile = function(filename, callback) {
 	return {String}
 */
 String.prototype.base64ContentType = function() {
-	var self = this.toString();
+	var self = this;
 
 	var index = self.indexOf(';');
 	if (index === -1)
@@ -1500,7 +1512,7 @@ String.prototype.removeDiacritics = function() {
 	return {String}
 */
 String.prototype.indent = function(max, c) {
-	var self = this.toString();
+	var self = this;
 	return new Array(max + 1).join(c || ' ') + self;
 };
 
@@ -1511,7 +1523,7 @@ String.prototype.indent = function(max, c) {
 */
 String.prototype.isNumber = function(isDecimal) {
 
-	var self = this.toString();
+	var self = this;
 	var length = self.length;
 
 	if (length === 0)
@@ -1542,7 +1554,7 @@ String.prototype.isNumber = function(isDecimal) {
 	return {String}
 */
 String.prototype.padLeft = function(max, c) {
-	var self = this.toString();
+	var self = this;
 	return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
 };
 
@@ -1552,7 +1564,7 @@ String.prototype.padLeft = function(max, c) {
 	return {String}
 */
 String.prototype.padRight = function(max, c) {
-	var self = this.toString();
+	var self = this;
 	return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
 };
 
@@ -1562,7 +1574,7 @@ String.prototype.padRight = function(max, c) {
 	return {String}
 */
 String.prototype.insert = function(index, value) {
-	var str = this.toString();
+	var str = this;
 	var a = str.substring(0, index);
 	var b = value.toString() + str.substring(index);
 	return a + b;
@@ -1572,7 +1584,7 @@ String.prototype.insert = function(index, value) {
 	Prepare string for replacing double dollar
 */
 String.prototype.dollar = function() {
-	var str = this.toString();
+	var str = this;
 	var index = str.indexOf('$', 0);
 
 	while (index !== -1) {
@@ -1591,7 +1603,7 @@ String.prototype.dollar = function() {
 String.prototype.link = function(max) {
 	max = max || 60;
 
-	var self = this.toString().trim().toLowerCase().removeDiacritics();
+	var self = this.trim().toLowerCase().removeDiacritics();
 	var builder = '';
 	var length = self.length;
 
@@ -1627,12 +1639,12 @@ String.prototype.link = function(max) {
 };
 
 String.prototype.pluralize = function(zero, one, few, other) {
-	var str = this.toString();
+	var str = this;
 	return str.parseInt().pluralize(zero, one, few, other);
 };
 
 String.prototype.isBoolean = function() {
-	var self = this.toString().toLowerCase();
+	var self = this.toLowerCase();
 	return (self === 'true' || self === 'false') ? true : false;
 };
 

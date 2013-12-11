@@ -964,7 +964,7 @@ Framework.prototype.onMeta = function() {
 
 	for (var i = 0; i < length; i++) {
 
-		var arg = utils.htmlEncode(arguments[i]);
+		var arg = utils.encode(arguments[i]);
 		if (arg === null || arg.length === 0)
 			continue;
 
@@ -1621,7 +1621,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		}
 
 		self._verify_directory('temp');
-		
+
 		var image = Image.load(filename, useImageMagick);
 
 		fnProcess(image);
@@ -2833,19 +2833,25 @@ Framework.prototype._clear = function(arr) {
 }
 
 /*
-	Cryptography (encode)
+	Cryptography (encrypt)
 	@value {String}
 	@key {String}
 	@isUniqe {Boolean} :: optional, default true
-	return {Framework}
+	return {String}
 */
-Framework.prototype.encode = function(value, key, isUnique) {
+Framework.prototype.encrypt = function(value, key, isUnique) {
 
 	var self = this;
 	var type = typeof(value);
 
 	if (type === UNDEFINED)
 		return '';
+
+	if (typeof(key) === BOOLEAN) {
+		var tmp = isUnique;
+		isUnique = key;
+		key = tmp;
+	}
 
 	if (type === FUNCTION)
 		value = value();
@@ -2856,25 +2862,34 @@ Framework.prototype.encode = function(value, key, isUnique) {
 	if (type === OBJECT)
 		value = JSON.stringify(value);
 
-	return value.encode(self.config.secret + '=' + key, isUnique || true);
+	return value.encode(self.config.secret + '=' + key, isUnique);
 };
 
 /*
-	Cryptography (decode)
+	Cryptography (decrypt)
 	@value {String}
 	@key {String}
 	@jsonConvert {Boolean} :: optional (convert string to JSON)
 	return {String or Object}
 */
-Framework.prototype.decode = function(value, key, jsonConvert) {
+Framework.prototype.decrypt = function(value, key, jsonConvert) {
+
+	if (typeof(key) === BOOLEAN) {
+		var tmp = jsonConvert;
+		jsonConvert = key;
+		key = tmp;
+	}
 
 	jsonConvert = jsonConvert || true;
 
 	var self = this;
-	var result = (value || '').decode(self.config.secret + '=' + key);
+	var result = (value || '').decrypt(self.config.secret + '=' + key);
 
-	if (jsonConvert && result.isJSON())
-		return JSON.parse(result);
+	if (jsonConvert) {
+		if (result.isJSON())
+			return JSON.parse(result);
+		return null;
+	}
 
 	return result;
 };
@@ -4826,6 +4841,50 @@ Controller.prototype.clear = function() {
 	return self;
 };
 
+/*
+	Cryptography (encrypt)
+	@value {String}
+	@key {String}
+	@isUniqe {Boolean} :: optional, default true
+	return {String}
+*/
+Controller.prototype.encrypt = function() {
+	var framework = this.framework;
+	return framework.encrypt.apply(framework, arguments);
+};
+
+/*
+	Cryptography (decrypt)
+	@value {String}
+	@key {String}
+	@jsonConvert {Boolean} :: optional (convert string to JSON)
+	return {String or Object}
+*/
+Controller.prototype.decrypt = function() {
+	var framework = this.framework;
+	return framework.decrypt.apply(framework, arguments);
+};
+
+/*
+	Hash value
+	@type {String} :: sha1, sha256, sha512, md5
+	@value {Object}
+	@salt {String or Boolean} :: custom salt {String} or secret as salt {undefined or Boolean}
+	return {String}
+*/
+Controller.prototype.hash = function(type, value, salt) {
+	var hash = crypto.createHash(type);
+	var plus = '';
+
+	if (typeof(salt) === STRING)
+		plus = salt;
+	else if (salt !== false)
+		plus = (this.config.secret || '');
+
+	hash.update(value.toString() + plus, ENCODING);
+	return hash.digest('hex');
+};
+
 Controller.prototype.validate = function(model, properties, prefix, name) {
 
 	var self = this;
@@ -5431,11 +5490,18 @@ Controller.prototype.$textarea = function(model, name, attr) {
 	if (attr.pattern)
 		builder += ' pattern="' + attr.pattern + ATTR_END;
 
+	if (attr.itemprop)
+		builder += ' itemprop="' + attr.itemprop + ATTR_END;
+
+	if (attr.itemid)
+		builder += ' itemid="' + attr.itemid + ATTR_END;
+
+
 	if (typeof(model) === UNDEFINED)
 		return builder + '></textarea>';
 
 	var value = (model[name] || attr.value) || '';
-	return builder + '>' + value.toString().htmlEncode() + '</textarea>';
+	return builder + '>' + value.toString().encode() + '</textarea>';
 };
 
 /*
@@ -5480,11 +5546,17 @@ Controller.prototype.$input = function(model, type, name, attr) {
 	if (attr.min)
 		builder += ' min="' + attr.min + ATTR_END;
 
+	if (attr.itemprop)
+		builder += ' itemprop="' + attr.itemprop + ATTR_END;
+
+	if (attr.itemid)
+		builder += ' itemid="' + attr.itemid + ATTR_END;
+
 	if (attr.readonly === true)
 		builder += ' readonly="readonly"';
 
 	if (attr.placeholder)
-		builder += ' placeholder="' + (attr.placeholder || '').toString().htmlEncode() + ATTR_END;
+		builder += ' placeholder="' + (attr.placeholder || '').toString().encode() + ATTR_END;
 
 	if (attr.autofocus === true)
 		builder += ' autofocus="autofocus"';
@@ -5532,9 +5604,9 @@ Controller.prototype.$input = function(model, type, name, attr) {
 	}
 
 	if (typeof(value) !== UNDEFINED)
-		builder += ' value="' + (value || '').toString().htmlEncode() + ATTR_END;
+		builder += ' value="' + (value || '').toString().encode() + ATTR_END;
 	else
-		builder += ' value="' + (attr.value || '').toString().htmlEncode() + ATTR_END;
+		builder += ' value="' + (attr.value || '').toString().encode() + ATTR_END;
 
 	builder += ' />';
 
@@ -5800,7 +5872,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 			isSelected = sel;
 		}
 
-		options += '<option value="' + val.toString().htmlEncode() + '"'+ (sel ? ' selected="selected"' : '') + '>' + text.toString().htmlEncode() + '</option>';
+		options += '<option value="' + val.toString().encode() + '"'+ (sel ? ' selected="selected"' : '') + '>' + text.toString().encode() + '</option>';
 	}
 
 	return options;
@@ -5858,7 +5930,7 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
 		builder += ' height="' + height + ATTR_END;
 
 	if (alt)
-		builder += ' alt="' + alt.htmlEncode() + ATTR_END;
+		builder += ' alt="' + alt.encode() + ATTR_END;
 
 	if (className)
 		builder += ' class="' + className + ATTR_END;
@@ -6995,7 +7067,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			value = value.toString();
 
 		if (isEncode)
-			value = value.toString().htmlEncode();
+			value = value.toString().encode();
 
 		values[i] = value;
 	}

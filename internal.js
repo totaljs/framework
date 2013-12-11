@@ -2624,7 +2624,7 @@ Template.prototype.parse = function(html, isRepository) {
 		}
 
 		if (isEncode)
-			format += '.toString().htmlEncode()';
+			format += '.toString().encode()';
 
 		var controller = '';
 
