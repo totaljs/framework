@@ -1841,7 +1841,7 @@ function parse(html, controller) {
 
 			if (count > 1) {
 				count--;
-		
+
 				if (copy)
 					code += current;
 
@@ -1953,6 +1953,9 @@ function parse(html, controller) {
 					case 'currentImage':
 					case 'currentUpload':
 					case 'currentVideo':
+					case 'currentView':
+					case 'currentTemplate':
+					case 'currentContent':
 						isEncode = false;
 						isDeclared = true;
 						code = 'self.$' + code;

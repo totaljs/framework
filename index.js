@@ -4701,11 +4701,15 @@ function Controller(name, req, res, subscribe) {
 	this.req = req;
 	this.res = res;
 
-	// controller.internal.type === 0 - classic
-	// controller.internal.type === 1 - server sent events
-	// controller.internal.type === 2 - multipart/x-mixed-replace
+	this.boundary = null;
 
-	this.internal = { layout: subscribe.framework.config['default-layout'], boundary: null, type: 0 };
+	// controller.type === 0 - classic
+	// controller.type === 1 - server sent events
+	// controller.type === 2 - multipart/x-mixed-replace
+	this.type = 0;
+
+	this.layoutName = subscribe.framework.config['default-layout'];
+
 	this.status = 200;
 
 	this.isLayout = false;
@@ -4729,6 +4733,9 @@ function Controller(name, req, res, subscribe) {
 	this._currentVideo = '';
 	this._currentJS = '';
 	this._currentCSS = '';
+	this._currentTemplate = '';
+	this._currentView = name[0] !== '#' && name !== 'default' ? '/' + name + '/' : '';
+	this._currentContent = '';
 }
 
 Controller.prototype = {
@@ -5188,7 +5195,7 @@ Controller.prototype.module = function(name) {
 */
 Controller.prototype.layout = function(name) {
 	var self = this;
-	self.internal.layout = name;
+	self.layoutName = name;
 	return self;
 };
 
@@ -5302,6 +5309,9 @@ Controller.prototype.$contentToggle = function(visible, name) {
 
 	if (!visible)
 		return '';
+
+	if (name[0] !== '~')
+		name = self._currentContent + name;
 
 	return internal.generateContent(self, name) || '';
 };
@@ -5479,36 +5489,26 @@ Controller.prototype.$textarea = function(model, name, attr) {
 
 	builder += ' name="' + name + '" id="' + (attr.id || name) + ATTR_END;
 
-	if (attr.class)
-		builder += ' class="' + attr.class + ATTR_END;
+	var keys = Object.keys(attr);
+	var length = keys.length;
 
-	if (attr.maxlength > 0)
-		builder += ' maxlength="'+ attr.maxlength + ATTR_END;
+	for (var i = 0; i < length; i++) {
 
-	if (attr.required === true)
-		builder += ' required="required"';
-
-	if (attr.disabled === true)
-		builder += ' disabled="disabled"';
-
-	if (attr.cols > 0)
-		builder += ' cols="' + attr.cols + ATTR_END;
-
-	if (attr.rows > 0)
-		builder += ' rows="' + attr.rows + ATTR_END;
-
-	if (attr.style)
-		builder += ' style="' + attr.style + ATTR_END;
-
-	if (attr.pattern)
-		builder += ' pattern="' + attr.pattern + ATTR_END;
-
-	if (attr.itemprop)
-		builder += ' itemprop="' + attr.itemprop + ATTR_END;
-
-	if (attr.itemid)
-		builder += ' itemid="' + attr.itemid + ATTR_END;
-
+		switch (keys[i]) {
+			case 'name':
+			case 'id':
+				break;
+			case 'required':
+			case 'disabled':
+			case 'readonly':
+			case 'value':
+				builder += ' ' + keys[i] + '="' + keys[i] + ATTR_END;
+				break;
+			default:
+				builder += ' ' + keys[i] + '="' + attr[keys[i]].toString().encode() + ATTR_END;
+				break;
+		}
+	}
 
 	if (typeof(model) === UNDEFINED)
 		return builder + '></textarea>';
@@ -5541,56 +5541,37 @@ Controller.prototype.$input = function(model, type, name, attr) {
 	else
 		builder += ' name="' + name + '" id="' + (attr.id || name) + ATTR_END;
 
-	if (attr.class)
-		builder += ' class="' + attr.class + ATTR_END;
-
-	if (attr.style)
-		builder += ' style="' + attr.style + ATTR_END;
-
-	if (attr.maxlength)
-		builder += ' maxlength="' + attr.maxlength + ATTR_END;
-
-	if (attr.max)
-		builder += ' max="' + attr.max + ATTR_END;
-
-	if (attr.step)
-		builder += ' step="' + attr.step + ATTR_END;
-
-	if (attr.min)
-		builder += ' min="' + attr.min + ATTR_END;
-
-	if (attr.itemprop)
-		builder += ' itemprop="' + attr.itemprop + ATTR_END;
-
-	if (attr.itemid)
-		builder += ' itemid="' + attr.itemid + ATTR_END;
-
-	if (attr.readonly === true)
-		builder += ' readonly="readonly"';
-
-	if (attr.placeholder)
-		builder += ' placeholder="' + (attr.placeholder || '').toString().encode() + ATTR_END;
-
-	if (attr.autofocus === true)
-		builder += ' autofocus="autofocus"';
-
-	if (attr.list)
-		builder += ' list="' + attr.list + ATTR_END;
-
-	if (attr.required === true)
-		builder += ' required="required"';
-
-	if (attr.disabled === true)
-		builder += ' disabled="disabled"';
-
-	if (attr.pattern && attr.pattern.length > 0)
-		builder += ' pattern="' + attr.pattern + ATTR_END;
-
 	if (attr.autocomplete) {
 		if (attr.autocomplete === true || attr.autocomplete === 'on')
 			builder += ' autocomplete="on"';
 		else
 			builder += ' autocomplete="off"';
+	}
+
+	var keys = Object.keys(attr);
+	var length = keys.length;
+
+	for (var i = 0; i < length; i++) {
+
+		switch (keys[i]) {
+			case 'name':
+			case 'id':
+			case 'type':
+			case 'autocomplete':
+			case 'checked':
+			case 'value':
+			case 'label':
+				break;
+			case 'required':
+			case 'disabled':
+			case 'readonly':
+			case 'autofocus':
+				builder += ' ' + keys[i] + '="' + keys[i] + ATTR_END;
+				break;
+			default:
+				builder += ' ' + keys[i] + '="' + attr[keys[i]].toString().encode() + ATTR_END;
+				break;
+		}
 	}
 
 	var value = '';
@@ -5857,7 +5838,9 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		name = name || 'name';
 
 	var isSelected = false;
-	for (var i = 0; i < arr.length; i++) {
+	var length = arr.length;
+
+	for (var i = 0; i < length; i++) {
 		var o = arr[i];
 		var type = typeof(o);
 		var text = '';
@@ -5885,7 +5868,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 			isSelected = sel;
 		}
 
-		options += '<option value="' + val.toString().encode() + '"'+ (sel ? ' selected="selected"' : '') + '>' + text.toString().encode() + '</option>';
+		options += '<option value="' + val.toString().encode() + '"' + (sel ? ' selected="selected"' : '') + '>' + text.toString().encode() + '</option>';
 	}
 
 	return options;
@@ -6122,6 +6105,79 @@ Controller.prototype.$currentJS = function(path) {
 	@path {String} :: add path to route path
 	return {String}
 */
+Controller.prototype.$currentView = function(path) {
+	var self = this;
+
+	if (typeof(path) === UNDEFINED) {
+		self._currentView = self.name[0] !== '#' && self.name !== 'default' ? '/' + self.name + '/' : '';
+		return self;
+	}
+
+	self._currentView = path && path.length > 0 ? utils.path(path) : '';
+	return '';
+};
+
+/*
+	Internal
+	@path {String} :: add path to route path
+	return {String}
+*/
+Controller.prototype.$currentTemplate = function(path) {
+	this._currentTemplate = path && path.length > 0 ? utils.path(path) : '';
+	return '';
+};
+
+/*
+	Internal
+	@path {String} :: add path to route path
+	return {String}
+*/
+Controller.prototype.$currentContent = function(path) {
+	this._currentContent = path && path.length > 0 ? utils.path(path) : '';
+	return '';
+};
+
+/*
+	Internal
+	@path {String} :: add path to route path
+	return {String}
+*/
+Controller.prototype.currentView = function(path) {
+	var self = this;
+	self.$currentView(path);
+	self._defaultView = self._currentView;
+	return self;
+};
+
+/*
+	Internal
+	@path {String} :: add path to route path
+	return {String}
+*/
+Controller.prototype.currentTemplate = function(path) {
+	var self = this;
+	self.$currentTemplate(path);
+	self._defaultTemplate = self._currentTemplate;
+	return self;
+};
+
+/*
+	Internal
+	@path {String} :: add path to route path
+	return {String}
+*/
+Controller.prototype.currentContent = function(path) {
+	var self = this;
+	self.$currentContent(path);
+	self._defaultContent = self._currentContent;
+	return self;
+};
+
+/*
+	Internal
+	@path {String} :: add path to route path
+	return {String}
+*/
 Controller.prototype.$currentCSS = function(path) {
 	this._currentCSS = path && path.length > 0 ? path : '';
 	return '';
@@ -6256,6 +6312,10 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 
 		return '';
 	}
+
+	if (name[0] !== '~')
+		name = self._currentTemplate + name;
+
 	return internal.generateTemplate(self, name, model, repository);
 };
 
@@ -6666,15 +6726,15 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 	if (!self.isConnected)
 		return self;
 
-	if (self.internal.type === 0 && res.success)
+	if (self.type === 0 && res.success)
 		throw new Error('Response was sent.');
 
-	if (self.internal.type > 0 && self.internal.type !== 1)
+	if (self.type > 0 && self.type !== 1)
 		throw new Error('Response was used.');
 
-	if (self.internal.type === 0) {
+	if (self.type === 0) {
 
-		self.internal.type = 1;
+		self.type = 1;
 
 		if (typeof(retry) === UNDEFINED)
 			retry = self.subscribe.route.timeout;
@@ -6727,19 +6787,19 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 	if (!self.isConnected)
 		return self;
 
-	if (self.internal.type === 0 && res.success)
+	if (self.type === 0 && res.success)
 		throw new Error('Response was sent.');
 
-	if (self.internal.type > 0 && self.internal.type !== 2)
+	if (self.type > 0 && self.type !== 2)
 		throw new Error('Response was used.');
 
-	if (self.internal.type === 0) {
-		self.internal.type = 2;
-		self.internal.boundary = '----partialjs' + utils.GUID(10);
+	if (self.type === 0) {
+		self.type = 2;
+		self.boundary = '----partialjs' + utils.GUID(10);
 		self.subscribe.success();
 		res.success = true;
 		self.req.on('close', self.close.bind(self));
-		res.writeHead(self.status, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + self.internal.boundary, 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
+		res.writeHead(self.status, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + self.boundary, 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
 	}
 
 	var type = typeof(stream);
@@ -6749,7 +6809,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 		stream = null;
 	}
 
-	res.write('--' + self.internal.boundary + '\r\nContent-Type: ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
+	res.write('--' + self.boundary + '\r\nContent-Type: ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
 
 	if (typeof(stream) !== UNDEFINED && stream !== null) {
 
@@ -6792,7 +6852,7 @@ Controller.prototype.close = function(end) {
 	if (!self.isConnected)
 		return self;
 
-	if (self.internal.type === 0) {
+	if (self.type === 0) {
 
 		self.isConnected = false;
 
@@ -6810,8 +6870,8 @@ Controller.prototype.close = function(end) {
 		return self;
 	}
 
-	if (self.internal.type === 2)
-		self.res.write('\r\n\r\n--' + self.internal.boundary + '--');
+	if (self.type === 2)
+		self.res.write('\r\n\r\n--' + self.boundary + '--');
 
 	self.isConnected = false;
 	self.res.success = true;
@@ -6821,7 +6881,7 @@ Controller.prototype.close = function(end) {
 
 	self.framework._request_stats(false, false);
 	self.framework.emit('request-end', self.req, self.res);
-	self.internal.type = 0;
+	self.type = 0;
 
 	return self;
 };
@@ -6891,14 +6951,10 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (self.res.success)
 		return isPartial ? '' : self;
 
-	var first = name[0];
-	var skip = first === '~';
+	var skip = name[0] === '~';
 
-	if (!self.isLayout && first !== '/' && !skip)
-	{
-		if (self.name !== 'default' && self.name[0] !== '#')
-			name = '/' + self.name + '/' + name;
-	}
+	if (!self.isLayout && !skip)
+		name = self._currentView + name;
 
 	if (skip)
 		name = name.substring(1);
@@ -6939,11 +6995,30 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var condition = false;
 
 	if (self.isLayout) {
-		self._currentCSS = self._defaultCSS || '';
-		self._currentJS = self._defaultJS || '';
-		self._currentDownload = self._defaultDownload || '';
-		self._currentVideo = self._defaultVideo || '';
-		self._currentImage = self._defaultImage || '';
+
+		if (self._defaultJS)
+			self._currentJS = self._defaultJS || '';
+
+		if (self._defaultJS)
+			self._currentJS = self._defaultJS || '';
+
+		if (self._defaultDownload)
+			self._currentDownload = self._defaultDownload || '';
+
+		if (self._defaultVideo)
+			self._currentVideo = self._defaultVideo || '';
+
+		if (self._defaultImage)
+			self._currentImage = self._defaultImage || '';
+
+		if (self._defaultView)
+			self._currentView = self._defaultView || '';
+
+		if (self._defaultTemplate)
+			self._currentTemplate = self._defaultTemplate || '';
+
+		if (self._defaultContent)
+			self._currentContent = self._defaultContent || '';
 	}
 
 	for (var i = 0; i < generator.execute.length; i++) {
@@ -7090,7 +7165,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (isPartial)
 		return value;
 
-	if (self.isLayout || utils.isNullOrEmpty(self.internal.layout)) {
+	if (self.isLayout || utils.isNullOrEmpty(self.layoutName)) {
 
 		self.subscribe.success();
 
@@ -7104,7 +7179,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	self.output = value;
 	self.isLayout = true;
-	self.view(self.internal.layout, null, headers);
+	self.view(self.layoutName, null, headers);
 	return self;
 };
 

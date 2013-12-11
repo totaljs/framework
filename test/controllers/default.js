@@ -186,7 +186,7 @@ function viewIndex() {
 	assert.ok(self.module('test').message() === 'message', name + 'module(exists) - read');
 
 	self.layout('test');
-	assert.ok(self.internal.layout === 'test', name + 'layout()');
+	assert.ok(self.layoutName === 'test', name + 'layout()');
 
 	assert.ok(self.functions('share').message() === 'message', name + 'functions()');
 	assert.ok(self.models('share').user.name === 'Peter', name + 'models()');
@@ -218,6 +218,9 @@ function viewIndex() {
 	assert.ok(self.routeFont('p.woff') === '/font/p.woff', name + 'routeFont()');
 	assert.ok(self.routeDownload('p.pdf') === '/download/p.pdf', name + 'routeDownload()');
 	assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
+
+	self.currentTemplate('current');
+
 	assert.ok(self.template('test', ['A', 'B']) === '<div>AB</div>{name | 1}', name + 'template - no repository');
 	assert.ok(self.template('test', ['A', 'B'], '', { name: 'ABCDEFG' }) === '<div>AB</div>A...', name + 'template - repository');
 	assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');
@@ -285,6 +288,7 @@ function viewViews() {
 	assert.ok(output.contains('<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>'), name + 'head');
 
 	self.repository.A = 'A';
+
 	output = self.view('c', { a: 'A', b: 'B', c: true, d: 'hidden<b>' }, true);
 
 	assert.ok(output.contains('<input type="text" name="a" id="a" class="bootstrap" value="A" />'), name + 'text');

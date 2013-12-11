@@ -12,7 +12,14 @@ IN DEVELOPMENT ======= 1.3.1
 - added: controller.decrypt(value, key)
 - added: framework.hash(type, value, [salt])
 - added: controller.hash(type, value, [salt])
+- added: controller.currentView()
+- added: controller.currentTemplate()
+- added: controller.currentContent()
+- added: @{currentView()}
+- added: @{currentTemplate()}
+- added: @{currentContent()}
 
+- updated: @{text}, @{password}, @{hidden}, @{textarea}, @{radio} @{checkbox}
 - updated: String.prototype.sha1([salt])
 - updated: String.prototype.md5([salt])
 - (IMPORTANT) updated: String.prototype.encode() === HTML encode
@@ -21,7 +28,6 @@ IN DEVELOPMENT ======= 1.3.1
 - fixed: increment/decrement Date/Time
 - fixed: paths (~ char is changing the relative path to the absolute path)
 - fixed: minifyHTML (<script>)
-- fixed: framework.encode()
 
 - removed: framework.config['directory-upload']
 - removed: framework.verification()
@@ -37,8 +43,7 @@ IN DEVELOPMENT ======= 1.3.1
 - (IMPORTANT) renamed: utils.htmlEncode() -> utils.encode()
 - (IMPORTANT) renamed: utils.htmlDecode() -> utils.decode()
 
-- improvements: compiling views (fixed )
-
+- improvements: compiling of views (fixed)
 
 ======= 1.3.0-1
 
