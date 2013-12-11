@@ -39,6 +39,9 @@ exports.install = function(framework) {
 		self.plain('408');
 	}, []);
 
+	assert.ok(framework.encrypt('123456', 'key', false) === 'MzQ9QR8YHQEVBV8cHBEUGFoVEQ', 'framework.encrypt()');
+	assert.ok(framework.decrypt('MzQ9QR8YHQEVBV8cHBEUGFoVEQ', 'key', false) === '123456', 'framework.decrypt()')
+
 	framework.route('/basic/', viewBAA);
 
 	// url

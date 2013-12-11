@@ -2862,7 +2862,7 @@ Framework.prototype.encrypt = function(value, key, isUnique) {
 	if (type === OBJECT)
 		value = JSON.stringify(value);
 
-	return value.encode(self.config.secret + '=' + key, isUnique);
+	return value.encrypt(self.config.secret + '=' + key, isUnique);
 };
 
 /*
@@ -2880,7 +2880,8 @@ Framework.prototype.decrypt = function(value, key, jsonConvert) {
 		key = tmp;
 	}
 
-	jsonConvert = jsonConvert || true;
+	if (typeof(jsonConvert) !== BOOLEAN)
+		jsonConvert = true;
 
 	var self = this;
 	var result = (value || '').decrypt(self.config.secret + '=' + key);
