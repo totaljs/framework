@@ -2305,10 +2305,7 @@ Framework.prototype.console = function() {
 	console.log('====================================================');
 	console.log('Name         : ' + framework.config.name);
 	console.log('Version      : ' + framework.config.version);
-
-	if (framework.config.author.length > 0)
-		console.log('Author       : ' + framework.config.author);
-
+	console.log('Author       : ' + framework.config.author);
 	console.log('Date         : ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
 	console.log('Mode         : ' + (framework.config.debug ? 'debug' : 'release'));
 	console.log('====================================================\n');
