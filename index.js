@@ -10,7 +10,6 @@ var parser = require('url');
 var events = require('events');
 var internal = require('./internal');
 var http = require('http');
-//var directory = path.dirname(process.argv[1]);
 var directory = process.cwd();
 var child = require('child_process');
 
@@ -26,9 +25,6 @@ var _controller = '';
 
 global.builders = require('./builders');
 global.utils = require('./utils');
-
-// process.chdir(directory);
-// process.maxTickDepth = 300;
 
 function Framework() {
 	this.version = 1301;
@@ -4426,7 +4422,7 @@ Subscribe.prototype.execute = function(status) {
 	var name = self.route.name;
 	self.controller = new Controller(name, self.req, self.res, self);
 
-	if (!self.isCanceled && !self.isMixed)
+	if (!self.isCanceled && !self.isMixed && self.route.timeout > 0)
 		self.timeout = setTimeout(self.handlers._cancel, self.route.timeout);
 
 	var lengthPrivate = self.route.partial.length;

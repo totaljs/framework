@@ -39,11 +39,11 @@ exports.install = function(framework) {
 		self.plain('408');
 	}, []);
 
-	assert.ok(framework.encrypt('123456', 'key', false) === 'MzQ9QR8YHQEVBV8cHBEUGFoVEQ', 'framework.encrypt(string)');
-	assert.ok(framework.decrypt('MzQ9QR8YHQEVBV8cHBEUGFoVEQ', 'key', false) === '123456', 'framework.decrypt(string)')
+	assert.ok(framework.encrypt('123456', 'key', false) === 'Mzg9QRUHFwcHWhg', 'framework.encrypt(string)');
+	assert.ok(framework.decrypt('Mzg9QRUHFwcHWhg', 'key', false) === '123456', 'framework.decrypt(string)')
 
-	assert.ok(framework.encrypt({ name: 'Peter' }, 'key', false) === 'NDQ9QVUIQFRNVk0XDHJFWQlXAk4GUw0CWBoQXhA', 'framework.encrypt(object)');
-	assert.ok(framework.decrypt('NDQ9QVUIQFRNVk0XDHJFWQlXAk4GUw0CWBoQXhA', 'key').name === 'Peter', 'framework.decrypt(object)')
+	assert.ok(framework.encrypt({ name: 'Peter' }, 'key', false) === 'NDg9QV8XSlJfCQo2AnIKWUtQAlBc', 'framework.encrypt(object)');
+	assert.ok(framework.decrypt('NDg9QV8XSlJfCQo2AnIKWUtQAlBc', 'key').name === 'Peter', 'framework.decrypt(object)')
 
 	framework.route('/basic/', viewBAA);
 
