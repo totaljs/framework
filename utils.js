@@ -571,6 +571,7 @@ exports.getContentType = function(ext) {
 		'ai': 'application/postscript',
 		'appcache': 'text/cache-manifest',
 		'avi': 'video/avi',
+		'aac': 'audio/aac',
 		'bin': 'application/octet-stream',
 		'bmp': 'image/bmp',
 		'css': 'text/css',
