@@ -39,8 +39,11 @@ exports.install = function(framework) {
 		self.plain('408');
 	}, []);
 
-	assert.ok(framework.encrypt('123456', 'key', false) === 'MzQ9QR8YHQEVBV8cHBEUGFoVEQ', 'framework.encrypt()');
-	assert.ok(framework.decrypt('MzQ9QR8YHQEVBV8cHBEUGFoVEQ', 'key', false) === '123456', 'framework.decrypt()')
+	assert.ok(framework.encrypt('123456', 'key', false) === 'MzQ9QR8YHQEVBV8cHBEUGFoVEQ', 'framework.encrypt(string)');
+	assert.ok(framework.decrypt('MzQ9QR8YHQEVBV8cHBEUGFoVEQ', 'key', false) === '123456', 'framework.decrypt(string)')
+
+	assert.ok(framework.encrypt({ name: 'Peter' }, 'key', false) === 'NDQ9QVUIQFRNVk0XDHJFWQlXAk4GUw0CWBoQXhA', 'framework.encrypt(object)');
+	assert.ok(framework.decrypt('NDQ9QVUIQFRNVk0XDHJFWQlXAk4GUw0CWBoQXhA', 'key').name === 'Peter', 'framework.decrypt(object)')
 
 	framework.route('/basic/', viewBAA);
 
@@ -197,6 +200,8 @@ function viewIndex() {
 	assert.ok(self.resource('test', 'name') === 'test', name + 'resource(test.resource)');
 
 	self.log('test');
+
+	assert.ok(self.hash('sha1', '123456', false) === '7c4a8d09ca3762af61e59520943dc26494f8941b', 'controller.hash()');
 
 	self.setModified('123456');
 

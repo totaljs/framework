@@ -2896,6 +2896,26 @@ Framework.prototype.decrypt = function(value, key, jsonConvert) {
 };
 
 /*
+	Hash value
+	@type {String} :: sha1, sha256, sha512, md5
+	@value {Object}
+	@salt {String or Boolean} :: custom salt {String} or secret as salt {undefined or Boolean}
+	return {String}
+*/
+Framework.prototype.hash = function(type, value, salt) {
+	var hash = crypto.createHash(type);
+	var plus = '';
+
+	if (typeof(salt) === STRING)
+		plus = salt;
+	else if (salt !== false)
+		plus = (this.config.secret || '');
+
+	hash.update(value.toString() + plus, ENCODING);
+	return hash.digest('hex');
+};
+
+/*
 	Resource reader
 	@name {String} :: filename of resource
 	@key {String}
@@ -4873,17 +4893,9 @@ Controller.prototype.decrypt = function() {
 	@salt {String or Boolean} :: custom salt {String} or secret as salt {undefined or Boolean}
 	return {String}
 */
-Controller.prototype.hash = function(type, value, salt) {
-	var hash = crypto.createHash(type);
-	var plus = '';
-
-	if (typeof(salt) === STRING)
-		plus = salt;
-	else if (salt !== false)
-		plus = (this.config.secret || '');
-
-	hash.update(value.toString() + plus, ENCODING);
-	return hash.digest('hex');
+Controller.prototype.hash = function() {
+	var framework = this.framework;
+	return framework.hash.apply(framework, arguments);
 };
 
 Controller.prototype.validate = function(model, properties, prefix, name) {
