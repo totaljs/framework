@@ -8,4 +8,5 @@ framework.run(http, debug, port);
 
 // framework.test(true);
 
+console.log('partial.js v' + framework.version);
 console.log('http://{0}:{1}/'.format(framework.ip, framework.port));

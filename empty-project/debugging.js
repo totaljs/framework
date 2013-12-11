@@ -148,6 +148,9 @@ function restart() {
 		app = null;
 	});
 
+	if (status === 0)
+		app.send('debugging');
+
 	status = 1;
 }
 

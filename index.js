@@ -27,7 +27,7 @@ global.builders = require('./builders');
 global.utils = require('./utils');
 
 function Framework() {
-	this.version = 1301;
+	this.version = 1302;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
@@ -2177,8 +2177,6 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 	self.clear();
 
 	self.cache.init();
-	//self.on('service', self.handlers.onservice);
-
 	self.install();
 
 	var module = self.module('#');
@@ -2218,6 +2216,12 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 	});
 
 	process.on('message', function(msg, h) {
+
+		if (msg === 'debugging') {
+			framework.console();
+			framework.console = utils.noop;
+			return;
+		}
 
 		if (msg === 'reconnect') {
 			self.reconnect();
@@ -2282,12 +2286,34 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 		self.error(err, 'framework.on("ready")');
 	}
 
+	if (!process.connected)
+		self.console();
+
 	return self;
 };
 
 // Alias for framework.init
 Framework.prototype.run = function(http, config, port, ip, options) {
 	return this.init(http, config, port, ip, options);
+};
+
+Framework.prototype.console = function() {
+	console.log('====================================================');
+	console.log('PID          : ' + process.pid);
+	console.log('node.js      : ' + process.version);
+	console.log('partial.js   : v' + framework.version);
+	console.log('====================================================');
+	console.log('Name         : ' + framework.config.name);
+	console.log('Version      : ' + framework.config.version);
+
+	if (framework.config.author.length > 0)
+		console.log('Author       : ' + framework.config.author);
+
+	console.log('Date         : ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
+	console.log('Mode         : ' + (framework.config.debug ? 'debug' : 'release'));
+	console.log('====================================================\n');
+	console.log('http://{0}:{1}/'.format(framework.ip, framework.port));
+	console.log('');
 };
 
 Framework.prototype.reconnect = function() {
