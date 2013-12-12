@@ -354,6 +354,12 @@ Message.prototype._send = function(socket, options) {
 
 	length = self.files.length;
 
+	if (mailer.debug) {
+		socket.on('end', function() {
+			console.log('END');
+		});
+	}
+
 	socket.on('data', function(data) {
 
 		var response = data.toString().split(CRLF);
@@ -365,7 +371,8 @@ Message.prototype._send = function(socket, options) {
 			if (line === '')
 				continue;
 
-			socket.emit('line', line);
+			if (socket)
+				socket.emit('line', line);
 		}
 	});
 
@@ -378,7 +385,7 @@ Message.prototype._send = function(socket, options) {
 
 		if (code === 250 && !isAuthorization) {
 
-			if (line.indexOf('AUTH LOGIN PLAIN') !== -1) {
+			if (line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) {
 				authType = 'plain';
 				isAuthorization = true;
 
