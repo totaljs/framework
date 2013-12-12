@@ -7020,30 +7020,14 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var condition = false;
 
 	if (self.isLayout) {
-
-		if (self._defaultJS)
-			self._currentJS = self._defaultJS || '';
-
-		if (self._defaultJS)
-			self._currentJS = self._defaultJS || '';
-
-		if (self._defaultDownload)
-			self._currentDownload = self._defaultDownload || '';
-
-		if (self._defaultVideo)
-			self._currentVideo = self._defaultVideo || '';
-
-		if (self._defaultImage)
-			self._currentImage = self._defaultImage || '';
-
-		if (self._defaultView)
-			self._currentView = self._defaultView || '';
-
-		if (self._defaultTemplate)
-			self._currentTemplate = self._defaultTemplate || '';
-
-		if (self._defaultContent)
-			self._currentContent = self._defaultContent || '';
+		self._currentCSS = self._defaultCSS || '';
+		self._currentJS = self._defaultJS || '';
+		self._currentDownload = self._defaultDownload || '';
+		self._currentVideo = self._defaultVideo || '';
+		self._currentImage = self._defaultImage || '';
+		self._currentView = self._defaultView || '';
+		self._currentTemplate = self._defaultTemplate || '';
+		self._currentContent = self._defaultContent || '';
 	}
 
 	for (var i = 0; i < generator.execute.length; i++) {
