@@ -11,7 +11,7 @@ var max = 100;
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
-	cb(true);
+	cb(true);	
 };
 
 framework.onError = function(error, name, uri) {
