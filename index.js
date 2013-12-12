@@ -975,7 +975,8 @@ Framework.prototype.onMeta = function() {
 				builder += '<meta name="keywords" content="' + arg + '" />';
 				break;
 			case 3:
-				builder += '<link rel="image_src" type="image/jpeg" href="' + arg + '" /><meta property="og:image" content="' + arg + '" /><meta name="twitter:image" content="' + arg + '" />';
+				var img = self.routeImage(arg);
+				builder += '<link rel="image_src" type="image/jpeg" href="' + img + '" /><meta property="og:image" content="' + img + '" /><meta name="twitter:image" content="' + img + '" />';
 				break;
 		}
 	}
