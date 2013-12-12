@@ -14,6 +14,7 @@ function createDirectory(directory) {
 	var arr = [];
 
 	arr.push('controllers');
+	arr.push('node_modules');
 
 	if ($type < 2) {
 
