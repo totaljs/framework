@@ -18,6 +18,7 @@ IN DEVELOPMENT ======= 1.3.1
 - added: @{currentView()}
 - added: @{currentTemplate()}
 - added: @{currentContent()}
+- added: restriction to the WebSocket
 
 - updated: @{meta(title, [description], [keywords], [image])}
 - updated: framework.route(url, fn, { timeout: false });
@@ -31,6 +32,8 @@ IN DEVELOPMENT ======= 1.3.1
 - fixed: paths (~ char is changing the relative path to the absolute path)
 - fixed: minifyHTML (<script>)
 - fixed: SMTP authentification
+- fixed: WebSocket (user, session, request)
+- fixed: WebSocket routing
 
 - removed: framework.config['directory-upload']
 - removed: framework.verification()

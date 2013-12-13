@@ -483,7 +483,6 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
 	var self = this;
 	var priority = 0;
-	var routeURL = internal.routeSplit(url.trim());
 	var index = url.indexOf(']');
 	var subdomain = null;
 
@@ -504,6 +503,8 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		});
 		priority -= arr.length;
 	}
+
+	var routeURL = internal.routeSplit(url.trim());
 
 	if (typeof(allow) === STRING)
 		allow = allow[allow];
@@ -2353,15 +2354,55 @@ Framework.prototype._upgrade = function(req, socket, head) {
         return;
 
 	var self = this;
+    var headers = req.headers;
+
+    req.uri = parser.parse('ws://' + req.headers.host + req.url);
+	req.data = { get: {} };
+	req.session = null;
+	req.user = null;
+
+	if (req.uri.query && req.uri.query.length > 0)
+		req.data.get = qs.parse(req.uri.query);
 
 	self.stats.request.websocket++;
 
-    socket = new WebSocketClient(req, socket, head);
+	if (self.restrictions.isRestrictions) {
+		if (self.restrictions.isAllowedIP) {
+			if (self.restrictions.allowedIP.indexOf(req.ip) === -1) {
+				self.stats.response.restriction++;
+				req.connection.destroy();
+				return self;
+			}
+		}
+
+		if (self.restrictions.isBlockedIP) {
+			if (self.restrictions.blockedIP.indexOf(req.ip) !== -1) {
+				self.stats.response.restriction++;
+				req.connection.destroy();
+				return self;
+			}
+		}
+
+		if (self.restrictions.isAllowedCustom) {
+			if (!self.restrictions._allowedCustom(headers)) {
+				self.stats.response.restriction++;
+				req.connection.destroy();
+				return self;
+			}
+		}
+
+		if (self.restrictions.isBlockedCustom) {
+			if (self.restrictions._blockedCustom(headers)) {
+				self.stats.response.restriction++;
+				req.connection.destroy();
+				return self;
+			}
+		}
+	}
 
     var path = utils.path(req.uri.pathname);
-	var subdomain = req.uri.host.toLowerCase().replace('www.', '').split('.');
 
-	//req.subdomain = null;
+    socket = new WebSocketClient(req, socket, head);
 	req.path = internal.routeSplit(req.uri.pathname);
 
     var route = self.lookup_websocket(req, socket.uri.pathname);
@@ -2378,18 +2419,15 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	var logged = route.flags.indexOf('logged') !== -1;
 	if (logged || route.flags.indexOf('unlogged')) {
 
-		self.onAuthorization.call(self, req, socket, route.flags, function(isLogged) {
+		self.onAuthorization.call(self, req, socket, route.flags, function(isLogged, user) {
 
-			if (logged && !isLogged) {
+			if ((logged && !isLogged) || (!logged && isLogged)) {
 				socket.close();
+				req.connection.destroy();
 				return;
 			}
 
-			if (!logged && isLogged) {
-				socket.close();
-				return;
-			}
-
+			req.user = user;
 			self._upgrade_continue(route, req, socket, path);
 		});
 
@@ -2501,7 +2539,7 @@ Framework.prototype._request = function(req, res) {
 
 	req.data = { get: {}, post: {}, files: [] };
 	req.buffer = { data: '', isExceeded: false, isData: false };
-	req.xhr = false;
+	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	req.flags = [];
 	req.session = null;
 	req.user = null;
@@ -2580,7 +2618,6 @@ Framework.prototype._request = function(req, res) {
 	if (self.config.debug)
 		flags.push('debug');
 
-	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	req.prefix = self.onPrefix === null ? '' : self.onPrefix(req) || '';
 
 	if (req.prefix.length > 0)
@@ -7644,15 +7681,7 @@ function WebSocketClient(req, socket, head) {
     this.socket = socket;
     this.req = req;
     this.isClosed = false;
-    this.get = {};
-    this.session = null;
-    this.user = null;
-    this.ip = '';
-    this.protocol = (req.headers['sec-websocket-protocol'] || '').replace(/\s/g, '').split(',');
 
-    req.uri = parser.parse('ws://' + req.headers.host + req.url);
-
-    this.uri = req.uri;
     this.length = 0;
     this.cookie = req.cookie.bind(req);
 
@@ -7664,7 +7693,42 @@ function WebSocketClient(req, socket, head) {
     this._isClosed = false;
 }
 
-WebSocketClient.prototype = new events.EventEmitter();
+WebSocketClient.prototype = {
+
+	get protocol() {
+		return (req.headers['sec-websocket-protocol'] || '').replace(/\s/g, '').split(',');
+	},
+
+	get ip() {
+		return this.req.ip;
+	},
+
+	get get() {
+		return this.req.data.get;
+	},
+
+	get uri() {
+		return this.req.uri;
+	},
+
+	get session() {
+		return this.req.session;
+	},
+
+	set session(value) {
+		this.req.session = value;
+	},
+
+	get user() {
+		return this.req.user;
+	},
+
+	set user(value) {
+		this.req.user = value;
+	}
+}
+
+WebSocketClient.prototype.__proto__ = new events.EventEmitter();
 
 /*
     Internal function
@@ -7713,16 +7777,6 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 
     self.socket = socket;
     self.socket.write(new Buffer(SOCKET_RESPONSE.format('partial.js v' + version, self._request_accept_key(self.req)), 'binary'));
-
-    var proxy = self.req.headers['x-forwarded-for'];
-
-    if (typeof(proxy) !== UNDEFINED)
-        self.ip = proxy.split(',', 1)[0] || self.req.connection.remoteAddress;
-    else
-        self.ip = self.req.connection.remoteAddress;
-
-    if (self.uri.query && self.uri.query.length > 0)
-        self.get = qs.parse(self.uri.query);
 
     self._id = self.ip.replace(/\./g, '') + utils.GUID(20);
     self.id = self._id;
@@ -7861,7 +7915,6 @@ WebSocketClient.prototype.close = function() {
 
     // removed: end(new Buffer(SOCKET_RESPONSE_ERROR, 'binary'));
     self.socket.end();
-
     return self;
 };
 
@@ -7940,7 +7993,7 @@ http.IncomingMessage.prototype = {
 		if (self._subdomain)
 			return self._subdomain;
 
-		var subdomain = self.uri.host.toLowerCase().replace('www.', '').split('.');
+		var subdomain = self.uri.host.toLowerCase().replace(/^www\./i, '').split('.');
 		if (subdomain.length > 2)
 			self._subdomain = subdomain.slice(0, subdomain.length - 2); // example: [subdomain].domain.com
 		else
