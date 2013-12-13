@@ -1437,11 +1437,11 @@ String.prototype.decrypt = function(key) {
 
 	var index = values.indexOf('=');
 	if (index === -1)
-		return '';
+		return null;
 
 	var counter = parseInt(values.substring(0, index), 10);
 	if (isNaN(counter))
-		return '';
+		return null;
 
 	values = values.substring(index + 1);
 
@@ -1460,7 +1460,7 @@ String.prototype.decrypt = function(key) {
 	var val = decrypt_data.join('');
 
 	if (counter !== val.length + key.length)
-		return '';
+		return null;
 
 	return val;
 };
