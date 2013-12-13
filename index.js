@@ -8025,13 +8025,15 @@ http.IncomingMessage.prototype.cookie = function(name) {
 	self.cookies = {};
 
     var cookie = self.headers['cookie'] || '';
-    if (cookie.length > 0) {
-		var arr = cookie.split(';');
-		var length = arr.length;
-		for (var i = 0; i < length; i++) {
-			var c = arr[i].trim().split('=');
-			self.cookies[c[0]] = c[1];
-		}
+    if (cookie.length === 0)
+    	return '';
+
+	var arr = cookie.split(';');
+	var length = arr.length;
+
+	for (var i = 0; i < length; i++) {
+		var c = arr[i].trim().split('=');
+		self.cookies[c[0]] = c[1];
 	}
 
 	return decodeURIComponent(self.cookies[name] || '');
