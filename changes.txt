@@ -1,5 +1,7 @@
 IN DEVELOPMENT ======= 1.3.1
 
+THIS VERSION IS RELEASE CANDIDATE 2 (RC 2)
+
 - added: auto-creating directories when are needed (logs, databases)
 - added: framework.config['directory-download']
 - added: framework.routeDownload()
@@ -19,6 +21,7 @@ IN DEVELOPMENT ======= 1.3.1
 - added: @{currentTemplate()}
 - added: @{currentContent()}
 - added: restriction to the WebSocket
+- added: controller.binary(buffer)
 
 - updated: @{meta(title, [description], [keywords], [image])}
 - updated: framework.route(url, fn, { timeout: false });

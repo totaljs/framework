@@ -147,6 +147,7 @@ function Framework() {
 			websocket: 0,
 			timeout: 0,
 			custom: 0,
+			binary: 0,
 			file: 0,
 			stream: 0,
 			streaming: 0,
@@ -1150,6 +1151,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Response timeout                : {0}x'.format(self.stats.response.timeout));
 	builder.push('Response forwarding             : {0}x'.format(self.stats.response.forwarding));
 	builder.push('Response file                   : {0}x'.format(self.stats.response.file));
+	builder.push('Response binary                 : {0}x'.format(self.stats.response.binary));
 	builder.push('Response not modified           : {0}x'.format(self.stats.response.notModified));
 	builder.push('Response stream                 : {0}x'.format(self.stats.response.stream));
 	builder.push('Response streaming              : {0}x'.format(self.stats.response.streaming));
@@ -6822,6 +6824,29 @@ Controller.prototype.redirectAsync = function(url, permament) {
 	};
 
 	self.async.complete(fn);
+	return self;
+};
+
+/*
+	Binary response
+	@buffer {Buffer}
+	return {Framework}
+*/
+Controller.prototype.binary = function(buffer) {
+	var self = this;
+
+	if (self.res.success || !self.isConnected)
+		return self;
+
+	self.subscribe.success();
+	self.req.clear(true);
+	self.res.success = true;
+	self.res.write(buffer.toString('binary'), 'binary');
+	self.res.end();
+	self.framework._request_stats(false, false);
+	self.framework.emit('request-end', self.req, self.res);
+	self.framework.stats.response.binary++;
+
 	return self;
 };
 
