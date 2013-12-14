@@ -2605,6 +2605,7 @@ Framework.prototype._request = function(req, res) {
 	req.prefix = '';
 	req.isAuthorized = true;
 	req.processing = 0;
+	req.isSecure = req.connection.encrypted;
 
 	var isXSS = false;
 	var accept = headers.accept;

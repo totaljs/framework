@@ -22,6 +22,7 @@ THIS VERSION IS RELEASE CANDIDATE 2 (RC 2)
 - added: @{currentContent()}
 - added: restriction to the WebSocket
 - added: controller.binary(buffer)
+- added: request.isSecure;
 
 - updated: @{meta(title, [description], [keywords], [image])}
 - updated: framework.route(url, fn, { timeout: false });
