@@ -209,8 +209,13 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 	var self = this;
 	smtp = smtp || null;
 
-	options = utils.copy({ secure: false, port: 25, user: '', password: '', timeout: 10000 }, options, true);
+	if (typeof(options) === 'function') {
+		var tmp = fnCallback;
+		fnCallback = options;
+		options = tmp;
+	}
 
+	options = utils.copy({ secure: false, port: 25, user: '', password: '', timeout: 10000 }, options, true);
 
 	if (smtp === null || smtp === '') {
 
@@ -268,7 +273,7 @@ Message.prototype._send = function(socket, options) {
 	var isAuthorization = false;
 	var authType = '';
 	var auth = [];
-	
+
 	mailer.emit('sending', self);
 
 	socket.setTimeout(options.timeout || 5000, function() {
