@@ -3167,7 +3167,7 @@ Framework.prototype.configure = function(arr, rewrite) {
 	if (self.config['etag-version'] === '')
 		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');
 
-	process.title = self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-');
+	process.title = 'partial: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
 
 	if (accepts !== null && accepts.length > 0) {
 		accepts.forEach(function(accept) {
