@@ -2432,7 +2432,6 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 	req.session = null;
 	req.user = null;
-	req.isSecure = req.uri.protocol === 'wss';
 	req.flags = [req.isSecure ? 'https' : 'http'];
 
     var path = utils.path(req.uri.pathname);
@@ -2590,7 +2589,6 @@ Framework.prototype._request = function(req, res) {
 	req.prefix = '';
 	req.isAuthorized = true;
 	req.processing = 0;
-	req.isSecure = req.connection.encrypted;
 
 	var isXSS = false;
 	var accept = headers.accept;
@@ -4927,6 +4925,10 @@ Controller.prototype = {
 
 	get isTest() {
 		return this.req.headers['assertion-testing'] === '1';
+	},
+
+	get isSecure() {
+		return this.req.isSecure;
 	},
 
 	get session() {
@@ -7391,6 +7393,10 @@ WebSocket.prototype = {
 		return this.framework.fs;
 	},
 
+	get isSecure() {
+		return this.req.isSecure;
+	},
+
 	get async() {
 
 		var self = this;
@@ -8081,6 +8087,10 @@ http.IncomingMessage.prototype = {
 
 	get host() {
 		return this.headers['host'];
+	},
+
+	get isSecure() {
+		return this.uri.protocol === 'https' || this.uri.protocol === 'wss';
 	}
 
 }

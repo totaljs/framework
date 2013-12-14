@@ -22,7 +22,8 @@ THIS VERSION IS RELEASE CANDIDATE 2 (RC 2)
 - added: @{currentContent()}
 - added: restriction to the WebSocket
 - added: controller.binary(buffer)
-- added: request.isSecure;
+- added: request.isSecure
+- added: controller.isSecure
 - added: routing supports [https] and [http] flag (websocket too)
 
 - updated: @{meta(title, [description], [keywords], [image])}
