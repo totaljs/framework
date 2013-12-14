@@ -8,6 +8,7 @@ var path = require('path');
 var crypto = require('crypto');
 var parser = require('url');
 var events = require('events');
+var sys = require('sys');
 var internal = require('./internal');
 var http = require('http');
 var directory = process.cwd();
@@ -404,6 +405,11 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (isMixed && flags.indexOf('upload') !== -1)
 		throw new Error('Multipart mishmash: mmr vs. upload');
 
+	var isMember = false;
+
+	if (flags.indexOf('logged') === -1 && flags.indexOf('unlogged') === -1)
+		isMember = true;
+
 	var routeURL = internal.routeSplit(url.trim());
 	var arr = [];
 
@@ -433,7 +439,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1)
 		self._request_check_POST = true;
 
-	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'], partial: partial || [], timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: flags.indexOf('raw') !== -1 });
+	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'], partial: partial || [], timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: flags.indexOf('raw') !== -1, isMEMBER: isMember });
 	return self;
 };
 
@@ -469,11 +475,6 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (_controller === '')
 		throw new Error('Websocket route must be defined in controller.');
 
-/*
-	if (url.indexOf('{') !== -1)
-		throw new Error('Websocket url cannot contains dynamic path.');
-*/
-
 	if (!utils.isArray(flags) && typeof(flags) === 'object') {
 		protocols = flags['protocols'] || flags['protocol'];
 		allow = flags['allow'] || flags['origin'];
@@ -495,6 +496,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	}
 
 	var arr = [];
+	var routeURL = internal.routeSplit(url.trim());
 
 	if (url.indexOf('{') !== -1) {
 		routeURL.forEach(function(o, i) {
@@ -504,7 +506,17 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		priority -= arr.length;
 	}
 
-	var routeURL = internal.routeSplit(url.trim());
+/*
+	var length = self.routes.websockets.length;
+	var path = routeURL.join('/');
+
+	if (path.indexOf('{') === -1) {
+		for (var i = 0; i < length; i++) {
+			if (self.routes.websockets[i].url.join('/') === path)
+				throw new Error('Websocket does not support multiple routes to one URL address.');
+		}
+	}
+*/
 
 	if (typeof(allow) === STRING)
 		allow = allow[allow];
@@ -515,7 +527,41 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (typeof(flags) === STRING)
 		flags = flags[flags];
 
-	self.routes.websockets.push({ name: _controller, url: routeURL, param: arr, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: maximumSize || self.config['default-websocket-request-length'] });
+	var isJSON = false;
+	var isBINARY = false;
+
+	if (flags) {
+
+		var tmp = [];
+		for (var i = 0; i < flags.length; i++) {
+			flags[i] = flags[i].toString().toLowerCase();
+
+			if (flags[i] === 'json')
+				isJSON = true;
+
+			if (flags[i] === 'binary')
+				isBINARY = true;
+
+			if (flags[i] === 'raw') {
+				isBINARY = false;
+				isJSON = false;
+			}
+
+			if (flags[i] !== 'json' && flags[i] !== 'binary' && flags[i] !== 'raw')
+				tmp.push(flags[i]);
+
+		}
+
+		flags = tmp;
+		priority += (flags.length * 2);
+	}
+
+	var isMember = false;
+
+	if (!flags || (flags.indexOf('logged') === -1 && flags.indexOf('unlogged') === -1))
+		isMember = true;
+
+	self.routes.websockets.push({ name: _controller, url: routeURL, param: arr, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: maximumSize || self.config['default-websocket-request-length'], isMEMBER: isMember, isJSON: isJSON, isBINARY: isBINARY });
 	return self;
 };
 
@@ -2356,14 +2402,6 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	var self = this;
     var headers = req.headers;
 
-    req.uri = parser.parse('ws://' + req.headers.host + req.url);
-	req.data = { get: {} };
-	req.session = null;
-	req.user = null;
-
-	if (req.uri.query && req.uri.query.length > 0)
-		req.data.get = qs.parse(req.uri.query);
-
 	self.stats.request.websocket++;
 
 	if (self.restrictions.isRestrictions) {
@@ -2400,41 +2438,52 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		}
 	}
 
-    var path = utils.path(req.uri.pathname);
+    req.uri = parser.parse('ws://' + req.headers.host + req.url);
+	req.data = { get: {} };
 
-    socket = new WebSocketClient(req, socket, head);
+	if (req.uri.query && req.uri.query.length > 0)
+		req.data.get = qs.parse(req.uri.query);
+
+	req.session = null;
+	req.user = null;
+	req.flags = [];
+
+    var path = utils.path(req.uri.pathname);
+    var websocket = new WebSocketClient(req, socket, head);
+
 	req.path = internal.routeSplit(req.uri.pathname);
 
-    var route = self.lookup_websocket(req, socket.uri.pathname);
-    if (route === null) {
-		socket.close();
-		return;
-	}
-
     if (self.onAuthorization === null) {
-		self._upgrade_continue(route, req, socket, path);
+	    var route = self.lookup_websocket(req, websocket.uri.pathname, true);
+
+	    if (route === null) {
+			websocket.close();
+			req.connection.destroy();
+			return;
+		}
+
+		self._upgrade_continue(route, req, websocket, path);
 		return;
     }
 
-	var logged = route.flags.indexOf('logged') !== -1;
-	if (logged || route.flags.indexOf('unlogged')) {
+	self.onAuthorization.call(self, req, websocket, req.flags, function(isLogged, user) {
 
-		self.onAuthorization.call(self, req, socket, route.flags, function(isLogged, user) {
-
-			if ((logged && !isLogged) || (!logged && isLogged)) {
-				socket.close();
-				req.connection.destroy();
-				return;
-			}
-
+		if (user)
 			req.user = user;
-			self._upgrade_continue(route, req, socket, path);
-		});
 
-		return;
-	}
+		req.flags.push(isLogged ? 'logged' : 'unlogged');
 
-	self._upgrade_continue(route, req, socket, path);
+		var route = self.lookup_websocket(req, websocket.uri.pathname, false);
+
+	    if (route === null) {
+			websocket.close();
+			req.connection.destroy();
+			return;
+		}
+
+		self._upgrade_continue(route, req, websocket, path);
+	});
+
 };
 
 Framework.prototype._upgrade_continue = function(route, req, socket, path) {
@@ -2443,16 +2492,24 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 
     if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version)) {
 		socket.close();
+		req.connection.destroy();
         return;
     }
 
-    if (typeof(self.connections[path]) === UNDEFINED) {
+    var id = path + (route.flags.length > 0 ? '#' + route.flags.join('-') : '');
+
+    if (route.isBINARY)
+    	socket.type = 1;
+    else if (route.isJSON)
+    	socket.type = 3;
+
+    if (typeof(self.connections[id]) === UNDEFINED) {
 		var connection = new WebSocket(self, path, route.name);
-		self.connections[path] = connection;
+		self.connections[id] = connection;
 		route.onInitialize.apply(connection, internal.routeParam(route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, route));
     }
 
-    socket.upgrade(self.connections[path]);
+    socket.upgrade(self.connections[id]);
 };
 
 Framework.prototype._service = function(count) {
@@ -3274,7 +3331,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 
 		if (route.flags !== null && route.flags.length > 0) {
 
-			var result = internal.routeCompareFlags(flags, route.flags, noLoggedUnlogged);
+			var result = internal.routeCompareFlags(flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
 
 			if (result === -1)
 				req.isAuthorized = false;
@@ -3300,7 +3357,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 	@url {String}
 	return {WebSocketRoute}
 */
-Framework.prototype.lookup_websocket = function(req, url) {
+Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 
 	var self = this;
 	var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
@@ -3315,6 +3372,18 @@ Framework.prototype.lookup_websocket = function(req, url) {
 
 		if (!internal.routeCompare(req.path, route.url, false))
 			continue;
+
+		if (route.flags !== null && route.flags.length > 0) {
+
+			var result = internal.routeCompareFlags(req.flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
+
+			if (result === -1)
+				req.isAuthorized = false;
+
+			if (result < 1)
+				continue;
+
+		}
 
 		return route;
 	}
@@ -4589,8 +4658,11 @@ Subscribe.prototype._execute = function() {
 /*
 	@isLogged {Boolean}
 */
-Subscribe.prototype._authorization = function(isLogged) {
+Subscribe.prototype._authorization = function(isLogged, user) {
 	var self = this;
+
+	if (user)
+		self.req.user = user;
 
 	self.req.flags.push(isLogged ? 'logged' : 'unlogged');
 	self.route = self.framework.lookup(self.req, self.req.buffer.isExceeded ? '#431' : self.req.uri.pathname, self.req.flags);
@@ -7274,6 +7346,12 @@ function WebSocket(framework, path, name) {
     this.repository = {};
     this.name = name;
     this.url = utils.path(path);
+
+	// on('open', function(client) {});
+	// on('close', function(client) {});
+	// on('message', function(client, message) {});
+	// on('error', function(error, client) {});
+    events.EventEmitter.call(this);
 }
 
 WebSocket.prototype = {
@@ -7313,12 +7391,7 @@ WebSocket.prototype = {
 	}
 }
 
-// on('open', function(client) {});
-// on('close', function(client) {});
-// on('message', function(client, message) {});
-// on('error', function(error, client) {});
-
-WebSocket.prototype.__proto__ = new events.EventEmitter();
+sys.inherits(WebSocket, events.EventEmitter);
 
 /*
     Send message
@@ -7740,7 +7813,6 @@ WebSocketClient.prototype.__proto__ = new events.EventEmitter();
 WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, version) {
 
     var self = this;
-    var socket = self.socket;
 
     flags = flags || [];
     protocols = protocols || [];
@@ -7775,16 +7847,10 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
     if (SOCKET_ALLOW_VERSION.indexOf(utils.parseInt(self.req.headers['sec-websocket-version'])) === -1)
         return false;
 
-    self.socket = socket;
     self.socket.write(new Buffer(SOCKET_RESPONSE.format('partial.js v' + version, self._request_accept_key(self.req)), 'binary'));
 
     self._id = self.ip.replace(/\./g, '') + utils.GUID(20);
     self.id = self._id;
-
-    if (flags.indexOf('binary') !== -1)
-		self.type = 1;
-    else if (flags.indexOf('json') !== -1)
-		self.type = 3;
 
     return true;
 };
@@ -7810,6 +7876,7 @@ WebSocketClient.prototype.upgrade = function(container) {
 
     self.container._add(self);
     self.container._refresh();
+
     self.container.framework.emit('websocket-begin', self.container, self);
     self.container.emit('open', self);
 
@@ -7879,7 +7946,6 @@ WebSocketClient.prototype._onclose = function() {
     	return;
 
     self._isClosed = true;
-
     self.container._remove(self._id);
     self.container._refresh();
     self.container.emit('close', self);
