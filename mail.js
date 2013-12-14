@@ -211,6 +211,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	options = utils.copy({ secure: false, port: 25, user: '', password: '', timeout: 10000 }, options, true);
 
+
 	if (smtp === null || smtp === '') {
 
 		smtp = getHostName(self.addressFrom.address);
@@ -267,12 +268,13 @@ Message.prototype._send = function(socket, options) {
 	var isAuthorization = false;
 	var authType = '';
 	var auth = [];
-
+	
 	mailer.emit('sending', self);
 
-	socket.setTimeout(options.timeout, function() {
+	socket.setTimeout(options.timeout || 5000, function() {
 		mailer.emit('error', new Error(utils.httpStatus(408)), self);
-		socket.end();
+		socket.destroy();
+		socket = null;
 	});
 
 	socket.setEncoding('utf8');
@@ -384,18 +386,15 @@ Message.prototype._send = function(socket, options) {
 		var code = parseInt(line.match(/\d+/)[0], 10);
 
 		if (code === 250 && !isAuthorization) {
-
-			if (line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) {
+			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) || (options.user && options.password)) {
 				authType = 'plain';
 				isAuthorization = true;
-
-				if (line.indexOf('XOAUTH') !== -1) {
-					auth.push('AUTH PLAIN ' + new Buffer('\0'+ options.user + '\0' + options.password).toString('base64'));
-				} else {
+				if (line.indexOf('XOAUTH') === -1) {
 					auth.push('AUTH LOGIN');
 					auth.push(new Buffer(options.user).toString('base64'));
 					auth.push(new Buffer(options.password).toString('base64'));
-				}
+				} else
+					auth.push('AUTH PLAIN ' + new Buffer('\0'+ options.user + '\0' + options.password).toString('base64'));
 			}
 		}
 
@@ -424,8 +423,13 @@ Message.prototype._send = function(socket, options) {
 
 				write(buffer.shift());
 
-				if (buffer.length === 0)
+				if (buffer.length === 0) {
 					mailer.emit('success', self);
+					ending = setTimeout(function() {
+						socket.destroy();
+						socket = null;
+					}, 500);
+				}
 
 				break;
 
@@ -435,7 +439,7 @@ Message.prototype._send = function(socket, options) {
 
 				if (typeof(value) === UNDEFINED) {
 					mailer.error('error', new Error('Forbidden'), self);
-					socket.end();
+					socket.destroy();
 					socket = null;
 					break;
 				}
@@ -462,7 +466,7 @@ Message.prototype._send = function(socket, options) {
 			default:
 
 				if (code > 399) {
-					socket.end();
+					socket.destroy();
 					socket = null;
 					mailer.emit('error', new Error(line), self);
 				}

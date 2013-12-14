@@ -32,6 +32,7 @@ IN DEVELOPMENT ======= 1.3.1
 - updated: String.prototype.md5([salt])
 - (IMPORTANT) updated: String.prototype.encode() === HTML encode
 - (IMPORTANT) updated: String.prototype.decode() === HTML decode
+- updated: mail
 
 - fixed: increment/decrement Date/Time
 - fixed: paths (~ char is changing the relative path to the absolute path)
