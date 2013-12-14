@@ -11,7 +11,7 @@ var max = 100;
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
-	cb(true);	
+	cb(true);
 };
 
 framework.onError = function(error, name, uri) {
@@ -146,6 +146,26 @@ function test_routing(next) {
 			complete();
 		});
 	});
+
+	async.await('http', function(complete) {
+		utils.request(url + 'http/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'HTTP', 'HTTP flag routing problem');
+			complete();
+		});
+	});
+
+/*
+	async.await('https', function(complete) {
+		utils.request(url + 'https/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'HTTPS', 'HTTP flag routing problem');
+			complete();
+		});
+	});
+*/
 
 	async.complete(function() {
 		next && next();

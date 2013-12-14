@@ -393,7 +393,6 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (flags) {
 		for (var i = 0; i < flags.length; i++)
 			flags[i] = flags[i].toString().toLowerCase();
-
 		priority += (flags.length * 2);
 	} else
 		flags = ['get'];
@@ -425,14 +424,11 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (url.indexOf('#') !== -1)
 		priority--;
 
-	if (typeof(flags) !== UNDEFINED) {
+	if (flags.indexOf('proxy') !== -1 && flags.indexOf('json') === -1)
+		flags.push('json');
 
-		if (flags.indexOf('proxy') !== -1 && flags.indexOf('json') === -1)
-			flags.push('json');
-
-		if ((flags.indexOf('json') !== -1 || flags.indexOf('raw') !== -1) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1))
-			flags.push('post');
-	}
+	if ((flags.indexOf('json') !== -1 || flags.indexOf('raw') !== -1) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1))
+		flags.push('post');
 
 	if (flags.indexOf('referer') !== -1)
 		self._request_check_referer = true;
@@ -507,18 +503,6 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		priority -= arr.length;
 	}
 
-/*
-	var length = self.routes.websockets.length;
-	var path = routeURL.join('/');
-
-	if (path.indexOf('{') === -1) {
-		for (var i = 0; i < length; i++) {
-			if (self.routes.websockets[i].url.join('/') === path)
-				throw new Error('Websocket does not support multiple routes to one URL address.');
-		}
-	}
-*/
-
 	if (typeof(allow) === STRING)
 		allow = allow[allow];
 
@@ -530,32 +514,32 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
 	var isJSON = false;
 	var isBINARY = false;
+	var tmp = [];
 
-	if (flags) {
+	if (typeof(flags) === UNDEFINED)
+		flags = [];
 
-		var tmp = [];
-		for (var i = 0; i < flags.length; i++) {
-			flags[i] = flags[i].toString().toLowerCase();
+	for (var i = 0; i < flags.length; i++) {
+		flags[i] = flags[i].toString().toLowerCase();
 
-			if (flags[i] === 'json')
-				isJSON = true;
+		if (flags[i] === 'json')
+			isJSON = true;
 
-			if (flags[i] === 'binary')
-				isBINARY = true;
+		if (flags[i] === 'binary')
+			isBINARY = true;
 
-			if (flags[i] === 'raw') {
-				isBINARY = false;
-				isJSON = false;
-			}
-
-			if (flags[i] !== 'json' && flags[i] !== 'binary' && flags[i] !== 'raw')
-				tmp.push(flags[i]);
-
+		if (flags[i] === 'raw') {
+			isBINARY = false;
+			isJSON = false;
 		}
 
-		flags = tmp;
-		priority += (flags.length * 2);
+		if (flags[i] !== 'json' && flags[i] !== 'binary' && flags[i] !== 'raw')
+			tmp.push(flags[i]);
 	}
+
+	flags = tmp;
+
+	priority += (flags.length * 2);
 
 	var isMember = false;
 
@@ -2448,7 +2432,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 	req.session = null;
 	req.user = null;
-	req.flags = [];
+	req.isSecure = req.uri.protocol === 'wss';
+	req.flags = [req.isSecure ? 'https' : 'http'];
 
     var path = utils.path(req.uri.pathname);
     var websocket = new WebSocketClient(req, socket, head);
@@ -2653,6 +2638,8 @@ Framework.prototype._request = function(req, res) {
 	var flags = [req.method.toLowerCase()];
     var multipart = req.headers['content-type'] || '';
 
+    flags.push(protocol);
+
     if (multipart.indexOf('multipart/form-data') === -1) {
 
 	    if (multipart.indexOf('application/json') !== -1)
@@ -2672,8 +2659,6 @@ Framework.prototype._request = function(req, res) {
 
     if (accept === 'text/event-stream')
 		flags.push('sse');
-
-	flags.push(protocol);
 
 	if (self.config.debug)
 		flags.push('debug');

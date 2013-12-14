@@ -6,6 +6,8 @@ exports.install = function(framework) {
 	framework.route('/usage/', view_usage);
 	framework.route('/sse/', viewSSE_html);
 	framework.route('/sse/', viewSSE, ['sse']);
+	framework.route('/http/', viewHTTP, ['http']);
+	framework.route('/https/', viewHTTPS, ['https']);
 	framework.route('/dynamic/', viewDynamic);
 	framework.route('/f/', viewSocket);
 	framework.route('/js/', viewJS);
@@ -360,3 +362,11 @@ function viewLive() {
 	}, 3000);
 
 };
+
+function viewHTTP() {
+	this.plain('HTTP');
+}
+
+function viewHTTPS() {
+	this.plain('HTTPS');
+}
