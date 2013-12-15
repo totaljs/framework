@@ -443,7 +443,7 @@ Message.prototype._send = function(socket, options) {
 				var value = auth.shift();
 
 				if (typeof(value) === UNDEFINED) {
-					mailer.error('error', new Error('Forbidden'), self);
+					mailer.emit('error', new Error('Forbidden.'), self);
 					socket.destroy();
 					socket = null;
 					break;
