@@ -385,6 +385,8 @@ Message.prototype._send = function(socket, options) {
 
 	socket.on('line', function(line) {
 
+		line = line.toUpperCase();
+
 		if (mailer.debug)
 			console.log('–––>', line);
 
