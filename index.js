@@ -1009,7 +1009,7 @@ Framework.prototype.onMeta = function() {
 			case 3:
 				var tmp = arg.substring(0, 6);
 				var img = tmp === 'http:/' || tmp === 'https:' || arg.substring(0, 2) === '//' ? arg : self.hostname(self.routeImage(arg));
-				builder += '<link rel="image_src" type="image/jpeg" href="' + img + '" /><meta property="og:image" content="' + img + '" /><meta name="twitter:image" content="' + img + '" />';
+				builder += '<meta property="og:image" content="' + img + '" /><meta name="twitter:image" content="' + img + '" />';
 				break;
 		}
 	}

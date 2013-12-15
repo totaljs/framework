@@ -3,6 +3,8 @@
 web application framework for node.js
 =====================================
 
+__partial.js__ is the best ever web application framework for creating a rich web sites a web services. The framework has good documentation and contains many examples. Please support framework on GitHub and other social networks.
+
 > Current version (v1.3.0) is Release Candidate 1 (RC 1)
 
 ```
