@@ -13,6 +13,7 @@ var internal = require('./internal');
 var http = require('http');
 var directory = process.cwd();
 var child = require('child_process');
+var CoffeeScript = null;
 
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
@@ -243,7 +244,7 @@ Framework.prototype.controller = function(name) {
 	_controller = name;
 
 	// initialize controller
-	var obj = require(path.join(directory, self.config['directory-controllers'], name + '.js'));
+	var obj = require(path.join(directory, self.config['directory-controllers'], name));
 
 	self.controllers[name] = obj;
 
@@ -593,13 +594,16 @@ Framework.prototype.module = function(name) {
 
 	var filename = path.join(directory, self.config['directory-modules'], name + '.js');
 
-	if (!fs.existsSync(filename)) {
+	if (!fs.existsSync(filename))
+		filename = path.join(directory, self.config['directory-modules'], name + '.coffee');
 
+	if (!fs.existsSync(filename))
 		filename = path.join(directory, self.config['directory-modules'], name, 'index.js');
-		if (fs.existsSync(filename))
-			module = require(filename);
 
-	} else
+	if (!fs.existsSync(filename))
+		filename = path.join(directory, self.config['directory-modules'], name, 'index.coffee');
+
+	if (fs.existsSync(filename))
 		module = require(filename);
 
 	if (typeof(module) === UNDEFINED)
@@ -629,10 +633,10 @@ Framework.prototype.install = function() {
 		fs.readdirSync(dir).forEach(function(o) {
 
 			var ext = path.extname(o);
-			if (ext.toLowerCase() !== '.js')
+			if (['.js', '.coffee'].indexOf(ext.toLowerCase()) === -1)
 				return;
 
-			self.controller(o.substring(0, o.length - 3));
+			self.controller(o.substring(0, o.length - ext.length));
 		});
 	}
 
@@ -642,9 +646,8 @@ Framework.prototype.install = function() {
 		fs.readdirSync(dir).forEach(function(o) {
 
 			var ext = path.extname(o);
-
 			var isDirectory = fs.statSync(path.join(dir + o)).isDirectory();
-			if (!isDirectory && ext.toLowerCase() !== '.js')
+			if (!isDirectory && ['.js', '.coffee'].indexOf(ext.toLowerCase()) === -1)
 				return;
 
 			var name = o.replace(ext, '');
@@ -674,10 +677,19 @@ Framework.prototype.install = function() {
 		fs.readdirSync(dir).forEach(function(o) {
 
 			var ext = path.extname(o);
-			if (ext.toLowerCase() !== '.js')
+			if (['.js', '.coffee'].indexOf(ext.toLowerCase()) === -1)
 				return;
 
-			eval(fs.readFileSync(path.join(directory, self.config['directory-definitions'], o), 'utf8').toString());
+			var compile = function(contents) {
+				return contents
+			};
+			if ('.coffee' === ext.toLowerCase()) {
+				if (CoffeeScript === null)
+					CoffeeScript = require('coffee-script');
+				compile = CoffeeScript.compile;
+			}
+
+			eval(compile(fs.readFileSync(path.join(directory, self.config['directory-definitions'], o), 'utf8').toString()));
 		});
 	}
 	return self;
@@ -2850,10 +2862,11 @@ Framework.prototype.test = function(stop, names, cb) {
 
 		var fileName = path.join(directory, self.config['directory-tests'], name);
 
-		if (path.extname(fileName).toLowerCase() !== '.js')
+		var ext = path.extname(fileName);
+		if (['.js', '.coffee'].indexOf(ext.toLowerCase()) === -1)
 			return;
 
-		if (names.length > 0 && names.indexOf(name.substring(0, name.length - 3)) === -1)
+		if (names.length > 0 && names.indexOf(name.substring(0, name.length - ext.length)) === -1)
 			return;
 
 		var test = require(fileName);
@@ -3187,7 +3200,7 @@ Framework.prototype.configure = function(arr, rewrite) {
 Framework.prototype.routeJS = function(name) {
 	var self = this;
 
-	if (name.indexOf('.js') === -1)
+	if (name.indexOf('.js') === -1 && name.indexOf('.coffee') === -1)
 		name += '.js';
 
 	return self._routeStatic(name, self.config['static-url-js']);
@@ -3402,7 +3415,7 @@ Framework.prototype.worker = function(name, id, timeout) {
 	if (fork !== null)
 		return fork;
 
-	fork = child.fork(utils.combine(self.config['directory-workers'], name + '.js'), { cwd: directory });
+	fork = child.fork(utils.combine(self.config['directory-workers'], name), { cwd: directory });
 	id = name + '_' + new Date().getTime();
 	fork.__id = id;
 	self.workers[id] = fork;
@@ -3674,7 +3687,7 @@ FrameworkFileSystem.prototype.deleteCSS = function(name) {
 FrameworkFileSystem.prototype.deleteJS = function(name) {
 	var self = this;
 
-	if (name.indexOf('.js') === -1)
+	if (name.indexOf('.js') === -1 && name.indexOf('.coffee') === -1)
 		name += '.js';
 
 	var filename = utils.combine(self.config['directory-public'], self.config['static-url-js'], name);
@@ -3719,7 +3732,7 @@ FrameworkFileSystem.prototype.deleteContent = function(name) {
 FrameworkFileSystem.prototype.deleteWorker = function(name) {
 	var self = this;
 
-	if (name.indexOf('.js') === -1)
+	if (name.indexOf('.js') === -1 && name.indexOf('.coffee') === -1)
 		name += '.js';
 
 	var filename = utils.combine(self.config['directory-workers'], name);
@@ -3821,7 +3834,7 @@ FrameworkFileSystem.prototype.createJS = function(name, content, rewrite, append
 	if ((content || '').length === 0)
 		return false;
 
-	if (name.indexOf('.js') === -1)
+	if (name.indexOf('.js') === -1 && name.indexOf('.coffee') === -1)
 		name += '.js';
 
 	var filename = utils.combine(self.config['directory-public'], self.config['static-url-js'], name);
@@ -3915,7 +3928,7 @@ FrameworkFileSystem.prototype.createWorker = function(name, content, rewrite, ap
 	if ((content || '').length === 0)
 		return false;
 
-	if (name.indexOf('.js') === -1)
+	if (name.indexOf('.js') === -1 && name.indexOf('.coffee') === -1)
 		name += '.js';
 
 	self.framework._verify_directory('workers');
