@@ -5,7 +5,7 @@ var path = require('path');
 var util = require('util');
 var events = require('events');
 
-var VERSION = 'v2.0.3';
+var VERSION = 'v2.0.4';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -851,12 +851,20 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 	var fnWrite = function(json, valid) {
 
 		if (lines.length > 25 || valid) {
+
+			if (lines.length === 0) {
+				if (completed && countWrite <= 0)
+					fnRename();
+				return;
+			}
+
 			countWrite++;
 			fs.appendFile(self.filenameTemp, lines.join(NEWLINE) + NEWLINE, function() {
 				countWrite--;
 				if (completed && countWrite <= 0)
 					fnRename();
 			});
+
 			lines = [];
 		}
 
@@ -901,11 +909,11 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 		fnWrite(updated);
 	};
 
-	var reader = self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
+	fs.appendFile(self.filenameTemp, '');
 
+	var reader = self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
 		onBuffer(buffer.toString(), fnItem, fnBuffer);
 		return true;
-
 	}, function(success) {
 
 		if (!success) {
