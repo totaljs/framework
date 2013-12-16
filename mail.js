@@ -84,6 +84,7 @@ function Message(subject, body) {
 	this.addressCC = [];
 	this.addressBCC = [];
 	this.addressFrom = { name: '', address: '' };
+	this.callback = null;
 }
 
 /*
@@ -215,6 +216,8 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 		options = tmp;
 	}
 
+	self.callback = fnCallback;
+
 	options = utils.copy({ secure: false, port: 25, user: '', password: '', timeout: 10000 }, options, true);
 
 	if (smtp === null || smtp === '') {
@@ -224,12 +227,13 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 			if (err) {
 				mailer.emit('error', err, self);
-				fnCallback();
+				fnCallback(err);
 				return;
 			}
 
 			socket.on('error', function(err) {
 				mailer.emit('error', err, self);
+				fnCallback(err);
 			});
 
 			self._send(socket, options);
@@ -242,7 +246,6 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	socket.on('error', function(err) {
 		mailer.emit('error', err, self);
-		fnCallback();
 	});
 
 	socket.on('secureConnect', function() {
@@ -252,9 +255,6 @@ Message.prototype.send = function(smtp, options, fnCallback) {
     socket.on('connect', function() {
 		self._send(socket, options);
     });
-
-    if (fnCallback)
-		socket.on('close', fnCallback);
 
     return self;
 };
@@ -273,6 +273,7 @@ Message.prototype._send = function(socket, options) {
 	var isAuthorization = false;
 	var authType = '';
 	var auth = [];
+	var err = null;
 
 	mailer.emit('sending', self);
 
@@ -432,6 +433,10 @@ Message.prototype._send = function(socket, options) {
 
 				if (buffer.length === 0) {
 					mailer.emit('success', self);
+
+					if (self.callback)
+						self.callback(null);
+
 					ending = setTimeout(function() {
 						socket.destroy();
 						socket = null;
@@ -445,7 +450,13 @@ Message.prototype._send = function(socket, options) {
 				var value = auth.shift();
 
 				if (typeof(value) === UNDEFINED) {
-					mailer.emit('error', new Error('Forbidden.'), self);
+
+					err = new Error('Forbidden.');
+					mailer.emit('error', err, self);
+
+					if (self.callback)
+						self.callback(err);
+
 					socket.destroy();
 					socket = null;
 					break;
@@ -473,9 +484,12 @@ Message.prototype._send = function(socket, options) {
 			default:
 
 				if (code > 399) {
+					err = new Error(line);
 					socket.destroy();
 					socket = null;
-					mailer.emit('error', new Error(line), self);
+					mailer.emit('error', err, self);
+					if (self.callback)
+						self.callback(err);
 				}
 
 				break;
