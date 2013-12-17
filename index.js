@@ -5337,7 +5337,7 @@ Controller.prototype.layout = function(name) {
 */
 Controller.prototype.models = function(name) {
 	var self = this;
-	return (self.controllers[name] || {}).models;
+	return (self.controllers[name || self.name] || {}).models;
 };
 
 /*
@@ -5347,7 +5347,7 @@ Controller.prototype.models = function(name) {
 */
 Controller.prototype.functions = function(name) {
 	var self = this;
-	return (self.controllers[name] || {}).functions;
+	return (self.controllers[name || self.name] || {}).functions;
 };
 
 /*
