@@ -179,6 +179,8 @@ function Framework() {
 	this._request_check_redirect = false;
 	this._request_check_referer = false;
 	this._request_check_POST = false;
+	this._length_partial_private = 0;
+	this._length_partial_global = 0;
 
 	var self = this;
 }
@@ -449,10 +451,14 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 Framework.prototype.partial = function(name, funcExecute) {
 	var self = this;
 
-	if (typeof(name) === FUNCTION)
+	if (typeof(name) === FUNCTION) {
 		self.routes.partialGlobal.push(name);
-	else
+		self._length_partial_global = Object.keys(self.routes.partialGlobal).length;
+	}
+ 	else {
 		self.routes.partial[name] = funcExecute;
+		self._length_partial_private = Object.keys(self.routes.partial).length;
+	}
 
 	return self;
 };
@@ -4542,10 +4548,7 @@ Subscribe.prototype.execute = function(status) {
 	if (!self.isCanceled && !self.isMixed && self.route.timeout > 0)
 		self.timeout = setTimeout(self.handlers._cancel, self.route.timeout);
 
-	var lengthPrivate = self.route.partial.length;
-	var lengthGlobal = self.framework.routes.partialGlobal.length;
-
-	if (lengthPrivate === 0 && lengthGlobal === 0) {
+	if (self.framework._length_partial_private === 0 && self.framework._length_partial_global === 0) {
 		self.handlers._execute();
 		return self;
 	}
@@ -4553,12 +4556,12 @@ Subscribe.prototype.execute = function(status) {
 	var async = new utils.Async();
 	var count = 0;
 
-	for (var i = 0; i < lengthGlobal; i++) {
+	for (var i = 0; i < self.framework._length_partial_global; i++) {
 		var partial = self.framework.routes.partialGlobal[i];
 		async.await('global' + i, partial.bind(self.controller));
 	}
 
-	for (var i = 0; i < lengthPrivate; i++) {
+	for (var i = 0; i < self.framework._length_partial_private; i++) {
 		var partialName = self.route.partial[i];
 		var partialFn = self.framework.routes.partial[partialName];
 		if (partialFn) {
@@ -4567,7 +4570,7 @@ Subscribe.prototype.execute = function(status) {
 		}
 	}
 
-	if (count === 0 && lengthGlobal === 0)
+	if (count === 0 && self.framework._length_partial_global === 0)
 		self.handlers._execute();
 	else
 		async.run(self.handlers._execute);
