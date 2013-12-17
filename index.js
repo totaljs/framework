@@ -2993,6 +2993,9 @@ Framework.prototype.decrypt = function(value, key, jsonConvert) {
 	var self = this;
 	var result = (value || '').decrypt(self.config.secret + '=' + key);
 
+	if (result === null)
+		return null;
+
 	if (jsonConvert) {
 		if (result.isJSON())
 			return JSON.parse(result);
