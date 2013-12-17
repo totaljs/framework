@@ -68,6 +68,8 @@ function error500() {
 	self.plain(utils.httpStatus(self.status));
 }
 
+// GET: homepage
+// Description: webpage homepage
 function view_homepage() {
 	var self = this;
 	self.view('homepage');
