@@ -1245,7 +1245,7 @@ String.prototype.params = function(obj) {
 			val = val(index);
 
 		if (typeof(val) === UNDEFINED)
-			return;
+			continue;
 
 		if (format.length > 0) {
 
