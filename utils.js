@@ -1779,7 +1779,7 @@ Number.prototype.format = function(format) {
 	beg = num.indexOf('.');
 	max = format || 0;
 
-	if (max === 0 && num != -1)
+	if (max === 0 && beg !== -1)
 		max = num.length - (beg + 1);
 
 	if (max > 0) {
