@@ -438,7 +438,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1)
 		self._request_check_POST = true;
 
-	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'], partial: partial || [], timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: flags.indexOf('raw') !== -1, isMEMBER: isMember });
+	if (!(partial instanceof Array))
+		partial = null;
+
+	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'], partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: flags.indexOf('raw') !== -1, isMEMBER: isMember });
 	return self;
 };
 
@@ -482,6 +485,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		protocols = flags['protocols'] || flags['protocol'];
 		allow = flags['allow'] || flags['origin'];
 		maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
+		partial = flags['partial'];
 		flags = flags['flags'];
 	}
 
@@ -3185,6 +3189,7 @@ Framework.prototype.configure = function(arr, rewrite) {
 		});
 	}
 
+	self.emit('configure', self.config);
 	return self;
 };
 
@@ -4556,6 +4561,11 @@ Subscribe.prototype.execute = function(status) {
 		return self;
 	}
 
+	if (self.framework._length_partial_global === 0 && self.route.partial === null) {
+		self.handlers._execute();
+		return self;
+	}
+
 	var async = new utils.Async();
 	var count = 0;
 
@@ -4564,12 +4574,14 @@ Subscribe.prototype.execute = function(status) {
 		async.await('global' + i, partial.bind(self.controller));
 	}
 
-	for (var i = 0; i < self.framework._length_partial_private; i++) {
-		var partialName = self.route.partial[i];
-		var partialFn = self.framework.routes.partial[partialName];
-		if (partialFn) {
-			count++;
-			async.await(partialName, partialFn.bind(self.controller));
+	if (self.route.partial !== null) {
+		for (var i = 0; i < self.framework._length_partial_private; i++) {
+			var partialName = self.route.partial[i];
+			var partialFn = self.framework.routes.partial[partialName];
+			if (partialFn) {
+				count++;
+				async.await(partialName, partialFn.bind(self.controller));
+			}
 		}
 	}
 
