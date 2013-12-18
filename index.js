@@ -8058,7 +8058,11 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 		builder.push('HttpOnly');
 
     var self = this;
-	self.setHeader('Set-Cookie', builder.join('; '));
+
+	var arr = self.getHeader('set-cookie') || [];
+
+	arr.push(builder.join('; '));
+	self.setHeader('Set-Cookie', arr);
 
 	return self;
 };

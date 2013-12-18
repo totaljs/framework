@@ -156,6 +156,17 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('cookie', function(complete) {
+		utils.request(url + 'cookie/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			
+			var cookie = headers['set-cookie'].join('');
+			assert(cookie.indexOf('cookie1=1;') !== -1 && cookie.indexOf('cookie2=2;') !== -1 && cookie.indexOf('cookie3=3;') !== -1, 'Cookie problem.');
+			complete();
+		});
+	});	
+
 /*
 	async.await('https', function(complete) {
 		utils.request(url + 'https/', 'GET', null, function(error, data, code, headers) {

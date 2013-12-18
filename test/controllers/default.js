@@ -12,6 +12,7 @@ exports.install = function(framework) {
 	framework.route('/f/', viewSocket);
 	framework.route('/js/', viewJS);
 	framework.route('/', viewIndex);
+	framework.route('/cookie/', view_cookie);
 	framework.route('/layout/', view_layout);
 	framework.route('/custom/', viewCustomTesting);
 	framework.route('/views/', viewViews, [], ['partial']);
@@ -309,7 +310,7 @@ function viewViewsIf() {
 	self.layout('');
 	self.repository.A = 'A';
 	self.view('c', { a: 'A', b: 'B' });
-};
+}
 
 function viewError() {
 	var self = this;
@@ -317,32 +318,32 @@ function viewError() {
 	assert.ok(template === '', 'template: not found problem');
 	assert.ok(self.content('asdasd') === '', 'content: not found problem');
 	self.view('asdlkjasl');
-};
+}
 
 function viewRouteA() {
 	var self = this;
 	assert.ok(self.url === '/a/', 'routing: viewRouteA');
 	self.plain('OK');
-};
+}
 
 function viewRouteAB() {
 	var self = this;
 	assert.ok(self.url === '/c/b/', 'routing: viewRouteAB');
 	self.plain('OK');
-};
+}
 
 function viewRouteAA(a) {
 	var self = this;
 	assert.ok(a === 'aaa', 'routing: viewRouteAA');
 	assert.ok(self.url === '/a/aaa/', 'routing: viewRouteAA');
 	self.plain('OK');
-};
+}
 
 function viewRouteABC() {
 	var self = this;
 	assert.ok(self.url === '/a/b/c/', 'routing: viewRouteABC');
 	self.plain('OK');
-};
+}
 
 function viewJS() {
 	var self = this;
@@ -361,8 +362,16 @@ function viewLive() {
 	setTimeout(function() {
 		self.mixed.send('/users/petersirka/desktop/aaaaa/2.jpg', self.mixed.end.bind(self));
 	}, 3000);
+}
 
-};
+function view_cookie() {
+	var self = this;
+	self.res.cookie('cookie1', '1', new Date().add('d', 1));
+	self.res.cookie('cookie2', '2', new Date().add('d', 1));
+	self.res.cookie('cookie3', '3', new Date().add('d', 1));
+	self.res.cookie('cookie4', '4', new Date().add('d', 1));
+	self.plain('cookie');
+}
 
 function viewHTTP() {
 	this.plain('HTTP');
