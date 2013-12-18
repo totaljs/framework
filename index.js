@@ -485,7 +485,6 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		protocols = flags['protocols'] || flags['protocol'];
 		allow = flags['allow'] || flags['origin'];
 		maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
-		partial = flags['partial'];
 		flags = flags['flags'];
 	}
 
