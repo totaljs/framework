@@ -3103,15 +3103,23 @@ Framework.prototype.configureMapping = function(content, rewrite) {
 
 /*
 	INTERNAL: Framework configure
-	@arr {String Array} :: optional
+	@arr {String Array or String (filename)} :: optional
 	@rewrite {Boolean} :: optional, default true
 	return {Framework}
 */
 Framework.prototype.configure = function(arr, rewrite) {
 
 	var self = this;
+	var type = typeof(arr);
 
-	if (typeof(arr) === UNDEFINED) {
+	if (type === STRING) {
+		var filename = utils.combine('/', arr);
+		if (!fs.existsSync(filename))
+			return self;
+		arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
+	}
+
+	if (type === UNDEFINED) {
 		var filename = utils.combine('/', 'config-' + (self.config.debug ? 'debug' : 'release'));
 
 		if (!fs.existsSync(filename))
