@@ -149,6 +149,7 @@ function Framework() {
 			custom: 0,
 			binary: 0,
 			file: 0,
+			destroy: 0,
 			stream: 0,
 			streaming: 0,
 			plain: 0,
@@ -1157,6 +1158,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse));
 	builder.push('Response Websocket message      : {0}x'.format(self.stats.response.websocket));
 	builder.push('Response restriction            : {0}x'.format(self.stats.response.restriction));
+	builder.push('Response destroy                : {0}x'.format(self.stats.response.destroy));
 	builder.push('Response 400                    : {0}x'.format(self.stats.response.error400));
 	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401));
 	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403));
@@ -6620,6 +6622,19 @@ Controller.prototype.empty = function(headers) {
 	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.status, '', 'text/plain', false, headers);
 	self.framework.stats.response.empty++;
+
+	return self;
+};
+
+Controller.prototype.destroy = function() {
+	var self = this;
+
+	if (self.res.success || !self.isConnected)
+		return self;
+
+	self.subscribe.success();
+	req.connection.destroy();
+	self.framework.stats.response.destroy++;
 
 	return self;
 };
