@@ -426,16 +426,20 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (url.indexOf('#') !== -1)
 		priority--;
 
-	if (flags.indexOf('proxy') !== -1 && flags.indexOf('json') === -1)
+	if (flags.indexOf('proxy') !== -1 && flags.indexOf('json') === -1) {
 		flags.push('json');
+		priority++;
+	}
 
-	if ((flags.indexOf('json') !== -1 || flags.indexOf('raw') !== -1) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1))
+	if ((flags.indexOf('json') !== -1 || flags.indexOf('raw') !== -1) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1)) {
 		flags.push('post');
+		priority++;
+	}
 
 	if (flags.indexOf('referer') !== -1)
 		self._request_check_referer = true;
 
-	if (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1)
+	if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1 || flags.indexOf('json') !== -1))
 		self._request_check_POST = true;
 
 	if (!(partial instanceof Array))
@@ -4750,8 +4754,14 @@ Subscribe.prototype._end = function() {
 
 	if (self.route !== null && self.route.isRAW)
 		self.req.data.post = self.req.buffer.data;
-	else
+	else {
+		if (self.req.headers['content-type'].indexOf('x-www-form-urlencoded') === -1) {
+			self.route = self.framework.lookup(self.req, '#400', []);
+			self.execute(400);
+			return;
+		}
 		self.req.data.post = qs.parse(self.req.buffer.data);
+	}
 
 	self.req.buffer.data = null;
 	self.prepare(self.req.flags, self.req.uri.pathname);
@@ -6583,9 +6593,9 @@ Controller.prototype.plain = function(contentBody, headers) {
 		return self;
 
 	var type = typeof(contentBody);
-	
+
 	if (type === UNDEFINED)
-		contentBody = ''; 
+		contentBody = '';
 	else if (type !== STRING)
 		contentBody = contentBody === null ? '' : contentBody.toString();
 
