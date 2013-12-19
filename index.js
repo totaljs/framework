@@ -6582,8 +6582,15 @@ Controller.prototype.plain = function(contentBody, headers) {
 	if (self.res.success || !self.isConnected)
 		return self;
 
+	var type = typeof(contentBody);
+	
+	if (type === UNDEFINED)
+		contentBody = ''; 
+	else if (type !== STRING)
+		contentBody = contentBody === null ? '' : contentBody.toString();
+
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.status, typeof(contentBody) === STRING ? contentBody : contentBody.toString(), 'text/plain', true, headers);
+	self.framework.responseContent(self.req, self.res, self.status, contentBody, 'text/plain', true, headers);
 	self.framework.stats.response.plain++;
 
 	return self;

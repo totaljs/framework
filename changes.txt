@@ -25,6 +25,7 @@ IN DEVELOPMENT ======= 1.3.1
 - added: routing supports [https] and [http] flag (websocket too)
 - added: framework.on('configure')
 
+- updated: controller.plain();
 - updated: framework.configure(filename or array, [rewrite])
 - updated: NoSQL embedded database version
 - updated: @{meta(title, [description], [keywords], [image])}
