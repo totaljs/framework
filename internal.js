@@ -2799,7 +2799,7 @@ function parsePluralize(value) {
 	index = value.indexOf(condition, beg + 1);
 	d = value.substring(beg + 1, index).replace(/\'/g, "\\'");
 
-	return ".pluralize('{0}','{1}','{2}', '{3}')".format(a, b, c, d);
+	return ".pluralize('{0}','{1}','{2}','{3}')".format(a, b, c, d);
 }
 
 /*
