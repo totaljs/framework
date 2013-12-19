@@ -6633,7 +6633,7 @@ Controller.prototype.destroy = function() {
 		return self;
 
 	self.subscribe.success();
-	req.connection.destroy();
+	self.req.connection.destroy();
 	self.framework.stats.response.destroy++;
 
 	return self;
