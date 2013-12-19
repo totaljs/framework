@@ -128,7 +128,7 @@ function view_test_view() {
 }
 
 function viewCustomTesting() {
-	this.plain(this.template('one', [{ name: 'A', price: 10 }, { name: 'B', price: 10.5 }]));
+	this.plain(this.template('one', [{ name: 'A', price: 10, B: false }, { name: 'B', price: 10.5, B: true }]));
 }
 
 function socket(self, framework) {
@@ -248,7 +248,7 @@ function viewViews() {
 	self.repository.tag = '<b>A</b>';
 	self.repository.optionsEmpty = [{ name: 'A', value: 'A' }, { name: 'B', value: 'B' }];
 	self.repository.options = [{ k: 'C', v: 'C' }, { k: 'D', v: 'D' }];
-	self.repository.template = [{ name: 'A', price: 10 }, { name: 'B', price: 10.5 }];
+	self.repository.template = [{ name: 'A', price: 10, B: false }, { name: 'B', price: 10.5, B: true }];
 
 	var output = self.view('a', { a: 'A', b: 'B', arr: ['1', '2', '3'] }, true);
 
@@ -276,7 +276,7 @@ function viewViews() {
 	assert.ok(output.contains('#content-toggle#'), name + 'contentToggle');
 //	template-one<div>10.00</div><div>10</div><div>A</div><div>other</div><div>10.50</div><div>10.5</div><div>B</div><div>other</div>
 //	template-one<div>10.00</div><div>10</div><div>A</div><div>zero</div><div>10.50</div><div>10.5</div><div>B</div><div>one</div>
-	assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>A</div><div>zero</div><div>10.50</div><div>10.5</div><div>B</div><div>one</div>#'), name + 'template() - one');
+	assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>A</div><div>zero</div><div>D</div><div>10.50</div><div>10.5</div><div>B</div><div>one</div><div>C</div>#'), name + 'template() - one');
 	assert.ok(output.contains('#template-more<ul><li>A</li><li>B</li></ul>#'), name + 'template() - more');
 	assert.ok(output.contains('#template-emptyEMPTY#'), name + 'template() - empty');
 	assert.ok(output.contains('#template-toggle#'), name + 'templateToggle()');
