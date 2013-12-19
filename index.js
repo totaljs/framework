@@ -4757,7 +4757,7 @@ Subscribe.prototype._end = function() {
 	if (self.route !== null && self.route.isRAW)
 		self.req.data.post = self.req.buffer.data;
 	else {
-		if (self.req.headers['content-type'].indexOf('x-www-form-urlencoded') === -1) {
+		if ((self.req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
 			self.route = self.framework.lookup(self.req, '#400', []);
 			self.execute(400);
 			return;
