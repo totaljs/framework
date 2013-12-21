@@ -41,7 +41,7 @@ function params(tmp, replace) {
 
 //console.log((1).pluralize('zero', 'one', 'few', 'other'));
 
-var Stream = require('stream');
+// var Stream = require('stream');
 //var writer = fs.createWriteStream('/users/petersirka/desktop/kokotar.zip')
 //var reader = fs.createReadStream('/users/petersirka/desktop/user.zip');
 
@@ -78,4 +78,3 @@ fs.createReadStream('/users/petersirka/desktop/a.jpg').pipe(p.stdin);
 
 //var socket = new tls.connect(465, 'smtp.gmail.com');
 //var isSended = false;
-
