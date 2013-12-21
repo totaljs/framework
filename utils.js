@@ -2412,8 +2412,10 @@ FileList.prototype.stat = function(path) {
 			return self.next();
 
 		if (stats.isDirectory() && (self.onFilter === null || self.onFilter(path, true))) {
-			self.pendingDirectory.push(path);
 			self.directory.push(path);
+			self.pendingDirectory.push(path);
+			self.next();
+			return;
 		}
 
 		if (self.onFilter === null || self.onFilter(path, false))
