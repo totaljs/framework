@@ -88,7 +88,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 			tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
 			tmp.fileName = tmp.fileName.substring(0, tmp.fileName.length - 1);
-			
+
 			tmp.isFile = true;
 			tmp.fileNameTmp = utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + utils.random(100000) + '.upload');
 			stream = fs.createWriteStream(tmp.fileNameTmp, { flags: 'w' });
@@ -447,9 +447,21 @@ function HttpFile(name, filename, path, length, contentType) {
 	@filename {String} :: new filename
 	return {HttpFile}
 */
-HttpFile.prototype.copy = function(filename) {
+HttpFile.prototype.copy = function(filename, callback) {
+
 	var self = this;
-	fs.createReadStream(self.path).pipe(fs.createWriteStream(filename));
+
+	if (!callback) {
+		fs.createReadStream(self.path).pipe(fs.createWriteStream(filename));
+		return;
+	}
+
+	var reader = fs.createReadStream(self.path);
+	var writer = fs.createWriteStream(filename);
+
+	reader.on('close', callback);
+	reader.pipe(writer);
+
 	return self;
 };
 
