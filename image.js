@@ -3,6 +3,7 @@
 var child = require('child_process');
 var exec = child.exec;
 var spawn = child.spawn;
+var path = require('path');
 
 // INTERNAL
 var sof = {
@@ -83,8 +84,9 @@ function Image(filename, useImageMagick) {
 
 	this.builder = [];
 	this.filename = type === 'string' ? filename : null;
-	this.stream = type === 'object' ? filename : null;
+	this.currentStream = type === 'object' ? filename : null;
 	this.isIM = useImageMagick || false;
+	this.outputType = type === 'string' ? path.extname(filename).substring(1) : 'jpg';
 
 	if (!filename)
 		throw new Error('Image filename is undefined.');
@@ -163,17 +165,19 @@ Image.prototype.save = function(filename, callback) {
 	}
 
 	var cmd = exec(command, function(error, stdout, stderr) {
+
 		self.clear();
-		if (callback) {
-			if (error)
-				callback(error, '');
-			else
-				callback(null, filename);
-		}
+		if (!callback)
+			return;
+
+		if (error)
+			callback(error, '');
+		else
+			callback(null, filename);
 	});
 
-	if (self.stream)
-		self.stream.pipe(cmd.stdin);
+	if (self.currentStream)
+		self.currentStream.pipe(cmd.stdin);
 
 	return self;
 };
@@ -197,6 +201,9 @@ Image.prototype.pipe = function(stream, type, options) {
 	if (self.builder.length === 0)
 		return;
 
+	if (typeof(type) === 'undefined' || type === null)
+		type = self.outputType;
+
 	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, (type ? type + ':' : '') + '-'));
 
 	cmd.stderr.on('data', stream.emit.bind(stream, 'error'));
@@ -205,11 +212,40 @@ Image.prototype.pipe = function(stream, type, options) {
 	cmd.on('error', stream.emit.bind(stream, 'error'));
 	cmd.stdout.pipe(stream, options);
 
-	if (self.stream)
-		self.stream.pipe(cmd.stdin);
+	if (self.currentStream)
+		self.currentStream.pipe(cmd.stdin);
 
 	return self;
+};
 
+/*
+	Create a stream
+	@stream {Stream}
+	@type {String} :: optional, image type (png, jpg, gif)
+	@options {Object} :: Stream object
+	return {Image}
+*/
+Image.prototype.stream = function(type, options) {
+
+	var self = this;
+
+	if (typeof(type) === 'object') {
+		options = type;
+		type = null;
+	}
+
+	if (self.builder.length === 0)
+		return;
+
+	if (typeof(type) === 'undefined' || type === null)
+		type = self.outputType;
+
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, (type ? type + ':' : '') + '-'));
+
+	if (self.currentStream)
+		self.currentStream.pipe(cmd.stdin);
+
+	return cmd.stdout;
 };
 
 /*
@@ -230,9 +266,10 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 			return -1;
 	});
 
-	self.builder.forEach(function(o) {
-		cmd += (cmd.length > 0 ? ' ' : '') + o.cmd;
-	});
+	var length = self.builder.length;
+
+	for (var i = 0; i < length; i++)
+		cmd += (cmd.length > 0 ? ' ' : '') + self.builder[i].cmd;
 
 	return (self.isIM ? 'convert' : 'gm -convert') + ' "' + filenameFrom + '"' + ' ' + cmd + ' "' + filenameTo + '"';
 };
@@ -261,7 +298,10 @@ Image.prototype.arg = function(first, last) {
 			return -1;
 	});
 
-	self.builder.forEach(function(o) {
+	var length = self.builder.length;
+
+	for (var i = 0; i < length; i++) {
+		var o = self.builder[i];
 		var index = o.cmd.indexOf(' ');
 		if (index === -1)
 			arr.push(o.cmd);
@@ -269,7 +309,7 @@ Image.prototype.arg = function(first, last) {
 			arr.push(o.cmd.substring(0, index));
 			arr.push(o.cmd.substring(index + 1).replace(/\"/g, ''));
 		}
-	});
+	}
 
 	if (last)
 		arr.push(last);
@@ -316,6 +356,16 @@ Image.prototype.identify = function(cb) {
 Image.prototype.push = function(key, value, priority) {
 	var self = this;
 	self.builder.push({ cmd: key + (value ? ' "' + value + '"' : ''), priority: priority });
+	return self;
+};
+
+Image.prototype.output = function(type) {
+	var self = this;
+
+	if (type[0] === '.')
+		type = type.substring(1);
+
+	self.outputType = type;
 	return self;
 };
 

@@ -1691,6 +1691,70 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 };
 
 /*
+	Response image
+	@req {ServerRequest}
+	@res {ServerResponse}
+	@filename {String or Stream}
+	@fnProcess {Function} :: function(FrameworkImage) {}
+	@headers {Object} :: optional, additional headers
+	@useImageMagick {Boolean} :: optional, use ImageMagick (otherwise is used GraphicsMagick), default false
+	return {Framework}
+*/
+Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnProcess, headers, useImageMagick) {
+
+	var self = this;
+	var stream = null;
+
+	if (typeof(filename) === OBJECT)
+		stream = filename;
+
+	var key = 'image-' + req.url.substring(1);
+
+	if (self.isProcessing(key)) {
+
+		if (req.processing > self.config['default-request-timeout']) {
+			// timeout
+			self.response408(req, res);
+			return;
+		}
+
+		req.processing += 500;
+
+		setTimeout(function() {
+			self.responseImage(req, res, filename, fnProcess, headers, useImageMagick);
+		}, 500);
+
+		return;
+	}
+
+	var Image = require('./image');
+
+	// STREAM
+	if (stream !== null) {
+		var image = Image.load(stream, useImageMagick);
+		fnProcess(image);
+		self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
+		return self;
+	}
+
+	// FILENAME
+	fs.exists(filename, function(exist) {
+
+		if (!exist) {
+			self.response404(req, res);
+			return;
+		}
+
+		self._verify_directory('temp');
+		var image = Image.load(filename, useImageMagick);
+		fnProcess(image);
+		self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
+
+	});
+	return self;
+};
+
+/*
 	Response stream
 	@req {ServerRequest}
 	@res {ServerResponse}
@@ -2028,6 +2092,32 @@ Framework.prototype.response408 = function(req, res) {
 		self.emit('request-end', req, res);
 
 	self.stats.response.error408++;
+	return self;
+};
+
+/*
+	Response with 431 error
+	@req {ServerRequest}
+	@res {ServerResponse}
+	return {Framework}
+*/
+Framework.prototype.response431 = function(req, res) {
+	var self = this;
+
+	if (res.success)
+		return self;
+
+	self._request_stats(false, req.isStaticFile);
+	req.clear(true);
+
+	res.success = true;
+	res.writeHead(431, { 'Content-Type': 'text/plain' });
+	res.end(utils.httpStatus(431));
+
+	if (!req.isStaticFile)
+		self.emit('request-end', req, res);
+
+	self.stats.response.error431++;
 	return self;
 };
 
@@ -4709,9 +4799,7 @@ Subscribe.prototype._end = function() {
 
 		if (self.route === null) {
 			self.req.clear(true);
-			self.framework.stats.request.blocked++;
-			self.framework._request_stats(false, false);
-			self.req.connection.destroy();
+			self.framework.response431(self.req, self.res);
 			return;
 		}
 
@@ -8235,6 +8323,7 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
 
 	framework._clear(arr);
 	self.data.files = null;
+
 	return self;
 };
 

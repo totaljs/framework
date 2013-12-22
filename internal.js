@@ -45,6 +45,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 	var ip = req.ip.replace(/\./g, '');
 	var close = 0;
 	var isXSS = false;
+	var rm = null;
 
 	boundary = boundary.substring(boundary.indexOf('=') + 1);
 
@@ -62,7 +63,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
     parser.onHeaderValue = function(buffer, start, end) {
 
-		if (req.buffer.isExceeded || tmp.step > 1)
+		if (req.buffer.isExceeded)
 			return;
 
 		if (isXSS)
@@ -87,6 +88,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 			tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
 			tmp.fileName = tmp.fileName.substring(0, tmp.fileName.length - 1);
+			
 			tmp.isFile = true;
 			tmp.fileNameTmp = utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + utils.random(100000) + '.upload');
 			stream = fs.createWriteStream(tmp.fileNameTmp, { flags: 'w' });
@@ -110,6 +112,12 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 		if (size >= maximumSize) {
 			req.buffer.isExceeded = true;
+
+			if (rm === null)
+				rm = [tmp.fileNameTmp];
+			else
+				rm.push(tmp.fileNameTmp);
+
 			return;
 		}
 
@@ -160,6 +168,9 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 				if (isXSS && req.flags.indexOf('xss') === -1)
 					req.flags.push('xss');
+
+				if (rm !== null)
+					framework._clear(rm);
 
 				callback();
 				return;
