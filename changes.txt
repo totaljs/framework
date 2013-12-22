@@ -29,6 +29,8 @@ IN DEVELOPMENT ======= 1.3.1
 - added: builders.default(name)
 - added: FrameworkImage.stream(type, [options])
 - added: FrameworkImage.output(type);
+- added: FrameworkImage.bitdepth(value)
+- added: FrameworkImage.colors(value)
 
 - updated: controller.plain();
 - updated: framework.configure(filename or array, [rewrite])

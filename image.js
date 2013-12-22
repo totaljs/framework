@@ -534,11 +534,19 @@ Image.prototype.flop = function() {
 };
 
 Image.prototype.minify = function() {
-	return this.push('+profile',  '*');
+	return this.push('+profile', '*');
 };
 
 Image.prototype.grayscale = function() {
-	return this.push('-modulate 100,0', null, 10);
+	return this.push('-modulate', null, 10);
+};
+
+Image.prototype.bitdepth = function(value) {
+	return this.push('-depth', value, 10);
+};
+
+Image.prototype.colors = function(value) {
+	return this.push('-colors', value, 10);
 };
 
 /*
