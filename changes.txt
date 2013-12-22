@@ -41,6 +41,7 @@ IN DEVELOPMENT ======= 1.3.1
 - (IMPORTANT) updated: String.prototype.decode() === HTML decode
 - updated: mail
 
+- fixed: uploading
 - fixed: utils.ls()
 - fixed: ['json'] and ['post'] flag
 - fixed: set of multiple cookie

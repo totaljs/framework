@@ -33,7 +33,7 @@ function Framework() {
 
 	this.handlers = {
 		onrequest: this._request.bind(this),
-		onxss: this.onXSS(this),
+		onxss: this.onXSS.bind(this),
 		onupgrade: this._upgrade.bind(this),
 		onservice: this._service.bind(this)
 	};
