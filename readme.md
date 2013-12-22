@@ -54,6 +54,7 @@ __Modules__:
 
 - [Online counter](https://github.com/petersirka/partial.js-modules/tree/master/online)
 - [FileStorage](https://github.com/petersirka/partial.js-modules/tree/master/filestorage)
+- [FileCache](https://github.com/petersirka/partial.js-modules/tree/master/filecache)
 - [Fulltext search engine](https://github.com/petersirka/partial.js-modules/tree/master/fulltext)
 - [Authorization](https://github.com/petersirka/partial.js-modules/tree/master/authorization)
 - [Session (in-memory, redis or memcached)](https://github.com/petersirka/partial.js-modules/tree/master/session)
