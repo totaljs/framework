@@ -86,6 +86,10 @@ exports.validation = function(name, arr) {
 	return arr;
 };
 
+exports.default = function(name) {
+	return exports.defaults(name);
+};
+
 /*
 	Create schema object
     @name {String}
