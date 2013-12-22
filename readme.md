@@ -59,7 +59,9 @@ __Modules__:
 - [Session (in-memory, redis or memcached)](https://github.com/petersirka/partial.js-modules/tree/master/session)
 - [Login with Facebook](https://github.com/petersirka/partial.js-modules/tree/master/facebook)
 - [Less CSS - lesscss.org](https://github.com/petersirka/partial.js-modules/tree/master/less)
+- [SASS CSS - www.sass-lang.com](https://github.com/petersirka/partial.js-modules/tree/master/sass)
 - [Jade view engine](https://github.com/petersirka/partial.js-modules/tree/master/jade)
+- [doT view engine](https://github.com/petersirka/partial.js-modules/tree/master/dot)
 - [Live storage](https://github.com/petersirka/partial.js-modules/tree/master/storage)
 - [Markdown parser](https://github.com/petersirka/partial.js-modules/tree/master/markdown)
 
@@ -78,6 +80,12 @@ Do not miss
 - [node.js - MongoLab provider](https://github.com/petersirka/node-mongolab) - MongoLab client (tip for partial.js)
 - [node.js - NoSQL embedded database](https://github.com/petersirka/nosql)
 - [node.js - Backup / Restore](https://github.com/petersirka/node-backup) - Backup / Restore solution
+
+__Client-side libraries__
+
+- [jQuery two way bindings](https://github.com/petersirka/jquery.bindings)
+- [jQuery templates - partial.js templating](https://github.com/petersirka/jquery.templates)
+- [partial.js routing on client-side via HTML 5 history API](https://github.com/petersirka/partial.js-clientside)
 
 ***
 
