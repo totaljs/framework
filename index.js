@@ -3036,7 +3036,7 @@ Framework.prototype._clear = function(arr) {
 	});
 
 	return self;
-}
+};
 
 /*
 	Cryptography (encrypt)
