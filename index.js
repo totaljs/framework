@@ -4678,13 +4678,13 @@ Subscribe.prototype.execute = function(status) {
 	}
 
 	if (self.route.partial !== null) {
-		for (var i = 0; i < self.framework._length_partial_private; i++) {
-			var partialName = self.route.partial[i];
-			var partialFn = self.framework.routes.partial[partialName];
-			if (partialFn) {
-				count++;
-				async.await(partialName, partialFn.bind(self.controller));
-			}
+		var length = self.route.partial.length;
+		for (var i = 0; i < length; i++) {
+			var partialFn = self.framework.routes.partial[self.route.partial[i]];
+			if (!partialFn)
+				continue;
+			count++;
+			async.await(self.route.partial[i], partialFn.bind(self.controller));
 		}
 	}
 
