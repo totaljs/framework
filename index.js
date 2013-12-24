@@ -148,6 +148,7 @@ function Framework() {
 			timeout: 0,
 			custom: 0,
 			binary: 0,
+			pipe: 0,
 			file: 0,
 			destroy: 0,
 			stream: 0,
@@ -1563,6 +1564,88 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
+
+	return self;
+};
+
+/*
+	Response PIPE
+	@req {ServerRequest}
+	@res {ServerResponse}
+	@url {String}
+	@header {Object} :: optional
+	@timeout {Number} :: optional
+	@callback {Function} :: optional
+	return {Framework}
+*/
+Framework.prototype.responsePipe = function(req, res, url, headers, timeout, callback) {
+
+	var self = this;
+
+	if (res.success)
+		return self;
+
+	var uri = parser.parse(url);
+	var h = {};
+
+	h['Cache-Control'] = 'private';
+
+	if (headers)
+		utils.extend(h, headers, true);
+
+	h['X-Powered-By'] = 'partial.js v' + self.version;
+
+	var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
+	var connection = options.protocol === 'https:' ? https : http;
+	var supportsGZIP = (req.headers['accept-encoding'] || '').indexOf('gzip') !== -1;
+
+	var client = connection.get(options, function(response) {
+
+		var contentType = response.headers['content-type'];
+		var isGZIP = (response.headers['content-encoding'] || '').indexOf('gzip') !== -1;
+		var compress = !isGZIP && supportsGZIP && (contentType.indexOf('text/') !== -1 || contentType.indexOf('javascript') !== -1);
+
+		res.setHeader('Content-Type', contentType);
+		res.setHeader('Vary', 'Accept-Encoding');
+
+		if (compress) {
+			res.setHeader('Content-Encoding', 'gzip');
+			response.pipe(zlib.createGzip()).pipe(res);
+			return;
+		}
+
+		if (!supportsGZIP && isGZIP)
+			response.pipe(zlib.createGunzip()).pipe(res);
+		else
+			response.pipe(res);
+	});
+
+	if ((timeout || 0) > 0) {
+		client.setTimeout(timeout || 3000, function() {
+			self.response408(req, res);
+			if (callback)
+				callback();
+		});
+	}
+
+	client.on('close', function() {
+
+		if (res.success)
+			return;
+
+		req.clear(true);
+		res.success = true;
+
+		self.stats.response.pipe++;
+		self._request_stats(false, req.isStaticFile);
+		res.success = true;
+
+		if (!req.isStaticFile)
+			self.emit('request-end', req, res);
+
+		if (callback)
+			callback();
+	});
 
 	return self;
 };
@@ -5115,6 +5198,34 @@ Controller.prototype.clear = function() {
 };
 
 /*
+	Pipe URL response
+	@url {String}
+	@headers {Object} :: optional
+	return {Controller}
+*/
+Controller.prototype.pipe = function(url, headers, callback) {
+
+	var self = this;
+
+	if (typeof(headers) === FUNCTION) {
+		var tmp = callback;
+		callback = headers;
+		headers = tmp;
+	}
+
+	if (self.res.success || !self.isConnected)
+		return self;
+
+	self.framework.responsePipe(self.req, self.res, url, headers, null, function() {
+		self.subscribe.success();
+		if (callback)
+			callback();
+	});
+
+	return self;
+};
+
+/*
 	Cryptography (encrypt)
 	@value {String}
 	@key {String}
@@ -6895,7 +7006,7 @@ Controller.prototype.view500 = function(error) {
 		return self;
 
 	self.req.path = [];
-	self.framework.error(typeof(error) === 'string' ? new Error(error) : error, self.name, self.req.uri);
+	self.framework.error(typeof(error) === STRING ? new Error(error) : error, self.name, self.req.uri);
 	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#500', []);
 	self.subscribe.execute(500);

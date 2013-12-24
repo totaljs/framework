@@ -21,7 +21,7 @@ var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
 var NEWLINE = '\r\n';
-var VERSION = (typeof(framework) !== UNDEFINED ? 'v' + framework.version : '');
+var VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version : '');
 
 if (typeof(setImmediate) === UNDEFINED) {
 	global.setImmediate = function(cb) {
@@ -115,7 +115,8 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 	if (isJSON)
 		h['Content-Type'] = 'application/json';
 
-	util._extend(h, headers);
+	if (headers)
+		util._extend(h, headers);
 
 	h['X-Powered-By'] = 'partial.js' + VERSION;
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
@@ -134,7 +135,8 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 		});
 
 		res.on('end', function() {
-			callback(null, this._buffer, res.statusCode, res.headers);
+			var self = this;
+			callback(null, self._buffer, self.statusCode, self.headers);
 		});
 
 		res.resume();
@@ -1997,7 +1999,7 @@ Array.prototype.waiting = function(onItem, callback) {
 
 	var self = this;
 	var item = self.shift();
-	
+
 	if (typeof(item) === UNDEFINED) {
 		if (callback)
 			callback();

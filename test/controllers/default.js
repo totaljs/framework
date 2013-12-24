@@ -5,6 +5,7 @@ exports.install = function(framework) {
 	framework.route('/homepage/', view_homepage);
 	framework.route('/usage/', view_usage);
 	framework.route('/sse/', viewSSE_html);
+	framework.route('/pipe/', pipe);
 	framework.route('/sse/', viewSSE, ['sse']);
 	framework.route('/http/', viewHTTP, ['http']);
 	framework.route('/https/', viewHTTPS, ['https']);
@@ -362,6 +363,11 @@ function viewLive() {
 	setTimeout(function() {
 		self.mixed.send('/users/petersirka/desktop/aaaaa/2.jpg', self.mixed.end.bind(self));
 	}, 3000);
+}
+
+function pipe() {
+	var self = this;
+	self.pipe('http://www.partialjs.com/xhr/version/', { 'X-Requested-With': 'XMLHttpRequest' });
 }
 
 function view_cookie() {

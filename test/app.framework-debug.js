@@ -86,7 +86,6 @@ function test_view_error(next) {
 	});
 }
 
-
 function test_routing(next) {
 
 	var async = new utils.Async();
@@ -120,6 +119,15 @@ function test_routing(next) {
 		utils.request(url + 'c/b/', 'GET', null, function(error, data, code, headers) {
 			if (error)
 				throw error;
+			complete();
+		});
+	});
+
+	async.await('pipe', function(complete) {
+		utils.request(url + 'pipe/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(data.toString('utf8').isJSON(), 'controller.pipe() / responsePipe() problem');
 			complete();
 		});
 	});
@@ -160,12 +168,12 @@ function test_routing(next) {
 		utils.request(url + 'cookie/', 'GET', null, function(error, data, code, headers) {
 			if (error)
 				throw error;
-			
+
 			var cookie = headers['set-cookie'].join('');
 			assert(cookie.indexOf('cookie1=1;') !== -1 && cookie.indexOf('cookie2=2;') !== -1 && cookie.indexOf('cookie3=3;') !== -1, 'Cookie problem.');
 			complete();
 		});
-	});	
+	});
 
 /*
 	async.await('https', function(complete) {
@@ -181,7 +189,7 @@ function test_routing(next) {
 	async.complete(function() {
 		next && next();
 	});
-};
+}
 
 function run() {
 
@@ -194,7 +202,6 @@ function run() {
 		assert.ok(framework.global.timeout > 0, 'timeout');
 
 		end();
-		console.log(framework.stats);
 		return;
 	}
 
