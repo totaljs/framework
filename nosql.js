@@ -5,7 +5,7 @@ var path = require('path');
 var util = require('util');
 var events = require('events');
 
-var VERSION = 'v2.0.4';
+var VERSION = 'v2.0.5';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -1817,8 +1817,9 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
 	size = (BINARY_HEADER_LENGTH - header.length) + 1;
 	header += new Array(size).join(' ');
 
-	var id = self.db.name + '#' + new Date().getTime().toString() + Math.random().toString(36).substring(10);
-	var stream = fs.createWriteStream(path.join(self.directory, id + EXTENSION_BINARY));
+	var id = new Date().getTime().toString() + Math.random().toString(36).substring(10);
+	var key = self.db.name + '#' + id;
+	var stream = fs.createWriteStream(path.join(self.directory, key + EXTENSION_BINARY));
 
 	stream.write(header);
 	stream.end(buffer);
@@ -1856,9 +1857,10 @@ Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) 
 	var self = this;
 	var size = buffer.length;
 	var dimension = { width: 0, height: 0 };
+	var key = id;
 
-	if (id.indexOf('#') === -1)
-		id = self.db.name + '#' + id;
+	if (key.indexOf('#') === -1)
+		key = self.db.name + '#' + key;
 
 	if (name.indexOf('.gif') !== -1)
 		dimension = dimensionGIF(buffer);
@@ -1872,7 +1874,7 @@ Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) 
 	size = (BINARY_HEADER_LENGTH - header.length) + 1;
 	header += new Array(size).join(' ');
 
-	var stream = fs.createWriteStream(path.join(self.directory, id + EXTENSION_BINARY));
+	var stream = fs.createWriteStream(path.join(self.directory, key + EXTENSION_BINARY));
 
 	stream.write(header);
 	stream.end(buffer);
@@ -1924,12 +1926,14 @@ Binary.prototype.read = function(id, callback) {
 	return {Database}
 */
 Binary.prototype.remove = function(id, fnCallback, changes) {
+
 	var self = this;
+	var key = id;
 
-	if (id.indexOf('#') === -1)
-		id = self.db.name + '#' + id;
+	if (key.indexOf('#') === -1)
+		key = self.db.name + '#' + key;
 
-	var filename = path.join(self.directory, id + EXTENSION_BINARY);
+	var filename = path.join(self.directory, key + EXTENSION_BINARY);
 
 	if (typeof(fnCallback) === STRING) {
 		changes = fnCallback;
