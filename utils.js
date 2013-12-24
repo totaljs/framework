@@ -1116,12 +1116,12 @@ String.prototype.contains = function(value, mustAll) {
 	var str = this;
 
 	if (typeof(value) === STRING)
-		return str.indexOf(value) !== -1;
+		return str.indexOf(value, typeof(mustAll) === NUMBER ? mustAll : 0) !== -1;
 
 	var length = value.length;
+
 	for (var i = 0; i < length; i++) {
 		var exists = str.indexOf(value[i]) !== -1;
-
 		if (mustAll) {
 			if (!exists)
 				return false;
@@ -1129,7 +1129,7 @@ String.prototype.contains = function(value, mustAll) {
 			return true;
 	}
 
-	return mustAll ? true : false;
+	return mustAll;
 };
 
 /*
