@@ -2811,9 +2811,7 @@ Framework.prototype._request = function(req, res) {
 	req.isProxy = headers['x-proxy'] === 'partial.js';
 	req.data = { get: {}, post: {}, files: [] };
 	req.flags = null;
-	
-	// req.buffer = { data: '', isExceeded: false, isData: false };
-	
+
 	req.buffer_exceeded = false;
 	req.buffer_data = '';
 	req.buffer_has = false;
