@@ -1133,7 +1133,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Pending requests                : {0}x'.format(self.stats.request.pending));
 	builder.push('Blocked requests                : {0}x'.format(self.stats.request.xss));
 	builder.push('Request to webpage              : {0}x'.format(self.stats.request.web));
-	builder.push('Request to Websocket            : {0}x'.format(self.stats.request.websocket));
+	builder.push('Request to websocket            : {0}x'.format(self.stats.request.websocket));
 	builder.push('Request to file                 : {0}x'.format(self.stats.request.file));
 	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr));
 	builder.push('Request GET                     : {0}x'.format(self.stats.request.get));
@@ -1155,13 +1155,14 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Response forwarding             : {0}x'.format(self.stats.response.forwarding));
 	builder.push('Response file                   : {0}x'.format(self.stats.response.file));
 	builder.push('Response binary                 : {0}x'.format(self.stats.response.binary));
+	builder.push('Response pipe                   : {0}x'.format(self.stats.response.pipe));
 	builder.push('Response not modified           : {0}x'.format(self.stats.response.notModified));
 	builder.push('Response stream                 : {0}x'.format(self.stats.response.stream));
 	builder.push('Response streaming              : {0}x'.format(self.stats.response.streaming));
 	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr));
-	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse));
-	builder.push('Response Websocket message      : {0}x'.format(self.stats.response.websocket));
+	builder.push('Response websocket message      : {0}x'.format(self.stats.response.websocket));
 	builder.push('Response restriction            : {0}x'.format(self.stats.response.restriction));
+	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse));
 	builder.push('Response destroy                : {0}x'.format(self.stats.response.destroy));
 	builder.push('Response 400                    : {0}x'.format(self.stats.response.error400));
 	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401));
@@ -2725,8 +2726,8 @@ Framework.prototype._service = function(count) {
 		self.resources = {};
 	}
 
-	// every 5 minute service clears static cache
-	if (count % 5 === 0) {
+	// every 3 minute service clears static cache
+	if (count % 3 === 0) {
 		self.emit('clear', 'temporary', self.temporary);
 		self.temporary.path = {};
 		self.temporary.range = {};
@@ -2847,7 +2848,8 @@ Framework.prototype._request = function(req, res) {
 				return;
 			}
 		} catch(err) {
-			self.framework.error(err, 'framework.onRoute()', req.uri);
+			self.response500(req, res, err);
+			return;
 		}
 	}
 

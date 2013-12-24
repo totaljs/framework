@@ -45,10 +45,11 @@ IN DEVELOPMENT ======= 1.3.1
 - updated: @{meta(title, [description], [keywords], [image])}
 - updated: framework.route(url, fn, { timeout: false });
 - updated: framework.onAuthorization(req, res/socket, flags, next)) (@next has 2 params, IsLogged {Boolean}, new: User {Object})
-- updated: @{text}, @{password}, @{hidden}, @{textarea}, @{radio} @{checkbox}
+- updated: @{text}, @{password}, @{hidden}, @{textarea}, @{radio}, @{checkbox}
 - updated: String.prototype.sha1([salt])
 - updated: String.prototype.md5([salt])
 - updated: mail
+- updated: decrease time to cache
 
 - fixed: framework.responseFile()
 - fixed: partial routing
