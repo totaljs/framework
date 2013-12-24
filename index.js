@@ -1460,13 +1460,13 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	key = key || filename;
 	var name = self.temporary.path[key];
-
+	
 	if (name === null) {
 		self.response404(req, res);
 		return self;
 	}
 
-	var extension = path.extname(filename).substring(1);
+	var extension = path.extname(name).substring(1);
 
 	if (self.config['static-accepts'].indexOf('.' + extension) === -1) {
 		self.response404(req, res);
@@ -1757,7 +1757,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				}
 
 				self.temporary.path[key] = name;
-				self.responseFile(req, res, name, '', headers, key);
+				self.responseFile(req, res, name, '', headers, key);				
 			});
 
 		});
@@ -1792,7 +1792,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			}
 
 			self.temporary.path[key] = name;
-			self.responseFile(req, res, filename, '', headers, key);
+			self.responseFile(req, res, filename, '', headers, key);			
 		});
 
 	});
@@ -1830,7 +1830,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 		req.processing += 500;
 
 		setTimeout(function() {
-			self.responseImage(req, res, filename, fnProcess, headers, useImageMagick);
+			self.responseImageWithoutCache(req, res, filename, fnProcess, headers, useImageMagick);
 		}, 500);
 
 		return;
