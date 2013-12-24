@@ -450,7 +450,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (!(partial instanceof Array))
 		partial = null;
 
-	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: maximumSize || self.config['default-request-length'], partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: flags.indexOf('raw') !== -1, isMEMBER: isMember });
+	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: (maximumSize || self.config['default-request-length']) * 1024, partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: flags.indexOf('raw') !== -1, isMEMBER: isMember });
 	return self;
 };
 
@@ -564,7 +564,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (!flags || (flags.indexOf('logged') === -1 && flags.indexOf('unlogged') === -1))
 		isMember = true;
 
-	self.routes.websockets.push({ name: _controller, url: routeURL, param: arr, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: maximumSize || self.config['default-websocket-request-length'], isMEMBER: isMember, isJSON: isJSON, isBINARY: isBINARY });
+	self.routes.websockets.push({ name: _controller, url: routeURL, param: arr, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: (maximumSize || self.config['default-websocket-request-length']) * 1024, isMEMBER: isMember, isJSON: isJSON, isBINARY: isBINARY });
 	return self;
 };
 
@@ -1649,6 +1649,29 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 		if (callback)
 			callback();
 	});
+
+	return self;
+};
+
+/*
+	Response custom
+	@req {ServerRequest}
+	@res {ServerResponse}
+*/
+Framework.prototype.responseCustom = function(req, res) {
+
+	var self = this;
+
+	if (res.success)
+		return self;
+
+	req.clear(true);
+	self.stats.response.custom++;
+	res.success = true;
+	self._request_stats(false, req.isStaticFile);
+
+	if (!req.isStaticFile)
+		self.emit('request-end', req, res);
 
 	return self;
 };
