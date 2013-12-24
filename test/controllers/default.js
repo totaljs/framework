@@ -367,7 +367,7 @@ function viewLive() {
 
 function pipe() {
 	var self = this;
-	self.pipe('http://www.partialjs.com/xhr/version/', { 'X-Requested-With': 'XMLHttpRequest' });
+	self.pipe('http://www.partialjs.com/');
 }
 
 function view_cookie() {

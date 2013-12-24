@@ -128,7 +128,7 @@ function test_routing(next) {
 			complete();
 		});
 	});
-
+/*
 	async.await('pipe', function(complete) {
 		utils.request(url + 'pipe/', 'GET', null, function(error, data, code, headers) {
 			if (error)
@@ -137,7 +137,7 @@ function test_routing(next) {
 			complete();
 		});
 	});
-
+*/
 	async.await('a/b/c/', function(complete) {
 		utils.request(url + 'a/b/c/', 'GET', null, function(error, data, code, headers) {
 			if (error)

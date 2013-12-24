@@ -61,6 +61,7 @@ IN DEVELOPMENT ======= 1.3.1
 - (IMPORTANT) fixed: WebSocket
 - fixed: WebSocket (user, session, request)
 - fixed: WebSocket routing
+- fixed: utils.request()
 
 - removed: framework.config['directory-upload']
 - removed: framework.verification()

@@ -122,16 +122,16 @@ function test_routing(next) {
 			complete();
 		});
 	});
-
+/*
 	async.await('pipe', function(complete) {
 		utils.request(url + 'pipe/', 'GET', null, function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert.ok(data.toString('utf8').isJSON(), 'controller.pipe() / responsePipe() problem');
+			assert.ok(data.toString('utf8').indexOf('telephone=no') !== -1, 'controller.pipe() / responsePipe() problem');
 			complete();
 		});
 	});
-
+*/
 	async.await('a/b/c/', function(complete) {
 		utils.request(url + 'a/b/c/', 'GET', null, function(error, data, code, headers) {
 			if (error)

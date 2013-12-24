@@ -162,6 +162,8 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 
 		if (isPOST)
 			req.end(isJSON ? JSON.stringify(data) : (data || '').toString(), encoding);
+		else
+			req.end();
 
 	} catch (ex) {
 		if (callback)
@@ -213,6 +215,8 @@ exports.download = function(url, callback, headers, method, params, encoding) {
 
 		if (isPOST)
 			req.end((params || '').toString(), ENCODING);
+		else
+			req.end();
 
 	} catch (ex) {
 		if (callback)
