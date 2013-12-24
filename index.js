@@ -438,6 +438,9 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		priority++;
 	}
 
+	if (flags.indexOf('get') === -1 && flags.indexOf('post') === -1 && flags.indexOf('delete') === -1 && flags.indexOf('put') === -1)
+		flags.push('get');
+
 	if (flags.indexOf('referer') !== -1)
 		self._request_check_referer = true;
 

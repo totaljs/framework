@@ -371,6 +371,8 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
 	var isXSS = false;
 	var length = arr2.length;
+	var LOGGED = 'logged';
+	var UNLOGGED = 'unlogged';
 
 	for (var i = 0; i < length; i++) {
 		var value = arr2[i];
@@ -378,7 +380,7 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 		if (value[0] === '!')
 			continue;
 
-		if (noLoggedUnlogged && (value === 'logged' || value === 'unlogged'))
+		if (noLoggedUnlogged && (value === LOGGED || value === UNLOGGED))
 			continue;
 
 		var index = arr1.indexOf(value);
@@ -392,7 +394,7 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 			isXSS = true;
 
 		if (index === -1)
-			return value === 'logged' || value === 'unlogged' ? -1 : 0;
+			return value === LOGGED || value === UNLOGGED ? -1 : 0;
 	}
 
 	if (!isXSS && arr1.indexOf('xss') !== -1)
