@@ -49,8 +49,8 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 	boundary = boundary.substring(boundary.indexOf('=') + 1);
 
-	req.buffer.isExceeded = false;
-	req.buffer.isData = true;
+	req.buffer_exceeded = false;
+	req.buffer_has = true;
 
 	parser.initWithBoundary(boundary);
 
@@ -63,7 +63,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
     parser.onHeaderValue = function(buffer, start, end) {
 
-		if (req.buffer.isExceeded)
+		if (req.buffer_exceeded)
 			return;
 
 		if (isXSS)
@@ -99,7 +99,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
     parser.onPartData = function(buffer, start, end) {
 
-		if (req.buffer.isExceeded)
+		if (req.buffer_exceeded)
 			return;
 
 		if (isXSS)
@@ -111,7 +111,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		size += length;
 
 		if (size >= maximumSize) {
-			req.buffer.isExceeded = true;
+			req.buffer_exceeded = true;
 
 			if (rm === null)
 				rm = [tmp.fileNameTmp];
@@ -143,7 +143,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 			stream = null;
 		}
 
-		if (req.buffer.isExceeded)
+		if (req.buffer_exceeded)
 			return;
 
 		if (isXSS)
@@ -205,8 +205,8 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 
 	boundary = boundary.substring(boundary.indexOf('=') + 1);
 
-	req.buffer.isExceeded = false;
-	req.buffer.isData = true;
+	req.buffer_exceeded = false;
+	req.buffer_has = true;
 
 	parser.initWithBoundary(boundary);
 
@@ -217,7 +217,8 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
     };
 
     parser.onHeaderValue = function(buffer, start, end) {
-		if (req.buffer.isExceeded || tmp.step > 1)
+
+		if (req.buffer_exceeded || tmp.step > 1)
 			return;
 
 		var arr = buffer.slice(start, end).toString(ENCODING).split(';');
@@ -245,6 +246,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 			close++;
 			return;
 		}
+
     };
 
     parser.onPartData = function(buffer, start, end) {

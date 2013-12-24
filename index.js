@@ -1460,7 +1460,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	key = key || filename;
 	var name = self.temporary.path[key];
-	
+
 	if (name === null) {
 		self.response404(req, res);
 		return self;
@@ -1757,7 +1757,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				}
 
 				self.temporary.path[key] = name;
-				self.responseFile(req, res, name, '', headers, key);				
+				self.responseFile(req, res, name, '', headers, key);
 			});
 
 		});
@@ -1792,7 +1792,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			}
 
 			self.temporary.path[key] = name;
-			self.responseFile(req, res, filename, '', headers, key);			
+			self.responseFile(req, res, filename, '', headers, key);
 		});
 
 	});
@@ -2794,23 +2794,9 @@ Framework.prototype._request = function(req, res) {
 		res.setHeader('Mode', 'debug');
 
     res.success = false;
-
-	req.data = { get: {}, post: {}, files: [] };
-	req.buffer = { data: '', isExceeded: false, isData: false };
-	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
-	req.flags = [];
-	req.session = null;
-	req.user = null;
-	req.prefix = '';
-	req.isAuthorized = true;
-	req.processing = 0;
-
-	var isXSS = false;
-	var accept = headers.accept;
-
-	req.isProxy = headers['x-proxy'] === 'partial.js';
 	req.uri = parser.parse(protocol + '://' + req.host + req.url);
 	req.path = internal.routeSplit(req.uri.pathname);
+	req.processing = 0;
 
 	// if is static file, return file
 	if (utils.isStaticFile(req.uri.pathname)) {
@@ -2820,6 +2806,25 @@ Framework.prototype._request = function(req, res) {
 		new Subscribe(self, req, res, 3).file();
 		return;
 	}
+
+	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
+	req.isProxy = headers['x-proxy'] === 'partial.js';
+	req.data = { get: {}, post: {}, files: [] };
+	req.flags = null;
+	
+	// req.buffer = { data: '', isExceeded: false, isData: false };
+	
+	req.buffer_exceeded = false;
+	req.buffer_data = '';
+	req.buffer_has = false;
+
+	req.session = null;
+	req.user = null;
+	req.prefix = '';
+	req.isAuthorized = true;
+
+	var isXSS = false;
+	var accept = headers.accept;
 
 	self._request_stats(true, false);
 	self.stats.request.web++;
@@ -4633,13 +4638,12 @@ function Subscribe(framework, req, res, type) {
 	// type = 3 - file routing
 
 	// OPTIMALIZATION: saving memory and processor
-	if (framework.onAuthorization !== null)
+	if (type !== 3 && framework.onAuthorization !== null)
 		this.handlers._authorization = this._authorization.bind(this);
 
 	if (type === 3)
 		this.handlers._endfile = this._endfile.bind(this);
-
-	if (type === 1)
+	else if (type === 1)
 		this.handlers._parsepost = this._parsepost.bind(this);
 
 	this.controller = null;
@@ -4709,8 +4713,8 @@ Subscribe.prototype.urlencoded = function() {
 		return;
 	}
 
-	self.req.buffer.isData = true;
-	self.req.buffer.isExceeded = false;
+	self.req.buffer_has = true;
+	self.req.buffer_exceeded = false;
 	self.req.on('data', self.handlers._parsepost);
 	self.end();
 };
@@ -4819,12 +4823,12 @@ Subscribe.prototype.prepare = function(flags, url) {
 	}
 
 	if (self.route === null)
-		self.route = self.framework.lookup(self.req, self.req.buffer.isExceeded ? '#431' : url || self.req.uri.pathname, flags);
+		self.route = self.framework.lookup(self.req, self.req.buffer_exceeded ? '#431' : url || self.req.uri.pathname, flags);
 
 	if (self.route === null)
 		self.route = self.framework.lookup(self.req, self.req.flags.indexOf('xss') === -1 ? '#404' : '#400', []);
 
-	self.execute(self.req.buffer.isExceeded ? 431 : 404);
+	self.execute(self.req.buffer_exceeded ? 431 : 404);
 };
 
 Subscribe.prototype._execute = function() {
@@ -4882,12 +4886,12 @@ Subscribe.prototype._authorization = function(isLogged, user) {
 		self.req.user = user;
 
 	self.req.flags.push(isLogged ? 'logged' : 'unlogged');
-	self.route = self.framework.lookup(self.req, self.req.buffer.isExceeded ? '#431' : self.req.uri.pathname, self.req.flags);
+	self.route = self.framework.lookup(self.req, self.req.buffer_exceeded ? '#431' : self.req.uri.pathname, self.req.flags);
 
 	if (self.route === null)
 		self.route = self.framework.lookup(self.req, self.req.isAuthorized ? '#404' : '#401', []);
 
-	self.execute(self.req.buffer.isExceeded ? 431 : 404);
+	self.execute(self.req.buffer_exceeded ? 431 : 404);
 };
 
 Subscribe.prototype._end = function() {
@@ -4903,7 +4907,7 @@ Subscribe.prototype._end = function() {
 		return;
 	}
 
-	if (self.req.buffer.isExceeded) {
+	if (self.req.buffer_exceeded) {
 		self.route = self.framework.lookup(self.req, '#431', []);
 
 		if (self.route === null) {
@@ -4916,7 +4920,7 @@ Subscribe.prototype._end = function() {
 		return;
 	}
 
-	if (self.req.buffer.data.length === 0) {
+	if (self.req.buffer_data.length === 0) {
 		self.prepare(self.req.flags, self.req.uri.pathname);
 		return;
 	}
@@ -4924,14 +4928,14 @@ Subscribe.prototype._end = function() {
 	if (self.route.isJSON) {
 		try
 		{
-			if (!self.req.buffer.data.isJSON()) {
+			if (!self.req.buffer_data.isJSON()) {
 				self.route = self.framework.lookup(self.req, '#400', []);
 				self.execute(400);
 				return;
 			}
 
-			self.req.data.post = JSON.parse(self.req.buffer.data);
-			self.req.buffer.data = null;
+			self.req.data.post = JSON.parse(self.req.buffer_data);
+			self.req.buffer_data = null;
 			self.prepare(self.req.flags, self.req.uri.pathname);
 
 		} catch (err) {
@@ -4942,7 +4946,7 @@ Subscribe.prototype._end = function() {
 		return;
 	}
 
-	if (self.framework.onXSS !== null && self.framework.onXSS(self.req.buffer.data)) {
+	if (self.framework.onXSS !== null && self.framework.onXSS(self.req.buffer_data)) {
 		if (self.req.flags.indexOf('xss') === -1) {
 			self.req.flags.push('xss');
 			self.route = self.framework.lookup(self.req, '#400', []);
@@ -4951,18 +4955,17 @@ Subscribe.prototype._end = function() {
 		}
 	}
 
-	if (self.route !== null && self.route.isRAW)
-		self.req.data.post = self.req.buffer.data;
-	else {
+	if (self.route !== null && self.route.isRAW) {
+		self.req.data.post = self.req.buffer_data;
+	} else {
 		if ((self.req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
 			self.route = self.framework.lookup(self.req, '#400', []);
 			self.execute(400);
 			return;
 		}
-		self.req.data.post = qs.parse(self.req.buffer.data);
+		self.req.data.post = qs.parse(self.req.buffer_data);
 	}
 
-	self.req.buffer.data = null;
 	self.prepare(self.req.flags, self.req.uri.pathname);
 };
 
@@ -4975,6 +4978,11 @@ Subscribe.prototype._endfile = function() {
 	if (length === 0) {
 		self.framework.onStatic(self.req, self.res);
 		return;
+	}
+
+	if (self.req.uri.query && self.req.uri.query.length > 0) {
+		self.req.data = {};
+		self.req.data.get = qs.parse(self.req.uri.query);
 	}
 
 	for (var i = 0; i < length; i++) {
@@ -5001,17 +5009,17 @@ Subscribe.prototype._parsepost = function(chunk) {
 
 	var self = this;
 
-	if (self.req.buffer.isExceeded)
+	if (self.req.buffer_exceeded)
 		return;
 
-	if (!self.req.buffer.isExceeded)
-		self.req.buffer.data += chunk.toString();
+	if (!self.req.buffer_exceeded)
+		self.req.buffer_data += chunk.toString();
 
-	if (self.req.buffer.data.length < self.route.maximumSize)
+	if (self.req.buffer_data.length < self.route.maximumSize)
 		return;
 
-	self.req.buffer.isExceeded = true;
-	self.req.buffer.data = '';
+	self.req.buffer_exceeded = true;
+	self.req.buffer_data = '';
 };
 
 Subscribe.prototype._cancel = function() {
