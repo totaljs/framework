@@ -5,6 +5,8 @@ web application framework for node.js
 
 __partial.js__ is the best ever web application framework for creating a rich web sites and web services. The framework has good documentation and contains many examples. Please support the framework on GitHub and other social networks.
 
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/petersirka/partial.js/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
 > Current version (v1.3.0) is Release Candidate 1 (RC 1)
 
 ```
