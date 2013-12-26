@@ -275,7 +275,7 @@ Message.prototype._send = function(socket, options) {
 	var auth = [];
 	var err = null;
 
-	mailer.emit('sending', self);
+	mailer.emit('send', self);
 
 	socket.setTimeout(options.timeout || 5000, function() {
 		mailer.emit('error', new Error(utils.httpStatus(408)), self);

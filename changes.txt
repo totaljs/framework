@@ -85,6 +85,7 @@ IN DEVELOPMENT ======= 1.3.1
 - (IMPORTANT) renamed: framework.decode(value, key) -> framework.decrypt(value, key)
 - (IMPORTANT) renamed: utils.htmlEncode() -> utils.encode()
 - (IMPORTANT) renamed: utils.htmlDecode() -> utils.decode()
+- (IMPORTANT) renamed: mail.on('sending') -> mail.on('send')
 
 - improvements: compiling of views (fixed)
 
