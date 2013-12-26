@@ -2467,6 +2467,11 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 
 	process.on('message', function(msg, h) {
 
+		if (typeof(msg) !== STRING) {
+			self.emit('message', msg, h);
+			return;
+		}
+
 		if (msg === 'debugging') {
 			framework.console();
 			framework.console = utils.noop;
