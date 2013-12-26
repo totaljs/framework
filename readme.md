@@ -55,8 +55,9 @@ __Examples__:
 __Modules__:
 
 - [Online counter](https://github.com/petersirka/partial.js-modules/tree/master/online)
-- [FileStorage](https://github.com/petersirka/partial.js-modules/tree/master/filestorage)
+- [FileServer](https://github.com/petersirka/partial.js-modules/tree/master/fileserver)
 - [FileCache](https://github.com/petersirka/partial.js-modules/tree/master/filecache)
+- [FileStorage](https://github.com/petersirka/partial.js-modules/tree/master/filestorage)
 - [Fulltext search engine](https://github.com/petersirka/partial.js-modules/tree/master/fulltext)
 - [Authorization](https://github.com/petersirka/partial.js-modules/tree/master/authorization)
 - [Session (in-memory, redis or memcached)](https://github.com/petersirka/partial.js-modules/tree/master/session)
@@ -67,6 +68,10 @@ __Modules__:
 - [doT view engine](https://github.com/petersirka/partial.js-modules/tree/master/dot)
 - [Live storage](https://github.com/petersirka/partial.js-modules/tree/master/storage)
 - [Markdown parser](https://github.com/petersirka/partial.js-modules/tree/master/markdown)
+
+__Other products__:
+
+- [FileServer: storing of uploaded files](https://github.com/petersirka/fileserver)
 
 Documentation
 -------------
@@ -88,6 +93,7 @@ __Client-side libraries__
 
 - [jQuery two way bindings](https://github.com/petersirka/jquery.bindings)
 - [jQuery templates - partial.js templating](https://github.com/petersirka/jquery.templates)
+- [jQuery file upload (+ drag&drop)](https://github.com/petersirka/jquery.upload)
 - [partial.js routing on client-side via HTML 5 history API](https://github.com/petersirka/partial.js-clientside)
 
 ***

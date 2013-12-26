@@ -41,7 +41,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 	var isFile = false;
 	var size = 0;
 	var stream = null;
-	var tmp = { name: '', value: '', contentType: '', fileName: '', fileNameTmp: '', fileSize: 0, isFile: false, step: 0 };
+	var tmp = { name: '', value: '', contentType: '', fileName: '', fileNameTmp: '', fileSize: 0, isFile: false, step: 0, width: 0, height: 0 };
 	var ip = req.ip.replace(/\./g, '');
 	var close = 0;
 	var isXSS = false;
@@ -77,24 +77,23 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 			return;
 		}
 
-		if (tmp.step === 0) {
-
-			tmp.name = arr[1].substring(arr[1].indexOf('=') + 2);
-			tmp.name = tmp.name.substring(0, tmp.name.length - 1);
-			tmp.step = 1;
-
-			if (arr.length !== 3)
-				return;
-
-			tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
-			tmp.fileName = tmp.fileName.substring(0, tmp.fileName.length - 1);
-
-			tmp.isFile = true;
-			tmp.fileNameTmp = utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + utils.random(100000) + '.upload');
-			stream = fs.createWriteStream(tmp.fileNameTmp, { flags: 'w' });
-			close++;
+		if (tmp.step !== 0)
 			return;
-		}
+
+		tmp.name = arr[1].substring(arr[1].indexOf('=') + 2);
+		tmp.name = tmp.name.substring(0, tmp.name.length - 1);
+		tmp.step = 1;
+
+		if (arr.length !== 3)
+			return;
+
+		tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
+		tmp.fileName = tmp.fileName.substring(0, tmp.fileName.length - 1);
+
+		tmp.isFile = true;
+		tmp.fileNameTmp = utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + utils.random(100000) + '.upload');
+		stream = fs.createWriteStream(tmp.fileNameTmp, { flags: 'w' });
+		close++;
     };
 
     parser.onPartData = function(buffer, start, end) {
@@ -126,6 +125,26 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 			return;
 		}
 
+		if (tmp.fileSize === 0) {
+			var wh = null;
+			switch (tmp.contentType) {
+				case 'image/jpeg':
+					wh = require('./image').measureJPG(data);
+					break;
+				case 'image/gif':
+					wh = require('./image').measureGIF(data);
+					break;
+				case 'image/png':
+					wh = require('./image').measurePNG(data);
+					break;
+			}
+
+			if (wh) {
+				tmp.width = wh.width;
+				tmp.height = wh.height;
+			}
+		}
+
 		stream.write(data);
 		tmp.fileSize += length;
     };
@@ -150,7 +169,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 			return;
 
 		if (tmp.isFile) {
-			req.data.files.push(new HttpFile(tmp.name, tmp.fileName, tmp.fileNameTmp, tmp.fileSize, tmp.contentType));
+			req.data.files.push(new HttpFile(tmp.name, tmp.fileName, tmp.fileNameTmp, tmp.fileSize, tmp.contentType, tmp.width, tmp.height));
 			return;
 		}
 
@@ -275,7 +294,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 		if (!tmp.isFile)
 			return;
 
-		onFile(new HttpFile(tmp.name, tmp.fileName, tmp.fileNameTmp, tmp.fileSize, tmp.contentType));
+		onFile(new HttpFile(tmp.name, tmp.fileName, tmp.fileNameTmp, tmp.fileSize, tmp.contentType, tmp.with, tmp.height));
     };
 
     parser.onEnd = function() {
@@ -438,12 +457,14 @@ exports.routeParam = function(routeUrl, route) {
 	@contentType {String}
 	return {HttpFile}
 */
-function HttpFile(name, filename, path, length, contentType) {
+function HttpFile(name, filename, path, length, contentType, width, height) {
 	this.name = name;
 	this.filename = filename;
 	this.length = length;
 	this.contentType = contentType;
 	this.path = path;
+	this.width = width;
+	this.height = height;
 }
 
 /*
@@ -466,40 +487,6 @@ HttpFile.prototype.copy = function(filename, callback) {
 	reader.on('close', callback);
 	reader.pipe(writer);
 
-	return self;
-};
-
-/*
-	Measure picture
-	@callback {Function} :: @err {Error}, @size {Object}
-	return {HttpFile}
-*/
-HttpFile.prototype.measure = function(callback) {
-
-	var self = this;
-
-	if (!self.isImage()) {
-		callback('This type of file is not supported.');
-		return;
-	}
-
-	var stream = fs.createReadStream(self.path, { start:0, end: self.contentType === 'image/jpeg' ? 1000 : 100 });
-	stream.on('data', function (buffer) {
-		switch (self.contentType) {
-			case 'image/jpeg':
-				callback(null, require('./image').measureJPG(buffer));
-				return;
-			case 'image/gif':
-				callback(null, require('./image').measureGIF(buffer));
-				return;
-			case 'image/png':
-				callback(null, require('./image').measurePNG(buffer));
-				return;
-		}
-		callback(new Error('This type of file is not supported.'));
-	});
-
-	stream.on('error', callback);
 	return self;
 };
 
