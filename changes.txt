@@ -58,7 +58,7 @@ IN DEVELOPMENT ======= 1.3.1
 - fixed: utils.ls()
 - fixed: ['json'] and ['post'] flag
 - fixed: HTTP routing flags
-- fixed: set of multiple cookie
+- fixed: set of multiple cookies
 - fixed: increment/decrement Date/Time
 - fixed: paths (~ char is changing the relative path to the absolute path)
 - fixed: minifyHTML (<script>)
