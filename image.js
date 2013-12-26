@@ -222,17 +222,11 @@ Image.prototype.pipe = function(stream, type, options) {
 	Create a stream
 	@stream {Stream}
 	@type {String} :: optional, image type (png, jpg, gif)
-	@options {Object} :: Stream object
 	return {Image}
 */
-Image.prototype.stream = function(type, options) {
+Image.prototype.stream = function(type) {
 
 	var self = this;
-
-	if (typeof(type) === 'object') {
-		options = type;
-		type = null;
-	}
 
 	if (self.builder.length === 0)
 		return;
