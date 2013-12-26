@@ -5,7 +5,7 @@ var path = require('path');
 var util = require('util');
 var events = require('events');
 
-var VERSION = 'v2.0.5';
+var VERSION = 'v2.0.6';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -1812,16 +1812,15 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
 	else if (name.indexOf('.jpg') !== -1)
 		dimension = dimensionJPG(buffer);
 
-	var header = JSON.stringify({ name: name, size: size, type: type, width: dimension.width, height: dimension.height });
-
-	size = (BINARY_HEADER_LENGTH - header.length) + 1;
-	header += new Array(size).join(' ');
+	var header = new Buffer(BINARY_HEADER_LENGTH);
+	header.fill(' ');
+	header.write(JSON.stringify({ name: name, size: size, type: type, width: dimension.width, height: dimension.height }));
 
 	var id = new Date().getTime().toString() + Math.random().toString(36).substring(10);
 	var key = self.db.name + '#' + id;
 	var stream = fs.createWriteStream(path.join(self.directory, key + EXTENSION_BINARY));
 
-	stream.write(header);
+	stream.write(header, 'binary');
 	stream.end(buffer);
 	stream = null;
 
@@ -1869,14 +1868,13 @@ Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) 
 	else if (name.indexOf('.jpg') !== -1)
 		dimension = dimensionJPG(buffer);
 
-	var header = JSON.stringify({ name: name, size: size, type: type, width: dimension.width, height: dimension.height });
-
-	size = (BINARY_HEADER_LENGTH - header.length) + 1;
-	header += new Array(size).join(' ');
+	var header = new Buffer(BINARY_HEADER_LENGTH);
+	header.fill(' ');
+	header.write(JSON.stringify({ name: name, size: size, type: type, width: dimension.width, height: dimension.height }));
 
 	var stream = fs.createWriteStream(path.join(self.directory, key + EXTENSION_BINARY));
 
-	stream.write(header);
+	stream.write(header, 'binary');
 	stream.end(buffer);
 	stream = null;
 
@@ -1903,14 +1901,14 @@ Binary.prototype.read = function(id, callback) {
 		id = self.db.name + '#' + id;
 
 	var filename = path.join(self.directory, id + EXTENSION_BINARY);
-	var stream = fs.createReadStream(filename, { start: 0, end: BINARY_HEADER_LENGTH - 1 });
+	var stream = fs.createReadStream(filename, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
 
 	stream.on('error', function(err) {
 		callback(err, null, null);
 	});
 
 	stream.on('data', function(buffer) {
-		var json = buffer.toString('utf8').replace(/^[\s]+|[\s]+$/g, '');
+		var json = new Buffer(buffer, 'binary').toString('utf8').replace(/^[\s]+|[\s]+$/g, '');
 		stream = fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
 		callback(null, stream, JSON.parse(json));
 	});
