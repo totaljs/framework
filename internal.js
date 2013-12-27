@@ -1960,7 +1960,7 @@ function parse(html, controller) {
 					case 'currentJS':
 					case 'currentCSS':
 					case 'currentImage':
-					case 'currentUpload':
+					case 'currentDownload':
 					case 'currentVideo':
 					case 'currentView':
 					case 'currentTemplate':
@@ -2007,7 +2007,7 @@ function parse(html, controller) {
 					case 'routeCSS':
 					case 'routeImage':
 					case 'routeFont':
-					case 'routeUpload':
+					case 'routeDownload':
 					case 'routeVideo':
 					case 'routeStatic':
 						isEncode = false;
