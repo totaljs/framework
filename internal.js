@@ -32,7 +32,6 @@ if (typeof(setImmediate) === UNDEFINED) {
 	@tmpDirectory {String}
 	@onXSS {Function}
 	@callback {Function}
-	return {St<ring array}
 */
 exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, onXSS, callback) {
 
@@ -211,14 +210,13 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 	@tmpDirectory {String}
 	@onFile {Function} :: this function is called when is a file downloaded
 	@callback {Function}
-	return {String array}
 */
 exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, callback) {
 
 	var parser = new MultipartParser();
 	var boundary = contentType.split(';')[1];
 	var stream = null;
-	var tmp = { name: '', contentType: '', fileName: '', fileNameTmp: '', fileSize: 0, isFile: false, step: 0 };
+	var tmp = { name: '', contentType: '', fileName: '', fileNameTmp: '', fileSize: 0, isFile: false, step: 0, width: 0, height: 0 };
 	var ip = req.ip.replace(/\./g, '');
 	var close = 0;
 
@@ -275,6 +273,26 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 		if (!tmp.isFile)
 			return;
 
+		if (tmp.fileSize === 0) {
+			var wh = null;
+			switch (tmp.contentType) {
+				case 'image/jpeg':
+					wh = require('./image').measureJPG(data);
+					break;
+				case 'image/gif':
+					wh = require('./image').measureGIF(data);
+					break;
+				case 'image/png':
+					wh = require('./image').measurePNG(data);
+					break;
+			}
+
+			if (wh) {
+				tmp.width = wh.width;
+				tmp.height = wh.height;
+			}
+		}
+
 		stream.write(data);
 		tmp.fileSize += length;
 	};
@@ -294,7 +312,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 		if (!tmp.isFile)
 			return;
 
-		onFile(new HttpFile(tmp.name, tmp.fileName, tmp.fileNameTmp, tmp.fileSize, tmp.contentType, tmp.with, tmp.height));
+		onFile(new HttpFile(tmp.name, tmp.fileName, tmp.fileNameTmp, tmp.fileSize, tmp.contentType, tmp.width, tmp.height));
     };
 
     parser.onEnd = function() {
