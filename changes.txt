@@ -8,7 +8,7 @@ IN DEVELOPMENT ======= 1.3.1
 - added: framework.routeDownload()
 - added: String.prototype.sha256([salt])
 - added: String.prototype.sha512([salt])
-- added: @{currentDownload}
+- added: @{currentDownload()}
 - added: @{currentView()}
 - added: @{currentTemplate()}
 - added: @{currentContent()}
@@ -88,6 +88,7 @@ IN DEVELOPMENT ======= 1.3.1
 - (IMPORTANT) renamed: mail.on('sending') -> mail.on('send')
 
 - improvements: compiling of views (fixed)
+- example (add): https://github.com/petersirka/partial.js/tree/master/examples/request-to-response
 
 ======= 1.3.0-1
 
