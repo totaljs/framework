@@ -30,7 +30,7 @@ function view_homepage() {
 	// file.isVideo();
 	// file.isImage();
 
-	model.info = file.filename + ' ({0} kB)'.format(Math.floor(file.length / 1024, 2));
+	model.info = file.filename + ' ({0} kB) - {1}x{2}'.format(Math.floor(file.length / 1024, 2), file.width, file.height);
 
 	// =============================
 	// $ brew install graphicsmagick
