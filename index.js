@@ -438,6 +438,13 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		priority++;
 	}
 
+	if (isMixed) {
+		if (flags.indexOf('post') === -1 && flags.indexOf('put') === -1 && flags.indexOf('upload') === -1) {
+			flags.push('upload');
+			priority++
+		}
+	}
+
 	if (flags.indexOf('get') === -1 && flags.indexOf('post') === -1 && flags.indexOf('delete') === -1 && flags.indexOf('put') === -1 && flags.indexOf('upload') === -1)
 		flags.push('get');
 
@@ -1467,7 +1474,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return self;
 	}
 
-	var extension = path.extname(key).substring(1);
+	var extension = path.extname(name).substring(1);
 
 	if (self.config['static-accepts'].indexOf('.' + extension) === -1) {
 		self.response404(req, res);
@@ -1524,7 +1531,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	returnHeaders['Expires'] = new Date().add('d', 15);
 	returnHeaders['Vary'] = 'Accept-Encoding';
 
-	// možnosť odoslať vlastné hlavičky
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
 
@@ -1751,6 +1757,10 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
 			fnProcess(image);
 
+			var extension = path.extname(name);
+			if (extension.substring(1) !== image.outputType)
+				name = name.substring(0, name.lastIndexOf(extension)) + '.' + image.outputType;
+
 			image.save(name, function(err) {
 
 				delete self.temporary.processing[key];
@@ -1786,6 +1796,10 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
 		fnProcess(image);
 
+		var extension = path.extname(name);
+		if (extension.substring(1) !== image.outputType)
+			name = name.substring(0, name.lastIndexOf(extension)) + '.' + image.outputType;
+
 		image.save(name, function(err) {
 
 			delete self.temporary.processing[key];
@@ -1797,7 +1811,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			}
 
 			self.temporary.path[key] = name;
-			self.responseFile(req, res, filename, '', headers, key);
+			self.responseFile(req, res, name, '', headers, key);
 		});
 
 	});
@@ -4873,6 +4887,7 @@ Subscribe.prototype._execute = function() {
 		}
 
 		self.framework._verify_directory('temp');
+
 		internal.parseMULTIPART_MIXED(self.req, self.header, self.framework.config['directory-temp'], function(file) {
 			self.route.onExecute.call(self.controller, file);
 		}, self.handlers._end);
