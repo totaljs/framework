@@ -188,7 +188,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 					req.flags.push('xss');
 
 				if (rm !== null)
-					framework._clear(rm);
+					framework.unlink(rm);
 
 				callback();
 				return;
@@ -319,6 +319,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 		var cb = function cb () {
 
 			if (close <= 0) {
+				onFile(null);
 				callback();
 				return;
 			}

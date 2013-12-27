@@ -3145,7 +3145,7 @@ Framework.prototype.clear = function() {
 		for (var i = 0; i < length; i++)
 			arr.push(utils.combine(self.config['directory-temp'], files[i]));
 
-		self._clear(arr);
+		self.unlink(arr);
 	});
 
 	// clear static cache
@@ -3158,18 +3158,27 @@ Framework.prototype.clear = function() {
 	INTERNAL: Force remove files
 	return {Framework}
 */
-Framework.prototype._clear = function(arr) {
+Framework.prototype.unlink = function(arr, callback) {
 	var self = this;
 
-	if (arr.length === 0)
+	if (typeof(arr) === STRING)
+		arr = [arr];
+
+	if (arr.length === 0) {
+		if (callback)
+			callback();
 		return;
+	}
 
 	var filename = arr.shift();
-	if (!filename)
+	if (!filename) {
+		if (callback)
+			callback();
 		return;
+	}
 
 	fs.unlink(filename, function() {
-		self._clear(arr);
+		self.unlink(arr, callback);
 	});
 
 	return self;
@@ -8490,7 +8499,7 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
 	for (var i = 0; i < length; i++)
 		arr.push(files[i].path);
 
-	framework._clear(arr);
+	framework.unlink(arr);
 	self.data.files = null;
 
 	return self;

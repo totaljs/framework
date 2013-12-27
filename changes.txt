@@ -37,6 +37,7 @@ IN DEVELOPMENT ======= 1.3.1
 - added: request.isSecure
 - added: routing supports [https] and [http] flag (websocket too)
 - added: builders.default(name)
+- added: framework.unlink(array, [callback])
 
 - (IMPORTANT) updated: maximum request length (length 1 = 1 kB)
 - (IMPORTANT) updated: String.prototype.encode() === HTML encode
