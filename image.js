@@ -532,7 +532,7 @@ Image.prototype.minify = function() {
 };
 
 Image.prototype.grayscale = function() {
-	return this.push('-modulate', null, 10);
+	return this.push('-colorspace', 'Gray', 10);
 };
 
 Image.prototype.bitdepth = function(value) {
@@ -550,8 +550,8 @@ Image.prototype.background = function(color) {
 	return this.push('-background', color, 2);
 };
 
-Image.prototype.sepia = function() {
-	return this.push('-modulate 115,0,100 \\ -colorize 7,21,50', null, 10);
+Image.prototype.sepia = function(percentage) {
+	return this.push('-modulate', '115,0,100', 4).push('-colorize', '7,21,50', 5)
 };
 
 /*
