@@ -10,13 +10,13 @@ exports.install = function(framework) {
 	// route: all txt files
 	// Documentation: http://docs.partialjs.com/Framework/#framework.file
 	// Try: http://127.0.0.4/test.txt
-	framework.file('.txt', static_txt);
+	framework.file('All *.txt', static_txt);
 
 	// route: all jpg files
 	// all images will resized about 50%
 	// Documentation: http://docs.partialjs.com/Framework/#framework.file
 	// Try: http://127.0.0.4/header.jpg
-	framework.file('.jpg', static_jpg);
+	framework.file('All *.jpg', static_jpg);
 }
 
 function static_txt(req, res, isValidation) {
