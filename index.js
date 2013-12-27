@@ -1474,7 +1474,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return self;
 	}
 
-	var extension = path.extname(name).substring(1);
+	var extension = path.extname(key).substring(1);
 
 	if (self.config['static-accepts'].indexOf('.' + extension) === -1) {
 		self.response404(req, res);
