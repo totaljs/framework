@@ -2239,10 +2239,11 @@ function compressJS(html, index, framework) {
 
 	var js = html.substring(indexBeg, indexEnd + strTo.length).trim();
 	var val = js.substring(strFrom.length, js.length - strTo.length).trim();
-	var compiled = exports.compile_javascript(val, framework).replace(/\\n/g, "'+(String.fromCharCode(13)+String.fromCharCode(10))+'");
 
+	var compiled = exports.compile_javascript(val, framework).replace(/\\n/g, "'+(String.fromCharCode(13)+String.fromCharCode(10))+'");
 	html = html.replace(js, (strFrom + compiled.dollar().trim() + strTo).trim());
-	return compressJS(html, indexBeg + compiled.length, framework);
+
+	return compressJS(html, indexBeg + compiled.length + 9, framework);
 }
 
 function compressCSS(html, index, framework) {
@@ -2265,8 +2266,7 @@ function compressCSS(html, index, framework) {
 	var val = css.substring(strFrom.length, css.length - strTo.length).trim();
 	var compiled = exports.compile_less(val, true, framework);
 	html = html.replace(css, (strFrom + compiled.trim() + strTo).trim());
-	return compressCSS(html, indexBeg + compiled.length, framework);
-
+	return compressCSS(html, indexBeg + compiled.length + 8, framework);
 }
 
 /*
