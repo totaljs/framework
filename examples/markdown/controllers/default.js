@@ -1,4 +1,3 @@
-var md = require('partial.js/markdown');
 var fs = require('fs');
 
 exports.install = function(framework) {
@@ -9,12 +8,12 @@ exports.install = function(framework) {
 function view_markdown() {
 
 	var self = this;
-	var markdown = md.init();
+	var markdown = self.module('markdown').init();
 
 	markdown.onEmbedded = function(name, value) {
 		switch (name) {
 			case 'javascript':
-				return '<pre>{0}</pre>'.format(value.join('\n').htmlEncode());
+				return '<pre>{0}</pre>'.format(value.join('\n').encode());
 		}
 	}
 

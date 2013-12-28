@@ -12,7 +12,7 @@ framework.onAuthorization = function(req, res, flags, callback) {
 		return;
 	}
 
-	var obj = self.decode(cookie, 'user');
+	var obj = self.decrypt(cookie, 'user');
 
 	if (obj === null || obj === '' || obj.ip !== req.ip) {
 		callback(false);
@@ -37,8 +37,7 @@ framework.onAuthorization = function(req, res, flags, callback) {
 		}
 
 		self.cache.add('user_' + user.id, user, new Date().add('m', 5));
-		req.user = user;
-		callback(true);
+		callback(true, user);
 	});
 
 };

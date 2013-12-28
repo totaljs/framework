@@ -12,7 +12,7 @@ framework.helpers.say = function(what, raw) {
 
 	raw = raw || false;
 	if (!raw)
-		return what.toString().htmlEncode();
+		return what.toString().encode();
 	return what;
 };
 

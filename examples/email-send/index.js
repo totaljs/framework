@@ -10,7 +10,7 @@ message.to('petersirka@gmail.com');
 // message.reply('@');
 // message.attachment('/filename.txt', 'name.txt');
 
-message.sender('sirka@wsd-europe.com', 'Peter Sirka');
+message.from('sirka@wsd-europe.com', 'Janko Hrasko');
 
 mail.on('error', function (err) {
 	console.log(err);

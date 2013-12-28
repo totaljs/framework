@@ -16,5 +16,3 @@ framework.run(http, debug, port);
 framework.test(true, function() {
 	console.log('SUCCESSS');
 });
-
-console.log("http://{0}:{1}/".format(framework.ip, framework.port));

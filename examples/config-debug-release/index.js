@@ -16,5 +16,3 @@ framework.run(http, debug, port);
 // or
 //
 // framework.run(http, { debug: true, name: 'TEST' }, port);
-
-console.log("http://{0}:{1}/".format(framework.ip, framework.port));

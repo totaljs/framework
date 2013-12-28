@@ -7,4 +7,3 @@ var port = 8004;
 var debug = false;
 
 framework.run(http, debug, port);
-console.log("http://{0}:{1}/".format(framework.ip, framework.port));

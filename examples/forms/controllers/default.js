@@ -36,6 +36,7 @@ function json_registration() {
 	var self = this;
 
 	self.repository.country = ['', 'SK', 'CZ', 'EN', 'DE', 'AU', 'HU', 'PL', 'FR'];
+	
 	self.repository.type = [
 		{ id: 0, name: '' },
 		{ id: 1, name: 'Developer' },

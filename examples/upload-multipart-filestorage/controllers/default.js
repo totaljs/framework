@@ -13,7 +13,7 @@ exports.install = function(framework) {
 function view_homepage() {
 	var self = this;
 
-	self.framework.storage.listing(function(err, arr) {
+	self.framework.filestorage('users').listing(function(err, arr) {
 
 		var model = [];
 
@@ -21,7 +21,7 @@ function view_homepage() {
 			directory.split('\n').forEach(function(file) {
 
 				var picture = JSON.parse(file);
-				if (picture.extension.contains(['jpg', 'gif', 'png']))
+				if (picture.extension.contains(['jpg', 'jpeg', 'gif', 'png']))
 					model.push(picture);
 			});
 		});
@@ -40,7 +40,7 @@ function view_error_maximum() {
 function view_upload() {
 	var self = this;
 
-	self.framework.storage.insert(self.files[0].filename, self.files[0].path, function(err, id, stat) {
+	self.framework.filestorage('users').insert(self.files[0].filename, self.files[0].path, function(err, id, stat) {
 		self.redirect('/?success=ok');
 	});
 
@@ -59,5 +59,5 @@ function file_picture(req, res, isValidation) {
 		return;
 	}
 
-	self.storage.pipe(id, res, req);
+	self.filestorage('users').pipe(id, req, res);
 }

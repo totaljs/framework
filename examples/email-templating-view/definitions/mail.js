@@ -14,7 +14,7 @@ framework.mail = function(email, subject, html) {
 	// message.subject;
 	// message.body;
 
-	message.sender(self.config['mail-from'], self.config['mail-from-name']);
+	message.from(self.config['mail-from'], self.config['mail-from-name']);
 	message.to(email);
 
 	// message.cc('@');

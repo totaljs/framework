@@ -6,7 +6,7 @@ exports.install = function(framework) {
 function view_homepage() {
 	var self = this;
 	
-	if (!self.isXHR) {
+	if (!self.xhr) {
 		self.repository.title = 'Validation example';
 		self.view('homepage', { LoginName: '@' });
 		return;
