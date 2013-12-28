@@ -5,7 +5,7 @@ var path = require('path');
 var util = require('util');
 var events = require('events');
 
-var VERSION = 'v2.0.6';
+var VERSION = 'v2.0.7';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -183,10 +183,14 @@ Database.prototype = {
 
 		return new Date(Date.parse(dt.toString()));
 	}
+};
 
-}
-
-Database.prototype.__proto__ = new events.EventEmitter();
+Database.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
+	constructor: {
+		value: Database,
+		enumberable: false
+	}
+});
 
 /*
 	Insert data into database
