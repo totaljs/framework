@@ -9,6 +9,10 @@ __partial.js__ is the best ever web application framework for creating a rich we
 
 > Current version (v1.3.1) is Release Candidate 2 (RC 2)
 
+#### What's new?
+
+VIDEO: http://www.youtube.com/watch?v=-Y3LC2QmGpQ
+
 ```
 $ npm install partial.js
 ```
