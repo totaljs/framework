@@ -11,7 +11,7 @@ var crypto = require('crypto');
 var expressionCache = {};
 var sys = require('sys');
 
-var regexpMail = new RegExp('^[a-zA-Z0-9-_.]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
+var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
@@ -2183,7 +2183,12 @@ Async.prototype = {
 	}
 }
 
-sys.inherits(Async, events.EventEmitter);
+Async.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
+	constructor: {
+		value: Async,
+		enumberable: false
+	}
+});
 
 Async.prototype.reload = function() {
 	var self = this;

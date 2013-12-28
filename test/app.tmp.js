@@ -6,6 +6,7 @@ var util = require('util');
 var path = require('path');
 var utils = require('../utils');
 var exec = require('child_process').exec;
+var sys = require('sys');
 var Image = require('../image');
 var fs = require('fs');
 var events = require('events');
@@ -25,7 +26,7 @@ var tmp = "template('more', price.asda, 'asdsa', repository['asdasd'])";
 function params(tmp, replace) {
 
 	var isCopy = false;
-	
+
 	var index = tmp.indexOf('(');
 	if (index === -1)
 		return false;
@@ -38,6 +39,42 @@ function params(tmp, replace) {
 
 	return true;
 }
+
+function MyClass() {
+	this.name = 'my class';
+}
+
+MyClass.prototype = {
+	get getName() {
+		return 'KOKOT';
+	}
+}
+
+//MyClass.super_ = events.EventEmitter;
+MyClass.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
+	constructor: {
+		value: MyClass,
+		enumberable: false
+	}
+});
+
+var my1 = new MyClass();
+
+my1.on('kokot', function() {
+	console.log('my1');
+});
+
+var my2 = new MyClass();
+
+my2.on('kokot', function() {
+	console.log('my2');
+});
+
+my2.emit('kokot');
+
+console.log(my1.getName);
+
+
 
 //console.log((1).pluralize('zero', 'one', 'few', 'other'));
 

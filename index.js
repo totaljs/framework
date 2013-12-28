@@ -457,7 +457,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (!(partial instanceof Array))
 		partial = null;
 
-	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: (maximumSize || self.config['default-request-length']) * 1024, partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: flags.indexOf('raw') !== -1, isMEMBER: isMember });
+	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: (maximumSize || self.config['default-request-length']) * 1024, partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: flags.indexOf('raw') !== -1, isMEMBER: isMember, isXSS: flags.indexOf('xss') !== -1 });
 	return self;
 };
 
@@ -997,18 +997,6 @@ Framework.prototype.onXSS = function(data) {
 
 	return {String}
 */
-Framework.prototype.onSettings = function() {
-	return '';
-};
-
-/*
-	Render HTML for views
-	@argument {String params}
-
-	this === controller
-
-	return {String}
-*/
 Framework.prototype.onMeta = function() {
 
 	var self = this;
@@ -1475,6 +1463,9 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	}
 
 	var extension = path.extname(key).substring(1);
+
+	if (extension.length === 0)
+		extension = path.extname(name).substring(1);
 
 	if (self.config['static-accepts'].indexOf('.' + extension) === -1) {
 		self.response404(req, res);
@@ -3590,7 +3581,6 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 				continue;
 
 		} else {
-
 			if (flags.indexOf('xss') !== -1)
 				continue;
 		}
@@ -4763,7 +4753,6 @@ Subscribe.prototype.end = function() {
 Subscribe.prototype.execute = function(status) {
 
 	var self = this;
-
 	if (status > 399 && (self.route === null || self.route.name[0] === '#')) {
 		switch (status) {
 			case 400:
@@ -4858,7 +4847,7 @@ Subscribe.prototype.prepare = function(flags, url) {
 		self.route = self.framework.lookup(self.req, self.req.buffer_exceeded ? '#431' : url || self.req.uri.pathname, flags);
 
 	if (self.route === null)
-		self.route = self.framework.lookup(self.req, self.req.flags.indexOf('xss') === -1 ? '#404' : '#400', []);
+		self.route = self.framework.lookup(self.req, self.req.flags.indexOf('xss') === -1 ? '#404' : '#400', []);	
 
 	self.execute(self.req.buffer_exceeded ? 431 : 404);
 };
@@ -4867,7 +4856,6 @@ Subscribe.prototype._execute = function() {
 
 	var self = this;
 	var name = self.route.name;
-
 	self.controller.isCanceled = false;
 
 	try
@@ -4944,7 +4932,6 @@ Subscribe.prototype._end = function() {
 		self.route = self.framework.lookup(self.req, '#431', []);
 
 		if (self.route === null) {
-			self.req.clear(true);
 			self.framework.response431(self.req, self.res);
 			return;
 		}
@@ -4954,6 +4941,13 @@ Subscribe.prototype._end = function() {
 	}
 
 	if (self.req.buffer_data.length === 0) {
+
+		// POST, MULTIPART
+		if (self.route !== null && !self.route.isXSS && self.req.flags.indexOf('xss') !== -1) {
+			self.route400();
+			return;
+		}
+
 		self.prepare(self.req.flags, self.req.uri.pathname);
 		return;
 	}
@@ -4962,8 +4956,7 @@ Subscribe.prototype._end = function() {
 		try
 		{
 			if (!self.req.buffer_data.isJSON()) {
-				self.route = self.framework.lookup(self.req, '#400', []);
-				self.execute(400);
+				self.route400();
 				return;
 			}
 
@@ -4972,18 +4965,19 @@ Subscribe.prototype._end = function() {
 			self.prepare(self.req.flags, self.req.uri.pathname);
 
 		} catch (err) {
-			self.route = self.framework.lookup(self.req, '#400', []);
-			self.execute(400);
+			self.route400();
 		}
 
 		return;
 	}
 
-	if (self.framework.onXSS !== null && self.framework.onXSS(self.req.buffer_data)) {
-		if (self.req.flags.indexOf('xss') === -1) {
+	// A route has not allowed XSS
+	if (!self.route.isXSS && self.framework.onXSS !== null) {
+
+		if (self.framework.onXSS(self.req.buffer_data)) {
 			self.req.flags.push('xss');
-			self.route = self.framework.lookup(self.req, '#400', []);
-			self.execute(400);
+			self.framework.stats.request.xss++;
+			self.route400();
 			return;
 		}
 	}
@@ -4992,8 +4986,7 @@ Subscribe.prototype._end = function() {
 		self.req.data.post = self.req.buffer_data;
 	} else {
 		if ((self.req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
-			self.route = self.framework.lookup(self.req, '#400', []);
-			self.execute(400);
+			self.route400();
 			return;
 		}
 		self.req.data.post = qs.parse(self.req.buffer_data);
@@ -5001,6 +4994,12 @@ Subscribe.prototype._end = function() {
 
 	self.prepare(self.req.flags, self.req.uri.pathname);
 };
+
+Subscribe.prototype.route400 = function() {
+	var self = this;
+	self.route = self.framework.lookup(self.req, '#400', []);
+	self.execute(400);
+}
 
 Subscribe.prototype._endfile = function() {
 
@@ -5593,17 +5592,6 @@ Controller.prototype.sitemap = function(name, url, index) {
 		});
 	}
 
-	return self;
-};
-
-/*
-	Settings for views
-	@arguments {String array}
-	return {Controller};
-*/
-Controller.prototype.settings = function() {
-	var self = this;
-	self.repository['$settings'] = self.framework.onSettings.apply(this, arguments);
 	return self;
 };
 
@@ -6292,7 +6280,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		}
 
 		if (!isSelected) {
-			sel = val === selected;
+			sel = val == selected;
 			isSelected = sel;
 		}
 
@@ -7431,7 +7419,6 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		name = name.substring(1);
 
 	var generator = internal.generateView(self, name);
-
 	if (generator === null) {
 
 		if (isPartial)
@@ -7476,7 +7463,8 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		self._currentContent = self._defaultContent || '';
 	}
 
-	for (var i = 0; i < generator.execute.length; i++) {
+	var length = generator.execute.length;
+	for (var i = 0; i < length; i++) {
 
 		var execute = generator.execute[i];
 		var isEncode = execute.isEncode;
@@ -7534,7 +7522,6 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			case 'meta':
 			case 'head':
 			case 'sitemap':
-			case 'settings':
 			case 'layout':
 
 				isEncode = false;
@@ -8140,9 +8127,14 @@ WebSocketClient.prototype = {
 	set user(value) {
 		this.req.user = value;
 	}
-}
+};
 
-WebSocketClient.prototype.__proto__ = new events.EventEmitter();
+WebSocketClient.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
+	constructor: {
+		value: WebSocketClient,
+		enumberable: false
+	}
+});
 
 /*
     Internal function

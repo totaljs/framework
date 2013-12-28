@@ -164,9 +164,6 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		if (req.buffer_exceeded)
 			return;
 
-		if (isXSS)
-			return;
-
 		if (tmp.isFile) {
 			req.data.files.push(new HttpFile(tmp.name, tmp.fileName, tmp.fileNameTmp, tmp.fileSize, tmp.contentType, tmp.width, tmp.height));
 			return;
@@ -184,8 +181,10 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 			if (close <= 0) {
 
-				if (isXSS && req.flags.indexOf('xss') === -1)
+				if (isXSS) {
 					req.flags.push('xss');
+					framework.stats.request.xss++;
+				}
 
 				if (rm !== null)
 					framework.unlink(rm);
@@ -1845,6 +1844,15 @@ function parse(html, controller) {
 	var name = '';
 	var length = cache.length;
 
+	var currentJS = 0;
+	var currentCSS = 0;
+	var currentImage = 0;
+	var currentDownload = 0;
+	var currentVideo = 0;
+	var currentView = 0;
+	var currentTemplate = 0;
+	var currentContent = 0;
+
 	while (index < length) {
 
 		var current = cache[index];
@@ -1879,15 +1887,78 @@ function parse(html, controller) {
 			copy = false;
 
 			var other = cache.substring(indexBeg + code.length + 2);
-
 			code = code.trim();
 
-			var indexer = keys[code];
+			var keycode = code;
+			var parIndex = keycode.indexOf('(');
+
+			if (parIndex !== -1) {
+				var parnm = keycode.substring(0, parIndex);
+				switch (parnm) {
+					case 'currentImage':
+						currentImage++;
+						break;
+					case 'currentJS':
+						currentJS++;
+						break;
+					case 'currentCSS':
+						currentCSS++;
+						break;
+					case 'currentVideo':
+						currentVideo++;
+						break;
+					case 'currentContent':
+						currentContent++;
+						break;
+					case 'currentView':
+						currentView++;
+						break;
+					case 'currentTemplate':
+						currentTemplate++;
+						break;
+
+					case 'image':
+					case 'routeImage':
+						keycode += currentImage;
+						break;
+
+					case 'js':
+					case 'routeJS':
+						keycode += currentJS;
+						break;
+
+					case 'css':
+					case 'routeCSS':
+						keycode += currentCSS;
+						break;
+
+					case 'routeVideo':
+						keycode += currentVideo;
+						break;
+
+					case 'view':
+					case 'viewToggle':
+						keycode += currentView;
+						break;
+
+					case 'template':
+					case 'templateToggle':
+						keycode += currentTemplate;
+						break;
+
+					case 'content':
+					case 'contetnToggle':
+						keycode += currentContent;
+						break;
+				}
+			}
+
+			var indexer = keys[keycode];
 			var push = false;
 
 			if (typeof(indexer) === UNDEFINED) {
 				indexer = execute.length;
-				keys[code] = indexer;
+				keys[keycode] = indexer;
 				push = true;
 			}
 
@@ -2055,7 +2126,6 @@ function parse(html, controller) {
 					case 'head':
 					case 'meta':
 					case 'sitemap':
-					case 'settings':
 					case 'layout':
 					case 'title':
 					case 'description':

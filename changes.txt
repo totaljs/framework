@@ -54,7 +54,13 @@
 - updated: String.prototype.md5([salt])
 - updated: mail
 - updated: decrease time to cache
+- updated: email validation (by @jg10)
 
+- fixed: @{currentJS()}
+- fixed: @{currentCSS()}
+- fixed: @{currentVideo()}
+- fixed: @{currentImage()}
+- fixed: xss
 - fixed: framework.responseFile()
 - fixed: partial routing
 - fixed: uploading
