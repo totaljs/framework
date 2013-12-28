@@ -7,7 +7,7 @@ __partial.js__ is the best ever web application framework for creating a rich we
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/petersirka/partial.js/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
-> Current version (v1.3.0) is Release Candidate 1 (RC 1)
+> Current version (v1.3.1) is Release Candidate 2 (RC 2)
 
 ```
 $ npm install partial.js
