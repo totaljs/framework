@@ -5135,7 +5135,7 @@ Controller.prototype = {
 	},
 
 	get flags() {
-		return this.req.flags;
+		return this.subscribe.route.flags;
 	},
 
 	get path() {
