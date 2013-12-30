@@ -91,7 +91,17 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 		tmp.isFile = true;
 		tmp.fileNameTmp = utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + utils.random(100000) + '.upload');
+
 		stream = fs.createWriteStream(tmp.fileNameTmp, { flags: 'w' });
+
+		stream.once('close', function() {
+			close--;
+		});
+
+		stream.once('error', function() {
+			close--;
+		});
+
 		close++;
     };
 
@@ -151,11 +161,6 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
     parser.onPartEnd = function() {
 
 		if (stream !== null) {
-
-			stream.on('close', function() {
-				close--;
-			});
-
 			stream.end();
 			stream = null;
 		}
@@ -296,6 +301,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 	};
 
     parser.onPartEnd = function() {
+
 		if (stream !== null) {
 
 			stream.on('close', function() {
@@ -314,14 +320,13 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 
     parser.onEnd = function() {
 		var cb = function cb () {
-
-			if (close <= 0) {
-				onFile(null);
-				callback();
+			if (close > 0) {
+				setImmediate(cb);
 				return;
 			}
 
-			setImmediate(cb);
+			onFile(null);
+			callback();
 		};
 
 		cb();
