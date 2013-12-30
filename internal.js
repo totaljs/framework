@@ -181,29 +181,29 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
     parser.onEnd = function() {
 
-		var cb = function () {
+		var cb = function() {
 
-			if (close <= 0) {
-
-				if (isXSS) {
-					req.flags.push('xss');
-					framework.stats.request.xss++;
-				}
-
-				if (rm !== null)
-					framework.unlink(rm);
-
-				callback();
+			if (close > 0) {
+				setImmediate(cb);
 				return;
 			}
 
-			setImmediate(cb);
+			if (isXSS) {
+				req.flags.push('xss');
+				framework.stats.request.xss++;
+			}
+
+			if (rm !== null)
+				framework.unlink(rm);
+
+			callback();
 		};
 
 		cb();
     };
 
     req.on('data', parser.write.bind(parser));
+    req.on('end', parser.end.bind(parser));
 };
 
 /*
@@ -263,6 +263,15 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 			tmp.isFile = true;
 			tmp.fileNameTmp = utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + utils.random(100000) + '.upload');
 			stream = fs.createWriteStream(tmp.fileNameTmp, { flags: 'w' });
+
+			stream.on('close', function() {
+				close--;
+			});
+
+			stream.on('error', function() {
+				close--;
+			});
+
 			close++;
 			return;
 		}
@@ -303,11 +312,6 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
     parser.onPartEnd = function() {
 
 		if (stream !== null) {
-
-			stream.on('close', function() {
-				close--;
-			});
-
 			stream.end();
 			stream = null;
 		}
@@ -320,6 +324,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 
     parser.onEnd = function() {
 		var cb = function cb () {
+
 			if (close > 0) {
 				setImmediate(cb);
 				return;
@@ -1505,7 +1510,6 @@ function MultipartParser() {
   this.boundaryChars = null;
   this.lookbehind = null;
   this.state = S.PARSER_UNINITIALIZED;
-
   this.index = null;
   this.flags = 0;
 }
@@ -1519,15 +1523,16 @@ MultipartParser.stateToString = function(stateNumber) {
 };
 
 MultipartParser.prototype.initWithBoundary = function(str) {
-  this.boundary = new Buffer(str.length+4);
-  this.boundary.write('\r\n--', 'ascii', 0);
-  this.boundary.write(str, 'ascii', 4);
-  this.lookbehind = new Buffer(this.boundary.length+8);
-  this.state = S.START;
+  var self = this;
+  self.boundary = new Buffer(str.length+4);
+  self.boundary.write('\r\n--', 'ascii', 0);
+  self.boundary.write(str, 'ascii', 4);
+  self.lookbehind = new Buffer(self.boundary.length+8);
+  self.state = S.START;
 
-  this.boundaryChars = {};
-  for (var i = 0; i < this.boundary.length; i++) {
-    this.boundaryChars[this.boundary[i]] = true;
+  self.boundaryChars = {};
+  for (var i = 0; i < self.boundary.length; i++) {
+    self.boundaryChars[self.boundary[i]] = true;
   }
 };
 
@@ -1535,14 +1540,14 @@ MultipartParser.prototype.write = function(buffer) {
   var self = this,
       i = 0,
       len = buffer.length,
-      prevIndex = this.index,
-      index = this.index,
-      state = this.state,
-      flags = this.flags,
-      lookbehind = this.lookbehind,
-      boundary = this.boundary,
-      boundaryChars = this.boundaryChars,
-      boundaryLength = this.boundary.length,
+      prevIndex = self.index,
+      index = self.index,
+      state = self.state,
+      flags = self.flags,
+      lookbehind = self.lookbehind,
+      boundary = self.boundary,
+      boundaryChars = self.boundaryChars,
+      boundaryLength = self.boundary.length,
       boundaryEnd = boundaryLength - 1,
       bufferLength = buffer.length,
       c,
@@ -1753,7 +1758,6 @@ MultipartParser.prototype.write = function(buffer) {
           // it could be the beginning of a new sequence
           i--;
         }
-
         break;
       case S.END:
         break;
@@ -1766,26 +1770,32 @@ MultipartParser.prototype.write = function(buffer) {
   dataCallback('headerValue');
   dataCallback('partData');
 
-  this.index = index;
-  this.state = state;
-  this.flags = flags;
+  self.index = index;
+  self.state = state;
+  self.flags = flags;
 
   return len;
 };
 
 MultipartParser.prototype.end = function() {
+
+  var self = this;
+
   var callback = function(self, name) {
     var callbackSymbol = 'on'+name.substr(0, 1).toUpperCase()+name.substr(1);
     if (callbackSymbol in self) {
       self[callbackSymbol]();
     }
   };
-  if ((this.state == S.HEADER_FIELD_START && this.index === 0) ||
-      (this.state == S.PART_DATA && this.index == this.boundary.length)) {
-    callback(this, 'partEnd');
-    callback(this, 'end');
-  } else if (this.state != S.END) {
-    return new Error('MultipartParser.end(): stream ended unexpectedly: ' + this.explain());
+
+  if ((self.state == S.HEADER_FIELD_START && self.index === 0) ||
+      (self.state == S.PART_DATA && self.index == self.boundary.length)) {
+    callback(self, 'partEnd');
+    callback(self, 'end');
+  } else if (self.state != S.END) {
+  	callback(self, 'partEnd');
+  	callback(self, 'end');
+    return new Error('MultipartParser.end(): stream ended unexpectedly: ' + self.explain());
   }
 };
 
