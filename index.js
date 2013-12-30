@@ -1526,7 +1526,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		utils.extend(returnHeaders, headers, true);
 
 	if (downloadName && downloadName.length > 0)
-		returnHeaders['Content-Disposition'] = 'attachment; filename=' + downloadName;
+		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(downloadName);
 
 	if (etag.length > 0)
 		returnHeaders['Etag'] = etag;
@@ -1909,7 +1909,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	downloadName = downloadName || '';
 
 	if (downloadName.length > 0)
-		returnHeaders['Content-Disposition'] = 'attachment; filename=' + downloadName;
+		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(downloadName);
 
 	returnHeaders['Content-Type'] = contentType;
 
@@ -4847,7 +4847,7 @@ Subscribe.prototype.prepare = function(flags, url) {
 		self.route = self.framework.lookup(self.req, self.req.buffer_exceeded ? '#431' : url || self.req.uri.pathname, flags);
 
 	if (self.route === null)
-		self.route = self.framework.lookup(self.req, self.req.flags.indexOf('xss') === -1 ? '#404' : '#400', []);	
+		self.route = self.framework.lookup(self.req, self.req.flags.indexOf('xss') === -1 ? '#404' : '#400', []);
 
 	self.execute(self.req.buffer_exceeded ? 431 : 404);
 };
