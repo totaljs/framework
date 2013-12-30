@@ -157,7 +157,6 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 			});
 
 			stream.end();
-			stream.destroy();
 			stream = null;
 		}
 
@@ -304,7 +303,6 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 			});
 
 			stream.end();
-			stream.destroy();
 			stream = null;
 		}
 

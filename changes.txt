@@ -1,3 +1,8 @@
+======= 1.3.1-1
+
+- fixed: Content-Disposition (added URL encoded)
+- fixed: upload stream (problem in Debian)
+
 ======= 1.3.1
 
 - added: auto-creating directories when are needed (logs, databases)
