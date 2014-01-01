@@ -28,7 +28,7 @@ global.builders = require('./builders');
 global.utils = require('./utils');
 
 function Framework() {
-	this.version = 1311;
+	this.version = 1320;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
@@ -183,6 +183,7 @@ function Framework() {
 	this._request_check_POST = false;
 	this._length_partial_private = 0;
 	this._length_partial_global = 0;
+	this._length_files = 0;
 
 	var self = this;
 }
@@ -581,6 +582,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 Framework.prototype.file = function(name, funcValidation, funcExecute) {
 	var self = this;
 	self.routes.files.push({ controller: _controller, name: name, onValidation: funcValidation, onExecute: funcExecute || funcValidation });
+	self._length_files++;
 	return self;
 };
 
@@ -1328,18 +1330,6 @@ Framework.prototype.usage = function(detailed) {
 };
 
 /*
-	Automatic serve static files
-	@req {ServerRequest}
-	@res {ServerResponse}
-	return {Framework}
-*/
-Framework.prototype.onStatic = function(req, res) {
-	var self = this;
-	self.responseStatic(req, res);
-	return self;
-};
-
-/*
 	3rd CSS compiler (Sync)
 	@filename {String}
 	@content {String} :: Content of CSS file
@@ -1416,7 +1406,8 @@ Framework.prototype.responseStatic = function(req, res) {
 	if (index !== -1)
 		name = name.substring(0, index);
 
-	var filename = utils.combine(self.config['directory-public'], name);
+	var filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+
 	self.responseFile(req, res, filename, '');
 	return self;
 };
@@ -2815,9 +2806,16 @@ Framework.prototype._request = function(req, res) {
 
 	// if is static file, return file
 	if (utils.isStaticFile(req.uri.pathname)) {
+
 		req.isStaticFile = true;
 		self.stats.request.file++;
 		self._request_stats(true, true);
+
+		if (self._length_files === 0) {
+			self.responseStatic(req, res);
+			return;
+		}
+
 		new Subscribe(self, req, res, 3).file();
 		return;
 	}
@@ -5004,20 +5002,13 @@ Subscribe.prototype.route400 = function() {
 Subscribe.prototype._endfile = function() {
 
 	var self = this;
-	var files = self.framework.routes.files;
-	var length = files.length;
-
-	if (length === 0) {
-		self.framework.onStatic(self.req, self.res);
-		return;
-	}
 
 	if (self.req.uri.query && self.req.uri.query.length > 0) {
 		self.req.data = {};
 		self.req.data.get = qs.parse(self.req.uri.query);
 	}
 
-	for (var i = 0; i < length; i++) {
+	for (var i = 0; i < self.framework._length_files; i++) {
 		var file = files[i];
 		try
 		{
@@ -5034,7 +5025,7 @@ Subscribe.prototype._endfile = function() {
 		}
 	}
 
-	self.framework.onStatic(self.req, self.res);
+	self.framework.responseStatic(self.req, self.res);
 };
 
 Subscribe.prototype._parsepost = function(chunk) {

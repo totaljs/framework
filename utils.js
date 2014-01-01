@@ -601,6 +601,7 @@ exports.getContentType = function(ext) {
 		'jpeg': 'image/jpeg',
 		'jpg': 'image/jpeg',
 		'js': 'text/javascript',
+		'geojson': 'application/json',
 		'json': 'application/json',
 		'm4a': 'audio/mp4a-latm',
 		'm4v': 'video/x-m4v',
