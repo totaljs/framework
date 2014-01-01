@@ -4,6 +4,8 @@ IN DEVELOPMENT ======= 1.3.2
 
 - fixed: static files (problem in white chars)
 
+- improvements: static files
+
 ======= 1.3.1-1
 
 - fixed: Content-Disposition (added URL-encode)
