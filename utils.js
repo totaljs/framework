@@ -381,19 +381,15 @@ exports.extend = function(target, source, rewrite) {
 	Copy values
 	@target {Object}
 	@source {Object}
-	@rewrite {Boolean} :: option, default true
 	return {Object}
 */
-exports.copy = function(target, source, rewrite) {
+exports.copy = function(target, source) {
 
 	if (target === null || source === null)
 		return target;
 
 	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
 		return target;
-
-	if (typeof(rewrite) === UNDEFINED)
-		rewrite = true;
 
 	var keys = Object.keys(source);
 	var i = keys.length;
@@ -404,11 +400,6 @@ exports.copy = function(target, source, rewrite) {
 
 		if (typeof(target[key]) === UNDEFINED)
 			continue;
-
-		if (rewrite) {
-			target[key] = source[key];
-			continue;
-		}
 
 		target[key] = source[key];
 	}
