@@ -447,7 +447,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		priority++;
 	}
 
-	if ((flags.indexOf('json') !== -1 || flags.indexOf('raw') !== -1) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1)) {
+	if ((flags.indexOf('json') !== -1 || isRaw) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1)) {
 		flags.push('post');
 		priority++;
 	}
