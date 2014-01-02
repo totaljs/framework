@@ -395,9 +395,22 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		priority += 2;
 	}
 
+	var isRaw = false;
+
 	if (flags) {
-		for (var i = 0; i < flags.length; i++)
-			flags[i] = flags[i].toString().toLowerCase();
+		var tmp = [];
+		for (var i = 0; i < flags.length; i++) {
+			var flag = flags[i].toString().toLowerCase();
+			switch (flag) {
+				case 'raw':
+					isRaw = true;
+					break;
+				default:
+					tmp.push(flag);
+					break;
+			}
+		}
+		flags = tmp;
 		priority += (flags.length * 2);
 	} else
 		flags = ['get'];
@@ -458,7 +471,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (!(partial instanceof Array))
 		partial = null;
 
-	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: (maximumSize || self.config['default-request-length']) * 1024, partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: flags.indexOf('raw') !== -1, isMEMBER: isMember, isXSS: flags.indexOf('xss') !== -1 });
+	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: (maximumSize || self.config['default-request-length']) * 1024, partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: isRaw, isMEMBER: isMember, isXSS: flags.indexOf('xss') !== -1 });
 	return self;
 };
 

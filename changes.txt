@@ -2,6 +2,7 @@ IN DEVELOPMENT ======= 1.3.2
 
 - added: .geojson content-type
 
+- fixed: "raw" flag
 - fixed: static files (problem in white chars)
 
 - improvements: static files
