@@ -7789,6 +7789,10 @@ WebSocket.prototype.close = function(id) {
 
     var self = this;
     var keys = self._keys;
+
+    if (keys === null)
+    	return self;
+
     var length = keys.length;
 
     if (length === 0)
@@ -7873,11 +7877,16 @@ WebSocket.prototype.find = function(id) {
 */
 WebSocket.prototype.destroy = function() {
     var self = this;
+
+    if (self.connections === null && self._keys === null)
+    	return self;
+
     self.close();
     self.connections = null;
     self._keys = null;
     delete self.framework.connections[self.path];
     self.emit('destroy');
+    return self;
 };
 
 /*
