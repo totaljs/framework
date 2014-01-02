@@ -28,7 +28,7 @@ global.builders = require('./builders');
 global.utils = require('./utils');
 
 function Framework() {
-	this.version = 1320;
+	this.version = 1312;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
@@ -5022,7 +5022,7 @@ Subscribe.prototype._endfile = function() {
 	}
 
 	for (var i = 0; i < self.framework._length_files; i++) {
-		var file = files[i];
+		var file = self.framework.routes.files[i];
 		try
 		{
 
