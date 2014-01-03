@@ -1,11 +1,11 @@
-IN DEVELOPMENT ======= 1.3.2
+IN DEVELOPMENT ======= 1.3.1-3 (HOTFIX)
 
 - fixed: (websocket) controller.destroy()
 - fixed: framework.responseFile() - the ability to add custom content-type
 
 - improvements: processing of request
 
-======= 1.3.1-2
+======= 1.3.1-2 (HOTFIX)
 
 - added: .geojson content-type
 
@@ -15,7 +15,7 @@ IN DEVELOPMENT ======= 1.3.2
 
 - improvements: static files
 
-======= 1.3.1-1
+======= 1.3.1-1 (HOTFIX)
 
 - fixed: Content-Disposition (added URL-encode)
 - fixed: upload
@@ -124,7 +124,7 @@ IN DEVELOPMENT ======= 1.3.2
 - improvements: compiling of views (fixed)
 - example (add): https://github.com/petersirka/partial.js/tree/master/examples/request-to-response
 
-======= 1.3.0-1
+======= 1.3.0-1 (HOTFIX)
 
 - updated: NoSQL version v2.0.3 (added new event on('load'))
 - updated: debugging.js (watching of resources)
@@ -279,7 +279,7 @@ THIS VERSION IS RELEASE CANDIDATE 1 (RC 1)
 
 - removed: keepalive.js from empty-projects
 
-======= 1.2.7-1
+======= 1.2.7-1 (HOTFIX)
 
 - added: framework.stats.request.delete
 - added: framework.stats.request.put
