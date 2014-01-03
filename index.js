@@ -1543,7 +1543,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (!returnHeaders[RESPONSE_HEADER_CONTENTTYPE])
 		returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = utils.getContentType(extension);
 
-	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE.indexOf(contentType) !== -1;
+	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE.indexOf(returnHeaders[RESPONSE_HEADER_CONTENTTYPE]) !== -1;
 	var range = req.headers['range'] || '';
 
 	res.success = true;
