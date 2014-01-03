@@ -575,6 +575,7 @@ exports.getContentType = function(ext) {
 		'css': 'text/css',
 		'less': 'text/css',
 		'sass': 'text/css',
+		'scss': 'text/css',
 		'csv': 'text/csv',
 		'doc': 'application/msword',
 		'docx': 'application/msword',
