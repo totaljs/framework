@@ -1,1 +1,4 @@
-console.log(Iterator);
+
+
+var A = 'B';
+var obj = { A: 'c' }]

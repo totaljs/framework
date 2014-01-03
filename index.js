@@ -22,6 +22,12 @@ var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
 
+var REQUEST_COMPRESS_EXTENSION = ['js', 'css', 'txt'];
+var RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
+var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
+var CONTENTTYPE_TEXTPLAIN = 'text/plain';
+var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', 'text/html'];
+
 var _controller = '';
 
 global.builders = require('./builders');
@@ -1517,12 +1523,11 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			delete self.temporary.path[key];
 	}
 
-	var compress = self.config['allow-gzip'] && ['js', 'css', 'txt'].indexOf(extension) !== -1;
 	var accept = req.headers['accept-encoding'] || '';
 	var returnHeaders = {};
 
 	returnHeaders['Accept-Ranges'] = 'bytes';
-	returnHeaders['Cache-Control'] = 'public';
+	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public';
 	returnHeaders['Expires'] = new Date().add('d', 15);
 	returnHeaders['Vary'] = 'Accept-Encoding';
 
@@ -1535,14 +1540,18 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (etag.length > 0)
 		returnHeaders['Etag'] = etag;
 
-	returnHeaders['Content-Type'] = utils.getContentType(extension);
+	if (!returnHeaders[RESPONSE_HEADER_CONTENTTYPE])
+		returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = utils.getContentType(extension);
 
-	var stream;
+	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE.indexOf(contentType) !== -1;
 	var range = req.headers['range'] || '';
+
 	res.success = true;
 
 	if (range.length > 0)
 		return self.responseRange(name, range, returnHeaders, req, res);
+
+	var stream;
 
 	if (compress && accept.indexOf('gzip') !== -1) {
 
@@ -1593,7 +1602,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 	var uri = parser.parse(url);
 	var h = {};
 
-	h['Cache-Control'] = 'private';
+	h[RESPONSE_HEADER_CACHECONTROL] = 'private';
 
 	if (headers)
 		utils.extend(h, headers, true);
@@ -1614,7 +1623,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 		if (attachment.length > 0)
 			res.setHeader('Content-Disposition', attachment);
 
-		res.setHeader('Content-Type', contentType);
+		res.setHeader(RESPONSE_HEADER_CONTENTTYPE, contentType);
 		res.setHeader('Vary', 'Accept-Encoding');
 
 		if (compress) {
@@ -1899,11 +1908,11 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (contentType.indexOf('/') === -1)
 		contentType = utils.getContentType(contentType);
 
-	var compress = self.config['allow-gzip'] && ['text/plain', 'text/javascript', 'text/css', 'application/x-javascript', 'text/html'].indexOf(contentType) !== -1;
+	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE.indexOf(contentType) !== -1;
 	var accept = req.headers['accept-encoding'] || '';
 	var returnHeaders = {};
 
-	returnHeaders['Cache-Control'] = 'public';
+	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public';
 	returnHeaders['Expires'] = new Date().add('d', 15);
 	returnHeaders['Vary'] = 'Accept-Encoding';
 
@@ -1915,7 +1924,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (downloadName.length > 0)
 		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(downloadName);
 
-	returnHeaders['Content-Type'] = contentType;
+	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 
 	if (compress && accept.indexOf('gzip') !== -1) {
 
@@ -2108,9 +2117,15 @@ Framework.prototype.response400 = function(req, res) {
 	req.clear(true);
 
 	res.success = true;
-	res.writeHead(400, { 'Content-Type': 'text/plain' });
-	res.end(utils.httpStatus(400));
-	self.emit('request-end', req, res);
+
+	var headers = {};
+	var status = 400;
+	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
+	res.writeHead(status, headers);
+	res.end(utils.httpStatus(status));
+
+	if (!req.isStaticFile)
+		self.emit('request-end', req, res);
 
 	self.stats.response.error400++;
 	return self;
@@ -2132,9 +2147,14 @@ Framework.prototype.response401 = function(req, res) {
 	req.clear(true);
 
 	res.success = true;
-	res.writeHead(401, { 'Content-Type': 'text/plain' });
-	res.end(utils.httpStatus(401));
-	self.emit('request-end', req, res);
+	var headers = {};
+	var status = 401;
+	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
+	res.writeHead(status, headers);
+	res.end(utils.httpStatus(status));
+
+	if (!req.isStaticFile)
+		self.emit('request-end', req, res);
 
 	self.stats.response.error401++;
 	return self;
@@ -2156,8 +2176,11 @@ Framework.prototype.response403 = function(req, res) {
 	req.clear(true);
 
 	res.success = true;
-	res.writeHead(403, { 'Content-Type': 'text/plain' });
-	res.end(utils.httpStatus(403));
+	var headers = {};
+	var status = 403;
+	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
+	res.writeHead(status, headers);
+	res.end(utils.httpStatus(status));
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -2182,8 +2205,11 @@ Framework.prototype.response404 = function(req, res) {
 	req.clear(true);
 
 	res.success = true;
-	res.writeHead(404, { 'Content-Type': 'text/plain' });
-	res.end(utils.httpStatus(404));
+	var headers = {};
+	var status = 404;
+	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
+	res.writeHead(status, headers);
+	res.end(utils.httpStatus(status));
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -2206,10 +2232,13 @@ Framework.prototype.response408 = function(req, res) {
 
 	self._request_stats(false, req.isStaticFile);
 	req.clear(true);
-
 	res.success = true;
-	res.writeHead(408, { 'Content-Type': 'text/plain' });
-	res.end(utils.httpStatus(408));
+
+	var headers = {};
+	var status = 408;
+	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
+	res.writeHead(status, headers);
+	res.end(utils.httpStatus(status));
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -2234,8 +2263,11 @@ Framework.prototype.response431 = function(req, res) {
 	req.clear(true);
 
 	res.success = true;
-	res.writeHead(431, { 'Content-Type': 'text/plain' });
-	res.end(utils.httpStatus(431));
+	var headers = {};
+	var status = 431;
+	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
+	res.writeHead(status, headers);
+	res.end(utils.httpStatus(status));
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -2264,8 +2296,11 @@ Framework.prototype.response500 = function(req, res, error) {
 		framework.error(error, null, req.uri);
 
 	res.success = true;
-	res.writeHead(500, { 'Content-Type': 'text/plain' });
-	res.end(utils.httpStatus(500));
+	var headers = {};
+	var status = 500;
+	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
+	res.writeHead(status, headers);
+	res.end(utils.httpStatus(status));
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -2289,8 +2324,12 @@ Framework.prototype.response501 = function(req, res) {
 	self._request_stats(false, req.isStaticFile);
 	req.clear(true);
 	res.success = true;
-	res.writeHead(501, { 'Content-Type': 'text/plain' });
-	res.end(utils.httpStatus(501));
+
+	var headers = {};
+	var status = 501;
+	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
+	res.writeHead(status, headers);
+	res.end(utils.httpStatus(status));
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -2321,9 +2360,8 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 	var accept = req.headers['accept-encoding'] || '';
 	var returnHeaders = {};
-	var buffer;
 
-	returnHeaders['Cache-Control'] = 'private';
+	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'private';
 	returnHeaders['Vary'] = 'Accept-Encoding';
 
 	// možnosť odoslať vlastné hlavičky
@@ -2332,40 +2370,36 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 	// Safari resolve
 	if (contentType === 'application/json')
-		returnHeaders['Cache-Control'] = 'no-cache';
+		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'no-cache';
 
 	// pridáme UTF-8 do hlavičky
 	if ((/text|application/).test(contentType))
 		contentType += '; charset=utf-8';
 
 	if (compress && accept.indexOf('gzip') !== -1) {
+		zlib.gzip(new Buffer(contentBody), function(err, data) {
 
-		buffer = new Buffer(contentBody);
-
-		zlib.gzip(buffer, function(err, data) {
-
-			if (!err) {
-
-				returnHeaders['Content-Type'] = contentType;
-				returnHeaders['Content-Encoding'] = 'gzip';
-
-				res.writeHead(code, returnHeaders);
-				res.end(data, ENCODING);
-
-			} else
+			if (err) {
 				req.connection.destroy();
+				return;
+			}
 
-			self._request_stats(false, req.isStaticFile);
+			returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
+			returnHeaders['Content-Encoding'] = 'gzip';
 
-			if (!req.isStaticFile)
-				self.emit('request-end', req, res);
-
+			res.writeHead(code, returnHeaders);
+			res.end(data, ENCODING);
 		});
+
+		self._request_stats(false, req.isStaticFile);
+
+		if (!req.isStaticFile)
+			self.emit('request-end', req, res);
 
 		return self;
 	}
 
-	returnHeaders['Content-Type'] = contentType;
+	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = contentType;
 	res.writeHead(code, returnHeaders);
 	res.end(contentBody, ENCODING);
 
@@ -4794,7 +4828,7 @@ Subscribe.prototype.execute = function(status) {
 	}
 
 	if (self.route === null) {
-		self.framework.responseContent(self.req, self.res, status || 404, utils.httpStatus(status || 404), 'text/plain', true);
+		self.framework.responseContent(self.req, self.res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, true);
 		return self;
 	}
 
@@ -4932,7 +4966,10 @@ Subscribe.prototype._end = function() {
 
 	if (self.isMixed) {
 		self.req.clear(true);
-		self.res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'cache-control': 'private, max-age=0' });
+		var headers = {};
+		headers[RESPONSE_HEADER_CONTENTTYPE] = 'text/plain; charset=utf-8';
+		headers[RESPONSE_HEADER_CACHECONTROL] = 'private, max-age=0';
+		self.res.writeHead(200, headers);
 		self.res.end('END');
 		self.framework._request_stats(false, false);
 		self.framework.emit('request-end', self.req, self.res);
@@ -5033,7 +5070,7 @@ Subscribe.prototype._endfile = function() {
 
 		} catch (err) {
 			self.framework.error(err, file.controller + ' :: ' + file.name, self.req.uri);
-			self.framework.responseContent(self.req, self.res, 500, '500 - internal server error', 'text/plain', true);
+			self.framework.responseContent(self.req, self.res, 500, '500 - internal server error', CONTENTTYPE_TEXTPLAIN, true);
 			return;
 		}
 	}
@@ -6836,7 +6873,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 		return self;
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.status, contentBody, contentType || 'text/plain', true, headers);
+	self.framework.responseContent(self.req, self.res, self.status, contentBody, contentType || CONTENTTYPE_TEXTPLAIN, true, headers);
 	return self;
 };
 
@@ -6860,7 +6897,7 @@ Controller.prototype.plain = function(contentBody, headers) {
 		contentBody = contentBody === null ? '' : contentBody.toString();
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.status, contentBody, 'text/plain', true, headers);
+	self.framework.responseContent(self.req, self.res, self.status, contentBody, CONTENTTYPE_TEXTPLAIN, true, headers);
 	self.framework.stats.response.plain++;
 
 	return self;
@@ -6878,7 +6915,7 @@ Controller.prototype.empty = function(headers) {
 		return self;
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.status, '', 'text/plain', false, headers);
+	self.framework.responseContent(self.req, self.res, self.status, '', CONTENTTYPE_TEXTPLAIN, false, headers);
 	self.framework.stats.response.empty++;
 
 	return self;
@@ -7205,7 +7242,10 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 		self.subscribe.success();
 		self.req.on('close', self.close.bind(self));
 		res.success = true;
-		res.writeHead(self.status, { 'Content-type': 'text/event-stream', 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
+		var headers = { 'Pragma': 'no-cache' };
+		headers[RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, max-age=0, must-revalidate';
+		headers[RESPONSE_HEADER_CONTENTTYPE] = 'text/event-stream';
+		res.writeHead(self.status, headers);
 	}
 
 	if (typeof(data) === OBJECT)
@@ -7262,7 +7302,10 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 		self.subscribe.success();
 		res.success = true;
 		self.req.on('close', self.close.bind(self));
-		res.writeHead(self.status, { 'Content-type': 'multipart/x-mixed-replace; boundary=' + self.boundary, 'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', 'Pragma': 'no-cache' });
+		var headers = { 'Pragma': 'no-cache' };
+		headers[RESPONSE_HEADER_CONTENTTYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
+		headers[RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, max-age=0, must-revalidate';
+		res.writeHead(self.status, headers);
 	}
 
 	var type = typeof(stream);
@@ -7272,7 +7315,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 		stream = null;
 	}
 
-	res.write('--' + self.boundary + '\r\nContent-Type: ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
+	res.write('--' + self.boundary + '\r\n' + RESPONSE_HEADER_CONTENTTYPE + ': ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
 
 	if (typeof(stream) !== UNDEFINED && stream !== null) {
 
@@ -7360,7 +7403,9 @@ Controller.prototype.close = function(end) {
 Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 
 	var self = this;
-	var headers = { 'X-Proxy': 'partial.js', 'Content-Type': 'application/json' };
+	var headers = { 'X-Proxy': 'partial.js' };
+	headers[RESPONSE_HEADER_CONTENTTYPE] = 'application/json';
+
 	var tmp;
 
 	if (typeof(fnCallback) === NUMBER) {
@@ -7900,7 +7945,8 @@ WebSocket.prototype.destroy = function() {
 WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 
 	var self = this;
-	var headers = { 'X-Proxy': 'partial.js', 'Content-Type': 'application/json' };
+	var headers = { 'X-Proxy': 'partial.js' };
+	headers[RESPONSE_HEADER_CONTENTTYPE] = 'application/json';
 
 	if (typeof(obj) === FUNCTION) {
 		var tmp = fnCallback;

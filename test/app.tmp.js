@@ -22,7 +22,6 @@ var BOOLEAN = 'boolean';
 
 var tmp = "template('more', price.asda, 'asdsa', repository['asdasd'])";
 
-
 function params(tmp, replace) {
 
 	var isCopy = false;
@@ -39,42 +38,6 @@ function params(tmp, replace) {
 
 	return true;
 }
-
-function MyClass() {
-	this.name = 'my class';
-}
-
-MyClass.prototype = {
-	get getName() {
-		return 'KOKOT';
-	}
-}
-
-//MyClass.super_ = events.EventEmitter;
-MyClass.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
-	constructor: {
-		value: MyClass,
-		enumberable: false
-	}
-});
-
-var my1 = new MyClass();
-
-my1.on('kokot', function() {
-	console.log('my1');
-});
-
-var my2 = new MyClass();
-
-my2.on('kokot', function() {
-	console.log('my2');
-});
-
-my2.emit('kokot');
-
-console.log(my1.getName);
-
-
 
 //console.log((1).pluralize('zero', 'one', 'few', 'other'));
 
