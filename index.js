@@ -2430,7 +2430,11 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 
 	req.clear(true);
 	res.success = true;
-	res.writeHead(permament ? 301 : 302, { 'Location': url });
+	
+	var headers = { 'Location': url };
+	headers[RESPONSE_HEADER_CONTENTTYPE] = 'text/html; charset=utf-8';
+
+	res.writeHead(permament ? 301 : 302, headers);
 	res.end();
 
 	if (!req.isStaticFile)
