@@ -34,7 +34,7 @@ global.builders = require('./builders');
 global.utils = require('./utils');
 
 function Framework() {
-	this.version = 1313;
+	this.version = 1320;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
@@ -2430,7 +2430,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 
 	req.clear(true);
 	res.success = true;
-	
+
 	var headers = { 'Location': url };
 	headers[RESPONSE_HEADER_CONTENTTYPE] = 'text/html; charset=utf-8';
 
@@ -3678,6 +3678,28 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 	}
 
 	return null;
+};
+
+/*
+	Accepts file
+	@extension {String}
+	@contentType {String} :: optional
+	return {Framework}
+*/
+Framework.prototype.accepts = function(extension, contentType) {
+
+	var self = this;
+
+	if (extension[0] !== '.')
+		extension = '.' + extension;
+
+	if (self.config['static-accepts'].indexOf(extension) === -1)
+		self.config['static-accepts'].push(extension);
+
+	if (contentType)
+		utils.setContentType(extension, contentType);
+
+	return self;
 };
 
 /*
