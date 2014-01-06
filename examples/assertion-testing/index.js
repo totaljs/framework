@@ -6,13 +6,7 @@ var debug = true;
 
 framework.run(http, debug, port);
 
-/*
-	Make a tests
-	@stop {Boolean} :: stop framework (default true)
-	@names {String array} :: only tests in names (optional)
-	@callback {Functions} :: on complete test handler (optional)
-	return {Framework}
-*/
+// Documentation: http://docs.partialjs.com/Framework/#framework.test
 framework.test(true, function() {
 	console.log('SUCCESSS');
 });
