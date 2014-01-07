@@ -339,10 +339,31 @@ exports.prepare = function(name, model) {
 			continue;
 		}
 
-		var isArray = value[0] === '[';
+		var isArray = value[0] === '[' || value === 'array';
 
-		if (isArray)
-			value = value.substring(1, value.length - 1);
+		if (isArray) {
+
+			if (value[0] === '[')
+				value = value.substring(1, value.length - 1);
+			else
+				value = null;
+
+			if (!(val instanceof Array)) {
+				item[property] = (defaults ? isUndefined(defaults(property, false), []) : []);
+				continue;
+			}
+
+			item[property] = [];
+			var sublength = val.length;
+			for (var j = 0; j < sublength; j++) {
+				if (value === null)
+					item[property].push(model[property][j]);
+				else
+					item[property][j] = exports.prepare(value, model[property][j]);
+			}
+
+			continue;
+		}
 
 		var lower = value.toLowerCase();
 
@@ -392,22 +413,6 @@ exports.prepare = function(name, model) {
 			}
 
 			item[property] = isUndefined(defaults(property));
-			continue;
-		}
-
-		if (isArray) {
-
-			if (!(val instanceof Array)) {
-				item[property] = (defaults ? isUndefined(defaults(property, false), []) : []);
-				continue;
-			}
-
-			item[property] = [];
-			var sublength = val.length;
-			for (var j = 0; j < sublength; j++) {
-				item[property][j] = exports.prepare(value, model[property][j]);
-			}
-
 			continue;
 		}
 
