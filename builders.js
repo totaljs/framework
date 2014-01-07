@@ -356,10 +356,36 @@ exports.prepare = function(name, model) {
 			item[property] = [];
 			var sublength = val.length;
 			for (var j = 0; j < sublength; j++) {
-				if (value === null)
+
+				if (value === null) {
 					item[property].push(model[property][j]);
-				else
-					item[property][j] = exports.prepare(value, model[property][j]);
+					continue;
+				}
+
+				var tmp = model[property][j];
+
+				switch (value) {
+					case 'string':
+					case 'varchar':
+					case 'text':
+						item[property].push((tmp || '').toString());
+						break;
+					case 'bool':
+					case 'boolean':
+						tmp = (tmp || '').toString().toLowerCase();
+						item[property].push(tmp === 'true' || tmp === '1');
+						break;
+					case 'int':
+					case 'integer':
+						item[property].push(utils.parseInt(tmp));
+						break;
+					case 'number':
+						item[property].push(utils.parseFloat(tmp));
+						break;
+					default:
+						item[property][j] = exports.prepare(value, model[property][j]);
+						break;
+				}
 			}
 
 			continue;

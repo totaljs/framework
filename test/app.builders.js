@@ -101,15 +101,18 @@ function test_Schema() {
 	assert.ok(output.Name === '', name + 'defaults (String)');
 	assert.ok(output.Male === false, name + 'defaults (Boolean)');
 
-	builders.schema('1', { name: 'string', join: '[2]' });
+	builders.schema('1', { name: 'string', join: '[2]', nums: '[number]' });
 	builders.schema('2', { age: Number }, function(name) {
 		if (name === 'age')
 			return -1;
 	});
 
 	//console.log(builders.defaults('1', { name: 'Peter', age: 30, join: { name: 20 }}));
-	output = builders.prepare('1', { name: 'Peter', join: [{ name: 'TEST' }, { age: 20, kokot: 'PICA' }]});
+	output = builders.prepare('1', { name: 'Peter', join: [{ name: 'TEST' }, { age: 20, test: 'KUNDA' }], nums: ['1', 'asdas', 2.3]});
 	assert.ok(output.join[0].age === -1 && output.join[1].age === 20, name + 'schema - joining models');
+	assert.ok(output.nums[2] === 2.3 && output.nums[1] === 0, name + 'schema - parse plain array');
+
+//	console.log(output);
 
 };
 
