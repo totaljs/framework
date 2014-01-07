@@ -324,14 +324,18 @@ exports.prepare = function(name, model) {
 			continue;
 		}
 
-		if (type === BOOLEAN) {
+		if (val === null || typeval === UNDEFINED)
+			tmp = '';
+		else
 			tmp = val.toString();
+
+		if (type === BOOLEAN) {
 			item[property] = tmp === 'true' || tmp === '1';
 			continue;
 		}
 
 		if (type !== STRING) {
-			item[property] = val.toString();
+			item[property] = tmp;
 			continue;
 		}
 
@@ -343,7 +347,6 @@ exports.prepare = function(name, model) {
 		var lower = value.toLowerCase();
 
 		if (lower.contains([STRING, 'text', 'varchar', 'nvarchar'])) {
-			tmp = val.toString();
 
 			var beg = lower.indexOf('(');
 			if (beg === -1) {
@@ -367,7 +370,6 @@ exports.prepare = function(name, model) {
 		}
 
 		if (lower.contains('bool', BOOLEAN)) {
-			tmp = val.toString();
 			item[property] = tmp === 'true' || tmp === '1';
 			continue;
 		}
@@ -410,7 +412,6 @@ exports.prepare = function(name, model) {
 		}
 
 		item[property] = exports.prepare(value, model[property]);
-		//item[property] = (defaults ? defaults(property, false) || null : null);
 	}
 
 	return item;
