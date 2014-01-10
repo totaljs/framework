@@ -1400,7 +1400,7 @@ Framework.prototype.compileStatic = function(req, filename) {
 
 	self._verify_directory('temp');
 
-	var fileCompiled = utils.combine(self.config['directory-temp'], req.url.replace(/\//g, '-').substring(1));
+	var fileCompiled = utils.combine(self.config['directory-temp'], req.uri.pathname.replace(/\//g, '-').substring(1));
 	fs.writeFileSync(fileCompiled, output);
 
 	return fileCompiled;
