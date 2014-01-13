@@ -1,0 +1,6 @@
+// Static files mapping according a version
+
+// EXAMPLE:
+// old-image.jpg      : new-image.jpg
+// default.js         : default-101.js
+// default.css        : default-103.css

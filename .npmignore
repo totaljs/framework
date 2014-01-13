@@ -1,0 +1,12 @@
+Makefile
+empty-project/
+examples/
+test/
+*.markdown
+*.md
+.git*
+*.DS_Store
+*.sublime-project
+*.sublime-workspace
+changes.txt
+roadmap.txt

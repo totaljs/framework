@@ -1,0 +1,5 @@
+name							: partial.js
+secret							: secret-key-for-signature
+
+// session cookie name
+cookie							: __user

@@ -1,0 +1,31 @@
+@{layout('')}
+
+<!DOCTYPE html>
+<head>
+</head>
+<body>
+
+	<script type="text/javascript">
+
+		function init() {
+	        var socket = new WebSocket('ws://127.0.0.1:8001', 'test');
+
+	        socket.onopen = function() {
+	            console.log('handshake successfully established. May send data now...');
+	            socket.send("Hello World"); 
+	        };
+
+			socket.onmessage = function(e) {
+				console.log(e.data);
+			};
+
+	        socket.onclose = function() {
+	            console.log('connection closed');
+	        };
+
+		}
+
+	</script>
+
+</body>
+</html>

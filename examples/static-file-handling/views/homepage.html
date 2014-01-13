@@ -1,0 +1,29 @@
+@{layout('')}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Handling static files</title>
+    <meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=10" />
+	<meta name="format-detection" content="telephone=no"/>
+	<meta name="viewport" content="width=1024, user-scalable=yes" />
+	<meta name="robots" content="all,follow" />
+</head>
+<body>
+
+	<h1>Resizing of all images about 50%</h1>
+
+	<h2>GIF</h2>
+	<div><img src="/img/biker.gif" /></div>
+	<br />
+	<h2>PNG</h2>
+	<br />
+	<div>@{image('man.png')}</div>
+	<br />
+	<h2>JPG</h2>
+	<div><img src="@{routeImage('partial.jpg')}" /></div>
+
+
+</body>
+</html>

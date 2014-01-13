@@ -1,0 +1,17 @@
+#
+@{if model.a !== model.b}
+@{repository.A}C
+@{else}B@{endif}
+@{if model.a !== model.b}A@{else}B@{endif}
+@{if model.a === 'A'}
+XXX
+@{endif}
+@{if model.a === 'B'}
+EEE
+@{endif}
+#
+@{text('a', { class: 'bootstrap' })}
+@{hidden('d')}
+@{checkbox('c', 'test label')}
+@{textarea('b', { class: 'myarea' })}
+@{radio('a', 'A', 'test label')}

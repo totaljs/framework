@@ -1,0 +1,1028 @@
+IN DEVELOPMENT ======= 1.3.2
+
+- added: framework.accepts(extension, [contentType])
+- added: utils.setContentType(extension, contentType)
+- added: @{place('footer', 'jquery.min.js', '//your-cnd/your-script.js')} - for appending value to a place
+- added: @{place('footer')} - for rendering place
+- added: automatically removing of comments from views
+
+- updated: @{head()} - added: routeJS, routeCSS
+
+- fixed: controller.view()
+- fixed: controller.template()
+- fixed: builders.prepare()
+
+improvements
+clean code
+
+======= 1.3.1-3 (HOTFIX)
+
+- added: content-type (text/html) into responseRedirect
+
+- fixed: (websocket) controller.destroy()
+- fixed: framework.responseFile() - the ability to add custom content-type
+
+- clean code
+
+======= 1.3.1-2 (HOTFIX)
+
+- added: .geojson content-type
+
+- fixed: file routing
+- fixed: "raw" flag
+- fixed: static files (problem in white chars)
+
+- improvements: static files
+
+======= 1.3.1-1 (HOTFIX)
+
+- fixed: Content-Disposition (added URL-encode)
+- fixed: upload
+- fixed: upload stream (removed stream.destroy())
+
+======= 1.3.1
+
+- added: auto-creating directories when are needed (logs, databases)
+- added: uploading - automatically parsing of image Width/Height: HttpFile.width, HttpFile.height
+- added: restriction to the WebSocket
+- added: framework.hash(type, value, [salt])
+- added: framework.config['directory-download']
+- added: framework.routeDownload()
+- added: String.prototype.sha256([salt])
+- added: String.prototype.sha512([salt])
+- added: @{currentDownload()}
+- added: @{currentView()}
+- added: @{currentTemplate()}
+- added: @{currentContent()}
+- added: controller.routeDownload()
+- added: controller.currentDownload()
+- added: controller.encrypt(value, key, [isUnique])
+- added: controller.decrypt(value, key)
+- added: controller.hash(type, value, [salt])
+- added: controller.currentView()
+- added: controller.currentTemplate()
+- added: controller.currentContent()
+- added: controller.binary(buffer, contentType)
+- added: controller.isSecure
+- added: controller.destroy()
+- added: controller.pipe(url, [headers], [callback])
+- added: framework.on('configure')
+- added: framework.stats.response.destroy
+- added: framework.stats.response.binary
+- added: FrameworkImage.stream([type])
+- added: FrameworkImage.output(type)
+- added: FrameworkImage.bitdepth(value)
+- added: FrameworkImage.colors(value)
+- added: framework.responsePipe(req, res, url, [headers], [timeout], [callback])
+- added: framework.responseCustom(req, res)
+- added: framework.responseImageWithoutCache(req, res, filename/stream, fnProcess, [headers], [isIM])
+- added: request.isSecure
+- added: routing supports [https] and [http] flag (websocket too)
+- added: builders.default(name)
+- added: framework.unlink(array, [callback])
+
+- (IMPORTANT) updated: maximum request length (length 1 = 1 kB)
+- (IMPORTANT) updated: String.prototype.encode() === HTML encode
+- (IMPORTANT) updated: String.prototype.decode() === HTML decode
+- updated: HttpFile.copy(filename, [callback]);
+- updated: controller.plain();
+- updated: framework.configure(filename or array, [rewrite])
+- updated: NoSQL embedded database (new version v2.0.5)
+- updated: @{meta(title, [description], [keywords], [image])}
+- updated: framework.route(url, fn, { timeout: false });
+- updated: framework.onAuthorization(req, res/socket, flags, next)) (@next has 2 params, IsLogged {Boolean}, new: User {Object})
+- updated: @{text}, @{password}, @{hidden}, @{textarea}, @{radio}, @{checkbox}
+- updated: String.prototype.sha1([salt])
+- updated: String.prototype.md5([salt])
+- updated: mail
+- updated: decrease time to cache
+- updated: email validation (by @jg10)
+
+- fixed: @{currentJS()}
+- fixed: @{currentCSS()}
+- fixed: @{currentVideo()}
+- fixed: @{currentImage()}
+- fixed: xss
+- fixed: framework.responseFile()
+- fixed: partial routing
+- fixed: uploading
+- fixed: utils.ls()
+- fixed: ['json'] and ['post'] flag
+- fixed: HTTP routing flags
+- fixed: set of multiple cookies
+- fixed: increment/decrement Date/Time
+- fixed: paths (~ char is changing the relative path to the absolute path)
+- fixed: minifyHTML (<script>)
+- fixed: SMTP authentification
+- fixed: String.prototype.params()
+- (IMPORTANT) fixed: WebSocket
+- fixed: WebSocket (user, session, request)
+- fixed: WebSocket routing
+- fixed: utils.request()
+- fixed: minifyJS
+- fixed: minifyCSS
+- fixed: FrameworkImage.sepia()
+- fixed: FrameworkImage.grayscale()
+
+- removed: framework.config['directory-upload']
+- removed: framework.verification()
+- removed: framework.routeUpload()
+- removed: controller.routeUpload()
+- removed: controller.currentUpload()
+- removed: @{currentUpload())
+- removed: HttpFile.measure()
+
+- (IMPORTANT) renamed: String.prototype.encode(value, key, [isUnique]) -> String.prototype.encrypt(value, key, [isUnique])
+- (IMPORTANT) renamed: String.prototype.decode(value, key) -> String.prototype.decrypt(value, key)
+- (IMPORTANT) renamed: framework.encode(value, key, [isUnique]) -> framework.encrypt(value, key, [isUnique])
+- (IMPORTANT) renamed: framework.decode(value, key) -> framework.decrypt(value, key)
+- (IMPORTANT) renamed: utils.htmlEncode() -> utils.encode()
+- (IMPORTANT) renamed: utils.htmlDecode() -> utils.decode()
+- (IMPORTANT) renamed: mail.on('sending') -> mail.on('send')
+
+- improvements: compiling of views (fixed)
+- example (add): https://github.com/petersirka/partial.js/tree/master/examples/request-to-response
+
+======= 1.3.0-1 (HOTFIX)
+
+- updated: NoSQL version v2.0.3 (added new event on('load'))
+- updated: debugging.js (watching of resources)
+- updated: partial.js binary
+
+- fixed: WebSocket dynamic routing
+- fixed: Project directory (problem with clustered mode PM2 - https://github.com/Unitech/pm2)
+
+======= 1.3.0
+
+THIS VERSION IS RELEASE CANDIDATE 1 (RC 1)
+
+- added: framework.config['default-ip'] (set the ip address from a configuration)
+- added: framework.config['default-port'] (set the port from a configuration)
+- added: framework.onRequest(req, res)
+- added: framework.worker(name, [id], [timeout])
+- added: framework.workers
+- added: framework.versions
+- added: framework.reconnect()
+- added: framework.responseImage(req, res, filename/stream, fnProcess, [headers], [isIM])
+- added: framework.fs.create.temporary(name, stream, [callback])
+- added: framework.fs.rm.temporary(name)
+- added: framework.fs.create.worker(name, content, [rewrite], [append])
+- added: framework.fs.rm.worker(name)
+- added: framework.on('ready')
+- added: framework.on('reconfigure')
+- added: framework.injectVersions(url, [rewrite])
+- added: controller.image(filename/stream, fnProcess, [headers], [isIM])
+- added: controller.subdomain (alias -> req.subdomain)
+- added: controller.custom()
+- added: controller.clear()
+- added: controller.noClear()
+- added: FrameworkImage.measure(callback)
+- added: FrameworkImage.pipe(stream, [type], [options])
+- added: HttpFile.stream([options])
+- added: HttpFile.pipe(stream)
+- added: HttpFile.measure(callback)
+- added: HttpFile.md5(callback)
+- added: builders.schema supports join models
+- added: Number.parseDate([plus])
+- added: supports 400 (Bad request)
+- added: dynamic render View and Template from string
+- added: simply static files versioning (example: static-version)
+- added: utils.distance(lat1, lng1, lat2, lng2)
+- added: utils.ls(path, callback, [filter])
+- added: Array.prototype.waiting(onItem, [callback])
+- added: default accepts *.otf
+
+- updated: XSS is routed to 400 (BAD REQUEST)
+- updated: FrameworkImage supports stream (image.pipe() and new Image(stream or filename))
+- updated: FrameworkImage.minify()
+- updated: FrameworkImage.command(name, value, [priority])
+- updated: Framework.file();
+- updated: builders.schema()
+- updated: builders.defaults()
+- updated: builders.prepare()
+- updated: controller.validate()
+- updated: controller.close([end])
+- updated: controller.content(name, [contentType/return content], [headers])
+- updated: utils.validate()
+- updated: utils.httpStatus()
+- updated: nosql (extended buffer)
+- updated: req.hostname()
+- updated: binary
+
+- fixed: FrameworkCache
+- fixed: WebSocket - Safari disconnect()
+- fixed: minify HTML
+- fixed: subdomain routing [www is automatically removed]
+- fixed: controller.database()
+- fixed: controller.baa()
+- fixed: HttpRequest.authorization()
+- fixed: mail.send()
+- fixed: json flag
+- fixed: put flag
+- fixed: framework.clear(), request.clear()
+- fixed: FrameworkMarkdown - parsing of title
+- fixed: templates (throwing of exception by the illegal tags)
+
+- (IMPORTANT) removed: framework.backup(), framework.restore() (will be replaced for a module)
+- (IMPORTANT) removed: markdown (will be replaced for a module)
+
+- improvements: saving of memory
+- improvements: utils.js
+
+- documentation (add) HttpFile
+- documentation (upd) Configuration
+- documentation (upd) How do "views" work?
+- documentation (upd) How does authorization work?
+- documentation (upd) FrameworkController
+- documentation (upd) FrameworkFileSystem
+- documentation (upd) FrameworkViews
+- documentation (upd) FrameworkController
+- documentation (upd) Request.prototype
+
+- example (add): https://github.com/petersirka/partial.js/tree/master/examples/static-file-handling
+- example (add): https://github.com/petersirka/partial.js/tree/master/examples/workers
+- example (add): https://github.com/petersirka/partial.js/tree/master/examples/mysql
+- example (add): https://github.com/petersirka/partial.js/tree/master/examples/postgresql
+- example (add): https://github.com/petersirka/partial.js/tree/master/examples/angularjs
+- example (add): https://github.com/petersirka/partial.js/tree/master/examples/csrf
+- example (add): https://github.com/petersirka/partial.js/tree/master/examples/xss-protection
+- example (upd): https://github.com/petersirka/partial.js/tree/master/examples/routing
+- example (upd): https://github.com/petersirka/partial.js/tree/master/examples/routing-subdomain
+- example (upd): https://github.com/petersirka/partial.js/tree/master/examples/static-version
+- example (upd): https://github.com/petersirka/partial.js/tree/master/examples/framework-schema
+- example (upd): https://github.com/petersirka/partial.js/tree/master/examples/validation
+- example (upd): https://github.com/petersirka/partial.js/tree/master/examples/mongodb-mongolab
+
+======= 1.2.9
+
+- updated: utils.getContentType()
+- updated: binary/empty-project minified debugging.js
+- updated: NoSQL v2.0.2 (added: binary.update())
+- updated: license
+
+- fixed: framework.usage()
+- fixed: framework.backup()
+- fixed: template repository
+- clean code
+
+======= 1.2.8
+
+- added: referer flag
+- added: debugging.js
+- added: default accepts *.mp4
+- added: template supports rendering of other templates or views
+- added: framework.stats.response.timeout
+- added: framework.stats.response.notModified
+- added: framework.isProcessed()
+- added: Number.prototype.VAT
+- added: Number.prototype.discount
+- added: utils.send(name, [stream or filename], url, [callback], [headers], [method])
+- added: utils.download(url, callback, [headers], [method], [params], [encoding])
+
+- updated: framework.backup([callback], [url]);
+- updated: NoSQL v2.0.0
+- updated: builders.schema(), builders.defaults()
+- updated: framework.usage()
+- updated: utils.getContentType()
+- updated: framework.eval() - framework can eval Function in its context
+- updated: binary
+
+- fixed: framework.usage()
+- fixed: framework.stats
+- fixed: @{user}
+- fixed: FrameworkRestrictions
+- fixed: template ' character
+- fixed: utils.Async - onComplete calling
+- fixed: stability
+- fixed: markdown parser
+
+- removed: keepalive.js from empty-projects
+
+======= 1.2.7-1 (HOTFIX)
+
+- added: framework.stats.request.delete
+- added: framework.stats.request.put
+- added: framework.stats.request.blocked
+- added: framework.stats.request.pending
+- added: framework.stats.response.forwarding (host redirecting)
+- added: controller.run() - to run async tasks
+
+- updated: complete rewrited markdown parser (more than 50% better performance)
+- updated: complete rewrited markdown example
+- updated: framework.usage informations
+
+- fixed: request.hostname()
+- fixed: builders.schema (default declaration)
+
+======= 1.2.7
+
+- added: definitions
+- added: framework.restrictions class
+- added: framework.async class
+- added: framework.injectConfig()
+- added: framework.injectDefinition()
+- added: framework.injectController()
+- added: framework.eval()
+- added: framework.response501() and controller.view501() - 501 Not Implemented
+- added: framework.redirect(oldHost, newHost, withPath, permament)
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/redirect-host
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/scheduler
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-async
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-eval
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-module
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-controller
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-config
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-inject-definition
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-restrictions
+- added: new example https://github.com/petersirka/partial.js/tree/master/examples/framework-schema
+- added: download content from URL in framework.fs.create...
+- added: parse resource/configuration from a string - string.configuration()
+- added: async.cancel()
+- added: framework.on('websocket-begin')
+- added: framework.on('websocket-end')
+- added: controller.uri
+- added: MailMessage.from() alias for MailMessage.sender()
+- added: HttpRequest.authorization()
+- added: config.author
+
+- updated: framework.usage()
+- updated: CSS auto-vendor-prefixes (added font-smoothing)
+- updated: default port: port || process.env.PORT || 8000
+- updated: default framework.onMeta()
+- updated: framework.init() - default IP is 127.0.0.1
+- updated: controller.cancel() (added async.cancel)
+- updated: utils.request() (added return Boolean)
+- updated: utils.random(max, min)
+- updated: completely rewritten utils.async()
+- updated: @{head} (added author meta tag (if not empty) from config)
+
+- fixed: FrameworkFileSystem class
+- fixed: view render
+- fixed: FrameworkCache.fn()
+- fixed: FrameworkCache.recycle()
+- fixed: utils.reduce()
+- fixed: utils.base64ToFile()
+- fixed: @{canonical}, @{next}, @{prev}, @{prefetch}, @{prerender}
+- fixed: utils.request()
+
+!!! IMPORTANT !!!
+
+- renamed: websocket event websocket-connection -> websocket-beg
+- renamed: controller.lastEventID -> contrlloler.sseID
+- renamed: framework.inject() to framework.injectModule()
+- renamed: framework.path.backup() -> framework.path.backups()
+- renamed: controller.statusCode –> controller.status
+- renamed: String.prototype.maxLength() -> String.prototype.max()
+
+improvements
+clean code
+
+======= 1.2.6
+
+- added: new options parameter - framework.run(http/https, debug, [port], [ip], [options])
+- added: static-accepts - .map, .ogg, .mp3, .webp, .swf
+
+- updated: framework.route() and framework.websocket(), Example: framework.route('/', fn, { flags: [], length: 3430, timeout: 3400 });
+- updated: utils.getContentType() - .webp
+- updated: nosql
+
+- fixed: views current routing
+- fixed: websocket session and user
+- fixed: controller.session and controller.user
+
+- renamed: [backup] directory to [backups]
+
+======= 1.2.5
+
+- I believe that this is the final version. From now I'll writing only documentation and some tutorials.
+- please visit: https://github.com/petersirka/partial.js-modules
+
+- added: encodeURIcomponent & decodeURIcomponent to WebSocket
+- added: ~ to controller.file()
+- added: framework.config['allow-compile-js'] {Boolean} (default true)
+- added: framework.config['allow-compile-css'] {Boolean} (default true)
+- added: request.user (default null)
+- added: new view tag: @{user} (default null)
+- added: controller.user (default null)
+- added: framework.on('request-end', req, res) - close a request / response
+- added: utils.isEmpty(obj)
+
+- updated: framework.responseRange()
+
+- renamed: framework.on('request') - framework.on('request-begin', req, res)
+- renamed: framework.cache.write() - to - framework.cache.add()
+- renamed: framework.cache.setExpires() - to - framework.cache.setExpire()
+
+- removed: controller.isXHR (use controller.xhr)
+- removed: req.isXHR (use req.xhr)
+
+clean code
+
+======= 1.2.4-6
+
+- added: controller.ip;
+- added: controller.host([path])
+- added: @{host([path])}
+- added: framework.response401(req, res)
+- added: framework.response403(req, res)
+
+- updated: response.cookie(name, value, expire, options)
+- updated: request.session is null as default
+
+- renamed: String.toSHA1() to String.sha1()
+- renamed: String.toMD5() to String.md5()
+
+- fixed: route dynamic params
+- fixed: controller.view500()
+- fixed: clearing temporary files
+
+clean code
+
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/upload-multipart-filestorage
+
+======= 1.2.4-5
+
+IMPORTANT:
+- updated: controller.view() - view('my-view-name') -> /controller-name/my-view-name.html (except default.js controller)
+
+IMPORTANT:
+- renamed: framework.onLoaded to framework.onLoad;
+- renamed: module.onLoaded to module.onLoad;
+- renamed: controller.onLoaded to controller.onLoad;
+
+- added: partial.js is a global object ... applies everywhere: framework.[method]
+- added: controller.cors(allow, method, header, credentials) - return {Boolean}
+- added: controller.header(name, value) - set response header
+- added: @header(name, value) - set response header
+- added: controller.currentImage(), .currentCSS(), .currentJS(), .currentUpload(), .currentVideo()
+- added: @currentImage(), @currentCSS(), @currentJS(), @currentUpload(), @currentVideo()
+- added: routeUpload(), @routeUpload()
+- added: config['static-url-upload']
+- added: auto-removing comments from "views"
+- added: controller.empty(); - response empty body
+- added: new event framework.on('clear', name);
+- added: ErrorBuilder.replace(search, value);
+- added: new event framework.on('expire', name, value);
+
+- updated: controller.proxy() - added timeout
+- updated: framework.stats;
+- updated: framework.usage()
+- updated: all examples
+
+- removed: routeDocument(), @routeDocument()
+- removed: config['static-url-document']
+- removed: auto clear database object
+
+- fixed: CSS auto vendor prefixes (fixed IE opacity)
+- fixed: utils.request() - encoding
+
+- NEW MODULE: https://github.com/petersirka/partial.js-modules
+
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/cors
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/custom-headers
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/views-route-to-file
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/email-templating-view
+
+======= 1.2.4-4
+
+- added: partial.js/utils is a global object ... applies everywhere: utils.[method]
+- added: partial.js/builders is a global object ... applies everywhere: builders.[method]
+- added: auto verifying directories
+- added: framework.onCompileCSS(filename, output) :: must return {String} (if is declared then auto-vendor-prefixes and internal LESS CSS are disabled)
+- added: framework.onCompileJS(filename, output) :: must return {String} (if is declared then internal JavaScript minificator is disabled)
+- added: utils.copy(target, source, rewrite);
+- added: Array.where(fn);
+- added: Array.randomize();
+- added: partial.js/mail attachments
+- added: controller.baa() - Basic access authentication (WWW-Authenticate)
+- added: controller.isProxy {Boolean};
+- added: controller.proxy(url, obj, callback);
+- added: controller.error(err);
+- added: new route flag: "proxy"
+- added: utils.httpStatus(code);
+
+- updated: dynamic compress CSS and JS by the framework.onCompileCSS and framework.onCompileJS in views
+- updated: process.name
+- updated: empty-project and NPM executable
+- updated: expression() - added internal cache
+- updated: nosql embedded database (supports stored functions)
+- updated: partial.js/mail (complete rewrite module)
+
+- fixed: partial.js/mail SMTP user authorization
+- fixed: utils.request();
+
+- removed: partial.js/mail.send()
+- removed: utils.loadFromFile()
+
+- clean code
+
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/email-send
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/external-compile-sass
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/external-compile-uglifyjs
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/controller-proxy
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/email-templating
+- NEW EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/authorization-www-basic
+
+======= 1.2.4-3
+
+- added: controller.isConnected - indicating whether the client is still connected to the server
+
+- updated: framework.usage()
+- updated: examples (server-sent-events, live-streaming)
+- updated: nosql
+
+- removed: Object.dispose(), conflict with rethinkdb (www.rethinkdb.com)
+
+- fixed: avoid response exception (if is a client disconnected)
+
+======= 1.2.4-2
+
+- added: Server-Sent Events - One Way Messaging (http://www.w3schools.com/html/html5_serversentevents.asp)
+- added: new route flag "sse" - [s]erver [s]ent [e]vents
+- added: new route flag "mmr" - [m]ultipart/x-[m]ixed-[r]eplace
+- added: controller.sse(data, [eventname], [id], [retry]) - Server-sent events
+- added: controller.lastEventID (server-sent events - Last-Event-ID)
+- added: controller.mmr(filename, [stream], [callback]) - multipart/x-mixed-replace
+- added: controller.close() - close opened connection
+- added: new Server sent events example (https://github.com/petersirka/partial.js/tree/master/examples/server-sent-events)
+
+!!! IMPORTANT !!!
+
+- removed: controller.mixed   - alternative: controller.mmr()
+- removed: route flag "mixed" - alternative: "mmr"
+
+======= 1.2.4-1
+
+- added: auto skipping minified JS or CSS - filename must contain scriptname[-min.js(.css)] or scriptname[.min.js(.css)]
+- added: file streaming via multipart/x-mixed-replace (https://github.com/petersirka/partial.js/tree/master/examples/live-streaming)
+- added: multipart/x-mixed-replace upload (https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
+- added: new test flag "mixed" for incommning multipart/x-mixed-replace content (https://github.com/petersirka/partial.js/tree/master/examples/live-streaming-upload)
+
+- added: framework.fs.create.css(), framework.fs.create.js(), etc.
+- added: framework.fs.rm.css(), framework.fs.rm.js(), etc.
+- added: framework.fs alias to controller.fs
+- added: framework.path.public(), framework.path.temp(), etc.
+- added: framework.path alias to controller.path
+
+- added: new view tag @{download(filename, [downloadName])}
+
+- removed: framework.deleteCSS, framework.deleteJS, etc.
+- removed: framework.createCSS, framework.createJS, etc.
+- removed: framework.pathPublic, framework.pathTemp, etc.
+
+- renamed: HttpFile.fileName -> HttpFile.filename, HttpFile.fileSize -> HttpFile.size
+
+- updated: framework.config.etag-version, if etag-version is empty then default etag-version will be framework.config.version
+- updated: framework.verification(), added new checking for write and read files
+- updated: framework.usage(), better formatting
+
+- fixed: controller.cancel()
+- fixed: framework.version
+
+- clean code
+
+======= 1.2.4-0
+
+// HTML 5 features http://daker.me/2013/05/5-html5-features-you-need-to-know.html
+- added: @{dns('//fonts.googleapis.com', '//google-analytics.com')}
+- added: @{prefetch('http://daker.me/2013/05/hello-world.html')}
+- added: @{prerender('http://daker.me/2013/05/hello-world.html')}
+- added: @{head('//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js')} and @{head}
+
+// http://googlewebmastercentral.blogspot.sk/2011/09/pagination-with-relnext-and-relprev.html
+- added: @{next('/page/3/')}
+- added: @{prev('/page/1/')}
+
+// http://googlewebmastercentral.blogspot.sk/2009/02/specify-your-canonical.html
+- added: @{canonical('/original/12345-product/')}
+
+- added: new example: https://github.com/petersirka/partial.js/tree/master/examples/views-head
+- added: @{title}, @{description}, @{keywords}
+
+// http://www.partialjs.com/documentation/views/
+- updated: @{text}, @{hidden}, @{checkbox}, @{radio}, @{textarea}
+
+- updated: @{image('url', { width: 200, height: 200, class: 'CLASS' })} or @{image('url', 200, 200, 'ALT', 'CLASS')}
+- updated: auto CSS vendor prefixes
+- updated: websocket - client.close() - removed @status
+
+- fixed: binary (executable)
+
+- clean code
+
+======= 1.2.3-9
+
+- added: CSS auto vendor prefixes
+- added: new route flag '+xhr' (usefull for both request - XHR and non XHR)
+
+- updated: empty-project (added to default.css @#auto-vendor-prefix#@)
+- updated: binary (executable)
+
+- fixed: minify "Content"
+
+======= 1.2.3-8
+
+- added: partial content routing - framework.partial(name, [fnExecute])
+- added: partial content to controller routing - framework.route(url, flags, maximumSize, [partial], [timeout])
+- added: controller timeout - framework.route(url, flags, maximumSize, [partial], [timeout])
+- added: controller.isCanceled;
+- added: new system route #408 (Request Timeout)
+- added: framework.config['default-request-timeout']
+
+- updated: framework.usage()
+
+- fixed: problem with path
+- fixed: utils.request()
+- fixed: problem Content-Range - Streaming
+
+- clean code
+
+NEW EXAMPLES:
+
+- https://github.com/petersirka/partial.js/tree/master/examples/routing-partial (partial routing)
+- https://github.com/petersirka/partial.js/tree/master/examples/routing-timeout (new system route #408)
+
+======= 1.2.3-7
+
+- added: template pluralize (https://github.com/petersirka/partial.js/tree/master/examples/templating)
+- added: basic sending and recieving messages through websocket (Standard - RFC 6455 Support) - https://github.com/petersirka/partial.js/tree/master/examples/websocket
+- added: websocket routing
+- added: framework.errors (Array, last 50 errors)
+- added: config-release, config-debug: allow-websocket
+- added: framework.stats
+
+- updated: allow HTML comments in views
+- updated: framework.usage() (added new features)
+- updated: framework performance
+
+- removed: obsolete functions (framework/controller ifNotModified)
+- removed: obsolete functions (framework/controller routeFile)
+- removed: framework.lastError
+
+- renamed: config-release, config-debug: "gzip" to "allow-gzip"
+
+- fixed: NoSQL embedded database
+- fixed: SMTP mail
+
+- clean code
+
+======= 1.2.3-6
+
+- added: template condition (https://github.com/petersirka/partial.js/tree/master/examples/templating)
+- added: new mark to template = {#} - return current array index (https://github.com/petersirka/partial.js/tree/master/examples/templating)
+- added: framework.inject(name, url) - for injecting scripts
+- added: framework.refresh([clear]) - refresh all internal information
+- added: framework.config.gzip - default true
+
+- renamed: [framework/controller].ifNotModified() to [framework/controller].notModified()
+
+- fixed: LESS CSS (problem with @media)
+
+- clean code
+
+======= 1.2.3-5
+
+- fixed: route flags
+- fixed: utils.validate()
+- fixed: controller.validate()
+
+- clean code
+
+======= 1.2.3-4
+
+- added: new alias for framework.routeFile() = framework.file()
+- added: new examples
+
+- updated: nosql (new version)
+
+- removed: custom route validation (route to controller)
+- removed: unnecessary files
+
+- fixed: String.isEmail()
+- fixed: String.isJSON()
+- fixed: XSS protection
+- fixed: setImmediate()
+
+- clean code
+
+======= 1.2.3-3
+
+- added: cache.fn();
+- added: utils.getContentType() - *.appcache
+
+- updated: nosql (new version, removed streams)
+
+- fixed: utils.isStaticFile()
+- fixed: utils.request()
+
+======= 1.2.3-2
+
+- added: auto-detector: XSS in Request (inspired by ASP.NET)
+- added: new route flag: "xss"
+- added: Controller.flags[]
+
+- updated: nosql (new version, fixed problem with db.remove())
+
+- fixed: utils.isJSON()
+
+======= 1.2.3-1
+
+- updated: nosql (new version, supports changes)
+
+- fixed: routing to static files
+- fixed: routing to controllers
+- fixed: stop framework when "EADDRINUSE"
+- fixed: JavaScript compressor (problem with "\n" in views)
+
+======= 1.2.3-0
+
+- added: controller.stream(contentType, stream, [downloadName], [headers]);
+- added: controller.validate() - controller.validation() is alias
+
+- updated: utils.async, controller.async
+- updated: nosql (new version)
+- updated: content types
+
+- renamed: utils.validation() to utils.validate()
+- renamed: JavaScript content type renamed to text/javascript (from application/x-javascript)
+
+- fixed: template engine
+- fixed: view engine
+- fixed: routing priority
+
+======= 1.2.2-9
+
+- fixed: problem with nosql/view–>create
+
+======= 1.2.2-8
+
+- updated: rename framework.onAuthorize to framework.onAuthorization
+
+======= 1.2.2-7
+
+- added: utils.expression() / global.expression(), read documentation -> utils / expression
+- added: @{global.property} and @{!global.property}, read documentation -> framework
+- added: controller.global == framework.global
+- added: framework.global = {} - this is global object
+- added: framework.pathTemp(name), framework.pathPublic(name)
+- added: framework.ifNotModified(req, res, value, [strict]) and framework.setModified(req, res, value)
+- added: framework.responseStream(req, res, filename, stream, [downloadName], [headers])
+
+- updated: controller.view403(), controller.view403() and controller.view500()
+- updated: nosql (supports binary files)
+
+- fixed: view condition @{if condition} @{endif}
+- fixed: framework.onLoaded throwing error
+
+======= 1.2.2-6
+
+- added: supports Accept-Ranges for streaming
+- added: new config item: static-accepts-custom: .mp3, .flv, etc.
+
+- updated: framework.usage(), added: databases directory size and added: staticsRange
+- updated: clean code
+
+======= 1.2.2-5
+
+- updated: nosql embedded database (new version)
+- updated: clean code
+- updated: backup
+
+- fixed: try -> catch to emit load event and #.onLoaded
+
+======= 1.2.2-4
+
+- updated: @{meta} / added after title " - " + config['name'] (without homepage url)
+- updated: binary –> default controller name: default.js
+- updated: empty project –> default controller name: default.js
+- updated: nosql embedded database (new version)
+
+======= 1.2.2-3
+
+- updated: nosql embedded database
+
+======= 1.2.2-2
+
+- added: nosql embedded database (via https://github.com/petersirka/nosql)
+- added: new namespace partial.js/nosql
+
+- updated: backup & restore (added clear directory)
+- updated: markdown image parser, added new parser tag: [![alt](src)](url)
+- updated: framework.database()
+
+- removed: sqlite3
+- removed: QueryBuilder
+- removed: ParameterBuilder
+- rmeoved: OrderBuilder
+
+- fixed: problem with older node.js version (setImmediate)
+- fixed: problem with controller validation onResource
+
+======= 1.2.2-1
+======= 1.2.2-0
+======= 1.2.1-9
+======= 1.2.1-8
+
+- added: keepalive.js (supports commands: reset, restart, stop, backup and restore)
+- added: process.send() for child_process.fork();
+- added: framework.cache.clear();
+- added: to markdown: image with link ![alt](src)(url)
+
+- fixed: problem in Windows with path to file or directory
+
+======= 1.2.1-7
+
+- added: framework.onFilterBackup(@path)
+- added: framework.onFilterRestore(@path)
+
+======= 1.2.1-6
+
+- added: config['directory-backup']
+- added: backup & restore website
+
+- updated: controlller.validation() - now, owner is controller
+- updated: assertion-testing added new "init" alias "run"
+- updated: framework.usage(), added: backup directory size
+- updated: decrease time expiration for views, contents, templates (5 minutes)
+- updated: empty-project (added backup & restore command)
+- updated: binary (executable)
+
+======= 1.2.1-5
+
+- IMPORTANT: removed @{viewIf},  @{templateIf},  @{contentIf}
+- IMPORTANT: renamed @{viewVisible to viewToggle}, @{templateVisible to templateToggle}, @{contentVisible to contentToggle}
+- IMPORTANT: renamed config keys
+
+- added: config.version (web site version)
+- added: controller.usage function
+- added: framework.run() / alias for framework.init();
+- added: new parameter @controller {Controller} to controller.onRequest()
+- added: utils.trim();
+
+- updated: decrease time expiration for static cache (5 minutes)
+- updated: framework.usage()
+- updated: binary / executables
+
+- removed: config.httpCache
+- removed: config.httpMinify
+- removed: config.httpCompress
+- removed: detailed parameter from module.usage() function
+
+======= 1.2.1-4
+
+- IMPORTANT: partial.js/picture renamed to partial.js/image
+
+- added: @{css('default.css')}
+- added: @{script('default.js')}
+- added: @{image('image.jpg', @width {Number}, @height {Number}, @alt {String}, className {String})}
+- added: @{favicon('favicon.png')}
+- added: @{json(@obj {Object}, @name {String | Optional})}
+- added: Number.padLeft(), Number.padRight()  - default char is '0'
+- added: @{text()}, @{hidden()}, @{checkbox()}, @{radio()}, @{textarea()}, @{password()}
+- added: builders.prepare('schemaName', model); return new object by the schema
+- added: markdown - new paragraph // and \\
+
+- updated: htmlEncode, htmlDecode (& = &amp;)
+- updated: improvement View engine parser
+- updated: @routeJS
+- updated: @routeCSS
+- updated: @routeImage
+- updated: partial.js binary
+- updated: String.padLeft(), String.padRight() - default char is ' '
+- updated: utils.etag(filename, version)
+- updated: utils.async & controller.async (setImmediate)
+
+- renamed: utils.Etag and ETagVersion to: utils.etag() and config.etagVersion
+
+- fixed: static files
+- fixed: minify HTML
+- fixed: @{if condition} @{endif}
+- fixed: problem with empty view
+- fixed: etagversion
+- fixed: template engine parser (problem with date format)
+
+======= 1.2.1-3
+
+- added: builders.default(schemaName)
+- added: utils.noop()
+- added: string.count('search text')
+- added: string.parseDate()
+- added: string.urlEncode()
+- added: string.urlDecode()
+
+- updated: clean code
+- updated: decrease time expiration in views and templates
+
+- fixed: LESS @import
+- fixed: string.htmlEncode(), utils.htmlEncode()
+
+======= 1.2.1-2
+
+- fixed: file upload
+
+======= 1.2.1-1
+
+- added: condition to view engine @{if model.a === model.b} TRUE @{else} FALSE @{endif} (doesnt support nested condition)
+
+======= 1.2.1-0
+
+- added: node v0.10.0 compatibility
+- added: framework - process SIGINT event
+
+- fixed: markdown parse link and image
+- fixed: template repository
+- fixed: utils.request (node v0.10)
+
+======= 1.2.0-9
+
+- updated: framework.cache, added cache.removeAll(search)
+- updated: SQLite schemaCreate, schemaDrop, renamed to: createSchema, deleteSchema
+- updated: markdown delegates + added new function markdown.parse() (it is same as markdown.load())
+
+- fixed: utils.extend()
+- fixed: install module
+- fixed: req.hostname(), problem with uri.port
+
+======= 1.2.0-8
+
+- added: sqlite ORM supports blob type
+- added: framework.on('exit')
+- added: markdown.load(text, name), @name parameter (such as helper to parser)
+
+- updated: rename returnFile, returnContent, returnStatic, return404, return500: responseFile, responseContent, etc..
+- updated: auto added first property name as primary key in builders schema (note: if not defined primary key)
+- updated: clean code
+- updated: SQLite ORM: delete callback return params: @err {Error} and @isDeleted {Boolean}
+- updated: Markdown link parser
+- updated: rename view helpers (isReadonly, isDisabled, isChecked, isSelected: renamed to readonly, disabled, checked, selected)
+- updated: improvement Markdown parser
+
+- fixed: error message / view not found, content not found, template not found
+- fixed: error message in SQLite ORM
+- fixed: problem with insert, update in SQLite ORM (fix without properties)
+- fixed: framework.clear()
+- fixed: problem with upload and readSync & read (framework waits until the stream is closed)
+- fixed: install controller & module - framework load only *.js files
+
+======= 1.2.0-7
+
+- added: framework.utils array.prototype.take(count), array.prototype.skip(count)
+- added: sqlite.schemaCreate(schema), sqlite.schemaDrop(schema)
+- added: controller.cancel()
+- added: controller.install
+
+- updated: controller.init is now obsolete
+- updated: framework.createResource(name, {String or Object});
+
+- fixed: framework.decode()
+- fixed: problem with routing priority
+
+======= 1.2.0-6
+
+- updated: rename framework.statics to framework.static;
+- clean code
+
+======= 1.2.0-5
+
+- fixed: problem with template compiler
+
+======= 1.2.0-4
+
+- updated: view compiler (improvement)
+- updated: template compiler (improvement)
+
+- fixed: problem with framework.clear();
+
+======= 1.2.0-3
+
+- added: controller.url :: {String}, property return relative url
+- added: automatic minify HTML
+- added: CSS minification is enabled in debug mode
+- added: auto trimming string values to SQLite ORM - insert/update
+- added: module usage
+
+- updated: QueryBuilder (builders), add == addQuery
+- updated: config, added @httpMinify {Boolean}, optional - default true
+
+- fixed: framework.clear() (added clear framework.static)
+- fixed: framework.usage() (fixed temporary directory size)
+
+======= 1.2.0-2
+
+- added: auto-initialization controllers
+- added: SQLite simple ORM - partial.js/sqlite
+- added: framework.database();
+- added: controller.database();
+- added: controller.sitemap();
+- added: framework.onValidation();
+- added: controller.validation();
+- added: utils Async class
+- added: new examples
+
+- updated: documentations
+
+- removed: partial.js/couchdb (https://github.com/petersirka/node-couchdb)
+- removed: partial.js/mongodb (https://github.com/petersirka/node-mongolab)
+- removed: partial.js/rdmbs (https://github.com/petersirka/node-rdbms)
+
+- fixed: problems

@@ -1,0 +1,60 @@
+@{layout('')}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authorization</title>
+    <meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=10" />
+	<meta name="format-detection" content="telephone=no"/>
+	<meta name="viewport" content="width=1024, user-scalable=yes" />
+	<meta name="robots" content="all,follow" />
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+	<style type="text/css">
+		body { padding: 50px; margin: 0; font:normal 12px Arial; color: gray }
+		#error { display: none; background-color: black; color: white; margin: 20px 0 0 0; }
+		#error > div { border-bottom: 1px solid gray; padding: 3px 5px; }
+	</style>
+</head>
+<body>
+
+	<form action="#" method="POST" id="f">
+		<div>
+			<div>Login name:</div>
+			<div><input type="text" name="LoginName" value="@{model.LoginName}" maxlength="200" /></div>
+		</div>
+		<br />
+		<div>
+			<div>Login password:</div>
+			<div><input type="text" name="LoginPassword" value="" maxlength="30" /></div>
+		</div>
+		<div id="error"></div>
+	</form>
+	<br />
+	<button>Submit</button>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$('button').bind('click', function() {
+				$.post('/?ts=' + new Date().getTime(), $('#f').serialize(), function(d) {
+					var err = $('#error');
+				
+					if (d instanceof Array) {
+
+						err.empty();
+						d.forEach(function(o) {
+							err.append('<div>' + o.error + '</div>');
+						});
+						err.show();
+						return;
+					};
+
+					err.hide();
+					window.location.href = '/';
+				});
+			});
+		});
+	</script>
+
+</body>
+</html>

@@ -1,0 +1,1 @@
+message		:toto je správa z resource (sk.resource)

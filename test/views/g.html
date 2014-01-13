@@ -1,0 +1,36 @@
+@{layout('')}
+
+<!DOCTYPE html>
+<head>
+	<style type="text/css">
+		@#auto-vendor-prefix#@
+		body { background-color: red; };
+		div { box-shadow: 0 0 5px silver; }
+	</style>
+</head>
+<body>
+
+	<script type="text/javascript">
+
+		function init() {
+			var es = new EventSource('/sse/');
+
+		  es.onmessage = function(ev) {
+		  	console.log('OK');
+		  	console.log(ev.data);
+		  };
+
+		  es.addEventListener('end', function() {
+		  	console.log('END');
+		  }, true);
+
+		  es.onerror = function(e) {
+		  	console.log(e);
+		  	console.log('ERROR');
+		  };
+		}
+
+	</script>
+
+</body>
+</html>

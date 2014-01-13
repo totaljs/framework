@@ -1,0 +1,4 @@
+name							: partial.js
+version							: 1.01
+secret							: secret-key-for-web
+author							: You company name

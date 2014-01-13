@@ -1,0 +1,101 @@
+
+<div class="mb5"><button name="open">CONNECT</button></div>
+<div><button name="close" disabled="disabled">DISCONNECT</button></div>
+<br />
+<div>
+	<input type="text" name="message" maxlength="200" style="width:500px" />
+	<button name="send" disabled="disabled">SEND</div>
+</div>
+<br />
+<div>
+	<textarea id="output" style="width:620px;height:300px" readonly="readonly"></textarea>
+</div>
+<br />
+<div>
+	<input type="text" value="Peter Sirka" name="username" maxlength="20" style="width:200px" />
+	<button name="rename" disabled="disabled">RENAME</div>
+</div>
+
+<script type="text/javascript">
+
+	// ATTENTION
+	// IF YOU SEND EMPTY MESSAGE (socket.send('')) - USER WILL DISCONNECTED
+
+	var socket = null;
+
+	$(document).ready(function() {
+
+		$('button').bind('click', function() {
+
+			if (this.name === 'rename') {
+				var value = $('input[name="username"]').val();
+				
+				if (value.length > 0)
+					socket.send(encodeURIComponent(JSON.stringify({ username: value })));
+
+				return;
+			}
+
+			if (this.name === 'send') {
+				console.log('send');
+				send();
+				return;
+			}
+
+			if (this.name === 'open') {
+				connect();
+				return;
+			}
+
+			console.log('disconnect');
+			disconnect();
+		});
+	});
+
+	function connect() {
+
+		if (socket !== null)
+			return;
+
+		$('button[name="open"]').attr('disabled', true);
+		$('button[name="close"],button[name="send"],button[name="rename"]').attr('disabled', false);
+		socket = new WebSocket('ws://127.0.0.1:8004/');
+
+	    socket.onopen = function() {
+	        console.log('open');
+	    };
+
+		socket.onmessage = function(e) {
+			var el = $('#output');
+			var m = JSON.parse(decodeURIComponent(e.data)).message;
+			el.val(m + '\n' + el.val());
+		};
+
+	    socket.onclose = function() {
+	        console.log('close');
+	    };
+	}
+
+	function send() {
+		var el = $('input[name="message"]');
+		var msg = el.val();
+
+		if (socket !== null && msg.length > 0)
+			socket.send(encodeURIComponent(JSON.stringify({ message: msg })));
+
+		el.val('');
+	}
+
+	function disconnect() {
+
+		if (socket === null)
+			return;
+
+		$('button[name="close"],button[name="send"],button[name="rename"]').attr('disabled', true);
+		$('button[name="open"]').attr('disabled', false);
+
+		socket.close();
+		socket = null;
+	}
+
+</script>

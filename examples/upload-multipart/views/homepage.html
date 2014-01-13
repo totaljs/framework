@@ -1,0 +1,10 @@
+@{meta('File upload')}
+
+<div style="background-color:#F0F0F0;padding:3px 10px">
+	Uploaded: <b style="color:black">@{model.info}</b>
+</div>
+<br />
+<form method="POST" enctype="multipart/form-data" action="/">
+	<input type="file" name="File" />
+	<button>SUBMIT</button>
+</form>
