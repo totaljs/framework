@@ -65,7 +65,7 @@ function createFiles(directory) {
 
 function createFileIndex(directory) {
 	var buffer = [];
-	buffer.push("var framework = require('partial.js');");
+	buffer.push("var framework = require('total.js');");
 	buffer.push("var http = require('http');");
 	buffer.push("");
 	buffer.push("var port = parseInt(process.argv[2] || '8000', 10);");
@@ -285,7 +285,7 @@ function createFileTest(directory) {
 	var buffer = [];
 
 	buffer.push("var assert = require('assert');");
-	buffer.push("var utils = require('partial.js/utils');");
+	buffer.push("var utils = require('total.js/utils');");
 	buffer.push("");
 	buffer.push("exports.run = function(framework) {");
 	buffer.push("");
@@ -303,10 +303,10 @@ function createFileDebugging(directory) {
 }
 
 function install(directory) {
-	exec('npm install partial.js', { cwd: directory }, function (error, stdout, stderr) {
+	exec('npm install total.js', { cwd: directory }, function (error, stdout, stderr) {
 
 	}).on('exit', function() {
-		console.log('partial.js: success');
+		console.log('total.js: success');
 	});
 }
 
@@ -315,7 +315,7 @@ function display_help() {
 		console.log('-m or -minimal   = minimal');
 		console.log('-n or -normal    = normal');
 		console.log('-f or -full      = full (default)');
-		console.log('-v or -version   = partial.js version');
+		console.log('-v or -version   = total.js version');
 		console.log('/path/           = target (default current directory)');
 		console.log('');
 }
@@ -328,7 +328,7 @@ function main() {
 		var cmd = arg.toLowerCase();
 
 		if (cmd === '-v' || cmd === '-version') {
-			console.log(require('partial.js').version);
+			console.log(require('total.js').version);
 			return;
 		}
 
@@ -355,7 +355,7 @@ function main() {
 	}
 
 	if (!fs.existsSync(dir)) {
-		console.log('partial.js: error / directory not exists');
+		console.log('total.js: error / directory not exists');
 		return;
 	}
 
@@ -371,18 +371,18 @@ function main() {
 		}
 
 		if (!can) {
-			console.log('partial.js: error / directory is not empty');
+			console.log('total.js: error / directory is not empty');
 			return;
 		}
 	}
 
-	console.log('partial.js: creating directories');
+	console.log('total.js: creating directories');
 	createDirectory(dir);
 
-	console.log('partial.js: creating files');
+	console.log('total.js: creating files');
 	createFiles(dir);
 
-	console.log('partial.js: installing current version partial.js');
+	console.log('total.js: installing current version total.js');
 	install(dir);
 }
 

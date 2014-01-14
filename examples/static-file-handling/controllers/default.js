@@ -14,11 +14,11 @@ function image_resize(req, res, isValidation) {
 
 	// generate response
 	// this === framework
-	// Documentation: http://docs.partialjs.com/Framework/#framework.responseImage
+	// Documentation: http://docs.totaljs.com/Framework/#framework.responseImage
 	this.responseImage(req, res, this.path.public(req.url), function (image) {
 
 		// image === FrameworkImage
-		// http://docs.partialjs.com/FrameworkImage/
+		// http://docs.totaljs.com/FrameworkImage/
 
 		image.resize('50%');
 		image.quality(80);

@@ -1,5 +1,3 @@
-> supports only partial.js +v1.2.4-1
-
 1. create in your desktop a new directory with few pictures
 2. update the upload-client.js and change a directory path
 3. run index.js

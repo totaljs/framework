@@ -12,11 +12,11 @@ function view_homepage() {
 		return;
 	}
 
-	// Look here: https://github.com/petersirka/partial.js/tree/master/examples/framework-schema
-	// Documentation: http://docs.partialjs.com/FrameworkController/#controller.validate
+	// Look here: https://github.com/petersirka/total.js/tree/master/examples/framework-schema
+	// Documentation: http://docs.totaljs.com/FrameworkController/#controller.validate
 	var result = self.validate(self.post, ['FirstName', 'LastName', 'Age', 'Email', 'Terms'], 'Form');
 
-	// Documentation: http://docs.partialjs.com/Builders.ErrorBuilder/
+	// Documentation: http://docs.totaljs.com/Builders.ErrorBuilder/
 	if (result.hasError()) {		
 		result.replace('@Email', self.post.Email);
 		self.json(result);

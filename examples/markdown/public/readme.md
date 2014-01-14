@@ -1,8 +1,8 @@
 # H1
 
-Welcome to __Markdown parser__. Link [__partial.js__ on GitHub]:https://github.com/petersirka/partial.js or <www.google.sk>.
+Welcome to __Markdown parser__. Link [__total.js__ on GitHub]:https://github.com/petersirka/total.js or <www.google.sk>.
 
-> ![Logo](http://www.partialjs.com/upload/icon.png#83x94) and with link: [![Logo](http://www.partialjs.com/upload/icon.png)](http://www.partialjs.com)
+> ![Logo](http://www.totaljs.com/download/icon-black.png#128x146) and with link: [![Logo](http://www.totaljs.com/download/icon-black.png)](http://www.totaljs.com)
 
 H1 Caption
 ==========

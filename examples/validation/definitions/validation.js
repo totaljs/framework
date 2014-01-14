@@ -1,6 +1,6 @@
 
 // Global validation
-// Look here: https://github.com/petersirka/partial.js/tree/master/examples/framework-schema
+// Look here: https://github.com/petersirka/total.js/tree/master/examples/framework-schema
 framework.onValidation = function(name, value) {
 
 	// this == controller

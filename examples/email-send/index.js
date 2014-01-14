@@ -1,5 +1,5 @@
-var framework = require('partial.js');
-var mail = require('partial.js/mail');
+var framework = require('total.js');
+var mail = require('total.js/mail');
 
 var message = new mail.Message('Subject', 'Body');
 

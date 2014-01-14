@@ -38,10 +38,10 @@ function view_homepage() {
 
 	var filename = self.path.public('upload.jpg');
 
-	// Documentation: http://docs.partialjs.com/FrameworkImage/
+	// Documentation: http://docs.totaljs.com/FrameworkImage/
 	var image = file.image(); // this is equivalent to require('partail.js/image').init([useImageMagick]);
 
-	// require('partial.js/image').init(filename, [useImageMagick]);
+	// require('total.js/image').init(filename, [useImageMagick]);
 	// file.image([useImageMagick]);
 
 	// image.identify(function(err, info) { info.width, info.heigth });
@@ -62,7 +62,7 @@ function view_homepage() {
 	// image.sepia();
 	// image.command(command, [priority]);
 
-	// IMPORTANT: see here https://github.com/petersirka/partial.js/tree/master/examples/routing
+	// IMPORTANT: see here https://github.com/petersirka/total.js/tree/master/examples/routing
 
 	image.resizeCenter(300, 300).save(filename, function(err, filename) {
 

@@ -2,13 +2,13 @@ exports.install = function(framework) {
 	framework.route('/', view_homepage);
 	framework.route('/usage/', view_usage);
 
-	// Documentation: http://docs.partialjs.com/Framework/#framework.websocket
+	// Documentation: http://docs.totaljs.com/Framework/#framework.websocket
 	framework.websocket('/', socket_homepage, ['json']);
 
 	// framework.websocket('/chat/', socket_homepage, ['json'], ['chat']);
 
 	// framework.websocket('/chat/private/', socket_private_homepage, ['json'], ['privatechat'], ['*']);
-	// framework.websocket('/chat/private/sex/', socket_sex_homepage, ['json'], ['privatechat', 'sexchat'], ['www.partialjs.com', 'eshop.partialjs.com', 'blog.partialjs.com']);
+	// framework.websocket('/chat/private/sex/', socket_sex_homepage, ['json'], ['privatechat', 'sexchat'], ['www.totaljs.com', 'eshop.totaljs.com', 'blog.totaljs.com']);
 
 	// client side:
 	// new WebSocket('ws://127.0.0.1:8004/', 'privatechat');
@@ -67,6 +67,9 @@ function socket_homepage() {
     	return {Client}
     */
     // controller.find(name);
+
+    // DESTROY CONTROLLER
+    // controller.destroy();
 
     // ============================================================
 

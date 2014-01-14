@@ -1,4 +1,4 @@
-// Documentation: http://docs.partialjs.com/Framework/#framework.onValidation
+// Documentation: http://docs.totaljs.com/Framework/#framework.onValidation
 framework.onValidation = function(name, value, path) {
 	switch (name) {
 		case 'Email':

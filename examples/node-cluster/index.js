@@ -15,6 +15,6 @@ if (cluster.isMaster) {
  	return; 
 }
 
-var framework = require('partial.js');
+var framework = require('total.js');
 framework.run(http, debug, port);
 console.log("http://{0}:{1}/".format(framework.ip, framework.port));

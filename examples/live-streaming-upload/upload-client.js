@@ -2,7 +2,7 @@ var urlParser = require('url');
 var http = require('http');
 var path = require('path');
 var fs = require('fs');
-var utils = require('partial.js/utils');
+var utils = require('total.js/utils');
 
 // directory must contain only files
 var directory = '/users/petersirka/desktop/mixed/';

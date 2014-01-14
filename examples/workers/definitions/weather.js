@@ -1,7 +1,7 @@
 
 function refresh() {
 
-	// Documentation: http://docs.partialjs.com/Framework/#framework.worker
+	// Documentation: http://docs.totaljs.com/Framework/#framework.worker
 	// workers/weather.js will runs in other process
 	var worker = framework.worker('weather', 'current', 5000);
 

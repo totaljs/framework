@@ -5,10 +5,10 @@ exports.install = function(framework) {
 
 function pipe_homepage() {
 	var self = this;
-	self.pipe('http://www.partialjs.com');
+	self.pipe('http://www.totaljs.com');
 }
 
 function pipe_file() {
 	var self = this;
-	self.pipe('http://www.partialjs.com/upload/empty-project.zip');
+	self.pipe('http://www.totaljs.com/download/logo-black.png');
 }

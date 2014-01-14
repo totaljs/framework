@@ -1,3 +1,3 @@
 # Download markdown module
 
-- https://github.com/petersirka/partial.js-modules/tree/master/markdown
+- https://github.com/petersirka/total.js-modules/tree/master/markdown

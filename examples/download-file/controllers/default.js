@@ -4,12 +4,12 @@ exports.install = function(framework) {
 };
 
 function file_download() {
-	// Documentation: http://docs.partialjs.com/FrameworkController/#controller.file
+	// Documentation: http://docs.totaljs.com/FrameworkController/#controller.file
 	this.file('company-profile.pdf', 'about-us.pdf');
 }
 
 function image_download() {
-	// Documentation: http://docs.partialjs.com/FrameworkController/#controller.image
+	// Documentation: http://docs.totaljs.com/FrameworkController/#controller.image
 	this.image('slovakia.jpg', function(image) {
 		image.resize('50%');
 		image.minify();

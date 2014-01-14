@@ -7,7 +7,7 @@ exports.install = function(framework) {
 	framework.route('/', view_homepage);
 
 	// file route
-	// Documentation: http://docs.partialjs.com/Framework/#framework.file
+	// Documentation: http://docs.totaljs.com/Framework/#framework.file
 	framework.file('*.pdf counter', file_download);
 
 };
@@ -28,7 +28,7 @@ function file_download(req, res, isValidation) {
 
 	counter++;
 
-	// Documentation: http://docs.partialjs.com/Framework/#framework.responseFile
+	// Documentation: http://docs.totaljs.com/Framework/#framework.responseFile
 	// response file
 	self.responseFile(req, res, self.path.public(filename), filename);
 };

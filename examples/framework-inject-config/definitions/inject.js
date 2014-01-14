@@ -1,3 +1,3 @@
 framework.on('load', function() {
-	framework.injectConfig('http://www.partialjs.com/inject-config.txt');
+	framework.injectConfig('http://www.totaljs.com/inject-config.txt');
 });

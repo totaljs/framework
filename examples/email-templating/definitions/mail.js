@@ -1,4 +1,4 @@
-// Documentation: http://docs.partialjs.com/FrameworkMail/
+// Documentation: http://docs.totaljs.com/FrameworkMail/
 var mail = require('partial.js/mail');
 
 framework.mail = function(email, name, params) {

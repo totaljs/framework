@@ -4,6 +4,5 @@ exports.install = function(framework) {
 
 function view_homepage() {
 	var self = this;
-	self.repository.title = 'Templates';
 	self.view('homepage');
 }

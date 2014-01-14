@@ -1,6 +1,6 @@
 // run in terminal: $ sudo node index
 
-var framework = require('partial.js');
+var framework = require('total.js');
 var http = require('http');
 
 var port = 80;

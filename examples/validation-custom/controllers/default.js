@@ -7,7 +7,6 @@ function view_homepage() {
 	var self = this;
 	
 	if (!self.xhr) {
-		self.repository.title = 'Validation example';
 		self.view('homepage', { LoginName: '@' });
 		return;
 	}
@@ -16,10 +15,10 @@ function view_homepage() {
 		return self.resource('en', name);
 	};
 
-	// Documentation: http://docs.partialjs.com/Builders.ErrorBuilder/
+	// Documentation: http://docs.totaljs.com/Builders.ErrorBuilder/
 	var errorBuilder = new builders.ErrorBuilder(resource);
 
-	// Documentation: http://docs.partialjs.com/FrameworkUtils/#utils.validate
+	// Documentation: http://docs.totaljs.com/FrameworkUtils/#utils.validate
 	if (utils.validate(self.post, ['FirstName', 'LastName', 'Age', 'Email', 'Terms'], onValidation, errorBuilder).hasError()) {
 		self.json(errorBuilder);
 		return;

@@ -34,7 +34,10 @@ global.builders = require('./builders');
 global.utils = require('./utils');
 
 function Framework() {
-	this.version = 1400;
+
+	this.version = 1000;
+	this.version_header = '1.0';
+
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
@@ -48,7 +51,7 @@ function Framework() {
 
 		debug: false,
 
-		name: 'partial.js',
+		name: 'total.js',
 		version: '1.01',
 		author: '',
 		secret: os.hostname() + '-' + os.platform() + '-' + os.arch(),
@@ -1607,7 +1610,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 	if (headers)
 		utils.extend(h, headers, true);
 
-	h['X-Powered-By'] = 'partial.js v' + self.version;
+	h['X-Powered-By'] = 'total.js v' + self.version_header;
 
 	var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 	var connection = options.protocol === 'https:' ? https : http;
@@ -2607,7 +2610,7 @@ Framework.prototype.console = function() {
 	console.log('====================================================');
 	console.log('PID          : ' + process.pid);
 	console.log('node.js      : ' + process.version);
-	console.log('partial.js   : v' + framework.version);
+	console.log('total.js     : v' + framework.version);
 	console.log('====================================================');
 	console.log('Name         : ' + framework.config.name);
 	console.log('Version      : ' + framework.config.version);
@@ -2748,7 +2751,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 
 	var self = this;
 
-    if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version)) {
+    if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version_header)) {
 		socket.close();
 		req.connection.destroy();
         return;
@@ -2799,7 +2802,7 @@ Framework.prototype._request = function(req, res) {
 	if (self.onRequest !== null && self.onRequest(req, res))
 		return;
 
-	res.setHeader('X-Powered-By', 'partial.js v' + self.version);
+	res.setHeader('X-Powered-By', 'total.js v' + self.version_header);
 
 	var headers = req.headers;
 	var protocol = req.connection.encrypted ? 'https' : 'http';
@@ -2872,7 +2875,7 @@ Framework.prototype._request = function(req, res) {
 	}
 
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
-	req.isProxy = headers['x-proxy'] === 'partial.js';
+	req.isProxy = headers['x-proxy'] === 'total.js';
 	req.data = { get: {}, post: {}, files: [] };
 	req.flags = null;
 
@@ -3469,7 +3472,7 @@ Framework.prototype.configure = function(arr, rewrite) {
 	if (self.config['etag-version'] === '')
 		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');
 
-	process.title = 'partial: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
+	process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
 
 	if (accepts !== null && accepts.length > 0) {
 		accepts.forEach(function(accept) {
@@ -7368,7 +7371,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 
 	if (self.type === 0) {
 		self.type = 2;
-		self.boundary = '----partialjs' + utils.GUID(10);
+		self.boundary = '----totaljs' + utils.GUID(10);
 		self.subscribe.success();
 		res.success = true;
 		self.req.on('close', self.close.bind(self));
@@ -7473,7 +7476,7 @@ Controller.prototype.close = function(end) {
 Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 
 	var self = this;
-	var headers = { 'X-Proxy': 'partial.js' };
+	var headers = { 'X-Proxy': 'total.js' };
 	headers[RESPONSE_HEADER_CONTENTTYPE] = 'application/json';
 
 	var tmp;
@@ -7780,7 +7783,7 @@ var SOCKET_ALLOW_VERSION   = [13];
 
 /*
     WebSocket
-    @framework {partial.js}
+    @framework {total.js}
     @path {String}
     @name {String} :: Controller name
     return {WebSocket}
@@ -8019,7 +8022,7 @@ WebSocket.prototype.destroy = function() {
 WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 
 	var self = this;
-	var headers = { 'X-Proxy': 'partial.js' };
+	var headers = { 'X-Proxy': 'total.js' };
 	headers[RESPONSE_HEADER_CONTENTTYPE] = 'application/json';
 
 	if (typeof(obj) === FUNCTION) {
@@ -8314,7 +8317,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
     if (SOCKET_ALLOW_VERSION.indexOf(utils.parseInt(self.req.headers['sec-websocket-version'])) === -1)
         return false;
 
-    self.socket.write(new Buffer(SOCKET_RESPONSE.format('partial.js v' + version, self._request_accept_key(self.req)), 'binary'));
+    self.socket.write(new Buffer(SOCKET_RESPONSE.format('total.js v' + version, self._request_accept_key(self.req)), 'binary'));
 
     self._id = (self.ip || '').replace(/\./g, '') + utils.GUID(20);
     self.id = self._id;

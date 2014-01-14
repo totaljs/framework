@@ -1,1 +1,0 @@
-> supports only partial.js +v1.2.4-1

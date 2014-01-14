@@ -1,4 +1,4 @@
-// Documentation: http://docs.partialjs.com/Builders.SchemaBuilder/#builders.schema
+// Documentation: http://docs.totaljs.com/Builders.SchemaBuilder/#builders.schema
 builders.schema('contactform', { Email: 'string(200)', Phone: 'string(40)', Message: 'string(10000)', Ip: 'string(60)', Created: 'date' }, function(name, isDefault) {
 	switch (name) {
 		case 'Email':
@@ -8,5 +8,5 @@ builders.schema('contactform', { Email: 'string(200)', Phone: 'string(40)', Mess
 	}
 });
 
-// Documentation: http://docs.partialjs.com/Builders.SchemaBuilder/#builders.validation
+// Documentation: http://docs.totaljs.com/Builders.SchemaBuilder/#builders.validation
 builders.validation('contactform', ['Email', 'Message']);

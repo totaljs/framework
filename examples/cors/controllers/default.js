@@ -14,7 +14,7 @@ function cors_time() {
 	// OR
 
 	/*
-	if (!self.cors(['partialjs.com', 'google.com'], ['GET', 'POST'])) {
+	if (!self.cors(['totaljs.com', 'google.com'], ['GET', 'POST'])) {
 		self.plain('Not allowed');
 		return;
 	}
@@ -27,7 +27,7 @@ function cors_time() {
 	// @allow, [@method], [@header], [@credentials]
 	// true == with credentials
 	
-	if (!self.cors(['partialjs.com', 'google.com'], true)) {
+	if (!self.cors(['totaljs.com', 'google.com'], true)) {
 		self.plain('Not allowed');
 		return;
 	}

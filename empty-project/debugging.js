@@ -1,14 +1,14 @@
 // ===================================================
 // IMPORTANT: only for debugging mode
-// partial.js - web application framework for node.js
-// http://www.partialjs.com
+// total.js - web application framework for node.js
+// http://www.totaljs.com
 // ===================================================
 
 var fork = require('child_process').fork;
 var fs = require('fs');
 var path = require('path');
 var directory = process.cwd();
-var utils = require('partial.js/utils');
+var utils = require('total.js/utils');
 
 var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules', directory + '/resources'];
 var files = {};

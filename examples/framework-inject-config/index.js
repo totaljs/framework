@@ -1,4 +1,4 @@
-var framework = require('partial.js');
+var framework = require('totaljs.js');
 var http = require('http');
 
 var port = 8004;

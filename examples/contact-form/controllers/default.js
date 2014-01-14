@@ -12,7 +12,7 @@ function json_form() {
 	var self = this;	
 	var model = self.post;
 
-	// Documentation: http://docs.partialjs.com/FrameworkController/#controller.validate
+	// Documentation: http://docs.totaljs.com/FrameworkController/#controller.validate
 	var error = self.validate(model, 'contactform');
 
 	if (error.hasError()) {
@@ -20,7 +20,7 @@ function json_form() {
 		return;
 	}
 
-	// Documentation: http://docs.partialjs.com/Builders.SchemaBuilder/#builders.prepare
+	// Documentation: http://docs.totaljs.com/Builders.SchemaBuilder/#builders.prepare
 	model = builders.prepare('contactform', model);
 	model.Ip = self.ip;
 

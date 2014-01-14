@@ -21,7 +21,7 @@ var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
 var NEWLINE = '\r\n';
-var VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version : '');
+var VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version_header : '');
 
 var contentTypes = {
 	'ai': 'application/postscript',
@@ -190,7 +190,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 	if (headers)
 		util._extend(h, headers);
 
-	h['X-Powered-By'] = 'partial.js' + VERSION;
+	h['X-Powered-By'] = 'total.js' + VERSION;
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
@@ -264,7 +264,7 @@ exports.download = function(url, callback, headers, method, params, encoding) {
 	encoding = encoding || ENCODING;
 
 	util._extend(h, headers);
-	h['X-Powered-By'] = 'partial.js' + VERSION;
+	h['X-Powered-By'] = 'total.js' + VERSION;
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
@@ -331,7 +331,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 
 	h['Cache-Control'] = 'max-age=0';
 	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
-	h['X-Powered-By'] = 'partial.js' + VERSION;
+	h['X-Powered-By'] = 'total.js' + VERSION;
 
 	var uri = urlParser.parse(url);
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };

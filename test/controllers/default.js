@@ -226,7 +226,7 @@ function viewIndex() {
 	assert.ok(self.template('test', ['A', 'B']) === '<div>AB</div>{name | 1}', name + 'template - no repository');
 	assert.ok(self.template('test', ['A', 'B'], '', { name: 'ABCDEFG' }) === '<div>AB</div>A...', name + 'template - repository');
 	assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');
-	assert.ok(self.view('test', null, true) === 'partial.js', name + 'view');
+	assert.ok(self.view('test', null, true) === 'total.js', name + 'view');
 	assert.ok(self.content('test', true) === 'EMPTY', name + 'content');
 	assert.ok(self.url === '/', name + 'url');
 
@@ -366,7 +366,7 @@ function viewLive() {
 
 function pipe() {
 	var self = this;
-	self.pipe('http://www.partialjs.com/');
+	self.pipe('http://www.totaljs.com/');
 }
 
 function view_cookie() {

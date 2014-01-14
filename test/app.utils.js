@@ -31,13 +31,13 @@ function prototypeNumber() {
 
 // test: string prototype
 function prototypeString() {
-	var str = ' partial.js    ';
-	assert.ok(str.trim() === 'partial.js', 'string.trim()');
-	assert.ok(str.contains(['p', 'X']), 'string.contains(all=false)');
-	assert.ok(str.contains(['p', 'X'], true) === false, 'string.contains(all=true)');
+	var str = ' total.js    ';
+	assert.ok(str.trim() === 'total.js', 'string.trim()');
+	assert.ok(str.contains(['t', 'X']), 'string.contains(all=false)');
+	assert.ok(str.contains(['t', 'X'], true) === false, 'string.contains(all=true)');
 	assert.ok('{0}={1}'.format('name', 'value') === 'name=value', 'string.format()');
-	assert.ok('<b>partial.js</b>"&nbsp;'.encode() === '&lt;b&gt;partial.js&lt;/b&gt;&quot;&amp;nbsp;', 'string.encode()');
-	assert.ok('&lt;b&gt;partial.js&lt;/b&gt;&amp;nbsp;'.decode() === '<b>partial.js</b>&nbsp;', 'string.decode()');
+	assert.ok('<b>total.js</b>"&nbsp;'.encode() === '&lt;b&gt;total.js&lt;/b&gt;&quot;&amp;nbsp;', 'string.encode()');
+	assert.ok('&lt;b&gt;total.js&lt;/b&gt;&amp;nbsp;'.decode() === '<b>total.js</b>&nbsp;', 'string.decode()');
 
 	str = 'abcdefgh ijklmnop';
 	assert.ok(str.max(5, '---') === 'ab---', 'string.maxLength(5, "---")');

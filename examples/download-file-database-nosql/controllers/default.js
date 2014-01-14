@@ -40,13 +40,13 @@ function static_image(req, res, isValidation) {
         }
 
         // Set HTTP cache via etag
-        // Documentation: http://docs.partialjs.com/Framework/#framework.setModified
+        // Documentation: http://docs.totaljs.com/Framework/#framework.setModified
         //self.setModified(req, res, id);
 
-        // Documentation: http://docs.partialjs.com/Framework/#framework.responseStream
+        // Documentation: http://docs.totaljs.com/Framework/#framework.responseStream
         // self.responseStream(req, res, 'image/png', stream);
 
-        // Documentation: http://docs.partialjs.com/Framework/#framework.responseImage
+        // Documentation: http://docs.totaljs.com/Framework/#framework.responseImage
         self.responseImage(req, res, stream, function(image) {
             image.resize('50%');
             image.output('png');

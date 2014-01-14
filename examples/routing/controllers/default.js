@@ -1,5 +1,5 @@
 exports.install = function(framework) {
-	// Documentation: http://docs.partialjs.com/Framework/#framework.route
+	// Documentation: http://docs.totaljs.com/Framework/#framework.route
 	framework.route('/contact/', view_contact);
 	framework.route('/products/', view_products);
 	framework.route('/products/{category}/', view_products);
@@ -8,13 +8,13 @@ exports.install = function(framework) {
 	framework.route('/{category}/', view_homepage);
 
 	// route: all txt files
-	// Documentation: http://docs.partialjs.com/Framework/#framework.file
+	// Documentation: http://docs.totaljs.com/Framework/#framework.file
 	// Try: http://127.0.0.4/test.txt
 	framework.file('All *.txt', static_txt);
 
 	// route: all jpg files
 	// all images will resized about 50%
-	// Documentation: http://docs.partialjs.com/Framework/#framework.file
+	// Documentation: http://docs.totaljs.com/Framework/#framework.file
 	// Try: http://127.0.0.4/header.jpg
 	framework.file('All *.jpg', static_jpg);
 }
@@ -26,7 +26,7 @@ function static_txt(req, res, isValidation) {
 
 	// generate response
 	// this === framework
-	// Documentation: http://docs.partialjs.com/Framework/#framework.responsContent
+	// Documentation: http://docs.totaljs.com/Framework/#framework.responsContent
 	this.responseContent(req, res, 200, 'Server time: ' + new Date().toString(), 'text/plain');
 }
 
@@ -37,11 +37,11 @@ function static_jpg(req, res, isValidation) {
 
 	// generate response
 	// this === framework
-	// Documentation: http://docs.partialjs.com/Framework/#framework.responseImage
+	// Documentation: http://docs.totaljs.com/Framework/#framework.responseImage
 	this.responseImage(req, res, this.path.public(req.url), function (image) {
 
 		// image === FrameworkImage
-		// http://docs.partialjs.com/FrameworkImage/
+		// http://docs.totaljs.com/FrameworkImage/
 
 		image.resize('50%');
 		image.quality(80);

@@ -6,6 +6,6 @@ exports.install = function(framework) {
 
 function file_download() {
 	var self = this;
-	// Documentation: http://docs.partialjs.com/Framework/#framework.responseStream
+	// Documentation: http://docs.totaljs.com/Framework/#framework.responseStream
 	self.stream('application/pdf', fs.createReadStream(self.path.public('company-profile.pdf')), 'about-us.pdf');
 }

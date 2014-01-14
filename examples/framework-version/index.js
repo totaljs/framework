@@ -1,3 +1,3 @@
-var framework = require('partial.js');
+var framework = require('total.js');
 
 console.log(framework.version);

@@ -1,6 +1,6 @@
 exports.init = function(framework) {
 
-	// Documentation: http://docs.partialjs.com/Framework/#framework.route
+	// Documentation: http://docs.totaljs.com/Framework/#framework.route
 	framework.route('/', timeout);
 
 	framework.route('/quick/', timeout, { timeout: 100 });

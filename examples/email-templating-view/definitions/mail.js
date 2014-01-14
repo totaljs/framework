@@ -1,5 +1,5 @@
-// Documentation: http://docs.partialjs.com/FrameworkMail/
-var mail = require('partial.js/mail');
+// Documentation: http://docs.totaljs.com/FrameworkMail/
+var mail = require('total.js/mail');
 
 framework.mail = function(email, subject, html) {
 
@@ -8,7 +8,6 @@ framework.mail = function(email, subject, html) {
 	if (subject.length === 0 || html.length === 0)
 		return false;
 
-	// partial.js +v1.2.4-4
 	var message = new mail.Message(subject, html);
 
 	// message.subject;

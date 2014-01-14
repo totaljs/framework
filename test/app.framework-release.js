@@ -247,7 +247,7 @@ mem.on('stats', function(info) {
 	console.log('STATS ->', JSON.stringify(info));
 });
 
-framework.fs.create.view('fromURL', 'http://partialjs.com/framework/test.html');
+framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html');
 
 var hd = null;
 

@@ -12,4 +12,4 @@ All forms on webpage send via XHR ([CORS](http://en.wikipedia.org/wiki/Cross-ori
 - minimal requests to the server
 - it's safe
 
-EXAMPLE: https://github.com/petersirka/partial.js/tree/master/examples/contact-form
+EXAMPLE: https://github.com/petersirka/total.js/tree/master/examples/contact-form

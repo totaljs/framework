@@ -1,5 +1,5 @@
 var assert = require('assert');
-var utils = require('partial.js/utils');
+var utils = require('total.js/utils');
 
 exports.run = function(framework) {
 
