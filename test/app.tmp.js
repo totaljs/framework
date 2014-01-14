@@ -72,8 +72,8 @@ fs.createReadStream('/users/petersirka/desktop/a.jpg').pipe(p.stdin);
 //message.to('petersirka@gmail.com');
 //message.from('sirka@wsd-europe.com', 'Janko');
 
-//message.send('smtp.wsd-europe.com', { user: 'sirka@wsd-europe.com', password: 'PETO07dlska' });
-//message.send('smtp.gmail.com', { port: 465, secure: true, user: 'petersirka@gmail.com', password: '' });
+//message.send('smtp.yourdomain.com', { user: 'yourmail@yourdomain.com', password: 'PASS' });
+//message.send('smtp.gmail.com', { port: 465, secure: true, user: 'your@gmail.com', password: '' });
 //message.send();
 
 //var socket = new tls.connect(465, 'smtp.gmail.com');
