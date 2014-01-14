@@ -6,7 +6,7 @@ var debug = true;
 
 framework.run(http, debug, port);
 
-// Documentation: http://docs.partialjs.com/Framework/#framework.test
+// Documentation: http://docs.totaljs.com/Framework/#framework.test
 framework.test(true, function() {
 	console.log('SUCCESSS');
 });

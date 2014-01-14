@@ -6,10 +6,10 @@ function viewHomepage() {
 	var self = this;
 	var builder = [];
 	
-	// Documentation: http://docs.partialjs.com/Async/
+	// Documentation: http://docs.totaljs.com/Async/
 	self.await(function(complete) {
 
-		// Documentation: http://docs.partialjs.com/FrameworkUtils/#utils.request
+		// Documentation: http://docs.totaljs.com/FrameworkUtils/#utils.request
 		utils.request('https://www.google.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.google.com -> ' + output);
@@ -19,7 +19,7 @@ function viewHomepage() {
 
 	self.await(function(complete) {
 
-		// Documentation: http://docs.partialjs.com/FrameworkUtils/#utils.request
+		// Documentation: http://docs.totaljs.com/FrameworkUtils/#utils.request
 		utils.request('https://www.expressjs.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.expressjs.com -> ' + output);
@@ -29,7 +29,7 @@ function viewHomepage() {
 
 	self.await(function(complete) {
 
-		// Documentation: http://docs.partialjs.com/FrameworkUtils/#utils.request
+		// Documentation: http://docs.totaljs.com/FrameworkUtils/#utils.request
 		utils.request('http://www.yahoo.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
 			builder.push('www.yahoo.com -> ' + output);
@@ -39,10 +39,10 @@ function viewHomepage() {
 
 	self.await('partial', function(complete) {
 
-		// Documentation: http://docs.partialjs.com/FrameworkUtils/#utils.request
-		utils.request('http://www.partialjs.com', 'GET', null, function(err, data) {
+		// Documentation: http://docs.totaljs.com/FrameworkUtils/#utils.request
+		utils.request('http://www.totaljs.com', 'GET', null, function(err, data) {
 			var output = err ? 'error' : data.length.toString();
-			builder.push('www.partialjs.com -> ' + output);
+			builder.push('www.totaljs.com -> ' + output);
 			complete();
 		});
 	});
