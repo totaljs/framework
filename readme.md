@@ -18,7 +18,7 @@ $ npm install total.js
 - [__Documentation__](http://docs.totaljs.com)
 - [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
 - [Changelog](https://github.com/petersirka/total.js/blob/master/changes.txt)
-- [__Roadmap__](https://github.com/petersirka/total.js/blob/master/roadmap.txt)
+- [__Roadmap__](https://github.com/petersirka/total.js/issues/milestones?with_issues=no)
 
 __Development__:
 
@@ -38,10 +38,9 @@ __Interesting__:
 __Social networks__:
 
 - [__Discussion forum__](https://groups.google.com/forum/#!forum/totaljs)
-- [Flattr total.js](http://flattr.com/thing/1436218/total-js-web-application-framework-for-node-js)
 - [Follow total.js on GitHub](https://github.com/petersirka/total.js)
-- [Follow total.js on Twitter - __@totaljs__](https://twitter.com/totaljs)
-- [Follow total.js on Facebook](https://www.facebook.com/totaljs)
+- [Follow total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
+- [Follow total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
 - [Follow total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
 
 __Examples__:
