@@ -34,7 +34,7 @@ global.builders = require('./builders');
 global.utils = require('./utils');
 
 function Framework() {
-	this.version = 1320;
+	this.version = 1400;
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
 	this.handlers = {
