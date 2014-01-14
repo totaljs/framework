@@ -1,9 +1,11 @@
 ![total.js logo](http://www.totaljs.com/download/logo-black.png)
 
+> Dear community. I had to rename framework partial.js because I'm not owner of domain name ( partialjs.com ) but i'm owner of framework. Not all people are good and I made a mistake a long time ago. I hope you'll understand.
+
 web framework for node.js
 =========================
 
-total.js__ is the best ever web application framework for creating a rich web sites and web services. The framework has good documentation and contains many examples. Please support the framework on GitHub and other social networks.
+__total.js__ is the best ever web application framework for creating a rich web sites and web services. The framework has good documentation and contains many examples. Please support the framework on GitHub and other social networks.
 
 > Current version (v1.0.0) is __stable version__.
 
