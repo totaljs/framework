@@ -1,4 +1,4 @@
-![partial.js logo](http://www.partialjs.com/upload/logo-christmas.png)
+![partial.js logo](http://www.totaljs.com/upload/logo-partial.png)
 
 web application framework for node.js
 =====================================
