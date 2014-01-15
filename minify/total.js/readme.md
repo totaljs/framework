@@ -30,7 +30,6 @@ __Development__:
 
 __Interesting__:
 
-- [__express.js vs total.js__](http://www.totaljs.com/benefits/)
 - [Tutorial](http://docs.totaljs.com/tutorial/)
 - [Download __total.js modules__](https://github.com/petersirka/total.js-modules/)
 - Framework supports [NoSQL Embedded database](https://github.com/petersirka/nosql) for max. 20 000 documents per database
@@ -45,12 +44,9 @@ __Social networks__:
 
 __Examples__:
 
-- __NEW__ - [Sushi website example](http://sushi.totaljs.com)
-- __NEW__ - [TODO list example](http://todo.totaljs.com)
+- [Sushi website example](http://sushi.totaljs.com)
+- [TODO list example](http://todo.totaljs.com)
 - [More than 90 examples](https://github.com/petersirka/total.js/tree/master/examples)
-- [HTML 5 full website example](http://www.totaljs.com/get-started/)
-- Older code: [blog written in total.js (without installation)](http://blog.totaljs.com)
-- Older code: [e-shop written in total.js (without installation)](http://eshop.totaljs.com)
 
 __Modules__:
 
@@ -184,7 +180,7 @@ $ sudo npm install -g total.js
 ```
 $ mkdir mywebsite
 $ cd mywebsite
-$ total.js
+$ total
 ```
 ```
 $ node debugging

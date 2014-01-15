@@ -1,0 +1,4 @@
+======= 1.0.1 (HOTFIX)
+
+- fixed: builders.prepare()
+- fixed: binary (command-line tools)

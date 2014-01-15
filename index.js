@@ -35,8 +35,8 @@ global.utils = require('./utils');
 
 function Framework() {
 
-	this.version = 1000;
-	this.version_header = '1.0';
+	this.version = 1001;
+	this.version_header = '1.0.1';
 
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 

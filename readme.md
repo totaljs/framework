@@ -180,7 +180,7 @@ $ sudo npm install -g total.js
 ```
 $ mkdir mywebsite
 $ cd mywebsite
-$ total.js
+$ total
 ```
 ```
 $ node debugging
