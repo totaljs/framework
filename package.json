@@ -1,6 +1,6 @@
 {
     "name": "total.js",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "web framework (MVC) for node.js",
     "main": "./index.js",
     "keywords": [ "total", "framework", "web", "webpage", "mvc", "controller", "view", "sqlite", "rdbms", "upload", "picture", "graphicsmagick", "imagemagick", "eshop", "blog", "forum", "chat", "game", "nosql", "database", "streaming", "live", "server sent events", "sse", "multipart", "x-mixed-replace"],
@@ -19,7 +19,7 @@
     "author": {
         "name": "Peter Širka"
     },
-    "bin": { "total.js": "./bin/total" },
+    "bin": { "total": "./bin/total", "total.js": "./bin/total" },
     "_from": "total.js",
     "directories": {
         "test": "test"

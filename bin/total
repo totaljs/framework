@@ -345,7 +345,7 @@ function main() {
 			continue;
 		}
 
-		if (cmd === '-h' || cmd === '-help') {
+		if (cmd === '-h' || cmd === '-help' || cmd === '--help') {
 			display_help();
 			return;
 		}
