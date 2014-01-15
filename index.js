@@ -2610,7 +2610,7 @@ Framework.prototype.console = function() {
 	console.log('====================================================');
 	console.log('PID          : ' + process.pid);
 	console.log('node.js      : ' + process.version);
-	console.log('total.js     : v' + framework.version);
+	console.log('total.js     : v' + framework.version_header);
 	console.log('====================================================');
 	console.log('Name         : ' + framework.config.name);
 	console.log('Version      : ' + framework.config.version);
