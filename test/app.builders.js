@@ -68,7 +68,7 @@ function test_UrlBuilder() {
 
 function test_Schema() {
 	var name = 'Schema: ';
-
+	
 	builders.schema('tbl_user', { Id: Number, Name: String, date: Date }, function(name) {	
 		if (name === 'date')
 			return 'OK';

@@ -243,6 +243,9 @@ exports.prepare = function(name, model) {
 	if (obj === null)
 		return null;
 
+	if (model === null)
+		return exports.defaults(name);
+
 	var tmp;
 	var item = utils.extend({}, obj, true);
 	var properties = Object.keys(item);
@@ -252,7 +255,7 @@ exports.prepare = function(name, model) {
 	for (var i = 0; i < length; i++) {
 
 		var property = properties[i];
-		var val = model[property];
+		var val = model[property];		
 
 		if (typeof(val) === UNDEFINED && defaults)
 			val = defaults(property, false);
@@ -296,6 +299,7 @@ exports.prepare = function(name, model) {
 						else
 							tmp = null;
 						break;
+
 					case NUMBER:
 						tmp = new Date(val);
 						break;
@@ -316,6 +320,11 @@ exports.prepare = function(name, model) {
 			}
 
 			item[property] = isUndefined(defaults(property), null);
+			continue;
+		}
+
+		if (type === OBJECT) {
+			item[property] = typeval === OBJECT ? val : null;
 			continue;
 		}
 
