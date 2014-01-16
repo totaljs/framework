@@ -1,4 +1,4 @@
-<div class="list {# | 'even' : 'odd'}">
+<div class="list {# ? 'even' : 'odd'}">
 	<div>{name}</div>
 	<div>Max 5 chars: {name | 5}</div>
 	<div>{price | ## ###.##}</div>
@@ -6,4 +6,5 @@
 	<div>Child: {example.name}</div>
 	<div>Function: {fn}</div>
 	<div>Current record index (index in array): {#}</div>
+	<div>@{template('products-tags', tags)}</div>
 </div>
