@@ -8366,7 +8366,10 @@ WebSocketClient.prototype._ondata = function(data) {
         return;
     }
 
-	var message = decodeURIComponent(utils.decode_WS(data) || '');
+	var message = utils.decode_WS(data);
+	try {
+		message = decodeURIComponent(message || '');
+	} catch(ex) {}
 
     if (message === '') {
         // websocket.close() send empty string
