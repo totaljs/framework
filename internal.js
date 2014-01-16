@@ -2694,7 +2694,7 @@ Template.prototype.parse = function(html, isRepository) {
 		var format = '';
 		var name = tmp[i];
 		var isEncode = true;
-
+		var cond = '';
 		var isView = name[0] === '@';
 
 		indexEnd = template.indexOf(name, indexBeg);
@@ -2704,31 +2704,44 @@ Template.prototype.parse = function(html, isRepository) {
 		indexBeg = indexEnd + name.length;
 
 		if (!isView) {
-			index = name.indexOf('|');
-	        if (index !== -1) {
 
+        	index = name.indexOf('?');
+        	if (index !== -1) {
 	            format = name.substring(index + 1, name.length - 1).trim();
 	            name = name.substring(1, index);
+	            cond = parseConditionParams(name);
+                var condition = parseCondition(format);
+            	if (cond.length !== 0) {
+					format = "(function(){return " + name.split(cond).join('@#1_0;') + "})().condition(" + condition + ")";
+					name = cond;
+            	} else
+            		format = ".condition(" + condition + ")";
 
-	            var pluralize = parsePluralize(format);
-	            if (pluralize.length === 0) {
-	                if (format.indexOf('#') === -1) {
-	                    var condition = parseCondition(format);
-	                    if (condition.length === 0) {
-	                        var count = utils.parseInt(format);
-	                        if (count === 0) {
-	                            format = ".format('" + format + "')";
-	                        } else
-	                            format = ".max(" + (count + 3) + ",'...')";
-	                    } else
-	                        format = ".condition(" + condition + ")";
-	                } else
-	                    format = ".format('" + format + "')";
-	            } else
-	                format = pluralize;
-	        }
-	        else
-	            name = name.substring(1, name.length - 1);
+        	} else {
+
+				index = name.indexOf('|');
+		        if (index !== -1) {
+			            format = name.substring(index + 1, name.length - 1).trim();
+			            name = name.substring(1, index);
+			            var pluralize = parsePluralize(format);
+			            if (pluralize.length === 0) {
+			                if (format.indexOf('#') === -1) {
+			                    var condition = parseCondition(format);
+			                    if (condition.length === 0) {
+			                        var count = utils.parseInt(format);
+			                        if (count === 0) {
+			                            format = ".format('" + format + "')";
+			                        } else
+			                            format = ".max(" + (count + 3) + ",'...')";
+			                    } else
+			                   		format = ".condition(" + condition + ")";
+			                } else
+			                    format = ".format('" + format + "')";
+			            } else
+			                format = pluralize;
+			        } else
+        				name = name.substring(1, name.length - 1);
+        	}
 
 			if (name[0] === '!') {
 				name = name.substring(1);
@@ -2746,7 +2759,6 @@ Template.prototype.parse = function(html, isRepository) {
 		if (isView) {
 
 			isEncode = false;
-
 			name = name.substring(2, name.length - 1);
 
 			if (name.substring(0, 8) === 'template') {
@@ -2791,6 +2803,7 @@ Template.prototype.parse = function(html, isRepository) {
 		}
 
 		if (!isView) {
+
 			var key = name + format;
 			indexer = keys[key];
 
@@ -2799,7 +2812,12 @@ Template.prototype.parse = function(html, isRepository) {
 				indexer = property.length - 1;
 				keys[key] = indexer;
 			}
-			builder.push('prop[' + indexer + ']' + format);
+
+			if (format.indexOf('@#1_0;') === -1)
+				builder.push('prop[' + indexer + ']' + format);
+			else
+				builder.push(format.split('@#1_0;').join('prop[' + indexer + ']'));
+
 		} else
 			builder.push(controller);
 	}
@@ -2831,7 +2849,7 @@ Template.prototype.parse = function(html, isRepository) {
 
 	try
 	{
-		return { generator: eval('(function(prop, controller){return ' + fn.join('+') + ';})'), beg: beg, end: end, property: property, repositoryBeg: repositoryBeg, repositoryEnd: repositoryEnd };
+		return { generator: eval('(function(prop,controller){return ' + fn.join('+') + ';})'), beg: beg, end: end, property: property, repositoryBeg: repositoryBeg, repositoryEnd: repositoryEnd };
 	} catch (ex) {
 		self.controller.framework.error(ex, 'Template compiler', self.controller.req.uri);
 	}
@@ -2853,6 +2871,13 @@ function parseParams(tmp, rp) {
 
 	tmp = tmp.substring(0, index + 1) + arr.join(',') + ')';
 	return tmp;
+}
+
+function parseConditionParams(value) {
+	var property = value.match(/[^"']?[a-zA-Z0-9\.\#]+/i);
+	if (property === null)
+		return '';
+	return property.toString();
 }
 
 function parseCondition(value) {
@@ -3064,7 +3089,6 @@ function compile_eval(generator, model, indexer, controller) {
 		var val;
 
 		if (property !== '') {
-
 			if (property.indexOf('.') !== -1) {
 				var arr = property.split('.');
 				if (arr.length === 2)

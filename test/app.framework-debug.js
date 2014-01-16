@@ -7,7 +7,7 @@ var fs = require('fs');
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
-
+	
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
