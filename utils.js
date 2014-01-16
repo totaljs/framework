@@ -409,6 +409,7 @@ exports.trim = function(obj) {
 	Empty function
 */
 exports.noop = function() {};
+global.noop = function() {};
 
 /*
 	Get HTTP Status description
