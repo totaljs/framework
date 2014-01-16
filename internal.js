@@ -2688,6 +2688,7 @@ Template.prototype.parse = function(html, isRepository) {
 		tmp = [];
 
 	var length = tmp.length;
+	var indexKey = 0;
 
 	for (var i = 0; i < length; i++) {
 
@@ -2770,6 +2771,7 @@ Template.prototype.parse = function(html, isRepository) {
 							property.push(prop);
 							indexer = property.length - 1;
 							keys[key] = indexer;
+							indexKey++;
 						}
 						return 'prop[' + indexer + ']';
 					}
@@ -2787,6 +2789,7 @@ Template.prototype.parse = function(html, isRepository) {
 							property.push(prop);
 							indexer = property.length - 1;
 							keys[key] = indexer;
+							indexKey++;
 						}
 						return 'prop[' + indexer + ']';
 					}
@@ -2804,7 +2807,7 @@ Template.prototype.parse = function(html, isRepository) {
 
 		if (!isView) {
 
-			var key = name + format;
+			var key = name + format + indexKey;
 			indexer = keys[key];
 
 			if (typeof(indexer) === UNDEFINED) {
