@@ -2219,7 +2219,7 @@ function parse(html, controller) {
 			continue;
 		}
 
-		if (condition !== 0 && str[0] === ')') {
+		if (condition !== 0 && str[0] === ')' && (builder[i + 1] || '') !== ')') {
 
 			isPlus = true;
 
@@ -2250,7 +2250,7 @@ function parse(html, controller) {
 		}
 
 		if (i % 2 !== 0)
-			fn += str;
+			fn += str.replace('( arr[', '(arr[');
 		else
 			fn += "'" + str.replace(/\'/g, "\\'") + "'";
 	}
