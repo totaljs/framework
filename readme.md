@@ -96,6 +96,7 @@ __Client-side libraries__
 Videos on YouTube
 -----------------
 
+- VIDEO: [Why is node.js awesome? WebSocket + nginx + total.js + HTML + JavaScript ](http://www.youtube.com/watch?v=PRvvg6KcMX8)
 - VIDEO: [Node.js / total.js debugging of web applications](http://www.youtube.com/watch?v=4wLq_bJ_sfs)
 - VIDEO: [total.js / node.js - balancing of requests](http://www.youtube.com/watch?v=1VOJ7cWoboo)
 - VIDEO: [HTML 5 Server-Sent Events (JavaScript) via total.js & node.js](http://www.youtube.com/watch?v=XoWIv3xGxR4)

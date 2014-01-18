@@ -1,4 +1,7 @@
 ======= 1.0.1 (HOTFIX)
 
+- added: advanced template conditions
+
 - fixed: builders.prepare()
 - fixed: binary (command-line tools)
+- fixed: views conditions
