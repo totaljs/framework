@@ -196,4 +196,4 @@ $ open http://127.0.0.1:8000
 
 ## Contact
 
-Peter Sirka - <petersirka@gmail.com>, currently I'm working at [858project.com](http://www.858project.com)
+Peter Sirka - <petersirka@gmail.com>
