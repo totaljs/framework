@@ -105,6 +105,9 @@ function Framework() {
 	this.connections = {};
 	this.versions = null;
 
+	this.isDebug = true;
+	this.isTest = false;
+
 	this.routes = {
 		web: [],
 		files: [],
@@ -2477,6 +2480,7 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 	else if (typeof(config) === OBJECT)
 		utils.extend(self.config, config, true);
 
+	self.isDebug = self.config.debug;
 	self.configure();
 	self.configureMapping();
 	self.clear();
@@ -3132,6 +3136,8 @@ Framework.prototype.test = function(stop, names, cb) {
 	} else
 		names = names || [];
 
+	self.isTest = true;
+
 	fs.readdirSync(utils.combine(self.config['directory-tests'])).forEach(function(name) {
 
 		var fileName = path.join(directory, self.config['directory-tests'], name);
@@ -3164,7 +3170,12 @@ Framework.prototype.test = function(stop, names, cb) {
 		}
 	});
 
-	self.testing(stop, cb);
+	self.testing(stop, function() {
+		self.isTest = false;
+		if (cb)
+			cb();
+	});
+
 	return self;
 };
 
