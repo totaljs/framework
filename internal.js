@@ -2324,7 +2324,7 @@ function compressJS(html, index, framework) {
 	var js = html.substring(indexBeg, indexEnd + strTo.length).trim();
 	var val = js.substring(strFrom.length, js.length - strTo.length).trim();
 
-	var compiled = exports.compile_javascript(val, framework).replace(/\\n/g, "'+(String.fromCharCode(13)+String.fromCharCode(10))+'");
+	var compiled = exports.compile_javascript(val, framework).replace(/\\\\/g, '\\\\\\\\').replace(/\\n/g, "'+(String.fromCharCode(13)+String.fromCharCode(10))+'");
 	html = html.replace(js, (strFrom + compiled.dollar().trim() + strTo).trim());
 
 	return compressJS(html, indexBeg + compiled.length + 9, framework);
