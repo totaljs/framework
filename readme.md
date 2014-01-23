@@ -1,8 +1,5 @@
 ![total.js logo](http://www.totaljs.com/download/logo-black.png)
 
-
-> Dear community. I had to rename framework partial.js because I'm not owner of domain name (partialjs.com) but I'm owner of the framework. Not all people are good and I made a mistake a long time ago. I hope you'll understand.
-
 web framework for node.js
 =========================
 

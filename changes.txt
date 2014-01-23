@@ -1,3 +1,7 @@
+======= 1.0.2 (HOTFIX)
+
+- fixed: mail message (problem with diacritics in OUTLOOK)
+
 ======= 1.0.1 (HOTFIX)
 
 - added: advanced template conditions
