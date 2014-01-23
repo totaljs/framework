@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.0.3 (HOTFIX)
+
+- fixed: // char in views and templates
+
 ======= 1.0.2 (HOTFIX)
 
 - fixed: mail message (problem with diacritics in OUTLOOK)
