@@ -243,9 +243,10 @@ Framework.prototype.refresh = function(clear) {
 /*
 	Add/Register a new controller
 	@name {String}
+	@definition {Object} :: optional, controller definition
 	return {Framework}
 */
-Framework.prototype.controller = function(name) {
+Framework.prototype.controller = function(name, definition) {
 
 	var self = this;
 
@@ -257,7 +258,7 @@ Framework.prototype.controller = function(name) {
 	_controller = name;
 
 	// initialize controller
-	var obj = require(path.join(directory, self.config['directory-controllers'], name + '.js'));
+	var obj = definition ? definition : require(path.join(directory, self.config['directory-controllers'], name + '.js'));
 
 	self.controllers[name] = obj;
 

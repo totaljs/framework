@@ -1,5 +1,7 @@
 IN DEVELOPMENT ======= 1.0.3 (HOTFIX)
 
+- added: framework.controller(name, definition);
+
 - fixed: // char in views and templates
 
 ======= 1.0.2 (HOTFIX)
