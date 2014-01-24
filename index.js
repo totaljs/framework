@@ -103,6 +103,7 @@ function Framework() {
 	this.global = {};
 	this.resources = {};
 	this.connections = {};
+	this.functions = {};
 	this.versions = null;
 
 	this.isDebug = true;

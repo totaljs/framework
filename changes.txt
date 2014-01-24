@@ -1,8 +1,9 @@
-IN DEVELOPMENT ======= 1.0.3 (HOTFIX)
+IN DEVELOPMENT ======= 1.0.3
 
 - added: framework.isDebug
 - added: framework.isTest
 - added: framework.controller(name, definition)
+- added: framework.functions
 
 - fixed: // char in views and templates
 
