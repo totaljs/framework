@@ -8,13 +8,18 @@ IN DEVELOPMENT ======= ???
 - added: framework.assert(name, callback)
 - added: framework.assert(name, url, callback, method, data, headers, xhr)
 - added: framework.injectComponent(name, url)
+- added: framework.path.components([filename])
 
+- updated: framework.usage([detailed])
 - updated: BINARY
 
 - fixed: // char in views and templates
 - fixed: assertion testing
 
 improvements: views (in release mode)
+
+- EXAMPLE (NEW): https://github.com/petersirka/total.js/tree/master/examples/components
+- EXAMPLE (NEW): https://github.com/petersirka/total.js/tree/master/examples/minimal
 
 ======= 1.0.2 (HOTFIX)
 

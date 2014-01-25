@@ -1,0 +1,11 @@
+@{meta('Component example')}
+
+<div>
+	<h1>Component example</h1>
+	<br />
+	<h2>Grid</h2>
+	@{component('grid', [1, 2, 3, 4, 5])}
+	<br />
+	<h2>Contact form</h2>
+	@{component('contactform', { Email: '@' })}
+</div>
