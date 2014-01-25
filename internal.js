@@ -2040,8 +2040,9 @@ function parse(html, controller) {
 			if (push) {
 				beg = '';
 				end = '';
+				var type = 0;
 				var isDeclared = false;
-				switch (name) {
+				switch (name) {					
 
 					case 'options':
 					case 'readonly':
@@ -2080,7 +2081,10 @@ function parse(html, controller) {
 					case 'contentToggle':
 					case 'template':
 					case 'templateToggle':
+					case 'component':
+					case 'componentToggle':
 						beg = 'return self.$';
+						type = 1;
 						break;
 
 					case 'radio':
@@ -2136,6 +2140,10 @@ function parse(html, controller) {
 						beg = 'return self.';
 						break;
 
+					case 'functions':
+						beg = 'return self.framework.';
+						break;
+
 					case 'head':
 					case 'place':
 					case 'meta':
@@ -2180,10 +2188,52 @@ function parse(html, controller) {
 						break;
 				}
 
+				switch (name) {
+					case 'body':
+						type = 2;
+						break;
+
+					case 'title':
+					case 'description':
+					case 'keywords':
+						type = 3;
+						break;
+
+					case 'meta':
+					case 'head':
+					case 'sitemap':
+					case 'layout':
+						type = 4;
+						break;
+
+					case 'place':
+						type = 5;
+						break;
+
+					case 'functions':
+					case 'global':
+					case 'model':
+					case 'repository':
+					case 'session':
+					case 'user':
+					case 'config':
+					case 'get':
+					case 'post':
+					case 'dns':
+					case 'header':
+					case 'next':
+					case 'prev':
+					case 'prerender':
+					case 'prefetch':
+					case 'canonical':
+						type = 6;
+						break;
+				}
+
 				if (isCondition && condition === 0)
 					code = '(function(){' + beg + code + end + ';})';
 
-				execute.push({ run: code, name: name, isEncode: isEncode, isDeclared: isDeclared });
+				execute.push({ run: code, name: name, isEncode: isEncode, isDeclared: isDeclared, type: type });
 			}
 
 			cache = other;

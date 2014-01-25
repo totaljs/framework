@@ -67,6 +67,7 @@ function Framework() {
 		'directory-resources': '/resources/',
 		'directory-public': '/public/',
 		'directory-modules': '/modules/',
+		'directory-components': '/components/',
 		'directory-logs': '/logs/',
 		'directory-tests': '/tests/',
 		'directory-databases': '/databases/',
@@ -108,6 +109,7 @@ function Framework() {
 
 	this.isDebug = true;
 	this.isTest = false;
+	this.isLoaded = false;
 
 	this.routes = {
 		web: [],
@@ -120,6 +122,7 @@ function Framework() {
 
 	this.helpers = {};
 	this.modules = {};
+	this.components = {};
 	this.controllers = {};
 	this.tests = {};
 	this.errors = [];
@@ -645,28 +648,92 @@ Framework.prototype.module = function(name) {
 	if (typeof(module) !== UNDEFINED)
 		return module;
 
-	var filename = path.join(directory, self.config['directory-modules'], name + '.js');
+	if (self.isLoaded)
+		return null;
+
+	var configDirectory = self.config['directory-modules'];
+	var filename = path.join(directory, configDirectory, name + '.js');
+	var isDirectory = false;
 
 	if (!fs.existsSync(filename)) {
 
-		filename = path.join(directory, self.config['directory-modules'], name, 'index.js');
+		filename = path.join(directory, configDirectory, name, name + '.js');
 		if (fs.existsSync(filename))
 			module = require(filename);
+		else
+			filename = path.join(directory, configDirectory, name, 'index.js');
+
+		if (fs.existsSync(filename))
+			module = require(filename);
+
+		isDirectory = true;
 
 	} else
 		module = require(filename);
 
 	if (typeof(module) === UNDEFINED)
-		module = null;
+		return null;
 
 	_controller = '#module-' + name;
 
 	if (module !== null && typeof(module.directory) === UNDEFINED)
-		module.directory = path.join(directory, self.config['directory-modules']);
+		module.directory = isDirectory ? path.join(directory, configDirectory) : path.join(directory, configDirectory, name);
 
 	self.modules[name] = module;
-
 	return module;
+};
+
+/*
+	Component caller
+	@name {String}
+	return {Object} :: framework return require();
+*/
+Framework.prototype.component = function(name) {
+
+	var self = this;
+	var component = self.components[name];
+
+	if (typeof(component) !== UNDEFINED)
+		return component;
+
+	if (self.isLoaded)
+		return null;
+
+	var configDirectory = self.config['directory-components'];
+	var filename = path.join(directory, configDirectory, name + '.js');
+	var isDirectory = false;
+
+	if (!fs.existsSync(filename)) {
+
+		filename = path.join(directory, configDirectory, name, name + '.js');
+
+		if (fs.existsSync(filename))
+			component = require(filename);
+		else
+			filename = path.join(directory, configDirectory, name, 'index.js');
+
+		if (fs.existsSync(filename))
+			component = require(filename);
+
+		isDirectory = true;
+	} else
+		component = require(filename);
+
+	if (typeof(component) === UNDEFINED)
+		return null;
+
+	if (component !== null && typeof(component.directory) === UNDEFINED)
+		component.directory = isDirectory ? path.join(directory, configDirectory) : path.join(directory, configDirectory, name);
+
+	_controller = '';
+
+	self.components[name] = component;
+	component.install.call(self, self, component.directory);
+
+	if (typeof(component.render) === UNDEFINED)
+		throw new Error('Component must contain "export.render" function.');
+
+	return component;
 };
 
 /*
@@ -722,7 +789,27 @@ Framework.prototype.install = function() {
 
 	self._routeSort();
 
-	dir = path.join(directory, self.config['directory-definitions']);
+	dir = path.join(directory, self.config['directory-components']);
+	if (fs.existsSync(dir)) {
+		fs.readdirSync(dir).forEach(function(o) {
+
+			var ext = path.extname(o);
+
+			var isDirectory = fs.statSync(path.join(dir + o)).isDirectory();
+			if (!isDirectory && ext.toLowerCase() !== '.js')
+				return;
+
+			var name = o.replace(ext, '');
+
+			if (name === '#')
+				return;
+
+			self.component(name);
+		});
+	}
+
+	var configDirectory = self.config['directory-definitions'];
+	dir = path.join(directory, configDirectory);
 
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(function(o) {
@@ -731,7 +818,7 @@ Framework.prototype.install = function() {
 			if (ext.toLowerCase() !== '.js')
 				return;
 
-			eval(fs.readFileSync(path.join(directory, self.config['directory-definitions'], o), 'utf8').toString());
+			eval(fs.readFileSync(path.join(directory, configDirectory, o), 'utf8').toString());
 		});
 	}
 	return self;
@@ -836,6 +923,7 @@ Framework.prototype.injectModule = function(name, url) {
 			}
 
 			self.modules[name] = result;
+			_controller = '';
 
 		} catch (ex) {
 			self.error(ex, 'injectModule - ' + name, null);
@@ -879,6 +967,7 @@ Framework.prototype.injectController = function(name, url) {
 			}
 
 			self.controllers[name] = result;
+			_controller = '';
 
 		} catch (ex) {
 			self.error(ex, 'injectController - ' + name, null);
@@ -887,6 +976,7 @@ Framework.prototype.injectController = function(name, url) {
 
 	return self;
 };
+
 /*
 	Inject definition from URL
 	@url {String}
@@ -909,6 +999,40 @@ Framework.prototype.injectDefinition = function(url) {
 			eval(data);
 		} catch (ex) {
 			self.error(ex, 'injectDefinition - ' + url, null);
+		}
+	});
+
+	return self;
+};
+
+/*
+	Inject definition from URL
+	@url {String}
+	return {Framework}
+*/
+Framework.prototype.injectComponent = function(name, url) {
+
+	var self = this;
+	var framework = self;
+
+	utils.request(url, 'GET', '', function(error, data) {
+
+		if (error) {
+			self.error(error, 'injectComponent - ' + name, null);
+			return;
+		}
+
+		try
+		{
+			var result = eval('(new (function(){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
+
+			if (typeof(result.install) !== UNDEFINED)
+				result.install(self, name);
+
+			self.components[name] = result;
+
+		} catch (ex) {
+			self.error(ex, 'injectComponent - ' + name, null);
 		}
 	});
 
@@ -2463,7 +2587,10 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 
 	var self = this;
 
-	if (typeof(port) === OBJECT) {
+	if (isNaN(port))
+		port = null;
+
+	if (port !== null && typeof(port) === OBJECT) {
 		var tmp = options;
 		options = port;
 		port = tmp;
@@ -2600,6 +2727,8 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 	} catch (err) {
 		self.error(err, 'framework.on("ready")');
 	}
+
+	self.isLoaded = true;
 
 	if (!process.connected)
 		self.console();
@@ -3045,6 +3174,11 @@ Framework.prototype.assert = function(name, url, callback, method, data, headers
 
 	var self = this;
 
+	if (typeof(url) === FUNCTION) {
+		url.call(self, name);
+		return;
+	}
+
 	if (typeof(headers) === BOOLEAN) {
 		xhr = headers;
 		headers = {};
@@ -3061,7 +3195,7 @@ Framework.prototype.assert = function(name, url, callback, method, data, headers
 	if (xhr)
 		obj.headers['X-Requested-With'] = 'XMLHttpRequest';
 
-	obj.headers['assertion-testing'] = '1';
+	obj.headers['x-assertion-testing'] = '1';
 	self.tests[name] = obj;
 
 	return self;
@@ -3114,7 +3248,7 @@ Framework.prototype.testing = function(stop, callback) {
 		self.testing(stop, callback);
 	};
 
-	var url = (test.url.indexOf('http://') > 0 || test.url.indexOf('https://') > 0 ? '' : 'http://127.0.0.1:' + self.port) + test.url;
+	var url = (test.url.indexOf('http://') > 0 || test.url.indexOf('https://') > 0 ? '' : 'http://' + self.ip + ':' + self.port) + test.url;
 	utils.request(url, test.method, test.data, cb, test.headers);
 
 	return self;
@@ -3141,41 +3275,46 @@ Framework.prototype.test = function(stop, names, cb) {
 
 	fs.readdirSync(utils.combine(self.config['directory-tests'])).forEach(function(name) {
 
-		var fileName = path.join(directory, self.config['directory-tests'], name);
+		var filename = path.join(directory, self.config['directory-tests'], name);
 
-		if (path.extname(fileName).toLowerCase() !== '.js')
+		if (path.extname(filename).toLowerCase() !== '.js')
 			return;
 
 		if (names.length > 0 && names.indexOf(name.substring(0, name.length - 3)) === -1)
 			return;
 
-		var test = require(fileName);
+		var test = require(filename);
 
 		try
 		{
 			var isRun = typeof(test.run) !== UNDEFINED;
+			var isInstall = typeof(test.isInstall) !== UNDEFINED;
 			var isInit = typeof(test.init) !== UNDEFINED;
 			var isLoad = typeof(test.load) !== UNDEFINED;
 
 			if (isRun)
 				test.run(self, name);
+			else if (isInstall)
+				test.install(self, name);
 			else if (isInit)
 				test.init(self, name);
 			else if (isLoad)
 				test.load(self, name);
 
 		} catch (ex) {
-			self.cache.stop();
-			self.server.close();
+			self.stop();
 			throw ex;
 		}
+
 	});
 
-	self.testing(stop, function() {
-		self.isTest = false;
-		if (cb)
-			cb();
-	});
+	setTimeout(function() {
+		self.testing(stop, function() {
+			self.isTest = false;
+			if (cb)
+				cb();
+		});
+	}, 500);
 
 	return self;
 };
@@ -5285,7 +5424,7 @@ Controller.prototype = {
 	},
 
 	get isTest() {
-		return this.req.headers['assertion-testing'] === '1';
+		return this.req.headers['x-assertion-testing'] === '1';
 	},
 
 	get isSecure() {
@@ -5852,6 +5991,37 @@ Controller.prototype.$templateToggle = function(visible, name, model, nameEmpty,
 		return '';
 
 	return self.template(name, model, nameEmpty, repository);
+};
+
+/*
+	Internal function for views
+	@name {String} :: filename
+	@model {Object} :: must be an array
+	@nameEmpty {String} :: optional filename from contents
+	@repository {Object} :: optional
+	return {Controller};
+*/
+Controller.prototype.$component = function(name) {
+	var self = this;
+	return self.$componentToggle(true, name);
+};
+
+/*
+	Internal function for views
+	@bool {Boolean}
+	@name {String} :: filename
+	@model {Object}
+	@nameEmpty {String} :: optional filename from contents
+	@repository {Object} :: optional
+	return {Controller};
+*/
+Controller.prototype.$componentToggle = function(visible, name) {
+	var self = this;
+
+	if (!visible)
+		return '';
+
+	return self.component(name);
 };
 
 /*
@@ -6863,6 +7033,27 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 };
 
 /*
+	Render component to string
+	@name {String}
+	return {String}
+*/
+Controller.prototype.component = function(name) {
+	var self = this;
+	var component = framework.component(name);
+
+	if (component === null)
+		return '';
+
+	var length = arguments.length;
+	var params = [];
+
+	for (var i = 1; i < length; i++)
+		params.push(arguments[i]);
+
+	return component.render.apply(self, params);
+};
+
+/*
 	Response JSON
 	@obj {Object}
 	@headers {Object} :: optional
@@ -7623,14 +7814,8 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 			continue;
 		}
 
-		switch (execute.name) {
-			case 'view':
-			case 'viewToggle':
-			case 'content':
-			case 'contentToggle':
-			case 'template':
-			case 'templateToggle':
-
+		switch (execute.type) {
+			case 1:
 				if (run.indexOf('sitemap') !== -1)
 					sitemap = self.sitemap();
 
@@ -7638,25 +7823,19 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 				if (!condition)
 					run = 'self.$' + run;
-
 				break;
 
-			case 'body':
+			case 2:
 				isEncode = false;
 				evl = false;
 				value = self.output;
 				break;
 
-			case 'title':
-			case 'description':
-			case 'keywords':
+			case 3:
 				run = 'self.repository["$'+ execute.name + '"]';
 				break;
 
-			case 'meta':
-			case 'head':
-			case 'sitemap':
-			case 'layout':
+			case 4:
 
 				isEncode = false;
 
@@ -7670,26 +7849,12 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 				break;
 
-			case 'place':
+			case 5:
 				isEncode = false;
 				run = 'self.' + run;
 				break;
 
-			case 'global':
-			case 'model':
-			case 'repository':
-			case 'session':
-			case 'user':
-			case 'config':
-			case 'get':
-			case 'post':
-			case 'dns':
-			case 'header':
-			case 'next':
-			case 'prev':
-			case 'prerender':
-			case 'prefetch':
-			case 'canonical':
+			case 6:
 				break;
 
 			default:
