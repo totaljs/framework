@@ -286,7 +286,7 @@ function createFileTest(directory) {
 	buffer.push("        assert.ok('1' === '1', name);");
 	buffer.push("    });");
 	buffer.push("");
-	buffer.push("    framework.assert('Homepage', '/1/', function response(error, data, name, code, headers) {");
+	buffer.push("    framework.assert('Homepage', '/1/', function(error, data, name, code, headers) {");
 	buffer.push("        assert.ok(code === 200, name);");
 	buffer.push("    });");
 	buffer.push("");
