@@ -1,1 +1,0 @@
-message		:this is message from resource (en.resource)

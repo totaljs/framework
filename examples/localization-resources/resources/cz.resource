@@ -1,1 +1,0 @@
-message		:toto je zpráva z resource (cz.resource)
