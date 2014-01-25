@@ -1,11 +1,20 @@
-IN DEVELOPMENT ======= 1.0.3
+IN DEVELOPMENT ======= ???
 
+- added: new feature COMPONENTS
 - added: framework.isDebug
 - added: framework.isTest
 - added: framework.controller(name, definition)
 - added: framework.functions
+- added: framework.assert(name, callback)
+- added: framework.assert(name, url, callback, method, data, headers, xhr)
+- added: framework.injectComponent(name, url)
+
+- updated: BINARY
 
 - fixed: // char in views and templates
+- fixed: assertion testing
+
+improvements: views (in release mode)
 
 ======= 1.0.2 (HOTFIX)
 
