@@ -2485,12 +2485,17 @@ View.prototype.render = function(name) {
     return {Object} :: return factory object
 */
 View.prototype.read = function(name) {
+	
 	var self = this;
 	var config = self.controller.config;
-	var filename = utils.combine(config['directory-views'], name + '.html');
+	var isOut = name[0] === '.';
+	var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-views'], name + '.html');
 
 	if (fs.existsSync(filename))
 		return parse(fs.readFileSync(filename).toString('utf8'), self.controller);
+
+	if (isOut)
+		return null;
 
 	var index = name.lastIndexOf('/');
 	if (index === -1)
@@ -2500,7 +2505,7 @@ View.prototype.read = function(name) {
 	if (name.indexOf('#') !== -1)
 		return null;
 
-	filename = utils.combine(config['directory-views'], name + '.html');
+	filename = name[0] === '.' ? name.substring(1) : utils.combine(config['directory-views'], name + '.html');
 
 	if (fs.existsSync(filename))
 		return parse(fs.readFileSync(filename).toString('utf8'), self.controller);
@@ -2571,10 +2576,11 @@ View.prototype.dynamic = function(content) {
 Content.prototype.read = function(name) {
 	var self = this;
 	var config = self.controller.config;
-	var fileName = utils.combine(config['directory-contents'], name + '.html');
+	var isOut = name[0] === '.';
+	var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-contents'], name + '.html');
 
-	if (fs.existsSync(fileName))
-		return minifyHTML(fs.readFileSync(fileName).toString('utf8'));
+	if (fs.existsSync(filename))
+		return minifyHTML(fs.readFileSync(filename).toString('utf8'));
 
 	return null;
 };
@@ -2627,8 +2633,7 @@ Content.prototype.load = function(name, prefix) {
     return {Object}
 */
 exports.generateView = function(controller, name) {
-	var view = new View(controller);
-	return view.render(name);
+	return new View(controller).render(name);
 };
 
 /*
@@ -2638,8 +2643,7 @@ exports.generateView = function(controller, name) {
     return {String}
 */
 exports.generateContent = function(controller, name) {
-	var content = new Content(controller);
-	return content.render(name);
+	return new Content(controller).render(name);
 };
 
 /*
@@ -3005,7 +3009,8 @@ function parsePluralize(value) {
 Template.prototype.read = function(name) {
 	var self = this;
 	var config = self.controller.config;
-	var filename = utils.combine(config['directory-templates'], name + '.html');
+	var isOut = name[0] === '.';
+	var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-templates'], name + '.html');
 
 	if (fs.existsSync(filename))
 		return self.parse(fs.readFileSync(filename).toString('utf8'));
@@ -3179,6 +3184,5 @@ function compile_eval(generator, model, indexer, controller) {
 	@repository {Object} :: optional
 */
 exports.generateTemplate = function(controller, name, model, repository) {
-	var template = new Template(controller, model, repository);
-	return template.render(name);
+	return new Template(controller, model, repository).render(name);
 };
