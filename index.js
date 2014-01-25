@@ -265,7 +265,7 @@ Framework.prototype.controller = function(name, definition) {
 	_controller = name;
 
 	// initialize controller
-	var obj = definition ? definition : require(path.join(directory, self.config['directory-controllers'], name + '.js'));
+	var obj = definition ? definition() : require(path.join(directory, self.config['directory-controllers'], name + '.js'));
 
 	self.controllers[name] = obj;
 
@@ -728,7 +728,8 @@ Framework.prototype.component = function(name) {
 	_controller = '';
 
 	self.components[name] = component;
-	component.install.call(self, self, component.directory);
+	if (component.install)
+		component.install.call(self, self, name, component.directory);
 
 	if (typeof(component.render) === UNDEFINED)
 		throw new Error('Component must contain "export.render" function.');
@@ -1216,6 +1217,7 @@ Framework.prototype.usage = function(detailed) {
 	var controllers = Object.keys(self.controllers);
 	var connections = Object.keys(self.connections);
 	var modules = Object.keys(self.modules);
+	var components = Object.keys(self.components);
 	var helpers = Object.keys(self.helpers);
 	var staticFiles = Object.keys(self.temporary.path);
 	var staticRange = Object.keys(self.temporary.range);
@@ -1260,6 +1262,7 @@ Framework.prototype.usage = function(detailed) {
 	builder.push('Resource count                  : {0}'.format(resources.length));
 	builder.push('Controller count                : {0}'.format(controllers.length));
 	builder.push('Module count                    : {0}'.format(modules.length));
+	builder.push('Components count                : {0}'.format(components.length));
 	builder.push('Cache                           : {0} items'.format(cache.length, self.cache.count));
 	builder.push('WebSocket connections           : {0}'.format(connections.length));
 	builder.push('');
@@ -1422,6 +1425,27 @@ Framework.prototype.usage = function(detailed) {
 			builder.push((module.usage() || '').toString());
 		});
 	}
+
+	if (components.length > 0) {
+		builder.push('');
+		builder.push('## Components');
+
+		components.forEach(function(o) {
+
+			builder.push('');
+			builder.push('### ' + o);
+			builder.push('');
+
+			var module = self.components[o];
+
+			if (module === null || typeof(module.usage) === UNDEFINED) {
+				builder.push('> undefined');
+				return;
+			}
+
+			builder.push((module.usage() || '').toString());
+		});
+	}	
 
 	if (helpers.length > 0) {
 		builder.push('');
@@ -4571,6 +4595,15 @@ FrameworkPath.prototype.logs = function(filename) {
 	@filename {String} :: optional
 	return {String}
 */
+FrameworkPath.prototype.components = function(filename) {
+	var self = this;
+	return utils.combine(self.config['directory-components'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
 FrameworkPath.prototype.temp = function(filename) {
 	var self = this;
 	self.framework._verify_directory('temp');
@@ -6019,7 +6052,7 @@ Controller.prototype.$templateToggle = function(visible, name, model, nameEmpty,
 */
 Controller.prototype.$component = function(name) {
 	var self = this;
-	return self.$componentToggle(true, name);
+	return self.component.apply(self, arguments);
 };
 
 /*
@@ -6037,7 +6070,13 @@ Controller.prototype.$componentToggle = function(visible, name) {
 	if (!visible)
 		return '';
 
-	return self.component(name);
+	var params = [];
+	var length = arguments.length;
+
+	for (var i = 1; i < length; i++)
+		params.push(arguments[i]);
+
+	return self.component.apply(self, arguments);
 };
 
 /*
@@ -6307,8 +6346,9 @@ Controller.prototype.$dns = function(value) {
 
 	var builder = '';
 	var self = this;
+	var length = arguments.length;
 
-	for (var i = 0; i < arguments.length; i++)
+	for (var i = 0; i < length; i++)
 		builder += '<link rel="dns-prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
 
 	self.head(builder);
@@ -6324,8 +6364,9 @@ Controller.prototype.$prefetch = function() {
 
 	var builder = '';
 	var self = this;
+	var length = arguments.length;
 
-	for (var i = 0; i < arguments.length; i++)
+	for (var i = 0; i < length; i++)
 		builder += '<link rel="prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
 
 	self.head(builder);
@@ -6341,8 +6382,9 @@ Controller.prototype.$prerender = function(value) {
 
 	var builder = '';
 	var self = this;
+	var length = arguments.length;
 
-	for (var i = 0; i < arguments.length; i++)
+	for (var i = 0; i < length; i++)
 		builder += '<link rel="prerender" href="' + self._prepareHost(arguments[i] || '') + '" />';
 
 	self.head(builder);
@@ -6402,14 +6444,18 @@ Controller.prototype.head = function() {
 
 	var self = this;
 
-	if (arguments.length === 0)
-		return (self.repository[REPOSITORY_HEAD] || '') + (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '');
+	var length = arguments.length;
+	var header = (self.repository[REPOSITORY_HEAD] || '');
+	if (length === 0)
+		return header + (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '');
 
 	var output = '';
-
-	for (var i = 0; i < arguments.length; i++) {
-
+	for (var i = 0; i < length; i++) {
+		
 		var val = arguments[i];
+
+		if (header.length > 0 && header.indexOf(val) !== -1)
+			continue;
 
 		if (val.indexOf('<') !== -1) {
 			output += val;
@@ -6425,7 +6471,7 @@ Controller.prototype.head = function() {
 			output += '<link type="text/css" rel="stylesheet" href="' + (isRoute ? self.routeCSS(val) : val) + '" />';
 	}
 
-	var header = (self.repository[REPOSITORY_HEAD] || '') + output;
+	header += output;
 	self.repository[REPOSITORY_HEAD] = header;
 	return '';
 };
@@ -6440,13 +6486,13 @@ Controller.prototype.place = function(name) {
 	var self = this;
 
 	var key = REPOSITORY_PLACE + '_' + name;
+	var length = arguments.length;
 
-	if (arguments.length === 1)
+	if (length === 1)
 		return self.repository[key] || '';
 
 	var output = '';
-
-	for (var i = 1; i < arguments.length; i++) {
+	for (var i = 1; i < length; i++) {
 
 		var val = arguments[i];
 
@@ -7066,7 +7112,8 @@ Controller.prototype.component = function(name) {
 	for (var i = 1; i < length; i++)
 		params.push(arguments[i]);
 
-	return component.render.apply(self, params);
+	var output = component.render.apply(self, params);
+	return output;
 };
 
 /*
