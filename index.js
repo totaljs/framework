@@ -3271,11 +3271,20 @@ Framework.prototype.test = function(stop, names, cb) {
 	} else
 		names = names || [];
 
+	var counter = 0;
 	self.isTest = true;
 
-	fs.readdirSync(utils.combine(self.config['directory-tests'])).forEach(function(name) {
+	var dir = self.config['directory-tests'];
 
-		var filename = path.join(directory, self.config['directory-tests'], name);
+	if (!fs.existsSync(utils.combine(dir))) {
+		if (cb) cb();
+		if (stop) setTimeout(function() { framework.stop(); }, 500);
+		return self;
+	}
+
+	fs.readdirSync(utils.combine(dir)).forEach(function(name) {
+
+		var filename = path.join(directory, dir, name);
 
 		if (path.extname(filename).toLowerCase() !== '.js')
 			return;
@@ -3301,12 +3310,19 @@ Framework.prototype.test = function(stop, names, cb) {
 			else if (isLoad)
 				test.load(self, name);
 
+			counter++;
+
 		} catch (ex) {
-			self.stop();
+			setTimeout(function() { framework.stop(); }, 500);
 			throw ex;
 		}
-
 	});
+
+	if (counter === 0) {
+		if (cb) cb();		
+		if (stop) setTimeout(function() { framework.stop(); }, 500);
+		return self;
+	}
 
 	setTimeout(function() {
 		self.testing(stop, function() {
@@ -3314,7 +3330,7 @@ Framework.prototype.test = function(stop, names, cb) {
 			if (cb)
 				cb();
 		});
-	}, 500);
+	}, 100);
 
 	return self;
 };
