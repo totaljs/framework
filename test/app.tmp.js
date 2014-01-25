@@ -81,3 +81,13 @@ fs.createReadStream('/users/petersirka/desktop/a.jpg').pipe(p.stdin);
 
 //var socket = new tls.connect(465, 'smtp.gmail.com');
 //var isSended = false;
+
+function b() {
+	console.log(arguments);
+}
+
+function a() {
+	b.call(this, arguments);
+}
+
+a('Peter', 243);

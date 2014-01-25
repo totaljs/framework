@@ -131,7 +131,7 @@ function restart() {
 		app = null;
 	}
 
-	app = fork(path.join(directory, 'index.js'));
+	app = fork(path.join(directory, 'debug.js'));
 
 	app.on('message', function(msg) {
 		if (msg.substring(0, 5) === 'name:') {
