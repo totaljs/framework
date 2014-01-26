@@ -18,6 +18,7 @@ IN DEVELOPMENT ======= ???
 
 - updated: framework.usage([detailed])
 - updated: BINARY
+- updated: WebSocket skips throwing error (ECONNRESET)
 
 - fixed: // char in views and templates
 - fixed: assertion testing

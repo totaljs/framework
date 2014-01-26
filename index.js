@@ -8717,6 +8717,8 @@ WebSocketClient.prototype._ondata = function(data) {
 */
 WebSocketClient.prototype._onerror = function(error) {
     var self = this;
+    if (error.stack.indexOf('ECONNRESET') !== -1)
+    	return;
     self.container.emit('error', error, self);
 };
 
