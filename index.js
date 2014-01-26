@@ -1282,42 +1282,43 @@ Framework.prototype.usage = function(detailed) {
 
 	builder.push('## Basic informations');
 	builder.push('');
-	builder.push('Node version                    : {0}'.format(process.version));
-	builder.push('Framework version               : v{0}'.format(self.version));
-	builder.push('Platform                        : {0}'.format(process.platform));
-	builder.push('Processor                       : {0}'.format(process.arch));
-	builder.push('PID                             : {0}'.format(process.pid));
-	builder.push('Service call                    : {0}x'.format(self.cache.count));
+	builder.push('PID                             : ' + process.pid);
+	builder.push('Node version                    : ' + process.version);
+	builder.push('Framework version               : ' + self.version_header);
+	builder.push('Platform                        : ' + process.platform);
+	builder.push('Processor                       : ' + process.arch);
+	builder.push('Service call                    : ' + self.cache.count + 'x');
 	builder.push('Uptime                          : {0} minutes'.format(Math.floor(process.uptime() / 60)));
 	builder.push('Memory usage                    : total {0} MB, used {1} MB'.format((memory.heapTotal / 1024 / 1024).format('#######.##'), (memory.heapUsed / 1024 / 1024).format('#######.##')));
+	builder.push('Mode                            : ' + (self.config.debug ? 'debug' : 'release'));
 	builder.push('');
 	builder.push('## Directories');
 	builder.push('');
-	builder.push('Current directory               : {0}'.format(process.cwd));
+	builder.push('Current directory               : ' + process.cwd());
 	builder.push('Temporary directory             : {0} kB'.format((size / 1024).format('#########.##')));
 	builder.push('Databases directory             : {0} kB'.format((sizeDatabase / 1024).format('#########.##')));
 	builder.push('');
 	builder.push('## Counter');
 	builder.push('');
-	builder.push('Resource count                  : {0}'.format(resources.length));
-	builder.push('Controller count                : {0}'.format(controllers.length));
-	builder.push('Module count                    : {0}'.format(modules.length));
-	builder.push('Components count                : {0}'.format(components.length));
+	builder.push('Resource count                  : ' + resources.length);
+	builder.push('Controller count                : ' + controllers.length);
+	builder.push('Module count                    : ' + modules.length);
+	builder.push('Components count                : ' + components.length);
 	builder.push('Cache                           : {0} items'.format(cache.length, self.cache.count));
-	builder.push('WebSocket connections           : {0}'.format(connections.length));
+	builder.push('WebSocket connections           : ' + connections.length);
 	builder.push('');
 	builder.push('## Routing');
 	builder.push('');
-	builder.push('Routes to webpage               : {0}'.format(self.routes.web.length));
-	builder.push('Routes to websocket             : {0}'.format(self.routes.websockets.length));
-	builder.push('Routes to file                  : {0}'.format(self.routes.files.length));
-	builder.push('Partial content (custom)        : {0}'.format(Object.keys(self.routes.partial).length));
-	builder.push('Partial content (global)        : {0}'.format(self.routes.partialGlobal.length));
-	builder.push('Redirects                       : {0}'.format(redirects.length));
-	builder.push('Helpers                         : {0}'.format(helpers.length));
-	builder.push('File handling informations      : {0}'.format(staticFiles.length));
-	builder.push('Streaming informations          : {0}'.format(staticRange.length));
-	builder.push('Error count                     : {0}'.format(self.errors.length));
+	builder.push('Routes to webpage               : ' + self.routes.web.length);
+	builder.push('Routes to websocket             : ' + self.routes.websockets.length);
+	builder.push('Routes to file                  : ' + self.routes.files.length);
+	builder.push('Partial content (custom)        : ' + Object.keys(self.routes.partial).length);
+	builder.push('Partial content (global)        : ' + self.routes.partialGlobal.length);
+	builder.push('Redirects                       : ' + redirects.length);
+	builder.push('Helpers                         : ' + helpers.length);
+	builder.push('File handling informations      : ' + staticFiles.length);
+	builder.push('Streaming informations          : ' + staticRange.length);
+	builder.push('Error count                     : ' + self.errors.length);
 	builder.push('');
 	builder.push('## Requests statistic');
 	builder.push('');
@@ -1492,7 +1493,7 @@ Framework.prototype.usage = function(detailed) {
 		builder.push('## View helpers');
 		builder.push('');
 		helpers.forEach(function(o) {
-			builder.push('- @{0}'.format(o));
+			builder.push('- @' + o);
 		});
 	}
 
@@ -1501,7 +1502,7 @@ Framework.prototype.usage = function(detailed) {
 		builder.push('## Cached items');
 		builder.push('');
 		cache.forEach(function(o) {
-			builder.push('- {0}'.format(o));
+			builder.push('- ' + o);
 		});
 	}
 
@@ -1519,7 +1520,7 @@ Framework.prototype.usage = function(detailed) {
 		builder.push('## Cache of static files');
 		builder.push('');
 		staticFiles.forEach(function(o) {
-			builder.push('- {0}'.format(o));
+			builder.push('- ' + o);
 		});
 	}
 
