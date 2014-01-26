@@ -1,6 +1,8 @@
 IN DEVELOPMENT ======= ???
 
 - added: new feature COMPONENTS
+- added: new feature MODELS
+- added: framework.model(name)
 - added: framework.isDebug
 - added: framework.isTest
 - added: framework.controller(name, definition)
@@ -8,8 +10,11 @@ IN DEVELOPMENT ======= ???
 - added: framework.assert(name, callback)
 - added: framework.assert(name, url, callback, method, data, headers, xhr)
 - added: framework.injectComponent(name, url)
+- added: framework.injectModel(name, url)
 - added: framework.path.components([filename])
 - added: framework.id
+- added: controller.model(name)
+- added: controller.current (contains current model)
 
 - updated: framework.usage([detailed])
 - updated: BINARY

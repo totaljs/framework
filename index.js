@@ -65,6 +65,7 @@ function Framework() {
 		'directory-definitions': '/definitions/',
 		'directory-temp': '/tmp/',
 		'directory-templates': '/templates/',
+		'directory-models': '/models/',
 		'directory-resources': '/resources/',
 		'directory-public': '/public/',
 		'directory-modules': '/modules/',
@@ -123,6 +124,7 @@ function Framework() {
 
 	this.helpers = {};
 	this.modules = {};
+	this.models = {};
 	this.components = {};
 	this.controllers = {};
 	this.tests = {};
@@ -935,6 +937,43 @@ Framework.prototype.injectModule = function(name, url) {
 	return self;
 };
 
+/*
+	Inject model from URL
+	@name {String} :: name of model
+	@url {String}
+	return {Framework}
+*/
+Framework.prototype.injectModel = function(name, url) {
+
+	var self = this;
+	var framework = self;
+
+	utils.request(url, 'GET', '', function(error, data) {
+
+		if (error) {
+			self.error(error, 'injectModel - ' + name, null);
+			return;
+		}
+
+		try
+		{
+			var result = eval('(new (function(){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
+			self.models[name] = result;
+
+		} catch (ex) {
+			self.error(ex, 'injectModel - ' + name, null);
+		}
+	});
+
+	return self;
+};
+
+/*
+	Inject controller from URL
+	@name {String} :: name of controller
+	@url {String}
+	return {Framework}
+*/
 Framework.prototype.injectController = function(name, url) {
 
 	var self = this;
@@ -1446,7 +1485,7 @@ Framework.prototype.usage = function(detailed) {
 
 			builder.push((module.usage() || '').toString());
 		});
-	}	
+	}
 
 	if (helpers.length > 0) {
 		builder.push('');
@@ -3185,6 +3224,23 @@ Framework.prototype._request_stats = function(beg, isStaticFile) {
 };
 
 /*
+	Get model
+	@name {String}
+	return {Object}
+*/
+Framework.prototype.model = function(name) {
+	var self = this;
+	var model = self.models[name];
+
+	if (model)
+		return model;
+
+	model = require(path.join(directory, this.config['directory-models'], name + '.js'));
+	self.models[name] = model;
+	return model;
+};
+
+/*
 	A test request into the controller
 
 	@name {String}
@@ -3346,7 +3402,7 @@ Framework.prototype.test = function(stop, names, cb) {
 	});
 
 	if (counter === 0) {
-		if (cb) cb();		
+		if (cb) cb();
 		if (stop) setTimeout(function() { framework.stop(); }, 500);
 		return self;
 	}
@@ -5384,10 +5440,10 @@ function Controller(name, req, res, subscribe) {
 	this.isConnected = true;
 
 	this.repository = {};
-	this.model = null;
 
 	// render output
-	this.output = '';
+	this.output = null;
+	this.current = null;
 	this.prefix = req.prefix;
 
 	if (typeof(this.prefix) === UNDEFINED || this.prefix.length === 0)
@@ -5890,6 +5946,16 @@ Controller.prototype.layout = function(name) {
 	var self = this;
 	self.layoutName = name;
 	return self;
+};
+
+/*
+	Get a model
+	@name {String} :: name of controller
+	return {Object};
+*/
+Controller.prototype.model = function(name) {
+	var self = this;
+	return self.framework.model(name);
 };
 
 /*
@@ -6454,7 +6520,7 @@ Controller.prototype.head = function() {
 
 	var output = '';
 	for (var i = 0; i < length; i++) {
-		
+
 		var val = arguments[i];
 
 		if (header.length > 0 && header.indexOf(val) !== -1)
@@ -7841,7 +7907,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var value = '';
 	var condition = false;
 
-	self.model = model;
+	self.current = model;
 
 	if (self.isLayout) {
 		self._currentCSS = self._defaultCSS || '';
@@ -8333,12 +8399,12 @@ WebSocket.prototype.module = function(name) {
 };
 
 /*
-    Controller models reader
-    @name {String} :: name of controller
+    Get a model
+    @name {String} :: name of model
     return {Object};
 */
-WebSocket.prototype.models = function(name) {
-    return (this.framework.controllers[name] || {}).models;
+WebSocket.prototype.model = function(name) {
+    return this.framework.model(name);
 };
 
 /*

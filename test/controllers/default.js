@@ -190,7 +190,8 @@ function viewIndex() {
 	assert.ok(self.layoutName === 'test', name + 'layout()');
 
 	assert.ok(self.functions('share').message() === 'message', name + 'functions()');
-	assert.ok(self.models('share').user.name === 'Peter', name + 'models()');
+	assert.ok(self.model('user').ok === 1, name + 'model()');
+	assert.ok(framework.model('user').ok === 1, 'framework: model()');
 
 	assert.ok(self.isSecure === false, 'controller.isSecure');
 	assert.ok(self.config.isDefinition === true, 'definitions()');
