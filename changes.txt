@@ -9,6 +9,7 @@ IN DEVELOPMENT ======= ???
 - added: framework.assert(name, url, callback, method, data, headers, xhr)
 - added: framework.injectComponent(name, url)
 - added: framework.path.components([filename])
+- added: framework.id
 
 - updated: framework.usage([detailed])
 - updated: BINARY

@@ -35,6 +35,7 @@ global.utils = require('./utils');
 
 function Framework() {
 
+	this.id = null;
 	this.version = 1002;
 	this.version_header = '1.0.2';
 
