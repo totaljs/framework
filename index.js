@@ -2657,7 +2657,6 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 				process.send('stop');
 			process.exit(0);
 		}
-
 	});
 
 	process.on('SIGTERM', function() {
@@ -2756,6 +2755,9 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 
 	if (!process.connected)
 		self.console();
+
+	self.removeAllListeners('load');
+	self.removeAllListeners('ready');
 
 	return self;
 };

@@ -1128,6 +1128,8 @@ Database.prototype._metaLoad = function(callback) {
 			if (callback)
 				callback(false, self.meta);
 
+			self.removeAllListeners('ready');
+			self.removeAllListeners('load');
 			return;
 		}
 
@@ -1147,6 +1149,10 @@ Database.prototype._metaLoad = function(callback) {
 		if (callback)
 			callback(true, self.meta);
 
+		if (!isReady) {
+			self.removeAllListeners('ready');
+			self.removeAllListeners('load');
+		}
 	});
 
 	return self;
