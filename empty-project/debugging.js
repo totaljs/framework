@@ -10,7 +10,7 @@ var path = require('path');
 var directory = process.cwd();
 var utils = require('total.js/utils');
 
-var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules', directory + '/resources'];
+var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules', directory + '/resources', directory + '/components', directory + '/models'];
 var files = {};
 var force = false;
 var changes = [];
