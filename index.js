@@ -5444,7 +5444,7 @@ function Controller(name, req, res, subscribe) {
 
 	// render output
 	this.output = null;
-	this.current = null;
+	this.$model = null;
 	this.prefix = req.prefix;
 
 	if (typeof(this.prefix) === UNDEFINED || this.prefix.length === 0)
@@ -7908,7 +7908,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var value = '';
 	var condition = false;
 
-	self.current = model;
+	self.$model = model;
 
 	if (self.isLayout) {
 		self._currentCSS = self._defaultCSS || '';

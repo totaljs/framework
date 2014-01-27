@@ -14,7 +14,7 @@ IN DEVELOPMENT ======= ???
 - added: framework.path.components([filename])
 - added: framework.id
 - added: controller.model(name)
-- added: controller.current (contains current model)
+- added: controller.$model (contains current model)
 
 - updated: framework.usage([detailed])
 - updated: BINARY

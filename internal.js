@@ -2129,6 +2129,10 @@ function parse(html, controller) {
 						beg = 'return ';
 						break;
 
+					case 'model':
+						beg = 'return self.$';
+						break;
+
 					case 'global':
 					case 'model':
 					case 'repository':
