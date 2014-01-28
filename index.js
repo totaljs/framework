@@ -2596,7 +2596,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 		return self;
 	}
 
-	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = contentType;
+	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 	res.writeHead(code, returnHeaders);
 	res.end(contentBody, ENCODING);
 

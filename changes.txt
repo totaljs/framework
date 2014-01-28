@@ -25,6 +25,7 @@ IN DEVELOPMENT ======= ???
 - fixed: assertion testing
 - fixed: mail attachment (fixed: line too long)
 - fixed: "@charset" keyword in CSS
+- fixed: cache-control header
 
 improvements: views (in release mode)
 
