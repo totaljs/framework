@@ -15,6 +15,7 @@ IN DEVELOPMENT ======= ???
 - added: framework.id
 - added: controller.model(name)
 - added: controller.$model (contains current model)
+- added: flag: OPTIONS
 
 - updated: framework.usage([detailed])
 - updated: BINARY
