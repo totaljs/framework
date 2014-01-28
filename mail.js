@@ -471,7 +471,7 @@ Message.prototype._send = function(socket, options) {
 
 				if (self.files.length > 0) {
 					message = null;
-					self._writeAttachment(write, boundary);
+					self._writeAttachment(write, boundary, socket);
 					return;
 				}
 
@@ -498,7 +498,7 @@ Message.prototype._send = function(socket, options) {
 
 };
 
-Message.prototype._writeAttachment = function(write, boundary) {
+Message.prototype._writeAttachment = function(write, boundary, socket) {
 
 	var self = this;
 	var attachment = self.files.shift();
@@ -511,26 +511,39 @@ Message.prototype._writeAttachment = function(write, boundary) {
 	}
 
 	var name = attachment.name;
+	var stream = fs.createReadStream(attachment.filename, { encoding: 'base64' });
+	var message = [];
+	var ext = path.extname(attachment.filename);
 
-	fs.readFile(attachment.filename, 'base64', function(err, data) {
+	message.push('--' + boundary);
+	message.push('Content-Disposition: attachment; filename="' + name + '"');
+	message.push('Content-Type: application/octet-stream; name="' + name + '"');
+	message.push('Content-Transfer-Encoding: base64');
+	message.push(CRLF);
 
-		if (err) {
-			mailer.error('error', err, self);
-			self._writeAttachment(write, boundary);
-			return;
+	write(message.join(CRLF));
+
+	stream.on('data', function(buf) {
+
+		var length = buf.length;
+		var count = 0;
+		var beg = 0;
+
+		while (count < length) {
+
+			count += 72;
+
+			if (count > length)
+				count = length;
+
+			write(buf.slice(beg, count).toString('base64'));
+			beg = count;
 		}
+	});
 
-		var message = [];
-		message.push('--' + boundary);
-		message.push('Content-Type: application/octet-stream; name="' + name + '"');
-		message.push('Content-Transfer-Encoding: base64');
-		message.push('Content-Disposition: attachment; filename="' + name + '"');
-		message.push(CRLF);
-		message.push(data);
-		message.push('');
-		write(message.join(CRLF));
-
-		self._writeAttachment(write, boundary);
+	stream.on('end', function() {
+		write(CRLF);
+		self._writeAttachment(write, boundary, socket);
 	});
 
 	return self;

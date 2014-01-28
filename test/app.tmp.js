@@ -67,14 +67,17 @@ fs.createReadStream('/users/petersirka/desktop/a.jpg').pipe(p.stdin);
 
 // message.attachment('/users/petersirka/desktop/wall.png');
 
-//var mail = new require('../mail');
-//mail.debug = true;
-//var message = mail.create('subject: Peter Širka', '+ľščťžýáíé');
+var mail = new require('../mail');
+mail.debug = true;
+
+// var message = mail.create('subject: Peter Širka', '+ľščťžýáíé');
 
 //message.to('petersirka@858project.com');
 //message.from('petersirka@gmail.com', 'Janko');
+//message.attachment('/users/petersirka/desktop/test.js', 'test.js');
+//message.attachment('/users/petersirka/desktop/a.zip', 'b.zip');
 
-//message.send('mail.858project.com', { user: '@858project.com', password: '' });
+message.send('mail.858project.com', { user: '@858project.com', password: '' });
 
 //message.send('smtp.gmail.com', { port: 465, secure: true, user: 'your@gmail.com', password: '' });
 //message.send();
