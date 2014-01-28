@@ -23,6 +23,7 @@ IN DEVELOPMENT ======= ???
 - fixed: // char in views and templates
 - fixed: assertion testing
 - fixed: mail attachment (fixed: line too long)
+- fixed: "@charset" keyword in CSS
 
 improvements: views (in release mode)
 
