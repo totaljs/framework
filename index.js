@@ -5712,6 +5712,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 
 	var self = this;
 	var origin = self.req.headers['origin'];
+	var isOPTIONS = self.req.method.toUpperCase() === 'OPTIONS';
 
 	if (typeof(origin) === UNDEFINED)
 		return true;
@@ -5735,6 +5736,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 	var isAllowed = false;
 	var isAll = false;
 	var value;
+	var headers = self.req.headers;
 
 	if (header) {
 
@@ -5742,7 +5744,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 			header = [header];
 
 		for (var i = 0; i < header.length; i++) {
-			if (self.req.headers[header[i].toLowerCase()]) {
+			if (headers[header[i].toLowerCase()]) {
 				isAllowed = true;
 				break;
 			}
@@ -5759,12 +5761,14 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 		if (!utils.isArray(method))
 			method = [method];
 
+		var current = headers['access-control-request-method'] || self.req.method;
+
 		for (var i = 0; i < method.length; i++) {
 
 			value = method[i].toUpperCase();
 			method[i] = value;
 
-			if (value === self.req.method)
+			if (current.indexOf(value) !== -1)
 				isAllowed = true;
 		}
 
@@ -5789,16 +5793,33 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 	if (!isAllowed)
 		return false;
 
+	var tmp;
+	var name;
+
 	self.res.setHeader('Access-Control-Allow-Origin', isAll ? '*' : origin);
 
 	if (credentials)
 		self.res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-	if (method)
-		self.res.setHeader('Access-Control-Allow-Methods', method.join(', '));
+	name = 'Access-Control-Allow-Methods';
 
-	if (header)
-		self.res.setHeader('Access-Control-Allow-Headers', header.join(', '));
+	if (method) {
+		self.res.setHeader(name, method.join(', '));
+	} else if (isOPTIONS) {
+		tmp = headers['access-control-request-method'];
+		if (tmp)
+			self.res.setHeader(name, tmp);
+	}
+
+	name = 'Access-Control-Allow-Headers';
+
+	if (header) {
+		self.res.setHeader(name, header.join(', '));
+	} else if (isOPTIONS) {
+		tmp = headers['access-control-request-headers'];
+		if (tmp)
+			self.res.setHeader(name, tmp);
+	}
 
 	return true;
 };
@@ -7325,7 +7346,7 @@ Controller.prototype.empty = function(headers) {
 		return self;
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.status, '', CONTENTTYPE_TEXTPLAIN, false, headers);
+	self.framework.responseContent(self.req, self.res, 204, '', CONTENTTYPE_TEXTPLAIN, false, headers);
 	self.framework.stats.response.empty++;
 
 	return self;

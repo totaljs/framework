@@ -27,6 +27,8 @@ IN DEVELOPMENT ======= ???
 - fixed: "@charset" keyword in CSS
 - fixed: cache-control header
 - fixed: HTML conditional comments in views
+- fixed: controller.cors(), fixed problem with preflight
+- fixed: controller.empty() -> added 204 http status code
 
 improvements: views (in release mode)
 
