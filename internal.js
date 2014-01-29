@@ -2042,7 +2042,7 @@ function parse(html, controller) {
 				end = '';
 				var type = 0;
 				var isDeclared = false;
-				switch (name) {					
+				switch (name) {
 
 					case 'options':
 					case 'readonly':
@@ -2345,8 +2345,15 @@ function removeComments(html) {
 		if (end === -1)
 			break;
 
-		html = html.replace(html.substring(beg, end + 3), '');
-		beg = html.indexOf(tagBeg);
+		var comment = html.substring(beg, end + 3);
+
+		if (comment.indexOf('[if') !== -1 || comment.indexOf('[endif') !== -1) {
+			beg = html.indexOf(tagBeg, end + 3);
+			continue;
+		}
+
+		html = html.replace(comment, '');
+		beg = html.indexOf(tagBeg, end + 3);
 	}
 
 	return html;
@@ -2489,7 +2496,7 @@ View.prototype.render = function(name) {
     return {Object} :: return factory object
 */
 View.prototype.read = function(name) {
-	
+
 	var self = this;
 	var config = self.controller.config;
 	var isOut = name[0] === '.';

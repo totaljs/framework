@@ -26,6 +26,7 @@ IN DEVELOPMENT ======= ???
 - fixed: mail attachment (fixed: line too long)
 - fixed: "@charset" keyword in CSS
 - fixed: cache-control header
+- fixed: HTML conditional comments in views
 
 improvements: views (in release mode)
 
