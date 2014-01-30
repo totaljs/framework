@@ -3,10 +3,6 @@ var http = require('http');
 
 framework.run(http, true, parseInt(process.argv[2]));
 
-setTimeout(function() {
-	framework.stop();
-}, 3000);
-
 framework.test(true, function() {
 	console.log('');
 	console.log('====================================================');
