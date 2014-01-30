@@ -15,7 +15,7 @@ IN DEVELOPMENT ======= ???
 - added: framework.path.components([filename])
 - added: framework.path.models([filename])
 - added: controller.model(name)
-- added: controller.$model (contains current model)
+- added: controller.$model - (property contains current model)
 - added: flag: OPTIONS
 
 - updated: framework.usage([detailed])
