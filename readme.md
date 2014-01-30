@@ -104,8 +104,11 @@ Videos on YouTube
 
 ***
 
-* **NEW** Supports workers - [example: workers](https://github.com/totaljs/examples/tree/master/workers)
-* **NEW** Supports versioning of static files - [example: static-version](https://github.com/totaljs/examples/tree/master/static-version)
+* **NEW** Supports components - [example: workers](https://github.com/totaljs/examples/tree/master/components)
+* **NEW** Supports models - [example: models](https://github.com/totaljs/examples/tree/master/models)
+* **NEW** Supports dynamic controllers - [example: models](https://github.com/totaljs/examples/tree/master/minimal)
+* Supports workers - [example: workers](https://github.com/totaljs/examples/tree/master/workers)
+* Supports versioning of static files - [example: static-version](https://github.com/totaljs/examples/tree/master/static-version)
 * Supports redirects - [example: host redirect](https://github.com/totaljs/examples/tree/master/redirect-host)
 * Supports restrictions - [example: restrictions](https://github.com/totaljs/examples/tree/master/framework-restrictions)
 * Controller proxy - [example: proxy](https://github.com/totaljs/examples/tree/master/controller-proxy)
