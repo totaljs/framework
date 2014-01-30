@@ -262,7 +262,7 @@ Framework.prototype.controller = function(name, definition) {
 
 	// is controller initialized?
 	if (self.controllers[name])
-		return self;
+		return self.controllers[name];
 
 	// get controller name to internal property
 	_controller = name;
@@ -692,7 +692,6 @@ Framework.prototype.module = function(name) {
 	return {Object} :: framework return require();
 */
 Framework.prototype.component = function(name) {
-
 	var self = this;
 	var component = self.components[name];
 
@@ -2778,6 +2777,8 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 		}
 	}
 
+	self.isLoaded = true;
+
 	try
 	{
 		self.emit('load', self);
@@ -2791,8 +2792,6 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 	} catch (err) {
 		self.error(err, 'framework.on("ready")');
 	}
-
-	self.isLoaded = true;
 
 	if (!process.connected)
 		self.console();
@@ -4660,6 +4659,14 @@ FrameworkPath.prototype.components = function(filename) {
 	return utils.combine(self.config['directory-components'], filename || '').replace(/\\/g, '/');
 };
 
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.models = function(filename) {
+	var self = this;
+	return utils.combine(self.config['directory-models'], filename || '').replace(/\\/g, '/');
+};
 /*
 	@filename {String} :: optional
 	return {String}
@@ -8427,6 +8434,29 @@ WebSocket.prototype.module = function(name) {
 */
 WebSocket.prototype.model = function(name) {
     return this.framework.model(name);
+};
+
+/*
+    Get a model
+    @name {String} :: name of model
+    return {Object};
+*/
+WebSocket.prototype.component = function(name) {
+
+	var self = this;
+	var component = framework.component(name);
+
+	if (component === null)
+		return '';
+
+	var length = arguments.length;
+	var params = [];
+
+	for (var i = 1; i < length; i++)
+		params.push(arguments[i]);
+
+	var output = component.render.apply(self, params);
+	return output;
 };
 
 /*

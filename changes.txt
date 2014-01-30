@@ -2,9 +2,10 @@ IN DEVELOPMENT ======= ???
 
 - added: new feature COMPONENTS
 - added: new feature MODELS
-- added: framework.model(name)
+- added: framework.id
 - added: framework.isDebug
 - added: framework.isTest
+- added: framework.model(name)
 - added: framework.controller(name, definition)
 - added: framework.functions
 - added: framework.assert(name, callback)
@@ -12,7 +13,7 @@ IN DEVELOPMENT ======= ???
 - added: framework.injectComponent(name, url)
 - added: framework.injectModel(name, url)
 - added: framework.path.components([filename])
-- added: framework.id
+- added: framework.path.models([filename])
 - added: controller.model(name)
 - added: controller.$model (contains current model)
 - added: flag: OPTIONS
@@ -21,6 +22,7 @@ IN DEVELOPMENT ======= ???
 - updated: BINARY
 - updated: WebSocket skips throwing error (ECONNRESET)
 
+- fixed: framework.controller(name)
 - fixed: // char in views and templates
 - fixed: assertion testing
 - fixed: mail attachment (fixed: line too long)
@@ -33,7 +35,10 @@ IN DEVELOPMENT ======= ???
 improvements: views (in release mode)
 
 - EXAMPLE (NEW): https://github.com/petersirka/total.js/tree/master/examples/components
+- EXAMPLE (NEW): https://github.com/petersirka/total.js/tree/master/examples/models
 - EXAMPLE (NEW): https://github.com/petersirka/total.js/tree/master/examples/minimal
+- EXAMPLE (NEW): https://github.com/petersirka/total.js/tree/master/examples/framework-functions
+- EXAMPLE (UPD): https://github.com/petersirka/total.js/tree/master/examples/cors
 
 ======= 1.0.2 (HOTFIX)
 
