@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= ???
+======= 1.1.0
 
 - added: new feature COMPONENTS
 - added: new feature MODELS

@@ -5,7 +5,7 @@ web framework for node.js
 
 __total.js__ is the best ever web application framework for creating a rich web sites and web services. The framework has good documentation and contains many examples. Please support the framework on GitHub and other social networks.
 
-> Current version (v1.0.2) is __stable version__.
+> Current version (v1.1.0) is __stable version__.
 
 ```
 $ npm install total.js
