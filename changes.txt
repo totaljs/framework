@@ -39,6 +39,7 @@ improvements: views (in release mode)
 - EXAMPLE (NEW): https://github.com/petersirka/total.js/tree/master/examples/minimal
 - EXAMPLE (NEW): https://github.com/petersirka/total.js/tree/master/examples/framework-functions
 - EXAMPLE (UPD): https://github.com/petersirka/total.js/tree/master/examples/cors
+- EXAMPLE (UPD): https://github.com/petersirka/total.js/tree/master/examples/cluster
 
 ======= 1.0.2 (HOTFIX)
 
