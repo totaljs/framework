@@ -5,6 +5,9 @@
 // ===================================================
 
 var isDebugging = process.argv[process.argv.length - 1] === 'debugging';
+var directory = process.cwd();
+var fs = require('fs');
+var path = require('path');
 
 function debug() {
 	var framework = require('total.js');
@@ -14,12 +17,8 @@ function debug() {
 }
 
 function app() {
-	var fork = require('child_process').fork;
-	var fs = require('fs');
-	var path = require('path');
-	var directory = process.cwd();
+	var fork = require('child_process').fork;	
 	var utils = require('total.js/utils');
-
 	var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules', directory + '/resources', directory + '/components', directory + '/models'];
 	var files = {};
 	var force = false;
@@ -212,7 +211,6 @@ function app() {
 		fs.writeFileSync(pid, process.pid);
 
 		pidInterval = setInterval(function() {
-
 			fs.exists(pid, function(exist) {
 				if (exist)
 					return;
@@ -232,7 +230,7 @@ function app() {
 	refresh_directory();
 }
 
-if (isDebugging)
+if (isDebugging) 
 	debug()
-else
+else if (!fs.existsSync(path.join(directory, 'debug.pid')))
 	app();
