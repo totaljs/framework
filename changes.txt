@@ -34,12 +34,12 @@
 
 improvements: views (in release mode)
 
-- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/examples/components
-- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/examples/models
-- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/examples/minimal
-- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/examples/framework-functions
-- EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/examples/cors
-- EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/examples/cluster
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/components
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/models
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/minimal
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/framework-functions
+- EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/cors
+- EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/cluster
 
 ======= 1.0.2 (HOTFIX)
 
