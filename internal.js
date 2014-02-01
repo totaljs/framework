@@ -928,7 +928,8 @@ Less.prototype.compile = function(value) {
 */
 function autoprefixer(value) {
 
-	var prefix = ['appearance', 'box-shadow', 'border-radius', 'border-image', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-origin', 'transition', 'user-select', 'animation', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing'];
+	// 'box-shadow', 'border-radius'
+	var prefix = ['appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-origin', 'transition', 'user-select', 'animation', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing'];
 	var id = '@#auto-vendor-prefix#@';
 
 	if (value.indexOf(id) === -1)
@@ -1010,11 +1011,11 @@ function autoprefixer(value) {
 			if (property.indexOf('linear-gradient') === -1)
 				continue;
 
-			updated = plus + delimiter;
 			updated += plus.replace('linear-', '-webkit-linear-') + delimiter;
 			updated += plus.replace('linear-', '-moz-linear-') + delimiter;
 			updated += plus.replace('linear-', '-o-linear-') + delimiter;
 			updated += plus.replace('linear-', '-ms-linear-');
+			updated = plus + delimiter;
 
 			value = value.replace(property, '@[[' + output.length + ']]');
 			output.push(updated);
@@ -1046,13 +1047,10 @@ function autoprefixer(value) {
 		updated += '-webkit-' + plus + delimiter;
 		updated += '-moz-' + plus;
 
-		if (name !== 'box-shadow' && name !== 'border-radius') {
+		if (name.indexOf('animation') === -1)
+			updated += delimiter + '-ms-' + plus;
 
-			if (name.indexOf('animation') === -1)
-				updated += delimiter + '-ms-' + plus;
-
-			updated += delimiter + '-o-' + plus;
-		}
+		updated += delimiter + '-o-' + plus;
 
 		value = value.replace(property, '@[[' + output.length + ']]');
 		output.push(updated);
