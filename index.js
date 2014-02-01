@@ -36,8 +36,8 @@ global.utils = require('./utils');
 function Framework() {
 
 	this.id = null;
-	this.version = 1100;
-	this.version_header = '1.1.0';
+	this.version = 1110;
+	this.version_header = '1.1.1';
 
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
@@ -8203,20 +8203,24 @@ WebSocket.prototype.send = function(message, id, blacklist) {
     if (length === 0)
 		return self;
 
-    blacklist = blacklist || [];
+
+	var fn = typeof(blacklist) === FUNCTION ? blacklist : null;
+    var is = blacklist instanceof Array;
 
     if (typeof(id) === UNDEFINED || id === null || id.length === 0) {
-
-        var isBlacklist = blacklist.length > 0;
 
         for (var i = 0; i < length; i++) {
 
 			var _id = keys[i];
-            var conn = self.connections[_id];
 
-            if (isBlacklist && blacklist.indexOf(conn.id) !== -1)
+   			if (is && blacklist.indexOf(_id) !== -1)
                 continue;
 
+            var conn = self.connections[_id];
+
+            if (fn !== null && !fn.call(self, _id, conn))
+				continue;
+			
             conn.send(message);
             self.framework.stats.response.websocket++;
         }
@@ -8225,17 +8229,23 @@ WebSocket.prototype.send = function(message, id, blacklist) {
         return self;
     }
 
+    fn = typeof(id) === FUNCTION ? id : null;
+    is = id instanceof Array;
+
     for (var i = 0; i < length; i++) {
 
 		var _id = keys[i];
 
-        if (id.indexOf(_id) === -1)
+        if (is && id.indexOf(_id) === -1)
             continue;
 
         var conn = self.connections[_id];
+
+        if (fn !== null && !fn.call(self, _id, conn) === -1)
+            continue;
+
         conn.send(message);
         self.framework.stats.response.websocket++;
-
     }
 
     self.emit('send', message, id, blacklist);
@@ -8270,13 +8280,20 @@ WebSocket.prototype.close = function(id) {
         return self;
     }
 
+    var is = id instanceof Array;
+    var fn = typeof(id) === FUNCTION ? id : null;
+
 	for (var i = 0; i < length; i++) {
 
 		var _id = keys[i];
+
+        if (is && id.indexOf(_id) === -1)
+            continue;        
+
         var conn = self.connections[_id];
 
-        if (id.indexOf(_id) === -1)
-            continue;
+        if (fn !== null && !fn.call(self, _id, conn))
+        	continue;
 
         conn.close();
         self._remove(_id);
@@ -8768,7 +8785,7 @@ WebSocketClient.prototype._ondata = function(data) {
 */
 WebSocketClient.prototype._onerror = function(error) {
     var self = this;
-    if (error.stack.indexOf('ECONNRESET') !== -1)
+    if (error.stack.indexOf('ECONNRESET') !== -1 || error.stack.indexOf('socket is closed') !== -1 || error.stack.indexOf('EPIPE') !== -1)
     	return;
     self.container.emit('error', error, self);
 };
