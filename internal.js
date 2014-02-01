@@ -1011,11 +1011,11 @@ function autoprefixer(value) {
 			if (property.indexOf('linear-gradient') === -1)
 				continue;
 
-			updated += plus.replace('linear-', '-webkit-linear-') + delimiter;
+			updated = plus.replace('linear-', '-webkit-linear-') + delimiter;
 			updated += plus.replace('linear-', '-moz-linear-') + delimiter;
 			updated += plus.replace('linear-', '-o-linear-') + delimiter;
 			updated += plus.replace('linear-', '-ms-linear-');
-			updated = plus + delimiter;
+			updated += plus + delimiter;
 
 			value = value.replace(property, '@[[' + output.length + ']]');
 			output.push(updated);

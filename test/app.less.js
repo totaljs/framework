@@ -26,9 +26,11 @@ buffer.push('b{border-radius:1px}');
 buffer.push('a{border-radius:1px 2px 3px 4px}');
 buffer.push('a{text-overflow:ellipsis}');
 buffer.push('@keyframes test{border-radius:5px}');
+buffer.push('div{background:linear-gradient(90deg, #000000, #FFFFFF)}');
 
 css = buffer.join('\n');
-assert.ok(less.compile_less(css, true) === 'b{border-radius:1px;-webkit-border-radius:1px;-moz-border-radius:1px}a{border-radius:1px 2px 3px 4px;-webkit-border-radius:1px 2px 3px 4px;-moz-border-radius:1px 2px 3px 4px}a{text-overflow:ellipsis}@keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-webkit-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-moz-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}@-o-keyframes test{border-radius:5px;-webkit-border-radius:5px;-moz-border-radius:5px}', 'automated CSS vendor prefixes');
+
+assert.ok(less.compile_less(css, true) === 'b{border-radius:1px}a{border-radius:1px 2px 3px 4px}a{text-overflow:ellipsis}@keyframes test{border-radius:5px}@-webkit-keyframes test{border-radius:5px}@-moz-keyframes test{border-radius:5px}@-o-keyframes test{border-radius:5px}div{background:-webkit-linear-gradient(90deg, #000000, #FFFFFF);background:-moz-linear-gradient(90deg, #000000, #FFFFFF);background:-o-linear-gradient(90deg, #000000, #FFFFFF);background:-ms-linear-gradient(90deg, #000000, #FFFFFF)background:linear-gradient(90deg, #000000, #FFFFFF);}', 'automated CSS vendor prefixes');
 
 console.log('================================================');
 console.log('success - OK');
