@@ -2985,6 +2985,9 @@ Framework.prototype._service = function(count) {
 	if (count % 20 === 0) {
 		self.emit('clear', 'resources');
 		self.resources = {};
+
+		if (typeof(gc) !== UNDEFINED)
+			gc();
 	}
 
 	// every 3 minute service clears static cache
@@ -2993,9 +2996,6 @@ Framework.prototype._service = function(count) {
 		self.temporary.path = {};
 		self.temporary.range = {};
 	}
-
-	if (typeof(gc) !== UNDEFINED)
-		gc();
 
 	self.emit('service', count);
 };
@@ -8229,7 +8229,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 
             if (fn !== null && !fn.call(self, _id, conn))
 				continue;
-			
+
             conn.send(message);
             self.framework.stats.response.websocket++;
         }
@@ -8297,7 +8297,7 @@ WebSocket.prototype.close = function(id) {
 		var _id = keys[i];
 
         if (is && id.indexOf(_id) === -1)
-            continue;        
+            continue;
 
         var conn = self.connections[_id];
 

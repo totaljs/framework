@@ -2,6 +2,7 @@ IN DEVELOPMENT ======= 1.1.1 (HOTFIX)
 
 - added: node harmony functions (see example)
 - added: gc() into framework.on('service')
+- added: config['allow-performance'] true/false (default, false)
 
 - updated: auto-vendor-prefixes (updated linear-gradient prioraty according to w3schools.com)
 - updated: websocket.send(message, [id], [blacklist]), id and blacklist can be a function
