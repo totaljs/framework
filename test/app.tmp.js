@@ -77,7 +77,7 @@ mail.debug = true;
 //message.attachment('/users/petersirka/desktop/test.js', 'test.js');
 //message.attachment('/users/petersirka/desktop/a.zip', 'b.zip');
 
-message.send('mail.858project.com', { user: '@858project.com', password: '' });
+// message.send('mail.858project.com', { user: '@858project.com', password: '' });
 
 //message.send('smtp.gmail.com', { port: 465, secure: true, user: 'your@gmail.com', password: '' });
 //message.send();

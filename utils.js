@@ -312,7 +312,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 
 	var self = this;
 
-	if (typeof(callback) === 'object') {
+	if (typeof(callback) === OBJECT) {
 		var tmp = headers;
 		callback = headers;
 		headers = tmp;
@@ -1902,7 +1902,7 @@ Number.prototype.parseDate = function(plus) {
 	return new Date(this + (plus || 0));
 };
 
-if (typeof (Number.prototype.toRad) === "undefined") {
+if (typeof (Number.prototype.toRad) === UNDEFINED) {
     Number.prototype.toRad = function () {
         return this * Math.PI / 180;
     };
@@ -2460,4 +2460,89 @@ FileList.prototype.next = function() {
 };
 
 exports.Async = Async;
-exports.async = Async;
+
+exports.sync = function(fn) {
+	return function() {
+
+		var args = [].slice.call(arguments);
+		var params;
+		var callback;
+		var executed = false;
+
+		args.push(function() {
+			params = arguments;
+			if (!executed && callback) {
+				executed = true;
+				callback.apply(this, params);
+			}
+		});
+
+		fn.apply(this, args);
+
+		return function(cb) {
+			callback = cb;
+			if (!executed && params) {
+				executed = true;
+				callback.apply(this, params);
+			}
+		};
+	};
+};
+
+exports.async = function(fn) {
+	return function(complete) {
+
+		var self = this;
+		var generator = fn();
+
+		next(null);
+
+		function next(err, result) {
+
+			var g;
+
+			try
+			{
+				switch (err === null) {
+					case true:
+						g = generator.next(result);
+						break;
+					case false:
+						g = generator.throw(err);
+						break;
+				}
+			} catch (e) {
+				if (complete)
+					complete(e);
+				return;
+			}
+
+			if (g.done) {				
+				if (complete)
+					complete(null, g.value);
+				return;
+			}
+
+			if (typeof(g.value) !== FUNCTION) {
+				next.call(self, null, g.value);
+				return;
+			}
+
+			try
+			{
+				g.value.call(self, function() {
+					next.apply(self, arguments);
+				});
+			} catch (e) {
+				setImmediate(function() {
+					next.call(self, e);
+				});
+			}
+		}
+
+		return generator.value;
+	};
+};
+
+global.async = exports.async;
+global.sync = exports.sync;

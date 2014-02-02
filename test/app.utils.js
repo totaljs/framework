@@ -183,6 +183,39 @@ function prototypeArray() {
 	assert.ok(arr.take(3).join('') === '123', 'array.take()');
 }
 
+function t_callback1(a, cb) {
+	cb(null, a);
+}
+
+function t_callback2(a, b, cb) {
+	cb(null, a + b);
+}
+
+function t_callback3(a, b, cb) {
+	cb(new Error('TEST'), a + b);
+}
+
+function harmony() {
+
+	async(function *() {
+		var a = yield sync(t_callback1)(1);
+		assert.ok(a === 1, 'harmony t_callback1');
+
+		var b = yield sync(t_callback2)(1, 1);
+		assert.ok(b === 2, 'harmony t_callback2');
+
+		return a + b;
+	})(function(err, value) {
+		assert.ok(value === 3, 'harmony callback');
+	});
+
+	async(function *() {
+		var err = yield sync(t_callback3)(1, 1);
+	})(function(err, value) {
+		assert.ok(err.message === 'TEST', 'harmony t_callback3');
+	});
+}
+
 function others() {
 	var obj = {};
 
@@ -321,7 +354,7 @@ function others() {
 	});
 
 	utils.request('http://www.yahoo.com', 'GET', null, function(err, data, code) {
-		assert.ok(code === 200, 'utils.request (success)');
+		assert.ok(code === 301, 'utils.request (success)');
 	});
 
 	utils.request('http://xxxxxxx.yyy', 'GET', null, function(err, data, code) {
@@ -377,6 +410,7 @@ prototypeNumber();
 prototypeString();
 prototypeArray();
 others();
+harmony();
 
 console.log('================================================');
 console.log('success - OK');

@@ -1,11 +1,16 @@
 IN DEVELOPMENT ======= 1.1.1 (HOTFIX)
 
+- added: node harmony functions (see example)
+- added: gc() into framework.on('service')
+
 - updated: auto-vendor-prefixes (updated linear-gradient prioraty according to w3schools.com)
 - updated: websocket.send(message, [id], [blacklist]), id and blacklist can be a function
 
 - removed: border-radius and box-shadow from auto-vendor-prefixes
 
 - fixed: WebSocket skips throwing error (socket close, EPIPE)
+
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/harmony
 
 ======= 1.1.0
 

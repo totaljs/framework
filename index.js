@@ -100,7 +100,8 @@ function Framework() {
 		'allow-gzip': true,
 		'allow-websocket': true,
 		'allow-compile-js': true,
-		'allow-compile-css': true
+		'allow-compile-css': true,
+		'allow-performance': false
 	};
 
 	this.global = {};
@@ -2993,12 +2994,20 @@ Framework.prototype._service = function(count) {
 		self.temporary.range = {};
 	}
 
+	if (typeof(gc) !== UNDEFINED)
+		gc();
+
 	self.emit('service', count);
 };
 
 Framework.prototype._request = function(req, res) {
 
 	var self = this;
+
+	if (self.config['allow-performance']) {
+		req.connection.setNoDelay(true);
+		req.connection.setTimeout(0);
+	}
 
 	if (self.onRequest !== null && self.onRequest(req, res))
 		return;
