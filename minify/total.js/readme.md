@@ -47,6 +47,7 @@ __Examples__:
 
 __Modules__:
 
+- [Simple prevention of DDOS](https://github.com/totaljs/modules/tree/master/ddos)
 - [Online counter](https://github.com/totaljs/modules/tree/master/online)
 - [FileServer](https://github.com/totaljs/modules/tree/master/fileserver)
 - [FileCache](https://github.com/totaljs/modules/tree/master/filecache)
