@@ -3741,6 +3741,9 @@ Framework.prototype.configure = function(arr, rewrite) {
 		});
 	}
 
+	if (self.config['allow-performance'])
+		http.globalAgent.maxSockets = 9999;
+
 	self.emit('configure', self.config);
 	return self;
 };
