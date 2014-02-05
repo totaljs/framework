@@ -279,7 +279,8 @@ Message.prototype._send = function(socket, options) {
 
 	socket.setTimeout(options.timeout || 5000, function() {
 		mailer.emit('error', new Error(utils.httpStatus(408)), self);
-		socket.destroy();
+		if (socket !== null)
+			socket.destroy();
 		socket = null;
 	});
 
@@ -438,7 +439,8 @@ Message.prototype._send = function(socket, options) {
 						self.callback(null);
 
 					ending = setTimeout(function() {
-						socket.destroy();
+						if (socket !== null)
+							socket.destroy();
 						socket = null;
 					}, 500);
 				}
@@ -457,7 +459,8 @@ Message.prototype._send = function(socket, options) {
 					if (self.callback)
 						self.callback(err);
 
-					socket.destroy();
+					if (socket !== null)
+						socket.destroy();
 					socket = null;
 					break;
 				}
@@ -483,14 +486,19 @@ Message.prototype._send = function(socket, options) {
 
 			default:
 
-				if (code > 399) {
-					err = new Error(line);
+				if (code < 400)
+					break;
+
+				err = new Error(line);
+
+				if (socket !== null)
 					socket.destroy();
-					socket = null;
-					mailer.emit('error', err, self);
-					if (self.callback)
-						self.callback(err);
-				}
+
+				socket = null;
+				mailer.emit('error', err, self);
+
+				if (self.callback)
+					self.callback(err);
 
 				break;
 		}

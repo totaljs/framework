@@ -10,6 +10,7 @@ IN DEVELOPMENT ======= 2.0.0
 - removed: border-radius and box-shadow from auto-vendor-prefixes
 
 - fixed: WebSocket skips throwing error (socket close, EPIPE)
+- fixed: mail
 
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/harmony
 
