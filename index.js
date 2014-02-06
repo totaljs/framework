@@ -387,9 +387,6 @@ Framework.prototype.redirect = function(host, newHost, withPath, permament) {
 */
 Framework.prototype.route = function(url, funcExecute, flags, maximumSize, partial, timeout) {
 
-	if (_controller === '')
-		throw new Error('Route must be defined in a controller.');
-
 	if (utils.isArray(maximumSize)) {
 		var tmp = partial;
 		partial = maximumSize;
@@ -492,7 +489,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (!(partial instanceof Array))
 		partial = null;
 
-	self.routes.web.push({ priority: priority, subdomain: subdomain, name: _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: (maximumSize || self.config['default-request-length']) * 1024, partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: isRaw, isMEMBER: isMember, isXSS: flags.indexOf('xss') !== -1 });
+	self.routes.web.push({ priority: priority, subdomain: subdomain, name: (_controller || '').length === 0 ? 'unknown' : _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: (maximumSize || self.config['default-request-length']) * 1024, partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: isRaw, isMEMBER: isMember, isXSS: flags.indexOf('xss') !== -1 });
 	return self;
 };
 
@@ -528,9 +525,6 @@ Framework.prototype.partial = function(name, funcExecute) {
 	return {Framework}
 */
 Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, maximumSize) {
-
-	if (_controller === '')
-		throw new Error('Websocket route must be defined in controller.');
 
 	if (!utils.isArray(flags) && typeof(flags) === 'object') {
 		protocols = flags['protocols'] || flags['protocol'];
@@ -606,7 +600,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (!flags || (flags.indexOf('logged') === -1 && flags.indexOf('unlogged') === -1))
 		isMember = true;
 
-	self.routes.websockets.push({ name: _controller, url: routeURL, param: arr, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: (maximumSize || self.config['default-websocket-request-length']) * 1024, isMEMBER: isMember, isJSON: isJSON, isBINARY: isBINARY });
+	self.routes.websockets.push({ name: (_controller || '').length === 0 ? 'unknown' : _controller, url: routeURL, param: arr, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: (maximumSize || self.config['default-websocket-request-length']) * 1024, isMEMBER: isMember, isJSON: isJSON, isBINARY: isBINARY });
 	return self;
 };
 
@@ -615,7 +609,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 */
 Framework.prototype.file = function(name, funcValidation, funcExecute) {
 	var self = this;
-	self.routes.files.push({ controller: _controller, name: name, onValidation: funcValidation, onExecute: funcExecute || funcValidation });
+	self.routes.files.push({ controller: (_controller || '').length === 0 ? 'unknown' : _controller, name: name, onValidation: funcValidation, onExecute: funcExecute || funcValidation });
 	self._length_files++;
 	return self;
 };
