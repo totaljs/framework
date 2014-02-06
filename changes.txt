@@ -1,11 +1,13 @@
 IN DEVELOPMENT ======= 1.1.1
 
+- added: route to website, route to file and route to websocket is possible everywhere
 - added: node harmony functions (see example)
 - added: gc() into framework.on('service')
 - added: config['allow-performance'] true/false (default, false)
 
 - updated: auto-vendor-prefixes (updated linear-gradient prioraty according to w3schools.com)
 - updated: websocket.send(message, [id], [blacklist]), id and blacklist can be a function
+- updated: license
 
 - removed: border-radius and box-shadow from auto-vendor-prefixes
 
