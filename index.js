@@ -8016,6 +8016,8 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 					if (!condition) {
 						eval('self.' + run);
 						evl = false;
+						values[i] = '';
+						continue;						
 					}
 				} else
 					run = execute.name === 'head' ? 'self.head()' : 'self.repository["$'+ execute.name + '"]';
