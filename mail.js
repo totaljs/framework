@@ -248,10 +248,6 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 		mailer.emit('error', err, self);
 	});
 
-	socket.on('secureConnect', function() {
-		self._send(socket, options);
-	});
-
     socket.on('connect', function() {
 		self._send(socket, options);
     });
