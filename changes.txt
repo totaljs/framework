@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 2.0.0
+IN DEVELOPMENT ======= 1.1.1
 
 - added: node harmony functions (see example)
 - added: gc() into framework.on('service')
@@ -11,6 +11,7 @@ IN DEVELOPMENT ======= 2.0.0
 
 - fixed: WebSocket skips throwing error (socket close, EPIPE)
 - fixed: mail
+- fixed: view rendering
 
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/harmony
 
