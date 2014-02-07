@@ -16,6 +16,7 @@ IN DEVELOPMENT ======= 1.1.1
 - fixed: view rendering
 
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/harmony
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/routing-inline
 
 ======= 1.1.0
 
