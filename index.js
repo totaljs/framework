@@ -5216,7 +5216,7 @@ Subscribe.prototype._execute = function() {
 		var isModule = name[0] === '#' && name[1] === 'm';
 		var o = isModule ? self.framework.modules[name.substring(8)] : self.framework.controllers[name];
 
-		if (o.request)
+		if (o && o.request)
 			o.request.call(self.controller, self.controller);
 
 	} catch (err) {
