@@ -165,7 +165,7 @@ Videos on YouTube
 * Supports dynamic stop server - [example: stop server](https://github.com/totaljs/examples/tree/master/framework-stop)
 * About 9 000 lines of JavaScript code, all files have 270 kB
 * __NO DEPENDENCIES *** NO DEPENDENCIES *** NO DEPENDENCIES__
-* [More examples](https://github.com/totaljs/examples/tree)master/
+* [More examples](https://github.com/totaljs/examples/tree/master/)
 * [Documentation](http://docs.totaljs.com/)
 * __Supports internal NoSQL embedded database__ - [example: authorization](https://github.com/totaljs/examples/tree/master/authorization) or [example: contact form](https://github.com/totaljs/examples/tree/master/contact-form)
 
