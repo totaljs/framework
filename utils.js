@@ -1087,6 +1087,14 @@ if (!String.prototype.trim) {
 	};
 }
 
+String.prototype.replacer = function(find, text) {
+	var self = this;
+	var beg = self.indexOf(find);
+	if (beg === -1)
+		return self;
+	return self.substring(0, beg) + text + self.substring(beg + find.length);
+};
+
 /*
 	Count text in string
 	@text {String}

@@ -8036,7 +8036,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 					else {
 						isEncode = false;
 						if (condition)
-							run = run.replace('(function(){', '(function(){return helper.');
+							run = run.replacer('(function(){', '(function(){return helper.');
 						else
 							run = 'helper.' + internal.appendThis(run);
 					}

@@ -893,7 +893,7 @@ Less.prototype.compile = function(value) {
 				return;
 
 			if (o.isVariable) {
-				value = value.replace(o.value, '');
+				value = value.replacer(o.value, '');
 				return;
 			}
 
@@ -905,7 +905,7 @@ Less.prototype.compile = function(value) {
 				return;
 
 			var v = o.getValue(val);
-			value = value.replace(o.value, v);
+			value = value.replacer(o.value, v);
 		});
 	}
 
@@ -935,7 +935,7 @@ function autoprefixer(value) {
 	if (value.indexOf(id) === -1)
 		return value;
 
-	value = autoprefixer_keyframes(value.replace(id, ''));
+	value = autoprefixer_keyframes(value.replacer(id, ''));
 
 	var builder = [];
 	var index = 0;
@@ -1001,7 +1001,7 @@ function autoprefixer(value) {
 
 			updated += 'filter:alpha(opacity='+Math.floor(opacity * 100)+');';
 
-			value = value.replace(property, '@[[' + output.length + ']]');
+			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
 		}
@@ -1011,21 +1011,21 @@ function autoprefixer(value) {
 			if (property.indexOf('linear-gradient') === -1)
 				continue;
 
-			updated = plus.replace('linear-', '-webkit-linear-') + delimiter;
-			updated += plus.replace('linear-', '-moz-linear-') + delimiter;
-			updated += plus.replace('linear-', '-o-linear-') + delimiter;
-			updated += plus.replace('linear-', '-ms-linear-');
+			updated = plus.replacer('linear-', '-webkit-linear-') + delimiter;
+			updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
+			updated += plus.replacer('linear-', '-o-linear-') + delimiter;
+			updated += plus.replacer('linear-', '-ms-linear-');
 			updated += plus + delimiter;
 
-			value = value.replace(property, '@[[' + output.length + ']]');
+			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
 		}
 
 		if (name === 'text-overflow') {
 			updated = plus + delimiter;
-			updated += plus.replace('text-overflow', '-ms-text-overflow');
-			value = value.replace(property, '@[[' + output.length + ']]');
+			updated += plus.replacer('text-overflow', '-ms-text-overflow');
+			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
 		}
@@ -1036,10 +1036,10 @@ function autoprefixer(value) {
 				continue;
 
 			updated = plus + delimiter;
-			updated += plus.replace('box', '-webkit-box') + delimiter;
-			updated += plus.replace('box', '-moz-box');
+			updated += plus.replacer('box', '-webkit-box') + delimiter;
+			updated += plus.replacer('box', '-moz-box');
 
-			value = value.replace(property, '@[[' + output.length + ']]');
+			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
 		}
@@ -1052,13 +1052,13 @@ function autoprefixer(value) {
 
 		updated += delimiter + '-o-' + plus;
 
-		value = value.replace(property, '@[[' + output.length + ']]');
+		value = value.replacer(property, '@[[' + output.length + ']]');
 		output.push(updated);
 	}
 
 	length = output.length;
 	for (var i = 0; i < length; i++)
-		value = value.replace('@[[' + i + ']]', output[i]);
+		value = value.replacer('@[[' + i + ']]', output[i]);
 
 	output = null;
 	builder = null;
@@ -1125,7 +1125,7 @@ function autoprefixer_keyframes(value) {
 		updated += '@-moz-' + plus + delimiter;
 		updated += '@-o-' + plus;
 
-		value = value.replace(property, '@[[' + output.length + ']]');
+		value = value.replacer(property, '@[[' + output.length + ']]');
 		output.push(updated);
 	}
 
@@ -2304,7 +2304,7 @@ function parse(html, controller) {
 		if (i % 2 !== 0)
 			fn += str.replace('( arr[', '(arr[');
 		else
-			fn += "'" + str.replace(/\'/g, "\\'") + "'";
+			fn += "'" + str.replace(/\\\'/g, "\\\\'").replace(/\'/g, "\\'") + "'";
 	}
 
 	fn = '(function(arr,self,repository,model,session,sitemap,get,post,url,empty,global,helper,user){return ' + (fn.length === 0 ? 'empty' : fn) + ';})';
@@ -2350,7 +2350,7 @@ function removeComments(html) {
 			continue;
 		}
 
-		html = html.replace(comment, '');
+		html = html.replacer(comment, '');
 		beg = html.indexOf(tagBeg, end + 3);
 	}
 
@@ -2381,11 +2381,13 @@ function compressJS(html, index, framework) {
 		return html;
 
 	var js = html.substring(indexBeg, indexEnd + strTo.length).trim();
+	var beg = html.indexOf(js);
+	if (beg === -1)
+		return html;
+
 	var val = js.substring(strFrom.length, js.length - strTo.length).trim();
-
 	var compiled = exports.compile_javascript(val, framework).replace(/\\\\/g, '\\\\\\\\').replace(/\\n/g, "'+(String.fromCharCode(13)+String.fromCharCode(10))+'");
-	html = html.replace(js, (strFrom + compiled.dollar().trim() + strTo).trim());
-
+	html = html.replacer(js, strFrom + compiled.dollar().trim() + strTo.trim());
 	return compressJS(html, indexBeg + compiled.length + 9, framework);
 }
 
@@ -2408,7 +2410,7 @@ function compressCSS(html, index, framework) {
 	var css = html.substring(indexBeg, indexEnd + strTo.length);
 	var val = css.substring(strFrom.length, css.length - strTo.length).trim();
 	var compiled = exports.compile_less(val, true, framework);
-	html = html.replace(css, (strFrom + compiled.trim() + strTo).trim());
+	html = html.replacer(css, (strFrom + compiled.trim() + strTo).trim());
 	return compressCSS(html, indexBeg + compiled.length + 8, framework);
 }
 
@@ -2460,7 +2462,7 @@ function minifyHTML(html) {
 			}
 
 			cache[key] = value.replace(/\n/g, '\\n');
-			html = html.replace(value, key);
+			html = html.replacer(value, key);
 			beg = html.indexOf(tagBeg, beg + tagBeg.length);
 		}
 	}
@@ -2472,7 +2474,7 @@ function minifyHTML(html) {
 
 	for (var i = 0; i < length; i++) {
 		var key = keys[i];
-		html = html.replace(key, cache[key]);
+		html = html.replacer(key, cache[key]);
 	}
 
 	return html;
