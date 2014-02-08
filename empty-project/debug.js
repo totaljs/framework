@@ -17,7 +17,7 @@ function debug() {
 }
 
 function app() {
-	var fork = require('child_process').fork;	
+	var fork = require('child_process').fork;
 	var utils = require('total.js/utils');
 	var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules', directory + '/resources', directory + '/components', directory + '/models'];
 	var files = {};
@@ -167,7 +167,17 @@ function app() {
 		status = 1;
 	}
 
-	process.on('SIGTERM', function() {
+	process.on('SIGTERM', end);
+	process.on('SIGINT', end);
+	process.on('exit', end);
+
+	function end() {
+
+		if (arguments.callee.isEnd)
+			return;
+
+		arguments.callee.isEnd = true;
+
 		fs.unlink(pid, noop);
 
 		if (app === null) {
@@ -178,30 +188,7 @@ function app() {
 		process.kill(app.pid);
 		app = null;
 		process.exit(0);
-	});
-
-	process.on('SIGINT', function() {
-		fs.unlink(pid, noop);
-
-		if (app === null) {
-			process.exit(0);
-			return;
-		}
-
-		process.kill(app.pid);
-		app = null;
-		process.exit(0);
-	});
-
-	process.on('exit', function() {
-		fs.unlink(pid, noop);
-
-		if (app === null)
-			return;
-
-		process.kill(app.pid);
-		app = null;
-	});
+	}
 
 	function noop() {}
 
@@ -230,7 +217,7 @@ function app() {
 	refresh_directory();
 }
 
-if (isDebugging) 
+if (isDebugging)
 	debug()
 else if (!fs.existsSync(path.join(directory, 'debug.pid')))
 	app();

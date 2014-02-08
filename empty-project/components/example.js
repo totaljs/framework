@@ -1,7 +1,6 @@
 // optional
 exports.install = function(framework) {
 	// component doesn't support routing
-	console.log('OK');
 };
 
 // optional
