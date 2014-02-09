@@ -250,14 +250,15 @@ function viewViews() {
 	self.repository.template = [{ name: 'A', price: 10, B: false }, { name: 'B', price: 10.5, B: true }];
 
 	var output = self.view('a', { a: 'A', b: 'B', arr: ['1', '2', '3'] }, true);
-
+	
 	//console.log('\n\n\n');
-	//console.log(output);
+	//console.log('###' + output + '###');
+	//console.log('\n\n\n');
 	//self.framework.stop();
 	//return;
 	assert.ok(output.contains('var d="$\'"'), name + 'JS script special chars 1');
 	assert.ok(output.contains("var e='$\\'';"), name + "JS script special chars 2");
-	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>', name + ' minify html'));
+	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>'), name + ' minify html');
 	assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
 	assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');
 	assert.ok(output.contains('#helper-property-OK#'), name + 'helper property');
@@ -273,6 +274,8 @@ function viewViews() {
 	assert.ok(output.contains('#view-toggle#'), name + 'viewToggle()');
 	assert.ok(output.contains('#contentEMPTY#'), name + 'content');
 	assert.ok(output.contains('#content-toggle#'), name + 'contentToggle');
+	assert.ok(output.contains('#componentCOMPONENT#'), name + 'component');
+	assert.ok(output.contains('#titleTITLE#'), name + 'title');
 //	template-one<div>10.00</div><div>10</div><div>A</div><div>other</div><div>10.50</div><div>10.5</div><div>B</div><div>other</div>
 //	template-one<div>10.00</div><div>10</div><div>A</div><div>zero</div><div>10.50</div><div>10.5</div><div>B</div><div>one</div>
 	assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>A</div><div>zero</div><div>D</div><div>10.50</div><div>10.5</div><div>B</div><div>one</div><div>C</div>#'), name + 'template() - one');
@@ -292,6 +295,7 @@ function viewViews() {
 
 	assert.ok(output.contains('src="/js/jquery.js"'), name + 'place (routeJS)');
 	assert.ok(output.contains('src="//fabricjs.js"'), name + 'place');
+	assert.ok(output.contains('#dynamic<b>OK</b>#'), name + 'dynamic view');
 
 	self.repository.A = 'A';
 
@@ -311,7 +315,7 @@ function viewViewsIf() {
 	var self = this;
 	self.layout('');
 	self.repository.A = 'A';
-	self.view('c', { a: 'A', b: 'B' });
+	self.view('current/c', { a: 'A', b: 'B' });
 }
 
 function viewError() {

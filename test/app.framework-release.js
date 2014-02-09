@@ -4,14 +4,10 @@ var framework = require('../index');
 var http = require('http');
 var fs = require('fs');
 
-var port = parseInt(process.argv[2] || '8001');
-var url = 'http://127.0.0.1:' + port + '/';
+var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
-var max = 5000;
-var async = new utils.Async();
-
-framework.run(http, false, port);
-
+var max = 100;
+	
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
@@ -21,14 +17,13 @@ framework.onAuthorization = function(req, res, flags, cb) {
 framework.onError = function(error, name, uri) {
 
 	if (errorStatus === 0) {
-		console.log(error, name, uri, max);
+		console.log(error, name, uri);
+		console.log(error.stack);
 		framework.stop();
 		return;
 	}
 
 	if (errorStatus === 1) {
-		if (error.toString().indexOf('not found') === -1)
-			console.log(error);
 		assert.ok(error.toString().indexOf('not found') !== -1, 'view: not found problem');
 		errorStatus = 2;
 		return;
@@ -56,7 +51,6 @@ function end() {
 }
 
 function test_controller_functions(next) {
-
 	utils.request(url, 'GET', null, function(error, data, code, headers) {
 
 		if (error)
@@ -133,7 +127,7 @@ function test_routing(next) {
 		utils.request(url + 'pipe/', 'GET', null, function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert.ok(data.toString('utf8').isJSON(), 'controller.pipe() / responsePipe() problem');
+			assert.ok(data.toString('utf8').indexOf('telephone=no') !== -1, 'controller.pipe() / responsePipe() problem');
 			complete();
 		});
 	});
@@ -205,20 +199,9 @@ function run() {
 
 		assert.ok(framework.global.header > 0, 'partial - global');
 		assert.ok(framework.global.partial > 0, 'partial - partial');
+		assert.ok(framework.global.timeout > 0, 'timeout');
 
-		console.log('Max   :', memMax);
-		console.log('Leak  :', memLeak);
-		console.timeEnd('new');
-		console.log('');
-		console.log(framework.stats);
-		console.log('');
-		console.log('----------------------------');
-		console.log('');
 		end();
-
-		var diff = hd.end();
-		console.log(JSON.stringify(diff, null, '\t'));
-
 		return;
 	}
 
@@ -235,27 +218,19 @@ function run() {
 }
 
 var mem = require('memwatch');
-var memMax = 0;
-var memLeak = 0;
 
 mem.on('leak', function(info) {
-	memLeak++;
+	console.log('LEAK ->', info);
 });
 
 mem.on('stats', function(info) {
-	memMax = Math.max(memMax, info.max);
 	console.log('STATS ->', JSON.stringify(info));
 });
 
 framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html');
 
-var hd = null;
-
-setTimeout(function() {
-	hd = new mem.HeapDiff();
-}, 2000);
-
-setTimeout(function() {
-	console.time('new');
+framework.on('ready', function() {
 	run();
-}, 500);
+});
+
+framework.run(http, false, 8001);

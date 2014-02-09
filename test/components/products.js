@@ -16,5 +16,5 @@ exports.configure = function(setup) {
 // REQUIRED
 exports.render = function(data) {
 	// this === controller or this === framework
-	return '';
+	return 'COMPONENT';
 };

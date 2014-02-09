@@ -1829,493 +1829,272 @@ function Content(controller) {
 	this.prefix = controller.prefix;
 }
 
-/*
-	Parse HTML
-    @html {String}
-    return {Object}
-*/
-function parse(html, controller) {
-	var index = 0;
-	var count = 0;
+function view_parse(content) {
 
-	var copy = false;
-	var framework = controller.framework;
-	var code = '';
-	var cache = removeComments(compressCSS(compressJS(html, 0, framework), 0, framework));
+	content = removeComments(compressCSS(compressJS(content, 0, framework), 0, framework));
 
-	var indexBeg = 0;
-	var builder = [];
-	var execute = [];
-	var keys = {};
+	var builder = '';
+	var command = view_find_command(content, 0);
+
+	if (command === null)
+		builder = '+\'' + minifyHTML(content).replace(/\n/g, '\\n') + '\'';
+
+	var old = null;
 	var condition = 0;
-	var isCondition = false;
-	var plus = '';
-	var beg = '';
-	var end = '';
-	var name = '';
-	var length = cache.length;
+	var is = false;
 
-	var currentJS = 0;
-	var currentCSS = 0;
-	var currentImage = 0;
-	var currentDownload = 0;
-	var currentVideo = 0;
-	var currentView = 0;
-	var currentTemplate = 0;
-	var currentContent = 0;
+	while (command !== null) {
 
-	while (index < length) {
+		if (condition === 0 && builder !== '')
+			builder += '+';
 
-		var current = cache[index];
-		var next = cache[index + 1];
-
-		index++;
-
-		if (!copy && current === '@' && next === '{') {
-			copy = true;
-			count = 0;
-			indexBeg = index;
-			continue;
+		if (old !== null) {
+			var text = content.substring(old.end + 1, command.beg).trim();
+			if (text !== '') {
+				if (view_parse_plus(builder))
+					builder += '+';
+				builder += '\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
+			}
+		} else {
+			var text = content.substring(0, command.beg).trim();
+			if (text !== '') {
+				if (view_parse_plus(builder))
+					builder += '+';
+				builder += '\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
+			}			
 		}
 
-		if (copy && current === '{') {
-			count++;
-			if (count <= 1)
-				continue;
-		}
-
-		if (copy && current === '}') {
-
-			if (count > 1) {
-				count--;
-
-				if (copy)
-					code += current;
-
-				continue;
-			}
-
-			copy = false;
-
-			var other = cache.substring(indexBeg + code.length + 2);
-			code = code.trim();
-
-			var keycode = code;
-			var parIndex = keycode.indexOf('(');
-
-			if (parIndex !== -1) {
-				var parnm = keycode.substring(0, parIndex);
-				switch (parnm) {
-					case 'currentImage':
-						currentImage++;
-						break;
-					case 'currentJS':
-						currentJS++;
-						break;
-					case 'currentCSS':
-						currentCSS++;
-						break;
-					case 'currentVideo':
-						currentVideo++;
-						break;
-					case 'currentContent':
-						currentContent++;
-						break;
-					case 'currentView':
-						currentView++;
-						break;
-					case 'currentTemplate':
-						currentTemplate++;
-						break;
-
-					case 'image':
-					case 'routeImage':
-						keycode += currentImage;
-						break;
-
-					case 'js':
-					case 'routeJS':
-						keycode += currentJS;
-						break;
-
-					case 'css':
-					case 'routeCSS':
-						keycode += currentCSS;
-						break;
-
-					case 'routeVideo':
-						keycode += currentVideo;
-						break;
-
-					case 'view':
-					case 'viewToggle':
-						keycode += currentView;
-						break;
-
-					case 'template':
-					case 'templateToggle':
-						keycode += currentTemplate;
-						break;
-
-					case 'content':
-					case 'contetnToggle':
-						keycode += currentContent;
-						break;
-				}
-			}
-
-			var indexer = keys[keycode];
-			var push = false;
-
-			if (typeof(indexer) === UNDEFINED) {
-				indexer = execute.length;
-				keys[keycode] = indexer;
-				push = true;
-			}
-
-			var value = cache.substring(0, indexBeg - 1);
-
-			condition = code.substring(0, 2) === 'if' ? 1 : code.substring(0, 5) === 'endif' ? 3 : code.substring(0, 4) === 'else' ? 2 : 0;
-			builder.push(minifyHTML(value).replace(/\n/g, '\\n'));
-
-			var param = 'arr[' + indexer + ']';
-
-			if (condition > 0) {
-
-				switch (condition) {
-					case 1:
-						isCondition = true;
-						name = 'if';
-						builder.push('({0} ? '.format(param));
-						code = code.substring(2).trim();
-						break;
-					case 2:
-						builder.push(':');
-						break;
-					case 3:
-						isCondition = false;
-						builder.push(')');
-						break;
-				}
-
-			} else {
-
-				if (isCondition)
-					param = '( ' + param + '(self,repository,model,session,sitemap,get,post,url,empty,global,helper,user) || \'\')';
-
-				builder.push(param);
-			}
-
-			var isEncode = code[0] !== '!';
-
-			if (!isEncode)
-				code = code.substring(1);
-
-			var a = code.indexOf('.');
-			var b = code.indexOf('(');
-			var c = code.indexOf('[');
-
-			if (a === -1)
-				a = b;
-
-			if (b === -1)
-				b = a;
-
-			if (a === -1)
-				a = c;
-
-			if (b === -1)
-				b = c;
-
-			index = Math.min(a, b);
-
-			if (index === -1)
-				index = code.length;
-
-			if (condition !== 1)
-				name = code.substring(0, index);
-
-			if (push) {
-				beg = '';
-				end = '';
-				var type = 0;
-				var isDeclared = false;
-				switch (name) {
-
-					case 'options':
-					case 'readonly':
-					case 'selected':
-					case 'disabled':
-					case 'checked':
-					case 'etag':
-					case 'modified':
-					case 'image':
-					case 'download':
-					case 'json':
-					case 'dns':
-					case 'header':
-					case 'prefetch':
-					case 'prerender':
-					case 'next':
-					case 'prev':
-					case 'canonical':
-					case 'currentJS':
-					case 'currentCSS':
-					case 'currentImage':
-					case 'currentDownload':
-					case 'currentVideo':
-					case 'currentView':
-					case 'currentTemplate':
-					case 'currentContent':
-						isEncode = false;
-						isDeclared = true;
-						code = 'self.$' + code;
-						beg = 'return ';
-						break;
-
-					case 'view':
-					case 'viewToggle':
-					case 'content':
-					case 'contentToggle':
-					case 'template':
-					case 'templateToggle':
-					case 'component':
-					case 'componentToggle':
-						beg = 'return self.$';
-						type = 1;
-						break;
-
-					case 'radio':
-					case 'text':
-					case 'checkbox':
-					case 'hidden':
-					case 'textarea':
-					case 'password':
-						isEncode = false;
-						isDeclared = true;
-						code = 'self.$' + exports.appendModel(code);
-						beg = 'return ';
-						break;
-
-					case 'js':
-					case 'script':
-					case 'css':
-					case 'favicon':
-						beg = '';
-						isEncode = false;
-						isDeclared = true;
-						code = 'self.$' + code + (code.indexOf('(') === -1 ? '()' : '');
-						beg = 'return ';
-						break;
-
-					case 'routeJS':
-					case 'routeCSS':
-					case 'routeImage':
-					case 'routeFont':
-					case 'routeDownload':
-					case 'routeVideo':
-					case 'routeStatic':
-						isEncode = false;
-						isDeclared = true;
-						code = 'self.' + code;
-						beg = 'return ';
-						break;
-
-					case 'resource':
-						code = 'self.' + code;
-						isDeclared = true;
-						beg = 'return ';
-						break;
-
-					case 'model':
-						beg = 'return self.$';
-						break;
-
-					case 'global':
-					case 'model':
-					case 'repository':
-					case 'session':
-					case 'user':
-					case 'config':
-					case 'get':
-					case 'post':
-						beg = 'return self.';
-						break;
-
-					case 'functions':
-						beg = 'return self.framework.';
-						break;
-
-					case 'head':
-					case 'place':
-					case 'meta':
-					case 'sitemap':
-					case 'layout':
-					case 'title':
-					case 'description':
-					case 'keywords':
-
-						if (code.indexOf('(') !== -1) {
-							beg = 'self.';
-							end = ';return \'\'';
-						} else {
-							beg = 'return self.repository["$';
-							end = '"]';
-						}
-
-						break;
-
-					case 'host':
-						isEncode = false;
-
-						if (code.contains('('))
-							code = 'self.' + code;
-						else
-							code = 'self.host()';
-
-						beg = 'return ';
-						isDeclared = true;
-						break;
-
-					case 'url':
-						isEncode = false;
-
-						if (code.contains('('))
-							code = 'self.$' + code;
-						else
-							code = 'url';
-
-						beg = 'return ';
-						isDeclared = true;
-						break;
-				}
-
-				switch (name) {
-					case 'body':
-						type = 2;
-						break;
-
-					case 'title':
-					case 'description':
-					case 'keywords':
-						type = 3;
-						break;
-
-					case 'meta':
-					case 'head':
-					case 'sitemap':
-					case 'layout':
-						type = 4;
-						break;
-
-					case 'place':
-						type = 5;
-						break;
-
-					case 'functions':
-					case 'global':
-					case 'model':
-					case 'repository':
-					case 'session':
-					case 'user':
-					case 'config':
-					case 'get':
-					case 'post':
-					case 'dns':
-					case 'header':
-					case 'next':
-					case 'prev':
-					case 'prerender':
-					case 'prefetch':
-					case 'canonical':
-						type = 6;
-						break;
-				}
-
-				if (isCondition && condition === 0)
-					code = '(function(){' + beg + code + end + ';})';
-
-				execute.push({ run: code, name: name, isEncode: isEncode, isDeclared: isDeclared, type: type });
-			}
-
-			cache = other;
-
-			index = 0;
-			code = '';
-			continue;
-		}
-
-		if (copy)
-			code += current;
-	}
-
-	builder.push(minifyHTML(cache));
-
-	var fn = '';
-	var isPlus = true;
-	condition = 0;
-
-	length = builder.length;
-
-	for (var i = 0; i < length; i++) {
-
-		var str = builder[i];
-
-		if (str === '')
-			continue;
-
-		if (condition === 1 && str[0] === ':') {
-			condition = 2;
-			fn += ' : ';
-			isPlus = false;
-			continue;
-		}
-
-		if (condition !== 0 && str[0] === ')' && (builder[i + 1] || '') !== ')') {
-
-			isPlus = true;
-
-			if (condition !== 2)
-				fn += ' : empty';
-
-			fn += ')';
-			condition = 0;
-			continue;
-		}
-
-		if (isPlus && fn.length > 0)
-			fn += '+';
-
-		if (!isPlus)
-			isPlus = true;
-
-		if (str.substring(0, 4) === '(arr') {
-
-			if (condition !== 0) {
-				controller.framework.error(new Error('View engine doesn\'t support nested condition.'), 'View compiler', controller.req.uri);
-				fn = '';
-				break;
-			}
-
-			isPlus = false;
+		var cmd = content.substring(command.beg + 2, command.end);
+
+		if (cmd.substring(0, 3) === 'if ') {
+			if (view_parse_plus(builder))
+				builder += '+';
 			condition = 1;
+			builder += '(' + cmd.substring(3) + '?';
+			is = true;
+		} else if (cmd === 'else') {
+			condition = 2;
+			builder += ':';
+			is = true;
+		} else if (cmd === 'endif') {
+			if (condition === 1)
+				builder += ':\'\'';
+			condition = 0;
+			builder += ')';
+			is = true;
+		} else {
+			if (view_parse_plus(builder))
+				builder += '+';
+			builder += view_prepare(command.command);
 		}
 
-		if (i % 2 !== 0)
-			fn += str.replace('( arr[', '(arr[');
-		else
-			fn += "'" + str.replace(/\\\'/g, "\\\\'").replace(/\'/g, "\\'") + "'";
+		if (!is) {
+
+		}
+
+		old = command;
+		command = view_find_command(content, command.end);
 	}
 
-	fn = '(function(arr,self,repository,model,session,sitemap,get,post,url,empty,global,helper,user){return ' + (fn.length === 0 ? 'empty' : fn) + ';})';
+	if (old !== null) {
+		var text = content.substring(old.end + 1).trim();
+		if (text.length > 0)
+			builder += '+\'' + minifyHTML(text).replace(/\n/g, '\\n') + '\'';
+	}
 
 	try
 	{
-		return { generator: eval(fn), execute: execute };
-	} catch (ex) {
-		controller.framework.error(ex, 'View compiler', controller.req.uri);
+		return eval('(function(self,repository,model,session,sitemap,get,post,url,empty,global,helpers,user,config,functions){return ' + builder.substring(1) + '})');
+	} catch(ex) {
 		return null;
 	}
+}
+
+function view_parse_plus(builder) {
+	var c = builder[builder.length - 1];
+	if (c !== '!' && c !== '?' && c !== '+' && c !== '.' && c !== ':')
+		return true;
+	return false;
+}
+
+function view_prepare(command) {
+
+	var a = command.indexOf('.');
+	var b = command.indexOf('(');
+	var c = command.indexOf('[');
+
+	if (a === -1)
+		a = b;
+
+	if (b === -1)
+		b = a;
+
+	if (a === -1)
+		a = c;
+
+	if (b === -1)
+		b = c;
+
+	var index = Math.min(a, b);
+
+	if (index === -1)
+		index = command.length;
+
+	var name = command.substring(0, index);
+
+	switch (name) {
+		case 'repository':
+		case 'model':
+		case 'get':
+		case 'post':
+		case 'global':
+		case 'session':
+		case 'user':
+		case 'config':
+		case 'functions':
+		case 'model':
+			return '(' + command + ' || \'\').toString().encode()';
+
+		case '!repository':
+		case '!get':
+		case '!post':
+		case '!global':
+		case '!session':
+		case '!user':
+		case '!config':
+		case '!functions':
+		case '!model':
+			return '(' + command.substring(1) + ' || \'\')';
+
+		case 'body':
+			return 'self.output';
+
+		case 'resource':
+			return '(self.' + command + ' || \'\').toString().encode()';
+
+		case '!resource':
+			return '(self.' + command + ' || \'\')';
+
+		case 'host':
+			if (command.indexOf('(') === -1)
+				return 'self.host()';
+			return 'self.' + command;
+
+		case 'url':
+			if (command.indexOf('(') !== -1)
+				return 'self.$' + command;
+			return command = 'url';
+
+		case 'title':
+		case 'description':
+		case 'keywords':
+			if (command.indexOf('(') !== -1)
+				return 'self.' + command;
+			return '(repository[\'$' + command + '\'] || \'\')';
+
+		case 'head':
+		case 'place':
+		case 'meta':
+		case 'sitemap':
+			if (command.indexOf('(') !== -1)
+				return 'self.$' + command;
+			return '(repository[\'$' + command + '\'] || \'\')';
+
+		case 'js':
+		case 'script':
+		case 'css':
+		case 'favicon':
+			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
+
+		case 'routeJS':
+		case 'routeCSS':
+		case 'routeImage':
+		case 'routeFont':
+		case 'routeDownload':
+		case 'routeVideo':
+		case 'routeStatic':
+			return 'self.' + command;
+
+		case 'canonical':
+		case 'checked':
+		case 'component':
+		case 'componentToggle':
+		case 'content':
+		case 'contentToggle':
+		case 'currentContent':
+		case 'currentCSS':
+		case 'currentDownload':
+		case 'currentImage':
+		case 'currentJS':
+		case 'currentTemplate':
+		case 'currentVideo':
+		case 'currentView':
+		case 'disabled':
+		case 'dns':
+		case 'download':
+		case 'etag':
+		case 'header':
+		case 'image':
+		case 'json':
+		case 'layout':
+		case 'modified':
+		case 'next':
+		case 'options':
+		case 'prefetch':
+		case 'prerender':
+		case 'prev':
+		case 'readonly':
+		case 'selected':
+		case 'template':
+		case 'templateToggle':
+		case 'view':
+		case 'viewToggle':
+			return 'self.$' + command;
+		case 'radio':
+		case 'text':
+		case 'checkbox':
+		case 'hidden':
+		case 'textarea':
+		case 'password':
+			return 'self.$' + exports.appendModel(command);
+
+		default:
+			return 'helpers.' + command;
+	}
+
+	return command;
+}
+
+function view_find_command(content, index) {
+
+	var index = content.indexOf('@{', index);
+	if (index === -1)
+		return null;
+
+	var length = content.length;
+	var count = 0;
+
+	for (var i = index + 2; i < length; i++) {
+		var c = content[i];
+
+		if (c === '{') {
+			count++;
+			continue;
+		}
+
+		if (c !== '}')
+			continue;
+		else {
+			if (count > 0) {
+				count--;
+				continue;
+			}
+		}
+
+		return { beg: index, end: i, command: content.substring(index + 2, i).trim() };
+	}
+
+	return null;
 }
 
 function removeCondition(text, beg) {
@@ -2480,15 +2259,6 @@ function minifyHTML(html) {
 	return html;
 }
 
-/*
-	Render view
-    @name {String}
-    return {Object} :: return factory object
-*/
-View.prototype.render = function(name) {
-	var self = this;
-	return self.load(name, self.prefix);
-};
 
 /*
 	Read view
@@ -2503,7 +2273,7 @@ View.prototype.read = function(name) {
 	var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-views'], name + '.html');
 
 	if (fs.existsSync(filename))
-		return parse(fs.readFileSync(filename).toString('utf8'), self.controller);
+		return view_parse(fs.readFileSync(filename).toString('utf8'));
 
 	if (isOut)
 		return null;
@@ -2519,7 +2289,7 @@ View.prototype.read = function(name) {
 	filename = name[0] === '.' ? name.substring(1) : utils.combine(config['directory-views'], name + '.html');
 
 	if (fs.existsSync(filename))
-		return parse(fs.readFileSync(filename).toString('utf8'), self.controller);
+		return view_parse(fs.readFileSync(filename).toString('utf8'));
 
 	return null;
 };
@@ -2530,7 +2300,7 @@ View.prototype.read = function(name) {
     @prefix {String}
     return {Object} :: return factory object
 */
-View.prototype.load = function(name, prefix) {
+View.prototype.load = function(name, prefix, filename) {
 
 	var self = this;
 
@@ -2539,21 +2309,20 @@ View.prototype.load = function(name, prefix) {
 		return self.dynamic(name);
 
 	var isPrefix = (prefix || '').length > 0;
+	var key = 'view.' + filename + (isPrefix ? '#' + prefix : '');
 
-	var key = 'view.' + name + (isPrefix ? '#' + prefix : '');
-
-	var generator = self.cache.read(key);
+	var generator = self.controller.framework.temporary.views[key] || null;
 
 	if (generator !== null)
 		return generator;
 
-	generator = self.read(name + (isPrefix ? '#' + prefix : ''));
+	generator = self.read(filename + (isPrefix ? '#' + prefix : ''));
 
 	if (generator === null && isPrefix)
-		generator = self.read(name);
+		generator = self.read(filename);
 
 	if (generator !== null && !self.controller.isDebug)
-		self.cache.add(key, generator, new Date().add('minute', 5));
+		self.controller.framework.temporary.views[key] = generator;
 
 	return generator;
 };
@@ -2567,18 +2336,19 @@ View.prototype.dynamic = function(content) {
 
 	var self = this;
 	var key = content.md5();
-	var generator = self.cache.read(key);
+	var generator = self.controller.framework.temporary.views[key] || null;
 
 	if (generator !== null)
 		return generator;
 
-	generator = parse(content, self.controller);
+	generator = view_parse(content, self.controller);
 
 	if (generator !== null && !self.controller.isDebug)
-		self.cache.add(key, generator, new Date().add('minute', 5));
+		self.controller.framework.temporary.views[key] = generator;
 
 	return generator;
 };
+
 /*
 	Read content
     @name {String}
@@ -2597,16 +2367,6 @@ Content.prototype.read = function(name) {
 };
 
 /*
-	Render content
-    @name {String}
-    return {String}
-*/
-Content.prototype.render = function(name) {
-	var self = this;
-	return self.load(name, self.prefix);
-};
-
-/*
 	Load content
     @name {String}
     @prefix {String}
@@ -2618,7 +2378,7 @@ Content.prototype.load = function(name, prefix) {
 	var isPrefix = prefix.length > 0;
 
 	var key = 'content.' + name + (isPrefix ? '#' + prefix : '');
-	var content = self.cache.read(key);
+	var content = self.controller.framework.temporary.views[key] || null;
 
 	if (content !== null)
 		return content;
@@ -2632,7 +2392,7 @@ Content.prototype.load = function(name, prefix) {
 		self.controller.framework.error('Content "' + name + '" not found.', self.controller.name, self.controller.uri);
 
 	if (content !== null && !self.controller.isDebug)
-		self.cache.add(key, content, new Date().add('minute', 5));
+		self.controller.framework.temporary.views[key] = content;
 
 	return content;
 };
@@ -2643,8 +2403,8 @@ Content.prototype.load = function(name, prefix) {
     @name {String}
     return {Object}
 */
-exports.generateView = function(controller, name) {
-	return new View(controller).render(name);
+exports.generateView = function(controller, name, plus) {
+	return new View(controller).load(name, controller.prefix, plus);
 };
 
 /*
@@ -2654,7 +2414,7 @@ exports.generateView = function(controller, name) {
     return {String}
 */
 exports.generateContent = function(controller, name) {
-	return new Content(controller).render(name);
+	return new Content(controller).load(name, controller.prefix);
 };
 
 /*
@@ -3035,35 +2795,35 @@ Template.prototype.read = function(name) {
     @prefix {String} :: optional
     return {Object} :: return parsed HTML
 */
-Template.prototype.load = function(name, prefix) {
+Template.prototype.load = function(name, prefix, plus) {
 
 	var self = this;
 
 	// Is dynamic content?
-	if (name.indexOf('{') !== -1 && name.indexOf('}') !== -1) {
+	if (name.indexOf('{') !== -1) {
 		self.name = '<dynamic>';
 		return self.dynamic(name);
 	}
 
-	self.name = name + (isPrefix ? '#' + prefix : '');
+	self.name = plus + name + (isPrefix ? '#' + prefix : '');
 
 	var isPrefix = (prefix || '').length > 0;
-	var key = 'template.' + name + (isPrefix ? '#' + prefix : '') + (self.repository !== null ? '.repository' : '');
-	var generator = self.cache.read(key);
+	var key = 'template.' + plus + name + (isPrefix ? '#' + prefix : '') + (self.repository !== null ? '.repository' : '');
+	var generator = self.controller.framework.temporary.views[key] || null;
 
 	if (generator !== null)
 		return generator;
 
-	generator = self.read(name + (isPrefix ? '#' + prefix : ''));
+	generator = self.read(plus + name + (isPrefix ? '#' + prefix : ''));
 
 	if (generator === null && isPrefix)
-		generator = self.read(name);
+		generator = self.read(plus + name);
 
 	if (generator === null)
-		self.controller.framework.error('Template "' + name + '" not found.', self.controller.name, self.controller.uri);
+		self.controller.framework.error('Template "' + plus + name + '" not found.', self.controller.name, self.controller.uri);
 
 	if (generator !== null && !self.controller.isDebug)
-		self.cache.add(key, generator, new Date().add('minute', 5));
+		self.controller.framework.temporary.views[key] = generator;
 
 	return generator;
 };
@@ -3095,10 +2855,10 @@ Template.prototype.dynamic = function(content) {
     @name {String}
     return {String}
 */
-Template.prototype.render = function(name) {
+Template.prototype.render = function(name, plus) {
 
 	var self = this;
-	var generator = self.load(name, self.prefix);
+	var generator = self.load(name, self.prefix, plus);
 
 	if (generator === null)
 		return '';
@@ -3107,9 +2867,6 @@ Template.prototype.render = function(name) {
 
 	var beg = generator.repositoryBeg !== null ? compile(generator.repositoryBeg, self.repository, false, self.controller) : generator.beg;
 	var end = generator.repositoryEnd !== null ? compile(generator.repositoryEnd, self.repository, false, self.controller) : generator.end;
-
-	if (name !== 'comments')
-		return beg + mid + end;
 
 	return beg + mid + end;
 };
@@ -3194,6 +2951,6 @@ function compile_eval(generator, model, indexer, controller) {
 	@model {Array of Object}
 	@repository {Object} :: optional
 */
-exports.generateTemplate = function(controller, name, model, repository) {
-	return new Template(controller, model, repository).render(name);
+exports.generateTemplate = function(controller, name, model, repository, plus) {
+	return new Template(controller, model, repository).render(name, plus);
 };

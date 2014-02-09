@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.1.1
 - added: node harmony functions (see example)
 - added: gc() into framework.on('service')
 - added: config['allow-performance'] true/false (default, false)
+- added: new views/templates/contents cache
 
 - updated: auto-vendor-prefixes (updated linear-gradient prioraty according to w3schools.com)
 - updated: websocket.send(message, [id], [blacklist]), id and blacklist can be a function
@@ -13,7 +14,8 @@ IN DEVELOPMENT ======= 1.1.1
 
 - fixed: WebSocket skips throwing error (socket close, EPIPE)
 - fixed: mail
-- fixed: view rendering
+
+- rewrited: view engine
 
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/harmony
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/routing-inline

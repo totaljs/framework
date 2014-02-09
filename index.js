@@ -27,7 +27,6 @@ var RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
 var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', 'text/html'];
-
 var _controller = '';
 
 global.builders = require('./builders');
@@ -141,7 +140,8 @@ function Framework() {
 	this.temporary = {
 		path: {},
 		processing: {},
-		range: {}
+		range: {},
+		views: {}
 	};
 
 	this.stats = {
@@ -243,6 +243,7 @@ Framework.prototype.refresh = function(clear) {
 	self.configureMapping();
 	self.temporary.path = {};
 	self.temporary.range = {};
+	self.temporary.views = {};
 	self.emit('reconfigure');
 
 	if (clear || true)
@@ -393,6 +394,12 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		maximumSize = tmp;
 	}
 
+	if (typeof(funcExecute) === OBJECT) {
+		var tmp = flags;
+		funcExecute = flags;
+		flags = tmp;
+	}
+
 	if (!utils.isArray(flags) && typeof(flags) === 'object') {
 		maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
 		partial = flags['partials'] || flags['partial'];
@@ -490,6 +497,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		partial = null;
 
 	self.routes.web.push({ priority: priority, subdomain: subdomain, name: (_controller || '').length === 0 ? 'unknown' : _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: (maximumSize || self.config['default-request-length']) * 1024, partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: isRaw, isMEMBER: isMember, isXSS: flags.indexOf('xss') !== -1 });
+
+	if (_controller.length === 0)
+		self._routeSort();
+
 	return self;
 };
 
@@ -525,6 +536,12 @@ Framework.prototype.partial = function(name, funcExecute) {
 	return {Framework}
 */
 Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, maximumSize) {
+
+	if (typeof(funcExecute) === OBJECT) {
+		var tmp = flags;
+		funcExecute = flags;
+		flags = tmp;
+	}
 
 	if (!utils.isArray(flags) && typeof(flags) === 'object') {
 		protocols = flags['protocols'] || flags['protocol'];
@@ -601,6 +618,10 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		isMember = true;
 
 	self.routes.websockets.push({ name: (_controller || '').length === 0 ? 'unknown' : _controller, url: routeURL, param: arr, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: (maximumSize || self.config['default-websocket-request-length']) * 1024, isMEMBER: isMember, isJSON: isJSON, isBINARY: isBINARY });
+
+	if (_controller.length === 0)
+		self._routeSort();
+
 	return self;
 };
 
@@ -2989,6 +3010,7 @@ Framework.prototype._service = function(count) {
 		self.emit('clear', 'temporary', self.temporary);
 		self.temporary.path = {};
 		self.temporary.range = {};
+		self.temporary.views = {};
 	}
 
 	self.emit('service', count);
@@ -3057,7 +3079,7 @@ Framework.prototype._request = function(req, res) {
     if (self.config.debug)
 		res.setHeader('Mode', 'debug');
 
-    res.success = false;
+	res.success = false;
 	req.uri = parser.parse(protocol + '://' + req.host + req.url);
 	req.path = internal.routeSplit(req.uri.pathname);
 	req.processing = 0;
@@ -3080,6 +3102,7 @@ Framework.prototype._request = function(req, res) {
 
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	req.isProxy = headers['x-proxy'] === 'total.js';
+
 	req.data = { get: {}, post: {}, files: [] };
 	req.flags = null;
 
@@ -5327,7 +5350,6 @@ Subscribe.prototype._end = function() {
 
 	// A route has not allowed XSS
 	if (!self.route.isXSS && self.framework.onXSS !== null) {
-
 		if (self.framework.onXSS(self.req.buffer_data)) {
 			self.req.flags.push('xss');
 			self.framework.stats.request.xss++;
@@ -5411,6 +5433,7 @@ Subscribe.prototype._cancel = function() {
 	if (self.controller === null)
 		return;
 
+	self.controller.isTimeout = true;
 	self.controller.isCanceled = true;
 	self.route = self.framework.lookup(self.req, '#408', []);
 	self.execute(408);
@@ -5452,6 +5475,7 @@ function Controller(name, req, res, subscribe) {
 	this.isLayout = false;
 	this.isCanceled = false;
 	this.isConnected = true;
+	this.isTimeout = false;
 
 	this.repository = {};
 
@@ -5929,6 +5953,12 @@ Controller.prototype.meta = function() {
 	return self;
 };
 
+Controller.prototype.$meta = function() {
+	var self = this;
+	self.meta.apply(self, arguments);
+	return '';
+};
+
 /*
 	Sitemap generator
 	@name {String}
@@ -5963,6 +5993,13 @@ Controller.prototype.sitemap = function(name, url, index) {
 	return self;
 };
 
+
+Controller.prototype.$sitemap = function(name, url, index) {
+	var self = this;
+	self.sitemap.apply(self, arguments);
+	return '';
+}
+
 /*
 	Module caller
 	@name {String}
@@ -5982,6 +6019,18 @@ Controller.prototype.layout = function(name) {
 	self.layoutName = name;
 	return self;
 };
+
+/*
+	Layout setter
+	@name {String} :: layout filename
+	return {Controller};
+*/
+Controller.prototype.$layout = function(name) {
+	var self = this;
+	self.layoutName = name;
+	return '';
+};
+
 
 /*
 	Get a model
@@ -6577,13 +6626,19 @@ Controller.prototype.head = function() {
 
 	header += output;
 	self.repository[REPOSITORY_HEAD] = header;
+	return self;
+};
+
+Controller.prototype.$head = function() {
+	var self = this;
+	self.head.apply(self, arguments);
 	return '';
 };
 
 /*
 	Internal function for views
 	@arguments {String}
-	return {String}
+	return {Controller}
 */
 Controller.prototype.place = function(name) {
 
@@ -6616,6 +6671,14 @@ Controller.prototype.place = function(name) {
 	}
 
 	self.repository[key] = (self.repository[key] || '') + output;
+	return self;
+};
+
+Controller.prototype.$place = function() {
+	var self = this;
+	if (arguments.length === 1)
+		return self.place.apply(self, arguments);
+	self.place.apply(self, arguments);
 	return '';
 };
 
@@ -7192,10 +7255,12 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 		return '';
 	}
 
-	if (name[0] !== '~')
-		name = self._currentTemplate + name;
+	var plus = '';
 
-	return internal.generateTemplate(self, name, model, repository);
+	if (name[0] !== '~')
+		plus = self._currentTemplate;
+
+	return internal.generateTemplate(self, name, model, repository, plus);
 };
 
 /*
@@ -7909,38 +7974,35 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		return self;
 
 	var skip = name[0] === '~';
+	var filename = name;
 
 	if (!self.isLayout && !skip)
-		name = self._currentView + name;
+		filename = self._currentView + name;
 
 	if (skip)
-		name = name.substring(1);
+		filename = name.substring(1);
 
-	var generator = internal.generateView(self, name);
+	var generator = internal.generateView(self, name, filename);
 	if (generator === null) {
 
 		if (isPartial)
 			return '';
 
-		self.view500('View "' + name + '" not found.');
+		var err = 'View "' + name + '" not found.';
+
+		if (self.isLayout) {
+			self.subscribe.success();
+			self.framework.response500(self.req, self.res, err);
+			return;
+		}
+
+		self.view500(err);
 		return;
 	}
 
-	var values = [];
-	var repository = self.repository;
-	var config = self.config;
-	var get = self.get;
-	var post = self.post;
-	var session = self.session;
-	var user = self.user;
-	var helper = self.framework.helpers;
-	var fn = generator.generator;
 	var sitemap = null;
-	var url = self.url;
 	var empty = '';
-	var global = self.framework.global;
 	var value = '';
-	var condition = false;
 
 	self.$model = model;
 
@@ -7955,127 +8017,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		self._currentContent = self._defaultContent || '';
 	}
 
-	var length = generator.execute.length;
-	for (var i = 0; i < length; i++) {
-
-		var execute = generator.execute[i];
-		var isEncode = execute.isEncode;
-		var run = execute.run;
-		var evl = true;
-
-		if (execute.name === 'if') {
-			values[i] = eval(run);
-			condition = true;
-			continue;
-		}
-
-		if (execute.name === 'else') {
-			values[i] = '';
-			condition = true;
-			continue;
-		}
-
-		if (execute.name === 'endif') {
-			values[i] = '';
-			condition = false;
-			continue;
-		}
-
-		switch (execute.type) {
-			case 1:
-				if (run.indexOf('sitemap') !== -1)
-					sitemap = self.sitemap();
-
-				isEncode = false;
-
-				if (!condition)
-					run = 'self.$' + run;
-				break;
-
-			case 2:
-				isEncode = false;
-				evl = false;
-				value = self.output;
-				break;
-
-			case 3:
-				run = 'self.repository["$'+ execute.name + '"]';
-				break;
-
-			case 4:
-
-				isEncode = false;
-
-				if (run.indexOf('(') !== -1) {
-					if (!condition) {
-						eval('self.' + run);
-						evl = false;
-						values[i] = '';
-						continue;						
-					}
-				} else
-					run = execute.name === 'head' ? 'self.head()' : 'self.repository["$'+ execute.name + '"]';
-
-				break;
-
-			case 5:
-				isEncode = false;
-				run = 'self.' + run;
-				break;
-
-			case 6:
-				break;
-
-			default:
-
-				if (!execute.isDeclared) {
-					if (typeof(helper[execute.name]) === UNDEFINED) {
-						self.framework.error(new Error('Helper "' + execute.name + '" is not defined.'), 'view -> ' + name, self.req.uri);
-						evl = false;
-					}
-					else {
-						isEncode = false;
-						if (condition)
-							run = run.replacer('(function(){', '(function(){return helper.');
-						else
-							run = 'helper.' + internal.appendThis(run);
-					}
-				}
-
-			break;
-		}
-
-		if (evl) {
-			try
-			{
-				value = eval(run);
-			} catch (ex) {
-				self.framework.error(ex, 'View error "' + name + '", problem with: ' + execute.name, self.req.uri);
-			}
-		}
-
-		if (typeof(value) === FUNCTION) {
-			values[i] = value;
-			continue;
-		}
-
-		if (value === null)
-			value = '';
-
-		var type = typeof(value);
-
-		if (type === UNDEFINED)
-			value = '';
-		else if (type !== STRING)
-			value = value.toString();
-
-		if (isEncode)
-			value = value.toString().encode();
-
-		values[i] = value;
-	}
-
-	value = fn.call(self, values, self, repository, model, session, sitemap, get, post, url, empty, global, helper, user).replace(/\\n/g, '\n');
+	value = generator.call(self, self, self.repository, model, self.session, sitemap, self.get, self.post, self.url, empty, self.framework.global, self.framework.helpers, self.user, self.config, self.framework.functions).replace(/\\n/g, '\n');
 
 	if (isPartial)
 		return value;
@@ -8094,7 +8036,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	self.output = value;
 	self.isLayout = true;
-	self.view(self.layoutName, null, headers);
+	self.view(self.layoutName, self.$model, headers);
 	return self;
 };
 

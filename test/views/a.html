@@ -1,3 +1,4 @@
+@{meta('TITLE')}
 @{dns('//fonts.googleapis.com')}
 @{prefetch('http://daker.me/2013/05/hello-world.html')}
 @{prerender('http://daker.me/2013/05/hello-world.html')}
@@ -27,11 +28,14 @@
 @{currentTemplate('current')}
 #template-more@{template('more', repository.template)}#
 #routejs-@{routeJS('p.js')}#
+#title@{title}#
+#component@{component('products')}#
 #@{head}#
 #@{download('test.pdf', 'content', 'test')}#
 a
 @{place('footer', 'jquery.js')}
 @{place('footer', '//fabricjs.js')}
+#dynamic@{view('<b>OK</b>')}#
 <!-- COMMENT @{error_mark} -->
 <script type="text/template"><textarea>
 a</textarea>

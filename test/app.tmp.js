@@ -20,67 +20,181 @@ var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
 
-var tmp = "template('more', price.asda, 'asdsa', repository['asdasd'])";
+function view_parse(content) {
 
-function params(tmp, replace) {
+	var builder = '';
+	var command = view_find_command(content, 0);
 
-	var isCopy = false;
+	if (command === null) {
+		builder.push(content);
+		return builder;
+	}
 
-	var index = tmp.indexOf('(');
-	if (index === -1)
-		return false;
+	var old = null;
+	var condition = 0;
+	var is = false;
 
-	tmp = tmp.substring(index + 1, tmp.length - 1).replace(/\s/g, '').split(',');
-	var length = tmp.length;
+	while (command !== null) {
 
-	for (var i = 0; i < length; i++)
-		replace(tmp[i], i);
+		if (condition === 0 && builder !== '')
+			builder += '+';
 
-	return true;
+		if (old !== null) {
+			var text = content.substring(old.end + 1, command.beg).replace(/\n/g, '');
+			if (text !== '') {
+				if (view_parse_plus(builder))
+					builder += '+';
+				builder += '\'' + text + '\'';
+			}
+		}
+
+		var cmd = content.substring(command.beg + 2, command.end);
+
+		if (cmd.substring(0, 3) === 'if ') {
+			if (view_parse_plus(builder))
+				builder += '+';
+			condition = 1;
+			builder += '(' + cmd.substring(3) + '?';
+			is = true;
+		} else if (cmd === 'else') {
+			condition = 2;
+			builder += ':';
+			is = true;
+		} else if (cmd === 'endif') {
+
+			if (condition === 1)
+				builder += ':\'\'';
+			condition = 0;
+			builder += ')';
+			is = true;
+		} else {
+			if (view_parse_plus(builder))
+				builder += '+';
+			builder += view_prepare(command.command);
+		}
+
+		if (!is) {
+
+		}
+
+		old = command;
+		command = view_find_command(content, command.end);
+	}
+
+	if (old !== null) {
+		var text = content.substring(old.end + 1).trim();
+		if (text.length > 0)
+			builder += '+\'' + text + '\'';
+	}
+
+	console.log(builder);
+	return builder;
 }
 
-//console.log((1).pluralize('zero', 'one', 'few', 'other'));
+function view_parse_plus(builder) {
+	var c = builder[builder.length - 1];
+	if (c !== '!' && c !== '?' && c !== '+' && c !== '.' && c !== ':')
+		return true;
+	return false;
+}
 
-// var Stream = require('stream');
-//var writer = fs.createWriteStream('/users/petersirka/desktop/kokotar.zip')
-//var reader = fs.createReadStream('/users/petersirka/desktop/user.zip');
+function view_prepare(command) {
 
-//reader.pipe(writer);
-//console.log(writer);
-/*
-var image = Image.load('/users/petersirka/desktop/header.jpg', false);
-image.resize('20%');
-image.quality(90);
-image.minify();
-image.save('/users/petersirka/desktop/c.jpg');
-*/
+	var a = command.indexOf('.');
+	var b = command.indexOf('(');
+	var c = command.indexOf('[');
 
-//image.pipe(fs.createWriteStream('/users/petersirka/desktop/c.jpg'));
+	if (a === -1)
+		a = b;
 
-/*
-var p = exec('gm -convert - -resize 10% "/users/petersirka/desktop/b.jpg"', function(err, stdout) {
-	console.log('OK');
-});
+	if (b === -1)
+		b = a;
 
-fs.createReadStream('/users/petersirka/desktop/a.jpg').pipe(p.stdin);
-*/
+	if (a === -1)
+		a = c;
 
-// message.attachment('/users/petersirka/desktop/wall.png');
+	if (b === -1)
+		b = c;
 
-var mail = new require('../mail');
-mail.debug = true;
+	var index = Math.min(a, b);
+	var name = command.substring(0, index);
 
-// var message = mail.create('subject: Peter Širka', '+ľščťžýáíé');
+	switch (name) {
+		case 'repository':
+		case 'model':
+		case 'get':
+		case 'post':
+		case 'global':
+		case 'session':
+		case 'user':
+		case 'config':
+			return '(' + command + ' || \'\').toString().encode()';
+		case '!repository':
+		case '!model':
+		case '!get':
+		case '!post':
+		case '!global':
+		case '!session':
+		case '!user':
+		case '!config':
+			return '(' + command.substring(1) + ' || \'\')';
 
-//message.to('petersirka@858project.com');
-//message.from('petersirka@gmail.com', 'Janko');
-//message.attachment('/users/petersirka/desktop/test.js', 'test.js');
-//message.attachment('/users/petersirka/desktop/a.zip', 'b.zip');
+		case 'options':
+		case 'readonly':
+		case 'selected':
+		case 'disabled':
+		case 'checked':
+		case 'etag':
+		case 'modified':
+		case 'image':
+		case 'download':
+		case 'json':
+		case 'dns':
+		case 'header':
+		case 'prefetch':
+		case 'prerender':
+		case 'next':
+		case 'prev':
+		case 'canonical':
+		case 'currentJS':
+		case 'currentCSS':
+		case 'currentImage':
+		case 'currentDownload':
+		case 'currentVideo':
+		case 'currentView':
+		case 'currentTemplate':
+		case 'currentContent':
+		case 'layout':
+			return 'self.$' + command;
+	}
 
-// message.send('mail.858project.com', { user: '@858project.com', password: '' });
+	return command;
+}
 
-//message.send('smtp.gmail.com', { port: 465, secure: true, user: 'your@gmail.com', password: '' });
-//message.send();
+function view_find_command(content, index) {
 
-//var socket = new tls.connect(465, 'smtp.gmail.com');
-//var isSended = false;
+	var index = content.indexOf('@{', index);
+	if (index === -1)
+		return null;
+
+	var length = content.length;
+	var count = 0;
+
+	for (var i = index; i < length; i++) {
+		var c = content[i];
+
+		if (c === '{') {
+			count++;
+			continue;
+		}
+
+		if (c !== '}')
+			continue;
+
+		return { beg: index, end: i, command: content.substring(index + 2, i).trim() };
+	}
+
+	return null;
+}
+
+view_parse(fs.readFileSync('views/parse.html').toString());
