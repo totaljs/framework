@@ -1837,7 +1837,7 @@ function view_parse(content) {
 	var command = view_find_command(content, 0);
 
 	if (command === null)
-		builder = '+\'' + minifyHTML(content).replace(/\n/g, '\\n') + '\'';
+		builder = '+\'' + minifyHTML(content).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 
 	var old = null;
 	var condition = 0;
@@ -1899,15 +1899,11 @@ function view_parse(content) {
 	if (old !== null) {
 		var text = content.substring(old.end + 1).trim();
 		if (text.length > 0)
-			builder += '+\'' + minifyHTML(text).replace(/\n/g, '\\n') + '\'';
+			builder += '+\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 	}
 
-	try
-	{
-		return eval('(function(self,repository,model,session,sitemap,get,post,url,empty,global,helpers,user,config,functions){return ' + builder.substring(1) + '})');
-	} catch(ex) {
-		return null;
-	}
+	var fn = '(function(self,repository,model,session,sitemap,get,post,url,empty,global,helpers,user,config,functions){return ' + builder.substring(1) + '})';
+	return eval(fn);
 }
 
 function view_parse_plus(builder) {
@@ -2270,6 +2266,7 @@ View.prototype.read = function(name) {
 	var self = this;
 	var config = self.controller.config;
 	var isOut = name[0] === '.';
+
 	var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-views'], name + '.html');
 
 	if (fs.existsSync(filename))
