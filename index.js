@@ -5963,7 +5963,7 @@ Controller.prototype.$meta = function() {
 	}
 
 	var repository = self.repository;
-	return self.framework.onMeta(repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
+	return self.framework.onMeta.call(self, repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
 };
 
 /*

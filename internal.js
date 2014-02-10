@@ -1972,6 +1972,7 @@ function view_prepare(command) {
 			return '(self.' + command + ' || \'\')';
 
 		case 'host':
+		case 'hostname':
 			if (command.indexOf('(') === -1)
 				return 'self.host()';
 			return 'self.' + command;
