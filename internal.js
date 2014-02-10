@@ -1990,11 +1990,15 @@ function view_prepare(command) {
 
 		case 'head':
 		case 'place':
-		case 'meta':
 		case 'sitemap':
 			if (command.indexOf('(') !== -1)
 				return 'self.$' + command;
 			return '(repository[\'$' + command + '\'] || \'\')';
+
+		case 'meta':
+			if (command.indexOf('(') !== -1)
+				return 'self.$' + command;
+			return 'self.$meta()';
 
 		case 'js':
 		case 'script':

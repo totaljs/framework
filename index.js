@@ -394,8 +394,8 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		maximumSize = tmp;
 	}
 
-	if (typeof(funcExecute) === OBJECT) {
-		var tmp = flags;
+	if (typeof(funcExecute) === OBJECT || funcExecute instanceof Array) {
+		var tmp = funcExecute;
 		funcExecute = flags;
 		flags = tmp;
 	}
@@ -5017,6 +5017,7 @@ var REPOSITORY_PLACE = '$place';
 var REPOSITORY_META_TITLE = '$title';
 var REPOSITORY_META_DESCRIPTION = '$description';
 var REPOSITORY_META_KEYWORDS = '$keywords';
+var REPOSITORY_META_IMAGE = '$image';
 var ATTR_END = '"';
 
 function Subscribe(framework, req, res, type) {
@@ -5949,13 +5950,82 @@ Controller.prototype.meta = function() {
 	self.repository[REPOSITORY_META_TITLE] = arguments[0] || '';
 	self.repository[REPOSITORY_META_DESCRIPTION] = arguments[1] || '';
 	self.repository[REPOSITORY_META_KEYWORDS] = arguments[2] || '';
-	self.repository[REPOSITORY_META] = self.framework.onMeta.apply(this, arguments);
+	self.repository[REPOSITORY_META_IMAGE] = arguments[3] || '';
 	return self;
 };
 
 Controller.prototype.$meta = function() {
 	var self = this;
-	self.meta.apply(self, arguments);
+
+	if (arguments.length !== 0) {
+		self.meta.apply(self, arguments);
+		return '';
+	}
+
+	var repository = self.repository;
+	return self.framework.onMeta(repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
+};
+
+/*
+	Set Meta Title
+	@value {String}
+	return {Controller};
+*/
+Controller.prototype.title = function(value) {
+	var self = this;
+	self.$title(value);
+	return self;
+};
+
+/*
+	Set Meta Description
+	@value {String}
+	return {Controller};
+*/
+Controller.prototype.description = function(value) {
+	var self = this;
+	self.$description(value);
+	return self;
+};
+
+/*
+	Set Meta Keywords
+	@value {String}
+	return {Controller};
+*/
+Controller.prototype.keywords = function(value) {
+	var self = this;
+	self.$keywords(value);
+	return self;
+};
+
+Controller.prototype.$title = function(value) {
+	var self = this;
+
+	if (!value)
+		return self.repository[REPOSITORY_META_TITLE] || '';
+
+	self.repository[REPOSITORY_META_TITLE] = value;
+	return '';
+};
+
+Controller.prototype.$description = function(value) {
+	var self = this;
+
+	if (!value)
+		return self.repository[REPOSITORY_META_DESCRIPTION] || '';
+
+	self.repository[REPOSITORY_META_DESCRIPTION] = value;
+	return '';
+};
+
+Controller.prototype.$keywords = function(value) {
+	var self = this;
+
+	if (!value)
+		return self.repository[REPOSITORY_META_KEYWORDS] || '';
+
+	self.repository[REPOSITORY_META_KEYWORDS] = value;
 	return '';
 };
 

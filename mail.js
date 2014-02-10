@@ -263,8 +263,7 @@ Message.prototype._send = function(socket, options) {
 	var message = [];
 	var host = getHostName(self.addressFrom.address);
 	var date = new Date();
-	var timestamp = date.getTime();
-	var boundary = '----totaljs' + timestamp;
+	var boundary = '--totaljs' + date.getTime();
 	var isAuthenticated = false;
 	var isAuthorization = false;
 	var authType = '';
@@ -291,6 +290,9 @@ Message.prototype._send = function(socket, options) {
 	};
 
 	buffer.push('MAIL FROM: <' + self.addressFrom.address + '>');
+
+	message.push('Message-ID: <' + GUID() + '@WIN-' + s4() + '>');
+	message.push('MIME-Version: 1.0');
 	message.push('From: ' + (self.addressFrom.name.length > 0 ? '"' + self.addressFrom.name + '" ' + '<' + self.addressFrom.address + '>' : self.addressFrom.address));
 
 	var length = self.addressTo.length;
@@ -306,7 +308,6 @@ Message.prototype._send = function(socket, options) {
 
 		message.push('To: ' + builder);
 		builder = '';
-
 	}
 
 	length = self.addressCC.length;
@@ -333,10 +334,8 @@ Message.prototype._send = function(socket, options) {
 	buffer.push('QUIT');
 	buffer.push('');
 
-	message.push('Subject: ' + self.subject);
-	message.push('MIME-Version: 1.0');
-	message.push('Message-ID: <' + timestamp + host + '>');
 	message.push('Date: ' + date.toUTCString());
+	message.push('Subject: ' + self.subject);
 
 	length = self.addressReply.length;
 	if (length > 0) {
@@ -348,14 +347,14 @@ Message.prototype._send = function(socket, options) {
 		builder = '';
 	}
 
-	message.push('Content-Type: multipart/mixed; boundary="' + boundary + '"');
+	message.push('Content-Type: multipart/mixed; boundary=' + boundary);
 	message.push('');
 
 	message.push('--' + boundary);
 	message.push('Content-Type: ' + (self.body.indexOf('<') !== -1 && self.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
 	message.push('Content-Transfer-Encoding: base64');
-	message.push(CRLF);
-	message.push(new Buffer(self.body.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n')).toString('base64'));
+	message.push('');
+	message.push(prepareBASE64(new Buffer(self.body.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n')).toString('base64')));
 
 	length = self.files.length;
 
@@ -535,7 +534,7 @@ Message.prototype._writeAttachment = function(write, boundary, socket) {
 
 		while (count < length) {
 
-			count += 72;
+			count += 68;
 
 			if (count > length)
 				count = length;
@@ -553,11 +552,36 @@ Message.prototype._writeAttachment = function(write, boundary, socket) {
 	return self;
 };
 
+function prepareBASE64(message) {
+
+	var index = 0;
+	var output = '';
+	var length = message.length;
+
+	while (index < length) {
+		var max = index + 68;
+		if (max > length)
+			max = length;
+		output += message.substring(index, max) + '\n';
+		index = max;
+	}
+
+	return output;
+}
+
 /*
 	@address {String}
 */
 function getHostName(address) {
     return address.substring(address.indexOf('@') + 1);
+}
+
+function s4() {
+	return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
+}
+
+function GUID() {
+	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
 
 // ======================================================
