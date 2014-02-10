@@ -8000,7 +8000,6 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		return;
 	}
 
-	var sitemap = null;
 	var empty = '';
 	var value = '';
 
@@ -8017,7 +8016,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		self._currentContent = self._defaultContent || '';
 	}
 
-	value = generator.call(self, self, self.repository, model, self.session, sitemap, self.get, self.post, self.url, empty, self.framework.global, self.framework.helpers, self.user, self.config, self.framework.functions).replace(/\\n/g, '\n');
+	value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, self.framework.helpers, self.user, self.config, self.framework.functions, 0).replace(/\\n/g, '\n');
 
 	if (isPartial)
 		return value;
@@ -8856,7 +8855,7 @@ http.IncomingMessage.prototype = {
 		var proxy = self.headers['x-forwarded-for'];
 		//  x-forwarded-for: client, proxy1, proxy2, ...
 		if (typeof(proxy) !== UNDEFINED)
-			return proxy.split(',', 1)[0] || self.connection.remoteAddress;
+			return proxy.split(',', 1)[0] || self.connection.removiewddress;
 		return self.connection.remoteAddress;
 	},
 

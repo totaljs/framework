@@ -16,9 +16,12 @@ IN DEVELOPMENT ======= 1.1.1
 - fixed: mail
 
 - rewrited: view engine
+- rewrited: template engine (according to view engine)
 
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/harmony
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/routing-inline
+
+IMPORTANT: markup of template is OBSOLETE. Templates support only view markup.
 
 ======= 1.1.0
 

@@ -1861,7 +1861,7 @@ function view_parse(content) {
 				if (view_parse_plus(builder))
 					builder += '+';
 				builder += '\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
-			}			
+			}
 		}
 
 		var cmd = content.substring(command.beg + 2, command.end);
@@ -1902,7 +1902,7 @@ function view_parse(content) {
 			builder += '+\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 	}
 
-	var fn = '(function(self,repository,model,session,sitemap,get,post,url,empty,global,helpers,user,config,functions){return ' + builder.substring(1) + '})';
+	var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index){return ' + builder.substring(1) + '})';
 	return eval(fn);
 }
 
@@ -2001,6 +2001,9 @@ function view_prepare(command) {
 		case 'css':
 		case 'favicon':
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
+
+		case 'index':
+			return '(' + command + ')';
 
 		case 'routeJS':
 		case 'routeCSS':
@@ -2476,7 +2479,7 @@ function Template(controller, model, repository) {
     @isRepository {Boolean}
     return {Object}
 */
-Template.prototype.parse = function(html, isRepository) {
+Template.prototype.parse_old = function(html, isRepository) {
 
 	var self = this;
 	var indexBeg = html.indexOf('<!--');
@@ -2668,8 +2671,8 @@ Template.prototype.parse = function(html, isRepository) {
 	var repositoryEnd = null;
 
 	if (!isRepository && self.repository !== null) {
-		repositoryBeg = beg.indexOf('{') !== -1 ? self.parse(beg, true) : null;
-		repositoryEnd = end.indexOf('{') !== -1 ? self.parse(end, true) : null;
+		repositoryBeg = beg.indexOf('{') !== -1 ? self.parse_old(beg, true) : null;
+		repositoryEnd = end.indexOf('{') !== -1 ? self.parse_old(end, true) : null;
 	}
 
 	try
@@ -2780,10 +2783,38 @@ Template.prototype.read = function(name) {
 	var isOut = name[0] === '.';
 	var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-templates'], name + '.html');
 
-	if (fs.existsSync(filename))
-		return self.parse(fs.readFileSync(filename).toString('utf8'));
+	if (!fs.existsSync(filename))
+		return null;
 
-	return null;
+	var content = fs.readFileSync(filename).toString(ENCODING);
+
+	if (content.indexOf('model.') !== -1 && content.indexOf('@{') !== -1)
+		return self.parse(content);
+
+	return self.parse_old(content);
+};
+
+Template.prototype.parse = function(html) {
+
+	var self = this;
+	var indexBeg = html.indexOf('<!--');
+	var indexEnd = html.lastIndexOf('-->');
+
+	var beg = '';
+	var end = '';
+	var template = html.trim();
+
+	if (indexBeg !== -1 && indexEnd !== -1) {
+		beg = html.substring(0, indexBeg).trim();
+		end = html.substring(indexEnd + 3).trim();
+		template = html.substring(indexBeg + 4, indexEnd).trim();
+	}
+
+	beg = minifyHTML(beg);
+	end = minifyHTML(end);
+	template = minifyHTML(template);
+
+	return { is: true, beg: beg.length > 0 ? view_parse(beg) : null, end: end.length > 0 ? view_parse(end) : null, template: view_parse(template) };
 };
 
 /*
@@ -2833,8 +2864,8 @@ Template.prototype.load = function(name, prefix, plus) {
 Template.prototype.dynamic = function(content) {
 
 	var self = this;
-	var key = content.md5();
-	var generator = self.cache.read(key);
+	var key = 'template.' + content.md5();
+	var generator = self.framework.temporary.views[key] || null;
 
 	if (generator !== null)
 		return generator;
@@ -2842,7 +2873,7 @@ Template.prototype.dynamic = function(content) {
 	generator = self.parse(content);
 
 	if (generator !== null && !self.controller.isDebug)
-		self.cache.add(key, generator, new Date().add('minute', 5));
+		self.framework.temporary.views[key] = generator;
 
 	return generator;
 };
@@ -2860,12 +2891,29 @@ Template.prototype.render = function(name, plus) {
 	if (generator === null)
 		return '';
 
-	var mid = compile(generator, self.model, true, self.controller, false);
+	if (!generator.is) {
+		var mid = compile(generator, self.model, true, self.controller, false);
+		var beg = generator.repositoryBeg !== null ? compile(generator.repositoryBeg, self.repository, false, self.controller) : generator.beg;
+		var end = generator.repositoryEnd !== null ? compile(generator.repositoryEnd, self.repository, false, self.controller) : generator.end;
+		return beg + mid + end;
+	}
 
-	var beg = generator.repositoryBeg !== null ? compile(generator.repositoryBeg, self.repository, false, self.controller) : generator.beg;
-	var end = generator.repositoryEnd !== null ? compile(generator.repositoryEnd, self.repository, false, self.controller) : generator.end;
+	var builder = '';
 
-	return beg + mid + end;
+	if (generator.beg !== null)
+		builder += generator.beg.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, self.controller.framework.global, self.controller.framework.helpers, self.controller.user, self.controller.config, self.controller.framework.functions, 0).replace(/\\n/g, '\n');
+
+	if (self.model instanceof Array) {
+		var length = self.model.length;
+		for (var i = 0; i < length; i++)
+			builder += generator.template.call(self.controller, self.controller, self.repository, self.model[i], self.controller.session, self.controller.get, self.controller.post, self.controller.url, self.controller.framework.global, self.controller.framework.helpers, self.controller.user, self.controller.config, self.controller.framework.functions, i).replace(/\\n/g, '\n');
+	} else
+		builder += generator.template.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, self.controller.framework.global, self.controller.framework.helpers, self.controller.user, self.controller.config, self.controller.framework.functions, 0).replace(/\\n/g, '\n');
+
+	if (generator.end !== null)
+		builder += generator.end.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, self.controller.framework.global, self.controller.framework.helpers, self.controller.user, self.controller.config, self.controller.framework.functions, 0).replace(/\\n/g, '\n');
+
+	return builder;
 };
 
 /*
