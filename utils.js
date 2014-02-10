@@ -2520,13 +2520,17 @@ exports.async = function(fn) {
 						break;
 				}
 			} catch (e) {
-				if (complete)
-					complete(e);
+				if (complete) {
+					if (typeof(complete) === OBJECT && complete.view500)
+						complete.view500(e);
+					else
+						complete(e);
+				}
 				return;
 			}
 
 			if (g.done) {				
-				if (complete)
+				if (complete && typeof(complete) !== OBJECT)
 					complete(null, g.value);
 				return;
 			}
