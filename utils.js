@@ -2490,29 +2490,30 @@ FileList.prototype.next = function() {
 
 exports.Async = Async;
 
-exports.sync = function(fn) {
+exports.sync = function(fn, owner) {
 	return function() {
 
 		var args = [].slice.call(arguments);
 		var params;
 		var callback;
 		var executed = false;
+		var self = owner || this;
 
 		args.push(function() {
 			params = arguments;
 			if (!executed && callback) {
 				executed = true;
-				callback.apply(this, params);
+				callback.apply(self, params);
 			}
 		});
 
-		fn.apply(this, args);
+		fn.apply(self, args);
 
 		return function(cb) {
 			callback = cb;
 			if (!executed && params) {
 				executed = true;
-				callback.apply(this, params);
+				callback.apply(self, params);
 			}
 		};
 	};
