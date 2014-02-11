@@ -1,5 +1,7 @@
 IN DEVELOPMENT ======= 1.1.1
 
+- new: NEW TEMPLATE ENGINE 2.0
+
 - added: route to website, route to file and route to websocket is possible everywhere
 - added: node harmony functions (see example)
 - added: gc() into framework.on('service')
@@ -8,6 +10,7 @@ IN DEVELOPMENT ======= 1.1.1
 - added: controller.title()
 - added: controller.description()
 - added: controller.keywords()
+- added: String.prototype.hash([type])
 
 - updated: auto-vendor-prefixes (updated linear-gradient prioraty according to w3schools.com)
 - updated: websocket.send(message, [id], [blacklist]), id and blacklist can be a function

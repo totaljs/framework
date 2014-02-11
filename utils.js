@@ -1096,6 +1096,27 @@ String.prototype.replacer = function(find, text) {
 };
 
 /*
+	Hash string
+	@type {String} :: optional, default empty
+	return {String}
+*/
+String.prototype.hash = function(type) {
+	var str = this;
+	switch ((type || '').toLowerCase()) {
+		case 'md5':
+			return str.md5();
+		case 'sha1':
+			return str.sha1();
+		case 'sha256':
+			return str.sha256();
+		case 'sha512':
+			return str.sha512();
+		default:
+			return str.split('').reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+	}
+};
+
+/*
 	Count text in string
 	@text {String}
 	return {Number}
@@ -2529,7 +2550,7 @@ exports.async = function(fn) {
 				return;
 			}
 
-			if (g.done) {				
+			if (g.done) {
 				if (complete && typeof(complete) !== OBJECT)
 					complete(null, g.value);
 				return;
