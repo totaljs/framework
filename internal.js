@@ -1849,14 +1849,14 @@ function view_parse(content) {
 			builder += '+';
 
 		if (old !== null) {
-			var text = content.substring(old.end + 1, command.beg).trim();
+			var text = content.substring(old.end + 1, command.beg);
 			if (text !== '') {
 				if (view_parse_plus(builder))
 					builder += '+';
 				builder += '\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 			}
 		} else {
-			var text = content.substring(0, command.beg).trim();
+			var text = content.substring(0, command.beg);
 			if (text !== '') {
 				if (view_parse_plus(builder))
 					builder += '+';
@@ -1897,7 +1897,7 @@ function view_parse(content) {
 	}
 
 	if (old !== null) {
-		var text = content.substring(old.end + 1).trim();
+		var text = content.substring(old.end + 1);
 		if (text.length > 0)
 			builder += '+\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 	}
