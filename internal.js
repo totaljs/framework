@@ -1523,8 +1523,15 @@ MultipartParser.stateToString = function(stateNumber) {
 MultipartParser.prototype.initWithBoundary = function(str) {
   var self = this;
   self.boundary = new Buffer(str.length+4);
-  self.boundary.write('\r\n--', 'ascii', 0);
-  self.boundary.write(str, 'ascii', 4);
+
+  if (framework.versionNode >= 1111) {
+	  self.boundary.write('\r\n--', 0, 'ascii');
+	  self.boundary.write(str, 4, 'ascii');
+  } else {
+	  self.boundary.write('\r\n--', 'ascii', 0);
+	  self.boundary.write(str, 'ascii', 4);
+  }
+
   self.lookbehind = new Buffer(self.boundary.length+8);
   self.state = S.START;
 

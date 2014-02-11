@@ -587,7 +587,7 @@ exports.isNullOrEmpty = function(str) {
 exports.parseInt = function(obj, def) {
 	var type = typeof(obj);
 
-	if (type === UNDEFINED)
+	if (type === UNDEFINED || obj === null)
 		return def || 0;
 
 	var str = type !== STRING ? obj.toString() : obj;
@@ -603,7 +603,7 @@ exports.parseInt = function(obj, def) {
 exports.parseFloat = function(obj, def) {
 	var type = typeof(obj);
 
-	if (type === UNDEFINED)
+	if (type === UNDEFINED || obj === null)
 		return def || 0;
 
 	var str = type !== STRING ? obj.toString() : obj;
