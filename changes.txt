@@ -22,6 +22,7 @@ IN DEVELOPMENT ======= 1.1.1
 - fixed: WebSocket skips throwing error (socket close, EPIPE)
 - fixed: mail
 - fixed: buffer.write (new node => 0.11.11)
+- fixed: controller.proxy(), utils.request(), utils.download() - problem with NGINX, missing Content-Length header
 
 - rewrited: view engine
 - rewrited: template engine (according to view engine)

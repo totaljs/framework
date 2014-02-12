@@ -191,6 +191,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 		util._extend(h, headers);
 
 	h['X-Powered-By'] = 'total.js' + VERSION;
+
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
 	var response = function(res) {
@@ -215,11 +216,14 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 	};
 
 	var con = options.protocol === 'https:' ? https : http;
+	var isPOST = method === 'POST' || method === 'PUT';
+	var value = isPOST ? isJSON ? JSON.stringify(data) : (data || '').toString() : '';
+
+	if (isPOST)
+		options.headers['Content-Length'] = value.length;
 
 	try
 	{
-
-		var isPOST = method === 'POST' || method === 'PUT';
 		var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
 
 		if (callback) {
@@ -233,7 +237,7 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 		}
 
 		if (isPOST)
-			req.end(isJSON ? JSON.stringify(data) : (data || '').toString(), encoding);
+			req.end(value, encoding);
 		else
 			req.end();
 
@@ -277,6 +281,11 @@ exports.download = function(url, callback, headers, method, params, encoding) {
 	{
 
 		var isPOST = method === 'POST' || method === 'PUT';
+		var value = isPOST ? (params || '').toString() : '';
+
+		if (isPOST)
+			options.headers['Content-Length'] = value.length;
+
 		var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
 
 		if (callback) {
@@ -286,7 +295,7 @@ exports.download = function(url, callback, headers, method, params, encoding) {
 		}
 
 		if (isPOST)
-			req.end((params || '').toString(), ENCODING);
+			req.end(value, ENCODING);
 		else
 			req.end();
 
