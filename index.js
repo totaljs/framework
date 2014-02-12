@@ -7677,11 +7677,12 @@ Controller.prototype.view404 = function() {
 Controller.prototype.view500 = function(error) {
 	var self = this;
 
+	self.framework.error(typeof(error) === STRING ? new Error(error) : error, self.name, self.req.uri);
+
 	if (self.res.success || !self.isConnected)
 		return self;
 
 	self.req.path = [];
-	self.framework.error(typeof(error) === STRING ? new Error(error) : error, self.name, self.req.uri);
 	self.subscribe.success();
 	self.subscribe.route = self.framework.lookup(self.req, '#500', []);
 	self.subscribe.execute(500);

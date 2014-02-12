@@ -18,6 +18,7 @@ IN DEVELOPMENT ======= 1.1.1
 
 - removed: border-radius and box-shadow from auto-vendor-prefixes
 
+- fixed: controller.view500()
 - fixed: WebSocket skips throwing error (socket close, EPIPE)
 - fixed: mail
 - fixed: buffer.write (new node => 0.11.11)
