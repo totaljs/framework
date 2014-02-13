@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.1.1
+IN DEVELOPMENT ======= 1.2.0
 
 - new: NEW TEMPLATE ENGINE 2.0
 
@@ -37,11 +37,12 @@ IN DEVELOPMENT ======= 1.1.1
 - rewrited: view engine
 - rewrited: template engine (according to view engine)
 
-- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/harmony
-- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/routing-inline
-
 IMPORTANT: framework.usage() return OBJECT
 IMPORTANT: markup of template is OBSOLETE. Templates support only view markup.
+
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/generators
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/routing-inline
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/problems
 
 ======= 1.1.0
 
