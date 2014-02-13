@@ -178,7 +178,7 @@ function viewIndex() {
 	assert.ok(self.path.temp('file.txt') === './tmp/file.txt', name + 'path.temp');
 
 	self.meta('A', 'B');
-	assert.ok(self.repository['$meta'] === 'AB', name + 'meta() - write');
+	assert.ok(self.repository['$title'] === 'A' && self.repository['$description'] === 'B', name + 'meta() - write');
 
 	self.sitemap('A', '/');
 	assert.ok(self.sitemap()[0].name === 'A', name + 'sitemap() - write');
