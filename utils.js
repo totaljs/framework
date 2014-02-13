@@ -1967,6 +1967,19 @@ Array.prototype.take = function(count) {
 };
 
 /*
+	Trim values
+*/
+Array.prototype.trim = function() {
+	var self = this;
+	var length = self.length;
+	for (var i = 0; i < length; i++) {
+		if (typeof(self[i]) === STRING)
+			self[i] = self[i].trim();
+	}
+	return self;
+};
+
+/*
     @count {Number}
     return {Array}
 */
