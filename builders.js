@@ -574,7 +574,9 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
 	Serialize ErrorBuilder to JSON format
     return {String}
 */
-ErrorBuilder.prototype.json = function() {
+ErrorBuilder.prototype.json = function(beautify) {
+	if (beautify)
+		return JSON.stringify(this.prepare().builder, null, '\t');
 	return JSON.stringify(this.prepare().builder);
 };
 

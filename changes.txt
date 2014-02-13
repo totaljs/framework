@@ -28,6 +28,7 @@ IN DEVELOPMENT ======= 1.2.0
 - updated: controller.view404([problem])
 - updated: controller.view501([problem])
 - updated: framework.usage([detailed]) - return OBJECT
+- updated: controller.json(obj, [header], [beaufity]);
 
 - removed: border-radius and box-shadow from auto-vendor-prefixes
 

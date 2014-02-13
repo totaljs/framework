@@ -1293,10 +1293,8 @@ Framework.prototype.log = function() {
 	return {String}
 */
 Framework.prototype.usage = function(detailed) {
-	var memory = process.memoryUsage();
-	var builder = [];
 	var self = this;
-
+	var memory = process.memoryUsage();
 	var cache = Object.keys(self.cache.repository);
 	var resources = Object.keys(self.resources);
 	var controllers = Object.keys(self.controllers);
@@ -1310,26 +1308,11 @@ Framework.prototype.usage = function(detailed) {
 	var size = 0;
 	var sizeDatabase = 0;
 	var dir = utils.combine(self.config['directory-temp']);
-
-	if (fs.existsSync(dir)) {
-		fs.readdirSync(dir).forEach(function(o) {
-			size += fs.statSync(utils.combine(self.config['directory-temp'], o)).size;
-		});
-	}
-
-	dir = utils.combine(self.config['directory-databases']);
-
-	if (fs.existsSync(dir)) {
-		fs.readdirSync(dir).forEach(function(o) {
-			sizeDatabase += fs.statSync(utils.combine(self.config['directory-databases'], o)).size;
-		});
-	}
-
 	var output = {};
 
 	output.framework = {
 		pid: process.pid,
-		node: prototype.version,
+		node: process.version,
 		version: self.version_header,
 		platform: process.platform,
 		processor: process.arch,
@@ -1337,7 +1320,6 @@ Framework.prototype.usage = function(detailed) {
 		memoryTotal: memory.heapTotal / 1024 / 1024,
 		memoryUsage: memory.heapUsed / 1024 / 1024,
 		mode: self.config.debug ? 'debug' : 'release',
-		temporary: size / 1024,
 		directory: process.cwd()
 	};
 
@@ -1385,6 +1367,7 @@ Framework.prototype.usage = function(detailed) {
 	output.controllers = [];
 
 	controllers.forEach(function(o) {
+		var controller = self.controllers[o];
 		output.controllers.push({
 			name: o,
 			usage: typeof(controller.usage) === UNDEFINED ? null : controller.usage()
@@ -1404,7 +1387,7 @@ Framework.prototype.usage = function(detailed) {
 
 	modules.forEach(function(o) {
 		var module = self.modules[o];
-		output.module.spush({
+		output.modules.push({
 			name: o,
 			usage: typeof(module.usage) === UNDEFINED ? null : module.usage()
 		});
@@ -1426,7 +1409,7 @@ Framework.prototype.usage = function(detailed) {
 	output.errors = self.errors;
 	output.problems = self.problems;
 
-	return builder.join('\n');
+	return output;
 };
 
 /*
@@ -6855,16 +6838,20 @@ Controller.prototype.$download = function(filename, innerHTML, downloadName, cla
 	return builder + '>' + (innerHTML || filename) + '</a>';
 };
 
-/*
-	Append <script> TAG
-	return {String}
-*/
-Controller.prototype.$json = function(obj, name) {
+Controller.prototype.$json = function(obj, name, beautify) {
+
+	if (typeof(name) === BOOLEAN) {
+		var tmp = name;
+		name = beautify;
+		beautify = name;
+	}
+
+	var value = beautify ? JSON.stringify(obj, null, 4) : JSON.stringify(obj);
 
 	if (!name)
-		return JSON.stringify(obj);
+		return value;
 
-	return '<script type="application/json" id="' + name + '">' + JSON.stringify(obj) + '</script>';
+	return '<script type="application/json" id="' + name + '">' + value + '</script>';
 };
 
 /*
@@ -7250,16 +7237,26 @@ Controller.prototype.component = function(name) {
 	@headers {Object} :: optional
 	return {Controller};
 */
-Controller.prototype.json = function(obj, headers) {
+Controller.prototype.json = function(obj, headers, beautify) {
 	var self = this;
 
 	if (self.res.success || !self.isConnected)
 		return self;
 
+	if (typeof(headers) === BOOLEAN) {
+		var tmp = headers;
+		beautify = headers;
+		headers = tmp;
+	}
+
 	if (obj instanceof builders.ErrorBuilder)
-		obj = obj.json();
-	else
-		obj = JSON.stringify(obj || {});
+		obj = obj.json(beautify);
+	else {
+		if (beautify)
+			obj = JSON.stringify(obj || {}, null, 4);
+		else
+			obj = JSON.stringify(obj || {});
+	}
 
 	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.status, obj, 'application/json', true, headers);
@@ -7305,11 +7302,11 @@ Controller.prototype.noClear = function(enable) {
 	@headers {Object} :: optional
 	return {Controller};
 */
-Controller.prototype.jsonAsync = function(obj, headers) {
+Controller.prototype.jsonAsync = function(obj, headers, beautify) {
 	var self = this;
 
 	var fn = function() {
-		self.json(obj, headers);
+		self.json(obj, headers, beautify);
 	};
 
 	self.async.complete(fn);
