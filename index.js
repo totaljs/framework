@@ -7358,7 +7358,9 @@ Controller.prototype.plain = function(contentBody, headers) {
 
 	if (type === UNDEFINED)
 		contentBody = '';
-	else if (type !== STRING)
+	else if (type === OBJECT)
+		contentBody = contentBody === null ? '' : JSON.stringify(contentBody, null, 4);
+	else
 		contentBody = contentBody === null ? '' : contentBody.toString();
 
 	self.subscribe.success();

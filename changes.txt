@@ -27,6 +27,7 @@ IN DEVELOPMENT ======= 1.2.0
 - updated: controller.view403([problem])
 - updated: controller.view404([problem])
 - updated: controller.view501([problem])
+- updated: controller.plain(contentBody, [headers]) - added JSON serialized for objects
 - updated: framework.usage([detailed]) - return OBJECT
 - updated: controller.json(obj, [header], [beaufity]);
 
