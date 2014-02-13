@@ -431,6 +431,11 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 				case 'raw':
 					isRaw = true;
 					break;
+				case 'logged':
+				case 'unlogged':
+					priority -= 2;
+					tmp.push(flag);
+					break;
 				default:
 					tmp.push(flag);
 					break;
