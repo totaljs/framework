@@ -1320,267 +1320,106 @@ Framework.prototype.usage = function(detailed) {
 		});
 	}
 
-	builder.push('## Basic informations');
-	builder.push('');
-	builder.push('PID                             : ' + process.pid);
-	builder.push('Node version                    : ' + process.version);
-	builder.push('Framework version               : ' + self.version_header);
-	builder.push('Platform                        : ' + process.platform);
-	builder.push('Processor                       : ' + process.arch);
-	builder.push('Service call                    : ' + self.cache.count + 'x');
-	builder.push('Uptime                          : {0} minutes'.format(Math.floor(process.uptime() / 60)));
-	builder.push('Memory usage                    : total {0} MB, used {1} MB'.format((memory.heapTotal / 1024 / 1024).format('#######.##'), (memory.heapUsed / 1024 / 1024).format('#######.##')));
-	builder.push('Mode                            : ' + (self.config.debug ? 'debug' : 'release'));
-	builder.push('');
-	builder.push('## Directories');
-	builder.push('');
-	builder.push('Current directory               : ' + process.cwd());
-	builder.push('Temporary directory             : {0} kB'.format((size / 1024).format('#########.##')));
-	builder.push('Databases directory             : {0} kB'.format((sizeDatabase / 1024).format('#########.##')));
-	builder.push('');
-	builder.push('## Counter');
-	builder.push('');
-	builder.push('Resource count                  : ' + resources.length);
-	builder.push('Controller count                : ' + controllers.length);
-	builder.push('Module count                    : ' + modules.length);
-	builder.push('Components count                : ' + components.length);
-	builder.push('Cache                           : {0} items'.format(cache.length, self.cache.count));
-	builder.push('WebSocket connections           : ' + connections.length);
-	builder.push('');
-	builder.push('## Routing');
-	builder.push('');
-	builder.push('Routes to webpage               : ' + self.routes.web.length);
-	builder.push('Routes to websocket             : ' + self.routes.websockets.length);
-	builder.push('Routes to file                  : ' + self.routes.files.length);
-	builder.push('Partial content (custom)        : ' + Object.keys(self.routes.partial).length);
-	builder.push('Partial content (global)        : ' + self.routes.partialGlobal.length);
-	builder.push('Redirects                       : ' + redirects.length);
-	builder.push('Helpers                         : ' + helpers.length);
-	builder.push('File handling informations      : ' + staticFiles.length);
-	builder.push('Streaming informations          : ' + staticRange.length);
-	builder.push('Error count                     : ' + self.errors.length);
-	builder.push('');
-	builder.push('## Requests statistic');
-	builder.push('');
-	builder.push('Pending requests                : {0}x'.format(self.stats.request.pending));
-	builder.push('Blocked requests                : {0}x'.format(self.stats.request.xss));
-	builder.push('Request to webpage              : {0}x'.format(self.stats.request.web));
-	builder.push('Request to websocket            : {0}x'.format(self.stats.request.websocket));
-	builder.push('Request to file                 : {0}x'.format(self.stats.request.file));
-	builder.push('Request XHR                     : {0}x'.format(self.stats.request.xhr));
-	builder.push('Request GET                     : {0}x'.format(self.stats.request.get));
-	builder.push('Request POST                    : {0}x'.format(self.stats.request.post));
-	builder.push('Request PUT                     : {0}x'.format(self.stats.request.put));
-	builder.push('Request DELETE                  : {0}x'.format(self.stats.request['delete']));
-	builder.push('Request multipart               : {0}x'.format(self.stats.request.upload));
-	builder.push('Request XSS                     : {0}x'.format(self.stats.request.xss));
-	builder.push('');
-	builder.push('## Responses statistic');
-	builder.push('');
-	builder.push('Response view                   : {0}x'.format(self.stats.response.view));
-	builder.push('Response JSON                   : {0}x'.format(self.stats.response.json));
-	builder.push('Response plain                  : {0}x'.format(self.stats.response.plain));
-	builder.push('Response empty                  : {0}x'.format(self.stats.response.empty));
-	builder.push('Response custom                 : {0}x'.format(self.stats.response.custom));
-	builder.push('Response redirect               : {0}x'.format(self.stats.response.redirect));
-	builder.push('Response timeout                : {0}x'.format(self.stats.response.timeout));
-	builder.push('Response forwarding             : {0}x'.format(self.stats.response.forwarding));
-	builder.push('Response file                   : {0}x'.format(self.stats.response.file));
-	builder.push('Response binary                 : {0}x'.format(self.stats.response.binary));
-	builder.push('Response pipe                   : {0}x'.format(self.stats.response.pipe));
-	builder.push('Response not modified           : {0}x'.format(self.stats.response.notModified));
-	builder.push('Response stream                 : {0}x'.format(self.stats.response.stream));
-	builder.push('Response streaming              : {0}x'.format(self.stats.response.streaming));
-	builder.push('Response x-mixed-replace        : {0}x'.format(self.stats.response.mmr));
-	builder.push('Response websocket message      : {0}x'.format(self.stats.response.websocket));
-	builder.push('Response restriction            : {0}x'.format(self.stats.response.restriction));
-	builder.push('Response Server Sent Events     : {0}x'.format(self.stats.response.sse));
-	builder.push('Response destroy                : {0}x'.format(self.stats.response.destroy));
-	builder.push('Response 400                    : {0}x'.format(self.stats.response.error400));
-	builder.push('Response 401                    : {0}x'.format(self.stats.response.error401));
-	builder.push('Response 403                    : {0}x'.format(self.stats.response.error403));
-	builder.push('Response 404                    : {0}x'.format(self.stats.response.error404));
-	builder.push('Response 408                    : {0}x'.format(self.stats.response.error408));
-	builder.push('Response 431                    : {0}x'.format(self.stats.response.error431));
-	builder.push('Response 500                    : {0}x'.format(self.stats.response.error500));
-	builder.push('Response 501                    : {0}x'.format(self.stats.response.error501));
-	builder.push('');
+	var output = {};
 
-	if (redirects.length > 0) {
-		builder.push('## Redirects');
-		builder.push('');
-		redirects.forEach(function(o) {
-			builder.push('- ' + o);
-		});
-		builder.push('');
-	}
+	output.framework = {
+		pid: process.pid,
+		node: prototype.version,
+		version: self.version_header,
+		platform: process.platform,
+		processor: process.arch,
+		uptime: Math.floor(process.uptime() / 60),
+		memoryTotal: memory.heapTotal / 1024 / 1024,
+		memoryUsage: memory.heapUsed / 1024 / 1024,
+		mode: self.config.debug ? 'debug' : 'release',
+		temporary: size / 1024,
+		directory: process.cwd()
+	};
+
+	output.counter = {
+		resource: resources.length,
+		controller: controllers.length,
+		module: modules.length,
+		component: components.length,
+		cache: cache.length,
+		connection: connections.length,
+		helper: helpers.length,
+		error: self.errors.length,
+		problem: self.problem.length
+	};
+
+	output.routing = {
+		webpage: self.routes.web.length,
+		websocket: self.routes.websockets.length,
+		file: self.routes.files.length,
+		partial: Object.keys(self.routes.partial).length,
+		global: self.routes.partialGlobal.length,
+		redirect: redirects.length
+	};
+
+	output.stats = {
+		request: self.stats.request,
+		response: self.stats.response
+	};
+
+	output.redirects = redirects;
 
 	if (self.restrictions.isRestrictions) {
-		builder.push('## Restrictions');
 
-		if (self.restrictions.isAllowedIP) {
-			builder.push('');
-			builder.push('### Allowed IP');
-			builder.push('');
-			self.restrictions.allowedIP.forEach(function(o) {
-				builder.push('- ' + o);
-			});
-		}
-
-		if (self.restrictions.isBlockedIP) {
-			builder.push('');
-			builder.push('### Blocked IP');
-			builder.push('');
-			self.restrictions.blockedIP.forEach(function(o) {
-				builder.push('- ' + o);
-			});
-		}
-
-		if (self.restrictions.isAllowedCustom) {
-			builder.push('');
-			builder.push('### Allowed headers');
-			builder.push('');
-			self.restrictions.allowedCustomKeys.forEach(function(o) {
-				builder.push('- ' + o);
-			});
-		}
-
-		if (self.restrictions.isBlockedCustom) {
-			builder.push('');
-			builder.push('### Blocked headers');
-			builder.push('');
-			self.restrictions.blockedCustomKeys.forEach(function(o) {
-				builder.push('- ' + o);
-			});
-		}
+		output.restrictions = {
+			allowed: [],
+			blocked: [],
+			allowedHeaders: self.restrictions.allowedCustomKeys,
+			blockedHeaders: self.restrictions.blockedCustomKeys
+		};
 	}
 
 	if (!detailed)
-		return builder.join('\n');
+		return output;
 
-	builder.push('## Controllers');
+	output.controllers = [];
 
 	controllers.forEach(function(o) {
-
-		builder.push('');
-		builder.push('### ' + o);
-		builder.push('');
-
-		var controller = self.controllers[o];
-
-		if (typeof(controller.usage) === UNDEFINED) {
-			builder.push('> undefined');
-			return;
-		}
-
-		builder.push((controller.usage() || '').toString());
-
+		output.controllers.push({
+			name: o,
+			usage: typeof(controller.usage) === UNDEFINED ? null : controller.usage()
+		});
 	});
 
-	if (connections.length > 0) {
-		builder.push('');
-		builder.push('## WebSocket connections');
-		builder.push('');
-		connections.forEach(function(o) {
-			builder.push('- {0} (online {1}x)'.format(o, self.connections[o].online));
+	output.connections = [];
+
+	connections.forEach(function(o) {
+		output.connections.push({
+			name: o,
+			online: self.connections[o].online
 		});
-	}
+	});
 
-	if (modules.length > 0) {
-		builder.push('');
-		builder.push('## Modules');
+	output.modules = [];
 
-		modules.forEach(function(o) {
-
-			builder.push('');
-			builder.push('### ' + (o === '#' ? 'Global module (#)' : o));
-			builder.push('');
-
-			var module = self.modules[o];
-
-			if (module === null || typeof(module.usage) === UNDEFINED) {
-				builder.push('> undefined');
-				return;
-			}
-
-			builder.push((module.usage() || '').toString());
+	modules.forEach(function(o) {
+		var module = self.modules[o];
+		output.module.spush({
+			name: o,
+			usage: typeof(module.usage) === UNDEFINED ? null : module.usage()
 		});
-	}
+	});
 
-	if (components.length > 0) {
-		builder.push('');
-		builder.push('## Components');
+	output.components = [];
 
-		components.forEach(function(o) {
-
-			builder.push('');
-			builder.push('### ' + o);
-			builder.push('');
-
-			var module = self.components[o];
-
-			if (module === null || typeof(module.usage) === UNDEFINED) {
-				builder.push('> undefined');
-				return;
-			}
-
-			builder.push((module.usage() || '').toString());
+	components.forEach(function(o) {
+		var module = self.components[o];
+		output.components.push({
+			name: o,
+			usage: typeof(module.usage) === UNDEFINED ? null : module.usage()
 		});
-	}
+	});
 
-	if (helpers.length > 0) {
-		builder.push('');
-		builder.push('## View helpers');
-		builder.push('');
-		helpers.forEach(function(o) {
-			builder.push('- @' + o);
-		});
-	}
-
-	if (cache.length > 0) {
-		builder.push('');
-		builder.push('## Cached items');
-		builder.push('');
-		cache.forEach(function(o) {
-			builder.push('- ' + o);
-		});
-	}
-
-	if (resources.length > 0) {
-		builder.push('');
-		builder.push('## Resources');
-		builder.push('');
-		resources.forEach(function(o) {
-			builder.push('- {0}.resource'.format(o));
-		});
-	}
-
-	if (staticFiles.length > 0) {
-		builder.push('');
-		builder.push('## Cache of static files');
-		builder.push('');
-		staticFiles.forEach(function(o) {
-			builder.push('- ' + o);
-		});
-	}
-
-	if (staticRange.length > 0) {
-		builder.push('');
-		builder.push('## Cache of static files / range');
-		builder.push('');
-		staticRange.forEach(function(o) {
-			builder.push('- {0} / {1}'.format(o, (self.temporary.range[o] / 1024).floor(2)));
-		});
-	}
-
-	if (self.errors.length > 0) {
-		builder.push('');
-		builder.push('## Errors');
-		builder.push('');
-		self.errors.forEach(function(error) {
-			builder.push('- ' + error.date.format('yyyy-MM-dd / HH:mm:ss - ') + error.error.toString() + ' - ' + error.error.stack + '\n');
-		});
-	}
+	output.helpers = helpers;
+	output.cache = cache;
+	output.resources = resources;
+	output.errors = self.errors;
+	output.problems = self.problems;
 
 	return builder.join('\n');
 };
@@ -7529,8 +7368,15 @@ Controller.prototype.empty = function(headers) {
 	if (self.res.success || !self.isConnected)
 		return self;
 
+	var code = 204;
+
+	if (typeof(headers) === NUMBER) {
+		code = headers;
+		headers = null;
+	}
+
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, 204, '', CONTENTTYPE_TEXTPLAIN, false, headers);
+	self.framework.responseContent(self.req, self.res, code, '', CONTENTTYPE_TEXTPLAIN, false, headers);
 	self.framework.stats.response.empty++;
 
 	return self;
@@ -7641,8 +7487,11 @@ Controller.prototype.stream = function(contentType, stream, downloadName, header
 	Response 400
 	return {Controller};
 */
-Controller.prototype.view400 = function() {
+Controller.prototype.view400 = function(problem) {
 	var self = this;
+
+	if (problem && problem.length > 0)
+		self.problem(problem);
 
 	if (self.res.success || !self.isConnected)
 		return self;
@@ -7658,8 +7507,11 @@ Controller.prototype.view400 = function() {
 	Response 401
 	return {Controller};
 */
-Controller.prototype.view401 = function() {
+Controller.prototype.view401 = function(problem) {
 	var self = this;
+
+	if (problem && problem.length > 0)
+		self.problem(problem);	
 
 	if (self.res.success || !self.isConnected)
 		return self;
@@ -7675,8 +7527,11 @@ Controller.prototype.view401 = function() {
 	Response 403
 	return {Controller};
 */
-Controller.prototype.view403 = function() {
+Controller.prototype.view403 = function(problem) {
 	var self = this;
+
+	if (problem && problem.length > 0)
+		self.problem(problem);
 
 	if (self.res.success || !self.isConnected)
 		return self;
@@ -7692,8 +7547,11 @@ Controller.prototype.view403 = function() {
 	Response 404
 	return {Controller};
 */
-Controller.prototype.view404 = function() {
+Controller.prototype.view404 = function(problem) {
 	var self = this;
+
+	if (problem && problem.length > 0)
+		self.problem(problem);	
 
 	if (self.res.success || !self.isConnected)
 		return self;
@@ -7729,8 +7587,11 @@ Controller.prototype.view500 = function(error) {
 	Response 501
 	return {Controller};
 */
-Controller.prototype.view501 = function() {
+Controller.prototype.view501 = function(problem) {
 	var self = this;
+
+	if (problem && problem.length > 0)
+		self.problem(problem);
 
 	if (self.res.success || !self.isConnected)
 		return self;
