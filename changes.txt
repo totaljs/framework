@@ -11,6 +11,11 @@ IN DEVELOPMENT ======= 1.1.1
 - added: controller.description()
 - added: controller.keywords()
 - added: String.prototype.hash([type])
+- added: Array.prototype.trim()
+- added: controller.problem(message);
+- added: framework.problem(message, [name], [uri]);
+- added: framework.on('problem', message, name, uri)
+- added: framework.problems;
 
 - updated: auto-vendor-prefixes (updated linear-gradient prioraty according to w3schools.com)
 - updated: websocket.send(message, [id], [blacklist]), id and blacklist can be a function

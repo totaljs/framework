@@ -2800,7 +2800,7 @@ Template.prototype.read = function(name) {
 
 	var content = fs.readFileSync(filename).toString(ENCODING);
 
-	if (content.indexOf('model.') !== -1 && content.indexOf('@{') !== -1)
+	if (content.indexOf('model') !== -1 && content.indexOf('@{') !== -1)
 		return self.parse(content);
 
 	return self.parse_old(content);

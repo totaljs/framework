@@ -129,6 +129,7 @@ function Framework() {
 	this.controllers = {};
 	this.tests = {};
 	this.errors = [];
+	this.problems = [];
 	this.server = null;
 	this.port = 0;
 	this.ip = '';
@@ -645,12 +646,36 @@ Framework.prototype.file = function(name, funcValidation, funcExecute) {
 Framework.prototype.error = function(err, name, uri) {
 	var self = this;
 
-	self.errors.push({ error: err, name: name, uri: uri, date: new Date() });
+	if (self.errors !== null) {
+		self.errors.push({ error: err, name: name, uri: uri, date: new Date() });
 
-	if (self.errors.length > 50)
-		self.errors.shift();
+		if (self.errors.length > 50)
+			self.errors.shift();
+	}
 
 	self.onError(err, name, uri);
+	return self;
+};
+
+
+/*
+	Problem caller
+	@message {String}
+	@name {String} :: controller name
+	@uri {URI} :: optional
+	return {Framework}
+*/
+Framework.prototype.problem = function(message, name, uri) {
+	var self = this;
+
+	if (self.problems !== null) {
+		self.problems.push({ message: message, name: name, uri: uri });
+
+		if (self.problems.length > 50)
+			self.problems.shift();
+	}
+
+	self.emit('problem', message, name, uri);
 	return self;
 };
 
@@ -5874,6 +5899,17 @@ Controller.prototype.error = function(err) {
 };
 
 /*
+	Problem
+	@message {String}
+	return {Framework}
+*/
+Controller.prototype.problem = function(message) {
+	var self = this;
+	self.framework.problem(message, self.name, self.uri);
+	return self;
+};
+
+/*
 	Add function to async waiting list
 	@name {String}
 	@waitingFor {String} :: name of async function
@@ -8331,6 +8367,17 @@ WebSocket.prototype.close = function(id) {
 WebSocket.prototype.error = function(err) {
 	var self = this;
 	self.framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.path);
+	return self;
+};
+
+/*
+	Problem
+	@message {String}
+	return {Framework}
+*/
+WebSocket.prototype.problem = function(message) {
+	var self = this;
+	self.framework.problem(message, self.name, self.uri);
 	return self;
 };
 
