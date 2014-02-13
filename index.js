@@ -3572,7 +3572,7 @@ Framework.prototype.configure = function(arr, rewrite) {
 	for (var i = 0; i < length; i++) {
 		var str = arr[i];
 
-		if (str === '')
+		if (str === '' || str[0] === '#' || (str[0] === '/' || str[1] === '/'))
 			continue;
 
 		var index = str.indexOf(':');
@@ -5047,12 +5047,14 @@ Subscribe.prototype.execute = function(status) {
 		return self;
 	}
 
-	var async = new utils.Async();
+	var funcs = [];
 	var count = 0;
 
-	for (var i = 0; i < self.framework._length_partial_global; i++) {
-		var partial = self.framework.routes.partialGlobal[i];
-		async.await('global' + i, partial.bind(self.controller));
+	if (self.framework._length_partial_global > 0) {
+		for (var i = 0; i < self.framework._length_partial_global; i++) {
+			var partial = self.framework.routes.partialGlobal[i];
+			funcs.push(partial.bind(self.controller));
+		}
 	}
 
 	if (self.route.partial !== null) {
@@ -5062,15 +5064,16 @@ Subscribe.prototype.execute = function(status) {
 			if (!partialFn)
 				continue;
 			count++;
-			async.await(self.route.partial[i], partialFn.bind(self.controller));
+			funcs.push(partialFn.bind(self.controller));
 		}
 	}
 
-	if (count === 0 && self.framework._length_partial_global === 0)
+	if (count === 0 && self.framework._length_partial_global === 0) {
 		self.handlers._execute();
-	else
-		async.run(self.handlers._execute);
+		return;
+	}
 
+	funcs.async(self.handlers._execute);
 	return self;
 };
 
@@ -7210,7 +7213,13 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 	if (name[0] !== '~')
 		plus = self._currentTemplate;
 
-	return internal.generateTemplate(self, name, model, repository, plus);
+	try
+	{
+		return internal.generateTemplate(self, name, model, repository, plus);
+	} catch(ex) {
+		self.error(new Error('Template: ' + name + ' - ' + ex.toString()));
+		return '';
+	}
 };
 
 /*
@@ -7516,7 +7525,7 @@ Controller.prototype.view401 = function(problem) {
 	var self = this;
 
 	if (problem && problem.length > 0)
-		self.problem(problem);	
+		self.problem(problem);
 
 	if (self.res.success || !self.isConnected)
 		return self;
@@ -7556,7 +7565,7 @@ Controller.prototype.view404 = function(problem) {
 	var self = this;
 
 	if (problem && problem.length > 0)
-		self.problem(problem);	
+		self.problem(problem);
 
 	if (self.res.success || !self.isConnected)
 		return self;
@@ -7989,7 +7998,21 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		self._currentContent = self._defaultContent || '';
 	}
 
-	value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, self.framework.helpers, self.user, self.config, self.framework.functions, 0).replace(/\\n/g, '\n');
+	try
+	{
+		value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, self.framework.helpers, self.user, self.config, self.framework.functions, 0).replace(/\\n/g, '\n');
+	} catch(ex) {
+
+		var err = new Error('View: ' + name + ' - ' + ex.toString());
+
+		if (!isPartial) {
+			self.view500(err);
+			return;
+		}
+
+		self.error(err);
+		return '';
+	}
 
 	if (isPartial)
 		return value;

@@ -1909,7 +1909,7 @@ function view_parse(content) {
 			builder += '+\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 	}
 
-	var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index){return ' + builder.substring(1) + '})';
+	var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index){var controller=self;return ' + builder.substring(1) + '})';
 	return eval(fn);
 }
 
@@ -1946,6 +1946,7 @@ function view_prepare(command) {
 	var name = command.substring(0, index);
 
 	switch (name) {
+		case 'controller':
 		case 'repository':
 		case 'model':
 		case 'get':
@@ -1958,6 +1959,7 @@ function view_prepare(command) {
 		case 'model':
 			return '(' + command + ' || \'\').toString().encode()';
 
+		case '!controller':
 		case '!repository':
 		case '!get':
 		case '!post':

@@ -12,11 +12,14 @@ IN DEVELOPMENT ======= 1.2.0
 - added: controller.keywords()
 - added: String.prototype.hash([type])
 - added: Array.prototype.trim()
+- added: Array.prototype.wait()
+- added: Array.prototype.async()
 - added: controller.problem(message);
 - added: framework.problem(message, [name], [uri]);
 - added: framework.on('problem', message, name, uri)
 - added: framework.problems;
 
+- updated: parsing of configuration: # and // is a comment
 - updated: auto-vendor-prefixes (updated linear-gradient prioraty according to w3schools.com)
 - updated: websocket.send(message, [id], [blacklist]), id and blacklist can be a function
 - updated: license
@@ -30,12 +33,16 @@ IN DEVELOPMENT ======= 1.2.0
 
 - fixed: controller.view500()
 - fixed: WebSocket skips throwing error (socket close, EPIPE)
-- fixed: mail
+- fixed: mail (SPAM fixes)
 - fixed: buffer.write (new node => 0.11.11)
 - fixed: controller.proxy(), utils.request(), utils.download() - problem with NGINX, missing Content-Length header
 
 - rewrited: view engine
 - rewrited: template engine (according to view engine)
+
+- improvements: views
+- improvements: templates
+- improvements: partial routing
 
 IMPORTANT: framework.usage() return OBJECT
 IMPORTANT: markup of template is OBSOLETE. Templates support only view markup.
