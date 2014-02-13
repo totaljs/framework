@@ -1299,6 +1299,7 @@ Framework.prototype.usage = function(detailed) {
 	var resources = Object.keys(self.resources);
 	var controllers = Object.keys(self.controllers);
 	var connections = Object.keys(self.connections);
+	var workers = Object.keys(self.workers);
 	var modules = Object.keys(self.modules);
 	var components = Object.keys(self.components);
 	var helpers = Object.keys(self.helpers);
@@ -1313,13 +1314,15 @@ Framework.prototype.usage = function(detailed) {
 	output.framework = {
 		pid: process.pid,
 		node: process.version,
-		version: self.version_header,
+		version: 'v' + self.version_header,
 		platform: process.platform,
 		processor: process.arch,
 		uptime: Math.floor(process.uptime() / 60),
-		memoryTotal: memory.heapTotal / 1024 / 1024,
-		memoryUsage: memory.heapUsed / 1024 / 1024,
+		memoryTotal: (memory.heapTotal / 1024 / 1024).floor(2),
+		memoryUsage: (memory.heapUsed / 1024 / 1024).floor(2),
 		mode: self.config.debug ? 'debug' : 'release',
+		port: self.port,
+		ip: self.ip,
 		directory: process.cwd()
 	};
 
@@ -1329,6 +1332,7 @@ Framework.prototype.usage = function(detailed) {
 		module: modules.length,
 		component: components.length,
 		cache: cache.length,
+		worker: workers.length,
 		connection: connections.length,
 		helper: helpers.length,
 		error: self.errors.length,
