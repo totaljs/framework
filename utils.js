@@ -1189,7 +1189,7 @@ String.prototype.configuration = function() {
 
 		var str = arr[i];
 
-		if (str === '')
+		if (str === '' || str[0] === '#')
 			continue;
 
 		if (str.substring(0, 2) === '//')
@@ -2056,6 +2056,16 @@ Array.prototype.random = function() {
 	@complete {Function} :: optional
 */
 Array.prototype.waiting = function(onItem, callback) {
+	console.log('Array.prototype.waiting: OBSOLETE. Use Array.prototype.wait');
+	return this.wait(onItem, callback);
+};
+
+/*
+	Waiting list - function remove each item
+	@callback {Function} :: function(next) {}
+	@complete {Function} :: optional
+*/
+Array.prototype.wait = function(onItem, callback) {
 
 	var self = this;
 	var item = self.shift();
@@ -2063,11 +2073,33 @@ Array.prototype.waiting = function(onItem, callback) {
 	if (typeof(item) === UNDEFINED) {
 		if (callback)
 			callback();
-		return;
+		return self;
 	}
 
 	onItem.call(self, item, function() {
-		self.waiting(onItem, callback);
+		setImmediate(function() {
+			self.wait(onItem, callback);
+		});
+	});
+
+	return self;
+};
+
+Array.prototype.async = function(callback) {
+
+	var self = this;
+	var item = self.shift();
+
+	if (typeof(item) === UNDEFINED) {
+		if (callback)
+			callback();
+		return self;
+	}
+
+	item(function() {
+		setImmediate(function() {
+			self.async(callback);
+		});
 	});
 
 	return self;
