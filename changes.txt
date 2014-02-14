@@ -7,8 +7,8 @@ IN DEVELOPMENT ======= 1.2.0
 - added: gc() into framework.on('service')
 - added: config['allow-performance'] true/false (default, false)
 - added: new views/templates/contents cache
-- added: framework.problem(message, [name], [uri]);
-- added: framework.on('problem', message, name, uri)
+- added: framework.problem(message, [name], [uri], [ip]);
+- added: framework.on('problem', message, [name], [uri], [ip])
 - added: framework.problems;
 - added: req.language;
 - added: controller.title()

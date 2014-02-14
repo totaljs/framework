@@ -668,19 +668,20 @@ Framework.prototype.error = function(err, name, uri) {
 	@message {String}
 	@name {String} :: controller name
 	@uri {URI} :: optional
+	@ip {String} :: optional
 	return {Framework}
 */
-Framework.prototype.problem = function(message, name, uri) {
+Framework.prototype.problem = function(message, name, uri, ip) {
 	var self = this;
 
 	if (self.problems !== null) {
-		self.problems.push({ message: message, name: name, uri: uri });
+		self.problems.push({ message: message, name: name, uri: uri, ip: ip });
 
 		if (self.problems.length > 50)
 			self.problems.shift();
 	}
 
-	self.emit('problem', message, name, uri);
+	self.emit('problem', message, name, uri, ip);
 	return self;
 };
 
@@ -5750,7 +5751,7 @@ Controller.prototype.error = function(err) {
 */
 Controller.prototype.problem = function(message) {
 	var self = this;
-	self.framework.problem(message, self.name, self.uri);
+	self.framework.problem(message, self.name, self.uri, self.ip);
 	return self;
 };
 
