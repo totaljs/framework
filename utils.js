@@ -30,7 +30,7 @@ var contentTypes = {
 	'aac': 'audio/aac',
 	'bin': 'application/octet-stream',
 	'bmp': 'image/bmp',
-	'coffee': 'text/javascript',
+	'coffee': 'text/coffeescript',
 	'css': 'text/css',
 	'less': 'text/css',
 	'sass': 'text/css',
