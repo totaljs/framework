@@ -1957,7 +1957,7 @@ function view_prepare(command) {
 		case 'config':
 		case 'functions':
 		case 'model':
-			return '(' + command + ' || \'\').toString().encode()';
+			return command + '.toString().encode()';
 
 		case '!controller':
 		case '!repository':
@@ -1969,16 +1969,16 @@ function view_prepare(command) {
 		case '!config':
 		case '!functions':
 		case '!model':
-			return '(' + command.substring(1) + ' || \'\')';
+			return command.substring(1);
 
 		case 'body':
 			return 'self.output';
 
 		case 'resource':
-			return '(self.' + command + ' || \'\').toString().encode()';
+			return '(self.' + command + ').toString().encode()';
 
 		case '!resource':
-			return '(self.' + command .substring(1) + ' || \'\')';
+			return '(self.' + command .substring(1) + ')';
 
 		case 'host':
 		case 'hostname':
