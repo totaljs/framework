@@ -1978,7 +1978,7 @@ function view_prepare(command) {
 			return '(self.' + command + ' || \'\').toString().encode()';
 
 		case '!resource':
-			return '(self.' + command + ' || \'\')';
+			return '(self.' + command .substring(1) + ' || \'\')';
 
 		case 'host':
 		case 'hostname':
