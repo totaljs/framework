@@ -7,39 +7,41 @@ IN DEVELOPMENT ======= 1.2.0
 - added: gc() into framework.on('service')
 - added: config['allow-performance'] true/false (default, false)
 - added: new views/templates/contents cache
-- added: controller.title()
-- added: controller.description()
-- added: controller.keywords()
-- added: String.prototype.hash([type])
-- added: Array.prototype.trim()
-- added: Array.prototype.wait()
-- added: Array.prototype.async()
-- added: controller.problem(message);
 - added: framework.problem(message, [name], [uri]);
 - added: framework.on('problem', message, name, uri)
 - added: framework.problems;
 - added: req.language;
+- added: controller.title()
+- added: controller.description()
+- added: controller.keywords()
+- added: controller.problem(message);
+- added: Array.prototype.trim()
+- added: Array.prototype.wait()
+- added: Array.prototype.async()
+- added: String.prototype.hash([type])
 
+- updated: license
 - updated: parsing of configuration: # and // is a comment
 - updated: auto-vendor-prefixes (updated linear-gradient prioraty according to w3schools.com)
 - updated: websocket.send(message, [id], [blacklist]), id and blacklist can be a function
-- updated: license
 - updated: controller.view400([problem])
 - updated: controller.view403([problem])
 - updated: controller.view404([problem])
 - updated: controller.view501([problem])
 - updated: controller.plain(contentBody, [headers]) - added JSON serialized for objects
-- updated: framework.usage([detailed]) - return OBJECT
 - updated: controller.json(obj, [header], [beaufity]);
+- updated: framework.usage([detailed]) - return OBJECT
 - updated: @{sitemap} is currently: @{sitemap()}
 
 - removed: border-radius and box-shadow from auto-vendor-prefixes
 
+- obsolete: Array.prototype.waiting()
+
 - fixed: controller.view500()
+- fixed: controller.proxy(), utils.request(), utils.download() - problem with NGINX, missing Content-Length header
 - fixed: WebSocket skips throwing error (socket close, EPIPE)
 - fixed: mail (SPAM fixes)
 - fixed: buffer.write (new node => 0.11.11)
-- fixed: controller.proxy(), utils.request(), utils.download() - problem with NGINX, missing Content-Length header
 
 - rewrited: view engine
 - rewrited: template engine (according to view engine)
