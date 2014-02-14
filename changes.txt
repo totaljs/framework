@@ -18,6 +18,7 @@ IN DEVELOPMENT ======= 1.2.0
 - added: framework.problem(message, [name], [uri]);
 - added: framework.on('problem', message, name, uri)
 - added: framework.problems;
+- added: req.language;
 
 - updated: parsing of configuration: # and // is a comment
 - updated: auto-vendor-prefixes (updated linear-gradient prioraty according to w3schools.com)
@@ -30,6 +31,7 @@ IN DEVELOPMENT ======= 1.2.0
 - updated: controller.plain(contentBody, [headers]) - added JSON serialized for objects
 - updated: framework.usage([detailed]) - return OBJECT
 - updated: controller.json(obj, [header], [beaufity]);
+- updated: @{sitemap} is currently: @{sitemap()}
 
 - removed: border-radius and box-shadow from auto-vendor-prefixes
 

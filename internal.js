@@ -1909,7 +1909,7 @@ function view_parse(content) {
 			builder += '+\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 	}
 
-	var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index){var controller=self;return ' + builder.substring(1) + '})';
+	var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap){var controller=self;return ' + builder.substring(1) + '})';
 	return eval(fn);
 }
 
@@ -1996,7 +1996,12 @@ function view_prepare(command) {
 		case 'keywords':
 			if (command.indexOf('(') !== -1)
 				return 'self.' + command;
-			return '(repository[\'$' + command + '\'] || \'\')';
+			return '(repository[\'$' + command + '\'] || \'\').toString().encode()';
+
+		case '!title':
+		case '!description':
+		case '!keywords':
+			return '(repository[\'$' + command.substring(1) + '\'] || \'\')';
 
 		case 'head':
 		case 'place':
@@ -2879,7 +2884,7 @@ Template.prototype.dynamic = function(content) {
 
 	var self = this;
 	var key = 'template.' + content.md5();
-	var generator = self.framework.temporary.views[key] || null;
+	var generator = self.controller.framework.temporary.views[key] || null;
 
 	if (generator !== null)
 		return generator;
@@ -2887,7 +2892,7 @@ Template.prototype.dynamic = function(content) {
 	generator = self.parse(content);
 
 	if (generator !== null && !self.controller.isDebug)
-		self.framework.temporary.views[key] = generator;
+		self.controller.framework.temporary.views[key] = generator;
 
 	return generator;
 };

@@ -8001,6 +8001,10 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	self.$model = model;
 
+	var sitemap = function() {
+		return self.sitemap.apply(self, arguments);
+	};
+
 	if (self.isLayout) {
 		self._currentCSS = self._defaultCSS || '';
 		self._currentJS = self._defaultJS || '';
@@ -8014,7 +8018,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	try
 	{
-		value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, self.framework.helpers, self.user, self.config, self.framework.functions, 0).replace(/\\n/g, '\n');
+		value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, self.framework.helpers, self.user, self.config, self.framework.functions, 0, sitemap).replace(/\\n/g, '\n');
 	} catch(ex) {
 
 		var err = new Error('View: ' + name + ' - ' + ex.toString());
@@ -8902,8 +8906,11 @@ http.IncomingMessage.prototype = {
 
 	get isSecure() {
 		return this.uri.protocol === 'https' || this.uri.protocol === 'wss';
-	}
+	},
 
+	get language() {
+		return ((this.headers['accept-language'].split(';')[0] || '').split(',')[0] || '').toLowerCase();
+	}
 }
 
 http.IncomingMessage.prototype.__proto__ = _tmp;
