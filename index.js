@@ -1301,6 +1301,7 @@ Framework.prototype.usage = function(detailed) {
 	var connections = Object.keys(self.connections);
 	var workers = Object.keys(self.workers);
 	var modules = Object.keys(self.modules);
+	var models = Object.keys(self.models);
 	var components = Object.keys(self.components);
 	var helpers = Object.keys(self.helpers);
 	var staticFiles = Object.keys(self.temporary.path);
@@ -1371,10 +1372,10 @@ Framework.prototype.usage = function(detailed) {
 	output.controllers = [];
 
 	controllers.forEach(function(o) {
-		var controller = self.controllers[o];
+		var item = self.controllers[o];
 		output.controllers.push({
 			name: o,
-			usage: typeof(controller.usage) === UNDEFINED ? null : controller.usage()
+			usage: typeof(item.usage) === UNDEFINED ? null : item.usage()
 		});
 	});
 
@@ -1390,20 +1391,30 @@ Framework.prototype.usage = function(detailed) {
 	output.modules = [];
 
 	modules.forEach(function(o) {
-		var module = self.modules[o];
+		var item = self.modules[o];
 		output.modules.push({
 			name: o,
-			usage: typeof(module.usage) === UNDEFINED ? null : module.usage()
+			usage: typeof(item.usage) === UNDEFINED ? null : item.usage()
 		});
 	});
 
 	output.components = [];
 
 	components.forEach(function(o) {
-		var module = self.components[o];
+		var item = self.components[o];
 		output.components.push({
 			name: o,
-			usage: typeof(module.usage) === UNDEFINED ? null : module.usage()
+			usage: typeof(item.usage) === UNDEFINED ? null : item.usage()
+		});
+	});
+
+	output.models = [];
+
+	models.forEach(function(o) {
+		var item = self.models[o];
+		output.models.push({
+			name: o,
+			usage: typeof(item.usage) === UNDEFINED ? null : item.usage()
 		});
 	});
 
