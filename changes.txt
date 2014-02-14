@@ -14,7 +14,8 @@ IN DEVELOPMENT ======= 1.2.0
 - added: controller.title()
 - added: controller.description()
 - added: controller.keywords()
-- added: controller.problem(message);
+- added: controller.problem(message)
+- added: controller.memorize(key, expire, fnTo, [fnFrom]) - cache for controller.view(), controller.json(), controller.plain()
 - added: Array.prototype.trim()
 - added: Array.prototype.wait()
 - added: Array.prototype.async()
@@ -53,6 +54,7 @@ IN DEVELOPMENT ======= 1.2.0
 IMPORTANT: framework.usage() return OBJECT
 IMPORTANT: markup of template is OBSOLETE. Templates support only view markup.
 
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/controller-memorize
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/generators
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/routing-inline
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/problems

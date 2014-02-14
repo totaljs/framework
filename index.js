@@ -26,7 +26,8 @@ var REQUEST_COMPRESS_EXTENSION = ['js', 'css', 'txt'];
 var RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
 var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
-var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', 'text/html'];
+var CONTENTTYPE_TEXTHTML = 'text/html';
+var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', CONTENTTYPE_TEXTHTML];
 var _controller = '';
 
 global.builders = require('./builders');
@@ -2512,7 +2513,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 	res.success = true;
 
 	var headers = { 'Location': url };
-	headers[RESPONSE_HEADER_CONTENTTYPE] = 'text/html; charset=utf-8';
+	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTHTML + '; charset=utf-8';
 
 	res.writeHead(permament ? 301 : 302, headers);
 	res.end();
@@ -7278,6 +7279,9 @@ Controller.prototype.json = function(obj, headers, beautify) {
 	self.framework.responseContent(self.req, self.res, self.status, obj, 'application/json', true, headers);
 	self.framework.stats.response.json++;
 
+	if (self.precache)
+		self.precache(obj, 'application/json', headers);
+
 	return self;
 };
 
@@ -7343,7 +7347,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 	var type = typeof(contentType);
 
 	if (type === UNDEFINED) {
-		self.content(self.$contentToggle(true, contentBody), 'text/html', headers);
+		self.content(self.$contentToggle(true, contentBody), CONTENTTYPE_TEXTHTML, headers);
 		return;
 	}
 
@@ -7382,6 +7386,9 @@ Controller.prototype.plain = function(contentBody, headers) {
 	self.subscribe.success();
 	self.framework.responseContent(self.req, self.res, self.status, contentBody, CONTENTTYPE_TEXTPLAIN, true, headers);
 	self.framework.stats.response.plain++;
+
+	if (self.precache)
+		self.precache(contentBody, CONTENTTYPE_TEXTPLAIN, headers);
 
 	return self;
 };
@@ -7997,9 +8004,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		return;
 	}
 
-	var empty = '';
 	var value = '';
-
 	self.$model = model;
 
 	var sitemap = function() {
@@ -8040,17 +8045,86 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 		self.subscribe.success();
 
-		if (self.isConnected) {
-			self.framework.responseContent(self.req, self.res, self.status, value, 'text/html', true, headers);
-			self.framework.stats.response.view++;
-		}
+		if (!self.isConnected)
+			return;
+
+		self.framework.responseContent(self.req, self.res, self.status, value, CONTENTTYPE_TEXTHTML, true, headers);
+		self.framework.stats.response.view++;
+
+		if (self.precache)
+			self.self.precache(value);
 
 		return self;
 	}
 
 	self.output = value;
+
+	if (self.precache)
+		self.precache(value, CONTENTTYPE_TEXTHTML, headers);
+
 	self.isLayout = true;
 	self.view(self.layoutName, self.$model, headers);
+	return self;
+};
+
+/*
+	Memorize a view (without layout) into the cache
+	@key {String} :: cache key
+	@expire {Date} :: expiration
+	@fnTo {Function} :: if cache not exist
+	@fnFrom {Function} :: optional, if cache is exist
+	return {Controller}
+*/
+Controller.prototype.memorize = function(key, expire, fnTo, fnFrom) {
+
+	var self = this;
+	var output = self.cache.read(key);
+
+	if (output === null) {
+
+		self.precache = function(value, contentType, headers) {
+			self.cache.add(key, { content: value, type: contentType, headers: headers }, expire);
+			self.precache = null;
+		};
+
+		fnTo();
+
+		return self;
+	}
+
+	if (fnFrom)
+		fnFrom();
+
+	if (output.type !== CONTENTTYPE_TEXTHTML)
+		self.framework.responseContent(self.req, self.res, self.status, output.content, output.type, true, output.headers);
+
+	switch (output.type) {
+		case CONTENTTYPE_TEXTPLAIN:
+			self.framework.stats.response.plain++;		
+			return self;
+		case 'application/json':
+			self.framework.stats.response.json++;
+			return self;
+		case CONTENTTYPE_TEXTHTML:
+			self.framework.stats.response.view++;
+			break;
+	}
+
+	if (utils.isNullOrEmpty(self.layoutName)) {
+
+		self.subscribe.success();
+
+		if (!self.isConnected)
+			return self;
+
+		self.framework.responseContent(self.req, self.res, self.status, output.content, output.type, true, output.headers);		
+		return self;
+	}
+
+	self.output = output.content;
+	self.isLayout = true;
+	self.view(self.layoutName, null);
+
 	return self;
 };
 
