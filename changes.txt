@@ -61,6 +61,8 @@ IMPORTANT: markup of template is OBSOLETE. Templates support only view markup.
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/generators
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/routing-inline
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/problems
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/mongoose
+- EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/templates
 
 ======= 1.1.0
 
