@@ -8077,7 +8077,10 @@ Controller.prototype.memorize = function(key, expire, fnTo, fnFrom) {
 	if (output === null) {
 
 		self.precache = function(value, contentType, headers, title, description, keywords, image, sitemap) {
-			var options = { content: value, type: contentType, headers: headers };
+			var options = { content: value, type: contentType };
+
+			if (headers)
+				options.headers = headers;
 
 			if (title) {
 				options.title = title;
