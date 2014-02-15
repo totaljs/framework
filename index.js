@@ -8083,6 +8083,7 @@ Controller.prototype.memorize = function(key, expire, disabled, fnTo, fnFrom) {
 		}
 
 		self.precache = function(value, contentType, headers, isView) {
+
 			var options = { content: value, type: contentType };
 
 			if (headers)
@@ -8093,9 +8094,12 @@ Controller.prototype.memorize = function(key, expire, disabled, fnTo, fnFrom) {
 				var length = keys.length;
 				options.repository = [];
 				for (var i = 0; i < length; i++) {
-					var key = keys[i];
-					if (key[0] === '$' || key === 'sitemap')
-						options.repository.push({ key: key, value: self.repository[key] });
+					var name = keys[i];
+					if (name[0] === '$' || name === 'sitemap') {
+						var value = self.repository[name];
+						if (value)
+							options.repository.push({ key: name, value: value });
+					}
 				}
 			}
 
@@ -8107,7 +8111,6 @@ Controller.prototype.memorize = function(key, expire, disabled, fnTo, fnFrom) {
 			fnTo = disabled;
 
 		fnTo();
-
 		return self;
 	}
 
