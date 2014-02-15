@@ -5,34 +5,26 @@ var builders = require('../builders');
 
 function test_PageBuilder () {
 
-	var name = 'PageBuilder: ';
-	var builder = new builders.PageBuilder(100, 1, 12);
+	var name = 'Pagination: ';
+	var builder = new builders.Pagination(100, 1, 12);
 
 	assert.ok(builder.isPrev === false, name + 'isPrev (1)');
 	assert.ok(builder.isNext === true, name + 'isNext (1)');
 
+	var output = builder.render();
 
-	var output = builder.render(function(page, selected) {
-		return page;
-	});
+	console.log(output);
 
-	assert.ok(output.length === 9, name + 'render - no max');
-
-	output = builder.render(function(page, selected) {
-		return page;
-	}, 6);
-
-	assert.ok(output.length === 6, name + 'render - max 6');
+	output = builder.render(6);
+	console.log(output);
 
 	builder.refresh(100, 5, 12);
 
 	assert.ok(builder.isPrev, name + 'isPrev (50)');
 	assert.ok(builder.isNext, name + 'isNext (50)');
 
-	output = builder.render(function(page, selected) {
-		return page;
-	}, 5);
-
+	output = builder.render(5);
+	console.log(output);
 	assert.ok(output.join('') === '34567', name + 'render - max 5');
 };
 

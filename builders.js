@@ -31,8 +31,9 @@ function UrlBuilder() {
     @items {Number}
     @page {Number}
     @max {Number}
+    @format {String}, optional
 */
-function PageBuilder(items, page, max) {
+function Pagination(items, page, max, format) {
 	this.isNext = false;
 	this.isPrev = false;
 	this.items = items;
@@ -42,6 +43,7 @@ function PageBuilder(items, page, max) {
 	this.page = 0;
 	this.max = 0;
 	this.visible = false;
+	this.format = format || '?page={0}';
 	this.refresh(items, page, max);
 }
 
@@ -655,13 +657,13 @@ ErrorBuilder.prototype.prepare = function() {
 };
 
 /*
-	Refresh PageBuilder
+	Refresh Pagination
 	@items {Number}
 	@page {Number}
 	@max {Number}
-    return {PageBuilder}
+    return {Pagination}
 */
-PageBuilder.prototype.refresh = function(items, page, max) {
+Pagination.prototype.refresh = function(items, page, max) {
 	var self = this;
 
 	self.count = Math.floor(items / max) + (items % max > 0 ? 1 : 0);
@@ -683,19 +685,26 @@ PageBuilder.prototype.refresh = function(items, page, max) {
 };
 
 /*
-	Render PageBuilder
+	Render Pagination
 	@fn {Function} :: function(pageIndex)
 	@max {Number} :: optional, default undefined
     return {Array}
 */
-PageBuilder.prototype.render = function(fn, max) {
+Pagination.prototype.render = function(max, format) {
 
 	var self = this;
 	var builder = [];
+	format = format || self.format;
+
+	if (typeof(max) === STRING) {
+		var tmp = format;
+		format = max;
+		max = format;
+	}
 
 	if (typeof(max) === UNDEFINED) {
 		for (var i = 1; i < self.count + 1; i++)
-			builder.push(fn(i, i === self.page));
+			builder.push({ url: format.replace(/\{0\}/g, i), page: i, selected: i === self.page });
 		return builder;
 	}
 
@@ -718,7 +727,7 @@ PageBuilder.prototype.render = function(fn, max) {
 	}
 
 	for (var i = pageFrom; i < pageTo + 1; i++)
-		builder.push(fn(i, i === self.page));
+		builder.push({ url: format.replace(/\{0\}/g, i), page: i, selected: i === self.page });
 
 	return builder;
 };
@@ -836,5 +845,5 @@ UrlBuilder.prototype.toOne = function(keys, delimiter) {
 // ======================================================
 
 exports.ErrorBuilder = ErrorBuilder;
-exports.PageBuilder = PageBuilder;
+exports.Pagination = Pagination;
 exports.UrlBuilder = UrlBuilder;
