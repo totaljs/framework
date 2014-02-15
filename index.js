@@ -8040,7 +8040,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		return value;
 
 	if (!self.isLayout && self.precache)
-		self.precache(value, CONTENTTYPE_TEXTHTML, headers, self.repository[REPOSITORY_META_TITLE], self.repository[REPOSITORY_META_DESCRIPTION], self.repository[REPOSITORY_META_KEYWORDS], self.repository[REPOSITORY_META_IMAGE], self.sitemap());
+		self.precache(value, CONTENTTYPE_TEXTHTML, headers, true);
 
 	if (self.isLayout || utils.isNullOrEmpty(self.layoutName)) {
 
@@ -8065,38 +8065,56 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	Memorize a view (without layout) into the cache
 	@key {String} :: cache key
 	@expire {Date} :: expiration
+	@disabled {Boolean} :: disabled for debug mode
 	@fnTo {Function} :: if cache not exist
 	@fnFrom {Function} :: optional, if cache is exist
 	return {Controller}
 */
-Controller.prototype.memorize = function(key, expire, fnTo, fnFrom) {
+Controller.prototype.memorize = function(key, expire, disabled, fnTo, fnFrom) {
 
 	var self = this;
 	var output = self.cache.read(key);
 
 	if (output === null) {
 
-		self.precache = function(value, contentType, headers, title, description, keywords, image, sitemap) {
+		if (disabled === true) {
+			fnTo();
+			return self;
+		}
+
+		self.precache = function(value, contentType, headers, isView) {
 			var options = { content: value, type: contentType };
 
 			if (headers)
 				options.headers = headers;
 
-			if (title) {
-				options.title = title;
-				options.description = description;
-				options.keywords = keywords;
-				options.image = image;
-				options.sitemap = sitemap;
+			if (isView) {
+				var keys = Object.keys(self.repository);
+				var length = keys.length;
+				options.repository = [];
+				for (var i = 0; i < length; i++) {
+					var key = keys[i];
+					if (key[0] === '$' || key === 'sitemap')
+						options.repository.push({ key: key, value: self.repository[key] });
+				}
 			}
 
 			self.cache.add(key, options, expire);
 			self.precache = null;
 		};
 
+		if (typeof(disabled) === FUNCTION)
+			fnTo = disabled;
+
 		fnTo();
 
 		return self;
+	}
+
+	if (typeof(disabled) === FUNCTION) {
+		var tmp = fnTo;
+		fnTo = disabled;
+		fnFrom = tmp;
 	}
 
 	if (fnFrom)
@@ -8107,7 +8125,7 @@ Controller.prototype.memorize = function(key, expire, fnTo, fnFrom) {
 
 	switch (output.type) {
 		case CONTENTTYPE_TEXTPLAIN:
-			self.framework.stats.response.plain++;		
+			self.framework.stats.response.plain++;
 			return self;
 		case 'application/json':
 			self.framework.stats.response.json++;
@@ -8117,8 +8135,9 @@ Controller.prototype.memorize = function(key, expire, fnTo, fnFrom) {
 			break;
 	}
 
-	self.meta(output.title, output.description, output.keywords, output.image);
-	self.repository.sitemap = output.sitemap;
+	var length = output.repository.length;
+	for (var i = 0; i < length; i++)
+		self.repository[output.repository[i].key] = output.repository[i].value;
 
 	if (utils.isNullOrEmpty(self.layoutName)) {
 
@@ -8127,7 +8146,7 @@ Controller.prototype.memorize = function(key, expire, fnTo, fnFrom) {
 		if (!self.isConnected)
 			return self;
 
-		self.framework.responseContent(self.req, self.res, self.status, output.content, output.type, true, output.headers);		
+		self.framework.responseContent(self.req, self.res, self.status, output.content, output.type, true, output.headers);
 		return self;
 	}
 
