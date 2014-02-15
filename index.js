@@ -5946,7 +5946,6 @@ Controller.prototype.sitemap = function(name, url, index) {
 	return self;
 };
 
-
 Controller.prototype.$sitemap = function(name, url, index) {
 	var self = this;
 	self.sitemap.apply(self, arguments);
@@ -5983,7 +5982,6 @@ Controller.prototype.$layout = function(name) {
 	self.layoutName = name;
 	return '';
 };
-
 
 /*
 	Get a model
@@ -8041,6 +8039,9 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (isPartial)
 		return value;
 
+	if (!self.isLayout && self.precache)
+		self.precache(value, CONTENTTYPE_TEXTHTML, headers, self.repository[REPOSITORY_META_TITLE], self.repository[REPOSITORY_META_DESCRIPTION], self.repository[REPOSITORY_META_KEYWORDS], self.repository[REPOSITORY_META_IMAGE], self.sitemap());
+
 	if (self.isLayout || utils.isNullOrEmpty(self.layoutName)) {
 
 		self.subscribe.success();
@@ -8051,17 +8052,10 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		self.framework.responseContent(self.req, self.res, self.status, value, CONTENTTYPE_TEXTHTML, true, headers);
 		self.framework.stats.response.view++;
 
-		if (self.precache)
-			self.self.precache(value);
-
 		return self;
 	}
 
 	self.output = value;
-
-	if (self.precache)
-		self.precache(value, CONTENTTYPE_TEXTHTML, headers);
-
 	self.isLayout = true;
 	self.view(self.layoutName, self.$model, headers);
 	return self;
@@ -8082,8 +8076,18 @@ Controller.prototype.memorize = function(key, expire, fnTo, fnFrom) {
 
 	if (output === null) {
 
-		self.precache = function(value, contentType, headers) {
-			self.cache.add(key, { content: value, type: contentType, headers: headers }, expire);
+		self.precache = function(value, contentType, headers, title, description, keywords, image, sitemap) {
+			var options = { content: value, type: contentType, headers: headers };
+
+			if (title) {
+				options.title = title;
+				options.description = description;
+				options.keywords = keywords;
+				options.image = image;
+				options.sitemap = sitemap;
+			}
+
+			self.cache.add(key, options, expire);
 			self.precache = null;
 		};
 
@@ -8109,6 +8113,9 @@ Controller.prototype.memorize = function(key, expire, fnTo, fnFrom) {
 			self.framework.stats.response.view++;
 			break;
 	}
+
+	self.meta(output.title, output.description, output.keywords, output.image);
+	self.repository.sitemap = output.sitemap;
 
 	if (utils.isNullOrEmpty(self.layoutName)) {
 
