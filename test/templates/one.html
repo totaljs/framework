@@ -1,5 +1,5 @@
-<div>{price | ##.##}</div>
-<div>{price}</div>
-<div>{# | 'A' : 'B'}</div>
-<div>{# | 'zero', 'one', 'few', 'other'}</div>
-<div>{B | 'C' : 'D'}</div>
+<div>@{model.price.format('##.##')}</div>
+<div>@{model.price}</div>
+<div>@{if index % 2 === 0}A@{else}B@{endif}</div>
+<div>@{index.pluralize('zero', 'one', 'few', 'other')}</div>
+<div>@{if model.B}C@{else}D@{endif}</div>
