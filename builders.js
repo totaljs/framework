@@ -257,7 +257,7 @@ exports.prepare = function(name, model) {
 	for (var i = 0; i < length; i++) {
 
 		var property = properties[i];
-		var val = model[property];		
+		var val = model[property];
 
 		if (typeof(val) === UNDEFINED && defaults)
 			val = defaults(property, false);
@@ -683,6 +683,45 @@ Pagination.prototype.refresh = function(items, page, max) {
 
 	return self;
 };
+
+/*
+	Get previous page
+	@format {String} :: optional
+	return {Object}
+*/
+Pagination.prototype.prev = function(format) {
+	var self = this;
+	var page = 0;
+
+	format = format || self.format;
+
+	if (self.isPrev)
+		page = self.page - 1;
+	else
+		page = self.count;
+
+	return { url: format.replace(/\{0\}/g, page), page: page, selected: false };
+};
+
+/*
+	Get next page
+	@format {String} :: optional
+	return {Object}
+*/
+Pagination.prototype.next = function(format) {
+	var self = this;
+	var page = 0;
+
+	format = format || self.format;
+
+	if (self.isNext)
+		page = self.page + 1;
+	else
+		page = 1;
+
+	return { url: format.replace(/\{0\}/g, page), page: page, selected: false };
+};
+
 
 /*
 	Render Pagination

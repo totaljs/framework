@@ -7210,6 +7210,9 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
 		return '';
 	}
 
+	if (typeof(repository) === UNDEFINED)
+		repository = self.repository;
+
 	var plus = '';
 
 	if (name[0] !== '~')

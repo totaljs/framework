@@ -20,6 +20,7 @@ IN DEVELOPMENT ======= 1.2.0
 - added: Array.prototype.wait()
 - added: Array.prototype.async()
 - added: String.prototype.hash([type])
+- added: Pagination.next([format]), Pagination.prev([format])
 
 - updated: license
 - updated: parsing of configuration: # and // is a comment
@@ -34,6 +35,7 @@ IN DEVELOPMENT ======= 1.2.0
 - updated: framework.usage([detailed]) - return OBJECT
 - updated: @{sitemap} is currently: @{sitemap()}
 - updated: PageBuilder
+- updated: @{template()} and controller.template() - default repository is controller repository
 
 - removed: border-radius and box-shadow from auto-vendor-prefixes
 
