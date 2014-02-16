@@ -6,6 +6,7 @@ IN DEVELOPMENT ======= 1.2.0
 - added: node harmony functions (see example)
 - added: gc() into framework.on('service')
 - added: config['allow-performance'] true/false (default, false)
+- added: config['default-image-converter'] (default "gm" - GraphicsMagick, another possibility: "im" - ImageMagick)
 - added: new views/templates/contents cache
 - added: framework.problem(message, [name], [uri], [ip]);
 - added: framework.on('problem', message, [name], [uri], [ip])

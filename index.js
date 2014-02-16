@@ -97,11 +97,15 @@ function Framework() {
 		// in milliseconds
 		'default-request-timeout': 3000,
 
+		// otherwise is used ImageMagick (Heroku supports ImageMagick)
+		// gm = graphicsmagick or im = imagemagick
+		'default-image-converter': 'gm',
+
 		'allow-gzip': true,
 		'allow-websocket': true,
 		'allow-compile-js': true,
 		'allow-compile-css': true,
-		'allow-performance': false
+		'allow-performance': false,
 	};
 
 	this.global = {};
@@ -1814,7 +1818,10 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		req.processing += 500;
 
 		setTimeout(function() {
-			self.responseImage(req, res, filename, fnProcess, headers, useImageMagick);
+			var im = useImageMagick;
+			if (typeof(im) === UNDEFINED)
+				im = self.config['default-image-converter'] === 'im';
+			self.responseImage(req, res, filename, fnProcess, headers, im);
 		}, 500);
 
 		return;
@@ -1934,7 +1941,10 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 		req.processing += 500;
 
 		setTimeout(function() {
-			self.responseImageWithoutCache(req, res, filename, fnProcess, headers, useImageMagick);
+			var im = useImageMagick;
+			if (typeof(im) === UNDEFINED)
+				im = self.config['default-image-converter'] === 'im';
+			self.responseImageWithoutCache(req, res, filename, fnProcess, headers, im);
 		}, 500);
 
 		return;
@@ -2647,11 +2657,16 @@ Framework.prototype.init = function(http, config, port, ip, options) {
     if (self.config['allow-websocket'])
 		self.server.on('upgrade', self.handlers.onupgrade);
 
-	self.port = port || self.config['default-port'] || process.env.PORT || 8000;
+	if (!port) {
+		if (self.config['default-port'] === 'auto')
+			port = parseInt(process.env.PORT.toString());
+	}
+
+	self.port = port || 8000;
 
 	if (ip !== null) {
 		self.ip = ip || self.config['default-ip'] || '127.0.0.1';
-		if (self.ip === 'heroku' || self.ip === 'null' || self.ip === 'undefined')
+		if (self.ip === 'null' || self.ip === 'undefined' || self.ip === 'auto')
 			self.ip = undefined;
 	}
 	else
@@ -2660,7 +2675,7 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 	self.server.listen(self.port, self.ip);
 
 	if (typeof(self.ip) === UNDEFINED || self.ip === null)
-		self.ip = UNDEFINED;
+		self.ip = 'auto';
 
 	if (module !== null) {
 		if (typeof(module.onLoad) !== UNDEFINED) {

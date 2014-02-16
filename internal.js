@@ -611,7 +611,15 @@ HttpFile.prototype.isAudio = function() {
 	return {Image} :: look at ./lib/image.js
 */
 HttpFile.prototype.image = function(imageMagick) {
-	return require('./image').init(this.path, imageMagick);
+
+	var im = imageMagick;
+
+	// Not a clean solution because the framework hasn't a direct dependence.
+	// This is hack :-)
+	if (typeof(im) === UNDEFINED)
+		im = framework.config['default-image-converter'] === 'im';
+
+	return require('./image').init(this.path, im);
 };
 
 // *********************************************************************************
