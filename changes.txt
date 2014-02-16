@@ -46,6 +46,7 @@ IN DEVELOPMENT ======= 1.2.0
 - fixed: WebSocket skips throwing error (socket close, EPIPE)
 - fixed: mail (SPAM fixes)
 - fixed: buffer.write (new node => 0.11.11)
+- fixed: IP and heroku deploy
 
 - rewrited: view engine
 - rewrited: template engine (according to view engine)
@@ -57,11 +58,13 @@ IN DEVELOPMENT ======= 1.2.0
 IMPORTANT: framework.usage() return OBJECT
 IMPORTANT: markup of template is OBSOLETE. Templates support only view markup.
 
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/heroku
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/controller-memorize
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/generators
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/routing-inline
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/problems
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/mongoose
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/pagination
 - EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/templates
 
 ======= 1.1.0

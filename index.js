@@ -2543,7 +2543,7 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 		var tmp = options;
 		options = port;
 		port = tmp;
-	} else if (typeof(ip) === OBJECT) {
+	} else if (ip !== null && typeof(ip) === OBJECT) {
 		var tmp = options;
 		options = ip;
 		ip = tmp;
@@ -2647,9 +2647,20 @@ Framework.prototype.init = function(http, config, port, ip, options) {
     if (self.config['allow-websocket'])
 		self.server.on('upgrade', self.handlers.onupgrade);
 
-	self.port = port || process.env.PORT || self.config['default-port'] || 8000;
-	self.ip = ip || self.config['default-ip'] || '127.0.0.1';
+	self.port = port || self.config['default-port'] || process.env.PORT || 8000;
+
+	if (ip !== null) {
+		self.ip = ip || self.config['default-ip'] || '127.0.0.1';
+		if (self.ip === 'heroku' || self.ip === 'null' || self.ip === 'undefined')
+			self.ip = undefined;
+	}
+	else
+		self.ip = undefined;
+
 	self.server.listen(self.port, self.ip);
+
+	if (typeof(self.ip) === UNDEFINED || self.ip === null)
+		self.ip = UNDEFINED;
 
 	if (module !== null) {
 		if (typeof(module.onLoad) !== UNDEFINED) {
