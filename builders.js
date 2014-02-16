@@ -762,8 +762,11 @@ Pagination.prototype.render = function(max, format) {
 
 	if (pageTo >= pages) {
 		pageTo = pages;
-		pageFrom = pages - max;
+		pageFrom = pages - max;		
 	}
+
+	if (pageFrom < 0)
+		pageFrom = 1;
 
 	for (var i = pageFrom; i < pageTo + 1; i++)
 		builder.push({ url: format.replace(/\{0\}/g, i), page: i, selected: i === self.page });
