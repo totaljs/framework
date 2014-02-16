@@ -1807,6 +1807,10 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		return self;
 	}
 
+	var im = useImageMagick;
+	if (typeof(im) === UNDEFINED)
+		im = self.config['default-image-converter'] === 'im';
+
 	if (self.isProcessing(key)) {
 
 		if (req.processing > self.config['default-request-timeout']) {
@@ -1818,9 +1822,6 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		req.processing += 500;
 
 		setTimeout(function() {
-			var im = useImageMagick;
-			if (typeof(im) === UNDEFINED)
-				im = self.config['default-image-converter'] === 'im';
 			self.responseImage(req, res, filename, fnProcess, headers, im);
 		}, 500);
 
@@ -1845,7 +1846,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			}
 
 			self._verify_directory('temp');
-			var image = Image.load(stream, useImageMagick);
+			var image = Image.load(stream, im);
 
 			fnProcess(image);
 
@@ -1884,7 +1885,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
 		self._verify_directory('temp');
 
-		var image = Image.load(filename, useImageMagick);
+		var image = Image.load(filename, im);
 
 		fnProcess(image);
 
@@ -1929,6 +1930,10 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 		stream = filename;
 
 	var key = 'image-' + req.url.substring(1);
+	var im = useImageMagick;
+	if (typeof(im) === UNDEFINED)
+		im = self.config['default-image-converter'] === 'im';
+
 
 	if (self.isProcessing(key)) {
 
@@ -1941,9 +1946,6 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 		req.processing += 500;
 
 		setTimeout(function() {
-			var im = useImageMagick;
-			if (typeof(im) === UNDEFINED)
-				im = self.config['default-image-converter'] === 'im';
 			self.responseImageWithoutCache(req, res, filename, fnProcess, headers, im);
 		}, 500);
 
@@ -1954,7 +1956,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 
 	// STREAM
 	if (stream !== null) {
-		var image = Image.load(stream, useImageMagick);
+		var image = Image.load(stream, im);
 		fnProcess(image);
 		self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
 		return self;
@@ -1969,7 +1971,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 		}
 
 		self._verify_directory('temp');
-		var image = Image.load(filename, useImageMagick);
+		var image = Image.load(filename, im);
 		fnProcess(image);
 		self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
 
