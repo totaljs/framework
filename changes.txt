@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.0
+======= 1.2.0
 
 - new: NEW TEMPLATE ENGINE 2.0
 
@@ -59,6 +59,7 @@ IN DEVELOPMENT ======= 1.2.0
 IMPORTANT: framework.usage() return OBJECT
 IMPORTANT: markup of template is OBSOLETE. Templates support only view markup.
 
+- EXAMPLE (NEW): https://github.com/totaljs/demo
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/heroku
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/controller-memorize
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/generators

@@ -5,7 +5,7 @@ web framework for node.js
 
 __total.js__ is the best ever web application framework for creating a rich web sites and web services. The framework has good documentation and contains many examples. Please support the framework on GitHub and other social networks.
 
-> Current version (v1.1.0) is __stable version__.
+> Current version (v1.2.0) is __stable version__.
 
 ```
 $ npm install total.js
@@ -27,6 +27,7 @@ __Development__:
 
 __Interesting__:
 
+- [NEW: Total.js Mongoose Demo on Heroku](http://totaldemo.herokuapp.com/)
 - [Tutorial](http://docs.totaljs.com/tutorial/)
 - [Download __total.js modules__](https://github.com/totaljs/modules/)
 - Framework supports [NoSQL Embedded database](https://github.com/petersirka/nosql) for max. 20 000 documents per database
@@ -41,6 +42,7 @@ __Social networks__:
 
 __Examples__:
 
+- [NEW: Total.js Mongoose Demo on Heroku](http://totaldemo.herokuapp.com/)
 - [Sushi website example](http://sushi.totaljs.com)
 - [TODO list example](http://todo.totaljs.com)
 - [More than 90 examples](https://github.com/totaljs/examples/tree/master/)
