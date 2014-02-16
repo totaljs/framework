@@ -8068,7 +8068,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (isPartial)
 		return value;
 
-	if (!self.isLayout && self.precache)
+	if (!self.isLayout && self.precache && self.status === 200)
 		self.precache(value, CONTENTTYPE_TEXTHTML, headers, true);
 
 	if (self.isLayout || utils.isNullOrEmpty(self.layoutName)) {
