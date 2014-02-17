@@ -2463,7 +2463,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 	// Safari resolve
 	if (contentType === 'application/json')
-		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'no-cache';
+		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
 
 	// pridáme UTF-8 do hlavičky
 	if ((/text|application/).test(contentType))
