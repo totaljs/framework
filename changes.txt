@@ -58,7 +58,7 @@
 - improvements: templates
 - improvements: partial routing
 
-IMPORTANT: framework.usage() return OBJECT
+IMPORTANT: framework.usage() returns OBJECT
 IMPORTANT: markup of template is OBSOLETE. Templates support only view markup.
 
 - EXAMPLE (NEW): https://github.com/totaljs/demo
