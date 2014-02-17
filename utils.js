@@ -630,6 +630,15 @@ exports.isArray = function(obj) {
 };
 
 /*
+	Is RegExp?
+	@obj {Object}
+	return {Boolean}
+*/
+exports.isRegExp = function(obj) {
+	return util.isRegExp(obj);
+};
+
+/*
 	Is date?
 	@obj {Object}
 	return {Boolean}

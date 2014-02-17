@@ -4864,10 +4864,18 @@ FrameworkCache.prototype.removeAll = function(search) {
 	var count = 0;
 	var keys = Object.keys(self.repository);
 	var length = keys.length;
+	var isReg = utils.isRegExp(search);
 
 	for (var i = 0; i < length; i++) {
-		if (keys[i].indexOf(search) === -1)
-			continue;
+
+		if (isReg) {
+			if (!search.test(keys[i]))
+				continue;
+		} else {
+			if (keys[i].indexOf(search) === -1)
+				continue;
+		}
+
 		self.remove(keys[i]);
 		count++;
 	}

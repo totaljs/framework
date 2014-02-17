@@ -22,6 +22,7 @@
 - added: Array.prototype.async()
 - added: String.prototype.hash([type])
 - added: Pagination.next([format]), Pagination.prev([format])
+- added: utils.isRegExp(obj)
 
 - updated: license
 - updated: parsing of configuration: # and // is a comment
@@ -34,6 +35,7 @@
 - updated: controller.plain(contentBody, [headers]) - added JSON serialized for objects
 - updated: controller.json(obj, [header], [beaufity]);
 - updated: framework.usage([detailed]) - return OBJECT
+- updated: FrameworkCache.removeAll(search or regexp-pattern)
 - updated: @{sitemap} is currently: @{sitemap()}
 - updated: PageBuilder
 - updated: @{template()} and controller.template() - default repository is controller repository
