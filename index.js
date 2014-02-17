@@ -2662,6 +2662,8 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 	if (!port) {
 		if (self.config['default-port'] === 'auto')
 			port = parseInt(process.env.PORT.toString());
+		else
+			port = self.config['default-port'];
 	}
 
 	self.port = port || 8000;
