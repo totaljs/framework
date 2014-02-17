@@ -69,6 +69,12 @@ __Other products__:
 
 - [FileServer: storing of uploaded files](https://github.com/petersirka/fileserver)
 
+Project
+-------
+
+- <www.gpslocalization.com> is written in total.js and uses WebSockets, try it.
+
+
 Documentation
 -------------
 - [English documentation](http://docs.totaljs.com/)
