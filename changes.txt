@@ -34,7 +34,7 @@
 - updated: controller.view501([problem])
 - updated: controller.plain(contentBody, [headers]) - added JSON serialized for objects
 - updated: controller.json(obj, [header], [beaufity]);
-- updated: framework.usage([detailed]) - return OBJECT
+- updated: framework.usage([detailed]) - returns OBJECT
 - updated: FrameworkCache.removeAll(search or regexp-pattern)
 - updated: @{sitemap} is currently: @{sitemap()}
 - updated: PageBuilder
