@@ -72,7 +72,7 @@ __Other products__:
 Project
 -------
 
-- <www.gpslocalization.com> is written in total.js and uses WebSockets, try it.
+- [www.gpslocalization.com](http://www.gpslocalization.com) is written in total.js and uses WebSockets, __try it__.
 
 
 Documentation
