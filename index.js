@@ -36,8 +36,8 @@ global.utils = require('./utils');
 function Framework() {
 
 	this.id = null;
-	this.version = 1200;
-	this.version_header = '1.2.0';
+	this.version = 1201;
+	this.version_header = '1.2.1';
 
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
@@ -6588,6 +6588,7 @@ Controller.prototype.head = function() {
 
 	var length = arguments.length;
 	var header = (self.repository[REPOSITORY_HEAD] || '');
+
 	if (length === 0)
 		return header + (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '');
 

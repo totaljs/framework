@@ -1,3 +1,5 @@
+======= 1.2.1-1 (NPM problem)
+======= 1.2.1   (NPM problem)
 ======= 1.2.0
 
 - new: NEW TEMPLATE ENGINE 2.0

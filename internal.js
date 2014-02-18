@@ -2012,6 +2012,9 @@ function view_prepare(command) {
 			return '(repository[\'$' + command.substring(1) + '\'] || \'\')';
 
 		case 'head':
+			if (command.indexOf('(') !== -1)
+				return 'self.$' + command;
+			return 'self.' + command + '()';
 		case 'place':
 		case 'sitemap':
 			if (command.indexOf('(') !== -1)
