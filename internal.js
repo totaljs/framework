@@ -2046,6 +2046,7 @@ function view_prepare(command) {
 
 		case 'canonical':
 		case 'checked':
+		case 'helper':
 		case 'component':
 		case 'componentToggle':
 		case 'content':
@@ -2086,13 +2087,44 @@ function view_prepare(command) {
 		case 'textarea':
 		case 'password':
 			return 'self.$' + exports.appendModel(command);
-
 		default:
-			return 'helpers.' + command;
+			return 'helpers.' + view_insert_call(command);
 	}
 
 	return command;
 }
+
+function view_insert_call(command) {
+
+	var beg = command.indexOf('(');
+	if (beg === -1)
+		return command;
+
+	var length = command.length;
+	var count = 0;
+
+	for (var i = beg + 1; i < length; i++) {
+
+		var c = command[i];
+
+		if (c !== '(' && c !== ')')
+			continue;
+
+		if (c === '(') {
+			count++;
+			continue;
+		}
+
+		if (count > 0) {
+			count--;
+			continue;
+		}
+
+		return command.substring(0, beg) + '.call(self, ' + command.substring(beg + 1);
+	}
+
+	return command;
+};
 
 function view_find_command(content, index) {
 

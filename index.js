@@ -6197,6 +6197,11 @@ Controller.prototype.$component = function(name) {
 	return self.component.apply(self, arguments);
 };
 
+Controller.prototype.$helper = function(name) {
+	var self = this;
+	return self.helper.apply(self, arguments);
+};
+
 /*
 	Internal function for views
 	@bool {Boolean}
@@ -7289,6 +7294,27 @@ Controller.prototype.component = function(name) {
 };
 
 /*
+	Render component to string
+	@name {String}
+	return {String}
+*/
+Controller.prototype.helper = function(name) {
+	var self = this;
+	var helper = framework.helpers[name] || null;
+
+	if (helper === null)
+		return '';
+
+	var length = arguments.length;
+	var params = [];
+
+	for (var i = 1; i < length; i++)
+		params.push(arguments[i]);
+
+	return helper.apply(self, params);
+};
+
+/*
 	Response JSON
 	@obj {Object}
 	@headers {Object} :: optional
@@ -8062,9 +8088,11 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		self._currentContent = self._defaultContent || '';
 	}
 
+	var helpers = self.framework.helpers;
+
 	try
 	{
-		value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, self.framework.helpers, self.user, self.config, self.framework.functions, 0, sitemap).replace(/\\n/g, '\n');
+		value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, helpers, self.user, self.config, self.framework.functions, 0, sitemap).replace(/\\n/g, '\n');
 	} catch(ex) {
 
 		var err = new Error('View: ' + name + ' - ' + ex.toString());
