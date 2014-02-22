@@ -2,6 +2,7 @@ IN DEVELOPMENT ======= 1.2.2 (HOTFIX)
 
 - added: view @{helper('name', [arg1], [arg2], ...)}
 - added: controller.helper(name, [arg1], [arg2], ...)
+- added: next markup /*auto*/ for auto-vendor-prefixes
 
 - fixed: helpers
 

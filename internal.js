@@ -940,8 +940,11 @@ function autoprefixer(value) {
 	var prefix = ['appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-origin', 'transition', 'user-select', 'animation', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing'];
 	var id = '@#auto-vendor-prefix#@';
 
-	if (value.indexOf(id) === -1)
-		return value;
+	if (value.indexOf(id) === -1) {
+		id = '/*auto*/';
+		if (value.indexOf(id) === -1)
+			return value;
+	}
 
 	value = autoprefixer_keyframes(value.replacer(id, ''));
 
