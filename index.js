@@ -135,6 +135,7 @@ function Framework() {
 	this.tests = {};
 	this.errors = [];
 	this.problems = [];
+	this.changes = [];
 	this.server = null;
 	this.port = 0;
 	this.ip = '';
@@ -436,10 +437,17 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 				case 'raw':
 					isRaw = true;
 					break;
-				case 'logged':
-				case 'unlogged':
+				case 'authorize':
 					priority -= 2;
-					tmp.push(flag);
+					tmp.push('authorize');
+					break;
+				case 'logged':
+					priority -= 2;
+					tmp.push('authorize');
+					console.log('OBSOLETE: flag "logged" - use "authorize".');
+					break;
+				case 'unlogged':
+					console.log('OBSOLETE: flag "unlogged". Framework doesn\'t support unlogged flag.');
 					break;
 				default:
 					tmp.push(flag);
@@ -461,7 +469,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 
 	var isMember = false;
 
-	if (flags.indexOf('logged') === -1 && flags.indexOf('unlogged') === -1)
+	if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1)
 		isMember = true;
 
 	var routeURL = internal.routeSplit(url.trim());
@@ -625,7 +633,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
 	var isMember = false;
 
-	if (!flags || (flags.indexOf('logged') === -1 && flags.indexOf('unlogged') === -1))
+	if (!flags || (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1))
 		isMember = true;
 
 	self.routes.websockets.push({ name: (_controller || '').length === 0 ? 'unknown' : _controller, url: routeURL, param: arr, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: (maximumSize || self.config['default-websocket-request-length']) * 1024, isMEMBER: isMember, isJSON: isJSON, isBINARY: isBINARY });
@@ -667,7 +675,6 @@ Framework.prototype.error = function(err, name, uri) {
 	return self;
 };
 
-
 /*
 	Problem caller
 	@message {String}
@@ -687,6 +694,28 @@ Framework.prototype.problem = function(message, name, uri, ip) {
 	}
 
 	self.emit('problem', message, name, uri, ip);
+	return self;
+};
+
+/*
+	Change caller
+	@message {String}
+	@name {String} :: controller name
+	@uri {URI} :: optional
+	@ip {String} :: optional
+	return {Framework}
+*/
+Framework.prototype.change = function(message, name, uri, ip) {
+	var self = this;
+
+	if (self.changes !== null) {
+		self.changes.push({ message: message, name: name, uri: uri, ip: ip });
+
+		if (self.changes.length > 50)
+			self.changes.shift();
+	}
+
+	self.emit('change', message, name, uri, ip);
 	return self;
 };
 
@@ -1186,7 +1215,7 @@ Framework.prototype.onRequest = null;
 	@req {ServerRequest}
 	@res {ServerResponse} OR {WebSocketClient}
 	@flags {String array}
-	@callback {Function} - @callback(Boolean), true if logged and false if unlogged
+	@callback {Function} - @callback(Boolean), true if authorize and false if unlogged
 */
 Framework.prototype.onAuthorization = null;
 
@@ -2848,7 +2877,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		if (user)
 			req.user = user;
 
-		req.flags.push(isLogged ? 'logged' : 'unlogged');
+		if (isLogged)
+			req.flags.push('authorize');
 
 		var route = self.lookup_websocket(req, websocket.uri.pathname, false);
 
@@ -5191,7 +5221,9 @@ Subscribe.prototype._authorization = function(isLogged, user) {
 	if (user)
 		self.req.user = user;
 
-	self.req.flags.push(isLogged ? 'logged' : 'unlogged');
+	if (isLogged)
+		self.req.flags.push('authorize');
+
 	self.route = self.framework.lookup(self.req, self.req.buffer_exceeded ? '#431' : self.req.uri.pathname, self.req.flags);
 
 	if (self.route === null)
@@ -5791,6 +5823,17 @@ Controller.prototype.error = function(err) {
 Controller.prototype.problem = function(message) {
 	var self = this;
 	self.framework.problem(message, self.name, self.uri, self.ip);
+	return self;
+};
+
+/*
+	Change
+	@message {String}
+	return {Framework}
+*/
+Controller.prototype.change = function(message) {
+	var self = this;
+	self.framework.change(message, self.name, self.uri, self.ip);
 	return self;
 };
 
