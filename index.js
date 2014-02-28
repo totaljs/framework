@@ -6380,11 +6380,14 @@ Controller.prototype.$ngTemplate = function(name, id) {
 
 	if (typeof(tmp) === UNDEFINED) {
 		var filename = utils.combine(self.config['directory-angular'], name);
+
 		if (fs.existsSync(filename))
 			tmp = fs.readFileSync(filename).toString('utf8');
 		else
 			tmp = '';
-		self.framework.temporary.views[key] = tmp;
+
+		if (!self.isDebug)
+			self.framework.temporary.views[key] = tmp;
 	}
 
 	return '<script type="text/ng-template" id="' + id +'">' + tmp + '</script>';
