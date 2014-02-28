@@ -1,13 +1,29 @@
-IN DEVELOPMENT ======= 1.2.2 (HOTFIX)
+IN DEVELOPMENT ======= 1.2.3
 
 - added: view @{helper('name', [arg1], [arg2], ...)}
 - added: controller.helper(name, [arg1], [arg2], ...)
-- added: next markup /*auto*/ for auto-vendor-prefixes
-- added: authorize flag
+- added: new markup /*auto*/ for auto-vendor-prefixes
+- added: [authorize] flag
+- added: @{ng(name)}
+- added: @{ngTemplate(name, [id])}
+- added: @{ngController(name)}
+- added: @{ngFilter(name)}
+- added: @{ngService(name)}
+- added: @{ngDirective(name)}
+- added: @{ngResource(name)}
+- added: @{ngCommon(name)}
+- added: @{ngInclude(name)}
+- added: @{ngStyle(name)}
+- added: @{ngLocale(version, [name])}
+- added: config['directory-angular']
+- added: config['angular-version']
+- added: config['angular-i18n-version']
+- added: routing with asterix, example: framework.route('/subpage/*', ...);
+- added: binary: total -angular [or] total -a
 
 IMPORTANT:
-- updated: logged flag is obsolete
-- updated: unlogged flag is obsolete
+- updated: [logged] flag is obsolete
+- updated: [unlogged] flag is obsolete
 
 - fixed: helpers
 

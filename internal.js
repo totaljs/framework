@@ -370,11 +370,11 @@ exports.routeSplit = function(url, noLower) {
 	@isSystem {Boolean}
 	return {Boolean}
 */
-exports.routeCompare = function(url, route, isSystem) {
+exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
 	var length = url.length;
 
-	if (route.length !== length)
+	if (route.length !== length && !isAsterix)
 		return false;
 
 	var skip = length === 1 && url[0] === '/';
@@ -382,6 +382,9 @@ exports.routeCompare = function(url, route, isSystem) {
 	for (var i = 0; i < length; i++) {
 
 		var value = route[i];
+
+		if (isAsterix && typeof(value) === UNDEFINED)
+			return true;
 
 		if (!isSystem && (!skip && value[0] === '{'))
 			continue;
@@ -2046,6 +2049,19 @@ function view_prepare(command) {
 		case 'routeVideo':
 		case 'routeStatic':
 			return 'self.' + command;
+
+		case 'ng':
+		case 'ngTemplate':
+		case 'ngController':
+		case 'ngCommon':
+		case 'ngInclude':
+		case 'ngLocale':
+		case 'ngService':
+		case 'ngFilter':
+		case 'ngDirective':
+		case 'ngResource':
+		case 'ngStyle':
+			return 'self.$' + command;
 
 		case 'canonical':
 		case 'checked':

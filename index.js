@@ -36,8 +36,8 @@ global.utils = require('./utils');
 function Framework() {
 
 	this.id = null;
-	this.version = 1220;
-	this.version_header = '1.2.2';
+	this.version = 1230;
+	this.version_header = '1.2.3';
 
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
@@ -68,6 +68,7 @@ function Framework() {
 		'directory-models': '/models/',
 		'directory-resources': '/resources/',
 		'directory-public': '/public/',
+		'directory-angular': '/app/',
 		'directory-modules': '/modules/',
 		'directory-components': '/components/',
 		'directory-logs': '/logs/',
@@ -88,6 +89,9 @@ function Framework() {
 		// 'static-accepts-custom': [],
 
 		'default-layout': '_layout',
+
+		'angular-version': '1.2.10',
+		'angular-i18n-version': '1.2.10',
 
 		// default maximum request size / length
 		// default 5 kB
@@ -395,6 +399,9 @@ Framework.prototype.redirect = function(host, newHost, withPath, permament) {
 */
 Framework.prototype.route = function(url, funcExecute, flags, maximumSize, partial, timeout) {
 
+	if (url === '')
+		url = '/';
+
 	if (utils.isArray(maximumSize)) {
 		var tmp = partial;
 		partial = maximumSize;
@@ -408,18 +415,24 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	}
 
 	if (!utils.isArray(flags) && typeof(flags) === 'object') {
-		maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
+		maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'] || flags['size'];
 		partial = flags['partials'] || flags['partial'];
 		timeout = flags['timeout'];
-		flags = flags['flags'];
+		flags = flags['flags'] || flags['flag'];
 	}
 
 	var self = this;
 	var priority = 0;
 	var index = url.indexOf(']');
 	var subdomain = null;
+	var isASTERIX = url.indexOf('*') !== -1;
 
 	priority = url.count('/');
+
+	if (isASTERIX) {
+		url = url.replace('*', '').replace('//', '/');
+		priority = (-10) - priority;
+	}
 
 	if (index > 0) {
 		subdomain = url.substring(1, index).trim().toLowerCase().split(',');
@@ -484,7 +497,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	}
 
 	if (url.indexOf('#') !== -1)
-		priority--;
+		priority -= 100;
 
 	if (flags.indexOf('proxy') !== -1 && flags.indexOf('json') === -1) {
 		flags.push('json');
@@ -515,7 +528,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	if (!(partial instanceof Array))
 		partial = null;
 
-	self.routes.web.push({ priority: priority, subdomain: subdomain, name: (_controller || '').length === 0 ? 'unknown' : _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: (maximumSize || self.config['default-request-length']) * 1024, partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: isRaw, isMEMBER: isMember, isXSS: flags.indexOf('xss') !== -1 });
+	self.routes.web.push({ priority: priority, subdomain: subdomain, name: (_controller || '').length === 0 ? 'unknown' : _controller, url: routeURL, param: arr, flags: flags || [], onExecute: funcExecute, maximumSize: (maximumSize || self.config['default-request-length']) * 1024, partial: partial, timeout: timeout || self.config['default-request-timeout'], isJSON: flags.indexOf('json') !== -1, isRAW: isRaw, isMEMBER: isMember, isXSS: flags.indexOf('xss') !== -1, isASTERIX: isASTERIX });
 
 	if (_controller.length === 0)
 		self._routeSort();
@@ -556,6 +569,9 @@ Framework.prototype.partial = function(name, funcExecute) {
 */
 Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, maximumSize) {
 
+	if (url === '')
+		url = '/';
+
 	if (typeof(funcExecute) === OBJECT) {
 		var tmp = flags;
 		funcExecute = flags;
@@ -573,6 +589,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	var priority = 0;
 	var index = url.indexOf(']');
 	var subdomain = null;
+	var isASTERIX = url.indexOf('*') !== -1;
 
 	priority = url.count('/');
 
@@ -580,6 +597,11 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		subdomain = url.substring(1, index).trim().toLowerCase().split(',');
 		url = url.substring(index + 1);
 		priority += 2;
+	}
+
+	if (isASTERIX) {
+		url = url.replace('*', '').replace('//', '/');
+		priority = (-10) - priority;
 	}
 
 	var arr = [];
@@ -636,7 +658,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (!flags || (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1))
 		isMember = true;
 
-	self.routes.websockets.push({ name: (_controller || '').length === 0 ? 'unknown' : _controller, url: routeURL, param: arr, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: (maximumSize || self.config['default-websocket-request-length']) * 1024, isMEMBER: isMember, isJSON: isJSON, isBINARY: isBINARY });
+	self.routes.websockets.push({ name: (_controller || '').length === 0 ? 'unknown' : _controller, url: routeURL, param: arr, subdomain: subdomain, priority: priority, flags: flags || [], onInitialize: funcInitialize, protocols: protocols || [], allow: allow || [], length: (maximumSize || self.config['default-websocket-request-length']) * 1024, isMEMBER: isMember, isJSON: isJSON, isBINARY: isBINARY, isASTERIX: isASTERIX });
 
 	if (_controller.length === 0)
 		self._routeSort();
@@ -1616,9 +1638,21 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (typeof(name) === UNDEFINED) {
 
 		if (!fs.existsSync(filename)) {
-			self.temporary.path[key] = null;
-			self.response404(req, res);
-			return self;
+
+			// virtual directory App
+			var tmpname = filename.replace(self.config['directory-public'], self.config['directory-angular']);
+			var notfound = true;
+
+			if (tmpname !== filename) {
+				filename = tmpname;
+				notfound = !fs.existsSync(filename);
+			}
+
+			if (notfound) {
+				self.temporary.path[key] = null;
+				self.response404(req, res);
+				return self;
+			}
 		}
 
 		name = filename;
@@ -1649,7 +1683,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		utils.extend(returnHeaders, headers, true);
 
 	if (downloadName && downloadName.length > 0)
-		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(downloadName);
+		returnHeaders['Content-Disposition'] = 'attachment; filename="' + downloadName + '"';
 
 	if (etag.length > 0)
 		returnHeaders['Etag'] = etag;
@@ -3825,8 +3859,13 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 		if (!internal.routeCompareSubdomain(subdomain, route.subdomain))
 			continue;
 
-		if (!internal.routeCompare(req.path, route.url, isSystem))
-			continue;
+		if (route.isASTERIX) {
+			if (!internal.routeCompare(req.path, route.url, isSystem, true))
+				continue;
+		} else {
+			if (!internal.routeCompare(req.path, route.url, isSystem))
+				continue;
+		}
 
 		if (isSystem)
 			return route;
@@ -3842,6 +3881,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 				continue;
 
 		} else {
+
 			if (flags.indexOf('xss') !== -1)
 				continue;
 		}
@@ -3871,8 +3911,13 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 		if (!internal.routeCompareSubdomain(subdomain, route.subdomain))
 			continue;
 
-		if (!internal.routeCompare(req.path, route.url, false))
-			continue;
+		if (route.isASTERIX) {
+			if (!internal.routeCompare(req.path, route.url, false, true))
+				continue;
+		} else {
+			if (!internal.routeCompare(req.path, route.url, false))
+				continue;
+		}
 
 		if (route.flags !== null && route.flags.length > 0) {
 
@@ -4949,6 +4994,11 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 // *********************************************************************************
 
 var REPOSITORY_HEAD = '$head';
+var REPOSITORY_ANGULAR = '$angular';
+var REPOSITORY_ANGULAR_LOCALE = '$angular-locale';
+var REPOSITORY_ANGULAR_COMMON = '$angular-common';
+var REPOSITORY_ANGULAR_CONTROLLER = '$angular-controller';
+var REPOSITORY_ANGULAR_OTHER = '$angular-other';
 var REPOSITORY_META = '$meta';
 var REPOSITORY_PLACE = '$place';
 var REPOSITORY_META_TITLE = '$title';
@@ -6164,6 +6214,352 @@ Controller.prototype.$viewToggle = function(visible, name, model) {
 };
 
 /*
+	Include: Angular.js CDN into the head
+	@version {String}
+	@name {String or String Array} :: optional, example: route or resource
+	return {String}
+*/
+Controller.prototype.$ng = function(name) {
+	var self = this;
+
+	var length = arguments.length;
+	if (length > 1) {
+		for (var i = 0; i < length; i++)
+			self.$ng(arguments[i]);
+		return '';
+	}
+
+	if (name instanceof Array) {
+		length = name.length;
+		for (var i = 0; i < length; i++)
+			self.$ng(name[i]);
+		return '';
+	}
+
+	var isCommon = name[0] === '~';
+
+	if (isCommon)
+		name = name.substring(1);
+
+	if (typeof(name) === UNDEFINED)
+		name = 'angular';
+
+	if (name === 'core' || name === '' || name === 'base' || name === 'main')
+		name = 'angular';
+
+	if (name !== 'angular' && name.indexOf('angular-') === -1)
+		name = 'angular-' + name;
+
+	var output = self.repository[REPOSITORY_ANGULAR] || '';
+	var script = self.$script_create((isCommon ? '/common/' + name + '.min.js' : '//cdnjs.cloudflare.com/ajax/libs/angular.js/' + self.config['angular-version'] + '/' + name + '.min.js'));
+
+	if (name === 'angular')
+		output = script + output;
+	else
+		output += script;
+
+	self.repository[REPOSITORY_ANGULAR] = output;
+	return '';
+};
+
+
+Controller.prototype.$ngCommon = function(name) {
+	var self = this;
+	var output = self.repository[REPOSITORY_ANGULAR_COMMON] || '';
+
+	if (name.lastIndexOf('.js') === -1)
+		name += '.min.js';
+
+	var script = self.$script_create('/common/' + name);
+	output += script;
+
+	self.repository[REPOSITORY_ANGULAR_COMMON] = output;
+};
+
+Controller.prototype.$ngLocale = function(name) {
+
+	var self = this;
+	var length = arguments.length;
+
+	if (length > 2) {
+		for (var i = 1; i < length; i++)
+			self.$ngLocale(arguments[i]);
+		return '';
+	}
+
+	if (name instanceof Array) {
+		length = name.length;
+		for (var i = 0; i < length; i++)
+			self.$ngLocale(name[i]);
+		return '';
+	}
+
+	var output = self.repository[REPOSITORY_ANGULAR_LOCALE] || '';
+	var isLocal = name[0] === '~';
+	var extension = '';
+
+	if (isLocal)
+		name = name.substring(1);
+
+	if (name.indexOf('angular-locale_') !== -1)
+		name = name.replace('angular-locale_', '');
+
+	if (name.lastIndexOf('.js') === -1)
+		extension = '.min.js';
+
+	output += self.$script_create(isLocal ? '/i18n/angular-locale_' + name + extension : '//cdnjs.cloudflare.com/ajax/libs/angular-i18n/' + self.config['angular-i18n-version'] + '/angular-locale_' + name + extension);
+	self.repository[REPOSITORY_ANGULAR_LOCALE] = output;
+
+	return '';
+};
+
+Controller.prototype.$script_create = function(url) {
+	return '<script type="text/javascript" src="' + url + '"></script>';
+};
+
+/*
+	Include: Controller into the head
+	@name {String or String Array}
+	return {String}
+*/
+Controller.prototype.$ngController = function(name) {
+
+	var self = this;
+
+	var length = arguments.length;
+	if (length > 1) {
+		for (var i = 0; i < length; i++)
+			self.$ngController(arguments[i]);
+		return '';
+	}
+
+	if (name instanceof Array) {
+		length = name.length;
+		for (var i = 0; i < length; i++)
+			self.$ngController(name[i]);
+		return '';
+	}
+
+	if (name.lastIndexOf('.js') === -1)
+		name += '.js';
+
+	var output = self.repository[REPOSITORY_ANGULAR_CONTROLLER] || '';
+	var isLocal = name[0] === '~';
+
+	if (isLocal)
+		name = name.substring(1);
+
+	output += self.$script_create('/controllers/' + name);
+	self.repository[REPOSITORY_ANGULAR_CONTROLLER] = output;
+
+	return '';
+};
+
+/*
+	Include: Content from file into the body
+	@name {String}
+	return {String}
+*/
+Controller.prototype.$ngTemplate = function(name, id) {
+
+	var self = this;
+
+	if (typeof(id) === UNDEFINED)
+		id = name;
+
+	if (name.lastIndexOf('.html') === -1)
+		name += '.html';
+
+	if (name[0] === '~')
+		name = name.substring(1);
+	else if (name[1] !== '/')
+		name = '/templates/' + name;
+
+	var key = 'ng-' + name;
+	var tmp = self.framework.temporary.views[key];
+
+	if (typeof(tmp) === UNDEFINED) {
+		var filename = utils.combine(self.config['directory-angular'], name);
+		if (fs.existsSync(filename))
+			tmp = fs.readFileSync(filename).toString('utf8');
+		else
+			tmp = '';
+		self.framework.temporary.views[key] = tmp;
+	}
+
+	return '<script type="text/ng-template" id="' + id +'">' + tmp + '</script>';
+};
+
+/*
+	Include: Directive into the head
+	@name {String}
+	return {String}
+*/
+Controller.prototype.$ngDirective = function(name) {
+
+	var self = this;
+
+	var length = arguments.length;
+	if (length > 1) {
+		for (var i = 0; i < length; i++)
+			self.$ngDirective(arguments[i]);
+		return '';
+	}
+
+	if (name instanceof Array) {
+		length = name.length;
+		for (var i = 0; i < length; i++)
+			self.$ngDirective(name[i]);
+		return '';
+	}
+
+	if (name.lastIndexOf('.js') === -1)
+		name += '.js';
+
+	var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
+	var isLocal = name[0] === '~';
+
+	if (isLocal)
+		name = name.substring(1);
+
+	output += self.$script_create('/directives/' + name);
+	self.repository[REPOSITORY_ANGULAR_OTHER] = output;
+	return '';
+};
+
+/*
+	Include: CSS into the head
+	@name {String}
+	return {String}
+*/
+Controller.prototype.$ngStyle = function(name) {
+	if (name.lastIndexOf('.css') === -1)
+		name += '.css';
+	this.head(name);
+	return '';
+};
+
+/*
+	Include: Service into the head
+	@name {String}
+	return {String}
+*/
+Controller.prototype.$ngService = function(name) {
+
+	var self = this;
+
+	var length = arguments.length;
+	if (length > 1) {
+		for (var i = 0; i < length; i++)
+			self.$ngService(arguments[i]);
+		return '';
+	}
+
+	if (name instanceof Array) {
+		length = name.length;
+		for (var i = 0; i < length; i++)
+			self.$ngService(name[i]);
+		return '';
+	}
+
+	if (name.lastIndexOf('.js') === -1)
+		name += '.js';
+
+	var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
+	var isLocal = name[0] === '~';
+
+	if (isLocal)
+		name = name.substring(1);
+
+	output += self.$script_create('/services/' + name);
+	self.repository[REPOSITORY_ANGULAR_OTHER] = output;
+
+	return '';
+};
+
+/*
+	Include: Filter into the head
+	@name {String}
+	return {String}
+*/
+Controller.prototype.$ngFilter = function(name) {
+
+	var self = this;
+
+	var length = arguments.length;
+	if (length > 1) {
+		for (var i = 0; i < length; i++)
+			self.$ngFilter(arguments[i]);
+		return '';
+	}
+
+	if (name instanceof Array) {
+		length = name.length;
+		for (var i = 0; i < length; i++)
+			self.$ngFilter(name[i]);
+		return '';
+	}
+
+	var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
+	var isLocal = name[0] === '~';
+
+	if (isLocal)
+		name = name.substring(1);
+
+	output += self.$script_create('/filters/' + name);
+	self.repository[REPOSITORY_ANGULAR_OTHER] = output;
+
+	return '';
+};
+
+/*
+	Include: Resource into the head
+	@name {String}
+	return {String}
+*/
+Controller.prototype.$ngResource = function(name) {
+
+	var self = this;
+
+	var length = arguments.length;
+	if (length > 1) {
+		for (var i = 0; i < length; i++)
+			self.$ngResource(arguments[i]);
+		return '';
+	}
+
+	if (name instanceof Array) {
+		length = name.length;
+		for (var i = 0; i < length; i++)
+			self.$ngResource(name[i]);
+		return '';
+	}
+
+	if (name.lastIndexOf('.js') === -1)
+		name += '.js';
+
+	var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
+	var isLocal = name[0] === '~';
+
+	if (isLocal)
+		name = name.substring(1);
+
+	output += self.$script_create('/resources/' + name);
+	self.repository[REPOSITORY_ANGULAR_OTHER] = output;
+
+	return '';
+};
+
+Controller.prototype.$ngInclude = function(name) {
+	var self = this;
+
+	if (name.lastIndexOf('.js') === -1)
+		name += '.js';
+
+	return self.$script_create(name);
+};
+
+/*
 	Internal function for views
 	@name {String} :: filename
 	return {String}
@@ -6637,8 +7033,11 @@ Controller.prototype.head = function() {
 	var length = arguments.length;
 	var header = (self.repository[REPOSITORY_HEAD] || '');
 
-	if (length === 0)
-		return header + (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '');
+	if (length === 0) {
+		var angularBeg = (self.repository[REPOSITORY_ANGULAR] || '') + (self.repository[REPOSITORY_ANGULAR_COMMON] || '') + (self.repository[REPOSITORY_ANGULAR_LOCALE] || '') + (self.repository[REPOSITORY_ANGULAR_OTHER] || '');
+		var angularEnd = (angularBeg.length > 0 ? self.$script_create('app.js') : '') + (self.repository[REPOSITORY_ANGULAR_CONTROLLER] || '');
+		return (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '') + angularBeg + header + angularEnd;
+	}
 
 	var output = '';
 	for (var i = 0; i < length; i++) {

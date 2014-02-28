@@ -19,3 +19,10 @@ var FUNCTION = 'function';
 var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
+
+function test(version, name) {
+	for (var i = 1; i < arguments.length; i++)
+		console.log(arguments[i]);
+}
+
+test('1.2.2', 'angular', 'test');

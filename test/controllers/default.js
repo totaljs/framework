@@ -6,6 +6,7 @@ exports.install = function(framework) {
 	framework.route('/usage/', view_usage);
 	framework.route('/sse/', viewSSE_html);
 	framework.route('/pipe/', pipe);
+	framework.route('/app/*', asterix);
 	framework.route('/sse/', viewSSE, ['sse']);
 	framework.route('/http/', viewHTTP, ['http']);
 	framework.route('/https/', viewHTTPS, ['https']);
@@ -66,6 +67,10 @@ function resize_image(req, res) {
 	this.responseImage(req, res, this.path.public(req.url), function(image) {
 		image.resize('20%');
 	});
+}
+
+function asterix() {
+	this.plain('ASTERIX');
 }
 
 function view_homepage() {

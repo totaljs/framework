@@ -134,6 +134,15 @@ function test_routing(next) {
 		});
 	});
 */
+	async.await('asterix', function(complete) {
+		utils.request(url + 'app/a/b/c/d', 'GET', null, function(error, data, code, headers) {
+			assert(data === 'ASTERIX', 'asterix routing problem');
+			if (error)
+				throw error;
+			complete();
+		});
+	});
+
 	async.await('a/b/c/', function(complete) {
 		utils.request(url + 'a/b/c/', 'GET', null, function(error, data, code, headers) {
 			if (error)

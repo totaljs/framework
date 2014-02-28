@@ -9,6 +9,7 @@ var $type = 0;
 // $type == 0 - full
 // $type == 1 - normal
 // $type == 2 - minimum
+// $type == 3 - angular
 
 function createDirectory(directory) {
 	var arr = [];
@@ -34,12 +35,43 @@ function createDirectory(directory) {
 
 		arr.push('resources');
 		arr.push('public');
-
 		arr.push('tmp');
 	}
 
 	arr.forEach(function(o) {
 		var dir = path.join(directory, o);
+		if (!fs.existsSync(dir))
+			fs.mkdirSync(dir);
+	});
+}
+
+function createDirectoryAngular(directory) {
+	var arr = [];
+
+	arr.push('app');
+	arr.push('controllers');
+	arr.push('node_modules');
+	arr.push('views');
+
+	arr.forEach(function(o) {
+		var dir = path.join(directory, o);
+		if (!fs.existsSync(dir))
+			fs.mkdirSync(dir);
+	});
+
+	arr = [];
+	arr.push('common');
+	arr.push('controllers');
+	arr.push('css');
+	arr.push('directives');
+	arr.push('filters');
+	arr.push('resources');
+	arr.push('services');
+	arr.push('templates');
+	arr.push('views');
+
+	arr.forEach(function(o) {
+		var dir = path.join(directory, 'app', o);
 		if (!fs.existsSync(dir))
 			fs.mkdirSync(dir);
 	});
@@ -55,13 +87,19 @@ function createFiles(directory) {
 		createFilePublic(directory);
 	}
 
+	if ($type === 3) {
+		createFileViews(directory);
+		createFilePublicAngular(directory);
+		createFileControllerAngular(directory);
+	} else
+		createFileController(directory);
+
 	if ($type === 0) {
 		createFileTest(directory);
 		createFileModules(directory);
 		createFileComponent(directory);
 	}
 
-	createFileController(directory);
 }
 
 function createFileIndex(directory) {
@@ -73,13 +111,22 @@ function createFileIndex(directory) {
 function createFileConfig(directory) {
 	var buffer = [];
 
-	buffer.push("default-ip         : 127.0.0.1");
-	buffer.push("default-port       : 8000");
+	buffer.push("default-ip               : 127.0.0.1");
+	buffer.push("default-port             : 8000");
 	buffer.push("");
-	buffer.push("name               : my web site");
-	buffer.push("version            : 1.01");
-	buffer.push("secret             : your-secret-key");
-	buffer.push("author             : Your company name");
+	buffer.push("name                     : my web site");
+	buffer.push("version                  : 1.01");
+	buffer.push("secret                   : your-secret-key");
+	buffer.push("author                   : Your company name");
+
+	if ($type === 3) {
+		buffer.push('');
+		buffer.push('// CloudFlare cdnjs');
+		buffer.push("angular-version          : 1.2.10");
+		buffer.push('');
+		buffer.push('// CloudFlare cdnjs');
+		buffer.push("angular-i18n-version     : 1.2.10");
+	}
 
 	fs.writeFileSync(path.join(directory, 'config-release'), buffer.join(EOF));
 	fs.writeFileSync(path.join(directory, 'config-debug'), buffer.join(EOF).replace(/true/g, 'false'));
@@ -93,15 +140,42 @@ function createFileViews(directory) {
 		fs.mkdirSync(dir);
 
 	buffer.push("@{meta('title', 'description', 'keywords')}");
-	buffer.push("");
-	buffer.push('<div>Hello world!</div>');
 
-	fs.writeFileSync(path.join(dir, 'homepage.html'), buffer.join('\n'));
+	if ($type === 3) {
+		buffer.push('');
+		buffer.push('<!-- /app/css/ -->')
+		buffer.push("@{ngStyle('app')}");
+		buffer.push('');
+		buffer.push('<!-- cdnjs -->')
+		buffer.push("@{ngLocale('en-us')}");
+		buffer.push('');
+		buffer.push('<!-- /app/controllers/ -->')
+		buffer.push("@{ngController('home', 'user')}");
+	}
+
+	buffer.push("");
+	buffer.push('<div ng-controller="HomeCtrl">{{ name }}</div>');
+
+	if ($type === 3)
+		fs.writeFileSync(path.join(dir, 'app.html'), buffer.join('\n'));
+	else
+		fs.writeFileSync(path.join(dir, 'homepage.html'), buffer.join('\n'));
 
 	buffer = [];
 
+	if ($type === 3) {
+		buffer.push("");
+		buffer.push("@{ng('angular', 'resource', 'route')}");
+		buffer.push("");
+	}
+
 	buffer.push('<!DOCTYPE html>');
-	buffer.push('<html>');
+
+	if ($type === 3)
+		buffer.push('<html ng-app="app">');
+	else
+		buffer.push('<html>');
+	
 	buffer.push('<head>');
 	buffer.push('    @{meta}');
 	buffer.push('    <meta charset="utf-8" />');
@@ -110,9 +184,11 @@ function createFileViews(directory) {
 	buffer.push('    <meta name="viewport" content="width=1024, user-scalable=yes" />');
 	buffer.push('    <meta name="robots" content="all,follow" />');
 	buffer.push('    @{head}');
-	buffer.push('    @{css(\'default.css\')}');
-	buffer.push('    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>');
-	buffer.push('    @{js(\'default.js\')}');
+	if ($type !== 3) {
+		buffer.push('    @{css(\'default.css\')}');
+		buffer.push('    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>');
+		buffer.push('    @{js(\'default.js\')}');
+	}
 	buffer.push('    @{favicon(\'favicon.ico\')}');
 	buffer.push('</head>');
 	buffer.push('<body>');
@@ -130,13 +206,50 @@ function createFileResource(directory) {
 	fs.writeFileSync(path.join(dir, 'default.resource'), 'name                : value' + EOF);
 }
 
+function createFilePublicAngular(directory) {
+
+	var dir = path.join(directory, 'app');
+	var css = path.join(dir, 'css');
+	var controllers = path.join(dir, 'controllers');
+	var buffer = [];
+
+	buffer.push('User-agent: *');
+	buffer.push('Allow: /');
+	buffer.push('');
+
+	fs.writeFileSync(path.join(dir, 'robots.txt'), buffer.join(EOF));
+
+	buffer = [];
+	buffer.push('/*auto*/');
+	buffer.push('');
+	buffer.push('body { padding:20px; margin:0; font:normal 12px Arial; }');
+	fs.writeFileSync(path.join(css, 'app.css'), buffer.join(EOF));
+
+	buffer = [];
+	buffer.push("var app = angular.module('app', []);");
+	buffer.push('');
+	fs.writeFileSync(path.join(dir, 'app.js'), buffer.join(EOF));
+
+	buffer = [];
+    buffer.push('function HomeCtrl($scope) {\n    $scope.name = \'total.js + angular.js = awesome\';\n}');
+	fs.writeFileSync(path.join(controllers, 'home.js'), buffer.join(EOF));
+
+	buffer = [];
+    buffer.push('function UserCtrl($scope) {\n    // example\n}');
+	fs.writeFileSync(path.join(controllers, 'user.js'), buffer.join(EOF));
+}
+
 function createFilePublic(directory) {
 
 	var dir = path.join(directory, 'public');
-
 	var css = path.join(dir, 'css');
 	var js = path.join(dir, 'js');
 	var img = path.join(dir, 'img');
+
+	fs.writeFileSync(path.join(dir, 'favicon.ico'), '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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'base64');
+
+	if ($type === 3)
+		return;
 
 	if (!fs.existsSync(js))
 		fs.mkdirSync(js);
@@ -170,7 +283,6 @@ function createFilePublic(directory) {
     buffer.push('');
     buffer.push('});');
 
-	fs.writeFileSync(path.join(dir, 'favicon.ico'), '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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'base64');
 	fs.writeFileSync(path.join(js, 'default.js'), buffer.join(EOF));
 }
 
@@ -184,6 +296,23 @@ function createFileModules(directory) {
 	buffer.push('};');
 
 	fs.writeFileSync(path.join(dir, 'example.js'), buffer.join(EOF));
+}
+
+function createFileControllerAngular(directory) {
+
+	var dir = path.join(directory, 'controllers');
+	var buffer = [];
+
+	buffer.push('exports.install = function(framework) {');
+	buffer.push('    framework.route(\'/*\', view_app);');
+	buffer.push('};');
+	buffer.push('');
+	buffer.push('function view_app() {');
+	buffer.push('    var self = this;');
+	buffer.push('    self.view(\'app\');');
+	buffer.push('}');
+
+	fs.writeFileSync(path.join(dir, 'default.js'), buffer.join(EOF));
 }
 
 function createFileController(directory) {
@@ -327,6 +456,7 @@ function display_help() {
 		console.log('-m or -minimal   = minimal');
 		console.log('-n or -normal    = normal');
 		console.log('-f or -full      = full (default)');
+		console.log('-a or -angular   = for angular.js application');
 		console.log('-v or -version   = total.js version');
 		console.log('/path/           = target (default current directory)');
 		console.log('');
@@ -346,6 +476,11 @@ function main() {
 
 		if (cmd === '-f' || cmd === '-full')
 			continue;
+
+		if (cmd === '-a' || cmd === '-angular') {
+			$type = 3;
+			continue;
+		}
 
 		if (cmd === '-m' || cmd === '-minimal' || cmd === '-minimum') {
 			$type = 2;
@@ -389,7 +524,11 @@ function main() {
 	}
 
 	console.log('total.js: creating directories');
-	createDirectory(dir);
+
+	if ($type !== 3)
+		createDirectory(dir);
+	else
+		createDirectoryAngular(dir);
 
 	console.log('total.js: creating files');
 	createFiles(dir);
