@@ -26,6 +26,11 @@ IMPORTANT:
 - updated: [unlogged] flag is obsolete
 
 - fixed: helpers
+- fixed: static files caching in debug mode
+
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/angularjs
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/angularjs-common
+- EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/routing
 
 ======= 1.2.1-1 (NPM problem)
 ======= 1.2.1   (NPM problem)

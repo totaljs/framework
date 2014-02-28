@@ -1603,6 +1603,9 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	key = key || filename;
 	var name = self.temporary.path[key];
 
+	if (framework.config.debug)
+		name = undefined;
+
 	if (name === null) {
 		self.response404(req, res);
 		return self;
