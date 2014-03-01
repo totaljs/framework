@@ -382,17 +382,19 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 	for (var i = 0; i < length; i++) {
 
 		var value = route[i];
-
-		if (isAsterix && typeof(value) === UNDEFINED)
+		if (!isSystem && isAsterix && typeof(value) === UNDEFINED)
 			return true;
 
 		if (!isSystem && (!skip && value[0] === '{'))
 			continue;
 
-		if (url[i] !== value)
+		if (url[i] !== value) {
+			if (!isSystem)
+				return isAsterix
 			return false;
+		}
 	}
-
+	
 	return true;
 };
 

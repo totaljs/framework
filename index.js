@@ -7042,7 +7042,7 @@ Controller.prototype.head = function() {
 
 	if (length === 0) {
 		var angularBeg = (self.repository[REPOSITORY_ANGULAR] || '') + (self.repository[REPOSITORY_ANGULAR_COMMON] || '') + (self.repository[REPOSITORY_ANGULAR_LOCALE] || '');
-		var angularEnd = (angularBeg.length > 0 ? self.$script_create('app.js') : '') + (self.repository[REPOSITORY_ANGULAR_OTHER] || '') + (self.repository[REPOSITORY_ANGULAR_CONTROLLER] || '');
+		var angularEnd = (angularBeg.length > 0 ? self.$script_create('/app.js') : '') + (self.repository[REPOSITORY_ANGULAR_OTHER] || '') + (self.repository[REPOSITORY_ANGULAR_CONTROLLER] || '');
 		return (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '') + angularBeg + header + angularEnd;
 	}
 
