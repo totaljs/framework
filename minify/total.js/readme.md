@@ -32,10 +32,10 @@ __TOTALSTACK__:
 ![TOTALSTACK logo](http://www.totaljs.com/img/totalstack.png)
 
 - [Download angular.js empty project](https://github.com/totaljs/framework/releases)
-- [Example: total.js / Angular.js](https://github.com/totaljs/examples/tree/master/angularjs)
-- [Example: total.js / Angular.js + Websocket](https://github.com/totaljs/examples/tree/master/angularjs-websocket)
-- [Example: total.js / Angular.js Routing](https://github.com/totaljs/examples/tree/master/angularjs-routing)
-- [Example: total.js / Angular.js Resources + REST + MongoDB](https://github.com/totaljs/examples/tree/master/angularjs-routing)
+- __NEW__ [Example: total.js / Angular.js](https://github.com/totaljs/examples/tree/master/angularjs)
+- __NEW__ [Example: total.js / Angular.js + Websocket](https://github.com/totaljs/examples/tree/master/angularjs-websocket)
+- __NEW__ [Example: total.js / Angular.js Routing](https://github.com/totaljs/examples/tree/master/angularjs-routing)
+- __NEW__ [Example: total.js / Angular.js Resources + REST + MongoDB](https://github.com/totaljs/examples/tree/master/angularjs-routing)
 
 __Interesting__:
 
