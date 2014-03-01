@@ -5,7 +5,7 @@ web framework for node.js
 
 __total.js__ is the best ever web application framework for creating a rich web sites and web services. The framework has good documentation and contains many examples. Please support the framework on GitHub and other social networks.
 
-> Current version (1.2.1-1) is __stable version__.
+> Current version (1.2.3) is __stable version__.
 
 ```
 $ npm install total.js
@@ -24,6 +24,18 @@ __Development__:
 - [__Documentation__: Website testing on the internet (tunnel between localhost and internet)](http://docs.totaljs.com/#ngrok)
 - [__Documentation__: Publish a website - REVERSE PROXY](http://docs.totaljs.com/#publish)
 - [__Documentation__: total.js for Sublime Text 2 Editor](http://docs.totaljs.com/#sublime)
+
+__TOTALSTACK__:
+
+> total.js (+1.2.3) supports great features for development Angular.js applications. I call this: __TOTALSTACK__.
+
+![TOTALSTACK logo](http://www.totaljs.com/img/totalstack.png)
+
+- [Download angular.js empty project](https://github.com/totaljs/framework/releases)
+- [Example: total.js / Angular.js](https://github.com/totaljs/examples/tree/master/angularjs)
+- [Example: total.js / Angular.js + Websocket](https://github.com/totaljs/examples/tree/master/angularjs-websocket)
+- [Example: total.js / Angular.js Routing](https://github.com/totaljs/examples/tree/master/angularjs-routing)
+- [Example: total.js / Angular.js Resources + REST + MongoDB](https://github.com/totaljs/examples/tree/master/angularjs-routing)
 
 __Interesting__:
 

@@ -1,9 +1,9 @@
 {
     "name": "total.js",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "description": "web framework (MVC) for node.js",
     "main": "./index.js",
-    "keywords": [ "total", "framework", "web", "webpage", "mvc", "controller", "view", "sqlite", "rdbms", "upload", "picture", "graphicsmagick", "imagemagick", "eshop", "blog", "forum", "chat", "game", "nosql", "database", "streaming", "live", "server sent events", "sse", "multipart", "x-mixed-replace"],
+    "keywords": [ "total", "framework", "web", "websocket", "mvc", "controller", "view", "angular.js", "upload", "picture", "graphicsmagick", "imagemagick", "eshop", "blog", "forum", "chat", "game", "nosql", "database", "streaming", "live", "server sent events", "sse", "multipart", "x-mixed-replace"],
     "engines": {
         "node": ">=0.8.0"
     },

@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.2.3
+======= 1.2.3
 
 - added: view @{helper('name', [arg1], [arg2], ...)}
 - added: controller.helper(name, [arg1], [arg2], ...)
@@ -38,6 +38,8 @@ IMPORTANT:
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/angularjs
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/angularjs-websocket
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/angularjs-common
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/angularjs-mongodb-rest-resources
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/angularjs-routing
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/changes
 - EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/routing
 - EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/problems
