@@ -1480,6 +1480,7 @@ Framework.prototype.usage = function(detailed) {
 	output.resources = resources;
 	output.errors = self.errors;
 	output.problems = self.problems;
+	output.changes = self.changes;
 
 	return output;
 };
@@ -8914,6 +8915,18 @@ WebSocket.prototype.problem = function(message) {
 };
 
 /*
+	Change
+	@message {String}
+	return {Framework}
+*/
+WebSocket.prototype.change = function(message) {
+	var self = this;
+	self.framework.change(message, self.name, self.uri, self.ip);
+	return self;
+};
+
+
+/*
     All connections (forEach)
     @fn {Function} :: function(client, index) {}
     return {WebSocketClient};
@@ -9073,6 +9086,27 @@ WebSocket.prototype.component = function(name) {
 
 	var output = component.render.apply(self, params);
 	return output;
+};
+
+/*
+	Render component to string
+	@name {String}
+	return {String}
+*/
+WebSocket.prototype.helper = function(name) {
+	var self = this;
+	var helper = framework.helpers[name] || null;
+
+	if (helper === null)
+		return '';
+
+	var length = arguments.length;
+	var params = [];
+
+	for (var i = 1; i < length; i++)
+		params.push(arguments[i]);
+
+	return helper.apply(self, params);
 };
 
 /*

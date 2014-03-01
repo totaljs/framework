@@ -2,6 +2,7 @@ IN DEVELOPMENT ======= 1.2.3
 
 - added: view @{helper('name', [arg1], [arg2], ...)}
 - added: controller.helper(name, [arg1], [arg2], ...)
+- added: controller.change(message)
 - added: new markup /*auto*/ for auto-vendor-prefixes
 - added: [authorize] flag
 - added: @{ng(name)}
@@ -14,23 +15,32 @@ IN DEVELOPMENT ======= 1.2.3
 - added: @{ngCommon(name)}
 - added: @{ngInclude(name)}
 - added: @{ngStyle(name)}
-- added: @{ngLocale(version, [name])}
+- added: @{ngLocale(name)}
+- added: @{helper(helperName, [param1], [param2], ...)}
 - added: config['directory-angular']
 - added: config['angular-version']
 - added: config['angular-i18n-version']
-- added: routing with asterix, example: framework.route('/subpage/*', ...);
 - added: binary: total -angular [or] total -a
+- added: framework.change(message, [name], [uri], [ip]);
+- added: framework.changes;
+- added: framework.on('change', message, [name], [uri], [ip]);
 
 IMPORTANT:
-- updated: [logged] flag is obsolete
-- updated: [unlogged] flag is obsolete
+- added: routing with asterix, example: framework.route('/subpage/*', ...);
+
+IMPORTANT:
+- updated: [logged] flag is obsolete, new flag: authorize
+- updated: [unlogged] flag is obsolete (without flag)
 
 - fixed: helpers
 - fixed: static files caching in debug mode
 
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/angularjs
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/angularjs-websocket
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/angularjs-common
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/changes
 - EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/routing
+- EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/problems
 
 ======= 1.2.1-1 (NPM problem)
 ======= 1.2.1   (NPM problem)
