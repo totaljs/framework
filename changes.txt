@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.2.4
+
+- updated: utils.copy(source, target), previous: utils.copy(target, source);
+
 ======= 1.2.3
 
 - added: view @{helper('name', [arg1], [arg2], ...)}

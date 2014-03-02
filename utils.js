@@ -466,7 +466,7 @@ exports.extend = function(target, source, rewrite) {
 	@source {Object}
 	return {Object}
 */
-exports.copy = function(target, source) {
+exports.copy = function(source, target) {
 
 	if (target === null || source === null)
 		return target;
