@@ -1,4 +1,4 @@
-======= 1.2.4 (HOTFIX)
+======= 1.2.3-1 (HOTFIX)
 
 IMPORTANT:
 - fixed: [authorize] flag
