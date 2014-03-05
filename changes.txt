@@ -1,5 +1,7 @@
-IN DEVELOPMENT ======= 1.2.4
+======= 1.2.4 (HOTFIX)
 
+IMPORTANT:
+- fixed: [authorize] flag
 - updated: utils.copy(source, target), previous: utils.copy(target, source);
 
 ======= 1.2.3
