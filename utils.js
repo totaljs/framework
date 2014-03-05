@@ -462,8 +462,8 @@ exports.extend = function(target, source, rewrite) {
 
 /*
 	Copy values
-	@target {Object}
 	@source {Object}
+	@target {Object}
 	return {Object}
 */
 exports.copy = function(source, target) {
@@ -480,7 +480,6 @@ exports.copy = function(source, target) {
 	while (i--) {
 
 		var key = keys[i];
-
 		if (typeof(target[key]) === UNDEFINED)
 			continue;
 

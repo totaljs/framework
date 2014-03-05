@@ -194,7 +194,7 @@ function t_callback2(a, b, cb) {
 function t_callback3(a, b, cb) {
 	cb(new Error('TEST'), a + b);
 }
-
+/*
 function harmony() {
 
 	async(function *() {
@@ -214,7 +214,7 @@ function harmony() {
 	})(function(err, value) {
 		assert.ok(err.message === 'TEST', 'harmony t_callback3');
 	});
-}
+}*/
 
 function others() {
 	var obj = {};
@@ -227,6 +227,9 @@ function others() {
 
 	utils.extend(obj, { name: 'Peter', age: 25 });
 	assert.ok(obj.name === 'Peter' && obj.age === 25, 'utils.extend()');
+
+	utils.copy({ name: 'A', age: -1 }, obj);
+	assert.ok(obj.name === 'A' && obj.age === -1, 'utils.copy(rewrite=true)');
 
 	utils.reduce(obj, ['name']);
 	assert.ok(typeof(obj.age) === 'undefined', 'utils.reduce()');
@@ -410,7 +413,7 @@ prototypeNumber();
 prototypeString();
 prototypeArray();
 others();
-harmony();
+//harmony();
 
 console.log('================================================');
 console.log('success - OK');

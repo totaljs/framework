@@ -218,7 +218,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	self.callback = fnCallback;
 
-	options = utils.copy({ secure: false, port: 25, user: '', password: '', timeout: 10000 }, options, true);
+	options = utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000 });
 
 	if (smtp === null || smtp === '') {
 
