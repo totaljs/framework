@@ -2,6 +2,7 @@
 
 var qs = require('querystring');
 var os = require('os');
+
 var fs = require('fs');
 var zlib = require('zlib');
 var path = require('path');
@@ -23,6 +24,8 @@ var OBJECT = 'object';
 var BOOLEAN = 'boolean';
 
 var REQUEST_COMPRESS_EXTENSION = ['js', 'css', 'txt'];
+var EXTENSION_JS = '.js';
+var EXTENSION_COFFEE = '.coffee';
 var RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
 var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
@@ -36,8 +39,8 @@ global.utils = require('./utils');
 function Framework() {
 
 	this.id = null;
-	this.version = 1231;
-	this.version_header = '1.2.3-1';
+	this.version = 1300;
+	this.version_header = '1.3.0';
 
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
@@ -84,7 +87,7 @@ function Framework() {
 		'static-url-video': '/video/',
 		'static-url-font': '/font/',
 		'static-url-download': '/download/',
-		'static-accepts': ['.jpg', '.png', '.gif', '.ico', '.js', '.coffee', '.css', '.txt', '.xml', '.woff', '.otf', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache', '.map', '.ogg', '.mp4', '.mp3', '.webp', '.swf'],
+		'static-accepts': ['.jpg', '.png', '.gif', '.ico', EXTENSION_JS, EXTENSION_COFFEE, '.css', '.txt', '.xml', '.woff', '.otf', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache', '.map', '.ogg', '.mp4', '.mp3', '.webp', '.swf'],
 
 		// 'static-accepts-custom': [],
 
@@ -216,6 +219,9 @@ function Framework() {
 	this._length_partial_global = 0;
 	this._length_files = 0;
 
+	this.isCoffee = false;
+	this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
+
 	var self = this;
 }
 
@@ -280,8 +286,23 @@ Framework.prototype.controller = function(name, definition) {
 	// get controller name to internal property
 	_controller = name;
 
-	// initialize controller
-	var obj = definition ? definition() : require(path.join(directory, self.config['directory-controllers'], name + '.js'));
+	var obj = null;
+
+	if (!definition) {
+
+		var filename = path.join(directory, self.config['directory-controllers'], name);
+		if (self.isCoffee) {
+			if (fs.existsSync(filename + EXTENSION_COFFEE))
+				filename += EXTENSION_COFFEE;
+			else
+				filename += EXTENSION_JS;
+		} else
+			filename += EXTENSION_JS;
+
+		obj = require(filename);
+
+	} else
+		obj = definition();
 
 	self.controllers[name] = obj;
 
@@ -758,16 +779,42 @@ Framework.prototype.module = function(name) {
 		return null;
 
 	var configDirectory = self.config['directory-modules'];
-	var filename = path.join(directory, configDirectory, name + '.js');
+	var filename = path.join(directory, configDirectory, name);
 	var isDirectory = false;
+
+	if (self.isCoffee) {
+		if (fs.existsSync(filename))
+			filename += EXTENSION_COFFEE;
+		else
+			filename += EXTENSION_JS;
+	} else
+		filename += EXTENSION_JS;
 
 	if (!fs.existsSync(filename)) {
 
-		filename = path.join(directory, configDirectory, name, name + '.js');
-		if (fs.existsSync(filename))
+		filename = path.join(directory, configDirectory, name, name);
+
+		if (self.isCoffee) {
+			if (fs.existsSync(filename + EXTENSION_COFFEE))
+				filename += EXTENSION_COFFEE;
+			else
+				filename += EXTENSION_JS;
+		} else
+			filename += EXTENSION_JS;
+
+		if (!fs.existsSync(filename)) {
+
+			filename = path.join(directory, configDirectory, name, 'index');
+			if (self.isCoffee) {
+				if (fs.existsSync(filename + EXTENSION_COFFEE))
+					filename += EXTENSION_COFFEE;
+				else
+					filename += EXTENSION_JS;
+			} else
+				filename += EXTENSION_JS;
+
+		} else
 			module = require(filename);
-		else
-			filename = path.join(directory, configDirectory, name, 'index.js');
 
 		if (fs.existsSync(filename))
 			module = require(filename);
@@ -805,19 +852,45 @@ Framework.prototype.component = function(name) {
 		return null;
 
 	var configDirectory = self.config['directory-components'];
-	var filename = path.join(directory, configDirectory, name + '.js');
+	var filename = path.join(directory, configDirectory, name);
 	var isDirectory = false;
+
+	if (self.isCoffee) {
+		if (fs.existsSync(filename + EXTENSION_COFFEE))
+			filename += EXTENSION_COFFEE;
+		else
+			filename += EXTENSION_JS;
+	} else
+		filename += EXTENSION_JS;
 
 	if (!fs.existsSync(filename)) {
 
-		filename = path.join(directory, configDirectory, name, name + '.js');
+		filename = path.join(directory, configDirectory, name, name);
 
-		if (fs.existsSync(filename))
-			component = require(filename);
-		else
-			filename = path.join(directory, configDirectory, name, 'index.js');
+		if (self.isCoffee) {
+			if (fs.existsSync(filename + EXTENSION_COFFEE))
+				filename += EXTENSION_COFFEE;
+			else
+				filename += EXTENSION_JS;
+		} else
+			filename += EXTENSION_JS;
 
-		if (fs.existsSync(filename))
+		if (!fs.existsSync(filename)) {
+
+			filename = path.join(directory, configDirectory, name, 'index');
+
+			if (self.isCoffee) {
+				if (fs.existsSync(filename + EXTENSION_COFFEE))
+					filename += EXTENSION_COFFEE;
+				else
+					filename += EXTENSION_JS;
+			} else
+				filename += EXTENSION_JS;
+
+			if (fs.existsSync(filename))
+				component = require(filename);
+
+		} else
 			component = require(filename);
 
 		isDirectory = true;
@@ -855,11 +928,11 @@ Framework.prototype.install = function() {
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(function(o) {
 
-			var ext = path.extname(o);
-			if (ext.toLowerCase() !== '.js')
+			var ext = path.extname(o).toLowerCase();
+			if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)
 				return;
 
-			self.controller(o.substring(0, o.length - 3));
+			self.controller(o.substring(0, o.length - ext.length));
 		});
 	}
 
@@ -869,9 +942,10 @@ Framework.prototype.install = function() {
 		fs.readdirSync(dir).forEach(function(o) {
 
 			var ext = path.extname(o);
-
 			var isDirectory = fs.statSync(path.join(dir + o)).isDirectory();
-			if (!isDirectory && ext.toLowerCase() !== '.js')
+			var extLower = ext.toLowerCase();
+
+			if (!isDirectory && extLower !== EXTENSION_JS && extLower !== EXTENSION_COFFEE)
 				return;
 
 			var name = o.replace(ext, '');
@@ -900,9 +974,10 @@ Framework.prototype.install = function() {
 		fs.readdirSync(dir).forEach(function(o) {
 
 			var ext = path.extname(o);
-
 			var isDirectory = fs.statSync(path.join(dir + o)).isDirectory();
-			if (!isDirectory && ext.toLowerCase() !== '.js')
+			var extLower = ext.toLowerCase();
+
+			if (!isDirectory && extLower !== EXTENSION_JS && extLower !== EXTENSION_COFFEE)
 				return;
 
 			var name = o.replace(ext, '');
@@ -920,8 +995,8 @@ Framework.prototype.install = function() {
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(function(o) {
 
-			var ext = path.extname(o);
-			if (ext.toLowerCase() !== '.js')
+			var ext = path.extname(o).toLowerCase();
+			if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)
 				return;
 
 			eval(fs.readFileSync(path.join(directory, configDirectory, o), 'utf8').toString());
@@ -1518,7 +1593,7 @@ Framework.prototype.compileStatic = function(req, filename) {
 	var output = fs.readFileSync(filename).toString(ENCODING);
 
 	switch (ext) {
-		case '.js':
+		case EXTENSION_JS:
 			output = self.config['allow-compile-js'] ? self.onCompileJS === null ? internal.compile_javascript(output, self) : self.onCompileJS(filename, output) : output;
 			break;
 
@@ -1644,7 +1719,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		if (!fs.existsSync(filename)) {
 
 			// virtual directory App
-			var tmpname = filename.replace(self.config['directory-public'], self.config['directory-angular']);
+			var tmpname = self.isWindows ? filename.replace(self.config['directory-public'].replace(/\//g, '\\'), self.config['directory-angular'].replace(/\//g, '\\')) : filename.replace(self.config['directory-public'], self.config['directory-angular']);
 			var notfound = true;
 
 			if (tmpname !== filename) {
@@ -2615,6 +2690,11 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 
 	var self = this;
 
+	process.argv.forEach(function(name) {
+		if (name.toLowerCase().indexOf('coffee') !== -1)
+			self.isCoffee = true;
+	});
+
 	if (isNaN(port))
 		port = null;
 
@@ -3228,7 +3308,17 @@ Framework.prototype.model = function(name) {
 	if (model)
 		return model;
 
-	model = require(path.join(directory, this.config['directory-models'], name + '.js'));
+	var filename = path.join(directory, this.config['directory-models'], name);
+
+	if (self.isCoffee) {
+		if (fs.exists(filename + EXTENSION_COFFEE))
+			filename += EXTENSION_COFFEE;
+		else
+			filename += EXTENSION_JS;
+	} else
+		filename += EXTENSION_JS;
+
+	model = require(filename);
 	self.models[name] = model;
 	return model;
 };
@@ -3361,8 +3451,9 @@ Framework.prototype.test = function(stop, names, cb) {
 	fs.readdirSync(utils.combine(dir)).forEach(function(name) {
 
 		var filename = path.join(directory, dir, name);
+		var ext = path.extname(filename).toLowerCase();
 
-		if (path.extname(filename).toLowerCase() !== '.js')
+		if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)
 			return;
 
 		if (names.length > 0 && names.indexOf(name.substring(0, name.length - 3)) === -1)
@@ -3740,8 +3831,8 @@ Framework.prototype.configure = function(arr, rewrite) {
 Framework.prototype.routeJS = function(name) {
 	var self = this;
 
-	if (name.lastIndexOf('.js') === -1)
-		name += '.js';
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
+		name += EXTENSION_JS;
 
 	return self._routeStatic(name, self.config['static-url-js']);
 };
@@ -3987,7 +4078,17 @@ Framework.prototype.worker = function(name, id, timeout) {
 	if (fork !== null)
 		return fork;
 
-	fork = child.fork(utils.combine(self.config['directory-workers'], name + '.js'), { cwd: directory });
+	var filename = utils.combine(self.config['directory-workers'], name);
+
+	if (self.isCoffee) {
+		if (fs.existsSync(filename + EXTENSION_COFFEE))
+			filename += EXTENSION_COFFEE;
+		else
+			filename += EXTENSION_JS;
+	} else
+		filename += EXTENSION_JS;
+
+	fork = child.fork(filename, { cwd: directory });
 	id = name + '_' + new Date().getTime();
 	fork.__id = id;
 	self.workers[id] = fork;
@@ -4259,8 +4360,8 @@ FrameworkFileSystem.prototype.deleteCSS = function(name) {
 FrameworkFileSystem.prototype.deleteJS = function(name) {
 	var self = this;
 
-	if (name.lastIndexOf('.js') === -1)
-		name += '.js';
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
+		name += EXTENSION_JS;
 
 	var filename = utils.combine(self.config['directory-public'], self.config['static-url-js'], name);
 	return self.deleteFile(filename);
@@ -4304,8 +4405,8 @@ FrameworkFileSystem.prototype.deleteContent = function(name) {
 FrameworkFileSystem.prototype.deleteWorker = function(name) {
 	var self = this;
 
-	if (name.lastIndexOf('.js') === -1)
-		name += '.js';
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
+		name += EXTENSION_JS;
 
 	var filename = utils.combine(self.config['directory-workers'], name);
 	return self.deleteFile(filename);
@@ -4406,8 +4507,8 @@ FrameworkFileSystem.prototype.createJS = function(name, content, rewrite, append
 	if ((content || '').length === 0)
 		return false;
 
-	if (name.lastIndexOf('.js') === -1)
-		name += '.js';
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
+		name += EXTENSION_JS;
 
 	var filename = utils.combine(self.config['directory-public'], self.config['static-url-js'], name);
 	return self.createFile(filename, content, append, rewrite);
@@ -4500,8 +4601,8 @@ FrameworkFileSystem.prototype.createWorker = function(name, content, rewrite, ap
 	if ((content || '').length === 0)
 		return false;
 
-	if (name.lastIndexOf('.js') === -1)
-		name += '.js';
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
+		name += EXTENSION_JS;
 
 	self.framework._verify_directory('workers');
 
@@ -6271,7 +6372,7 @@ Controller.prototype.$ngCommon = function(name) {
 	var self = this;
 	var output = self.repository[REPOSITORY_ANGULAR_COMMON] || '';
 
-	if (name.lastIndexOf('.js') === -1)
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		name += '.min.js';
 
 	var script = self.$script_create('/common/' + name);
@@ -6308,7 +6409,7 @@ Controller.prototype.$ngLocale = function(name) {
 	if (name.indexOf('angular-locale_') !== -1)
 		name = name.replace('angular-locale_', '');
 
-	if (name.lastIndexOf('.js') === -1)
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		extension = '.min.js';
 
 	output += self.$script_create(isLocal ? '/i18n/angular-locale_' + name + extension : '//cdnjs.cloudflare.com/ajax/libs/angular-i18n/' + self.config['angular-i18n-version'] + '/angular-locale_' + name + extension);
@@ -6344,8 +6445,8 @@ Controller.prototype.$ngController = function(name) {
 		return '';
 	}
 
-	if (name.lastIndexOf('.js') === -1)
-		name += '.js';
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
+		name += EXTENSION_JS;
 
 	var output = self.repository[REPOSITORY_ANGULAR_CONTROLLER] || '';
 	var isLocal = name[0] === '~';
@@ -6420,8 +6521,8 @@ Controller.prototype.$ngDirective = function(name) {
 		return '';
 	}
 
-	if (name.lastIndexOf('.js') === -1)
-		name += '.js';
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
+		name += EXTENSION_JS;
 
 	var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
 	var isLocal = name[0] === '~';
@@ -6469,8 +6570,8 @@ Controller.prototype.$ngService = function(name) {
 		return '';
 	}
 
-	if (name.lastIndexOf('.js') === -1)
-		name += '.js';
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
+		name += EXTENSION_JS;
 
 	var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
 	var isLocal = name[0] === '~';
@@ -6542,8 +6643,8 @@ Controller.prototype.$ngResource = function(name) {
 		return '';
 	}
 
-	if (name.lastIndexOf('.js') === -1)
-		name += '.js';
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
+		name += EXTENSION_JS;
 
 	var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
 	var isLocal = name[0] === '~';
@@ -6560,8 +6661,8 @@ Controller.prototype.$ngResource = function(name) {
 Controller.prototype.$ngInclude = function(name) {
 	var self = this;
 
-	if (name.lastIndexOf('.js') === -1)
-		name += '.js';
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
+		name += EXTENSION_JS;
 
 	return self.$script_create(name);
 };
@@ -7062,7 +7163,7 @@ Controller.prototype.head = function() {
 		var tmp = val.substring(0, 7);
 		var isRoute = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
 
-		if (val.lastIndexOf('.js') !== -1)
+		if (val.lastIndexOf(EXTENSION_JS) !== -1)
 			output += '<script type="text/javascript" src="' + (isRoute ? self.routeJS(val) : val) + '"></script>';
 		else if (val.lastIndexOf('.css') !== -1)
 			output += '<link type="text/css" rel="stylesheet" href="' + (isRoute ? self.routeCSS(val) : val) + '" />';
@@ -7104,7 +7205,7 @@ Controller.prototype.place = function(name) {
 			continue;
 		}
 
-		if (val.lastIndexOf('.js') === -1) {
+		if (val.lastIndexOf(EXTENSION_JS) === -1) {
 			output += val;
 			continue;
 		}
