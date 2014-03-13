@@ -270,7 +270,7 @@ function createFilePublic(directory) {
 	fs.writeFileSync(path.join(dir, 'robots.txt'), buffer.join(EOF));
 
 	buffer = [];
-	buffer.push('@#auto-vendor-prefix#@');
+	buffer.push('/*auto*/');
 	buffer.push('');
 	buffer.push('@constant{ color:#505050 }');
 	buffer.push('@function(property){ color:@property }');
