@@ -151,10 +151,12 @@ function createFileViews(directory) {
 		buffer.push('');
 		buffer.push('<!-- /app/controllers/ -->')
 		buffer.push("@{ngController('home', 'user')}");
+		buffer.push("");
+		buffer.push('<div ng-controller="HomeCtrl">{{ name }}</div>');
+	} else {
+		buffer.push("");
+		buffer.push('<div>Hello world!</div>');
 	}
-
-	buffer.push("");
-	buffer.push('<div ng-controller="HomeCtrl">{{ name }}</div>');
 
 	if ($type === 3)
 		fs.writeFileSync(path.join(dir, 'app.html'), buffer.join('\n'));
@@ -175,7 +177,7 @@ function createFileViews(directory) {
 		buffer.push('<html ng-app="app">');
 	else
 		buffer.push('<html>');
-	
+
 	buffer.push('<head>');
 	buffer.push('    @{meta}');
 	buffer.push('    <meta charset="utf-8" />');
