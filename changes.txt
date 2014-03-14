@@ -3,6 +3,9 @@ IN DEVELOPMENT ======= 1.3.0
 - added: supports CoffeeScript
 - added: framework.isWindows (readonly, boolean)
 - added: framework.isCoffee (readonly, boolean)
+- added: config['default-websocket-encodedecode'] (default: true)
+
+- updated: controller.find(id or function)
 
 - fixed: binary
 

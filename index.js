@@ -100,6 +100,7 @@ function Framework() {
 		// default 5 kB
 		'default-request-length': 1024 * 5,
 		'default-websocket-request-length': 1024 * 5,
+		'default-websocket-encodedecode': true,
 
 		// in milliseconds
 		'default-request-timeout': 3000,
@@ -3787,6 +3788,7 @@ Framework.prototype.configure = function(arr, rewrite) {
 			case 'static-accepts':
 				obj[name] = value.replace(/\s/g, '').split(',');
 				break;
+			case 'default-websocket-encodedecode':
 			case 'allow-gzip':
 			case 'allow-websocket':
 			case 'allow-compile-css':
@@ -9048,17 +9050,25 @@ WebSocket.prototype.all = function(fn) {
 
 /*
     Find a connection
-    @id {String}
+    @id {String or Function} :: function(client, id) {}
     return {WebSocketClient}
 */
 WebSocket.prototype.find = function(id) {
     var self = this;
     var length = self._keys.length;
+    var isFn = typeof(id) === FUNCTION;
 
     for (var i = 0; i < length; i++) {
         var connection = self.connections[self._keys[i]];
-        if (connection.id === id)
-            return connection;
+
+        if (!isFn) {
+	        if (connection.id === id)
+	            return connection;
+	        continue;
+        }
+
+    	if (id(connection, connection.id))
+    		return connection;
     }
 
     return null;
@@ -9551,7 +9561,12 @@ WebSocketClient.prototype.send = function(message) {
     if (self.isClosed)
         return;
 
-	self.socket.write(new Buffer(utils.encode_WS(encodeURIComponent(self.type === 3 ? JSON.stringify(message) : (message || '').toString())), 'binary'));
+    var data = self.type === 3 ? JSON.stringify(message) : (message || '').toString();
+
+   	if (self.framework.config['default-websocket-encodedecode'] === true && data.length > 0)
+   		data = encodeURIComponent(data);
+
+	self.socket.write(new Buffer(utils.encode_WS(data), 'binary'));
     return self;
 };
 
