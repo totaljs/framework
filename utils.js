@@ -784,7 +784,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
 				type = OBJECT;
 		}
 
-		if (type === OBJECT) {
+		if (type === OBJECT && !exports.isDate(value)) {
 
 			if (isSchema) {
 				var schema = builders.schema(schemaName) || null;

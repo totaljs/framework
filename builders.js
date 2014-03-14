@@ -90,6 +90,12 @@ exports.isJoin = function(value) {
 	return {String Array}
 */
 exports.validation = function(name, arr) {
+	
+	if (typeof(arr) === FUNCTION) {
+		schemaValidator[name] = arr;
+		return true;
+	}
+
 	if (typeof(arr) === UNDEFINED)
 		return schemaValidation[name] || [];
 

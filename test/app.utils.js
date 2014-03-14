@@ -368,16 +368,15 @@ function others() {
 		return 'resource-' + name;
 	};
 
-
 	var error = utils.validate({}, ['firstName', 'lastName', 'age'], onValidation, resource);
 
 	assert.ok(error.hasError(), 'validation - hasError()');
 
 	error.prepare();
 
-	assert.ok(error.builder[0].name === 'firstName' || error.builder[0].error === 'resource-firstName', 'validation - return boolean');
-	assert.ok(error.builder[1].name === 'lastName' || error.builder[1].error === 'lastName-error', 'validation - return string');
-	assert.ok(error.builder[2].name === 'age' || error.builder[2].error === 'age-error', 'validation - return utils.isValid()');
+	assert.ok(error.errors[0].name === 'firstName' || error.errors[0].error === 'resource-firstName', 'validation - return boolean');
+	assert.ok(error.errors[1].name === 'lastName' || error.errors[1].error === 'lastName-error', 'validation - return string');
+	assert.ok(error.errors[2].name === 'age' || error.errors[2].error === 'age-error', 'validation - return utils.isValid()');
 
 	error.clear();
 	assert.ok(!error.hasError(), 'validation - clear() & hasError()');
