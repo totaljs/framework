@@ -2,6 +2,7 @@
 
 var schema = {};
 var schemaValidation = {};
+var schemaValidator = {};
 var schemaDefaults = {};
 
 var UNDEFINED = 'undefined';
@@ -16,11 +17,15 @@ var REQUIRED = 'The field "@" is required.';
     @onResource {Function} :: function(name, key) return {String}
 */
 function ErrorBuilder(onResource) {
-	this.builder = [];
-	this.onResource = onResource || null;
+	this.errors = [];
+	this.onResource = onResource;
+	this.resourceName = '';
+	this.resourcePrefix = '';
 	this.length = 0;
 	this.replacer = [];
 	this.isPrepared = false;
+	if (typeof(onResource) === UNDEFINED)
+		this._resource();
 }
 
 function UrlBuilder() {
@@ -51,16 +56,20 @@ function Pagination(items, page, max, format) {
 	Create object schema
     @name {String}
     @obj {Number}
-    @defaults {Function}
+    @defaults {Function} :: optional
+    @validator {Function} :: optional
     return {Object}
 */
-exports.schema = function(name, obj, defaults) {
+exports.schema = function(name, obj, defaults, validator) {
 
 	if (typeof(obj) === UNDEFINED)
 		return schema[name] || null;
 
 	if (typeof(defaults) === FUNCTION)
 		schemaDefaults[name] = defaults;
+
+	if (typeof(validator) === FUNCTION)
+		schemaValidator[name] = validator;
 
 	schema[name] = obj;
 	return obj;
@@ -86,6 +95,23 @@ exports.validation = function(name, arr) {
 
 	schemaValidation[name] = arr;
 	return arr;
+};
+
+/*
+	Validate schema model
+	@name {String} :: schema name
+	@model {Object} :: model
+	return {ErrorBuilder}
+*/
+exports.validate = function(name, model) {
+
+	var fn = schemaValidator[name];
+	var builder = new ErrorBuilder();
+
+	if (typeof(fn) === UNDEFINED)
+		return builder;
+
+	return utils.validate.call(this, model, Object.keys(schema[name]), fn, builder);
 };
 
 exports.default = function(name) {
@@ -470,6 +496,28 @@ function isUndefined(value, def) {
 // ======================================================
 
 /*
+	Set resource
+	@name {String} :: resource filename
+	@prefix {String}
+	return {ErrorBuilder}
+*/
+ErrorBuilder.prototype.resource = function(name, prefix) {
+	var self = this;
+	self.resourceName = name;
+	self.resourcePrefix = prefix || '';
+	return self._resource();
+};
+
+ErrorBuilder.prototype._resource = function() {
+	var self = this;
+	self.onResource = function(name) {
+		var self = this;
+		return framework.resource(self.resourceName, self.resourcePrefix + name);
+	};
+	return self;
+};
+
+/*
 	Add a new error
 	@name {String or ErrorBuilder}
 	@error {String} :: default value @ (for resources)
@@ -481,16 +529,16 @@ ErrorBuilder.prototype.add = function(name, error, path) {
 
 	if (name instanceof ErrorBuilder) {
 
-		name.builder.forEach(function(o) {
-			self.builder.push(o);
+		name.errors.forEach(function(o) {
+			self.errors.push(o);
 		});
 
-		self.length = self.builder.length;
+		self.length = self.errors.length;
 		return self;
 	}
 
-	self.builder.push({ name : name, error: error || '@', path: path });
-	self.length = self.builder.length;
+	self.errors.push({ name : name, error: error || '@', path: path });
+	self.length = self.errors.length;
 	return self;
 };
 
@@ -502,11 +550,11 @@ ErrorBuilder.prototype.add = function(name, error, path) {
 ErrorBuilder.prototype.remove = function(name) {
 	var self = this;
 
-	self.builder = self.builder.remove(function(o) {
+	self.errors = self.errors.remove(function(o) {
 		return o.name === name;
 	});
 
-	self.length = self.builder.length;
+	self.length = self.errors.length;
 	return self;
 };
 
@@ -518,12 +566,12 @@ ErrorBuilder.prototype.hasError = function(name) {
 	var self = this;
 
 	if (name) {
-		return self.builder.find(function(o) {
+		return self.errors.find(function(o) {
 			return o.name === name;
 		}) !== null;
 	}
 
-	return self.builder.length > 0;
+	return self.errors.length > 0;
 };
 
 /*
@@ -538,7 +586,7 @@ ErrorBuilder.prototype.read = function(name) {
 	if (!self.isPrepared)
 		self.prepare();
 
-	var error = self.builder.find(function(o) {
+	var error = self.errors.find(function(o) {
 		return o.name === name;
 	});
 
@@ -554,7 +602,7 @@ ErrorBuilder.prototype.read = function(name) {
 */
 ErrorBuilder.prototype.clear = function() {
 	var self = this;
-	self.builder = [];
+	self.errors = [];
 	self.length = 0;
 	return self;
 };
@@ -578,8 +626,8 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
 */
 ErrorBuilder.prototype.json = function(beautify) {
 	if (beautify)
-		return JSON.stringify(this.prepare().builder, null, '\t');
-	return JSON.stringify(this.prepare().builder);
+		return JSON.stringify(this.prepare().errors, null, '\t');
+	return JSON.stringify(this.prepare().errors);
 };
 
 /*
@@ -587,7 +635,7 @@ ErrorBuilder.prototype.json = function(beautify) {
     return {String}
 */
 ErrorBuilder.prototype.JSON = function() {
-	return JSON.stringify(this.prepare().builder);
+	return JSON.stringify(this.prepare().errors);
 };
 
 /*
@@ -600,12 +648,12 @@ ErrorBuilder.prototype._prepare = function() {
 	if (self.onResource === null)
 		return self;
 
-	var builder = self.builder;
-	var length = builder.length;
+	var errors = self.errors;
+	var length = errors.length;
 
 	for (var i = 0; i < length; i++) {
 
-		var o = builder[i];
+		var o = errors[i];
 
 		if (o.error[0] !== '@')
 			continue;
@@ -625,8 +673,8 @@ ErrorBuilder.prototype._prepare = function() {
 ErrorBuilder.prototype._prepareReplace = function() {
 
 	var self = this;
-	var builder = self.builder;
-	var lengthBuilder = builder.length;
+	var errors = self.errors;
+	var lengthBuilder = errors.length;
 	var keys = Object.keys(self.replacer);
 	var lengthKeys = keys.length;
 
@@ -634,7 +682,7 @@ ErrorBuilder.prototype._prepareReplace = function() {
 		return self;
 
 	for (var i = 0; i < lengthBuilder; i++) {
-		var o = builder[i];
+		var o = errors[i];
 		for (var j = 0; j < lengthKeys; j++) {
 			var key = keys[j];
 			o.error = o.error.replace(key, self.replacer[key]);
@@ -762,7 +810,7 @@ Pagination.prototype.render = function(max, format) {
 
 	if (pageTo >= pages) {
 		pageTo = pages;
-		pageFrom = pages - max;		
+		pageFrom = pages - max;
 	}
 
 	if (pageFrom < 0)

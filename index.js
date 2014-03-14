@@ -33,8 +33,9 @@ var CONTENTTYPE_TEXTHTML = 'text/html';
 var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', CONTENTTYPE_TEXTHTML];
 var _controller = '';
 
-global.builders = require('./builders');
-global.utils = require('./utils');
+global.Builders = global.builders = require('./builders');
+global.Utils = global.utils = require('./utils');
+global.Mail = require('./mail');
 
 function Framework() {
 

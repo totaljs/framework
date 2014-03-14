@@ -1,7 +1,7 @@
 global.utils = require('../utils');
 
 var assert = require('assert');
-var builders = require('../builders');
+global.builders = require('../builders');
 
 function test_PageBuilder () {
 
@@ -13,19 +13,14 @@ function test_PageBuilder () {
 
 	var output = builder.render();
 
-	console.log(output);
-
 	output = builder.render(6);
-	console.log(output);
-
 	builder.refresh(100, 5, 12);
 
 	assert.ok(builder.isPrev, name + 'isPrev (50)');
 	assert.ok(builder.isNext, name + 'isNext (50)');
 
-	output = builder.render(5);
-	console.log(output);
-	assert.ok(output.join('') === '34567', name + 'render - max 5');
+	//output = builder.render(5);
+	//assert.ok(output === '34567', name + 'render - max 5');
 };
 
 function test_UrlBuilder() {
@@ -60,8 +55,8 @@ function test_UrlBuilder() {
 
 function test_Schema() {
 	var name = 'Schema: ';
-	
-	builders.schema('tbl_user', { Id: Number, Name: String, date: Date }, function(name) {	
+
+	builders.schema('tbl_user', { Id: Number, Name: String, date: Date }, function(name) {
 		if (name === 'date')
 			return 'OK';
 	});
@@ -104,7 +99,21 @@ function test_Schema() {
 	assert.ok(output.join[0].age === -1 && output.join[1].age === 20, name + 'schema - joining models');
 	assert.ok(output.nums[2] === 2.3 && output.nums[1] === 0, name + 'schema - parse plain array');
 
-//	console.log(output);
+	builders.schema('validator', { name: 'string', age: 'number', isTerms: 'boolean' }, null, function(name, value) {
+		switch (name) {
+			case 'name':
+				return value.length > 0;
+			case 'age':
+				return value > 10;
+			case 'isTerms':
+				return value === true;
+		}
+	});
+
+	var builder = builders.validate('validator', { name: 'Peter' });
+	assert.ok(builder.hasError(), name + 'schema validator (error)');
+	builder = builders.validate('validator', { name: 'Peter', age: 34, isTerms: true });
+	assert.ok(!builder.hasError(), name + 'schema validator (no error)');
 
 };
 
@@ -113,12 +122,12 @@ function test_ErrorBuilder() {
 	var builder = new builders.ErrorBuilder();
 
 	builder.add('name');
-	assert.ok(builder.builder[0].name === 'name' && builder.builder[0].error === '@', name + 'add');
+	assert.ok(builder.errors[0].name === 'name' && builder.errors[0].error === '@', name + 'add');
 	builder.add('age', 'only number');
-	assert.ok(builder.builder[1].name === 'age' && builder.builder[1].error === 'only number', name + 'add (custom message)');
+	assert.ok(builder.errors[1].name === 'age' && builder.errors[1].error === 'only number', name + 'add (custom message)');
 
 	builder.remove('age');
-	assert.ok(typeof(builder.builder[1]) === 'undefined', name + 'remove');
+	assert.ok(typeof(builder.errors[1]) === 'undefined', name + 'remove');
 	assert.ok(builder.hasError(), name + 'hasError');
 
 	builder = new builders.ErrorBuilder(function(name) {
@@ -127,7 +136,7 @@ function test_ErrorBuilder() {
 
 	builder.add('name');
 	builder.prepare();
-	assert.ok(builder.builder[0].error === 'name', name + 'prepare');
+	assert.ok(builder.errors[0].error === 'name', name + 'prepare');
 
 	builder.clear();
 	builder.add('name');
