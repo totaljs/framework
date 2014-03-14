@@ -8877,7 +8877,12 @@ WebSocket.prototype = {
 	}
 }
 
-sys.inherits(WebSocket, events.EventEmitter);
+WebSocket.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
+	constructor: {
+		value: WebSocket,
+		enumberable: false
+	}
+});
 
 /*
     Send message
@@ -9372,6 +9377,14 @@ WebSocketClient.prototype = {
 		return this.req.uri;
 	},
 
+	get config() {
+		return this.container.config;
+	},
+
+	get global() {
+		return this.container.global;
+	},
+
 	get session() {
 		return this.req.session;
 	},
@@ -9563,7 +9576,7 @@ WebSocketClient.prototype.send = function(message) {
 
     var data = self.type === 3 ? JSON.stringify(message) : (message || '').toString();
 
-   	if (self.framework.config['default-websocket-encodedecode'] === true && data.length > 0)
+   	if (self.container.config['default-websocket-encodedecode'] === true && data.length > 0)
    		data = encodeURIComponent(data);
 
 	self.socket.write(new Buffer(utils.encode_WS(data), 'binary'));
