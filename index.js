@@ -9347,6 +9347,7 @@ function WebSocketClient(req, socket, head) {
     this.socket = socket;
     this.req = req;
     this.isClosed = false;
+    this.errors = 0;
 
     this.length = 0;
     this.cookie = req.cookie.bind(req);
@@ -9498,18 +9499,25 @@ WebSocketClient.prototype._ondata = function(data) {
     var self = this;
 
     if (data.length > self.length) {
+    	self.errors++;
         self.container.emit('error', new Error('Maximum request length exceeded.'), self);
         return;
     }
 
 	var message = utils.decode_WS(data);
 	try {
-		message = decodeURIComponent(message || '');
+
+		if (self.container.config['default-websocket-encodedecode'] === true)
+			message = decodeURIComponent(message || '');
+		else
+			message = message || '';
+
 	} catch(ex) {}
 
     if (message === '') {
         // websocket.close() send empty string
-        self.close();
+        self.errors++;
+        //self.close();
         return;
     }
 
@@ -9524,13 +9532,15 @@ WebSocketClient.prototype._ondata = function(data) {
             message = JSON.parse(message);
         } catch (ex) {
             message = null;
+	        self.errors++;
             self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
             return;
         }
     }
     else {
+        self.errors++;
         message = null;
-        self.close();
+        //self.close();
         return;
     }
 
