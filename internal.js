@@ -2323,6 +2323,9 @@ function minifyHTML(html) {
 				len = value.indexOf('type="text/html"');
 				if (len < end && len !== -1)
 					break;
+				len = value.indexOf('type="text/ng-template"');
+				if (len < end && len !== -1)
+					break;
 			}
 
 			cache[key] = value.replace(/\n/g, '\\n');
