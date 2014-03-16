@@ -152,6 +152,7 @@ function Framework() {
 	this.workers = {};
 	this.databases = {};
 	this.directory = directory;
+	this.isLE = os.endianness ? os.endianness() === 'LE' : true;
 
 	this.temporary = {
 		path: {},
@@ -571,11 +572,11 @@ Framework.prototype.partial = function(name, funcExecute) {
 	if (typeof(name) === FUNCTION) {
 		self.routes.partialGlobal.push(name);
 		self._length_partial_global = Object.keys(self.routes.partialGlobal).length;
+		return self;
 	}
- 	else {
-		self.routes.partial[name] = funcExecute;
-		self._length_partial_private = Object.keys(self.routes.partial).length;
-	}
+
+	self.routes.partial[name] = funcExecute;
+	self._length_partial_private = Object.keys(self.routes.partial).length;
 
 	return self;
 };
@@ -2803,9 +2804,9 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 	if (options)
 		self.server = http.createServer(options, self.handlers.onrequest);
 	else
-    	self.server = http.createServer(self.handlers.onrequest);
+		self.server = http.createServer(self.handlers.onrequest);
 
-    if (self.config['allow-websocket'])
+	if (self.config['allow-websocket'])
 		self.server.on('upgrade', self.handlers.onupgrade);
 
 	if (!port) {
@@ -2922,11 +2923,11 @@ Framework.prototype._verify_directory = function(name) {
 
 Framework.prototype._upgrade = function(req, socket, head) {
 
-    if (req.headers.upgrade !== 'websocket')
-        return;
+	if (req.headers.upgrade !== 'websocket')
+		return;
 
 	var self = this;
-    var headers = req.headers;
+	var headers = req.headers;
 
 	self.stats.request.websocket++;
 
@@ -2964,7 +2965,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		}
 	}
 
-    req.uri = parser.parse('ws://' + req.headers.host + req.url);
+	req.uri = parser.parse('ws://' + req.headers.host + req.url);
 	req.data = { get: {} };
 
 	if (req.uri.query && req.uri.query.length > 0)
@@ -2974,15 +2975,15 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	req.user = null;
 	req.flags = [req.isSecure ? 'https' : 'http'];
 
-    var path = utils.path(req.uri.pathname);
-    var websocket = new WebSocketClient(req, socket, head);
+	var path = utils.path(req.uri.pathname);
+	var websocket = new WebSocketClient(req, socket, head);
 
 	req.path = internal.routeSplit(req.uri.pathname);
 
-    if (self.onAuthorization === null) {
-	    var route = self.lookup_websocket(req, websocket.uri.pathname, true);
+	if (self.onAuthorization === null) {
+		var route = self.lookup_websocket(req, websocket.uri.pathname, true);
 
-	    if (route === null) {
+		if (route === null) {
 			websocket.close();
 			req.connection.destroy();
 			return;
@@ -2990,7 +2991,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 		self._upgrade_continue(route, req, websocket, path);
 		return;
-    }
+	}
 
 	self.onAuthorization.call(self, req, websocket, req.flags, function(isLogged, user) {
 
@@ -3002,7 +3003,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 		var route = self.lookup_websocket(req, websocket.uri.pathname, false);
 
-	    if (route === null) {
+		if (route === null) {
 			websocket.close();
 			req.connection.destroy();
 			return;
@@ -3017,26 +3018,26 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 
 	var self = this;
 
-    if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version_header)) {
+	if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version_header)) {
 		socket.close();
 		req.connection.destroy();
-        return;
-    }
+		return;
+	}
 
-    var id = path + (route.flags.length > 0 ? '#' + route.flags.join('-') : '');
+	var id = path + (route.flags.length > 0 ? '#' + route.flags.join('-') : '');
 
-    if (route.isBINARY)
-    	socket.type = 1;
-    else if (route.isJSON)
-    	socket.type = 3;
+	if (route.isBINARY)
+		socket.type = 1;
+	else if (route.isJSON)
+		socket.type = 3;
 
-    if (typeof(self.connections[id]) === UNDEFINED) {
+	if (typeof(self.connections[id]) === UNDEFINED) {
 		var connection = new WebSocket(self, path, route.name, id);
 		self.connections[id] = connection;
 		route.onInitialize.apply(connection, internal.routeParam(route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, route));
-    }
+	}
 
-    socket.upgrade(self.connections[id]);
+	socket.upgrade(self.connections[id]);
 };
 
 Framework.prototype._service = function(count) {
@@ -3125,7 +3126,7 @@ Framework.prototype._request = function(req, res) {
 		}
 	}
 
-    if (self.config.debug)
+	if (self.config.debug)
 		res.setHeader('Mode', 'debug');
 
 	res.success = false;
@@ -3196,28 +3197,28 @@ Framework.prototype._request = function(req, res) {
 	}
 
 	var flags = [req.method.toLowerCase()];
-    var multipart = req.headers['content-type'] || '';
+	var multipart = req.headers['content-type'] || '';
 
-    flags.push(protocol);
+	flags.push(protocol);
 
-    if (multipart.indexOf('multipart/form-data') === -1) {
+	if (multipart.indexOf('multipart/form-data') === -1) {
 
-	    if (multipart.indexOf('application/json') !== -1)
-	    	flags.push('json');
+		if (multipart.indexOf('application/json') !== -1)
+			flags.push('json');
 
 		if (multipart.indexOf('mixed') === -1)
 			multipart = '';
 		else
 			flags.push('mmr');
-    }
+	}
 
 	if (multipart.length > 0)
 		flags.push('upload');
 
-    if (req.isProxy)
+	if (req.isProxy)
 		flags.push('proxy');
 
-    if (accept === 'text/event-stream')
+	if (accept === 'text/event-stream')
 		flags.push('sse');
 
 	if (self.config.debug)
@@ -8814,27 +8815,27 @@ var SOCKET_HASH            = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 var SOCKET_ALLOW_VERSION   = [13];
 
 /*
-    WebSocket
-    @framework {total.js}
-    @path {String}
-    @name {String} :: Controller name
-    return {WebSocket}
+	WebSocket
+	@framework {total.js}
+	@path {String}
+	@name {String} :: Controller name
+	return {WebSocket}
 */
 function WebSocket(framework, path, name, id) {
-    this._keys = [];
-    this.id = id;
-    this.online = 0;
-    this.connections = {};
-    this.framework = framework;
-    this.repository = {};
-    this.name = name;
-    this.url = utils.path(path);
+	this._keys = [];
+	this.id = id;
+	this.online = 0;
+	this.connections = {};
+	this.framework = framework;
+	this.repository = {};
+	this.name = name;
+	this.url = utils.path(path);
 
 	// on('open', function(client) {});
 	// on('close', function(client) {});
 	// on('message', function(client, message) {});
 	// on('error', function(error, client) {});
-    events.EventEmitter.call(this);
+	events.EventEmitter.call(this);
 }
 
 WebSocket.prototype = {
@@ -8886,119 +8887,119 @@ WebSocket.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
 });
 
 /*
-    Send message
-    @message {String or Object}
-    @id {String Array}
-    @blacklist {String Array}
-    return {WebSocket}
+	Send message
+	@message {String or Object}
+	@id {String Array}
+	@blacklist {String Array}
+	return {WebSocket}
 */
 WebSocket.prototype.send = function(message, id, blacklist) {
 
-    var self = this;
-    var keys = self._keys;
-    var length = keys.length;
+	var self = this;
+	var keys = self._keys;
+	var length = keys.length;
 
-    if (length === 0)
+	if (length === 0)
 		return self;
 
 
 	var fn = typeof(blacklist) === FUNCTION ? blacklist : null;
-    var is = blacklist instanceof Array;
+	var is = blacklist instanceof Array;
 
-    if (typeof(id) === UNDEFINED || id === null || id.length === 0) {
+	if (typeof(id) === UNDEFINED || id === null || id.length === 0) {
 
-        for (var i = 0; i < length; i++) {
+		for (var i = 0; i < length; i++) {
 
 			var _id = keys[i];
 
-   			if (is && blacklist.indexOf(_id) !== -1)
-                continue;
-
-            var conn = self.connections[_id];
-
-            if (fn !== null && !fn.call(self, _id, conn))
+			if (is && blacklist.indexOf(_id) !== -1)
 				continue;
 
-            conn.send(message);
-            self.framework.stats.response.websocket++;
-        }
+			var conn = self.connections[_id];
 
-        self.emit('send', message, null, []);
-        return self;
-    }
+			if (fn !== null && !fn.call(self, _id, conn))
+				continue;
 
-    fn = typeof(id) === FUNCTION ? id : null;
-    is = id instanceof Array;
-
-    for (var i = 0; i < length; i++) {
-
-		var _id = keys[i];
-
-        if (is && id.indexOf(_id) === -1)
-            continue;
-
-        var conn = self.connections[_id];
-
-        if (fn !== null && !fn.call(self, _id, conn) === -1)
-            continue;
-
-        conn.send(message);
-        self.framework.stats.response.websocket++;
-    }
-
-    self.emit('send', message, id, blacklist);
-    return self;
-};
-
-/*
-    Close connection
-    @id {String Array} :: optional, default null
-    return {WebSocket}
-*/
-WebSocket.prototype.close = function(id) {
-
-    var self = this;
-    var keys = self._keys;
-
-    if (keys === null)
-    	return self;
-
-    var length = keys.length;
-
-    if (length === 0)
-		return self;
-
-    if (typeof(id) === UNDEFINED || id === null || id.length === 0) {
-		for (var i = 0; i < length; i++) {
-			var _id = keys[i];
-            self.connections[_id].close();
-            self._remove(_id);
+			conn.send(message);
+			self.framework.stats.response.websocket++;
 		}
-        self._refresh();
-        return self;
-    }
 
-    var is = id instanceof Array;
-    var fn = typeof(id) === FUNCTION ? id : null;
+		self.emit('send', message, null, []);
+		return self;
+	}
+
+	fn = typeof(id) === FUNCTION ? id : null;
+	is = id instanceof Array;
 
 	for (var i = 0; i < length; i++) {
 
 		var _id = keys[i];
 
-        if (is && id.indexOf(_id) === -1)
-            continue;
+		if (is && id.indexOf(_id) === -1)
+			continue;
 
-        var conn = self.connections[_id];
+		var conn = self.connections[_id];
 
-        if (fn !== null && !fn.call(self, _id, conn))
-        	continue;
+		if (fn !== null && !fn.call(self, _id, conn) === -1)
+			continue;
 
-        conn.close();
-        self._remove(_id);
+		conn.send(message);
+		self.framework.stats.response.websocket++;
 	}
 
-    self._refresh();
-    return self;
+	self.emit('send', message, id, blacklist);
+	return self;
+};
+
+/*
+	Close connection
+	@id {String Array} :: optional, default null
+	return {WebSocket}
+*/
+WebSocket.prototype.close = function(id) {
+
+	var self = this;
+	var keys = self._keys;
+
+	if (keys === null)
+		return self;
+
+	var length = keys.length;
+
+	if (length === 0)
+		return self;
+
+	if (typeof(id) === UNDEFINED || id === null || id.length === 0) {
+		for (var i = 0; i < length; i++) {
+			var _id = keys[i];
+			self.connections[_id].close();
+			self._remove(_id);
+		}
+		self._refresh();
+		return self;
+	}
+
+	var is = id instanceof Array;
+	var fn = typeof(id) === FUNCTION ? id : null;
+
+	for (var i = 0; i < length; i++) {
+
+		var _id = keys[i];
+
+		if (is && id.indexOf(_id) === -1)
+			continue;
+
+		var conn = self.connections[_id];
+
+		if (fn !== null && !fn.call(self, _id, conn))
+			continue;
+
+		conn.close();
+		self._remove(_id);
+	}
+
+	self._refresh();
+	return self;
 };
 
 /*
@@ -9036,65 +9037,65 @@ WebSocket.prototype.change = function(message) {
 
 
 /*
-    All connections (forEach)
-    @fn {Function} :: function(client, index) {}
-    return {WebSocketClient};
+	All connections (forEach)
+	@fn {Function} :: function(client, index) {}
+	return {WebSocketClient};
 */
 WebSocket.prototype.all = function(fn) {
 
-    var self = this;
-    var length = self._keys.length;
+	var self = this;
+	var length = self._keys.length;
 
-    for (var i = 0; i < length; i++) {
-        var id = self._keys[i];
-        if (fn(self.connections[id], i))
-            break;
-    }
+	for (var i = 0; i < length; i++) {
+		var id = self._keys[i];
+		if (fn(self.connections[id], i))
+			break;
+	}
 
-    return self;
+	return self;
 };
 
 /*
-    Find a connection
-    @id {String or Function} :: function(client, id) {}
-    return {WebSocketClient}
+	Find a connection
+	@id {String or Function} :: function(client, id) {}
+	return {WebSocketClient}
 */
 WebSocket.prototype.find = function(id) {
-    var self = this;
-    var length = self._keys.length;
-    var isFn = typeof(id) === FUNCTION;
+	var self = this;
+	var length = self._keys.length;
+	var isFn = typeof(id) === FUNCTION;
 
-    for (var i = 0; i < length; i++) {
-        var connection = self.connections[self._keys[i]];
+	for (var i = 0; i < length; i++) {
+		var connection = self.connections[self._keys[i]];
 
-        if (!isFn) {
-	        if (connection.id === id)
-	            return connection;
-	        continue;
-        }
+		if (!isFn) {
+			if (connection.id === id)
+				return connection;
+			continue;
+		}
 
-    	if (id(connection, connection.id))
-    		return connection;
-    }
+		if (id(connection, connection.id))
+			return connection;
+	}
 
-    return null;
+	return null;
 };
 
 /*
-    Destroy a websocket
+	Destroy a websocket
 */
 WebSocket.prototype.destroy = function() {
-    var self = this;
+	var self = this;
 
-    if (self.connections === null && self._keys === null)
-    	return self;
+	if (self.connections === null && self._keys === null)
+		return self;
 
-    self.close();
-    self.connections = null;
-    self._keys = null;
-    delete self.framework.connections[self.id];
-    self.emit('destroy');
-    return self;
+	self.close();
+	self.connections = null;
+	self._keys = null;
+	delete self.framework.connections[self.id];
+	self.emit('destroy');
+	return self;
 };
 
 /*
@@ -9132,60 +9133,60 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 };
 
 /*
-    Internal function
-    return {WebSocket}
+	Internal function
+	return {WebSocket}
 */
 WebSocket.prototype._refresh = function() {
-    var self = this;
-    self._keys = Object.keys(self.connections);
-    self.online = self._keys.length;
-    return self;
+	var self = this;
+	self._keys = Object.keys(self.connections);
+	self.online = self._keys.length;
+	return self;
 };
 
 /*
-    Internal function
-    @id {String}
-    return {WebSocket}
+	Internal function
+	@id {String}
+	return {WebSocket}
 */
 WebSocket.prototype._remove = function(id) {
-    var self = this;
-    delete self.connections[id];
-    return self;
+	var self = this;
+	delete self.connections[id];
+	return self;
 };
 
 /*
-    Internal function
-    @client {WebSocketClient}
-    return {WebSocket}
+	Internal function
+	@client {WebSocketClient}
+	return {WebSocket}
 */
 WebSocket.prototype._add = function(client) {
-    var self = this;
-    self.connections[client._id] = client;
-    return self;
+	var self = this;
+	self.connections[client._id] = client;
+	return self;
 };
 
 /*
-    Module caller
-    @name {String}
-    return {Module};
+	Module caller
+	@name {String}
+	return {Module};
 */
 WebSocket.prototype.module = function(name) {
-    return this.framework.module(name);
+	return this.framework.module(name);
 };
 
 /*
-    Get a model
-    @name {String} :: name of model
-    return {Object};
+	Get a model
+	@name {String} :: name of model
+	return {Object};
 */
 WebSocket.prototype.model = function(name) {
-    return this.framework.model(name);
+	return this.framework.model(name);
 };
 
 /*
-    Get a model
-    @name {String} :: name of model
-    return {Object};
+	Get a model
+	@name {String} :: name of model
+	return {Object};
 */
 WebSocket.prototype.component = function(name) {
 
@@ -9227,138 +9228,138 @@ WebSocket.prototype.helper = function(name) {
 };
 
 /*
-    Controller functions reader
-    @name {String} :: name of controller
-    return {Object};
+	Controller functions reader
+	@name {String} :: name of controller
+	return {Object};
 */
 WebSocket.prototype.functions = function(name) {
-    return (this.framework.controllers[name] || {}).functions;
+	return (this.framework.controllers[name] || {}).functions;
 };
 
 /*
-    Return database
-    @name {String}
-    return {Database};
+	Return database
+	@name {String}
+	return {Database};
 */
 WebSocket.prototype.database = function(name) {
-    return this.framework.database(name);
+	return this.framework.database(name);
 };
 
 /*
-    Resource reader
-    @name {String} :: filename
-    @key {String}
-    return {String};
+	Resource reader
+	@name {String} :: filename
+	@key {String}
+	return {String};
 */
 WebSocket.prototype.resource = function(name, key) {
-    return this.framework.resource(name, key);
+	return this.framework.resource(name, key);
 };
 
 /*
-    Log
-    @arguments {Object array}
-    return {WebSocket};
+	Log
+	@arguments {Object array}
+	return {WebSocket};
 */
 WebSocket.prototype.log = function() {
-    var self = this;
-    self.framework.log.apply(self.framework, arguments);
-    return self;
+	var self = this;
+	self.framework.log.apply(self.framework, arguments);
+	return self;
 };
 
 /*
-    Validation / alias for validate
-    return {ErrorBuilder}
+	Validation / alias for validate
+	return {ErrorBuilder}
 */
 WebSocket.prototype.validation = function(model, properties, prefix, name) {
-    return this.validate(model, properties, prefix, name);
+	return this.validate(model, properties, prefix, name);
 };
 
 /*
-    Validation object
-    @model {Object} :: object to validate
-    @properties {String array} : what properties?
-    @prefix {String} :: prefix for resource = prefix + model name
-    @name {String} :: name of resource
-    return {ErrorBuilder}
+	Validation object
+	@model {Object} :: object to validate
+	@properties {String array} : what properties?
+	@prefix {String} :: prefix for resource = prefix + model name
+	@name {String} :: name of resource
+	return {ErrorBuilder}
 */
 WebSocket.prototype.validate = function(model, properties, prefix, name) {
 
-    var self = this;
+	var self = this;
 
-    var resource = function(key) {
-        return self.resource(name || 'default', (prefix || '') + key);
-    };
+	var resource = function(key) {
+		return self.resource(name || 'default', (prefix || '') + key);
+	};
 
-    var error = new builders.ErrorBuilder(resource);
-    return utils.validate.call(self, model, properties, self.framework.onValidation, error);
+	var error = new builders.ErrorBuilder(resource);
+	return utils.validate.call(self, model, properties, self.framework.onValidation, error);
 };
 
 /*
-    Add function to async wait list
-    @name {String}
-    @waitingFor {String} :: name of async function
-    @fn {Function}
-    return {WebSocket}
+	Add function to async wait list
+	@name {String}
+	@waitingFor {String} :: name of async function
+	@fn {Function}
+	return {WebSocket}
 */
 WebSocket.prototype.wait = function(name, waitingFor, fn) {
-    var self = this;
-    self.async.wait(name, waitingFor, fn);
-    return self;
+	var self = this;
+	self.async.wait(name, waitingFor, fn);
+	return self;
 };
 
 /*
-    Run async functions
-    @callback {Function}
-    return {WebSocket}
+	Run async functions
+	@callback {Function}
+	return {WebSocket}
 */
 WebSocket.prototype.complete = function(callback) {
-    var self = this;
-    return self.complete(callback);
+	var self = this;
+	return self.complete(callback);
 };
 
 /*
-    Add function to async list
-    @name {String}
-    @fn {Function}
-    return {WebSocket}
+	Add function to async list
+	@name {String}
+	@fn {Function}
+	return {WebSocket}
 */
 WebSocket.prototype.await = function(name, fn) {
-    var self = this;
-    self.async.await(name, fn);
-    return self;
+	var self = this;
+	self.async.await(name, fn);
+	return self;
 };
 
 /*
-    WebSocketClient
-    @req {Request}
-    @socket {Socket}
-    @head {Buffer}
+	WebSocketClient
+	@req {Request}
+	@socket {Socket}
+	@head {Buffer}
 */
 function WebSocketClient(req, socket, head) {
 
-    this.handlers = {
-        ondata: this._ondata.bind(this),
-        onerror: this._onerror.bind(this),
-        onclose: this._onclose.bind(this)
-    };
+	this.handlers = {
+		ondata: this._ondata.bind(this),
+		onerror: this._onerror.bind(this),
+		onclose: this._onclose.bind(this)
+	};
 
-    this.container = null;
-    this._id = null;
-    this.id = '';
-    this.socket = socket;
-    this.req = req;
-    this.isClosed = false;
-    this.errors = 0;
+	this.container = null;
+	this._id = null;
+	this.id = '';
+	this.socket = socket;
+	this.req = req;
+	this.isClosed = false;
+	this.errors = 0;
+	this.buffer = new Buffer(0);
+	this.length = 0;
+	this.cookie = req.cookie.bind(req);
 
-    this.length = 0;
-    this.cookie = req.cookie.bind(req);
+	// 1 = raw - not implemented
+	// 2 = plain
+	// 3 = JSON
 
-    // 1 = raw - not implemented
-    // 2 = plain
-    // 3 = JSON
-
-    this.type = 2;
-    this._isClosed = false;
+	this.type = 2;
+	this._isClosed = false;
 }
 
 WebSocketClient.prototype = {
@@ -9412,209 +9413,281 @@ WebSocketClient.prototype.__proto__ = Object.create(events.EventEmitter.prototyp
 });
 
 /*
-    Internal function
-    @allow {String Array} :: allow origin
-    @protocols {String Array} :: allow protocols
-    @flags {String Array} :: flags
-    return {Boolean}
+	Internal function
+	@allow {String Array} :: allow origin
+	@protocols {String Array} :: allow protocols
+	@flags {String Array} :: flags
+	return {Boolean}
 */
 WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, version) {
 
-    var self = this;
+	var self = this;
 
-    flags = flags || [];
-    protocols = protocols || [];
-    allow = allow || [];
+	flags = flags || [];
+	protocols = protocols || [];
+	allow = allow || [];
 
-    self.length = length;
+	self.length = length;
 
-    var origin = self.req.headers['origin'] || '';
+	var origin = self.req.headers['origin'] || '';
 
-    if (allow.length > 0) {
+	if (allow.length > 0) {
 
-        if (allow.indexOf('*') === -1) {
-            for (var i = 0; i < allow.length; i++) {
-                if (origin.indexOf(allow[i]) === -1)
-                    return false;
-            }
-        }
+		if (allow.indexOf('*') === -1) {
+			for (var i = 0; i < allow.length; i++) {
+				if (origin.indexOf(allow[i]) === -1)
+					return false;
+			}
+		}
 
-    } else {
+	} else {
 
-        if (origin.indexOf(self.req.headers.host) === -1)
-            return false;
-    }
+		if (origin.indexOf(self.req.headers.host) === -1)
+			return false;
+	}
 
-    if (protocols.length > 0) {
-        for (var i = 0; i < protocols.length; i++) {
-            if (self.protocol.indexOf(protocols[i]) === -1)
-                return false;
-        }
-    }
+	if (protocols.length > 0) {
+		for (var i = 0; i < protocols.length; i++) {
+			if (self.protocol.indexOf(protocols[i]) === -1)
+				return false;
+		}
+	}
 
-    if (SOCKET_ALLOW_VERSION.indexOf(utils.parseInt(self.req.headers['sec-websocket-version'])) === -1)
-        return false;
+	if (SOCKET_ALLOW_VERSION.indexOf(utils.parseInt(self.req.headers['sec-websocket-version'])) === -1)
+		return false;
 
-    self.socket.write(new Buffer(SOCKET_RESPONSE.format('total.js v' + version, self._request_accept_key(self.req)), 'binary'));
+	self.socket.write(new Buffer(SOCKET_RESPONSE.format('total.js v' + version, self._request_accept_key(self.req)), 'binary'));
 
-    self._id = (self.ip || '').replace(/\./g, '') + utils.GUID(20);
-    self.id = self._id;
+	self._id = (self.ip || '').replace(/\./g, '') + utils.GUID(20);
+	self.id = self._id;
 
-    return true;
+	return true;
 };
 
 /*
-    Internal function
-    @container {WebSocket}
-    return {WebSocketClient}
+	Internal function
+	@container {WebSocket}
+	return {WebSocketClient}
 */
 WebSocketClient.prototype.upgrade = function(container) {
 
-    var self = this;
-    self.container = container;
+	var self = this;
+	self.container = container;
 
-    //self.socket.setTimeout(0);
-    //self.socket.setNoDelay(true);
-    //self.socket.setKeepAlive(true, 0);
+	//self.socket.setTimeout(0);
+	//self.socket.setNoDelay(true);
+	//self.socket.setKeepAlive(true, 0);
 
-    self.socket.on('data', self.handlers.ondata);
-    self.socket.on('error', self.handlers.onerror);
-    self.socket.on('close', self.handlers.onclose);
-    self.socket.on('end', self.handlers.onclose);
+	self.socket.on('data', self.handlers.ondata);
+	self.socket.on('error', self.handlers.onerror);
+	self.socket.on('close', self.handlers.onclose);
+	self.socket.on('end', self.handlers.onclose);
 
-    self.container._add(self);
-    self.container._refresh();
+	self.container._add(self);
+	self.container._refresh();
 
-    self.container.framework.emit('websocket-begin', self.container, self);
-    self.container.emit('open', self);
+	self.container.framework.emit('websocket-begin', self.container, self);
+	self.container.emit('open', self);
 
-    return self;
+	return self;
 };
 
 /*
-    Internal handler
-    @data {Buffer}
+	MIT
+	Written by Jozef Gula
+	---------------------
+	Internal handler
+	@data {Buffer}
 */
 WebSocketClient.prototype._ondata = function(data) {
 
-    var self = this;
+	var self = this;
 
-    if (data.length > self.length) {
-    	self.errors++;
-        self.container.emit('error', new Error('Maximum request length exceeded.'), self);
-        return;
-    }
-
-	var message = utils.decode_WS(data);
-	try {
-
-		if (self.container.config['default-websocket-encodedecode'] === true)
-			message = decodeURIComponent(message || '');
-		else
-			message = message || '';
-
-	} catch(ex) {}
-
-    if (message === '') {
-        // websocket.close() send empty string
-        self.errors++;
-        //self.close();
-        return;
-    }
-
-    if (self.type !== 3) {
-		self.container.emit('message', self, message);
+	if (data.length + self.buffer.length > self.length) {
+		self.errors++;
+		self.container.emit('error', new Error('Maximum request length exceeded.'), self);
 		return;
-    }
+	}
 
-    if (message.isJSON()) {
-        try
-        {
-            message = JSON.parse(message);
-        } catch (ex) {
-            message = null;
-	        self.errors++;
-            self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
-            return;
-        }
-    }
-    else {
-        self.errors++;
-        message = null;
-        //self.close();
-        return;
-    }
+	switch (data[0] & 0x0f) {
+		case 0x01:
+			// text message
+			self.parse(data);
+			break;
+		case 0x02:
+			// binary message
+			self.parse(data);
+			break;
+		case 0x08:
+			// close
+			self.close();
+			break;
+		case 0x09:
+			// ping
+			self.socket.write(self._state('pong'));
+			break;
+		case 0x0a:
+			// pong
+			break;
+	}
+};
 
-    self.container.emit('message', self, message);
+// MIT
+// Written by Jozef Gula
+WebSocketClient.prototype.parse = function(data) {
+
+	var self = this;
+
+	if (data != null)
+		self.buffer = Buffer.concat([self.buffer, data]);
+
+	var bLength = self.buffer[1];
+
+	if (((bLength & 0x80) >> 7) !== 1)
+		return self;
+
+	var length = utils.getMessageLength(self.buffer, self.container.framework.isLE);
+	var index = (self.buffer[1] & 0x7f);
+
+	index = (index == 126) ? 4 : (index == 127 ? 10 : 2);
+
+	if ((index + length + 4) > (self.buffer.length))
+		return self;
+
+	var mask = new Buffer(4);
+	self.buffer.copy(mask, 0, index, index + 4);
+
+	// TEXT
+	if (self.type !== 1) {
+		var output = '';
+		for (var i = 0; i < length; i++)
+			output += String.fromCharCode(self.buffer[index + 4 + i] ^ mask[i % 4]);
+
+		// JSON
+		if (self.type === 3) {
+			try
+			{
+				self.container.emit('message', self, JSON.parse(self.container.config['default-websocket-encodedecode'] === true ? decodeURIComponent(output) : output));
+			} catch (ex) {
+				self.errors++;
+				self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
+			}
+		} else
+			self.container.emit('message', self, self.container.config['default-websocket-encodedecode'] === true ? decodeURIComponent(output) : output);
+
+	} else {
+		var binary = new Buffer(length);
+		for (var i = 0; i < length; i++)
+			binary.write(self.buffer[index + 4 + i] ^ mask[i % 4]);
+		self.container.emit('message', self, binary);
+	}
+
+	self.buffer = self.buffer.slice(index + length + 4, self.buffer.length);
+	if (self.buffer.length >= 2)
+		self.parse(null);
+
+	return self;
 };
 
 /*
-    Internal handler
+	Internal handler
 */
 WebSocketClient.prototype._onerror = function(error) {
-    var self = this;
-    if (error.stack.indexOf('ECONNRESET') !== -1 || error.stack.indexOf('socket is closed') !== -1 || error.stack.indexOf('EPIPE') !== -1)
-    	return;
-    self.container.emit('error', error, self);
+	var self = this;
+	if (error.stack.indexOf('ECONNRESET') !== -1 || error.stack.indexOf('socket is closed') !== -1 || error.stack.indexOf('EPIPE') !== -1)
+		return;
+	self.container.emit('error', error, self);
 };
 
 /*
-    Internal handler
+	Internal handler
 */
 WebSocketClient.prototype._onclose = function() {
-    var self = this;
+	var self = this;
 
-    if (self._isClosed)
-    	return;
+	if (self._isClosed)
+		return;
 
-    self._isClosed = true;
-    self.container._remove(self._id);
-    self.container._refresh();
-    self.container.emit('close', self);
-    self.container.framework.emit('websocket-end', self.container, self);
+	self._isClosed = true;
+	self.container._remove(self._id);
+	self.container._refresh();
+	self.container.emit('close', self);
+	self.container.framework.emit('websocket-end', self.container, self);
 };
 
 /*
-    Send message
-    @message {String or Object}
-    return {WebSocketClient}
+	Send message
+	@message {String or Object}
+	return {WebSocketClient}
 */
 WebSocketClient.prototype.send = function(message) {
-    var self = this;
+	var self = this;
 
-    if (self.isClosed)
-        return;
+	if (self.isClosed)
+		return;
 
-    var data = self.type === 3 ? JSON.stringify(message) : (message || '').toString();
+	if (self.type !== 1) {
+		var data = self.type === 3 ? JSON.stringify(message) : (message || '').toString();
+		if (self.container.config['default-websocket-encodedecode'] === true && data.length > 0)
+			data = encodeURIComponent(data);
+		self.socket.write(new Buffer(utils.encode_WS(data), 'binary'));
+	} else
+		self.socket.write(new Buffer(utils.encode_WS(message, 'binary')));
 
-   	if (self.container.config['default-websocket-encodedecode'] === true && data.length > 0)
-   		data = encodeURIComponent(data);
-
-	self.socket.write(new Buffer(utils.encode_WS(data), 'binary'));
-    return self;
+	return self;
 };
 
 /*
-    Close connection
-    return {WebSocketClient}
+	Close connection
+	return {WebSocketClient}
 */
 WebSocketClient.prototype.close = function() {
-    var self = this;
+	var self = this;
 
-    if (self.isClosed)
-        return self;
+	if (self.isClosed)
+		return self;
 
-    self.isClosed = true;
+	self.isClosed = true;
+	self.socket.end(self._state('close'));
+	return self;
+};
 
-    // removed: end(new Buffer(SOCKET_RESPONSE_ERROR, 'binary'));
-    self.socket.end();
-    return self;
+/*
+	Send state
+	return {Buffer}
+*/
+WebSocketClient.prototype._state = function(type) {
+	var value = new Buffer(6);
+	switch (type) {
+		case 'close':
+			value[0] = 0x08;
+			value[0] |= 0x80;
+			value[1] = 0x80;
+			break;
+		case 'ping':
+			value[0] = 0x09;
+			value[0] |= 0x80;
+			value[1] = 0x80;
+			break;
+		case 'pong':
+			value[0] = 0x0A;
+			value[0] |= 0x80;
+			value[1] = 0x80;
+			break;
+	}
+	var iMask = Math.floor(Math.random() * 255);
+	value[2] = iMask >> 8;
+	value[3] = iMask;
+	iMask = Math.floor(Math.random() * 255);
+	value[4] = iMask >> 8;
+	value[5] = iMask;
+	return value;
 };
 
 WebSocketClient.prototype._request_accept_key = function(req) {
-    var sha1 = crypto.createHash('sha1');
-    sha1.update((req.headers['sec-websocket-key'] || '') + SOCKET_HASH);
-    return sha1.digest('base64');
+	var sha1 = crypto.createHash('sha1');
+	sha1.update((req.headers['sec-websocket-key'] || '') + SOCKET_HASH);
+	return sha1.digest('base64');
 };
 
 // *********************************************************************************
@@ -9660,7 +9733,7 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 	if (options.httpOnly || options.httponly || options.HttpOnly)
 		builder.push('HttpOnly');
 
-    var self = this;
+	var self = this;
 
 	var arr = self.getHeader('set-cookie') || [];
 
@@ -9728,9 +9801,9 @@ http.IncomingMessage.prototype.cookie = function(name) {
 
 	self.cookies = {};
 
-    var cookie = self.headers['cookie'] || '';
-    if (cookie.length === 0)
-    	return '';
+	var cookie = self.headers['cookie'] || '';
+	if (cookie.length === 0)
+		return '';
 
 	var arr = cookie.split(';');
 	var length = arr.length;

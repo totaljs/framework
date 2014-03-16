@@ -167,11 +167,11 @@ exports.isEmpty = function(obj) {
 	Send request to URL
 	@url {String}
 	@method {String}
-    @data {String}
-    @callback {Function} :: function(error, data, statusCode, headers)
-    @headers {Object} :: optional, default {}
-    @encoding {String} :: optional, default utf8
-    @timeout {Number} :: optional, default 10000
+	@data {String}
+	@callback {Function} :: function(error, data, statusCode, headers)
+	@headers {Object} :: optional, default {}
+	@encoding {String} :: optional, default utf8
+	@timeout {Number} :: optional, default 10000
 */
 exports.request = function(url, method, data, callback, headers, encoding, timeout) {
 
@@ -600,7 +600,7 @@ exports.parseInt = function(obj, def) {
 		return def || 0;
 
 	var str = type !== STRING ? obj.toString() : obj;
-    return str.parseInt(def, 10);
+	return str.parseInt(def, 10);
 };
 
 /*
@@ -616,7 +616,7 @@ exports.parseFloat = function(obj, def) {
 		return def || 0;
 
 	var str = type !== STRING ? obj.toString() : obj;
-    return str.parseFloat(def);
+	return str.parseFloat(def);
 };
 
 /*
@@ -718,15 +718,15 @@ exports.GUID = function(max) {
 
 	max = max || 40;
 
-    var rnd = function () {
-        return Math.floor(Math.random() * 65536).toString(16);
-    };
+	var rnd = function () {
+		return Math.floor(Math.random() * 65536).toString(16);
+	};
 
-    var str = '';
-    for (var i = 0; i < (max / 4) + 1; i++)
+	var str = '';
+	for (var i = 0; i < (max / 4) + 1; i++)
 		str += rnd();
 
-    return str.substring(0, max);
+	return str.substring(0, max);
 };
 
 /*
@@ -895,88 +895,64 @@ exports.combine = function() {
 	return {String}
 */
 exports.removeDiacritics = function(str) {
-    var dictionaryA = ['á', 'ä', 'č', 'ď', 'é', 'ě', 'ť', 'ž', 'ú', 'ů', 'ü', 'í', 'ï', 'ô', 'ó', 'ö', 'š', 'ľ', 'ĺ', 'ý', 'ÿ', 'č', 'ř'];
-    var dictionaryB = ['a', 'a', 'c', 'd', 'e', 'e', 't', 'z', 'u', 'u', 'u', 'i', 'i', 'o', 'o', 'o', 's', 'l', 'l', 'y', 'y', 'c', 'r'];
-    var buf = '';
-    var length = str.length;
-    for (var i = 0; i < length; i++) {
-        var c = str[i];
-        var isUpper = false;
+	var dictionaryA = ['á', 'ä', 'č', 'ď', 'é', 'ě', 'ť', 'ž', 'ú', 'ů', 'ü', 'í', 'ï', 'ô', 'ó', 'ö', 'š', 'ľ', 'ĺ', 'ý', 'ÿ', 'č', 'ř'];
+	var dictionaryB = ['a', 'a', 'c', 'd', 'e', 'e', 't', 'z', 'u', 'u', 'u', 'i', 'i', 'o', 'o', 'o', 's', 'l', 'l', 'y', 'y', 'c', 'r'];
+	var buf = '';
+	var length = str.length;
+	for (var i = 0; i < length; i++) {
+		var c = str[i];
+		var isUpper = false;
 
-        var index = dictionaryA.indexOf(c);
-        if (index === -1) {
-            index = dictionaryA.indexOf(c.toLowerCase());
-            isUpper = true;
-        }
+		var index = dictionaryA.indexOf(c);
+		if (index === -1) {
+			index = dictionaryA.indexOf(c.toLowerCase());
+			isUpper = true;
+		}
 
-        if (index === -1) {
-            buf += c;
-            continue;
-        }
+		if (index === -1) {
+			buf += c;
+			continue;
+		}
 
-        c = dictionaryB[index];
-        if (isUpper)
-            c = c.toUpperCase();
+		c = dictionaryB[index];
+		if (isUpper)
+			c = c.toUpperCase();
 
-        buf += c;
-    }
-    return buf;
+		buf += c;
+	}
+	return buf;
 };
 
 // Author: Haribabu Pasupathy
 // http://stackoverflow.com/users/1679439/haribabu-pasupathy
 exports.encode_WS = function(data){
 
-    var bytesFormatted = [];
-    bytesFormatted[0] = 129;
+	var bytesFormatted = [];
+	var length = data.length;
+	bytesFormatted[0] = 129;
 
-    if (data.length <= 125) {
-        bytesFormatted[1] = data.length;
-    } else if (data.length >= 126 && data.length <= 65535) {
-        bytesFormatted[1] = 126;
-        bytesFormatted[2] = (data.length >> 8) & 255;
-        bytesFormatted[3] = (data.length) & 255;
-    } else {
-        bytesFormatted[1] = 127;
-        bytesFormatted[2] = (data.length >> 56) & 255;
-        bytesFormatted[3] = (data.length >> 48) & 255;
-        bytesFormatted[4] = (data.length >> 40) & 255;
-        bytesFormatted[5] = (data.length >> 32) & 255;
-        bytesFormatted[6] = (data.length >> 24) & 255;
-        bytesFormatted[7] = (data.length >> 16) & 255;
-        bytesFormatted[8] = (data.length >> 8) & 255;
-        bytesFormatted[9] = (data.length) & 255;
-    }
+	if (data.length <= 125) {
+		bytesFormatted[1] = length;
+	} else if (length >= 126 && length <= 65535) {
+		bytesFormatted[1] = 126;
+		bytesFormatted[2] = (length >> 8) & 255;
+		bytesFormatted[3] = (length) & 255;
+	} else {
+		bytesFormatted[1] = 127;
+		bytesFormatted[2] = (length >> 56) & 255;
+		bytesFormatted[3] = (length >> 48) & 255;
+		bytesFormatted[4] = (length >> 40) & 255;
+		bytesFormatted[5] = (length >> 32) & 255;
+		bytesFormatted[6] = (length >> 24) & 255;
+		bytesFormatted[7] = (length >> 16) & 255;
+		bytesFormatted[8] = (length >> 8) & 255;
+		bytesFormatted[9] = (length) & 255;
+	}
 
-    var length = data.length;
-    for (var i = 0; i < length; i++)
-        bytesFormatted.push(data.charCodeAt(i));
+	for (var i = 0; i < length; i++)
+		bytesFormatted.push(data.charCodeAt(i));
 
-    return bytesFormatted;
-};
-
-// Author: Haribabu Pasupathy
-// http://stackoverflow.com/users/1679439/haribabu-pasupathy
-exports.decode_WS = function(data) {
-
-    var datalength = data[1] & 127;
-    var indexFirstMask = 2;
-
-    if (datalength === 126)
-        indexFirstMask = 4;
-    else if (datalength === 127)
-        indexFirstMask = 10;
-
-    var masks = data.slice(indexFirstMask, indexFirstMask + 4);
-    var i = indexFirstMask + 4;
-    var index = 0;
-    var output = '';
-    var length = data.length;
-
-    while (i < length)
-        output += String.fromCharCode(data[i++] ^ masks[index++ % 4]);
-
-    return output;
+	return bytesFormatted;
 };
 
 /*
@@ -988,12 +964,12 @@ exports.decode_WS = function(data) {
 	return {Number}
 */
 exports.distance = function(lat1, lon1, lat2, lon2) {
-    var R = 6371;
-    var dLat = (lat2 - lat1).toRad();
-    var dLon = (lon2 - lon1).toRad();
-    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return (R * c).floor(3);
+	var R = 6371;
+	var dLat = (lat2 - lat1).toRad();
+	var dLon = (lon2 - lon1).toRad();
+	var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+	return (R * c).floor(3);
 };
 
 /*
@@ -1140,17 +1116,17 @@ String.prototype.hash = function(type) {
 	return {Number}
 */
 String.prototype.count = function(text) {
-    var index = 0;
-    var count = 0;
-    do {
+	var index = 0;
+	var count = 0;
+	do {
 
-        index = this.indexOf(text, index + text.length);
+		index = this.indexOf(text, index + text.length);
 
-        if (index > 0)
-            count++;
+		if (index > 0)
+			count++;
 
-    } while (index > 0);
-    return count;
+	} while (index > 0);
+	return count;
 };
 
 String.prototype.parseDate = function() {
@@ -1219,13 +1195,13 @@ String.prototype.configuration = function() {
 	return {String}
 */
 String.prototype.format = function() {
-    var formatted = this;
-    var length = arguments.length;
-    for (var i = 0; i < length; i++) {
-        var regexp = new RegExp('\\{' + i + '\\}', 'gi');
-        formatted = formatted.replace(regexp, arguments[i]);
-    }
-    return formatted;
+	var formatted = this;
+	var length = arguments.length;
+	for (var i = 0; i < length; i++) {
+		var regexp = new RegExp('\\{' + i + '\\}', 'gi');
+		formatted = formatted.replace(regexp, arguments[i]);
+	}
+	return formatted;
 };
 
 String.prototype.encode = function() {
@@ -1250,9 +1226,9 @@ String.prototype.urlDecode = function() {
 	return {String}
 */
 String.prototype.params = function(obj) {
-    var formatted = this;
+	var formatted = this;
 
-    if (typeof(obj) === UNDEFINED || obj === null)
+	if (typeof(obj) === UNDEFINED || obj === null)
 		return formatted;
 
 	var reg = /\{[^}\n]*\}/g;
@@ -1321,7 +1297,7 @@ String.prototype.params = function(obj) {
 		formatted = formatted.replace(prop, isEncode ? exports.encode(val) : val);
 	}
 
-    return formatted;
+	return formatted;
 };
 
 /*
@@ -1333,7 +1309,7 @@ String.prototype.params = function(obj) {
 String.prototype.max = function(length, chars) {
 	var str = this;
 	chars = chars || '...';
-    return str.length > length ? str.substring(0, length - chars.length) + chars : str;
+	return str.length > length ? str.substring(0, length - chars.length) + chars : str;
 };
 
 String.prototype.isJSON = function() {
@@ -1368,18 +1344,18 @@ String.prototype.isEmail = function() {
 	return {Number}
 */
 String.prototype.parseInt = function(def) {
-    var num = 0;
-    var str = this;
+	var num = 0;
+	var str = this;
 
-    if (str.substring(0, 1) === '0')
+	if (str.substring(0, 1) === '0')
 		num = parseInt(str.replace(/\s/g, '').substring(1), 10);
-    else
+	else
 		num = parseInt(str.replace(/\s/g, ''), 10);
 
-    if (isNaN(num))
-        return def || 0;
+	if (isNaN(num))
+		return def || 0;
 
-    return num;
+	return num;
 };
 
 /*
@@ -1388,30 +1364,30 @@ String.prototype.parseInt = function(def) {
 */
 String.prototype.parseFloat = function(def) {
 	var num = 0;
-    var str = this;
+	var str = this;
 
-    if (str.substring(0, 1) === '0')
-        num = parseFloat(str.replace(/\s/g, '').substring(1).replace(',', '.'));
-    else
-        num = parseFloat(str.replace(/\s/g, '').replace(',', '.'));
+	if (str.substring(0, 1) === '0')
+		num = parseFloat(str.replace(/\s/g, '').substring(1).replace(',', '.'));
+	else
+		num = parseFloat(str.replace(/\s/g, '').replace(',', '.'));
 
-    if (isNaN(num))
-        return def || 0;
+	if (isNaN(num))
+		return def || 0;
 
-    return num;
+	return num;
 };
 
 String.prototype.toUnicode = function() {
-    var result = '';
-    var self = this;
-    var length = self.length;
-    for(var i = 0; i < length; ++i){
-        if(self.charCodeAt(i) > 126 || self.charCodeAt(i) < 32)
-            result += '\\u' + self.charCodeAt(i).hex(4);
-        else
-            result += self[i];
-    }
-    return result;
+	var result = '';
+	var self = this;
+	var length = self.length;
+	for(var i = 0; i < length; ++i){
+		if(self.charCodeAt(i) > 126 || self.charCodeAt(i) < 32)
+			result += '\\u' + self.charCodeAt(i).hex(4);
+		else
+			result += self[i];
+	}
+	return result;
 };
 
 String.prototype.fromUnicode = function() {
@@ -1454,28 +1430,28 @@ String.prototype.md5 = function(salt) {
 */
 String.prototype.encrypt = function(key, isUnique) {
 	var str = '0' + this;
-    var data_count = str.length;
-    var key_count = key.length;
-    var change = str[data_count - 1];
-    var random = isUnique ? exports.random(120) + 40 : 65;
-    var count = data_count + (random % key_count);
-    var values = [];
-    var index = 0;
+	var data_count = str.length;
+	var key_count = key.length;
+	var change = str[data_count - 1];
+	var random = isUnique ? exports.random(120) + 40 : 65;
+	var count = data_count + (random % key_count);
+	var values = [];
+	var index = 0;
 
-    values[0] = String.fromCharCode(random);
-    var counter = this.length + key.length;
+	values[0] = String.fromCharCode(random);
+	var counter = this.length + key.length;
 
-    for (var i = count - 1; i > 0; i--) {
+	for (var i = count - 1; i > 0; i--) {
 		index = str.charCodeAt(i % data_count);
 		values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
-    }
+	}
 
-    var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(/\//g, '-').replace(/\+/g, '_');
-    index = hash.indexOf('=');
-    if (index > 0)
+	var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(/\//g, '-').replace(/\+/g, '_');
+	index = hash.indexOf('=');
+	if (index > 0)
 		return hash.substring(0, index);
 
-    return hash;
+	return hash;
 };
 
 /*
@@ -1886,10 +1862,10 @@ Number.prototype.pluralize = function(zero, one, few, other) {
 	return {String}
 */
 Number.prototype.hex = function(length) {
-    var str = this.toString(16).toUpperCase();
-    while(str.length < length)
-        str = '0' + str;
-    return str;
+	var str = this.toString(16).toUpperCase();
+	while(str.length < length)
+		str = '0' + str;
+	return str;
 };
 
 /*
@@ -1950,9 +1926,9 @@ Number.prototype.parseDate = function(plus) {
 };
 
 if (typeof (Number.prototype.toRad) === UNDEFINED) {
-    Number.prototype.toRad = function () {
-        return this * Math.PI / 180;
-    };
+	Number.prototype.toRad = function () {
+		return this * Math.PI / 180;
+	};
 }
 
 Boolean.prototype.condition = function(ifTrue, ifFalse) {
@@ -1960,7 +1936,7 @@ Boolean.prototype.condition = function(ifTrue, ifFalse) {
 };
 
 /*
-    @count {Number}
+	@count {Number}
 	return {Array}
 */
 Array.prototype.take = function(count) {
@@ -1989,8 +1965,8 @@ Array.prototype.trim = function() {
 };
 
 /*
-    @count {Number}
-    return {Array}
+	@count {Number}
+	return {Array}
 */
 Array.prototype.skip = function(count) {
 	var arr = [];
@@ -2640,6 +2616,39 @@ exports.async = function(fn) {
 		return generator.value;
 	};
 };
+
+// MIT
+// Written by Jozef Gula
+exports.getMessageLength = function(data, isLE) {
+
+	var length = data[1] & 0x7f;
+
+	if (length === 126) {
+
+		if (data.length < 4)
+			return -1;
+
+		var a = 211;
+		var bLength = [data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+		return converBytesToInt64(bLength, 0, isLE);
+	}
+
+	if (length === 127) {
+		if (data.Length < 10)
+			return -1;
+		var bLength = [data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]];
+		return converBytesToInt64(bLength, 0, isLE);
+	}
+	return length;
+};
+
+// MIT
+// Written by Jozef Gula
+function converBytesToInt64(data, startIndex, isLE) {
+	if (isLE)
+		return (data[startIndex] | (data[startIndex + 1] << 0x08) | (data[startIndex + 2] << 0x10) | (data[startIndex + 3] << 0x18) | (data[startIndex + 4] << 0x20) | (data[startIndex + 5] << 0x28) | (data[startIndex + 6] << 0x30) | (data[startIndex + 7] << 0x38));
+	return ((data[startIndex + 7] << 0x20) | (data[startIndex + 6] << 0x28) | (data[startIndex + 5] << 0x30) | (data[startIndex + 4] << 0x38) | (data[startIndex + 3]) | (data[startIndex + 2] << 0x08) | (data[startIndex + 1] << 0x10) | (data[startIndex] << 0x18));
+}
 
 global.async = exports.async;
 global.sync = exports.sync;
