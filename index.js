@@ -9662,7 +9662,9 @@ WebSocketClient.prototype.close = function() {
 		return self;
 
 	self.isClosed = true;
-	self.socket.end(self._state('close'));
+	//self.socket.end(self._state('close'));
+	self.socket.end();
+	
 	return self;
 };
 
