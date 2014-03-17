@@ -924,14 +924,18 @@ exports.removeDiacritics = function(str) {
 };
 
 // Author: Haribabu Pasupathy
+// Author: Jozef Gula
 // http://stackoverflow.com/users/1679439/haribabu-pasupathy
 exports.encode_WS = function(data){
 
-	var bytesFormatted = [];
+	// Is Buffer?
+ 	var binary = typeof(data.readUInt8) !== UNDEFINED;
 	var length = data.length;
-	bytesFormatted[0] = 129;
+	var bytesFormatted = [];
 
-	if (data.length <= 125) {
+	bytesFormatted[0] = binary ? 0x82 : 0x81;
+
+	if (length <= 125) {
 		bytesFormatted[1] = length;
 	} else if (length >= 126 && length <= 65535) {
 		bytesFormatted[1] = 126;
@@ -949,8 +953,12 @@ exports.encode_WS = function(data){
 		bytesFormatted[9] = (length) & 255;
 	}
 
-	for (var i = 0; i < length; i++)
-		bytesFormatted.push(data.charCodeAt(i));
+	for (var i = 0; i < length; i++) {
+	   if (binary)
+			bytesFormatted.push(data[i]);
+	   else
+		  	bytesFormatted.push(data.charCodeAt(i));
+	}
 
 	return bytesFormatted;
 };

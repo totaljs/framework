@@ -9511,12 +9511,18 @@ WebSocketClient.prototype._ondata = function(data) {
 
 	switch (data[0] & 0x0f) {
 		case 0x01:
-			// text message
-			self.parse(data);
+
+			// text message or JSON message
+			if (self.type !== 1)
+				self.parse(data);
+
 			break;
 		case 0x02:
+
 			// binary message
-			self.parse(data);
+			if (self.type === 1)
+				self.parse(data);
+
 			break;
 		case 0x08:
 			// close
@@ -9621,18 +9627,26 @@ WebSocketClient.prototype._onclose = function() {
 	return {WebSocketClient}
 */
 WebSocketClient.prototype.send = function(message) {
+
 	var self = this;
 
 	if (self.isClosed)
 		return;
 
 	if (self.type !== 1) {
+
 		var data = self.type === 3 ? JSON.stringify(message) : (message || '').toString();
 		if (self.container.config['default-websocket-encodedecode'] === true && data.length > 0)
 			data = encodeURIComponent(data);
+
 		self.socket.write(new Buffer(utils.encode_WS(data), 'binary'));
-	} else
-		self.socket.write(new Buffer(utils.encode_WS(message, 'binary')));
+
+	} else {
+
+		if (message !== null)
+			self.socket.write(new Buffer(utils.encode_WS(message), 'binary'));
+
+	}
 
 	return self;
 };
