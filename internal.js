@@ -58,9 +58,9 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		tmp.fileSize = 0;
 		tmp.step = 0;
 		tmp.isFile = false;
-    };
+	};
 
-    parser.onHeaderValue = function(buffer, start, end) {
+	parser.onHeaderValue = function(buffer, start, end) {
 
 		if (req.buffer_exceeded)
 			return;
@@ -103,9 +103,9 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		});
 
 		close++;
-    };
+	};
 
-    parser.onPartData = function(buffer, start, end) {
+	parser.onPartData = function(buffer, start, end) {
 
 		if (req.buffer_exceeded)
 			return;
@@ -156,9 +156,9 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 		stream.write(data);
 		tmp.fileSize += length;
-    };
+	};
 
-    parser.onPartEnd = function() {
+	parser.onPartEnd = function() {
 
 		if (stream !== null) {
 			stream.end();
@@ -176,10 +176,24 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		if (onXSS(tmp.value))
 			isXSS = true;
 
-		req.data.post[tmp.name] = tmp.value;
-    };
+		var temporary = req.data.post[tmp.name];
 
-    parser.onEnd = function() {
+		if (typeof(temporary) === UNDEFINED) {
+			req.data.post[tmp.name] = tmp.value;
+			return;
+		}
+
+		if (utils.isArray(temporary)) {
+			req.data.post[tmp.name].push(tmp.value);
+			return;
+		}
+
+		temporary = [temporary];
+		temporary.push(tmp.value);
+		req.data.post[tmp.name] = temporary;
+	};
+
+	parser.onEnd = function() {
 
 		var cb = function() {
 
@@ -200,10 +214,10 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		};
 
 		cb();
-    };
+	};
 
-    req.on('data', parser.write.bind(parser));
-    req.on('end', parser.end.bind(parser));
+	req.on('data', parser.write.bind(parser));
+	req.on('end', parser.end.bind(parser));
 };
 
 /*
@@ -234,9 +248,9 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 		tmp.fileSize = 0;
 		tmp.step = 0;
 		tmp.isFile = false;
-    };
+	};
 
-    parser.onHeaderValue = function(buffer, start, end) {
+	parser.onHeaderValue = function(buffer, start, end) {
 
 		if (req.buffer_exceeded || tmp.step > 1)
 			return;
@@ -276,9 +290,9 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 			return;
 		}
 
-    };
+	};
 
-    parser.onPartData = function(buffer, start, end) {
+	parser.onPartData = function(buffer, start, end) {
 		var data = buffer.slice(start, end);
 		var length = data.length;
 
@@ -309,7 +323,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 		tmp.fileSize += length;
 	};
 
-    parser.onPartEnd = function() {
+	parser.onPartEnd = function() {
 
 		if (stream !== null) {
 			stream.end();
@@ -320,9 +334,9 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 			return;
 
 		onFile(new HttpFile(tmp.name, tmp.fileName, tmp.fileNameTmp, tmp.fileSize, tmp.contentType, tmp.width, tmp.height));
-    };
+	};
 
-    parser.onEnd = function() {
+	parser.onEnd = function() {
 		var cb = function cb () {
 
 			if (close > 0) {
@@ -335,9 +349,9 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 		};
 
 		cb();
-    };
+	};
 
-    req.on('data', parser.write.bind(parser));
+	req.on('data', parser.write.bind(parser));
 };
 
 /*
@@ -394,7 +408,7 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 			return false;
 		}
 	}
-	
+
 	return true;
 };
 
@@ -797,18 +811,18 @@ Less.prototype.getValue = function(prev, value) {
 	if (prev !== null)
 		index = prev.index + prev.value.length;
 
-    var beg = false;
-    var copy = false;
-    var skip = false;
+	var beg = false;
+	var copy = false;
+	var skip = false;
 
-    var param = 0;
-    var val = 0;
+	var param = 0;
+	var val = 0;
 
-    var sb = [];
-    var less = new LessValue(self);
-    var without = ['@import', '@font-face', '@keyframes', '@-moz-keyframes', '@-webkit-keyframes', '@-o-keyframes', '@-ms-keyframes', '@media', '@charset'];
+	var sb = [];
+	var less = new LessValue(self);
+	var without = ['@import', '@font-face', '@keyframes', '@-moz-keyframes', '@-webkit-keyframes', '@-o-keyframes', '@-ms-keyframes', '@media', '@charset'];
 
-    while (index < value.length) {
+	while (index < value.length) {
 
 		var c = value[index];
 		if (c === '@' && !less.isFunction) {
@@ -880,9 +894,9 @@ Less.prototype.getValue = function(prev, value) {
 		}
 
 		index++;
-    }
+	}
 
-    return null;
+	return null;
 };
 
 /*
@@ -1195,264 +1209,264 @@ exports.compile_less = function(value, minify, framework) {
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /*
-    Minify JS
-    @source {String}
-    return {String}
+	Minify JS
+	@source {String}
+	return {String}
 */
 function JavaScript(source) {
 
-    var EOF = -1;
-    var sb = [];
-    var theA; // int
-    var theB; // int
-    var theLookahead = EOF; // int
-    var index = 0;
+	var EOF = -1;
+	var sb = [];
+	var theA; // int
+	var theB; // int
+	var theLookahead = EOF; // int
+	var index = 0;
 
-    function jsmin()
-    {
-        theA = 13;
-        action(3);
-        var indexer = 0;
-        while (theA !== EOF)
-        {
-            switch (theA)
-            {
-                case 32:
-                    if (isAlphanum(theB))
-                        action(1);
-                    else
-                        action(2);
-                    break;
-                case 13:
-                    switch (theB)
-                    {
-                        case 123:
-                        case 91:
-                        case 40:
-                        case 43:
-                        case 45:
-                            action(1);
-                            break;
-                        case 32:
-                            action(3);
-                            break;
-                        default:
-                            if (isAlphanum(theB))
-                                action(1);
-                            else
-                                action(2);
-                            break;
-                    }
-                    break;
-                default:
-                    switch (theB)
-                    {
-                        case 32:
-                            if (isAlphanum(theA)) {
-                                action(1);
-                                break;
-                            }
-                            action(3);
-                            break;
+	function jsmin()
+	{
+		theA = 13;
+		action(3);
+		var indexer = 0;
+		while (theA !== EOF)
+		{
+			switch (theA)
+			{
+				case 32:
+					if (isAlphanum(theB))
+						action(1);
+					else
+						action(2);
+					break;
+				case 13:
+					switch (theB)
+					{
+						case 123:
+						case 91:
+						case 40:
+						case 43:
+						case 45:
+							action(1);
+							break;
+						case 32:
+							action(3);
+							break;
+						default:
+							if (isAlphanum(theB))
+								action(1);
+							else
+								action(2);
+							break;
+					}
+					break;
+				default:
+					switch (theB)
+					{
+						case 32:
+							if (isAlphanum(theA)) {
+								action(1);
+								break;
+							}
+							action(3);
+							break;
 
-                        case 13:
-                            switch (theA)
-                            {
-                                case 125:
-                                case 93:
-                                case 41:
-                                case 43:
-                                case 45:
-                                case 34:
-                                case 92:
-                                        action(1);
-                                        break;
-                                default:
-                                    if (isAlphanum(theA))
-                                        action(1);
-                                    else
-                                        action(3);
-                                    break;
-                            }
-                            break;
-                        default:
-                            action(1);
-                            break;
-                    }
-                    break;
-            }
-        }
-    }
+						case 13:
+							switch (theA)
+							{
+								case 125:
+								case 93:
+								case 41:
+								case 43:
+								case 45:
+								case 34:
+								case 92:
+										action(1);
+										break;
+								default:
+									if (isAlphanum(theA))
+										action(1);
+									else
+										action(3);
+									break;
+							}
+							break;
+						default:
+							action(1);
+							break;
+					}
+					break;
+			}
+		}
+	}
 
-    function action(d)
-    {
-        if (d <= 1)
-        {
-            put(theA);
-        }
-        if (d <= 2)
-        {
-            theA = theB;
-            if (theA === 39 || theA === 34)
-            {
-                for (; ; )
-                {
-                    put(theA);
-                    theA = get();
-                    if (theA === theB)
-                    {
-                        break;
-                    }
-                    if (theA <= 13)
-                    {
-                        //throw new Exception(string.Format("Error: JSMIN unterminated string literal: {0}\n", theA));
-                        c = EOF;
-                        return;
-                    }
-                    if (theA === 92)
-                    {
-                        put(theA);
-                        theA = get();
-                    }
-                }
-            }
-        }
-        if (d <= 3)
-        {
-            theB = next();
-            if (theB === 47 && (theA === 40 || theA === 44 || theA === 61 ||
-                               theA === 91 || theA === 33 || theA === 58 ||
-                               theA === 38 || theA === 124 || theA === 63 ||
-                               theA === 123 || theA === 125 || theA === 59 ||
-                               theA === 13))
-            {
-                put(theA);
-                put(theB);
-                for (; ; )
-                {
-                    theA = get();
-                    if (theA === 47)
-                    {
-                        break;
-                    }
-                    else if (theA === 92)
-                    {
-                        put(theA);
-                        theA = get();
-                    }
-                    else if (theA <= 13)
-                    {
-                        c = EOF;
-                        return;
-                    }
-                    put(theA);
-                }
-                theB = next();
-            }
-        }
-    }
+	function action(d)
+	{
+		if (d <= 1)
+		{
+			put(theA);
+		}
+		if (d <= 2)
+		{
+			theA = theB;
+			if (theA === 39 || theA === 34)
+			{
+				for (; ; )
+				{
+					put(theA);
+					theA = get();
+					if (theA === theB)
+					{
+						break;
+					}
+					if (theA <= 13)
+					{
+						//throw new Exception(string.Format("Error: JSMIN unterminated string literal: {0}\n", theA));
+						c = EOF;
+						return;
+					}
+					if (theA === 92)
+					{
+						put(theA);
+						theA = get();
+					}
+				}
+			}
+		}
+		if (d <= 3)
+		{
+			theB = next();
+			if (theB === 47 && (theA === 40 || theA === 44 || theA === 61 ||
+							   theA === 91 || theA === 33 || theA === 58 ||
+							   theA === 38 || theA === 124 || theA === 63 ||
+							   theA === 123 || theA === 125 || theA === 59 ||
+							   theA === 13))
+			{
+				put(theA);
+				put(theB);
+				for (; ; )
+				{
+					theA = get();
+					if (theA === 47)
+					{
+						break;
+					}
+					else if (theA === 92)
+					{
+						put(theA);
+						theA = get();
+					}
+					else if (theA <= 13)
+					{
+						c = EOF;
+						return;
+					}
+					put(theA);
+				}
+				theB = next();
+			}
+		}
+	}
 
-    function next()
-    {
-        var c = get();
+	function next()
+	{
+		var c = get();
 
-        if (c !== 47)
+		if (c !== 47)
 			return c;
 
-        switch (peek())
-        {
-            case 47:
-                for (; ; )
-                {
-                    c = get();
-                    if (c <= 13)
-                        return c;
-                }
-                break;
-            case 42:
-                get();
-                for (; ; )
-                {
-                    switch (get())
-                    {
-                        case 42:
-                            if (peek() === 47)
-                            {
-                                get();
-                                return 32;
-                            }
-                            break;
-                        case EOF:
-                            c = EOF;
-                            return;
-                    }
-                }
-                break;
-            default:
-                return c;
-        }
+		switch (peek())
+		{
+			case 47:
+				for (; ; )
+				{
+					c = get();
+					if (c <= 13)
+						return c;
+				}
+				break;
+			case 42:
+				get();
+				for (; ; )
+				{
+					switch (get())
+					{
+						case 42:
+							if (peek() === 47)
+							{
+								get();
+								return 32;
+							}
+							break;
+						case EOF:
+							c = EOF;
+							return;
+					}
+				}
+				break;
+			default:
+				return c;
+		}
 
-        return c;
-    }
+		return c;
+	}
 
-    function peek()
-    {
-        theLookahead = get();
-        return theLookahead;
-    }
+	function peek()
+	{
+		theLookahead = get();
+		return theLookahead;
+	}
 
-    function get()
-    {
-        var c = theLookahead;
-        theLookahead = EOF;
-        if (c === EOF)
-        {
-            c = source.charCodeAt(index++);
-            if (isNaN(c))
-                c = EOF;
-        }
-        if (c >= 32 || c === 13 || c === EOF)
-        {
-            return c;
-        }
-        if (c === 10) // \r
-        {
-            return 13;
-        }
-        return 32;
-    }
+	function get()
+	{
+		var c = theLookahead;
+		theLookahead = EOF;
+		if (c === EOF)
+		{
+			c = source.charCodeAt(index++);
+			if (isNaN(c))
+				c = EOF;
+		}
+		if (c >= 32 || c === 13 || c === EOF)
+		{
+			return c;
+		}
+		if (c === 10) // \r
+		{
+			return 13;
+		}
+		return 32;
+	}
 
-    function put(c) {
-        if (c === 13 || c === 10)
-            sb.push(' ');
-        else
-            sb.push(String.fromCharCode(c));
-    }
+	function put(c) {
+		if (c === 13 || c === 10)
+			sb.push(' ');
+		else
+			sb.push(String.fromCharCode(c));
+	}
 
-    function isAlphanum(c) {
-        return ((c >= 97 && c <= 122) || (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || c === 95 || c === 36 || c === 92 || c > 126);
-    }
+	function isAlphanum(c) {
+		return ((c >= 97 && c <= 122) || (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || c === 95 || c === 36 || c === 92 || c > 126);
+	}
 
-    jsmin();
-    return sb.join('');
+	jsmin();
+	return sb.join('');
 }
 
 exports.compile_javascript = function(source, framework) {
-    try
-    {
+	try
+	{
 		if (framework) {
 			if (framework.onCompileJS !== null)
 				return framework.onCompileJS('', source);
 		}
 
-        return JavaScript(source);
-    } catch (ex) {
+		return JavaScript(source);
+	} catch (ex) {
 
 		if (framework)
 			framework.error(ex, 'JavaScript compressor');
 
-        return source;
-    }
+		return source;
+	}
 };
 
 // *********************************************************************************
@@ -1483,40 +1497,40 @@ exports.compile_javascript = function(source, framework) {
 // THE SOFTWARE.
 
 var Buffer = require('buffer').Buffer,
-    s = 0,
-    S =
-    { PARSER_UNINITIALIZED: s++,
-      START: s++,
-      START_BOUNDARY: s++,
-      HEADER_FIELD_START: s++,
-      HEADER_FIELD: s++,
-      HEADER_VALUE_START: s++,
-      HEADER_VALUE: s++,
-      HEADER_VALUE_ALMOST_DONE: s++,
-      HEADERS_ALMOST_DONE: s++,
-      PART_DATA_START: s++,
-      PART_DATA: s++,
-      PART_END: s++,
-      END: s++
-    },
+	s = 0,
+	S =
+	{ PARSER_UNINITIALIZED: s++,
+	  START: s++,
+	  START_BOUNDARY: s++,
+	  HEADER_FIELD_START: s++,
+	  HEADER_FIELD: s++,
+	  HEADER_VALUE_START: s++,
+	  HEADER_VALUE: s++,
+	  HEADER_VALUE_ALMOST_DONE: s++,
+	  HEADERS_ALMOST_DONE: s++,
+	  PART_DATA_START: s++,
+	  PART_DATA: s++,
+	  PART_END: s++,
+	  END: s++
+	},
 
-    f = 1,
-    F =
-    { PART_BOUNDARY: f,
-      LAST_BOUNDARY: f *= 2
-    },
+	f = 1,
+	F =
+	{ PART_BOUNDARY: f,
+	  LAST_BOUNDARY: f *= 2
+	},
 
-    LF = 10,
-    CR = 13,
-    SPACE = 32,
-    HYPHEN = 45,
-    COLON = 58,
-    A = 97,
-    Z = 122,
+	LF = 10,
+	CR = 13,
+	SPACE = 32,
+	HYPHEN = 45,
+	COLON = 58,
+	A = 97,
+	Z = 122,
 
-    lower = function(c) {
-      return c | 0x20;
-    };
+	lower = function(c) {
+	  return c | 0x20;
+	};
 
 for (s in S) {
   exports[s] = S[s];
@@ -1534,8 +1548,8 @@ exports.MultipartParser = MultipartParser;
 
 MultipartParser.stateToString = function(stateNumber) {
   for (var state in S) {
-    var number = S[state];
-    if (number === stateNumber) return state;
+	var number = S[state];
+	if (number === stateNumber) return state;
   }
 };
 
@@ -1556,238 +1570,238 @@ MultipartParser.prototype.initWithBoundary = function(str) {
 
   self.boundaryChars = {};
   for (var i = 0; i < self.boundary.length; i++) {
-    self.boundaryChars[self.boundary[i]] = true;
+	self.boundaryChars[self.boundary[i]] = true;
   }
 };
 
 MultipartParser.prototype.write = function(buffer) {
   var self = this,
-      i = 0,
-      len = buffer.length,
-      prevIndex = self.index,
-      index = self.index,
-      state = self.state,
-      flags = self.flags,
-      lookbehind = self.lookbehind,
-      boundary = self.boundary,
-      boundaryChars = self.boundaryChars,
-      boundaryLength = self.boundary.length,
-      boundaryEnd = boundaryLength - 1,
-      bufferLength = buffer.length,
-      c,
-      cl,
+	  i = 0,
+	  len = buffer.length,
+	  prevIndex = self.index,
+	  index = self.index,
+	  state = self.state,
+	  flags = self.flags,
+	  lookbehind = self.lookbehind,
+	  boundary = self.boundary,
+	  boundaryChars = self.boundaryChars,
+	  boundaryLength = self.boundary.length,
+	  boundaryEnd = boundaryLength - 1,
+	  bufferLength = buffer.length,
+	  c,
+	  cl,
 
-      mark = function(name) {
-        self[name+'Mark'] = i;
-      },
-      clear = function(name) {
-        delete self[name+'Mark'];
-      },
-      callback = function(name, buffer, start, end) {
-        if (start !== undefined && start === end) {
-          return;
-        }
+	  mark = function(name) {
+		self[name+'Mark'] = i;
+	  },
+	  clear = function(name) {
+		delete self[name+'Mark'];
+	  },
+	  callback = function(name, buffer, start, end) {
+		if (start !== undefined && start === end) {
+		  return;
+		}
 
-        var callbackSymbol = 'on'+name.substr(0, 1).toUpperCase()+name.substr(1);
-        if (callbackSymbol in self) {
-          self[callbackSymbol](buffer, start, end);
-        }
-      },
-      dataCallback = function(name, clear) {
-        var markSymbol = name+'Mark';
-        if (!(markSymbol in self)) {
-          return;
-        }
+		var callbackSymbol = 'on'+name.substr(0, 1).toUpperCase()+name.substr(1);
+		if (callbackSymbol in self) {
+		  self[callbackSymbol](buffer, start, end);
+		}
+	  },
+	  dataCallback = function(name, clear) {
+		var markSymbol = name+'Mark';
+		if (!(markSymbol in self)) {
+		  return;
+		}
 
-        if (!clear) {
-          callback(name, buffer, self[markSymbol], buffer.length);
-          self[markSymbol] = 0;
-        } else {
-          callback(name, buffer, self[markSymbol], i);
-          delete self[markSymbol];
-        }
-      };
+		if (!clear) {
+		  callback(name, buffer, self[markSymbol], buffer.length);
+		  self[markSymbol] = 0;
+		} else {
+		  callback(name, buffer, self[markSymbol], i);
+		  delete self[markSymbol];
+		}
+	  };
 
   for (i = 0; i < len; i++) {
-    c = buffer[i];
-    switch (state) {
-      case S.PARSER_UNINITIALIZED:
-        return i;
-      case S.START:
-        index = 0;
-        state = S.START_BOUNDARY;
-      case S.START_BOUNDARY:
-        if (index == boundary.length - 2) {
-          if (c == HYPHEN) {
-            flags |= F.LAST_BOUNDARY;
-          } else if (c != CR) {
-            return i;
-          }
-          index++;
-          break;
-        } else if (index - 1 == boundary.length - 2) {
-          if (flags & F.LAST_BOUNDARY && c == HYPHEN){
-            callback('end');
-            state = S.END;
-            flags = 0;
-          } else if (!(flags & F.LAST_BOUNDARY) && c == LF) {
-            index = 0;
-            callback('partBegin');
-            state = S.HEADER_FIELD_START;
-          } else {
-            return i;
-          }
-          break;
-        }
+	c = buffer[i];
+	switch (state) {
+	  case S.PARSER_UNINITIALIZED:
+		return i;
+	  case S.START:
+		index = 0;
+		state = S.START_BOUNDARY;
+	  case S.START_BOUNDARY:
+		if (index == boundary.length - 2) {
+		  if (c == HYPHEN) {
+			flags |= F.LAST_BOUNDARY;
+		  } else if (c != CR) {
+			return i;
+		  }
+		  index++;
+		  break;
+		} else if (index - 1 == boundary.length - 2) {
+		  if (flags & F.LAST_BOUNDARY && c == HYPHEN){
+			callback('end');
+			state = S.END;
+			flags = 0;
+		  } else if (!(flags & F.LAST_BOUNDARY) && c == LF) {
+			index = 0;
+			callback('partBegin');
+			state = S.HEADER_FIELD_START;
+		  } else {
+			return i;
+		  }
+		  break;
+		}
 
-        if (c != boundary[index+2]) {
-          index = -2;
-        }
-        if (c == boundary[index+2]) {
-          index++;
-        }
-        break;
-      case S.HEADER_FIELD_START:
-        state = S.HEADER_FIELD;
-        mark('headerField');
-        index = 0;
-      case S.HEADER_FIELD:
-        if (c == CR) {
-          clear('headerField');
-          state = S.HEADERS_ALMOST_DONE;
-          break;
-        }
+		if (c != boundary[index+2]) {
+		  index = -2;
+		}
+		if (c == boundary[index+2]) {
+		  index++;
+		}
+		break;
+	  case S.HEADER_FIELD_START:
+		state = S.HEADER_FIELD;
+		mark('headerField');
+		index = 0;
+	  case S.HEADER_FIELD:
+		if (c == CR) {
+		  clear('headerField');
+		  state = S.HEADERS_ALMOST_DONE;
+		  break;
+		}
 
-        index++;
-        if (c == HYPHEN) {
-          break;
-        }
+		index++;
+		if (c == HYPHEN) {
+		  break;
+		}
 
-        if (c == COLON) {
-          if (index == 1) {
-            // empty header field
-            return i;
-          }
-          dataCallback('headerField', true);
-          state = S.HEADER_VALUE_START;
-          break;
-        }
+		if (c == COLON) {
+		  if (index == 1) {
+			// empty header field
+			return i;
+		  }
+		  dataCallback('headerField', true);
+		  state = S.HEADER_VALUE_START;
+		  break;
+		}
 
-        cl = lower(c);
-        if (cl < A || cl > Z) {
-          return i;
-        }
-        break;
-      case S.HEADER_VALUE_START:
-        if (c == SPACE) {
-          break;
-        }
+		cl = lower(c);
+		if (cl < A || cl > Z) {
+		  return i;
+		}
+		break;
+	  case S.HEADER_VALUE_START:
+		if (c == SPACE) {
+		  break;
+		}
 
-        mark('headerValue');
-        state = S.HEADER_VALUE;
-      case S.HEADER_VALUE:
-        if (c == CR) {
-          dataCallback('headerValue', true);
-          callback('headerEnd');
-          state = S.HEADER_VALUE_ALMOST_DONE;
-        }
-        break;
-      case S.HEADER_VALUE_ALMOST_DONE:
-        if (c != LF) {
-          return i;
-        }
-        state = S.HEADER_FIELD_START;
-        break;
-      case S.HEADERS_ALMOST_DONE:
-        if (c != LF) {
-          return i;
-        }
+		mark('headerValue');
+		state = S.HEADER_VALUE;
+	  case S.HEADER_VALUE:
+		if (c == CR) {
+		  dataCallback('headerValue', true);
+		  callback('headerEnd');
+		  state = S.HEADER_VALUE_ALMOST_DONE;
+		}
+		break;
+	  case S.HEADER_VALUE_ALMOST_DONE:
+		if (c != LF) {
+		  return i;
+		}
+		state = S.HEADER_FIELD_START;
+		break;
+	  case S.HEADERS_ALMOST_DONE:
+		if (c != LF) {
+		  return i;
+		}
 
-        callback('headersEnd');
-        state = S.PART_DATA_START;
-        break;
-      case S.PART_DATA_START:
-        state = S.PART_DATA;
-        mark('partData');
-      case S.PART_DATA:
-        prevIndex = index;
+		callback('headersEnd');
+		state = S.PART_DATA_START;
+		break;
+	  case S.PART_DATA_START:
+		state = S.PART_DATA;
+		mark('partData');
+	  case S.PART_DATA:
+		prevIndex = index;
 
-        if (index === 0) {
-          // boyer-moore derrived algorithm to safely skip non-boundary data
-          i += boundaryEnd;
-          while (i < bufferLength && !(buffer[i] in boundaryChars)) {
-            i += boundaryLength;
-          }
-          i -= boundaryEnd;
-          c = buffer[i];
-        }
+		if (index === 0) {
+		  // boyer-moore derrived algorithm to safely skip non-boundary data
+		  i += boundaryEnd;
+		  while (i < bufferLength && !(buffer[i] in boundaryChars)) {
+			i += boundaryLength;
+		  }
+		  i -= boundaryEnd;
+		  c = buffer[i];
+		}
 
-        if (index < boundary.length) {
-          if (boundary[index] == c) {
-            if (index === 0) {
-              dataCallback('partData', true);
-            }
-            index++;
-          } else {
-            index = 0;
-          }
-        } else if (index == boundary.length) {
-          index++;
-          if (c == CR) {
-            // CR = part boundary
-            flags |= F.PART_BOUNDARY;
-          } else if (c == HYPHEN) {
-            // HYPHEN = end boundary
-            flags |= F.LAST_BOUNDARY;
-          } else {
-            index = 0;
-          }
-        } else if (index - 1 == boundary.length)  {
-          if (flags & F.PART_BOUNDARY) {
-            index = 0;
-            if (c == LF) {
-              // unset the PART_BOUNDARY flag
-              flags &= ~F.PART_BOUNDARY;
-              callback('partEnd');
-              callback('partBegin');
-              state = S.HEADER_FIELD_START;
-              break;
-            }
-          } else if (flags & F.LAST_BOUNDARY) {
-            if (c == HYPHEN) {
-              callback('partEnd');
-              callback('end');
-              state = S.END;
-              flags = 0;
-            } else {
-              index = 0;
-            }
-          } else {
-            index = 0;
-          }
-        }
+		if (index < boundary.length) {
+		  if (boundary[index] == c) {
+			if (index === 0) {
+			  dataCallback('partData', true);
+			}
+			index++;
+		  } else {
+			index = 0;
+		  }
+		} else if (index == boundary.length) {
+		  index++;
+		  if (c == CR) {
+			// CR = part boundary
+			flags |= F.PART_BOUNDARY;
+		  } else if (c == HYPHEN) {
+			// HYPHEN = end boundary
+			flags |= F.LAST_BOUNDARY;
+		  } else {
+			index = 0;
+		  }
+		} else if (index - 1 == boundary.length)  {
+		  if (flags & F.PART_BOUNDARY) {
+			index = 0;
+			if (c == LF) {
+			  // unset the PART_BOUNDARY flag
+			  flags &= ~F.PART_BOUNDARY;
+			  callback('partEnd');
+			  callback('partBegin');
+			  state = S.HEADER_FIELD_START;
+			  break;
+			}
+		  } else if (flags & F.LAST_BOUNDARY) {
+			if (c == HYPHEN) {
+			  callback('partEnd');
+			  callback('end');
+			  state = S.END;
+			  flags = 0;
+			} else {
+			  index = 0;
+			}
+		  } else {
+			index = 0;
+		  }
+		}
 
-        if (index > 0) {
-          // when matching a possible boundary, keep a lookbehind reference
-          // in case it turns out to be a false lead
-          lookbehind[index-1] = c;
-        } else if (prevIndex > 0) {
-          // if our boundary turned out to be rubbish, the captured lookbehind
-          // belongs to partData
-          callback('partData', lookbehind, 0, prevIndex);
-          prevIndex = 0;
-          mark('partData');
+		if (index > 0) {
+		  // when matching a possible boundary, keep a lookbehind reference
+		  // in case it turns out to be a false lead
+		  lookbehind[index-1] = c;
+		} else if (prevIndex > 0) {
+		  // if our boundary turned out to be rubbish, the captured lookbehind
+		  // belongs to partData
+		  callback('partData', lookbehind, 0, prevIndex);
+		  prevIndex = 0;
+		  mark('partData');
 
-          // reconsider the current character even so it interrupted the sequence
-          // it could be the beginning of a new sequence
-          i--;
-        }
-        break;
-      case S.END:
-        break;
-      default:
-        return i;
-    }
+		  // reconsider the current character even so it interrupted the sequence
+		  // it could be the beginning of a new sequence
+		  i--;
+		}
+		break;
+	  case S.END:
+		break;
+	  default:
+		return i;
+	}
   }
 
   dataCallback('headerField');
@@ -1806,20 +1820,20 @@ MultipartParser.prototype.end = function() {
   var self = this;
 
   var callback = function(self, name) {
-    var callbackSymbol = 'on'+name.substr(0, 1).toUpperCase()+name.substr(1);
-    if (callbackSymbol in self) {
-      self[callbackSymbol]();
-    }
+	var callbackSymbol = 'on'+name.substr(0, 1).toUpperCase()+name.substr(1);
+	if (callbackSymbol in self) {
+	  self[callbackSymbol]();
+	}
   };
 
   if ((self.state == S.HEADER_FIELD_START && self.index === 0) ||
-      (self.state == S.PART_DATA && self.index == self.boundary.length)) {
-    callback(self, 'partEnd');
-    callback(self, 'end');
+	  (self.state == S.PART_DATA && self.index == self.boundary.length)) {
+	callback(self, 'partEnd');
+	callback(self, 'end');
   } else if (self.state != S.END) {
-  	callback(self, 'partEnd');
-  	callback(self, 'end');
-    return new Error('MultipartParser.end(): stream ended unexpectedly: ' + self.explain());
+	callback(self, 'partEnd');
+	callback(self, 'end');
+	return new Error('MultipartParser.end(): stream ended unexpectedly: ' + self.explain());
   }
 };
 
@@ -1835,8 +1849,8 @@ MultipartParser.prototype.explain = function() {
 
 /*
 	View class
-    @controller {Controller}
-    return {View}
+	@controller {Controller}
+	return {View}
 */
 function View(controller) {
 	this.controller = controller;
@@ -1846,8 +1860,8 @@ function View(controller) {
 
 /*
 	Content class
-    @controller {Controller}
-    return {Content}
+	@controller {Controller}
+	return {Content}
 */
 function Content(controller) {
 	this.controller = controller;
@@ -2223,9 +2237,9 @@ function removeComments(html) {
 
 /*
 	Dynamic JavaScript compress
-    @html {String}
-    @index {Number}
-    return {String}
+	@html {String}
+	@index {Number}
+	return {String}
 */
 function compressJS(html, index, framework) {
 
@@ -2280,8 +2294,8 @@ function compressCSS(html, index, framework) {
 
 /*
 	Minify HTML
-    @html {String}
-    return {String}
+	@html {String}
+	return {String}
 */
 function minifyHTML(html) {
 
@@ -2350,8 +2364,8 @@ function minifyHTML(html) {
 
 /*
 	Read view
-    @name {String}
-    return {Object} :: return factory object
+	@name {String}
+	return {Object} :: return factory object
 */
 View.prototype.read = function(name) {
 
@@ -2385,9 +2399,9 @@ View.prototype.read = function(name) {
 
 /*
 	Load view
-    @name {String}
-    @prefix {String}
-    return {Object} :: return factory object
+	@name {String}
+	@prefix {String}
+	return {Object} :: return factory object
 */
 View.prototype.load = function(name, prefix, filename) {
 
@@ -2440,8 +2454,8 @@ View.prototype.dynamic = function(content) {
 
 /*
 	Read content
-    @name {String}
-    return {String}
+	@name {String}
+	return {String}
 */
 Content.prototype.read = function(name) {
 	var self = this;
@@ -2457,9 +2471,9 @@ Content.prototype.read = function(name) {
 
 /*
 	Load content
-    @name {String}
-    @prefix {String}
-    return {String}
+	@name {String}
+	@prefix {String}
+	return {String}
 */
 Content.prototype.load = function(name, prefix) {
 
@@ -2488,9 +2502,9 @@ Content.prototype.load = function(name, prefix) {
 
 /*
 	Render view from file
-    @controller {Controller}
-    @name {String}
-    return {Object}
+	@controller {Controller}
+	@name {String}
+	return {Object}
 */
 exports.generateView = function(controller, name, plus) {
 	return new View(controller).load(name, controller.prefix, plus);
@@ -2498,9 +2512,9 @@ exports.generateView = function(controller, name, plus) {
 
 /*
 	Load content from file
-    @controller {Controller}
-    @name {String}
-    return {String}
+	@controller {Controller}
+	@name {String}
+	return {String}
 */
 exports.generateContent = function(controller, name) {
 	return new Content(controller).load(name, controller.prefix);
@@ -2508,8 +2522,8 @@ exports.generateContent = function(controller, name) {
 
 /*
 	Internal function
-    @str {String}
-    return {String}
+	@str {String}
+	return {String}
 */
 exports.appendThis = function(str) {
 	var index = str.indexOf('(');
@@ -2541,11 +2555,11 @@ exports.appendModel = function(str) {
 
 
 /*
-    Template class
-    @controller {Controller}
-    @model {Object}
-    @repository {Object}
-    return {Template}
+	Template class
+	@controller {Controller}
+	@model {Object}
+	@repository {Object}
+	return {Template}
 */
 function Template(controller, model, repository) {
 	this.controller = controller;
@@ -2563,10 +2577,10 @@ function Template(controller, model, repository) {
 }
 
 /*
-    Parse HTML
-    @html {String}
-    @isRepository {Boolean}
-    return {Object}
+	Parse HTML
+	@html {String}
+	@isRepository {Boolean}
+	return {Object}
 */
 Template.prototype.parse_old = function(html, isRepository) {
 
@@ -2620,43 +2634,43 @@ Template.prototype.parse_old = function(html, isRepository) {
 
 		if (!isView) {
 
-        	index = name.indexOf('?');
-        	if (index !== -1) {
-	            format = name.substring(index + 1, name.length - 1).trim();
-	            name = name.substring(1, index);
-	            cond = parseConditionParams(name);
-                var condition = parseCondition(format);
-            	if (cond.length !== 0) {
+			index = name.indexOf('?');
+			if (index !== -1) {
+				format = name.substring(index + 1, name.length - 1).trim();
+				name = name.substring(1, index);
+				cond = parseConditionParams(name);
+				var condition = parseCondition(format);
+				if (cond.length !== 0) {
 					format = "(function(){return " + name.split(cond).join('@#1_0;') + "})().condition(" + condition + ")";
 					name = cond;
-            	} else
-            		format = ".condition(" + condition + ")";
+				} else
+					format = ".condition(" + condition + ")";
 
-        	} else {
+			} else {
 
 				index = name.indexOf('|');
-		        if (index !== -1) {
-			            format = name.substring(index + 1, name.length - 1).trim();
-			            name = name.substring(1, index);
-			            var pluralize = parsePluralize(format);
-			            if (pluralize.length === 0) {
-			                if (format.indexOf('#') === -1) {
-			                    var condition = parseCondition(format);
-			                    if (condition.length === 0) {
-			                        var count = utils.parseInt(format);
-			                        if (count === 0) {
-			                            format = ".format('" + format + "')";
-			                        } else
-			                            format = ".max(" + (count + 3) + ",'...')";
-			                    } else
-			                   		format = ".condition(" + condition + ")";
-			                } else
-			                    format = ".format('" + format + "')";
-			            } else
-			                format = pluralize;
-			        } else
-        				name = name.substring(1, name.length - 1);
-        	}
+				if (index !== -1) {
+						format = name.substring(index + 1, name.length - 1).trim();
+						name = name.substring(1, index);
+						var pluralize = parsePluralize(format);
+						if (pluralize.length === 0) {
+							if (format.indexOf('#') === -1) {
+								var condition = parseCondition(format);
+								if (condition.length === 0) {
+									var count = utils.parseInt(format);
+									if (count === 0) {
+										format = ".format('" + format + "')";
+									} else
+										format = ".max(" + (count + 3) + ",'...')";
+								} else
+									format = ".condition(" + condition + ")";
+							} else
+								format = ".format('" + format + "')";
+						} else
+							format = pluralize;
+					} else
+						name = name.substring(1, name.length - 1);
+			}
 
 			if (name[0] === '!') {
 				name = name.substring(1);
@@ -2862,9 +2876,9 @@ function parsePluralize(value) {
 }
 
 /*
-    Read from file
-    @name {String}
-    return {Object} :: return parsed HTML
+	Read from file
+	@name {String}
+	return {Object} :: return parsed HTML
 */
 Template.prototype.read = function(name) {
 	var self = this;
@@ -2907,10 +2921,10 @@ Template.prototype.parse = function(html) {
 };
 
 /*
-    Load template with/without prefix
-    @name {String}
-    @prefix {String} :: optional
-    return {Object} :: return parsed HTML
+	Load template with/without prefix
+	@name {String}
+	@prefix {String} :: optional
+	return {Object} :: return parsed HTML
 */
 Template.prototype.load = function(name, prefix, plus) {
 
@@ -2968,9 +2982,9 @@ Template.prototype.dynamic = function(content) {
 };
 
 /*
-    Render HTML
-    @name {String}
-    return {String}
+	Render HTML
+	@name {String}
+	return {String}
 */
 Template.prototype.render = function(name, plus) {
 
@@ -3007,10 +3021,10 @@ Template.prototype.render = function(name, plus) {
 
 /*
 	Eval parsed code
-    @generator {Object}
-    @obj {Array}
-    @plain {Boolean} :: internal property
-    return {String}
+	@generator {Object}
+	@obj {Array}
+	@plain {Boolean} :: internal property
+	return {String}
 */
 function compile(generator, obj, plain, controller) {
 
@@ -3034,9 +3048,9 @@ function compile(generator, obj, plain, controller) {
 
 /*
 	Eval parsed code
-    @generator {Object}
-    @model {Object}
-    return {String}
+	@generator {Object}
+	@model {Object}
+	return {String}
 */
 function compile_eval(generator, model, indexer, controller) {
 
