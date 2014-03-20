@@ -3314,7 +3314,7 @@ Framework.prototype.model = function(name) {
 	var filename = path.join(directory, this.config['directory-models'], name);
 
 	if (self.isCoffee) {
-		if (fs.exists(filename + EXTENSION_COFFEE))
+		if (fs.existsSync(filename + EXTENSION_COFFEE))
 			filename += EXTENSION_COFFEE;
 		else
 			filename += EXTENSION_JS;
