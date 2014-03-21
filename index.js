@@ -992,19 +992,22 @@ Framework.prototype.install = function() {
 		});
 	}
 
-	var configDirectory = self.config['directory-definitions'];
-	dir = path.join(directory, configDirectory);
+	dir = path.join(directory, self.config['directory-definitions']);
 
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(function(o) {
-
 			var ext = path.extname(o).toLowerCase();
-			if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)
+			if (ext !== EXTENSION_JS && (ext !== EXTENSION_COFFEE))
 				return;
+			var data = fs.readFileSync(path.join(dir, o), 'utf8').toString();
 
-			eval(fs.readFileSync(path.join(directory, configDirectory, o), 'utf8').toString());
+			if (self.isCoffee)
+				require('coffee-script').eval(data)
+			else
+				eval(data);
 		});
 	}
+
 	return self;
 };
 
@@ -9664,7 +9667,7 @@ WebSocketClient.prototype.close = function() {
 	self.isClosed = true;
 	//self.socket.end(self._state('close'));
 	self.socket.end();
-	
+
 	return self;
 };
 
