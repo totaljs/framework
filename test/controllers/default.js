@@ -231,7 +231,8 @@ function viewIndex() {
 
 	assert.ok(self.template('test', ['A', 'B'], { name: '' }) === '<div>AB</div>', name + 'template - no repository');
 	assert.ok(self.template('test', ['A', 'B'], '', { name: 'ABCDEFG' }) === '<div>AB</div>...', name + 'template - repository');
-	assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');
+	assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');	
+	self.layout('');
 	assert.ok(self.view('test', null, true) === 'total.js', name + 'view');
 	assert.ok(self.content('test', true) === 'EMPTY', name + 'content');
 	assert.ok(self.url === '/', name + 'url');
@@ -261,6 +262,7 @@ function viewViews() {
 	//console.log('\n\n\n');
 	//self.framework.stop();
 	//return;
+	//console.log(output);
 	assert.ok(output.contains('var d="$\'"'), name + 'JS script special chars 1');
 	assert.ok(output.contains("var e='$\\'';"), name + "JS script special chars 2");
 	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>'), name + ' minify html');
@@ -304,6 +306,7 @@ function viewViews() {
 
 	self.repository.A = 'A';
 
+	self.currentView('current');
 	output = self.view('c', { a: 'A', b: 'B', c: true, d: 'hidden<b>' }, true);
 
 	assert.ok(output.contains('<input type="text" name="a" id="a" class="bootstrap" value="A" />'), name + 'text');

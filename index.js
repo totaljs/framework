@@ -6322,7 +6322,12 @@ Controller.prototype.$view = function(name, model) {
 Controller.prototype.$viewToggle = function(visible, name, model) {
 	if (!visible)
 		return '';
-	return this.view(name, model, null, true);
+	var self = this;
+	var layout = self.layoutName;
+	self.layoutName = '';
+	var value = self.view(name, model, null, true);
+	self.layoutName = layout;
+	return value;
 };
 
 /*
@@ -8613,7 +8618,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (generator === null) {
 
 		if (isPartial)
-			return '';
+			return self.output;
 
 		var err = 'View "' + name + '" not found.';
 
@@ -8660,16 +8665,22 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		}
 
 		self.error(err);
-		return '';
-	}
-
-	if (isPartial)
+		value = self.output;
+		self.output = '';
+		self.isLayout = false;
 		return value;
+	}
 
 	if (!self.isLayout && self.precache && self.status === 200)
 		self.precache(value, CONTENTTYPE_TEXTHTML, headers, true);
 
 	if (self.isLayout || utils.isNullOrEmpty(self.layoutName)) {
+
+		self.output = '';
+		self.isLayout = false;
+
+		if (isPartial)
+			return value;
 
 		self.subscribe.success();
 
@@ -8684,7 +8695,14 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	self.output = value;
 	self.isLayout = true;
-	self.view(self.layoutName, self.$model, headers);
+	value = self.view(self.layoutName, self.$model, headers, isPartial);
+
+	if (isPartial) {
+		self.output = '';
+		self.isLayout = false;
+		return value;
+	}
+
 	return self;
 };
 
