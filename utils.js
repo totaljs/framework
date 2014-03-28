@@ -466,10 +466,13 @@ exports.extend = function(target, source, rewrite) {
 /*
 	Copy values
 	@source {Object}
-	@target {Object}
+	@target {Object} :: optional
 	return {Object}
 */
 exports.copy = function(source, target) {
+
+	if (typeof(target) === UNDEFINED)
+		return exports.extend({}, source, true);
 
 	if (target === null || source === null)
 		return target;

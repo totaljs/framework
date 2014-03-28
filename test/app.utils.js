@@ -223,7 +223,9 @@ function others() {
 	assert.ok(!utils.isEmpty({ a: 1 }), 'utils.isEmpty() - not empty');
 
 	utils.copy(obj, { name: 'Peter', age: 25 });
-	assert.ok(!obj.name, 'utils.copy()');
+	assert.ok(!obj.name, 'utils.copy(2)');
+
+	assert.ok(utils.copy({ name: 'Janko' }).name === 'Janko', 'utils.copy(1)');
 
 	utils.extend(obj, { name: 'Peter', age: 25 });
 	assert.ok(obj.name === 'Peter' && obj.age === 25, 'utils.extend()');
