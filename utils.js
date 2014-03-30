@@ -527,6 +527,28 @@ exports.reduce = function(source, prop) {
 };
 
 /*
+	Assign value into the object according to the path
+	@obj {Object}
+	@path {String}
+	@fn {Function or Some value}
+	return {obj}
+*/
+exports.assign = function(obj, path, fn) {
+
+	if (obj === null || typeof(obj) === 'undefined')
+		return obj;
+
+	var arr = path.split('.');
+	var model = obj[arr[0]];
+
+	for (var i = 1; i < arr.length - 1; i++)
+		model = model[arr[i]];
+
+	model[arr[arr.length - 1]] = typeof (fn) === 'function' ? fn(model[arr[arr.length - 1]]) : fn;
+	return obj;
+};
+
+/*
 	Is relative URL?
 	@url {String}
 	return {Boolean}

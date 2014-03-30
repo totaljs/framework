@@ -7,6 +7,7 @@ IN DEVELOPMENT ======= 1.3.0
 - added: Builders.ErrorBuilder.resource(filename, prefix) - can change resource filename or prefix
 - added: new global variables - Builders, Mail, Utils
 - added: Builders.validate(schemaName, model) - returns ErrorBuilder from everywhere (uses framework.resource)
+- added: utils.assign(obj, path, value/function)
 
 - updated: Builders.schema(name, obj, [defaults], [validator]) - validator is new
 - updated: Builders.validation(name, [arr] or [function])
