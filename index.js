@@ -74,6 +74,7 @@ function Framework() {
 		'directory-public': '/public/',
 		'directory-angular': '/app/',
 		'directory-modules': '/modules/',
+		'directory-logics': '/logics/',
 		'directory-components': '/components/',
 		'directory-logs': '/logs/',
 		'directory-tests': '/tests/',
@@ -139,6 +140,7 @@ function Framework() {
 	this.helpers = {};
 	this.modules = {};
 	this.models = {};
+	this.logics = {};
 	this.components = {};
 	this.controllers = {};
 	this.tests = {};
@@ -840,6 +842,40 @@ Framework.prototype.module = function(name) {
 };
 
 /*
+	Logic caller
+	@name {String}
+	return {Object} :: framework return require();
+*/
+Framework.prototype.logic = function(name) {
+
+	var self = this;
+	var logic = self.logics[name];
+
+	if (typeof(logic) !== UNDEFINED)
+		return logic;
+
+	var configDirectory = self.config['directory-logics'];
+	var filename = path.join(directory, configDirectory, name);
+
+	if (self.isCoffee) {
+		if (fs.existsSync(filename))
+			filename += EXTENSION_COFFEE;
+		else
+			filename += EXTENSION_JS;
+	} else
+		filename += EXTENSION_JS;
+
+	if (fs.existsSync(filename)) {
+		logic = require(filename);
+
+	if (typeof(logic) === UNDEFINED)
+		return null;
+
+	self.logics[name] = logic;
+	return logic;
+};
+
+/*
 	Component caller
 	@name {String}
 	return {Object} :: framework return require();
@@ -930,10 +966,9 @@ Framework.prototype.install = function() {
 
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(function(o) {
-
 			var ext = path.extname(o).toLowerCase();
-			if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)
-				return;
+			if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)				
+				return;			
 
 			self.controller(o.substring(0, o.length - ext.length));
 		});
@@ -6234,6 +6269,16 @@ Controller.prototype.$layout = function(name) {
 Controller.prototype.model = function(name) {
 	var self = this;
 	return self.framework.model(name);
+};
+
+/*
+	Get a business logic
+	@name {String} :: name of controller
+	return {Object};
+*/
+Controller.prototype.logic = function(name) {
+	var self = this;
+	return self.framework.logic(name);
 };
 
 /*
