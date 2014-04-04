@@ -50,6 +50,9 @@ exports.install = function(framework) {
 	assert.ok(framework.encrypt({ name: 'Peter' }, 'key', false) === 'MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'framework.encrypt(object)');
 	assert.ok(framework.decrypt('MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'key').name === 'Peter', 'framework.decrypt(object)')
 
+	assert.ok(source('main').hello() === 'world', 'source');
+	assert.ok(include('main').hello() === 'world', 'source');
+
 	framework.route('/basic/', viewBAA);
 
 	// url

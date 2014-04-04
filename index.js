@@ -37,6 +37,10 @@ global.Builders = global.builders = require('./builders');
 global.Utils = global.utils = require('./utils');
 global.Mail = require('./mail');
 
+global.include = global.source = function(name) {
+	return framework.source(name);
+};
+
 function Framework() {
 
 	this.id = null;
@@ -74,7 +78,7 @@ function Framework() {
 		'directory-public': '/public/',
 		'directory-angular': '/app/',
 		'directory-modules': '/modules/',
-		'directory-logics': '/logics/',
+		'directory-source': '/source/',
 		'directory-components': '/components/',
 		'directory-logs': '/logs/',
 		'directory-tests': '/tests/',
@@ -140,7 +144,7 @@ function Framework() {
 	this.helpers = {};
 	this.modules = {};
 	this.models = {};
-	this.logics = {};
+	this.sources = {};
 	this.components = {};
 	this.controllers = {};
 	this.tests = {};
@@ -281,6 +285,8 @@ Framework.prototype.refresh = function(clear) {
 	return {Framework}
 */
 Framework.prototype.controller = function(name, definition) {
+
+console.log(name);
 
 	var self = this;
 
@@ -842,40 +848,6 @@ Framework.prototype.module = function(name) {
 };
 
 /*
-	Logic caller
-	@name {String}
-	return {Object} :: framework return require();
-*/
-Framework.prototype.logic = function(name) {
-
-	var self = this;
-	var logic = self.logics[name];
-
-	if (typeof(logic) !== UNDEFINED)
-		return logic;
-
-	var configDirectory = self.config['directory-logics'];
-	var filename = path.join(directory, configDirectory, name);
-
-	if (self.isCoffee) {
-		if (fs.existsSync(filename))
-			filename += EXTENSION_COFFEE;
-		else
-			filename += EXTENSION_JS;
-	} else
-		filename += EXTENSION_JS;
-
-	if (fs.existsSync(filename)) {
-		logic = require(filename);
-
-	if (typeof(logic) === UNDEFINED)
-		return null;
-
-	self.logics[name] = logic;
-	return logic;
-};
-
-/*
 	Component caller
 	@name {String}
 	return {Object} :: framework return require();
@@ -964,15 +936,26 @@ Framework.prototype.install = function() {
 	var dir = path.join(directory, self.config['directory-controllers']);
 	var framework = self;
 
-	if (fs.existsSync(dir)) {
-		fs.readdirSync(dir).forEach(function(o) {
-			var ext = path.extname(o).toLowerCase();
-			if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)				
-				return;			
+	function install_controller(directory, level) {
+		fs.readdirSync(directory).forEach(function(o) {
 
-			self.controller(o.substring(0, o.length - ext.length));
+			var isDirectory = fs.statSync(path.join(directory, o)).isDirectory();
+			if (isDirectory) {
+				level++;
+				install_controller(path.join(directory, o), level);
+				return;
+			}
+
+			var ext = path.extname(o).toLowerCase();
+			if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)
+				return;
+
+			self.controller((level > 0 ? directory.replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length));
 		});
 	}
+
+	if (fs.existsSync(dir))
+		install_controller(dir, 0);
 
 	dir = path.join(directory, self.config['directory-modules']);
 
@@ -3338,7 +3321,7 @@ Framework.prototype._request_stats = function(beg, isStaticFile) {
 };
 
 /*
-	Get model
+	Get a model
 	@name {String}
 	return {Object}
 */
@@ -3349,7 +3332,7 @@ Framework.prototype.model = function(name) {
 	if (model)
 		return model;
 
-	var filename = path.join(directory, this.config['directory-models'], name);
+	var filename = path.join(directory, self.config['directory-models'], name);
 
 	if (self.isCoffee) {
 		if (fs.existsSync(filename + EXTENSION_COFFEE))
@@ -3362,6 +3345,33 @@ Framework.prototype.model = function(name) {
 	model = require(filename);
 	self.models[name] = model;
 	return model;
+};
+
+/*
+	Get a source
+	@name {String}
+	return {Object}
+*/
+Framework.prototype.source = function(name) {
+	var self = this;
+	var source = self.sources[name];
+
+	if (source)
+		return source;
+
+	var filename = path.join(directory, self.config['directory-source'], name);
+
+	if (self.isCoffee) {
+		if (fs.existsSync(filename + EXTENSION_COFFEE))
+			filename += EXTENSION_COFFEE;
+		else
+			filename += EXTENSION_JS;
+	} else
+		filename += EXTENSION_JS;
+
+	source = require(filename);
+	self.sources[name] = source;
+	return source;
 };
 
 /*
@@ -6269,16 +6279,6 @@ Controller.prototype.$layout = function(name) {
 Controller.prototype.model = function(name) {
 	var self = this;
 	return self.framework.model(name);
-};
-
-/*
-	Get a business logic
-	@name {String} :: name of controller
-	return {Object};
-*/
-Controller.prototype.logic = function(name) {
-	var self = this;
-	return self.framework.logic(name);
 };
 
 /*

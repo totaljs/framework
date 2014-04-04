@@ -151,6 +151,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('subshare', function(complete) {
+		utils.request(url + 'sub/share/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'SUBSHARE', 'problem with controller in subdirectory.');
+			complete();
+		});
+	});
+
 	async.await('logged', function(complete) {
 		utils.request(url + 'logged/', 'GET', null, function(error, data, code, headers) {
 			if (error)

@@ -8,8 +8,9 @@ IN DEVELOPMENT ======= 1.3.0
 - added: new global variables - Builders, Mail, Utils
 - added: Builders.validate(schemaName, model) - returns ErrorBuilder from everywhere (uses framework.resource)
 - added: utils.assign(obj, path, value/function)
-- added: framework.logic(name);
-- added: controller.logic(name);
+- added: framework.config['directory-source'], great for business logic
+- added: new global methods include() and source() are linked into the config['directory-source']
+- added: allowed controllers in subdirectories
 
 - updated: Builders.schema(name, obj, [defaults], [validator]) - validator is new
 - updated: Builders.validation(name, [arr] or [function])
