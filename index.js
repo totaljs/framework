@@ -9020,12 +9020,20 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 /*
 	Close connection
 	@id {String Array} :: optional, default null
+	@message {String} :: optional
+	@code {Number} :: optional, default 1000
 	return {WebSocket}
 */
-WebSocket.prototype.close = function(id) {
+WebSocket.prototype.close = function(id, message, code) {
 
 	var self = this;
 	var keys = self._keys;
+
+	if (typeof(id) === STRING) {
+		code = message;
+		message = id;
+		id = null;
+	}
 
 	if (keys === null)
 		return self;
@@ -9038,7 +9046,7 @@ WebSocket.prototype.close = function(id) {
 	if (typeof(id) === UNDEFINED || id === null || id.length === 0) {
 		for (var i = 0; i < length; i++) {
 			var _id = keys[i];
-			self.connections[_id].close();
+			self.connections[_id].close(message, code);
 			self._remove(_id);
 		}
 		self._refresh();
@@ -9060,7 +9068,7 @@ WebSocket.prototype.close = function(id) {
 		if (fn !== null && !fn.call(self, _id, conn))
 			continue;
 
-		conn.close();
+		conn.close(message, code);
 		self._remove(_id);
 	}
 
@@ -9705,12 +9713,12 @@ WebSocketClient.prototype.send = function(message) {
 		if (self.container.config['default-websocket-encodedecode'] === true && data.length > 0)
 			data = encodeURIComponent(data);
 
-		self.socket.write(new Buffer(utils.encode_WS(data), 'binary'));
+		self.socket.write(utils.getWebSocketFrame(0, data, 0x01));
 
 	} else {
 
 		if (message !== null)
-			self.socket.write(new Buffer(utils.encode_WS(message), 'binary'));
+			self.socket.write(utils.getWebSocketFrame(0, message, 0x02));
 
 	}
 
@@ -9721,15 +9729,14 @@ WebSocketClient.prototype.send = function(message) {
 	Close connection
 	return {WebSocketClient}
 */
-WebSocketClient.prototype.close = function() {
+WebSocketClient.prototype.close = function(message, code) {
 	var self = this;
 
 	if (self.isClosed)
 		return self;
 
 	self.isClosed = true;
-	//self.socket.end(self._state('close'));
-	self.socket.end();
+	self.socket.end(utils.getWebSocketFrame(code || 1000, message || '', 0x08));
 
 	return self;
 };

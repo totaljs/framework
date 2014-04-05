@@ -951,45 +951,73 @@ exports.removeDiacritics = function(str) {
 	return buf;
 };
 
-// Author: Haribabu Pasupathy
 // Author: Jozef Gula
-// http://stackoverflow.com/users/1679439/haribabu-pasupathy
-exports.encode_WS = function(data){
+exports.getWebSocketFrame = function(code, message, type) {
+    var messageBuffer = getWebSocketFrameMessageBytes(code, message);
+    var messageLength = messageBuffer.length;
+    var lengthBuffer = getWebSocketFrameLengthBytes(messageLength);
+    var frameBuffer = new Buffer(1 + lengthBuffer.length + messageLength);
+    frameBuffer[0] = 0x80 | type;
+    lengthBuffer.copy(frameBuffer, 1, 0, lengthBuffer.length);
+    messageBuffer.copy(frameBuffer, lengthBuffer.length + 1, 0, messageLength);
+    return frameBuffer;
+}
 
-	// Is Buffer?
- 	var binary = typeof(data.readUInt8) !== UNDEFINED;
-	var length = data.length;
-	var bytesFormatted = [];
+// Author: Jozef Gula
+function getWebSocketFrameMessageBytes(code, message) {
+    var index = code === 0 ? 0 : 2;
+    var binary = typeof(message.readUInt8) !== UNDEFINED;
+    var length = message.length;
+    var messageBuffer = new Buffer(length + index);
 
-	bytesFormatted[0] = binary ? 0x82 : 0x81;
+    for (var i = 0; i < length; i++) {
+        if (binary)
+            messageBuffer[i + index] = message[i];
+        else
+            messageBuffer[i + index] = message.charCodeAt(i);
+    }
 
-	if (length <= 125) {
-		bytesFormatted[1] = length;
-	} else if (length >= 126 && length <= 65535) {
-		bytesFormatted[1] = 126;
-		bytesFormatted[2] = (length >> 8) & 255;
-		bytesFormatted[3] = (length) & 255;
-	} else {
-		bytesFormatted[1] = 127;
-		bytesFormatted[2] = (length >> 56) & 255;
-		bytesFormatted[3] = (length >> 48) & 255;
-		bytesFormatted[4] = (length >> 40) & 255;
-		bytesFormatted[5] = (length >> 32) & 255;
-		bytesFormatted[6] = (length >> 24) & 255;
-		bytesFormatted[7] = (length >> 16) & 255;
-		bytesFormatted[8] = (length >> 8) & 255;
-		bytesFormatted[9] = (length) & 255;
-	}
+    if (code === 0)
+        return messageBuffer;
 
-	for (var i = 0; i < length; i++) {
-	   if (binary)
-			bytesFormatted.push(data[i]);
-	   else
-		  	bytesFormatted.push(data.charCodeAt(i));
-	}
+    messageBuffer[0] = (code >> 8);
+    messageBuffer[1] = (code);
 
-	return bytesFormatted;
-};
+    return messageBuffer;
+}
+
+// Author: Jozef Gula
+function getWebSocketFrameLengthBytes(length) {
+    var lengthBuffer = null;
+
+    if (length <= 125) {
+        lengthBuffer = new Buffer(1);
+        lengthBuffer[0] = length;
+        return lengthBuffer;
+    }
+
+    if (length <= 65535) {
+        lengthBuffer = new Buffer(3);
+        lengthBuffer[0] = 126;
+        lengthBuffer[1] = (length >> 8) & 255;
+        lengthBuffer[2] = (length) & 255;
+        return lengthBuffer;
+    }
+
+    lengthBuffer = new Buffer(9);
+
+    lengthBuffer[0] = 127;
+    lengthBuffer[1] = (length >> 56) & 255;
+    lengthBuffer[2] = (length >> 48) & 255;
+    lengthBuffer[3] = (length >> 40) & 255;
+    lengthBuffer[4] = (length >> 32) & 255;
+    lengthBuffer[5] = (length >> 24) & 255;
+    lengthBuffer[6] = (length >> 16) & 255;
+    lengthBuffer[7] = (length >> 8) & 255;
+    lengthBuffer[8] = (length) & 255;
+
+    return lengthBuffer;
+}
 
 /*
 	Get distance (KM) between two coordinates

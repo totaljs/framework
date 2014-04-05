@@ -16,6 +16,8 @@ IN DEVELOPMENT ======= 1.3.0
 - updated: Builders.validation(name, [arr] or [function])
 - updated: controller.find(id or function)
 - updated: utils.copy(source, [target]);
+- updated: WebSocket.close([id], [message], [code]);
+- updated: WebSocketClient.close([message], [code]);
 
 - fixed: Controller properties on the WebSocket connections
 - fixed: binary
