@@ -286,8 +286,6 @@ Framework.prototype.refresh = function(clear) {
 */
 Framework.prototype.controller = function(name, definition) {
 
-console.log(name);
-
 	var self = this;
 
 	// is controller initialized?
