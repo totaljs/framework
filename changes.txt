@@ -29,7 +29,7 @@
 - fixed: Windows path
 
 IMPORTANT:
-rewrited: WebSocket + WebSocket supports: text, JSON, binary, ping + pong
+rewritten: WebSocket + WebSocket supports: text, JSON, binary, ping + pong
 
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/angularjs-bootstrap
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/bootstrap
@@ -145,8 +145,8 @@ IMPORTANT:
 - fixed: buffer.write (new node => 0.11.11)
 - fixed: IP and heroku deploy
 
-- rewrited: view engine
-- rewrited: template engine (according to view engine)
+- rewritten: view engine
+- rewritten: template engine (according to view engine)
 
 - improvements: views
 - improvements: templates
