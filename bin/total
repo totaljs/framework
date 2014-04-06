@@ -31,6 +31,7 @@ function createDirectory(directory) {
 			arr.push('contents');
 			arr.push('logs');
 			arr.push('modules');
+			arr.push('source');
 		}
 
 		arr.push('resources');
