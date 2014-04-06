@@ -41,6 +41,12 @@ global.include = global.source = function(name) {
 	return framework.source(name);
 };
 
+if (typeof(setImmediate) === UNDEFINED) {
+	global.setImmediate = function(cb) {
+		process.nextTick(cb);
+	};
+}
+
 function Framework() {
 
 	this.id = null;
@@ -106,7 +112,7 @@ function Framework() {
 		// default 5 kB
 		'default-request-length': 1024 * 5,
 		'default-websocket-request-length': 1024 * 5,
-		'default-websocket-encodedecode': true,
+		'default-websocket-encodedecode': false,
 
 		// in milliseconds
 		'default-request-timeout': 3000,

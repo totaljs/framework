@@ -18,12 +18,6 @@ var FUNCTION = 'function';
 var REG_1 = /[\n\r\t]+/g;
 var REG_2 = /\s{2,}/g;
 
-if (typeof(setImmediate) === UNDEFINED) {
-	global.setImmediate = function(cb) {
-		process.nextTick(cb);
-	};
-}
-
 /*
 	Internal function / Parse data from Request
 	@req {ServerRequest}
