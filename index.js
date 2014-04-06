@@ -1174,6 +1174,36 @@ Framework.prototype.injectModel = function(name, url) {
 };
 
 /*
+	Inject source from URL
+	@name {String} :: name of source
+	@url {String}
+	return {Framework}
+*/
+Framework.prototype.injectSource = function(name, url) {
+
+	var self = this;
+	var framework = self;
+
+	utils.request(url, 'GET', '', function(error, data) {
+
+		if (error) {
+			self.error(error, 'injectSource - ' + name, null);
+			return;
+		}
+
+		try
+		{
+			var result = eval('(new (function(){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
+			self.sources[name] = result;
+
+		} catch (ex) {
+			self.error(ex, 'injectSource - ' + name, null);
+		}
+	});
+
+	return self;
+};
+/*
 	Inject controller from URL
 	@name {String} :: name of controller
 	@url {String}

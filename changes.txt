@@ -3,12 +3,14 @@ IN DEVELOPMENT ======= 1.3.0
 - added: supports CoffeeScript
 - added: framework.isWindows (readonly, boolean)
 - added: framework.isCoffee (readonly, boolean)
+- added: framework.config['directory-source'], great for business logic
+- added: framework.injectSource(name)
+- added: framework.source(name), call a business logic
+- added: new global methods include() and source() are linked into the config['directory-source']
 - added: config['default-websocket-encodedecode'] - encodeURIComponent && decodeURIComponent (IMPORTANT: default: false)
 - added: Builders.ErrorBuilder.resource(filename, prefix) - can change resource filename or prefix
 - added: new global variables - Builders, Mail, Utils
 - added: Builders.validate(schemaName, model) - returns ErrorBuilder from everywhere (uses framework.resource)
-- added: framework.config['directory-source'], great for business logic
-- added: new global methods include() and source() are linked into the config['directory-source']
 - added: allowed controllers in subdirectories
 - added: utils.assign(obj, path, value/function) - read more in documentation
 
