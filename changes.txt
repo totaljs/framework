@@ -35,6 +35,8 @@ rewrited: WebSocket + WebSocket supports: text, JSON, binary, ping + pong
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/bootstrap
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/framework-schema-validation
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/webrtc (unfinished but for an idea)
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/framework-business-logic-source
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/framework-inject-business-logic-source
 
 ======= 1.2.3-1 (HOTFIX)
 
