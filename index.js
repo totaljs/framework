@@ -5665,6 +5665,7 @@ function Controller(name, req, res, subscribe) {
 
 	// render output
 	this.output = null;
+	this.outputPartial = null;
 	this.$model = null;
 	this.prefix = req.prefix;
 
@@ -8686,6 +8687,9 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	var skip = name[0] === '~';
 	var filename = name;
+	var isLayout = self.isLayout;
+
+	self.isLayout = false;
 
 	if (!self.isLayout && !skip)
 		filename = self._currentView + name;
@@ -8697,11 +8701,11 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (generator === null) {
 
 		if (isPartial)
-			return self.output;
+			return self.outputPartial;
 
 		var err = 'View "' + name + '" not found.';
 
-		if (self.isLayout) {
+		if (isLayout) {
 			self.subscribe.success();
 			self.framework.response500(self.req, self.res, err);
 			return;
@@ -8718,7 +8722,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		return self.sitemap.apply(self, arguments);
 	};
 
-	if (self.isLayout) {
+	if (isLayout) {
 		self._currentCSS = self._defaultCSS || '';
 		self._currentJS = self._defaultJS || '';
 		self._currentDownload = self._defaultDownload || '';
@@ -8733,7 +8737,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	try
 	{
-		value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, helpers, self.user, self.config, self.framework.functions, 0, sitemap).replace(/\\n/g, '\n');
+		value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, helpers, self.user, self.config, self.framework.functions, 0, sitemap, isPartial ? self.outputPartial : self.output).replace(/\\n/g, '\n');
 	} catch(ex) {
 
 		var err = new Error('View: ' + name + ' - ' + ex.toString());
@@ -8744,19 +8748,27 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		}
 
 		self.error(err);
-		value = self.output;
-		self.output = '';
-		self.isLayout = false;
+
+		if (self.isPartial) {
+			value = self.outputPartial;
+			self.outputPartial = '';
+		} else {
+			value = self.output;
+			self.output = '';
+		}
+
+		isLayout = false;
 		return value;
 	}
 
-	if (!self.isLayout && self.precache && self.status === 200)
+	if (!isLayout && self.precache && self.status === 200)
 		self.precache(value, CONTENTTYPE_TEXTHTML, headers, true);
 
-	if (self.isLayout || utils.isNullOrEmpty(self.layoutName)) {
+	if (isLayout || utils.isNullOrEmpty(self.layoutName)) {
 
+		self.outputPartial = '';
 		self.output = '';
-		self.isLayout = false;
+		isLayout = false;
 
 		if (isPartial)
 			return value;
@@ -8772,12 +8784,16 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		return self;
 	}
 
-	self.output = value;
+	if (isPartial)
+		self.outputPartial = value;
+	else
+		self.output = value;
+
 	self.isLayout = true;
 	value = self.view(self.layoutName, self.$model, headers, isPartial);
 
 	if (isPartial) {
-		self.output = '';
+		self.outputPartial = '';
 		self.isLayout = false;
 		return value;
 	}

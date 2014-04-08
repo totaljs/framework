@@ -1936,7 +1936,7 @@ function view_parse(content) {
 			builder += '+\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 	}
 
-	var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap){var controller=self;return ' + builder.substring(1) + '})';
+	var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output){var controller=self;return ' + builder.substring(1) + '})';
 	return eval(fn);
 }
 
@@ -1999,7 +1999,7 @@ function view_prepare(command) {
 			return '(' + command.substring(1) + ')';
 
 		case 'body':
-			return 'self.output';
+			return 'output';
 
 		case 'resource':
 			return '(self.' + command + ').toString().encode()';
