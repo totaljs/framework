@@ -50,8 +50,8 @@ if (typeof(setImmediate) === UNDEFINED) {
 function Framework() {
 
 	this.id = null;
-	this.version = 1300;
-	this.version_header = '1.3.0';
+	this.version = 1310;
+	this.version_header = '1.3.1';
 
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
@@ -105,7 +105,7 @@ function Framework() {
 
 		'default-layout': '_layout',
 
-		'angular-version': '1.2.10',
+		'angular-version': '1.2.15',
 		'angular-i18n-version': '1.2.10',
 
 		// default maximum request size / length
