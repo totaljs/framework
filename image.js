@@ -4,6 +4,7 @@ var child = require('child_process');
 var exec = child.exec;
 var spawn = child.spawn;
 var path = require('path');
+var utils = require('./utils');
 
 // INTERNAL
 var sof = {

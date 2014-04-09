@@ -4,6 +4,7 @@ var events = require('events');
 var dns = require('dns');
 var fs = require('fs');
 var path = require('path');
+var utils = require('./utils');
 
 const CRLF = '\r\n';
 const UNDEFINED = 'undefined';

@@ -10,6 +10,7 @@
 
 var crypto = require('crypto');
 var fs = require('fs');
+var utils = require('./utils');
 
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';

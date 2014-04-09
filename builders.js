@@ -1,5 +1,7 @@
 'use strict';
 
+var utils = require('./utils');
+
 var schema = {};
 var schemaValidation = {};
 var schemaValidator = {};

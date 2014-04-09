@@ -34,7 +34,7 @@ var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 't
 var _controller = '';
 
 global.Builders = global.builders = require('./builders');
-global.Utils = global.utils = require('./utils');
+var utils = global.Utils = global.utils = require('./utils');
 global.Mail = require('./mail');
 
 global.include = global.source = function(name) {
@@ -497,6 +497,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 					break;
 				case 'unlogged':
 					console.log('OBSOLETE: flag "unlogged". Framework doesn\'t support unlogged flag.');
+					break;
+				case 'referer':
+				case 'referrer':
+					tmp.push('referer');
 					break;
 				default:
 					tmp.push(flag);
