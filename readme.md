@@ -35,7 +35,7 @@ __TOTALSTACK__:
 - __NEW__ [Example: total.js / Angular.js](https://github.com/totaljs/examples/tree/master/angularjs)
 - __NEW__ [Example: total.js / Angular.js + Websocket](https://github.com/totaljs/examples/tree/master/angularjs-websocket)
 - __NEW__ [Example: total.js / Angular.js Routing](https://github.com/totaljs/examples/tree/master/angularjs-routing)
-- __NEW__ [Example: total.js / Angular.js Resources + REST + MongoDB](https://github.com/totaljs/examples/tree/master/angularjs-routing)
+- __NEW__ [Example: total.js / Angular.js Resources + REST + MongoDB](https://github.com/totaljs/examples/tree/master/angularjs-mongodb-rest-resources)
 - __NEW__ [Example: total.js / Angular.js with Bootstrap](https://github.com/totaljs/examples/tree/master/angularjs-bootstrap)
 
 __Interesting__:
