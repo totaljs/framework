@@ -6704,6 +6704,9 @@ Controller.prototype.$ngFilter = function(name) {
 		return '';
 	}
 
+	if (name.lastIndexOf(EXTENSION_JS) === -1)
+		name += EXTENSION_JS;
+
 	var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
 	var isLocal = name[0] === '~';
 
