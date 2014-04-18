@@ -35,10 +35,22 @@ var _controller = '';
 
 global.Builders = global.builders = require('./builders');
 var utils = global.Utils = global.utils = require('./utils');
-global.Mail = require('./mail');
+global.Mail = global.MAIL = require('./mail');
 
-global.include = global.source = function(name) {
+global.include = global.INCLUDE = global.source = global.SOURCE = function(name) {
 	return framework.source(name);
+};
+
+global.MODULE = function(name) {
+	return framework.module(name);
+};
+
+global.DATABASE = function() {
+	return framework.database.apply(framework, arguments);
+};
+
+global.MODEL = function(name) {
+	return framework.model(name);
 };
 
 if (typeof(setImmediate) === UNDEFINED) {
@@ -50,8 +62,8 @@ if (typeof(setImmediate) === UNDEFINED) {
 function Framework() {
 
 	this.id = null;
-	this.version = 1310;
-	this.version_header = '1.3.1';
+	this.version = 1320;
+	this.version_header = '1.3.2';
 
 	this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
