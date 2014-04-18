@@ -19,7 +19,7 @@ function debug() {
 function app() {
 	var fork = require('child_process').fork;
 	var utils = require('total.js/utils');
-	var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules', directory + '/resources', directory + '/components', directory + '/models'];
+	var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules', directory + '/resources', directory + '/components', directory + '/models', directory + '/source'];
 	var files = {};
 	var force = false;
 	var changes = [];
