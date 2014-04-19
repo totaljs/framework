@@ -2769,7 +2769,7 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 			self.isCoffee = true;
 	});
 
-	if (isNaN(port))
+	if (isNaN(port) && typeof(port) !== STRING)
 		port = null;
 
 	if (port !== null && typeof(port) === OBJECT) {
@@ -2882,7 +2882,13 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 
 	if (!port) {
 		if (self.config['default-port'] === 'auto')
-			port = parseInt(process.env.PORT.toString());
+		{
+			var envPort = process.env.PORT.toString();
+			if(isNaN(envPort))
+				port = envPort;
+			else
+				port = parseInt(envPort);
+		}
 		else
 			port = self.config['default-port'];
 	}
