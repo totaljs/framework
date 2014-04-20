@@ -502,13 +502,18 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 					priority -= 2;
 					tmp.push('authorize');
 					break;
+				case 'unauthorize':
+					priority -= 2;
+					tmp.push('unauthorize');
+					break;
 				case 'logged':
 					priority -= 2;
 					tmp.push('authorize');
 					console.log('OBSOLETE: flag "logged" - use "authorize".');
 					break;
 				case 'unlogged':
-					console.log('OBSOLETE: flag "unlogged". Framework doesn\'t support unlogged flag.');
+					tmp.push('unauthorize');
+					console.log('OBSOLETE: flag "unlogged" - use "unauthorize".');
 					break;
 				case 'referer':
 				case 'referrer':
@@ -527,14 +532,14 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 	var isMixed = flags.indexOf('mmr') !== -1;
 
 	if (isMixed && url.indexOf('{') !== -1)
-		throw new Error('Mixed route cannot contain dynamic path');
+		throw new Error('Mixed route cannot contain dynamic path.');
 
 	if (isMixed && flags.indexOf('upload') !== -1)
-		throw new Error('Multipart mishmash: mmr vs. upload');
+		throw new Error('Multipart mishmash: mmr vs. upload.');
 
 	var isMember = false;
 
-	if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1)
+	if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1)
 		isMember = true;
 
 	var routeURL = internal.routeSplit(url.trim());
@@ -1386,7 +1391,7 @@ Framework.prototype.onRequest = null;
 	@req {ServerRequest}
 	@res {ServerResponse} OR {WebSocketClient}
 	@flags {String array}
-	@callback {Function} - @callback(Boolean), true if authorize and false if unlogged
+	@callback {Function} - @callback(Boolean), true is [authorize]d and false is [unauthorize]d
 */
 Framework.prototype.onAuthorization = null;
 
@@ -3075,8 +3080,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		if (user)
 			req.user = user;
 
-		if (isLogged)
-			req.flags.push('authorize');
+		self.req.flags.push(isLogged ? 'authorize' : 'unauthorize');
 
 		var route = self.lookup_websocket(req, websocket.uri.pathname, false);
 
@@ -5484,9 +5488,7 @@ Subscribe.prototype._authorization = function(isLogged, user) {
 	if (user)
 		self.req.user = user;
 
-	if (isLogged)
-		self.req.flags.push('authorize');
-
+	self.req.flags.push(isLogged ? 'authorize' : 'unauthorize');
 	self.route = self.framework.lookup(self.req, self.req.buffer_exceeded ? '#431' : self.req.uri.pathname, self.req.flags);
 
 	if (self.route === null)
@@ -8728,7 +8730,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		if (isPartial)
 			return self.outputPartial;
 
-		var err = 'View "' + name + '" not found.';
+		var err = 'View "' + filename + '" not found.';
 
 		if (isLayout) {
 			self.subscribe.success();

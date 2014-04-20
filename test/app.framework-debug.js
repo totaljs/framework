@@ -11,7 +11,7 @@ var max = 100;
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
-	cb(true);
+	cb(req.url !== '/unauthorize/');
 };
 
 framework.onError = function(error, name, uri) {
@@ -162,6 +162,15 @@ function test_routing(next) {
 
 	async.await('logged', function(complete) {
 		utils.request(url + 'logged/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			complete();
+		});
+	});
+
+	async.await('unauthorize', function(complete) {
+		utils.request(url + 'unauthorize/', 'GET', null, function(error, data, code, headers) {
+			assert.ok(data === 'UNAUTHORIZED', 'unauthorize flag problem');
 			if (error)
 				throw error;
 			complete();

@@ -2,6 +2,7 @@ var assert = require('assert');
 
 exports.install = function(framework) {
 	framework.route('/logged/', view_logged, { flags: ['authorize'], timeout: 1000, length: 3000 });
+	framework.route('/unauthorize/', view_unauthorize, { flags: ['unauthorize'] });
 	framework.route('/homepage/', view_homepage);
 	framework.route('/usage/', view_usage);
 	framework.route('/sse/', viewSSE_html);
@@ -117,6 +118,11 @@ function view_logged() {
 	assert.ok(self.session.ready === true, 'Session problem');
 	assert.ok(self.user.alias === 'Peter Širka', 'User problem');
 	self.plain('OK');
+}
+
+function view_unauthorize() {
+	var self = this;
+	self.plain('UNAUTHORIZED');
 }
 
 function viewSSE() {
