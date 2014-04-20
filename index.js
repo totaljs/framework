@@ -499,15 +499,15 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 					isRaw = true;
 					break;
 				case 'authorize':
-					priority -= 2;
+					priority += 2;
 					tmp.push('authorize');
 					break;
 				case 'unauthorize':
-					priority -= 2;
+					priority += 2;
 					tmp.push('unauthorize');
 					break;
 				case 'logged':
-					priority -= 2;
+					priority += 2;
 					tmp.push('authorize');
 					console.log('OBSOLETE: flag "logged" - use "authorize".');
 					break;
