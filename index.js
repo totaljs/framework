@@ -561,7 +561,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		priority++;
 	}
 
-	if ((flags.indexOf('json') !== -1 || isRaw) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1)) {
+	if ((flags.indexOf('json') !== -1 || isRaw) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
 		flags.push('post');
 		priority++;
 	}
@@ -573,13 +573,21 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 		}
 	}
 
-	if (flags.indexOf('get') === -1 && flags.indexOf('post') === -1 && flags.indexOf('delete') === -1 && flags.indexOf('put') === -1 && flags.indexOf('upload') === -1 && flags.indexOf('options') === -1)
+	if (flags.indexOf('get') === -1 &&
+		flags.indexOf('post') === -1 &&
+		flags.indexOf('delete') === -1 &&
+		flags.indexOf('put') === -1 &&
+		flags.indexOf('upload') === -1 &&
+		flags.indexOf('head') === -1 &&
+		flags.indexOf('trace') === -1 &&
+		flags.indexOf('patch') === -1 &&
+		flags.indexOf('propfind') === -1)
 		flags.push('get');
 
 	if (flags.indexOf('referer') !== -1)
 		self._request_check_referer = true;
 
-	if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1 || flags.indexOf('json') !== -1))
+	if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1))
 		self._request_check_POST = true;
 
 	if (!(partial instanceof Array))
@@ -3080,7 +3088,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		if (user)
 			req.user = user;
 
-		self.req.flags.push(isLogged ? 'authorize' : 'unauthorize');
+		req.flags.push(isLogged ? 'authorize' : 'unauthorize');
 
 		var route = self.lookup_websocket(req, websocket.uri.pathname, false);
 
