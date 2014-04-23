@@ -2698,15 +2698,17 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	if ((/text|application/).test(contentType))
 		contentType += '; charset=utf-8';
 
+	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
+
 	if (compress && accept.lastIndexOf('gzip') !== -1) {
 		zlib.gzip(new Buffer(contentBody), function(err, data) {
 
 			if (err) {
-				req.connection.destroy();
+				res.writeHead(code, returnHeaders);
+				res.end(contentBody, ENCODING);
 				return;
 			}
 
-			returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 			returnHeaders['Content-Encoding'] = 'gzip';
 
 			res.writeHead(code, returnHeaders);
@@ -2721,7 +2723,6 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 		return self;
 	}
 
-	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 	res.writeHead(code, returnHeaders);
 	res.end(contentBody, ENCODING);
 
@@ -5370,7 +5371,7 @@ Subscribe.prototype.execute = function(status) {
 	}
 
 	if (self.route === null) {
-		self.framework.responseContent(self.req, self.res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, true);
+		self.framework.responseContent(self.req, self.res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, self.framework.config['allow-gzip']);
 		return self;
 	}
 
@@ -5614,7 +5615,7 @@ Subscribe.prototype._endfile = function() {
 
 		} catch (err) {
 			self.framework.error(err, file.controller + ' :: ' + file.name, self.req.uri);
-			self.framework.responseContent(self.req, self.res, 500, '500 - internal server error', CONTENTTYPE_TEXTPLAIN, true);
+			self.framework.responseContent(self.req, self.res, 500, '500 - internal server error', CONTENTTYPE_TEXTPLAIN, self.framework.config['allow-gzip']);
 			return;
 		}
 	}
@@ -8019,7 +8020,7 @@ Controller.prototype.json = function(obj, headers, beautify) {
 	}
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.status, obj, 'application/json', true, headers);
+	self.framework.responseContent(self.req, self.res, self.status, obj, 'application/json', self.config['allow-gzip'], headers);
 	self.framework.stats.response.json++;
 
 	if (self.precache)
@@ -8101,7 +8102,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 		return self;
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.status, contentBody, contentType || CONTENTTYPE_TEXTPLAIN, true, headers);
+	self.framework.responseContent(self.req, self.res, self.status, contentBody, contentType || CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
 	return self;
 };
 
@@ -8127,7 +8128,7 @@ Controller.prototype.plain = function(contentBody, headers) {
 		contentBody = contentBody === null ? '' : contentBody.toString();
 
 	self.subscribe.success();
-	self.framework.responseContent(self.req, self.res, self.status, contentBody, CONTENTTYPE_TEXTPLAIN, true, headers);
+	self.framework.responseContent(self.req, self.res, self.status, contentBody, CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
 	self.framework.stats.response.plain++;
 
 	if (self.precache)
@@ -8813,7 +8814,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		if (!self.isConnected)
 			return;
 
-		self.framework.responseContent(self.req, self.res, self.status, value, CONTENTTYPE_TEXTHTML, true, headers);
+		self.framework.responseContent(self.req, self.res, self.status, value, CONTENTTYPE_TEXTHTML, self.config['allow-gzip'], headers);
 		self.framework.stats.response.view++;
 
 		return self;
@@ -8899,7 +8900,7 @@ Controller.prototype.memorize = function(key, expire, disabled, fnTo, fnFrom) {
 		fnFrom();
 
 	if (output.type !== CONTENTTYPE_TEXTHTML)
-		self.framework.responseContent(self.req, self.res, self.status, output.content, output.type, true, output.headers);
+		self.framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
 
 	switch (output.type) {
 		case CONTENTTYPE_TEXTPLAIN:
@@ -8924,7 +8925,7 @@ Controller.prototype.memorize = function(key, expire, disabled, fnTo, fnFrom) {
 		if (!self.isConnected)
 			return self;
 
-		self.framework.responseContent(self.req, self.res, self.status, output.content, output.type, true, output.headers);
+		self.framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
 		return self;
 	}
 
