@@ -6542,9 +6542,9 @@ Controller.prototype.$ngLocale = function(name) {
 	return '';
 };
 
-Controller.prototype.$script_create = function(val) {
+Controller.prototype.$script_create = function(name) {
 	var self = this;
-  return '<script type="text/javascript" src="' + (self._isRoute(val) ? self.routeJS(val) : val)  + '"></script>';
+	return '<script type="text/javascript" src="' + (self._isRoute(name) ? self.routeJS(name) : name)  + '"></script>';
 };
 
 /*
