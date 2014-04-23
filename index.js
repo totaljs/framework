@@ -6481,7 +6481,7 @@ Controller.prototype.$ng = function(name) {
 		name = 'angular-' + name;
 
 	var output = self.repository[REPOSITORY_ANGULAR] || '';
-	var script = self.$script_create((isCommon ? '/common/' + name + '.min.js' : '//cdnjs.cloudflare.com/ajax/libs/angular.js/' + self.config['angular-version'] + '/' + name + '.min.js'));
+	var script = self.$script_create((isCommon ? 'common/' + name + '.min.js' : '//cdnjs.cloudflare.com/ajax/libs/angular.js/' + self.config['angular-version'] + '/' + name + '.min.js'));
 
 	if (name === 'angular')
 		output = script + output;
@@ -6500,7 +6500,7 @@ Controller.prototype.$ngCommon = function(name) {
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		name += '.min.js';
 
-	var script = self.$script_create('/common/' + name);
+	var script = self.$script_create('common/' + name);
 	output += script;
 
 	self.repository[REPOSITORY_ANGULAR_COMMON] = output;
@@ -6537,14 +6537,15 @@ Controller.prototype.$ngLocale = function(name) {
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		extension = '.min.js';
 
-	output += self.$script_create(isLocal ? '/i18n/angular-locale_' + name + extension : '//cdnjs.cloudflare.com/ajax/libs/angular-i18n/' + self.config['angular-i18n-version'] + '/angular-locale_' + name + extension);
+	output += self.$script_create(isLocal ? 'i18n/angular-locale_' + name + extension : '//cdnjs.cloudflare.com/ajax/libs/angular-i18n/' + self.config['angular-i18n-version'] + '/angular-locale_' + name + extension);
 	self.repository[REPOSITORY_ANGULAR_LOCALE] = output;
 
 	return '';
 };
 
 Controller.prototype.$script_create = function(url) {
-	return '<script type="text/javascript" src="' + url + '"></script>';
+	var self = this;
+	return '<script type="text/javascript" src="' + (self._isRoute(url) ? self.routeJS(url) : url)  + '"></script>';
 };
 
 /*
@@ -6579,7 +6580,7 @@ Controller.prototype.$ngController = function(name) {
 	if (isLocal)
 		name = name.substring(1);
 
-	output += self.$script_create('/controllers/' + name);
+	output += self.$script_create('controllers/' + name);
 	self.repository[REPOSITORY_ANGULAR_CONTROLLER] = output;
 
 	return '';
@@ -6655,7 +6656,7 @@ Controller.prototype.$ngDirective = function(name) {
 	if (isLocal)
 		name = name.substring(1);
 
-	output += self.$script_create('/directives/' + name);
+	output += self.$script_create('directives/' + name);
 	self.repository[REPOSITORY_ANGULAR_OTHER] = output;
 	return '';
 };
@@ -6704,7 +6705,7 @@ Controller.prototype.$ngService = function(name) {
 	if (isLocal)
 		name = name.substring(1);
 
-	output += self.$script_create('/services/' + name);
+	output += self.$script_create('services/' + name);
 	self.repository[REPOSITORY_ANGULAR_OTHER] = output;
 
 	return '';
@@ -6742,7 +6743,7 @@ Controller.prototype.$ngFilter = function(name) {
 	if (isLocal)
 		name = name.substring(1);
 
-	output += self.$script_create('/filters/' + name);
+	output += self.$script_create('filters/' + name);
 	self.repository[REPOSITORY_ANGULAR_OTHER] = output;
 
 	return '';
@@ -6780,7 +6781,7 @@ Controller.prototype.$ngResource = function(name) {
 	if (isLocal)
 		name = name.substring(1);
 
-	output += self.$script_create('/resources/' + name);
+	output += self.$script_create('resources/' + name);
 	self.repository[REPOSITORY_ANGULAR_OTHER] = output;
 
 	return '';
@@ -7271,7 +7272,7 @@ Controller.prototype.head = function() {
 
 	if (length === 0) {
 		var angularBeg = (self.repository[REPOSITORY_ANGULAR] || '') + (self.repository[REPOSITORY_ANGULAR_COMMON] || '') + (self.repository[REPOSITORY_ANGULAR_LOCALE] || '');
-		var angularEnd = (angularBeg.length > 0 ? self.$script_create('/app.js') : '') + (self.repository[REPOSITORY_ANGULAR_OTHER] || '') + (self.repository[REPOSITORY_ANGULAR_CONTROLLER] || '');
+		var angularEnd = (angularBeg.length > 0 ? self.$script_create('app.js') : '') + (self.repository[REPOSITORY_ANGULAR_OTHER] || '') + (self.repository[REPOSITORY_ANGULAR_CONTROLLER] || '');
 		return (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '') + angularBeg + header + angularEnd;
 	}
 
@@ -7622,7 +7623,7 @@ Controller.prototype._routeHelper = function(current, name, fn) {
 		return fn.call(self.framework, name);
 
 	if (current.substring(0, 2) === '//' || current.substring(0, 6) === 'http:/' || current.substring(0, 7) === 'https:/')
-		return fn.call(self.framework, current + name);
+		return fn.call(self.framework, utils.path(current) + name);
 
 	if (current[0] === '~')
 		return fn.call(self.framework, utils.path(current.substring(1)) + name);
@@ -8952,6 +8953,16 @@ Controller.prototype.viewAsync = function(name, model, headers) {
 
 	self.async.complete(fn);
 	return self;
+};
+
+/*
+	Check the path what is route path
+	@val {String}
+	return {Boolen};
+*/
+Controller.prototype._isRoute = function(path) {
+    var tmp = path.substring(0, 7);
+    return !(tmp[0] === "/" && tmp[1] === "/") && tmp !== "http://" && tmp !== "https:/";
 };
 
 // *********************************************************************************
