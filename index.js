@@ -1931,7 +1931,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 
 		var contentType = response.headers['content-type'];
 		var isGZIP = (response.headers['content-encoding'] || '').lastIndexOf('gzip') !== -1;
-		var compress = !isGZIP && supportsGZIP && (contentType.indexOf('text/') !== -1 || contentType.indexOf('javascript') !== -1);
+		var compress = !isGZIP && supportsGZIP && (contentType.indexOf('text/') !== -1 || contentType.lastIndexOf('javascript') !== -1 || contentType.lastIndexOf('json') !== -1);
 		var attachment = response.headers['content-disposition'] || '';
 
 		if (attachment.length > 0)
