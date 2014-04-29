@@ -1864,7 +1864,7 @@ function Content(controller) {
 	this.prefix = controller.prefix;
 }
 
-function view_parse(content) {
+function view_parse(content, minify) {
 
 	content = removeComments(compressCSS(compressJS(content, 0, framework), 0, framework));
 
@@ -1872,7 +1872,7 @@ function view_parse(content) {
 	var command = view_find_command(content, 0);
 
 	if (command === null)
-		builder = '+\'' + minifyHTML(content).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
+		builder = '+\'' + minifyHTML(content, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 
 	var old = null;
 	var condition = 0;
@@ -1888,14 +1888,14 @@ function view_parse(content) {
 			if (text !== '') {
 				if (view_parse_plus(builder))
 					builder += '+';
-				builder += '\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
+				builder += '\'' + minifyHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 			}
 		} else {
 			var text = content.substring(0, command.beg);
 			if (text !== '') {
 				if (view_parse_plus(builder))
 					builder += '+';
-				builder += '\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
+				builder += '\'' + minifyHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 			}
 		}
 
@@ -1934,7 +1934,7 @@ function view_parse(content) {
 	if (old !== null) {
 		var text = content.substring(old.end + 1);
 		if (text.length > 0)
-			builder += '+\'' + minifyHTML(text).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
+			builder += '+\'' + minifyHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 	}
 
 	var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output){var controller=self;return ' + builder.substring(1) + '})';
@@ -2292,9 +2292,9 @@ function compressCSS(html, index, framework) {
 	@html {String}
 	return {String}
 */
-function minifyHTML(html) {
+function minifyHTML(html, minify) {
 
-	if (html === null || html === '')
+	if (html === null || html === '' || !minify)
 		return html;
 
 	html = removeComments(html);
@@ -2371,7 +2371,7 @@ View.prototype.read = function(name) {
 	var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-views'], name + '.html');
 
 	if (fs.existsSync(filename))
-		return view_parse(fs.readFileSync(filename).toString('utf8'));
+		return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
 
 	if (isOut)
 		return null;
@@ -2387,7 +2387,7 @@ View.prototype.read = function(name) {
 	filename = name[0] === '.' ? name.substring(1) : utils.combine(config['directory-views'], name + '.html');
 
 	if (fs.existsSync(filename))
-		return view_parse(fs.readFileSync(filename).toString('utf8'));
+		return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
 
 	return null;
 };
@@ -2439,7 +2439,7 @@ View.prototype.dynamic = function(content) {
 	if (generator !== null)
 		return generator;
 
-	generator = view_parse(content, self.controller);
+	generator = view_parse(content, self.controller, self.controller.config['allow-compress-html']);
 
 	if (generator !== null && !self.controller.isDebug)
 		self.controller.framework.temporary.views[key] = generator;
@@ -2459,7 +2459,7 @@ Content.prototype.read = function(name) {
 	var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-contents'], name + '.html');
 
 	if (fs.existsSync(filename))
-		return minifyHTML(fs.readFileSync(filename).toString('utf8'));
+		return minifyHTML(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
 
 	return null;
 };
@@ -2593,9 +2593,11 @@ Template.prototype.parse_old = function(html, isRepository) {
 		template = html.substring(indexBeg + 4, indexEnd).trim();
 	}
 
-	beg = minifyHTML(beg);
-	end = minifyHTML(end);
-	template = minifyHTML(template);
+	var minify = self.controller.config['allow-compress-html'];
+
+	beg = minifyHTML(beg, minify);
+	end = minifyHTML(end, minify);
+	template = minifyHTML(template, minify);
 
 	indexBeg = 0;
 	var indexer = 0;
@@ -2908,11 +2910,13 @@ Template.prototype.parse = function(html) {
 		template = html.substring(indexBeg + 4, indexEnd).trim();
 	}
 
-	beg = minifyHTML(beg);
-	end = minifyHTML(end);
-	template = minifyHTML(template);
+	var minify = self.controller.config['allow-compress-html'];
 
-	return { is: true, beg: beg.length > 0 ? view_parse(beg) : null, end: end.length > 0 ? view_parse(end) : null, template: view_parse(template) };
+	beg = minifyHTML(beg, minify);
+	end = minifyHTML(end, minify);
+	template = minifyHTML(template, minify);
+
+	return { is: true, beg: beg.length > 0 ? view_parse(beg, minify) : null, end: end.length > 0 ? view_parse(end, minify) : null, template: view_parse(template, minify) };
 };
 
 /*

@@ -2,6 +2,7 @@ IN DEVELOPMENT ======= 1.3.2 (HOTFIX)
 
 - added: new global methods: INCLUDE() - framework.source(), SOURCE() - framework.source(), MODEL(name) -> framework.model(), MODULE(name) -> framework.module(), DATABASE() -> framework.database()
 - added: unauthorize flag
+- added: config['allow-compress-html']
 
 - updated: debug.js (added "source")
 

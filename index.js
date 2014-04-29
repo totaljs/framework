@@ -137,6 +137,7 @@ function Framework() {
 		'allow-websocket': true,
 		'allow-compile-js': true,
 		'allow-compile-css': true,
+		'allow-compress-html': true,
 		'allow-performance': false,
 	};
 
