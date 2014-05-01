@@ -1,4 +1,4 @@
-global.builders = require('../builders');
+ global.builders = require('../builders');
 global.framework = { version: '' };
 
 var assert = require('assert');
@@ -156,7 +156,7 @@ function prototypeString() {
 
 	str = 'Peter Širka Linker & - you known';
 	assert.ok(str.link() === 'peter-sirka-linker-you-known', 'string.link(): ' + str);
-	assert.ok(str.link(11) === 'peter-sirka', 'string.link(): ' + str);	
+	assert.ok(str.link(11) === 'peter-sirka', 'string.link(): ' + str);
 }
 
 function prototypeArray() {
@@ -280,6 +280,9 @@ function others() {
 	assert.ok(utils.GUID(40).length === 40, 'utils.GUID(40)');
 	assert.ok(utils.combine('1', '2', 'logo.jpg') === '.1/2/logo.jpg', 'utils.combine()');
 
+	assert.ok(utils.encode('<b>total.js</b>"&nbsp;') === '&lt;b&gt;total.js&lt;/b&gt;&quot;&amp;nbsp;', 'utils.encode()');
+	assert.ok(utils.decode('&lt;b&gt;total.js&lt;/b&gt;&amp;nbsp;') === '<b>total.js</b>&nbsp;', 'utils.decode()');
+
 	obj = { a: '  1  ', b: { a: '    2 '}};
 	utils.trim(obj);
 	assert.ok(JSON.stringify(obj) === '{"a":"1","b":{"a":"2"}}', 'utils.trim()');
@@ -337,7 +340,7 @@ function others() {
 		value.push(8);
 		next();
 	});
-	
+
 	async.await(function(next) {
 		next();
 	});
@@ -347,7 +350,7 @@ function others() {
 	});
 
 	async.complete(function() {
-		
+
 		value.sort(function(a, b) {
 			if (a > b)
 				return 1;
@@ -394,7 +397,7 @@ function others() {
 
 	builders.validation('1', ['name', 'join']);
 	builders.validation('2', ['age']);
-	
+
 	error = utils.validate({ name: 'Name', join: [{ age: 'A' }, { age: 4 }]}, '1', onValidation, resource);
 	assert.ok(error.hasError(), 'validation - hasError() (array)');
 }

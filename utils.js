@@ -590,7 +590,7 @@ exports.decode = function(str) {
 	if (type !== STRING)
 		str = str.toString();
 
-	return str.htmlDecode();
+	return str.decode();
 };
 
 /*
