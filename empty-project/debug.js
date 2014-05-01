@@ -1,5 +1,5 @@
 // ===================================================
-// IMPORTANT: only for debugging mode
+// IMPORTANT: only for development mode
 // total.js - web application framework for node.js
 // http://www.totaljs.com
 // ===================================================

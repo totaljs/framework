@@ -5748,6 +5748,10 @@ Controller.prototype = {
 		return this.req.data.files;
 	},
 
+	get language() {
+		return this.req.language;
+	},
+
 	get subdomain() {
 		return this.req.subdomain;
 	},
