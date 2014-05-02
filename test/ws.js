@@ -1,30 +1,94 @@
+var crypto = require('crypto');
+var qs = require('querystring');
 var utils = require('../utils');
-var headers = {};
 
-headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
-headers['Authorization'] = 'Basic S3ozSWl2QmxmSURWclFOQzFncVJtdk42cjpSeU9MeFRQWmMzaGVNVDZUMEZVNlRHdngxVmt6aEJ3VmRjaE13RU5QeUwyVzRBVDZnSA==';
-headers['User-Agent'] = 'confiapp';
-/*
-utils.request('https://api.twitter.com/oauth2/token', 'POST', 'grant_type=client_credentials', function(err, data) {
+function TwitterOAuth(apiKey, apiSecret, accessToken, accessSecret) {
+    this.apiKey = apiKey;
+    this.apiSecret = apiSecret;
+    this.accessToken = accessToken;
+    this.accessSecret = accessSecret;
+}
 
-	var response = JSON.parse(data);
-	headers['Authorization'] = 'Bearer ' + response['access_token'];
+TwitterOAuth.prototype.create = function(obj) {
+    var keys = Object.keys(obj);
+    var length = keys.length;
+    var builder = [];
 
-	utils.request('https://api.twitter.com/search/tweets/?q=' + encodeURIComponent('#total.js'), 'GET', '', function(err, data) {
+    keys.sort();
 
-		console.log(data);
+    for (var i = 0; i < length; i++) {
+        var key = keys[i];
+        builder.push(key + '="' + escape(obj[key]) + '"');
+    }
 
-	}, headers);
+    return builder.join(', ');
+};
 
+TwitterOAuth.prototype.signature = function(method, url, params) {
 
-}, headers);
+    var self = this;
+    var keys = Object.keys(params);
+    var builder = [];
+    var key = encodeURIComponent(self.apiSecret) + '&' + encodeURIComponent(self.accessSecret);
 
-*/
+    keys.sort();
 
-var str = 'nclude_entities=true&oauth_consumer_key=xvz1evFS4wEEPTGEFPHBog&oauth_nonce=kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1318622958&oauth_token=370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb&oauth_version=1.0&status=Hello%20Ladies%20%2B%20Gentlemen%2C%20a%20signed%20OAuth%20request%21';
-var a = '12345678901234567890123456789012';
+    var length = keys.length;
+    for (var i = 0; i < length; i++)
+        builder.push(keys[i] + '%3D' + encodeURIComponent(params[keys[i]]));
 
-console.log(new Buffer(a).toString('base64'));
+    var signature = method + '&' + encodeURIComponent(url) + '&' + builder.join('%26');
+    return crypto.createHmac('sha1', key).update(signature).digest('base64');
+};
 
-// MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
-// kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg
+TwitterOAuth.prototype.request = function(method, url, params, callback, redirect) {
+
+    var headers = {};
+    var oauth = {};
+    var self = this;
+    var data = '';
+
+    oauth['oauth_consumer_key'] = self.apiKey;
+
+    if (redirect)
+        oauth['oauth_callback'] = redirect;
+
+    oauth['oauth_token'] = self.accessToken;
+    oauth['oauth_signature_method'] = 'HMAC-SHA1';
+    oauth['oauth_timestamp'] = Math.floor(new Date().getTime() / 1000).toString();
+    oauth['oauth_nonce'] = utils.GUID(32);
+    oauth['oauth_version'] = '1.0';
+
+    if (!params)
+        params = {};
+    else
+        data = qs.stringify(params);
+
+    var keys = Object.keys(params);
+    var length = keys.length;
+
+    for (var i = 0; i < length; i++)
+        params[keys[i]] = encodeURIComponent(params[keys[i]]);
+
+    params['oauth_consumer_key'] = oauth['oauth_consumer_key'];
+    params['oauth_nonce'] = oauth['oauth_nonce'];
+    params['oauth_signature_method'] = oauth['oauth_signature_method'];
+    params['oauth_timestamp'] = oauth['oauth_timestamp'];
+    params['oauth_version'] = oauth['oauth_version'];
+    params['oauth_token'] = oauth['oauth_token'];
+
+    oauth['oauth_signature'] = self.signature(method, url, params);
+    headers['Authorization'] = 'OAuth ' + self.create(oauth);
+
+    console.log(data);
+
+    utils.request(url, method, data, function(err, data) {
+        callback(err, JSON.parse(data));
+    }, headers);
+};
+
+var twitter = new TwitterOAuth('Kz3IivBlfIDVrQNC1gqRmvN6r', 'RyOLxTPZc3heMT6T0FU6TGvx1VkzhBwVdchMwENPyL2W4AT6gH', '15876887-ndkuDgi6pqUpVXhqqAPeiTLpWelDKhzm6Q7pZ44l0', '8Fc9pdsnjaWQiXEBVyBaR6B5s2Cl9xGM6yG9jLCnPMHW9');
+
+twitter.request('GET', 'https://api.twitter.com/1.1/search/tweets.json', { q: '@totalframework' }, function(err, data) {
+    console.log(data);
+});

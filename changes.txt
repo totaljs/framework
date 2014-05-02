@@ -14,6 +14,7 @@ IN DEVELOPMENT ======= 1.3.2 (HOTFIX)
 - fixed: routing priority
 - fixed: config['allow-gzip']
 - fixed: utils.decode()
+- fixed: utils.request()
 
 - removed: String.prototype.link([max])
 

@@ -178,7 +178,6 @@ exports.isEmpty = function(obj) {
 */
 exports.request = function(url, method, data, callback, headers, encoding, timeout) {
 
-	var uri = urlParser.parse(url);
 	var h = {};
 	var isJSON = typeof(data) === OBJECT;
 
@@ -187,6 +186,10 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
 
 	if (method !== 'GET')
 		h['Content-Type'] = 'application/x-www-form-urlencoded';
+	else if (typeof(data) === STRING && data.length > 0)
+		url += (data[0] === '?' ? '' : '?') + data;
+
+	var uri = urlParser.parse(url);
 
 	if (isJSON)
 		h['Content-Type'] = 'application/json';
