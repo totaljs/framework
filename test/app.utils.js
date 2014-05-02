@@ -155,8 +155,8 @@ function prototypeString() {
 	assert.ok(str.params({now: new Date(), number: 23034.34, name: '<b>Peter</b>'}).length === 106, 'string.params(): ' + str);
 
 	str = 'Peter Širka Linker & - you known';
-	assert.ok(str.link() === 'peter-sirka-linker-you-known', 'string.link(): ' + str);
-	assert.ok(str.link(11) === 'peter-sirka', 'string.link(): ' + str);
+	assert.ok(str.linker() === 'peter-sirka-linker-you-known', 'string.link(): ' + str);
+	assert.ok(str.linker(11) === 'peter-sirka', 'string.link(): ' + str);
 }
 
 function prototypeArray() {

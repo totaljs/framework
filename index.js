@@ -1832,11 +1832,18 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			}
 		}
 
+		name += ';' + fs.statSync(name).size;
+
 		self.temporary.path[key] = name;
 
 		if (self.config.debug)
 			delete self.temporary.path[key];
 	}
+
+	var index = name.lastIndexOf(';');
+	var size = name.substring(index + 1);
+
+	name = name.substring(0, index);
 
 	var accept = req.headers['accept-encoding'] || '';
 	var returnHeaders = {};
@@ -1860,15 +1867,19 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE.indexOf(returnHeaders[RESPONSE_HEADER_CONTENTTYPE]) !== -1;
 	var range = req.headers['range'] || '';
+	var supportsGzip = accept.lastIndexOf('gzip') !== -1;
 
 	res.success = true;
 
 	if (range.length > 0)
 		return self.responseRange(name, range, returnHeaders, req, res);
 
+	if (size !== '0' && !compress)
+		returnHeaders['Content-Length'] = size;
+
 	var stream;
 
-	if (compress && accept.lastIndexOf('gzip') !== -1) {
+	if (compress && supportsGzip) {
 
 		returnHeaders['Content-Encoding'] = 'gzip';
 		res.writeHead(200, returnHeaders);

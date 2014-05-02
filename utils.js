@@ -1700,7 +1700,7 @@ String.prototype.dollar = function() {
 	@max {Number} :: optional default 60 chars
 	return {String}
 */
-String.prototype.link = function(max) {
+String.prototype.linker = function(max) {
 	max = max || 60;
 
 	var self = this.trim().toLowerCase().removeDiacritics();
@@ -1736,6 +1736,11 @@ String.prototype.link = function(max) {
 	}
 
 	return builder;
+};
+
+String.prototype.link = function(max) {
+	console.log('String.prototype.link: OBSOLETE - Use String.prototype.Linker()');
+	return this.linker(max);
 };
 
 String.prototype.pluralize = function(zero, one, few, other) {
