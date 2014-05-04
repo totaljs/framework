@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.4.0
+======= 1.4.0
 
 - added: new global methods: INCLUDE() - framework.source(), SOURCE() - framework.source(), MODEL(name) -> framework.model(), MODULE(name) -> framework.module(), DATABASE() -> framework.database()
 - added: unauthorize flag
