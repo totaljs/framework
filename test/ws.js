@@ -80,8 +80,6 @@ TwitterOAuth.prototype.request = function(method, url, params, callback, redirec
     oauth['oauth_signature'] = self.signature(method, url, params);
     headers['Authorization'] = 'OAuth ' + self.create(oauth);
 
-    console.log(data);
-
     utils.request(url, method, data, function(err, data) {
         callback(err, JSON.parse(data));
     }, headers);
@@ -89,6 +87,12 @@ TwitterOAuth.prototype.request = function(method, url, params, callback, redirec
 
 var twitter = new TwitterOAuth('Kz3IivBlfIDVrQNC1gqRmvN6r', 'RyOLxTPZc3heMT6T0FU6TGvx1VkzhBwVdchMwENPyL2W4AT6gH', '15876887-ndkuDgi6pqUpVXhqqAPeiTLpWelDKhzm6Q7pZ44l0', '8Fc9pdsnjaWQiXEBVyBaR6B5s2Cl9xGM6yG9jLCnPMHW9');
 
-twitter.request('GET', 'https://api.twitter.com/1.1/search/tweets.json', { q: '@totalframework' }, function(err, data) {
+/*
+twitter.request('GET', 'https://api.twitter.com/1.1/search/tweets.json', { q: '#nodejs', count: 4 }, function(err, data) {
+    console.log(data);
+});
+*/
+
+twitter.request('POST', 'https://api.twitter.com/1.1/statuses/update.json', { status: 'Test tweet.', trim_user: 'true', include_entities: 'true' }, function(err, data) {
     console.log(data);
 });
