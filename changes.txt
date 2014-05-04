@@ -20,6 +20,7 @@ IN DEVELOPMENT ======= 1.4.0
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/font-awesome
 - EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/websocket
 - EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/angularjs-websocket
+- EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/config-debug-release
 
 - MODULES (NEW): https://github.com/totaljs/modules/tree/master/twitter
 
