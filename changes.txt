@@ -4,8 +4,8 @@ IN DEVELOPMENT ======= 1.4.1 (HOTFIX)
 - added: request.noCache()
 - added: response.noCache()
 
-- updated: framework.isProcessed()
-- updated: framework.isProcessing()
+- updated: framework.isProcessed(filename or request)
+- updated: framework.isProcessing(filename or request)
 
 - fixed: framework.isProcessed()
 
