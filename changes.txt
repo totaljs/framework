@@ -1,3 +1,14 @@
+IN DEVELOPMENT ======= 1.4.1 (HOTFIX)
+
+- added: framework.noCache(req, [res])
+- added: request.noCache()
+- added: response.noCache()
+
+- updated: framework.isProcessed()
+- updated: framework.isProcessing()
+
+- fixed: framework.isProcessed()
+
 ======= 1.4.0
 
 - added: new global methods: INCLUDE() - framework.source(), SOURCE() - framework.source(), MODEL(name) -> framework.model(), MODULE(name) -> framework.module(), DATABASE() -> framework.database()
