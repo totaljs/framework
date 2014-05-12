@@ -1,5 +1,6 @@
-IN DEVELOPMENT ======= 1.4.1 (HOTFIX)
+IN DEVELOPMENT ======= 1.5.0
 
+- added: TOTAL.JS PACKAGE MANAGER (new binary: tpm === [t]otal.js [p]ackage [m]anager)
 - added: framework.noCache(req, [res])
 - added: request.noCache()
 - added: response.noCache()

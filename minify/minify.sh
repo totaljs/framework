@@ -15,8 +15,13 @@ ECHO "....... nosql.js"
 uglifyjs nosql.js -o minify/total.js/nosql.js
 ECHO "....... utils.js"
 uglifyjs utils.js -o minify/total.js/utils.js
-ECHO "....... binary"
+ECHO "....... binary - total"
 uglifyjs bin/total -o minify/total.js/bin/total
+ECHO "....... binary - tpm"
+uglifyjs bin/tpm -o minify/total.js/bin/tpm
+
+chmod 777 minify/total.js/bin/total
+chmod 777 minify/total.js/bin/tpm
 
 cp readme.md minify/total.js/readme.md
 cp package.json minify/total.js/package.json

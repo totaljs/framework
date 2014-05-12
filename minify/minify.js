@@ -14,3 +14,6 @@ fs.readdirSync(dir).forEach(function(name) {
 */
 var binary = path.join(dir, 'bin', 'total');
 fs.writeFileSync(binary, '#!/usr/bin/env node\n\n' + license + fs.readFileSync(binary, 'utf8'), 'utf8');
+
+binary = path.join(dir, 'bin', 'tpm');
+fs.writeFileSync(binary, '#!/usr/bin/env node\n\n' + license + fs.readFileSync(binary, 'utf8'), 'utf8');

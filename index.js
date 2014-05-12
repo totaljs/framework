@@ -62,8 +62,8 @@ if (typeof(setImmediate) === UNDEFINED) {
 function Framework() {
 
     this.id = null;
-    this.version = 1410;
-    this.version_header = '1.4.1';
+    this.version = 1500;
+    this.version_header = '1.5.0';
 
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
@@ -111,7 +111,7 @@ function Framework() {
         'static-url-video': '/video/',
         'static-url-font': '/font/',
         'static-url-download': '/download/',
-        'static-accepts': ['.jpg', '.png', '.gif', '.ico', EXTENSION_JS, EXTENSION_COFFEE, '.css', '.txt', '.xml', '.woff', '.otf', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache', '.map', '.ogg', '.mp4', '.mp3', '.webp', '.swf'],
+        'static-accepts': ['.jpg', '.png', '.gif', '.ico', EXTENSION_JS, EXTENSION_COFFEE, '.css', '.txt', '.xml', '.woff', '.otf', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache', '.map', '.ogg', '.mp4', '.mp3', '.webp', '.swf', '.package'],
 
         // 'static-accepts-custom': [],
 
