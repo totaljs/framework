@@ -52,6 +52,7 @@ __Social networks__:
 - [Follow total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
 - [Follow total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
 - [Follow total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
+- [Follow total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
 __Examples__:
 
