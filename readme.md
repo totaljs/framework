@@ -206,11 +206,8 @@ $ cd mywebsite
 $ total
 ```
 ```
-$ node debugging
+$ node debug.js
 
-# OR
-
-$ node index 8080
 ```
 ```
 $ open http://127.0.0.1:8000
