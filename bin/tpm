@@ -1,6 +1,7 @@
 'use strict';
 
 var VERSION = 'v1.5.0';
+
 var fs = require('fs');
 var ph = require('path');
 var parser = require('url');
@@ -13,6 +14,7 @@ var os = require('os');
 var EOF = os.platform() === 'win32' ? '\r\n' : '\n';
 var $type = 0;
 var settings = {};
+var colors = { reset: '\x1b[0m', underscore: '\x1b[4m', dim: '\x1b[2m', reverse: '\x1b[7m', white: '\x1b[37m', red: '\x1b[31m', bgRed: '\x1b[41m', bgGreen: '\x1b[42m' };
 
 var current_repository = 'default';
 var current_package = '';
@@ -429,7 +431,7 @@ function download(url, callback) {
     var h = {};
     var encoding = 'utf8';
 
-    h['X-Powered-By'] = 'total.js';
+    h['X-Powered-By'] = 'total.js package manager';
 
     var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
@@ -462,48 +464,48 @@ function download(url, callback) {
 }
 
 function display_help() {
-    log('\x1b[0m');
+    log(colors.reset);
     log('====== Total.js Package Manager ' + VERSION +' ======');
     log('');
     log('Documentation: http://docs.totaljs.com/total-package-manager/');
     log('');
-    log('\x1b[4mInstall package to the current path\x1b[0m');
+    log(colors.underscore + '===== INSTALL PACKAGE TO THE CURRENT PATH' + colors.reset);
     log('');
-    log('\x1b[31mtpm install [optional: package_name] [optional: repository_name]\x1b[0m');
+    log(colors.red + 'tpm install [optional: package_name] [optional: repository_name]' + colors.reset);
     log('');
     log('EXAMPLE: tpm install ddos');
     log('EXAMPLE: tpm install ddos local-repository');
     log('');
-    log('\x1b[2mInstall all total.js packages from package.json:\x1b[0m');
+    log(colors.dim + 'Install all total.js packages from package.json:' + colors.reset);
     log('EXAMPLE: tpm install');
     log('');
-    log('\x1b[4mUninstall package from the current path\x1b[0m');
+    log(colors.underscore + '===== UNINSTALL PACKAGE FROM THE CURRENT PATH' + colors.reset);
     log('');
-    log('\x1b[31mtpm uninstall [optional: package_name] [optional: repository_name]\x1b[0m');
+    log(colors.red + 'tpm uninstall [optional: package_name] [optional: repository_name]' + colors.reset);
     log('');
     log('EXAMPLE: tpm uninstall ddos');
     log('EXAMPLE: tpm uninstall ddos local-repository');
     log('');
-    log('\x1b[2mUninstall all total.js packages from package.json:\x1b[0m');
+    log(colors.dim + 'Uninstall all total.js packages from package.json:' + colors.reset);
     log('EXAMPLE: tpm uninstall');
     log('');
-    log('\x1b[4mCreate package from the current path create\x1b[0m');
+    log(colors.underscore + '===== CREATE PACKAGE FROM THE CURRENT PATH CREATE' + colors.reset);
     log('');
-    log('\x1b[31mtpm create [important: package_name]\x1b[0m');
+    log(colors.red + 'tpm create [important: package_name]' + colors.reset);
     log('');
     log('EXAMPLE: tpm create my-project-template');
     log('EXAMPLE: tpm create my-module');
     log('');
-    log('\x1b[4mAdd a new package repository\x1b[0m');
+    log(colors.underscore + '===== ADD A NEW PACKAGE REPOSITORY' + colors.reset);
     log('');
-    log('\x1b[31mtpm repository [repository_name] [repository_url]\x1b[0m');
+    log(colors.red + 'tpm repository [repository_name] [repository_url]' + colors.reset);
     log('');
     log('EXAMPLE: tpm repository local http://127.0.0.1:8000/');
     log('EXAMPLE: tpm repository enterprise http://repository.yourcompany.com/packages/totaljs/');
     log('');
-    log('\x1b[4mShow all registered repositories\x1b[0m');
+    log(colors.underscore + '===== SHOW ALL REGISTERED REPOSITORIES' + colors.reset);
     log('');
-    log('\x1b[31mtpm repositories\x1b[0m');
+    log(colors.red + 'tpm repositories' + colors.reset);
     log('');
 }
 
@@ -546,7 +548,7 @@ function install(repository, pkgname, cb, append) {
         name += '.package';
 
     log('');
-    log('\x1b[31m--- INSTALL PACKAGE --\x1b[0m');
+    log(colors.red + '--- INSTALL PACKAGE --' + colors.reset);
     log('');
     log('Package      :', pkgname);
     log('Directory    :', process.cwd());
@@ -556,7 +558,7 @@ function install(repository, pkgname, cb, append) {
 
         if (err) {
 
-            log('\x1b[41m\x1b[37mError        :', err + '\x1b[0m');
+            log(colors.bgRed + colors.white + 'Error        :', err + colors.reset);
 
             if (cb)
                 cb();
@@ -565,7 +567,7 @@ function install(repository, pkgname, cb, append) {
         }
 
         if (response.statusCode !== 200) {
-            log('\x1b[41m\x1b[37mError        :', response.statusCode + '\x1b[0m');
+            log(colors.bgRed + colors.white + 'Error        :', response.statusCode + colors.reset);
             log('');
 
             if (cb)
@@ -585,7 +587,7 @@ function install(repository, pkgname, cb, append) {
             backup.restore(filename, ph.dirname(filename), function() {
                 log('Removing     :', filename);
                 fs.unlinkSync(filename);
-                log('\x1b[42m\x1b[37mStatus       :', 'Success\x1b[0m');
+                log(colors.bgGreen + colors.white + 'Status       :', 'Success' + colors.reset);
                 log('');
                 if (append) {
                     filename = ph.join(process.cwd(), 'package.json');
@@ -624,7 +626,7 @@ function uninstall(repository, pkgname, cb, remove) {
         name += '.package';
 
     log('');
-    log('\x1b[31m--- UNINSTALL PACKAGE --\x1b[0m');
+    log(colors.red + '--- UNINSTALL PACKAGE --' + colors.reset);
     log('');
     log('Package      :', pkgname);
     log('Directory    :', process.cwd());
@@ -634,7 +636,7 @@ function uninstall(repository, pkgname, cb, remove) {
 
         if (err) {
 
-            log('\x1b[41m\x1b[37mError        :', err + '\x1b[0m');
+            log(colors.bgRed + colors.white + 'Error        :', err + colors.reset);
 
             if (cb)
                 cb();
@@ -643,7 +645,7 @@ function uninstall(repository, pkgname, cb, remove) {
         }
 
         if (response.statusCode !== 200) {
-            log('\x1b[41m\x1b[37mError        :', response.statusCode + '\x1b[0m');
+            log(colors.bgRed + colors.white + 'Error        :', response.statusCode + colors.reset);
             log('');
 
             if (cb)
@@ -681,7 +683,7 @@ function uninstall(repository, pkgname, cb, remove) {
 
                 log('Removing     :', filename);
                 fs.unlinkSync(filename);
-                log('\x1b[42m\x1b[37mStatus       :', 'Success\x1b[0m');
+                log(colors.bgGreen + colors.white + 'Status       :', 'Success' + colors.reset);
                 log('');
 
                 if (remove) {
@@ -806,6 +808,11 @@ function main() {
         if (cmd === 'repositories') {
             display_repositories();
             return;
+        }
+
+        if (cmd === 'packages' || cmd === 'list') {
+            $type = 5;
+            continue;
         }
 
         if (cmd === '-h' || cmd === '-help' || cmd === '--help' || cmd === 'help') {
