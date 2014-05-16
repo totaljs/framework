@@ -32,6 +32,7 @@ var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var CONTENTTYPE_TEXTHTML = 'text/html';
 var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', CONTENTTYPE_TEXTHTML];
 var _controller = '';
+var _test = '';
 
 global.Builders = global.builders = require('./builders');
 var utils = global.Utils = global.utils = require('./utils');
@@ -3508,58 +3509,116 @@ Framework.prototype.source = function(name) {
     return source;
 };
 
-/*
-    A test request into the controller
-
-    @name {String}
-    @url {String}
-    @callback {Functions} :: function(error, data, statusCode, headers);
-    @method {String} :: default GET
-    @data {String} :: default empty string
-    @headers {Object} :: optional
-    @xhr {Boolean} :: optional
-
-    return {Framework}
-*/
-Framework.prototype.assert = function(name, url, callback, method, data, headers, xhr) {
+/**
+ * Add a test function or test request
+ * @param  {String}            name     Test name.
+ * @param  {Url or Function}   url      Url or Callback function(next, name) {}.
+ * @param  {Array}             flags    Routed flags (GET, POST, PUT, XHR, JSON ...).
+ * @param  {Function}          callback Callback.
+ * @param  {Object or String}  data     Request data.
+ * @param  {Object}            cookies  Request cookies.
+ * @param  {Object}            headers  Additional headers.
+ * @return {Framework}
+ */
+Framework.prototype.assert = function(name, url, flags, callback, data, cookies, headers) {
 
     var self = this;
 
     if (typeof(url) === FUNCTION) {
-        url.call(self, name);
-        return;
+        self.tests[_test + ': ' + name] = {
+            run: url
+        };
+        return self;
     }
 
-    if (typeof(headers) === BOOLEAN) {
-        xhr = headers;
-        headers = {};
+    var method = 'GET';
+    var length = 0;
+    var isJSON = false;
+
+    headers = utils.extend({}, headers || {});
+
+    if (flags instanceof Array) {
+        length = flags.length;
+        for (var i = 0; i < length; i++) {
+
+            switch (flags[i].toLowerCase()) {
+
+                case 'authorize':
+                case 'unauthorize':
+                    break;
+
+                case 'xhr':
+                    headers['X-Requested-With'] = 'XMLHttpRequest';
+                    break;
+
+                case 'json':
+                    headers['Content-Type'] = 'application/json';
+                    isJSON = true;
+                    break;
+
+                case 'get':
+                case 'delete':
+                case 'options':
+                    method = flags[i].toUpperCase();
+                    break;
+
+                case 'upload':
+                    headers['Content-Type'] = 'multipart/form-data';
+                    break;
+
+                case 'post':
+                case 'put':
+
+                    method = flags[i].toUpperCase();
+
+                    if (!headers['Content-Type'])
+                        headers['Content-Type'] = 'application/x-www-form-urlencoded';
+
+                    break;
+            }
+        }
     }
+
+    headers['X-Assertion-Testing'] = '1';
+
+    if (cookies) {
+        var builder = [];
+        var keys = Object.keys(cookies);
+
+        length = keys.length;
+
+        for (var i = 0; i < length; i++)
+            builder.push(keys[i] + '=' + encodeURIComponent(cookies[keys[i]]));
+
+        if (builder.length > 0)
+            headers['Cookie'] = builder.join('; ');
+    }
+
+    if (typeof(data) !== STRING)
+        data = isJSON ? JSON.stringify(data) : qs.stringify(data);
+
+    if (data && data.length > 0)
+        headers['Content-Length'] = data.length;
 
     var obj = {
         url: url,
         callback: callback,
-        method: method || 'GET',
-        data: data,
-        headers: headers || {}
+        method: method,
+        data: data || '',
+        headers: headers
     };
 
-    if (xhr)
-        obj.headers['X-Requested-With'] = 'XMLHttpRequest';
-
-    obj.headers['x-assertion-testing'] = '1';
-    self.tests[name] = obj;
-
+    self.tests[_test + ': ' + name] = obj;
     return self;
 };
 
-/*
-    Internal test function for assertion testing
-
-    @stop {Boolean} :: stop framework (default true)
-    @callback {Functions} :: on complete test handler
-
-    return {Framework}
-*/
+/**
+ * Test in progress
+ * @private
+ * @param  {Boolean}   stop     Stop application.
+ * @param  {Function}  callback Callback.
+ * @return {Framework}
+ */
 Framework.prototype.testing = function(stop, callback) {
 
     if (typeof(stop) === UNDEFINED)
@@ -3581,26 +3640,86 @@ Framework.prototype.testing = function(stop, callback) {
 
     var key = keys[0];
     var test = self.tests[key];
+    var caption = 'TEST ----------- ' + key;
 
     delete self.tests[key];
 
-    var cb = function(error, data, code, headers) {
+    if (test.run) {
+
+        console.log(caption);
+
         try
         {
-            test.callback.call(self, error, data, key, code, headers);
-        } catch (ex) {
-
+            test.run.call(self, function() {
+                self.testing(stop, callback);
+            }, key);
+        } catch (e) {
             setTimeout(function() {
                 self.stop();
             }, 500);
-
-            throw ex;
+            throw e;
         }
-        self.testing(stop, callback);
+        return self;
+    }
+
+    var response = function(res) {
+
+        res._buffer = '';
+
+        res.on('data', function(chunk) {
+            this._buffer += chunk.toString(ENCODING);
+        });
+
+        res.on('end', function() {
+
+            var cookie = res.headers['cookie'] || '';
+            var cookies = {};
+
+            if (cookie.length !== 0) {
+
+                var arr = cookie.split(';');
+                var length = arr.length;
+
+                for (var i = 0; i < length; i++) {
+                    var c = arr[i].trim().split('=');
+                    cookies[c.shift()] = unescape(c.join('='));
+                }
+            }
+
+            try
+            {
+                test.callback(null, res._buffer, res.statusCode, res.headers, cookies, key);
+                self.testing(stop, callback);
+            } catch (e) {
+                setTimeout(function() {
+                    self.stop();
+                }, 500);
+                throw e;
+            }
+        });
+
+        res.resume();
     };
 
-    var url = (test.url.indexOf('http://') > 0 || test.url.indexOf('https://') > 0 ? '' : 'http://' + self.ip + ':' + self.port) + test.url;
-    utils.request(url, test.method, test.data, cb, test.headers);
+    var options = parser.parse((test.url.indexOf('http://') > 0 || test.url.indexOf('https://') > 0 ? '' : 'http://' + self.ip + ':' + self.port) + test.url);
+    var con = options.protocol === 'https:' ? https : http;
+    var req = test.method === 'POST' || test.method === 'PUT' ? con.request(options, response) : con.get(options, response);
+
+    req.on('error', function(error) {
+
+        setTimeout(function() {
+            self.stop();
+        }, 500);
+
+        throw error;
+    });
+
+    console.log(caption);
+
+    if (test.data.length > 0)
+        req.end(test.data, ENCODING);
+    else
+        req.end();
 
     return self;
 };
@@ -3653,6 +3772,8 @@ Framework.prototype.test = function(stop, names, cb) {
             var isInit = typeof(test.init) !== UNDEFINED;
             var isLoad = typeof(test.load) !== UNDEFINED;
 
+            _test = name;
+
             if (isRun)
                 test.run(self, name);
             else if (isInstall)
@@ -3669,6 +3790,8 @@ Framework.prototype.test = function(stop, names, cb) {
             throw ex;
         }
     });
+
+    _test = '';
 
     if (counter === 0) {
         if (cb) cb();
@@ -3925,15 +4048,23 @@ Framework.prototype.configure = function(arr, rewrite) {
     }
 
     if (type === UNDEFINED) {
-        var filename = utils.combine('/', 'config-' + (self.config.debug ? 'debug' : 'release'));
 
-        if (!fs.existsSync(filename))
-            return self;
+        var filenameA = utils.combine('/', 'config');
+        var filenameB = utils.combine('/', 'config-' + (self.config.debug ? 'debug' : 'release'));
 
-        arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
+        arr = [];
+
+        if (fs.existsSync(filenameA))
+            arr = arr.concat(fs.readFileSync(filenameA).toString(ENCODING).split('\n'));
+
+        if (fs.existsSync(filenameB))
+            arr = arr.concat(fs.readFileSync(filenameB).toString(ENCODING).split('\n'));
     }
 
     if (!arr instanceof Array)
+        return self;
+
+    if (arr.length === 0)
         return self;
 
     if (typeof(rewrite) === UNDEFINED)
@@ -10076,7 +10207,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
 
     for (var i = 0; i < length; i++) {
         var c = arr[i].trim().split('=');
-        self.cookies[c[0]] = c[1];
+        self.cookies[c.shift()] = c.join('=');
     }
 
     return decodeURIComponent(self.cookies[name] || '');
