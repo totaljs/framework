@@ -12,6 +12,7 @@ IN DEVELOPMENT ======= 1.5.0
 - updated: assertion testing (new features)
 - updated: framework.isProcessed(filename or request)
 - updated: framework.isProcessing(filename or request)
+- updated: binary (some changes and improvements)
 
 - fixed: framework.isProcessed()
 - fixed: binary (test.js in empty-project)

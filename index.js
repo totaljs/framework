@@ -118,8 +118,8 @@ function Framework() {
 
         'default-layout': '_layout',
 
-        'angular-version': '1.2.15',
-        'angular-i18n-version': '1.2.10',
+        'angular-version': '1.2.16',
+        'angular-i18n-version': '1.2.15',
 
         // default maximum request size / length
         // default 5 kB

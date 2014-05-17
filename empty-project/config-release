@@ -1,7 +1,5 @@
 default-ip                      : 127.0.0.1
 default-port                    : 8000
 
-name							: total.js
-version							: 1.01
-secret							: secret-key-for-web
-author							: You company name
+version                         : 1.01
+secret                          : secret-key-for-web
