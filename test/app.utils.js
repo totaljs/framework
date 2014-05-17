@@ -39,6 +39,16 @@ function prototypeString() {
 	assert.ok('<b>total.js</b>"&nbsp;'.encode() === '&lt;b&gt;total.js&lt;/b&gt;&quot;&amp;nbsp;', 'string.encode()');
 	assert.ok('&lt;b&gt;total.js&lt;/b&gt;&amp;nbsp;'.decode() === '<b>total.js</b>&nbsp;', 'string.decode()');
 
+	str = 'Great function.'
+
+	assert.ok(str.startsWith('Great'), 'string.startsWith()');
+	assert.ok(str.startsWith('GrEAT', true), 'string.startsWith(ignoreCase)');
+	assert.ok(str.startsWith('asdljkaslkdj aslkdjalsdjlasdjlkasdjlasjdlaj') === false, 'string.startsWith() - large string');
+
+	assert.ok(str.endsWith('ion.'), 'string.endsWith()');
+	assert.ok(str.endsWith('ION.', true), 'string.endsWith(ignoreCase)');
+	assert.ok(str.endsWith('asdljkaslkdj aslkdjalsdjlasdjlkasdjlasjdlaj') === false, 'string.endsWith() - large string');
+
 	str = 'abcdefgh ijklmnop';
 	assert.ok(str.max(5, '---') === 'ab---', 'string.maxLength(5, "---")');
 	assert.ok(str.max(5) === 'ab...', 'string.maxLength(5)');

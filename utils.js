@@ -13,6 +13,8 @@ var sys = require('sys');
 
 var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
+var regexpTRIM = /^[\s]+|[\s]+$/g;
+
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
 var STRING = 'string';
@@ -24,937 +26,947 @@ var NEWLINE = '\r\n';
 var VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version_header : '');
 
 var contentTypes = {
-	'ai': 'application/postscript',
-	'appcache': 'text/cache-manifest',
-	'avi': 'video/avi',
-	'aac': 'audio/aac',
-	'bin': 'application/octet-stream',
-	'bmp': 'image/bmp',
-	'coffee': 'text/coffeescript',
-	'css': 'text/css',
-	'less': 'text/css',
-	'sass': 'text/css',
-	'scss': 'text/css',
-	'csv': 'text/csv',
-	'doc': 'application/msword',
-	'docx': 'application/msword',
-	'dtd': 'application/xml-dtd',
-	'eps': 'application/postscript',
-	'exe': 'application/octet-stream',
-	'gif': 'image/gif',
-	'gzip': 'application/x-gzip',
-	'htm': 'text/html',
-	'html': 'text/html',
-	'ico': 'image/x-icon',
-	'ics': 'text/calendar',
-	'ifb': 'text/calendar',
-	'jpe': 'image/jpeg',
-	'jpeg': 'image/jpeg',
-	'jpg': 'image/jpeg',
-	'js': 'text/javascript',
-	'geojson': 'application/json',
-	'json': 'application/json',
-	'm4a': 'audio/mp4a-latm',
-	'm4v': 'video/x-m4v',
-	'md': 'text/markdown',
-	'mid': 'audio/midi',
-	'midi': 'audio/midi',
-	'mov': 'video/quicktime',
-	'mp3': 'audio/mpeg',
-	'mp4': 'video/mp4',
-	'mpe': 'video/mpeg',
-	'mpeg': 'video/mpeg',
-	'mpg': 'video/mpeg',
-	'mpga': 'audio/mpeg',
-	'mv4': 'video/mv4',
-	'mtl': 'text/plain',
-	'obj': 'text/plain',
-	'ogg': 'application/ogg',
-	'pdf': 'application/pdf',
-	'png': 'image/png',
-	'ppt': 'application/vnd.ms-powerpoint',
-	'pptx': 'application/vnd.ms-powerpoint',
-	'ps': 'application/postscript',
-	'rar': 'application/x-rar-compressed',
-	'rtf': 'text/rtf',
-	'sh': 'application/x-sh',
-	'svg': 'image/svg+xml',
-	'swf': 'application/x-shockwave-flash',
-	'stl': 'application/sla',
-	'tar': 'application/x-tar',
-	'tif': 'image/tiff',
-	'tiff': 'image/tiff',
-	'txt': 'text/plain',
-	'wav': 'audio/x-wav',
-	'webp': 'image/webp',
-	'woff': 'font/woff',
-	'xht': 'application/xhtml+xml',
-	'xhtml': 'application/xhtml+xml',
-	'xls': 'application/vnd.ms-excel',
-	'xlsx': 'application/vnd.ms-excel',
-	'xml': 'application/xml',
-	'xpm': 'image/x-xpixmap',
-	'xsl': 'application/xml',
-	'xslt': 'application/xslt+xml',
-	'zip': 'application/zip'
+    'aac': 'audio/aac',
+    'ai': 'application/postscript',
+    'appcache': 'text/cache-manifest',
+    'avi': 'video/avi',
+    'bin': 'application/octet-stream',
+    'bmp': 'image/bmp',
+    'coffee': 'text/coffeescript',
+    'css': 'text/css',
+    'csv': 'text/csv',
+    'doc': 'application/msword',
+    'docx': 'application/msword',
+    'dtd': 'application/xml-dtd',
+    'eps': 'application/postscript',
+    'exe': 'application/octet-stream',
+    'geojson': 'application/json',
+    'gif': 'image/gif',
+    'gzip': 'application/x-gzip',
+    'htm': 'text/html',
+    'html': 'text/html',
+    'ico': 'image/x-icon',
+    'ics': 'text/calendar',
+    'ifb': 'text/calendar',
+    'jpe': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'jpg': 'image/jpeg',
+    'js': 'text/javascript',
+    'json': 'application/json',
+    'less': 'text/css',
+    'm4a': 'audio/mp4a-latm',
+    'm4v': 'video/x-m4v',
+    'md': 'text/markdown',
+    'mid': 'audio/midi',
+    'midi': 'audio/midi',
+    'mov': 'video/quicktime',
+    'mp3': 'audio/mpeg',
+    'mp4': 'video/mp4',
+    'mpe': 'video/mpeg',
+    'mpeg': 'video/mpeg',
+    'mpg': 'video/mpeg',
+    'mpga': 'audio/mpeg',
+    'mtl': 'text/plain',
+    'mv4': 'video/mv4',
+    'obj': 'text/plain',
+    'ogg': 'application/ogg',
+    'package': 'text/plain',
+    'pdf': 'application/pdf',
+    'png': 'image/png',
+    'ppt': 'application/vnd.ms-powerpoint',
+    'pptx': 'application/vnd.ms-powerpoint',
+    'ps': 'application/postscript',
+    'rar': 'application/x-rar-compressed',
+    'rtf': 'text/rtf',
+    'sass': 'text/css',
+    'scss': 'text/css',
+    'sh': 'application/x-sh',
+    'stl': 'application/sla',
+    'svg': 'image/svg+xml',
+    'swf': 'application/x-shockwave-flash',
+    'tar': 'application/x-tar',
+    'tif': 'image/tiff',
+    'tiff': 'image/tiff',
+    'txt': 'text/plain',
+    'wav': 'audio/x-wav',
+    'webp': 'image/webp',
+    'woff': 'font/woff',
+    'xht': 'application/xhtml+xml',
+    'xhtml': 'application/xhtml+xml',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.ms-excel',
+    'xml': 'application/xml',
+    'xpm': 'image/x-xpixmap',
+    'xsl': 'application/xml',
+    'xslt': 'application/xslt+xml',
+    'zip': 'application/zip'
 };
 
 if (typeof(setImmediate) === UNDEFINED) {
-	global.setImmediate = function(cb) {
-		process.nextTick(cb);
-	};
+    global.setImmediate = function(cb) {
+        process.nextTick(cb);
+    };
 }
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /*
-	Expression declaration
-	@query {String}
-	@params {String Array}
-	@values {Object Array}
-	return {Function}
+    Expression declaration
+    @query {String}
+    @params {String Array}
+    @values {Object Array}
+    return {Function}
 */
 function expression(query, params) {
 
-	var name = params.join(',');
-	var fn = expressionCache[query + '-' + name];
+    var name = params.join(',');
+    var fn = expressionCache[query + '-' + name];
 
-	if (!fn) {
-		fn = eval('(function(' + name +'){' + (query.indexOf('return') === -1 ? 'return ' : '') + query + '})');
-		expressionCache[query + name] = fn;
-	}
+    if (!fn) {
+        fn = eval('(function(' + name +'){' + (query.indexOf('return') === -1 ? 'return ' : '') + query + '})');
+        expressionCache[query + name] = fn;
+    }
 
-	var values = [];
+    var values = [];
 
-	for (var i = 2; i < arguments.length; i++)
-		values.push(arguments[i]);
+    for (var i = 2; i < arguments.length; i++)
+        values.push(arguments[i]);
 
-	return (function() {
-		var arr = [];
+    return (function() {
+        var arr = [];
 
-		for (var i = 0; i < arguments.length; i++)
-			arr.push(arguments[i]);
+        for (var i = 0; i < arguments.length; i++)
+            arr.push(arguments[i]);
 
-		for (var i = 0; i < values.length; i++)
-			arr.push(values[i]);
+        for (var i = 0; i < values.length; i++)
+            arr.push(values[i]);
 
-		return fn.apply(this, arr);
-	});
+        return fn.apply(this, arr);
+    });
 }
 
 global.expression = expression;
 
 
-/*
-	@obj {Object}
-*/
+/**
+ * Checks if is object empty
+ * @param  {Object}  obj
+ * @return {Boolean}
+ */
 exports.isEmpty = function(obj) {
 
-	if (obj === null)
-		return true;
+    if (obj === null)
+        return true;
 
-	if (obj.length && obj.length > 0)
-		return false;
+    if (obj.length && obj.length > 0)
+        return false;
 
-	if (obj.length === 0)
-		return true;
+    if (obj.length === 0)
+        return true;
 
-	for (var key in obj) {
-		if (hasOwnProperty.call(obj, key))
-		return false;
-	}
-	return true;
+    for (var key in obj) {
+        if (hasOwnProperty.call(obj, key))
+        return false;
+    }
+    return true;
 };
 
 /*
-	Send request to URL
-	@url {String}
-	@method {String}
-	@data {String}
-	@callback {Function} :: function(error, data, statusCode, headers)
-	@headers {Object} :: optional, default {}
-	@encoding {String} :: optional, default utf8
-	@timeout {Number} :: optional, default 10000
+    Send request to URL
+    @url {String}
+    @method {String}
+    @data {String}
+    @callback {Function} :: function(error, data, statusCode, headers)
+    @headers {Object} :: optional, default {}
+    @encoding {String} :: optional, default utf8
+    @timeout {Number} :: optional, default 10000
 */
 exports.request = function(url, method, data, callback, headers, encoding, timeout) {
 
-	var h = {};
-	var isJSON = typeof(data) === OBJECT;
+    var h = {};
+    var isJSON = typeof(data) === OBJECT;
 
-	encoding = encoding || ENCODING;
-	method = (method || '').toString().toUpperCase();
+    encoding = encoding || ENCODING;
+    method = (method || '').toString().toUpperCase();
 
-	if (method !== 'GET')
-		h['Content-Type'] = 'application/x-www-form-urlencoded';
-	else if (typeof(data) === STRING && data.length > 0)
-		url += (data[0] === '?' ? '' : '?') + data;
+    if (method !== 'GET')
+        h['Content-Type'] = 'application/x-www-form-urlencoded';
+    else if (typeof(data) === STRING && data.length > 0)
+        url += (data[0] === '?' ? '' : '?') + data;
 
-	var uri = urlParser.parse(url);
+    var uri = urlParser.parse(url);
 
-	if (isJSON)
-		h['Content-Type'] = 'application/json';
+    if (isJSON)
+        h['Content-Type'] = 'application/json';
 
-	if (headers)
-		util._extend(h, headers);
+    if (headers)
+        util._extend(h, headers);
 
-	h['X-Powered-By'] = 'total.js' + VERSION;
+    h['X-Powered-By'] = 'total.js' + VERSION;
 
-	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
+    var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
-	var response = function(res) {
+    var response = function(res) {
 
-		if (!callback) {
-			res.resume();
-			return;
-		}
+        if (!callback) {
+            res.resume();
+            return;
+        }
 
-		res._buffer = '';
+        res._buffer = '';
 
-		res.on('data', function(chunk) {
-			this._buffer += chunk.toString(encoding);
-		});
+        res.on('data', function(chunk) {
+            this._buffer += chunk.toString(encoding);
+        });
 
-		res.on('end', function() {
-			var self = this;
-			callback(null, self._buffer, self.statusCode, self.headers);
-		});
+        res.on('end', function() {
+            var self = this;
+            callback(null, self._buffer, self.statusCode, self.headers);
+        });
 
-		res.resume();
-	};
+        res.resume();
+    };
 
-	var con = options.protocol === 'https:' ? https : http;
-	var isPOST = method === 'POST' || method === 'PUT';
-	var value = isPOST ? isJSON ? JSON.stringify(data) : (data || '').toString() : '';
+    var con = options.protocol === 'https:' ? https : http;
+    var isPOST = method === 'POST' || method === 'PUT';
+    var value = isPOST ? isJSON ? JSON.stringify(data) : (data || '').toString() : '';
 
-	if (isPOST)
-		options.headers['Content-Length'] = value.length;
+    if (isPOST)
+        options.headers['Content-Length'] = value.length;
 
-	try
-	{
-		var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
+    try
+    {
+        var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
 
-		if (callback) {
-			req.on('error', function(error) {
-				callback(error, null, 0, {});
-			});
+        if (callback) {
+            req.on('error', function(error) {
+                callback(error, null, 0, {});
+            });
 
-			req.setTimeout(timeout || 10000, function() {
-				callback(new Error(exports.httpStatus(408)), null, 0, {});
-			});
-		}
+            req.setTimeout(timeout || 10000, function() {
+                callback(new Error(exports.httpStatus(408)), null, 0, {});
+            });
+        }
 
-		if (isPOST)
-			req.end(value, encoding);
-		else
-			req.end();
+        if (isPOST)
+            req.end(value, encoding);
+        else
+            req.end();
 
-	} catch (ex) {
-		if (callback)
-			callback(ex, null, 0, {});
-		return false;
-	}
+    } catch (ex) {
+        if (callback)
+            callback(ex, null, 0, {});
+        return false;
+    }
 
-	return true;
+    return true;
 };
 
 /*
-	Download content from URL
-	@url {String}
-	@callback {Function} :: optional, params: @err {Error}, @response {Response}
-	@headers {Object} :: optional, additional headers
-	@method {String} :: optional, default POST,
-	@params {String} :: optional custom params (for POST or PUT method)
-	@encoding {String} :: optional, default utf8
+    Download content from URL
+    @url {String}
+    @callback {Function} :: optional, params: @err {Error}, @response {Response}
+    @headers {Object} :: optional, additional headers
+    @method {String} :: optional, default POST,
+    @params {String} :: optional custom params (for POST or PUT method)
+    @encoding {String} :: optional, default utf8
 */
 exports.download = function(url, callback, headers, method, params, encoding) {
 
-	var uri = urlParser.parse(url);
-	var h = {};
+    var uri = urlParser.parse(url);
+    var h = {};
 
-	method = (method || '').toString().toUpperCase();
-	encoding = encoding || ENCODING;
+    method = (method || '').toString().toUpperCase();
+    encoding = encoding || ENCODING;
 
-	util._extend(h, headers);
-	h['X-Powered-By'] = 'total.js' + VERSION;
-	var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
+    util._extend(h, headers);
+    h['X-Powered-By'] = 'total.js' + VERSION;
+    var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
-	var response = function(res) {
-		callback(null, res);
-	};
+    var response = function(res) {
+        callback(null, res);
+    };
 
-	var con = options.protocol === 'https:' ? https : http;
+    var con = options.protocol === 'https:' ? https : http;
 
-	try
-	{
+    try
+    {
 
-		var isPOST = method === 'POST' || method === 'PUT';
-		var value = isPOST ? (params || '').toString() : '';
+        var isPOST = method === 'POST' || method === 'PUT';
+        var value = isPOST ? (params || '').toString() : '';
 
-		if (isPOST)
-			options.headers['Content-Length'] = value.length;
+        if (isPOST)
+            options.headers['Content-Length'] = value.length;
 
-		var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
+        var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
 
-		if (callback) {
-			req.on('error', function(error) {
-				callback(error, null);
-			});
-		}
+        if (callback) {
+            req.on('error', function(error) {
+                callback(error, null);
+            });
+        }
 
-		if (isPOST)
-			req.end(value, ENCODING);
-		else
-			req.end();
+        if (isPOST)
+            req.end(value, ENCODING);
+        else
+            req.end();
 
-	} catch (ex) {
-		if (callback)
-			callback(ex, null);
-		return false;
-	}
+    } catch (ex) {
+        if (callback)
+            callback(ex, null);
+        return false;
+    }
 
-	return true;
+    return true;
 };
 
 /*
-	Send a stream through HTTP
-	@name {String} :: filename with extension
-	@stream {ReadableStream or String (filename)}
-	@url {String}
-	@callback {Function} :: optional, params: @err {Error}, @response {String}
-	@headers {Object} :: optional, additional headers
-	@method {String} :: optional, default POST
+    Send a stream through HTTP
+    @name {String} :: filename with extension
+    @stream {ReadableStream or String (filename)}
+    @url {String}
+    @callback {Function} :: optional, params: @err {Error}, @response {String}
+    @headers {Object} :: optional, additional headers
+    @method {String} :: optional, default POST
 */
 exports.send = function(name, stream, url, callback, headers, method) {
 
-	var self = this;
+    var self = this;
 
-	if (typeof(callback) === OBJECT) {
-		var tmp = headers;
-		callback = headers;
-		headers = tmp;
-	}
+    if (typeof(callback) === OBJECT) {
+        var tmp = headers;
+        callback = headers;
+        headers = tmp;
+    }
 
-	if (typeof(stream) === STRING)
-		stream = fs.createReadStream(stream, { flags: 'r' });
+    if (typeof(stream) === STRING)
+        stream = fs.createReadStream(stream, { flags: 'r' });
 
-	var BOUNDARY = '----' + Math.random().toString(16).substring(2);
-	var h = {};
+    var BOUNDARY = '----' + Math.random().toString(16).substring(2);
+    var h = {};
 
-	if (headers)
-		util._extend(h, headers);
+    if (headers)
+        util._extend(h, headers);
 
-	name = path.basename(name);
+    name = path.basename(name);
 
-	h['Cache-Control'] = 'max-age=0';
-	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
-	h['X-Powered-By'] = 'total.js' + VERSION;
+    h['Cache-Control'] = 'max-age=0';
+    h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
+    h['X-Powered-By'] = 'total.js' + VERSION;
 
-	var uri = urlParser.parse(url);
-	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
+    var uri = urlParser.parse(url);
+    var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
-	var response = function(res) {
+    var response = function(res) {
 
-		if (!callback)
-			return;
+        if (!callback)
+            return;
 
-		res.body = '';
-		res.on('data', function(chunk) {
-			this.body += chunk.toString(ENCODING);
-		});
+        res.body = '';
+        res.on('data', function(chunk) {
+            this.body += chunk.toString(ENCODING);
+        });
 
-		res.on('end', function() {
-			callback(null, res.body);
-		});
+        res.on('end', function() {
+            callback(null, res.body);
+        });
 
-	};
+    };
 
-	var connection = options.protocol === 'https:' ? https : http;
-	var req = connection.request(options, response);
+    var connection = options.protocol === 'https:' ? https : http;
+    var req = connection.request(options, response);
 
-	if (callback) {
-		req.on('error', function(err) {
-			callback(err, null);
-		});
-	}
+    if (callback) {
+        req.on('error', function(err) {
+            callback(err, null);
+        });
+    }
 
-	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + utils.getContentType(path.extname(name)) + NEWLINE + NEWLINE;
-	req.write(header);
+    var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + utils.getContentType(path.extname(name)) + NEWLINE + NEWLINE;
+    req.write(header);
 
-	stream.on('end', function() {
-		req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
-	});
+    stream.on('end', function() {
+        req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
+    });
 
-	stream.pipe(req, { end: false });
+    stream.pipe(req, { end: false });
 
-	return self;
+    return self;
 };
 
 /*
-	TRIM string properties
-	@obj {Object}
-	return {Object}
+    TRIM string properties
+    @obj {Object}
+    return {Object}
 */
 exports.trim = function(obj) {
 
-	var type = typeof(obj);
+    var type = typeof(obj);
 
-	if (type === STRING)
-		return obj.trim();
+    if (type === STRING)
+        return obj.trim();
 
-	if (type !== OBJECT)
-		return obj;
+    if (type !== OBJECT)
+        return obj;
 
-	Object.keys(obj).forEach(function(name) {
-		var val = obj[name];
+    Object.keys(obj).forEach(function(name) {
+        var val = obj[name];
 
-		if (typeof(val) === OBJECT) {
-			exports.trim(val);
-			return;
-		}
+        if (typeof(val) === OBJECT) {
+            exports.trim(val);
+            return;
+        }
 
-		if (typeof(val) !== STRING)
-			return;
+        if (typeof(val) !== STRING)
+            return;
 
-		obj[name] = val.trim();
-	});
+        obj[name] = val.trim();
+    });
 
-	return obj;
+    return obj;
 };
 
 /*
-	Empty function
+    Empty function
 */
 exports.noop = function() {};
 global.noop = function() {};
 
 /*
-	Get HTTP Status description
-	@code {Number}
-	@addCode {Boolean} :: optional, default true
-	return {String}
+    Get HTTP Status description
+    @code {Number}
+    @addCode {Boolean} :: optional, default true
+    return {String}
 */
 exports.httpStatus = function(code, addCode) {
-	return (addCode || true ? code + ': ' : '') + http.STATUS_CODES[code];
+    return (addCode || true ? code + ': ' : '') + http.STATUS_CODES[code];
 };
 
 /*
-	Extend object
-	@target {Object}
-	@source {Object}
-	@rewrite {Boolean} :: option, default false
-	return {Object}
+    Extend object
+    @target {Object}
+    @source {Object}
+    @rewrite {Boolean} :: option, default false
+    return {Object}
 */
 exports.extend = function(target, source, rewrite) {
 
-	if (target === null || source === null)
-		return target;
+    if (target === null || source === null)
+        return target;
 
-	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
-		return target;
+    if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
+        return target;
 
-	var keys = Object.keys(source);
-	var i = keys.length;
+    var keys = Object.keys(source);
+    var i = keys.length;
 
-	while (i--) {
+    while (i--) {
 
-		var key = keys[i];
+        var key = keys[i];
 
-		if (rewrite || typeof(target[key]) === UNDEFINED)
-			target[key] = source[key];
-	}
+        if (rewrite || typeof(target[key]) === UNDEFINED)
+            target[key] = source[key];
+    }
 
-	return target;
+    return target;
 };
 
 /*
-	Copy values
-	@source {Object}
-	@target {Object} :: optional
-	return {Object}
+    Copy values
+    @source {Object}
+    @target {Object} :: optional
+    return {Object}
 */
 exports.copy = function(source, target) {
 
-	if (typeof(target) === UNDEFINED)
-		return exports.extend({}, source, true);
+    if (typeof(target) === UNDEFINED)
+        return exports.extend({}, source, true);
 
-	if (target === null || source === null)
-		return target;
+    if (target === null || source === null)
+        return target;
 
-	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
-		return target;
+    if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
+        return target;
 
-	var keys = Object.keys(source);
-	var i = keys.length;
+    var keys = Object.keys(source);
+    var i = keys.length;
 
-	while (i--) {
+    while (i--) {
 
-		var key = keys[i];
-		if (typeof(target[key]) === UNDEFINED)
-			continue;
+        var key = keys[i];
+        if (typeof(target[key]) === UNDEFINED)
+            continue;
 
-		target[key] = source[key];
-	}
+        target[key] = source[key];
+    }
 
-	return target;
+    return target;
 };
 
 /*
-	Reduce object properties
-	@source {Object}
-	@prop {String array or Object} :: property name
-	return @source
+    Reduce object properties
+    @source {Object}
+    @prop {String array or Object} :: property name
+    return @source
 */
 exports.reduce = function(source, prop) {
 
-	if (source === null || prop === null)
-		return source;
+    if (source === null || prop === null)
+        return source;
 
-	var type = typeof(prop);
+    var type = typeof(prop);
 
-	if (prop instanceof Array) {
-		Object.keys(source).forEach(function(o) {
-			if (prop.indexOf(o) === -1)
-				delete source[o];
-		});
-	}
+    if (prop instanceof Array) {
+        Object.keys(source).forEach(function(o) {
+            if (prop.indexOf(o) === -1)
+                delete source[o];
+        });
+    }
 
-	if (type === OBJECT) {
-		var obj = Object.keys(prop);
-		Object.keys(source).forEach(function(o) {
-			if (obj.indexOf(o) === -1)
-				delete source[o];
-		});
-	}
+    if (type === OBJECT) {
+        var obj = Object.keys(prop);
+        Object.keys(source).forEach(function(o) {
+            if (obj.indexOf(o) === -1)
+                delete source[o];
+        });
+    }
 
-	return source;
+    return source;
 };
 
 /*
-	Assign value into the object according to the path
-	@obj {Object}
-	@path {String}
-	@fn {Function or Some value}
-	return {obj}
+    Assign value into the object according to the path
+    @obj {Object}
+    @path {String}
+    @fn {Function or Some value}
+    return {obj}
 */
 exports.assign = function(obj, path, fn) {
 
-	if (obj === null || typeof(obj) === 'undefined')
-		return obj;
+    if (obj === null || typeof(obj) === 'undefined')
+        return obj;
 
-	var arr = path.split('.');
-	var model = obj[arr[0]];
+    var arr = path.split('.');
+    var model = obj[arr[0]];
 
-	for (var i = 1; i < arr.length - 1; i++)
-		model = model[arr[i]];
+    for (var i = 1; i < arr.length - 1; i++)
+        model = model[arr[i]];
 
-	model[arr[arr.length - 1]] = typeof (fn) === 'function' ? fn(model[arr[arr.length - 1]]) : fn;
-	return obj;
+    model[arr[arr.length - 1]] = typeof (fn) === 'function' ? fn(model[arr[arr.length - 1]]) : fn;
+    return obj;
 };
 
 /*
-	Is relative URL?
-	@url {String}
-	return {Boolean}
+    Is relative URL?
+    @url {String}
+    return {Boolean}
 */
 exports.isRelative = function(url) {
-	return !(url.substring(0, 2) === '//' || url.indexOf('http://') !== -1 || url.indexOf('https://') !== -1);
+    return !(url.substring(0, 2) === '//' || url.indexOf('http://') !== -1 || url.indexOf('https://') !== -1);
 };
 
 /*
-	Encode HTML
-	@str {String}
-	return {String}
+    Encode HTML
+    @str {String}
+    return {String}
 */
 exports.encode = function(str) {
 
-	var type = typeof(str);
+    var type = typeof(str);
 
-	if (type === UNDEFINED)
-		return '';
+    if (type === UNDEFINED)
+        return '';
 
-	if (type !== STRING)
-		str = str.toString();
+    if (type !== STRING)
+        str = str.toString();
 
-	return str.encode();
+    return str.encode();
 };
 
 /*
-	Decode HTML
-	@str {String}
-	return {String}
+    Decode HTML
+    @str {String}
+    return {String}
 */
 exports.decode = function(str) {
 
-	var type = typeof(str);
+    var type = typeof(str);
 
-	if (type === UNDEFINED)
-		return '';
+    if (type === UNDEFINED)
+        return '';
 
-	if (type !== STRING)
-		str = str.toString();
+    if (type !== STRING)
+        str = str.toString();
 
-	return str.decode();
+    return str.decode();
 };
 
 /*
-	Is static file?
-	@url {String}
-	return {Boolean}
+    Is static file?
+    @url {String}
+    return {Boolean}
 */
 exports.isStaticFile = function(url) {
-	var pattern = /\.\w{2,8}($|\?)+/g;
-	return pattern.test(url);
+    var pattern = /\.\w{2,8}($|\?)+/g;
+    return pattern.test(url);
 };
 
 /*
-	@str {String}
-	return {Boolean}
+    @str {String}
+    return {Boolean}
 */
 exports.isNullOrEmpty = function(str) {
 
-	if (typeof(str) !== STRING)
-		return true;
+    if (typeof(str) !== STRING)
+        return true;
 
-	return str.length === 0;
+    return str.length === 0;
 };
 
 /*
-	parseInt
-	@obj {Object}
-	@def {Number}
-	return {Number}
+    parseInt
+    @obj {Object}
+    @def {Number}
+    return {Number}
 */
 exports.parseInt = function(obj, def) {
-	var type = typeof(obj);
+    var type = typeof(obj);
 
-	if (type === UNDEFINED || obj === null)
-		return def || 0;
+    if (type === UNDEFINED || obj === null)
+        return def || 0;
 
-	var str = type !== STRING ? obj.toString() : obj;
-	return str.parseInt(def, 10);
+    var str = type !== STRING ? obj.toString() : obj;
+    return str.parseInt(def, 10);
 };
 
 /*
-	parseFloat
-	@obj {Object}
-	@def {Number}
-	return {Number}
+    parseFloat
+    @obj {Object}
+    @def {Number}
+    return {Number}
 */
 exports.parseFloat = function(obj, def) {
-	var type = typeof(obj);
+    var type = typeof(obj);
 
-	if (type === UNDEFINED || obj === null)
-		return def || 0;
+    if (type === UNDEFINED || obj === null)
+        return def || 0;
 
-	var str = type !== STRING ? obj.toString() : obj;
-	return str.parseFloat(def);
+    var str = type !== STRING ? obj.toString() : obj;
+    return str.parseFloat(def);
 };
 
 /*
-	Is array?
-	@obj {Object}
-	return {Boolean}
+    Is array?
+    @obj {Object}
+    return {Boolean}
 */
 exports.isArray = function(obj) {
-	return util.isArray(obj);
+    return util.isArray(obj);
 };
 
 /*
-	Is RegExp?
-	@obj {Object}
-	return {Boolean}
+    Is RegExp?
+    @obj {Object}
+    return {Boolean}
 */
 exports.isRegExp = function(obj) {
-	return util.isRegExp(obj);
+    return util.isRegExp(obj);
 };
 
 /*
-	Is date?
-	@obj {Object}
-	return {Boolean}
+    Is date?
+    @obj {Object}
+    return {Boolean}
 */
 exports.isDate = function(obj) {
-	return util.isDate(obj);
+    return util.isDate(obj);
 };
 
 /*
-	Get Content Type from extension
-	@ext {String}
-	return {String}
+    Get Content Type from extension
+    @ext {String}
+    return {String}
 */
 exports.getContentType = function(ext) {
-	if (ext[0] === '.')
-		ext = ext.substring(1);
-	return contentTypes[ext.toLowerCase()] || 'application/octet-stream';
+    if (ext[0] === '.')
+        ext = ext.substring(1);
+    return contentTypes[ext.toLowerCase()] || 'application/octet-stream';
 };
 
 /*
-	Set Content Type from extension
-	@ext {String}
-	@type {String}
-	return {String}
+    Set Content Type from extension
+    @ext {String}
+    @type {String}
+    return {String}
 */
 exports.setContentType = function(ext, type) {
-	if (ext[0] === '.')
-		ext = ext.substring(1);
-	contentTypes[ext.toLowerCase()] = type;
-	return true;
+    if (ext[0] === '.')
+        ext = ext.substring(1);
+    contentTypes[ext.toLowerCase()] = type;
+    return true;
 };
 
 /*
-	Create ETag from string
-	@text {String} :: filename
-	@version {String} :: optional
-	return {String}
+    Create ETag from string
+    @text {String} :: filename
+    @version {String} :: optional
+    return {String}
 */
 exports.etag = function(text, version) {
-	var sum = 0;
-	var length = text.length;
-	for (var i = 0; i < length; i++)
-		sum += text.charCodeAt(i);
-	return sum.toString() + (version ? ':' + version : '');
+    var sum = 0;
+    var length = text.length;
+    for (var i = 0; i < length; i++)
+        sum += text.charCodeAt(i);
+    return sum.toString() + (version ? ':' + version : '');
 };
 
 /*
-	Add @delimiter to end of @path
-	@path {String} :: filename
-	@delimiter {String} :: optional, default /
-	return {String}
+    Add @delimiter to end of @path
+    @path {String} :: filename
+    @delimiter {String} :: optional, default /
+    return {String}
 */
 exports.path = function(path, delimiter) {
-	delimiter = delimiter || '/';
-	if (path[path.length - 1] === delimiter)
-		return path;
-	return path + delimiter;
+    delimiter = delimiter || '/';
+    if (path[path.length - 1] === delimiter)
+        return path;
+    return path + delimiter;
 };
 
 /*
-	Get random number
-	@max {Number}
-	@min {Number}
-	return {Number}
+    Get random number
+    @max {Number}
+    @min {Number}
+    return {Number}
 */
 exports.random = function(max, min) {
-	max = (max || 100000);
-	min = (min || 0);
-	return Math.floor(Math.random() * (max - min + 1)) + min;
+    max = (max || 100000);
+    min = (min || 0);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
 /*
-	Create unique identifier
-	@max {Number} :: optional, default 40
-	return {String}
+    Create unique identifier
+    @max {Number} :: optional, default 40
+    return {String}
 */
 exports.GUID = function(max) {
 
-	max = max || 40;
+    max = max || 40;
 
-	var rnd = function () {
-		return Math.floor(Math.random() * 65536).toString(16);
-	};
+    var rnd = function () {
+        return Math.floor(Math.random() * 65536).toString(16);
+    };
 
-	var str = '';
-	for (var i = 0; i < (max / 4) + 1; i++)
-		str += rnd();
+    var str = '';
+    for (var i = 0; i < (max / 4) + 1; i++)
+        str += rnd();
 
-	return str.substring(0, max);
+    return str.substring(0, max);
 };
 
 /*
-	Validate
-	@model {Object} :: object to validate
-	@properties {String array}
-	@prepare {Function} : return utils.isValid() OR {Boolean} :: true is valid
-	@builder {ErrorBuilder}
-	@resource {Function} :: function(key) return {String}
-	return {ErrorBuilder}
+    Validate
+    @model {Object} :: object to validate
+    @properties {String array}
+    @prepare {Function} : return utils.isValid() OR {Boolean} :: true is valid
+    @builder {ErrorBuilder}
+    @resource {Function} :: function(key) return {String}
+    return {ErrorBuilder}
 */
 exports.validate = function(model, properties, prepare, builder, resource, path) {
 
-	if (typeof(builder) === FUNCTION && typeof(resource) === UNDEFINED) {
-		resource = builder;
-		builder = null;
-	}
+    if (typeof(builder) === FUNCTION && typeof(resource) === UNDEFINED) {
+        resource = builder;
+        builder = null;
+    }
 
-	var error = builder;
-	var current = typeof(path) === UNDEFINED ? '' : path + '.';
-	var isSchema = false;
-	var schemaName = '';
-	var definition = null;
+    var error = builder;
+    var current = typeof(path) === UNDEFINED ? '' : path + '.';
+    var isSchema = false;
+    var schemaName = '';
+    var definition = null;
 
-	if (!(error instanceof builders.ErrorBuilder))
-		error = new builders.ErrorBuilder(resource);
+    if (!(error instanceof builders.ErrorBuilder))
+        error = new builders.ErrorBuilder(resource);
 
-	if (typeof(properties) === STRING) {
-		var schema = builders.validation(properties);
-		if (schema.length !== 0) {
-			schemaName = properties;
-			properties = schema;
-			isSchema = true;
-			definition = builders.schema(schemaName);
-		} else
-			properties = properties.replace(/\s/g, '').split(',');
-	}
+    if (typeof(properties) === STRING) {
+        var schema = builders.validation(properties);
+        if (schema.length !== 0) {
+            schemaName = properties;
+            properties = schema;
+            isSchema = true;
+            definition = builders.schema(schemaName);
+        } else
+            properties = properties.replace(/\s/g, '').split(',');
+    }
 
-	if (typeof(model) === UNDEFINED || model === null)
-		model = {};
+    if (typeof(model) === UNDEFINED || model === null)
+        model = {};
 
-	if (typeof(prepare) !== FUNCTION)
-		throw new Error('Validate hasn\'t any method to validate properties.\nDefine delegate: framework.onValidate ...');
+    if (typeof(prepare) !== FUNCTION)
+        throw new Error('Validate hasn\'t any method to validate properties.\nDefine delegate: framework.onValidate ...');
 
-	for (var i = 0; i < properties.length; i++) {
+    for (var i = 0; i < properties.length; i++) {
 
-		var name = properties[i].toString();
-		var value = model[name];
-		var type = typeof(value);
+        var name = properties[i].toString();
+        var value = model[name];
+        var type = typeof(value);
 
-		value = (type === FUNCTION ? model[name]() : model[name]) || '';
+        value = (type === FUNCTION ? model[name]() : model[name]) || '';
 
-		if (type !== OBJECT && isSchema) {
-			if (builders.isJoin(definition[name]))
-				type = OBJECT;
-		}
+        if (type !== OBJECT && isSchema) {
+            if (builders.isJoin(definition[name]))
+                type = OBJECT;
+        }
 
-		if (type === OBJECT && !exports.isDate(value)) {
+        if (type === OBJECT && !exports.isDate(value)) {
 
-			if (isSchema) {
-				var schema = builders.schema(schemaName) || null;
-				if (schema !== null) {
-					schema = schema[name] || null;
-					if (schema !== null) {
-						var isArray = schema[0] === '[';
+            if (isSchema) {
+                var schema = builders.schema(schemaName) || null;
+                if (schema !== null) {
+                    schema = schema[name] || null;
+                    if (schema !== null) {
+                        var isArray = schema[0] === '[';
 
-						if (isArray)
-							schema = schema.substring(1, schema.length - 1);
+                        if (isArray)
+                            schema = schema.substring(1, schema.length - 1);
 
-						if (isArray) {
+                        if (isArray) {
 
-							if (!(value instanceof Array)) {
-								error.add(name, '@');
-								continue;
-							}
+                            if (!(value instanceof Array)) {
+                                error.add(name, '@');
+                                continue;
+                            }
 
-							var sublength = value.length;
-							for (var j = 0; j < sublength; j++)
-								exports.validate(value[j], schema, prepare, error, resource, current + name);
+                            var sublength = value.length;
+                            for (var j = 0; j < sublength; j++)
+                                exports.validate(value[j], schema, prepare, error, resource, current + name);
 
-							continue;
-						}
+                            continue;
+                        }
 
-						exports.validate(value, schema, prepare, error, resource, current + name);
-						continue;
-					}
-				}
-			}
+                        exports.validate(value, schema, prepare, error, resource, current + name);
+                        continue;
+                    }
+                }
+            }
 
-			exports.validate(value, properties, prepare, error, resource, current + name);
-			continue;
-		}
+            exports.validate(value, properties, prepare, error, resource, current + name);
+            continue;
+        }
 
-		var result = prepare(name, value, current + name);
+        var result = prepare(name, value, current + name);
 
-		if (typeof(result) === UNDEFINED)
-			continue;
+        if (typeof(result) === UNDEFINED)
+            continue;
 
-		type = typeof(result);
+        type = typeof(result);
 
-		if (type === STRING) {
-			error.add(name, result, current + name);
-			continue;
-		}
+        if (type === STRING) {
+            error.add(name, result, current + name);
+            continue;
+        }
 
-		if (type === BOOLEAN) {
-			if (!result)
-				error.add(name, '@', current + name);
-			continue;
-		}
+        if (type === BOOLEAN) {
+            if (!result)
+                error.add(name, '@', current + name);
+            continue;
+        }
 
-		if (result.isValid === false)
-			error.add(name, result.error, current + name);
-	}
+        if (result.isValid === false)
+            error.add(name, result.error, current + name);
+    }
 
-	return error;
+    return error;
 };
 
 /*
-	Validation object
-	@isValid {Boolean}
-	@error {String} :: optional, default @
-	return {Object}
+    Validation object
+    @isValid {Boolean}
+    @error {String} :: optional, default @
+    return {Object}
 */
 exports.isValid = function(valid, error) {
-	return { isValid: valid, error: error || '@' };
+    return { isValid: valid, error: error || '@' };
 };
 
 /*
-	Email address validation
-	@str {String}
-	return {Boolean}
+    Email address validation
+    @str {String}
+    return {Boolean}
 */
 exports.isEmail = function(str) {
-	return (str || '').toString().isEmail();
+    return (str || '').toString().isEmail();
 };
 
 /*
-	URL address validation
-	@str {String}
-	return {Boolean}
+    URL address validation
+    @str {String}
+    return {Boolean}
 */
 exports.isURL = function(str) {
-	return (str || '').toString().isURL();
+    return (str || '').toString().isURL();
 };
 
 /*
-	Combine path
-	@arguments {String array}
-	return {String}
+    Combine path
+    @arguments {String array}
+    return {String}
 */
 exports.combine = function() {
 
-	var self = this;
+    var self = this;
 
-	if (arguments[0][0] === '~') {
-		arguments[0] = arguments[0].substring(1);
-		return path.join.apply(self, arguments);
-	}
+    if (arguments[0][0] === '~') {
+        arguments[0] = arguments[0].substring(1);
+        return path.join.apply(self, arguments);
+    }
 
-	return '.' + path.join.apply(self, arguments);
+    return '.' + path.join.apply(self, arguments);
 };
 
 /*
-	@str {String}
-	return {String}
+    @str {String}
+    return {String}
 */
 exports.removeDiacritics = function(str) {
-	var dictionaryA = ['á', 'ä', 'č', 'ď', 'é', 'ě', 'ť', 'ž', 'ú', 'ů', 'ü', 'í', 'ï', 'ô', 'ó', 'ö', 'š', 'ľ', 'ĺ', 'ý', 'ÿ', 'č', 'ř'];
-	var dictionaryB = ['a', 'a', 'c', 'd', 'e', 'e', 't', 'z', 'u', 'u', 'u', 'i', 'i', 'o', 'o', 'o', 's', 'l', 'l', 'y', 'y', 'c', 'r'];
-	var buf = '';
-	var length = str.length;
-	for (var i = 0; i < length; i++) {
-		var c = str[i];
-		var isUpper = false;
+    var dictionaryA = ['á', 'ä', 'č', 'ď', 'é', 'ě', 'ť', 'ž', 'ú', 'ů', 'ü', 'í', 'ï', 'ô', 'ó', 'ö', 'š', 'ľ', 'ĺ', 'ý', 'ÿ', 'č', 'ř'];
+    var dictionaryB = ['a', 'a', 'c', 'd', 'e', 'e', 't', 'z', 'u', 'u', 'u', 'i', 'i', 'o', 'o', 'o', 's', 'l', 'l', 'y', 'y', 'c', 'r'];
+    var buf = '';
+    var length = str.length;
+    for (var i = 0; i < length; i++) {
+        var c = str[i];
+        var isUpper = false;
 
-		var index = dictionaryA.indexOf(c);
-		if (index === -1) {
-			index = dictionaryA.indexOf(c.toLowerCase());
-			isUpper = true;
-		}
+        var index = dictionaryA.indexOf(c);
+        if (index === -1) {
+            index = dictionaryA.indexOf(c.toLowerCase());
+            isUpper = true;
+        }
 
-		if (index === -1) {
-			buf += c;
-			continue;
-		}
+        if (index === -1) {
+            buf += c;
+            continue;
+        }
 
-		c = dictionaryB[index];
-		if (isUpper)
-			c = c.toUpperCase();
+        c = dictionaryB[index];
+        if (isUpper)
+            c = c.toUpperCase();
 
-		buf += c;
-	}
-	return buf;
+        buf += c;
+    }
+    return buf;
 };
 
-// Author: Jozef Gula
+/**
+ * Get WebSocket frame
+ * @author Jozef Gula <gula.jozef@gmail.com>
+ * @param  {Number} code
+ * @param  {Buffer or String} message
+ * @param  {Hexa} type
+ * @return {Buffer}
+ */
 exports.getWebSocketFrame = function(code, message, type) {
     var messageBuffer = getWebSocketFrameMessageBytes(code, message);
     var messageLength = messageBuffer.length;
@@ -966,7 +978,13 @@ exports.getWebSocketFrame = function(code, message, type) {
     return frameBuffer;
 }
 
-// Author: Jozef Gula
+/**
+ * Get bytes of WebSocket frame message
+ * @author Jozef Gula <gula.jozef@gmail.com>
+ * @param  {Number} code
+ * @param  {Buffer or String} message
+ * @return {Buffer}
+ */
 function getWebSocketFrameMessageBytes(code, message) {
     var index = code === 0 ? 0 : 2;
     var binary = typeof(message.readUInt8) !== UNDEFINED;
@@ -989,7 +1007,12 @@ function getWebSocketFrameMessageBytes(code, message) {
     return messageBuffer;
 }
 
-// Author: Jozef Gula
+/**
+ * Get length of WebSocket frame
+ * @author Jozef Gula <gula.jozef@gmail.com>
+ * @param  {Number} length
+ * @return {Number}
+ */
 function getWebSocketFrameLengthBytes(length) {
     var lengthBuffer = null;
 
@@ -1023,1703 +1046,1742 @@ function getWebSocketFrameLengthBytes(length) {
 }
 
 /*
-	Get distance (KM) between two coordinates
-	@lat1 {Number}
-	@lot1 {Number}
-	@lat2 {Number}
-	@lot1 {Number}
-	return {Number}
+    Get distance (KM) between two coordinates
+    @lat1 {Number}
+    @lot1 {Number}
+    @lat2 {Number}
+    @lot1 {Number}
+    return {Number}
 */
 exports.distance = function(lat1, lon1, lat2, lon2) {
-	var R = 6371;
-	var dLat = (lat2 - lat1).toRad();
-	var dLon = (lon2 - lon1).toRad();
-	var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-	return (R * c).floor(3);
+    var R = 6371;
+    var dLat = (lat2 - lat1).toRad();
+    var dLon = (lon2 - lon1).toRad();
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1.toRad()) * Math.cos(lat2.toRad()) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return (R * c).floor(3);
 };
 
 /*
-	Get file and directory list
-	@path {String}
-	@callback {Function} :: function(files, directories)
-	@filter {Function} :: function(path, isDirectory) - must return Boolean
+    Get file and directory list
+    @path {String}
+    @callback {Function} :: function(files, directories)
+    @filter {Function} :: function(path, isDirectory) - must return Boolean
 */
 exports.ls = function(path, callback, filter) {
-	var filelist = new FileList();
-	filelist.onComplete = callback;
-	filelist.onFilter = filter || null;
-	filelist.walk(path);
+    var filelist = new FileList();
+    filelist.onComplete = callback;
+    filelist.onFilter = filter || null;
+    filelist.walk(path);
 };
 
 /*
-	@type {String}
-	@value {Number}
-	return {Date}
+    @type {String}
+    @value {Number}
+    return {Date}
 */
 Date.prototype.add = function(type, value) {
-	var self = this;
-	var dt = new Date(self.getTime());
+    var self = this;
+    var dt = new Date(self.getTime());
 
-	switch(type) {
-		case 's':
-		case 'ss':
-		case 'second':
-		case 'seconds':
-			dt.setSeconds(dt.getSeconds() + value);
-			return dt;
-		case 'm':
-		case 'mm':
-		case 'minute':
-		case 'minutes':
-			dt.setMinutes(dt.getMinutes() + value);
-			return dt;
-		case 'h':
-		case 'hh':
-		case 'hour':
-		case 'hours':
-			dt.setHours(dt.getHours() + value);
-			return dt;
-		case 'd':
-		case 'dd':
-		case 'day':
-		case 'days':
-			dt.setDate(dt.getDate() + value);
-			return dt;
-		case 'M':
-		case 'MM':
-		case 'month':
-		case 'months':
-			dt.setMonth(dt.getMonth() + value);
-			return dt;
-		case 'y':
-		case 'yyyy':
-		case 'year':
-		case 'years':
-			dt.setFullYear(dt.getFullYear() + value);
-			return dt;
-	}
-	return dt;
+    switch(type) {
+        case 's':
+        case 'ss':
+        case 'second':
+        case 'seconds':
+            dt.setSeconds(dt.getSeconds() + value);
+            return dt;
+        case 'm':
+        case 'mm':
+        case 'minute':
+        case 'minutes':
+            dt.setMinutes(dt.getMinutes() + value);
+            return dt;
+        case 'h':
+        case 'hh':
+        case 'hour':
+        case 'hours':
+            dt.setHours(dt.getHours() + value);
+            return dt;
+        case 'd':
+        case 'dd':
+        case 'day':
+        case 'days':
+            dt.setDate(dt.getDate() + value);
+            return dt;
+        case 'M':
+        case 'MM':
+        case 'month':
+        case 'months':
+            dt.setMonth(dt.getMonth() + value);
+            return dt;
+        case 'y':
+        case 'yyyy':
+        case 'year':
+        case 'years':
+            dt.setFullYear(dt.getFullYear() + value);
+            return dt;
+    }
+    return dt;
 };
 
 /*
-	Format date to string
-	@format {String}
-	return {String}
+    Format date to string
+    @format {String}
+    return {String}
 */
 Date.prototype.format = function(format) {
-	var self = this;
+    var self = this;
 
-	var h = self.getHours();
-	var m = self.getMinutes().toString();
-	var s = self.getSeconds().toString();
-	var M = (self.getMonth() + 1).toString();
-	var yyyy = self.getFullYear().toString();
-	var d = self.getDate().toString();
+    var h = self.getHours();
+    var m = self.getMinutes().toString();
+    var s = self.getSeconds().toString();
+    var M = (self.getMonth() + 1).toString();
+    var yyyy = self.getFullYear().toString();
+    var d = self.getDate().toString();
 
-	var a = 'AM';
-	var H = h.toString();
+    var a = 'AM';
+    var H = h.toString();
 
 
-	if (h >= 12) {
-		h -= 12;
-		a = 'PM';
-	}
+    if (h >= 12) {
+        h -= 12;
+        a = 'PM';
+    }
 
-	if (h === 0)
-		h = 12;
+    if (h === 0)
+        h = 12;
 
-	h = h.toString();
+    h = h.toString();
 
-	var hh = h.padLeft(2, '0');
-	var HH = H.padLeft(2, '0');
-	var mm = m.padLeft(2, '0');
-	var ss = s.padLeft(2, '0');
-	var MM = M.padLeft(2, '0');
-	var dd = d.padLeft(2, '0');
-	var yy = yyyy.substring(2);
+    var hh = h.padLeft(2, '0');
+    var HH = H.padLeft(2, '0');
+    var mm = m.padLeft(2, '0');
+    var ss = s.padLeft(2, '0');
+    var MM = M.padLeft(2, '0');
+    var dd = d.padLeft(2, '0');
+    var yy = yyyy.substring(2);
 
-	return format.replace(/yyyy/g, yyyy).replace(/yy/g, yy).replace(/MM/g, MM).replace(/M/g, M).replace(/dd/g, dd).replace(/d/g, d).replace(/HH/g, HH).replace(/H/g, H).replace(/hh/g, hh).replace(/h/g, h).replace(/mm/g, mm).replace(/m/g, m).replace(/ss/g, ss).replace(/s/g, ss).replace(/a/g, a);
+    return format.replace(/yyyy/g, yyyy).replace(/yy/g, yy).replace(/MM/g, MM).replace(/M/g, M).replace(/dd/g, dd).replace(/d/g, d).replace(/HH/g, HH).replace(/H/g, H).replace(/hh/g, hh).replace(/h/g, h).replace(/mm/g, mm).replace(/m/g, m).replace(/ss/g, ss).replace(/s/g, ss).replace(/a/g, a);
 };
 
 if (!String.prototype.trim) {
-	String.prototype.trim = function() {
-		return this.replace(/^[\s]+|[\s]+$/g, '');
-	};
+    String.prototype.trim = function() {
+        return this.replace(regexpTRIM, '');
+    };
 }
 
+
+/**
+ * Checks if string starts with the text
+ * @see {@link http://docs.totaljs.com/String.prototype/#String.prototype.startsWith|Documentation}
+ * @param  {String}  text       Text to find.
+ * @param  {Boolean} ignoreCase Ingore case sensitive.
+ * @return {Boolean}
+ */
+String.prototype.startsWith = function(text, ignoreCase) {
+
+    var self = this;
+    var length = text.length;
+    var tmp = self.substring(0, length);
+
+    if (ignoreCase)
+        return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
+
+    return tmp.length === length && tmp === text;
+};
+
+/**
+ * Checks if string ends with the text
+ * @see {@link http://docs.totaljs.com/String.prototype/#String.prototype.endsWith|Documentation}
+ * @param  {String}  text Text to find.
+ * @param  {Boolean} ignoreCase Ingore case sensitive.
+ * @return {Boolean}
+ */
+String.prototype.endsWith = function(text, ignoreCase) {
+    var self = this;
+    var length = text.length;
+    var tmp = self.substring(self.length - length);
+
+    if (ignoreCase)
+        return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
+
+    return tmp.length === length && tmp === text;
+
+};
+
 String.prototype.replacer = function(find, text) {
-	var self = this;
-	var beg = self.indexOf(find);
-	if (beg === -1)
-		return self;
-	return self.substring(0, beg) + text + self.substring(beg + find.length);
+    var self = this;
+    var beg = self.indexOf(find);
+    if (beg === -1)
+        return self;
+    return self.substring(0, beg) + text + self.substring(beg + find.length);
 };
 
 /*
-	Hash string
-	@type {String} :: optional, default empty
-	return {String}
+    Hash string
+    @type {String} :: optional, default empty
+    return {String}
 */
 String.prototype.hash = function(type) {
-	var str = this;
-	switch ((type || '').toLowerCase()) {
-		case 'md5':
-			return str.md5();
-		case 'sha1':
-			return str.sha1();
-		case 'sha256':
-			return str.sha256();
-		case 'sha512':
-			return str.sha512();
-		default:
-			return str.split('').reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
-	}
+    var str = this;
+    switch ((type || '').toLowerCase()) {
+        case 'md5':
+            return str.md5();
+        case 'sha1':
+            return str.sha1();
+        case 'sha256':
+            return str.sha256();
+        case 'sha512':
+            return str.sha512();
+        default:
+            return str.split('').reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+    }
 };
 
 /*
-	Count text in string
-	@text {String}
-	return {Number}
+    Count text in string
+    @text {String}
+    return {Number}
 */
 String.prototype.count = function(text) {
-	var index = 0;
-	var count = 0;
-	do {
+    var index = 0;
+    var count = 0;
+    do {
 
-		index = this.indexOf(text, index + text.length);
+        index = this.indexOf(text, index + text.length);
 
-		if (index > 0)
-			count++;
+        if (index > 0)
+            count++;
 
-	} while (index > 0);
-	return count;
+    } while (index > 0);
+    return count;
 };
 
 String.prototype.parseDate = function() {
-	return new Date(this);
+    return new Date(this);
 };
 
 /*
-	Contain string a array values?
-	@value {String or String Array}
-	@mustAll {Boolean} :: optional (default false), String must contains all items in String array
-	return {Boolean}
+    Contain string a array values?
+    @value {String or String Array}
+    @mustAll {Boolean} :: optional (default false), String must contains all items in String array
+    return {Boolean}
 */
 String.prototype.contains = function(value, mustAll) {
 
-	var str = this;
+    var str = this;
 
-	if (typeof(value) === STRING)
-		return str.indexOf(value, typeof(mustAll) === NUMBER ? mustAll : 0) !== -1;
+    if (typeof(value) === STRING)
+        return str.indexOf(value, typeof(mustAll) === NUMBER ? mustAll : 0) !== -1;
 
-	var length = value.length;
+    var length = value.length;
 
-	for (var i = 0; i < length; i++) {
-		var exists = str.indexOf(value[i]) !== -1;
-		if (mustAll) {
-			if (!exists)
-				return false;
-		} else if (exists)
-			return true;
-	}
+    for (var i = 0; i < length; i++) {
+        var exists = str.indexOf(value[i]) !== -1;
+        if (mustAll) {
+            if (!exists)
+                return false;
+        } else if (exists)
+            return true;
+    }
 
-	return mustAll;
+    return mustAll;
 };
 
 /*
-	Parse configuration from string
-	return {Object}
+    Parse configuration from string
+    return {Object}
 */
 String.prototype.configuration = function() {
 
-	var arr = this.split('\n');
-	var length = arr.length;
-	var obj = {};
+    var arr = this.split('\n');
+    var length = arr.length;
+    var obj = {};
 
-	for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; i++) {
 
-		var str = arr[i];
+        var str = arr[i];
 
-		if (str === '' || str[0] === '#')
-			continue;
+        if (str === '' || str[0] === '#')
+            continue;
 
-		if (str.substring(0, 2) === '//')
-			continue;
+        if (str.substring(0, 2) === '//')
+            continue;
 
-		var index = str.indexOf(':');
-		if (index === -1)
-			continue;
+        var index = str.indexOf(':');
+        if (index === -1)
+            continue;
 
-		obj[str.substring(0, index).trim()] = str.substring(index + 1).trim();
-	}
+        obj[str.substring(0, index).trim()] = str.substring(index + 1).trim();
+    }
 
-	return obj;
+    return obj;
 };
 
 /*
-	@arguments {Object array}
-	return {String}
+    @arguments {Object array}
+    return {String}
 */
 String.prototype.format = function() {
-	var formatted = this;
-	var length = arguments.length;
-	for (var i = 0; i < length; i++) {
-		var regexp = new RegExp('\\{' + i + '\\}', 'gi');
-		formatted = formatted.replace(regexp, arguments[i]);
-	}
-	return formatted;
+    var formatted = this;
+    var length = arguments.length;
+    for (var i = 0; i < length; i++) {
+        var regexp = new RegExp('\\{' + i + '\\}', 'gi');
+        formatted = formatted.replace(regexp, arguments[i]);
+    }
+    return formatted;
 };
 
 String.prototype.encode = function() {
-	return this.replace(/\&/g, '&amp;').replace(/\>/g, '&gt;').replace(/\</g, '&lt;').replace(/\"/g, '&quot;');
+    return this.replace(/\&/g, '&amp;').replace(/\>/g, '&gt;').replace(/\</g, '&lt;').replace(/\"/g, '&quot;');
 };
 
 String.prototype.decode = function() {
-	return this.replace(/&gt;/g, '>').replace(/\&lt;/g, '<').replace(/\&quot;/g, '"').replace(/&amp;/g, '&');
+    return this.replace(/&gt;/g, '>').replace(/\&lt;/g, '<').replace(/\&quot;/g, '"').replace(/&amp;/g, '&');
 };
 
 String.prototype.urlEncode = function() {
-	return encodeURIComponent(this);
+    return encodeURIComponent(this);
 };
 
 String.prototype.urlDecode = function() {
-	return decodeURIComponent(this);
+    return decodeURIComponent(this);
 };
 
 /*
-	Simple templating :: Hello {name}, your score: {score}, your price: {price | ### ###.##}, date: {date | dd.MM.yyyy}
-	@obj {Object}
-	return {String}
+    Simple templating :: Hello {name}, your score: {score}, your price: {price | ### ###.##}, date: {date | dd.MM.yyyy}
+    @obj {Object}
+    return {String}
 */
 String.prototype.params = function(obj) {
-	var formatted = this;
+    var formatted = this;
 
-	if (typeof(obj) === UNDEFINED || obj === null)
-		return formatted;
+    if (typeof(obj) === UNDEFINED || obj === null)
+        return formatted;
 
-	var reg = /\{[^}\n]*\}/g;
-	var match = formatted.match(reg);
+    var reg = /\{[^}\n]*\}/g;
+    var match = formatted.match(reg);
 
-	if (match === null)
-		return formatted;
+    if (match === null)
+        return formatted;
 
-	var length = match.length;
+    var length = match.length;
 
-	for (var i = 0; i < length; i++) {
-		var prop = match[i];
+    for (var i = 0; i < length; i++) {
+        var prop = match[i];
 
-		var isEncode = false;
-		var name = prop.substring(1, prop.length - 1).trim();
+        var isEncode = false;
+        var name = prop.substring(1, prop.length - 1).trim();
 
-		var format = '';
-		var index = name.indexOf('|');
+        var format = '';
+        var index = name.indexOf('|');
 
-		if (index !== -1) {
-			format = name.substring(index + 1, name.length).trim();
-			name = name.substring(0, index).trim();
-		}
+        if (index !== -1) {
+            format = name.substring(index + 1, name.length).trim();
+            name = name.substring(0, index).trim();
+        }
 
-		if (prop.substring(0, 2) === '{!')
-			name = name.substring(1);
-		else
-			isEncode = true;
+        if (prop.substring(0, 2) === '{!')
+            name = name.substring(1);
+        else
+            isEncode = true;
 
-		var val;
+        var val;
 
-		if (name.indexOf('.') !== -1) {
-			var arr = name.split('.');
+        if (name.indexOf('.') !== -1) {
+            var arr = name.split('.');
 
-			if (arr.length === 2)
-				val = obj[arr[0]][arr[1]];
-			else if (arr.length === 3)
-				val = obj[arr[0]][arr[1]][arr[3]];
-			else if (arr.length === 4)
-				val = obj[arr[0]][arr[1]][arr[3]][arr[4]];
-			else if (arr.length === 5)
-				val = obj[arr[0]][arr[1]][arr[3]][arr[4]][arr[5]];
+            if (arr.length === 2)
+                val = obj[arr[0]][arr[1]];
+            else if (arr.length === 3)
+                val = obj[arr[0]][arr[1]][arr[3]];
+            else if (arr.length === 4)
+                val = obj[arr[0]][arr[1]][arr[3]][arr[4]];
+            else if (arr.length === 5)
+                val = obj[arr[0]][arr[1]][arr[3]][arr[4]][arr[5]];
 
-		} else
-			val = name.length === 0 ? obj : obj[name];
+        } else
+            val = name.length === 0 ? obj : obj[name];
 
-		if (typeof(val) === FUNCTION)
-			val = val(index);
+        if (typeof(val) === FUNCTION)
+            val = val(index);
 
-		if (typeof(val) === UNDEFINED)
-			continue;
+        if (typeof(val) === UNDEFINED)
+            continue;
 
-		if (format.length > 0) {
+        if (format.length > 0) {
 
-			var type = typeof(val);
-			if (type === STRING) {
-				var max = parseInt(format, 10);
-				if (!isNaN(max))
-					val = val.max(max + 3, '...');
+            var type = typeof(val);
+            if (type === STRING) {
+                var max = parseInt(format, 10);
+                if (!isNaN(max))
+                    val = val.max(max + 3, '...');
 
-			} else if (type === NUMBER || util.isDate(val))
-				val = val.format(format);
-		}
+            } else if (type === NUMBER || util.isDate(val))
+                val = val.format(format);
+        }
 
-		val = val.toString().dollar();
-		formatted = formatted.replace(prop, isEncode ? exports.encode(val) : val);
-	}
+        val = val.toString().dollar();
+        formatted = formatted.replace(prop, isEncode ? exports.encode(val) : val);
+    }
 
-	return formatted;
+    return formatted;
 };
 
 /*
-	Set max length of string
-	@length {Number}
-	@chars {String} :: optional, default ...
-	return {String}
+    Set max length of string
+    @length {Number}
+    @chars {String} :: optional, default ...
+    return {String}
 */
 String.prototype.max = function(length, chars) {
-	var str = this;
-	chars = chars || '...';
-	return str.length > length ? str.substring(0, length - chars.length) + chars : str;
+    var str = this;
+    chars = chars || '...';
+    return str.length > length ? str.substring(0, length - chars.length) + chars : str;
 };
 
 String.prototype.isJSON = function() {
-	var self = this;
-	if (self.length <= 1)
-		return false;
-	var a = self[0];
-	var b = self[self.length - 1];
-	return (a === '"' && b === '"') || (a === '[' && b === ']') || (a === '{' && b === '}');
+    var self = this;
+    if (self.length <= 1)
+        return false;
+    var a = self[0];
+    var b = self[self.length - 1];
+    return (a === '"' && b === '"') || (a === '[' && b === ']') || (a === '{' && b === '}');
 };
 
 String.prototype.isURL = function() {
-	var str = this;
-	if (str.length <= 7)
-		return false;
-	return regexpUrl.test(str);
+    var str = this;
+    if (str.length <= 7)
+        return false;
+    return regexpUrl.test(str);
 };
 
 String.prototype.isEmail = function() {
-	var str = this;
-	if (str.length <= 4)
-		return false;
+    var str = this;
+    if (str.length <= 4)
+        return false;
 
-	if (str[0] === '.' || str[str.length - 1] === '.')
-		return false;
+    if (str[0] === '.' || str[str.length - 1] === '.')
+        return false;
 
-	return regexpMail.test(str);
+    return regexpMail.test(str);
 };
 
 /*
-	@def {Number} :: optional, default 0
-	return {Number}
+    @def {Number} :: optional, default 0
+    return {Number}
 */
 String.prototype.parseInt = function(def) {
-	var num = 0;
-	var str = this;
+    var num = 0;
+    var str = this;
 
-	if (str.substring(0, 1) === '0')
-		num = parseInt(str.replace(/\s/g, '').substring(1), 10);
-	else
-		num = parseInt(str.replace(/\s/g, ''), 10);
+    if (str.substring(0, 1) === '0')
+        num = parseInt(str.replace(/\s/g, '').substring(1), 10);
+    else
+        num = parseInt(str.replace(/\s/g, ''), 10);
 
-	if (isNaN(num))
-		return def || 0;
+    if (isNaN(num))
+        return def || 0;
 
-	return num;
+    return num;
 };
 
 /*
-	@def {Number} :: optional, default 0
-	return {Number}
+    @def {Number} :: optional, default 0
+    return {Number}
 */
 String.prototype.parseFloat = function(def) {
-	var num = 0;
-	var str = this;
+    var num = 0;
+    var str = this;
 
-	if (str.substring(0, 1) === '0')
-		num = parseFloat(str.replace(/\s/g, '').substring(1).replace(',', '.'));
-	else
-		num = parseFloat(str.replace(/\s/g, '').replace(',', '.'));
+    if (str.substring(0, 1) === '0')
+        num = parseFloat(str.replace(/\s/g, '').substring(1).replace(',', '.'));
+    else
+        num = parseFloat(str.replace(/\s/g, '').replace(',', '.'));
 
-	if (isNaN(num))
-		return def || 0;
+    if (isNaN(num))
+        return def || 0;
 
-	return num;
+    return num;
 };
 
 String.prototype.toUnicode = function() {
-	var result = '';
-	var self = this;
-	var length = self.length;
-	for(var i = 0; i < length; ++i){
-		if(self.charCodeAt(i) > 126 || self.charCodeAt(i) < 32)
-			result += '\\u' + self.charCodeAt(i).hex(4);
-		else
-			result += self[i];
-	}
-	return result;
+    var result = '';
+    var self = this;
+    var length = self.length;
+    for(var i = 0; i < length; ++i){
+        if(self.charCodeAt(i) > 126 || self.charCodeAt(i) < 32)
+            result += '\\u' + self.charCodeAt(i).hex(4);
+        else
+            result += self[i];
+    }
+    return result;
 };
 
 String.prototype.fromUnicode = function() {
 
-	var str = this.replace(/\\u([\d\w]{4})/gi, function (match, v) {
-		return String.fromCharCode(parseInt(v, 16));
-	});
+    var str = this.replace(/\\u([\d\w]{4})/gi, function (match, v) {
+        return String.fromCharCode(parseInt(v, 16));
+    });
 
-	return unescape(str);
+    return unescape(str);
 };
 
 String.prototype.sha1 = function(salt) {
-	var hash = crypto.createHash('sha1');
-	hash.update(this + (salt || ''), ENCODING);
-	return hash.digest('hex');
+    var hash = crypto.createHash('sha1');
+    hash.update(this + (salt || ''), ENCODING);
+    return hash.digest('hex');
 };
 
 String.prototype.sha256 = function(salt) {
-	var hash = crypto.createHash('sha256');
-	hash.update(this + (salt || ''), ENCODING);
-	return hash.digest('hex');
+    var hash = crypto.createHash('sha256');
+    hash.update(this + (salt || ''), ENCODING);
+    return hash.digest('hex');
 };
 
 String.prototype.sha512 = function(salt) {
-	var hash = crypto.createHash('sha512');
-	hash.update(this + (salt || ''), ENCODING);
-	return hash.digest('hex');
+    var hash = crypto.createHash('sha512');
+    hash.update(this + (salt || ''), ENCODING);
+    return hash.digest('hex');
 };
 
 String.prototype.md5 = function(salt) {
-	var hash = crypto.createHash('md5');
-	hash.update(this + (salt || ''), ENCODING);
-	return hash.digest('hex');
+    var hash = crypto.createHash('md5');
+    hash.update(this + (salt || ''), ENCODING);
+    return hash.digest('hex');
 };
 
 /*
-	@key {String}
-	@isUnique {Boolean}
-	return {String}
+    @key {String}
+    @isUnique {Boolean}
+    return {String}
 */
 String.prototype.encrypt = function(key, isUnique) {
-	var str = '0' + this;
-	var data_count = str.length;
-	var key_count = key.length;
-	var change = str[data_count - 1];
-	var random = isUnique ? exports.random(120) + 40 : 65;
-	var count = data_count + (random % key_count);
-	var values = [];
-	var index = 0;
+    var str = '0' + this;
+    var data_count = str.length;
+    var key_count = key.length;
+    var change = str[data_count - 1];
+    var random = isUnique ? exports.random(120) + 40 : 65;
+    var count = data_count + (random % key_count);
+    var values = [];
+    var index = 0;
 
-	values[0] = String.fromCharCode(random);
-	var counter = this.length + key.length;
+    values[0] = String.fromCharCode(random);
+    var counter = this.length + key.length;
 
-	for (var i = count - 1; i > 0; i--) {
-		index = str.charCodeAt(i % data_count);
-		values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
-	}
+    for (var i = count - 1; i > 0; i--) {
+        index = str.charCodeAt(i % data_count);
+        values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
+    }
 
-	var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(/\//g, '-').replace(/\+/g, '_');
-	index = hash.indexOf('=');
-	if (index > 0)
-		return hash.substring(0, index);
+    var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(/\//g, '-').replace(/\+/g, '_');
+    index = hash.indexOf('=');
+    if (index > 0)
+        return hash.substring(0, index);
 
-	return hash;
+    return hash;
 };
 
 /*
-	@key {String}
-	return {String}
+    @key {String}
+    return {String}
 */
 String.prototype.decrypt = function(key) {
 
-	var values = this.replace(/\-/g, '/').replace(/\_/g, '+');
-	var mod = values.length % 4;
+    var values = this.replace(/\-/g, '/').replace(/\_/g, '+');
+    var mod = values.length % 4;
 
-	if (mod > 0) {
-		for (var i = 0; i < mod; i++)
-			values += '=';
-	}
+    if (mod > 0) {
+        for (var i = 0; i < mod; i++)
+            values += '=';
+    }
 
-	values = new Buffer(values, 'base64').toString(ENCODING);
+    values = new Buffer(values, 'base64').toString(ENCODING);
 
-	var index = values.indexOf('=');
-	if (index === -1)
-		return null;
+    var index = values.indexOf('=');
+    if (index === -1)
+        return null;
 
-	var counter = parseInt(values.substring(0, index), 10);
-	if (isNaN(counter))
-		return null;
+    var counter = parseInt(values.substring(0, index), 10);
+    if (isNaN(counter))
+        return null;
 
-	values = values.substring(index + 1);
+    values = values.substring(index + 1);
 
-	var count = values.length;
-	var random = values.charCodeAt(0);
+    var count = values.length;
+    var random = values.charCodeAt(0);
 
-	var key_count = key.length;
-	var data_count = count - (random % key_count);
-	var decrypt_data = [];
+    var key_count = key.length;
+    var data_count = count - (random % key_count);
+    var decrypt_data = [];
 
-	for (var i = data_count - 1; i > 0; i--) {
-		index = values.charCodeAt(i) ^ (random ^ key.charCodeAt(i % key_count));
-		decrypt_data[i] = String.fromCharCode(index);
-	}
+    for (var i = data_count - 1; i > 0; i--) {
+        index = values.charCodeAt(i) ^ (random ^ key.charCodeAt(i % key_count));
+        decrypt_data[i] = String.fromCharCode(index);
+    }
 
-	var val = decrypt_data.join('');
+    var val = decrypt_data.join('');
 
-	if (counter !== val.length + key.length)
-		return null;
+    if (counter !== val.length + key.length)
+        return null;
 
-	return val;
+    return val;
 };
 
 /*
-	Convert value from base64 and save to file
-	@filename {String}
-	@callback {Function} :: optional
-	return {String}
+    Convert value from base64 and save to file
+    @filename {String}
+    @callback {Function} :: optional
+    return {String}
 */
 String.prototype.base64ToFile = function(filename, callback) {
-	var self = this;
+    var self = this;
 
-	var index = self.indexOf(',');
-	if (index === -1)
-		index = 0;
-	else
-		index++;
+    var index = self.indexOf(',');
+    if (index === -1)
+        index = 0;
+    else
+        index++;
 
-	if (callback)
-		fs.writeFile(filename, self.substring(index), 'base64', callback);
-	else
-		fs.writeFile(filename, self.substring(index), 'base64', exports.noop);
+    if (callback)
+        fs.writeFile(filename, self.substring(index), 'base64', callback);
+    else
+        fs.writeFile(filename, self.substring(index), 'base64', exports.noop);
 
-	return this;
+    return this;
 };
 
 /*
-	Get content type from base64
-	return {String}
+    Get content type from base64
+    return {String}
 */
 String.prototype.base64ContentType = function() {
-	var self = this;
+    var self = this;
 
-	var index = self.indexOf(';');
-	if (index === -1)
-		return '';
+    var index = self.indexOf(';');
+    if (index === -1)
+        return '';
 
-	return self.substring(5, index);
+    return self.substring(5, index);
 };
 
 String.prototype.removeDiacritics = function() {
-	return exports.removeDiacritics(this);
+    return exports.removeDiacritics(this);
 };
 
 /*
-	Indent
-	@max {Number}
-	@c {String} : optional, default SPACE
-	return {String}
+    Indent
+    @max {Number}
+    @c {String} : optional, default SPACE
+    return {String}
 */
 String.prototype.indent = function(max, c) {
-	var self = this;
-	return new Array(max + 1).join(c || ' ') + self;
+    var self = this;
+    return new Array(max + 1).join(c || ' ') + self;
 };
 
 /*
-	isNumber?
-	@isDecimal {Boolean} :: optional, default false
-	return {Boolean}
+    isNumber?
+    @isDecimal {Boolean} :: optional, default false
+    return {Boolean}
 */
 String.prototype.isNumber = function(isDecimal) {
 
-	var self = this;
-	var length = self.length;
+    var self = this;
+    var length = self.length;
 
-	if (length === 0)
-		return false;
+    if (length === 0)
+        return false;
 
-	isDecimal = isDecimal || false;
+    isDecimal = isDecimal || false;
 
-	for (var i = 0; i < length; i++) {
-		var ascii = self.charCodeAt(i);
+    for (var i = 0; i < length; i++) {
+        var ascii = self.charCodeAt(i);
 
-		if (isDecimal) {
-			if (ascii === 44 || ascii === 46) {
-				isDecimal = false;
-				continue;
-			}
-		}
+        if (isDecimal) {
+            if (ascii === 44 || ascii === 46) {
+                isDecimal = false;
+                continue;
+            }
+        }
 
-		if (ascii < 48 || ascii > 57)
-			return false;
-	}
+        if (ascii < 48 || ascii > 57)
+            return false;
+    }
 
-	return true;
+    return true;
 };
 
 /*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
+    @max {Number}
+    @c {String} :: optional
+    return {String}
 */
 String.prototype.padLeft = function(max, c) {
-	var self = this;
-	return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
+    var self = this;
+    return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
 };
 
 /*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
+    @max {Number}
+    @c {String} :: optional
+    return {String}
 */
 String.prototype.padRight = function(max, c) {
-	var self = this;
-	return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
+    var self = this;
+    return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
 };
 
 /*
-	index {Number}
-	value {String}
-	return {String}
+    index {Number}
+    value {String}
+    return {String}
 */
 String.prototype.insert = function(index, value) {
-	var str = this;
-	var a = str.substring(0, index);
-	var b = value.toString() + str.substring(index);
-	return a + b;
+    var str = this;
+    var a = str.substring(0, index);
+    var b = value.toString() + str.substring(index);
+    return a + b;
 };
 
 /*
-	Prepare string for replacing double dollar
+    Prepare string for replacing double dollar
 */
 String.prototype.dollar = function() {
-	var str = this;
-	var index = str.indexOf('$', 0);
+    var str = this;
+    var index = str.indexOf('$', 0);
 
-	while (index !== -1) {
-		if (str[index + 1] === '$')
-			str = str.insert(index, '$');
-		index = str.indexOf('$', index + 2);
-	}
-	return str.toString();
+    while (index !== -1) {
+        if (str[index + 1] === '$')
+            str = str.insert(index, '$');
+        index = str.indexOf('$', index + 2);
+    }
+    return str.toString();
 };
 
 /*
-	Create link
-	@max {Number} :: optional default 60 chars
-	return {String}
+    Create link
+    @max {Number} :: optional default 60 chars
+    return {String}
 */
 String.prototype.linker = function(max) {
-	max = max || 60;
+    max = max || 60;
 
-	var self = this.trim().toLowerCase().removeDiacritics();
-	var builder = '';
-	var length = self.length;
+    var self = this.trim().toLowerCase().removeDiacritics();
+    var builder = '';
+    var length = self.length;
 
-	for (var i = 0; i < length; i++) {
-		var c = self[i];
-		var code = self.charCodeAt(i);
+    for (var i = 0; i < length; i++) {
+        var c = self[i];
+        var code = self.charCodeAt(i);
 
-		if (builder.length >= max)
-			break;
+        if (builder.length >= max)
+            break;
 
-		if (code > 31 && code < 48) {
+        if (code > 31 && code < 48) {
 
-			if (builder[builder.length - 1] === '-')
-				continue;
+            if (builder[builder.length - 1] === '-')
+                continue;
 
-			builder += '-';
-			continue;
-		}
+            builder += '-';
+            continue;
+        }
 
-		if (code > 47 && code < 58) {
-			builder += c;
-			continue;
-		}
+        if (code > 47 && code < 58) {
+            builder += c;
+            continue;
+        }
 
-		if (code > 94 && code < 123) {
-			builder += c;
-			continue;
-		}
+        if (code > 94 && code < 123) {
+            builder += c;
+            continue;
+        }
 
-	}
+    }
 
-	return builder;
+    return builder;
 };
 
 String.prototype.link = function(max) {
-	console.log('String.prototype.link: OBSOLETE - Use String.prototype.Linker()');
-	return this.linker(max);
+    console.log('String.prototype.link: OBSOLETE - Use String.prototype.Linker()');
+    return this.linker(max);
 };
 
 String.prototype.pluralize = function(zero, one, few, other) {
-	var str = this;
-	return str.parseInt().pluralize(zero, one, few, other);
+    var str = this;
+    return str.parseInt().pluralize(zero, one, few, other);
 };
 
 String.prototype.isBoolean = function() {
-	var self = this.toLowerCase();
-	return (self === 'true' || self === 'false') ? true : false;
+    var self = this.toLowerCase();
+    return (self === 'true' || self === 'false') ? true : false;
 };
 
 /*
-	@decimals {Number}
-	return {Number}
+    @decimals {Number}
+    return {Number}
 */
 Number.prototype.floor = function(decimals) {
-	return Math.floor(this * Math.pow(10, decimals)) / Math.pow(10, decimals);
+    return Math.floor(this * Math.pow(10, decimals)) / Math.pow(10, decimals);
 };
 
 /*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
+    @max {Number}
+    @c {String} :: optional
+    return {String}
 */
 Number.prototype.padLeft = function(max, c) {
-	return this.toString().padLeft(max, c || '0');
+    return this.toString().padLeft(max, c || '0');
 };
 
 /*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
+    @max {Number}
+    @c {String} :: optional
+    return {String}
 */
 Number.prototype.padRight = function(max, c) {
-	return this.toString().padRight(max, c || '0');
+    return this.toString().padRight(max, c || '0');
 };
 
 /*
-	Format number :: 10000 = 10 000
-	@format {Number or String} :: number is decimal and string is specified format, example: ## ###.##
-	return {String}
+    Format number :: 10000 = 10 000
+    @format {Number or String} :: number is decimal and string is specified format, example: ## ###.##
+    return {String}
 */
 Number.prototype.format = function(format) {
 
-	var index = 0;
-	var num = this.toString();
-	var beg = 0;
-	var end = 0;
-	var max = 0;
-	var output = '';
-	var length = 0;
+    var index = 0;
+    var num = this.toString();
+    var beg = 0;
+    var end = 0;
+    var max = 0;
+    var output = '';
+    var length = 0;
 
-	if (typeof(format) === STRING) {
+    if (typeof(format) === STRING) {
 
-		var d = false;
-		length = format.length;
+        var d = false;
+        length = format.length;
 
-		for (var i = 0; i < length; i++) {
-			var c = format[i];
-			if (c === '#') {
-				if (d)
-					end++;
-				else
-					beg++;
-			}
+        for (var i = 0; i < length; i++) {
+            var c = format[i];
+            if (c === '#') {
+                if (d)
+                    end++;
+                else
+                    beg++;
+            }
 
-			if (c === '.')
-				d = true;
-		}
+            if (c === '.')
+                d = true;
+        }
 
-		var strBeg = num;
-		var strEnd = '';
+        var strBeg = num;
+        var strEnd = '';
 
-		index = num.indexOf('.');
+        index = num.indexOf('.');
 
-		if (index !== -1) {
-			strBeg = num.substring(0, index);
-			strEnd = num.substring(index + 1);
-		}
+        if (index !== -1) {
+            strBeg = num.substring(0, index);
+            strEnd = num.substring(index + 1);
+        }
 
-		if (strBeg.length > beg) {
-			max = strBeg.length - beg;
-			var tmp = '';
-			for (var i = 0; i < max; i++)
-				tmp += '#';
+        if (strBeg.length > beg) {
+            max = strBeg.length - beg;
+            var tmp = '';
+            for (var i = 0; i < max; i++)
+                tmp += '#';
 
-			format = tmp + format;
-		}
+            format = tmp + format;
+        }
 
-		if (strBeg.length < beg)
-			strBeg = strBeg.padLeft(beg, ' ');
+        if (strBeg.length < beg)
+            strBeg = strBeg.padLeft(beg, ' ');
 
-		if (strEnd.length < end)
-			strEnd = strEnd.padRight(end, '0');
+        if (strEnd.length < end)
+            strEnd = strEnd.padRight(end, '0');
 
-		if (strEnd.length > end)
-			strEnd = strEnd.substring(0, end);
+        if (strEnd.length > end)
+            strEnd = strEnd.substring(0, end);
 
-		d = false;
-		index = 0;
+        d = false;
+        index = 0;
 
-		var skip = true;
-		length = format.length;
+        var skip = true;
+        length = format.length;
 
-		for (var i = 0; i < length; i++) {
+        for (var i = 0; i < length; i++) {
 
-			var c = format[i];
+            var c = format[i];
 
-			if (c !== '#') {
+            if (c !== '#') {
 
-				if (skip)
-					continue;
+                if (skip)
+                    continue;
 
-				if (c === '.') {
-					d = true;
-					index = 0;
-				}
+                if (c === '.') {
+                    d = true;
+                    index = 0;
+                }
 
-				output += c;
-				continue;
-			}
+                output += c;
+                continue;
+            }
 
-			var value = d ? strEnd[index] : strBeg[index];
+            var value = d ? strEnd[index] : strBeg[index];
 
-			if (skip)
-				skip = [',', ' '].indexOf(value) !== -1;
+            if (skip)
+                skip = [',', ' '].indexOf(value) !== -1;
 
-			if (!skip)
-				output += value;
+            if (!skip)
+                output += value;
 
-			index++;
-		}
+            index++;
+        }
 
-		return output;
-	}
+        return output;
+    }
 
-	output = '### ### ###';
-	beg = num.indexOf('.');
-	max = format || 0;
+    output = '### ### ###';
+    beg = num.indexOf('.');
+    max = format || 0;
 
-	if (max === 0 && beg !== -1)
-		max = num.length - (beg + 1);
+    if (max === 0 && beg !== -1)
+        max = num.length - (beg + 1);
 
-	if (max > 0) {
-		output += '.';
-		for (var i = 0; i < max; i++)
-			output += '#';
-	}
+    if (max > 0) {
+        output += '.';
+        for (var i = 0; i < max; i++)
+            output += '#';
+    }
 
-	return this.format(output);
+    return this.format(output);
 };
 
 /*
-	Pluralize number
-	zero {String}
-	one {String}
-	few {String}
-	other {String}
-	return {String}
+    Pluralize number
+    zero {String}
+    one {String}
+    few {String}
+    other {String}
+    return {String}
 */
 Number.prototype.pluralize = function(zero, one, few, other) {
 
-	var num = this;
-	var value = '';
+    var num = this;
+    var value = '';
 
-	if (num === 0)
-		value = zero || '';
-	else if (num === 1)
-		value = one || '';
-	else if (num > 1 && num < 5)
-		value = few || '';
-	else
-		value = other;
+    if (num === 0)
+        value = zero || '';
+    else if (num === 1)
+        value = one || '';
+    else if (num > 1 && num < 5)
+        value = few || '';
+    else
+        value = other;
 
-	var beg = value.indexOf('#');
-	var end = value.lastIndexOf('#');
+    var beg = value.indexOf('#');
+    var end = value.lastIndexOf('#');
 
-	if (beg === -1)
-		return value;
+    if (beg === -1)
+        return value;
 
-	var format = value.substring(beg, end + 1);
-	return num.format(format) + value.replace(format, '');
+    var format = value.substring(beg, end + 1);
+    return num.format(format) + value.replace(format, '');
 };
 
 /*
-	@length {Number}
-	return {String}
+    @length {Number}
+    return {String}
 */
 Number.prototype.hex = function(length) {
-	var str = this.toString(16).toUpperCase();
-	while(str.length < length)
-		str = '0' + str;
-	return str;
+    var str = this.toString(16).toUpperCase();
+    while(str.length < length)
+        str = '0' + str;
+    return str;
 };
 
 /*
-	Internal function
+    Internal function
 */
 Number.prototype.condition = function(ifTrue, ifFalse) {
-	return (this % 2 === 0 ? ifTrue : ifFalse) || '';
+    return (this % 2 === 0 ? ifTrue : ifFalse) || '';
 };
 
 /*
-	VAT
-	@percentage {Number}
-	@decimals {Number}, optional, default 2,
-	@includedVAT {Boolean}, optional, default true
-	return {Number}
+    VAT
+    @percentage {Number}
+    @decimals {Number}, optional, default 2,
+    @includedVAT {Boolean}, optional, default true
+    return {Number}
 */
 Number.prototype.VAT = function(percentage, decimals, includedVAT) {
-	var num = this;
-	var type = typeof(decimals);
+    var num = this;
+    var type = typeof(decimals);
 
-	if (type === BOOLEAN) {
-		var tmp = includedVAT;
-		includedVAT = decimals;
-		decimals = tmp;
-		type = typeof(decimals);
-	}
+    if (type === BOOLEAN) {
+        var tmp = includedVAT;
+        includedVAT = decimals;
+        decimals = tmp;
+        type = typeof(decimals);
+    }
 
-	if (type === UNDEFINED)
-		decimals = 2;
+    if (type === UNDEFINED)
+        decimals = 2;
 
-	if (typeof(includedVAT) === UNDEFINED)
-		includedVAT = true;
+    if (typeof(includedVAT) === UNDEFINED)
+        includedVAT = true;
 
-	if (percentage === 0 || num === 0)
-		return num;
+    if (percentage === 0 || num === 0)
+        return num;
 
-	return includedVAT ? (num / ((percentage / 100) + 1)).floor(decimals) : (num * ((percentage / 100) + 1)).floor(decimals);
+    return includedVAT ? (num / ((percentage / 100) + 1)).floor(decimals) : (num * ((percentage / 100) + 1)).floor(decimals);
 };
 
 /*
-	Discount
-	@percentage {Number}
-	@decimals {Number}, optional, default 2
-	return {Number}
+    Discount
+    @percentage {Number}
+    @decimals {Number}, optional, default 2
+    return {Number}
 */
 Number.prototype.discount = function(percentage, decimals) {
-	var num = this;
-	var type = typeof(decimals);
+    var num = this;
+    var type = typeof(decimals);
 
-	if (type === UNDEFINED)
-		decimals = 2;
+    if (type === UNDEFINED)
+        decimals = 2;
 
-	return (num - (num / 100) * percentage).floor(decimals);
+    return (num - (num / 100) * percentage).floor(decimals);
 };
 
 Number.prototype.parseDate = function(plus) {
-	return new Date(this + (plus || 0));
+    return new Date(this + (plus || 0));
 };
 
 if (typeof (Number.prototype.toRad) === UNDEFINED) {
-	Number.prototype.toRad = function () {
-		return this * Math.PI / 180;
-	};
+    Number.prototype.toRad = function () {
+        return this * Math.PI / 180;
+    };
 }
 
 Boolean.prototype.condition = function(ifTrue, ifFalse) {
-	return (this ? ifTrue : ifFalse) || '';
+    return (this ? ifTrue : ifFalse) || '';
 };
 
 /*
-	@count {Number}
-	return {Array}
+    @count {Number}
+    return {Array}
 */
 Array.prototype.take = function(count) {
-	var arr = [];
-	var self = this;
-	var length = self.length;
-	for (var i = 0; i < length; i++) {
-		arr.push(self[i]);
-		if (arr.length >= count)
-			return arr;
-	}
-	return arr;
+    var arr = [];
+    var self = this;
+    var length = self.length;
+    for (var i = 0; i < length; i++) {
+        arr.push(self[i]);
+        if (arr.length >= count)
+            return arr;
+    }
+    return arr;
 };
 
 /*
-	Trim values
+    Trim values
 */
 Array.prototype.trim = function() {
-	var self = this;
-	var length = self.length;
-	for (var i = 0; i < length; i++) {
-		if (typeof(self[i]) === STRING)
-			self[i] = self[i].trim();
-	}
-	return self;
+    var self = this;
+    var length = self.length;
+    for (var i = 0; i < length; i++) {
+        if (typeof(self[i]) === STRING)
+            self[i] = self[i].trim();
+    }
+    return self;
 };
 
 /*
-	@count {Number}
-	return {Array}
+    @count {Number}
+    return {Array}
 */
 Array.prototype.skip = function(count) {
-	var arr = [];
-	var self = this;
-	var length = self.length;
-	for (var i = 0; i < length; i++) {
-		if (i >= count)
-			arr.push(self[i]);
-	}
-	return arr;
+    var arr = [];
+    var self = this;
+    var length = self.length;
+    for (var i = 0; i < length; i++) {
+        if (i >= count)
+            arr.push(self[i]);
+    }
+    return arr;
 };
 
 /*
-	@cb {Function} :: return true / false
-	return {Array}
+    @cb {Function} :: return true / false
+    return {Array}
 */
 Array.prototype.where = function(cb) {
 
-	var self = this;
-	var selected = [];
-	var length = self.length;
+    var self = this;
+    var selected = [];
+    var length = self.length;
 
-	for (var i = 0; i < length; i++) {
-		if (cb.call(self, self[i], i))
-			selected.push(self[i]);
-	}
+    for (var i = 0; i < length; i++) {
+        if (cb.call(self, self[i], i))
+            selected.push(self[i]);
+    }
 
-	return selected;
+    return selected;
 };
 
 /*
-	@cb {Function} :: return true if is finded
-	return {Array item}
+    @cb {Function} :: return true if is finded
+    return {Array item}
 */
 Array.prototype.find = function(cb) {
-	var self = this;
-	var length = self.length;
-	for (var i = 0; i < length; i++) {
-		if (cb.call(self, self[i], i))
-			return self[i];
-	}
-	return null;
+    var self = this;
+    var length = self.length;
+    for (var i = 0; i < length; i++) {
+        if (cb.call(self, self[i], i))
+            return self[i];
+    }
+    return null;
 };
 
 /*
-	@cb {Function} :: return true if is removed
-	return {Array}
+    @cb {Function} :: return true if is removed
+    return {Array}
 */
 Array.prototype.remove = function(cb) {
-	var self = this;
-	var arr = [];
-	var length = self.length;
-	for (var i = 0; i < length; i++) {
-		if (!cb.call(self, self[i], i))
-			arr.push(self[i]);
-	}
-	return arr;
+    var self = this;
+    var arr = [];
+    var length = self.length;
+    for (var i = 0; i < length; i++) {
+        if (!cb.call(self, self[i], i))
+            arr.push(self[i]);
+    }
+    return arr;
 };
 
 /*
-	Random return item from array
-	Return {Object}
+    Random return item from array
+    Return {Object}
 */
 Array.prototype.random = function() {
-	var self = this;
-	return self[exports.random(self.length - 1)];
+    var self = this;
+    return self[exports.random(self.length - 1)];
 };
 
 /*
-	Waiting list - function remove each item
-	@callback {Function} :: function(next) {}
-	@complete {Function} :: optional
+    Waiting list - function remove each item
+    @callback {Function} :: function(next) {}
+    @complete {Function} :: optional
 */
 Array.prototype.waiting = function(onItem, callback) {
-	console.log('Array.prototype.waiting: OBSOLETE. Use Array.prototype.wait');
-	return this.wait(onItem, callback);
+    console.log('Array.prototype.waiting: OBSOLETE. Use Array.prototype.wait');
+    return this.wait(onItem, callback);
 };
 
 /*
-	Waiting list - function remove each item
-	@callback {Function} :: function(next) {}
-	@complete {Function} :: optional
+    Waiting list - function remove each item
+    @callback {Function} :: function(next) {}
+    @complete {Function} :: optional
 */
 Array.prototype.wait = function(onItem, callback) {
 
-	var self = this;
-	var item = self.shift();
+    var self = this;
+    var item = self.shift();
 
-	if (typeof(item) === UNDEFINED) {
-		if (callback)
-			callback();
-		return self;
-	}
+    if (typeof(item) === UNDEFINED) {
+        if (callback)
+            callback();
+        return self;
+    }
 
-	onItem.call(self, item, function() {
-		setImmediate(function() {
-			self.wait(onItem, callback);
-		});
-	});
+    onItem.call(self, item, function() {
+        setImmediate(function() {
+            self.wait(onItem, callback);
+        });
+    });
 
-	return self;
+    return self;
 };
 
 Array.prototype.async = function(callback) {
 
-	var self = this;
-	var item = self.shift();
+    var self = this;
+    var item = self.shift();
 
-	if (typeof(item) === UNDEFINED) {
-		if (callback)
-			callback();
-		return self;
-	}
+    if (typeof(item) === UNDEFINED) {
+        if (callback)
+            callback();
+        return self;
+    }
 
-	item(function() {
-		setImmediate(function() {
-			self.async(callback);
-		});
-	});
+    item(function() {
+        setImmediate(function() {
+            self.async(callback);
+        });
+    });
 
-	return self;
+    return self;
 };
 
 /*
-	Randomize array
-	Return {Array}
+    Randomize array
+    Return {Array}
 */
 Array.prototype.randomize = function() {
 
-	var self = this;
-	var random = (Math.floor(Math.random() * 100000000) * 10).toString();
-	var index = 0;
-	var old = 0;
+    var self = this;
+    var random = (Math.floor(Math.random() * 100000000) * 10).toString();
+    var index = 0;
+    var old = 0;
 
-	self.sort(function(a, b) {
+    self.sort(function(a, b) {
 
-		var c = random[index++];
+        var c = random[index++];
 
-		if (typeof(c) === UNDEFINED) {
-			c = random[0];
-			index = 0;
-		}
+        if (typeof(c) === UNDEFINED) {
+            c = random[0];
+            index = 0;
+        }
 
-		if (old > c) {
-			old = c;
-			return -1;
-		}
+        if (old > c) {
+            old = c;
+            return -1;
+        }
 
-		if (old === c) {
-			old = c;
-			return 0;
-		}
+        if (old === c) {
+            old = c;
+            return 0;
+        }
 
-		old = c;
-		return 1;
-	});
+        old = c;
+        return 1;
+    });
 
-	return self;
+    return self;
 };
 
 /*
-	Async class
+    Async class
 */
 function AsyncTask(owner, name, fn, cb, waiting) {
 
-	this.handlers = {
-		oncomplete: this.complete.bind(this)
-	};
+    this.handlers = {
+        oncomplete: this.complete.bind(this)
+    };
 
-	this.isRunning = 0;
-	this.owner = owner;
-	this.name = name;
-	this.fn = fn;
-	this.cb = cb;
-	this.waiting = waiting;
-	this.interval = null;
-	this.isCanceled = false;
+    this.isRunning = 0;
+    this.owner = owner;
+    this.name = name;
+    this.fn = fn;
+    this.cb = cb;
+    this.waiting = waiting;
+    this.interval = null;
+    this.isCanceled = false;
 }
 
 AsyncTask.prototype.run = function() {
-	var self = this;
-	try
-	{
-		self.isRunning = 1;
-		self.owner.tasksWaiting[self.name] = true;
-		self.owner.emit('begin', self.name);
+    var self = this;
+    try
+    {
+        self.isRunning = 1;
+        self.owner.tasksWaiting[self.name] = true;
+        self.owner.emit('begin', self.name);
 
-		var timeout = self.owner.tasksTimeout[self.name];
-		if (timeout > 0)
-			self.interval = setTimeout(self.timeout.bind(self), timeout);
+        var timeout = self.owner.tasksTimeout[self.name];
+        if (timeout > 0)
+            self.interval = setTimeout(self.timeout.bind(self), timeout);
 
-		self.fn(self.handlers.oncomplete);
-	} catch (ex) {
-		self.owner.emit('error', self.name, ex);
-		self.complete();
-	}
-	return self;
+        self.fn(self.handlers.oncomplete);
+    } catch (ex) {
+        self.owner.emit('error', self.name, ex);
+        self.complete();
+    }
+    return self;
 };
 
 AsyncTask.prototype.timeout = function(timeout) {
-	var self = this;
+    var self = this;
 
-	if (timeout > 0) {
-		clearTimeout(self.interval);
-		setTimeout(self.timeout.bind(self), timeout);
-		return self;
-	}
+    if (timeout > 0) {
+        clearTimeout(self.interval);
+        setTimeout(self.timeout.bind(self), timeout);
+        return self;
+    }
 
-	if (timeout <= 0) {
-		clearTimeout(self.interval);
-		setTimeout(self.timeout.bind(self), timeout);
-		return self;
-	}
+    if (timeout <= 0) {
+        clearTimeout(self.interval);
+        setTimeout(self.timeout.bind(self), timeout);
+        return self;
+    }
 
-	self.cancel(true);
-	return self;
+    self.cancel(true);
+    return self;
 };
 
 AsyncTask.prototype.cancel = function(isTimeout) {
-	var self = this;
+    var self = this;
 
-	self.isCanceled = true;
+    self.isCanceled = true;
 
-	if (isTimeout)
-		self.owner.emit('timeout', self.name);
-	else
-		self.owner.emit('cancel', self.name);
+    if (isTimeout)
+        self.owner.emit('timeout', self.name);
+    else
+        self.owner.emit('cancel', self.name);
 
-	self.fn = null;
-	self.cb = null;
+    self.fn = null;
+    self.cb = null;
 };
 
 AsyncTask.prototype.complete = function() {
 
-	var item = this;
-	var self = item.owner;
+    var item = this;
+    var self = item.owner;
 
-	item.isRunning = 2;
+    item.isRunning = 2;
 
-	delete self.tasksPending[item.name];
-	delete self.tasksWaiting[item.name];
+    delete self.tasksPending[item.name];
+    delete self.tasksWaiting[item.name];
 
-	if (!item.isCanceled) {
-		try
-		{
-			self.emit('end', item.name);
+    if (!item.isCanceled) {
+        try
+        {
+            self.emit('end', item.name);
 
-			if (item.cb)
-				item.cb();
+            if (item.cb)
+                item.cb();
 
-		} catch (ex) {
-			self.emit('error', ex, item.name);
-		}
-	}
+        } catch (ex) {
+            self.emit('error', ex, item.name);
+        }
+    }
 
-	self.reload();
-	self.refresh();
+    self.reload();
+    self.refresh();
 
-	return self;
+    return self;
 };
 
 function Async(owner) {
 
-	this._max = 0;
-	this._count = 0;
-	this._isRunning = false;
+    this._max = 0;
+    this._count = 0;
+    this._isRunning = false;
 
-	this.owner = owner;
-	this.onComplete = [];
+    this.owner = owner;
+    this.onComplete = [];
 
-	this.tasksPending = {};
-	this.tasksWaiting = {};
-	this.tasksAll = [];
-	this.tasksTimeout = {};
+    this.tasksPending = {};
+    this.tasksWaiting = {};
+    this.tasksAll = [];
+    this.tasksTimeout = {};
 
-	events.EventEmitter.call(this);
+    events.EventEmitter.call(this);
 }
 
 Async.prototype = {
-	get count() {
-		return this._count;
-	},
+    get count() {
+        return this._count;
+    },
 
-	get percentage() {
-		var self = this;
-		return 100 - Math.floor((self._count * 100) / self._max);
-	}
+    get percentage() {
+        var self = this;
+        return 100 - Math.floor((self._count * 100) / self._max);
+    }
 }
 
 Async.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
-	constructor: {
-		value: Async,
-		enumberable: false
-	}
+    constructor: {
+        value: Async,
+        enumberable: false
+    }
 });
 
 Async.prototype.reload = function() {
-	var self = this;
-	self.tasksAll = Object.keys(self.tasksPending);
-	self.emit('percentage', self.percentage);
-	return self;
+    var self = this;
+    self.tasksAll = Object.keys(self.tasksPending);
+    self.emit('percentage', self.percentage);
+    return self;
 };
 
 Async.prototype.cancel = function(name) {
 
-	var self = this;
+    var self = this;
 
-	if (typeof(name) === UNDEFINED) {
+    if (typeof(name) === UNDEFINED) {
 
-		for (var i = 0; i < self._count; i++)
-			self.cancel(tasksAll[i]);
+        for (var i = 0; i < self._count; i++)
+            self.cancel(tasksAll[i]);
 
-		return true;
-	}
+        return true;
+    }
 
-	var task = self.tasksPending[name];
+    var task = self.tasksPending[name];
 
-	if (!task)
-		return false;
+    if (!task)
+        return false;
 
-	delete self.tasksPending[name];
-	delete self.tasksWaiting[name];
+    delete self.tasksPending[name];
+    delete self.tasksWaiting[name];
 
-	task.cancel();
-	self.reload();
-	self.refresh();
+    task.cancel();
+    self.reload();
+    self.refresh();
 
-	return true;
+    return true;
 };
 
 Async.prototype.await = function(name, fn, cb) {
 
-	var self = this;
+    var self = this;
 
-	if (typeof(name) === FUNCTION) {
-		cb = fn;
-		fn = name;
-		name = exports.GUID(6);
-	}
+    if (typeof(name) === FUNCTION) {
+        cb = fn;
+        fn = name;
+        name = exports.GUID(6);
+    }
 
-	if (typeof(self.tasksPending[name]) !== UNDEFINED)
-		return false;
+    if (typeof(self.tasksPending[name]) !== UNDEFINED)
+        return false;
 
-	self.tasksPending[name] = new AsyncTask(self, name, fn, cb, null);
-	self._max++;
-	self.reload();
-	self.refresh();
+    self.tasksPending[name] = new AsyncTask(self, name, fn, cb, null);
+    self._max++;
+    self.reload();
+    self.refresh();
 
-	return true;
+    return true;
 };
 
 Async.prototype.wait = function(name, waitingFor, fn, cb) {
 
-	var self = this;
+    var self = this;
 
-	if (typeof(waitingFor) === FUNCTION) {
-		cb = fn;
-		fn = waitingFor;
-		waitingFor = name;
-		name = exports.GUID(6);
-	}
+    if (typeof(waitingFor) === FUNCTION) {
+        cb = fn;
+        fn = waitingFor;
+        waitingFor = name;
+        name = exports.GUID(6);
+    }
 
-	if (typeof(self.tasksPending[name]) !== UNDEFINED)
-		return false;
+    if (typeof(self.tasksPending[name]) !== UNDEFINED)
+        return false;
 
-	self.tasksPending[name] = new AsyncTask(self, name, fn, cb, waitingFor);
-	self._max++;
-	self.reload();
-	self.refresh();
+    self.tasksPending[name] = new AsyncTask(self, name, fn, cb, waitingFor);
+    self._max++;
+    self.reload();
+    self.refresh();
 
-	return true;
+    return true;
 
 };
 
 Async.prototype.complete = function(fn) {
-	return this.run(fn);
+    return this.run(fn);
 };
 
 Async.prototype.run = function(fn) {
-	var self = this;
-	self._isRunning = true;
+    var self = this;
+    self._isRunning = true;
 
-	if (fn)
-		self.onComplete.push(fn);
+    if (fn)
+        self.onComplete.push(fn);
 
-	self.refresh();
-	return self;
+    self.refresh();
+    return self;
 };
 
 Async.prototype.isRunning = function(name) {
 
-	var self = this;
+    var self = this;
 
-	if (!name)
-		return self._isRunning;
+    if (!name)
+        return self._isRunning;
 
-	var task = self.tasksPending[name];
-	if (!task)
-		return false;
+    var task = self.tasksPending[name];
+    if (!task)
+        return false;
 
-	return task.isRunning === 1;
+    return task.isRunning === 1;
 };
 
 Async.prototype.isWaiting = function(name) {
-	var self = this;
+    var self = this;
 
-	var task = self.tasksPending[name];
-	if (!task)
-		return false;
+    var task = self.tasksPending[name];
+    if (!task)
+        return false;
 
-	return task.isRunning === 0;
+    return task.isRunning === 0;
 };
 
 Async.prototype.isPending = function(name) {
-	var self = this;
-	var task = self.tasksPending[name];
-	if (!task)
-		return false;
-	return true;
+    var self = this;
+    var task = self.tasksPending[name];
+    if (!task)
+        return false;
+    return true;
 };
 
 Async.prototype.timeout = function(name, timeout) {
 
-	var self = this;
+    var self = this;
 
-	if (timeout <= 0 || typeof(timeout) === UNDEFINED) {
-		delete self.tasksTimeout[name];
-		return self;
-	}
+    if (timeout <= 0 || typeof(timeout) === UNDEFINED) {
+        delete self.tasksTimeout[name];
+        return self;
+    }
 
-	self.tasksTimeout[name] = timeout;
-	return self;
+    self.tasksTimeout[name] = timeout;
+    return self;
 };
 
 Async.prototype.refresh = function(name) {
 
-	var self = this;
+    var self = this;
 
-	if (!self._isRunning)
-		return self;
+    if (!self._isRunning)
+        return self;
 
-	self._count = self.tasksAll.length;
+    self._count = self.tasksAll.length;
 
-	for (var i = 0; i < self._count; i++) {
+    for (var i = 0; i < self._count; i++) {
 
-		var task = self.tasksPending[self.tasksAll[i]];
+        var task = self.tasksPending[self.tasksAll[i]];
 
-		if (task.isRunning !== 0)
-			continue;
+        if (task.isRunning !== 0)
+            continue;
 
-		if (task.waiting !== null && typeof(self.tasksWaiting[task.waiting]) !== UNDEFINED)
-			continue;
+        if (task.waiting !== null && typeof(self.tasksWaiting[task.waiting]) !== UNDEFINED)
+            continue;
 
-		task.run();
-	}
+        task.run();
+    }
 
-	if (self._count === 0) {
-		self._isRunning = false;
-		self.emit('complete');
-		self.emit('percentage', 100);
-		self._max = 0;
-		var complete = self.onComplete;
-		var length = complete.length;
-		self.onComplete = [];
-		for (var i = 0; i < length; i++) {
-			try
-			{
-				complete[i]();
-			} catch (ex) {
-				self.emit('error', ex);
-			}
-		}
-	}
+    if (self._count === 0) {
+        self._isRunning = false;
+        self.emit('complete');
+        self.emit('percentage', 100);
+        self._max = 0;
+        var complete = self.onComplete;
+        var length = complete.length;
+        self.onComplete = [];
+        for (var i = 0; i < length; i++) {
+            try
+            {
+                complete[i]();
+            } catch (ex) {
+                self.emit('error', ex);
+            }
+        }
+    }
 
-	return self;
+    return self;
 };
 
 function FileList() {
-	this.pending = [];
-	this.pendingDirectory = [];
-	this.directory = [];
-	this.file = [];
-	this.onComplete = null;
-	this.onFilter = null;
+    this.pending = [];
+    this.pendingDirectory = [];
+    this.directory = [];
+    this.file = [];
+    this.onComplete = null;
+    this.onFilter = null;
 }
 
 FileList.prototype.reset = function() {
-	var self = this;
-	self.file = [];
-	self.directory = [];
-	self.pendingDirectory = [];
+    var self = this;
+    self.file = [];
+    self.directory = [];
+    self.pendingDirectory = [];
 };
 
 FileList.prototype.walk = function(directory) {
 
-	var self = this;
+    var self = this;
 
-	if (directory instanceof Array) {
-		var length = directory.length;
+    if (directory instanceof Array) {
+        var length = directory.length;
 
-		for (var i = 0; i < length; i++)
-			self.pendingDirectory.push(directory[i]);
+        for (var i = 0; i < length; i++)
+            self.pendingDirectory.push(directory[i]);
 
-		self.next();
-		return;
-	}
+        self.next();
+        return;
+    }
 
-	fs.readdir(directory, function(err, arr) {
+    fs.readdir(directory, function(err, arr) {
 
-		if (err)
-			return self.next();
+        if (err)
+            return self.next();
 
-		var length = arr.length;
-		for (var i = 0; i < length; i++)
-			self.pending.push(path.join(directory, arr[i]));
+        var length = arr.length;
+        for (var i = 0; i < length; i++)
+            self.pending.push(path.join(directory, arr[i]));
 
-		self.next();
-	});
+        self.next();
+    });
 };
 
 FileList.prototype.stat = function(path) {
-	var self = this;
+    var self = this;
 
-	fs.stat(path, function(err, stats) {
+    fs.stat(path, function(err, stats) {
 
-		if (err)
-			return self.next();
+        if (err)
+            return self.next();
 
-		if (stats.isDirectory() && (self.onFilter === null || self.onFilter(path, true))) {
-			self.directory.push(path);
-			self.pendingDirectory.push(path);
-			self.next();
-			return;
-		}
+        if (stats.isDirectory() && (self.onFilter === null || self.onFilter(path, true))) {
+            self.directory.push(path);
+            self.pendingDirectory.push(path);
+            self.next();
+            return;
+        }
 
-		if (self.onFilter === null || self.onFilter(path, false))
-			self.file.push(path);
+        if (self.onFilter === null || self.onFilter(path, false))
+            self.file.push(path);
 
-		self.next();
-	});
+        self.next();
+    });
 };
 
 FileList.prototype.next = function() {
-	var self = this;
+    var self = this;
 
-	if (self.pending.length > 0) {
-		var item = self.pending.shift();
-		self.stat(item);
-		return;
-	}
+    if (self.pending.length > 0) {
+        var item = self.pending.shift();
+        self.stat(item);
+        return;
+    }
 
-	if (self.pendingDirectory.length > 0) {
-		var directory = self.pendingDirectory.shift();
-		self.walk(directory);
-		return;
-	}
+    if (self.pendingDirectory.length > 0) {
+        var directory = self.pendingDirectory.shift();
+        self.walk(directory);
+        return;
+    }
 
-	self.onComplete(self.file, self.directory);
+    self.onComplete(self.file, self.directory);
 };
 
 exports.Async = Async;
 
 exports.sync = function(fn, owner) {
-	return function() {
+    return function() {
 
-		var args = [].slice.call(arguments);
-		var params;
-		var callback;
-		var executed = false;
-		var self = owner || this;
+        var args = [].slice.call(arguments);
+        var params;
+        var callback;
+        var executed = false;
+        var self = owner || this;
 
-		args.push(function() {
-			params = arguments;
-			if (!executed && callback) {
-				executed = true;
-				callback.apply(self, params);
-			}
-		});
+        args.push(function() {
+            params = arguments;
+            if (!executed && callback) {
+                executed = true;
+                callback.apply(self, params);
+            }
+        });
 
-		fn.apply(self, args);
+        fn.apply(self, args);
 
-		return function(cb) {
-			callback = cb;
-			if (!executed && params) {
-				executed = true;
-				callback.apply(self, params);
-			}
-		};
-	};
+        return function(cb) {
+            callback = cb;
+            if (!executed && params) {
+                executed = true;
+                callback.apply(self, params);
+            }
+        };
+    };
 };
 
 exports.async = function(fn) {
-	return function(complete) {
+    return function(complete) {
 
-		var self = this;
-		var generator = fn();
+        var self = this;
+        var generator = fn();
 
-		next(null);
+        next(null);
 
-		function next(err, result) {
+        function next(err, result) {
 
-			var g;
+            var g;
 
-			try
-			{
-				switch (err === null) {
-					case true:
-						g = generator.next(result);
-						break;
-					case false:
-						g = generator.throw(err);
-						break;
-				}
-			} catch (e) {
-				if (complete) {
-					if (typeof(complete) === OBJECT && complete.view500)
-						complete.view500(e);
-					else
-						complete(e);
-				}
-				return;
-			}
+            try
+            {
+                switch (err === null) {
+                    case true:
+                        g = generator.next(result);
+                        break;
+                    case false:
+                        g = generator.throw(err);
+                        break;
+                }
+            } catch (e) {
+                if (complete) {
+                    if (typeof(complete) === OBJECT && complete.view500)
+                        complete.view500(e);
+                    else
+                        complete(e);
+                }
+                return;
+            }
 
-			if (g.done) {
-				if (complete && typeof(complete) !== OBJECT)
-					complete(null, g.value);
-				return;
-			}
+            if (g.done) {
+                if (complete && typeof(complete) !== OBJECT)
+                    complete(null, g.value);
+                return;
+            }
 
-			if (typeof(g.value) !== FUNCTION) {
-				next.call(self, null, g.value);
-				return;
-			}
+            if (typeof(g.value) !== FUNCTION) {
+                next.call(self, null, g.value);
+                return;
+            }
 
-			try
-			{
-				g.value.call(self, function() {
-					next.apply(self, arguments);
-				});
-			} catch (e) {
-				setImmediate(function() {
-					next.call(self, e);
-				});
-			}
-		}
+            try
+            {
+                g.value.call(self, function() {
+                    next.apply(self, arguments);
+                });
+            } catch (e) {
+                setImmediate(function() {
+                    next.call(self, e);
+                });
+            }
+        }
 
-		return generator.value;
-	};
+        return generator.value;
+    };
 };
 
 // MIT
 // Written by Jozef Gula
 exports.getMessageLength = function(data, isLE) {
 
-	var length = data[1] & 0x7f;
+    var length = data[1] & 0x7f;
 
-	if (length === 126) {
+    if (length === 126) {
 
-		if (data.length < 4)
-			return -1;
+        if (data.length < 4)
+            return -1;
 
-		var a = 211;
-		var bLength = [data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-		return converBytesToInt64(bLength, 0, isLE);
-	}
+        var a = 211;
+        var bLength = [data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+        return converBytesToInt64(bLength, 0, isLE);
+    }
 
-	if (length === 127) {
-		if (data.Length < 10)
-			return -1;
-		var bLength = [data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]];
-		return converBytesToInt64(bLength, 0, isLE);
-	}
-	return length;
+    if (length === 127) {
+        if (data.Length < 10)
+            return -1;
+        var bLength = [data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]];
+        return converBytesToInt64(bLength, 0, isLE);
+    }
+    return length;
 };
 
 // MIT
 // Written by Jozef Gula
 function converBytesToInt64(data, startIndex, isLE) {
-	if (isLE)
-		return (data[startIndex] | (data[startIndex + 1] << 0x08) | (data[startIndex + 2] << 0x10) | (data[startIndex + 3] << 0x18) | (data[startIndex + 4] << 0x20) | (data[startIndex + 5] << 0x28) | (data[startIndex + 6] << 0x30) | (data[startIndex + 7] << 0x38));
-	return ((data[startIndex + 7] << 0x20) | (data[startIndex + 6] << 0x28) | (data[startIndex + 5] << 0x30) | (data[startIndex + 4] << 0x38) | (data[startIndex + 3]) | (data[startIndex + 2] << 0x08) | (data[startIndex + 1] << 0x10) | (data[startIndex] << 0x18));
+    if (isLE)
+        return (data[startIndex] | (data[startIndex + 1] << 0x08) | (data[startIndex + 2] << 0x10) | (data[startIndex + 3] << 0x18) | (data[startIndex + 4] << 0x20) | (data[startIndex + 5] << 0x28) | (data[startIndex + 6] << 0x30) | (data[startIndex + 7] << 0x38));
+    return ((data[startIndex + 7] << 0x20) | (data[startIndex + 6] << 0x28) | (data[startIndex + 5] << 0x30) | (data[startIndex + 4] << 0x38) | (data[startIndex + 3]) | (data[startIndex + 2] << 0x08) | (data[startIndex + 1] << 0x10) | (data[startIndex] << 0x18));
 }
 
 global.async = exports.async;

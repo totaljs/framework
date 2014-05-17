@@ -5,7 +5,10 @@ IN DEVELOPMENT ======= 1.5.0
 - added: request.noCache()
 - added: response.noCache()
 - added: new config file (this file is loaded in a debug and in a release mode): /some-app/config
+- added: String.prototype.startsWith(text, [ignoreCase]);
+- added: String.prototype.endsWith(text, [ignoreCase]);
 
+- updated: framework.eval(string/url/function) - this function supports eval code from another URL
 - updated: assertion testing (new features)
 - updated: framework.isProcessed(filename or request)
 - updated: framework.isProcessing(filename or request)
