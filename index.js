@@ -1346,11 +1346,12 @@ Framework.prototype.injectComponent = function(name, url) {
     return self;
 };
 
-/*
-    Eval script
-    @script {String or Function}
-    return {Framework}
-*/
+/**
+ * Eval code
+ * @see {@link http://docs.totaljs.com/Framework/#framework.eval|Documentation}
+ * @param  {String or Function} script function to eval or Code or URL address.
+ * @return {Framework}
+ */
 Framework.prototype.eval = function(script) {
 
     var self = this;
@@ -1364,6 +1365,18 @@ Framework.prototype.eval = function(script) {
             self.error(ex, 'eval - ' + script.toString(), null);
         }
         return self;
+    }
+
+    if ((script.startsWith('http://', true) || script.startsWith('https://', true)) && scripts.trim().indexOf('\n') === -1) {
+        utils.request(script, 'GET', '', function(err, data) {
+
+            if (!err) {
+                // recursive calling
+                self.eval(data.toString());
+                return;
+            }
+            self.error(err);
+        });
     }
 
     try
@@ -3542,10 +3555,6 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
         for (var i = 0; i < length; i++) {
 
             switch (flags[i].toLowerCase()) {
-
-                case 'authorize':
-                case 'unauthorize':
-                    break;
 
                 case 'xhr':
                     headers['X-Requested-With'] = 'XMLHttpRequest';
