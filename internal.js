@@ -1983,8 +1983,14 @@ function view_prepare(command) {
 		case 'session':
 		case 'user':
 		case 'config':
-		case 'functions':
 		case 'model':
+
+			if (view_is_assign(command))
+				return 'self.$set(' + command + ')';
+
+			return '(' + command + ').toString().encode()';
+
+		case 'functions':
 			return '(' + command + ').toString().encode()';
 
 		case '!controller':
@@ -2035,6 +2041,7 @@ function view_prepare(command) {
 			if (command.indexOf('(') !== -1)
 				return 'self.$' + command;
 			return 'self.' + command + '()';
+
 		case 'place':
 		case 'sitemap':
 			if (command.indexOf('(') !== -1)
@@ -2157,7 +2164,37 @@ function view_insert_call(command) {
 	}
 
 	return command;
-};
+}
+
+function view_is_assign(value) {
+
+	var length = value.length;
+	var skip = 0;
+
+	for (var i = 0; i < length; i++) {
+
+		var c = value[i];
+
+		if (c === '[') {
+			skip++;
+			continue;
+		}
+
+		if (c === ']') {
+			skip--;
+			continue;
+		}
+
+		if (c === '=') {
+			if (skip === 0)
+				return true;
+		}
+
+	}
+
+	return false;
+}
+
 
 function view_find_command(content, index) {
 

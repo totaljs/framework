@@ -7144,6 +7144,16 @@ Controller.prototype.$selected = function(bool, charBeg, charEnd) {
     return self.$isValue(bool, charBeg, charEnd, 'selected="selected"');
 };
 
+/**
+ * Fake function for assign value
+ * @private
+ * @param {Object} value Value to eval.
+ * return {String} Returns empty string.
+ */
+Controller.prototype.$set = function(value) {
+    return '';
+};
+
 /*
     Internal function for views
     @bool {Boolean}
