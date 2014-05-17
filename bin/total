@@ -4,7 +4,7 @@ var path = require('path');
 var os = require('os');
 
 var EOF = os.platform() === 'win32' ? '\r\n' : '\n';
-var $type = 0;
+var $type = 1;
 
 // $type == 0 - full
 // $type == 1 - normal
@@ -111,21 +111,25 @@ function createFileIndex(directory) {
 function createFileConfig(directory) {
 	var buffer = [];
 
+	buffer.push("name                     : My web site");
+	buffer.push("author                   : Your company name");
+
+	fs.writeFileSync(path.join(directory, 'config'), buffer.join(EOF));
+	buffer = [];
+
 	buffer.push("default-ip               : 127.0.0.1");
 	buffer.push("default-port             : 8000");
 	buffer.push("");
-	buffer.push("name                     : my web site");
-	buffer.push("version                  : 1.01");
 	buffer.push("secret                   : your-secret-key");
-	buffer.push("author                   : Your company name");
+	buffer.push("version                  : 1.01");
 
 	if ($type === 3) {
 		buffer.push('');
 		buffer.push('// CloudFlare cdnjs');
-		buffer.push("angular-version          : 1.2.15");
+		buffer.push("angular-version          : 1.2.16");
 		buffer.push('');
 		buffer.push('// CloudFlare cdnjs');
-		buffer.push("angular-i18n-version     : 1.2.10");
+		buffer.push("angular-i18n-version     : 1.2.15");
 	}
 
 	fs.writeFileSync(path.join(directory, 'config-release'), buffer.join(EOF));
@@ -188,7 +192,7 @@ function createFileViews(directory) {
 	buffer.push('    @{head}');
 	if ($type !== 3) {
 		buffer.push('    @{css(\'default.css\')}');
-		buffer.push('    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>');
+		buffer.push('    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>');
 		buffer.push('    @{js(\'default.js\')}');
 	}
 	buffer.push('    @{favicon(\'favicon.ico\')}');
@@ -403,17 +407,18 @@ function createFileTest(directory) {
 	buffer.push("");
 	buffer.push("exports.run = function(framework) {");
 	buffer.push("");
-	buffer.push("    framework.assert('Homepage', function(name) {");
+	buffer.push("    framework.assert('Number validation', function(next, name) {");
 	buffer.push("        assert.ok('1' === '1', name);");
+	buffer.push("        next();");
 	buffer.push("    });");
 	buffer.push("");
-	buffer.push("    framework.assert('Homepage', '/1/', function(error, data, name, code, headers) {");
+	buffer.push("    framework.assert('Homepage', '/1/', ['xhr', 'json'], function(error, data, code, headers, cookies, name) {");
 	buffer.push("        assert.ok(code === 200, name);");
-	buffer.push("    });");
+	buffer.push("    }, { name: 'total.js (optional)' }, { cookie: 'value (optional)' }, { 'X-My-Header': 'optional' });");
 	buffer.push("");
 	buffer.push("};");
 
-	fs.writeFileSync(path.join(dir, 'global.js'), buffer.join(EOF));
+	fs.writeFileSync(path.join(dir, 'default.js'), buffer.join(EOF));
 }
 
 function createFileComponent(directory) {
@@ -456,8 +461,8 @@ function install(directory) {
 function display_help() {
 		console.log('');
 		console.log('-m or -minimal   = minimal');
-		console.log('-n or -normal    = normal');
-		console.log('-f or -full      = full (default)');
+		console.log('-n or -normal    = normal (default)');
+		console.log('-f or -full      = full');
 		console.log('-a or -angular   = for angular.js application');
 		console.log('-v or -version   = total.js version');
 		console.log('/path/           = target (default current directory)');
@@ -476,25 +481,25 @@ function main() {
 			return;
 		}
 
-		if (cmd === '-f' || cmd === '-full')
+		if (cmd === '-f' || cmd === '-full' || cmd === 'full')
 			continue;
 
-		if (cmd === '-a' || cmd === '-angular') {
+		if (cmd === '-a' || cmd === '-angular' || cmd === 'angular') {
 			$type = 3;
 			continue;
 		}
 
-		if (cmd === '-m' || cmd === '-minimal' || cmd === '-minimum') {
+		if (cmd === '-m' || cmd === '-minimal' || cmd === '-minimum' || cmd === 'minimum') {
 			$type = 2;
 			continue;
 		}
 
-		if (cmd === '-n' || cmd === '-normal') {
+		if (cmd === '-n' || cmd === '-normal' || cmd === 'normal') {
 			$type = 1;
 			continue;
 		}
 
-		if (cmd === '-h' || cmd === '-help' || cmd === '--help') {
+		if (cmd === '-h' || cmd === '-help' || cmd === '--help' || cmd === 'help') {
 			display_help();
 			return;
 		}
