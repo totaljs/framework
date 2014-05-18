@@ -224,12 +224,7 @@ function createFilePublicAngular(directory) {
 	buffer.push('');
 
 	fs.writeFileSync(path.join(dir, 'robots.txt'), buffer.join(EOF));
-
-	buffer = [];
-	buffer.push('/*auto*/');
-	buffer.push('');
-	buffer.push('body { padding:20px; margin:0; font:normal 12px Arial; }');
-	fs.writeFileSync(path.join(css, 'app.css'), buffer.join(EOF));
+	fs.writeFileSync(path.join(css, 'app.css'), 'LyphdXRvKi8NCg0KLyoNCiAgICB2YXIgY29sb3IgPSAnY29sb3I6cmVkJzsNCiAgICB2YXIgd2lkdGggPSAnOTQwcHgnOw0KKi8NCg0KYm9keSB7IHBhZGRpbmc6MjBweDsgbWFyZ2luOjA7IGZvbnQ6bm9ybWFsIDEycHggQXJpYWw7IGNvbG9yOiM1MDUwNTA7IH0NCg0KLmNvbnRlbnQgeyBtYXJnaW46MCBhdXRvOyB3aWR0aDogJHdpZHRoOyBwYWRkaW5nOiAxMHB4OyBib3JkZXItcmFkaXVzOiA1cHg7ICRjb2xvcjsgYm94LXNoYWRvdzogMCAwIDIwcHggcmdiYSgwLDAsMCwwLjUpOyBhbmltYXRpb246IG15QW5pbWF0aW9uIDVzIGFsdGVybmF0ZTsgfQ0KDQoubGlzdCB7IGJvcmRlci1ib3R0b206MXB4IHNvbGlkICNFMEUwRTA7IHBhZGRpbmctYm90dG9tOjVweDsgbWFyZ2luLWJvdHRvbTo1cHg7IH0NCi5saXN0ID4gZGl2OmZpcnN0LWNoaWxkIHsgZm9udC1zaXplOiAxNXB4OyB9DQoNCkBrZXlmcmFtZXMgbXlBbmltYXRpb24NCnsNCgkwJSAgIHsgYmFja2dyb3VuZDogd2hpdGU7IH0NCgkyNSUgIHsgYmFja2dyb3VuZDogI0YwRjBGMDsgfQ0KCTUwJSAgeyBiYWNrZ3JvdW5kOiAjRDBEMEQwOyB9DQoJMTAwJSB7IGJhY2tncm91bmQ6ICNFMEUwRTA7IH0NCn0=', 'base64');
 
 	buffer = [];
 	buffer.push("var app = angular.module('app', []);");
@@ -272,17 +267,7 @@ function createFilePublic(directory) {
 	buffer.push('');
 
 	fs.writeFileSync(path.join(dir, 'robots.txt'), buffer.join(EOF));
-
-	buffer = [];
-	buffer.push('/*auto*/');
-	buffer.push('');
-	buffer.push('@constant{ color:#505050 }');
-	buffer.push('@function(property){ color:@property }');
-	buffer.push('');
-	buffer.push('body { padding:20px; margin:0; font:normal 12px Arial; @constant; }');
-	buffer.push('div { @function(\'red\'); }');
-
-	fs.writeFileSync(path.join(css, 'default.css'), buffer.join(EOF));
+	fs.writeFileSync(path.join(css, 'default.css'), 'LyphdXRvKi8NCg0KLyoNCiAgICB2YXIgY29sb3IgPSAnY29sb3I6cmVkJzsNCiAgICB2YXIgd2lkdGggPSAnOTQwcHgnOw0KKi8NCg0KYm9keSB7IHBhZGRpbmc6MjBweDsgbWFyZ2luOjA7IGZvbnQ6bm9ybWFsIDEycHggQXJpYWw7IGNvbG9yOiM1MDUwNTA7IH0NCg0KLmNvbnRlbnQgeyBtYXJnaW46MCBhdXRvOyB3aWR0aDogJHdpZHRoOyBwYWRkaW5nOiAxMHB4OyBib3JkZXItcmFkaXVzOiA1cHg7ICRjb2xvcjsgYm94LXNoYWRvdzogMCAwIDIwcHggcmdiYSgwLDAsMCwwLjUpOyBhbmltYXRpb246IG15QW5pbWF0aW9uIDVzIGFsdGVybmF0ZTsgfQ0KDQoubGlzdCB7IGJvcmRlci1ib3R0b206MXB4IHNvbGlkICNFMEUwRTA7IHBhZGRpbmctYm90dG9tOjVweDsgbWFyZ2luLWJvdHRvbTo1cHg7IH0NCi5saXN0ID4gZGl2OmZpcnN0LWNoaWxkIHsgZm9udC1zaXplOiAxNXB4OyB9DQoNCkBrZXlmcmFtZXMgbXlBbmltYXRpb24NCnsNCgkwJSAgIHsgYmFja2dyb3VuZDogd2hpdGU7IH0NCgkyNSUgIHsgYmFja2dyb3VuZDogI0YwRjBGMDsgfQ0KCTUwJSAgeyBiYWNrZ3JvdW5kOiAjRDBEMEQwOyB9DQoJMTAwJSB7IGJhY2tncm91bmQ6ICNFMEUwRTA7IH0NCn0=', 'base64');
 
 	buffer = [];
 	buffer.push('$(document).ready(function() {');
