@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.5.0
 
 - added: TOTAL.JS PACKAGE MANAGER (new binary: tpm === [t]otal.js [p]ackage [m]anager)
+- added: JS CSS (important: removed LESS)
 - added: framework.noCache(req, [res])
 - added: request.noCache()
 - added: response.noCache()
@@ -17,6 +18,8 @@ IN DEVELOPMENT ======= 1.5.0
 
 - fixed: framework.isProcessed()
 - fixed: binary (test.js in empty-project)
+
+- removed: LESS
 
 ======= 1.4.0
 

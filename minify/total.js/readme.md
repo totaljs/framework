@@ -171,7 +171,7 @@ Videos on YouTube
 * Supports HTML minification
 * Supports JavaScript compress
 * Supports JavaScript dynamic compress in views - [example: dynamic JavaScript compress](https://github.com/totaljs/examples/tree/master/views-javascript-compress)
-* Supports simple LESS CSS (with compress) - [example: LESS CSS](https://github.com/totaljs/examples/tree/master/css-less)
+* __Supports JS CSS__ - [example: JS CSS](https://github.com/totaljs/examples/tree/master/css-jscss)
 * Supports resources (for multilanguage pages) - [example: resources](https://github.com/totaljs/examples/tree/master/localization-resources)
 * __Supports prefixes for mobile devices__ - [example: prefixes](https://github.com/totaljs/examples/tree/master/mobile)
 * Supports SMTP mail sender (attachment, HTML, basic authentication) - [example: SMTP mail sender](https://github.com/totaljs/examples/tree/master/email-templating)

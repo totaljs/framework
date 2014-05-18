@@ -1700,7 +1700,7 @@ Framework.prototype.compileStatic = function(req, filename) {
             break;
 
         case '.css':
-            output = self.config['allow-compile-css'] ? self.onCompileCSS === null ? internal.compile_less(output) : self.onCompileCSS(filename, output) : output;
+            output = self.config['allow-compile-css'] ? self.onCompileCSS === null ? internal.compile_css(output) : self.onCompileCSS(filename, output) : output;
             var matches = output.match(/url\(.*?\)/g);
             if (matches !== null) {
                 matches.forEach(function(o) {

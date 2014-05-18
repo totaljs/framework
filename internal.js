@@ -641,310 +641,154 @@ HttpFile.prototype.image = function(imageMagick) {
 
 // *********************************************************************************
 // =================================================================================
-// LESS CSS
+// JS CSS + AUTO-VENDOR-PREFIXES
 // =================================================================================
 // *********************************************************************************
 
-function LessParam() {
-	this.name = '';
-	this.value = '';
+function compile_jscss(css) {
+
+    var comments = [];
+
+    var beg = 0;
+    var end = 0;
+    var tmp = '';
+
+    while (true) {
+
+        beg = css.indexOf('/*', beg);
+
+        if (beg === -1) {
+            tmp += css;
+            break;
+        }
+
+        end = css.indexOf('*/', beg);
+        if (end === -1)
+            continue;
+
+        comments.push(css.substring(beg, end).trim());
+        beg = 0;
+        css = css.substring(end + 2);
+    }
+
+    css = tmp.trim();
+
+    var length = comments.length;
+    var code = '';
+    var avp = '@#auto-vendor-prefix#@';
+    var isAuto = css.startsWith(avp);
+
+    if (isAuto)
+        css = css.replace(avp, '');
+
+    tmp = '';
+
+    for (var i = 0; i < length; i++) {
+
+        var comment = comments[i];
+
+        // Auto vendor prefixes
+        if (comment.indexOf('auto') !== -1 && comment.length <= 10) {
+            isAuto = true;
+            continue;
+        }
+
+        // Code for evaluating
+        if (comment.indexOf('var ') !== -1 || comment.indexOf('function ') !== -1)
+            code += comment.replace('/*', '').replace('*/', '') + '\n\n';
+
+    }
+
+    beg = 0;
+    end = 0;
+
+    var output = '';
+    tmp = css;
+
+    while (true) {
+
+        beg = tmp.indexOf('$');
+
+        if (beg === -1) {
+            output += tmp.replace(/\\/g, '\\\\').replace(/\"/g, '\\"').replace(/\n/g, '');
+            break;
+        }
+
+        output += tmp.substring(0, beg).replace(/\n/g, '');
+        tmp = tmp.substring(beg);
+
+        length = tmp.length;
+        end = 0;
+
+        var skipA = 0;
+        var skipB = 0;
+		var skipC = 0;
+
+        for (var i = 0; i < length; i++) {
+
+        	if (tmp[i] === '"') {
+
+        		if (skipA > 0) {
+        			skipA--;
+        			continue;
+        		}
+
+        		skipA++;
+        	}
+
+        	if (tmp[i] === '{')
+        		skipC++;
+
+        	if (tmp[i] === '\'') {
+
+        		if (skipB > 0) {
+        			skipB--;
+        			continue;
+        		}
+
+        		skipB++;
+        	}
+
+        	if (tmp[i] === '}' && skipC > 0) {
+        		skipC--;
+        		continue;
+        	}
+
+        	if (skipA > 0 || skipB > 0 || skipC > 0)
+        		continue;
+
+            if (tmp[i] === ';' || tmp[i] === '}' || tmp[i] === '\n') {
+                end = i;
+                break;
+            }
+        }
+
+        if (end === 0)
+            continue;
+
+        var cmd = tmp.substring(0, end);
+        tmp = tmp.substring(end);
+        output += '"+' + cmd.substring(1) + '+"';
+
+    }
+
+    var length = output.length;
+    var compiled = '';
+
+    output = code + '\n\n;compiled = "' + output + (output[length - 1] === '"' ? '' : '"');
+    eval(output);
+
+    var reg1 = /\n|\s{2,}/g;
+    var reg2 = /\s?\{\s{1,}/g;
+    var reg3 = /\s?\}\s{1,}/g;
+    var reg4 = /\s?\:\s{1,}/g;
+    var reg5 = /\s?\;\s{1,}/g;
+
+    if (isAuto)
+    	compiled = autoprefixer(compiled)
+
+    return compiled.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
 }
-
-/*
-	Internal class
-	@parent {Object}
-	return {LessValue}
-*/
-function LessValue(parent) {
-	this.index = 0;
-	this.value = '';
-	this.name = '';
-	this.isVariable = false;
-	this.isFunction = false;
-	this.isProblem = false;
-	this.parent = parent;
-};
-
-function Less() {};
-
-/*
-	Internal function
-	@less {Object}
-	return {String}
-*/
-LessValue.prototype.getValue = function(less) {
-
-	var self = this;
-
-	if (less === null)
-		return '';
-
-	if (self.isVariable)
-		return '';
-
-	var value = '';
-
-	if (!self.isFunction) {
-		value = less.value.substring(less.name.length).trim();
-
-		// možná chyba pri substring - 2
-		if ((value[0] === '{') && (value[value.length - 1] === '}'))
-			value = value.substring(1, value.length - 2).trim();
-
-		return value;
-	}
-
-	var param = [];
-	var beg = less.value.indexOf('(') + 1;
-	var end = less.value.indexOf(')', beg + 1);
-
-	less.value.substring(beg, end).split(',').forEach(function(o) {
-		var p = new LessParam();
-		p.name = o.trim();
-		param.push(p);
-	});
-
-	beg = self.value.indexOf('(') + 1;
-	end = self.value.lastIndexOf(')');
-
-	var index = 0;
-
-	self.parent.getParams(self.value.substring(beg, end)).forEach(function(o, index) {
-		if (param[index])
-			param[index].value = o.trim().replace(/\|/g, ',');
-	});
-
-	beg = less.value.indexOf('{') + 1;
-	end = less.value.lastIndexOf('}');
-
-	var sb = [];
-
-	less.value.substring(beg, end).split(';').forEach(function(o, index) {
-		value = o.trim();
-
-		if (value.length === 0)
-			return;
-
-		param.forEach(function(oo) {
-			var reg = new RegExp('@' + oo.name, 'g');
-			value = value.replace(reg, oo.value);
-		});
-
-		sb.push(value);
-	});
-
-	return sb.join(';');
-};
-
-/*
-	Internal function
-	@param {String}
-	return {String array}
-*/
-Less.prototype.getParams = function getParams(param) {
-
-	var self = this;
-	var sb = '';
-	var arr = [];
-	var index = 0;
-	var skip = false;
-	var closure = false;
-
-	var prepare = function prepare(n) {
-		var value = n.replace(/\|/g, ',');
-		if (value[0] === '\'' || value[0] === '"')
-			return value.substring(1, value.length - 1).trim();
-		return value;
-	};
-
-	do
-	{
-		var c = param[index];
-
-		if (c === '(' && !skip) {
-			closure = true;
-			skip = true;
-		}
-
-		if (!closure) {
-			if (c === '\'' || c === '"')
-				skip = !skip;
-		}
-
-		if (c === ')' && !skip && closure) {
-			skip = false;
-			closure = false;
-		}
-
-		if (c !== ',' || skip || closure) {
-			sb += c;
-		} else {
-			arr.push(prepare(sb));
-			sb = '';
-		}
-
-		index++;
-
-	} while (index < param.length);
-
-	if (sb.length > 0)
-		arr.push(prepare(sb));
-
-	return arr;
-};
-
-/*
-	Internal function
-	@prev {LessValue}
-	@value {String}
-	return {LessValue}
-*/
-Less.prototype.getValue = function(prev, value) {
-	var self = this;
-	var index = 0;
-
-	if (prev !== null)
-		index = prev.index + prev.value.length;
-
-	var beg = false;
-	var copy = false;
-	var skip = false;
-
-	var param = 0;
-	var val = 0;
-
-	var sb = [];
-	var less = new LessValue(self);
-	var without = ['@import', '@font-face', '@keyframes', '@-moz-keyframes', '@-webkit-keyframes', '@-o-keyframes', '@-ms-keyframes', '@media', '@charset'];
-
-	while (index < value.length) {
-
-		var c = value[index];
-		if (c === '@' && !less.isFunction) {
-			beg = true;
-			copy = true;
-			less.index = index;
-		} else if (beg) {
-			var charindex = value.charCodeAt(index);
-
-			if (charindex === 40)
-				param++;
-			else if (charindex === 41)
-				param--;
-
-			var next = val !== 0;
-
-			if (charindex === 123) {
-
-				if (val === 0)
-					less.isVariable = true;
-
-				val++;
-				next = true;
-			} else if (charindex === 125) {
-
-				if (val === 0) {
-					index++;
-					continue;
-				}
-				val--;
-				next = true;
-			}
-
-			if (charindex === 32 || charindex === 41)
-				next = true;
-			else if (param === 0 && val === 0 && !next)
-				next = (charindex >= 65 && charindex <= 90) || (charindex >= 97 && charindex <= 122) || charindex === 45;
-			else if (param > 0 && val === 0) {
-				next = charindex !== 41;
-				less.isFunction = true;
-			} else if (val > 0 && param === 0)
-				next = true;
-
-			copy = next;
-		}
-
-		if (beg && copy)
-			sb.push(c);
-		else if(beg) {
-
-			if (copy)
-				sb.push(c);
-
-			less.value = sb.join('').trim();
-
-			if (less.isFunction)
-				less.name = less.value.substring(0, less.value.indexOf('(')).trim();
-			else if (less.isVariable)
-				less.name = less.value.substring(0, less.value.indexOf('{')).trim();
-			else
-				less.name = less.value.trim();
-
-			var invalid = less.name.split(' ');
-
-			if (without.indexOf(invalid[0]) > -1)
-				less.isProblem = true;
-
-			return less;
-		}
-
-		index++;
-	}
-
-	return null;
-};
-
-/*
-	Internal function
-	@value {String}
-	return {String}
-*/
-Less.prototype.compile = function(value) {
-
-	var self = this;
-	var arr = [];
-	var less = self.getValue(null, value);
-
-	while (less !== null) {
-		arr.push(less);
-		less = self.getValue(less, value);
-	}
-
-	if (arr.length > 0) {
-
-		arr.forEach(function(o) {
-
-			if (o.isProblem)
-				return;
-
-			if (o.isVariable) {
-				value = value.replacer(o.value, '');
-				return;
-			}
-
-			var val = arr.find(function(oo) {
-				return oo.name === o.name;
-			});
-
-			if (val === null)
-				return;
-
-			var v = o.getValue(val);
-			value = value.replacer(o.value, v);
-		});
-	}
-
-	var reg1 = /\n|\s{2,}/g;
-	var reg2 = /\s?\{\s{1,}/g;
-	var reg3 = /\s?\}\s{1,}/g;
-	var reg4 = /\s?\:\s{1,}/g;
-	var reg5 = /\s?\;\s{1,}/g;
-
-	arr = null;
-	less = null;
-
-	return value.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
-};
 
 /*
 	Auto vendor prefixer
@@ -955,15 +799,8 @@ function autoprefixer(value) {
 
 	// 'box-shadow', 'border-radius'
 	var prefix = ['appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-origin', 'transition', 'user-select', 'animation', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing'];
-	var id = '@#auto-vendor-prefix#@';
 
-	if (value.indexOf(id) === -1) {
-		id = '/*auto*/';
-		if (value.indexOf(id) === -1)
-			return value;
-	}
-
-	value = autoprefixer_keyframes(value.replacer(id, ''));
+	value = autoprefixer_keyframes(value);
 
 	var builder = [];
 	var index = 0;
@@ -1168,12 +1005,12 @@ function autoprefixer_keyframes(value) {
 	return value;
 }
 
-exports.compile_less = function(value, minify, framework) {
+exports.compile_css = function(value, minify, framework) {
 	if (framework) {
 		if (framework.onCompileCSS !== null)
 			return framework.onCompileCSS('', value);
 	}
-	return new Less().compile(autoprefixer(value), minify);
+	return compile_jscss(value);
 };
 
 // *********************************************************************************
@@ -2319,7 +2156,7 @@ function compressCSS(html, index, framework) {
 
 	var css = html.substring(indexBeg, indexEnd + strTo.length);
 	var val = css.substring(strFrom.length, css.length - strTo.length).trim();
-	var compiled = exports.compile_less(val, true, framework);
+	var compiled = exports.compile_css(val, true, framework);
 	html = html.replacer(css, (strFrom + compiled.trim() + strTo).trim());
 	return compressCSS(html, indexBeg + compiled.length + 8, framework);
 }
