@@ -1,7 +1,7 @@
 //  parseMULTIPART
 //  parseMULTIPART_MIXED
 //	HttpFile
-//	LESS CSS + Auto vendor prefixes
+//	JS CSS + Auto vendor prefixes
 //	JavaScript Compiler
 //	View engine
 //	Template engine
@@ -434,7 +434,9 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 	var length = arr2.length;
 	//var LOGGED = 'logged';
 	//var UNLOGGED = 'unlogged';
+
 	var AUTHORIZE = 'authorize';
+	var UNAUTHORIZE = 'unauthorize';
 
 	for (var i = 0; i < length; i++) {
 		var value = arr2[i];
@@ -442,8 +444,7 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 		if (value[0] === '!')
 			continue;
 
-		//if (noLoggedUnlogged && (value === LOGGED || value === UNLOGGED))
-		if (noLoggedUnlogged && value === AUTHORIZE)
+		if (noLoggedUnlogged && (value === AUTHORIZE || value === UNAUTHORIZE))
 			continue;
 
 		var index = arr1.indexOf(value);
@@ -458,7 +459,7 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
 //			return value === LOGGED || value === UNLOGGED ? -1 : 0;
 		if (index === -1)
-			return value === AUTHORIZE ? -1 : 0;
+			return value === AUTHORIZE || value === UNAUTHORIZE ? -1 : 0;
 	}
 
 	if (!isXSS && arr1.indexOf('xss') !== -1)

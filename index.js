@@ -179,6 +179,7 @@ function Framework() {
     this.databases = {};
     this.directory = directory;
     this.isLE = os.endianness ? os.endianness() === 'LE' : true;
+    this.isHTTPS = false;
 
     this.temporary = {
         path: {},
@@ -1791,8 +1792,8 @@ Framework.prototype.isProcessing = function(filename) {
 
     var name = this.temporary.processing[filename];
     if (typeof(self.temporary.processing[filename]) !== UNDEFINED)
-        return false;
-    return true;
+        return true;
+    return false;
 };
 
 /**
@@ -2856,6 +2857,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 Framework.prototype.init = function(http, config, port, ip, options) {
 
     var self = this;
+    self.isHTTPS = typeof(http.parser) === UNDEFINED;
 
     process.argv.forEach(function(name) {
         if (name.toLowerCase().indexOf('coffee') !== -1)
@@ -3054,7 +3056,7 @@ Framework.prototype.console = function() {
     console.log('Date         : ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
     console.log('Mode         : ' + (framework.config.debug ? 'debug' : 'release'));
     console.log('====================================================\n');
-    console.log('http://{0}:{1}/'.format(framework.ip, framework.port));
+    console.log('{2}://{0}:{1}/'.format(framework.ip, framework.port, framework.isHTTPS ? 'https' : 'http'));
     console.log('');
 };
 
@@ -4294,7 +4296,6 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
         if (route.flags !== null && route.flags.length > 0) {
 
             var result = internal.routeCompareFlags(flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
-
             if (result === -1)
                 req.isAuthorized = false;
 
