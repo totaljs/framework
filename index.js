@@ -1349,7 +1349,7 @@ Framework.prototype.injectComponent = function(name, url) {
 /**
  * Eval code
  * @see {@link http://docs.totaljs.com/Framework/#framework.eval|Documentation}
- * @param  {String or Function} script function to eval or Code or URL address.
+ * @param  {String or Function} script Function to eval or Code or URL address.
  * @return {Framework}
  */
 Framework.prototype.eval = function(script) {
