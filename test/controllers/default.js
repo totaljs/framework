@@ -29,7 +29,7 @@ exports.install = function(framework) {
 	framework.route('/test-view/', view_test_view);
 	framework.route('/login/google/callback/', aa);
 	framework.route('/timeout/', function() {}, [], null, [], 50);
-	
+
 	framework.file('Resizing of images', function(req, res) {
 		return req.url.indexOf('.jpg') !== -1;
 	}, resize_image);
@@ -240,7 +240,7 @@ function viewIndex() {
 
 	assert.ok(self.template('test', ['A', 'B'], { name: '' }) === '<div>AB</div>', name + 'template - no repository');
 	assert.ok(self.template('test', ['A', 'B'], '', { name: 'ABCDEFG' }) === '<div>AB</div>...', name + 'template - repository');
-	assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');	
+	assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');
 	self.layout('');
 	assert.ok(self.view('test', null, true) === 'total.js', name + 'view');
 	assert.ok(self.content('test', true) === 'EMPTY', name + 'content');
@@ -265,13 +265,15 @@ function viewViews() {
 	self.repository.template = [{ name: 'A', price: 10, B: false }, { name: 'B', price: 10.5, B: true }];
 
 	var output = self.view('a', { a: 'A', b: 'B', arr: ['1', '2', '3'] }, true);
-	
+
 	//console.log('\n\n\n');
 	//console.log('###' + output + '###');
 	//console.log('\n\n\n');
 	//self.framework.stop();
 	//return;
 	//console.log(output);
+
+	assert.ok(output.contains('<INLINE>5</INLINE>'), name + 'Inline assign value');
 	assert.ok(output.contains('var d="$\'"'), name + 'JS script special chars 1');
 	assert.ok(output.contains("var e='$\\'';"), name + "JS script special chars 2");
 	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>'), name + ' minify html');
@@ -312,6 +314,7 @@ function viewViews() {
 	assert.ok(output.contains('src="/js/jquery.js"'), name + 'place (routeJS)');
 	assert.ok(output.contains('src="//fabricjs.js"'), name + 'place');
 	assert.ok(output.contains('#dynamic<b>OK</b>#'), name + 'dynamic view');
+	assert.ok(self.repository.INLINE === 6, name + 'INLINE assign 2');
 
 	self.repository.A = 'A';
 

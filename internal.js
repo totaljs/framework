@@ -2007,6 +2007,7 @@ function view_is_assign(value) {
 
 	var length = value.length;
 	var skip = 0;
+	var plus = 0;
 
 	for (var i = 0; i < length; i++) {
 
@@ -2020,6 +2021,23 @@ function view_is_assign(value) {
 		if (c === ']') {
 			skip--;
 			continue;
+		}
+
+		var next = value[i + 1] || '';
+
+		if (c === '+' && (next === '+' || next === '=')) {
+			if (skip === 0)
+				return true;
+		}
+
+		if (c === '-' && (next === '-' || next === '=')) {
+			if (skip === 0)
+				return true;
+		}
+
+		if (c === '*' && (next === '*' || next === '=')) {
+			if (skip === 0)
+				return true;
 		}
 
 		if (c === '=') {
