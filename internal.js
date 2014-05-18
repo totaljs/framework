@@ -1709,7 +1709,7 @@ function view_parse(content, minify) {
 	var command = view_find_command(content, 0);
 
 	if (command === null)
-		builder = '+\'' + minifyHTML(content, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
+		builder = '+\'' + compressHTML(content, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 
 	var old = null;
 	var condition = 0;
@@ -1725,14 +1725,14 @@ function view_parse(content, minify) {
 			if (text !== '') {
 				if (view_parse_plus(builder))
 					builder += '+';
-				builder += '\'' + minifyHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
+				builder += '\'' + compressHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 			}
 		} else {
 			var text = content.substring(0, command.beg);
 			if (text !== '') {
 				if (view_parse_plus(builder))
 					builder += '+';
-				builder += '\'' + minifyHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
+				builder += '\'' + compressHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 			}
 		}
 
@@ -1771,7 +1771,7 @@ function view_parse(content, minify) {
 	if (old !== null) {
 		var text = content.substring(old.end + 1);
 		if (text.length > 0)
-			builder += '+\'' + minifyHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
+			builder += '+\'' + compressHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + '\'';
 	}
 
 	var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output){var controller=self;return ' + builder.substring(1) + '})';
@@ -2104,12 +2104,14 @@ function removeComments(html) {
 	return html;
 }
 
-/*
-	Dynamic JavaScript compress
-	@html {String}
-	@index {Number}
-	return {String}
-*/
+/**
+ * Inline JS compressor
+ * @private
+ * @param  {String} html HTML.
+ * @param  {Number} index Last index.
+ * @param  {Framework} framework Framework object.
+ * @return {String}
+ */
 function compressJS(html, index, framework) {
 
 	var strFrom = '<script type="text/javascript">';
@@ -2138,6 +2140,14 @@ function compressJS(html, index, framework) {
 	return compressJS(html, indexBeg + compiled.length + 9, framework);
 }
 
+/**
+ * Inline CSS compressor
+ * @private
+ * @param  {String} html HTML.
+ * @param  {Number} index Last index.
+ * @param  {Framework} framework Framework object.
+ * @return {String}
+ */
 function compressCSS(html, index, framework) {
 	var strFrom = '<style type="text/css">';
 	var strTo = '</style>';
@@ -2161,12 +2171,14 @@ function compressCSS(html, index, framework) {
 	return compressCSS(html, indexBeg + compiled.length + 8, framework);
 }
 
-/*
-	Minify HTML
-	@html {String}
-	return {String}
-*/
-function minifyHTML(html, minify) {
+/**
+ * HTML compressor
+ * @private
+ * @param  {String} html HTML.
+ * @param  {Boolean} minify Can minify?
+ * @return {String}
+ */
+function compressHTML(html, minify) {
 
 	if (html === null || html === '' || !minify)
 		return html;
@@ -2229,7 +2241,6 @@ function minifyHTML(html, minify) {
 
 	return html;
 }
-
 
 /*
 	Read view
@@ -2333,7 +2344,7 @@ Content.prototype.read = function(name) {
 	var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-contents'], name + '.html');
 
 	if (fs.existsSync(filename))
-		return minifyHTML(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
+		return compressHTML(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
 
 	return null;
 };
@@ -2389,24 +2400,6 @@ exports.generateContent = function(controller, name) {
 	return new Content(controller).load(name, controller.prefix);
 };
 
-/*
-	Internal function
-	@str {String}
-	return {String}
-*/
-exports.appendThis = function(str) {
-	var index = str.indexOf('(');
-	var dot = str.indexOf('.');
-
-	if (index <= 0)
-		return str;
-
-	if (dot > 0 && dot < index)
-		return str;
-	var end = str.substring(index + 1);
-	return str.substring(0, index) + '.call(this' + (end[0] === ')' ? end : ',' + end);
-};
-
 exports.appendModel = function(str) {
 	var index = str.indexOf('(');
 	if (index === -1)
@@ -2421,7 +2414,6 @@ exports.appendModel = function(str) {
 // TEMPLATE ENGINE
 // =================================================================================
 // *********************************************************************************
-
 
 /*
 	Template class
@@ -2446,307 +2438,6 @@ function Template(controller, model, repository) {
 }
 
 /*
-	Parse HTML
-	@html {String}
-	@isRepository {Boolean}
-	return {Object}
-*/
-Template.prototype.parse_old = function(html, isRepository) {
-
-	var self = this;
-	var indexBeg = html.indexOf('<!--');
-	var indexEnd = html.lastIndexOf('-->');
-
-	var beg = '';
-	var end = '';
-	var template = html.trim();
-
-	if (indexBeg !== -1 && indexEnd !== -1) {
-		beg = html.substring(0, indexBeg).trim();
-		end = html.substring(indexEnd + 3).trim();
-		template = html.substring(indexBeg + 4, indexEnd).trim();
-	}
-
-	var minify = self.controller.config['allow-compress-html'];
-
-	beg = minifyHTML(beg, minify);
-	end = minifyHTML(end, minify);
-	template = minifyHTML(template, minify);
-
-	indexBeg = 0;
-	var indexer = 0;
-	var index = 0;
-
-	var builder = [];
-	var property = [];
-	var keys = {};
-
-	var tmp = template.match(/(@)?\{[^}\n]*\}/g);
-
-	if (tmp === null)
-		tmp = [];
-
-	var length = tmp.length;
-	var indexKey = 0;
-
-	for (var i = 0; i < length; i++) {
-
-		var format = '';
-		var name = tmp[i];
-		var isEncode = true;
-		var cond = '';
-		var isView = name[0] === '@';
-
-		indexEnd = template.indexOf(name, indexBeg);
-
-		var b = template.substring(indexBeg, indexEnd);
-		builder.push(b);
-		indexBeg = indexEnd + name.length;
-
-		if (!isView) {
-
-			index = name.indexOf('?');
-			if (index !== -1) {
-				format = name.substring(index + 1, name.length - 1).trim();
-				name = name.substring(1, index);
-				cond = parseConditionParams(name);
-				var condition = parseCondition(format);
-				if (cond.length !== 0) {
-					format = "(function(){return " + name.split(cond).join('@#1_0;') + "})().condition(" + condition + ")";
-					name = cond;
-				} else
-					format = ".condition(" + condition + ")";
-
-			} else {
-
-				index = name.indexOf('|');
-				if (index !== -1) {
-						format = name.substring(index + 1, name.length - 1).trim();
-						name = name.substring(1, index);
-						var pluralize = parsePluralize(format);
-						if (pluralize.length === 0) {
-							if (format.indexOf('#') === -1) {
-								var condition = parseCondition(format);
-								if (condition.length === 0) {
-									var count = utils.parseInt(format);
-									if (count === 0) {
-										format = ".format('" + format + "')";
-									} else
-										format = ".max(" + (count + 3) + ",'...')";
-								} else
-									format = ".condition(" + condition + ")";
-							} else
-								format = ".format('" + format + "')";
-						} else
-							format = pluralize;
-					} else
-						name = name.substring(1, name.length - 1);
-			}
-
-			if (name[0] === '!') {
-				name = name.substring(1);
-				isEncode = false;
-			}
-
-			name = name.trim();
-		}
-
-		if (isEncode)
-			format += '.toString().encode()';
-
-		var controller = '';
-
-		if (isView) {
-
-			isEncode = false;
-			name = name.substring(2, name.length - 1);
-
-			if (name.substring(0, 8) === 'template') {
-				controller = 'controller.' + parseParams(name, function(prop, index) {
-
-					if (index === 1 || index === 3) {
-						indexer = keys[prop];
-						if (typeof(indexer) === UNDEFINED) {
-							property.push(prop);
-							indexer = property.length - 1;
-							keys[key] = indexer;
-							indexKey++;
-						}
-						return 'prop[' + indexer + ']';
-					}
-
-					return prop;
-				});
-			} else if (name.substring(0, 4) === 'view') {
-
-				var counter = 0;
-				controller = 'controller.' + parseParams(name, function(prop, index) {
-					counter++;
-					if (index === 1) {
-						indexer = keys[prop];
-						if (typeof(indexer) === UNDEFINED) {
-							property.push(prop);
-							indexer = property.length - 1;
-							keys[key] = indexer;
-							indexKey++;
-						}
-						return 'prop[' + indexer + ']';
-					}
-
-					return prop;
-				});
-
-				if (counter === 1)
-					controller = controller.substring(0, controller.length - 1) + ',null,true)';
-				else if (counter === 2)
-					controller = controller.substring(0, controller.length - 1) + ',true)';
-			} else
-				throw new Error('Template "' + self.name + '" contains an illegal tag "' + tmp[i] + '".');
-		}
-
-		if (!isView) {
-
-			var key = name + format + indexKey;
-			indexer = keys[key];
-
-			if (typeof(indexer) === UNDEFINED) {
-				property.push(name.trim());
-				indexer = property.length - 1;
-				keys[key] = indexer;
-			}
-
-			if (format.indexOf('@#1_0;') === -1)
-				builder.push('prop[' + indexer + ']' + format);
-			else
-				builder.push(format.split('@#1_0;').join('prop[' + indexer + ']'));
-
-		} else
-			builder.push(controller);
-	}
-
-	if (indexBeg !== template.length)
-		builder.push(template.substring(indexBeg));
-
-	var fn = [];
-	var length = builder.length;
-	for (var i = 0; i < length; i++) {
-
-		var str = builder[i];
-
-		if (i % 2 !== 0) {
-			if (str.length > 0)
-				fn.push(str);
-		}
-		else
-			fn.push("'" + str.replace(/\'/g, "\\'").replace(/\n/g, '\\n') + "'");
-	}
-
-	var repositoryBeg = null;
-	var repositoryEnd = null;
-
-	if (!isRepository && self.repository !== null) {
-		repositoryBeg = beg.indexOf('{') !== -1 ? self.parse_old(beg, true) : null;
-		repositoryEnd = end.indexOf('{') !== -1 ? self.parse_old(end, true) : null;
-	}
-
-	try
-	{
-		return { generator: eval('(function(prop,controller){return ' + fn.join('+') + ';})'), beg: beg, end: end, property: property, repositoryBeg: repositoryBeg, repositoryEnd: repositoryEnd };
-	} catch (ex) {
-		self.controller.framework.error(ex, 'Template compiler', self.controller.req.uri);
-	}
-};
-
-function parseParams(tmp, rp) {
-
-	var isCopy = false;
-
-	var index = tmp.indexOf('(');
-	if (index === -1)
-		return tmp;
-
-	var arr = tmp.substring(index + 1, tmp.length - 1).replace(/\s/g, '').split(',');
-	var length = arr.length;
-
-	for (var i = 0; i < length; i++)
-		arr[i] = rp(arr[i], i);
-
-	tmp = tmp.substring(0, index + 1) + arr.join(',') + ')';
-	return tmp;
-}
-
-function parseConditionParams(value) {
-	var property = value.match(/[^"']?[a-zA-Z0-9\.\#]+/i);
-	if (property === null)
-		return '';
-	return property.toString();
-}
-
-function parseCondition(value) {
-
-	value = value.trim();
-
-	var condition = value[0];
-	if (condition !== '"' && condition !== '\'')
-		return '';
-
-	var index = value.indexOf(condition, 1);
-	if (index === -1)
-		return '';
-
-	var a = value.substring(1, index).replace(/\'/g, "\\'");
-	index = value.indexOf(condition, index + 2);
-
-	if (index === -1)
-		return "'{0}'".format(a);
-
-	return "'{0}','{1}'".format(a, value.substring(index + 1, value.length - 1).replace(/\'/g, "\\'"));
-}
-
-function parsePluralize(value) {
-
-	value = value.trim();
-
-	var condition = value[0];
-	if (condition !== '"' && condition !== '\'')
-		return '';
-
-	var index = value.indexOf(condition, 1);
-	if (index === -1)
-		return '';
-
-	var a = value.substring(1, index).replace(/\'/g, "\\'");
-	var b = '';
-	var c = '';
-	var d = '';
-
-	var beg = value.indexOf(condition, index + 1);
-
-	if (beg === -1)
-		return '';
-
-	index = value.indexOf(condition, beg + 1);
-	b = value.substring(beg + 1, index).replace(/\'/g, "\\'");
-	c = '';
-
-	beg = value.indexOf(condition, index + 1);
-	if (beg === -1)
-		return '';
-
-	index = value.indexOf(condition, beg + 1);
-	c = value.substring(beg + 1, index).replace(/\'/g, "\\'");
-
-	beg = value.indexOf(condition, index + 1);
-	if (beg === -1)
-		return -1;
-
-	index = value.indexOf(condition, beg + 1);
-	d = value.substring(beg + 1, index).replace(/\'/g, "\\'");
-
-	return ".pluralize('{0}','{1}','{2}','{3}')".format(a, b, c, d);
-}
-
-/*
 	Read from file
 	@name {String}
 	return {Object} :: return parsed HTML
@@ -2761,11 +2452,7 @@ Template.prototype.read = function(name) {
 		return null;
 
 	var content = fs.readFileSync(filename).toString(ENCODING);
-
-	if (content.indexOf('model') !== -1 && content.indexOf('@{') !== -1)
-		return self.parse(content);
-
-	return self.parse_old(content);
+	return self.parse(content);
 };
 
 Template.prototype.parse = function(html) {
@@ -2786,9 +2473,9 @@ Template.prototype.parse = function(html) {
 
 	var minify = self.controller.config['allow-compress-html'];
 
-	beg = minifyHTML(beg, minify);
-	end = minifyHTML(end, minify);
-	template = minifyHTML(template, minify);
+	beg = compressHTML(beg, minify);
+	end = compressHTML(end, minify);
+	template = compressHTML(template, minify);
 
 	return { is: true, beg: beg.length > 0 ? view_parse(beg, minify) : null, end: end.length > 0 ? view_parse(end, minify) : null, template: view_parse(template, minify) };
 };
@@ -2891,79 +2578,6 @@ Template.prototype.render = function(name, plus) {
 
 	return builder;
 };
-
-/*
-	Eval parsed code
-	@generator {Object}
-	@obj {Array}
-	@plain {Boolean} :: internal property
-	return {String}
-*/
-function compile(generator, obj, plain, controller) {
-
-	var html = '';
-
-	if (plain) {
-
-		if (!utils.isArray(obj))
-			obj = [obj];
-
-		var length = obj.length;
-
-		for (var j = 0; j < length; j++)
-			html += compile_eval(generator, obj[j], j, controller);
-
-	} else
-		html = compile_eval(generator, obj, 0, controller);
-
-	return plain ? html : generator.beg + html + generator.end;
-}
-
-/*
-	Eval parsed code
-	@generator {Object}
-	@model {Object}
-	return {String}
-*/
-function compile_eval(generator, model, indexer, controller) {
-
-	var params = [];
-	var length = generator.property.length;
-
-	for (var i = 0; i < length; i++) {
-
-		var property = generator.property[i];
-		var val;
-
-		if (property !== '') {
-			if (property.indexOf('.') !== -1) {
-				var arr = property.split('.');
-				if (arr.length === 2)
-					val = model[arr[0]][arr[1]];
-				else if (arr.length === 3)
-					val = model[arr[0]][arr[1]][arr[3]];
-				else if (arr.length === 4)
-					val = model[arr[0]][arr[1]][arr[3]][arr[4]];
-				else if (arr.length === 5)
-					val = model[arr[0]][arr[1]][arr[3]][arr[4]][arr[5]];
-			} else if (property === '#')
-				val = indexer;
-			else
-				val = model[property];
-		} else
-			val = model;
-
-		if (typeof(val) === FUNCTION)
-			val = val(i);
-
-		if (typeof(val) === UNDEFINED || val === null)
-			val = '';
-
-		params.push(val);
-	}
-
-	return generator.generator.call(null, params, controller);
-}
 
 /*
 	Generate template / Render template

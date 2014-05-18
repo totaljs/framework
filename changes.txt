@@ -19,7 +19,8 @@ IN DEVELOPMENT ======= 1.5.0
 - fixed: framework.isProcessed()
 - fixed: binary (test.js in empty-project)
 
-- removed: LESS
+- removed: IMPORTANT: old template engine was removed from templates
+- removed: IMPORTANT: LESS CSS
 
 ======= 1.4.0
 
