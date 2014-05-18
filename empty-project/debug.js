@@ -4,16 +4,18 @@
 // http://www.totaljs.com
 // ===================================================
 
+var fs = require('fs');
+var https = false;
+var options = { key: null, cert: null };
+
 var isDebugging = process.argv[process.argv.length - 1] === 'debugging';
 var directory = process.cwd();
-var fs = require('fs');
 var path = require('path');
 
 function debug() {
 	var framework = require('total.js');
-	var http = require('http');
 	var port = parseInt(process.argv[2]);
-	framework.run(http, true, port);
+	framework.run(require(https ? 'http' : 'https'), true, port, (options && options.key && options.cert) ? options : null);
 }
 
 function app() {
