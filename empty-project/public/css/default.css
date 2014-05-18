@@ -1,10 +1,13 @@
 /*auto*/
 
-@color { color: red }
+/*
+    var color = 'color:red';
+    var width = '940px';
+*/
 
 body { padding:20px; margin:0; font:normal 12px Arial; color:#505050; }
 
-.content { margin:0 auto; width: 940px; padding: 10px; border-radius: 5px; @color; box-shadow: 0 0 20px rgba(0,0,0,0.5); animation: myAnimation 5s alternate; }
+.content { margin:0 auto; width: $width; padding: 10px; border-radius: 5px; $color; box-shadow: 0 0 20px rgba(0,0,0,0.5); animation: myAnimation 5s alternate; }
 
 .list { border-bottom:1px solid #E0E0E0; padding-bottom:5px; margin-bottom:5px; }
 .list > div:first-child { font-size: 15px; }
