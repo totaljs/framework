@@ -178,16 +178,16 @@ exports.isEmpty = function(obj) {
     return true;
 };
 
-/*
-    Send request to URL
-    @url {String}
-    @method {String}
-    @data {String}
-    @callback {Function} :: function(error, data, statusCode, headers)
-    @headers {Object} :: optional, default {}
-    @encoding {String} :: optional, default utf8
-    @timeout {Number} :: optional, default 10000
-*/
+/**
+ * Create a request to specific URL
+ * @param  {String} url URL address.
+ * @param  {String} method HTTP method (GET, POST, PUT, DELETE)
+ * @param  {String or Object} data Request data.
+ * @param  {Function} callback Callback.
+ * @param  {Object} headers Custom headers.
+ * @param  {String} encoding Encoding (default: UTF8)
+ * @param  {Number} timeout Request timeout.
+ */
 exports.request = function(url, method, data, callback, headers, encoding, timeout) {
 
     var h = {};
@@ -269,15 +269,15 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
     return true;
 };
 
-/*
-    Download content from URL
-    @url {String}
-    @callback {Function} :: optional, params: @err {Error}, @response {Response}
-    @headers {Object} :: optional, additional headers
-    @method {String} :: optional, default POST,
-    @params {String} :: optional custom params (for POST or PUT method)
-    @encoding {String} :: optional, default utf8
-*/
+/**
+ * Download content from an URL
+ * @param  {String}   url      A valid URL address.
+ * @param  {Function} callback Callback.
+ * @param  {Object}   headers  Custom headers.
+ * @param  {String}   method   HTTP method.
+ * @param  {String}   params   Params.
+ * @param  {String}   encoding Encoding.
+ */
 exports.download = function(url, callback, headers, method, params, encoding) {
 
     var uri = urlParser.parse(url);
@@ -327,15 +327,15 @@ exports.download = function(url, callback, headers, method, params, encoding) {
     return true;
 };
 
-/*
-    Send a stream through HTTP
-    @name {String} :: filename with extension
-    @stream {ReadableStream or String (filename)}
-    @url {String}
-    @callback {Function} :: optional, params: @err {Error}, @response {String}
-    @headers {Object} :: optional, additional headers
-    @method {String} :: optional, default POST
-*/
+/**
+ * Send a stream through HTTP
+ * @param  {String}   name     Filename with extension.
+ * @param  {Stream}   stream   Stream.
+ * @param  {String}   url      A valid URL address.
+ * @param  {Function} callback Callback.
+ * @param  {Object}   headers  Custom headers (optional).
+ * @param  {String}   method   HTTP method (optional, default POST).
+ */
 exports.send = function(name, stream, url, callback, headers, method) {
 
     var self = this;
@@ -401,11 +401,11 @@ exports.send = function(name, stream, url, callback, headers, method) {
     return self;
 };
 
-/*
-    TRIM string properties
-    @obj {Object}
-    return {Object}
-*/
+/**
+ * Trim string properties
+ * @param  {Object} obj Object.
+ * @return {Object}
+ */
 exports.trim = function(obj) {
 
     var type = typeof(obj);
@@ -433,29 +433,30 @@ exports.trim = function(obj) {
     return obj;
 };
 
-/*
-    Empty function
-*/
+/**
+ * Noop function
+ * @return {Function} Empty function.
+ */
 exports.noop = function() {};
 global.noop = function() {};
 
-/*
-    Get HTTP Status description
-    @code {Number}
-    @addCode {Boolean} :: optional, default true
-    return {String}
-*/
+/**
+ * Read HTTP status
+ * @param  {Number} code HTTP code status.
+ * @param  {Boolean} addCode Add code number to HTTP status.
+ * @return {String}
+ */
 exports.httpStatus = function(code, addCode) {
     return (addCode || true ? code + ': ' : '') + http.STATUS_CODES[code];
 };
 
-/*
-    Extend object
-    @target {Object}
-    @source {Object}
-    @rewrite {Boolean} :: option, default false
-    return {Object}
-*/
+/**
+ * Extend object
+ * @param {Object} target Target object.
+ * @param {Object} source Source object.
+ * @param {Boolean} rewrite Rewrite exists values (optional, default false).
+ * @return {Object} Modified object.
+ */
 exports.extend = function(target, source, rewrite) {
 
     if (target === null || source === null)
@@ -478,12 +479,12 @@ exports.extend = function(target, source, rewrite) {
     return target;
 };
 
-/*
-    Copy values
-    @source {Object}
-    @target {Object} :: optional
-    return {Object}
-*/
+/**
+ * Copy values from object to object
+ * @param  {Object} source Object source
+ * @param  {Object} target Object target (optional)
+ * @return {Object} Modified object.
+ */
 exports.copy = function(source, target) {
 
     if (typeof(target) === UNDEFINED)
@@ -510,12 +511,12 @@ exports.copy = function(source, target) {
     return target;
 };
 
-/*
-    Reduce object properties
-    @source {Object}
-    @prop {String array or Object} :: property name
-    return @source
-*/
+/**
+ * Reduce an object
+ * @param {Object} source Source object.
+ * @param {String Array or Object} prop Other properties than these ones will be removed.
+ * @return {[type]}        [description]
+ */
 exports.reduce = function(source, prop) {
 
     if (source === null || prop === null)
@@ -541,16 +542,16 @@ exports.reduce = function(source, prop) {
     return source;
 };
 
-/*
-    Assign value into the object according to the path
-    @obj {Object}
-    @path {String}
-    @fn {Function or Some value}
-    return {obj}
-*/
+/**
+ * Assign value to an object according to a path
+ * @param {Object} obj Source object.
+ * @param {String} path Path to the update.
+ * @param {Object or Function} fn Value or Function to update.
+ * @return {Object}
+ */
 exports.assign = function(obj, path, fn) {
 
-    if (obj === null || typeof(obj) === 'undefined')
+    if (obj === null || typeof(obj) === UNDEFINED)
         return obj;
 
     var arr = path.split('.');
@@ -559,24 +560,24 @@ exports.assign = function(obj, path, fn) {
     for (var i = 1; i < arr.length - 1; i++)
         model = model[arr[i]];
 
-    model[arr[arr.length - 1]] = typeof (fn) === 'function' ? fn(model[arr[arr.length - 1]]) : fn;
+    model[arr[arr.length - 1]] = typeof (fn) === FUNCTION ? fn(model[arr[arr.length - 1]]) : fn;
     return obj;
 };
 
-/*
-    Is relative URL?
-    @url {String}
-    return {Boolean}
-*/
+/**
+ * Checks if is relative url
+ * @param  {String}  url
+ * @return {Boolean}
+ */
 exports.isRelative = function(url) {
     return !(url.substring(0, 2) === '//' || url.indexOf('http://') !== -1 || url.indexOf('https://') !== -1);
 };
 
-/*
-    Encode HTML
-    @str {String}
-    return {String}
-*/
+/**
+ * HTML encode string
+ * @param  {String} str
+ * @return {String}
+ */
 exports.encode = function(str) {
 
     var type = typeof(str);
@@ -590,11 +591,11 @@ exports.encode = function(str) {
     return str.encode();
 };
 
-/*
-    Decode HTML
-    @str {String}
-    return {String}
-*/
+/**
+ * HTML decode string
+ * @param  {String} str
+ * @return {String}
+ */
 exports.decode = function(str) {
 
     var type = typeof(str);
@@ -608,20 +609,21 @@ exports.decode = function(str) {
     return str.decode();
 };
 
-/*
-    Is static file?
-    @url {String}
-    return {Boolean}
-*/
+/**
+ * Checks if URL contains file extension.
+ * @param  {String} url
+ * @return {Boolean}
+ */
 exports.isStaticFile = function(url) {
     var pattern = /\.\w{2,8}($|\?)+/g;
     return pattern.test(url);
 };
 
-/*
-    @str {String}
-    return {Boolean}
-*/
+/**
+ * Checks if string is null or empty
+ * @param  {String} str
+ * @return {Boolean}
+ */
 exports.isNullOrEmpty = function(str) {
 
     if (typeof(str) !== STRING)
@@ -630,14 +632,17 @@ exports.isNullOrEmpty = function(str) {
     return str.length === 0;
 };
 
-/*
-    parseInt
-    @obj {Object}
-    @def {Number}
-    return {Number}
-*/
+/**
+ * Converts Value to number
+ * @param  {Object} obj Value to convert.
+ * @param  {Number} def Default value (default: 0).
+ * @return {Number}
+ */
 exports.parseInt = function(obj, def) {
     var type = typeof(obj);
+
+    if (type === NUMBER)
+        return obj;
 
     if (type === UNDEFINED || obj === null)
         return def || 0;
@@ -646,14 +651,17 @@ exports.parseInt = function(obj, def) {
     return str.parseInt(def, 10);
 };
 
-/*
-    parseFloat
-    @obj {Object}
-    @def {Number}
-    return {Number}
-*/
+/**
+ * Converts Value to float number
+ * @param  {Object} obj Value to convert.
+ * @param  {Number} def Default value (default: 0).
+ * @return {Number}
+ */
 exports.parseFloat = function(obj, def) {
     var type = typeof(obj);
+
+    if (type === NUMBER)
+        return obj;
 
     if (type === UNDEFINED || obj === null)
         return def || 0;
@@ -1060,6 +1068,14 @@ function getWebSocketFrameLengthBytes(length) {
     @lot1 {Number}
     return {Number}
 */
+/**
+ * GPS distance in KM
+ * @param  {Number} lat1
+ * @param  {Number} lon1
+ * @param  {Number} lat2
+ * @param  {Number} lon2
+ * @return {Number}
+ */
 exports.distance = function(lat1, lon1, lat2, lon2) {
     var R = 6371;
     var dLat = (lat2 - lat1).toRad();
@@ -1069,12 +1085,12 @@ exports.distance = function(lat1, lon1, lat2, lon2) {
     return (R * c).floor(3);
 };
 
-/*
-    Get file and directory list
-    @path {String}
-    @callback {Function} :: function(files, directories)
-    @filter {Function} :: function(path, isDirectory) - must return Boolean
-*/
+/**
+ * Directory listing
+ * @param  {String} path Path.
+ * @param  {Function} callback Callback
+ * @param  {Function} filter Custom filter (optional).
+ */
 exports.ls = function(path, callback, filter) {
     var filelist = new FileList();
     filelist.onComplete = callback;
