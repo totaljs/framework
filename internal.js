@@ -1,10 +1,9 @@
-//  parseMULTIPART
-//  parseMULTIPART_MIXED
-//	HttpFile
-//	JS CSS + Auto vendor prefixes
-//	JavaScript Compiler
-//	View engine
-//	Template engine
+/**
+ * @module FrameworkInternal
+ * @author Peter Širka <petersirka@gmail.com>
+ * @copyright Peter Širka 2012-2014
+ * @version 1.5.0
+ */
 
 'use strict';
 
@@ -2323,7 +2322,7 @@ View.prototype.load = function(name, prefix, filename) {
 	if (generator === null && isPrefix)
 		generator = self.read(filename);
 
-	if (generator !== null && !self.controller.isDebug)
+	if (!self.controller.isDebug)
 		self.controller.framework.temporary.views[key] = generator;
 
 	return generator;
@@ -2345,7 +2344,7 @@ View.prototype.dynamic = function(content) {
 
 	generator = view_parse(content, self.controller, self.controller.config['allow-compress-html']);
 
-	if (generator !== null && !self.controller.isDebug)
+	if (!self.controller.isDebug)
 		self.controller.framework.temporary.views[key] = generator;
 
 	return generator;
@@ -2393,7 +2392,7 @@ Content.prototype.load = function(name, prefix) {
 	if (content === null)
 		self.controller.framework.error('Content "' + name + '" not found.', self.controller.name, self.controller.uri);
 
-	if (content !== null && !self.controller.isDebug)
+	if (!self.controller.isDebug)
 		self.controller.framework.temporary.views[key] = content;
 
 	return content;
@@ -2456,11 +2455,11 @@ function Template(controller, model, repository) {
 		this.model = [model];
 }
 
-/*
-	Read from file
-	@name {String}
-	return {Object} :: return parsed HTML
-*/
+/**
+ * Reads template from the file
+ * @param  {String} name Template name.
+ * @return {Object}
+ */
 Template.prototype.read = function(name) {
 	var self = this;
 	var config = self.controller.config;
@@ -2474,11 +2473,28 @@ Template.prototype.read = function(name) {
 	return self.parse(content);
 };
 
+/**
+ * Parse template
+ * @param  {String} html Parse HTML.
+ * @return {Object}
+ */
 Template.prototype.parse = function(html) {
 
 	var self = this;
-	var indexBeg = html.indexOf('<!--');
-	var indexEnd = html.lastIndexOf('-->');
+	var searchBeg = '<!--';
+	var searchEnd = '-->';
+	var indexBeg = html.indexOf(searchBeg);
+	var indexEnd = html.lastIndexOf(searchEnd);
+
+	if (indexBeg === -1) {
+
+		searchBeg = '@{foreach}';
+		searchEnd = '@{end}';
+		indexBeg = html.indexOf(searchBeg);
+
+		if (indexBeg !== -1)
+			indexEnd = html.indexOf(searchEnd, indexBeg);
+	}
 
 	var beg = '';
 	var end = '';
@@ -2486,8 +2502,8 @@ Template.prototype.parse = function(html) {
 
 	if (indexBeg !== -1 && indexEnd !== -1) {
 		beg = html.substring(0, indexBeg).trim();
-		end = html.substring(indexEnd + 3).trim();
-		template = html.substring(indexBeg + 4, indexEnd).trim();
+		end = html.substring(indexEnd + searchEnd.length).trim();
+		template = html.substring(indexBeg + searchBeg.length, indexEnd).trim();
 	}
 
 	var minify = self.controller.config['allow-compress-html'];
@@ -2499,12 +2515,13 @@ Template.prototype.parse = function(html) {
 	return { is: true, beg: beg.length > 0 ? view_parse(beg, minify) : null, end: end.length > 0 ? view_parse(end, minify) : null, template: view_parse(template, minify) };
 };
 
-/*
-	Load template with/without prefix
-	@name {String}
-	@prefix {String} :: optional
-	return {Object} :: return parsed HTML
-*/
+/**
+ * Load template
+ * @param  {String} name   Template name.
+ * @param  {String} prefix Prefix (framework.onPrefix).
+ * @param  {String} plus   Plus name.
+ * @return {object}
+ */
 Template.prototype.load = function(name, prefix, plus) {
 
 	var self = this;
@@ -2532,17 +2549,18 @@ Template.prototype.load = function(name, prefix, plus) {
 	if (generator === null)
 		self.controller.framework.error('Template "' + plus + name + '" not found.', self.controller.name, self.controller.uri);
 
-	if (generator !== null && !self.controller.isDebug)
+	if (!self.controller.isDebug)
 		self.controller.framework.temporary.views[key] = generator;
 
 	return generator;
 };
 
-/*
-	Compile dynamic template
-	@content {String}
-	return {Object} :: return parsed HTML
-*/
+/**
+ * Compile a dynamic template
+ * @private
+ * @param  {String} content HTML content.
+ * @return {Object}
+ */
 Template.prototype.dynamic = function(content) {
 
 	var self = this;
@@ -2554,7 +2572,7 @@ Template.prototype.dynamic = function(content) {
 
 	generator = self.parse(content);
 
-	if (generator !== null && !self.controller.isDebug)
+	if (!self.controller.isDebug)
 		self.controller.framework.temporary.views[key] = generator;
 
 	return generator;

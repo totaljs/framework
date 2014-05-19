@@ -16,6 +16,8 @@ IN DEVELOPMENT ======= 1.5.0
 - updated: framework.isProcessing(filename or request)
 - updated: binary (some changes and improvements)
 
+- renamed: ErrorBuilder.length -> ErrorBUilder.count
+
 - fixed: framework.isProcessed()
 - fixed: binary (test.js in empty-project)
 

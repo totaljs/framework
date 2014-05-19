@@ -1,3 +1,10 @@
+/**
+ * @module FrameworkBuilders
+ * @author Peter Širka <petersirka@gmail.com>
+ * @copyright Peter Širka 2012-2014
+ * @version 1.5.0
+ */
+
 'use strict';
 
 var utils = require('./utils');
@@ -18,28 +25,56 @@ var REQUIRED = 'The field "@" is required.';
 /*
     @onResource {Function} :: function(name, key) return {String}
 */
+/**
+ * ErrorBuilder
+ * @class
+ * @classdesc Object validation.
+ * @param {ErrorBuilderOnResource} onResource Resource handler.
+ * @property {Number} count Count of errors.
+ */
 function ErrorBuilder(onResource) {
+
 	this.errors = [];
 	this.onResource = onResource;
 	this.resourceName = '';
 	this.resourcePrefix = '';
-	this.length = 0;
+	this.count = 0;
 	this.replacer = [];
 	this.isPrepared = false;
+
 	if (typeof(onResource) === UNDEFINED)
 		this._resource();
 }
 
+/**
+ * @callback ErrorBuilderOnResource
+ * @param {String} name Filename of resource.
+ * @param {String} key Resource key.
+ * @return {String}
+ */
+
+/**
+ * UrlBuilder
+ * @class
+ * @classdesc CRUD parameters in URL.
+ */
 function UrlBuilder() {
 	this.builder = {};
 }
 
-/*
-    @items {Number}
-    @page {Number}
-    @max {Number}
-    @format {String}, optional
-*/
+/**
+ * Pagination
+ * @class
+ * @param {Number} items  Count of items.
+ * @param {Number} page   Current page.
+ * @param {Number} max    Max items on page.
+ * @param {String} format URL format for links (next, back, go to). Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
+ * @property {Number} isNext Is next page?
+ * @property {Number} isPrev Is previous page?
+ * @property {Number} count Page count.
+ * @property {Boolean} visible Is more than one page?
+ * @property {String} format Format URL. Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
+ */
 function Pagination(items, page, max, format) {
 	this.isNext = false;
 	this.isPrev = false;
@@ -54,14 +89,15 @@ function Pagination(items, page, max, format) {
 	this.refresh(items, page, max);
 }
 
-/*
-	Create object schema
-    @name {String}
-    @obj {Number}
-    @defaults {Function} :: optional
-    @validator {Function} :: optional
-    return {Object}
-*/
+
+/**
+ * Create schema
+ * @param  {String} name chema name.
+ * @param  {Object} obj Schema definition.
+ * @param  {SchemaDefaults} defaults Schema defaults.
+ * @param  {SchemaValidator} validator Schema validator.
+ * @return {Object}
+ */
 exports.schema = function(name, obj, defaults, validator) {
 
 	if (typeof(obj) === UNDEFINED)
@@ -77,6 +113,28 @@ exports.schema = function(name, obj, defaults, validator) {
 	return obj;
 };
 
+/**
+ * Default handler
+ * @callback SchemaDefaults
+ * @param {String} name Property name.
+ * @param {Booelan} isDefault Is default (true) or prepare (false)?
+ * @return {Object} Property value.
+ */
+
+/**
+ * Validator handler
+ * @callback SchemaValidator
+ * @param {String} name Property name.
+ * @param {Object} value Property value.
+ * @return {Boolean} Is valid?
+ */
+
+/**
+ * Check if property value is joined to other class
+ * @private
+ * @param  {String}  value Property value from Schema definition.
+ * @return {Boolean}
+ */
 exports.isJoin = function(value) {
 	if (!value)
 		return false;
@@ -85,32 +143,33 @@ exports.isJoin = function(value) {
 	return typeof(schema[value]) !== UNDEFINED;
 };
 
-/*
-	Create schema validation
-	@name {String},
-	@arr {String Array}
-	return {String Array}
-*/
-exports.validation = function(name, arr) {
-	
-	if (typeof(arr) === FUNCTION) {
-		schemaValidator[name] = arr;
+/**
+ * Create validation
+ * @param  {String} name Schema name.
+ * @param  {Function or Array} fn Validator Handler or Property names as array for validating.
+ * @return {Function or Array}
+ */
+exports.validation = function(name, fn) {
+
+	if (typeof(fn) === FUNCTION) {
+		schemaValidator[name] = fn;
 		return true;
 	}
 
-	if (typeof(arr) === UNDEFINED)
+	if (typeof(fn) === UNDEFINED)
 		return schemaValidation[name] || [];
 
-	schemaValidation[name] = arr;
-	return arr;
+	schemaValidation[name] = fn;
+	return fn;
 };
 
-/*
-	Validate schema model
-	@name {String} :: schema name
-	@model {Object} :: model
-	return {ErrorBuilder}
-*/
+
+/**
+ * Validate model
+ * @param  {String} name  Schema name.
+ * @param  {Object} model Object for validating.
+ * @return {ErrorBuilder}
+ */
 exports.validate = function(name, model) {
 
 	var fn = schemaValidator[name];
@@ -126,11 +185,11 @@ exports.default = function(name) {
 	return exports.defaults(name);
 };
 
-/*
-	Create schema object
-    @name {String}
-    return {Object}
-*/
+/**
+ * Create default object according to schema
+ * @param  {String} name Schema name.
+ * @return {Object}
+ */
 exports.defaults = function(name) {
 
 	var obj = exports.schema(name);
@@ -266,12 +325,12 @@ exports.defaults = function(name) {
 	return item;
 };
 
-/*
-	Prepare model to schema
-    @name {String}
-    @model {Object}
-    return {Object}
-*/
+/**
+ * Prepare object according to schema
+ * @param  {String} name  Schema name.
+ * @param  {Object} model Object to prepare.
+ * @return {Object} Prepared object.
+ */
 exports.prepare = function(name, model) {
 
 	var obj = exports.schema(name);
@@ -503,12 +562,12 @@ function isUndefined(value, def) {
 // PROTOTYPES
 // ======================================================
 
-/*
-	Set resource
-	@name {String} :: resource filename
-	@prefix {String}
-	return {ErrorBuilder}
-*/
+/**
+ * Resource setting
+ * @param  {String} name   Resource name.
+ * @param  {String} prefix Resource prefix.
+ * @return {ErrorBuilder}
+ */
 ErrorBuilder.prototype.resource = function(name, prefix) {
 	var self = this;
 	self.resourceName = name;
@@ -516,6 +575,11 @@ ErrorBuilder.prototype.resource = function(name, prefix) {
 	return self._resource();
 };
 
+/**
+ * Internal: Resource wrapper
+ * @private
+ * @return {ErrorBuilder}
+ */
 ErrorBuilder.prototype._resource = function() {
 	var self = this;
 	self.onResource = function(name) {
@@ -525,12 +589,13 @@ ErrorBuilder.prototype._resource = function() {
 	return self;
 };
 
-/*
-	Add a new error
-	@name {String or ErrorBuilder}
-	@error {String} :: default value @ (for resources)
-    return {ErrorBuilder}
-*/
+/**
+ * Add an error
+ * @param {String} name  Property name.
+ * @param {String} error Error message.
+ * @param {String} path  Current path (in object).
+ * @return {ErrorBuilder}
+ */
 ErrorBuilder.prototype.add = function(name, error, path) {
 	var self = this;
 	self.isPrepared = false;
@@ -541,20 +606,20 @@ ErrorBuilder.prototype.add = function(name, error, path) {
 			self.errors.push(o);
 		});
 
-		self.length = self.errors.length;
+		self.count = self.errors.length;
 		return self;
 	}
 
 	self.errors.push({ name : name, error: error || '@', path: path });
-	self.length = self.errors.length;
+	self.count = self.errors.length;
 	return self;
 };
 
-/*
-	Remove error
-	@name {String}
-    return {ErrorBuilder}
-*/
+/**
+ * Remove error
+ * @param  {String} name Property name.
+ * @return {ErrorBuilder}
+ */
 ErrorBuilder.prototype.remove = function(name) {
 	var self = this;
 
@@ -562,14 +627,15 @@ ErrorBuilder.prototype.remove = function(name) {
 		return o.name === name;
 	});
 
-	self.length = self.errors.length;
+	self.count = self.errors.length;
 	return self;
 };
 
-/*
-	@name {String} :: optional, default undefined
-    return {Boolean}
-*/
+/**
+ * Has error?
+ * @param  {String}  name Property name (optional).
+ * @return {Boolean}
+ */
 ErrorBuilder.prototype.hasError = function(name) {
 	var self = this;
 
@@ -582,11 +648,11 @@ ErrorBuilder.prototype.hasError = function(name) {
 	return self.errors.length > 0;
 };
 
-/*
-	Read error message
-	@name {String}
-	return {String}
-*/
+/**
+ * Read an error
+ * @param  {String} name Property name.
+ * @return {String}
+ */
 ErrorBuilder.prototype.read = function(name) {
 
 	var self = this;
@@ -604,23 +670,23 @@ ErrorBuilder.prototype.read = function(name) {
 	return null;
 };
 
-/*
-	Clear ErrorBuilder
-    return {ErrorBuilder}
-*/
+/**
+ * Clear error collection
+ * @return {ErrorBuilder}
+ */
 ErrorBuilder.prototype.clear = function() {
 	var self = this;
 	self.errors = [];
-	self.length = 0;
+	self.count = 0;
 	return self;
 };
 
-/*
-	Add a replace rule
-	@search {String}
-	@newvale {String}
-    return {ErrorBuilder}
-*/
+/**
+ * Replace text in message
+ * @param  {String} search   Text to search.
+ * @param  {String} newvalue Text to replace.
+ * @return {ErrorBuilder}
+ */
 ErrorBuilder.prototype.replace = function(search, newvalue) {
 	var self = this;
 	self.isPrepared = false;
@@ -632,24 +698,33 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
 	Serialize ErrorBuilder to JSON format
     return {String}
 */
+/**
+ * Serialize ErrorBuilder to JSON
+ * @param {Boolean} beautify Beautify JSON.
+ * @return {String}
+ */
 ErrorBuilder.prototype.json = function(beautify) {
 	if (beautify)
 		return JSON.stringify(this.prepare().errors, null, '\t');
 	return JSON.stringify(this.prepare().errors);
 };
 
-/*
-	Serialize ErrorBuilder to JSON format
-    return {String}
-*/
-ErrorBuilder.prototype.JSON = function() {
+/**
+ * Serialize ErrorBuilder to JSON
+ * @param {Boolean} beautify Beautify JSON.
+ * @return {String}
+ */
+ErrorBuilder.prototype.JSON = function(beautify) {
+	if (beautify)
+		return JSON.stringify(this.prepare().errors, null, '\t');
 	return JSON.stringify(this.prepare().errors);
 };
 
-/*
-	Prepare builder with Resources
-    return {ErrorBuilder}
-*/
+/**
+ * Internal: Prepare error messages with onResource()
+ * @private
+ * @return {ErrorBuidler}
+ */
 ErrorBuilder.prototype._prepare = function() {
 	var self = this;
 
@@ -678,6 +753,11 @@ ErrorBuilder.prototype._prepare = function() {
 	return self;
 };
 
+/**
+ * Internal: Prepare error messages with onResource()
+ * @private
+ * @return {ErrorBuidler}
+ */
 ErrorBuilder.prototype._prepareReplace = function() {
 
 	var self = this;
@@ -700,6 +780,11 @@ ErrorBuilder.prototype._prepareReplace = function() {
 	return self;
 };
 
+/**
+ * Internal: Prepare error messages with onResource()
+ * @private
+ * @return {ErrorBuidler}
+ */
 ErrorBuilder.prototype.prepare = function() {
 	var self = this;
 
@@ -712,13 +797,13 @@ ErrorBuilder.prototype.prepare = function() {
 	return self;
 };
 
-/*
-	Refresh Pagination
-	@items {Number}
-	@page {Number}
-	@max {Number}
-    return {Pagination}
-*/
+/**
+ * Refresh pagination
+ * @param  {Number} items Count of items.
+ * @param  {Number} page  Current page.
+ * @param  {Number} max   Max items on page.
+ * @return {Pagination}
+ */
 Pagination.prototype.refresh = function(items, page, max) {
 	var self = this;
 
@@ -740,11 +825,11 @@ Pagination.prototype.refresh = function(items, page, max) {
 	return self;
 };
 
-/*
-	Get previous page
-	@format {String} :: optional
-	return {Object}
-*/
+/**
+ * Get previous page
+ * @param  {String} format Custom format (optional).
+ * @return {Object} Example: { url: String, page: Number, selected: Boolean }
+ */
 Pagination.prototype.prev = function(format) {
 	var self = this;
 	var page = 0;
@@ -756,14 +841,14 @@ Pagination.prototype.prev = function(format) {
 	else
 		page = self.count;
 
-	return { url: format.replace(/\{0\}/g, page), page: page, selected: false };
+	return { url: format.format(page, self.items, self.count), page: page, selected: false };
 };
 
-/*
-	Get next page
-	@format {String} :: optional
-	return {Object}
-*/
+/**
+ * Get next page
+ * @param  {String} format Custom format (optional).
+ * @return {Object} Example: { url: String, page: Number, selected: Boolean }
+ */
 Pagination.prototype.next = function(format) {
 	var self = this;
 	var page = 0;
@@ -775,16 +860,15 @@ Pagination.prototype.next = function(format) {
 	else
 		page = 1;
 
-	return { url: format.replace(/\{0\}/g, page), page: page, selected: false };
+	return { url: format.format(page, self.items, self.count), page: page, selected: false };
 };
 
-
-/*
-	Render Pagination
-	@fn {Function} :: function(pageIndex)
-	@max {Number} :: optional, default undefined
-    return {Array}
-*/
+/**
+ * Create pagination
+ * @param  {Number} max    Max pages in collection (optional).
+ * @param  {String} format Custom format (optional).
+ * @return {Object Array}  Example: [{ url: String, page: Number, selected: Boolean }]
+ */
 Pagination.prototype.render = function(max, format) {
 
 	var self = this;
@@ -797,9 +881,9 @@ Pagination.prototype.render = function(max, format) {
 		max = format;
 	}
 
-	if (typeof(max) === UNDEFINED) {
+	if (typeof(max) === UNDEFINED || max === null) {
 		for (var i = 1; i < self.count + 1; i++)
-			builder.push({ url: format.replace(/\{0\}/g, i), page: i, selected: i === self.page });
+			builder.push({ url: format.format(i, self.items, self.count), page: i, selected: i === self.page });
 		return builder;
 	}
 
@@ -825,17 +909,17 @@ Pagination.prototype.render = function(max, format) {
 		pageFrom = 1;
 
 	for (var i = pageFrom; i < pageTo + 1; i++)
-		builder.push({ url: format.replace(/\{0\}/g, i), page: i, selected: i === self.page });
+		builder.push({ url: format.format(i, self.items, self.count), page: i, selected: i === self.page });
 
 	return builder;
 };
 
-/*
-	Add parameter to UrlBuilder
-	@name {String}
-	@value {String}
-    return {UrlBuilder}
-*/
+/**
+ * Add parameter
+ * @param {String} name
+ * @param {Object} value
+ * return {UrlBuilder}
+ */
 UrlBuilder.prototype.add = function(name, value) {
 	var self = this;
 
@@ -850,40 +934,40 @@ UrlBuilder.prototype.add = function(name, value) {
 	return self;
 };
 
-/*
-	Remove parameter from UrlBuilder
-	@name {String}
-    return {UrlBuilder}
-*/
+/**
+ * Remove parameter
+ * @param  {String} name
+ * @return {UrlBuilder}
+ */
 UrlBuilder.prototype.remove = function(name) {
 	var self = this;
 	delete self.builder[name];
 	return self;
 };
 
-/*
-	Read parameter
-	@name {String}
-    return {Object}
-*/
+/**
+ * Read value
+ * @param  {String} name
+ * @return {Object}
+ */
 UrlBuilder.prototype.read = function(name) {
 	return this.builder[name] || null;
 };
 
-/*
-	Remove all keys
-    return {UrlBuilder}
-*/
+/**
+ * Clear parameter collection
+ * @return {UrlBuilder}
+ */
 UrlBuilder.prototype.clear = function() {
 	var self = this;
 	self.builder = {};
 	return self;
 };
 
-/*
-	Create URL
-    return {String}
-*/
+/**
+ * Create URL
+ * @return {String}
+ */
 UrlBuilder.prototype.toString = function() {
 
 	var self = this;
@@ -896,11 +980,11 @@ UrlBuilder.prototype.toString = function() {
 	return builder.join('&');
 };
 
-/*
-	Has UrlBuilder values?
-	@keys {String or String array}
-    return {Boolean}
-*/
+/**
+ * Has these parameters?
+ * @param  {String Array} keys Keys.
+ * @return {Boolean}
+ */
 UrlBuilder.prototype.hasValue = function(keys) {
 
 	if (typeof(keys) === UNDEFINED)
@@ -920,12 +1004,12 @@ UrlBuilder.prototype.hasValue = function(keys) {
 	return true;
 };
 
-/*
-	Render parameter
-	@keys {String array} :: what parameter
-	@delimiter {String}
-    return {String}
-*/
+/**
+ * Render paramerters
+ * @param  {String Array} keys Keys.
+ * @param  {String} delimiter Delimiter (default &).
+ * @return {String}
+ */
 UrlBuilder.prototype.toOne = function(keys, delimiter) {
 
 	var self = this;

@@ -1,3 +1,12 @@
+/**
+ * @module FrameworkMail
+ * @author Peter Širka <petersirka@gmail.com>
+ * @copyright Peter Širka 2012-2014
+ * @version 1.5.0
+ */
+
+'use strict'
+
 var net = require('net');
 var tls = require('tls');
 var events = require('events');
@@ -5,20 +14,20 @@ var dns = require('dns');
 var fs = require('fs');
 var path = require('path');
 var utils = require('./utils');
-
-const CRLF = '\r\n';
-const UNDEFINED = 'undefined';
+var CRLF = '\r\n';
+var UNDEFINED = 'undefined';
 
 var errors = {
-	notvalid: 'e-mail address is not valid',
+	notvalid: 'E-mail address is not valid',
 	resolve: 'Cannot resolve MX of ',
 	connection: 'Cannot connect to any SMTP server.'
 };
 
-/*
-	Mailer class
-	extended via prototypes
-*/
+/**
+ * Mailer
+ * @class
+ * @property {Boolean} debug Debug mode (true/false).
+ */
 function Mailer() {
 	this.debug = false;
 	this.Message = Message;
@@ -27,6 +36,12 @@ function Mailer() {
 
 Mailer.prototype = new events.EventEmitter();
 
+/**
+ * Create Mail Message
+ * @param  {String} subject
+ * @param  {String} body
+ * @return {MailMessage}
+ */
 Mailer.prototype.create = function(subject, body) {
 	return new Message(subject, body);
 };
@@ -36,6 +51,11 @@ Mailer.prototype.create = function(subject, body) {
 	@domain {String}
 	@callback {Function} :: callback(error, socket);
 */
+/**
+ * Resolve MX record
+ * @param  {String}   domain   Domain name.
+ * @param  {ResolveMxCallback} callback Callback.
+ */
 function resolveMx(domain, callback) {
     dns.resolveMx(domain, function(err, data) {
 
@@ -76,6 +96,20 @@ function resolveMx(domain, callback) {
     });
 }
 
+/**
+ * Message send callback
+ * @callback ResolveMxCallback
+ * @param {Error} err Error handling.
+ * @param {Socket} socket Net socket.
+ */
+
+/**
+ * Mail Message
+ * @param {String} subject
+ * @param {String} body
+ * @property {String} subject
+ * @property {String} body
+ */
 function Message(subject, body) {
 	this.subject = subject || '';
 	this.body = body || '';
@@ -88,22 +122,22 @@ function Message(subject, body) {
 	this.callback = null;
 }
 
-/*
-	Set sender address and name
-	@address {String}
-	@name {String} :: optional
-	return {Message}
-*/
+/**
+ * Set sender
+ * @param  {String} address A valid e-mail address.
+ * @param  {String} name    User name.
+ * @return {Message}
+ */
 Message.prototype.sender = function(address, name) {
 	return this.from(address, name);
 };
 
-/*
-	Set from address and name
-	@address {String}
-	@name {String} :: optional
-	return {Message}
-*/
+/**
+ * Set sender
+ * @param  {String} address A valid e-mail address.
+ * @param  {String} name    User name.
+ * @return {Message}
+ */
 Message.prototype.from = function(address, name) {
 
 	if (!address.isEmail())
@@ -117,11 +151,11 @@ Message.prototype.from = function(address, name) {
 
 };
 
-/*
-	Add a recipient
-	@address {String}
-	return {Message}
-*/
+/**
+ * Add a recipient
+ * @param  {String} address A valid e-mail addrčess.
+ * @return {Message}
+ */
 Message.prototype.to = function(address) {
 
 	if (!address.isEmail())
@@ -133,11 +167,11 @@ Message.prototype.to = function(address) {
 
 };
 
-/*
-	Add a CC recipient
-	@address {String}
-	return {Message}
-*/
+/**
+ * Add a CC recipient
+ * @param  {String} address A valid e-mail addrčess.
+ * @return {Message}
+ */
 Message.prototype.cc = function(address) {
 
 	if (!address.isEmail())
@@ -149,11 +183,11 @@ Message.prototype.cc = function(address) {
 
 };
 
-/*
-	Add a BCC recipient
-	@address {String}
-	return {Message}
-*/
+/**
+ * Add a BCC recipient
+ * @param  {String} address A valid e-mail addrčess.
+ * @return {Message}
+ */
 Message.prototype.bcc = function(address) {
 
 	if (!address.isEmail())
@@ -165,11 +199,11 @@ Message.prototype.bcc = function(address) {
 
 };
 
-/*
-	Add a reply to address
-	@address {String}
-	return {Message}
-*/
+/**
+ * Add a reply to address
+ * @param  {String} address A valid e-mail addrčess.
+ * @return {Message}
+ */
 Message.prototype.reply = function(address) {
 
 	if (!address.isEmail())
@@ -181,12 +215,11 @@ Message.prototype.reply = function(address) {
 
 };
 
-/*
-	Add a attachment
-	@filename {String}
-	@name {String} :: optional, name with extension
-	return {Message}
-*/
+/**
+ * Add an attachment
+ * @param  {String} filename Filename with extension.
+ * @return {Message}
+ */
 Message.prototype.attachment = function(filename, name) {
 
 	var self = this;
@@ -199,13 +232,13 @@ Message.prototype.attachment = function(filename, name) {
 
 };
 
-/*
-	Send e-mail
-	@smtp {String}
-	@options {Object} :: optional, @port {Number}, @timeout {Number}, @user {String}, @password {String}
-	@fnCallback {Function} :: optional
-	return {Message}
-*/
+/**
+ * Send e-mail
+ * @param  {String} smtp       SMTP server / hostname.
+ * @param  {Object} options    Options (optional).
+ * @param  {MessageSendCallback} fnCallback
+ * @return {Message}
+ */
 Message.prototype.send = function(smtp, options, fnCallback) {
 
 	var self = this;
@@ -256,6 +289,18 @@ Message.prototype.send = function(smtp, options, fnCallback) {
     return self;
 };
 
+/**
+ * Message send callback
+ * @callback MessageSendCallback
+ * @param {Error} err Error handling.
+ */
+
+/**
+ * Internal: Send method
+ * @private
+ * @param  {Socket} socket
+ * @param  {Object} options
+ */
 Message.prototype._send = function(socket, options) {
 
 	var self = this;
@@ -502,6 +547,12 @@ Message.prototype._send = function(socket, options) {
 
 };
 
+/**
+ * Internal: Write attachment into the current socket
+ * @param  {Function} write  Write function.
+ * @param  {String} boundary Boundary.
+ * @param  {Socket} socket   Current socket.
+ */
 Message.prototype._writeAttachment = function(write, boundary, socket) {
 
 	var self = this;
@@ -553,34 +604,52 @@ Message.prototype._writeAttachment = function(write, boundary, socket) {
 	return self;
 };
 
-function prepareBASE64(message) {
+/**
+ * Split Base64 to lines with 68 characters
+ * @private
+ * @param  {String} value Base64 message.
+ * @return {String}
+ */
+function prepareBASE64(value) {
 
 	var index = 0;
 	var output = '';
-	var length = message.length;
+	var length = value.length;
 
 	while (index < length) {
 		var max = index + 68;
 		if (max > length)
 			max = length;
-		output += message.substring(index, max) + '\n';
+		output += value.substring(index, max) + '\n';
 		index = max;
 	}
 
 	return output;
 }
 
-/*
-	@address {String}
-*/
+/**
+ * Get hostname
+ * @param  {String} address A valid e-mail address.
+ * @return {String} Hostname.
+ */
 function getHostName(address) {
     return address.substring(address.indexOf('@') + 1);
 }
 
+/**
+ * Internal: Create random hexadecimal string
+ * @private
+ * @return {String}
+ */
 function s4() {
 	return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
 }
 
+/**
+ * Create GUID identificator
+ * @private
+ * return {String}
+ */
 function GUID() {
 	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
@@ -588,5 +657,6 @@ function GUID() {
 // ======================================================
 // EXPORTS
 // ======================================================
+
 var mailer = new Mailer();
 module.exports = mailer;

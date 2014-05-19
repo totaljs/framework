@@ -1,3 +1,10 @@
+/**
+ * @module NoSQL Embedded Database
+ * @author Peter Širka <petersirka@gmail.com>
+ * @copyright Peter Širka 2012-2014
+ * @version 2.0.7
+ */
+
 'use strict';
 
 var fs = require('fs');
