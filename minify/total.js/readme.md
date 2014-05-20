@@ -1,3 +1,5 @@
+[![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
+
 ![total.js logo](http://www.totaljs.com/download/logo-black.png)
 
 web framework for node.js

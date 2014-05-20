@@ -467,11 +467,14 @@ Framework.prototype.resize = function(path, width, height, extensions) {
 
     var length = extension.length;
     for (var i = 0; i < length; i++)
-        extension[i] = (extension[i] !== '.' ? '.' : '') + extension[i].toLowerCase();
+        extension[i] = (extension[i][0] !== '.' ? '.' : '') + extension[i].toLowerCase();
 
     index = path.lastIndexOf('/');
     if (index !== -1)
         path = path.substring(0, index);
+
+    if (path[0] !== '/')
+        path    = '/' + path;
 
     self.routes.resize[path] = { width: width, height: height, extension: extension };
     return self;
@@ -1789,16 +1792,22 @@ Framework.prototype.responseStatic = function(req, res) {
 
     var filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
 
-    if (isResize) {
-        self.responseImage(req, res, filename, function(image) {
-            image.resize(resizer.width, resizer.height);
-            image.quality(self.config['default-image-quality']);
-            image.minify();
-        });
+    if (!isResize) {
+        self.responseFile(req, res, filename, '');
         return self;
     }
 
-    self.responseFile(req, res, filename, '');
+    self.responseImage(req, res, filename, function(image) {
+
+        if (resizer.width && resizer.height)
+            image.resizeCenter(resizer.width, resizer.height);
+        else
+            image.resize(resizer.width, resizer.height);
+
+        image.quality(self.config['default-image-quality']);
+        image.minify();
+
+    });
 
     return self;
 };
@@ -1962,11 +1971,15 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
         if (self.config.debug)
             delete self.temporary.path[key];
-
     }
 
     var index = name.lastIndexOf(';');
-    var size = name.substring(index + 1);
+    var size = null;
+
+    if (index === -1)
+        index = name.length;
+    else
+        size = name.substring(index + 1);
 
     name = name.substring(0, index);
 
@@ -1999,7 +2012,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     if (range.length > 0)
         return self.responseRange(name, range, returnHeaders, req, res);
 
-    if (size !== '0' && !compress)
+    if (size !== null && size !== '0' && !compress)
         returnHeaders['Content-Length'] = size;
 
     var stream;
@@ -2230,7 +2243,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
                     return;
                 }
 
-                self.temporary.path[key] = name;
+                self.temporary.path[key] = name + ';' + fs.statSync(name).size;
                 self.responseFile(req, res, name, '', headers, key);
             });
 
@@ -2269,11 +2282,12 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
                 return;
             }
 
-            self.temporary.path[key] = name;
+            self.temporary.path[key] = name + ';' + fs.statSync(name).size;
             self.responseFile(req, res, name, '', headers, key);
         });
 
     });
+
     return self;
 };
 
