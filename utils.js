@@ -7,7 +7,8 @@
 
 'use strict';
 
-var urlParser = require('url');
+var parser = require('url');
+var qs = require('querystring');
 var http = require('http');
 var https = require('https');
 var util = require('util');
@@ -179,41 +180,116 @@ exports.isEmpty = function(obj) {
 };
 
 /**
- * Create a request to specific URL
+ * Create a request to a specific URL
  * @param  {String} url URL address.
- * @param  {String} method HTTP method (GET, POST, PUT, DELETE)
- * @param  {String or Object} data Request data.
- * @param  {Function} callback Callback.
- * @param  {Object} headers Custom headers.
- * @param  {String} encoding Encoding (default: UTF8)
+ * @param  {String Array} flags Request flags.
+ * @param  {String or Object} data Request data (optional).
+ * @param  {Function(error, content, statusCode, headers)} callback Callback.
+ * @param  {Object} headers Custom cookies (optional, default: null).
+ * @param  {Object} headers Custom headers (optional, default: null).
+ * @param  {String} encoding Encoding (optional, default: UTF8)
  * @param  {Number} timeout Request timeout.
+ * return {Boolean}
  */
-exports.request = function(url, method, data, callback, headers, encoding, timeout) {
+exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
 
-    var h = {};
-    var isJSON = typeof(data) === OBJECT;
+    // No data (data is optinal argument)
+    if (typeof(data) === FUNCTION) {
+        timeout = encoding;
+        encoding = headers;
+        headers = cookies;
+        cookies = callback;
+        callback = data;
+        data = '';
+    }
 
-    encoding = encoding || ENCODING;
-    method = (method || '').toString().toUpperCase();
+    var method = 'GET';
+    var length = 0;
+    var isJSON = false;
 
-    if (method !== 'GET')
-        h['Content-Type'] = 'application/x-www-form-urlencoded';
-    else if (typeof(data) === STRING && data.length > 0)
-        url += (data[0] === '?' ? '' : '?') + data;
+    headers = exports.extend({}, headers || {});
 
-    var uri = urlParser.parse(url);
+    if (typeof(encoding) !== STRING)
+        encoding = ENCODING;
 
-    if (isJSON)
-        h['Content-Type'] = 'application/json';
+    if (data === null)
+        data = '';
 
-    if (headers)
-        util._extend(h, headers);
+    if (flags instanceof Array) {
+        length = flags.length;
+        for (var i = 0; i < length; i++) {
 
-    h['X-Powered-By'] = 'total.js' + VERSION;
+            switch (flags[i].toLowerCase()) {
 
-    var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
+                case 'xhr':
+                    headers['X-Requested-With'] = 'XMLHttpRequest';
+                    break;
 
-    var response = function(res) {
+                case 'json':
+                    headers['Content-Type'] = 'application/json';
+                    isJSON = true;
+                    break;
+
+                case 'get':
+                case 'delete':
+                case 'options':
+                    method = flags[i].toUpperCase();
+                    break;
+
+                case 'upload':
+                    headers['Content-Type'] = 'multipart/form-data';
+                    break;
+
+                case 'post':
+                case 'put':
+
+                    method = flags[i].toUpperCase();
+
+                    if (!headers['Content-Type'])
+                        headers['Content-Type'] = 'application/x-www-form-urlencoded';
+
+                    break;
+            }
+        }
+    }
+
+    var isPOST = method === 'POST' || method === 'PUT';
+
+    if (typeof(data) !== STRING)
+        data = isJSON ? JSON.stringify(data) : qs.stringify(data);
+    else if (data[0] === '?')
+        data = data.substring(1);
+
+    if (!isPOST) {
+        if (data.length > 0 && url.indexOf('?') === -1)
+            url += '?' + data;
+        data = '';
+    }
+
+    var uri = parser.parse(url);
+
+    headers['X-Powered-By'] = 'total.js' + VERSION;
+
+    if (cookies) {
+        var builder = [];
+        var keys = Object.keys(cookies);
+
+        length = keys.length;
+
+        for (var i = 0; i < length; i++)
+            builder.push(keys[i] + '=' + encodeURIComponent(cookies[keys[i]]));
+
+        if (builder.length > 0)
+            headers['Cookie'] = builder.join('; ');
+    }
+
+    if (data.length > 0)
+        headers['Content-Length'] = data.length;
+
+    uri.agent = false;
+    uri.headers = headers;
+
+    var onResponse = function(res) {
 
         if (!callback) {
             res.resume();
@@ -232,100 +308,187 @@ exports.request = function(url, method, data, callback, headers, encoding, timeo
         });
 
         res.resume();
+
     };
 
-    var con = options.protocol === 'https:' ? https : http;
-    var isPOST = method === 'POST' || method === 'PUT';
-    var value = isPOST ? isJSON ? JSON.stringify(data) : (data || '').toString() : '';
-
-    if (isPOST)
-        options.headers['Content-Length'] = value.length;
+    var connection = uri.protocol === 'https:' ? https : http;
 
     try
     {
-        var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
+        var request = isPOST ? connection.request(uri, onResponse) : connection.get(uri, onResponse);
 
         if (callback) {
-            req.on('error', function(error) {
+            request.on('error', function(error) {
                 callback(error, null, 0, {});
             });
 
-            req.setTimeout(timeout || 10000, function() {
+            request.setTimeout(timeout || 10000, function() {
                 callback(new Error(exports.httpStatus(408)), null, 0, {});
             });
         }
 
         if (isPOST)
-            req.end(value, encoding);
+            request.end(value, encoding);
         else
-            req.end();
+            request.end();
 
     } catch (ex) {
+
         if (callback)
             callback(ex, null, 0, {});
+
         return false;
     }
 
     return true;
-};
+}
 
 /**
- * Download content from an URL
- * @param  {String}   url      A valid URL address.
- * @param  {Function} callback Callback.
- * @param  {Object}   headers  Custom headers.
- * @param  {String}   method   HTTP method.
- * @param  {String}   params   Params.
- * @param  {String}   encoding Encoding.
+ * Create a request to a specific URL
+ * @param  {String} url URL address.
+ * @param  {String Array} flags Request flags.
+ * @param  {String or Object} data Request data (optional).
+ * @param  {Function(error, response)} callback Callback.
+ * @param  {Object} headers Custom cookies (optional, default: null).
+ * @param  {Object} headers Custom headers (optional, default: null).
+ * @param  {String} encoding Encoding (optional, default: UTF8)
+ * @param  {Number} timeout Request timeout.
+ * return {Boolean}
  */
-exports.download = function(url, callback, headers, method, params, encoding) {
+exports.download = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
 
-    var uri = urlParser.parse(url);
-    var h = {};
+    // No data (data is optinal argument)
+    if (typeof(data) === FUNCTION) {
+        timeout = encoding;
+        encoding = headers;
+        headers = cookies;
+        cookies = callback;
+        callback = data;
+        data = '';
+    }
 
-    method = (method || '').toString().toUpperCase();
-    encoding = encoding || ENCODING;
+    var method = 'GET';
+    var length = 0;
+    var isJSON = false;
 
-    util._extend(h, headers);
-    h['X-Powered-By'] = 'total.js' + VERSION;
-    var options = { protocol: uri.protocol, auth: uri.auth, method: method, hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
+    headers = exports.extend({}, headers || {});
 
-    var response = function(res) {
+    if (typeof(encoding) !== STRING)
+        encoding = ENCODING;
+
+    if (data === null)
+        data = '';
+
+    if (flags instanceof Array) {
+        length = flags.length;
+        for (var i = 0; i < length; i++) {
+
+            switch (flags[i].toLowerCase()) {
+
+                case 'xhr':
+                    headers['X-Requested-With'] = 'XMLHttpRequest';
+                    break;
+
+                case 'json':
+                    headers['Content-Type'] = 'application/json';
+                    isJSON = true;
+                    break;
+
+                case 'get':
+                case 'delete':
+                case 'options':
+                    method = flags[i].toUpperCase();
+                    break;
+
+                case 'upload':
+                    headers['Content-Type'] = 'multipart/form-data';
+                    break;
+
+                case 'post':
+                case 'put':
+
+                    method = flags[i].toUpperCase();
+
+                    if (!headers['Content-Type'])
+                        headers['Content-Type'] = 'application/x-www-form-urlencoded';
+
+                    break;
+            }
+        }
+    }
+
+    var isPOST = method === 'POST' || method === 'PUT';
+
+    if (typeof(data) !== STRING)
+        data = isJSON ? JSON.stringify(data) : qs.stringify(data);
+    else if (data[0] === '?')
+        data = data.substring(1);
+
+    if (!isPOST) {
+        if (data.length > 0 && url.indexOf('?') === -1)
+            url += '?' + data;
+        data = '';
+    }
+
+    var uri = parser.parse(url);
+
+    headers['X-Powered-By'] = 'total.js' + VERSION;
+
+    if (cookies) {
+        var builder = [];
+        var keys = Object.keys(cookies);
+
+        length = keys.length;
+
+        for (var i = 0; i < length; i++)
+            builder.push(keys[i] + '=' + encodeURIComponent(cookies[keys[i]]));
+
+        if (builder.length > 0)
+            headers['Cookie'] = builder.join('; ');
+    }
+
+    if (data.length > 0)
+        headers['Content-Length'] = data.length;
+
+    uri.agent = false;
+    uri.headers = headers;
+
+    var onResponse = function(res) {
         callback(null, res);
+        res.resume();
     };
 
-    var con = options.protocol === 'https:' ? https : http;
+    var connection = uri.protocol === 'https:' ? https : http;
 
     try
     {
-
-        var isPOST = method === 'POST' || method === 'PUT';
-        var value = isPOST ? (params || '').toString() : '';
-
-        if (isPOST)
-            options.headers['Content-Length'] = value.length;
-
-        var req = isPOST ? callback ? con.request(options, response) : con.request(options) : callback ? con.get(options, response) : con.get(options);
+        var request = isPOST ? connection.request(uri, onResponse) : connection.get(uri, onResponse);
 
         if (callback) {
-            req.on('error', function(error) {
-                callback(error, null);
+            request.on('error', function(error) {
+                callback(error, null, 0, {});
+            });
+
+            request.setTimeout(timeout || 10000, function() {
+                callback(new Error(exports.httpStatus(408)), null, 0, {});
             });
         }
 
         if (isPOST)
-            req.end(value, ENCODING);
+            request.end(value, encoding);
         else
-            req.end();
+            request.end();
 
     } catch (ex) {
+
         if (callback)
-            callback(ex, null);
+            callback(ex, null, 0, {});
+
         return false;
     }
 
     return true;
-};
+}
 
 /**
  * Send a stream through HTTP
@@ -361,7 +524,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
     h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
     h['X-Powered-By'] = 'total.js' + VERSION;
 
-    var uri = urlParser.parse(url);
+    var uri = parser.parse(url);
     var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 
     var response = function(res) {
@@ -670,50 +833,49 @@ exports.parseFloat = function(obj, def) {
     return str.parseFloat(def);
 };
 
-/*
-    Is array?
-    @obj {Object}
-    return {Boolean}
-*/
+/**
+ * Check if object is Array.
+ * @param  {Object} obj
+ * @return {Boolean}
+ */
 exports.isArray = function(obj) {
-    return util.isArray(obj);
+    return obj instanceof Array;
 };
 
-/*
-    Is RegExp?
-    @obj {Object}
-    return {Boolean}
-*/
+/**
+ * Check if object is RegExp
+ * @param  {Object} obj
+ * @return {Boolean}
+ */
 exports.isRegExp = function(obj) {
     return util.isRegExp(obj);
 };
 
-/*
-    Is date?
-    @obj {Object}
-    return {Boolean}
-*/
+/**
+ * Check if object is Date
+ * @param  {Object} obj
+ * @return {Boolean}
+ */
 exports.isDate = function(obj) {
     return util.isDate(obj);
 };
 
-/*
-    Get Content Type from extension
-    @ext {String}
-    return {String}
-*/
+/**
+ * Get ContentType from file extension.
+ * @param  {String} ext File extension.
+ * @return {String}
+ */
 exports.getContentType = function(ext) {
     if (ext[0] === '.')
         ext = ext.substring(1);
     return contentTypes[ext.toLowerCase()] || 'application/octet-stream';
 };
 
-/*
-    Set Content Type from extension
-    @ext {String}
-    @type {String}
-    return {String}
-*/
+/**
+ * Add a new content type to content types
+ * @param {String} ext File extension.
+ * @param {String} type Content type (example: application/json).
+ */
 exports.setContentType = function(ext, type) {
     if (ext[0] === '.')
         ext = ext.substring(1);
@@ -721,12 +883,12 @@ exports.setContentType = function(ext, type) {
     return true;
 };
 
-/*
-    Create ETag from string
-    @text {String} :: filename
-    @version {String} :: optional
-    return {String}
-*/
+/**
+ * Create eTag hash from text
+ * @param  {String} text
+ * @param  {String} version
+ * @return {String}
+ */
 exports.etag = function(text, version) {
     var sum = 0;
     var length = text.length;

@@ -371,8 +371,12 @@ function others() {
 		assert.ok(value.join(',') === '1,2,3,4,5,6,7,8,9', 'async');
 	});
 
-	utils.request('http://www.yahoo.com', 'GET', null, function(err, data, code) {
+	utils.request('http://www.yahoo.com', ['GET'], function(err, data, code) {
 		assert.ok(code === 301, 'utils.request (success)');
+	});
+
+	utils.download('http://www.yahoo.com', ['GET'], function(err, res) {
+		assert.ok(res.statusCode === 301, 'utils.download (success)');
 	});
 
 	utils.request('http://xxxxxxx.yyy', 'GET', null, function(err, data, code) {
