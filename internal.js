@@ -1006,11 +1006,20 @@ function autoprefixer_keyframes(value) {
 }
 
 exports.compile_css = function(value, minify, framework) {
+
 	if (framework) {
 		if (framework.onCompileCSS !== null)
 			return framework.onCompileCSS('', value);
 	}
-	return compile_jscss(value);
+
+	try
+	{
+		return compile_jscss(value);
+	} catch (ex) {
+		if (framework)
+			framework.error(ex);
+		return '';
+	}
 };
 
 // *********************************************************************************
