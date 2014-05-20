@@ -119,7 +119,7 @@ function Framework() {
         'static-url-video': '/video/',
         'static-url-font': '/font/',
         'static-url-download': '/download/',
-        'static-accepts': ['.jpg', '.png', '.gif', '.ico', EXTENSION_JS, EXTENSION_COFFEE, '.css', '.txt', '.xml', '.woff', '.otf', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache', '.map', '.ogg', '.mp4', '.mp3', '.webp', '.swf', '.package'],
+        'static-accepts': ['.jpg', '.png', '.gif', '.ico', EXTENSION_JS, EXTENSION_COFFEE, '.css', '.txt', '.xml', '.woff', '.otf', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache', '.map', '.ogg', '.mp4', '.mp3', '.webp', '.webm', '.swf', '.package'],
 
         // 'static-accepts-custom': [],
 
@@ -448,19 +448,26 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 };
 
 /**
- * Autoresizer
- * @param  {String} path   Relative path.
- * @param  {String} width  New width.
- * @param  {String} height New height.
+ * Auto resize picture according the path
+ * @param {String} path Relative path.
+ * @param {String} width New width.
+ * @param {String} height New height.
+ * @param {String Array} ext Allowed file extension.
  * @return {Framework}
  */
-Framework.prototype.autoresizer = function(path, width, height) {
+Framework.prototype.resize = function(path, width, height, extensions) {
     var self = this;
-    var extension = '*';
+    var extension = null;
     var index = path.lastIndexOf('.');
 
     if (index !== -1)
-        extension = path.substring(index);
+        extension = [path.substring(index)];
+    else
+        extension = extensions || ['.jpg', '.png', '.gif'];
+
+    var length = extension.length;
+    for (var i = 0; i < length; i++)
+        extension[i] = (extension[i] !== '.' ? '.' : '') + extension[i].toLowerCase();
 
     index = path.lastIndexOf('/');
     if (index !== -1)
@@ -470,16 +477,16 @@ Framework.prototype.autoresizer = function(path, width, height) {
     return self;
 };
 
-/*
-    Add a new route
-    @url {String}
-    @funcExecute {Function}
-    @flags {String array or Object} :: optional, default []
-    @maximumSize {Number} :: optional, default by the config
-    @partial {String Array} :: optional, partial content
-    @timeout {Number} :: optional, default by the config
-    return {Framework}
-*/
+/**
+ * Add a route
+ * @param  {String} url
+ * @param  {Function} funcExecute Action.
+ * @param  {String Array} flags
+ * @param  {Number} maximumSize Maximum length of request data.
+ * @param  {String Array} partial Loads partial content.
+ * @param  {Number timeout Response timeout.
+ * @return {Framework}
+ */
 Framework.prototype.route = function(url, funcExecute, flags, maximumSize, partial, timeout) {
 
     if (url === '')
@@ -1777,7 +1784,7 @@ Framework.prototype.responseStatic = function(req, res) {
 
     if (resizer !== null) {
         index = name.lastIndexOf('.');
-        isResize = resizer.extension === '*' || resizer.extension.toLowerCase() === name.substring(index).toLowerCase();
+        isResize = resizer.extension === '*' || resizer.extension.indexOf(name.substring(index).toLowerCase()) !== -1;
     }
 
     var filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
@@ -3641,6 +3648,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
     }
 
     headers['X-Assertion-Testing'] = '1';
+    headers['X-Powered-By'] = 'total.js' + VERSION;
 
     if (cookies) {
         var builder = [];

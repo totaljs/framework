@@ -9,15 +9,18 @@ IN DEVELOPMENT ======= 1.5.0
 - added: String.prototype.startsWith(text, [ignoreCase]);
 - added: String.prototype.endsWith(text, [ignoreCase]);
 - added: in views - into the repository, model, user, session, get, post, global, config can assign some value: @{repository.name = 'total.js'}
-- added: picture auto resizer
+- added: picture auto resizer: framework.resize(path, [width], [height], [extensions])
+- added: .webm into the config['static-accepts']
 
+- updated: utils.request(url, flags, [data], callback, cookies, headers, encoding, timeout)
+- updated: utils.download(url, flags, [data], callback, cookies, headers, encoding, timeout)
 - updated: framework.eval(string/url/function) - this function supports eval code from another URL
 - updated: assertion testing (new features)
 - updated: framework.isProcessed(filename or request)
 - updated: framework.isProcessing(filename or request)
 - updated: binary (some changes and improvements)
 
-- renamed: ErrorBuilder.length -> ErrorBUilder.count
+- renamed: ErrorBuilder.length -> ErrorBuilder.count
 
 - fixed: framework.isProcessed()
 - fixed: binary (test.js in empty-project)
