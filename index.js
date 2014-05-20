@@ -140,6 +140,7 @@ function Framework() {
         // otherwise is used ImageMagick (Heroku supports ImageMagick)
         // gm = graphicsmagick or im = imagemagick
         'default-image-converter': 'gm',
+        'default-image-quality': 93,
 
         'allow-gzip': true,
         'allow-websocket': true,
@@ -165,7 +166,8 @@ function Framework() {
         websockets: [],
         partial: {},
         partialGlobal: [],
-        redirects: {}
+        redirects: {},
+        resize: {}
     };
 
     this.helpers = {};
@@ -422,15 +424,15 @@ Framework.prototype.stop = function(code) {
     return self;
 };
 
-/*
-    Add a redirect route
-    @host {String} :: domain with protocol
-    @hostNew {String} :: domain with protocol
-    @withPath {Boolean} :: copy path (default: true)
-    @permament {Boolean} :: Permament redirect (302) (default: false)
-    return {Framework}
-*/
-Framework.prototype.redirect = function(host, newHost, withPath, permament) {
+/**
+ * Add a redirect route
+ * @param  {String} host Domain with protocol.
+ * @param  {String} newHost Domain with protocol.
+ * @param  {Boolean} withPath Copy path (default: true).
+ * @param  {Boolean} permanent Is permanent redirect (302)? (default: false)
+ * @return {Framework}
+ */
+Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
     var self = this;
 
     if (host[host.length - 1] === '/')
@@ -439,9 +441,32 @@ Framework.prototype.redirect = function(host, newHost, withPath, permament) {
     if (newHost[newHost.length - 1] === '/')
         newHost = newHost.substring(0, newHost.length - 1);
 
-    self.routes.redirects[host] = { url: newHost, path: withPath, permament: permament };
+    self.routes.redirects[host] = { url: newHost, path: withPath, permanent: permanent };
     self._request_check_redirect = true;
 
+    return self;
+};
+
+/**
+ * Autoresizer
+ * @param  {String} path   Relative path.
+ * @param  {String} width  New width.
+ * @param  {String} height New height.
+ * @return {Framework}
+ */
+Framework.prototype.autoresizer = function(path, width, height) {
+    var self = this;
+    var extension = '*';
+    var index = path.lastIndexOf('.');
+
+    if (index !== -1)
+        extension = path.substring(index);
+
+    index = path.lastIndexOf('/');
+    if (index !== -1)
+        path = path.substring(0, index);
+
+    self.routes.resize[path] = { width: width, height: height, extension: extension };
     return self;
 };
 
@@ -1747,9 +1772,27 @@ Framework.prototype.responseStatic = function(req, res) {
     if (index !== -1)
         name = name.substring(0, index);
 
+    var resizer = self.routes.resize[name.substring(0, name.lastIndexOf('/') + 1)] || null;
+    var isResize = false;
+
+    if (resizer !== null) {
+        index = name.lastIndexOf('.');
+        isResize = resizer.extension === '*' || resizer.extension.toLowerCase() === name.substring(index).toLowerCase();
+    }
+
     var filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
 
+    if (isResize) {
+        self.responseImage(req, res, filename, function(image) {
+            image.resize(resizer.width, resizer.height);
+            image.quality(self.config['default-image-quality']);
+            image.minify();
+        });
+        return self;
+    }
+
     self.responseFile(req, res, filename, '');
+
     return self;
 };
 
@@ -2826,10 +2869,10 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
     @req {ServerRequest}
     @res {ServerResponse}
     @url {String}
-    @permament {Boolean} :: optional
+    @permanent {Boolean} :: optional
     return {Framework}
 */
-Framework.prototype.responseRedirect = function(req, res, url, permament) {
+Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 
     var self = this;
 
@@ -2844,7 +2887,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
     var headers = { 'Location': url };
     headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTHTML + '; charset=utf-8';
 
-    res.writeHead(permament ? 301 : 302, headers);
+    res.writeHead(permanent ? 301 : 302, headers);
     res.end();
 
     if (!req.isStaticFile)
@@ -2864,7 +2907,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permament) {
 Framework.prototype.init = function(http, config, port, ip, options) {
 
     var self = this;
-    self.isHTTPS = typeof(http.parser) === UNDEFINED;
+    self.isHTTPS = typeof(http.STATUS_CODES) === UNDEFINED;
 
     process.argv.forEach(function(name) {
         if (name.toLowerCase().indexOf('coffee') !== -1)
@@ -3265,7 +3308,7 @@ Framework.prototype._request = function(req, res) {
         var redirect = self.routes.redirects[protocol +'://' + req.host];
         if (redirect) {
             self.stats.response.forwarding++;
-            self.responseRedirect(req, res, redirect.url + (redirect.path ? req.url : ''), redirect.permament);
+            self.responseRedirect(req, res, redirect.url + (redirect.path ? req.url : ''), redirect.permanent);
             return self;
         }
     }
@@ -8613,10 +8656,10 @@ Controller.prototype.view501 = function(problem) {
 /*
     Response redirect
     @url {String}
-    @permament {Boolean} :: optional default false
+    @permanent {Boolean} :: optional default false
     return {Controller};
 */
-Controller.prototype.redirect = function(url, permament) {
+Controller.prototype.redirect = function(url, permanent) {
     var self = this;
 
     if (self.res.success || !self.isConnected)
@@ -8625,7 +8668,7 @@ Controller.prototype.redirect = function(url, permament) {
     self.subscribe.success();
     self.req.clear(true);
     self.res.success = true;
-    self.res.writeHead(permament ? 301 : 302, { 'Location': url });
+    self.res.writeHead(permanent ? 301 : 302, { 'Location': url });
     self.res.end();
     self.framework._request_stats(false, false);
     self.framework.emit('request-end', self.req, self.res);
@@ -8641,11 +8684,11 @@ Controller.prototype.redirect = function(url, permament) {
     @headers {Object} :: optional
     return {Controller};
 */
-Controller.prototype.redirectAsync = function(url, permament) {
+Controller.prototype.redirectAsync = function(url, permanent) {
     var self = this;
 
     var fn = function() {
-        self.redirect(url, permament);
+        self.redirect(url, permanent);
     };
 
     self.async.complete(fn);

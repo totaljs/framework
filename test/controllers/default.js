@@ -30,9 +30,11 @@ exports.install = function(framework) {
 	framework.route('/login/google/callback/', aa);
 	framework.route('/timeout/', function() {}, [], null, [], 50);
 
+/*
 	framework.file('Resizing of images', function(req, res) {
 		return req.url.indexOf('.jpg') !== -1;
 	}, resize_image);
+*/
 
 	framework.route('/live/', viewLive);
 	framework.route('/live/incoming/', viewLiveIncoming, ['mixed']);

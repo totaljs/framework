@@ -40,7 +40,6 @@ __TOTALSTACK__:
 
 __Interesting__:
 
-- [NEW: Total.js Mongoose Demo on Heroku](http://totaldemo.herokuapp.com/)
 - [Tutorial](http://docs.totaljs.com/tutorial/)
 - [Download __total.js modules__](https://github.com/totaljs/modules/)
 - Framework supports [NoSQL Embedded database](https://github.com/petersirka/nosql) for max. 20 000 documents per database
@@ -56,7 +55,6 @@ __Social networks__:
 
 __Examples__:
 
-- [NEW: Total.js Mongoose Demo on Heroku](http://totaldemo.herokuapp.com/)
 - [Sushi website example](http://sushi.totaljs.com)
 - [TODO list example](http://todo.totaljs.com)
 - [More than 90 examples](https://github.com/totaljs/examples/tree/master/)
