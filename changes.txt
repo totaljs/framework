@@ -9,7 +9,7 @@ IN DEVELOPMENT ======= 1.5.0
 - added: String.prototype.startsWith(text, [ignoreCase]);
 - added: String.prototype.endsWith(text, [ignoreCase]);
 - added: in views - into the repository, model, user, session, get, post, global, config can assign some value: @{repository.name = 'total.js'}
-- added: picture auto resizer: framework.resize(path, [width], [height], [extensions])
+- added: picture auto resizer: framework.resize(url, [width], [height], [extensions], [path])
 - added: .webm into the config['static-accepts']
 
 - updated: utils.request(url, flags, [data], callback, cookies, headers, encoding, timeout)
