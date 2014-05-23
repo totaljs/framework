@@ -53,3 +53,9 @@ var e = '$\'';
 @{repository.INLINE = 5}
 <INLINE>@{repository.INLINE}</INLINE>
 @{repository.INLINE++}
+
+@{foreach a in [1, 2, 3, 4]}
+<div>@{a}</div>
+<div>@{!a}</div>
+<div>@{if a % 2 === 0}FOREACH@{endif}</div>
+@{end}

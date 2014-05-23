@@ -268,7 +268,6 @@ function viewViews() {
 
 	var output = self.view('a', { a: 'A', b: 'B', arr: ['1', '2', '3'] }, true);
 
-	//console.log('\n\n\n');
 	//console.log('###' + output + '###');
 	//console.log('\n\n\n');
 	//self.framework.stop();
