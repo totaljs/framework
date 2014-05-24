@@ -19,6 +19,7 @@ IN DEVELOPMENT ======= 1.5.0
 - added: controller.throw500(error)
 - added: controller.throw501([problem])
 
+- updated: @{options(array/object)} - supports Object
 - updated: utils.request(url, flags, [data], callback, cookies, headers, encoding, timeout)
 - updated: utils.download(url, flags, [data], callback, cookies, headers, encoding, timeout)
 - updated: framework.eval(string/url/function) - this function supports eval code from another URL

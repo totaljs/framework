@@ -7821,10 +7821,21 @@ Controller.prototype.$etag = function(value) {
     return {String}
 */
 Controller.prototype.$options = function(arr, selected, name, value) {
+
     var self = this;
+    var type = typeof(arr);
 
     if (arr === null || typeof(arr) === UNDEFINED)
         return '';
+
+    var isObject = false;
+    var tmp = null;
+
+    if (!(arr instanceof Array) && type === OBJECT) {
+        isObject = true;
+        tmp = arr;
+        arr = Object.keys(arr);
+    }
 
     if (!utils.isArray(arr))
         arr = [arr];
@@ -7833,14 +7844,18 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 
     var options = '';
 
-    if (typeof(value) === UNDEFINED)
-        value = value || name || 'value';
+    if (!isObject) {
+        if (typeof(value) === UNDEFINED)
+            value = value || name || 'value';
 
-    if (typeof(name) === UNDEFINED)
-        name = name || 'name';
+        if (typeof(name) === UNDEFINED)
+            name = name || 'name';
+    }
 
     var isSelected = false;
-    var length = arr.length;
+    var length = 0;
+
+    length = arr.length;
 
     for (var i = 0; i < length; i++) {
 
@@ -7850,7 +7865,20 @@ Controller.prototype.$options = function(arr, selected, name, value) {
         var val = '';
         var sel = false;
 
-        if (type === OBJECT) {
+        if (isObject) {
+            if (name === true) {
+                val = tmp[o];
+                text = o;
+                if (value === null)
+                    value = '';
+            } else {
+                val = o;
+                text = tmp[o];
+                if (text === null)
+                    text = '';
+            }
+
+        } else if (type === OBJECT) {
 
             text = (o[name] || '');
             val = (o[value] || '');
