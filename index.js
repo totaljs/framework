@@ -10457,6 +10457,15 @@ http.IncomingMessage.prototype = {
 http.IncomingMessage.prototype.__proto__ = _tmp;
 
 /**
+ * Signature request (user-agent + ip + referer + current URL)
+ * @return {Request}
+ */
+http.IncomingMessage.prototype.signature = function() {
+    var self = this;
+    return framework.encrypt((self.headers['user-agent'] || '') + '#' + self.ip + '#' + (self.headers['referer'] || '') + '#' + self.url, 'request-signature', false);
+};
+
+/**
  * Disable HTTP cache for current request
  * @return {Request}
  */
