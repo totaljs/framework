@@ -12,6 +12,12 @@ IN DEVELOPMENT ======= 1.5.0
 - added: .webm into the config['static-accepts']
 - added: in views - into the repository, model, user, session, get, post, global, config can assign some value: @{repository.name = 'total.js'}
 - added: in views - supports @{foreach}
+- added: controller.throw400([problem])
+- added: controller.throw401([problem])
+- added: controller.throw403([problem])
+- added: controller.throw404([problem])
+- added: controller.throw500(error)
+- added: controller.throw501([problem])
 
 - updated: utils.request(url, flags, [data], callback, cookies, headers, encoding, timeout)
 - updated: utils.download(url, flags, [data], callback, cookies, headers, encoding, timeout)

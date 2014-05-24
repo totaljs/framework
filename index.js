@@ -8647,6 +8647,15 @@ Controller.prototype.stream = function(contentType, stream, downloadName, header
     return self;
 };
 
+/**
+ * Throw 401 - Bad request.
+ * @param  {String} problem Description of problem (optional)
+ * @return {FrameworkController}
+ */
+Controller.prototype.throw400 = function(problem) {
+    return this.view400(problem);
+};
+
 /*
     Response 400
     return {Controller};
@@ -8665,6 +8674,15 @@ Controller.prototype.view400 = function(problem) {
     self.subscribe.route = self.framework.lookup(self.req, '#400', []);
     self.subscribe.execute(400);
     return self;
+};
+
+/**
+ * Throw 401 - Unauthorized.
+ * @param  {String} problem Description of problem (optional)
+ * @return {FrameworkController}
+ */
+Controller.prototype.throw401 = function(problem) {
+    return this.view401(problem);
 };
 
 /*
@@ -8687,6 +8705,15 @@ Controller.prototype.view401 = function(problem) {
     return self;
 };
 
+/**
+ * Throw 403 - Forbidden.
+ * @param  {String} problem Description of problem (optional)
+ * @return {FrameworkController}
+ */
+Controller.prototype.throw403 = function(problem) {
+    return this.view403(problem);
+};
+
 /*
     Response 403
     return {Controller};
@@ -8707,6 +8734,14 @@ Controller.prototype.view403 = function(problem) {
     return self;
 };
 
+/**
+ * Throw 404 - Not found.
+ * @param  {String} problem Description of problem (optional)
+ * @return {FrameworkController}
+ */
+Controller.prototype.throw404 = function(problem) {
+    return this.view404(problem);
+};
 /*
     Response 404
     return {Controller};
@@ -8747,6 +8782,15 @@ Controller.prototype.view500 = function(error) {
     return self;
 };
 
+/**
+ * Throw 500 - Internal Server Error
+ * @param  {Error} error
+ * @return {FrameworkController}
+ */
+Controller.prototype.throw500 = function(error) {
+    return this.view500(error);
+};
+
 /*
     Response 501
     return {Controller};
@@ -8765,6 +8809,15 @@ Controller.prototype.view501 = function(problem) {
     self.subscribe.route = self.framework.lookup(self.req, '#501', []);
     self.subscribe.execute(501);
     return self;
+};
+
+/**
+ * Throw 501 - Not implemented
+ * @param  {String} problem Description of problem (optional)
+ * @return {FrameworkController}
+ */
+Controller.prototype.throw501 = function(problem) {
+    return this.view501(problem);
 };
 
 /*
