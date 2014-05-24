@@ -8,7 +8,7 @@ IN DEVELOPMENT ======= 1.5.0
 - added: new config file (this file is loaded in a debug and in a release mode): /some-app/config
 - added: String.prototype.startsWith(text, [ignoreCase]);
 - added: String.prototype.endsWith(text, [ignoreCase]);
-- added: picture auto resizer: framework.resize(url, [width], [height], [extensions], [path])
+- added: picture auto resizer: framework.resize(url, [width], [height], [extensions], [path], [options])
 - added: .webm into the config['static-accepts']
 - added: in views - into the repository, model, user, session, get, post, global, config can assign some value: @{repository.name = 'total.js'}
 - added: in views - supports @{foreach}
@@ -33,6 +33,8 @@ IN DEVELOPMENT ======= 1.5.0
 
 - fixed: framework.isProcessed()
 - fixed: binary (test.js in empty-project)
+- fixed: @{ngCommon()}
+- fixed: @{ngStyle()}
 
 - removed: IMPORTANT: old template engine was removed from templates
 - removed: IMPORTANT: LESS CSS

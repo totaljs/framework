@@ -460,7 +460,7 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
  * @param {String} path Source directory (optional).
  * @return {Framework}
  */
-Framework.prototype.resize = function(url, width, height, extensions, path) {
+Framework.prototype.resize = function(url, width, height, extensions, path, options) {
     var self = this;
     var extension = null;
     var index = url.lastIndexOf('.');
@@ -492,11 +492,19 @@ Framework.prototype.resize = function(url, width, height, extensions, path) {
 
     path = path || url;
 
+    if (!options)
+        options = {};
+
     self.routes.resize[url] = {
         width: width,
         height: height,
         extension: extension,
-        path: path || url
+        path: path || url,
+        grayscale: options.grayscale,
+        blur: options.blur,
+        flip: options.flip,
+        flop: options.flop,
+        sepia: options.sepia
     };
 
     return self;
@@ -1871,6 +1879,24 @@ Framework.prototype.responseStatic = function(req, res) {
             image.resizeCenter(resizer.width, resizer.height);
         else
             image.resize(resizer.width, resizer.height);
+
+        if (resizer.grayscale)
+            image.grayscale();
+
+        if (resizer.blur)
+            image.blur(typeof(resizer.blur) === 'number' ? resizer.blur : 1);
+
+        if (resizer.rotate && typeof(resizer.rotate) == NUMBER)
+            image.rotate(resizer.rotate);
+
+        if (resizer.flop)
+            image.flop();
+
+        if (resizer.flip)
+            image.flip();
+
+        if (resizer.sepia)
+            image.sepia(typeof(resizer.sepia) === 'number' ? resizer.sepia : 100);
 
         image.quality(self.config['default-image-quality']);
         image.minify();
@@ -6864,7 +6890,23 @@ Controller.prototype.$ng = function(name) {
 
 
 Controller.prototype.$ngCommon = function(name) {
+
     var self = this;
+    var length = arguments.length;
+
+    if (length > 1) {
+        for (var i = 0; i < length; i++)
+            self.$ngCommon(arguments[i]);
+        return '';
+    }
+
+    if (name instanceof Array) {
+        length = name.length;
+        for (var i = 0; i < length; i++)
+            self.$ngCommon(name[i]);
+        return '';
+    }
+
     var output = self.repository[REPOSITORY_ANGULAR_COMMON] || '';
 
     if (name.lastIndexOf(EXTENSION_JS) === -1)
@@ -6874,6 +6916,7 @@ Controller.prototype.$ngCommon = function(name) {
     output += script;
 
     self.repository[REPOSITORY_ANGULAR_COMMON] = output;
+    return '';
 };
 
 Controller.prototype.$ngLocale = function(name) {
@@ -7036,9 +7079,27 @@ Controller.prototype.$ngDirective = function(name) {
     return {String}
 */
 Controller.prototype.$ngStyle = function(name) {
+
+    var self = this;
+    var length = arguments.length;
+
+    if (length > 1) {
+        for (var i = 0; i < length; i++)
+            self.$ngStyle(arguments[i]);
+        return '';
+    }
+
+    if (name instanceof Array) {
+        length = name.length;
+        for (var i = 0; i < length; i++)
+            self.$ngStyle(name[i]);
+        return '';
+    }
+
     if (name.lastIndexOf('.css') === -1)
         name += '.css';
-    this.head(name);
+
+    self.head(name);
     return '';
 };
 
