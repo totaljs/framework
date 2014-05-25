@@ -146,6 +146,7 @@ function view_test_view() {
 
 function viewCustomTesting() {
 	this.plain(this.template('one', [{ name: 'A', price: 10, B: false }, { name: 'B', price: 10.5, B: true }]));
+	//this.plain(this.template('new', [{ tag: '<b>A</b>' }, { tag: '<b>B</b>' }]));
 }
 
 function socket(self, framework) {
@@ -243,6 +244,10 @@ function viewIndex() {
 	assert.ok(self.template('test', ['A', 'B'], { name: '' }) === '<div>AB</div>', name + 'template - no repository');
 	assert.ok(self.template('test', ['A', 'B'], '', { name: 'ABCDEFG' }) === '<div>AB</div>...', name + 'template - repository');
 	assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');
+
+	var tmp = self.template('~new', [{ tag: '<b>A</b>' }, { tag: '<b>B</b>' }]);
+	assert.ok(tmp.indexOf('<div>&lt;b&gt;B&lt;/b&gt;</div><div><b>B</b></div><span>1</span>') !== -1, name + 'template - foreach');
+
 	self.layout('');
 	assert.ok(self.view('test', null, true) === 'total.js', name + 'view');
 	assert.ok(self.content('test', true) === 'EMPTY', name + 'content');

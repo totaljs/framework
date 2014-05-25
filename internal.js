@@ -19,13 +19,13 @@ var REG_1 = /[\n\r\t]+/g;
 var REG_2 = /\s{2,}/g;
 
 /*
-	Internal function / Parse data from Request
-	@req {ServerRequest}
-	@contentType {String}
-	@maximumSize {Number}
-	@tmpDirectory {String}
-	@onXSS {Function}
-	@callback {Function}
+    Internal function / Parse data from Request
+    @req {ServerRequest}
+    @contentType {String}
+    @maximumSize {Number}
+    @tmpDirectory {String}
+    @onXSS {Function}
+    @callback {Function}
 */
 exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, onXSS, callback) {
 
@@ -228,12 +228,12 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 };
 
 /*
-	Internal function / Parse MIXED data
-	@req {ServerRequest}
-	@contentType {String}
-	@tmpDirectory {String}
-	@onFile {Function} :: this function is called when is a file downloaded
-	@callback {Function}
+    Internal function / Parse MIXED data
+    @req {ServerRequest}
+    @contentType {String}
+    @tmpDirectory {String}
+    @onFile {Function} :: this function is called when is a file downloaded
+    @callback {Function}
 */
 exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, callback) {
 
@@ -374,9 +374,9 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 };
 
 /*
-	Internal function / Split string (url) to array
-	@url {String}
-	return {String array}
+    Internal function / Split string (url) to array
+    @url {String}
+    return {String array}
 */
 exports.routeSplit = function(url, noLower) {
 
@@ -397,11 +397,11 @@ exports.routeSplit = function(url, noLower) {
 };
 
 /*
-	Internal function / Compare route with url
-	@route {String array}
-	@url {String}
-	@isSystem {Boolean}
-	return {Boolean}
+    Internal function / Compare route with url
+    @route {String array}
+    @url {String}
+    @isSystem {Boolean}
+    return {Boolean}
 */
 exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
@@ -432,10 +432,10 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 };
 
 /*
-	Internal function / Compare subdomain
-	@subdomain {String}
-	@arr {String array}
-	return {Boolean}
+    Internal function / Compare subdomain
+    @subdomain {String}
+    @arr {String array}
+    return {Boolean}
 */
 exports.routeCompareSubdomain = function(subdomain, arr) {
 
@@ -446,11 +446,11 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
 };
 
 /*
-	Internal function / Compare flags
-	@arr1 {String array}
-	@arr2 {String array}
-	@noLoggedUnlogged {Boolean}
-	return {Number}
+    Internal function / Compare flags
+    @arr1 {String array}
+    @arr2 {String array}
+    @noLoggedUnlogged {Boolean}
+    return {Number}
 */
 exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
@@ -481,7 +481,7 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
         if (value === 'xss')
             isXSS = true;
 
-        //			return value === LOGGED || value === UNLOGGED ? -1 : 0;
+        //          return value === LOGGED || value === UNLOGGED ? -1 : 0;
         if (index === -1)
             return value === AUTHORIZE || value === UNAUTHORIZE ? -1 : 0;
     }
@@ -493,10 +493,10 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 };
 
 /*
-	Internal function
-	@routeUrl {String array}
-	@route {Controller route}
-	return {String array}
+    Internal function
+    @routeUrl {String array}
+    @route {Controller route}
+    return {String array}
 */
 exports.routeParam = function(routeUrl, route) {
     var arr = [];
@@ -517,13 +517,13 @@ exports.routeParam = function(routeUrl, route) {
 };
 
 /*
-	HttpFile class
-	@name {String}
-	@filename {String}
-	@path {String}
-	@length {Number}
-	@contentType {String}
-	return {HttpFile}
+    HttpFile class
+    @name {String}
+    @filename {String}
+    @path {String}
+    @length {Number}
+    @contentType {String}
+    return {HttpFile}
 */
 function HttpFile(name, filename, path, length, contentType, width, height) {
     this.name = name;
@@ -536,9 +536,9 @@ function HttpFile(name, filename, path, length, contentType, width, height) {
 }
 
 /*
-	Read file to byte array
-	@filename {String} :: new filename
-	return {HttpFile}
+    Read file to byte array
+    @filename {String} :: new filename
+    return {HttpFile}
 */
 HttpFile.prototype.copy = function(filename, callback) {
 
@@ -559,17 +559,17 @@ HttpFile.prototype.copy = function(filename, callback) {
 };
 
 /*
-	Read file to buffer (SYNC)
-	return {Buffer}
+    Read file to buffer (SYNC)
+    return {Buffer}
 */
 HttpFile.prototype.readSync = function() {
     return fs.readFileSync(this.path);
 };
 
 /*
-	Read file to buffer (ASYNC)
-	@callback {Function} :: function(error, data);
-	return {HttpFile}
+    Read file to buffer (ASYNC)
+    @callback {Function} :: function(error, data);
+    return {HttpFile}
 */
 HttpFile.prototype.read = function(callback) {
     var self = this;
@@ -578,9 +578,9 @@ HttpFile.prototype.read = function(callback) {
 };
 
 /*
-	Create MD5 hash from a file
-	@callback {Function} :: function(error, hash);
-	return {HttpFile}
+    Create MD5 hash from a file
+    @callback {Function} :: function(error, hash);
+    return {HttpFile}
 */
 HttpFile.prototype.md5 = function(callback) {
 
@@ -604,9 +604,9 @@ HttpFile.prototype.md5 = function(callback) {
 };
 
 /*
-	Get a stream
-	@options {Object} :: optional
-	return {Stream}
+    Get a stream
+    @options {Object} :: optional
+    return {Stream}
 */
 HttpFile.prototype.stream = function(options) {
     var self = this;
@@ -614,10 +614,10 @@ HttpFile.prototype.stream = function(options) {
 };
 
 /*
-	Pipe a stream
-	@stream {Stream}
-	@options {Object} :: optional
-	return {Stream}
+    Pipe a stream
+    @stream {Stream}
+    @options {Object} :: optional
+    return {Stream}
 */
 HttpFile.prototype.pipe = function(stream, options) {
     var self = this;
@@ -625,7 +625,7 @@ HttpFile.prototype.pipe = function(stream, options) {
 };
 
 /*
-	return {Boolean}
+    return {Boolean}
 */
 HttpFile.prototype.isImage = function() {
     var self = this;
@@ -633,7 +633,7 @@ HttpFile.prototype.isImage = function() {
 };
 
 /*
-	return {Boolean}
+    return {Boolean}
 */
 HttpFile.prototype.isVideo = function() {
     var self = this;
@@ -641,7 +641,7 @@ HttpFile.prototype.isVideo = function() {
 };
 
 /*
-	return {Boolean}
+    return {Boolean}
 */
 HttpFile.prototype.isAudio = function() {
     var self = this;
@@ -649,8 +649,8 @@ HttpFile.prototype.isAudio = function() {
 };
 
 /*
-	@imageMagick {Boolean} :: optional - default false
-	return {Image} :: look at ./lib/image.js
+    @imageMagick {Boolean} :: optional - default false
+    return {Image} :: look at ./lib/image.js
 */
 HttpFile.prototype.image = function(imageMagick) {
 
@@ -816,9 +816,9 @@ function compile_jscss(css) {
 }
 
 /*
-	Auto vendor prefixer
-	@value {String} :: Raw CSS
-	return {String}
+    Auto vendor prefixer
+    @value {String} :: Raw CSS
+    return {String}
 */
 function autoprefixer(value) {
 
@@ -1080,9 +1080,9 @@ exports.compile_css = function(value, minify, framework) {
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /*
-	Minify JS
-	@source {String}
-	return {String}
+    Minify JS
+    @source {String}
+    return {String}
 */
 function JavaScript(source) {
 
@@ -1686,9 +1686,9 @@ MultipartParser.prototype.explain = function() {
 // *********************************************************************************
 
 /*
-	View class
-	@controller {Controller}
-	return {View}
+    View class
+    @controller {Controller}
+    return {View}
 */
 function View(controller) {
     this.controller = controller;
@@ -1697,9 +1697,9 @@ function View(controller) {
 }
 
 /*
-	Content class
-	@controller {Controller}
-	return {Content}
+    Content class
+    @controller {Controller}
+    return {Content}
 */
 function Content(controller) {
     this.controller = controller;
@@ -1723,12 +1723,20 @@ function view_parse(content, minify) {
     var foreach = 0;
     var is = false;
     var newCommand = '';
+    var tmp = '';
     var index = 0;
 
     while (command !== null) {
 
+
+        /**
+         * @todo Whats is this?
+         */
+
+        /*
         if (condition === 0 && builder !== '')
             builder += '+';
+        */
 
         if (old !== null) {
             var text = content.substring(old.end + 1, command.beg);
@@ -1750,6 +1758,10 @@ function view_parse(content, minify) {
 
         if (cmd.substring(0, 8) === 'foreach ') {
             foreach = 1;
+
+            if (cmd.indexOf('foreach var ') !== -1)
+                cmd = cmd.replace(' var ', ' ');
+
             newCommand = (cmd.substring(8, cmd.indexOf(' ', 8)) || '').trim();
             index = cmd.indexOf('[');
             if (index === -1)
@@ -1778,9 +1790,15 @@ function view_parse(content, minify) {
             builder += ')';
             is = true;
         } else {
-            if (view_parse_plus(builder))
-                builder += '+';
-            builder += view_prepare(command.command, newCommand);
+
+            tmp = view_prepare(command.command, newCommand);
+
+            if (tmp.length > 0) {
+                if (view_parse_plus(builder))
+                    builder += '+';
+                builder += tmp;
+            }
+
         }
 
         old = command;
@@ -1810,19 +1828,18 @@ function view_prepare(command, dynamicCommand) {
     var b = command.indexOf('(');
     var c = command.indexOf('[');
 
-    if (a === -1)
-        a = b;
+    var max = [];
 
-    if (b === -1)
-        b = a;
+    if (a !== -1)
+        max.push(a);
 
-    if (a === -1)
-        a = c;
+    if (b !== -1)
+        max.push(b);
 
-    if (b === -1)
-        b = c;
+    if (c !== -1)
+        max.push(c);
 
-    var index = Math.min(a, b);
+    var index = Math.min.apply(this, max);
 
     if (index === -1)
         index = command.length;
@@ -1836,9 +1853,9 @@ function view_prepare(command, dynamicCommand) {
         return '(' + command.substring(1) + ').toString()';
 
     switch (name) {
-    	case 'foreach':
-    	case 'end':
-    		return '';
+        case 'foreach':
+        case 'end':
+            return '';
 
         case 'controller':
         case 'repository':
@@ -2294,9 +2311,9 @@ function compressHTML(html, minify) {
 }
 
 /*
-	Read view
-	@name {String}
-	return {Object} :: return factory object
+    Read view
+    @name {String}
+    return {Object} :: return factory object
 */
 View.prototype.read = function(name) {
 
@@ -2329,10 +2346,10 @@ View.prototype.read = function(name) {
 };
 
 /*
-	Load view
-	@name {String}
-	@prefix {String}
-	return {Object} :: return factory object
+    Load view
+    @name {String}
+    @prefix {String}
+    return {Object} :: return factory object
 */
 View.prototype.load = function(name, prefix, filename) {
 
@@ -2362,9 +2379,9 @@ View.prototype.load = function(name, prefix, filename) {
 };
 
 /*
-	Compile dynamic view
-	@content {String}
-	return {Object} :: return parsed HTML
+    Compile dynamic view
+    @content {String}
+    return {Object} :: return parsed HTML
 */
 View.prototype.dynamic = function(content) {
 
@@ -2384,9 +2401,9 @@ View.prototype.dynamic = function(content) {
 };
 
 /*
-	Read content
-	@name {String}
-	return {String}
+    Read content
+    @name {String}
+    return {String}
 */
 Content.prototype.read = function(name) {
     var self = this;
@@ -2401,10 +2418,10 @@ Content.prototype.read = function(name) {
 };
 
 /*
-	Load content
-	@name {String}
-	@prefix {String}
-	return {String}
+    Load content
+    @name {String}
+    @prefix {String}
+    return {String}
 */
 Content.prototype.load = function(name, prefix) {
 
@@ -2432,20 +2449,20 @@ Content.prototype.load = function(name, prefix) {
 };
 
 /*
-	Render view from file
-	@controller {Controller}
-	@name {String}
-	return {Object}
+    Render view from file
+    @controller {Controller}
+    @name {String}
+    return {Object}
 */
 exports.generateView = function(controller, name, plus) {
     return new View(controller).load(name, controller.prefix, plus);
 };
 
 /*
-	Load content from file
-	@controller {Controller}
-	@name {String}
-	return {String}
+    Load content from file
+    @controller {Controller}
+    @name {String}
+    return {String}
 */
 exports.generateContent = function(controller, name) {
     return new Content(controller).load(name, controller.prefix);
@@ -2467,11 +2484,11 @@ exports.appendModel = function(str) {
 // *********************************************************************************
 
 /*
-	Template class
-	@controller {Controller}
-	@model {Object}
-	@repository {Object}
-	return {Template}
+    Template class
+    @controller {Controller}
+    @model {Object}
+    @repository {Object}
+    return {Template}
 */
 function Template(controller, model, repository) {
     this.controller = controller;
@@ -2497,6 +2514,10 @@ Template.prototype.read = function(name) {
     var self = this;
     var config = self.controller.config;
     var isOut = name[0] === '.';
+
+    if (name[0] === '~')
+        name = name.substring(1);
+
     var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-templates'], name + '.html');
 
     if (!fs.existsSync(filename))
@@ -2514,21 +2535,15 @@ Template.prototype.read = function(name) {
 Template.prototype.parse = function(html) {
 
     var self = this;
-    var searchBeg = '<!--';
-    var searchEnd = '-->';
+    var searchBeg = '@{foreach}';
     var indexBeg = html.indexOf(searchBeg);
-    var indexEnd = html.lastIndexOf(searchEnd);
+    var minify = self.controller.config['allow-compress-html'];
 
-    if (indexBeg === -1) {
+    if (indexBeg === -1 && html.indexOf('@{foreach') !== -1)
+        return { is: true, template: view_parse(compressHTML(html.trim()), minify) };
 
-        searchBeg = '@{foreach}';
-        searchEnd = '@{end}';
-        indexBeg = html.indexOf(searchBeg);
-
-        if (indexBeg !== -1)
-            indexEnd = html.indexOf(searchEnd, indexBeg);
-    }
-
+    var searchEnd = '@{end}';
+    var indexEnd = indexBeg !== -1 ? html.lastIndexOf(searchEnd) : -1;
     var beg = '';
     var end = '';
     var template = html.trim();
@@ -2539,14 +2554,16 @@ Template.prototype.parse = function(html) {
         template = html.substring(indexBeg + searchBeg.length, indexEnd).trim();
     }
 
-    var minify = self.controller.config['allow-compress-html'];
+    if (beg.length > 0)
+        beg = compressHTML(beg, minify);
 
-    beg = compressHTML(beg, minify);
-    end = compressHTML(end, minify);
+    if (end.length > 0)
+        end = compressHTML(end, minify);
+
     template = compressHTML(template, minify);
 
     return {
-        is: true,
+        is: false,
         beg: beg.length > 0 ? view_parse(beg, minify) : null,
         end: end.length > 0 ? view_parse(end, minify) : null,
         template: view_parse(template, minify)
@@ -2565,7 +2582,7 @@ Template.prototype.load = function(name, prefix, plus) {
     var self = this;
 
     // Is dynamic content?
-    if (name.indexOf('{') !== -1) {
+    if (name.indexOf('@{') !== -1) {
         self.name = '<dynamic>';
         return self.dynamic(name);
     }
@@ -2617,9 +2634,9 @@ Template.prototype.dynamic = function(content) {
 };
 
 /*
-	Render HTML
-	@name {String}
-	return {String}
+    Render HTML
+    @name {String}
+    return {String}
 */
 Template.prototype.render = function(name, plus) {
 
@@ -2629,12 +2646,8 @@ Template.prototype.render = function(name, plus) {
     if (generator === null)
         return '';
 
-    if (!generator.is) {
-        var mid = compile(generator, self.model, true, self.controller, false);
-        var beg = generator.repositoryBeg !== null ? compile(generator.repositoryBeg, self.repository, false, self.controller) : generator.beg;
-        var end = generator.repositoryEnd !== null ? compile(generator.repositoryEnd, self.repository, false, self.controller) : generator.end;
-        return beg + mid + end;
-    }
+    if (generator.is)
+        return generator.template.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, self.controller.framework.global, self.controller.framework.helpers, self.controller.user, self.controller.config, self.controller.framework.functions, 0).replace(/\\n/g, '\n');
 
     var builder = '';
 
@@ -2655,11 +2668,11 @@ Template.prototype.render = function(name, plus) {
 };
 
 /*
-	Generate template / Render template
-	@controller {Controller}
-	@name {String} :: filename of template
-	@model {Array of Object}
-	@repository {Object} :: optional
+    Generate template / Render template
+    @controller {Controller}
+    @name {String} :: filename of template
+    @model {Array of Object}
+    @repository {Object} :: optional
 */
 exports.generateTemplate = function(controller, name, model, repository, plus) {
     return new Template(controller, model, repository).render(name, plus);

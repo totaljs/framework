@@ -1,0 +1,10 @@
+@{foreach var m in model}
+    <div>@{m.tag}</div><div>@{!m.tag}</div><span>@{index}</span>
+@{end}
+
+@{foreach m in [0, 1, 2]}
+    <div>@{m}-@{index}</div>
+    @{if index % 2 === 0}
+    MOD
+    @{endif}
+@{end}
