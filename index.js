@@ -456,20 +456,15 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
  * @param {String} url Relative path.
  * @param {String} width New width (optional).
  * @param {String} height New height (optional).
+ * @param {Object} options Additional options.
  * @param {String Array} ext Allowed file extension (optional).
  * @param {String} path Source directory (optional).
  * @return {Framework}
  */
-Framework.prototype.resize = function(url, width, height, extensions, path, options) {
+Framework.prototype.resize = function(url, width, height, options, path, extensions) {
     var self = this;
     var extension = null;
     var index = url.lastIndexOf('.');
-
-    if (typeof(extensions) === STRING) {
-        var tmp = path;
-        path = extensions;
-        extensions = tmp;
-    }
 
     if (index !== -1)
         extension = [url.substring(index)];
@@ -502,9 +497,11 @@ Framework.prototype.resize = function(url, width, height, extensions, path, opti
         path: path || url,
         grayscale: options.grayscale,
         blur: options.blur,
+        rotate: options.rotate,
         flip: options.flip,
         flop: options.flop,
-        sepia: options.sepia
+        sepia: options.sepia,
+        quality: options.quality
     };
 
     return self;
