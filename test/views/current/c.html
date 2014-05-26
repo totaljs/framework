@@ -15,3 +15,10 @@ EEE
 @{checkbox('c', 'test label')}
 @{textarea('b', { class: 'myarea' })}
 @{radio('a', 'A', 'test label')}
+@{if 1==1}
+    @{if 2==2}
+        @{if 3==3}
+            <div>NESTED</div>
+        @{endif}
+    @{endif}
+@{endif}

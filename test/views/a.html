@@ -1,3 +1,11 @@
+@{helper name(a, b)}
+    <count>@{a}</count>
+    @{if typeof(b) !== 'undefined'}
+        <next>@{b}</next>
+    @{endif}
+@{end}
+
+@{name(10)}
 @{meta('TITLE')}
 @{dns('//fonts.googleapis.com')}
 @{prefetch('http://daker.me/2013/05/hello-world.html')}
@@ -8,8 +16,7 @@
 @{head('//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js')}
 #tag-encode@{repository.tag}#
 #tag-raw@{!repository.tag}#
-#helper-property-@{property}#
-#helper-fn-@{fn('A')}#
+#helper-fn-@{helper('fn', 'A')}#
 #readonly@{readonly(true)}#
 #checked@{checked(true)}#
 #selected@{selected(true)}#
@@ -58,4 +65,9 @@ var e = '$\'';
 <div>@{a}</div>
 <div>@{!a}</div>
 <div>@{if a % 2 === 0}FOREACH@{endif}</div>
+@{foreach var c in [10, 11, 12]}
+    <div>C:@{c}</div>
 @{end}
+<div>HELPER:@{a}-@{name(a, index)}</div>
+@{end}
+@{name(40, 40)}

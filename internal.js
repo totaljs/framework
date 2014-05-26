@@ -1712,6 +1712,7 @@ function view_parse(content, minify) {
     content = removeComments(compressCSS(compressJS(content, 0, framework), 0, framework));
 
     var DELIMITER = '\'';
+    var SPACE = ' ';
     var builder = 'var $EMPTY=\'\';var $length=0;var $source=null;var $tmp=index;var $output=$EMPTY';
     var command = view_find_command(content, 0);
 
@@ -1719,24 +1720,16 @@ function view_parse(content, minify) {
         builder += '+' + DELIMITER + compressHTML(content, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + DELIMITER;
 
     var old = null;
-    var condition = 0;
-    var foreach = 0;
-    var is = false;
     var newCommand = '';
     var tmp = '';
     var index = 0;
+    var counter = 0;
+    var functions = [];
+    var functionsName = [];
+    var isFN = false;
+    var builderTMP = '';
 
     while (command !== null) {
-
-
-        /**
-         * @todo Whats is this?
-         */
-
-        /*
-        if (condition === 0 && builder !== '')
-            builder += '+';
-        */
 
         if (old !== null) {
             var text = content.substring(old.end + 1, command.beg);
@@ -1756,49 +1749,56 @@ function view_parse(content, minify) {
 
         var cmd = content.substring(command.beg + 2, command.end);
 
-        if (cmd.substring(0, 8) === 'foreach ') {
-            foreach = 1;
+        if (cmd.substring(0, 7) === 'helper ') {
+
+            builderTMP = builder;
+            builder = 'function ' + cmd.substring(7).trim() + '{var $output=$EMPTY';
+            isFN = true;
+            functionsName.push(cmd.substring(7, cmd.indexOf('(', 7)).trim());
+
+        } else if (cmd.substring(0, 8) === 'foreach ') {
+
+            counter++;
 
             if (cmd.indexOf('foreach var ') !== -1)
-                cmd = cmd.replace(' var ', ' ');
+                cmd = cmd.replace(' var ', SPACE);
 
-            newCommand = (cmd.substring(8, cmd.indexOf(' ', 8)) || '').trim();
+            newCommand = (cmd.substring(8, cmd.indexOf(SPACE, 8)) || '').trim();
             index = cmd.indexOf('[');
-            if (index === -1)
-                index = cmd.lastIndexOf(' ');
-            var source = cmd.substring(index).trim();
-            builder += ';$source=' + source + ';if ($source && $source.length > 0){$length=$source.length;';
-            builder += 'for(var i=0;i<$length;i++){'
-            builder += 'index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
-        } else if (cmd === 'end') {
-            builder += ';}}index=$tmp;$output+=$EMPTY';
-            newCommand = '';
-        } else if (cmd.substring(0, 3) === 'if ') {
-            if (view_parse_plus(builder))
-                builder += '+';
-            condition = 1;
-            builder += '(' + cmd.substring(3) + '?';
-            is = true;
-        } else if (cmd === 'else') {
-            condition = 2;
-            builder += ':';
-            is = true;
-        } else if (cmd === 'endif') {
-            if (condition === 1)
-                builder += ':$EMPTY';
-            condition = 0;
-            builder += ')';
-            is = true;
-        } else {
 
-            tmp = view_prepare(command.command, newCommand);
+            if (index === -1)
+                index = cmd.lastIndexOf(SPACE);
+
+            builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if (!($source instanceof Array) || source.length === 0)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
+
+        } else if (cmd === 'end') {
+
+            if (isFN && counter <= 0) {
+                counter = 0;
+                builder += ';return $output;}';
+                functions.push(builder);
+                builder = builderTMP;
+                builderTMP = '';
+            } else {
+                counter--;
+                builder += '}return $output;})()';
+                newCommand = '';
+            }
+
+        } else if (cmd.substring(0, 3) === 'if ') {
+            builder += ';if (' + cmd.substring(3) + '){$output+=$EMPTY';
+        } else if (cmd === 'else') {
+            builder += '} else {$output+=$EMPTY';
+        } else if (cmd === 'endif') {
+            builder += '}$output+=$EMPTY'
+        } else {
+            tmp = view_prepare(command.command, newCommand, functionsName);
 
             if (tmp.length > 0) {
                 if (view_parse_plus(builder))
                     builder += '+';
                 builder += tmp;
             }
-
         }
 
         old = command;
@@ -1811,9 +1811,10 @@ function view_parse(content, minify) {
             builder += '+' + DELIMITER + compressHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + DELIMITER;
     }
 
-    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output){var controller=self;' + builder + ';return $output;})';
+    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output){' + (functions.length > 0 ? functions.join('') : '') + ';var controller=self;' + builder + ';return $output;})';
     return eval(fn);
 }
+
 
 function view_parse_plus(builder) {
     var c = builder[builder.length - 1];
@@ -1822,7 +1823,7 @@ function view_parse_plus(builder) {
     return false;
 }
 
-function view_prepare(command, dynamicCommand) {
+function view_prepare(command, dynamicCommand, functions) {
 
     var a = command.indexOf('.');
     var b = command.indexOf('(');
@@ -2011,7 +2012,7 @@ function view_prepare(command, dynamicCommand) {
         case 'password':
             return 'self.$' + exports.appendModel(command);
         default:
-            return 'helpers.' + view_insert_call(command);
+            return functions.indexOf(name) === -1 ? command[0] === '!' ? command.substring(1) + '.toString()' : command + '.toString().encode()' : command + '.toString()';
     }
 
     return command;
@@ -2540,9 +2541,21 @@ Template.prototype.parse = function(html) {
     var minify = self.controller.config['allow-compress-html'];
 
     if (indexBeg === -1 && html.indexOf('@{foreach') !== -1)
-        return { is: true, template: view_parse(compressHTML(html.trim()), minify) };
+        return {
+            is: true,
+            template: view_parse(compressHTML(html.trim()), minify)
+        };
 
     var searchEnd = '@{end}';
+
+    if (indexBeg === -1) {
+        searchBeg = '<!--';
+        searchEnd = '-->';
+        indexBeg = html.indexOf(searchBeg);
+        if (indexBeg !== -1)
+            console.log('OBSOLETE: <!-- @{model} --> (replace to @{foreach} @{model} @{end}) in template:', self.name);
+    }
+
     var indexEnd = indexBeg !== -1 ? html.lastIndexOf(searchEnd) : -1;
     var beg = '';
     var end = '';
