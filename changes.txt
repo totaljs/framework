@@ -42,6 +42,9 @@ IN DEVELOPMENT ======= 1.5.0
 - removed: IMPORTANT: old template engine was removed from templates
 - removed: IMPORTANT: LESS CSS
 
+- improvements: views
+- improvements: templates
+
 ======= 1.4.0
 
 - added: new global methods: INCLUDE() - framework.source(), SOURCE() - framework.source(), MODEL(name) -> framework.model(), MODULE(name) -> framework.module(), DATABASE() -> framework.database()
