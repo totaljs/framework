@@ -801,6 +801,7 @@ function compile_jscss(css) {
     var compiled = '';
 
     output = code + '\n\n;compiled = "' + output + (output[length - 1] === '"' ? '' : '"');
+
     eval(output);
 
     var reg1 = /\n|\s{2,}/g;

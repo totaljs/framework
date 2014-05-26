@@ -1872,10 +1872,12 @@ Framework.prototype.responseStatic = function(req, res) {
 
     self.responseImage(req, res, filename, function(image) {
 
-        if (resizer.width && resizer.height)
-            image.resizeCenter(resizer.width, resizer.height);
-        else
-            image.resize(resizer.width, resizer.height);
+        if (resize.width || resize.height) {
+            if (resizer.width && resizer.height)
+                image.resizeCenter(resizer.width, resizer.height);
+            else
+                image.resize(resizer.width, resizer.height);
+        }
 
         if (resizer.grayscale)
             image.grayscale();
