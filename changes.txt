@@ -24,6 +24,7 @@ IN DEVELOPMENT ======= 1.5.0
 - adedd: Builders.create(schemaName)
 - added: controller.exception
 
+- updated: config['default-websocket-encodedecode'] - default: true
 - updated: @{options(array/object)} - supports Object
 - updated: utils.request(url, flags, [data], callback, cookies, headers, encoding, timeout)
 - updated: utils.download(url, flags, [data], callback, cookies, headers, encoding, timeout)

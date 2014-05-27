@@ -132,7 +132,7 @@ function Framework() {
         // default 5 kB
         'default-request-length': 1024 * 5,
         'default-websocket-request-length': 1024 * 5,
-        'default-websocket-encodedecode': false,
+        'default-websocket-encodedecode': true,
 
         // in milliseconds
         'default-request-timeout': 3000,
