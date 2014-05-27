@@ -990,7 +990,11 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
         var value = model[name];
         var type = typeof(value);
 
-        value = (type === FUNCTION ? model[name]() : model[name]) || '';
+        if (type === UNDEFINED) {
+            error.add(name, '@', current + name);
+            continue;
+        } else
+            value = (type === FUNCTION ? model[name]() : model[name]);
 
         if (type !== OBJECT && isSchema) {
             if (builders.isJoin(definition[name]))
@@ -1029,8 +1033,8 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
                 }
             }
 
-            exports.validate(value, properties, prepare, error, resource, current + name);
-            continue;
+            //exports.validate(value, properties, prepare, error, resource, current + name);
+            //continue;
         }
 
         var result = prepare(name, value, current + name);

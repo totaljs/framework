@@ -42,6 +42,7 @@ IN DEVELOPMENT ======= 1.5.0
 - fixed: @{ngCommon()}
 - fixed: @{ngStyle()}
 - fixed: measure JPG - extended buffer
+- fixed: utils.validate()
 
 - removed: IMPORTANT: old template engine was removed from templates
 - removed: IMPORTANT: LESS CSS

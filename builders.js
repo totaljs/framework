@@ -766,7 +766,7 @@ ErrorBuilder.prototype._prepare = function() {
  * To string
  * @return {String}
  */
-ErrorBuilder.prototype.toString = function(delimiter) {
+ErrorBuilder.prototype.toString = function() {
 
     var self = this;
 
@@ -778,9 +778,9 @@ ErrorBuilder.prototype.toString = function(delimiter) {
     var builder = [];
 
     for (var i = 0; i < length; i++)
-        builder.push(errors[i].error);
+        builder.push(errors[i].error || errors[i].name);
 
-    return builder.join(delimiter || '\n');
+    return builder.join('\n');
 
 };
 
