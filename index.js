@@ -1859,8 +1859,8 @@ Framework.prototype.responseStatic = function(req, res) {
         name = name.substring(index + 1);
         index = name.lastIndexOf('.');
         isResize = resizer.extension === '*' || resizer.extension.indexOf(name.substring(index).toLowerCase()) !== -1;
-        name = resizer.path + name;
-
+        if (isResize)
+            name = resizer.path + name;
     }
 
     var filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
@@ -1872,7 +1872,7 @@ Framework.prototype.responseStatic = function(req, res) {
 
     self.responseImage(req, res, filename, function(image) {
 
-        if (resize.width || resize.height) {
+        if (resizer.width || resizer.height) {
             if (resizer.width && resizer.height)
                 image.resizeCenter(resizer.width, resizer.height);
             else
