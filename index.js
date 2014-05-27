@@ -5655,6 +5655,7 @@ function Subscribe(framework, req, res, type) {
     this.isCanceled = false;
     this.isMixed = false;
     this.header = '';
+    this.error = null;
 }
 
 Subscribe.prototype.success = function() {
@@ -5767,7 +5768,9 @@ Subscribe.prototype.execute = function(status) {
     }
 
     var name = self.route.name;
+
     self.controller = new Controller(name, self.req, self.res, self);
+    self.controller.exception = self.exception;
 
     if (!self.isCanceled && !self.isMixed && self.route.timeout > 0)
         self.timeout = setTimeout(self.handlers._cancel, self.route.timeout);
@@ -6064,6 +6067,7 @@ function Controller(name, req, res, subscribe) {
     this.framework = subscribe.framework;
     this.req = req;
     this.res = res;
+    this.exception = null;
 
     this.boundary = null;
 
@@ -6478,6 +6482,8 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 Controller.prototype.error = function(err) {
     var self = this;
     self.framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.uri);
+    self.subscribe.exception = err;
+    self.exception = err;
     return self;
 };
 
@@ -8760,6 +8766,7 @@ Controller.prototype.view400 = function(problem) {
     self.req.path = [];
     self.subscribe.success();
     self.subscribe.route = self.framework.lookup(self.req, '#400', []);
+    self.subscribe.exception = problem;
     self.subscribe.execute(400);
     return self;
 };
@@ -8789,6 +8796,7 @@ Controller.prototype.view401 = function(problem) {
     self.req.path = [];
     self.subscribe.success();
     self.subscribe.route = self.framework.lookup(self.req, '#401', []);
+    self.subscribe.exception = problem;
     self.subscribe.execute(401);
     return self;
 };
@@ -8818,6 +8826,7 @@ Controller.prototype.view403 = function(problem) {
     self.req.path = [];
     self.subscribe.success();
     self.subscribe.route = self.framework.lookup(self.req, '#403', []);
+    self.subscribe.exception = problem;
     self.subscribe.execute(403);
     return self;
 };
@@ -8846,6 +8855,7 @@ Controller.prototype.view404 = function(problem) {
     self.req.path = [];
     self.subscribe.success();
     self.subscribe.route = self.framework.lookup(self.req, '#404', []);
+    self.subscribe.exception = problem;
     self.subscribe.execute(404);
     return self;
 };
@@ -8864,8 +8874,10 @@ Controller.prototype.view500 = function(error) {
         return self;
 
     self.req.path = [];
+    self.subscribe.exception = err;
     self.subscribe.success();
     self.subscribe.route = self.framework.lookup(self.req, '#500', []);
+    self.subscribe.exception = error;
     self.subscribe.execute(500);
     return self;
 };
@@ -8895,6 +8907,7 @@ Controller.prototype.view501 = function(problem) {
     self.req.path = [];
     self.subscribe.success();
     self.subscribe.route = self.framework.lookup(self.req, '#501', []);
+    self.subscribe.exception = problem;
     self.subscribe.execute(501);
     return self;
 };

@@ -22,6 +22,7 @@ IN DEVELOPMENT ======= 1.5.0
 - added: controller.throw501([problem])
 - added: request.signature()
 - adedd: Builders.create(schemaName)
+- added: controller.exception
 
 - updated: @{options(array/object)} - supports Object
 - updated: utils.request(url, flags, [data], callback, cookies, headers, encoding, timeout)
