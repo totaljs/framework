@@ -34,16 +34,16 @@ var REQUIRED = 'The field "@" is required.';
  */
 function ErrorBuilder(onResource) {
 
-	this.errors = [];
-	this.onResource = onResource;
-	this.resourceName = '';
-	this.resourcePrefix = '';
-	this.count = 0;
-	this.replacer = [];
-	this.isPrepared = false;
+    this.errors = [];
+    this.onResource = onResource;
+    this.resourceName = '';
+    this.resourcePrefix = '';
+    this.count = 0;
+    this.replacer = [];
+    this.isPrepared = false;
 
-	if (typeof(onResource) === UNDEFINED)
-		this._resource();
+    if (typeof(onResource) === UNDEFINED)
+        this._resource();
 }
 
 /**
@@ -59,7 +59,7 @@ function ErrorBuilder(onResource) {
  * @classdesc CRUD parameters in URL.
  */
 function UrlBuilder() {
-	this.builder = {};
+    this.builder = {};
 }
 
 /**
@@ -76,17 +76,17 @@ function UrlBuilder() {
  * @property {String} format Format URL. Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
  */
 function Pagination(items, page, max, format) {
-	this.isNext = false;
-	this.isPrev = false;
-	this.items = items;
-	this.count = 0;
-	this.skip = 0;
-	this.take = 0;
-	this.page = 0;
-	this.max = 0;
-	this.visible = false;
-	this.format = format || '?page={0}';
-	this.refresh(items, page, max);
+    this.isNext = false;
+    this.isPrev = false;
+    this.items = items;
+    this.count = 0;
+    this.skip = 0;
+    this.take = 0;
+    this.page = 0;
+    this.max = 0;
+    this.visible = false;
+    this.format = format || '?page={0}';
+    this.refresh(items, page, max);
 }
 
 
@@ -100,17 +100,17 @@ function Pagination(items, page, max, format) {
  */
 exports.schema = function(name, obj, defaults, validator) {
 
-	if (typeof(obj) === UNDEFINED)
-		return schema[name] || null;
+    if (typeof(obj) === UNDEFINED)
+        return schema[name] || null;
 
-	if (typeof(defaults) === FUNCTION)
-		schemaDefaults[name] = defaults;
+    if (typeof(defaults) === FUNCTION)
+        schemaDefaults[name] = defaults;
 
-	if (typeof(validator) === FUNCTION)
-		schemaValidator[name] = validator;
+    if (typeof(validator) === FUNCTION)
+        schemaValidator[name] = validator;
 
-	schema[name] = obj;
-	return obj;
+    schema[name] = obj;
+    return obj;
 };
 
 /**
@@ -136,11 +136,11 @@ exports.schema = function(name, obj, defaults, validator) {
  * @return {Boolean}
  */
 exports.isJoin = function(value) {
-	if (!value)
-		return false;
-	if (value[0] === '[')
-		return true;
-	return typeof(schema[value]) !== UNDEFINED;
+    if (!value)
+        return false;
+    if (value[0] === '[')
+        return true;
+    return typeof(schema[value]) !== UNDEFINED;
 };
 
 /**
@@ -151,16 +151,16 @@ exports.isJoin = function(value) {
  */
 exports.validation = function(name, fn) {
 
-	if (typeof(fn) === FUNCTION) {
-		schemaValidator[name] = fn;
-		return true;
-	}
+    if (typeof(fn) === FUNCTION) {
+        schemaValidator[name] = fn;
+        return true;
+    }
 
-	if (typeof(fn) === UNDEFINED)
-		return schemaValidation[name] || [];
+    if (typeof(fn) === UNDEFINED)
+        return schemaValidation[name] || [];
 
-	schemaValidation[name] = fn;
-	return fn;
+    schemaValidation[name] = fn;
+    return fn;
 };
 
 
@@ -172,17 +172,22 @@ exports.validation = function(name, fn) {
  */
 exports.validate = function(name, model) {
 
-	var fn = schemaValidator[name];
-	var builder = new ErrorBuilder();
+    var fn = schemaValidator[name];
+    var builder = new ErrorBuilder();
 
-	if (typeof(fn) === UNDEFINED)
-		return builder;
+    if (typeof(fn) === UNDEFINED)
+        return builder;
 
-	return utils.validate.call(this, model, Object.keys(schema[name]), fn, builder);
+    return utils.validate.call(this, model, Object.keys(schema[name]), fn, builder);
 };
 
-exports.default = function(name) {
-	return exports.defaults(name);
+/**
+ * Create default object according to schema
+ * @param  {String} name Schema name.
+ * @return {Object}
+ */
+exports.create = function(name) {
+    return exports.defaults(name);
 };
 
 /**
@@ -192,137 +197,137 @@ exports.default = function(name) {
  */
 exports.defaults = function(name) {
 
-	var obj = exports.schema(name);
+    var obj = exports.schema(name);
 
-	if (obj === null)
-		return null;
+    if (obj === null)
+        return null;
 
-	var defaults = schemaDefaults[name];
-	var item = utils.extend({}, obj, true);
-	var properties = Object.keys(item);
-	var length = properties.length;
+    var defaults = schemaDefaults[name];
+    var item = utils.extend({}, obj, true);
+    var properties = Object.keys(item);
+    var length = properties.length;
 
-	for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; i++) {
 
-		var property = properties[i];
-		var value = item[property];
-		var type = typeof(value);
+        var property = properties[i];
+        var value = item[property];
+        var type = typeof(value);
 
-		if (defaults) {
-			var def = defaults(property, true);
-			if (typeof(def) !== UNDEFINED) {
-				item[property] = def;
-				continue;
-			}
-		}
+        if (defaults) {
+            var def = defaults(property, true);
+            if (typeof(def) !== UNDEFINED) {
+                item[property] = def;
+                continue;
+            }
+        }
 
-		if (type === FUNCTION) {
+        if (type === FUNCTION) {
 
-			if (value === Number) {
-				item[property] = 0;
-				continue;
-			}
+            if (value === Number) {
+                item[property] = 0;
+                continue;
+            }
 
-			if (value === Boolean) {
-				item[property] = false;
-				continue;
-			}
+            if (value === Boolean) {
+                item[property] = false;
+                continue;
+            }
 
-			if (value === String) {
-				item[property] = '';
-				continue;
-			}
+            if (value === String) {
+                item[property] = '';
+                continue;
+            }
 
-			if (value === Date) {
-				item[property] = new Date();
-				continue;
-			}
+            if (value === Date) {
+                item[property] = new Date();
+                continue;
+            }
 
-			if (value === Object) {
-				item[property] = {};
-				continue;
-			}
+            if (value === Object) {
+                item[property] = {};
+                continue;
+            }
 
-			if (value === Array) {
-				item[property] = [];
-				continue;
-			}
+            if (value === Array) {
+                item[property] = [];
+                continue;
+            }
 
-			item[property] = value();
-			continue;
-		}
+            item[property] = value();
+            continue;
+        }
 
-		if (type === NUMBER) {
-			item[property] = 0;
-			continue;
-		}
+        if (type === NUMBER) {
+            item[property] = 0;
+            continue;
+        }
 
-		if (type === BOOLEAN) {
-			item[property] = false;
-			continue;
-		}
+        if (type === BOOLEAN) {
+            item[property] = false;
+            continue;
+        }
 
-		if (type === OBJECT) {
-			item[property] = value instanceof Array ? [] : {};
-			continue;
-		}
+        if (type === OBJECT) {
+            item[property] = value instanceof Array ? [] : {};
+            continue;
+        }
 
-		if (type !== STRING) {
-			item[property] = null;
-			continue;
-		}
+        if (type !== STRING) {
+            item[property] = null;
+            continue;
+        }
 
-		var isArray = value[0] === '[';
+        var isArray = value[0] === '[';
 
-		if (isArray)
-			value = value.substring(1, value.length - 1);
+        if (isArray)
+            value = value.substring(1, value.length - 1);
 
-		if (isArray) {
-			item[property] = [];
-			continue;
-		}
+        if (isArray) {
+            item[property] = [];
+            continue;
+        }
 
-		var lower = value.toLowerCase();
+        var lower = value.toLowerCase();
 
-		if (lower.contains([STRING, 'text', 'varchar', 'nvarchar', 'binary', 'data', 'base64'])) {
-			item[property] = '';
-			continue;
-		}
+        if (lower.contains([STRING, 'text', 'varchar', 'nvarchar', 'binary', 'data', 'base64'])) {
+            item[property] = '';
+            continue;
+        }
 
-		if (lower.contains(['int', NUMBER, 'decimal', 'byte', 'float', 'double'])) {
-			item[property] = 0;
-			continue;
-		}
+        if (lower.contains(['int', NUMBER, 'decimal', 'byte', 'float', 'double'])) {
+            item[property] = 0;
+            continue;
+        }
 
-		if (lower.contains('bool')) {
-			item[property] = false;
-			continue;
-		}
+        if (lower.contains('bool')) {
+            item[property] = false;
+            continue;
+        }
 
-		if (lower.contains(['date', 'time'])) {
-			item[property] = new Date();
-			continue;
-		}
+        if (lower.contains(['date', 'time'])) {
+            item[property] = new Date();
+            continue;
+        }
 
-		if (lower.contains(['object'])) {
-			item[property] = {};
-			continue;
-		}
+        if (lower.contains(['object'])) {
+            item[property] = {};
+            continue;
+        }
 
-		if (lower.contains(['array'])) {
-			item[property] = [];
-			continue;
-		}
+        if (lower.contains(['array'])) {
+            item[property] = [];
+            continue;
+        }
 
-		if (lower.contains(['binary', 'data', 'base64'])) {
-			item[property] = null;
-			continue;
-		}
+        if (lower.contains(['binary', 'data', 'base64'])) {
+            item[property] = null;
+            continue;
+        }
 
-		item[property] = exports.defaults(value);
-	}
+        item[property] = exports.defaults(value);
+    }
 
-	return item;
+    return item;
 };
 
 /**
@@ -333,229 +338,229 @@ exports.defaults = function(name) {
  */
 exports.prepare = function(name, model) {
 
-	var obj = exports.schema(name);
+    var obj = exports.schema(name);
 
-	if (obj === null)
-		return null;
+    if (obj === null)
+        return null;
 
-	if (model === null)
-		return exports.defaults(name);
+    if (model === null)
+        return exports.defaults(name);
 
-	var tmp;
-	var item = utils.extend({}, obj, true);
-	var properties = Object.keys(item);
-	var defaults = schemaDefaults[name];
-	var length = properties.length;
+    var tmp;
+    var item = utils.extend({}, obj, true);
+    var properties = Object.keys(item);
+    var defaults = schemaDefaults[name];
+    var length = properties.length;
 
-	for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; i++) {
 
-		var property = properties[i];
-		var val = model[property];
+        var property = properties[i];
+        var val = model[property];
 
-		if (typeof(val) === UNDEFINED && defaults)
-			val = defaults(property, false);
+        if (typeof(val) === UNDEFINED && defaults)
+            val = defaults(property, false);
 
-		if (typeof(val) === UNDEFINED)
-			val = '';
+        if (typeof(val) === UNDEFINED)
+            val = '';
 
-		var value = item[property];
-		var type = typeof(value);
-		var typeval = typeof(val);
+        var value = item[property];
+        var type = typeof(value);
+        var typeval = typeof(val);
 
-		if (typeval === FUNCTION)
-			val = val();
+        if (typeval === FUNCTION)
+            val = val();
 
-		if (type === FUNCTION) {
+        if (type === FUNCTION) {
 
-			if (value === Number) {
-				item[property] = utils.parseFloat(val);
-				continue;
-			}
+            if (value === Number) {
+                item[property] = utils.parseFloat(val);
+                continue;
+            }
 
-			if (value === Boolean) {
-				tmp = val.toString();
-				item[property] = tmp === 'true' || tmp === '1';
-				continue;
-			}
+            if (value === Boolean) {
+                tmp = val.toString();
+                item[property] = tmp === 'true' || tmp === '1';
+                continue;
+            }
 
-			if (value === String) {
-				item[property] = val.toString();
-				continue;
-			}
+            if (value === String) {
+                item[property] = val.toString();
+                continue;
+            }
 
-			if (value === Date) {
+            if (value === Date) {
 
-				tmp = null;
+                tmp = null;
 
-				switch (typeval) {
-					case OBJECT:
-						if (utils.isDate(val))
-							tmp = val;
-						else
-							tmp = null;
-						break;
+                switch (typeval) {
+                    case OBJECT:
+                        if (utils.isDate(val))
+                            tmp = val;
+                        else
+                            tmp = null;
+                        break;
 
-					case NUMBER:
-						tmp = new Date(val);
-						break;
+                    case NUMBER:
+                        tmp = new Date(val);
+                        break;
 
-					case STRING:
-						if (val === '')
-							tmp = null;
-						else
-							tmp = val.parseDate();
-						break;
-				}
+                    case STRING:
+                        if (val === '')
+                            tmp = null;
+                        else
+                            tmp = val.parseDate();
+                        break;
+                }
 
-				if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
-					tmp = null;
+                if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
+                    tmp = null;
 
-				item[property] = tmp || (defaults ? isUndefined(defaults(property), null) : null);
-				continue;
-			}
+                item[property] = tmp || (defaults ? isUndefined(defaults(property), null) : null);
+                continue;
+            }
 
-			item[property] = isUndefined(defaults(property), null);
-			continue;
-		}
+            item[property] = isUndefined(defaults(property), null);
+            continue;
+        }
 
-		if (type === OBJECT) {
-			item[property] = typeval === OBJECT ? val : null;
-			continue;
-		}
+        if (type === OBJECT) {
+            item[property] = typeval === OBJECT ? val : null;
+            continue;
+        }
 
-		if (type === NUMBER) {
-			item[property] = utils.parseFloat(val);
-			continue;
-		}
+        if (type === NUMBER) {
+            item[property] = utils.parseFloat(val);
+            continue;
+        }
 
-		if (val === null || typeval === UNDEFINED)
-			tmp = '';
-		else
-			tmp = val.toString();
+        if (val === null || typeval === UNDEFINED)
+            tmp = '';
+        else
+            tmp = val.toString();
 
-		if (type === BOOLEAN) {
-			item[property] = tmp === 'true' || tmp === '1';
-			continue;
-		}
+        if (type === BOOLEAN) {
+            item[property] = tmp === 'true' || tmp === '1';
+            continue;
+        }
 
-		if (type !== STRING) {
-			item[property] = tmp;
-			continue;
-		}
+        if (type !== STRING) {
+            item[property] = tmp;
+            continue;
+        }
 
-		var isArray = value[0] === '[' || value === 'array';
+        var isArray = value[0] === '[' || value === 'array';
 
-		if (isArray) {
+        if (isArray) {
 
-			if (value[0] === '[')
-				value = value.substring(1, value.length - 1);
-			else
-				value = null;
+            if (value[0] === '[')
+                value = value.substring(1, value.length - 1);
+            else
+                value = null;
 
-			if (!(val instanceof Array)) {
-				item[property] = (defaults ? isUndefined(defaults(property, false), []) : []);
-				continue;
-			}
+            if (!(val instanceof Array)) {
+                item[property] = (defaults ? isUndefined(defaults(property, false), []) : []);
+                continue;
+            }
 
-			item[property] = [];
-			var sublength = val.length;
-			for (var j = 0; j < sublength; j++) {
+            item[property] = [];
+            var sublength = val.length;
+            for (var j = 0; j < sublength; j++) {
 
-				if (value === null) {
-					item[property].push(model[property][j]);
-					continue;
-				}
+                if (value === null) {
+                    item[property].push(model[property][j]);
+                    continue;
+                }
 
-				var tmp = model[property][j];
+                var tmp = model[property][j];
 
-				switch (value) {
-					case 'string':
-					case 'varchar':
-					case 'text':
-						item[property].push((tmp || '').toString());
-						break;
-					case 'bool':
-					case 'boolean':
-						tmp = (tmp || '').toString().toLowerCase();
-						item[property].push(tmp === 'true' || tmp === '1');
-						break;
-					case 'int':
-					case 'integer':
-						item[property].push(utils.parseInt(tmp));
-						break;
-					case 'number':
-						item[property].push(utils.parseFloat(tmp));
-						break;
-					default:
-						item[property][j] = exports.prepare(value, model[property][j]);
-						break;
-				}
-			}
+                switch (value) {
+                    case 'string':
+                    case 'varchar':
+                    case 'text':
+                        item[property].push((tmp || '').toString());
+                        break;
+                    case 'bool':
+                    case 'boolean':
+                        tmp = (tmp || '').toString().toLowerCase();
+                        item[property].push(tmp === 'true' || tmp === '1');
+                        break;
+                    case 'int':
+                    case 'integer':
+                        item[property].push(utils.parseInt(tmp));
+                        break;
+                    case 'number':
+                        item[property].push(utils.parseFloat(tmp));
+                        break;
+                    default:
+                        item[property][j] = exports.prepare(value, model[property][j]);
+                        break;
+                }
+            }
 
-			continue;
-		}
+            continue;
+        }
 
-		var lower = value.toLowerCase();
+        var lower = value.toLowerCase();
 
-		if (lower.contains([STRING, 'text', 'varchar', 'nvarchar'])) {
+        if (lower.contains([STRING, 'text', 'varchar', 'nvarchar'])) {
 
-			var beg = lower.indexOf('(');
-			if (beg === -1) {
-				item[property] = tmp;
-				continue;
-			}
+            var beg = lower.indexOf('(');
+            if (beg === -1) {
+                item[property] = tmp;
+                continue;
+            }
 
-			var size = lower.substring(beg + 1, lower.length - 1).parseInt();
-			item[property] = tmp.max(size, '...');
-			continue;
-		}
+            var size = lower.substring(beg + 1, lower.length - 1).parseInt();
+            item[property] = tmp.max(size, '...');
+            continue;
+        }
 
-		if (lower.contains(['int', 'byte'])) {
-			item[property] = utils.parseInt(val);
-			continue;
-		}
+        if (lower.contains(['int', 'byte'])) {
+            item[property] = utils.parseInt(val);
+            continue;
+        }
 
-		if (lower.contains(['decimal', NUMBER, 'float', 'double'])) {
-			item[property] = utils.parseFloat(val);
-			continue;
-		}
+        if (lower.contains(['decimal', NUMBER, 'float', 'double'])) {
+            item[property] = utils.parseFloat(val);
+            continue;
+        }
 
-		if (lower.contains('bool', BOOLEAN)) {
-			item[property] = tmp === 'true' || tmp === '1';
-			continue;
-		}
+        if (lower.contains('bool', BOOLEAN)) {
+            item[property] = tmp === 'true' || tmp === '1';
+            continue;
+        }
 
-		if (lower.contains(['date', 'time'])) {
+        if (lower.contains(['date', 'time'])) {
 
-			if (typeval === 'date') {
-				item[property] = val;
-				continue;
-			}
+            if (typeval === 'date') {
+                item[property] = val;
+                continue;
+            }
 
-			if (typeval === STRING) {
-				item[property] = val.parseDate();
-				continue;
-			}
+            if (typeval === STRING) {
+                item[property] = val.parseDate();
+                continue;
+            }
 
-			if (typeval === NUMBER) {
-				item[property] = new Date(val);
-				continue;
-			}
+            if (typeval === NUMBER) {
+                item[property] = new Date(val);
+                continue;
+            }
 
-			item[property] = isUndefined(defaults(property));
-			continue;
-		}
+            item[property] = isUndefined(defaults(property));
+            continue;
+        }
 
-		item[property] = exports.prepare(value, model[property]);
-	}
+        item[property] = exports.prepare(value, model[property]);
+    }
 
-	return item;
+    return item;
 };
 
 function isUndefined(value, def) {
-	if (typeof(value) === UNDEFINED)
-		return def;
-	return value;
+    if (typeof(value) === UNDEFINED)
+        return def;
+    return value;
 }
 
 // ======================================================
@@ -569,10 +574,10 @@ function isUndefined(value, def) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.resource = function(name, prefix) {
-	var self = this;
-	self.resourceName = name;
-	self.resourcePrefix = prefix || '';
-	return self._resource();
+    var self = this;
+    self.resourceName = name;
+    self.resourcePrefix = prefix || '';
+    return self._resource();
 };
 
 /**
@@ -581,12 +586,12 @@ ErrorBuilder.prototype.resource = function(name, prefix) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype._resource = function() {
-	var self = this;
-	self.onResource = function(name) {
-		var self = this;
-		return framework.resource(self.resourceName, self.resourcePrefix + name);
-	};
-	return self;
+    var self = this;
+    self.onResource = function(name) {
+        var self = this;
+        return framework.resource(self.resourceName, self.resourcePrefix + name);
+    };
+    return self;
 };
 
 /**
@@ -597,22 +602,26 @@ ErrorBuilder.prototype._resource = function() {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.add = function(name, error, path) {
-	var self = this;
-	self.isPrepared = false;
+    var self = this;
+    self.isPrepared = false;
 
-	if (name instanceof ErrorBuilder) {
+    if (name instanceof ErrorBuilder) {
 
-		name.errors.forEach(function(o) {
-			self.errors.push(o);
-		});
+        name.errors.forEach(function(o) {
+            self.errors.push(o);
+        });
 
-		self.count = self.errors.length;
-		return self;
-	}
+        self.count = self.errors.length;
+        return self;
+    }
 
-	self.errors.push({ name : name, error: error || '@', path: path });
-	self.count = self.errors.length;
-	return self;
+    self.errors.push({
+        name: name,
+        error: error || '@',
+        path: path
+    });
+    self.count = self.errors.length;
+    return self;
 };
 
 /**
@@ -621,14 +630,14 @@ ErrorBuilder.prototype.add = function(name, error, path) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.remove = function(name) {
-	var self = this;
+    var self = this;
 
-	self.errors = self.errors.remove(function(o) {
-		return o.name === name;
-	});
+    self.errors = self.errors.remove(function(o) {
+        return o.name === name;
+    });
 
-	self.count = self.errors.length;
-	return self;
+    self.count = self.errors.length;
+    return self;
 };
 
 /**
@@ -637,15 +646,15 @@ ErrorBuilder.prototype.remove = function(name) {
  * @return {Boolean}
  */
 ErrorBuilder.prototype.hasError = function(name) {
-	var self = this;
+    var self = this;
 
-	if (name) {
-		return self.errors.find(function(o) {
-			return o.name === name;
-		}) !== null;
-	}
+    if (name) {
+        return self.errors.find(function(o) {
+            return o.name === name;
+        }) !== null;
+    }
 
-	return self.errors.length > 0;
+    return self.errors.length > 0;
 };
 
 /**
@@ -655,19 +664,19 @@ ErrorBuilder.prototype.hasError = function(name) {
  */
 ErrorBuilder.prototype.read = function(name) {
 
-	var self = this;
+    var self = this;
 
-	if (!self.isPrepared)
-		self.prepare();
+    if (!self.isPrepared)
+        self.prepare();
 
-	var error = self.errors.find(function(o) {
-		return o.name === name;
-	});
+    var error = self.errors.find(function(o) {
+        return o.name === name;
+    });
 
-	if (error !== null)
-		return error.error;
+    if (error !== null)
+        return error.error;
 
-	return null;
+    return null;
 };
 
 /**
@@ -675,10 +684,10 @@ ErrorBuilder.prototype.read = function(name) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.clear = function() {
-	var self = this;
-	self.errors = [];
-	self.count = 0;
-	return self;
+    var self = this;
+    self.errors = [];
+    self.count = 0;
+    return self;
 };
 
 /**
@@ -688,10 +697,10 @@ ErrorBuilder.prototype.clear = function() {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.replace = function(search, newvalue) {
-	var self = this;
-	self.isPrepared = false;
-	self.replacer[search] = newvalue;
-	return self;
+    var self = this;
+    self.isPrepared = false;
+    self.replacer[search] = newvalue;
+    return self;
 };
 
 /*
@@ -704,9 +713,9 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
  * @return {String}
  */
 ErrorBuilder.prototype.json = function(beautify) {
-	if (beautify)
-		return JSON.stringify(this.prepare().errors, null, '\t');
-	return JSON.stringify(this.prepare().errors);
+    if (beautify)
+        return JSON.stringify(this.prepare().errors, null, '\t');
+    return JSON.stringify(this.prepare().errors);
 };
 
 /**
@@ -715,9 +724,9 @@ ErrorBuilder.prototype.json = function(beautify) {
  * @return {String}
  */
 ErrorBuilder.prototype.JSON = function(beautify) {
-	if (beautify)
-		return JSON.stringify(this.prepare().errors, null, '\t');
-	return JSON.stringify(this.prepare().errors);
+    if (beautify)
+        return JSON.stringify(this.prepare().errors, null, '\t');
+    return JSON.stringify(this.prepare().errors);
 };
 
 /**
@@ -726,31 +735,31 @@ ErrorBuilder.prototype.JSON = function(beautify) {
  * @return {ErrorBuidler}
  */
 ErrorBuilder.prototype._prepare = function() {
-	var self = this;
+    var self = this;
 
-	if (self.onResource === null)
-		return self;
+    if (self.onResource === null)
+        return self;
 
-	var errors = self.errors;
-	var length = errors.length;
+    var errors = self.errors;
+    var length = errors.length;
 
-	for (var i = 0; i < length; i++) {
+    for (var i = 0; i < length; i++) {
 
-		var o = errors[i];
+        var o = errors[i];
 
-		if (o.error[0] !== '@')
-			continue;
+        if (o.error[0] !== '@')
+            continue;
 
-		if (o.error.length === 1)
-			o.error = self.onResource(o.name);
-		else
-			o.error = self.onResource(o.error.substring(1));
+        if (o.error.length === 1)
+            o.error = self.onResource(o.name);
+        else
+            o.error = self.onResource(o.error.substring(1));
 
-		if (typeof(o.error) === UNDEFINED)
-			o.error = REQUIRED.replace('@', o.name);
-	}
+        if (typeof(o.error) === UNDEFINED)
+            o.error = REQUIRED.replace('@', o.name);
+    }
 
-	return self;
+    return self;
 };
 
 /**
@@ -760,24 +769,24 @@ ErrorBuilder.prototype._prepare = function() {
  */
 ErrorBuilder.prototype._prepareReplace = function() {
 
-	var self = this;
-	var errors = self.errors;
-	var lengthBuilder = errors.length;
-	var keys = Object.keys(self.replacer);
-	var lengthKeys = keys.length;
+    var self = this;
+    var errors = self.errors;
+    var lengthBuilder = errors.length;
+    var keys = Object.keys(self.replacer);
+    var lengthKeys = keys.length;
 
-	if (lengthBuilder === 0 || lengthKeys === 0)
-		return self;
+    if (lengthBuilder === 0 || lengthKeys === 0)
+        return self;
 
-	for (var i = 0; i < lengthBuilder; i++) {
-		var o = errors[i];
-		for (var j = 0; j < lengthKeys; j++) {
-			var key = keys[j];
-			o.error = o.error.replace(key, self.replacer[key]);
-		}
-	}
+    for (var i = 0; i < lengthBuilder; i++) {
+        var o = errors[i];
+        for (var j = 0; j < lengthKeys; j++) {
+            var key = keys[j];
+            o.error = o.error.replace(key, self.replacer[key]);
+        }
+    }
 
-	return self;
+    return self;
 };
 
 /**
@@ -786,15 +795,15 @@ ErrorBuilder.prototype._prepareReplace = function() {
  * @return {ErrorBuidler}
  */
 ErrorBuilder.prototype.prepare = function() {
-	var self = this;
+    var self = this;
 
-	if (self.isPrepared)
-		return self;
+    if (self.isPrepared)
+        return self;
 
-	self._prepare()._prepareReplace();
-	self.isPrepared = true;
+    self._prepare()._prepareReplace();
+    self.isPrepared = true;
 
-	return self;
+    return self;
 };
 
 /**
@@ -805,24 +814,24 @@ ErrorBuilder.prototype.prepare = function() {
  * @return {Pagination}
  */
 Pagination.prototype.refresh = function(items, page, max) {
-	var self = this;
+    var self = this;
 
-	self.count = Math.floor(items / max) + (items % max > 0 ? 1 : 0);
-	self.page = page - 1;
+    self.count = Math.floor(items / max) + (items % max > 0 ? 1 : 0);
+    self.page = page - 1;
 
-	if (self.page < 0)
-		self.page = 0;
+    if (self.page < 0)
+        self.page = 0;
 
-	self.items = items;
-	self.skip = self.page * max;
-	self.take = max;
-	self.max = max;
-	self.isPrev = self.page > 0;
-	self.isNext = self.page < self.count - 1;
-	self.visible = self.count > 1;
-	self.page++;
+    self.items = items;
+    self.skip = self.page * max;
+    self.take = max;
+    self.max = max;
+    self.isPrev = self.page > 0;
+    self.isNext = self.page < self.count - 1;
+    self.visible = self.count > 1;
+    self.page++;
 
-	return self;
+    return self;
 };
 
 /**
@@ -831,17 +840,21 @@ Pagination.prototype.refresh = function(items, page, max) {
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.prev = function(format) {
-	var self = this;
-	var page = 0;
+    var self = this;
+    var page = 0;
 
-	format = format || self.format;
+    format = format || self.format;
 
-	if (self.isPrev)
-		page = self.page - 1;
-	else
-		page = self.count;
+    if (self.isPrev)
+        page = self.page - 1;
+    else
+        page = self.count;
 
-	return { url: format.format(page, self.items, self.count), page: page, selected: false };
+    return {
+        url: format.format(page, self.items, self.count),
+        page: page,
+        selected: false
+    };
 };
 
 /**
@@ -850,17 +863,21 @@ Pagination.prototype.prev = function(format) {
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.next = function(format) {
-	var self = this;
-	var page = 0;
+    var self = this;
+    var page = 0;
 
-	format = format || self.format;
+    format = format || self.format;
 
-	if (self.isNext)
-		page = self.page + 1;
-	else
-		page = 1;
+    if (self.isNext)
+        page = self.page + 1;
+    else
+        page = 1;
 
-	return { url: format.format(page, self.items, self.count), page: page, selected: false };
+    return {
+        url: format.format(page, self.items, self.count),
+        page: page,
+        selected: false
+    };
 };
 
 /**
@@ -871,47 +888,55 @@ Pagination.prototype.next = function(format) {
  */
 Pagination.prototype.render = function(max, format) {
 
-	var self = this;
-	var builder = [];
-	format = format || self.format;
+    var self = this;
+    var builder = [];
+    format = format || self.format;
 
-	if (typeof(max) === STRING) {
-		var tmp = format;
-		format = max;
-		max = format;
-	}
+    if (typeof(max) === STRING) {
+        var tmp = format;
+        format = max;
+        max = format;
+    }
 
-	if (typeof(max) === UNDEFINED || max === null) {
-		for (var i = 1; i < self.count + 1; i++)
-			builder.push({ url: format.format(i, self.items, self.count), page: i, selected: i === self.page });
-		return builder;
-	}
+    if (typeof(max) === UNDEFINED || max === null) {
+        for (var i = 1; i < self.count + 1; i++)
+            builder.push({
+                url: format.format(i, self.items, self.count),
+                page: i,
+                selected: i === self.page
+            });
+        return builder;
+    }
 
-	var half = Math.floor(max / 2);
-	var pages = self.count;
+    var half = Math.floor(max / 2);
+    var pages = self.count;
 
-	var pageFrom = self.page - half;
-	var pageTo = self.page + half;
-	var plus = 0;
+    var pageFrom = self.page - half;
+    var pageTo = self.page + half;
+    var plus = 0;
 
-	if (pageFrom <= 0) {
-		plus = Math.abs(pageFrom);
-		pageFrom = 1;
-		pageTo += plus;
-	}
+    if (pageFrom <= 0) {
+        plus = Math.abs(pageFrom);
+        pageFrom = 1;
+        pageTo += plus;
+    }
 
-	if (pageTo >= pages) {
-		pageTo = pages;
-		pageFrom = pages - max;
-	}
+    if (pageTo >= pages) {
+        pageTo = pages;
+        pageFrom = pages - max;
+    }
 
-	if (pageFrom < 0)
-		pageFrom = 1;
+    if (pageFrom < 0)
+        pageFrom = 1;
 
-	for (var i = pageFrom; i < pageTo + 1; i++)
-		builder.push({ url: format.format(i, self.items, self.count), page: i, selected: i === self.page });
+    for (var i = pageFrom; i < pageTo + 1; i++)
+        builder.push({
+            url: format.format(i, self.items, self.count),
+            page: i,
+            selected: i === self.page
+        });
 
-	return builder;
+    return builder;
 };
 
 /**
@@ -921,17 +946,17 @@ Pagination.prototype.render = function(max, format) {
  * return {UrlBuilder}
  */
 UrlBuilder.prototype.add = function(name, value) {
-	var self = this;
+    var self = this;
 
-	if (typeof(name) === 'object') {
-		Object.keys(name).forEach(function(o) {
-			self.builder[o] = name[o];
-		});
-		return;
-	}
+    if (typeof(name) === 'object') {
+        Object.keys(name).forEach(function(o) {
+            self.builder[o] = name[o];
+        });
+        return;
+    }
 
-	self.builder[name] = value;
-	return self;
+    self.builder[name] = value;
+    return self;
 };
 
 /**
@@ -940,9 +965,9 @@ UrlBuilder.prototype.add = function(name, value) {
  * @return {UrlBuilder}
  */
 UrlBuilder.prototype.remove = function(name) {
-	var self = this;
-	delete self.builder[name];
-	return self;
+    var self = this;
+    delete self.builder[name];
+    return self;
 };
 
 /**
@@ -951,7 +976,7 @@ UrlBuilder.prototype.remove = function(name) {
  * @return {Object}
  */
 UrlBuilder.prototype.read = function(name) {
-	return this.builder[name] || null;
+    return this.builder[name] || null;
 };
 
 /**
@@ -959,9 +984,9 @@ UrlBuilder.prototype.read = function(name) {
  * @return {UrlBuilder}
  */
 UrlBuilder.prototype.clear = function() {
-	var self = this;
-	self.builder = {};
-	return self;
+    var self = this;
+    self.builder = {};
+    return self;
 };
 
 /**
@@ -970,14 +995,14 @@ UrlBuilder.prototype.clear = function() {
  */
 UrlBuilder.prototype.toString = function() {
 
-	var self = this;
-	var builder = [];
+    var self = this;
+    var builder = [];
 
-	Object.keys(self.builder).forEach(function(o) {
-		builder.push(o + '=' + encodeURIComponent(self.builder[o] || ''));
-	});
+    Object.keys(self.builder).forEach(function(o) {
+        builder.push(o + '=' + encodeURIComponent(self.builder[o] || ''));
+    });
 
-	return builder.join('&');
+    return builder.join('&');
 };
 
 /**
@@ -987,21 +1012,21 @@ UrlBuilder.prototype.toString = function() {
  */
 UrlBuilder.prototype.hasValue = function(keys) {
 
-	if (typeof(keys) === UNDEFINED)
-		return false;
+    if (typeof(keys) === UNDEFINED)
+        return false;
 
-	var self = this;
+    var self = this;
 
-	if (typeof(keys) === 'string')
-		keys = [keys];
+    if (typeof(keys) === 'string')
+        keys = [keys];
 
-	for (var i = 0; i < keys.length; i++) {
-		var val = self.builder[keys[i]];
-		if (typeof(val) === UNDEFINED || val === null)
-			return false;
-	}
+    for (var i = 0; i < keys.length; i++) {
+        var val = self.builder[keys[i]];
+        if (typeof(val) === UNDEFINED || val === null)
+            return false;
+    }
 
-	return true;
+    return true;
 };
 
 /**
@@ -1012,14 +1037,14 @@ UrlBuilder.prototype.hasValue = function(keys) {
  */
 UrlBuilder.prototype.toOne = function(keys, delimiter) {
 
-	var self = this;
-	var builder = [];
+    var self = this;
+    var builder = [];
 
-	keys.forEach(function(o) {
-		builder.push(self.builder[o] || '');
-	});
+    keys.forEach(function(o) {
+        builder.push(self.builder[o] || '');
+    });
 
-	return builder.join(delimiter || '&');
+    return builder.join(delimiter || '&');
 };
 
 // ======================================================
