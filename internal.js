@@ -1812,10 +1812,9 @@ function view_parse(content, minify) {
             builder += '+' + DELIMITER + compressHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + DELIMITER;
     }
 
-    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output){' + (functions.length > 0 ? functions.join('') : '') + ';var controller=self;' + builder + ';return $output;})';
+    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output){' + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
     return eval(fn);
 }
-
 
 function view_parse_plus(builder) {
     var c = builder[builder.length - 1];
