@@ -21,6 +21,7 @@ IN DEVELOPMENT ======= 1.5.0
 - added: controller.throw500(error)
 - added: controller.throw501([problem])
 - added: request.signature()
+- adedd: Builders.create(schemaName)
 
 - updated: @{options(array/object)} - supports Object
 - updated: utils.request(url, flags, [data], callback, cookies, headers, encoding, timeout)
@@ -38,6 +39,7 @@ IN DEVELOPMENT ======= 1.5.0
 - fixed: binary (test.js in empty-project)
 - fixed: @{ngCommon()}
 - fixed: @{ngStyle()}
+- fixed: measure JPG - extended buffer
 
 - removed: IMPORTANT: old template engine was removed from templates
 - removed: IMPORTANT: LESS CSS
