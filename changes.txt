@@ -51,6 +51,8 @@ IN DEVELOPMENT ======= 1.5.0
 - improvements: views
 - improvements: templates
 
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/routing-resize
+
 ======= 1.4.0
 
 - added: new global methods: INCLUDE() - framework.source(), SOURCE() - framework.source(), MODEL(name) -> framework.model(), MODULE(name) -> framework.module(), DATABASE() -> framework.database()
