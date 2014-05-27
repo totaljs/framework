@@ -763,6 +763,28 @@ ErrorBuilder.prototype._prepare = function() {
 };
 
 /**
+ * To string
+ * @return {String}
+ */
+ErrorBuilder.prototype.toString = function(delimiter) {
+
+    var self = this;
+
+    if (!self.isPrepared)
+        self.prepare();
+
+    var errors = self.errors;
+    var length = errors.length;
+    var builder = [];
+
+    for (var i = 0; i < length; i++)
+        builder.push(errors[i].error);
+
+    return builder.join(delimiter || '\n');
+
+};
+
+/**
  * Internal: Prepare error messages with onResource()
  * @private
  * @return {ErrorBuidler}

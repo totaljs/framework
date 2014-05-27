@@ -33,6 +33,7 @@ IN DEVELOPMENT ======= 1.5.0
 - updated: framework.isProcessing(filename or request)
 - updated: binary (some changes and improvements)
 - updated: template engine
+- updated: ErrorBuidler.toString([delimiter])
 
 - renamed: ErrorBuilder.length -> ErrorBuilder.count
 

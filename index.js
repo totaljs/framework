@@ -8874,7 +8874,7 @@ Controller.prototype.view500 = function(error) {
         return self;
 
     self.req.path = [];
-    self.subscribe.exception = err;
+    self.subscribe.exception = error;
     self.subscribe.success();
     self.subscribe.route = self.framework.lookup(self.req, '#500', []);
     self.subscribe.exception = error;
