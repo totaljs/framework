@@ -3808,7 +3808,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
     }
 
     headers['X-Assertion-Testing'] = '1';
-    headers['X-Powered-By'] = 'total.js' + VERSION;
+    headers['X-Powered-By'] = 'total.js v' + self.version_header;
 
     if (cookies) {
         var builder = [];
