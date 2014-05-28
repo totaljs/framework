@@ -46,7 +46,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
         width: 0,
         height: 0
     };
-    var ip = req.ip.re(/\./g, '');
+    var ip = req.ip.replace(/\./g, '');
     var close = 0;
     var isXSS = false;
     var rm = null;
@@ -691,12 +691,14 @@ function compile_jscss(css) {
         if (end === -1)
             continue;
 
+
         comments.push(css.substring(beg, end).trim());
         beg = 0;
         css = css.substring(end + 2);
     }
 
     css = tmp.trim();
+
 
     var length = comments.length;
     var code = '';
@@ -782,6 +784,11 @@ function compile_jscss(css) {
             if (skipA > 0 || skipB > 0 || skipC > 0)
                 continue;
 
+            if (i === length - 1) {
+                end = i + 1;
+                break;
+            }
+
             if (tmp[i] === ';' || tmp[i] === '}' || tmp[i] === '\n') {
                 end = i;
                 break;
@@ -794,6 +801,7 @@ function compile_jscss(css) {
         var cmd = tmp.substring(0, end);
         tmp = tmp.substring(end);
         output += '"+' + cmd.substring(1) + '+"';
+        beg = 0;
 
     }
 
@@ -801,6 +809,9 @@ function compile_jscss(css) {
     var compiled = '';
 
     output = code + '\n\n;compiled = "' + output + (output[length - 1] === '"' ? '' : '"');
+
+    if (output.substring(output.length - 2) === '+"')
+        output += '"';
 
     eval(output);
 
