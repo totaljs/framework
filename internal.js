@@ -1048,18 +1048,15 @@ function autoprefixer_keyframes(value) {
     return value;
 }
 
-exports.compile_css = function(value, minify, framework) {
+exports.compile_css = function(value, minify) {
 
-    if (framework) {
-        if (framework.onCompileCSS !== null)
-            return framework.onCompileCSS('', value);
-    }
+    if (framework.onCompileCSS !== null)
+        return framework.onCompileCSS('', value);
 
     try {
         return compile_jscss(value);
     } catch (ex) {
-        if (framework)
-            framework.error(ex);
+        framework.error(new Error('JS CSS exception: ' + ex.message));
         return '';
     }
 };
@@ -2260,10 +2257,9 @@ function compressJS(html, index, framework) {
  * @private
  * @param  {String} html HTML.
  * @param  {Number} index Last index.
- * @param  {Framework} framework Framework object.
  * @return {String}
  */
-function compressCSS(html, index, framework) {
+function compressCSS(html, index) {
     var strFrom = '<style type="text/css">';
     var strTo = '</style>';
 
@@ -2281,9 +2277,9 @@ function compressCSS(html, index, framework) {
 
     var css = html.substring(indexBeg, indexEnd + strTo.length);
     var val = css.substring(strFrom.length, css.length - strTo.length).trim();
-    var compiled = exports.compile_css(val, true, framework);
+    var compiled = exports.compile_css(val, true);
     html = html.replacer(css, (strFrom + compiled.trim() + strTo).trim());
-    return compressCSS(html, indexBeg + compiled.length + 8, framework);
+    return compressCSS(html, indexBeg + compiled.length + 8);
 }
 
 /**
