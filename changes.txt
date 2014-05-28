@@ -14,6 +14,7 @@ IN DEVELOPMENT ======= 1.5.0
 - added: in views - supports @{foreach [property] in [array]} ... @{end}
 - added: in views - supports nested conditions
 - added: in views - supports inline helpers
+- added: in views - supports sections
 - added: controller.throw400([problem])
 - added: controller.throw401([problem])
 - added: controller.throw403([problem])
@@ -23,6 +24,8 @@ IN DEVELOPMENT ======= 1.5.0
 - added: request.signature()
 - adedd: Builders.create(schemaName)
 - added: controller.exception
+- added: framework.onMail(address, subject, body, callback)
+- added: controller.mail(address, subject, viewName, [model], [callback])
 
 - updated: config['default-websocket-encodedecode'] - default: true
 - updated: @{options(array/object)} - supports Object
