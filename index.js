@@ -6817,9 +6817,9 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
     }
 
     var self = this;
-    var body = self.view(name, model, true);
+    var body = self.view(view, model, true);
 
-    framework.onMail(address, body, callback);
+    framework.onMail(address, subject, body, callback);
 
     return self;
 };
