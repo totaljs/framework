@@ -295,6 +295,7 @@ function viewViews() {
     self.repository.arr = ['Q', 'R', 'S'];
     self.repository.title = 'TEST';
     self.repository.tag = '<b>A</b>';
+
     self.repository.optionsEmpty = [{
         name: 'A',
         value: 'A'
@@ -302,6 +303,8 @@ function viewViews() {
         name: 'B',
         value: 'B'
     }];
+
+
     self.repository.options = [{
         k: 'C',
         v: 'C'
@@ -334,6 +337,7 @@ function viewViews() {
     assert.ok(output.contains('<count>40</count><next>40</next>'), name + 'inline helper + condition');
     assert.ok(output.contains('HELPER:1-<count>1</count><next>0</next>'), name + 'inline helper + foreach 1');
     assert.ok(output.contains('HELPER:2-<count>2</count><next>1</next>'), name + 'inline helper + foreach 2');
+    assert.ok(output.contains('<section>SECTION</section>'), name + 'section');
 
     assert.ok(output.contains('<div>4</div><div>4</div><div>FOREACH</div>'), name + 'foreach');
     assert.ok(output.contains('<div>3</div><div>3</div><div></div><div>C:10</div><div>C:11</div><div>C:12</div>'), name + 'foreach - nested');

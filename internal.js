@@ -46,7 +46,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
         width: 0,
         height: 0
     };
-    var ip = req.ip.replace(/\./g, '');
+    var ip = req.ip.re(/\./g, '');
     var close = 0;
     var isXSS = false;
     var rm = null;
@@ -1708,6 +1708,12 @@ function Content(controller) {
     this.prefix = controller.prefix;
 }
 
+/**
+ * View parser
+ * @param {String} content
+ * @param {Boolean} minify
+ * @return {Function}
+ */
 function view_parse(content, minify) {
 
     content = removeComments(compressCSS(compressJS(content, 0, framework), 0, framework));
@@ -1728,7 +1734,9 @@ function view_parse(content, minify) {
     var functions = [];
     var functionsName = [];
     var isFN = false;
+    var isSECTION = false;
     var builderTMP = '';
+    var sectionName = '';
 
     while (command !== null) {
 
@@ -1749,15 +1757,24 @@ function view_parse(content, minify) {
         }
 
         var cmd = content.substring(command.beg + 2, command.end);
+        var cmd8 = cmd.substring(0, 8);
 
-        if (cmd.substring(0, 7) === 'helper ') {
+        if (cmd8 === 'section ' && cmd.lastIndexOf(')') === -1) {
+
+            builderTMP = builder;
+            builder = '+(function(){var $output=$EMPTY';
+            sectionName = cmd.substring(8);
+            isSECTION = true;
+            isFN = true;
+
+        } else if (cmd.substring(0, 7) === 'helper ') {
 
             builderTMP = builder;
             builder = 'function ' + cmd.substring(7).trim() + '{var $output=$EMPTY';
             isFN = true;
             functionsName.push(cmd.substring(7, cmd.indexOf('(', 7)).trim());
 
-        } else if (cmd.substring(0, 8) === 'foreach ') {
+        } else if (cmd8 === 'foreach ') {
 
             counter++;
 
@@ -1774,12 +1791,23 @@ function view_parse(content, minify) {
 
         } else if (cmd === 'end') {
 
-            if (isFN && counter <= 0) {
+          if (isFN && counter <= 0) {
+
                 counter = 0;
-                builder += ';return $output;}';
-                functions.push(builder);
-                builder = builderTMP;
-                builderTMP = '';
+
+                if (isSECTION) {
+                    builder = builderTMP + builder + ';repository[\'$section_' + sectionName + '\']=$output;return $EMPTY})()';
+                    builderTMP = '';
+                } else {
+                    builder += ';return $output;}';
+                    functions.push(builder);
+                    builder = builderTMP;
+                    builderTMP = '';
+                }
+
+                isSECTION = false;
+                isFN = false;
+
             } else {
                 counter--;
                 builder += '}return $output;})()';
@@ -1830,6 +1858,7 @@ function view_prepare(command, dynamicCommand, functions) {
     var c = command.indexOf('[');
 
     var max = [];
+    var tmp = 0;
 
     if (a !== -1)
         max.push(a);
@@ -1857,6 +1886,12 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'foreach':
         case 'end':
             return '';
+
+        case 'section':
+            tmp = command.indexOf('(');
+            if (tmp === -1)
+                return '';
+            return '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/\'/g, '') + '\'] || \'\')';
 
         case 'controller':
         case 'repository':

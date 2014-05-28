@@ -1,3 +1,7 @@
+@{section script}
+    <section>SECTION</section>
+@{end}
+
 @{helper name(a, b)}
     <count>@{a}</count>
     @{if typeof(b) !== 'undefined'}
@@ -71,3 +75,5 @@ var e = '$\'';
 <div>HELPER:@{a}-@{name(a, index)}</div>
 @{end}
 @{name(40, 40)}
+
+@{section('script')}
