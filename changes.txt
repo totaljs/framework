@@ -47,6 +47,7 @@ IN DEVELOPMENT ======= 1.5.0
 - fixed: @{ngStyle()}
 - fixed: measure JPG - extended buffer
 - fixed: utils.validate()
+- fixed: Mail sender (problem with TLS)
 
 - removed: IMPORTANT: old template engine was removed from templates
 - removed: IMPORTANT: LESS CSS
@@ -54,7 +55,13 @@ IN DEVELOPMENT ======= 1.5.0
 - improvements: views
 - improvements: templates
 
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/controller-mail
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/css-jscss
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/routing-resize
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/views-place-sections
+- EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/views
+- EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/views-custom-helper
+
 
 ======= 1.4.0
 
