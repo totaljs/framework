@@ -234,9 +234,9 @@ Message.prototype.attachment = function(filename, name) {
 
 /**
  * Send e-mail
- * @param  {String} smtp       SMTP server / hostname.
- * @param  {Object} options    Options (optional).
- * @param  {MessageSendCallback} fnCallback
+ * @param {String} smtp SMTP server / hostname.
+ * @param {Object} options Options (optional).
+ * @param {Function(err)} fnCallback
  * @return {Message}
  */
 Message.prototype.send = function(smtp, options, fnCallback) {
@@ -288,12 +288,6 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
     return self;
 };
-
-/**
- * Message send callback
- * @callback MessageSendCallback
- * @param {Error} err Error handling.
- */
 
 /**
  * Internal: Send method

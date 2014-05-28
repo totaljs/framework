@@ -1560,6 +1560,46 @@ Framework.prototype.onRoute = null;
 */
 Framework.prototype.onValidation = null;
 
+/**
+ * Mail handler
+ * @type {Function(address, subject, body, callback)}
+ */
+Framework.prototype.onMail = function(address, subject, body, callback) {
+
+    var message = Mail.create(subject, body);
+
+    if (address instanceof Array) {
+        var length = address.length;
+        for (var i = 0; i < length; i++)
+            message.to(address[i]);
+    } else
+        message.to(address);
+
+    var self = this;
+
+    message.from(self.config['mail.address.from'] || '', self.config['name']);
+
+    var tmp = self.config['mail.address.reply'];
+
+    if (tmp && tmp.length > 0 && tmp.isEmail())
+        message.reply(self.config['mail.address.reply']);
+
+    tmp = self.config['mail.address.copy'];
+
+    if (tmp && tmp.length > 0 && tmp.isEmail())
+        message.bcc(tmp);
+
+    var options = {};
+    var opt = self.config['mail.smtp.options'];
+
+    if (opt && opt.isJSON())
+        options = JSON.parse(opt);
+
+    message.send(self.config['mail.smtp'], options, callback);
+
+    return self;
+};
+
 /*
     Validate request data
     @data {String}
@@ -6758,6 +6798,30 @@ Controller.prototype.model = function(name) {
 Controller.prototype.models = function(name) {
     var self = this;
     return (self.controllers[name || self.name] || {}).models;
+};
+
+/**
+ * Send e-mail
+ * @param {String or Array} address E-mail address.
+ * @param {String} subject E-mail subject.
+ * @param {String} view View name.
+ * @param {Object} model Optional.
+ * @param {Function(err)} callback Optional.
+ * @return {Controlller}
+ */
+Controller.prototype.mail = function(address, subject, view, model, callback) {
+
+    if (typeof(model) === FUNCTION) {
+        callback = model;
+        model = null;
+    }
+
+    var self = this;
+    var body = self.view(name, model, true);
+
+    framework.onMail(address, body, callback);
+
+    return self;
 };
 
 /*
