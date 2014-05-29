@@ -1727,12 +1727,24 @@ function view_parse(content, minify) {
     content = removeComments(compressCSS(compressJS(content, 0, framework), 0, framework));
 
     var DELIMITER = '\'';
+    var DELIMITER_UNESCAPE = 'unescape(\'';
+    var DELIMITER_UNESCAPE_END = '\')';
     var SPACE = ' ';
     var builder = 'var $EMPTY=\'\';var $length=0;var $source=null;var $tmp=index;var $output=$EMPTY';
     var command = view_find_command(content, 0);
+    var compressed = '';
+
+    function escaper(value) {
+        value = compressHTML(value, minify);
+        if (value === '')
+            return '$EMPTY';
+        if (value.match(/\n|\t|\r|\'|\\/) !== null)
+            return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END
+        return DELIMITER + value + DELIMITER;
+    }
 
     if (command === null)
-        builder += '+' + DELIMITER + compressHTML(content, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + DELIMITER;
+        builder += '+' + escaper(content);
 
     var old = null;
     var newCommand = '';
@@ -1753,14 +1765,14 @@ function view_parse(content, minify) {
             if (text !== '') {
                 if (view_parse_plus(builder))
                     builder += '+';
-                builder += DELIMITER + compressHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + DELIMITER;
+                builder += escaper(text);
             }
         } else {
             var text = content.substring(0, command.beg);
             if (text !== '') {
                 if (view_parse_plus(builder))
                     builder += '+';
-                builder += DELIMITER + compressHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + DELIMITER;
+                builder += escaper(text);
             }
         }
 
@@ -1845,7 +1857,7 @@ function view_parse(content, minify) {
     if (old !== null) {
         var text = content.substring(old.end + 1);
         if (text.length > 0)
-            builder += '+' + DELIMITER + compressHTML(text, minify).replace(/\\\'/g, '\\\\\'').replace(/\'/g, '\\\'').replace(/\n/g, '\\n') + DELIMITER;
+            builder += '+' + escaper(text);
     }
 
     var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output){' + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
@@ -2247,7 +2259,7 @@ function compressJS(html, index, framework) {
         return html;
 
     var val = js.substring(strFrom.length, js.length - strTo.length).trim();
-    var compiled = exports.compile_javascript(val, framework).replace(/\\\\/g, '\\\\\\\\').replace(/\\n/g, "'+(String.fromCharCode(13)+String.fromCharCode(10))+'");
+    var compiled = exports.compile_javascript(val, framework);
     html = html.replacer(js, strFrom + compiled.dollar().trim() + strTo.trim());
     return compressJS(html, indexBeg + compiled.length + 9, framework);
 }

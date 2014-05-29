@@ -1362,7 +1362,6 @@ if (!String.prototype.trim) {
     };
 }
 
-
 /**
  * Checks if string starts with the text
  * @see {@link http://docs.totaljs.com/String.prototype/#String.prototype.startsWith|Documentation}

@@ -200,8 +200,46 @@ function aa() {
 }
 
 function viewTest() {
-    this.layout('');
-    this.view('e');
+
+    var name = 'views: ';
+    var self = this;
+
+    self.repository.arr = ['Q', 'R', 'S'];
+    self.repository.title = 'TEST';
+    self.repository.tag = '<b>A</b>';
+
+    self.repository.optionsEmpty = [{
+        name: 'A',
+        value: 'A'
+    }, {
+        name: 'B',
+        value: 'B'
+    }];
+
+    self.repository.options = [{
+        k: 'C',
+        v: 'C'
+    }, {
+        k: 'D',
+        v: 'D'
+    }];
+    self.repository.template = [{
+        name: 'A',
+        price: 10,
+        B: false
+    }, {
+        name: 'B',
+        price: 10.5,
+        B: true
+    }];
+
+    //this.layout('');
+    //this.view('e');
+    var output = self.view('a', {
+        a: 'A',
+        b: 'B',
+        arr: ['1', '2', '3']
+    });
 }
 
 function viewDynamic() {
@@ -311,7 +349,6 @@ function viewViews() {
         value: 'B'
     }];
 
-
     self.repository.options = [{
         k: 'C',
         v: 'C'
@@ -351,7 +388,7 @@ function viewViews() {
     assert.ok(output.contains('<INLINE>5</INLINE>'), name + 'Inline assign value');
     assert.ok(output.contains('var d="$\'"'), name + 'JS script special chars 1');
     assert.ok(output.contains("var e='$\\'';"), name + "JS script special chars 2");
-    assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>'), name + ' minify html');
+    assert.ok(output.contains('<script type="text/template"><textarea>\\na</textarea>a</script>'), name + ' minify html');
     assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
     assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');
     assert.ok(output.contains('#helper-fn-A#'), name + 'helper function');

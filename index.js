@@ -6589,6 +6589,70 @@ Controller.prototype.run = function(callback) {
     return self.async.complete(callback);
 };
 
+/**
+ * Transfer to new route
+ * @param {String} url Relative URL.
+ * @param {String Array} flags Route flags (optional).
+ * @return {Boolean}
+ */
+Controller.prototype.transfer = function(url, flags) {
+
+    var self = this;
+    var length = self.framework.routes.web.length;
+    var path = internal.routeSplit(url.trim());
+    var isSystem = url[0] === '#';
+    var noFlag = flags === null || typeof(flags) === UNDEFINED;
+    var selected = null;
+
+    for (var i = 0; i < length; i++) {
+
+        var route = self.framework.routes.web[i];
+
+        if (route.isASTERIX) {
+            if (!internal.routeCompare(path, route.url, isSystem, true))
+                continue;
+        } else {
+            if (!internal.routeCompare(path, route.url, isSystem))
+                continue;
+        }
+
+        if (noFlag) {
+            selected = route;
+            break;
+        }
+
+        if (route.flags !== null && route.flags.length > 0) {
+
+            var result = internal.routeCompareFlags(flags, route.flags, true);
+            if (result === -1)
+                req.isAuthorized = false;
+
+            if (result < 1)
+                continue;
+
+        } else {
+
+            if (flags.indexOf('xss') !== -1)
+                continue;
+        }
+
+        selected = route;
+        break;
+    }
+
+    if (!selected)
+        return false;
+
+    self.cancel();
+    self.req.path = [];
+    self.subscribe.success();
+    self.subscribe.route = selected;
+    self.subscribe.execute(404);
+
+    return true;
+
+};
+
 /*
     Cancel execute controller function
     Note: you can cancel controller function execute in on('controller') or controller.request();
@@ -8986,70 +9050,6 @@ Controller.prototype.throw501 = function(problem) {
     return this.view501(problem);
 };
 
-/**
- * Transfer to new route
- * @param {String} url Relative URL.
- * @param {String Array} flags Route flags (optional).
- * @return {Boolean}
- */
-Controller.prototype.transfer = function(url, flags) {
-
-    var self = this;
-    var length = self.framework.routes.web.length;
-    var path = internal.routeSplit(url.trim());
-    var isSystem = url[0] === '#';
-    var noFlag = flags === null || typeof(flags) === UNDEFINED;
-    var selected = null;
-
-    for (var i = 0; i < length; i++) {
-
-        var route = self.framework.routes.web[i];
-
-        if (route.isASTERIX) {
-            if (!internal.routeCompare(path, route.url, isSystem, true))
-                continue;
-        } else {
-            if (!internal.routeCompare(path, route.url, isSystem))
-                continue;
-        }
-
-        if (noFlag) {
-            selected = route;
-            break;
-        }
-
-        if (route.flags !== null && route.flags.length > 0) {
-
-            var result = internal.routeCompareFlags(flags, route.flags, true);
-            if (result === -1)
-                req.isAuthorized = false;
-
-            if (result < 1)
-                continue;
-
-        } else {
-
-            if (flags.indexOf('xss') !== -1)
-                continue;
-        }
-
-        selected = route;
-        break;
-    }
-
-    if (!selected)
-        return false;
-
-    self.cancel();
-    self.req.path = [];
-    self.subscribe.success();
-    self.subscribe.route = selected;
-    self.subscribe.execute(404);
-
-    return true;
-
-};
-
 /*
     Response redirect
     @url {String}
@@ -9451,7 +9451,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     var helpers = self.framework.helpers;
 
     try {
-        value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, helpers, self.user, self.config, self.framework.functions, 0, sitemap, isPartial ? self.outputPartial : self.output).replace(/\\n/g, '\n');
+        value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, helpers, self.user, self.config, self.framework.functions, 0, sitemap, isPartial ? self.outputPartial : self.output);
     } catch (ex) {
 
         var err = new Error('View: ' + name + ' - ' + ex.toString());
