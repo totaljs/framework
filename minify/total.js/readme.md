@@ -13,7 +13,8 @@ __total.js__ is web application framework for creating a rich web sites and web 
 $ npm install total.js
 ```
 
-- [total.js homepage - www.totaljs.com](http://totaljs.com)
+- [__NEWS__](http://www.totaljs.com/news/)
+- [total.js homepage - www.totaljs.com](http://www.totaljs.com)
 - [__Documentation__](http://docs.totaljs.com)
 - [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
