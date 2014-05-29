@@ -267,6 +267,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
     }
 
     var uri = parser.parse(url);
+    uri.method = method;
 
     headers['X-Powered-By'] = 'total.js' + VERSION;
 
@@ -328,7 +329,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
         }
 
         if (isPOST)
-            request.end(value, encoding);
+            request.end(data, encoding);
         else
             request.end();
 
@@ -431,6 +432,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
     }
 
     var uri = parser.parse(url);
+    uri.method = method;
 
     headers['X-Powered-By'] = 'total.js' + VERSION;
 
@@ -475,7 +477,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
         }
 
         if (isPOST)
-            request.end(value, encoding);
+            request.end(data, encoding);
         else
             request.end();
 
