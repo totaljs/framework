@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.5.0
+======= 1.5.0
 
 - added: TOTAL.JS PACKAGE MANAGER (new binary: tpm === [t]otal.js [p]ackage [m]anager)
 - added: JS CSS (important: removed LESS)

@@ -7,7 +7,7 @@ web framework for node.js
 
 __total.js__ is web application framework for creating a rich web sites and web services. The framework has good documentation and contains many examples. Please support the framework on GitHub and other social networks.
 
-> Current version (1.4.0) is __stable version__.
+> Current version (1.5.0) is __stable version__.
 
 ```
 $ npm install total.js
@@ -127,9 +127,9 @@ Videos on YouTube
 
 ***
 
-* **NEW** Supports components - [example: workers](https://github.com/totaljs/examples/tree/master/components)
-* **NEW** Supports models - [example: models](https://github.com/totaljs/examples/tree/master/models)
-* **NEW** Supports dynamic controllers - [example: models](https://github.com/totaljs/examples/tree/master/minimal)
+* Supports components - [example: workers](https://github.com/totaljs/examples/tree/master/components)
+* Supports models - [example: models](https://github.com/totaljs/examples/tree/master/models)
+* Supports dynamic controllers - [example: models](https://github.com/totaljs/examples/tree/master/minimal)
 * Supports workers - [example: workers](https://github.com/totaljs/examples/tree/master/workers)
 * Supports versioning of static files - [example: static-version](https://github.com/totaljs/examples/tree/master/static-version)
 * Supports redirects - [example: host redirect](https://github.com/totaljs/examples/tree/master/redirect-host)
