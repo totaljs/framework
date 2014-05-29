@@ -1,5 +1,6 @@
 exports.install = function(framework) {
 	framework.route('/share/', view_share);
+	framework.route('/router/', view_router);
 	framework.route('/share/a/', view_share_a);
 };
 
@@ -24,4 +25,8 @@ function view_share() {
 function view_share_a() {
 	this.layout('');
 	this.view('a');
+}
+
+function view_router() {
+	this.plain('dilino gadzo');
 }

@@ -124,6 +124,16 @@ function test_routing(next) {
 			complete();
 		});
 	});
+
+	async.await('router', function(complete) {
+		utils.request(url + 'routeto/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'dilino gadzo', 'problem with controller.routeTo()');
+			complete();
+		});
+	});
+
 /*
 	async.await('pipe', function(complete) {
 		utils.request(url + 'pipe/', 'GET', null, function(error, data, code, headers) {

@@ -26,6 +26,7 @@ IN DEVELOPMENT ======= 1.5.0
 - added: controller.exception
 - added: framework.onMail(address, subject, body, callback)
 - added: controller.mail(address, subject, viewName, [model], [callback])
+- added: controller.transfer(url, [flags])
 
 - updated: config['default-websocket-encodedecode'] - default: true
 - updated: @{options(array/object)} - supports Object

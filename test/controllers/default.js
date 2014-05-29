@@ -18,6 +18,7 @@ exports.install = function(framework) {
     framework.route('/http/', viewHTTP, ['http']);
     framework.route('/https/', viewHTTPS, ['https']);
     framework.route('/dynamic/', viewDynamic);
+    framework.route('/routeto/', viewRouteto);
     framework.route('/f/', viewSocket);
     framework.route('/js/', viewJS);
     framework.route('/', viewIndex);
@@ -81,6 +82,12 @@ function resize_image(req, res) {
     this.responseImage(req, res, this.path.public(req.url), function(image) {
         image.resize('20%');
     });
+}
+
+function viewRouteto() {
+    var self = this;
+    var result = self.transfer('/router/');
+    assert.ok(result, 'controller.routeTo()');
 }
 
 function asterix() {
