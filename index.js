@@ -3869,16 +3869,15 @@ Framework.prototype.testing = function(stop, callback) {
 
     var key = keys[0];
     var test = self.tests[key];
-    var caption = 'TEST ----------- ' + key;
+    var caption = 'Success .............. ' + key;
 
     delete self.tests[key];
 
     if (test.run) {
 
-        console.log(caption);
-
         try {
             test.run.call(self, function() {
+                console.log(caption);
                 self.testing(stop, callback);
             }, key);
         } catch (e) {
@@ -3916,6 +3915,7 @@ Framework.prototype.testing = function(stop, callback) {
 
             try {
                 test.callback(null, res._buffer, res.statusCode, res.headers, cookies, key);
+                console.log(caption);
                 self.testing(stop, callback);
             } catch (e) {
                 setTimeout(function() {
@@ -3940,8 +3940,6 @@ Framework.prototype.testing = function(stop, callback) {
 
         throw error;
     });
-
-    console.log(caption);
 
     if (test.data.length > 0)
         req.end(test.data, ENCODING);
@@ -4032,6 +4030,8 @@ Framework.prototype.test = function(stop, names, cb) {
     }
 
     setTimeout(function() {
+        console.log('====== TESTING ======');
+        console.log('');
         self.testing(stop, function() {
             self.isTest = false;
             if (cb)
@@ -6979,7 +6979,7 @@ Controller.prototype.$ngCommon = function(name) {
     var output = self.repository[REPOSITORY_ANGULAR_COMMON] || '';
 
     if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += '.min.js';
+        name += EXTENSION_JS;
 
     var script = self.$script_create('/common/' + name);
     output += script;
@@ -7017,7 +7017,7 @@ Controller.prototype.$ngLocale = function(name) {
         name = name.replace('angular-locale_', '');
 
     if (name.lastIndexOf(EXTENSION_JS) === -1)
-        extension = '.min.js';
+        extension = EXTENSION_JS;
 
     output += self.$script_create(isLocal ? '/i18n/angular-locale_' + name + extension : '//cdnjs.cloudflare.com/ajax/libs/angular-i18n/' + self.config['angular-i18n-version'] + '/angular-locale_' + name + extension);
     self.repository[REPOSITORY_ANGULAR_LOCALE] = output;
