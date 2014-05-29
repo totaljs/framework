@@ -6600,8 +6600,9 @@ Controller.prototype.transfer = function(url, flags) {
     var self = this;
     var length = self.framework.routes.web.length;
     var path = internal.routeSplit(url.trim());
+
     var isSystem = url[0] === '#';
-    var noFlag = flags === null || typeof(flags) === UNDEFINED;
+    var noFlag = flags === null || typeof(flags) === UNDEFINED || flags.length === 0;
     var selected = null;
 
     for (var i = 0; i < length; i++) {
@@ -6639,6 +6640,7 @@ Controller.prototype.transfer = function(url, flags) {
         selected = route;
         break;
     }
+
 
     if (!selected)
         return false;
