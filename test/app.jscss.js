@@ -1,5 +1,6 @@
 var assert = require('assert');
 var utils = require('../utils');
+var utils = require('../index');
 var internal = require('../internal');
 
 var buffer = [];

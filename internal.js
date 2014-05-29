@@ -2346,7 +2346,7 @@ function compressHTML(html, minify) {
                     break;
             }
 
-            cache[key] = value.replace(/\n/g, '\\n');
+            cache[key] = value;
             html = html.replacer(value, key);
             beg = html.indexOf(tagBeg, beg + tagBeg.length);
         }
