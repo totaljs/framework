@@ -6624,7 +6624,7 @@ Controller.prototype.transfer = function(url, flags) {
 
         if (route.flags !== null && route.flags.length > 0) {
 
-            var result = internal.routeCompareFlags(flags, route.flags, true);
+            var result = internal.routeCompareFlags(route.flags, flags, true);
             if (result === -1)
                 req.isAuthorized = false;
 
