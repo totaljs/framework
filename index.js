@@ -70,8 +70,8 @@ if (typeof(setImmediate) === UNDEFINED) {
 function Framework() {
 
     this.id = null;
-    this.version = 1500;
-    this.version_header = '1.5.0';
+    this.version = 1501;
+    this.version_header = '1.5.1';
 
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
