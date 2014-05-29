@@ -673,10 +673,19 @@ HttpFile.prototype.image = function(imageMagick) {
 function compile_jscss(css) {
 
     var comments = [];
-
     var beg = 0;
     var end = 0;
     var tmp = '';
+    var reg1 = /\n|\s{2,}/g;
+    var reg2 = /\s?\{\s{1,}/g;
+    var reg3 = /\s?\}\s{1,}/g;
+    var reg4 = /\s?\:\s{1,}/g;
+    var reg5 = /\s?\;\s{1,}/g;
+    var output = '';
+
+    var prepare = function(value) {
+        return value.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
+    };
 
     while (true) {
 
@@ -691,24 +700,22 @@ function compile_jscss(css) {
         if (end === -1)
             continue;
 
-
         comments.push(css.substring(beg, end).trim());
-        beg = 0;
+        tmp += css.substring(0, beg).trim();
         css = css.substring(end + 2);
+        beg = 0;
     }
 
-    css = tmp.trim();
-
+    output = '';
+    tmp = tmp.trim();
 
     var length = comments.length;
     var code = '';
     var avp = '@#auto-vendor-prefix#@';
-    var isAuto = css.startsWith(avp);
+    var isAuto = tmp.startsWith(avp);
 
     if (isAuto)
-        css = css.replace(avp, '');
-
-    tmp = '';
+        tmp = tmp.replace(avp, '');
 
     for (var i = 0; i < length; i++) {
 
@@ -729,19 +736,19 @@ function compile_jscss(css) {
     beg = 0;
     end = 0;
 
-    var output = '';
-    tmp = css;
+    var DELIMITER_UNESCAPE = '+unescape(\'';
+    var DELIMITER_UNESCAPE_END = '\')';
 
     while (true) {
 
         beg = tmp.indexOf('$');
 
         if (beg === -1) {
-            output += tmp.replace(/\\/g, '\\\\').replace(/\"/g, '\\"').replace(/\n/g, '');
+            output += DELIMITER_UNESCAPE + escape(tmp) + DELIMITER_UNESCAPE_END;
             break;
         }
 
-        output += tmp.substring(0, beg).replace(/\n/g, '');
+        output += DELIMITER_UNESCAPE + escape(tmp.substring(0, beg)) + DELIMITER_UNESCAPE_END;
         tmp = tmp.substring(beg);
 
         length = tmp.length;
@@ -800,31 +807,20 @@ function compile_jscss(css) {
 
         var cmd = tmp.substring(0, end);
         tmp = tmp.substring(end);
-        output += '"+' + cmd.substring(1) + '+"';
+        output += '+' + cmd.substring(1);
         beg = 0;
-
     }
 
     var length = output.length;
     var compiled = '';
 
-    output = code + '\n\n;compiled = "' + output + (output[length - 1] === '"' ? '' : '"');
-
-    if (output.substring(output.length - 2) === '+"')
-        output += '"';
-
+    output = code + '\n\n;compiled = \'\'' + output;
     eval(output);
-
-    var reg1 = /\n|\s{2,}/g;
-    var reg2 = /\s?\{\s{1,}/g;
-    var reg3 = /\s?\}\s{1,}/g;
-    var reg4 = /\s?\:\s{1,}/g;
-    var reg5 = /\s?\;\s{1,}/g;
 
     if (isAuto)
         compiled = autoprefixer(compiled)
 
-    return compiled.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
+    return prepare(compiled);
 }
 
 /*

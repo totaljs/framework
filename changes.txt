@@ -1,4 +1,4 @@
-======= 1.5.0
+======= 1.5.0 & 1.5.1
 
 - added: TOTAL.JS PACKAGE MANAGER (new binary: tpm === [t]otal.js [p]ackage [m]anager)
 - added: JS CSS (important: removed LESS)
@@ -56,13 +56,13 @@
 - improvements: views
 - improvements: templates
 
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/controller-transfer
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/controller-mail
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/css-jscss
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/routing-resize
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/views-place-sections
 - EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/views
 - EXAMPLE (UPD): https://github.com/totaljs/examples/tree/master/views-custom-helper
-
 
 ======= 1.4.0
 
