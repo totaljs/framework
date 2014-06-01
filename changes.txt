@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.5.2
+
+- fixed: request.signature()
+
 ======= 1.5.0 & 1.5.1
 
 - added: TOTAL.JS PACKAGE MANAGER (new binary: tpm === [t]otal.js [p]ackage [m]anager)

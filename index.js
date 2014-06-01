@@ -70,8 +70,8 @@ if (typeof(setImmediate) === UNDEFINED) {
 function Framework() {
 
     this.id = null;
-    this.version = 1501;
-    this.version_header = '1.5.1';
+    this.version = 1502;
+    this.version_header = '1.5.2';
 
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
@@ -10666,7 +10666,7 @@ http.IncomingMessage.prototype.__proto__ = _tmp;
  */
 http.IncomingMessage.prototype.signature = function() {
     var self = this;
-    return framework.encrypt((self.headers['user-agent'] || '') + '#' + self.ip + '#' + (self.headers['referer'] || '') + '#' + self.url, 'request-signature', false);
+    return framework.encrypt((self.headers['user-agent'] || '') + '#' + self.ip + '#' + self.url, 'request-signature', false);
 };
 
 /**
