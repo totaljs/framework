@@ -5555,6 +5555,9 @@ FrameworkCache.prototype.read = function(name) {
     if (value === null)
         return null;
 
+    if (value.expire < new Date())
+        return null;
+
     return value.value;
 };
 

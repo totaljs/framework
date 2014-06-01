@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.5.2
 
 - fixed: request.signature()
+- fixed: cache.read() - problem with exact expiration
 
 ======= 1.5.0 & 1.5.1
 
