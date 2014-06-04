@@ -9345,6 +9345,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
     var headers = {
         'X-Proxy': 'total.js'
     };
+
     headers[RESPONSE_HEADER_CONTENTTYPE] = 'application/json';
 
     var tmp;
@@ -9361,7 +9362,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
         obj = tmp;
     }
 
-    utils.request(url, 'POST', obj, function(error, data, code, headers) {
+    utils.request(url, ['post', 'json'], obj, function(error, data, code, headers) {
 
         if (!fnCallback)
             return;
@@ -9371,7 +9372,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 
         fnCallback.call(self, error, data, code, headers);
 
-    }, headers, 'utf8', timeout || 10000);
+    }, null, headers, 'utf8', timeout || 10000);
 
     return self;
 };
