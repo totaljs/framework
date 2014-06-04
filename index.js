@@ -3882,7 +3882,7 @@ Framework.prototype.testing = function(stop, callback) {
             }, key);
         } catch (e) {
             setTimeout(function() {
-                self.stop();
+                self.stop(1);
             }, 500);
             throw e;
         }
@@ -3919,7 +3919,7 @@ Framework.prototype.testing = function(stop, callback) {
                 self.testing(stop, callback);
             } catch (e) {
                 setTimeout(function() {
-                    self.stop();
+                    self.stop(1);
                 }, 500);
                 throw e;
             }
@@ -3935,7 +3935,7 @@ Framework.prototype.testing = function(stop, callback) {
     req.on('error', function(error) {
 
         setTimeout(function() {
-            self.stop();
+            self.stop(1);
         }, 500);
 
         throw error;
@@ -3974,7 +3974,7 @@ Framework.prototype.test = function(stop, names, cb) {
     if (!fs.existsSync(utils.combine(dir))) {
         if (cb) cb();
         if (stop) setTimeout(function() {
-            framework.stop();
+            framework.stop(1);
         }, 500);
         return self;
     }
@@ -4013,7 +4013,7 @@ Framework.prototype.test = function(stop, names, cb) {
 
         } catch (ex) {
             setTimeout(function() {
-                framework.stop();
+                framework.stop(1);
             }, 500);
             throw ex;
         }
@@ -4024,7 +4024,7 @@ Framework.prototype.test = function(stop, names, cb) {
     if (counter === 0) {
         if (cb) cb();
         if (stop) setTimeout(function() {
-            framework.stop();
+            framework.stop(1);
         }, 500);
         return self;
     }
