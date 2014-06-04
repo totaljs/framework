@@ -3882,7 +3882,7 @@ Framework.prototype.testing = function(stop, callback) {
             }, key);
         } catch (e) {
             setTimeout(function() {
-                self.stop();
+                self.stop(1);
             }, 500);
             throw e;
         }
@@ -3919,7 +3919,7 @@ Framework.prototype.testing = function(stop, callback) {
                 self.testing(stop, callback);
             } catch (e) {
                 setTimeout(function() {
-                    self.stop();
+                    self.stop(1);
                 }, 500);
                 throw e;
             }
@@ -3935,7 +3935,7 @@ Framework.prototype.testing = function(stop, callback) {
     req.on('error', function(error) {
 
         setTimeout(function() {
-            self.stop();
+            self.stop(1);
         }, 500);
 
         throw error;
