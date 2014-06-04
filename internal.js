@@ -2063,6 +2063,10 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'password':
             return 'self.$' + exports.appendModel(command);
         default:
+
+            if (framework.helpers[name])
+                return 'helpers.' + view_insert_call(command);
+
             return functions.indexOf(name) === -1 ? command[0] === '!' ? command.substring(1) + '.toString()' : command + '.toString().encode()' : command + '.toString()';
     }
 
