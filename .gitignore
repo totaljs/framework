@@ -2,3 +2,4 @@
 *.sublime-workspace
 .DS_Store
 *.log
+.idea
