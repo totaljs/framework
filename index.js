@@ -70,8 +70,8 @@ if (typeof(setImmediate) === UNDEFINED) {
 function Framework() {
 
     this.id = null;
-    this.version = 1501;
-    this.version_header = '1.5.1';
+    this.version = 1502;
+    this.version_header = '1.5.2';
 
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
@@ -5555,6 +5555,9 @@ FrameworkCache.prototype.read = function(name) {
     if (value === null)
         return null;
 
+    if (value.expire < new Date())
+        return null;
+
     return value.value;
 };
 
@@ -9342,6 +9345,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
     var headers = {
         'X-Proxy': 'total.js'
     };
+
     headers[RESPONSE_HEADER_CONTENTTYPE] = 'application/json';
 
     var tmp;
@@ -9358,7 +9362,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
         obj = tmp;
     }
 
-    utils.request(url, 'POST', obj, function(error, data, code, headers) {
+    utils.request(url, ['post', 'json'], obj, function(error, data, code, headers) {
 
         if (!fnCallback)
             return;
@@ -9368,7 +9372,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 
         fnCallback.call(self, error, data, code, headers);
 
-    }, headers, 'utf8', timeout || 10000);
+    }, null, headers, 'utf8', timeout || 10000);
 
     return self;
 };
@@ -10666,7 +10670,7 @@ http.IncomingMessage.prototype.__proto__ = _tmp;
  */
 http.IncomingMessage.prototype.signature = function() {
     var self = this;
-    return framework.encrypt((self.headers['user-agent'] || '') + '#' + self.ip + '#' + (self.headers['referer'] || '') + '#' + self.url, 'request-signature', false);
+    return framework.encrypt((self.headers['user-agent'] || '') + '#' + self.ip + '#' + self.url, 'request-signature', false);
 };
 
 /**

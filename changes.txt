@@ -1,3 +1,10 @@
+IN DEVELOPMENT ======= 1.5.2 (HOTFIX)
+
+- fixed: calling global helpers like this: @{someHelper('some-argument')}
+- fixed: controller.proxy()
+- fixed: request.signature()
+- fixed: cache.read() - problem with exact expiration
+
 ======= 1.5.0 & 1.5.1
 
 - added: TOTAL.JS PACKAGE MANAGER (new binary: tpm === [t]otal.js [p]ackage [m]anager)
