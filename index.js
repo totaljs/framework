@@ -646,6 +646,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
     }
 
     if (flags.indexOf('get') === -1 &&
+        flags.indexOf('options') === -1 &&
         flags.indexOf('post') === -1 &&
         flags.indexOf('delete') === -1 &&
         flags.indexOf('put') === -1 &&
@@ -659,7 +660,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
     if (flags.indexOf('referer') !== -1)
         self._request_check_referer = true;
 
-    if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1))
+    if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
         self._request_check_POST = true;
 
     if (!(partial instanceof Array))

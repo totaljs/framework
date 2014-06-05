@@ -4,6 +4,8 @@ IN DEVELOPMENT ======= 1.5.2 (HOTFIX)
 - fixed: controller.proxy()
 - fixed: request.signature()
 - fixed: cache.read() - problem with exact expiration
+- fixed: "options" route flag
+- fixed: configuration (fixer: @peterkc)
 
 ======= 1.5.0 & 1.5.1
 
