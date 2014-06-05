@@ -4286,10 +4286,10 @@ Framework.prototype.configure = function(arr, rewrite) {
 
         arr = [];
 
-        if (fs.existsSync(filenameA))
+        if (fs.existsSync(filenameA) && fs.lstatSync(filenameA).isFile())
             arr = arr.concat(fs.readFileSync(filenameA).toString(ENCODING).split('\n'));
 
-        if (fs.existsSync(filenameB))
+        if (fs.existsSync(filenameB) && fs.lstatSync(filenameB).isFile())
             arr = arr.concat(fs.readFileSync(filenameB).toString(ENCODING).split('\n'));
     }
 
