@@ -9,6 +9,7 @@ IN DEVELOPMENT ======= 1.5.2 (HOTFIX)
 - fixed: cache.read() - problem with exact expiration
 - fixed: "options" route flag
 - fixed: configuration (fixer: @peterkc)
+- fixed: schemas
 
 ======= 1.5.0 & 1.5.1
 

@@ -343,7 +343,7 @@ exports.prepare = function(name, model) {
     if (obj === null)
         return null;
 
-    if (model === null)
+    if (model === null || typeof(model) === UNDEFINED)
         return exports.defaults(name);
 
     var tmp;
@@ -473,7 +473,7 @@ exports.prepare = function(name, model) {
 
                 var tmp = model[property][j];
 
-                switch (value) {
+                switch (value.toLowerCase()) {
                     case 'string':
                     case 'varchar':
                     case 'text':
