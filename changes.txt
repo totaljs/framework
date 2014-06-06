@@ -1,5 +1,8 @@
 IN DEVELOPMENT ======= 1.5.2 (HOTFIX)
 
+- added: CONFIG(name) - return a value from the config file
+- added: RESOURCE(name, key) - return a value from the resource file
+
 - fixed: calling global helpers like this: @{someHelper('some-argument')}
 - fixed: controller.proxy()
 - fixed: request.signature()

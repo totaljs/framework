@@ -57,6 +57,14 @@ global.DATABASE = function() {
     return framework.database.apply(framework, arguments);
 };
 
+global.CONFIG = function(name) {
+    return framework.config[name];
+};
+
+global.RESOURCE = function(name, key) {
+    return framework.resource(name, key);
+};
+
 global.MODEL = function(name) {
     return framework.model(name);
 };
