@@ -12,6 +12,7 @@ IN DEVELOPMENT ======= 1.5.2 (HOTFIX)
 - fixed: "options" route flag
 - fixed: configuration (fixer: @peterkc)
 - fixed: schemas
+- fixed: assertion testing
 
 ======= 1.5.0 & 1.5.1
 

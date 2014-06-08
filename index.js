@@ -3130,7 +3130,11 @@ Framework.prototype.init = function(http, config, port, ip, options) {
     }
 
     process.on('uncaughtException', function(e) {
+
         self.error(e, '', null);
+
+        if (self.isTest)
+            process.exit(1);
 
         if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
             if (typeof(process.send) === FUNCTION)
