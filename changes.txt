@@ -1,7 +1,16 @@
 IN DEVELOPMENT ======= 1.5.2 (HOTFIX)
 
+- added: CONFIG(name) - return a value from the config file
+- added: RESOURCE(name, key) - return a value from the resource file
+- added: utils.parseXML(xml)
+
+- fixed: calling global helpers like this: @{someHelper('some-argument')}
+- fixed: controller.proxy()
 - fixed: request.signature()
 - fixed: cache.read() - problem with exact expiration
+- fixed: "options" route flag
+- fixed: configuration (fixer: @peterkc)
+- fixed: schemas
 
 ======= 1.5.0 & 1.5.1
 

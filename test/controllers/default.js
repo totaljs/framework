@@ -392,6 +392,7 @@ function viewViews() {
     assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
     assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');
     assert.ok(output.contains('#helper-fn-A#'), name + 'helper function');
+    assert.ok(output.contains('#helper-fnwithout-A#'), name + 'helper function (without helper keyword)');
     assert.ok(output.contains('#readonly readonly="readonly"#'), name + 'readonly()');
     assert.ok(output.contains('#checked checked="checked"#'), name + 'checked()');
     assert.ok(output.contains('#selected selected="selected"#'), name + 'selected()');

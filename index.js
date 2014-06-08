@@ -57,6 +57,14 @@ global.DATABASE = function() {
     return framework.database.apply(framework, arguments);
 };
 
+global.CONFIG = function(name) {
+    return framework.config[name];
+};
+
+global.RESOURCE = function(name, key) {
+    return framework.resource(name, key);
+};
+
 global.MODEL = function(name) {
     return framework.model(name);
 };
@@ -646,6 +654,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
     }
 
     if (flags.indexOf('get') === -1 &&
+        flags.indexOf('options') === -1 &&
         flags.indexOf('post') === -1 &&
         flags.indexOf('delete') === -1 &&
         flags.indexOf('put') === -1 &&
@@ -659,7 +668,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
     if (flags.indexOf('referer') !== -1)
         self._request_check_referer = true;
 
-    if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1))
+    if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
         self._request_check_POST = true;
 
     if (!(partial instanceof Array))
@@ -4286,10 +4295,10 @@ Framework.prototype.configure = function(arr, rewrite) {
 
         arr = [];
 
-        if (fs.existsSync(filenameA))
+        if (fs.existsSync(filenameA) && fs.lstatSync(filenameA).isFile())
             arr = arr.concat(fs.readFileSync(filenameA).toString(ENCODING).split('\n'));
 
-        if (fs.existsSync(filenameB))
+        if (fs.existsSync(filenameB) && fs.lstatSync(filenameB).isFile())
             arr = arr.concat(fs.readFileSync(filenameB).toString(ENCODING).split('\n'));
     }
 
@@ -9345,6 +9354,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
     var headers = {
         'X-Proxy': 'total.js'
     };
+
     headers[RESPONSE_HEADER_CONTENTTYPE] = 'application/json';
 
     var tmp;
@@ -9361,7 +9371,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
         obj = tmp;
     }
 
-    utils.request(url, 'POST', obj, function(error, data, code, headers) {
+    utils.request(url, ['post', 'json'], obj, function(error, data, code, headers) {
 
         if (!fnCallback)
             return;
@@ -9371,7 +9381,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 
         fnCallback.call(self, error, data, code, headers);
 
-    }, headers, 'utf8', timeout || 10000);
+    }, null, headers, 'utf8', timeout || 10000);
 
     return self;
 };
