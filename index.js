@@ -3324,7 +3324,7 @@ Framework.prototype._verify_directory = function(name) {
 
 Framework.prototype._upgrade = function(req, socket, head) {
 
-    if (req.headers.upgrade !== 'websocket')
+    if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
         return;
 
     var self = this;
