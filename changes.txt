@@ -4,7 +4,10 @@ IN DEVELOPMENT ======= 1.5.2 (HOTFIX)
 - added: RESOURCE(name, key) - return a value from the resource file
 - added: utils.parseXML(xml)
 - added: config['static-accept'] += '.json'
+- added: Array.prototype.slug([max])
+- added: Array.prototype.orderBy([name], [asc])
 
+- fixed: WebSocket in IE
 - fixed: calling global helpers like this: @{someHelper('some-argument')}
 - fixed: controller.proxy()
 - fixed: request.signature()
@@ -13,6 +16,7 @@ IN DEVELOPMENT ======= 1.5.2 (HOTFIX)
 - fixed: configuration (fixer: @peterkc)
 - fixed: schemas
 - fixed: assertion testing
+- fixed: view @{foreach ....}
 
 ======= 1.5.0 & 1.5.1
 
