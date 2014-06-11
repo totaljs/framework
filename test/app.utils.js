@@ -191,6 +191,9 @@ function prototypeArray() {
 	arr = [1, 2, 3, 4, 5];
 	assert.ok(arr.skip(3).join('') === '45', 'array.skip()');
 	assert.ok(arr.take(3).join('') === '123', 'array.take()');
+
+	assert.ok(arr.orderBy(false)[0] === 5, 'array.orderBy()');
+
 }
 
 function t_callback1(a, cb) {

@@ -2080,6 +2080,10 @@ String.prototype.linker = function(max) {
     return builder;
 };
 
+String.prototype.slug = function(max) {
+    return this.linker(max);
+};
+
 String.prototype.link = function(max) {
     console.log('String.prototype.link: OBSOLETE - Use String.prototype.Linker()');
     return this.linker(max);
@@ -2361,6 +2365,106 @@ Array.prototype.take = function(count) {
     }
     return arr;
 };
+
+/*
+    @name {String}
+    return {Array}
+*/
+Array.prototype.orderBy = function(name, asc) {
+
+    if (typeof(name) === BOOLEAN) {
+        var tmp = asc;
+        asc = name;
+        name = tmp;
+    }
+
+    if (typeof(asc) === UNDEFINED)
+        asc = true;
+
+    var self = this;
+    var type = 0;
+    var path = (name || '').split('.');
+    var length = path.length;
+
+    self.sort(function(a, b) {
+
+        var va = null;
+        var vb = null;
+
+        switch (length) {
+            case 1:
+
+                if (path[0] === '') {
+                    va = a;
+                    vb = b;
+                } else {
+                    va = a[path[0]];
+                    vb = b[path[0]];
+                }
+
+                break;
+            case 2:
+                va = a[path[0]][path[1]];
+                vb = b[path[0]][path[1]];
+                break;
+            case 3:
+                va = a[path[0]][path[1]][path[2]];
+                vb = b[path[0]][path[1]][path[2]];
+                break;
+            case 4:
+                va = a[path[0]][path[1]][path[2]][path[3]];
+                vb = b[path[0]][path[1]][path[2]][path[3]];
+                break;
+            case 5:
+                va = a[path[0]][path[1]][path[2]][path[3]][path[4]];
+                vb = b[path[0]][path[1]][path[2]][path[3]][path[4]];
+                break;
+            default:
+                return 0;
+        }
+
+        if (type === 0) {
+            var t = typeof(va);
+            if (t === STRING)
+                type = 1;
+            else if (t === NUMBER)
+                type = 2;
+            else if (t === BOOLEAN)
+                type = 3;
+            else
+                type = 4;
+        }
+
+        // String
+        if (type === 1)
+            return asc ? va.removeDiacritics().localeCompare(vb.removeDiacritics()) : vb.removeDiacritics().localeCompare(va.removeDiacritics());
+
+        if (type === 2) {
+
+            if (va > vb)
+                return asc ? 1 : -1;
+
+            if (va < vb)
+                return asc ? -1 : 1;
+
+            return 0;
+        }
+
+        if (type === 3) {
+            if (va === true && vb === false)
+                return asc ? 1 : -1;
+            if (va === false && vb === true)
+                return asc ? -1 : 1;
+            return 0;
+        }
+
+        return 0;
+
+    });
+
+    return self;
+};
+
 
 /*
     Trim values
