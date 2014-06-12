@@ -3865,8 +3865,8 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 /**
  * Test in progress
  * @private
- * @param  {Boolean}   stop     Stop application.
- * @param  {Function}  callback Callback.
+ * @param {Boolean} stop Stop application.
+ * @param {Function} callback Callback.
  * @return {Framework}
  */
 Framework.prototype.testing = function(stop, callback) {
@@ -3880,29 +3880,42 @@ Framework.prototype.testing = function(stop, callback) {
     if (keys.length === 0) {
 
         if (callback)
-            callback();
+            callback(framework.isTestError === true);
 
         if (stop)
-            self.stop();
+            self.stop(framework.isTestError ? 1 : 0);
 
         return self;
     }
 
+    var logger = function(name, start, err) {
+
+        var time = Math.floor(new Date() - start) + ' ms';
+
+        if (err) {
+            framework.isTestError = true;
+            console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + err + '> [' + time + ']');
+            return;
+        }
+
+        console.info('Passed '.padRight(20, '.') + ' ' + name + ' [' + time + ']');
+    };
+
     var key = keys[0];
     var test = self.tests[key];
-    var caption = '{0} .............. ' + key;
 
     delete self.tests[key];
+    var beg = new Date();
 
     if (test.run) {
-
         try {
             test.run.call(self, function() {
-                console.log(caption.format('Passed'));
+                logger(key, beg);
                 self.testing(stop, callback);
             }, key);
         } catch (e) {
-            console.log(caption.format('Failed') + ' <' + e.toString() + '>');
+            logger(key, beg, e);
+            framework.isTestError = true;
             self.testing(stop, callback);
             throw e;
         }
@@ -3935,10 +3948,10 @@ Framework.prototype.testing = function(stop, callback) {
 
             try {
                 test.callback(null, res._buffer, res.statusCode, res.headers, cookies, key);
-                console.log(caption.format('Passed'));
+                logger(key, beg);
                 self.testing(stop, callback);
             } catch (e) {
-                console.log(caption.format('Failed') + ' <' + e.toString() + '>');
+                logger(key, beg, e);
                 self.testing(stop, callback);
                 throw e;
             }
@@ -3952,7 +3965,7 @@ Framework.prototype.testing = function(stop, callback) {
     var req = test.method === 'POST' || test.method === 'PUT' ? con.request(options, response) : con.get(options, response);
 
     req.on('error', function(e) {
-        console.log(caption.format('Failed') + ' <' + e.toString() + '>');
+        log(key, beg, e);
         self.testing(stop, callback);
     });
 
@@ -3975,6 +3988,9 @@ Framework.prototype.test = function(stop, names, cb) {
 
     var self = this;
 
+    if (typeof(stop) === UNDEFINED)
+        stop = true;
+
     if (typeof(names) === FUNCTION) {
         cb = names;
         names = [];
@@ -3994,6 +4010,19 @@ Framework.prototype.test = function(stop, names, cb) {
         return self;
     }
 
+    var logger = function(name, start, err) {
+
+        var time = Math.floor(new Date() - start) + ' ms';
+
+        if (err) {
+            framework.isTestError = true;
+            console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + err + '> [' + time + ']');
+            return;
+        }
+
+        console.info('Passed '.padRight(20, '.') + ' ' + name + ' [' + time + ']');
+    };
+
     fs.readdirSync(utils.combine(dir)).forEach(function(name) {
 
         var filename = path.join(directory, dir, name);
@@ -4006,6 +4035,7 @@ Framework.prototype.test = function(stop, names, cb) {
             return;
 
         var test = require(filename);
+        var beg = new Date();
 
         try {
             var isRun = typeof(test.run) !== UNDEFINED;
@@ -4027,20 +4057,24 @@ Framework.prototype.test = function(stop, names, cb) {
             counter++;
 
         } catch (ex) {
-            setTimeout(function() {
-                framework.stop(1);
-            }, 500);
-            throw ex;
+            logger('Failed', beg, ex);
         }
     });
 
     _test = '';
 
     if (counter === 0) {
-        if (cb) cb();
-        if (stop) setTimeout(function() {
+
+        if (cb)
+            cb();
+
+        if (!stop)
+            return self;
+
+        setTimeout(function() {
             framework.stop(1);
         }, 500);
+
         return self;
     }
 
@@ -4049,6 +4083,7 @@ Framework.prototype.test = function(stop, names, cb) {
         console.log('');
         self.testing(stop, function() {
             self.isTest = false;
+            console.log('');
             if (cb)
                 cb();
         });
