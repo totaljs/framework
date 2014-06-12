@@ -4,7 +4,7 @@
 - added: RESOURCE(name, key) - returns a value from the resource file
 - added: utils.parseXML(xml)
 - added: config['static-accept'] += '.json'
-- added: Array.prototype.slug([max])
+- added: String.prototype.slug([max])
 - added: Array.prototype.orderBy([name], [asc])
 - added: framework.on('request', function(req, res) {})
 - added: framework.on('websocket', function(req, socket) {})
