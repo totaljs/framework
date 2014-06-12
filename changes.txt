@@ -1,7 +1,7 @@
-IN DEVELOPMENT ======= 1.5.2 (HOTFIX)
+======= 1.5.2 (HOTFIX)
 
-- added: CONFIG(name) - return a value from the config file
-- added: RESOURCE(name, key) - return a value from the resource file
+- added: CONFIG(name) - returns a value from the config file
+- added: RESOURCE(name, key) - returns a value from the resource file
 - added: utils.parseXML(xml)
 - added: config['static-accept'] += '.json'
 - added: Array.prototype.slug([max])
