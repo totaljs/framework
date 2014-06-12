@@ -3327,6 +3327,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
     if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
         return;
 
+    self.emit('websocket', req, socket, head);
+
     var self = this;
     var headers = req.headers;
 
@@ -3476,6 +3478,8 @@ Framework.prototype._request = function(req, res) {
         req.connection.setNoDelay(true);
         req.connection.setTimeout(0);
     }
+
+    self.emit('request', req, res);
 
     if (self.onRequest !== null && self.onRequest(req, res))
         return;
@@ -3886,7 +3890,7 @@ Framework.prototype.testing = function(stop, callback) {
 
     var key = keys[0];
     var test = self.tests[key];
-    var caption = 'Success .............. ' + key;
+    var caption = '{0} .............. ' + key;
 
     delete self.tests[key];
 
@@ -3894,13 +3898,12 @@ Framework.prototype.testing = function(stop, callback) {
 
         try {
             test.run.call(self, function() {
-                console.log(caption);
+                console.log(caption.format('Passed'));
                 self.testing(stop, callback);
             }, key);
         } catch (e) {
-            setTimeout(function() {
-                self.stop(1);
-            }, 500);
+            console.log(caption.format('Failed') + ' <' + e.toString() + '>');
+            self.testing(stop, callback);
             throw e;
         }
         return self;
@@ -3932,12 +3935,11 @@ Framework.prototype.testing = function(stop, callback) {
 
             try {
                 test.callback(null, res._buffer, res.statusCode, res.headers, cookies, key);
-                console.log(caption);
+                console.log(caption.format('Passed'));
                 self.testing(stop, callback);
             } catch (e) {
-                setTimeout(function() {
-                    self.stop(1);
-                }, 500);
+                console.log(caption.format('Failed') + ' <' + e.toString() + '>');
+                self.testing(stop, callback);
                 throw e;
             }
         });
@@ -3949,13 +3951,9 @@ Framework.prototype.testing = function(stop, callback) {
     var con = options.protocol === 'https:' ? https : http;
     var req = test.method === 'POST' || test.method === 'PUT' ? con.request(options, response) : con.get(options, response);
 
-    req.on('error', function(error) {
-
-        setTimeout(function() {
-            self.stop(1);
-        }, 500);
-
-        throw error;
+    req.on('error', function(e) {
+        console.log(caption.format('Failed') + ' <' + e.toString() + '>');
+        self.testing(stop, callback);
     });
 
     if (test.data.length > 0)

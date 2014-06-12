@@ -6,6 +6,10 @@ IN DEVELOPMENT ======= 1.5.2 (HOTFIX)
 - added: config['static-accept'] += '.json'
 - added: Array.prototype.slug([max])
 - added: Array.prototype.orderBy([name], [asc])
+- added: framework.on('request', function(req, res) {})
+- added: framework.on('websocket', function(req, socket) {})
+
+- updated: assertion testing
 
 - fixed: WebSocket in IE
 - fixed: calling global helpers like this: @{someHelper('some-argument')}
