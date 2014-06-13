@@ -4005,7 +4005,7 @@ Framework.prototype.test = function(stop, names, cb) {
     if (!fs.existsSync(utils.combine(dir))) {
         if (cb) cb();
         if (stop) setTimeout(function() {
-            framework.stop(1);
+            framework.stop(framework.isTestError ? 1 : 0);
         }, 500);
         return self;
     }
