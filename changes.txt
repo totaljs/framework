@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.5.3 (HOTFIX)
+
+- fixed: exit code in assertion testing (bug with lowest priority)
+
 ======= 1.5.2 (HOTFIX)
 
 - added: CONFIG(name) - returns a value from the config file
