@@ -78,8 +78,8 @@ if (typeof(setImmediate) === UNDEFINED) {
 function Framework() {
 
     this.id = null;
-    this.version = 1502;
-    this.version_header = '1.5.2';
+    this.version = 1530;
+    this.version_header = '1.5.3';
 
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
@@ -172,8 +172,8 @@ function Framework() {
         web: [],
         files: [],
         websockets: [],
-        partial: {},
-        partialGlobal: [],
+        middlewareCustom: {},
+        middleware: [],
         redirects: {},
         resize: {}
     };
@@ -262,8 +262,8 @@ function Framework() {
     this._request_check_redirect = false;
     this._request_check_referer = false;
     this._request_check_POST = false;
-    this._length_partial_private = 0;
-    this._length_partial_global = 0;
+    this._length_middleware_custom = 0;
+    this._length_middleware = 0;
     this._length_files = 0;
 
     this.isCoffee = false;
@@ -521,18 +521,18 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
  * @param  {Function} funcExecute Action.
  * @param  {String Array} flags
  * @param  {Number} maximumSize Maximum length of request data.
- * @param  {String Array} partial Loads partial content.
+ * @param  {String Array} middleware Loads custom middleware.
  * @param  {Number timeout Response timeout.
  * @return {Framework}
  */
-Framework.prototype.route = function(url, funcExecute, flags, maximumSize, partial, timeout) {
+Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middleware, timeout) {
 
     if (url === '')
         url = '/';
 
     if (utils.isArray(maximumSize)) {
-        var tmp = partial;
-        partial = maximumSize;
+        var tmp = middleware;
+        middleware = maximumSize;
         maximumSize = tmp;
     }
 
@@ -544,7 +544,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 
     if (!utils.isArray(flags) && typeof(flags) === 'object') {
         maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'] || flags['size'];
-        partial = flags['partials'] || flags['partial'];
+        middleware = flags['middleware'] || flags['partials'] || flags['partial'];
         timeout = flags['timeout'];
         flags = flags['flags'] || flags['flag'];
     }
@@ -671,8 +671,8 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
     if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
         self._request_check_POST = true;
 
-    if (!(partial instanceof Array))
-        partial = null;
+    if (!(middleware instanceof Array))
+        middleware = null;
 
     self.routes.web.push({
         priority: priority,
@@ -683,8 +683,8 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
         flags: flags || [],
         onExecute: funcExecute,
         maximumSize: (maximumSize || self.config['default-request-length']) * 1024,
-        partial: partial,
-        timeout: timeout || self.config['default-request-timeout'],
+        middleware: middleware,
+        timeout: typeof(timeout) === UNDEFINED ? self.config['default-request-timeout'] : timeout,
         isJSON: flags.indexOf('json') !== -1,
         isRAW: isRaw,
         isMEMBER: isMember,
@@ -699,26 +699,36 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, parti
 };
 
 /*
+    Add a middleware
+    @name {String or Function} :: if @name is function, route will be a global middleware
+    @funcExecute {Function} :: optional
+    return {Framework}
+*/
+Framework.prototype.middleware = function(name, funcExecute) {
+    var self = this;
+
+    if (typeof(name) === FUNCTION) {
+        self.routes.middleware.push(name);
+        self._length_middleware = Object.keys(self.routes.middleware).length;
+        return self;
+    }
+
+    self.routes.middlewareCustom[name] = funcExecute;
+    self._length_middleware_custom = Object.keys(self.routes.middlewareCustom).length;
+
+    return self;
+};
+
+/*
     Add a new partial route
     @name {String or Function} :: if @name is function, route will be a global partial content
     @funcExecute {Function} :: optional
     return {Framework}
 */
 Framework.prototype.partial = function(name, funcExecute) {
-    var self = this;
-
-    if (typeof(name) === FUNCTION) {
-        self.routes.partialGlobal.push(name);
-        self._length_partial_global = Object.keys(self.routes.partialGlobal).length;
-        return self;
-    }
-
-    self.routes.partial[name] = funcExecute;
-    self._length_partial_private = Object.keys(self.routes.partial).length;
-
-    return self;
+    console.log('OBSOLETE: framework.partial(), use: framework.middleware()');
+    return this.middleware(name, funcExecute);
 };
-
 /*
     Add a new websocket route
     @url {String}
@@ -1739,8 +1749,8 @@ Framework.prototype.usage = function(detailed) {
         webpage: self.routes.web.length,
         websocket: self.routes.websockets.length,
         file: self.routes.files.length,
-        partial: Object.keys(self.routes.partial).length,
-        global: self.routes.partialGlobal.length,
+        middlewareCustom: Object.keys(self.routes.middleware).length,
+        middleware: self.routes.middleware.length,
         redirect: redirects.length
     };
 
@@ -3327,11 +3337,10 @@ Framework.prototype._upgrade = function(req, socket, head) {
     if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
         return;
 
-    self.emit('websocket', req, socket, head);
-
     var self = this;
     var headers = req.headers;
 
+    self.emit('websocket', req, socket, head);
     self.stats.request.websocket++;
 
     if (self.restrictions.isRestrictions) {
@@ -5868,38 +5877,37 @@ Subscribe.prototype.execute = function(status) {
     if (!self.isCanceled && !self.isMixed && self.route.timeout > 0)
         self.timeout = setTimeout(self.handlers._cancel, self.route.timeout);
 
-    if (self.framework._length_partial_private === 0 && self.framework._length_partial_global === 0) {
+    if (self.framework._length_middleware_custom === 0 && self.framework._length_middleware === 0) {
         self.handlers._execute();
         return self;
     }
 
-    if (self.framework._length_partial_global === 0 && self.route.partial === null) {
+    if (self.framework._length_middleware === 0 && self.route.middleware === null) {
         self.handlers._execute();
         return self;
     }
-
     var funcs = [];
     var count = 0;
 
-    if (self.framework._length_partial_global > 0) {
-        for (var i = 0; i < self.framework._length_partial_global; i++) {
-            var partial = self.framework.routes.partialGlobal[i];
-            funcs.push(partial.bind(self.controller));
+    if (self.framework._length_middleware > 0) {
+        for (var i = 0; i < self.framework._length_middleware; i++) {
+            var middleware = self.framework.routes.middleware[i];
+            funcs.push(middleware.bind(self.controller));
         }
     }
 
-    if (self.route.partial !== null) {
-        var length = self.route.partial.length;
+    if (self.route.middleware !== null) {
+        var length = self.route.middleware.length;
         for (var i = 0; i < length; i++) {
-            var partialFn = self.framework.routes.partial[self.route.partial[i]];
-            if (!partialFn)
+            var middlewareFn = self.framework.routes.middlewareCustom[self.route.middleware[i]];
+            if (!middlewareFn)
                 continue;
             count++;
-            funcs.push(partialFn.bind(self.controller));
+            funcs.push(middlewareFn.bind(self.controller));
         }
     }
 
-    if (count === 0 && self.framework._length_partial_global === 0) {
+    if (count === 0 && self.framework._length_middleware === 0) {
         self.handlers._execute();
         return;
     }
@@ -8697,6 +8705,7 @@ Controller.prototype.json = function(obj, headers, beautify) {
 Controller.prototype.custom = function() {
 
     var self = this;
+
     if (self.res.success || !self.isConnected)
         return false;
 
@@ -9120,9 +9129,7 @@ Controller.prototype.redirect = function(url, permanent) {
     self.subscribe.success();
     self.req.clear(true);
     self.res.success = true;
-    self.res.writeHead(permanent ? 301 : 302, {
-        'Location': url
-    });
+    self.res.writeHead(permanent ? 301 : 302, { 'Location': url });
     self.res.end();
     self.framework._request_stats(false, false);
     self.framework.emit('request-end', self.req, self.res);
@@ -10681,6 +10688,10 @@ http.IncomingMessage.prototype = {
         if (typeof(proxy) !== UNDEFINED)
             return proxy.split(',', 1)[0] || self.connection.removiewddress;
         return self.connection.remoteAddress;
+    },
+
+    get query() {
+        return this.data.get;
     },
 
     get subdomain() {

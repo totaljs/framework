@@ -1,6 +1,11 @@
 IN DEVELOPMENT ======= 1.5.3 (HOTFIX)
 
+- added: request.query (alias for request.data.get)
+
+- (IMPORTANT) renamed: framework.partial() to framework.middleware()
+
 - fixed: exit code in assertion testing (bug with lowest priority)
+- (CRITICAL) fixed: WebSocket event
 
 ======= 1.5.2 (HOTFIX)
 
