@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.5.3 (HOTFIX)
+======= 1.5.3 (HOTFIX)
 
 - added: request.query (alias for request.data.get)
 
