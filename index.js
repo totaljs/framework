@@ -10411,26 +10411,29 @@ WebSocketClient.prototype.upgrade = function(container) {
 WebSocketClient.prototype._ondata = function(data) {
 
     var self = this;
+    
+    if (data != null)
+        self.buffer = Buffer.concat([self.buffer, data]);
 
-    if (data.length + self.buffer.length > self.length) {
+    if (self.buffer.length > self.length) {
         self.errors++;
         self.container.emit('error', new Error('Maximum request length exceeded.'), self);
         return;
     }
 
-    switch (data[0] & 0x0f) {
+    switch (self.buffer[0] & 0x0f) {
         case 0x01:
 
             // text message or JSON message
             if (self.type !== 1)
-                self.parse(data);
+                self.parse();
 
             break;
         case 0x02:
 
             // binary message
             if (self.type === 1)
-                self.parse(data);
+                self.parse();
 
             break;
         case 0x08:
@@ -10449,12 +10452,9 @@ WebSocketClient.prototype._ondata = function(data) {
 
 // MIT
 // Written by Jozef Gula
-WebSocketClient.prototype.parse = function(data) {
+WebSocketClient.prototype.parse = function() {
 
     var self = this;
-
-    if (data != null)
-        self.buffer = Buffer.concat([self.buffer, data]);
 
     var bLength = self.buffer[1];
 
