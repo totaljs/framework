@@ -2,7 +2,7 @@
  * @module Framework
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2014
- * @version 1.5.2
+ * @version 1.5.4
  */
 
 'use strict';
@@ -78,8 +78,8 @@ if (typeof(setImmediate) === UNDEFINED) {
 function Framework() {
 
     this.id = null;
-    this.version = 1530;
-    this.version_header = '1.5.3';
+    this.version = 1540;
+    this.version_header = '1.5.4';
 
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
@@ -10411,7 +10411,7 @@ WebSocketClient.prototype.upgrade = function(container) {
 WebSocketClient.prototype._ondata = function(data) {
 
     var self = this;
-    
+
     if (data != null)
         self.buffer = Buffer.concat([self.buffer, data]);
 

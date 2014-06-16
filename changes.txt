@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.5.4 (HOTFIX)
+
+- fixed: long messages in WebSocket
+
 ======= 1.5.3 (HOTFIX)
 
 - added: request.query (alias for request.data.get)
