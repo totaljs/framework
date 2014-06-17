@@ -2,7 +2,7 @@
  * @module FrameworkUtils
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2014
- * @version 1.5.0.
+ * @version 1.5.4.
  */
 
 'use strict';
@@ -1303,10 +1303,10 @@ function getWebSocketFrameLengthBytes(length) {
     lengthBuffer = new Buffer(9);
 
     lengthBuffer[0] = 127;
-    lengthBuffer[1] = (length >> 56) & 255;
-    lengthBuffer[2] = (length >> 48) & 255;
-    lengthBuffer[3] = (length >> 40) & 255;
-    lengthBuffer[4] = (length >> 32) & 255;
+    lengthBuffer[1] = 0x00;
+    lengthBuffer[2] = 0x00;
+    lengthBuffer[3] = 0x00;
+    lengthBuffer[4] = 0x00;
     lengthBuffer[5] = (length >> 24) & 255;
     lengthBuffer[6] = (length >> 16) & 255;
     lengthBuffer[7] = (length >> 8) & 255;
