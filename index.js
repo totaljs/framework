@@ -35,6 +35,7 @@ var EXTENSION_JS = '.js';
 var EXTENSION_COFFEE = '.coffee';
 var RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
 var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
+var RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var CONTENTTYPE_TEXTHTML = 'text/html';
 var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', CONTENTTYPE_TEXTHTML];
@@ -2196,7 +2197,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         return self.responseRange(name, range, returnHeaders, req, res);
 
     if (size !== null && size !== '0' && !compress)
-        returnHeaders['Content-Length'] = size;
+        returnHeaders[RESPONSE_HEADER_CONTENTLENGTH] = size;
 
     var stream;
 
@@ -2653,7 +2654,7 @@ Framework.prototype.responseRange = function(name, range, headers, req, res) {
 
     var length = (end - beg) + 1;
 
-    headers['Content-Length'] = length;
+    headers[RESPONSE_HEADER_CONTENTLENGTH] = length;
     headers['Content-Range'] = 'bytes ' + beg + '-' + end + '/' + total;
 
     res.writeHead(206, headers);
@@ -3528,6 +3529,7 @@ Framework.prototype._request = function(req, res) {
     }
 
     self.emit('request', req, res);
+    res.req = req;
 
     if (self.onRequest !== null && self.onRequest(req, res))
         return;
@@ -3899,7 +3901,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
         data = isJSON ? JSON.stringify(data) : qs.stringify(data);
 
     if (data && data.length > 0)
-        headers['Content-Length'] = data.length;
+        headers[RESPONSE_HEADER_CONTENTLENGTH] = data.length;
 
     var obj = {
         url: url,
@@ -9930,7 +9932,6 @@ WebSocket.prototype.send = function(message, id, blacklist) {
     if (length === 0)
         return self;
 
-
     var fn = typeof(blacklist) === FUNCTION ? blacklist : null;
     var is = blacklist instanceof Array;
 
@@ -10795,6 +10796,13 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
     return self;
 };
 
+http.ServerResponse.prototype.json = function() {
+    var self = this;
+    self.removeHeader('Etag');
+    self.removeHeader('Last-Modified');
+    return self;
+};
+
 /**
  * Disable HTTP cache for current response
  * @return {Response}
@@ -10804,6 +10812,101 @@ http.ServerResponse.prototype.noCache = function() {
     self.removeHeader('Etag');
     self.removeHeader('Last-Modified');
     return self;
+};
+
+/**
+ * Send
+ * @param {Number} code Response status code, optional
+ * @param {Object} body Body
+ * @param {String} type Content-Type, optional
+ * @return {Response}
+ */
+http.ServerResponse.prototype.send = function(code, body, type) {
+
+    var self = this;
+    var req = self.req;
+    var contentType = type;
+
+    if (typeof(body) === UNDEFINED) {
+        body = code;
+        code = 200;
+    }
+
+    switch (typeof(body)) {
+        case STRING:
+            if (!contentType)
+                contentType = 'text/html';
+            break;
+
+        case NUMBER:
+
+            if (!contentType)
+                contentType = 'text/plain';
+
+            body = utils.httpStatus(body);
+
+            break;
+
+        case BOOLEAN:
+        case OBJECT:
+
+            if (!contentType)
+                contentType = 'application/json';
+
+            body = JSON.parse(body);
+            break;
+    }
+
+    var accept = req.headers['accept-encoding'] || '';
+    var headers = {};
+
+    headers[RESPONSE_HEADER_CACHECONTROL] = 'private';
+    headers['Vary'] = 'Accept-Encoding';
+
+    // Safari resolve
+    if (contentType === 'application/json')
+        headers[RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
+
+    if ((/text|application/).test(contentType))
+        contentType += '; charset=utf-8';
+
+    headers[RESPONSE_HEADER_CONTENTTYPE] = contentType;
+
+    if (compress && accept.lastIndexOf('gzip') !== -1) {
+        buffer = new Buffer(body);
+        headers[RESPONSE_HEADER_CONTENTLENGTH] = buffer.length;
+        zlib.gzip(buffer, function(err, data) {
+
+            if (err) {
+                res.writeHead(code, headers);
+                res.end(body, ENCODING);
+                return;
+            }
+
+            headers['Content-Encoding'] = 'gzip';
+
+            res.writeHead(code, headers);
+            res.end(data, ENCODING);
+        });
+
+        return self;
+    }
+
+    headers[RESPONSE_HEADER_CONTENTLENGTH] = buffer.length;
+
+    res.writeHead(code, headers);
+    res.end(body, ENCODING);
+
+    return self;
+};
+
+/**
+ * Response JSON
+ * @param {Object} obj
+ * @return {Response}
+ */
+http.ServerResponse.prototype.json = function(obj) {
+    return this.send(200, obj, 'application/json');
 };
 
 var _tmp = http.IncomingMessage.prototype;
