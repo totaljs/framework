@@ -10824,6 +10824,7 @@ http.ServerResponse.prototype.noCache = function() {
 http.ServerResponse.prototype.send = function(code, body, type) {
 
     var self = this;
+    var res = self;
     var req = self.req;
     var contentType = type;
 
@@ -10853,7 +10854,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
             if (!contentType)
                 contentType = 'application/json';
 
-            body = JSON.parse(body);
+            body = JSON.stringify(body);
             break;
     }
 
@@ -10872,8 +10873,8 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 
     headers[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 
-    if (compress && accept.lastIndexOf('gzip') !== -1) {
-        buffer = new Buffer(body);
+    if (accept.lastIndexOf('gzip') !== -1) {
+        var buffer = new Buffer(body);
         headers[RESPONSE_HEADER_CONTENTLENGTH] = buffer.length;
         zlib.gzip(buffer, function(err, data) {
 
@@ -10892,7 +10893,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
         return self;
     }
 
-    headers[RESPONSE_HEADER_CONTENTLENGTH] = buffer.length;
+    headers[RESPONSE_HEADER_CONTENTLENGTH] = body.length;
 
     res.writeHead(code, headers);
     res.end(body, ENCODING);

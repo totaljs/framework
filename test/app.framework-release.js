@@ -260,7 +260,7 @@ function test_routing(next) {
 		utils.request(url + 'robots.txt', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '/robots.txt', 'static file routing');
+			assert(data === '/robots.txt', 'static file routing && res.send(STRING)');
 			complete();
 		});
 	});
@@ -269,7 +269,16 @@ function test_routing(next) {
 		utils.request(url + 'middleware.txt', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '/middleware.txt', 'static file routing with middleware');
+			assert(JSON.parse(data).url === '/middleware.txt', 'static file routing with middleware && res.send(OBJECT)');
+			complete();
+		});
+	});
+
+	async.await('static-file-status', function(complete) {
+		utils.request(url + 'status.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '404: Not Found', 'static file routing && res.send(NUMBER)');
 			complete();
 		});
 	});

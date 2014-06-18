@@ -82,6 +82,7 @@ exports.install = function(framework) {
 
     framework.file('middleware.txt', file_plain_middleware, ['file']);
     framework.file('robots.txt', file_plain);
+    framework.file('status.txt', file_plain_status);
 
     // url
     // function
@@ -135,17 +136,21 @@ function plain_upload() {
 function file_plain(req, res, isValidation) {
     if (isValidation)
         return req.url === '/robots.txt';
-
-    var self = this;
-    self.responseContent(req, res, 200, req.url, 'text/plain');
+    res.send(req.url);
 }
 
 function file_plain_middleware(req, res, isValidation) {
     if (isValidation)
         return req.url === '/middleware.txt';
 
-    var self = this;
-    self.responseContent(req, res, 200, req.url, 'text/plain');
+    res.send({ url: req.url });
+}
+
+function file_plain_status(req, res, isValidation) {
+    if (isValidation)
+        return req.url === '/status.txt';
+
+    res.send(404);
 }
 
 function resize_image(req, res) {
