@@ -1,6 +1,13 @@
-IN DEVELOPMENT ======= 1.5.4 (HOTFIX)
+IN DEVELOPMENT ======= 1.6.0
 
+- added: middleware to framework.websocket(url, funcInitialize, [flags], [protocols], [allow], [maximumSize], [middleware])
+- added: middleware to framework.file([name], [fnValidation], [fnExecute], [middleware])
+
+- fixed: controller.custom()
 - fixed: long messages in WebSocket by [Andrea Sessa](https://plus.google.com/u/0/104713619368072403016)
+
+- clean code
+- improvements: framework
 
 ======= 1.5.3 (HOTFIX)
 
