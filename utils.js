@@ -227,6 +227,10 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
                 case 'json':
                     headers['Content-Type'] = 'application/json';
+
+                    if (method === '')
+                        method = 'POST';
+
                     isJSON = true;
                     break;
 
@@ -324,7 +328,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
             });
 
             request.setTimeout(timeout || 10000, function() {
-                callback(new Error(exports.httpStatus(408)), null, 0, {});
+                callback(new Error(exports.httpStatus(408)), null, 0, null);
             });
         }
 
@@ -336,7 +340,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
     } catch (ex) {
 
         if (callback)
-            callback(ex, null, 0, {});
+            callback(ex, null, 0, null);
 
         return false;
     }
@@ -472,7 +476,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
             });
 
             request.setTimeout(timeout || 10000, function() {
-                callback(new Error(exports.httpStatus(408)), null, 0, {});
+                callback(new Error(exports.httpStatus(408)), null, 0, null);
             });
         }
 
@@ -540,7 +544,8 @@ exports.send = function(name, stream, url, callback, headers, method) {
         });
 
         res.on('end', function() {
-            callback(null, res.body);
+            var self = this;
+            callback(null, self.body, self.statusCode, self.headers);
         });
 
     };
@@ -550,12 +555,18 @@ exports.send = function(name, stream, url, callback, headers, method) {
 
     if (callback) {
         req.on('error', function(err) {
-            callback(err, null);
+            callback(err, null, 0, null);
         });
     }
 
     var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + utils.getContentType(path.extname(name)) + NEWLINE + NEWLINE;
     req.write(header);
+
+    // Is Buffer
+    if (typeof(stream.length) === NUMBER) {
+        req.end(stream.toString('utf8') + NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
+        return self;
+    }
 
     stream.on('end', function() {
         req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
