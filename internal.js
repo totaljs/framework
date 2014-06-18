@@ -1295,7 +1295,7 @@ function JavaScript(source) {
     return sb.join('');
 }
 
-exports.compile_javascript = function(source, framework) {
+exports.compile_javascript = function(source) {
     try {
         if (framework) {
             if (framework.onCompileJS !== null)
@@ -1720,7 +1720,7 @@ function Content(controller) {
  */
 function view_parse(content, minify) {
 
-    content = removeComments(compressCSS(compressJS(content, 0, framework), 0, framework));
+    content = removeComments(compressCSS(compressJS(content, 0), 0));
 
     var DELIMITER = '\'';
     var DELIMITER_UNESCAPE = 'unescape(\'';
@@ -2230,10 +2230,9 @@ function removeComments(html) {
  * @private
  * @param  {String} html HTML.
  * @param  {Number} index Last index.
- * @param  {Framework} framework Framework object.
  * @return {String}
  */
-function compressJS(html, index, framework) {
+function compressJS(html, index) {
 
     var strFrom = '<script type="text/javascript">';
     var strTo = '</script>';
@@ -2256,9 +2255,9 @@ function compressJS(html, index, framework) {
         return html;
 
     var val = js.substring(strFrom.length, js.length - strTo.length).trim();
-    var compiled = exports.compile_javascript(val, framework);
+    var compiled = exports.compile_javascript(val);
     html = html.replacer(js, strFrom + compiled.dollar().trim() + strTo.trim());
-    return compressJS(html, indexBeg + compiled.length + 9, framework);
+    return compressJS(html, indexBeg + compiled.length + 9);
 }
 
 /**
@@ -2370,7 +2369,7 @@ function compressHTML(html, minify) {
 View.prototype.read = function(name) {
 
     var self = this;
-    var config = self.controller.config;
+    var config = framework.config;
     var isOut = name[0] === '.';
 
     var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-views'], name + '.html');
@@ -2414,7 +2413,7 @@ View.prototype.load = function(name, prefix, filename) {
     var isPrefix = (prefix || '').length > 0;
     var key = 'view.' + filename + (isPrefix ? '#' + prefix : '');
 
-    var generator = self.controller.framework.temporary.views[key] || null;
+    var generator = framework.temporary.views[key] || null;
 
     if (generator !== null)
         return generator;
@@ -2425,7 +2424,7 @@ View.prototype.load = function(name, prefix, filename) {
         generator = self.read(filename);
 
     if (!self.controller.isDebug)
-        self.controller.framework.temporary.views[key] = generator;
+        framework.temporary.views[key] = generator;
 
     return generator;
 };
@@ -2439,15 +2438,15 @@ View.prototype.dynamic = function(content) {
 
     var self = this;
     var key = content.md5();
-    var generator = self.controller.framework.temporary.views[key] || null;
+    var generator = framework.temporary.views[key] || null;
 
     if (generator !== null)
         return generator;
 
-    generator = view_parse(content, self.controller, self.controller.config['allow-compress-html']);
+    generator = view_parse(content, self.controller, framework.config['allow-compress-html']);
 
     if (!self.controller.isDebug)
-        self.controller.framework.temporary.views[key] = generator;
+        framework.temporary.views[key] = generator;
 
     return generator;
 };
@@ -2459,7 +2458,7 @@ View.prototype.dynamic = function(content) {
 */
 Content.prototype.read = function(name) {
     var self = this;
-    var config = self.controller.config;
+    var config = framework.config;
     var isOut = name[0] === '.';
     var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-contents'], name + '.html');
 
@@ -2481,7 +2480,7 @@ Content.prototype.load = function(name, prefix) {
     var isPrefix = prefix.length > 0;
 
     var key = 'content.' + name + (isPrefix ? '#' + prefix : '');
-    var content = self.controller.framework.temporary.views[key] || null;
+    var content = framework.temporary.views[key] || null;
 
     if (content !== null)
         return content;
@@ -2492,10 +2491,10 @@ Content.prototype.load = function(name, prefix) {
         content = self.read(name);
 
     if (content === null)
-        self.controller.framework.error('Content "' + name + '" not found.', self.controller.name, self.controller.uri);
+        framework.error('Content "' + name + '" not found.', self.controller.name, self.controller.uri);
 
     if (!self.controller.isDebug)
-        self.controller.framework.temporary.views[key] = content;
+        framework.temporary.views[key] = content;
 
     return content;
 };
@@ -2564,7 +2563,7 @@ function Template(controller, model, repository) {
  */
 Template.prototype.read = function(name) {
     var self = this;
-    var config = self.controller.config;
+    var config = framework.config;
     var isOut = name[0] === '.';
 
     if (name[0] === '~')
@@ -2589,7 +2588,7 @@ Template.prototype.parse = function(html) {
     var self = this;
     var searchBeg = '@{foreach}';
     var indexBeg = html.indexOf(searchBeg);
-    var minify = self.controller.config['allow-compress-html'];
+    var minify = framework.config['allow-compress-html'];
 
     if (indexBeg === -1 && html.indexOf('@{foreach') !== -1)
         return {
@@ -2655,7 +2654,7 @@ Template.prototype.load = function(name, prefix, plus) {
 
     var isPrefix = (prefix || '').length > 0;
     var key = 'template.' + plus + name + (isPrefix ? '#' + prefix : '') + (self.repository !== null ? '.repository' : '');
-    var generator = self.controller.framework.temporary.views[key] || null;
+    var generator = framework.temporary.views[key] || null;
 
     if (generator !== null)
         return generator;
@@ -2666,10 +2665,10 @@ Template.prototype.load = function(name, prefix, plus) {
         generator = self.read(plus + name);
 
     if (generator === null)
-        self.controller.framework.error('Template "' + plus + name + '" not found.', self.controller.name, self.controller.uri);
+        framework.error('Template "' + plus + name + '" not found.', self.controller.name, self.controller.uri);
 
     if (!self.controller.isDebug)
-        self.controller.framework.temporary.views[key] = generator;
+        framework.temporary.views[key] = generator;
 
     return generator;
 };
@@ -2684,7 +2683,7 @@ Template.prototype.dynamic = function(content) {
 
     var self = this;
     var key = 'template.' + content.md5();
-    var generator = self.controller.framework.temporary.views[key] || null;
+    var generator = framework.temporary.views[key] || null;
 
     if (generator !== null)
         return generator;
@@ -2692,7 +2691,7 @@ Template.prototype.dynamic = function(content) {
     generator = self.parse(content);
 
     if (!self.controller.isDebug)
-        self.controller.framework.temporary.views[key] = generator;
+        framework.temporary.views[key] = generator;
 
     return generator;
 };
@@ -2711,22 +2710,22 @@ Template.prototype.render = function(name, plus) {
         return '';
 
     if (generator.is)
-        return generator.template.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, self.controller.framework.global, self.controller.framework.helpers, self.controller.user, self.controller.config, self.controller.framework.functions, 0).replace(/\\n/g, '\n');
+        return generator.template.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, framework.global, framework.helpers, self.controller.user, framework.config, framework.functions, 0).replace(/\\n/g, '\n');
 
     var builder = '';
 
     if (generator.beg !== null)
-        builder += generator.beg.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, self.controller.framework.global, self.controller.framework.helpers, self.controller.user, self.controller.config, self.controller.framework.functions, 0).replace(/\\n/g, '\n');
+        builder += generator.beg.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, framework.global, framework.helpers, self.controller.user, framework.config, framework.functions, 0).replace(/\\n/g, '\n');
 
     if (self.model instanceof Array) {
         var length = self.model.length;
         for (var i = 0; i < length; i++)
-            builder += generator.template.call(self.controller, self.controller, self.repository, self.model[i], self.controller.session, self.controller.get, self.controller.post, self.controller.url, self.controller.framework.global, self.controller.framework.helpers, self.controller.user, self.controller.config, self.controller.framework.functions, i).replace(/\\n/g, '\n');
+            builder += generator.template.call(self.controller, self.controller, self.repository, self.model[i], self.controller.session, self.controller.get, self.controller.post, self.controller.url, framework.global, framework.helpers, self.controller.user, framework.config, framework.functions, i).replace(/\\n/g, '\n');
     } else
-        builder += generator.template.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, self.controller.framework.global, self.controller.framework.helpers, self.controller.user, self.controller.config, self.controller.framework.functions, 0).replace(/\\n/g, '\n');
+        builder += generator.template.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, framework.global, framework.helpers, self.controller.user, framework.config, framework.functions, 0).replace(/\\n/g, '\n');
 
     if (generator.end !== null)
-        builder += generator.end.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, self.controller.framework.global, self.controller.framework.helpers, self.controller.user, self.controller.config, self.controller.framework.functions, 0).replace(/\\n/g, '\n');
+        builder += generator.end.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, framework.global, framework.helpers, self.controller.user, framework.config, framework.functions, 0).replace(/\\n/g, '\n');
 
     return builder;
 };
