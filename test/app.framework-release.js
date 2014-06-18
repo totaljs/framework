@@ -3,7 +3,7 @@ var assert = require('assert');
 var framework = require('../index');
 var http = require('http');
 var fs = require('fs');
-
+var debug = false;
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
@@ -56,12 +56,11 @@ function test_controller_functions(next) {
 		if (error)
 			assert.ok(false, 'test_controller_functions: ' + error.toString());
 
-		/*
 		assert.ok(code === 404, 'controller: statusCode ' + code);
 		assert.ok(headers['etag'] === '123456:1', 'controller: setModified(etag)');
 		assert.ok(headers['last-modified'].toString().indexOf('1984') !== -1, 'controller: setModified(date)');
 		assert.ok(headers['expires'].toString().indexOf('1984') !== -1, 'controller: setExpires(date)');
-		*/
+
 		next();
 	});
 }
@@ -72,7 +71,7 @@ function test_view_functions(next) {
 		if (error)
 			assert.ok(false, 'test_view_functions: ' + error.toString());
 
-		//assert.ok(data === '{"r":true}', 'json');
+		assert.ok(data === '{"r":true}', 'json');
 		next();
 	});
 };
@@ -203,6 +202,85 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('post-raw', function(complete) {
+		utils.request(url + 'post/raw/', ['post', 'raw'], 'SALAMA', function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'SALAMA', 'post-raw');
+			complete();
+		});
+	});
+
+	async.await('post-json', function(complete) {
+		utils.request(url + 'post/json/', ['json', 'post'], { name: "total.js" }, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '{"name":"total.js","type":"json"}', 'post-json');
+			complete();
+		});
+	});
+
+	async.await('post-parse', function(complete) {
+		utils.request(url + 'post/parse/', ['post'], { name: "total.js" }, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '{"name":"total.js","type":"parse"}', 'post-json');
+			complete();
+		});
+	});
+
+	async.await('put-raw', function(complete) {
+		utils.request(url + 'put/raw/', ['put', 'raw'], 'SALAMA', function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'SALAMA', 'put-raw');
+			complete();
+		});
+	});
+
+	async.await('put-json', function(complete) {
+		utils.request(url + 'put/json/', ['json', 'put'], { name: "total.js" }, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '{"name":"total.js","type":"json"}', 'put-json');
+			complete();
+		});
+	});
+
+	async.await('put-parse', function(complete) {
+		utils.request(url + 'put/parse/', ['put'], { name: "total.js" }, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '{"name":"total.js","type":"parse"}', 'put-json');
+			complete();
+		});
+	});
+
+	async.await('static-file', function(complete) {
+		utils.request(url + 'robots.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '/robots.txt', 'static file routing');
+			complete();
+		});
+	});
+
+	async.await('static-file-middleware', function(complete) {
+		utils.request(url + 'middleware.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '/middleware.txt', 'static file routing with middleware');
+			complete();
+		});
+	});
+
+	async.await('upload', function(complete) {
+		utils.send('test.txt', new Buffer('dG90YWwuanMgaXMga2luZyBvZiB3ZWI=', 'base64'), url + 'upload/', function(error, data, code, headers) {
+			assert(data === '{"name":"test.txt","length":25,"type":"text/plain"}', 'upload');
+			complete();
+		});
+	});
+
 	async.await('cookie', function(complete) {
 		utils.request(url + 'cookie/', 'GET', null, function(error, data, code, headers) {
 			if (error)
@@ -213,17 +291,6 @@ function test_routing(next) {
 			complete();
 		});
 	});
-
-/*
-	async.await('https', function(complete) {
-		utils.request(url + 'https/', 'GET', null, function(error, data, code, headers) {
-			if (error)
-				throw error;
-			assert(data === 'HTTPS', 'HTTP flag routing problem');
-			complete();
-		});
-	});
-*/
 
 	async.complete(function() {
 		next && next();
@@ -236,8 +303,9 @@ function run() {
 
 		framework.fs.rm.view('fromURL');
 
-		assert.ok(framework.global.header > 0, 'partial - global');
-		assert.ok(framework.global.partial > 0, 'partial - partial');
+		assert.ok(framework.global.header > 0, 'middleware - global');
+		assert.ok(framework.global.middleware > 0, 'middleware - middleware');
+		assert.ok(framework.global.file > 0, 'middleware - file');
 		assert.ok(framework.global.timeout > 0, 'timeout');
 
 		end();
@@ -272,4 +340,4 @@ framework.on('ready', function() {
 	run();
 });
 
-framework.run(http, false, 8001);
+framework.run(http, debug, 8001);

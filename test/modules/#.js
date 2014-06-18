@@ -34,16 +34,23 @@ exports.onLoad = function() {
 	};
 
 	self.global.header = 0;
-	self.global.partial = 0;
+	self.global.middleware = 0;
 	self.global.timeout = 0;
+	self.global.file = 0;
 
-	self.partial(function(next) {
+	self.middleware(function(next) {
 		self.global.header++;
 		next();
 	});
 
-	self.partial('partial', function(next) {
-		self.global.partial++;
+	self.middleware('middleware', function(next) {
+		self.global.middleware++;
+		next();
+	});
+
+	self.middleware('file', function(next, req, res) {
+		self.global.file++;
+		assert.ok(req.isStaticFile === true, 'file middleware problem');
 		next();
 	});
 };

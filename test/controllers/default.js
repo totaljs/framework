@@ -1,14 +1,17 @@
 var assert = require('assert');
 
 exports.install = function(framework) {
+
     framework.route('/logged/', view_logged, {
         flags: ['authorize'],
         timeout: 1000,
         length: 3000
     });
+
     framework.route('/unauthorize/', view_unauthorize, {
         flags: ['unauthorize']
     });
+
     framework.route('/homepage/', view_homepage);
     framework.route('/usage/', view_usage);
     framework.route('/sse/', viewSSE_html);
@@ -25,7 +28,7 @@ exports.install = function(framework) {
     framework.route('/cookie/', view_cookie);
     framework.route('/layout/', view_layout);
     framework.route('/custom/', viewCustomTesting);
-    framework.route('/views/', viewViews, [], ['partial']);
+    framework.route('/views/', viewViews, [], ['middleware']);
     framework.route('/view-notfound/', viewError);
     framework.route('/views-if/', viewViewsIf);
     framework.route('/{a}/', viewRouteA);
@@ -36,6 +39,16 @@ exports.install = function(framework) {
     framework.route('/test-view/', view_test_view);
     framework.route('/login/google/callback/', aa);
     framework.route('/timeout/', function() {}, [], null, [], 50);
+
+    framework.route('/post/raw/', plain_post_raw, ['post', 'raw']);
+    framework.route('/post/parse/', plain_post_parse, ['post']);
+    framework.route('/post/json/', plain_post_json, ['json']);
+
+    framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);
+    framework.route('/put/parse/', plain_put_parse, ['put']);
+    framework.route('/put/json/', plain_put_json, ['json', 'put']);
+
+    framework.route('/upload/', plain_upload, ['upload']);
 
     /*
 	framework.file('Resizing of images', function(req, res) {
@@ -67,6 +80,9 @@ exports.install = function(framework) {
 
     framework.route('/basic/', viewBAA);
 
+    framework.file('middleware.txt', file_plain_middleware, ['file']);
+    framework.file('robots.txt', file_plain);
+
     // url
     // function
     // flags [json, logged, unlogged]
@@ -75,6 +91,62 @@ exports.install = function(framework) {
     // maximumSize
     framework.websocket('/', socket);
 };
+
+function plain_post_raw() {
+    var self = this;
+    self.plain(self.post);
+}
+
+function plain_post_parse() {
+    var self = this;
+    self.post.type = 'parse';
+    self.json(self.post);
+}
+
+function plain_post_json() {
+    var self = this;
+    self.post.type = 'json';
+    self.json(self.post);
+}
+
+function plain_put_raw() {
+    var self = this;
+    self.plain(self.post);
+}
+
+function plain_put_parse() {
+    var self = this;
+    self.post.type = 'parse';
+    self.json(self.post);
+}
+
+function plain_put_json() {
+    var self = this;
+    self.post.type = 'json';
+    self.json(self.post);
+}
+
+function plain_upload() {
+    var self = this;
+    var file = self.files[0];
+    self.json({ name: file.filename, length: file.length, type: file.contentType });
+}
+
+function file_plain(req, res, isValidation) {
+    if (isValidation)
+        return req.url === '/robots.txt';
+
+    var self = this;
+    self.responseContent(req, res, 200, req.url, 'text/plain');
+}
+
+function file_plain_middleware(req, res, isValidation) {
+    if (isValidation)
+        return req.url === '/middleware.txt';
+
+    var self = this;
+    self.responseContent(req, res, 200, req.url, 'text/plain');
+}
 
 function resize_image(req, res) {
     var fs = require('fs');
