@@ -2,7 +2,7 @@
  * @module Framework
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2014
- * @version 1.5.4
+ * @version 1.6.0
  */
 
 'use strict';
@@ -78,17 +78,9 @@ if (typeof(setImmediate) === UNDEFINED) {
 function Framework() {
 
     this.id = null;
-    this.version = 1540;
-    this.version_header = '1.5.4';
-
+    this.version = 1600;
+    this.version_header = '1.6.0';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
-
-    this.handlers = {
-        onrequest: this._request.bind(this),
-        onxss: this.onXSS.bind(this),
-        onupgrade: this._upgrade.bind(this),
-        onservice: this._service.bind(this)
-    };
 
     this.config = {
 
@@ -237,7 +229,7 @@ function Framework() {
             plain: 0,
             empty: 0,
             redirect: 0,
-            forwarding: 0,
+            forward: 0,
             restriction: 0,
             notModified: 0,
             mmr: 0,
@@ -303,11 +295,14 @@ Framework.prototype.refresh = function(clear) {
 
     self.resources = {};
     self.databases = {};
+
     self.configure();
     self.configureMapping();
+
     self.temporary.path = {};
     self.temporary.range = {};
     self.temporary.views = {};
+
     self.emit('reconfigure');
 
     if (clear || true)
@@ -729,6 +724,7 @@ Framework.prototype.partial = function(name, funcExecute) {
     console.log('OBSOLETE: framework.partial(), use: framework.middleware()');
     return this.middleware(name, funcExecute);
 };
+
 /*
     Add a new websocket route
     @url {String}
@@ -737,12 +733,19 @@ Framework.prototype.partial = function(name, funcExecute) {
     @protocols {String Array} :: optional, websocket-allow-protocols
     @allow {String Array} :: optional, allow origin
     @maximumSize {Number} :: optional, default by the config
+    @middleware {String Array} :: optional, middleware
     return {Framework}
 */
-Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, maximumSize) {
+Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, maximumSize, middleware) {
 
     if (url === '')
         url = '/';
+
+    if (utils.isArray(maximumSize)) {
+        var tmp = middleware;
+        middleware = maximumSize;
+        maximumSize = tmp;
+    }
 
     if (typeof(funcExecute) === OBJECT) {
         var tmp = flags;
@@ -754,8 +757,12 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         protocols = flags['protocols'] || flags['protocol'];
         allow = flags['allow'] || flags['origin'];
         maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
+        middleware = flags['middleware'];
         flags = flags['flags'];
     }
+
+    if (typeof(middleware) === UNDEFINED)
+        middleware = null;
 
     var self = this;
     var priority = 0;
@@ -844,7 +851,8 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         isMEMBER: isMember,
         isJSON: isJSON,
         isBINARY: isBINARY,
-        isASTERIX: isASTERIX
+        isASTERIX: isASTERIX,
+        middleware: middleware
     });
 
     if (_controller.length === 0)
@@ -853,17 +861,40 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
     return self;
 };
 
-/*
-    Alias for routeFile
-*/
-Framework.prototype.file = function(name, funcValidation, funcExecute) {
+/**
+ * Create a file route
+ * @param {String} name
+ * @param {Function} funcValidation
+ * @param {Function} fnExecute
+ * @param {String Array} middleware
+ * @return {Framework}
+ */
+Framework.prototype.file = function(name, fnValidation, fnExecute, middleware) {
     var self = this;
+
+    if (utils.isArray(fnValidation)) {
+        var a = fnExecute;
+        var b = middleware;
+        middleware = fnValidation;
+        fnValidation = a;
+        fnExecute = b;
+    } else if (utils.isArray(fnExecute)) {
+        var a = fnExecute;
+        fnExecute = middleware;
+        middleware = a;
+    }
+
+    if (typeof(middleware) === UNDEFINED)
+        middleware = null;
+
     self.routes.files.push({
         controller: (_controller || '').length === 0 ? 'unknown' : _controller,
         name: name,
-        onValidation: funcValidation,
-        onExecute: funcExecute || funcValidation
+        onValidation: fnValidation,
+        onExecute: fnExecute || fnValidation,
+        middleware: middleware
     });
+
     self._length_files++;
     return self;
 };
@@ -1867,7 +1898,7 @@ Framework.prototype.compileStatic = function(req, filename) {
 
     switch (ext) {
         case EXTENSION_JS:
-            output = self.config['allow-compile-js'] ? self.onCompileJS === null ? internal.compile_javascript(output, self) : self.onCompileJS(filename, output) : output;
+            output = self.config['allow-compile-js'] ? self.onCompileJS === null ? internal.compile_javascript(output) : self.onCompileJS(filename, output) : output;
             break;
 
         case '.css':
@@ -2306,8 +2337,9 @@ Framework.prototype.responseCustom = function(req, res) {
         return self;
 
     req.clear(true);
-    self.stats.response.custom++;
     res.success = true;
+
+    self.stats.response.custom++;
     self._request_stats(false, req.isStaticFile);
 
     if (!req.isStaticFile)
@@ -2964,6 +2996,7 @@ Framework.prototype.response501 = function(req, res) {
 
     var headers = {};
     var status = 501;
+
     headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
     res.writeHead(status, headers);
     res.end(utils.httpStatus(status));
@@ -3069,9 +3102,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
     req.clear(true);
     res.success = true;
 
-    var headers = {
-        'Location': url
-    };
+    var headers = { 'Location': url };
     headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTHTML + '; charset=utf-8';
 
     res.writeHead(permanent ? 301 : 302, headers);
@@ -3212,13 +3243,21 @@ Framework.prototype.init = function(http, config, port, ip, options) {
         self.emit('message', msg, h);
     });
 
-    if (options)
-        self.server = http.createServer(options, self.handlers.onrequest);
-    else
-        self.server = http.createServer(self.handlers.onrequest);
+    if (options) {
+        self.server = http.createServer(options, function(req, res) {
+            self._request(req, res);
+        });
+    } else {
+        self.server = http.createServer(function(req, res) {
+            self._request(req, res);
+        });
+    }
 
-    if (self.config['allow-websocket'])
-        self.server.on('upgrade', self.handlers.onupgrade);
+    if (self.config['allow-websocket']) {
+        self.server.on('upgrade', function(req, socket, head) {
+            self._upgrade(req, socket, head);
+        });
+    }
 
     if (!port) {
         if (self.config['default-port'] === 'auto') {
@@ -3501,7 +3540,7 @@ Framework.prototype._request = function(req, res) {
     if (self._request_check_redirect) {
         var redirect = self.routes.redirects[protocol + '://' + req.host];
         if (redirect) {
-            self.stats.response.forwarding++;
+            self.stats.response.forward++;
             self.responseRedirect(req, res, redirect.url + (redirect.path ? req.url : ''), redirect.permanent);
             return self;
         }
@@ -3549,7 +3588,7 @@ Framework.prototype._request = function(req, res) {
     req.path = internal.routeSplit(req.uri.pathname);
     req.processing = 0;
 
-    // if is static file, return file
+    // Validate if this request is a file (static file)
     if (utils.isStaticFile(req.uri.pathname)) {
 
         req.isStaticFile = true;
@@ -3573,6 +3612,7 @@ Framework.prototype._request = function(req, res) {
         post: {},
         files: []
     };
+
     req.flags = null;
 
     req.buffer_exceeded = false;
@@ -3619,9 +3659,9 @@ Framework.prototype._request = function(req, res) {
 
     flags.push(protocol);
 
-    if (multipart.indexOf('multipart/form-data') === -1) {
+    if (multipart.indexOf('/form-data') === -1) {
 
-        if (multipart.indexOf('application/json') !== -1)
+        if (multipart.indexOf('/json') !== -1)
             flags.push('json');
 
         if (multipart.indexOf('mixed') === -1)
@@ -3670,8 +3710,10 @@ Framework.prototype._request = function(req, res) {
     // call event request
     self.emit('request-begin', req, res);
 
-    if (req.method === 'GET' || req.method === 'DELETE' || req.method === 'OPTIONS') {
-        if (req.method === 'DELETE')
+    var method = req.method;
+
+    if (method === 'GET' || method === 'DELETE' || method === 'OPTIONS') {
+        if (method === 'DELETE')
             self.stats.request['delete']++;
         else
             self.stats.request.get++;
@@ -3680,13 +3722,13 @@ Framework.prototype._request = function(req, res) {
         return;
     }
 
-    if (self._request_check_POST && (req.method === 'POST' || req.method === 'PUT')) {
+    if (self._request_check_POST && (method === 'POST' || method === 'PUT')) {
         if (multipart.length > 0) {
             self.stats.request.upload++;
             new Subscribe(self, req, res, 2).multipart(multipart);
         } else {
 
-            if (req.method === 'PUT')
+            if (method === 'PUT')
                 self.stats.request.put++;
             else
                 self.stats.request.post++;
@@ -4731,7 +4773,6 @@ Framework.prototype.worker = function(name, id, timeout) {
 // *********************************************************************************
 
 function FrameworkRestrictions(framework) {
-    this.framework = framework;
     this.isRestrictions = false;
     this.isAllowedIP = false;
     this.isBlockedIP = false;
@@ -4759,7 +4800,7 @@ FrameworkRestrictions.prototype.allow = function(name, value) {
     if (typeof(value) === UNDEFINED) {
         self.allowedIP.push(name);
         self.refresh();
-        return self.framework;
+        return framework;
     }
 
     // Custom header
@@ -4769,7 +4810,7 @@ FrameworkRestrictions.prototype.allow = function(name, value) {
         self.allowedCustom[name].push(value);
 
     self.refresh();
-    return self.framework;
+    return framework;
 
 };
 
@@ -4787,7 +4828,7 @@ FrameworkRestrictions.prototype.disallow = function(name, value) {
     if (typeof(value) === UNDEFINED) {
         self.blockedIP.push(name);
         self.refresh();
-        return self.framework;
+        return framework;
     }
 
     // Custom header
@@ -4797,7 +4838,7 @@ FrameworkRestrictions.prototype.disallow = function(name, value) {
         self.blockedCustom[name].push(value);
 
     self.refresh();
-    return self.framework;
+    return framework;
 
 };
 
@@ -4820,7 +4861,7 @@ FrameworkRestrictions.prototype.refresh = function() {
 
     self.isRestrictions = self.isAllowedIP || self.isBlockedIP || self.isAllowedCustom || self.isBlockedCustom;
 
-    return self.framework;
+    return framework;
 };
 
 /*
@@ -4832,7 +4873,7 @@ FrameworkRestrictions.prototype.clearIP = function() {
     self.allowedIP = [];
     self.blockedIP = [];
     self.refresh();
-    return self.framework;
+    return framework;
 }
 
 /*
@@ -4846,7 +4887,7 @@ FrameworkRestrictions.prototype.clearHeaders = function() {
     self.allowedCustomKeys = [];
     self.blockedCustomKeys = [];
     self.refresh();
-    return self.framework;
+    return framework;
 }
 
 /*
@@ -4918,7 +4959,6 @@ FrameworkRestrictions.prototype._blockedCustom = function(headers) {
 
 function FrameworkFileSystem(framework) {
 
-    this.framework = framework;
     this.config = framework.config;
 
     this.create = {
@@ -5141,7 +5181,7 @@ FrameworkFileSystem.prototype.createTemplate = function(name, content, rewrite, 
     if (name.lastIndexOf('.html') === -1)
         name += '.html';
 
-    self.framework._verify_directory('templates');
+    framework._verify_directory('templates');
 
     var filename = utils.combine(self.config['directory-templates'], name);
     return self.createFile(filename, content, append, rewrite);
@@ -5165,7 +5205,7 @@ FrameworkFileSystem.prototype.createView = function(name, content, rewrite, appe
     if (name.lastIndexOf('.html') === -1)
         name += '.html';
 
-    self.framework._verify_directory('views');
+    framework._verify_directory('views');
 
     var filename = utils.combine(self.config['directory-views'], name);
     return self.createFile(filename, content, append, rewrite);
@@ -5189,7 +5229,7 @@ FrameworkFileSystem.prototype.createContent = function(name, content, rewrite, a
     if (name.lastIndexOf('.html') === -1)
         name += '.html';
 
-    self.framework._verify_directory('contents');
+    framework._verify_directory('contents');
 
     var filename = utils.combine(self.config['directory-contents'], name);
     return self.createFile(filename, content, append, rewrite);
@@ -5213,7 +5253,7 @@ FrameworkFileSystem.prototype.createWorker = function(name, content, rewrite, ap
     if (name.lastIndexOf(EXTENSION_JS) === -1)
         name += EXTENSION_JS;
 
-    self.framework._verify_directory('workers');
+    framework._verify_directory('workers');
 
     var filename = utils.combine(self.config['directory-workers'], name);
     return self.createFile(filename, content, append, rewrite);
@@ -5246,7 +5286,7 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
         });
     }
 
-    self.framework._verify_directory('resources');
+    framework._verify_directory('resources');
 
     var filename = utils.combine(self.config['directory-resources'], name);
     return self.createFile(filename, builder, append, rewrite);
@@ -5262,7 +5302,7 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
 FrameworkFileSystem.prototype.createTemporary = function(name, stream, callback) {
     var self = this;
 
-    self.framework._verify_directory('temp');
+    framework._verify_directory('temp');
 
     var filename = utils.combine(self.config['directory-temp'], name);
     var writer = fs.createWriteStream(filename);
@@ -5342,7 +5382,6 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 // *********************************************************************************
 
 function FrameworkPath(framework) {
-    this.framework = framework;
     this.config = framework.config;
 }
 
@@ -5352,7 +5391,7 @@ function FrameworkPath(framework) {
 */
 FrameworkPath.prototype.public = function(filename) {
     var self = this;
-    self.framework._verify_directory('public');
+    framework._verify_directory('public');
     return utils.combine(self.config['directory-public'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5362,7 +5401,7 @@ FrameworkPath.prototype.public = function(filename) {
 */
 FrameworkPath.prototype.logs = function(filename) {
     var self = this;
-    self.framework._verify_directory('logs');
+    framework._verify_directory('logs');
     return utils.combine(self.config['directory-logs'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5389,7 +5428,7 @@ FrameworkPath.prototype.models = function(filename) {
 */
 FrameworkPath.prototype.temp = function(filename) {
     var self = this;
-    self.framework._verify_directory('temp');
+    framework._verify_directory('temp');
     return utils.combine(self.config['directory-temp'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5403,7 +5442,7 @@ FrameworkPath.prototype.temporary = function(filename) {
 */
 FrameworkPath.prototype.views = function(filename) {
     var self = this;
-    self.framework._verify_directory('views');
+    framework._verify_directory('views');
     return utils.combine(self.config['directory-views'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5413,7 +5452,7 @@ FrameworkPath.prototype.views = function(filename) {
 */
 FrameworkPath.prototype.templates = function(filename) {
     var self = this;
-    self.framework._verify_directory('templates');
+    framework._verify_directory('templates');
     return utils.combine(self.config['directory-templates'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5423,7 +5462,7 @@ FrameworkPath.prototype.templates = function(filename) {
 */
 FrameworkPath.prototype.workers = function(filename) {
     var self = this;
-    self.framework._verify_directory('workers');
+    framework._verify_directory('workers');
     return utils.combine(self.config['directory-workers'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5433,7 +5472,7 @@ FrameworkPath.prototype.workers = function(filename) {
 */
 FrameworkPath.prototype.databases = function(filename) {
     var self = this;
-    self.framework._verify_directory('databases');
+    framework._verify_directory('databases');
     return utils.combine(self.config['directory-databases'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5443,7 +5482,7 @@ FrameworkPath.prototype.databases = function(filename) {
 */
 FrameworkPath.prototype.contents = function(filename) {
     var self = this;
-    self.framework._verify_directory('contents');
+    framework._verify_directory('contents');
     return utils.combine(self.config['directory-contents'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5453,7 +5492,7 @@ FrameworkPath.prototype.contents = function(filename) {
 */
 FrameworkPath.prototype.modules = function(filename) {
     var self = this;
-    self.framework._verify_directory('modules');
+    framework._verify_directory('modules');
     return utils.combine(self.config['directory-modules'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5463,7 +5502,7 @@ FrameworkPath.prototype.modules = function(filename) {
 */
 FrameworkPath.prototype.controllers = function(filename) {
     var self = this;
-    self.framework._verify_directory('controllers');
+    framework._verify_directory('controllers');
     return utils.combine(self.config['directory-controllers'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5473,7 +5512,7 @@ FrameworkPath.prototype.controllers = function(filename) {
 */
 FrameworkPath.prototype.definitions = function(filename) {
     var self = this;
-    self.framework._verify_directory('definitions');
+    framework._verify_directory('definitions');
     return utils.combine(self.config['directory-definitions'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5483,7 +5522,7 @@ FrameworkPath.prototype.definitions = function(filename) {
 */
 FrameworkPath.prototype.tests = function(filename) {
     var self = this;
-    self.framework._verify_directory('tests');
+    framework._verify_directory('tests');
     return utils.combine(self.config['directory-tests'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5493,7 +5532,7 @@ FrameworkPath.prototype.tests = function(filename) {
 */
 FrameworkPath.prototype.resources = function(filename) {
     var self = this;
-    self.framework._verify_directory('resources');
+    framework._verify_directory('resources');
     return utils.combine(self.config['directory-resources'], filename || '').replace(/\\/g, '/');
 };
 
@@ -5517,7 +5556,6 @@ FrameworkPath.prototype.root = function(filename) {
 */
 function FrameworkCache(framework) {
     this.repository = {};
-    this.framework = framework;
     this.count = 1;
     this.interval = null;
 }
@@ -5563,7 +5601,7 @@ FrameworkCache.prototype.recycle = function() {
     self.count++;
 
     if (length === 0) {
-        self.framework.handlers.onservice(self.count);
+        framework._service(self.count);
         return self;
     }
 
@@ -5573,12 +5611,12 @@ FrameworkCache.prototype.recycle = function() {
         var o = keys[i];
         var value = repository[o];
         if (value.expire < expire) {
-            self.framework.emit('expire', o, value.value);
+            framework.emit('expire', o, value.value);
             delete repository[o];
         }
     }
 
-    self.framework.handlers.onservice(self.count);
+    framework._service(self.count);
     return self;
 };
 
@@ -5727,27 +5765,11 @@ var REPOSITORY_META_IMAGE = '$image';
 var ATTR_END = '"';
 
 function Subscribe(framework, req, res, type) {
-    this.framework = framework;
-
-    this.handlers = {
-        _execute: this._execute.bind(this),
-        _cancel: this._cancel.bind(this),
-        _end: this._end.bind(this)
-    };
 
     // type = 0 - GET, DELETE
     // type = 1 - POST, PUT
     // type = 2 - POST MULTIPART
     // type = 3 - file routing
-
-    // OPTIMALIZATION: saving memory and processor
-    if (type !== 3 && framework.onAuthorization !== null)
-        this.handlers._authorization = this._authorization.bind(this);
-
-    if (type === 3)
-        this.handlers._endfile = this._endfile.bind(this);
-    else if (type === 1)
-        this.handlers._parsepost = this._parsepost.bind(this);
 
     this.controller = null;
     this.req = req;
@@ -5773,7 +5795,11 @@ Subscribe.prototype.success = function() {
 
 Subscribe.prototype.file = function() {
     var self = this;
-    self.req.on('end', self.handlers._endfile);
+
+    self.req.on('end', function() {
+        self.doEndfile(this);
+    });
+
     self.req.resume();
     return self;
 };
@@ -5784,20 +5810,27 @@ Subscribe.prototype.file = function() {
 Subscribe.prototype.multipart = function(header) {
 
     var self = this;
-    self.route = self.framework.lookup(self.req, self.req.uri.pathname, self.req.flags, true);
+    var req = self.req;
+    self.route = framework.lookup(req, req.uri.pathname, req.flags, true);
     self.header = header;
 
     if (self.route === null) {
-        self.framework._request_stats(false, false);
-        self.framework.stats.request.blocked++;
-        self.req.connection.destroy();
-        return;
+        framework._request_stats(false, false);
+        framework.stats.request.blocked++;
+        req.connection.destroy();
+        return self;
     }
 
     if (header.indexOf('mixed') === -1) {
-        self.framework._verify_directory('temp');
-        internal.parseMULTIPART(self.req, header, self.route.maximumSize, self.framework.config['directory-temp'], self.framework.handlers.onxss, self.handlers._end);
-        return;
+        framework._verify_directory('temp');
+        internal.parseMULTIPART(req, header, self.route.maximumSize, framework.config['directory-temp'], function(data) {
+            if (framework.onXSS)
+                return framework.onXSS(data);
+            return true;
+        }, function() {
+            self.doEnd();
+        });
+        return self;
     }
 
     self.isMixed = true;
@@ -5807,25 +5840,33 @@ Subscribe.prototype.multipart = function(header) {
 Subscribe.prototype.urlencoded = function() {
 
     var self = this;
-    self.route = self.framework.lookup(self.req, self.req.uri.pathname, self.req.flags, true);
+    self.route = framework.lookup(self.req, self.req.uri.pathname, self.req.flags, true);
 
     if (self.route === null) {
         self.req.clear(true);
-        self.framework.stats.request.blocked++;
-        self.framework._request_stats(false, false);
+        framework.stats.request.blocked++;
+        framework._request_stats(false, false);
         self.req.connection.destroy();
         return;
     }
 
     self.req.buffer_has = true;
     self.req.buffer_exceeded = false;
-    self.req.on('data', self.handlers._parsepost);
+
+    self.req.on('data', function(chunk) {
+        self.doParsepost(chunk);
+    });
+
     self.end();
 };
 
 Subscribe.prototype.end = function() {
     var self = this;
-    self.req.on('end', self.handlers._end);
+
+    self.req.on('end', function() {
+        self.doEnd();
+    });
+
     self.req.resume();
 };
 
@@ -5835,71 +5876,76 @@ Subscribe.prototype.end = function() {
 Subscribe.prototype.execute = function(status) {
 
     var self = this;
-    if (status > 399 && (self.route === null || self.route.name[0] === '#')) {
+    var route = self.route;
+    var req = self.req;
+    var res = self.res;
+
+    if (status > 399 && (route === null || route.name[0] === '#')) {
         switch (status) {
             case 400:
-                self.framework.stats.response.error400++;
+                framework.stats.response.error400++;
                 break;
             case 401:
-                self.framework.stats.response.error401++;
+                framework.stats.response.error401++;
                 break;
             case 403:
-                self.framework.stats.response.error403++;
+                framework.stats.response.error403++;
                 break;
             case 404:
-                self.framework.stats.response.error404++;
+                framework.stats.response.error404++;
                 break;
             case 408:
-                self.framework.stats.response.error408++;
+                framework.stats.response.error408++;
                 break;
             case 431:
-                self.framework.stats.response.error431++;
+                framework.stats.response.error431++;
                 break;
             case 500:
-                self.framework.stats.response.error500++;
+                framework.stats.response.error500++;
                 break;
             case 501:
-                self.framework.stats.response.error501++;
+                framework.stats.response.error501++;
                 break;
         }
     }
 
-    if (self.route === null) {
-        self.framework.responseContent(self.req, self.res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, self.framework.config['allow-gzip']);
+    if (route === null) {
+        framework.responseContent(req, res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
         return self;
     }
 
-    var name = self.route.name;
+    var name = route.name;
+    var controller = new Controller(name, req, res, self);
 
-    self.controller = new Controller(name, self.req, self.res, self);
-    self.controller.exception = self.exception;
+    controller.exception = self.exception;
+    self.controller = controller;
 
-    if (!self.isCanceled && !self.isMixed && self.route.timeout > 0)
-        self.timeout = setTimeout(self.handlers._cancel, self.route.timeout);
-
-    if (self.framework._length_middleware_custom === 0 && self.framework._length_middleware === 0) {
-        self.handlers._execute();
-        return self;
+    if (!self.isCanceled && !self.isMixed && route.timeout > 0) {
+        self.timeout = setTimeout(function() {
+            self.doCancel();
+        }, route.timeout);
     }
 
-    if (self.framework._length_middleware === 0 && self.route.middleware === null) {
-        self.handlers._execute();
-        return self;
-    }
+    if (framework._length_middleware_custom === 0 && framework._length_middleware === 0)
+        return self.doExecute();
+
+    if (framework._length_middleware === 0 && route.middleware === null)
+        return self.doExecute();
+
     var funcs = [];
     var count = 0;
 
-    if (self.framework._length_middleware > 0) {
-        for (var i = 0; i < self.framework._length_middleware; i++) {
-            var middleware = self.framework.routes.middleware[i];
-            funcs.push(middleware.bind(self.controller));
+    if (framework._length_middleware > 0) {
+        for (var i = 0; i < framework._length_middleware; i++) {
+            var middleware = framework.routes.middleware[i];
+            funcs.push(middleware.bind(controller));
         }
     }
 
-    if (self.route.middleware !== null) {
-        var length = self.route.middleware.length;
+    if (route.middleware !== null) {
+        var length = route.middleware.length;
         for (var i = 0; i < length; i++) {
-            var middlewareFn = self.framework.routes.middlewareCustom[self.route.middleware[i]];
+            var middlewareFn = framework.routes.middlewareCustom[route.middleware[i]];
             if (!middlewareFn)
                 continue;
             count++;
@@ -5907,12 +5953,13 @@ Subscribe.prototype.execute = function(status) {
         }
     }
 
-    if (count === 0 && self.framework._length_middleware === 0) {
-        self.handlers._execute();
-        return;
-    }
+    if (count === 0 && framework._length_middleware === 0)
+        return self.doExecute();
 
-    funcs.async(self.handlers._execute);
+    funcs.async(function() {
+        self.doExecute();
+    });
+
     return self;
 };
 
@@ -5923,218 +5970,298 @@ Subscribe.prototype.execute = function(status) {
 Subscribe.prototype.prepare = function(flags, url) {
 
     var self = this;
+    var req = self.req;
+    var res = self.res;
 
-    if (self.framework.onAuthorization !== null) {
-        self.framework.onAuthorization(self.req, self.res, flags, self.handlers._authorization);
+    if (framework.onAuthorization !== null) {
+        framework.onAuthorization(req, res, flags, function(isAuthorized, user) {
+            self.doAuthorization(isAuthorized, user);
+        });
         return;
     }
 
     if (self.route === null)
-        self.route = self.framework.lookup(self.req, self.req.buffer_exceeded ? '#431' : url || self.req.uri.pathname, flags);
+        self.route = framework.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, flags);
 
     if (self.route === null)
-        self.route = self.framework.lookup(self.req, self.req.flags.indexOf('xss') === -1 ? '#404' : '#400', []);
+        self.route = framework.lookup(req, req.flags.indexOf('xss') === -1 ? '#404' : '#400', []);
 
-    self.execute(self.req.buffer_exceeded ? 431 : 404);
+    self.execute(req.buffer_exceeded ? 431 : 404);
 };
 
-Subscribe.prototype._execute = function() {
+Subscribe.prototype.doExecute = function() {
 
     var self = this;
     var name = self.route.name;
-    self.controller.isCanceled = false;
+    var controller = self.controller;
+    var req = self.req;
+
+    controller.isCanceled = false;
 
     try {
-        self.framework.emit('controller', self.controller, name);
+        framework.emit('controller', controller, name);
 
         var isModule = name[0] === '#' && name[1] === 'm';
-        var o = isModule ? self.framework.modules[name.substring(8)] : self.framework.controllers[name];
+        var o = isModule ? framework.modules[name.substring(8)] : framework.controllers[name];
 
         if (o && o.request)
-            o.request.call(self.controller, self.controller);
+            o.request.call(controller, controller);
 
     } catch (err) {
-        self.framework.error(err, name, self.req.uri);
+        framework.error(err, name, req.uri);
     }
 
     try {
 
-        if (self.controller.isCanceled)
-            return;
+        if (controller.isCanceled)
+            return self;
 
         if (!self.isMixed) {
-            self.route.onExecute.apply(self.controller, internal.routeParam(self.route.param.length > 0 ? internal.routeSplit(self.req.uri.pathname, true) : self.req.path, self.route));
-            return;
+            self.route.onExecute.apply(controller, internal.routeParam(self.route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
+            return self;
         }
 
-        self.framework._verify_directory('temp');
+        framework._verify_directory('temp');
 
-        internal.parseMULTIPART_MIXED(self.req, self.header, self.framework.config['directory-temp'], function(file) {
-            self.route.onExecute.call(self.controller, file);
-        }, self.handlers._end);
+        internal.parseMULTIPART_MIXED(req, self.header, framework.config['directory-temp'], function(file) {
+            self.route.onExecute.call(controller, file);
+        }, function() {
+            self.doEnd();
+        });
 
     } catch (err) {
-        self.controller = null;
-        self.framework.error(err, name, self.req.uri);
-        self.route = self.framework.lookup(self.req, '#500', []);
+        controller = null;
+        framework.error(err, name, req.uri);
+        self.route = framework.lookup(req, '#500', []);
         self.execute(500);
     }
+
+    return self;
 };
 
 /*
     @isLogged {Boolean}
 */
-Subscribe.prototype._authorization = function(isLogged, user) {
+Subscribe.prototype.doAuthorization = function(isLogged, user) {
+
     var self = this;
+    var req = self.req;
+
+    req.flags.push(isLogged ? 'authorize' : 'unauthorize');
 
     if (user)
-        self.req.user = user;
+        req.user = user;
 
-    self.req.flags.push(isLogged ? 'authorize' : 'unauthorize');
-    self.route = self.framework.lookup(self.req, self.req.buffer_exceeded ? '#431' : self.req.uri.pathname, self.req.flags);
+    var route = framework.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags);
 
-    if (self.route === null)
-        self.route = self.framework.lookup(self.req, self.req.isAuthorized ? '#404' : '#401', []);
+    if (route === null)
+        route = framework.lookup(req, req.isAuthorized ? '#404' : '#401', []);
 
-    self.execute(self.req.buffer_exceeded ? 431 : 404);
+    self.route = route;
+    self.execute(req.buffer_exceeded ? 431 : 404);
+
+    return self;
 };
 
-Subscribe.prototype._end = function() {
+Subscribe.prototype.doEnd = function() {
 
     var self = this;
+    var req = self.req;
+    var res = self.res;
+    var route = self.route;
 
     if (self.isMixed) {
-        self.req.clear(true);
+        req.clear(true);
         var headers = {};
         headers[RESPONSE_HEADER_CONTENTTYPE] = 'text/plain; charset=utf-8';
         headers[RESPONSE_HEADER_CACHECONTROL] = 'private, max-age=0';
-        self.res.writeHead(200, headers);
-        self.res.end('END');
-        self.framework._request_stats(false, false);
-        self.framework.emit('request-end', self.req, self.res);
-        return;
+        res.writeHead(200, headers);
+        res.end('END');
+        framework._request_stats(false, false);
+        framework.emit('request-end', req,res);
+        return self;
     }
 
-    if (self.req.buffer_exceeded) {
-        self.route = self.framework.lookup(self.req, '#431', []);
+    if (req.buffer_exceeded) {
+        route = framework.lookup(req, '#431', []);
 
-        if (self.route === null) {
-            self.framework.response431(self.req, self.res);
-            return;
+        if (route === null) {
+            framework.response431(req, res);
+            return self;
         }
 
         self.execute(431);
-        return;
+        return self;
     }
 
-    if (self.req.buffer_data.length === 0) {
+    if (req.buffer_data.length === 0) {
 
         // POST, MULTIPART
-        if (self.route !== null && !self.route.isXSS && self.req.flags.indexOf('xss') !== -1) {
+        if (route !== null && !route.isXSS && req.flags.indexOf('xss') !== -1) {
             self.route400();
-            return;
+            return self;
         }
 
-        self.prepare(self.req.flags, self.req.uri.pathname);
-        return;
+        self.prepare(req.flags, req.uri.pathname);
+        return self;
     }
 
-    if (self.route.isJSON) {
+    if (route.isJSON) {
         try {
-            if (!self.req.buffer_data.isJSON()) {
+
+            if (!req.buffer_data.isJSON()) {
                 self.route400();
-                return;
+                return self;
             }
 
-            self.req.data.post = JSON.parse(self.req.buffer_data);
-            self.req.buffer_data = null;
-            self.prepare(self.req.flags, self.req.uri.pathname);
+            req.data.post = JSON.parse(req.buffer_data);
+            req.buffer_data = null;
+            self.prepare(req.flags, req.uri.pathname);
 
         } catch (err) {
             self.route400();
         }
 
-        return;
+        return self;
     }
 
     // A route has not allowed XSS
-    if (!self.route.isXSS && self.framework.onXSS !== null) {
-        if (self.framework.onXSS(self.req.buffer_data)) {
-            self.req.flags.push('xss');
-            self.framework.stats.request.xss++;
+    if (!self.route.isXSS && framework.onXSS !== null) {
+        if (framework.onXSS(req.buffer_data)) {
+            req.flags.push('xss');
+            framework.stats.request.xss++;
             self.route400();
-            return;
+            return self;
         }
     }
 
     if (self.route !== null && self.route.isRAW) {
-        self.req.data.post = self.req.buffer_data;
+        req.data.post = req.buffer_data;
     } else {
-        if ((self.req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
+
+        if ((req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
             self.route400();
-            return;
+            return self;
         }
-        self.req.data.post = qs.parse(self.req.buffer_data);
+
+        req.data.post = qs.parse(req.buffer_data);
+
     }
 
-    self.prepare(self.req.flags, self.req.uri.pathname);
+    self.prepare(req.flags, req.uri.pathname);
+    return self;
 };
 
 Subscribe.prototype.route400 = function() {
     var self = this;
-    self.route = self.framework.lookup(self.req, '#400', []);
+    self.route = framework.lookup(self.req, '#400', []);
     self.execute(400);
-}
+    return self;
+};
 
-Subscribe.prototype._endfile = function() {
+Subscribe.prototype.doEndfile = function() {
 
     var self = this;
+    var req = self.req;
+    var res = self.res;
 
-    if (self.req.uri.query && self.req.uri.query.length > 0) {
-        self.req.data = {};
-        self.req.data.get = qs.parse(self.req.uri.query);
+    if (req.uri.query && req.uri.query.length > 0) {
+        req.data = {};
+        req.data.get = qs.parse(req.uri.query);
     }
 
-    for (var i = 0; i < self.framework._length_files; i++) {
-        var file = self.framework.routes.files[i];
+    for (var i = 0; i < framework._length_files; i++) {
+        var file = framework.routes.files[i];
         try {
 
-            if (file.onValidation.call(self.framework, self.req, self.res, true)) {
-                file.onExecute.call(self.framework, self.req, self.res, false);
-                return;
+            if (file.onValidation.call(framework, req, res, true)) {
+
+                if (file.middleware === null)
+                    file.onExecute.call(framework, req, res, false);
+                else
+                    self.doEndfile_middleware(file);
+
+                return self;
             }
 
         } catch (err) {
-            self.framework.error(err, file.controller + ' :: ' + file.name, self.req.uri);
-            self.framework.responseContent(self.req, self.res, 500, '500 - internal server error', CONTENTTYPE_TEXTPLAIN, self.framework.config['allow-gzip']);
-            return;
+            framework.error(err, file.controller + ' :: ' + file.name, req.uri);
+            framework.responseContent(req, res, 500, '500 - internal server error', CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
+            return self;
         }
     }
 
-    self.framework.responseStatic(self.req, self.res);
+    framework.responseStatic(self.req, self.res);
+    return self;
 };
 
-Subscribe.prototype._parsepost = function(chunk) {
+/**
+ * Executes a file middleware
+ * @param {FileRoute} file
+ * @return {Subscribe}
+ */
+Subscribe.prototype.doEndfile_middleware = function(file) {
 
+    var func = [];
+    var length = file.middleware.length;
     var self = this;
+    var req = self.req;
+    var res = self.res;
 
-    if (self.req.buffer_exceeded)
-        return;
+    for (var i = 0; i < length; i++) {
 
-    if (!self.req.buffer_exceeded)
-        self.req.buffer_data += chunk.toString();
+        var middleware = framework.routes.middlewareCustom[file.middleware[i]];
+        if (!middleware)
+            continue;
 
-    if (self.req.buffer_data.length < self.route.maximumSize)
-        return;
+        (function(middleware) {
+        func.push(function(next) {
+            middleware.call(framework, next, req, res);
+        })})(middleware);
+    }
 
-    self.req.buffer_exceeded = true;
-    self.req.buffer_data = '';
+    func.async(function() {
+        try {
+            file.onExecute.call(framework, req, res, false);
+        } catch (err) {
+            framework.error(err, file.controller + ' :: ' + file.name, req.uri);
+            framework.responseContent(req, res, 500, '500 - internal server error', CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
+            return self;
+        }
+    });
+
+    return self;
 };
 
-Subscribe.prototype._cancel = function() {
+/**
+ * Parse data from CHUNK
+ * @param {Buffer} chunk
+ * @return {FrameworkSubscribe}
+ */
+Subscribe.prototype.doParsepost = function(chunk) {
+
+    var self = this;
+    var req = self.req;
+
+    if (req.buffer_exceeded)
+        return self;
+
+    if (!req.buffer_exceeded)
+        req.buffer_data += chunk.toString();
+
+    if (req.buffer_data.length < self.route.maximumSize)
+        return self;
+
+    req.buffer_exceeded = true;
+    req.buffer_data = '';
+
+    return self;
+};
+
+Subscribe.prototype.doCancel = function() {
     var self = this;
 
-    self.framework.stats.response.timeout++;
+    framework.stats.response.timeout++;
     clearTimeout(self.timeout);
     self.timeout = null;
 
@@ -6143,7 +6270,7 @@ Subscribe.prototype._cancel = function() {
 
     self.controller.isTimeout = true;
     self.controller.isCanceled = true;
-    self.route = self.framework.lookup(self.req, '#408', []);
+    self.route = framework.lookup(self.req, '#408', []);
     self.execute(408);
 };
 
@@ -6165,7 +6292,6 @@ function Controller(name, req, res, subscribe) {
 
     this.subscribe = subscribe;
     this.name = name;
-    this.framework = subscribe.framework;
     this.req = req;
     this.res = res;
     this.exception = null;
@@ -6177,7 +6303,7 @@ function Controller(name, req, res, subscribe) {
     // controller.type === 2 - multipart/x-mixed-replace
     this.type = 0;
 
-    this.layoutName = subscribe.framework.config['default-layout'];
+    this.layoutName = framework.config['default-layout'];
 
     this.status = 200;
 
@@ -6220,11 +6346,11 @@ Controller.prototype = {
     },
 
     get path() {
-        return this.framework.path;
+        return framework.path;
     },
 
     get fs() {
-        return this.framework.fs;
+        return framework.fs;
     },
 
     get get() {
@@ -6264,15 +6390,15 @@ Controller.prototype = {
     },
 
     get cache() {
-        return this.framework.cache;
+        return framework.cache;
     },
 
     get config() {
-        return this.framework.config;
+        return framework.config;
     },
 
     get controllers() {
-        return this.framework.controllers;
+        return framework.controllers;
     },
 
     get isProxy() {
@@ -6280,7 +6406,7 @@ Controller.prototype = {
     },
 
     get isDebug() {
-        return this.framework.config.debug;
+        return framework.config.debug;
     },
 
     get isTest() {
@@ -6308,11 +6434,11 @@ Controller.prototype = {
     },
 
     get global() {
-        return this.framework.global;
+        return framework.global;
     },
 
     set global(value) {
-        this.framework.global = value;
+        framework.global = value;
     },
 
     get async() {
@@ -6367,7 +6493,7 @@ Controller.prototype.pipe = function(url, headers, callback) {
     if (self.res.success || !self.isConnected)
         return self;
 
-    self.framework.responsePipe(self.req, self.res, url, headers, null, function() {
+    framework.responsePipe(self.req, self.res, url, headers, null, function() {
         self.subscribe.success();
         if (callback)
             callback();
@@ -6408,7 +6534,6 @@ Controller.prototype.decrypt = function() {
     return {String}
 */
 Controller.prototype.hash = function() {
-    var framework = this.framework;
     return framework.hash.apply(framework, arguments);
 };
 
@@ -6421,7 +6546,7 @@ Controller.prototype.validate = function(model, properties, prefix, name) {
     };
 
     var error = new builders.ErrorBuilder(resource);
-    return utils.validate.call(self, model, properties, self.framework.onValidation, error);
+    return utils.validate.call(self, model, properties, framework.onValidation, error);
 };
 
 /*
@@ -6582,7 +6707,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 */
 Controller.prototype.error = function(err) {
     var self = this;
-    self.framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.uri);
+    framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.uri);
     self.subscribe.exception = err;
     self.exception = err;
     return self;
@@ -6595,7 +6720,7 @@ Controller.prototype.error = function(err) {
 */
 Controller.prototype.problem = function(message) {
     var self = this;
-    self.framework.problem(message, self.name, self.uri, self.ip);
+    framework.problem(message, self.name, self.uri, self.ip);
     return self;
 };
 
@@ -6606,7 +6731,7 @@ Controller.prototype.problem = function(message) {
 */
 Controller.prototype.change = function(message) {
     var self = this;
-    self.framework.change(message, self.name, self.uri, self.ip);
+    framework.change(message, self.name, self.uri, self.ip);
     return self;
 };
 
@@ -6659,7 +6784,7 @@ Controller.prototype.run = function(callback) {
 Controller.prototype.transfer = function(url, flags) {
 
     var self = this;
-    var length = self.framework.routes.web.length;
+    var length = framework.routes.web.length;
     var path = internal.routeSplit(url.trim());
 
     var isSystem = url[0] === '#';
@@ -6668,7 +6793,7 @@ Controller.prototype.transfer = function(url, flags) {
 
     for (var i = 0; i < length; i++) {
 
-        var route = self.framework.routes.web[i];
+        var route = framework.routes.web[i];
 
         if (route.isASTERIX) {
             if (!internal.routeCompare(path, route.url, isSystem, true))
@@ -6739,7 +6864,7 @@ Controller.prototype.cancel = function() {
 */
 Controller.prototype.log = function() {
     var self = this;
-    self.framework.log.apply(self.framework, arguments);
+    framework.log.apply(framework, arguments);
     return self;
 };
 
@@ -6766,7 +6891,7 @@ Controller.prototype.$meta = function() {
     }
 
     var repository = self.repository;
-    return self.framework.onMeta.call(self, repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
+    return framework.onMeta.call(self, repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
 };
 
 /*
@@ -6882,7 +7007,7 @@ Controller.prototype.$sitemap = function(name, url, index) {
     return {Module};
 */
 Controller.prototype.module = function(name) {
-    return this.framework.module(name);
+    return framework.module(name);
 };
 
 /*
@@ -6914,7 +7039,7 @@ Controller.prototype.$layout = function(name) {
 */
 Controller.prototype.model = function(name) {
     var self = this;
-    return self.framework.model(name);
+    return framework.model(name);
 };
 
 /*
@@ -6973,7 +7098,7 @@ Controller.prototype.functions = function(name) {
 */
 Controller.prototype.notModified = function(compare, strict) {
     var self = this;
-    return self.framework.notModified(self.req, self.res, compare, strict);
+    return framework.notModified(self.req, self.res, compare, strict);
 };
 
 /*
@@ -6987,7 +7112,7 @@ Controller.prototype.notModified = function(compare, strict) {
 */
 Controller.prototype.setModified = function(value) {
     var self = this;
-    self.framework.setModified(self.req, self.res, value);
+    framework.setModified(self.req, self.res, value);
     return self;
 };
 
@@ -7215,7 +7340,7 @@ Controller.prototype.$ngTemplate = function(name, id) {
         name = '/templates/' + name;
 
     var key = 'ng-' + name;
-    var tmp = self.framework.temporary.views[key];
+    var tmp = framework.temporary.views[key];
 
     if (typeof(tmp) === UNDEFINED) {
         var filename = utils.combine(self.config['directory-angular'], name);
@@ -7226,7 +7351,7 @@ Controller.prototype.$ngTemplate = function(name, id) {
             tmp = '';
 
         if (!self.isDebug)
-            self.framework.temporary.views[key] = tmp;
+            framework.temporary.views[key] = tmp;
     }
 
     return '<script type="text/ng-template" id="' + id + '">' + tmp + '</script>';
@@ -8234,7 +8359,7 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
     return {String}
 */
 Controller.prototype.$download = function(filename, innerHTML, downloadName, className) {
-    var builder = '<a href="' + this.framework.routeDownload(filename) + ATTR_END;
+    var builder = '<a href="' + framework.routeDownload(filename) + ATTR_END;
 
     if (downloadName)
         builder += ' download="' + downloadName + ATTR_END;
@@ -8279,7 +8404,7 @@ Controller.prototype.$favicon = function(name) {
     if (name.lastIndexOf('.gif') !== -1)
         contentType = 'image/gif';
 
-    name = self.framework.routeStatic('/' + name);
+    name = framework.routeStatic('/' + name);
 
     return '<link rel="shortcut icon" href="' + name + '" type="' + contentType + '" /><link rel="icon" href="' + name + '" type="' + contentType + '" />';
 };
@@ -8289,15 +8414,15 @@ Controller.prototype._routeHelper = function(current, name, fn) {
     var self = this;
 
     if (current.length === 0)
-        return fn.call(self.framework, name);
+        return fn.call(framework, name);
 
     if (current.substring(0, 2) === '//' || current.substring(0, 6) === 'http:/' || current.substring(0, 7) === 'https:/')
-        return fn.call(self.framework, current + name);
+        return fn.call(framework, current + name);
 
     if (current[0] === '~')
-        return fn.call(self.framework, utils.path(current.substring(1)) + name);
+        return fn.call(framework, utils.path(current.substring(1)) + name);
 
-    return fn.call(self.framework, utils.path(current) + name);
+    return fn.call(framework, utils.path(current) + name);
 };
 
 /*
@@ -8312,7 +8437,7 @@ Controller.prototype.routeJS = function(name, tag) {
     if (typeof(name) === UNDEFINED)
         name = 'default.js';
 
-    var url = self._routeHelper(self._currentJS, name, self.framework.routeJS);
+    var url = self._routeHelper(self._currentJS, name, framework.routeJS);
     return tag ? '<script type="text/javascript" src="' + url + '"></script>' : url;
 };
 
@@ -8328,7 +8453,7 @@ Controller.prototype.routeCSS = function(name, tag) {
     if (typeof(name) === UNDEFINED)
         name = 'default.css';
 
-    var url = self._routeHelper(self._currentCSS, name, self.framework.routeCSS);
+    var url = self._routeHelper(self._currentCSS, name, framework.routeCSS);
     return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
 
@@ -8339,7 +8464,7 @@ Controller.prototype.routeCSS = function(name, tag) {
 */
 Controller.prototype.routeImage = function(name) {
     var self = this;
-    return self._routeHelper(self._currentImage, name, self.framework.routeImage);
+    return self._routeHelper(self._currentImage, name, framework.routeImage);
 };
 
 /*
@@ -8349,7 +8474,7 @@ Controller.prototype.routeImage = function(name) {
 */
 Controller.prototype.routeVideo = function(name) {
     var self = this;
-    return self._routeHelper(self._currentVideo, name, self.framework.routeVideo);
+    return self._routeHelper(self._currentVideo, name, framework.routeVideo);
 };
 
 /*
@@ -8359,7 +8484,7 @@ Controller.prototype.routeVideo = function(name) {
 */
 Controller.prototype.routeFont = function(name) {
     var self = this;
-    return self.framework.routeFont(name);
+    return framework.routeFont(name);
 };
 
 /*
@@ -8369,7 +8494,7 @@ Controller.prototype.routeFont = function(name) {
 */
 Controller.prototype.routeDownload = function(name) {
     var self = this;
-    return self._routeHelper(self._currentDownload, name, self.framework.routeDownload);
+    return self._routeHelper(self._currentDownload, name, framework.routeDownload);
 };
 
 /*
@@ -8379,7 +8504,7 @@ Controller.prototype.routeDownload = function(name) {
 */
 Controller.prototype.routeStatic = function(name) {
     var self = this;
-    return self.framework.routeStatic(name);
+    return framework.routeStatic(name);
 };
 
 /*
@@ -8573,7 +8698,7 @@ Controller.prototype.currentVideo = function(path) {
 */
 Controller.prototype.resource = function(name, key) {
     var self = this;
-    return self.framework.resource(name, key);
+    return framework.resource(name, key);
 };
 
 /*
@@ -8689,8 +8814,8 @@ Controller.prototype.json = function(obj, headers, beautify) {
     }
 
     self.subscribe.success();
-    self.framework.responseContent(self.req, self.res, self.status, obj, 'application/json', self.config['allow-gzip'], headers);
-    self.framework.stats.response.json++;
+    framework.responseContent(self.req, self.res, self.status, obj, 'application/json', self.config['allow-gzip'], headers);
+    framework.stats.response.json++;
 
     if (self.precache)
         self.precache(obj, 'application/json', headers);
@@ -8710,10 +8835,7 @@ Controller.prototype.custom = function() {
         return false;
 
     self.subscribe.success();
-    self.res.success = true;
-    self.framework.stats.response.custom++;
-    self.framework._request_stats(false, false);
-    self.framework.emit('request-end', self.req, self.res);
+    framework.responseCustom(self.req, self.res);
 
     return true;
 
@@ -8772,7 +8894,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
         return self;
 
     self.subscribe.success();
-    self.framework.responseContent(self.req, self.res, self.status, contentBody, contentType || CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
+    framework.responseContent(self.req, self.res, self.status, contentBody, contentType || CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
     return self;
 };
 
@@ -8798,8 +8920,8 @@ Controller.prototype.plain = function(contentBody, headers) {
         contentBody = contentBody === null ? '' : contentBody.toString();
 
     self.subscribe.success();
-    self.framework.responseContent(self.req, self.res, self.status, contentBody, CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
-    self.framework.stats.response.plain++;
+    framework.responseContent(self.req, self.res, self.status, contentBody, CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
+    framework.stats.response.plain++;
 
     if (self.precache)
         self.precache(contentBody, CONTENTTYPE_TEXTPLAIN, headers);
@@ -8826,8 +8948,8 @@ Controller.prototype.empty = function(headers) {
     }
 
     self.subscribe.success();
-    self.framework.responseContent(self.req, self.res, code, '', CONTENTTYPE_TEXTPLAIN, false, headers);
-    self.framework.stats.response.empty++;
+    framework.responseContent(self.req, self.res, code, '', CONTENTTYPE_TEXTPLAIN, false, headers);
+    framework.stats.response.empty++;
 
     return self;
 };
@@ -8840,7 +8962,7 @@ Controller.prototype.destroy = function() {
 
     self.subscribe.success();
     self.req.connection.destroy();
-    self.framework.stats.response.destroy++;
+    framework.stats.response.destroy++;
 
     return self;
 };
@@ -8861,10 +8983,10 @@ Controller.prototype.file = function(filename, downloadName, headers) {
     if (filename[0] === '~')
         filename = '.' + filename.substring(1);
     else
-        filename = utils.combine(self.framework.config['directory-public'], filename);
+        filename = utils.combine(framework.config['directory-public'], filename);
 
     self.subscribe.success();
-    self.framework.responseFile(self.req, self.res, filename, downloadName, headers);
+    framework.responseFile(self.req, self.res, filename, downloadName, headers);
 
     return self;
 };
@@ -8887,11 +9009,11 @@ Controller.prototype.image = function(filename, fnProcess, headers, useImageMagi
         if (filename[0] === '~')
             filename = '.' + filename.substring(1);
         else
-            filename = utils.combine(self.framework.config['directory-public'], filename);
+            filename = utils.combine(framework.config['directory-public'], filename);
     }
 
     self.subscribe.success();
-    self.framework.responseImage(self.req, self.res, filename, fnProcess, headers, useImageMagick);
+    framework.responseImage(self.req, self.res, filename, fnProcess, headers, useImageMagick);
 
     return self;
 };
@@ -8929,7 +9051,7 @@ Controller.prototype.stream = function(contentType, stream, downloadName, header
         return self;
 
     self.subscribe.success();
-    self.framework.responseStream(self.req, self.res, contentType, stream, downloadName, headers);
+    framework.responseStream(self.req, self.res, contentType, stream, downloadName, headers);
     return self;
 };
 
@@ -8957,7 +9079,7 @@ Controller.prototype.view400 = function(problem) {
 
     self.req.path = [];
     self.subscribe.success();
-    self.subscribe.route = self.framework.lookup(self.req, '#400', []);
+    self.subscribe.route = framework.lookup(self.req, '#400', []);
     self.subscribe.exception = problem;
     self.subscribe.execute(400);
     return self;
@@ -8987,7 +9109,7 @@ Controller.prototype.view401 = function(problem) {
 
     self.req.path = [];
     self.subscribe.success();
-    self.subscribe.route = self.framework.lookup(self.req, '#401', []);
+    self.subscribe.route = framework.lookup(self.req, '#401', []);
     self.subscribe.exception = problem;
     self.subscribe.execute(401);
     return self;
@@ -9017,7 +9139,7 @@ Controller.prototype.view403 = function(problem) {
 
     self.req.path = [];
     self.subscribe.success();
-    self.subscribe.route = self.framework.lookup(self.req, '#403', []);
+    self.subscribe.route = framework.lookup(self.req, '#403', []);
     self.subscribe.exception = problem;
     self.subscribe.execute(403);
     return self;
@@ -9046,7 +9168,7 @@ Controller.prototype.view404 = function(problem) {
 
     self.req.path = [];
     self.subscribe.success();
-    self.subscribe.route = self.framework.lookup(self.req, '#404', []);
+    self.subscribe.route = framework.lookup(self.req, '#404', []);
     self.subscribe.exception = problem;
     self.subscribe.execute(404);
     return self;
@@ -9060,7 +9182,7 @@ Controller.prototype.view404 = function(problem) {
 Controller.prototype.view500 = function(error) {
     var self = this;
 
-    self.framework.error(typeof(error) === STRING ? new Error(error) : error, self.name, self.req.uri);
+    framework.error(typeof(error) === STRING ? new Error(error) : error, self.name, self.req.uri);
 
     if (self.res.success || !self.isConnected)
         return self;
@@ -9068,7 +9190,7 @@ Controller.prototype.view500 = function(error) {
     self.req.path = [];
     self.subscribe.exception = error;
     self.subscribe.success();
-    self.subscribe.route = self.framework.lookup(self.req, '#500', []);
+    self.subscribe.route = framework.lookup(self.req, '#500', []);
     self.subscribe.exception = error;
     self.subscribe.execute(500);
     return self;
@@ -9099,7 +9221,7 @@ Controller.prototype.view501 = function(problem) {
 
     self.req.path = [];
     self.subscribe.success();
-    self.subscribe.route = self.framework.lookup(self.req, '#501', []);
+    self.subscribe.route = framework.lookup(self.req, '#501', []);
     self.subscribe.exception = problem;
     self.subscribe.execute(501);
     return self;
@@ -9131,9 +9253,9 @@ Controller.prototype.redirect = function(url, permanent) {
     self.res.success = true;
     self.res.writeHead(permanent ? 301 : 302, { 'Location': url });
     self.res.end();
-    self.framework._request_stats(false, false);
-    self.framework.emit('request-end', self.req, self.res);
-    self.framework.stats.response.redirect++;
+    framework._request_stats(false, false);
+    framework.emit('request-end', self.req, self.res);
+    framework.stats.response.redirect++;
 
     return self;
 };
@@ -9156,25 +9278,32 @@ Controller.prototype.redirectAsync = function(url, permanent) {
     return self;
 };
 
-/*
-    Binary response
-    @buffer {Buffer}
-    return {Framework}
-*/
+/**
+ * A binary response
+ * @param {Buffer} buffer
+ * @return {FrameworkController}
+ */
 Controller.prototype.binary = function(buffer) {
-    var self = this;
 
-    if (self.res.success || !self.isConnected)
+    var self = this;
+    var res = self.res;
+
+    if (res.success || !self.isConnected)
         return self;
 
+    var req = self.req;
+
     self.subscribe.success();
-    self.req.clear(true);
-    self.res.success = true;
-    self.res.write(buffer.toString('binary'), 'binary');
-    self.res.end();
-    self.framework._request_stats(false, false);
-    self.framework.emit('request-end', self.req, self.res);
-    self.framework.stats.response.binary++;
+
+    req.clear(true);
+
+    res.success = true;
+    res.write(buffer.toString('binary'), 'binary');
+    res.end();
+
+    framework._request_stats(false, false);
+    framework.emit('request-end', req, res);
+    framework.stats.response.binary++;
 
     return self;
 };
@@ -9260,7 +9389,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
     builder += newline;
 
     res.write(builder);
-    self.framework.stats.response.sse++;
+    framework.stats.response.sse++;
 
     return self;
 };
@@ -9320,7 +9449,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
         stream.pipe(res, {
             end: false
         });
-        self.framework.stats.response.mmr++;
+        framework.stats.response.mmr++;
         return self;
     }
 
@@ -9335,7 +9464,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
     stream.pipe(res, {
         end: false
     });
-    self.framework.stats.response.mmr++;
+    framework.stats.response.mmr++;
 
     return self;
 };
@@ -9365,8 +9494,8 @@ Controller.prototype.close = function(end) {
             if (end)
                 self.res.end();
 
-            self.framework._request_stats(false, false);
-            self.framework.emit('request-end', self.req, self.res);
+            framework._request_stats(false, false);
+            framework.emit('request-end', self.req, self.res);
         }
 
         return self;
@@ -9381,8 +9510,8 @@ Controller.prototype.close = function(end) {
     if (end)
         self.res.end();
 
-    self.framework._request_stats(false, false);
-    self.framework.emit('request-end', self.req, self.res);
+    framework._request_stats(false, false);
+    framework.emit('request-end', self.req, self.res);
     self.type = 0;
 
     return self;
@@ -9485,7 +9614,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
         if (isLayout) {
             self.subscribe.success();
-            self.framework.response500(self.req, self.res, err);
+            framework.response500(self.req, self.res, err);
             return;
         }
 
@@ -9511,10 +9640,10 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
         self._currentContent = self._defaultContent || '';
     }
 
-    var helpers = self.framework.helpers;
+    var helpers = framework.helpers;
 
     try {
-        value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, self.framework.global, helpers, self.user, self.config, self.framework.functions, 0, sitemap, isPartial ? self.outputPartial : self.output);
+        value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, sitemap, isPartial ? self.outputPartial : self.output);
     } catch (ex) {
 
         var err = new Error('View: ' + name + ' - ' + ex.toString());
@@ -9555,8 +9684,8 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
         if (!self.isConnected)
             return;
 
-        self.framework.responseContent(self.req, self.res, self.status, value, CONTENTTYPE_TEXTHTML, self.config['allow-gzip'], headers);
-        self.framework.stats.response.view++;
+        framework.responseContent(self.req, self.res, self.status, value, CONTENTTYPE_TEXTHTML, self.config['allow-gzip'], headers);
+        framework.stats.response.view++;
 
         return self;
     }
@@ -9647,17 +9776,17 @@ Controller.prototype.memorize = function(key, expire, disabled, fnTo, fnFrom) {
         fnFrom();
 
     if (output.type !== CONTENTTYPE_TEXTHTML)
-        self.framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
+        framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
 
     switch (output.type) {
         case CONTENTTYPE_TEXTPLAIN:
-            self.framework.stats.response.plain++;
+            framework.stats.response.plain++;
             return self;
         case 'application/json':
-            self.framework.stats.response.json++;
+            framework.stats.response.json++;
             return self;
         case CONTENTTYPE_TEXTHTML:
-            self.framework.stats.response.view++;
+            framework.stats.response.view++;
             break;
     }
 
@@ -9672,7 +9801,7 @@ Controller.prototype.memorize = function(key, expire, disabled, fnTo, fnFrom) {
         if (!self.isConnected)
             return self;
 
-        self.framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
+        framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
         return self;
     }
 
@@ -9740,27 +9869,27 @@ function WebSocket(framework, path, name, id) {
 WebSocket.prototype = {
 
     get global() {
-        return this.framework.global;
+        return framework.global;
     },
 
     get config() {
-        return this.framework.config;
+        return framework.config;
     },
 
     get cache() {
-        return this.framework.cache;
+        return framework.cache;
     },
 
     get isDebug() {
-        return this.framework.config.debug;
+        return framework.config.debug;
     },
 
     get path() {
-        return this.framework.path;
+        return framework.path;
     },
 
     get fs() {
-        return this.framework.fs;
+        return framework.fs;
     },
 
     get isSecure() {
@@ -9820,7 +9949,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
                 continue;
 
             conn.send(message);
-            self.framework.stats.response.websocket++;
+            framework.stats.response.websocket++;
         }
 
         self.emit('send', message, null, []);
@@ -9843,7 +9972,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
             continue;
 
         conn.send(message);
-        self.framework.stats.response.websocket++;
+        framework.stats.response.websocket++;
     }
 
     self.emit('send', message, id, blacklist);
@@ -9916,7 +10045,7 @@ WebSocket.prototype.close = function(id, message, code) {
 */
 WebSocket.prototype.error = function(err) {
     var self = this;
-    self.framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.path);
+    framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.path);
     return self;
 };
 
@@ -9927,7 +10056,7 @@ WebSocket.prototype.error = function(err) {
 */
 WebSocket.prototype.problem = function(message) {
     var self = this;
-    self.framework.problem(message, self.name, self.uri);
+    framework.problem(message, self.name, self.uri);
     return self;
 };
 
@@ -9938,7 +10067,7 @@ WebSocket.prototype.problem = function(message) {
 */
 WebSocket.prototype.change = function(message) {
     var self = this;
-    self.framework.change(message, self.name, self.uri, self.ip);
+    framework.change(message, self.name, self.uri, self.ip);
     return self;
 };
 
@@ -10000,7 +10129,7 @@ WebSocket.prototype.destroy = function() {
     self.close();
     self.connections = null;
     self._keys = null;
-    delete self.framework.connections[self.id];
+    delete framework.connections[self.id];
     self.emit('destroy');
     return self;
 };
@@ -10080,7 +10209,7 @@ WebSocket.prototype._add = function(client) {
     return {Module};
 */
 WebSocket.prototype.module = function(name) {
-    return this.framework.module(name);
+    return framework.module(name);
 };
 
 /*
@@ -10089,7 +10218,7 @@ WebSocket.prototype.module = function(name) {
     return {Object};
 */
 WebSocket.prototype.model = function(name) {
-    return this.framework.model(name);
+    return framework.model(name);
 };
 
 /*
@@ -10142,7 +10271,7 @@ WebSocket.prototype.helper = function(name) {
     return {Object};
 */
 WebSocket.prototype.functions = function(name) {
-    return (this.framework.controllers[name] || {}).functions;
+    return (framework.controllers[name] || {}).functions;
 };
 
 /*
@@ -10151,7 +10280,7 @@ WebSocket.prototype.functions = function(name) {
     return {Database};
 */
 WebSocket.prototype.database = function(name) {
-    return this.framework.database(name);
+    return framework.database(name);
 };
 
 /*
@@ -10161,7 +10290,7 @@ WebSocket.prototype.database = function(name) {
     return {String};
 */
 WebSocket.prototype.resource = function(name, key) {
-    return this.framework.resource(name, key);
+    return framework.resource(name, key);
 };
 
 /*
@@ -10171,7 +10300,7 @@ WebSocket.prototype.resource = function(name, key) {
 */
 WebSocket.prototype.log = function() {
     var self = this;
-    self.framework.log.apply(self.framework, arguments);
+    framework.log.apply(framework, arguments);
     return self;
 };
 
@@ -10200,7 +10329,7 @@ WebSocket.prototype.validate = function(model, properties, prefix, name) {
     };
 
     var error = new builders.ErrorBuilder(resource);
-    return utils.validate.call(self, model, properties, self.framework.onValidation, error);
+    return utils.validate.call(self, model, properties, framework.onValidation, error);
 };
 
 /*
@@ -10810,10 +10939,10 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
 
     var files = self.data.files;
 
-    if (isAuto && self._manual)
+    if (!files)
         return self;
 
-    if (!files)
+    if (isAuto && self._manual)
         return self;
 
     var length = files.length;
