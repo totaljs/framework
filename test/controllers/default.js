@@ -40,6 +40,7 @@ exports.install = function(framework) {
     framework.route('/login/google/callback/', aa);
     framework.route('/timeout/', function() {}, [], null, [], 50);
 
+    framework.route('/get/', plain_get);
     framework.route('/post/raw/', plain_post_raw, ['post', 'raw']);
     framework.route('/post/parse/', plain_post_parse, ['post']);
     framework.route('/post/json/', plain_post_json, ['json']);
@@ -92,6 +93,11 @@ exports.install = function(framework) {
     // maximumSize
     framework.websocket('/', socket);
 };
+
+function plain_get() {
+    var self = this;
+    self.json(self.get);
+}
 
 function plain_post_raw() {
     var self = this;

@@ -37,22 +37,32 @@ exports.onLoad = function() {
 	self.global.middleware = 0;
 	self.global.timeout = 0;
 	self.global.file = 0;
+	self.global.all = 0;
 
+/*
+	REMOVED
 	self.middleware(function(next) {
 		self.global.header++;
 		next();
 	});
+*/
+	self.middleware('each', function(req, res, next) {
+		self.global.all++;
+		next();
+	});
 
-	self.middleware('middleware', function(next) {
+	self.middleware('middleware', function(req, res, next) {
 		self.global.middleware++;
 		next();
 	});
 
-	self.middleware('file', function(next, req, res) {
+	self.middleware('file', function(req, res, next) {
 		self.global.file++;
 		assert.ok(req.isStaticFile === true, 'file middleware problem');
 		next();
 	});
+
+	self.use('each');
 };
 
 exports.onPictureUrl = function(dimension, id, width, height, alt) {

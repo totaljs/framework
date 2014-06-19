@@ -176,28 +176,28 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
             return;
 
         if (tmp.isFile) {
-            req.data.files.push(new HttpFile(tmp.name, tmp.fileName, tmp.fileNameTmp, tmp.fileSize, tmp.contentType, tmp.width, tmp.height));
+            req.files.push(new HttpFile(tmp.name, tmp.fileName, tmp.fileNameTmp, tmp.fileSize, tmp.contentType, tmp.width, tmp.height));
             return;
         }
 
         if (onXSS(tmp.value))
             isXSS = true;
 
-        var temporary = req.data.post[tmp.name];
+        var temporary = req.body[tmp.name];
 
         if (typeof(temporary) === UNDEFINED) {
-            req.data.post[tmp.name] = tmp.value;
+            req.body[tmp.name] = tmp.value;
             return;
         }
 
         if (utils.isArray(temporary)) {
-            req.data.post[tmp.name].push(tmp.value);
+            req.body[tmp.name].push(tmp.value);
             return;
         }
 
         temporary = [temporary];
         temporary.push(tmp.value);
-        req.data.post[tmp.name] = temporary;
+        req.body[tmp.name] = temporary;
     };
 
     parser.onEnd = function() {

@@ -29,7 +29,6 @@ var FUNCTION = 'function';
 var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
-
 var REQUEST_COMPRESS_EXTENSION = ['js', 'css', 'txt'];
 var EXTENSION_JS = '.js';
 var EXTENSION_COFFEE = '.coffee';
@@ -39,6 +38,7 @@ var RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var CONTENTTYPE_TEXTHTML = 'text/html';
 var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', CONTENTTYPE_TEXTHTML];
+
 var _controller = '';
 var _test = '';
 
@@ -58,6 +58,7 @@ global.DATABASE = function() {
     return framework.database.apply(framework, arguments);
 };
 
+
 global.CONFIG = function(name) {
     return framework.config[name];
 };
@@ -68,6 +69,21 @@ global.RESOURCE = function(name, key) {
 
 global.MODEL = function(name) {
     return framework.model(name);
+};
+
+global.COMPONENT = function(name) {
+    var component = framework.component(name);
+
+    if (component === null)
+        return '';
+
+    var length = arguments.length;
+    var params = [];
+
+    for (var i = 1; i < length; i++)
+        params.push(arguments[i]);
+
+    return component.render.apply(self, params);
 };
 
 if (typeof(setImmediate) === UNDEFINED) {
@@ -165,10 +181,10 @@ function Framework() {
         web: [],
         files: [],
         websockets: [],
-        middlewareCustom: {},
-        middleware: [],
+        middleware: {},
         redirects: {},
-        resize: {}
+        resize: {},
+        request: []
     };
 
     this.helpers = {};
@@ -255,8 +271,8 @@ function Framework() {
     this._request_check_redirect = false;
     this._request_check_referer = false;
     this._request_check_POST = false;
-    this._length_middleware_custom = 0;
     this._length_middleware = 0;
+    this._length_request_middleware = 0;
     this._length_files = 0;
 
     this.isCoffee = false;
@@ -284,11 +300,11 @@ Framework.prototype = {
 
 Framework.prototype.__proto__ = new events.EventEmitter();
 
-/*
-    Refresh framework internal information
-    @clear {Boolean} || optional, default true - clear TMP directory
-    return {Framework}
-*/
+/**
+ * Refersh framework internal informations
+ * @param {Boolean} clear Clear temporary files, optional
+ * @return {Framework}
+ */
 Framework.prototype.refresh = function(clear) {
     var self = this;
 
@@ -362,7 +378,11 @@ Framework.prototype.controller = function(name, definition) {
     return self;
 };
 
-Framework.prototype._routeSort = function() {
+/**
+ * Sort routes
+ * @return {Framework}
+ */
+Framework.prototype.routesSort = function() {
 
     var self = this;
 
@@ -689,28 +709,42 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     });
 
     if (_controller.length === 0)
-        self._routeSort();
+        self.routesSort();
 
     return self;
 };
 
 /*
     Add a middleware
-    @name {String or Function} :: if @name is function, route will be a global middleware
-    @funcExecute {Function} :: optional
+    @name {String} :: Middleware name
+    @funcExecute {Function(next, req, res)} :: optional
     return {Framework}
 */
 Framework.prototype.middleware = function(name, funcExecute) {
     var self = this;
+    self.routes.middleware[name] = funcExecute;
+    self._length_middleware = Object.keys(self.routes.middleware).length;
+    return self;
+};
 
-    if (typeof(name) === FUNCTION) {
-        self.routes.middleware.push(name);
-        self._length_middleware = Object.keys(self.routes.middleware).length;
-        return self;
-    }
+/**
+ * Add a global middleware
+ * @param {String} name
+ * @return {Framework}
+ */
+Framework.prototype.use = function(name) {
+    var self = this;
 
-    self.routes.middlewareCustom[name] = funcExecute;
-    self._length_middleware_custom = Object.keys(self.routes.middlewareCustom).length;
+    if (arguments.length > 0) {
+        for (var i = 0; i < arguments.length; i++)
+            self.routes.request.push(arguments[i]);
+    } else if (name instanceof Array) {
+        for (var i = 0; i < name.length; i++)
+            self.routes.request.push(name[i]);
+    } else
+        self.routes.request.push(name);
+
+    self._length_request_middleware = self.routes.request.length;
 
     return self;
 };
@@ -857,7 +891,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
     });
 
     if (_controller.length === 0)
-        self._routeSort();
+        self.routesSort();
 
     return self;
 };
@@ -1194,7 +1228,7 @@ Framework.prototype.install = function() {
         });
     }
 
-    self._routeSort();
+    self.routesSort();
 
     dir = path.join(directory, self.config['directory-components']);
     if (fs.existsSync(dir)) {
@@ -1329,7 +1363,7 @@ Framework.prototype.injectModule = function(name, url) {
 
             if (typeof(result.install) !== UNDEFINED) {
                 result.install(self, name);
-                self._routeSort();
+                self.routesSort();
             }
 
             self.modules[name] = result;
@@ -1437,7 +1471,7 @@ Framework.prototype.injectController = function(name, url) {
 
             if (typeof(result.install) !== UNDEFINED) {
                 result.install(self, name);
-                self._routeSort();
+                self.routesSort();
             }
 
             self.controllers[name] = result;
@@ -1559,7 +1593,7 @@ Framework.prototype.eval = function(script) {
     @uri {Uri} :: optional
 */
 Framework.prototype.onError = function(err, name, uri) {
-    console.log(err.toString(), err.stack);
+    console.log((name ? name : ': ') + err.toString() + (uri ? ' (' + uri.toString() + ')' : ''), err.stack);
     console.log('--------------------------------------------------------------------');
     return this;
 };
@@ -1594,14 +1628,6 @@ Framework.prototype.onPrefix = null;
     return {String} :: return new name of static file (style-new.css or script-new.js)
 */
 Framework.prototype.onVersion = null;
-
-/*
-    Route validator / Request restriction
-    @req {ServerRequest}
-    @res {ServerResponse}
-    return {Boolean}
-*/
-Framework.prototype.onRoute = null;
 
 /*
     Global framework validation
@@ -1781,8 +1807,7 @@ Framework.prototype.usage = function(detailed) {
         webpage: self.routes.web.length,
         websocket: self.routes.websockets.length,
         file: self.routes.files.length,
-        middlewareCustom: Object.keys(self.routes.middleware).length,
-        middleware: self.routes.middleware.length,
+        middleware: Object.keys(self.routes.middleware).length,
         redirect: redirects.length
     };
 
@@ -2062,16 +2087,16 @@ Framework.prototype.noCache = function(req, res) {
     return this;
 };
 
-/*
-    Response file
-    @req {ServerRequest}
-    @res {ServerResponse}
-    @filename {String}
-    @downloadName {String} :: optional
-    @headers {Object} :: optional
-    @filepath {String} :: path to file (INTERNAL)
-    return {Framework}
-*/
+/**
+ * Response file
+ * @param {ServerRequest} req
+ * @param {ServerResponse} res
+ * @param {String} filename
+ * @param {String} downloadName Optional
+ * @param {Object} headers Optional
+ * @param {String} key Path to file, internal.
+ * @return {Framework}
+ */
 Framework.prototype.responseFile = function(req, res, filename, downloadName, headers, key) {
 
     var self = this;
@@ -2553,16 +2578,16 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
     return self;
 };
 
-/*
-    Response stream
-    @req {ServerRequest}
-    @res {ServerResponse}
-    @contentType {String}
-    @stream {ReadStream}
-    @downloadName {String} :: optional
-    @headers {Object} :: optional
-    return {Framework}
-*/
+/**
+ * Response stream
+ * @param  {ServerRequest} req
+ * @param  {ServerResponse} res
+ * @param  {String} contentType
+ * @param  {ReadStream} stream
+ * @param  {String} downloadName Optional
+ * @param  {Object} headers Optional
+ * @return {Framework}
+ */
 Framework.prototype.responseStream = function(req, res, contentType, stream, downloadName, headers) {
 
     var self = this;
@@ -3418,13 +3443,6 @@ Framework.prototype._upgrade = function(req, socket, head) {
     }
 
     req.uri = parser.parse('ws://' + req.headers.host + req.url);
-    req.data = {
-        get: {}
-    };
-
-    if (req.uri.query && req.uri.query.length > 0)
-        req.data.get = qs.parse(req.uri.query);
-
     req.session = null;
     req.user = null;
     req.flags = [req.isSecure ? 'https' : 'http'];
@@ -3474,7 +3492,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
     if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version_header)) {
         socket.close();
         req.connection.destroy();
-        return;
+        return self;
     }
 
     var id = path + (route.flags.length > 0 ? '#' + route.flags.join('-') : '');
@@ -3484,13 +3502,43 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
     else if (route.isJSON)
         socket.type = 3;
 
-    if (typeof(self.connections[id]) === UNDEFINED) {
-        var connection = new WebSocket(self, path, route.name, id);
-        self.connections[id] = connection;
-        route.onInitialize.apply(connection, internal.routeParam(route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, route));
-    }
+    var next = function() {
 
-    socket.upgrade(self.connections[id]);
+        if (typeof(self.connections[id]) === UNDEFINED) {
+            var connection = new WebSocket(self, path, route.name, id);
+            self.connections[id] = connection;
+            route.onInitialize.apply(connection, internal.routeParam(route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, route));
+        }
+
+        socket.upgrade(self.connections[id]);
+
+    };
+
+    if (route.middleware instanceof Array && route.middleware.length > 0) {
+
+        var func = [];
+
+        for (var i = 0, length = route.middleware.length; i < length; i++) {
+
+            var middleware = framework.routes.middleware[file.middleware[i]];
+
+            if (!middleware)
+                continue;
+
+            (function(middleware) {
+                func.push(function(next) {
+                    middleware.call(framework, req, res, next);
+                });
+            })(middleware);
+
+        }
+
+        func.async(next);
+
+    } else
+        next();
+
+    return self;
 };
 
 Framework.prototype._service = function(count) {
@@ -3528,13 +3576,8 @@ Framework.prototype._request = function(req, res) {
         req.connection.setTimeout(0);
     }
 
-    self.emit('request', req, res);
     res.req = req;
-
-    if (self.onRequest !== null && self.onRequest(req, res))
-        return;
-
-    res.setHeader('X-Powered-By', 'total.js v' + self.version_header);
+    self.emit('request', req, res);
 
     var headers = req.headers;
     var protocol = req.connection.encrypted ? 'https' : 'http';
@@ -3582,39 +3625,70 @@ Framework.prototype._request = function(req, res) {
         }
     }
 
-    if (self.config.debug)
-        res.setHeader('Mode', 'debug');
-
-    res.success = false;
     req.uri = parser.parse(protocol + '://' + req.host + req.url);
     req.path = internal.routeSplit(req.uri.pathname);
+    req.body = {};
+    req.files = [];
     req.processing = 0;
 
-    // Validate if this request is a file (static file)
-    if (utils.isStaticFile(req.uri.pathname)) {
+    res.success = false;
+    res.setHeader('X-Powered-By', 'total.js v' + self.version_header);
 
-        req.isStaticFile = true;
+    if (self.isDebug)
+        res.setHeader('Mode', 'debug');
+
+    req.isStaticFile = utils.isStaticFile(req.uri.pathname);
+
+    if (self._length_request_middleware === 0)
+        return self._request_continue(req, res, headers, protocol);
+
+    var func = [];
+
+    for (var i = 0; i < self._length_request_middleware; i++) {
+
+        var middleware = self.routes.middleware[self.routes.request[i]];
+
+        if (!middleware) {
+            self.error('Middleware not found: ' + route.middleware[i], controller.name, req.uri);
+            continue;
+        }
+
+        (function(middleware) {
+            func.push(function(next) {
+                middleware.call(framework, req, res, next);
+            });
+        })(middleware);
+    }
+
+    func.async(function() {
+        self._request_continue(req, res, headers, protocol);
+    });
+};
+
+Framework.prototype._request_continue = function(req, res, headers, protocol) {
+
+    var self = this;
+
+    if (req === null || res === null || res.headersSent)
+        return self;
+
+    // Validate if this request is a file (static file)
+    if (req.isStaticFile) {
+
         self.stats.request.file++;
         self._request_stats(true, true);
 
         if (self._length_files === 0) {
             self.responseStatic(req, res);
-            return;
+            return self;
         }
 
         new Subscribe(self, req, res, 3).file();
-        return;
+        return self;
     }
 
     req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
     req.isProxy = headers['x-proxy'] === 'total.js';
-
-    req.data = {
-        get: {},
-        post: {},
-        files: []
-    };
-
     req.flags = null;
 
     req.buffer_exceeded = false;
@@ -3635,25 +3709,6 @@ Framework.prototype._request = function(req, res) {
     if (req.uri.query && req.uri.query.length > 0) {
         if (self.onXSS !== null)
             isXSS = self.onXSS(req.uri.query);
-        req.data.get = qs.parse(req.uri.query);
-    }
-
-    if (self.onRoute !== null) {
-        try {
-            if (!self.onRoute(req, res)) {
-
-                if (!res.success) {
-                    self._request_stats(false, false);
-                    self.stats.request.blocked++;
-                    req.connection.destroy();
-                }
-
-                return;
-            }
-        } catch (err) {
-            self.response500(req, res, err);
-            return;
-        }
     }
 
     var flags = [req.method.toLowerCase()];
@@ -3721,7 +3776,7 @@ Framework.prototype._request = function(req, res) {
             self.stats.request.get++;
 
         new Subscribe(self, req, res, 0).end();
-        return;
+        return self;
     }
 
     if (self._request_check_POST && (method === 'POST' || method === 'PUT')) {
@@ -3737,13 +3792,16 @@ Framework.prototype._request = function(req, res) {
 
             new Subscribe(self, req, res, 1).urlencoded();
         }
-        return;
+        return self;
     }
 
     self.emit('request-end', req, res);
     self._request_stats(false, false);
     self.stats.request.blocked++;
+
     req.connection.destroy();
+
+    return self;
 };
 
 Framework.prototype._request_stats = function(beg, isStaticFile) {
@@ -5928,37 +5986,33 @@ Subscribe.prototype.execute = function(status) {
         }, route.timeout);
     }
 
-    if (framework._length_middleware_custom === 0 && framework._length_middleware === 0)
+    if (framework._length_middleware === 0 || route.middleware === null)
         return self.doExecute();
 
-    if (framework._length_middleware === 0 && route.middleware === null)
-        return self.doExecute();
+    var func = [];
+    var length = route.middleware.length;
 
-    var funcs = [];
-    var count = 0;
+    for (var i = 0; i < length; i++) {
 
-    if (framework._length_middleware > 0) {
-        for (var i = 0; i < framework._length_middleware; i++) {
-            var middleware = framework.routes.middleware[i];
-            funcs.push(middleware.bind(controller));
+        var middleware = framework.routes.middleware[route.middleware[i]];
+
+        if (!middleware) {
+            self.error('Middleware not found: ' + route.middleware[i], controller.name, req.uri);
+            continue;
         }
+
+        (function(middleware) {
+            func.push(function(next) {
+                middleware.call(framework, req, res, next);
+            });
+        })(middleware);
+
     }
 
-    if (route.middleware !== null) {
-        var length = route.middleware.length;
-        for (var i = 0; i < length; i++) {
-            var middlewareFn = framework.routes.middlewareCustom[route.middleware[i]];
-            if (!middlewareFn)
-                continue;
-            count++;
-            funcs.push(middlewareFn.bind(self.controller));
-        }
-    }
-
-    if (count === 0 && framework._length_middleware === 0)
+    if (func.length === 0)
         return self.doExecute();
 
-    funcs.async(function() {
+    func.async(function() {
         self.doExecute();
     });
 
@@ -6116,7 +6170,7 @@ Subscribe.prototype.doEnd = function() {
                 return self;
             }
 
-            req.data.post = JSON.parse(req.buffer_data);
+            req.body = JSON.parse(req.buffer_data);
             req.buffer_data = null;
             self.prepare(req.flags, req.uri.pathname);
 
@@ -6138,7 +6192,7 @@ Subscribe.prototype.doEnd = function() {
     }
 
     if (self.route !== null && self.route.isRAW) {
-        req.data.post = req.buffer_data;
+        req.body = req.buffer_data;
     } else {
 
         if ((req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
@@ -6146,7 +6200,7 @@ Subscribe.prototype.doEnd = function() {
             return self;
         }
 
-        req.data.post = qs.parse(req.buffer_data);
+        req.body = qs.parse(req.buffer_data);
 
     }
 
@@ -6166,11 +6220,6 @@ Subscribe.prototype.doEndfile = function() {
     var self = this;
     var req = self.req;
     var res = self.res;
-
-    if (req.uri.query && req.uri.query.length > 0) {
-        req.data = {};
-        req.data.get = qs.parse(req.uri.query);
-    }
 
     for (var i = 0; i < framework._length_files; i++) {
         var file = framework.routes.files[i];
@@ -6212,13 +6261,13 @@ Subscribe.prototype.doEndfile_middleware = function(file) {
 
     for (var i = 0; i < length; i++) {
 
-        var middleware = framework.routes.middlewareCustom[file.middleware[i]];
+        var middleware = framework.routes.middleware[file.middleware[i]];
         if (!middleware)
             continue;
 
         (function(middleware) {
         func.push(function(next) {
-            middleware.call(framework, next, req, res);
+            middleware.call(framework, req, res, next);
         })})(middleware);
     }
 
@@ -6356,15 +6405,23 @@ Controller.prototype = {
     },
 
     get get() {
-        return this.req.data.get;
+        return this.req.query;
+    },
+
+    get query() {
+        return this.req.query;
     },
 
     get post() {
-        return this.req.data.post;
+        return this.req.body;
+    },
+
+    get body() {
+        return this.req.body;
     },
 
     get files() {
-        return this.req.data.files;
+        return this.req.files;
     },
 
     get language() {
@@ -10412,7 +10469,7 @@ WebSocketClient.prototype = {
     },
 
     get get() {
-        return this.req.data.get;
+        return this.req.query;
     },
 
     get uri() {
@@ -10902,6 +10959,48 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 };
 
 /**
+ * Response static file
+ * @return {Response}
+ */
+http.ServerResponse.prototype.continue = function() {
+    var self = this;
+    if (self.headersSent)
+        return;
+    framework.responseStatic(self.req, self);
+    return self;
+};
+
+/**
+ * Response file
+ * @param {String} filename
+ * @param {String} downloadName Optional
+ * @param {Object} headers Optional
+ * @return {Framework}
+ */
+http.ServerResponse.prototype.file = function(filename, downloadName, headers) {
+    var self = this;
+    if (self.headersSent)
+        return;
+    framework.responseFile(self.req, self, filename, downloadName, headers);
+    return self;
+};
+
+/**
+ * Response stream
+ * @param {String} filename
+ * @param {String} downloadName Optional
+ * @param {Object} headers Optional
+ * @return {Framework}
+ */
+http.ServerResponse.prototype.stream = function(contentType, stream, downloadName, headers) {
+    var self = this;
+    if (self.headersSent)
+        return;
+    framework.responseStream(self.req, self, contentType, stream, downloadName, headers);
+    return self;
+};
+
+/**
  * Response JSON
  * @param {Object} obj
  * @return {Response}
@@ -10924,7 +11023,11 @@ http.IncomingMessage.prototype = {
     },
 
     get query() {
-        return this.data.get;
+        var self = this;
+        if (self._dataGET)
+            return self._dataGET;
+        self._dataGET = qs.parse(self.uri.query);
+        return self._dataGET;
     },
 
     get subdomain() {
@@ -11037,11 +11140,7 @@ http.IncomingMessage.prototype.authorization = function() {
 http.IncomingMessage.prototype.clear = function(isAuto) {
 
     var self = this;
-
-    if (!self.data)
-        return self;
-
-    var files = self.data.files;
+    var files = self.files;
 
     if (!files)
         return self;
@@ -11059,7 +11158,7 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
         arr.push(files[i].path);
 
     framework.unlink(arr);
-    self.data.files = null;
+    self.files = null;
 
     return self;
 };

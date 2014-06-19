@@ -202,6 +202,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('get', function(complete) {
+		utils.request(url + 'get/?name=total&age=30', ['get'], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '{"name":"total","age":"30"}', 'get');
+			complete();
+		});
+	});
+
 	async.await('post-raw', function(complete) {
 		utils.request(url + 'post/raw/', ['post', 'raw'], 'SALAMA', function(error, data, code, headers) {
 			if (error)
@@ -312,7 +321,6 @@ function run() {
 
 		framework.fs.rm.view('fromURL');
 
-		assert.ok(framework.global.header > 0, 'middleware - global');
 		assert.ok(framework.global.middleware > 0, 'middleware - middleware');
 		assert.ok(framework.global.file > 0, 'middleware - file');
 		assert.ok(framework.global.timeout > 0, 'timeout');

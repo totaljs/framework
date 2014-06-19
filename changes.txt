@@ -1,13 +1,31 @@
 IN DEVELOPMENT ======= 1.6.0
 
+- added: COMPONENT(name, params...) - returns rendered output from component
 - added: middleware to framework.websocket(url, funcInitialize, [flags], [protocols], [allow], [maximumSize], [middleware])
 - added: middleware to framework.file([name], [fnValidation], [fnExecute], [middleware])
+- added: middleware to framework.use(name), this is global middleware
 - added: Response.send([code], body, [contentType])
 - added: Response.json(obj);
+- added: Response.file(filename, [downloadName], [headers])
+- added: Response.stream(contentType, stream, [downloadName], [headers])
+- added: Response.continue();
+- added: Request.query;
+- added: Request.body;
+- added: Request.files;
 - added: String.parseConfig([default]);
+- added: Controller.body --> is same as Controller.post
+- added: Controller.query --> is same as Controller.get
+
+- (IMPORTANT) updated: middleware function to: function(req, res, next) {}
 
 - fixed: controller.custom()
 - fixed: long messages in WebSocket by Andrea Sessa <https://plus.google.com/u/0/104713619368072403016>
+
+- (IMPORTANT) removed: global middleware
+- (IMPORTANT) removed: Request.data.get
+- (IMPORTANT) removed: Request.data.post
+- (IMPORTANT) removed: Request.data.files
+- (IMPORTANT) removed: framework.onRoute()
 
 - clean code
 - improvements: framework
