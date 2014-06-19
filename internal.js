@@ -1745,7 +1745,7 @@ function view_parse(content, minify) {
     var old = null;
     var newCommand = '';
     var tmp = '';
-    var index = 0;
+    var source = '';
     var counter = 0;
     var functions = [];
     var functionsName = [];
@@ -1798,9 +1798,9 @@ function view_parse(content, minify) {
                 cmd = cmd.replace(' var ', SPACE);
 
             newCommand = (cmd.substring(8, cmd.indexOf(SPACE, 8)) || '').trim();
-            index = cmd.indexOf(SPACE, 12);
+            source = cmd.split(SPACE)[3];
 
-            builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if (!($source instanceof Array) || source.length === 0)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
+            builder += '+(function(){var $source=' + (source && source.trim()) + ';if (!($source instanceof Array) || source.length === 0)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
 
         } else if (cmd === 'end') {
 
