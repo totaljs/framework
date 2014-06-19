@@ -1577,15 +1577,24 @@ String.prototype.contains = function(value, mustAll) {
     return mustAll;
 };
 
-/*
-    Parse configuration from string
-    return {Object}
-*/
-String.prototype.configuration = function() {
+/**
+ * Parse configuration from a string
+ * @param {Object} def Default value, optional
+ * @return {Object}
+ */
+String.prototype.configuration = function(def) {
+    return this.parseConfig(def);
+};
 
+/**
+ * Parse configuration from a string
+ * @param {Object} def
+ * @return {Object}
+ */
+String.prototype.parseConfig = function(def) {
     var arr = this.split('\n');
     var length = arr.length;
-    var obj = {};
+    var obj = exports.extend({}, def);
 
     for (var i = 0; i < length; i++) {
 

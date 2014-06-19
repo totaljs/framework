@@ -167,6 +167,11 @@ function prototypeString() {
 	str = 'Peter Širka Linker & - you known';
 	assert.ok(str.linker() === 'peter-sirka-linker-you-known', 'string.link(): ' + str);
 	assert.ok(str.linker(11) === 'peter-sirka', 'string.link(): ' + str);
+	assert.ok(str.slug() === 'peter-sirka-linker-you-known', 'string.slug(): ' + str);
+	assert.ok(str.slug(11) === 'peter-sirka', 'string.slug(): ' + str);
+
+	str = '// Configuration\nname   : total.js\nage    : 29\n// comment1    : comment1\n# comment2     : comment2\ndebug  : false';
+	assert.ok(JSON.stringify(str.parseConfig({ comment3: 'comment3' })) === '{"comment3":"comment3","name":"total.js","age":"29","debug":"false"}', 'String.parseConfig()');
 }
 
 function prototypeArray() {
@@ -234,6 +239,8 @@ function others() {
 
 	assert.ok(utils.isEmpty({}), 'utils.isEmpty() - is empty');
 	assert.ok(!utils.isEmpty({ a: 1 }), 'utils.isEmpty() - not empty');
+
+	assert.ok(JSON.stringify(utils.extend({ id: 1 })) === '{"id":1}', 'utils.extend() - undefined');
 
 	utils.copy(obj, { name: 'Peter', age: 25 });
 	assert.ok(!obj.name, 'utils.copy(2)');
@@ -422,6 +429,7 @@ function others() {
 
 	error = utils.validate({ name: 'Name', join: [{ age: 'A' }, { age: 4 }]}, '1', onValidation, resource);
 	assert.ok(error.hasError(), 'validation - hasError() (array)');
+
 }
 
 function onValidation(name, value, path) {
