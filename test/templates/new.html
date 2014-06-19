@@ -1,5 +1,5 @@
-@{foreach var m in model}
-    <div>@{m.tag}</div><div>@{!m.tag}</div><span>@{index}</span>
+@{foreach var person in model}
+    <div>@{person.tag}</div><div>@{!person.tag}</div><span>@{index}</span>
 @{end}
 
 @{foreach m in [0, 1, 2]}

@@ -20,6 +20,7 @@ IN DEVELOPMENT ======= 1.6.0
 
 - fixed: controller.custom()
 - fixed: long messages in WebSocket by Andrea Sessa <https://plus.google.com/u/0/104713619368072403016>
+- fixed: view engine parser (reported by @tohachan)
 
 - (IMPORTANT) removed: global middleware
 - (IMPORTANT) removed: Request.data.get

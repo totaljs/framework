@@ -242,7 +242,7 @@ function view_test_view() {
     this.view('test');
 }
 
-function viewCustomTesting() {
+function viewCustomTesting() {/*
     this.plain(this.template('one', [{
         name: 'A',
         price: 10,
@@ -251,8 +251,11 @@ function viewCustomTesting() {
         name: 'B',
         price: 10.5,
         B: true
-    }]));
-    //this.plain(this.template('new', [{ tag: '<b>A</b>' }, { tag: '<b>B</b>' }]));
+    }]));*/
+    this.plain(this.template('new', [{ tag: '<b>A</b>' }, { tag: '<b>B</b>' }]));
+    setTimeout(function() {
+        framework.stop();
+    }, 500);
 }
 
 function socket(self, framework) {
@@ -400,6 +403,7 @@ function viewIndex() {
     }, {
         tag: '<b>B</b>'
     }]);
+
     assert.ok(tmp.indexOf('<div>&lt;b&gt;B&lt;/b&gt;</div><div><b>B</b></div><span>1</span>') !== -1, name + 'template - foreach');
 
     self.layout('');
