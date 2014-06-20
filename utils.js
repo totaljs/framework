@@ -2605,6 +2605,11 @@ Array.prototype.wait = function(onItem, callback) {
     return self;
 };
 
+/**
+ * Create async loop
+ * @param  {Function} callback
+ * @return {Array}
+ */
 Array.prototype.async = function(callback) {
 
     var self = this;
@@ -2619,6 +2624,37 @@ Array.prototype.async = function(callback) {
     item(function() {
         setImmediate(function() {
             self.async(callback);
+        });
+    });
+
+    return self;
+};
+
+/**
+ * Create async loop for middleware
+ * @param  {Function} callback
+ * @return {Array}
+ */
+Array.prototype._async_middleware = function(res, callback) {
+
+    var self = this;
+
+    if (res.success || res.headersSent) {
+        callback = null;
+        return self;
+    }
+
+    var item = self.shift();
+
+    if (typeof(item) === UNDEFINED) {
+        if (callback)
+            callback();
+        return self;
+    }
+
+    item(function() {
+        setImmediate(function() {
+            self._async_middleware(res, callback);
         });
     });
 

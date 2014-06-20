@@ -3533,7 +3533,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 
         }
 
-        func.async(next);
+        func._async_middleware(res, next);
 
     } else
         next();
@@ -3660,7 +3660,7 @@ Framework.prototype._request = function(req, res) {
         })(middleware);
     }
 
-    func.async(function() {
+    func._async_middleware(res, function() {
         self._request_continue(req, res, headers, protocol);
     });
 };
@@ -6012,7 +6012,7 @@ Subscribe.prototype.execute = function(status) {
     if (func.length === 0)
         return self.doExecute();
 
-    func.async(function() {
+    func._async_middleware(res, function() {
         self.doExecute();
     });
 
@@ -6271,7 +6271,7 @@ Subscribe.prototype.doEndfile_middleware = function(file) {
         })})(middleware);
     }
 
-    func.async(function() {
+    func._async_middleware(res, function() {
         try {
             file.onExecute.call(framework, req, res, false);
         } catch (err) {
@@ -10881,6 +10881,10 @@ http.ServerResponse.prototype.noCache = function() {
 http.ServerResponse.prototype.send = function(code, body, type) {
 
     var self = this;
+
+    if (self.headersSent)
+        return;
+
     var res = self;
     var req = self.req;
     var contentType = type;
@@ -10930,6 +10934,9 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 
     headers[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 
+    res.success = true;
+    req.clear(true);
+
     if (accept.lastIndexOf('gzip') !== -1) {
         var buffer = new Buffer(body);
         headers[RESPONSE_HEADER_CONTENTLENGTH] = buffer.length;
@@ -10964,8 +10971,10 @@ http.ServerResponse.prototype.send = function(code, body, type) {
  */
 http.ServerResponse.prototype.continue = function() {
     var self = this;
+
     if (self.headersSent)
         return;
+
     framework.responseStatic(self.req, self);
     return self;
 };

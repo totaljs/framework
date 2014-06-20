@@ -322,6 +322,7 @@ function run() {
 		framework.fs.rm.view('fromURL');
 
 		assert.ok(framework.global.middleware > 0, 'middleware - middleware');
+		assert.ok(framework.global.all > 0, 'middleware - global');
 		assert.ok(framework.global.file > 0, 'middleware - file');
 		assert.ok(framework.global.timeout > 0, 'timeout');
 

@@ -22,7 +22,7 @@ IN DEVELOPMENT ======= 1.6.0
 - fixed: long messages in WebSocket by Andrea Sessa <https://plus.google.com/u/0/104713619368072403016>
 - fixed: view engine parser (reported by @tohachan)
 
-- (IMPORTANT) removed: global middleware
+- (IMPORTANT) removed: global middleware from controllers
 - (IMPORTANT) removed: Request.data.get
 - (IMPORTANT) removed: Request.data.post
 - (IMPORTANT) removed: Request.data.files

@@ -1,3 +1,5 @@
+require("v8-profiler");
+
 var urlParser = require('url');
 var http = require('http');
 var tls = require('tls');
@@ -19,10 +21,15 @@ var FUNCTION = 'function';
 var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
+var indexer = 0;
 
-function test(version, name) {
-	for (var i = 1; i < arguments.length; i++)
-		console.log(arguments[i]);
-}
 
-test('1.2.2', 'angular', 'test');
+var arr = [];
+
+arr.push(function() {
+
+})
+
+arr._async_middleware(function() {
+    console.log('DONE');
+});
