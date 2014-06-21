@@ -657,7 +657,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         priority++;
     }
 
-    if ((flags.indexOf('json') !== -1 || isRaw) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
+    if ((flags.indexOf('json') !== -1 || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
         flags.push('post');
         priority++;
     }
@@ -702,6 +702,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         middleware: middleware,
         timeout: typeof(timeout) === UNDEFINED ? self.config['default-request-timeout'] : timeout,
         isJSON: flags.indexOf('json') !== -1,
+        isXML: flags.indexOf('xml') !== -1,
         isRAW: isRaw,
         isMEMBER: isMember,
         isXSS: flags.indexOf('xss') !== -1,
@@ -3721,6 +3722,9 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
         if (multipart.indexOf('/json') !== -1)
             flags.push('json');
 
+        if (multipart.indexOf('/xml') !== -1)
+            flags.push('xml');
+
         if (multipart.indexOf('mixed') === -1)
             multipart = '';
         else
@@ -3897,7 +3901,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 
     var method = 'GET';
     var length = 0;
-    var isJSON = false;
+    var type = 0;
 
     headers = utils.extend({}, headers || {});
 
@@ -3913,7 +3917,12 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 
                 case 'json':
                     headers['Content-Type'] = 'application/json';
-                    isJSON = true;
+                    type = 1;
+                    break;
+
+                case 'xml':
+                    headers['Content-Type'] = 'text/xml';
+                    type = 2;
                     break;
 
                 case 'get':
@@ -3956,7 +3965,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
     }
 
     if (typeof(data) !== STRING)
-        data = isJSON ? JSON.stringify(data) : qs.stringify(data);
+        data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
 
     if (data && data.length > 0)
         headers[RESPONSE_HEADER_CONTENTLENGTH] = data.length;
@@ -6165,6 +6174,11 @@ Subscribe.prototype.doEnd = function() {
     if (route.isJSON) {
         try {
 
+            if ((req.headers['content-type'] || '').indexOf('application/json') === -1) {
+                self.route400();
+                return self;
+            }
+
             if (!req.buffer_data.isJSON()) {
                 self.route400();
                 return self;
@@ -6181,6 +6195,23 @@ Subscribe.prototype.doEnd = function() {
         return self;
     }
 
+    if (route.isXML) {
+
+        if ((req.headers['content-type'] || '').indexOf('text/xml') === -1) {
+            self.route400();
+            return self;
+        }
+
+        try {
+            req.body = utils.parseXML(req.buffer_data);
+            req.buffer_data = null;
+            self.prepare(req.flags, req.uri.pathname);
+        } catch (err) {
+            self.route400();
+        }
+        return self;
+    }
+
     // A route has not allowed XSS
     if (!self.route.isXSS && framework.onXSS !== null) {
         if (framework.onXSS(req.buffer_data)) {
@@ -6191,18 +6222,14 @@ Subscribe.prototype.doEnd = function() {
         }
     }
 
-    if (self.route !== null && self.route.isRAW) {
-        req.body = req.buffer_data;
-    } else {
-
+    if (!self.route.isRAW) {
         if ((req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
             self.route400();
             return self;
         }
-
         req.body = qs.parse(req.buffer_data);
-
-    }
+    } else
+        req.body = req.buffer_data;
 
     self.prepare(req.flags, req.uri.pathname);
     return self;

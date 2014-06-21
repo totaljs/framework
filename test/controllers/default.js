@@ -44,10 +44,12 @@ exports.install = function(framework) {
     framework.route('/post/raw/', plain_post_raw, ['post', 'raw']);
     framework.route('/post/parse/', plain_post_parse, ['post']);
     framework.route('/post/json/', plain_post_json, ['json']);
+    framework.route('/post/xml/', plain_post_xml, ['xml']);
 
     framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);
     framework.route('/put/parse/', plain_put_parse, ['put']);
     framework.route('/put/json/', plain_put_json, ['json', 'put']);
+    framework.route('/put/xml/', plain_put_xml, ['xml', 'put']);
 
     framework.route('/upload/', plain_upload, ['upload']);
 
@@ -116,6 +118,12 @@ function plain_post_json() {
     self.json(self.post);
 }
 
+function plain_post_xml() {
+    var self = this;
+    self.post.type = 'xml';
+    self.json(self.post);
+}
+
 function plain_put_raw() {
     var self = this;
     self.plain(self.post);
@@ -130,6 +138,12 @@ function plain_put_parse() {
 function plain_put_json() {
     var self = this;
     self.post.type = 'json';
+    self.json(self.post);
+}
+
+function plain_put_xml() {
+    var self = this;
+    self.post.type = 'xml';
     self.json(self.post);
 }
 

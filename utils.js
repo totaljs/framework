@@ -2,7 +2,7 @@
  * @module FrameworkUtils
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2014
- * @version 1.5.4.
+ * @version 1.6.0.
  */
 
 'use strict';
@@ -238,7 +238,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
     var method = 'GET';
     var length = 0;
-    var isJSON = false;
+    var type = 0;
 
     headers = exports.extend({}, headers || {});
 
@@ -264,7 +264,16 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
                     if (method === '')
                         method = 'POST';
 
-                    isJSON = true;
+                    type = 1;
+                    break;
+
+                case 'xml':
+                    headers['Content-Type'] = 'text/xml';
+
+                    if (method === '')
+                        method = 'POST';
+
+                    type = 2;
                     break;
 
                 case 'get':
@@ -293,7 +302,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
     var isPOST = method === 'POST' || method === 'PUT';
 
     if (typeof(data) !== STRING)
-        data = isJSON ? JSON.stringify(data) : qs.stringify(data);
+        data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
     else if (data[0] === '?')
         data = data.substring(1);
 
@@ -407,7 +416,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
     var method = 'GET';
     var length = 0;
-    var isJSON = false;
+    var type = 0;
 
     headers = exports.extend({}, headers || {});
 
@@ -429,7 +438,12 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
                 case 'json':
                     headers['Content-Type'] = 'application/json';
-                    isJSON = true;
+                    type = 1;
+                    break;
+
+                case 'xml':
+                    headers['Content-Type'] = 'text/xml';
+                    type = 2;
                     break;
 
                 case 'get':
@@ -458,7 +472,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
     var isPOST = method === 'POST' || method === 'PUT';
 
     if (typeof(data) !== STRING)
-        data = isJSON ? JSON.stringify(data) : qs.stringify(data);
+        data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
     else if (data[0] === '?')
         data = data.substring(1);
 

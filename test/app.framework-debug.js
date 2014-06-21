@@ -229,6 +229,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('post-xml', function(complete) {
+		utils.request(url + 'post/xml/', ['xml', 'post'], '<root><name>total.js</name></root>', function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '{"root.name":"total.js","type":"xml"}', 'post-xml');
+			complete();
+		});
+	});
+
 	async.await('post-parse', function(complete) {
 		utils.request(url + 'post/parse/', ['post'], { name: "total.js" }, function(error, data, code, headers) {
 			if (error)
@@ -252,6 +261,15 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			assert(data === '{"name":"total.js","type":"json"}', 'put-json');
+			complete();
+		});
+	});
+
+	async.await('put-xml', function(complete) {
+		utils.request(url + 'put/xml/', ['xml', 'put'], '<root><name>total.js</name></root>', function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '{"root.name":"total.js","type":"xml"}', 'put-xml');
 			complete();
 		});
 	});
