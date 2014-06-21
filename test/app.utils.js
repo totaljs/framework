@@ -430,6 +430,18 @@ function others() {
 	error = utils.validate({ name: 'Name', join: [{ age: 'A' }, { age: 4 }]}, '1', onValidation, resource);
 	assert.ok(error.hasError(), 'validation - hasError() (array)');
 
+	var indexer = 0;
+
+	utils.wait(function() {
+		return indexer++ === 3;
+	}, function(err) {
+		assert(err === null, 'utils.wait()');
+	});
+
+	utils.wait(noop, function(err) {
+		assert(err !== null, 'utils.wait() - timeout');
+	}, 1000);
+
 }
 
 function onValidation(name, value, path) {

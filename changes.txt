@@ -15,6 +15,7 @@ IN DEVELOPMENT ======= 1.6.0
 - added: String.parseConfig([default]);
 - added: Controller.body --> is same as Controller.post
 - added: Controller.query --> is same as Controller.get
+- added: utils.wait(fnValid, fnCallback, [timeout(default: 5000 ms)], [interval(default: 500 ms)])
 
 - (IMPORTANT) updated: middleware function to: function(req, res, next) {}
 

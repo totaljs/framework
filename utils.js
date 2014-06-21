@@ -180,6 +180,39 @@ exports.isEmpty = function(obj) {
 };
 
 /**
+ * Function checks a valid function and waits for positive result
+ * @param {Function} valid
+ * @param {Function(err)} callback
+ * @param {Number} timeout  Timeout, optional (default: 5000)
+ * @param {Number} interval Refresh interval, optional (default: 500)
+ */
+exports.wait = function(valid, callback, timeout, interval) {
+
+    if (valid() === true)
+        return callback(null);
+
+    var id_timeout = null;
+    var id_interval = setInterval(function() {
+
+        if (valid() === true) {
+            clearInterval(id_interval);
+            clearTimeout(id_timeout);
+            if (callback)
+                callback(null);
+            return;
+        }
+
+    }, interval || 500);
+
+    id_timeout = setTimeout(function() {
+        clearInterval(id_interval);
+        if (callback)
+            callback(new Error('Timeout.'));
+    }, timeout || 5000);
+
+};
+
+/**
  * Create a request to a specific URL
  * @param  {String} url URL address.
  * @param  {String Array} flags Request flags.
