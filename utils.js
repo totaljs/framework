@@ -181,24 +181,24 @@ exports.isEmpty = function(obj) {
 
 /**
  * Function checks a valid function and waits for positive result
- * @param {Function} valid
- * @param {Function(err)} callback
+ * @param {Function} fnValid
+ * @param {Function(err)} fnCallback
  * @param {Number} timeout  Timeout, optional (default: 5000)
  * @param {Number} interval Refresh interval, optional (default: 500)
  */
-exports.wait = function(valid, callback, timeout, interval) {
+exports.wait = function(fnValid, fnCallback, timeout, interval) {
 
-    if (valid() === true)
-        return callback(null);
+    if (fnValid() === true)
+        return fnCallback(null);
 
     var id_timeout = null;
     var id_interval = setInterval(function() {
 
-        if (valid() === true) {
+        if (fnValid() === true) {
             clearInterval(id_interval);
             clearTimeout(id_timeout);
-            if (callback)
-                callback(null);
+            if (fnCallback)
+                fnCallback(null);
             return;
         }
 
@@ -206,8 +206,8 @@ exports.wait = function(valid, callback, timeout, interval) {
 
     id_timeout = setTimeout(function() {
         clearInterval(id_interval);
-        if (callback)
-            callback(new Error('Timeout.'));
+        if (fnCallback)
+            fnCallback(new Error('Timeout.'));
     }, timeout || 5000);
 
 };

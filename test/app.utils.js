@@ -441,7 +441,6 @@ function others() {
 	utils.wait(noop, function(err) {
 		assert(err !== null, 'utils.wait() - timeout');
 	}, 1000);
-
 }
 
 function onValidation(name, value, path) {
