@@ -20,6 +20,8 @@ IN DEVELOPMENT ======= 1.6.0
 - added: new flag: 'xml' in utils.request()
 - added: new flag: 'xml' in framework.assert()
 
+- updated: framework.run([http], config, [port], [ip], [options])
+
 - (IMPORTANT) updated: middleware function to: function(req, res, next) {}
 
 - fixed: controller.custom()

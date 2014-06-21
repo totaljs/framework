@@ -3152,6 +3152,17 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 Framework.prototype.init = function(http, config, port, ip, options) {
 
     var self = this;
+    var type = typeof(http);
+
+    if (type === BOOLEAN) {
+        options = ip;
+        ip = port;
+        port = config;
+        config = http;
+        http = require('http');
+    } else if (type === UNDEFINED)
+        http = require('http');
+
     self.isHTTPS = typeof(http.STATUS_CODES) === UNDEFINED;
 
     process.argv.forEach(function(name) {
