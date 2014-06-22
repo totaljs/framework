@@ -22,11 +22,13 @@ IN DEVELOPMENT ======= 1.6.0
 - added: new flag: 'xml' in utils.request()
 - added: new flag: 'xml' in framework.assert()
 - added: assertion testing: exports.usage = function() {} for custom results of test
+- added: assertion testing: exports.disabled = true for disabling current test
 - added: assertion testing: priority (example: exports.priority = 1)
 - added: controller.isController (for middleware)
 
 - updated: framework.run([http], config, [port], [ip], [options])
 - updated: utils.validate(), Builders.validate() –> prepare function (added: schemaName): function(name, value, path, schemaName)
+- updated: framework.assert() supports "data" as function (for future data)
 
 - (IMPORTANT) updated: middleware function to: function(req, res, next) {}
 

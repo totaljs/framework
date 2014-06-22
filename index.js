@@ -3993,12 +3993,6 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
             headers['Cookie'] = builder.join('; ');
     }
 
-    if (typeof(data) !== STRING)
-        data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
-
-    if (data && data.length > 0)
-        headers[RESPONSE_HEADER_CONTENTLENGTH] = data.length;
-
     var obj = {
         name: _test + ': ' + name,
         priority: framework.testsPriority,
@@ -4006,7 +4000,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
         url: url,
         callback: callback,
         method: method,
-        data: data || '',
+        data: data,
         headers: headers
     };
 
@@ -4115,11 +4109,25 @@ Framework.prototype.testing = function(stop, callback) {
     };
 
     var options = parser.parse((test.url.indexOf('http://') > 0 || test.url.indexOf('https://') > 0 ? '' : 'http://' + self.ip + ':' + self.port) + test.url);
+
+    if (typeof(test.data) === FUNCTION)
+        test.data = test.data();
+
+    if (typeof(test.data) !== STRING)
+        test.data = test.headers[RESPONSE_HEADER_CONTENTTYPE].indexOf('json') !== -1 ? JSON.stringify(test.data) : qs.stringify(test.data);
+
+    if (test.data && test.data.length > 0)
+        test.headers[RESPONSE_HEADER_CONTENTLENGTH] = test.data.length;
+
+    options.method = test.method;
+    options.headers = test.headers;
+
     var con = options.protocol === 'https:' ? https : http;
     var req = test.method === 'POST' || test.method === 'PUT' ? con.request(options, response) : con.get(options, response);
 
     req.on('error', function(e) {
-        log(key, beg, e);
+        logger(key, beg, e);
+        self.testsNO++;
         self.testing(stop, callback);
     });
 
@@ -4290,8 +4298,8 @@ Framework.prototype.test = function(stop, names, cb) {
         self.testing(stop, function() {
 
             console.log('');
-            console.log('Passed ... ', framework.testsOK);
-            console.log('Failed ... ', framework.testsNO);
+            console.log('Passed ...', framework.testsOK);
+            console.log('Failed ...', framework.testsNO);
             console.log('');
 
             results();
@@ -6256,7 +6264,7 @@ Subscribe.prototype.doEnd = function() {
 
         // POST, MULTIPART
         if (route !== null && !route.isXSS && req.flags.indexOf('xss') !== -1) {
-            self.route400();
+            self.route400(new Error('Cross-site scripting.'));
             return self;
         }
 
@@ -6268,12 +6276,12 @@ Subscribe.prototype.doEnd = function() {
         try {
 
             if ((req.headers['content-type'] || '').indexOf('application/json') === -1) {
-                self.route400();
+                self.route400(new Error('Request validation.'));
                 return self;
             }
 
             if (!req.buffer_data.isJSON()) {
-                self.route400();
+                self.route400(new Error('Request validation.'));
                 return self;
             }
 
@@ -6282,7 +6290,7 @@ Subscribe.prototype.doEnd = function() {
             self.prepare(req.flags, req.uri.pathname);
 
         } catch (err) {
-            self.route400();
+            self.route400(err);
         }
 
         return self;
@@ -6291,7 +6299,7 @@ Subscribe.prototype.doEnd = function() {
     if (route.isXML) {
 
         if ((req.headers['content-type'] || '').indexOf('text/xml') === -1) {
-            self.route400();
+            self.route400(new Error('Request validation.'));
             return self;
         }
 
@@ -6300,7 +6308,7 @@ Subscribe.prototype.doEnd = function() {
             req.buffer_data = null;
             self.prepare(req.flags, req.uri.pathname);
         } catch (err) {
-            self.route400();
+            self.route400(err);
         }
         return self;
     }
@@ -6310,14 +6318,14 @@ Subscribe.prototype.doEnd = function() {
         if (framework.onXSS(req.buffer_data)) {
             req.flags.push('xss');
             framework.stats.request.xss++;
-            self.route400();
+            self.route400(new Error('Cross-site scripting.'));
             return self;
         }
     }
 
     if (!self.route.isRAW) {
         if ((req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
-            self.route400();
+            self.route400('Request validation.');
             return self;
         }
         req.body = qs.parse(req.buffer_data);
@@ -6328,9 +6336,10 @@ Subscribe.prototype.doEnd = function() {
     return self;
 };
 
-Subscribe.prototype.route400 = function() {
+Subscribe.prototype.route400 = function(problem) {
     var self = this;
     self.route = framework.lookup(self.req, '#400', []);
+    self.exception = problem;
     self.execute(400);
     return self;
 };
