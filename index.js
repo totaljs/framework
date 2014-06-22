@@ -3922,6 +3922,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
         self.tests.push({
             name: _test + ': ' + name,
             priority: framework.testsPriority,
+            index: self.tests.length,
             run: url
         });
         return self;
@@ -4001,6 +4002,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
     var obj = {
         name: _test + ': ' + name,
         priority: framework.testsPriority,
+        index: self.tests.length,
         url: url,
         callback: callback,
         method: method,
@@ -4261,6 +4263,13 @@ Framework.prototype.test = function(stop, names, cb) {
             return 1;
         if (a.priority < b.priority)
             return -1;
+
+        if (a.index > b.index)
+            return 1;
+
+        if (a.index < b.index)
+            return -1;
+
         return 0;
     });
 
