@@ -6079,7 +6079,7 @@ Subscribe.prototype.execute = function(status) {
 
         (function(middleware) {
             func.push(function(next) {
-                middleware.call(framework, req, res, next);
+                middleware.call(controller, req, res, next);
             });
         })(middleware);
 
@@ -10981,7 +10981,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
     var self = this;
 
     if (self.headersSent)
-        return;
+        return self;
 
     var res = self;
     var req = self.req;
@@ -11037,7 +11037,6 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 
     if (accept.lastIndexOf('gzip') !== -1) {
         var buffer = new Buffer(body);
-        headers[RESPONSE_HEADER_CONTENTLENGTH] = buffer.length;
         zlib.gzip(buffer, function(err, data) {
 
             if (err) {
@@ -11047,6 +11046,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
             }
 
             headers['Content-Encoding'] = 'gzip';
+            headers[RESPONSE_HEADER_CONTENTLENGTH] = data.length;
 
             res.writeHead(code, headers);
             res.end(data, ENCODING);
