@@ -1,5 +1,8 @@
 IN DEVELOPMENT ======= 1.6.0
 
+- added: framework.http(mode, [options])
+- added: framework.https(mode, [options]) - I'm recommending to use NGINX as HTTPS proxy
+- added: config-test (new config file)
 - added: COMPONENT(name, params...) - returns rendered output from component
 - added: middleware to framework.websocket(url, funcInitialize, [flags], [protocols], [allow], [maximumSize], [middleware])
 - added: middleware to framework.file([name], [fnValidation], [fnExecute], [middleware])

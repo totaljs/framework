@@ -3149,12 +3149,13 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
     @options {Object}
     return {Framework}
 */
-Framework.prototype.init = function(http, config, port, ip, options) {
+Framework.prototype.init = function(http, config, port, ip, options, test) {
 
     var self = this;
     var type = typeof(http);
 
     if (type === BOOLEAN) {
+        test = options;
         options = ip;
         ip = port;
         port = config;
@@ -3194,6 +3195,10 @@ Framework.prototype.init = function(http, config, port, ip, options) {
     self.isDebug = self.config.debug;
     self.configure();
     self.configureMapping();
+
+    if (test)
+        self.configure('config-test', false);
+
     self.clear();
 
     self.cache.init();
@@ -3352,6 +3357,11 @@ Framework.prototype.init = function(http, config, port, ip, options) {
     self.removeAllListeners('load');
     self.removeAllListeners('ready');
 
+    if (test) {
+        self.test(true);
+        return self;
+    }
+
     setTimeout(function() {
 
         if (framework.isTest)
@@ -3370,7 +3380,82 @@ Framework.prototype.init = function(http, config, port, ip, options) {
 
 // Alias for framework.init
 Framework.prototype.run = function(http, config, port, ip, options) {
+
+    if (typeof(http) === STRING)
+        return this.mode(http, config, port, ip, options);
+
     return this.init(http, config, port, ip, options);
+};
+
+/**
+ * Run framework –> HTTP
+ * @param  {String} mode Framework mode.
+ * @param  {Object} options Framework settings.
+ * @return {Framework}
+ */
+Framework.prototype.http = function(mode, options) {
+
+    if (typeof(options) === 'undefined')
+        options = {};
+
+    if (!options.port)
+        options.port = parseInt(process.argv[2]);
+
+    return this.mode(require('http'), mode, options.port, options.ip, options.config);
+};
+
+/**
+ * Run framework –> HTTPS
+ * @param  {String} mode Framework mode.
+ * @param  {Object} options Framework settings.
+ * @return {Framework}
+ */
+Framework.prototype.https = function(mode, options) {
+
+    if (typeof(options) === 'undefined')
+        options = {};
+
+    if (!options.port)
+        options.port = parseInt(process.argv[2]);
+
+    return this.mode(require('https'), mode, options.port, options.ip, options.config, options);
+};
+
+// Alias for framework.init
+Framework.prototype.mode = function(http, name, port, ip, options) {
+
+    var test = false;
+    var debug = false;
+
+    switch (name.toLowerCase().replace(/\.|\s/g, '-')) {
+        case 'release':
+        case 'production':
+            break;
+
+        case 'debug':
+        case 'develop':
+        case 'development':
+            debug = true;
+            break;
+
+        case 'test':
+        case 'testing':
+        case 'test-debug':
+        case 'testing-debug':
+            test = true;
+            debug = true;
+            break;
+
+        case 'test-release':
+        case 'testing-release':
+        case 'test-production':
+        case 'testing-production':
+            test = true;
+            debug = false;
+            break;
+    }
+
+    return this.init(http, debug, port, ip, options, test);
 };
 
 Framework.prototype.console = function() {
@@ -4171,6 +4256,8 @@ Framework.prototype.test = function(stop, names, cb) {
         }, 500);
         return self;
     }
+
+    self.configure('config-test', true);
 
     var logger = function(name, start, err) {
 
