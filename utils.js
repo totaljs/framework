@@ -1002,15 +1002,16 @@ exports.GUID = function(max) {
     return str.substring(0, max);
 };
 
-/*
-    Validate
-    @model {Object} :: object to validate
-    @properties {String array}
-    @prepare {Function} : return utils.isValid() OR {Boolean} :: true is valid
-    @builder {ErrorBuilder}
-    @resource {Function} :: function(key) return {String}
-    return {ErrorBuilder}
-*/
+/**
+ * Validate object
+ * @param {Object} model Model to validate.
+ * @param {String Array or String} properties Properties or Schema name.
+ * @param {Function(name, value, path, schema)} prepare Validate function.
+ * @param {ErrorBuilder} builder Own ErrorBuilder object.
+ * @param {Function(resourceName, key)} resource Resource handler.
+ * @param {String} path Internal, current path
+ * @return {ErrorBuilder}
+ */
 exports.validate = function(model, properties, prepare, builder, resource, path) {
 
     if (typeof(builder) === FUNCTION && typeof(resource) === UNDEFINED) {
@@ -1092,12 +1093,9 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
                     }
                 }
             }
-
-            //exports.validate(value, properties, prepare, error, resource, current + name);
-            //continue;
         }
 
-        var result = prepare(name, value, current + name);
+        var result = prepare(name, value, current + name, schemaName);
 
         if (typeof(result) === UNDEFINED)
             continue;

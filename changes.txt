@@ -4,11 +4,13 @@ IN DEVELOPMENT ======= 1.6.0
 - added: middleware to framework.websocket(url, funcInitialize, [flags], [protocols], [allow], [maximumSize], [middleware])
 - added: middleware to framework.file([name], [fnValidation], [fnExecute], [middleware])
 - added: middleware to framework.use(name), this is global middleware
+- added: Response.controller, link to the current controller (if exists)
 - added: Response.send([code], body, [contentType])
 - added: Response.json(obj);
 - added: Response.file(filename, [downloadName], [headers])
 - added: Response.stream(contentType, stream, [downloadName], [headers])
 - added: Response.continue();
+- added: Response.req (current request)
 - added: Request.query;
 - added: Request.body;
 - added: Request.files;
@@ -19,8 +21,10 @@ IN DEVELOPMENT ======= 1.6.0
 - added: new flag: 'xml' in controller.route()
 - added: new flag: 'xml' in utils.request()
 - added: new flag: 'xml' in framework.assert()
+- added: assertion testing: exports.usage = function() {} for custom results of test
 
 - updated: framework.run([http], config, [port], [ip], [options])
+- updated: utils.validate(), Builders.validate() –> prepare function (added: schemaName): function(name, value, path, schemaName)
 
 - (IMPORTANT) updated: middleware function to: function(req, res, next) {}
 

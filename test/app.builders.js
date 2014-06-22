@@ -137,7 +137,8 @@ function test_Schema() {
         name: 'string',
         age: 'number',
         isTerms: 'boolean'
-    }, null, function(name, value) {
+    }, null, function(name, value, path, name) {
+        assert.ok(name !== 'validator', 'schema validator - problem with schema name in utils.validate()');
         switch (name) {
             case 'name':
                 return value.length > 0;

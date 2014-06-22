@@ -3352,6 +3352,19 @@ Framework.prototype.init = function(http, config, port, ip, options) {
     self.removeAllListeners('load');
     self.removeAllListeners('ready');
 
+    setTimeout(function() {
+
+        if (framework.isTest)
+            return;
+
+        // clear unnecessary items
+        delete framework.tests;
+        delete framework.test;
+        delete framework.testing;
+        delete framework.assert;
+
+    }, 5000);
+
     return self;
 };
 
@@ -3989,7 +4002,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
         headers: headers
     };
 
-    self.tests[_test + ': ' + name] = obj;
+    self.tests[Object.keys(self.tests).length + '. ' + _test + ': ' + name] = obj;
     return self;
 };
 
@@ -4154,6 +4167,21 @@ Framework.prototype.test = function(stop, names, cb) {
         console.info('Passed '.padRight(20, '.') + ' ' + name + ' [' + time + ']');
     };
 
+    var results = function() {
+        if (framework.testsResults.length === 0)
+            return;
+
+        console.log('');
+        console.log('====== RESULTS ======');
+        console.log('');
+        framework.testsResults.forEach(function(fn) {
+            fn();
+        });
+    };
+
+    if (!framework.testsResults)
+        framework.testsResults = [];
+
     fs.readdirSync(utils.combine(dir)).forEach(function(name) {
 
         var filename = path.join(directory, dir, name);
@@ -4185,6 +4213,12 @@ Framework.prototype.test = function(stop, names, cb) {
             else if (isLoad)
                 test.load(self, name);
 
+            if (test.usage) {
+                (function(test) {
+                    framework.testsResults.push(function() { test.usage(); });
+                })(test);
+            }
+
             counter++;
 
         } catch (ex) {
@@ -4195,6 +4229,8 @@ Framework.prototype.test = function(stop, names, cb) {
     _test = '';
 
     if (counter === 0) {
+
+        results();
 
         if (cb)
             cb();
@@ -4213,6 +4249,7 @@ Framework.prototype.test = function(stop, names, cb) {
         console.log('====== TESTING ======');
         console.log('');
         self.testing(stop, function() {
+            results();
             self.isTest = false;
             console.log('');
             if (cb)
@@ -6422,6 +6459,9 @@ function Controller(name, req, res, subscribe) {
     this._currentTemplate = '';
     this._currentView = name[0] !== '#' && name !== 'default' ? '/' + name + '/' : '';
     this._currentContent = '';
+
+    // Assign controller to Response
+    this.res.controller = this;
 }
 
 Controller.prototype = {
