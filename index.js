@@ -6456,6 +6456,7 @@ function Controller(name, req, res, subscribe) {
     this.isCanceled = false;
     this.isConnected = true;
     this.isTimeout = false;
+    this.isController = true;
 
     this.repository = {};
 
