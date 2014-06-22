@@ -4062,11 +4062,13 @@ Framework.prototype.testing = function(stop, callback) {
         try {
             test.run.call(self, function() {
                 logger(key, beg);
+                framework.testsOK++;
                 self.testing(stop, callback);
             }, key);
         } catch (e) {
             logger(key, beg, e);
             framework.isTestError = true;
+            framework.testsNO++;
             self.testing(stop, callback);
         }
         return self;
@@ -4099,8 +4101,10 @@ Framework.prototype.testing = function(stop, callback) {
             try {
                 test.callback(null, res._buffer, res.statusCode, res.headers, cookies, key);
                 logger(key, beg);
+                framework.testsOK++;
                 self.testing(stop, callback);
             } catch (e) {
+                framework.testsNO++;
                 logger(key, beg, e);
                 self.testing(stop, callback);
                 throw e;
@@ -4188,6 +4192,12 @@ Framework.prototype.test = function(stop, names, cb) {
     if (!framework.testsResults)
         framework.testsResults = [];
 
+    if (!framework.testsOK)
+        framework.testsOK = 0;
+
+    if (!framework.testsNO)
+        framework.testsNO = 0;
+
     fs.readdirSync(utils.combine(dir)).forEach(function(name) {
 
         var filename = path.join(directory, dir, name);
@@ -4210,6 +4220,9 @@ Framework.prototype.test = function(stop, names, cb) {
 
             _test = name;
 
+            if (test.disabled === true)
+                return;
+
             if (typeof(test.order) === UNDEFINED)
                 framework.testsPriority = typeof(test.priority) === UNDEFINED ? self.tests.length : test.priority;
             else
@@ -4226,7 +4239,7 @@ Framework.prototype.test = function(stop, names, cb) {
 
             if (test.usage) {
                 (function(test) {
-                    framework.testsResults.push(function() { test.usage(); });
+                    framework.testsResults.push(function() { test.usage(name); });
                 })(test);
             }
 
@@ -4275,6 +4288,12 @@ Framework.prototype.test = function(stop, names, cb) {
         console.log('====== TESTING ======');
         console.log('');
         self.testing(stop, function() {
+
+            console.log('');
+            console.log('Passed ... ', framework.testsOK);
+            console.log('Failed ... ', framework.testsNO);
+            console.log('');
+
             results();
             self.isTest = false;
             console.log('');
