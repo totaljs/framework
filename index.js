@@ -4047,7 +4047,7 @@ Framework.prototype.testing = function(stop, callback) {
 
         if (err) {
             framework.isTestError = true;
-            console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + (err.name === 'AssertionError' ? err.toString() : err.stack) + '> [' + time + ']');
+            console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + (err.name.toLowerCase().indexOf('assert') !== -1 ? err.toString() : err.stack) + '> [' + time + ']');
             return;
         }
 
@@ -4166,7 +4166,7 @@ Framework.prototype.test = function(stop, names, cb) {
 
         if (err) {
             framework.isTestError = true;
-            console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + (err.name === 'AssertionError' ? err.toString() : err.stack) + '> [' + time + ']');
+            console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + (err.name.toLowerCase().indexOf('assert') !== -1 ? err.toString() : err.stack) + '> [' + time + ']');
             return;
         }
 
