@@ -3917,7 +3917,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
     var self = this;
 
     if (typeof(url) === FUNCTION) {
-        self.tests[_test + ': ' + name] = {
+        self.tests[(Object.keys(self.tests).length + 1).padLeft(3, '0') + '. ' + _test + ': ' + name] = {
             run: url
         };
         return self;
@@ -4002,7 +4002,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
         headers: headers
     };
 
-    self.tests[Object.keys(self.tests).length + '. ' + _test + ': ' + name] = obj;
+    self.tests[(Object.keys(self.tests).length + 1).padLeft(3, '0') + '. ' + _test + ': ' + name] = obj;
     return self;
 };
 
