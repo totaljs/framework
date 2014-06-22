@@ -193,7 +193,7 @@ function Framework() {
     this.sources = {};
     this.components = {};
     this.controllers = {};
-    this.tests = {};
+    this.tests = [];
     this.errors = [];
     this.problems = [];
     this.changes = [];
@@ -3916,10 +3916,14 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 
     var self = this;
 
+    // !IMPORTANT! framework.testsPriority is created dynamically in framework.test()
+
     if (typeof(url) === FUNCTION) {
-        self.tests[(Object.keys(self.tests).length + 1).padLeft(3, '0') + '. ' + _test + ': ' + name] = {
+        self.tests.push({
+            name: _test + ': ' + name,
+            priority: framework.testsPriority,
             run: url
-        };
+        });
         return self;
     }
 
@@ -3995,6 +3999,8 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
         headers[RESPONSE_HEADER_CONTENTLENGTH] = data.length;
 
     var obj = {
+        name: _test + ': ' + name,
+        priority: framework.testsPriority,
         url: url,
         callback: callback,
         method: method,
@@ -4002,7 +4008,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
         headers: headers
     };
 
-    self.tests[(Object.keys(self.tests).length + 1).padLeft(3, '0') + '. ' + _test + ': ' + name] = obj;
+    self.tests.push(obj);
     return self;
 };
 
@@ -4018,10 +4024,11 @@ Framework.prototype.testing = function(stop, callback) {
     if (typeof(stop) === UNDEFINED)
         stop = true;
 
-    var self = this;
-    var keys = Object.keys(self.tests);
+    // !IMPORTANT! framework.isTestError is created dynamically
 
-    if (keys.length === 0) {
+    var self = this;
+
+    if (self.tests.length === 0) {
 
         if (callback)
             callback(framework.isTestError === true);
@@ -4045,10 +4052,9 @@ Framework.prototype.testing = function(stop, callback) {
         console.info('Passed '.padRight(20, '.') + ' ' + name + ' [' + time + ']');
     };
 
-    var key = keys[0];
-    var test = self.tests[key];
+    var test = self.tests.shift();
+    var key = test.name;
 
-    delete self.tests[key];
     var beg = new Date();
 
     if (test.run) {
@@ -4204,6 +4210,11 @@ Framework.prototype.test = function(stop, names, cb) {
 
             _test = name;
 
+            if (typeof(test.order) === UNDEFINED)
+                framework.testsPriority = typeof(test.priority) === UNDEFINED ? self.tests.length : test.priority;
+            else
+                framework.testsPriority = test.priority;
+
             if (isRun)
                 test.run(self, name);
             else if (isInstall)
@@ -4244,6 +4255,14 @@ Framework.prototype.test = function(stop, names, cb) {
 
         return self;
     }
+
+    self.tests.sort(function(a, b) {
+        if (a.priority > b.priority)
+            return 1;
+        if (a.priority < b.priority)
+            return -1;
+        return 0;
+    });
 
     setTimeout(function() {
         console.log('====== TESTING ======');
