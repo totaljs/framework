@@ -4047,7 +4047,7 @@ Framework.prototype.testing = function(stop, callback) {
 
         if (err) {
             framework.isTestError = true;
-            console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + err + '> [' + time + ']');
+            console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + (err.name === 'AssertionError' ? err.toString() : err.stack) + '> [' + time + ']');
             return;
         }
 
@@ -4056,7 +4056,6 @@ Framework.prototype.testing = function(stop, callback) {
 
     var test = self.tests.shift();
     var key = test.name;
-
     var beg = new Date();
 
     if (test.run) {
@@ -4069,7 +4068,6 @@ Framework.prototype.testing = function(stop, callback) {
             logger(key, beg, e);
             framework.isTestError = true;
             self.testing(stop, callback);
-            throw e;
         }
         return self;
     }
@@ -4168,7 +4166,7 @@ Framework.prototype.test = function(stop, names, cb) {
 
         if (err) {
             framework.isTestError = true;
-            console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + err + '> [' + time + ']');
+            console.error('Failed [x] '.padRight(20, '.') + ' ' + name + ' <' + (err.name === 'AssertionError' ? err.toString() : err.stack) + '> [' + time + ']');
             return;
         }
 
