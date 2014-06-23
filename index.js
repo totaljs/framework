@@ -6787,7 +6787,6 @@ Controller.prototype.pipe = function(url, headers, callback) {
     return {String}
 */
 Controller.prototype.encrypt = function() {
-    var framework = this.framework;
     return framework.encrypt.apply(framework, arguments);
 };
 
@@ -6799,7 +6798,6 @@ Controller.prototype.encrypt = function() {
     return {String or Object}
 */
 Controller.prototype.decrypt = function() {
-    var framework = this.framework;
     return framework.decrypt.apply(framework, arguments);
 };
 
@@ -9846,8 +9844,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
     return {NoSQL};
 */
 Controller.prototype.database = function() {
-    var self = this.framework;
-    return self.database.apply(self, arguments);
+    return framework.database.apply(framework, arguments);
 };
 
 /*
@@ -10131,7 +10128,6 @@ function WebSocket(framework, path, name, id) {
     this.id = id;
     this.online = 0;
     this.connections = {};
-    this.framework = framework;
     this.repository = {};
     this.name = name;
     this.url = utils.path(path);
@@ -10555,8 +10551,8 @@ WebSocket.prototype.functions = function(name) {
     @name {String}
     return {Database};
 */
-WebSocket.prototype.database = function(name) {
-    return framework.database(name);
+WebSocket.prototype.database = function() {
+    return framework.database.apply(framework, arguments);
 };
 
 /*
