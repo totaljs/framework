@@ -447,11 +447,13 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
 
 
 var httpVerbs = ['get','post','options','put','delete','patch','upload','head','trace','propfind'];
+exports.httpVerbs = httpVerbs;
 
-exports.isVerb = function (str){
+function isHttpVerb(str){
     return httpVerbs.indexOf(str.toLowerCase()) !== -1;
-};
+}
 
+exports.isHttpVerb = isHttpVerb;
 
 /*
     Internal function / Compare flags
@@ -488,10 +490,10 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
             continue;
         }
 
-        if (index === -1 && !isVerb(value)){
+        if (index === -1 && !isHttpVerb(value)){
             return value === AUTHORIZE || value === UNAUTHORIZE ? -1 : 0;
         }
-        hasVerb = hasVerb || (index !== -1 && isVerb(value));
+        hasVerb = hasVerb || (index !== -1 && isHttpVerb(value));
     }
 
     if (!isXSS && arr1.indexOf('xss') !== -1)
