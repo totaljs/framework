@@ -1,7 +1,5 @@
 /**
  * @module FrameworkMail
- * @author Peter Širka <petersirka@gmail.com>
- * @copyright Peter Širka 2012-2014
  * @version 1.5.0
  */
 
