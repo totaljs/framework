@@ -221,7 +221,7 @@ function test_routing(next) {
 	});
 
 	async.await('post-json', function(complete) {
-		utils.request(url + 'post/json/', ['json', 'post'], { name: "total.js" }, function(error, data, code, headers) {
+		utils.request(url + 'post/json/', ['json', 'post'], { name: 'total.js' }, function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === '{"name":"total.js","type":"json"}', 'post-json');
@@ -239,7 +239,7 @@ function test_routing(next) {
 	});
 
 	async.await('post-parse', function(complete) {
-		utils.request(url + 'post/parse/', ['post'], { name: "total.js" }, function(error, data, code, headers) {
+		utils.request(url + 'post/parse/', ['post'], { name: 'total.js' }, function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === '{"name":"total.js","type":"parse"}', 'post-json');
@@ -257,7 +257,7 @@ function test_routing(next) {
 	});
 
 	async.await('put-json', function(complete) {
-		utils.request(url + 'put/json/', ['json', 'put'], { name: "total.js" }, function(error, data, code, headers) {
+		utils.request(url + 'put/json/', ['json', 'put'], { name: 'total.js' }, function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === '{"name":"total.js","type":"json"}', 'put-json');
@@ -275,10 +275,46 @@ function test_routing(next) {
 	});
 
 	async.await('put-parse', function(complete) {
-		utils.request(url + 'put/parse/', ['put'], { name: "total.js" }, function(error, data, code, headers) {
+		utils.request(url + 'put/parse/', ['put'], { name: 'total.js' }, function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === '{"name":"total.js","type":"parse"}', 'put-json');
+			complete();
+		});
+	});
+
+	async.await('multiple GET', function(complete) {
+		utils.request(url + 'multiple/', ['get'], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'POST-GET-PUT-DELETE', 'multiple (GET)');
+			complete();
+		});
+	});
+
+	async.await('multiple DELETE', function(complete) {
+		utils.request(url + 'multiple/', ['delete'], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'POST-GET-PUT-DELETE', 'multiple (DELETE)');
+			complete();
+		});
+	});
+
+	async.await('multiple POST', function(complete) {
+		utils.request(url + 'multiple/', ['post'], { name: 'total.js' }, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'POST-GET-PUT-DELETE', 'multiple (POST)');
+			complete();
+		});
+	});
+
+	async.await('multiple PUT', function(complete) {
+		utils.request(url + 'multiple/', ['put'], { name: 'total.js' }, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'POST-GET-PUT-DELETE', 'multiple (PUT)');
 			complete();
 		});
 	});

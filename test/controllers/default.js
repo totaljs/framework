@@ -45,6 +45,7 @@ exports.install = function(framework) {
     framework.route('/post/parse/', plain_post_parse, ['post']);
     framework.route('/post/json/', plain_post_json, ['json']);
     framework.route('/post/xml/', plain_post_xml, ['xml']);
+    framework.route('/multiple/', plain_multiple, ['post', 'get', 'put', 'delete']);
 
     framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);
     framework.route('/put/parse/', plain_put_parse, ['put']);
@@ -95,6 +96,11 @@ exports.install = function(framework) {
     // maximumSize
     framework.websocket('/', socket);
 };
+
+function plain_multiple() {
+    var self = this;
+    self.plain('POST-GET-PUT-DELETE');
+}
 
 function plain_get() {
     var self = this;

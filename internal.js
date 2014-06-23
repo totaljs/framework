@@ -1,8 +1,6 @@
 /**
  * @module FrameworkInternal
- * @author Peter Širka <petersirka@gmail.com>
- * @copyright Peter Širka 2012-2014
- * @version 1.5.0
+ * @version 1.6.0
  */
 
 'use strict';
@@ -17,6 +15,8 @@ var FUNCTION = 'function';
 
 var REG_1 = /[\n\r\t]+/g;
 var REG_2 = /\s{2,}/g;
+
+var HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
 
 /*
     Internal function / Parse data from Request
@@ -445,16 +445,6 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
     return arr.indexOf(subdomain) > -1;
 };
 
-
-var httpVerbs = ['get','post','options','put','delete','patch','upload','head','trace','propfind'];
-exports.httpVerbs = httpVerbs;
-
-function isHttpVerb(str){
-    return httpVerbs.indexOf(str.toLowerCase()) !== -1;
-}
-
-exports.isHttpVerb = isHttpVerb;
-
 /*
     Internal function / Compare flags
     @arr1 {String array}
@@ -486,14 +476,13 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
             isXSS = true;
         }
 
-        if (index === -1 && value === 'xss') {
+        if (index === -1 && value === 'xss')
             continue;
-        }
 
-        if (index === -1 && !isHttpVerb(value)){
+        if (index === -1 && !HTTPVERBS[value])
             return value === AUTHORIZE || value === UNAUTHORIZE ? -1 : 0;
-        }
-        hasVerb = hasVerb || (index !== -1 && isHttpVerb(value));
+
+        hasVerb = hasVerb || (index !== -1 && HTTPVERBS[value]);
     }
 
     if (!isXSS && arr1.indexOf('xss') !== -1)
