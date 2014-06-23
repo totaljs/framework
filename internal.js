@@ -423,7 +423,7 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
         if (url[i] !== value) {
             if (!isSystem)
-                return isAsterix
+                return isAsterix;
             return false;
         }
     }
@@ -445,6 +445,14 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
     return arr.indexOf(subdomain) > -1;
 };
 
+
+var httpVerbs = ['get','post','options','put','delete','patch','upload','head','trace','propfind'];
+
+exports.isVerb = function (str){
+    return httpVerbs.indexOf(str.toLowerCase()) !== -1;
+};
+
+
 /*
     Internal function / Compare flags
     @arr1 {String array}
@@ -456,8 +464,7 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
     var isXSS = false;
     var length = arr2.length;
-    //var LOGGED = 'logged';
-    //var UNLOGGED = 'unlogged';
+    var hasVerb = false;
 
     var AUTHORIZE = 'authorize';
     var UNAUTHORIZE = 'unauthorize';
@@ -465,7 +472,7 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
     for (var i = 0; i < length; i++) {
         var value = arr2[i];
 
-        if (value[0] === '!')
+        if (value[0] === '!') // ignore roles
             continue;
 
         if (noLoggedUnlogged && (value === AUTHORIZE || value === UNAUTHORIZE))
@@ -473,23 +480,24 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
         var index = arr1.indexOf(value);
 
-        if (index === -1 && value === 'xss') {
+        if (value === 'xss'){
             isXSS = true;
+        }
+
+        if (index === -1 && value === 'xss') {
             continue;
         }
 
-        if (value === 'xss')
-            isXSS = true;
-
-        //          return value === LOGGED || value === UNLOGGED ? -1 : 0;
-        if (index === -1)
+        if (index === -1 && !isVerb(value)){
             return value === AUTHORIZE || value === UNAUTHORIZE ? -1 : 0;
+        }
+        hasVerb = hasVerb || (index !== -1 && isVerb(value));
     }
 
     if (!isXSS && arr1.indexOf('xss') !== -1)
         return 0;
 
-    return 1;
+    return hasVerb ? 1 : 0;
 };
 
 /*
