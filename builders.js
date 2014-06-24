@@ -20,9 +20,6 @@ var NUMBER = 'number';
 var BOOLEAN = 'boolean';
 var REQUIRED = 'The field "@" is required.';
 
-/*
-    @onResource {Function} :: function(name, key) return {String}
-*/
 /**
  * ErrorBuilder
  * @class
