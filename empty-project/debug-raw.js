@@ -1,12 +1,16 @@
 // ===================================================
-// IMPORTANT: only for development mode
+// IMPORTANT: only for development
 // total.js - web application framework for node.js
 // http://www.totaljs.com
 // ===================================================
 
 var fs = require('fs');
-var https = false;
-var options = { key: null, cert: null };
+var options = {};
+
+// options.ip = '127.0.0.1';
+// options.port = parseInt(process.argv[2]);
+// options.config = { name: 'total.js' };
+// options.https = { key: fs.readFileSync('keys/agent2-key.pem'), cert: fs.readFileSync('keys/agent2-cert.pem')};
 
 var isDebugging = process.argv[process.argv.length - 1] === 'debugging';
 var directory = process.cwd();
@@ -15,7 +19,9 @@ var path = require('path');
 function debug() {
     var framework = require('total.js');
     var port = parseInt(process.argv[2]);
-    framework.run(require(https ? 'https' : 'http'), true, port, '', (options && options.key && options.cert) ? options : null);
+    if (options.https)
+        return framework.https('debug', options);
+    framework.http('debug', options);
 }
 
 function app() {
