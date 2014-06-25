@@ -4061,9 +4061,9 @@ Framework.prototype.testing = function(stop, callback) {
                 logger(key, beg, err);
 
                 if (err)
-                    framework.testsOK++;
-                else
                     framework.testsNO++;
+                else
+                    framework.testsOK++;
 
                 self.testing(stop, callback);
             };
