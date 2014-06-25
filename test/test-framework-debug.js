@@ -1,9 +1,7 @@
 var utils = require('../utils');
 var assert = require('assert');
 var framework = require('../index');
-var http = require('http');
 var fs = require('fs');
-var debug = true;
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
@@ -412,4 +410,4 @@ framework.on('ready', function() {
 	run();
 });
 
-framework.run(http, debug, 8001);
+framework.http('debug', { port: 8001 });

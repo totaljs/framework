@@ -1,5 +1,1 @@
-var framework = require('../index');
-var http = require('http');
-
-framework.run(http, true, 8001);
-framework.test(true);
+require('../index').http('test', 8001);

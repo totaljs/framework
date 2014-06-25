@@ -275,8 +275,6 @@ function Framework() {
 
     this.isCoffee = false;
     this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
-
-    var self = this;
 }
 
 // ======================================================
@@ -336,7 +334,7 @@ Framework.prototype.controller = function(name, definition) {
 
     var self = this;
 
-    // is controller initialized?
+    // is controller alized?
     if (self.controllers[name])
         return self.controllers[name];
 
@@ -3139,28 +3137,26 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
     return self;
 };
 
-/*
-    Initialization
-    @http {HTTP or HTTPS}
-    @config {Boolean or Object}
-    @port {Number}
-    @options {Object}
-    return {Framework}
-*/
-Framework.prototype.init = function(http, config, port, ip, options, test) {
+/**
+ * Initialize framework
+ * @param  {Object} http
+ * @param  {Boolean} debug
+ * @param  {Object} options
+ * @return {Framework}
+ */
+Framework.prototype.initialize = function(http, debug, options) {
 
     var self = this;
-    var type = typeof(http);
 
-    if (type === BOOLEAN) {
-        test = options;
-        options = ip;
-        ip = port;
-        port = config;
-        config = http;
-        http = require('http');
-    } else if (type === UNDEFINED)
-        http = require('http');
+    if (self.server !== null)
+        return self;
+
+    if (!options)
+        options = {};
+
+    var port = options.port;
+    var ip = options.ip;
+    var config = options.config || {};
 
     self.isHTTPS = typeof(http.STATUS_CODES) === UNDEFINED;
 
@@ -3172,131 +3168,32 @@ Framework.prototype.init = function(http, config, port, ip, options, test) {
     if (isNaN(port) && typeof(port) !== STRING)
         port = null;
 
-    if (port !== null && typeof(port) === OBJECT) {
-        var tmp = options;
-        options = port;
-        port = tmp;
-    } else if (ip !== null && typeof(ip) === OBJECT) {
-        var tmp = options;
-        options = ip;
-        ip = tmp;
-    }
+    self.config.debug = debug;
+    self.isDebug = debug;
 
-    if (self.server !== null)
-        return;
-
-    if (typeof(config) === BOOLEAN)
-        self.config.debug = config;
-    else if (typeof(config) === OBJECT)
-        utils.extend(self.config, config, true);
-
-    self.isDebug = self.config.debug;
     self.configure();
     self.configureMapping();
 
-    if (test)
+    if (self.isTest)
         self.configure('config-test', false);
 
     self.clear();
-
     self.cache.init();
     self.install();
 
-    var module = self.module('#');
-    if (module !== null) {
-        Object.keys(module).forEach(function(o) {
-            if (o === 'onLoad' || o === 'usage')
-                return;
-            self[o] = module[o];
-        });
-    }
-
-    process.on('uncaughtException', function(e) {
-
-        self.error(e, '', null);
-
-        if (self.isTest) {
-            setTimeout(function() {
-                process.exit(1);
-            }, 1000);
-            return;
-        }
-
-        if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
-            if (typeof(process.send) === FUNCTION)
-                process.send('stop');
-            process.exit(0);
-        }
-    });
-
-    process.on('SIGTERM', function() {
-        self.stop();
-    });
-
-    process.on('SIGINT', function() {
-        self.stop();
-    });
-
-    process.on('exit', function() {
-
-        if (self.onExit)
-            self.onExit(self);
-
-        self.emit('exit');
-    });
-
-    process.on('message', function(msg, h) {
-
-        if (typeof(msg) !== STRING) {
-            self.emit('message', msg, h);
-            return;
-        }
-
-        if (msg === 'debugging') {
-            framework.console();
-            framework.console = utils.noop;
-            return;
-        }
-
-        if (msg === 'reconnect') {
-            self.reconnect();
-            return;
-        }
-
-        if (msg === 'reconfigure') {
-            self.configure();
-            self.configureMapping();
-            self.emit(msg);
-            return;
-        }
-
-        if (msg === 'reset') {
-            self.clear();
-            self.cache.clear();
-            return;
-        }
-
-        if (msg === 'stop' || msg === 'exit') {
-            self.stop();
-            return;
-        }
-
-        self.emit('message', msg, h);
-    });
-
-    if (options) {
-        self.server = http.createServer(options, function(req, res) {
-            self._request(req, res);
+    if (options.https) {
+        self.server = http.createServer(options.https, function(req, res) {
+            framework._request(req, res);
         });
     } else {
         self.server = http.createServer(function(req, res) {
-            self._request(req, res);
+            framework._request(req, res);
         });
     }
 
     if (self.config['allow-websocket']) {
         self.server.on('upgrade', function(req, socket, head) {
-            self._upgrade(req, socket, head);
+            framework._upgrade(req, socket, head);
         });
     }
 
@@ -3315,7 +3212,7 @@ Framework.prototype.init = function(http, config, port, ip, options, test) {
 
     if (ip !== null) {
         self.ip = ip || self.config['default-ip'] || '127.0.0.1';
-        if (self.ip === 'null' || self.ip === 'undefined' || self.ip === 'auto')
+        if (self.ip === 'null' || self.ip === UNDEFINED || self.ip === 'auto')
             self.ip = undefined;
     } else
         self.ip = undefined;
@@ -3324,16 +3221,6 @@ Framework.prototype.init = function(http, config, port, ip, options, test) {
 
     if (typeof(self.ip) === UNDEFINED || self.ip === null)
         self.ip = 'auto';
-
-    if (module !== null) {
-        if (typeof(module.onLoad) !== UNDEFINED) {
-            try {
-                module.onLoad.call(self, self);
-            } catch (err) {
-                self.error(err, '#.onLoad()');
-            }
-        }
-    }
 
     self.isLoaded = true;
 
@@ -3355,8 +3242,8 @@ Framework.prototype.init = function(http, config, port, ip, options, test) {
     self.removeAllListeners('load');
     self.removeAllListeners('ready');
 
-    if (test) {
-        self.test(true);
+    if (self.isTest) {
+        self.test(true, options.tests || options.test);
         return self;
     }
 
@@ -3376,13 +3263,45 @@ Framework.prototype.init = function(http, config, port, ip, options, test) {
     return self;
 };
 
-// Alias for framework.init
 Framework.prototype.run = function(http, config, port, ip, options) {
+
+    console.log('OBSOLETE: please use for run framework.http("debug", [options([ip: String], [port: Number], [config: Object])]) or framework.http("release", [options([ip: String], [port: Number], [config: Object])]) or framework.http("test", [options([ip: String], [port: Number], [config: Object], tests: [String Array])])');
 
     if (typeof(http) === STRING)
         return this.mode(http, config, port, ip, options);
 
-    return this.init(http, config, port, ip, options);
+    var debug = false;
+    var type = typeof(config);
+
+    if (type === BOOLEAN)
+        debug = config;
+    else if (type === OBJECT) {
+        debug = config.debug;
+        options.config = config;
+    }
+
+    self.isHTTPS = typeof(http.STATUS_CODES) === UNDEFINED;
+
+    if (isNaN(port) && typeof(port) !== STRING)
+        port = null;
+
+    if (port !== null && typeof(port) === OBJECT) {
+        var tmp = options;
+        options = port;
+        port = tmp;
+    } else if (ip !== null && typeof(ip) === OBJECT) {
+        var tmp = options;
+        options = ip;
+        ip = tmp;
+    }
+
+    if (typeof(options) === UNDEFINED)
+        options = {};
+
+    options.ip = ip;
+    options.port = port;
+
+    return this.initialize(http, debug, options);
 };
 
 /**
@@ -3393,13 +3312,13 @@ Framework.prototype.run = function(http, config, port, ip, options) {
  */
 Framework.prototype.http = function(mode, options) {
 
-    if (typeof(options) === 'undefined')
+    if (typeof(options) === UNDEFINED)
         options = {};
 
     if (!options.port)
         options.port = parseInt(process.argv[2]);
 
-    return this.mode(require('http'), mode, options.port, options.ip, options.config);
+    return this.mode(require('http'), mode, options);
 };
 
 /**
@@ -3410,20 +3329,18 @@ Framework.prototype.http = function(mode, options) {
  */
 Framework.prototype.https = function(mode, options) {
 
-    if (typeof(options) === 'undefined')
+    if (typeof(options) === UNDEFINED)
         options = {};
 
-    if (!options.port)
-        options.port = parseInt(process.argv[2]);
-
-    return this.mode(require('https'), mode, options.port, options.ip, options.config, options);
+    return this.mode(require('https'), mode, options);
 };
 
 // Alias for framework.init
-Framework.prototype.mode = function(http, name, port, ip, options) {
+Framework.prototype.mode = function(http, name, options) {
 
     var test = false;
     var debug = false;
+    var self = this;
 
     switch (name.toLowerCase().replace(/\.|\s/g, '-')) {
         case 'release':
@@ -3442,6 +3359,7 @@ Framework.prototype.mode = function(http, name, port, ip, options) {
         case 'testing-debug':
             test = true;
             debug = true;
+            self.isTest = true;
             break;
 
         case 'test-release':
@@ -3453,7 +3371,7 @@ Framework.prototype.mode = function(http, name, port, ip, options) {
             break;
     }
 
-    return this.init(http, debug, port, ip, options, test);
+    return self.initialize(http, debug, options);
 };
 
 Framework.prototype.console = function() {
@@ -11405,3 +11323,76 @@ http.IncomingMessage.prototype.hostname = function(path) {
 };
 
 global.framework = module.exports = new Framework();
+
+process.on('uncaughtException', function(e) {
+
+    framework.error(e, '', null);
+
+    if (framework.isTest) {
+        setTimeout(function() {
+            process.exit(1);
+        }, 1000);
+        return;
+    }
+
+    if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
+        if (typeof(process.send) === FUNCTION)
+            process.send('stop');
+        process.exit(0);
+    }
+});
+
+process.on('SIGTERM', function() {
+    framework.stop();
+});
+
+process.on('SIGINT', function() {
+    framework.stop();
+});
+
+process.on('exit', function() {
+
+    if (framework.onExit)
+        framework.onExit(framework);
+
+    framework.emit('exit');
+});
+
+process.on('message', function(msg, h) {
+
+    if (typeof(msg) !== STRING) {
+        framework.emit('message', msg, h);
+        return;
+    }
+
+    if (msg === 'debugging') {
+        framework.console();
+        framework.console = utils.noop;
+        return;
+    }
+
+    if (msg === 'reconnect') {
+        framework.reconnect();
+        return;
+    }
+
+    if (msg === 'reconfigure') {
+        framework.configure();
+        framework.configureMapping();
+        framework.emit(msg);
+        return;
+    }
+
+    if (msg === 'reset') {
+        framework.clear();
+        framework.cache.clear();
+        return;
+    }
+
+    if (msg === 'stop' || msg === 'exit') {
+        framework.stop();
+        return;
+    }
+
+    framework.emit('message', msg, h);
+});

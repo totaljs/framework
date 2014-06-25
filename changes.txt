@@ -33,8 +33,10 @@ IN DEVELOPMENT ======= 1.6.0
 - updated: framework.run([http], config, [port], [ip], [options])
 - updated: utils.validate(), Builders.validate() –> prepare function (added: schemaName): function(name, value, path, schemaName)
 - updated: framework.assert() supports "data" as function (for future data)
-
+- updated: empty-project
 - (IMPORTANT) updated: middleware function to: function(req, res, next) {}
+
+- (IMPORTANT) removed: global module #
 
 - fixed: controller.custom()
 - fixed: long messages in WebSocket by Andrea Sessa <https://plus.google.com/u/0/104713619368072403016>
