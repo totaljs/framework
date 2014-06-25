@@ -4059,7 +4059,12 @@ Framework.prototype.testing = function(stop, callback) {
             // Is used in: process.on('uncaughtException')
             framework.testContinue = function(err) {
                 logger(key, beg, err);
-                framework.testsOK++;
+
+                if (err)
+                    framework.testsOK++;
+                else
+                    framework.testsNO++;
+
                 self.testing(stop, callback);
             };
 
