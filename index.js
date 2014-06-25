@@ -4055,11 +4055,18 @@ Framework.prototype.testing = function(stop, callback) {
 
     if (test.run) {
         try {
-            test.run.call(self, function() {
-                logger(key, beg);
+
+            // Is used in: process.on('uncaughtException')
+            framework.testContinue = function(err) {
+                logger(key, beg, err);
                 framework.testsOK++;
                 self.testing(stop, callback);
+            };
+
+            test.run.call(self, function() {
+                self.testContinue();
             }, key);
+
         } catch (e) {
             logger(key, beg, e);
             framework.isTestError = true;
@@ -11326,14 +11333,13 @@ global.framework = module.exports = new Framework();
 
 process.on('uncaughtException', function(e) {
 
-    framework.error(e, '', null);
-
     if (framework.isTest) {
-        setTimeout(function() {
-            process.exit(1);
-        }, 1000);
+        // HACK: this method is created dynamically in framework.testing();
+        framework.testContinue(e);
         return;
     }
+
+    framework.error(e, '', null);
 
     if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
         if (typeof(process.send) === FUNCTION)
