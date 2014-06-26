@@ -3280,6 +3280,7 @@ Framework.prototype.run = function(http, config, port, ip, options) {
         options.config = config;
     }
 
+    var self = this;
     self.isHTTPS = typeof(http.STATUS_CODES) === UNDEFINED;
 
     if (isNaN(port) && typeof(port) !== STRING)
