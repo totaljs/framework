@@ -414,7 +414,7 @@ exports.prepare = function(name, model) {
                 continue;
             }
 
-            item[property] = isUndefined(defaults(property), null);
+            item[property] = defaults ? isUndefined(defaults(value), null) : null;
             continue;
         }
 
