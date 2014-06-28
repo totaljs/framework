@@ -537,7 +537,7 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
  * @param  {Number timeout Response timeout.
  * @return {Framework}
  */
-Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middleware, timeout) {
+Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middleware, timeout, options) {
 
     if (url === '')
         url = '/';
@@ -558,6 +558,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'] || flags['size'];
         middleware = flags['middleware'] || flags['partials'] || flags['partial'];
         timeout = flags['timeout'];
+        options = flags['options'];
         flags = flags['flags'] || flags['flag'];
     }
 
@@ -702,11 +703,15 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         isRAW: isRaw,
         isMEMBER: isMember,
         isXSS: flags.indexOf('xss') !== -1,
-        isASTERIX: isASTERIX
+        isASTERIX: isASTERIX,
+        options: options
     });
+
+    self.emit('route-add', 'web', self.routes.web[self.routes.web.length-1]);
 
     if (_controller.length === 0)
         self.routesSort();
+
 
     return self;
 };
@@ -768,7 +773,7 @@ Framework.prototype.partial = function(name, funcExecute) {
     @middleware {String Array} :: optional, middleware
     return {Framework}
 */
-Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, maximumSize, middleware) {
+Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, maximumSize, middleware, options) {
 
     if (url === '')
         url = '/';
@@ -790,6 +795,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         allow = flags['allow'] || flags['origin'];
         maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
         middleware = flags['middleware'];
+        options = flags['options'];
         flags = flags['flags'];
     }
 
@@ -884,8 +890,10 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         isJSON: isJSON,
         isBINARY: isBINARY,
         isASTERIX: isASTERIX,
-        middleware: middleware
+        middleware: middleware,
+        options: options
     });
+    self.emit('route-add', 'websocket', self.routes.websockets[self.routes.websockets.length-1]);
 
     if (_controller.length === 0)
         self.routesSort();
@@ -901,7 +909,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
  * @param {String Array} middleware
  * @return {Framework}
  */
-Framework.prototype.file = function(name, fnValidation, fnExecute, middleware) {
+Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, options) {
     var self = this;
 
     if (utils.isArray(fnValidation)) {
@@ -924,8 +932,10 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware) {
         name: name,
         onValidation: fnValidation,
         onExecute: fnExecute || fnValidation,
-        middleware: middleware
+        middleware: middleware,
+        options: options
     });
+    self.emit('route-add', 'file', self.routes.files[self.routes.files.length-1]);
 
     self._length_files++;
     return self;
