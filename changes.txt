@@ -36,6 +36,7 @@ IN DEVELOPMENT ======= 1.6.0
 - updated: utils.validate(), Builders.validate() –> prepare function (added: schemaName): function(name, value, path, schemaName)
 - updated: framework.assert() supports "data" as function (for future data)
 - updated: empty-project
+- updated: request.signature([key]) - added key param
 - (IMPORTANT) updated: middleware function to: function(req, res, next) {}
 
 - (IMPORTANT) removed: global module #
