@@ -11229,12 +11229,13 @@ http.IncomingMessage.prototype = {
 http.IncomingMessage.prototype.__proto__ = _tmp;
 
 /**
- * Signature request (user-agent + ip + referer + current URL)
+ * Signature request (user-agent + ip + referer + current URL + custom key)
+ * @param {String} key Custom key.
  * @return {Request}
  */
-http.IncomingMessage.prototype.signature = function() {
+http.IncomingMessage.prototype.signature = function(key) {
     var self = this;
-    return framework.encrypt((self.headers['user-agent'] || '') + '#' + self.ip + '#' + self.url, 'request-signature', false);
+    return framework.encrypt((self.headers['user-agent'] || '') + '#' + self.ip + '#' + self.url + '#' + (key || ''), 'request-signature', false);
 };
 
 /**
