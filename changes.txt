@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.6.0
 - added: framework.https(mode, [options]) - I'm recommending to use NGINX as HTTPS proxy
 - added: config-test (new config file)
 - added: COMPONENT(name, params...) - returns rendered output from component
+- added: middleware delegate: function(req, res, next, [options]) { next(); }
 - added: middleware to framework.websocket(url, funcInitialize, [flags], [protocols], [allow], [maximumSize], [middleware])
 - added: middleware to framework.file([name], [fnValidation], [fnExecute], [middleware])
 - added: middleware to framework.use(name), this is global middleware

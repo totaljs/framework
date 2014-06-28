@@ -712,7 +712,6 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     if (_controller.length === 0)
         self.routesSort();
 
-
     return self;
 };
 
@@ -893,6 +892,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         middleware: middleware,
         options: options
     });
+
     self.emit('route-add', 'websocket', self.routes.websockets[self.routes.websockets.length-1]);
 
     if (_controller.length === 0)
@@ -935,9 +935,10 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
         middleware: middleware,
         options: options
     });
-    self.emit('route-add', 'file', self.routes.files[self.routes.files.length-1]);
 
+    self.emit('route-add', 'file', self.routes.files[self.routes.files.length-1]);
     self._length_files++;
+
     return self;
 };
 
@@ -3564,7 +3565,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 
             (function(middleware) {
                 func.push(function(next) {
-                    middleware.call(framework, req, res, next);
+                    middleware.call(framework, req, res, next, route.options);
                 });
             })(middleware);
 
@@ -6139,7 +6140,7 @@ Subscribe.prototype.execute = function(status) {
 
         (function(middleware) {
             func.push(function(next) {
-                middleware.call(controller, req, res, next);
+                middleware.call(controller, req, res, next, route.options);
             });
         })(middleware);
 
@@ -6422,7 +6423,7 @@ Subscribe.prototype.doEndfile_middleware = function(file) {
 
         (function(middleware) {
         func.push(function(next) {
-            middleware.call(framework, req, res, next);
+            middleware.call(framework, req, res, next, file.options);
         })})(middleware);
     }
 
