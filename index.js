@@ -9007,9 +9007,11 @@ Controller.prototype.helper = function(name) {
     Response JSON
     @obj {Object}
     @headers {Object} :: optional
+    @beautify {Boolean} :: optional
+    @replacer {Function} :: optional
     return {Controller};
 */
-Controller.prototype.json = function(obj, headers, beautify) {
+Controller.prototype.json = function(obj, headers, beautify, replacer) {
     var self = this;
 
     if (self.res.success || !self.isConnected)
@@ -9025,9 +9027,9 @@ Controller.prototype.json = function(obj, headers, beautify) {
         obj = obj.json(beautify);
     else {
         if (beautify)
-            obj = JSON.stringify(obj || {}, null, 4);
+            obj = JSON.stringify(obj || {}, replacer, 4);
         else
-            obj = JSON.stringify(obj || {});
+            obj = JSON.stringify(obj || {}, replacer);
     }
 
     self.subscribe.success();
