@@ -29,8 +29,9 @@ IN DEVELOPMENT ======= 1.6.0
 - added: assertion testing: exports.disabled = true for disabling current test
 - added: assertion testing: priority (example: exports.priority = 1)
 - added: routing supports multiple HTTP-VERBS/METHODS together (author: bir <https://github.com/bir>)
-- added: routing supports options for middleware  (author: bir <https://github.com/bir>)
+- added: routing supports options for middleware, author: bir <https://github.com/bir>
 - added: global method COMPONENT(name, params...) - returns rendered output from component
+- added: controller.json(obj, [beautify], [replacer]) and ErrorBuilder.json([beautify], [replacer]), author: bir <https://github.com/bir>
 
 - updated: framework.run([http], config, [port], [ip], [options])
 - updated: utils.validate(), Builders.validate() –> prepare function (added: schemaName): function(name, value, path, schemaName)

@@ -9003,14 +9003,14 @@ Controller.prototype.helper = function(name) {
     return helper.apply(self, params);
 };
 
-/*
-    Response JSON
-    @obj {Object}
-    @headers {Object} :: optional
-    @beautify {Boolean} :: optional
-    @replacer {Function} :: optional
-    return {Controller};
-*/
+/**
+ * Response JSON
+ * @param {Object} obj
+ * @param {Object} headers Custom headers, optional.
+ * @param {Boolean} beautify Beautify JSON.
+ * @param {Function(key, value)} replacer JSON replacer.
+ * @return {Controller}
+ */
 Controller.prototype.json = function(obj, headers, beautify, replacer) {
     var self = this;
 
@@ -9018,9 +9018,8 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
         return self;
 
     if (typeof(headers) === BOOLEAN) {
-        var tmp = headers;
+        replacer = beautify;
         beautify = headers;
-        headers = tmp;
     }
 
     if (obj instanceof builders.ErrorBuilder)

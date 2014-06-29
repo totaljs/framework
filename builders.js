@@ -60,9 +60,9 @@ function UrlBuilder() {
 /**
  * Pagination
  * @class
- * @param {Number} items  Count of items.
- * @param {Number} page   Current page.
- * @param {Number} max    Max items on page.
+ * @param {Number} items Count of items.
+ * @param {Number} page Current page.
+ * @param {Number} max Max items on page.
  * @param {String} format URL format for links (next, back, go to). Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
  * @property {Number} isNext Is next page?
  * @property {Number} isPrev Is previous page?
@@ -127,7 +127,7 @@ exports.schema = function(name, obj, defaults, validator) {
 /**
  * Check if property value is joined to other class
  * @private
- * @param  {String}  value Property value from Schema definition.
+ * @param {String} value Property value from Schema definition.
  * @return {Boolean}
  */
 exports.isJoin = function(value) {
@@ -140,8 +140,8 @@ exports.isJoin = function(value) {
 
 /**
  * Create validation
- * @param  {String} name Schema name.
- * @param  {Function or Array} fn Validator Handler or Property names as array for validating.
+ * @param {String} name Schema name.
+ * @param {Function or Array} fn Validator Handler or Property names as array for validating.
  * @return {Function or Array}
  */
 exports.validation = function(name, fn) {
@@ -327,8 +327,8 @@ exports.defaults = function(name) {
 
 /**
  * Prepare object according to schema
- * @param  {String} name  Schema name.
- * @param  {Object} model Object to prepare.
+ * @param {String} name Schema name.
+ * @param {Object} model Object to prepare.
  * @return {Object} Prepared object.
  */
 exports.prepare = function(name, model) {
@@ -564,8 +564,8 @@ function isUndefined(value, def) {
 
 /**
  * Resource setting
- * @param  {String} name   Resource name.
- * @param  {String} prefix Resource prefix.
+ * @param {String} name Resource name.
+ * @param {String} prefix Resource prefix.
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.resource = function(name, prefix) {
@@ -621,7 +621,7 @@ ErrorBuilder.prototype.add = function(name, error, path) {
 
 /**
  * Remove error
- * @param  {String} name Property name.
+ * @param {String} name Property name.
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.remove = function(name) {
@@ -637,7 +637,7 @@ ErrorBuilder.prototype.remove = function(name) {
 
 /**
  * Has error?
- * @param  {String}  name Property name (optional).
+ * @param {String}  name Property name (optional).
  * @return {Boolean}
  */
 ErrorBuilder.prototype.hasError = function(name) {
@@ -654,7 +654,7 @@ ErrorBuilder.prototype.hasError = function(name) {
 
 /**
  * Read an error
- * @param  {String} name Property name.
+ * @param {String} name Property name.
  * @return {String}
  */
 ErrorBuilder.prototype.read = function(name) {
@@ -687,8 +687,8 @@ ErrorBuilder.prototype.clear = function() {
 
 /**
  * Replace text in message
- * @param  {String} search   Text to search.
- * @param  {String} newvalue Text to replace.
+ * @param {String} search Text to search.
+ * @param {String} newvalue Text to replace.
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.replace = function(search, newvalue) {
@@ -698,14 +698,10 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
     return self;
 };
 
-/*
-	Serialize ErrorBuilder to JSON format
-    return {String}
-*/
 /**
  * Serialize ErrorBuilder to JSON
  * @param {Boolean} beautify Beautify JSON.
- * @param {Function} replacer Beautify JSON.
+ * @param {Function(key, value)} replacer JSON replacer.
  * @return {String}
  */
 ErrorBuilder.prototype.json = function(beautify, replacer) {
@@ -826,9 +822,9 @@ ErrorBuilder.prototype.prepare = function() {
 
 /**
  * Refresh pagination
- * @param  {Number} items Count of items.
- * @param  {Number} page  Current page.
- * @param  {Number} max   Max items on page.
+ * @param {Number} items Count of items.
+ * @param {Number} page Current page.
+ * @param {Number} max Max items on page.
  * @return {Pagination}
  */
 Pagination.prototype.refresh = function(items, page, max) {
@@ -854,7 +850,7 @@ Pagination.prototype.refresh = function(items, page, max) {
 
 /**
  * Get previous page
- * @param  {String} format Custom format (optional).
+ * @param {String} format Custom format (optional).
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.prev = function(format) {
@@ -877,7 +873,7 @@ Pagination.prototype.prev = function(format) {
 
 /**
  * Get next page
- * @param  {String} format Custom format (optional).
+ * @param {String} format Custom format (optional).
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.next = function(format) {
@@ -900,9 +896,9 @@ Pagination.prototype.next = function(format) {
 
 /**
  * Create pagination
- * @param  {Number} max    Max pages in collection (optional).
- * @param  {String} format Custom format (optional).
- * @return {Object Array}  Example: [{ url: String, page: Number, selected: Boolean }]
+ * @param {Number} max Max pages in collection (optional).
+ * @param {String} format Custom format (optional).
+ * @return {Object Array} Example: [{ url: String, page: Number, selected: Boolean }]
  */
 Pagination.prototype.render = function(max, format) {
 
@@ -979,7 +975,7 @@ UrlBuilder.prototype.add = function(name, value) {
 
 /**
  * Remove parameter
- * @param  {String} name
+ * @param {String} name
  * @return {UrlBuilder}
  */
 UrlBuilder.prototype.remove = function(name) {
@@ -990,7 +986,7 @@ UrlBuilder.prototype.remove = function(name) {
 
 /**
  * Read value
- * @param  {String} name
+ * @param {String} name
  * @return {Object}
  */
 UrlBuilder.prototype.read = function(name) {
@@ -1025,7 +1021,7 @@ UrlBuilder.prototype.toString = function() {
 
 /**
  * Has these parameters?
- * @param  {String Array} keys Keys.
+ * @param {String Array} keys Keys.
  * @return {Boolean}
  */
 UrlBuilder.prototype.hasValue = function(keys) {
@@ -1049,8 +1045,8 @@ UrlBuilder.prototype.hasValue = function(keys) {
 
 /**
  * Render paramerters
- * @param  {String Array} keys Keys.
- * @param  {String} delimiter Delimiter (default &).
+ * @param {String Array} keys Keys.
+ * @param {String} delimiter Delimiter (default &).
  * @return {String}
  */
 UrlBuilder.prototype.toOne = function(keys, delimiter) {
