@@ -705,12 +705,13 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
 /**
  * Serialize ErrorBuilder to JSON
  * @param {Boolean} beautify Beautify JSON.
+ * @param {Function} replacer Beautify JSON.
  * @return {String}
  */
-ErrorBuilder.prototype.json = function(beautify) {
+ErrorBuilder.prototype.json = function(beautify, replacer) {
     if (beautify)
-        return JSON.stringify(this.prepare().errors, null, '\t');
-    return JSON.stringify(this.prepare().errors);
+        return JSON.stringify(this.prepare().errors, replacer, '\t');
+    return JSON.stringify(this.prepare().errors, replacer);
 };
 
 /**
