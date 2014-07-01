@@ -390,14 +390,14 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 /**
  * Create a request to a specific URL
- * @param  {String} url URL address.
- * @param  {String Array} flags Request flags.
- * @param  {String or Object} data Request data (optional).
- * @param  {Function(error, response)} callback Callback.
- * @param  {Object} headers Custom cookies (optional, default: null).
- * @param  {Object} headers Custom headers (optional, default: null).
- * @param  {String} encoding Encoding (optional, default: UTF8)
- * @param  {Number} timeout Request timeout.
+ * @param {String} url URL address.
+ * @param {String Array} flags Request flags.
+ * @param {String or Object} data Request data (optional).
+ * @param {Function(error, response)} callback Callback.
+ * @param {Object} headers Custom cookies (optional, default: null).
+ * @param {Object} headers Custom headers (optional, default: null).
+ * @param {String} encoding Encoding (optional, default: UTF8)
+ * @param {Number} timeout Request timeout.
  * return {Boolean}
  */
 exports.download = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
@@ -624,7 +624,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 
 /**
  * Trim string properties
- * @param  {Object} obj Object.
+ * @param {Object} obj
  * @return {Object}
  */
 exports.trim = function(obj) {
