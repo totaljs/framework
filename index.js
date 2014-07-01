@@ -209,7 +209,8 @@ function Framework() {
         path: {},
         processing: {},
         range: {},
-        views: {}
+        views: {},
+        precompiled: {}
     };
 
     this.stats = {
@@ -4960,6 +4961,28 @@ Framework.prototype.worker = function(name, id, timeout) {
     }, timeout);
 
     return fork;
+};
+
+/**
+ * Precompile view/css/javascript
+ * @param {String} name
+ * @param {String} url
+ * @return {Framework}
+ */
+Framework.prototype.precompile = function(name, url) {
+
+    var self = this;
+    var filename = 'precompiled-' + name;
+
+    if (typeof(url) === UNDEFINED) {
+        if (!self.temporary.precompiled[name])
+            return self;
+        return self.precompile(name, self.temporary.precompiled[name].url);
+    }
+
+    self.temporary.precompiled[name] = { url: url, filename: filename };
+
+    return self;
 };
 
 // *********************************************************************************
