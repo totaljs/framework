@@ -163,6 +163,12 @@ function Framework() {
         'allow-compile-css': true,
         'allow-compress-html': true,
         'allow-performance': false,
+
+        // Used in framework._service()
+        // in minutes
+        'default-interval-clear-resources': 20,
+        'default-interval-clear-temporary': 3,
+        'default-interval-precompile': 61
     };
 
     this.global = {};
@@ -182,7 +188,8 @@ function Framework() {
         middleware: {},
         redirects: {},
         resize: {},
-        request: []
+        request: [],
+        precompiled: {}
     };
 
     this.helpers = {};
@@ -209,8 +216,7 @@ function Framework() {
         path: {},
         processing: {},
         range: {},
-        views: {},
-        precompiled: {}
+        views: {}
     };
 
     this.stats = {
@@ -3586,8 +3592,8 @@ Framework.prototype._service = function(count) {
     if (self.config.debug)
         self.resources = {};
 
-    // every 20 minute service clears resources
-    if (count % 20 === 0) {
+    // every 20 minutes service clears resources
+    if (count % framework.config['default-interval-clear-resources'] === 0) {
         self.emit('clear', 'resources');
         self.resources = {};
 
@@ -3595,12 +3601,19 @@ Framework.prototype._service = function(count) {
             gc();
     }
 
-    // every 3 minute service clears static cache
-    if (count % 3 === 0) {
+    // every 3 minutes service clears static cache
+    if (count % framework.config['default-interval-clear-temporary'] === 0) {
         self.emit('clear', 'temporary', self.temporary);
         self.temporary.path = {};
         self.temporary.range = {};
         self.temporary.views = {};
+    }
+
+    // every 61 minutes services precompile all resources
+    if (count % framework.config['default-interval-precompile'] === 0) {
+        Object.keys(self.routes.precompiled).wait(function(item, next) {
+            self.precompile(item.name, next);
+        });
     }
 
     self.emit('service', count);
@@ -4626,14 +4639,20 @@ Framework.prototype.configure = function(arr, rewrite) {
             case 'default-request-length':
             case 'default-websocket-request-length':
             case 'default-request-timeout':
+            case 'default-interval-clear-temporary':
+            case 'default-interval-clear-resources':
+            case 'default-interval-precompile':
                 obj[name] = utils.parseInt(value);
                 break;
+
             case 'static-accepts-custom':
                 accepts = value.replace(/\s/g, '').split(',');
                 break;
+
             case 'static-accepts':
                 obj[name] = value.replace(/\s/g, '').split(',');
                 break;
+
             case 'default-websocket-encodedecode':
             case 'allow-gzip':
             case 'allow-websocket':
@@ -4641,10 +4660,13 @@ Framework.prototype.configure = function(arr, rewrite) {
             case 'allow-compile-js':
                 obj[name] = value.toLowerCase() === 'true' || value === '1';
                 break;
+
             case 'version':
                 obj[name] = value;
                 break;
+
             default:
+
                 obj[name] = value.isNumber() ? utils.parseInt(value) : value.isNumber(true) ? utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
                 break;
         }
@@ -4972,15 +4994,45 @@ Framework.prototype.worker = function(name, id, timeout) {
 Framework.prototype.precompile = function(name, url) {
 
     var self = this;
-    var filename = 'precompiled-' + name;
+    var item = self.routes.precompiled[name];
+    var type = typeof(url);
 
-    if (typeof(url) === UNDEFINED) {
-        if (!self.temporary.precompiled[name])
+    if (type === UNDEFINED) {
+        if (!item)
             return self;
-        return self.precompile(name, self.temporary.precompiled[name].url);
     }
 
-    self.temporary.precompiled[name] = { url: url, filename: filename };
+    if (typeof(item) === UNDEFINED) {
+        item = {};
+        item.filename = self.path.temporary('precompiled-' + utils.GUID(10) + '.tmp');
+        self.temporary.precompiled[name] = item;
+    }
+
+    item.isLoaded = false;
+
+    if (type === STRING)
+        item.url = url;
+
+    utils.download(item.url, ['get'], function(err, response) {
+
+        if (err)
+            return framework.error(err, 'framework.precompile()', item.url);
+
+        response.on('error', function(err) {
+            if (type === FUNCTION)
+                url(err);
+            self.emit('precompile', item.name, err);
+        });
+
+        response.on('end', function() {
+            item.isLoaded = true;
+            self.emit('precompile', item.name, null);
+            if (type === FUNCTION)
+                url(null);
+        });
+
+        response.pipe(fs.createWriteStream(item.filename));
+    });
 
     return self;
 };
@@ -8967,6 +9019,8 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
         return '';
     }
 
+    var precompiled = framework.routes.precompiled[name];
+
     if (typeof(repository) === UNDEFINED)
         repository = self.repository;
 
@@ -8976,7 +9030,7 @@ Controller.prototype.template = function(name, model, nameEmpty, repository) {
         plus = self._currentTemplate;
 
     try {
-        return internal.generateTemplate(self, name, model, repository, plus);
+        return internal.generateTemplate(self, name, model, repository, plus, precompiled);
     } catch (ex) {
         self.error(new Error('Template: ' + name + ' - ' + ex.toString()));
         return '';
@@ -9832,19 +9886,20 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     if (self.res.success && !isPartial)
         return self;
 
+    var precompiled = framework.routes.precompiled[name];
     var skip = name[0] === '~';
     var filename = name;
     var isLayout = self.isLayout;
 
     self.isLayout = false;
 
-    if (!self.isLayout && !skip)
+    if (!self.isLayout && !skip && !precompiled)
         filename = self._currentView + name;
 
     if (skip)
         filename = name.substring(1);
 
-    var generator = internal.generateView(self, name, filename);
+    var generator = internal.generateView(self, name, filename, precompiled);
     if (generator === null) {
 
         if (isPartial)

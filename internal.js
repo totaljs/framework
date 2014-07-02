@@ -2400,7 +2400,7 @@ View.prototype.read = function(name) {
     @prefix {String}
     return {Object} :: return factory object
 */
-View.prototype.load = function(name, prefix, filename) {
+View.prototype.load = function(name, prefix, filename, precompiled) {
 
     var self = this;
 
@@ -2503,8 +2503,8 @@ Content.prototype.load = function(name, prefix) {
     @name {String}
     return {Object}
 */
-exports.generateView = function(controller, name, plus) {
-    return new View(controller).load(name, controller.prefix, plus);
+exports.generateView = function(controller, name, plus, precompiled) {
+    return new View(controller).load(name, controller.prefix, plus, precompiled);
 };
 
 /*
@@ -2735,6 +2735,6 @@ Template.prototype.render = function(name, plus) {
     @model {Array of Object}
     @repository {Object} :: optional
 */
-exports.generateTemplate = function(controller, name, model, repository, plus) {
-    return new Template(controller, model, repository).render(name, plus);
+exports.generateTemplate = function(controller, name, model, repository, plus, precompiled) {
+    return new Template(controller, model, repository).render(name, plus, precompiled);
 };
