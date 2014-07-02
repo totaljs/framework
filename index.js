@@ -9177,14 +9177,6 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
     var self = this;
     var type = typeof(contentType);
 
-    if (type === UNDEFINED) {
-        self.content(self.$contentToggle(true, contentBody), CONTENTTYPE_TEXTHTML, headers);
-        return;
-    }
-
-    if (type === BOOLEAN)
-        return self.$contentToggle(true, contentBody);
-
     if (self.res.success || !self.isConnected)
         return self;
 

@@ -34,6 +34,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
     var isFile = false;
     var size = 0;
     var stream = null;
+
     var tmp = {
         name: '',
         value: '',
@@ -46,6 +47,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
         width: 0,
         height: 0
     };
+
     var ip = req.ip.replace(/\./g, '');
     var close = 0;
     var isXSS = false;
