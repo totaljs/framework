@@ -32,7 +32,16 @@ IN DEVELOPMENT ======= 1.6.0
 - added: routing supports options for middleware, author: bir <https://github.com/bir>
 - added: global method COMPONENT(name, params...) - returns rendered output from component
 - added: controller.json(obj, [beautify], [replacer]) and ErrorBuilder.json([beautify], [replacer]), author: bir <https://github.com/bir>
+- added: framework.precompile(name, url) - precompile view from URL address
+- added: PRECOMPILE(name, url) - alias for framework.precompile()
+- added: config['default-interval-clear-resources'], default 20
+- added: config['default-interval-clear-temporary'], default 3
+- added: config['default-interval-precompile'], default 61
 
+- updated: (IMPORTANT) INCLUDE(name, [options]), SOURCE(name, [options]) –> object
+- updated: (IMPORTANT) SOURCE(name, [options]), framework.source(name, [options]) –> object
+- updated: (IMPORTANT) INCLUDE(url, [options]), framework.include(url, [options]) –> undefined
+- updated: (IMPORTANT) SOURCE(url, [options]), framework.source(url, [options]) –> undefined
 - updated: framework.run([http], config, [port], [ip], [options])
 - updated: utils.validate(), Builders.validate() –> prepare function (added: schemaName): function(name, value, path, schemaName)
 - updated: framework.assert() supports "data" as function (for future data)
@@ -45,6 +54,7 @@ IN DEVELOPMENT ======= 1.6.0
 - fixed: view engine parser (reported by @tohachan)
 - fixed: Builders.prepare()
 
+- removed: (IMPORTANT) prefixes + framework.onPrefix()
 - removed: (IMPORTANT) controller.framework (use: framework. instead of self.framework)
 - removed: (IMPORTANT) global middleware from controllers
 - removed: (IMPORTANT) Request.data.get
@@ -52,6 +62,8 @@ IN DEVELOPMENT ======= 1.6.0
 - removed: (IMPORTANT) Request.data.files
 - removed: (IMPORTANT) framework.onRoute()
 - removed: (IMPORTANT) global module #
+- removed: (IMPORTANT) view engine: templates were changed to views
+- removed: (IMPORTANT) @{content()}
 
 - clean code
 - improvements: framework

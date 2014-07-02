@@ -513,7 +513,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
     try
     {
-        var request = isPOST ? connection.request(uri, onResponse) : connection.get(uri, onResponse);
+        var request = isPOST ? connection.request(uri, onResponse) : connection.request(uri, onResponse);
 
         if (callback) {
             request.on('error', function(error) {

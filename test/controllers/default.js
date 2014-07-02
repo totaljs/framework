@@ -12,6 +12,7 @@ exports.install = function(framework) {
         flags: ['unauthorize']
     });
 
+    framework.route('/precompile/', view_precomile);
     framework.route('/homepage/', view_homepage);
     framework.route('/usage/', view_usage);
     framework.route('/sse/', viewSSE_html);
@@ -96,6 +97,12 @@ exports.install = function(framework) {
     // maximumSize
     framework.websocket('/', socket);
 };
+
+function view_precomile() {
+    var self = this;
+    self.layout('precompile._layout');
+    self.view('precompile.homepage');
+}
 
 function plain_multiple() {
     var self = this;
@@ -339,8 +346,6 @@ function viewTest() {
         B: true
     }];
 
-    //this.layout('');
-    //this.view('e');
     var output = self.view('a', {
         a: 'A',
         b: 'B',
@@ -408,27 +413,8 @@ function viewIndex() {
     assert.ok(self.routeDownload('p.pdf') === '/download/p.pdf', name + 'routeDownload()');
     assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
 
-    self.currentTemplate('current');
-
-    assert.ok(self.template('test', ['A', 'B'], {
-        name: ''
-    }) === '<div>AB</div>', name + 'template - no repository');
-    assert.ok(self.template('test', ['A', 'B'], '', {
-        name: 'ABCDEFG'
-    }) === '<div>AB</div>...', name + 'template - repository');
-    assert.ok(self.template('test', [], 'test') === 'EMPTY', name + 'template - empty');
-
-    var tmp = self.template('~new', [{
-        tag: '<b>A</b>'
-    }, {
-        tag: '<b>B</b>'
-    }]);
-
-    assert.ok(tmp.indexOf('<div>&lt;b&gt;B&lt;/b&gt;</div><div><b>B</b></div><span>1</span>') !== -1, name + 'template - foreach');
-
     self.layout('');
     assert.ok(self.view('test', null, true) === 'total.js', name + 'view');
-    assert.ok(self.content('test', true) === 'EMPTY', name + 'content');
     assert.ok(self.url === '/', name + 'url');
 
     var error = self.validate({
@@ -509,16 +495,8 @@ function viewViews() {
     assert.ok(output.contains('#options<option value="C" selected="selected">C</option><option value="D">D</option>#'), name + 'options() - with property name and value');
     assert.ok(output.contains('#view#bmodel##'), name + 'view() with model');
     assert.ok(output.contains('#view-toggle#'), name + 'viewToggle()');
-    assert.ok(output.contains('#contentEMPTY#'), name + 'content');
-    assert.ok(output.contains('#content-toggle#'), name + 'contentToggle');
     assert.ok(output.contains('#componentCOMPONENT#'), name + 'component');
     assert.ok(output.contains('#titleTITLE#'), name + 'title');
-    //	template-one<div>10.00</div><div>10</div><div>A</div><div>other</div><div>10.50</div><div>10.5</div><div>B</div><div>other</div>
-    //	template-one<div>10.00</div><div>10</div><div>A</div><div>zero</div><div>10.50</div><div>10.5</div><div>B</div><div>one</div>
-    assert.ok(output.contains('#template-one<div>10.00</div><div>10</div><div>A</div><div>zero</div><div>D</div><div>10.50</div><div>10.5</div><div>B</div><div>one</div><div>C</div>#'), name + 'template() - one');
-    assert.ok(output.contains('#template-more<ul><li>A</li><li>B</li></ul>#'), name + 'template() - more');
-    assert.ok(output.contains('#template-emptyEMPTY#'), name + 'template() - empty');
-    assert.ok(output.contains('#template-toggle#'), name + 'templateToggle()');
     assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
     assert.ok(output.contains('#<a href="/download/test.pdf" download="test">content</a>#'), name + 'download');
 
@@ -570,9 +548,6 @@ function viewViewsIf() {
 
 function viewError() {
     var self = this;
-    var template = self.template('asdljsald', [1, 2, 3]);
-    assert.ok(template === '', 'template: not found problem');
-    assert.ok(self.content('asdasd') === '', 'content: not found problem');
     self.view('asdlkjasl');
 }
 

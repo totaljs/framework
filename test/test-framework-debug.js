@@ -6,6 +6,8 @@ var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
 
+INCLUDE('http://www.totaljs.com/framework/include.js', { test: true });
+
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
@@ -23,21 +25,10 @@ framework.onError = function(error, name, uri) {
 
 	if (errorStatus === 1) {
 		assert.ok(error.toString().indexOf('not found') !== -1, 'view: not found problem');
-		errorStatus = 2;
-		return;
-	}
-
-	if (errorStatus === 2) {
-		assert.ok(error.toString().indexOf('not found') !== -1, 'template: not found problem');
-		errorStatus = 3;
-		return;
-	}
-
-	if (errorStatus === 3) {
-		assert.ok(error.toString().indexOf('not found') !== -1, 'content: not found problem');
 		errorStatus = 0;
 		return;
 	}
+
 };
 
 function end() {
@@ -154,6 +145,15 @@ function test_routing(next) {
 		utils.request(url + 'a/b/c/', 'GET', null, function(error, data, code, headers) {
 			if (error)
 				throw error;
+			complete();
+		});
+	});
+
+	async.await('precompile', function(complete) {
+		utils.request(url + 'precompile/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(data.indexOf('precompile') === -1, 'framework.precompile() problem');
 			complete();
 		});
 	});
@@ -407,7 +407,9 @@ mem.on('stats', function(info) {
 framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html');
 
 framework.on('ready', function() {
-	run();
+	setTimeout(function() {
+		run();
+	}, 1000);
 });
 
 framework.http('debug', { port: 8001 });

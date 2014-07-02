@@ -44,8 +44,8 @@ global.Builders = global.builders = require('./builders');
 var utils = global.Utils = global.utils = require('./utils');
 global.Mail = global.MAIL = require('./mail');
 
-global.include = global.INCLUDE = global.source = global.SOURCE = function(name) {
-    return framework.source(name);
+global.include = global.INCLUDE = global.source = global.SOURCE = function(name, options) {
+    return framework.source(name, options);
 };
 
 global.MODULE = function(name) {
@@ -55,7 +55,6 @@ global.MODULE = function(name) {
 global.DATABASE = function() {
     return framework.database.apply(framework, arguments);
 };
-
 
 global.CONFIG = function(name) {
     return framework.config[name];
@@ -67,6 +66,10 @@ global.RESOURCE = function(name, key) {
 
 global.MODEL = function(name) {
     return framework.model(name);
+};
+
+global.PRECOMPILE = function(name, url) {
+    return framework.precompile(name, url);
 };
 
 global.COMPONENT = function(name) {
@@ -108,12 +111,10 @@ function Framework() {
 
         'etag-version': '',
 
-        'directory-contents': '/contents/',
         'directory-controllers': '/controllers/',
         'directory-views': '/views/',
         'directory-definitions': '/definitions/',
         'directory-temp': '/tmp/',
-        'directory-templates': '/templates/',
         'directory-models': '/models/',
         'directory-resources': '/resources/',
         'directory-public': '/public/',
@@ -1301,7 +1302,7 @@ Framework.prototype.injectConfig = function(url, debug, rewrite) {
     if (typeof(rewrite) === UNDEFINED)
         rewrite = true;
 
-    utils.request(url, 'GET', '', function(error, data) {
+    utils.request(url, ['get'], function(error, data) {
 
         if (error) {
             self.error(error, 'injectConfig - ' + url, null);
@@ -1328,7 +1329,7 @@ Framework.prototype.injectVersions = function(url, rewrite) {
     if (typeof(rewrite) === UNDEFINED)
         rewrite = false;
 
-    utils.request(url, 'GET', '', function(error, data) {
+    utils.request(url, ['get'], function(error, data) {
 
         if (error) {
             self.error(error, 'injectVersions - ' + url, null);
@@ -1353,7 +1354,7 @@ Framework.prototype.injectModule = function(name, url) {
     var self = this;
     var framework = self;
 
-    utils.request(url, 'GET', '', function(error, data) {
+    utils.request(url, ['get'], function(error, data) {
 
         if (error) {
             self.error(error, 'injectModule - ' + name, null);
@@ -1403,7 +1404,7 @@ Framework.prototype.injectModel = function(name, url) {
     var self = this;
     var framework = self;
 
-    utils.request(url, 'GET', '', function(error, data) {
+    utils.request(url, ['get'], function(error, data) {
 
         if (error) {
             self.error(error, 'injectModel - ' + name, null);
@@ -1433,7 +1434,7 @@ Framework.prototype.injectSource = function(name, url) {
     var self = this;
     var framework = self;
 
-    utils.request(url, 'GET', '', function(error, data) {
+    utils.request(url, ['get'], function(error, data) {
 
         if (error) {
             self.error(error, 'injectSource - ' + name, null);
@@ -1461,7 +1462,7 @@ Framework.prototype.injectController = function(name, url) {
 
     var self = this;
 
-    utils.request(url, 'GET', '', function(error, data) {
+    utils.request(url, ['get'], function(error, data) {
 
         if (error) {
             self.error(error, 'injectController - ' + name, null);
@@ -1510,7 +1511,7 @@ Framework.prototype.injectDefinition = function(url) {
     var self = this;
     var framework = self;
 
-    utils.request(url, 'GET', '', function(error, data) {
+    utils.request(url, ['get'], function(error, data) {
 
         if (error) {
             self.error(error, 'injectDefinition - ' + url, null);
@@ -1537,7 +1538,7 @@ Framework.prototype.injectComponent = function(name, url) {
     var self = this;
     var framework = self;
 
-    utils.request(url, 'GET', '', function(error, data) {
+    utils.request(url, ['get'], function(error, data) {
 
         if (error) {
             self.error(error, 'injectComponent - ' + name, null);
@@ -1629,13 +1630,6 @@ Framework.prototype.onRequest = null;
     @callback {Function} - @callback(Boolean), true is [authorize]d and false is [unauthorize]d
 */
 Framework.prototype.onAuthorization = null;
-
-/*
-    Prefix delegate
-    @req {ServerRequest}
-    return {String} :: return prefix (default return empty string)
-*/
-Framework.prototype.onPrefix = null;
 
 /*
     Versioning static files (this delegate call LESS CSS by the background property)
@@ -3749,7 +3743,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
     req.session = null;
     req.user = null;
-    req.prefix = '';
     req.isAuthorized = true;
 
     var isXSS = false;
@@ -3793,11 +3786,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
     if (self.config.debug)
         flags.push('debug');
-
-    req.prefix = self.onPrefix === null ? '' : self.onPrefix(req) || '';
-
-    if (req.prefix.length > 0)
-        flags.push('#' + req.prefix);
 
     flags.push('+xhr');
 
@@ -3901,17 +3889,21 @@ Framework.prototype.model = function(name) {
     return model;
 };
 
-/*
-    Get a source
-    @name {String}
-    return {Object}
-*/
-Framework.prototype.source = function(name) {
+/**
+ * Load source code
+ * @param {String} nameORurl
+ * @param {Object} options Custom initial options, optional.
+ * @return {Object}
+ */
+Framework.prototype.source = function(name, options) {
     var self = this;
     var source = self.sources[name];
 
     if (source)
         return source;
+
+    if ((name.startsWith('http://') || name.startsWith('https://')))
+        return self.include(name, options);
 
     var filename = path.join(directory, self.config['directory-source'], name);
 
@@ -3925,8 +3917,51 @@ Framework.prototype.source = function(name) {
 
     source = require(filename);
     self.sources[name] = source;
+
+    if (source.install)
+        source.install(options);
+
     return source;
 };
+
+/**
+ * Load source code
+ * @param {String} nameORurl
+ * @param {Object} options Custom initial options, optional.
+ * @return {Object or Undefined}
+ */
+Framework.prototype.include = function(url, options) {
+
+    var self = this;
+
+    if (!(url.startsWith('http://') || url.startsWith('https://')))
+        return self.source(url, options);
+
+    var framework = self;
+
+    utils.request(url, ['get'], function(error, data) {
+
+        if (error) {
+            self.error(error, 'include - ' + url, null);
+            return;
+        }
+
+        try {
+
+            _controller = '';
+
+            var result = eval('(new (function(){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
+
+            if (typeof(result.install) !== UNDEFINED)
+                result.install(options);
+
+        } catch (ex) {
+            self.error(ex, 'include - ' + url, null);
+        }
+
+    });
+};
+
 
 /**
  * Add a test function or test request
@@ -4986,7 +5021,7 @@ Framework.prototype.worker = function(name, id, timeout) {
 };
 
 /**
- * Precompile view/css/javascript
+ * Precompile views
  * @param {String} name
  * @param {String} url
  * @return {Framework}
@@ -5005,7 +5040,7 @@ Framework.prototype.precompile = function(name, url) {
     if (typeof(item) === UNDEFINED) {
         item = {};
         item.filename = self.path.temporary('precompiled-' + utils.GUID(10) + '.tmp');
-        self.temporary.precompiled[name] = item;
+        self.routes.precompiled[name] = item;
     }
 
     item.isLoaded = false;
@@ -5013,10 +5048,15 @@ Framework.prototype.precompile = function(name, url) {
     if (type === STRING)
         item.url = url;
 
+    if (item.url.indexOf('http') !== 0)
+        item.url = 'http://' + item.url;
+
     utils.download(item.url, ['get'], function(err, response) {
 
         if (err)
             return framework.error(err, 'framework.precompile()', item.url);
+
+        response.on('data', noop);
 
         response.on('error', function(err) {
             if (type === FUNCTION)
@@ -5031,7 +5071,8 @@ Framework.prototype.precompile = function(name, url) {
                 url(null);
         });
 
-        response.pipe(fs.createWriteStream(item.filename));
+        var stream = fs.createWriteStream(item.filename);
+        response.pipe(stream);
     });
 
     return self;
@@ -5237,8 +5278,6 @@ function FrameworkFileSystem(framework) {
         css: this.createCSS.bind(this),
         js: this.createJS.bind(this),
         view: this.createView.bind(this),
-        content: this.createContent.bind(this),
-        template: this.createTemplate.bind(this),
         resource: this.createResource.bind(this),
         temporary: this.createTemporary.bind(this),
         worker: this.createWorker.bind(this),
@@ -5249,8 +5288,6 @@ function FrameworkFileSystem(framework) {
         css: this.deleteCSS.bind(this),
         js: this.deleteJS.bind(this),
         view: this.deleteView.bind(this),
-        content: this.deleteContent.bind(this),
-        template: this.deleteTemplate.bind(this),
         resource: this.deleteResource.bind(this),
         temporary: this.deleteTemporary.bind(this),
         worker: this.deleteWorker.bind(this),
@@ -5330,21 +5367,6 @@ FrameworkFileSystem.prototype.deleteWorker = function(name) {
         name += EXTENSION_JS;
 
     var filename = utils.combine(self.config['directory-workers'], name);
-    return self.deleteFile(filename);
-};
-
-/*
-    Delete a file - Template
-    @name {String}
-    return {Boolean}
-*/
-FrameworkFileSystem.prototype.deleteTemplate = function(name) {
-    var self = this;
-
-    if (name.lastIndexOf('.html') === -1)
-        name += '.html';
-
-    var filename = utils.combine(self.config['directory-templates'], name);
     return self.deleteFile(filename);
 };
 
@@ -5432,30 +5454,6 @@ FrameworkFileSystem.prototype.createJS = function(name, content, rewrite, append
         name += EXTENSION_JS;
 
     var filename = utils.combine(self.config['directory-public'], self.config['static-url-js'], name);
-    return self.createFile(filename, content, append, rewrite);
-};
-
-/*
-    Create a file with the template
-    @name {String}
-    @content {String}
-    @rewrite {Boolean} :: optional (default false)
-    @append {Boolean} :: optional (default false)
-    return {Boolean}
-*/
-FrameworkFileSystem.prototype.createTemplate = function(name, content, rewrite, append) {
-
-    var self = this;
-
-    if ((content || '').length === 0)
-        return false;
-
-    if (name.lastIndexOf('.html') === -1)
-        name += '.html';
-
-    framework._verify_directory('templates');
-
-    var filename = utils.combine(self.config['directory-templates'], name);
     return self.createFile(filename, content, append, rewrite);
 };
 
@@ -5716,16 +5714,6 @@ FrameworkPath.prototype.views = function(filename) {
     var self = this;
     framework._verify_directory('views');
     return utils.combine(self.config['directory-views'], filename || '').replace(/\\/g, '/');
-};
-
-/*
-    @filename {String} :: optional
-    return {String}
-*/
-FrameworkPath.prototype.templates = function(filename) {
-    var self = this;
-    framework._verify_directory('templates');
-    return utils.combine(self.config['directory-templates'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -6601,21 +6589,13 @@ function Controller(name, req, res, subscribe) {
     this.output = null;
     this.outputPartial = null;
     this.$model = null;
-    this.prefix = req.prefix;
-
-    if (typeof(this.prefix) === UNDEFINED || this.prefix.length === 0)
-        this.prefix = '';
-    else
-        this.prefix = this.prefix;
 
     this._currentImage = '';
     this._currentDownload = '';
     this._currentVideo = '';
     this._currentJS = '';
     this._currentCSS = '';
-    this._currentTemplate = '';
     this._currentView = name[0] !== '#' && name !== 'default' ? '/' + name + '/' : '';
-    this._currentContent = '';
 
     // Assign controller to Response
     this.res.controller = this;
@@ -7424,23 +7404,49 @@ Controller.prototype.setExpires = function(date) {
     return self;
 };
 
-/*
-    Internal function for views
-    @name {String} :: filename
-    @model {Object}
-    return {String}
-*/
+/**
+ * INTERNAL: Render view in view
+ * @private
+ * @param {String} name
+ * @param {Object} model Custom model, optional.
+ * @return {String}
+ */
+Controller.prototype.$template = function(name, model) {
+    return this.$viewToggle(true, name, model);
+};
+
+/**
+ * INTERNAL: Render view in view
+ * @private
+ * @param {Boolean} visible
+ * @param {String} name
+ * @param {Object} model Custom model, optional.
+ * @return {String}
+ */
+Controller.prototype.$templateToggle = function(visible, name, model) {
+    return this.$viewToggle(visible, name, model);
+};
+
+
+/**
+ * INTERNAL: Render view in view
+ * @private
+ * @param {String} name
+ * @param {Object} model Custom model, optional.
+ * @return {String}
+ */
 Controller.prototype.$view = function(name, model) {
     return this.$viewToggle(true, name, model);
 };
 
-/*
-    Internal function for views
-    @visible {Boolean}
-    @name {String} :: filename
-    @model {Object}
-    return {String}
-*/
+/**
+ * INTERNAL: Render view in view
+ * @private
+ * @param {Boolean} visible
+ * @param {String} name
+ * @param {Object} model Custom model, optional.
+ * @return {String}
+ */
 Controller.prototype.$viewToggle = function(visible, name, model) {
     if (!visible)
         return '';
@@ -7839,68 +7845,9 @@ Controller.prototype.$ngInclude = function(name) {
     return self.$script_create(name);
 };
 
-/*
-    Internal function for views
-    @name {String} :: filename
-    return {String}
-*/
-Controller.prototype.$content = function(name) {
-    return this.$contentToggle(true, name);
-};
-
-/*
-    Internal function for views
-    @visible {Boolean}
-    @name {String} :: filename
-    return {String}
-*/
-Controller.prototype.$contentToggle = function(visible, name) {
-
-    var self = this;
-
-    if (!visible)
-        return '';
-
-    if (name[0] !== '~')
-        name = self._currentContent + name;
-
-    return internal.generateContent(self, name) || '';
-};
-
 Controller.prototype.$url = function(host) {
     var self = this;
     return host ? self.req.hostname(self.url) : self.url;
-};
-
-/*
-    Internal function for views
-    @name {String} :: filename
-    @model {Object} :: must be an array
-    @nameEmpty {String} :: optional filename from contents
-    @repository {Object} :: optional
-    return {Controller};
-*/
-Controller.prototype.$template = function(name, model, nameEmpty, repository) {
-    var self = this;
-    return self.$templateToggle(true, name, model, nameEmpty, repository);
-};
-
-/*
-    Internal function for views
-    @bool {Boolean}
-    @name {String} :: filename
-    @model {Object}
-    @nameEmpty {String} :: optional filename from contents
-    @repository {Object} :: optional
-    return {Controller};
-*/
-Controller.prototype.$templateToggle = function(visible, name, model, nameEmpty, repository) {
-    var self = this;
-
-    if (!visible)
-        return '';
-
-    return self.template(name, model, nameEmpty, repository);
 };
 
 /*
@@ -8831,54 +8778,10 @@ Controller.prototype.$currentView = function(path) {
     @path {String} :: add path to route path
     return {String}
 */
-Controller.prototype.$currentTemplate = function(path) {
-    this._currentTemplate = path && path.length > 0 ? utils.path(path) : '';
-    return '';
-};
-
-/*
-    Internal
-    @path {String} :: add path to route path
-    return {String}
-*/
-Controller.prototype.$currentContent = function(path) {
-    this._currentContent = path && path.length > 0 ? utils.path(path) : '';
-    return '';
-};
-
-/*
-    Internal
-    @path {String} :: add path to route path
-    return {String}
-*/
 Controller.prototype.currentView = function(path) {
     var self = this;
     self.$currentView(path);
     self._defaultView = self._currentView;
-    return self;
-};
-
-/*
-    Internal
-    @path {String} :: add path to route path
-    return {String}
-*/
-Controller.prototype.currentTemplate = function(path) {
-    var self = this;
-    self.$currentTemplate(path);
-    self._defaultTemplate = self._currentTemplate;
-    return self;
-};
-
-/*
-    Internal
-    @path {String} :: add path to route path
-    return {String}
-*/
-Controller.prototype.currentContent = function(path) {
-    var self = this;
-    self.$currentContent(path);
-    self._defaultContent = self._currentContent;
     return self;
 };
 
@@ -9002,39 +8905,8 @@ Controller.prototype.resource = function(name, key) {
     @cb {Function} :: callback(string)
     return {String}
 */
-Controller.prototype.template = function(name, model, nameEmpty, repository) {
-
-    var self = this;
-
-    if (typeof(nameEmpty) === OBJECT) {
-        repository = nameEmpty;
-        nameEmpty = '';
-    }
-
-    if (typeof(model) === UNDEFINED || model === null || model.length === 0) {
-
-        if (typeof(nameEmpty) !== UNDEFINED && nameEmpty.length > 0)
-            return self.$content(nameEmpty);
-
-        return '';
-    }
-
-    var precompiled = framework.routes.precompiled[name];
-
-    if (typeof(repository) === UNDEFINED)
-        repository = self.repository;
-
-    var plus = '';
-
-    if (name[0] !== '~')
-        plus = self._currentTemplate;
-
-    try {
-        return internal.generateTemplate(self, name, model, repository, plus, precompiled);
-    } catch (ex) {
-        self.error(new Error('Template: ' + name + ' - ' + ex.toString()));
-        return '';
-    }
+Controller.prototype.template = function(name, model) {
+    return this.view(name, model, true);
 };
 
 /*
@@ -9164,14 +9036,13 @@ Controller.prototype.jsonAsync = function(obj, headers, beautify) {
     return self;
 };
 
-/*
-    !!! pell-mell
-    Response custom content or Return content from Contents
-    @contentBody {String}
-    @contentType {String} :: optional
-    @headers {Object} :: optional
-    return {Controller or String}; :: return String when contentType is undefined
-*/
+/**
+ * Response a custom content
+ * @param {String} contentBody
+ * @param {String} contentType
+ * @param {Object} headers Custom headers, optional.
+ * @return {Controller}
+ */
 Controller.prototype.content = function(contentBody, contentType, headers) {
 
     var self = this;
@@ -9878,20 +9749,19 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     if (self.res.success && !isPartial)
         return self;
 
-    var precompiled = framework.routes.precompiled[name];
     var skip = name[0] === '~';
     var filename = name;
     var isLayout = self.isLayout;
 
     self.isLayout = false;
 
-    if (!self.isLayout && !skip && !precompiled)
+    if (!self.isLayout && !skip)
         filename = self._currentView + name;
 
     if (skip)
         filename = name.substring(1);
 
-    var generator = internal.generateView(self, name, filename, precompiled);
+    var generator = internal.generateView(self, name, filename);
     if (generator === null) {
 
         if (isPartial)
@@ -9923,8 +9793,6 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
         self._currentVideo = self._defaultVideo || '';
         self._currentImage = self._defaultImage || '';
         self._currentView = self._defaultView || '';
-        self._currentTemplate = self._defaultTemplate || '';
-        self._currentContent = self._defaultContent || '';
     }
 
     var helpers = framework.helpers;

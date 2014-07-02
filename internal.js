@@ -1702,17 +1702,6 @@ function View(controller) {
     this.prefix = controller.prefix;
 }
 
-/*
-    Content class
-    @controller {Controller}
-    return {Content}
-*/
-function Content(controller) {
-    this.controller = controller;
-    this.cache = controller.cache;
-    this.prefix = controller.prefix;
-}
-
 /**
  * View parser
  * @param {String} content
@@ -2021,8 +2010,6 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'helper':
         case 'component':
         case 'componentToggle':
-        case 'content':
-        case 'contentToggle':
         case 'currentContent':
         case 'currentCSS':
         case 'currentDownload':
@@ -2052,6 +2039,8 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'view':
         case 'viewToggle':
             return 'self.$' + command;
+
+
         case 'radio':
         case 'text':
         case 'checkbox':
@@ -2059,6 +2048,7 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'textarea':
         case 'password':
             return 'self.$' + exports.appendModel(command);
+
         default:
 
             if (framework.helpers[name])
@@ -2361,18 +2351,18 @@ function compressHTML(html, minify) {
     return html;
 }
 
-/*
-    Read view
-    @name {String}
-    return {Object} :: return factory object
-*/
-View.prototype.read = function(name) {
+/**
+ * Read file
+ * @param {String} path
+ * @return {Object}
+ */
+View.prototype.read = function(path) {
 
     var self = this;
     var config = framework.config;
-    var isOut = name[0] === '.';
+    var isOut = path[0] === '.';
 
-    var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-views'], name + '.html');
+    var filename = isOut ? path.substring(1) : utils.combine(config['directory-views'], path);
 
     if (fs.existsSync(filename))
         return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
@@ -2380,15 +2370,11 @@ View.prototype.read = function(name) {
     if (isOut)
         return null;
 
-    var index = name.lastIndexOf('/');
+    var index = path.lastIndexOf('/');
     if (index === -1)
         return null;
 
-    name = name.substring(index + 1);
-    if (name.indexOf('#') !== -1)
-        return null;
-
-    filename = name[0] === '.' ? name.substring(1) : utils.combine(config['directory-views'], name + '.html');
+    filename = utils.combine(config['directory-views'], path.substring(index + 1));
 
     if (fs.existsSync(filename))
         return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
@@ -2396,13 +2382,13 @@ View.prototype.read = function(name) {
     return null;
 };
 
-/*
-    Load view
-    @name {String}
-    @prefix {String}
-    return {Object} :: return factory object
-*/
-View.prototype.load = function(name, prefix, filename, precompiled) {
+/**
+ * Load view
+ * @param {String} name
+ * @param {String} filename
+ * @return {Objec}
+ */
+View.prototype.load = function(name, filename) {
 
     var self = this;
 
@@ -2410,18 +2396,20 @@ View.prototype.load = function(name, prefix, filename, precompiled) {
     if (name.indexOf('@{') !== -1 || name.indexOf('<') !== -1)
         return self.dynamic(name);
 
-    var isPrefix = (prefix || '').length > 0;
-    var key = 'view.' + filename + (isPrefix ? '#' + prefix : '');
+    var precompiled = framework.routes.precompiled[name];
 
+    if (precompiled)
+        filename = '.' + precompiled.filename;
+    else
+        filename += '.html';
+
+    var key = 'view#' + filename;
     var generator = framework.temporary.views[key] || null;
 
     if (generator !== null)
         return generator;
 
-    generator = self.read(filename + (isPrefix ? '#' + prefix : ''));
-
-    if (generator === null && isPrefix)
-        generator = self.read(filename);
+    generator = self.read(filename);
 
     if (!self.controller.isDebug)
         framework.temporary.views[key] = generator;
@@ -2452,71 +2440,13 @@ View.prototype.dynamic = function(content) {
 };
 
 /*
-    Read content
-    @name {String}
-    return {String}
-*/
-Content.prototype.read = function(name) {
-    var self = this;
-    var config = framework.config;
-    var isOut = name[0] === '.';
-    var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-contents'], name + '.html');
-
-    if (fs.existsSync(filename))
-        return compressHTML(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
-
-    return null;
-};
-
-/*
-    Load content
-    @name {String}
-    @prefix {String}
-    return {String}
-*/
-Content.prototype.load = function(name, prefix) {
-
-    var self = this;
-    var isPrefix = prefix.length > 0;
-
-    var key = 'content.' + name + (isPrefix ? '#' + prefix : '');
-    var content = framework.temporary.views[key] || null;
-
-    if (content !== null)
-        return content;
-
-    content = self.read(name + (isPrefix ? '#' + prefix : ''));
-
-    if (content === null && isPrefix)
-        content = self.read(name);
-
-    if (content === null)
-        framework.error('Content "' + name + '" not found.', self.controller.name, self.controller.uri);
-
-    if (!self.controller.isDebug)
-        framework.temporary.views[key] = content;
-
-    return content;
-};
-
-/*
     Render view from file
     @controller {Controller}
     @name {String}
     return {Object}
 */
-exports.generateView = function(controller, name, plus, precompiled) {
-    return new View(controller).load(name, controller.prefix, plus, precompiled);
-};
-
-/*
-    Load content from file
-    @controller {Controller}
-    @name {String}
-    return {String}
-*/
-exports.generateContent = function(controller, name) {
-    return new Content(controller).load(name, controller.prefix);
+exports.generateView = function(controller, name, plus) {
+    return new View(controller).load(name, plus);
 };
 
 exports.appendModel = function(str) {
@@ -2526,217 +2456,4 @@ exports.appendModel = function(str) {
 
     var end = str.substring(index + 1);
     return str.substring(0, index) + '(model' + (end[0] === ')' ? end : ',' + end);
-};
-
-// *********************************************************************************
-// =================================================================================
-// TEMPLATE ENGINE
-// =================================================================================
-// *********************************************************************************
-
-/*
-    Template class
-    @controller {Controller}
-    @model {Object}
-    @repository {Object}
-    return {Template}
-*/
-function Template(controller, model, repository) {
-    this.controller = controller;
-    this.model = model;
-    this.repository = repository || null;
-    this.prefix = controller.prefix;
-    this.cache = controller.cache;
-    this.name = '';
-
-    if (typeof(model) === UNDEFINED)
-        model = '';
-
-    if (model !== null && !utils.isArray(model))
-        this.model = [model];
-}
-
-/**
- * Reads template from the file
- * @param  {String} name Template name.
- * @return {Object}
- */
-Template.prototype.read = function(name) {
-    var self = this;
-    var config = framework.config;
-    var isOut = name[0] === '.';
-
-    if (name[0] === '~')
-        name = name.substring(1);
-
-    var filename = isOut ? name.substring(1) + '.html' : utils.combine(config['directory-templates'], name + '.html');
-
-    if (!fs.existsSync(filename))
-        return null;
-
-    var content = fs.readFileSync(filename).toString(ENCODING);
-    return self.parse(content);
-};
-
-/**
- * Parse template
- * @param  {String} html Parse HTML.
- * @return {Object}
- */
-Template.prototype.parse = function(html) {
-
-    var self = this;
-    var searchBeg = '@{foreach}';
-    var indexBeg = html.indexOf(searchBeg);
-    var minify = framework.config['allow-compress-html'];
-
-    if (indexBeg === -1 && html.indexOf('@{foreach') !== -1)
-        return {
-            is: true,
-            template: view_parse(compressHTML(html.trim()), minify)
-        };
-
-    var searchEnd = '@{end}';
-
-    if (indexBeg === -1) {
-        searchBeg = '<!--';
-        searchEnd = '-->';
-        indexBeg = html.indexOf(searchBeg);
-        if (indexBeg !== -1)
-            console.log('OBSOLETE: <!-- @{model} --> (replace to @{foreach} @{model} @{end}) in template:', self.name);
-    }
-
-    var indexEnd = indexBeg !== -1 ? html.lastIndexOf(searchEnd) : -1;
-    var beg = '';
-    var end = '';
-    var template = html.trim();
-
-    if (indexBeg !== -1 && indexEnd !== -1) {
-        beg = html.substring(0, indexBeg).trim();
-        end = html.substring(indexEnd + searchEnd.length).trim();
-        template = html.substring(indexBeg + searchBeg.length, indexEnd).trim();
-    }
-
-    if (beg.length > 0)
-        beg = compressHTML(beg, minify);
-
-    if (end.length > 0)
-        end = compressHTML(end, minify);
-
-    template = compressHTML(template, minify);
-
-    return {
-        is: false,
-        beg: beg.length > 0 ? view_parse(beg, minify) : null,
-        end: end.length > 0 ? view_parse(end, minify) : null,
-        template: view_parse(template, minify)
-    };
-};
-
-/**
- * Load template
- * @param  {String} name   Template name.
- * @param  {String} prefix Prefix (framework.onPrefix).
- * @param  {String} plus   Plus name.
- * @return {object}
- */
-Template.prototype.load = function(name, prefix, plus) {
-
-    var self = this;
-
-    // Is dynamic content?
-    if (name.indexOf('@{') !== -1) {
-        self.name = '<dynamic>';
-        return self.dynamic(name);
-    }
-
-    self.name = plus + name + (isPrefix ? '#' + prefix : '');
-
-    var isPrefix = (prefix || '').length > 0;
-    var key = 'template.' + plus + name + (isPrefix ? '#' + prefix : '') + (self.repository !== null ? '.repository' : '');
-    var generator = framework.temporary.views[key] || null;
-
-    if (generator !== null)
-        return generator;
-
-    generator = self.read(plus + name + (isPrefix ? '#' + prefix : ''));
-
-    if (generator === null && isPrefix)
-        generator = self.read(plus + name);
-
-    if (generator === null)
-        framework.error('Template "' + plus + name + '" not found.', self.controller.name, self.controller.uri);
-
-    if (!self.controller.isDebug)
-        framework.temporary.views[key] = generator;
-
-    return generator;
-};
-
-/**
- * Compile a dynamic template
- * @private
- * @param  {String} content HTML content.
- * @return {Object}
- */
-Template.prototype.dynamic = function(content) {
-
-    var self = this;
-    var key = 'template.' + content.md5();
-    var generator = framework.temporary.views[key] || null;
-
-    if (generator !== null)
-        return generator;
-
-    generator = self.parse(content);
-
-    if (!self.controller.isDebug)
-        framework.temporary.views[key] = generator;
-
-    return generator;
-};
-
-/*
-    Render HTML
-    @name {String}
-    return {String}
-*/
-Template.prototype.render = function(name, plus) {
-
-    var self = this;
-    var generator = self.load(name, self.prefix, plus);
-
-    if (generator === null)
-        return '';
-
-    if (generator.is)
-        return generator.template.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, framework.global, framework.helpers, self.controller.user, framework.config, framework.functions, 0).replace(/\\n/g, '\n');
-
-    var builder = '';
-
-    if (generator.beg !== null)
-        builder += generator.beg.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, framework.global, framework.helpers, self.controller.user, framework.config, framework.functions, 0).replace(/\\n/g, '\n');
-
-    if (self.model instanceof Array) {
-        var length = self.model.length;
-        for (var i = 0; i < length; i++)
-            builder += generator.template.call(self.controller, self.controller, self.repository, self.model[i], self.controller.session, self.controller.get, self.controller.post, self.controller.url, framework.global, framework.helpers, self.controller.user, framework.config, framework.functions, i).replace(/\\n/g, '\n');
-    } else
-        builder += generator.template.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, framework.global, framework.helpers, self.controller.user, framework.config, framework.functions, 0).replace(/\\n/g, '\n');
-
-    if (generator.end !== null)
-        builder += generator.end.call(self.controller, self.controller, self.repository, self.model, self.controller.session, self.controller.get, self.controller.post, self.controller.url, framework.global, framework.helpers, self.controller.user, framework.config, framework.functions, 0).replace(/\\n/g, '\n');
-
-    return builder;
-};
-
-/*
-    Generate template / Render template
-    @controller {Controller}
-    @name {String} :: filename of template
-    @model {Array of Object}
-    @repository {Object} :: optional
-*/
-exports.generateTemplate = function(controller, name, model, repository, plus, precompiled) {
-    return new Template(controller, model, repository).render(name, plus, precompiled);
 };
