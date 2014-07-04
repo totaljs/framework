@@ -37,6 +37,8 @@ IN DEVELOPMENT ======= 1.6.0
 - added: config['default-interval-clear-resources'], default 20
 - added: config['default-interval-clear-temporary'], default 3
 - added: config['default-interval-precompile'], default 61
+- added: framework.on('eval', function([url]) {});
+- added: framework.on('route-add', function(type, route) {})
 
 - updated: (IMPORTANT) INCLUDE(name, [options]), SOURCE(name, [options]) –> object
 - updated: (IMPORTANT) SOURCE(name, [options]), framework.source(name, [options]) –> object

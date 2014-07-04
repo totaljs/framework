@@ -715,7 +715,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         options: options
     });
 
-    self.emit('route-add', 'web', self.routes.web[self.routes.web.length-1]);
+    self.emit('route-add', 'web', self.routes.web[self.routes.web.length - 1]);
 
     if (_controller.length === 0)
         self.routesSort();
@@ -901,7 +901,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         options: options
     });
 
-    self.emit('route-add', 'websocket', self.routes.websockets[self.routes.websockets.length-1]);
+    self.emit('route-add', 'websocket', self.routes.websockets[self.routes.websockets.length - 1]);
 
     if (_controller.length === 0)
         self.routesSort();
@@ -944,7 +944,7 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
         options: options
     });
 
-    self.emit('route-add', 'file', self.routes.files[self.routes.files.length-1]);
+    self.emit('route-add', 'file', self.routes.files[self.routes.files.length - 1]);
     self._length_files++;
 
     return self;
@@ -1575,26 +1575,30 @@ Framework.prototype.eval = function(script) {
     if (typeof(script) === FUNCTION) {
         try {
             eval('(' + script.toString() + ')()');
-        } catch (ex) {
+            framework.emit('eval');
+    } catch (ex) {
             self.error(ex, 'eval - ' + script.toString(), null);
         }
         return self;
     }
 
     if ((script.startsWith('http://', true) || script.startsWith('https://', true)) && scripts.trim().indexOf('\n') === -1) {
-        utils.request(script, 'GET', '', function(err, data) {
+        utils.request(script, ['get'], function(err, data) {
 
             if (!err) {
                 // recursive calling
                 self.eval(data.toString());
+                framework.emit('eval', script);
                 return;
             }
+
             self.error(err);
         });
     }
 
     try {
         eval(script);
+        framework.emit('eval');
     } catch (ex) {
         self.error(ex, 'eval - ' + script, null);
     }
@@ -5605,7 +5609,7 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 
     if (content.substring(0, 7) === 'http://' || content.substring(0, 8) === 'https://') {
 
-        utils.request(content, 'GET', null, function(err, data) {
+        utils.request(content, ['get'], function(err, data) {
 
             if (!err)
                 self.createFile(filename, data, append, rewrite);
@@ -9690,8 +9694,6 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
         'X-Proxy': 'total.js'
     };
 
-    headers[RESPONSE_HEADER_CONTENTTYPE] = 'application/json';
-
     var tmp;
 
     if (typeof(fnCallback) === NUMBER) {
@@ -10300,7 +10302,6 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
     var headers = {
         'X-Proxy': 'total.js'
     };
-    headers[RESPONSE_HEADER_CONTENTTYPE] = 'application/json';
 
     if (typeof(obj) === FUNCTION) {
         var tmp = fnCallback;
@@ -10308,7 +10309,7 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
         obj = tmp;
     }
 
-    utils.request(url, 'POST', obj, function(error, data, code, headers) {
+    utils.request(url, ['post', 'json'], obj, function(error, data, code, headers) {
 
         if (!fnCallback)
             return;
