@@ -39,6 +39,7 @@ IN DEVELOPMENT ======= 1.6.0
 - added: config['default-interval-clear-temporary'], default 3
 - added: config['default-interval-precompile'], default 61
 - added: framework.on('eval', function([url]) {});
+- added: framework.on('include', function(url, options) {});
 - added: framework.on('route-add', function(type, route) {})
 - added: String.prototype.parseDateExpire() - parse expiration date, example: '1 minute', '1 year'
 
@@ -54,6 +55,8 @@ IN DEVELOPMENT ======= 1.6.0
 - updated: middleware function to: function(req, res, next) {}
 - update: expiration supports string (framework.cache, response.cookie)
 - updated: $view(name, model, [expire]), $viewToggle(name, model, [expire]) - added expiration {String}
+
+- renamed: framework.on('expire') -> framework.on('cache-expire')
 
 - fixed: controller.custom()
 - fixed: long messages in WebSocket by Andrea Sessa <https://plus.google.com/u/0/104713619368072403016>

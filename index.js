@@ -3988,6 +3988,8 @@ Framework.prototype.include = function(url, options) {
             if (typeof(result.install) !== UNDEFINED)
                 result.install(options);
 
+            self.emit('include', url, options);
+
         } catch (ex) {
             self.error(ex, 'include - ' + url, null);
         }
@@ -5865,7 +5867,7 @@ FrameworkCache.prototype.recycle = function() {
         var o = keys[i];
         var value = items[o];
         if (value.expire < expire) {
-            framework.emit('expire', o, value.value);
+            framework.emit('cache-expire', o, value.value);
             delete items[o];
         }
     }
