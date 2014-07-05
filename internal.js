@@ -1917,7 +1917,7 @@ function view_prepare(command, dynamicCommand, functions) {
             if (view_is_assign(command))
                 return 'self.$set(' + command + ')';
 
-            if (command.indexOf('.') === -1)
+            if (command.lastIndexOf('.') === -1)
                 return 'output';
 
             return '(' + command + ').toString().encode()';
