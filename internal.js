@@ -1945,9 +1945,11 @@ function view_prepare(command, dynamicCommand, functions) {
 
 
         case 'resource':
+        case 'RESOURCE':
             return '(self.' + command + ').toString().encode()';
 
         case '!resource':
+        case '!RESOURCE':
             return '(self.' + command.substring(1) + ')';
 
         case 'host':
