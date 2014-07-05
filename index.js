@@ -64,8 +64,16 @@ global.RESOURCE = function(name, key) {
     return framework.resource(name, key);
 };
 
+global.LOG = function() {
+    return framework.apply(framework, arguments);
+};
+
 global.MODEL = function(name) {
     return framework.model(name);
+};
+
+global.FUNCTION = function(name) {
+    return framework.functions[name];
 };
 
 global.PRECOMPILE = function(name, url) {
@@ -168,7 +176,7 @@ function Framework() {
         // Used in framework._service()
         // in minutes
         'default-interval-clear-resources': 20,
-        'default-interval-clear-temporary': 3,
+        'default-interval-clear-cache': 3,
         'default-interval-precompile': 61
     };
 
@@ -3623,7 +3631,7 @@ Framework.prototype._service = function(count) {
     }
 
     // every 3 minutes service clears static cache
-    if (count % framework.config['default-interval-clear-temporary'] === 0) {
+    if (count % framework.config['default-interval-clear-cache'] === 0) {
         self.emit('clear', 'temporary', self.temporary);
         self.temporary.path = {};
         self.temporary.range = {};
@@ -4701,7 +4709,7 @@ Framework.prototype.configure = function(arr, rewrite) {
             case 'default-request-length':
             case 'default-websocket-request-length':
             case 'default-request-timeout':
-            case 'default-interval-clear-temporary':
+            case 'default-interval-clear-cache':
             case 'default-interval-clear-resources':
             case 'default-interval-precompile':
                 obj[name] = utils.parseInt(value);
@@ -5842,7 +5850,7 @@ FrameworkPath.prototype.root = function(filename) {
     @framework {Framework}
 */
 function FrameworkCache(framework) {
-    this.repository = {};
+    this.items = {};
     this.count = 1;
     this.interval = null;
 }
@@ -5870,7 +5878,7 @@ FrameworkCache.prototype.stop = function() {
 
 FrameworkCache.prototype.clear = function() {
     var self = this;
-    self.repository = {};
+    self.items = {};
     return self;
 };
 
@@ -5881,8 +5889,8 @@ FrameworkCache.prototype.clear = function() {
 FrameworkCache.prototype.recycle = function() {
 
     var self = this;
-    var repository = self.repository;
-    var keys = Object.keys(repository);
+    var items = self.items;
+    var keys = Object.keys(items);
     var length = keys.length;
 
     self.count++;
@@ -5896,10 +5904,10 @@ FrameworkCache.prototype.recycle = function() {
 
     for (var i = 0; i < length; i++) {
         var o = keys[i];
-        var value = repository[o];
+        var value = items[o];
         if (value.expire < expire) {
             framework.emit('expire', o, value.value);
-            delete repository[o];
+            delete items[o];
         }
     }
 
@@ -5916,14 +5924,18 @@ FrameworkCache.prototype.recycle = function() {
 */
 FrameworkCache.prototype.add = function(name, value, expire) {
     var self = this;
+    var type = typeof(expire);
 
-    if (typeof(expire) === UNDEFINED)
-        expire = new Date().add('m', 5);
+    switch (type) {
+        case STRING:
+            expire = expire.parseExpire();
+            break;
+        case UNDEFINED:
+            expire = new Date().add('m', 5);
+            break;
+    }
 
-    self.repository[name] = {
-        value: value,
-        expire: expire
-    };
+    self.items[name] = { value: value, expire: expire };
     return value;
 };
 
@@ -5934,7 +5946,7 @@ FrameworkCache.prototype.add = function(name, value, expire) {
 */
 FrameworkCache.prototype.read = function(name) {
     var self = this;
-    var value = self.repository[name] || null;
+    var value = self.items[name] || null;
 
     if (value === null)
         return null;
@@ -5953,10 +5965,13 @@ FrameworkCache.prototype.read = function(name) {
 */
 FrameworkCache.prototype.setExpire = function(name, expire) {
     var self = this;
-    var obj = self.repository[name];
+    var obj = self.items[name];
 
     if (typeof(obj) === UNDEFINED)
         return self;
+
+    if (typeof(expire) === STRING)
+        expire = expire.parseExpire();
 
     obj.expire = expire;
     return self;
@@ -5969,9 +5984,9 @@ FrameworkCache.prototype.setExpire = function(name, expire) {
 */
 FrameworkCache.prototype.remove = function(name) {
     var self = this;
-    var value = self.repository[name] || null;
+    var value = self.items[name] || null;
 
-    delete self.repository[name];
+    delete self.items[name];
     return value;
 };
 
@@ -5983,7 +5998,7 @@ FrameworkCache.prototype.remove = function(name) {
 FrameworkCache.prototype.removeAll = function(search) {
     var self = this;
     var count = 0;
-    var keys = Object.keys(self.repository);
+    var keys = Object.keys(self.items);
     var length = keys.length;
     var isReg = utils.isRegExp(search);
 
@@ -7438,8 +7453,8 @@ Controller.prototype.setExpires = function(date) {
  * @param {Object} model Custom model, optional.
  * @return {String}
  */
-Controller.prototype.$template = function(name, model) {
-    return this.$viewToggle(true, name, model);
+Controller.prototype.$template = function(name, model, expire) {
+    return this.$viewToggle(true, name, model, expire);
 };
 
 /**
@@ -7450,10 +7465,9 @@ Controller.prototype.$template = function(name, model) {
  * @param {Object} model Custom model, optional.
  * @return {String}
  */
-Controller.prototype.$templateToggle = function(visible, name, model) {
-    return this.$viewToggle(visible, name, model);
+Controller.prototype.$templateToggle = function(visible, name, model, expire) {
+    return this.$viewToggle(visible, name, model, expire);
 };
-
 
 /**
  * INTERNAL: Render view in view
@@ -7462,8 +7476,8 @@ Controller.prototype.$templateToggle = function(visible, name, model) {
  * @param {Object} model Custom model, optional.
  * @return {String}
  */
-Controller.prototype.$view = function(name, model) {
-    return this.$viewToggle(true, name, model);
+Controller.prototype.$view = function(name, model, expire) {
+    return this.$viewToggle(true, name, model, expire);
 };
 
 /**
@@ -7474,14 +7488,28 @@ Controller.prototype.$view = function(name, model) {
  * @param {Object} model Custom model, optional.
  * @return {String}
  */
-Controller.prototype.$viewToggle = function(visible, name, model) {
+Controller.prototype.$viewToggle = function(visible, name, model, expire) {
+
     if (!visible)
         return '';
+
     var self = this;
+
+    if (expire) {
+        var output = self.cache.read('$view.' + name);
+        if (output !== null)
+            return output;
+    }
+
     var layout = self.layoutName;
+
     self.layoutName = '';
-    var value = self.view(name, model, null, true);
+    var value = self.view(name, model, null, true, expire);
     self.layoutName = layout;
+
+    if (expire)
+        self.cache.add('$view.' + name, value, expire);
+
     return value;
 };
 
@@ -9890,13 +9918,13 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 /*
     Memorize a view (without layout) into the cache
     @key {String} :: cache key
-    @expire {Date} :: expiration
+    @expires {Date} :: expiration
     @disabled {Boolean} :: disabled for debug mode
     @fnTo {Function} :: if cache not exist
     @fnFrom {Function} :: optional, if cache is exist
     return {Controller}
 */
-Controller.prototype.memorize = function(key, expire, disabled, fnTo, fnFrom) {
+Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
     var self = this;
     var output = self.cache.read(key);
@@ -9935,7 +9963,7 @@ Controller.prototype.memorize = function(key, expire, disabled, fnTo, fnFrom) {
                 }
             }
 
-            self.cache.add(key, options, expire);
+            self.cache.add(key, options, expires);
             self.precache = null;
         };
 
@@ -10925,22 +10953,26 @@ WebSocketClient.prototype._request_accept_key = function(req) {
 // =================================================================================
 // *********************************************************************************
 
-/*
-    Write cookie
-    @name {String}
-    @value {String}
-    @expires {Date} :: optional
-    @options {Object} :: options.path, options.domain, options.secure, options.httpOnly, options.expires
-    return {ServerResponse}
-*/
+/**
+ * Add cookie to response
+ * @param {String} name
+ * @param {Object} value
+ * @param {Date/String} expires
+ * @param {Object} options Additional options.
+ * @return {ServerResponse}
+ */
 http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 
     var builder = [name + '=' + encodeURIComponent(value)];
+    var type = typeof(expires);
 
-    if (expires && !utils.isDate(expires) && typeof(expires) === 'object') {
+    if (expires && !utils.isDate(expires) && type === OBJECT) {
         options = expires;
         expires = options.expires || options.expire || null;
     }
+
+    if (type === STRING)
+        expires = expires.parseExpire();
 
     if (!options)
         options = {};

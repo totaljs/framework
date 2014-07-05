@@ -1589,8 +1589,34 @@ String.prototype.count = function(text) {
     return count;
 };
 
+/**
+ * Parse date from string
+ * @return {Date}
+ */
 String.prototype.parseDate = function() {
-    return new Date(this);
+    var self = this;
+    return new Date(self);
+};
+
+/**
+ * Parse expiration date
+ * @return {Date}
+ */
+String.prototype.parseExpire = function() {
+    var self = this;
+    var index = self.indexOf(' ');
+    var dt = new Date();
+
+    if (index === -1)
+        return dt;
+
+    var num = parseInt(self.substring(0, index));
+    if (isNaN(num))
+        return dt;
+
+    var type = self.substring(index + 1).trim();
+
+    return dt.add(type, num);
 };
 
 /*

@@ -409,7 +409,7 @@ framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html'
 framework.on('ready', function() {
 	setTimeout(function() {
 		run();
-	}, 1000);
+	}, 2000);
 });
 
 framework.http('release', { port: 8001 });

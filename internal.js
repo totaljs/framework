@@ -1911,6 +1911,8 @@ function view_prepare(command, dynamicCommand, functions) {
 
             return '(' + command + ').toString().encode()';
 
+        case 'CONFIG':
+        case 'FUNCTION':
         case 'functions':
             return '(' + command + ').toString().encode()';
 
@@ -1924,6 +1926,8 @@ function view_prepare(command, dynamicCommand, functions) {
         case '!config':
         case '!functions':
         case '!model':
+        case '!CONFIG':
+        case '!FUNCTION':
             return '(' + command.substring(1) + ')';
 
         case 'body':
