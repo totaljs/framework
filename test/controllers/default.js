@@ -29,7 +29,7 @@ exports.install = function(framework) {
     framework.route('/cookie/', view_cookie);
     framework.route('/layout/', view_layout);
     framework.route('/custom/', viewCustomTesting);
-    framework.route('/views/', viewViews, [], ['middleware']);
+    framework.route('/views/', viewViews, ["#middleware"]);
     framework.route('/view-notfound/', viewError);
     framework.route('/views-if/', viewViewsIf);
     framework.route('/{a}/', viewRouteA);

@@ -7,6 +7,7 @@ IN DEVELOPMENT ======= 1.6.0
 - added: middleware to framework.websocket(url, funcInitialize, [flags], [protocols], [allow], [maximumSize], [middleware])
 - added: middleware to framework.file([name], [fnValidation], [fnExecute], [middleware])
 - added: middleware to framework.use(name), this is global middleware
+- added: middleware can add as flag: '#middleware1', '#middleware2'
 - added: Response.controller, link to the current controller (if exists)
 - added: Response.send([code], body, [contentType])
 - added: Response.json(obj);

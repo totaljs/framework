@@ -592,9 +592,22 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     var isRaw = false;
 
     if (flags) {
+
         var tmp = [];
+        var count = 0;
+
         for (var i = 0; i < flags.length; i++) {
+
+            if (flags[i][0] === '#') {
+                if ((middleware || null) === null)
+                    middleware = [];
+                middleware.push(flags[i].substring(1));
+                continue;
+            }
+
+            count++;
             var flag = flags[i].toString().toLowerCase();
+
             switch (flag) {
                 case 'raw':
                     isRaw = true;
@@ -626,7 +639,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
             }
         }
         flags = tmp;
-        priority += (flags.length * 2);
+        priority += (count * 2);
     } else
         flags = ['get'];
 
@@ -851,12 +864,22 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
     var isJSON = false;
     var isBINARY = false;
     var tmp = [];
+    var count = 0;
 
     if (typeof(flags) === UNDEFINED)
         flags = [];
 
     for (var i = 0; i < flags.length; i++) {
+
+        if (flags[i][0] === '#') {
+            if ((middleware || null) === null)
+                middleware = [];
+            middleware.push(flags[i].substring(1));
+            continue;
+        }
+
         flags[i] = flags[i].toString().toLowerCase();
+        count++;
 
         if (flags[i] === 'json')
             isJSON = true;
@@ -875,7 +898,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
     flags = tmp;
 
-    priority += (flags.length * 2);
+    priority += (count * 2);
 
     var isMember = false;
 
