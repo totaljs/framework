@@ -3078,17 +3078,17 @@ Framework.prototype.response501 = function(req, res) {
     return self;
 };
 
-/*
-    Response content
-    @req {ServerRequest}
-    @res {ServerResponse}
-    @code {Number}
-    @contentBody {String}
-    @contentType {String}
-    @compress {Boolean}
-    @headers {Object} :: optional key/value
-    return {Framework}
-*/
+/**
+ * Response content
+ * @param {Request} req
+ * @param {Response} res
+ * @param {Number} code Status code.
+ * @param {String} contentBody Content body.
+ * @param {String} contentType Content type.
+ * @param {Boolean} compress GZIP compression.
+ * @param {Object} headers Custom headers.
+ * @return {Framework}
+ */
 Framework.prototype.responseContent = function(req, res, code, contentBody, contentType, compress, headers) {
     var self = this;
 
@@ -3104,7 +3104,6 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
     returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'private';
     returnHeaders['Vary'] = 'Accept-Encoding';
 
-    // možnosť odoslať vlastné hlavičky
     if (headers)
         utils.extend(returnHeaders, headers, true);
 
@@ -3112,7 +3111,6 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
     if (contentType === 'application/json')
         returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
 
-    // pridáme UTF-8 do hlavičky
     if ((/text|application/).test(contentType))
         contentType += '; charset=utf-8';
 
@@ -3152,14 +3150,14 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
     return self;
 };
 
-/*
-    Internal function
-    @req {ServerRequest}
-    @res {ServerResponse}
-    @url {String}
-    @permanent {Boolean} :: optional
-    return {Framework}
-*/
+/**
+ * Response Redirect
+ * @param {Request} req
+ * @param {Response} res
+ * @param {String} url
+ * @param {Boolean} permanent Optional.
+ * @return {Framework}
+ */
 Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 
     var self = this;
@@ -5376,21 +5374,6 @@ FrameworkFileSystem.prototype.deleteView = function(name) {
 };
 
 /*
-    Delete a file - Content
-    @name {String}
-    return {Boolean}
-*/
-FrameworkFileSystem.prototype.deleteContent = function(name) {
-    var self = this;
-
-    if (name.lastIndexOf('.html') === -1)
-        name += '.html';
-
-    var filename = utils.combine(self.config['directory-contents'], name);
-    return self.deleteFile(filename);
-};
-
-/*
     Delete a file - Worker
     @name {String}
     return {Boolean}
@@ -5513,30 +5496,6 @@ FrameworkFileSystem.prototype.createView = function(name, content, rewrite, appe
     framework._verify_directory('views');
 
     var filename = utils.combine(self.config['directory-views'], name);
-    return self.createFile(filename, content, append, rewrite);
-};
-
-/*
-    Create a file with the content
-    @name {String}
-    @content {String}
-    @rewrite {Boolean} :: optional (default false)
-    @append {Boolean} :: optional (default false)
-    return {Boolean}
-*/
-FrameworkFileSystem.prototype.createContent = function(name, content, rewrite, append) {
-
-    var self = this;
-
-    if ((content || '').length === 0)
-        return false;
-
-    if (name.lastIndexOf('.html') === -1)
-        name += '.html';
-
-    framework._verify_directory('contents');
-
-    var filename = utils.combine(self.config['directory-contents'], name);
     return self.createFile(filename, content, append, rewrite);
 };
 
@@ -5928,8 +5887,9 @@ FrameworkCache.prototype.add = function(name, value, expire) {
 
     switch (type) {
         case STRING:
-            expire = expire.parseExpire();
+            expire = expire.parseDateExpire();
             break;
+
         case UNDEFINED:
             expire = new Date().add('m', 5);
             break;
@@ -5971,7 +5931,7 @@ FrameworkCache.prototype.setExpire = function(name, expire) {
         return self;
 
     if (typeof(expire) === STRING)
-        expire = expire.parseExpire();
+        expire = expire.parseDateExpire();
 
     obj.expire = expire;
     return self;
@@ -10064,6 +10024,7 @@ function WebSocket(framework, path, name, id) {
     this.connections = {};
     this.repository = {};
     this.name = name;
+    this.isController = true;
     this.url = utils.path(path);
 
     // on('open', function(client) {});
@@ -10619,6 +10580,10 @@ WebSocketClient.prototype = {
         return this.req.query;
     },
 
+    get query() {
+        return this.req.query;
+    },
+
     get uri() {
         return this.req.uri;
     },
@@ -10972,7 +10937,7 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
     }
 
     if (type === STRING)
-        expires = expires.parseExpire();
+        expires = expires.parseDateExpire();
 
     if (!options)
         options = {};

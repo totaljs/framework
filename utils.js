@@ -1602,7 +1602,7 @@ String.prototype.parseDate = function() {
  * Parse expiration date
  * @return {Date}
  */
-String.prototype.parseExpire = function() {
+String.prototype.parseDateExpire = function() {
     var self = this;
     var index = self.indexOf(' ');
     var dt = new Date();

@@ -40,7 +40,7 @@ IN DEVELOPMENT ======= 1.6.0
 - added: config['default-interval-precompile'], default 61
 - added: framework.on('eval', function([url]) {});
 - added: framework.on('route-add', function(type, route) {})
-- added: String.prototype.parseExpire() - parse expiration date, example: '1 minute', '1 year'
+- added: String.prototype.parseDateExpire() - parse expiration date, example: '1 minute', '1 year'
 
 - updated: (IMPORTANT) INCLUDE(name, [options]), SOURCE(name, [options]) –> object
 - updated: (IMPORTANT) SOURCE(name, [options]), framework.source(name, [options]) –> object
