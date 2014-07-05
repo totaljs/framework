@@ -1900,6 +1900,7 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'model':
         case 'get':
         case 'post':
+        case 'query':
         case 'global':
         case 'session':
         case 'user':
@@ -1908,6 +1909,16 @@ function view_prepare(command, dynamicCommand, functions) {
 
             if (view_is_assign(command))
                 return 'self.$set(' + command + ')';
+
+            return '(' + command + ').toString().encode()';
+
+        case 'body':
+
+            if (view_is_assign(command))
+                return 'self.$set(' + command + ')';
+
+            if (command.indexOf('.') === -1)
+                return 'output';
 
             return '(' + command + ').toString().encode()';
 
@@ -1920,6 +1931,8 @@ function view_prepare(command, dynamicCommand, functions) {
         case '!repository':
         case '!get':
         case '!post':
+        case '!body':
+        case '!query':
         case '!global':
         case '!session':
         case '!user':
@@ -1930,8 +1943,6 @@ function view_prepare(command, dynamicCommand, functions) {
         case '!FUNCTION':
             return '(' + command.substring(1) + ')';
 
-        case 'body':
-            return 'output';
 
         case 'resource':
             return '(self.' + command + ').toString().encode()';
