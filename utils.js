@@ -1281,13 +1281,12 @@ exports.parseXML = function(xml) {
     return obj;
 };
 
-
 /**
  * Get WebSocket frame
  * @author Jozef Gula <gula.jozef@gmail.com>
- * @param  {Number} code
- * @param  {Buffer or String} message
- * @param  {Hexa} type
+ * @param {Number} code
+ * @param {Buffer or String} message
+ * @param {Hexa} type
  * @return {Buffer}
  */
 exports.getWebSocketFrame = function(code, message, type) {
@@ -1300,7 +1299,6 @@ exports.getWebSocketFrame = function(code, message, type) {
     messageBuffer.copy(frameBuffer, lengthBuffer.length + 1, 0, messageLength);
     return frameBuffer;
 }
-
 
 /**
  * Get bytes of WebSocket frame message

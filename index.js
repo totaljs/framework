@@ -177,7 +177,8 @@ function Framework() {
         // in minutes
         'default-interval-clear-resources': 20,
         'default-interval-clear-cache': 3,
-        'default-interval-precompile': 61
+        'default-interval-precompile': 61,
+        'default-interval-websocket-ping': 1
     };
 
     this.global = {};
@@ -3643,9 +3644,22 @@ Framework.prototype._service = function(count) {
         });
     }
 
+    // every 1 minute is created a ping message
+    if (count % framework.config['default-interval-websocket-ping'] === 0) {
+        Object.keys(framework.connections).wait(function(item, next) {
+            framework.connections[item].ping();
+            next();
+        });
+    }
+
     self.emit('service', count);
 };
 
+/**
+ * Request processing
+ * @param {Request} req
+ * @param {Response} res
+ */
 Framework.prototype._request = function(req, res) {
 
     var self = this;
@@ -3846,6 +3860,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
     var method = req.method;
 
     if (method === 'GET' || method === 'DELETE' || method === 'OPTIONS') {
+
         if (method === 'DELETE')
             self.stats.request['delete']++;
         else
@@ -3853,9 +3868,11 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
         new Subscribe(self, req, res, 0).end();
         return self;
+
     }
 
     if (self._request_check_POST && (method === 'POST' || method === 'PUT')) {
+
         if (multipart.length > 0) {
             self.stats.request.upload++;
             new Subscribe(self, req, res, 2).multipart(multipart);
@@ -3868,6 +3885,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
             new Subscribe(self, req, res, 1).urlencoded();
         }
+
         return self;
     }
 
@@ -4712,6 +4730,7 @@ Framework.prototype.configure = function(arr, rewrite) {
             case 'default-interval-clear-cache':
             case 'default-interval-clear-resources':
             case 'default-interval-precompile':
+            case 'default-interval-websocket-ping':
                 obj[name] = utils.parseInt(value);
                 break;
 
@@ -10084,13 +10103,13 @@ WebSocket.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
     }
 });
 
-/*
-    Send message
-    @message {String or Object}
-    @id {String Array}
-    @blacklist {String Array}
-    return {WebSocket}
-*/
+/**
+ * Send a message
+ * @param {String} message
+ * @param {String Array or Function(client)} id
+ * @param {String Array or Funciton(client)} blacklist
+ * @return {WebSocket}
+ */
 WebSocket.prototype.send = function(message, id, blacklist) {
 
     var self = this;
@@ -10145,6 +10164,25 @@ WebSocket.prototype.send = function(message, id, blacklist) {
     }
 
     self.emit('send', message, id, blacklist);
+    return self;
+};
+
+/**
+ * Send a ping
+ * @return {WebSocket}
+ */
+WebSocket.prototype.ping = function() {
+
+    var self = this;
+    var keys = self._keys;
+    var length = keys.length;
+
+    if (length === 0)
+        return self;
+
+    for (var i = 0; i < length; i++)
+        self.connections[keys[i]].ping();
+
     return self;
 };
 
@@ -10239,7 +10277,6 @@ WebSocket.prototype.change = function(message) {
     framework.change(message, self.name, self.uri, self.ip);
     return self;
 };
-
 
 /*
     All connections (forEach)
@@ -10696,7 +10733,7 @@ WebSocketClient.prototype.upgrade = function(container) {
     self.container._add(self);
     self.container._refresh();
 
-    self.container.framework.emit('websocket-begin', self.container, self);
+    framework.emit('websocket-begin', self.container, self);
     self.container.emit('open', self);
 
     return self;
@@ -10742,8 +10779,8 @@ WebSocketClient.prototype._ondata = function(data) {
             self.close();
             break;
         case 0x09:
-            // ping
-            self.socket.write(self._state('pong'));
+            // ping, response pong
+            self.socket.write(utils.getWebSocketFrame(0, '', 0x0A));
             break;
         case 0x0a:
             // pong
@@ -10762,7 +10799,7 @@ WebSocketClient.prototype.parse = function() {
     if (((bLength & 0x80) >> 7) !== 1)
         return self;
 
-    var length = utils.getMessageLength(self.buffer, self.container.framework.isLE);
+    var length = utils.getMessageLength(self.buffer, framework.isLE);
     var index = (self.buffer[1] & 0x7f);
 
     index = (index == 126) ? 4 : (index == 127 ? 10 : 2);
@@ -10827,7 +10864,7 @@ WebSocketClient.prototype._onclose = function() {
     self.container._remove(self._id);
     self.container._refresh();
     self.container.emit('close', self);
-    self.container.framework.emit('websocket-end', self.container, self);
+    framework.emit('websocket-end', self.container, self);
 };
 
 /*
@@ -10840,7 +10877,7 @@ WebSocketClient.prototype.send = function(message) {
     var self = this;
 
     if (self.isClosed)
-        return;
+        return self;
 
     if (self.type !== 1) {
 
@@ -10860,10 +10897,27 @@ WebSocketClient.prototype.send = function(message) {
     return self;
 };
 
-/*
-    Close connection
-    return {WebSocketClient}
-*/
+/**
+ * Ping message
+ * @return {WebSocketClient}
+ */
+WebSocketClient.prototype.ping = function() {
+
+    var self = this;
+
+    if (self.isClosed)
+        return self;
+
+    self.socket.write(utils.getWebSocketFrame(0, '', 0x09));
+    return self;
+};
+
+/**
+ * Close connection
+ * @param {String} message Message.
+ * @param {Number} code WebSocket code.
+ * @return {WebSocketClient}
+ */
 WebSocketClient.prototype.close = function(message, code) {
     var self = this;
 
@@ -10874,38 +10928,6 @@ WebSocketClient.prototype.close = function(message, code) {
     self.socket.end(utils.getWebSocketFrame(code || 1000, message || '', 0x08));
 
     return self;
-};
-
-/*
-    Send state
-    return {Buffer}
-*/
-WebSocketClient.prototype._state = function(type) {
-    var value = new Buffer(6);
-    switch (type) {
-        case 'close':
-            value[0] = 0x08;
-            value[0] |= 0x80;
-            value[1] = 0x80;
-            break;
-        case 'ping':
-            value[0] = 0x09;
-            value[0] |= 0x80;
-            value[1] = 0x80;
-            break;
-        case 'pong':
-            value[0] = 0x0A;
-            value[0] |= 0x80;
-            value[1] = 0x80;
-            break;
-    }
-    var iMask = Math.floor(Math.random() * 255);
-    value[2] = iMask >> 8;
-    value[3] = iMask;
-    iMask = Math.floor(Math.random() * 255);
-    value[4] = iMask >> 8;
-    value[5] = iMask;
-    return value;
 };
 
 WebSocketClient.prototype._request_accept_key = function(req) {

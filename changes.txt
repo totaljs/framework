@@ -38,6 +38,8 @@ IN DEVELOPMENT ======= 1.6.0
 - added: config['default-interval-clear-resources'], default 20
 - added: config['default-interval-clear-temporary'], default 3
 - added: config['default-interval-precompile'], default 61
+- added: config['default-interval-websocket-ping'], default 1
+- added: create automatically a ping message for websocket clients
 - added: framework.on('eval', function([url]) {});
 - added: framework.on('include', function(url, options) {});
 - added: framework.on('route-add', function(type, route) {})
