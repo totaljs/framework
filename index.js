@@ -52,6 +52,14 @@ global.MODULE = function(name) {
     return framework.module(name);
 };
 
+global.INSTALL = function(url, options, callback) {
+    return framework.install(url, options, callback);
+};
+
+global.UNINSTALL = function(name, options) {
+    return framework.uninstall(name, options);
+};
+
 global.DATABASE = function() {
     return framework.database.apply(framework, arguments);
 };
@@ -78,6 +86,10 @@ global.FUNCTION = function(name) {
 
 global.PRECOMPILE = function(name, url) {
     return framework.precompile(name, url);
+};
+
+global.UNCOMPILE = function(name) {
+    return framework.uncompile(name);
 };
 
 global.COMPONENT = function(name) {
@@ -1127,7 +1139,7 @@ Framework.prototype.module = function(name) {
     if (typeof(module) === UNDEFINED)
         return null;
 
-    _controller = '#module-' + name;
+    _controller = '#m' + name;
 
     if (module !== null && typeof(module.directory) === UNDEFINED)
         module.directory = isDirectory ? path.join(directory, configDirectory) : path.join(directory, configDirectory, name);
@@ -1215,11 +1227,11 @@ Framework.prototype.component = function(name) {
     return component;
 };
 
-/*
-    Install/Init modules
-    return {Framework}
-*/
-Framework.prototype.install = function() {
+/**
+ * [load description]
+ * @return {[type]} [description]
+ */
+Framework.prototype.load = function() {
 
     var self = this;
     var dir = path.join(directory, self.config['directory-controllers']);
@@ -1259,9 +1271,7 @@ Framework.prototype.install = function() {
                 return;
 
             var name = o.replace(ext, '');
-
-            if (name === '#')
-                return;
+            _controller = '';
 
             var module = self.module(name);
 
@@ -1395,7 +1405,7 @@ Framework.prototype.injectModule = function(name, url) {
 
         try {
             var result = eval('(new (function(){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
-            _controller = '#module-' + name;
+            _controller = '#' + name;
 
             self.routes.web = self.routes.web.remove(function(route) {
                 return route.name === _controller;
@@ -3225,7 +3235,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 
     self.clear();
     self.cache.init();
-    self.install();
+    self.load();
 
     if (options.https) {
         self.server = http.createServer(options.https, function(req, res) {
@@ -3941,8 +3951,8 @@ Framework.prototype.model = function(name) {
 };
 
 /**
- * Load source code
- * @param {String} nameORurl
+ * Load a source code
+ * @param {String} name
  * @param {Object} options Custom initial options, optional.
  * @return {Object}
  */
@@ -3952,9 +3962,6 @@ Framework.prototype.source = function(name, options) {
 
     if (source)
         return source;
-
-    if ((name.startsWith('http://') || name.startsWith('https://')))
-        return self.include(name, options);
 
     var filename = path.join(directory, self.config['directory-source'], name);
 
@@ -3976,24 +3983,31 @@ Framework.prototype.source = function(name, options) {
 };
 
 /**
- * Load source code
- * @param {String} nameORurl
+ * Load a source code (alias for framework.source())
+ * @param {String} name
  * @param {Object} options Custom initial options, optional.
- * @return {Object or Undefined}
+ * @return {Object}
  */
-Framework.prototype.include = function(url, options) {
+Framework.prototype.include = function(name, options) {
+    return this.source(name, options);
+};
+
+/**
+ * Install module from URL
+ * @param {String} url
+ * @param {Object} options Custom initial options, optional.
+ * @param {Function(err, module)} callback
+ */
+Framework.prototype.install = function(url, options, callback) {
 
     var self = this;
 
-    if (!(url.startsWith('http://') || url.startsWith('https://')))
-        return self.source(url, options);
+    utils.request(url, ['get'], function(err, data) {
 
-    var framework = self;
-
-    utils.request(url, ['get'], function(error, data) {
-
-        if (error) {
-            self.error(error, 'include - ' + url, null);
+        if (err) {
+            if (callback)
+                callback(err);
+            self.error(err, 'install - ' + url, null);
             return;
         }
 
@@ -4002,29 +4016,96 @@ Framework.prototype.include = function(url, options) {
             _controller = '';
 
             var result = eval('(new (function(){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
+            var name = (result.name || url);
 
-            if (typeof(result.install) !== UNDEFINED)
-                result.install(options);
+            // Uninstall previous version
+            self.uninstall(name);
 
-            self.emit('include', url, options);
+            _controller = '#' + name;
+
+            self.routes.web = self.routes.web.remove(function(route) {
+                return route.name === _controller;
+            });
+
+            self.routes.files = self.routes.files.remove(function(route) {
+                return route.name === _controller;
+            });
+
+            self.routes.websockets = self.routes.websockets.remove(function(route) {
+                return route.name === _controller;
+            });
+
+            if (result.install) {
+                result.install(self, options, name);
+                self.routesSort();
+            }
+
+            self.modules[name] = result;
+            _controller = '';
+
+            if (callback)
+                callback(null, self.modules[name]);
+
+            self.emit('install', name, self.modules[name], url);
 
         } catch (ex) {
-            self.error(ex, 'include - ' + url, null);
+            if (callback)
+                callback(ex);
+            self.error(ex, 'install - ' + url, null);
         }
 
     });
 };
 
+/**
+ * Uninstall module
+ * @param {String} name
+ * @param {Object} options Custom options, optional.
+ * @return {Boolean}
+ */
+Framework.prototype.uninstall = function(name, options) {
+
+    var self = this;
+    var module = self.modules[name];
+
+    if (!module)
+        return false;
+
+    _controller = '#' + name;
+
+    self.routes.web = self.routes.web.remove(function(route) {
+        return route.name === _controller;
+    });
+
+    self.routes.files = self.routes.files.remove(function(route) {
+        return route.name === _controller;
+    });
+
+    self.routes.websockets = self.routes.websockets.remove(function(route) {
+        return route.name === _controller;
+    });
+
+    self.routesSort();
+
+    if (module.uninstall)
+        module.uninstall(self, options, name);
+
+    delete self.modules[name];
+    _controller = '';
+
+    self.emit('uninstall', name);
+    return true;
+};
 
 /**
  * Add a test function or test request
- * @param  {String}            name     Test name.
- * @param  {Url or Function}   url      Url or Callback function(next, name) {}.
- * @param  {Array}             flags    Routed flags (GET, POST, PUT, XHR, JSON ...).
- * @param  {Function}          callback Callback.
- * @param  {Object or String}  data     Request data.
- * @param  {Object}            cookies  Request cookies.
- * @param  {Object}            headers  Additional headers.
+ * @param {String} name Test name.
+ * @param {Url or Function} url Url or Callback function(next, name) {}.
+ * @param {Array} flags Routed flags (GET, POST, PUT, XHR, JSON ...).
+ * @param {Function} callback Callback.
+ * @param {Object or String} data Request data.
+ * @param {Object} cookies Request cookies.
+ * @param {Object} headers Additional headers.
  * @return {Framework}
  */
 Framework.prototype.assert = function(name, url, flags, callback, data, cookies, headers) {
@@ -5132,6 +5213,32 @@ Framework.prototype.precompile = function(name, url) {
     return self;
 };
 
+/**
+ * Uncompile view
+ * @param {String} name
+ * @return {Boolean}
+ */
+Framework.prototype.uncompile = function(name) {
+    var self = this;
+    var item = self.routes.precompiled[name];
+
+    if (!item)
+        return false;
+
+    delete self.routes.precompiled[name];
+
+    if (!item.isLoaded)
+        return true;
+
+    fs.exists(item.filename, function(exist) {
+        if (!exist)
+            return;
+        fs.unlink(item.filename);
+    });
+
+    return true;
+};
+
 // *********************************************************************************
 // =================================================================================
 // Framework Restrictions
@@ -5325,9 +5432,6 @@ FrameworkRestrictions.prototype._blockedCustom = function(headers) {
 // *********************************************************************************
 
 function FrameworkFileSystem(framework) {
-
-    this.config = framework.config;
-
     this.create = {
         css: this.createCSS.bind(this),
         js: this.createJS.bind(this),
@@ -5360,7 +5464,7 @@ FrameworkFileSystem.prototype.deleteCSS = function(name) {
     if (name.lastIndexOf('.css') === -1)
         name += '.css';
 
-    var filename = utils.combine(self.config['directory-public'], self.config['static-url-css'], name);
+    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-css'], name);
     return self.deleteFile(filename);
 };
 
@@ -5375,7 +5479,7 @@ FrameworkFileSystem.prototype.deleteJS = function(name) {
     if (name.lastIndexOf(EXTENSION_JS) === -1)
         name += EXTENSION_JS;
 
-    var filename = utils.combine(self.config['directory-public'], self.config['static-url-js'], name);
+    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-js'], name);
     return self.deleteFile(filename);
 };
 
@@ -5390,7 +5494,7 @@ FrameworkFileSystem.prototype.deleteView = function(name) {
     if (name.lastIndexOf('.html') === -1)
         name += '.html';
 
-    var filename = utils.combine(self.config['directory-views'], name);
+    var filename = utils.combine(framework.config['directory-views'], name);
     return self.deleteFile(filename);
 };
 
@@ -5405,7 +5509,7 @@ FrameworkFileSystem.prototype.deleteWorker = function(name) {
     if (name.lastIndexOf(EXTENSION_JS) === -1)
         name += EXTENSION_JS;
 
-    var filename = utils.combine(self.config['directory-workers'], name);
+    var filename = utils.combine(framework.config['directory-workers'], name);
     return self.deleteFile(filename);
 };
 
@@ -5420,7 +5524,7 @@ FrameworkFileSystem.prototype.deleteResource = function(name) {
     if (name.lastIndexOf('.resource') === -1)
         name += '.resource';
 
-    var filename = utils.combine(self.config['directory-resources'], name);
+    var filename = utils.combine(framework.config['directory-resources'], name);
     return self.deleteFile(filename);
 };
 
@@ -5431,7 +5535,7 @@ FrameworkFileSystem.prototype.deleteResource = function(name) {
 */
 FrameworkFileSystem.prototype.deleteTemporary = function(name) {
     var self = this;
-    var filename = utils.combine(self.config['directory-temp'], name);
+    var filename = utils.combine(framework.config['directory-temp'], name);
     return self.deleteFile(filename);
 };
 
@@ -5470,7 +5574,7 @@ FrameworkFileSystem.prototype.createCSS = function(name, content, rewrite, appen
     if (name.lastIndexOf('.css') === -1)
         name += '.css';
 
-    var filename = utils.combine(self.config['directory-public'], self.config['static-url-css'], name);
+    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-css'], name);
     return self.createFile(filename, content, append, rewrite);
 };
 
@@ -5492,7 +5596,7 @@ FrameworkFileSystem.prototype.createJS = function(name, content, rewrite, append
     if (name.lastIndexOf(EXTENSION_JS) === -1)
         name += EXTENSION_JS;
 
-    var filename = utils.combine(self.config['directory-public'], self.config['static-url-js'], name);
+    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-js'], name);
     return self.createFile(filename, content, append, rewrite);
 };
 
@@ -5516,7 +5620,7 @@ FrameworkFileSystem.prototype.createView = function(name, content, rewrite, appe
 
     framework._verify_directory('views');
 
-    var filename = utils.combine(self.config['directory-views'], name);
+    var filename = utils.combine(framework.config['directory-views'], name);
     return self.createFile(filename, content, append, rewrite);
 };
 
@@ -5540,7 +5644,7 @@ FrameworkFileSystem.prototype.createWorker = function(name, content, rewrite, ap
 
     framework._verify_directory('workers');
 
-    var filename = utils.combine(self.config['directory-workers'], name);
+    var filename = utils.combine(framework.config['directory-workers'], name);
     return self.createFile(filename, content, append, rewrite);
 };
 
@@ -5573,7 +5677,7 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
 
     framework._verify_directory('resources');
 
-    var filename = utils.combine(self.config['directory-resources'], name);
+    var filename = utils.combine(framework.config['directory-resources'], name);
     return self.createFile(filename, builder, append, rewrite);
 };
 
@@ -5589,7 +5693,7 @@ FrameworkFileSystem.prototype.createTemporary = function(name, stream, callback)
 
     framework._verify_directory('temp');
 
-    var filename = utils.combine(self.config['directory-temp'], name);
+    var filename = utils.combine(framework.config['directory-temp'], name);
     var writer = fs.createWriteStream(filename);
 
     if (callback) {
@@ -5677,7 +5781,7 @@ function FrameworkPath(framework) {
 FrameworkPath.prototype.public = function(filename) {
     var self = this;
     framework._verify_directory('public');
-    return utils.combine(self.config['directory-public'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-public'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -5687,7 +5791,7 @@ FrameworkPath.prototype.public = function(filename) {
 FrameworkPath.prototype.logs = function(filename) {
     var self = this;
     framework._verify_directory('logs');
-    return utils.combine(self.config['directory-logs'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-logs'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -5696,7 +5800,7 @@ FrameworkPath.prototype.logs = function(filename) {
 */
 FrameworkPath.prototype.components = function(filename) {
     var self = this;
-    return utils.combine(self.config['directory-components'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-components'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -5705,7 +5809,7 @@ FrameworkPath.prototype.components = function(filename) {
 */
 FrameworkPath.prototype.models = function(filename) {
     var self = this;
-    return utils.combine(self.config['directory-models'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-models'], filename || '').replace(/\\/g, '/');
 };
 /*
     @filename {String} :: optional
@@ -5714,7 +5818,7 @@ FrameworkPath.prototype.models = function(filename) {
 FrameworkPath.prototype.temp = function(filename) {
     var self = this;
     framework._verify_directory('temp');
-    return utils.combine(self.config['directory-temp'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-temp'], filename || '').replace(/\\/g, '/');
 };
 
 FrameworkPath.prototype.temporary = function(filename) {
@@ -5728,7 +5832,7 @@ FrameworkPath.prototype.temporary = function(filename) {
 FrameworkPath.prototype.views = function(filename) {
     var self = this;
     framework._verify_directory('views');
-    return utils.combine(self.config['directory-views'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-views'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -5738,7 +5842,7 @@ FrameworkPath.prototype.views = function(filename) {
 FrameworkPath.prototype.workers = function(filename) {
     var self = this;
     framework._verify_directory('workers');
-    return utils.combine(self.config['directory-workers'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-workers'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -5748,7 +5852,7 @@ FrameworkPath.prototype.workers = function(filename) {
 FrameworkPath.prototype.databases = function(filename) {
     var self = this;
     framework._verify_directory('databases');
-    return utils.combine(self.config['directory-databases'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-databases'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -5758,7 +5862,7 @@ FrameworkPath.prototype.databases = function(filename) {
 FrameworkPath.prototype.contents = function(filename) {
     var self = this;
     framework._verify_directory('contents');
-    return utils.combine(self.config['directory-contents'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-contents'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -5768,7 +5872,7 @@ FrameworkPath.prototype.contents = function(filename) {
 FrameworkPath.prototype.modules = function(filename) {
     var self = this;
     framework._verify_directory('modules');
-    return utils.combine(self.config['directory-modules'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-modules'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -5778,7 +5882,7 @@ FrameworkPath.prototype.modules = function(filename) {
 FrameworkPath.prototype.controllers = function(filename) {
     var self = this;
     framework._verify_directory('controllers');
-    return utils.combine(self.config['directory-controllers'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-controllers'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -5788,7 +5892,7 @@ FrameworkPath.prototype.controllers = function(filename) {
 FrameworkPath.prototype.definitions = function(filename) {
     var self = this;
     framework._verify_directory('definitions');
-    return utils.combine(self.config['directory-definitions'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-definitions'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -5798,7 +5902,7 @@ FrameworkPath.prototype.definitions = function(filename) {
 FrameworkPath.prototype.tests = function(filename) {
     var self = this;
     framework._verify_directory('tests');
-    return utils.combine(self.config['directory-tests'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-tests'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -5808,7 +5912,7 @@ FrameworkPath.prototype.tests = function(filename) {
 FrameworkPath.prototype.resources = function(filename) {
     var self = this;
     framework._verify_directory('resources');
-    return utils.combine(self.config['directory-resources'], filename || '').replace(/\\/g, '/');
+    return utils.combine(framework.config['directory-resources'], filename || '').replace(/\\/g, '/');
 };
 
 /*
