@@ -34,28 +34,29 @@ IN DEVELOPMENT ======= 1.6.0
 - added: global method COMPONENT(name, params...) - returns rendered output from component
 - added: controller.json(obj, [beautify], [replacer]) and ErrorBuilder.json([beautify], [replacer]), author: bir <https://github.com/bir>
 - added: framework.precompile(name, url) - precompile view from URL address
+- added: framework.uncompile(name) - disable compiling of precompiled views
 - added: PRECOMPILE(name, url) - alias for framework.precompile()
-- added: config['default-interval-clear-resources'], default 20
-- added: config['default-interval-clear-temporary'], default 3
-- added: config['default-interval-precompile'], default 61
-- added: config['default-interval-websocket-ping'], default 1
+- added: UNCOMPILE(name) - alias for framework.uncompile()
+- added: config['default-interval-clear-resources'], default 20 (minutes)
+- added: config['default-interval-clear-temporary'], default 3 (minutes)
+- added: config['default-interval-precompile'], default 61 (minutes)
+- added: config['default-interval-websocket-ping'], default 1 (minutes)
 - added: create automatically a ping message for websocket clients
 - added: framework.on('eval', function([url]) {});
-- added: framework.on('include', function(url, options) {});
+- added: framework.on('install', function(name, module, url) {});
+- added: framework.on('uninstall', function(name) {});
 - added: framework.on('route-add', function(type, route) {})
 - added: String.prototype.parseDateExpire() - parse expiration date, example: '1 minute', '1 year'
 
 - updated: (IMPORTANT) INCLUDE(name, [options]), SOURCE(name, [options]) –> object
 - updated: (IMPORTANT) SOURCE(name, [options]), framework.source(name, [options]) –> object
-- updated: (IMPORTANT) INCLUDE(url, [options]), framework.include(url, [options]) –> undefined
-- updated: (IMPORTANT) SOURCE(url, [options]), framework.source(url, [options]) –> undefined
 - updated: framework.run([http], config, [port], [ip], [options])
 - updated: utils.validate(), Builders.validate() –> prepare function (added: schemaName): function(name, value, path, schemaName)
 - updated: framework.assert() supports "data" as function (for future data)
 - updated: empty-project
 - updated: request.signature([key]) - added key param
 - updated: middleware function to: function(req, res, next) {}
-- update: expiration supports string (framework.cache, response.cookie)
+- update: expiration supports string (framework.cache, response.cookie), example: '1 minute'
 - updated: $view(name, model, [expire]), $viewToggle(name, model, [expire]) - added expiration {String}
 
 - renamed: framework.on('expire') -> framework.on('cache-expire')
