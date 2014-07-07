@@ -4,6 +4,20 @@ global.framework = { version: '' };
 var assert = require('assert');
 var utils = require('../utils');
 
+// test: date prototype
+function prototypeDate() {
+
+	var dt = new Date(1404723152167);
+	assert.ok(dt.toString() === 'Mon Jul 07 2014 10:52:32 GMT+0200 (CEST)', 'date problem');
+	assert.ok(dt.add('minute', 5).toString() === 'Mon Jul 07 2014 10:57:32 GMT+0200 (CEST)', 'date add');
+
+	dt = new Date();
+	dt = dt.add('minute', 1);
+	dt = dt.add('seconds', 5);
+
+	assert.ok('1 minute 5 seconds'.parseDateExpire().format('mm:ss') === dt.format('mm:ss'), 'date expiration');
+}
+
 // test: number prototype
 function prototypeNumber() {
 	var format = '';
@@ -454,6 +468,7 @@ function onValidation(name, value, path) {
 	}
 }
 
+prototypeDate();
 prototypeNumber();
 prototypeString();
 prototypeArray();
