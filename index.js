@@ -88,8 +88,8 @@ global.PRECOMPILE = function(name, url) {
     return framework.precompile(name, url);
 };
 
-global.UNCOMPILE = function(name) {
-    return framework.uncompile(name);
+global.REMOVE = function(type, name, options) {
+    return framework.remove(type, name, options);
 };
 
 global.COMPONENT = function(name) {
@@ -757,12 +757,12 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     return self;
 };
 
-/*
-    Add a middleware
-    @name {String} :: Middleware name
-    @funcExecute {Function(next, req, res)} :: optional
-    return {Framework}
-*/
+/**
+ * Add a middleware
+ * @param {String} name
+ * @param {Function(req, res, next, options)} funcExecute
+ * @return {Framework}
+ */
 Framework.prototype.middleware = function(name, funcExecute) {
     var self = this;
     self.routes.middleware[name] = funcExecute;
@@ -1139,7 +1139,7 @@ Framework.prototype.module = function(name) {
     if (typeof(module) === UNDEFINED)
         return null;
 
-    _controller = '#m' + name;
+    _controller = '#' + name;
 
     if (module !== null && typeof(module.directory) === UNDEFINED)
         module.directory = isDirectory ? path.join(directory, configDirectory) : path.join(directory, configDirectory, name);
@@ -1261,6 +1261,7 @@ Framework.prototype.load = function() {
     dir = path.join(directory, self.config['directory-modules']);
 
     if (fs.existsSync(dir)) {
+
         fs.readdirSync(dir).forEach(function(o) {
 
             var ext = path.extname(o);
@@ -1271,6 +1272,7 @@ Framework.prototype.load = function() {
                 return;
 
             var name = o.replace(ext, '');
+
             _controller = '';
 
             var module = self.module(name);
@@ -1279,11 +1281,13 @@ Framework.prototype.load = function() {
                 return;
 
             try {
-                module.install(self, self, name);
+                module.install(self, {}, name);
             } catch (err) {
                 self.error(err, name);
             }
         });
+
+        _controller = '';
     }
 
     self.routesSort();
@@ -1299,12 +1303,7 @@ Framework.prototype.load = function() {
             if (!isDirectory && extLower !== EXTENSION_JS && extLower !== EXTENSION_COFFEE)
                 return;
 
-            var name = o.replace(ext, '');
-
-            if (name === '#')
-                return;
-
-            self.component(name);
+            self.component(o.replace(ext, ''));
         });
     }
 
@@ -1648,6 +1647,52 @@ Framework.prototype.eval = function(script) {
     return self;
 };
 
+/**
+ * Remove a part from the framework
+ * @param {String} type
+ * @param {String} name
+ * @param {Object} options Custom options, optional.
+ * @return {Framework}
+ */
+Framework.prototype.remove = function(type, name, options) {
+    var self = this;
+
+    switch (type) {
+
+        case 'middleware':
+            delete self.routes.middleware[name];
+            self._length_middleware = Object.keys(self.routes.middleware).length;
+            break;
+
+        case 'module':
+            self.uninstall(name, options);
+            break;
+
+        case 'precompile':
+        case 'precompiled':
+        case 'view':
+
+            var precompile = self.routes.precompiled[name];
+
+            if (!precompile)
+                return false;
+
+            delete self.routes.precompiled[name];
+
+            if (!precompile.isLoaded)
+                return true;
+
+            fs.exists(precompile.filename, function(exist) {
+                if (exist)
+                    fs.unlink(precompile.filename);
+            });
+
+            break;
+    }
+
+    return self;
+};
+
 /*
     Error Handler
     @err {Error}
@@ -1659,14 +1704,6 @@ Framework.prototype.onError = function(err, name, uri) {
     console.log('--------------------------------------------------------------------');
     return this;
 };
-
-/*
-    Pre-request handler
-    @req {ServerRequest}
-    @res {ServerResponse}
-    return {Boolean}
-*/
-Framework.prototype.onRequest = null;
 
 /*
     Authorization handler
@@ -5211,32 +5248,6 @@ Framework.prototype.precompile = function(name, url) {
     });
 
     return self;
-};
-
-/**
- * Uncompile view
- * @param {String} name
- * @return {Boolean}
- */
-Framework.prototype.uncompile = function(name) {
-    var self = this;
-    var item = self.routes.precompiled[name];
-
-    if (!item)
-        return false;
-
-    delete self.routes.precompiled[name];
-
-    if (!item.isLoaded)
-        return true;
-
-    fs.exists(item.filename, function(exist) {
-        if (!exist)
-            return;
-        fs.unlink(item.filename);
-    });
-
-    return true;
 };
 
 // *********************************************************************************

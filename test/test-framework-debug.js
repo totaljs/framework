@@ -380,8 +380,8 @@ function run() {
 
 		UNINSTALL('include', { uninstall: true });
 
-		assert.ok(framework.uncompile('precompile._layout') === true, 'framework.uncompile()');
-		assert.ok(framework.uncompile('precompile.homepage') === true, 'framework.uncompile()');
+		REMOVE('precompile', 'precompile._layout');
+		framework.remove('precompile', 'precompile.homepage');
 
 		setTimeout(function() {
 			end();
