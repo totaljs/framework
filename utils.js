@@ -1602,19 +1602,25 @@ String.prototype.parseDate = function() {
  */
 String.prototype.parseDateExpire = function() {
     var self = this;
-    var index = self.indexOf(' ');
+
+    var arr = self.split(' ');
     var dt = new Date();
+    var length = arr.length;
 
-    if (index === -1)
-        return dt;
+    for (var i = 0; i < length; i += 2) {
 
-    var num = parseInt(self.substring(0, index));
-    if (isNaN(num))
-        return dt;
+        var num = arr[i].parseInt();
+        if (num === 0)
+            continue;
 
-    var type = self.substring(index + 1).trim();
+        var type = arr[i + 1] || '';
+        if (type === '')
+            continue;
 
-    return dt.add(type, num);
+        dt = dt.add(type, num);
+    }
+
+    return dt;
 };
 
 /*
