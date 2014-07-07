@@ -3292,11 +3292,9 @@ Framework.prototype.initialize = function(http, debug, options) {
 
     if (!port) {
         if (self.config['default-port'] === 'auto') {
-            var envPort = process.env.PORT.toString();
-            if (isNaN(envPort))
+            var envPort = parseInt(process.env.PORT || '');
+            if (!isNaN(envPort))
                 port = envPort;
-            else
-                port = parseInt(envPort);
         } else
             port = self.config['default-port'];
     }
@@ -4359,7 +4357,7 @@ Framework.prototype.testing = function(stop, callback) {
         test.data = test.data();
 
     if (typeof(test.data) !== STRING)
-        test.data = test.headers[RESPONSE_HEADER_CONTENTTYPE].indexOf('json') !== -1 ? JSON.stringify(test.data) : qs.stringify(test.data);
+        test.data = (test.headers[RESPONSE_HEADER_CONTENTTYPE] || '').indexOf('json') !== -1 ? JSON.stringify(test.data) : qs.stringify(test.data);
 
     if (test.data && test.data.length > 0)
         test.headers[RESPONSE_HEADER_CONTENTLENGTH] = test.data.length;
