@@ -1656,6 +1656,7 @@ String.prototype.contains = function(value, mustAll) {
  * @return {Object}
  */
 String.prototype.configuration = function(def) {
+    console.log('OBSOLETE: String.configuration() -> use String.parseConfig([default])');
     return this.parseConfig(def);
 };
 

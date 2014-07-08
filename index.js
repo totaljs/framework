@@ -68,6 +68,18 @@ global.CONFIG = function(name) {
     return framework.config[name];
 };
 
+global.INJECT = function(type, url, options, callback) {
+    return framework.inject(type, url, options, callback);
+};
+
+global.REGISTER = function(type, name, declaration, options) {
+    return framework.register(type, name, declaration, options);
+};
+
+global.UNREGISTER = function(type, name, options) {
+    return framework.unregister(type, name, options);
+};
+
 global.RESOURCE = function(name, key) {
     return framework.resource(name, key);
 };
@@ -86,10 +98,6 @@ global.FUNCTION = function(name) {
 
 global.PRECOMPILE = function(name, url) {
     return framework.precompile(name, url);
-};
-
-global.REMOVE = function(type, name, options) {
-    return framework.remove(type, name, options);
 };
 
 if (typeof(setImmediate) === UNDEFINED) {
@@ -396,22 +404,12 @@ Framework.prototype._install = function(type, name, declaration) {
 };
 
 /**
- * Get or Create (inline) a controller
+ * Get a controller
  * @param {String} name
- * @param {Function} definition Controller declaration, optional.
  * @return {Object}
  */
-Framework.prototype.controller = function(name, declaration) {
-
-    var self = this;
-
-    if (!declaration)
-        return self.controllers[name] || null;
-
-    self._install('controller', name, declaration);
-    self._routesSort();
-
-    return self.controllers[name] || null;
+Framework.prototype.controller = function(name) {
+    return this.controllers[name] || null;
 };
 
 /**
@@ -1085,81 +1083,13 @@ Framework.prototype.change = function(message, name, uri, ip) {
     return self;
 };
 
-/*
-    Module caller
-    @name {String}
-    return {Object} :: framework return require();
-*/
+/**
+ * Get a module
+ * @param {String} name
+ * @return {Object}
+ */
 Framework.prototype.module = function(name) {
-
-    var self = this;
-    var module = self.modules[name];
-
-    if (typeof(module) !== UNDEFINED)
-        return module;
-
-    if (self.isLoaded)
-        return null;
-
-    var configDirectory = self.config['directory-modules'];
-    var filename = path.join(directory, configDirectory, name);
-    var isDirectory = false;
-
-    if (self.isCoffee) {
-        if (fs.existsSync(filename))
-            filename += EXTENSION_COFFEE;
-        else
-            filename += EXTENSION_JS;
-    } else
-        filename += EXTENSION_JS;
-
-    if (!fs.existsSync(filename)) {
-
-        filename = path.join(directory, configDirectory, name, name);
-
-        if (self.isCoffee) {
-            if (fs.existsSync(filename + EXTENSION_COFFEE))
-                filename += EXTENSION_COFFEE;
-            else
-                filename += EXTENSION_JS;
-        } else
-            filename += EXTENSION_JS;
-
-        if (!fs.existsSync(filename)) {
-
-            filename = path.join(directory, configDirectory, name, 'index');
-            if (self.isCoffee) {
-                if (fs.existsSync(filename + EXTENSION_COFFEE))
-                    filename += EXTENSION_COFFEE;
-                else
-                    filename += EXTENSION_JS;
-            } else
-                filename += EXTENSION_JS;
-
-        } else
-            module = require(filename);
-
-        if (fs.existsSync(filename))
-            module = require(filename);
-
-        isDirectory = true;
-
-    } else
-        module = require(filename);
-
-    if (typeof(module) === UNDEFINED)
-        return null;
-
-    if (module.name)
-        name = module.name;
-
-    _controller = '#' + name;
-
-    if (module !== null && typeof(module.directory) === UNDEFINED)
-        module.directory = isDirectory ? path.join(directory, configDirectory) : path.join(directory, configDirectory, name);
-
-    self.modules[name] = module;
-    return module;
+    return this.modules[name] || null;
 };
 
 /**
@@ -1186,7 +1116,10 @@ Framework.prototype.load = function() {
             if (ext !== EXTENSION_JS)
                 return;
 
-            self._install('controller', (level > 0 ? directory.replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length));
+            var name = (level > 0 ? directory.replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length);
+            var filename = path.join(dir, name) + EXTENSION_JS;
+
+            self.register('controller', name, fs.readFileSync(filename).toString(ENCODING));
         });
     }
 
@@ -1214,11 +1147,10 @@ Framework.prototype.load = function() {
             } else
                 name = o.replace(ext, '');
 
-            self._install('module', name);
+            var filename = path.join(directory, self.config['directory-modules'], name) + EXTENSION_JS;
+            self.register('module', name, fs.readFileSync(filename).toString(ENCODING));
         });
     }
-
-    self._routesSort();
 
     dir = path.join(directory, self.config['directory-definitions']);
 
@@ -1227,9 +1159,209 @@ Framework.prototype.load = function() {
             var ext = path.extname(o).toLowerCase();
             if (ext !== EXTENSION_JS)
                 return;
-            var data = fs.readFileSync(path.join(dir, o), 'utf8').toString();
-            eval(data);
+            var data = fs.readFileSync(path.join(dir, o), ENCODING).toString();
+            self.register('definition', data);
         });
+    }
+
+    self._routesSort();
+    return self;
+};
+
+/**
+ * Register type with its declaration
+ * @param {String} type Available types: model, module, controller, source.
+ * @param {String} name Default name (optional).
+ * @param {String or Function} declaration
+ * @param {Object} options Custom options, optional.
+ * @return {Framework}
+ */
+Framework.prototype.register = function(type, name, declaration, options) {
+
+    var self = this;
+    var obj = null;
+
+    if (typeof(declaration) === UNDEFINED) {
+        declaration = name;
+        name = 'unknown';
+    }
+
+    if (type === 'definition') {
+
+        try {
+            obj = typeof(declaration) === FUNCTION ? declaration() : eval(declaration);
+        } catch (ex) {
+            self.error(ex, 'framework.register(\'' + type + '\')', null);
+            return self;
+        }
+
+        self._routesSort();
+        self.emit('register', type, name);
+        return self;
+    }
+
+    if (type === 'model' || type === 'source') {
+
+        try {
+            obj = typeof(declaration) === FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
+        } catch (ex) {
+            self.error(ex, 'framework.register(\'' + type + '\')', null);
+            return self;
+        }
+
+        if (typeof(obj.name) === STRING)
+            name = obj.name;
+
+        if (type === 'model')
+            self.models[name] = obj;
+        else
+            self.sources[name] = obj;
+
+        if (typeof(obj.install) === FUNCTION)
+            obj.install(self, options, name);
+
+        self._routesSort();
+        self.emit('register', type, name);
+        return self;
+    }
+
+    if (type === 'module' || type === 'controller') {
+
+        _controller = 'TMP' + Utils.random(10000);
+
+        try {
+            obj = typeof(declaration) === FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
+        } catch (ex) {
+            self.error(ex, 'framework.register(\'' + type + '\')', null);
+            return self;
+        }
+
+        if (typeof(obj.name) === STRING)
+            name = obj.name;
+
+        self.unregister(type, name);
+
+        if (typeof(obj.install) === FUNCTION)
+            obj.install(self, options, name);
+
+        var id = (type === 'module' ? '#' : '') + name;
+        var length = self.routes.web.length;
+
+        for (var i = 0; i < length; i++) {
+            if (self.routes.web[i].name === _controller)
+                self.routes.web[i].name = id;
+        }
+
+        length = self.routes.websockets.length;
+        for (var i = 0; i < length; i++) {
+            if (self.routes.websockets[i].name === _controller)
+                self.routes.websockets[i].name = id;
+        }
+
+        length = self.routes.files.length;
+        for (var i = 0; i < length; i++) {
+            if (self.routes.files[i].name === _controller)
+                self.routes.files[i].name = id;
+        }
+
+        self._routesSort();
+
+        if (type === 'module')
+            self.modules[name] = obj;
+        else
+            self.controllers[name] = obj;
+
+        _controller = '';
+        self.emit('register', type, name);
+        return self;
+    }
+
+    return self;
+};
+
+/**
+ * Unregister type
+ * @param {String} type Available types: model, module, controller, source.
+ * @param {String} name
+ * @param {Object} options Custom options, optional.
+ * @return {Framework}
+ */
+Framework.prototype.unregister = function(type, name, options) {
+
+    var self = this;
+    var obj = null;
+
+    if (type === 'view') {
+        obj = self.routes.precompiled[name];
+
+        if (!obj)
+            return false;
+
+        delete self.routes.precompiled[name];
+
+        if (!obj.isLoaded)
+            return true;
+
+        fs.exists(obj.filename, function(exist) {
+            if (exist)
+                fs.unlink(obj.filename);
+        });
+
+        self.emit('unregister', type, name);
+        return self;
+    }
+
+    if (type === 'model' || type === 'source') {
+
+        obj = type === 'model' ? self.models[name] : self.sources[name];
+
+        if (obj) {
+
+            if (typeof(obj.uninstall) === FUNCTION)
+                obj.uninstall(self, options, name);
+
+            if (type === 'model')
+                delete self.models[name];
+            else
+                delete self.sources[name];
+        }
+
+        self._routesSort();
+        self.emit('unregister', type, name);
+        return self;
+    }
+
+    if (type === 'module' || type === 'controller') {
+
+        var isModule = type === 'module';
+        obj = isModule ? self.modules[name] : self.controllers[name];
+        var id = (isModule ? '#' : '') + name;
+
+        self.routes.web = self.routes.web.remove(function(route) {
+            return route.name === id;
+        });
+
+        self.routes.files = self.routes.files.remove(function(route) {
+            return route.name === id;
+        });
+
+        self.routes.websockets = self.routes.websockets.remove(function(route) {
+            return route.name === id;
+        });
+
+        if (obj) {
+            if (obj.uninstall)
+                obj.uninstall(self, options, name);
+
+            if (isModule)
+                delete self.modules[name];
+            else
+                delete self.controllers[name];
+        }
+
+        self._routesSort();
+        self.emit('unregister', type, name);
+        return self;
     }
 
     return self;
@@ -1245,9 +1377,6 @@ Framework.prototype.inject = function(type, url, options, callback) {
         options = tmp;
     }
 
-    if (type === 'module')
-        return self.install(url, options, callback);
-
     utils.request(url, ['get'], function(err, data) {
 
         if (err) {
@@ -1256,11 +1385,14 @@ Framework.prototype.inject = function(type, url, options, callback) {
                 callback(err);
 
             self.error(err, 'inject (' + type + ') - ' + url, null);
-
             return;
         }
 
         switch (type) {
+
+            case 'view':
+                console.log()
+                break;
 
             case 'version':
             case 'versions':
@@ -1274,33 +1406,25 @@ Framework.prototype.inject = function(type, url, options, callback) {
                 self._configure(data.split('\n'), true);
                 break;
 
+            case 'controller':
+                self.register('controller', url, data, options);
+                break;
+
+            case 'module':
+                self.register('module', url, data, options);
+                break;
+
             case 'model':
-
-                var result = eval('(new (function(){var module=exports={};this.exports=exports;' + data + '})).exports');
-                var name = result.name ? result.name : url;
-
-                self.models[name] = result;
-
-                if (result.install)
-                    result.install(self, options, name);
-
+                self.register('model', url, data, options);
                 break;
 
             case 'source':
             case 'include':
-
-                var result = eval('(new (function(){var module=exports={};this.exports=exports;' + data + '})).exports');
-                var name = result.name ? result.name : url;
-
-                self.sources[name] = result;
-
-                if (result.install)
-                    result.install(self, options, name);
-
+                self.register('source', url, data, options);
                 break;
 
             case 'definition':
-                eval(data);
+                self.register('definition', url, data, options);
                 break;
         }
 
@@ -3663,30 +3787,31 @@ Framework.prototype._request_stats = function(beg, isStaticFile) {
     return self;
 };
 
-/*
-    Get a model
-    @name {String}
-    return {Object}
-*/
+/**
+ * Get a model
+ * @param {String} name
+ * @return {Object}
+ */
 Framework.prototype.model = function(name) {
+
     var self = this;
     var model = self.models[name];
 
-    if (model)
+    if (model || model === null)
         return model;
 
-    var filename = path.join(directory, self.config['directory-models'], name);
+    var filename = path.join(directory, self.config['directory-models'], name) + EXTENSION_JS;
 
-    if (self.isCoffee) {
-        if (fs.existsSync(filename + EXTENSION_COFFEE))
-            filename += EXTENSION_COFFEE;
-        else
-            filename += EXTENSION_JS;
-    } else
-        filename += EXTENSION_JS;
+    if (fs.existsSync(filename))
+        model = require(filename);
+    else
+        model = null;
 
-    model = require(filename);
     self.models[name] = model;
+
+    if (model && typeof(model.install) === FUNCTION)
+        model.install(options);
+
     return model;
 };
 
@@ -3700,20 +3825,19 @@ Framework.prototype.source = function(name, options, callback) {
     var self = this;
     var source = self.sources[name];
 
-    if (source)
+    if (source || source === null)
         return source;
-
-    if (name.startsWith('http://') || name.startsWith('https://')) {
-        self.inject('source', name, options, callback);
-        return null;
-    }
 
     var filename = path.join(directory, self.config['directory-source'], name + EXTENSION_JS);
 
-    source = require(filename);
+    if (fs.existsSync(filename))
+        source = require(filename);
+    else
+        source = null;
+
     self.sources[name] = source;
 
-    if (source.install)
+    if (source && typeof(source.install) === FUNCTION)
         source.install(options);
 
     if (callback)
@@ -3728,8 +3852,8 @@ Framework.prototype.source = function(name, options, callback) {
  * @param {Object} options Custom initial options, optional.
  * @return {Object}
  */
-Framework.prototype.include = function(name, options) {
-    return this.source(name, options);
+Framework.prototype.include = function(name, options, callback) {
+    return this.source(name, options, callback);
 };
 
 /**
@@ -3737,104 +3861,20 @@ Framework.prototype.include = function(name, options) {
  * @param {String} url
  * @param {Object} options Custom initial options, optional.
  * @param {Function(err, module)} callback
+ * @return {Framework}
  */
 Framework.prototype.install = function(url, options, callback) {
-
-    var self = this;
-
-    utils.request(url, ['get'], function(err, data) {
-
-        if (err) {
-            if (callback)
-                callback(err);
-            self.error(err, 'install - ' + url, null);
-            return;
-        }
-
-        try {
-
-            _controller = '';
-
-            var result = eval('(new (function(){var module = this;var exports = {};this.exports=exports;' + data + '})).exports');
-            var name = (result.name || url);
-
-            // Uninstall previous version
-            self.uninstall(name);
-
-            _controller = '#' + name;
-
-            self.routes.web = self.routes.web.remove(function(route) {
-                return route.name === _controller;
-            });
-
-            self.routes.files = self.routes.files.remove(function(route) {
-                return route.name === _controller;
-            });
-
-            self.routes.websockets = self.routes.websockets.remove(function(route) {
-                return route.name === _controller;
-            });
-
-            if (result.install)
-                result.install(self, options, name);
-
-            self._routesSort();
-            self.modules[name] = result;
-
-            _controller = '';
-
-            if (callback)
-                callback(null, self.modules[name]);
-
-            self.emit('install', name, self.modules[name], url);
-
-        } catch (ex) {
-            if (callback)
-                callback(ex);
-            self.error(ex, 'install - ' + url, null);
-        }
-
-    });
+    return this.inject('module', url, options, callback);
 };
 
 /**
  * Uninstall module
  * @param {String} name
  * @param {Object} options Custom options, optional.
- * @return {Boolean}
+ * @return {Framework}
  */
 Framework.prototype.uninstall = function(name, options) {
-
-    var self = this;
-    var module = self.modules[name];
-
-    if (!module)
-        return false;
-
-    _controller = '#' + name;
-
-    self.routes.web = self.routes.web.remove(function(route) {
-        return route.name === _controller;
-    });
-
-    self.routes.files = self.routes.files.remove(function(route) {
-        return route.name === _controller;
-    });
-
-    self.routes.websockets = self.routes.websockets.remove(function(route) {
-        return route.name === _controller;
-    });
-
-    self._routesSort();
-
-    if (module.uninstall)
-        module.uninstall(self, options, name);
-
-    delete self.modules[name];
-    _controller = '';
-
-    self.emit('uninstall', name);
-    return true;
+    return this.unregister('module', name, options);
 };
 
 /**
@@ -4439,7 +4479,7 @@ Framework.prototype.resource = function(name, key) {
     if (!fs.existsSync(fileName))
         return '';
 
-    var obj = fs.readFileSync(fileName).toString(ENCODING).configuration();
+    var obj = fs.readFileSync(fileName).toString(ENCODING).parseConfig();
     self.resources[name] = obj;
     return obj[key] || '';
 };
@@ -7502,7 +7542,7 @@ Controller.prototype.$ngTemplate = function(name, id) {
         var filename = utils.combine(self.config['directory-angular'], name);
 
         if (fs.existsSync(filename))
-            tmp = fs.readFileSync(filename).toString('utf8');
+            tmp = fs.readFileSync(filename).toString(ENCODING);
         else
             tmp = '';
 
@@ -9513,7 +9553,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 
         fnCallback.call(self, error, data, code, headers);
 
-    }, null, headers, 'utf8', timeout || 10000);
+    }, null, headers, ENCODING, timeout || 10000);
 
     return self;
 };
@@ -11018,7 +11058,7 @@ http.IncomingMessage.prototype.authorization = function() {
     if (authorization === '')
         return result;
 
-    var arr = new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString('utf8').split(':');
+    var arr = new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
 
     result.name = arr[0] || '';
     result.password = arr[1] || '';

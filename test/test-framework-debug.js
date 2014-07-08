@@ -378,10 +378,10 @@ function run() {
 		assert.ok(framework.global.file > 0, 'middleware - file');
 		assert.ok(framework.global.timeout > 0, 'timeout');
 
-		UNINSTALL('include', { uninstall: true });
+		UNREGISTER('source', { uninstall: true });
+		UNREGISTER('view', 'precompile._layout');
 
-		REMOVE('precompile', 'precompile._layout');
-		framework.remove('precompile', 'precompile.homepage');
+		framework.unregister('precompile', 'precompile.homepage');
 
 		setTimeout(function() {
 			end();
