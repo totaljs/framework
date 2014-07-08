@@ -50,6 +50,8 @@ IN DEVELOPMENT ======= 1.6.0
 - added: module: exports.name = 'name of module';
 - added: module: exports.version = 'version of module';
 - added: module: exports.uninstall = function(framework, options) {};
+- added: framework.install('url', [options], [callback])
+- added: framework.uninstall('url', [options], [callback])
 - added: framework.inject('model/modul/source/versions/config', url, [options], [callback])
 
 - updated: module: exports.install = function(framework, options) {};
@@ -83,7 +85,11 @@ IN DEVELOPMENT ======= 1.6.0
 - removed: (IMPORTANT) global module #
 - removed: (IMPORTANT) view engine: templates were changed to views
 - removed: (IMPORTANT) @{content()}
-- removed: (IMPORTANT) injectModel(), injectDefinition(), injectModule(), injectSource(), injectController()
+- removed: (IMPORTANT) framework.injectModel() -> framework.inject('model', url, [options], [callback])
+- removed: (IMPORTANT) framework.injectModule() -> framework.install('url', [options], [callback])
+- removed: (IMPORTANT) framework.injectSource() -> framework.inject('source', url, [options], [callback])
+- removed: (IMPORTANT) framework.injectDefinition()
+- removed: (IMPORTANT) framework.injectController()
 
 - clean code
 - improvements: framework
