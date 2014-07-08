@@ -495,7 +495,6 @@ function viewViews() {
     assert.ok(output.contains('#options<option value="C" selected="selected">C</option><option value="D">D</option>#'), name + 'options() - with property name and value');
     assert.ok(output.contains('#view#bmodel##'), name + 'view() with model');
     assert.ok(output.contains('#view-toggle#'), name + 'viewToggle()');
-    assert.ok(output.contains('#componentCOMPONENT#'), name + 'component');
     assert.ok(output.contains('#titleTITLE#'), name + 'title');
     assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
     assert.ok(output.contains('#<a href="/download/test.pdf" download="test">content</a>#'), name + 'download');

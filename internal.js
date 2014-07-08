@@ -2025,8 +2025,6 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'canonical':
         case 'checked':
         case 'helper':
-        case 'component':
-        case 'componentToggle':
         case 'currentContent':
         case 'currentCSS':
         case 'currentDownload':
