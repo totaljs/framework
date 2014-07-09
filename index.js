@@ -165,7 +165,7 @@ function Framework() {
         // in minutes
         'default-interval-clear-resources': 20,
         'default-interval-clear-cache': 3,
-        'default-interval-precompile': 61,
+        'default-interval-precompile-views': 61,
         'default-interval-websocket-ping': 1
     };
 
@@ -3463,7 +3463,7 @@ Framework.prototype._service = function(count) {
     if (self.config.debug)
         self.resources = {};
 
-    // every 20 minutes service clears resources
+    // every 20 minutes (default) service clears resources
     if (count % framework.config['default-interval-clear-resources'] === 0) {
         self.emit('clear', 'resources');
         self.resources = {};
@@ -3472,7 +3472,7 @@ Framework.prototype._service = function(count) {
             gc();
     }
 
-    // every 3 minutes service clears static cache
+    // every 3 minutes (default) service clears static cache
     if (count % framework.config['default-interval-clear-cache'] === 0) {
         self.emit('clear', 'temporary', self.temporary);
         self.temporary.path = {};
@@ -3480,14 +3480,14 @@ Framework.prototype._service = function(count) {
         self.temporary.views = {};
     }
 
-    // every 61 minutes services precompile all resources
-    if (count % framework.config['default-interval-precompile'] === 0) {
+    // every 61 minutes (default) services precompile all (installed) views
+    if (count % framework.config['default-interval-precompile-views'] === 0) {
         Object.keys(self.routes.precompiled).wait(function(item, next) {
             self.precompile(item.name, next);
         });
     }
 
-    // every 1 minute is created a ping message
+    // every 1 minute (default) is created a ping message
     if (count % framework.config['default-interval-websocket-ping'] === 0) {
         Object.keys(framework.connections).wait(function(item, next) {
             framework.connections[item].ping();
@@ -4851,19 +4851,10 @@ Framework.prototype.worker = function(name, id, timeout) {
     if (fork !== null)
         return fork;
 
-    var filename = utils.combine(self.config['directory-workers'], name);
+    var filename = utils.combine(self.config['directory-workers'], name) + EXTENSION_JS;
 
-    if (self.isCoffee) {
-        if (fs.existsSync(filename + EXTENSION_COFFEE))
-            filename += EXTENSION_COFFEE;
-        else
-            filename += EXTENSION_JS;
-    } else
-        filename += EXTENSION_JS;
+    fork = child.fork(filename, { cwd: directory });
 
-    fork = child.fork(filename, {
-        cwd: directory
-    });
     id = name + '_' + new Date().getTime();
     fork.__id = id;
     self.workers[id] = fork;
@@ -4872,7 +4863,6 @@ Framework.prototype.worker = function(name, id, timeout) {
         var self = this;
         if (self.__timeout)
             clearTimeout(self.__timeout);
-
         delete framework.workers[self.__id];
     });
 
@@ -4887,64 +4877,6 @@ Framework.prototype.worker = function(name, id, timeout) {
     }, timeout);
 
     return fork;
-};
-
-/**
- * Precompile views
- * @param {String} name
- * @param {String} url
- * @return {Framework}
- */
-Framework.prototype.precompile = function(name, url) {
-
-    var self = this;
-    var item = self.routes.precompiled[name];
-    var type = typeof(url);
-
-    if (type === UNDEFINED) {
-        if (!item)
-            return self;
-    }
-
-    if (typeof(item) === UNDEFINED) {
-        item = {};
-        item.filename = self.path.temporary('precompiled-' + utils.GUID(10) + '.tmp');
-        self.routes.precompiled[name] = item;
-    }
-
-    item.isLoaded = false;
-
-    if (type === STRING)
-        item.url = url;
-
-    if (item.url.indexOf('http') !== 0)
-        item.url = 'http://' + item.url;
-
-    utils.download(item.url, ['get'], function(err, response) {
-
-        if (err)
-            return framework.error(err, 'framework.precompile()', item.url);
-
-        response.on('data', noop);
-
-        response.on('error', function(err) {
-            if (type === FUNCTION)
-                url(err);
-            self.emit('precompile', item.name, err);
-        });
-
-        response.on('end', function() {
-            item.isLoaded = true;
-            self.emit('precompile', item.name, null);
-            if (type === FUNCTION)
-                url(null);
-        });
-
-        var stream = fs.createWriteStream(item.filename);
-        response.pipe(stream);
-    });
-
-    return self;
 };
 
 // *********************************************************************************
