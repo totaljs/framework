@@ -1,0 +1,1 @@
+exports.ok = 2;

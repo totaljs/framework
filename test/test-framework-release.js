@@ -6,7 +6,7 @@ var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
 
-INSTALL('http://www.totaljs.com/framework/include.js', { test: true });
+INSTALL('module', 'http://www.totaljs.com/framework/include.js', { test: true });
 
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
@@ -378,10 +378,10 @@ function run() {
 		assert.ok(framework.global.file > 0, 'middleware - file');
 		assert.ok(framework.global.timeout > 0, 'timeout');
 
-		UNINSTALL('include', { uninstall: true });
+		UNINSTALL('source', { uninstall: true });
+		UNINSTALL('view', 'precompile._layout');
 
-		REMOVE('precompile', 'precompile._layout');
-		framework.remove('precompile', 'precompile.homepage');
+		framework.uninstall('precompile', 'precompile.homepage');
 
 		setTimeout(function() {
 			end();

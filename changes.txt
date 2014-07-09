@@ -2,7 +2,6 @@ IN DEVELOPMENT ======= 1.6.0
 
 - added: framework.http(mode, [options]) - mode: test, debug or development, release or production
 - added: framework.https(mode, [options]) - I recommend to use NGINX as HTTPS proxy
-- added: config-test (new config file)
 - added: middleware delegate: function(req, res, next, [options]) { next(); }
 - added: middleware to framework.websocket(url, funcInitialize, [flags], [protocols], [allow], [maximumSize], [middleware])
 - added: middleware to framework.file([name], [fnValidation], [fnExecute], [middleware])
@@ -18,10 +17,10 @@ IN DEVELOPMENT ======= 1.6.0
 - added: Request.query;
 - added: Request.body;
 - added: Request.files;
-- added: String.parseConfig([default]);
 - added: controller.body --> is same as Controller.post
 - added: controller.query --> is same as Controller.get
 - added: controller.isController (for middleware)
+- added: controller.json(obj, [beautify], [replacer]) and ErrorBuilder.json([beautify], [replacer]), author: bir <https://github.com/bir>
 - added: utils.wait(fnValid, fnCallback, [timeout(default: 5000 ms)], [interval(default: 500 ms)])
 - added: new flag: 'xml' in controller.route()
 - added: new flag: 'xml' in utils.request()
@@ -31,27 +30,25 @@ IN DEVELOPMENT ======= 1.6.0
 - added: assertion testing: priority (example: exports.priority = 1)
 - added: routing supports multiple HTTP-VERBS/METHODS together (author: bir <https://github.com/bir>)
 - added: routing supports options for middleware, author: bir <https://github.com/bir>
-- added: controller.json(obj, [beautify], [replacer]) and ErrorBuilder.json([beautify], [replacer]), author: bir <https://github.com/bir>
-- added: framework.precompile(name, url) - precompile view from URL address
-- added: framework.remove(type, name, [options]) - remove a module, precompile, middleware
-- added: PRECOMPILE(name, url) - alias for framework.precompile()
-- added: REMOVE(type, name, [options]) - alias for framework.remove()
+- added: config-test (new config file)
 - added: config['default-interval-clear-resources'], default 20 (minutes)
 - added: config['default-interval-clear-temporary'], default 3 (minutes)
 - added: config['default-interval-precompile'], default 61 (minutes)
 - added: config['default-interval-websocket-ping'], default 1 (minutes)
 - added: create automatically a ping message for websocket clients
-- added: framework.on('eval', function([url]) {});
-- added: framework.on('install', function(name, module, url) {});
-- added: framework.on('uninstall', function(name) {});
+- added: global INSTALL(type, name, declaration/url/function, [options], [callback]);
+- added: global UNINSTALL(type, name, [options]);
+- added: framework.install(type, name, declaration/url/function, [options], [callback]);
+- added: framework.uninstall(type, name, [options]);
+- added: framework.on('install', function(type, name) {});
+- added: framework.on('uninstall', function(type, name) {});
 - added: framework.on('route-add', function(type, route) {})
+- added: module/model/source/controller: exports.name = 'name ';
+- added: module/model/source/controller: exports.version = 'version';
+- added: model/source: exports.install = function(framework, options, name) {}
+- added: module/model/source/controller: exports.uninstall = function(framework, options) {}
 - added: String.prototype.parseDateExpire() - parse expiration date, example: '1 minute', '1 year'
-- added: module: exports.name = 'name of module';
-- added: module: exports.version = 'version of module';
-- added: module: exports.uninstall = function(framework, options) {};
-- added: framework.install('url', [options], [callback])
-- added: framework.uninstall('url', [options], [callback])
-- added: framework.inject('model/modul/source/versions/config', url, [options], [callback])
+- added: String.parseConfig([default]);
 
 - updated: module: exports.install = function(framework, options) {};
 - updated: (IMPORTANT) INCLUDE(name, [options]), SOURCE(name, [options]) –> object
@@ -73,22 +70,22 @@ IN DEVELOPMENT ======= 1.6.0
 - fixed: Builders.prepare()
 
 - removed: (IMPORTANT) COMPONENTS()
-- removed: (IMPORTANT) framework.onRequest() - TIP: use middleware
 - removed: (IMPORTANT) prefixes + framework.onPrefix()
 - removed: (IMPORTANT) controller.framework (use: framework. instead of self.framework)
 - removed: (IMPORTANT) global middleware from controllers
+- removed: (IMPORTANT) global module #
 - removed: (IMPORTANT) Request.data.get
 - removed: (IMPORTANT) Request.data.post
 - removed: (IMPORTANT) Request.data.files
-- removed: (IMPORTANT) framework.onRoute()
-- removed: (IMPORTANT) global module #
 - removed: (IMPORTANT) view engine: templates were changed to views
-- removed: (IMPORTANT) @{content()}
-- removed: (IMPORTANT) framework.injectModel() -> framework.inject('model', url, [options], [callback])
-- removed: (IMPORTANT) framework.injectModule() -> framework.install('url', [options], [callback])
-- removed: (IMPORTANT) framework.injectSource() -> framework.inject('source', url, [options], [callback])
-- removed: (IMPORTANT) framework.injectDefinition()
-- removed: (IMPORTANT) framework.injectController()
+- removed: (IMPORTANT) `@{content()}`
+- removed: (IMPORTANT) framework.injectModel() -> framework.install()
+- removed: (IMPORTANT) framework.injectModule() -> framework.install()
+- removed: (IMPORTANT) framework.injectSource() -> framework.install()
+- removed: (IMPORTANT) framework.injectDefinition() -> framework.install()
+- removed: (IMPORTANT) framework.injectController() -> framework.install()
+- removed: (IMPORTANT) framework.onRoute() - TIP: use middleware
+- removed: (IMPORTANT) framework.onRequest() - TIP: use middleware
 
 - clean code
 - improvements: framework
