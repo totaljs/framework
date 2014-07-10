@@ -2706,14 +2706,21 @@ Array.prototype.async = function(callback) {
 
 /**
  * Create async loop for middleware
- * @param  {Function} callback
+ * @param {Response} res
+ * @param {Function} callback
+ * @param {Controller} controller Current controller if exists, optional.
  * @return {Array}
  */
-Array.prototype._async_middleware = function(res, callback) {
+Array.prototype._async_middleware = function(res, callback, controller) {
 
     var self = this;
 
     if (res.success || res.headersSent) {
+
+        // Prevent timeout
+        if (controller)
+            controller.subscribe.success();
+
         callback = null;
         return self;
     }

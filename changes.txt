@@ -17,6 +17,7 @@ IN DEVELOPMENT ======= 1.6.0
 - added: Request.query;
 - added: Request.body;
 - added: Request.files;
+- added: controller.middleware(names, [options], [callback])
 - added: controller.body --> is same as Controller.post
 - added: controller.query --> is same as Controller.get
 - added: controller.isController (for middleware)
@@ -50,9 +51,11 @@ IN DEVELOPMENT ======= 1.6.0
 - added: String.prototype.parseDateExpire() - parse expiration date, example: '1 minute', '1 year'
 - added: String.parseConfig([default]);
 
+- updated: NoSQL v2.0.8
 - updated: module: exports.install = function(framework, options) {};
 - updated: (IMPORTANT) INCLUDE(name, [options]), SOURCE(name, [options]) –> object
 - updated: (IMPORTANT) SOURCE(name, [options]), framework.source(name, [options]) –> object
+- updated: framework.controller(name) - definition was removed (use: framework.install())
 - updated: framework.run([http], config, [port], [ip], [options])
 - updated: utils.validate(), Builders.validate() –> prepare function (added: schemaName): function(name, value, path, schemaName)
 - updated: framework.assert() supports "data" as function (for future data)

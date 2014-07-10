@@ -3574,6 +3574,7 @@ Framework.prototype._request = function(req, res) {
         res.setHeader('Mode', 'debug');
 
     req.isStaticFile = utils.isStaticFile(req.uri.pathname);
+    self._request_stats(true, true);
 
     if (self._length_request_middleware === 0)
         return self._request_continue(req, res, headers, protocol);
@@ -3612,7 +3613,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
     if (req.isStaticFile) {
 
         self.stats.request.file++;
-        self._request_stats(true, true);
 
         if (self._length_files === 0) {
             self.responseStatic(req, res);
@@ -6500,9 +6500,57 @@ Controller.prototype.validation = function(model, properties, prefix, name) {
     return this.validate(model, properties, prefix, name);
 };
 
+/**
+ * Clear uploaded files
+ * @return {Controller}
+ */
 Controller.prototype.clear = function() {
     var self = this;
     self.req.clear();
+    return self;
+};
+
+/**
+ * Exec middleware
+ * @param {String Array} names Middleware name.
+ * @param {Object} options Custom options for middleware.
+ * @param {Function} callback
+ * @return {Controller}
+ */
+Controller.prototype.middleware = function(names, options, callback) {
+
+    if (typeof(names) === STRING)
+        names = [names];
+
+    if (typeof(options) === FUNCTION) {
+        var tmp = callback;
+        callback = options;
+        options = callback;
+    }
+
+    if (typeof(options) === UNDEFINED || options === null)
+        options = {};
+
+    var self = this;
+    var func = [];
+    var length = names.length;
+
+    for (var i = 0; i < length; i++) {
+
+        var middleware = framework.routes.middleware[names[i]];
+
+        if (!middleware)
+            continue;
+
+        (function(middleware, options) {
+            func.push(function(next) {
+                middleware.call(framework, self.req, self.res, next, options);
+            });
+        })(middleware, typeof(options[names[i]]) === UNDEFINED ? options : options[names[i]]);
+
+    }
+
+    func._async_middleware(self.res, callback, controller);
     return self;
 };
 
@@ -8702,20 +8750,20 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
     return self;
 };
 
-/*
-    Set custom response
-    return {Boolean}
-*/
+/**
+ * Set custom response
+ * @return {Controller}
+ */
 Controller.prototype.custom = function() {
 
     var self = this;
 
+    self.subscribe.success();
+
     if (self.res.success || !self.isConnected)
         return false;
 
-    self.subscribe.success();
     framework.responseCustom(self.req, self.res);
-
     return true;
 
 };
@@ -10694,6 +10742,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 
     switch (typeof(body)) {
         case STRING:
+
             if (!contentType)
                 contentType = 'text/html';
             break;
@@ -10731,9 +10780,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
         contentType += '; charset=utf-8';
 
     headers[RESPONSE_HEADER_CONTENTTYPE] = contentType;
-
-    res.success = true;
-    req.clear(true);
+    framework.responseCustom(req, res);
 
     if (accept.lastIndexOf('gzip') !== -1) {
         var buffer = new Buffer(body);
@@ -10756,7 +10803,6 @@ http.ServerResponse.prototype.send = function(code, body, type) {
     }
 
     headers[RESPONSE_HEADER_CONTENTLENGTH] = body.length;
-
     res.writeHead(code, headers);
     res.end(body, ENCODING);
 
