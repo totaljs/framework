@@ -10482,9 +10482,11 @@ WebSocketClient.prototype._ondata = function(data) {
         case 0x09:
             // ping, response pong
             self.socket.write(utils.getWebSocketFrame(0, '', 0x0A));
+            self.buffer = new Buffer(0);
             break;
         case 0x0a:
             // pong
+            self.buffer = new Buffer(0);
             break;
     }
 };
@@ -10536,8 +10538,9 @@ WebSocketClient.prototype.parse = function() {
     }
 
     self.buffer = self.buffer.slice(index + length + 4, self.buffer.length);
+
     if (self.buffer.length >= 2)
-        self.parse(null);
+        self.parse();
 
     return self;
 };
