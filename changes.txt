@@ -64,6 +64,7 @@ IN DEVELOPMENT ======= 1.6.0
 - updated: middleware function to: function(req, res, next) {}
 - update: expiration supports string (framework.cache, response.cookie), example: '1 minute'
 - updated: $view(name, model, [expire]), $viewToggle(name, model, [expire]) - added expiration {String}
+- updated: controller.validate('schema_name', model);
 
 - renamed: framework.on('expire') -> framework.on('cache-expire')
 
@@ -71,6 +72,7 @@ IN DEVELOPMENT ======= 1.6.0
 - fixed: long messages in WebSocket by Andrea Sessa <https://plus.google.com/u/0/104713619368072403016>
 - fixed: view engine parser (reported by @tohachan)
 - fixed: Builders.prepare()
+- fixed: Builders.validate()
 
 - removed: (IMPORTANT) COMPONENTS()
 - removed: (IMPORTANT) prefixes + framework.onPrefix()

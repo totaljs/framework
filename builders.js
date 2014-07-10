@@ -31,7 +31,7 @@ function ErrorBuilder(onResource) {
 
     this.errors = [];
     this.onResource = onResource;
-    this.resourceName = '';
+    this.resourceName = 'default';
     this.resourcePrefix = '';
     this.count = 0;
     this.replacer = [];
@@ -142,12 +142,26 @@ exports.isJoin = function(value) {
  * Create validation
  * @param {String} name Schema name.
  * @param {Function or Array} fn Validator Handler or Property names as array for validating.
+ * @param {String Array} properties Valid only these properties, optional.
  * @return {Function or Array}
  */
-exports.validation = function(name, fn) {
+exports.validation = function(name, properties, fn) {
+
+    if (fn instanceof Array && typeof(properties) === FUNCTION) {
+        var tmp = fn;
+        fn = properties;
+        properties = fn;
+    }
 
     if (typeof(fn) === FUNCTION) {
+
         schemaValidator[name] = fn;
+
+        if (typeof(properties) === UNDEFINED)
+            schemaValidation[name] = Object.keys(schema[name]);
+        else
+            schemaValidation[name] = properties;
+
         return true;
     }
 
@@ -158,14 +172,13 @@ exports.validation = function(name, fn) {
     return fn;
 };
 
-
 /**
  * Validate model
- * @param  {String} name  Schema name.
- * @param  {Object} model Object for validating.
+ * @param {String} name Schema name.
+ * @param {Object} model Object for validating.
  * @return {ErrorBuilder}
  */
-exports.validate = function(name, model) {
+exports.validate = function(name, model, resourcePrefix, resourceName) {
 
     var fn = schemaValidator[name];
     var builder = new ErrorBuilder();
@@ -173,7 +186,13 @@ exports.validate = function(name, model) {
     if (typeof(fn) === UNDEFINED)
         return builder;
 
-    return utils.validate.call(this, model, Object.keys(schema[name]), fn, builder);
+    if (resourceName)
+        builder.resourceName = resourceName;
+
+    if (resourcePrefix)
+        builder.resourcePrefix = resourcePrefix;
+
+    return utils.validate.call(this, model, name, fn, builder);
 };
 
 /**
@@ -570,7 +589,7 @@ function isUndefined(value, def) {
  */
 ErrorBuilder.prototype.resource = function(name, prefix) {
     var self = this;
-    self.resourceName = name;
+    self.resourceName = name || 'default';
     self.resourcePrefix = prefix || '';
     return self._resource();
 };
@@ -581,11 +600,14 @@ ErrorBuilder.prototype.resource = function(name, prefix) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype._resource = function() {
+
     var self = this;
+
     self.onResource = function(name) {
         var self = this;
         return framework.resource(self.resourceName, self.resourcePrefix + name);
     };
+
     return self;
 };
 
@@ -615,6 +637,7 @@ ErrorBuilder.prototype.add = function(name, error, path) {
         error: error || '@',
         path: path
     });
+
     self.count = self.errors.length;
     return self;
 };
@@ -727,6 +750,7 @@ ErrorBuilder.prototype.JSON = function(beautify) {
  * @return {ErrorBuidler}
  */
 ErrorBuilder.prototype._prepare = function() {
+
     var self = this;
 
     if (self.onResource === null)
