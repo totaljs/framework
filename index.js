@@ -23,7 +23,7 @@ var child = require('child_process');
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
 var STRING = 'string';
-var FUNCTION = 'function';
+var TYPE_FUNCTION = 'function';
 var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
@@ -343,7 +343,7 @@ Framework.prototype._install = function(type, name, declaration) {
 
     _controller = 'TMP' + Utils.random(10000);
 
-    if (typeof(declaration) !== FUNCTION) {
+    if (typeof(declaration) !== TYPE_FUNCTION) {
         var filename = path.join(directory, self.config['directory-' + type + 's'], name) + EXTENSION_JS;
         obj = require(filename);
     } else
@@ -456,7 +456,7 @@ Framework.prototype.database = function(name) {
 Framework.prototype.stop = function(code) {
     var self = this;
 
-    if (typeof(process.send) === FUNCTION)
+    if (typeof(process.send) === TYPE_FUNCTION)
         process.send('stop');
 
     self.cache.stop();
@@ -1116,22 +1116,12 @@ Framework.prototype.load = function() {
         fs.readdirSync(dir).forEach(function(o) {
 
             var ext = path.extname(o);
-            var isDirectory = fs.statSync(path.join(dir + o)).isDirectory();
             var extLower = ext.toLowerCase();
-            var name = '';
-
-            if (!isDirectory && extLower !== EXTENSION_JS)
+            if (extLower !== EXTENSION_JS)
                 return;
 
-            if (isDirectory) {
-                name = path.join(dir + o, o + EXTENSION_JS);
-                if (!fs.existsSync(name))
-                    return;
-            } else
-                name = o.replace(ext, '');
-
-            var filename = path.join(directory, self.config['directory-modules'], name) + EXTENSION_JS;
-            self.install('module', name, fs.readFileSync(filename).toString(ENCODING));
+            var filename = path.join(directory, self.config['directory-modules'], o);
+            self.install('module', o.replace(ext, ''), fs.readFileSync(filename).toString(ENCODING));
         });
     }
 
@@ -1209,7 +1199,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
     if (type === 'middleware') {
 
-        self.routes.middleware[name] = typeof(declaration) === FUNCTION ? declaration : eval('(' + declaration + ')()');
+        self.routes.middleware[name] = typeof(declaration) === TYPE_FUNCTION ? declaration : eval('(' + declaration + ')()');
         self._length_middleware = Object.keys(self.routes.middleware).length;
         self.emit('install', type, name);
 
@@ -1266,7 +1256,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         _controller = '';
 
         try {
-            obj = typeof(declaration) === FUNCTION ? eval('(' + declaration.toString() + ')()') : eval(declaration);
+            obj = typeof(declaration) === TYPE_FUNCTION ? eval('(' + declaration.toString() + ')()') : eval(declaration);
         } catch (ex) {
             self.error(ex, 'framework.install(\'' + type + '\')', null);
 
@@ -1289,10 +1279,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         _controller = '';
 
         try {
-            obj = typeof(declaration) === FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
+            obj = typeof(declaration) === TYPE_FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
         } catch (ex) {
 
-            self.error(ex, 'framework.install(\'' + type + '\')', null);
+            self.error(ex, 'framework.install(\'' + type + '\', \'' + name + '\')', null);
 
             if (callback)
                 callback(ex);
@@ -1308,7 +1298,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         else
             self.sources[name] = obj;
 
-        if (typeof(obj.install) === FUNCTION)
+        if (typeof(obj.install) === TYPE_FUNCTION)
             obj.install(self, options, name);
 
         self.emit('install', type, name);
@@ -1324,10 +1314,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         _controller = 'TMP' + Utils.random(10000);
 
         try {
-            obj = typeof(declaration) === FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
+            obj = typeof(declaration) === TYPE_FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
         } catch (ex) {
 
-            self.error(ex, 'framework.install(\'' + type + '\')', null);
+            self.error(ex, 'framework.install(\'' + type + '\', \'' + name + '\')', null);
 
             if (callback)
                 callback(ex);
@@ -1340,7 +1330,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         self.uninstall(type, name);
 
-        if (typeof(obj.install) === FUNCTION)
+        if (typeof(obj.install) === TYPE_FUNCTION)
             obj.install(self, options, name);
 
         var id = (type === 'module' ? '#' : '') + name;
@@ -1431,7 +1421,7 @@ Framework.prototype.uninstall = function(type, name, options) {
         if (!obj)
             return self;
 
-        if (typeof(obj.uninstall) === FUNCTION)
+        if (typeof(obj.uninstall) === TYPE_FUNCTION)
             obj.uninstall(self, options, name);
 
         if (type === 'model')
@@ -1501,7 +1491,7 @@ Framework.prototype.eval = function(script) {
  * @return {Framework}
  */
 Framework.prototype.onError = function(err, name, uri) {
-    console.log((name ? name : ': ') + err.toString() + (uri ? ' (' + uri.toString() + ')' : ''), err.stack);
+    console.log((name ? name : '') + ': ' + err.toString() + (uri ? ' (' + uri.toString() + ')' : ''), err.stack);
     console.log('--------------------------------------------------------------------');
     return this;
 };
@@ -1651,7 +1641,7 @@ Framework.prototype.log = function() {
 Framework.prototype.usage = function(detailed) {
     var self = this;
     var memory = process.memoryUsage();
-    var cache = Object.keys(self.cache.repository);
+    var cache = Object.keys(self.cache.items);
     var resources = Object.keys(self.resources);
     var controllers = Object.keys(self.controllers);
     var connections = Object.keys(self.connections);
@@ -1990,9 +1980,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     key = key || filename;
     var name = self.temporary.path[key];
 
-    if (framework.config.debug)
-        name = undefined;
-
     if (name === null) {
         self.response404(req, res);
         return self;
@@ -2003,10 +1990,17 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     if (extension.length === 0)
         extension = path.extname(name).substring(1);
 
+    var index = extension.lastIndexOf(';');
+    if (index !== -1)
+        extension = extension.substring(0, index);
+
     if (self.config['static-accepts'].indexOf('.' + extension) === -1) {
         self.response404(req, res);
         return self;
     }
+
+    if (framework.config.debug)
+        name = undefined;
 
     var etag = utils.etag(req.url, self.config['etag-version']);
 
@@ -2063,7 +2057,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
             delete self.temporary.path[key];
     }
 
-    var index = name.lastIndexOf(';');
+    index = name.lastIndexOf(';');
     var size = null;
 
     if (index === -1)
@@ -3638,7 +3632,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
     var isXSS = false;
     var accept = headers.accept;
 
-    self._request_stats(true, false);
     self.stats.request.web++;
 
     if (req.uri.query && req.uri.query.length > 0) {
@@ -3854,7 +3847,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 
     // !IMPORTANT! framework.testsPriority is created dynamically in framework.test()
 
-    if (typeof(url) === FUNCTION) {
+    if (typeof(url) === TYPE_FUNCTION) {
         self.tests.push({
             name: _test + ': ' + name,
             priority: framework.testsPriority,
@@ -4058,7 +4051,7 @@ Framework.prototype.testing = function(stop, callback) {
 
     var options = parser.parse((test.url.indexOf('http://') > 0 || test.url.indexOf('https://') > 0 ? '' : 'http://' + self.ip + ':' + self.port) + test.url);
 
-    if (typeof(test.data) === FUNCTION)
+    if (typeof(test.data) === TYPE_FUNCTION)
         test.data = test.data();
 
     if (typeof(test.data) !== STRING)
@@ -4102,7 +4095,7 @@ Framework.prototype.test = function(stop, names, cb) {
     if (typeof(stop) === UNDEFINED)
         stop = true;
 
-    if (typeof(names) === FUNCTION) {
+    if (typeof(names) === TYPE_FUNCTION) {
         cb = names;
         names = [];
     } else
@@ -4350,7 +4343,7 @@ Framework.prototype.encrypt = function(value, key, isUnique) {
         key = tmp;
     }
 
-    if (type === FUNCTION)
+    if (type === TYPE_FUNCTION)
         value = value();
 
     if (type === NUMBER)
@@ -5369,7 +5362,7 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
             if (!err)
                 self.createFile(filename, data, append, rewrite);
 
-            if (typeof(callback) === FUNCTION)
+            if (typeof(callback) === TYPE_FUNCTION)
                 callback(err, filename);
 
         });
@@ -5398,7 +5391,7 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 
     fs.writeFileSync(filename, content, ENCODING);
 
-    if (typeof(callback) === FUNCTION)
+    if (typeof(callback) === TYPE_FUNCTION)
         callback(null, filename);
 
     return true;
@@ -6522,7 +6515,7 @@ Controller.prototype.middleware = function(names, options, callback) {
     if (typeof(names) === STRING)
         names = [names];
 
-    if (typeof(options) === FUNCTION) {
+    if (typeof(options) === TYPE_FUNCTION) {
         var tmp = callback;
         callback = options;
         options = callback;
@@ -6564,7 +6557,7 @@ Controller.prototype.pipe = function(url, headers, callback) {
 
     var self = this;
 
-    if (typeof(headers) === FUNCTION) {
+    if (typeof(headers) === TYPE_FUNCTION) {
         var tmp = callback;
         callback = headers;
         headers = tmp;
@@ -6615,6 +6608,14 @@ Controller.prototype.hash = function() {
     return framework.hash.apply(framework, arguments);
 };
 
+/**
+ * Validate a model
+ * @param {Object} model Model to validate.
+ * @param {String Array} properties
+ * @param {String} prefix Resource prefix.
+ * @param {String} name Resource name.
+ * @return {ErrorBuilder}
+ */
 Controller.prototype.validate = function(model, properties, prefix, name) {
 
     var self = this;
@@ -6622,6 +6623,9 @@ Controller.prototype.validate = function(model, properties, prefix, name) {
     var resource = function(key) {
         return self.resource(name || 'default', (prefix || '') + key);
     };
+
+    if (typeof(model) === STRING)
+        return builders.validate(model, properties);
 
     var error = new builders.ErrorBuilder(resource);
     return utils.validate.call(self, model, properties, framework.onValidation, error);
@@ -7141,7 +7145,7 @@ Controller.prototype.models = function(name) {
  */
 Controller.prototype.mail = function(address, subject, view, model, callback) {
 
-    if (typeof(model) === FUNCTION) {
+    if (typeof(model) === TYPE_FUNCTION) {
         callback = model;
         model = null;
     }
@@ -8286,10 +8290,10 @@ Controller.prototype.$options = function(arr, selected, name, value) {
             text = (o[name] || '');
             val = (o[value] || '');
 
-            if (typeof(text) === FUNCTION)
+            if (typeof(text) === TYPE_FUNCTION)
                 text = text(i);
 
-            if (typeof(val) === FUNCTION)
+            if (typeof(val) === TYPE_FUNCTION)
                 val = val(i, text);
 
         } else {
@@ -9349,7 +9353,7 @@ Controller.prototype.mmr = function(filename, stream, cb) {
 
     var type = typeof(stream);
 
-    if (type === FUNCTION) {
+    if (type === TYPE_FUNCTION) {
         cb = stream;
         stream = null;
     }
@@ -9458,7 +9462,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
         fnCallback = tmp;
     }
 
-    if (typeof(obj) === FUNCTION) {
+    if (typeof(obj) === TYPE_FUNCTION) {
         tmp = fnCallback;
         fnCallback = obj;
         obj = tmp;
@@ -9672,14 +9676,14 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
             self.precache = null;
         };
 
-        if (typeof(disabled) === FUNCTION)
+        if (typeof(disabled) === TYPE_FUNCTION)
             fnTo = disabled;
 
         fnTo();
         return self;
     }
 
-    if (typeof(disabled) === FUNCTION) {
+    if (typeof(disabled) === TYPE_FUNCTION) {
         var tmp = fnTo;
         fnTo = disabled;
         fnFrom = tmp;
@@ -9843,7 +9847,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
     if (length === 0)
         return self;
 
-    var fn = typeof(blacklist) === FUNCTION ? blacklist : null;
+    var fn = typeof(blacklist) === TYPE_FUNCTION ? blacklist : null;
     var is = blacklist instanceof Array;
 
     if (typeof(id) === UNDEFINED || id === null || id.length === 0) {
@@ -9868,7 +9872,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
         return self;
     }
 
-    fn = typeof(id) === FUNCTION ? id : null;
+    fn = typeof(id) === TYPE_FUNCTION ? id : null;
     is = id instanceof Array;
 
     for (var i = 0; i < length; i++) {
@@ -9947,7 +9951,7 @@ WebSocket.prototype.close = function(id, message, code) {
     }
 
     var is = id instanceof Array;
-    var fn = typeof(id) === FUNCTION ? id : null;
+    var fn = typeof(id) === TYPE_FUNCTION ? id : null;
 
     for (var i = 0; i < length; i++) {
 
@@ -10029,7 +10033,7 @@ WebSocket.prototype.all = function(fn) {
 WebSocket.prototype.find = function(id) {
     var self = this;
     var length = self._keys.length;
-    var isFn = typeof(id) === FUNCTION;
+    var isFn = typeof(id) === TYPE_FUNCTION;
 
     for (var i = 0; i < length; i++) {
         var connection = self.connections[self._keys[i]];
@@ -10078,7 +10082,7 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
         'X-Proxy': 'total.js'
     };
 
-    if (typeof(obj) === FUNCTION) {
+    if (typeof(obj) === TYPE_FUNCTION) {
         var tmp = fnCallback;
         fnCallback = obj;
         obj = tmp;
@@ -11051,7 +11055,7 @@ process.on('uncaughtException', function(e) {
     framework.error(e, '', null);
 
     if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
-        if (typeof(process.send) === FUNCTION)
+        if (typeof(process.send) === TYPE_FUNCTION)
             process.send('stop');
         process.exit(0);
     }

@@ -73,6 +73,7 @@ IN DEVELOPMENT ======= 1.6.0
 - fixed: view engine parser (reported by @tohachan)
 - fixed: Builders.prepare()
 - fixed: Builders.validate()
+- fixed: framework.responseFile()
 
 - removed: (IMPORTANT) COMPONENTS()
 - removed: (IMPORTANT) prefixes + framework.onPrefix()
