@@ -3808,7 +3808,7 @@ Framework.prototype.model = function(name) {
     var filename = path.join(directory, self.config['directory-models'], name + EXTENSION_JS);
 
     if (fs.existsSync(filename))
-        self.install('model', name, fs.readFileSync(filename).toString(ENCODING));
+        self.install('model', name, filename, undefined, undefined, undefined, true);
 
     return self.models[name] || null;
 };
@@ -3833,7 +3833,7 @@ Framework.prototype.source = function(name, options, callback) {
     var filename = path.join(directory, self.config['directory-source'], name + EXTENSION_JS);
 
     if (fs.existsSync(filename))
-        self.install('source', name, fs.readFileSync(filename).toString(ENCODING));
+        self.install('source', name, filename, undefined, undefined, undefined, true);
 
     return self.sources[name] || null;
 };
@@ -3989,11 +3989,12 @@ Framework.prototype.testing = function(stop, callback) {
     if (typeof(stop) === UNDEFINED)
         stop = true;
 
-    // !IMPORTANT! framework.isTestError is created dynamically
-
     var self = this;
 
+    // !IMPORTANT! framework.isTestError is created dynamically
+
     if (self.tests.length === 0) {
+
 
         if (callback)
             callback(framework.isTestError === true);
@@ -4046,6 +4047,7 @@ Framework.prototype.testing = function(stop, callback) {
             framework.testsNO++;
             self.testing(stop, callback);
         }
+
         return self;
     }
 
@@ -4284,6 +4286,7 @@ Framework.prototype.test = function(stop, names, cb) {
     setTimeout(function() {
         console.log('====== TESTING ======');
         console.log('');
+
         self.testing(stop, function() {
 
             console.log('');
@@ -4293,7 +4296,9 @@ Framework.prototype.test = function(stop, names, cb) {
 
             results();
             self.isTest = false;
+
             console.log('');
+
             if (cb)
                 cb();
         });
@@ -4838,13 +4843,13 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
     return null;
 };
 
-/*
-    Accepts file
-    @extension {String}
-    @contentType {String} :: optional
-    return {Framework}
-*/
-Framework.prototype.accepts = function(extension, contentType) {
+/**
+ * Accept file type
+ * @param {String} extension
+ * @param {String} contentType Content-Type for file extension, optional.
+ * @return {Framework}
+ */
+Framework.prototype.accept = function(extension, contentType) {
 
     var self = this;
 
@@ -4858,6 +4863,11 @@ Framework.prototype.accepts = function(extension, contentType) {
         utils.setContentType(extension, contentType);
 
     return self;
+};
+
+Framework.prototype.accepts = function(extension, contentType) {
+    console.log('OBSOLETE: framework.accepts(), use: framework.accept()');
+    return this.accept(extension, contentType);
 };
 
 /*
@@ -11086,19 +11096,22 @@ global.framework = module.exports = new Framework();
 
 process.on('uncaughtException', function(e) {
 
+    if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
+        if (typeof(process.send) === TYPE_FUNCTION)
+            process.send('stop');
+        process.exit(0);
+        return;
+    }
+
     if (framework.isTest) {
         // HACK: this method is created dynamically in framework.testing();
-        framework.testContinue(e);
+        if (framework.testContinue)
+            framework.testContinue(e);
         return;
     }
 
     framework.error(e, '', null);
 
-    if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
-        if (typeof(process.send) === TYPE_FUNCTION)
-            process.send('stop');
-        process.exit(0);
-    }
 });
 
 process.on('SIGTERM', function() {

@@ -1046,6 +1046,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
     for (var i = 0; i < properties.length; i++) {
 
         var name = properties[i].toString();
+
         var value = model[name];
         var type = typeof(value);
 
@@ -1063,12 +1064,18 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
         if (type === OBJECT && !exports.isDate(value)) {
 
             if (isSchema) {
+
                 var schema = builders.schema(schemaName) || null;
+
                 if (schema !== null) {
                     schema = schema[name] || null;
-                    if (schema !== null) {
-                        var isArray = schema[0] === '[';
 
+                    if (schema === Date || schema === String || schema === Number || schema === Boolean) {
+
+
+                    } else if (schema !== null && typeof(schema) === STRING) {
+
+                        var isArray = schema[0] === '[';
                         if (isArray)
                             schema = schema.substring(1, schema.length - 1);
 

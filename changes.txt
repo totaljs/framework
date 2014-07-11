@@ -39,6 +39,7 @@ IN DEVELOPMENT ======= 1.6.0
 - added: create automatically a ping message for websocket clients
 - added: global INSTALL(type, name, declaration/url/function, [options], [callback]);
 - added: global UNINSTALL(type, name, [options]);
+- added: global CONTROLLER(name);
 - added: framework.install(type, name, declaration/url/function, [options], [callback]);
 - added: framework.uninstall(type, name, [options]);
 - added: framework.on('install', function(type, name) {});
@@ -67,8 +68,10 @@ IN DEVELOPMENT ======= 1.6.0
 - updated: controller.validate('schema_name', model);
 
 - renamed: framework.on('expire') -> framework.on('cache-expire')
+- renamed: framework.accepts(extension, [contentType]) -> framework.accept(extension, [contentType])
 
 - fixed: controller.custom()
+- fixed: utils.validate()
 - fixed: long messages in WebSocket by Andrea Sessa <https://plus.google.com/u/0/104713619368072403016>
 - fixed: view engine parser (reported by @tohachan)
 - fixed: Builders.prepare()

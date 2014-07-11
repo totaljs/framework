@@ -84,7 +84,6 @@ function Pagination(items, page, max, format) {
     this.refresh(items, page, max);
 }
 
-
 /**
  * Create schema
  * @param  {String} name chema name.
@@ -93,7 +92,7 @@ function Pagination(items, page, max, format) {
  * @param  {SchemaValidator} validator Schema validator.
  * @return {Object}
  */
-exports.schema = function(name, obj, defaults, validator) {
+exports.schema = function(name, obj, defaults, validator, properties) {
 
     if (typeof(obj) === UNDEFINED)
         return schema[name] || null;
@@ -103,6 +102,9 @@ exports.schema = function(name, obj, defaults, validator) {
 
     if (typeof(validator) === FUNCTION)
         schemaValidator[name] = validator;
+
+    if (properties instanceof Array)
+        schemaValidation[name] = properties;
 
     schema[name] = obj;
     return obj;
@@ -165,8 +167,12 @@ exports.validation = function(name, properties, fn) {
         return true;
     }
 
-    if (typeof(fn) === UNDEFINED)
-        return schemaValidation[name] || [];
+    if (typeof(fn) === UNDEFINED) {
+        var validator = schemaValidation[name];
+        if (typeof(validator) === UNDEFINED)
+            return Object.keys(schema[name]);
+        return schema || [];
+    }
 
     schemaValidation[name] = fn;
     return fn;

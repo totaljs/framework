@@ -137,7 +137,7 @@ function test_Schema() {
         name: 'string',
         age: 'number',
         isTerms: 'boolean'
-    }, null, function(name, value, path, name) {
+    }, null, function(name, value, path, schema) {
         assert.ok(name !== 'validator', 'schema validator - problem with schema name in utils.validate()');
         switch (name) {
             case 'name':
@@ -152,12 +152,15 @@ function test_Schema() {
     var builder = builders.validate('validator', {
         name: 'Peter'
     });
+
     assert.ok(builder.hasError(), name + 'schema validator (error)');
+
     builder = builders.validate('validator', {
         name: 'Peter',
         age: 34,
         isTerms: true
     });
+
     assert.ok(!builder.hasError(), name + 'schema validator (no error)');
 
 };
