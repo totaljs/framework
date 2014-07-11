@@ -1102,7 +1102,7 @@ Framework.prototype.load = function() {
             var name = (level > 0 ? directory.replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length);
             var filename = path.join(dir, name) + EXTENSION_JS;
 
-            self.install('controller', name, fs.readFileSync(filename).toString(ENCODING));
+            self.install('controller', name, filename, undefined, undefined, undefined, true);
         });
     }
 
@@ -1121,7 +1121,7 @@ Framework.prototype.load = function() {
                 return;
 
             var filename = path.join(directory, self.config['directory-modules'], o);
-            self.install('module', o.replace(ext, ''), fs.readFileSync(filename).toString(ENCODING));
+            self.install('module', o.replace(ext, ''), filename, undefined, undefined, undefined, true);
         });
     }
 
@@ -1132,8 +1132,7 @@ Framework.prototype.load = function() {
             var ext = path.extname(o).toLowerCase();
             if (ext !== EXTENSION_JS)
                 return;
-            var data = fs.readFileSync(path.join(dir, o), ENCODING).toString();
-            self.install('definition', o.replace(ext, ''), data);
+            self.install('definition', o.replace(ext, ''), path.join(dir, o), undefined, undefined, undefined, true);
         });
     }
 
@@ -1148,14 +1147,15 @@ Framework.prototype.load = function() {
  * @param {String or Function} declaration
  * @param {Object} options Custom options, optional.
  * @param {Object} internal Internal/Temporary options, optional.
+ * @param {Boolean} useRequired Internal, optional.
  * @return {Framework}
  */
-Framework.prototype.install = function(type, name, declaration, options, callback, internal) {
+Framework.prototype.install = function(type, name, declaration, options, callback, internal, useRequired) {
 
     var self = this;
     var obj = null;
 
-    if (type !== 'config' && type !== 'version') {
+    if (type !== 'config' && type !== 'version' && typeof(name) === 'STRING') {
         if (name.startsWith('http://') || name.startsWith('https://')) {
             if (typeof(declaration) === OBJECT) {
                 callback = options;
@@ -1164,6 +1164,16 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
                 name = internal || 'unknown';
             }
         }
+    }
+
+    if (typeof(declaration) === OBJECT) {
+        var t = typeof(options);
+
+        if (t === TYPE_FUNCTION)
+            callback = options;
+
+        options = declaration;
+        declaration = undefined;
     }
 
     if (typeof(declaration) === UNDEFINED) {
@@ -1256,7 +1266,14 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         _controller = '';
 
         try {
-            obj = typeof(declaration) === TYPE_FUNCTION ? eval('(' + declaration.toString() + ')()') : eval(declaration);
+
+            if (useRequired) {
+                delete require.cache[require.resolve(declaration)];
+                obj = require(declaration);
+            }
+            else
+                obj = typeof(declaration) === TYPE_FUNCTION ? eval('(' + declaration.toString() + ')()') : eval(declaration);
+
         } catch (ex) {
             self.error(ex, 'framework.install(\'' + type + '\')', null);
 
@@ -1279,7 +1296,14 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         _controller = '';
 
         try {
-            obj = typeof(declaration) === TYPE_FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
+
+            if (useRequired) {
+                delete require.cache[require.resolve(declaration)];
+                obj = require(declaration);
+            }
+            else
+                obj = typeof(declaration) === TYPE_FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
+
         } catch (ex) {
 
             self.error(ex, 'framework.install(\'' + type + '\', \'' + name + '\')', null);
@@ -1292,6 +1316,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         if (typeof(obj.name) === STRING)
             name = obj.name;
+
+        self.uninstall(type, name);
 
         if (type === 'model')
             self.models[name] = obj;
@@ -1314,7 +1340,15 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         _controller = 'TMP' + Utils.random(10000);
 
         try {
-            obj = typeof(declaration) === TYPE_FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
+
+            if (useRequired) {
+                delete require.cache[require.resolve(declaration)];
+                obj = require(declaration);
+            }
+            else {
+                obj = typeof(declaration) === TYPE_FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
+            }
+
         } catch (ex) {
 
             self.error(ex, 'framework.install(\'' + type + '\', \'' + name + '\')', null);
@@ -1421,6 +1455,9 @@ Framework.prototype.uninstall = function(type, name, options) {
         if (!obj)
             return self;
 
+        if (obj.id)
+            delete require.cache[require.resolve(obj.id)];
+
         if (typeof(obj.uninstall) === TYPE_FUNCTION)
             obj.uninstall(self, options, name);
 
@@ -1441,6 +1478,9 @@ Framework.prototype.uninstall = function(type, name, options) {
 
         if (!obj)
             return self;
+
+        if (obj.id)
+            delete require.cache[require.resolve(obj.id)];
 
         var id = (isModule ? '#' : '') + name;
 
@@ -1491,7 +1531,7 @@ Framework.prototype.eval = function(script) {
  * @return {Framework}
  */
 Framework.prototype.onError = function(err, name, uri) {
-    console.log((name ? name : '') + ': ' + err.toString() + (uri ? ' (' + uri.toString() + ')' : ''), err.stack);
+    console.log((name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + uri.toString() + ')' : ''), err.stack);
     console.log('--------------------------------------------------------------------');
     return this;
 };
