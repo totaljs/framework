@@ -86,10 +86,10 @@ function Pagination(items, page, max, format) {
 
 /**
  * Create schema
- * @param  {String} name chema name.
- * @param  {Object} obj Schema definition.
- * @param  {SchemaDefaults} defaults Schema defaults.
- * @param  {SchemaValidator} validator Schema validator.
+ * @param {String} name chema name.
+ * @param {Object} obj Schema definition.
+ * @param {SchemaDefaults} defaults Schema defaults.
+ * @param {SchemaValidator} validator Schema validator.
  * @return {Object}
  */
 exports.schema = function(name, obj, defaults, validator, properties) {
