@@ -1967,7 +1967,7 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'description':
         case 'keywords':
             if (command.indexOf('(') !== -1)
-                return 'self.' + command;
+                return 'self.$' + command;
             return '(repository[\'$' + command + '\'] || \'\').toString().encode()';
 
         case '!title':
