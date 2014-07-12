@@ -51,6 +51,8 @@ IN DEVELOPMENT ======= 1.6.0
 - added: module/model/source/controller: exports.uninstall = function(framework, options) {}
 - added: String.prototype.parseDateExpire() - parse expiration date, example: '1 minute', '1 year'
 - added: String.parseConfig([default]);
+- added: framework.fs.create.database()
+- added: framework.fs.rm.database()
 
 - updated: NoSQL v2.0.8
 - updated: module: exports.install = function(framework, options) {};

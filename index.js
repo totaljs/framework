@@ -5117,22 +5117,24 @@ FrameworkRestrictions.prototype._blockedCustom = function(headers) {
 function FrameworkFileSystem(framework) {
     this.create = {
         css: this.createCSS.bind(this),
+        database: this.createDatabase.bind(this),
+        file: this.createFile.bind(this),
         js: this.createJS.bind(this),
-        view: this.createView.bind(this),
         resource: this.createResource.bind(this),
         temporary: this.createTemporary.bind(this),
-        worker: this.createWorker.bind(this),
-        file: this.createFile.bind(this)
+        view: this.createView.bind(this),
+        worker: this.createWorker.bind(this)
     };
 
     this.rm = {
         css: this.deleteCSS.bind(this),
+        database: this.deleteDatabase.bind(this),
+        file: this.deleteFile.bind(this),
         js: this.deleteJS.bind(this),
-        view: this.deleteView.bind(this),
         resource: this.deleteResource.bind(this),
         temporary: this.deleteTemporary.bind(this),
-        worker: this.deleteWorker.bind(this),
-        file: this.deleteFile.bind(this)
+        view: this.deleteView.bind(this),
+        worker: this.deleteWorker.bind(this)
     };
 }
 
@@ -5178,6 +5180,17 @@ FrameworkFileSystem.prototype.deleteView = function(name) {
         name += '.html';
 
     var filename = utils.combine(framework.config['directory-views'], name);
+    return self.deleteFile(filename);
+};
+
+/*
+    Delete a file - Database
+    @name {String}
+    return {Boolean}
+*/
+FrameworkFileSystem.prototype.deleteDatabase = function(name) {
+    var self = this;
+    var filename = utils.combine(framework.config['directory-databases'], name);
     return self.deleteFile(filename);
 };
 
@@ -5280,6 +5293,25 @@ FrameworkFileSystem.prototype.createJS = function(name, content, rewrite, append
         name += EXTENSION_JS;
 
     var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-js'], name);
+    return self.createFile(filename, content, append, rewrite);
+};
+
+/*
+    Create a database
+    @name {String}
+    @content {String}
+    @rewrite {Boolean} :: optional (default false)
+    @append {Boolean} :: optional (default false)
+    return {Boolean}
+*/
+FrameworkFileSystem.prototype.createDatabase = function(name, content, rewrite, append) {
+
+    var self = this;
+
+    if ((content || '').length === 0)
+        return false;
+
+    var filename = utils.combine(framework.config['directory-databases'], name);
     return self.createFile(filename, content, append, rewrite);
 };
 
