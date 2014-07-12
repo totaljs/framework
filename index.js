@@ -6004,7 +6004,7 @@ Subscribe.prototype.execute = function(status) {
 
         (function(middleware) {
             func.push(function(next) {
-                middleware.call(controller, req, res, next, route.options);
+                middleware.call(controller, req, res, next, route.options, controller);
             });
         })(middleware);
 

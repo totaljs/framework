@@ -2,7 +2,7 @@ IN DEVELOPMENT ======= 1.6.0
 
 - added: framework.http(mode, [options]) - mode: test, debug or development, release or production
 - added: framework.https(mode, [options]) - I recommend to use NGINX as HTTPS proxy
-- added: middleware delegate: function(req, res, next, [options]) { next(); }
+- added: middleware delegate: function(req, res, next, [options], [controller]) { next(); }
 - added: middleware to framework.websocket(url, funcInitialize, [flags], [protocols], [allow], [maximumSize], [middleware])
 - added: middleware to framework.file([name], [fnValidation], [fnExecute], [middleware])
 - added: middleware to framework.use(name), this is global middleware
