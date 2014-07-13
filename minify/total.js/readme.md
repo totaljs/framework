@@ -58,8 +58,6 @@ __Social networks__:
 
 __Examples__:
 
-- [Sushi website example](http://sushi.totaljs.com)
-- [TODO list example](http://todo.totaljs.com)
 - [More than 90 examples](https://github.com/totaljs/examples/tree/master/)
 
 __Modules__:
