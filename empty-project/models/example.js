@@ -16,6 +16,6 @@ exports.usage = function() {
     return {};
 };
 
-exports.yourcode = function() {
-    return 'Hello World';
+exports.schema = function() {
+    return { name: String, age: Number };
 };
