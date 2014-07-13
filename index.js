@@ -1161,7 +1161,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
                 callback = options;
                 options = declaration;
                 declaration = name;
-                name = internal || 'unknown';
+                name = '';
             }
         }
     }
@@ -1178,7 +1178,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
     if (typeof(declaration) === UNDEFINED) {
         declaration = name;
-        name = internal || 'unknown';
+        name = '';
     }
 
     // Check if declaration is a valid URL address
@@ -1351,7 +1351,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         } catch (ex) {
 
-            self.error(ex, 'framework.install(\'' + type + '\', \'' + name + '\')', null);
+            self.error(ex, 'framework.install(\'' + type + '\', \'' + (name.length === 0 ? internal : '') + '\')', null);
 
             if (callback)
                 callback(ex);
