@@ -1186,10 +1186,14 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         if (declaration.startsWith('http://') || declaration.startsWith('https://')) {
 
-            utils.request(declaration, ['get'], function(err, data) {
+            utils.request(declaration, ['get'], function(err, data, code) {
+
+                if (code !== 200 && !err)
+                    err = new Error(data);
 
                 if (err) {
-                    self.error(err, 'framework.install(\'{0}\', \'{1}\')'.format(type, name), null);
+
+                    self.error(err, 'framework.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
 
                     if (callback)
                         callback(err);
@@ -1306,11 +1310,37 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         try {
 
             if (useRequired) {
-                delete require.cache[require.resolve(declaration)];
+
                 obj = require(declaration);
+
+                (function(name) {
+
+                    setTimeout(function() {
+                        delete require.cache[name];
+                    }, 1000);
+
+                })(require.resolve(declaration));
+
             }
-            else
-                obj = typeof(declaration) === TYPE_FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
+            else {
+
+                if (typeof(declaration) !== STRING)
+                    declaration = declaration.toString();
+
+                var filename = directory + self.path.temporary('installed-' + type + '-' + utils.GUID(10) + '.js').substring(1);
+                fs.writeFileSync(filename, declaration);
+                obj = require(filename);
+
+                (function(name, filename) {
+
+                    setTimeout(function() {
+                        fs.unlinkSync(filename);
+                        delete require.cache[name];
+                    }, 1000);
+
+                })(require.resolve(filename), filename);
+
+            }
 
         } catch (ex) {
 
@@ -1350,11 +1380,36 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         try {
 
             if (useRequired) {
-                delete require.cache[require.resolve(declaration)];
+
                 obj = require(declaration);
+
+                (function(name) {
+
+                    setTimeout(function() {
+                        delete require.cache[name];
+                    }, 1000);
+
+                })(require.resolve(declaration));
+
             }
             else {
-                obj = typeof(declaration) === TYPE_FUNCTION ? declaration() : eval('(new (function(){var module=exports={};this.exports=exports;' + declaration + '})).exports');
+
+                if (typeof(declaration) !== STRING)
+                    declaration = declaration.toString();
+
+                var filename = directory + self.path.temporary('installed-' + type + '-' + utils.GUID(10) + '.js').substring(1);
+                fs.writeFileSync(filename, declaration);
+                obj = require(filename);
+
+                (function(name, filename) {
+
+                    setTimeout(function() {
+                        fs.unlinkSync(filename);
+                        delete require.cache[name];
+                    }, 1000);
+
+                })(require.resolve(filename), filename);
+
             }
 
         } catch (ex) {
