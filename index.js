@@ -3663,6 +3663,9 @@ Framework.prototype._request = function(req, res) {
     req.body = {};
     req.files = [];
     req.processing = 0;
+    req.session = null;
+    req.user = null;
+    req.isAuthorized = true;
 
     res.success = false;
     res.setHeader('X-Powered-By', 'total.js v' + self.version_header);
@@ -3727,10 +3730,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
     req.buffer_exceeded = false;
     req.buffer_data = '';
     req.buffer_has = false;
-
-    req.session = null;
-    req.user = null;
-    req.isAuthorized = true;
 
     var isXSS = false;
     var accept = headers.accept;
