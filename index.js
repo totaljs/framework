@@ -3580,7 +3580,7 @@ Framework.prototype._service = function(count) {
     // every 61 minutes (default) services precompile all (installed) views
     if (count % framework.config['default-interval-precompile-views'] === 0) {
         Object.keys(self.routes.precompiled).wait(function(item, next) {
-            self.precompile(item.name, next);
+            self.install('view', item.name, item.url, null, next);
         });
     }
 
