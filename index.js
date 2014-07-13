@@ -3579,8 +3579,10 @@ Framework.prototype._service = function(count) {
 
     // every 61 minutes (default) services precompile all (installed) views
     if (count % framework.config['default-interval-precompile-views'] === 0) {
-        Object.keys(self.routes.views).wait(function(item, next) {
-            self.install('view', item.name, item.url, null, next);
+        Object.keys(self.routes.views).wait(function(key, next) {
+            var item = self.routes.views[key];
+            console.log(key, item.url);
+            self.install('view', key, item.url, null, next);
         });
     }
 
@@ -4645,7 +4647,7 @@ Framework.prototype._configure = function(arr, rewrite) {
             case 'default-request-timeout':
             case 'default-interval-clear-cache':
             case 'default-interval-clear-resources':
-            case 'default-interval-precompile':
+            case 'default-interval-precompile-views':
             case 'default-interval-websocket-ping':
                 obj[name] = utils.parseInt(value);
                 break;
