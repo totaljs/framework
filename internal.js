@@ -2411,7 +2411,7 @@ View.prototype.load = function(name, filename) {
     if (name.indexOf('@{') !== -1 || name.indexOf('<') !== -1)
         return self.dynamic(name);
 
-    var precompiled = framework.routes.precompiled[name];
+    var precompiled = framework.routes.views[name];
 
     if (precompiled)
         filename = '.' + precompiled.filename;

@@ -187,7 +187,7 @@ function Framework() {
         redirects: {},
         resize: {},
         request: [],
-        precompiled: {}
+        views: {}
     };
 
     this.helpers = {};
@@ -1213,7 +1213,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
     if (type === 'middleware') {
 
-        self.routes.middleware[name] = typeof(declaration) === TYPE_FUNCTION ? declaration : eval('(' + declaration + ')()');
+        self.routes.middleware[name] = typeof(declaration) === TYPE_FUNCTION ? declaration : eval(declaration);
         self._length_middleware = Object.keys(self.routes.middleware).length;
         self.emit('install', type, name);
 
@@ -1245,15 +1245,15 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         return self;
     }
 
-    if (type === 'view' || type === 'precompile') {
+    if (type === 'view') {
 
-        var item = self.routes.precompiled[name];
+        var item = self.routes.views[name];
 
         if (typeof(item) === UNDEFINED) {
             item = {};
-            item.filename = self.path.temporary('precompiled-' + utils.GUID(10) + '.tmp');
+            item.filename = self.path.temporary('installed-view-' + utils.GUID(10) + '.tmp');
             item.url = internal;
-            self.routes.precompiled[name] = item;
+            self.routes.views[name] = item;
             self.emit('install', type, name);
         }
 
@@ -1495,12 +1495,12 @@ Framework.prototype.uninstall = function(type, name, options) {
 
     if (type === 'view' || type === 'precompile') {
 
-        obj = self.routes.precompiled[name];
+        obj = self.routes.views[name];
 
         if (!obj)
             return self;
 
-        delete self.routes.precompiled[name];
+        delete self.routes.views[name];
 
         fs.exists(obj.filename, function(exist) {
             if (exist)
@@ -3579,7 +3579,7 @@ Framework.prototype._service = function(count) {
 
     // every 61 minutes (default) services precompile all (installed) views
     if (count % framework.config['default-interval-precompile-views'] === 0) {
-        Object.keys(self.routes.precompiled).wait(function(item, next) {
+        Object.keys(self.routes.views).wait(function(item, next) {
             self.install('view', item.name, item.url, null, next);
         });
     }
