@@ -99,6 +99,8 @@ IN DEVELOPMENT ======= 1.6.0
 - removed: (IMPORTANT) framework.injectController() -> framework.install()
 - removed: (IMPORTANT) framework.onRoute() - TIP: use middleware
 - removed: (IMPORTANT) framework.onRequest() - TIP: use middleware
+- removed: (IMPORTANT) framework.on('ready')
+- removed: (IMPORTANT) controller & module -> exports.request()
 
 - clean code
 - improvements: framework

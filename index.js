@@ -3208,20 +3208,17 @@ Framework.prototype.initialize = function(http, debug, options) {
     if (!process.connected)
         self.console();
 
-    try {
-        self.emit('load', self);
-    } catch (err) {
-        self.error(err, 'framework.on("load")');
-    }
+    setTimeout(function() {
 
-    try {
-        self.emit('ready', self);
-    } catch (err) {
-        self.error(err, 'framework.on("ready")');
-    }
+        try {
+            self.emit('load', self);
+        } catch (err) {
+            self.error(err, 'framework.on("load")');
+        }
 
-    self.removeAllListeners('load');
-    self.removeAllListeners('ready');
+        self.removeAllListeners('load');
+
+    }, 500);
 
     if (self.isTest) {
         self.test(true, options.tests || options.test);
