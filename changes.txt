@@ -53,6 +53,7 @@ IN DEVELOPMENT ======= 1.6.0
 - added: String.parseConfig([default]);
 - added: framework.fs.create.database()
 - added: framework.fs.rm.database()
+- added: controller.isTransfer
 
 - updated: NoSQL v2.0.8
 - updated: module: exports.install = function(framework, options) {};

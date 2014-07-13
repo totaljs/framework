@@ -5937,6 +5937,7 @@ function Subscribe(framework, req, res, type) {
     this.timeout = null;
     this.isCanceled = false;
     this.isMixed = false;
+    this.isTransfer = false;
     this.header = '';
     this.error = null;
 }
@@ -6076,7 +6077,9 @@ Subscribe.prototype.execute = function(status) {
     var name = route.name;
     var controller = new Controller(name, req, res, self);
 
+    controller.isTransfer = self.isTransfer;
     controller.exception = self.exception;
+
     self.controller = controller;
 
     if (!self.isCanceled && !self.isMixed && route.timeout > 0) {
@@ -6151,25 +6154,12 @@ Subscribe.prototype.doExecute = function() {
     var controller = self.controller;
     var req = self.req;
 
-    controller.isCanceled = false;
-
-    try {
-        framework.emit('controller', controller, name);
-
-        var isModule = name[0] === '#' && name[1] === 'm';
-        var o = isModule ? framework.modules[name.substring(8)] : framework.controllers[name];
-
-        if (o && o.request)
-            o.request.call(controller, controller);
-
-    } catch (err) {
-        framework.error(err, name, req.uri);
-    }
-
     try {
 
         if (controller.isCanceled)
             return self;
+
+        framework.emit('controller', controller, name, self.route.options);
 
         if (!self.isMixed) {
             self.route.onExecute.apply(controller, internal.routeParam(self.route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
@@ -6481,6 +6471,7 @@ function Controller(name, req, res, subscribe) {
     this.isConnected = true;
     this.isTimeout = false;
     this.isController = true;
+    this.isTransfer = false;
 
     this.repository = {};
 
@@ -7063,9 +7054,10 @@ Controller.prototype.transfer = function(url, flags) {
 
     self.cancel();
     self.req.path = [];
+    self.subscribe.isTransfer = true;
     self.subscribe.success();
     self.subscribe.route = selected;
-    self.subscribe.execute(404);
+    self.subscribe.execute(404, (route.name !== self.name));
 
     return true;
 
