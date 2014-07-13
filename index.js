@@ -1270,6 +1270,14 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             if (useRequired) {
                 delete require.cache[require.resolve(declaration)];
                 obj = require(declaration);
+
+                (function(name) {
+
+                    setTimeout(function() {
+                        delete require.cache[name];
+                    }, 1000);
+
+                })(require.resolve(declaration));
             }
             else
                 obj = typeof(declaration) === TYPE_FUNCTION ? eval('(' + declaration.toString() + ')()') : eval(declaration);
