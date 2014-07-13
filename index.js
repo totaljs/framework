@@ -1894,6 +1894,10 @@ Framework.prototype.compileStatic = function(req, filename) {
     var self = this;
     var index = filename.lastIndexOf('.');
     var ext = filename.substring(index).toLowerCase();
+
+    if ((self.config['allow-compile-js'] === false && ext === EXTENSION_JS) || (self.config['allow-compile-css'] === false && ext === '.css'))
+        return filename;
+
     var output = fs.readFileSync(filename).toString(ENCODING);
 
     switch (ext) {
@@ -2146,10 +2150,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
         // compile JavaScript and CSS
         if (extension === 'js' || extension === 'css') {
-            if (name.lastIndexOf('.min.') === -1 && name.lastIndexOf('-min.') === -1) {
+            if (name.lastIndexOf('.min.') === -1 && name.lastIndexOf('-min.') === -1)
                 name = self.compileStatic(req, name);
-                self.temporary.path[key] = name;
-            }
         }
 
         name += ';' + fs.statSync(name).size;

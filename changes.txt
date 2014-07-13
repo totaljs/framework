@@ -79,6 +79,7 @@ IN DEVELOPMENT ======= 1.6.0
 - fixed: Builders.prepare()
 - fixed: Builders.validate()
 - fixed: framework.responseFile()
+- fixed: framework.onCompileStatic()
 
 - removed: (IMPORTANT) COMPONENTS()
 - removed: (IMPORTANT) prefixes + framework.onPrefix()
