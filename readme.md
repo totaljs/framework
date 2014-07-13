@@ -1,3 +1,11 @@
+---
+
+## IMPORTANT NOTE:
+
+I prepared all examples to a new version. Please wait or download a new version from GitHub. This week it will be. Thanks!
+
+---
+
 [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
 ![total.js logo](http://www.totaljs.com/download/logo-black.png)
