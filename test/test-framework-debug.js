@@ -378,8 +378,6 @@ function run() {
 		assert.ok(framework.global.file > 0, 'middleware - file');
 		assert.ok(framework.global.timeout > 0, 'timeout');
 
-		console.log(framework.temporary.dependencies);
-
 		UNINSTALL('source', { uninstall: true });
 		UNINSTALL('view', 'precompile._layout');
 

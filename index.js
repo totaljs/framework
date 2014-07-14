@@ -1548,8 +1548,8 @@ Framework.prototype.uninstall = function(type, name, options) {
             return self;
 
         delete self.routes.middleware[name];
-        self._length_middleware = Object.keys(self.routes.middleware).length;
         delete self.temporary.dependencies[type + '.' + name];
+        self._length_middleware = Object.keys(self.routes.middleware).length;
         self.emit('uninstall', type, name);
         return self;
     }
@@ -1562,13 +1562,13 @@ Framework.prototype.uninstall = function(type, name, options) {
             return self;
 
         delete self.routes.views[name];
+        delete self.temporary.dependencies[type + '.' + name];
 
         fs.exists(obj.filename, function(exist) {
             if (exist)
                 fs.unlink(obj.filename);
         });
 
-        delete self.temporary.dependencies[type + '.' + name];
         self.emit('uninstall', type, name);
         return self;
     }
@@ -1591,8 +1591,9 @@ Framework.prototype.uninstall = function(type, name, options) {
         else
             delete self.sources[name];
 
-        self._routesSort();
         delete self.temporary.dependencies[type + '.' + name];
+
+        self._routesSort();
         self.emit('uninstall', type, name);
         return self;
     }
