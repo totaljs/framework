@@ -213,7 +213,8 @@ function Framework() {
         path: {},
         processing: {},
         range: {},
-        views: {}
+        views: {},
+        dependencies: {}
     };
 
     this.stats = {
@@ -1166,7 +1167,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         }
     }
 
-    if (typeof(declaration) === OBJECT) {
+    var t = typeof(declaration);
+    var key = '';
+    var tmp = null;
+
+    if (t === OBJECT || t === FUNCTION) {
         var t = typeof(options);
 
         if (t === TYPE_FUNCTION)
@@ -1215,11 +1220,22 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         self.routes.middleware[name] = typeof(declaration) === TYPE_FUNCTION ? declaration : eval(declaration);
         self._length_middleware = Object.keys(self.routes.middleware).length;
-        self.emit('install', type, name);
 
         if (callback)
             callback(null);
 
+        key = type + '.' + name;
+
+        if (self.temporary.dependencies[key]) {
+            self.temporary.dependencies[key].updated = new Date();
+        } else {
+            self.temporary.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0 };
+            if (internal)
+                self.temporary.dependencies[key].url = internal;
+        }
+
+        self.temporary.dependencies[key].count++;
+        self.emit('install', type, name);
         return self;
     }
 
@@ -1248,16 +1264,20 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
     if (type === 'view') {
 
         var item = self.routes.views[name];
+        key = type + '.' + name;
 
         if (typeof(item) === UNDEFINED) {
             item = {};
             item.filename = self.path.temporary('installed-view-' + utils.GUID(10) + '.tmp');
             item.url = internal;
+            item.count = 0;
             self.routes.views[name] = item;
-            self.emit('install', type, name);
         }
 
+        item.count++;
+
         fs.writeFileSync(item.filename, declaration);
+        self.emit('install', type, name);
 
         if (callback)
             callback(null);
@@ -1287,6 +1307,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
                 obj = typeof(declaration) === TYPE_FUNCTION ? eval('(' + declaration.toString() + ')()') : eval(declaration);
 
         } catch (ex) {
+
             self.error(ex, 'framework.install(\'' + type + '\')', null);
 
             if (callback)
@@ -1339,7 +1360,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
                     }, 1000);
 
                 })(require.resolve(filename), filename);
-
             }
 
         } catch (ex) {
@@ -1355,7 +1375,27 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         if (typeof(obj.name) === STRING)
             name = obj.name;
 
+        key = type + '.' + name;
+        tmp = self.temporary.dependencies[key];
+
         self.uninstall(type, name);
+
+        if (tmp) {
+            self.temporary.dependencies[key] = tmp;
+            self.temporary.dependencies[key].updated = new Date();
+        }
+        else {
+            self.temporary.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0 };
+            if (internal)
+                self.temporary.dependencies[key].url = internal;
+        }
+
+        self.temporary.dependencies[key].count++;
+
+        if (obj.reinstall)
+            self.temporary.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpire();
+        else
+            delete self.temporary.dependencies[key];
 
         if (type === 'model')
             self.models[name] = obj;
@@ -1425,7 +1465,27 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         if (typeof(obj.name) === STRING)
             name = obj.name;
 
+        key = type + '.' + name;
+        tmp = self.temporary.dependencies[key];
+
         self.uninstall(type, name);
+
+        if (tmp) {
+            self.temporary.dependencies[key] = tmp;
+            self.temporary.dependencies[key].updated = new Date();
+        }
+        else {
+            self.temporary.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0 };
+            if (internal)
+                self.temporary.dependencies[key].url = internal;
+        }
+
+        self.temporary.dependencies[key].count++;
+
+        if (obj.reinstall)
+            self.temporary.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpire();
+        else
+            delete self.temporary.dependencies[key].reinstall;
 
         if (typeof(obj.install) === TYPE_FUNCTION)
             obj.install(self, options, name);
@@ -1489,6 +1549,7 @@ Framework.prototype.uninstall = function(type, name, options) {
 
         delete self.routes.middleware[name];
         self._length_middleware = Object.keys(self.routes.middleware).length;
+        delete self.temporary.dependencies[type + '.' + name];
         self.emit('uninstall', type, name);
         return self;
     }
@@ -1507,6 +1568,7 @@ Framework.prototype.uninstall = function(type, name, options) {
                 fs.unlink(obj.filename);
         });
 
+        delete self.temporary.dependencies[type + '.' + name];
         self.emit('uninstall', type, name);
         return self;
     }
@@ -1530,6 +1592,7 @@ Framework.prototype.uninstall = function(type, name, options) {
             delete self.sources[name];
 
         self._routesSort();
+        delete self.temporary.dependencies[type + '.' + name];
         self.emit('uninstall', type, name);
         return self;
     }
@@ -1570,6 +1633,7 @@ Framework.prototype.uninstall = function(type, name, options) {
         }
 
         self._routesSort();
+        delete self.temporary.dependencies[type + '.' + name];
         self.emit('uninstall', type, name);
         return self;
     }
@@ -3212,11 +3276,13 @@ Framework.prototype.initialize = function(http, debug, options) {
 
         try {
             self.emit('load', self);
+            self.emit('ready', self);
         } catch (err) {
-            self.error(err, 'framework.on("load")');
+            self.error(err, 'framework.on("load/ready")');
         }
 
         self.removeAllListeners('load');
+        self.removeAllListeners('ready');
 
     }, 500);
 
@@ -10993,6 +11059,21 @@ http.ServerResponse.prototype.stream = function(contentType, stream, downloadNam
     if (self.headersSent)
         return;
     framework.responseStream(self.req, self, contentType, stream, downloadName, headers);
+    return self;
+};
+
+/**
+ * Response image
+ * @param {String} filename
+ * @param {String} fnProcess
+ * @param {Object} headers Optional.
+ * @return {Framework}
+ */
+http.ServerResponse.prototype.image = function(filename, fnProcess, headers) {
+    var self = this;
+    if (self.headersSent)
+        return;
+    framework.responseImage(self.req, self, filename, fnProcess, headers);
     return self;
 };
 

@@ -378,6 +378,8 @@ function run() {
 		assert.ok(framework.global.file > 0, 'middleware - file');
 		assert.ok(framework.global.timeout > 0, 'timeout');
 
+		console.log(framework.temporary.dependencies);
+
 		UNINSTALL('source', { uninstall: true });
 		UNINSTALL('view', 'precompile._layout');
 
@@ -413,7 +415,7 @@ mem.on('stats', function(info) {
 
 framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html');
 
-framework.on('ready', function() {
+framework.on('load', function() {
 	setTimeout(function() {
 		run();
 	}, 2000);

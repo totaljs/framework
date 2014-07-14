@@ -189,8 +189,16 @@ exports.validate = function(name, model, resourcePrefix, resourceName) {
     var fn = schemaValidator[name];
     var builder = new ErrorBuilder();
 
-    if (typeof(fn) === UNDEFINED)
-        return builder;
+    if (typeof(fn) === UNDEFINED) {
+
+        if (typeof(framework.onValidation) !== FUNCTION) {
+            if (framework && framework.error)
+                framework.error(new Error('Schema "' + name + '" doesn\'t defined a validation delegate.'), 'Builders.validate()', null);
+            return builder;
+        }
+
+        fn = framework.onValidation;
+    }
 
     if (resourceName)
         builder.resourceName = resourceName;

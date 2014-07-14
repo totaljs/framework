@@ -1,4 +1,4 @@
- global.builders = require('../builders');
+global.builders = require('../builders');
 global.framework = { version: '' };
 
 var assert = require('assert');
@@ -400,15 +400,15 @@ function others() {
 		assert.ok(value.join(',') === '1,2,3,4,5,6,7,8,9', 'async');
 	});
 
-	utils.request('http://www.yahoo.com', ['GET'], function(err, data, code) {
+	utils.request('http://www.yahoo.com', ['get'], function(err, data, code) {
 		assert.ok(code === 301, 'utils.request (success)');
 	});
 
-	utils.download('http://www.yahoo.com', ['GET'], function(err, res) {
+	utils.download('http://www.yahoo.com', ['get'], function(err, res) {
 		assert.ok(res.statusCode === 301, 'utils.download (success)');
 	});
 
-	utils.request('http://xxxxxxx.yyy', 'GET', null, function(err, data, code) {
+	utils.request('http://xxxxxxx.yyy', 'get', null, function(err, data, code) {
 		assert.ok(err !== null, 'utils.requiest (error)');
 	});
 
@@ -443,6 +443,11 @@ function others() {
 
 	error = utils.validate({ name: 'Name', join: [{ age: 'A' }, { age: 4 }]}, '1', onValidation, resource);
 	assert.ok(error.hasError(), 'validation - hasError() (array)');
+
+	builders.schema('3', { name: 'string', arrNumber: '[Number]', arrString: '[string]' }, null, onValidation);
+	error = builders.validate('3', { name: 'Peter', arrNumber: 'peter' });
+
+	assert.ok(error.hasError(), 'validation - hasError() (array 2)');
 
 	var indexer = 0;
 

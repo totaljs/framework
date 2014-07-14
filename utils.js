@@ -1071,18 +1071,44 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
                     schema = schema[name] || null;
 
                     if (schema === Date || schema === String || schema === Number || schema === Boolean) {
-
-
+                        // Empty
                     } else if (schema !== null && typeof(schema) === STRING) {
 
                         var isArray = schema[0] === '[';
                         if (isArray)
-                            schema = schema.substring(1, schema.length - 1);
+                            schema = schema.substring(1, schema.length - 1).trim();
 
                         if (isArray) {
 
                             if (!(value instanceof Array)) {
-                                error.add(name, '@');
+                                error.add(name, '@', current + name);
+                                continue;
+                            }
+
+                            // Schema not exists, so valid plain values
+                            if (builders.schema(schema) === null) {
+
+                                var result2 = prepare(name, value, current + name, schemaName);
+
+                                if (typeof(result2) === UNDEFINED)
+                                    continue;
+
+                                type = typeof(result2);
+
+                                if (type === STRING) {
+                                    error.add(name, result2, current + name);
+                                    continue;
+                                }
+
+                                if (type === BOOLEAN) {
+                                    if (!result2)
+                                        error.add(name, '@', current + name);
+                                    continue;
+                                }
+
+                                if (result2.isValid === false)
+                                    error.add(name, result2.error, current + name);
+
                                 continue;
                             }
 

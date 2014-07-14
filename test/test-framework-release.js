@@ -413,7 +413,7 @@ mem.on('stats', function(info) {
 
 framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html');
 
-framework.on('ready', function() {
+framework.on('load', function() {
 	setTimeout(function() {
 		run();
 	}, 2000);
