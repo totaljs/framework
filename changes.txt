@@ -70,6 +70,7 @@ IN DEVELOPMENT ======= 1.6.0
 - update: expiration supports string (framework.cache, response.cookie), example: '1 minute'
 - updated: $view(name, model, [expire]), $viewToggle(name, model, [expire]) - added expiration {String}
 - updated: controller.validate('schema_name', model);
+- updated: Angular.js version
 
 - renamed: framework.on('expire') -> framework.on('cache-expire')
 - renamed: framework.accepts(extension, [contentType]) -> framework.accept(extension, [contentType])
