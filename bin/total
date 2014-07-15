@@ -47,6 +47,7 @@ function createDirectoryAngular(directory) {
 
 	arr.push('app');
 	arr.push('controllers');
+	arr.push('definitions');
 	arr.push('node_modules');
 	arr.push('views');
 
@@ -86,7 +87,7 @@ function createFiles(directory) {
 	}
 
 	if ($type === 3) {
-		createFileResource(directory);
+		// createFileResource(directory);
 		createFileViews(directory);
 		createFilePublicAngular(directory);
 		createFileControllerAngular(directory);
