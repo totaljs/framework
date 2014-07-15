@@ -20,21 +20,19 @@ function createDirectory(directory) {
 	if ($type < 2) {
 
 		arr.push('views');
-		arr.push('databases');
 		arr.push('definitions');
 
 		if ($type == 0) {
+			arr.push('databases');
 			arr.push('workers');
 			arr.push('tests');
-			arr.push('contents');
 			arr.push('logs');
 			arr.push('modules');
 			arr.push('source');
+			arr.push('resources');
 		}
 
-		arr.push('resources');
 		arr.push('public');
-		arr.push('tmp');
 	}
 
 	arr.forEach(function(o) {
@@ -82,11 +80,11 @@ function createFiles(directory) {
 
 	if ($type < 2) {
 		createFileViews(directory);
-		createFileResource(directory);
 		createFilePublic(directory);
 	}
 
 	if ($type === 3) {
+		createFileResource(directory);
 		createFileViews(directory);
 		createFilePublicAngular(directory);
 		createFileControllerAngular(directory);
@@ -311,63 +309,7 @@ function createFileController(directory) {
 
 	buffer.push('exports.install = function(framework) {');
 	buffer.push('    framework.route(\'/\', view_homepage);');
-	buffer.push('    framework.route(\'#400\', error400);');
-	buffer.push('    framework.route(\'#401\', error401);');
-	buffer.push('    framework.route(\'#403\', error403);');
-	buffer.push('    framework.route(\'#404\', error404);');
-	buffer.push('    framework.route(\'#408\', error408);');
-	buffer.push('    framework.route(\'#431\', error431);');
-	buffer.push('    framework.route(\'#500\', error500);');
 	buffer.push('};');
-	buffer.push('');
-	buffer.push('// Bad Request');
-	buffer.push('function error400() {');
-	buffer.push('    var self = this;');
-	buffer.push('    self.status = 400;');
-	buffer.push('    self.plain(utils.httpStatus(self.status));');
-	buffer.push('}');
-	buffer.push('');
-	buffer.push('// Unauthorized');
-	buffer.push('function error401() {');
-	buffer.push('    var self = this;');
-	buffer.push('    self.status = 401;');
-	buffer.push('    self.plain(utils.httpStatus(self.status));');
-	buffer.push('}');
-	buffer.push('');
-	buffer.push('// Forbidden');
-	buffer.push('function error403() {');
-	buffer.push('    var self = this;');
-	buffer.push('    self.status = 403;');
-	buffer.push('    self.plain(utils.httpStatus(self.status));');
-	buffer.push('}');
-	buffer.push('');
-	buffer.push('// Not Found');
-	buffer.push('function error404() {');
-	buffer.push('    var self = this;');
-	buffer.push('    self.status = 404;');
-	buffer.push('    self.plain(utils.httpStatus(self.status));');
-	buffer.push('}');
-	buffer.push('');
-	buffer.push('// Request Timeout');
-	buffer.push('function error408() {');
-	buffer.push('    var self = this;');
-	buffer.push('    self.status = 408;');
-	buffer.push('    self.plain(utils.httpStatus(self.status));');
-	buffer.push('}');
-	buffer.push('');
-	buffer.push('// Request Header Fields Too Large');
-	buffer.push('function error431() {');
-	buffer.push('    var self = this;');
-	buffer.push('    self.status = 431;');
-	buffer.push('    self.plain(utils.httpStatus(self.status));');
-	buffer.push('}');
-	buffer.push('');
-	buffer.push('// Internal Server Error');
-	buffer.push('function error500() {');
-	buffer.push('    var self = this;');
-	buffer.push('    self.status = 500;');
-	buffer.push('    self.plain(utils.httpStatus(self.status));');
-	buffer.push('}');
 	buffer.push('');
 	buffer.push('function view_homepage() {');
 	buffer.push('    var self = this;');
