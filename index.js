@@ -1236,14 +1236,21 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         }
 
         self.temporary.dependencies[key].count++;
-        self.emit('install', type, name);
+
+        setTimeout(function() {
+            self.emit('install', type, name);
+        }, 500);
+
         return self;
     }
 
     if (type === 'config' || type === 'configuration' || type === 'settings') {
 
         self._configure(declaration instanceof Array ? declaration : declaration.toString().split('\n'), true);
-        self.emit('install', type, name);
+
+        setTimeout(function() {
+            self.emit('install', type, name);
+        }, 500);
 
         if (callback)
             callback(null);
@@ -1254,7 +1261,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
     if (type === 'version' || type === 'versions') {
 
         self._configure_versions(declaration.toString(), true);
-        self.emit('install', type, name);
+
+        setTimeout(function() {
+            self.emit('install', type, name);
+        }, 500);
 
         if (callback)
             callback(null);
@@ -1278,7 +1288,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         item.count++;
 
         fs.writeFileSync(item.filename, declaration);
-        self.emit('install', type, name);
+
+        setTimeout(function() {
+            self.emit('install', type, name);
+        }, 500);
 
         if (callback)
             callback(null);
@@ -1320,7 +1333,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         if (callback)
             callback(null);
 
-        self.emit('install', type, name);
+        setTimeout(function() {
+            self.emit('install', type, name);
+        }, 500);
 
         return self;
     }
@@ -1406,7 +1421,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         if (typeof(obj.install) === TYPE_FUNCTION)
             obj.install(self, options, name);
 
-        self.emit('install', type, name);
+        setTimeout(function() {
+            self.emit('install', type, name);
+        }, 500);
 
         if (callback)
             callback(null);
@@ -1520,7 +1537,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         _controller = '';
 
-        self.emit('install', type, name);
+        setTimeout(function() {
+            self.emit('install', type, name);
+        }, 500);
 
         if (callback)
             callback(null);
