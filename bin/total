@@ -75,8 +75,10 @@ function createDirectoryAngular(directory) {
 }
 
 function createFiles(directory) {
+
 	createFileIndex(directory);
 	createFileConfig(directory);
+	createFileDefinitions(directory);
 
 	if ($type < 2) {
 		createFileViews(directory);
@@ -103,11 +105,17 @@ function createFileIndex(directory) {
 	fs.writeFileSync(path.join(directory, 'test.js'), 'Ly8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09DQovLyBJTVBPUlRBTlQ6IG9ubHkgZm9yIHRlc3RpbmcNCi8vIHRvdGFsLmpzIC0gd2ViIGFwcGxpY2F0aW9uIGZyYW1ld29yayBmb3Igbm9kZS5qcw0KLy8gaHR0cDovL3d3dy50b3RhbGpzLmNvbQ0KLy8gPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09DQoNCnZhciBvcHRpb25zID0ge307DQoNCi8vIG9wdGlvbnMudGVzdHMgPSBbJ2NvbnRyb2xsZXJzJywgJ21vZHVsZXMnXTsNCi8vIG9wdGlvbnMuaXAgPSAnMTI3LjAuMC4xJzsNCi8vIG9wdGlvbnMucG9ydCA9IHBhcnNlSW50KHByb2Nlc3MuYXJndlsyXSk7DQovLyBvcHRpb25zLmNvbmZpZyA9IHsgbmFtZTogJ3RvdGFsLmpzJyB9Ow0KLy8gb3B0aW9ucy5odHRwcyA9IHsga2V5OiBmcy5yZWFkRmlsZVN5bmMoJ2tleXMvYWdlbnQyLWtleS5wZW0nKSwgY2VydDogZnMucmVhZEZpbGVTeW5jKCdrZXlzL2FnZW50Mi1jZXJ0LnBlbScpfTsNCg0KLyoqDQogKiBSZWxlYXNlIG5vdGVzOg0KICovDQoNCnJlcXVpcmUoJ3RvdGFsLmpzJykuaHR0cCgndGVzdCcsIG9wdGlvbnMpOw0KLy8gcmVxdWlyZSgndG90YWwuanMnKS5odHRwcygndGVzdCcsIG9wdGlvbnMpOw==', 'base64');
 }
 
+function createFileDefinitions(directory) {
+	fs.writeFileSync(path.join(directory, 'definitions', 'modules.js'), 'LyoqDQogKiBFeHRlcm5hbCBtb2R1bGVzDQogKi8NCg0KLy8gUmVhbC10aW1lIHdlYiB0cmFja2luZw0KSU5TVEFMTCgnbW9kdWxlJywgJ2h0dHBzOi8vbW9kdWxlcy50b3RhbGpzLmNvbS93ZWJjb3VudGVyL3YxLjAwL3dlYmNvdW50ZXIuanMnLCB7IHVybDogJy93ZWJjb3VudGVyLycgfSk7DQoNCi8vIEEgc2ltcGxlIERET1MgcHJvdGVjdGlvbg0KSU5TVEFMTCgnbW9kdWxlJywgJ2h0dHBzOi8vbW9kdWxlcy50b3RhbGpzLmNvbS9kZG9zL3YxLjAwL2Rkb3MuanMnKTs=', 'base64');
+}
+
 function createFileConfig(directory) {
 	var buffer = [];
 
 	buffer.push("name                     : My web site");
+	buffer.push("version                  : 1.01");
 	buffer.push("author                   : Your company name");
+	buffer.push("secret                   : your-secret-key");
 	buffer.push("");
 	buffer.push("// Mail settings");
 	buffer.push("mail.smtp                : smtp.yourwebsite.com");
@@ -122,8 +130,6 @@ function createFileConfig(directory) {
 	buffer.push("default-ip               : 127.0.0.1");
 	buffer.push("default-port             : 8000");
 	buffer.push("");
-	buffer.push("secret                   : your-secret-key");
-	buffer.push("version                  : 1.01");
 
 	if ($type === 3) {
 		buffer.push('');
