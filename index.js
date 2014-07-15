@@ -3223,6 +3223,9 @@ Framework.prototype.initialize = function(http, debug, options) {
     self._configure();
     self._configure_versions();
 
+    if (self.config['disable-strict-server-certificate-validation'] === true)
+        process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+
     if (self.isTest)
         self._configure('config-test', false);
 
@@ -3245,9 +3248,6 @@ Framework.prototype.initialize = function(http, debug, options) {
             framework._upgrade(req, socket, head);
         });
     }
-
-    if (self.config['disable-strict-server-certificate-validation'] === true)
-        process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
     if (!port) {
         if (self.config['default-port'] === 'auto') {
