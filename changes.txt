@@ -36,6 +36,7 @@ IN DEVELOPMENT ======= 1.6.0
 - added: config['default-interval-clear-temporary'], default 3 (minutes)
 - added: config['default-interval-precompile-views'], default 61 (minutes)
 - added: config['default-interval-websocket-ping'], default 1 (minutes)
+- added: config['disable-strict-server-certificate-validation'], default true
 - added: create automatically a ping message for websocket clients
 - added: global INSTALL(type, name, declaration/url/function, [options], [callback]);
 - added: global UNINSTALL(type, name, [options]);
@@ -81,6 +82,7 @@ IN DEVELOPMENT ======= 1.6.0
 - fixed: Builders.validate()
 - fixed: framework.responseFile()
 - fixed: framework.onCompileStatic()
+- fixed: framework configuration
 
 - removed: (IMPORTANT) COMPONENTS()
 - removed: (IMPORTANT) prefixes + framework.onPrefix()

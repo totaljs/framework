@@ -160,6 +160,7 @@ function Framework() {
         'allow-compile-css': true,
         'allow-compress-html': true,
         'allow-performance': false,
+        'disable-strict-server-certificate-validation': true,
 
         // Used in framework._service()
         // in minutes
@@ -3245,6 +3246,9 @@ Framework.prototype.initialize = function(http, debug, options) {
         });
     }
 
+    if (self.config['disable-strict-server-certificate-validation'] === true)
+        process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+
     if (!port) {
         if (self.config['default-port'] === 'auto') {
             var envPort = parseInt(process.env.PORT || '');
@@ -4724,11 +4728,13 @@ Framework.prototype._configure = function(arr, rewrite) {
                 obj[name] = value.replace(/\s/g, '').split(',');
                 break;
 
-            case 'default-websocket-encodedecode':
             case 'allow-gzip':
             case 'allow-websocket':
-            case 'allow-compile-css':
             case 'allow-compile-js':
+            case 'allow-compile-css':
+            case 'allow-compress-html':
+            case 'allow-performance':
+            case 'disable-strict-server-certificate-validation':
                 obj[name] = value.toLowerCase() === 'true' || value === '1';
                 break;
 
