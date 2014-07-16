@@ -2005,9 +2005,10 @@ Framework.prototype.compileStatic = function(req, filename) {
 
     self._verify_directory('temp');
 
-    var fileCompiled = utils.combine(self.config['directory-temp'], req.uri.pathname.replace(/\//g, '-').substring(1));
-    fs.writeFileSync(fileCompiled, output);
+    var plus = self.id === null ? '' : 'instance-' + self.id + '-';
+    var fileCompiled = utils.combine(self.config['directory-temp'], plus + req.uri.pathname.replace(/\//g, '-').substring(1));
 
+    fs.writeFileSync(fileCompiled, output)
     return fileCompiled;
 };
 
@@ -2494,8 +2495,9 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
     }
 
     var Image = require('./image');
-    name = self.path.temp(key.replace(/\//g, '-'));
+    var plus = self.id === null ? '' : 'instance-' + self.id + '-';
 
+    name = self.path.temp(plus + key.replace(/\//g, '-'));
     self.temporary.processing[key] = true;
 
     // STREAM
@@ -2750,10 +2752,9 @@ Framework.prototype.responseRange = function(name, range, headers, req, res) {
     headers['Content-Range'] = 'bytes ' + beg + '-' + end + '/' + total;
 
     res.writeHead(206, headers);
-    var stream = fs.createReadStream(name, {
-        start: beg,
-        end: end
-    });
+
+    var stream = fs.createReadStream(name, { start: beg, end: end });
+
     stream.pipe(res);
 
     self.stats.response.streaming++;
