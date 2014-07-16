@@ -171,7 +171,7 @@ exports.validation = function(name, properties, fn) {
         var validator = schemaValidation[name];
         if (typeof(validator) === UNDEFINED)
             return Object.keys(schema[name]);
-        return schema || [];
+        return validator || [];
     }
 
     schemaValidation[name] = fn;
