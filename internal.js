@@ -797,7 +797,7 @@ function compile_jscss(css) {
                 break;
             }
 
-            if (tmp[i] === ';' || tmp[i] === '}' || tmp[i] === '\n') {
+            if (tmp[i] === ';' || tmp[i] === '!' || tmp[i] === '}' || tmp[i] === '\n') {
                 end = i;
                 break;
             }

@@ -84,6 +84,7 @@ IN DEVELOPMENT ======= 1.6.0
 - fixed: framework.responseFile()
 - fixed: framework.onCompileStatic()
 - fixed: framework configuration
+- fixed: JS CSS
 
 - removed: (IMPORTANT) COMPONENTS()
 - removed: (IMPORTANT) prefixes + framework.onPrefix()
