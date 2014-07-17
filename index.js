@@ -1272,6 +1272,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         return self;
     }
 
+    var plus = self.id === null ? '' : 'instance-' + self.id + '-';
+
     if (type === 'view') {
 
         var item = self.routes.views[name];
@@ -1279,7 +1281,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         if (typeof(item) === UNDEFINED) {
             item = {};
-            item.filename = self.path.temporary('installed-view-' + utils.GUID(10) + '.tmp');
+            item.filename = self.path.temporary('installed-' + plus + 'view-' + utils.GUID(10) + '.tmp');
             item.url = internal;
             item.count = 0;
             self.routes.views[name] = item;
@@ -1364,7 +1366,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
                 if (typeof(declaration) !== STRING)
                     declaration = declaration.toString();
 
-                var filename = directory + self.path.temporary('installed-' + type + '-' + utils.GUID(10) + '.js').substring(1);
+                var filename = directory + self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js').substring(1);
                 fs.writeFileSync(filename, declaration);
                 obj = require(filename);
 
@@ -1455,7 +1457,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
                 if (typeof(declaration) !== STRING)
                     declaration = declaration.toString();
 
-                var filename = directory + self.path.temporary('installed-' + type + '-' + utils.GUID(10) + '.js').substring(1);
+                var filename = directory + self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js').substring(1);
                 fs.writeFileSync(filename, declaration);
                 obj = require(filename);
 
