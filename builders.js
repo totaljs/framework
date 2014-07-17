@@ -111,6 +111,17 @@ exports.schema = function(name, obj, defaults, validator, properties) {
 };
 
 /**
+ * Remove schema
+ * @param {String} name
+ */
+exports.remove = function(name) {
+    delete schemaDefaults[name];
+    delete schemaValidator[name];
+    delete schemaValidation[name];
+    delete schema[name];
+};
+
+/**
  * Default handler
  * @callback SchemaDefaults
  * @param {String} name Property name.
@@ -242,7 +253,7 @@ exports.defaults = function(name) {
         var type = typeof(value);
 
         if (defaults) {
-            var def = defaults(property, true);
+            var def = defaults(property, true, name);
             if (typeof(def) !== UNDEFINED) {
                 item[property] = def;
                 continue;
@@ -372,7 +383,7 @@ exports.prepare = function(name, model) {
         return null;
 
     if (model === null || typeof(model) === UNDEFINED)
-        return exports.defaults(name);
+        return exports.defaults(name, false, name);
 
     var tmp;
     var item = utils.extend({}, obj, true);
@@ -386,7 +397,7 @@ exports.prepare = function(name, model) {
         var val = model[property];
 
         if (typeof(val) === UNDEFINED && defaults)
-            val = defaults(property, false);
+            val = defaults(property, false, name);
 
         if (typeof(val) === UNDEFINED)
             val = '';
@@ -443,11 +454,11 @@ exports.prepare = function(name, model) {
                 if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
                     tmp = null;
 
-                item[property] = tmp || (defaults ? isUndefined(defaults(property), null) : null);
+                item[property] = tmp || (defaults ? isUndefined(defaults(property, false, name), null) : null);
                 continue;
             }
 
-            item[property] = defaults ? isUndefined(defaults(value), null) : null;
+            item[property] = defaults ? isUndefined(defaults(value, false, name), null) : null;
             continue;
         }
 
@@ -486,7 +497,7 @@ exports.prepare = function(name, model) {
                 value = null;
 
             if (!(val instanceof Array)) {
-                item[property] = (defaults ? isUndefined(defaults(property, false), []) : []);
+                item[property] = (defaults ? isUndefined(defaults(property, false, name), []) : []);
                 continue;
             }
 
@@ -575,7 +586,7 @@ exports.prepare = function(name, model) {
                 continue;
             }
 
-            item[property] = isUndefined(defaults(property));
+            item[property] = isUndefined(defaults(property, false, name));
             continue;
         }
 

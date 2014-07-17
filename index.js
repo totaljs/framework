@@ -1564,6 +1564,12 @@ Framework.prototype.uninstall = function(type, name, options) {
     var self = this;
     var obj = null;
 
+    if (type === 'schema') {
+        Builders.remove(name);
+        self.emit('uninstall', type, name);
+        return self;
+    }
+
     if (type === 'middleware') {
 
         if (!self.routes.middleware[name])
