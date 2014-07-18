@@ -832,7 +832,7 @@ function compile_jscss(css) {
 function autoprefixer(value) {
 
     // 'box-shadow', 'border-radius'
-    var prefix = ['appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-origin', 'transition', 'user-select', 'animation', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing'];
+    var prefix = ['appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-origin', 'transition', 'user-select', 'animation', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust'];
 
     value = autoprefixer_keyframes(value);
 
@@ -864,7 +864,10 @@ function autoprefixer(value) {
                 continue;
 
             // text-transform
-            if (property === 'transform' && value.substring(index - 1, index) === '-')
+            var isPrefix = value.substring(index - 1, index) === '-';
+            // if (property === 'transform' && isPrefix)
+
+            if (isPrefix)
                 continue;
 
             var css = value.substring(index, end);

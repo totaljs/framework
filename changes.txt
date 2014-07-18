@@ -85,6 +85,7 @@ IN DEVELOPMENT ======= 1.6.0
 - fixed: framework.onCompileStatic()
 - fixed: framework configuration
 - fixed: JS CSS
+- fixed: Auto vendor prefixer (CSS)
 
 - removed: (IMPORTANT) COMPONENTS()
 - removed: (IMPORTANT) prefixes + framework.onPrefix()
