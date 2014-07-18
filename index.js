@@ -8549,26 +8549,46 @@ Controller.prototype.$options = function(arr, selected, name, value) {
     return options;
 };
 
-/*
-    Append <script> TAG
-    @name {String} :: filename
-    return {String}
-*/
-Controller.prototype.$script = function(name) {
-    return this.routeJS(name, true);
+/**
+ * Append <script> TAG
+ * @internal
+ * @return {String}
+ */
+Controller.prototype.$script = function() {
+    var self = this;
+    return self.$js.apply(self, arguments);
 };
 
-Controller.prototype.$js = function(name) {
-    return this.routeJS(name, true);
+/**
+ * Append <script> TAG
+ * @internal
+ * @return {String}
+ */
+Controller.prototype.$js = function() {
+
+    var self = this;
+    var builder = '';
+
+    for (var i = 0; i < arguments.length; i++)
+        builder += self.routeJS(arguments[i], true);
+
+    return builder;
 };
 
-/*
-    Appedn style <link> TAG
-    @name {String} :: filename
-    return {String}
-*/
-Controller.prototype.$css = function(name) {
-    return this.routeCSS(name, true);
+/**
+ * Append <link> TAG
+ * @internal
+ * @return {String}
+ */
+Controller.prototype.$css = function() {
+
+    var self = this;
+    var builder = '';
+
+    for (var i = 0; i < arguments.length; i++)
+        builder += self.routeCSS(arguments[i], true);
+
+    return builder;
 };
 
 /*
@@ -8612,14 +8632,15 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
     return builder + ' border="0" />';
 };
 
-/*
-    Append <a> TAG
-    @filename {String}
-    @innerHTML {String}
-    @downloadName {String}
-    @className {String} :: optional
-    return {String}
-*/
+/**
+ * Creates URL of static routing: DOWNLOAD (<a href="..." download="...")
+ * @internal
+ * @param {String} filename
+ * @param {String} innerHTML
+ * @param {String} downloadName Optional.
+ * @param {String} className Optional.
+ * @return {String}
+ */
 Controller.prototype.$download = function(filename, innerHTML, downloadName, className) {
     var builder = '<a href="' + framework.routeDownload(filename) + ATTR_END;
 
@@ -8632,27 +8653,36 @@ Controller.prototype.$download = function(filename, innerHTML, downloadName, cla
     return builder + '>' + (innerHTML || filename) + '</a>';
 };
 
-Controller.prototype.$json = function(obj, name, beautify) {
+/**
+ * Serialize object into the JSON
+ * @internal
+ * @param {Object} obj
+ * @param {String} id Optional.
+ * @param {Boolean} beautify Optional.
+ * @return {String}
+ */
+Controller.prototype.$json = function(obj, id, beautify) {
 
-    if (typeof(name) === BOOLEAN) {
-        var tmp = name;
-        name = beautify;
-        beautify = name;
+    if (typeof(id) === BOOLEAN) {
+        var tmp = id;
+        id = beautify;
+        beautify = id;
     }
 
     var value = beautify ? JSON.stringify(obj, null, 4) : JSON.stringify(obj);
 
-    if (!name)
+    if (!id)
         return value;
 
-    return '<script type="application/json" id="' + name + '">' + value + '</script>';
+    return '<script type="application/json" id="' + id + '">' + value + '</script>';
 };
 
-/*
-    Append favicon TAG
-    @name {String} :: filename
-    return {String}
-*/
+/**
+ * Append FAVICON tag
+ * @internal
+ * @param {String} name
+ * @return {String}
+ */
 Controller.prototype.$favicon = function(name) {
     var self = this;
     var contentType = 'image/x-icon';
@@ -8662,8 +8692,7 @@ Controller.prototype.$favicon = function(name) {
 
     if (name.lastIndexOf('.png') !== -1)
         contentType = 'image/png';
-
-    if (name.lastIndexOf('.gif') !== -1)
+    else if (name.lastIndexOf('.gif') !== -1)
         contentType = 'image/gif';
 
     name = framework.routeStatic('/' + name);
@@ -8687,12 +8716,12 @@ Controller.prototype._routeHelper = function(current, name, fn) {
     return fn.call(framework, utils.path(current) + name);
 };
 
-/*
-    Static file routing
-    @name {String} :: filename
-    @tag {Boolean} :: optional, append tag? default: false
-    return {String}
-*/
+/**
+ * Creates URL of static routing: JavaScript
+ * @param {String} name
+ * @param {Boolean} tag Append tag?
+ * @return {String}
+ */
 Controller.prototype.routeJS = function(name, tag) {
     var self = this;
 
@@ -8703,12 +8732,12 @@ Controller.prototype.routeJS = function(name, tag) {
     return tag ? '<script type="text/javascript" src="' + url + '"></script>' : url;
 };
 
-/*
-    Static file routing
-    @name {String} :: filename
-    @tag {Boolean} :: optional, append tag? default: false
-    return {String}
-*/
+/**
+ * Creates URL of static routing: CSS
+ * @param {String} name
+ * @param {Boolean} tag Append tag?
+ * @return {String}
+ */
 Controller.prototype.routeCSS = function(name, tag) {
     var self = this;
 
@@ -8719,41 +8748,41 @@ Controller.prototype.routeCSS = function(name, tag) {
     return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
 
-/*
-    Static file routing
-    @name {String} :: filename
-    return {String}
-*/
+/**
+ * Creates URL of static routing: IMG
+ * @param {String} name
+ * @return {String}
+ */
 Controller.prototype.routeImage = function(name) {
     var self = this;
     return self._routeHelper(self._currentImage, name, framework.routeImage);
 };
 
-/*
-    Static file routing
-    @name {String} :: filename
-    return {String}
-*/
+/**
+ * Creates URL of static routing: VIDEO
+ * @param {String} name
+ * @return {String}
+ */
 Controller.prototype.routeVideo = function(name) {
     var self = this;
     return self._routeHelper(self._currentVideo, name, framework.routeVideo);
 };
 
-/*
-    Static file routing
-    @name {String} :: filename
-    return {String}
-*/
+/**
+ * Creates URL of static routing: FONT
+ * @param {String} name
+ * @return {String}
+ */
 Controller.prototype.routeFont = function(name) {
     var self = this;
     return framework.routeFont(name);
 };
 
-/*
-    Static file routing
-    @name {String} :: filename
-    return {String}
-*/
+/**
+ * Creates URL of static routing: DOWNLOAD
+ * @param {String} name
+ * @return {String}
+ */
 Controller.prototype.routeDownload = function(name) {
     var self = this;
     return self._routeHelper(self._currentDownload, name, framework.routeDownload);
