@@ -11329,8 +11329,9 @@ process.on('uncaughtException', function(e) {
 
     if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
         if (typeof(process.send) === TYPE_FUNCTION)
-            process.send('stop');
-        process.exit(0);
+            process.send('eaddrinuse');
+        console.log('\nIP address and PORT is already in use.\nYou must change the PORT\'s number or IP address.\n');
+        process.exit(1);
         return;
     }
 

@@ -151,17 +151,20 @@ function app() {
         app = fork(path.join(directory, 'debug.js'), arr);
 
         app.on('message', function(msg) {
+
             if (msg.substring(0, 5) === 'name:') {
                 process.title = 'debug: ' + msg.substring(6);
                 return;
             }
+
+            if (msg === 'eaddrinuse')
+                process.exit(1);
+
         });
 
         app.on('exit', function() {
-
             if (status !== 255)
                 return;
-
             app = null;
         });
 
