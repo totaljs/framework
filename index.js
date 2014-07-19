@@ -6845,15 +6845,21 @@ Controller.prototype.hash = function() {
 };
 
 /**
- * Compare DateTime with current Date
+ * Compare DateTime
  * @param {String} type Compare type ('<', '>', '=', '>=', '<=')
- * @param {String or Date} value String (yyyy-MM-dd [HH:mm:ss])
+ * @param {String or Date} d1 String (yyyy-MM-dd [HH:mm:ss]), (optional) - default current date
+ * @param {String or Date} d2 String (yyyy-MM-dd [HH:mm:ss])
  * @return {Boolean}
  */
-Controller.prototype.date = function(type, value) {
+Controller.prototype.date = function(type, d1, d2) {
 
-    var beg = new Date();
-    var end = typeof(value) === STRING ? value.parseDate() : value;
+    if (typeof(d2) === UNDEFINED) {
+        d2 = d1;
+        d1 = new Date();
+    }
+
+    var beg = typeof(d1) === STRING ? d1.parseDate() : d1;
+    var end = typeof(d2) === STRING ? d2.parseDate() : d2;
     var r = beg.compare(end);
 
     switch (type) {
@@ -10127,6 +10133,42 @@ WebSocket.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
         enumberable: false
     }
 });
+
+/**
+ * Compare Date/Time
+ * @param {String} type Compare type ('<', '>', '=', '>=', '<=')
+ * @param {String or Date} d1 String (yyyy-MM-dd [HH:mm:ss]), (optional) - default current date
+ * @param {String or Date} d2 String (yyyy-MM-dd [HH:mm:ss])
+ * @return {Boolean}
+ */
+WebSocket.prototype.date = function(type, d1, d2) {
+
+    if (typeof(d2) === UNDEFINED) {
+        d2 = d1;
+        d1 = new Date();
+    }
+
+    var beg = typeof(d1) === STRING ? d1.parseDate() : d1;
+    var end = typeof(d2) === STRING ? d2.parseDate() : d2;
+    var r = beg.compare(end);
+
+    switch (type) {
+        case '>':
+            return r === 1;
+        case '>=':
+        case '=>':
+            return r === 1 || r === 0;
+        case '<':
+            return r === -1;
+        case '<=':
+        case '=<':
+            return r === -1 || r === 0;
+        case '=':
+            return r === 0;
+    }
+
+    return true;
+};
 
 /**
  * Send a message
