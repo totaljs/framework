@@ -12,6 +12,7 @@ var utils = require('./utils');
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
 var FUNCTION = 'function';
+var OBJECT = 'object';
 
 var REG_1 = /[\n\r\t]+/g;
 var REG_2 = /\s{2,}/g;
@@ -1300,8 +1301,11 @@ function JavaScript(source) {
 }
 
 exports.compile_javascript = function(source) {
+
+    var isFramework = (typeof(framework) === OBJECT);
+
     try {
-        if (framework) {
+        if (isFramework) {
             if (framework.onCompileJS !== null)
                 return framework.onCompileJS('', source);
         }
@@ -1309,7 +1313,7 @@ exports.compile_javascript = function(source) {
         return JavaScript(source);
     } catch (ex) {
 
-        if (framework)
+        if (isFramework)
             framework.error(ex, 'JavaScript compressor');
 
         return source;

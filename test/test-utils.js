@@ -24,11 +24,13 @@ function prototypeDate() {
 	assert.ok('Sat Jan 02 2010 00:00:00 GMT+0100 (CET)' === dt.toString(), 'date parsing 2');
 
 	dt = '2100-01-01'.parseDate();
-
 	assert.ok(dt.compare(new Date()) === 1, 'date compare (earlier)');
 	assert.ok(dt.compare('2101-01-01'.parseDate()) === -1, 'date compare (later)');
 	assert.ok(dt.compare(dt) === 0, 'date compare (same)');
 	assert.ok(Date.compare(dt, dt) === 0, 'date compare (same, static)');
+
+	dt = '12:00:00'.parseDate();
+	assert.ok(dt.compare(dt) === 0, 'time compare (same)');
 }
 
 // test: number prototype

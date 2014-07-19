@@ -1664,10 +1664,18 @@ String.prototype.parseDate = function() {
     var self = this;
     var arr = self.split(' ');
 
+    if (arr[0].indexOf(':') !== -1) {
+        var tmp = arr[1];
+        arr[1] = arr[0];
+        arr[0] = tmp;
+    }
+
     var date = (arr[0] || '').split('-');
     var time = (arr[1] || '').split(':');
-
     var parsed = [];
+
+    if (date.length < 3 && time.length < 2)
+        return null;
 
     parsed.push(parseInt(date[0], 10)); // year
     parsed.push(parseInt(date[1], 10)); // month
@@ -1676,9 +1684,30 @@ String.prototype.parseDate = function() {
     parsed.push(parseInt(time[1], 10)); // minutes
     parsed.push(parseInt(time[2], 10)); // seconds
 
+    var def = new Date();
+
     for (var i = 0, length = parsed.length; i < length; i++) {
         if (isNaN(parsed[i]))
             parsed[i] = 0;
+
+        var value = parsed[i];
+        if (value !== 0)
+            continue;
+
+        switch (i) {
+            case 0:
+                if (value <= 0)
+                    parsed[i] = def.getFullYear();
+                break;
+            case 1:
+                if (value <= 0)
+                    parsed[i] = def.getMonth() + 1;
+                break;
+            case 2:
+                if (value <= 0)
+                    parsed[i] = def.getDate();
+                break;
+        }
     }
 
     return new Date(parsed[0], parsed[1] - 1, parsed[2], parsed[3], parsed[4], parsed[5]);
