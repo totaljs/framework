@@ -53,7 +53,9 @@ global.MODULE = function(name) {
 };
 
 global.DATABASE = function() {
-    return framework.database.apply(framework, arguments);
+    if (typeof(framework.database) === FUNCTION)
+        return framework.database.apply(framework, arguments);
+    return framework.database;
 };
 
 global.CONFIG = function(name) {
@@ -9058,6 +9060,25 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 };
 
 /**
+ * Create View or JSON callback
+ * @param {String} viewName Optional, if is undefined or null then returns JSON.
+ * @return {Function}
+ */
+Controller.prototype.callback = function(viewName) {
+    var self = this;
+    return function(err, data) {
+
+        if (err)
+            return self.throw500(err);
+
+        if (typeof(viewName) === STRING)
+            return self.view(viewName, data);
+
+        self.json(data);
+    };
+};
+
+/**
  * Set custom response
  * @return {Controller}
  */
@@ -9792,7 +9813,9 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
     return {NoSQL};
 */
 Controller.prototype.database = function() {
-    return framework.database.apply(framework, arguments);
+    if (typeof(framework.database) === FUNCTION)
+        return framework.database.apply(framework, arguments);
+    return framework.database;
 };
 
 /*
@@ -10529,7 +10552,9 @@ WebSocket.prototype.functions = function(name) {
     return {Database};
 */
 WebSocket.prototype.database = function() {
-    return framework.database.apply(framework, arguments);
+    if (typeof(framework.database) === FUNCTION)
+        return framework.database.apply(framework, arguments);
+    return framework.database;
 };
 
 /*

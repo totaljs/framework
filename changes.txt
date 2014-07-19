@@ -58,6 +58,7 @@ IN DEVELOPMENT ======= 1.6.0
 - added: Date.compare(date) - for instance of date;
 - added: Date.compare(d1, d2);
 - added: Controller.date(type, date)
+- added: Controller.callback([viewName])
 
 - updated: NoSQL v2.0.8
 - updated: String.parseDate('yyyy-MM-dd HH:mm:ss') - time is optional
