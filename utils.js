@@ -1488,6 +1488,42 @@ Date.prototype.add = function(type, value) {
     return dt;
 };
 
+/**
+ * Compare dates
+ * @param {Date} date
+ * @return {Number} Results: -1 = current date is earlier than @date, 0 = current date is same as @date, 1 = current date is later than @date
+ */
+Date.prototype.compare = function(date) {
+
+    var self = this;
+    var r = self.getTime() - date.getTime();
+
+    if (r === 0)
+        return 0;
+
+    if (r < 0)
+        return -1;
+
+    return 1;
+};
+
+/**
+ * Compare two dates
+ * @param {String or Date} d1
+ * @param {String or Date} d2
+ * @return {Number} Results: -1 = @d1 is earlier than @d2, 0 = @d1 is same as @d2, 1 = @d1 is later than @d2
+ */
+Date.compare = function(d1, d2) {
+
+    if (typeof(d1) === STRING)
+        d1 = d1.parseDate();
+
+    if (typeof(d2) === STRING)
+        d2 = d2.parseDate();
+
+    return d1.compare(d2);
+};
+
 /*
     Format date to string
     @format {String}
@@ -1626,7 +1662,26 @@ String.prototype.count = function(text) {
  */
 String.prototype.parseDate = function() {
     var self = this;
-    return new Date(self);
+    var arr = self.split(' ');
+
+    var date = (arr[0] || '').split('-');
+    var time = (arr[1] || '').split(':');
+
+    var parsed = [];
+
+    parsed.push(parseInt(date[0], 10)); // year
+    parsed.push(parseInt(date[1], 10)); // month
+    parsed.push(parseInt(date[2], 10)); // day
+    parsed.push(parseInt(time[0], 10)); // hours
+    parsed.push(parseInt(time[1], 10)); // minutes
+    parsed.push(parseInt(time[2], 10)); // seconds
+
+    for (var i = 0, length = parsed.length; i < length; i++) {
+        if (isNaN(parsed[i]))
+            parsed[i] = 0;
+    }
+
+    return new Date(parsed[0], parsed[1] - 1, parsed[2], parsed[3], parsed[4], parsed[5]);
 };
 
 /**

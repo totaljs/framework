@@ -6845,6 +6845,37 @@ Controller.prototype.hash = function() {
 };
 
 /**
+ * Compare DateTime with current Date
+ * @param {String} type Compare type ('<', '>', '=', '>=', '<=')
+ * @param {String or Date} value String (yyyy-MM-dd [HH:mm:ss])
+ * @return {Boolean}
+ */
+Controller.prototype.date = function(type, value) {
+
+    var beg = new Date();
+    var end = typeof(value) === STRING ? value.parseDate() : value;
+    var r = beg.compare(end);
+
+    switch (type) {
+        case '>':
+            return r === 1;
+        case '>=':
+        case '=>':
+            return r === 1 || r === 0;
+        case '<':
+            return r === -1;
+        case '<=':
+        case '=<':
+            return r === -1 || r === 0;
+        case '=':
+            return r === 0;
+    }
+
+    return true;
+
+};
+
+/**
  * Validate a model
  * @param {Object} model Model to validate.
  * @param {String Array} properties
@@ -9826,7 +9857,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     var helpers = framework.helpers;
 
     try {
-        value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, sitemap, isPartial ? self.outputPartial : self.output);
+        value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, sitemap, isPartial ? self.outputPartial : self.output, self.date);
     } catch (ex) {
 
         var err = new Error('View: ' + name + ' - ' + ex.toString());

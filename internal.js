@@ -1845,7 +1845,7 @@ function view_parse(content, minify) {
             builder += '+' + escaper(text);
     }
 
-    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output){' + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output,date){' + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
     return eval(fn);
 }
 

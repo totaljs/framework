@@ -55,8 +55,12 @@ IN DEVELOPMENT ======= 1.6.0
 - added: framework.fs.create.database()
 - added: framework.fs.rm.database()
 - added: controller.isTransfer
+- added: Date.compare(date) - for instance of date;
+- added: Date.compare(d1, d2);
+- added: Controller.date(type, date)
 
 - updated: NoSQL v2.0.8
+- updated: String.parseDate('yyyy-MM-dd HH:mm:ss') - time is optional
 - updated: module: exports.install = function(framework, options) {};
 - updated: (IMPORTANT) INCLUDE(name, [options]), SOURCE(name, [options]) –> object
 - updated: (IMPORTANT) SOURCE(name, [options]), framework.source(name, [options]) –> object
