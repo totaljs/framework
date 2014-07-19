@@ -15,7 +15,7 @@ var FUNCTION = 'function';
 var OBJECT = 'object';
 
 var REG_1 = /[\n\r\t]+/g;
-var REG_2 = /\s{2,}/g;
+var REG_2 = /\s{3,}/g;
 
 var HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
 

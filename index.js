@@ -53,9 +53,9 @@ global.MODULE = function(name) {
 };
 
 global.DATABASE = function() {
-    if (typeof(framework.database) === FUNCTION)
-        return framework.database.apply(framework, arguments);
-    return framework.database;
+    if (typeof(framework.database) === OBJECT)
+        return framework.database;
+    return framework.database.apply(framework, arguments);
 };
 
 global.CONFIG = function(name) {
@@ -9813,9 +9813,9 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
     return {NoSQL};
 */
 Controller.prototype.database = function() {
-    if (typeof(framework.database) === FUNCTION)
-        return framework.database.apply(framework, arguments);
-    return framework.database;
+    if (typeof(framework.database) === OBJECT)
+        return framework.database;
+    return framework.database.apply(framework, arguments);
 };
 
 /*
@@ -10552,9 +10552,9 @@ WebSocket.prototype.functions = function(name) {
     return {Database};
 */
 WebSocket.prototype.database = function() {
-    if (typeof(framework.database) === FUNCTION)
-        return framework.database.apply(framework, arguments);
-    return framework.database;
+    if (typeof(framework.database) === OBJECT)
+        return framework.database;
+    return framework.database.apply(framework, arguments);
 };
 
 /*
