@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.6.0
+======= 1.6.0
 
 - added: framework.http(mode, [options]) - mode: test, debug or development, release or production
 - added: framework.https(mode, [options]) - I recommend to use NGINX as HTTPS proxy
