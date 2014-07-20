@@ -162,7 +162,7 @@ function Framework() {
         'allow-compile-css': true,
         'allow-compress-html': true,
         'allow-performance': false,
-        'disable-strict-server-certificate-validation': true,
+        // 'disable-strict-server-certificate-validation': true,
 
         // Used in framework._service()
         // in minutes
@@ -3253,9 +3253,10 @@ Framework.prototype.initialize = function(http, debug, options) {
     self._configure();
     self._configure_versions();
 
+/*
     if (self.config['disable-strict-server-certificate-validation'] === true)
         process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
-
+*/
     if (self.isTest)
         self._configure('config-test', false);
 
@@ -4764,7 +4765,7 @@ Framework.prototype._configure = function(arr, rewrite) {
             case 'allow-compile-css':
             case 'allow-compress-html':
             case 'allow-performance':
-            case 'disable-strict-server-certificate-validation':
+            // case 'disable-strict-server-certificate-validation':
                 obj[name] = value.toLowerCase() === 'true' || value === '1';
                 break;
 
