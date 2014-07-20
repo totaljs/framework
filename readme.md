@@ -1,11 +1,5 @@
 ---
 
-## IMPORTANT NOTE:
-
-I prepared all examples to a new version. Please wait or download a new version from GitHub. This week it will be. Thanks!
-
----
-
 [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
 ![total.js logo](http://www.totaljs.com/download/logo-black.png)
@@ -134,7 +128,6 @@ Videos on YouTube
 
 ***
 
-* Supports components - [example: workers](https://github.com/totaljs/examples/tree/master/components)
 * Supports models - [example: models](https://github.com/totaljs/examples/tree/master/models)
 * Supports dynamic controllers - [example: models](https://github.com/totaljs/examples/tree/master/minimal)
 * Supports workers - [example: workers](https://github.com/totaljs/examples/tree/master/workers)
@@ -166,10 +159,6 @@ Videos on YouTube
 * Supports file upload - [example: file upload](https://github.com/totaljs/examples/tree/master/upload-multipart)
 * Supports copy&paste custom code between projects - [example: framework-custom](https://github.com/totaljs/examples/tree/master/framework-custom)
 * __Supports modules__ (module can create a route, view, template, resource, etc.) - [example: module](https://github.com/totaljs/examples/tree/master/framework-modules)
-* __Supports inject config from URL__ - [example: config inject](https://github.com/totaljs/examples/tree/master/framework-inject-config)
-* __Supports inject module from URL__ - [example: module inject](https://github.com/totaljs/examples/tree/master/framework-inject-module)
-* __Supports inject controller from URL__ - [example: controller inject](https://github.com/totaljs/examples/tree/master/framework-inject-controller)
-* __Supports inject definition from URL__ - [example: definition inject](https://github.com/totaljs/examples/tree/master/framework-inject-definition)
 * Supports form data validation - [example: validation](https://github.com/totaljs/examples/tree/master/validation)
 * Supports simple log writer - [example: logs](https://github.com/totaljs/examples/tree/master/logs)
 * Supports simple restrictions - [example: restriction](https://github.com/totaljs/examples/tree/master/restrictions-ip)
@@ -185,7 +174,7 @@ Videos on YouTube
 * Supports simple mail templating - [example: mail templating](https://github.com/totaljs/examples/tree/master/email-templating)
 * Supports custom authorization - [example: authorization](https://github.com/totaljs/examples/tree/master/authorization)
 * Supports basic access authentication - [example: basic access authentication](https://github.com/totaljs/examples/tree/master/authorization-www-basic)
-* Supports simple image processing (resize, grayscale, etc.) via GraphicsMagick/ImageMagick - [example: image-resize](https://github.com/totaljs/examples/tree/master/image-resize)
+* Supports image processing (resize, grayscale, etc.) via GraphicsMagick/ImageMagick - [example: image-resize](https://github.com/totaljs/examples/tree/master/image-resize)
 * Easy adding dynamic META tags in views or controllers - [example: meta tags](https://github.com/totaljs/examples/tree/master/views-meta)
 * Easy adding dynamic Settings in views or controllers - [example: view settings](https://github.com/totaljs/examples/tree/master/views-settings)
 * Simple use paypal payment with [example: node-paypal project](https://github.com/petersirka/node-paypal) - [example: paypal](https://github.com/totaljs/examples/tree/master/paypal)
@@ -214,7 +203,6 @@ $ total
 ```
 ```
 $ node debug.js
-
 ```
 ```
 $ open http://127.0.0.1:8000
