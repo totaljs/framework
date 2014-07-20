@@ -92,6 +92,7 @@ IN DEVELOPMENT ======= 1.6.0
 - fixed: framework configuration
 - fixed: JS CSS
 - fixed: Auto vendor prefixer (CSS)
+- fixed: Image.command()
 
 - removed: (IMPORTANT) COMPONENTS()
 - removed: (IMPORTANT) prefixes + framework.onPrefix()

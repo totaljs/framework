@@ -582,7 +582,7 @@ Image.prototype.sepia = function(percentage) {
 	@priority {Number}
 */
 Image.prototype.command = function(key, value, priority) {
-    return this.push(cmd, null, priority || 10);
+    return this.push(key, value, priority || 10);
 };
 
 exports.Image = Image;
