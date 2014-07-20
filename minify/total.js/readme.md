@@ -1,11 +1,3 @@
----
-
-## IMPORTANT NOTE:
-
-I prepared all examples to a new version. Please wait or download a new version from GitHub. This week it will be. Thanks!
-
----
-
 [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
 ![total.js logo](http://www.totaljs.com/download/logo-black.png)
@@ -15,13 +7,13 @@ web framework for node.js
 
 __total.js__ is web application framework for creating a rich web sites and web services. The framework has good documentation and contains many examples. Please support the framework on GitHub and other social networks.
 
-> Current version (1.5.3) is __stable version__.
+> Current version (1.6.0) is __stable version__.
 
 ```
 $ npm install total.js
 ```
 
-- [__NEWS__](http://www.totaljs.com/news/)
+- READ: [__NEWS__](http://www.totaljs.com/news/)
 - [total.js homepage - www.totaljs.com](http://www.totaljs.com)
 - [__Documentation__](http://docs.totaljs.com)
 - [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
@@ -43,11 +35,11 @@ __TOTALSTACK__:
 ![TOTALSTACK logo](http://www.totaljs.com/img/totalstack.png)
 
 - [Download angular.js empty project](https://github.com/totaljs/framework/releases)
-- __NEW__ [Example: total.js / Angular.js](https://github.com/totaljs/examples/tree/master/angularjs)
-- __NEW__ [Example: total.js / Angular.js + Websocket](https://github.com/totaljs/examples/tree/master/angularjs-websocket)
-- __NEW__ [Example: total.js / Angular.js Routing](https://github.com/totaljs/examples/tree/master/angularjs-routing)
-- __NEW__ [Example: total.js / Angular.js Resources + REST + MongoDB](https://github.com/totaljs/examples/tree/master/angularjs-mongodb-rest-resources)
-- __NEW__ [Example: total.js / Angular.js with Bootstrap](https://github.com/totaljs/examples/tree/master/angularjs-bootstrap)
+- [Example: total.js / Angular.js](https://github.com/totaljs/examples/tree/master/angularjs)
+- [Example: total.js / Angular.js + Websocket](https://github.com/totaljs/examples/tree/master/angularjs-websocket)
+- [Example: total.js / Angular.js Routing](https://github.com/totaljs/examples/tree/master/angularjs-routing)
+- [Example: total.js / Angular.js Resources + REST + MongoDB](https://github.com/totaljs/examples/tree/master/angularjs-mongodb-rest-resources)
+- [Example: total.js / Angular.js with Bootstrap](https://github.com/totaljs/examples/tree/master/angularjs-bootstrap)
 
 __Interesting__:
 
@@ -134,7 +126,6 @@ Videos on YouTube
 
 ***
 
-* Supports components - [example: workers](https://github.com/totaljs/examples/tree/master/components)
 * Supports models - [example: models](https://github.com/totaljs/examples/tree/master/models)
 * Supports dynamic controllers - [example: models](https://github.com/totaljs/examples/tree/master/minimal)
 * Supports workers - [example: workers](https://github.com/totaljs/examples/tree/master/workers)
@@ -166,10 +157,6 @@ Videos on YouTube
 * Supports file upload - [example: file upload](https://github.com/totaljs/examples/tree/master/upload-multipart)
 * Supports copy&paste custom code between projects - [example: framework-custom](https://github.com/totaljs/examples/tree/master/framework-custom)
 * __Supports modules__ (module can create a route, view, template, resource, etc.) - [example: module](https://github.com/totaljs/examples/tree/master/framework-modules)
-* __Supports inject config from URL__ - [example: config inject](https://github.com/totaljs/examples/tree/master/framework-inject-config)
-* __Supports inject module from URL__ - [example: module inject](https://github.com/totaljs/examples/tree/master/framework-inject-module)
-* __Supports inject controller from URL__ - [example: controller inject](https://github.com/totaljs/examples/tree/master/framework-inject-controller)
-* __Supports inject definition from URL__ - [example: definition inject](https://github.com/totaljs/examples/tree/master/framework-inject-definition)
 * Supports form data validation - [example: validation](https://github.com/totaljs/examples/tree/master/validation)
 * Supports simple log writer - [example: logs](https://github.com/totaljs/examples/tree/master/logs)
 * Supports simple restrictions - [example: restriction](https://github.com/totaljs/examples/tree/master/restrictions-ip)
@@ -185,7 +172,7 @@ Videos on YouTube
 * Supports simple mail templating - [example: mail templating](https://github.com/totaljs/examples/tree/master/email-templating)
 * Supports custom authorization - [example: authorization](https://github.com/totaljs/examples/tree/master/authorization)
 * Supports basic access authentication - [example: basic access authentication](https://github.com/totaljs/examples/tree/master/authorization-www-basic)
-* Supports simple image processing (resize, grayscale, etc.) via GraphicsMagick/ImageMagick - [example: image-resize](https://github.com/totaljs/examples/tree/master/image-resize)
+* Supports image processing (resize, etc.) via GraphicsMagick/ImageMagick - [example: image-resize](https://github.com/totaljs/examples/tree/master/image-resize)
 * Easy adding dynamic META tags in views or controllers - [example: meta tags](https://github.com/totaljs/examples/tree/master/views-meta)
 * Easy adding dynamic Settings in views or controllers - [example: view settings](https://github.com/totaljs/examples/tree/master/views-settings)
 * Simple use paypal payment with [example: node-paypal project](https://github.com/petersirka/node-paypal) - [example: paypal](https://github.com/totaljs/examples/tree/master/paypal)
@@ -194,8 +181,9 @@ Videos on YouTube
 * Supports dynamic stop server - [example: stop server](https://github.com/totaljs/examples/tree/master/framework-stop)
 * About 9 000 lines of JavaScript code, all files have 270 kB
 * __NO DEPENDENCIES *** NO DEPENDENCIES *** NO DEPENDENCIES__
-* [More examples](https://github.com/totaljs/examples/tree/master/)
+* [Modules](https://github.com/totaljs/modules)
 * [Documentation](http://docs.totaljs.com/)
+* [More examples](https://github.com/totaljs/examples/tree/master/)
 * __Supports internal NoSQL embedded database__ - [example: authorization](https://github.com/totaljs/examples/tree/master/authorization) or [example: contact form](https://github.com/totaljs/examples/tree/master/contact-form)
 
 ***
@@ -214,7 +202,6 @@ $ total
 ```
 ```
 $ node debug.js
-
 ```
 ```
 $ open http://127.0.0.1:8000
