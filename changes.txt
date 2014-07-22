@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.6.1
+
+- fixed: controller.callback([view_name]), supports NoSQL Embeded Database
+
 ======= 1.6.0
 
 - added: framework.http(mode, [options]) - mode: test, debug or development, release or production

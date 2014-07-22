@@ -19,6 +19,7 @@ var internal = require('./internal');
 var http = require('http');
 var directory = process.cwd();
 var child = require('child_process');
+var util = require('util');
 
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
@@ -9067,6 +9068,12 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 Controller.prototype.callback = function(viewName) {
     var self = this;
     return function(err, data) {
+
+        // NoSQL embedded database
+        if (typeof(data) === UNDEFINED && !util.isError(err)) {
+            data = err;
+            err = null;
+        }
 
         if (err)
             return self.throw500(err);
