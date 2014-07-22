@@ -4278,7 +4278,7 @@ Framework.prototype.testing = function(stop, callback) {
         self.testing(stop, callback);
     });
 
-    if (test.data.length > 0)
+    if (test.data && test.data.length > 0)
         req.end(test.data, ENCODING);
     else
         req.end();
