@@ -3,6 +3,8 @@ cache:
   - npm
 node_js:
   - "0.10"
+install:
+  - npm install --dev
 script:
   - node test/test-builders.js
   - node test/test-javascript.js
