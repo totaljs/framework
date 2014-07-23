@@ -206,6 +206,7 @@ function app() {
 
         pidInterval = setInterval(function() {
             fs.exists(pid, function(exist) {
+
                 if (exist)
                     return;
 
@@ -224,7 +225,25 @@ function app() {
     refresh_directory();
 }
 
-if (isDebugging)
-    debug()
-else if (!fs.existsSync(path.join(directory, 'debug.pid')))
-    app();
+function run() {
+
+    if (isDebugging) {
+        debug();
+        return;
+    }
+
+    var filename = path.join(directory, 'debug.pid');
+
+    if (!fs.existsSync(filename)) {
+        app();
+        return;
+    }
+
+    fs.unlinkSync(filename);
+
+    setTimeout(function() {
+        app();
+    }, 3000);
+}
+
+run();
