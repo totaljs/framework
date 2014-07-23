@@ -1,0 +1,13 @@
+language: node_js
+cache:
+  - npm
+node_js:
+  - "0.10"
+script:
+  - node test/test-builders.js
+  - node test/test-javascript.js
+  - node test/test-jscss.js
+  - node test/test-tmp.js
+  - node test/test-utils.js
+  - node test/test-framework-debug.js
+  - node test/test-framework-release.js
