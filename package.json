@@ -1,60 +1,65 @@
 {
-  "name": "total.js",
-  "version": "1.6.0-1",
-  "description": "web framework (MVC) for node.js",
-  "main": "./index.js",
-  "keywords": [
-    "total",
-    "framework",
-    "web",
-    "websocket",
-    "mvc",
-    "controller",
-    "view",
-    "angular.js",
-    "upload",
-    "picture",
-    "graphicsmagick",
-    "imagemagick",
-    "eshop",
-    "blog",
-    "forum",
-    "chat",
-    "game",
-    "nosql",
-    "database",
-    "streaming",
-    "live",
-    "server sent events",
-    "sse",
-    "multipart",
-    "x-mixed-replace"
-  ],
-  "engines": {
-    "node": ">=0.8.0"
-  },
-  "readmeFilename": "readme.md",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/totaljs/framework.git"
-  },
-  "license": "MIT",
-  "author": {
-    "name": "Peter Širka"
-  },
-  "bin": {
-    "total": "./bin/total",
-    "total.js": "./bin/total",
-    "tpm": "./bin/tpm"
-  },
-  "_from": "total.js",
-  "directories": {
-    "test": "test"
-  },
-  "devDependencies": {
-    "memwatch": "^0.2.2"
-  }
+    "_from": "total.js",
+    "author": {
+        "name": "Peter \u0160irka"
+    },
+    "bin": {
+        "total": "./bin/total",
+        "total.js": "./bin/total",
+        "tpm": "./bin/tpm"
+    },
+    "contributors": [
+        "Peter \u0160irka <petersirka@gmail.com>",
+        "Toshiaki Takahashi <toshipon123@gmail.com>",
+        "Bir <https://github.com/bir>"
+    ],
+    "description": "web framework (MVC) for node.js",
+    "devDependencies": {
+        "memwatch": "^0.2.2"
+    },
+    "directories": {
+        "test": "test"
+    },
+    "engines": {
+        "node": ">=0.8.0"
+    },
+    "keywords": [
+        "total",
+        "framework",
+        "web",
+        "websocket",
+        "mvc",
+        "controller",
+        "view",
+        "angular.js",
+        "upload",
+        "picture",
+        "graphicsmagick",
+        "imagemagick",
+        "eshop",
+        "blog",
+        "forum",
+        "chat",
+        "game",
+        "nosql",
+        "database",
+        "streaming",
+        "live",
+        "server sent events",
+        "sse",
+        "multipart",
+        "x-mixed-replace"
+    ],
+    "license": "MIT",
+    "main": "./index.js",
+    "name": "total.js",
+    "readmeFilename": "readme.md",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/totaljs/framework.git"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "version": "1.6.0-1"
 }

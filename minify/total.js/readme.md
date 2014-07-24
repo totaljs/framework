@@ -1,3 +1,4 @@
+[![Build Status](https://secure.travis-ci.org/totaljs/framework.svg?branch=master)](http://travis-ci.org/totaljs/framework)
 [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
 ![total.js logo](http://www.totaljs.com/download/logo-black.png)
@@ -206,6 +207,12 @@ $ node debug.js
 ```
 $ open http://127.0.0.1:8000
 ```
+
+## Contributors
+
+Peter Širka - <https://github.com/petersirka>
+Toshiaki Takahashi - <https://github.com/toshipon>
+Bir - <https://github.com/bir>
 
 ## Contact
 

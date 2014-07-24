@@ -208,6 +208,12 @@ $ node debug.js
 $ open http://127.0.0.1:8000
 ```
 
+## Contributors
+
+Peter Širka - <https://github.com/petersirka>
+Toshiaki Takahashi - <https://github.com/toshipon>
+Bir - <https://github.com/bir>
+
 ## Contact
 
 Peter Sirka - <petersirka@gmail.com>
