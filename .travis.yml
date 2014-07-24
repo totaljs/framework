@@ -5,13 +5,6 @@ node_js:
   - "0.10"
 install:
   - npm install
-before_script:
-  - export TZ=CET-1CEST
 script:
-  - node test/test-builders.js
-  - node test/test-javascript.js
-  - node test/test-jscss.js
-  - node test/test-tmp.js
-  - node test/test-utils.js
-  - node test/test-framework-debug.js
-  - node test/test-framework-release.js
+  - cd test
+  - sh run.sh
