@@ -3689,7 +3689,12 @@ Framework.prototype._service = function(count) {
     // every 1 minute (default) is created a ping message
     if (count % framework.config['default-interval-websocket-ping'] === 0) {
         Object.keys(framework.connections).wait(function(item, next) {
-            framework.connections[item].ping();
+
+            var conn = framework.connections[item];
+
+            if (conn && typeof(conn.ping) === FUNCTION)
+                conn.ping();
+
             next();
         });
     }

@@ -1,5 +1,4 @@
-[![Build Status](https://secure.travis-ci.org/totaljs/framework.svg?branch=master)](http://travis-ci.org/totaljs/framework)
-[![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
+[![NPM version][npm-version-image]][npm-url] [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
 ![total.js logo](http://www.totaljs.com/download/logo-black.png)
 
@@ -7,8 +6,6 @@ web framework for node.js
 =========================
 
 __total.js__ is web application framework for creating a rich web sites and web services. The framework has good documentation and contains many examples. Please support the framework on GitHub and other social networks.
-
-> Current version (1.6.0) is __stable version__.
 
 ```
 $ npm install total.js
@@ -210,10 +207,20 @@ $ open http://127.0.0.1:8000
 
 ## Contributors
 
-Peter Širka - <https://github.com/petersirka>
-Toshiaki Takahashi - <https://github.com/toshipon>
-Bir - <https://github.com/bir>
+- Peter Širka, <https://github.com/petersirka>
+- Toshiaki Takahashi, <https://github.com/toshipon>
+- Bir, <https://github.com/bir>
 
 ## Contact
 
 Peter Sirka - <petersirka@gmail.com>
+
+[license-image]: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
+[license-url]: LICENSE
+
+[npm-url]: https://npmjs.org/package/total.js
+[npm-version-image]: http://img.shields.io/npm/v/total.js.svg?style=flat
+[npm-downloads-image]: http://img.shields.io/npm/dm/total.js.svg?style=flat
+
+[travis-url]: http://travis-ci.org/totaljs/framework
+[travis-image]: http://img.shields.io/travis/totaljs/framework.svg?style=flat
