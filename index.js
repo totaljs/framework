@@ -4368,10 +4368,10 @@ Framework.prototype.test = function(stop, names, cb) {
         framework.testsNO = 0;
 
     utils.ls(utils.combine(dir), function(files) {
-        files.forEach(function(path) {
+        files.forEach(function(filePath) {
 
-            var name = path.relative(utils.combine(dir), path);
-            var filename = path.join(directory, path);
+            var name = path.relative(utils.combine(dir), filePath);
+            var filename = path.join(directory, filePath);
             var ext = path.extname(filename).toLowerCase();
 
             if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)
