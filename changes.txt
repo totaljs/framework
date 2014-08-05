@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.6.1 (HOTFIX)
 
 - fixed: controller.callback([view_name]), supports NoSQL Embeded Database
 - fixed: WebSocket auto-ping
+- fixed: (debug mode) caching of static files
 
 ======= 1.6.0
 

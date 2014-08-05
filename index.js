@@ -2237,7 +2237,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
             }
 
             if (notfound) {
-                self.temporary.path[key] = null;
+
+                if (!self.config.debug)
+                    self.temporary.path[key] = null;
+
                 self.response404(req, res);
                 return self;
             }
