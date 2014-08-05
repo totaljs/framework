@@ -4367,114 +4367,117 @@ Framework.prototype.test = function(stop, names, cb) {
     if (!framework.testsNO)
         framework.testsNO = 0;
 
-    fs.readdirSync(utils.combine(dir)).forEach(function(name) {
+    utils.ls(utils.combine(dir), function(files) {
+        files.forEach(function(path) {
 
-        var filename = path.join(directory, dir, name);
-        var ext = path.extname(filename).toLowerCase();
+            var name = path.relative(utils.combine(dir), path);
+            var filename = path.join(directory, path);
+            var ext = path.extname(filename).toLowerCase();
 
-        if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)
-            return;
-
-        if (names.length > 0 && names.indexOf(name.substring(0, name.length - 3)) === -1)
-            return;
-
-        var test = require(filename);
-        var beg = new Date();
-
-        try {
-            var isRun = typeof(test.run) !== UNDEFINED;
-            var isInstall = typeof(test.isInstall) !== UNDEFINED;
-            var isInit = typeof(test.init) !== UNDEFINED;
-            var isLoad = typeof(test.load) !== UNDEFINED;
-
-            _test = name;
-
-            if (test.disabled === true)
+            if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)
                 return;
 
-            if (typeof(test.order) === UNDEFINED)
-                framework.testsPriority = typeof(test.priority) === UNDEFINED ? self.tests.length : test.priority;
-            else
-                framework.testsPriority = test.priority;
+            if (names.length > 0 && names.indexOf(name.substring(0, name.length - 3)) === -1)
+                return;
 
-            if (isRun)
-                test.run(self, name);
-            else if (isInstall)
-                test.install(self, name);
-            else if (isInit)
-                test.init(self, name);
-            else if (isLoad)
-                test.load(self, name);
+            var test = require(filename);
+            var beg = new Date();
 
-            if (test.usage) {
-                (function(test) {
-                    framework.testsResults.push(function() { test.usage(name); });
-                })(test);
+            try {
+                var isRun = typeof(test.run) !== UNDEFINED;
+                var isInstall = typeof(test.isInstall) !== UNDEFINED;
+                var isInit = typeof(test.init) !== UNDEFINED;
+                var isLoad = typeof(test.load) !== UNDEFINED;
+
+                _test = name;
+
+                if (test.disabled === true)
+                    return;
+
+                if (typeof(test.order) === UNDEFINED)
+                    framework.testsPriority = typeof(test.priority) === UNDEFINED ? self.tests.length : test.priority;
+                else
+                    framework.testsPriority = test.priority;
+
+                if (isRun)
+                    test.run(self, name);
+                else if (isInstall)
+                    test.install(self, name);
+                else if (isInit)
+                    test.init(self, name);
+                else if (isLoad)
+                    test.load(self, name);
+
+                if (test.usage) {
+                    (function(test) {
+                        framework.testsResults.push(function() { test.usage(name); });
+                    })(test);
+                }
+
+                counter++;
+
+            } catch (ex) {
+                logger('Failed', beg, ex);
             }
+        });
 
-            counter++;
+        _test = '';
 
-        } catch (ex) {
-            logger('Failed', beg, ex);
-        }
-    });
-
-    _test = '';
-
-    if (counter === 0) {
-
-        results();
-
-        if (cb)
-            cb();
-
-        if (!stop)
-            return self;
-
-        setTimeout(function() {
-            framework.stop(1);
-        }, 500);
-
-        return self;
-    }
-
-    self.tests.sort(function(a, b) {
-
-        if (a.priority > b.priority)
-            return 1;
-
-        if (a.priority < b.priority)
-            return -1;
-
-        if (a.index > b.index)
-            return 1;
-
-        if (a.index < b.index)
-            return -1;
-
-        return 0;
-    });
-
-    setTimeout(function() {
-        console.log('====== TESTING ======');
-        console.log('');
-
-        self.testing(stop, function() {
-
-            console.log('');
-            console.log('Passed ...', framework.testsOK);
-            console.log('Failed ...', framework.testsNO);
-            console.log('');
+        if (counter === 0) {
 
             results();
-            self.isTest = false;
-
-            console.log('');
 
             if (cb)
                 cb();
+
+            if (!stop)
+                return self;
+
+            setTimeout(function() {
+                framework.stop(1);
+            }, 500);
+
+            return self;
+        }
+
+        self.tests.sort(function(a, b) {
+
+            if (a.priority > b.priority)
+                return 1;
+
+            if (a.priority < b.priority)
+                return -1;
+
+            if (a.index > b.index)
+                return 1;
+
+            if (a.index < b.index)
+                return -1;
+
+            return 0;
         });
-    }, 100);
+
+        setTimeout(function() {
+            console.log('====== TESTING ======');
+            console.log('');
+
+            self.testing(stop, function() {
+
+                console.log('');
+                console.log('Passed ...', framework.testsOK);
+                console.log('Failed ...', framework.testsNO);
+                console.log('');
+
+                results();
+                self.isTest = false;
+
+                console.log('');
+
+                if (cb)
+                    cb();
+            });
+        }, 100);
+    });
 
     return self;
 };
