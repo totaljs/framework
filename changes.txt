@@ -2,9 +2,13 @@ IN DEVELOPMENT ======= 1.6.1 (HOTFIX)
 
 - added: transform-style, perspective, backface-visibility into the CSS auto-vendor-prefixes
 
+- updated: assertion testing (author: @toshipon)
+
 - fixed: controller.callback([view_name]), supports NoSQL Embeded Database
 - fixed: WebSocket auto-ping
 - fixed: (debug mode) caching of static files
+
+- improvements: framework (comparison of undefined)
 
 ======= 1.6.0
 

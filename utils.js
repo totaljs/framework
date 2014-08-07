@@ -693,7 +693,7 @@ exports.extend = function(target, source, rewrite) {
 
         var key = keys[i];
 
-        if (rewrite || typeof(target[key]) === UNDEFINED)
+        if (rewrite || target[key] === undefined)
             target[key] = source[key];
     }
 
@@ -708,7 +708,7 @@ exports.extend = function(target, source, rewrite) {
  */
 exports.copy = function(source, target) {
 
-    if (typeof(target) === UNDEFINED)
+    if (target === undefined)
         return exports.extend({}, source, true);
 
     if (target === null || source === null)
@@ -723,7 +723,7 @@ exports.copy = function(source, target) {
     while (i--) {
 
         var key = keys[i];
-        if (typeof(target[key]) === UNDEFINED)
+        if (target[key] === undefined)
             continue;
 
         target[key] = source[key];
@@ -772,7 +772,7 @@ exports.reduce = function(source, prop) {
  */
 exports.assign = function(obj, path, fn) {
 
-    if (obj === null || typeof(obj) === UNDEFINED)
+    if (obj === null || obj === undefined)
         return obj;
 
     var arr = path.split('.');
@@ -801,10 +801,10 @@ exports.isRelative = function(url) {
  */
 exports.encode = function(str) {
 
-    var type = typeof(str);
-
-    if (type === UNDEFINED)
+    if (str === undefined)
         return '';
+
+    var type = typeof(str);
 
     if (type !== STRING)
         str = str.toString();
@@ -819,10 +819,10 @@ exports.encode = function(str) {
  */
 exports.decode = function(str) {
 
-    var type = typeof(str);
-
-    if (type === UNDEFINED)
+    if (str === undefined)
         return '';
+
+    var type = typeof(str);
 
     if (type !== STRING)
         str = str.toString();
@@ -860,13 +860,14 @@ exports.isNullOrEmpty = function(str) {
  * @return {Number}
  */
 exports.parseInt = function(obj, def) {
+
+    if (obj === undefined || obj === null)
+        return def || 0;
+
     var type = typeof(obj);
 
     if (type === NUMBER)
         return obj;
-
-    if (type === UNDEFINED || obj === null)
-        return def || 0;
 
     var str = type !== STRING ? obj.toString() : obj;
     return str.parseInt(def, 10);
@@ -879,13 +880,14 @@ exports.parseInt = function(obj, def) {
  * @return {Number}
  */
 exports.parseFloat = function(obj, def) {
+
+    if (obj === undefined || obj === null)
+        return def || 0;
+
     var type = typeof(obj);
 
     if (type === NUMBER)
         return obj;
-
-    if (type === UNDEFINED || obj === null)
-        return def || 0;
 
     var str = type !== STRING ? obj.toString() : obj;
     return str.parseFloat(def);
@@ -1012,13 +1014,13 @@ exports.GUID = function(max) {
  */
 exports.validate = function(model, properties, prepare, builder, resource, path) {
 
-    if (typeof(builder) === FUNCTION && typeof(resource) === UNDEFINED) {
+    if (typeof(builder) === FUNCTION && resource === undefined) {
         resource = builder;
         builder = null;
     }
 
     var error = builder;
-    var current = typeof(path) === UNDEFINED ? '' : path + '.';
+    var current = path === undefined ? '' : path + '.';
     var isSchema = false;
     var schemaName = '';
     var definition = null;
@@ -1037,7 +1039,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
             properties = properties.replace(/\s/g, '').split(',');
     }
 
-    if (typeof(model) === UNDEFINED || model === null)
+    if (model === undefined || model === null)
         model = {};
 
     if (typeof(prepare) !== FUNCTION)
@@ -1050,7 +1052,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
         var value = model[name];
         var type = typeof(value);
 
-        if (type === UNDEFINED) {
+        if (value === undefined) {
             error.add(name, '@', current + name);
             continue;
         } else
@@ -1090,7 +1092,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
 
                                 var result2 = prepare(name, value, current + name, schemaName);
 
-                                if (typeof(result2) === UNDEFINED)
+                                if (result2 === undefined)
                                     continue;
 
                                 type = typeof(result2);
@@ -1128,7 +1130,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
 
         var result = prepare(name, value, current + name, schemaName);
 
-        if (typeof(result) === UNDEFINED)
+        if (result === undefined)
             continue;
 
         type = typeof(result);
@@ -1266,7 +1268,7 @@ exports.parseXML = function(xml) {
             var path = current.join('.') + '.' + o;
             var value = xml.substring(from, beg);
 
-            if (typeof(obj[path]) === UNDEFINED)
+            if (obj[path] === undefined)
                 obj[path] = value;
             else if (obj[path] instanceof Array)
                 obj[path].push(value);
@@ -1342,7 +1344,7 @@ exports.getWebSocketFrame = function(code, message, type) {
  */
 function getWebSocketFrameMessageBytes(code, message) {
     var index = code === 0 ? 0 : 2;
-    var binary = typeof(message.readUInt8) !== UNDEFINED;
+    var binary = message.readUInt8 !== undefined;
     var length = message.length;
     var messageBuffer = new Buffer(length + index);
 
@@ -1845,7 +1847,7 @@ String.prototype.urlDecode = function() {
 String.prototype.params = function(obj) {
     var formatted = this;
 
-    if (typeof(obj) === UNDEFINED || obj === null)
+    if (obj === undefined || obj === null)
         return formatted;
 
     var reg = /\{[^}\n]*\}/g;
@@ -1895,7 +1897,7 @@ String.prototype.params = function(obj) {
         if (typeof(val) === FUNCTION)
             val = val(index);
 
-        if (typeof(val) === UNDEFINED)
+        if (val === undefined)
             continue;
 
         if (format.length > 0) {
@@ -2522,7 +2524,7 @@ Number.prototype.VAT = function(percentage, decimals, includedVAT) {
     if (type === UNDEFINED)
         decimals = 2;
 
-    if (typeof(includedVAT) === UNDEFINED)
+    if (includedVAT === undefined)
         includedVAT = true;
 
     if (percentage === 0 || num === 0)
@@ -2539,9 +2541,8 @@ Number.prototype.VAT = function(percentage, decimals, includedVAT) {
 */
 Number.prototype.discount = function(percentage, decimals) {
     var num = this;
-    var type = typeof(decimals);
 
-    if (type === UNDEFINED)
+    if (decimals === undefined)
         decimals = 2;
 
     return (num - (num / 100) * percentage).floor(decimals);
@@ -2589,7 +2590,7 @@ Array.prototype.orderBy = function(name, asc) {
         name = tmp;
     }
 
-    if (typeof(asc) === UNDEFINED)
+    if (asc === undefined)
         asc = true;
 
     var self = this;
@@ -2781,7 +2782,7 @@ Array.prototype.wait = function(onItem, callback) {
     var self = this;
     var item = self.shift();
 
-    if (typeof(item) === UNDEFINED) {
+    if (item === undefined) {
         if (callback)
             callback();
         return self;
@@ -2806,7 +2807,7 @@ Array.prototype.async = function(callback) {
     var self = this;
     var item = self.shift();
 
-    if (typeof(item) === UNDEFINED) {
+    if (item === undefined) {
         if (callback)
             callback();
         return self;
@@ -2844,7 +2845,7 @@ Array.prototype._async_middleware = function(res, callback, controller) {
 
     var item = self.shift();
 
-    if (typeof(item) === UNDEFINED) {
+    if (item === undefined) {
         if (callback)
             callback();
         return self;
@@ -2874,7 +2875,7 @@ Array.prototype.randomize = function() {
 
         var c = random[index++];
 
-        if (typeof(c) === UNDEFINED) {
+        if (c === undefined) {
             c = random[0];
             index = 0;
         }
@@ -3043,7 +3044,7 @@ Async.prototype.cancel = function(name) {
 
     var self = this;
 
-    if (typeof(name) === UNDEFINED) {
+    if (name === undefined) {
 
         for (var i = 0; i < self._count; i++)
             self.cancel(tasksAll[i]);
@@ -3076,7 +3077,7 @@ Async.prototype.await = function(name, fn, cb) {
         name = exports.GUID(6);
     }
 
-    if (typeof(self.tasksPending[name]) !== UNDEFINED)
+    if (self.tasksPending[name] !== undefined)
         return false;
 
     self.tasksPending[name] = new AsyncTask(self, name, fn, cb, null);
@@ -3098,7 +3099,7 @@ Async.prototype.wait = function(name, waitingFor, fn, cb) {
         name = exports.GUID(6);
     }
 
-    if (typeof(self.tasksPending[name]) !== UNDEFINED)
+    if (self.tasksPending[name] !== undefined)
         return false;
 
     self.tasksPending[name] = new AsyncTask(self, name, fn, cb, waitingFor);
@@ -3161,7 +3162,7 @@ Async.prototype.timeout = function(name, timeout) {
 
     var self = this;
 
-    if (timeout <= 0 || typeof(timeout) === UNDEFINED) {
+    if (timeout <= 0 || timeout === undefined) {
         delete self.tasksTimeout[name];
         return self;
     }
@@ -3186,7 +3187,7 @@ Async.prototype.refresh = function(name) {
         if (task.isRunning !== 0)
             continue;
 
-        if (task.waiting !== null && typeof(self.tasksWaiting[task.waiting]) !== UNDEFINED)
+        if (task.waiting !== null && self.tasksWaiting[task.waiting] !== undefined)
             continue;
 
         task.run();

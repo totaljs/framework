@@ -2,7 +2,7 @@
  * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2014
- * @version 2.0.8
+ * @version 2.0.9
  */
 
 'use strict';
@@ -12,7 +12,7 @@ var path = require('path');
 var util = require('util');
 var events = require('events');
 
-var VERSION = 'v2.0.8';
+var VERSION = 'v2.0.9';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -57,7 +57,7 @@ function Database(filename, directory, changes) {
     this.isReady = false;
     this.status_prev = STATUS_UNKNOWN;
     this.status = STATUS_UNKNOWN;
-    this.changes = typeof(changes) === UNDEFINED ? true : changes === true;
+    this.changes = changes === undefined ? true : changes === true;
 
     this.countRead = 0;
     this.countWrite = 0;
@@ -178,7 +178,7 @@ Database.prototype = {
         if (util.isDate(dt))
             return dt;
 
-        if (dt === null || typeof(dt) === UNDEFINED)
+        if (dt === null || dt === undefined)
             return null;
 
         return new Date(Date.parse(dt.toString()));
@@ -231,7 +231,7 @@ Database.prototype.insert = function(arr, fnCallback, changes) {
 
         var doc = arr[i];
 
-        if (typeof(doc.json) === UNDEFINED) {
+        if (doc.json === undefined) {
             builder.push(doc);
 
             if (changes)
@@ -307,7 +307,7 @@ Database.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, isScal
         return self;
     }
 
-    if (typeof(fnCallback) === UNDEFINED) {
+    if (fnCallback === undefined) {
         fnCallback = fnMap;
         fnMap = function(doc) { return doc; };
     }
@@ -346,7 +346,7 @@ Database.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, isScal
             return;
 
         var item = fnMap(doc);
-        if (item === false || item === null || typeof(item) === UNDEFINED)
+        if (item === false || item === null || item === undefined)
             return;
 
         count++;
@@ -555,7 +555,7 @@ Database.prototype.sort = function(fnMap, fnSort, itemSkip, itemTake, fnCallback
     var onItem = function(doc) {
 
         var item = fnMap(doc);
-        if (item === false || item === null || typeof(item) === UNDEFINED)
+        if (item === false || item === null || item === undefined)
             return;
 
         count++;
@@ -577,7 +577,7 @@ Database.prototype.clear = function(fnCallback, changes) {
     var self = this;
     var type = typeof(fnCallback);
 
-    if (type === UNDEFINED)
+    if (fnCallback === undefined)
         fnCallback = null;
 
     if (type === STRING) {
@@ -664,7 +664,7 @@ Database.prototype.drop = function(fnCallback) {
 
     var self = this;
 
-    if (typeof(fnCallback) === UNDEFINED)
+    if (fnCallback === undefined)
         fnCallback = null;
 
     self.pendingDrop.push(fnCallback);
@@ -779,7 +779,7 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
         fnCallback = null;
     }
 
-    if (typeof(fnUpdate) !== UNDEFINED)
+    if (fnUpdate !== undefined)
         self.pendingLock.push(updatePrepare(fnUpdate, fnCallback, changes, type || 'update'));
 
     if (self.status !== STATUS_UNKNOWN) {
@@ -835,7 +835,7 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
             var changes = [];
             operation.forEach(function(o) {
 
-                if (typeof(o.changes) !== UNDEFINED)
+                if (o.changes !== undefined)
                     changes.push(o.changes);
 
                 if (o.callback)
@@ -942,7 +942,7 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 Database.prototype.prepare = function(fnUpdate, fnCallback, changes) {
     var self = this;
 
-    if (typeof(fnUpdate) !== UNDEFINED)
+    if (fnUpdate !== undefined)
         self.pendingLock.push(updatePrepare(fnUpdate, fnCallback, changes, 'update'));
 
     return self;
@@ -1080,7 +1080,7 @@ Database.prototype.next = function() {
 Database.prototype.description = function(value) {
     var self = this;
 
-    if (typeof(value) === UNDEFINED)
+    if (value === undefined)
         return self.meta.description;
 
     self.meta.description = (value || '').toString();
@@ -1091,7 +1091,7 @@ Database.prototype.description = function(value) {
 Database.prototype.custom = function(value) {
     var self = this;
 
-    if (typeof(value) === UNDEFINED)
+    if (value === undefined)
         return self.meta.custom;
 
     self.meta.custom = value;
@@ -1102,7 +1102,7 @@ Database.prototype.custom = function(value) {
 Database.prototype._metaSave = function() {
     var self = this;
 
-    if (typeof(self.meta.created) === UNDEFINED)
+    if (self.meta.created === undefined)
         self.meta.created = new Date();
 
     fs.writeFile(self.filenameMeta, JSON.stringify(self.meta), noop);
@@ -1169,7 +1169,7 @@ Views.prototype.all = function(name, fnCallback, itemSkip, itemTake, fnMap) {
     var self = this;
     var view = self.views[name];
 
-    if (typeof(view) === UNDEFINED) {
+    if (view === undefined) {
         view = self.getView(name);
         self.views[name] = view;
     }
@@ -1211,7 +1211,7 @@ Views.prototype.top = function(name, top, fnCallback, fnMap) {
     var self = this;
     var view = self.views[name];
 
-    if (typeof(view) === UNDEFINED) {
+    if (view === undefined) {
         view = self.getView(name);
         self.views[name] = view;
     }
@@ -1238,12 +1238,12 @@ Views.prototype.one = function(name, fnMap, fnCallback) {
     var self = this;
     var view = self.views[name];
 
-    if (typeof(view) === UNDEFINED) {
+    if (view === undefined) {
         view = self.getView(name);
         self.views[name] = view;
     }
 
-    if (typeof(fnCallback) === UNDEFINED) {
+    if (fnCallback === undefined) {
         fnCallback = fnMap;
         fnMap = null;
     }
@@ -1275,7 +1275,7 @@ Views.prototype.drop = function(name, fnCallback, changes) {
         fnCallback = null;
     }
 
-    if (typeof(view) === UNDEFINED) {
+    if (view === undefined) {
         view = self.getView(name);
         self.views[name] = view;
     }
@@ -1350,7 +1350,7 @@ Views.prototype.refresh = function(name, fnCallback) {
 
         var view = self.views[name];
 
-        if (typeof(view) === UNDEFINED) {
+        if (view === undefined) {
             view = self.getView(name);
             self.views[name] = view;
         }
@@ -1532,7 +1532,7 @@ View.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, skipCount,
             return;
 
         var item = fnMap(doc);
-        if (item === false || item === null || typeof(item) === UNDEFINED)
+        if (item === false || item === null || item === undefined)
             return;
 
         count++;
@@ -1580,7 +1580,7 @@ View.prototype.operation = function(fnCallback) {
 
     var self = this;
 
-    if (typeof(fnCallback) !== UNDEFINED)
+    if (fnCallback !== undefined)
         self.pendingOperation.push(fnCallback);
 
     if (self.status !== STATUS_UNKNOWN)
@@ -1750,7 +1750,7 @@ Stored.prototype.execute = function(name, params, fnCallback, changes) {
 
     var fn = self.db.meta.stored[name];
 
-    if (typeof(fn) === UNDEFINED) {
+    if (fn === undefined) {
 
         if (fnCallback)
             fnCallback();
@@ -1761,7 +1761,7 @@ Stored.prototype.execute = function(name, params, fnCallback, changes) {
     var cache = self.cache[name];
     self.db.emit('stored', name);
 
-    if (typeof(fn) === UNDEFINED) {
+    if (fn === undefined) {
 
         if (fnCallback)
             fnCallback();
@@ -1769,13 +1769,13 @@ Stored.prototype.execute = function(name, params, fnCallback, changes) {
         return;
     }
 
-    if (typeof(cache) === UNDEFINED) {
+    if (cache === undefined) {
         fn = eval('(' + fn + ')');
         self.cache[name] = fn;
     } else
         fn = cache;
 
-    if (typeof(fnCallback) === UNDEFINED)
+    if (fnCallback === undefined)
         fnCallback = function() {};
 
     fn.call(self.db, self.db, fnCallback, params || null);
@@ -2008,7 +2008,7 @@ Changelog.prototype.insert = function(description) {
     if (!self.db.changes)
         return self.db;
 
-    if (typeof(description) === UNDEFINED)
+    if (description === undefined)
         return self.db;
 
     if (!(description instanceof Array))

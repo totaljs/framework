@@ -188,7 +188,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
         var temporary = req.body[tmp.name];
 
-        if (typeof(temporary) === UNDEFINED) {
+        if (temporary === undefined) {
             req.body[tmp.name] = tmp.value;
             return;
         }
@@ -418,7 +418,7 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
     for (var i = 0; i < length; i++) {
 
         var value = route[i];
-        if (!isSystem && isAsterix && typeof(value) === UNDEFINED)
+        if (!isSystem && isAsterix && value === undefined)
             return true;
 
         if (!isSystem && (!skip && value[0] === '{'))
@@ -660,7 +660,7 @@ HttpFile.prototype.image = function(imageMagick) {
 
     // Not a clean solution because the framework hasn't a direct dependence.
     // This is hack :-)
-    if (typeof(im) === UNDEFINED)
+    if (im === undefined)
         im = framework.config['default-image-converter'] === 'im';
 
     return require('./image').init(this.path, im);

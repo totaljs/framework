@@ -221,7 +221,7 @@ Image.prototype.pipe = function(stream, type, options) {
     if (self.builder.length === 0)
         return;
 
-    if (typeof(type) === 'undefined' || type === null)
+    if (type === undefined || type === null)
         type = self.outputType;
 
     var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, (type ? type + ':' : '') + '-'));
@@ -251,7 +251,7 @@ Image.prototype.stream = function(type) {
     if (self.builder.length === 0)
         return;
 
-    if (typeof(type) === 'undefined' || type === null)
+    if (type === undefined || type === null)
         type = self.outputType;
 
     var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, (type ? type + ':' : '') + '-'));

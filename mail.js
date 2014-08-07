@@ -222,7 +222,7 @@ Message.prototype.attachment = function(filename, name) {
 
     var self = this;
 
-    if (typeof(name) === UNDEFINED)
+    if (name === undefined)
         name = path.basename(filename);
 
     self.files.push({ name: name, filename: filename, contentType: utils.getContentType(path.extname(name)) });
@@ -497,7 +497,7 @@ Message.prototype._send = function(socket, options) {
 
                 var value = auth.shift();
 
-                if (typeof(value) === UNDEFINED) {
+                if (value === undefined) {
 
                     err = new Error('Forbidden.');
                     mailer.emit('error', err, self);
@@ -563,7 +563,7 @@ Message.prototype._writeAttachment = function(write, boundary, socket) {
     var self = this;
     var attachment = self.files.shift();
 
-    if (typeof(attachment) === UNDEFINED) {
+    if (attachment === undefined) {
         write('--' + boundary + '--');
         write('');
         write('.');

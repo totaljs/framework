@@ -37,7 +37,7 @@ function ErrorBuilder(onResource) {
     this.replacer = [];
     this.isPrepared = false;
 
-    if (typeof(onResource) === UNDEFINED)
+    if (onResource === undefined)
         this._resource();
 }
 
@@ -94,7 +94,7 @@ function Pagination(items, page, max, format) {
  */
 exports.schema = function(name, obj, defaults, validator, properties) {
 
-    if (typeof(obj) === UNDEFINED)
+    if (obj === undefined)
         return schema[name] || null;
 
     if (typeof(defaults) === FUNCTION)
@@ -148,7 +148,7 @@ exports.isJoin = function(value) {
         return false;
     if (value[0] === '[')
         return true;
-    return typeof(schema[value]) !== UNDEFINED;
+    return schema[value] !== undefined;
 };
 
 /**
@@ -170,7 +170,7 @@ exports.validation = function(name, properties, fn) {
 
         schemaValidator[name] = fn;
 
-        if (typeof(properties) === UNDEFINED)
+        if (properties === undefined)
             schemaValidation[name] = Object.keys(schema[name]);
         else
             schemaValidation[name] = properties;
@@ -178,9 +178,9 @@ exports.validation = function(name, properties, fn) {
         return true;
     }
 
-    if (typeof(fn) === UNDEFINED) {
+    if (fn === undefined) {
         var validator = schemaValidation[name];
-        if (typeof(validator) === UNDEFINED)
+        if (validator === undefined)
             return Object.keys(schema[name]);
         return validator || [];
     }
@@ -200,7 +200,7 @@ exports.validate = function(name, model, resourcePrefix, resourceName) {
     var fn = schemaValidator[name];
     var builder = new ErrorBuilder();
 
-    if (typeof(fn) === UNDEFINED) {
+    if (fn === undefined) {
 
         if (typeof(framework.onValidation) !== FUNCTION) {
             if (framework && framework.error)
@@ -254,7 +254,7 @@ exports.defaults = function(name) {
 
         if (defaults) {
             var def = defaults(property, true, name);
-            if (typeof(def) !== UNDEFINED) {
+            if (def !== undefined) {
                 item[property] = def;
                 continue;
             }
@@ -382,7 +382,7 @@ exports.prepare = function(name, model) {
     if (obj === null)
         return null;
 
-    if (model === null || typeof(model) === UNDEFINED)
+    if (model === null || model === undefined)
         return exports.defaults(name, false, name);
 
     var tmp;
@@ -396,10 +396,10 @@ exports.prepare = function(name, model) {
         var property = properties[i];
         var val = model[property];
 
-        if (typeof(val) === UNDEFINED && defaults)
+        if (val === undefined && defaults)
             val = defaults(property, false, name);
 
-        if (typeof(val) === UNDEFINED)
+        if (val === undefined)
             val = '';
 
         var value = item[property];
@@ -597,7 +597,7 @@ exports.prepare = function(name, model) {
 };
 
 function isUndefined(value, def) {
-    if (typeof(value) === UNDEFINED)
+    if (value === undefined)
         return def;
     return value;
 }
@@ -796,7 +796,7 @@ ErrorBuilder.prototype._prepare = function() {
         else
             o.error = self.onResource(o.error.substring(1));
 
-        if (typeof(o.error) === UNDEFINED)
+        if (o.error === undefined)
             o.error = REQUIRED.replace('@', o.name);
     }
 
@@ -961,7 +961,7 @@ Pagination.prototype.render = function(max, format) {
         max = format;
     }
 
-    if (typeof(max) === UNDEFINED || max === null) {
+    if (max === undefined || max === null) {
         for (var i = 1; i < self.count + 1; i++)
             builder.push({
                 url: format.format(i, self.items, self.count),
@@ -1075,7 +1075,7 @@ UrlBuilder.prototype.toString = function() {
  */
 UrlBuilder.prototype.hasValue = function(keys) {
 
-    if (typeof(keys) === UNDEFINED)
+    if (keys === undefined)
         return false;
 
     var self = this;
@@ -1085,7 +1085,7 @@ UrlBuilder.prototype.hasValue = function(keys) {
 
     for (var i = 0; i < keys.length; i++) {
         var val = self.builder[keys[i]];
-        if (typeof(val) === UNDEFINED || val === null)
+        if (val === undefined || val === null)
             return false;
     }
 
