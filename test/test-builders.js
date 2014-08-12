@@ -173,7 +173,7 @@ function test_ErrorBuilder() {
     var builder = new builders.ErrorBuilder();
 
     builder.add('name');
-    assert.ok(builder.errors[0].name === 'name' && builder.errors[0].error === '@', name + 'add');
+    assert.ok(builder.errors[0].name === 'name' && builder.errors[0].error === 'name', name + 'add');
     builder.add('age', 'only number');
     assert.ok(builder.errors[1].name === 'age' && builder.errors[1].error === 'only number', name + 'add (custom message)');
 

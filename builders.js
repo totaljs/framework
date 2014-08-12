@@ -29,7 +29,7 @@ var REQUIRED = 'The field "@" is required.';
  */
 function ErrorBuilder(onResource) {
 
-    this.errors = [];
+    this._errors = [];
     this.onResource = onResource;
     this.resourceName = 'default';
     this.resourcePrefix = '';
@@ -606,6 +606,23 @@ function isUndefined(value, def) {
 // PROTOTYPES
 // ======================================================
 
+ErrorBuilder.prototype = {
+
+    get errors() {
+        var self = this;
+        if (!self.isPrepared)
+            self.prepare();
+        return self._errors;
+    },
+
+    get error() {
+        var self = this;
+        if (!self.isPrepared)
+            self.prepare();
+        return self._errors;
+    }
+}
+
 /**
  * Resource setting
  * @param {String} name Resource name.
@@ -630,7 +647,9 @@ ErrorBuilder.prototype._resource = function() {
 
     self.onResource = function(name) {
         var self = this;
-        return framework.resource(self.resourceName, self.resourcePrefix + name);
+        if (typeof(framework) !== UNDEFINED)
+            return framework.resource(self.resourceName, self.resourcePrefix + name);
+        return name;
     };
 
     return self;
@@ -653,17 +672,17 @@ ErrorBuilder.prototype.add = function(name, error, path) {
             self.errors.push(o);
         });
 
-        self.count = self.errors.length;
+        self.count = self._errors.length;
         return self;
     }
 
-    self.errors.push({
+    self._errors.push({
         name: name,
         error: error || '@',
         path: path
     });
 
-    self.count = self.errors.length;
+    self.count = self._errors.length;
     return self;
 };
 
@@ -675,11 +694,11 @@ ErrorBuilder.prototype.add = function(name, error, path) {
 ErrorBuilder.prototype.remove = function(name) {
     var self = this;
 
-    self.errors = self.errors.remove(function(o) {
+    self._errors = self._errors.remove(function(o) {
         return o.name === name;
     });
 
-    self.count = self.errors.length;
+    self.count = self._errors.length;
     return self;
 };
 
@@ -692,12 +711,12 @@ ErrorBuilder.prototype.hasError = function(name) {
     var self = this;
 
     if (name) {
-        return self.errors.find(function(o) {
+        return self._errors.find(function(o) {
             return o.name === name;
         }) !== null;
     }
 
-    return self.errors.length > 0;
+    return self._errors.length > 0;
 };
 
 /**
@@ -712,7 +731,7 @@ ErrorBuilder.prototype.read = function(name) {
     if (!self.isPrepared)
         self.prepare();
 
-    var error = self.errors.find(function(o) {
+    var error = self._errors.find(function(o) {
         return o.name === name;
     });
 
@@ -728,7 +747,7 @@ ErrorBuilder.prototype.read = function(name) {
  */
 ErrorBuilder.prototype.clear = function() {
     var self = this;
-    self.errors = [];
+    self._errors = [];
     self.count = 0;
     return self;
 };
@@ -754,8 +773,8 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
  */
 ErrorBuilder.prototype.json = function(beautify, replacer) {
     if (beautify)
-        return JSON.stringify(this.prepare().errors, replacer, '\t');
-    return JSON.stringify(this.prepare().errors, replacer);
+        return JSON.stringify(this.prepare()._errors, replacer, '\t');
+    return JSON.stringify(this.prepare()._errors, replacer);
 };
 
 /**
@@ -765,8 +784,8 @@ ErrorBuilder.prototype.json = function(beautify, replacer) {
  */
 ErrorBuilder.prototype.JSON = function(beautify) {
     if (beautify)
-        return JSON.stringify(this.prepare().errors, null, '\t');
-    return JSON.stringify(this.prepare().errors);
+        return JSON.stringify(this.prepare()._errors, null, '\t');
+    return JSON.stringify(this.prepare()._errors);
 };
 
 /**
@@ -781,7 +800,7 @@ ErrorBuilder.prototype._prepare = function() {
     if (self.onResource === null)
         return self;
 
-    var errors = self.errors;
+    var errors = self._errors;
     var length = errors.length;
 
     for (var i = 0; i < length; i++) {
@@ -814,7 +833,7 @@ ErrorBuilder.prototype.toString = function() {
     if (!self.isPrepared)
         self.prepare();
 
-    var errors = self.errors;
+    var errors = self._errors;
     var length = errors.length;
     var builder = [];
 
@@ -833,7 +852,7 @@ ErrorBuilder.prototype.toString = function() {
 ErrorBuilder.prototype._prepareReplace = function() {
 
     var self = this;
-    var errors = self.errors;
+    var errors = self._errors;
     var lengthBuilder = errors.length;
     var keys = Object.keys(self.replacer);
     var lengthKeys = keys.length;
