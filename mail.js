@@ -293,7 +293,9 @@ Message.prototype.send = function(smtp, options, fnCallback) {
     });
 
     socket.on('connect', function() {
-        self._send(socket, options);
+        if (!options.secure) {
+            self._send(socket, options);
+        }
     });
 
     return self;
