@@ -2,12 +2,14 @@ IN DEVELOPMENT ======= 1.6.1 (HOTFIX)
 
 - added: `ErrorBuilder.errors` list of errors
 - added: transform-style, perspective, backface-visibility into the CSS auto-vendor-prefixes
+- added: WebSocket supports global middleware
 
 - updated: assertion testing (author: @toshipon)
 
 - fixed: controller.callback([view_name]), supports NoSQL Embeded Database
 - fixed: WebSocket auto-ping
 - fixed: (debug mode) caching of static files
+- fixed: global middleware (fixed exception in exception)
 
 - improvements: framework (comparison of undefined)
 

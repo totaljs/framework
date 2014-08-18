@@ -3514,150 +3514,6 @@ Framework.prototype._verify_directory = function(name) {
     return self;
 };
 
-Framework.prototype._upgrade = function(req, socket, head) {
-
-    if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
-        return;
-
-    var self = this;
-    var headers = req.headers;
-
-    self.emit('websocket', req, socket, head);
-    self.stats.request.websocket++;
-
-    if (self.restrictions.isRestrictions) {
-        if (self.restrictions.isAllowedIP) {
-            if (self.restrictions.allowedIP.indexOf(req.ip) === -1) {
-                self.stats.response.restriction++;
-                req.connection.destroy();
-                return self;
-            }
-        }
-
-        if (self.restrictions.isBlockedIP) {
-            if (self.restrictions.blockedIP.indexOf(req.ip) !== -1) {
-                self.stats.response.restriction++;
-                req.connection.destroy();
-                return self;
-            }
-        }
-
-        if (self.restrictions.isAllowedCustom) {
-            if (!self.restrictions._allowedCustom(headers)) {
-                self.stats.response.restriction++;
-                req.connection.destroy();
-                return self;
-            }
-        }
-
-        if (self.restrictions.isBlockedCustom) {
-            if (self.restrictions._blockedCustom(headers)) {
-                self.stats.response.restriction++;
-                req.connection.destroy();
-                return self;
-            }
-        }
-    }
-
-    req.uri = parser.parse('ws://' + req.headers.host + req.url);
-    req.session = null;
-    req.user = null;
-    req.flags = [req.isSecure ? 'https' : 'http'];
-
-    var path = utils.path(req.uri.pathname);
-    var websocket = new WebSocketClient(req, socket, head);
-
-    req.path = internal.routeSplit(req.uri.pathname);
-
-    if (self.onAuthorization === null) {
-        var route = self.lookup_websocket(req, websocket.uri.pathname, true);
-
-        if (route === null) {
-            websocket.close();
-            req.connection.destroy();
-            return;
-        }
-
-        self._upgrade_continue(route, req, websocket, path);
-        return;
-    }
-
-    self.onAuthorization.call(self, req, websocket, req.flags, function(isLogged, user) {
-
-        if (user)
-            req.user = user;
-
-        req.flags.push(isLogged ? 'authorize' : 'unauthorize');
-
-        var route = self.lookup_websocket(req, websocket.uri.pathname, false);
-
-        if (route === null) {
-            websocket.close();
-            req.connection.destroy();
-            return;
-        }
-
-        self._upgrade_continue(route, req, websocket, path);
-    });
-
-};
-
-Framework.prototype._upgrade_continue = function(route, req, socket, path) {
-
-    var self = this;
-
-    if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version_header)) {
-        socket.close();
-        req.connection.destroy();
-        return self;
-    }
-
-    var id = path + (route.flags.length > 0 ? '#' + route.flags.join('-') : '');
-
-    if (route.isBINARY)
-        socket.type = 1;
-    else if (route.isJSON)
-        socket.type = 3;
-
-    var next = function() {
-
-        if (self.connections[id] === undefined) {
-            var connection = new WebSocket(self, path, route.name, id);
-            self.connections[id] = connection;
-            route.onInitialize.apply(connection, internal.routeParam(route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, route));
-        }
-
-        socket.upgrade(self.connections[id]);
-
-    };
-
-    if (route.middleware instanceof Array && route.middleware.length > 0) {
-
-        var func = [];
-
-        for (var i = 0, length = route.middleware.length; i < length; i++) {
-
-            var middleware = framework.routes.middleware[file.middleware[i]];
-
-            if (!middleware)
-                continue;
-
-            (function(middleware) {
-                func.push(function(next) {
-                    middleware.call(framework, req, res, next, route.options);
-                });
-            })(middleware);
-
-        }
-
-        func._async_middleware(res, next);
-
-    } else
-        next();
-
-    return self;
-};
-
 Framework.prototype._service = function(count) {
     var self = this;
 
@@ -3796,7 +3652,7 @@ Framework.prototype._request = function(req, res) {
         var middleware = self.routes.middleware[self.routes.request[i]];
 
         if (!middleware) {
-            self.error('Middleware not found: ' + route.middleware[i], controller.name, req.uri);
+            self.error('Middleware not found: ' + route.middleware[i], null, req.uri);
             continue;
         }
 
@@ -3943,6 +3799,202 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
     req.connection.destroy();
 
+    return self;
+};
+
+/**
+ * Upgrade HTTP (WebSocket)
+ * @param {HttpRequest} req
+ * @param {Socket} socket
+ * @param {Buffer} head
+ */
+Framework.prototype._upgrade = function(req, socket, head) {
+
+    if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
+        return;
+
+    var self = this;
+    var headers = req.headers;
+
+    self.emit('websocket', req, socket, head);
+    self.stats.request.websocket++;
+
+    if (self.restrictions.isRestrictions) {
+        if (self.restrictions.isAllowedIP) {
+            if (self.restrictions.allowedIP.indexOf(req.ip) === -1) {
+                self.stats.response.restriction++;
+                req.connection.destroy();
+                return self;
+            }
+        }
+
+        if (self.restrictions.isBlockedIP) {
+            if (self.restrictions.blockedIP.indexOf(req.ip) !== -1) {
+                self.stats.response.restriction++;
+                req.connection.destroy();
+                return self;
+            }
+        }
+
+        if (self.restrictions.isAllowedCustom) {
+            if (!self.restrictions._allowedCustom(headers)) {
+                self.stats.response.restriction++;
+                req.connection.destroy();
+                return self;
+            }
+        }
+
+        if (self.restrictions.isBlockedCustom) {
+            if (self.restrictions._blockedCustom(headers)) {
+                self.stats.response.restriction++;
+                req.connection.destroy();
+                return self;
+            }
+        }
+    }
+
+    req.uri = parser.parse((req.isSecure ? 'wss' : 'ws') + '://' + req.headers.host + req.url);
+    req.session = null;
+    req.user = null;
+    req.flags = [req.isSecure ? 'https' : 'http'];
+
+    var path = utils.path(req.uri.pathname);
+    var websocket = new WebSocketClient(req, socket, head);
+
+    req.path = internal.routeSplit(req.uri.pathname);
+
+    if (self._length_request_middleware === 0)
+        return self._upgrade_prepare(req, websocket, path, headers);
+
+    var func = [];
+
+    for (var i = 0; i < self._length_request_middleware; i++) {
+
+        var middleware = self.routes.middleware[self.routes.request[i]];
+
+        if (!middleware) {
+            self.error('Middleware not found: ' + route.middleware[i], null, req.uri);
+            continue;
+        }
+
+        (function(middleware) {
+            func.push(function(next) {
+                middleware.call(framework, req, null, next);
+            });
+        })(middleware);
+    }
+
+    func._async_middleware(res, function() {
+        self._upgrade_prepare(req, websocket, path, headers);
+    });
+
+};
+
+/**
+ * Prepare WebSocket
+ * @param {HttpRequest} req
+ * @param {WebSocketClient} websocket
+ * @param {String} path
+ * @param {Object} headers
+ */
+Framework.prototype._upgrade_prepare = function(req, websocket, path, headers) {
+
+    var self = this;
+
+    if (self.onAuthorization === null) {
+        var route = self.lookup_websocket(req, websocket.uri.pathname, true);
+
+        if (route === null) {
+            websocket.close();
+            req.connection.destroy();
+            return;
+        }
+
+        self._upgrade_continue(route, req, websocket, path);
+        return;
+    }
+
+    self.onAuthorization.call(self, req, websocket, req.flags, function(isLogged, user) {
+
+        if (user)
+            req.user = user;
+
+        req.flags.push(isLogged ? 'authorize' : 'unauthorize');
+
+        var route = self.lookup_websocket(req, websocket.uri.pathname, false);
+
+        if (route === null) {
+            websocket.close();
+            req.connection.destroy();
+            return;
+        }
+
+        self._upgrade_continue(route, req, websocket, path);
+    });
+
+};
+
+/**
+ * WebSocket, controller caller
+ * @param {Object} route
+ * @param {HttpRequest} req
+ * @param {Socket} socket
+ * @param {String} path
+ * @return {Framework}
+ */
+Framework.prototype._upgrade_continue = function(route, req, socket, path) {
+
+    var self = this;
+
+    if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version_header)) {
+        socket.close();
+        req.connection.destroy();
+        return self;
+    }
+
+    var id = path + (route.flags.length > 0 ? '#' + route.flags.join('-') : '');
+
+    if (route.isBINARY)
+        socket.type = 1;
+    else if (route.isJSON)
+        socket.type = 3;
+
+    var next = function() {
+
+        if (self.connections[id] === undefined) {
+            var connection = new WebSocket(self, path, route.name, id);
+            self.connections[id] = connection;
+            route.onInitialize.apply(connection, internal.routeParam(route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, route));
+        }
+
+        socket.upgrade(self.connections[id]);
+
+    };
+
+    if (route.middleware instanceof Array && route.middleware.length > 0) {
+
+        var func = [];
+
+        for (var i = 0, length = route.middleware.length; i < length; i++) {
+
+            var middleware = framework.routes.middleware[file.middleware[i]];
+
+            if (!middleware)
+                continue;
+
+            (function(middleware) {
+                func.push(function(next) {
+                    middleware.call(framework, req, res, next, route.options);
+                });
+            })(middleware);
+
+        }
+
+        func._async_middleware(res, next);
+        return self;
+    }
+
+    next();
     return self;
 };
 
