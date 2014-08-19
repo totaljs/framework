@@ -3853,7 +3853,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
         }
     }
 
-    req.uri = parser.parse((req.isSecure ? 'wss' : 'ws') + '://' + req.headers.host + req.url);
+    // TODO: A problem with checking whether is a protocol secured or not, default: FALSE
+    req.uri = parser.parse((false ? 'wss' : 'ws') + '://' + req.headers.host + req.url);
     req.session = null;
     req.user = null;
     req.flags = [req.isSecure ? 'https' : 'http'];
