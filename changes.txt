@@ -11,6 +11,7 @@ IN DEVELOPMENT ======= 1.6.1 (HOTFIX)
 - fixed: (debug mode) caching of static files
 - fixed: global middleware (fixed exception in exception)
 - fixed: Mail (problem with secure option, author: @asessa)
+- fixed: binary (if debug.pid exists then is deleted and created again)
 
 - improvements: framework (comparison of undefined)
 
