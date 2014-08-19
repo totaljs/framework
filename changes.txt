@@ -10,7 +10,7 @@ IN DEVELOPMENT ======= 1.6.1 (HOTFIX)
 - fixed: WebSocket auto-ping
 - fixed: (debug mode) caching of static files
 - fixed: global middleware (fixed exception in exception)
-- fixed: Mail (problem with secure option)
+- fixed: Mail (problem with secure option, author: @asessa)
 
 - improvements: framework (comparison of undefined)
 
