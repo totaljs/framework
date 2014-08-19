@@ -211,6 +211,7 @@ $ open http://127.0.0.1:8000
 - Toshiaki Takahashi, <https://github.com/toshipon>
 - Bir, <https://github.com/bir>
 - Serkan Kocaman, <https://github.com/KiPSOFT>
+- Andrea Sessa, <https://github.com/asessa>
 
 ## Contact
 
