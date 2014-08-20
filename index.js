@@ -10733,6 +10733,7 @@ function WebSocketClient(req, socket, head) {
     this.socket = socket;
     this.req = req;
     this.isClosed = false;
+    this.isWebSocket = true;
     this.errors = 0;
     this.buffer = new Buffer(0);
     this.length = 0;
