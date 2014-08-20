@@ -215,7 +215,7 @@ $ open http://127.0.0.1:8000
 
 ## Contact
 
-Peter Sirka - <petersirka@gmail.com>
+Peter Širka - <petersirka@gmail.com>
 
 [license-image]: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: LICENSE
