@@ -3885,7 +3885,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
         })(middleware);
     }
 
-    func._async_middleware(res, function() {
+    func._async_middleware(websocket, function() {
         self._upgrade_prepare(req, websocket, path, headers);
     });
 
