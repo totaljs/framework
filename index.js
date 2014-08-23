@@ -4629,13 +4629,13 @@ Framework.prototype.encrypt = function(value, key, isUnique) {
     return value.encrypt(self.config.secret + '=' + key, isUnique);
 };
 
-/*
-    Cryptography (decrypt)
-    @value {String}
-    @key {String}
-    @jsonConvert {Boolean} :: optional (convert string to JSON)
-    return {String or Object}
-*/
+/**
+ * Cryptography
+ * @param {Object or String} value
+ * @param {String} key
+ * @param {Boolean} jsonConvert Optional.
+ * @return {Object or String}
+ */
 Framework.prototype.decrypt = function(value, key, jsonConvert) {
 
     if (typeof(key) === BOOLEAN) {
@@ -4654,8 +4654,11 @@ Framework.prototype.decrypt = function(value, key, jsonConvert) {
         return null;
 
     if (jsonConvert) {
-        if (result.isJSON())
-            return JSON.parse(result);
+        if (result.isJSON()) {
+            try {
+                return JSON.parse(result);
+            } catch (ex) {}
+        }
         return null;
     }
 

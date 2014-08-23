@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.6.2 (HOTFIX)
+
+- fixed: problem with parsing a bad JSON datas - framework.decrypt();
+
 ======= 1.6.1 (HOTFIX)
 
 - added: `ErrorBuilder.errors` list of errors
