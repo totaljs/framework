@@ -97,7 +97,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1601;
-    this.version_header = '1.6.1';
+    this.version_header = '1.6.2';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
