@@ -329,7 +329,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
     }
 
     if (data.length > 0)
-        headers['Content-Length'] = data.length;
+        headers['Content-Length'] = data.length + 1;
 
     uri.agent = false;
     uri.headers = headers;
@@ -499,7 +499,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
     }
 
     if (data.length > 0)
-        headers['Content-Length'] = data.length;
+        headers['Content-Length'] = data.length + 1;
 
     uri.agent = false;
     uri.headers = headers;

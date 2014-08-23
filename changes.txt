@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.6.2 (HOTFIX)
 
 - fixed: problem with parsing a bad JSON datas - framework.decrypt();
+- fixed: problem with Content-Length in Utils.request()
 
 ======= 1.6.1 (HOTFIX)
 
