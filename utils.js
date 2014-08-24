@@ -412,6 +412,21 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
         data = '';
     }
 
+    if (typeof(cookies) === NUMBER) {
+        cookies = null;
+        timeout = cookies;
+    }
+
+    if (typeof(headers) === NUMBER) {
+        headers = null;
+        timeout = headers;
+    }
+
+    if (typeof(encoding) === NUMBER) {
+        encoding = null;
+        timeout = encoding;
+    }
+
     var method = 'GET';
     var length = 0;
     var type = 0;
@@ -543,12 +558,12 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 /**
  * Send a stream through HTTP
- * @param  {String}   name     Filename with extension.
- * @param  {Stream}   stream   Stream.
- * @param  {String}   url      A valid URL address.
- * @param  {Function} callback Callback.
- * @param  {Object}   headers  Custom headers (optional).
- * @param  {String}   method   HTTP method (optional, default POST).
+ * @param {String} name Filename with extension.
+ * @param {Stream} stream Stream.
+ * @param {String} url A valid URL address.
+ * @param {Function} callback Callback.
+ * @param {Object} headers Custom headers (optional).
+ * @param {String} method HTTP method (optional, default POST).
  */
 exports.send = function(name, stream, url, callback, headers, method) {
 
