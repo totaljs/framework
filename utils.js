@@ -234,6 +234,21 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
         data = '';
     }
 
+    if (typeof(cookies) === NUMBER) {
+        cookies = null;
+        timeout = cookies;
+    }
+
+    if (typeof(headers) === NUMBER) {
+        headers = null;
+        timeout = headers;
+    }
+
+    if (typeof(encoding) === NUMBER) {
+        encoding = null;
+        timeout = encoding;
+    }
+
     var method = 'GET';
     var length = 0;
     var type = 0;
@@ -275,7 +290,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
                     break;
 
                 case 'get':
-                case 'delete':
+            case 'delete':
                 case 'options':
                     method = flags[i].toUpperCase();
                     break;
