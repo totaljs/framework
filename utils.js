@@ -153,6 +153,21 @@ function expression(query, params) {
 
 global.expression = expression;
 
+/**
+ * Checks if element is null or undefined
+ * @param  element
+ * @return {Boolean}
+ */
+exports.isNull = function(element) {
+
+    if (element === null)
+        return true;
+
+    if (element === undefined)
+        return true;
+
+    return false;
+};
 
 /**
  * Checks if is object empty
