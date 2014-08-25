@@ -1284,10 +1284,8 @@ function JavaScript(source) {
     }
 
     function put(c) {
-        if (c === 13 || c === 10) {
-            var last = sb[sb.length - 1];
-            sb.push(last === ')' || last === '}' ? ';' : ' ');
-        }
+        if (c === 13 || c === 10)
+            sb.push(' ');
         else
             sb.push(String.fromCharCode(c));
     }
