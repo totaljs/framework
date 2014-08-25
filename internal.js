@@ -1278,16 +1278,16 @@ function JavaScript(source) {
         if (c >= 32 || c === 13 || c === EOF) {
             return c;
         }
-        if (c === 10) // \r
-        {
+        if (c === 10)
             return 13;
-        }
         return 32;
     }
 
     function put(c) {
-        if (c === 13 || c === 10)
-            sb.push(' ');
+        if (c === 13 || c === 10) {
+            var last = sb[sb.length - 1];
+            sb.push(last === ')' || last === '}' ? ';' : ' ');
+        }
         else
             sb.push(String.fromCharCode(c));
     }
