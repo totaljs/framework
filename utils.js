@@ -1467,8 +1467,8 @@ exports.distance = function(lat1, lon1, lat2, lon2) {
 /**
  * Directory listing
  * @param  {String} path Path.
- * @param  {Function} callback Callback
- * @param  {Function} filter Custom filter (optional).
+ * @param  {Function(files, directories)} callback Callback
+ * @param  {Function(filename)} filter Custom filter (optional).
  */
 exports.ls = function(path, callback, filter) {
     var filelist = new FileList();

@@ -1089,30 +1089,32 @@ Framework.prototype.load = function() {
     var self = this;
     var dir = path.join(directory, self.config['directory-controllers']);
     var framework = self;
+    var arr = [];
 
-    function install_controller(directory, level) {
+    function listing(directory, level, output) {
+        if (!fs.existsSync(dir))
+            return;
         fs.readdirSync(directory).forEach(function(o) {
-
             var isDirectory = fs.statSync(path.join(directory, o)).isDirectory();
             if (isDirectory) {
                 level++;
-                install_controller(path.join(directory, o), level);
+                listing(path.join(directory, o), level, output);
                 return;
             }
-
             var ext = path.extname(o).toLowerCase();
             if (ext !== EXTENSION_JS)
                 return;
-
             var name = (level > 0 ? directory.replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length);
-            var filename = path.join(dir, name) + EXTENSION_JS;
-
-            self.install('controller', name, filename, undefined, undefined, undefined, true);
+            output.push({ name: name[0] === '/' ? name.substring(1) : name, filename: path.join(dir, name) + EXTENSION_JS });
         });
     }
 
-    if (fs.existsSync(dir))
-        install_controller(dir, 0);
+    arr = [];
+    listing(dir, 0, arr);
+
+    arr.forEach(function(item) {
+        self.install('controller', item.name, item.filename, undefined, undefined, undefined, true)
+    });
 
     dir = path.join(directory, self.config['directory-modules']);
 
@@ -1132,14 +1134,21 @@ Framework.prototype.load = function() {
 
     dir = path.join(directory, self.config['directory-definitions']);
 
-    if (fs.existsSync(dir)) {
-        fs.readdirSync(dir).forEach(function(o) {
-            var ext = path.extname(o).toLowerCase();
-            if (ext !== EXTENSION_JS)
-                return;
-            self.install('definition', o.replace(ext, ''), path.join(dir, o), undefined, undefined, undefined, true);
-        });
-    }
+    arr = [];
+    listing(dir, 0, arr);
+
+    arr.forEach(function(item) {
+        self.install('definition', item.name, item.filename, undefined, undefined, undefined, true)
+    });
+
+    dir = path.join(directory, self.config['directory-models']);
+
+    arr = [];
+    listing(dir, 0, arr);
+
+    arr.forEach(function(item) {
+        self.install('model', item.name, item.filename, undefined, undefined, undefined, true)
+    });
 
     self._routesSort();
     return self;
