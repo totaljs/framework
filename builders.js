@@ -1,6 +1,6 @@
 /**
  * @module FrameworkBuilders
- * @version 1.6.0
+ * @version 1.7.0
  */
 
 'use strict';
@@ -76,6 +76,7 @@ function SchemaBuilderEntity(parent, name, obj, defaults, validator, properties)
     this.fnValidation = validator;
     this.properties = properties;
     this.tasks;
+    this.transforms;
 }
 
 /**
@@ -112,16 +113,29 @@ SchemaBuilderEntity.prototype.setProperties = function(properties) {
 };
 
 /**
- * Register a task for the schema
- * @param {String} name Task name.
- * @param {Function(command, value, model, errorBuilder, next)} fn
+ * Add a new task for the schema
+ * @param {Function(command, value, model, errorBuilder, helper, next)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.task = function(fn) {
+SchemaBuilderEntity.prototype.addTask = function(fn) {
     var self = this;
     if (!self.tasks)
         self.tasks = [];
     self.tasks.push(fn);
+    return self;
+};
+
+/**
+ * Add a new transformation for the schema
+ * @param {String} name Task name.
+ * @param {Function(model, errorBuilder, helper, next(value))} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
+    var self = this;
+    if (!self.transforms)
+        self.transforms = {};
+    self.transforms[name] = fn;
     return self;
 };
 
@@ -566,41 +580,43 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 };
 
 /**
- * Make a object according to schema with all tasks
+ * Make an object according to schema with all tasks
  * @param {String} command
  * @param {Object} model
+ * @param {Object} helper A helper object, optional.
  * @param {Function(errorBuilder, model, command)} callback
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.make = function(command, model, callback) {
+SchemaBuilderEntity.prototype.make = function(command, model, helper, callback) {
 
-    for (var i = 0, length = arguments.length; i < length; i++) {
-        switch (typeof(arguments[i])) {
-            case STRING:
-                command = arguments[i];
-                break;
-            case OBJECT:
-                model = arguments[i];
-                break;
-            case FUNCTION:
-                callback = arguments[i];
-                break;
-        }
+    if (typeof(command) === OBJECT) {
+        callback = helper;
+        helper = model;
+        model = command;
+        command = '';
     }
 
-    if (command === undefined)
-        command = '';
+    if (callback === undefined) {
+        callback = helper;
+        helper = undefined;
+    }
+
 
     var self = this;
     var dependencies = [];
     var output = self.prepare(model, dependencies);
-    var builder = new ErrorBuilder();
+    var builder = self.fnValidation === undefined ? new ErrorBuilder() : self.validate(output);
 
     var done = function() {
         if (builder.hasError() === false)
             builder = null;
         callback(builder, output, command);
     };
+
+    if (builder.hasError()) {
+        done();
+        return;
+    }
 
     if (dependencies.length === 0) {
         done();
@@ -617,12 +633,52 @@ SchemaBuilderEntity.prototype.make = function(command, model, callback) {
         }
 
         schema.tasks.wait(function(task, next) {
-            task(command, item.value, output, builder, function() {
+            task(command, item.value, output, builder, helper, function() {
                 next();
             });
         }, next);
 
     }, done, true);
+
+    return self;
+
+};
+
+/**
+ * Transform an object
+ * @param {String} name
+ * @param {Object} model
+ * @param {Object} helper A helper object, optional.
+ * @param {Function(errorBuilder, output, model)} callback
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback) {
+
+    var self = this;
+
+    if (callback === undefined) {
+        callback = helper;
+        helper = undefined;
+    }
+
+    var trans = self.transforms ? self.transforms[name] : undefined;
+
+    if (!trans) {
+        callback(new ErrorBuilder().add('', 'Transform not found.'));
+        return;
+    }
+
+    var output = self.prepare(model);
+    var builder = self.fnValidation === undefined ? new ErrorBuilder() : self.validate(output);
+
+    if (builder.hasError()) {
+        callback(builder);
+        return;
+    }
+
+    trans(output, builder, helper, function(result) {
+        callback(builder.hasError() ? builder : null, result, model);
+    });
 
     return self;
 

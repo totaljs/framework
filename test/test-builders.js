@@ -123,12 +123,14 @@ function test_Schema() {
             return -1;
     });
 
-    builders.schema('default').get('2').task(function(command, value, model, err, next) {
+    builders.schema('default').get('2').addTask(function(command, value, model, err, helper, next) {
         if (model.counter === undefined)
             model.counter = value.age;
         else
             model.counter += value.age;
         next();
+    }).addTransform('xml', function(model, err, helper, next) {
+        next('<xml>OK</xml>');
     });
 
     //console.log(builders.defaults('1', { name: 'Peter', age: 30, join: { name: 20 }}));
@@ -149,6 +151,10 @@ function test_Schema() {
     builders.schema('default').get('1').make('create', output, function(err, model, command) {
         assert.ok(model.counter === 19, 'Builders.task()');
         assert.ok(err === null, 'Builders.make()');
+    });
+
+    builders.schema('default').get('2').transform('xml', output, function(err, output) {
+        assert.ok(output === '<xml>OK</xml>', 'Builders.transform()');
     });
 
     builders.schema('validator', {

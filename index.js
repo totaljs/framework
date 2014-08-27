@@ -1,6 +1,6 @@
 /**
  * @module Framework
- * @version 1.6.0
+ * @version 1.7.0
  */
 
 'use strict';
@@ -96,8 +96,8 @@ if (typeof(setImmediate) === UNDEFINED) {
 function Framework() {
 
     this.id = null;
-    this.version = 1602;
-    this.version_header = '1.6.2';
+    this.version = 1700;
+    this.version_header = '1.7.0';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
