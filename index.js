@@ -83,6 +83,10 @@ global.MODEL = function(name) {
     return framework.model(name);
 };
 
+global.SCHEMA = function(name) {
+    return Builders.schema(name);
+};
+
 global.FUNCTION = function(name) {
     return framework.functions[name];
 };

@@ -732,8 +732,8 @@ exports.extend = function(target, source, rewrite) {
 
 /**
  * Copy values from object to object
- * @param  {Object} source Object source
- * @param  {Object} target Object target (optional)
+ * @param {Object} source Object source
+ * @param {Object} target Object target (optional)
  * @return {Object} Modified object.
  */
 exports.copy = function(source, target) {

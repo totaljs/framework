@@ -591,9 +591,11 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
  * @param {Object} model
  * @param {Object} helper A helper object, optional.
  * @param {Function(errorBuilder, model, command)} callback
+ * @param {Boolean} noPrepare Disable preparing.
+ * @param {Boolean} noValidate Disable validating.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.make = function(command, model, helper, callback) {
+SchemaBuilderEntity.prototype.make = function(command, model, helper, callback, noPrepare, noValidate) {
 
     if (typeof(command) === OBJECT) {
         callback = helper;
@@ -609,8 +611,8 @@ SchemaBuilderEntity.prototype.make = function(command, model, helper, callback) 
 
     var self = this;
     var dependencies = [];
-    var output = self.prepare(model, dependencies);
-    var builder = self.fnValidation === undefined ? new ErrorBuilder() : self.validate(output);
+    var output = noPrepare === true ? utils.copy(model) : self.prepare(model);
+    var builder = self.fnValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
 
     var done = function() {
         if (builder.hasError() === false)
@@ -651,9 +653,11 @@ SchemaBuilderEntity.prototype.make = function(command, model, helper, callback) 
  * @param {Object} model
  * @param {Object} helper A helper object, optional.
  * @param {Function(errorBuilder, output, model)} callback
+ * @param {Boolean} noPrepare Disable preparing.
+ * @param {Boolean} noValidate Disable validating.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback) {
+SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback, noPrepare, noValidate) {
 
     var self = this;
 
@@ -669,8 +673,8 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
         return;
     }
 
-    var output = self.prepare(model);
-    var builder = self.fnValidation === undefined ? new ErrorBuilder() : self.validate(output);
+    var output = noPrepare === true ? utils.copy(model) : self.prepare(model);
+    var builder = self.fnValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
 
     if (builder.hasError()) {
         callback(builder);
