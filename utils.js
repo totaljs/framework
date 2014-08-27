@@ -1127,7 +1127,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
                             // Schema not exists
                             if (collection[schema] === undefined) {
 
-                                var result2 = prepare(name, value, current + name, schemaName);
+                                var result2 = prepare(name, value, current + name, schemaName, model);
                                 if (result2 === undefined)
                                     continue;
 
@@ -1165,7 +1165,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
             }
         }
 
-        var result = prepare(name, value, current + name, schemaName);
+        var result = prepare(name, value, current + name, schemaName, model);
 
         if (result === undefined)
             continue;
