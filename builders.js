@@ -368,6 +368,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         var property = properties[i];
         var val = model[property];
 
+
         if (val === undefined && defaults)
             val = defaults(property, false, self.name);
 
@@ -427,6 +428,11 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                     tmp = null;
 
                 item[property] = tmp || (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
+                continue;
+            }
+
+            if (value === Object) {
+                item[property] = model[property];
                 continue;
             }
 
@@ -574,7 +580,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         var entity = self.parent.get(value);
 
         if (entity) {
-            item[property] = entity.prepare(value);
+            item[property] = entity.prepare(val );
             if (dependencies)
                 dependencies.push({ name: value, value: item[property] });
         }
@@ -611,7 +617,7 @@ SchemaBuilderEntity.prototype.make = function(command, model, helper, callback, 
 
     var self = this;
     var dependencies = [];
-    var output = noPrepare === true ? utils.copy(model) : self.prepare(model);
+    var output = noPrepare === true ? utils.copy(model) : self.prepare(model, dependencies);
     var builder = self.fnValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
 
     var done = function() {
