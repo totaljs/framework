@@ -623,11 +623,7 @@ SchemaBuilderEntity.prototype.make = function(command, model, helper, callback) 
         return;
     }
 
-    if (dependencies.length === 0) {
-        done();
-        return;
-    }
-
+    dependencies.unshift({ name: self.name, value: output });
     dependencies.wait(function(item, next) {
 
         var schema = self.parent.get(item.name);
