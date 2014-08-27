@@ -39,12 +39,12 @@ SchemaBuilder.prototype.get = function(name) {
  * @param {Function(propertyName, isntPreparing, schemaName)} defaults
  * @param {Function(propertyName, value, path, schemaName)} validator
  * @param {String Array} properties Properties to validate.
- * @return {SchemaBuilder}
+ * @return {SchemaBuilderEntity}
  */
 SchemaBuilder.prototype.add = function(name, obj, defaults, validator, properties) {
     var self = this;
     self.collection[name] = new SchemaBuilderEntity(self, name, obj, defaults, validator, properties);
-    return self;
+    return self.collection[name];
 };
 
 /**
