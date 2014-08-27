@@ -80,12 +80,19 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 
 /**
  * Set schema validation
- * @param {Function(propertyName, value, path, schemaName)} fn A validation function.
+ * @param {String Array} properties Properties to validate, optional.
+ * @param {Function(propertyName, value, path, schemaName, model)} fn A validation function.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setValidation = function(fn) {
+SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
     var self = this;
-    self.fnValidation = fn;
+
+    if (typeof(properties) !== FUNCTION) {
+        self.properties = properties;
+        self.fnValidation = fn;
+    } else
+        self.fnValidation = properties;
+
     return self;
 };
 
@@ -113,7 +120,7 @@ SchemaBuilderEntity.prototype.setProperties = function(properties) {
 
 /**
  * Add a new task for the schema
- * @param {Function(command, value, model, errorBuilder, helper, next)} fn
+ * @param {Function(command, value, model, errorBuilder, helper, next, schema)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addTask = function(fn) {
@@ -127,7 +134,7 @@ SchemaBuilderEntity.prototype.addTask = function(fn) {
 /**
  * Add a new transformation for the schema
  * @param {String} name Task name.
- * @param {Function(model, errorBuilder, helper, next(value))} fn
+ * @param {Function(model, errorBuilder, helper, next(value), schema)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
@@ -600,7 +607,6 @@ SchemaBuilderEntity.prototype.make = function(command, model, helper, callback) 
         helper = undefined;
     }
 
-
     var self = this;
     var dependencies = [];
     var output = self.prepare(model, dependencies);
@@ -634,7 +640,7 @@ SchemaBuilderEntity.prototype.make = function(command, model, helper, callback) 
         schema.tasks.wait(function(task, next) {
             task(command, item.value, output, builder, helper, function() {
                 next();
-            });
+            }, self);
         }, next);
 
     }, done, true);
@@ -677,7 +683,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
     trans(output, builder, helper, function(result) {
         callback(builder.hasError() ? builder : null, result, model);
-    });
+    }, self);
 
     return self;
 
@@ -1010,7 +1016,7 @@ ErrorBuilder.prototype.add = function(name, error, path) {
 
     self._errors.push({
         name: name,
-        error: error || '@',
+        error: typeof(error) === STRING ? error : error.toString() || '@',
         path: path
     });
 
