@@ -3542,7 +3542,7 @@ Framework.prototype._service = function(count) {
         Object.keys(self.routes.views).wait(function(key, next) {
             var item = self.routes.views[key];
             self.install('view', key, item.url, null, next);
-        });
+        }, true);
     }
 
     // every 1 minute (default) is created a ping message
@@ -3555,7 +3555,7 @@ Framework.prototype._service = function(count) {
                 conn.ping();
 
             next();
-        });
+        }, true);
     }
 
     self.emit('service', count);

@@ -7,11 +7,6 @@
 
 var utils = require('./utils');
 
-var schema = {};
-var schemaValidation = {};
-var schemaValidator = {};
-var schemaDefaults = {};
-
 var UNDEFINED = 'undefined';
 var FUNCTION = 'function';
 var OBJECT = 'object';
@@ -19,195 +14,152 @@ var STRING = 'string';
 var NUMBER = 'number';
 var BOOLEAN = 'boolean';
 var REQUIRED = 'The field "@" is required.';
+var DEFAULT_SCHEMA = 'default';
 
-/**
- * ErrorBuilder
- * @class
- * @classdesc Object validation.
- * @param {ErrorBuilderOnResource} onResource Resource handler.
- * @property {Number} count Count of errors.
- */
-function ErrorBuilder(onResource) {
+var schemas = {};
 
-    this._errors = [];
-    this.onResource = onResource;
-    this.resourceName = 'default';
-    this.resourcePrefix = '';
-    this.count = 0;
-    this.replacer = [];
-    this.isPrepared = false;
-
-    if (onResource === undefined)
-        this._resource();
+function SchemaBuilder(name) {
+    this.name = name;
+    this.collection = {};
 }
 
 /**
- * @callback ErrorBuilderOnResource
- * @param {String} name Filename of resource.
- * @param {String} key Resource key.
- * @return {String}
- */
-
-/**
- * UrlBuilder
- * @class
- * @classdesc CRUD parameters in URL.
- */
-function UrlBuilder() {
-    this.builder = {};
-}
-
-/**
- * Pagination
- * @class
- * @param {Number} items Count of items.
- * @param {Number} page Current page.
- * @param {Number} max Max items on page.
- * @param {String} format URL format for links (next, back, go to). Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
- * @property {Number} isNext Is next page?
- * @property {Number} isPrev Is previous page?
- * @property {Number} count Page count.
- * @property {Boolean} visible Is more than one page?
- * @property {String} format Format URL. Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
- */
-function Pagination(items, page, max, format) {
-    this.isNext = false;
-    this.isPrev = false;
-    this.items = items;
-    this.count = 0;
-    this.skip = 0;
-    this.take = 0;
-    this.page = 0;
-    this.max = 0;
-    this.visible = false;
-    this.format = format || '?page={0}';
-    this.refresh(items, page, max);
-}
-
-/**
- * Create schema
- * @param {String} name chema name.
- * @param {Object} obj Schema definition.
- * @param {SchemaDefaults} defaults Schema defaults.
- * @param {SchemaValidator} validator Schema validator.
+ * Get a schema
+ * @param {String} name
  * @return {Object}
  */
-exports.schema = function(name, obj, defaults, validator, properties) {
-
-    if (obj === undefined)
-        return schema[name] || null;
-
-    if (typeof(defaults) === FUNCTION)
-        schemaDefaults[name] = defaults;
-
-    if (typeof(validator) === FUNCTION)
-        schemaValidator[name] = validator;
-
-    if (properties instanceof Array)
-        schemaValidation[name] = properties;
-
-    schema[name] = obj;
-    return obj;
+SchemaBuilder.prototype.get = function(name) {
+    return this.collection[name];
 };
 
 /**
- * Remove schema
- * @param {String} name
- */
-exports.remove = function(name) {
-    delete schemaDefaults[name];
-    delete schemaValidator[name];
-    delete schemaValidation[name];
-    delete schema[name];
-};
-
-/**
- * Default handler
- * @callback SchemaDefaults
- * @param {String} name Property name.
- * @param {Booelan} isDefault Is default (true) or prepare (false)?
- * @return {Object} Property value.
- */
-
-/**
- * Validator handler
- * @callback SchemaValidator
- * @param {String} name Property name.
- * @param {Object} value Property value.
- * @return {Boolean} Is valid?
- */
-
-/**
- * Check if property value is joined to other class
- * @private
- * @param {String} value Property value from Schema definition.
- * @return {Boolean}
- */
-exports.isJoin = function(value) {
-    if (!value)
-        return false;
-    if (value[0] === '[')
-        return true;
-    return schema[value] !== undefined;
-};
-
-/**
- * Create validation
+ * Register a new schema
  * @param {String} name Schema name.
- * @param {Function or Array} fn Validator Handler or Property names as array for validating.
- * @param {String Array} properties Valid only these properties, optional.
- * @return {Function or Array}
+ * @param {Object} obj Schema definition.
+ * @param {Function(propertyName, isntPreparing, schemaName)} defaults
+ * @param {Function(propertyName, value, path, schemaName)} validator
+ * @param {String Array} properties Properties to validate.
+ * @return {SchemaBuilder}
  */
-exports.validation = function(name, properties, fn) {
-
-    if (fn instanceof Array && typeof(properties) === FUNCTION) {
-        var tmp = fn;
-        fn = properties;
-        properties = fn;
-    }
-
-    if (typeof(fn) === FUNCTION) {
-
-        schemaValidator[name] = fn;
-
-        if (properties === undefined)
-            schemaValidation[name] = Object.keys(schema[name]);
-        else
-            schemaValidation[name] = properties;
-
-        return true;
-    }
-
-    if (fn === undefined) {
-        var validator = schemaValidation[name];
-        if (validator === undefined)
-            return Object.keys(schema[name]);
-        return validator || [];
-    }
-
-    schemaValidation[name] = fn;
-    return fn;
+SchemaBuilder.prototype.add = function(name, obj, defaults, validator, properties) {
+    var self = this;
+    self.collection[name] = new SchemaBuilderEntity(self, name, obj, defaults, validator, properties);
+    return self;
 };
 
 /**
- * Validate model
- * @param {String} name Schema name.
- * @param {Object} model Object for validating.
+ * Remove an exist schema or group of schemas
+ * @param {String} name Schema name, optional.
+ * @return {SchemaBuilder}
+ */
+SchemaBuilder.prototype.remove = function(name) {
+    var self = this;
+
+    if (name === undefined) {
+        delete schemas[name];
+        self.collection = null;
+        return;
+    }
+
+    var schema = self.collection[name];
+    if (schema)
+        schema.remove();
+    schema = null;
+    return self;
+};
+
+function SchemaBuilderEntity(parent, name, obj, defaults, validator, properties) {
+    this.parent = parent;
+    this.name = name;
+    this.schema = obj;
+    this.fnDefaults = defaults;
+    this.fnValidation = validator;
+    this.properties = properties;
+    this.tasks;
+}
+
+/**
+ * Set schema validation
+ * @param {Function(propertyName, value, path, schemaName)} fn A validation function.
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.setValidation = function(fn) {
+    var self = this;
+    self.fnValidation = fn;
+    return self;
+};
+
+/**
+ * Set the default values for schema
+ * @param {Function(propertyName, isntPreparing, schemaName)} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.setDefault = function(fn) {
+    var self = this;
+    self.fnDefaults = fn;
+    return self;
+};
+
+/**
+ * Set properties to validate
+ * @param {String Array} properties
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.setProperties = function(properties) {
+    var self = this;
+    self.properties = properties;
+    return self;
+};
+
+/**
+ * Register a task for the schema
+ * @param {String} name Task name.
+ * @param {Function(command, value, model, errorBuilder, next)} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.task = function(fn) {
+    var self = this;
+    if (!self.tasks)
+        self.tasks = [];
+    self.tasks.push(fn);
+    return self;
+};
+
+/**
+ * Remove current schema
+ */
+SchemaBuilderEntity.prototype.remove = function() {
+    var self = this;
+    delete self.parent.collection[self.name];
+    self.schema = null;
+    self.fnDefaults = null;
+    self.fnValidation = null;
+    self.properties = null;
+    self.tasks = null;
+};
+
+/**
+ * Validate a schema
+ * @param {Object} model Object to validate.
+ * @param {String} resourcePrefix Prefix for resource key.
+ * @param {String} resourceName Resource filename.
+ * @param {ErrorBuilder} builder ErrorBuilder, INTERNAL.
  * @return {ErrorBuilder}
  */
-exports.validate = function(name, model, resourcePrefix, resourceName) {
+SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder) {
 
-    var fn = schemaValidator[name];
-    var builder = new ErrorBuilder();
+    var self = this;
+    var fn = self.fnValidation;
 
-    if (fn === undefined) {
+    if (builder === undefined)
+        builder = new ErrorBuilder();
 
+    if (fn === undefined || fn === null) {
         if (typeof(framework.onValidation) !== FUNCTION) {
             if (framework && framework.error)
-                framework.error(new Error('Schema "' + name + '" doesn\'t defined a validation delegate.'), 'Builders.validate()', null);
+                framework.error(new Error('Schema "' + name + '" doesn\'t defined a validation delegate.'), self.parent.name + '.' + self.name + '.validate()', null);
             return builder;
         }
-
         fn = framework.onValidation;
     }
 
@@ -217,36 +169,35 @@ exports.validate = function(name, model, resourcePrefix, resourceName) {
     if (resourcePrefix)
         builder.resourcePrefix = resourcePrefix;
 
-    return utils.validate.call(this, model, name, fn, builder);
+    return utils.validate.call(self, model, self.name, fn, builder, undefined, self.collection);
 };
 
 /**
- * Create default object according to schema
- * @param  {String} name Schema name.
+ * Create a default object according the schema
+ * @alias SchemaBuilderEntity.default()
  * @return {Object}
  */
-exports.create = function(name) {
-    return exports.defaults(name);
+SchemaBuilderEntity.prototype.create = function() {
+    return this.default();
 };
 
 /**
- * Create default object according to schema
- * @param  {String} name Schema name.
+ * Create a default object according the schema
  * @return {Object}
  */
-exports.defaults = function(name) {
+SchemaBuilderEntity.prototype.default = function() {
 
-    var obj = exports.schema(name);
+    var self = this;
+    var obj = self.schema;
 
     if (obj === null)
         return null;
 
-    var defaults = schemaDefaults[name];
+    var defaults = self.fnDefaults;
     var item = utils.extend({}, obj, true);
     var properties = Object.keys(item);
-    var length = properties.length;
 
-    for (var i = 0; i < length; i++) {
+    for (var i = 0, length = properties.length; i < length; i++) {
 
         var property = properties[i];
         var value = item[property];
@@ -363,41 +314,42 @@ exports.defaults = function(name) {
             continue;
         }
 
-        item[property] = exports.defaults(value);
+        var child = self.parent.get(value);
+        item[property] = child ? child.default() : null;
     }
 
     return item;
 };
 
 /**
- * Prepare object according to schema
- * @param {String} name Schema name.
- * @param {Object} model Object to prepare.
- * @return {Object} Prepared object.
+ * Prepare model according to schema
+ * @param {Object} model
+ * @param {String Array} dependencies INTERNAL.
+ * @return {Object}
  */
-exports.prepare = function(name, model) {
+SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
-    var obj = exports.schema(name);
+    var self = this;
+    var obj = self.schema;
 
     if (obj === null)
         return null;
 
     if (model === null || model === undefined)
-        return exports.defaults(name, false, name);
+        return self.default();
 
     var tmp;
     var item = utils.extend({}, obj, true);
     var properties = Object.keys(item);
-    var defaults = schemaDefaults[name];
-    var length = properties.length;
+    var defaults = self.fnDefaults;
 
-    for (var i = 0; i < length; i++) {
+    for (var i = 0, length = properties.length; i < length; i++) {
 
         var property = properties[i];
         var val = model[property];
 
         if (val === undefined && defaults)
-            val = defaults(property, false, name);
+            val = defaults(property, false, self.name);
 
         if (val === undefined)
             val = '';
@@ -454,7 +406,7 @@ exports.prepare = function(name, model) {
                 if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
                     tmp = null;
 
-                item[property] = tmp || (defaults ? isUndefined(defaults(property, false, name), null) : null);
+                item[property] = tmp || (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
                 continue;
             }
 
@@ -502,8 +454,7 @@ exports.prepare = function(name, model) {
             }
 
             item[property] = [];
-            var sublength = val.length;
-            for (var j = 0; j < sublength; j++) {
+            for (var j = 0, sublength = val.length; j < sublength; j++) {
 
                 if (value === null) {
                     item[property].push(model[property][j]);
@@ -531,7 +482,17 @@ exports.prepare = function(name, model) {
                         item[property].push(utils.parseFloat(tmp));
                         break;
                     default:
-                        item[property][j] = exports.prepare(value, model[property][j]);
+
+                        var entity = self.parent.get(value);
+
+                        if (entity) {
+                            item[property][j] = entity.prepare(tmp, dependencies);
+                            if (dependencies)
+                                dependencies.push({ name: value, value: item[property][j] });
+                        }
+                        else
+                            item[property][j] = null;
+
                         break;
                 }
             }
@@ -590,10 +551,323 @@ exports.prepare = function(name, model) {
             continue;
         }
 
-        item[property] = exports.prepare(value, model[property]);
+        var entity = self.parent.get(value);
+
+        if (entity) {
+            item[property] = entity.prepare(value);
+            if (dependencies)
+                dependencies.push({ name: value, value: item[property] });
+        }
+        else
+            item[property] = null;
     }
 
     return item;
+};
+
+/**
+ * Make a object according to schema with all tasks
+ * @param {String} command
+ * @param {Object} model
+ * @param {Function(errorBuilder, model, command)} callback
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.make = function(command, model, callback) {
+
+    for (var i = 0, length = arguments.length; i < length; i++) {
+        switch (typeof(arguments[i])) {
+            case STRING:
+                command = arguments[i];
+                break;
+            case OBJECT:
+                model = arguments[i];
+                break;
+            case FUNCTION:
+                callback = arguments[i];
+                break;
+        }
+    }
+
+    if (command === undefined)
+        command = '';
+
+    var self = this;
+    var dependencies = [];
+    var output = self.prepare(model, dependencies);
+    var builder = new ErrorBuilder();
+
+    var done = function() {
+        if (builder.hasError() === false)
+            builder = null;
+        callback(builder, output, command);
+    };
+
+    if (dependencies.length === 0) {
+        done();
+        return;
+    }
+
+    dependencies.wait(function(item, next) {
+
+        var schema = self.parent.get(item.name);
+
+        if (schema.tasks === undefined || schema.tasks.length === 0) {
+            next();
+            return;
+        }
+
+        schema.tasks.wait(function(task, next) {
+            task(command, item.value, output, builder, function() {
+                next();
+            });
+        }, next);
+
+    }, done, true);
+
+    return self;
+
+};
+
+/**
+ * ErrorBuilder
+ * @class
+ * @classdesc Object validation.
+ * @param {ErrorBuilderOnResource} onResource Resource handler.
+ * @property {Number} count Count of errors.
+ */
+function ErrorBuilder(onResource) {
+
+    this._errors = [];
+    this.onResource = onResource;
+    this.resourceName = 'default';
+    this.resourcePrefix = '';
+    this.count = 0;
+    this.replacer = [];
+    this.isPrepared = false;
+
+    if (onResource === undefined)
+        this._resource();
+}
+
+/**
+ * @callback ErrorBuilderOnResource
+ * @param {String} name Filename of resource.
+ * @param {String} key Resource key.
+ * @return {String}
+ */
+
+/**
+ * UrlBuilder
+ * @class
+ * @classdesc CRUD parameters in URL.
+ */
+function UrlBuilder() {
+    this.builder = {};
+}
+
+/**
+ * Pagination
+ * @class
+ * @param {Number} items Count of items.
+ * @param {Number} page Current page.
+ * @param {Number} max Max items on page.
+ * @param {String} format URL format for links (next, back, go to). Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
+ * @property {Number} isNext Is next page?
+ * @property {Number} isPrev Is previous page?
+ * @property {Number} count Page count.
+ * @property {Boolean} visible Is more than one page?
+ * @property {String} format Format URL. Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
+ */
+function Pagination(items, page, max, format) {
+    this.isNext = false;
+    this.isPrev = false;
+    this.items = items;
+    this.count = 0;
+    this.skip = 0;
+    this.take = 0;
+    this.page = 0;
+    this.max = 0;
+    this.visible = false;
+    this.format = format || '?page={0}';
+    this.refresh(items, page, max);
+}
+
+/**
+ * Create schema
+ * @param {String} name chema name.
+ * @param {Object} obj Schema definition.
+ * @param {SchemaDefaults} defaults Schema defaults.
+ * @param {SchemaValidator} validator Schema validator.
+ * @return {Object}
+ */
+exports.schema = function(name, obj, defaults, validator, properties) {
+
+    if (obj === undefined) {
+
+        if (schemas[name] === undefined)
+            schemas[name] = new SchemaBuilder(name);
+
+        return schemas[name];
+    }
+
+    if (schemas[DEFAULT_SCHEMA] === undefined)
+        schemas[DEFAULT_SCHEMA] = new SchemaBuilder(DEFAULT_SCHEMA);
+
+    if (typeof(defaults) !== FUNCTION)
+        defaults = undefined;
+
+    if (typeof(validator) !== FUNCTION)
+        validator = undefined;
+
+    if (!(properties instanceof Array))
+        properties = undefined;
+
+    schemas[DEFAULT_SCHEMA].add(name, obj, defaults, validator, properties);
+
+    return obj;
+};
+
+/**
+ * Remove a schema
+ * @param {String} name
+ */
+exports.remove = function(name) {
+    delete schemas[name];
+};
+
+/**
+ * Default handler
+ * @callback SchemaDefaults
+ * @param {String} name Property name.
+ * @param {Booelan} isDefault Is default (true) or prepare (false)?
+ * @return {Object} Property value.
+ */
+
+/**
+ * Validator handler
+ * @callback SchemaValidator
+ * @param {String} name Property name.
+ * @param {Object} value Property value.
+ * @return {Boolean} Is valid?
+ */
+
+/**
+ * Check if property value is joined to other class
+ * @private
+ * @param {String} value Property value from Schema definition.
+ * @return {Boolean}
+ */
+exports.isJoin = function(collection, value) {
+    if (!value)
+        return false;
+    if (value[0] === '[')
+        return true;
+    if (collection === undefined)
+        return false;
+    return collection[value] !== undefined;
+};
+
+/**
+ * Create validation
+ * @param {String} name Schema name.
+ * @param {Function or Array} fn Validator Handler or Property names as array for validating.
+ * @param {String Array} properties Valid only these properties, optional.
+ * @return {Function or Array}
+ */
+exports.validation = function(name, properties, fn) {
+
+    if (schemas[DEFAULT_SCHEMA] === undefined)
+        return [];
+
+    var schema = schemas[DEFAULT_SCHEMA].get(name);
+    if (schema === undefined)
+        return [];
+
+    if (fn instanceof Array && typeof(properties) === FUNCTION) {
+        var tmp = fn;
+        fn = properties;
+        properties = fn;
+    }
+
+    if (typeof(fn) === FUNCTION) {
+
+        schema.fnValidation = fn;
+
+        if (properties === undefined)
+            schema.properties = Object.keys(schema.schema);
+        else
+            schema.properties = properties;
+
+        return true;
+    }
+
+    if (fn === undefined) {
+        var validator = schema.properties;
+        if (validator === undefined)
+            return Object.keys(schema.schema);
+        return validator || [];
+    }
+
+    schema.fnValidation = fn;
+    return fn;
+};
+
+/**
+ * Validate model
+ * @param {String} name Schema name.
+ * @param {Object} model Object for validating.
+ * @return {ErrorBuilder}
+ */
+exports.validate = function(name, model, resourcePrefix, resourceName) {
+
+    var schema = schemas[DEFAULT_SCHEMA];
+    if (schema === undefined)
+        return null;
+
+    schema = schema.get(name);
+    if (schema === undefined)
+        return null;
+
+    var fn = schema.fnValidation;
+    return schema.validate(model, resourcePrefix, resourceName);
+};
+
+/**
+ * Create default object according to schema
+ * @param  {String} name Schema name.
+ * @return {Object}
+ */
+exports.create = function(name) {
+    return exports.defaults(name);
+};
+
+/**
+ * Create default object according to schema
+ * @param  {String} name Schema name.
+ * @return {Object}
+ */
+exports.defaults = function(name) {
+    if (schemas[DEFAULT_SCHEMA] === undefined)
+        return null;
+    var schema = schemas[DEFAULT_SCHEMA].get(name);
+    if (schema === undefined)
+        return null;
+    return schema.default();
+};
+
+/**
+ * Prepare object according to schema
+ * @param {String} name Schema name.
+ * @param {Object} model Object to prepare.
+ * @return {Object} Prepared object.
+ */
+exports.prepare = function(name, model) {
+    if (schemas[DEFAULT_SCHEMA] === undefined)
+        return null;
+    var schema = schemas[DEFAULT_SCHEMA].get(name);
+    if (schema === undefined)
+        return null;
+    return schema.prepare(model);
 };
 
 function isUndefined(value, def) {
@@ -1133,6 +1407,7 @@ UrlBuilder.prototype.toOne = function(keys, delimiter) {
 // EXPORTS
 // ======================================================
 
+exports.SchemaBuilder = SchemaBuilder;
 exports.ErrorBuilder = ErrorBuilder;
 exports.Pagination = Pagination;
 exports.UrlBuilder = UrlBuilder;

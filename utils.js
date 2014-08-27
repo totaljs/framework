@@ -1042,12 +1042,15 @@ exports.GUID = function(max) {
  * @param {String} path Internal, current path
  * @return {ErrorBuilder}
  */
-exports.validate = function(model, properties, prepare, builder, resource, path) {
+exports.validate = function(model, properties, prepare, builder, resource, path, collection) {
 
     if (typeof(builder) === FUNCTION && resource === undefined) {
         resource = builder;
         builder = null;
     }
+
+    if (collection === undefined)
+        collection = {};
 
     var error = builder;
     var current = path === undefined ? '' : path + '.';
@@ -1064,7 +1067,9 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
             schemaName = properties;
             properties = schema;
             isSchema = true;
-            definition = builders.schema(schemaName);
+            definition = collection === undefined ? builders.schema('default').collection : collection;
+            if (!definition)
+                definition = {};
         } else
             properties = properties.replace(/\s/g, '').split(',');
     }
@@ -1085,11 +1090,12 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
         if (value === undefined) {
             error.add(name, '@', current + name);
             continue;
-        } else
-            value = (type === FUNCTION ? model[name]() : model[name]);
+        } else if (type === FUNCTION)
+            value = model[name]();
 
         if (type !== OBJECT && isSchema) {
-            if (builders.isJoin(definition[name]))
+            collection = builders.schema('default').collection;
+            if (builders.isJoin(collection, name))
                 type = OBJECT;
         }
 
@@ -1097,10 +1103,11 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
 
             if (isSchema) {
 
-                var schema = builders.schema(schemaName) || null;
+                var schema = collection[schemaName];
 
-                if (schema !== null) {
-                    schema = schema[name] || null;
+                if (schema) {
+
+                    schema = schema.schema[name] || null;
 
                     if (schema === Date || schema === String || schema === Number || schema === Boolean) {
                         // Empty
@@ -1117,11 +1124,10 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
                                 continue;
                             }
 
-                            // Schema not exists, so valid plain values
-                            if (builders.schema(schema) === null) {
+                            // Schema not exists
+                            if (collection[schema] === undefined) {
 
                                 var result2 = prepare(name, value, current + name, schemaName);
-
                                 if (result2 === undefined)
                                     continue;
 
@@ -1144,14 +1150,15 @@ exports.validate = function(model, properties, prepare, builder, resource, path)
                                 continue;
                             }
 
+
                             var sublength = value.length;
                             for (var j = 0; j < sublength; j++)
-                                exports.validate(value[j], schema, prepare, error, resource, current + name);
+                                exports.validate(value[j], schema, prepare, error, resource, current + name, collection);
 
                             continue;
                         }
 
-                        exports.validate(value, schema, prepare, error, resource, current + name);
+                        exports.validate(value, schema, prepare, error, resource, current + name, collection);
                         continue;
                     }
                 }
@@ -2807,10 +2814,21 @@ Array.prototype.waiting = function(onItem, callback) {
     @callback {Function} :: function(next) {}
     @complete {Function} :: optional
 */
-Array.prototype.wait = function(onItem, callback) {
+Array.prototype.wait = function(onItem, callback, remove) {
 
     var self = this;
-    var item = self.shift();
+    var type = typeof(callback);
+
+    if (type === NUMBER || type === BOOLEAN) {
+        var tmp = remove;
+        remove = callback;
+        callback = tmp;
+    }
+
+    if (remove === undefined)
+        remove = 0;
+
+    var item = remove === true ? self.shift() : self[remove];
 
     if (item === undefined) {
         if (callback)
@@ -2820,7 +2838,9 @@ Array.prototype.wait = function(onItem, callback) {
 
     onItem.call(self, item, function() {
         setImmediate(function() {
-            self.wait(onItem, callback);
+            if (typeof(remove) === NUMBER)
+                remove++;
+            self.wait(onItem, callback, remove);
         });
     });
 
@@ -3449,6 +3469,59 @@ function converBytesToInt64(data, startIndex, isLE) {
         return (data[startIndex] | (data[startIndex + 1] << 0x08) | (data[startIndex + 2] << 0x10) | (data[startIndex + 3] << 0x18) | (data[startIndex + 4] << 0x20) | (data[startIndex + 5] << 0x28) | (data[startIndex + 6] << 0x30) | (data[startIndex + 7] << 0x38));
     return ((data[startIndex + 7] << 0x20) | (data[startIndex + 6] << 0x28) | (data[startIndex + 5] << 0x30) | (data[startIndex + 4] << 0x38) | (data[startIndex + 3]) | (data[startIndex + 2] << 0x08) | (data[startIndex + 1] << 0x10) | (data[startIndex] << 0x18));
 }
+
+var queue = {};
+
+function queue_next(name) {
+    var item = queue[name];
+    item.running--;
+
+    if (item.running < 0)
+        item.running = 0;
+
+    if (item.pending.length === 0)
+        return;
+
+    var fn = item.pending.shift();
+    if (fn === undefined)
+        return;
+
+    (function(name){
+        setImmediate(function() {
+            fn(function() {
+                queue_next(name);
+            });
+        });
+    })(name);
+};
+
+/**
+ * Queue list
+ * @param {String} name
+ * @param {Number} max Maximum stack.
+ * @param {Function(next)} fn
+ */
+exports.queue = function(name, max, fn) {
+
+    if (queue[name] === undefined)
+        queue[name] = { limit: max, running: 0, pending: [] };
+
+    var item = queue[name];
+    item.running++;
+
+    if (item.running > item.limit) {
+        item.pending.push(fn);
+        return;
+    }
+
+    (function(name){
+        setImmediate(function() {
+            fn(function() {
+                queue_next(name);
+            });
+        });
+    })(name);
+};
 
 global.async = exports.async;
 global.sync = exports.sync;

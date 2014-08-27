@@ -228,6 +228,22 @@ function prototypeArray() {
 
 	assert.ok(arr.orderBy(false)[0] === 5, 'array.orderBy()');
 
+	var counter = arr.length;
+
+	arr.wait(function(item, next) {
+		counter--;
+		next();
+	}, function() {
+		assert.ok(counter === 0 && counter !== arr.length, 'array.wait(remove = false)');
+
+		arr.wait(function(item, next) {
+			next();
+		}, function() {
+			assert.ok(arr.length === 0, 'array.wait(remove = true)');
+		}, true);
+
+	});
+
 }
 
 function t_callback1(a, cb) {
@@ -432,7 +448,6 @@ function others() {
 	};
 
 	var error = utils.validate({}, ['firstName', 'lastName', 'age'], onValidation, resource);
-
 	assert.ok(error.hasError(), 'validation - hasError()');
 
 	error.prepare();
@@ -475,6 +490,30 @@ function others() {
 	utils.wait(noop, function(err) {
 		assert(err !== null, 'utils.wait() - timeout');
 	}, 1000);
+
+	var queue = 0;
+
+	utils.queue('file', 2, function(next) {
+		setTimeout(function() {
+			queue++;
+			next();
+		}, 300);
+	});
+
+	utils.queue('file', 2, function(next) {
+		setTimeout(function() {
+			queue--;
+			next();
+		}, 300);
+	});
+
+	utils.queue('file', 2, function(next) {
+		setTimeout(function() {
+			assert.ok(queue === 0, 'utils.queue()');
+			next();
+		}, 300);
+	});
+
 }
 
 function onValidation(name, value, path) {
