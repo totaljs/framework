@@ -36,14 +36,13 @@ SchemaBuilder.prototype.get = function(name) {
  * Register a new schema
  * @param {String} name Schema name.
  * @param {Object} obj Schema definition.
- * @param {Function(propertyName, isntPreparing, schemaName)} defaults
  * @param {Function(propertyName, value, path, schemaName)} validator
  * @param {String Array} properties Properties to validate.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilder.prototype.add = function(name, obj, defaults, validator, properties) {
+SchemaBuilder.prototype.add = function(name, obj, validator, properties) {
     var self = this;
-    self.collection[name] = new SchemaBuilderEntity(self, name, obj, defaults, validator, properties);
+    self.collection[name] = new SchemaBuilderEntity(self, name, obj, validator, properties);
     return self.collection[name];
 };
 
@@ -68,11 +67,11 @@ SchemaBuilder.prototype.remove = function(name) {
     return self;
 };
 
-function SchemaBuilderEntity(parent, name, obj, defaults, validator, properties) {
+function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.parent = parent;
     this.name = name;
     this.schema = obj;
-    this.fnDefaults = defaults;
+    this.fnDefaults;
     this.fnValidation = validator;
     this.properties = properties;
     this.tasks;
@@ -778,7 +777,10 @@ exports.schema = function(name, obj, defaults, validator, properties) {
     if (!(properties instanceof Array))
         properties = undefined;
 
-    schemas[DEFAULT_SCHEMA].add(name, obj, defaults, validator, properties);
+    var schema = schemas[DEFAULT_SCHEMA].add(name, obj, validator, properties);
+
+    if (defaults)
+        schema.setDefault(defaults);
 
     return obj;
 };
