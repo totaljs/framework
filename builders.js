@@ -73,7 +73,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.schema = obj;
     this.fnDefaults;
     this.fnValidation = validator;
-    this.properties = properties;
+    this.properties = properties === undefined ? Object.keys(obj) : properties;
     this.tasks;
     this.transforms;
 }
@@ -189,7 +189,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
     if (resourcePrefix)
         builder.resourcePrefix = resourcePrefix;
 
-    return utils.validate.call(self, model, self.name, fn, builder, undefined, self.collection);
+    return utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
 };
 
 /**
@@ -1016,7 +1016,7 @@ ErrorBuilder.prototype.add = function(name, error, path) {
 
     self._errors.push({
         name: name,
-        error: typeof(error) === STRING ? error : error.toString() || '@',
+        error: typeof(error) === STRING ? error : (error || '').toString() || '@',
         path: path
     });
 

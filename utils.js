@@ -1062,7 +1062,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
         error = new builders.ErrorBuilder(resource);
 
     if (typeof(properties) === STRING) {
-        var schema = builders.validation(properties);
+        var schema = collection === undefined ? builders.validation(properties) : collection[properties] === undefined ? '' : collection[properties].properties;
         if (schema.length !== 0) {
             schemaName = properties;
             properties = schema;
