@@ -1419,16 +1419,38 @@ UrlBuilder.prototype.clear = function() {
  * Create URL
  * @return {String}
  */
-UrlBuilder.prototype.toString = function() {
+UrlBuilder.prototype.toString = function(url, skipEmpty) {
+
+    if (typeof(url) === BOOLEAN) {
+        var tmp = skipEmpty;
+        skipEmpty = url;
+        url = tmp;
+    }
 
     var self = this;
     var builder = [];
 
     Object.keys(self.builder).forEach(function(o) {
-        builder.push(o + '=' + encodeURIComponent(self.builder[o] || ''));
+
+        var value = self.builder[o];
+        if (value === undefined || value === null)
+            value = '';
+        else
+            value = value.toString();
+
+        if (skipEmpty && value === '')
+            return;
+
+        builder.push(o + '=' + encodeURIComponent(value));
     });
 
-    return builder.join('&');
+    if (typeof(url) === STRING) {
+        if (url[url.length - 1] !== '?')
+            url += '?';
+    } else
+        url = '';
+
+    return url + builder.join('&');
 };
 
 /**
