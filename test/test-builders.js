@@ -123,7 +123,7 @@ function test_Schema() {
             return -1;
     });
 
-    builders.schema('default').get('2').addTask(function(command, value, model, err, helper, next) {
+    builders.schema('default').get('2').addComposer(function(command, value, model, err, helper, next) {
         if (model.counter === undefined)
             model.counter = value.age;
         else
@@ -131,6 +131,8 @@ function test_Schema() {
         next();
     }).addTransform('xml', function(model, err, helper, next) {
         next('<xml>OK</xml>');
+    }).addWorkflow('send', function(model, err, helper, next) {
+        next('workflow');
     });
 
     //console.log(builders.defaults('1', { name: 'Peter', age: 30, join: { name: 20 }}));
@@ -148,13 +150,17 @@ function test_Schema() {
     assert.ok(output.join[0].age === -1 && output.join[1].age === 20, name + 'schema - joining models');
     assert.ok(output.nums[2] === 2.3 && output.nums[1] === 0, name + 'schema - parse plain array');
 
-    builders.schema('default').get('1').make('create', output, function(err, model, command) {
+    builders.schema('default').get('1').compose('create', output, function(err, model, command) {
         assert.ok(model.counter === 19, 'Builders.task()');
         assert.ok(err === null, 'Builders.make()');
     });
 
     builders.schema('default').get('2').transform('xml', output, function(err, output) {
         assert.ok(output === '<xml>OK</xml>', 'Builders.transform()');
+    });
+
+    builders.schema('default').get('2').workflow('send', output, function(err, output) {
+        assert.ok(output === 'workflow', 'Builders.workflow()');
     });
 
     builders.schema('validator', {

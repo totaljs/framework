@@ -994,6 +994,10 @@ exports.etag = function(text, version) {
     return {String}
 */
 exports.path = function(path, delimiter) {
+
+    if (!path)
+        path = '';
+
     delimiter = delimiter || '/';
     if (path[path.length - 1] === delimiter)
         return path;
@@ -1607,6 +1611,13 @@ if (!String.prototype.trim) {
     String.prototype.trim = function() {
         return this.replace(regexpTRIM, '');
     };
+}
+
+if (!String.prototype.replaceAt) {
+    String.prototype.replaceAt = function(index, character) {
+        var self = this;
+        return self.substr(0, index) + character + self.substr(index + character.length);
+    }
 }
 
 /**

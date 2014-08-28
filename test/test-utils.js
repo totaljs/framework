@@ -67,6 +67,7 @@ function prototypeString() {
 	assert.ok('{0}={1}'.format('name', 'value') === 'name=value', 'string.format()');
 	assert.ok('<b>total.js</b>"&nbsp;'.encode() === '&lt;b&gt;total.js&lt;/b&gt;&quot;&amp;nbsp;', 'string.encode()');
 	assert.ok('&lt;b&gt;total.js&lt;/b&gt;&amp;nbsp;'.decode() === '<b>total.js</b>&nbsp;', 'string.decode()');
+	assert.ok(str.trim().replaceAt(5, ';') === 'total;js', 'string.replaceAt()');
 
 	str = 'Great function.'
 

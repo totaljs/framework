@@ -15,6 +15,7 @@ var NUMBER = 'number';
 var BOOLEAN = 'boolean';
 var REQUIRED = 'The field "@" is required.';
 var DEFAULT_SCHEMA = 'default';
+var DEFAULT_SCHEMA_PROPERTY = '$state';
 
 var schemas = {};
 
@@ -74,7 +75,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.fnDefaults;
     this.fnValidation = validator;
     this.properties = properties === undefined ? Object.keys(obj) : properties;
-    this.tasks;
+    this.composers;
     this.transforms;
 }
 
@@ -119,21 +120,21 @@ SchemaBuilderEntity.prototype.setProperties = function(properties) {
 };
 
 /**
- * Add a new task for the schema
+ * Add a new composer for the schema
  * @param {Function(command, value, model, errorBuilder, helper, next, schema)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.addTask = function(fn) {
+SchemaBuilderEntity.prototype.addComposer = function(fn) {
     var self = this;
-    if (!self.tasks)
-        self.tasks = [];
-    self.tasks.push(fn);
+    if (!self.composers)
+        self.composers = [];
+    self.composers.push(fn);
     return self;
 };
 
 /**
  * Add a new transformation for the schema
- * @param {String} name Task name.
+ * @param {String} name Transform name.
  * @param {Function(model, errorBuilder, helper, next(value), schema)} fn
  * @return {SchemaBuilderEntity}
  */
@@ -142,6 +143,20 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
     if (!self.transforms)
         self.transforms = {};
     self.transforms[name] = fn;
+    return self;
+};
+
+/**
+ * Add a new workflow for the schema
+ * @param {String} name Transform name.
+ * @param {Function(model, errorBuilder, helper, next(value), schema)} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
+    var self = this;
+    if (!self.workflows)
+        self.workflows = {};
+    self.workflows[name] = fn;
     return self;
 };
 
@@ -155,7 +170,8 @@ SchemaBuilderEntity.prototype.remove = function() {
     self.fnDefaults = null;
     self.fnValidation = null;
     self.properties = null;
-    self.tasks = null;
+    self.composers = null;
+    self.workflows = null;
 };
 
 /**
@@ -189,7 +205,28 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
     if (resourcePrefix)
         builder.resourcePrefix = resourcePrefix;
 
+    self._setStateToModel(model, 1, 1);
+
     return utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
+}
+
+SchemaBuilderEntity.prototype._getStateOfModel = function(model, index) {
+    return (model[DEFAULT_SCHEMA_PROPERTY] || '')[index] || '0';
+};
+
+SchemaBuilderEntity.prototype._setStateToModel = function(model, index, value) {
+
+    var item = model[DEFAULT_SCHEMA_PROPERTY];
+
+    if (typeof(value) !== OBJECT)
+        value = value.toString();
+
+    if (!item)
+        model[DEFAULT_SCHEMA_PROPERTY] = '01';
+    else if (item[1] !== value)
+        model[DEFAULT_SCHEMA_PROPERTY] = item.replaceAt(1, value);
+
+    return this;
 };
 
 /**
@@ -580,7 +617,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         var entity = self.parent.get(value);
 
         if (entity) {
-            item[property] = entity.prepare(val );
+            item[property] = entity.prepare(val);
             if (dependencies)
                 dependencies.push({ name: value, value: item[property] });
         }
@@ -588,20 +625,19 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
             item[property] = null;
     }
 
+    self._setStateToModel(model, 0, 1);
     return item;
 };
 
 /**
- * Make an object according to schema with all tasks
+ * Compose an object according to schema with all composers
  * @param {String} command
  * @param {Object} model
  * @param {Object} helper A helper object, optional.
  * @param {Function(errorBuilder, model, command)} callback
- * @param {Boolean} noPrepare Disable preparing.
- * @param {Boolean} noValidate Disable validating.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.make = function(command, model, helper, callback, noPrepare, noValidate) {
+SchemaBuilderEntity.prototype.compose = function(command, model, helper, callback) {
 
     if (typeof(command) === OBJECT) {
         callback = helper;
@@ -616,6 +652,10 @@ SchemaBuilderEntity.prototype.make = function(command, model, helper, callback, 
     }
 
     var self = this;
+
+    var noPrepare = self._getStateOfModel(model, 0) === '1';
+    var noValidate = self._getStateOfModel(model, 1) === '1';
+
     var dependencies = [];
     var output = noPrepare === true ? utils.copy(model) : self.prepare(model, dependencies);
     var builder = self.fnValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
@@ -636,13 +676,13 @@ SchemaBuilderEntity.prototype.make = function(command, model, helper, callback, 
 
         var schema = self.parent.get(item.name);
 
-        if (schema.tasks === undefined || schema.tasks.length === 0) {
+        if (schema.composers === undefined || schema.composers.length === 0) {
             next();
             return;
         }
 
-        schema.tasks.wait(function(task, next) {
-            task(command, item.value, output, builder, helper, function() {
+        schema.composers.wait(function(composer, next) {
+            composer(command, item.value, output, builder, helper, function() {
                 next();
             }, self);
         }, next);
@@ -655,6 +695,7 @@ SchemaBuilderEntity.prototype.make = function(command, model, helper, callback, 
 
 /**
  * Transform an object
+ * @param {String Array} flags Flags for compose, optional. Default: prepare, validate.
  * @param {String} name
  * @param {Object} model
  * @param {Object} helper A helper object, optional.
@@ -663,7 +704,7 @@ SchemaBuilderEntity.prototype.make = function(command, model, helper, callback, 
  * @param {Boolean} noValidate Disable validating.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback, noPrepare, noValidate) {
+SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback) {
 
     var self = this;
 
@@ -679,7 +720,10 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
         return;
     }
 
-    var output = noPrepare === true ? utils.copy(model) : self.prepare(model);
+    var noPrepare = self._getStateOfModel(model, 0) === '1';
+    var noValidate = self._getStateOfModel(model, 1) === '1';
+
+    var output =  noPrepare === true ? utils.copy(model) : self.prepare(model);
     var builder = self.fnValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
 
     if (builder.hasError()) {
@@ -693,6 +737,102 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
     return self;
 
+};
+
+/**
+ * Run workflow
+ * @param {String} name
+ * @param {Object} model
+ * @param {Object} helper A helper object, optional.
+ * @param {Function(errorBuilder, output, model)} callback
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback) {
+
+    var self = this;
+
+    if (callback === undefined) {
+        callback = helper;
+        helper = undefined;
+    }
+
+    var workflow = self.workflows ? self.workflows[name] : undefined;
+
+    if (!workflow) {
+        callback(new ErrorBuilder().add('', 'Workflow not found.'));
+        return;
+    }
+
+    var noPrepare = self._getStateOfModel(model, 0) === '1';
+    var noValidate = self._getStateOfModel(model, 1) === '1';
+
+    var output = noPrepare === true ? utils.copy(model) : self.prepare(model);
+    var builder = noValidate === true || self.fnValidation === undefined ? new ErrorBuilder() : self.validate(output);
+
+    if (builder.hasError()) {
+        callback(builder);
+        return;
+    }
+
+    workflow(output, builder, helper, function(result) {
+        callback(builder.hasError() ? builder : null, result, model);
+    }, self);
+
+    return self;
+
+};
+
+/**
+ * Clean model (remove state of all schemas in model).
+ * @param {Object} model
+ * @param {Boolean} isCopied Internal argument.
+ * @return {Object}
+ */
+SchemaBuilderEntity.prototype.clean = function(model, isCopied) {
+
+    if (model === null || model === undefined)
+        return model;
+
+    if (isCopied)
+        model = utils.copy(model);
+
+    delete model[DEFAULT_SCHEMA_PROPERTY];
+
+    var keys = Object.keys(model);
+
+    for (var i = 0, length = keys.length; i < length; i++) {
+
+        var key = keys[i];
+        var value = model[key];
+
+        if (value === null)
+            continue;
+
+        if (typeof(value) !== OBJECT)
+            continue;
+
+        if (value instanceof Array) {
+
+            for (var j = 0, sublength = value.length; j < sublength; j++) {
+
+                var item = value[j];
+
+                if (item === null)
+                    continue;
+
+                if (typeof(item) !== OBJECT)
+                    continue;
+
+                self.clean(item, true);
+            }
+
+            continue;
+        }
+
+        self.clean(value, true);
+    }
+
+    return model;
 };
 
 /**
