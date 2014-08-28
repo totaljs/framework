@@ -832,7 +832,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         flags = tmp;
     }
 
-    if (!utils.isArray(flags) && typeof(flags) === 'object') {
+    if (!(flags instanceof Array) && typeof(flags) === OBJECT) {
         protocols = flags['protocols'] || flags['protocol'];
         allow = flags['allow'] || flags['origin'];
         maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
@@ -924,7 +924,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
     var isMember = false;
 
-    if (!flags || (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1))
+    if (!flags || (flags.indexOf('authorize') === -1))
         isMember = true;
 
     self.routes.websockets.push({
