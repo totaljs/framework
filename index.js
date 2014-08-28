@@ -4109,6 +4109,63 @@ Framework.prototype._log = function(a, b, c, d) {
 };
 
 /**
+ * Send e-mail
+ * @param {String or Array} address E-mail address.
+ * @param {String} subject E-mail subject.
+ * @param {String} view View name.
+ * @param {Object} model Optional.
+ * @param {Function(err)} callback Optional.
+ * @return {Framework}
+ */
+Framework.prototype.mail = function(address, subject, view, model, callback) {
+
+    var controller = new Controller('', null, null, null);
+
+    if (typeof(layout) === OBJECT) {
+        var tmp = repository;
+        repository = layout;
+        layout = tmp;
+    }
+
+    controller.layoutName = layout || '';
+
+    if (typeof(repository) === OBJECT && repository !== null)
+        controller.repository = repository;
+
+    controller.mail.apply(controller, arguments);
+    return self;
+};
+
+
+/**
+ * Render view
+ * @param {String} name View name.
+ * @param {Object} model Model.
+ * @param {String} layout Layout for the view, optional. Default without layout.
+ * @param {Object} repository A repository object, optional. Default empty.
+ * @return {String}
+ */
+Framework.prototype.view = function(name, model, layout, repository) {
+
+    var controller = new Controller('', null, null, null);
+
+    if (typeof(layout) === OBJECT) {
+        var tmp = repository;
+        repository = layout;
+        layout = tmp;
+    }
+
+    controller.layoutName = layout || '';
+
+    if (typeof(repository) === OBJECT && repository !== null)
+        controller.repository = repository;
+
+    var output = controller.view(name, model, true);
+    controller = null;
+    return output;
+};
+
+/**
  * Add a test function or test request
  * @param {String} name Test name.
  * @param {Url or Function} url Url or Callback function(next, name) {}.
@@ -6666,10 +6723,19 @@ function Controller(name, req, res, subscribe) {
     this._currentVideo = '';
     this._currentJS = '';
     this._currentCSS = '';
-    this._currentView = name[0] !== '#' && name !== 'default' ? '/' + name + '/' : '';
+    this._currentView = name[0] !== '#' && name !== 'default' && name !== '' ? '/' + name + '/' : '';
+
+    if (!this.req) {
+        var empty = {};
+        this.req = { uri: empty };
+    }
+
+    if (!this.res)
+        this.res = {};
 
     // Assign controller to Response
-    this.res.controller = this;
+    if (this.res)
+        this.res.controller = this;
 }
 
 Controller.prototype = {
@@ -9922,7 +9988,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
         headers = null;
     }
 
-    if (self.res.success && !isPartial)
+    if (!isPartial && self.res && self.res.success)
         return self;
 
     var skip = name[0] === '~';
@@ -9972,9 +10038,10 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     }
 
     var helpers = framework.helpers;
-
-    try {
+/*
+    try {*/
         value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, sitemap, isPartial ? self.outputPartial : self.output, self.date);
+/*
     } catch (ex) {
 
         var err = new Error('View: ' + name + ' - ' + ex.toString());
@@ -9996,7 +10063,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
         isLayout = false;
         return value;
-    }
+    }*/
 
     if (!isLayout && self.precache && self.status === 200)
         self.precache(value, CONTENTTYPE_TEXTHTML, headers, true);

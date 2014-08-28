@@ -1704,7 +1704,6 @@ MultipartParser.prototype.explain = function() {
 function View(controller) {
     this.controller = controller;
     this.cache = controller.cache;
-    this.prefix = controller.prefix;
 }
 
 /**
@@ -1948,7 +1947,6 @@ function view_prepare(command, dynamicCommand, functions) {
         case '!FUNCTION':
             return '(' + command.substring(1) + ')';
 
-
         case 'resource':
         case 'RESOURCE':
             return '(self.' + command + ').toString().encode()';
@@ -2059,7 +2057,6 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'view':
         case 'viewToggle':
             return 'self.$' + command;
-
 
         case 'radio':
         case 'text':
@@ -2431,7 +2428,7 @@ View.prototype.load = function(name, filename) {
 
     generator = self.read(filename);
 
-    if (!self.controller.isDebug)
+    if (!framework.isDebug)
         framework.temporary.views[key] = generator;
 
     return generator;
@@ -2451,9 +2448,9 @@ View.prototype.dynamic = function(content) {
     if (generator !== null)
         return generator;
 
-    generator = view_parse(content, self.controller, framework.config['allow-compress-html']);
+    generator = view_parse(content, framework.config['allow-compress-html']);
 
-    if (!self.controller.isDebug)
+    if (!framework.isDebug)
         framework.temporary.views[key] = generator;
 
     return generator;
