@@ -7047,8 +7047,8 @@ Controller.prototype.validate = function(model, properties, prefix, name) {
         return self.resource(name || 'default', (prefix || '') + key);
     };
 
-    if (typeof(model) === STRING)
-        return builders.validate(model, properties);
+    if (typeof(properties) === STRING)
+        return builders.validate(properties, model, prefix);
 
     var error = new builders.ErrorBuilder(resource);
     return utils.validate.call(self, model, properties, framework.onValidation, error);
