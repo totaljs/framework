@@ -34,6 +34,17 @@ SchemaBuilder.prototype.get = function(name) {
 };
 
 /**
+ * Get a schema
+ * @param {String} name
+ * @return {Object}
+ */
+SchemaBuilder.prototype.group = function(name) {
+    if (schemas[group] === undefined)
+        schemas = new SchemaBuilder(name);
+    return schemas[name];
+};
+
+/**
  * Register a new schema
  * @param {String} name Schema name.
  * @param {Object} obj Schema definition.
