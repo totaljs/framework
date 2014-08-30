@@ -18,6 +18,7 @@ Framework supports a backward compatibility.
 - updated: Array.wait(fnItem, fnCallback, removeItems) - default: function doesn't remove items
 - updated: Builders.UrlBuilder() -> toString([skipEmpty])
 
+- fixed: xml parser
 - fixed: problem with parsing a bad JSON datas - framework.decrypt();
 
 ======= 1.6.1 (HOTFIX)

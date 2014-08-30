@@ -1306,7 +1306,7 @@ exports.parseXML = function(xml) {
             if (from === -1 || o !== el.substring(2, el.length - 1))
                 continue;
 
-            var path = current.join('.') + '.' + o;
+            var path = (current.length > 0 ? current.join('.') + '.' : '') + o;
             var value = xml.substring(from, beg);
 
             if (obj[path] === undefined)

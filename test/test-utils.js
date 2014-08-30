@@ -350,9 +350,12 @@ function others() {
 	assert.ok(utils.decode('&lt;b&gt;total.js&lt;/b&gt;&amp;nbsp;') === '<b>total.js</b>&nbsp;', 'utils.decode()');
 
 	var result = utils.parseXML('<div><b>Peter</b><i style="color:red">Italic</i></div>');
+
 	assert.ok(result['div.b'] === 'Peter', 'XML Parser 1');
 	assert.ok(result['div.i'] === 'Italic', 'XML Parser 2');
 	assert.ok(result['div.i[]'].style === 'color:red', 'XML Parser Attributes');
+
+	result = utils.parseXML('<xml>OK</xml>');
 
 	obj = { a: '  1  ', b: { a: '    2 '}};
 	utils.trim(obj);
