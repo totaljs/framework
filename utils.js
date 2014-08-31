@@ -1707,6 +1707,14 @@ String.prototype.count = function(text) {
 };
 
 /**
+ * Parse XML
+ * @return {Object}
+ */
+String.prototype.parseXML = function() {
+    return exports.parseXML(this);
+};
+
+/**
  * Parse date from string
  * @return {Date}
  */
