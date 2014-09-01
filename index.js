@@ -10038,10 +10038,9 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     }
 
     var helpers = framework.helpers;
-/*
-    try {*/
+
+    try {
         value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, sitemap, isPartial ? self.outputPartial : self.output, self.date);
-/*
     } catch (ex) {
 
         var err = new Error('View: ' + name + ' - ' + ex.toString());
@@ -10063,7 +10062,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
         isLayout = false;
         return value;
-    }*/
+    }
 
     if (!isLayout && self.precache && self.status === 200)
         self.precache(value, CONTENTTYPE_TEXTHTML, headers, true);
