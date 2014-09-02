@@ -9991,16 +9991,16 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     if (!isPartial && self.res && self.res.success)
         return self;
 
-    var skip = name[0] === '~';
+    var skip = name[0] === '/' ? 1 : name[0] === '~' ? 2 : 0;
     var filename = name;
     var isLayout = self.isLayout;
 
     self.isLayout = false;
 
-    if (!self.isLayout && !skip)
+    if (!self.isLayout && skip === 0)
         filename = self._currentView + name;
 
-    if (skip)
+    if (skip === 2)
         filename = name.substring(1);
 
     var generator = internal.generateView(self, name, filename);
