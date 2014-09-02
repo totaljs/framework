@@ -10003,7 +10003,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     if (skip === 2)
         filename = name.substring(1);
 
-    var generator = internal.generateView(self, name, filename);
+    var generator = internal.generateView(name, filename);
     if (generator === null) {
 
         if (isPartial)

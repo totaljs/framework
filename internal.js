@@ -1698,12 +1698,9 @@ MultipartParser.prototype.explain = function() {
 
 /*
     View class
-    @controller {Controller}
     return {View}
 */
-function View(controller) {
-    this.controller = controller;
-    this.cache = controller.cache;
+function View() {
 }
 
 /**
@@ -2458,12 +2455,11 @@ View.prototype.dynamic = function(content) {
 
 /*
     Render view from file
-    @controller {Controller}
     @name {String}
     return {Object}
 */
-exports.generateView = function(controller, name, plus) {
-    return new View(controller).load(name, plus);
+exports.generateView = function(name, plus) {
+    return new View().load(name, plus);
 };
 
 exports.appendModel = function(str) {
