@@ -133,6 +133,8 @@ function test_Schema() {
         next('<xml>OK</xml>');
     }).addWorkflow('send', function(model, err, helper, next) {
         next('workflow');
+    }).addFactory('factory', function(empty, err, helper, next) {
+        next('factory');
     });
 
     //console.log(builders.defaults('1', { name: 'Peter', age: 30, join: { name: 20 }}));
@@ -153,7 +155,7 @@ function test_Schema() {
     builders.schema('default').get('1').compose('create', output, function(err, model, command) {
         assert.ok(model.counter === 19, 'Builders.task()');
         assert.ok(err === null, 'Builders.make()');
-    });
+    })
 
     builders.schema('default').get('2').transform('xml', output, function(err, output) {
         assert.ok(output === '<xml>OK</xml>', 'Builders.transform()');
@@ -161,6 +163,10 @@ function test_Schema() {
 
     builders.schema('default').get('2').workflow('send', output, function(err, output) {
         assert.ok(output === 'workflow', 'Builders.workflow()');
+    });
+
+    builders.schema('default').get('2').factory('factory', function(err, empty) {
+        assert(err === null && empty === 'factory', 'Builders.factory()');
     });
 
     builders.schema('validator', {

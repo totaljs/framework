@@ -18,6 +18,7 @@ var DEFAULT_SCHEMA = 'default';
 var DEFAULT_SCHEMA_PROPERTY = '$state';
 
 var schemas = {};
+var transforms = {};
 
 function SchemaBuilder(name) {
     this.name = name;
@@ -77,7 +78,36 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.properties = properties === undefined ? Object.keys(obj) : properties;
     this.composers;
     this.transforms;
+    this.factories;
 }
+
+SchemaBuilderEntity.prototype.getDependencies = function() {
+    var self = this;
+    var arr = Object.keys(self.schema);
+    var dependencies = [];
+
+    for (var i = 0, length = arr.length; i < length; i++) {
+
+        var name = arr[i];
+        var type = self.schema[name];
+
+        if (typeof(type) !== STRING)
+            continue;
+
+        var isArray = type[0] === ']';
+        if (isArray)
+            type = type.substring(1, type.length - 1);
+
+        var m = self.parent.get(type);
+
+        if (typeof(m) === undefined)
+            continue;
+
+        dependencies.push({ name: name, isArray: isArray, schema: m });
+    }
+
+    return dependencies;
+};
 
 /**
  * Set schema validation
@@ -116,6 +146,20 @@ SchemaBuilderEntity.prototype.setDefault = function(fn) {
 SchemaBuilderEntity.prototype.setProperties = function(properties) {
     var self = this;
     self.properties = properties;
+    return self;
+};
+
+/**
+ * Add a new factory for the schema
+ * @param {String} name Factory name
+ * @param {Function(empty, error, helper, next, schema)} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.addFactory = function(name, fn) {
+    var self = this;
+    if (!self.factories)
+        self.factories = {};
+    self.factories[name] = fn;
     return self;
 };
 
@@ -261,7 +305,7 @@ SchemaBuilderEntity.prototype.default = function() {
         var type = typeof(value);
 
         if (defaults) {
-            var def = defaults(property, true, name);
+            var def = defaults(property, true);
             if (def !== undefined) {
                 item[property] = def;
                 continue;
@@ -777,6 +821,49 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
     workflow(output, builder, helper, function(result) {
         callback(builder.hasError() ? builder : null, result, model);
     }, self);
+
+    return self;
+
+};
+
+/**
+ * Factory for the schema
+ * @param {String} name Factory name.
+ * @param {Object} helper A helper object, optional.
+ * @param {Function(error, output)} callback
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.factory = function(name, helper, callback) {
+
+    var self = this;
+
+    if (typeof(helper) === FUNCTION) {
+        var tmp = callback;
+        callback = helper;
+        helper = callback;
+    }
+
+    var output = self.default();
+    var builder = new ErrorBuilder();
+
+    var done = function() {
+        if (builder.hasError() === false)
+            builder = null;
+        callback(builder, output);
+    };
+
+    var factory = self.factories ? self.factories[name] : undefined;
+    if (factory === undefined) {
+        builder.add('', 'Factory not found.');
+        callback(builder);
+        return;
+    }
+
+    factory(output, builder, helper, function(value) {
+        if (value)
+            output = value;
+        callback(builder.hasError() ? builder : null, output);
+    }, self.name);
 
     return self;
 
@@ -1369,6 +1456,12 @@ ErrorBuilder.prototype.prepare = function() {
     self._prepare()._prepareReplace();
     self.isPrepared = true;
 
+    return self;
+};
+
+ErrorBuilder.transform = function(name, fn) {
+    var self = this;
+    transforms['error'][name] = fn;
     return self;
 };
 
