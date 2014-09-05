@@ -447,7 +447,7 @@ SchemaBuilderEntity.prototype.default = function() {
         var type = typeof(value);
 
         if (defaults) {
-            var def = defaults(property, true);
+            var def = defaults(property, true, self.name);
             if (def !== undefined) {
                 item[property] = def;
                 continue;
