@@ -268,8 +268,6 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
         return self;
     }
 
-    var self = this;
-
     self.onSave(builder, output, helper, function(value) {
         callback(builder.hasError() ? builder : null, value === undefined ? output : value);
     });
@@ -304,12 +302,11 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 
 /**
  * Execute onRemove delegate
- * @param {Object} model
  * @param {Object} helper A helper object, optional.
  * @param {Function(err, result)} callback
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.remove = function(model, helper, callback) {
+SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 
     if (callback === undefined) {
         callback = helper;
@@ -317,21 +314,10 @@ SchemaBuilderEntity.prototype.remove = function(model, helper, callback) {
     }
 
     var self = this;
-    var noPrepare = self._getStateOfModel(model, 0) === '1';
-    var noValidate = self._getStateOfModel(model, 1) === '1';
+    var builder = new ErrorBuilder();
 
-    var output = noPrepare === true ? utils.copy(model) : self.prepare(model);
-    var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
-
-    if (builder.hasError()) {
-        callback(builder);
-        return self;
-    }
-
-    var self = this;
-
-    self.onRemove(builder, output, helper, function(value) {
-        callback(builder.hasError() ? builder : null, value === undefined ? output : value);
+    self.onRemove(builder, helper, function(value) {
+        callback(builder.hasError() ? builder : null, value === undefined ? helper : value);
     });
 
     return self;
@@ -619,7 +605,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
             }
 
             if (value === String) {
-                item[property] = val.toString();
+                item[property] = val === undefined || val === null ? '' : val.toString();
                 continue;
             }
 
