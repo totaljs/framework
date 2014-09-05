@@ -726,7 +726,7 @@ SchemaBuilderEntity.prototype.compose = function(command, model, helper, callbac
         }
 
         schema.composers.wait(function(composer, next) {
-            composer(command, item.value, output, builder, helper, function() {
+            composer.call(self, command, item.value, output, builder, helper, function() {
                 next();
             }, self);
         }, next);
@@ -775,7 +775,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
         return;
     }
 
-    trans(output, builder, helper, function(result) {
+    trans.call(self, output, builder, helper, function(result) {
         callback(builder.hasError() ? builder : null, result, model);
     }, self);
 
@@ -818,7 +818,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
         return;
     }
 
-    workflow(output, builder, helper, function(result) {
+    workflow.call(self, output, builder, helper, function(result) {
         callback(builder.hasError() ? builder : null, result, model);
     }, self);
 
@@ -859,7 +859,7 @@ SchemaBuilderEntity.prototype.factory = function(name, helper, callback) {
         return;
     }
 
-    factory(output, builder, helper, function(value) {
+    factory.call(self, output, builder, helper, function(value) {
         if (value)
             output = value;
         callback(builder.hasError() ? builder : null, output);
