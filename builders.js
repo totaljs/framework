@@ -1263,13 +1263,18 @@ ErrorBuilder.prototype._resource = function() {
 /**
  * Add an error
  * @param {String} name  Property name.
- * @param {String} error Error message.
+ * @param {String or Error} error Error message.
  * @param {String} path  Current path (in object).
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.add = function(name, error, path) {
     var self = this;
     self.isPrepared = false;
+
+    if (error === undefined) {
+        error = name;
+        name = '';
+    }
 
     if (name instanceof ErrorBuilder) {
 
@@ -1280,6 +1285,9 @@ ErrorBuilder.prototype.add = function(name, error, path) {
         self.count = self._errors.length;
         return self;
     }
+
+    if (error instanceof Error)
+        error = error.toString();
 
     self._errors.push({
         name: name,
