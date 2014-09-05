@@ -3,10 +3,8 @@ IN DEVELOPMENT ======= 1.7.0
 Framework supports a backward compatibility.
 
 - added: SCHEMA(name), returns group of schemas
-- added: Builders.Schema() - schema supports composers
 - added: Builders.Schema() - schema supports workflows
 - added: Builders.Schema() - schema supports transformations
-- added: Builders.Schema() - schema supports factories
 - added: Builders.Schema() - schema supports grouping `Builders.schema('group').get('schema_name)`
 - added: framework.mail() - is alias for controller.mail()
 - added: framework.view(name, [model], [layout], [repository]) - is alias for controller.view()
