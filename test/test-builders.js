@@ -123,18 +123,23 @@ function test_Schema() {
             return -1;
     });
 
-    builders.schema('default').get('2').addComposer(function(command, value, model, err, helper, next) {
-        if (model.counter === undefined)
-            model.counter = value.age;
-        else
-            model.counter += value.age;
-        next();
-    }).addTransform('xml', function(model, err, helper, next) {
+    builders.schema('default').get('2').addTransform('xml', function(model, err, helper, next) {
         next('<xml>OK</xml>');
     }).addWorkflow('send', function(model, err, helper, next) {
         next('workflow');
-    }).addFactory('factory', function(empty, err, helper, next) {
-        next('factory');
+    }).setGet(function(error, model, helper, next) {
+        assert.ok(error.hasError() === false, 'schema - setGet');
+        model.age = 99;
+        next();
+    }).setSave(function(error, model, helper, next) {
+        assert.ok(error.hasError() === false, 'schema - setSave');
+        next(true);
+    }).setRemove(function(error,model,  helper, next) {
+        assert.ok(error.hasError() === false, 'schema - setRemove');
+        next(true);
+    }).setQuery(function(error, helper, next) {
+        assert.ok(error.hasError() === false, 'schema - setQuery');
+        next([]);
     });
 
     //console.log(builders.defaults('1', { name: 'Peter', age: 30, join: { name: 20 }}));
@@ -152,21 +157,20 @@ function test_Schema() {
     assert.ok(output.join[0].age === -1 && output.join[1].age === 20, name + 'schema - joining models');
     assert.ok(output.nums[2] === 2.3 && output.nums[1] === 0, name + 'schema - parse plain array');
 
-    builders.schema('default').get('1').compose('create', output, function(err, model, command) {
-        assert.ok(model.counter === 19, 'Builders.task()');
-        assert.ok(err === null, 'Builders.make()');
-    })
-
     builders.schema('default').get('2').transform('xml', output, function(err, output) {
         assert.ok(output === '<xml>OK</xml>', 'Builders.transform()');
     });
 
     builders.schema('default').get('2').workflow('send', output, function(err, output) {
         assert.ok(output === 'workflow', 'Builders.workflow()');
-    });
-
-    builders.schema('default').get('2').factory('factory', function(err, empty) {
-        assert(err === null && empty === 'factory', 'Builders.factory()');
+    }).get(null, function(err, result) {
+        assert.ok(result.age === 99, 'schema - get');
+    }).save(output, function(err, result) {
+        assert.ok(result === true, 'schema - save');
+    }).remove(output, function(err, result) {
+        assert.ok(result === true, 'schema - remove');
+    }).query(output, function(err, result) {
+        assert.ok(result.length === 0, 'schema - query');
     });
 
     builders.schema('validator', {

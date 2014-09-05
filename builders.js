@@ -81,7 +81,6 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.onSave;
     this.onGet;
     this.onRemove;
-    this.onPrepare;
     this.onQuery;
 }
 
@@ -160,7 +159,7 @@ SchemaBuilderEntity.prototype.setQuery = function(fn) {
     return self;
 };
 
-SchemaBuilderEntity.prototype.setDelete = function(fn) {
+SchemaBuilderEntity.prototype.setRemove = function(fn) {
     var self = this;
     self.onRemove = fn;
     return self;
@@ -225,17 +224,18 @@ SchemaBuilderEntity.prototype.destroy = function() {
     self.onRead = null;
     self.onRemove = null;
     self.onQuery = null;
-    self.onPrepare = null;
     self.workflows = null;
     self.transforms = null;
 };
 
 SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
+
     if (callback === undefined) {
         callback = helper;
         helper = undefined;
     }
 
+    var self = this;
     var noPrepare = self._getStateOfModel(model, 0) === '1';
     var noValidate = self._getStateOfModel(model, 1) === '1';
 
@@ -244,26 +244,80 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
 
     if (builder.hasError()) {
         callback(builder);
-        return;
+        return self;
     }
 
     var self = this;
-    self.onSave(helper, function() {
 
+    self.onSave(builder, output, helper, function(value) {
+        callback(builder.hasError() ? builder : null, value === undefined ? output : value);
     });
+
     return self;
 };
 
-SchemaBuilderEntity.prototype.get = function(helper, fn) {
+SchemaBuilderEntity.prototype.get = function(helper, callback) {
+
+    if (callback === undefined) {
+        callback = helper;
+        helper = undefined;
+    }
+
+    var self = this;
+    var builder = new ErrorBuilder();
+    var output = self.default();
+
+    self.onGet(builder, output, helper, function(value) {
+        callback(builder.hasError() ? builder : null, value === undefined ? output : value);
+    });
+
+    return self;
 
 };
 
-SchemaBuilderEntity.prototype.remove = function(helper, fn) {
+SchemaBuilderEntity.prototype.remove = function(model, helper, callback) {
 
+    if (callback === undefined) {
+        callback = helper;
+        helper = undefined;
+    }
+
+    var self = this;
+    var noPrepare = self._getStateOfModel(model, 0) === '1';
+    var noValidate = self._getStateOfModel(model, 1) === '1';
+
+    var output = noPrepare === true ? utils.copy(model) : self.prepare(model);
+    var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
+
+    if (builder.hasError()) {
+        callback(builder);
+        return self;
+    }
+
+    var self = this;
+
+    self.onRemove(builder, output, helper, function(value) {
+        callback(builder.hasError() ? builder : null, value === undefined ? output : value);
+    });
+
+    return self;
 };
 
-SchemaBuilderEntity.prototype.query = function(helper, fn) {
+SchemaBuilderEntity.prototype.query = function(helper, callback) {
 
+    if (callback === undefined) {
+        callback = helper;
+        helper = undefined;
+    }
+
+    var self = this;
+    var builder = new ErrorBuilder();
+
+    self.onQuery(builder, helper, function(value) {
+        callback(builder.hasError() ? builder : null, value);
+    });
+
+    return self;
 };
 
 /**
