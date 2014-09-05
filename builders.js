@@ -726,8 +726,13 @@ SchemaBuilderEntity.prototype.compose = function(command, model, helper, callbac
         }
 
         schema.composers.wait(function(composer, next) {
-            composer.call(self, command, item.value, output, builder, helper, function() {
+            composer.call(self, command, item.value, output, builder, helper, function(result) {
+
+                if (result !== undefined)
+                    item.value = result;
+
                 next();
+
             }, self);
         }, next);
 
@@ -776,7 +781,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
     }
 
     trans.call(self, output, builder, helper, function(result) {
-        callback(builder.hasError() ? builder : null, result, model);
+        callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
     }, self);
 
     return self;
@@ -819,7 +824,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
     }
 
     workflow.call(self, output, builder, helper, function(result) {
-        callback(builder.hasError() ? builder : null, result, model);
+        callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
     }, self);
 
     return self;
@@ -860,9 +865,7 @@ SchemaBuilderEntity.prototype.factory = function(name, helper, callback) {
     }
 
     factory.call(self, output, builder, helper, function(value) {
-        if (value)
-            output = value;
-        callback(builder.hasError() ? builder : null, output);
+        callback(builder.hasError() ? builder : null, value === undefined ? output : value);
     }, self.name);
 
     return self;
