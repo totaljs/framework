@@ -141,33 +141,47 @@ SchemaBuilderEntity.prototype.setDefault = function(fn) {
     return self;
 };
 
+/**
+ * Set save handler
+ * @param {Function(error, model, helper, next(value))} fn
+ * @return {SchemaBuilderEntity}
+ */
 SchemaBuilderEntity.prototype.setSave = function(fn) {
     var self = this;
     self.onSave = fn;
     return self;
 };
 
+/**
+ * Set getter handler
+ * @param {Function(error, model, helper, next(value))} fn
+ * @return {SchemaBuilderEntity}
+ */
 SchemaBuilderEntity.prototype.setGet = function(fn) {
     var self = this;
     self.onGet = fn;
     return self;
 };
 
+/**
+ * Set query handler
+ * @param {Function(error, helper, next(value))} fn
+ * @return {SchemaBuilderEntity}
+ */
 SchemaBuilderEntity.prototype.setQuery = function(fn) {
     var self = this;
     self.onQuery = fn;
     return self;
 };
 
+/**
+ * Set remove handler
+ * @param {Function(error, model, helper, next(value))} fn
+ * @return {SchemaBuilderEntity}
+ */
 SchemaBuilderEntity.prototype.setRemove = function(fn) {
     var self = this;
     self.onRemove = fn;
-    return self;
-};
-
-SchemaBuilderEntity.prototype.setQuery = function(fn) {
-    var self = this;
-    self.onQuery = fn;
     return self;
 };
 
@@ -211,7 +225,7 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
 };
 
 /**
- * Remove current schema
+ * Desotry current schema
  */
 SchemaBuilderEntity.prototype.destroy = function() {
     var self = this;
@@ -228,6 +242,13 @@ SchemaBuilderEntity.prototype.destroy = function() {
     self.transforms = null;
 };
 
+/**
+ * Execute onSave delegate
+ * @param {Object} model
+ * @param {Object} helper A helper object, optional.
+ * @param {Function(err, result)} callback
+ * @return {SchemaBuilderEntity}
+ */
 SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
 
     if (callback === undefined) {
@@ -256,6 +277,12 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
     return self;
 };
 
+/**
+ * Execute onGet delegate
+ * @param {Object} helper A helper object, optional.
+ * @param {Function(err, result)} callback
+ * @return {SchemaBuilderEntity}
+ */
 SchemaBuilderEntity.prototype.get = function(helper, callback) {
 
     if (callback === undefined) {
@@ -275,6 +302,13 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 
 };
 
+/**
+ * Execute onRemove delegate
+ * @param {Object} model
+ * @param {Object} helper A helper object, optional.
+ * @param {Function(err, result)} callback
+ * @return {SchemaBuilderEntity}
+ */
 SchemaBuilderEntity.prototype.remove = function(model, helper, callback) {
 
     if (callback === undefined) {
@@ -303,6 +337,12 @@ SchemaBuilderEntity.prototype.remove = function(model, helper, callback) {
     return self;
 };
 
+/**
+ * Execute onQuery delegate
+ * @param {Object} helper A helper object, optional.
+ * @param {Function(err, result)} callback
+ * @return {SchemaBuilderEntity}
+ */
 SchemaBuilderEntity.prototype.query = function(helper, callback) {
 
     if (callback === undefined) {
