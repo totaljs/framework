@@ -74,10 +74,9 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.name = name;
     this.schema = obj;
     this.properties = properties === undefined ? Object.keys(obj) : properties;
+    this.transforms;
     this.onDefault;
     this.onValidation = validator;
-    this.transforms;
-    this.factories;
     this.onSave;
     this.onGet;
     this.onRemove;
@@ -807,8 +806,6 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
  * @param {Object} model
  * @param {Object} helper A helper object, optional.
  * @param {Function(errorBuilder, output, model)} callback
- * @param {Boolean} noPrepare Disable preparing.
- * @param {Boolean} noValidate Disable validating.
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback) {
