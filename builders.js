@@ -73,12 +73,16 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.parent = parent;
     this.name = name;
     this.schema = obj;
-    this.fnDefaults;
-    this.fnValidation = validator;
     this.properties = properties === undefined ? Object.keys(obj) : properties;
-    this.composers;
+    this.onDefault;
+    this.onValidation = validator;
     this.transforms;
     this.factories;
+    this.onSave;
+    this.onGet;
+    this.onRemove;
+    this.onPrepare;
+    this.onQuery;
 }
 
 SchemaBuilderEntity.prototype.getDependencies = function() {
@@ -120,9 +124,9 @@ SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
 
     if (typeof(properties) !== FUNCTION) {
         self.properties = properties;
-        self.fnValidation = fn;
+        self.onValidation = fn;
     } else
-        self.fnValidation = properties;
+        self.onValidation = properties;
 
     return self;
 };
@@ -134,7 +138,37 @@ SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
  */
 SchemaBuilderEntity.prototype.setDefault = function(fn) {
     var self = this;
-    self.fnDefaults = fn;
+    self.onDefault = fn;
+    return self;
+};
+
+SchemaBuilderEntity.prototype.setSave = function(fn) {
+    var self = this;
+    self.onSave = fn;
+    return self;
+};
+
+SchemaBuilderEntity.prototype.setGet = function(fn) {
+    var self = this;
+    self.onGet = fn;
+    return self;
+};
+
+SchemaBuilderEntity.prototype.setQuery = function(fn) {
+    var self = this;
+    self.onQuery = fn;
+    return self;
+};
+
+SchemaBuilderEntity.prototype.setDelete = function(fn) {
+    var self = this;
+    self.onRemove = fn;
+    return self;
+};
+
+SchemaBuilderEntity.prototype.setQuery = function(fn) {
+    var self = this;
+    self.onQuery = fn;
     return self;
 };
 
@@ -146,33 +180,6 @@ SchemaBuilderEntity.prototype.setDefault = function(fn) {
 SchemaBuilderEntity.prototype.setProperties = function(properties) {
     var self = this;
     self.properties = properties;
-    return self;
-};
-
-/**
- * Add a new factory for the schema
- * @param {String} name Factory name
- * @param {Function(empty, error, helper, next, schema)} fn
- * @return {SchemaBuilderEntity}
- */
-SchemaBuilderEntity.prototype.addFactory = function(name, fn) {
-    var self = this;
-    if (!self.factories)
-        self.factories = {};
-    self.factories[name] = fn;
-    return self;
-};
-
-/**
- * Add a new composer for the schema
- * @param {Function(command, value, model, errorBuilder, helper, next, schema)} fn
- * @return {SchemaBuilderEntity}
- */
-SchemaBuilderEntity.prototype.addComposer = function(fn) {
-    var self = this;
-    if (!self.composers)
-        self.composers = [];
-    self.composers.push(fn);
     return self;
 };
 
@@ -207,15 +214,56 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
 /**
  * Remove current schema
  */
-SchemaBuilderEntity.prototype.remove = function() {
+SchemaBuilderEntity.prototype.destroy = function() {
     var self = this;
     delete self.parent.collection[self.name];
-    self.schema = null;
-    self.fnDefaults = null;
-    self.fnValidation = null;
     self.properties = null;
-    self.composers = null;
+    self.schema = null;
+    self.onDefault = null;
+    self.onValidation = null;
+    self.onSave = null;
+    self.onRead = null;
+    self.onRemove = null;
+    self.onQuery = null;
+    self.onPrepare = null;
     self.workflows = null;
+    self.transforms = null;
+};
+
+SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
+    if (callback === undefined) {
+        callback = helper;
+        helper = undefined;
+    }
+
+    var noPrepare = self._getStateOfModel(model, 0) === '1';
+    var noValidate = self._getStateOfModel(model, 1) === '1';
+
+    var output = noPrepare === true ? utils.copy(model) : self.prepare(model);
+    var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
+
+    if (builder.hasError()) {
+        callback(builder);
+        return;
+    }
+
+    var self = this;
+    self.onSave(helper, function() {
+
+    });
+    return self;
+};
+
+SchemaBuilderEntity.prototype.get = function(helper, fn) {
+
+};
+
+SchemaBuilderEntity.prototype.remove = function(helper, fn) {
+
+};
+
+SchemaBuilderEntity.prototype.query = function(helper, fn) {
+
 };
 
 /**
@@ -229,7 +277,7 @@ SchemaBuilderEntity.prototype.remove = function() {
 SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder) {
 
     var self = this;
-    var fn = self.fnValidation;
+    var fn = self.onValidation;
 
     if (builder === undefined)
         builder = new ErrorBuilder();
@@ -294,7 +342,7 @@ SchemaBuilderEntity.prototype.default = function() {
     if (obj === null)
         return null;
 
-    var defaults = self.fnDefaults;
+    var defaults = self.onDefault;
     var item = utils.extend({}, obj, true);
     var properties = Object.keys(item);
 
@@ -442,7 +490,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
     var tmp;
     var item = utils.extend({}, obj, true);
     var properties = Object.keys(item);
-    var defaults = self.fnDefaults;
+    var defaults = self.onDefault;
 
     for (var i = 0, length = properties.length; i < length; i++) {
 
@@ -674,77 +722,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 };
 
 /**
- * Compose an object according to schema with all composers
- * @param {String} command
- * @param {Object} model
- * @param {Object} helper A helper object, optional.
- * @param {Function(errorBuilder, model, command)} callback
- * @return {SchemaBuilderEntity}
- */
-SchemaBuilderEntity.prototype.compose = function(command, model, helper, callback) {
-
-    if (typeof(command) === OBJECT) {
-        callback = helper;
-        helper = model;
-        model = command;
-        command = '';
-    }
-
-    if (callback === undefined) {
-        callback = helper;
-        helper = undefined;
-    }
-
-    var self = this;
-
-    var noPrepare = self._getStateOfModel(model, 0) === '1';
-    var noValidate = self._getStateOfModel(model, 1) === '1';
-
-    var dependencies = [];
-    var output = noPrepare === true ? utils.copy(model) : self.prepare(model, dependencies);
-    var builder = self.fnValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
-
-    var done = function() {
-        if (builder.hasError() === false)
-            builder = null;
-        callback(builder, output, command);
-    };
-
-    if (builder.hasError()) {
-        done();
-        return;
-    }
-
-    dependencies.unshift({ name: self.name, value: output });
-    dependencies.wait(function(item, next) {
-
-        var schema = self.parent.get(item.name);
-
-        if (schema.composers === undefined || schema.composers.length === 0) {
-            next();
-            return;
-        }
-
-        schema.composers.wait(function(composer, next) {
-            composer.call(self, command, item.value, output, builder, helper, function(result) {
-
-                if (result !== undefined)
-                    item.value = result;
-
-                next();
-
-            }, self);
-        }, next);
-
-    }, done, true);
-
-    return self;
-
-};
-
-/**
  * Transform an object
- * @param {String Array} flags Flags for compose, optional. Default: prepare, validate.
  * @param {String} name
  * @param {Object} model
  * @param {Object} helper A helper object, optional.
@@ -773,7 +751,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
     var noValidate = self._getStateOfModel(model, 1) === '1';
 
     var output =  noPrepare === true ? utils.copy(model) : self.prepare(model);
-    var builder = self.fnValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
+    var builder = self.onValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
 
     if (builder.hasError()) {
         callback(builder);
@@ -816,7 +794,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
     var noValidate = self._getStateOfModel(model, 1) === '1';
 
     var output = noPrepare === true ? utils.copy(model) : self.prepare(model);
-    var builder = noValidate === true || self.fnValidation === undefined ? new ErrorBuilder() : self.validate(output);
+    var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
 
     if (builder.hasError()) {
         callback(builder);
@@ -826,47 +804,6 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
     workflow.call(self, output, builder, helper, function(result) {
         callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
     }, self);
-
-    return self;
-
-};
-
-/**
- * Factory for the schema
- * @param {String} name Factory name.
- * @param {Object} helper A helper object, optional.
- * @param {Function(error, output)} callback
- * @return {SchemaBuilderEntity}
- */
-SchemaBuilderEntity.prototype.factory = function(name, helper, callback) {
-
-    var self = this;
-
-    if (typeof(helper) === FUNCTION) {
-        var tmp = callback;
-        callback = helper;
-        helper = callback;
-    }
-
-    var output = self.default();
-    var builder = new ErrorBuilder();
-
-    var done = function() {
-        if (builder.hasError() === false)
-            builder = null;
-        callback(builder, output);
-    };
-
-    var factory = self.factories ? self.factories[name] : undefined;
-    if (factory === undefined) {
-        builder.add('', 'Factory not found.');
-        callback(builder);
-        return;
-    }
-
-    factory.call(self, output, builder, helper, function(value) {
-        callback(builder.hasError() ? builder : null, value === undefined ? output : value);
-    }, self.name);
 
     return self;
 
@@ -1091,7 +1028,7 @@ exports.validation = function(name, properties, fn) {
 
     if (typeof(fn) === FUNCTION) {
 
-        schema.fnValidation = fn;
+        schema.onValidation = fn;
 
         if (properties === undefined)
             schema.properties = Object.keys(schema.schema);
@@ -1108,7 +1045,7 @@ exports.validation = function(name, properties, fn) {
         return validator || [];
     }
 
-    schema.fnValidation = fn;
+    schema.onValidation = fn;
     return fn;
 };
 
@@ -1128,7 +1065,7 @@ exports.validate = function(name, model, resourcePrefix, resourceName) {
     if (schema === undefined)
         return null;
 
-    var fn = schema.fnValidation;
+    var fn = schema.onValidation;
     return schema.validate(model, resourcePrefix, resourceName);
 };
 
