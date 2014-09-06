@@ -1720,9 +1720,14 @@ String.prototype.parseXML = function() {
  */
 String.prototype.parseDate = function() {
     var self = this;
-    var arr = self.split(' ');
 
-    if (arr[0].indexOf(':') !== -1) {
+    var arr = self.indexOf(' ') === -1 ? self.split('T') : self.split(' ');
+    var index = arr[0].indexOf(':');
+
+    if (arr[1] === undefined)
+        arr[1] = '00:00:00';
+
+    if (index !== -1) {
         var tmp = arr[1];
         arr[1] = arr[0];
         arr[0] = tmp;
@@ -1735,12 +1740,22 @@ String.prototype.parseDate = function() {
     if (date.length < 3 && time.length < 2)
         return null;
 
+    index = time[2].indexOf('.');
+
+    // milliseconds
+    if (index !== -1) {
+        time[3] = time[2].substring(index + 1);
+        time[2] = time[2].substring(0, index);
+    } else
+        time[3] = '0';
+
     parsed.push(parseInt(date[0], 10)); // year
     parsed.push(parseInt(date[1], 10)); // month
     parsed.push(parseInt(date[2], 10)); // day
     parsed.push(parseInt(time[0], 10)); // hours
     parsed.push(parseInt(time[1], 10)); // minutes
     parsed.push(parseInt(time[2], 10)); // seconds
+    parsed.push(parseInt(time[3], 10)); // miliseconds
 
     var def = new Date();
 

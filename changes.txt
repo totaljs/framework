@@ -22,6 +22,7 @@ Framework supports a backward compatibility.
 - fixed: if path starts '/' then is view loaded directly from /views/ directory
 - fixed: xml parser
 - fixed: problem with parsing a bad JSON datas - framework.decrypt();
+- fixed: String.prototype.parseDate()
 
 ======= 1.6.1 (HOTFIX)
 
