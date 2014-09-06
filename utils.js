@@ -2098,6 +2098,10 @@ String.prototype.md5 = function(salt) {
     return hash.digest('hex');
 };
 
+String.prototype.toSearch = function() {
+    return this.toLowerCase().removeDiacritics();
+};
+
 /*
     @key {String}
     @isUnique {Boolean}
