@@ -69,8 +69,8 @@ function prototypeString() {
 	assert.ok('&lt;b&gt;total.js&lt;/b&gt;&amp;nbsp;'.decode() === '<b>total.js</b>&nbsp;', 'string.decode()');
 	assert.ok(str.trim().replaceAt(5, ';') === 'total;js', 'string.replaceAt()');
 
-	str = ' A PeTer Širka   Je krááál. ';
-	assert.ok(str.toSearch() === 'a peter sirka je kraaal.', 'string.toSearch()');
+	str = ' A PeTer Širka   Je krááály. ';
+	assert.ok(str.toSearch() === 'a peter sirka je kraaali.', 'string.toSearch()');
 
 	str = 'Great function.';
 
