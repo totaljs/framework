@@ -224,7 +224,16 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
 };
 
 /**
- * Desotry current schema
+ * Find a schema in current group
+ * @param {String} name
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.find = function(name) {
+    return this.parent.get(name);
+};
+
+/**
+ * Destroy current schema
  */
 SchemaBuilderEntity.prototype.destroy = function() {
     var self = this;
@@ -239,6 +248,73 @@ SchemaBuilderEntity.prototype.destroy = function() {
     self.onQuery = null;
     self.workflows = null;
     self.transforms = null;
+};
+
+/**
+ * Execute multiple onSave delegate
+ * @param {Object} model
+ * @param {Object} helper A helper object, optional.
+ * @param {Function(err, result)} callback
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.saveMultiple = function(model, helper, callback) {
+
+    if (callback === undefined) {
+        callback = helper;
+        helper = undefined;
+    }
+
+    var repository;
+    var output = [];
+
+    if (model instanceof Array)
+        repository = model;
+    else
+        repository = [model];
+
+    var self = this;
+    var builder = new ErrorBuilder();
+
+    for (var i = 0, length = repository.length; i < length; i++) {
+
+        var item = repository[i];
+
+        var noPrepare = self._getStateOfModel(item, 0) === '1';
+        var noValidate = self._getStateOfModel(item, 1) === '1';
+
+        var prepared = noPrepare === true ? utils.copy(item) : self.prepare(item);
+
+        if (noValidate === true || self.onValidation === undefined) {
+
+            if (!builder.hasError())
+                output.push(prepared);
+
+            continue;
+        }
+
+        builder.add(self.validate(prepared));
+
+        if (!builder.hasError())
+            output.push(prepared);
+    }
+
+    if (builder.hasError()) {
+        callback(builder);
+        return self;
+    }
+
+    repository = [];
+
+    output.wait(function(item, next) {
+        self.onSave(builder, output, helper, function(value) {
+            repository.push(value);
+            next();
+        });
+    }, function() {
+        callback(builder.hasError() ? builder : null, repository);
+    });
+
+    return self;
 };
 
 /**
@@ -1254,20 +1330,27 @@ ErrorBuilder.prototype.add = function(name, error, path) {
     var self = this;
     self.isPrepared = false;
 
+    if (name instanceof ErrorBuilder) {
+
+        if (name.hasError()) {
+
+            name.errors.forEach(function(o) {
+                self.errors.push(o);
+            });
+
+            self.count = self._errors.length;
+        }
+
+        return self;
+    }
+
     if (error === undefined) {
         error = name;
         name = '';
     }
 
-    if (name instanceof ErrorBuilder) {
-
-        name.errors.forEach(function(o) {
-            self.errors.push(o);
-        });
-
-        self.count = self._errors.length;
+    if (error === undefined || error === null)
         return self;
-    }
 
     if (error instanceof Error)
         error = error.toString();
