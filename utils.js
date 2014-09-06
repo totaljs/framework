@@ -178,6 +178,16 @@ exports.isEmpty = function(obj) {
 };
 
 /**
+ * Compare objects
+ * @param {Object} obj1
+ * @param {Object} obj2
+ * @return {Boolean}
+ */
+exports.compare = function(obj1, obj2) {
+    return JSON.stringify(obj1) === JSON.stringify(obj2);
+};
+
+/**
  * Function checks a valid function and waits for positive result
  * @param {Function} fnValid
  * @param {Function(err)} fnCallback
