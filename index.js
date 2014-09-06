@@ -9217,7 +9217,7 @@ Controller.prototype.callback = function(viewName) {
     return function(err, data) {
 
         // NoSQL embedded database
-        if (data === undefined && !util.isError(err)) {
+        if (data === undefined && !util.isError(err) && (!(err instanceof Builders.ErrorBuilder))) {
             data = err;
             err = null;
         }
