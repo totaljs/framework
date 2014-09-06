@@ -69,7 +69,10 @@ function prototypeString() {
 	assert.ok('&lt;b&gt;total.js&lt;/b&gt;&amp;nbsp;'.decode() === '<b>total.js</b>&nbsp;', 'string.decode()');
 	assert.ok(str.trim().replaceAt(5, ';') === 'total;js', 'string.replaceAt()');
 
-	str = 'Great function.'
+	str = ' A PeTer Širka   Je krááál. ';
+	assert.ok(str.toSearch() === 'a peter sirka je kraaal.', 'string.toSearch()');
+
+	str = 'Great function.';
 
 	assert.ok(str.startsWith('Great'), 'string.startsWith()');
 	assert.ok(str.startsWith('GrEAT', true), 'string.startsWith(ignoreCase)');
