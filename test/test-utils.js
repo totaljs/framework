@@ -521,16 +521,16 @@ function others() {
 		}, 300);
 	});
 
-	var a = { a: 1, b: 2, name: 'Peter' };
-	var b = { a: 1, b: 2, name: 'Peter' };
+	var a = { a: 1, b: 2, name: 'Peter', isActive: true };
+	var b = { a: 1, b: 2, name: 'Peter', isActive: true };
 
-	assert.ok(utils.compare(a, b), 'utils.compare(1)');
+	assert.ok(utils.isEqual(a, b), 'utils.isEqual(1)');
+
+	b.isActive = false;
+	assert.ok(utils.isEqual(a, b) === false, 'utils.isEqual(2)');
 
 	b.name = 'Lucia';
-	assert.ok(utils.compare(a, b) === false, 'utils.compare(2)');
-
-	b.name = 'Lucia';
-	assert.ok(utils.compare(a, b, ['a', 'b']), 'utils.compare(3)');
+	assert.ok(utils.isEqual(a, b, ['a', 'b']), 'utils.isEqual(3)');
 
 }
 

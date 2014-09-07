@@ -183,7 +183,7 @@ exports.isEmpty = function(obj) {
  * @param {Object} obj2
  * @return {Boolean}
  */
-exports.compare = function(obj1, obj2, properties) {
+exports.isEqual = function(obj1, obj2, properties) {
 
     var keys = properties ? properties : Object.keys(obj1);
 
