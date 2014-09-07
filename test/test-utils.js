@@ -521,6 +521,17 @@ function others() {
 		}, 300);
 	});
 
+	var a = { a: 1, b: 2, name: 'Peter' };
+	var b = { a: 1, b: 2, name: 'Peter' };
+
+	assert.ok(utils.compare(a, b), 'utils.compare(1)');
+
+	b.name = 'Lucia';
+	assert.ok(utils.compare(a, b) === false, 'utils.compare(2)');
+
+	b.name = 'Lucia';
+	assert.ok(utils.compare(a, b, ['a', 'b']), 'utils.compare(3)');
+
 }
 
 function onValidation(name, value, path) {

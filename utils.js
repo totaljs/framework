@@ -183,8 +183,18 @@ exports.isEmpty = function(obj) {
  * @param {Object} obj2
  * @return {Boolean}
  */
-exports.compare = function(obj1, obj2) {
-    return JSON.stringify(obj1) === JSON.stringify(obj2);
+exports.compare = function(obj1, obj2, properties) {
+
+    var keys = properties ? properties : Object.keys(obj1);
+
+    for (var i = 0, length = keys.length; i < length; i++) {
+        var key = keys[i];
+        if (obj1[key] === obj2[key])
+            continue;
+        return false;
+    }
+
+    return true;
 };
 
 /**
