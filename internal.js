@@ -920,7 +920,7 @@ function autoprefixer(value) {
             updated = plus.replacer('linear-', '-webkit-linear-') + delimiter;
             updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
             updated += plus.replacer('linear-', '-o-linear-') + delimiter;
-            updated += plus.replacer('linear-', '-ms-linear-');
+            updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
             updated += plus + delimiter;
 
             value = value.replacer(property, '@[[' + output.length + ']]');
@@ -1032,7 +1032,7 @@ function autoprefixer_keyframes(value) {
 
         updated += '@-webkit-' + plus + delimiter;
         updated += '@-moz-' + plus + delimiter;
-        updated += '@-o-' + plus;
+        updated += '@-o-' + plus + delimiter;
 
         value = value.replacer(property, '@[[' + output.length + ']]');
         output.push(updated);
