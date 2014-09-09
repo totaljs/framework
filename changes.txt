@@ -3,7 +3,9 @@ IN DEVELOPMENT ======= 1.7.0
 Framework supports a backward compatibility.
 
 - added: SCHEMA(name), returns group of schemas
+- added: Builders.Schema() - schema supports onGet, onSave, onRemove, onQuery
 - added: Builders.Schema() - schema supports workflows
+- added: Builders.Schema() - schema supports composer
 - added: Builders.Schema() - schema supports transformations
 - added: Builders.Schema() - schema supports grouping `Builders.schema('group').get('schema_name)`
 - added: framework.mail() - is alias for controller.mail()
