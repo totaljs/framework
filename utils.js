@@ -1739,13 +1739,10 @@ String.prototype.parseXML = function() {
  * @return {Date}
  */
 String.prototype.parseDate = function() {
-    var self = this;
-
+    var self = this.trim();
     var arr = self.indexOf(' ') === -1 ? self.split('T') : self.split(' ');
     var index = arr[0].indexOf(':');
-
-    if (arr[1] === undefined)
-        arr[1] = '00:00:00';
+    var length = arr[0].length;
 
     if (index !== -1) {
         var tmp = arr[1];
@@ -1753,11 +1750,30 @@ String.prototype.parseDate = function() {
         arr[0] = tmp;
     }
 
+    if (arr[0] === undefined)
+        arr[0] = '';
+
+    var noTime = arr[1] === undefined ? true : arr[1].length === 0;
+
+    for (var i = 0; i < length; i++) {
+        var c = arr[0].charCodeAt(i);
+        if (c > 47 && c < 58)
+            continue;
+        if (c === 45 || c === 46)
+            continue;
+
+        if (noTime)
+            return null;
+    }
+
+    if (arr[1] === undefined)
+        arr[1] = '00:00:00';
+
     var date = (arr[0] || '').split('-');
     var time = (arr[1] || '').split(':');
     var parsed = [];
 
-    if (date.length < 3 && time.length < 2)
+    if (date.length < 4 && time.length < 2)
         return null;
 
     index = time[2].indexOf('.');
