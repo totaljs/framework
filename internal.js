@@ -672,157 +672,21 @@ HttpFile.prototype.image = function(imageMagick) {
 // =================================================================================
 // *********************************************************************************
 
-function compile_jscss(css) {
+function compile_autovendor(css) {
 
-    var comments = [];
-    var beg = 0;
-    var end = 0;
-    var tmp = '';
     var reg1 = /\n|\s{2,}/g;
     var reg2 = /\s?\{\s{1,}/g;
     var reg3 = /\s?\}\s{1,}/g;
     var reg4 = /\s?\:\s{1,}/g;
     var reg5 = /\s?\;\s{1,}/g;
-    var output = '';
 
-    var prepare = function(value) {
-        return value.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
-    };
-
-    while (true) {
-
-        beg = css.indexOf('/*', beg);
-
-        if (beg === -1) {
-            tmp += css;
-            break;
-        }
-
-        end = css.indexOf('*/', beg);
-        if (end === -1)
-            continue;
-
-        comments.push(css.substring(beg, end).trim());
-        tmp += css.substring(0, beg).trim();
-        css = css.substring(end + 2);
-        beg = 0;
-    }
-
-    output = '';
-    tmp = tmp.trim();
-
-    var length = comments.length;
-    var code = '';
     var avp = '@#auto-vendor-prefix#@';
-    var isAuto = tmp.startsWith(avp);
+    var isAuto = css.startsWith(avp) || css.indexOf('/*auto*/') !== -1;
 
     if (isAuto)
-        tmp = tmp.replace(avp, '');
+        css = autoprefixer(css)
 
-    for (var i = 0; i < length; i++) {
-
-        var comment = comments[i];
-
-        // Auto vendor prefixes
-        if (comment.indexOf('auto') !== -1 && comment.length <= 10) {
-            isAuto = true;
-            continue;
-        }
-
-        // Code for evaluating
-        if (comment.indexOf('var ') !== -1 || comment.indexOf('function ') !== -1)
-            code += comment.replace('/*', '').replace('*/', '') + '\n\n';
-
-    }
-
-    beg = 0;
-    end = 0;
-
-    var DELIMITER_UNESCAPE = '+unescape(\'';
-    var DELIMITER_UNESCAPE_END = '\')';
-
-    while (true) {
-
-        beg = tmp.indexOf('$');
-
-        if (beg === -1) {
-            output += DELIMITER_UNESCAPE + escape(tmp) + DELIMITER_UNESCAPE_END;
-            break;
-        }
-
-        output += DELIMITER_UNESCAPE + escape(tmp.substring(0, beg)) + DELIMITER_UNESCAPE_END;
-        tmp = tmp.substring(beg);
-
-        length = tmp.length;
-        end = 0;
-
-        var skipA = 0;
-        var skipB = 0;
-        var skipC = 0;
-
-        for (var i = 0; i < length; i++) {
-
-            if (tmp[i] === '"') {
-
-                if (skipA > 0) {
-                    skipA--;
-                    continue;
-                }
-
-                skipA++;
-            }
-
-            if (tmp[i] === '{')
-                skipC++;
-
-            if (tmp[i] === '\'') {
-
-                if (skipB > 0) {
-                    skipB--;
-                    continue;
-                }
-
-                skipB++;
-            }
-
-            if (tmp[i] === '}' && skipC > 0) {
-                skipC--;
-                continue;
-            }
-
-            if (skipA > 0 || skipB > 0 || skipC > 0)
-                continue;
-
-            if (i === length - 1) {
-                end = i + 1;
-                break;
-            }
-
-            if (tmp[i] === ';' || tmp[i] === '!' || tmp[i] === '}' || tmp[i] === '\n') {
-                end = i;
-                break;
-            }
-        }
-
-        if (end === 0)
-            continue;
-
-        var cmd = tmp.substring(0, end);
-        tmp = tmp.substring(end);
-        output += '+' + cmd.substring(1);
-        beg = 0;
-    }
-
-    var length = output.length;
-    var compiled = '';
-
-    output = code + '\n\n;compiled = \'\'' + output;
-    eval(output);
-
-    if (isAuto)
-        compiled = autoprefixer(compiled)
-
-    return prepare(compiled);
+    return css.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
 }
 
 /*
@@ -832,7 +696,6 @@ function compile_jscss(css) {
 */
 function autoprefixer(value) {
 
-    // 'box-shadow', 'border-radius'
     var prefix = ['appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility'];
 
     value = autoprefixer_keyframes(value);
@@ -1055,7 +918,7 @@ exports.compile_css = function(value, minify) {
         return framework.onCompileCSS('', value);
 
     try {
-        return compile_jscss(value);
+        return compile_autovendor(value);
     } catch (ex) {
         framework.error(new Error('JS CSS exception: ' + ex.message));
         return '';

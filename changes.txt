@@ -20,6 +20,8 @@ Framework supports a backward compatibility.
 - updated: Array.wait(fnItem, fnCallback, removeItems) - default: function doesn't remove items
 - updated: Builders.UrlBuilder() -> toString([skipEmpty])
 
+- removed: JS CSS
+
 - fixed: if path starts '/' then is view loaded directly from /views/ directory
 - fixed: xml parser
 - fixed: problem with parsing a bad JSON datas - framework.decrypt();
