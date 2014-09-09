@@ -681,7 +681,17 @@ function compile_autovendor(css) {
     var reg5 = /\s?\;\s{1,}/g;
 
     var avp = '@#auto-vendor-prefix#@';
-    var isAuto = css.startsWith(avp) || css.indexOf('/*auto*/') !== -1;
+    var isAuto = css.startsWith(avp);
+
+    if (isAuto)
+        css = css.replace(avp, '');
+    else {
+        avp = '/*auto*/';
+        isAuto = css.indexOf(avp) !== -1;
+        if (isAuto)
+            css = css.replace(avp, '');
+    }
+
 
     if (isAuto)
         css = autoprefixer(css)
