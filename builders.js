@@ -75,6 +75,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.schema = obj;
     this.properties = properties === undefined ? Object.keys(obj) : properties;
     this.transforms;
+    this.composes;
     this.onDefault;
     this.onValidation = validator;
     this.onSave;
@@ -221,6 +222,24 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
         self.workflows = {};
     self.workflows[name] = fn;
     return self;
+};
+
+/**
+ * Add a new composer for the schema
+ * @param {String} name Transform name.
+ * @param {Function(output, model, errorBuilder, helper, next(value), schema)} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
+    var self = this;
+    if (!self.composes)
+        self.composes = {};
+    self.composes[name] = fn;
+    return self;
+};
+
+SchemaBuilderEntity.prototype.addComposer = function(name, fn) {
+    return this.addCompose(name, fn);
 };
 
 /**
@@ -913,7 +932,42 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
     trans.call(self, output, builder, helper, function(result) {
         callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    }, self);
+    }, self.name);
+
+    return self;
+
+};
+
+/**
+ * Compose an object
+ * @param {String} name
+ * @param {Object} model
+ * @param {Object} helper A helper object, optional.
+ * @param {Function(errorBuilder, output, model)} callback
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) {
+
+    var self = this;
+
+    if (callback === undefined) {
+        callback = helper;
+        helper = undefined;
+    }
+
+    var builder = new ErrorBuilder();
+    var compose = self.composes ? self.composes[name] : undefined;
+
+    if (!compose) {
+        callback(builder.add('', 'Compose not found.'));
+        return;
+    }
+
+    var output = self.default();
+
+    compose.call(self, output, model, builder, helper, function(result) {
+        callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
+    }, self.name);
 
     return self;
 
@@ -956,7 +1010,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 
     workflow.call(self, output, builder, helper, function(result) {
         callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    }, self);
+    }, self.name);
 
     return self;
 
@@ -1344,10 +1398,8 @@ ErrorBuilder.prototype.add = function(name, error, path) {
         return self;
     }
 
-    if (error === undefined) {
-        error = name;
-        name = '';
-    }
+    if (error === undefined)
+        error = '@';
 
     if (error === undefined || error === null)
         return self;
