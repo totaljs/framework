@@ -1079,6 +1079,7 @@ SchemaBuilderEntity.prototype.clean = function(model, isCopied) {
 function ErrorBuilder(onResource) {
 
     this._errors = [];
+    this._transformName = transforms['error_default'];
     this.onResource = onResource;
     this.resourceName = 'default';
     this.resourcePrefix = '';
@@ -1330,14 +1331,14 @@ ErrorBuilder.prototype = {
         var self = this;
         if (!self.isPrepared)
             self.prepare();
-        return self._errors;
+        return self._transform();
     },
 
     get error() {
         var self = this;
         if (!self.isPrepared)
             self.prepare();
-        return self._errors;
+        return self._transform();
     }
 }
 
@@ -1506,9 +1507,10 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
  * @return {String}
  */
 ErrorBuilder.prototype.json = function(beautify, replacer) {
+    var obj = this.prepare()._transform();
     if (beautify)
-        return JSON.stringify(this.prepare()._errors, replacer, '\t');
-    return JSON.stringify(this.prepare()._errors, replacer);
+        return JSON.stringify(obj, replacer, '\t');
+    return JSON.stringify(obj, replacer);
 };
 
 /**
@@ -1516,10 +1518,8 @@ ErrorBuilder.prototype.json = function(beautify, replacer) {
  * @param {Boolean} beautify Beautify JSON.
  * @return {String}
  */
-ErrorBuilder.prototype.JSON = function(beautify) {
-    if (beautify)
-        return JSON.stringify(this.prepare()._errors, null, '\t');
-    return JSON.stringify(this.prepare()._errors);
+ErrorBuilder.prototype.JSON = function(beautify, replacer) {
+    return this.json(beautify, replacer);
 };
 
 /**
@@ -1557,6 +1557,26 @@ ErrorBuilder.prototype._prepare = function() {
 };
 
 /**
+ * Execute a transform
+ * @private
+ * @return {Object}
+ */
+ErrorBuilder.prototype._transform = function() {
+
+    var self = this;
+
+    if (!self._transformName)
+        return self._errors;
+
+    var current = transforms['error'][self._transformName];
+
+    if (current === undefined)
+        return self._errors;
+
+    return current(self);
+};
+
+/**
  * To string
  * @return {String}
  */
@@ -1576,6 +1596,27 @@ ErrorBuilder.prototype.toString = function() {
 
     return builder.join('\n');
 
+};
+
+/**
+ * Set transformation for current ErrorBuilder
+ * @param {String} name
+ * @return {ErrorBuilder}
+ */
+ErrorBuilder.prototype.setTransform = function(name) {
+    var self = this;
+    self._transform = name;
+    return self;
+};
+
+/**
+ * Transform
+ * @param {String} name
+ * @return {Object}
+ */
+ErrorBuilder.prototype.transform = function(name) {
+    var self = this;
+    return self.prepare()._transform();
 };
 
 /**
@@ -1622,9 +1663,27 @@ ErrorBuilder.prototype.prepare = function() {
     return self;
 };
 
+/**
+ * STATIC: Create transformation
+ * @param {String} name
+ * @param {Function(errorBuilder)} fn
+ * @return {ErrorBuilder}
+ */
 ErrorBuilder.transform = function(name, fn) {
     var self = this;
     transforms['error'][name] = fn;
+    return self;
+};
+
+/**
+ * STATIC: Create transformation
+ * @param {String} name
+ * @param {Function(errorBuilder)} fn
+ * @return {ErrorBuilder}
+ */
+ErrorBuilder.setDefaultTransform = function(name) {
+    var self = this;
+    transforms['error_default'] = name;
     return self;
 };
 

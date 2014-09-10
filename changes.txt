@@ -2,6 +2,9 @@ IN DEVELOPMENT ======= 1.7.0
 
 Framework supports a backward compatibility.
 
+- added: ErrorBuilder.transform()
+- added: ErrorBuilder.setTransform() - set default transform
+- added: ErrorBuilder.setDefaultTransform() for all ErrorBuilders
 - added: SCHEMA(name), returns group of schemas
 - added: Builders.Schema() - schema supports onGet, onSave, onRemove, onQuery
 - added: Builders.Schema() - schema supports workflows
