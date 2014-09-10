@@ -1398,6 +1398,9 @@ ErrorBuilder.prototype.add = function(name, error, path) {
         return self;
     }
 
+    if ((name === undefined || name === null) && (error === undefined || error === null))
+        return self;
+
     if (error === undefined)
         error = '@';
 
