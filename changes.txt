@@ -2,9 +2,6 @@ IN DEVELOPMENT ======= 1.7.0
 
 Framework supports a backward compatibility.
 
-- added: ErrorBuilder.transform()
-- added: ErrorBuilder.setTransform() - set default transform
-- added: ErrorBuilder.setDefaultTransform() for all ErrorBuilders
 - added: SCHEMA(name), returns group of schemas
 - added: Builders.Schema() - schema supports onGet, onSave, onRemove, onQuery
 - added: Builders.Schema() - schema supports workflows
@@ -19,7 +16,18 @@ Framework supports a backward compatibility.
 - added: String.prototype.toSearch()
 - added: async queue - Utils.queue(name, maximumCalls, fn) (for e.g. EMFILE, too many open files)
 - added: Utils.isEqual(obj1, obj2, [properties])
-
+- added: ErrorBuilder.transform()
+- added: ErrorBuilder.addTransform() - add transform
+- added: ErrorBuilder.setTransform() - set default transform
+- added: ErrorBuilder.setDefaultTransform() for all ErrorBuilders
+- added: Pagination.transform()
+- added: Pagination.addTransform() - add transform
+- added: Pagination.setTransform() - set default transform
+- added: Pagination.setDefaultTransform() for all Paginations
+- added: Pagination.first()
+- added: Pagination.last()
+- added: Pagination.isFirst
+- added: Pagination.isLast
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
 - updated: Utils.request(), timeout is possible to add as cookie, headers or encoding
 - updated: Array.wait(fnItem, fnCallback, removeItems) - default: function doesn't remove items

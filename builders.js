@@ -18,7 +18,7 @@ var DEFAULT_SCHEMA = 'default';
 var DEFAULT_SCHEMA_PROPERTY = '$state';
 
 var schemas = {};
-var transforms = {};
+var transforms = { pagination: {}, error: {} };
 
 function SchemaBuilder(name) {
     this.name = name;
@@ -1078,8 +1078,8 @@ SchemaBuilderEntity.prototype.clean = function(model, isCopied) {
  */
 function ErrorBuilder(onResource) {
 
-    this._errors = [];
-    this._transformName = transforms['error_default'];
+    this.items = [];
+    this.transformName = transforms['error_default'];
     this.onResource = onResource;
     this.resourceName = 'default';
     this.resourcePrefix = '';
@@ -1123,6 +1123,8 @@ function UrlBuilder() {
 function Pagination(items, page, max, format) {
     this.isNext = false;
     this.isPrev = false;
+    this.isFirst = false;
+    this.isLast = false;
     this.items = items;
     this.count = 0;
     this.skip = 0;
@@ -1132,6 +1134,7 @@ function Pagination(items, page, max, format) {
     this.visible = false;
     this.format = format || '?page={0}';
     this.refresh(items, page, max);
+    this.transformName = transforms['pagination_default'];
 }
 
 /**
@@ -1393,7 +1396,7 @@ ErrorBuilder.prototype.add = function(name, error, path) {
                 self.errors.push(o);
             });
 
-            self.count = self._errors.length;
+            self.count = self.items.length;
         }
 
         return self;
@@ -1411,13 +1414,13 @@ ErrorBuilder.prototype.add = function(name, error, path) {
     if (error instanceof Error)
         error = error.toString();
 
-    self._errors.push({
+    self.items.push({
         name: name,
         error: typeof(error) === STRING ? error : (error || '').toString() || '@',
         path: path
     });
 
-    self.count = self._errors.length;
+    self.count = self.items.length;
     return self;
 };
 
@@ -1429,11 +1432,11 @@ ErrorBuilder.prototype.add = function(name, error, path) {
 ErrorBuilder.prototype.remove = function(name) {
     var self = this;
 
-    self._errors = self._errors.remove(function(o) {
+    self.items = self.items.remove(function(o) {
         return o.name === name;
     });
 
-    self.count = self._errors.length;
+    self.count = self.items.length;
     return self;
 };
 
@@ -1446,12 +1449,12 @@ ErrorBuilder.prototype.hasError = function(name) {
     var self = this;
 
     if (name) {
-        return self._errors.find(function(o) {
+        return self.items.find(function(o) {
             return o.name === name;
         }) !== null;
     }
 
-    return self._errors.length > 0;
+    return self.items.length > 0;
 };
 
 /**
@@ -1466,7 +1469,7 @@ ErrorBuilder.prototype.read = function(name) {
     if (!self.isPrepared)
         self.prepare();
 
-    var error = self._errors.find(function(o) {
+    var error = self.items.find(function(o) {
         return o.name === name;
     });
 
@@ -1482,7 +1485,7 @@ ErrorBuilder.prototype.read = function(name) {
  */
 ErrorBuilder.prototype.clear = function() {
     var self = this;
-    self._errors = [];
+    self.items = [];
     self.count = 0;
     return self;
 };
@@ -1534,7 +1537,7 @@ ErrorBuilder.prototype._prepare = function() {
     if (self.onResource === null)
         return self;
 
-    var errors = self._errors;
+    var errors = self.items;
     var length = errors.length;
 
     for (var i = 0; i < length; i++) {
@@ -1561,19 +1564,20 @@ ErrorBuilder.prototype._prepare = function() {
  * @private
  * @return {Object}
  */
-ErrorBuilder.prototype._transform = function() {
+ErrorBuilder.prototype._transform = function(name) {
 
     var self = this;
+    var transformName = name || self.transformName;
 
-    if (!self._transformName)
-        return self._errors;
+    if (!transformName)
+        return self.items;
 
-    var current = transforms['error'][self._transformName];
+    var current = transforms['error'][transformName];
 
     if (current === undefined)
-        return self._errors;
+        return self.items;
 
-    return current(self);
+    return current.call(self);
 };
 
 /**
@@ -1587,7 +1591,7 @@ ErrorBuilder.prototype.toString = function() {
     if (!self.isPrepared)
         self.prepare();
 
-    var errors = self._errors;
+    var errors = self.items;
     var length = errors.length;
     var builder = [];
 
@@ -1605,7 +1609,7 @@ ErrorBuilder.prototype.toString = function() {
  */
 ErrorBuilder.prototype.setTransform = function(name) {
     var self = this;
-    self._transform = name;
+    self.transformName = name;
     return self;
 };
 
@@ -1616,7 +1620,7 @@ ErrorBuilder.prototype.setTransform = function(name) {
  */
 ErrorBuilder.prototype.transform = function(name) {
     var self = this;
-    return self.prepare()._transform();
+    return self.prepare()._transform(name);
 };
 
 /**
@@ -1627,7 +1631,7 @@ ErrorBuilder.prototype.transform = function(name) {
 ErrorBuilder.prototype._prepareReplace = function() {
 
     var self = this;
-    var errors = self._errors;
+    var errors = self.items;
     var lengthBuilder = errors.length;
     var keys = Object.keys(self.replacer);
     var lengthKeys = keys.length;
@@ -1667,24 +1671,58 @@ ErrorBuilder.prototype.prepare = function() {
  * STATIC: Create transformation
  * @param {String} name
  * @param {Function(errorBuilder)} fn
- * @return {ErrorBuilder}
  */
-ErrorBuilder.transform = function(name, fn) {
-    var self = this;
+ErrorBuilder.addTransform = function(name, fn) {
     transforms['error'][name] = fn;
-    return self;
+};
+
+/**
+ * STATIC: Remove transformation
+ * @param {String} name
+ */
+ErrorBuilder.removeTransform = function(name) {
+    delete transforms['error'][name];
 };
 
 /**
  * STATIC: Create transformation
  * @param {String} name
  * @param {Function(errorBuilder)} fn
- * @return {ErrorBuilder}
  */
 ErrorBuilder.setDefaultTransform = function(name) {
-    var self = this;
-    transforms['error_default'] = name;
-    return self;
+    if (name === undefined)
+        delete transforms['error_default'];
+    else
+        transforms['error_default'] = name;
+};
+
+/**
+ * STATIC: Create transformation
+ * @param {String} name
+ * @param {Function(pagination)} fn
+ */
+Pagination.addTransform = function(name, fn) {
+    transforms['pagination'][name] = fn;
+};
+
+/**
+ * STATIC: Create transformation
+ * @param {String} name
+ * @param {Function(pagination)} fn
+ */
+Pagination.setDefaultTransform = function(name) {
+    if (name === undefined)
+        delete transforms['pagination_default'];
+    else
+        transforms['pagination_default'] = name;
+};
+
+/**
+ * STATIC: Remove transformation
+ * @param {String} name
+ */
+Pagination.removeTransform = function(name) {
+    delete transforms['pagination'][name];
 };
 
 /**
@@ -1709,6 +1747,8 @@ Pagination.prototype.refresh = function(items, page, max) {
     self.max = max;
     self.isPrev = self.page > 0;
     self.isNext = self.page < self.count - 1;
+    self.isFirst = self.count > 1;
+    self.isLast = self.count > 1;
     self.visible = self.count > 1;
     self.page++;
 
@@ -1716,7 +1756,49 @@ Pagination.prototype.refresh = function(items, page, max) {
 };
 
 /**
- * Get previous page
+ * Set transformation for current Pagination
+ * @param {String} name
+ * @return {Pagination}
+ */
+Pagination.prototype.setTransform = function(name) {
+    var self = this;
+    self._transform = name;
+    return self;
+};
+
+/**
+ * Execute a transform
+ * @private
+ * @param {String} name A transformation name.
+ * @param {Object} argument1 Optinonal.
+ * @param {Object} argument2 Optinonal.
+ * @param {Object} argument3 Optinonal.
+ * @param {Object} argument4 Optinonal.
+ * @param {Object} argument..n Optinonal.
+ * @return {Object}
+ */
+Pagination.prototype.transform = function(name) {
+
+    var self = this;
+    var transformName = name || self.transformName;
+
+    if (!transformName)
+        throw new Error('A transformation of Pagination not found.');
+
+    var current = transforms['pagination'][transformName];
+
+    if (current === undefined)
+        return self.render();
+
+    var param = [];
+    for (var i = 1; i < arguments.length; i++)
+        param.push(arguments[i]);
+
+    return current.apply(self, param);
+};
+
+/**
+ * Get a previous page
  * @param {String} format Custom format (optional).
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
@@ -1734,12 +1816,13 @@ Pagination.prototype.prev = function(format) {
     return {
         url: format.format(page, self.items, self.count),
         page: page,
-        selected: false
+        selected: false,
+        enabled: self.isPrev
     };
 };
 
 /**
- * Get next page
+ * Get a next page
  * @param {String} format Custom format (optional).
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
@@ -1757,12 +1840,53 @@ Pagination.prototype.next = function(format) {
     return {
         url: format.format(page, self.items, self.count),
         page: page,
-        selected: false
+        selected: false,
+        enabled: self.isNext
     };
 };
 
 /**
- * Create pagination
+ * Get a last page
+ * @param {String} format Custom format (optional).
+ * @return {Object} Example: { url: String, page: Number, selected: Boolean }
+ */
+Pagination.prototype.last = function(format) {
+
+    var self = this;
+    var page = self.count;
+
+    format = format || self.format;
+
+    return {
+        url: format.format(page, self.items, self.count),
+        page: page,
+        selected: false,
+        enabled: self.count > 0
+    };
+};
+
+/**
+ * Get a first page
+ * @param {String} format Custom format (optional).
+ * @return {Object} Example: { url: String, page: Number, selected: Boolean }
+ */
+Pagination.prototype.first = function(format) {
+
+    var self = this;
+    var page = 1;
+
+    format = format || self.format;
+
+    return {
+        url: format.format(page, self.items, self.count),
+        page: page,
+        selected: false,
+        enabled: self.count > 0
+    };
+};
+
+/**
+ * Create a pagination object
  * @param {Number} max Max pages in collection (optional).
  * @param {String} format Custom format (optional).
  * @return {Object Array} Example: [{ url: String, page: Number, selected: Boolean }]
@@ -1770,6 +1894,10 @@ Pagination.prototype.next = function(format) {
 Pagination.prototype.render = function(max, format) {
 
     var self = this;
+
+    if (self.transformName)
+        return transforms['pagination'][self.transformName].apply(self, arguments);
+
     var builder = [];
     format = format || self.format;
 
@@ -1784,7 +1912,8 @@ Pagination.prototype.render = function(max, format) {
             builder.push({
                 url: format.format(i, self.items, self.count),
                 page: i,
-                selected: i === self.page
+                selected: i === self.page,
+                enabled: true
             });
         return builder;
     }
@@ -1814,7 +1943,8 @@ Pagination.prototype.render = function(max, format) {
         builder.push({
             url: format.format(i, self.items, self.count),
             page: i,
-            selected: i === self.page
+            selected: i === self.page,
+            enabled: true
         });
 
     return builder;
@@ -1829,14 +1959,16 @@ Pagination.prototype.render = function(max, format) {
 UrlBuilder.prototype.add = function(name, value) {
     var self = this;
 
-    if (typeof(name) === 'object') {
-        Object.keys(name).forEach(function(o) {
-            self.builder[o] = name[o];
-        });
-        return;
+    if (typeof(name) !== OBJECT) {
+        self.builder[name] = value;
+        return self;
     }
 
-    self.builder[name] = value;
+    var arr = Object.keys(name);
+
+    for (var i = 0, length = arr.length; i < length; i++)
+        self.builder[arr[i]] = name[arr[i]];
+
     return self;
 };
 

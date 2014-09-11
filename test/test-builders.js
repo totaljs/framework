@@ -6,21 +6,47 @@ global.builders = require('../builders');
 function test_PageBuilder() {
 
     var name = 'Pagination: ';
+
+    builders.Pagination.addTransform('custom', function(argument1) {
+        assert.ok(argument1 === 1, name + 'addTransform(argument1)');
+        return this.count;
+    });
+
     var builder = new builders.Pagination(100, 1, 12);
 
     assert.ok(builder.isPrev === false, name + 'isPrev (1)');
     assert.ok(builder.isNext === true, name + 'isNext (1)');
+    assert.ok(builder.isFirst === true, name + 'isFirst (1)');
+    assert.ok(builder.isLast === true, name + 'isLast (1)');
 
     var output = builder.render();
 
     output = builder.render(6);
     builder.refresh(100, 5, 12);
 
-    assert.ok(builder.isPrev, name + 'isPrev (50)');
-    assert.ok(builder.isNext, name + 'isNext (50)');
+    assert.ok(builder.isPrev, name + 'isPrev (2)');
+    assert.ok(builder.isNext, name + 'isNext (2)');
+    assert.ok(builder.isFirst === true, name + 'isFirst (2)');
+    assert.ok(builder.isLast === true, name + 'isLast (2)');
 
-    //output = builder.render(5);
-    //assert.ok(output === '34567', name + 'render - max 5');
+    output = builder.render(5);
+    assert.ok(output[2].selected, name + 'render - max 5 (selected page problem)');
+    assert.ok(output[4].url === '?page=7', name + 'render - max 5 (url format)');
+
+    builder.refresh(1, 1, 12);
+    assert.ok(builder.isFirst === false, name + 'isFirst (3)');
+    assert.ok(builder.isLast === false, name + 'isLast (3)');
+
+    builder.refresh(10, 1, 5);
+    assert.ok(builder.isFirst === true, name + 'isFirst (4)');
+    assert.ok(builder.isLast === true, name + 'isLast (4)');
+    assert.ok(builder.transform('custom', 1) === 2, name + 'transform()');
+
+    builders.Pagination.setDefaultTransform('custom');
+
+    var builder = new builders.Pagination(100, 1, 10);
+    assert.ok(builder.render(1) === 10, name + 'default transform()');
+
 };
 
 function test_UrlBuilder() {
@@ -47,10 +73,10 @@ function test_UrlBuilder() {
     builder.clear();
     assert.ok(builder.read('A') === null, name + 'clear()');
 
-    assert.ok(builder.hasValue(['A', 'B']) === false, name + 'hasValues(empty)');
+    assert.ok(builder.hasValue(['A', 'B']) === false, name + 'hasValue(empty)');
     builder.add('A', '1');
     builder.add('B', '2');
-    assert.ok(builder.hasValue(['A', 'B']) === true, name + 'hasValues()');
+    assert.ok(builder.hasValue(['A', 'B']) === true, name + 'hasValue()');
 }
 
 function test_Schema() {
@@ -207,6 +233,12 @@ function test_Schema() {
 
 function test_ErrorBuilder() {
     var name = 'ErrorBuilder: ';
+
+    builders.ErrorBuilder.addTransform('custom', function() {
+        assert.ok(this.hasError(), name + 'transform context');
+        return this.items.length;
+    });
+
     var builder = new builders.ErrorBuilder();
 
     builder.add('name');
@@ -228,18 +260,26 @@ function test_ErrorBuilder() {
 
     builder.clear();
     builder.add('name');
-
     assert.ok(builder.json() === '[{"name":"name","error":"name"}]', name + 'json');
 
     builder.add(new builders.ErrorBuilder().add('age'));
     assert.ok(builder.json() === '[{"name":"name","error":"name"},{"name":"age","error":"age"}]', name + 'add(ErrorBuilder)');
-
     assert.ok(builder.read('name') === 'name', name + 'read()');
     assert.ok(builder.hasError('name'), name + 'hasError(name)');
 
     builder.replace('name', 'FET');
-
     assert.ok(builder.read('name') === 'FET', name + 'replace()');
+
+    builder.setTransform('default');
+    assert.ok(builder.transform('custom') === 2, name + 'transform()');
+
+    builders.ErrorBuilder.setDefaultTransform('custom');
+    builder = new builders.ErrorBuilder();
+
+    builder.add('error', new Error('some error'));
+    builder.add('name');
+
+    assert.ok(builder.errors === 2, name + 'transform()');
 };
 
 test_PageBuilder();
