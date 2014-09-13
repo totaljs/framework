@@ -91,13 +91,20 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 
 /**
  * Define type in schema
- * @param {String} name
+ * @param {String/String Array} name
  * @param {Object/String} type
  * @param {Boolean} required Is required? Default: false.
  * @return {SchemaBuilder}
  */
 SchemaBuilderEntity.prototype.define = function(name, type, required) {
+
     var self = this;
+
+    if (name instanceof Array) {
+        for (var i = 0, length = name.length; i < length; i++)
+            self.define(name[i], type, required);
+        return self;
+    }
 
     self.schema[name] = type;
 
