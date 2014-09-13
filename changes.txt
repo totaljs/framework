@@ -8,6 +8,7 @@ Framework supports a backward compatibility.
 - added: Builders.Schema() - schema supports composer
 - added: Builders.Schema() - schema supports transformations
 - added: Builders.Schema() - schema supports grouping `Builders.schema('group').get('schema_name)`
+- added: Builders.Schema() - schema supports rules
 - added: framework.mail() - is alias for controller.mail()
 - added: framework.view(name, [model], [layout], [repository]) - is alias for controller.view()
 - added: validate handler contains new parameter model -> (name, value, path, schema, model)

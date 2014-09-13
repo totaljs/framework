@@ -44,6 +44,10 @@ SchemaBuilder.prototype.get = function(name) {
  */
 SchemaBuilder.prototype.add = function(name, obj, properties, validator) {
     var self = this;
+
+    if (typeof(obj) === UNDEFINED)
+        obj = {};
+
     self.collection[name] = new SchemaBuilderEntity(self, name, obj, validator, properties);
     return self.collection[name];
 };
@@ -76,6 +80,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.properties = properties === undefined ? Object.keys(obj) : properties;
     this.transforms;
     this.composes;
+    this.rules;
     this.onDefault;
     this.onValidation = validator;
     this.onSave;
@@ -83,6 +88,31 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.onRemove;
     this.onQuery;
 }
+
+/**
+ * Define type in schema
+ * @param {String} name
+ * @param {Object/String} type
+ * @param {Boolean} required Is required? Default: false.
+ * @return {SchemaBuilder}
+ */
+SchemaBuilderEntity.prototype.define = function(name, type, required) {
+    var self = this;
+
+    self.schema[name] = type;
+
+    if (!required)
+        return self;
+
+    if (self.properties === undefined || self.properties === null)
+        self.properties = [];
+
+    if (self.properties.indexOf(name) !== -1)
+        return self;
+
+    self.properties.push(name);
+    return self;
+};
 
 SchemaBuilderEntity.prototype.getDependencies = function() {
     var self = this;
@@ -198,46 +228,93 @@ SchemaBuilderEntity.prototype.setProperties = function(properties) {
 
 /**
  * Add a new transformation for the schema
- * @param {String} name Transform name.
- * @param {Function(model, errorBuilder, helper, next(value), schema)} fn
+ * @param {String} name Rule name, optional.
+ * @param {Object} value
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.addRule = function(name, value) {
+    var self = this;
+
+    if (value === undefined) {
+        fn = name;
+        name = 'default';
+    }
+
+    if (!self.rules)
+        self.rules = {};
+
+    self.rules[name] = value;
+    return self;
+};
+
+/**
+ * Add a new transformation for the schema
+ * @param {String} name Transform name, optional.
+ * @param {Function(model, next([output]), errorBuilder, helper, schemaName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
     var self = this;
+
+    if (typeof(name) === FUNCTION) {
+        fn = name;
+        name = 'default';
+    }
+
     if (!self.transforms)
         self.transforms = {};
+
     self.transforms[name] = fn;
     return self;
 };
 
 /**
  * Add a new workflow for the schema
- * @param {String} name Transform name.
- * @param {Function(model, errorBuilder, helper, next(value), schema)} fn
+ * @param {String} name Transform name, optional.
+ * @param {Function(model, next([output]), errorBuilder, helper, schemaName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
     var self = this;
+
+    if (typeof(name) === FUNCTION) {
+        fn = name;
+        name = 'default';
+    }
+
     if (!self.workflows)
         self.workflows = {};
+
     self.workflows[name] = fn;
     return self;
 };
 
 /**
  * Add a new composer for the schema
- * @param {String} name Transform name.
- * @param {Function(output, model, errorBuilder, helper, next(value), schema)} fn
+ * @param {String} name Transform name, optional.
+ * @param {Function(output, model, next([output]), errorBuilder, helper, schemaName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
     var self = this;
+
+    if (typeof(name) === FUNCTION) {
+        fn = name;
+        name = 'default';
+    }
+
     if (!self.composes)
         self.composes = {};
+
     self.composes[name] = fn;
     return self;
 };
 
+/**
+ * Add a new composer for the schema
+ * @param {String} name Transform name, optional.
+ * @param {Function(output, model, next([output]), errorBuilder, helper, schemaName)} fn
+ */
 SchemaBuilderEntity.prototype.addComposer = function(name, fn) {
     return this.addCompose(name, fn);
 };
@@ -249,6 +326,23 @@ SchemaBuilderEntity.prototype.addComposer = function(name, fn) {
  */
 SchemaBuilderEntity.prototype.find = function(name) {
     return this.parent.get(name);
+};
+
+/**
+ * Get a rule
+ * @param {String} name
+ * @return {Object}
+ */
+SchemaBuilderEntity.prototype.rule = function(name) {
+    var self = this;
+
+    if (self.rules === undefined)
+        return undefined;
+
+    if (name === undefined)
+        name = 'default';
+
+    return self.rules[name];
 };
 
 /**
@@ -907,6 +1001,13 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
     var self = this;
 
+    if (typeof(name) !== STRING) {
+        callback = helper;
+        helper = model;
+        model = name;
+        name = 'default';
+    }
+
     if (callback === undefined) {
         callback = helper;
         helper = undefined;
@@ -930,9 +1031,9 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
         return;
     }
 
-    trans.call(self, output, builder, helper, function(result) {
+    trans.call(self, output, function(result) {
         callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    }, self.name);
+    }, builder, helper, self.name);
 
     return self;
 
@@ -950,6 +1051,13 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 
     var self = this;
 
+    if (typeof(name) !== STRING) {
+        callback = helper;
+        helper = model;
+        model = name;
+        name = 'default';
+    }
+
     if (callback === undefined) {
         callback = helper;
         helper = undefined;
@@ -959,15 +1067,15 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
     var compose = self.composes ? self.composes[name] : undefined;
 
     if (!compose) {
-        callback(builder.add('', 'Compose not found.'));
+        callback(builder.add('', 'Composer not found.'));
         return;
     }
 
     var output = self.default();
 
-    compose.call(self, output, model, builder, helper, function(result) {
+    compose.call(self, output, model, function(result) {
         callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    }, self.name);
+    }, builder, helper, self.name);
 
     return self;
 
@@ -984,6 +1092,13 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback) {
 
     var self = this;
+
+    if (typeof(name) !== STRING) {
+        callback = helper;
+        helper = model;
+        model = name;
+        name = 'default';
+    }
 
     if (callback === undefined) {
         callback = helper;
@@ -1008,9 +1123,9 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
         return;
     }
 
-    workflow.call(self, output, builder, helper, function(result) {
+    workflow.call(self, output, function(result) {
         callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    }, self.name);
+    },  builder, helper, self.name);
 
     return self;
 

@@ -138,9 +138,10 @@ function test_Schema() {
 
     builders.schema('1', {
         name: 'string',
-        join: '[2]',
-        nums: '[number]'
+        join: '[2]'
     });
+
+    builders.schema('default').get('1').define('nums', '[number]');
 
     builders.schema('2', {
         age: Number
@@ -149,9 +150,9 @@ function test_Schema() {
             return -1;
     });
 
-    builders.schema('default').get('2').addTransform('xml', function(model, err, helper, next) {
+    builders.schema('default').get('2').addTransform('xml', function(model, next, err, helper) {
         next('<xml>OK</xml>');
-    }).addWorkflow('send', function(model, err, helper, next) {
+    }).addWorkflow('send', function(model, next, err, helper) {
         next('workflow');
     }).setGet(function(error, model, helper, next) {
         assert.ok(error.hasError() === false, 'schema - setGet');
