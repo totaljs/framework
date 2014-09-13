@@ -440,10 +440,14 @@ function others() {
 
 	utils.request('http://www.yahoo.com', ['get'], function(err, data, code) {
 		assert.ok(code === 301, 'utils.request (success)');
+	}).on('data', function(chunk, p) {
+		assert.ok(p === 100, 'utils.request (events)');
 	});
 
 	utils.download('http://www.yahoo.com', ['get'], function(err, res) {
 		assert.ok(res.statusCode === 301, 'utils.download (success)');
+	}).on('data', function(chunk, p) {
+		assert.ok(p === 100, 'utils.download (events)');
 	});
 
 	utils.request('http://xxxxxxx.yyy', 'get', null, function(err, data, code) {

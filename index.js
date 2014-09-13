@@ -9923,7 +9923,7 @@ Controller.prototype.close = function(end) {
     @obj {Object}
     @fnCallback {Function} :: optional
     @timeout {Number} :: optional
-    return {Controller}
+    return {EventEmitter}
 */
 Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 
@@ -9946,7 +9946,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
         obj = tmp;
     }
 
-    utils.request(url, ['post', 'json'], obj, function(error, data, code, headers) {
+    return utils.request(url, ['post', 'json'], obj, function(error, data, code, headers) {
 
         if (!fnCallback)
             return;
@@ -9957,8 +9957,6 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
         fnCallback.call(self, error, data, code, headers);
 
     }, null, headers, ENCODING, timeout || 10000);
-
-    return self;
 };
 
 /*
@@ -10589,7 +10587,7 @@ WebSocket.prototype.destroy = function() {
     @url {String}
     @obj {Object}
     @fnCallback {Function} :: optional
-    return {Controller}
+    return {EvetEmitter}
 */
 WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 
@@ -10604,7 +10602,7 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
         obj = tmp;
     }
 
-    utils.request(url, ['post', 'json'], obj, function(error, data, code, headers) {
+    return utils.request(url, ['post', 'json'], obj, function(error, data, code, headers) {
 
         if (!fnCallback)
             return;
@@ -10616,7 +10614,6 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 
     }, headers);
 
-    return self;
 };
 
 /*

@@ -29,8 +29,12 @@ Framework supports a backward compatibility.
 - added: Pagination.last()
 - added: Pagination.isFirst
 - added: Pagination.isLast
+
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
 - updated: Utils.request(), timeout is possible to add as cookie, headers or encoding
+- updated: Utils.request() returns EventEmitter (begin, end, data(chunk, percentage))
+- updated: Utils.download() returns EventEmitter (begin, end, data(chunk, percentage))
+- updated: Controller.proxy() - returns EventEmitter (begin, end, data(chunk, percentage))
 - updated: Array.wait(fnItem, fnCallback, removeItems) - default: function doesn't remove items
 - updated: Builders.UrlBuilder() -> toString([skipEmpty])
 

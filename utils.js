@@ -272,6 +272,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
     var method = 'GET';
     var length = 0;
     var type = 0;
+    var e = new events.EventEmitter();
 
     headers = exports.extend({}, headers || {});
 
@@ -346,6 +347,8 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
     }
 
     var uri = parser.parse(url);
+    var responseLength = 0;
+
     uri.method = method;
 
     headers['X-Powered-By'] = 'total.js' + VERSION;
@@ -371,20 +374,21 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
     var onResponse = function(res) {
 
-        if (!callback) {
-            res.resume();
-            return;
-        }
-
         res._buffer = '';
+        res._bufferlength = 0;
 
         res.on('data', function(chunk) {
-            this._buffer += chunk.toString(encoding);
+            var self = this;
+            self._buffer += chunk.toString(encoding);
+            self._bufferlength += chunk.length;
+            e.emit('data', chunk, responseLength > 0 ? (self._bufferlength / responseLength) * 100 : 0);
         });
 
         res.on('end', function() {
             var self = this;
-            callback(null, self._buffer, self.statusCode, self.headers);
+            e.emit('end', self._buffer, self.statusCode, self.headers);
+            if (callback)
+                callback(null, self._buffer, self.statusCode, self.headers);
         });
 
         res.resume();
@@ -407,6 +411,11 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
             });
         }
 
+        request.on('response', function(response) {
+            responseLength = parseInt(response.headers['content-length']) || 0;
+            e.emit('begin', responseLength);
+        });
+
         if (isPOST)
             request.end(data, encoding);
         else
@@ -417,10 +426,10 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
         if (callback)
             callback(ex, null, 0, null);
 
-        return false;
+        return e;
     }
 
-    return true;
+    return e;
 }
 
 /**
@@ -465,6 +474,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
     var method = 'GET';
     var length = 0;
     var type = 0;
+    var e = new events.EventEmitter();
 
     headers = exports.extend({}, headers || {});
 
@@ -531,6 +541,8 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
     }
 
     var uri = parser.parse(url);
+    var responseLength = 0;
+
     uri.method = method;
 
     headers['X-Powered-By'] = 'total.js' + VERSION;
@@ -555,8 +567,23 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
     uri.headers = headers;
 
     var onResponse = function(res) {
+
+        res._bufferlength = 0;
+
+        res.on('data', function(chunk) {
+            var self = this;
+            self._bufferlength += chunk.length;
+            e.emit('data', chunk, responseLength > 0 ? (self._bufferlength / responseLength) * 100 : 0);
+        });
+
+        res.on('end', function() {
+            var self = this;
+            e.emit('end', self.statusCode, self.headers);
+        });
+
         callback(null, res);
         res.resume();
+
     };
 
     var connection = uri.protocol === 'https:' ? https : http;
@@ -575,6 +602,11 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
             });
         }
 
+        request.on('response', function(response) {
+            responseLength = parseInt(response.headers['content-length']) || 0;
+            e.emit('begin', responseLength);
+        });
+
         if (isPOST)
             request.end(data, encoding);
         else
@@ -585,10 +617,10 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
         if (callback)
             callback(ex, null, 0, {});
 
-        return false;
+        return e;
     }
 
-    return true;
+    return e;
 }
 
 /**
