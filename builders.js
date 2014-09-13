@@ -53,6 +53,16 @@ SchemaBuilder.prototype.add = function(name, obj, properties, validator) {
 };
 
 /**
+ * Register a new schema
+ * @alias
+ * @return {SchemBuilderEntity}
+ */
+SchemaBuilder.prototype.create = function() {
+    var self = this;
+    return self.add.apply(self, arguments);
+};
+
+/**
  * Remove an exist schema or group of schemas
  * @param {String} name Schema name, optional.
  * @return {SchemaBuilder}
