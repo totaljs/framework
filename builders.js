@@ -151,6 +151,11 @@ SchemaBuilderEntity.prototype.getDependencies = function() {
 SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
     var self = this;
 
+    if (fn === undefined && properties instanceof Array) {
+        self.properties = properties;
+        return self;
+    }
+
     if (typeof(properties) !== FUNCTION) {
         self.properties = properties;
         self.onValidation = fn;
