@@ -44,6 +44,7 @@ Framework supports a backward compatibility.
 - fixed: xml parser
 - fixed: problem with parsing a bad JSON datas - framework.decrypt();
 - fixed: String.prototype.parseDate()
+- fixed: path in framework.resize()
 
 ======= 1.6.1 (HOTFIX)
 

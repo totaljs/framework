@@ -2036,12 +2036,12 @@ Framework.prototype.compileStatic = function(req, filename) {
     return fileCompiled;
 };
 
-/*
-    Serve static files
-    @req {ServerRequest}
-    @res {ServerResponse}
-    return {Framework}
-*/
+/**
+ * Server all static files
+ * @param {Request} req
+ * @param {Response} res
+ * @return {Framework}
+ */
 Framework.prototype.responseStatic = function(req, res) {
 
     var self = this;
@@ -2058,16 +2058,20 @@ Framework.prototype.responseStatic = function(req, res) {
     index = name.lastIndexOf('/');
     var resizer = self.routes.resize[name.substring(0, index + 1)] || null;
     var isResize = false;
+    var filename = undefined;
 
     if (resizer !== null) {
         name = name.substring(index + 1);
         index = name.lastIndexOf('.');
-        isResize = resizer.extension === '*' || resizer.extension.indexOf(name.substring(index).toLowerCase()) !== -1;
-        if (isResize)
-            name = resizer.path + name;
-    }
 
-    var filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+        isResize = resizer.extension === '*' || resizer.extension.indexOf(name.substring(index).toLowerCase()) !== -1;
+        if (isResize) {
+            name = resizer.path + decodeURIComponent(name);
+            filename = name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : utils.combine(self.config['directory-public'], name);
+        }
+
+    } else
+        filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
 
     if (!isResize) {
         self.responseFile(req, res, filename, '');
@@ -2101,9 +2105,12 @@ Framework.prototype.responseStatic = function(req, res) {
         if (resizer.sepia)
             image.sepia(typeof(resizer.sepia) === 'number' ? resizer.sepia : 100);
 
-        image.quality(self.config['default-image-quality']);
-        image.minify();
+        if (resizer.quality)
+            image.qualit(resizer.quality);
+        else
+            image.quality(self.config['default-image-quality']);
 
+        image.minify();
     });
 
     return self;
@@ -2536,6 +2543,10 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
                 delete self.temporary.processing[key];
                 self.temporary.path[key] = name;
                 self.responseFile(req, res, name, '', headers, key);
+
+                if (self.isDebug)
+                    delete self.temporary.path[key];
+
                 return;
             }
 
@@ -2555,11 +2566,16 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
                 if (err) {
                     self.temporary.path[key] = null;
                     self.response500(req, res, err);
+
+                    if (self.isDebug)
+                        delete self.temporary.path[key];
+
                     return;
                 }
 
                 self.temporary.path[key] = name + ';' + fs.statSync(name).size;
                 self.responseFile(req, res, name, '', headers, key);
+
             });
 
         });
@@ -2574,6 +2590,10 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
             delete self.temporary.processing[key];
             self.temporary.path[key] = null;
             self.response404(req, res);
+
+            if (self.isDebug)
+                delete self.temporary.path[key];
+
             return;
         }
 
@@ -2594,6 +2614,10 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
             if (err) {
                 self.temporary.path[key] = null;
                 self.response500(req, res, err);
+
+                if (self.isDebug)
+                    delete self.temporary.path[key];
+
                 return;
             }
 
@@ -5789,9 +5813,7 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 // =================================================================================
 // *********************************************************************************
 
-function FrameworkPath(framework) {
-    this.config = framework.config;
-}
+function FrameworkPath(framework) {}
 
 /*
     @filename {String} :: optional
