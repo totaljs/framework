@@ -2106,7 +2106,7 @@ Framework.prototype.responseStatic = function(req, res) {
             image.sepia(typeof(resizer.sepia) === 'number' ? resizer.sepia : 100);
 
         if (resizer.quality)
-            image.qualit(resizer.quality);
+            image.quality(resizer.quality);
         else
             image.quality(self.config['default-image-quality']);
 
