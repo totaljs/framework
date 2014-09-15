@@ -37,6 +37,7 @@ Framework supports a backward compatibility.
 - updated: Controller.proxy() - returns EventEmitter (begin, end, data(chunk, percentage))
 - updated: Array.wait(fnItem, fnCallback, removeItems) - default: function doesn't remove items
 - updated: Builders.UrlBuilder() -> toString([skipEmpty])
+- updated: Number.format([decimals], [separator], [decimalSeparator])
 
 - removed: JS CSS
 

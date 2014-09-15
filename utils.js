@@ -2481,12 +2481,66 @@ Number.prototype.padRight = function(max, c) {
     return this.toString().padRight(max, c || '0');
 };
 
+/**
+ * Format number
+ * @param {Number} decimals Maximum decimal numbers
+ * @param {String} separator Number separator, default ' '
+ * @param {String} separatorDecimal Decimal separator, default '.' if number separator is ',' or ' '.
+ * @return {String}
+ */
+Number.prototype.format = function(decimals, separator, separatorDecimal) {
+
+    var self = this;
+
+    if (decimals[0] === '#')
+        return self.format2(decimals);
+
+    var num = self.toString();
+    var dec = '';
+    var output = '';
+    var index = num.indexOf('.');
+
+    if (typeof(decimals) === STRING) {
+        var tmp = separator;
+        separator = decimals;
+        decimals = tmp;
+    }
+
+    if (separator === undefined)
+        separator = ' ';
+
+    if (index !== -1) {
+        dec = num.substring(index + 1);
+        num = num.substring(0, index);
+    }
+
+    var index = -1;
+    for (var i = num.length - 1; i >= 0; i--) {
+        index++;
+        if (index > 0 && index % 3 === 0)
+            output = separator + output;
+        output = num[i] + output;
+    }
+
+    if (dec.length > 0 || decimals > 0) {
+        if (dec.length > decimals)
+            dec = dec.substring(0, decimals);
+        else
+            dec = dec.padRight(decimals, '0');
+    }
+
+    if (dec.length > 0 && separatorDecimal === undefined)
+        separatorDecimal = separator === '.' ? ',' : '.';
+
+    return output + (dec.length > 0 ? separatorDecimal + dec : '');
+};
+
 /*
     Format number :: 10000 = 10 000
     @format {Number or String} :: number is decimal and string is specified format, example: ## ###.##
     return {String}
 */
-Number.prototype.format = function(format) {
+Number.prototype.format2 = function(format) {
 
     var index = 0;
     var num = this.toString();
