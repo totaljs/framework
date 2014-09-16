@@ -1808,7 +1808,7 @@ Framework.prototype.onMeta = function() {
 
         switch (i) {
             case 0:
-                builder += '<title>' + (arg + (self.url !== '/' && !self.config['custom-titles'] ? ' - ' + self.config['name'] : '')) + '</title>';
+                builder += '<title>' + (arg + (self.url !== '/' && !self.config['allow-custom-titles'] ? ' - ' + self.config['name'] : '')) + '</title>';
                 break;
             case 1:
                 builder += '<meta name="description" content="' + arg + '" />';
