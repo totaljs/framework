@@ -282,7 +282,16 @@ Message.prototype.send = function(smtp, options, fnCallback) {
         return self;
     }
 
-    var socket = options.secure ? tls.connect(options.port, smtp, function() { self._send(this, options); }) : net.createConnection(options.port, smtp);
+    var socket;
+
+    if (options.secure) {
+
+        var internal = Utils.copy(options);
+        internal.host = smtp;
+        socket = tls.connect(internal, function() { self._send(this, options); });
+
+    } else
+        socket = net.createConnection(options.port, smtp);
 
     socket.on('error', function(err) {
         mailer.emit('error', err, self);
@@ -293,9 +302,8 @@ Message.prototype.send = function(smtp, options, fnCallback) {
     });
 
     socket.on('connect', function() {
-        if (!options.secure) {
+        if (!options.secure)
             self._send(socket, options);
-        }
     });
 
     return self;
