@@ -1573,8 +1573,7 @@ MultipartParser.prototype.explain = function() {
     View class
     return {View}
 */
-function View() {
-}
+function View() {}
 
 /**
  * View parser
@@ -1769,9 +1768,12 @@ function view_prepare(command, dynamicCommand, functions) {
                 return '';
             return '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/\'/g, '') + '\'] || \'\')';
 
-        case 'controller':
-        case 'repository':
+        case 'log':
+        case 'LOG':
+            return '(' + (name === 'log' ? 'framework.' : '') + command + '?$EMPTY:$EMPTY)';
+
         case 'model':
+        case 'repository':
         case 'get':
         case 'post':
         case 'query':
@@ -1779,7 +1781,7 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'session':
         case 'user':
         case 'config':
-        case 'model':
+        case 'controller':
 
             if (view_is_assign(command))
                 return 'self.$set(' + command + ')';
@@ -1798,6 +1800,9 @@ function view_prepare(command, dynamicCommand, functions) {
 
         case 'CONFIG':
         case 'FUNCTION':
+        case 'MODEL':
+        case 'SCHEMA':
+        case 'MODULE':
         case 'functions':
             return '(' + command + ').toString().encode()';
 
@@ -1814,7 +1819,10 @@ function view_prepare(command, dynamicCommand, functions) {
         case '!functions':
         case '!model':
         case '!CONFIG':
+        case '!SCHEMA':
         case '!FUNCTION':
+        case '!MODEL':
+        case '!MODULE':
             return '(' + command.substring(1) + ')';
 
         case 'resource':

@@ -76,7 +76,7 @@ global.RESOURCE = function(name, key) {
 };
 
 global.LOG = function() {
-    return framework.apply(framework, arguments);
+    return framework.log.apply(framework, arguments);
 };
 
 global.MODEL = function(name) {
@@ -1142,7 +1142,7 @@ Framework.prototype.load = function() {
     listing(dir, 0, arr);
 
     arr.forEach(function(item) {
-        self.install('definition', item.name, item.filename, undefined, undefined, undefined, true)
+        self.install('definition', item.name, item.filename, undefined, undefined, undefined, true);
     });
 
     dir = path.join(directory, self.config['directory-models']);
@@ -1151,7 +1151,7 @@ Framework.prototype.load = function() {
     listing(dir, 0, arr);
 
     arr.forEach(function(item) {
-        self.install('model', item.name, item.filename, undefined, undefined, undefined, true)
+        self.install('model', item.name, item.filename, undefined, undefined, undefined, true);
     });
 
     self._routesSort();
