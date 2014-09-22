@@ -1866,6 +1866,7 @@ function view_prepare(command, dynamicCommand, functions) {
             return 'self.' + command + '()';
 
         case 'sitemap':
+        case 'place':
             if (command.indexOf('(') !== -1)
                 return 'self.$' + command;
             return '(repository[\'$' + command + '\'] || \'\')';

@@ -36,6 +36,8 @@
 #@{head}#
 #@{download('test.pdf', 'content', 'test')}#
 a
+@{place('footer', 'jquery.js')}
+@{place('footer', '//fabricjs.js')}
 #dynamic@{view('<b>OK</b>')}#
 <!-- COMMENT @{error_mark} -->
 <script type="text/template"><textarea>
@@ -52,6 +54,7 @@ var r = /$\''''\"/g;
 var n = '\n"\n';
 </script>
 
+@{place('footer')}
 @{repository.INLINE = 5}
 <INLINE>@{repository.INLINE}</INLINE>
 @{repository.INLINE++}

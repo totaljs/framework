@@ -6173,6 +6173,7 @@ var REPOSITORY_META_TITLE = '$title';
 var REPOSITORY_META_DESCRIPTION = '$description';
 var REPOSITORY_META_KEYWORDS = '$keywords';
 var REPOSITORY_META_IMAGE = '$image';
+var REPOSITORY_PLACE = '$place';
 var ATTR_END = '"';
 
 function Subscribe(framework, req, res, type) {
@@ -7805,6 +7806,48 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire) {
         self.cache.add('$view.' + name, value, expire);
 
     return value;
+};
+
+Controller.prototype.place = function(name) {
+
+    var self = this;
+
+    var key = REPOSITORY_PLACE + '_' + name;
+    var length = arguments.length;
+
+    if (length === 1)
+        return self.repository[key] || '';
+
+    var output = '';
+    for (var i = 1; i < length; i++) {
+
+        var val = arguments[i];
+
+        if (val.indexOf('<') !== -1) {
+            output += val;
+            continue;
+        }
+
+        if (val.lastIndexOf(EXTENSION_JS) === -1) {
+            output += val;
+            continue;
+        }
+
+        var tmp = val.substring(0, 7);
+        var isRoute = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
+        output += '<script type="text/javascript" src="' + (isRoute ? self.routeJS(val) : val) + '"></script>';
+    }
+
+    self.repository[key] = (self.repository[key] || '') + output;
+    return self;
+};
+
+Controller.prototype.$place = function() {
+    var self = this;
+    if (arguments.length === 1)
+        return self.place.apply(self, arguments);
+    self.place.apply(self, arguments);
+    return '';
 };
 
 Controller.prototype.$url = function(host) {
