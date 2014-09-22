@@ -167,6 +167,7 @@ function Framework() {
         'allow-compile-css': true,
         'allow-compress-html': true,
         'allow-performance': false,
+        'allow-custom-titles': false,
         'disable-strict-server-certificate-validation': true,
 
         // Used in framework._service()
