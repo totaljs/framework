@@ -122,7 +122,7 @@ function Framework() {
         'directory-models': '/models/',
         'directory-resources': '/resources/',
         'directory-public': '/public/',
-        'directory-angular': '/app/',
+        'directory-public-virtual': '/app/',
         'directory-modules': '/modules/',
         'directory-source': '/source/',
         'directory-logs': '/logs/',
@@ -2249,7 +2249,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         if (!fs.existsSync(filename)) {
 
             // virtual directory App
-            var tmpname = self.isWindows ? filename.replace(self.config['directory-public'].replace(/\//g, '\\'), self.config['directory-angular'].replace(/\//g, '\\')) : filename.replace(self.config['directory-public'], self.config['directory-angular']);
+            var tmpname = self.isWindows ? filename.replace(self.config['directory-public'].replace(/\//g, '\\'), self.config['directory-public-virtual'].replace(/\//g, '\\')) : filename.replace(self.config['directory-public'], self.config['directory-public-virtual']);
             var notfound = true;
 
             if (tmpname !== filename) {
@@ -6171,13 +6171,7 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 // *********************************************************************************
 
 var REPOSITORY_HEAD = '$head';
-var REPOSITORY_ANGULAR = '$angular';
-var REPOSITORY_ANGULAR_LOCALE = '$angular-locale';
-var REPOSITORY_ANGULAR_COMMON = '$angular-common';
-var REPOSITORY_ANGULAR_CONTROLLER = '$angular-controller';
-var REPOSITORY_ANGULAR_OTHER = '$angular-other';
 var REPOSITORY_META = '$meta';
-var REPOSITORY_PLACE = '$place';
 var REPOSITORY_META_TITLE = '$title';
 var REPOSITORY_META_DESCRIPTION = '$description';
 var REPOSITORY_META_KEYWORDS = '$keywords';
@@ -7419,6 +7413,7 @@ Controller.prototype.$meta = function() {
         return '';
     }
 
+    framework.emit('controller-render-meta', self);
     var repository = self.repository;
     return framework.onMeta.call(self, repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
 };
@@ -7728,393 +7723,6 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire) {
     return value;
 };
 
-/*
-    Include: Angular.js CDN into the head
-    @version {String}
-    @name {String or String Array} :: optional, example: route or resource
-    return {String}
-*/
-Controller.prototype.$ng = function(name) {
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ng(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ng(name[i]);
-        return '';
-    }
-
-    var isCommon = name[0] === '~';
-
-    if (isCommon)
-        name = name.substring(1);
-
-    if (name === undefined)
-        name = 'angular';
-
-    if (name === 'core' || name === '' || name === 'base' || name === 'main')
-        name = 'angular';
-
-    if (name !== 'angular' && name.indexOf('angular-') === -1)
-        name = 'angular-' + name;
-
-    var output = self.repository[REPOSITORY_ANGULAR] || '';
-    var script = self.$script_create((isCommon ? '/common/' + name + '.min.js' : '//cdnjs.cloudflare.com/ajax/libs/angular.js/' + self.config['angular-version'] + '/' + name + '.min.js'));
-
-    if (name === 'angular')
-        output = script + output;
-    else
-        output += script;
-
-    self.repository[REPOSITORY_ANGULAR] = output;
-    return '';
-};
-
-
-Controller.prototype.$ngCommon = function(name) {
-
-    var self = this;
-    var length = arguments.length;
-
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngCommon(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngCommon(name[i]);
-        return '';
-    }
-
-    var output = self.repository[REPOSITORY_ANGULAR_COMMON] || '';
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var script = self.$script_create('/common/' + name);
-    output += script;
-
-    self.repository[REPOSITORY_ANGULAR_COMMON] = output;
-    return '';
-};
-
-Controller.prototype.$ngLocale = function(name) {
-
-    var self = this;
-    var length = arguments.length;
-
-    if (length > 2) {
-        for (var i = 1; i < length; i++)
-            self.$ngLocale(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngLocale(name[i]);
-        return '';
-    }
-
-    var output = self.repository[REPOSITORY_ANGULAR_LOCALE] || '';
-    var isLocal = name[0] === '~';
-    var extension = '';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    if (name.indexOf('angular-locale_') !== -1)
-        name = name.replace('angular-locale_', '');
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        extension = EXTENSION_JS;
-
-    output += self.$script_create(isLocal ? '/i18n/angular-locale_' + name + extension : '//cdnjs.cloudflare.com/ajax/libs/angular-i18n/' + self.config['angular-i18n-version'] + '/angular-locale_' + name + extension);
-    self.repository[REPOSITORY_ANGULAR_LOCALE] = output;
-
-    return '';
-};
-
-Controller.prototype.$script_create = function(url) {
-    return '<script type="text/javascript" src="' + url + '"></script>';
-};
-
-/*
-    Include: Controller into the head
-    @name {String or String Array}
-    return {String}
-*/
-Controller.prototype.$ngController = function(name) {
-
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngController(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngController(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var output = self.repository[REPOSITORY_ANGULAR_CONTROLLER] || '';
-    var isLocal = name[0] === '~';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    output += self.$script_create('/controllers/' + name);
-    self.repository[REPOSITORY_ANGULAR_CONTROLLER] = output;
-
-    return '';
-};
-
-/*
-    Include: Content from file into the body
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngTemplate = function(name, id) {
-
-    var self = this;
-
-    if (id === undefined)
-        id = name;
-
-    if (name.lastIndexOf('.html') === -1)
-        name += '.html';
-
-    if (name[0] === '~')
-        name = name.substring(1);
-    else if (name[1] !== '/')
-        name = '/templates/' + name;
-
-    var key = 'ng-' + name;
-    var tmp = framework.temporary.views[key];
-
-    if (tmp === undefined) {
-        var filename = utils.combine(self.config['directory-angular'], name);
-
-        if (fs.existsSync(filename))
-            tmp = fs.readFileSync(filename).toString(ENCODING);
-        else
-            tmp = '';
-
-        if (!self.isDebug)
-            framework.temporary.views[key] = tmp;
-    }
-
-    return '<script type="text/ng-template" id="' + id + '">' + tmp + '</script>';
-};
-
-/*
-    Include: Directive into the head
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngDirective = function(name) {
-
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngDirective(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngDirective(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
-    var isLocal = name[0] === '~';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    output += self.$script_create('/directives/' + name);
-    self.repository[REPOSITORY_ANGULAR_OTHER] = output;
-    return '';
-};
-
-/*
-    Include: CSS into the head
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngStyle = function(name) {
-
-    var self = this;
-    var length = arguments.length;
-
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngStyle(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngStyle(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf('.css') === -1)
-        name += '.css';
-
-    self.head(name);
-    return '';
-};
-
-/*
-    Include: Service into the head
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngService = function(name) {
-
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngService(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngService(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
-    var isLocal = name[0] === '~';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    output += self.$script_create('/services/' + name);
-    self.repository[REPOSITORY_ANGULAR_OTHER] = output;
-
-    return '';
-};
-
-/*
-    Include: Filter into the head
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngFilter = function(name) {
-
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngFilter(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngFilter(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
-    var isLocal = name[0] === '~';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    output += self.$script_create('/filters/' + name);
-    self.repository[REPOSITORY_ANGULAR_OTHER] = output;
-
-    return '';
-};
-
-/*
-    Include: Resource into the head
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngResource = function(name) {
-
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngResource(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngResource(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
-    var isLocal = name[0] === '~';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    output += self.$script_create('/resources/' + name);
-    self.repository[REPOSITORY_ANGULAR_OTHER] = output;
-
-    return '';
-};
-
-Controller.prototype.$ngInclude = function(name) {
-    var self = this;
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    return self.$script_create(name);
-};
-
 Controller.prototype.$url = function(host) {
     var self = this;
     return host ? self.req.hostname(self.url) : self.url;
@@ -8397,93 +8005,6 @@ Controller.prototype.$input = function(model, type, name, attr) {
     return builder;
 };
 
-/*
-    Internal function for views
-    @arguments {String}
-    return {String}
-*/
-Controller.prototype.$dns = function(value) {
-
-    var builder = '';
-    var self = this;
-    var length = arguments.length;
-
-    for (var i = 0; i < length; i++)
-        builder += '<link rel="dns-prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
-
-    self.head(builder);
-    return '';
-};
-
-/*
-    Internal function for views
-    @arguments {String}
-    return {String}
-*/
-Controller.prototype.$prefetch = function() {
-
-    var builder = '';
-    var self = this;
-    var length = arguments.length;
-
-    for (var i = 0; i < length; i++)
-        builder += '<link rel="prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
-
-    self.head(builder);
-    return '';
-};
-
-/*
-    Internal function for views
-    @arguments {String}
-    return {String}
-*/
-Controller.prototype.$prerender = function(value) {
-
-    var builder = '';
-    var self = this;
-    var length = arguments.length;
-
-    for (var i = 0; i < length; i++)
-        builder += '<link rel="prerender" href="' + self._prepareHost(arguments[i] || '') + '" />';
-
-    self.head(builder);
-    return '';
-};
-
-/*
-    Internal function for views
-    @value {String}
-    return {String}
-*/
-Controller.prototype.$next = function(value) {
-    var self = this;
-    self.head('<link rel="next" href="' + self._prepareHost(value || '') + '" />');
-    return '';
-};
-
-/*
-    Internal function for views
-    @arguments {String}
-    return {String}
-*/
-Controller.prototype.$prev = function(value) {
-    var self = this;
-    self.head('<link rel="prev" href="' + self._prepareHost(value || '') + '" />');
-    return '';
-};
-
-/*
-    Internal function for views
-    @arguments {String}
-    return {String}
-*/
-Controller.prototype.$canonical = function(value) {
-    var self = this;
-    self.head('<link rel="canonical" href="' + self._prepareHost(value || '') + '" />');
-    return '';
-};
-
 Controller.prototype._prepareHost = function(value) {
     var tmp = value.substring(0, 5);
 
@@ -8508,9 +8029,8 @@ Controller.prototype.head = function() {
     var header = (self.repository[REPOSITORY_HEAD] || '');
 
     if (length === 0) {
-        var angularBeg = (self.repository[REPOSITORY_ANGULAR] || '') + (self.repository[REPOSITORY_ANGULAR_COMMON] || '') + (self.repository[REPOSITORY_ANGULAR_LOCALE] || '');
-        var angularEnd = (angularBeg.length > 0 ? self.$script_create('/app.js') : '') + (self.repository[REPOSITORY_ANGULAR_OTHER] || '') + (self.repository[REPOSITORY_ANGULAR_CONTROLLER] || '');
-        return (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '') + angularBeg + header + angularEnd;
+        framework.emit('controller-render-head', self);
+        return (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '') + header;
     }
 
     var output = '';
@@ -8543,53 +8063,6 @@ Controller.prototype.head = function() {
 Controller.prototype.$head = function() {
     var self = this;
     self.head.apply(self, arguments);
-    return '';
-};
-
-/*
-    Internal function for views
-    @arguments {String}
-    return {Controller}
-*/
-Controller.prototype.place = function(name) {
-
-    var self = this;
-
-    var key = REPOSITORY_PLACE + '_' + name;
-    var length = arguments.length;
-
-    if (length === 1)
-        return self.repository[key] || '';
-
-    var output = '';
-    for (var i = 1; i < length; i++) {
-
-        var val = arguments[i];
-
-        if (val.indexOf('<') !== -1) {
-            output += val;
-            continue;
-        }
-
-        if (val.lastIndexOf(EXTENSION_JS) === -1) {
-            output += val;
-            continue;
-        }
-
-        var tmp = val.substring(0, 7);
-        var isRoute = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
-        output += '<script type="text/javascript" src="' + (isRoute ? self.routeJS(val) : val) + '"></script>';
-    }
-
-    self.repository[key] = (self.repository[key] || '') + output;
-    return self;
-};
-
-Controller.prototype.$place = function() {
-    var self = this;
-    if (arguments.length === 1)
-        return self.place.apply(self, arguments);
-    self.place.apply(self, arguments);
     return '';
 };
 

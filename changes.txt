@@ -33,6 +33,8 @@ Framework supports a backward compatibility.
 - added: new option into Mail: rejectUnauthorized (for TLS)
 - added: @{log()} and @{LOG()} into views
 - added: @{console} (.log, .info, etc.) into views
+- added: framework.on('controller-render-head', function(controller) {})
+- added: framework.on('controller-render-meta', function(controller) {})
 
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
 - updated: Utils.request(), timeout is possible to add as cookie, headers or encoding
@@ -43,7 +45,12 @@ Framework supports a backward compatibility.
 - updated: Builders.UrlBuilder() -> toString([skipEmpty])
 - updated: Number.format([decimals], [separator], [decimalSeparator])
 
+- renamed: config['directory-angular'] to config['directory-public-virtual']
+
+- removed: @{place} -> alternative @{section}
 - removed: JS CSS
+- removed: (IMPORTANT) view markup for Angular.js from the core (it will be a module)
+- removed: (IMPORTANT) view markup for HTML5 (dns, prefetch, next, etc.) - (it will be a module) 
 
 - fixed: LOG()
 - fixed: if path starts '/' then is view loaded directly from /views/ directory

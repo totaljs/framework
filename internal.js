@@ -465,9 +465,11 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
     var UNAUTHORIZE = 'unauthorize';
 
     for (var i = 0; i < length; i++) {
-        var value = arr2[i];
 
-        if (value[0] === '!') // ignore roles
+        var value = arr2[i];
+        var c = value[0];
+
+        if (c === '!' || c === '#' || c === '$' || c === '@') // ignore roles
             continue;
 
         if (noLoggedUnlogged && (value === AUTHORIZE || value === UNAUTHORIZE))
@@ -475,9 +477,8 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
         var index = arr1.indexOf(value);
 
-        if (value === 'xss'){
+        if (value === 'xss')
             isXSS = true;
-        }
 
         if (index === -1 && value === 'xss')
             continue;
@@ -1864,7 +1865,6 @@ function view_prepare(command, dynamicCommand, functions) {
                 return 'self.$' + command;
             return 'self.' + command + '()';
 
-        case 'place':
         case 'sitemap':
             if (command.indexOf('(') !== -1)
                 return 'self.$' + command;
@@ -1893,20 +1893,6 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'routeStatic':
             return 'self.' + command;
 
-        case 'ng':
-        case 'ngTemplate':
-        case 'ngController':
-        case 'ngCommon':
-        case 'ngInclude':
-        case 'ngLocale':
-        case 'ngService':
-        case 'ngFilter':
-        case 'ngDirective':
-        case 'ngResource':
-        case 'ngStyle':
-            return 'self.$' + command;
-
-        case 'canonical':
         case 'checked':
         case 'helper':
         case 'currentContent':
@@ -1918,7 +1904,6 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'currentVideo':
         case 'currentView':
         case 'disabled':
-        case 'dns':
         case 'download':
         case 'etag':
         case 'header':
@@ -1926,11 +1911,7 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'json':
         case 'layout':
         case 'modified':
-        case 'next':
         case 'options':
-        case 'prefetch':
-        case 'prerender':
-        case 'prev':
         case 'readonly':
         case 'selected':
         case 'template':

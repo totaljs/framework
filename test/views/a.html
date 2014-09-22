@@ -11,12 +11,6 @@
 
 @{name(10)}
 @{meta('TITLE')}
-@{dns('//fonts.googleapis.com')}
-@{prefetch('http://daker.me/2013/05/hello-world.html')}
-@{prerender('http://daker.me/2013/05/hello-world.html')}
-@{next('/a/3/')}
-@{prev('/a/1/')}
-@{canonical('/a/a-b-c/')}
 @{head('//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js')}
 #tag-encode@{repository.tag}#
 #tag-raw@{!repository.tag}#
@@ -36,8 +30,6 @@
 #@{head}#
 #@{download('test.pdf', 'content', 'test')}#
 a
-@{place('footer', 'jquery.js')}
-@{place('footer', '//fabricjs.js')}
 #dynamic@{view('<b>OK</b>')}#
 <!-- COMMENT @{error_mark} -->
 <script type="text/template"><textarea>
@@ -54,7 +46,6 @@ var r = /$\''''\"/g;
 var n = '\n"\n';
 </script>
 
-@{place('footer')}
 @{repository.INLINE = 5}
 <INLINE>@{repository.INLINE}</INLINE>
 @{repository.INLINE++}
