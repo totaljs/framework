@@ -3171,6 +3171,9 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
     req.clear(true);
     res.success = true;
 
+    if (contentBody === null || contentBody === undefined)
+        contentBody = '';
+
     var accept = req.headers['accept-encoding'] || '';
     var returnHeaders = {};
 
@@ -9628,10 +9631,12 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     var generator = internal.generateView(name, filename);
     if (generator === null) {
 
-        if (isPartial)
-            return self.outputPartial;
+        var err = new Error('View "' + filename + '" not found.');
 
-        var err = 'View "' + filename + '" not found.';
+        if (isPartial) {
+            framework.error(err, self.name, self.uri);
+            return self.outputPartial;
+        }
 
         if (isLayout) {
             self.subscribe.success();
