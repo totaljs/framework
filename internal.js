@@ -1893,8 +1893,16 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'routeStatic':
             return 'self.' + command;
 
-        case 'checked':
+        case 'json':
+        case 'image':
+        case 'layout':
+        case 'template':
+        case 'templateToggle':
+        case 'view':
+        case 'viewToggle':
         case 'helper':
+        case 'download':
+        case 'selected':
         case 'currentContent':
         case 'currentCSS':
         case 'currentDownload':
@@ -1904,20 +1912,18 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'currentVideo':
         case 'currentView':
         case 'disabled':
-        case 'download':
+        case 'checked':
         case 'etag':
         case 'header':
-        case 'image':
-        case 'json':
-        case 'layout':
         case 'modified':
         case 'options':
         case 'readonly':
-        case 'selected':
-        case 'template':
-        case 'templateToggle':
-        case 'view':
-        case 'viewToggle':
+        case 'canonical':
+        case 'dns':
+        case 'next':
+        case 'prefetch':
+        case 'prerender':
+        case 'prev':
             return 'self.$' + command;
 
         case 'radio':

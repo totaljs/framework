@@ -50,7 +50,6 @@ Framework supports a backward compatibility.
 - removed: @{place} -> alternative @{section}
 - removed: JS CSS
 - removed: (IMPORTANT) view markup for Angular.js from the core (it will be a module)
-- removed: (IMPORTANT) view markup for HTML5 (dns, prefetch, next, etc.) - (it will be a module) 
 
 - fixed: LOG()
 - fixed: if path starts '/' then is view loaded directly from /views/ directory

@@ -144,9 +144,6 @@ function Framework() {
 
         'default-layout': '_layout',
 
-        'angular-version': '1.2.18',
-        'angular-i18n-version': '1.2.15',
-
         // default maximum request size / length
         // default 5 kB
         'default-request-length': 1024 * 5,
@@ -7405,6 +7402,93 @@ Controller.prototype.meta = function() {
     return self;
 };
 
+/*
+    Internal function for views
+    @arguments {String}
+    return {String}
+*/
+Controller.prototype.$dns = function(value) {
+
+    var builder = '';
+    var self = this;
+    var length = arguments.length;
+
+    for (var i = 0; i < length; i++)
+        builder += '<link rel="dns-prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
+
+    self.head(builder);
+    return '';
+};
+
+/*
+    Internal function for views
+    @arguments {String}
+    return {String}
+*/
+Controller.prototype.$prefetch = function() {
+
+    var builder = '';
+    var self = this;
+    var length = arguments.length;
+
+    for (var i = 0; i < length; i++)
+        builder += '<link rel="prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
+
+    self.head(builder);
+    return '';
+};
+
+/*
+    Internal function for views
+    @arguments {String}
+    return {String}
+*/
+Controller.prototype.$prerender = function(value) {
+
+    var builder = '';
+    var self = this;
+    var length = arguments.length;
+
+    for (var i = 0; i < length; i++)
+        builder += '<link rel="prerender" href="' + self._prepareHost(arguments[i] || '') + '" />';
+
+    self.head(builder);
+    return '';
+};
+
+/*
+    Internal function for views
+    @value {String}
+    return {String}
+*/
+Controller.prototype.$next = function(value) {
+    var self = this;
+    self.head('<link rel="next" href="' + self._prepareHost(value || '') + '" />');
+    return '';
+};
+
+/*
+    Internal function for views
+    @arguments {String}
+    return {String}
+*/
+Controller.prototype.$prev = function(value) {
+    var self = this;
+    self.head('<link rel="prev" href="' + self._prepareHost(value || '') + '" />');
+    return '';
+};
+
+/*
+    Internal function for views
+    @arguments {String}
+    return {String}
+*/
+Controller.prototype.$canonical = function(value) {
+    var self = this;
+    self.head('<link rel="canonical" href="' + self._prepareHost(value || '') + '" />');
+    return '';
+};
+
 Controller.prototype.$meta = function() {
     var self = this;
 
@@ -8026,12 +8110,13 @@ Controller.prototype.head = function() {
     var self = this;
 
     var length = arguments.length;
-    var header = (self.repository[REPOSITORY_HEAD] || '');
 
     if (length === 0) {
         framework.emit('controller-render-head', self);
-        return (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '') + header;
+        return (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '');
     }
+
+    var header = (self.repository[REPOSITORY_HEAD] || '');
 
     var output = '';
     for (var i = 0; i < length; i++) {
