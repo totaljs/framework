@@ -1,10 +1,14 @@
+var framework = require('../index');
+var url = 'http://127.0.0.1:8001/';
 
+var mem = require('memwatch');
 
-var Image = require('../image');
+mem.on('leak', function(info) {
+    console.log('LEAK ->', info);
+});
 
+mem.on('stats', function(info) {
+    console.log('STATS ->', JSON.stringify(info));
+});
 
-var img = Image.load('/users/petersirka/desktop/b.jpg', false);
-
-img.resize('100%', '100%');
-img.watermark('/users/petersirka/desktop/a.jpg', 'center');
-img.save('/users/petersirka/desktop/output.jpg');
+framework.http('debug', { port: 8001 });

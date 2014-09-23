@@ -162,7 +162,7 @@ function Framework() {
         'allow-websocket': true,
         'allow-compile-js': true,
         'allow-compile-css': true,
-        'allow-compress-html': true,
+        'allow-compile-html': true,
         'allow-performance': false,
         'allow-custom-titles': false,
         'disable-strict-server-certificate-validation': true,
@@ -394,6 +394,8 @@ Framework.prototype._install = function(type, name, declaration) {
         self.controllers[name] = obj;
 
     _controller = '';
+
+    return self;
 };
 
 /**
@@ -762,10 +764,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
 /**
  * Merge files
  * @param {String} url Relative URL.
- * @param {String} file1 Filename or URL.
- * @param {String} file2 Filename or URL.
- * @param {String} file3 Filename or URL.
- * @param {String} fileN Filename or URL.
+ * @param {String/String Array  } file1 Filename or URL.
+ * @param {String/String Array} file2 Filename or URL.
+ * @param {String/String Array} file3 Filename or URL.
+ * @param {String/String Array} fileN Filename or URL.
  * @return {Framework}
  */
 Framework.prototype.merge = function(url) {
@@ -773,54 +775,19 @@ Framework.prototype.merge = function(url) {
     var arr = [];
     var self = this;
 
-    if (!self.isLoaded) {
-        var arg = arguments;
-        setTimeout(function() {
-            framework.merge.apply(framework, arg);
-        }, 200);
-        return self;
-    }
-
     for (var i = 1, length = arguments.length; i < length; i++) {
-        var name = arguments[i];
 
-        if (name.startsWith('http://') || name.startsWith('https://')) {
-            arr.push(name);
-            continue;
-        }
+        var items = arguments[i];
 
-        if (name[0] === '~')
-            name = name.substring(1);
-        else
-            name = self.path.public(name);
+        if (!(items instanceof Array))
+            items = [items];
 
-        arr.push(name);
-
+        for (var j = 0, lengthsub = items.length; j < lengthsub; j++)
+            arr.push(items[j]);
     }
 
     var filename = self.path.temp('merge-' + url.replace(/\//g, '-'));
-    self.routes.merge[url] = filename;
-
-    var writer = fs.createWriteStream(filename);
-
-    arr.wait(function(name, next) {
-
-        if (!name.startsWith('http://') && !name.startsWith('https://')) {
-            writer.write(self.compileContent(path.extname(name).substring(1), fs.readFileSync(name).toString(ENCODING), name));
-            next();
-            return;
-        }
-
-        Utils.request(name, ['get'], function(err, content) {
-            var fname = path.basename(name);
-            writer.write(self.compileContent(path.extname(fname).substring(1), content, fname));
-            next();
-        });
-
-    }, function() {
-        writer.end();
-    });
-
+    self.routes.merge[url] = { filename: filename, files: arr };
     return self;
 };
 
@@ -2054,59 +2021,211 @@ Framework.prototype.onCompileCSS = null;
 */
 Framework.prototype.onCompileJS = null;
 
-/*
-    Compile JavaScript and CSS
-    @req {ServerRequest}
-    @filename {String}
-    return {String or NULL};
-*/
-Framework.prototype.compileStatic = function(req, filename, extension) {
-
-    if (!fs.existsSync(filename))
-        return null;
-
-    var self = this;
-
-    if ((self.config['allow-compile-js'] === false && extension === EXTENSION_JS) || (self.config['allow-compile-css'] === false && extension === '.css'))
-        return filename;
-
-    var output = self.compileContent(extension, fs.readFileSync(filename).toString(ENCODING), filename);
-    var plus = self.id === null ? '' : 'instance-' + self.id + '-';
-    var fileCompiled = utils.combine(self.config['directory-temp'], plus + req.uri.pathname.replace(/\//g, '-').substring(1));
-
-    self._verify_directory('temp');
-    fs.writeFileSync(fileCompiled, output);
-
-    return fileCompiled;
-};
-
+/**
+ * Compile content (JS, CSS, HTML)
+ * @param {String} extension File extension.
+ * @param {String} content File content.
+ * @param {String} filename
+ * @return {String}
+ */
 Framework.prototype.compileContent = function(extension, content, filename) {
 
     var self = this;
 
     switch (extension) {
-
         case 'js':
-            content = self.config['allow-compile-js'] ? self.onCompileJS === null ? internal.compile_javascript(content) : self.onCompileJS(filename, content) : content;
-            break;
-
+            return self.config['allow-compile-js'] ? internal.compile_javascript(content) : content;
+        case 'html':
+            return self.config['allow-compile-html'] ? internal.compile_html(content) : content;
         case 'css':
 
-            content = self.config['allow-compile-css'] ? self.onCompileCSS === null ? internal.compile_css(content) : self.onCompileCSS(filename, content) : content;
+            content = self.config['allow-compile-css'] ? internal.compile_css(content) : content;
 
             var matches = content.match(/url\(.*?\)/g);
             if (matches === null)
-                break;
+                return content;
 
             matches.forEach(function(o) {
                 var url = o.substring(4, o.length - 1);
                 content = content.replace(o, 'url(' + self._version(url) + ')');
             });
 
-            break;
+            return content;
     }
 
     return content;
+};
+
+/**
+ * Compile static file
+ * @param {URI} uri
+ * @param {String} key Temporary key.
+ * @param {String} filename
+ * @param {String} extension File extension.
+ * @param {Function()} callback
+ * @return {Framework}
+ */
+Framework.prototype.compileFile = function(uri, key, filename, extension, callback) {
+
+    var self = this;
+
+    fs.readFile(filename, function(err, buffer) {
+
+        if (err) {
+            self.error(err, filename, uri);
+            self.temporary.path[key] = null;
+            callback();
+            return;
+        }
+
+        var file = self.path.temp((self.id === null ? '' : 'instance-' + self.id + '-') + uri.pathname.replace(/\//g, '-').substring(1));
+        self._verify_directory('temp');
+        fs.writeFileSync(file, self.compileContent(extension, buffer.toString(ENCODING), filename), ENCODING);
+        self.temporary.path[key] = file + ';' + fs.statSync(file).size;
+        callback();
+
+    });
+
+    return self;
+};
+
+/**
+ * Merge static files (JS, CSS, HTML, TXT, JSON)
+ * @param {URI} uri
+ * @param {String} key Temporary key.
+ * @param {String} extension File extension.
+ * @param {Function()} callback
+ * @return {Framework}
+ */
+Framework.prototype.compileMerge = function(uri, key, extension, callback) {
+
+    var self = this;
+    var merge = self.routes.merge[uri.pathname];
+    var filename = merge.filename;
+
+    if (!self.config.debug && fs.existsSync(filename)) {
+        self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
+        callback();
+        return self;
+    }
+
+    var writer = fs.createWriteStream(merge.filename);
+
+    merge.files.wait(function(filename, next) {
+
+        if (filename.startsWith('http://') || filename.startsWith('https://')) {
+            Utils.request(filename, ['get'], function(err, data) {
+                var output = self.compileContent(extension, data, filename).trim();
+
+                if (extension === 'js') {
+                    if (output[output.length - 1] !== ';')
+                        output += ';';
+                } else if (extension === 'html') {
+                    if (output[output.length - 1] !== NEWLINE)
+                        output += NEWLINE;
+                }
+
+                writer.write(output, ENCODING);
+                next();
+            });
+            return;
+        }
+
+        if (filename[0] !== '~') {
+            var tmp = self.path.public(filename);
+            if (self.isVirtualDirectory && !fs.existsSync(tmp))
+                tmp = utils.combine(self.config['directory-public-virtual'], filename);
+            filename = tmp;
+        }
+        else
+            filename = filename.substring(1);
+
+        fs.readFile(filename, function(err, buffer) {
+
+            if (err) {
+                self.error(err, merge.filename, uri);
+                next();
+                return;
+            }
+
+            var output = self.compileContent(extension, buffer.toString(ENCODING), filename).trim();
+
+            if (extension === 'js') {
+                if (output[output.length - 1] !== ';')
+                    output += ';';
+            } else if (extension === 'html') {
+                if (output[output.length - 1] !== NEWLINE)
+                    output += NEWLINE;
+            }
+
+            writer.write(output, ENCODING);
+            next();
+
+        });
+
+    }, function() {
+        writer.end();
+        self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
+        callback();
+    });
+
+    return self;
+};
+
+/**
+ * Validating static file for compilation
+ * @param {URI} uri
+ * @param {String} key Temporary key.
+ * @param {String} filename
+ * @param {String} extension File extension.
+ * @param {Function()} callback
+ * @return {Framework}
+ */
+Framework.prototype.compileValidation = function(uri, key, filename, extension, callback) {
+
+    var self = this;
+
+    if (self.routes.merge[uri.pathname]) {
+        self.compileMerge(uri, key, extension, callback);
+        return;
+    }
+
+    if (!fs.existsSync(filename)) {
+
+        // file doesn't exist
+        if (!self.isVirtualDirectory) {
+            self.temporary.path[key] = null;
+            callback();
+            return self;
+        }
+
+        var tmpname = self.isWindows ? filename.replace(self.config['directory-public'].replace(/\//g, '\\'), self.config['directory-public-virtual'].replace(/\//g, '\\')) : filename.replace(self.config['directory-public'], self.config['directory-public-virtual']);
+        var notfound = true;
+
+        if (tmpname !== filename) {
+            filename = tmpname;
+            notfound = !fs.existsSync(filename);
+        }
+
+        if (notfound) {
+            self.temporary.path[key] = null;
+            callback();
+            return self;
+        }
+
+    }
+
+    if (extension === 'js' || extension === 'css' || extension === 'html') {
+        if (filename.lastIndexOf('.min.') === -1 && filename.lastIndexOf('-min.') === -1) {
+            self.compileFile(uri, key, filename, extension, callback);
+            return self;
+        }
+    }
+
+    self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
+    callback();
+
+    return self;
 };
 
 /**
@@ -2141,7 +2260,8 @@ Framework.prototype.responseStatic = function(req, res) {
         if (isResize) {
             name = resizer.path + decodeURIComponent(name);
             filename = name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : utils.combine(self.config['directory-public'], name);
-        }
+        } else
+            filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
 
     } else
         filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
@@ -2191,7 +2311,7 @@ Framework.prototype.responseStatic = function(req, res) {
 
 /**
  * Is processed static file?
- * @param  {String / Request}  filename Filename or Request object.
+ * @param {String / Request} filename Filename or Request object.
  * @return {Boolean}
  */
 Framework.prototype.isProcessed = function(filename) {
@@ -2233,7 +2353,7 @@ Framework.prototype.isProcessing = function(filename) {
         filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
     }
 
-    var name = this.temporary.processing[filename];
+    var name = self.temporary.processing[filename];
     if (self.temporary.processing[filename] !== undefined)
         return true;
     return false;
@@ -2278,6 +2398,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     var name = self.temporary.path[key];
 
     if (name === null) {
+
+        if (self.config.debug)
+            delete self.temporary.path[key];
+
         self.response404(req, res);
         return self;
     }
@@ -2296,12 +2420,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         return self;
     }
 
-    if (framework.config.debug)
-        name = undefined;
-
-    if (framework.routes.merge[req.uri.pathname])
-        name = framework.routes.merge[req.uri.pathname];
-
     var etag = utils.etag(req.url, self.config['etag-version']);
 
     if (!self.config.debug && req.headers['if-none-match'] === etag) {
@@ -2319,52 +2437,32 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         return self;
     }
 
+    // JS, CSS
     if (name === undefined) {
 
-        if (!fs.existsSync(filename)) {
+        if (self.isProcessing(key)) {
 
-            if (!self.isVirtualDirectory) {
-
-                if (!self.config.debug)
-                    self.temporary.path[key] = null;
-
-                self.response404(req, res);
-                return self;
+            if (req.processing > self.config['default-request-timeout']) {
+                // timeout
+                self.response408(req, res);
+                return;
             }
 
-            // virtual directory App
-            var tmpname = self.isWindows ? filename.replace(self.config['directory-public'].replace(/\//g, '\\'), self.config['directory-public-virtual'].replace(/\//g, '\\')) : filename.replace(self.config['directory-public'], self.config['directory-public-virtual']);
-            var notfound = true;
-
-            if (tmpname !== filename) {
-                filename = tmpname;
-                notfound = !fs.existsSync(filename);
-            }
-
-            if (notfound) {
-
-                if (!self.config.debug)
-                    self.temporary.path[key] = null;
-
-                self.response404(req, res);
-                return self;
-            }
+            req.processing += 500;
+            setTimeout(function() {
+                framework.responseFile(req, res, filename, downloadName, headers, key);
+            }, 500);
+            return self;
         }
 
-        name = filename;
+        // waiting
+        self.temporary.processing[key] = true;
+        self.compileValidation(req.uri, key, filename, extension, function() {
+            delete self.temporary.processing[key];
+            framework.responseFile(req, res, filename, downloadName, headers, key);
+        });
 
-        // compile JavaScript and CSS
-        if (extension === 'js' || extension === 'css') {
-            if (name.lastIndexOf('.min.') === -1 && name.lastIndexOf('-min.') === -1)
-                name = self.compileStatic(req, name, extension.substring(1));
-        }
-
-        name += ';' + fs.statSync(name).size;
-
-        self.temporary.path[key] = name;
-
-        if (self.config.debug)
-            delete self.temporary.path[key];
+        return self;
     }
 
     index = name.lastIndexOf(';');
@@ -2405,6 +2503,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
     if (range.length > 0)
         return self.responseRange(name, range, returnHeaders, req, res);
+
+
+    if (self.config.debug && self.isProcessed(key))
+        delete self.temporary.path[key];
 
     if (size !== null && size !== '0' && !compress)
         returnHeaders[RESPONSE_HEADER_CONTENTLENGTH] = size;
@@ -2672,6 +2774,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
     fs.exists(filename, function(exist) {
 
         if (!exist) {
+
             delete self.temporary.processing[key];
             self.temporary.path[key] = null;
             self.response404(req, res);
@@ -2734,52 +2837,43 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
         stream = filename;
 
     var key = 'image-' + req.url.substring(1);
-    var im = useImageMagick;
-    if (im === undefined)
-        im = self.config['default-image-converter'] === 'im';
 
+    utils.queue(key, 10, function(next) {
 
-    if (self.isProcessing(key)) {
+        var im = useImageMagick;
+        if (im === undefined)
+            im = self.config['default-image-converter'] === 'im';
 
-        if (req.processing > self.config['default-request-timeout']) {
-            // timeout
-            self.response408(req, res);
-            return;
+        var Image = require('./image');
+
+        // STREAM
+        if (stream !== null) {
+            next();
+            var image = Image.load(stream, im);
+            fnProcess(image);
+            self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
+            return self;
         }
 
-        req.processing += 500;
+        // FILENAME
+        fs.exists(filename, function(exist) {
 
-        setTimeout(function() {
-            self.responseImageWithoutCache(req, res, filename, fnProcess, headers, im);
-        }, 500);
+            next();
 
-        return;
-    }
+            if (!exist) {
+                self.response404(req, res);
+                return;
+            }
 
-    var Image = require('./image');
+            self._verify_directory('temp');
+            var image = Image.load(filename, im);
+            fnProcess(image);
+            self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
 
-    // STREAM
-    if (stream !== null) {
-        var image = Image.load(stream, im);
-        fnProcess(image);
-        self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
-        return self;
-    }
-
-    // FILENAME
-    fs.exists(filename, function(exist) {
-
-        if (!exist) {
-            self.response404(req, res);
-            return;
-        }
-
-        self._verify_directory('temp');
-        var image = Image.load(filename, im);
-        fnProcess(image);
-        self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
+        });
 
     });
+
     return self;
 };
 
@@ -3125,10 +3219,8 @@ Framework.prototype.response404 = function(req, res) {
 */
 Framework.prototype.response408 = function(req, res) {
     var self = this;
-
     if (res.success)
         return self;
-
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
     res.success = true;
@@ -5016,10 +5108,14 @@ Framework.prototype._configure = function(arr, rewrite) {
             case 'allow-websocket':
             case 'allow-compile-js':
             case 'allow-compile-css':
-            case 'allow-compress-html':
+            case 'allow-compile-html':
             case 'allow-performance':
             case 'disable-strict-server-certificate-validation':
                 obj[name] = value.toLowerCase() === 'true' || value === '1';
+                break;
+
+            case 'allow-compress-html':
+                obj['allow-compile-html'] = value.toLowerCase() === 'true' || value === '1';
                 break;
 
             case 'version':

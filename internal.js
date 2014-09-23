@@ -1192,6 +1192,10 @@ exports.compile_javascript = function(source) {
     }
 };
 
+exports.compile_html = function(source) {
+    return compressHTML(source, true);
+};
+
 // *********************************************************************************
 // =================================================================================
 // MULTIPART PARSER
@@ -2251,7 +2255,7 @@ View.prototype.read = function(path) {
     var filename = isOut ? path.substring(1) : utils.combine(config['directory-views'], path);
 
     if (fs.existsSync(filename))
-        return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
+        return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compile-html']);
 
     if (isOut)
         return null;
@@ -2263,7 +2267,7 @@ View.prototype.read = function(path) {
     filename = utils.combine(config['directory-views'], path.substring(index + 1));
 
     if (fs.existsSync(filename))
-        return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
+        return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compile-html']);
 
     return null;
 };
@@ -2317,7 +2321,7 @@ View.prototype.dynamic = function(content) {
     if (generator !== null)
         return generator;
 
-    generator = view_parse(content, framework.config['allow-compress-html']);
+    generator = view_parse(content, framework.config['allow-compile-html']);
 
     if (!framework.isDebug)
         framework.temporary.views[key] = generator;

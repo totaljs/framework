@@ -55,11 +55,9 @@ exports.install = function(framework) {
 
     framework.route('/upload/', plain_upload, ['upload']);
 
-    /*
 	framework.file('Resizing of images', function(req, res) {
 		return req.url.indexOf('.jpg') !== -1;
 	}, resize_image);
-*/
 
     framework.route('/live/', viewLive);
     framework.route('/live/incoming/', viewLiveIncoming, ['mixed']);
@@ -188,8 +186,8 @@ function file_plain_status(req, res, isValidation) {
 
 function resize_image(req, res) {
     var fs = require('fs');
-    //	this.responseImage(req, res, fs.createReadStream(this.path.public(req.url)), function(image) {
-    this.responseImage(req, res, this.path.public(req.url), function(image) {
+    this.responseImage(req, res, fs.createReadStream(this.path.public(req.url)), function(image) {
+    //this.responseImageWithoutCache(req, res, this.path.public(req.url), function(image) {
         image.resize('20%');
     });
 }
