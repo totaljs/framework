@@ -284,6 +284,7 @@ function Framework() {
     this._length_request_middleware = 0;
     this._length_files = 0;
 
+    this.isVirtualDirectory = false;
     this.isCoffee = false;
     this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
 }
@@ -2245,6 +2246,15 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
         if (!fs.existsSync(filename)) {
 
+            if (!self.isVirtualDirectory) {
+
+                if (!self.config.debug)
+                    self.temporary.path[key] = null;
+
+                self.response404(req, res);
+                return self;
+            }
+
             // virtual directory App
             var tmpname = self.isWindows ? filename.replace(self.config['directory-public'].replace(/\//g, '\\'), self.config['directory-public-virtual'].replace(/\//g, '\\')) : filename.replace(self.config['directory-public'], self.config['directory-public-virtual']);
             var notfound = true;
@@ -3303,6 +3313,8 @@ Framework.prototype.initialize = function(http, debug, options) {
 
     self.clear();
     self.cache.init();
+    self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
+    self.emit('init');
     self.load();
 
     if (options.https) {
