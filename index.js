@@ -786,7 +786,10 @@ Framework.prototype.merge = function(url) {
             arr.push(items[j]);
     }
 
-    var filename = self.path.temp('merge-' + url.replace(/\//g, '-'));
+    if (url[0] !== '/')
+        url = '/' + url;
+
+    var filename = self.path.temp('merge-' + url.substring(1).replace(/\//g, '-'));
     self.routes.merge[url] = { filename: filename, files: arr };
     return self;
 };
