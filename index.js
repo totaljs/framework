@@ -193,7 +193,8 @@ function Framework() {
         redirects: {},
         resize: {},
         request: [],
-        views: {}
+        views: {},
+        merge: {}
     };
 
     this.helpers = {};
@@ -754,6 +755,71 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
 
     if (_controller.length === 0)
         self._routesSort();
+
+    return self;
+};
+
+/**
+ * Merge files
+ * @param {String} url Relative URL.
+ * @param {String} file1 Filename or URL.
+ * @param {String} file2 Filename or URL.
+ * @param {String} file3 Filename or URL.
+ * @param {String} fileN Filename or URL.
+ * @return {Framework}
+ */
+Framework.prototype.merge = function(url) {
+
+    var arr = [];
+    var self = this;
+
+    if (!self.isLoaded) {
+        var arg = arguments;
+        setTimeout(function() {
+            framework.merge.apply(framework, arg);
+        }, 200);
+        return self;
+    }
+
+    for (var i = 1, length = arguments.length; i < length; i++) {
+        var name = arguments[i];
+
+        if (name.startsWith('http://') || name.startsWith('https://')) {
+            arr.push(name);
+            continue;
+        }
+
+        if (name[0] === '~')
+            name = name.substring(1);
+        else
+            name = self.path.public(name);
+
+        arr.push(name);
+
+    }
+
+    var filename = self.path.temp('merge-' + url.replace(/\//g, '-'));
+    self.routes.merge[url] = filename;
+
+    var writer = fs.createWriteStream(filename);
+
+    arr.wait(function(name, next) {
+
+        if (!name.startsWith('http://') && !name.startsWith('https://')) {
+            writer.write(self.compileContent(path.extname(name).substring(1), fs.readFileSync(name).toString(ENCODING), name));
+            next();
+            return;
+        }
+
+        Utils.request(name, ['get'], function(err, content) {
+            var fname = path.basename(name);
+            writer.write(self.compileContent(path.extname(fname).substring(1), content, fname));
+            next();
+        });
+
+    }, function() {
+        writer.end();
+    });
 
     return self;
 };
@@ -1994,45 +2060,53 @@ Framework.prototype.onCompileJS = null;
     @filename {String}
     return {String or NULL};
 */
-Framework.prototype.compileStatic = function(req, filename) {
+Framework.prototype.compileStatic = function(req, filename, extension) {
 
     if (!fs.existsSync(filename))
         return null;
 
     var self = this;
-    var index = filename.lastIndexOf('.');
-    var ext = filename.substring(index).toLowerCase();
 
-    if ((self.config['allow-compile-js'] === false && ext === EXTENSION_JS) || (self.config['allow-compile-css'] === false && ext === '.css'))
+    if ((self.config['allow-compile-js'] === false && extension === EXTENSION_JS) || (self.config['allow-compile-css'] === false && extension === '.css'))
         return filename;
 
-    var output = fs.readFileSync(filename).toString(ENCODING);
+    var output = self.compileContent(extension, fs.readFileSync(filename).toString(ENCODING), filename);
+    var plus = self.id === null ? '' : 'instance-' + self.id + '-';
+    var fileCompiled = utils.combine(self.config['directory-temp'], plus + req.uri.pathname.replace(/\//g, '-').substring(1));
 
-    switch (ext) {
-        case EXTENSION_JS:
-            output = self.config['allow-compile-js'] ? self.onCompileJS === null ? internal.compile_javascript(output) : self.onCompileJS(filename, output) : output;
+    self._verify_directory('temp');
+    fs.writeFileSync(fileCompiled, output);
+
+    return fileCompiled;
+};
+
+Framework.prototype.compileContent = function(extension, content, filename) {
+
+    var self = this;
+
+    switch (extension) {
+
+        case 'js':
+            content = self.config['allow-compile-js'] ? self.onCompileJS === null ? internal.compile_javascript(content) : self.onCompileJS(filename, content) : content;
             break;
 
-        case '.css':
-            output = self.config['allow-compile-css'] ? self.onCompileCSS === null ? internal.compile_css(output) : self.onCompileCSS(filename, output) : output;
-            var matches = output.match(/url\(.*?\)/g);
-            if (matches !== null) {
-                matches.forEach(function(o) {
-                    var url = o.substring(4, o.length - 1);
-                    output = output.replace(o, 'url(' + self._version(url) + ')');
-                });
-            }
+        case 'css':
+
+            content = self.config['allow-compile-css'] ? self.onCompileCSS === null ? internal.compile_css(content) : self.onCompileCSS(filename, content) : content;
+
+            var matches = content.match(/url\(.*?\)/g);
+            if (matches === null)
+                break;
+
+            matches.forEach(function(o) {
+                var url = o.substring(4, o.length - 1);
+                content = content.replace(o, 'url(' + self._version(url) + ')');
+            });
 
             break;
     }
 
-    self._verify_directory('temp');
-
-    var plus = self.id === null ? '' : 'instance-' + self.id + '-';
-    var fileCompiled = utils.combine(self.config['directory-temp'], plus + req.uri.pathname.replace(/\//g, '-').substring(1));
-
-    fs.writeFileSync(fileCompiled, output)
-    return fileCompiled;
+    return content;
 };
 
 /**
@@ -2225,6 +2299,9 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     if (framework.config.debug)
         name = undefined;
 
+    if (framework.routes.merge[req.uri.pathname])
+        name = framework.routes.merge[req.uri.pathname];
+
     var etag = utils.etag(req.url, self.config['etag-version']);
 
     if (!self.config.debug && req.headers['if-none-match'] === etag) {
@@ -2279,7 +2356,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         // compile JavaScript and CSS
         if (extension === 'js' || extension === 'css') {
             if (name.lastIndexOf('.min.') === -1 && name.lastIndexOf('-min.') === -1)
-                name = self.compileStatic(req, name);
+                name = self.compileStatic(req, name, extension.substring(1));
         }
 
         name += ';' + fs.statSync(name).size;
@@ -4669,6 +4746,7 @@ Framework.prototype.clear = function() {
     // clear static cache
     self.temporary.path = {};
     self.temporary.range = {};
+
     return self;
 };
 
