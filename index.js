@@ -3801,7 +3801,7 @@ Framework.prototype._request = function(req, res) {
     self.emit('request', req, res);
 
     var headers = req.headers;
-    var protocol = req.connection.encrypted ? 'https' : 'http';
+    var protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
 
     if (self._request_check_redirect) {
         var redirect = self.routes.redirects[protocol + '://' + req.host];
