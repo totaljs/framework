@@ -1,14 +1,24 @@
-var framework = require('../index');
-var url = 'http://127.0.0.1:8001/';
+// var framework = require('../index');
+// var url = 'http://127.0.0.1:8001/';
+//
+// var mem = require('memwatch');
+//
+// mem.on('leak', function(info) {
+//     console.log('LEAK ->', info);
+// });
+//
+// mem.on('stats', function(info) {
+//     console.log('STATS ->', JSON.stringify(info));
+// });
+//
+// framework.http('debug', { port: 8001 });
 
-var mem = require('memwatch');
+var Image = require('../image');
+var fs = require('fs');
+var buffer = fs.readFileSync('/users/petersirka/desktop/picture.png');
 
-mem.on('leak', function(info) {
-    console.log('LEAK ->', info);
-});
+var img = Image.load(buffer);
 
-mem.on('stats', function(info) {
-    console.log('STATS ->', JSON.stringify(info));
-});
-
-framework.http('debug', { port: 8001 });
+img.resize('50%');
+img.output('png');
+img.save('/users/petersirka/desktop/picture-resize.png');
