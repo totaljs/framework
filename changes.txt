@@ -30,6 +30,15 @@ Framework supports a backward compatibility.
 - added: Pagination.isFirst
 - added: Pagination.isLast
 - added: framework.config['allow-custom-titles'] - (default: false)
+- added: new option into Mail: rejectUnauthorized (for TLS)
+- added: @{log()} and @{LOG()} into views
+- added: @{console} (.log, .info, etc.) into views
+- added: framework.on('controller-render-head', function(controller) {})
+- added: framework.on('controller-render-meta', function(controller) {})
+- added: framework.on('init')
+- added: framework.merge('/merge.js', '/js/file1.js', '/js/file2.js')
+- added: framework supports X-Forwarded-Protocol header
+- added: FrameworkImage supports buffer
 
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
 - updated: Utils.request(), timeout is possible to add as cookie, headers or encoding
@@ -40,13 +49,19 @@ Framework supports a backward compatibility.
 - updated: Builders.UrlBuilder() -> toString([skipEmpty])
 - updated: Number.format([decimals], [separator], [decimalSeparator])
 
-- removed: JS CSS
+- renamed: config['directory-angular'] to config['directory-public-virtual']
 
+- removed: @{place} -> alternative @{section}
+- removed: JS CSS
+- removed: (IMPORTANT) view markup for Angular.js from the core (it will be a module)
+
+- fixed: LOG()
 - fixed: if path starts '/' then is view loaded directly from /views/ directory
 - fixed: xml parser
 - fixed: problem with parsing a bad JSON datas - framework.decrypt();
 - fixed: String.prototype.parseDate()
 - fixed: path in framework.resize()
+- fixed: framework.responseImageWithoutCache()
 
 ======= 1.6.1 (HOTFIX)
 

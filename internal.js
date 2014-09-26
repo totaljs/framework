@@ -465,9 +465,11 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
     var UNAUTHORIZE = 'unauthorize';
 
     for (var i = 0; i < length; i++) {
-        var value = arr2[i];
 
-        if (value[0] === '!') // ignore roles
+        var value = arr2[i];
+        var c = value[0];
+
+        if (c === '!' || c === '#' || c === '$' || c === '@') // ignore roles
             continue;
 
         if (noLoggedUnlogged && (value === AUTHORIZE || value === UNAUTHORIZE))
@@ -475,9 +477,8 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
         var index = arr1.indexOf(value);
 
-        if (value === 'xss'){
+        if (value === 'xss')
             isXSS = true;
-        }
 
         if (index === -1 && value === 'xss')
             continue;
@@ -1191,6 +1192,10 @@ exports.compile_javascript = function(source) {
     }
 };
 
+exports.compile_html = function(source) {
+    return compressHTML(source, true);
+};
+
 // *********************************************************************************
 // =================================================================================
 // MULTIPART PARSER
@@ -1573,8 +1578,7 @@ MultipartParser.prototype.explain = function() {
     View class
     return {View}
 */
-function View() {
-}
+function View() {}
 
 /**
  * View parser
@@ -1769,9 +1773,15 @@ function view_prepare(command, dynamicCommand, functions) {
                 return '';
             return '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/\'/g, '') + '\'] || \'\')';
 
-        case 'controller':
-        case 'repository':
+        case 'log':
+        case 'LOG':
+            return '(' + (name === 'log' ? 'framework.' : '') + command + '?$EMPTY:$EMPTY)';
+
+        case 'console':
+            return '(' + command + '?$EMPTY:$EMPTY)';
+
         case 'model':
+        case 'repository':
         case 'get':
         case 'post':
         case 'query':
@@ -1779,7 +1789,7 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'session':
         case 'user':
         case 'config':
-        case 'model':
+        case 'controller':
 
             if (view_is_assign(command))
                 return 'self.$set(' + command + ')';
@@ -1798,6 +1808,9 @@ function view_prepare(command, dynamicCommand, functions) {
 
         case 'CONFIG':
         case 'FUNCTION':
+        case 'MODEL':
+        case 'SCHEMA':
+        case 'MODULE':
         case 'functions':
             return '(' + command + ').toString().encode()';
 
@@ -1814,7 +1827,10 @@ function view_prepare(command, dynamicCommand, functions) {
         case '!functions':
         case '!model':
         case '!CONFIG':
+        case '!SCHEMA':
         case '!FUNCTION':
+        case '!MODEL':
+        case '!MODULE':
             return '(' + command.substring(1) + ')';
 
         case 'resource':
@@ -1853,8 +1869,8 @@ function view_prepare(command, dynamicCommand, functions) {
                 return 'self.$' + command;
             return 'self.' + command + '()';
 
-        case 'place':
         case 'sitemap':
+        case 'place':
             if (command.indexOf('(') !== -1)
                 return 'self.$' + command;
             return '(repository[\'$' + command + '\'] || \'\')';
@@ -1882,22 +1898,16 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'routeStatic':
             return 'self.' + command;
 
-        case 'ng':
-        case 'ngTemplate':
-        case 'ngController':
-        case 'ngCommon':
-        case 'ngInclude':
-        case 'ngLocale':
-        case 'ngService':
-        case 'ngFilter':
-        case 'ngDirective':
-        case 'ngResource':
-        case 'ngStyle':
-            return 'self.$' + command;
-
-        case 'canonical':
-        case 'checked':
+        case 'json':
+        case 'image':
+        case 'layout':
+        case 'template':
+        case 'templateToggle':
+        case 'view':
+        case 'viewToggle':
         case 'helper':
+        case 'download':
+        case 'selected':
         case 'currentContent':
         case 'currentCSS':
         case 'currentDownload':
@@ -1907,25 +1917,18 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'currentVideo':
         case 'currentView':
         case 'disabled':
-        case 'dns':
-        case 'download':
+        case 'checked':
         case 'etag':
         case 'header':
-        case 'image':
-        case 'json':
-        case 'layout':
         case 'modified':
-        case 'next':
         case 'options':
+        case 'readonly':
+        case 'canonical':
+        case 'dns':
+        case 'next':
         case 'prefetch':
         case 'prerender':
         case 'prev':
-        case 'readonly':
-        case 'selected':
-        case 'template':
-        case 'templateToggle':
-        case 'view':
-        case 'viewToggle':
             return 'self.$' + command;
 
         case 'radio':
@@ -2252,7 +2255,7 @@ View.prototype.read = function(path) {
     var filename = isOut ? path.substring(1) : utils.combine(config['directory-views'], path);
 
     if (fs.existsSync(filename))
-        return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
+        return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compile-html']);
 
     if (isOut)
         return null;
@@ -2264,7 +2267,7 @@ View.prototype.read = function(path) {
     filename = utils.combine(config['directory-views'], path.substring(index + 1));
 
     if (fs.existsSync(filename))
-        return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compress-html']);
+        return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compile-html']);
 
     return null;
 };
@@ -2318,7 +2321,7 @@ View.prototype.dynamic = function(content) {
     if (generator !== null)
         return generator;
 
-    generator = view_parse(content, framework.config['allow-compress-html']);
+    generator = view_parse(content, framework.config['allow-compile-html']);
 
     if (!framework.isDebug)
         framework.temporary.views[key] = generator;

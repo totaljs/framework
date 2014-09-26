@@ -76,7 +76,7 @@ global.RESOURCE = function(name, key) {
 };
 
 global.LOG = function() {
-    return framework.apply(framework, arguments);
+    return framework.log.apply(framework, arguments);
 };
 
 global.MODEL = function(name) {
@@ -122,7 +122,7 @@ function Framework() {
         'directory-models': '/models/',
         'directory-resources': '/resources/',
         'directory-public': '/public/',
-        'directory-angular': '/app/',
+        'directory-public-virtual': '/app/',
         'directory-modules': '/modules/',
         'directory-source': '/source/',
         'directory-logs': '/logs/',
@@ -144,9 +144,6 @@ function Framework() {
 
         'default-layout': '_layout',
 
-        'angular-version': '1.2.18',
-        'angular-i18n-version': '1.2.15',
-
         // default maximum request size / length
         // default 5 kB
         'default-request-length': 1024 * 5,
@@ -165,8 +162,9 @@ function Framework() {
         'allow-websocket': true,
         'allow-compile-js': true,
         'allow-compile-css': true,
-        'allow-compress-html': true,
+        'allow-compile-html': true,
         'allow-performance': false,
+        'allow-custom-titles': false,
         'disable-strict-server-certificate-validation': true,
 
         // Used in framework._service()
@@ -195,7 +193,8 @@ function Framework() {
         redirects: {},
         resize: {},
         request: [],
-        views: {}
+        views: {},
+        merge: {}
     };
 
     this.helpers = {};
@@ -286,6 +285,7 @@ function Framework() {
     this._length_request_middleware = 0;
     this._length_files = 0;
 
+    this.isVirtualDirectory = false;
     this.isCoffee = false;
     this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
 }
@@ -394,6 +394,8 @@ Framework.prototype._install = function(type, name, declaration) {
         self.controllers[name] = obj;
 
     _controller = '';
+
+    return self;
 };
 
 /**
@@ -756,6 +758,39 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     if (_controller.length === 0)
         self._routesSort();
 
+    return self;
+};
+
+/**
+ * Merge files
+ * @param {String} url Relative URL.
+ * @param {String/String Array  } file1 Filename or URL.
+ * @param {String/String Array} file2 Filename or URL.
+ * @param {String/String Array} file3 Filename or URL.
+ * @param {String/String Array} fileN Filename or URL.
+ * @return {Framework}
+ */
+Framework.prototype.merge = function(url) {
+
+    var arr = [];
+    var self = this;
+
+    for (var i = 1, length = arguments.length; i < length; i++) {
+
+        var items = arguments[i];
+
+        if (!(items instanceof Array))
+            items = [items];
+
+        for (var j = 0, lengthsub = items.length; j < lengthsub; j++)
+            arr.push(items[j]);
+    }
+
+    if (url[0] !== '/')
+        url = '/' + url;
+
+    var filename = self.path.temp('merge-' + url.substring(1).replace(/\//g, '-'));
+    self.routes.merge[url] = { filename: filename, files: arr };
     return self;
 };
 
@@ -1142,7 +1177,7 @@ Framework.prototype.load = function() {
     listing(dir, 0, arr);
 
     arr.forEach(function(item) {
-        self.install('definition', item.name, item.filename, undefined, undefined, undefined, true)
+        self.install('definition', item.name, item.filename, undefined, undefined, undefined, true);
     });
 
     dir = path.join(directory, self.config['directory-models']);
@@ -1151,7 +1186,7 @@ Framework.prototype.load = function() {
     listing(dir, 0, arr);
 
     arr.forEach(function(item) {
-        self.install('model', item.name, item.filename, undefined, undefined, undefined, true)
+        self.install('model', item.name, item.filename, undefined, undefined, undefined, true);
     });
 
     self._routesSort();
@@ -1989,51 +2024,211 @@ Framework.prototype.onCompileCSS = null;
 */
 Framework.prototype.onCompileJS = null;
 
-/*
-    Compile JavaScript and CSS
-    @req {ServerRequest}
-    @filename {String}
-    return {String or NULL};
-*/
-Framework.prototype.compileStatic = function(req, filename) {
-
-    if (!fs.existsSync(filename))
-        return null;
+/**
+ * Compile content (JS, CSS, HTML)
+ * @param {String} extension File extension.
+ * @param {String} content File content.
+ * @param {String} filename
+ * @return {String}
+ */
+Framework.prototype.compileContent = function(extension, content, filename) {
 
     var self = this;
-    var index = filename.lastIndexOf('.');
-    var ext = filename.substring(index).toLowerCase();
 
-    if ((self.config['allow-compile-js'] === false && ext === EXTENSION_JS) || (self.config['allow-compile-css'] === false && ext === '.css'))
-        return filename;
+    switch (extension) {
+        case 'js':
+            return self.config['allow-compile-js'] ? internal.compile_javascript(content) : content;
+        case 'html':
+            return self.config['allow-compile-html'] ? internal.compile_html(content) : content;
+        case 'css':
 
-    var output = fs.readFileSync(filename).toString(ENCODING);
+            content = self.config['allow-compile-css'] ? internal.compile_css(content) : content;
 
-    switch (ext) {
-        case EXTENSION_JS:
-            output = self.config['allow-compile-js'] ? self.onCompileJS === null ? internal.compile_javascript(output) : self.onCompileJS(filename, output) : output;
-            break;
+            var matches = content.match(/url\(.*?\)/g);
+            if (matches === null)
+                return content;
 
-        case '.css':
-            output = self.config['allow-compile-css'] ? self.onCompileCSS === null ? internal.compile_css(output) : self.onCompileCSS(filename, output) : output;
-            var matches = output.match(/url\(.*?\)/g);
-            if (matches !== null) {
-                matches.forEach(function(o) {
-                    var url = o.substring(4, o.length - 1);
-                    output = output.replace(o, 'url(' + self._version(url) + ')');
-                });
-            }
+            matches.forEach(function(o) {
+                var url = o.substring(4, o.length - 1);
+                content = content.replace(o, 'url(' + self._version(url) + ')');
+            });
 
-            break;
+            return content;
     }
 
-    self._verify_directory('temp');
+    return content;
+};
 
-    var plus = self.id === null ? '' : 'instance-' + self.id + '-';
-    var fileCompiled = utils.combine(self.config['directory-temp'], plus + req.uri.pathname.replace(/\//g, '-').substring(1));
+/**
+ * Compile static file
+ * @param {URI} uri
+ * @param {String} key Temporary key.
+ * @param {String} filename
+ * @param {String} extension File extension.
+ * @param {Function()} callback
+ * @return {Framework}
+ */
+Framework.prototype.compileFile = function(uri, key, filename, extension, callback) {
 
-    fs.writeFileSync(fileCompiled, output)
-    return fileCompiled;
+    var self = this;
+
+    fs.readFile(filename, function(err, buffer) {
+
+        if (err) {
+            self.error(err, filename, uri);
+            self.temporary.path[key] = null;
+            callback();
+            return;
+        }
+
+        var file = self.path.temp((self.id === null ? '' : 'instance-' + self.id + '-') + uri.pathname.replace(/\//g, '-').substring(1));
+        self._verify_directory('temp');
+        fs.writeFileSync(file, self.compileContent(extension, buffer.toString(ENCODING), filename), ENCODING);
+        self.temporary.path[key] = file + ';' + fs.statSync(file).size;
+        callback();
+
+    });
+
+    return self;
+};
+
+/**
+ * Merge static files (JS, CSS, HTML, TXT, JSON)
+ * @param {URI} uri
+ * @param {String} key Temporary key.
+ * @param {String} extension File extension.
+ * @param {Function()} callback
+ * @return {Framework}
+ */
+Framework.prototype.compileMerge = function(uri, key, extension, callback) {
+
+    var self = this;
+    var merge = self.routes.merge[uri.pathname];
+    var filename = merge.filename;
+
+    if (!self.config.debug && fs.existsSync(filename)) {
+        self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
+        callback();
+        return self;
+    }
+
+    var writer = fs.createWriteStream(merge.filename);
+
+    merge.files.wait(function(filename, next) {
+
+        if (filename.startsWith('http://') || filename.startsWith('https://')) {
+            Utils.request(filename, ['get'], function(err, data) {
+                var output = self.compileContent(extension, data, filename).trim();
+
+                if (extension === 'js') {
+                    if (output[output.length - 1] !== ';')
+                        output += ';';
+                } else if (extension === 'html') {
+                    if (output[output.length - 1] !== NEWLINE)
+                        output += NEWLINE;
+                }
+
+                writer.write(output, ENCODING);
+                next();
+            });
+            return;
+        }
+
+        if (filename[0] !== '~') {
+            var tmp = self.path.public(filename);
+            if (self.isVirtualDirectory && !fs.existsSync(tmp))
+                tmp = utils.combine(self.config['directory-public-virtual'], filename);
+            filename = tmp;
+        }
+        else
+            filename = filename.substring(1);
+
+        fs.readFile(filename, function(err, buffer) {
+
+            if (err) {
+                self.error(err, merge.filename, uri);
+                next();
+                return;
+            }
+
+            var output = self.compileContent(extension, buffer.toString(ENCODING), filename).trim();
+
+            if (extension === 'js') {
+                if (output[output.length - 1] !== ';')
+                    output += ';';
+            } else if (extension === 'html') {
+                if (output[output.length - 1] !== NEWLINE)
+                    output += NEWLINE;
+            }
+
+            writer.write(output, ENCODING);
+            next();
+
+        });
+
+    }, function() {
+        writer.end();
+        self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
+        callback();
+    });
+
+    return self;
+};
+
+/**
+ * Validating static file for compilation
+ * @param {URI} uri
+ * @param {String} key Temporary key.
+ * @param {String} filename
+ * @param {String} extension File extension.
+ * @param {Function()} callback
+ * @return {Framework}
+ */
+Framework.prototype.compileValidation = function(uri, key, filename, extension, callback) {
+
+    var self = this;
+
+    if (self.routes.merge[uri.pathname]) {
+        self.compileMerge(uri, key, extension, callback);
+        return;
+    }
+
+    if (!fs.existsSync(filename)) {
+
+        // file doesn't exist
+        if (!self.isVirtualDirectory) {
+            self.temporary.path[key] = null;
+            callback();
+            return self;
+        }
+
+        var tmpname = self.isWindows ? filename.replace(self.config['directory-public'].replace(/\//g, '\\'), self.config['directory-public-virtual'].replace(/\//g, '\\')) : filename.replace(self.config['directory-public'], self.config['directory-public-virtual']);
+        var notfound = true;
+
+        if (tmpname !== filename) {
+            filename = tmpname;
+            notfound = !fs.existsSync(filename);
+        }
+
+        if (notfound) {
+            self.temporary.path[key] = null;
+            callback();
+            return self;
+        }
+
+    }
+
+    if (extension === 'js' || extension === 'css' || extension === 'html') {
+        if (filename.lastIndexOf('.min.') === -1 && filename.lastIndexOf('-min.') === -1) {
+            self.compileFile(uri, key, filename, extension, callback);
+            return self;
+        }
+    }
+
+    self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
+    callback();
+
+    return self;
 };
 
 /**
@@ -2068,7 +2263,8 @@ Framework.prototype.responseStatic = function(req, res) {
         if (isResize) {
             name = resizer.path + decodeURIComponent(name);
             filename = name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : utils.combine(self.config['directory-public'], name);
-        }
+        } else
+            filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
 
     } else
         filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
@@ -2118,7 +2314,7 @@ Framework.prototype.responseStatic = function(req, res) {
 
 /**
  * Is processed static file?
- * @param  {String / Request}  filename Filename or Request object.
+ * @param {String / Request} filename Filename or Request object.
  * @return {Boolean}
  */
 Framework.prototype.isProcessed = function(filename) {
@@ -2160,7 +2356,7 @@ Framework.prototype.isProcessing = function(filename) {
         filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
     }
 
-    var name = this.temporary.processing[filename];
+    var name = self.temporary.processing[filename];
     if (self.temporary.processing[filename] !== undefined)
         return true;
     return false;
@@ -2205,6 +2401,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     var name = self.temporary.path[key];
 
     if (name === null) {
+
+        if (self.config.debug)
+            delete self.temporary.path[key];
+
         self.response404(req, res);
         return self;
     }
@@ -2223,9 +2423,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         return self;
     }
 
-    if (framework.config.debug)
-        name = undefined;
-
     var etag = utils.etag(req.url, self.config['etag-version']);
 
     if (!self.config.debug && req.headers['if-none-match'] === etag) {
@@ -2243,43 +2440,32 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         return self;
     }
 
+    // JS, CSS
     if (name === undefined) {
 
-        if (!fs.existsSync(filename)) {
+        if (self.isProcessing(key)) {
 
-            // virtual directory App
-            var tmpname = self.isWindows ? filename.replace(self.config['directory-public'].replace(/\//g, '\\'), self.config['directory-angular'].replace(/\//g, '\\')) : filename.replace(self.config['directory-public'], self.config['directory-angular']);
-            var notfound = true;
-
-            if (tmpname !== filename) {
-                filename = tmpname;
-                notfound = !fs.existsSync(filename);
+            if (req.processing > self.config['default-request-timeout']) {
+                // timeout
+                self.response408(req, res);
+                return;
             }
 
-            if (notfound) {
-
-                if (!self.config.debug)
-                    self.temporary.path[key] = null;
-
-                self.response404(req, res);
-                return self;
-            }
+            req.processing += 500;
+            setTimeout(function() {
+                framework.responseFile(req, res, filename, downloadName, headers, key);
+            }, 500);
+            return self;
         }
 
-        name = filename;
+        // waiting
+        self.temporary.processing[key] = true;
+        self.compileValidation(req.uri, key, filename, extension, function() {
+            delete self.temporary.processing[key];
+            framework.responseFile(req, res, filename, downloadName, headers, key);
+        });
 
-        // compile JavaScript and CSS
-        if (extension === 'js' || extension === 'css') {
-            if (name.lastIndexOf('.min.') === -1 && name.lastIndexOf('-min.') === -1)
-                name = self.compileStatic(req, name);
-        }
-
-        name += ';' + fs.statSync(name).size;
-
-        self.temporary.path[key] = name;
-
-        if (self.config.debug)
-            delete self.temporary.path[key];
+        return self;
     }
 
     index = name.lastIndexOf(';');
@@ -2320,6 +2506,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
     if (range.length > 0)
         return self.responseRange(name, range, returnHeaders, req, res);
+
+
+    if (self.config.debug && self.isProcessed(key))
+        delete self.temporary.path[key];
 
     if (size !== null && size !== '0' && !compress)
         returnHeaders[RESPONSE_HEADER_CONTENTLENGTH] = size;
@@ -2587,6 +2777,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
     fs.exists(filename, function(exist) {
 
         if (!exist) {
+
             delete self.temporary.processing[key];
             self.temporary.path[key] = null;
             self.response404(req, res);
@@ -2649,52 +2840,43 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
         stream = filename;
 
     var key = 'image-' + req.url.substring(1);
-    var im = useImageMagick;
-    if (im === undefined)
-        im = self.config['default-image-converter'] === 'im';
 
+    utils.queue(key, 10, function(next) {
 
-    if (self.isProcessing(key)) {
+        var im = useImageMagick;
+        if (im === undefined)
+            im = self.config['default-image-converter'] === 'im';
 
-        if (req.processing > self.config['default-request-timeout']) {
-            // timeout
-            self.response408(req, res);
-            return;
+        var Image = require('./image');
+
+        // STREAM
+        if (stream !== null) {
+            next();
+            var image = Image.load(stream, im);
+            fnProcess(image);
+            self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
+            return self;
         }
 
-        req.processing += 500;
+        // FILENAME
+        fs.exists(filename, function(exist) {
 
-        setTimeout(function() {
-            self.responseImageWithoutCache(req, res, filename, fnProcess, headers, im);
-        }, 500);
+            next();
 
-        return;
-    }
+            if (!exist) {
+                self.response404(req, res);
+                return;
+            }
 
-    var Image = require('./image');
+            self._verify_directory('temp');
+            var image = Image.load(filename, im);
+            fnProcess(image);
+            self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
 
-    // STREAM
-    if (stream !== null) {
-        var image = Image.load(stream, im);
-        fnProcess(image);
-        self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
-        return self;
-    }
-
-    // FILENAME
-    fs.exists(filename, function(exist) {
-
-        if (!exist) {
-            self.response404(req, res);
-            return;
-        }
-
-        self._verify_directory('temp');
-        var image = Image.load(filename, im);
-        fnProcess(image);
-        self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
+        });
 
     });
+
     return self;
 };
 
@@ -3040,10 +3222,8 @@ Framework.prototype.response404 = function(req, res) {
 */
 Framework.prototype.response408 = function(req, res) {
     var self = this;
-
     if (res.success)
         return self;
-
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
     res.success = true;
@@ -3172,6 +3352,9 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
     req.clear(true);
     res.success = true;
+
+    if (contentBody === null || contentBody === undefined)
+        contentBody = '';
 
     var accept = req.headers['accept-encoding'] || '';
     var returnHeaders = {};
@@ -3302,6 +3485,8 @@ Framework.prototype.initialize = function(http, debug, options) {
 
     self.clear();
     self.cache.init();
+    self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
+    self.emit('init');
     self.load();
 
     if (options.https) {
@@ -3616,7 +3801,7 @@ Framework.prototype._request = function(req, res) {
     self.emit('request', req, res);
 
     var headers = req.headers;
-    var protocol = req.connection.encrypted ? 'https' : 'http';
+    var protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
 
     if (self._request_check_redirect) {
         var redirect = self.routes.redirects[protocol + '://' + req.host];
@@ -4656,6 +4841,7 @@ Framework.prototype.clear = function() {
     // clear static cache
     self.temporary.path = {};
     self.temporary.range = {};
+
     return self;
 };
 
@@ -4925,10 +5111,14 @@ Framework.prototype._configure = function(arr, rewrite) {
             case 'allow-websocket':
             case 'allow-compile-js':
             case 'allow-compile-css':
-            case 'allow-compress-html':
+            case 'allow-compile-html':
             case 'allow-performance':
             case 'disable-strict-server-certificate-validation':
                 obj[name] = value.toLowerCase() === 'true' || value === '1';
+                break;
+
+            case 'allow-compress-html':
+                obj['allow-compile-html'] = value.toLowerCase() === 'true' || value === '1';
                 break;
 
             case 'version':
@@ -6171,17 +6361,12 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 // *********************************************************************************
 
 var REPOSITORY_HEAD = '$head';
-var REPOSITORY_ANGULAR = '$angular';
-var REPOSITORY_ANGULAR_LOCALE = '$angular-locale';
-var REPOSITORY_ANGULAR_COMMON = '$angular-common';
-var REPOSITORY_ANGULAR_CONTROLLER = '$angular-controller';
-var REPOSITORY_ANGULAR_OTHER = '$angular-other';
 var REPOSITORY_META = '$meta';
-var REPOSITORY_PLACE = '$place';
 var REPOSITORY_META_TITLE = '$title';
 var REPOSITORY_META_DESCRIPTION = '$description';
 var REPOSITORY_META_KEYWORDS = '$keywords';
 var REPOSITORY_META_IMAGE = '$image';
+var REPOSITORY_PLACE = '$place';
 var ATTR_END = '"';
 
 function Subscribe(framework, req, res, type) {
@@ -7411,6 +7596,93 @@ Controller.prototype.meta = function() {
     return self;
 };
 
+/*
+    Internal function for views
+    @arguments {String}
+    return {String}
+*/
+Controller.prototype.$dns = function(value) {
+
+    var builder = '';
+    var self = this;
+    var length = arguments.length;
+
+    for (var i = 0; i < length; i++)
+        builder += '<link rel="dns-prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
+
+    self.head(builder);
+    return '';
+};
+
+/*
+    Internal function for views
+    @arguments {String}
+    return {String}
+*/
+Controller.prototype.$prefetch = function() {
+
+    var builder = '';
+    var self = this;
+    var length = arguments.length;
+
+    for (var i = 0; i < length; i++)
+        builder += '<link rel="prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
+
+    self.head(builder);
+    return '';
+};
+
+/*
+    Internal function for views
+    @arguments {String}
+    return {String}
+*/
+Controller.prototype.$prerender = function(value) {
+
+    var builder = '';
+    var self = this;
+    var length = arguments.length;
+
+    for (var i = 0; i < length; i++)
+        builder += '<link rel="prerender" href="' + self._prepareHost(arguments[i] || '') + '" />';
+
+    self.head(builder);
+    return '';
+};
+
+/*
+    Internal function for views
+    @value {String}
+    return {String}
+*/
+Controller.prototype.$next = function(value) {
+    var self = this;
+    self.head('<link rel="next" href="' + self._prepareHost(value || '') + '" />');
+    return '';
+};
+
+/*
+    Internal function for views
+    @arguments {String}
+    return {String}
+*/
+Controller.prototype.$prev = function(value) {
+    var self = this;
+    self.head('<link rel="prev" href="' + self._prepareHost(value || '') + '" />');
+    return '';
+};
+
+/*
+    Internal function for views
+    @arguments {String}
+    return {String}
+*/
+Controller.prototype.$canonical = function(value) {
+    var self = this;
+    self.head('<link rel="canonical" href="' + self._prepareHost(value || '') + '" />');
+    return '';
+};
+
 Controller.prototype.$meta = function() {
     var self = this;
 
@@ -7419,6 +7691,7 @@ Controller.prototype.$meta = function() {
         return '';
     }
 
+    framework.emit('controller-render-meta', self);
     var repository = self.repository;
     return framework.onMeta.call(self, repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
 };
@@ -7728,391 +8001,46 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire) {
     return value;
 };
 
-/*
-    Include: Angular.js CDN into the head
-    @version {String}
-    @name {String or String Array} :: optional, example: route or resource
-    return {String}
-*/
-Controller.prototype.$ng = function(name) {
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ng(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ng(name[i]);
-        return '';
-    }
-
-    var isCommon = name[0] === '~';
-
-    if (isCommon)
-        name = name.substring(1);
-
-    if (name === undefined)
-        name = 'angular';
-
-    if (name === 'core' || name === '' || name === 'base' || name === 'main')
-        name = 'angular';
-
-    if (name !== 'angular' && name.indexOf('angular-') === -1)
-        name = 'angular-' + name;
-
-    var output = self.repository[REPOSITORY_ANGULAR] || '';
-    var script = self.$script_create((isCommon ? '/common/' + name + '.min.js' : '//cdnjs.cloudflare.com/ajax/libs/angular.js/' + self.config['angular-version'] + '/' + name + '.min.js'));
-
-    if (name === 'angular')
-        output = script + output;
-    else
-        output += script;
-
-    self.repository[REPOSITORY_ANGULAR] = output;
-    return '';
-};
-
-
-Controller.prototype.$ngCommon = function(name) {
+Controller.prototype.place = function(name) {
 
     var self = this;
+
+    var key = REPOSITORY_PLACE + '_' + name;
     var length = arguments.length;
 
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngCommon(arguments[i]);
-        return '';
+    if (length === 1)
+        return self.repository[key] || '';
+
+    var output = '';
+    for (var i = 1; i < length; i++) {
+
+        var val = arguments[i];
+
+        if (val.indexOf('<') !== -1) {
+            output += val;
+            continue;
+        }
+
+        if (val.lastIndexOf(EXTENSION_JS) === -1) {
+            output += val;
+            continue;
+        }
+
+        var tmp = val.substring(0, 7);
+        var isRoute = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
+        output += '<script type="text/javascript" src="' + (isRoute ? self.routeJS(val) : val) + '"></script>';
     }
 
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngCommon(name[i]);
-        return '';
-    }
+    self.repository[key] = (self.repository[key] || '') + output;
+    return self;
+};
 
-    var output = self.repository[REPOSITORY_ANGULAR_COMMON] || '';
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var script = self.$script_create('/common/' + name);
-    output += script;
-
-    self.repository[REPOSITORY_ANGULAR_COMMON] = output;
+Controller.prototype.$place = function() {
+    var self = this;
+    if (arguments.length === 1)
+        return self.place.apply(self, arguments);
+    self.place.apply(self, arguments);
     return '';
-};
-
-Controller.prototype.$ngLocale = function(name) {
-
-    var self = this;
-    var length = arguments.length;
-
-    if (length > 2) {
-        for (var i = 1; i < length; i++)
-            self.$ngLocale(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngLocale(name[i]);
-        return '';
-    }
-
-    var output = self.repository[REPOSITORY_ANGULAR_LOCALE] || '';
-    var isLocal = name[0] === '~';
-    var extension = '';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    if (name.indexOf('angular-locale_') !== -1)
-        name = name.replace('angular-locale_', '');
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        extension = EXTENSION_JS;
-
-    output += self.$script_create(isLocal ? '/i18n/angular-locale_' + name + extension : '//cdnjs.cloudflare.com/ajax/libs/angular-i18n/' + self.config['angular-i18n-version'] + '/angular-locale_' + name + extension);
-    self.repository[REPOSITORY_ANGULAR_LOCALE] = output;
-
-    return '';
-};
-
-Controller.prototype.$script_create = function(url) {
-    return '<script type="text/javascript" src="' + url + '"></script>';
-};
-
-/*
-    Include: Controller into the head
-    @name {String or String Array}
-    return {String}
-*/
-Controller.prototype.$ngController = function(name) {
-
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngController(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngController(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var output = self.repository[REPOSITORY_ANGULAR_CONTROLLER] || '';
-    var isLocal = name[0] === '~';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    output += self.$script_create('/controllers/' + name);
-    self.repository[REPOSITORY_ANGULAR_CONTROLLER] = output;
-
-    return '';
-};
-
-/*
-    Include: Content from file into the body
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngTemplate = function(name, id) {
-
-    var self = this;
-
-    if (id === undefined)
-        id = name;
-
-    if (name.lastIndexOf('.html') === -1)
-        name += '.html';
-
-    if (name[0] === '~')
-        name = name.substring(1);
-    else if (name[1] !== '/')
-        name = '/templates/' + name;
-
-    var key = 'ng-' + name;
-    var tmp = framework.temporary.views[key];
-
-    if (tmp === undefined) {
-        var filename = utils.combine(self.config['directory-angular'], name);
-
-        if (fs.existsSync(filename))
-            tmp = fs.readFileSync(filename).toString(ENCODING);
-        else
-            tmp = '';
-
-        if (!self.isDebug)
-            framework.temporary.views[key] = tmp;
-    }
-
-    return '<script type="text/ng-template" id="' + id + '">' + tmp + '</script>';
-};
-
-/*
-    Include: Directive into the head
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngDirective = function(name) {
-
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngDirective(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngDirective(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
-    var isLocal = name[0] === '~';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    output += self.$script_create('/directives/' + name);
-    self.repository[REPOSITORY_ANGULAR_OTHER] = output;
-    return '';
-};
-
-/*
-    Include: CSS into the head
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngStyle = function(name) {
-
-    var self = this;
-    var length = arguments.length;
-
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngStyle(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngStyle(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf('.css') === -1)
-        name += '.css';
-
-    self.head(name);
-    return '';
-};
-
-/*
-    Include: Service into the head
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngService = function(name) {
-
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngService(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngService(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
-    var isLocal = name[0] === '~';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    output += self.$script_create('/services/' + name);
-    self.repository[REPOSITORY_ANGULAR_OTHER] = output;
-
-    return '';
-};
-
-/*
-    Include: Filter into the head
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngFilter = function(name) {
-
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngFilter(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngFilter(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
-    var isLocal = name[0] === '~';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    output += self.$script_create('/filters/' + name);
-    self.repository[REPOSITORY_ANGULAR_OTHER] = output;
-
-    return '';
-};
-
-/*
-    Include: Resource into the head
-    @name {String}
-    return {String}
-*/
-Controller.prototype.$ngResource = function(name) {
-
-    var self = this;
-
-    var length = arguments.length;
-    if (length > 1) {
-        for (var i = 0; i < length; i++)
-            self.$ngResource(arguments[i]);
-        return '';
-    }
-
-    if (name instanceof Array) {
-        length = name.length;
-        for (var i = 0; i < length; i++)
-            self.$ngResource(name[i]);
-        return '';
-    }
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    var output = self.repository[REPOSITORY_ANGULAR_OTHER] || '';
-    var isLocal = name[0] === '~';
-
-    if (isLocal)
-        name = name.substring(1);
-
-    output += self.$script_create('/resources/' + name);
-    self.repository[REPOSITORY_ANGULAR_OTHER] = output;
-
-    return '';
-};
-
-Controller.prototype.$ngInclude = function(name) {
-    var self = this;
-
-    if (name.lastIndexOf(EXTENSION_JS) === -1)
-        name += EXTENSION_JS;
-
-    return self.$script_create(name);
 };
 
 Controller.prototype.$url = function(host) {
@@ -8397,93 +8325,6 @@ Controller.prototype.$input = function(model, type, name, attr) {
     return builder;
 };
 
-/*
-    Internal function for views
-    @arguments {String}
-    return {String}
-*/
-Controller.prototype.$dns = function(value) {
-
-    var builder = '';
-    var self = this;
-    var length = arguments.length;
-
-    for (var i = 0; i < length; i++)
-        builder += '<link rel="dns-prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
-
-    self.head(builder);
-    return '';
-};
-
-/*
-    Internal function for views
-    @arguments {String}
-    return {String}
-*/
-Controller.prototype.$prefetch = function() {
-
-    var builder = '';
-    var self = this;
-    var length = arguments.length;
-
-    for (var i = 0; i < length; i++)
-        builder += '<link rel="prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
-
-    self.head(builder);
-    return '';
-};
-
-/*
-    Internal function for views
-    @arguments {String}
-    return {String}
-*/
-Controller.prototype.$prerender = function(value) {
-
-    var builder = '';
-    var self = this;
-    var length = arguments.length;
-
-    for (var i = 0; i < length; i++)
-        builder += '<link rel="prerender" href="' + self._prepareHost(arguments[i] || '') + '" />';
-
-    self.head(builder);
-    return '';
-};
-
-/*
-    Internal function for views
-    @value {String}
-    return {String}
-*/
-Controller.prototype.$next = function(value) {
-    var self = this;
-    self.head('<link rel="next" href="' + self._prepareHost(value || '') + '" />');
-    return '';
-};
-
-/*
-    Internal function for views
-    @arguments {String}
-    return {String}
-*/
-Controller.prototype.$prev = function(value) {
-    var self = this;
-    self.head('<link rel="prev" href="' + self._prepareHost(value || '') + '" />');
-    return '';
-};
-
-/*
-    Internal function for views
-    @arguments {String}
-    return {String}
-*/
-Controller.prototype.$canonical = function(value) {
-    var self = this;
-    self.head('<link rel="canonical" href="' + self._prepareHost(value || '') + '" />');
-    return '';
-};
-
 Controller.prototype._prepareHost = function(value) {
     var tmp = value.substring(0, 5);
 
@@ -8505,13 +8346,13 @@ Controller.prototype.head = function() {
     var self = this;
 
     var length = arguments.length;
-    var header = (self.repository[REPOSITORY_HEAD] || '');
 
     if (length === 0) {
-        var angularBeg = (self.repository[REPOSITORY_ANGULAR] || '') + (self.repository[REPOSITORY_ANGULAR_COMMON] || '') + (self.repository[REPOSITORY_ANGULAR_LOCALE] || '');
-        var angularEnd = (angularBeg.length > 0 ? self.$script_create('/app.js') : '') + (self.repository[REPOSITORY_ANGULAR_OTHER] || '') + (self.repository[REPOSITORY_ANGULAR_CONTROLLER] || '');
-        return (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '') + angularBeg + header + angularEnd;
+        framework.emit('controller-render-head', self);
+        return (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '');
     }
+
+    var header = (self.repository[REPOSITORY_HEAD] || '');
 
     var output = '';
     for (var i = 0; i < length; i++) {
@@ -8543,53 +8384,6 @@ Controller.prototype.head = function() {
 Controller.prototype.$head = function() {
     var self = this;
     self.head.apply(self, arguments);
-    return '';
-};
-
-/*
-    Internal function for views
-    @arguments {String}
-    return {Controller}
-*/
-Controller.prototype.place = function(name) {
-
-    var self = this;
-
-    var key = REPOSITORY_PLACE + '_' + name;
-    var length = arguments.length;
-
-    if (length === 1)
-        return self.repository[key] || '';
-
-    var output = '';
-    for (var i = 1; i < length; i++) {
-
-        var val = arguments[i];
-
-        if (val.indexOf('<') !== -1) {
-            output += val;
-            continue;
-        }
-
-        if (val.lastIndexOf(EXTENSION_JS) === -1) {
-            output += val;
-            continue;
-        }
-
-        var tmp = val.substring(0, 7);
-        var isRoute = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
-        output += '<script type="text/javascript" src="' + (isRoute ? self.routeJS(val) : val) + '"></script>';
-    }
-
-    self.repository[key] = (self.repository[key] || '') + output;
-    return self;
-};
-
-Controller.prototype.$place = function() {
-    var self = this;
-    if (arguments.length === 1)
-        return self.place.apply(self, arguments);
-    self.place.apply(self, arguments);
     return '';
 };
 
@@ -10027,10 +9821,12 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     var generator = internal.generateView(name, filename);
     if (generator === null) {
 
-        if (isPartial)
-            return self.outputPartial;
+        var err = new Error('View "' + filename + '" not found.');
 
-        var err = 'View "' + filename + '" not found.';
+        if (isPartial) {
+            framework.error(err, self.name, self.uri);
+            return self.outputPartial;
+        }
 
         if (isLayout) {
             self.subscribe.success();

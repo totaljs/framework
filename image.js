@@ -196,8 +196,12 @@ Image.prototype.save = function(filename, callback) {
             callback(null, filename);
     });
 
-    if (self.currentStream)
-        self.currentStream.pipe(cmd.stdin);
+    if (self.currentStream) {
+        if (self.currentStream instanceof Buffer)
+            cmd.stdin.end(self.currentStream);
+        else
+            self.currentStream.pipe(cmd.stdin);
+    }
 
     return self;
 };
@@ -232,8 +236,12 @@ Image.prototype.pipe = function(stream, type, options) {
     cmd.on('error', stream.emit.bind(stream, 'error'));
     cmd.stdout.pipe(stream, options);
 
-    if (self.currentStream)
-        self.currentStream.pipe(cmd.stdin);
+    if (self.currentStream) {
+        if (self.currentStream instanceof Buffer)
+            cmd.stdin.end(self.currentStream);
+        else
+            self.currentStream.pipe(cmd.stdin);
+    }
 
     return self;
 };
@@ -256,8 +264,12 @@ Image.prototype.stream = function(type) {
 
     var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, (type ? type + ':' : '') + '-'));
 
-    if (self.currentStream)
-        self.currentStream.pipe(cmd.stdin);
+    if (self.currentStream) {
+        if (self.currentStream instanceof Buffer)
+            cmd.stdin.end(self.currentStream);
+        else
+            self.currentStream.pipe(cmd.stdin);
+    }
 
     return cmd.stdout;
 };

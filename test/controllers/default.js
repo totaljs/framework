@@ -55,11 +55,9 @@ exports.install = function(framework) {
 
     framework.route('/upload/', plain_upload, ['upload']);
 
-    /*
 	framework.file('Resizing of images', function(req, res) {
 		return req.url.indexOf('.jpg') !== -1;
 	}, resize_image);
-*/
 
     framework.route('/live/', viewLive);
     framework.route('/live/incoming/', viewLiveIncoming, ['mixed']);
@@ -188,8 +186,8 @@ function file_plain_status(req, res, isValidation) {
 
 function resize_image(req, res) {
     var fs = require('fs');
-    //	this.responseImage(req, res, fs.createReadStream(this.path.public(req.url)), function(image) {
-    this.responseImage(req, res, this.path.public(req.url), function(image) {
+    this.responseImage(req, res, fs.createReadStream(this.path.public(req.url)), function(image) {
+    //this.responseImageWithoutCache(req, res, this.path.public(req.url), function(image) {
         image.resize('20%');
     });
 }
@@ -507,7 +505,6 @@ function viewViews() {
     assert.ok(output.contains('<link rel="next" href="http://127.0.0.1:8001/a/3/" />'), name + 'next');
     assert.ok(output.contains('<link rel="prev" href="http://127.0.0.1:8001/a/1/" />'), name + 'prev');
     assert.ok(output.contains('<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>'), name + 'head');
-
     assert.ok(output.contains('src="/js/jquery.js"'), name + 'place (routeJS)');
     assert.ok(output.contains('src="//fabricjs.js"'), name + 'place');
     assert.ok(output.contains('#dynamic<b>OK</b>#'), name + 'dynamic view');
