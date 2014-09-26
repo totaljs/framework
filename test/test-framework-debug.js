@@ -6,7 +6,7 @@ var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
 
-INSTALL('module', 'http://www.totaljs.com/framework/include.js', { test: true });
+INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
