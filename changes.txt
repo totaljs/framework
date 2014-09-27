@@ -18,11 +18,11 @@ Framework supports a backward compatibility.
 - added: async queue - Utils.queue(name, maximumCalls, fn) (for e.g. EMFILE, too many open files)
 - added: Utils.isEqual(obj1, obj2, [properties])
 - added: ErrorBuilder.transform()
-- added: ErrorBuilder.addTransform() - add transform
+- added: ErrorBuilder.addTransform(name, fn, [isDefault]) - add transform
 - added: ErrorBuilder.setTransform() - set default transform
 - added: ErrorBuilder.setDefaultTransform() for all ErrorBuilders
 - added: Pagination.transform()
-- added: Pagination.addTransform() - add transform
+- added: Pagination.addTransform(name, fn, [isDefault]) - add transform
 - added: Pagination.setTransform() - set default transform
 - added: Pagination.setDefaultTransform() for all Paginations
 - added: Pagination.first()
@@ -48,6 +48,7 @@ Framework supports a backward compatibility.
 - updated: Array.wait(fnItem, fnCallback, removeItems) - default: function doesn't remove items
 - updated: Builders.UrlBuilder() -> toString([skipEmpty])
 - updated: Number.format([decimals], [separator], [decimalSeparator])
+- updated: Date.format([format]) - format is optional, function returns ISO format without "Z"
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
 

@@ -1656,6 +1656,9 @@ Date.prototype.format = function(format) {
     var dd = d.padLeft(2, '0');
     var yy = yyyy.substring(2);
 
+    if (format === undefined || format === null || format === '')
+        return yyyy + '-' + MM + '-' + dd + 'T' + hh + ':' + mm + ':' + ss + ':' + self.getMilliseconds().toString();
+
     return format.replace(/yyyy/g, yyyy).replace(/yy/g, yy).replace(/MM/g, MM).replace(/M/g, M).replace(/dd/g, dd).replace(/d/g, d).replace(/HH/g, HH).replace(/H/g, H).replace(/hh/g, hh).replace(/h/g, h).replace(/mm/g, mm).replace(/m/g, m).replace(/ss/g, ss).replace(/s/g, ss).replace(/a/g, a);
 };
 
