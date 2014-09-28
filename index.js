@@ -11097,7 +11097,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
             if (!contentType)
                 contentType = 'application/json';
 
-            if (obj instanceof builders.ErrorBuilder)
+            if (body instanceof builders.ErrorBuilder)
                 body = obj.output();
 
             body = JSON.stringify(body);
