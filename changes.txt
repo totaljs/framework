@@ -66,6 +66,7 @@ Framework supports a backward compatibility.
 - fixed: String.prototype.parseDate()
 - fixed: path in framework.resize()
 - fixed: framework.responseImageWithoutCache()
+- fixed: appending .js or .css through @{head()}
 
 ======= 1.6.1 (HOTFIX)
 

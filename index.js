@@ -8369,10 +8369,10 @@ Controller.prototype.head = function() {
         var tmp = val.substring(0, 7);
         var isRoute = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
 
-        if (val.lastIndexOf(EXTENSION_JS) !== -1)
-            output += '<script type="text/javascript" src="' + (isRoute ? self.routeJS(val) : val) + '"></script>';
-        else if (val.lastIndexOf('.css') !== -1)
+        if (val.endsWith('.css', true))
             output += '<link type="text/css" rel="stylesheet" href="' + (isRoute ? self.routeCSS(val) : val) + '" />';
+        else if (val.endsWith(EXTENSION_JS, true) !== -1)
+            output += '<script type="text/javascript" src="' + (isRoute ? self.routeJS(val) : val) + '"></script>';
     }
 
     header += output;
