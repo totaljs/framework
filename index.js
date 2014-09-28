@@ -11040,13 +11040,6 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
     return self;
 };
 
-http.ServerResponse.prototype.json = function() {
-    var self = this;
-    self.removeHeader('Etag');
-    self.removeHeader('Last-Modified');
-    return self;
-};
-
 /**
  * Disable HTTP cache for current response
  * @return {Response}
@@ -11086,6 +11079,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 
             if (!contentType)
                 contentType = 'text/html';
+
             break;
 
         case NUMBER:
@@ -11102,6 +11096,9 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 
             if (!contentType)
                 contentType = 'application/json';
+
+            if (obj instanceof builders.ErrorBuilder)
+                body = obj.output();
 
             body = JSON.stringify(body);
             break;
@@ -11215,7 +11212,10 @@ http.ServerResponse.prototype.image = function(filename, fnProcess, headers) {
  * @return {Response}
  */
 http.ServerResponse.prototype.json = function(obj) {
-    return this.send(200, obj, 'application/json');
+    var self = this;
+    // self.removeHeader('Etag');
+    // self.removeHeader('Last-Modified');
+    return self.send(200, obj, 'application/json');
 };
 
 var _tmp = http.IncomingMessage.prototype;

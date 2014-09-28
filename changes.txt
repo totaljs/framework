@@ -18,6 +18,7 @@ Framework supports a backward compatibility.
 - added: async queue - Utils.queue(name, maximumCalls, fn) (for e.g. EMFILE, too many open files)
 - added: Utils.isEqual(obj1, obj2, [properties])
 - added: ErrorBuilder.transform()
+- added: ErrorBuilder.output()
 - added: ErrorBuilder.addTransform(name, fn, [isDefault]) - add transform
 - added: ErrorBuilder.setTransform() - set default transform
 - added: ErrorBuilder.setDefaultTransform() for all ErrorBuilders
@@ -49,6 +50,7 @@ Framework supports a backward compatibility.
 - updated: Builders.UrlBuilder() -> toString([skipEmpty])
 - updated: Number.format([decimals], [separator], [decimalSeparator])
 - updated: Date.format([format]) - format is optional, function returns ISO format without "Z"
+- updated: response.send(), response.json() - supports ErrorBuilder
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
 
