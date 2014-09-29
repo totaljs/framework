@@ -362,6 +362,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('Authorize', function(complete) {
+		utils.request(url + 'a/b/c/d/authorize/', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'authorize', 'Authorize problem.');
+			complete();
+		});
+	});
+
 	async.complete(function() {
 		next && next();
 	});

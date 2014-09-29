@@ -17,7 +17,7 @@ var OBJECT = 'object';
 var REG_1 = /[\n\r\t]+/g;
 var REG_2 = /\s{3,}/g;
 
-var HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
+var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
 /*
     Internal function / Parse data from Request
@@ -448,13 +448,6 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
     return arr.indexOf(subdomain) > -1;
 };
 
-/*
-    Internal function / Compare flags
-    @arr1 {String array}
-    @arr2 {String array}
-    @noLoggedUnlogged {Boolean}
-    return {Number}
-*/
 exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
     var hasVerb = false;
@@ -474,9 +467,6 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
         var value = select[i];
         var c = value[0];
 
-        if (value === 'xss' || value === 'referer' || value === 'debug')
-            continue;
-
         if (c === '!' || c === '#' || c === '$' || c === '@' || c === '+') // ignore roles
             continue;
 
@@ -484,17 +474,21 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
             continue;
 
         var index = compare.indexOf(value);
+        var method = value.toUpperCase();
 
-        if (index === -1 && !HTTPVERBS[value])
+        if (index === -1 && !HTTPVERBS[method])
             return value === AUTHORIZE || value === UNAUTHORIZE ? -1 : 0;
 
-        hasVerb = hasVerb || (index !== -1 && HTTPVERBS[value]);
+        hasVerb = hasVerb || (index !== -1 && HTTPVERBS[method]);
     }
 
     return hasVerb ? 1 : 0;
 };
 
 exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
+
+    if (!HTTPVERBS[req.method])
+        return 0;
 
     for (var i = 0, length = req.flags.length; i < length; i++) {
 
@@ -507,13 +501,18 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
                     return 0;
                 continue;
 
-            case 'referer':
-                if (!route.isREFERER)
+            case 'debug':
+                if (!route.isDEBUG && route.isRELEASE)
                     return 0;
                 continue;
 
-            case '+xhr':
-                if (!route.isBOTH)
+            case 'release':
+                if (!route.isRELEASE && route.isDEBUG)
+                    return 0;
+                continue;
+
+            case 'referer':
+                if (!route.isREFERER)
                     return 0;
                 continue;
 
@@ -533,19 +532,22 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
                 continue;
 
             case 'xhr':
-                if (route.isBOTH)
+            case '+xhr':
+                if (!route.isBOTH && !route.isXHR)
                     return 0;
                 continue;
         }
 
-        if (noLoggedUnlogged)
+        if (noLoggedUnlogged && route.isMEMBER)
             continue;
 
-//        if (flag === 'authorize')
 
+        var index = route.flags.indexOf(flag);
+        if (index === -1)
+            return !route.isMEMBER ? -1 : 0;
     }
 
-    return HTTPVERBS[req.method] ? 1 : 0;
+    return 1;
 };
 
 /*

@@ -12,6 +12,18 @@ exports.install = function(framework) {
         flags: ['unauthorize']
     });
 
+    framework.route('/a/b/c/d/authorize/', function() {
+        this.plain('authorize');
+    }, {
+        flags: ['authorize']
+    });
+
+    framework.route('/', function() {
+        this.plain('OK');
+    }, {
+        flags: ['unauthorize']
+    });
+
     framework.route('/precompile/', view_precomile);
     framework.route('/homepage/', view_homepage);
     framework.route('/usage/', view_usage);
@@ -86,6 +98,10 @@ exports.install = function(framework) {
     framework.file('middleware.txt', file_plain_middleware, ['file']);
     framework.file('robots.txt', file_plain);
     framework.file('status.txt', file_plain_status);
+
+    framework.route('#401', function() {
+        this.plain('401');
+    });
 
     // url
     // function

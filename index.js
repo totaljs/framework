@@ -678,7 +678,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
 
     var isMember = false;
 
-    if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1)
+    if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1 && flags.indexOf('unlogged') === -1)
         isMember = true;
 
     var routeURL = internal.routeSplit(url.trim());
@@ -757,6 +757,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         isRELEASE: flags.indexOf('release') !== -1,
         isPROXY: flags.indexOf('proxy') !== -1,
         isBOTH: flags.indexOf('+xhr') !== -1,
+        isXHR: flags.indexOf('xhr') !== -1,
         isUPLOAD: flags.indexOf('upload') !== -1,
         options: options
     });
@@ -3975,8 +3976,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
     if (self.config.debug)
         flags.push('debug');
 
-    flags.push('+xhr');
-
     if (req.xhr) {
         self.stats.request.xhr++;
         flags.push('xhr');
@@ -5314,6 +5313,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
         if (route.flags !== null && route.flags.length > 0) {
 
             var result = internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
+
             if (result === -1)
                 req.isAuthorized = false;
 
