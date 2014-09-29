@@ -615,6 +615,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     }
 
     var isRaw = false;
+    var isNOXHR = false;
 
     if (flags) {
 
@@ -634,6 +635,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
             var flag = flags[i].toString().toLowerCase();
 
             switch (flag) {
+                case 'noxhr':
+                case '-xhr':
+                    isNOXHR = true;
+                    continue;
                 case 'raw':
                     isRaw = true;
                     break;
@@ -712,6 +717,11 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         }
     }
 
+    if (flags.indexOf('upload') !== -1) {
+        if (flags.indexOf('post') === -1 && flag.indexOf('put') === -1)
+            flags.push('post');
+    }
+
     if (flags.indexOf('get') === -1 &&
         flags.indexOf('options') === -1 &&
         flags.indexOf('post') === -1 &&
@@ -756,7 +766,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         isDEBUG: flags.indexOf('debug') !== -1,
         isRELEASE: flags.indexOf('release') !== -1,
         isPROXY: flags.indexOf('proxy') !== -1,
-        isBOTH: flags.indexOf('+xhr') !== -1,
+        isBOTH: isNOXHR ? false : true,
         isXHR: flags.indexOf('xhr') !== -1,
         isUPLOAD: flags.indexOf('upload') !== -1,
         options: options
@@ -3948,7 +3958,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
     var flags = [req.method.toLowerCase()];
     var multipart = req.headers['content-type'] || '';
 
-    //flags.push(protocol);
+    flags.push(protocol);
 
     if (multipart.indexOf('/form-data') === -1) {
 
@@ -4093,8 +4103,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
     req.uri = parser.parse((false ? 'wss' : 'ws') + '://' + req.headers.host + req.url);
     req.session = null;
     req.user = null;
-    //req.flags = [req.isSecure ? 'https' : 'http'];
-    req.flags = ['get'];
+    req.flags = [req.isSecure ? 'https' : 'http', 'get'];
 
     var path = utils.path(req.uri.pathname);
     var websocket = new WebSocketClient(req, socket, head);
@@ -5309,6 +5318,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 
         if (isSystem)
             return route;
+
 
         if (route.flags !== null && route.flags.length > 0) {
 

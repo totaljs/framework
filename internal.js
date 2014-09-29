@@ -487,9 +487,6 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
 exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 
-    if (!HTTPVERBS[req.method])
-        return 0;
-
     if (route.flags.indexOf(req.method.toLowerCase()) === -1)
         return 0;
 
@@ -543,7 +540,6 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 
         if (noLoggedUnlogged && route.isMEMBER)
             continue;
-
 
         var index = route.flags.indexOf(flag);
         if (index === -1)
