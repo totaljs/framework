@@ -67,6 +67,7 @@ Framework supports a backward compatibility.
 - fixed: path in framework.resize()
 - fixed: framework.responseImageWithoutCache()
 - fixed: appending .js or .css through @{head()}
+- fixed: WebSocket authorization
 
 ======= 1.6.1 (HOTFIX)
 

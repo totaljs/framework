@@ -955,6 +955,9 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
     flags = tmp;
 
+    if (flags.indexOf('get') === -1)
+        flags.unshift('get');
+
     priority += (count * 2);
 
     var isMember = false;
@@ -4079,7 +4082,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
     req.uri = parser.parse((false ? 'wss' : 'ws') + '://' + req.headers.host + req.url);
     req.session = null;
     req.user = null;
-    req.flags = [req.isSecure ? 'https' : 'http'];
+    //req.flags = [req.isSecure ? 'https' : 'http'];
+    req.flags = ['get'];
 
     var path = utils.path(req.uri.pathname);
     var websocket = new WebSocketClient(req, socket, head);
