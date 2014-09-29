@@ -712,6 +712,13 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         }
     }
 
+    if (flags.indexOf('release') === -1) {
+        if (framework.config.debug)
+            flags.push('debug');
+        else
+            flags.push('release');
+    }
+
     if (flags.indexOf('get') === -1 &&
         flags.indexOf('options') === -1 &&
         flags.indexOf('post') === -1 &&
@@ -3935,7 +3942,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
     var flags = [req.method.toLowerCase()];
     var multipart = req.headers['content-type'] || '';
 
-    flags.push(protocol);
+    //flags.push(protocol);
 
     if (multipart.indexOf('/form-data') === -1) {
 

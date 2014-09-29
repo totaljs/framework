@@ -457,31 +457,39 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
 */
 exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
-    var isXSS = false;
-    var length = arr2.length;
+    if (arr1.indexOf('xss') !== -1 && arr2.indexOf('xss') === -1)
+        return 0;
+
+    if (arr1.indexOf('referer') === -1 && arr2.indexOf('referer') !== -1)
+        return 0;
+
     var hasVerb = false;
+    var a1 = arr1;
+    var a2 = arr2;
+    var l1 = arr1.length;
+    var l2 = arr2.length;
+    var select = l1 > l2 ? a1 : a2;
+    var compare = l1 > l2 ? a2 : a1;
+    var length = Math.max(l1, l2);
 
     var AUTHORIZE = 'authorize';
     var UNAUTHORIZE = 'unauthorize';
 
     for (var i = 0; i < length; i++) {
 
-        var value = arr2[i];
+        var value = select[i];
         var c = value[0];
 
-        if (c === '!' || c === '#' || c === '$' || c === '@') // ignore roles
+        if (value === 'xss' || value === 'referer')
+            continue;
+
+        if (c === '!' || c === '#' || c === '$' || c === '@' || c === '+') // ignore roles
             continue;
 
         if (noLoggedUnlogged && (value === AUTHORIZE || value === UNAUTHORIZE))
             continue;
 
-        var index = arr1.indexOf(value);
-
-        if (value === 'xss')
-            isXSS = true;
-
-        if (index === -1 && value === 'xss')
-            continue;
+        var index = compare.indexOf(value);
 
         if (index === -1 && !HTTPVERBS[value])
             return value === AUTHORIZE || value === UNAUTHORIZE ? -1 : 0;
@@ -489,11 +497,9 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
         hasVerb = hasVerb || (index !== -1 && HTTPVERBS[value]);
     }
 
-    if (!isXSS && arr1.indexOf('xss') !== -1)
-        return 0;
-
     return hasVerb ? 1 : 0;
 };
+
 
 /*
     Internal function

@@ -69,6 +69,7 @@ Framework supports a backward compatibility.
 - fixed: appending .js or .css through @{head()}
 - fixed: WebSocket authorization
 - fixed: WebSocketClient.req
+- fixed: Routing
 
 ======= 1.6.1 (HOTFIX)
 
