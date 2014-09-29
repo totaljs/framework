@@ -10651,7 +10651,7 @@ function WebSocketClient(req, socket, head) {
 WebSocketClient.prototype = {
 
     get protocol() {
-        return (req.headers['sec-websocket-protocol'] || '').replace(/\s/g, '').split(',');
+        return (this.req.headers['sec-websocket-protocol'] || '').replace(/\s/g, '').split(',');
     },
 
     get ip() {
