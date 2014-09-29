@@ -457,12 +457,6 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
 */
 exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
-    if (arr1.indexOf('xss') !== -1 && arr2.indexOf('xss') === -1)
-        return 0;
-
-    if (arr1.indexOf('referer') === -1 && arr2.indexOf('referer') !== -1)
-        return 0;
-
     var hasVerb = false;
     var a1 = arr1;
     var a2 = arr2;
@@ -480,7 +474,7 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
         var value = select[i];
         var c = value[0];
 
-        if (value === 'xss' || value === 'referer')
+        if (value === 'xss' || value === 'referer' || value === 'debug')
             continue;
 
         if (c === '!' || c === '#' || c === '$' || c === '@' || c === '+') // ignore roles
@@ -500,6 +494,59 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
     return hasVerb ? 1 : 0;
 };
 
+exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
+
+    for (var i = 0, length = req.flags.length; i < length; i++) {
+
+        var flag = req.flags[i];
+
+        switch (flag) {
+
+            case 'proxy':
+                if (!route.isPROXY)
+                    return 0;
+                continue;
+
+            case 'referer':
+                if (!route.isREFERER)
+                    return 0;
+                continue;
+
+            case '+xhr':
+                if (!route.isBOTH)
+                    return 0;
+                continue;
+
+            case 'upload':
+                if (!route.isUPLOAD)
+                    return 0;
+                continue;
+
+            case 'https':
+                if (!route.isHTTPS && route.isHTTP)
+                    return 0;
+                continue;
+
+            case 'http':
+                if (!route.isHTTP && route.isHTTPS)
+                    return 0;
+                continue;
+
+            case 'xhr':
+                if (route.isBOTH)
+                    return 0;
+                continue;
+        }
+
+        if (noLoggedUnlogged)
+            continue;
+
+//        if (flag === 'authorize')
+
+    }
+
+    return HTTPVERBS[req.method] ? 1 : 0;
+};
 
 /*
     Internal function

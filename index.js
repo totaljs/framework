@@ -712,13 +712,6 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         }
     }
 
-    if (flags.indexOf('release') === -1) {
-        if (framework.config.debug)
-            flags.push('debug');
-        else
-            flags.push('release');
-    }
-
     if (flags.indexOf('get') === -1 &&
         flags.indexOf('options') === -1 &&
         flags.indexOf('post') === -1 &&
@@ -757,6 +750,14 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         isMEMBER: isMember,
         isXSS: flags.indexOf('xss') !== -1,
         isASTERIX: isASTERIX,
+        isREFERER: flags.indexOf('referer') !== -1,
+        isHTTPS: flags.indexOf('https') !== -1,
+        isHTTP: flags.indexOf('http') !== -1,
+        isDEBUG: flags.indexOf('debug') !== -1,
+        isRELEASE: flags.indexOf('release') !== -1,
+        isPROXY: flags.indexOf('proxy') !== -1,
+        isBOTH: flags.indexOf('+xhr') !== -1,
+        isUPLOAD: flags.indexOf('upload') !== -1,
         options: options
     });
 
@@ -987,6 +988,10 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         isJSON: isJSON,
         isBINARY: isBINARY,
         isASTERIX: isASTERIX,
+        isHTTPS: flags.indexOf('https'),
+        isHTTP: flags.indexOf('http'),
+        isDEBUG: flags.indexOf('debug'),
+        isRELEASE: flags.indexOf('release'),
         middleware: middleware,
         options: options
     });
@@ -5308,7 +5313,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 
         if (route.flags !== null && route.flags.length > 0) {
 
-            var result = internal.routeCompareFlags(flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
+            var result = internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
             if (result === -1)
                 req.isAuthorized = false;
 
