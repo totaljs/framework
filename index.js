@@ -7446,16 +7446,21 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
     return true;
 };
 
-/*
-    Error
-    @err {Error}
-    return {Framework}
-*/
+/**
+ * Error caller
+ * @param {Error/String} err
+ * @return {Controller/Function}
+ */
 Controller.prototype.error = function(err) {
     var self = this;
-    framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.uri);
+    var result = framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.uri);
+
+    if (err === undefined)
+        return result;
+
     self.subscribe.exception = err;
     self.exception = err;
+
     return self;
 };
 
@@ -10339,14 +10344,18 @@ WebSocket.prototype.close = function(id, message, code) {
     return self;
 };
 
-/*
-    Error
-    @err {Error}
-    return {Framework}
-*/
+/**
+ * Error caller
+ * @param {Error/String} err
+ * @return {WebSocket/Function}
+ */
 WebSocket.prototype.error = function(err) {
     var self = this;
-    framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.path);
+    var result = framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.path);
+
+    if (err === undefined)
+        return result;
+
     return self;
 };
 
