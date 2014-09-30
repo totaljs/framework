@@ -1056,14 +1056,22 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
     return self;
 };
 
-/*
-    Error caller
-    @err {Error}
-    @name {String} :: controller name
-    @uri {URI} :: optional
-    return {Framework}
-*/
+/**
+ * Error caller
+ * @param {Error} err
+ * @param {String} name Controller or Script name.
+ * @param {Object} uri
+ * @return {Framework}
+ */
 Framework.prototype.error = function(err, name, uri) {
+
+    if (err === undefined) {
+        return function(err) {
+            if (err)
+                framework.error(err, name, uri);
+        };
+    }
+
     var self = this;
 
     if (self.errors !== null) {

@@ -53,6 +53,7 @@ Framework supports a backward compatibility.
 - updated: Number.format([decimals], [separator], [decimalSeparator])
 - updated: Date.format([format]) - format is optional, function returns ISO format without "Z"
 - updated: response.send(), response.json() - supports ErrorBuilder
+- updated: framework.error() (returns a wrapped delegate if error is undefined)
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
 
