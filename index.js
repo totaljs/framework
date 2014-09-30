@@ -3888,6 +3888,7 @@ Framework.prototype._request = function(req, res) {
     req.session = null;
     req.user = null;
     req.isAuthorized = true;
+    req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 
     res.success = false;
     res.setHeader('X-Powered-By', 'total.js v' + self.version_header);
@@ -3945,7 +3946,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
         return self;
     }
 
-    req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
     req.isProxy = headers['x-proxy'] === 'total.js';
     req.flags = null;
 
