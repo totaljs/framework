@@ -493,6 +493,9 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
     if (route.isREFERER && route.flags.indexOf('referer') === -1)
         return 0;
 
+    if (route.isXHR && route.flags.indexOf('xhr') === -1)
+        return 0;
+
     for (var i = 0, length = req.flags.length; i < length; i++) {
 
         var flag = req.flags[i];
