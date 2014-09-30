@@ -490,6 +490,9 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
     if (route.flags.indexOf(req.method.toLowerCase()) === -1)
         return 0;
 
+    if (route.isREFERER && route.flags.indexOf('referer') === -1)
+        return 0;
+
     for (var i = 0, length = req.flags.length; i < length; i++) {
 
         var flag = req.flags[i];
@@ -512,8 +515,6 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
                 continue;
 
             case 'referer':
-                if (!route.isREFERER)
-                    return 0;
                 continue;
 
             case 'upload':
