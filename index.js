@@ -616,6 +616,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
 
     var isRaw = false;
     var isNOXHR = false;
+    var method = '';
 
     if (flags) {
 
@@ -663,6 +664,17 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
                 case 'referrer':
                     tmp.push('referer');
                     break;
+                case 'delete':
+                case 'get':
+                case 'head':
+                case 'options':
+                case 'patch':
+                case 'post':
+                case 'propfind':
+                case 'put':
+                case 'trace':
+                    tmp.push(flag);
+                    break;
                 default:
                     tmp.push(flag);
                     break;
@@ -670,8 +682,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         }
         flags = tmp;
         priority += (count * 2);
-    } else
+    } else {
         flags = ['get'];
+        method = 'get';
+    }
 
     var isMixed = flags.indexOf('mmr') !== -1;
 
@@ -707,6 +721,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
 
     if ((flags.indexOf('json') !== -1 || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
         flags.push('post');
+        method += (method.length > 0 ? ',' : '') + 'post';
         priority++;
     }
 
@@ -718,8 +733,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     }
 
     if (flags.indexOf('upload') !== -1) {
-        if (flags.indexOf('post') === -1 && flag.indexOf('put') === -1)
+        if (flags.indexOf('post') === -1 && flag.indexOf('put') === -1) {
             flags.push('post');
+            method += (method.length > 0 ? ',' : '') + 'post';
+        }
     }
 
     if (flags.indexOf('get') === -1 &&
@@ -731,8 +748,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         flags.indexOf('head') === -1 &&
         flags.indexOf('trace') === -1 &&
         flags.indexOf('patch') === -1 &&
-        flags.indexOf('propfind') === -1)
-        flags.push('get');
+        flags.indexOf('propfind') === -1) {
+            flags.push('get');
+            method += (method.length > 0 ? ',' : '') + 'get';
+        }
 
     if (flags.indexOf('referer') !== -1)
         self._request_check_referer = true;
@@ -743,6 +762,11 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     if (!(middleware instanceof Array))
         middleware = null;
 
+    if (method.indexOf(',') !== -1 || method === '')
+        method = undefined;
+    else
+        method = method.toUpperCase();
+
     self.routes.web.push({
         priority: priority,
         subdomain: subdomain,
@@ -750,6 +774,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         url: routeURL,
         param: arr,
         flags: flags || [],
+        method: method,
         onExecute: funcExecute,
         maximumSize: (maximumSize || self.config['default-request-length']) * 1024,
         middleware: middleware,
@@ -1024,6 +1049,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
  * @return {Framework}
  */
 Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, options) {
+
     var self = this;
 
     if (utils.isArray(fnValidation)) {

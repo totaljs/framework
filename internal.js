@@ -487,13 +487,17 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
 exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 
-    if (route.flags.indexOf(req.method.toLowerCase()) === -1)
+    if (route.isXHR && !req.xhr)
         return 0;
+
+    var method = req.method;
+    if (req.method) {
+        if (req.method !== method)
+            return 0;
+    } else if (route.flags.indexOf(method.toLowerCase()) === -1)
+            return 0;
 
     if (route.isREFERER && req.flags.indexOf('referer') === -1)
-        return 0;
-
-    if (route.isXHR && req.flags.indexOf('xhr') === -1)
         return 0;
 
     for (var i = 0, length = req.flags.length; i < length; i++) {
@@ -553,12 +557,12 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
     return 1;
 };
 
-/*
-    Internal function
-    @routeUrl {String array}
-    @route {Controller route}
-    return {String array}
-*/
+/**
+ * Create arguments for controller action
+ * @param {String Array} routeUrl
+ * @param {Object} route
+ * @return {String Array}
+ */
 exports.routeParam = function(routeUrl, route) {
     var arr = [];
 

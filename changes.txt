@@ -73,6 +73,8 @@ Framework supports a backward compatibility.
 - fixed: WebSocketClient.req
 - fixed: Routing
 
+- improvements: routing performance
+
 ======= 1.6.2 (HOTFIX)
 
 - updated: obtaining `req.xhr` before middleware
