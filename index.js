@@ -1799,8 +1799,7 @@ Framework.prototype.eval = function(script) {
  * @return {Framework}
  */
 Framework.prototype.onError = function(err, name, uri) {
-    console.log((name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + uri.toString() + ')' : ''), err.stack);
-    console.log('--------------------------------------------------------------------');
+    console.log('======= ' + (new Date().format('yyyy-MM-dd HH:mm:ss')) + ': ' + (name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + uri.toString() + ')' : ''), err.stack);
     return this;
 };
 
