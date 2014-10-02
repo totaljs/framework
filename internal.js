@@ -491,8 +491,8 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
         return 0;
 
     var method = req.method;
-    if (req.method) {
-        if (req.method !== method)
+    if (route.method) {
+        if (route.method !== method)
             return 0;
     } else if (route.flags.indexOf(method.toLowerCase()) === -1)
             return 0;

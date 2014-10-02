@@ -674,6 +674,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
                 case 'put':
                 case 'trace':
                     tmp.push(flag);
+                    method += (method.length > 0 ? ',' : '') + flag;
                     break;
                 default:
                     tmp.push(flag);
