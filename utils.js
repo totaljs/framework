@@ -377,6 +377,13 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
         res._buffer = '';
         res._bufferlength = 0;
 
+        // We have redirect
+        if (res.statusCode === 301) {
+            exports.request(res.headers['location'], flags, data, callback, cookies, headers, encoding, timeout);
+            res = null;
+            return;
+        }
+
         res.on('data', function(chunk) {
             var self = this;
             self._buffer += chunk.toString(encoding);
