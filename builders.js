@@ -1662,6 +1662,10 @@ ErrorBuilder.prototype.JSON = function(beautify, replacer) {
     return this.json(beautify, replacer);
 };
 
+ErrorBuilder.prototype.output = function() {
+    return this.prepare()._transform();
+};
+
 /**
  * Internal: Prepare error messages with onResource()
  * @private
@@ -1808,9 +1812,12 @@ ErrorBuilder.prototype.prepare = function() {
  * STATIC: Create transformation
  * @param {String} name
  * @param {Function(errorBuilder)} fn
+ * @param {Boolean} isDefault Default transformation for all error builders.
  */
-ErrorBuilder.addTransform = function(name, fn) {
+ErrorBuilder.addTransform = function(name, fn, isDefault) {
     transforms['error'][name] = fn;
+    if (isDefault)
+        ErrorBuilder.setDefaultTransform(name);
 };
 
 /**
@@ -1837,9 +1844,12 @@ ErrorBuilder.setDefaultTransform = function(name) {
  * STATIC: Create transformation
  * @param {String} name
  * @param {Function(pagination)} fn
+ * @param {Boolean} isDefault Default transformation for all paginations.
  */
-Pagination.addTransform = function(name, fn) {
+Pagination.addTransform = function(name, fn, isDefault) {
     transforms['pagination'][name] = fn;
+    if (isDefault)
+        Pagination.setDefaultTransform(name);
 };
 
 /**

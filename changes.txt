@@ -18,11 +18,12 @@ Framework supports a backward compatibility.
 - added: async queue - Utils.queue(name, maximumCalls, fn) (for e.g. EMFILE, too many open files)
 - added: Utils.isEqual(obj1, obj2, [properties])
 - added: ErrorBuilder.transform()
-- added: ErrorBuilder.addTransform() - add transform
+- added: ErrorBuilder.output()
+- added: ErrorBuilder.addTransform(name, fn, [isDefault]) - add transform
 - added: ErrorBuilder.setTransform() - set default transform
 - added: ErrorBuilder.setDefaultTransform() for all ErrorBuilders
 - added: Pagination.transform()
-- added: Pagination.addTransform() - add transform
+- added: Pagination.addTransform(name, fn, [isDefault]) - add transform
 - added: Pagination.setTransform() - set default transform
 - added: Pagination.setDefaultTransform() for all Paginations
 - added: Pagination.first()
@@ -37,8 +38,10 @@ Framework supports a backward compatibility.
 - added: framework.on('controller-render-meta', function(controller) {})
 - added: framework.on('init')
 - added: framework.merge('/merge.js', '/js/file1.js', '/js/file2.js')
-- added: framework supports X-Forwarded-Protocol header
+- added: framework supports X-Forwarded-Protocol header 
 - added: FrameworkImage supports buffer
+- added: auto-vendor-prefixes: box-sizing
+- added: new flag `noxhr` or `-xhr` because all route contains +xhr as default
 
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
 - updated: Utils.request(), timeout is possible to add as cookie, headers or encoding
@@ -48,6 +51,10 @@ Framework supports a backward compatibility.
 - updated: Array.wait(fnItem, fnCallback, removeItems) - default: function doesn't remove items
 - updated: Builders.UrlBuilder() -> toString([skipEmpty])
 - updated: Number.format([decimals], [separator], [decimalSeparator])
+- updated: Date.format([format]) - format is optional, function returns ISO format without "Z"
+- updated: response.send(), response.json() - supports ErrorBuilder
+- updated: framework.error() (returns a wrapped delegate if error is undefined)
+- updated: Utils.request() supports auto-redirect if response status code is 301
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
 
@@ -62,6 +69,16 @@ Framework supports a backward compatibility.
 - fixed: String.prototype.parseDate()
 - fixed: path in framework.resize()
 - fixed: framework.responseImageWithoutCache()
+- fixed: appending .js or .css through @{head()}
+- fixed: WebSocket authorization
+- fixed: WebSocketClient.req
+- fixed: Routing
+
+- improvements: routing performance
+
+======= 1.6.2 (HOTFIX)
+
+- updated: obtaining `req.xhr` before middleware
 
 ======= 1.6.1 (HOTFIX)
 

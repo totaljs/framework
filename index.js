@@ -146,8 +146,8 @@ function Framework() {
 
         // default maximum request size / length
         // default 5 kB
-        'default-request-length': 1024 * 5,
-        'default-websocket-request-length': 1024 * 5,
+        'default-request-length': 5,
+        'default-websocket-request-length': 5,
         'default-websocket-encodedecode': true,
 
         // in milliseconds
@@ -615,6 +615,8 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     }
 
     var isRaw = false;
+    var isNOXHR = false;
+    var method = '';
 
     if (flags) {
 
@@ -634,6 +636,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
             var flag = flags[i].toString().toLowerCase();
 
             switch (flag) {
+                case 'noxhr':
+                case '-xhr':
+                    isNOXHR = true;
+                    continue;
                 case 'raw':
                     isRaw = true;
                     break;
@@ -658,6 +664,18 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
                 case 'referrer':
                     tmp.push('referer');
                     break;
+                case 'delete':
+                case 'get':
+                case 'head':
+                case 'options':
+                case 'patch':
+                case 'post':
+                case 'propfind':
+                case 'put':
+                case 'trace':
+                    tmp.push(flag);
+                    method += (method.length > 0 ? ',' : '') + flag;
+                    break;
                 default:
                     tmp.push(flag);
                     break;
@@ -665,8 +683,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         }
         flags = tmp;
         priority += (count * 2);
-    } else
+    } else {
         flags = ['get'];
+        method = 'get';
+    }
 
     var isMixed = flags.indexOf('mmr') !== -1;
 
@@ -678,7 +698,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
 
     var isMember = false;
 
-    if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1)
+    if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1 && flags.indexOf('unlogged') === -1)
         isMember = true;
 
     var routeURL = internal.routeSplit(url.trim());
@@ -702,6 +722,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
 
     if ((flags.indexOf('json') !== -1 || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
         flags.push('post');
+        method += (method.length > 0 ? ',' : '') + 'post';
         priority++;
     }
 
@@ -709,6 +730,13 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         if (flags.indexOf('post') === -1 && flags.indexOf('put') === -1 && flags.indexOf('upload') === -1) {
             flags.push('upload');
             priority++
+        }
+    }
+
+    if (flags.indexOf('upload') !== -1) {
+        if (flags.indexOf('post') === -1 && flag.indexOf('put') === -1) {
+            flags.push('post');
+            method += (method.length > 0 ? ',' : '') + 'post';
         }
     }
 
@@ -721,8 +749,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         flags.indexOf('head') === -1 &&
         flags.indexOf('trace') === -1 &&
         flags.indexOf('patch') === -1 &&
-        flags.indexOf('propfind') === -1)
-        flags.push('get');
+        flags.indexOf('propfind') === -1) {
+            flags.push('get');
+            method += (method.length > 0 ? ',' : '') + 'get';
+        }
 
     if (flags.indexOf('referer') !== -1)
         self._request_check_referer = true;
@@ -733,6 +763,11 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     if (!(middleware instanceof Array))
         middleware = null;
 
+    if (method.indexOf(',') !== -1 || method === '')
+        method = undefined;
+    else
+        method = method.toUpperCase();
+
     self.routes.web.push({
         priority: priority,
         subdomain: subdomain,
@@ -740,6 +775,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         url: routeURL,
         param: arr,
         flags: flags || [],
+        method: method,
         onExecute: funcExecute,
         maximumSize: (maximumSize || self.config['default-request-length']) * 1024,
         middleware: middleware,
@@ -750,6 +786,15 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         isMEMBER: isMember,
         isXSS: flags.indexOf('xss') !== -1,
         isASTERIX: isASTERIX,
+        isREFERER: flags.indexOf('referer') !== -1,
+        isHTTPS: flags.indexOf('https') !== -1,
+        isHTTP: flags.indexOf('http') !== -1,
+        isDEBUG: flags.indexOf('debug') !== -1,
+        isRELEASE: flags.indexOf('release') !== -1,
+        isPROXY: flags.indexOf('proxy') !== -1,
+        isBOTH: isNOXHR ? false : true,
+        isXHR: flags.indexOf('xhr') !== -1,
+        isUPLOAD: flags.indexOf('upload') !== -1,
         options: options
     });
 
@@ -955,6 +1000,9 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
     flags = tmp;
 
+    if (flags.indexOf('get') === -1)
+        flags.unshift('get');
+
     priority += (count * 2);
 
     var isMember = false;
@@ -977,6 +1025,10 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         isJSON: isJSON,
         isBINARY: isBINARY,
         isASTERIX: isASTERIX,
+        isHTTPS: flags.indexOf('https'),
+        isHTTP: flags.indexOf('http'),
+        isDEBUG: flags.indexOf('debug'),
+        isRELEASE: flags.indexOf('release'),
         middleware: middleware,
         options: options
     });
@@ -998,6 +1050,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
  * @return {Framework}
  */
 Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, options) {
+
     var self = this;
 
     if (utils.isArray(fnValidation)) {
@@ -1030,14 +1083,22 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
     return self;
 };
 
-/*
-    Error caller
-    @err {Error}
-    @name {String} :: controller name
-    @uri {URI} :: optional
-    return {Framework}
-*/
+/**
+ * Error caller
+ * @param {Error} err
+ * @param {String} name Controller or Script name.
+ * @param {Object} uri
+ * @return {Framework}
+ */
 Framework.prototype.error = function(err, name, uri) {
+
+    if (err === undefined) {
+        return function(err) {
+            if (err)
+                framework.error(err, name, uri);
+        };
+    }
+
     var self = this;
 
     if (self.errors !== null) {
@@ -1738,8 +1799,7 @@ Framework.prototype.eval = function(script) {
  * @return {Framework}
  */
 Framework.prototype.onError = function(err, name, uri) {
-    console.log((name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + uri.toString() + ')' : ''), err.stack);
-    console.log('--------------------------------------------------------------------');
+    console.log('======= ' + (new Date().format('yyyy-MM-dd HH:mm:ss')) + ': ' + (name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + uri.toString() + ')' : ''), err.stack);
     return this;
 };
 
@@ -3854,6 +3914,7 @@ Framework.prototype._request = function(req, res) {
     req.session = null;
     req.user = null;
     req.isAuthorized = true;
+    req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 
     res.success = false;
     res.setHeader('X-Powered-By', 'total.js v' + self.version_header);
@@ -3911,7 +3972,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
         return self;
     }
 
-    req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
     req.isProxy = headers['x-proxy'] === 'total.js';
     req.flags = null;
 
@@ -3959,8 +4019,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
     if (self.config.debug)
         flags.push('debug');
-
-    flags.push('+xhr');
 
     if (req.xhr) {
         self.stats.request.xhr++;
@@ -4079,7 +4137,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
     req.uri = parser.parse((false ? 'wss' : 'ws') + '://' + req.headers.host + req.url);
     req.session = null;
     req.user = null;
-    req.flags = [req.isSecure ? 'https' : 'http'];
+    req.flags = [req.isSecure ? 'https' : 'http', 'get'];
 
     var path = utils.path(req.uri.pathname);
     var websocket = new WebSocketClient(req, socket, head);
@@ -5296,9 +5354,11 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
         if (isSystem)
             return route;
 
+
         if (route.flags !== null && route.flags.length > 0) {
 
-            var result = internal.routeCompareFlags(flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
+            var result = internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
+
             if (result === -1)
                 req.isAuthorized = false;
 
@@ -7413,16 +7473,21 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
     return true;
 };
 
-/*
-    Error
-    @err {Error}
-    return {Framework}
-*/
+/**
+ * Error caller
+ * @param {Error/String} err
+ * @return {Controller/Function}
+ */
 Controller.prototype.error = function(err) {
     var self = this;
-    framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.uri);
+    var result = framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.uri);
+
+    if (err === undefined)
+        return result;
+
     self.subscribe.exception = err;
     self.exception = err;
+
     return self;
 };
 
@@ -8370,10 +8435,10 @@ Controller.prototype.head = function() {
         var tmp = val.substring(0, 7);
         var isRoute = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
 
-        if (val.lastIndexOf(EXTENSION_JS) !== -1)
-            output += '<script type="text/javascript" src="' + (isRoute ? self.routeJS(val) : val) + '"></script>';
-        else if (val.lastIndexOf('.css') !== -1)
+        if (val.endsWith('.css', true))
             output += '<link type="text/css" rel="stylesheet" href="' + (isRoute ? self.routeCSS(val) : val) + '" />';
+        else if (val.endsWith(EXTENSION_JS, true) !== -1)
+            output += '<script type="text/javascript" src="' + (isRoute ? self.routeJS(val) : val) + '"></script>';
     }
 
     header += output;
@@ -10306,14 +10371,18 @@ WebSocket.prototype.close = function(id, message, code) {
     return self;
 };
 
-/*
-    Error
-    @err {Error}
-    return {Framework}
-*/
+/**
+ * Error caller
+ * @param {Error/String} err
+ * @return {WebSocket/Function}
+ */
 WebSocket.prototype.error = function(err) {
     var self = this;
-    framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.path);
+    var result = framework.error(typeof(err) === STRING ? new Error(err) : err, self.name, self.path);
+
+    if (err === undefined)
+        return result;
+
     return self;
 };
 
@@ -10648,7 +10717,7 @@ function WebSocketClient(req, socket, head) {
 WebSocketClient.prototype = {
 
     get protocol() {
-        return (req.headers['sec-websocket-protocol'] || '').replace(/\s/g, '').split(',');
+        return (this.req.headers['sec-websocket-protocol'] || '').replace(/\s/g, '').split(',');
     },
 
     get ip() {
@@ -11041,13 +11110,6 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
     return self;
 };
 
-http.ServerResponse.prototype.json = function() {
-    var self = this;
-    self.removeHeader('Etag');
-    self.removeHeader('Last-Modified');
-    return self;
-};
-
 /**
  * Disable HTTP cache for current response
  * @return {Response}
@@ -11087,6 +11149,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 
             if (!contentType)
                 contentType = 'text/html';
+
             break;
 
         case NUMBER:
@@ -11103,6 +11166,9 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 
             if (!contentType)
                 contentType = 'application/json';
+
+            if (body instanceof builders.ErrorBuilder)
+                body = obj.output();
 
             body = JSON.stringify(body);
             break;
@@ -11216,7 +11282,10 @@ http.ServerResponse.prototype.image = function(filename, fnProcess, headers) {
  * @return {Response}
  */
 http.ServerResponse.prototype.json = function(obj) {
-    return this.send(200, obj, 'application/json');
+    var self = this;
+    // self.removeHeader('Etag');
+    // self.removeHeader('Last-Modified');
+    return self.send(200, obj, 'application/json');
 };
 
 var _tmp = http.IncomingMessage.prototype;

@@ -17,7 +17,7 @@ var OBJECT = 'object';
 var REG_1 = /[\n\r\t]+/g;
 var REG_2 = /\s{3,}/g;
 
-var HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
+var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
 /*
     Internal function / Parse data from Request
@@ -448,59 +448,121 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
     return arr.indexOf(subdomain) > -1;
 };
 
-/*
-    Internal function / Compare flags
-    @arr1 {String array}
-    @arr2 {String array}
-    @noLoggedUnlogged {Boolean}
-    return {Number}
-*/
 exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
-    var isXSS = false;
-    var length = arr2.length;
     var hasVerb = false;
+    var a1 = arr1;
+    var a2 = arr2;
+    var l1 = arr1.length;
+    var l2 = arr2.length;
+    var select = l1 > l2 ? a1 : a2;
+    var compare = l1 > l2 ? a2 : a1;
+    var length = Math.max(l1, l2);
 
     var AUTHORIZE = 'authorize';
     var UNAUTHORIZE = 'unauthorize';
 
     for (var i = 0; i < length; i++) {
 
-        var value = arr2[i];
+        var value = select[i];
         var c = value[0];
 
-        if (c === '!' || c === '#' || c === '$' || c === '@') // ignore roles
+        if (c === '!' || c === '#' || c === '$' || c === '@' || c === '+') // ignore roles
             continue;
 
         if (noLoggedUnlogged && (value === AUTHORIZE || value === UNAUTHORIZE))
             continue;
 
-        var index = arr1.indexOf(value);
+        var index = compare.indexOf(value);
+        var method = value.toUpperCase();
 
-        if (value === 'xss')
-            isXSS = true;
-
-        if (index === -1 && value === 'xss')
-            continue;
-
-        if (index === -1 && !HTTPVERBS[value])
+        if (index === -1 && !HTTPVERBS[method])
             return value === AUTHORIZE || value === UNAUTHORIZE ? -1 : 0;
 
-        hasVerb = hasVerb || (index !== -1 && HTTPVERBS[value]);
+        hasVerb = hasVerb || (index !== -1 && HTTPVERBS[method]);
     }
-
-    if (!isXSS && arr1.indexOf('xss') !== -1)
-        return 0;
 
     return hasVerb ? 1 : 0;
 };
 
-/*
-    Internal function
-    @routeUrl {String array}
-    @route {Controller route}
-    return {String array}
-*/
+exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
+
+    if (route.isXHR && !req.xhr)
+        return 0;
+
+    var method = req.method;
+    if (route.method) {
+        if (route.method !== method)
+            return 0;
+    } else if (route.flags.indexOf(method.toLowerCase()) === -1)
+            return 0;
+
+    if (route.isREFERER && req.flags.indexOf('referer') === -1)
+        return 0;
+
+    for (var i = 0, length = req.flags.length; i < length; i++) {
+
+        var flag = req.flags[i];
+
+        switch (flag) {
+
+            case 'proxy':
+                if (!route.isPROXY)
+                    return 0;
+                continue;
+
+            case 'debug':
+                if (!route.isDEBUG && route.isRELEASE)
+                    return 0;
+                continue;
+
+            case 'release':
+                if (!route.isRELEASE && route.isDEBUG)
+                    return 0;
+                continue;
+
+            case 'referer':
+                continue;
+
+            case 'upload':
+                if (!route.isUPLOAD)
+                    return 0;
+                continue;
+
+            case 'https':
+                if (!route.isHTTPS && route.isHTTP)
+                    return 0;
+                continue;
+
+            case 'http':
+                if (!route.isHTTP && route.isHTTPS)
+                    return 0;
+                continue;
+
+            case 'xhr':
+            case '+xhr':
+                if (!route.isBOTH && !route.isXHR)
+                    return 0;
+                continue;
+        }
+
+        if (noLoggedUnlogged && route.isMEMBER)
+            continue;
+
+        var index = route.flags.indexOf(flag);
+        if (index === -1)
+            return !route.isMEMBER ? -1 : 0;
+    }
+
+    return 1;
+};
+
+/**
+ * Create arguments for controller action
+ * @param {String Array} routeUrl
+ * @param {Object} route
+ * @return {String Array}
+ */
 exports.routeParam = function(routeUrl, route) {
     var arr = [];
 
@@ -707,7 +769,7 @@ function compile_autovendor(css) {
 */
 function autoprefixer(value) {
 
-    var prefix = ['appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility'];
+    var prefix = ['appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing'];
 
     value = autoprefixer_keyframes(value);
 

@@ -6,7 +6,7 @@ var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
 
-INSTALL('module', 'http://www.totaljs.com/framework/include.js', { test: true });
+INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
@@ -358,6 +358,15 @@ function test_routing(next) {
 
 			var cookie = headers['set-cookie'].join('');
 			assert(cookie.indexOf('cookie1=1;') !== -1 && cookie.indexOf('cookie2=2;') !== -1 && cookie.indexOf('cookie3=3;') !== -1, 'Cookie problem.');
+			complete();
+		});
+	});
+
+	async.await('Authorize', function(complete) {
+		utils.request(url + 'a/b/c/d/authorize/', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'authorize', 'Authorize problem.');
 			complete();
 		});
 	});
