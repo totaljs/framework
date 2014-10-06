@@ -72,6 +72,7 @@ Framework supports a backward compatibility.
 - fixed: WebSocket authorization
 - fixed: WebSocketClient.req
 - fixed: Routing
+- fixed: controller.cancel() (after framework.emit('controller', ...))
 
 - improvements: routing performance
 

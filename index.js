@@ -6666,6 +6666,9 @@ Subscribe.prototype.doExecute = function() {
 
         framework.emit('controller', controller, name, self.route.options);
 
+        if (controller.isCanceled)
+            return self;
+
         if (!self.isMixed) {
             self.route.onExecute.apply(controller, internal.routeParam(self.route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
             return self;
