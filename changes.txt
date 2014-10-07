@@ -17,19 +17,19 @@ Framework supports a backward compatibility.
 - added: String.prototype.toSearch()
 - added: async queue - Utils.queue(name, maximumCalls, fn) (for e.g. EMFILE, too many open files)
 - added: Utils.isEqual(obj1, obj2, [properties])
-- added: ErrorBuilder.transform()
-- added: ErrorBuilder.output()
+- added: ErrorBuilder.prototype.transform()
+- added: ErrorBuilder.prototype.output()
+- added: ErrorBuilder.prototype.setTransform(name) - set default transform
 - added: ErrorBuilder.addTransform(name, fn, [isDefault]) - add transform
-- added: ErrorBuilder.setTransform() - set default transform
 - added: ErrorBuilder.setDefaultTransform() for all ErrorBuilders
-- added: Pagination.transform()
 - added: Pagination.addTransform(name, fn, [isDefault]) - add transform
-- added: Pagination.setTransform() - set default transform
-- added: Pagination.setDefaultTransform() for all Paginations
-- added: Pagination.first()
-- added: Pagination.last()
-- added: Pagination.isFirst
-- added: Pagination.isLast
+- added: Pagination.setDefaultTransform(name) for all Paginations
+- added: Pagination.prototype.transform()
+- added: Pagination.prototype.setTransform(name) - set default transform
+- added: Pagination.prototype.first()
+- added: Pagination.prototype.last()
+- added: Pagination.prototype.isFirst
+- added: Pagination.prototype.isLast
 - added: framework.config['allow-custom-titles'] - (default: false)
 - added: new option into Mail: rejectUnauthorized (for TLS)
 - added: @{log()} and @{LOG()} into views

@@ -83,6 +83,10 @@ SchemaBuilder.prototype.remove = function(name) {
     return self;
 };
 
+SchemaBuilder.prototype.destroy = function(name) {
+    return this.remove(name);
+};
+
 function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.parent = parent;
     this.name = name;
@@ -162,7 +166,7 @@ SchemaBuilderEntity.prototype.getDependencies = function() {
 /**
  * Set schema validation
  * @param {String Array} properties Properties to validate, optional.
- * @param {Function(propertyName, value, path, schemaName, model)} fn A validation function.
+ * @param {Function(propertyName, value, path, entityName, model)} fn A validation function.
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
@@ -184,7 +188,7 @@ SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
 
 /**
  * Set the default values for schema
- * @param {Function(propertyName, isntPreparing, schemaName)} fn
+ * @param {Function(propertyName, isntPreparing, entityName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setDefault = function(fn) {
@@ -249,7 +253,7 @@ SchemaBuilderEntity.prototype.setProperties = function(properties) {
 };
 
 /**
- * Add a new transformation for the schema
+ * Add a new rule for the schema
  * @param {String} name Rule name, optional.
  * @param {Object} value
  * @return {SchemaBuilderEntity}
@@ -270,9 +274,9 @@ SchemaBuilderEntity.prototype.addRule = function(name, value) {
 };
 
 /**
- * Add a new transformation for the schema
+ * Add a new transformation for the entity
  * @param {String} name Transform name, optional.
- * @param {Function(model, next([output]), errorBuilder, helper, schemaName)} fn
+ * @param {Function(model, next([output]), errorBuilder, helper, entityName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
@@ -291,8 +295,8 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
 };
 
 /**
- * Add a new workflow for the schema
- * @param {String} name Transform name, optional.
+ * Add a new workflow for the entity
+ * @param {String} name Workflow name, optional.
  * @param {Function(model, next([output]), errorBuilder, helper, schemaName)} fn
  * @return {SchemaBuilderEntity}
  */
@@ -312,9 +316,9 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
 };
 
 /**
- * Add a new composer for the schema
- * @param {String} name Transform name, optional.
- * @param {Function(output, model, next([output]), errorBuilder, helper, schemaName)} fn
+ * Add a new composer for the entity
+ * @param {String} name Composer name, optional.
+ * @param {Function(output, model, next([output]), errorBuilder, helper, entityName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
@@ -333,16 +337,16 @@ SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
 };
 
 /**
- * Add a new composer for the schema
+ * Add a new composer for the entity
  * @param {String} name Transform name, optional.
- * @param {Function(output, model, next([output]), errorBuilder, helper, schemaName)} fn
+ * @param {Function(output, model, next([output]), errorBuilder, helper, entityName)} fn
  */
 SchemaBuilderEntity.prototype.addComposer = function(name, fn) {
     return this.addCompose(name, fn);
 };
 
 /**
- * Find a schema in current group
+ * Find a entity in current group
  * @param {String} name
  * @return {SchemaBuilderEntity}
  */
@@ -368,7 +372,7 @@ SchemaBuilderEntity.prototype.rule = function(name) {
 };
 
 /**
- * Destroy current schema
+ * Destroy current entity
  */
 SchemaBuilderEntity.prototype.destroy = function() {
     var self = this;
