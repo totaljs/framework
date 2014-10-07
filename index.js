@@ -5405,7 +5405,8 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 
         if (route.flags !== null && route.flags.length > 0) {
 
-            var result = internal.routeCompareFlags(req.flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
+            // var result = internal.routeCompareFlags(req.flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
+            var result = internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
 
             if (result === -1)
                 req.isAuthorized = false;
