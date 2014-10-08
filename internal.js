@@ -7,7 +7,6 @@
 
 var crypto = require('crypto');
 var fs = require('fs');
-var utils = require('./utils');
 
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
@@ -98,7 +97,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
         tmp.fileName = tmp.fileName.substring(0, tmp.fileName.length - 1);
 
         tmp.isFile = true;
-        tmp.fileNameTmp = utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + utils.random(100000) + '.upload');
+        tmp.fileNameTmp = framework_utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + framework_utils.random(100000) + '.upload');
 
         stream = fs.createWriteStream(tmp.fileNameTmp, {
             flags: 'w'
@@ -148,13 +147,13 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
             var wh = null;
             switch (tmp.contentType) {
                 case 'image/jpeg':
-                    wh = require('./image').measureJPG(data);
+                    wh = framework_image.measureJPG(data);
                     break;
                 case 'image/gif':
-                    wh = require('./image').measureGIF(data);
+                    wh = framework_image.measureGIF(data);
                     break;
                 case 'image/png':
-                    wh = require('./image').measurePNG(data);
+                    wh = framework_image.measurePNG(data);
                     break;
             }
 
@@ -193,7 +192,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
             return;
         }
 
-        if (utils.isArray(temporary)) {
+        if (framework_utils.isArray(temporary)) {
             req.body[tmp.name].push(tmp.value);
             return;
         }
@@ -295,7 +294,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
             tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
             tmp.fileName = tmp.fileName.substring(0, tmp.fileName.length - 1);
             tmp.isFile = true;
-            tmp.fileNameTmp = utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + utils.random(100000) + '.upload');
+            tmp.fileNameTmp = framework_utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + framework_utils.random(100000) + '.upload');
             stream = fs.createWriteStream(tmp.fileNameTmp, {
                 flags: 'w'
             });
@@ -325,13 +324,13 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
             var wh = null;
             switch (tmp.contentType) {
                 case 'image/jpeg':
-                    wh = require('./image').measureJPG(data);
+                    wh = framework_image.measureJPG(data);
                     break;
                 case 'image/gif':
-                    wh = require('./image').measureGIF(data);
+                    wh = framework_image.measureGIF(data);
                     break;
                 case 'image/png':
-                    wh = require('./image').measurePNG(data);
+                    wh = framework_image.measurePNG(data);
                     break;
             }
 
@@ -726,7 +725,7 @@ HttpFile.prototype.image = function(imageMagick) {
     if (im === undefined)
         im = framework.config['default-image-converter'] === 'im';
 
-    return require('./image').init(this.path, im);
+    return framework_image.init(this.path, im);
 };
 
 // *********************************************************************************
@@ -2315,7 +2314,7 @@ View.prototype.read = function(path) {
     var config = framework.config;
     var isOut = path[0] === '.';
 
-    var filename = isOut ? path.substring(1) : utils.combine(config['directory-views'], path);
+    var filename = isOut ? path.substring(1) : framework_utils.combine(config['directory-views'], path);
 
     if (fs.existsSync(filename))
         return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compile-html']);
@@ -2327,7 +2326,7 @@ View.prototype.read = function(path) {
     if (index === -1)
         return null;
 
-    filename = utils.combine(config['directory-views'], path.substring(index + 1));
+    filename = framework_utils.combine(config['directory-views'], path.substring(index + 1));
 
     if (fs.existsSync(filename))
         return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compile-html']);

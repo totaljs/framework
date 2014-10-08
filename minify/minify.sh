@@ -29,3 +29,4 @@ cp license.txt minify/total.js/license.txt
 
 cd minify
 node minify.js
+node merge.js

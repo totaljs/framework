@@ -5,8 +5,6 @@
 
 'use strict';
 
-var utils = require('./utils');
-
 var UNDEFINED = 'undefined';
 var FUNCTION = 'function';
 var OBJECT = 'object';
@@ -421,7 +419,7 @@ SchemaBuilderEntity.prototype.saveMultiple = function(model, helper, callback) {
         var noPrepare = self._getStateOfModel(item, 0) === '1';
         var noValidate = self._getStateOfModel(item, 1) === '1';
 
-        var prepared = noPrepare === true ? utils.copy(item) : self.prepare(item);
+        var prepared = noPrepare === true ? framework_utils.copy(item) : self.prepare(item);
 
         if (noValidate === true || self.onValidation === undefined) {
 
@@ -474,7 +472,7 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
     var noPrepare = self._getStateOfModel(model, 0) === '1';
     var noValidate = self._getStateOfModel(model, 1) === '1';
 
-    var output = noPrepare === true ? utils.copy(model) : self.prepare(model);
+    var output = noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
     var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
 
     if (builder.hasError()) {
@@ -593,7 +591,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 
     self._setStateToModel(model, 1, 1);
 
-    return utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
+    return framework_utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
 }
 
 SchemaBuilderEntity.prototype._getStateOfModel = function(model, index) {
@@ -637,7 +635,7 @@ SchemaBuilderEntity.prototype.default = function() {
         return null;
 
     var defaults = self.onDefault;
-    var item = utils.extend({}, obj, true);
+    var item = framework_utils.extend({}, obj, true);
     var properties = Object.keys(item);
 
     for (var i = 0, length = properties.length; i < length; i++) {
@@ -782,7 +780,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         return self.default();
 
     var tmp;
-    var item = utils.extend({}, obj, true);
+    var item = framework_utils.extend({}, obj, true);
     var properties = Object.keys(item);
     var defaults = self.onDefault;
 
@@ -808,7 +806,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         if (type === FUNCTION) {
 
             if (value === Number) {
-                item[property] = utils.parseFloat(val);
+                item[property] = framework_utils.parseFloat(val);
                 continue;
             }
 
@@ -829,7 +827,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
                 switch (typeval) {
                     case OBJECT:
-                        if (utils.isDate(val))
+                        if (framework_utils.isDate(val))
                             tmp = val;
                         else
                             tmp = null;
@@ -869,7 +867,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         }
 
         if (type === NUMBER) {
-            item[property] = utils.parseFloat(val);
+            item[property] = framework_utils.parseFloat(val);
             continue;
         }
 
@@ -925,10 +923,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                         break;
                     case 'int':
                     case 'integer':
-                        item[property].push(utils.parseInt(tmp));
+                        item[property].push(framework_utils.parseInt(tmp));
                         break;
                     case 'number':
-                        item[property].push(utils.parseFloat(tmp));
+                        item[property].push(framework_utils.parseFloat(tmp));
                         break;
                     default:
 
@@ -965,12 +963,12 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         }
 
         if (lower.contains(['int', 'byte'])) {
-            item[property] = utils.parseInt(val);
+            item[property] = framework_utils.parseInt(val);
             continue;
         }
 
         if (lower.contains(['decimal', NUMBER, 'float', 'double'])) {
-            item[property] = utils.parseFloat(val);
+            item[property] = framework_utils.parseFloat(val);
             continue;
         }
 
@@ -1049,7 +1047,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
     var noPrepare = self._getStateOfModel(model, 0) === '1';
     var noValidate = self._getStateOfModel(model, 1) === '1';
 
-    var output =  noPrepare === true ? utils.copy(model) : self.prepare(model);
+    var output =  noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
     var builder = self.onValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
 
     if (builder.hasError()) {
@@ -1141,7 +1139,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
     var noPrepare = self._getStateOfModel(model, 0) === '1';
     var noValidate = self._getStateOfModel(model, 1) === '1';
 
-    var output = noPrepare === true ? utils.copy(model) : self.prepare(model);
+    var output = noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
     var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
 
     if (builder.hasError()) {
@@ -1169,7 +1167,7 @@ SchemaBuilderEntity.prototype.clean = function(model, isCopied) {
         return model;
 
     if (isCopied)
-        model = utils.copy(model);
+        model = framework_utils.copy(model);
 
     delete model[DEFAULT_SCHEMA_PROPERTY];
 

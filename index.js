@@ -15,7 +15,6 @@ var crypto = require('crypto');
 var parser = require('url');
 var events = require('events');
 var sys = require('sys');
-var internal = require('./internal');
 var http = require('http');
 var directory = process.cwd();
 var child = require('child_process');
@@ -41,9 +40,28 @@ var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 't
 var _controller = '';
 var _test = '';
 
-global.Builders = global.builders = require('./builders');
-var utils = global.Utils = global.utils = require('./utils');
-global.Mail = global.MAIL = require('./mail');
+// GO ONLINE MODE
+if (!global.framework_internal)
+    global.framework_internal = require('./internal');
+
+if (!global.framework_builders)
+    global.framework_builders = require('./builders');
+
+if (!global.framework_utils)
+    global.framework_utils = require('./utils');
+
+if (!global.framework_mail)
+    global.framework_mail = require('./mail');
+
+if (!global.framework_image)
+    global.framework_image = require('./image');
+
+if (!global.framework_nosql)
+    global.framework_nosql = require('./nosql');
+
+global.Builders = global.builders = framework_builders;
+var utils = global.Utils = global.utils = framework_utils;
+global.Mail = global.MAIL = framework_mail;
 
 global.include = global.INCLUDE = global.source = global.SOURCE = function(name, options) {
     return framework.source(name, options);
@@ -453,7 +471,7 @@ Framework.prototype.database = function(name) {
 
     self._verify_directory('databases');
 
-    db = require('./nosql').load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), true);
+    db = framework_nosql.load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), true);
     self.databases[name] = db;
 
     return db;
@@ -701,7 +719,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1 && flags.indexOf('unlogged') === -1)
         isMember = true;
 
-    var routeURL = internal.routeSplit(url.trim());
+    var routeURL = framework_internal.routeSplit(url.trim());
     var arr = [];
 
     if (url.indexOf('{') !== -1) {
@@ -944,7 +962,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
     }
 
     var arr = [];
-    var routeURL = internal.routeSplit(url.trim());
+    var routeURL = framework_internal.routeSplit(url.trim());
 
     if (url.indexOf('{') !== -1) {
         routeURL.forEach(function(o, i) {
@@ -2097,12 +2115,12 @@ Framework.prototype.compileContent = function(extension, content, filename) {
 
     switch (extension) {
         case 'js':
-            return self.config['allow-compile-js'] ? internal.compile_javascript(content) : content;
+            return self.config['allow-compile-js'] ? framework_internal.compile_javascript(content) : content;
         case 'html':
-            return self.config['allow-compile-html'] ? internal.compile_html(content) : content;
+            return self.config['allow-compile-html'] ? framework_internal.compile_html(content) : content;
         case 'css':
 
-            content = self.config['allow-compile-css'] ? internal.compile_css(content) : content;
+            content = self.config['allow-compile-css'] ? framework_internal.compile_css(content) : content;
 
             var matches = content.match(/url\(.*?\)/g);
             if (matches === null)
@@ -2445,7 +2463,7 @@ Framework.prototype.noCache = function(req, res) {
  * @param {String} filename
  * @param {String} downloadName Optional
  * @param {Object} headers Optional
- * @param {String} key Path to file, internal.
+ * @param {String} key Path to file, INTERNAL.
  * @return {Framework}
  */
 Framework.prototype.responseFile = function(req, res, filename, downloadName, headers, key) {
@@ -2778,7 +2796,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
         return;
     }
 
-    var Image = require('./image');
+    var Image = framework_image;
     var plus = self.id === null ? '' : 'instance-' + self.id + '-';
 
     name = self.path.temp(plus + key.replace(/\//g, '-'));
@@ -2907,7 +2925,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
         if (im === undefined)
             im = self.config['default-image-converter'] === 'im';
 
-        var Image = require('./image');
+        var Image = framework_image;
 
         // STREAM
         if (stream !== null) {
@@ -3907,7 +3925,7 @@ Framework.prototype._request = function(req, res) {
     }
 
     req.uri = parser.parse(protocol + '://' + req.host + req.url);
-    req.path = internal.routeSplit(req.uri.pathname);
+    req.path = framework_internal.routeSplit(req.uri.pathname);
     req.body = {};
     req.files = [];
     req.processing = 0;
@@ -4142,7 +4160,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
     var path = utils.path(req.uri.pathname);
     var websocket = new WebSocketClient(req, socket, head);
 
-    req.path = internal.routeSplit(req.uri.pathname);
+    req.path = framework_internal.routeSplit(req.uri.pathname);
 
     if (self._length_request_middleware === 0)
         return self._upgrade_prepare(req, websocket, path, headers);
@@ -4245,7 +4263,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
         if (self.connections[id] === undefined) {
             var connection = new WebSocket(self, path, route.name, id);
             self.connections[id] = connection;
-            route.onInitialize.apply(connection, internal.routeParam(route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, route));
+            route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
         }
 
         socket.upgrade(self.connections[id]);
@@ -5339,14 +5357,14 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 
         var route = self.routes.web[i];
 
-        if (!internal.routeCompareSubdomain(subdomain, route.subdomain))
+        if (!framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
             continue;
 
         if (route.isASTERIX) {
-            if (!internal.routeCompare(req.path, route.url, isSystem, true))
+            if (!framework_internal.routeCompare(req.path, route.url, isSystem, true))
                 continue;
         } else {
-            if (!internal.routeCompare(req.path, route.url, isSystem))
+            if (!framework_internal.routeCompare(req.path, route.url, isSystem))
                 continue;
         }
 
@@ -5356,7 +5374,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 
         if (route.flags !== null && route.flags.length > 0) {
 
-            var result = internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
+            var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
 
             if (result === -1)
                 req.isAuthorized = false;
@@ -5392,21 +5410,21 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 
         var route = self.routes.websockets[i];
 
-        if (!internal.routeCompareSubdomain(subdomain, route.subdomain))
+        if (!framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
             continue;
 
         if (route.isASTERIX) {
-            if (!internal.routeCompare(req.path, route.url, false, true))
+            if (!framework_internal.routeCompare(req.path, route.url, false, true))
                 continue;
         } else {
-            if (!internal.routeCompare(req.path, route.url, false))
+            if (!framework_internal.routeCompare(req.path, route.url, false))
                 continue;
         }
 
         if (route.flags !== null && route.flags.length > 0) {
 
-            // var result = internal.routeCompareFlags(req.flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
-            var result = internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
+            // var result = framework_internal.routeCompareFlags(req.flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
+            var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
 
             if (result === -1)
                 req.isAuthorized = false;
@@ -6489,7 +6507,7 @@ Subscribe.prototype.multipart = function(header) {
 
     if (header.indexOf('mixed') === -1) {
         framework._verify_directory('temp');
-        internal.parseMULTIPART(req, header, self.route.maximumSize, framework.config['directory-temp'], function(data) {
+        framework_internal.parseMULTIPART(req, header, self.route.maximumSize, framework.config['directory-temp'], function(data) {
             if (framework.onXSS)
                 return framework.onXSS(data);
             return true;
@@ -6671,13 +6689,13 @@ Subscribe.prototype.doExecute = function() {
             return self;
 
         if (!self.isMixed) {
-            self.route.onExecute.apply(controller, internal.routeParam(self.route.param.length > 0 ? internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
+            self.route.onExecute.apply(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
             return self;
         }
 
         framework._verify_directory('temp');
 
-        internal.parseMULTIPART_MIXED(req, self.header, framework.config['directory-temp'], function(file) {
+        framework_internal.parseMULTIPART_MIXED(req, self.header, framework.config['directory-temp'], function(file) {
             self.route.onExecute.call(controller, file);
         }, function() {
             self.doEnd();
@@ -7566,7 +7584,7 @@ Controller.prototype.transfer = function(url, flags) {
 
     var self = this;
     var length = framework.routes.web.length;
-    var path = internal.routeSplit(url.trim());
+    var path = framework_internal.routeSplit(url.trim());
 
     var isSystem = url[0] === '#';
     var noFlag = flags === null || flags === undefined || flags.length === 0;
@@ -7577,10 +7595,10 @@ Controller.prototype.transfer = function(url, flags) {
         var route = framework.routes.web[i];
 
         if (route.isASTERIX) {
-            if (!internal.routeCompare(path, route.url, isSystem, true))
+            if (!framework_internal.routeCompare(path, route.url, isSystem, true))
                 continue;
         } else {
-            if (!internal.routeCompare(path, route.url, isSystem))
+            if (!framework_internal.routeCompare(path, route.url, isSystem))
                 continue;
         }
 
@@ -7591,7 +7609,7 @@ Controller.prototype.transfer = function(url, flags) {
 
         if (route.flags !== null && route.flags.length > 0) {
 
-            var result = internal.routeCompareFlags(route.flags, flags, true);
+            var result = framework_internal.routeCompareFlags(route.flags, flags, true);
             if (result === -1)
                 req.isAuthorized = false;
 
@@ -9886,7 +9904,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     if (skip === 2)
         filename = name.substring(1);
 
-    var generator = internal.generateView(name, filename);
+    var generator = framework_internal.generateView(name, filename);
     if (generator === null) {
 
         var err = new Error('View "' + filename + '" not found.');

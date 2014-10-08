@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.7.0
 
 Framework supports a backward compatibility.
+Framework supports: one file only (all libraries in one JS file)
 
 - added: SCHEMA(name), returns group of schemas
 - added: Builders.Schema() - schema supports onGet, onSave, onRemove, onQuery

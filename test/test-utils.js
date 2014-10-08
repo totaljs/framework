@@ -1,5 +1,5 @@
+require('../index');
 global.builders = require('../builders');
-global.framework = { version: '' };
 
 var assert = require('assert');
 var utils = require('../utils');
@@ -36,21 +36,10 @@ function prototypeDate() {
 // test: number prototype
 function prototypeNumber() {
 	var format = '';
-
 	assert.ok((10000).format(2) === '10 000.00', 'format number with decimal parameter');
-
-	format = '### ### ###.###';
-	assert.ok((10000).format(format) === '10 000.000', 'format number: ' + format);
-
-	format = '###,###,###.###';
-	assert.ok((10000).format(format) === '10,000.000', 'format number: ' + format);
-
-	format = '#########.###';
-	assert.ok((10000).format(format) === '10000.000', 'format number: ' + format);
-
-	format = '###';
-	assert.ok((10000).format(format) === '10000', 'format number: ' + format);
-
+	assert.ok((10000).format(3) === '10 000.000', 'format/decimal: A');
+	assert.ok((10000).format(3, ',', '.') === '10,000.000', 'format/decimal: B');
+	assert.ok((10000).format() === '10 000', 'format/decimal: C');
 	var number = 10.103435;
 	assert.ok(number.floor(2) === 10.10, 'floor number: 2 decimals');
 	assert.ok(number.floor(4) === 10.1034, 'floor number: 4 decimals');
@@ -194,7 +183,7 @@ function prototypeString() {
 	assert.ok(num.padLeft(10) === '0000012345', 'number.padLeft(10): ' + num);
 	assert.ok(num.padRight(10) === '1234500000', 'number.padRight(10): ' + num);
 
-	str = 'Date: {now | dd.MM.yyyy HH:mm:ss}. Currency: {number | ###,###,###.##} and encoded: {name} and raw: {!name}';
+	str = 'Date: {now | dd.MM.yyyy HH:mm:ss}. Currency: {number | 2} and encoded: {name} and raw: {!name}';
 	assert.ok(str.params({now: new Date(), number: 23034.34, name: '<b>Peter</b>'}).length === 106, 'string.params(): ' + str);
 
 	str = 'Peter Širka Linker & - you known';
@@ -439,7 +428,7 @@ function others() {
 	});
 
 	utils.request('http://www.yahoo.com', ['get'], function(err, data, code) {
-		assert.ok(code === 301, 'utils.request (success)');
+		assert.ok(code === 200, 'utils.request (success)');
 	}).on('data', function(chunk, p) {
 		assert.ok(p === 100, 'utils.request (events)');
 	});

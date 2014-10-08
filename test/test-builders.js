@@ -1,3 +1,4 @@
+require('../index');
 global.utils = require('../utils');
 
 var assert = require('assert');
@@ -243,7 +244,7 @@ function test_ErrorBuilder() {
     var builder = new builders.ErrorBuilder();
 
     builder.add('name');
-    assert.ok(builder.errors[0].name === 'name' && builder.errors[0].error === 'name', name + 'add');
+    assert.ok(builder.errors[0].name === 'name' && builder.errors[0].error === 'default', name + 'add');
     builder.add('age', 'only number');
     assert.ok(builder.errors[1].name === 'age' && builder.errors[1].error === 'only number', name + 'add (custom message)');
 
@@ -264,7 +265,7 @@ function test_ErrorBuilder() {
     assert.ok(builder.json() === '[{"name":"name","error":"name"}]', name + 'json');
 
     builder.add(new builders.ErrorBuilder().add('age'));
-    assert.ok(builder.json() === '[{"name":"name","error":"name"},{"name":"age","error":"age"}]', name + 'add(ErrorBuilder)');
+    assert.ok(builder.json() === '[{"name":"name","error":"name"},{"name":"age","error":"The field \\\"age\\\" is required."}]', name + 'add(ErrorBuilder)');
     assert.ok(builder.read('name') === 'name', name + 'read()');
     assert.ok(builder.hasError('name'), name + 'hasError(name)');
 

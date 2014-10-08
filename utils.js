@@ -2057,8 +2057,11 @@ String.prototype.params = function(obj) {
                 if (!isNaN(max))
                     val = val.max(max + 3, '...');
 
-            } else if (type === NUMBER || util.isDate(val))
+            } else if (type === NUMBER || util.isDate(val)) {
+                if (format.isNumber())
+                    format = parseInt(format);
                 val = val.format(format);
+            }
         }
 
         val = val.toString().dollar();
@@ -2502,7 +2505,7 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 
     var self = this;
 
-    if (decimals[0] === '#')
+    if (typeof(decimals) === STRING)
         return self.format2(decimals);
 
     var num = self.toString();
