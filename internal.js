@@ -2038,7 +2038,8 @@ function view_insert_call(command) {
             continue;
         }
 
-        return command.substring(0, beg) + '.call(self, ' + command.substring(beg + 1);
+        var arg = command.substring(beg + 1);
+        return command.substring(0, beg) + '.call(self' + (arg.length > 1 ? ',' + arg : ')');
     }
 
     return command;

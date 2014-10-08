@@ -73,6 +73,7 @@ Framework supports a backward compatibility.
 - fixed: WebSocketClient.req
 - fixed: Routing
 - fixed: controller.cancel() (after framework.emit('controller', ...))
+- fixed: view helpers (calling without arguments)
 
 - improvements: routing performance
 
