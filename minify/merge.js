@@ -1,3 +1,4 @@
+var UglifyJS = require('uglify-js');
 var fs = require('fs');
 var path = require('path');
 var dir = './total.js/';
@@ -10,7 +11,7 @@ var buffer = [];
 for (var i = 0, length = merge.length; i < length; i++) {
 
     var file = merge[i];
-    var content = fs.readFileSync('total.js/' + file).toString('utf8');
+    var content = fs.readFileSync('../' + file).toString('utf8');
 
     switch (file) {
         case 'index.js':
@@ -22,4 +23,12 @@ for (var i = 0, length = merge.length; i < length; i++) {
     }
 }
 
-fs.writeFileSync(path.join(process.cwd(), 'framework.js'), license + buffer.join(''));
+var output = buffer.join('');
+var options = {};
+
+options.fromString = true;
+options.mangle = true;
+
+output = UglifyJS.minify(output, options).code;
+
+fs.writeFileSync(path.join(process.cwd(), 'merged/total.js'), license + output);
