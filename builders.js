@@ -1919,11 +1919,11 @@ Pagination.prototype.setTransform = function(name) {
  * Execute a transform
  * @private
  * @param {String} name A transformation name.
- * @param {Object} argument1 Optinonal.
- * @param {Object} argument2 Optinonal.
- * @param {Object} argument3 Optinonal.
- * @param {Object} argument4 Optinonal.
- * @param {Object} argument..n Optinonal.
+ * @param {Object} argument1 Optional.
+ * @param {Object} argument2 Optional.
+ * @param {Object} argument3 Optional.
+ * @param {Object} argument4 Optional.
+ * @param {Object} argument..n Optional.
  * @return {Object}
  */
 Pagination.prototype.transform = function(name) {
@@ -2040,7 +2040,7 @@ Pagination.prototype.first = function(format) {
  * @param {String} format Custom format (optional).
  * @return {Object Array} Example: [{ url: String, page: Number, selected: Boolean }]
  */
-Pagination.prototype.render = function(max, format) {
+Pagination.prototype.prepare = function(max, format) {
 
     var self = this;
 
@@ -2097,6 +2097,10 @@ Pagination.prototype.render = function(max, format) {
         });
 
     return builder;
+};
+
+Pagination.prototype.render = function(max, format) {
+    return this.prepare(max, format);
 };
 
 /**
