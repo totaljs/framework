@@ -9125,8 +9125,11 @@ Controller.prototype.callback = function(viewName) {
             err = null;
         }
 
-        if (err)
+        if (err) {
+            if (err instanceof Builders.ErrorBuilder && !viewName)
+                return self.json(err);
             return self.throw500(err);
+        }
 
         if (typeof(viewName) === STRING)
             return self.view(viewName, data);

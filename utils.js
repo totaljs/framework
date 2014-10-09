@@ -1818,7 +1818,7 @@ String.prototype.parseDate = function() {
     if (date.length < 4 && time.length < 2)
         return null;
 
-    index = time[2].indexOf('.');
+    index = (time[2] || '').indexOf('.');
 
     // milliseconds
     if (index !== -1) {
