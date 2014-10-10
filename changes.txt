@@ -43,8 +43,8 @@ Framework supports: one file only (all libraries in one JS file)
 - added: FrameworkImage supports buffer
 - added: auto-vendor-prefixes: box-sizing
 - added: new flag `noxhr` or `-xhr` because all route contains +xhr as default
-- added: config['errorbuilder-default-resource-name']
-- added: config['errorbuilder-default-resource-prefix']
+- added: config['default-errorbuilder-resource-name']
+- added: config['default-errorbuilder-resource-prefix']
 
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
 - updated: Utils.request(), timeout is possible to add as cookie, headers or encoding

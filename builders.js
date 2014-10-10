@@ -1220,8 +1220,8 @@ function ErrorBuilder(onResource) {
     this.items = [];
     this.transformName = transforms['error_default'];
     this.onResource = onResource;
-    this.resourceName = framework.config['errorbuilder-default-resource-name'] || 'default';
-    this.resourcePrefix = framework.config['errorbuilder-default-resource-prefix'] || '';
+    this.resourceName = framework.config['default-errorbuilder-resource-name'] || 'default';
+    this.resourcePrefix = framework.config['default-errorbuilder-resource-prefix'] || '';
     this.count = 0;
     this.replacer = [];
     this.isPrepared = false;
