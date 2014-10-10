@@ -60,6 +60,7 @@ Framework supports: one file only (all libraries in one JS file)
 - updated: framework.error() (returns a wrapped delegate if error is undefined)
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
+- renamed: config['allow-compress-html'] to config['allow-compile-html']
 
 - removed: JS CSS
 - removed: (IMPORTANT) view markup for Angular.js from the core (it will be a module)

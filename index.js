@@ -154,7 +154,7 @@ function Framework() {
         'static-url-css': '/css/',
         'static-url-image': '/img/',
         'static-url-video': '/video/',
-        'static-url-font': '/font/',
+        'static-url-font': '/fonts/',
         'static-url-download': '/download/',
         'static-accepts': ['.jpg', '.png', '.gif', '.ico', EXTENSION_JS, EXTENSION_COFFEE, '.css', '.txt', '.xml', '.woff', '.otf', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache', '.map', '.ogg', '.mp4', '.mp3', '.webp', '.webm', '.swf', '.package', '.json'],
 
@@ -165,7 +165,7 @@ function Framework() {
         // default maximum request size / length
         // default 5 kB
         'default-request-length': 5,
-        'default-websocket-request-length': 5,
+        'default-websocket-request-length': 2,
         'default-websocket-encodedecode': true,
 
         // in milliseconds
@@ -239,7 +239,7 @@ function Framework() {
         processing: {},
         range: {},
         views: {},
-        dependencies: {}
+        dependencies: {},
     };
 
     this.stats = {
@@ -1379,6 +1379,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         self._configure(declaration instanceof Array ? declaration : declaration.toString().split('\n'), true);
 
         setTimeout(function() {
+            delete self.temporary['mail-settings'];
             self.emit('install', type, name);
         }, 500);
 
@@ -1874,14 +1875,16 @@ Framework.prototype.onMail = function(address, subject, body, callback) {
     if (tmp && tmp.length > 0 && tmp.isEmail())
         message.bcc(tmp);
 
-    var options = {};
-    var opt = self.config['mail.smtp.options'];
+    var opt = self.temporary['mail-settings'];
 
-    if (opt && opt.isJSON())
-        options = JSON.parse(opt);
+    if (opt === undefined) {
+        var config = self.config['mail.smtp.options'];
+        if (config && config.isJSON())
+            opt = JSON.parse(config);
+        self.temporary['mail-settings'] = opt;
+    }
 
-    message.send(self.config['mail.smtp'], options, callback);
-
+    message.send(self.config['mail.smtp'], opt, callback);
     return self;
 };
 
