@@ -6938,7 +6938,7 @@ Subscribe.prototype.doParsepost = function(chunk) {
     if (!req.buffer_exceeded)
         req.buffer_data += chunk.toString();
 
-    if (req.buffer_data.length < self.route.maximumSize)
+    if ((req.buffer_data.length / 1024) < self.route.maximumSize)
         return self;
 
     req.buffer_exceeded = true;

@@ -66,6 +66,7 @@ Framework supports: one file only (all libraries in one JS file)
 - removed: (IMPORTANT) view markup for Angular.js from the core (it will be a module)
 
 - fixed: LOG()
+- fixed: buffer exceeded if a framework receives a data
 - fixed: if path starts '/' then is view loaded directly from /views/ directory
 - fixed: xml parser
 - fixed: problem with parsing a bad JSON datas - framework.decrypt();
