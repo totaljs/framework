@@ -5320,16 +5320,11 @@ Framework.prototype._routeStatic = function(name, directory) {
 /*
     Internal static file path
     @name {String} :: filename
-    @extention {String} :: static file extention
     return {String}
 */
-Framework.prototype._staticFilePath = function(name, extension) {
+Framework.prototype._staticFilePath = function(name) {
     var self = this;
-    var static_url = self.config['static-url'];
-    if (extension) {
-        static_url = self.config['static-url-' + extension.substring(1)];
-    }
-    return utils.combine(self.config['directory-public'], path.relative(static_url, name));
+    return utils.combine(self.config['directory-public'], path.relative(self.config['static-url'], name));
 };
 
 /*
@@ -5761,7 +5756,7 @@ FrameworkFileSystem.prototype.deleteCSS = function(name) {
     if (name.lastIndexOf(EXTENSION_CSS) === -1)
         name += EXTENSION_CSS;
 
-    var filename = self._staticFilePath(name, EXTENSION_CSS);
+    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-css'], name);
     return self.deleteFile(filename);
 };
 
@@ -5776,7 +5771,7 @@ FrameworkFileSystem.prototype.deleteJS = function(name) {
     if (name.lastIndexOf(EXTENSION_JS) === -1)
         name += EXTENSION_JS;
 
-    var filename = self._staticFilePath(name, EXTENSION_JS);
+    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-js'], name);
     return self.deleteFile(filename);
 };
 
@@ -5879,10 +5874,10 @@ FrameworkFileSystem.prototype.createCSS = function(name, content, rewrite, appen
     if ((content || '').length === 0)
         return false;
 
-    if (name.lastIndexOf('.css') === -1)
-        name += '.css';
+    if (name.lastIndexOf(EXTENSION_CSS) === -1)
+        name += EXTENSION_CSS;
 
-    var filename = self._staticFilePath(name, EXTENSION_CSS);
+    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-css'], name);
     return self.createFile(filename, content, append, rewrite);
 };
 
@@ -5904,7 +5899,7 @@ FrameworkFileSystem.prototype.createJS = function(name, content, rewrite, append
     if (name.lastIndexOf(EXTENSION_JS) === -1)
         name += EXTENSION_JS;
 
-    var filename = self._staticFilePath(name, EXTENSION_JS);
+    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-js'], name);
     return self.createFile(filename, content, append, rewrite);
 };
 
@@ -9304,7 +9299,7 @@ Controller.prototype.file = function(filename, downloadName, headers) {
     if (filename[0] === '~')
         filename = '.' + filename.substring(1);
     else
-        filename = self._staticFilePath(filename);
+        filename = utils.combine(framework.config['directory-public'], filename);
 
     self.subscribe.success();
     framework.responseFile(self.req, self.res, filename, downloadName, headers);
@@ -9330,7 +9325,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, useImageMagi
         if (filename[0] === '~')
             filename = '.' + filename.substring(1);
         else
-            filename = self._staticFilePath(filename);
+            filename = utils.combine(framework.config['directory-public'], filename);
     }
 
     self.subscribe.success();
