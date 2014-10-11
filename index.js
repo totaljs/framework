@@ -29,6 +29,7 @@ var OBJECT = 'object';
 var BOOLEAN = 'boolean';
 var REQUEST_COMPRESS_EXTENSION = ['js', 'css', 'txt'];
 var EXTENSION_JS = '.js';
+var EXTENSION_CSS = '.css';
 var EXTENSION_COFFEE = '.coffee';
 var RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
 var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
@@ -2340,12 +2341,12 @@ Framework.prototype.responseStatic = function(req, res) {
         isResize = resizer.extension === '*' || resizer.extension.indexOf(name.substring(index).toLowerCase()) !== -1;
         if (isResize) {
             name = resizer.path + decodeURIComponent(name);
-            filename = name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : utils.combine(self.config['directory-public'], name);
+            filename = name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : self._staticFilePath(name);
         } else
-            filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+            filename = self._staticFilePath(decodeURIComponent(name));
 
     } else
-        filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+        filename = self._staticFilePath(decodeURIComponent(name));
 
     if (!isResize) {
         self.responseFile(req, res, filename, '');
@@ -2406,7 +2407,7 @@ Framework.prototype.isProcessed = function(filename) {
         if (index !== -1)
             name = name.substring(0, index);
 
-        filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+        filename = self._staticFilePath(decodeURIComponent(name));
     }
 
     if (self.temporary.path[filename] !== undefined)
@@ -2431,10 +2432,9 @@ Framework.prototype.isProcessing = function(filename) {
         if (index !== -1)
             name = name.substring(0, index);
 
-        filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+        filename = self._staticFilePath(decodeURIComponent(filename));
     }
 
-    var name = self.temporary.processing[filename];
     if (self.temporary.processing[filename] !== undefined)
         return true;
     return false;
@@ -5318,6 +5318,21 @@ Framework.prototype._routeStatic = function(name, directory) {
 };
 
 /*
+    Internal static file path
+    @name {String} :: filename
+    @extention {String} :: static file extention
+    return {String}
+*/
+Framework.prototype._staticFilePath = function(name, extension) {
+    var self = this;
+    var static_url = self.config['static-url'];
+    if (extension) {
+        static_url = self.config['static-url-' + extension.substring(1)];
+    }
+    return utils.combine(self.config['directory-public'], path.relative(static_url, name));
+};
+
+/*
     Internal mapping function
     @name {String} :: filename
     return {String}
@@ -5743,10 +5758,10 @@ function FrameworkFileSystem(framework) {
 FrameworkFileSystem.prototype.deleteCSS = function(name) {
     var self = this;
 
-    if (name.lastIndexOf('.css') === -1)
-        name += '.css';
+    if (name.lastIndexOf(EXTENSION_CSS) === -1)
+        name += EXTENSION_CSS;
 
-    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-css'], name);
+    var filename = self._staticFilePath(name, EXTENSION_CSS);
     return self.deleteFile(filename);
 };
 
@@ -5761,7 +5776,7 @@ FrameworkFileSystem.prototype.deleteJS = function(name) {
     if (name.lastIndexOf(EXTENSION_JS) === -1)
         name += EXTENSION_JS;
 
-    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-js'], name);
+    var filename = self._staticFilePath(name, EXTENSION_JS);
     return self.deleteFile(filename);
 };
 
@@ -5867,7 +5882,7 @@ FrameworkFileSystem.prototype.createCSS = function(name, content, rewrite, appen
     if (name.lastIndexOf('.css') === -1)
         name += '.css';
 
-    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-css'], name);
+    var filename = self._staticFilePath(name, EXTENSION_CSS);
     return self.createFile(filename, content, append, rewrite);
 };
 
@@ -5889,7 +5904,7 @@ FrameworkFileSystem.prototype.createJS = function(name, content, rewrite, append
     if (name.lastIndexOf(EXTENSION_JS) === -1)
         name += EXTENSION_JS;
 
-    var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-js'], name);
+    var filename = self._staticFilePath(name, EXTENSION_JS);
     return self.createFile(filename, content, append, rewrite);
 };
 
@@ -9289,7 +9304,7 @@ Controller.prototype.file = function(filename, downloadName, headers) {
     if (filename[0] === '~')
         filename = '.' + filename.substring(1);
     else
-        filename = utils.combine(framework.config['directory-public'], filename);
+        filename = self._staticFilePath(filename);
 
     self.subscribe.success();
     framework.responseFile(self.req, self.res, filename, downloadName, headers);
@@ -9315,7 +9330,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, useImageMagi
         if (filename[0] === '~')
             filename = '.' + filename.substring(1);
         else
-            filename = utils.combine(framework.config['directory-public'], filename);
+            filename = self._staticFilePath(filename);
     }
 
     self.subscribe.success();
