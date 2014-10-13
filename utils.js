@@ -2364,20 +2364,25 @@ String.prototype.isNumber = function(isDecimal) {
     @c {String} :: optional
     return {String}
 */
-String.prototype.padLeft = function(max, c) {
-    var self = this;
-    return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
-};
+
+if (!String.prototype.padLeft) {
+    String.prototype.padLeft = function(max, c) {
+        var self = this;
+        return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
+    };
+}
 
 /*
     @max {Number}
     @c {String} :: optional
     return {String}
 */
-String.prototype.padRight = function(max, c) {
-    var self = this;
-    return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
-};
+if (!String.prototype.padRight) {
+    String.prototype.padRight = function(max, c) {
+        var self = this;
+        return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
+    };
+}
 
 /*
     index {Number}
