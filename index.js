@@ -176,6 +176,7 @@ function Framework() {
         'default-image-converter': 'gm',
         'default-image-quality': 93,
 
+        'allow-handle-static-files': true,
         'allow-gzip': true,
         'allow-websocket': true,
         'allow-compile-js': true,
@@ -190,7 +191,7 @@ function Framework() {
         'default-interval-clear-resources': 20,
         'default-interval-clear-cache': 3,
         'default-interval-precompile-views': 61,
-        'default-interval-websocket-ping': 1
+        'default-interval-websocket-ping': 1,
     };
 
     this.global = {};
@@ -3943,7 +3944,7 @@ Framework.prototype._request = function(req, res) {
     if (self.isDebug)
         res.setHeader('Mode', 'debug');
 
-    req.isStaticFile = utils.isStaticFile(req.uri.pathname);
+    req.isStaticFile = framework.config['allow-handle-static-files'] ? utils.isStaticFile(req.uri.pathname) : false;
     self._request_stats(true, true);
 
     if (self._length_request_middleware === 0)

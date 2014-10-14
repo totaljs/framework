@@ -45,6 +45,7 @@ Framework supports: one file only (all libraries in one JS file)
 - added: new flag `noxhr` or `-xhr` because all route contains +xhr as default
 - added: config['default-errorbuilder-resource-name']
 - added: config['default-errorbuilder-resource-prefix']
+- added: config['allow-handler-static-files']
 - added: .md (markdown) into static-accepts
 
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
