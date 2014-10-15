@@ -857,7 +857,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                 continue;
             }
 
-            item[property] = defaults ? isUndefined(defaults(value, false, name), null) : null;
+            item[property] = defaults ? isUndefined(defaults(value, false, self.name), null) : null;
             continue;
         }
 
@@ -896,7 +896,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                 value = null;
 
             if (!(val instanceof Array)) {
-                item[property] = (defaults ? isUndefined(defaults(property, false, name), []) : []);
+                item[property] = (defaults ? isUndefined(defaults(property, false, self.name), []) : []);
                 continue;
             }
 
@@ -994,7 +994,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                 continue;
             }
 
-            item[property] = isUndefined(defaults(property, false, name));
+            item[property] = isUndefined(defaults(property, false, self.name));
             continue;
         }
 
