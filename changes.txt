@@ -48,7 +48,6 @@ Framework supports: one file only (all libraries in one JS file)
 - added: config['allow-handle-static-files']
 - added: FrameworkCache.get() alias for FrameworkCache.read()
 - added: supports creating route without action (framework wraps action)
-
 - added: .md (markdown) into static-accepts
 - added: (modules, models, sources and controllers) exports.id instead of export.name
 
