@@ -600,10 +600,38 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         maximumSize = tmp;
     }
 
-    if (typeof(funcExecute) === OBJECT || funcExecute instanceof Array) {
+    var type = typeof(funcExecute);
+    var index = 0;
+
+    if (type === OBJECT || funcExecute instanceof Array) {
         var tmp = funcExecute;
         funcExecute = flags;
         flags = tmp;
+    }
+
+    if (type === STRING) {
+        // viewname
+        var viewname = funcExecute;
+        funcExecute = function(name) {
+            this.view(viewname);
+        };
+    } else if (typeof(funcExecute) !== TYPE_FUNCTION) {
+
+        var viewname = url;
+
+        if (viewname.endsWith('/'))
+            viewname = viewname.substring(0, viewname.length - 1);
+
+        index = viewname.lastIndexOf('/');
+        if (index !== -1)
+            viewname = viewname.substring(index + 1);
+
+        if (viewname === '' || viewname === '/')
+            viewname = 'index';
+
+        funcExecute = function() {
+            this.view(viewname);
+        };
     }
 
     if (!utils.isArray(flags) && typeof(flags) === 'object') {
@@ -616,10 +644,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
 
     var self = this;
     var priority = 0;
-    var index = url.indexOf(']');
     var subdomain = null;
     var isASTERIX = url.indexOf('*') !== -1;
 
+    index = url.indexOf(']');
     priority = url.count('/');
 
     if (isASTERIX) {
@@ -1303,7 +1331,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
     var key = '';
     var tmp = null;
 
-    if (t === OBJECT || t === FUNCTION) {
+    if (t === OBJECT) {
+
         var t = typeof(options);
 
         if (t === TYPE_FUNCTION)
@@ -3857,7 +3886,7 @@ Framework.prototype._service = function(count) {
 
             var conn = framework.connections[item];
 
-            if (conn && typeof(conn.ping) === FUNCTION)
+            if (conn && typeof(conn.ping) === TYPE_FUNCTION)
                 conn.ping();
 
             next();
@@ -6331,20 +6360,32 @@ FrameworkCache.prototype.add = function(name, value, expire) {
     return value;
 };
 
-/*
-    Read item from cache
-    @name {String}
-    return {Object}
-*/
-FrameworkCache.prototype.read = function(name) {
+/**
+ * Get item from the cache
+ * @alias FrameworkCache.prototype.get
+ * @param {String} key
+ * @param {Object} def Default value.
+ * @return {Object}
+ */
+FrameworkCache.prototype.read = function(key, def) {
+    return this.get(key);
+};
+
+/**
+ * Get item from the cache
+ * @param {String} key
+ * @param {Object} def Default value.
+ * @return {Object}
+ */
+FrameworkCache.prototype.get = function(key, def) {
     var self = this;
-    var value = self.items[name] || null;
+    var value = self.items[key] || null;
 
     if (value === null)
-        return null;
+        return typeof(def) === UNDEFINED ? null : def;
 
     if (value.expire < new Date())
-        return null;
+        return typeof(def) === UNDEFINED ? null : def;
 
     return value.value;
 };
