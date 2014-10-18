@@ -50,6 +50,7 @@ Framework supports: one file only (all libraries in one JS file)
 - added: supports creating route without action (framework wraps action)
 - added: .md (markdown) into static-accepts
 - added: (modules, models, sources and controllers) exports.id instead of export.name
+- added: framework.mapping(url, new_filename)
 
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
 - updated: Utils.request(), timeout is possible to add as cookie, headers or encoding

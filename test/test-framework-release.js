@@ -371,6 +371,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('mapping', function(complete) {
+		utils.request(url + 'fet.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'TEST', 'static file mapping');
+			complete();
+		});
+	});
+
 	async.complete(function() {
 		next && next();
 	});

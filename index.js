@@ -213,7 +213,8 @@ function Framework() {
         resize: {},
         request: [],
         views: {},
-        merge: {}
+        merge: {},
+        mapping: {}
     };
 
     this.helpers = {};
@@ -240,7 +241,7 @@ function Framework() {
         processing: {},
         range: {},
         views: {},
-        dependencies: {},
+        dependencies: {}
     };
 
     this.stats = {
@@ -884,6 +885,19 @@ Framework.prototype.merge = function(url) {
     var filename = self.path.temp('merge-' + url.substring(1).replace(/\//g, '-'));
     self.routes.merge[url] = { filename: filename, files: arr };
     return self;
+};
+
+/**
+ * Mapping of static file
+ * @param {String} url
+ * @param {String} path
+ * @return {Framework}
+ */
+Framework.prototype.mapping = function(url, path) {
+    if (url[0] !== '/')
+        url = '/' + url;
+    this.routes.mapping[url] = path;
+    return this;
 };
 
 /**
@@ -1733,6 +1747,12 @@ Framework.prototype.uninstall = function(type, name, options) {
         return self;
     }
 
+    if (type === 'mapping') {
+        delete self.routes.mapping[name];
+        self.emit('uninstall', type, name);
+        return self;
+    }
+
     if (type === 'middleware') {
 
         if (!self.routes.middleware[name])
@@ -1869,6 +1889,20 @@ Framework.prototype.onAuthorization = null;
     return {String} :: return new name of static file (style-new.css or script-new.js)
 */
 Framework.prototype.onVersion = null;
+
+/**
+ * On mapping static files
+ * @param {String} url
+ * @param {String} def Default value.
+ * @return {String}
+ */
+Framework.prototype.onMapping = function(url, def) {
+    if (url[0] !== '/')
+        url = '/' + url;
+    if (this.routes.mapping[url])
+        return this.routes.mapping[url];
+    return def;
+};
 
 /*
     Global framework validation
@@ -2371,16 +2405,15 @@ Framework.prototype.responseStatic = function(req, res) {
     if (resizer !== null) {
         name = name.substring(index + 1);
         index = name.lastIndexOf('.');
-
         isResize = resizer.extension === '*' || resizer.extension.indexOf(name.substring(index).toLowerCase()) !== -1;
         if (isResize) {
             name = resizer.path + decodeURIComponent(name);
-            filename = name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : utils.combine(self.config['directory-public'], name);
+            filename = self.onMapping(name, name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : utils.combine(self.config['directory-public'], name));
         } else
-            filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+            filename = self.onMapping(name, utils.combine(self.config['directory-public'], decodeURIComponent(name)));
 
     } else
-        filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+        filename = self.onMapping(name, utils.combine(self.config['directory-public'], decodeURIComponent(name)));
 
     if (!isResize) {
         self.responseFile(req, res, filename, '');
