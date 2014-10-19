@@ -147,6 +147,7 @@ function Framework() {
         'directory-tests': '/tests/',
         'directory-databases': '/databases/',
         'directory-workers': '/workers/',
+        'directory-packages': '/packages/',
 
         // all HTTP static request are routed to directory-public
         'static-url': '',
@@ -214,7 +215,8 @@ function Framework() {
         request: [],
         views: {},
         merge: {},
-        mapping: {}
+        mapping: {},
+        packages: {}
     };
 
     this.helpers = {};
@@ -241,7 +243,8 @@ function Framework() {
         processing: {},
         range: {},
         views: {},
-        dependencies: {}
+        dependencies: {},
+        other: {}
     };
 
     this.stats = {
@@ -348,72 +351,12 @@ Framework.prototype.refresh = function(clear) {
     self.temporary.path = {};
     self.temporary.range = {};
     self.temporary.views = {};
+    self.temporary.other = {};
 
     self.emit('reconfigure');
 
     if (clear || true)
         self.clear();
-
-    return self;
-};
-
-/**
- * Install controller or module
- * @private
- * @param {String} type
- * @param {String} name
- * @param {Function} declaration Controller/Module declaration, optional.
- * @return {Framework}
- */
-Framework.prototype._install = function(type, name, declaration) {
-
-    var self = this;
-    var obj = null;
-
-    _controller = 'TMP' + Utils.random(10000);
-
-    if (typeof(declaration) !== TYPE_FUNCTION) {
-        var filename = path.join(directory, self.config['directory-' + type + 's'], name) + EXTENSION_JS;
-        obj = require(filename);
-    } else
-        obj = declaration();
-
-    if (obj === null)
-        return self;
-
-    if (obj.name)
-        name = obj.name;
-
-    if (obj.install)
-        obj.install.call(self, self, {}, name);
-
-    var id = (type === 'module' ? '#' : '') + name;
-    var length = 0;
-
-    length = self.routes.web.length;
-    for (var i = 0; i < length; i++) {
-        if (self.routes.web[i].name === _controller)
-            self.routes.web[i].name = id;
-    }
-
-    length = self.routes.websockets.length;
-    for (var i = 0; i < length; i++) {
-        if (self.routes.websockets[i].name === _controller)
-            self.routes.websockets[i].name = id;
-    }
-
-    length = self.routes.files.length;
-    for (var i = 0; i < length; i++) {
-        if (self.routes.files[i].name === _controller)
-            self.routes.files[i].name = id;
-    }
-
-    if (type === 'module')
-        self.modules[name] = obj;
-    else
-        self.controllers[name] = obj;
-
-    _controller = '';
 
     return self;
 };
@@ -472,7 +415,6 @@ Framework.prototype.database = function(name) {
         return db;
 
     self._verify_directory('databases');
-
     db = framework_nosql.load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), true);
     self.databases[name] = db;
 
@@ -519,8 +461,8 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
         path: withPath,
         permanent: permanent
     };
-    self._request_check_redirect = true;
 
+    self._request_check_redirect = true;
     return self;
 };
 
@@ -1252,21 +1194,25 @@ Framework.prototype.load = function() {
     var framework = self;
     var arr = [];
 
-    function listing(directory, level, output) {
+    function listing(directory, level, output, extension) {
         if (!fs.existsSync(dir))
             return;
+
+        if (!extension)
+            extension = EXTENSION_JS;
+
         fs.readdirSync(directory).forEach(function(o) {
             var isDirectory = fs.statSync(path.join(directory, o)).isDirectory();
             if (isDirectory) {
                 level++;
-                listing(path.join(directory, o), level, output);
+                listing(path.join(directory, o), level, output, extension);
                 return;
             }
             var ext = path.extname(o).toLowerCase();
-            if (ext !== EXTENSION_JS)
+            if (ext !== extension)
                 return;
             var name = (level > 0 ? directory.replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length);
-            output.push({ name: name[0] === '/' ? name.substring(1) : name, filename: path.join(dir, name) + EXTENSION_JS });
+            output.push({ name: name[0] === '/' ? name.substring(1) : name, filename: path.join(dir, name) + extension });
         });
     }
 
@@ -1311,6 +1257,15 @@ Framework.prototype.load = function() {
         self.install('model', item.name, item.filename, undefined, undefined, undefined, true);
     });
 
+    dir = path.join(directory, self.config['directory-packages']);
+
+    arr = [];
+    listing(dir, 0, arr, '.package');
+
+    arr.forEach(function(item) {
+        self.install('package', item.name, item.filename, undefined, undefined, undefined, true);
+    });
+
     self._routesSort();
     return self;
 };
@@ -1323,9 +1278,10 @@ Framework.prototype.load = function() {
  * @param {Object} options Custom options, optional.
  * @param {Object} internal Internal/Temporary options, optional.
  * @param {Boolean} useRequired Internal, optional.
+ * @param {Boolean} skipEmit Internal, optional.
  * @return {Framework}
  */
-Framework.prototype.install = function(type, name, declaration, options, callback, internal, useRequired) {
+Framework.prototype.install = function(type, name, declaration, options, callback, internal, useRequired, skipEmit) {
 
     var self = this;
     var obj = null;
@@ -1346,12 +1302,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
     var tmp = null;
 
     if (t === OBJECT) {
-
         var t = typeof(options);
-
         if (t === TYPE_FUNCTION)
             callback = options;
-
         options = declaration;
         declaration = undefined;
     }
@@ -1443,6 +1396,32 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         if (callback)
             callback(null);
+
+        return self;
+    }
+
+    if (type === 'package') {
+
+        var backup = new Backup();
+        var id = path.basename(declaration, '.package');
+        var dir = path.join(framework.path.root(), framework.config['directory-temp'], id);
+
+        self.routes.packages[id] = dir;
+        backup.restore(declaration, dir, function() {
+
+            var filename = path.join(dir, 'index.js');
+            self.install('module', id, filename, options, function(err) {
+
+                setTimeout(function() {
+                    self.emit('install', type, name);
+                }, 500);
+
+                if (callback)
+                    callback(err);
+
+            }, internal, useRequired, true);
+
+        });
 
         return self;
     }
@@ -1600,9 +1579,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         if (typeof(obj.install) === TYPE_FUNCTION)
             obj.install(self, options, name);
 
-        setTimeout(function() {
-            self.emit('install', type, name);
-        }, 500);
+        if (!skipEmit) {
+            setTimeout(function() {
+                self.emit('install', type, name);
+            }, 500);
+        }
 
         if (callback)
             callback(null);
@@ -1716,9 +1697,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         _controller = '';
 
-        setTimeout(function() {
-            self.emit('install', type, name);
-        }, 500);
+        if (!skipEmit) {
+            setTimeout(function() {
+                self.emit('install', type, name);
+            }, 500);
+        }
 
         if (callback)
             callback(null);
@@ -1734,9 +1717,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
  * @param {String} type Available types: model, module, controller, source.
  * @param {String} name
  * @param {Object} options Custom options, optional.
+ * @param {Object} skipEmit Internal, optional.
  * @return {Framework}
  */
-Framework.prototype.uninstall = function(type, name, options) {
+Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 
     var self = this;
     var obj = null;
@@ -1762,6 +1746,12 @@ Framework.prototype.uninstall = function(type, name, options) {
         delete self.temporary.dependencies[type + '.' + name];
         self._length_middleware = Object.keys(self.routes.middleware).length;
         self.emit('uninstall', type, name);
+        return self;
+    }
+
+    if (type === 'package') {
+        delete self.routes.packages[name];
+        self.uninstall('module', name, options, true);
         return self;
     }
 
@@ -1846,7 +1836,10 @@ Framework.prototype.uninstall = function(type, name, options) {
 
         self._routesSort();
         delete self.temporary.dependencies[type + '.' + name];
-        self.emit('uninstall', type, name);
+
+        if (!skipEmit)
+            self.emit('uninstall', type, name);
+
         return self;
     }
 
@@ -4035,13 +4028,14 @@ Framework.prototype._request = function(req, res) {
     func._async_middleware(res, function() {
         self._request_continue(req, res, headers, protocol);
     });
+
 };
 
 Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
     var self = this;
 
-    if (req === null || res === null || res.headersSent)
+    if (req === null || res === null || res.headersSent || res.success)
         return self;
 
     // Validate if this request is a file (static file)
@@ -4084,8 +4078,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
         if (multipart.indexOf('/json') !== -1)
             flags.push('json');
-
-        if (multipart.indexOf('/xml') !== -1)
+        else if (multipart.indexOf('/xml') !== -1)
             flags.push('xml');
 
         if (multipart.indexOf('mixed') === -1)
@@ -4126,45 +4119,35 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
     // call event request
     self.emit('request-begin', req, res);
-
     var method = req.method;
 
     if (method === 'GET' || method === 'DELETE' || method === 'OPTIONS') {
-
         if (method === 'DELETE')
             self.stats.request['delete']++;
         else
             self.stats.request.get++;
-
         new Subscribe(self, req, res, 0).end();
         return self;
-
     }
 
     if (self._request_check_POST && (method === 'POST' || method === 'PUT')) {
-
         if (multipart.length > 0) {
             self.stats.request.upload++;
             new Subscribe(self, req, res, 2).multipart(multipart);
         } else {
-
             if (method === 'PUT')
                 self.stats.request.put++;
             else
                 self.stats.request.post++;
-
             new Subscribe(self, req, res, 1).urlencoded();
         }
-
         return self;
     }
 
     self.emit('request-end', req, res);
     self._request_stats(false, false);
     self.stats.request.blocked++;
-
     req.connection.destroy();
-
     return self;
 };
 
@@ -4219,8 +4202,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
         }
     }
 
-    // TODO: A problem with checking whether is a protocol secured or not, default: FALSE
-    req.uri = parser.parse((false ? 'wss' : 'ws') + '://' + req.headers.host + req.url);
+    req.uri = parser.parse((req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' || headers['x-forwarded-protocol'] === 'wss' ? 'wss' : 'ws') + '://' + req.headers.host + req.url);
     req.session = null;
     req.user = null;
     req.flags = [req.isSecure ? 'https' : 'http', 'get'];
@@ -4335,7 +4317,6 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
         }
 
         socket.upgrade(self.connections[id]);
-
     };
 
     if (route.middleware instanceof Array && route.middleware.length > 0) {
@@ -4970,6 +4951,7 @@ Framework.prototype.clear = function() {
     if (!fs.existsSync(dir))
         return self;
 
+//    console.log('sudo rm -r -f ' + path.join(directory, self.config['directory-temp']));
     fs.readdir(dir, function(err, files) {
         if (err)
             return;
@@ -5410,13 +5392,17 @@ Framework.prototype._version = function(name) {
     @noLoggedUnlogged {Boolean} :: optional, default false
     return {ControllerRoute}
 */
-Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
+Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache) {
 
     var self = this;
     var isSystem = url[0] === '#';
 
     if (isSystem)
         req.path = [url];
+
+    var key = 'lookup#' + req.url;
+    if (!isSystem && !noCache && self.temporary.other[key])
+        return self.temporary.other[key];
 
     var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
     var length = self.routes.web.length;
@@ -5439,7 +5425,6 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
         if (isSystem)
             return route;
 
-
         if (route.flags !== null && route.flags.length > 0) {
 
             var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
@@ -5456,10 +5441,25 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
                 continue;
         }
 
-        return route;
+        return self.lookup_cache(req, route, key);
     }
 
     return null;
+};
+
+Framework.prototype.lookup_cache = function(req, route, key, noCache) {
+
+    if (noCache === true)
+        return route;
+
+    if (!route.isMEMBER)
+        return route;
+
+    if (route.param.length > 0)
+        return route;
+
+    this.temporary.other[key] = route;
+    return route;
 };
 
 /*
@@ -6291,6 +6291,24 @@ FrameworkPath.prototype.resources = function(filename) {
 FrameworkPath.prototype.root = function(filename) {
     return path.join(directory, filename || '');
 };
+
+
+/*
+    @filename {String} :: optional
+    return {String}
+*/
+FrameworkPath.prototype.package = function(name, filename) {
+    return path.join(directory, framework.config['directory-temp'], name, filename || '');
+};
+
+/*
+    @filename {String} :: optional
+    return {String}
+*/
+FrameworkPath.prototype.packages = function(filename) {
+    return path.join(directory, framework.config['directory-packages'], filename || '');
+};
+
 
 // *********************************************************************************
 // =================================================================================
@@ -8525,8 +8543,11 @@ Controller.prototype.head = function() {
 
         var val = arguments[i];
 
+        /*
+        DUPLICATE - performance issue
         if (header.length > 0 && header.indexOf(val) !== -1)
             continue;
+        */
 
         if (val.indexOf('<') !== -1) {
             output += val;
@@ -8854,11 +8875,16 @@ Controller.prototype.$json = function(obj, id, beautify) {
  * @return {String}
  */
 Controller.prototype.$favicon = function(name) {
+
     var self = this;
     var contentType = 'image/x-icon';
 
     if (name === undefined)
         name = 'favicon.ico';
+
+    var key = 'favicon#' + name;
+    if (framework.temporary.other[key])
+        return framework.temporary.other[key];
 
     if (name.lastIndexOf('.png') !== -1)
         contentType = 'image/png';
@@ -8866,8 +8892,8 @@ Controller.prototype.$favicon = function(name) {
         contentType = 'image/gif';
 
     name = framework.routeStatic('/' + name);
+    return framework.temporary.other[key] = '<link rel="shortcut icon" href="' + name + '" type="' + contentType + '" /><link rel="icon" href="' + name + '" type="' + contentType + '" />';
 
-    return '<link rel="shortcut icon" href="' + name + '" type="' + contentType + '" /><link rel="icon" href="' + name + '" type="' + contentType + '" />';
 };
 
 Controller.prototype._routeHelper = function(current, name, fn) {
@@ -9807,9 +9833,11 @@ Controller.prototype.mmr = function(filename, stream, cb) {
         self.subscribe.success();
         res.success = true;
         self.req.on('close', self.close.bind(self));
+
         var headers = {
             'Pragma': 'no-cache'
         };
+
         headers[RESPONSE_HEADER_CONTENTTYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
         headers[RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, max-age=0, must-revalidate';
         res.writeHead(self.status, headers);
@@ -9914,9 +9942,7 @@ Controller.prototype.close = function(end) {
 Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 
     var self = this;
-    var headers = {
-        'X-Proxy': 'total.js'
-    };
+    var headers = { 'X-Proxy': 'total.js' };
 
     var tmp;
 
@@ -9975,7 +10001,8 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     if (!isPartial && self.res && self.res.success)
         return self;
 
-    var skip = name[0] === '/' ? 1 : name[0] === '~' ? 2 : 0;
+    var c = name[0];
+    var skip = c === '/' ? 1 : c === '~' ? 2 : c === '@' ? 3 : 0;
     var filename = name;
     var isLayout = self.isLayout;
 
@@ -9984,8 +10011,11 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     if (!self.isLayout && skip === 0)
         filename = self._currentView + name;
 
-    if (skip === 2)
+    if (skip === 2 || skip === 3)
         filename = name.substring(1);
+
+    if (skip === 3)
+        filename = '.' + framework.path.package(filename);
 
     var generator = framework_internal.generateView(name, filename);
     if (generator === null) {
@@ -10010,10 +10040,6 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     var value = '';
     self.$model = model;
 
-    var sitemap = function() {
-        return self.sitemap.apply(self, arguments);
-    };
-
     if (isLayout) {
         self._currentCSS = self._defaultCSS || '';
         self._currentJS = self._defaultJS || '';
@@ -10026,7 +10052,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     var helpers = framework.helpers;
 
     try {
-        value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, sitemap, isPartial ? self.outputPartial : self.output, self.date);
+        value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, isPartial ? self.outputPartial : self.output, self.date);
     } catch (ex) {
 
         var err = new Error('View: ' + name + ' - ' + ex.toString());
@@ -11155,6 +11181,175 @@ WebSocketClient.prototype._request_accept_key = function(req) {
     var sha1 = crypto.createHash('sha1');
     sha1.update((req.headers['sec-websocket-key'] || '') + SOCKET_HASH);
     return sha1.digest('base64');
+};
+
+function Backup() {
+    this.file = [];
+    this.directory = [];
+    this.path = '';
+    this.fileName = '';
+    this.read = { key: '', value: '', status: 0 };
+    this.pending = 0;
+    this.complete = function() {};
+    this.filter = function(path) {
+        return true;
+    };
+}
+
+Backup.prototype.restoreKey = function(data) {
+
+    var self = this;
+    var read = self.read;
+
+    if (read.status === 1) {
+        self.restoreValue(data);
+        return;
+    }
+
+    var index = data.indexOf(':');
+
+    if (index === -1) {
+        read.key += data;
+        return;
+    }
+
+    read.status = 1;
+    read.key = data.substring(0, index);
+    self.restoreValue(data.substring(index + 1));
+};
+
+Backup.prototype.restoreValue = function(data) {
+
+    var self = this;
+    var read = self.read;
+
+    if (read.status !== 1) {
+        self.restoreKey(data);
+        return;
+    }
+
+    var index = data.indexOf('\n');
+    if (index === -1) {
+        read.value += data;
+        return;
+    }
+
+    read.value += data.substring(0, index);
+    self.restoreFile(read.key.replace(/\s/g, ''), read.value.replace(/\s/g, ''));
+
+    read.status = 0;
+    read.value = '';
+    read.key = '';
+
+    self.restoreKey(data.substring(index + 1));
+};
+
+Backup.prototype.restore = function(filename, path, callback, filter) {
+
+    if (!fs.existsSync(filename)) {
+        if (callback)
+            callback(new Error('Package not found.'), path);
+        return;
+    }
+
+    var self = this;
+    self.filter = filter;
+    self.createDirectory(path, true);
+
+    var stream = fs.createReadStream(filename);
+    var key = '';
+    var value = '';
+    var status = 0;
+
+    self.path = path;
+
+    stream.on('data', function(buffer) {
+        var data = buffer.toString('utf8');
+        self.restoreKey(data);
+    });
+
+    if (!callback) {
+        stream.resume();
+        return;
+    }
+
+    callback.path = path;
+
+    stream.on('end', function() {
+        self.callback(callback);
+        stream = null;
+    });
+
+    stream.resume();
+};
+
+Backup.prototype.callback = function(cb) {
+    var self = this;
+
+    if (self.pending <= 0)
+        return cb(null, cb.path);
+
+    setTimeout(function() {
+        self.callback(cb);
+    }, 100);
+};
+
+Backup.prototype.restoreFile = function(key, value) {
+    var self = this;
+
+    if (typeof(self.filter) === 'function' && !self.filter(key))
+        return;
+
+    if (value === '#') {
+        self.createDirectory(key);
+        return;
+    }
+
+    var p = key;
+    var index = key.lastIndexOf('/');
+
+    if (index !== -1) {
+        p = key.substring(0, index).trim();
+        if (p.length > 0)
+            self.createDirectory(p);
+    }
+
+    var buffer = new Buffer(value, 'base64');
+    self.pending++;
+    zlib.gunzip(buffer, function(err, data) {
+        fs.writeFileSync(path.join(self.path, key), data);
+        self.pending--;
+        buffer = null;
+    });
+};
+
+Backup.prototype.createDirectory = function(p, root) {
+
+    if (p[0] === '/')
+        p = p.substring(1);
+
+    if (p[p.length - 1] === '/')
+        p = p.substring(0, p.length - 1);
+
+    var arr = p.split('/');
+    var directory = '';
+    var self = this;
+    var length = arr.length;
+
+    for (var i = 0; i < length; i++) {
+
+        var name = arr[i];
+        directory += (directory.length > 0 ? '/' : '') + name;
+        var dir = path.join(self.path, directory);
+
+        if (root)
+            dir = '/' + dir;
+
+        if (fs.existsSync(dir))
+            continue;
+
+        fs.mkdirSync(dir);
+    }
 };
 
 // *********************************************************************************

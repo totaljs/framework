@@ -1682,6 +1682,7 @@ function view_parse(content, minify) {
     var isSECTION = false;
     var builderTMP = '';
     var sectionName = '';
+    var isSitemap = false;
 
     while (command !== null) {
 
@@ -1773,6 +1774,8 @@ function view_parse(content, minify) {
 
         old = command;
         command = view_find_command(content, command.end);
+        if (command && command.command && command.command.indexOf('sitemap(') !== -1)
+            isSitemap = true;
     }
 
     if (old !== null) {
@@ -1781,7 +1784,7 @@ function view_parse(content, minify) {
             builder += '+' + escaper(text);
     }
 
-    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output,date){' + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,output,date){' + (isSitemap ? 'var sitemap = function() { return self.sitemap.apply(self, arguments);};' : '') + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
     return eval(fn);
 }
 
@@ -2313,7 +2316,6 @@ View.prototype.read = function(path) {
     var self = this;
     var config = framework.config;
     var isOut = path[0] === '.';
-
     var filename = isOut ? path.substring(1) : framework_utils.combine(config['directory-views'], path);
 
     if (fs.existsSync(filename))

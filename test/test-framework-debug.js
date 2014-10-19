@@ -4,7 +4,7 @@ var framework = require('../index');
 var fs = require('fs');
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
-var max = 100;
+var max = 100 ;
 
 INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
@@ -389,6 +389,7 @@ function run() {
 
 	if (max <= 0) {
 
+		console.timeEnd('TEST');
 		framework.fs.rm.view('fromURL');
 
 		assert.ok(framework.global.middleware > 0, 'middleware - middleware');
@@ -433,6 +434,7 @@ framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html'
 
 framework.on('load', function() {
 	setTimeout(function() {
+		console.time('TEST');
 		run();
 	}, 2000);
 });

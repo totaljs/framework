@@ -24,6 +24,7 @@ exports.install = function(framework) {
         flags: ['unauthorize']
     });
 
+    framework.route('/package/', '@testpackage/test');
     framework.route('/precompile/', view_precomile);
     framework.route('/homepage/', view_homepage);
     framework.route('/usage/', view_usage);

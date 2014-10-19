@@ -51,6 +51,8 @@ Framework supports: one file only (all libraries in one JS file)
 - added: .md (markdown) into static-accepts
 - added: (modules, models, sources and controllers) exports.id instead of export.name
 - added: framework.mapping(url, new_filename)
+- added: framework.config['directory-packages'] for packages
+- added: (IMPORTANT) PACKAGES (same as modules but package can contain many files in one file)
 
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
 - updated: Utils.request(), timeout is possible to add as cookie, headers or encoding
