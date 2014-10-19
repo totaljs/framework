@@ -4945,13 +4945,13 @@ Framework.prototype.test = function(stop, names, cb) {
 */
 Framework.prototype.clear = function() {
 
+/*
     var self = this;
     var dir = utils.combine(self.config['directory-temp']);
 
     if (!fs.existsSync(dir))
         return self;
 
-//    console.log('sudo rm -r -f ' + path.join(directory, self.config['directory-temp']));
     fs.readdir(dir, function(err, files) {
         if (err)
             return;
@@ -4967,8 +4967,8 @@ Framework.prototype.clear = function() {
     // clear static cache
     self.temporary.path = {};
     self.temporary.range = {};
-
-    return self;
+*/
+    return this;
 };
 
 /*
