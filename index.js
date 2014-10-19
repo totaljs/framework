@@ -354,10 +354,6 @@ Framework.prototype.refresh = function(clear) {
     self.temporary.other = {};
 
     self.emit('reconfigure');
-
-    if (clear || true)
-        self.clear();
-
     return self;
 };
 
@@ -3622,7 +3618,7 @@ Framework.prototype.initialize = function(http, debug, options) {
     if (self.isTest)
         self._configure('config-test', false);
 
-    self.clear();
+    // self.clear();
     self.cache.init();
     self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
     self.emit('init');
@@ -3896,6 +3892,7 @@ Framework.prototype._service = function(count) {
         self.temporary.path = {};
         self.temporary.range = {};
         self.temporary.views = {};
+        self.temporary.other = {};
     }
 
     // every 61 minutes (default) services precompile all (installed) views
@@ -4945,7 +4942,6 @@ Framework.prototype.test = function(stop, names, cb) {
 */
 Framework.prototype.clear = function() {
 
-/*
     var self = this;
     var dir = utils.combine(self.config['directory-temp']);
 
@@ -4956,18 +4952,37 @@ Framework.prototype.clear = function() {
         if (err)
             return;
 
-        var arr = [];
-        var length = files.length;
-        for (var i = 0; i < length; i++)
-            arr.push(utils.combine(self.config['directory-temp'], files[i]));
+        var fil = [];
+        var dir = [];
 
-        self.unlink(arr);
+        files.wait(function(item, next) {
+            var path = utils.combine(self.config['directory-temp'], item);
+            fs.stat(path, function(err, stat) {
+
+                if (err) {
+                    next();
+                    return;
+                }
+
+                if (stat.isDirectory())
+                    dir.push(path);
+                else
+                    fil.push(path);
+
+                next();
+            });
+        }, function() {
+            self.unlink(fil, function() {
+                self.rmdir(dir);
+            });
+        });
+
     });
 
     // clear static cache
     self.temporary.path = {};
     self.temporary.range = {};
-*/
+
     return this;
 };
 
@@ -4996,6 +5011,36 @@ Framework.prototype.unlink = function(arr, callback) {
 
     fs.unlink(filename, function() {
         self.unlink(arr, callback);
+    });
+
+    return self;
+};
+
+/*
+    INTERNAL: Force remove empty directories
+    return {Framework}
+*/
+Framework.prototype.rmdir = function(arr, callback) {
+    var self = this;
+
+    if (typeof(arr) === STRING)
+        arr = [arr];
+
+    if (arr.length === 0) {
+        if (callback)
+            callback();
+        return;
+    }
+
+    var path = arr.shift();
+    if (!path) {
+        if (callback)
+            callback();
+        return;
+    }
+
+    fs.rmdir(path, function() {
+        self.rmdir(arr, callback);
     });
 
     return self;
@@ -11825,7 +11870,7 @@ process.on('message', function(msg, h) {
     }
 
     if (msg === 'reset') {
-        framework.clear();
+        // framework.clear();
         framework.cache.clear();
         return;
     }
