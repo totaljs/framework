@@ -4,7 +4,7 @@ var framework = require('../index');
 var fs = require('fs');
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
-var max = 100 ;
+var max = 500;
 
 INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
@@ -32,6 +32,9 @@ framework.onError = function(error, name, uri) {
 };
 
 function end() {
+	console.log('');
+	console.log('Requests count:', framework.stats.request.request);
+	console.log('');
 	console.log('================================================');
 	console.log('success - OK');
 	console.log('================================================');
@@ -401,10 +404,11 @@ function run() {
 		UNINSTALL('view', 'precompile._layout');
 
 		framework.uninstall('precompile', 'precompile.homepage');
+		framework.clear();
 
 		setTimeout(function() {
 			end();
-		}, 1000)
+		}, 2000)
 		return;
 	}
 

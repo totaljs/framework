@@ -250,6 +250,7 @@ function Framework() {
     this.stats = {
 
         request: {
+            request: 0,
             pending: 0,
             web: 0,
             xhr: 0,
@@ -3934,6 +3935,7 @@ Framework.prototype._request = function(req, res) {
     }
 
     res.req = req;
+    self.stats.request.request++;
     self.emit('request', req, res);
 
     var headers = req.headers;
@@ -4948,35 +4950,10 @@ Framework.prototype.clear = function() {
     if (!fs.existsSync(dir))
         return self;
 
-    fs.readdir(dir, function(err, files) {
-        if (err)
-            return;
-
-        var fil = [];
-        var dir = [];
-
-        files.wait(function(item, next) {
-            var path = utils.combine(self.config['directory-temp'], item);
-            fs.stat(path, function(err, stat) {
-
-                if (err) {
-                    next();
-                    return;
-                }
-
-                if (stat.isDirectory())
-                    dir.push(path);
-                else
-                    fil.push(path);
-
-                next();
-            });
-        }, function() {
-            self.unlink(fil, function() {
-                self.rmdir(dir);
-            });
+    framework_utils.ls(dir, function(files, directories) {
+        self.unlink(files, function() {
+            self.rmdir(directories);
         });
-
     });
 
     // clear static cache
