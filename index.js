@@ -2175,8 +2175,10 @@ Framework.prototype.compileContent = function(extension, content, filename) {
     switch (extension) {
         case 'js':
             return self.config['allow-compile-js'] ? framework_internal.compile_javascript(content) : content;
+/*
         case 'html':
             return self.config['allow-compile-html'] ? framework_internal.compile_html(content) : content;
+*/
         case 'css':
 
             content = self.config['allow-compile-css'] ? framework_internal.compile_css(content) : content;
@@ -2355,7 +2357,7 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 
     }
 
-    if (extension === 'js' || extension === 'css' || extension === 'html') {
+    if (extension === 'js' || extension === 'css') {
         if (filename.lastIndexOf('.min.') === -1 && filename.lastIndexOf('-min.') === -1) {
             self.compileFile(uri, key, filename, extension, callback);
             return self;
@@ -5471,13 +5473,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
 
 Framework.prototype.lookup_cache = function(req, route, key, noCache) {
 
-    if (noCache === true)
-        return route;
-
-    if (!route.isMEMBER)
-        return route;
-
-    if (route.param.length > 0)
+    if (noCache === true || route.isASTERIX || !route.isMEMBER || route.param.length > 0)
         return route;
 
     this.temporary.other[key] = route;
