@@ -4,7 +4,7 @@ var framework = require('../index');
 var fs = require('fs');
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
-var max = 500;
+var max = 100;
 
 INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
