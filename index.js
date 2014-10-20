@@ -10618,6 +10618,7 @@ WebSocket.prototype.destroy = function() {
     self.connections = null;
     self._keys = null;
     delete framework.connections[self.id];
+    self.removeAllListeners();
     self.emit('destroy');
     return self;
 };
