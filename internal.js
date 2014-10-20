@@ -408,8 +408,9 @@ exports.routeSplit = function(url, noLower) {
 exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
     var length = url.length;
+    var lengthRoute = route.length;
 
-    if (route.length !== length && !isAsterix)
+    if (lengthRoute !== length && !isAsterix)
         return false;
 
     var skip = length === 1 && url[0] === '/';
@@ -417,6 +418,7 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
     for (var i = 0; i < length; i++) {
 
         var value = route[i];
+
         if (!isSystem && isAsterix && value === undefined)
             return true;
 
@@ -425,7 +427,7 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
         if (url[i] !== value) {
             if (!isSystem)
-                return isAsterix;
+                return isAsterix ? i === lengthRoute : false;
             return false;
         }
     }
