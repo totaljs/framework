@@ -814,8 +814,12 @@ Framework.prototype.merge = function(url) {
         if (!(items instanceof Array))
             items = [items];
 
-        for (var j = 0, lengthsub = items.length; j < lengthsub; j++)
-            arr.push(items[j]);
+        for (var j = 0, lengthsub = items.length; j < lengthsub; j++) {
+            var fn = items[j];
+            if (fn[0] === '@')
+                fn = '.' + framework.path.package(fn.substring(1));
+            arr.push(fn);
+        }
     }
 
     if (url[0] !== '/')
@@ -833,8 +837,13 @@ Framework.prototype.merge = function(url) {
  * @return {Framework}
  */
 Framework.prototype.mapping = function(url, path) {
+
     if (url[0] !== '/')
         url = '/' + url;
+
+    if (path[0] === '@')
+        path = '.' + framework.path.package(path.substring(1));
+
     this.routes.mapping[url] = path;
     return this;
 };
@@ -1316,18 +1325,39 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         if (declaration.startsWith('http://') || declaration.startsWith('https://')) {
 
+            if (type === 'package') {
+
+                utils.download(declaration, ['get'], function(err, response) {
+
+                    if (err) {
+                        self.error(err, 'framework.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
+                        if (callback)
+                            callback(err);
+                        return;
+                    }
+
+                    var id = path.basename(declaration, '.package');
+                    var filename = framework.path.temp(id + '.package');
+
+                    response.pipe(fs.createWriteStream(filename));
+                    response.on('end', function() {
+                        self.install(type, id, filename, undefined, undefined, undefined, true);
+                    });
+
+                });
+
+                return self;
+            }
+
             utils.request(declaration, ['get'], function(err, data, code) {
 
                 if (code !== 200 && !err)
                     err = new Error(data);
 
                 if (err) {
-
                     self.error(err, 'framework.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
-
                     if (callback)
                         callback(err);
-
                     return;
                 }
 
@@ -2533,6 +2563,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     if (res.success)
         return self;
 
+    // Is package?
+    if (filename[0] === '@')
+        filename = '.' + framework.path.package(filename.substring(1));
+
     req.clear(true);
 
     key = key || filename;
@@ -2644,7 +2678,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
     if (range.length > 0)
         return self.responseRange(name, range, returnHeaders, req, res);
-
 
     if (self.config.debug && self.isProcessed(key))
         delete self.temporary.path[key];
@@ -2821,6 +2854,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
     if (typeof(filename) === OBJECT)
         stream = filename;
+    else if (filename[0] === '@')
+        filename = '.' + framework.path.package(filename.substring(1));
 
     var key = 'image-' + req.url.substring(1);
     var name = self.temporary.path[key];
@@ -2976,6 +3011,8 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 
     if (typeof(filename) === OBJECT)
         stream = filename;
+    else if (filename[0] === '@')
+        filename = '.' + framework.path.package(filename.substring(1));
 
     var key = 'image-' + req.url.substring(1);
 
