@@ -93,6 +93,7 @@ Framework supports: one file only (all libraries in one JS file)
 - improvements: routing performance
 
 - EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/static-file-merge
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/framework-schema-and-validation
 
 ======= 1.6.2 (HOTFIX)
 
