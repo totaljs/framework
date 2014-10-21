@@ -26,6 +26,16 @@ __Development__:
 - [__Documentation__: Publish a website - REVERSE PROXY](http://docs.totaljs.com/#publish)
 - [__Documentation__: total.js for Sublime Text 2 Editor](http://docs.totaljs.com/#sublime)
 
+__References__:
+
+- [total.js (+ documentation) - www.totaljs.com](http://www.totaljs.com)
+- [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)
+- [GPS Localization (WebSocket) - www.gpslocalization.com](https://www.privater.eu)
+- [Online Clipboard (CouchDB) - www.online-clipboard.com](https://www.online-clipboard.com)
+- [Sushi Eshop - www.sushi-bratislava.sk](www.sushi-bratislava.sk)
+
+... and many more
+
 __TOTALSTACK__:
 
 > total.js (+1.2.3) supports great features for development Angular.js applications. I call this: __TOTALSTACK__.
