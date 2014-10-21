@@ -80,8 +80,8 @@ __Other products__:
 
 - [FileServer: storing of uploaded files](https://github.com/petersirka/fileserver)
 
-Project
--------
+References
+----------
 
 - [total.js (+ documentation) - www.totaljs.com](http://www.totaljs.com)
 - [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)
