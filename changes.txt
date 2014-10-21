@@ -86,7 +86,7 @@ Framework supports: one file only (all libraries in one JS file)
 - fixed: appending .js or .css through @{head()}
 - fixed: WebSocket authorization
 - fixed: WebSocketClient.req
-- fixed: Routing
+- fixed: routing (+ asterix routing)
 - fixed: controller.cancel() (after framework.emit('controller', ...))
 - fixed: view helpers (calling without arguments)
 

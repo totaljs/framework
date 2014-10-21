@@ -413,6 +413,9 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
     if (lengthRoute !== length && !isAsterix)
         return false;
 
+    if (isAsterix && lengthRoute === 1 && route[0] === '/')
+        return true;
+
     var skip = length === 1 && url[0] === '/';
 
     for (var i = 0; i < length; i++) {
@@ -427,7 +430,7 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
         if (url[i] !== value) {
             if (!isSystem)
-                return isAsterix ? i === lengthRoute : false;
+                return isAsterix ? i >= lengthRoute : false;
             return false;
         }
     }

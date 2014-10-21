@@ -534,6 +534,12 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     if (url === '')
         url = '/';
 
+    if (url[0] !== '[' && url[0] !== '/')
+        url = '/' + url;
+
+    if (url.endsWith('/'))
+        url = url.substring(0, url.length - 1);
+
     if (utils.isArray(maximumSize)) {
         var tmp = middleware;
         middleware = maximumSize;
@@ -592,7 +598,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
 
     if (isASTERIX) {
         url = url.replace('*', '').replace('//', '/');
-        priority = (-10) - priority;
+        priority = priority - 100;
     }
 
     if (index > 0) {
