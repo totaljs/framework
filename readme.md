@@ -83,11 +83,11 @@ __Other products__:
 References
 ----------
 
-- [total.js (+ documentation) - www.totaljs.com](http://www.totaljs.com)
+- [total.js (+ documentation) - www.totaljs.com](https://www.totaljs.com)
 - [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)
-- [GPS Localization (WebSocket) - www.gpslocalization.com](https://www.privater.eu)
+- [GPS Localization (WebSocket) - www.gpslocalization.com](http://www.gpslocalization.com)
 - [Online Clipboard (CouchDB) - www.online-clipboard.com](https://www.online-clipboard.com)
-- [Sushi Eshop - www.sushi-bratislava.sk](www.sushi-bratislava.sk)
+- [Sushi Eshop - www.sushi-bratislava.sk](http://www.sushi-bratislava.sk)
 
 ... and many more.
 
