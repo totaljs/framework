@@ -88,6 +88,7 @@ SchemaBuilder.prototype.destroy = function(name) {
 function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.parent = parent;
     this.name = name;
+    this.primary;
     this.schema = obj;
     this.properties = properties === undefined ? Object.keys(obj) : properties;
     this.transforms;
@@ -108,7 +109,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
  * @param {Boolean} required Is required? Default: false.
  * @return {SchemaBuilder}
  */
-SchemaBuilderEntity.prototype.define = function(name, type, required) {
+SchemaBuilderEntity.prototype.define = function(name, type, required, primary) {
 
     var self = this;
 
@@ -118,6 +119,8 @@ SchemaBuilderEntity.prototype.define = function(name, type, required) {
         return self;
     }
 
+    if (primary)
+        self.primary = primary;
     self.schema[name] = type;
 
     if (!required)
