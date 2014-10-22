@@ -9,7 +9,6 @@ var child = require('child_process');
 var exec = child.exec;
 var spawn = child.spawn;
 var path = require('path');
-var utils = require('./utils');
 
 // INTERNAL
 var sof = {
@@ -362,8 +361,8 @@ Image.prototype.identify = function(cb) {
         var size = arr[2].split('x');
         var obj = {
             type: arr[1],
-            width: utils.parseInt(size[0]),
-            height: utils.parseInt(size[1])
+            width: framework_utils.parseInt(size[0]),
+            height: framework_utils.parseInt(size[1])
         };
 
         cb(null, obj);

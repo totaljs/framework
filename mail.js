@@ -11,7 +11,6 @@ var events = require('events');
 var dns = require('dns');
 var fs = require('fs');
 var path = require('path');
-var utils = require('./utils');
 var CRLF = '\r\n';
 var UNDEFINED = 'undefined';
 
@@ -225,7 +224,7 @@ Message.prototype.attachment = function(filename, name) {
     if (name === undefined)
         name = path.basename(filename);
 
-    self.files.push({ name: name, filename: filename, contentType: utils.getContentType(path.extname(name)) });
+    self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)) });
     return self;
 
 };
@@ -250,7 +249,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
     self.callback = fnCallback;
 
-    options = utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000 });
+    options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000 });
 
     if (smtp === null || smtp === '') {
 
@@ -286,7 +285,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
     if (options.secure) {
 
-        var internal = Utils.copy(options);
+        var internal = framework_utils.copy(options);
         internal.host = smtp;
         socket = tls.connect(internal, function() { self._send(this, options); });
 
@@ -334,7 +333,7 @@ Message.prototype._send = function(socket, options) {
     mailer.emit('send', self);
 
     socket.setTimeout(options.timeout || 5000, function() {
-        mailer.emit('error', new Error(utils.httpStatus(408)), self);
+        mailer.emit('error', new Error(framework_utils.httpStatus(408)), self);
         if (socket !== null)
             socket.destroy();
         socket = null;

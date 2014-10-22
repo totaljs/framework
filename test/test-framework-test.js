@@ -1,6 +1,3 @@
-var utils = require('../utils');
-
-/*
 var framework = require('../index');
 var url = 'http://127.0.0.1:8001/';
 var mem = require('memwatch');
@@ -20,13 +17,3 @@ mem.on('stats', function(info) {
 });
 
 framework.http('debug', { port: 8001 });
-
-var Image = require('../image');
-var fs = require('fs');
-var buffer = fs.readFileSync('/users/petersirka/desktop/picture.png');
-
-var img = Image.load(buffer);
-
-img.resize('50%');
-img.output('png');
-img.save('/users/petersirka/desktop/picture-resize.png');*/

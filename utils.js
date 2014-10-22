@@ -1805,20 +1805,22 @@ String.prototype.parseDate = function() {
             continue;
 
         if (noTime)
-            return null;
+            return new Date(self);
     }
 
     if (arr[1] === undefined)
         arr[1] = '00:00:00';
 
-    var date = (arr[0] || '').split('-');
+    var firstDay = arr[0].indexOf('-') === -1;
+
+    var date = (arr[0] || '').split(firstDay ? '.' : '-');
     var time = (arr[1] || '').split(':');
     var parsed = [];
 
     if (date.length < 4 && time.length < 2)
-        return null;
+        return new Date(self);
 
-    index = time[2].indexOf('.');
+    index = (time[2] || '').indexOf('.');
 
     // milliseconds
     if (index !== -1) {
@@ -1827,9 +1829,9 @@ String.prototype.parseDate = function() {
     } else
         time[3] = '0';
 
-    parsed.push(parseInt(date[0], 10)); // year
+    parsed.push(parseInt(date[firstDay ? 2 : 0], 10)); // year
     parsed.push(parseInt(date[1], 10)); // month
-    parsed.push(parseInt(date[2], 10)); // day
+    parsed.push(parseInt(date[firstDay ? 0 : 2], 10)); // day
     parsed.push(parseInt(time[0], 10)); // hours
     parsed.push(parseInt(time[1], 10)); // minutes
     parsed.push(parseInt(time[2], 10)); // seconds
@@ -2057,8 +2059,11 @@ String.prototype.params = function(obj) {
                 if (!isNaN(max))
                     val = val.max(max + 3, '...');
 
-            } else if (type === NUMBER || util.isDate(val))
+            } else if (type === NUMBER || util.isDate(val)) {
+                if (format.isNumber())
+                    format = parseInt(format);
                 val = val.format(format);
+            }
         }
 
         val = val.toString().dollar();
@@ -2361,20 +2366,25 @@ String.prototype.isNumber = function(isDecimal) {
     @c {String} :: optional
     return {String}
 */
-String.prototype.padLeft = function(max, c) {
-    var self = this;
-    return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
-};
+
+if (!String.prototype.padLeft) {
+    String.prototype.padLeft = function(max, c) {
+        var self = this;
+        return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
+    };
+}
 
 /*
     @max {Number}
     @c {String} :: optional
     return {String}
 */
-String.prototype.padRight = function(max, c) {
-    var self = this;
-    return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
-};
+if (!String.prototype.padRight) {
+    String.prototype.padRight = function(max, c) {
+        var self = this;
+        return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
+    };
+}
 
 /*
     index {Number}
@@ -2502,7 +2512,7 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 
     var self = this;
 
-    if (decimals[0] === '#')
+    if (typeof(decimals) === STRING)
         return self.format2(decimals);
 
     var num = self.toString();
@@ -2551,6 +2561,8 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
     return {String}
 */
 Number.prototype.format2 = function(format) {
+
+    console.log('OBSOLETE: Number.prototype.format(\'### ### ###\');');
 
     var index = 0;
     var num = this.toString();

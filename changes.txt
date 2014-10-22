@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.7.0
 
 Framework supports a backward compatibility.
+Framework supports: one file only (all libraries in one JS file)
 
 - added: SCHEMA(name), returns group of schemas
 - added: Builders.Schema() - schema supports onGet, onSave, onRemove, onQuery
@@ -17,19 +18,19 @@ Framework supports a backward compatibility.
 - added: String.prototype.toSearch()
 - added: async queue - Utils.queue(name, maximumCalls, fn) (for e.g. EMFILE, too many open files)
 - added: Utils.isEqual(obj1, obj2, [properties])
-- added: ErrorBuilder.transform()
-- added: ErrorBuilder.output()
+- added: ErrorBuilder.prototype.transform()
+- added: ErrorBuilder.prototype.output()
+- added: ErrorBuilder.prototype.setTransform(name) - set default transform
 - added: ErrorBuilder.addTransform(name, fn, [isDefault]) - add transform
-- added: ErrorBuilder.setTransform() - set default transform
 - added: ErrorBuilder.setDefaultTransform() for all ErrorBuilders
-- added: Pagination.transform()
 - added: Pagination.addTransform(name, fn, [isDefault]) - add transform
-- added: Pagination.setTransform() - set default transform
-- added: Pagination.setDefaultTransform() for all Paginations
-- added: Pagination.first()
-- added: Pagination.last()
-- added: Pagination.isFirst
-- added: Pagination.isLast
+- added: Pagination.setDefaultTransform(name) for all Paginations
+- added: Pagination.prototype.transform()
+- added: Pagination.prototype.setTransform(name) - set default transform
+- added: Pagination.prototype.first()
+- added: Pagination.prototype.last()
+- added: Pagination.prototype.isFirst
+- added: Pagination.prototype.isLast
 - added: framework.config['allow-custom-titles'] - (default: false)
 - added: new option into Mail: rejectUnauthorized (for TLS)
 - added: @{log()} and @{LOG()} into views
@@ -42,10 +43,23 @@ Framework supports a backward compatibility.
 - added: FrameworkImage supports buffer
 - added: auto-vendor-prefixes: box-sizing
 - added: new flag `noxhr` or `-xhr` because all route contains +xhr as default
+- added: config['default-errorbuilder-resource-name']
+- added: config['default-errorbuilder-resource-prefix']
+- added: config['allow-handle-static-files']
+- added: FrameworkCache.get() alias for FrameworkCache.read()
+- added: supports creating route without action (framework wraps action)
+- added: .md (markdown) into static-accepts
+- added: (modules, models, sources and controllers) exports.id instead of export.name
+- added: framework.mapping(url, new_filename)
+- added: framework.config['directory-packages'] for packages
+- added: (IMPORTANT) PACKAGES (same as modules but package can contain many files in one file)
+- added: framework.stats.request.request (requests count)
 
+- uodated: (IMPORTANT) framework doesn't remove files/subdirectories in temporary directory
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
 - updated: Utils.request(), timeout is possible to add as cookie, headers or encoding
 - updated: Utils.request() returns EventEmitter (begin, end, data(chunk, percentage))
+- updated: Utils.request() supports auto-redirect if response status code is 301
 - updated: Utils.download() returns EventEmitter (begin, end, data(chunk, percentage))
 - updated: Controller.proxy() - returns EventEmitter (begin, end, data(chunk, percentage))
 - updated: Array.wait(fnItem, fnCallback, removeItems) - default: function doesn't remove items
@@ -54,15 +68,15 @@ Framework supports a backward compatibility.
 - updated: Date.format([format]) - format is optional, function returns ISO format without "Z"
 - updated: response.send(), response.json() - supports ErrorBuilder
 - updated: framework.error() (returns a wrapped delegate if error is undefined)
-- updated: Utils.request() supports auto-redirect if response status code is 301
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
+- renamed: config['allow-compress-html'] to config['allow-compile-html']
 
-- removed: @{place} -> alternative @{section}
 - removed: JS CSS
 - removed: (IMPORTANT) view markup for Angular.js from the core (it will be a module)
 
 - fixed: LOG()
+- fixed: buffer exceeded if a framework receives a data
 - fixed: if path starts '/' then is view loaded directly from /views/ directory
 - fixed: xml parser
 - fixed: problem with parsing a bad JSON datas - framework.decrypt();
@@ -72,9 +86,14 @@ Framework supports a backward compatibility.
 - fixed: appending .js or .css through @{head()}
 - fixed: WebSocket authorization
 - fixed: WebSocketClient.req
-- fixed: Routing
+- fixed: routing (+ asterix routing)
+- fixed: controller.cancel() (after framework.emit('controller', ...))
+- fixed: view helpers (calling without arguments)
 
 - improvements: routing performance
+
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/static-file-merge
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/framework-schema-and-validation
 
 ======= 1.6.2 (HOTFIX)
 

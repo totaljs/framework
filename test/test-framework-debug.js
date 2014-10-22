@@ -32,6 +32,9 @@ framework.onError = function(error, name, uri) {
 };
 
 function end() {
+	console.log('');
+	console.log('Requests count:', framework.stats.request.request);
+	console.log('');
 	console.log('================================================');
 	console.log('success - OK');
 	console.log('================================================');
@@ -371,6 +374,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('mapping', function(complete) {
+		utils.request(url + 'fet.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'TEST', 'static file mapping');
+			complete();
+		});
+	});
+
 	async.complete(function() {
 		next && next();
 	});
@@ -380,6 +392,7 @@ function run() {
 
 	if (max <= 0) {
 
+		console.timeEnd('TEST');
 		framework.fs.rm.view('fromURL');
 
 		assert.ok(framework.global.middleware > 0, 'middleware - middleware');
@@ -391,10 +404,11 @@ function run() {
 		UNINSTALL('view', 'precompile._layout');
 
 		framework.uninstall('precompile', 'precompile.homepage');
+		framework.clear();
 
 		setTimeout(function() {
 			end();
-		}, 1000)
+		}, 2000)
 		return;
 	}
 
@@ -424,6 +438,7 @@ framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html'
 
 framework.on('load', function() {
 	setTimeout(function() {
+		console.time('TEST');
 		run();
 	}, 2000);
 });
