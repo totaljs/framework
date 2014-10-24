@@ -1566,6 +1566,18 @@ ErrorBuilder.prototype.add = function(name, error, path) {
     return self;
 };
 
+
+/**
+ * Add an error (@alias for add)
+ * @param {String} name  Property name.
+ * @param {String or Error} error Error message.
+ * @param {String} path  Current path (in object).
+ * @return {ErrorBuilder}
+ */
+ErrorBuilder.prototype.push = function(name, error, path) {
+    return this.add(name, err, path);
+};
+
 /**
  * Remove error
  * @param {String} name Property name.

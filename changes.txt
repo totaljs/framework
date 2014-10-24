@@ -18,6 +18,7 @@ Framework supports: one file only (all libraries in one JS file)
 - added: String.prototype.toSearch()
 - added: async queue - Utils.queue(name, maximumCalls, fn) (for e.g. EMFILE, too many open files)
 - added: Utils.isEqual(obj1, obj2, [properties])
+- added: ErrorBuilder.prototype.push()
 - added: ErrorBuilder.prototype.transform()
 - added: ErrorBuilder.prototype.output()
 - added: ErrorBuilder.prototype.setTransform(name) - set default transform
