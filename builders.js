@@ -1116,12 +1116,14 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
     var builder = self.onValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
 
     if (builder.hasError()) {
-        callback(builder);
+        if (callback)
+            callback(builder);
         return;
     }
 
     trans.call(self, builder, output, function(result) {
-        callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
+        if (callback)
+            callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
     }, helper, self.name);
 
     return self;
@@ -1163,7 +1165,8 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
     var output = self.default();
 
     compose.call(self, builder, output, model, function(result) {
-        callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
+        if (callback)
+            callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
     }, helper, self.name);
 
     return self;
@@ -1208,12 +1211,14 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
     var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
 
     if (builder.hasError()) {
-        callback(builder);
+        if (callback)
+            callback(builder);
         return;
     }
 
     workflow.call(self, builder, output, function(result) {
-        callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
+        if (callback)
+            callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
     }, helper, self.name);
 
     return self;
