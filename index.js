@@ -170,7 +170,7 @@ function Framework() {
         'default-websocket-encodedecode': true,
 
         // in milliseconds
-        'default-request-timeout': 3000,
+        'default-request-timeout': 5000,
 
         // otherwise is used ImageMagick (Heroku supports ImageMagick)
         // gm = graphicsmagick or im = imagemagick
