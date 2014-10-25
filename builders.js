@@ -628,9 +628,14 @@ SchemaBuilderEntity.prototype.create = function() {
     return this.default();
 };
 
+/**
+ * Makes extensible object
+ * @param {Object} obj
+ * @return {Object}
+ */
 SchemaBuilderEntity.prototype.make = function(obj) {
 
-    if (obj._save)
+    if (obj.$save)
         return obj;
 
     var self = this;
@@ -819,7 +824,7 @@ SchemaBuilderEntity.prototype.default = function() {
         item[property] = child ? child.default() : null;
     }
 
-    return item;
+    return self.make(item);
 };
 
 /**
@@ -1070,7 +1075,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
     }
 
     self._setStateToModel(model, 0, 1);
-    return item;
+    return self.make(item);
 };
 
 /**
