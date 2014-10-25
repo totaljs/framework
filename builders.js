@@ -1023,7 +1023,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
             }
 
             var size = lower.substring(beg + 1, lower.length - 1).parseInt();
-            item[property] = tmp.max(size, '...');
+            item[property] = tmp.max(size, '');
             continue;
         }
 
