@@ -1102,6 +1102,9 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
         helper = undefined;
     }
 
+    if (typeof(callback) !== 'function')
+        callback = undefined;
+
     var trans = self.transforms ? self.transforms[name] : undefined;
 
     if (!trans) {
@@ -1154,6 +1157,9 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
         helper = undefined;
     }
 
+    if (typeof(callback) !== 'function')
+        callback = undefined;
+
     var builder = new ErrorBuilder();
     var compose = self.composes ? self.composes[name] : undefined;
 
@@ -1196,6 +1202,9 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
         callback = helper;
         helper = undefined;
     }
+
+    if (typeof(callback) !== 'function')
+        callback = undefined;
 
     var workflow = self.workflows ? self.workflows[name] : undefined;
 
