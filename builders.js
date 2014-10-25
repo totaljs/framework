@@ -360,8 +360,11 @@ SchemaBuilderEntity.prototype.find = function(name) {
  * @param {String} name
  * @return {Object}
  */
-SchemaBuilderEntity.prototype.rule = function(name) {
+SchemaBuilderEntity.prototype.rule = function(name, value) {
     var self = this;
+
+    if (value)
+        return self.addRule(name, value);
 
     if (self.rules === undefined)
         return undefined;
@@ -1575,7 +1578,7 @@ ErrorBuilder.prototype.add = function(name, error, path) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.push = function(name, error, path) {
-    return this.add(name, err, path);
+    return this.add(name, error, path);
 };
 
 /**
