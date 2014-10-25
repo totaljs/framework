@@ -277,7 +277,7 @@ SchemaBuilderEntity.prototype.addRule = function(name, value) {
 /**
  * Add a new transformation for the entity
  * @param {String} name Transform name, optional.
- * @param {Function(model, next([output]), errorBuilder, helper, entityName)} fn
+ * @param {Function(errorBuilder, model, next([output]), helper, entityName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
@@ -298,7 +298,7 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
 /**
  * Add a new workflow for the entity
  * @param {String} name Workflow name, optional.
- * @param {Function(model, next([output]), errorBuilder, helper, schemaName)} fn
+ * @param {Function(errorBuilder, model, next([output]), helper, schemaName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
@@ -319,7 +319,7 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
 /**
  * Add a new composer for the entity
  * @param {String} name Composer name, optional.
- * @param {Function(output, model, next([output]), errorBuilder, helper, entityName)} fn
+ * @param {Function(errorBuilder, output, model, next([output]), helper, entityName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
@@ -340,7 +340,7 @@ SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
 /**
  * Add a new composer for the entity
  * @param {String} name Transform name, optional.
- * @param {Function(output, model, next([output]), errorBuilder, helper, entityName)} fn
+ * @param {Function(errorBuilder, output, model, next([output]), helper, entityName)} fn
  */
 SchemaBuilderEntity.prototype.addComposer = function(name, fn) {
     return this.addCompose(name, fn);
@@ -626,6 +626,60 @@ SchemaBuilderEntity.prototype._setStateToModel = function(model, index, value) {
  */
 SchemaBuilderEntity.prototype.create = function() {
     return this.default();
+};
+
+SchemaBuilderEntity.prototype.make = function(obj) {
+
+    if (obj._save)
+        return obj;
+
+    var self = this;
+
+    obj.$save = function(helper, callback) {
+        return self.save(obj, helper, callback);
+    };
+
+    obj.$remove = function(helper, callback) {
+        return self.remove(callback === undefined ? obj : helper, callback);
+    };
+
+    obj.$default = function() {
+        return self.default();
+    };
+
+    obj.$destroy = function() {
+        obj = null;
+    };
+
+    obj.$transform = function(name, helper, callback) {
+        return self.transform(name, obj, helper, callback);
+    };
+
+    obj.$compose = function(name, helper, callback) {
+        return self.compose(name, obj, helper, callback);
+    };
+
+    obj.$workflow = function(name, helper, callback) {
+        return self.workflow(name, obj, helper, callback);
+    };
+
+    obj.$clean = function() {
+        return self.clean(obj);
+    };
+
+    obj.$schema = function() {
+        return self;
+    };
+
+    obj.$validate = function(resourcePrefix, resourceName, builder) {
+        return self.validate(obj, resourcePrefix, resourceName, builder);
+    };
+
+    obj.$rule = function(name) {
+        return self.rule(name);
+    };
+
+    return obj;
 };
 
 /**
@@ -1061,9 +1115,9 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
         return;
     }
 
-    trans.call(self, output, function(result) {
+    trans.call(self, builder, output, function(result) {
         callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    }, builder, helper, self.name);
+    }, helper, self.name);
 
     return self;
 
@@ -1103,9 +1157,9 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 
     var output = self.default();
 
-    compose.call(self, output, model, function(result) {
+    compose.call(self, builder, output, model, function(result) {
         callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    }, builder, helper, self.name);
+    }, helper, self.name);
 
     return self;
 
@@ -1153,9 +1207,9 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
         return;
     }
 
-    workflow.call(self, output, function(result) {
+    workflow.call(self, builder, output, function(result) {
         callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    },  builder, helper, self.name);
+    }, helper, self.name);
 
     return self;
 
@@ -1176,6 +1230,15 @@ SchemaBuilderEntity.prototype.clean = function(model, isCopied) {
         model = framework_utils.copy(model);
 
     delete model[DEFAULT_SCHEMA_PROPERTY];
+    delete model['$transform'];
+    delete model['$workflow'];
+    delete model['$destroy'];
+    delete model['$save'];
+    delete model['$remove'];
+    delete model['$clean'];
+    delete model['$default'];
+    delete model['$schema'];
+    delete model['$validate'];
 
     var keys = Object.keys(model);
 
