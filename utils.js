@@ -2081,7 +2081,8 @@ String.prototype.params = function(obj) {
 */
 String.prototype.max = function(length, chars) {
     var str = this;
-    chars = chars || '...';
+    if (typeof(chars) !== STRING)
+        chars = '...';
     return str.length > length ? str.substring(0, length - chars.length) + chars : str;
 };
 
