@@ -1987,10 +1987,14 @@ Framework.prototype.onMail = function(address, subject, body, callback) {
 */
 Framework.prototype.onXSS = function(data) {
 
-    if (data === null || data.length === 0)
+    if (!data)
         return false;
 
-    data = decodeURIComponent(data);
+    try
+    {
+        data = decodeURIComponent(data);
+    } catch (e) {}
+
     return (data.indexOf('<') !== -1 && data.lastIndexOf('>') !== -1);
 };
 
