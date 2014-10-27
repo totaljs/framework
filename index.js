@@ -5179,7 +5179,7 @@ Framework.prototype.resource = function(name, key) {
     var res = self.resources[name];
 
     if (res !== undefined)
-        return res[key];
+        return res[key] || '';
 
     var fileName = utils.combine(self.config['directory-resources'], name + '.resource');
 

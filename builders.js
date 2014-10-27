@@ -1795,7 +1795,7 @@ ErrorBuilder.prototype._prepare = function() {
         else
             o.error = self.onResource(o.error.substring(1));
 
-        if (o.error === undefined)
+        if (o.error === undefined || o.error.length === 0)
             o.error = REQUIRED.replace('@', o.name);
     }
 
