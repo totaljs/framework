@@ -1615,6 +1615,12 @@ ErrorBuilder.prototype.add = function(name, error, path) {
     var self = this;
     self.isPrepared = false;
 
+    if (typeof(name) === OBJECT) {
+        path = error;
+        error = name;
+        name = '';
+    }
+
     if (name instanceof ErrorBuilder) {
 
         if (name.hasError()) {
