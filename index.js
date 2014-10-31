@@ -1626,7 +1626,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
     if (type === 'module' || type === 'controller') {
 
-        _controller = 'TMP' + Utils.random(10000);
+        var _ID = _controller = 'TMP' + Utils.random(10000);
 
         try {
 
@@ -1673,7 +1673,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             return self;
         }
 
-        if (typeof(obj.name) === STRING)
+        if (typeof(obj.id) === STRING)
+            name = obj.name;
+        else if (typeof(obj.name) === STRING)
             name = obj.name;
 
         key = type + '.' + name;
@@ -1697,6 +1699,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             self.temporary.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpire();
         else
             delete self.temporary.dependencies[key].reinstall;
+
+        _controller = _ID;
 
         if (typeof(obj.install) === TYPE_FUNCTION)
             obj.install(self, options, name);
