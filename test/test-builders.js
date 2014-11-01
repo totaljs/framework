@@ -265,7 +265,7 @@ function test_ErrorBuilder() {
     assert.ok(builder.json() === '[{"name":"name","error":"name"}]', name + 'json');
 
     builder.add(new builders.ErrorBuilder().add('age'));
-    assert.ok(builder.json() === '[{"name":"name","error":"name"},{"name":"age","error":"The field \\\"age\\\" is required."}]', name + 'add(ErrorBuilder)');
+    assert.ok(builder.json() === '[{"name":"name","error":"name"},{"name":"age","error":"age"}]', name + 'add(ErrorBuilder)');
     assert.ok(builder.read('name') === 'name', name + 'read()');
     assert.ok(builder.hasError('name'), name + 'hasError(name)');
 
