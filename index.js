@@ -170,7 +170,7 @@ function Framework() {
         'default-websocket-encodedecode': true,
 
         // in milliseconds
-        'default-request-timeout': 3000,
+        'default-request-timeout': 5000,
 
         // otherwise is used ImageMagick (Heroku supports ImageMagick)
         // gm = graphicsmagick or im = imagemagick
@@ -1626,7 +1626,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
     if (type === 'module' || type === 'controller') {
 
-        _controller = 'TMP' + Utils.random(10000);
+        var _ID = _controller = 'TMP' + Utils.random(10000);
 
         try {
 
@@ -1673,7 +1673,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             return self;
         }
 
-        if (typeof(obj.name) === STRING)
+        if (typeof(obj.id) === STRING)
+            name = obj.id;
+        else if (typeof(obj.name) === STRING)
             name = obj.name;
 
         key = type + '.' + name;
@@ -1697,6 +1699,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             self.temporary.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpire();
         else
             delete self.temporary.dependencies[key].reinstall;
+
+        _controller = _ID;
 
         if (typeof(obj.install) === TYPE_FUNCTION)
             obj.install(self, options, name);
@@ -1987,10 +1991,14 @@ Framework.prototype.onMail = function(address, subject, body, callback) {
 */
 Framework.prototype.onXSS = function(data) {
 
-    if (data === null || data.length === 0)
+    if (!data)
         return false;
 
-    data = decodeURIComponent(data);
+    try
+    {
+        data = decodeURIComponent(data);
+    } catch (e) {}
+
     return (data.indexOf('<') !== -1 && data.lastIndexOf('>') !== -1);
 };
 
@@ -5175,7 +5183,7 @@ Framework.prototype.resource = function(name, key) {
     var res = self.resources[name];
 
     if (res !== undefined)
-        return res[key];
+        return res[key] || '';
 
     var fileName = utils.combine(self.config['directory-resources'], name + '.resource');
 
@@ -5464,15 +5472,19 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
 
     var self = this;
     var isSystem = url[0] === '#';
+    var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
 
     if (isSystem)
         req.path = [url];
 
-    var key = 'lookup#' + req.url;
+    var key;
+
+    if (!noCache)
+        key = 'lookup#' + req.isSecure + '#' + subdomain + '#' + req.method + '#' + req.url + '#' + req.xhr + '#' + (req.headers['content-type'] || '').substring(0, 20);
+
     if (!isSystem && !noCache && self.temporary.other[key])
         return self.temporary.other[key];
 
-    var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
     var length = self.routes.web.length;
 
     for (var i = 0; i < length; i++) {
@@ -5505,7 +5517,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
 
         } else {
 
-            if (flags.indexOf('xss') !== -1)
+            if (flags && flags.indexOf('xss') !== -1)
                 continue;
         }
 
@@ -6819,16 +6831,17 @@ Subscribe.prototype.prepare = function(flags, url) {
         framework.onAuthorization(req, res, flags, function(isAuthorized, user) {
             self.doAuthorization(isAuthorized, user);
         });
-        return;
+        return self;
     }
 
     if (self.route === null)
-        self.route = framework.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, flags);
+        self.route = framework.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, req.flags);
 
     if (self.route === null)
-        self.route = framework.lookup(req, req.flags.indexOf('xss') === -1 ? '#404' : '#400', []);
+        self.route = framework.lookup(req, req.flags.indexOf('xss') === -1 ? '#404' : '#400');
 
     self.execute(req.buffer_exceeded ? 431 : 404);
+    return self;
 };
 
 Subscribe.prototype.doExecute = function() {
@@ -6864,7 +6877,7 @@ Subscribe.prototype.doExecute = function() {
     } catch (err) {
         controller = null;
         framework.error(err, name, req.uri);
-        self.route = framework.lookup(req, '#500', []);
+        self.route = framework.lookup(req, '#500');
         self.execute(500);
     }
 
@@ -6887,7 +6900,7 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
     var route = framework.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags);
 
     if (route === null)
-        route = framework.lookup(req, req.isAuthorized ? '#404' : '#401', []);
+        route = framework.lookup(req, req.isAuthorized ? '#404' : '#401');
 
     self.route = route;
     self.execute(req.buffer_exceeded ? 431 : 404);
@@ -6915,7 +6928,7 @@ Subscribe.prototype.doEnd = function() {
     }
 
     if (req.buffer_exceeded) {
-        route = framework.lookup(req, '#431', []);
+        route = framework.lookup(req, '#431');
 
         if (route === null) {
             framework.response431(req, res);
@@ -7004,7 +7017,7 @@ Subscribe.prototype.doEnd = function() {
 
 Subscribe.prototype.route400 = function(problem) {
     var self = this;
-    self.route = framework.lookup(self.req, '#400', []);
+    self.route = framework.lookup(self.req, '#400');
     self.exception = problem;
     self.execute(400);
     return self;
@@ -7116,7 +7129,7 @@ Subscribe.prototype.doCancel = function() {
 
     self.controller.isTimeout = true;
     self.controller.isCanceled = true;
-    self.route = framework.lookup(self.req, '#408', []);
+    self.route = framework.lookup(self.req, '#408');
     self.execute(408);
 };
 
@@ -9553,7 +9566,7 @@ Controller.prototype.view400 = function(problem) {
 
     self.req.path = [];
     self.subscribe.success();
-    self.subscribe.route = framework.lookup(self.req, '#400', []);
+    self.subscribe.route = framework.lookup(self.req, '#400');
     self.subscribe.exception = problem;
     self.subscribe.execute(400);
     return self;
@@ -9583,7 +9596,7 @@ Controller.prototype.view401 = function(problem) {
 
     self.req.path = [];
     self.subscribe.success();
-    self.subscribe.route = framework.lookup(self.req, '#401', []);
+    self.subscribe.route = framework.lookup(self.req, '#401');
     self.subscribe.exception = problem;
     self.subscribe.execute(401);
     return self;
@@ -9613,7 +9626,7 @@ Controller.prototype.view403 = function(problem) {
 
     self.req.path = [];
     self.subscribe.success();
-    self.subscribe.route = framework.lookup(self.req, '#403', []);
+    self.subscribe.route = framework.lookup(self.req, '#403');
     self.subscribe.exception = problem;
     self.subscribe.execute(403);
     return self;
@@ -9642,7 +9655,7 @@ Controller.prototype.view404 = function(problem) {
 
     self.req.path = [];
     self.subscribe.success();
-    self.subscribe.route = framework.lookup(self.req, '#404', []);
+    self.subscribe.route = framework.lookup(self.req, '#404');
     self.subscribe.exception = problem;
     self.subscribe.execute(404);
     return self;
@@ -9664,7 +9677,7 @@ Controller.prototype.view500 = function(error) {
     self.req.path = [];
     self.subscribe.exception = error;
     self.subscribe.success();
-    self.subscribe.route = framework.lookup(self.req, '#500', []);
+    self.subscribe.route = framework.lookup(self.req, '#500');
     self.subscribe.exception = error;
     self.subscribe.execute(500);
     return self;
@@ -9695,7 +9708,7 @@ Controller.prototype.view501 = function(problem) {
 
     self.req.path = [];
     self.subscribe.success();
-    self.subscribe.route = framework.lookup(self.req, '#501', []);
+    self.subscribe.route = framework.lookup(self.req, '#501');
     self.subscribe.exception = problem;
     self.subscribe.execute(501);
     return self;

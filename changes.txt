@@ -10,6 +10,7 @@ Framework supports: one file only (all libraries in one JS file)
 - added: Builders.Schema() - schema supports transformations
 - added: Builders.Schema() - schema supports grouping `Builders.schema('group').get('schema_name)`
 - added: Builders.Schema() - schema supports rules
+- added: Builders.Schema().make(obj) - make object with $save, $remove, $compose, etc.
 - added: framework.mail() - is alias for controller.mail()
 - added: framework.view(name, [model], [layout], [repository]) - is alias for controller.view()
 - added: validate handler contains new parameter model -> (name, value, path, schema, model)
@@ -18,6 +19,7 @@ Framework supports: one file only (all libraries in one JS file)
 - added: String.prototype.toSearch()
 - added: async queue - Utils.queue(name, maximumCalls, fn) (for e.g. EMFILE, too many open files)
 - added: Utils.isEqual(obj1, obj2, [properties])
+- added: ErrorBuilder.prototype.push()
 - added: ErrorBuilder.prototype.transform()
 - added: ErrorBuilder.prototype.output()
 - added: ErrorBuilder.prototype.setTransform(name) - set default transform
