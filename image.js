@@ -10,22 +10,7 @@ var exec = child.exec;
 var spawn = child.spawn;
 var path = require('path');
 
-// INTERNAL
-var sof = {
-    0xc0: true,
-    0xc1: true,
-    0xc2: true,
-    0xc3: true,
-    0xc5: true,
-    0xc6: true,
-    0xc7: true,
-    0xc9: true,
-    0xca: true,
-    0xcb: true,
-    0xcd: true,
-    0xce: true,
-    0xcf: true
-};
+var sof = { 0xc0: true, 0xc1: true, 0xc2: true, 0xc3: true, 0xc5: true, 0xc6: true, 0xc7: true, 0xc9: true, 0xca: true, 0xcb: true, 0xcd: true, 0xce: true, 0xcf: true };
 
 function u16(buf, o) {
     return buf[o] << 8 | buf[o + 1];
@@ -36,10 +21,7 @@ function u32(buf, o) {
 }
 
 exports.measureGIF = function(buffer) {
-    return {
-        width: buffer[6],
-        height: buffer[8]
-    };
+    return { width: buffer[6], height: buffer[8] };
 };
 
 // MIT
@@ -81,10 +63,7 @@ exports.measureJPG = function(buffer) {
 // Written by TJ Holowaychuk
 // visionmedia
 exports.measurePNG = function(buffer) {
-    return {
-        width: u32(buffer, 16),
-        height: u32(buffer, 16 + 4)
-    };
+    return { width: u32(buffer, 16), height: u32(buffer, 16 + 4) };
 };
 
 /*
@@ -92,18 +71,21 @@ exports.measurePNG = function(buffer) {
 	@filename {String}
 	@useImageMagick {Boolean} :: default false
 */
-function Image(filename, useImageMagick) {
+function Image(filename, useImageMagick, width, height) {
 
     var type = typeof(filename);
 
+    this.width = width;
+    this.height = height;
     this.builder = [];
     this.filename = type === 'string' ? filename : null;
     this.currentStream = type === 'object' ? filename : null;
     this.isIM = useImageMagick || false;
     this.outputType = type === 'string' ? path.extname(filename).substring(1) : 'jpg';
-
+/*
     if (!filename)
         throw new Error('Image filename is undefined.');
+*/
 }
 
 /*
@@ -158,13 +140,14 @@ Image.prototype.measure = function(callback) {
     return self;
 };
 
-/*
-	Execute all filters and save image
-	@filename {String}
-	@callback {Function} :: optional
-	return {Image}
-*/
-Image.prototype.save = function(filename, callback) {
+/**
+ * Execute commands
+ * @param {String} filename
+ * @param {Function(err, filename)} callback Optional.
+ * @param {Function(stream)} writer A custom stream writer, optional.
+ * @return {Image}
+ */
+Image.prototype.save = function(filename, callback, writer) {
 
     var self = this;
 
@@ -201,6 +184,9 @@ Image.prototype.save = function(filename, callback) {
         else
             self.currentStream.pipe(cmd.stdin);
     }
+
+    if (writer)
+        writer(cmd.stdin);
 
     return self;
 };
@@ -245,13 +231,13 @@ Image.prototype.pipe = function(stream, type, options) {
     return self;
 };
 
-/*
-	Create a stream
-	@stream {Stream}
-	@type {String} :: optional, image type (png, jpg, gif)
-	return {Image}
-*/
-Image.prototype.stream = function(type) {
+/**
+ * Create a stream
+ * @param {String} type File type (png, jpg, gif)
+ * @param {Function(stream)} writer A custom stream writer.
+ * @return {ReadStream}
+ */
+Image.prototype.stream = function(type, writer) {
 
     var self = this;
 
@@ -269,6 +255,9 @@ Image.prototype.stream = function(type) {
         else
             self.currentStream.pipe(cmd.stdin);
     }
+
+    if (writer)
+        writer(cmd.stdin);
 
     return cmd.stdout;
 };
@@ -420,11 +409,36 @@ Image.prototype.resize = function(w, h, options) {
 };
 
 /*
-	@w {Number}
-	@h {Number}
+    @w {Number}
+    @h {Number}
 */
-Image.prototype.resizeCenter = function(w, h) {
-    return this.resize(w, h, '^').align('center').crop(w, h);
+Image.prototype.extent = function(w, h) {
+
+    var self = this;
+    var size = '';
+
+    if (w && h)
+        size = w + 'x' + h;
+    else if (w && !h)
+        size = w;
+    else if (!w && h)
+        size = 'x' + h;
+
+    return self.push('-extent', size, 1);
+};
+
+
+/**
+ * Resize picture
+ * @param {Number} w
+ * @param {Number} h
+ * @param {String} color Optional, background color.
+ * @return {Image}
+ */
+Image.prototype.resizeCenter = function(w, h, color) {
+    if (this.width < w && this.height < h)
+        return this.background(color ? color : 'white').align('center').extent(w, h);
+    return this.resize(w, h, '^').background(color ? color : 'white').align('center').crop(w, h);
 };
 
 /*
@@ -585,7 +599,7 @@ Image.prototype.background = function(color) {
 };
 
 Image.prototype.sepia = function(percentage) {
-    return this.push('-modulate', '115,0,100', 4).push('-colorize', '7,21,50', 5)
+    return this.push('-modulate', '115,0,100', 4).push('-colorize', '7,21,50', 5);
 };
 
 /*
@@ -604,10 +618,10 @@ exports.Picture = Image;
 	@filename {String}
 	@imageMagick {Boolean} :: default false
 */
-exports.init = function(filename, imageMagick) {
-    return new Image(filename, imageMagick);
+exports.init = function(filename, imageMagick, width, height) {
+    return new Image(filename, imageMagick, width, height);
 };
 
-exports.load = function(filename, imageMagick) {
-    return new Image(filename, imageMagick);
+exports.load = function(filename, imageMagick, width, height) {
+    return new Image(filename, imageMagick, width, height);
 };

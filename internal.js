@@ -730,7 +730,7 @@ HttpFile.prototype.image = function(imageMagick) {
     if (im === undefined)
         im = framework.config['default-image-converter'] === 'im';
 
-    return framework_image.init(this.path, im);
+    return framework_image.init(this.path, im, this.width, this.height);
 };
 
 // *********************************************************************************
