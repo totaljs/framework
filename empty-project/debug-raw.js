@@ -15,13 +15,24 @@ var options = {};
 var isDebugging = process.argv[process.argv.length - 1] === 'debugging';
 var directory = process.cwd();
 var path = require('path');
+var first = true;
 
 function debug() {
     var framework = require('total.js');
     var port = parseInt(process.argv[2]);
+
     if (options.https)
         return framework.https('debug', options);
+
     framework.http('debug', options);
+
+    if (first) {
+        first = false;
+        framework.emit('debug-start');
+        return;
+    }
+
+    framework.emit('debug-restart');
 }
 
 function app() {
