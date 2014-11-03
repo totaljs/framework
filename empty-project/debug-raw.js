@@ -12,10 +12,10 @@ var options = {};
 // options.config = { name: 'total.js' };
 // options.https = { key: fs.readFileSync('keys/agent2-key.pem'), cert: fs.readFileSync('keys/agent2-cert.pem')};
 
-var isDebugging = process.argv[process.argv.length - 1] === 'debugging';
+var isDebugging = process.argv.indexOf('debugging') !== -1;
 var directory = process.cwd();
 var path = require('path');
-var first = true;
+var first = process.argv.indexOf('restart') === -1;
 
 function debug() {
     var framework = require('total.js');
@@ -26,13 +26,10 @@ function debug() {
 
     framework.http('debug', options);
 
-    if (first) {
-        first = false;
+    if (first)
         framework.emit('debug-start');
-        return;
-    }
-
-    framework.emit('debug-restart');
+    else
+        framework.emit('debug-restart');
 }
 
 function app() {
@@ -157,6 +154,12 @@ function app() {
 
         var arr = process.argv;
         arr.pop();
+
+        if (first)
+            first = false;
+        else
+            arr.push('restart');
+
         arr.push('debugging');
 
         app = fork(path.join(directory, 'debug.js'), arr);
