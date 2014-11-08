@@ -1598,7 +1598,7 @@ ErrorBuilder.prototype._resource = function() {
         var self = this;
         if (typeof(framework) !== UNDEFINED)
             return framework.resource(self.resourceName, self.resourcePrefix + name);
-        return name;
+        return '';
     };
 
     return self;
@@ -1615,24 +1615,19 @@ ErrorBuilder.prototype.add = function(name, error, path) {
     var self = this;
     self.isPrepared = false;
 
+    if (name instanceof ErrorBuilder) {
+        if (name.hasError()) {
+            for (var i = 0, length = name.items.length; i < length; i++)
+                self.items.push(name.items[i]);
+            self.count = self.items.length;
+        }
+        return self;
+    }
+
     if (typeof(name) === OBJECT) {
         path = error;
         error = name;
         name = '';
-    }
-
-    if (name instanceof ErrorBuilder) {
-
-        if (name.hasError()) {
-
-            name.errors.forEach(function(o) {
-                self.errors.push(o);
-            });
-
-            self.count = self.items.length;
-        }
-
-        return self;
     }
 
     if ((name === undefined || name === null) && (error === undefined || error === null))

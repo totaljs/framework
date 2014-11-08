@@ -4377,20 +4377,20 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 
         for (var i = 0, length = route.middleware.length; i < length; i++) {
 
-            var middleware = framework.routes.middleware[file.middleware[i]];
+            var middleware = framework.routes.middleware[route.middleware[i]];
 
             if (!middleware)
                 continue;
 
             (function(middleware) {
                 func.push(function(next) {
-                    middleware.call(framework, req, res, next, route.options);
+                    middleware.call(framework, req, socket, next, route.options);
                 });
             })(middleware);
 
         }
 
-        func._async_middleware(res, next);
+        func._async_middleware(socket, next);
         return self;
     }
 
