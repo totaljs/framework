@@ -4280,7 +4280,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
         (function(middleware) {
             func.push(function(next) {
-                middleware.call(framework, req, null, next);
+                middleware.call(framework, req, websocket, next);
             });
         })(middleware);
     }
