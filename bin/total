@@ -234,6 +234,8 @@ function createFilePublicAngular(directory) {
     var controllers = path.join(dir, 'controllers');
     var buffer = [];
 
+    fs.mkdirSync(modules);
+
     buffer.push('User-agent: *');
     buffer.push('Allow: /');
     buffer.push('');
