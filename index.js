@@ -788,6 +788,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         isBOTH: isNOXHR ? false : true,
         isXHR: flags.indexOf('xhr') !== -1,
         isUPLOAD: flags.indexOf('upload') !== -1,
+        isSYSTEM: url.startsWith('/#'),
         options: options
     });
 
@@ -5501,13 +5502,15 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
                 continue;
         }
 
-        if (isSystem)
-            return route;
+        if (isSystem) {
+            if (route.isSYSTEM)
+                return route;
+            continue;
+        }
 
         if (route.flags !== null && route.flags.length > 0) {
 
             var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
-
             if (result === -1)
                 req.isAuthorized = false;
 
