@@ -9805,15 +9805,15 @@ Controller.prototype.binary = function(buffer) {
 Controller.prototype.baa = function(name) {
 
     var self = this;
-    var authorization = self.req.headers['authorization'] || '';
 
-    if (authorization === '') {
-        self.res.setHeader('WWW-Authenticate', 'Basic realm="' + (name || 'Administration') + '"');
-        self.view401();
-        return null;
-    }
+    if (name === undefined)
+        return self.req.authorization();
 
-    return self.req.authorization();
+    self.res.setHeader('WWW-Authenticate', 'Basic realm="' + (name || 'Administration') + '"');
+    self.view401();
+    self.cancel();
+
+    return null;
 };
 
 /*
@@ -11775,15 +11775,16 @@ http.IncomingMessage.prototype.authorization = function() {
 
     var self = this;
     var authorization = self.headers['authorization'] || '';
-    var result = { name: '', password: '' };
+    var result = { user: '', password: '', empty: true };
 
     if (authorization === '')
         return result;
 
     var arr = new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
 
-    result.name = arr[0] || '';
+    result.user = arr[0] || '';
     result.password = arr[1] || '';
+    result.empty = result.user.length === 0 || result.password.length === 0;
 
     return result;
 };

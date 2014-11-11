@@ -70,6 +70,7 @@ Framework supports: one file only (all libraries in one JS file)
 - updated: Date.format([format]) - format is optional, function returns ISO format without "Z"
 - updated: response.send(), response.json() - supports ErrorBuilder
 - updated: framework.error() (returns a wrapped delegate if error is undefined)
+- updated: controller.baa([message]) - read documentation
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
 - renamed: config['allow-compress-html'] to config['allow-compile-html']
