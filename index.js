@@ -1203,7 +1203,7 @@ Framework.prototype.module = function(name) {
 Framework.prototype.load = function() {
 
     var self = this;
-    var dir = path.join(directory, self.config['directory-controllers']);
+    var dir = '';
     var framework = self;
     var arr = [];
 
@@ -1229,13 +1229,6 @@ Framework.prototype.load = function() {
         });
     }
 
-    arr = [];
-    listing(dir, 0, arr);
-
-    arr.forEach(function(item) {
-        self.install('controller', item.name, item.filename, undefined, undefined, undefined, true)
-    });
-
     dir = path.join(directory, self.config['directory-modules']);
 
     if (fs.existsSync(dir)) {
@@ -1252,13 +1245,13 @@ Framework.prototype.load = function() {
         });
     }
 
-    dir = path.join(directory, self.config['directory-definitions']);
+    dir = path.join(directory, self.config['directory-packages']);
 
     arr = [];
-    listing(dir, 0, arr);
+    listing(dir, 0, arr, '.package');
 
     arr.forEach(function(item) {
-        self.install('definition', item.name, item.filename, undefined, undefined, undefined, true);
+        self.install('package', item.name, item.filename, undefined, undefined, undefined, true);
     });
 
     dir = path.join(directory, self.config['directory-models']);
@@ -1270,13 +1263,20 @@ Framework.prototype.load = function() {
         self.install('model', item.name, item.filename, undefined, undefined, undefined, true);
     });
 
-    dir = path.join(directory, self.config['directory-packages']);
-
+    dir = path.join(directory, self.config['directory-definitions']);
     arr = [];
-    listing(dir, 0, arr, '.package');
+    listing(dir, 0, arr);
 
     arr.forEach(function(item) {
-        self.install('package', item.name, item.filename, undefined, undefined, undefined, true);
+        self.install('definition', item.name, item.filename, undefined, undefined, undefined, true);
+    });
+
+    arr = [];
+    dir = path.join(directory, self.config['directory-controllers']);
+    listing(dir, 0, arr);
+
+    arr.forEach(function(item) {
+        self.install('controller', item.name, item.filename, undefined, undefined, undefined, true)
     });
 
     self._routesSort();
