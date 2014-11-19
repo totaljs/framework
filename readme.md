@@ -223,7 +223,7 @@ $ open http://127.0.0.1:8000
 Peter Širka - <petersirka@gmail.com>
 
 [license-image]: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
-[license-url]: LICENSE
+[license-url]: license.txt
 
 [npm-url]: https://npmjs.org/package/total.js
 [npm-version-image]: http://img.shields.io/npm/v/total.js.svg?style=flat
