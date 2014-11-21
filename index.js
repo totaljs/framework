@@ -10349,7 +10349,7 @@ function WebSocket(framework, path, name, id) {
     // on('close', function(client) {});
     // on('message', function(client, message) {});
     // on('error', function(error, client) {});
-    events.EventEmitter.call(this);
+    // events.EventEmitter.call(this);
 }
 
 WebSocket.prototype = {
