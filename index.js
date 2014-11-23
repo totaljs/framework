@@ -5450,7 +5450,7 @@ Framework.prototype._routeStatic = function(name, directory) {
 */
 Framework.prototype._staticFilePath = function(name) {
     var self = this;
-    return utils.combine(self.config['directory-public'], path.relative(self.config['static-url'], name));
+    return utils.combine(self.config['directory-public'], path.relative(url.parse(self.config['static-url']).pathname, name));
 };
 
 /*
