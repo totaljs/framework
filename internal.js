@@ -408,15 +408,20 @@ exports.routeSplit = function(url, noLower) {
 exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
     var length = url.length;
+    var lengthRoute = route.length;
 
-    if (route.length !== length && !isAsterix)
+    if (lengthRoute !== length && !isAsterix)
         return false;
+
+    if (isAsterix && lengthRoute === 1 && route[0] === '/')
+        return true;
 
     var skip = length === 1 && url[0] === '/';
 
     for (var i = 0; i < length; i++) {
 
         var value = route[i];
+
         if (!isSystem && isAsterix && value === undefined)
             return true;
 
@@ -425,7 +430,7 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
         if (url[i] !== value) {
             if (!isSystem)
-                return isAsterix;
+                return isAsterix ? i >= lengthRoute : false;
             return false;
         }
     }
@@ -725,7 +730,7 @@ HttpFile.prototype.image = function(imageMagick) {
     if (im === undefined)
         im = framework.config['default-image-converter'] === 'im';
 
-    return framework_image.init(this.path, im);
+    return framework_image.init(this.path, im, this.width, this.height);
 };
 
 // *********************************************************************************
@@ -1649,7 +1654,10 @@ function View() {}
  */
 function view_parse(content, minify) {
 
-    content = removeComments(compressCSS(compressJS(content, 0), 0));
+    if (minify)
+        content = removeComments(content);
+
+    content = compressCSS(compressJS(content, 0), 0);
 
     var DELIMITER = '\'';
     var DELIMITER_UNESCAPE = 'unescape(\'';
@@ -1682,6 +1690,7 @@ function view_parse(content, minify) {
     var isSECTION = false;
     var builderTMP = '';
     var sectionName = '';
+    var isSitemap = false;
 
     while (command !== null) {
 
@@ -1773,6 +1782,8 @@ function view_parse(content, minify) {
 
         old = command;
         command = view_find_command(content, command.end);
+        if (command && command.command && command.command.indexOf('sitemap(') !== -1)
+            isSitemap = true;
     }
 
     if (old !== null) {
@@ -1781,7 +1792,7 @@ function view_parse(content, minify) {
             builder += '+' + escaper(text);
     }
 
-    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,sitemap,output,date){' + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,output,date){' + (isSitemap ? 'var sitemap = function() { return self.sitemap.apply(self, arguments);};' : '') + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
     return eval(fn);
 }
 
@@ -2313,7 +2324,6 @@ View.prototype.read = function(path) {
     var self = this;
     var config = framework.config;
     var isOut = path[0] === '.';
-
     var filename = isOut ? path.substring(1) : framework_utils.combine(config['directory-views'], path);
 
     if (fs.existsSync(filename))

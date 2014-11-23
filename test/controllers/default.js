@@ -24,6 +24,7 @@ exports.install = function(framework) {
         flags: ['unauthorize']
     });
 
+    framework.route('/package/', '@testpackage/test');
     framework.route('/precompile/', view_precomile);
     framework.route('/homepage/', view_homepage);
     framework.route('/usage/', view_usage);
@@ -424,7 +425,7 @@ function viewIndex() {
     assert.ok(self.routeCSS('p.css') === '/css/p.css', name + 'routeCSS()');
     assert.ok(self.routeImage('p.jpg') === '/img/p.jpg', name + 'routeImage()');
     assert.ok(self.routeVideo('p.avi') === '/video/p.avi', name + 'routeVideo()');
-    assert.ok(self.routeFont('p.woff') === '/font/p.woff', name + 'routeFont()');
+    assert.ok(self.routeFont('p.woff') === '/fonts/p.woff', name + 'routeFont()');
     assert.ok(self.routeDownload('p.pdf') === '/download/p.pdf', name + 'routeDownload()');
     assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
 

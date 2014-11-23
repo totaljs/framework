@@ -80,11 +80,16 @@ __Other products__:
 
 - [FileServer: storing of uploaded files](https://github.com/petersirka/fileserver)
 
-Project
--------
+References
+----------
 
-- [www.gpslocalization.com](http://www.gpslocalization.com) is written in total.js and uses WebSockets, __try it__.
+- [total.js (+ documentation) - www.totaljs.com](https://www.totaljs.com)
+- [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)
+- [GPS Localization (WebSocket) - www.gpslocalization.com](http://www.gpslocalization.com)
+- [Online Clipboard (CouchDB) - www.online-clipboard.com](https://www.online-clipboard.com)
+- [Sushi Eshop - www.sushi-bratislava.sk](http://www.sushi-bratislava.sk)
 
+... and many more.
 
 Documentation
 -------------
@@ -218,7 +223,7 @@ $ open http://127.0.0.1:8000
 Peter Širka - <petersirka@gmail.com>
 
 [license-image]: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
-[license-url]: LICENSE
+[license-url]: license.txt
 
 [npm-url]: https://npmjs.org/package/total.js
 [npm-version-image]: http://img.shields.io/npm/v/total.js.svg?style=flat

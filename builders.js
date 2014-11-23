@@ -88,6 +88,7 @@ SchemaBuilder.prototype.destroy = function(name) {
 function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.parent = parent;
     this.name = name;
+    this.primary;
     this.schema = obj;
     this.properties = properties === undefined ? Object.keys(obj) : properties;
     this.transforms;
@@ -108,7 +109,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
  * @param {Boolean} required Is required? Default: false.
  * @return {SchemaBuilder}
  */
-SchemaBuilderEntity.prototype.define = function(name, type, required) {
+SchemaBuilderEntity.prototype.define = function(name, type, required, primary) {
 
     var self = this;
 
@@ -118,6 +119,8 @@ SchemaBuilderEntity.prototype.define = function(name, type, required) {
         return self;
     }
 
+    if (primary)
+        self.primary = primary;
     self.schema[name] = type;
 
     if (!required)
@@ -274,7 +277,7 @@ SchemaBuilderEntity.prototype.addRule = function(name, value) {
 /**
  * Add a new transformation for the entity
  * @param {String} name Transform name, optional.
- * @param {Function(model, next([output]), errorBuilder, helper, entityName)} fn
+ * @param {Function(errorBuilder, model, next([output]), helper, entityName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
@@ -295,7 +298,7 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
 /**
  * Add a new workflow for the entity
  * @param {String} name Workflow name, optional.
- * @param {Function(model, next([output]), errorBuilder, helper, schemaName)} fn
+ * @param {Function(errorBuilder, model, next([output]), helper, schemaName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
@@ -316,7 +319,7 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
 /**
  * Add a new composer for the entity
  * @param {String} name Composer name, optional.
- * @param {Function(output, model, next([output]), errorBuilder, helper, entityName)} fn
+ * @param {Function(errorBuilder, output, model, next([output]), helper, entityName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
@@ -337,7 +340,7 @@ SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
 /**
  * Add a new composer for the entity
  * @param {String} name Transform name, optional.
- * @param {Function(output, model, next([output]), errorBuilder, helper, entityName)} fn
+ * @param {Function(errorBuilder, output, model, next([output]), helper, entityName)} fn
  */
 SchemaBuilderEntity.prototype.addComposer = function(name, fn) {
     return this.addCompose(name, fn);
@@ -357,8 +360,11 @@ SchemaBuilderEntity.prototype.find = function(name) {
  * @param {String} name
  * @return {Object}
  */
-SchemaBuilderEntity.prototype.rule = function(name) {
+SchemaBuilderEntity.prototype.rule = function(name, value) {
     var self = this;
+
+    if (value)
+        return self.addRule(name, value);
 
     if (self.rules === undefined)
         return undefined;
@@ -623,6 +629,65 @@ SchemaBuilderEntity.prototype.create = function() {
 };
 
 /**
+ * Makes extensible object
+ * @param {Object} obj
+ * @return {Object}
+ */
+SchemaBuilderEntity.prototype.make = function(obj) {
+
+    if (obj.$save)
+        return obj;
+
+    var self = this;
+
+    obj.$save = function(helper, callback) {
+        return self.save(obj, helper, callback);
+    };
+
+    obj.$remove = function(helper, callback) {
+        return self.remove(callback === undefined ? obj : helper, callback);
+    };
+
+    obj.$default = function() {
+        return self.default();
+    };
+
+    obj.$destroy = function() {
+        obj = null;
+    };
+
+    obj.$transform = function(name, helper, callback) {
+        return self.transform(name, obj, helper, callback);
+    };
+
+    obj.$compose = function(name, helper, callback) {
+        return self.compose(name, obj, helper, callback);
+    };
+
+    obj.$workflow = function(name, helper, callback) {
+        return self.workflow(name, obj, helper, callback);
+    };
+
+    obj.$clean = function() {
+        return self.clean(obj);
+    };
+
+    obj.$schema = function() {
+        return self;
+    };
+
+    obj.$validate = function(resourcePrefix, resourceName, builder) {
+        return self.validate(obj, resourcePrefix, resourceName, builder);
+    };
+
+    obj.$rule = function(name) {
+        return self.rule(name);
+    };
+
+    return obj;
+};
+
+/**
  * Create a default object according the schema
  * @return {Object}
  */
@@ -759,7 +824,7 @@ SchemaBuilderEntity.prototype.default = function() {
         item[property] = child ? child.default() : null;
     }
 
-    return item;
+    return self.make(item);
 };
 
 /**
@@ -857,7 +922,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                 continue;
             }
 
-            item[property] = defaults ? isUndefined(defaults(value, false, name), null) : null;
+            item[property] = defaults ? isUndefined(defaults(value, false, self.name), null) : null;
             continue;
         }
 
@@ -896,7 +961,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                 value = null;
 
             if (!(val instanceof Array)) {
-                item[property] = (defaults ? isUndefined(defaults(property, false, name), []) : []);
+                item[property] = (defaults ? isUndefined(defaults(property, false, self.name), []) : []);
                 continue;
             }
 
@@ -958,7 +1023,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
             }
 
             var size = lower.substring(beg + 1, lower.length - 1).parseInt();
-            item[property] = tmp.max(size, '...');
+            item[property] = tmp.max(size, '');
             continue;
         }
 
@@ -994,7 +1059,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                 continue;
             }
 
-            item[property] = isUndefined(defaults(property, false, name));
+            item[property] = isUndefined(defaults(property, false, self.name));
             continue;
         }
 
@@ -1010,7 +1075,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
     }
 
     self._setStateToModel(model, 0, 1);
-    return item;
+    return self.make(item);
 };
 
 /**
@@ -1037,6 +1102,9 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
         helper = undefined;
     }
 
+    if (typeof(callback) !== 'function')
+        callback = undefined;
+
     var trans = self.transforms ? self.transforms[name] : undefined;
 
     if (!trans) {
@@ -1051,13 +1119,15 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
     var builder = self.onValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
 
     if (builder.hasError()) {
-        callback(builder);
+        if (callback)
+            callback(builder);
         return;
     }
 
-    trans.call(self, output, function(result) {
-        callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    }, builder, helper, self.name);
+    trans.call(self, builder, output, function(result) {
+        if (callback)
+            callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
+    }, helper, self.name);
 
     return self;
 
@@ -1087,6 +1157,9 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
         helper = undefined;
     }
 
+    if (typeof(callback) !== 'function')
+        callback = undefined;
+
     var builder = new ErrorBuilder();
     var compose = self.composes ? self.composes[name] : undefined;
 
@@ -1097,9 +1170,10 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 
     var output = self.default();
 
-    compose.call(self, output, model, function(result) {
-        callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    }, builder, helper, self.name);
+    compose.call(self, builder, output, model, function(result) {
+        if (callback)
+            callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
+    }, helper, self.name);
 
     return self;
 
@@ -1129,6 +1203,9 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
         helper = undefined;
     }
 
+    if (typeof(callback) !== 'function')
+        callback = undefined;
+
     var workflow = self.workflows ? self.workflows[name] : undefined;
 
     if (!workflow) {
@@ -1143,13 +1220,15 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
     var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
 
     if (builder.hasError()) {
-        callback(builder);
+        if (callback)
+            callback(builder);
         return;
     }
 
-    workflow.call(self, output, function(result) {
-        callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    },  builder, helper, self.name);
+    workflow.call(self, builder, output, function(result) {
+        if (callback)
+            callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
+    }, helper, self.name);
 
     return self;
 
@@ -1170,6 +1249,15 @@ SchemaBuilderEntity.prototype.clean = function(model, isCopied) {
         model = framework_utils.copy(model);
 
     delete model[DEFAULT_SCHEMA_PROPERTY];
+    delete model['$transform'];
+    delete model['$workflow'];
+    delete model['$destroy'];
+    delete model['$save'];
+    delete model['$remove'];
+    delete model['$clean'];
+    delete model['$default'];
+    delete model['$schema'];
+    delete model['$validate'];
 
     var keys = Object.keys(model);
 
@@ -1510,7 +1598,7 @@ ErrorBuilder.prototype._resource = function() {
         var self = this;
         if (typeof(framework) !== UNDEFINED)
             return framework.resource(self.resourceName, self.resourcePrefix + name);
-        return name;
+        return '';
     };
 
     return self;
@@ -1528,17 +1616,18 @@ ErrorBuilder.prototype.add = function(name, error, path) {
     self.isPrepared = false;
 
     if (name instanceof ErrorBuilder) {
-
         if (name.hasError()) {
-
-            name.errors.forEach(function(o) {
-                self.errors.push(o);
-            });
-
+            for (var i = 0, length = name.items.length; i < length; i++)
+                self.items.push(name.items[i]);
             self.count = self.items.length;
         }
-
         return self;
+    }
+
+    if (typeof(name) === OBJECT) {
+        path = error;
+        error = name;
+        name = '';
     }
 
     if ((name === undefined || name === null) && (error === undefined || error === null))
@@ -1561,6 +1650,18 @@ ErrorBuilder.prototype.add = function(name, error, path) {
 
     self.count = self.items.length;
     return self;
+};
+
+
+/**
+ * Add an error (@alias for add)
+ * @param {String} name  Property name.
+ * @param {String or Error} error Error message.
+ * @param {String} path  Current path (in object).
+ * @return {ErrorBuilder}
+ */
+ErrorBuilder.prototype.push = function(name, error, path) {
+    return this.add(name, error, path);
 };
 
 /**
@@ -1695,7 +1796,7 @@ ErrorBuilder.prototype._prepare = function() {
         else
             o.error = self.onResource(o.error.substring(1));
 
-        if (o.error === undefined)
+        if (o.error === undefined || o.error.length === 0)
             o.error = REQUIRED.replace('@', o.name);
     }
 

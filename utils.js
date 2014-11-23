@@ -1805,18 +1805,20 @@ String.prototype.parseDate = function() {
             continue;
 
         if (noTime)
-            return null;
+            return new Date(self);
     }
 
     if (arr[1] === undefined)
         arr[1] = '00:00:00';
 
-    var date = (arr[0] || '').split('-');
+    var firstDay = arr[0].indexOf('-') === -1;
+
+    var date = (arr[0] || '').split(firstDay ? '.' : '-');
     var time = (arr[1] || '').split(':');
     var parsed = [];
 
     if (date.length < 4 && time.length < 2)
-        return null;
+        return new Date(self);
 
     index = (time[2] || '').indexOf('.');
 
@@ -1827,9 +1829,9 @@ String.prototype.parseDate = function() {
     } else
         time[3] = '0';
 
-    parsed.push(parseInt(date[0], 10)); // year
+    parsed.push(parseInt(date[firstDay ? 2 : 0], 10)); // year
     parsed.push(parseInt(date[1], 10)); // month
-    parsed.push(parseInt(date[2], 10)); // day
+    parsed.push(parseInt(date[firstDay ? 0 : 2], 10)); // day
     parsed.push(parseInt(time[0], 10)); // hours
     parsed.push(parseInt(time[1], 10)); // minutes
     parsed.push(parseInt(time[2], 10)); // seconds
@@ -2079,7 +2081,8 @@ String.prototype.params = function(obj) {
 */
 String.prototype.max = function(length, chars) {
     var str = this;
-    chars = chars || '...';
+    if (typeof(chars) !== STRING)
+        chars = '...';
     return str.length > length ? str.substring(0, length - chars.length) + chars : str;
 };
 
@@ -2364,20 +2367,25 @@ String.prototype.isNumber = function(isDecimal) {
     @c {String} :: optional
     return {String}
 */
-String.prototype.padLeft = function(max, c) {
-    var self = this;
-    return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
-};
+
+if (!String.prototype.padLeft) {
+    String.prototype.padLeft = function(max, c) {
+        var self = this;
+        return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
+    };
+}
 
 /*
     @max {Number}
     @c {String} :: optional
     return {String}
 */
-String.prototype.padRight = function(max, c) {
-    var self = this;
-    return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
-};
+if (!String.prototype.padRight) {
+    String.prototype.padRight = function(max, c) {
+        var self = this;
+        return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
+    };
+}
 
 /*
     index {Number}

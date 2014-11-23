@@ -151,9 +151,9 @@ function test_Schema() {
             return -1;
     });
 
-    builders.schema('default').get('2').addTransform('xml', function(model, next, err, helper) {
+    builders.schema('default').get('2').addTransform('xml', function(err, model, next, helper) {
         next('<xml>OK</xml>');
-    }).addWorkflow('send', function(model, next, err, helper) {
+    }).addWorkflow('send', function(err, model, next, helper) {
         next('workflow');
     }).setGet(function(error, model, helper, next) {
         assert.ok(error.hasError() === false, 'schema - setGet');
@@ -265,7 +265,7 @@ function test_ErrorBuilder() {
     assert.ok(builder.json() === '[{"name":"name","error":"name"}]', name + 'json');
 
     builder.add(new builders.ErrorBuilder().add('age'));
-    assert.ok(builder.json() === '[{"name":"name","error":"name"},{"name":"age","error":"The field \\\"age\\\" is required."}]', name + 'add(ErrorBuilder)');
+    assert.ok(builder.json() === '[{"name":"name","error":"name"},{"name":"age","error":"age"}]', name + 'add(ErrorBuilder)');
     assert.ok(builder.read('name') === 'name', name + 'read()');
     assert.ok(builder.hasError('name'), name + 'hasError(name)');
 
