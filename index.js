@@ -29,6 +29,7 @@ var OBJECT = 'object';
 var BOOLEAN = 'boolean';
 var REQUEST_COMPRESS_EXTENSION = ['js', 'css', 'txt'];
 var EXTENSION_JS = '.js';
+var EXTENSION_CSS = '.css';
 var EXTENSION_COFFEE = '.coffee';
 var RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
 var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
@@ -2511,7 +2512,7 @@ Framework.prototype.isProcessed = function(filename) {
         if (index !== -1)
             name = name.substring(0, index);
 
-        filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+        filename = self._staticFilePath(decodeURIComponent(name));
     }
 
     if (self.temporary.path[filename] !== undefined)
@@ -2536,10 +2537,9 @@ Framework.prototype.isProcessing = function(filename) {
         if (index !== -1)
             name = name.substring(0, index);
 
-        filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+        filename = self._staticFilePath(decodeURIComponent(filename));
     }
 
-    var name = self.temporary.processing[filename];
     if (self.temporary.processing[filename] !== undefined)
         return true;
     return false;
@@ -5444,6 +5444,16 @@ Framework.prototype._routeStatic = function(name, directory) {
 };
 
 /*
+    Internal static file path
+    @name {String} :: filename
+    return {String}
+*/
+Framework.prototype._staticFilePath = function(name) {
+    var self = this;
+    return utils.combine(self.config['directory-public'], path.relative(url.parse(self.config['static-url']).pathname, name));
+};
+
+/*
     Internal mapping function
     @name {String} :: filename
     return {String}
@@ -5887,8 +5897,8 @@ function FrameworkFileSystem(framework) {
 FrameworkFileSystem.prototype.deleteCSS = function(name) {
     var self = this;
 
-    if (name.lastIndexOf('.css') === -1)
-        name += '.css';
+    if (name.lastIndexOf(EXTENSION_CSS) === -1)
+        name += EXTENSION_CSS;
 
     var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-css'], name);
     return self.deleteFile(filename);
@@ -6008,8 +6018,8 @@ FrameworkFileSystem.prototype.createCSS = function(name, content, rewrite, appen
     if ((content || '').length === 0)
         return false;
 
-    if (name.lastIndexOf('.css') === -1)
-        name += '.css';
+    if (name.lastIndexOf(EXTENSION_CSS) === -1)
+        name += EXTENSION_CSS;
 
     var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-css'], name);
     return self.createFile(filename, content, append, rewrite);
