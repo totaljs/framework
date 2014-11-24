@@ -1975,7 +1975,28 @@ String.prototype.format = function() {
 };
 
 String.prototype.encode = function() {
-    return this.replace(/\&/g, '&amp;').replace(/\>/g, '&gt;').replace(/\</g, '&lt;').replace(/\"/g, '&quot;');
+    var output = '';
+    for (var i = 0, length = this.length; i < length; i++) {
+        var c = this[i];
+        switch (c) {
+            case '<':
+                output += '&lt;';
+                break;
+            case '>':
+                output += '&gt;';
+                break;
+            case '"':
+                output += '&quot;';
+                break;
+            case '&':
+                output += '&amp;';
+                break;
+            default:
+                output += c;
+                break;
+        }
+    }
+    return output;
 };
 
 String.prototype.decode = function() {
