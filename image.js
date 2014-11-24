@@ -424,7 +424,7 @@ Image.prototype.extent = function(w, h) {
     else if (!w && h)
         size = 'x' + h;
 
-    return self.push('-extent', size, 1);
+    return self.push('-extent', size, 4);
 };
 
 
@@ -436,9 +436,7 @@ Image.prototype.extent = function(w, h) {
  * @return {Image}
  */
 Image.prototype.resizeCenter = function(w, h, color) {
-    if (this.width < w && this.height < h)
-        return this.background(color ? color : 'white').align('center').extent(w, h);
-    return this.resize(w, h, '^').background(color ? color : 'white').align('center').crop(w, h);
+    return this.resize(w, h).background(color ? color : 'white').align('center').extent(w, h);
 };
 
 /*

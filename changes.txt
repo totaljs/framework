@@ -93,6 +93,7 @@ Framework loads modules, packages, models, definitions, controllers
 - fixed: routing (+ asterix routing)
 - fixed: controller.cancel() (after framework.emit('controller', ...))
 - fixed: view helpers (calling without arguments)
+- fixed: FrameworkImage.resizeCenter()
 
 - improvements: routing performance
 
