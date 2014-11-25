@@ -2947,48 +2947,101 @@ Array.prototype.skip = function(count) {
     return arr;
 };
 
-/*
-    @cb {Function} :: return true / false
-    return {Array}
-*/
-Array.prototype.where = function(cb) {
+/**
+ * Find items in Array
+ * @param {Function(item, index) or String/Object} cb
+ * @param {Object} value Optional.
+ * @return {Array}
+ */
+Array.prototype.where = function(cb, value) {
 
     var self = this;
     var selected = [];
-    var length = self.length;
+    var isFN = typeof(cb) === 'function';
+    var isV = value !== undefined;
 
-    for (var i = 0; i < length; i++) {
-        if (cb.call(self, self[i], i))
+    for (var i = 0, length = self.length; i < length; i++) {
+
+        if (isFN) {
+            if (cb.call(self, self[i], i))
+                selected.push(self[i]);
+            continue;
+        }
+
+        if (isV) {
+            if (self[i][cb] === value)
+                selected.push(self[i]);
+            continue;
+        }
+
+        if (self[i] === cb)
             selected.push(self[i]);
     }
 
     return selected;
 };
 
-/*
-    @cb {Function} :: return true if is finded
-    return {Array item}
-*/
-Array.prototype.find = function(cb) {
+/**
+ * Find item in Array
+ * @param {Function(item, index) or String/Object} cb
+ * @param {Object} value Optional.
+ * @return {Array}
+ */
+Array.prototype.find = function(cb, value) {
+
     var self = this;
-    var length = self.length;
-    for (var i = 0; i < length; i++) {
-        if (cb.call(self, self[i], i))
+    var isFN = typeof(cb) === 'function';
+    var isV = value !== undefined;
+
+    for (var i = 0, length = self.length; i < length; i++) {
+
+        if (isFN) {
+            if (cb.call(self, self[i], i))
+                return self[i];
+            continue;
+        }
+
+        if (isV) {
+            if (self[i][cb] === value)
+                return self[i];
+            continue;
+        }
+
+        if (self[i] === cb)
             return self[i];
     }
+
     return null;
 };
 
-/*
-    @cb {Function} :: return true if is removed
-    return {Array}
-*/
-Array.prototype.remove = function(cb) {
+/**
+ * Remove items from Array
+ * @param {Function(item, index) or Object} cb
+ * @param {Object} value Optional.
+ * @return {Array}
+ */
+Array.prototype.remove = function(cb, value) {
+
     var self = this;
     var arr = [];
-    var length = self.length;
-    for (var i = 0; i < length; i++) {
-        if (!cb.call(self, self[i], i))
+    var isFN = typeof(cb) === 'function';
+    var isV = value !== undefined;
+
+    for (var i = 0, length = self.length; i < length; i++) {
+
+        if (isFN) {
+            if (!cb.call(self, self[i], i))
+                arr.push(self[i]);
+            continue;
+        }
+
+        if (isV) {
+            if (self[i][cb] !== value)
+                arr.push(self[i]);
+            continue;
+        }
+
+        if (self[i] !== cb)
             arr.push(self[i]);
     }
     return arr;

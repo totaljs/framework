@@ -208,12 +208,16 @@ function prototypeArray() {
 
 	assert.ok(arr.find(function(o) { return o.name === '4'; }).value === 40, 'array.find()');
 	assert.ok(arr.find(function(o) { return o.name === '6'; }) === null, 'array.find(): null');
+	assert.ok(arr.find('name', '4').value === 40, 'array.find(inline)');
+	assert.ok(arr.find('name', '6') === null, 'array.find(inline): null');
 
 	arr = arr.remove(function(o) {
 		return o.value > 30;
 	});
 
 	assert.ok(arr.length === 3, 'array.remove()');
+	arr = arr.remove('value', 30);
+	assert.ok(arr.length === 2, 'array.remove(inline)');
 
 	arr = [1, 2, 3, 4, 5];
 	assert.ok(arr.skip(3).join('') === '45', 'array.skip()');
