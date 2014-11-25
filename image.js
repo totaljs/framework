@@ -427,16 +427,26 @@ Image.prototype.extent = function(w, h) {
     return self.push('-extent', size, 4);
 };
 
+/**
+ * Resize picture to miniature (full picture)
+ * @param {Number} w
+ * @param {Number} h
+ * @param {String} color Optional, background color.
+ * @return {Image}
+ */
+Image.prototype.miniature = function(w, h, color) {
+    return this.resize(w, h).background(color ? color : 'white').align('center').extent(w, h);
+};
 
 /**
- * Resize picture
+ * Resize picture to center
  * @param {Number} w
  * @param {Number} h
  * @param {String} color Optional, background color.
  * @return {Image}
  */
 Image.prototype.resizeCenter = function(w, h, color) {
-    return this.resize(w, h).background(color ? color : 'white').align('center').extent(w, h);
+    return this.resize(w, h, '^').background(color ? color : 'white').align('center').crop(w, h);
 };
 
 /*
