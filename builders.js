@@ -1240,13 +1240,19 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
  * @param {Boolean} isCopied Internal argument.
  * @return {Object}
  */
-SchemaBuilderEntity.prototype.clean = function(model, isCopied) {
+SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 
-    if (model === null || model === undefined)
-        return model;
+    if (m === null || m === undefined)
+        return m;
 
-    if (isCopied)
-        model = framework_utils.copy(model);
+    var model;
+
+    if (!isCopied)
+        model = framework_utils.copy(m);
+    else
+        model = m;
+
+    var self = this;
 
     delete model[DEFAULT_SCHEMA_PROPERTY];
     delete model['$transform'];
@@ -1258,6 +1264,8 @@ SchemaBuilderEntity.prototype.clean = function(model, isCopied) {
     delete model['$default'];
     delete model['$schema'];
     delete model['$validate'];
+    delete model['$compose'];
+    delete model['$rule'];
 
     var keys = Object.keys(model);
 
@@ -1273,24 +1281,22 @@ SchemaBuilderEntity.prototype.clean = function(model, isCopied) {
             continue;
 
         if (value instanceof Array) {
-
             for (var j = 0, sublength = value.length; j < sublength; j++) {
 
                 var item = value[j];
-
                 if (item === null)
                     continue;
 
                 if (typeof(item) !== OBJECT)
                     continue;
 
-                self.clean(item, true);
+                value[j] = self.clean(item, true);
             }
 
             continue;
         }
 
-        self.clean(value, true);
+        model[key] = self.clean(value, true);
     }
 
     return model;
