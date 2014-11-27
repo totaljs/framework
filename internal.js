@@ -18,6 +18,12 @@ var REG_2 = /\s{3,}/g;
 
 var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
+global.$STRING = function(value) {
+    if (value === null || value === undefined)
+        return '';
+    return value.toString();
+};
+
 /*
     Internal function / Parse data from Request
     @req {ServerRequest}
@@ -1866,7 +1872,7 @@ function view_prepare(command, dynamicCommand, functions) {
             if (view_is_assign(command))
                 return 'self.$set(' + command + ')';
 
-            return '(' + command + ').toString().encode()';
+            return '$STRING(' + command + ').encode()';
 
         case 'body':
 
@@ -1876,7 +1882,7 @@ function view_prepare(command, dynamicCommand, functions) {
             if (command.lastIndexOf('.') === -1)
                 return 'output';
 
-            return '(' + command + ').toString().encode()';
+            return '$STRING(' + command + ').encode()';
 
         case 'CONFIG':
         case 'FUNCTION':
@@ -1884,7 +1890,7 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'SCHEMA':
         case 'MODULE':
         case 'functions':
-            return '(' + command + ').toString().encode()';
+            return '$STRING(' + command + ').encode()';
 
         case '!controller':
         case '!repository':
@@ -1903,15 +1909,15 @@ function view_prepare(command, dynamicCommand, functions) {
         case '!FUNCTION':
         case '!MODEL':
         case '!MODULE':
-            return '(' + command.substring(1) + ')';
+            return '$STRING(' + command.substring(1) + ')';
 
         case 'resource':
         case 'RESOURCE':
-            return '(self.' + command + ').toString().encode()';
+            return '$STRING(self.' + command + ').encode()';
 
         case '!resource':
         case '!RESOURCE':
-            return '(self.' + command.substring(1) + ')';
+            return '$STRING(self.' + command.substring(1) + ')';
 
         case 'host':
         case 'hostname':
@@ -2016,7 +2022,7 @@ function view_prepare(command, dynamicCommand, functions) {
             if (framework.helpers[name])
                 return 'helpers.' + view_insert_call(command);
 
-            return functions.indexOf(name) === -1 ? command[0] === '!' ? command.substring(1) + '.toString()' : command + '.toString().encode()' : command + '.toString()';
+            return '$STRING(' + (functions.indexOf(name) === -1 ? command[0] === '!' ? command.substring(1) + ')' : command + ').encode()' : command + ')');
     }
 
     return command;

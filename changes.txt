@@ -82,6 +82,7 @@ Framework loads modules, packages, models, definitions, controllers
 - removed: (IMPORTANT) view markup for Angular.js from the core (it will be a module)
 
 - fixed: LOG()
+- fixed: view engine rendering (fixed problem with undefined and null values)
 - fixed: buffer exceeded if a framework receives a data
 - fixed: if path starts '/' then is view loaded directly from /views/ directory
 - fixed: xml parser
