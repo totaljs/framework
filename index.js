@@ -3673,7 +3673,7 @@ Framework.prototype.initialize = function(http, debug, options) {
     if (self.isTest)
         self._configure('config-test', false);
 
-    // self.clear();
+    self.clear(true);
     self.cache.init();
     self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
     self.emit('init');
@@ -4996,23 +4996,39 @@ Framework.prototype.test = function(stop, names, cb) {
     Clear temporary directory
     return {Framework}
 */
-Framework.prototype.clear = function() {
+Framework.prototype.clear = function(isInit) {
 
     var self = this;
-    var dir = utils.combine(self.config['directory-temp']);
+    var tmp = self.config['directory-temp'];
+    var dir = utils.combine(tmp);
 
     if (!fs.existsSync(dir))
         return self;
 
     framework_utils.ls(dir, function(files, directories) {
+
+        if (isInit) {
+            var arr = [];
+            for (var i = 0, length = files.length; i < length; i++) {
+                var filename = files[i].substring(tmp.length - 1);
+                if (filename.indexOf('/') === -1)
+                    arr.push(files[i]);
+            }
+            files = arr;
+            directories = [];
+        }
+
         self.unlink(files, function() {
             self.rmdir(directories);
         });
+
     });
 
-    // clear static cache
-    self.temporary.path = {};
-    self.temporary.range = {};
+    if (!isInit) {
+        // clear static cache
+        self.temporary.path = {};
+        self.temporary.range = {};
+    }
 
     return this;
 };
@@ -5040,7 +5056,7 @@ Framework.prototype.unlink = function(arr, callback) {
         return;
     }
 
-    fs.unlink(filename, function() {
+    fs.unlink(filename, function(err) {
         self.unlink(arr, callback);
     });
 
