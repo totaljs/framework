@@ -119,7 +119,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0';
+    this.version_header = '1.7.0 (build: 13)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -3673,87 +3673,92 @@ Framework.prototype.initialize = function(http, debug, options) {
     if (self.isTest)
         self._configure('config-test', false);
 
-    self.clear(true);
     self.cache.init();
     self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
     self.emit('init');
-    self.load();
 
-    if (options.https) {
-        self.server = http.createServer(options.https, function(req, res) {
-            framework._request(req, res);
-        });
-    } else {
-        self.server = http.createServer(function(req, res) {
-            framework._request(req, res);
-        });
-    }
+    // clear static files
+    self.clear(function() {
 
-    if (self.config['allow-websocket']) {
-        self.server.on('upgrade', function(req, socket, head) {
-            framework._upgrade(req, socket, head);
-        });
-    }
+        self.load();
 
-    if (!port) {
-        if (self.config['default-port'] === 'auto') {
-            var envPort = parseInt(process.env.PORT || '');
-            if (!isNaN(envPort))
-                port = envPort;
-        } else
-            port = self.config['default-port'];
-    }
-
-    self.port = port || 8000;
-
-    if (ip !== null) {
-        self.ip = ip || self.config['default-ip'] || '127.0.0.1';
-        if (self.ip === 'null' || self.ip === UNDEFINED || self.ip === 'auto')
-            self.ip = undefined;
-    } else
-        self.ip = undefined;
-
-    self.server.listen(self.port, self.ip);
-
-    if (self.ip === undefined || self.ip === null)
-        self.ip = 'auto';
-
-    self.isLoaded = true;
-
-    if (!process.connected)
-        self.console();
-
-    setTimeout(function() {
-
-        try {
-            self.emit('load', self);
-            self.emit('ready', self);
-        } catch (err) {
-            self.error(err, 'framework.on("load/ready")');
+        if (options.https) {
+            self.server = http.createServer(options.https, function(req, res) {
+                framework._request(req, res);
+            });
+        } else {
+            self.server = http.createServer(function(req, res) {
+                framework._request(req, res);
+            });
         }
 
-        self.removeAllListeners('load');
-        self.removeAllListeners('ready');
+        if (self.config['allow-websocket']) {
+            self.server.on('upgrade', function(req, socket, head) {
+                framework._upgrade(req, socket, head);
+            });
+        }
 
-    }, 500);
+        if (!port) {
+            if (self.config['default-port'] === 'auto') {
+                var envPort = parseInt(process.env.PORT || '');
+                if (!isNaN(envPort))
+                    port = envPort;
+            } else
+                port = self.config['default-port'];
+        }
 
-    if (self.isTest) {
-        self.test(true, options.tests || options.test);
-        return self;
-    }
+        self.port = port || 8000;
 
-    setTimeout(function() {
+        if (ip !== null) {
+            self.ip = ip || self.config['default-ip'] || '127.0.0.1';
+            if (self.ip === 'null' || self.ip === UNDEFINED || self.ip === 'auto')
+                self.ip = undefined;
+        } else
+            self.ip = undefined;
 
-        if (framework.isTest)
-            return;
+        self.server.listen(self.port, self.ip);
 
-        // clear unnecessary items
-        delete framework.tests;
-        delete framework.test;
-        delete framework.testing;
-        delete framework.assert;
+        if (self.ip === undefined || self.ip === null)
+            self.ip = 'auto';
 
-    }, 5000);
+        self.isLoaded = true;
+
+        if (!process.connected)
+            self.console();
+
+        setTimeout(function() {
+
+            try {
+                self.emit('load', self);
+                self.emit('ready', self);
+            } catch (err) {
+                self.error(err, 'framework.on("load/ready")');
+            }
+
+            self.removeAllListeners('load');
+            self.removeAllListeners('ready');
+
+        }, 500);
+
+        if (self.isTest) {
+            self.test(true, options.tests || options.test);
+            return self;
+        }
+
+        setTimeout(function() {
+
+            if (framework.isTest)
+                return;
+
+            // clear unnecessary items
+            delete framework.tests;
+            delete framework.test;
+            delete framework.testing;
+            delete framework.assert;
+
+        }, 5000);
+
+    }, true);
 
     return self;
 };
@@ -4996,14 +5001,17 @@ Framework.prototype.test = function(stop, names, cb) {
     Clear temporary directory
     return {Framework}
 */
-Framework.prototype.clear = function(isInit) {
+Framework.prototype.clear = function(callback, isInit) {
 
     var self = this;
     var tmp = self.config['directory-temp'];
     var dir = utils.combine(tmp);
 
-    if (!fs.existsSync(dir))
+    if (!fs.existsSync(dir)) {
+        if (callback)
+            callback();
         return self;
+    }
 
     framework_utils.ls(dir, function(files, directories) {
 
@@ -5019,7 +5027,7 @@ Framework.prototype.clear = function(isInit) {
         }
 
         self.unlink(files, function() {
-            self.rmdir(directories);
+            self.rmdir(directories, callback);
         });
 
     });
