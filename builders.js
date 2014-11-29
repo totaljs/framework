@@ -740,7 +740,7 @@ SchemaBuilderEntity.prototype.default = function() {
             }
 
             if (value === Object) {
-                item[property] = {};
+                item[property] = null;
                 continue;
             }
 
