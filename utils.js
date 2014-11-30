@@ -2803,10 +2803,11 @@ Boolean.prototype.condition = function(ifTrue, ifFalse) {
     return (this ? ifTrue : ifFalse) || '';
 };
 
-/*
-    @count {Number}
-    return {Array}
-*/
+/**
+ * Take items from array
+ * @param {Number} count
+ * @return {Array}
+ */
 Array.prototype.take = function(count) {
     var arr = [];
     var self = this;
@@ -2819,10 +2820,32 @@ Array.prototype.take = function(count) {
     return arr;
 };
 
-/*
-    @name {String}
-    return {Array}
-*/
+/**
+ * First item in array
+ * @param {Object} def Default value.
+ * @return {Object}
+ */
+Array.prototype.first = function(def) {
+    var item = this[0];
+    return item === undefined ? def : item;
+};
+
+/**
+ * Last item in array
+ * @param {Object} def Default value.
+ * @return {Object}
+ */
+Array.prototype.last = function(def) {
+    var item = this[this.length - 1];
+    return item === undefined ? def : item;
+};
+
+/**
+ * Array object sorting
+ * @param {String} name Property name.
+ * @param {Booelan} asc
+ * @return {Array}
+ */
 Array.prototype.orderBy = function(name, asc) {
 
     if (typeof(name) === BOOLEAN) {
@@ -2932,10 +2955,11 @@ Array.prototype.trim = function() {
     return self;
 };
 
-/*
-    @count {Number}
-    return {Array}
-*/
+/**
+ * Skip items from array
+ * @param {Number} count
+ * @return {Array}
+ */
 Array.prototype.skip = function(count) {
     var arr = [];
     var self = this;
