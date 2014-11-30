@@ -73,8 +73,8 @@ function resolveMx(domain, callback) {
         function tryConnect(index) {
 
             if (index >= data.length) {
-              callback(new Error(errors.connection));
-              return;
+                callback(new Error(errors.connection));
+                return;
             }
 
             var sock = net.createConnection(25, data[index].exchange);
@@ -421,6 +421,8 @@ Message.prototype._send = function(socket, options) {
     if (mailer.debug) {
         socket.on('end', function() {
             console.log('END');
+            if (socket)
+                socket.destroy();
         });
     }
 
@@ -445,7 +447,7 @@ Message.prototype._send = function(socket, options) {
         line = line.toUpperCase();
 
         if (mailer.debug)
-            console.log('–––>', line);
+            console.log('<–––', line);
 
         var code = parseInt(line.match(/\d+/)[0], 10);
 
