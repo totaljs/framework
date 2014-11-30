@@ -161,7 +161,7 @@ function Framework() {
 
         // 'static-accepts-custom': [],
 
-        'default-layout': '_layout',
+        'default-layout': 'layout',
 
         // default maximum request size / length
         // default 5 kB
@@ -4510,22 +4510,12 @@ Framework.prototype._log = function(a, b, c, d) {
  * @return {Framework}
  */
 Framework.prototype.mail = function(address, subject, view, model, callback) {
-
     var controller = new Controller('', null, null, null);
-
-    if (typeof(layout) === OBJECT) {
-        var tmp = repository;
-        repository = layout;
-        layout = tmp;
-    }
-
-    controller.layoutName = layout || '';
-
+    controller.layoutName = '';
     if (typeof(repository) === OBJECT && repository !== null)
         controller.repository = repository;
-
     controller.mail.apply(controller, arguments);
-    return self;
+    return this;
 };
 
 
@@ -8226,8 +8216,8 @@ Controller.prototype.setExpires = function(date) {
  * @param {Object} model Custom model, optional.
  * @return {String}
  */
-Controller.prototype.$template = function(name, model, expire) {
-    return this.$viewToggle(true, name, model, expire);
+Controller.prototype.$template = function(name, model, expire, key) {
+    return this.$viewToggle(true, name, model, expire, key);
 };
 
 /**
@@ -8238,8 +8228,8 @@ Controller.prototype.$template = function(name, model, expire) {
  * @param {Object} model Custom model, optional.
  * @return {String}
  */
-Controller.prototype.$templateToggle = function(visible, name, model, expire) {
-    return this.$viewToggle(visible, name, model, expire);
+Controller.prototype.$templateToggle = function(visible, name, model, expire, key) {
+    return this.$viewToggle(visible, name, model, expire, key);
 };
 
 /**
@@ -8249,8 +8239,8 @@ Controller.prototype.$templateToggle = function(visible, name, model, expire) {
  * @param {Object} model Custom model, optional.
  * @return {String}
  */
-Controller.prototype.$view = function(name, model, expire) {
-    return this.$viewToggle(true, name, model, expire);
+Controller.prototype.$view = function(name, model, expire, key) {
+    return this.$viewToggle(true, name, model, expire, key);
 };
 
 /**
@@ -8261,27 +8251,29 @@ Controller.prototype.$view = function(name, model, expire) {
  * @param {Object} model Custom model, optional.
  * @return {String}
  */
-Controller.prototype.$viewToggle = function(visible, name, model, expire) {
+Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
 
     if (!visible)
         return '';
 
     var self = this;
+    var cache;
 
     if (expire) {
-        var output = self.cache.read('$view.' + name);
-        if (output !== null)
+        cache = '$view.' + name + '.' + (key || '');
+        var output = self.cache.read(cache);
+        if (output)
             return output;
     }
 
     var layout = self.layoutName;
 
     self.layoutName = '';
-    var value = self.view(name, model, null, true, expire);
+    var value = self.view(name, model, null, true);
     self.layoutName = layout;
 
     if (expire)
-        self.cache.add('$view.' + name, value, expire);
+        self.cache.add(cache, value, expire);
 
     return value;
 };
@@ -10177,7 +10169,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
         return value;
     }
 
-    if (!isLayout && self.precache && self.status === 200)
+    if (!isLayout && self.precache && self.status === 200 && !isPartial)
         self.precache(value, CONTENTTYPE_TEXTHTML, headers, true);
 
     if (isLayout || utils.isNullOrEmpty(self.layoutName)) {
@@ -10240,11 +10232,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
         self.precache = function(value, contentType, headers, isView) {
 
-            var options = {
-                content: value,
-                type: contentType
-            };
-
+            var options = { content: value, type: contentType };
             if (headers)
                 options.headers = headers;
 
@@ -10257,10 +10245,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
                     if (name[0] === '$' || name === 'sitemap') {
                         var value = self.repository[name];
                         if (value)
-                            options.repository.push({
-                                key: name,
-                                value: value
-                            });
+                            options.repository.push({ key: name, value: value });
                     }
                 }
             }
@@ -10305,12 +10290,9 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
         self.repository[output.repository[i].key] = output.repository[i].value;
 
     if (utils.isNullOrEmpty(self.layoutName)) {
-
         self.subscribe.success();
-
         if (!self.isConnected)
             return self;
-
         framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
         return self;
     }
@@ -11910,8 +11892,12 @@ process.on('message', function(msg, h) {
     }
 
     if (msg === 'debugging') {
-        framework.console();
-        framework.console = utils.noop;
+        Utils.wait(function() {
+            return framework.isLoaded;
+        }, function() {
+            framework.console();
+            framework.console = utils.noop;
+        }, 10000, 500);
         return;
     }
 
