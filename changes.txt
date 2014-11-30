@@ -58,6 +58,8 @@ Framework loads modules, packages, models, definitions, controllers
 - added: (IMPORTANT) PACKAGES (same as modules but package can contain many files in one file)
 - added: framework.stats.request.request (requests count)
 - added: FrameworkImage.miniature(w, h, bgColor)
+- added: Array.first([def])
+- added: Array.last([def])
 
 - uodated: (IMPORTANT) framework doesn't remove subdirectories with files in temporary directory
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
@@ -74,9 +76,11 @@ Framework loads modules, packages, models, definitions, controllers
 - updated: framework.error() (returns a wrapped delegate if error is undefined)
 - updated: controller.baa([message]) - read documentation
 - updated: Array.where(), Array.find(), Array.remove() - added a new functionality
+- updated: @{view(name, [model], [expire], [expire-key])}
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
 - renamed: config['allow-compress-html'] to config['allow-compile-html']
+- renamed: (IMPORTANT) default view layout from `_layout` to `layout`
 
 - removed: JS CSS
 - removed: (IMPORTANT) view markup for Angular.js from the core (it will be a module)
@@ -96,6 +100,9 @@ Framework loads modules, packages, models, definitions, controllers
 - fixed: routing (+ asterix routing)
 - fixed: controller.cancel() (after framework.emit('controller', ...))
 - fixed: view helpers (calling without arguments)
+- fixed: dynamic cache of views
+- fixed: mail sending
+- fixed: clearing temporary directory
 
 - improvements: routing performance
 
