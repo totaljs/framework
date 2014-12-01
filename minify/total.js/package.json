@@ -6,7 +6,8 @@
     "bin": {
         "total": "./bin/total",
         "total.js": "./bin/total",
-        "tpm": "./bin/tpm"
+        "tpm": "./bin/tpm",
+        "totalpackage": "./bin/tpm"
     },
     "contributors": [
         "Peter \u0160irka <petersirka@gmail.com>",
