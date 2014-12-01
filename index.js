@@ -109,6 +109,10 @@ global.FUNCTION = function(name) {
     return framework.functions[name];
 };
 
+global.ROUTING = function(name) {
+    return framework.routing(name);
+};
+
 if (typeof(setImmediate) === UNDEFINED) {
     global.setImmediate = function(cb) {
         process.nextTick(cb);
@@ -520,12 +524,12 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
  * @param {String} url
  * @param {Function} funcExecute Action.
  * @param {String Array} flags
- * @param {Number} maximumSize Maximum length of request data.
+ * @param {Number} length Maximum length of request data.
  * @param {String Array} middleware Loads custom middleware.
  * @param {Number timeout Response timeout.
  * @return {Framework}
  */
-Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middleware, timeout, options) {
+Framework.prototype.route = function(url, funcExecute, flags, length, middleware, timeout, options) {
 
     if (url === '')
         url = '/';
@@ -536,15 +540,15 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     if (url.endsWith('/'))
         url = url.substring(0, url.length - 1);
 
-    if (utils.isArray(maximumSize)) {
+    if (utils.isArray(length)) {
         var tmp = middleware;
-        middleware = maximumSize;
-        maximumSize = tmp;
+        middleware = length;
+        length = tmp;
     }
 
     var type = typeof(funcExecute);
     var index = 0;
-    var id = url;
+    var name = url;
 
     if (type === OBJECT || funcExecute instanceof Array) {
         var tmp = funcExecute;
@@ -578,14 +582,12 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
     }
 
     if (!utils.isArray(flags) && typeof(flags) === 'object') {
-        maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'] || flags['size'];
+        length = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'] || flags['size'];
         middleware = flags['middleware'] || flags['partials'] || flags['partial'];
         timeout = flags['timeout'];
         options = flags['options'];
-        if (flags['id'])
-            id = flags['id'];
-        else if (flags['name'])
-            id = flags['name'];
+        if (flags['name'])
+            name = flags['name'];
         flags = flags['flags'] || flags['flag'];
     }
 
@@ -761,16 +763,16 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         method = method.toUpperCase();
 
     self.routes.web.push({
-        id: id,
+        name: name,
         priority: priority,
         subdomain: subdomain,
-        name: (_controller || '').length === 0 ? 'unknown' : _controller,
+        controller: (_controller || '').length === 0 ? 'unknown' : _controller,
         url: routeURL,
         param: arr,
         flags: flags || [],
         method: method,
-        onExecute: funcExecute,
-        maximumSize: (maximumSize || self.config['default-request-length']) * 1024,
+        execute: funcExecute,
+        length: (length || self.config['default-request-length']) * 1024,
         middleware: middleware,
         timeout: timeout === undefined ? self.config['default-request-timeout'] : timeout,
         isJSON: flags.indexOf('json') !== -1,
@@ -798,6 +800,20 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         self._routesSort();
 
     return self;
+};
+
+/**
+ * Get routing by name
+ * @param {String} name
+ * @return {Object}
+ */
+Framework.prototype.routing = function(name) {
+    var self = this;
+    for (var i = 0, length = self.routes.web.length; i < length; i++) {
+        var route = self.routes.web[i];
+        if (route.name === name)
+            return { controller: route.controller, url: Utils.path(route.url.join('/')), id: route.id, flags: route.flags, middleware: route.middleware, execute: route.execute, timeout: route.timeout, options: route.options, length: route.length };
+    }
 };
 
 /**
@@ -896,20 +912,20 @@ Framework.prototype.use = function(name) {
  * @param {String Array} flags Optional.
  * @param {String Array} protocols Optional, framework compares this array with request protocol (http or https)
  * @param {String Array} allow Optional, framework compares this array with "origin" request header
- * @param {Number} maximumSize Optional, maximum message length.
+ * @param {Number} length Optional, maximum message length.
  * @param {String Array} middleware Optional, middlewares.
  * @param {Object} options Optional, additional options for middleware.
  * @return {Framework}
  */
-Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, maximumSize, middleware, options) {
+Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, length, middleware, options) {
 
     if (url === '')
         url = '/';
 
-    if (utils.isArray(maximumSize)) {
+    if (utils.isArray(length)) {
         var tmp = middleware;
-        middleware = maximumSize;
-        maximumSize = tmp;
+        middleware = length;
+        length = tmp;
     }
 
     if (typeof(funcExecute) === OBJECT) {
@@ -921,7 +937,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
     if (!(flags instanceof Array) && typeof(flags) === OBJECT) {
         protocols = flags['protocols'] || flags['protocol'];
         allow = flags['allow'] || flags['origin'];
-        maximumSize = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
+        length = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
         middleware = flags['middleware'];
         options = flags['options'];
         flags = flags['flags'];
@@ -1017,7 +1033,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         isMember = true;
 
     self.routes.websockets.push({
-        name: (_controller || '').length === 0 ? 'unknown' : _controller,
+        controller: (_controller || '').length === 0 ? 'unknown' : _controller,
         url: routeURL,
         param: arr,
         subdomain: subdomain,
@@ -1026,7 +1042,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         onInitialize: funcInitialize,
         protocols: protocols || [],
         allow: allow || [],
-        length: (maximumSize || self.config['default-websocket-request-length']) * 1024,
+        length: (length || self.config['default-websocket-request-length']) * 1024,
         isMEMBER: isMember,
         isJSON: isJSON,
         isBINARY: isBINARY,
@@ -1078,7 +1094,7 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
         controller: (_controller || '').length === 0 ? 'unknown' : _controller,
         name: name,
         onValidation: fnValidation,
-        onExecute: fnExecute || fnValidation,
+        execute: fnExecute || fnValidation,
         middleware: middleware,
         options: options
     });
@@ -1700,20 +1716,20 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         var length = self.routes.web.length;
 
         for (var i = 0; i < length; i++) {
-            if (self.routes.web[i].name === _controller)
-                self.routes.web[i].name = id;
+            if (self.routes.web[i].controller === _controller)
+                self.routes.web[i].controller = id;
         }
 
         length = self.routes.websockets.length;
         for (var i = 0; i < length; i++) {
-            if (self.routes.websockets[i].name === _controller)
-                self.routes.websockets[i].name = id;
+            if (self.routes.websockets[i].controller === _controller)
+                self.routes.websockets[i].controller = id;
         }
 
         length = self.routes.files.length;
         for (var i = 0; i < length; i++) {
-            if (self.routes.files[i].name === _controller)
-                self.routes.files[i].name = id;
+            if (self.routes.files[i].controller === _controller)
+                self.routes.files[i].controller = id;
         }
 
         self._routesSort();
@@ -1840,17 +1856,9 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 
         var id = (isModule ? '#' : '') + name;
 
-        self.routes.web = self.routes.web.remove(function(route) {
-            return route.name === id;
-        });
-
-        self.routes.files = self.routes.files.remove(function(route) {
-            return route.name === id;
-        });
-
-        self.routes.websockets = self.routes.websockets.remove(function(route) {
-            return route.name === id;
-        });
+        self.routes.web = self.routes.web.remove('controller', id);
+        self.routes.files = self.routes.files.remove('controller', id);
+        self.routes.websockets = self.routes.websockets.remove('controller', id);
 
         if (obj) {
             if (obj.uninstall)
@@ -4390,7 +4398,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
     var next = function() {
 
         if (self.connections[id] === undefined) {
-            var connection = new WebSocket(self, path, route.name, id);
+            var connection = new WebSocket(self, path, route.controller, id);
             self.connections[id] = connection;
             route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
         }
@@ -4538,7 +4546,7 @@ Framework.prototype._log = function(a, b, c, d) {
  * @return {Framework}
  */
 Framework.prototype.mail = function(address, subject, view, model, callback) {
-    var controller = new Controller('', null, null, null);
+    var controller = new Controller('', null, null, null, '');
     controller.layoutName = '';
     if (typeof(repository) === OBJECT && repository !== null)
         controller.repository = repository;
@@ -4556,7 +4564,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback) {
  */
 Framework.prototype.view = function(name, model, layout, repository) {
 
-    var controller = new Controller('', null, null, null);
+    var controller = new Controller('', null, null, null, '');
 
     if (typeof(layout) === OBJECT) {
         var tmp = repository;
@@ -6736,13 +6744,16 @@ Subscribe.prototype.file = function() {
     return self;
 };
 
-/*
-    @header {String} :: Content-Type
-*/
+/**
+ * Process MULTIPART (uploaded files)
+ * @param {String} header Content-Type header.
+ * @return {FrameworkSubscribe}
+ */
 Subscribe.prototype.multipart = function(header) {
 
     var self = this;
     var req = self.req;
+
     self.route = framework.lookup(req, req.uri.pathname, req.flags, true);
     self.header = header;
 
@@ -6755,7 +6766,7 @@ Subscribe.prototype.multipart = function(header) {
 
     if (header.indexOf('mixed') === -1) {
         framework._verify_directory('temp');
-        framework_internal.parseMULTIPART(req, header, self.route.maximumSize, framework.config['directory-temp'], function(data) {
+        framework_internal.parseMULTIPART(req, header, self.route.length, framework.config['directory-temp'], function(data) {
             if (framework.onXSS)
                 return framework.onXSS(data);
             return true;
@@ -6766,7 +6777,8 @@ Subscribe.prototype.multipart = function(header) {
     }
 
     self.isMixed = true;
-    self.execute();
+    self.execute(404);
+    return self;
 };
 
 Subscribe.prototype.urlencoded = function() {
@@ -6779,7 +6791,7 @@ Subscribe.prototype.urlencoded = function() {
         framework.stats.request.blocked++;
         framework._request_stats(false, false);
         self.req.connection.destroy();
-        return;
+        return self;
     }
 
     self.req.buffer_has = true;
@@ -6790,6 +6802,7 @@ Subscribe.prototype.urlencoded = function() {
     });
 
     self.end();
+    return self;
 };
 
 Subscribe.prototype.end = function() {
@@ -6802,9 +6815,12 @@ Subscribe.prototype.end = function() {
     self.req.resume();
 };
 
-/*
-    @status {Number} :: HTTP status
-*/
+/**
+ * Execute controller
+ * @private
+ * @param {Number} status Default HTTP status.
+ * @return {FrameworkSubscribe}
+ */
 Subscribe.prototype.execute = function(status) {
 
     var self = this;
@@ -6812,7 +6828,7 @@ Subscribe.prototype.execute = function(status) {
     var req = self.req;
     var res = self.res;
 
-    if (status > 399 && (route === null || route.name[0] === '#')) {
+    if ((route === null || route.controller[0] === '#') && status > 399) {
         switch (status) {
             case 400:
                 framework.stats.response.error400++;
@@ -6846,8 +6862,12 @@ Subscribe.prototype.execute = function(status) {
         return self;
     }
 
-    var name = route.name;
-    var controller = new Controller(name, req, res, self);
+    var name = route.controller;
+
+    if (route.currentViewDirectory === undefined)
+        route.currentViewDirectory = name[0] !== '#' && name !== 'default' && name !== '' ? '/' + name + '/' : '';
+
+    var controller = new Controller(name, req, res, self, route.currentViewDirectory);
 
     controller.isTransfer = self.isTransfer;
     controller.exception = self.exception;
@@ -6923,7 +6943,7 @@ Subscribe.prototype.prepare = function(flags, url) {
 Subscribe.prototype.doExecute = function() {
 
     var self = this;
-    var name = self.route.name;
+    var name = self.route.controller;
     var controller = self.controller;
     var req = self.req;
 
@@ -6938,14 +6958,14 @@ Subscribe.prototype.doExecute = function() {
             return self;
 
         if (!self.isMixed) {
-            self.route.onExecute.apply(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
+            self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
             return self;
         }
 
         framework._verify_directory('temp');
 
         framework_internal.parseMULTIPART_MIXED(req, self.header, framework.config['directory-temp'], function(file) {
-            self.route.onExecute.call(controller, file);
+            self.route.execute.call(controller, file);
         }, function() {
             self.doEnd();
         });
@@ -7113,7 +7133,7 @@ Subscribe.prototype.doEndfile = function() {
             if (file.onValidation.call(framework, req, res, true)) {
 
                 if (file.middleware === null)
-                    file.onExecute.call(framework, req, res, false);
+                    file.execute.call(framework, req, res, false);
                 else
                     self.doEndfile_middleware(file);
 
@@ -7158,7 +7178,7 @@ Subscribe.prototype.doEndfile_middleware = function(file) {
 
     func._async_middleware(res, function() {
         try {
-            file.onExecute.call(framework, req, res, false);
+            file.execute.call(framework, req, res, false);
         } catch (err) {
             framework.error(err, file.controller + ' :: ' + file.name, req.uri);
             framework.responseContent(req, res, 500, '500 - internal server error', CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
@@ -7185,7 +7205,7 @@ Subscribe.prototype.doParsepost = function(chunk) {
     if (!req.buffer_exceeded)
         req.buffer_data += chunk.toString();
 
-    if ((req.buffer_data.length / 1024) < self.route.maximumSize)
+    if ((req.buffer_data.length / 1024) < self.route.length)
         return self;
 
     req.buffer_exceeded = true;
@@ -7216,22 +7236,21 @@ Subscribe.prototype.doCancel = function() {
 // =================================================================================
 // *********************************************************************************
 
-/*
-    Controller class
-    @name {String}
-    @req {ServerRequest}
-    @res {ServerResponse}
-    @substribe {Object}
-    return {Controller};
-*/
-function Controller(name, req, res, subscribe) {
+/**
+ * FrameworkController
+ * @class
+ * @param {String} name Controller name.
+ * @param {Request} req
+ * @param {Response} res
+ * @param {FrameworkSubscribe} subscribe
+ */
+function Controller(name, req, res, subscribe, currentView) {
 
     this.subscribe = subscribe;
     this.name = name;
     this.req = req;
     this.res = res;
     this.exception = null;
-
     this.boundary = null;
 
     // controller.type === 0 - classic
@@ -7240,7 +7259,6 @@ function Controller(name, req, res, subscribe) {
     this.type = 0;
 
     this.layoutName = framework.config['default-layout'];
-
     this.status = 200;
 
     this.isLayout = false;
@@ -7249,7 +7267,6 @@ function Controller(name, req, res, subscribe) {
     this.isTimeout = false;
     this.isController = true;
     this.isTransfer = false;
-
     this.repository = {};
 
     // render output
@@ -7262,19 +7279,16 @@ function Controller(name, req, res, subscribe) {
     this._currentVideo = '';
     this._currentScript = '';
     this._currentStyle = '';
-    this._currentView = name[0] !== '#' && name !== 'default' && name !== '' ? '/' + name + '/' : '';
+    this._currentView = currentView;
 
-    if (!this.req) {
-        var empty = {};
-        this.req = { uri: empty };
-    }
+    if (!req)
+        this.req = { uri: {}};
 
-    if (!this.res)
+    if (!res)
         this.res = {};
 
     // Assign controller to Response
-    if (this.res)
-        this.res.controller = this;
+    this.res.controller = this;
 }
 
 Controller.prototype = {
@@ -7885,7 +7899,7 @@ Controller.prototype.transfer = function(url, flags) {
     self.subscribe.isTransfer = true;
     self.subscribe.success();
     self.subscribe.route = selected;
-    self.subscribe.execute(404, (route.name !== self.name));
+    self.subscribe.execute(404);
 
     return true;
 
@@ -9620,7 +9634,6 @@ Controller.prototype.file = function(filename, downloadName, headers) {
 
     self.subscribe.success();
     framework.responseFile(self.req, self.res, filename, downloadName, headers);
-
     return self;
 };
 

@@ -1060,6 +1060,7 @@ exports.path = function(path, delimiter) {
     delimiter = delimiter || '/';
     if (path[path.length - 1] === delimiter)
         return path;
+
     return path + delimiter;
 };
 
