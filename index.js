@@ -865,7 +865,7 @@ Framework.prototype.mapping = function(url, path) {
         url = '/' + url;
 
     if (path[0] === '@')
-        path = '.' + framework.path.package(path.substring(1));
+        path = (framework.isWindows ? '' : '.') + framework.path.package(path.substring(1));
 
     this.routes.mapping[url] = path;
     return this;
