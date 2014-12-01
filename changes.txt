@@ -79,6 +79,7 @@ Framework loads modules, packages, models, definitions, controllers
 - updated: controller.baa([message]) - read documentation
 - updated: Array.where(), Array.find(), Array.remove() - added a new functionality
 - updated: @{view(name, [model], [expire], [expire-key])}
+- updated: @{cookie(name)} --> read cookie
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
 - renamed: config['allow-compress-html'] to config['allow-compile-html']

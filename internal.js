@@ -1858,6 +1858,11 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'console':
             return '(' + command + '?$EMPTY:$EMPTY)';
 
+        case 'cookie':
+            return '$STRING(self.req.' + command + ').encode()';
+        case '!cookie':
+            return '$STRING(self.req.' + command + ')';
+
         case 'model':
         case 'repository':
         case 'get':
