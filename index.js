@@ -11553,18 +11553,34 @@ Backup.prototype.createDirectory = function(p, root) {
     if (p[0] === '/')
         p = p.substring(1);
 
-    if (p[p.length - 1] === '/')
-        p = p.substring(0, p.length - 1);
+    var is = framework.isWindows;
 
-    var arr = p.split('/');
+    if (is) {
+        if (p[p.length - 1] === '\\')
+            p = p.substring(0, p.length - 1);
+    } else {
+        if (p[p.length - 1] === '/')
+            p = p.substring(0, p.length - 1);
+    }
+
+    var arr = is ? p.split('\\') : p.split('/');
     var directory = '';
+
+    if (is)
+        arr.shift();
+
     var self = this;
     var length = arr.length;
 
     for (var i = 0; i < length; i++) {
 
         var name = arr[i];
-        directory += (directory.length > 0 ? '/' : '') + name;
+
+        if (is)
+            directory += (directory.length > 0 ? '\\' : '') + name;
+        else
+            directory += (directory.length > 0 ? '/' : '') + name;
+
         var dir = path.join(self.path, directory);
 
         if (root)
