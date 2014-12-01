@@ -398,31 +398,27 @@ Framework.prototype._routesSort = function() {
     return self;
 };
 
-/*
-    @name {String} :: file name of database
-    return {nosql}
-*/
+/**
+ * Get a database instance
+ * @param {String} name Database name (optional)
+ * @return {Framework}
+ */
 Framework.prototype.database = function(name) {
-
     var self = this;
-
     var db = self.databases[name];
-
     if (db !== undefined)
         return db;
-
     self._verify_directory('databases');
     db = framework_nosql.load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), true);
     self.databases[name] = db;
-
     return db;
 };
 
-/*
-    Stop the server and exit
-    @code {Number} :: optional, exit code - default 0
-    return {Framework}
-*/
+/**
+ * Stop application
+ * @param {Number} code Exit code, optional.
+ * @return {Framework}
+ */
 Framework.prototype.stop = function(code) {
     var self = this;
 
@@ -438,10 +434,10 @@ Framework.prototype.stop = function(code) {
 
 /**
  * Add a redirect route
- * @param  {String} host Domain with protocol.
- * @param  {String} newHost Domain with protocol.
- * @param  {Boolean} withPath Copy path (default: true).
- * @param  {Boolean} permanent Is permanent redirect (302)? (default: false)
+ * @param {String} host Domain with protocol.
+ * @param {String} newHost Domain with protocol.
+ * @param {Boolean} withPath Copy path (default: true).
+ * @param {Boolean} permanent Is permanent redirect (302)? (default: false)
  * @return {Framework}
  */
 Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
@@ -521,12 +517,12 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
 
 /**
  * Add a route
- * @param  {String} url
- * @param  {Function} funcExecute Action.
- * @param  {String Array} flags
- * @param  {Number} maximumSize Maximum length of request data.
- * @param  {String Array} middleware Loads custom middleware.
- * @param  {Number timeout Response timeout.
+ * @param {String} url
+ * @param {Function} funcExecute Action.
+ * @param {String Array} flags
+ * @param {Number} maximumSize Maximum length of request data.
+ * @param {String Array} middleware Loads custom middleware.
+ * @param {Number timeout Response timeout.
  * @return {Framework}
  */
 Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middleware, timeout, options) {
@@ -548,6 +544,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
 
     var type = typeof(funcExecute);
     var index = 0;
+    var id = url;
 
     if (type === OBJECT || funcExecute instanceof Array) {
         var tmp = funcExecute;
@@ -585,6 +582,10 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         middleware = flags['middleware'] || flags['partials'] || flags['partial'];
         timeout = flags['timeout'];
         options = flags['options'];
+        if (flags['id'])
+            id = flags['id'];
+        else if (flags['name'])
+            id = flags['name'];
         flags = flags['flags'] || flags['flag'];
     }
 
@@ -647,11 +648,9 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
                 case 'logged':
                     priority += 2;
                     tmp.push('authorize');
-                    console.log('OBSOLETE: flag "logged" - use "authorize".');
                     break;
                 case 'unlogged':
                     tmp.push('unauthorize');
-                    console.log('OBSOLETE: flag "unlogged" - use "unauthorize".');
                     break;
                 case 'referer':
                 case 'referrer':
@@ -762,6 +761,7 @@ Framework.prototype.route = function(url, funcExecute, flags, maximumSize, middl
         method = method.toUpperCase();
 
     self.routes.web.push({
+        id: id,
         priority: priority,
         subdomain: subdomain,
         name: (_controller || '').length === 0 ? 'unknown' : _controller,
@@ -889,28 +889,18 @@ Framework.prototype.use = function(name) {
     return self;
 };
 
-/*
-    Add a new partial route
-    @name {String or Function} :: if @name is function, route will be a global partial content
-    @funcExecute {Function} :: optional
-    return {Framework}
-*/
-Framework.prototype.partial = function(name, funcExecute) {
-    console.log('OBSOLETE: framework.partial(), use: framework.middleware()');
-    return this.middleware(name, funcExecute);
-};
-
-/*
-    Add a new websocket route
-    @url {String}
-    @funcInitialize {Function}
-    @flags {String Array or Object} :: optional
-    @protocols {String Array} :: optional, websocket-allow-protocols
-    @allow {String Array} :: optional, allow origin
-    @maximumSize {Number} :: optional, default by the config
-    @middleware {String Array} :: optional, middleware
-    return {Framework}
-*/
+/**
+ * Add a new websocket route
+ * @param {String} url
+ * @param {Function()} funcInitialize
+ * @param {String Array} flags Optional.
+ * @param {String Array} protocols Optional, framework compares this array with request protocol (http or https)
+ * @param {String Array} allow Optional, framework compares this array with "origin" request header
+ * @param {Number} maximumSize Optional, maximum message length.
+ * @param {String Array} middleware Optional, middlewares.
+ * @param {Object} options Optional, additional options for middleware.
+ * @return {Framework}
+ */
 Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, maximumSize, middleware, options) {
 
     if (url === '')
@@ -3824,8 +3814,8 @@ Framework.prototype.http = function(mode, options) {
 
 /**
  * Run framework –> HTTPS
- * @param  {String} mode Framework mode.
- * @param  {Object} options Framework settings.
+ * @param {String} mode Framework mode.
+ * @param {Object} options Framework settings.
  * @return {Framework}
  */
 Framework.prototype.https = function(mode, options) {
@@ -3836,7 +3826,13 @@ Framework.prototype.https = function(mode, options) {
     return this.mode(require('https'), mode, options);
 };
 
-// Alias for framework.init
+/**
+ * Run framework
+ * @param {Object} http
+ * @param {String} name Mode name.
+ * @param {Object} options Optional, additional options.
+ * @return {Framework}
+ */
 Framework.prototype.mode = function(http, name, options) {
 
     var test = false;
@@ -3876,7 +3872,7 @@ Framework.prototype.mode = function(http, name, options) {
 };
 
 /**
- * Framework informations
+ * Show framework informations
  */
 Framework.prototype.console = function() {
     console.log('====================================================');
@@ -3914,6 +3910,12 @@ Framework.prototype.reconnect = function() {
     return self;
 };
 
+/**
+ * Verifying directory
+ * @private
+ * @param {String} name Directory name
+ * @return {Framework}
+ */
 Framework.prototype._verify_directory = function(name) {
 
     var self = this;
@@ -3931,6 +3933,12 @@ Framework.prototype._verify_directory = function(name) {
     return self;
 };
 
+/**
+ * Internal service
+ * @private
+ * @param {Number} count Run count.
+ * @return {Framework}
+ */
 Framework.prototype._service = function(count) {
     var self = this;
 
@@ -3977,10 +3985,12 @@ Framework.prototype._service = function(count) {
     }
 
     self.emit('service', count);
+    return self;
 };
 
 /**
  * Request processing
+ * @private
  * @param {Request} req
  * @param {Response} res
  */
@@ -4089,6 +4099,15 @@ Framework.prototype._request = function(req, res) {
 
 };
 
+/**
+ * Continue to process
+ * @private
+ * @param {Request} req
+ * @param {Response} res
+ * @param {Object} headers
+ * @param {String} protocol [description]
+ * @return {Framework}
+ */
 Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
     var self = this;
@@ -4299,6 +4318,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 /**
  * Prepare WebSocket
+ * @private
  * @param {HttpRequest} req
  * @param {WebSocketClient} websocket
  * @param {String} path
@@ -4343,6 +4363,7 @@ Framework.prototype._upgrade_prepare = function(req, websocket, path, headers) {
 
 /**
  * WebSocket, controller caller
+ * @private
  * @param {Object} route
  * @param {HttpRequest} req
  * @param {Socket} socket
@@ -4404,6 +4425,13 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
     return self;
 };
 
+/**
+ * Request statistics writer
+ * @private
+ * @param {Boolean} beg
+ * @param {Boolean} isStaticFile
+ * @return {Framework}
+ */
 Framework.prototype._request_stats = function(beg, isStaticFile) {
 
     var self = this;
@@ -4518,7 +4546,6 @@ Framework.prototype.mail = function(address, subject, view, model, callback) {
     return this;
 };
 
-
 /**
  * Render view
  * @param {String} name View name.
@@ -4563,7 +4590,6 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
     var self = this;
 
     // !IMPORTANT! framework.testsPriority is created dynamically in framework.test()
-
     if (typeof(url) === TYPE_FUNCTION) {
         self.tests.push({
             name: _test + ': ' + name,
@@ -4987,10 +5013,12 @@ Framework.prototype.test = function(stop, names, cb) {
     return self;
 };
 
-/*
-    Clear temporary directory
-    return {Framework}
-*/
+/**
+ * Clear temporary directory
+ * @param {Function} callback
+ * @param {Boolean} isInit Private argument.
+ * @return {Framework}
+ */
 Framework.prototype.clear = function(callback, isInit) {
 
     var self = this;
@@ -5031,10 +5059,12 @@ Framework.prototype.clear = function(callback, isInit) {
     return this;
 };
 
-/*
-    INTERNAL: Force remove files
-    return {Framework}
-*/
+/**
+ * Remove files in array
+ * @param {String Array} arr File list.
+ * @param {Function} callback
+ * @return {Framework}
+ */
 Framework.prototype.unlink = function(arr, callback) {
     var self = this;
 
@@ -5061,10 +5091,12 @@ Framework.prototype.unlink = function(arr, callback) {
     return self;
 };
 
-/*
-    INTERNAL: Force remove empty directories
-    return {Framework}
-*/
+/**
+ * Remove directories in array
+ * @param {String Array} arr
+ * @param {Function} callback
+ * @return {Framework}
+ */
 Framework.prototype.rmdir = function(arr, callback) {
     var self = this;
 
@@ -5091,13 +5123,13 @@ Framework.prototype.rmdir = function(arr, callback) {
     return self;
 };
 
-/*
-    Cryptography (encrypt)
-    @value {String}
-    @key {String}
-    @isUniqe {Boolean} :: optional, default true
-    return {String}
-*/
+/**
+ * Cryptography (encrypt)
+ * @param {String} value
+ * @param {String} key Encrypt key.
+ * @param {Boolean} isUnique Optional, default true.
+ * @return {String}
+ */
 Framework.prototype.encrypt = function(value, key, isUnique) {
 
     var self = this;
@@ -5126,10 +5158,10 @@ Framework.prototype.encrypt = function(value, key, isUnique) {
 };
 
 /**
- * Cryptography
+ * Cryptography (decrypt)
  * @param {Object or String} value
- * @param {String} key
- * @param {Boolean} jsonConvert Optional.
+ * @param {String} key Decrypt key.
+ * @param {Boolean} jsonConvert Optional, default true.
  * @return {Object or String}
  */
 Framework.prototype.decrypt = function(value, key, jsonConvert) {
@@ -5161,13 +5193,13 @@ Framework.prototype.decrypt = function(value, key, jsonConvert) {
     return result;
 };
 
-/*
-    Hash value
-    @type {String} :: sha1, sha256, sha512, md5
-    @value {Object}
-    @salt {String or Boolean} :: custom salt {String} or secret as salt {undefined or Boolean}
-    return {String}
-*/
+/**
+ * Create hash
+ * @param {String} type Type (md5, sha1, sha256, etc.)
+ * @param {String} value
+ * @param {String} salt Optional, default false.
+ * @return {String}
+ */
 Framework.prototype.hash = function(type, value, salt) {
     var hash = crypto.createHash(type);
     var plus = '';
@@ -5181,12 +5213,12 @@ Framework.prototype.hash = function(type, value, salt) {
     return hash.digest('hex');
 };
 
-/*
-    Resource reader
-    @name {String} :: filename of resource
-    @key {String}
-    return {String}
-*/
+/**
+ * Resource reader
+ * @param {String} name Optional, resource file name. Default: "default".
+ * @param {String} key Resource key.
+ * @return {String} String
+ */
 Framework.prototype.resource = function(name, key) {
 
     if (key === undefined || name.length === 0) {
@@ -5210,6 +5242,12 @@ Framework.prototype.resource = function(name, key) {
     return obj[key] || '';
 };
 
+/**
+ * Versions configuration
+ * @private
+ * @param {String} content
+ * @return {Framework}
+ */
 Framework.prototype._configure_versions = function(content) {
 
     var self = this;
@@ -5235,14 +5273,8 @@ Framework.prototype._configure_versions = function(content) {
     return self;
 };
 
-/*
-    INTERNAL: Framework configure
-    @arr {String Array or String (filename)} :: optional
-    @rewrite {Boolean} :: optional, default true
-    return {Framework}
-
 /**
- * Configure
+ * Load configuration
  * @private
  * @param {[type]} arr [description]
  * @param {[type]} rewrite [description]
@@ -5369,12 +5401,22 @@ Framework.prototype._configure = function(arr, rewrite) {
     return self;
 };
 
-/*
-    Static file routing
-    @name {String} :: filename
-    return {String}
-*/
+/**
+ * Create URL: JavaScript (according to config['static-url-js'])
+ * @alias
+ * @param {String} name
+ * @return {String}
+ */
 Framework.prototype.routeJS = function(name) {
+    return this.routeScript(name);
+};
+
+/**
+ * Create URL: JavaScript (according to config['static-url-js'])
+ * @param {String} name
+ * @return {String}
+ */
+Framework.prototype.routeScript = function(name) {
     var self = this;
 
     if (name.lastIndexOf(EXTENSION_JS) === -1)
@@ -5383,12 +5425,22 @@ Framework.prototype.routeJS = function(name) {
     return self._routeStatic(name, self.config['static-url-js']);
 };
 
-/*
-    Static file routing
-    @name {String} :: filename
-    return {String}
-*/
+/**
+ * Create URL: CSS (according to config['static-url-css'])
+ * @alias
+ * @param {String} name
+ * @return {String}
+ */
 Framework.prototype.routeCSS = function(name) {
+    return this.routeStyle(name);
+};
+
+/**
+ * Create URL: CSS (according to config['static-url-css'])
+ * @param {String} name
+ * @return {String}
+ */
+Framework.prototype.routeStyle = function(name) {
     var self = this;
 
     if (name.lastIndexOf('.css') === -1)
@@ -5543,6 +5595,15 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
     return null;
 };
 
+/**
+ * Lookup cache
+ * @private
+ * @param {Request} req
+ * @param {Object} route
+ * @param {String} key
+ * @param {Booelan} noCache
+ * @return {Object}
+ */
 Framework.prototype.lookup_cache = function(req, route, key, noCache) {
 
     if (noCache === true || route.isASTERIX || !route.isMEMBER || route.param.length > 0)
@@ -5618,11 +5679,6 @@ Framework.prototype.accept = function(extension, contentType) {
         utils.setContentType(extension, contentType);
 
     return self;
-};
-
-Framework.prototype.accepts = function(extension, contentType) {
-    console.log('OBSOLETE: framework.accepts(), use: framework.accept()');
-    return this.accept(extension, contentType);
 };
 
 /*
@@ -5871,10 +5927,12 @@ FrameworkRestrictions.prototype._blockedCustom = function(headers) {
 
 function FrameworkFileSystem(framework) {
     this.create = {
-        css: this.createCSS.bind(this),
+        style: this.createStyle.bind(this),
+        css: this.createStyle.bind(this),
         database: this.createDatabase.bind(this),
         file: this.createFile.bind(this),
-        js: this.createJS.bind(this),
+        script: this.createScript.bind(this),
+        js: this.createScript.bind(this),
         resource: this.createResource.bind(this),
         temporary: this.createTemporary.bind(this),
         view: this.createView.bind(this),
@@ -5882,10 +5940,12 @@ function FrameworkFileSystem(framework) {
     };
 
     this.rm = {
-        css: this.deleteCSS.bind(this),
+        css: this.deleteStyle.bind(this),
+        style: this.deleteStyle.bind(this),
         database: this.deleteDatabase.bind(this),
         file: this.deleteFile.bind(this),
-        js: this.deleteJS.bind(this),
+        js: this.deleteScript.bind(this),
+        script: this.deleteScript.bind(this),
         resource: this.deleteResource.bind(this),
         temporary: this.deleteTemporary.bind(this),
         view: this.deleteView.bind(this),
@@ -5898,7 +5958,7 @@ function FrameworkFileSystem(framework) {
     @name {String}
     return {Boolean}
 */
-FrameworkFileSystem.prototype.deleteCSS = function(name) {
+FrameworkFileSystem.prototype.deleteStyle = function(name) {
     var self = this;
 
     if (name.lastIndexOf('.css') === -1)
@@ -5913,7 +5973,7 @@ FrameworkFileSystem.prototype.deleteCSS = function(name) {
     @name {String}
     return {Boolean}
 */
-FrameworkFileSystem.prototype.deleteJS = function(name) {
+FrameworkFileSystem.prototype.deleteScript = function(name) {
     var self = this;
 
     if (name.lastIndexOf(EXTENSION_JS) === -1)
@@ -6015,7 +6075,7 @@ FrameworkFileSystem.prototype.deleteFile = function(filename) {
     @append {Boolean} :: optional (default false)
     return {Boolean}
 */
-FrameworkFileSystem.prototype.createCSS = function(name, content, rewrite, append) {
+FrameworkFileSystem.prototype.createStyle = function(name, content, rewrite, append) {
 
     var self = this;
 
@@ -6037,7 +6097,7 @@ FrameworkFileSystem.prototype.createCSS = function(name, content, rewrite, appen
     @append {Boolean} :: optional (default false)
     return {Boolean}
 */
-FrameworkFileSystem.prototype.createJS = function(name, content, rewrite, append) {
+FrameworkFileSystem.prototype.createScript = function(name, content, rewrite, append) {
 
     var self = this;
 
@@ -6975,12 +7035,13 @@ Subscribe.prototype.doEnd = function() {
                 return self;
             }
 
-            if (!req.buffer_data.isJSON()) {
+            var data = req.buffer_data.trim();
+            if (!data.isJSON()) {
                 self.route400(new Error('Request validation.'));
                 return self;
             }
 
-            req.body = JSON.parse(req.buffer_data);
+            req.body = JSON.parse(data);
             req.buffer_data = null;
             self.prepare(req.flags, req.uri.pathname);
 
@@ -6999,7 +7060,7 @@ Subscribe.prototype.doEnd = function() {
         }
 
         try {
-            req.body = utils.parseXML(req.buffer_data);
+            req.body = utils.parseXML(req.buffer_data.trim());
             req.buffer_data = null;
             self.prepare(req.flags, req.uri.pathname);
         } catch (err) {
@@ -7199,8 +7260,8 @@ function Controller(name, req, res, subscribe) {
     this._currentImage = '';
     this._currentDownload = '';
     this._currentVideo = '';
-    this._currentJS = '';
-    this._currentCSS = '';
+    this._currentScript = '';
+    this._currentStyle = '';
     this._currentView = name[0] !== '#' && name !== 'default' && name !== '' ? '/' + name + '/' : '';
 
     if (!this.req) {
@@ -8835,7 +8896,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 
 /**
  * Append <script> TAG
- * @internal
+ * @private
  * @return {String}
  */
 Controller.prototype.$script = function() {
@@ -8845,7 +8906,7 @@ Controller.prototype.$script = function() {
 
 /**
  * Append <script> TAG
- * @internal
+ * @private
  * @return {String}
  */
 Controller.prototype.$js = function() {
@@ -8861,7 +8922,7 @@ Controller.prototype.$js = function() {
 
 /**
  * Append <link> TAG
- * @internal
+ * @private
  * @return {String}
  */
 Controller.prototype.$css = function() {
@@ -8917,8 +8978,8 @@ Controller.prototype.$image = function(name, width, height, alt, className) {
 };
 
 /**
- * Creates URL of static routing: DOWNLOAD (<a href="..." download="...")
- * @internal
+ * Create URL: DOWNLOAD (<a href="..." download="...")
+ * @private
  * @param {String} filename
  * @param {String} innerHTML
  * @param {String} downloadName Optional.
@@ -8939,7 +9000,7 @@ Controller.prototype.$download = function(filename, innerHTML, downloadName, cla
 
 /**
  * Serialize object into the JSON
- * @internal
+ * @private
  * @param {Object} obj
  * @param {String} id Optional.
  * @param {Boolean} beautify Optional.
@@ -8963,7 +9024,7 @@ Controller.prototype.$json = function(obj, id, beautify) {
 
 /**
  * Append FAVICON tag
- * @internal
+ * @private
  * @param {String} name
  * @return {String}
  */
@@ -8989,6 +9050,14 @@ Controller.prototype.$favicon = function(name) {
 
 };
 
+/**
+ * Route static file helper
+ * @private
+ * @param {String} current
+ * @param {String} name
+ * @param {Function} fn
+ * @return {String}
+ */
 Controller.prototype._routeHelper = function(current, name, fn) {
 
     var self = this;
@@ -9006,39 +9075,58 @@ Controller.prototype._routeHelper = function(current, name, fn) {
 };
 
 /**
- * Creates URL of static routing: JavaScript
+ * Create URL: JavaScript
+ * @alias
  * @param {String} name
  * @param {Boolean} tag Append tag?
  * @return {String}
  */
 Controller.prototype.routeJS = function(name, tag) {
-    var self = this;
+    return this.routeScript(name, tag);
+};
 
+/**
+ * Create URL: JavaScript
+ * @param {String} name
+ * @param {Boolean} tag Append tag?
+ * @return {String}
+ */
+Controller.prototype.routeScript = function(name, tag) {
+    var self = this;
     if (name === undefined)
         name = 'default.js';
-
-    var url = self._routeHelper(self._currentJS, name, framework.routeJS);
+    var url = self._routeHelper(self._currentScript, name, framework.routeScript);
     return tag ? '<script type="text/javascript" src="' + url + '"></script>' : url;
 };
 
 /**
- * Creates URL of static routing: CSS
+ * Create URL: CSS
  * @param {String} name
  * @param {Boolean} tag Append tag?
  * @return {String}
  */
 Controller.prototype.routeCSS = function(name, tag) {
+    return this.routeStyle(name, tag);
+};
+
+/**
+ * Create URL: CSS
+ * @param {String} name
+ * @param {Boolean} tag Append tag?
+ * @return {String}
+ */
+Controller.prototype.routeStyle = function(name, tag) {
     var self = this;
 
     if (name === undefined)
         name = 'default.css';
 
-    var url = self._routeHelper(self._currentCSS, name, framework.routeCSS);
+    var url = self._routeHelper(self._currentStyle, name, framework.routeCSS);
     return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
 
 /**
- * Creates URL of static routing: IMG
+ * Create URL: IMG
  * @param {String} name
  * @return {String}
  */
@@ -9048,7 +9136,7 @@ Controller.prototype.routeImage = function(name) {
 };
 
 /**
- * Creates URL of static routing: VIDEO
+ * Create URL: VIDEO
  * @param {String} name
  * @return {String}
  */
@@ -9058,7 +9146,7 @@ Controller.prototype.routeVideo = function(name) {
 };
 
 /**
- * Creates URL of static routing: FONT
+ * Create URL: FONT
  * @param {String} name
  * @return {String}
  */
@@ -9068,7 +9156,7 @@ Controller.prototype.routeFont = function(name) {
 };
 
 /**
- * Creates URL of static routing: DOWNLOAD
+ * Create URL: DOWNLOAD
  * @param {String} name
  * @return {String}
  */
@@ -9077,31 +9165,41 @@ Controller.prototype.routeDownload = function(name) {
     return self._routeHelper(self._currentDownload, name, framework.routeDownload);
 };
 
-/*
-    Static file routing
-    @name {String} :: filename
-    return {String}
-*/
+/**
+ * Create URL: static files (by the config['static-url'])
+ * @param {String} name
+ * @return {String}
+ */
 Controller.prototype.routeStatic = function(name) {
     var self = this;
     return framework.routeStatic(name);
 };
 
-/*
-    Internal
-    @path {String} :: add path to route path
-    return {String}
-*/
+/**
+ * Set current "script" path
+ * @alias
+ * @param {String} path
+ * @return {String}
+ */
 Controller.prototype.$currentJS = function(path) {
-    this._currentJS = path && path.length > 0 ? path : '';
+    return this.$currentScript(path);
+};
+
+/**
+ * Set current "script" path
+ * @param {String} path
+ * @return {String}
+ */
+Controller.prototype.$currentScript = function(path) {
+    this._currentScript = path && path.length > 0 ? path : '';
     return '';
 };
 
-/*
-    Internal
-    @path {String} :: add path to route path
-    return {String}
-*/
+/**
+ * Set current "view" path
+ * @param {String} path
+ * @return {String}
+ */
 Controller.prototype.$currentView = function(path) {
     var self = this;
 
@@ -9114,11 +9212,11 @@ Controller.prototype.$currentView = function(path) {
     return '';
 };
 
-/*
-    Internal
-    @path {String} :: add path to route path
-    return {String}
-*/
+/**
+ * Set current "view" path
+ * @param {String} path
+ * @return {FrameworkController}
+ */
 Controller.prototype.currentView = function(path) {
     var self = this;
     self.$currentView(path);
@@ -9126,51 +9224,61 @@ Controller.prototype.currentView = function(path) {
     return self;
 };
 
-/*
-    Internal
-    @path {String} :: add path to route path
-    return {String}
-*/
+/**
+ * Set current "style" path
+ * @alias
+ * @param {String} path
+ * @return {String}
+ */
 Controller.prototype.$currentCSS = function(path) {
-    this._currentCSS = path && path.length > 0 ? path : '';
+    return this.$currentStyle(path);
+};
+
+/**
+ * Set current "style" path
+ * @param {String} path
+ * @return {String}
+ */
+Controller.prototype.$currentStyle = function(path) {
+    this._currentStyle = path && path.length > 0 ? path : '';
     return '';
 };
 
-/*
-    Internal
-    @path {String} :: add path to route path
-    return {String}
-*/
+/**
+ * Set current "image" path
+ * @param {String} path
+ * @return {String}
+ */
 Controller.prototype.$currentImage = function(path) {
     this._currentImage = path && path.length > 0 ? path : '';
     return '';
 };
 
-/*
-    Internal
-    @path {String} :: add path to route path
-    return {String}
-*/
+/**
+ * Set current "video" path
+ * @param {String} path
+ * @return {String}
+ */
 Controller.prototype.$currentVideo = function(path) {
     this._currentVideo = path && path.length > 0 ? path : '';
     return '';
 };
 
-/*
-    Internal
-    @path {String} :: add path to route path
-    return {String}
-*/
+/**
+ * Set current "download" path
+ * @param {String} path
+ * @return {String}
+ */
 Controller.prototype.$currentDownload = function(path) {
     this._currentDownload = path && path.length > 0 ? path : '';
     return '';
 };
 
-/*
-    Set current image path
-    @path {String}
-    return {Controller}
-*/
+/**
+ * Set current "image" path
+ * @param {String} path
+ * @return {FrameworkController}
+ */
 Controller.prototype.currentImage = function(path) {
     var self = this;
     self.$currentImage(path);
@@ -9178,11 +9286,11 @@ Controller.prototype.currentImage = function(path) {
     return self;
 };
 
-/*
-    Set current download path
-    @path {String}
-    return {Controller}
-*/
+/**
+ * Set current "download" path
+ * @param {String} path
+ * @return {FrameworkController}
+ */
 Controller.prototype.currentDownload = function(path) {
     var self = this;
     self.$currentDownload(path);
@@ -9190,35 +9298,55 @@ Controller.prototype.currentDownload = function(path) {
     return self;
 };
 
-/*
-    Set current CSS path
-    @path {String}
-    return {Controller}
-*/
+/**
+ * Set current "style" path
+ * @alias
+ * @param {String} path
+ * @return {String}
+ */
 Controller.prototype.currentCSS = function(path) {
+    return this.currentStyle(path);
+};
+
+/**
+ * Set current "style" path
+ * @param {String} path
+ * @return {FrameworkController}
+ */
+Controller.prototype.currentStyle = function(path) {
     var self = this;
-    self.$currentCSS(path);
-    self._defaultCSS = self._currentCSS;
+    self.$currentStyle(path);
+    self._defaultStyle = self._currentStyle;
     return self;
 };
 
-/*
-    Set current JS path
-    @path {String}
-    return {Controller}
-*/
+/**
+ * Set current "script" path
+ * @alias
+ * @param {String} path
+ * @return {FrameworkController}
+ */
 Controller.prototype.currentJS = function(path) {
+    return this.currentScript(path);
+};
+
+/**
+ * Set current "script" path
+ * @param {String} path
+ * @return {FrameworkController}
+ */
+Controller.prototype.currentScript = function(path) {
     var self = this;
-    self.$currentJS(path);
-    self._defaultJS = self._currentJS;
+    self.$currentScript(path);
+    self._defaultScript = self._currentScript;
     return self;
 };
 
-/*
-    Set current video path
-    @path {String}
-    return {Controller}
-*/
+/**
+ * Set current "video" path
+ * @param {String} path
+ * @return {FrameworkController}
+ */
 Controller.prototype.currentVideo = function(path) {
     var self = this;
     self.$currentVideo(path);
@@ -9226,12 +9354,12 @@ Controller.prototype.currentVideo = function(path) {
     return self;
 };
 
-/*
-    Resource reader
-    @name {String} :: filename
-    @key {String}
-    return {String}
-*/
+/**
+ * Read resource
+ * @param {String} name Optional, resource file name. Default: "default".
+ * @param {String} key
+ * @return {String}
+ */
 Controller.prototype.resource = function(name, key) {
     var self = this;
     return framework.resource(name, key);
@@ -10134,8 +10262,8 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     self.$model = model;
 
     if (isLayout) {
-        self._currentCSS = self._defaultCSS || '';
-        self._currentJS = self._defaultJS || '';
+        self._currentStyle = self._defaultStyle || '';
+        self._currentScript = self._defaultScript || '';
         self._currentDownload = self._defaultDownload || '';
         self._currentVideo = self._defaultVideo || '';
         self._currentImage = self._defaultImage || '';

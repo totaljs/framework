@@ -103,6 +103,7 @@ Framework loads modules, packages, models, definitions, controllers
 - fixed: dynamic cache of views
 - fixed: mail sending
 - fixed: clearing temporary directory
+- fixed: parse JSON by the JSON route
 
 - improvements: routing performance
 

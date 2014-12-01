@@ -2483,7 +2483,7 @@ String.prototype.slug = function(max) {
 };
 
 String.prototype.link = function(max) {
-    console.log('String.prototype.link: OBSOLETE - Use String.prototype.Linker()');
+    console.log('String.prototype.link: OBSOLETE - Use String.prototype.linker()');
     return this.linker(max);
 };
 
