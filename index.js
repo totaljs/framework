@@ -865,7 +865,7 @@ Framework.prototype.mapping = function(url, path) {
         url = '/' + url;
 
     if (path[0] === '@')
-        path = (framework.isWindows ? '' : '.') + framework.path.package(path.substring(1));
+        path = framework.path.package(path.substring(1));
 
     this.routes.mapping[url] = path;
     return this;
@@ -2578,7 +2578,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
     // Is package?
     if (filename[0] === '@')
-        filename = '.' + framework.path.package(filename.substring(1));
+        filename = framework.path.package(filename.substring(1));
 
     req.clear(true);
 
@@ -2868,7 +2868,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
     if (typeof(filename) === OBJECT)
         stream = filename;
     else if (filename[0] === '@')
-        filename = '.' + framework.path.package(filename.substring(1));
+        filename = framework.path.package(filename.substring(1));
 
     var key = 'image-' + req.url.substring(1);
     var name = self.temporary.path[key];
@@ -3025,7 +3025,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
     if (typeof(filename) === OBJECT)
         stream = filename;
     else if (filename[0] === '@')
-        filename = '.' + framework.path.package(filename.substring(1));
+        filename = framework.path.package(filename.substring(1));
 
     var key = 'image-' + req.url.substring(1);
 
@@ -9622,7 +9622,7 @@ Controller.prototype.file = function(filename, downloadName, headers) {
     if (filename[0] === '~')
         filename = '.' + filename.substring(1);
     else
-        filename = utils.combine(framework.config['directory-public'], filename);
+        filename = framework.path.public(filename);
 
     self.subscribe.success();
     framework.responseFile(self.req, self.res, filename, downloadName, headers);
@@ -9647,7 +9647,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, useImageMagi
         if (filename[0] === '~')
             filename = '.' + filename.substring(1);
         else
-            filename = utils.combine(framework.config['directory-public'], filename);
+            filename = framework.path.public(filename);
     }
 
     self.subscribe.success();
@@ -10241,7 +10241,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
         filename = name.substring(1);
 
     if (skip === 3)
-        filename = '.' + framework.path.package(filename);
+        filename = framework.path.package(filename);
 
     var generator = framework_internal.generateView(name, filename);
     if (generator === null) {
@@ -11407,6 +11407,7 @@ function Backup() {
     this.fileName = '';
     this.read = { key: '', value: '', status: 0 };
     this.pending = 0;
+    this.cache = {};
     this.complete = function() {};
     this.filter = function(path) {
         return true;
@@ -11470,7 +11471,9 @@ Backup.prototype.restore = function(filename, path, callback, filter) {
     }
 
     var self = this;
+
     self.filter = filter;
+    self.cache = {};
     self.createDirectory(path, true);
 
     var stream = fs.createReadStream(filename);
@@ -11542,6 +11545,13 @@ Backup.prototype.restoreFile = function(key, value) {
 
 Backup.prototype.createDirectory = function(p, root) {
 
+    var self = this;
+
+    if (self.cache[p])
+        return;
+
+    self.cache[p] = true;
+
     if (p[0] === '/')
         p = p.substring(1);
 
@@ -11555,13 +11565,12 @@ Backup.prototype.createDirectory = function(p, root) {
             p = p.substring(0, p.length - 1);
     }
 
-    var arr = is ? p.split('\\') : p.split('/');
+    var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
     var directory = '';
 
-    if (is)
+    if (is && arr[0].indexOf(':') !== -1)
         arr.shift();
 
-    var self = this;
     var length = arr.length;
 
     for (var i = 0; i < length; i++) {
@@ -11574,9 +11583,8 @@ Backup.prototype.createDirectory = function(p, root) {
             directory += (directory.length > 0 ? '/' : '') + name;
 
         var dir = path.join(self.path, directory);
-
         if (root)
-            dir = '/' + dir;
+            dir = (is ? '\\' : '/') + dir;
 
         if (fs.existsSync(dir))
             continue;

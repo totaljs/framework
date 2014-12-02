@@ -2335,7 +2335,7 @@ View.prototype.read = function(path) {
     var self = this;
     var config = framework.config;
     var isOut = path[0] === '.';
-    var filename = isOut ? path.substring(1) : framework_utils.combine(config['directory-views'], path);
+    var filename = isOut ? path.substring(1) : framework.path.views(path);
 
     if (fs.existsSync(filename))
         return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compile-html']);
@@ -2347,7 +2347,7 @@ View.prototype.read = function(path) {
     if (index === -1)
         return null;
 
-    filename = framework_utils.combine(config['directory-views'], path.substring(index + 1));
+    filename = framework.path.views(path.substring(index + 1));
 
     if (fs.existsSync(filename))
         return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compile-html']);
