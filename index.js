@@ -8346,6 +8346,9 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
     var value = self.view(name, model, null, true);
     self.layoutName = layout;
 
+    if (value === null)
+        return '';
+
     if (expire)
         self.cache.add(cache, value, expire);
 
