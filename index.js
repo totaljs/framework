@@ -123,7 +123,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 13)';
+    this.version_header = '1.7.0 (build: 14)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -10281,7 +10281,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     var helpers = framework.helpers;
 
     try {
-        value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, isPartial ? self.outputPartial : self.output, self.date);
+        value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, isPartial ? self.outputPartial : self.output, self.date, self.req.cookie);
     } catch (ex) {
 
         var err = new Error('View: ' + name + ' - ' + ex.toString());
@@ -10380,7 +10380,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
                     var name = keys[i];
                     if (name[0] === '$' || name === 'sitemap') {
                         var value = self.repository[name];
-                        if (value)
+                        if (value !== undefined)
                             options.repository.push({ key: name, value: value });
                     }
                 }
@@ -10406,8 +10406,10 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
     if (fnFrom)
         fnFrom();
 
-    if (output.type !== CONTENTTYPE_TEXTHTML)
+    if (output.type !== CONTENTTYPE_TEXTHTML) {
         framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
+        return;
+    }
 
     switch (output.type) {
         case CONTENTTYPE_TEXTPLAIN:
@@ -10425,7 +10427,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
     for (var i = 0; i < length; i++)
         self.repository[output.repository[i].key] = output.repository[i].value;
 
-    if (utils.isNullOrEmpty(self.layoutName)) {
+    if (!self.layoutName) {
         self.subscribe.success();
         if (!self.isConnected)
             return self;
@@ -10436,7 +10438,6 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
     self.output = output.content;
     self.isLayout = true;
     self.view(self.layoutName, null);
-
     return self;
 };
 
@@ -11912,7 +11913,6 @@ http.IncomingMessage.prototype.noCache = function() {
 http.IncomingMessage.prototype.cookie = function(name) {
 
     var self = this;
-
     if (self.cookies !== undefined)
         return decodeURIComponent(self.cookies[name] || '');
 

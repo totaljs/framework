@@ -1798,7 +1798,7 @@ function view_parse(content, minify) {
             builder += '+' + escaper(text);
     }
 
-    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,output,date){' + (isSitemap ? 'var sitemap = function() { return self.sitemap.apply(self, arguments);};' : '') + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,output,date){var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
     return eval(fn);
 }
 
@@ -1859,9 +1859,9 @@ function view_prepare(command, dynamicCommand, functions) {
             return '(' + command + '?$EMPTY:$EMPTY)';
 
         case 'cookie':
-            return '$STRING(self.req.' + command + ').encode()';
+            return '$STRING(' + command + ').encode()';
         case '!cookie':
-            return '$STRING(self.req.' + command + ')';
+            return '$STRING(' + command + ')';
 
         case 'model':
         case 'repository':
