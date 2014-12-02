@@ -30,6 +30,7 @@ var OBJECT = 'object';
 var BOOLEAN = 'boolean';
 var NEWLINE = '\r\n';
 var VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version_header : '');
+var isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 
 var contentTypes = {
     'aac': 'audio/aac',

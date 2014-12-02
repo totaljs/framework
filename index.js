@@ -840,7 +840,7 @@ Framework.prototype.merge = function(url) {
         for (var j = 0, lengthsub = items.length; j < lengthsub; j++) {
             var fn = items[j];
             if (fn[0] === '@')
-                fn = '.' + framework.path.package(fn.substring(1));
+                fn = framework.path.package(fn.substring(1));
             arr.push(fn);
         }
     }
@@ -2443,12 +2443,12 @@ Framework.prototype.responseStatic = function(req, res) {
         isResize = resizer.extension === '*' || resizer.extension.indexOf(name.substring(index).toLowerCase()) !== -1;
         if (isResize) {
             name = resizer.path + decodeURIComponent(name);
-            filename = self.onMapping(name, name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : utils.combine(self.config['directory-public'], name));
+            filename = self.onMapping(name, name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : framework.path.public(name));
         } else
-            filename = self.onMapping(name, utils.combine(self.config['directory-public'], decodeURIComponent(name)));
+            filename = self.onMapping(name, framework.path.public(decodeURIComponent(name)));
 
     } else
-        filename = self.onMapping(name, utils.combine(self.config['directory-public'], decodeURIComponent(name)));
+        filename = self.onMapping(name, framework.path.public(decodeURIComponent(name)));
 
     if (!isResize) {
         self.responseFile(req, res, filename, '');
@@ -2509,7 +2509,7 @@ Framework.prototype.isProcessed = function(filename) {
         if (index !== -1)
             name = name.substring(0, index);
 
-        filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+        filename = framework.path.public(decodeURIComponent(name));
     }
 
     if (self.temporary.path[filename] !== undefined)
@@ -5030,8 +5030,7 @@ Framework.prototype.test = function(stop, names, cb) {
 Framework.prototype.clear = function(callback, isInit) {
 
     var self = this;
-    var tmp = self.config['directory-temp'];
-    var dir = utils.combine(tmp);
+    var dir = self.path.temp();
 
     if (!fs.existsSync(dir)) {
         if (callback)
@@ -5044,7 +5043,7 @@ Framework.prototype.clear = function(callback, isInit) {
         if (isInit) {
             var arr = [];
             for (var i = 0, length = files.length; i < length; i++) {
-                var filename = files[i].substring(tmp.length - 1);
+                var filename = files[i].substring(self.config['directory-temp'].length - 1);
                 if (filename.indexOf('/') === -1)
                     arr.push(files[i]);
             }
@@ -8710,13 +8709,6 @@ Controller.prototype.head = function() {
     for (var i = 0; i < length; i++) {
 
         var val = arguments[i];
-
-        /*
-        DUPLICATE - performance issue
-        if (header.length > 0 && header.indexOf(val) !== -1)
-            continue;
-        */
-
         if (val.indexOf('<') !== -1) {
             output += val;
             continue;

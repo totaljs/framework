@@ -107,6 +107,7 @@ Framework loads modules, packages, models, definitions, controllers
 - fixed: mail sending
 - fixed: clearing temporary directory
 - fixed: parse JSON by the JSON route
+- fixed: paths in Windows
 
 - improvements: routing performance
 
