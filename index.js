@@ -123,7 +123,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 14)';
+    this.version_header = '1.7.0 (build: 15)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -840,7 +840,7 @@ Framework.prototype.merge = function(url) {
         for (var j = 0, lengthsub = items.length; j < lengthsub; j++) {
             var fn = items[j];
             if (fn[0] === '@')
-                fn = framework.path.package(fn.substring(1));
+                fn = '~' + framework.path.package(fn.substring(1));
             arr.push(fn);
         }
     }

@@ -383,6 +383,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('merge package', function(complete) {
+		utils.request(url + 'mergepackage.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'console.log(\'test\');', 'merge package');
+			complete();
+		});
+	});
+
 	async.complete(function() {
 		next && next();
 	});
@@ -437,6 +446,9 @@ mem.on('stats', function(info) {
 framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html');
 
 framework.on('load', function() {
+
+	framework.merge('/mergepackage.js', '@testpackage/test.js');
+
 	setTimeout(function() {
 		console.time('TEST');
 		run();
