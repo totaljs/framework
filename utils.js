@@ -1300,13 +1300,14 @@ exports.combine = function() {
     return '.' + path.join.apply(self, arguments);
 };
 
-/*
-    @str {String}
-    return {String}
-*/
+/**
+ * Remove diacritics
+ * @param {String} str
+ * @return {String}
+ */
 exports.removeDiacritics = function(str) {
-    var dictionaryA = ['á', 'ä', 'č', 'ď', 'é', 'ě', 'ť', 'ž', 'ú', 'ů', 'ü', 'í', 'ï', 'ô', 'ó', 'ö', 'š', 'ľ', 'ĺ', 'ý', 'ÿ', 'č', 'ř'];
-    var dictionaryB = ['a', 'a', 'c', 'd', 'e', 'e', 't', 'z', 'u', 'u', 'u', 'i', 'i', 'o', 'o', 'o', 's', 'l', 'l', 'y', 'y', 'c', 'r'];
+    var dictionaryA = ['á', 'ä', 'č', 'ď', 'é', 'ě', 'ť', 'ž', 'ú', 'ů', 'ü', 'í', 'ï', 'ô', 'ó', 'ö', 'š', 'ľ', 'ĺ', 'ý', 'ÿ', 'č', 'ř', 'ŕ', 'ň'];
+    var dictionaryB = ['a', 'a', 'c', 'd', 'e', 'e', 't', 'z', 'u', 'u', 'u', 'i', 'i', 'o', 'o', 'o', 's', 'l', 'l', 'y', 'y', 'c', 'r', 'r', 'n'];
     var buf = '';
     var length = str.length;
     for (var i = 0; i < length; i++) {
