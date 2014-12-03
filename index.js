@@ -10294,10 +10294,10 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
         self.error(err);
 
         if (self.isPartial) {
-            value = self.outputPartial;
+            //value = self.outputPartial; // What is this? :-)
             self.outputPartial = '';
         } else {
-            value = self.output;
+            //value = self.output; // What is this? :-)
             self.output = '';
         }
 
