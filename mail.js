@@ -84,7 +84,7 @@ function resolveMx(domain, callback) {
             });
 
             sock.on('connect', function() {
-                sock.removeAllListeners('error');
+                // sock.removeAllListeners('error');
                 callback(null, sock);
             });
         }
@@ -395,7 +395,8 @@ Message.prototype._send = function(socket, options) {
     buffer.push('');
 
     message.push('Date: ' + date.toUTCString());
-    message.push('Subject: ' + self.subject);
+    // message.push('Subject: ' + self.subject);
+    message.push('Subject: =?utf-8?B?' + new Buffer(self.subject).toString('base64') + '?=');
 
     length = self.addressReply.length;
     if (length > 0) {
