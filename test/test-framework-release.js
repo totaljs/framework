@@ -392,6 +392,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('virtual', function(complete) {
+		utils.request(url + 'virtual.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'TEST', 'virtual directory problem');
+			complete();
+		});
+	});
+
 	async.complete(function() {
 		next && next();
 	});
