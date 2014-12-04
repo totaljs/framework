@@ -221,6 +221,24 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('post-schema', function(complete) {
+		utils.request(url + 'post/schema/', ['post'], 'name=Peter123456789012345678901234567890#', function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '{"name":"Peter12345","type":"schema"}', 'post-schema');
+			complete();
+		});
+	});
+
+	async.await('post-schema-error', function(complete) {
+		utils.request(url + 'post/schema/', ['post'], 'age=Peter123456789012345678901234567890#', function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '[{"name":"name","error":"default","path":"User.name"}]', 'post-schema');
+			complete();
+		});
+	});
+
 	async.await('post-json', function(complete) {
 		utils.request(url + 'post/json/', ['json', 'post'], { name: 'total.js' }, function(error, data, code, headers) {
 			if (error)

@@ -60,6 +60,7 @@ exports.install = function(framework) {
     framework.route('/post/json/', plain_post_json, ['json']);
     framework.route('/post/xml/', plain_post_xml, ['xml']);
     framework.route('/multiple/', plain_multiple, ['post', 'get', 'put', 'delete']);
+    framework.route('/post/schema/', plain_post_schema_parse, ['post', '*test/User']);
 
     framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);
     framework.route('/put/parse/', plain_put_parse, ['put']);
@@ -137,6 +138,12 @@ function plain_post_raw() {
 function plain_post_parse() {
     var self = this;
     self.post.type = 'parse';
+    self.json(self.post);
+}
+
+function plain_post_schema_parse() {
+    var self = this;
+    self.post.type = 'schema';
     self.json(self.post);
 }
 

@@ -11,7 +11,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: Builders.Schema() - schema supports transformations
 - added: Builders.Schema() - schema supports grouping `Builders.schema('group').get('schema_name)`
 - added: Builders.Schema() - schema supports rules
-- added: Builders.Schema().make(obj) - make object with $save, $remove, $compose, etc.
+- added: Builders.Schema().make(obj, callback(err, model)) - make object with $save, $remove, $compose, etc.
 - added: framework.mail() - is alias for controller.mail()
 - added: framework.view(name, [model], [layout], [repository]) - is alias for controller.view()
 - added: validate handler contains new parameter model -> (name, value, path, schema, model)
@@ -62,6 +62,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: Array.last([def])
 - added: framework.routing(name)
 - added: ROUTING(name)
+- added: routing supports schemas `*custom-schema/User` and we can define it in flags
 
 - uodated: (IMPORTANT) framework doesn't remove subdirectories with files in temporary directory
 - updated: (IMPORTANT) all models are loaded after is the framework loaded

@@ -101,8 +101,8 @@ global.MODEL = function(name) {
     return framework.model(name);
 };
 
-global.SCHEMA = function(name) {
-    return Builders.schema(name);
+global.SCHEMA = function(group, name, model) {
+    return Builders.load(group, name, model);
 };
 
 global.FUNCTION = function(name) {
@@ -123,7 +123,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 17)';
+    this.version_header = '1.7.0 (build: 18)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -613,6 +613,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
     var isRaw = false;
     var isNOXHR = false;
     var method = '';
+    var schema;
 
     if (flags) {
 
@@ -621,10 +622,17 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
         for (var i = 0; i < flags.length; i++) {
 
-            if (flags[i][0] === '#') {
+            var first = flags[i][0];
+
+            if (first === '#') {
                 if ((middleware || null) === null)
                     middleware = [];
                 middleware.push(flags[i].substring(1));
+                continue;
+            }
+
+            if (first === '*') {
+                schema = flags[i].substring(1).split('/');
                 continue;
             }
 
@@ -765,6 +773,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
     self.routes.web.push({
         name: name,
         priority: priority,
+        schema: schema,
         subdomain: subdomain,
         controller: (_controller || '').length === 0 ? 'unknown' : _controller,
         url: routeURL,
@@ -3304,6 +3313,7 @@ Framework.prototype.response400 = function(req, res) {
 
     var headers = {};
     var status = 400;
+
     headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
     res.writeHead(status, headers);
     res.end(utils.httpStatus(status));
@@ -6867,7 +6877,10 @@ Subscribe.prototype.execute = function(status) {
     }
 
     if (route === null) {
-        framework.responseContent(req, res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
+        if (status === 400 && self.exception instanceof Builders.ErrorBuilder)
+            framework.responseContent(req, res, status, self.exception.json(), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
+        else
+            framework.responseContent(req, res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
         return self;
     }
 
@@ -7044,6 +7057,8 @@ Subscribe.prototype.doEnd = function() {
         return self;
     }
 
+    var schema;
+
     if (req.buffer_data.length === 0) {
 
         // POST, MULTIPART
@@ -7071,8 +7086,32 @@ Subscribe.prototype.doEnd = function() {
             }
 
             req.body = JSON.parse(data);
-            req.buffer_data = null;
-            self.prepare(req.flags, req.uri.pathname);
+
+            if (!route.schema) {
+                req.buffer_data = null;
+                self.prepare(req.flags, req.uri.pathname);
+                return self;
+            }
+
+            schema = SCHEMA(route.schema[0]).get(route.schema[1]);
+
+            if (!schema) {
+                self.route500(new Error('Schema not found.'));
+                return self;
+            }
+
+            schema.load(req.body, function(err, result) {
+
+                if (err) {
+                    self.route400(err);
+                    return;
+                }
+
+                if (result)
+                    req.body = result;
+
+                self.prepare(req.flag, req.uri.pathname);
+            });
 
         } catch (err) {
             self.route400(err);
@@ -7108,16 +7147,44 @@ Subscribe.prototype.doEnd = function() {
         }
     }
 
-    if (!self.route.isRAW) {
-        if ((req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
-            self.route400('Request validation.');
-            return self;
-        }
-        req.body = qs.parse(req.buffer_data);
-    } else
+    if (self.route.isRAW) {
         req.body = req.buffer_data;
+        self.prepare(req.flags, req.uri.pathname);
+        return self;
+    }
 
-    self.prepare(req.flags, req.uri.pathname);
+    if ((req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
+        self.route400('Request validation.');
+        return self;
+    }
+
+    req.body = qs.parse(req.buffer_data);
+
+    if (!route.schema) {
+        self.prepare(req.flags, req.uri.pathname);
+        return self;
+    }
+
+    schema = SCHEMA(route.schema[0]).get(route.schema[1]);
+
+    if (!schema) {
+        self.route500(new Error('Schema not found.'));
+        return self;
+    }
+    
+    schema.load(req.body, function(err, result) {
+
+        if (err) {
+            self.route400(err);
+            return;
+        }
+
+        if (result)
+            req.body = result;
+
+        self.prepare(req.flag, req.uri.pathname);
+    });
+
     return self;
 };
 
@@ -7126,6 +7193,14 @@ Subscribe.prototype.route400 = function(problem) {
     self.route = framework.lookup(self.req, '#400');
     self.exception = problem;
     self.execute(400);
+    return self;
+};
+
+Subscribe.prototype.route500 = function(problem) {
+    var self = this;
+    self.route = framework.lookup(self.req, '#500');
+    self.exception = problem;
+    self.execute(500);
     return self;
 };
 

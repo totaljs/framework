@@ -13,7 +13,6 @@ var NUMBER = 'number';
 var BOOLEAN = 'boolean';
 var REQUIRED = 'The field "@" is required.';
 var DEFAULT_SCHEMA = 'default';
-var DEFAULT_SCHEMA_PROPERTY = '$state';
 
 var schemas = {};
 var transforms = { pagination: {}, error: {} };
@@ -394,73 +393,6 @@ SchemaBuilderEntity.prototype.destroy = function() {
 };
 
 /**
- * Execute multiple onSave delegate
- * @param {Object} model
- * @param {Object} helper A helper object, optional.
- * @param {Function(err, result)} callback
- * @return {SchemaBuilderEntity}
- */
-SchemaBuilderEntity.prototype.saveMultiple = function(model, helper, callback) {
-
-    if (callback === undefined) {
-        callback = helper;
-        helper = undefined;
-    }
-
-    var repository;
-    var output = [];
-
-    if (model instanceof Array)
-        repository = model;
-    else
-        repository = [model];
-
-    var self = this;
-    var builder = new ErrorBuilder();
-
-    for (var i = 0, length = repository.length; i < length; i++) {
-
-        var item = repository[i];
-
-        var noPrepare = self._getStateOfModel(item, 0) === '1';
-        var noValidate = self._getStateOfModel(item, 1) === '1';
-
-        var prepared = noPrepare === true ? framework_utils.copy(item) : self.prepare(item);
-
-        if (noValidate === true || self.onValidation === undefined) {
-
-            if (!builder.hasError())
-                output.push(prepared);
-
-            continue;
-        }
-
-        builder.add(self.validate(prepared));
-
-        if (!builder.hasError())
-            output.push(prepared);
-    }
-
-    if (builder.hasError()) {
-        callback(builder);
-        return self;
-    }
-
-    repository = [];
-
-    output.wait(function(item, next) {
-        self.onSave(builder, output, helper, function(value) {
-            repository.push(value);
-            next();
-        });
-    }, function() {
-        callback(builder.hasError() ? builder : null, repository);
-    });
-
-    return self;
-};
-
-/**
  * Execute onSave delegate
  * @param {Object} model
  * @param {Object} helper A helper object, optional.
@@ -475,19 +407,10 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
     }
 
     var self = this;
-    var noPrepare = self._getStateOfModel(model, 0) === '1';
-    var noValidate = self._getStateOfModel(model, 1) === '1';
+    var builder = new ErrorBuilder();
 
-    var output = noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
-    var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
-
-    if (builder.hasError()) {
-        callback(builder);
-        return self;
-    }
-
-    self.onSave(builder, output, helper, function(value) {
-        callback(builder.hasError() ? builder : null, value === undefined ? output : value);
+    self.onSave(builder, model, helper, function(value) {
+        callback(builder.hasError() ? builder : null, value === undefined ? model : value);
     });
 
     return self;
@@ -595,29 +518,9 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
     if (resourcePrefix)
         builder.resourcePrefix = resourcePrefix;
 
-    self._setStateToModel(model, 1, 1);
-
+    // self._setStateToModel(model, 1, 1);
     return framework_utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
 }
-
-SchemaBuilderEntity.prototype._getStateOfModel = function(model, index) {
-    return (model[DEFAULT_SCHEMA_PROPERTY] || '')[index] || '0';
-};
-
-SchemaBuilderEntity.prototype._setStateToModel = function(model, index, value) {
-
-    var item = model[DEFAULT_SCHEMA_PROPERTY];
-
-    if (typeof(value) !== OBJECT)
-        value = value.toString();
-
-    if (!item)
-        model[DEFAULT_SCHEMA_PROPERTY] = '01';
-    else if (item[1] !== value)
-        model[DEFAULT_SCHEMA_PROPERTY] = item.replaceAt(1, value);
-
-    return this;
-};
 
 /**
  * Create a default object according the schema
@@ -633,7 +536,7 @@ SchemaBuilderEntity.prototype.create = function() {
  * @param {Object} obj
  * @return {Object}
  */
-SchemaBuilderEntity.prototype.make = function(obj) {
+SchemaBuilderEntity.prototype.$make = function(obj) {
 
     if (obj.$save)
         return obj;
@@ -824,7 +727,27 @@ SchemaBuilderEntity.prototype.default = function() {
         item[property] = child ? child.default() : null;
     }
 
-    return self.make(item);
+    return self.$make(item);
+};
+
+SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = function(model, callback) {
+
+    var self = this;
+    var output = self.prepare(model);
+
+    if (self.onValidation === undefined) {
+        callback(null, output);
+        return self;
+    }
+
+    var builder = self.validate(output);
+    if (builder.hasError()) {
+        callback(builder, null);
+        return self;
+    }
+
+    callback(null, output);
+    return self;
 };
 
 /**
@@ -966,6 +889,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
             }
 
             item[property] = [];
+
             for (var j = 0, sublength = val.length; j < sublength; j++) {
 
                 if (value === null) {
@@ -1074,8 +998,8 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
             item[property] = null;
     }
 
-    self._setStateToModel(model, 0, 1);
-    return self.make(item);
+    // self._setStateToModel(model, 0, 1);
+    return self.$make(item);
 };
 
 /**
@@ -1112,21 +1036,22 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
         return;
     }
 
+    var builder = new ErrorBuilder();
+/*
     var noPrepare = self._getStateOfModel(model, 0) === '1';
     var noValidate = self._getStateOfModel(model, 1) === '1';
-
     var output =  noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
     var builder = self.onValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
-
+*/
     if (builder.hasError()) {
         if (callback)
             callback(builder);
         return;
     }
 
-    trans.call(self, builder, output, function(result) {
+    trans.call(self, builder, model, function(result) {
         if (callback)
-            callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
+            callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
     }, helper, self.name);
 
     return self;
@@ -1213,21 +1138,23 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
         return;
     }
 
+    var builder = new ErrorBuilder();
+
+/*
     var noPrepare = self._getStateOfModel(model, 0) === '1';
     var noValidate = self._getStateOfModel(model, 1) === '1';
-
     var output = noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
     var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
-
+*/
     if (builder.hasError()) {
         if (callback)
             callback(builder);
         return;
     }
 
-    workflow.call(self, builder, output, function(result) {
+    workflow.call(self, builder, model, function(result) {
         if (callback)
-            callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
+            callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
     }, helper, self.name);
 
     return self;
@@ -1254,7 +1181,6 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 
     var self = this;
 
-    delete model[DEFAULT_SCHEMA_PROPERTY];
     delete model['$transform'];
     delete model['$workflow'];
     delete model['$destroy'];
@@ -1406,6 +1332,20 @@ exports.schema = function(name, obj, defaults, validator, properties) {
         schema.setDefault(defaults);
 
     return obj;
+};
+
+exports.load = function(group, name, model) {
+
+    if (schemas[group] === undefined)
+        schemas[group] = new SchemaBuilder(group);
+
+    if (name) {
+        schema = schema[group].get(name);
+        if (schema === null)
+            throw new Error('Schema ' + group + '.' + name + ' not found.');
+    }
+
+    return model ? schema.make(model) : name ? schema : schemas[group];
 };
 
 /**
