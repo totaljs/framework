@@ -407,10 +407,18 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
     }
 
     var self = this;
-    var builder = new ErrorBuilder();
 
-    self.onSave(builder, model, helper, function(value) {
-        callback(builder.hasError() ? builder : null, value === undefined ? model : value);
+    self.$prepare(model, function(err, model) {
+
+        if (err) {
+            callback(err, model);
+            return;
+        }
+
+        var builder = new ErrorBuilder();
+        self.onSave(builder, model, helper, function(value) {
+            callback(builder.hasError() ? builder : null, value === undefined ? model : value);
+        });
     });
 
     return self;
@@ -588,6 +596,19 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
     };
 
     return obj;
+};
+
+SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
+
+    var self = this;
+
+    if (typeof(obj.$save) === FUNCTION) {
+        callback(null, obj);
+        return self;
+    }
+
+    self.make(obj, callback);
+    return self;
 };
 
 /**
@@ -1036,26 +1057,34 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
         return;
     }
 
-    var builder = new ErrorBuilder();
-/*
-    var noPrepare = self._getStateOfModel(model, 0) === '1';
-    var noValidate = self._getStateOfModel(model, 1) === '1';
-    var output =  noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
-    var builder = self.onValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
-*/
-    if (builder.hasError()) {
-        if (callback)
-            callback(builder);
-        return;
-    }
+    self.$prepare(model, function(err, model) {
 
-    trans.call(self, builder, model, function(result) {
-        if (callback)
-            callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
-    }, helper, self.name);
+        if (err) {
+            callback(err, model);
+            return;
+        }
+
+        var builder = new ErrorBuilder();
+    /*
+        var noPrepare = self._getStateOfModel(model, 0) === '1';
+        var noValidate = self._getStateOfModel(model, 1) === '1';
+        var output =  noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
+        var builder = self.onValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
+    */
+        if (builder.hasError()) {
+            if (callback)
+                callback(builder);
+            return;
+        }
+
+        trans.call(self, builder, model, function(result) {
+            if (callback)
+                callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+        }, helper, self.name);
+
+    });
 
     return self;
-
 };
 
 /**
@@ -1085,27 +1114,34 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
     if (typeof(callback) !== 'function')
         callback = undefined;
 
-    var builder = new ErrorBuilder();
     var compose = self.composes ? self.composes[name] : undefined;
 
     if (!compose) {
-        callback(builder.add('', 'Composer not found.'));
+        callback(new ErrorBuilder().add('', 'Composer not found.'));
         return;
     }
 
-    var output = self.default();
+    self.$prepare(model, function(err, model) {
 
-    compose.call(self, builder, output, model, function(result) {
-        if (callback)
-            callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-    }, helper, self.name);
+        if (err) {
+            callback(err, model);
+            return;
+        }
+
+        var output = self.default();
+        var builder = new ErrorBuilder();
+
+        compose.call(self, builder, output, model, function(result) {
+            if (callback)
+                callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
+        }, helper, self.name);
+    });
 
     return self;
-
 };
 
 /**
- * Run workflow
+ * Run a workflow
  * @param {String} name
  * @param {Object} model
  * @param {Object} helper A helper object, optional.
@@ -1138,27 +1174,29 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
         return;
     }
 
-    var builder = new ErrorBuilder();
+    self.$prepare(model, function(err, model) {
 
-/*
-    var noPrepare = self._getStateOfModel(model, 0) === '1';
-    var noValidate = self._getStateOfModel(model, 1) === '1';
-    var output = noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
-    var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
-*/
-    if (builder.hasError()) {
-        if (callback)
-            callback(builder);
-        return;
-    }
+        var builder = new ErrorBuilder();
 
-    workflow.call(self, builder, model, function(result) {
-        if (callback)
-            callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
-    }, helper, self.name);
+    /*
+        var noPrepare = self._getStateOfModel(model, 0) === '1';
+        var noValidate = self._getStateOfModel(model, 1) === '1';
+        var output = noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
+        var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
+    */
+        if (builder.hasError()) {
+            if (callback)
+                callback(builder);
+            return;
+        }
+
+        workflow.call(self, builder, model, function(result) {
+            if (callback)
+                callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+        }, helper, self.name);
+    });
 
     return self;
-
 };
 
 /**
