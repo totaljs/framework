@@ -123,7 +123,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 18)';
+    this.version_header = '1.7.0 (build: 19)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -537,6 +537,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
         // ID
         name = url;
         url = funcExecute;
+        funcExecute = flags;
         flags = length;
         length = middleware;
         middleware = timeout;
@@ -843,8 +844,12 @@ Framework.prototype.routing = function(name) {
     var self = this;
     for (var i = 0, length = self.routes.web.length; i < length; i++) {
         var route = self.routes.web[i];
-        if (route.name === name)
-            return { controller: route.controller, url: Utils.path(route.url.join('/')), id: route.id, flags: route.flags, middleware: route.middleware, execute: route.execute, timeout: route.timeout, options: route.options, length: route.length };
+        if (route.name === name) {
+            var url =  Utils.path(route.url.join('/'));
+            if (url[0] !== '/')
+                url = '/' + url;
+            return { controller: route.controller, url: url, id: route.id, flags: route.flags, middleware: route.middleware, execute: route.execute, timeout: route.timeout, options: route.options, length: route.length };
+        }
     }
 };
 
