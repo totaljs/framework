@@ -1377,9 +1377,11 @@ exports.load = function(group, name, model) {
     if (schemas[group] === undefined)
         schemas[group] = new SchemaBuilder(group);
 
+    var schema;
+
     if (name) {
-        schema = schema[group].get(name);
-        if (schema === null)
+        schema = schemas[group].get(name);
+        if (!schema)
             throw new Error('Schema ' + group + '.' + name + ' not found.');
     }
 
