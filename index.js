@@ -531,6 +531,19 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
  */
 Framework.prototype.route = function(url, funcExecute, flags, length, middleware, timeout, options) {
 
+    var name;
+
+    if (typeof(funcExecute) === 'string') {
+        // ID
+        name = url;
+        url = funcExecute;
+        flags = length;
+        length = middleware;
+        middleware = timeout;
+        timeout = options;
+        options = undefined;
+    }
+
     if (url === '')
         url = '/';
 
@@ -548,7 +561,9 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
     var type = typeof(funcExecute);
     var index = 0;
-    var name = url;
+
+    if (!name)
+        name = url;
 
     if (type === OBJECT || funcExecute instanceof Array) {
         var tmp = funcExecute;
@@ -588,6 +603,8 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
         options = flags['options'];
         if (flags['name'])
             name = flags['name'];
+        if (flags['id'])
+            name = flags['id'];
         flags = flags['flags'] || flags['flag'];
     }
 
@@ -652,10 +669,12 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
                     isRaw = true;
                     break;
                 case 'authorize':
+                case 'authorized':
                     priority += 2;
                     tmp.push('authorize');
                     break;
                 case 'unauthorize':
+                case 'unauthorized':
                     priority += 2;
                     tmp.push('unauthorize');
                     break;
