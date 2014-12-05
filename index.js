@@ -633,6 +633,10 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
             if (first === '*') {
                 schema = flags[i].substring(1).split('/');
+                if (schema.length === 1) {
+                    schema[1] = schema[0];
+                    schema[0] = '';
+                }
                 continue;
             }
 
@@ -7171,7 +7175,7 @@ Subscribe.prototype.doEnd = function() {
         self.route500(new Error('Schema not found.'));
         return self;
     }
-    
+
     schema.load(req.body, function(err, result) {
 
         if (err) {
