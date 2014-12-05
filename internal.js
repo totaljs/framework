@@ -2014,6 +2014,9 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'prev':
             return 'self.$' + command;
 
+        case 'now':
+            return '(new Date()' + command.substring(3) + ')';
+
         case 'radio':
         case 'text':
         case 'checkbox':
