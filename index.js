@@ -9695,7 +9695,7 @@ Controller.prototype.empty = function(headers) {
     if (self.res.success || !self.isConnected)
         return self;
 
-    var code = 204;
+    var code = 200;
 
     if (typeof(headers) === NUMBER) {
         code = headers;
@@ -10062,22 +10062,21 @@ Controller.prototype.binary = function(buffer) {
     return self;
 };
 
-/*
-    Basic access authentication (baa)
-    @name {String} :: optional, default Administration
-    return {Object} :: if null then user is not authenticated else return { name: {String}, password: {String} };
-*/
-Controller.prototype.baa = function(name) {
+/**
+ * Basic access authentication (baa)
+ * @param {String} label
+ * @return {Object}
+ */
+Controller.prototype.baa = function(label) {
 
     var self = this;
 
-    if (name === undefined)
+    if (label === undefined)
         return self.req.authorization();
 
-    self.res.setHeader('WWW-Authenticate', 'Basic realm="' + (name || 'Administration') + '"');
-    self.view401();
+    framework.responseContent(self.req, self.res, 401, '401: NOT AUTHORIZED', CONTENTTYPE_TEXTPLAIN, false, { 'WWW-Authenticate': 'Basic realm="' + (label || 'Administration') + '"'});
+    self.subscribe.success();
     self.cancel();
-
     return null;
 };
 
