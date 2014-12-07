@@ -112,6 +112,8 @@ Framework loads modules, packages, models, definitions, controllers
 - fixed: parse JSON by the JSON route
 - fixed: paths in Windows
 - fixed: subject encoding in mail (supports UTF-8)
+- fixed: sender name encoding in mail (supports UTF-8)
+- fixed: Utils.trim()
 
 - improvements: routing performance
 
