@@ -298,7 +298,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
     socket.on('error', function(err) {
         socket.destroy();
         self.closed = true;
-        if (error.stack.indexOf('ECONNRESET') !== -1)
+        if (err.stack.indexOf('ECONNRESET') !== -1)
             mailer.emit('error', err, self);
     });
 
