@@ -230,6 +230,26 @@ Message.prototype.attachment = function(filename, name) {
 };
 
 /**
+ * Adds an inline attachment.
+ * Inline attachments are exactly like normal attachments except that they are represented with the 'Content-ID' (cid)
+ * which can be referenced in the email's html body. For example an inline attachments (image) with a contentId of 'AB435BH'
+ * can be used inside the html body as "<img src='cid:AB435BH'>". An enabled web client then can render and show the embedded image.
+ *
+ * @param {String} filename Filename with extension (e.g. '/local/path/123.jpg')
+ * @param {String} name the optional filename (e.g. '123.jpg')
+ * @param {String} contentId the Content-ID (e.g. 'AB435BH'), must be unique across the email
+ * @returns {Message}
+ */
+Message.prototype.attachmentInline = function(filename, name, contentId) {
+    var self = this;
+    if (name === undefined)
+        name = path.basename(filename);
+
+    self.files.push({name: name, filename: filename, contentType: utils.getContentType(path.extname(name)), disposition: 'inline', contentId: contentId});
+    return self;
+};
+
+/**
  * Send e-mail
  * @param {String} smtp SMTP server / hostname.
  * @param {Object} options Options (optional).
@@ -585,8 +605,14 @@ Message.prototype._writeAttachment = function(write, boundary, socket) {
     var ext = path.extname(attachment.filename);
 
     message.push('--' + boundary);
-    message.push('Content-Disposition: attachment; filename="' + name + '"');
-    message.push('Content-Type: application/octet-stream; name="' + name + '"');
+
+    if (attachment.contentId) {
+        message.push('Content-Disposition: inline; filename="' + name + '"');
+        message.push('Content-ID: <' + attachment.contentId + '>');
+    } else {
+        message.push('Content-Disposition: attachment; filename="' + name + '"');
+    }
+    message.push('Content-Type: application/octet-stream;');
     message.push('Content-Transfer-Encoding: base64');
     message.push(CRLF);
 
