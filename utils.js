@@ -2160,6 +2160,19 @@ String.prototype.parseInt = function(def) {
     @def {Number} :: optional, default 0
     return {Number}
 */
+String.prototype.parseBool = function() {
+    var self = this.toLowerCase();
+    return self === 'true' || self === '1' || self === 'on';
+};
+
+String.prototype.parseBoolean = function() {
+    return this.parseBool();
+};
+
+/*
+    @def {Number} :: optional, default 0
+    return {Number}
+*/
 String.prototype.parseFloat = function(def) {
     var num = 0;
     var str = this;

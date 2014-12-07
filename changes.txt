@@ -63,6 +63,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: framework.routing(name)
 - added: ROUTING(name)
 - added: routing supports schemas `*custom-schema/User` and we can define it in flags
+- added: String.prototype.parseBool()
 
 - uodated: (IMPORTANT) framework doesn't remove subdirectories with files in temporary directory
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
