@@ -117,6 +117,7 @@ function Message(subject, body) {
     this.addressBCC = [];
     this.addressFrom = { name: '', address: '' };
     this.callback = null;
+    this.closed = false;
 }
 
 /**
@@ -257,7 +258,6 @@ Message.prototype.send = function(smtp, options, fnCallback) {
         resolveMx(smtp, function(err, socket) {
 
             if (err) {
-
                 mailer.emit('error', err, self);
 
                 if (fnCallback)
@@ -267,7 +267,6 @@ Message.prototype.send = function(smtp, options, fnCallback) {
             }
 
             socket.on('error', function(err) {
-
                 mailer.emit('error', err, self);
 
                 if (fnCallback)
@@ -293,7 +292,10 @@ Message.prototype.send = function(smtp, options, fnCallback) {
         socket = net.createConnection(options.port, smtp);
 
     socket.on('error', function(err) {
-        mailer.emit('error', err, self);
+        socket.destroy();
+        self.closed = true;
+        if (error.stack.indexOf('ECONNRESET') !== -1)
+            mailer.emit('error', err, self);
     });
 
     socket.on('clientError', function(err) {
@@ -333,6 +335,7 @@ Message.prototype._send = function(socket, options) {
     mailer.emit('send', self);
 
     socket.setTimeout(options.timeout || 5000, function() {
+        self.closed = true;
         mailer.emit('error', new Error(framework_utils.httpStatus(408)), self);
         if (socket !== null)
             socket.destroy();
@@ -342,6 +345,9 @@ Message.prototype._send = function(socket, options) {
     socket.setEncoding('utf8');
 
     var write = function(line) {
+
+        if (self.closed)
+            return;
 
         if (mailer.debug)
             console.log('SEND', line);
@@ -421,13 +427,16 @@ Message.prototype._send = function(socket, options) {
 
     if (mailer.debug) {
         socket.on('end', function() {
-            console.log('END');
+            self.closed = true;
             if (socket)
                 socket.destroy();
         });
     }
 
     socket.on('data', function(data) {
+
+        if (self.closed)
+            return;
 
         var response = data.toString().split(CRLF);
         var length = response.length;
@@ -444,7 +453,6 @@ Message.prototype._send = function(socket, options) {
     });
 
     socket.on('line', function(line) {
-
         line = line.toUpperCase();
 
         if (mailer.debug)
