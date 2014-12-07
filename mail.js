@@ -1,6 +1,6 @@
 /**
  * @module FrameworkMail
- * @version 1.5.0
+ * @version 1.7.0
  */
 
 'use strict'
@@ -31,7 +31,12 @@ function Mailer() {
     this.Mail = Message;
 }
 
-Mailer.prototype = new events.EventEmitter();
+Mailer.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
+    constructor: {
+        value: Mailer,
+        enumberable: false
+    }
+});
 
 /**
  * Create Mail Message
@@ -84,7 +89,6 @@ function resolveMx(domain, callback) {
             });
 
             sock.on('connect', function() {
-                // sock.removeAllListeners('error');
                 callback(null, sock);
             });
         }
