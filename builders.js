@@ -757,18 +757,21 @@ SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = functi
     var output = self.prepare(model);
 
     if (self.onValidation === undefined) {
-        callback(null, output);
-        return self;
+        if (callback)
+            callback(null, output);
+        return output;
     }
 
     var builder = self.validate(output);
     if (builder.hasError()) {
-        callback(builder, null);
-        return self;
+        if (callback)
+            callback(builder, null);
+        return output;
     }
 
-    callback(null, output);
-    return self;
+    if (callback)
+        callback(null, output);
+    return output;
 };
 
 /**
