@@ -2201,6 +2201,9 @@ function removeComments(html) {
  */
 function compressJS(html, index) {
 
+    if (!framework.config['allow-compile-js'])
+        return html;
+
     var strFrom = '<script type="text/javascript">';
     var strTo = '</script>';
 
