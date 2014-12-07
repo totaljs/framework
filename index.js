@@ -6914,7 +6914,7 @@ Subscribe.prototype.execute = function(status) {
 
     if (route === null) {
         if (status === 400 && self.exception instanceof Builders.ErrorBuilder)
-            framework.responseContent(req, res, status, self.exception.json(), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
+            framework.responseContent(req, res, 200, self.exception.json(), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
         else
             framework.responseContent(req, res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
         return self;
