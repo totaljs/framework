@@ -123,7 +123,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 19)';
+    this.version_header = '1.7.0 (build: 20)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -1980,9 +1980,15 @@ Framework.prototype.onValidation = null;
 
 /**
  * Mail handler
- * @type {Function(address, subject, body, callback)}
+ * @type {Function(address, subject, body, callback, replyTo)}
  */
-Framework.prototype.onMail = function(address, subject, body, callback) {
+Framework.prototype.onMail = function(address, subject, body, callback, replyTo) {
+
+    if (typeof(callback) === STRING) {
+        var tmp = replyTo;
+        replyTo = callback;
+        callback = tmp;
+    }
 
     var message = Mail.create(subject, body);
 
@@ -1999,7 +2005,9 @@ Framework.prototype.onMail = function(address, subject, body, callback) {
 
     var tmp = self.config['mail.address.reply'];
 
-    if (tmp && tmp.length > 0 && tmp.isEmail())
+    if (replyTo)
+        message.reply(replyTo);
+    else if (tmp && tmp.length > 0 && tmp.isEmail())
         message.reply(self.config['mail.address.reply']);
 
     tmp = self.config['mail.address.copy'];
@@ -4583,7 +4591,7 @@ Framework.prototype._log = function(a, b, c, d) {
  * @param {Function(err)} callback Optional.
  * @return {Framework}
  */
-Framework.prototype.mail = function(address, subject, view, model, callback) {
+Framework.prototype.mail = function(address, subject, view, model, callback, replyTo) {
     var controller = new Controller('', null, null, null, '');
     controller.layoutName = '';
     if (typeof(repository) === OBJECT && repository !== null)
@@ -8325,7 +8333,7 @@ Controller.prototype.models = function(name) {
  * @param {Function(err)} callback Optional.
  * @return {Controlller}
  */
-Controller.prototype.mail = function(address, subject, view, model, callback) {
+Controller.prototype.mail = function(address, subject, view, model, callback, replyTo) {
 
     if (typeof(model) === TYPE_FUNCTION) {
         callback = model;
@@ -8334,9 +8342,7 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
 
     var self = this;
     var body = self.view(view, model, true);
-
-    framework.onMail(address, subject, body, callback);
-
+    framework.onMail(address, subject, body, callback, replyTo);
     return self;
 };
 
