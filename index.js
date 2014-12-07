@@ -533,7 +533,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
     var name;
 
-    if (typeof(funcExecute) === 'string') {
+    if (typeof(funcExecute) === 'string' && flags !== undefined) {
         // ID
         name = url;
         url = funcExecute;
