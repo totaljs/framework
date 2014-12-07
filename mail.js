@@ -363,7 +363,7 @@ Message.prototype._send = function(socket, options) {
 
     message.push('Message-ID: <' + GUID() + '@WIN-' + s4() + '>');
     message.push('MIME-Version: 1.0');
-    message.push('From: ' + (self.addressFrom.name.length > 0 ? '"' + self.addressFrom.name + '" ' + '<' + self.addressFrom.address + '>' : self.addressFrom.address));
+    message.push('From: ' + (self.addressFrom.name.length > 0 ? unicode_encode(self.addressFrom.name) + ' <' + self.addressFrom.address + '>' : self.addressFrom.address));
 
     var length = self.addressTo.length;
     var builder = '';
@@ -406,7 +406,7 @@ Message.prototype._send = function(socket, options) {
 
     message.push('Date: ' + date.toUTCString());
     // message.push('Subject: ' + self.subject);
-    message.push('Subject: =?utf-8?B?' + new Buffer(self.subject).toString('base64') + '?=');
+    message.push('Subject: ' + unicode_encode(self.subject));
 
     length = self.addressReply.length;
     if (length > 0) {
@@ -681,6 +681,12 @@ function s4() {
  */
 function GUID() {
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+}
+
+function unicode_encode(val) {
+    if (!val)
+        return '';
+    return '=?utf-8?B?' + new Buffer(val).toString('base64') + '?=';
 }
 
 // ======================================================
