@@ -719,6 +719,9 @@ exports.send = function(name, stream, url, callback, headers, method) {
  */
 exports.trim = function(obj) {
 
+    if (obj === undefined || obj === null)
+        return obj;
+
     var type = typeof(obj);
 
     if (type === STRING)
