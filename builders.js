@@ -583,6 +583,10 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
         return self.clean(obj);
     };
 
+    obj.$prepare = function() {
+        return self.prepare(obj);
+    };
+
     obj.$schema = function() {
         return self;
     };
@@ -1228,6 +1232,7 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
     delete model['$save'];
     delete model['$remove'];
     delete model['$clean'];
+    delete model['$prepare'];
     delete model['$default'];
     delete model['$schema'];
     delete model['$validate'];
