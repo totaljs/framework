@@ -1170,13 +1170,9 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
         if (type === OBJECT && !exports.isDate(value)) {
 
             if (isSchema) {
-
                 var schema = collection[schemaName];
-
                 if (schema) {
-
                     schema = schema.schema[name] || null;
-
                     if (schema === Date || schema === String || schema === Number || schema === Boolean) {
                         // Empty
                     } else if (schema !== null && typeof(schema) === STRING) {
