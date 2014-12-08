@@ -611,7 +611,9 @@ SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
         return self;
     }
 
-    self.make(obj, callback);
+    var tmp = self.make(obj).$prepare();
+    var err = tmp.$validate();
+    callback(err.hasError() ? err : null, tmp);
     return self;
 };
 
