@@ -3811,7 +3811,7 @@ exports.queue = function(name, max, fn) {
 
     if (item.running > item.limit) {
         item.pending.push(fn);
-        return;
+        return false;
     }
 
     (function(name){
@@ -3821,6 +3821,8 @@ exports.queue = function(name, max, fn) {
             });
         });
     })(name);
+
+    return true;
 };
 
 global.async = exports.async;
