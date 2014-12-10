@@ -1162,7 +1162,7 @@ Framework.prototype.error = function(err, name, uri) {
 
     if (self.errors !== null) {
         self.errors.push({
-            error: err,
+            error: err.stack,
             name: name,
             uri: uri,
             date: new Date()
