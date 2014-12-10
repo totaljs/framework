@@ -152,6 +152,16 @@ function test_routing(next) {
 		});
 	});
 
+
+	async.await('package/', function(complete) {
+		utils.request(url + 'package/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(data === '<div>PACKAGELAYOUT</div><div>PACKAGEVIEW</div>', 'package view problem');
+			complete();
+		});
+	});
+
 	async.await('precompile', function(complete) {
 		utils.request(url + 'precompile/', 'GET', null, function(error, data, code, headers) {
 			if (error)
@@ -217,6 +227,24 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			assert(data === 'SALAMA', 'post-raw');
+			complete();
+		});
+	});
+
+	async.await('post-schema', function(complete) {
+		utils.request(url + 'post/schema/', ['post'], 'name=Peter123456789012345678901234567890#', function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '{"name":"Peter12345","type":"schema"}', 'post-schema');
+			complete();
+		});
+	});
+
+	async.await('post-schema-error', function(complete) {
+		utils.request(url + 'post/schema/', ['post'], 'age=Peter123456789012345678901234567890#', function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '[{"name":"name","error":"default","path":"User.name"}]', 'post-schema');
 			complete();
 		});
 	});

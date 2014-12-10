@@ -123,7 +123,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 21)';
+    this.version_header = '1.7.0 (build: 22)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -10392,7 +10392,6 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     var skip = c === '/' ? 1 : c === '~' ? 2 : c === '@' ? 3 : 0;
     var filename = name;
     var isLayout = self.isLayout;
-
     self.isLayout = false;
 
     if (!self.isLayout && skip === 0)
@@ -10402,7 +10401,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
         filename = name.substring(1);
 
     if (skip === 3)
-        filename = framework.path.package(filename);
+        filename = '.' + framework.path.package(filename);
 
     var generator = framework_internal.generateView(name, filename);
     if (generator === null) {

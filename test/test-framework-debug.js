@@ -152,6 +152,16 @@ function test_routing(next) {
 		});
 	});
 
+
+	async.await('package/', function(complete) {
+		utils.request(url + 'package/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(data === '<div>PACKAGELAYOUT</div><div>PACKAGEVIEW</div>', 'package view problem');
+			complete();
+		});
+	});
+
 	async.await('precompile', function(complete) {
 		utils.request(url + 'precompile/', 'GET', null, function(error, data, code, headers) {
 			if (error)
