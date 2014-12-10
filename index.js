@@ -11731,6 +11731,11 @@ Backup.prototype.createDirectory = function(p, root) {
  */
 http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 
+    var self = this;
+
+    if (self.headersSent || self.success)
+        return;
+
     var builder = [name + '=' + encodeURIComponent(value)];
     var type = typeof(expires);
 
@@ -11762,13 +11767,9 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
     if (options.httpOnly || options.httponly || options.HttpOnly)
         builder.push('HttpOnly');
 
-    var self = this;
-
     var arr = self.getHeader('set-cookie') || [];
-
     arr.push(builder.join('; '));
     self.setHeader('Set-Cookie', arr);
-
     return self;
 };
 
