@@ -3766,10 +3766,10 @@ function converBytesToInt64(data, startIndex, isLE) {
     return ((data[startIndex + 7] << 0x20) | (data[startIndex + 6] << 0x28) | (data[startIndex + 5] << 0x30) | (data[startIndex + 4] << 0x38) | (data[startIndex + 3]) | (data[startIndex + 2] << 0x08) | (data[startIndex + 1] << 0x10) | (data[startIndex] << 0x18));
 }
 
-var queue = {};
+exports.queuecache = {};
 
 function queue_next(name) {
-    var item = queue[name];
+    var item = exports.queuecache[name];
     item.running--;
 
     if (item.running < 0)
@@ -3799,10 +3799,10 @@ function queue_next(name) {
  */
 exports.queue = function(name, max, fn) {
 
-    if (queue[name] === undefined)
-        queue[name] = { limit: max, running: 0, pending: [] };
+    if (exports.queuecache[name] === undefined)
+        exports.queuecache[name] = { limit: max, running: 0, pending: [] };
 
-    var item = queue[name];
+    var item = exports.queuecache[name];
     item.running++;
 
     if (item.running > item.limit) {
