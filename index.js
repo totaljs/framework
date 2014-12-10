@@ -123,7 +123,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 20)';
+    this.version_header = '1.7.0 (build: 21)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -2144,6 +2144,11 @@ Framework.prototype.usage = function(detailed) {
         directory: process.cwd()
     };
 
+    var keys = Object.keys(Utils.queuecache);
+    var pending = 0;
+    for (var i = 0, length = keys.length; i < length; i++)
+        pending = Utils.queuecache[keys[i]].pending.length;
+
     output.counter = {
         resource: resources.length,
         controller: controllers.length,
@@ -2153,7 +2158,8 @@ Framework.prototype.usage = function(detailed) {
         connection: connections.length,
         helper: helpers.length,
         error: self.errors.length,
-        problem: self.problem.length
+        problem: self.problems.length,
+        queue: pending
     };
 
     output.routing = {
@@ -2229,7 +2235,6 @@ Framework.prototype.usage = function(detailed) {
     output.errors = self.errors;
     output.problems = self.problems;
     output.changes = self.changes;
-
     return output;
 };
 
@@ -2908,6 +2913,14 @@ Framework.prototype.responseCustom = function(req, res) {
 Framework.prototype.responseImage = function(req, res, filename, fnProcess, headers, useImageMagick) {
 
     var self = this;
+    var key = req.url.substring(1).replace(/\//g, '-');
+
+    var name = self.temporary.path[key];
+    if (name === null) {
+        self.response404(req, res);
+        return self;
+    }
+
     var stream = null;
 
     if (typeof(filename) === OBJECT)
@@ -2915,16 +2928,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
     else if (filename[0] === '@')
         filename = framework.path.package(filename.substring(1));
 
-    var key = 'image-' + req.url.substring(1);
-    var name = self.temporary.path[key];
-
-    if (name === null) {
-        self.response404(req, res);
-        return self;
-    }
-
     if (name !== undefined) {
-        self.responseFile(req, res, filename, '', headers, key);
+        self.responseFile(req, res, '', '', headers, key);
         return self;
     }
 
@@ -2933,7 +2938,6 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
         im = self.config['default-image-converter'] === 'im';
 
     if (self.isProcessing(key)) {
-
         if (req.processing > self.config['default-request-timeout']) {
             // timeout
             self.response408(req, res);
@@ -2941,7 +2945,6 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
         }
 
         req.processing += 500;
-
         setTimeout(function() {
             self.responseImage(req, res, filename, fnProcess, headers, im);
         }, 500);
@@ -2957,9 +2960,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
     // STREAM
     if (stream !== null) {
-
         fs.exists(name, function(exist) {
-
             if (exist) {
                 delete self.temporary.processing[key];
                 self.temporary.path[key] = name;
@@ -3036,10 +3037,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
             if (err) {
                 self.temporary.path[key] = null;
                 self.response500(req, res, err);
-
                 if (self.isDebug)
                     delete self.temporary.path[key];
-
                 return;
             }
 
@@ -3047,6 +3046,48 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
             self.responseFile(req, res, name, '', headers, key);
         });
 
+    });
+
+    return self;
+};
+
+Framework.prototype.responseImageCache = function(req, res, fnPrepare, fnProcess, headers, useImageMagick) {
+
+    var self = this;
+    var key = req.url.substring(1).replace(/\//g, '-');
+
+    var name = self.temporary.path[key];
+    if (name === null) {
+        self.response404(req, res);
+        return self;
+    }
+
+    if (name !== undefined) {
+        self.responseFile(req, res, '', '', headers, key);
+        return self;
+    }
+
+    if (self.isProcessing(key)) {
+        if (req.processing > self.config['default-request-timeout']) {
+            // timeout
+            self.response408(req, res);
+            return;
+        }
+
+        req.processing += 500;
+        setTimeout(function() {
+            self.responseImage(req, res, filename, fnProcess, headers, im);
+        }, 500);
+
+        return;
+    }
+
+    fnPrepare.call(self, function(filename) {
+        if (!filename) {
+            self.response404(req, res);
+            return;
+        }
+        self.responseImage(req, res, filename, fnProcess, headers, useImageMagick, key);
     });
 
     return self;
