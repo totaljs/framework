@@ -3029,7 +3029,7 @@ Array.prototype.where = function(cb, value) {
 Array.prototype.find = function(cb, value) {
 
     var self = this;
-    var isFN = typeof(cb) === 'function';
+    var isFN = typeof(cb) === FUNCTION;
     var isV = value !== undefined;
 
     for (var i = 0, length = self.length; i < length; i++) {
