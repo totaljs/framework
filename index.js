@@ -2345,7 +2345,6 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
     }
 
     var writer = fs.createWriteStream(merge.filename);
-
     merge.files.wait(function(filename, next) {
 
         if (filename.startsWith('http://') || filename.startsWith('https://')) {
@@ -6552,7 +6551,7 @@ FrameworkPath.prototype.root = function(filename) {
     return {String}
 */
 FrameworkPath.prototype.package = function(name, filename) {
-    return utils.combine(directory, framework.config['directory-temp'], name, filename || '');
+    return path.join(directory, framework.config['directory-temp'], name, filename || '');
 };
 
 /*
