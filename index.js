@@ -6511,7 +6511,7 @@ FrameworkPath.prototype.root = function(filename) {
     return {String}
 */
 FrameworkPath.prototype.package = function(name, filename) {
-    return path.join(directory, framework.config['directory-temp'], name, filename || '');
+    return utils.combine(directory, framework.config['directory-temp'], name, filename || '');
 };
 
 /*
