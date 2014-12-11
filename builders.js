@@ -511,13 +511,11 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
     if (builder === undefined)
         builder = new ErrorBuilder();
 
-    if (fn === undefined || fn === null) {
-        if (typeof(framework.onValidation) !== FUNCTION) {
-            if (framework && framework.error)
-                framework.error(new Error('Schema "' + self.name + '" doesn\'t defined a validation delegate.'), self.parent.name + '.' + self.name + '.validate()', null);
-            return builder;
-        }
+    if (fn === undefined || fn === null)
+        return builder;
         fn = framework.onValidation;
+        if (fn === undefined || fn === null)
+            return builder;
     }
 
     if (resourceName)
