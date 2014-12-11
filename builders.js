@@ -511,8 +511,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
     if (builder === undefined)
         builder = new ErrorBuilder();
 
-    if (fn === undefined || fn === null)
-        return builder;
+    if (fn === undefined || fn === null) {
         fn = framework.onValidation;
         if (fn === undefined || fn === null)
             return builder;
