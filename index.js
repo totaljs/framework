@@ -7573,6 +7573,13 @@ Controller.prototype = {
             self._async = new utils.Async(self);
 
         return self._async;
+    },
+
+    get viewname() {
+        var name = this.req.path[this.req.path.length - 1];
+        if (name === '' || name === undefined)
+            name = '/';
+        return name;
     }
 };
 
@@ -10378,9 +10385,15 @@ Controller.prototype.database = function() {
     return {Controller or String}; string is returned when isPartial == true
 */
 Controller.prototype.view = function(name, model, headers, isPartial) {
+
     var self = this;
 
-    if (isPartial === undefined && typeof(headers) === BOOLEAN) {
+    if (typeof(name) !== STRING) {
+        isPartial = headers;
+        headers = model;
+        model = name;
+        name = self.viewname;
+    } else if (isPartial === undefined && typeof(headers) === BOOLEAN) {
         isPartial = headers;
         headers = null;
     }
