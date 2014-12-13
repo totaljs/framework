@@ -1418,6 +1418,14 @@ exports.parseXML = function(xml) {
     return obj;
 };
 
+exports.parseJSON = function() {
+    try {
+        return JSON.parse(this);
+    } catch(e) {
+        return null;
+    }
+};
+
 /**
  * Get WebSocket frame
  * @author Jozef Gula <gula.jozef@gmail.com>
