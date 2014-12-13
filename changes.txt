@@ -117,6 +117,7 @@ Framework loads modules, packages, models, definitions, controllers
 - fixed: sender name encoding in mail (supports UTF-8)
 - fixed: Utils.trim()
 - fixed: Response.cookie()
+- fixed: String.format() --> null/undefined --> returns empty string
 
 - improvements: routing performance
 
