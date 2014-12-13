@@ -1971,7 +1971,10 @@ String.prototype.format = function() {
     var length = arguments.length;
     for (var i = 0; i < length; i++) {
         var regexp = new RegExp('\\{' + i + '\\}', 'gi');
-        formatted = formatted.replace(regexp, arguments[i]);
+        var value = arguments[i];
+        if (value === null || value === undefined)
+            value = '';
+        formatted = formatted.replace(regexp, value);
     }
     return formatted;
 };
