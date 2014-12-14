@@ -1662,13 +1662,14 @@ function view_parse_localization(content, language) {
         return content;
 
     var prepare = function(content) {
+        console.log('#' + content + '#');
         return framework.resource(language || '', content) || content;
     };
 
     while (command !== null) {
 
         if (command !== null)
-            output += content.substring(0, command.beg) + prepare(command.command);
+            output += content.substring(end === 0 ? 0 : end + 1, command.beg) + prepare(command.command);
 
         end = command.end;
         command = view_find_localization(content, command.end);
