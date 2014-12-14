@@ -2,6 +2,8 @@ var exec = require('child_process').exec;
 var fs = require('fs');
 var path = require('path');
 var os = require('os');
+var Utils = require('total.js/utils');
+var Internal = require('total.js/internal');
 
 var EOF = os.platform() === 'win32' ? '\r\n' : '\n';
 var $type = 1;
@@ -373,12 +375,13 @@ function install(directory) {
 
 function display_help() {
         console.log('');
-        console.log('-m or -minimal   = minimal');
-        console.log('-n or -normal    = normal (default)');
-        console.log('-f or -full      = full');
-        console.log('-a or -angular   = for angular.js application');
-        console.log('-v or -version   = total.js version');
-        console.log('/path/           = target (default current directory)');
+        console.log('-m or -minimal       = minimal');
+        console.log('-n or -normal        = normal (default)');
+        console.log('-f or -full          = full');
+        console.log('-a or -angular       = for angular.js application');
+        console.log('-v or -version       = total.js version');
+        console.log('-t or -translate     = get localized text from views');
+        console.log('/path/               = target (default current directory)');
         console.log('');
 }
 
@@ -392,6 +395,11 @@ function main() {
         if (cmd === '-v' || cmd === '-version') {
             console.log(require('total.js').version);
             return;
+        }
+
+        if (cmd === '-t' || cmd === '-translate') {
+            $type = 4;
+            continue
         }
 
         if (cmd === '-f' || cmd === '-full' || cmd === 'full')
@@ -421,10 +429,38 @@ function main() {
         break;
     }
 
-    $type = 2;
-
     if (!fs.existsSync(dir)) {
         console.log('total.js: error / directory not exists');
+        return;
+    }
+
+    if ($type === 4) {
+        Utils.ls(dir, function(files) {
+
+            var resource = {};
+            var max = 0;
+
+            for (var i = 0, length = files.length; i < length; i++) {
+                var filename = files[i];
+                if (!filename.endsWith('.html'))
+                    continue;
+                var content = fs.readFileSync(filename).toString('utf8');
+                var command = Internal.parseLocalization(content, 0);
+                while (command !== null) {
+                    resource[command.command] = true;
+                    max = Math.max(max, command.command.length);
+                    command = Internal.parseLocalization(content, command.end);
+                }
+            }
+
+            var keys = Object.keys(resource);
+            var builder = [];
+
+            for (var i = 0, length = keys.length; i < length; i++)
+                builder.push(keys[i].padRight(max + 5, ' ') + ': ');
+
+            fs.writeFileSync('translate.resource', builder.join('\n'));
+        });
         return;
     }
 
