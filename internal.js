@@ -2503,3 +2503,5 @@ exports.appendModel = function(str) {
     var end = str.substring(index + 1);
     return str.substring(0, index) + '(model' + (end[0] === ')' ? end : ',' + end);
 };
+
+exports.parseLocalization = view_find_localization;
