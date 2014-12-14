@@ -123,7 +123,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 23)';
+    this.version_header = '1.7.0 (build: 24)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -5337,10 +5337,13 @@ Framework.prototype.hash = function(type, value, salt) {
  */
 Framework.prototype.resource = function(name, key) {
 
-    if (key === undefined || name.length === 0) {
+    if (!key) {
         key = name;
-        name = 'default';
+        name = null;
     }
+
+    if (!name)
+        name = 'default';
 
     var self = this;
     var res = self.resources[name];
@@ -5348,13 +5351,14 @@ Framework.prototype.resource = function(name, key) {
     if (res !== undefined)
         return res[key] || '';
 
-    var fileName = utils.combine(self.config['directory-resources'], name + '.resource');
+    var filename = utils.combine(self.config['directory-resources'], name + '.resource');
 
-    if (!fs.existsSync(fileName))
+    if (!fs.existsSync(filename))
         return '';
 
-    var obj = fs.readFileSync(fileName).toString(ENCODING).parseConfig();
+    var obj = fs.readFileSync(filename).toString(ENCODING).parseConfig();
     self.resources[name] = obj;
+
     return obj[key] || '';
 };
 
@@ -7512,10 +7516,6 @@ Controller.prototype = {
         return this.req.files;
     },
 
-    get language() {
-        return this.req.language;
-    },
-
     get subdomain() {
         return this.req.subdomain;
     },
@@ -7630,6 +7630,18 @@ Controller.prototype.clear = function() {
     var self = this;
     self.req.clear();
     return self;
+};
+
+/**
+ * Translate text
+ * @param {String} text
+ * @return {String}
+ */
+Controller.prototype.translate = function(text) {
+    var value = framework.resource(this.language, text);
+    if (!value)
+        return text.replace(/\\:/g, ':');
+    return value.replace(/\\:/g, ':');
 };
 
 /**
@@ -10439,7 +10451,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
     if (skip === 3)
         filename = '.' + framework.path.package(filename);
 
-    var generator = framework_internal.generateView(name, filename);
+    var generator = framework_internal.generateView(name, filename, self.language);
     if (generator === null) {
 
         var err = new Error('View "' + filename + '" not found.');
@@ -12104,7 +12116,14 @@ http.IncomingMessage.prototype = {
     },
 
     get language() {
-        return ((this.headers['accept-language'].split(';')[0] || '').split(',')[0] || '').toLowerCase();
+        if (!this.$language) {
+            this.$language = (((this.headers['accept-language'] || '').split(';')[0] || '').split(',')[0] || '').toLowerCase();
+        }
+        return this.$language;
+    },
+
+    set language(value) {
+        this.$language = value;
     }
 };
 

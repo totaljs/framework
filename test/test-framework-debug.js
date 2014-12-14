@@ -125,6 +125,20 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('translate', function(complete) {
+		utils.request(url + 'translate/?language=', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '---translate---', 'translate problem (EN)');
+			utils.request(url + 'translate/?language=sk', 'GET', null, function(error, data, code, headers) {
+				if (error)
+					throw error;
+				assert(data === '---preklad---', 'translate problem (SK)');
+				complete();
+			});
+		});
+	});
+
 /*
 	async.await('pipe', function(complete) {
 		utils.request(url + 'pipe/', 'GET', null, function(error, data, code, headers) {

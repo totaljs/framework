@@ -1652,6 +1652,32 @@ MultipartParser.prototype.explain = function() {
 */
 function View() {}
 
+function view_parse_localization(content, language) {
+
+    var command = view_find_localization(content, 0);
+    var output = '';
+    var end = 0;
+
+    if (command === null)
+        return content;
+
+    var prepare = function(content) {
+        return framework.resource(language || '', content) || content;
+    };
+
+    while (command !== null) {
+
+        if (command !== null)
+            output += content.substring(0, command.beg) + prepare(command.command);
+
+        end = command.end;
+        command = view_find_localization(content, command.end);
+    }
+
+    output += content.substring(end + 1);
+    return output;
+}
+
 /**
  * View parser
  * @param {String} content
@@ -1981,6 +2007,9 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'routeStatic':
             return 'self.' + command;
 
+        case 'translate':
+            return 'self.' + command;
+
         case 'json':
         case 'image':
         case 'layout':
@@ -2116,7 +2145,6 @@ function view_is_assign(value) {
     return false;
 }
 
-
 function view_find_command(content, index) {
 
     var index = content.indexOf('@{', index);
@@ -2135,6 +2163,42 @@ function view_find_command(content, index) {
         }
 
         if (c !== '}')
+            continue;
+        else {
+            if (count > 0) {
+                count--;
+                continue;
+            }
+        }
+
+        return {
+            beg: index,
+            end: i,
+            command: content.substring(index + 2, i).trim()
+        };
+    }
+
+    return null;
+}
+
+function view_find_localization(content, index) {
+
+    var index = content.indexOf('@(', index);
+    if (index === -1)
+        return null;
+
+    var length = content.length;
+    var count = 0;
+
+    for (var i = index + 2; i < length; i++) {
+        var c = content[i];
+
+        if (c === '(') {
+            count++;
+            continue;
+        }
+
+        if (c !== ')')
             continue;
         else {
             if (count > 0) {
@@ -2336,7 +2400,7 @@ function compressHTML(html, minify) {
  * @param {String} path
  * @return {Object}
  */
-View.prototype.read = function(path) {
+View.prototype.read = function(path, language) {
 
     var self = this;
     var config = framework.config;
@@ -2344,7 +2408,7 @@ View.prototype.read = function(path) {
     var filename = isOut ? path.substring(1) : framework.path.views(path);
 
     if (fs.existsSync(filename))
-        return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compile-html']);
+        return view_parse(view_parse_localization(fs.readFileSync(filename).toString('utf8'), language), config['allow-compile-html']);
 
     if (isOut)
         return null;
@@ -2356,7 +2420,7 @@ View.prototype.read = function(path) {
     filename = framework.path.views(path.substring(index + 1));
 
     if (fs.existsSync(filename))
-        return view_parse(fs.readFileSync(filename).toString('utf8'), config['allow-compile-html']);
+        return view_parse(view_parse_localization(fs.readFileSync(filename).toString('utf8'), language), config['allow-compile-html']);
 
     return null;
 };
@@ -2367,13 +2431,13 @@ View.prototype.read = function(path) {
  * @param {String} filename
  * @return {Objec}
  */
-View.prototype.load = function(name, filename) {
+View.prototype.load = function(name, filename, language) {
 
     var self = this;
 
     // Is dynamic content?
     if (name.indexOf('@{') !== -1 || name.indexOf('<') !== -1)
-        return self.dynamic(name);
+        return self.dynamic(name, language);
 
     var precompiled = framework.routes.views[name];
 
@@ -2383,12 +2447,16 @@ View.prototype.load = function(name, filename) {
         filename += '.html';
 
     var key = 'view#' + filename;
+
+    if (language)
+        key += language;
+
     var generator = framework.temporary.views[key] || null;
 
     if (generator !== null)
         return generator;
 
-    generator = self.read(filename);
+    generator = self.read(filename, language);
 
     if (!framework.isDebug)
         framework.temporary.views[key] = generator;
@@ -2401,7 +2469,7 @@ View.prototype.load = function(name, filename) {
     @content {String}
     return {Object} :: return parsed HTML
 */
-View.prototype.dynamic = function(content) {
+View.prototype.dynamic = function(content, language) {
 
     var self = this;
     var key = content.md5();
@@ -2410,7 +2478,7 @@ View.prototype.dynamic = function(content) {
     if (generator !== null)
         return generator;
 
-    generator = view_parse(content, framework.config['allow-compile-html']);
+    generator = view_parse(view_parse_localization(content, language), framework.config['allow-compile-html']);
 
     if (!framework.isDebug)
         framework.temporary.views[key] = generator;
@@ -2423,8 +2491,8 @@ View.prototype.dynamic = function(content) {
     @name {String}
     return {Object}
 */
-exports.generateView = function(name, plus) {
-    return new View().load(name, plus);
+exports.generateView = function(name, plus, language) {
+    return new View().load(name, plus, language);
 };
 
 exports.appendModel = function(str) {

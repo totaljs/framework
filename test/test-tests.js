@@ -1,2 +1,6 @@
 var framework = require('../index');
-framework.http('test', { 'port': 8001 });
+framework.http('debug', { 'port': 8001 });
+
+setTimeout(function() {
+    framework.stop();
+}, 4000);

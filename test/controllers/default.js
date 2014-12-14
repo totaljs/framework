@@ -50,6 +50,7 @@ exports.install = function(framework) {
     framework.route('/a/{a}/', viewRouteAA);
     framework.route('/a/b/c/', viewRouteABC);
     framework.route('/test/', viewTest);
+    framework.route('/translate/', viewTranslate);
     framework.route('/test-view/', view_test_view);
     framework.route('/login/google/callback/', aa);
     framework.route('/timeout/', function() {}, [], null, [], 50);
@@ -379,6 +380,11 @@ function viewDynamic() {
     this.view('<b>@{model.name}</b>', {
         name: 'Peter'
     });
+}
+
+function viewTranslate() {
+    this.language = this.query.language || '';
+    this.view('translate');
 }
 
 function viewIndex() {

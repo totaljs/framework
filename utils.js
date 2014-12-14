@@ -1959,11 +1959,14 @@ String.prototype.parseConfig = function(def) {
         if (str.substring(0, 2) === '//')
             continue;
 
-        var index = str.indexOf(':');
-        if (index === -1)
-            continue;
+        var index = str.indexOf(' :');
+        if (index === -1) {
+            index = str.indexOf('\t:');
+            if (index === -1)
+                continue;
+        }
 
-        obj[str.substring(0, index).trim()] = str.substring(index + 1).trim();
+        obj[str.substring(0, index).trim()] = str.substring(index + 2).trim();
     }
 
     return obj;
