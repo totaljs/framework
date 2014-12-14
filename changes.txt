@@ -66,6 +66,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: String.prototype.parseBool()
 - added: framework.responseImageCache(req, res, fnPrepare, fnProcess, [headers])
 - added: String.prototype.parseJSON()
+- added: NOOP() --> global empty function (exists: noop(), Utils.noop())
 
 - updated: (IMPORTANT) framework doesn't remove subdirectories with files in temporary directory
 - updated: (IMPORTANT) all models are loaded after is the framework loaded

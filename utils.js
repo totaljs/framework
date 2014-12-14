@@ -751,8 +751,7 @@ exports.trim = function(obj) {
  * Noop function
  * @return {Function} Empty function.
  */
-exports.noop = function() {};
-global.noop = function() {};
+exports.noop = global.noop = global.NOOP = function() {};
 
 /**
  * Read HTTP status
