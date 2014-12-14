@@ -123,7 +123,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 22)';
+    this.version_header = '1.7.0 (build: 23)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -3376,11 +3376,14 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
     @res {ServerResponse}
     return {Framework}
 */
-Framework.prototype.response400 = function(req, res) {
+Framework.prototype.response400 = function(req, res, problem) {
     var self = this;
 
     if (res.success)
         return self;
+
+    if (problem)
+        self.problem(problem, 'response401()', req.uri, req.ip);
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3407,11 +3410,14 @@ Framework.prototype.response400 = function(req, res) {
     @res {ServerResponse}
     return {Framework}
 */
-Framework.prototype.response401 = function(req, res) {
+Framework.prototype.response401 = function(req, res, problem) {
     var self = this;
 
     if (res.success)
         return self;
+
+    if (problem)
+        self.problem(problem, 'response401()', req.uri, req.ip);
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3436,11 +3442,14 @@ Framework.prototype.response401 = function(req, res) {
     @res {ServerResponse}
     return {Framework}
 */
-Framework.prototype.response403 = function(req, res) {
+Framework.prototype.response403 = function(req, res, problem) {
     var self = this;
 
     if (res.success)
         return self;
+
+    if (problem)
+        self.problem(problem, 'response403()', req.uri, req.ip);
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3465,11 +3474,14 @@ Framework.prototype.response403 = function(req, res) {
     @res {ServerResponse}
     return {Framework}
 */
-Framework.prototype.response404 = function(req, res) {
+Framework.prototype.response404 = function(req, res, problem) {
     var self = this;
 
     if (res.success)
         return self;
+
+    if (problem)
+        self.problem(problem, 'response404()', req.uri, req.ip);
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3494,10 +3506,16 @@ Framework.prototype.response404 = function(req, res) {
     @res {ServerResponse}
     return {Framework}
 */
-Framework.prototype.response408 = function(req, res) {
+Framework.prototype.response408 = function(req, res, problem) {
+
     var self = this;
+
     if (res.success)
         return self;
+
+    if (problem)
+        self.problem(problem, 'response408()', req.uri, req.ip);
+
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
     res.success = true;
@@ -3521,11 +3539,14 @@ Framework.prototype.response408 = function(req, res) {
     @res {ServerResponse}
     return {Framework}
 */
-Framework.prototype.response431 = function(req, res) {
+Framework.prototype.response431 = function(req, res, problem) {
     var self = this;
 
     if (res.success)
         return self;
+
+    if (problem)
+        self.problem(problem, 'response431()', req.uri, req.ip);
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3561,7 +3582,7 @@ Framework.prototype.response500 = function(req, res, error) {
     req.clear(true);
 
     if (error)
-        framework.error(error, null, req.uri);
+        self.error(error, null, req.uri);
 
     res.success = true;
     var headers = {};
@@ -3583,11 +3604,14 @@ Framework.prototype.response500 = function(req, res, error) {
     @res {ServerResponse}
     return {Framework}
 */
-Framework.prototype.response501 = function(req, res) {
+Framework.prototype.response501 = function(req, res, problem) {
     var self = this;
 
     if (res.success)
         return self;
+
+    if (problem)
+        self.problem(problem, 'response501()', req.uri, req.ip);
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3658,7 +3682,6 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
             }
 
             returnHeaders['Content-Encoding'] = 'gzip';
-
             res.writeHead(code, returnHeaders);
             res.end(data, ENCODING);
         });
@@ -11930,6 +11953,38 @@ http.ServerResponse.prototype.send = function(code, body, type) {
     res.end(body, ENCODING);
 
     return self;
+};
+
+http.ServerResponse.prototype.throw400 = function(problem) {
+    framework.response400(this.req, this, problem);
+};
+
+http.ServerResponse.prototype.throw401 = function(problem) {
+    framework.response401(this.req, this, problem);
+};
+
+http.ServerResponse.prototype.throw403 = function(problem) {
+    framework.response403(this.req, this, problem);
+};
+
+http.ServerResponse.prototype.throw404 = function(problem) {
+    framework.response404(this.req, this, problem);
+};
+
+http.ServerResponse.prototype.throw408 = function(problem) {
+    framework.response408(this.req, this, problem);
+};
+
+http.ServerResponse.prototype.throw431 = function(problem) {
+    framework.response431(this.req, this, problem);
+};
+
+http.ServerResponse.prototype.throw500 = function(error) {
+    framework.response500(this.req, this, error);
+};
+
+http.ServerResponse.prototype.throw501 = function(problem) {
+    framework.response501(this.req, this, problem);
 };
 
 /**

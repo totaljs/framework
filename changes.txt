@@ -67,6 +67,15 @@ Framework loads modules, packages, models, definitions, controllers
 - added: framework.responseImageCache(req, res, fnPrepare, fnProcess, [headers])
 - added: String.prototype.parseJSON()
 - added: NOOP() --> global empty function (exists: noop(), Utils.noop())
+- added: response.throw400([problem])
+- added: response.throw401([problem])
+- added: response.throw403([problem])
+- added: response.throw404([problem])
+- added: response.throw408([problem])
+- added: response.throw431([problem])
+- added: response.throw500([error])
+- added: response.throw501([problem])
+
 
 - updated: (IMPORTANT) framework doesn't remove subdirectories with files in temporary directory
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
