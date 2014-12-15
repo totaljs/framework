@@ -123,7 +123,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 24)';
+    this.version_header = '1.7.0 (build: 25)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -3848,7 +3848,13 @@ Framework.prototype.initialize = function(http, debug, options) {
         }, 500);
 
         if (self.isTest) {
-            self.test(true, options.tests || options.test);
+
+            var sleep = options.sleep || options.delay || 1000;
+
+            setTimeout(function() {
+                self.test(true, options.tests || options.test);
+            }, sleep);
+
             return self;
         }
 
