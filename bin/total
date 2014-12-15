@@ -456,11 +456,14 @@ function main() {
                 var command = Internal.parseLocalization(content, 0);
                 while (command !== null) {
                     var key = 'T' + command.command.hash();
+                    var file = filename.substring(root.length);
                     texts[key] = command.command;
-                    if (resource[key])
-                        resource[key] += ', ' + filename.substring(root.length);
+                    if (resource[key]) {
+                        if (resource[key].indexOf(file) === -1)
+                            resource[key] += ', ' + file;
+                    }
                     else
-                        resource[key] = filename.substring(root.length);
+                        resource[key] = file;
                     count++;
                     max = Math.max(max, key.length);
                     command = Internal.parseLocalization(content, command.end);
