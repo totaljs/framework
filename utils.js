@@ -1754,8 +1754,21 @@ String.prototype.hash = function(type) {
         case 'sha512':
             return str.sha512();
         default:
-            return str.split('').reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+            return string_hash(str);
     }
+};
+
+function string_hash(s) {
+    var hash = 0, i, char;
+    if (s.length == 0)
+        return hash;
+    var l = s.length;
+    for (i = 0; i < l; i++) {
+        char = s.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
 };
 
 /*

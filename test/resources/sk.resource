@@ -1,1 +1,1 @@
-translate           : preklad
+T1052832078     : preklad

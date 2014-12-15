@@ -7638,10 +7638,10 @@ Controller.prototype.clear = function() {
  * @return {String}
  */
 Controller.prototype.translate = function(text) {
-    var value = framework.resource(this.language, text);
+    var value = framework.resource(this.language, 'T' + text.hash());
     if (!value)
-        return text.replace(/\\:/g, ':');
-    return value.replace(/\\:/g, ':');
+        return text;
+    return value;
 };
 
 /**

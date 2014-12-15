@@ -1662,7 +1662,7 @@ function view_parse_localization(content, language) {
         return content;
 
     var prepare = function(content) {
-        return framework.resource(language || '', content) || content;
+        return framework.resource(language || '', 'T' + content.hash()) || content;
     };
 
     while (command !== null) {
