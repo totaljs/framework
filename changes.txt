@@ -61,12 +61,15 @@ Framework loads modules, packages, models, definitions, controllers
 - added: Array.first([def])
 - added: Array.last([def])
 - added: framework.routing(name)
-- added: ROUTING(name)
+- added: global --> ROUTING(name)
+- added: global --> NOOP() empty function (exists: noop(), Utils.noop())
+- added: global --> DEBUG boolean property (is the framework in debug mode?)
+- added: global --> RELEASE boolean property (is the framework in release mode?)
+- added: global --> TEST boolean property (is the framework in test mode?)
 - added: routing supports schemas `*custom-schema/User` and we can define it in flags
 - added: String.prototype.parseBool()
 - added: framework.responseImageCache(req, res, fnPrepare, fnProcess, [headers])
 - added: String.prototype.parseJSON()
-- added: NOOP() --> global empty function (exists: noop(), Utils.noop())
 - added: response.throw400([problem])
 - added: response.throw401([problem])
 - added: response.throw403([problem])
@@ -76,6 +79,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: response.throw500([error])
 - added: response.throw501([problem])
 - added: view supports localization
+- added: assertion testing --> framework sets global.assert = require('assert')
 
 - updated: (IMPORTANT) framework doesn't remove subdirectories with files in temporary directory
 - updated: (IMPORTANT) all models are loaded after is the framework loaded

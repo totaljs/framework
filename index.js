@@ -119,6 +119,10 @@ if (typeof(setImmediate) === UNDEFINED) {
     };
 }
 
+global.DEBUG = false;
+global.TEST = false;
+global.RELEASE = false;
+
 function Framework() {
 
     this.id = null;
@@ -3770,6 +3774,8 @@ Framework.prototype.initialize = function(http, debug, options) {
 
     self.config.debug = debug;
     self.isDebug = debug;
+    global.DEBUG = debug;
+    global.RELEASE = !debug;
 
     self._configure();
     self._configure_versions();
@@ -3850,6 +3856,8 @@ Framework.prototype.initialize = function(http, debug, options) {
         if (self.isTest) {
 
             var sleep = options.sleep || options.delay || 1000;
+            global.TEST = true;
+            global.assert = require('assert');
 
             setTimeout(function() {
                 self.test(true, options.tests || options.test);
@@ -4820,7 +4828,6 @@ Framework.prototype.testing = function(stop, callback) {
     // !IMPORTANT! framework.isTestError is created dynamically
 
     if (self.tests.length === 0) {
-
 
         if (callback)
             callback(framework.isTestError === true);
