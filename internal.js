@@ -1824,7 +1824,7 @@ function view_parse(content, minify) {
             builder += '+' + escaper(text);
     }
 
-    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,output,date){var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+    var fn = '(function(self,repository,model,session,get,post,url,global,helpers,user,config,functions,index,output,date){var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
     return eval(fn);
 }
 
@@ -1941,6 +1941,9 @@ function view_prepare(command, dynamicCommand, functions) {
         case '!MODEL':
         case '!MODULE':
             return '$STRING(' + command.substring(1) + ')';
+
+        case 'language':
+            return command;
 
         case 'resource':
         case 'RESOURCE':
