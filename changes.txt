@@ -80,6 +80,8 @@ Framework loads modules, packages, models, definitions, controllers
 - added: response.throw501([problem])
 - added: view supports localization
 - added: assertion testing --> framework sets global.assert = require('assert')
+- added: module supports dependencies --> exports.dependencies = ['moduleA', 'moduleB'];
+- added: framework.dependencies (this object contains all installed total.js dependencies)
 
 - updated: (IMPORTANT) framework doesn't remove subdirectories with files in temporary directory
 - updated: (IMPORTANT) all models are loaded after is the framework loaded

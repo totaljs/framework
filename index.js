@@ -127,7 +127,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 25)';
+    this.version_header = '1.7.0 (build: 26)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -232,6 +232,7 @@ function Framework() {
     this.models = {};
     this.sources = {};
     this.controllers = {};
+    this.dependencies = {};
     this.tests = [];
     this.errors = [];
     this.problems = [];
@@ -251,7 +252,7 @@ function Framework() {
         processing: {},
         range: {},
         views: {},
-        dependencies: {},
+        dependencies: {}, // temporary for module dependencies
         other: {}
     };
 
@@ -1435,15 +1436,15 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         key = type + '.' + name;
 
-        if (self.temporary.dependencies[key]) {
-            self.temporary.dependencies[key].updated = new Date();
+        if (self.dependencies[key]) {
+            self.dependencies[key].updated = new Date();
         } else {
-            self.temporary.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0 };
+            self.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0 };
             if (internal)
-                self.temporary.dependencies[key].url = internal;
+                self.dependencies[key].url = internal;
         }
 
-        self.temporary.dependencies[key].count++;
+        self.dependencies[key].count++;
 
         setTimeout(function() {
             self.emit('install', type, name);
@@ -1631,26 +1632,26 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             name = obj.name;
 
         key = type + '.' + name;
-        tmp = self.temporary.dependencies[key];
+        tmp = self.dependencies[key];
 
         self.uninstall(type, name);
 
         if (tmp) {
-            self.temporary.dependencies[key] = tmp;
-            self.temporary.dependencies[key].updated = new Date();
+            self.dependencies[key] = tmp;
+            self.dependencies[key].updated = new Date();
         }
         else {
-            self.temporary.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0 };
+            self.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0 };
             if (internal)
-                self.temporary.dependencies[key].url = internal;
+                self.dependencies[key].url = internal;
         }
 
-        self.temporary.dependencies[key].count++;
+        self.dependencies[key].count++;
 
         if (obj.reinstall)
-            self.temporary.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpire();
+            self.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpire();
         else
-            delete self.temporary.dependencies[key];
+            delete self.dependencies[key];
 
         if (type === 'model')
             self.models[name] = obj;
@@ -1674,6 +1675,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
     if (type === 'module' || type === 'controller') {
 
+        // for inline routes
         var _ID = _controller = 'TMP' + Utils.random(10000);
 
         try {
@@ -1727,72 +1729,123 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             name = obj.name;
 
         key = type + '.' + name;
-        tmp = self.temporary.dependencies[key];
+        tmp = self.dependencies[key];
 
         self.uninstall(type, name);
 
         if (tmp) {
-            self.temporary.dependencies[key] = tmp;
-            self.temporary.dependencies[key].updated = new Date();
+            self.dependencies[key] = tmp;
+            self.dependencies[key].updated = new Date();
         }
         else {
-            self.temporary.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0 };
+            self.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0, _id: _ID };
             if (internal)
-                self.temporary.dependencies[key].url = internal;
+                self.dependencies[key].url = internal;
         }
 
-        self.temporary.dependencies[key].count++;
+        self.dependencies[key].dependencies = obj.dependencies;
+        self.dependencies[key].count++;
 
         if (obj.reinstall)
-            self.temporary.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpire();
+            self.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpire();
         else
-            delete self.temporary.dependencies[key].reinstall;
+            delete self.dependencies[key].reinstall;
 
         _controller = _ID;
 
-        if (typeof(obj.install) === TYPE_FUNCTION)
-            obj.install(self, options, name);
-
-        var id = (type === 'module' ? '#' : '') + name;
-        var length = self.routes.web.length;
-
-        for (var i = 0; i < length; i++) {
-            if (self.routes.web[i].controller === _controller)
-                self.routes.web[i].controller = id;
+        if (type === 'module') {
+            if (obj.dependencies instanceof Array) {
+                for (var i = 0, length = obj.dependencies.length; i < length; i++) {
+                    if (!self.dependencies['module.' + obj.dependencies[i]]) {
+                        self.temporary.dependencies[key] = { obj: obj, options: options, callback: callback, skipEmit: skipEmit };
+                        return self;
+                    }
+                }
+            }
         }
 
-        length = self.routes.websockets.length;
-        for (var i = 0; i < length; i++) {
-            if (self.routes.websockets[i].controller === _controller)
-                self.routes.websockets[i].controller = id;
-        }
+        self.doInstall(key, name, obj, options, callback, skipEmit);
 
-        length = self.routes.files.length;
-        for (var i = 0; i < length; i++) {
-            if (self.routes.files[i].controller === _controller)
-                self.routes.files[i].controller = id;
-        }
+        if (type === 'module') {
 
-        self._routesSort();
-
-        if (type === 'module')
             self.modules[name] = obj;
+            var keys = Object.keys(self.temporary.dependencies);
+
+            // check dependencies
+            for (var i = 0, length = keys.length; i < length; i++) {
+
+                var k = keys[i];
+                var a = self.temporary.dependencies[k];
+                var b = self.dependencies[k];
+                var skip = false;
+
+                for (var j = 0, jl = b.dependencies.length; j < jl; j++) {
+                    if (!self.dependencies['module.' + b.dependencies[j]]) {
+                        skip = true;
+                        break;
+                    }
+                }
+
+                if (skip)
+                    continue;
+
+                delete self.temporary.dependencies[k];
+                self.modules[b.name] = a.obj;
+                self.doInstall(k, b.name, a.obj, a.options, a.callback, a.skipEmit);
+            }
+        }
         else
             self.controllers[name] = obj;
 
-        _controller = '';
-
-        if (!skipEmit) {
-            setTimeout(function() {
-                self.emit('install', type, name);
-            }, 500);
-        }
-
-        if (callback)
-            callback(null);
-
         return self;
     }
+
+    return self;
+};
+
+Framework.prototype.doInstall = function(key, name, obj, options, callback, skipEmit) {
+
+    var self = this;
+    var me = self.dependencies[key];
+    var routeID = me._id;
+    var type = me.type;
+
+    _controller = routeID;
+
+    if (typeof(obj.install) === TYPE_FUNCTION)
+        obj.install(self, options, name);
+
+    var id = (type === 'module' ? '#' : '') + name;
+    var length = self.routes.web.length;
+
+    for (var i = 0; i < length; i++) {
+        if (self.routes.web[i].controller === routeID)
+            self.routes.web[i].controller = id;
+    }
+
+    length = self.routes.websockets.length;
+    for (var i = 0; i < length; i++) {
+        if (self.routes.websockets[i].controller === routeID)
+            self.routes.websockets[i].controller = id;
+    }
+
+    length = self.routes.files.length;
+    for (var i = 0; i < length; i++) {
+        if (self.routes.files[i].controller === routeID)
+            self.routes.files[i].controller = id;
+    }
+
+    self._routesSort();
+    _controller = '';
+
+    if (!skipEmit) {
+        setTimeout(function() {
+            self.emit('install', type, name);
+        }, 500);
+    }
+
+    if (callback)
+        callback(null);
 
     return self;
 };
@@ -1828,7 +1881,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
             return self;
 
         delete self.routes.middleware[name];
-        delete self.temporary.dependencies[type + '.' + name];
+        delete self.dependencies[type + '.' + name];
         self._length_middleware = Object.keys(self.routes.middleware).length;
         self.emit('uninstall', type, name);
         return self;
@@ -1848,7 +1901,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
             return self;
 
         delete self.routes.views[name];
-        delete self.temporary.dependencies[type + '.' + name];
+        delete self.dependencies[type + '.' + name];
 
         fs.exists(obj.filename, function(exist) {
             if (exist)
@@ -1877,7 +1930,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
         else
             delete self.sources[name];
 
-        delete self.temporary.dependencies[type + '.' + name];
+        delete self.dependencies[type + '.' + name];
 
         self._routesSort();
         self.emit('uninstall', type, name);
@@ -1912,7 +1965,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
         }
 
         self._routesSort();
-        delete self.temporary.dependencies[type + '.' + name];
+        delete self.dependencies[type + '.' + name];
 
         if (!skipEmit)
             self.emit('uninstall', type, name);
