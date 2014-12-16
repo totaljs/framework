@@ -127,7 +127,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 26)';
+    this.version_header = '1.7.0 (build: 27)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -1817,14 +1817,19 @@ Framework.prototype.install_prepare = function(noRecursive) {
 
     keys = Object.keys(self.temporary.dependencies);
 
+    clearTimeout(self.temporary.other['dependencies']);
+    self.temporary.other['dependencies'] = setTimeout(function() {
+        var keys = Object.keys(framework.temporary.dependencies);
+        if (keys.length > 0)
+            throw new Error('Dependency exception (module): missing dependencies for: ' + keys.join(', ').trim());
+        delete self.temporary.other['dependencies'];
+    }, 1500);
+
     if (keys.length === 0)
         return self;
 
-    if (noRecursive) {
-        if (keys.length > 0)
-            throw new Error('Dependencies exception: missing dependencies for: ' + keys.join(', ').trim());
+    if (noRecursive)
         return self;
-    }
 
     self.install_prepare(true);
     return self;
