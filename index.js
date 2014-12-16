@@ -1765,39 +1765,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             }
         }
 
-        self.doInstall(key, name, obj, options, callback, skipEmit);
+        self.install_make(key, name, obj, options, callback, skipEmit);
 
         if (type === 'module') {
-
             self.modules[name] = obj;
-            var keys = Object.keys(self.temporary.dependencies);
-
-            // check dependencies
-            for (var i = 0, length = keys.length; i < length; i++) {
-
-                var k = keys[i];
-                var a = self.temporary.dependencies[k];
-                var b = self.dependencies[k];
-                var skip = false;
-
-                if (b.processed)
-                    continue;
-
-                for (var j = 0, jl = b.dependencies.length; j < jl; j++) {
-                    var d = self.dependencies['module.' + b.dependencies[j]];
-                    if (!d || !d.processed) {
-                        skip = true;
-                        break;
-                    }
-                }
-
-                if (skip)
-                    continue;
-
-                delete self.temporary.dependencies[k];
-                self.modules[b.name] = a.obj;
-                self.doInstall(k, b.name, a.obj, a.options, a.callback, a.skipEmit);
-            }
+            self.install_prepare();
         }
         else
             self.controllers[name] = obj;
@@ -1808,7 +1780,57 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
     return self;
 };
 
-Framework.prototype.doInstall = function(key, name, obj, options, callback, skipEmit) {
+Framework.prototype.install_prepare = function(noRecursive) {
+
+    var self = this;
+    var keys = Object.keys(self.temporary.dependencies);
+
+    if (keys.length === 0)
+        return;
+
+    // check dependencies
+    for (var i = 0, length = keys.length; i < length; i++) {
+
+        var k = keys[i];
+        var a = self.temporary.dependencies[k];
+        var b = self.dependencies[k];
+        var skip = false;
+
+        if (b.processed)
+            continue;
+
+        for (var j = 0, jl = b.dependencies.length; j < jl; j++) {
+            var d = self.dependencies['module.' + b.dependencies[j]];
+            if (!d || !d.processed) {
+                skip = true;
+                break;
+            }
+        }
+
+        if (skip)
+            continue;
+
+        delete self.temporary.dependencies[k];
+        self.modules[b.name] = a.obj;
+        self.install_make(k, b.name, a.obj, a.options, a.callback, a.skipEmit);
+    }
+
+    keys = Object.keys(self.temporary.dependencies);
+
+    if (keys.length === 0)
+        return self;
+
+    if (noRecursive) {
+        if (keys.length > 0)
+            throw new Error('Dependencies exception: missing dependencies for: ' + keys.join(', ').trim());
+        return self;
+    }
+
+    self.install_prepare(true);
+    return self;
+};
+
+Framework.prototype.install_make = function(key, name, obj, options, callback, skipEmit) {
 
     var self = this;
     var me = self.dependencies[key];
