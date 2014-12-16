@@ -1745,6 +1745,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         self.dependencies[key].dependencies = obj.dependencies;
         self.dependencies[key].count++;
+        self.dependencies[key].processed = false;
 
         if (obj.reinstall)
             self.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpire();
@@ -1779,8 +1780,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
                 var b = self.dependencies[k];
                 var skip = false;
 
+                if (b.processed)
+                    continue;
+
                 for (var j = 0, jl = b.dependencies.length; j < jl; j++) {
-                    if (!self.dependencies['module.' + b.dependencies[j]]) {
+                    var d = self.dependencies['module.' + b.dependencies[j]];
+                    if (!d || !d.processed) {
                         skip = true;
                         break;
                     }
@@ -1814,6 +1819,8 @@ Framework.prototype.doInstall = function(key, name, obj, options, callback, skip
 
     if (typeof(obj.install) === TYPE_FUNCTION)
         obj.install(self, options, name);
+
+    me.processed = true;
 
     var id = (type === 'module' ? '#' : '') + name;
     var length = self.routes.web.length;

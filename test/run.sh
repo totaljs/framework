@@ -9,4 +9,3 @@ node test-css.js
 node test-utils.js
 node test-framework-debug.js
 node test-framework-release.js
-node test-tests.js

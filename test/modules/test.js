@@ -6,7 +6,6 @@ exports.install = function(framework) {
 	assert.ok(typeof(framework.modules) === 'object', 'module install');
 
     setTimeout(function() {
-        console.log(framework.routes);
         assert.ok(MODULE('inline-view').installed, 'module install dependencies');
     }, 3000);
 };
