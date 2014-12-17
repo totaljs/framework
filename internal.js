@@ -1800,7 +1800,7 @@ function view_parse(content, minify) {
             builder += ';if (' + cmd.substring(3) + '){$output+=$EMPTY';
         } else if (cmd === 'else') {
             builder += '} else {$output+=$EMPTY';
-        } else if (cmd === 'endif') {
+        } else if (cmd === 'endif' || cmd === 'fi') {
             builder += '}$output+=$EMPTY'
         } else {
             tmp = view_prepare(command.command, newCommand, functionsName);
