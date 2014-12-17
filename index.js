@@ -127,7 +127,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 27)';
+    this.version_header = '1.7.0 (build: 28)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -12350,7 +12350,7 @@ http.IncomingMessage.prototype.hostname = function(path) {
     return uri.protocol + '//' + uri.hostname + (uri.port !== null && uri.port !== undefined && uri.port !== 80 ? ':' + uri.port : '') + (path || '');
 };
 
-global.framework = module.exports = new Framework();
+global.framework = global.F = module.exports = new Framework();
 
 process.on('uncaughtException', function(e) {
 

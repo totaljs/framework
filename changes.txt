@@ -66,6 +66,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: global --> DEBUG boolean property (is the framework in debug mode?)
 - added: global --> RELEASE boolean property (is the framework in release mode?)
 - added: global --> TEST boolean property (is the framework in test mode?)
+- added: global --> F object property (is alias for "framework")
 - added: routing supports schemas `*custom-schema/User` and we can define it in flags
 - added: String.prototype.parseBool()
 - added: framework.responseImageCache(req, res, fnPrepare, fnProcess, [headers])
