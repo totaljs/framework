@@ -5463,6 +5463,19 @@ Framework.prototype.resource = function(name, key) {
 };
 
 /**
+ * Translate text
+ * @param {String} text
+ * @param {String} language A resource filename.
+ * @return {String}
+ */
+Framework.prototype.translate = function(text, language) {
+    var value = this.resource(language, 'T' + text.hash());
+    if (!value)
+        return text;
+    return value;
+};
+
+/**
  * Versions configuration
  * @private
  * @param {String} content
