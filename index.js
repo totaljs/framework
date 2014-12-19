@@ -127,7 +127,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 28)';
+    this.version_header = '1.7.0 (build: 29)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -1681,17 +1681,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         try {
 
             if (useRequired) {
-
                 obj = require(declaration);
-
                 (function(name) {
-
                     setTimeout(function() {
                         delete require.cache[name];
                     }, 1000);
-
                 })(require.resolve(declaration));
-
             }
             else {
 
@@ -1701,16 +1696,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
                 var filename = directory + self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js').substring(1);
                 fs.writeFileSync(filename, declaration);
                 obj = require(filename);
-
                 (function(name, filename) {
-
                     setTimeout(function() {
                         fs.unlinkSync(filename);
                         delete require.cache[name];
                     }, 1000);
-
                 })(require.resolve(filename), filename);
-
             }
 
         } catch (ex) {
@@ -1754,26 +1745,23 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         _controller = _ID;
 
-        if (type === 'module') {
-            if (obj.dependencies instanceof Array) {
-                for (var i = 0, length = obj.dependencies.length; i < length; i++) {
-                    if (!self.dependencies['module.' + obj.dependencies[i]]) {
-                        self.temporary.dependencies[key] = { obj: obj, options: options, callback: callback, skipEmit: skipEmit };
-                        return self;
-                    }
+        if (obj.dependencies instanceof Array) {
+            for (var i = 0, length = obj.dependencies.length; i < length; i++) {
+                if (!self.dependencies[type + '.' + obj.dependencies[i]]) {
+                    self.temporary.dependencies[key] = { obj: obj, options: options, callback: callback, skipEmit: skipEmit };
+                    return self;
                 }
             }
         }
 
         self.install_make(key, name, obj, options, callback, skipEmit);
 
-        if (type === 'module') {
+        if (type === 'module')
             self.modules[name] = obj;
-            self.install_prepare();
-        }
         else
             self.controllers[name] = obj;
 
+        self.install_prepare();
         return self;
     }
 
@@ -1811,7 +1799,12 @@ Framework.prototype.install_prepare = function(noRecursive) {
             continue;
 
         delete self.temporary.dependencies[k];
-        self.modules[b.name] = a.obj;
+
+        if (b.type === 'module')
+            self.modules[b.name] = a.obj;
+        else
+            self.controllers[b.name] = a.obj;
+
         self.install_make(k, b.name, a.obj, a.options, a.callback, a.skipEmit);
     }
 
