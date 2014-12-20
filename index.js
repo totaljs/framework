@@ -127,7 +127,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 29)';
+    this.version_header = '1.7.0 (build: 30)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -7285,7 +7285,7 @@ Subscribe.prototype.doEnd = function() {
     if (route.isJSON) {
         try {
 
-            if ((req.headers['content-type'] || '').match(/\/json$/)) {
+            if (!((req.headers['content-type'] || '').match(/\/json$/))) {
                 self.route400(new Error('The request validation (The content-type is not application/json).'));
                 return self;
             }

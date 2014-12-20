@@ -186,7 +186,7 @@ function plain_put_xml() {
 function plain_upload() {
     var self = this;
     var file = self.files[0];
-    self.json({ name: file.filename, length: file.length, type: file.contentType });
+    self.json({ name: file.filename, length: file.length, type: file.type });
 }
 
 function file_plain(req, res, isValidation) {
