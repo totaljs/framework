@@ -138,6 +138,9 @@ function plain_post_raw() {
 
 function plain_post_parse() {
     var self = this;
+    self.layout('');
+    var output = self.view('params', null, true);
+    assert.ok(output === '--body=total.js--query=query--post=total.js--get=query--', 'Problem with getting values from request body and URL.');
     self.post.type = 'parse';
     self.json(self.post);
 }

@@ -42,7 +42,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: framework.on('controller-render-meta', function(controller) {})
 - added: framework.on('init')
 - added: framework.merge('/merge.js', '/js/file1.js', '/js/file2.js')
-- added: framework supports X-Forwarded-Protocol header 
+- added: framework supports X-Forwarded-Protocol header
 - added: FrameworkImage supports buffer
 - added: auto-vendor-prefixes: box-sizing
 - added: new flag `noxhr` or `-xhr` because all route contains +xhr as default
@@ -85,6 +85,9 @@ Framework loads modules, packages, models, definitions, controllers
 - added: framework.dependencies (this object contains all installed total.js dependencies)
 - added: controller.translate([text]);
 - added: framework.translate(text, [language])
+- added: @{body.} instead of @{post.}
+- added: @{query.} instead of @{get.}
+- added: @{files} uploaded files
 
 - updated: (IMPORTANT) framework doesn't remove subdirectories with files in temporary directory
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
@@ -105,6 +108,8 @@ Framework loads modules, packages, models, definitions, controllers
 - updated: @{cookie(name)} --> read cookie
 - updated: framework.mail(address, subject, view, model, callback, replyTo) - added: replyTo
 - updated: controller.view(name) can execute without name (controller.viewname contains name according to URL)
+- updated: @{post} is deprecated
+- updated: @{get} is deprecated
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
 - renamed: config['allow-compress-html'] to config['allow-compile-html']
