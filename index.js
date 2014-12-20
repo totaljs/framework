@@ -4344,7 +4344,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
     req.flags = null;
 
     req.buffer_exceeded = false;
-    req.buffer_data = '';
+    req.buffer_data = new Buffer('');
     req.buffer_has = false;
 
     var isXSS = false;
@@ -7266,6 +7266,8 @@ Subscribe.prototype.doEnd = function() {
         return self;
     }
 
+    req.buffer_data = req.buffer_data.toString();
+
     var schema;
 
     if (req.buffer_data.length === 0) {
@@ -7496,13 +7498,13 @@ Subscribe.prototype.doParsepost = function(chunk) {
         return self;
 
     if (!req.buffer_exceeded)
-        req.buffer_data += chunk.toString();
+        req.buffer_data = Buffer.concat([req.buffer_data, chunk]);
 
     if ((req.buffer_data.length / 1024) < self.route.length)
         return self;
 
     req.buffer_exceeded = true;
-    req.buffer_data = '';
+    req.buffer_data = new Buffer('');
 
     return self;
 };
