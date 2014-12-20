@@ -28,7 +28,6 @@ framework.onError = function(error, name, uri) {
 		errorStatus = 0;
 		return;
 	}
-
 };
 
 function end() {
@@ -282,7 +281,7 @@ function test_routing(next) {
 	});
 
 	async.await('post-parse', function(complete) {
-		utils.request(url + 'post/parse/', ['post'], { name: 'total.js' }, function(error, data, code, headers) {
+		utils.request(url + 'post/parse/?value=query', ['post'], { name: 'total.js' }, function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === '{"name":"total.js","type":"parse"}', 'post-json');
