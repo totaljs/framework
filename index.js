@@ -7283,14 +7283,14 @@ Subscribe.prototype.doEnd = function() {
     if (route.isJSON) {
         try {
 
-            if ((req.headers['content-type'] || '').indexOf('application/json') === -1) {
-                self.route400(new Error('Request validation.'));
+            if ((req.headers['content-type'] || '').match(/\/json$/)) {
+                self.route400(new Error('The request validation (The content-type is not application/json).'));
                 return self;
             }
 
             var data = req.buffer_data.trim();
             if (!data.isJSON()) {
-                self.route400(new Error('Request validation.'));
+                self.route400(new Error('The request validation (not valid JSON).'));
                 return self;
             }
 
@@ -7332,7 +7332,7 @@ Subscribe.prototype.doEnd = function() {
     if (route.isXML) {
 
         if ((req.headers['content-type'] || '').indexOf('text/xml') === -1) {
-            self.route400(new Error('Request validation.'));
+            self.route400(new Error('The request validation (The content-type is not text/xml).'));
             return self;
         }
 
@@ -7363,7 +7363,7 @@ Subscribe.prototype.doEnd = function() {
     }
 
     if ((req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
-        self.route400('Request validation.');
+        self.route400('The request validation (The content-type is not x-www-form-urlencoded).');
         return self;
     }
 
