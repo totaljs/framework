@@ -227,6 +227,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: Date.compare(d1, d2);
 - added: Controller.date(type, date)
 - added: Controller.callback([viewName])
+- added: HttpFile.type (HttpFile.contentType is deprecated)
 
 - updated: NoSQL v2.0.8
 - updated: String.parseDate('yyyy-MM-dd HH:mm:ss') - time is optional

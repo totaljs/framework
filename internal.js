@@ -604,11 +604,18 @@ function HttpFile(name, filename, path, length, contentType, width, height) {
     this.name = name;
     this.filename = filename;
     this.length = length;
-    this.contentType = contentType;
+    this.type = contentType;
     this.path = path;
     this.width = width;
     this.height = height;
 }
+
+HttpFile.prototype = {
+    get contentType() {
+        console.log('OBSOLETE: The HttpFile.contentType is deprecated. Use: HttpFile.type');
+        return this.type;
+    }
+};
 
 /*
     Read file to byte array
