@@ -63,6 +63,7 @@ var contentTypes = {
     'less': 'text/css',
     'm4a': 'audio/mp4a-latm',
     'm4v': 'video/x-m4v',
+    'manifest': 'text/cache-manifest',
     'md': 'text/markdown',
     'mid': 'audio/midi',
     'midi': 'audio/midi',
@@ -1892,7 +1893,7 @@ String.prototype.parseDate = function() {
  * Parse expiration date
  * @return {Date}
  */
-String.prototype.parseDateExpire = function() {
+String.prototype.parseDateExpiration = function() {
     var self = this;
 
     var arr = self.split(' ');
@@ -3273,11 +3274,9 @@ Array.prototype.randomize = function() {
     Async class
 */
 function AsyncTask(owner, name, fn, cb, waiting) {
-
     this.handlers = {
         oncomplete: this.complete.bind(this)
     };
-
     this.isRunning = 0;
     this.owner = owner;
     this.name = name;
@@ -3309,6 +3308,7 @@ AsyncTask.prototype.run = function() {
 };
 
 AsyncTask.prototype.timeout = function(timeout) {
+
     var self = this;
 
     if (timeout > 0) {

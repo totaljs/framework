@@ -88,6 +88,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: @{body.} instead of @{post.}
 - added: @{query.} instead of @{get.}
 - added: @{files} uploaded files
+- added: .manifest to accept list
 
 - updated: (IMPORTANT) framework doesn't remove subdirectories with files in temporary directory
 - updated: (IMPORTANT) all models are loaded after is the framework loaded
@@ -114,6 +115,7 @@ Framework loads modules, packages, models, definitions, controllers
 - renamed: config['directory-angular'] to config['directory-public-virtual']
 - renamed: config['allow-compress-html'] to config['allow-compile-html']
 - renamed: (IMPORTANT) default view layout from `_layout` to `layout`
+- renamed: Utils.parseDateExpire() -> Utils.parseDateExpiration()
 
 - removed: JS CSS
 - removed: (IMPORTANT) view markup for Angular.js from the core (it will be a module)

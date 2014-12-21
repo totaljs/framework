@@ -127,7 +127,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 30)';
+    this.version_header = '1.7.0 (build: 31)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -165,7 +165,7 @@ function Framework() {
         'static-url-video': '/video/',
         'static-url-font': '/fonts/',
         'static-url-download': '/download/',
-        'static-accepts': ['.jpg', '.png', '.gif', '.ico', EXTENSION_JS, EXTENSION_COFFEE, '.css', '.txt', '.xml', '.woff', '.otf', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache', '.map', '.ogg', '.mp4', '.mp3', '.webp', '.webm', '.swf', '.package', '.json', '.md'],
+        'static-accepts': ['.jpg', '.png', '.gif', '.ico', EXTENSION_JS, EXTENSION_COFFEE, '.css', '.txt', '.xml', '.woff', '.otf', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache', '.manifest', '.map', '.ogg', '.mp4', '.mp3', '.webp', '.webm', '.swf', '.package', '.json', '.md'],
 
         // 'static-accepts-custom': [],
 
@@ -1649,7 +1649,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         self.dependencies[key].count++;
 
         if (obj.reinstall)
-            self.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpire();
+            self.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpiration();
         else
             delete self.dependencies[key];
 
@@ -1739,7 +1739,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         self.dependencies[key].processed = false;
 
         if (obj.reinstall)
-            self.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpire();
+            self.dependencies[key].reinstall = obj.reinstall.toString().parseDateExpiration();
         else
             delete self.dependencies[key].reinstall;
 
@@ -6785,7 +6785,7 @@ FrameworkCache.prototype.add = function(name, value, expire) {
 
     switch (type) {
         case STRING:
-            expire = expire.parseDateExpire();
+            expire = expire.parseDateExpiration();
             break;
 
         case UNDEFINED:
@@ -6841,7 +6841,7 @@ FrameworkCache.prototype.setExpire = function(name, expire) {
         return self;
 
     if (typeof(expire) === STRING)
-        expire = expire.parseDateExpire();
+        expire = expire.parseDateExpiration();
 
     obj.expire = expire;
     return self;
@@ -9905,8 +9905,11 @@ Controller.prototype.empty = function(headers) {
     return self;
 };
 
-Controller.prototype.destroy = function() {
+Controller.prototype.destroy = function(problem) {
     var self = this;
+
+    if (problem)
+        self.problem(problem);
 
     if (self.res.success || !self.isConnected)
         return self;
@@ -11119,8 +11122,11 @@ WebSocket.prototype.find = function(id) {
 /*
     Destroy a websocket
 */
-WebSocket.prototype.destroy = function() {
+WebSocket.prototype.destroy = function(problem) {
     var self = this;
+
+    if (problem)
+        self.problem(problem);
 
     if (self.connections === null && self._keys === null)
         return self;
@@ -11940,7 +11946,7 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
     }
 
     if (type === STRING)
-        expires = expires.parseDateExpire();
+        expires = expires.parseDateExpiration();
 
     if (!options)
         options = {};
