@@ -69,7 +69,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: global --> F object property (is alias for "framework")
 - added: routing supports schemas `*custom-schema/User` and we can define it in flags
 - added: String.prototype.parseBool()
-- added: framework.responseImageCache(req, res, fnPrepare, fnProcess, [headers])
+- added: framework.responseImagePrepare(req, res, fnPrepare, fnProcess, [headers])
 - added: String.prototype.parseJSON()
 - added: response.throw400([problem])
 - added: response.throw401([problem])

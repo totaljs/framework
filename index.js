@@ -3134,7 +3134,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
     return self;
 };
 
-Framework.prototype.responseImageCache = function(req, res, fnPrepare, fnProcess, headers, useImageMagick) {
+Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProcess, headers, useImageMagick) {
 
     var self = this;
     var key = req.url.substring(1).replace(/\//g, '-');
