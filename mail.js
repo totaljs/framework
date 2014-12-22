@@ -126,8 +126,8 @@ function Message(subject, body) {
 
 /**
  * Set sender
- * @param  {String} address A valid e-mail address.
- * @param  {String} name    User name.
+ * @param {String} address A valid e-mail address.
+ * @param {String} name User name.
  * @return {Message}
  */
 Message.prototype.sender = function(address, name) {
