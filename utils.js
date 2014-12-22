@@ -1130,10 +1130,10 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
         error = new builders.ErrorBuilder(resource);
 
     if (typeof(properties) === STRING) {
-        var schema = collection === undefined ? builders.validation(properties) : collection[properties] === undefined ? '' : collection[properties].properties;
+        var schema = collection === undefined ? builders.validation(properties) : collection[properties] === undefined ? '' : collection[properties].schema;
         if (schema.length !== 0) {
             schemaName = properties;
-            properties = schema;
+            properties = Object.keys(schema);
             isSchema = true;
             definition = collection === undefined ? builders.schema('default').collection : collection;
             if (!definition)
@@ -1146,12 +1146,11 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
         model = {};
 
     if (typeof(prepare) !== FUNCTION)
-        throw new Error('Validate hasn\'t any method to validate properties.\nDefine delegate: framework.onValidate ...');
+        throw new Error('The validate function does not have any method to validate properties.\nYou must define the delegate: framework.onValidate ...');
 
     for (var i = 0; i < properties.length; i++) {
 
         var name = properties[i].toString();
-
         var value = model[name];
         var type = typeof(value);
 

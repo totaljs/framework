@@ -127,7 +127,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 33)';
+    this.version_header = '1.7.0 (build: 34)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -7066,7 +7066,7 @@ Subscribe.prototype.execute = function(status) {
 
     if (route === null) {
         if (status === 400 && self.exception instanceof Builders.ErrorBuilder)
-            framework.responseContent(req, res, 200, self.exception.json(), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
+            framework.responseContent(req, res, 200, self.exception.json(), 'application/json', framework.config['allow-gzip']);
         else
             framework.responseContent(req, res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
         return self;
@@ -7295,7 +7295,7 @@ Subscribe.prototype.doEnd = function() {
                 return self;
             }
 
-            schema.load(req.body, function(err, result) {
+            schema.make(req.body, function(err, result) {
 
                 if (err) {
                     self.route400(err);
@@ -7367,7 +7367,7 @@ Subscribe.prototype.doEnd = function() {
         return self;
     }
 
-    schema.load(req.body, function(err, result) {
+    schema.make(req.body, function(err, result) {
 
         if (err) {
             self.route400(err);
