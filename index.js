@@ -127,7 +127,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 31)';
+    this.version_header = '1.7.0 (build: 32)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -442,7 +442,7 @@ Framework.prototype.stop = function(code) {
 };
 
 /**
- * Add a redirect route
+ * Add a route redirect
  * @param {String} host Domain with protocol.
  * @param {String} newHost Domain with protocol.
  * @param {Boolean} withPath Copy path (default: true).
@@ -450,7 +450,22 @@ Framework.prototype.stop = function(code) {
  * @return {Framework}
  */
 Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
+
     var self = this;
+    var external = host.startsWith('http://') || host.startsWith('https');
+
+    if (external === false) {
+        if (host[0] !== '/')
+            host = '/' + host;
+        framework.route(host, function() {
+            if (typeof(withPath) === BOOLEAN)
+                permanent = withPath;
+            if (newHost[0] !== '/')
+                newHost = '/' + newHost;
+            this.redirect(newHost, permanent);
+        });
+        return self;
+    }
 
     if (host[host.length - 1] === '/')
         host = host.substring(0, host.length - 1);
@@ -902,6 +917,10 @@ Framework.prototype.merge = function(url) {
  * @return {Framework}
  */
 Framework.prototype.mapping = function(url, path) {
+    return this.map.apply(this, arguments);
+};
+
+Framework.prototype.map = function(url, path) {
 
     if (url[0] !== '/')
         url = '/' + url;
@@ -8108,46 +8127,6 @@ Controller.prototype.change = function(message) {
     return self;
 };
 
-/*
-    Add function to async waiting list
-    @name {String}
-    @waitingFor {String} :: name of async function
-    @fn {Function}
-    return {Controller}
-*/
-Controller.prototype.wait = function(name, waitingFor, fn) {
-    var self = this;
-    self.async.wait(name, waitingFor, fn);
-    return self;
-};
-
-/*
-    Add function to async list
-    @name {String}
-    @fn {Function}
-    return {Controller}
-*/
-Controller.prototype.await = function(name, fn) {
-    var self = this;
-    self.async.await(name, fn);
-    return self;
-};
-
-/*
-    Run async functions
-    @callback {Function}
-    return {Controller}
-*/
-Controller.prototype.complete = function(callback) {
-    var self = this;
-    return self.async.complete(callback);
-};
-
-Controller.prototype.run = function(callback) {
-    var self = this;
-    return self.async.complete(callback);
-};
-
 /**
  * Transfer to new route
  * @param {String} url Relative URL.
@@ -9812,23 +9791,6 @@ Controller.prototype.noClear = function(enable) {
     return self;
 };
 
-/*
-    Response JSON ASYNC
-    @obj {Object}
-    @headers {Object} :: optional
-    return {Controller};
-*/
-Controller.prototype.jsonAsync = function(obj, headers, beautify) {
-    var self = this;
-
-    var fn = function() {
-        self.json(obj, headers, beautify);
-    };
-
-    self.async.complete(fn);
-    return self;
-};
-
 /**
  * Response a custom content
  * @param {String} contentBody
@@ -9968,24 +9930,6 @@ Controller.prototype.image = function(filename, fnProcess, headers, useImageMagi
     self.subscribe.success();
     framework.responseImage(self.req, self.res, filename, fnProcess, headers, useImageMagick);
 
-    return self;
-};
-
-/*
-    Response Async file
-    @filename {String}
-    @downloadName {String} :: optional
-    @headers {Object} :: optional
-    return {Controller};
-*/
-Controller.prototype.fileAsync = function(filename, downloadName, headers) {
-    var self = this;
-
-    var fn = function() {
-        self.file(filename, downloadName, headers);
-    };
-
-    self.async.complete(fn);
     return self;
 };
 
@@ -10210,24 +10154,6 @@ Controller.prototype.redirect = function(url, permanent) {
     framework.emit('request-end', self.req, self.res);
     framework.stats.response.redirect++;
 
-    return self;
-};
-
-/*
-    Response Async View
-    @name {String}
-    @model {Object} :: optional
-    @headers {Object} :: optional
-    return {Controller};
-*/
-Controller.prototype.redirectAsync = function(url, permanent) {
-    var self = this;
-
-    var fn = function() {
-        self.redirect(url, permanent);
-    };
-
-    self.async.complete(fn);
     return self;
 };
 
@@ -10754,24 +10680,6 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
     self.output = output.content;
     self.isLayout = true;
     self.view(self.layoutName, null);
-    return self;
-};
-
-/*
-    Response Async View
-    @name {String}
-    @model {Object} :: optional
-    @headers {Object} :: optional
-    return {Controller};
-*/
-Controller.prototype.viewAsync = function(name, model, headers) {
-    var self = this;
-
-    var fn = function() {
-        self.view(name, model, headers);
-    };
-
-    self.async.complete(fn);
     return self;
 };
 
@@ -11313,41 +11221,6 @@ WebSocket.prototype.validate = function(model, properties, prefix, name) {
 
     var error = new builders.ErrorBuilder(resource);
     return utils.validate.call(self, model, properties, framework.onValidation, error);
-};
-
-/*
-    Add function to async wait list
-    @name {String}
-    @waitingFor {String} :: name of async function
-    @fn {Function}
-    return {WebSocket}
-*/
-WebSocket.prototype.wait = function(name, waitingFor, fn) {
-    var self = this;
-    self.async.wait(name, waitingFor, fn);
-    return self;
-};
-
-/*
-    Run async functions
-    @callback {Function}
-    return {WebSocket}
-*/
-WebSocket.prototype.complete = function(callback) {
-    var self = this;
-    return self.complete(callback);
-};
-
-/*
-    Add function to async list
-    @name {String}
-    @fn {Function}
-    return {WebSocket}
-*/
-WebSocket.prototype.await = function(name, fn) {
-    var self = this;
-    self.async.await(name, fn);
-    return self;
 };
 
 /*
