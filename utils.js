@@ -1738,13 +1738,16 @@ String.prototype.replacer = function(find, text) {
     return self.substring(0, beg) + text + self.substring(beg + find.length);
 };
 
-/*
-    Hash string
-    @type {String} :: optional, default empty
-    return {String}
-*/
-String.prototype.hash = function(type) {
+/**
+ * Hash string
+ * @param {String} type Hash type.
+ * @param {String} salt Optional, salt.
+ * @return {String}
+ */
+String.prototype.hash = function(type, salt) {
     var str = this;
+    if (salt)
+        str += salt;
     switch ((type || '').toLowerCase()) {
         case 'md5':
             return str.md5();
