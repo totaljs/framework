@@ -3983,48 +3983,6 @@ Framework.prototype.initialize = function(http, debug, options) {
     return self;
 };
 
-Framework.prototype.run = function(http, config, port, ip, options) {
-
-    console.log('OBSOLETE: please use for beginning framework.http("debug", [options([ip: String], [port: Number], [config: Object])]) or framework.http("release", [options([ip: String], [port: Number], [config: Object])]) or framework.http("test", [options([ip: String], [port: Number], [config: Object], tests: [String Array])])');
-
-    if (typeof(http) === STRING)
-        return this.mode(http, config, port, ip, options);
-
-    var debug = false;
-    var type = typeof(config);
-
-    if (type === BOOLEAN)
-        debug = config;
-    else if (type === OBJECT) {
-        debug = config.debug;
-        options.config = config;
-    }
-
-    var self = this;
-    self.isHTTPS = typeof(http.STATUS_CODES) === UNDEFINED;
-
-    if (isNaN(port) && typeof(port) !== STRING)
-        port = null;
-
-    if (port !== null && typeof(port) === OBJECT) {
-        var tmp = options;
-        options = port;
-        port = tmp;
-    } else if (ip !== null && typeof(ip) === OBJECT) {
-        var tmp = options;
-        options = ip;
-        ip = tmp;
-    }
-
-    if (options === undefined)
-        options = {};
-
-    options.ip = ip;
-    options.port = port;
-
-    return this.initialize(http, debug, options);
-};
-
 /**
  * Run framework –> HTTP
  * @param  {String} mode Framework mode.
@@ -12244,7 +12202,7 @@ process.on('uncaughtException', function(e) {
     if (e.toString().indexOf('listen EADDRINUSE') !== -1) {
         if (typeof(process.send) === TYPE_FUNCTION)
             process.send('eaddrinuse');
-        console.log('\nIP address and PORT is already in use.\nYou must change the PORT\'s number or IP address.\n');
+        console.log('\nThe IP address and the PORT is already in use.\nYou must change the PORT\'s number or IP address.\n');
         process.exit(1);
         return;
     }
