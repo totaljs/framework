@@ -127,7 +127,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 32)';
+    this.version_header = '1.7.0 (build: 33)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -5729,14 +5729,15 @@ Framework.prototype._version = function(name) {
     return name;
 };
 
-/*
-    Internal function
-    @req {HttpRequest}
-    @url {String}
-    @flags {String Array}
-    @noLoggedUnlogged {Boolean} :: optional, default false
-    return {ControllerRoute}
-*/
+/**
+ * Lookup for the route
+ * @param {HttpRequest} req
+ * @param {String} url URL address.
+ * @param {String Array} flags
+ * @param {Boolean} noLoggedUnlogged A helper argument.
+ * @param {Boolean} noCache No cache.
+ * @return {Object}
+ */
 Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache) {
 
     var self = this;
@@ -5749,10 +5750,11 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
     var key;
 
     if (!noCache)
-        key = 'lookup#' + req.isSecure + '#' + subdomain + '#' + req.method + '#' + req.url + '#' + req.xhr + '#' + (req.headers['content-type'] || '').substring(0, 20);
+        key = ('lookup#' + req.isSecure + '#' + subdomain + '#' + req.method + '#' + req.url + '#' + req.xhr + '#' + (req.headers['content-type'] || '').substring(0, 20) + req.isAuthorized).hash();
 
-    if (!isSystem && !noCache && self.temporary.other[key])
+    if (!isSystem && !noCache && self.temporary.other[key]) {
         return self.temporary.other[key];
+    }
 
     var length = self.routes.web.length;
 
@@ -7133,6 +7135,11 @@ Subscribe.prototype.prepare = function(flags, url) {
 
     if (framework.onAuthorization !== null) {
         framework.onAuthorization(req, res, flags, function(isAuthorized, user) {
+            if (typeof(isAuthorized) !== BOOLEAN) {
+                user = isAuthorized;
+                isAuthorized = !user;
+            }
+            req.isAuthorized = isAuthorized;
             self.doAuthorization(isAuthorized, user);
         });
         return self;
