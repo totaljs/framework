@@ -15,7 +15,7 @@ function prototypeDate() {
 	dt = dt.add('minute', 1);
 	dt = dt.add('seconds', 5);
 
-	assert.ok('1 minute 5 seconds'.parseDateExpire().format('mm:ss') === dt.format('mm:ss'), 'date expiration');
+	assert.ok('1 minute 5 seconds'.parseDateExpiration().format('mm:ss') === dt.format('mm:ss'), 'date expiration');
 
 	dt = '2010-01-01 12:05:10'.parseDate();
 	assert.ok('Fri Jan 01 2010 12:05:10 GMT+0100 (CET)' === dt.toString(), 'date parsing 1');
