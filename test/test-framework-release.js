@@ -498,6 +498,7 @@ framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html'
 framework.on('load', function() {
 
 	framework.merge('/mergepackage.js', '@testpackage/test.js');
+	assert.ok(MODULE('supermodule').ok, 'load module from subdirectory');
 
 	setTimeout(function() {
 		console.time('TEST');

@@ -1297,23 +1297,14 @@ Framework.prototype.load = function() {
     }
 
     dir = path.join(directory, self.config['directory-modules']);
+    arr = [];
+    listing(dir, 0, arr, '.js');
 
-    if (fs.existsSync(dir)) {
-
-        fs.readdirSync(dir).forEach(function(o) {
-
-            var ext = path.extname(o);
-            var extLower = ext.toLowerCase();
-            if (extLower !== EXTENSION_JS)
-                return;
-
-            var filename = path.join(directory, self.config['directory-modules'], o);
-            self.install('module', o.replace(ext, ''), filename, undefined, undefined, undefined, true);
-        });
-    }
+    arr.forEach(function(item) {
+        self.install('module', item.name, item.filename, undefined, undefined, undefined, true);
+    });
 
     dir = path.join(directory, self.config['directory-packages']);
-
     arr = [];
     listing(dir, 0, arr, '.package');
 
