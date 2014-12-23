@@ -5741,7 +5741,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
     var key;
 
     if (!noCache)
-        key = ('lookup#' + req.isSecure + '#' + subdomain + '#' + req.method + '#' + req.url + '#' + req.xhr + '#' + (req.headers['content-type'] || '').substring(0, 20) + req.isAuthorized); //.hash();
+        key = ('lookup#' + req.isSecure + '#' + subdomain + '#' + req.method + '#' + req.url + '#' + req.xhr + '#' + (req.headers['content-type'] || '').substring(0, 20) + req.isAuthorized).hash();
 
     if (!isSystem && !noCache && self.temporary.other[key])
         return self.temporary.other[key];
