@@ -510,6 +510,9 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
     if (route.isREFERER && req.flags.indexOf('referer') === -1)
         return 0;
 
+    if (route.isJSON && req.flags.indexOf('json') === -1)
+        return 0;
+
     for (var i = 0, length = req.flags.length; i < length; i++) {
 
         var flag = req.flags[i];
