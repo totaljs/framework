@@ -124,6 +124,42 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('rest GET', function(complete) {
+		utils.request(url + 'rest/', ['get'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'GET', 'REST - GET');
+			complete();
+		});
+	});
+
+	async.await('rest DELETE', function(complete) {
+		utils.request(url + 'rest/', ['delete'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'DELETE', 'REST - DELETE');
+			complete();
+		});
+	});
+
+	async.await('rest POST', function(complete) {
+		utils.request(url + 'rest/', ['post', 'json'], { success: true }, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'POST', 'REST - POST (JSON)');
+			complete();
+		});
+	});
+
+	async.await('rest PUT', function(complete) {
+		utils.request(url + 'rest/', ['put', 'json'], { success: true }, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'PUT', 'REST - PUT (JSON)');
+			complete();
+		});
+	});
+
 	async.await('translate', function(complete) {
 		utils.request(url + 'translate/?language=', 'GET', null, function(error, data, code, headers) {
 			if (error)

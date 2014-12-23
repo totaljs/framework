@@ -62,6 +62,10 @@ exports.install = function(framework) {
     framework.route('/post/xml/', plain_post_xml, ['xml']);
     framework.route('/multiple/', plain_multiple, ['post', 'get', 'put', 'delete']);
     framework.route('/post/schema/', plain_post_schema_parse, ['post', '*test/User']);
+    framework.route('/rest/', plain_rest, ['post', 'json']);
+    framework.route('/rest/', plain_rest, ['put', 'json']);
+    framework.route('/rest/', plain_rest, ['get']);
+    framework.route('/rest/', plain_rest, ['delete']);
 
     framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);
     framework.route('/put/parse/', plain_put_parse, ['put']);
@@ -114,6 +118,10 @@ exports.install = function(framework) {
     // maximumSize
     framework.websocket('/', socket);
 };
+
+function plain_rest() {
+    this.plain(this.req.method);
+}
 
 function view_precomile() {
     var self = this;
