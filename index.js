@@ -93,6 +93,10 @@ global.RESOURCE = function(name, key) {
     return framework.resource(name, key);
 };
 
+global.TRANSLATE = function(name, key) {
+    return framework.translate(name, key);
+};
+
 global.LOG = function() {
     return framework.log.apply(framework, arguments);
 };
@@ -127,7 +131,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 35)';
+    this.version_header = '1.7.0 (build: 36)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -533,7 +537,8 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
         flip: options.flip,
         flop: options.flop,
         sepia: options.sepia,
-        quality: options.quality
+        quality: options.quality,
+        cache: options.cache === false ? false : true
     };
 
     return self;
@@ -659,6 +664,11 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
         var count = 0;
 
         for (var i = 0; i < flags.length; i++) {
+
+            if (typeof(flags[i]) === NUMBER) {
+                timeout = flags[i];
+                continue;
+            }
 
             var first = flags[i][0];
 
@@ -1104,6 +1114,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
         protocols: protocols || [],
         allow: allow || [],
         length: (length || self.config['default-websocket-request-length']) * 1024,
+        isWEBSOCKET: true,
         isMEMBER: isMember,
         isJSON: isJSON,
         isBINARY: isBINARY,
@@ -2338,7 +2349,8 @@ Framework.prototype.usage = function(detailed) {
     @content {String} :: Content of CSS file
     return {String}
 */
-Framework.prototype.onCompileCSS = null;
+Framework.prototype.onCompileStyle = null;
+Framework.prototype.onCompileCSS = null; // obsolete
 
 /*
     3rd JavaScript compiler (Sync)
@@ -2346,7 +2358,8 @@ Framework.prototype.onCompileCSS = null;
     @content {String} :: Content of JavaScript file
     return {String}
 */
-Framework.prototype.onCompileJS = null;
+Framework.prototype.onCompileScript = null;
+Framework.prototype.onCompileJS = null;  // obsolete
 
 /**
  * Compile content (JS, CSS, HTML)
@@ -2569,13 +2582,14 @@ Framework.prototype.responseStatic = function(req, res) {
     if (res.success)
         return self;
 
-    var name = req.url;
-    var index = name.indexOf('?');
+    var extension = req.extension;
+    if (self.config['static-accepts'].indexOf('.' + extension) === -1) {
+        self.response404(req, res);
+        return self;
+    }
 
-    if (index !== -1)
-        name = name.substring(0, index);
-
-    index = name.lastIndexOf('/');
+    var name = req.uri.pathname;
+    var index = name.lastIndexOf('/');
     var resizer = self.routes.resize[name.substring(0, index + 1)] || null;
     var isResize = false;
     var filename = undefined;
@@ -2598,7 +2612,9 @@ Framework.prototype.responseStatic = function(req, res) {
         return self;
     }
 
-    self.responseImage(req, res, filename, function(image) {
+    var method = resizer.cache ? self.responseImage : self.responseImageWithoutCache;
+
+    method.call(self, req, res, filename, function(image) {
 
         if (resizer.width || resizer.height) {
             if (resizer.width && resizer.height)
@@ -2737,48 +2753,35 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         return self;
     }
 
-    var extension = path.extname(key).substring(1);
-
-    if (extension.length === 0)
-        extension = path.extname(name).substring(1);
-
-    var index = extension.lastIndexOf(';');
-    if (index !== -1)
-        extension = extension.substring(0, index);
-
-    if (self.config['static-accepts'].indexOf('.' + extension) === -1) {
-        self.response404(req, res);
-        return self;
+    var extension = req.extension;
+    if (!extension) {
+        if (key)
+            extension = path.extname(key);
+        if (!extension)
+            extension = path.extname(name);
     }
 
     var etag = utils.etag(req.url, self.config['etag-version']);
 
     if (!self.config.debug && req.headers['if-none-match'] === etag) {
-
         res.success = true;
         res.writeHead(304);
         res.end();
-
         self.stats.response.notModified++;
         self._request_stats(false, req.isStaticFile);
-
         if (!req.isStaticFile)
             self.emit('request-end', req, res);
-
         return self;
     }
 
     // JS, CSS
     if (name === undefined) {
-
         if (self.isProcessing(key)) {
-
             if (req.processing > self.config['default-request-timeout']) {
                 // timeout
                 self.response408(req, res);
                 return;
             }
-
             req.processing += 500;
             setTimeout(function() {
                 framework.responseFile(req, res, filename, downloadName, headers, key);
@@ -2796,7 +2799,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         return self;
     }
 
-    index = name.lastIndexOf(';');
+    var index = name.lastIndexOf(';');
     var size = null;
 
     if (index === -1)
@@ -2811,7 +2814,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
     returnHeaders['Accept-Ranges'] = 'bytes';
     returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public';
-    returnHeaders['Expires'] = new Date().add('d', 15);
+
+    if (!res.getHeader('Expires'))
+        returnHeaders['Expires'] = new Date().add('d', 15);
+
     returnHeaders['Vary'] = 'Accept-Encoding';
 
     if (headers)
@@ -2820,7 +2826,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     if (downloadName && downloadName.length > 0)
         returnHeaders['Content-Disposition'] = 'attachment; filename="' + downloadName + '"';
 
-    if (etag.length > 0)
+    if (!res.getHeader('ETag') && etag.length > 0)
         returnHeaders['Etag'] = etag;
 
     if (!returnHeaders[RESPONSE_HEADER_CONTENTTYPE])
@@ -2841,34 +2847,22 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     if (size !== null && size !== '0' && !compress)
         returnHeaders[RESPONSE_HEADER_CONTENTLENGTH] = size;
 
-    var stream;
-
-    if (compress && supportsGzip) {
-
-        returnHeaders['Content-Encoding'] = 'gzip';
-        res.writeHead(200, returnHeaders);
-        stream = fs.createReadStream(name).pipe(zlib.createGzip());
-        stream.pipe(res);
-
-        self.stats.response.file++;
-        self._request_stats(false, req.isStaticFile);
-
-        if (!req.isStaticFile)
-            self.emit('request-end', req, res);
-
-        return self;
-
-    }
-
-    res.writeHead(200, returnHeaders);
-    stream = fs.createReadStream(name);
-    stream.pipe(res);
     self.stats.response.file++;
     self._request_stats(false, req.isStaticFile);
 
+    if (compress && supportsGzip) {
+        returnHeaders['Content-Encoding'] = 'gzip';
+        res.writeHead(200, returnHeaders);
+        fs.createReadStream(name).pipe(zlib.createGzip()).pipe(res);
+        if (!req.isStaticFile)
+            self.emit('request-end', req, res);
+        return self;
+    }
+
+    res.writeHead(200, returnHeaders);
+    fs.createReadStream(name).pipe(res);
     if (!req.isStaticFile)
         self.emit('request-end', req, res);
-
     return self;
 };
 
@@ -2910,7 +2904,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
         headers: h
     };
 
-    var connection = options.protocol === 'https:' ? https : http;
+    var connection = options.protocol === 'https:' ? require('https') : http;
     var supportsGZIP = (req.headers['accept-encoding'] || '').lastIndexOf('gzip') !== -1;
 
     var client = connection.get(options, function(response) {
@@ -4249,8 +4243,10 @@ Framework.prototype._request = function(req, res) {
         res.setHeader('Mode', 'debug');
 
     req.isStaticFile = framework.config['allow-handle-static-files'] ? utils.isStaticFile(req.uri.pathname) : false;
-    self._request_stats(true, true);
+    if (req.isStaticFile)
+        req.extension = path.extname(req.uri.pathname).substring(1);
 
+    self._request_stats(true, true);
     if (self._length_request_middleware === 0)
         return self._request_continue(req, res, headers, protocol);
 
@@ -5429,10 +5425,17 @@ Framework.prototype.resource = function(name, key) {
  * @param {String} language A resource filename.
  * @return {String}
  */
-Framework.prototype.translate = function(text, language) {
+Framework.prototype.translate = function(language, text) {
+
+    if (!text) {
+        text = language;
+        language = undefined;
+    }
+
     var value = this.resource(language, 'T' + text.hash());
     if (!value)
         return text;
+
     return value;
 };
 
@@ -5737,7 +5740,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
 
     if (isSystem)
         req.path = [url];
-
+/*
     var key;
 
     if (!noCache)
@@ -5745,9 +5748,9 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
 
     if (!isSystem && !noCache && self.temporary.other[key])
         return self.temporary.other[key];
+*/
 
     var length = self.routes.web.length;
-
     for (var i = 0; i < length; i++) {
 
         var route = self.routes.web[i];
@@ -5770,21 +5773,19 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
         }
 
         if (route.flags !== null && route.flags.length > 0) {
-
             var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
             if (result === -1)
                 req.isAuthorized = false;
 
             if (result < 1)
                 continue;
-
         } else {
-
             if (flags && flags.indexOf('xss') !== -1)
                 continue;
         }
 
-        return self.lookup_cache(req, route, key);
+        // return self.lookup_cache(req, route, key);
+        return route;
     }
 
     return null;
@@ -5800,10 +5801,8 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
  * @return {Object}
  */
 Framework.prototype.lookup_cache = function(req, route, key, noCache) {
-
     if (noCache === true || route.isASTERIX || !route.isMEMBER || route.param.length > 0)
         return route;
-
     this.temporary.other[key] = route;
     return route;
 };
@@ -5823,7 +5822,6 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
     for (var i = 0; i < length; i++) {
 
         var route = self.routes.websockets[i];
-
         if (!framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
             continue;
 
@@ -7720,10 +7718,7 @@ Controller.prototype.clear = function() {
  * @return {String}
  */
 Controller.prototype.translate = function(text) {
-    var value = framework.resource(this.language, 'T' + text.hash());
-    if (!value)
-        return text;
-    return value;
+    return framework.translate(this.language, text);
 };
 
 /**

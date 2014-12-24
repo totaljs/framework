@@ -497,21 +497,20 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 
 exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 
-    if (route.isXHR && !req.xhr)
-        return 0;
-
-    var method = req.method;
-    if (route.method) {
-        if (route.method !== method)
+    if (!route.isWEBSOCKET) {
+        if (route.isXHR && !req.xhr)
             return 0;
-    } else if (route.flags.indexOf(method.toLowerCase()) === -1)
+        var method = req.method;
+        if (route.method) {
+            if (route.method !== method)
+                return 0;
+        } else if (route.flags.indexOf(method.toLowerCase()) === -1)
+                return 0;
+        if (route.isREFERER && req.flags.indexOf('referer') === -1)
             return 0;
-
-    if (route.isREFERER && req.flags.indexOf('referer') === -1)
-        return 0;
-
-    if (route.isJSON && req.flags.indexOf('json') === -1)
-        return 0;
+        if (route.isJSON && req.flags.indexOf('json') === -1)
+            return 0;
+    }
 
     for (var i = 0, length = req.flags.length; i < length; i++) {
 
@@ -555,6 +554,10 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
             case 'xhr':
             case '+xhr':
                 if (!route.isBOTH && !route.isXHR)
+                    return 0;
+                continue;
+            case 'xss':
+                if (!route.isXSS)
                     return 0;
                 continue;
         }
@@ -714,7 +717,7 @@ HttpFile.prototype.pipe = function(stream, options) {
 */
 HttpFile.prototype.isImage = function() {
     var self = this;
-    return self.contentType.indexOf('image/') !== -1;
+    return self.type.indexOf('image/') !== -1;
 };
 
 /*
@@ -722,7 +725,7 @@ HttpFile.prototype.isImage = function() {
 */
 HttpFile.prototype.isVideo = function() {
     var self = this;
-    return self.contentType.indexOf('video/') !== -1;
+    return self.type.indexOf('video/') !== -1;
 };
 
 /*
@@ -730,7 +733,7 @@ HttpFile.prototype.isVideo = function() {
 */
 HttpFile.prototype.isAudio = function() {
     var self = this;
-    return self.contentType.indexOf('audio/') !== -1;
+    return self.type.indexOf('audio/') !== -1;
 };
 
 /*
@@ -1007,8 +1010,13 @@ function autoprefixer_keyframes(value) {
 
 exports.compile_css = function(value, minify) {
 
-    if (framework.onCompileCSS !== null)
+    if (framework.onCompileStyle !== null)
+        return framework.onCompileStyle('', value);
+
+    if (framework.onCompileCSS !== null) {
+        console.log('OBSOLETE: framework.onCompileCSS() is deprecated, use framework.onCompileStyle()');
         return framework.onCompileCSS('', value);
+    }
 
     try {
         return compile_autovendor(value);
@@ -1259,9 +1267,16 @@ exports.compile_javascript = function(source) {
     var isFramework = (typeof(framework) === OBJECT);
 
     try {
+
         if (isFramework) {
-            if (framework.onCompileJS !== null)
+
+            if (framework.onCompileScript !== null)
+                return framework.onCompileScript('', source);
+
+            if (framework.onCompileJS !== null) {
+                console.log('OBSOLETE: framework.onCompileJS() is deprecated, use framework.onCompileScript()');
                 return framework.onCompileJS('', source);
+            }
         }
 
         return JavaScript(source);
@@ -1672,7 +1687,7 @@ function view_parse_localization(content, language) {
         return content;
 
     var prepare = function(content) {
-        return framework.resource(language || '', 'T' + content.hash()) || content;
+        return framework.translate(language, content);
     };
 
     while (command !== null) {
@@ -1871,10 +1886,10 @@ function view_prepare(command, dynamicCommand, functions) {
     var name = command.substring(0, index);
 
     if (name === dynamicCommand)
-        return '(' + command + ').toString().encode()';
+        return '$STRING(' + command + ').encode()';
 
     if (name[0] === '!' && name.substring(1) === dynamicCommand)
-        return '(' + command.substring(1) + ').toString()';
+        return '$STRING(' + command.substring(1) + ')';
 
     switch (name) {
         case 'foreach':
@@ -2016,6 +2031,8 @@ function view_prepare(command, dynamicCommand, functions) {
 
         case 'routeJS':
         case 'routeCSS':
+        case 'routeScript':
+        case 'routeStyle':
         case 'routeImage':
         case 'routeFont':
         case 'routeDownload':
