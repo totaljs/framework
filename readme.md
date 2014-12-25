@@ -5,7 +5,7 @@
 web framework for node.js
 =========================
 
-__total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have dependencies and it has very good documentation + contains many examples. Please support the framework on GitHub and on other social networks.
+__total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it has very good documentation + contains many examples. Please support the framework on GitHub and on other social networks.
 
 ```
 $ npm install total.js
