@@ -8605,25 +8605,36 @@ Controller.prototype.place = function(name) {
 
     var output = '';
     for (var i = 1; i < length; i++) {
-
         var val = arguments[i];
-
-        if (val.indexOf('<') !== -1) {
-            output += val;
-            continue;
-        }
-
-        if (val.lastIndexOf(EXTENSION_JS) === -1) {
-            output += val;
-            continue;
-        }
-
-        var tmp = val.substring(0, 7);
-        var isRoute = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
-        output += '<script type="text/javascript" src="' + (isRoute ? self.routeJS(val) : val) + '"></script>';
+        if (val === null || typeof(val) === undefined)
+            val = '';
+        else
+            val = val.toString();
+        output += val;
     }
 
     self.repository[key] = (self.repository[key] || '') + output;
+    return self;
+};
+
+Controller.prototype.section = function(name, value, replace) {
+    
+    var self = this;
+    var key = '$section_' + name;
+
+    if (value === undefined)
+        return self.repository[key];
+
+    if (replace) {
+        self.repository[key] = value;
+        return self;
+    }
+
+    if (!self.repository[key])
+        self.repository[key] = value;
+    else
+        self.repository[key] += value;
+
     return self;
 };
 

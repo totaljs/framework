@@ -247,6 +247,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: Controller.date(type, date)
 - added: Controller.callback([viewName])
 - added: HttpFile.type (HttpFile.contentType is deprecated)
+- added: controller.section(name, [value]);
 
 - updated: NoSQL v2.0.8
 - updated: String.parseDate('yyyy-MM-dd HH:mm:ss') - time is optional
@@ -265,6 +266,7 @@ Framework loads modules, packages, models, definitions, controllers
 - updated: controller.validate('schema_name', model);
 - updated: Angular.js version
 - updated: @{css()} and @{js()} supports multiple values
+- updated: @{place()} doesn't add `<script>` tag automatically
 
 - renamed: framework.on('expire') -> framework.on('cache-expire')
 - renamed: framework.accepts(extension, [contentType]) -> framework.accept(extension, [contentType])

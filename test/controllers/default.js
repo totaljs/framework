@@ -546,8 +546,7 @@ function viewViews() {
     assert.ok(output.contains('<link rel="next" href="http://127.0.0.1:8001/a/3/" />'), name + 'next');
     assert.ok(output.contains('<link rel="prev" href="http://127.0.0.1:8001/a/1/" />'), name + 'prev');
     assert.ok(output.contains('<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>'), name + 'head');
-    assert.ok(output.contains('src="/js/jquery.js"'), name + 'place (routeJS)');
-    assert.ok(output.contains('src="//fabricjs.js"'), name + 'place');
+    assert.ok(output.contains('PLACE'), name + 'place');
     assert.ok(output.contains('#dynamic<b>OK</b>#'), name + 'dynamic view');
     assert.ok(self.repository.INLINE === 6, name + 'INLINE assign 2');
 
