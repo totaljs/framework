@@ -944,6 +944,9 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                     case 'number':
                         item[property].push(framework_utils.parseFloat(tmp));
                         break;
+                    case 'object':
+                        item[property].push(tmp);
+                        break;
                     default:
 
                         var entity = self.parent.get(value);
