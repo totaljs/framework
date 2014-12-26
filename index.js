@@ -10157,7 +10157,7 @@ Controller.prototype.baa = function(label) {
 
     var self = this;
 
-    if (self.req.headers['authorization'] !== undefined)
+    if (label === undefined)
         return self.req.authorization();
 
     framework.responseContent(self.req, self.res, 401, '401: NOT AUTHORIZED', CONTENTTYPE_TEXTPLAIN, false, { 'WWW-Authenticate': 'Basic realm="' + (label || 'Administration') + '"'});
