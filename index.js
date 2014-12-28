@@ -131,7 +131,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 37)';
+    this.version_header = '1.7.0 (build: 38)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -11958,6 +11958,20 @@ http.ServerResponse.prototype.continue = function() {
         return;
 
     framework.responseStatic(self.req, self);
+    return self;
+};
+
+/**
+ * Response redirect
+ * @param {String} url
+ * @param {Boolean} permanent Optional, default: false.
+ * @return {Framework}
+ */
+http.ServerResponse.prototype.redirect = function(url, permanent) {
+    var self = this;
+    if (self.headersSent)
+        return;
+    framework.responseRedirect(self.req, self, url, permanent);
     return self;
 };
 

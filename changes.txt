@@ -79,6 +79,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: response.throw431([problem])
 - added: response.throw500([error])
 - added: response.throw501([problem])
+- added: response.redirect(url, [permanent])
 - added: view supports localization
 - added: assertion testing --> framework sets global.assert = require('assert')
 - added: module/controller supports dependencies --> exports.dependencies = ['moduleA', 'moduleB'];
