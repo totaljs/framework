@@ -608,9 +608,10 @@ SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
         return self;
     }
 
-    var tmp = self.make(obj).$prepare();
-    var err = tmp.$validate();
-    callback(err.hasError() ? err : null, tmp);
+    self.make(obj, function(err, model) {
+        callback(err, model);
+    });
+
     return self;
 };
 
@@ -1605,9 +1606,10 @@ ErrorBuilder.prototype._resource = function() {
  * @param {String} name  Property name.
  * @param {String or Error} error Error message.
  * @param {String} path  Current path (in object).
+ * @param {Number} index Array Index, optional.
  * @return {ErrorBuilder}
  */
-ErrorBuilder.prototype.add = function(name, error, path) {
+ErrorBuilder.prototype.add = function(name, error, path, index) {
     var self = this;
     self.isPrepared = false;
 
@@ -1641,7 +1643,8 @@ ErrorBuilder.prototype.add = function(name, error, path) {
     self.items.push({
         name: name,
         error: typeof(error) === STRING ? error : (error || '').toString() || '@',
-        path: path
+        path: path,
+        index: index
     });
 
     self.count = self.items.length;
@@ -1654,10 +1657,11 @@ ErrorBuilder.prototype.add = function(name, error, path) {
  * @param {String} name  Property name.
  * @param {String or Error} error Error message.
  * @param {String} path  Current path (in object).
+ * @param {Number} index Array Index, optional.
  * @return {ErrorBuilder}
  */
-ErrorBuilder.prototype.push = function(name, error, path) {
-    return this.add(name, error, path);
+ErrorBuilder.prototype.push = function(name, error, path, index) {
+    return this.add(name, error, path, index);
 };
 
 /**

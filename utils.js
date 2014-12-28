@@ -1110,7 +1110,7 @@ exports.GUID = function(max) {
  * @param {String} path Internal, current path
  * @return {ErrorBuilder}
  */
-exports.validate = function(model, properties, prepare, builder, resource, path, collection) {
+exports.validate = function(model, properties, prepare, builder, resource, path, collection, index) {
 
     if (typeof(builder) === FUNCTION && resource === undefined) {
         resource = builder;
@@ -1161,17 +1161,17 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
             value = model[name]();
 
         if (type !== OBJECT && isSchema) {
-            collection = builders.schema('default').collection;
+            // collection = builders.schema('default').collection;
             if (builders.isJoin(collection, name))
                 type = OBJECT;
         }
 
         if (type === OBJECT && !exports.isDate(value)) {
-
             if (isSchema) {
                 var schema = collection[schemaName];
                 if (schema) {
                     schema = schema.schema[name] || null;
+
                     if (schema === Date || schema === String || schema === Number || schema === Boolean) {
                         // Empty
                     } else if (schema !== null && typeof(schema) === STRING) {
@@ -1183,11 +1183,11 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
                         if (isArray) {
 
                             if (!(value instanceof Array)) {
-                                error.add(name, '@', current + name);
+                                error.add(name, '@', current + name, index);
                                 continue;
                             }
 
-                            // Schema not exists
+                            // The schema not exists
                             if (collection[schema] === undefined) {
 
                                 var result2 = prepare(name, value, current + name, schemaName, model);
@@ -1197,18 +1197,18 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
                                 type = typeof(result2);
 
                                 if (type === STRING) {
-                                    error.add(name, result2, current + name);
+                                    error.add(name, result2, current + name, index);
                                     continue;
                                 }
 
                                 if (type === BOOLEAN) {
                                     if (!result2)
-                                        error.add(name, '@', current + name);
+                                        error.add(name, '@', current + name, index);
                                     continue;
                                 }
 
                                 if (result2.isValid === false)
-                                    error.add(name, result2.error, current + name);
+                                    error.add(name, result2.error, current + name, index);
 
                                 continue;
                             }
@@ -1216,7 +1216,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 
                             var sublength = value.length;
                             for (var j = 0; j < sublength; j++)
-                                exports.validate(value[j], schema, prepare, error, resource, current + name, collection);
+                                exports.validate(value[j], schema, prepare, error, resource, current + name, collection, j);
 
                             continue;
                         }
@@ -1236,18 +1236,18 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
         type = typeof(result);
 
         if (type === STRING) {
-            error.add(name, result, current + name);
+            error.add(name, result, current + name, index);
             continue;
         }
 
         if (type === BOOLEAN) {
             if (!result)
-                error.add(name, '@', current + name);
+                error.add(name, '@', current + name, index);
             continue;
         }
 
         if (result.isValid === false)
-            error.add(name, result.error, current + name);
+            error.add(name, result.error, current + name, index);
     }
 
     return error;

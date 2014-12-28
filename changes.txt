@@ -155,6 +155,7 @@ Framework loads modules, packages, models, definitions, controllers
 - fixed: subject encoding in mail (supports UTF-8)
 - fixed: sender name encoding in mail (supports UTF-8)
 - fixed: Utils.trim()
+- fixed: Utils.validation() (problem with schema array)
 - fixed: Response.cookie()
 - fixed: String.prototype.format() --> null/undefined --> returns empty string
 

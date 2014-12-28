@@ -131,7 +131,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 36)';
+    this.version_header = '1.7.0 (build: 37)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -8618,7 +8618,7 @@ Controller.prototype.place = function(name) {
 };
 
 Controller.prototype.section = function(name, value, replace) {
-    
+
     var self = this;
     var key = '$section_' + name;
 
