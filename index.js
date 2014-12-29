@@ -131,7 +131,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 38)';
+    this.version_header = '1.7.0 (build: 39)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -819,6 +819,11 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
     if (!(middleware instanceof Array))
         middleware = null;
 
+    var isMULTIPLE = false;
+
+    if (method.indexOf(',') !== -1)
+        isMULTIPLE = true;
+
     if (method.indexOf(',') !== -1 || method === '')
         method = undefined;
     else
@@ -838,6 +843,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
         length: (length || self.config['default-request-length']) * 1024,
         middleware: middleware,
         timeout: timeout === undefined ? self.config['default-request-timeout'] : timeout,
+        isMULTIPLE: isMULTIPLE,
         isJSON: flags.indexOf('json') !== -1,
         isXML: flags.indexOf('xml') !== -1,
         isRAW: isRaw,

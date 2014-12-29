@@ -508,7 +508,7 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
                 return 0;
         if (route.isREFERER && req.flags.indexOf('referer') === -1)
             return 0;
-        if (route.isJSON && req.flags.indexOf('json') === -1)
+        if (!route.isMULTIPLE && route.isJSON && req.flags.indexOf('json') === -1)
             return 0;
     }
 
@@ -517,6 +517,11 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
         var flag = req.flags[i];
 
         switch (flag) {
+
+            case 'json':
+                if (!route.isJSON)
+                    return 0;
+                continue;
 
             case 'proxy':
                 if (!route.isPROXY)
