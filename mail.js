@@ -250,7 +250,7 @@ Message.prototype.attachmentInline = function(filename, name, contentId) {
     if (name === undefined)
         name = path.basename(filename);
 
-    self.files.push({name: name, filename: filename, contentType: utils.getContentType(path.extname(name)), disposition: 'inline', contentId: contentId});
+    self.files.push({name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)), disposition: 'inline', contentId: contentId});
     return self;
 };
 
@@ -387,11 +387,12 @@ Message.prototype._send = function(socket, options) {
 
     var length = self.addressTo.length;
     var builder = '';
+    var mail;
 
     if (length > 0) {
 
         for (var i = 0; i < length; i++) {
-            var mail = '<' + self.addressTo[i] + '>';
+            mail = '<' + self.addressTo[i] + '>';
             buffer.push('RCPT TO: ' + mail);
             builder += (builder !== '' ? ', ' : '') + mail;
         }
@@ -404,7 +405,7 @@ Message.prototype._send = function(socket, options) {
     if (length > 0) {
 
         for (var i = 0; i < length; i++) {
-            var mail = '<' + self.addressCC[i] + '>';
+            mail = '<' + self.addressCC[i] + '>';
             buffer.push('RCPT TO: ' + mail);
             builder += (builder !== '' ? ', ' : '') + mail;
         }
@@ -429,8 +430,8 @@ Message.prototype._send = function(socket, options) {
     message.push('Subject: ' + unicode_encode(self.subject));
 
     length = self.addressReply.length;
-    if (length > 0) {
 
+    if (length > 0) {
         for (var i = 0; i < length; i++)
             builder += (builder !== '' ? ', ' : '') + '<' + self.addressReply[i] + '>';
 

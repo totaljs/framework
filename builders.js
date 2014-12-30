@@ -262,7 +262,7 @@ SchemaBuilderEntity.prototype.addRule = function(name, value) {
     var self = this;
 
     if (value === undefined) {
-        fn = name;
+        value = name;
         name = 'default';
     }
 
@@ -525,7 +525,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 
     // self._setStateToModel(model, 1, 1);
     return framework_utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
-}
+};
 
 /**
  * Create a default object according the schema
@@ -796,6 +796,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         return self.default();
 
     var tmp;
+    var entity;
     var item = framework_utils.extend({}, obj, true);
     var properties = Object.keys(item);
     var defaults = self.onDefault;
@@ -925,35 +926,35 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                     continue;
                 }
 
-                var tmp = model[property][j];
+                var tmpB = model[property][j];
 
                 switch (value.toLowerCase()) {
                     case 'string':
                     case 'varchar':
                     case 'text':
-                        item[property].push((tmp || '').toString());
+                        item[property].push((tmpB || '').toString());
                         break;
                     case 'bool':
                     case 'boolean':
-                        tmp = (tmp || '').toString().toLowerCase();
-                        item[property].push(tmp === 'true' || tmp === '1');
+                        tmpB = (tmpB || '').toString().toLowerCase();
+                        item[property].push(tmpB === 'true' || tmpB === '1');
                         break;
                     case 'int':
                     case 'integer':
-                        item[property].push(framework_utils.parseInt(tmp));
+                        item[property].push(framework_utils.parseInt(tmpB));
                         break;
                     case 'number':
-                        item[property].push(framework_utils.parseFloat(tmp));
+                        item[property].push(framework_utils.parseFloat(tmpB));
                         break;
                     case 'object':
-                        item[property].push(tmp);
+                        item[property].push(tmpB);
                         break;
                     default:
 
-                        var entity = self.parent.get(value);
+                        entity = self.parent.get(value);
 
                         if (entity) {
-                            item[property][j] = entity.prepare(tmp, dependencies);
+                            item[property][j] = entity.prepare(tmpB, dependencies);
                             if (dependencies)
                                 dependencies.push({ name: value, value: item[property][j] });
                         }
@@ -1018,7 +1019,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
             continue;
         }
 
-        var entity = self.parent.get(value);
+        entity = self.parent.get(value);
 
         if (entity) {
             item[property] = entity.prepare(val);
@@ -1567,7 +1568,7 @@ ErrorBuilder.prototype = {
             self.prepare();
         return self._transform();
     }
-}
+};
 
 /**
  * Resource setting

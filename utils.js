@@ -439,7 +439,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
     }
 
     return e;
-}
+};
 
 /**
  * Create a request to a specific URL
@@ -630,7 +630,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
     }
 
     return e;
-}
+};
 
 /**
  * Send a stream through HTTP
@@ -1125,12 +1125,13 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
     var isSchema = false;
     var schemaName = '';
     var definition = null;
+    var schema;
 
     if (!(error instanceof builders.ErrorBuilder))
         error = new builders.ErrorBuilder(resource);
 
     if (typeof(properties) === STRING) {
-        var schema = collection === undefined ? builders.validation(properties) : collection[properties] === undefined ? '' : collection[properties].properties;
+        schema = collection === undefined ? builders.validation(properties) : collection[properties] === undefined ? '' : collection[properties].properties;
         if (schema.length !== 0) {
             schemaName = properties;
             properties = schema;
@@ -1168,7 +1169,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 
         if (type === OBJECT && !exports.isDate(value)) {
             if (isSchema) {
-                var schema = collection[schemaName];
+                schema = collection[schemaName];
                 if (schema) {
                     schema = schema.schema[name] || null;
 
@@ -1442,7 +1443,7 @@ exports.getWebSocketFrame = function(code, message, type) {
     lengthBuffer.copy(frameBuffer, 1, 0, lengthBuffer.length);
     messageBuffer.copy(frameBuffer, lengthBuffer.length + 1, 0, messageLength);
     return frameBuffer;
-}
+};
 
 /**
  * Get bytes of WebSocket frame message
@@ -1688,7 +1689,7 @@ if (!String.prototype.replaceAt) {
     String.prototype.replaceAt = function(index, character) {
         var self = this;
         return self.substr(0, index) + character + self.substr(index + character.length);
-    }
+    };
 }
 
 /**
@@ -1763,7 +1764,7 @@ String.prototype.hash = function(type, salt) {
 
 function string_hash(s) {
     var hash = 0, i, char;
-    if (s.length == 0)
+    if (s.length === 0)
         return hash;
     var l = s.length;
     for (i = 0; i < l; i++) {
@@ -1772,7 +1773,7 @@ function string_hash(s) {
         hash |= 0; // Convert to 32bit integer
     }
     return hash;
-};
+}
 
 /*
     Count text in string
@@ -2600,7 +2601,7 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
         num = num.substring(0, index);
     }
 
-    var index = -1;
+    index = -1;
     for (var i = num.length - 1; i >= 0; i--) {
         index++;
         if (index > 0 && index % 3 === 0)
@@ -3398,7 +3399,7 @@ Async.prototype = {
         var self = this;
         return 100 - Math.floor((self._count * 100) / self._max);
     }
-}
+};
 
 Async.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
     constructor: {
@@ -3817,7 +3818,7 @@ function queue_next(name) {
             });
         });
     })(name);
-};
+}
 
 /**
  * Queue list

@@ -785,7 +785,7 @@ function compile_autovendor(css) {
 
 
     if (isAuto)
-        css = autoprefixer(css)
+        css = autoprefixer(css);
 
     return css.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
 }
@@ -1734,7 +1734,7 @@ function view_parse(content, minify) {
         if (value === '')
             return '$EMPTY';
         if (value.match(/\n|\t|\r|\'|\\/) !== null)
-            return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END
+            return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END;
         return DELIMITER + value + DELIMITER;
     }
 
@@ -1753,18 +1753,19 @@ function view_parse(content, minify) {
     var builderTMP = '';
     var sectionName = '';
     var isSitemap = false;
+    var text;
 
     while (command !== null) {
 
         if (old !== null) {
-            var text = content.substring(old.end + 1, command.beg);
+            text = content.substring(old.end + 1, command.beg);
             if (text !== '') {
                 if (view_parse_plus(builder))
                     builder += '+';
                 builder += escaper(text);
             }
         } else {
-            var text = content.substring(0, command.beg);
+            text = content.substring(0, command.beg);
             if (text !== '') {
                 if (view_parse_plus(builder))
                     builder += '+';
@@ -1831,7 +1832,7 @@ function view_parse(content, minify) {
         } else if (cmd === 'else') {
             builder += '} else {$output+=$EMPTY';
         } else if (cmd === 'endif' || cmd === 'fi') {
-            builder += '}$output+=$EMPTY'
+            builder += '}$output+=$EMPTY';
         } else {
             tmp = view_prepare(command.command, newCommand, functionsName);
 
@@ -1849,7 +1850,7 @@ function view_parse(content, minify) {
     }
 
     if (old !== null) {
-        var text = content.substring(old.end + 1);
+        text = content.substring(old.end + 1);
         if (text.length > 0)
             builder += '+' + escaper(text);
     }
@@ -1995,7 +1996,7 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'url':
             if (command.indexOf('(') !== -1)
                 return 'self.$' + command;
-            return command = 'url';
+            return 'self.' + command;
 
         case 'title':
         case 'description':
@@ -2185,7 +2186,7 @@ function view_is_assign(value) {
 
 function view_find_command(content, index) {
 
-    var index = content.indexOf('@{', index);
+    index = content.indexOf('@{', index);
     if (index === -1)
         return null;
 
@@ -2221,7 +2222,7 @@ function view_find_command(content, index) {
 
 function view_find_localization(content, index) {
 
-    var index = content.indexOf('@(', index);
+    index = content.indexOf('@(', index);
     if (index === -1)
         return null;
 

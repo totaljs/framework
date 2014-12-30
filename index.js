@@ -342,7 +342,7 @@ Framework.prototype = {
 
         return self._async;
     }
-}
+};
 
 Framework.prototype.__proto__ = new events.EventEmitter();
 
@@ -557,6 +557,8 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
 Framework.prototype.route = function(url, funcExecute, flags, length, middleware, timeout, options) {
 
     var name;
+    var tmp;
+    var viewname;
 
     if (typeof(funcExecute) === 'string' && flags !== undefined) {
         // ID
@@ -580,7 +582,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
         url = url.substring(0, url.length - 1);
 
     if (utils.isArray(length)) {
-        var tmp = middleware;
+        tmp = middleware;
         middleware = length;
         length = tmp;
     }
@@ -592,20 +594,20 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
         name = url;
 
     if (type === OBJECT || funcExecute instanceof Array) {
-        var tmp = funcExecute;
+        tmp = funcExecute;
         funcExecute = flags;
         flags = tmp;
     }
 
     if (type === STRING) {
         // viewname
-        var viewname = funcExecute;
+        viewname = funcExecute;
         funcExecute = function(name) {
             this.view(viewname);
         };
     } else if (typeof(funcExecute) !== TYPE_FUNCTION) {
 
-        var viewname = url;
+        viewname = url;
 
         if (viewname.endsWith('/'))
             viewname = viewname.substring(0, viewname.length - 1);
@@ -660,7 +662,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
     if (flags) {
 
-        var tmp = [];
+        tmp = [];
         var count = 0;
 
         for (var i = 0; i < flags.length; i++) {
@@ -785,12 +787,12 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
     if (isMixed) {
         if (flags.indexOf('post') === -1 && flags.indexOf('put') === -1 && flags.indexOf('upload') === -1) {
             flags.push('upload');
-            priority++
+            priority++;
         }
     }
 
     if (flags.indexOf('upload') !== -1) {
-        if (flags.indexOf('post') === -1 && flag.indexOf('put') === -1) {
+        if (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) {
             flags.push('post');
             method += (method.length > 0 ? ',' : '') + 'post';
         }
@@ -996,17 +998,19 @@ Framework.prototype.use = function(name) {
  */
 Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, length, middleware, options) {
 
+    var tmp;
+
     if (url === '')
         url = '/';
 
     if (utils.isArray(length)) {
-        var tmp = middleware;
+        tmp = middleware;
         middleware = length;
         length = tmp;
     }
 
     if (typeof(funcExecute) === OBJECT) {
-        var tmp = flags;
+        tmp = flags;
         funcExecute = flags;
         flags = tmp;
     }
@@ -1062,9 +1066,10 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
     if (typeof(flags) === STRING)
         flags = flags[flags];
 
+    tmp = [];
+
     var isJSON = false;
     var isBINARY = false;
-    var tmp = [];
     var count = 0;
 
     if (flags === undefined)
@@ -1152,15 +1157,16 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, options) {
 
     var self = this;
+    var a;
 
     if (utils.isArray(fnValidation)) {
-        var a = fnExecute;
+        a = fnExecute;
         var b = middleware;
         middleware = fnValidation;
         fnValidation = a;
         fnExecute = b;
     } else if (utils.isArray(fnExecute)) {
-        var a = fnExecute;
+        a = fnExecute;
         fnExecute = middleware;
         middleware = a;
     }
@@ -1351,7 +1357,7 @@ Framework.prototype.load = function() {
     listing(dir, 0, arr);
 
     arr.forEach(function(item) {
-        self.install('controller', item.name, item.filename, undefined, undefined, undefined, true)
+        self.install('controller', item.name, item.filename, undefined, undefined, undefined, true);
     });
 
     self._routesSort();
@@ -1374,7 +1380,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
     var self = this;
     var obj = null;
 
-    if (type !== 'config' && type !== 'version' && typeof(name) === 'STRING') {
+    if (type !== 'config' && type !== 'version' && typeof(name) === STRING) {
         if (name.startsWith('http://') || name.startsWith('https://')) {
             if (typeof(declaration) === OBJECT) {
                 callback = options;
@@ -1390,7 +1396,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
     var tmp = null;
 
     if (t === OBJECT) {
-        var t = typeof(options);
+        t = typeof(options);
         if (t === TYPE_FUNCTION)
             callback = options;
         options = declaration;
@@ -1720,7 +1726,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
                 if (typeof(declaration) !== STRING)
                     declaration = declaration.toString();
 
-                var filename = directory + self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js').substring(1);
+                filename = directory + self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js').substring(1);
                 fs.writeFileSync(filename, declaration);
                 obj = require(filename);
                 (function(name, filename) {
@@ -1837,12 +1843,12 @@ Framework.prototype.install_prepare = function(noRecursive) {
 
     keys = Object.keys(self.temporary.dependencies);
 
-    clearTimeout(self.temporary.other['dependencies']);
-    self.temporary.other['dependencies'] = setTimeout(function() {
+    clearTimeout(self.temporary.other.dependencies);
+    self.temporary.other.dependencies = setTimeout(function() {
         var keys = Object.keys(framework.temporary.dependencies);
         if (keys.length > 0)
             throw new Error('Dependency exception (module): missing dependencies for: ' + keys.join(', ').trim());
-        delete self.temporary.other['dependencies'];
+        delete self.temporary.other.dependencies;
     }, 1500);
 
     if (keys.length === 0)
@@ -2095,8 +2101,10 @@ Framework.prototype.onValidation = null;
  */
 Framework.prototype.onMail = function(address, subject, body, callback, replyTo) {
 
+    var tmp;
+
     if (typeof(callback) === STRING) {
-        var tmp = replyTo;
+        tmp = replyTo;
         replyTo = callback;
         callback = tmp;
     }
@@ -2112,9 +2120,8 @@ Framework.prototype.onMail = function(address, subject, body, callback, replyTo)
 
     var self = this;
 
-    message.from(self.config['mail.address.from'] || '', self.config['name']);
-
-    var tmp = self.config['mail.address.reply'];
+    message.from(self.config['mail.address.from'] || '', self.config.name);
+    tmp = self.config['mail.address.reply'];
 
     if (replyTo)
         message.reply(replyTo);
@@ -2179,7 +2186,7 @@ Framework.prototype.onMeta = function() {
 
         switch (i) {
             case 0:
-                builder += '<title>' + (arg + (self.url !== '/' && !self.config['allow-custom-titles'] ? ' - ' + self.config['name'] : '')) + '</title>';
+                builder += '<title>' + (arg + (self.url !== '/' && !self.config['allow-custom-titles'] ? ' - ' + self.config.name : '')) + '</title>';
                 break;
             case 1:
                 builder += '<meta name="description" content="' + arg + '" />';
@@ -2598,7 +2605,7 @@ Framework.prototype.responseStatic = function(req, res) {
     var index = name.lastIndexOf('/');
     var resizer = self.routes.resize[name.substring(0, index + 1)] || null;
     var isResize = false;
-    var filename = undefined;
+    var filename;
 
     if (resizer !== null) {
         name = name.substring(index + 1);
@@ -2691,9 +2698,10 @@ Framework.prototype.isProcessed = function(filename) {
 Framework.prototype.isProcessing = function(filename) {
 
     var self = this;
+    var name;
 
     if (filename.url) {
-        var name = filename.url;
+        name = filename.url;
         var index = name.indexOf('?');
 
         if (index !== -1)
@@ -2702,7 +2710,7 @@ Framework.prototype.isProcessing = function(filename) {
         filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
     }
 
-    var name = self.temporary.processing[filename];
+    name = self.temporary.processing[filename];
     if (self.temporary.processing[filename] !== undefined)
         return true;
     return false;
@@ -2715,12 +2723,9 @@ Framework.prototype.isProcessing = function(filename) {
  * @return {Framework}
  */
 Framework.prototype.noCache = function(req, res) {
-
     req.noCache();
-
     if (res)
         res.noCache();
-
     return this;
 };
 
@@ -3871,7 +3876,7 @@ Framework.prototype.initialize = function(http, debug, options) {
     self._configure_versions();
 
     if (self.config['disable-strict-server-certificate-validation'] === true)
-        process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
     if (self.isTest)
         self._configure('config-test', false);
@@ -4494,7 +4499,6 @@ Framework.prototype._upgrade = function(req, socket, head) {
     func._async_middleware(websocket, function() {
         self._upgrade_prepare(req, websocket, path, headers);
     });
-
 };
 
 /**
@@ -4539,7 +4543,6 @@ Framework.prototype._upgrade_prepare = function(req, websocket, path, headers) {
 
         self._upgrade_continue(route, req, websocket, path);
     });
-
 };
 
 /**
