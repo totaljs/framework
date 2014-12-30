@@ -600,7 +600,6 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
     }
 
     if (type === STRING) {
-        // viewname
         viewname = funcExecute;
         funcExecute = function(name) {
             this.view(viewname);
@@ -7689,8 +7688,8 @@ Controller.prototype = {
 
     get viewname() {
         var name = this.req.path[this.req.path.length - 1];
-        if (name === '' || name === undefined)
-            name = '/';
+        if (name === '' || name === undefined || name === '/')
+            name = 'index';
         return name;
     }
 };
