@@ -8,7 +8,6 @@ var Internal = require('total.js/internal');
 var EOF = os.platform() === 'win32' ? '\r\n' : '\n';
 var $type = 1;
 
-// $type == 0 - full
 // $type == 1 - normal
 // $type == 2 - minimal
 // $type == 3 - angular
@@ -20,20 +19,8 @@ function createDirectory(directory) {
     arr.push('node_modules');
 
     if ($type < 2) {
-
         arr.push('views');
         arr.push('definitions');
-
-        if ($type == 0) {
-            arr.push('databases');
-            arr.push('workers');
-            arr.push('tests');
-            arr.push('logs');
-            arr.push('modules');
-            arr.push('source');
-            arr.push('resources');
-        }
-
         arr.push('public');
     }
 
@@ -109,7 +96,7 @@ function createFileIndex(directory) {
 }
 
 function createFileDefinitions(directory) {
-    fs.writeFileSync(path.join(directory, 'definitions', 'modules.js'), 'LyoqDQogKiBFeHRlcm5hbCBtb2R1bGVzDQogKi8NCg0KLy8gUmVhbC10aW1lIHdlYiB0cmFja2luZw0KSU5TVEFMTCgnbW9kdWxlJywgJ2h0dHBzOi8vbW9kdWxlcy50b3RhbGpzLmNvbS93ZWJjb3VudGVyL3YxLjAwL3dlYmNvdW50ZXIuanMnLCB7IHVybDogJy93ZWJjb3VudGVyLycgfSk7DQoNCi8vIEEgc2ltcGxlIERET1MgcHJvdGVjdGlvbg0KSU5TVEFMTCgnbW9kdWxlJywgJ2h0dHBzOi8vbW9kdWxlcy50b3RhbGpzLmNvbS9kZG9zL3YxLjAwL2Rkb3MuanMnKTs=', 'base64');
+    fs.writeFileSync(path.join(directory, 'definitions', 'modules.js'), 'LyoqDQogKiBFeHRlcm5hbCBtb2R1bGVzDQogKi8NCg0KLy8gUmVhbC10aW1lIHdlYiB0cmFja2luZw0KSU5TVEFMTCgncGFja2FnZScsICdodHRwczovL21vZHVsZXMudG90YWxqcy5jb20vd2ViY291bnRlci92MS4wMi93ZWJjb3VudGVyLnBhY2thZ2UnLCB7IHVybDogJy93ZWJjb3VudGVyLycgfSk7DQoNCi8vIEEgc2ltcGxlIERET1MgcHJvdGVjdGlvbg0KSU5TVEFMTCgnbW9kdWxlJywgJ2h0dHBzOi8vbW9kdWxlcy50b3RhbGpzLmNvbS9kZG9zL3YxLjAwL2Rkb3MuanMnKTs=', 'base64');
 }
 
 function createFileConfig(directory) {
@@ -193,7 +180,7 @@ function createFileViews(directory) {
 
     if ($type !== 3) {
         buffer.push('    @{css(\'default.css\')}');
-        buffer.push('    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>');
+        buffer.push('    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>');
         buffer.push('    @{js(\'default.js\')}');
     }
 
@@ -377,7 +364,6 @@ function display_help() {
         console.log('');
         console.log('-m or -minimal       = minimal');
         console.log('-n or -normal        = normal (default)');
-        console.log('-f or -full          = full');
         console.log('-a or -angular       = for angular.js application');
         console.log('-t or -translate     = create a resource file with the localized text from views');
         console.log('-v or -version       = total.js version');
@@ -404,9 +390,6 @@ function main() {
             $type = 4;
             continue
         }
-
-        if (cmd === '-f' || cmd === '-full' || cmd === 'full')
-            continue;
 
         if (cmd === '-a' || cmd === '-angular' || cmd === 'angular') {
             $type = 3;
@@ -520,7 +503,7 @@ function main() {
     console.log('total.js: creating files');
     createFiles(dir);
 
-    console.log('total.js: installing current version total.js');
+    console.log('total.js: installing the latest version');
     install(dir);
 }
 
