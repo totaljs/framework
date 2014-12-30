@@ -131,7 +131,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 39)';
+    this.version_header = '1.7.0 (build: 40)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -1423,7 +1423,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
                     response.pipe(fs.createWriteStream(filename));
                     response.on('end', function() {
-                        self.install(type, id, filename, undefined, undefined, undefined, true);
+                        self.install(type, id, filename, options, undefined, undefined, true);
                     });
 
                 });
