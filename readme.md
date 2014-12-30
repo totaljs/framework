@@ -23,7 +23,6 @@ $ npm install total.js
 
 __Interesting__:
 
-- [Tutorial](http://docs.totaljs.com/tutorial/)
 - Framework supports [NoSQL Embedded database](https://github.com/petersirka/nosql) for max. 20 000 documents per database
 
 __Social networks__:
