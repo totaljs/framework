@@ -368,8 +368,12 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
             headers['Cookie'] = builder.join('; ');
     }
 
-    if (data.length > 0)
-        headers['Content-Length'] = data.length;
+    var buf;
+
+    if (data.length > 0) {
+        buf = new Buffer(data, ENCODING);
+        headers['Content-Length'] = buf.length;
+    }
 
     uri.agent = false;
     uri.headers = headers;
@@ -425,8 +429,8 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
             e.emit('begin', responseLength);
         });
 
-        if (isPOST)
-            request.end(data, encoding);
+        if (isPOST && buf)
+            request.end(buf);
         else
             request.end();
 
@@ -569,8 +573,12 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
             headers['Cookie'] = builder.join('; ');
     }
 
-    if (data.length > 0)
-        headers['Content-Length'] = data.length;
+    var buf;
+
+    if (data.length > 0) {
+        buf = new Buffer(data, ENCODING);
+        headers['Content-Length'] = buf.length;
+    }
 
     uri.agent = false;
     uri.headers = headers;
@@ -616,8 +624,8 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
             e.emit('begin', responseLength);
         });
 
-        if (isPOST)
-            request.end(data, encoding);
+        if (isPOST && buf)
+            request.end(buf);
         else
             request.end();
 

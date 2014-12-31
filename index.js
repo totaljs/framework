@@ -131,7 +131,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 40)';
+    this.version_header = '1.7.0 (build: 41)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -4828,6 +4828,11 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
                         headers['Content-Type'] = 'application/x-www-form-urlencoded';
 
                     break;
+
+                case 'raw':
+                    headers['Content-Type'] = 'application/octet-stream';
+                    break;
+
             }
         }
     }
@@ -4913,12 +4918,10 @@ Framework.prototype.testing = function(stop, callback) {
             // Is used in: process.on('uncaughtException')
             framework.testContinue = function(err) {
                 logger(key, beg, err);
-
                 if (err)
                     framework.testsNO++;
                 else
                     framework.testsOK++;
-
                 self.testing(stop, callback);
             };
 
@@ -4984,8 +4987,12 @@ Framework.prototype.testing = function(stop, callback) {
     if (typeof(test.data) !== STRING)
         test.data = (test.headers[RESPONSE_HEADER_CONTENTTYPE] || '').indexOf('json') !== -1 ? JSON.stringify(test.data) : qs.stringify(test.data);
 
-    if (test.data && test.data.length > 0)
-        test.headers[RESPONSE_HEADER_CONTENTLENGTH] = test.data.length;
+    var buf;
+
+    if (test.data && test.data.length > 0) {
+        buf = new Buffer(test.data, ENCODING);
+        test.headers[RESPONSE_HEADER_CONTENTLENGTH] = buf.length;
+    }
 
     options.method = test.method;
     options.headers = test.headers;
@@ -5000,7 +5007,7 @@ Framework.prototype.testing = function(stop, callback) {
     });
 
     if (test.data && test.data.length > 0)
-        req.end(test.data, ENCODING);
+        req.end(buf);
     else
         req.end();
 
@@ -6999,6 +7006,7 @@ Subscribe.prototype.urlencoded = function() {
 
     self.req.buffer_has = true;
     self.req.buffer_exceeded = false;
+    self.req.socket.setEncoding(ENCODING);
 
     self.req.on('data', function(chunk) {
         self.doParsepost(chunk);
@@ -7174,7 +7182,6 @@ Subscribe.prototype.doExecute = function() {
         }
 
         framework._verify_directory('temp');
-
         framework_internal.parseMULTIPART_MIXED(req, self.header, framework.config['directory-temp'], function(file) {
             self.route.execute.call(controller, file);
         }, function() {
@@ -7246,8 +7253,7 @@ Subscribe.prototype.doEnd = function() {
         return self;
     }
 
-    req.buffer_data = req.buffer_data.toString();
-
+    req.buffer_data = req.buffer_data.toString(ENCODING);
     var schema;
 
     if (req.buffer_data.length === 0) {

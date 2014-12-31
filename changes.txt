@@ -159,6 +159,8 @@ Framework loads modules, packages, models, definitions, controllers
 - fixed: Utils.validation() (problem with schema array)
 - fixed: Response.cookie()
 - fixed: String.prototype.format() --> null/undefined --> returns empty string
+- fixed: Utils.request() problem with unicode
+- fixed: framework.assert() problem with unicode
 
 - improvements: routing performance
 
