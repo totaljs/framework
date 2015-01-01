@@ -131,7 +131,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 41)';
+    this.version_header = '1.7.0 (build: 42)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -829,6 +829,9 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
         method = undefined;
     else
         method = method.toUpperCase();
+
+    if (name[1] === '#')
+        name = name.substring(1);
 
     self.routes.web.push({
         name: name,
@@ -5765,6 +5768,9 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
         return self.temporary.other[key];
 */
 
+    // helper for 401 http status
+    req.$isAuthorized = true;
+
     var length = self.routes.web.length;
     for (var i = 0; i < length; i++) {
 
@@ -5788,9 +5794,10 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
         }
 
         if (route.flags !== null && route.flags.length > 0) {
+
             var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
             if (result === -1)
-                req.isAuthorized = false;
+                req.$isAuthorized = false; // request is not authorized
 
             if (result < 1)
                 continue;
@@ -5834,6 +5841,8 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
     var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
     var length = self.routes.websockets.length;
 
+    req.$isAuthorized = true;
+
     for (var i = 0; i < length; i++) {
 
         var route = self.routes.websockets[i];
@@ -5854,7 +5863,7 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
             var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
 
             if (result === -1)
-                req.isAuthorized = false;
+                req.$isAuthorized = false;
 
             if (result < 1)
                 continue;
@@ -7214,7 +7223,7 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
     var route = framework.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags);
 
     if (route === null)
-        route = framework.lookup(req, req.isAuthorized ? '#404' : '#401');
+        route = framework.lookup(req, req.$isAuthorized ? '#404' : '#401');
 
     self.route = route;
     self.execute(req.buffer_exceeded ? 431 : 404);
@@ -8107,6 +8116,8 @@ Controller.prototype.transfer = function(url, flags) {
     var noFlag = flags === null || flags === undefined || flags.length === 0;
     var selected = null;
 
+    self.req.$isAuthorized = true;
+
     for (var i = 0; i < length; i++) {
 
         var route = framework.routes.web[i];
@@ -8128,7 +8139,7 @@ Controller.prototype.transfer = function(url, flags) {
 
             var result = framework_internal.routeCompareFlags(route.flags, flags, true);
             if (result === -1)
-                req.isAuthorized = false;
+                self.req.$isAuthorized = false;
 
             if (result < 1)
                 continue;
