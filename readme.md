@@ -48,7 +48,7 @@ __Client-side libraries__
 
 - [jQuery jComponent](https://github.com/petersirka/jComponent)
 - [jQuery two way bindings](https://github.com/petersirka/jquery.bindings)
-- [Tangular - template engine like Angular.js](https://github.com/petersirka/Tangular
+- [Tangular - template engine like Angular.js](https://github.com/petersirka/Tangular)
 - [jQuery file upload (+ drag&drop)](https://github.com/petersirka/jquery.upload)
 
 ***
