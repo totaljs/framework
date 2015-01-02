@@ -1661,9 +1661,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             return self;
         }
 
-        if (!name && typeof(obj.id) === STRING)
+        if (typeof(obj.id) === STRING)
             name = obj.id;
-        else if (!name && typeof(obj.name) === STRING)
+        else if (typeof(obj.name) === STRING)
             name = obj.name;
 
         key = type + '.' + name;
