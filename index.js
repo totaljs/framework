@@ -131,7 +131,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 43)';
+    this.version_header = '1.7.0 (build: 44)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -2386,6 +2386,9 @@ Framework.prototype.onCompileJS = null;  // obsolete
 Framework.prototype.compileContent = function(extension, content, filename) {
 
     var self = this;
+
+    if (filename && (filename.indexOf('.min.') !== -1 || filename.indexOf('-min.') !== -1))
+        return content;
 
     switch (extension) {
         case 'js':
