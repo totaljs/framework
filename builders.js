@@ -548,12 +548,55 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
     var self = this;
 
+    obj.$async = function(callback) {
+        if (callback === undefined)
+            callback = NOOP;
+        obj.$$async = [];
+        obj.$callback = callback;
+        setImmediate(function() {
+            obj.$$async.async(callback);
+        });
+        return obj;
+    };
+
     obj.$save = function(helper, callback) {
-        return self.save(obj, helper, callback);
+
+        if (!obj.$$async) {
+            self.save(obj, helper, callback);
+            return obj;
+        }
+
+        obj.$$async.push(function(next) {
+            self.save(obj, helper, function(err, result) {
+                if (!err)
+                    return next();
+                obj.$$async = null;
+                next = null;
+                obj.$callback(err);
+            });
+        });
+
+        return obj;
     };
 
     obj.$remove = function(helper, callback) {
-        return self.remove(callback === undefined ? obj : helper, callback);
+
+        if (!obj.$$async) {
+            self.remove(helper, callback);
+            return obj;
+        }
+
+        obj.$$async.push(function(next) {
+            self.remove(obj, helper, function(err, result) {
+                if (!err)
+                    return next();
+                obj.$$async = null;
+                next = null;
+                obj.$callback(err);
+            });
+        });
+
+        return obj;
     };
 
     obj.$default = function() {
@@ -565,15 +608,63 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
     };
 
     obj.$transform = function(name, helper, callback) {
-        return self.transform(name, obj, helper, callback);
+
+        if (!obj.$$async) {
+            self.transform(name, obj, helper, callback);
+            return obj;
+        }
+
+        obj.$$async.push(function(next) {
+            self.transform(name, obj, helper, function(err, result) {
+                if (!err)
+                    return next();
+                obj.$$async = null;
+                next = null;
+                obj.$callback(err);
+            });
+        });
+
+        return obj;
     };
 
     obj.$compose = function(name, helper, callback) {
-        return self.compose(name, obj, helper, callback);
+
+        if (!obj.$$async) {
+            self.compose(name, obj, helper, callback);
+            return obj;
+        }
+
+        obj.$$async.push(function(next) {
+            self.compose(name, obj, helper, function(err, result) {
+                if (!err)
+                    return next();
+                obj.$$async = null;
+                next = null;
+                obj.$callback(err);
+            });
+        });
+
+        return obj;
     };
 
     obj.$workflow = function(name, helper, callback) {
-        return self.workflow(name, obj, helper, callback);
+
+        if (!obj.$$async) {
+            self.workflow(name, obj, helper, callback);
+            return obj;
+        }
+
+        obj.$$async.push(function(next) {
+            self.workflow(name, obj, helper, function(err, result) {
+                if (!err)
+                    return next();
+                obj.$$async = null;
+                next = null;
+                obj.$callback(err);
+            });
+        });
+
+        return obj;
     };
 
     obj.$clean = function() {
@@ -1230,6 +1321,9 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 
     var self = this;
 
+    delete model['$$async'];
+    delete model['$async'];
+    delete model['$callback'];
     delete model['$transform'];
     delete model['$workflow'];
     delete model['$destroy'];

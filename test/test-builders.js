@@ -4,6 +4,9 @@ global.utils = require('../utils');
 var assert = require('assert');
 global.builders = require('../builders');
 
+var countW = 0;
+var countS = 0;
+
 function test_PageBuilder() {
 
     var name = 'Pagination: ';
@@ -154,12 +157,14 @@ function test_Schema() {
     builders.schema('default').get('2').addTransform('xml', function(err, model, next, helper) {
         next('<xml>OK</xml>');
     }).addWorkflow('send', function(err, model, next, helper) {
+        countW++;
         next('workflow');
     }).setGet(function(error, model, helper, next) {
         assert.ok(error.hasError() === false, 'schema - setGet');
         model.age = 99;
         next();
     }).setSave(function(error, model, helper, next) {
+        countS++;
         assert.ok(error.hasError() === false, 'schema - setSave');
         next(true);
     }).setRemove(function(error, helper, next) {
@@ -231,6 +236,11 @@ function test_Schema() {
 
     assert.ok(!builder.hasError(), name + 'schema validator (no error)');
 
+    var obj = SCHEMA('default', '2').create();
+
+    obj.$async(function(err) {
+        assert.ok(countW === 2 && countS === 2, 'schema $async');
+    }).$save().$workflow('send');
 };
 
 function test_ErrorBuilder() {
