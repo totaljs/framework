@@ -131,7 +131,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1700;
-    this.version_header = '1.7.0 (build: 42)';
+    this.version_header = '1.7.0 (build: 43)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -5747,10 +5747,9 @@ Framework.prototype._version = function(name) {
  * @param {String} url URL address.
  * @param {String Array} flags
  * @param {Boolean} noLoggedUnlogged A helper argument.
- * @param {Boolean} noCache No cache.
  * @return {Object}
  */
-Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache) {
+Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 
     var self = this;
     var isSystem = url[0] === '#';
@@ -5758,15 +5757,6 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
 
     if (isSystem)
         req.path = [url];
-/*
-    var key;
-
-    if (!noCache)
-        key = ('lookup#' + req.isSecure + '#' + subdomain + '#' + req.method + '#' + req.url + '#' + req.xhr + '#' + (req.headers['content-type'] || '').substring(0, 20) + req.isAuthorized).hash();
-
-    if (!isSystem && !noCache && self.temporary.other[key])
-        return self.temporary.other[key];
-*/
 
     // helper for 401 http status
     req.$isAuthorized = true;
@@ -5806,27 +5796,10 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged, noCache
                 continue;
         }
 
-        // return self.lookup_cache(req, route, key);
         return route;
     }
 
     return null;
-};
-
-/**
- * Lookup cache
- * @private
- * @param {Request} req
- * @param {Object} route
- * @param {String} key
- * @param {Booelan} noCache
- * @return {Object}
- */
-Framework.prototype.lookup_cache = function(req, route, key, noCache) {
-    if (noCache === true || route.isASTERIX || !route.isMEMBER || route.param.length > 0)
-        return route;
-    this.temporary.other[key] = route;
-    return route;
 };
 
 /*
