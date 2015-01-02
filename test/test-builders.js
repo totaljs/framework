@@ -238,8 +238,8 @@ function test_Schema() {
 
     var obj = SCHEMA('default', '2').create();
 
-    obj.$async(function(err) {
-        assert.ok(countW === 2 && countS === 2, 'schema $async');
+    obj.$async(function(err, result) {
+        assert.ok(err === null && countW === 2 && countS === 2 && result.length === 2, 'schema $async');
     }).$save().$workflow('send');
 };
 

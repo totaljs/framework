@@ -552,9 +552,12 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
         if (callback === undefined)
             callback = NOOP;
         obj.$$async = [];
+        obj.$$result = [];
         obj.$callback = callback;
         setImmediate(function() {
-            obj.$$async.async(callback);
+            obj.$$async.async(function() {
+                callback(null, obj.$$result);
+            });
         });
         return obj;
     };
@@ -568,11 +571,15 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
         obj.$$async.push(function(next) {
             self.save(obj, helper, function(err, result) {
+
+                if (obj.$$result)
+                    obj.$$result.push(err ? null : result);
+
                 if (!err)
                     return next();
                 obj.$$async = null;
                 next = null;
-                obj.$callback(err);
+                obj.$callback(err, obj.$$result);
             });
         });
 
@@ -588,11 +595,15 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
         obj.$$async.push(function(next) {
             self.remove(obj, helper, function(err, result) {
+
+                if (obj.$$result)
+                    obj.$$result.push(err ? null : result);
+
                 if (!err)
                     return next();
                 obj.$$async = null;
                 next = null;
-                obj.$callback(err);
+                obj.$callback(err, obj.$$result);
             });
         });
 
@@ -616,11 +627,15 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
         obj.$$async.push(function(next) {
             self.transform(name, obj, helper, function(err, result) {
+
+                if (obj.$$result)
+                    obj.$$result.push(err ? null : result);
+
                 if (!err)
                     return next();
                 obj.$$async = null;
                 next = null;
-                obj.$callback(err);
+                obj.$callback(err, obj.$$result);
             });
         });
 
@@ -636,11 +651,15 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
         obj.$$async.push(function(next) {
             self.compose(name, obj, helper, function(err, result) {
+
+                if (obj.$$result)
+                    obj.$$result.push(err ? null : result);
+
                 if (!err)
                     return next();
                 obj.$$async = null;
                 next = null;
-                obj.$callback(err);
+                obj.$callback(err, obj.$$result);
             });
         });
 
@@ -656,11 +675,15 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
         obj.$$async.push(function(next) {
             self.workflow(name, obj, helper, function(err, result) {
+
+                if (obj.$$result)
+                    obj.$$result.push(err ? null : result);
+
                 if (!err)
                     return next();
                 obj.$$async = null;
                 next = null;
-                obj.$callback(err);
+                obj.$callback(err, obj.$$result);
             });
         });
 
@@ -1321,6 +1344,7 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 
     var self = this;
 
+    delete model['$$result'];
     delete model['$$async'];
     delete model['$async'];
     delete model['$callback'];
