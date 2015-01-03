@@ -837,7 +837,7 @@ exports.copy = function(source, target) {
  * Reduce an object
  * @param {Object} source Source object.
  * @param {String Array or Object} prop Other properties than these ones will be removed.
- * @return {[type]}        [description]
+ * @return {[type]}
  */
 exports.reduce = function(source, prop) {
 
