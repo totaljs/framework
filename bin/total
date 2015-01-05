@@ -432,6 +432,7 @@ function diff(a, b) {
         items.push(find_comment(ba, key));
         items.push(key.padRight(padding) + ': ' + ca[key]);
         items.push('');
+        add++;
     }
 
     if (items.length > 0) {
@@ -440,7 +441,6 @@ function diff(a, b) {
         output += '\n';
         output += items.join('\n');
         output += '\n';
-        add = items.length;
     }
 
     items = [];
@@ -454,6 +454,7 @@ function diff(a, b) {
         items.push(find_comment(bb, key));
         items.push(key.padRight(padding) + ': ' + cb[key]);
         items.push('');
+        rem++;
     }
 
     if (items.length > 0) {
@@ -462,7 +463,6 @@ function diff(a, b) {
         output += '\n';
         output += items.join('\n');
         output += '\n';
-        rem = items.length;
     }
 
     var filename = path.join(path.dirname(a), path.basename(a, '.resource') + '-diff.txt');
@@ -555,6 +555,7 @@ function main() {
                     var key = 'T' + command.command.hash();
                     var file = filename.substring(root.length);
                     texts[key] = command.command;
+
                     if (resource[key]) {
                         if (resource[key].indexOf(file) === -1)
                             resource[key] += ', ' + file;
