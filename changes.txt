@@ -1,4 +1,14 @@
-IN DEVELOPMENT ======= 1.7.0
+IN DEVELOPMENT ======= 1.7.1
+
+- added: BINARY added --diff for creating difference between two resources
+
+- updated: String.encode(), String.decode()
+- updated: (IMPORTANT) change arguments in callback for workflow, compose, transform
+- updated: BINARY total --translate SOME TEXT create translate identificator
+
+- fixed: XML parsing
+
+======= 1.7.0
 
 Framework supports a backward compatibility.
 Framework supports: one file only (all libraries in one JS file)
