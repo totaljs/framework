@@ -1,12 +1,5 @@
 IN DEVELOPMENT ======= 1.7.1
 
-- added: BINARY added --diff for creating difference between two resources
-
-- updated: String.encode(), String.decode()
-- updated: (IMPORTANT) changed the arguments in callback for workflow, compose, transform
-- updated: BINARY total --translate SOME TEXT create translate identificator
-
-- fixed: XML parsing
 
 ======= 1.7.0
 
@@ -100,6 +93,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: @{query.} instead of @{get.}
 - added: @{files} uploaded files
 - added: .manifest to accept list
+- added: BINARY added --diff for creating difference between two resources
 
 - updated: framework.resize(), added: options.cache (true/false, default: true)
 - updated: the route flag can contian number (TIMEOUT for current route)
@@ -125,6 +119,9 @@ Framework loads modules, packages, models, definitions, controllers
 - updated: controller.view(name) can execute without name (controller.viewname contains name according to URL)
 - updated: @{post} is deprecated
 - updated: @{get} is deprecated
+- updated: String.encode(), String.decode()
+- updated: (IMPORTANT) changed the arguments in callback for workflow, compose, transform
+- updated: BINARY total --translate SOME TEXT create translate identificator
 
 - renamed: config['directory-angular'] to config['directory-public-virtual']
 - renamed: config['allow-compress-html'] to config['allow-compile-html']
@@ -171,6 +168,7 @@ Framework loads modules, packages, models, definitions, controllers
 - fixed: String.prototype.format() --> null/undefined --> returns empty string
 - fixed: Utils.request() problem with unicode
 - fixed: framework.assert() problem with unicode
+- fixed: XML parsing
 
 - improvements: routing performance
 
