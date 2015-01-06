@@ -38,7 +38,7 @@ var CONTENTTYPE_TEXTHTML = 'text/html';
 var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', CONTENTTYPE_TEXTHTML];
 
 var _controller = '';
-var _test = '';
+var _test;
 
 // GO ONLINE MODE
 if (!global.framework_internal)
@@ -130,8 +130,8 @@ global.RELEASE = false;
 function Framework() {
 
     this.id = null;
-    this.version = 1700;
-    this.version_header = '1.7.0';
+    this.version = 1701;
+    this.version_header = '1.7.1 (build: 1)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -3958,7 +3958,6 @@ Framework.prototype.initialize = function(http, debug, options) {
             var sleep = options.sleep || options.delay || 1000;
             global.TEST = true;
             global.assert = require('assert');
-
             setTimeout(function() {
                 self.test(true, options.tests || options.test);
             }, sleep);
@@ -4889,15 +4888,23 @@ Framework.prototype.testing = function(stop, callback) {
     var self = this;
 
     // !IMPORTANT! framework.isTestError is created dynamically
+    //             framework.testsFiles too
 
     if (self.tests.length === 0) {
+        if (self.testsFiles.length === 0) {
 
-        if (callback)
-            callback(framework.isTestError === true);
+            if (callback)
+                callback(framework.isTestError === true);
 
-        if (stop)
-            self.stop(framework.isTestError ? 1 : 0);
+            if (stop)
+                self.stop(framework.isTestError ? 1 : 0);
 
+            return self;
+        }
+
+        var file = self.testsFiles.shift();
+        file.fn.call(self, self);
+        self.testing(stop, callback);
         return self;
     }
 
@@ -5084,6 +5091,8 @@ Framework.prototype.test = function(stop, names, cb) {
 
     };
 
+    framework.testsFiles = [];
+
     if (!framework.testsResults)
         framework.testsResults = [];
 
@@ -5121,18 +5130,25 @@ Framework.prototype.test = function(stop, names, cb) {
                     return;
 
                 if (test.order === undefined)
-                    framework.testsPriority = test.priority === undefined ? self.tests.length : test.priority;
+                    framework.testsPriority = test.priority === undefined ? self.testsFiles.length : test.priority;
                 else
                     framework.testsPriority = test.priority;
 
+                var fn = null;
+
                 if (isRun)
-                    test.run(self, name);
+                    fn = test.run;
                 else if (isInstall)
-                    test.install(self, name);
+                    fn = test.install;
                 else if (isInit)
-                    test.init(self, name);
+                    fn = test.init;
                 else if (isLoad)
-                    test.load(self, name);
+                    fn = test.loadname;
+
+                if (fn === null)
+                    return;
+
+                self.testsFiles.push({ index: self.testsFiles.length, fn: fn, priority: framework.testsPriority });
 
                 if (test.usage) {
                     (function(test) {
@@ -5166,7 +5182,7 @@ Framework.prototype.test = function(stop, names, cb) {
             return self;
         }
 
-        self.tests.sort(function(a, b) {
+        self.testsFiles.sort(function(a, b) {
 
             if (a.priority > b.priority)
                 return 1;
