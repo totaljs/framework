@@ -276,7 +276,7 @@ SchemaBuilderEntity.prototype.addRule = function(name, value) {
 /**
  * Add a new transformation for the entity
  * @param {String} name Transform name, optional.
- * @param {Function(errorBuilder, model, next([output]), helper, entityName)} fn
+ * @param {Function(errorBuilder, model, helper, next([output]), entityName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
@@ -297,7 +297,7 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
 /**
  * Add a new workflow for the entity
  * @param {String} name Workflow name, optional.
- * @param {Function(errorBuilder, model, next([output]), helper, schemaName)} fn
+ * @param {Function(errorBuilder, model, helper, next([output]), schemaName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
@@ -318,7 +318,7 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
 /**
  * Add a new composer for the entity
  * @param {String} name Composer name, optional.
- * @param {Function(errorBuilder, output, model, next([output]), helper, entityName)} fn
+ * @param {Function(errorBuilder, output, model, helper, next([output]), entityName)} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
@@ -339,7 +339,7 @@ SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
 /**
  * Add a new composer for the entity
  * @param {String} name Transform name, optional.
- * @param {Function(errorBuilder, output, model, next([output]), helper, entityName)} fn
+ * @param {Function(errorBuilder, output, model, helper, next([output]), entityName)} fn
  */
 SchemaBuilderEntity.prototype.addComposer = function(name, fn) {
     return this.addCompose(name, fn);
@@ -446,7 +446,6 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
     });
 
     return self;
-
 };
 
 /**
@@ -1202,10 +1201,10 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
             return;
         }
 
-        trans.call(self, builder, model, function(result) {
+        trans.call(self, builder, model, helper, function(result) {
             if (callback)
                 callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
-        }, helper, self.name);
+        }, self.name);
 
     });
 
@@ -1256,10 +1255,10 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
         var output = self.default();
         var builder = new ErrorBuilder();
 
-        compose.call(self, builder, output, model, function(result) {
+        compose.call(self, builder, output, model, helper, function(result) {
             if (callback)
                 callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-        }, helper, self.name);
+        }, self.name);
     });
 
     return self;
@@ -1315,10 +1314,10 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
             return;
         }
 
-        workflow.call(self, builder, model, function(result) {
+        workflow.call(self, builder, model, helper, function(result) {
             if (callback)
                 callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
-        }, helper, self.name);
+        }, self.name);
     });
 
     return self;

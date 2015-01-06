@@ -154,9 +154,9 @@ function test_Schema() {
             return -1;
     });
 
-    builders.schema('default').get('2').addTransform('xml', function(err, model, next, helper) {
+    builders.schema('default').get('2').addTransform('xml', function(err, model, helper, next) {
         next('<xml>OK</xml>');
-    }).addWorkflow('send', function(err, model, next, helper) {
+    }).addWorkflow('send', function(err, model, helper, next) {
         countW++;
         next('workflow');
     }).setGet(function(error, model, helper, next) {
