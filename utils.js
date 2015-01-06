@@ -1376,7 +1376,7 @@ exports.parseXML = function(xml) {
                 continue;
 
             var path = (current.length > 0 ? current.join('.') + '.' : '') + o;
-            var value = xml.substring(from, beg);
+            var value = xml.substring(from, beg).decode();
 
             if (obj[path] === undefined)
                 obj[path] = value;
@@ -1417,9 +1417,8 @@ exports.parseXML = function(xml) {
 
         for (var i = 0; i < length; i++) {
             var index = match[i].indexOf('"');
-            attr[match[i].substring(0, index - 1)] = match[i].substring(index + 1, match[i].length - 1);
+            attr[match[i].substring(0, index - 1)] = match[i].substring(index + 1, match[i].length - 1).decode();
         }
-
         obj[current.join('.') + (isSingle ? '.' + name : '') + '[]'] = attr;
     }
 
@@ -2028,6 +2027,9 @@ String.prototype.encode = function() {
             case '"':
                 output += '&quot;';
                 break;
+            case '\'':
+                output += '&apos;';
+                break;
             case '&':
                 output += '&amp;';
                 break;
@@ -2040,7 +2042,7 @@ String.prototype.encode = function() {
 };
 
 String.prototype.decode = function() {
-    return this.replace(/&gt;/g, '>').replace(/\&lt;/g, '<').replace(/\&quot;/g, '"').replace(/&amp;/g, '&');
+    return this.replace(/&gt;/g, '>').replace(/\&lt;/g, '<').replace(/\&quot;/g, '"').replace(/&apos;/g, '\'').replace(/&amp;/g, '&');
 };
 
 String.prototype.urlEncode = function() {
