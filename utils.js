@@ -1147,7 +1147,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
             definition = collection === undefined ? builders.schema('default').collection : collection;
             if (!definition)
                 definition = {};
-        } else if (!collection)
+        } else if (collection)
             return error;
         else
             properties = properties.replace(/\s/g, '').split(',');
