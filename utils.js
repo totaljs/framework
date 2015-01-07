@@ -1147,7 +1147,9 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
             definition = collection === undefined ? builders.schema('default').collection : collection;
             if (!definition)
                 definition = {};
-        } else
+        } else if (!collection)
+            return error;
+        else
             properties = properties.replace(/\s/g, '').split(',');
     }
 
@@ -1419,7 +1421,8 @@ exports.parseXML = function(xml) {
             var index = match[i].indexOf('"');
             attr[match[i].substring(0, index - 1)] = match[i].substring(index + 1, match[i].length - 1).decode();
         }
-        obj[current.join('.') + (isSingle ? '.' + name : '') + '[]'] = attr;
+
+        obj[current.join('.') + (isSingle ? '.' + name : '') + '[]'] = attr.decode();
     }
 
     return obj;
