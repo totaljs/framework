@@ -131,7 +131,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1';
+    this.version_header = '1.7.1 (build: 2)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -7213,12 +7213,13 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
         req.user = user;
 
     var route = framework.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags);
+    var status = req.$isAuthorized ? 404 : 401;
 
     if (route === null)
-        route = framework.lookup(req, req.$isAuthorized ? '#404' : '#401');
+        route = framework.lookup(req, '#' + status);
 
     self.route = route;
-    self.execute(req.buffer_exceeded ? 431 : 404);
+    self.execute(req.buffer_exceeded ? 431 : status);
 
     return self;
 };
