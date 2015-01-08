@@ -138,7 +138,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1 (build: 3)';
+    this.version_header = '1.7.1 (build: 4)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -10647,6 +10647,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
         fnFrom();
 
     if (output.type !== CONTENTTYPE_TEXTHTML) {
+        self.subscribe.success();
         framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
         return;
     }
