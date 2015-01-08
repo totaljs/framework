@@ -117,6 +117,13 @@ global.ROUTING = function(name) {
     return framework.routing(name);
 };
 
+global.SUCCESS = function(success, obj) {
+    var o = { success: success };
+    if (obj)
+        return Utils.extend(o, obj);
+    return o;
+};
+
 if (typeof(setImmediate) === UNDEFINED) {
     global.setImmediate = function(cb) {
         process.nextTick(cb);
