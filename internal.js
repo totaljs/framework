@@ -15,6 +15,7 @@ var OBJECT = 'object';
 
 var REG_1 = /[\n\r\t]+/g;
 var REG_2 = /\s{3,}/g;
+var REG_3 = /\/{1,}/g;
 
 var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
@@ -390,6 +391,8 @@ exports.routeSplit = function(url, noLower) {
 
     if (!noLower)
         url = url.toLowerCase();
+
+    url = url.replace(REG_3, '/');
 
     if (url[0] === '/')
         url = url.substring(1);
