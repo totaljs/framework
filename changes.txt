@@ -1,5 +1,6 @@
 IN DEVELOPMENT ======= 1.7.1
 
+- fixed: authorization routing
 
 ======= 1.7.0
 
