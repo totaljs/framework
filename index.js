@@ -461,13 +461,25 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
     if (external === false) {
         if (host[0] !== '/')
             host = '/' + host;
+
+        var flags;
+
+        if (withPath instanceof Array) {
+            flags = withPath;
+            withPath = permanent === true;
+        } else if (permanent instanceof Array) {
+            flags = permanent;
+            withPath = withPath === true;
+        } else
+            withPath = withPath === true;
+
+        permanent = withPath;
         framework.route(host, function() {
-            if (typeof(withPath) === BOOLEAN)
-                permanent = withPath;
             if (newHost[0] !== '/')
                 newHost = '/' + newHost;
             this.redirect(newHost, permanent);
-        });
+        }, flags);
+
         return self;
     }
 
