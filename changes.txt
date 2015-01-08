@@ -1,6 +1,7 @@
-IN DEVELOPMENT ======= 1.7.1
+IN DEVELOPMENT ======= 1.7.1 (HOTFIX)
 
 - fixed: authorization routing
+- fixed: (CRITICAL) controller.memorize() in JSON output
 
 ======= 1.7.0
 
