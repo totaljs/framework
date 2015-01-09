@@ -3991,7 +3991,6 @@ Framework.prototype.initialize = function(http, debug, options) {
 
         if (typeof(options.sleep) === NUMBER) {
             setTimeout(function() {
-                console.log('OK');
                 self.server.listen(self.port, self.ip);
             }, options.sleep);
         } else
