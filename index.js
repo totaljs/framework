@@ -7192,7 +7192,7 @@ Subscribe.prototype.execute = function(status) {
         var middleware = framework.routes.middleware[route.middleware[i]];
 
         if (!middleware) {
-            self.error('Middleware not found: ' + route.middleware[i], controller.name, req.uri);
+            framework.error('Middleware not found: ' + route.middleware[i], controller.name, req.uri);
             continue;
         }
 
