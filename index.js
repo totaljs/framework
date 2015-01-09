@@ -117,6 +117,10 @@ global.ROUTING = function(name) {
     return framework.routing(name);
 };
 
+global.SCHEDULE = function(date, fn) {
+    return framework.schedule(date, fn);
+};
+
 global.SUCCESS = function(success, value) {
 
     var o = { success: success };
@@ -146,7 +150,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1 (build: 5)';
+    this.version_header = '1.7.1 (build: 6)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -227,7 +231,7 @@ function Framework() {
     this.connections = {};
     this.functions = {};
     this.versions = null;
-    this.schedulers = {};
+    this.schedules = {};
 
     this.isDebug = true;
     this.isTest = false;
@@ -337,7 +341,7 @@ function Framework() {
     this._length_middleware = 0;
     this._length_request_middleware = 0;
     this._length_files = 0;
-    this._schedulers = false;
+    this._schedules = false;
 
     this.isVirtualDirectory = false;
     this.isCoffee = false;
@@ -517,12 +521,12 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 };
 
 /**
- * Add a job to scheduler
+ * Schedule job
  * @param {Date or String} date
  * @param {Function} fn
  * @return {Framework}
  */
-Framework.prototype.scheduler = function(date, fn) {
+Framework.prototype.schedule = function(date, fn) {
 
     var self = this;
     var type = typeof(date);
@@ -535,8 +539,8 @@ Framework.prototype.scheduler = function(date, fn) {
     var sum = date.getTime();
     var id = Utils.GUID(5) + Utils.random(10000);
 
-    self.schedulers[id] = { expire: sum, fn: fn };
-    self._schedulers = true;
+    self.schedules[id] = { expire: sum, fn: fn };
+    self._schedules = true;
 
     return self;
 };
@@ -2294,7 +2298,7 @@ Framework.prototype.usage = function(detailed) {
     var workers = Object.keys(self.workers);
     var modules = Object.keys(self.modules);
     var models = Object.keys(self.models);
-    var schedulers = Object.keys(self.schedulers);
+    var schedules = Object.keys(self.schedules);
     var helpers = Object.keys(self.helpers);
     var staticFiles = Object.keys(self.temporary.path);
     var staticRange = Object.keys(self.temporary.range);
@@ -2331,7 +2335,7 @@ Framework.prototype.usage = function(detailed) {
         cache: cache.length,
         worker: workers.length,
         connection: connections.length,
-        scheduler: schedulers.length,
+        schedules: schedules.length,
         helper: helpers.length,
         error: self.errors.length,
         problem: self.problems.length,
@@ -4230,21 +4234,21 @@ Framework.prototype._service = function(count) {
 
     self.emit('service', count);
 
-    // Run schedulers
-    if (!self._schedulers)
+    // Run schedules
+    if (!self._schedules)
         return self;
 
-    var keys = Object.keys(self.schedulers);
+    var keys = Object.keys(self.schedules);
     var expire = new Date().getTime();
     var pending = false;
 
-    // F.scheduler() sets this property to true
-    self._schedulers = false;
+    // F.schedules() sets this property to true
+    self._schedules = false;
 
     for (var i = 0, length = keys.length; i < length; i++) {
 
         var key = keys[i];
-        var obj = self.schedulers[key];
+        var obj = self.schedules[key];
 
         if (obj.expire > expire) {
             pending = true;
@@ -4252,12 +4256,12 @@ Framework.prototype._service = function(count) {
         }
 
         count--;
-        delete self.schedulers[key];
+        delete self.schedules[key];
         obj.fn.call(self);
     }
 
     if (pending)
-        self._schedulers = true;
+        self._schedules = true;
 
     return self;
 };
