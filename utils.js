@@ -2558,6 +2558,10 @@ String.prototype.isBoolean = function() {
     return (self === 'true' || self === 'false') ? true : false;
 };
 
+String.prototype.capitalize = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+};
+
 /*
     @decimals {Number}
     return {Number}
