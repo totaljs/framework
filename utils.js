@@ -1125,8 +1125,12 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
         builder = null;
     }
 
-    if (collection === undefined)
+    var empty = false;
+
+    if (collection === undefined) {
+        empty = true;
         collection = {};
+    }
 
     var error = builder;
     var current = path === undefined ? '' : path + '.';
@@ -1147,7 +1151,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
             definition = collection === undefined ? builders.schema('default').collection : collection;
             if (!definition)
                 definition = {};
-        } else if (collection)
+        } else if (!empty)
             return error;
         else
             properties = properties.replace(/\s/g, '').split(',');
@@ -1422,7 +1426,7 @@ exports.parseXML = function(xml) {
             attr[match[i].substring(0, index - 1)] = match[i].substring(index + 1, match[i].length - 1).decode();
         }
 
-        obj[current.join('.') + (isSingle ? '.' + name : '') + '[]'] = attr.decode();
+        obj[current.join('.') + (isSingle ? '.' + name : '') + '[]'] = attr;
     }
 
     return obj;
@@ -1659,11 +1663,11 @@ Date.prototype.format = function(format) {
     var s = self.getSeconds().toString();
     var M = (self.getMonth() + 1).toString();
     var yyyy = self.getFullYear().toString();
+    var yy = self.getYear().toString();
     var d = self.getDate().toString();
 
     var a = 'AM';
     var H = h.toString();
-
 
     if (h >= 12) {
         h -= 12;
@@ -1681,7 +1685,6 @@ Date.prototype.format = function(format) {
     var ss = s.padLeft(2, '0');
     var MM = M.padLeft(2, '0');
     var dd = d.padLeft(2, '0');
-    var yy = yyyy.substring(2);
 
     if (format === undefined || format === null || format === '')
         return yyyy + '-' + MM + '-' + dd + 'T' + hh + ':' + mm + ':' + ss + ':' + self.getMilliseconds().toString();

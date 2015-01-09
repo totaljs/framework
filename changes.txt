@@ -1,5 +1,8 @@
 IN DEVELOPMENT ======= 1.7.1 (HOTFIX)
 
+- added: framework.scheduler(date/string/number, fn);
+
+- fixed: Utils.validation() (for Arrays)
 - fixed: authorization routing
 - fixed: (CRITICAL) controller.memorize() in JSON output
 
