@@ -2,6 +2,7 @@ IN DEVELOPMENT ======= 1.7.1 (HOTFIX)
 
 - added: framework.scheduler(date/string/number, fn);
 
+- fixed: (CRITICAL) if the controller middleware does not exist framework throws exception correctly
 - fixed: Utils.validation() (for Arrays)
 - fixed: authorization routing
 - fixed: (CRITICAL) controller.memorize() in JSON output
