@@ -192,6 +192,8 @@ function prototypeString() {
 	assert.ok(str.slug() === 'peter-sirka-linker-you-known', 'string.slug(): ' + str);
 	assert.ok(str.slug(11) === 'peter-sirka', 'string.slug(): ' + str);
 
+	assert.ok('total.js'.capitalize() === 'Total.js', 'string.capitalize()');
+
 	str = '// Configuration\nname   : total.js\nage    : 29\n// comment1    : comment1\n# comment2     : comment2\ndebug  : false';
 	assert.ok(JSON.stringify(str.parseConfig({ comment3: 'comment3' })) === '{"comment3":"comment3","name":"total.js","age":"29","debug":"false"}', 'String.parseConfig()');
 }
