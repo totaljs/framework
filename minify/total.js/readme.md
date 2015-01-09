@@ -73,6 +73,7 @@ Videos on YouTube
 - Serkan Kocaman, <https://github.com/KiPSOFT>
 - Andrea Sessa, <https://github.com/asessa>
 - Ehsan Darrudi, <https://github.com/darrudi>
+- harry-stot, <https://github.com/harry-stot>
 
 ## Contact
 
