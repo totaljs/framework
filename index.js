@@ -3989,7 +3989,14 @@ Framework.prototype.initialize = function(http, debug, options) {
         } else
             self.ip = undefined;
 
-        self.server.listen(self.port, self.ip);
+        if (typeof(options.sleep) === NUMBER) {
+            setTimeout(function() {
+                console.log('OK');
+                self.server.listen(self.port, self.ip);
+            }, options.sleep);
+        } else
+            self.server.listen(self.port, self.ip);
+
 
         if (self.ip === undefined || self.ip === null)
             self.ip = 'auto';
