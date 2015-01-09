@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.7.1 (HOTFIX)
 
 - added: framework.schedule(date/string/number, fn);
+- added: (IMPORTANT) a prevention for the HeaderSent exception
 
 - fixed: (CRITICAL) if the controller middleware does not exist framework throws exception correctly
 - fixed: Utils.validation() (for Arrays)

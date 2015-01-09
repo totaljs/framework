@@ -150,7 +150,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1 (build: 6)';
+    this.version_header = '1.7.1 (build: 7)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
@@ -2657,7 +2657,7 @@ Framework.prototype.responseStatic = function(req, res) {
 
     var self = this;
 
-    if (res.success)
+    if (res.success || res.headersSent)
         return self;
 
     var extension = req.extension;
@@ -2808,7 +2808,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
     var self = this;
 
-    if (res.success)
+    if (res.success || res.headersSent)
         return self;
 
     // Is package?
@@ -2956,7 +2956,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 
     var self = this;
 
-    if (res.success)
+    if (res.success || res.headersSent)
         return self;
 
     var uri = parser.parse(url);
@@ -3019,7 +3019,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 
     client.on('close', function() {
 
-        if (res.success)
+        if (res.success || res.headersSent)
             return;
 
         req.clear(true);
@@ -3048,8 +3048,8 @@ Framework.prototype.responseCustom = function(req, res) {
 
     var self = this;
 
-    if (res.success)
-        return self;
+    if (res.success || res.headersSent)
+        return;
 
     req.clear(true);
     res.success = true;
@@ -3331,7 +3331,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
     var self = this;
 
-    if (res.success)
+    if (res.success || res.headersSent)
         return self;
 
     req.clear(true);
@@ -3543,11 +3543,11 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 Framework.prototype.response400 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response401()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3577,11 +3577,11 @@ Framework.prototype.response400 = function(req, res, problem) {
 Framework.prototype.response401 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response401()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3609,11 +3609,11 @@ Framework.prototype.response401 = function(req, res, problem) {
 Framework.prototype.response403 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response403()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3641,11 +3641,11 @@ Framework.prototype.response403 = function(req, res, problem) {
 Framework.prototype.response404 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response404()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3674,11 +3674,11 @@ Framework.prototype.response408 = function(req, res, problem) {
 
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response408()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3706,11 +3706,11 @@ Framework.prototype.response408 = function(req, res, problem) {
 Framework.prototype.response431 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response431()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3739,14 +3739,14 @@ Framework.prototype.response431 = function(req, res, problem) {
 Framework.prototype.response500 = function(req, res, error) {
     var self = this;
 
-    if (res.success)
+    if (error)
+        self.error(error, null, req.uri);
+
+    if (res.success || res.headersSent)
         return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
-
-    if (error)
-        self.error(error, null, req.uri);
 
     res.success = true;
     var headers = {};
@@ -3771,11 +3771,11 @@ Framework.prototype.response500 = function(req, res, error) {
 Framework.prototype.response501 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response501()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3809,7 +3809,7 @@ Framework.prototype.response501 = function(req, res, problem) {
 Framework.prototype.responseContent = function(req, res, code, contentBody, contentType, compress, headers) {
     var self = this;
 
-    if (res.success)
+    if (res.success || res.headersSent)
         return self;
 
     req.clear(true);
@@ -3881,8 +3881,8 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 
     var self = this;
 
-    if (res.success)
-        return self;
+    if (res.success || res.headersSent)
+        return;
 
     self._request_stats(false, req.isStaticFile);
 
@@ -7887,7 +7887,7 @@ Controller.prototype.pipe = function(url, headers, callback) {
         headers = tmp;
     }
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     framework.responsePipe(self.req, self.res, url, headers, null, function() {
@@ -9776,7 +9776,7 @@ Controller.prototype.helper = function(name) {
 Controller.prototype.json = function(obj, headers, beautify, replacer) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     if (typeof(headers) === BOOLEAN) {
@@ -9841,7 +9841,7 @@ Controller.prototype.custom = function() {
 
     self.subscribe.success();
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return false;
 
     framework.responseCustom(self.req, self.res);
@@ -9872,7 +9872,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
     var self = this;
     var type = typeof(contentType);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.subscribe.success();
@@ -9889,7 +9889,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 Controller.prototype.plain = function(contentBody, headers) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     var type = typeof(contentBody);
@@ -9919,7 +9919,7 @@ Controller.prototype.plain = function(contentBody, headers) {
 Controller.prototype.empty = function(headers) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     var code = 200;
@@ -9942,7 +9942,7 @@ Controller.prototype.destroy = function(problem) {
     if (problem)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.subscribe.success();
@@ -9962,7 +9962,7 @@ Controller.prototype.destroy = function(problem) {
 Controller.prototype.file = function(filename, downloadName, headers) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     if (filename[0] === '~')
@@ -9986,7 +9986,7 @@ Controller.prototype.file = function(filename, downloadName, headers) {
 Controller.prototype.image = function(filename, fnProcess, headers, useImageMagick) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     if (typeof(filename) === STRING) {
@@ -10013,7 +10013,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, useImageMagi
 Controller.prototype.stream = function(contentType, stream, downloadName, headers) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.subscribe.success();
@@ -10040,7 +10040,7 @@ Controller.prototype.view400 = function(problem) {
     if (problem && problem.length > 0)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -10070,7 +10070,7 @@ Controller.prototype.view401 = function(problem) {
     if (problem && problem.length > 0)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -10100,7 +10100,7 @@ Controller.prototype.view403 = function(problem) {
     if (problem && problem.length > 0)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -10129,7 +10129,7 @@ Controller.prototype.view404 = function(problem) {
     if (problem && problem.length > 0)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -10150,7 +10150,7 @@ Controller.prototype.view500 = function(error) {
 
     framework.error(typeof(error) === STRING ? new Error(error) : error, self.name, self.req.uri);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -10182,7 +10182,7 @@ Controller.prototype.view501 = function(problem) {
     if (problem && problem.length > 0)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -10211,7 +10211,7 @@ Controller.prototype.throw501 = function(problem) {
 Controller.prototype.redirect = function(url, permanent) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.subscribe.success();
@@ -11942,6 +11942,9 @@ http.ServerResponse.prototype.send = function(code, body, type) {
     if (self.headersSent)
         return self;
 
+    if (self.controller)
+        self.controller.subscribe.success();
+
     var res = self;
     var req = self.req;
     var contentType = type;
@@ -12025,34 +12028,50 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 };
 
 http.ServerResponse.prototype.throw400 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response400(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw401 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response401(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw403 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response403(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw404 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response404(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw408 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response408(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw431 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response431(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw500 = function(error) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response500(this.req, this, error);
 };
 
 http.ServerResponse.prototype.throw501 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response501(this.req, this, problem);
 };
 
@@ -12062,10 +12081,10 @@ http.ServerResponse.prototype.throw501 = function(problem) {
  */
 http.ServerResponse.prototype.continue = function() {
     var self = this;
-
     if (self.headersSent)
         return;
-
+    if (self.controller)
+        self.controller.subscribe.success();
     framework.responseStatic(self.req, self);
     return self;
 };
@@ -12080,6 +12099,8 @@ http.ServerResponse.prototype.redirect = function(url, permanent) {
     var self = this;
     if (self.headersSent)
         return;
+    if (self.controller)
+        self.controller.subscribe.success();
     framework.responseRedirect(self.req, self, url, permanent);
     return self;
 };
@@ -12095,6 +12116,8 @@ http.ServerResponse.prototype.file = function(filename, downloadName, headers) {
     var self = this;
     if (self.headersSent)
         return;
+    if (self.controller)
+        self.controller.subscribe.success();
     framework.responseFile(self.req, self, filename, downloadName, headers);
     return self;
 };
@@ -12110,6 +12133,8 @@ http.ServerResponse.prototype.stream = function(contentType, stream, downloadNam
     var self = this;
     if (self.headersSent)
         return;
+    if (self.controller)
+        self.controller.subscribe.success();
     framework.responseStream(self.req, self, contentType, stream, downloadName, headers);
     return self;
 };
@@ -12125,6 +12150,8 @@ http.ServerResponse.prototype.image = function(filename, fnProcess, headers) {
     var self = this;
     if (self.headersSent)
         return;
+    if (self.controller)
+        self.controller.subscribe.success();
     framework.responseImage(self.req, self, filename, fnProcess, headers);
     return self;
 };
