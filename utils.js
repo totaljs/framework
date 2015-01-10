@@ -2562,6 +2562,15 @@ String.prototype.capitalize = function() {
     return this[0].toUpperCase() + this.substring(1);
 };
 
+/**
+ * Check if the string contains only letters and numbers.
+ * @return {Boolean}
+ */
+String.prototype.isAlphaNumeric = function() {
+  var regExp = /^[A-Za-z0-9]+$/;
+  return (this.match(regExp) ? true : false);
+};
+
 /*
     @decimals {Number}
     return {Number}
