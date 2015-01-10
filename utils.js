@@ -2589,6 +2589,15 @@ Number.prototype.padRight = function(max, c) {
 };
 
 /**
+ * Check if the string contains only letters and numbers.
+ * @return {Boolean}
+ */
+String.prototype.isAlphaNumeric = function() {
+  var regExp = /^[A-Za-z0-9]+$/;
+  return (this.match(regExp));
+};
+
+/**
  * Format number
  * @param {Number} decimals Maximum decimal numbers
  * @param {String} separator Number separator, default ' '
