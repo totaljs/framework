@@ -425,8 +425,8 @@ function test_routing(next) {
 	});
 
 	async.await('upload', function(complete) {
-		utils.send('test.txt', new Buffer('dG90YWwuanMgaXMga2luZyBvZiB3ZWI=', 'base64'), url + 'upload/', function(error, data, code, headers) {
-			assert(data === '{"name":"test.txt","length":25,"type":"text/plain"}', 'upload');
+		utils.send(',;-test.txt', new Buffer('dG90YWwuanMgaXMga2luZyBvZiB3ZWI=', 'base64'), url + 'upload/', function(error, data, code, headers) {
+			assert(data === '{"name":",;-test.txt","length":25,"type":"text/plain"}', 'upload');
 			complete();
 		});
 	});

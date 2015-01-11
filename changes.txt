@@ -8,6 +8,7 @@ IN DEVELOPMENT ======= 1.7.1 (HOTFIX)
 - fixed: Utils.validation() (for Arrays)
 - fixed: authorization routing
 - fixed: (CRITICAL) controller.memorize() in JSON output
+- fixed: (CRITICAL) uploading files, problem with the filename/name field (if it contained `;`)
 
 ======= 1.7.0
 

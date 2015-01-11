@@ -1,6 +1,6 @@
 /**
  * @module FrameworkInternal
- * @version 1.6.0
+ * @version 1.7.1
  */
 
 'use strict';
@@ -82,10 +82,17 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
         if (isXSS)
             return;
 
-        var arr = buffer.slice(start, end).toString(ENCODING).split(';');
+        var header = buffer.slice(start, end).toString(ENCODING);
 
         if (tmp.step === 1) {
-            tmp.contentType = arr[0];
+
+            var index = header.indexOf(';');
+
+            if (index === -1)
+                tmp.contentType = header.trim();
+            else
+                tmp.contentType = header.substring(0, index).trim();
+
             tmp.step = 2;
             return;
         }
@@ -93,16 +100,10 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
         if (tmp.step !== 0)
             return;
 
-        tmp.name = arr[1].substring(arr[1].indexOf('=') + 2);
-        tmp.name = tmp.name.substring(0, tmp.name.length - 1);
+        header = parse_multipart_header(header);
         tmp.step = 1;
-
-        if (arr.length !== 3)
-            return;
-
-        tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
-        tmp.fileName = tmp.fileName.substring(0, tmp.fileName.length - 1);
-
+        tmp.name = header[0];
+        tmp.fileName = header[1];
         tmp.isFile = true;
         tmp.fileNameTmp = framework_utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + framework_utils.random(100000) + '.upload');
 
@@ -281,43 +282,44 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
         if (req.buffer_exceeded || tmp.step > 1)
             return;
 
-        var arr = buffer.slice(start, end).toString(ENCODING).split(';');
+        var header = buffer.slice(start, end).toString(ENCODING);
 
         if (tmp.step === 1) {
-            tmp.contentType = arr[0];
+
+            var index = header.indexOf(';');
+
+            if (index === -1)
+                tmp.contentType = header.trim();
+            else
+                tmp.contentType = header.substring(0, index).trim();
+
             tmp.step = 2;
             return;
         }
 
-        if (tmp.step === 0) {
-
-            tmp.name = arr[1].substring(arr[1].indexOf('=') + 2);
-            tmp.name = tmp.name.substring(0, tmp.name.length - 1);
-            tmp.step = 1;
-
-            if (arr.length !== 3)
-                return;
-
-            tmp.fileName = arr[2].substring(arr[2].indexOf('=') + 2);
-            tmp.fileName = tmp.fileName.substring(0, tmp.fileName.length - 1);
-            tmp.isFile = true;
-            tmp.fileNameTmp = framework_utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + framework_utils.random(100000) + '.upload');
-            stream = fs.createWriteStream(tmp.fileNameTmp, {
-                flags: 'w'
-            });
-
-            stream.on('close', function() {
-                close--;
-            });
-
-            stream.on('error', function() {
-                close--;
-            });
-
-            close++;
+        if (tmp.step !== 0)
             return;
-        }
 
+        var arr = parse_multipart_header(header);
+        tmp.name = arr[0];
+        tmp.fileName = arr[1];
+        tmp.step = 1;
+        tmp.isFile = true;
+        tmp.fileNameTmp = framework_utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + framework_utils.random(100000) + '.upload');
+
+        stream = fs.createWriteStream(tmp.fileNameTmp, {
+            flags: 'w'
+        });
+
+        stream.on('close', function() {
+            close--;
+        });
+
+        stream.on('error', function() {
+            close--;
+        });
+
+        close++;
     };
 
     parser.onPartData = function(buffer, start, end) {
@@ -381,6 +383,41 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile, 
 
     req.on('data', parser.write.bind(parser));
 };
+
+function parse_multipart_header(header) {
+
+    var arr = [];
+    var find = ' name="';
+    var length = find.length;
+    var beg = header.indexOf(find);
+    var tmp = '';
+
+    if (beg !== -1)
+        tmp = header.substring(beg + length, header.indexOf('"', beg + length));
+
+    if (!tmp)
+        arr.push('undefined_' + (Math.floor(Math.random() * 100000)).toString());
+    else
+        arr.push(tmp);
+
+    find = ' filename="';
+    length = find.length;
+    beg = header.indexOf(find);
+    tmp = '';
+
+    if (beg !== -1)
+        tmp = header.substring(beg + length, header.indexOf('"', beg + length));
+
+    if (beg !== -1)
+        tmp = header.substring(beg + length, header.indexOf('"', beg + length));
+
+    if (!tmp)
+        arr.push('undefined_' + (Math.floor(Math.random() * 100000)).toString());
+    else
+        arr.push(tmp);
+
+    return arr;
+}
 
 /*
     Internal function / Split string (url) to array

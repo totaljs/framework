@@ -60,7 +60,7 @@ if (!global.framework_nosql)
     global.framework_nosql = require('./nosql');
 
 global.Builders = global.builders = framework_builders;
-var utils = global.Utils = global.utils = framework_utils;
+var utils = global.Utils = global.utils = global.U = framework_utils;
 global.Mail = global.MAIL = framework_mail;
 
 global.include = global.INCLUDE = global.source = global.SOURCE = function(name, options) {
@@ -150,7 +150,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1 (build: 7)';
+    this.version_header = '1.7.1 (build: 8)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
