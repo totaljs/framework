@@ -299,8 +299,11 @@ function others() {
 	utils.copy({ name: 'A', age: -1 }, obj);
 	assert.ok(obj.name === 'A' && obj.age === -1, 'utils.copy(rewrite=true)');
 
-	utils.reduce(obj, ['name']);
-	assert.ok(typeof(obj.age) === 'undefined', 'utils.reduce()');
+	var a = utils.reduce(obj, ['name']);
+	var b = utils.reduce(obj, ['name'], true);
+
+	assert.ok(typeof(a.age) === 'undefined', 'utils.reduce()');
+	assert.ok(typeof(b.age) === 'number', 'utils.reduce() - reverse');
 
 	var str = 'http://www.google.sk';
 	assert.ok(utils.isRelative(str) === false, 'utils.isRelative(): ' + str);

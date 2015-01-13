@@ -837,31 +837,29 @@ exports.copy = function(source, target) {
  * Reduce an object
  * @param {Object} source Source object.
  * @param {String Array or Object} prop Other properties than these ones will be removed.
- * @return {[type]}
+ * @param {Boolean} reverse Reverse reducing (prop will be removed), default: false.
+ * @return {Object}
  */
-exports.reduce = function(source, prop) {
+exports.reduce = function(source, prop, reverse) {
 
-    if (source === null || prop === null)
-        return source;
+    if (!(prop instanceof Array)) {
+        if (typeof(prop) === OBJECT)
+            return exports.reduce(source, Object.keys(prop), reverse);
+    }
 
-    var type = typeof(prop);
+    var output = {};
 
-    if (prop instanceof Array) {
-        Object.keys(source).forEach(function(o) {
+    Object.keys(source).forEach(function(o) {
+        if (reverse) {
             if (prop.indexOf(o) === -1)
-                delete source[o];
-        });
-    }
+                output[o] = source[o];
+        } else {
+            if (prop.indexOf(o) !== -1)
+                output[o] = source[o];
+        }
+    });
 
-    if (type === OBJECT) {
-        var obj = Object.keys(prop);
-        Object.keys(source).forEach(function(o) {
-            if (obj.indexOf(o) === -1)
-                delete source[o];
-        });
-    }
-
-    return source;
+    return output;
 };
 
 /**

@@ -128,12 +128,8 @@ global.SUCCESS = function(success, value) {
     if (value === undefined)
         return o;
 
-    if (value === null || typeof(value) !== OBJECT) {
-        value.value = value;
-        return o;
-    }
-
-    return Utils.extend(o, value);
+    o.value = value;
+    return o;
 };
 
 if (typeof(setImmediate) === UNDEFINED) {
@@ -150,7 +146,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1 (build: 8)';
+    this.version_header = '1.7.1 (build: 9)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
