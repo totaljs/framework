@@ -15,7 +15,6 @@ var fs = require('fs');
 var events = require('events');
 var crypto = require('crypto');
 var expressionCache = {};
-var sys = require('sys');
 
 var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
