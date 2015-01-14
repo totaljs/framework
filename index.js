@@ -123,7 +123,24 @@ global.SCHEDULE = function(date, fn) {
 
 global.SUCCESS = function(success, value) {
 
+    var err;
+
+    if (success instanceof Error) {
+        err = success;
+        success = false;
+    } else if (success instanceof Builders.ErrorBuilder) {
+        if (success.hasError()) {
+            err = success.output();
+            success = false;
+        } else
+            success = true;
+    } else if (success === null || success === undefined)
+        success = true;
+
     var o = { success: success };
+
+    if (err)
+        o.error = err;
 
     if (value === undefined)
         return o;
@@ -146,7 +163,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1 (build: 9)';
+    this.version_header = '1.7.1 (build: 10)';
     this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
 
     this.config = {
