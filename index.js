@@ -14,7 +14,6 @@ var path = require('path');
 var crypto = require('crypto');
 var parser = require('url');
 var events = require('events');
-var sys = require('sys');
 var http = require('http');
 var directory = process.cwd();
 var child = require('child_process');
@@ -163,8 +162,16 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1 (build: 10)';
-    this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
+    this.version_header = '1.7.1 (build: 11)';
+
+    var version = process.version.toString().replace('v', '').replace(/\./g, '');
+
+    if (version[1] === '0')
+        version = parseFloat('0.' + version.substring(1));
+    else
+        version = parseFloat(version);
+
+    this.versionNode = version;
 
     this.config = {
 

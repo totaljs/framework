@@ -1424,9 +1424,10 @@ MultipartParser.stateToString = function(stateNumber) {
 
 MultipartParser.prototype.initWithBoundary = function(str) {
     var self = this;
+
     self.boundary = new Buffer(str.length + 4);
 
-    if (framework.versionNode >= 1111) {
+    if (framework.versionNode > 0) {
         self.boundary.write('\r\n--', 0, 'ascii');
         self.boundary.write(str, 4, 'ascii');
     } else {
