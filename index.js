@@ -162,7 +162,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1 (build: 11)';
+    this.version_header = '1.7.1 (build: 12)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -553,7 +553,7 @@ Framework.prototype.schedule = function(date, fn) {
 
     if (type === STRING)
         date = date.parseDate();
-    else if (type === number)
+    else if (type === NUMBER)
         date = new Date(date);
 
     var sum = date.getTime();
