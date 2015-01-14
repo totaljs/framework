@@ -6,6 +6,8 @@ This version will work on `io.js` without problems.
 - added: (IMPORTANT) a prevention for the HeaderSent exception
 - added: new option `sleep` for framework.http() & framework.https()
 
+updated: String.toSearch() removes non-word characters
+
 - fixed: framework.versionNode (updated for io.js)
 - fixed: (CRITICAL) if the controller middleware does not exist framework throws exception correctly
 - fixed: Utils.validation() (for Arrays)

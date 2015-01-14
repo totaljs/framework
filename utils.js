@@ -2277,7 +2277,7 @@ String.prototype.md5 = function(salt) {
 };
 
 String.prototype.toSearch = function() {
-    return this.trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
+    return this.replace(/[^a-zA-Z\d\s:]/g, '').trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
 };
 
 /*
