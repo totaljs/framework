@@ -535,6 +535,8 @@ framework.on('load', function() {
 
 	framework.merge('/mergepackage.js', '@testpackage/test.js');
 	assert.ok(MODULE('supermodule').ok, 'load module from subdirectory');
+	assert.ok(F.config['custom-config1'] === '1YES', 'custom configuration 1');
+	assert.ok(F.config['custom-config2'] === '2YES', 'custom configuration 2');
 
 	setTimeout(function() {
 		console.time('TEST');
@@ -542,4 +544,4 @@ framework.on('load', function() {
 	}, 2000);
 });
 
-framework.http('release', { port: 8001 });
+framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('release', { port: 8001 });

@@ -5,6 +5,8 @@ This version will work on `io.js` without problems.
 - added: framework.schedule(date/string/number, fn);
 - added: (IMPORTANT) a prevention for the HeaderSent exception
 - added: new option `sleep` for framework.http() & framework.https()
+- added: request.ip caching
+- added: framework.useConfig(filename-configuration)
 
 updated: String.toSearch() removes non-word characters
 

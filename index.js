@@ -162,7 +162,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1 (build: 12)';
+    this.version_header = '1.7.1 (build: 13)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -419,6 +419,15 @@ Framework.prototype.refresh = function(clear) {
  */
 Framework.prototype.controller = function(name) {
     return this.controllers[name] || null;
+};
+
+/**
+ * Use configuration
+ * @param {String} filename
+ * @return {Framework}
+ */
+Framework.prototype.useConfig = function(name) {
+    return this._configure(name, true);
 };
 
 /**
@@ -12199,12 +12208,19 @@ var _tmp = http.IncomingMessage.prototype;
 http.IncomingMessage.prototype = {
 
     get ip() {
+
         var self = this;
-        var proxy = self.headers['x-forwarded-for'];
+        if (self._ip)
+            return self._ip;
+
         //  x-forwarded-for: client, proxy1, proxy2, ...
+        var proxy = self.headers['x-forwarded-for'];
         if (proxy !== undefined)
-            return proxy.split(',', 1)[0] || self.connection.removiewddress;
-        return self.connection.remoteAddress;
+            self._ip = proxy.split(',', 1)[0] || self.connection.removiewddress;
+        else
+            self._ip = self.connection.remoteAddress;
+
+        return self._ip;
     },
 
     get query() {
