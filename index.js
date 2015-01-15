@@ -162,7 +162,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1 (build: 14)';
+    this.version_header = '1.7.1 (build: 15)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -7082,9 +7082,9 @@ Subscribe.prototype.multipart = function(header) {
 
     framework._verify_directory('temp');
     framework_internal.parseMULTIPART(req, header, self.route.length, framework.config['directory-temp'], function(data) {
-        if (framework.onXSS)
+        if (!self.route.isXSS && framework.onXSS)
             return framework.onXSS(data);
-        return true;
+        return false;
     }, function() {
         self.doEnd();
     });

@@ -196,18 +196,20 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
             return;
         }
 
+        tmp.value = tmp.value.toString(ENCODING);
+
         if (onXSS(tmp.value))
             isXSS = true;
 
         var temporary = req.body[tmp.name];
 
         if (temporary === undefined) {
-            req.body[tmp.name] = tmp.value.toString(ENCODING);
+            req.body[tmp.name] = tmp.value;
             return;
         }
 
         if (framework_utils.isArray(temporary)) {
-            req.body[tmp.name].push(tmp.value.toString(ENCODING));
+            req.body[tmp.name].push(tmp.value);
             return;
         }
 
