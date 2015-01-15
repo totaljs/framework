@@ -15,6 +15,7 @@ updated: Utils.trim() supports arrays
 - fixed: (CRITICAL) if the controller middleware does not exist framework throws exception correctly
 - fixed: Utils.validation() (for Arrays)
 - fixed: authorization routing
+- fixed: (CRITICAL) request with multipart content-type
 - fixed: (CRITICAL) controller.memorize() in JSON output
 - fixed: (CRITICAL) uploading files, problem with the filename/name field (if it contained `;`)
 

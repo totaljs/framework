@@ -162,7 +162,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1701;
-    this.version_header = '1.7.1 (build: 13)';
+    this.version_header = '1.7.1 (build: 14)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -336,7 +336,6 @@ function Framework() {
             forward: 0,
             restriction: 0,
             notModified: 0,
-            mmr: 0,
             sse: 0,
             error400: 0,
             error401: 0,
@@ -832,14 +831,6 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
         method = 'get';
     }
 
-    var isMixed = flags.indexOf('mmr') !== -1;
-
-    if (isMixed && url.indexOf('{') !== -1)
-        throw new Error('Mixed route cannot contain dynamic path.');
-
-    if (isMixed && flags.indexOf('upload') !== -1)
-        throw new Error('Multipart mishmash: mmr vs. upload.');
-
     var isMember = false;
 
     if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1 && flags.indexOf('unlogged') === -1)
@@ -870,13 +861,6 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
         priority++;
     }
 
-    if (isMixed) {
-        if (flags.indexOf('post') === -1 && flags.indexOf('put') === -1 && flags.indexOf('upload') === -1) {
-            flags.push('upload');
-            priority++;
-        }
-    }
-
     if (flags.indexOf('upload') !== -1) {
         if (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) {
             flags.push('post');
@@ -901,7 +885,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
     if (flags.indexOf('referer') !== -1)
         self._request_check_referer = true;
 
-    if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
+    if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
         self._request_check_POST = true;
 
     if (!(middleware instanceof Array))
@@ -4473,10 +4457,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
         else if (multipart.indexOf('/xml') !== -1)
             flags.push('xml');
 
-        if (multipart.indexOf('mixed') === -1)
-            multipart = '';
-        else
-            flags.push('mmr');
+        multipart = '';
     }
 
     if (multipart.length > 0)
@@ -7052,7 +7033,6 @@ function Subscribe(framework, req, res, type) {
     this.route = null;
     this.timeout = null;
     this.isCanceled = false;
-    this.isMixed = false;
     this.isTransfer = false;
     this.header = '';
     this.error = null;
@@ -7100,20 +7080,14 @@ Subscribe.prototype.multipart = function(header) {
         return self;
     }
 
-    if (header.indexOf('mixed') === -1) {
-        framework._verify_directory('temp');
-        framework_internal.parseMULTIPART(req, header, self.route.length, framework.config['directory-temp'], function(data) {
-            if (framework.onXSS)
-                return framework.onXSS(data);
-            return true;
-        }, function() {
-            self.doEnd();
-        });
-        return self;
-    }
-
-    self.isMixed = true;
-    self.execute(404);
+    framework._verify_directory('temp');
+    framework_internal.parseMULTIPART(req, header, self.route.length, framework.config['directory-temp'], function(data) {
+        if (framework.onXSS)
+            return framework.onXSS(data);
+        return true;
+    }, function() {
+        self.doEnd();
+    });
     return self;
 };
 
@@ -7214,7 +7188,7 @@ Subscribe.prototype.execute = function(status) {
 
     self.controller = controller;
 
-    if (!self.isCanceled && !self.isMixed && route.timeout > 0) {
+    if (!self.isCanceled && route.timeout > 0) {
         self.timeout = setTimeout(function() {
             self.doCancel();
         }, route.timeout);
@@ -7302,17 +7276,8 @@ Subscribe.prototype.doExecute = function() {
         if (controller.isCanceled)
             return self;
 
-        if (!self.isMixed) {
-            self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
-            return self;
-        }
-
-        framework._verify_directory('temp');
-        framework_internal.parseMULTIPART_MIXED(req, self.header, framework.config['directory-temp'], function(file) {
-            self.route.execute.call(controller, file);
-        }, function() {
-            self.doEnd();
-        });
+        self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
+        return self;
 
     } catch (err) {
         controller = null;
@@ -7355,18 +7320,6 @@ Subscribe.prototype.doEnd = function() {
     var req = self.req;
     var res = self.res;
     var route = self.route;
-
-    if (self.isMixed) {
-        req.clear(true);
-        var headers = {};
-        headers[RESPONSE_HEADER_CONTENTTYPE] = 'text/plain; charset=utf-8';
-        headers[RESPONSE_HEADER_CACHECONTROL] = 'private, max-age=0';
-        res.writeHead(200, headers);
-        res.end('END');
-        framework._request_stats(false, false);
-        framework.emit('request-end', req,res);
-        return self;
-    }
 
     if (req.buffer_exceeded) {
         route = framework.lookup(req, '#431');
@@ -7663,7 +7616,6 @@ function Controller(name, req, res, subscribe, currentView) {
 
     // controller.type === 0 - classic
     // controller.type === 1 - server sent events
-    // controller.type === 2 - multipart/x-mixed-replace
     this.type = 0;
 
     this.layoutName = framework.config['default-layout'];
@@ -10372,83 +10324,6 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 
     res.write(builder);
     framework.stats.response.sse++;
-
-    return self;
-};
-
-/*
-    Send a file or stream via [m]ultipart/x-[m]ixed-[r]eplace
-    @filename {String}
-    @{stream} {Stream} :: optional, if undefined then framework reads by the filename file from disk
-    @cb {Function} :: callback if stream is sent
-    return {Controller}
-*/
-Controller.prototype.mmr = function(filename, stream, cb) {
-
-    var self = this;
-    var res = self.res;
-
-    if (!self.isConnected)
-        return self;
-
-    if (self.type === 0 && res.success)
-        throw new Error('Response was sent.');
-
-    if (self.type > 0 && self.type !== 2)
-        throw new Error('Response was used.');
-
-    if (self.type === 0) {
-        self.type = 2;
-        self.boundary = '----totaljs' + utils.GUID(10);
-        self.subscribe.success();
-        res.success = true;
-        self.req.on('close', self.close.bind(self));
-
-        var headers = {
-            'Pragma': 'no-cache'
-        };
-
-        headers[RESPONSE_HEADER_CONTENTTYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
-        headers[RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, max-age=0, must-revalidate';
-        res.writeHead(self.status, headers);
-    }
-
-    var type = typeof(stream);
-
-    if (type === TYPE_FUNCTION) {
-        cb = stream;
-        stream = null;
-    }
-
-    res.write('--' + self.boundary + '\r\n' + RESPONSE_HEADER_CONTENTTYPE + ': ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
-
-    if (stream !== undefined && stream !== null) {
-
-        stream.on('end', function() {
-            self = null;
-            if (cb)
-                cb();
-        });
-
-        stream.pipe(res, {
-            end: false
-        });
-        framework.stats.response.mmr++;
-        return self;
-    }
-
-    stream = fs.createReadStream(filename);
-
-    stream.on('end', function() {
-        self = null;
-        if (cb)
-            cb();
-    });
-
-    stream.pipe(res, {
-        end: false
-    });
-    framework.stats.response.mmr++;
 
     return self;
 };
