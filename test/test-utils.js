@@ -59,7 +59,8 @@ function prototypeString() {
 	assert.ok(str.trim().replaceAt(5, ';') === 'total;js', 'string.replaceAt()');
 
 	str = ' A PeTer Širka   Je krááály. ';
-	assert.ok(str.toSearch() === 'a peter sirka je kraaali.', 'string.toSearch()');
+
+	assert.ok(str.toSearch() === 'a peter sirka je kraaali', 'string.toSearch()');
 
 	str = 'Great function.';
 
@@ -360,9 +361,9 @@ function others() {
 
 	result = utils.parseXML('<xml>OK</xml>');
 
-	obj = { a: '  1  ', b: { a: '    2 '}};
+	obj = { a: '  1  ', b: { a: '    2 '}, c: [' 1 ', '2', [' 3', ' 5  ']]};
 	utils.trim(obj);
-	assert.ok(JSON.stringify(obj) === '{"a":"1","b":{"a":"2"}}', 'utils.trim()');
+	assert.ok(JSON.stringify(obj) === '{"a":"1","b":{"a":"2"},"c":["1","2",["3","5"]]}', 'utils.trim()');
 
 	var async = new utils.Async();
 	var value = [];

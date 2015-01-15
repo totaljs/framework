@@ -1,6 +1,6 @@
 /**
  * @module FrameworkUtils
- * @version 1.7.0.
+ * @version 1.7.1.
  */
 
 'use strict';
@@ -735,18 +735,40 @@ exports.trim = function(obj) {
     if (type === STRING)
         return obj.trim();
 
+    if (obj instanceof Array) {
+        for (var i = 0, length = obj.length; i < length; i++) {
+
+            var item = obj[i];
+            type = typeof(item);
+
+            if (type === OBJECT) {
+                exports.trim(item);
+                continue;
+            }
+
+            if (type !== STRING)
+                continue;
+
+            obj[i] = item.trim();
+        }
+
+        return obj;
+    }
+
     if (type !== OBJECT)
         return obj;
 
     Object.keys(obj).forEach(function(name) {
-        var val = obj[name];
 
-        if (typeof(val) === OBJECT) {
+        var val = obj[name];
+        var type = typeof(val);
+
+        if (type === OBJECT) {
             exports.trim(val);
             return;
         }
 
-        if (typeof(val) !== STRING)
+        if (type !== STRING)
             return;
 
         obj[name] = val.trim();
@@ -2277,7 +2299,7 @@ String.prototype.md5 = function(salt) {
 };
 
 String.prototype.toSearch = function() {
-    return this.replace(/[^a-zA-Z\d\s:]/g, '').trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
+    return this.replace(/[^a-zA-Zá-žÁ-Ž\d\s:]/g, '').trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
 };
 
 /*
