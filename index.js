@@ -6885,6 +6885,10 @@ FrameworkCache.prototype.add = function(name, value, expire) {
     return value;
 };
 
+FrameworkCache.prototype.set = function(name, value, expire) {
+    return this.add(name, value, expire);
+};
+
 /**
  * Get item from the cache
  * @alias FrameworkCache.prototype.get
