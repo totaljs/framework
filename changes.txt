@@ -8,8 +8,8 @@ This version will work on `io.js` without problems.
 - added: request.ip caching
 - added: framework.useConfig(filename-configuration)
 
-updated: String.toSearch() removes non-word characters
-updated: Utils.trim() supports arrays
+- updated: String.toSearch() removes non-word characters
+- updated: Utils.trim() supports arrays
 
 - fixed: framework.versionNode (updated for io.js)
 - fixed: (CRITICAL) if the controller middleware does not exist framework throws exception correctly
