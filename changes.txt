@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.7.1 (HOTFIX)
+======= 1.7.1 (HOTFIX)
 
 This version will work on `io.js` without problems.
 
@@ -18,6 +18,8 @@ updated: Utils.trim() supports arrays
 - fixed: (CRITICAL) request with multipart content-type (+fixed problem XSS)
 - fixed: (CRITICAL) controller.memorize() in JSON output
 - fixed: (CRITICAL) uploading files, problem with the filename/name field (if it contained `;`)
+
+- removed: mmr
 
 ======= 1.7.0
 
