@@ -59,7 +59,8 @@ function prototypeString() {
 	assert.ok(str.trim().replaceAt(5, ';') === 'total;js', 'string.replaceAt()');
 
 	str = ' A PeTer Širka   Je krááály. ';
-	assert.ok(str.toSearch() === 'a peter sirka je kraaali.', 'string.toSearch()');
+
+	assert.ok(str.toSearch() === 'a peter sirka je kraaali', 'string.toSearch()');
 
 	str = 'Great function.';
 
@@ -192,6 +193,10 @@ function prototypeString() {
 	assert.ok(str.slug() === 'peter-sirka-linker-you-known', 'string.slug(): ' + str);
 	assert.ok(str.slug(11) === 'peter-sirka', 'string.slug(): ' + str);
 
+	assert.ok('total.js'.capitalize() === 'Total.js', 'string.capitalize()');
+	assert.ok('totaljs'.isAlphaNumeric(), 'string.isAlphaNumeric(true)');
+	assert.ok('total js'.isAlphaNumeric() === false, 'string.isAlphaNumeric(false)');
+
 	str = '// Configuration\nname   : total.js\nage    : 29\n// comment1    : comment1\n# comment2     : comment2\ndebug  : false';
 	assert.ok(JSON.stringify(str.parseConfig({ comment3: 'comment3' })) === '{"comment3":"comment3","name":"total.js","age":"29","debug":"false"}', 'String.parseConfig()');
 }
@@ -295,8 +300,11 @@ function others() {
 	utils.copy({ name: 'A', age: -1 }, obj);
 	assert.ok(obj.name === 'A' && obj.age === -1, 'utils.copy(rewrite=true)');
 
-	utils.reduce(obj, ['name']);
-	assert.ok(typeof(obj.age) === 'undefined', 'utils.reduce()');
+	var a = utils.reduce(obj, ['name']);
+	var b = utils.reduce(obj, ['name'], true);
+
+	assert.ok(typeof(a.age) === 'undefined', 'utils.reduce()');
+	assert.ok(typeof(b.age) === 'number', 'utils.reduce() - reverse');
 
 	var str = 'http://www.google.sk';
 	assert.ok(utils.isRelative(str) === false, 'utils.isRelative(): ' + str);
@@ -353,9 +361,9 @@ function others() {
 
 	result = utils.parseXML('<xml>OK</xml>');
 
-	obj = { a: '  1  ', b: { a: '    2 '}};
+	obj = { a: '  1  ', b: { a: '    2 '}, c: [' 1 ', '2', [' 3', ' 5  ']]};
 	utils.trim(obj);
-	assert.ok(JSON.stringify(obj) === '{"a":"1","b":{"a":"2"}}', 'utils.trim()');
+	assert.ok(JSON.stringify(obj) === '{"a":"1","b":{"a":"2"},"c":["1","2",["3","5"]]}', 'utils.trim()');
 
 	var async = new utils.Async();
 	var value = [];

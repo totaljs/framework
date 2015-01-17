@@ -1,6 +1,6 @@
 /**
  * @module FrameworkUtils
- * @version 1.7.0.
+ * @version 1.7.1.
  */
 
 'use strict';
@@ -15,7 +15,6 @@ var fs = require('fs');
 var events = require('events');
 var crypto = require('crypto');
 var expressionCache = {};
-var sys = require('sys');
 
 var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
@@ -736,18 +735,40 @@ exports.trim = function(obj) {
     if (type === STRING)
         return obj.trim();
 
+    if (obj instanceof Array) {
+        for (var i = 0, length = obj.length; i < length; i++) {
+
+            var item = obj[i];
+            type = typeof(item);
+
+            if (type === OBJECT) {
+                exports.trim(item);
+                continue;
+            }
+
+            if (type !== STRING)
+                continue;
+
+            obj[i] = item.trim();
+        }
+
+        return obj;
+    }
+
     if (type !== OBJECT)
         return obj;
 
     Object.keys(obj).forEach(function(name) {
-        var val = obj[name];
 
-        if (typeof(val) === OBJECT) {
+        var val = obj[name];
+        var type = typeof(val);
+
+        if (type === OBJECT) {
             exports.trim(val);
             return;
         }
 
-        if (typeof(val) !== STRING)
+        if (type !== STRING)
             return;
 
         obj[name] = val.trim();
@@ -837,31 +858,29 @@ exports.copy = function(source, target) {
  * Reduce an object
  * @param {Object} source Source object.
  * @param {String Array or Object} prop Other properties than these ones will be removed.
- * @return {[type]}
+ * @param {Boolean} reverse Reverse reducing (prop will be removed), default: false.
+ * @return {Object}
  */
-exports.reduce = function(source, prop) {
+exports.reduce = function(source, prop, reverse) {
 
-    if (source === null || prop === null)
-        return source;
+    if (!(prop instanceof Array)) {
+        if (typeof(prop) === OBJECT)
+            return exports.reduce(source, Object.keys(prop), reverse);
+    }
 
-    var type = typeof(prop);
+    var output = {};
 
-    if (prop instanceof Array) {
-        Object.keys(source).forEach(function(o) {
+    Object.keys(source).forEach(function(o) {
+        if (reverse) {
             if (prop.indexOf(o) === -1)
-                delete source[o];
-        });
-    }
+                output[o] = source[o];
+        } else {
+            if (prop.indexOf(o) !== -1)
+                output[o] = source[o];
+        }
+    });
 
-    if (type === OBJECT) {
-        var obj = Object.keys(prop);
-        Object.keys(source).forEach(function(o) {
-            if (obj.indexOf(o) === -1)
-                delete source[o];
-        });
-    }
-
-    return source;
+    return output;
 };
 
 /**
@@ -1125,8 +1144,12 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
         builder = null;
     }
 
-    if (collection === undefined)
+    var empty = false;
+
+    if (collection === undefined) {
+        empty = true;
         collection = {};
+    }
 
     var error = builder;
     var current = path === undefined ? '' : path + '.';
@@ -1147,7 +1170,9 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
             definition = collection === undefined ? builders.schema('default').collection : collection;
             if (!definition)
                 definition = {};
-        } else
+        } else if (!empty)
+            return error;
+        else
             properties = properties.replace(/\s/g, '').split(',');
     }
 
@@ -1419,6 +1444,7 @@ exports.parseXML = function(xml) {
             var index = match[i].indexOf('"');
             attr[match[i].substring(0, index - 1)] = match[i].substring(index + 1, match[i].length - 1).decode();
         }
+
         obj[current.join('.') + (isSingle ? '.' + name : '') + '[]'] = attr;
     }
 
@@ -1656,11 +1682,11 @@ Date.prototype.format = function(format) {
     var s = self.getSeconds().toString();
     var M = (self.getMonth() + 1).toString();
     var yyyy = self.getFullYear().toString();
+    var yy = self.getYear().toString();
     var d = self.getDate().toString();
 
     var a = 'AM';
     var H = h.toString();
-
 
     if (h >= 12) {
         h -= 12;
@@ -1678,7 +1704,6 @@ Date.prototype.format = function(format) {
     var ss = s.padLeft(2, '0');
     var MM = M.padLeft(2, '0');
     var dd = d.padLeft(2, '0');
-    var yy = yyyy.substring(2);
 
     if (format === undefined || format === null || format === '')
         return yyyy + '-' + MM + '-' + dd + 'T' + hh + ':' + mm + ':' + ss + ':' + self.getMilliseconds().toString();
@@ -2274,7 +2299,7 @@ String.prototype.md5 = function(salt) {
 };
 
 String.prototype.toSearch = function() {
-    return this.trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
+    return this.replace(/[^a-zA-Zá-žÁ-Ž\d\s:]/g, '').trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
 };
 
 /*
@@ -2550,6 +2575,19 @@ String.prototype.pluralize = function(zero, one, few, other) {
 String.prototype.isBoolean = function() {
     var self = this.toLowerCase();
     return (self === 'true' || self === 'false') ? true : false;
+};
+
+String.prototype.capitalize = function() {
+    return this[0].toUpperCase() + this.substring(1);
+};
+
+/**
+ * Check if the string contains only letters and numbers.
+ * @return {Boolean}
+ */
+String.prototype.isAlphaNumeric = function() {
+  var regExp = /^[A-Za-z0-9]+$/;
+  return (this.match(regExp) ? true : false);
 };
 
 /*

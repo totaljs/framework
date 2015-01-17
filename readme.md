@@ -37,6 +37,7 @@ __Social networks__:
 References
 ----------
 
+- [Warstore.sk (Ecommerce)](https://www.warstore.sk)
 - [Spektrum-bb.sk (Ecommerce)](https://www.spektrum-bb.sk)
 - [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)
 - [GPS Localization (WebSocket) - www.gpslocalization.com](http://www.gpslocalization.com)
@@ -73,6 +74,7 @@ Videos on YouTube
 - Serkan Kocaman, <https://github.com/KiPSOFT>
 - Andrea Sessa, <https://github.com/asessa>
 - Ehsan Darrudi, <https://github.com/darrudi>
+- Tom Spaccialbelli, <https://github.com/harry-stot>
 
 ## Contact
 

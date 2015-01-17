@@ -1,5 +1,25 @@
-IN DEVELOPMENT ======= 1.7.1
+======= 1.7.1 (HOTFIX)
 
+This version will work on `io.js` without problems.
+
+- added: framework.schedule(date/string/number, fn);
+- added: (IMPORTANT) a prevention for the HeaderSent exception
+- added: new option `sleep` for framework.http() & framework.https()
+- added: request.ip caching
+- added: framework.useConfig(filename-configuration)
+
+updated: String.toSearch() removes non-word characters
+updated: Utils.trim() supports arrays
+
+- fixed: framework.versionNode (updated for io.js)
+- fixed: (CRITICAL) if the controller middleware does not exist framework throws exception correctly
+- fixed: Utils.validation() (for Arrays)
+- fixed: authorization routing
+- fixed: (CRITICAL) request with multipart content-type (+fixed problem XSS)
+- fixed: (CRITICAL) controller.memorize() in JSON output
+- fixed: (CRITICAL) uploading files, problem with the filename/name field (if it contained `;`)
+
+- removed: mmr
 
 ======= 1.7.0
 

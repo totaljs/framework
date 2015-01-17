@@ -14,7 +14,6 @@ var path = require('path');
 var crypto = require('crypto');
 var parser = require('url');
 var events = require('events');
-var sys = require('sys');
 var http = require('http');
 var directory = process.cwd();
 var child = require('child_process');
@@ -60,7 +59,7 @@ if (!global.framework_nosql)
     global.framework_nosql = require('./nosql');
 
 global.Builders = global.builders = framework_builders;
-var utils = global.Utils = global.utils = framework_utils;
+var utils = global.Utils = global.utils = global.U = framework_utils;
 global.Mail = global.MAIL = framework_mail;
 
 global.include = global.INCLUDE = global.source = global.SOURCE = function(name, options) {
@@ -117,6 +116,38 @@ global.ROUTING = function(name) {
     return framework.routing(name);
 };
 
+global.SCHEDULE = function(date, fn) {
+    return framework.schedule(date, fn);
+};
+
+global.SUCCESS = function(success, value) {
+
+    var err;
+
+    if (success instanceof Error) {
+        err = success;
+        success = false;
+    } else if (success instanceof Builders.ErrorBuilder) {
+        if (success.hasError()) {
+            err = success.output();
+            success = false;
+        } else
+            success = true;
+    } else if (success === null || success === undefined)
+        success = true;
+
+    var o = { success: success };
+
+    if (err)
+        o.error = err;
+
+    if (value === undefined)
+        return o;
+
+    o.value = value;
+    return o;
+};
+
 if (typeof(setImmediate) === UNDEFINED) {
     global.setImmediate = function(cb) {
         process.nextTick(cb);
@@ -130,9 +161,17 @@ global.RELEASE = false;
 function Framework() {
 
     this.id = null;
-    this.version = 1700;
-    this.version_header = '1.7.0';
-    this.versionNode = parseInt(process.version.replace('v', '').replace(/\./g, ''), 10);
+    this.version = 1701;
+    this.version_header = '1.7.1';
+
+    var version = process.version.toString().replace('v', '').replace(/\./g, '');
+
+    if (version[1] === '0')
+        version = parseFloat('0.' + version.substring(1));
+    else
+        version = parseFloat(version);
+
+    this.versionNode = version;
 
     this.config = {
 
@@ -212,6 +251,7 @@ function Framework() {
     this.connections = {};
     this.functions = {};
     this.versions = null;
+    this.schedules = {};
 
     this.isDebug = true;
     this.isTest = false;
@@ -296,7 +336,6 @@ function Framework() {
             forward: 0,
             restriction: 0,
             notModified: 0,
-            mmr: 0,
             sse: 0,
             error400: 0,
             error401: 0,
@@ -321,6 +360,7 @@ function Framework() {
     this._length_middleware = 0;
     this._length_request_middleware = 0;
     this._length_files = 0;
+    this._schedules = false;
 
     this.isVirtualDirectory = false;
     this.isCoffee = false;
@@ -378,6 +418,15 @@ Framework.prototype.refresh = function(clear) {
  */
 Framework.prototype.controller = function(name) {
     return this.controllers[name] || null;
+};
+
+/**
+ * Use configuration
+ * @param {String} filename
+ * @return {Framework}
+ */
+Framework.prototype.useConfig = function(name) {
+    return this._configure(name, true);
 };
 
 /**
@@ -461,13 +510,25 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
     if (external === false) {
         if (host[0] !== '/')
             host = '/' + host;
+
+        var flags;
+
+        if (withPath instanceof Array) {
+            flags = withPath;
+            withPath = permanent === true;
+        } else if (permanent instanceof Array) {
+            flags = permanent;
+            withPath = withPath === true;
+        } else
+            withPath = withPath === true;
+
+        permanent = withPath;
         framework.route(host, function() {
-            if (typeof(withPath) === BOOLEAN)
-                permanent = withPath;
             if (newHost[0] !== '/')
                 newHost = '/' + newHost;
             this.redirect(newHost, permanent);
-        });
+        }, flags);
+
         return self;
     }
 
@@ -484,6 +545,31 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
     };
 
     self._request_check_redirect = true;
+    return self;
+};
+
+/**
+ * Schedule job
+ * @param {Date or String} date
+ * @param {Function} fn
+ * @return {Framework}
+ */
+Framework.prototype.schedule = function(date, fn) {
+
+    var self = this;
+    var type = typeof(date);
+
+    if (type === STRING)
+        date = date.parseDate();
+    else if (type === NUMBER)
+        date = new Date(date);
+
+    var sum = date.getTime();
+    var id = Utils.GUID(5) + Utils.random(10000);
+
+    self.schedules[id] = { expire: sum, fn: fn };
+    self._schedules = true;
+
     return self;
 };
 
@@ -745,14 +831,6 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
         method = 'get';
     }
 
-    var isMixed = flags.indexOf('mmr') !== -1;
-
-    if (isMixed && url.indexOf('{') !== -1)
-        throw new Error('Mixed route cannot contain dynamic path.');
-
-    if (isMixed && flags.indexOf('upload') !== -1)
-        throw new Error('Multipart mishmash: mmr vs. upload.');
-
     var isMember = false;
 
     if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1 && flags.indexOf('unlogged') === -1)
@@ -783,13 +861,6 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
         priority++;
     }
 
-    if (isMixed) {
-        if (flags.indexOf('post') === -1 && flags.indexOf('put') === -1 && flags.indexOf('upload') === -1) {
-            flags.push('upload');
-            priority++;
-        }
-    }
-
     if (flags.indexOf('upload') !== -1) {
         if (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) {
             flags.push('post');
@@ -814,7 +885,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
     if (flags.indexOf('referer') !== -1)
         self._request_check_referer = true;
 
-    if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('mmr') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
+    if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
         self._request_check_POST = true;
 
     if (!(middleware instanceof Array))
@@ -2240,6 +2311,7 @@ Framework.prototype.usage = function(detailed) {
     var workers = Object.keys(self.workers);
     var modules = Object.keys(self.modules);
     var models = Object.keys(self.models);
+    var schedules = Object.keys(self.schedules);
     var helpers = Object.keys(self.helpers);
     var staticFiles = Object.keys(self.temporary.path);
     var staticRange = Object.keys(self.temporary.range);
@@ -2276,6 +2348,7 @@ Framework.prototype.usage = function(detailed) {
         cache: cache.length,
         worker: workers.length,
         connection: connections.length,
+        schedules: schedules.length,
         helper: helpers.length,
         error: self.errors.length,
         problem: self.problems.length,
@@ -2597,7 +2670,7 @@ Framework.prototype.responseStatic = function(req, res) {
 
     var self = this;
 
-    if (res.success)
+    if (res.success || res.headersSent)
         return self;
 
     var extension = req.extension;
@@ -2748,7 +2821,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
     var self = this;
 
-    if (res.success)
+    if (res.success || res.headersSent)
         return self;
 
     // Is package?
@@ -2896,7 +2969,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 
     var self = this;
 
-    if (res.success)
+    if (res.success || res.headersSent)
         return self;
 
     var uri = parser.parse(url);
@@ -2959,7 +3032,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 
     client.on('close', function() {
 
-        if (res.success)
+        if (res.success || res.headersSent)
             return;
 
         req.clear(true);
@@ -2988,8 +3061,8 @@ Framework.prototype.responseCustom = function(req, res) {
 
     var self = this;
 
-    if (res.success)
-        return self;
+    if (res.success || res.headersSent)
+        return;
 
     req.clear(true);
     res.success = true;
@@ -3271,7 +3344,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
     var self = this;
 
-    if (res.success)
+    if (res.success || res.headersSent)
         return self;
 
     req.clear(true);
@@ -3483,11 +3556,11 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 Framework.prototype.response400 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response401()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3517,11 +3590,11 @@ Framework.prototype.response400 = function(req, res, problem) {
 Framework.prototype.response401 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response401()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3549,11 +3622,11 @@ Framework.prototype.response401 = function(req, res, problem) {
 Framework.prototype.response403 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response403()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3581,11 +3654,11 @@ Framework.prototype.response403 = function(req, res, problem) {
 Framework.prototype.response404 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response404()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3614,11 +3687,11 @@ Framework.prototype.response408 = function(req, res, problem) {
 
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response408()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3646,11 +3719,11 @@ Framework.prototype.response408 = function(req, res, problem) {
 Framework.prototype.response431 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response431()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3679,14 +3752,14 @@ Framework.prototype.response431 = function(req, res, problem) {
 Framework.prototype.response500 = function(req, res, error) {
     var self = this;
 
-    if (res.success)
+    if (error)
+        self.error(error, null, req.uri);
+
+    if (res.success || res.headersSent)
         return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
-
-    if (error)
-        self.error(error, null, req.uri);
 
     res.success = true;
     var headers = {};
@@ -3711,11 +3784,11 @@ Framework.prototype.response500 = function(req, res, error) {
 Framework.prototype.response501 = function(req, res, problem) {
     var self = this;
 
-    if (res.success)
-        return self;
-
     if (problem)
         self.problem(problem, 'response501()', req.uri, req.ip);
+
+    if (res.success || res.headersSent)
+        return self;
 
     self._request_stats(false, req.isStaticFile);
     req.clear(true);
@@ -3749,7 +3822,7 @@ Framework.prototype.response501 = function(req, res, problem) {
 Framework.prototype.responseContent = function(req, res, code, contentBody, contentType, compress, headers) {
     var self = this;
 
-    if (res.success)
+    if (res.success || res.headersSent)
         return self;
 
     req.clear(true);
@@ -3821,8 +3894,8 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 
     var self = this;
 
-    if (res.success)
-        return self;
+    if (res.success || res.headersSent)
+        return;
 
     self._request_stats(false, req.isStaticFile);
 
@@ -3929,7 +4002,13 @@ Framework.prototype.initialize = function(http, debug, options) {
         } else
             self.ip = undefined;
 
-        self.server.listen(self.port, self.ip);
+        if (typeof(options.sleep) === NUMBER) {
+            setTimeout(function() {
+                self.server.listen(self.port, self.ip);
+            }, options.sleep);
+        } else
+            self.server.listen(self.port, self.ip);
+
 
         if (self.ip === undefined || self.ip === null)
             self.ip = 'auto';
@@ -4173,6 +4252,35 @@ Framework.prototype._service = function(count) {
     }
 
     self.emit('service', count);
+
+    // Run schedules
+    if (!self._schedules)
+        return self;
+
+    var keys = Object.keys(self.schedules);
+    var expire = new Date().getTime();
+    var pending = false;
+
+    // F.schedules() sets this property to true
+    self._schedules = false;
+
+    for (var i = 0, length = keys.length; i < length; i++) {
+
+        var key = keys[i];
+        var obj = self.schedules[key];
+
+        if (obj.expire > expire) {
+            pending = true;
+            continue;
+        }
+
+        delete self.schedules[key];
+        obj.fn.call(self);
+    }
+
+    if (pending)
+        self._schedules = true;
+
     return self;
 };
 
@@ -4348,10 +4456,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
         else if (multipart.indexOf('/xml') !== -1)
             flags.push('xml');
 
-        if (multipart.indexOf('mixed') === -1)
-            multipart = '';
-        else
-            flags.push('mmr');
+        multipart = '';
     }
 
     if (multipart.length > 0)
@@ -6780,6 +6885,10 @@ FrameworkCache.prototype.add = function(name, value, expire) {
     return value;
 };
 
+FrameworkCache.prototype.set = function(name, value, expire) {
+    return this.add(name, value, expire);
+};
+
 /**
  * Get item from the cache
  * @alias FrameworkCache.prototype.get
@@ -6927,7 +7036,6 @@ function Subscribe(framework, req, res, type) {
     this.route = null;
     this.timeout = null;
     this.isCanceled = false;
-    this.isMixed = false;
     this.isTransfer = false;
     this.header = '';
     this.error = null;
@@ -6975,20 +7083,14 @@ Subscribe.prototype.multipart = function(header) {
         return self;
     }
 
-    if (header.indexOf('mixed') === -1) {
-        framework._verify_directory('temp');
-        framework_internal.parseMULTIPART(req, header, self.route.length, framework.config['directory-temp'], function(data) {
-            if (framework.onXSS)
-                return framework.onXSS(data);
-            return true;
-        }, function() {
-            self.doEnd();
-        });
-        return self;
-    }
-
-    self.isMixed = true;
-    self.execute(404);
+    framework._verify_directory('temp');
+    framework_internal.parseMULTIPART(req, header, self.route.length, framework.config['directory-temp'], function(data) {
+        if (!self.route.isXSS && framework.onXSS)
+            return framework.onXSS(data);
+        return false;
+    }, function() {
+        self.doEnd();
+    });
     return self;
 };
 
@@ -7089,7 +7191,7 @@ Subscribe.prototype.execute = function(status) {
 
     self.controller = controller;
 
-    if (!self.isCanceled && !self.isMixed && route.timeout > 0) {
+    if (!self.isCanceled && route.timeout > 0) {
         self.timeout = setTimeout(function() {
             self.doCancel();
         }, route.timeout);
@@ -7106,7 +7208,7 @@ Subscribe.prototype.execute = function(status) {
         var middleware = framework.routes.middleware[route.middleware[i]];
 
         if (!middleware) {
-            self.error('Middleware not found: ' + route.middleware[i], controller.name, req.uri);
+            framework.error('Middleware not found: ' + route.middleware[i], controller.name, req.uri);
             continue;
         }
 
@@ -7177,17 +7279,8 @@ Subscribe.prototype.doExecute = function() {
         if (controller.isCanceled)
             return self;
 
-        if (!self.isMixed) {
-            self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
-            return self;
-        }
-
-        framework._verify_directory('temp');
-        framework_internal.parseMULTIPART_MIXED(req, self.header, framework.config['directory-temp'], function(file) {
-            self.route.execute.call(controller, file);
-        }, function() {
-            self.doEnd();
-        });
+        self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
+        return self;
 
     } catch (err) {
         controller = null;
@@ -7213,12 +7306,13 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
         req.user = user;
 
     var route = framework.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags);
+    var status = req.$isAuthorized ? 404 : 401;
 
     if (route === null)
-        route = framework.lookup(req, req.$isAuthorized ? '#404' : '#401');
+        route = framework.lookup(req, '#' + status);
 
     self.route = route;
-    self.execute(req.buffer_exceeded ? 431 : 404);
+    self.execute(req.buffer_exceeded ? 431 : status);
 
     return self;
 };
@@ -7229,18 +7323,6 @@ Subscribe.prototype.doEnd = function() {
     var req = self.req;
     var res = self.res;
     var route = self.route;
-
-    if (self.isMixed) {
-        req.clear(true);
-        var headers = {};
-        headers[RESPONSE_HEADER_CONTENTTYPE] = 'text/plain; charset=utf-8';
-        headers[RESPONSE_HEADER_CACHECONTROL] = 'private, max-age=0';
-        res.writeHead(200, headers);
-        res.end('END');
-        framework._request_stats(false, false);
-        framework.emit('request-end', req,res);
-        return self;
-    }
 
     if (req.buffer_exceeded) {
         route = framework.lookup(req, '#431');
@@ -7537,7 +7619,6 @@ function Controller(name, req, res, subscribe, currentView) {
 
     // controller.type === 0 - classic
     // controller.type === 1 - server sent events
-    // controller.type === 2 - multipart/x-mixed-replace
     this.type = 0;
 
     this.layoutName = framework.config['default-layout'];
@@ -7796,7 +7877,7 @@ Controller.prototype.pipe = function(url, headers, callback) {
         headers = tmp;
     }
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     framework.responsePipe(self.req, self.res, url, headers, null, function() {
@@ -9685,7 +9766,7 @@ Controller.prototype.helper = function(name) {
 Controller.prototype.json = function(obj, headers, beautify, replacer) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     if (typeof(headers) === BOOLEAN) {
@@ -9750,7 +9831,7 @@ Controller.prototype.custom = function() {
 
     self.subscribe.success();
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return false;
 
     framework.responseCustom(self.req, self.res);
@@ -9781,7 +9862,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
     var self = this;
     var type = typeof(contentType);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.subscribe.success();
@@ -9798,7 +9879,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 Controller.prototype.plain = function(contentBody, headers) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     var type = typeof(contentBody);
@@ -9828,7 +9909,7 @@ Controller.prototype.plain = function(contentBody, headers) {
 Controller.prototype.empty = function(headers) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     var code = 200;
@@ -9851,7 +9932,7 @@ Controller.prototype.destroy = function(problem) {
     if (problem)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.subscribe.success();
@@ -9871,7 +9952,7 @@ Controller.prototype.destroy = function(problem) {
 Controller.prototype.file = function(filename, downloadName, headers) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     if (filename[0] === '~')
@@ -9895,7 +9976,7 @@ Controller.prototype.file = function(filename, downloadName, headers) {
 Controller.prototype.image = function(filename, fnProcess, headers, useImageMagick) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     if (typeof(filename) === STRING) {
@@ -9922,7 +10003,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, useImageMagi
 Controller.prototype.stream = function(contentType, stream, downloadName, headers) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.subscribe.success();
@@ -9949,7 +10030,7 @@ Controller.prototype.view400 = function(problem) {
     if (problem && problem.length > 0)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -9979,7 +10060,7 @@ Controller.prototype.view401 = function(problem) {
     if (problem && problem.length > 0)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -10009,7 +10090,7 @@ Controller.prototype.view403 = function(problem) {
     if (problem && problem.length > 0)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -10038,7 +10119,7 @@ Controller.prototype.view404 = function(problem) {
     if (problem && problem.length > 0)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -10059,7 +10140,7 @@ Controller.prototype.view500 = function(error) {
 
     framework.error(typeof(error) === STRING ? new Error(error) : error, self.name, self.req.uri);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -10091,7 +10172,7 @@ Controller.prototype.view501 = function(problem) {
     if (problem && problem.length > 0)
         self.problem(problem);
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.req.path = [];
@@ -10120,7 +10201,7 @@ Controller.prototype.throw501 = function(problem) {
 Controller.prototype.redirect = function(url, permanent) {
     var self = this;
 
-    if (self.res.success || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected)
         return self;
 
     self.subscribe.success();
@@ -10246,83 +10327,6 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 
     res.write(builder);
     framework.stats.response.sse++;
-
-    return self;
-};
-
-/*
-    Send a file or stream via [m]ultipart/x-[m]ixed-[r]eplace
-    @filename {String}
-    @{stream} {Stream} :: optional, if undefined then framework reads by the filename file from disk
-    @cb {Function} :: callback if stream is sent
-    return {Controller}
-*/
-Controller.prototype.mmr = function(filename, stream, cb) {
-
-    var self = this;
-    var res = self.res;
-
-    if (!self.isConnected)
-        return self;
-
-    if (self.type === 0 && res.success)
-        throw new Error('Response was sent.');
-
-    if (self.type > 0 && self.type !== 2)
-        throw new Error('Response was used.');
-
-    if (self.type === 0) {
-        self.type = 2;
-        self.boundary = '----totaljs' + utils.GUID(10);
-        self.subscribe.success();
-        res.success = true;
-        self.req.on('close', self.close.bind(self));
-
-        var headers = {
-            'Pragma': 'no-cache'
-        };
-
-        headers[RESPONSE_HEADER_CONTENTTYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
-        headers[RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, max-age=0, must-revalidate';
-        res.writeHead(self.status, headers);
-    }
-
-    var type = typeof(stream);
-
-    if (type === TYPE_FUNCTION) {
-        cb = stream;
-        stream = null;
-    }
-
-    res.write('--' + self.boundary + '\r\n' + RESPONSE_HEADER_CONTENTTYPE + ': ' + utils.getContentType(path.extname(filename)) + '\r\n\r\n');
-
-    if (stream !== undefined && stream !== null) {
-
-        stream.on('end', function() {
-            self = null;
-            if (cb)
-                cb();
-        });
-
-        stream.pipe(res, {
-            end: false
-        });
-        framework.stats.response.mmr++;
-        return self;
-    }
-
-    stream = fs.createReadStream(filename);
-
-    stream.on('end', function() {
-        self = null;
-        if (cb)
-            cb();
-    });
-
-    stream.pipe(res, {
-        end: false
-    });
-    framework.stats.response.mmr++;
 
     return self;
 };
@@ -10627,6 +10631,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
         fnFrom();
 
     if (output.type !== CONTENTTYPE_TEXTHTML) {
+        self.subscribe.success();
         framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
         return;
     }
@@ -11850,6 +11855,9 @@ http.ServerResponse.prototype.send = function(code, body, type) {
     if (self.headersSent)
         return self;
 
+    if (self.controller)
+        self.controller.subscribe.success();
+
     var res = self;
     var req = self.req;
     var contentType = type;
@@ -11933,34 +11941,50 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 };
 
 http.ServerResponse.prototype.throw400 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response400(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw401 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response401(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw403 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response403(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw404 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response404(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw408 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response408(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw431 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response431(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw500 = function(error) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response500(this.req, this, error);
 };
 
 http.ServerResponse.prototype.throw501 = function(problem) {
+    if (this.controller)
+        this.controller.subscribe.success();
     framework.response501(this.req, this, problem);
 };
 
@@ -11970,10 +11994,10 @@ http.ServerResponse.prototype.throw501 = function(problem) {
  */
 http.ServerResponse.prototype.continue = function() {
     var self = this;
-
     if (self.headersSent)
         return;
-
+    if (self.controller)
+        self.controller.subscribe.success();
     framework.responseStatic(self.req, self);
     return self;
 };
@@ -11988,6 +12012,8 @@ http.ServerResponse.prototype.redirect = function(url, permanent) {
     var self = this;
     if (self.headersSent)
         return;
+    if (self.controller)
+        self.controller.subscribe.success();
     framework.responseRedirect(self.req, self, url, permanent);
     return self;
 };
@@ -12003,6 +12029,8 @@ http.ServerResponse.prototype.file = function(filename, downloadName, headers) {
     var self = this;
     if (self.headersSent)
         return;
+    if (self.controller)
+        self.controller.subscribe.success();
     framework.responseFile(self.req, self, filename, downloadName, headers);
     return self;
 };
@@ -12018,6 +12046,8 @@ http.ServerResponse.prototype.stream = function(contentType, stream, downloadNam
     var self = this;
     if (self.headersSent)
         return;
+    if (self.controller)
+        self.controller.subscribe.success();
     framework.responseStream(self.req, self, contentType, stream, downloadName, headers);
     return self;
 };
@@ -12033,6 +12063,8 @@ http.ServerResponse.prototype.image = function(filename, fnProcess, headers) {
     var self = this;
     if (self.headersSent)
         return;
+    if (self.controller)
+        self.controller.subscribe.success();
     framework.responseImage(self.req, self, filename, fnProcess, headers);
     return self;
 };
@@ -12054,12 +12086,19 @@ var _tmp = http.IncomingMessage.prototype;
 http.IncomingMessage.prototype = {
 
     get ip() {
+
         var self = this;
-        var proxy = self.headers['x-forwarded-for'];
+        if (self._ip)
+            return self._ip;
+
         //  x-forwarded-for: client, proxy1, proxy2, ...
+        var proxy = self.headers['x-forwarded-for'];
         if (proxy !== undefined)
-            return proxy.split(',', 1)[0] || self.connection.removiewddress;
-        return self.connection.remoteAddress;
+            self._ip = proxy.split(',', 1)[0] || self.connection.removiewddress;
+        else
+            self._ip = self.connection.remoteAddress;
+
+        return self._ip;
     },
 
     get query() {

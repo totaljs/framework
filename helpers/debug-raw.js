@@ -11,6 +11,7 @@ var options = {};
 // options.port = parseInt(process.argv[2]);
 // options.config = { name: 'total.js' };
 // options.https = { key: fs.readFileSync('keys/agent2-key.pem'), cert: fs.readFileSync('keys/agent2-cert.pem')};
+// options.sleep = 3000;
 
 var isDebugging = process.argv.indexOf('debugging') !== -1;
 var directory = process.cwd();

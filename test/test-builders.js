@@ -238,6 +238,12 @@ function test_Schema() {
 
     var obj = SCHEMA('default', '2').create();
 
+    var b = obj.$clone();
+
+    b.age = 10;
+
+    assert.ok(obj.age !== b.age, 'schema $clone');
+
     obj.$async(function(err, result) {
         assert.ok(err === null && countW === 2 && countS === 2 && result.length === 2, 'schema $async');
     }).$save().$workflow('send');

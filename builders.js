@@ -693,6 +693,10 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
         return self.clean(obj);
     };
 
+    obj.$clone = function() {
+        return self.$make(JSON.parse(JSON.stringify(obj)));
+    };
+
     obj.$prepare = function() {
         return self.prepare(obj);
     };
@@ -1345,6 +1349,7 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 
     delete model['$$result'];
     delete model['$$async'];
+    delete model['$clone'];
     delete model['$async'];
     delete model['$callback'];
     delete model['$transform'];

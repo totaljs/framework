@@ -425,8 +425,8 @@ function test_routing(next) {
 	});
 
 	async.await('upload', function(complete) {
-		utils.send('test.txt', new Buffer('dG90YWwuanMgaXMga2luZyBvZiB3ZWI=', 'base64'), url + 'upload/', function(error, data, code, headers) {
-			assert(data === '{"name":"test.txt","length":25,"type":"text/plain"}', 'upload');
+		utils.send(',;-test.txt', new Buffer('dG90YWwuanMgaXMga2luZyBvZiB3ZWI=', 'base64'), url + 'upload/', function(error, data, code, headers) {
+			assert(data === '{"name":",;-test.txt","length":25,"type":"text/plain"}', 'upload');
 			complete();
 		});
 	});
@@ -535,6 +535,8 @@ framework.on('load', function() {
 
 	framework.merge('/mergepackage.js', '@testpackage/test.js');
 	assert.ok(MODULE('supermodule').ok, 'load module from subdirectory');
+	assert.ok(F.config['custom-config1'] === '1YES', 'custom configuration 1');
+	assert.ok(F.config['custom-config2'] === '2YES', 'custom configuration 2');
 
 	setTimeout(function() {
 		console.time('TEST');
@@ -542,4 +544,4 @@ framework.on('load', function() {
 	}, 2000);
 });
 
-framework.http('debug', { port: 8001 });
+framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('debug', { port: 8001 });
