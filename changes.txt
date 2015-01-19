@@ -1,3 +1,7 @@
+IN DEVELOPMENT ======= 1.7.2 (HOTFIX)
+
+- fixed: (CRITICAL) mail sender (problem with CRLF in BASE64)
+
 ======= 1.7.1 (HOTFIX)
 
 This version will work on `io.js` without problems.
