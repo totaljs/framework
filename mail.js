@@ -446,7 +446,7 @@ Message.prototype._send = function(socket, options) {
     message.push('Content-Type: ' + (self.body.indexOf('<') !== -1 && self.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
     message.push('Content-Transfer-Encoding: base64');
     message.push('');
-    message.push(prepareBASE64(new Buffer(self.body.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n')).toString('base64')));
+    message.push(prepareBASE64(new Buffer(self.body.replace(/\r\n/g, '\n').replace(/\n/g, CRLF)).toString('base64')));
 
     length = self.files.length;
 
@@ -676,7 +676,7 @@ function prepareBASE64(value) {
         var max = index + 68;
         if (max > length)
             max = length;
-        output += value.substring(index, max) + '\n';
+        output += value.substring(index, max) + CRLF;
         index = max;
     }
 
