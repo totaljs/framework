@@ -22,6 +22,9 @@ function debug() {
     var framework = require('total.js');
     var port = parseInt(process.argv[2]);
 
+    if (!options.port)
+        options.port = port || 8000;
+
     if (options.https)
         return framework.https('debug', options);
 
@@ -36,7 +39,7 @@ function debug() {
 function app() {
     var fork = require('child_process').fork;
     var utils = require('total.js/utils');
-    var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules', directory + '/resources', directory + '/components', directory + '/models', directory + '/source'];
+    var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules', directory + '/resources', directory + '/components', directory + '/models', directory + '/source', directory + '/workers'];
     var files = {};
     var force = false;
     var changes = [];
