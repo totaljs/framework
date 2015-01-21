@@ -229,6 +229,7 @@ function prototypeArray() {
 	assert.ok(arr.take(3).join('') === '123', 'array.take()');
 
 	assert.ok(arr.orderBy(false)[0] === 5, 'array.orderBy()');
+	assert.ok(arr.extend({ $index: 1 })[0].$index = 1, 'array.extend()');
 
 	var counter = arr.length;
 

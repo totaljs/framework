@@ -2914,6 +2914,18 @@ Array.prototype.take = function(count) {
 };
 
 /**
+ * Extend objects in Array
+ * @param {Object} obj
+ * @param {Boolean} rewrite Default: false.
+ * @return {Array} Returns self
+ */
+Array.prototype.extend = function(obj, rewrite) {
+    for (var i = 0, length = this.length; i < length; i++)
+        this[i] = exports.extend(this[i], obj, rewrite);
+    return this;
+};
+
+/**
  * First item in array
  * @param {Object} def Default value.
  * @return {Object}
