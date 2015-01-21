@@ -914,7 +914,7 @@ function autoprefixer_keyframes(value) {
     return value;
 }
 
-exports.compile_css = function(value, minify) {
+exports.compile_css = function(value) {
 
     if (framework.onCompileStyle !== null)
         return framework.onCompileStyle('', value);
@@ -1177,15 +1177,15 @@ exports.compile_javascript = function(source) {
         if (isFramework) {
 
             if (framework.onCompileScript !== null)
-                return framework.onCompileScript('', source);
+                return framework.onCompileScript('', source).trim();
 
             if (framework.onCompileJS !== null) {
                 console.log('OBSOLETE: framework.onCompileJS() is deprecated, use framework.onCompileScript()');
-                return framework.onCompileJS('', source);
+                return framework.onCompileJS('', source).trim();
             }
         }
 
-        return JavaScript(source);
+        return JavaScript(source).trim();
     } catch (ex) {
 
         if (isFramework)

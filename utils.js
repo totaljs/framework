@@ -1,6 +1,6 @@
 /**
  * @module FrameworkUtils
- * @version 1.7.1.
+ * @version 1.7.2
  */
 
 'use strict';
@@ -3896,6 +3896,18 @@ exports.queue = function(name, max, fn) {
     })(name);
 
     return true;
+};
+
+exports.minifyStyle = function(value) {
+    return require('./internal').compile_css(value);
+};
+
+exports.minifyScript = function(value) {
+    return require('./internal').compile_javascript(value);
+};
+
+exports.minifyHTML = function(value) {
+    return require('./internal').compile_html(value);
 };
 
 global.async = exports.async;

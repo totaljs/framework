@@ -1,5 +1,9 @@
 IN DEVELOPMENT ======= 1.7.2 (HOTFIX)
 
+- added: Utils.minifyHTML(value);
+- added: Utils.minifyScript(value);
+- added: Utils.minifyStyle(value);
+
 - fixed: (CRITICAL) mail sender (problem with CRLF in BASE64)
 
 ======= 1.7.1 (HOTFIX)
