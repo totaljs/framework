@@ -22,7 +22,7 @@ function debug() {
     var framework = require('total.js');
     var port = parseInt(process.argv[2]);
 
-    if (!options.port)
+    if (port > 0 && !options.port)
         options.port = port || 8000;
 
     if (options.https)
