@@ -671,6 +671,7 @@ function compile_autovendor(css) {
     var reg3 = /\s?\}\s{1,}/g;
     var reg4 = /\s?\:\s{1,}/g;
     var reg5 = /\s?\;\s{1,}/g;
+    var reg6 = /\,\s{1,}/g;
 
     var avp = '@#auto-vendor-prefix#@';
     var isAuto = css.startsWith(avp);
@@ -684,11 +685,17 @@ function compile_autovendor(css) {
             css = css.replace(avp, '');
     }
 
-
     if (isAuto)
         css = autoprefixer(css);
-
-    return css.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
+    return css.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(reg6, function(search, index, text) {
+        for (var i = index; i > 0; i--) {
+            if (text[i] === '\'' || text[i] === '"') {
+                if (text[i - 1] === ':')
+                    return search;
+            }
+        }
+        return ',';
+    }).replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
 }
 
 /*
