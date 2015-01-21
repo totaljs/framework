@@ -232,7 +232,7 @@ SchemaBuilderEntity.prototype.setQuery = function(fn) {
 
 /**
  * Set remove handler
- * @param {Function(error, model, helper, next(value))} fn
+ * @param {Function(error, helper, next(value))} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setRemove = function(fn) {
