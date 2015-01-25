@@ -2920,8 +2920,16 @@ Array.prototype.take = function(count) {
  * @return {Array} Returns self
  */
 Array.prototype.extend = function(obj, rewrite) {
-    for (var i = 0, length = this.length; i < length; i++)
+    var isFn = typeof(obj) === FUNCTION;
+    for (var i = 0, length = this.length; i < length; i++) {
+
+        if (isFn) {
+            this[i] = obj(this[i], i);
+            continue;
+        }
+
         this[i] = exports.extend(this[i], obj, rewrite);
+    }
     return this;
 };
 

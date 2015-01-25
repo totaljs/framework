@@ -229,7 +229,16 @@ function prototypeArray() {
 	assert.ok(arr.take(3).join('') === '123', 'array.take()');
 
 	assert.ok(arr.orderBy(false)[0] === 5, 'array.orderBy()');
-	assert.ok(arr.extend({ $index: 1 })[0].$index = 1, 'array.extend()');
+
+	arr = [{}, {}, {}];
+	assert.ok(arr.extend({ $index: 1 })[0].$index === 1, 'array.extend(obj)');
+
+	var c = arr.extend(function(item, index) {
+		item.$index = index;
+		return item;
+	});
+
+	assert.ok(c[0].$index === 0, 'array.extend(function)');
 
 	var counter = arr.length;
 
