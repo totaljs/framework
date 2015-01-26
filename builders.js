@@ -92,6 +92,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.properties = properties === undefined ? Object.keys(obj) : properties;
     this.transforms;
     this.composes;
+    this.operations;
     this.rules;
     this.onDefault;
     this.onValidation = validator;
@@ -291,6 +292,27 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
         self.transforms = {};
 
     self.transforms[name] = fn;
+    return self;
+};
+
+/**
+ * Add a new operation for the entity
+ * @param {String} name Operation name, optional.
+ * @param {Function(errorBuilder, [model], helper, next([output]), entityName)} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.addOperation = function(name, fn) {
+    var self = this;
+
+    if (typeof(name) === FUNCTION) {
+        fn = name;
+        name = 'default';
+    }
+
+    if (!self.operations)
+        self.operations = {};
+
+    self.operations[name] = fn;
     return self;
 };
 
@@ -674,6 +696,30 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
         obj.$$async.push(function(next) {
             self.workflow(name, obj, helper, function(err, result) {
+
+                if (obj.$$result)
+                    obj.$$result.push(err ? null : result);
+
+                if (!err)
+                    return next();
+                obj.$$async = null;
+                next = null;
+                obj.$callback(err, obj.$$result);
+            });
+        });
+
+        return obj;
+    };
+
+    obj.$operation = function(name, helper, callback) {
+
+        if (!obj.$$async) {
+            self.operation(name, obj, helper, callback);
+            return obj;
+        }
+
+        obj.$$async.push(function(next) {
+            self.operation(name, obj, helper, function(err, result) {
 
                 if (obj.$$result)
                     obj.$$result.push(err ? null : result);
@@ -1328,6 +1374,42 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 };
 
 /**
+ * Run an operation
+ * @param {String} name
+ * @param {Object} helper A helper object, optional.
+ * @param {Function(errorBuilder, output)} callback
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.operation = function(name, helper, callback) {
+
+    var self = this;
+
+    if (callback === undefined) {
+        callback = helper;
+        helper = undefined;
+    }
+
+    if (typeof(callback) !== 'function')
+        callback = undefined;
+
+    var operation = self.operations ? self.operations[name] : undefined;
+
+    if (!operation) {
+        callback(new ErrorBuilder().add('', 'Operation not found.'));
+        return;
+    }
+
+    var builder = new ErrorBuilder();
+
+    operation.call(self, builder, undefined, helper, function(result) {
+        if (callback)
+            callback(builder.hasError() ? builder : null, result);
+    }, self.name);
+
+    return self;
+};
+
+/**
  * Clean model (remove state of all schemas in model).
  * @param {Object} model
  * @param {Boolean} isCopied Internal argument.
@@ -1354,6 +1436,7 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
     delete model['$callback'];
     delete model['$transform'];
     delete model['$workflow'];
+    delete model['$operation'];
     delete model['$destroy'];
     delete model['$save'];
     delete model['$remove'];

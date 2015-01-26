@@ -162,7 +162,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1702;
-    this.version_header = '1.7.2 (build: 4)';
+    this.version_header = '1.7.2 (build: 6)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -239,9 +239,9 @@ function Framework() {
         'disable-strict-server-certificate-validation': true,
 
         // Used in framework._service()
-        // in minutes
+        // All values are in minutes
         'default-interval-clear-resources': 20,
-        'default-interval-clear-cache': 3,
+        'default-interval-clear-cache': 7,
         'default-interval-precompile-views': 61,
         'default-interval-websocket-ping': 1,
     };

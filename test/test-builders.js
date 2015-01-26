@@ -159,6 +159,10 @@ function test_Schema() {
     }).addWorkflow('send', function(err, model, helper, next) {
         countW++;
         next('workflow');
+    }).addOperation('test', function(err, model, helper, next) {
+        assert.ok(!model, 'schema - operation 1');
+        assert.ok(helper === true, 'schema - operation 2');
+        next(false);
     }).setGet(function(error, model, helper, next) {
         assert.ok(error.hasError() === false, 'schema - setGet');
         model.age = 99;
@@ -204,6 +208,8 @@ function test_Schema() {
         assert.ok(result === true, 'schema - remove');
     }).query(output, function(err, result) {
         assert.ok(result.length === 0, 'schema - query');
+    }).operation(true, function(err, result) {
+        assert.ok(!result, 'schema - operation - result');
     });
 
     builders.schema('validator', {
