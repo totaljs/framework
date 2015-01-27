@@ -1271,6 +1271,9 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
  */
 Framework.prototype.error = function(err, name, uri) {
 
+    if (err === null)
+        return this;
+
     if (err === undefined) {
         return function(err) {
             if (err)
