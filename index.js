@@ -11473,7 +11473,7 @@ WebSocketClient.prototype.parse = function() {
 
     self.buffer = self.buffer.slice(index + length + 4, self.buffer.length);
 
-    if (self.buffer.length >= 2)
+    if (self.buffer.length >= 2 && utils.getMessageLength(self.buffer, framework.isLE))
         self.parse();
 
     return self;
