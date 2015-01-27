@@ -212,6 +212,18 @@ function test_Schema() {
         assert.ok(!result, 'schema - operation - result');
     });
 
+    SCHEMA('default', '2').addOperation('test2', function(error, model, helper, next) {
+        assert.ok(model === 1 || model === undefined, 'schema - operation problem with model');
+        assert.ok(helper === 2 || helper === undefined, 'schema - operation problem with helper');
+        next(3);
+    }).operation('test2', 1, 2, function(err, value) {
+        assert.ok(value === 3, 'schema - operation advanced 1');
+    }).operation('test2', 2, function(err, value) {
+        assert.ok(value === 3, 'schema - operation advanced 2');
+    }).operation('test2', function(err, value) {
+        assert.ok(value === 3, 'schema - operation advanced 3');
+    });
+
     builders.schema('validator', {
         name: 'string',
         age: 'number',

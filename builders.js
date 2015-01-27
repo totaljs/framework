@@ -1376,15 +1376,34 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 /**
  * Run an operation
  * @param {String} name
- * @param {Object} helper A helper object, optional.
+ * @param {Object} model A model object, optional, priority: 2.
+ * @param {Object} helper A helper object, optional, priority: 1.
  * @param {Function(errorBuilder, output)} callback
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.operation = function(name, helper, callback) {
+SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback) {
 
     var self = this;
 
-    if (callback === undefined) {
+    var tm = typeof(model);
+    var th = typeof(helper);
+    var tc = typeof(callback);
+
+    if (tc === UNDEFINED) {
+        if (th === FUNCTION) {
+            callback = helper;
+            helper = model;
+            model = undefined;
+        } else if (th === UNDEFINED) {
+            helper = model;
+            model = undefined;
+        }
+    } else if (th === UNDEFINED) {
+        helper = model;
+        model = undefined;
+    }
+
+    if (typeof(helper) === FUNCTION) {
         callback = helper;
         helper = undefined;
     }
@@ -1401,7 +1420,7 @@ SchemaBuilderEntity.prototype.operation = function(name, helper, callback) {
 
     var builder = new ErrorBuilder();
 
-    operation.call(self, builder, undefined, helper, function(result) {
+    operation.call(self, builder, model, helper, function(result) {
         if (callback)
             callback(builder.hasError() ? builder : null, result);
     }, self.name);
