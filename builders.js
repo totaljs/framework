@@ -94,6 +94,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.composes;
     this.operations;
     this.rules;
+    this.constants;
     this.onDefault;
     this.onValidation = validator;
     this.onSave;
@@ -271,6 +272,25 @@ SchemaBuilderEntity.prototype.addRule = function(name, value) {
         self.rules = {};
 
     self.rules[name] = value;
+    return self;
+};
+
+/**
+ * Add a new constant for the schema
+ * @param {String} name Constant name, optional.
+ * @param {Object} value
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.constant = function(name, value) {
+    var self = this;
+
+    if (value === undefined)
+        return self.constants ? self.constants[name] : undefined;
+
+    if (!self.constants)
+        self.constants = {};
+
+    self.constants[name] = value;
     return self;
 };
 
@@ -757,6 +777,10 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
     obj.$rule = function(name) {
         return self.rule(name);
+    };
+
+    obj.$constant = function(name) {
+        return self.constant(name);
     };
 
     return obj;
@@ -1466,6 +1490,7 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
     delete model['$validate'];
     delete model['$compose'];
     delete model['$rule'];
+    delete model['$constant'];
 
     var keys = Object.keys(model);
 

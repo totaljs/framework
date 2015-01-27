@@ -1,6 +1,7 @@
 IN DEVELOPMENT ======= 1.7.2 (HOTFIX)
 
 - added: Array.prototype.extend(obj, [rewrite])
+- added: SchemaBuilderEntity->constant(name, [value])
 - added: Utils.minifyHTML(value);
 - added: Utils.minifyScript(value);
 - added: Utils.minifyStyle(value);

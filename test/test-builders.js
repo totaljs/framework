@@ -222,7 +222,9 @@ function test_Schema() {
         assert.ok(value === 3, 'schema - operation advanced 2');
     }).operation('test2', function(err, value) {
         assert.ok(value === 3, 'schema - operation advanced 3');
-    });
+    }).constant('test', true);
+
+    assert.ok(SCHEMA('default', '2').constant('test') === true, 'schema - constant');
 
     builders.schema('validator', {
         name: 'string',
