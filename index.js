@@ -6536,21 +6536,41 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
     return {Boolean}
 */
 FrameworkFileSystem.prototype.createTemporary = function(name, stream, callback) {
+
     var self = this;
+
+    if (typeof(stream) === 'string') {
+        Utils.download(stream, ['get'], function(err, response) {
+
+            if (err) {
+                if (callback)
+                    return callback(err);
+                F.error(err);
+                return;
+            }
+
+            self.createTemporary(name, response, callback);
+        });
+        return;
+    }
 
     framework._verify_directory('temp');
 
     var filename = utils.combine(framework.config['directory-temp'], name);
     var writer = fs.createWriteStream(filename);
 
-    if (callback) {
-        writer.on('error', function(err) {
-            callback(err, filename);
-        });
-        writer.on('end', function() {
-            callback(null, filename);
-        });
+    if (!callback) {
+        stream.pipe(writer);
+        return self;
     }
+
+    writer.on('error', function(err) {
+        callback(err, filename);
+    });
+
+    writer.on('finish', function() {
+        callback(null, filename);
+    });
 
     stream.pipe(writer);
     return self;
