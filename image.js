@@ -101,8 +101,6 @@ exports.measureSVG = function(buffer) {
     return { width: width, height: height };
 };
 
-console.log(exports.measureSVG(new Buffer('<svg width="600" height="600" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">')));
-
 /*
 	Image class
 	@filename {String}
