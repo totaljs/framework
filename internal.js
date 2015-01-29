@@ -169,11 +169,17 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
                 case 'image/png':
                     wh = framework_image.measurePNG(data);
                     break;
+                case 'image/svg+xml':
+                    wh = framework_image.measureSVG(data);
+                    break;
             }
 
             if (wh) {
                 tmp.width = wh.width;
                 tmp.height = wh.height;
+            } else {
+                tmp.width = 0;
+                tmp.height = 0;
             }
         }
 

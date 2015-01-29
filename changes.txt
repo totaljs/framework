@@ -5,11 +5,14 @@ IN DEVELOPMENT ======= 1.7.2 (HOTFIX)
 - added: Utils.minifyHTML(value);
 - added: Utils.minifyScript(value);
 - added: Utils.minifyStyle(value);
+- added: FrameworkImage.measureSVG(buffer);
+- added: auto-parsing SVG width/height
 
 - updated: CSS compressor (better compression)
 
 - fixed: WebSocket message parsing
 - fixed: (CRITICAL) mail sender (problem with CRLF in BASE64)
+- fixed: the framework duplicates width/height in upload auto-parser
 
 ======= 1.7.1 (HOTFIX)
 

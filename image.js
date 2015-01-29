@@ -66,6 +66,43 @@ exports.measurePNG = function(buffer) {
     return { width: u32(buffer, 16), height: u32(buffer, 16 + 4) };
 };
 
+exports.measureSVG = function(buffer) {
+
+    var match = buffer.toString('utf8').match(/(width=\"\d+\")+|(height=\"\d+\")+/g);
+    if (!match)
+        return;
+
+    var width = 0;
+    var height = 0;
+
+    for (var i = 0, length = match.length; i < length; i++) {
+        var value = match[i];
+
+        if (width > 0 && height > 0)
+            break;
+
+        if (width === 0) {
+            if (value.startsWith('width="')) {
+                width = parseInt(value.match(/\d+/g));
+                if (isNaN(width))
+                    width = 0;
+            }
+        }
+
+        if (height === 0) {
+            if (value.startsWith('height="')) {
+                height = parseInt(value.match(/\d+/g));
+                if (isNaN(height))
+                    height = 0;
+            }
+        }
+    }
+
+    return { width: width, height: height };
+};
+
+console.log(exports.measureSVG(new Buffer('<svg width="600" height="600" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">')));
+
 /*
 	Image class
 	@filename {String}
