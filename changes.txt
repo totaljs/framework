@@ -7,6 +7,9 @@ IN DEVELOPMENT ======= 1.7.2 (HOTFIX)
 - added: Utils.minifyStyle(value);
 - added: FrameworkImage.measureSVG(buffer);
 - added: auto-parsing SVG width/height
+- added: framework.translator([language], text);
+- added: TRANSLATOR
+- added: SUCCESS(boolean, [value]) returns { success: boolean, value: [value] }
 
 - updated: CSS compressor (better compression)
 
@@ -124,7 +127,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: module/controller supports dependencies --> exports.dependencies = ['moduleA', 'moduleB'];
 - added: framework.dependencies (this object contains all installed total.js dependencies)
 - added: controller.translate([text]);
-- added: framework.translate(text, [language])
+- added: framework.translate([language], text)
 - added: @{body.} instead of @{post.}
 - added: @{query.} instead of @{get.}
 - added: @{files} uploaded files

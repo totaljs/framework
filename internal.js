@@ -1606,14 +1606,10 @@ function view_parse_localization(content, language) {
     if (command === null)
         return content;
 
-    var prepare = function(content) {
-        return framework.translate(language, content);
-    };
-
     while (command !== null) {
 
         if (command !== null)
-            output += content.substring(end === 0 ? 0 : end + 1, command.beg) + prepare(command.command);
+            output += content.substring(end === 0 ? 0 : end + 1, command.beg) + framework.translate(language, command.command);
 
         end = command.end;
         command = view_find_localization(content, command.end);
@@ -2458,4 +2454,4 @@ exports.appendModel = function(str) {
     return str.substring(0, index) + '(model' + (end[0] === ')' ? end : ',' + end);
 };
 
-exports.parseLocalization = view_find_localization;
+exports.parseLocalization = view_parse_localization;

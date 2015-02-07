@@ -1,6 +1,6 @@
 /**
  * @module Framework
- * @version 1.7.0
+ * @version 1.7.2
  */
 
 'use strict';
@@ -96,6 +96,10 @@ global.TRANSLATE = function(name, key) {
     return framework.translate(name, key);
 };
 
+global.TRANSLATOR = function(name, text) {
+    return framework.translator(name, text);
+};
+
 global.LOG = function() {
     return framework.log.apply(framework, arguments);
 };
@@ -162,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1720;
-    this.version_header = '1.7.2 (build: 10)';
+    this.version_header = '1.7.2 (build: 11)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -5566,8 +5570,8 @@ Framework.prototype.resource = function(name, key) {
 
 /**
  * Translate text
+ * @param {String} language A resource filename, optional.
  * @param {String} text
- * @param {String} language A resource filename.
  * @return {String}
  */
 Framework.prototype.translate = function(language, text) {
@@ -5582,6 +5586,16 @@ Framework.prototype.translate = function(language, text) {
         return text;
 
     return value;
+};
+
+/**
+ * The translator for the text from the View Engine @(TEXT TO TRANSLATE)
+ * @param {String} language A resource filename, optional.
+ * @param {String} text
+ * @return {String}
+ */
+Framework.prototype.translator = function(language, text) {
+    return framework_internal.parseLocalization(text, language);
 };
 
 /**
