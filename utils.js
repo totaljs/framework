@@ -2800,9 +2800,9 @@ Number.prototype.pluralize = function(zero, one, few, other) {
     var num = this;
     var value = '';
 
-    if (num === 0)
+    if (num == 0)
         value = zero || '';
-    else if (num === 1)
+    else if (num == 1)
         value = one || '';
     else if (num > 1 && num < 5)
         value = few || '';
