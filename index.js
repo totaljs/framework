@@ -1251,6 +1251,11 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
     if (middleware === undefined)
         middleware = null;
 
+    if (middleware) {
+        for (var i = 0, length = middleware.length; i < length; i++)
+            middleware[i] = middleware[i].replace('#', '');
+    }
+
     self.routes.files.push({
         controller: (_controller || '').length === 0 ? 'unknown' : _controller,
         name: name,
@@ -4377,6 +4382,7 @@ Framework.prototype._request = function(req, res) {
         req.extension = path.extname(req.uri.pathname).substring(1);
 
     self._request_stats(true, true);
+
     if (self._length_request_middleware === 0)
         return self._request_continue(req, res, headers, protocol);
 
