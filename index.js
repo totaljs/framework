@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1720;
-    this.version_header = '1.7.2 (build: 12)';
+    this.version_header = '1.7.2 (build: 13)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -9852,8 +9852,11 @@ Controller.prototype.callback = function(viewName) {
         }
 
         if (err) {
-            if (err instanceof Builders.ErrorBuilder && !viewName)
+            if (err instanceof Builders.ErrorBuilder && !viewName) {
+                if (self.language)
+                    err.resource(self.language);
                 return self.json(err);
+            }
             return self.throw500(err);
         }
 
