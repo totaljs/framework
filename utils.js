@@ -312,8 +312,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
                     break;
 
                 case 'get':
-            case 'delete':
+                case 'delete':
                 case 'options':
+                case 'head':
                     method = flags[i].toUpperCase();
                     break;
 

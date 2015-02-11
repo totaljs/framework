@@ -12,6 +12,7 @@ IN DEVELOPMENT ======= 1.7.2 (HOTFIX)
 - added: SUCCESS(boolean, [value]) returns { success: boolean, value: [value] }
 
 - updated: CSS compressor (better compression)
+- updated: Utils.Request() supports head method
 
 - fixed: Number.prototype.pluralize()
 - fixed: WebSocket message parsing
