@@ -1,6 +1,6 @@
 /**
  * @module FrameworkBuilders
- * @version 1.7.0
+ * @version 1.7.2
  */
 
 'use strict';
@@ -119,6 +119,9 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, primary) {
             self.define(name[i], type, required);
         return self;
     }
+
+    if (type instanceof SchemaBuilderEntity)
+        type = type.name;
 
     if (primary)
         self.primary = primary;
