@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1720;
-    this.version_header = '1.7.2 (build: 14)';
+    this.version_header = '1.7.2 (build: 15)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2485,14 +2485,14 @@ Framework.prototype.compileContent = function(extension, content, filename) {
 
     switch (extension) {
         case 'js':
-            return self.config['allow-compile-js'] ? framework_internal.compile_javascript(content) : content;
+            return self.config['allow-compile-js'] ? framework_internal.compile_javascript(content, filename) : content;
 /*
         case 'html':
             return self.config['allow-compile-html'] ? framework_internal.compile_html(content) : content;
 */
         case 'css':
 
-            content = self.config['allow-compile-css'] ? framework_internal.compile_css(content) : content;
+            content = self.config['allow-compile-css'] ? framework_internal.compile_css(content, filename) : content;
 
             var matches = content.match(/url\(.*?\)/g);
             if (matches === null)

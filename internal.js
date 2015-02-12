@@ -927,14 +927,14 @@ function autoprefixer_keyframes(value) {
     return value;
 }
 
-exports.compile_css = function(value) {
+exports.compile_css = function(value, filename) {
 
     if (framework.onCompileStyle !== null)
-        return framework.onCompileStyle('', value);
+        return framework.onCompileStyle(filename, value);
 
     if (framework.onCompileCSS !== null) {
         console.log('OBSOLETE: framework.onCompileCSS() is deprecated, use framework.onCompileStyle()');
-        return framework.onCompileCSS('', value);
+        return framework.onCompileCSS(filename, value);
     }
 
     try {
@@ -1181,7 +1181,7 @@ function JavaScript(source) {
     return sb.join('');
 }
 
-exports.compile_javascript = function(source) {
+exports.compile_javascript = function(source, filename) {
 
     var isFramework = (typeof(framework) === OBJECT);
 
@@ -1190,11 +1190,11 @@ exports.compile_javascript = function(source) {
         if (isFramework) {
 
             if (framework.onCompileScript !== null)
-                return framework.onCompileScript('', source).trim();
+                return framework.onCompileScript(filename, source).trim();
 
             if (framework.onCompileJS !== null) {
                 console.log('OBSOLETE: framework.onCompileJS() is deprecated, use framework.onCompileScript()');
-                return framework.onCompileJS('', source).trim();
+                return framework.onCompileJS(filename, source).trim();
             }
         }
 
@@ -2239,7 +2239,7 @@ function compressJS(html, index) {
         return html;
 
     var val = js.substring(strFrom.length, js.length - strTo.length).trim();
-    var compiled = exports.compile_javascript(val);
+    var compiled = exports.compile_javascript(val, '');
     html = html.replacer(js, strFrom + compiled.dollar().trim() + strTo.trim());
     return compressJS(html, indexBeg + compiled.length + 9);
 }
@@ -2269,7 +2269,7 @@ function compressCSS(html, index) {
 
     var css = html.substring(indexBeg, indexEnd + strTo.length);
     var val = css.substring(strFrom.length, css.length - strTo.length).trim();
-    var compiled = exports.compile_css(val, true);
+    var compiled = exports.compile_css(val, '');
     html = html.replacer(css, (strFrom + compiled.trim() + strTo).trim());
     return compressCSS(html, indexBeg + compiled.length + 8);
 }
