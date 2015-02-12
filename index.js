@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1720;
-    this.version_header = '1.7.2 (build: 13)';
+    this.version_header = '1.7.2 (build: 14)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2150,6 +2150,14 @@ Framework.prototype.onError = function(err, name, uri) {
     @callback {Function} - @callback(Boolean), true is [authorize]d and false is [unauthorize]d
 */
 Framework.prototype.onAuthorization = null;
+
+/*
+    Sets the current language for the current request
+    @req {ServerRequest}
+    @res {ServerResponse} OR {WebSocketClient}
+    @return {String}
+*/
+Framework.prototype.onLocate = null;
 
 /*
     Versioning static files (this delegate call LESS CSS by the background property)
@@ -4383,6 +4391,9 @@ Framework.prototype._request = function(req, res) {
 
     self._request_stats(true, true);
 
+    if (self.onLocate)
+        req.$language = self.onLocate(req, res);
+
     if (self._length_request_middleware === 0)
         return self._request_continue(req, res, headers, protocol);
 
@@ -4596,6 +4607,9 @@ Framework.prototype._upgrade = function(req, socket, head) {
     var websocket = new WebSocketClient(req, socket, head);
 
     req.path = framework_internal.routeSplit(req.uri.pathname);
+
+    if (self.onLocate)
+        req.$language = self.onLocate(req, socket);
 
     if (self._length_request_middleware === 0)
         return self._upgrade_prepare(req, websocket, path, headers);
@@ -7215,8 +7229,11 @@ Subscribe.prototype.execute = function(status) {
     }
 
     if (route === null) {
-        if (status === 400 && self.exception instanceof Builders.ErrorBuilder)
+        if (status === 400 && self.exception instanceof Builders.ErrorBuilder) {
+            if (req.$language)
+                self.exception.resource(req.$language, framework.config['default-errorbuilder-resource-prefix']);
             framework.responseContent(req, res, 200, self.exception.json(), 'application/json', framework.config['allow-gzip']);
+        }
         else
             framework.responseContent(req, res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
         return self;
@@ -7659,6 +7676,11 @@ function Controller(name, req, res, subscribe, currentView) {
     this.res = res;
     this.exception = null;
     this.boundary = null;
+
+
+    // Sets the default language
+    if (req)
+        this.language = req.$$language;
 
     // controller.type === 0 - classic
     // controller.type === 1 - server sent events
@@ -12180,9 +12202,8 @@ http.IncomingMessage.prototype = {
     },
 
     get language() {
-        if (!this.$language) {
+        if (!this.$language)
             this.$language = (((this.headers['accept-language'] || '').split(';')[0] || '').split(',')[0] || '').toLowerCase();
-        }
         return this.$language;
     },
 

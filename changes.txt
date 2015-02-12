@@ -10,6 +10,7 @@ IN DEVELOPMENT ======= 1.7.2 (HOTFIX)
 - added: framework.translator([language], text);
 - added: TRANSLATOR
 - added: SUCCESS(boolean, [value]) returns { success: boolean, value: [value] }
+- added: framework.onLocate(req, res) --> this method sets the current localization
 
 - updated: CSS compressor (better compression)
 - updated: Utils.Request() supports head method
