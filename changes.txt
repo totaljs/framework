@@ -20,6 +20,7 @@ IN DEVELOPMENT ======= 1.7.2 (HOTFIX)
 - updated: CSS compressor (better compression)
 - updated: Utils.Request() supports head method
 
+- fixed: debug.js (fixed port)
 - fixed: F.onCompileStyle and F.onCompileJavaScript (problem with filename)
 - fixed: Number.prototype.pluralize()
 - fixed: WebSocket message parsing
