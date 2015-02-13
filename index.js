@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1720;
-    this.version_header = '1.7.2 (build: 15)';
+    this.version_header = '1.7.2 (build: 16)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -7166,7 +7166,9 @@ Subscribe.prototype.urlencoded = function() {
 
     self.req.buffer_has = true;
     self.req.buffer_exceeded = false;
-    self.req.socket.setEncoding(ENCODING);
+
+    // THROWS (in OSX): Assertion failed: (Buffer::HasInstance(args[0]) == true), function Execute, file ../src/node_http_parser.cc, line 392.
+    //self.req.socket.setEncoding(ENCODING);
 
     self.req.on('data', function(chunk) {
         self.doParsepost(chunk);
