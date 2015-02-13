@@ -1565,6 +1565,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         self.dependencies[key].count++;
 
         setTimeout(function() {
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
 
@@ -1577,6 +1578,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         setTimeout(function() {
             delete self.temporary['mail-settings'];
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
 
@@ -1591,6 +1593,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         self._configure_versions(declaration.toString(), true);
 
         setTimeout(function() {
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
 
@@ -1613,6 +1616,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             self.install('module', id, filename, options, function(err) {
 
                 setTimeout(function() {
+                    self.emit(type + '#' + name);
                     self.emit('install', type, name);
                 }, 500);
 
@@ -1646,6 +1650,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         fs.writeFileSync(item.filename, declaration);
 
         setTimeout(function() {
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
 
@@ -1690,6 +1695,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             callback(null);
 
         setTimeout(function() {
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
 
@@ -1781,6 +1787,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         if (!skipEmit) {
             setTimeout(function() {
+                self.emit(type + '#' + name);
                 self.emit('install', type, name);
             }, 500);
         }
@@ -1985,6 +1992,7 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 
     if (!skipEmit) {
         setTimeout(function() {
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
     }

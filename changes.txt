@@ -11,6 +11,11 @@ IN DEVELOPMENT ======= 1.7.2 (HOTFIX)
 - added: TRANSLATOR
 - added: SUCCESS(boolean, [value]) returns { success: boolean, value: [value] }
 - added: framework.onLocate(req, res) --> this method sets the current localization
+- added: new installation event framework.on('module#name');
+- added: new installation event framework.on('controller#name');
+- added: new installation event framework.on('model#name');
+- added: new installation event framework.on('definition#name');
+- added: new installation event framework.on('configr#name');
 
 - updated: CSS compressor (better compression)
 - updated: Utils.Request() supports head method
