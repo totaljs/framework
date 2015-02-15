@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1720;
-    this.version_header = '1.7.2 (build: 16)';
+    this.version_header = '1.7.2';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -7690,7 +7690,7 @@ function Controller(name, req, res, subscribe, currentView) {
 
     // Sets the default language
     if (req)
-        this.language = req.$$language;
+        this.language = req.$language;
 
     // controller.type === 0 - classic
     // controller.type === 1 - server sent events
@@ -9849,8 +9849,11 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
         beautify = headers;
     }
 
-    if (obj instanceof builders.ErrorBuilder)
+    if (obj instanceof builders.ErrorBuilder) {
+        if (self.language && !obj.isResourceCustom)
+            obj.resource(self.language);
         obj = obj.json(beautify);
+    }
     else {
         if (beautify)
             obj = JSON.stringify(obj || {}, replacer, 4);

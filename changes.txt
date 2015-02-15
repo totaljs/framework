@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.7.2 (HOTFIX)
+======= 1.7.2 (HOTFIX)
 
 - added: Array.prototype.extend(obj, [rewrite])
 - added: SchemaBuilderEntity->constant(name, [value])
@@ -20,11 +20,13 @@ IN DEVELOPMENT ======= 1.7.2 (HOTFIX)
 - updated: CSS compressor (better compression)
 - updated: Utils.Request() supports head method
 
+- fixed: binary `total --diff`
 - fixed: debug.js (fixed port)
 - fixed: F.onCompileStyle and F.onCompileJavaScript (problem with filename)
 - fixed: Number.prototype.pluralize()
 - fixed: WebSocket message parsing
 - fixed: (CRITICAL) mail sender (problem with CRLF in BASE64)
+- fixed: (CRITICAL) `../src/node_http_parser.cc, line 392.`
 - fixed: the framework duplicates width/height in upload auto-parser
 
 ======= 1.7.1 (HOTFIX)

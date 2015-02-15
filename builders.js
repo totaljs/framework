@@ -1544,6 +1544,7 @@ function ErrorBuilder(onResource) {
     this.onResource = onResource;
     this.resourceName = framework.config['default-errorbuilder-resource-name'] || 'default';
     this.resourcePrefix = framework.config['default-errorbuilder-resource-prefix'] || '';
+    this.isResourceCustom = false;
     this.count = 0;
     this.replacer = [];
     this.isPrepared = false;
@@ -1830,6 +1831,7 @@ ErrorBuilder.prototype = {
  */
 ErrorBuilder.prototype.resource = function(name, prefix) {
     var self = this;
+    self.isResourceCustom = true;
     self.resourceName = name || 'default';
     self.resourcePrefix = prefix || '';
     return self._resource();
