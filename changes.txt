@@ -15,7 +15,7 @@
 - added: new installation event framework.on('controller#name');
 - added: new installation event framework.on('model#name');
 - added: new installation event framework.on('definition#name');
-- added: new installation event framework.on('configr#name');
+- added: new installation event framework.on('config#name');
 
 - updated: CSS compressor (better compression)
 - updated: Utils.Request() supports head method
