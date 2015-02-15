@@ -1,6 +1,6 @@
 /**
  * @module FrameworkBuilders
- * @version 1.7.0
+ * @version 1.7.2
  */
 
 'use strict';
@@ -92,7 +92,9 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.properties = properties === undefined ? Object.keys(obj) : properties;
     this.transforms;
     this.composes;
+    this.operations;
     this.rules;
+    this.constants;
     this.onDefault;
     this.onValidation = validator;
     this.onSave;
@@ -117,6 +119,9 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, primary) {
             self.define(name[i], type, required);
         return self;
     }
+
+    if (type instanceof SchemaBuilderEntity)
+        type = type.name;
 
     if (primary)
         self.primary = primary;
@@ -232,7 +237,7 @@ SchemaBuilderEntity.prototype.setQuery = function(fn) {
 
 /**
  * Set remove handler
- * @param {Function(error, model, helper, next(value))} fn
+ * @param {Function(error, helper, next(value))} fn
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setRemove = function(fn) {
@@ -274,6 +279,25 @@ SchemaBuilderEntity.prototype.addRule = function(name, value) {
 };
 
 /**
+ * Add a new constant for the schema
+ * @param {String} name Constant name, optional.
+ * @param {Object} value
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.constant = function(name, value) {
+    var self = this;
+
+    if (value === undefined)
+        return self.constants ? self.constants[name] : undefined;
+
+    if (!self.constants)
+        self.constants = {};
+
+    self.constants[name] = value;
+    return self;
+};
+
+/**
  * Add a new transformation for the entity
  * @param {String} name Transform name, optional.
  * @param {Function(errorBuilder, model, helper, next([output]), entityName)} fn
@@ -291,6 +315,27 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
         self.transforms = {};
 
     self.transforms[name] = fn;
+    return self;
+};
+
+/**
+ * Add a new operation for the entity
+ * @param {String} name Operation name, optional.
+ * @param {Function(errorBuilder, [model], helper, next([output]), entityName)} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.addOperation = function(name, fn) {
+    var self = this;
+
+    if (typeof(name) === FUNCTION) {
+        fn = name;
+        name = 'default';
+    }
+
+    if (!self.operations)
+        self.operations = {};
+
+    self.operations[name] = fn;
     return self;
 };
 
@@ -689,6 +734,30 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
         return obj;
     };
 
+    obj.$operation = function(name, helper, callback) {
+
+        if (!obj.$$async) {
+            self.operation(name, obj, helper, callback);
+            return obj;
+        }
+
+        obj.$$async.push(function(next) {
+            self.operation(name, obj, helper, function(err, result) {
+
+                if (obj.$$result)
+                    obj.$$result.push(err ? null : result);
+
+                if (!err)
+                    return next();
+                obj.$$async = null;
+                next = null;
+                obj.$callback(err, obj.$$result);
+            });
+        });
+
+        return obj;
+    };
+
     obj.$clean = function() {
         return self.clean(obj);
     };
@@ -711,6 +780,10 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
     obj.$rule = function(name) {
         return self.rule(name);
+    };
+
+    obj.$constant = function(name) {
+        return self.constant(name);
     };
 
     return obj;
@@ -1328,6 +1401,61 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 };
 
 /**
+ * Run an operation
+ * @param {String} name
+ * @param {Object} model A model object, optional, priority: 2.
+ * @param {Object} helper A helper object, optional, priority: 1.
+ * @param {Function(errorBuilder, output)} callback
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback) {
+
+    var self = this;
+
+    var tm = typeof(model);
+    var th = typeof(helper);
+    var tc = typeof(callback);
+
+    if (tc === UNDEFINED) {
+        if (th === FUNCTION) {
+            callback = helper;
+            helper = model;
+            model = undefined;
+        } else if (th === UNDEFINED) {
+            helper = model;
+            model = undefined;
+        }
+    } else if (th === UNDEFINED) {
+        helper = model;
+        model = undefined;
+    }
+
+    if (typeof(helper) === FUNCTION) {
+        callback = helper;
+        helper = undefined;
+    }
+
+    if (typeof(callback) !== 'function')
+        callback = undefined;
+
+    var operation = self.operations ? self.operations[name] : undefined;
+
+    if (!operation) {
+        callback(new ErrorBuilder().add('', 'Operation not found.'));
+        return;
+    }
+
+    var builder = new ErrorBuilder();
+
+    operation.call(self, builder, model, helper, function(result) {
+        if (callback)
+            callback(builder.hasError() ? builder : null, result);
+    }, self.name);
+
+    return self;
+};
+
+/**
  * Clean model (remove state of all schemas in model).
  * @param {Object} model
  * @param {Boolean} isCopied Internal argument.
@@ -1354,6 +1482,7 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
     delete model['$callback'];
     delete model['$transform'];
     delete model['$workflow'];
+    delete model['$operation'];
     delete model['$destroy'];
     delete model['$save'];
     delete model['$remove'];
@@ -1364,6 +1493,7 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
     delete model['$validate'];
     delete model['$compose'];
     delete model['$rule'];
+    delete model['$constant'];
 
     var keys = Object.keys(model);
 
@@ -1414,6 +1544,7 @@ function ErrorBuilder(onResource) {
     this.onResource = onResource;
     this.resourceName = framework.config['default-errorbuilder-resource-name'] || 'default';
     this.resourcePrefix = framework.config['default-errorbuilder-resource-prefix'] || '';
+    this.isResourceCustom = false;
     this.count = 0;
     this.replacer = [];
     this.isPrepared = false;
@@ -1700,6 +1831,7 @@ ErrorBuilder.prototype = {
  */
 ErrorBuilder.prototype.resource = function(name, prefix) {
     var self = this;
+    self.isResourceCustom = true;
     self.resourceName = name || 'default';
     self.resourcePrefix = prefix || '';
     return self._resource();

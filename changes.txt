@@ -1,3 +1,34 @@
+======= 1.7.2 (HOTFIX)
+
+- added: Array.prototype.extend(obj, [rewrite])
+- added: SchemaBuilderEntity->constant(name, [value])
+- added: Utils.minifyHTML(value);
+- added: Utils.minifyScript(value);
+- added: Utils.minifyStyle(value);
+- added: FrameworkImage.measureSVG(buffer);
+- added: auto-parsing SVG width/height
+- added: framework.translator([language], text);
+- added: TRANSLATOR
+- added: SUCCESS(boolean, [value]) returns { success: boolean, value: [value] }
+- added: framework.onLocate(req, res) --> this method sets the current localization
+- added: new installation event framework.on('module#name');
+- added: new installation event framework.on('controller#name');
+- added: new installation event framework.on('model#name');
+- added: new installation event framework.on('definition#name');
+- added: new installation event framework.on('config#name');
+
+- updated: CSS compressor (better compression)
+- updated: Utils.Request() supports head method
+
+- fixed: binary `total --diff`
+- fixed: debug.js (fixed port)
+- fixed: F.onCompileStyle and F.onCompileJavaScript (problem with filename)
+- fixed: Number.prototype.pluralize()
+- fixed: WebSocket message parsing
+- fixed: (CRITICAL) mail sender (problem with CRLF in BASE64)
+- fixed: (CRITICAL) `../src/node_http_parser.cc, line 392.`
+- fixed: the framework duplicates width/height in upload auto-parser
+
 ======= 1.7.1 (HOTFIX)
 
 This version will work on `io.js` without problems.
@@ -108,7 +139,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: module/controller supports dependencies --> exports.dependencies = ['moduleA', 'moduleB'];
 - added: framework.dependencies (this object contains all installed total.js dependencies)
 - added: controller.translate([text]);
-- added: framework.translate(text, [language])
+- added: framework.translate([language], text)
 - added: @{body.} instead of @{post.}
 - added: @{query.} instead of @{get.}
 - added: @{files} uploaded files

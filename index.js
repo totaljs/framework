@@ -1,6 +1,6 @@
 /**
  * @module Framework
- * @version 1.7.0
+ * @version 1.7.2
  */
 
 'use strict';
@@ -96,6 +96,10 @@ global.TRANSLATE = function(name, key) {
     return framework.translate(name, key);
 };
 
+global.TRANSLATOR = function(name, text) {
+    return framework.translator(name, text);
+};
+
 global.LOG = function() {
     return framework.log.apply(framework, arguments);
 };
@@ -161,8 +165,8 @@ global.RELEASE = false;
 function Framework() {
 
     this.id = null;
-    this.version = 1701;
-    this.version_header = '1.7.1';
+    this.version = 1720;
+    this.version_header = '1.7.2';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -239,9 +243,9 @@ function Framework() {
         'disable-strict-server-certificate-validation': true,
 
         // Used in framework._service()
-        // in minutes
+        // All values are in minutes
         'default-interval-clear-resources': 20,
-        'default-interval-clear-cache': 3,
+        'default-interval-clear-cache': 7,
         'default-interval-precompile-views': 61,
         'default-interval-websocket-ping': 1,
     };
@@ -1247,6 +1251,11 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
     if (middleware === undefined)
         middleware = null;
 
+    if (middleware) {
+        for (var i = 0, length = middleware.length; i < length; i++)
+            middleware[i] = middleware[i].replace('#', '');
+    }
+
     self.routes.files.push({
         controller: (_controller || '').length === 0 ? 'unknown' : _controller,
         name: name,
@@ -1270,6 +1279,9 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
  * @return {Framework}
  */
 Framework.prototype.error = function(err, name, uri) {
+
+    if (err === null)
+        return this;
 
     if (err === undefined) {
         return function(err) {
@@ -1553,6 +1565,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         self.dependencies[key].count++;
 
         setTimeout(function() {
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
 
@@ -1565,6 +1578,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         setTimeout(function() {
             delete self.temporary['mail-settings'];
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
 
@@ -1579,6 +1593,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         self._configure_versions(declaration.toString(), true);
 
         setTimeout(function() {
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
 
@@ -1601,6 +1616,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             self.install('module', id, filename, options, function(err) {
 
                 setTimeout(function() {
+                    self.emit(type + '#' + name);
                     self.emit('install', type, name);
                 }, 500);
 
@@ -1634,6 +1650,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
         fs.writeFileSync(item.filename, declaration);
 
         setTimeout(function() {
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
 
@@ -1678,6 +1695,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
             callback(null);
 
         setTimeout(function() {
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
 
@@ -1769,6 +1787,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
         if (!skipEmit) {
             setTimeout(function() {
+                self.emit(type + '#' + name);
                 self.emit('install', type, name);
             }, 500);
         }
@@ -1973,6 +1992,7 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 
     if (!skipEmit) {
         setTimeout(function() {
+            self.emit(type + '#' + name);
             self.emit('install', type, name);
         }, 500);
     }
@@ -2138,6 +2158,14 @@ Framework.prototype.onError = function(err, name, uri) {
     @callback {Function} - @callback(Boolean), true is [authorize]d and false is [unauthorize]d
 */
 Framework.prototype.onAuthorization = null;
+
+/*
+    Sets the current language for the current request
+    @req {ServerRequest}
+    @res {ServerResponse} OR {WebSocketClient}
+    @return {String}
+*/
+Framework.prototype.onLocate = null;
 
 /*
     Versioning static files (this delegate call LESS CSS by the background property)
@@ -2465,14 +2493,14 @@ Framework.prototype.compileContent = function(extension, content, filename) {
 
     switch (extension) {
         case 'js':
-            return self.config['allow-compile-js'] ? framework_internal.compile_javascript(content) : content;
+            return self.config['allow-compile-js'] ? framework_internal.compile_javascript(content, filename) : content;
 /*
         case 'html':
             return self.config['allow-compile-html'] ? framework_internal.compile_html(content) : content;
 */
         case 'css':
 
-            content = self.config['allow-compile-css'] ? framework_internal.compile_css(content) : content;
+            content = self.config['allow-compile-css'] ? framework_internal.compile_css(content, filename) : content;
 
             var matches = content.match(/url\(.*?\)/g);
             if (matches === null)
@@ -4370,6 +4398,10 @@ Framework.prototype._request = function(req, res) {
         req.extension = path.extname(req.uri.pathname).substring(1);
 
     self._request_stats(true, true);
+
+    if (self.onLocate)
+        req.$language = self.onLocate(req, res);
+
     if (self._length_request_middleware === 0)
         return self._request_continue(req, res, headers, protocol);
 
@@ -4583,6 +4615,9 @@ Framework.prototype._upgrade = function(req, socket, head) {
     var websocket = new WebSocketClient(req, socket, head);
 
     req.path = framework_internal.routeSplit(req.uri.pathname);
+
+    if (self.onLocate)
+        req.$language = self.onLocate(req, socket);
 
     if (self._length_request_middleware === 0)
         return self._upgrade_prepare(req, websocket, path, headers);
@@ -5563,8 +5598,8 @@ Framework.prototype.resource = function(name, key) {
 
 /**
  * Translate text
+ * @param {String} language A resource filename, optional.
  * @param {String} text
- * @param {String} language A resource filename.
  * @return {String}
  */
 Framework.prototype.translate = function(language, text) {
@@ -5579,6 +5614,16 @@ Framework.prototype.translate = function(language, text) {
         return text;
 
     return value;
+};
+
+/**
+ * The translator for the text from the View Engine @(TEXT TO TRANSLATE)
+ * @param {String} language A resource filename, optional.
+ * @param {String} text
+ * @return {String}
+ */
+Framework.prototype.translator = function(language, text) {
+    return framework_internal.parseLocalization(text, language);
 };
 
 /**
@@ -6533,21 +6578,41 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
     return {Boolean}
 */
 FrameworkFileSystem.prototype.createTemporary = function(name, stream, callback) {
+
     var self = this;
+
+    if (typeof(stream) === 'string') {
+        Utils.download(stream, ['get'], function(err, response) {
+
+            if (err) {
+                if (callback)
+                    return callback(err);
+                F.error(err);
+                return;
+            }
+
+            self.createTemporary(name, response, callback);
+        });
+        return;
+    }
 
     framework._verify_directory('temp');
 
     var filename = utils.combine(framework.config['directory-temp'], name);
     var writer = fs.createWriteStream(filename);
 
-    if (callback) {
-        writer.on('error', function(err) {
-            callback(err, filename);
-        });
-        writer.on('end', function() {
-            callback(null, filename);
-        });
+    if (!callback) {
+        stream.pipe(writer);
+        return self;
     }
+
+    writer.on('error', function(err) {
+        callback(err, filename);
+    });
+
+    writer.on('finish', function() {
+        callback(null, filename);
+    });
 
     stream.pipe(writer);
     return self;
@@ -7109,7 +7174,9 @@ Subscribe.prototype.urlencoded = function() {
 
     self.req.buffer_has = true;
     self.req.buffer_exceeded = false;
-    self.req.socket.setEncoding(ENCODING);
+
+    // THROWS (in OSX): Assertion failed: (Buffer::HasInstance(args[0]) == true), function Execute, file ../src/node_http_parser.cc, line 392.
+    //self.req.socket.setEncoding(ENCODING);
 
     self.req.on('data', function(chunk) {
         self.doParsepost(chunk);
@@ -7172,8 +7239,11 @@ Subscribe.prototype.execute = function(status) {
     }
 
     if (route === null) {
-        if (status === 400 && self.exception instanceof Builders.ErrorBuilder)
+        if (status === 400 && self.exception instanceof Builders.ErrorBuilder) {
+            if (req.$language)
+                self.exception.resource(req.$language, framework.config['default-errorbuilder-resource-prefix']);
             framework.responseContent(req, res, 200, self.exception.json(), 'application/json', framework.config['allow-gzip']);
+        }
         else
             framework.responseContent(req, res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
         return self;
@@ -7616,6 +7686,11 @@ function Controller(name, req, res, subscribe, currentView) {
     this.res = res;
     this.exception = null;
     this.boundary = null;
+
+
+    // Sets the default language
+    if (req)
+        this.language = req.$language;
 
     // controller.type === 0 - classic
     // controller.type === 1 - server sent events
@@ -9774,8 +9849,11 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
         beautify = headers;
     }
 
-    if (obj instanceof builders.ErrorBuilder)
+    if (obj instanceof builders.ErrorBuilder) {
+        if (self.language && !obj.isResourceCustom)
+            obj.resource(self.language);
         obj = obj.json(beautify);
+    }
     else {
         if (beautify)
             obj = JSON.stringify(obj || {}, replacer, 4);
@@ -9809,8 +9887,11 @@ Controller.prototype.callback = function(viewName) {
         }
 
         if (err) {
-            if (err instanceof Builders.ErrorBuilder && !viewName)
+            if (err instanceof Builders.ErrorBuilder && !viewName) {
+                if (self.language)
+                    err.resource(self.language);
                 return self.json(err);
+            }
             return self.throw500(err);
         }
 
@@ -12134,9 +12215,8 @@ http.IncomingMessage.prototype = {
     },
 
     get language() {
-        if (!this.$language) {
+        if (!this.$language)
             this.$language = (((this.headers['accept-language'] || '').split(';')[0] || '').split(',')[0] || '').toLowerCase();
-        }
         return this.$language;
     },
 

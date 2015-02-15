@@ -1,6 +1,6 @@
 /**
  * @module FrameworkUtils
- * @version 1.7.1.
+ * @version 1.7.2
  */
 
 'use strict';
@@ -312,8 +312,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
                     break;
 
                 case 'get':
-            case 'delete':
+                case 'delete':
                 case 'options':
+                case 'head':
                     method = flags[i].toUpperCase();
                     break;
 
@@ -2800,9 +2801,9 @@ Number.prototype.pluralize = function(zero, one, few, other) {
     var num = this;
     var value = '';
 
-    if (num === 0)
+    if (num == 0)
         value = zero || '';
-    else if (num === 1)
+    else if (num == 1)
         value = one || '';
     else if (num > 1 && num < 5)
         value = few || '';
@@ -2911,6 +2912,26 @@ Array.prototype.take = function(count) {
             return arr;
     }
     return arr;
+};
+
+/**
+ * Extend objects in Array
+ * @param {Object} obj
+ * @param {Boolean} rewrite Default: false.
+ * @return {Array} Returns self
+ */
+Array.prototype.extend = function(obj, rewrite) {
+    var isFn = typeof(obj) === FUNCTION;
+    for (var i = 0, length = this.length; i < length; i++) {
+
+        if (isFn) {
+            this[i] = obj(this[i], i);
+            continue;
+        }
+
+        this[i] = exports.extend(this[i], obj, rewrite);
+    }
+    return this;
 };
 
 /**
@@ -3896,6 +3917,18 @@ exports.queue = function(name, max, fn) {
     })(name);
 
     return true;
+};
+
+exports.minifyStyle = function(value) {
+    return require('./internal').compile_css(value);
+};
+
+exports.minifyScript = function(value) {
+    return require('./internal').compile_javascript(value);
+};
+
+exports.minifyHTML = function(value) {
+    return require('./internal').compile_html(value);
 };
 
 global.async = exports.async;

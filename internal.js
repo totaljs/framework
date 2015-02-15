@@ -169,11 +169,17 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
                 case 'image/png':
                     wh = framework_image.measurePNG(data);
                     break;
+                case 'image/svg+xml':
+                    wh = framework_image.measureSVG(data);
+                    break;
             }
 
             if (wh) {
                 tmp.width = wh.width;
                 tmp.height = wh.height;
+            } else {
+                tmp.width = 0;
+                tmp.height = 0;
             }
         }
 
@@ -671,6 +677,7 @@ function compile_autovendor(css) {
     var reg3 = /\s?\}\s{1,}/g;
     var reg4 = /\s?\:\s{1,}/g;
     var reg5 = /\s?\;\s{1,}/g;
+    var reg6 = /\,\s{1,}/g;
 
     var avp = '@#auto-vendor-prefix#@';
     var isAuto = css.startsWith(avp);
@@ -684,11 +691,17 @@ function compile_autovendor(css) {
             css = css.replace(avp, '');
     }
 
-
     if (isAuto)
         css = autoprefixer(css);
-
-    return css.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
+    return css.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(reg6, function(search, index, text) {
+        for (var i = index; i > 0; i--) {
+            if (text[i] === '\'' || text[i] === '"') {
+                if (text[i - 1] === ':')
+                    return search;
+            }
+        }
+        return ',';
+    }).replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
 }
 
 /*
@@ -914,14 +927,14 @@ function autoprefixer_keyframes(value) {
     return value;
 }
 
-exports.compile_css = function(value, minify) {
+exports.compile_css = function(value, filename) {
 
     if (framework.onCompileStyle !== null)
-        return framework.onCompileStyle('', value);
+        return framework.onCompileStyle(filename, value);
 
     if (framework.onCompileCSS !== null) {
         console.log('OBSOLETE: framework.onCompileCSS() is deprecated, use framework.onCompileStyle()');
-        return framework.onCompileCSS('', value);
+        return framework.onCompileCSS(filename, value);
     }
 
     try {
@@ -1168,7 +1181,7 @@ function JavaScript(source) {
     return sb.join('');
 }
 
-exports.compile_javascript = function(source) {
+exports.compile_javascript = function(source, filename) {
 
     var isFramework = (typeof(framework) === OBJECT);
 
@@ -1177,15 +1190,15 @@ exports.compile_javascript = function(source) {
         if (isFramework) {
 
             if (framework.onCompileScript !== null)
-                return framework.onCompileScript('', source);
+                return framework.onCompileScript(filename, source).trim();
 
             if (framework.onCompileJS !== null) {
                 console.log('OBSOLETE: framework.onCompileJS() is deprecated, use framework.onCompileScript()');
-                return framework.onCompileJS('', source);
+                return framework.onCompileJS(filename, source).trim();
             }
         }
 
-        return JavaScript(source);
+        return JavaScript(source).trim();
     } catch (ex) {
 
         if (isFramework)
@@ -1593,14 +1606,10 @@ function view_parse_localization(content, language) {
     if (command === null)
         return content;
 
-    var prepare = function(content) {
-        return framework.translate(language, content);
-    };
-
     while (command !== null) {
 
         if (command !== null)
-            output += content.substring(end === 0 ? 0 : end + 1, command.beg) + prepare(command.command);
+            output += content.substring(end === 0 ? 0 : end + 1, command.beg) + framework.translate(language, command.command);
 
         end = command.end;
         command = view_find_localization(content, command.end);
@@ -2230,7 +2239,7 @@ function compressJS(html, index) {
         return html;
 
     var val = js.substring(strFrom.length, js.length - strTo.length).trim();
-    var compiled = exports.compile_javascript(val);
+    var compiled = exports.compile_javascript(val, '');
     html = html.replacer(js, strFrom + compiled.dollar().trim() + strTo.trim());
     return compressJS(html, indexBeg + compiled.length + 9);
 }
@@ -2260,7 +2269,7 @@ function compressCSS(html, index) {
 
     var css = html.substring(indexBeg, indexEnd + strTo.length);
     var val = css.substring(strFrom.length, css.length - strTo.length).trim();
-    var compiled = exports.compile_css(val, true);
+    var compiled = exports.compile_css(val, '');
     html = html.replacer(css, (strFrom + compiled.trim() + strTo).trim());
     return compressCSS(html, indexBeg + compiled.length + 8);
 }
@@ -2445,4 +2454,4 @@ exports.appendModel = function(str) {
     return str.substring(0, index) + '(model' + (end[0] === ')' ? end : ',' + end);
 };
 
-exports.parseLocalization = view_find_localization;
+exports.parseLocalization = view_parse_localization;

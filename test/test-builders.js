@@ -159,6 +159,10 @@ function test_Schema() {
     }).addWorkflow('send', function(err, model, helper, next) {
         countW++;
         next('workflow');
+    }).addOperation('test', function(err, model, helper, next) {
+        assert.ok(!model, 'schema - operation 1');
+        assert.ok(helper === true, 'schema - operation 2');
+        next(false);
     }).setGet(function(error, model, helper, next) {
         assert.ok(error.hasError() === false, 'schema - setGet');
         model.age = 99;
@@ -204,7 +208,23 @@ function test_Schema() {
         assert.ok(result === true, 'schema - remove');
     }).query(output, function(err, result) {
         assert.ok(result.length === 0, 'schema - query');
+    }).operation(true, function(err, result) {
+        assert.ok(!result, 'schema - operation - result');
     });
+
+    SCHEMA('default', '2').addOperation('test2', function(error, model, helper, next) {
+        assert.ok(model === 1 || model === undefined, 'schema - operation problem with model');
+        assert.ok(helper === 2 || helper === undefined, 'schema - operation problem with helper');
+        next(3);
+    }).operation('test2', 1, 2, function(err, value) {
+        assert.ok(value === 3, 'schema - operation advanced 1');
+    }).operation('test2', 2, function(err, value) {
+        assert.ok(value === 3, 'schema - operation advanced 2');
+    }).operation('test2', function(err, value) {
+        assert.ok(value === 3, 'schema - operation advanced 3');
+    }).constant('test', true);
+
+    assert.ok(SCHEMA('default', '2').constant('test') === true, 'schema - constant');
 
     builders.schema('validator', {
         name: 'string',

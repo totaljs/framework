@@ -20,7 +20,13 @@ var first = process.argv.indexOf('restart') === -1;
 
 function debug() {
     var framework = require('total.js');
-    var port = parseInt(process.argv[2]);
+    var port = parseInt(process.argv[process.argv.length - 1]);
+
+    if (!isNaN(port)) {
+        if (!options)
+            options = {};
+        options.port = port;
+    }
 
     if (port > 0 && !options.port)
         options.port = port || 8000;
@@ -157,7 +163,7 @@ function app() {
         }
 
         var arr = process.argv;
-        arr.pop();
+        var port = arr.pop();
 
         if (first)
             first = false;
@@ -165,6 +171,7 @@ function app() {
             arr.push('restart');
 
         arr.push('debugging');
+        arr.push(port);
 
         app = fork(path.join(directory, 'debug.js'), arr);
 

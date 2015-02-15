@@ -518,7 +518,7 @@ function run() {
 		});
 	});
 }
-
+/*
 var mem = require('memwatch');
 
 mem.on('leak', function(info) {
@@ -528,7 +528,7 @@ mem.on('leak', function(info) {
 mem.on('stats', function(info) {
 	console.log('STATS ->', JSON.stringify(info));
 });
-
+*/
 framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html');
 
 framework.on('load', function() {

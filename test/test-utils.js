@@ -230,6 +230,16 @@ function prototypeArray() {
 
 	assert.ok(arr.orderBy(false)[0] === 5, 'array.orderBy()');
 
+	arr = [{}, {}, {}];
+	assert.ok(arr.extend({ $index: 1 })[0].$index === 1, 'array.extend(obj)');
+
+	var c = arr.extend(function(item, index) {
+		item.$index = index;
+		return item;
+	});
+
+	assert.ok(c[0].$index === 0, 'array.extend(function)');
+
 	var counter = arr.length;
 
 	arr.wait(function(item, next) {
@@ -281,7 +291,7 @@ function harmony() {
 	});
 }*/
 
-function others() {
+function other() {
 	var obj = {};
 
 	assert.ok(utils.isEmpty({}), 'utils.isEmpty() - is empty');
@@ -536,7 +546,9 @@ function others() {
 
 	b.name = 'Lucia';
 	assert.ok(utils.isEqual(a, b, ['a', 'b']), 'utils.isEqual(3)');
-
+	assert.ok(utils.minifyScript('var a = 1 ;') === 'var a=1;', 'JavaScript minifier');
+	assert.ok(utils.minifyStyle('body { margin: 0 0 0 5px }') === 'body{margin:0 0 0 5px}', 'Style minifier');
+	assert.ok(utils.minifyHTML('<b>\nTEST\n</b>') === '<b>TEST</b>', 'HTML minifier');
 }
 
 function onValidation(name, value, path) {
@@ -554,7 +566,7 @@ prototypeDate();
 prototypeNumber();
 prototypeString();
 prototypeArray();
-others();
+other();
 //harmony();
 
 console.log('================================================');
