@@ -2455,3 +2455,4 @@ exports.appendModel = function(str) {
 };
 
 exports.parseLocalization = view_parse_localization;
+exports.findLocalization = view_find_localization;

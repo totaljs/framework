@@ -590,7 +590,7 @@ function main() {
                     root = filename.substring(0, filename.lastIndexOf('/') + 1);
 
                 var content = fs.readFileSync(filename).toString('utf8');
-                var command = Internal.parseLocalization(content, 0);
+                var command = Internal.findLocalization(content, 0);
                 while (command !== null) {
                     var key = 'T' + command.command.hash();
                     var file = filename.substring(root.length);
@@ -605,7 +605,7 @@ function main() {
 
                     count++;
                     max = Math.max(max, key.length);
-                    command = Internal.parseLocalization(content, command.end);
+                    command = Internal.findLocalization(content, command.end);
                 }
             }
 
