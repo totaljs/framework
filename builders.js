@@ -1061,7 +1061,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
             }
 
             if (value === String) {
-                item[property] = onPrepare(property, val === undefined || val === null ? '' : val.toString());
+                item[property] = onPrepare(property, val === undefined || val === null ? '' : val.toString().trim());
                 continue;
             }
 
@@ -1120,7 +1120,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         if (val === null || typeval === UNDEFINED)
             tmp = '';
         else
-            tmp = val.toString();
+            tmp = val.toString().trim();
 
         if (type === BOOLEAN) {
             item[property] = onPrepare(property, tmp === 'true' || tmp === '1');
@@ -1161,7 +1161,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                     case 'string':
                     case 'varchar':
                     case 'text':
-                        item[property].push(onPrepare(property, (tmpB || '').toString(), j));
+                        item[property].push(onPrepare(property, (tmpB || '').toString().trim(), j));
                         break;
                     case 'bool':
                     case 'boolean':
@@ -1203,7 +1203,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
             var beg = lower.indexOf('(');
             if (beg === -1) {
-                item[property] = onPrepare(property, tmp);
+                item[property] = onPrepare(property, tmp.trim());
                 continue;
             }
 
