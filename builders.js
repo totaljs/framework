@@ -90,11 +90,14 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
     this.primary;
     this.schema = obj;
     this.properties = properties === undefined ? Object.keys(obj) : properties;
+    this.resourcePrefix;
+    this.resourceName;
     this.transforms;
     this.composes;
     this.operations;
     this.rules;
     this.constants;
+    this.onPrepare;
     this.onDefault;
     this.onValidation = validator;
     this.onSave;
@@ -191,6 +194,16 @@ SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
     return self;
 };
 
+SchemaBuilderEntity.prototype.setPrefix = function(prefix) {
+    this.resourcePrefix = prefix;
+    return this;
+};
+
+SchemaBuilderEntity.prototype.setResource = function(name) {
+    this.resourceName = name;
+    return this;
+};
+
 /**
  * Set the default values for schema
  * @param {Function(propertyName, isntPreparing, entityName)} fn
@@ -199,6 +212,17 @@ SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
 SchemaBuilderEntity.prototype.setDefault = function(fn) {
     var self = this;
     self.onDefault = fn;
+    return self;
+};
+
+/**
+ * Set the prepare
+ * @param {Function(name, value)} fn Must return a new value.
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.setPrepare = function(fn) {
+    var self = this;
+    self.onPrepare = fn;
     return self;
 };
 
@@ -560,6 +584,12 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
         if (fn === undefined || fn === null)
             return builder;
     }
+
+    if (self.resourcePrefix)
+        builder.resourcePrefix = self.resourcePrefix;
+
+    if (self.resourceName)
+        builder.resourceName = self.resourceName;
 
     if (resourceName)
         builder.resourceName = resourceName;
@@ -985,6 +1015,13 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
     if (model === null || model === undefined)
         return self.default();
 
+    var onPrepare = function(name, value, index) {
+        if (!self.onPrepare)
+            return value;
+        var val = self.onPrepare(name, value, index);
+        return val === undefined ? value : val;
+    };
+
     var tmp;
     var entity;
     var item = framework_utils.extend({}, obj, true);
@@ -1013,25 +1050,23 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         if (type === FUNCTION) {
 
             if (value === Number) {
-                item[property] = framework_utils.parseFloat(val);
+                item[property] = onPrepare(property, framework_utils.parseFloat(val));
                 continue;
             }
 
             if (value === Boolean) {
                 tmp = val.toString();
-                item[property] = tmp === 'true' || tmp === '1';
+                item[property] = onPrepare(property, tmp === 'true' || tmp === '1');
                 continue;
             }
 
             if (value === String) {
-                item[property] = val === undefined || val === null ? '' : val.toString();
+                item[property] = onPrepare(property, val === undefined || val === null ? '' : val.toString());
                 continue;
             }
 
             if (value === Date) {
-
                 tmp = null;
-
                 switch (typeval) {
                     case OBJECT:
                         if (framework_utils.isDate(val))
@@ -1055,12 +1090,16 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                 if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
                     tmp = null;
 
-                item[property] = tmp || (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
+                if (tmp)
+                    item[property] = onPrepare(property, tmp);
+                else
+                    item[property] = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
+
                 continue;
             }
 
             if (value === Object) {
-                item[property] = model[property];
+                item[property] = onPrepare(property, model[property]);
                 continue;
             }
 
@@ -1069,12 +1108,12 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         }
 
         if (type === OBJECT) {
-            item[property] = typeval === OBJECT ? val : null;
+            item[property] = typeval === OBJECT ? onPrepare(property, val) : null;
             continue;
         }
 
         if (type === NUMBER) {
-            item[property] = framework_utils.parseFloat(val);
+            item[property] = onPrepare(property, framework_utils.parseFloat(val));
             continue;
         }
 
@@ -1084,12 +1123,12 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
             tmp = val.toString();
 
         if (type === BOOLEAN) {
-            item[property] = tmp === 'true' || tmp === '1';
+            item[property] = onPrepare(property, tmp === 'true' || tmp === '1');
             continue;
         }
 
         if (type !== STRING) {
-            item[property] = tmp;
+            item[property] = onPrepare(property, tmp);
             continue;
         }
 
@@ -1112,7 +1151,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
             for (var j = 0, sublength = val.length; j < sublength; j++) {
 
                 if (value === null) {
-                    item[property].push(model[property][j]);
+                    item[property].push(onPrepare(property, model[property][j], j));
                     continue;
                 }
 
@@ -1122,22 +1161,22 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                     case 'string':
                     case 'varchar':
                     case 'text':
-                        item[property].push((tmpB || '').toString());
+                        item[property].push(onPrepare(property, (tmpB || '').toString(), j));
                         break;
                     case 'bool':
                     case 'boolean':
                         tmpB = (tmpB || '').toString().toLowerCase();
-                        item[property].push(tmpB === 'true' || tmpB === '1');
+                        item[property].push(onPrepare(property, tmpB === 'true' || tmpB === '1', j));
                         break;
                     case 'int':
                     case 'integer':
-                        item[property].push(framework_utils.parseInt(tmpB));
+                        item[property].push(onPrepare(property, framework_utils.parseInt(tmpB), j));
                         break;
                     case 'number':
-                        item[property].push(framework_utils.parseFloat(tmpB));
+                        item[property].push(onPrepare(property, framework_utils.parseFloat(tmpB), j));
                         break;
                     case 'object':
-                        item[property].push(tmpB);
+                        item[property].push(onPrepare(property, tmpB, j));
                         break;
                     default:
 
@@ -1146,7 +1185,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
                         if (entity) {
                             item[property][j] = entity.prepare(tmpB, dependencies);
                             if (dependencies)
-                                dependencies.push({ name: value, value: item[property][j] });
+                                dependencies.push({ name: value, value: onPrepare(value, item[property][j], j) });
                         }
                         else
                             item[property][j] = null;
@@ -1164,44 +1203,44 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
             var beg = lower.indexOf('(');
             if (beg === -1) {
-                item[property] = tmp;
+                item[property] = onPrepare(property, tmp);
                 continue;
             }
 
             var size = lower.substring(beg + 1, lower.length - 1).parseInt();
-            item[property] = tmp.max(size, '');
+            item[property] = onPrepare(property, tmp.max(size, ''));
             continue;
         }
 
         if (lower.contains(['int', 'byte'])) {
-            item[property] = framework_utils.parseInt(val);
+            item[property] = onPrepare(property, framework_utils.parseInt(val));
             continue;
         }
 
         if (lower.contains(['decimal', NUMBER, 'float', 'double'])) {
-            item[property] = framework_utils.parseFloat(val);
+            item[property] = onPrepare(property, framework_utils.parseFloat(val));
             continue;
         }
 
         if (lower.contains('bool', BOOLEAN)) {
-            item[property] = tmp === 'true' || tmp === '1';
+            item[property] = onPrepare(property, tmp === 'true' || tmp === '1');
             continue;
         }
 
         if (lower.contains(['date', 'time'])) {
 
             if (typeval === 'date') {
-                item[property] = val;
+                item[property] = onPrepare(property, val);
                 continue;
             }
 
             if (typeval === STRING) {
-                item[property] = val.parseDate();
+                item[property] = onPrepare(property, val.parseDate());
                 continue;
             }
 
             if (typeval === NUMBER) {
-                item[property] = new Date(val);
+                item[property] = onPrepare(property, new Date(val));
                 continue;
             }
 
@@ -1214,7 +1253,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         if (entity) {
             item[property] = entity.prepare(val);
             if (dependencies)
-                dependencies.push({ name: value, value: item[property] });
+                dependencies.push({ name: value, value: onPrepare(value, item[property]) });
         }
         else
             item[property] = null;
