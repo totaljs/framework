@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 1)';
+    this.version_header = '1.7.3 (build: 2)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -649,8 +649,16 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
     var name;
     var tmp;
     var viewname;
+    var skip = true;
 
-    if (typeof(funcExecute) === 'string' && flags !== undefined) {
+    for (var i = 0; i < arguments.length; i++) {
+        if (typeof(arguments[i]) === FUNCTION) {
+            skip = false;
+            break;
+        }
+    }
+
+    if (!skip && typeof(funcExecute) === 'string' && flags !== undefined) {
         // ID
         name = url;
         url = funcExecute;
