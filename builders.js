@@ -1,6 +1,6 @@
 /**
  * @module FrameworkBuilders
- * @version 1.7.2
+ * @version 1.7.3
  */
 
 'use strict';
@@ -1305,23 +1305,20 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
         }
 
         var builder = new ErrorBuilder();
-    /*
-        var noPrepare = self._getStateOfModel(model, 0) === '1';
-        var noValidate = self._getStateOfModel(model, 1) === '1';
-        var output =  noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
-        var builder = self.onValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
-    */
-        if (builder.hasError()) {
-            if (callback)
-                callback(builder);
-            return;
-        }
 
         trans.call(self, builder, model, helper, function(result) {
-            if (callback)
-                callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
-        }, self.name);
 
+            if (!callback)
+                return;
+
+            if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+                if (result instanceof Error || result instanceof ErrorBuilder)
+                    builder.push(result);
+                result = arguments[1];
+            }
+
+            callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+        }, self.name);
     });
 
     return self;
@@ -1372,8 +1369,17 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
         var builder = new ErrorBuilder();
 
         compose.call(self, builder, output, model, helper, function(result) {
-            if (callback)
-                callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
+
+            if (!callback)
+                return;
+
+            if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+                if (result instanceof Error || result instanceof ErrorBuilder)
+                    builder.push(result);
+                result = arguments[1];
+            }
+
+            callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
         }, self.name);
     });
 
@@ -1416,23 +1422,24 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 
     self.$prepare(model, function(err, model) {
 
-        var builder = new ErrorBuilder();
-
-    /*
-        var noPrepare = self._getStateOfModel(model, 0) === '1';
-        var noValidate = self._getStateOfModel(model, 1) === '1';
-        var output = noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
-        var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
-    */
-        if (builder.hasError()) {
-            if (callback)
-                callback(builder);
+        if (err) {
+            callback(err, model);
             return;
         }
 
+        var builder = new ErrorBuilder();
         workflow.call(self, builder, model, helper, function(result) {
-            if (callback)
-                callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+
+            if (!callback)
+                return;
+
+            if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+                if (result instanceof Error || result instanceof ErrorBuilder)
+                    builder.push(result);
+                result = arguments[1];
+            }
+
+            callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
         }, self.name);
     });
 
@@ -1487,8 +1494,17 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
     var builder = new ErrorBuilder();
 
     operation.call(self, builder, model, helper, function(result) {
-        if (callback)
-            callback(builder.hasError() ? builder : null, result);
+
+        if (!callback)
+            return;
+
+        if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+            if (result instanceof Error || result instanceof ErrorBuilder)
+                builder.push(result);
+            result = arguments[1];
+        }
+
+        callback(builder.hasError() ? builder : null, result);
     }, self.name);
 
     return self;

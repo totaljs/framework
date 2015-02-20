@@ -1,6 +1,6 @@
 /**
  * @module Framework
- * @version 1.7.2
+ * @version 1.7.3
  */
 
 'use strict';
@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 2)';
+    this.version_header = '1.7.3 (build: 3)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
