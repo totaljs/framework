@@ -37,6 +37,7 @@ __Social networks__:
 References
 ----------
 
+- [Bufferwall.com (Blog portal)](https://bufferwall.com)
 - [Warstore.sk (Ecommerce)](https://www.warstore.sk)
 - [Spektrum-bb.sk (Ecommerce)](https://www.spektrum-bb.sk)
 - [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)

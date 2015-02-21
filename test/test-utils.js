@@ -256,6 +256,14 @@ function prototypeArray() {
 
 	});
 
+	arr = [1, 2, 3, 4, 5, 6];
+	arr.limit(3, function(item, next, beg, end) {
+		if (beg === 0 && end === 3)
+			assert.ok(item.join(',') === '1,2,3', 'arrray.limit(0-3)');
+		else if (beg === 3 && end === 6)
+			assert.ok(item.join(',') === '4,5,6', 'arrray.limit(3-6)');
+	    next();
+	});
 }
 
 function t_callback1(a, cb) {

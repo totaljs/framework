@@ -1,6 +1,6 @@
 /**
  * @module FrameworkUtils
- * @version 1.7.2
+ * @version 1.7.3
  */
 
 'use strict';
@@ -3338,6 +3338,57 @@ Array.prototype.randomize = function() {
         old = c;
         return 1;
     });
+
+    return self;
+};
+
+Array.prototype.limit = function(max, fn, callback, index) {
+
+    if (index === undefined)
+        index = 0;
+
+    var current = [];
+    var self = this;
+    var length = index + max;
+
+    for (var i = index; i < length; i++) {
+        var item = self[i];
+
+        if (item !== undefined) {
+            current.push(item);
+            continue;
+        }
+
+        if (current.length === 0) {
+            if (callback)
+                callback();
+            return self;
+        }
+
+        fn(current, function() {
+            if (callback)
+                callback();
+        }, index, index + max);
+
+        return self;
+    }
+
+    if (current.length === 0) {
+        if (callback)
+            callback();
+        return self;
+    }
+
+    fn(current, function() {
+
+        if (length < self.length) {
+            self.limit(max, fn, callback, length);
+            return;
+        }
+
+        if (callback)
+            callback();
+    }, index, index + max);
 
     return self;
 };

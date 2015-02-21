@@ -4,6 +4,7 @@ IN DEVELOPMENT ======= 1.7.3
 - added: SchemaBuilderEntity–>setPrefix(prefix)
 - added: SchemaBuilderEntity->setResource(resourcename)
 - added: auto-trim strings in SchemaBuilderEntity
+- addde: Array.prototype.limit(max, fn, [callback]);
 
 ======= 1.7.2
 

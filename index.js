@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 3)';
+    this.version_header = '1.7.3 (build: 4)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2154,7 +2154,7 @@ Framework.prototype.eval = function(script) {
  * @return {Framework}
  */
 Framework.prototype.onError = function(err, name, uri) {
-    console.log('======= ' + (new Date().format('yyyy-MM-dd HH:mm:ss')) + ': ' + (name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + uri.toString() + ')' : ''), err.stack);
+    console.log('======= ' + (new Date().format('yyyy-MM-dd HH:mm:ss')) + ': ' + (name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + parser.format(uri) + ')' : ''), err.stack);
     return this;
 };
 
