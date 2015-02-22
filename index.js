@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 4)';
+    this.version_header = '1.7.3 (build: 5)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -528,11 +528,16 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 
         permanent = withPath;
         framework.route(host, function() {
+            if (newHost.startsWith('http://') || newHost.startsWith('https://')) {
+                this.redirect(newHost, permanent);
+                return;
+            }
+
             if (newHost[0] !== '/')
                 newHost = '/' + newHost;
+
             this.redirect(newHost, permanent);
         }, flags);
-
         return self;
     }
 
