@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 6)';
+    this.version_header = '1.7.3 (build: 7)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 

@@ -6,6 +6,7 @@ IN DEVELOPMENT ======= 1.7.3
 - added: auto-trim strings in SchemaBuilderEntity
 - added: Array.prototype.limit(max, fn(items, next), [callback])
 - added: Controller.route;
+- added: ErrorBuilder is a global class
 
 - fixed: framework.redirect()
 
