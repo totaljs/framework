@@ -5,6 +5,7 @@ IN DEVELOPMENT ======= 1.7.3
 - added: SchemaBuilderEntity->setResource(resourcename)
 - added: auto-trim strings in SchemaBuilderEntity
 - added: Array.prototype.limit(max, fn(items, next), [callback])
+- added: Controller.route;
 
 - fixed: framework.redirect()
 

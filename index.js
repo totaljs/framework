@@ -7852,6 +7852,10 @@ Controller.prototype = {
         framework.global = value;
     },
 
+    get route() {
+        return this.subscribe.route;
+    },
+
     get async() {
 
         var self = this;
