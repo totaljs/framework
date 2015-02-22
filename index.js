@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 5)';
+    this.version_header = '1.7.3 (build: 6)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -657,7 +657,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
     var skip = true;
 
     for (var i = 0; i < arguments.length; i++) {
-        if (typeof(arguments[i]) === FUNCTION) {
+        if (typeof(arguments[i]) === TYPE_FUNCTION) {
             skip = false;
             break;
         }
@@ -7850,10 +7850,6 @@ Controller.prototype = {
 
     set global(value) {
         framework.global = value;
-    },
-
-    get route() {
-        return this.subscribe.route;
     },
 
     get async() {
