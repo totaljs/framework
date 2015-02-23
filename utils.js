@@ -63,7 +63,7 @@ var contentTypes = {
     'm4a': 'audio/mp4a-latm',
     'm4v': 'video/x-m4v',
     'manifest': 'text/cache-manifest',
-    'md': 'text/markdown',
+    'md': 'text/x-markdown',
     'mid': 'audio/midi',
     'midi': 'audio/midi',
     'mov': 'video/quicktime',

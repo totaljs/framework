@@ -34,7 +34,7 @@ var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
 var RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var CONTENTTYPE_TEXTHTML = 'text/html';
-var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', CONTENTTYPE_TEXTHTML];
+var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', 'application/json', 'text/xml', 'image/svg+xml', 'text/x-markdown', CONTENTTYPE_TEXTHTML];
 
 var _controller = '';
 var _test;
@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 7)';
+    this.version_header = '1.7.3 (build: 8)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 

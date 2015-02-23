@@ -8,6 +8,8 @@ IN DEVELOPMENT ======= 1.7.3
 - added: Controller.route;
 - added: ErrorBuilder is a global class
 
+- updated: GZIP compression for static files (added .md, .json)
+
 - fixed: framework.redirect()
 
 ======= 1.7.2
