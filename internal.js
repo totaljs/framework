@@ -112,14 +112,12 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
         tmp.filename = header[1];
         tmp.filenameTmp = framework_utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + framework_utils.random(100000) + '.upload');
-        framework.emit('upload-begin', req, file);
 
         stream = fs.createWriteStream(tmp.filenameTmp, {
             flags: 'w'
         });
 
         stream.once('close', function() {
-            framework.emit('upload-end', req, file);
             close--;
         });
 
@@ -159,32 +157,37 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
             return;
         }
 
-        if (tmp.fileSize === 0) {
-            var wh = null;
-            switch (tmp.contentType) {
-                case 'image/jpeg':
-                    wh = framework_image.measureJPG(data);
-                    break;
-                case 'image/gif':
-                    wh = framework_image.measureGIF(data);
-                    break;
-                case 'image/png':
-                    wh = framework_image.measurePNG(data);
-                    break;
-                case 'image/svg+xml':
-                    wh = framework_image.measureSVG(data);
-                    break;
-            }
-
-            if (wh) {
-                tmp.width = wh.width;
-                tmp.height = wh.height;
-            } else {
-                tmp.width = 0;
-                tmp.height = 0;
-            }
+        if (tmp.fileSize) {
+            stream.write(data);
+            tmp.fileSize += length;
+            return;
         }
 
+        var wh = null;
+        switch (tmp.contentType) {
+            case 'image/jpeg':
+                wh = framework_image.measureJPG(data);
+                break;
+            case 'image/gif':
+                wh = framework_image.measureGIF(data);
+                break;
+            case 'image/png':
+                wh = framework_image.measurePNG(data);
+                break;
+            case 'image/svg+xml':
+                wh = framework_image.measureSVG(data);
+                break;
+        }
+
+        if (wh) {
+            tmp.width = wh.width;
+            tmp.height = wh.height;
+        } else {
+            tmp.width = 0;
+            tmp.height = 0;
+        }
+
+        framework.emit('upload-begin', req, new HttpFile(tmp.name, tmp.filename, tmp.filenameTmp, 0, tmp.contentType, tmp.width, tmp.height));
         stream.write(data);
         tmp.fileSize += length;
     };
@@ -200,7 +203,9 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
             return;
 
         if (tmp.isFile) {
-            req.files.push(new HttpFile(tmp.name, tmp.filename, tmp.filenameTmp, tmp.fileSize, tmp.contentType, tmp.width, tmp.height));
+            var httpfile = new HttpFile(tmp.name, tmp.filename, tmp.filenameTmp, tmp.fileSize, tmp.contentType, tmp.width, tmp.height);
+            req.files.push(httpfile);
+            framework.emit('upload-end', req, httpfile);
             return;
         }
 
