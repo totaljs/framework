@@ -7,6 +7,8 @@ IN DEVELOPMENT ======= 1.7.3
 - added: Array.prototype.limit(max, fn(items, next), [callback])
 - added: Controller.route;
 - added: ErrorBuilder is a global class
+- added: F.on('upload-begin', function(req, file) {})
+- added: F.on('upload-end', function(req, file) {})
 
 - updated: GZIP compression for static files (added .md, .json)
 

@@ -112,12 +112,14 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
         tmp.filename = header[1];
         tmp.filenameTmp = framework_utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + framework_utils.random(100000) + '.upload');
+        framework.emit('upload-begin', req, file);
 
         stream = fs.createWriteStream(tmp.filenameTmp, {
             flags: 'w'
         });
 
         stream.once('close', function() {
+            framework.emit('upload-end', req, file);
             close--;
         });
 
