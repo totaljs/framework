@@ -12,6 +12,7 @@ IN DEVELOPMENT ======= 1.7.3
 
 - updated: GZIP compression for static files (added .md, .json)
 
+- fixed: (CRITICAL) a package or module installation from the URL address
 - fixed: framework.redirect()
 
 ======= 1.7.2

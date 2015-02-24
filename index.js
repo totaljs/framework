@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 8)';
+    this.version_header = '1.7.3 (build: 9)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -1524,9 +1524,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
                     var id = path.basename(declaration, '.package');
                     var filename = framework.path.temp(id + '.package');
+                    var stream = fs.createWriteStream(filename);
 
-                    response.pipe(fs.createWriteStream(filename));
-                    response.on('end', function() {
+                    response.pipe(stream);
+                    stream.on('finish', function() {
                         self.install(type, id, filename, options, undefined, undefined, true);
                     });
 
