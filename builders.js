@@ -1033,6 +1033,9 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
         var property = properties[i];
         var val = model[property];
 
+        // IS PROTOTYPE? The problem was in e.g. "search" property, because search is in String prototypes.
+        if (!model.hasOwnProperty(property))
+            val = undefined;
 
         if (val === undefined && defaults)
             val = defaults(property, false, self.name);

@@ -13,6 +13,7 @@ IN DEVELOPMENT ======= 1.7.3
 - updated: GZIP compression for static files (added .md, .json)
 - updated: request schema parser and XML parser -> better handling errors
 
+- fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
 - fixed: (CRITICAL) a package or module installation from the URL address
 - fixed: framework.redirect()
 
