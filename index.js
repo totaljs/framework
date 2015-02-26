@@ -12291,7 +12291,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
 
     var self = this;
     if (self.cookies !== undefined)
-        return $decodeURIComponent(self, self.cookies[name] || '');
+        return $decodeURIComponent(self.cookies[name] || '');
 
     self.cookies = {};
 
@@ -12307,7 +12307,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
         self.cookies[c.shift()] = c.join('=');
     }
 
-    return $decodeURIComponent(self, self.cookies[name] || '');
+    return $decodeURIComponent(self.cookies[name] || '');
 };
 
 /**
