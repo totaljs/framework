@@ -12,10 +12,13 @@ IN DEVELOPMENT ======= 1.7.3
 
 - updated: GZIP compression for static files (added .md, .json)
 - updated: request schema parser and XML parser -> better handling errors
+- updated: wrapped decodeURIComponent for prevention of parsing
 
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
 - fixed: (CRITICAL) a package or module installation from the URL address
 - fixed: framework.redirect()
+
+- improved: auto-image-resizer (routes)
 
 ======= 1.7.2
 

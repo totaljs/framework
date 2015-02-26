@@ -621,10 +621,14 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
     if (!options)
         options = {};
 
+    var ext = {};
+    for (var i = 0, length = extension.length; i < length; i++)
+        ext[extension[i]] = true;
+
     self.routes.resize[url] = {
         width: width,
         height: height,
-        extension: extension,
+        extension: ext,
         path: path || url,
         grayscale: options.grayscale,
         blur: options.blur,
@@ -2273,7 +2277,7 @@ Framework.prototype.onXSS = function(data) {
 
     try
     {
-        data = decodeURIComponent(data);
+        data = $decodeURIComponent(data);
     } catch (e) {}
 
     return (data.indexOf('<') !== -1 && data.lastIndexOf('>') !== -1);
@@ -2730,15 +2734,17 @@ Framework.prototype.responseStatic = function(req, res) {
     if (resizer !== null) {
         name = name.substring(index + 1);
         index = name.lastIndexOf('.');
-        isResize = resizer.extension === '*' || resizer.extension.indexOf(name.substring(index).toLowerCase()) !== -1;
+        isResize = resizer.extension['*'] || resizer.extension[name.substring(index).toLowerCase()];
         if (isResize) {
-            name = resizer.path + decodeURIComponent(name);
+            name = resizer.path + $decodeURIComponent(name);
             filename = self.onMapping(name, name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : framework.path.public(name));
-        } else
-            filename = self.onMapping(name, framework.path.public(decodeURIComponent(name)));
+        } else {
+            filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
+        }
 
-    } else
-        filename = self.onMapping(name, framework.path.public(decodeURIComponent(name)));
+    } else {
+        filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
+    }
 
     if (!isResize) {
         self.responseFile(req, res, filename, '');
@@ -2801,7 +2807,7 @@ Framework.prototype.isProcessed = function(filename) {
         if (index !== -1)
             name = name.substring(0, index);
 
-        filename = framework.path.public(decodeURIComponent(name));
+        filename = framework.path.public($decodeURIComponent(name));
     }
 
     if (self.temporary.path[filename] !== undefined)
@@ -2827,7 +2833,7 @@ Framework.prototype.isProcessing = function(filename) {
         if (index !== -1)
             name = name.substring(0, index);
 
-        filename = utils.combine(self.config['directory-public'], decodeURIComponent(name));
+        filename = utils.combine(self.config['directory-public'], $decodeURIComponent(name));
     }
 
     name = self.temporary.processing[filename];
@@ -11555,13 +11561,13 @@ WebSocketClient.prototype.parse = function() {
         // JSON
         if (self.type === 3) {
             try {
-                self.container.emit('message', self, JSON.parse(self.container.config['default-websocket-encodedecode'] === true ? decodeURIComponent(output) : output));
+                self.container.emit('message', self, JSON.parse(self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output));
             } catch (ex) {
                 self.errors++;
                 self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
             }
         } else
-            self.container.emit('message', self, self.container.config['default-websocket-encodedecode'] === true ? decodeURIComponent(output) : output);
+            self.container.emit('message', self, self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output);
 
     } else {
         var binary = new Buffer(length);
@@ -12243,6 +12249,16 @@ http.IncomingMessage.prototype = {
     }
 };
 
+// Handle errors of decodeURIComponent
+function $decodeURIComponent(value) {
+    try
+    {
+        return decodeURIComponent(value);
+    } catch (e) {
+        return value;
+    }
+};
+
 http.IncomingMessage.prototype.__proto__ = _tmp;
 
 /**
@@ -12275,7 +12291,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
 
     var self = this;
     if (self.cookies !== undefined)
-        return decodeURIComponent(self.cookies[name] || '');
+        return $decodeURIComponent(self, self.cookies[name] || '');
 
     self.cookies = {};
 
@@ -12291,7 +12307,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
         self.cookies[c.shift()] = c.join('=');
     }
 
-    return decodeURIComponent(self.cookies[name] || '');
+    return $decodeURIComponent(self, self.cookies[name] || '');
 };
 
 /**
