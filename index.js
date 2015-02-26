@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 9)';
+    this.version_header = '1.7.3 (build: 10)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -7460,7 +7460,9 @@ Subscribe.prototype.doEnd = function() {
             schema = SCHEMA(route.schema[0]).get(route.schema[1]);
 
             if (!schema) {
-                self.route500(new Error('Schema not found.'));
+                var err = new Error('Schema not found.');
+                F.error(err, null, req.uri);
+                self.route500(err);
                 return self;
             }
 
@@ -7478,7 +7480,8 @@ Subscribe.prototype.doEnd = function() {
             });
 
         } catch (err) {
-            self.route400(err);
+            F.error(err, null, req.uri);
+            self.route500(err);
         }
 
         return self;
@@ -7496,7 +7499,8 @@ Subscribe.prototype.doEnd = function() {
             req.buffer_data = null;
             self.prepare(req.flags, req.uri.pathname);
         } catch (err) {
-            self.route400(err);
+            F.error(err, null, req.uri);
+            self.route500(err);
         }
         return self;
     }

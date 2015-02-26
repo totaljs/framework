@@ -11,6 +11,7 @@ IN DEVELOPMENT ======= 1.7.3
 - added: F.on('upload-end', function(req, file) {})
 
 - updated: GZIP compression for static files (added .md, .json)
+- updated: request schema parser and XML parser -> better handling errors
 
 - fixed: (CRITICAL) a package or module installation from the URL address
 - fixed: framework.redirect()
