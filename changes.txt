@@ -9,6 +9,7 @@ IN DEVELOPMENT ======= 1.7.3
 - added: ErrorBuilder is a global class
 - added: F.on('upload-begin', function(req, file) {})
 - added: F.on('upload-end', function(req, file) {})
+- added: config['static-accepts']: woff2
 
 - updated: GZIP compression for static files (added .md, .json)
 - updated: request schema parser and XML parser -> better handling errors
