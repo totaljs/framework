@@ -18,6 +18,7 @@ IN DEVELOPMENT ======= 1.7.3
 - fixed: (CRITICAL) a package or module installation from the URL address
 - fixed: framework.redirect()
 
+- improved: handling files
 - improved: auto-image-resizer (routes)
 
 ======= 1.7.2

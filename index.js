@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 10)';
+    this.version_header = '1.7.3 (build: 11)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -212,7 +212,7 @@ function Framework() {
         'static-url-video': '/video/',
         'static-url-font': '/fonts/',
         'static-url-download': '/download/',
-        'static-accepts': ['.jpg', '.png', '.gif', '.ico', EXTENSION_JS, EXTENSION_COFFEE, '.css', '.txt', '.xml', '.woff', '.otf', '.ttf', '.eot', '.svg', '.zip', '.rar', '.pdf', '.docx', '.xlsx', '.doc', '.xls', '.html', '.htm', '.appcache', '.manifest', '.map', '.ogg', '.mp4', '.mp3', '.webp', '.webm', '.swf', '.package', '.json', '.md'],
+        'static-accepts': { '.jpg': true, '.png': true, '.gif': true, '.ico': true, '.js': true, '.css': true, '.txt': true, '.xml': true, '.woff': true, '.woff2':true, '.otf':true, '.ttf':true, '.eot':true, '.svg':true, '.zip':true, '.rar':true, '.pdf':true, '.docx':true, '.xlsx':true, '.doc':true, '.xls':true, '.html':true, '.htm':true, '.appcache':true, '.manifest':true, '.map':true, '.ogg':true, '.mp4':true, '.mp3':true, '.webp':true, '.webm':true, '.swf':true, '.package':true, '.json':true, '.md': true },
 
         // 'static-accepts-custom': [],
 
@@ -2720,7 +2720,7 @@ Framework.prototype.responseStatic = function(req, res) {
         return self;
 
     var extension = req.extension;
-    if (self.config['static-accepts'].indexOf('.' + extension) === -1) {
+    if (!self.config['static-accepts']['.' + extension]) {
         self.response404(req, res);
         return self;
     }
@@ -5722,6 +5722,7 @@ Framework.prototype._configure = function(arr, rewrite) {
     var obj = {};
     var accepts = null;
     var length = arr.length;
+    var tmp;
 
     for (var i = 0; i < length; i++) {
         var str = arr[i];
@@ -5756,7 +5757,10 @@ Framework.prototype._configure = function(arr, rewrite) {
                 break;
 
             case 'static-accepts':
-                obj[name] = value.replace(/\s/g, '').split(',');
+                obj[name] = {};
+                tmp = value.replace(/\s/g, '').split(',');
+                for (var j = 0; j < tmp.length; j++)
+                    obj[name][tmp[j]] = true;
                 break;
 
             case 'allow-gzip':
@@ -5793,8 +5797,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 
     if (accepts !== null && accepts.length > 0) {
         accepts.forEach(function(accept) {
-            if (self.config['static-accepts'].indexOf(accept) === -1)
-                self.config['static-accepts'].push(accept);
+            self.config['static-accepts'][accept] = true;
         });
     }
 
@@ -6051,8 +6054,7 @@ Framework.prototype.accept = function(extension, contentType) {
     if (extension[0] !== '.')
         extension = '.' + extension;
 
-    if (self.config['static-accepts'].indexOf(extension) === -1)
-        self.config['static-accepts'].push(extension);
+    self.config['static-accepts'][extension] = true;
 
     if (contentType)
         utils.setContentType(extension, contentType);
