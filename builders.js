@@ -485,8 +485,13 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
         }
 
         var builder = new ErrorBuilder();
-        self.onSave(builder, model, helper, function(value) {
-            callback(builder.hasError() ? builder : null, value === undefined ? model : value);
+        self.onSave(builder, model, helper, function(result) {
+            if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+                if (result instanceof Error || result instanceof ErrorBuilder)
+                    builder.push(result);
+                result = arguments[1];
+            }
+            callback(builder.hasError() ? builder : null, result === undefined ? model : result);
         });
     });
 
@@ -510,8 +515,13 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
     var builder = new ErrorBuilder();
     var output = self.default();
 
-    self.onGet(builder, output, helper, function(value) {
-        callback(builder.hasError() ? builder : null, value === undefined ? output : value);
+    self.onGet(builder, output, helper, function(result) {
+        if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+            if (result instanceof Error || result instanceof ErrorBuilder)
+                builder.push(result);
+            result = arguments[1];
+        }
+        callback(builder.hasError() ? builder : null, result === undefined ? output : result);
     });
 
     return self;
@@ -533,8 +543,13 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
     var self = this;
     var builder = new ErrorBuilder();
 
-    self.onRemove(builder, helper, function(value) {
-        callback(builder.hasError() ? builder : null, value === undefined ? helper : value);
+    self.onRemove(builder, helper, function(result) {
+        if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+            if (result instanceof Error || result instanceof ErrorBuilder)
+                builder.push(result);
+            result = arguments[1];
+        }
+        callback(builder.hasError() ? builder : null, result === undefined ? helper : result);
     });
 
     return self;
@@ -556,8 +571,13 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
     var self = this;
     var builder = new ErrorBuilder();
 
-    self.onQuery(builder, helper, function(value) {
-        callback(builder.hasError() ? builder : null, value);
+    self.onQuery(builder, helper, function(result) {
+        if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+            if (result instanceof Error || result instanceof ErrorBuilder)
+                builder.push(result);
+            result = arguments[1];
+        }
+        callback(builder.hasError() ? builder : null, result);
     });
 
     return self;
