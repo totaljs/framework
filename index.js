@@ -170,7 +170,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 13)';
+    this.version_header = '1.7.3 (build: 14)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2942,10 +2942,18 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     }
 
     var etag = framework_utils.etag(req.url, self.config['etag-version']);
+    var returnHeaders = {};
 
     if (!self.config.debug && req.headers['if-none-match'] === etag) {
+
+        if (RELEASE && !res.getHeader('ETag') && etag.length > 0)
+            returnHeaders['Etag'] = etag;
+
+        if (RELEASE && !res.getHeader('Expires'))
+            returnHeaders['Expires'] = new Date().add('d', 15);
+
         res.success = true;
-        res.writeHead(304);
+        res.writeHead(304, returnHeaders);
         res.end();
         self.stats.response.notModified++;
         self._request_stats(false, req.isStaticFile);
@@ -2990,7 +2998,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     name = name.substring(0, index);
 
     var accept = req.headers['accept-encoding'] || '';
-    var returnHeaders = {};
 
     returnHeaders['Accept-Ranges'] = 'bytes';
     returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public';
