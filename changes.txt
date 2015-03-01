@@ -21,6 +21,7 @@ IN DEVELOPMENT ======= 1.7.3
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
 - fixed: (CRITICAL) a package or module installation from the URL address
 - fixed: framework.redirect()
+- fixed: HTTP cache (added longer time)
 
 - improved: handling files
 - improved: auto-image-resizer (routes)

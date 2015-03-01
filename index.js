@@ -2950,7 +2950,9 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
             returnHeaders['Etag'] = etag;
 
         if (RELEASE && !res.getHeader('Expires'))
-            returnHeaders['Expires'] = new Date().add('d', 15);
+            returnHeaders['Expires'] = new Date().add('M', 3);
+
+        returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=86400' : '');
 
         res.success = true;
         res.writeHead(304, returnHeaders);
@@ -3000,10 +3002,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     var accept = req.headers['accept-encoding'] || '';
 
     returnHeaders['Accept-Ranges'] = 'bytes';
-    returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public';
+    returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=86400' : '');
 
     if (RELEASE && !res.getHeader('Expires'))
-        returnHeaders['Expires'] = new Date().add('d', 15);
+        returnHeaders['Expires'] = new Date().add('M', 3);
 
     returnHeaders['Vary'] = 'Accept-Encoding';
 
@@ -3454,8 +3456,11 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
     var accept = req.headers['accept-encoding'] || '';
     var returnHeaders = {};
 
-    returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public';
-    returnHeaders['Expires'] = new Date().add('d', 15);
+    returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=86400' : '');
+
+    if (RELEASE)
+        returnHeaders['Expires'] = new Date().add('M', 3);
+
     returnHeaders['Vary'] = 'Accept-Encoding';
 
     if (headers)
@@ -12011,6 +12016,7 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
  */
 http.ServerResponse.prototype.noCache = function() {
     var self = this;
+    self.removeHeader(RESPONSE_HEADER_CACHECONTROL);
     self.removeHeader('Etag');
     self.removeHeader('Last-Modified');
     return self;
