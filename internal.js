@@ -1830,6 +1830,10 @@ function view_prepare(command, dynamicCommand, functions) {
         case 'LOG':
             return '(' + (name === 'log' ? 'framework.' : '') + command + '?$EMPTY:$EMPTY)';
 
+        case 'logger':
+        case 'LOGGER':
+            return '(' + (name === 'logger' ? 'framework.' : '') + command + '?$EMPTY:$EMPTY)';
+
         case 'console':
             return '(' + command + '?$EMPTY:$EMPTY)';
 

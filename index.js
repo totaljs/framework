@@ -104,6 +104,10 @@ global.LOG = function() {
     return framework.log.apply(framework, arguments);
 };
 
+global.LOGGER = function() {
+    return framework.logger.apply(framework, arguments);
+};
+
 global.MODEL = function(name) {
     return framework.model(name);
 };
@@ -2339,6 +2343,21 @@ Framework.prototype.log = function() {
 
     self._verify_directory('logs');
     fs.appendFile(utils.combine(self.config['directory-logs'], filename + '.log'), time + ' | ' + str + '\n');
+    return self;
+};
+
+Framework.prototype.logger = function() {
+    var self = this;
+    var now = new Date();
+    var dt = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padLeft(2, '0') + '-' + now.getDate().toString().padLeft(2, '0') + ' ' + now.getHours().toString().padLeft(2, '0') + ':' + now.getMinutes().toString().padLeft(2, '0') + ':' + now.getSeconds().toString().padLeft(2, '0');
+    var str = '';
+    var length = arguments.length;
+
+    for (var i = 1; i < length; i++)
+        str += (str.length > 0 ? ' ' : '') + (arguments[i] || '');
+
+    self._verify_directory('logs');
+    fs.appendFile(utils.combine(self.config['directory-logs'], arguments[0] + '.log'), dt + ' | ' + str + '\n');
     return self;
 };
 
@@ -8371,6 +8390,12 @@ Controller.prototype.log = function() {
     return self;
 };
 
+Controller.prototype.logger = function() {
+    var self = this;
+    framework.logger.apply(framework, arguments);
+    return self;
+};
+
 /*
     META Tags for views
     @arguments {String array}
@@ -11283,6 +11308,17 @@ WebSocket.prototype.resource = function(name, key) {
 WebSocket.prototype.log = function() {
     var self = this;
     framework.log.apply(framework, arguments);
+    return self;
+};
+
+/*
+    Logger
+    @arguments {Object array}
+    return {WebSocket};
+*/
+WebSocket.prototype.logger = function() {
+    var self = this;
+    framework.logger.apply(framework, arguments);
     return self;
 };
 

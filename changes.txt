@@ -10,6 +10,7 @@ IN DEVELOPMENT ======= 1.7.3
 - added: F.on('upload-begin', function(req, file) {})
 - added: F.on('upload-end', function(req, file) {})
 - added: config['static-accepts']: woff2
+- added: F.logger(filename, arg1, ...), controller.logger(...), @{logger(...)}
 
 - updated: GZIP compression for static files (added .md, .json)
 - updated: request schema parser and XML parser -> better handling errors
