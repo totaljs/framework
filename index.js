@@ -2828,9 +2828,7 @@ Framework.prototype.exists = function(req, res, callback) {
             return;
         }
 
-        callback(function() {
-            self.responseFile(req, res, filename);
-        }, filename);
+        callback(filename);
     });
 
     return self;
