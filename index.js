@@ -170,7 +170,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 12)';
+    this.version_header = '1.7.3 (build: 13)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2805,6 +2805,31 @@ Framework.prototype.responseStatic = function(req, res) {
             image.quality(self.config['default-image-quality']);
 
         image.minify();
+    });
+
+    return self;
+};
+
+Framework.prototype.exists = function(req, res, filename, callback) {
+
+    var name = req.url.replace(/\//g, '-').substring(1);
+    var self = this;
+
+    if (self.isProcessed(name)) {
+        self.responseFile(req, res, filename);
+        return self;
+    }
+
+    fs.exists(filename, function(e) {
+
+        if (e) {
+            framework.responseFile(req, res, filename);
+            return;
+        }
+
+        callback(function(filename) {
+            self.responseFile(req, res, filename);
+        }, filename);
     });
 
     return self;
