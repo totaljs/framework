@@ -166,7 +166,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 11)';
+    this.version_header = '1.7.3 (build: 12)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2898,7 +2898,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
             extension = path.extname(name);
     }
 
-    var etag = utils.etag(req.url, self.config['etag-version']);
+    var etag = framework_utils.etag(req.url, self.config['etag-version']);
 
     if (!self.config.debug && req.headers['if-none-match'] === etag) {
         res.success = true;
@@ -2952,7 +2952,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     returnHeaders['Accept-Ranges'] = 'bytes';
     returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public';
 
-    if (!res.getHeader('Expires'))
+    if (RELEASE && !res.getHeader('Expires'))
         returnHeaders['Expires'] = new Date().add('d', 15);
 
     returnHeaders['Vary'] = 'Accept-Encoding';
@@ -2963,7 +2963,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     if (downloadName && downloadName.length > 0)
         returnHeaders['Content-Disposition'] = 'attachment; filename="' + downloadName + '"';
 
-    if (!res.getHeader('ETag') && etag.length > 0)
+    if (!res.getHeader('ETag') && etag.length > 0 && RELEASE)
         returnHeaders['Etag'] = etag;
 
     if (!returnHeaders[RESPONSE_HEADER_CONTENTTYPE])

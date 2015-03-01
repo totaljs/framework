@@ -14,6 +14,7 @@ IN DEVELOPMENT ======= 1.7.3
 - updated: GZIP compression for static files (added .md, .json)
 - updated: request schema parser and XML parser -> better handling errors
 - updated: wrapped decodeURIComponent for prevention of parsing
+- updated: removed HTTP cache in DEBUG mode
 
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
 - fixed: (CRITICAL) a package or module installation from the URL address
