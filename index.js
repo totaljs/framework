@@ -7377,6 +7377,7 @@ Subscribe.prototype.doExecute = function() {
     } catch (err) {
         controller = null;
         framework.error(err, name, req.uri);
+        self.exception = err;
         self.route = framework.lookup(req, '#500');
         self.execute(500);
     }
