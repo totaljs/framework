@@ -2810,10 +2810,11 @@ Framework.prototype.responseStatic = function(req, res) {
     return self;
 };
 
-Framework.prototype.exists = function(req, res, filename, callback) {
+Framework.prototype.exists = function(req, res, callback) {
 
-    var name = req.url.replace(/\//g, '-').substring(1);
     var self = this;
+    var name = req.url.replace(/\//g, '-').substring(1);
+    var filename = self.path.temp(name);
 
     if (self.isProcessed(name)) {
         self.responseFile(req, res, filename);
@@ -2828,7 +2829,8 @@ Framework.prototype.exists = function(req, res, filename, callback) {
         }
 
         callback(function(filename) {
-            self.responseFile(req, res, filename);
+            if (filename)
+                self.responseFile(req, res, filename);
         }, filename);
     });
 
