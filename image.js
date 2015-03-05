@@ -1,6 +1,6 @@
 /**
  * @module FrameworkImage
- * @version 1.5.0
+ * @version 1.7.3
  */
 
 'use strict';
@@ -115,7 +115,7 @@ function Image(filename, useImageMagick, width, height) {
     this.builder = [];
     this.filename = type === 'string' ? filename : null;
     this.currentStream = type === 'object' ? filename : null;
-    this.isIM = useImageMagick || false;
+    this.isIM = useImageMagick === undefined || useImageMagick === null ? F.config['default-image-converter'] === 'im' : useImageMagick;
     this.outputType = type === 'string' ? path.extname(filename).substring(1) : 'jpg';
 /*
     if (!filename)
@@ -443,6 +443,10 @@ Image.prototype.resize = function(w, h, options) {
     return self.push('-resize', size + options, 1);
 };
 
+Image.prototype.trim = function() {
+    return this.push('-trim +repage', 1);
+};
+
 /*
     @w {Number}
     @h {Number}
@@ -639,6 +643,10 @@ Image.prototype.colors = function(value) {
 */
 Image.prototype.background = function(color) {
     return this.push('-background', color, 2);
+};
+
+Image.prototype.fill = function(color) {
+    return this.push('-fill', color, 2);
 };
 
 Image.prototype.sepia = function(percentage) {
