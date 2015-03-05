@@ -53,7 +53,7 @@ if (!global.framework_mail)
     global.framework_mail = require('./mail');
 
 if (!global.framework_image)
-    global.framework_image = require('./image');
+    global.framework_image = global.Image = require('./image');
 
 if (!global.framework_nosql)
     global.framework_nosql = require('./nosql');
