@@ -170,7 +170,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 14)';
+    this.version_header = '1.7.3 (build: 15)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2761,9 +2761,8 @@ Framework.prototype.responseStatic = function(req, res) {
             filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
         }
 
-    } else {
+    } else
         filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
-    }
 
     if (!isResize) {
         self.responseFile(req, res, filename, '');
@@ -2810,7 +2809,12 @@ Framework.prototype.responseStatic = function(req, res) {
     return self;
 };
 
-Framework.prototype.exists = function(req, res, callback) {
+Framework.prototype.exists = function(req, res, max, callback) {
+
+    if (typeof(max) === TYPE_FUNCTION) {
+        callback = max;
+        max = 10;
+    }
 
     var self = this;
     var name = req.url.replace(/\//g, '-').substring(1);
@@ -2821,14 +2825,17 @@ Framework.prototype.exists = function(req, res, callback) {
         return self;
     }
 
-    fs.exists(filename, function(e) {
+    U.queue('framework.exists', max, function(next) {
+        fs.exists(filename, function(e) {
 
-        if (e) {
-            framework.responseFile(req, res, filename);
-            return;
-        }
+            if (e) {
+                framework.responseFile(req, res, filename);
+                next();
+                return;
+            }
 
-        callback(filename);
+            callback(next, filename);
+        });
     });
 
     return self;
@@ -2966,6 +2973,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
     // JS, CSS
     if (name === undefined) {
+
         if (self.isProcessing(key)) {
             if (req.processing > self.config['default-request-timeout']) {
                 // timeout
@@ -2981,6 +2989,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
         // waiting
         self.temporary.processing[key] = true;
+
+        // checks if the file exists
         self.compileValidation(req.uri, key, filename, extension, function() {
             delete self.temporary.processing[key];
             framework.responseFile(req, res, filename, downloadName, headers, key);
