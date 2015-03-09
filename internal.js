@@ -1077,8 +1077,8 @@ function JavaScript(source) {
                         break;
                     }
                     if (theA <= 13) {
-                        //throw new Exception(string.Format("Error: JSMIN unterminated string literal: {0}\n", theA));
-                        c = EOF;
+                        if (framework)
+                            framework.error('Error: JSMIN unterminated string literal: ' + theA, 'JavaScript compressor');
                         return;
                     }
                     if (theA === 92) {
