@@ -17,6 +17,7 @@ IN DEVELOPMENT ======= 1.7.3
 - added: callback: F.responseImageWithoutCache()
 - added: callback: F.responseStream(), controller.stream(), response.stream()
 - added: callback: F.responseStatic(), response.continue()
+- added: Array.prototype.findIndex(cb, [value]) returns Number;
 
 - updated: GZIP compression for static files (added .md, .json)
 - updated: request schema parser and XML parser -> better handling errors

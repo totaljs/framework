@@ -3127,6 +3127,14 @@ Array.prototype.where = function(cb, value) {
  * @return {Array}
  */
 Array.prototype.find = function(cb, value) {
+    var self = this;
+    var index = self.findIndex(cb, value);
+    if (index === -1)
+        return null;
+    return self[index];
+};
+
+Array.prototype.findIndex = function(cb, value) {
 
     var self = this;
     var isFN = typeof(cb) === FUNCTION;
@@ -3136,21 +3144,21 @@ Array.prototype.find = function(cb, value) {
 
         if (isFN) {
             if (cb.call(self, self[i], i))
-                return self[i];
+                return i;
             continue;
         }
 
         if (isV) {
             if (self[i][cb] === value)
-                return self[i];
+                return i;
             continue;
         }
 
         if (self[i] === cb)
-            return self[i];
+            return i;
     }
 
-    return null;
+    return -1;
 };
 
 /**
