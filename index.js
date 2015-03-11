@@ -170,7 +170,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 15)';
+    this.version_header = '1.7.3 (build: 16)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2401,10 +2401,10 @@ Framework.prototype.usage = function(detailed) {
         directory: process.cwd()
     };
 
-    var keys = Object.keys(Utils.queuecache);
+    var keys = Object.keys(framework_utils.queuecache);
     var pending = 0;
     for (var i = 0, length = keys.length; i < length; i++)
-        pending = Utils.queuecache[keys[i]].pending.length;
+        pending = framework_utils.queuecache[keys[i]].pending.length;
 
     output.counter = {
         resource: resources.length,
@@ -2731,16 +2731,21 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
  * @param {Response} res
  * @return {Framework}
  */
-Framework.prototype.responseStatic = function(req, res) {
+Framework.prototype.responseStatic = function(req, res, done) {
 
     var self = this;
 
-    if (res.success || res.headersSent)
+    if (res.success || res.headersSent) {
+        if (done)
+            done();
         return self;
+    }
 
     var extension = req.extension;
     if (!self.config['static-accepts']['.' + extension]) {
         self.response404(req, res);
+        if (done)
+            done();
         return self;
     }
 
@@ -2765,7 +2770,7 @@ Framework.prototype.responseStatic = function(req, res) {
         filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
 
     if (!isResize) {
-        self.responseFile(req, res, filename, '');
+        self.responseFile(req, res, filename, undefined, undefined, done);
         return self;
     }
 
@@ -2804,7 +2809,7 @@ Framework.prototype.responseStatic = function(req, res) {
             image.quality(self.config['default-image-quality']);
 
         image.minify();
-    });
+    }, undefined, done);
 
     return self;
 };
@@ -2825,12 +2830,11 @@ Framework.prototype.exists = function(req, res, max, callback) {
         return self;
     }
 
-    U.queue('framework.exists', max, function(next) {
+    framework_utils.queue('framework.exists', max, function(next) {
         fs.exists(filename, function(e) {
 
             if (e) {
-                framework.responseFile(req, res, filename);
-                next();
+                framework.responseFile(req, res, filename, undefined, undefined, next);
                 return;
             }
 
@@ -2912,15 +2916,19 @@ Framework.prototype.noCache = function(req, res) {
  * @param {String} filename
  * @param {String} downloadName Optional
  * @param {Object} headers Optional
+ * @param {Function} done Optional, callback.
  * @param {String} key Path to file, INTERNAL.
  * @return {Framework}
  */
-Framework.prototype.responseFile = function(req, res, filename, downloadName, headers, key) {
+Framework.prototype.responseFile = function(req, res, filename, downloadName, headers, done, key) {
 
     var self = this;
 
-    if (res.success || res.headersSent)
+    if (res.success || res.headersSent) {
+        if (done)
+            done();
         return self;
+    }
 
     // Is package?
     if (filename[0] === '@')
@@ -2937,6 +2945,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
             delete self.temporary.path[key];
 
         self.response404(req, res);
+
+        if (done)
+            done();
+
         return self;
     }
 
@@ -2966,6 +2978,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         res.end();
         self.stats.response.notModified++;
         self._request_stats(false, req.isStaticFile);
+
+        if (done)
+            done();
+
         if (!req.isStaticFile)
             self.emit('request-end', req, res);
         return self;
@@ -2982,7 +2998,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
             }
             req.processing += 500;
             setTimeout(function() {
-                framework.responseFile(req, res, filename, downloadName, headers, key);
+                framework.responseFile(req, res, filename, downloadName, headers, done, key);
             }, 500);
             return self;
         }
@@ -2993,7 +3009,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         // checks if the file exists
         self.compileValidation(req.uri, key, filename, extension, function() {
             delete self.temporary.processing[key];
-            framework.responseFile(req, res, filename, downloadName, headers, key);
+            framework.responseFile(req, res, filename, downloadName, headers, done, key);
         });
 
         return self;
@@ -3038,7 +3054,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
     res.success = true;
 
     if (range.length > 0)
-        return self.responseRange(name, range, returnHeaders, req, res);
+        return self.responseRange(name, range, returnHeaders, req, res, done);
 
     if (self.config.debug && self.isProcessed(key))
         delete self.temporary.path[key];
@@ -3053,6 +3069,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
         returnHeaders['Content-Encoding'] = 'gzip';
         res.writeHead(200, returnHeaders);
         fs.createReadStream(name).pipe(zlib.createGzip()).pipe(res);
+        if (done)
+            done();
         if (!req.isStaticFile)
             self.emit('request-end', req, res);
         return self;
@@ -3060,6 +3078,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
     res.writeHead(200, returnHeaders);
     fs.createReadStream(name).pipe(res);
+    if (done)
+        done();
     if (!req.isStaticFile)
         self.emit('request-end', req, res);
     return self;
@@ -3186,17 +3206,17 @@ Framework.prototype.responseCustom = function(req, res) {
     return self;
 };
 
-/*
-    Response image
-    @req {ServerRequest}
-    @res {ServerResponse}
-    @filename {String or Stream}
-    @fnProcess {Function} :: function(FrameworkImage) {}
-    @headers {Object} :: optional, additional headers
-    @useImageMagick {Boolean} :: optional, use ImageMagick (otherwise is used GraphicsMagick), default false
-    return {Framework}
-*/
-Framework.prototype.responseImage = function(req, res, filename, fnProcess, headers, useImageMagick) {
+/**
+ * Responses image
+ * @param {ServerRequest} req
+ * @param {ServerResponse} res
+ * @param {String or Stream} filename
+ * @param {Function(image)} fnProcess
+ * @param {Object} headers Optional, additional headers.
+ * @param {Function} done Optional, callback function.
+ * @return {Framework}
+ */
+Framework.prototype.responseImage = function(req, res, filename, fnProcess, headers, done) {
 
     var self = this;
     var key = req.url.substring(1).replace(/\//g, '-');
@@ -3204,6 +3224,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
     var name = self.temporary.path[key];
     if (name === null) {
         self.response404(req, res);
+        if (done)
+            done();
         return self;
     }
 
@@ -3215,30 +3237,29 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
         filename = framework.path.package(filename.substring(1));
 
     if (name !== undefined) {
-        self.responseFile(req, res, '', '', headers, key);
+        self.responseFile(req, res, '', undefined, headers, done, key);
         return self;
     }
 
-    var im = useImageMagick;
-    if (im === undefined)
-        im = self.config['default-image-converter'] === 'im';
+    var im = self.config['default-image-converter'] === 'im';
 
     if (self.isProcessing(key)) {
+
         if (req.processing > self.config['default-request-timeout']) {
-            // timeout
             self.response408(req, res);
+            if (done)
+                done();
             return;
         }
 
         req.processing += 500;
         setTimeout(function() {
-            self.responseImage(req, res, filename, fnProcess, headers, im);
+            self.responseImage(req, res, filename, fnProcess, headers, done);
         }, 500);
 
         return;
     }
 
-    var Image = framework_image;
     var plus = self.id === null ? '' : 'instance-' + self.id + '-';
 
     name = self.path.temp(plus + key.replace(/\//g, '-'));
@@ -3247,19 +3268,18 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
     // STREAM
     if (stream !== null) {
         fs.exists(name, function(exist) {
+
             if (exist) {
                 delete self.temporary.processing[key];
                 self.temporary.path[key] = name;
-                self.responseFile(req, res, name, '', headers, key);
-
+                self.responseFile(req, res, name, undefined, headers, done, key);
                 if (self.isDebug)
                     delete self.temporary.path[key];
-
                 return;
             }
 
             self._verify_directory('temp');
-            var image = Image.load(stream, im);
+            var image = framework_image.load(stream, im);
 
             fnProcess(image);
 
@@ -3272,8 +3292,12 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
                 delete self.temporary.processing[key];
 
                 if (err) {
+
                     self.temporary.path[key] = null;
                     self.response500(req, res, err);
+
+                    if (done)
+                        done();
 
                     if (self.isDebug)
                         delete self.temporary.path[key];
@@ -3282,7 +3306,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
                 }
 
                 self.temporary.path[key] = name + ';' + fs.statSync(name).size;
-                self.responseFile(req, res, name, '', headers, key);
+                self.responseFile(req, res, name, undefined, headers, done, key);
 
             });
 
@@ -3300,6 +3324,9 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
             self.temporary.path[key] = null;
             self.response404(req, res);
 
+            if (done)
+                done();
+
             if (self.isDebug)
                 delete self.temporary.path[key];
 
@@ -3308,7 +3335,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
         self._verify_directory('temp');
 
-        var image = Image.load(filename, im);
+        var image = framework_image.load(filename, im);
 
         fnProcess(image);
 
@@ -3323,13 +3350,18 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
             if (err) {
                 self.temporary.path[key] = null;
                 self.response500(req, res, err);
+
+                if (done)
+                    done();
+
                 if (self.isDebug)
                     delete self.temporary.path[key];
+
                 return;
             }
 
             self.temporary.path[key] = name + ';' + fs.statSync(name).size;
-            self.responseFile(req, res, name, '', headers, key);
+            self.responseFile(req, res, name, undefined, headers, done, key);
         });
 
     });
@@ -3337,7 +3369,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
     return self;
 };
 
-Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProcess, headers, useImageMagick) {
+Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProcess, headers, done) {
 
     var self = this;
     var key = req.url.substring(1).replace(/\//g, '-');
@@ -3345,24 +3377,29 @@ Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProce
     var name = self.temporary.path[key];
     if (name === null) {
         self.response404(req, res);
+
+        if (done)
+            done();
+
         return self;
     }
 
     if (name !== undefined) {
-        self.responseFile(req, res, '', '', headers, key);
+        self.responseFile(req, res, '', undefined, headers, done, key);
         return self;
     }
 
     if (self.isProcessing(key)) {
         if (req.processing > self.config['default-request-timeout']) {
-            // timeout
             self.response408(req, res);
+            if (done)
+                done();
             return;
         }
 
         req.processing += 500;
         setTimeout(function() {
-            self.responseImage(req, res, filename, fnProcess, headers, im);
+            self.responseImage(req, res, filename, fnProcess, headers, done);
         }, 500);
 
         return;
@@ -3371,25 +3408,27 @@ Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProce
     fnPrepare.call(self, function(filename) {
         if (!filename) {
             self.response404(req, res);
+            if (done)
+                done();
             return;
         }
-        self.responseImage(req, res, filename, fnProcess, headers, useImageMagick, key);
+        self.responseImage(req, res, filename, fnProcess, headers, done);
     });
 
     return self;
 };
 
-/*
-    Response image
-    @req {ServerRequest}
-    @res {ServerResponse}
-    @filename {String or Stream}
-    @fnProcess {Function} :: function(FrameworkImage) {}
-    @headers {Object} :: optional, additional headers
-    @useImageMagick {Boolean} :: optional, use ImageMagick (otherwise is used GraphicsMagick), default false
-    return {Framework}
-*/
-Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnProcess, headers, useImageMagick) {
+/**
+ * Responses image
+ * @param {ServerRequest} req
+ * @param {ServerResponse} res
+ * @param {String or Stream} filename
+ * @param {Function(image)} fnProcess
+ * @param {Object} headers Optional, additional headers
+ * @param {Function} done Optional, callback.
+ * @return {Framework}
+ */
+Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnProcess, headers, done) {
 
     var self = this;
     var stream = null;
@@ -3400,62 +3439,53 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
         filename = framework.path.package(filename.substring(1));
 
     var key = 'image-' + req.url.substring(1);
+    var im = self.config['default-image-converter'] === 'im';
 
-    utils.queue(key, 10, function(next) {
+    // STREAM
+    if (stream !== null) {
+        var image = framework_image.load(stream, im);
+        fnProcess(image);
+        self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers, done);
+        return self;
+    }
 
-        var im = useImageMagick;
-        if (im === undefined)
-            im = self.config['default-image-converter'] === 'im';
+    // FILENAME
+    fs.exists(filename, function(exist) {
 
-        var Image = framework_image;
-
-        // STREAM
-        if (stream !== null) {
-            next();
-            var image = Image.load(stream, im);
-            fnProcess(image);
-            self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
-            return self;
+        if (!exist) {
+            self.response404(req, res);
+            if (done)
+                done();
+            return;
         }
 
-        // FILENAME
-        fs.exists(filename, function(exist) {
-
-            next();
-
-            if (!exist) {
-                self.response404(req, res);
-                return;
-            }
-
-            self._verify_directory('temp');
-            var image = Image.load(filename, im);
-            fnProcess(image);
-            self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers);
-
-        });
-
+        self._verify_directory('temp');
+        var image = framework_image.load(filename, im);
+        fnProcess(image);
+        self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers, done);
     });
-
     return self;
 };
 
 /**
- * Response stream
+ * Responses stream
  * @param {ServerRequest} req
  * @param {ServerResponse} res
  * @param {String} contentType
  * @param {ReadStream} stream
- * @param {String} downloadName Optional
+ * @param {String} download Optional, download name.
  * @param {Object} headers Optional
  * @return {Framework}
  */
-Framework.prototype.responseStream = function(req, res, contentType, stream, downloadName, headers) {
+Framework.prototype.responseStream = function(req, res, contentType, stream, download, headers, done) {
 
     var self = this;
 
-    if (res.success || res.headersSent)
+    if (res.success || res.headersSent) {
+        if (done)
+            done();
         return self;
+    }
 
     req.clear(true);
 
@@ -3476,10 +3506,10 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
     if (headers)
         utils.extend(returnHeaders, headers, true);
 
-    downloadName = downloadName || '';
+    download = download || '';
 
-    if (downloadName.length > 0)
-        returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(downloadName);
+    if (download.length > 0)
+        returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(download);
 
     returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 
@@ -3493,6 +3523,9 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
         self.stats.response.stream++;
         self._request_stats(false, req.isStaticFile);
 
+        if (done)
+            done();
+
         if (!req.isStaticFile)
             self.emit('request-end', req, res);
 
@@ -3505,22 +3538,26 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
     self.stats.response.stream++;
     self._request_stats(false, req.isStaticFile);
 
+    if (done)
+        done();
+
     if (!req.isStaticFile)
         self.emit('request-end', req, res);
 
     return self;
 };
 
-/*
-    Internal :: Response Range
-    @name {String}
-    @range {String}
-    @headers {Object}
-    @res {ServerResponse}
-    @req {ServerRequest}
-    return {Framework}
-*/
-Framework.prototype.responseRange = function(name, range, headers, req, res) {
+/**
+ * INTERNAL: Response range (streaming)
+ * @param {String} name Temporary name.
+ * @param {String} range
+ * @param {Object} headers Optional, additional headers.
+ * @param {ServerRequest} req
+ * @param {ServerResponse} res
+ * @param {Function} done Optional, callback.
+ * @return {Framework}
+ */
+Framework.prototype.responseRange = function(name, range, headers, req, res, done) {
 
     var self = this;
     var arr = range.replace(/bytes=/, '').split('-');
@@ -3529,7 +3566,6 @@ Framework.prototype.responseRange = function(name, range, headers, req, res) {
     var total = self.temporary.range[name] || 0;
 
     if (total === 0) {
-        // sync
         total = fs.statSync(name).size;
         self.temporary.range[name] = total;
     }
@@ -3555,6 +3591,9 @@ Framework.prototype.responseRange = function(name, range, headers, req, res) {
 
     self.stats.response.streaming++;
     self._request_stats(false, req.isStaticFile);
+
+    if (done)
+        done();
 
     if (!req.isStaticFile)
         self.emit('request-end', req, res);
@@ -10121,18 +10160,22 @@ Controller.prototype.destroy = function(problem) {
     return self;
 };
 
-/*
-    Response a file
-    @filename {String}
-    @downloadName {String} :: optional
-    @headers {Object} :: optional
-    return {Controller};
-*/
-Controller.prototype.file = function(filename, downloadName, headers) {
+/**
+ * Responses file
+ * @param {String} filename
+ * @param {String} download Optional, a download name.
+ * @param {Object} headers Optional, additional headers.
+ * @param {Function} done Optinoal, callback.
+ * @return {Controller}
+ */
+Controller.prototype.file = function(filename, download, headers, done) {
     var self = this;
 
-    if (self.res.success || self.res.headersSent || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected) {
+        if (done)
+            done();
         return self;
+    }
 
     if (filename[0] === '~')
         filename = '.' + filename.substring(1);
@@ -10140,23 +10183,26 @@ Controller.prototype.file = function(filename, downloadName, headers) {
         filename = framework.path.public(filename);
 
     self.subscribe.success();
-    framework.responseFile(self.req, self.res, filename, downloadName, headers);
+    framework.responseFile(self.req, self.res, filename, download, headers, done);
     return self;
 };
 
-/*
-    Response an image
-    @filename {String or Stream}
-    @fnProcess {Function} :: function(FrameworkImage) {}
-    @headers {Object} :: optional, additional headers
-    @useImageMagick {Boolean} :: optional, use ImageMagick (otherwise is used GraphicsMagick), default false
-    return {Framework}
-*/
-Controller.prototype.image = function(filename, fnProcess, headers, useImageMagick) {
+/**
+ * Responses image
+ * @param {String or Stream} filename
+ * @param {Function(image)} fnProcess
+ * @param {Object} headers Optional, additional headers.
+ * @param {Function} done Optional, callback.
+ * @return {Controller}
+ */
+Controller.prototype.image = function(filename, fnProcess, headers, done) {
     var self = this;
 
-    if (self.res.success || self.res.headersSent || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected) {
+        if (done)
+            done();
         return self;
+    }
 
     if (typeof(filename) === STRING) {
         if (filename[0] === '~')
@@ -10166,27 +10212,30 @@ Controller.prototype.image = function(filename, fnProcess, headers, useImageMagi
     }
 
     self.subscribe.success();
-    framework.responseImage(self.req, self.res, filename, fnProcess, headers, useImageMagick);
-
+    framework.responseImage(self.req, self.res, filename, fnProcess, headers, done);
     return self;
 };
 
-/*
-    Response stream
-    @contentType {String}
-    @stream {ReadStream}
-    @downloadName {String} :: optional
-    @headers {Object} :: optional key/value
-    return {Controller}
-*/
-Controller.prototype.stream = function(contentType, stream, downloadName, headers) {
+/**
+ * Responses stream
+ * @param {String} contentType
+ * @param {Stream} stream
+ * @param {String} download Optional, a download name.
+ * @param {Object} headers Optional, additional headers.
+ * @param {Function} done Optinoal, callback.
+ * @return {Controller}
+ */
+Controller.prototype.stream = function(contentType, stream, download, headers, done) {
     var self = this;
 
-    if (self.res.success || self.res.headersSent || !self.isConnected)
+    if (self.res.success || self.res.headersSent || !self.isConnected) {
+        if (done)
+            done();
         return self;
+    }
 
     self.subscribe.success();
-    framework.responseStream(self.req, self.res, contentType, stream, downloadName, headers);
+    framework.responseStream(self.req, self.res, contentType, stream, download, headers, done);
     return self;
 };
 
@@ -12180,16 +12229,20 @@ http.ServerResponse.prototype.throw501 = function(problem) {
 };
 
 /**
- * Response static file
+ * Responses static file
+ * @param {Function} done Optional, callback.
  * @return {Response}
  */
-http.ServerResponse.prototype.continue = function() {
+http.ServerResponse.prototype.continue = function(done) {
     var self = this;
-    if (self.headersSent)
+    if (self.headersSent) {
+        if (done)
+            done();
         return;
+    }
     if (self.controller)
         self.controller.subscribe.success();
-    framework.responseStatic(self.req, self);
+    framework.responseStatic(self.req, self, done);
     return self;
 };
 
@@ -12210,53 +12263,66 @@ http.ServerResponse.prototype.redirect = function(url, permanent) {
 };
 
 /**
- * Response file
+ * Responses file
  * @param {String} filename
- * @param {String} downloadName Optional
- * @param {Object} headers Optional
+ * @param {String} download Optional, a download name.
+ * @param {Object} headers Optional, additional headers.
+ * @param {Function} done Optional, callback.
  * @return {Framework}
  */
-http.ServerResponse.prototype.file = function(filename, downloadName, headers) {
+http.ServerResponse.prototype.file = function(filename, download, headers, done) {
     var self = this;
-    if (self.headersSent)
+    if (self.headersSent) {
+        if (done)
+            done();
         return;
+    }
     if (self.controller)
         self.controller.subscribe.success();
-    framework.responseFile(self.req, self, filename, downloadName, headers);
+    framework.responseFile(self.req, self, filename, download, headers, done);
     return self;
 };
 
 /**
- * Response stream
- * @param {String} filename
- * @param {String} downloadName Optional
- * @param {Object} headers Optional
+ * Responses stream
+ * @param {String} contentType
+ * @param {Stream} stream
+ * @param {String} download Optional, a download name.
+ * @param {Object} headers Optional, additional headers.
+ * @param {Function} done Optional, callback.
  * @return {Framework}
  */
-http.ServerResponse.prototype.stream = function(contentType, stream, downloadName, headers) {
+http.ServerResponse.prototype.stream = function(contentType, stream, download, headers, done) {
     var self = this;
-    if (self.headersSent)
+    if (self.headersSent) {
+        if (done)
+            done();
         return;
+    }
     if (self.controller)
         self.controller.subscribe.success();
-    framework.responseStream(self.req, self, contentType, stream, downloadName, headers);
+    framework.responseStream(self.req, self, contentType, stream, download, headers, done);
     return self;
 };
 
 /**
- * Response image
- * @param {String} filename
+ * Responses image
+ * @param {String or Stream} filename
  * @param {String} fnProcess
- * @param {Object} headers Optional.
+ * @param {Object} headers Optional, additional headers.
+ * @param {Function} done Optional, callback.
  * @return {Framework}
  */
-http.ServerResponse.prototype.image = function(filename, fnProcess, headers) {
+http.ServerResponse.prototype.image = function(filename, fnProcess, headers, done) {
     var self = this;
-    if (self.headersSent)
+    if (self.headersSent) {
+        if (done)
+            done();
         return;
+    }
     if (self.controller)
         self.controller.subscribe.success();
-    framework.responseImage(self.req, self, filename, fnProcess, headers);
+    framework.responseImage(self.req, self, filename, fnProcess, headers, done);
     return self;
 };
 
