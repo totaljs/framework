@@ -24,6 +24,7 @@ IN DEVELOPMENT ======= 1.7.3
 - updated: wrapped decodeURIComponent for prevention of parsing
 - updated: removed HTTP cache in DEBUG mode
 
+- fixed: F.usage() --> fixed queue pendings
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
 - fixed: (CRITICAL) a package or module installation from the URL address
 - fixed: framework.redirect()

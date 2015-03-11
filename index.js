@@ -170,7 +170,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 16)';
+    this.version_header = '1.7.3 (build: 17)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2404,7 +2404,7 @@ Framework.prototype.usage = function(detailed) {
     var keys = Object.keys(framework_utils.queuecache);
     var pending = 0;
     for (var i = 0, length = keys.length; i < length; i++)
-        pending = framework_utils.queuecache[keys[i]].pending.length;
+        pending += framework_utils.queuecache[keys[i]].pending.length;
 
     output.counter = {
         resource: resources.length,
