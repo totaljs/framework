@@ -18,11 +18,15 @@ IN DEVELOPMENT ======= 1.7.3
 - added: callback: F.responseStream(), controller.stream(), response.stream()
 - added: callback: F.responseStatic(), response.continue()
 - added: Array.prototype.findIndex(cb, [value]) returns Number;
+- added: Image.geometry(w, h, options)
+- added: Image.thumbnail(w, h, options)
+- added: Image.filter(type)
 
 - updated: GZIP compression for static files (added .md, .json)
 - updated: request schema parser and XML parser -> better handling errors
 - updated: wrapped decodeURIComponent for prevention of parsing
 - updated: removed HTTP cache in DEBUG mode
+- updated: Image.miniature(w,h,color,[filter]) --> added filter
 
 - fixed: F.usage() --> fixed queue pendings
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
@@ -32,6 +36,7 @@ IN DEVELOPMENT ======= 1.7.3
 
 - improved: handling files
 - improved: auto-image-resizer (routes)
+- improved: Image.miniature() -> increase about 50%
 
 ======= 1.7.2
 

@@ -102,9 +102,9 @@ exports.measureSVG = function(buffer) {
 };
 
 /*
-	Image class
-	@filename {String}
-	@useImageMagick {Boolean} :: default false
+    Image class
+    @filename {String}
+    @useImageMagick {Boolean} :: default false
 */
 function Image(filename, useImageMagick, width, height) {
 
@@ -124,8 +124,8 @@ function Image(filename, useImageMagick, width, height) {
 }
 
 /*
-	Clear all filter
-	return {Image}
+    Clear all filter
+    return {Image}
 */
 Image.prototype.clear = function() {
     var self = this;
@@ -227,11 +227,11 @@ Image.prototype.save = function(filename, callback, writer) {
 };
 
 /*
-	Pipe stream
-	@stream {Stream}
-	@type {String} :: optional, image type (png, jpg, gif)
-	@options {Object} :: Stream object
-	return {Image}
+    Pipe stream
+    @stream {Stream}
+    @type {String} :: optional, image type (png, jpg, gif)
+    @options {Object} :: Stream object
+    return {Image}
 */
 Image.prototype.pipe = function(stream, type, options) {
 
@@ -298,10 +298,10 @@ Image.prototype.stream = function(type, writer) {
 };
 
 /*
-	Internal function
-	@filenameFrom {String}
-	@filenameTo {String}
-	return {String}
+    Internal function
+    @filenameFrom {String}
+    @filenameTo {String}
+    return {String}
 */
 Image.prototype.cmd = function(filenameFrom, filenameTo) {
 
@@ -324,10 +324,10 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 };
 
 /*
-	Internal function
-	@filenameFrom {String}
-	@filenameTo {String}
-	return {String}
+    Internal function
+    @filenameFrom {String}
+    @filenameTo {String}
+    return {String}
 */
 Image.prototype.arg = function(first, last) {
 
@@ -367,9 +367,9 @@ Image.prototype.arg = function(first, last) {
 };
 
 /*
-	Identify image
-	cb {Function} :: function(err, info) {} :: info.type {String} == 'JPEG' | 'PNG', info.width {Number}, info.height {Number}
-	return {Image}
+    Identify image
+    cb {Function} :: function(err, info) {} :: info.type {String} == 'JPEG' | 'PNG', info.width {Number}, info.height {Number}
+    return {Image}
 */
 Image.prototype.identify = function(cb) {
     var self = this;
@@ -396,11 +396,11 @@ Image.prototype.identify = function(cb) {
 };
 
 /*
-	Append filter to filter list
-	@key {String}
-	@value {String}
-	@priority {Number}
-	return {Image}
+    Append filter to filter list
+    @key {String}
+    @value {String}
+    @priority {Number}
+    return {Image}
 */
 Image.prototype.push = function(key, value, priority) {
     var self = this;
@@ -422,10 +422,10 @@ Image.prototype.output = function(type) {
 };
 
 /*
-	@w {Number}
-	@h {Number}
-	@options {String}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-resize
+    @w {Number}
+    @h {Number}
+    @options {String}
+    http://www.graphicsmagick.org/GraphicsMagick.html#details-resize
 */
 Image.prototype.resize = function(w, h, options) {
     options = options || '';
@@ -441,6 +441,43 @@ Image.prototype.resize = function(w, h, options) {
         size = 'x' + h;
 
     return self.push('-resize', size + options, 1);
+};
+
+Image.prototype.thumbnail = function(w, h, options) {
+    options = options || '';
+
+    var self = this;
+    var size = '';
+
+    if (w && h)
+        size = w + 'x' + h;
+    else if (w && !h)
+        size = w;
+    else if (!w && h)
+        size = 'x' + h;
+
+    return self.push('-thumbnail', size + options, 1);
+};
+
+Image.prototype.geometry = function(w, h, options) {
+    options = options || '';
+
+    var self = this;
+    var size = '';
+
+    if (w && h)
+        size = w + 'x' + h;
+    else if (w && !h)
+        size = w;
+    else if (!w && h)
+        size = 'x' + h;
+
+    return self.push('-geometry', size + options, 1);
+};
+
+
+Image.prototype.filter = function(type) {
+    return this.push('-filter', type, 1);
 };
 
 Image.prototype.trim = function() {
@@ -471,10 +508,11 @@ Image.prototype.extent = function(w, h) {
  * @param {Number} w
  * @param {Number} h
  * @param {String} color Optional, background color.
+ * @param {String} filter Optional, resize filter (default: Box)
  * @return {Image}
  */
-Image.prototype.miniature = function(w, h, color) {
-    return this.resize(w, h).background(color ? color : 'white').align('center').extent(w, h);
+Image.prototype.miniature = function(w, h, color, filter) {
+    return this.filter(filter || 'Box').thumbnail(w, h).background(color ? color : 'white').align('center').extent(w, h);
 };
 
 /**
@@ -489,10 +527,10 @@ Image.prototype.resizeCenter = function(w, h, color) {
 };
 
 /*
-	@w {Number}
-	@h {Number}
-	@options {String}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-scale
+    @w {Number}
+    @h {Number}
+    @options {String}
+    http://www.graphicsmagick.org/GraphicsMagick.html#details-scale
 */
 Image.prototype.scale = function(w, h, options) {
     options = options || '';
@@ -511,26 +549,26 @@ Image.prototype.scale = function(w, h, options) {
 };
 
 /*
-	@w {Number}
-	@h {Number}
-	@x {Number}
-	@y {Number}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-crop
+    @w {Number}
+    @h {Number}
+    @x {Number}
+    @y {Number}
+    http://www.graphicsmagick.org/GraphicsMagick.html#details-crop
 */
 Image.prototype.crop = function(w, h, x, y) {
     return this.push('-crop', w + 'x' + h + '+' + (x || 0) + '+' + (y || 0), 4);
 };
 
 /*
-	@percentage {Number}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-quality
+    @percentage {Number}
+    http://www.graphicsmagick.org/GraphicsMagick.html#details-quality
 */
 Image.prototype.quality = function(percentage) {
     return this.push('-quality', percentage || 80, 5);
 };
 
 /*
-	@type {String}
+    @type {String}
 */
 Image.prototype.align = function(type) {
 
@@ -586,15 +624,15 @@ Image.prototype.align = function(type) {
 };
 
 /*
-	@type {String}
+    @type {String}
 */
 Image.prototype.gravity = function(type) {
     return this.align(type);
 };
 
 /*
-	@radius {Number}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-blur
+    @radius {Number}
+    http://www.graphicsmagick.org/GraphicsMagick.html#details-blur
 */
 Image.prototype.blur = function(radius) {
     return this.push('-blur', radius, 10);
@@ -605,8 +643,8 @@ Image.prototype.normalize = function() {
 };
 
 /*
-	@deg {Number}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-rotate
+    @deg {Number}
+    http://www.graphicsmagick.org/GraphicsMagick.html#details-rotate
 */
 Image.prototype.rotate = function(deg) {
     return this.push('-rotate', deg || 0, 8);
@@ -639,7 +677,7 @@ Image.prototype.colors = function(value) {
 };
 
 /*
-	@color {String}
+    @color {String}
 */
 Image.prototype.background = function(color) {
     return this.push('-background', color, 2);
@@ -654,8 +692,8 @@ Image.prototype.sepia = function(percentage) {
 };
 
 /*
-	@cmd {String}
-	@priority {Number}
+    @cmd {String}
+    @priority {Number}
 */
 Image.prototype.command = function(key, value, priority) {
     return this.push(key, value, priority || 10);
@@ -665,9 +703,9 @@ exports.Image = Image;
 exports.Picture = Image;
 
 /*
-	Init image class
-	@filename {String}
-	@imageMagick {Boolean} :: default false
+    Init image class
+    @filename {String}
+    @imageMagick {Boolean} :: default false
 */
 exports.init = function(filename, imageMagick, width, height) {
     return new Image(filename, imageMagick, width, height);
