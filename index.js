@@ -35,6 +35,7 @@ var RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var CONTENTTYPE_TEXTHTML = 'text/html';
 var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', 'application/json', 'text/xml', 'image/svg+xml', 'text/x-markdown', CONTENTTYPE_TEXTHTML];
+var TEMPORARY_KEY_REGEX = /\//g;
 
 var _controller = '';
 var _test;
@@ -170,7 +171,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 18)';
+    this.version_header = '1.7.3 (build: 19)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -1021,7 +1022,7 @@ Framework.prototype.merge = function(url) {
     if (url[0] !== '/')
         url = '/' + url;
 
-    var filename = self.path.temp('merge-' + url.substring(1).replace(/\//g, '-'));
+    var filename = self.path.temp('merge-' + createTemporaryKey(url));
     self.routes.merge[url] = { filename: filename, files: arr };
     return self;
 };
@@ -2576,7 +2577,7 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
             return;
         }
 
-        var file = self.path.temp((self.id === null ? '' : 'instance-' + self.id + '-') + uri.pathname.replace(/\//g, '-').substring(1));
+        var file = self.path.temp((self.id === null ? '' : 'instance-' + self.id + '-') + createTemporaryKey(uri.pathname));
         self._verify_directory('temp');
         fs.writeFileSync(file, self.compileContent(extension, buffer.toString(ENCODING), filename), ENCODING);
         self.temporary.path[key] = file + ';' + fs.statSync(file).size;
@@ -2822,10 +2823,19 @@ Framework.prototype.exists = function(req, res, max, callback) {
     }
 
     var self = this;
-    var name = req.url.replace(/\//g, '-').substring(1);
+    var name = createTemporaryKey(req);
     var filename = self.path.temp(name);
+    var httpcachevalid = false;
 
-    if (self.isProcessed(name)) {
+    if (RELEASE) {
+        var etag = framework_utils.etag(req.url, self.config['etag-version']);
+        if (req.headers['if-none-match'] === etag)
+            httpcachevalid = true;
+    }
+
+    httpcachevalid = false;
+
+    if (self.isProcessed(name) || httpcachevalid) {
         self.responseFile(req, res, filename);
         return self;
     }
@@ -2936,9 +2946,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
     req.clear(true);
 
-    key = key || filename;
-    var name = self.temporary.path[key];
+    if (!key)
+        key = createTemporaryKey(req);
 
+    var name = self.temporary.path[key];
     if (name === null) {
 
         if (self.config.debug)
@@ -2950,14 +2961,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
             done();
 
         return self;
-    }
-
-    var extension = req.extension;
-    if (!extension) {
-        if (key)
-            extension = path.extname(key);
-        if (!extension)
-            extension = path.extname(name);
     }
 
     var etag = framework_utils.etag(req.url, self.config['etag-version']);
@@ -2984,12 +2987,20 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
         if (!req.isStaticFile)
             self.emit('request-end', req, res);
+
         return self;
+    }
+
+    var extension = req.extension;
+    if (!extension) {
+        if (key)
+            extension = path.extname(key);
+        if (!extension)
+            extension = path.extname(name);
     }
 
     // JS, CSS
     if (name === undefined) {
-
         if (self.isProcessing(key)) {
             if (req.processing > self.config['default-request-timeout']) {
                 // timeout
@@ -3219,7 +3230,7 @@ Framework.prototype.responseCustom = function(req, res) {
 Framework.prototype.responseImage = function(req, res, filename, fnProcess, headers, done) {
 
     var self = this;
-    var key = req.url.substring(1).replace(/\//g, '-');
+    var key = createTemporaryKey(req);
 
     var name = self.temporary.path[key];
     if (name === null) {
@@ -3256,13 +3267,12 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
         setTimeout(function() {
             self.responseImage(req, res, filename, fnProcess, headers, done);
         }, 500);
-
         return;
     }
 
     var plus = self.id === null ? '' : 'instance-' + self.id + '-';
 
-    name = self.path.temp(plus + key.replace(/\//g, '-'));
+    name = self.path.temp(plus + key);
     self.temporary.processing[key] = true;
 
     // STREAM
@@ -3307,9 +3317,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
                 self.temporary.path[key] = name + ';' + fs.statSync(name).size;
                 self.responseFile(req, res, name, undefined, headers, done, key);
-
             });
-
         });
 
         return self;
@@ -3372,7 +3380,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProcess, headers, done) {
 
     var self = this;
-    var key = req.url.substring(1).replace(/\//g, '-');
+    var key = createTemporaryKey(req);
 
     var name = self.temporary.path[key];
     if (name === null) {
@@ -12550,8 +12558,16 @@ process.on('uncaughtException', function(e) {
     }
 
     framework.error(e, '', null);
-
 });
+
+/**
+ * Prepare URL address to temporary key (for caching)
+ * @param {ServerRequest or Strign} req
+ * @return {String}
+ */
+function createTemporaryKey(req) {
+    return (req.url ? req.url : req).replace(TEMPORARY_KEY_REGEX, '-').substring(1);
+}
 
 process.on('SIGTERM', function() {
     framework.stop();
