@@ -20,6 +20,9 @@ var errors = {
     connection: 'Cannot connect to any SMTP server.'
 };
 
+if (!global.framework_utils)
+    global.framework_utils = require('./utils');
+
 /**
  * Mailer
  * @class
