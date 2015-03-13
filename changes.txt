@@ -34,6 +34,8 @@ IN DEVELOPMENT ======= 1.7.3
 - fixed: framework.redirect()
 - fixed: HTTP cache (added longer time)
 
+- replaced: (IMPORTANT) `uri` to `url` in F.problems, F.changes, F.errors (saves memory)
+
 - improved: handling files
 - improved: auto-image-resizer (routes)
 - improved: Image.miniature() -> increase about 50%

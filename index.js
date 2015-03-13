@@ -170,7 +170,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 17)';
+    this.version_header = '1.7.3 (build: 18)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -1317,7 +1317,7 @@ Framework.prototype.error = function(err, name, uri) {
         self.errors.push({
             error: err.stack,
             name: name,
-            uri: uri,
+            url: uri ? parser.format(uri) : null,
             date: new Date()
         });
 
@@ -1344,7 +1344,7 @@ Framework.prototype.problem = function(message, name, uri, ip) {
         self.problems.push({
             message: message,
             name: name,
-            uri: uri,
+            url: uri ? parser.format(uri) : null,
             ip: ip
         });
 
@@ -1371,7 +1371,7 @@ Framework.prototype.change = function(message, name, uri, ip) {
         self.changes.push({
             message: message,
             name: name,
-            uri: uri,
+            url: uri ? parser.format(uri) : null,
             ip: ip
         });
 
@@ -4120,15 +4120,10 @@ Framework.prototype.initialize = function(http, debug, options) {
 
         self.load();
 
-        if (options.https) {
-            self.server = http.createServer(options.https, function(req, res) {
-                framework._request(req, res);
-            });
-        } else {
-            self.server = http.createServer(function(req, res) {
-                framework._request(req, res);
-            });
-        }
+        if (options.https)
+            self.server = http.createServer(options.https, self._request);
+        else
+            self.server = http.createServer(self._request);
 
         if (self.config['allow-websocket']) {
             self.server.on('upgrade', function(req, socket, head) {
@@ -4444,7 +4439,7 @@ Framework.prototype._service = function(count) {
  */
 Framework.prototype._request = function(req, res) {
 
-    var self = this;
+    var self = framework;
 
     if (self.config['allow-performance']) {
         req.connection.setNoDelay(true);
@@ -12534,7 +12529,8 @@ http.IncomingMessage.prototype.hostname = function(path) {
     return uri.protocol + '//' + uri.hostname + (uri.port !== null && uri.port !== undefined && uri.port !== 80 ? ':' + uri.port : '') + (path || '');
 };
 
-global.framework = global.F = module.exports = new Framework();
+var framework = new Framework();
+global.framework = global.F = module.exports = framework;
 
 process.on('uncaughtException', function(e) {
 
