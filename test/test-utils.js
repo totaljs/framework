@@ -154,8 +154,8 @@ function prototypeString() {
 	str = 'data:image/gif;base64,R0lGODdhAQABAIAAAF5eXgAAACwAAAAAAQABAAACAkQBADs=';
 	assert.ok(str.base64ContentType() === 'image/gif', 'string.base64ContentType(): ' + str);
 
-	str = 'ľščťŽýÁíéäôúá';
-	assert.ok(str.removeDiacritics() === 'lsctZyAieaoua', 'string.removeDiacritics(): ' + str);
+	str = 'ľščťŽýÁíéäôúáűő';
+	assert.ok(str.removeDiacritics() === 'lsctZyAieaouauo', 'string.removeDiacritics(): ' + str);
 
 	str ='<xml>';
 	assert.ok(str.indent(4) === '    <xml>', 'string.indent(4): ' + str);

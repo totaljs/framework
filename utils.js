@@ -19,7 +19,7 @@ var expressionCache = {};
 var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 var regexpTRIM = /^[\s]+|[\s]+$/g;
-
+var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
 var STRING = 'string';
@@ -1340,29 +1340,28 @@ exports.combine = function() {
  * @return {String}
  */
 exports.removeDiacritics = function(str) {
-    var dictionaryA = ['á', 'ä', 'č', 'ď', 'é', 'ě', 'ť', 'ž', 'ú', 'ů', 'ü', 'í', 'ï', 'ô', 'ó', 'ö', 'š', 'ľ', 'ĺ', 'ý', 'ÿ', 'č', 'ř', 'ŕ', 'ň'];
-    var dictionaryB = ['a', 'a', 'c', 'd', 'e', 'e', 't', 'z', 'u', 'u', 'u', 'i', 'i', 'o', 'o', 'o', 's', 'l', 'l', 'y', 'y', 'c', 'r', 'r', 'n'];
     var buf = '';
-    var length = str.length;
-    for (var i = 0; i < length; i++) {
+    for (var i = 0, length = str.length; i < length; i++) {
         var c = str[i];
+        var code = c.charCodeAt(0);
         var isUpper = false;
 
-        var index = dictionaryA.indexOf(c);
-        if (index === -1) {
-            index = dictionaryA.indexOf(c.toLowerCase());
+        var r = DIACRITICS[code];
+
+        if (r === undefined) {
+            code = c.toLowerCase().charCodeAt(0);
+            r = DIACRITICS[code];
             isUpper = true;
         }
 
-        if (index === -1) {
+        if (r === undefined) {
             buf += c;
             continue;
         }
 
-        c = dictionaryB[index];
+        c = r;
         if (isUpper)
             c = c.toUpperCase();
-
         buf += c;
     }
     return buf;
