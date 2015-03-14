@@ -21,6 +21,7 @@ IN DEVELOPMENT ======= 1.7.3
 - added: Image.geometry(w, h, options)
 - added: Image.thumbnail(w, h, options)
 - added: Image.filter(type)
+- added: `config['default-maximum-file-descriptors'] = 0`
 
 - updated: GZIP compression for static files (added .md, .json)
 - updated: request schema parser and XML parser -> better handling errors
@@ -40,6 +41,7 @@ IN DEVELOPMENT ======= 1.7.3
 - improved: handling files
 - improved: auto-image-resizer (routes)
 - improved: Image.miniature() -> increase about 50%
+- improved: U.queue()
 
 ======= 1.7.2
 

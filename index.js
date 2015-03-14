@@ -171,7 +171,7 @@ function Framework() {
 
     this.id = null;
     this.version = 1730;
-    this.version_header = '1.7.3 (build: 19)';
+    this.version_header = '1.7.3 (build: 20)';
 
     var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -228,6 +228,7 @@ function Framework() {
         'default-request-length': 5,
         'default-websocket-request-length': 2,
         'default-websocket-encodedecode': true,
+        'default-maximum-file-descriptors': 0,
 
         // in milliseconds
         'default-request-timeout': 5000,
@@ -2079,7 +2080,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
         delete self.routes.views[name];
         delete self.dependencies[type + '.' + name];
 
-        fs.exists(obj.filename, function(exist) {
+        fsFileExists(obj.filename, function(exist) {
             if (exist)
                 fs.unlink(obj.filename);
         });
@@ -2568,7 +2569,7 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
 
     var self = this;
 
-    fs.readFile(filename, function(err, buffer) {
+    fsFileRead(filename, function(err, buffer) {
 
         if (err) {
             self.error(err, filename, uri);
@@ -2638,7 +2639,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
         else
             filename = filename.substring(1);
 
-        fs.readFile(filename, function(err, buffer) {
+        fsFileRead(filename, function(err, buffer) {
 
             if (err) {
                 self.error(err, merge.filename, uri);
@@ -2841,7 +2842,7 @@ Framework.prototype.exists = function(req, res, max, callback) {
     }
 
     framework_utils.queue('framework.exists', max, function(next) {
-        fs.exists(filename, function(e) {
+        fsFileExists(filename, function(e) {
 
             if (e) {
                 framework.responseFile(req, res, filename, undefined, undefined, next);
@@ -3078,21 +3079,26 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
     if (compress && supportsGzip) {
         returnHeaders['Content-Encoding'] = 'gzip';
+        fsStreamRead(name, function(stream) {
+            res.writeHead(200, returnHeaders);
+            stream.pipe(zlib.createGzip()).pipe(res);
+            if (done)
+                done();
+            if (!req.isStaticFile)
+                self.emit('request-end', req, res);
+        });
+        return self;
+    }
+
+    fsStreamRead(name, function(stream) {
         res.writeHead(200, returnHeaders);
-        fs.createReadStream(name).pipe(zlib.createGzip()).pipe(res);
+        stream.pipe(res);
         if (done)
             done();
         if (!req.isStaticFile)
             self.emit('request-end', req, res);
-        return self;
-    }
+    });
 
-    res.writeHead(200, returnHeaders);
-    fs.createReadStream(name).pipe(res);
-    if (done)
-        done();
-    if (!req.isStaticFile)
-        self.emit('request-end', req, res);
     return self;
 };
 
@@ -3277,7 +3283,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
     // STREAM
     if (stream !== null) {
-        fs.exists(name, function(exist) {
+        fsFileExists(name, function(exist) {
 
             if (exist) {
                 delete self.temporary.processing[key];
@@ -3324,7 +3330,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
     }
 
     // FILENAME
-    fs.exists(filename, function(exist) {
+    fsFileExists(filename, function(exist) {
 
         if (!exist) {
 
@@ -3458,7 +3464,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
     }
 
     // FILENAME
-    fs.exists(filename, function(exist) {
+    fsFileExists(filename, function(exist) {
 
         if (!exist) {
             self.response404(req, res);
@@ -3591,20 +3597,20 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
     headers[RESPONSE_HEADER_CONTENTLENGTH] = length;
     headers['Content-Range'] = 'bytes ' + beg + '-' + end + '/' + total;
 
-    res.writeHead(206, headers);
+    fsStreamRead(name, { start: beg, end: end }, function(stream) {
 
-    var stream = fs.createReadStream(name, { start: beg, end: end });
+        res.writeHead(206, headers);
+        stream.pipe(res);
 
-    stream.pipe(res);
+        self.stats.response.streaming++;
+        self._request_stats(false, req.isStaticFile);
 
-    self.stats.response.streaming++;
-    self._request_stats(false, req.isStaticFile);
+        if (done)
+            done();
 
-    if (done)
-        done();
-
-    if (!req.isStaticFile)
-        self.emit('request-end', req, res);
+        if (!req.isStaticFile)
+            self.emit('request-end', req, res);
+    });
 
     return self;
 };
@@ -5856,6 +5862,7 @@ Framework.prototype._configure = function(arr, rewrite) {
             case 'default-interval-clear-resources':
             case 'default-interval-precompile-views':
             case 'default-interval-websocket-ping':
+            case 'default-maximum-file-descriptors':
                 obj[name] = utils.parseInt(value);
                 break;
 
@@ -6546,7 +6553,7 @@ FrameworkFileSystem.prototype.deleteTemporary = function(name) {
 FrameworkFileSystem.prototype.deleteFile = function(filename) {
     var self = this;
 
-    fs.exists(filename, function(exist) {
+    fsFileExists(filename, function(exist) {
         if (!exist)
             return;
         fs.unlink(filename);
@@ -12559,6 +12566,39 @@ process.on('uncaughtException', function(e) {
 
     framework.error(e, '', null);
 });
+
+function fsFileRead(filename, callback) {
+    U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
+        fs.readFile(filename, function(err, result) {
+            next();
+            callback(err, result);
+        });
+    });
+};
+
+function fsFileExists(filename, callback) {
+    U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
+        fs.exists(filename, function(e) {
+            next();
+            callback(e);
+        });
+    });
+};
+
+function fsStreamRead(filename, options, callback) {
+
+    if (!callback) {
+        callback = options;
+        options = undefined;
+    }
+
+    U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
+        var stream = fs.createReadStream(filename, options);
+        stream.on('error', next);
+        stream.on('close', next);
+        callback(stream);
+    });
+}
 
 /**
  * Prepare URL address to temporary key (for caching)

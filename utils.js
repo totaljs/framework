@@ -3956,6 +3956,11 @@ function queue_next(name) {
  */
 exports.queue = function(name, max, fn) {
 
+    if (!max) {
+        fn(NOOP);
+        return true;
+    }
+
     if (exports.queuecache[name] === undefined)
         exports.queuecache[name] = { limit: max, running: 0, pending: [] };
 
