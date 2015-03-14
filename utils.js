@@ -3966,7 +3966,7 @@ exports.queue = function(name, max, fn) {
 		return false;
 
 	if (!max) {
-		fn();
+		fn(NOOP);
 		return true;
 	}
 
