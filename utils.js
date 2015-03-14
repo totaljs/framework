@@ -3926,9 +3926,12 @@ function converBytesToInt64(data, startIndex, isLE) {
 exports.queuecache = {};
 
 function queue_next(name) {
-	var item = exports.queuecache[name];
-	item.running--;
 
+	var item = exports.queuecache[name];
+	if (!item)
+		return;
+
+	item.running--;
 	if (item.running < 0)
 		item.running = 0;
 
@@ -3936,9 +3939,12 @@ function queue_next(name) {
 		return;
 
 	var fn = item.pending.shift();
-	if (fn === undefined)
+	if (!fn) {
+		item.running = 0;
 		return;
+	}
 
+	item.running++;
 	(function(name){
 		setImmediate(function() {
 			fn(function() {
@@ -3956,8 +3962,11 @@ function queue_next(name) {
  */
 exports.queue = function(name, max, fn) {
 
+	if (!fn)
+		return false;
+
 	if (!max) {
-		fn(NOOP);
+		fn();
 		return true;
 	}
 
@@ -3965,13 +3974,12 @@ exports.queue = function(name, max, fn) {
 		exports.queuecache[name] = { limit: max, running: 0, pending: [] };
 
 	var item = exports.queuecache[name];
-	item.running++;
-
-	if (item.running > item.limit) {
+	if (item.running >= item.limit) {
 		item.pending.push(fn);
 		return false;
 	}
 
+	item.running++;
 	(function(name){
 		setImmediate(function() {
 			fn(function() {

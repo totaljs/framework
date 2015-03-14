@@ -2834,8 +2834,6 @@ Framework.prototype.exists = function(req, res, max, callback) {
 			httpcachevalid = true;
 	}
 
-	httpcachevalid = false;
-
 	if (self.isProcessed(name) || httpcachevalid) {
 		self.responseFile(req, res, filename);
 		return self;
@@ -3598,10 +3596,8 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 	headers['Content-Range'] = 'bytes ' + beg + '-' + end + '/' + total;
 
 	fsStreamRead(name, { start: beg, end: end }, function(stream) {
-
 		res.writeHead(206, headers);
 		stream.pipe(res);
-
 		self.stats.response.streaming++;
 		self._request_stats(false, req.isStaticFile);
 
@@ -12586,16 +12582,13 @@ function fsFileExists(filename, callback) {
 };
 
 function fsStreamRead(filename, options, callback) {
-
 	if (!callback) {
 		callback = options;
 		options = undefined;
 	}
-
 	U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
 		var stream = fs.createReadStream(filename, options);
-		stream.on('error', next);
-		stream.on('close', next);
+		setImmediate(next);
 		callback(stream);
 	});
 }
