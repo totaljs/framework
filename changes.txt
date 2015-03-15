@@ -23,7 +23,7 @@ source-code: "tabs" instead of "spaces"
 - added: Image.geometry(w, h, options)
 - added: Image.thumbnail(w, h, options)
 - added: Image.filter(type)
-- added: `config['default-maximum-file-descriptors'] = 0`
+- added: `config['default-maximum-file-descriptors'] = 0` (0 is disable watcher)
 
 - updated: GZIP compression for static files (added .md, .json)
 - updated: request schema parser and XML parser -> better handling errors
