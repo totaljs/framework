@@ -8,6 +8,9 @@
 var qs = require('querystring');
 var os = require('os');
 
+var ReadStream = require('fs').ReadStream
+var Stream = require('stream')
+
 var fs = require('fs');
 var zlib = require('zlib');
 var path = require('path');
@@ -171,7 +174,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 20)';
+	this.version_header = '1.7.3 (build: 21)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -3078,8 +3081,19 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (compress && supportsGzip) {
 		returnHeaders['Content-Encoding'] = 'gzip';
 		fsStreamRead(name, function(stream) {
+
 			res.writeHead(200, returnHeaders);
+
+			res.on('error', function(e) {
+				destroyStream(stream);
+			});
+
+			res.on('finish', function(e) {
+				destroyStream(stream);
+			});
+
 			stream.pipe(zlib.createGzip()).pipe(res);
+
 			if (done)
 				done();
 			if (!req.isStaticFile)
@@ -3091,6 +3105,15 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	fsStreamRead(name, function(stream) {
 		res.writeHead(200, returnHeaders);
 		stream.pipe(res);
+
+		res.on('error', function(e) {
+			destroyStream(stream);
+		});
+
+		res.on('finish', function(e) {
+			destroyStream(stream);
+		});
+
 		if (done)
 			done();
 		if (!req.isStaticFile)
@@ -3153,6 +3176,10 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 
 		res.setHeader(RESPONSE_HEADER_CONTENTTYPE, contentType);
 		res.setHeader('Vary', 'Accept-Encoding');
+
+		res.on('error', function() {
+			response.close();
+		});
 
 		if (compress) {
 			res.setHeader('Content-Encoding', 'gzip');
@@ -3529,6 +3556,11 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 		returnHeaders['Content-Encoding'] = 'gzip';
 		res.writeHead(200, returnHeaders);
+
+		res.on('error', function() {
+			stream.close();
+		});
+
 		var gzip = zlib.createGzip();
 		stream.pipe(gzip).pipe(res);
 
@@ -3545,6 +3577,15 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	}
 
 	res.writeHead(200, returnHeaders);
+
+	res.on('error', function(e) {
+		destroyStream(stream);
+	});
+
+	res.on('finish', function(e) {
+		destroyStream(stream);
+	});
+
 	stream.pipe(res);
 
 	self.stats.response.stream++;
@@ -3596,7 +3637,17 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 	headers['Content-Range'] = 'bytes ' + beg + '-' + end + '/' + total;
 
 	fsStreamRead(name, { start: beg, end: end }, function(stream) {
+
 		res.writeHead(206, headers);
+
+		res.on('error', function(e) {
+			destroyStream(stream);
+		});
+
+		res.on('finish', function(e) {
+			destroyStream(stream);
+		});
+
 		stream.pipe(res);
 		self.stats.response.streaming++;
 		self._request_stats(false, req.isStaticFile);
@@ -4301,7 +4352,12 @@ Framework.prototype.mode = function(http, name, options) {
 Framework.prototype.console = function() {
 	console.log('====================================================');
 	console.log('PID          : ' + process.pid);
-	console.log('node.js      : ' + process.version);
+
+	if (process.argv[0] === 'iojs')
+		console.log('io.js        : ' + process.version);
+	else
+		console.log('node.js      : ' + process.version);
+
 	console.log('total.js     : v' + framework.version_header);
 	console.log('====================================================');
 	console.log('Name         : ' + framework.config.name);
@@ -12586,8 +12642,13 @@ function fsStreamRead(filename, options, callback) {
 		callback = options;
 		options = undefined;
 	}
+
+	var opt = { flags: 'r', mode: '0666' };
+
+	if (options)
+		framework_utils.extend(opt, options, true);
 	U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
-		var stream = fs.createReadStream(filename, options);
+		var stream = fs.createReadStream(filename, opt);
 		callback(stream);
 		setTimeout(next, 10); // 10 ticks
 	});
@@ -12600,6 +12661,32 @@ function fsStreamRead(filename, options, callback) {
  */
 function createTemporaryKey(req) {
 	return (req.url ? req.url : req).replace(TEMPORARY_KEY_REGEX, '-').substring(1);
+}
+
+/**
+ * Destroy the stream
+ * @param {Stream} stream
+ * @return {Stream}
+ * @author Jonathan Ong <me@jongleberry.com>
+ * @license MIT
+ * @see {@link https://github.com/stream-utils/destroy}
+ */
+function destroyStream(stream) {
+	if (stream instanceof ReadStream) {
+		stream.destroy();
+		if (typeof(stream.close) !== TYPE_FUNCTION)
+			return stream;
+		stream.on('open', function() {
+			if (typeof(this.fd) === NUMBER)
+				this.close();
+		});
+		return stream;
+	}
+	if (!(stream instanceof Stream))
+		return stream;
+	if (typeof(stream.destroy) === TYPE_FUNCTION)
+		stream.destroy();
+	return stream;
 }
 
 process.on('SIGTERM', function() {
