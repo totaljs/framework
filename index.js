@@ -12588,8 +12588,8 @@ function fsStreamRead(filename, options, callback) {
 	}
 	U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
 		var stream = fs.createReadStream(filename, options);
-		setImmediate(next);
 		callback(stream);
+		setTimeout(next, 10); // 10 ticks
 	});
 }
 
