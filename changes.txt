@@ -30,6 +30,7 @@ source-code: "tabs" instead of "spaces"
 - updated: wrapped decodeURIComponent for prevention of parsing
 - updated: removed HTTP cache in DEBUG mode
 - updated: Image.miniature(w,h,color,[filter]) --> added filter
+- updated: binary supports translation files `--translate my-localization.txt`
 
 - fixed: F.usage() --> fixed queue pendings
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
