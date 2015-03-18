@@ -1,17 +1,21 @@
 /**
  * @module FrameworkInternal
- * @version 1.7.2
+ * @version 1.7.3
  */
 
 'use strict';
 
 var crypto = require('crypto');
 var fs = require('fs');
+var ReadStream = require('fs').ReadStream;
+var Stream = require('stream');
 
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
 var FUNCTION = 'function';
 var OBJECT = 'object';
+var BOOLEAN = 'boolean';
+var NUMBER = 'number';
 
 var REG_1 = /[\n\r\t]+/g;
 var REG_2 = /\s{3,}/g;
@@ -2465,5 +2469,194 @@ exports.appendModel = function(str) {
 	return str.substring(0, index) + '(model' + (end[0] === ')' ? end : ',' + end);
 };
 
+/**
+ * Destroy the stream
+ * @param {Stream} stream
+ * @return {Stream}
+ * @author Jonathan Ong <me@jongleberry.com>
+ * @license MIT
+ * @see {@link https://github.com/stream-utils/destroy}
+ */
+function destroyStream(stream) {
+	if (stream instanceof ReadStream) {
+		stream.destroy();
+		if (typeof(stream.close) !== FUNCTION)
+			return stream;
+		stream.on('open', function() {
+			if (typeof(this.fd) === NUMBER)
+				this.close();
+		});
+		return stream;
+	}
+	if (!(stream instanceof Stream))
+		return stream;
+	if (typeof(stream.destroy) === FUNCTION)
+		stream.destroy();
+	return stream;
+}
+
+/*
+ * ee-first (first, listener)
+ * Copyright(c) 2014 Jonathan Ong <me@jongleberry.com>
+ * MIT Licensed
+ * https://github.com/jonathanong/ee-first
+ */
+function first(stuff, done) {
+	var cleanups = [];
+	for (var i = 0, il = stuff.length; i < il; i++) {
+		var arr = stuff[i];
+		var ee = arr[0];
+		for (var j = 1, jl = arr.length; j < jl; j++) {
+			var event = arr[j];
+			var fn = listener(event, callback);
+			ee.on(event, fn);
+			cleanups.push({ ee: ee, event: event, fn: fn });
+		}
+	}
+
+	function callback() {
+		cleanup();
+		done.apply(null, arguments);
+	}
+
+	function cleanup() {
+		var x;
+		for (var i = 0, length = cleanups.length; i < length; i++) {
+			x = cleanups[i];
+			x.ee.removeListener(x.event, x.fn);
+		}
+	}
+
+	function thunk(fn) {
+		done = fn;
+	}
+
+	thunk.cancel = cleanup;
+	return thunk;
+}
+
+function listener(event, done) {
+	return function(arg1) {
+		var args = new Array(arguments.length);
+		var ee = this
+		var err = event === 'error' ? arg1 : null;
+
+		// copy args to prevent arguments escaping scope
+		for (var i = 0; i < args.length; i++)
+			args[i] = arguments[i];
+		done(err, ee, event, args);
+	}
+}
+
+/*
+ * on-finished (onFinished, attachFinishedListener, attachListener, createListener, patchAssignSocket, isFinished)
+ * Copyright(c) 2013 Jonathan Ong <me@jongleberry.com>
+ * Copyright(c) 2014 Douglas Christopher Wilson <doug@somethingdoug.com>
+ * MIT Licensed
+ * https://github.com/jshttp/on-finished
+ */
+function onFinished(msg, listener) {
+	if (isFinished(msg) !== false)
+		setImmediate(listener, null, msg);
+	attachListener(msg, listener);
+	return msg;
+}
+
+function attachFinishedListener(msg, callback) {
+	var eeMsg;
+	var eeSocket;
+	var finished = false;
+
+	function onFinish(error) {
+		eeMsg.cancel();
+		eeSocket.cancel();
+		finished = true;
+		callback(error);
+	}
+
+	// finished on first message event
+	eeMsg = eeSocket = first([[msg, 'end', 'finish']], onFinish);
+
+	function onSocket(socket) {
+		// remove listener
+		msg.removeListener('socket', onSocket)
+
+		if (finished || eeMsg !== eeSocket)
+			return;
+
+		// finished on first socket event
+		eeSocket = first([[socket, 'error', 'close']], onFinish);
+	}
+
+	// socket already assigned
+	if (msg.socket) {
+		onSocket(msg.socket);
+		return;
+	}
+
+	// wait for socket to be assigned
+	msg.on('socket', onSocket)
+
+	// node.js 0.8 patch
+	if (msg.socket === undefined)
+		patchAssignSocket(msg, onSocket);
+}
+
+function attachListener(msg, listener) {
+	var attached = msg.__onFinished;
+
+	// create a private single listener with queue
+	if (!attached || !attached.queue) {
+		attached = msg.__onFinished = createListener(msg);
+		attachFinishedListener(msg, attached);
+	}
+
+	attached.queue.push(listener);
+}
+
+function createListener(msg) {
+	function listener(err) {
+		if (msg.__onFinished === listener)
+			msg.__onFinished = null;
+		if (!listener.queue)
+			return;
+		var queue = listener.queue;
+		listener.queue = null
+		for (var i = 0, length = queue.length; i < length; i++)
+			queue[i](err, msg);
+	}
+	listener.queue = [];
+	return listener;
+}
+
+function patchAssignSocket(res, callback) {
+	var assignSocket = res.assignSocket;
+	if (typeof(assignSocket) !== FUNCTION)
+		return;
+	// res.on('socket', callback) is broken in 0.8
+	res.assignSocket = function _assignSocket(socket) {
+		assignSocket.call(this, socket);
+		callback(socket);
+	};
+}
+
+function isFinished(msg) {
+
+	var socket = msg.socket;
+
+	// OutgoingMessage
+	if (typeof msg.finished === BOOLEAN)
+		return Boolean(msg.finished || (socket && !socket.writable));
+
+	// IncomingMessage
+	if (typeof msg.complete === BOOLEAN)
+		return Boolean(!socket || msg.complete || !socket.readable);
+
+	// don't know
+	return;
+}
+
 exports.parseLocalization = view_parse_localization;
 exports.findLocalization = view_find_localization;
+exports.destroyStream = destroyStream;
+exports.onFinished = onFinished;

@@ -7,10 +7,6 @@
 
 var qs = require('querystring');
 var os = require('os');
-
-var ReadStream = require('fs').ReadStream
-var Stream = require('stream')
-
 var fs = require('fs');
 var zlib = require('zlib');
 var path = require('path');
@@ -174,7 +170,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 21)';
+	this.version_header = '1.7.3 (build: 22)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -3080,16 +3076,13 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	if (compress && supportsGzip) {
 		returnHeaders['Content-Encoding'] = 'gzip';
-		fsStreamRead(name, function(stream) {
+		fsStreamRead(name, function(stream, next) {
 
 			res.writeHead(200, returnHeaders);
 
-			res.on('error', function(e) {
-				destroyStream(stream);
-			});
-
-			res.on('finish', function(e) {
-				destroyStream(stream);
+			framework_internal.onFinished(res, function(err) {
+			 	framework_internal.destroyStream(stream);
+			 	next();
 			});
 
 			stream.pipe(zlib.createGzip()).pipe(res);
@@ -3102,16 +3095,13 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return self;
 	}
 
-	fsStreamRead(name, function(stream) {
+	fsStreamRead(name, function(stream, next) {
 		res.writeHead(200, returnHeaders);
 		stream.pipe(res);
 
-		res.on('error', function(e) {
-			destroyStream(stream);
-		});
-
-		res.on('finish', function(e) {
-			destroyStream(stream);
+		framework_internal.onFinished(res, function(err) {
+			framework_internal.destroyStream(stream);
+			next();
 		});
 
 		if (done)
@@ -3562,6 +3552,11 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		});
 
 		var gzip = zlib.createGzip();
+
+		framework_internal.onFinished(res, function() {
+			framework_internal.destroyStream(stream);
+		});
+
 		stream.pipe(gzip).pipe(res);
 
 		self.stats.response.stream++;
@@ -3578,12 +3573,8 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 	res.writeHead(200, returnHeaders);
 
-	res.on('error', function(e) {
-		destroyStream(stream);
-	});
-
-	res.on('finish', function(e) {
-		destroyStream(stream);
+	framework_internal.onFinished(res, function(err) {
+		framework_internal.destroyStream(stream);
 	});
 
 	stream.pipe(res);
@@ -3636,16 +3627,13 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 	headers[RESPONSE_HEADER_CONTENTLENGTH] = length;
 	headers['Content-Range'] = 'bytes ' + beg + '-' + end + '/' + total;
 
-	fsStreamRead(name, { start: beg, end: end }, function(stream) {
+	fsStreamRead(name, { start: beg, end: end }, function(stream, next) {
 
 		res.writeHead(206, headers);
 
-		res.on('error', function(e) {
-			destroyStream(stream);
-		});
-
-		res.on('finish', function(e) {
-			destroyStream(stream);
+		framework_internal.onFinished(res, function() {
+			framework_internal.destroyStream(stream);
+			next();
 		});
 
 		stream.pipe(res);
@@ -12637,7 +12625,7 @@ function fsFileExists(filename, callback) {
 	});
 };
 
-function fsStreamRead(filename, options, callback) {
+function fsStreamRead(filename, options, callback, next) {
 	if (!callback) {
 		callback = options;
 		options = undefined;
@@ -12649,8 +12637,7 @@ function fsStreamRead(filename, options, callback) {
 		framework_utils.extend(opt, options, true);
 	U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
 		var stream = fs.createReadStream(filename, opt);
-		callback(stream);
-		setTimeout(next, 10); // 10 ticks
+		callback(stream, next);
 	});
 }
 
@@ -12661,32 +12648,6 @@ function fsStreamRead(filename, options, callback) {
  */
 function createTemporaryKey(req) {
 	return (req.url ? req.url : req).replace(TEMPORARY_KEY_REGEX, '-').substring(1);
-}
-
-/**
- * Destroy the stream
- * @param {Stream} stream
- * @return {Stream}
- * @author Jonathan Ong <me@jongleberry.com>
- * @license MIT
- * @see {@link https://github.com/stream-utils/destroy}
- */
-function destroyStream(stream) {
-	if (stream instanceof ReadStream) {
-		stream.destroy();
-		if (typeof(stream.close) !== TYPE_FUNCTION)
-			return stream;
-		stream.on('open', function() {
-			if (typeof(this.fd) === NUMBER)
-				this.close();
-		});
-		return stream;
-	}
-	if (!(stream instanceof Stream))
-		return stream;
-	if (typeof(stream.destroy) === TYPE_FUNCTION)
-		stream.destroy();
-	return stream;
 }
 
 process.on('SIGTERM', function() {
