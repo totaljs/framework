@@ -25,6 +25,7 @@ source-code: "tabs" instead of "spaces"
 - added: Image.filter(type)
 - added: `config['default-maximum-file-descriptors'] = 0` (0 is disable watcher)
 
+- updated: (IMPORTANT): for evaluation multiple roles in routing (@role) framework validates only one role
 - updated: GZIP compression for static files (added .md, .json)
 - updated: request schema parser and XML parser -> better handling errors
 - updated: wrapped decodeURIComponent for prevention of parsing

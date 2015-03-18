@@ -430,12 +430,13 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 			return 0;
 	}
 
+	var isRole = false;
+
 	for (var i = 0, length = req.flags.length; i < length; i++) {
 
 		var flag = req.flags[i];
 
 		switch (flag) {
-
 			case 'json':
 				if (!route.isJSON)
 					return 0;
@@ -488,9 +489,18 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 		if (noLoggedUnlogged && route.isMEMBER)
 			continue;
 
+		var role = flag[0] === '@';
+
+		// Is some role verified?
+		if (role && isRole)
+			continue;
+
 		var index = route.flags.indexOf(flag);
 		if (index === -1)
 			return !route.isMEMBER ? -1 : 0;
+
+		if (role)
+			isRole = true;
 	}
 
 	return 1;
