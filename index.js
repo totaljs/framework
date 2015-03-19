@@ -170,7 +170,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 23)';
+	this.version_header = '1.7.3 (build: 24)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -7612,7 +7612,13 @@ Subscribe.prototype.doEnd = function() {
 				return self;
 			}
 
-			req.body = JSON.parse(data);
+			try
+			{
+				req.body = JSON.parse(data);
+			} catch(e) {
+				self.route400(new Error('The request validation (not valid JSON).'));
+				return self;
+			}
 
 			if (!route.schema) {
 				req.buffer_data = null;

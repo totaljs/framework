@@ -38,6 +38,7 @@ source-code: "tabs" instead of "spaces"
 - fixed: (CRITICAL) a package or module installation from the URL address
 - fixed: framework.redirect()
 - fixed: HTTP cache (added longer time)
+- fixed: auto JSON parsing in `json` request
 
 - replaced: (IMPORTANT) `uri` to `url` in F.problems, F.changes, F.errors (saves memory)
 
