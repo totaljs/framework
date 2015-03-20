@@ -170,7 +170,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 24)';
+	this.version_header = '1.7.3 (build: 25)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -7589,12 +7589,38 @@ Subscribe.prototype.doEnd = function() {
 	if (req.buffer_data.length === 0) {
 
 		// POST, MULTIPART
-		if (route !== null && !route.isXSS && req.flags.indexOf('xss') !== -1) {
+		if (route && !route.isXSS && req.flags.indexOf('xss') !== -1) {
 			self.route400(new Error('Cross-site scripting.'));
 			return self;
 		}
 
-		self.prepare(req.flags, req.uri.pathname);
+		if (!route || !route.schema) {
+			req.buffer_data = null;
+			self.prepare(req.flags, req.uri.pathname);
+			return self;
+		}
+
+		schema = SCHEMA(route.schema[0]).get(route.schema[1]);
+
+		if (!schema) {
+			var err = new Error('Schema not found.');
+			F.error(err, null, req.uri);
+			self.route500(err);
+			return self;
+		}
+
+		schema.make(req.body, function(err, result) {
+
+			if (err) {
+				self.route400(err);
+				return;
+			}
+
+			if (result)
+				req.body = result;
+
+			self.prepare(req.flag, req.uri.pathname);
+		});
 		return self;
 	}
 
