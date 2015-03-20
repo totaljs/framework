@@ -2516,11 +2516,11 @@ String.prototype.dollar = function() {
 	return str.toString();
 };
 
-/*
-	Create link
-	@max {Number} :: optional default 60 chars
-	return {String}
-*/
+/**
+ * Create a link from String
+ * @param  {Number} max A maximum length, default: 60 and optional.
+ * @return {String}
+ */
 String.prototype.linker = function(max) {
 	max = max || 60;
 
@@ -2536,10 +2536,8 @@ String.prototype.linker = function(max) {
 			break;
 
 		if (code > 31 && code < 48) {
-
 			if (builder[builder.length - 1] === '-')
 				continue;
-
 			builder += '-';
 			continue;
 		}
@@ -2553,9 +2551,10 @@ String.prototype.linker = function(max) {
 			builder += c;
 			continue;
 		}
-
 	}
-
+	var l = builder.length - 1;
+	if (builder[l] === '-')
+		return builder.substring(0, l);
 	return builder;
 };
 
