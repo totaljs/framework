@@ -81,12 +81,12 @@ Videos on YouTube
 
 Peter Širka - <petersirka@gmail.com>
 
-[license-image]: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
+[license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: license.txt
 
 [npm-url]: https://npmjs.org/package/total.js
-[npm-version-image]: http://img.shields.io/npm/v/total.js.svg?style=flat
-[npm-downloads-image]: http://img.shields.io/npm/dm/total.js.svg?style=flat
+[npm-version-image]: https://img.shields.io/npm/v/total.js.svg?style=flat
+[npm-downloads-image]: https://img.shields.io/npm/dm/total.js.svg?style=flat
 
-[travis-url]: http://travis-ci.org/totaljs/framework
-[travis-image]: http://img.shields.io/travis/totaljs/framework.svg?style=flat
+[travis-url]: https://travis-ci.org/totaljs/framework
+[travis-image]: https://img.shields.io/travis/totaljs/framework.svg?style=flat
