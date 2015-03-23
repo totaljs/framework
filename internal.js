@@ -820,7 +820,7 @@ function autoprefixer(value) {
 			updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-o-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
-			updated += plus + delimiter;
+			updated += plus + (plus[plus.length - 1] === ';' ? '' : delimiter);
 
 			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
