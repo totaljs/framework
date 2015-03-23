@@ -5,6 +5,7 @@
 
 'use strict';
 
+var Dns = require('dns');
 var parser = require('url');
 var qs = require('querystring');
 var http = require('http');
@@ -30,6 +31,7 @@ var BOOLEAN = 'boolean';
 var NEWLINE = '\r\n';
 var VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version_header : '');
 var isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
+var dnscache = {};
 
 var contentTypes = {
 	'aac': 'audio/aac',
@@ -229,7 +231,47 @@ exports.wait = function(fnValid, fnCallback, timeout, interval) {
 		if (fnCallback)
 			fnCallback(new Error('Timeout.'));
 	}, timeout || 5000);
+};
 
+/**
+ * Resolves an IP from the URL address
+ * @param {String} url
+ * @param {Function(err, uri)} callback
+ */
+exports.resolve = function(url, callback) {
+
+    var uri = parser.parse(url);
+
+    if (dnscache[uri.host]) {
+        uri.host = dnscache[uri.host];
+        callback(null, uri);
+        return;
+    }
+
+    Dns.resolve4(uri.hostname, function(e, addresses) {
+
+        if (!e) {
+            dnscache[uri.host] = addresses[0];
+            uri.host = addresses[0];
+	        callback(null, uri);
+            return;
+        }
+
+        Dns.resolve4(uri.hostname, function(e, addresses) {
+            if (e)
+                return callback(e);
+            dnscache[uri.host] = addresses[0];
+            uri.host = addresses[0];
+	        callback(null, uri);
+        });
+    });
+};
+
+/**
+ * Clears DNS cache
+ */
+exports.clearDNS = function() {
+	dnscache = {};
 };
 
 /**
@@ -353,7 +395,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var responseLength = 0;
 
 	uri.method = method;
-
 	headers['X-Powered-By'] = 'total.js' + VERSION;
 
 	if (cookies) {
@@ -400,9 +441,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 		res.on('end', function() {
 			var self = this;
-			e.emit('end', self._buffer, self.statusCode, self.headers);
+			e.emit('end', self._buffer, self.statusCode, self.headers, uri.host);
 			if (callback)
-				callback(null, self._buffer, self.statusCode, self.headers);
+				callback(null, self._buffer, self.statusCode, self.headers, uri.host);
 		});
 
 		res.resume();
@@ -417,11 +458,11 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 		if (callback) {
 			request.on('error', function(error) {
-				callback(error, null, 0, {});
+				callback(error, undefined, 0, undefined, undefined, uri.host);
 			});
 
 			request.setTimeout(timeout || 10000, function() {
-				callback(new Error(exports.httpStatus(408)), null, 0, null);
+				callback(new Error(exports.httpStatus(408)), undefined, 0, undefined, uri.host);
 			});
 		}
 
@@ -436,12 +477,10 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			request.end();
 
 	} catch (ex) {
-
 		if (callback)
-			callback(ex, null, 0, null);
-
-		return e;
+			callback(ex, undefined, 0);
 	}
+
 
 	return e;
 };

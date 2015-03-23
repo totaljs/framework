@@ -24,6 +24,8 @@ source-code: "tabs" instead of "spaces"
 - added: Image.thumbnail(w, h, options)
 - added: Image.filter(type)
 - added: `config['default-maximum-file-descriptors'] = 0` (0 = the watcher is disabled)
+- added: Utils.resolve(url, callback(err, uri)) DNS cache
+- added: Utils.clearDNS() clears DNS cache
 
 - updated: (IMPORTANT): for evaluation multiple roles in routing (@role) framework validates only one role
 - updated: GZIP compression for static files (added .md, .json)
