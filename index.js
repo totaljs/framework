@@ -25,7 +25,6 @@ var TYPE_FUNCTION = 'function';
 var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
-var REQUEST_COMPRESS_EXTENSION = ['js', 'css', 'txt'];
 var EXTENSION_JS = '.js';
 var EXTENSION_COFFEE = '.coffee';
 var RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
@@ -33,7 +32,7 @@ var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
 var RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var CONTENTTYPE_TEXTHTML = 'text/html';
-var REQUEST_COMPRESS_CONTENTTYPE = [CONTENTTYPE_TEXTPLAIN, 'text/javascript', 'text/css', 'application/x-javascript', 'application/json', 'text/xml', 'image/svg+xml', 'text/x-markdown', CONTENTTYPE_TEXTHTML];
+var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
 var TEMPORARY_KEY_REGEX = /\//g;
 
 var _controller = '';
@@ -170,7 +169,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 25)';
+	this.version_header = '1.7.3 (build: 26)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -3056,7 +3055,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (!returnHeaders[RESPONSE_HEADER_CONTENTTYPE])
 		returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = utils.getContentType(extension);
 
-	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE.indexOf(returnHeaders[RESPONSE_HEADER_CONTENTTYPE]) !== -1;
+	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[returnHeaders[RESPONSE_HEADER_CONTENTTYPE]];
 	var range = req.headers['range'] || '';
 	var supportsGzip = accept.lastIndexOf('gzip') !== -1;
 
@@ -3521,7 +3520,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (contentType.lastIndexOf('/') === -1)
 		contentType = utils.getContentType(contentType);
 
-	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE.indexOf(contentType) !== -1;
+	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType];
 	var accept = req.headers['accept-encoding'] || '';
 	var returnHeaders = {};
 
