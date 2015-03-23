@@ -76,6 +76,7 @@ Videos on YouTube
 - Andrea Sessa, <https://github.com/asessa>
 - Ehsan Darrudi, <https://github.com/darrudi>
 - Tom Spaccialbelli, <https://github.com/harry-stot>
+- Nikita Shmidt, <https://github.com/NikSmith>
 
 ## Contact
 
