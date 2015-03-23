@@ -2438,6 +2438,9 @@ Pagination.prototype.last = function(format) {
 	var self = this;
 	var page = self.count;
 
+	if (self.isPrev)
+        page = self.page - 1;
+
 	format = format || self.format;
 
 	return {
