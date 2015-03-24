@@ -59,6 +59,11 @@ SchemaBuilder.prototype.create = function() {
 	return self.add.apply(self, arguments);
 };
 
+SchemaBuilder.prototype.Create = function() {
+	var self = this;
+	return self.add.apply(self, arguments);
+};
+
 /**
  * Remove an exist schema or group of schemas
  * @param {String} name Schema name, optional.
@@ -628,6 +633,9 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
  */
 SchemaBuilderEntity.prototype.create = function() {
 	return this.default();
+};
+
+SchemaBuilderEntity.prototype.Create = function() {
 };
 
 /**
