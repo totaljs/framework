@@ -1682,8 +1682,10 @@ function view_parse(content, minify) {
 	var functionsName = [];
 	var isFN = false;
 	var isSECTION = false;
+	var isCOMPILATION = false;
 	var builderTMP = '';
 	var sectionName = '';
+	var compileName = '';
 	var isSitemap = false;
 	var text;
 
@@ -1707,8 +1709,17 @@ function view_parse(content, minify) {
 
 		var cmd = content.substring(command.beg + 2, command.end);
 		var cmd8 = cmd.substring(0, 8);
+		var cmd7 = cmd.substring(0, 7);
 
-		if (cmd8 === 'section ' && cmd.lastIndexOf(')') === -1) {
+		if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
+
+			builderTMP = builder + '+(framework.onCompileView.call(self,\'' + (cmd8[7] === ' ' ? cmd.substring(8) : '') + '\',';
+			builder = '';
+			sectionName = cmd.substring(8);
+			isCOMPILATION = true;
+			isFN = true;
+
+		} else if (cmd8 === 'section ' && cmd.lastIndexOf(')') === -1) {
 
 			builderTMP = builder;
 			builder = '+(function(){var $output=$EMPTY';
@@ -1716,7 +1727,7 @@ function view_parse(content, minify) {
 			isSECTION = true;
 			isFN = true;
 
-		} else if (cmd.substring(0, 7) === 'helper ') {
+		} else if (cmd7 === 'helper ') {
 
 			builderTMP = builder;
 			builder = 'function ' + cmd.substring(7).trim() + '{var $output=$EMPTY';
@@ -1737,10 +1748,12 @@ function view_parse(content, minify) {
 		} else if (cmd === 'end') {
 
 		  if (isFN && counter <= 0) {
-
 				counter = 0;
 
-				if (isSECTION) {
+				if (isCOMPILATION) {
+					builder = builderTMP + 'unescape($EMPTY' + builder + '),model) || $EMPTY)';
+					builderTMP = '';
+				} else if (isSECTION) {
 					builder = builderTMP + builder + ';repository[\'$section_' + sectionName + '\']=$output;return $EMPTY})()';
 					builderTMP = '';
 				} else {
@@ -1751,6 +1764,7 @@ function view_parse(content, minify) {
 				}
 
 				isSECTION = false;
+				isCOMPILATION = false;
 				isFN = false;
 
 			} else {

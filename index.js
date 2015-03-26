@@ -169,7 +169,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 26)';
+	this.version_header = '1.7.3 (build: 27)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2494,6 +2494,17 @@ Framework.prototype.usage = function(detailed) {
 	output.problems = self.problems;
 	output.changes = self.changes;
 	return output;
+};
+
+/**
+ * Compiles content in the view @{compile}...@{end}. The function has controller context, this === controler.
+ * @param {String} name
+ * @param {String} html HTML content to compile
+ * @param {Object} model
+ * @return {String}
+ */
+Framework.prototype.onCompileView = function(name, html, model) {
+	return html;
 };
 
 /*

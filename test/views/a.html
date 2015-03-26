@@ -43,7 +43,9 @@ a
 a</textarea>
 a
 </script>
-
+@{compile Tangular}
+COMPILE_TANGULAR
+@{end}
 <script>
 var b = 2;
 var c = 3;
@@ -70,3 +72,7 @@ var n = '\n"\n';
 @{name(40, 40)}
 #helper-fnwithout-@{fn('A')}#
 @{section('script')}
+
+@{compile}
+COMPILE_WITHOUT
+@{end}

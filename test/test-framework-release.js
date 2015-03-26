@@ -8,6 +8,10 @@ var max = 100;
 
 INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
+framework.onCompileView = function(name, html, model) {
+	return html + 'COMPILED';
+};
+
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };

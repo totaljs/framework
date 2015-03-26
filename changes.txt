@@ -26,6 +26,9 @@ source-code: "tabs" instead of "spaces"
 - added: `config['default-maximum-file-descriptors'] = 0` (0 = the watcher is disabled)
 - added: Utils.resolve(url, callback(err, uri)) DNS cache
 - added: Utils.clearDNS() clears DNS cache
+- added: framework.onCompileView(name, content, model)
+- added: `@{compile handlerbars}CONTENT TO COMPILE@{end}`
+- added: `@{compile}CONTENT TO COMPILE@{end}`
 
 - updated: (IMPORTANT): for evaluation multiple roles in routing (@role) framework validates only one role
 - updated: GZIP compression for static files (added .md, .json)
