@@ -169,7 +169,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 29)';
+	this.version_header = '1.7.3 (build: 30)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -3905,7 +3905,6 @@ Framework.prototype.response404 = function(req, res, problem) {
 Framework.prototype.response408 = function(req, res, problem) {
 
 	var self = this;
-
 	if (problem)
 		self.problem(problem, 'response408()', req.uri, req.ip);
 
@@ -4910,6 +4909,7 @@ Framework.prototype._upgrade_continue = function(route, req, socket, path) {
 
 		if (self.connections[id] === undefined) {
 			var connection = new WebSocket(self, path, route.controller, id);
+			connection.route = route;
 			self.connections[id] = connection;
 			route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
 		}
@@ -11021,6 +11021,7 @@ function WebSocket(framework, path, name, id) {
 	this.name = name;
 	this.isController = true;
 	this.url = utils.path(path);
+	this.route = null;
 
 	// on('open', function(client) {});
 	// on('close', function(client) {});
