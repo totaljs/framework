@@ -37,6 +37,8 @@ source-code: "tabs" instead of "spaces"
 - updated: removed HTTP cache in DEBUG mode
 - updated: Image.miniature(w,h,color,[filter]) --> added filter
 - updated: binary supports translation files `--translate my-localization.txt`
+- updated: framework.mail() --> returns MailMessage
+- updated: controller.mail() --> returns MailMessage
 
 - fixed: F.usage() --> fixed queue pendings
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)

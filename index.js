@@ -169,7 +169,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 27)';
+	this.version_header = '1.7.3 (build: 28)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2219,8 +2219,13 @@ Framework.prototype.onMapping = function(url, def) {
 Framework.prototype.onValidation = null;
 
 /**
- * Mail handler
- * @type {Function(address, subject, body, callback, replyTo)}
+ * Mail delegate
+ * @param {String or Array String} address
+ * @param {String} subject
+ * @param {String} body
+ * @param {Function(err)} callback
+ * @param {String} replyTo
+ * @return {MailMessage}
  */
 Framework.prototype.onMail = function(address, subject, body, callback, replyTo) {
 
@@ -2265,8 +2270,11 @@ Framework.prototype.onMail = function(address, subject, body, callback, replyTo)
 		self.temporary['mail-settings'] = opt;
 	}
 
-	message.send(self.config['mail.smtp'], opt, callback);
-	return self;
+	setTimeout(function() {
+		message.send(self.config['mail.smtp'], opt, callback);
+	}, 2);
+
+	return message;
 };
 
 /*
@@ -5046,15 +5054,14 @@ Framework.prototype._log = function(a, b, c, d) {
  * @param {String} view View name.
  * @param {Object} model Optional.
  * @param {Function(err)} callback Optional.
- * @return {Framework}
+ * @return {MailMessage}
  */
 Framework.prototype.mail = function(address, subject, view, model, callback, replyTo) {
 	var controller = new Controller('', null, null, null, '');
 	controller.layoutName = '';
 	if (typeof(repository) === OBJECT && repository !== null)
 		controller.repository = repository;
-	controller.mail.apply(controller, arguments);
-	return this;
+	return controller.mail.apply(controller, arguments);
 };
 
 /**
@@ -8852,7 +8859,7 @@ Controller.prototype.models = function(name) {
  * @param {String} view View name.
  * @param {Object} model Optional.
  * @param {Function(err)} callback Optional.
- * @return {Controlller}
+ * @return {MailMessage}
  */
 Controller.prototype.mail = function(address, subject, view, model, callback, replyTo) {
 
@@ -8863,8 +8870,8 @@ Controller.prototype.mail = function(address, subject, view, model, callback, re
 
 	var self = this;
 	var body = self.view(view, model, true);
-	framework.onMail(address, subject, body, callback, replyTo);
-	return self;
+
+	return framework.onMail(address, subject, body, callback, replyTo);
 };
 
 /*
