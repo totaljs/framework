@@ -651,7 +651,7 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
 	var self = this;
 
-	obj.$async = function(callback) {
+	obj.$async = function(callback, index) {
 		if (callback === undefined)
 			callback = NOOP;
 		obj.$$async = [];
@@ -662,7 +662,7 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 				var result = obj.$$result;
 				delete obj.$$result;
 				delete obj.$$async;
-				callback(null, result);
+				callback(null, index !== undefined ? result[index] : result);
 			});
 		});
 		return obj;

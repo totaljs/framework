@@ -39,6 +39,7 @@ source-code: "tabs" instead of "spaces"
 - updated: binary supports translation files `--translate my-localization.txt`
 - updated: framework.mail() --> returns MailMessage
 - updated: controller.mail() --> returns MailMessage
+- updated: SchemaBuilderEntity.$async(callback, [return-only-this-index])
 
 - fixed: F.usage() --> fixed queue pendings
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
