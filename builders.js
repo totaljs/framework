@@ -636,6 +636,7 @@ SchemaBuilderEntity.prototype.create = function() {
 };
 
 SchemaBuilderEntity.prototype.Create = function() {
+	return this.default();
 };
 
 /**
