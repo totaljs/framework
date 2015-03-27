@@ -659,7 +659,10 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 		obj.$callback = callback;
 		setImmediate(function() {
 			obj.$$async.async(function() {
-				callback(null, obj.$$result);
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				callback(null, result);
 			});
 		});
 		return obj;
@@ -680,9 +683,11 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
 				if (!err)
 					return next();
-				obj.$$async = null;
 				next = null;
-				obj.$callback(err, obj.$$result);
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
 			});
 		});
 
@@ -704,9 +709,11 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
 				if (!err)
 					return next();
-				obj.$$async = null;
 				next = null;
-				obj.$callback(err, obj.$$result);
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
 			});
 		});
 
@@ -736,9 +743,11 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
 				if (!err)
 					return next();
-				obj.$$async = null;
 				next = null;
-				obj.$callback(err, obj.$$result);
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
 			});
 		});
 
@@ -760,9 +769,11 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
 				if (!err)
 					return next();
-				obj.$$async = null;
 				next = null;
-				obj.$callback(err, obj.$$result);
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
 			});
 		});
 
@@ -784,9 +795,11 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
 				if (!err)
 					return next();
-				obj.$$async = null;
 				next = null;
-				obj.$callback(err, obj.$$result);
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
 			});
 		});
 
@@ -808,9 +821,11 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
 				if (!err)
 					return next();
-				obj.$$async = null;
 				next = null;
-				obj.$callback(err, obj.$$result);
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
 			});
 		});
 
