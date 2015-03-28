@@ -1939,6 +1939,20 @@ ErrorBuilder.prototype.resource = function(name, prefix) {
 	return self._resource();
 };
 
+ErrorBuilder.prototype.setResource = function(name) {
+	var self = this;
+	self.isResourceCustom = true;
+	self.resourceName = name || 'default';
+	return self._resource();
+};
+
+ErrorBuilder.prototype.setPrefix = function(name) {
+	var self = this;
+	self.isResourceCustom = true;
+	self.resourcePrefix = name || '';
+	return self._resource();
+};
+
 /**
  * Internal: Resource wrapper
  * @private
