@@ -617,6 +617,13 @@ function main() {
                 var content = fs.readFileSync(filename).toString('utf8');
                 var command = Internal.findLocalization(content, 0);
                 while (command !== null) {
+
+                    // Skip for direct reading
+                    if (command.command[0] === '#' && command.command[1] !== ' ') {
+                        command = Internal.findLocalization(content, command.end);
+                        continue;
+                    }
+
                     var key = 'T' + command.command.hash();
                     var file = filename.substring(root.length);
                     texts[key] = command.command;

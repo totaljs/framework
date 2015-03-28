@@ -169,7 +169,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 30)';
+	this.version_header = '1.7.3 (build: 31)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -5787,7 +5787,7 @@ Framework.prototype.resource = function(name, key) {
 };
 
 /**
- * Translate text
+ * Translates text
  * @param {String} language A resource filename, optional.
  * @param {String} text
  * @return {String}
@@ -5798,6 +5798,9 @@ Framework.prototype.translate = function(language, text) {
 		text = language;
 		language = undefined;
 	}
+
+	if (text[0] === '#' && text[1] !== ' ')
+		return this.resource(language, text.substring(1));
 
 	var value = this.resource(language, 'T' + text.hash());
 	if (!value)
