@@ -447,7 +447,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		});
 
 		res.resume();
-
 	};
 
 	var connection = uri.protocol === 'https:' ? https : http;
