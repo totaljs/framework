@@ -557,6 +557,15 @@ function other() {
 	assert.ok(utils.minifyScript('var a = 1 ;') === 'var a=1;', 'JavaScript minifier');
 	assert.ok(utils.minifyStyle('body { margin: 0 0 0 5px }') === 'body{margin:0 0 0 5px}', 'Style minifier');
 	assert.ok(utils.minifyHTML('<b>\nTEST\n</b>') === '<b>TEST</b>', 'HTML minifier');
+
+	var streamer = utils.streamer('\n', function(value, index) {
+		assert.ok(value.trim() === index.toString(), 'Streamer problem');
+	});
+
+	streamer('0');
+	streamer('\n1\n2\n');
+	streamer('3\n');
+	streamer('4\n');
 }
 
 function onValidation(name, value, path) {

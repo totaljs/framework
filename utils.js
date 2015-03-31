@@ -947,7 +947,7 @@ exports.assign = function(obj, path, fn) {
 
 /**
  * Checks if is relative url
- * @param  {String}  url
+ * @param {String} url
  * @return {Boolean}
  */
 exports.isRelative = function(url) {
@@ -955,8 +955,36 @@ exports.isRelative = function(url) {
 };
 
 /**
+ * Streamer method
+ * @param {String} delimiter
+ * @param {Function(value, index)} callback
+ */
+exports.streamer = function(delimiter, callback) {
+    var cache = '';
+    var length = delimiter.length;
+    var indexer = 0;
+    return function(chunk) {
+    	if (!chunk)
+    		return;
+        if (typeof(chunk) !== 'string')
+            chunk = chunk.toString('utf8');
+        cache += chunk;
+        var index = cache.indexOf(delimiter);
+        if (index === -1)
+            return;
+        while (index !== -1) {
+            callback(cache.substring(0, index + length), indexer++);
+            cache = cache.substring(index + length);
+            index = cache.indexOf(delimiter);
+            if (index === -1)
+                return;
+        }
+    };
+};
+
+/**
  * HTML encode string
- * @param  {String} str
+ * @param {String} str
  * @return {String}
  */
 exports.encode = function(str) {
@@ -974,7 +1002,7 @@ exports.encode = function(str) {
 
 /**
  * HTML decode string
- * @param  {String} str
+ * @param {String} str
  * @return {String}
  */
 exports.decode = function(str) {
@@ -992,7 +1020,7 @@ exports.decode = function(str) {
 
 /**
  * Checks if URL contains file extension.
- * @param  {String} url
+ * @param {String} url
  * @return {Boolean}
  */
 exports.isStaticFile = function(url) {
@@ -1002,7 +1030,7 @@ exports.isStaticFile = function(url) {
 
 /**
  * Checks if string is null or empty
- * @param  {String} str
+ * @param {String} str
  * @return {Boolean}
  */
 exports.isNullOrEmpty = function(str) {
@@ -1015,8 +1043,8 @@ exports.isNullOrEmpty = function(str) {
 
 /**
  * Converts Value to number
- * @param  {Object} obj Value to convert.
- * @param  {Number} def Default value (default: 0).
+ * @param {Object} obj Value to convert.
+ * @param {Number} def Default value (default: 0).
  * @return {Number}
  */
 exports.parseInt = function(obj, def) {
@@ -1035,8 +1063,8 @@ exports.parseInt = function(obj, def) {
 
 /**
  * Converts Value to float number
- * @param  {Object} obj Value to convert.
- * @param  {Number} def Default value (default: 0).
+ * @param {Object} obj Value to convert.
+ * @param {Number} def Default value (default: 0).
  * @return {Number}
  */
 exports.parseFloat = function(obj, def) {
@@ -1055,7 +1083,7 @@ exports.parseFloat = function(obj, def) {
 
 /**
  * Check if object is Array.
- * @param  {Object} obj
+ * @param {Object} obj
  * @return {Boolean}
  */
 exports.isArray = function(obj) {
@@ -1064,7 +1092,7 @@ exports.isArray = function(obj) {
 
 /**
  * Check if object is RegExp
- * @param  {Object} obj
+ * @param {Object} obj
  * @return {Boolean}
  */
 exports.isRegExp = function(obj) {
@@ -1073,7 +1101,7 @@ exports.isRegExp = function(obj) {
 
 /**
  * Check if object is Date
- * @param  {Object} obj
+ * @param {Object} obj
  * @return {Boolean}
  */
 exports.isDate = function(obj) {
@@ -1082,7 +1110,7 @@ exports.isDate = function(obj) {
 
 /**
  * Get ContentType from file extension.
- * @param  {String} ext File extension.
+ * @param {String} ext File extension.
  * @return {String}
  */
 exports.getContentType = function(ext) {
@@ -1105,8 +1133,8 @@ exports.setContentType = function(ext, type) {
 
 /**
  * Create eTag hash from text
- * @param  {String} text
- * @param  {String} version
+ * @param {String} text
+ * @param {String} version
  * @return {String}
  */
 exports.etag = function(text, version) {
