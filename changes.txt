@@ -45,6 +45,7 @@ source-code: "tabs" instead of "spaces"
 - fixed: F.usage() --> fixed queue pendings
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
 - fixed: (CRITICAL) a package or module installation from the URL address
+- fixed: (CRITICAL) response content-length
 - fixed: framework.redirect()
 - fixed: HTTP cache (added longer time)
 - fixed: auto JSON parsing in `json` request

@@ -169,7 +169,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 31)';
+	this.version_header = '1.7.3 (build: 32)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -3074,9 +3074,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (!returnHeaders[RESPONSE_HEADER_CONTENTTYPE])
 		returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = utils.getContentType(extension);
 
-	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[returnHeaders[RESPONSE_HEADER_CONTENTTYPE]];
+	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[returnHeaders[RESPONSE_HEADER_CONTENTTYPE]] && accept.lastIndexOf('gzip') !== -1;
 	var range = req.headers['range'] || '';
-	var supportsGzip = accept.lastIndexOf('gzip') !== -1;
 
 	res.success = true;
 
@@ -3092,7 +3091,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	self.stats.response.file++;
 	self._request_stats(false, req.isStaticFile);
 
-	if (compress && supportsGzip) {
+	if (compress) {
 		returnHeaders['Content-Encoding'] = 'gzip';
 		fsStreamRead(name, function(stream, next) {
 
@@ -3539,8 +3538,8 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (contentType.lastIndexOf('/') === -1)
 		contentType = utils.getContentType(contentType);
 
-	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType];
 	var accept = req.headers['accept-encoding'] || '';
+	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.lastIndexOf('gzip') !== -1;
 	var returnHeaders = {};
 
 	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=86400' : '');
@@ -3560,7 +3559,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 
-	if (compress && accept.lastIndexOf('gzip') !== -1) {
+	if (compress) {
 
 		returnHeaders['Content-Encoding'] = 'gzip';
 		res.writeHead(200, returnHeaders);
