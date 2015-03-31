@@ -169,7 +169,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 32)';
+	this.version_header = '1.7.3 (build: 33)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -11944,16 +11944,25 @@ Backup.prototype.restoreKey = function(data) {
 		return;
 	}
 
-	var index = data.indexOf(':');
+	var index = -1;
+	var tmp = data;
+
+	if (read.status === 2) {
+		tmp = read.key + tmp;
+		index = tmp.indexOf(':');
+	}
+	else
+		index = tmp.indexOf(':');
 
 	if (index === -1) {
 		read.key += data;
+		read.status = 2;
 		return;
 	}
 
 	read.status = 1;
-	read.key = data.substring(0, index);
-	self.restoreValue(data.substring(index + 1));
+	read.key = tmp.substring(0, index);
+	self.restoreValue(tmp.substring(index + 1));
 };
 
 Backup.prototype.restoreValue = function(data) {
@@ -12004,8 +12013,7 @@ Backup.prototype.restore = function(filename, path, callback, filter) {
 	self.path = path;
 
 	stream.on('data', function(buffer) {
-		var data = buffer.toString('utf8');
-		self.restoreKey(data);
+		self.restoreKey(buffer.toString('utf8'));
 	});
 
 	if (!callback) {
