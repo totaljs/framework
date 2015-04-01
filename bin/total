@@ -369,6 +369,7 @@ function display_help() {
         console.log('-t or -translate filename  = translates and creates a resource file from the text file');
         console.log('-d or -diff                = creates a differences between two resources "-diff filename1 filename2"');
         console.log('-v or -version             = total.js version');
+        console.log('-minify filename           = minifies .js, .css or .html file into filename.min.[extension]');
         console.log('/path/                     = target (default current directory)');
         console.log('');
 }
@@ -551,6 +552,11 @@ function main() {
             continue
         }
 
+        if (cmd === '-minify' || cmd === '-compress' || cmd === '-compile') {
+            $type = 5;
+            continue
+        }
+
         if (cmd === '-diff') {
             diff(process.argv[i + 1] || '', process.argv[i + 2] || '');
             return;
@@ -579,6 +585,33 @@ function main() {
         dir = arg;
         isDirectory = true;
         break;
+    }
+
+    if ($type === 5) {
+
+        if (!fs.existsSync(dir)) {
+            console.log('total.js: error / file not found');
+            return;
+        }
+
+        var content = fs.readFileSync(dir).toString('utf8');
+        var extension = path.extname(dir);
+        var filename = dir.replace(extension, '.min' + extension);
+
+        switch (extension.toLowerCase()) {
+            case '.html':
+                fs.writeFileSync(filename, Utils.minifyHTML(content));
+                break;
+            case '.js':
+                fs.writeFileSync(filename, Utils.minifyScript(content));
+                break;
+            case '.css':
+                fs.writeFileSync(filename, Utils.minifyStyle(content));
+                break;
+        }
+
+        console.log('Minified: ' + filename);
+        return;
     }
 
     if ($type !== 4) {
