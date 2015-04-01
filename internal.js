@@ -949,18 +949,20 @@ function autoprefixer_keyframes(value) {
 
 exports.compile_css = function(value, filename) {
 
-	if (framework.onCompileStyle !== null)
-		return framework.onCompileStyle(filename, value);
+	if (global.framework) {
+		if (framework.onCompileStyle !== null)
+			return framework.onCompileStyle(filename, value);
 
-	if (framework.onCompileCSS !== null) {
-		console.log('OBSOLETE: framework.onCompileCSS() is deprecated, use framework.onCompileStyle()');
-		return framework.onCompileCSS(filename, value);
+		if (framework.onCompileCSS !== null) {
+			console.log('OBSOLETE: framework.onCompileCSS() is deprecated, use framework.onCompileStyle()');
+			return framework.onCompileCSS(filename, value);
+		}
 	}
 
 	try {
 		return compile_autovendor(value);
 	} catch (ex) {
-		framework.error(new Error('JS CSS exception: ' + ex.message));
+		framework.error(new Error('CSS compiler exception: ' + ex.message));
 		return '';
 	}
 };
