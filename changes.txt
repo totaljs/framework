@@ -24,6 +24,7 @@ source-code: "tabs" instead of "spaces"
 - added: Image.thumbnail(w, h, options)
 - added: Image.filter(type)
 - added: `config['default-maximum-file-descriptors'] = 0` (0 = the watcher is disabled)
+- added: `config['default-interval-clear-dnscache'] = 2880` for clearing DNS cache of Utils.request(), Utils.download()
 - added: Utils.resolve(url, callback(err, uri)) DNS cache
 - added: Utils.clearDNS() clears DNS cache
 - added: framework.onCompileView(name, content, model)
@@ -42,6 +43,7 @@ source-code: "tabs" instead of "spaces"
 - updated: controller.mail() --> returns MailMessage
 - updated: SchemaBuilderEntity.$async(callback, [return-only-this-index])
 - updated: translation @(#KEY) (direct reading) or @(TEXT TO TRANSLATE) (hash reading)
+- updated: Utils.request(), Utils.download() supports `dnscache` flag for caching host IP
 
 - fixed: F.usage() --> fixed queue pendings
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)

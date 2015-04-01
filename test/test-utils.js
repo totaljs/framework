@@ -457,7 +457,7 @@ function other() {
 		assert.ok(value.join(',') === '1,2,3,4,5,6,7,8,9', 'async');
 	});
 
-	utils.request('http://www.yahoo.com', ['get'], function(err, data, code) {
+	utils.request('http://www.yahoo.com', ['get', 'dnscache'], function(err, data, code) {
 		assert.ok(code === 200, 'utils.request (success)');
 	}).on('data', function(chunk, p) {
 		assert.ok(p === 100, 'utils.request (events)');
@@ -469,7 +469,7 @@ function other() {
 		assert.ok(p === 100, 'utils.download (events)');
 	});
 
-	utils.request('http://xxxxxxx.yyy', 'get', null, function(err, data, code) {
+	utils.request('http://xxxxxxx.yyy', ['get'], null, function(err, data, code) {
 		assert.ok(err !== null, 'utils.requiest (error)');
 	});
 

@@ -169,7 +169,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 35)';
+	this.version_header = '1.7.3 (build: 36)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -252,6 +252,7 @@ function Framework() {
 		'default-interval-clear-cache': 7,
 		'default-interval-precompile-views': 61,
 		'default-interval-websocket-ping': 1,
+		'default-interval-clear-dnscache': 2880 // 2 days
 	};
 
 	this.global = {};
@@ -4261,7 +4262,6 @@ Framework.prototype._service = function(count) {
 	if (count % framework.config['default-interval-clear-resources'] === 0) {
 		self.emit('clear', 'resources');
 		self.resources = {};
-
 		if (typeof(gc) !== UNDEFINED)
 			gc();
 	}
@@ -4283,15 +4283,15 @@ Framework.prototype._service = function(count) {
 		}, true);
 	}
 
+	if (count % framework.config['default-interval-clear-dnscache'] === 0)
+		framework_utils.clearDNS();
+
 	// every 1 minute (default) is created a ping message
 	if (count % framework.config['default-interval-websocket-ping'] === 0) {
 		Object.keys(framework.connections).wait(function(item, next) {
-
 			var conn = framework.connections[item];
-
 			if (conn && typeof(conn.ping) === TYPE_FUNCTION)
 				conn.ping();
-
 			next();
 		}, true);
 	}
@@ -5749,6 +5749,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 			case 'default-interval-precompile-views':
 			case 'default-interval-websocket-ping':
 			case 'default-maximum-file-descriptors':
+			case 'default-interval-clear-dnscache':
 				obj[name] = utils.parseInt(value);
 				break;
 

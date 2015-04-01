@@ -257,13 +257,15 @@ exports.resolve = function(url, callback) {
             return;
         }
 
-        Dns.resolve4(uri.hostname, function(e, addresses) {
-            if (e)
-                return callback(e);
-            dnscache[uri.host] = addresses[0];
-            uri.host = addresses[0];
-	        callback(null, uri);
-        });
+        setImmediate(function() {
+	        Dns.resolve4(uri.hostname, function(e, addresses) {
+	            if (e)
+	                return callback(e, uri);
+	            dnscache[uri.host] = addresses[0];
+	            uri.host = addresses[0];
+		        callback(null, uri);
+	        });
+    	});
     });
 };
 
@@ -317,6 +319,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var length = 0;
 	var type = 0;
 	var e = new events.EventEmitter();
+	var isDNSCACHE = false;
 
 	headers = exports.extend({}, headers || {});
 
@@ -373,6 +376,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					if (!headers['Content-Type'])
 						headers['Content-Type'] = 'application/x-www-form-urlencoded';
 
+					break;
+				case 'dnscache':
+					isDNSCACHE = true;
 					break;
 			}
 		}
@@ -450,36 +456,44 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	};
 
 	var connection = uri.protocol === 'https:' ? https : http;
+	var run = function() {
+		try
+		{
+			var request = isPOST ? connection.request(uri, onResponse) : connection.get(uri, onResponse);
 
-	try
-	{
-		var request = isPOST ? connection.request(uri, onResponse) : connection.get(uri, onResponse);
+			if (callback) {
+				request.on('error', function(error) {
+					callback(error, undefined, 0, undefined, undefined, uri.host);
+				});
 
-		if (callback) {
-			request.on('error', function(error) {
-				callback(error, undefined, 0, undefined, undefined, uri.host);
+				request.setTimeout(timeout || 10000, function() {
+					callback(new Error(exports.httpStatus(408)), undefined, 0, undefined, uri.host);
+				});
+			}
+
+			request.on('response', function(response) {
+				responseLength = parseInt(response.headers['content-length']) || 0;
+				e.emit('begin', responseLength);
 			});
 
-			request.setTimeout(timeout || 10000, function() {
-				callback(new Error(exports.httpStatus(408)), undefined, 0, undefined, uri.host);
-			});
+			if (isPOST && buf)
+				request.end(buf);
+			else
+				request.end();
+
+		} catch (ex) {
+			if (callback)
+				callback(ex, undefined, 0);
 		}
+	};
 
-		request.on('response', function(response) {
-			responseLength = parseInt(response.headers['content-length']) || 0;
-			e.emit('begin', responseLength);
+	if (isDNSCACHE) {
+		exports.resolve(url, function(err, u) {
+			uri.host = u.host;
+			run();
 		});
-
-		if (isPOST && buf)
-			request.end(buf);
-		else
-			request.end();
-
-	} catch (ex) {
-		if (callback)
-			callback(ex, undefined, 0);
-	}
-
+	} else
+		run();
 
 	return e;
 };
@@ -527,6 +541,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	var length = 0;
 	var type = 0;
 	var e = new events.EventEmitter();
+	var isDNSCACHE = false;
 
 	headers = exports.extend({}, headers || {});
 
@@ -568,13 +583,15 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 				case 'post':
 				case 'put':
-
 					method = flags[i].toUpperCase();
-
 					if (!headers['Content-Type'])
 						headers['Content-Type'] = 'application/x-www-form-urlencoded';
-
 					break;
+
+				case 'dnscache':
+					isDNSCACHE = true;
+					break;
+
 			}
 		}
 	}
@@ -639,42 +656,47 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 		callback(null, res);
 		res.resume();
-
 	};
 
 	var connection = uri.protocol === 'https:' ? https : http;
+	var run = function() {
+		try
+		{
+			var request = isPOST ? connection.request(uri, onResponse) : connection.request(uri, onResponse);
 
-	try
-	{
-		var request = isPOST ? connection.request(uri, onResponse) : connection.request(uri, onResponse);
+			if (callback) {
+				request.on('error', function(error) {
+					callback(error, null, 0, {});
+				});
 
-		if (callback) {
-			request.on('error', function(error) {
-				callback(error, null, 0, {});
+				request.setTimeout(timeout || 10000, function() {
+					callback(new Error(exports.httpStatus(408)), null, 0, null);
+				});
+			}
+
+			request.on('response', function(response) {
+				responseLength = parseInt(response.headers['content-length']) || 0;
+				e.emit('begin', responseLength);
 			});
 
-			request.setTimeout(timeout || 10000, function() {
-				callback(new Error(exports.httpStatus(408)), null, 0, null);
-			});
+			if (isPOST && buf)
+				request.end(buf);
+			else
+				request.end();
+
+		} catch (ex) {
+			if (callback)
+				callback(ex, null, 0, {});
 		}
+	};
 
-		request.on('response', function(response) {
-			responseLength = parseInt(response.headers['content-length']) || 0;
-			e.emit('begin', responseLength);
+	if (isDNSCACHE) {
+		exports.resolve(url, function(err, u) {
+			uri.host = u.host;
+			run();
 		});
-
-		if (isPOST && buf)
-			request.end(buf);
-		else
-			request.end();
-
-	} catch (ex) {
-
-		if (callback)
-			callback(ex, null, 0, {});
-
-		return e;
-	}
+	} else
+		run();
 
 	return e;
 };
@@ -689,8 +711,6 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
  * @param {String} method HTTP method (optional, default POST).
  */
 exports.send = function(name, stream, url, callback, headers, method) {
-
-	var self = this;
 
 	if (typeof(callback) === OBJECT) {
 		var tmp = headers;
@@ -748,7 +768,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 	// Is Buffer
 	if (typeof(stream.length) === NUMBER) {
 		req.end(stream.toString('utf8') + NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
-		return self;
+		return;
 	}
 
 	stream.on('end', function() {
@@ -756,8 +776,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 	});
 
 	stream.pipe(req, { end: false });
-
-	return self;
+	return;
 };
 
 /**
