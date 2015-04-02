@@ -1,6 +1,6 @@
 /**
  * @module FrameworkMail
- * @version 1.7.2
+ * @version 1.7.3
  */
 
 'use strict'
@@ -310,23 +310,25 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 	var socket;
 
 	if (options.secure) {
-
 		var internal = framework_utils.copy(options);
 		internal.host = smtp;
 		socket = tls.connect(internal, function() { self._send(this, options); });
-
 	} else
 		socket = net.createConnection(options.port, smtp);
 
 	socket.on('error', function(err) {
 		socket.destroy();
 		self.closed = true;
+		if (self.callback)
+			self.callback(err);
 		if (err.stack.indexOf('ECONNRESET') === -1)
 			mailer.emit('error', err, self);
 	});
 
 	socket.on('clientError', function(err) {
 		mailer.emit('error', err, self);
+		if (self.callback)
+			self.callback(err);
 	});
 
 	socket.on('connect', function() {
@@ -363,10 +365,13 @@ Message.prototype._send = function(socket, options) {
 
 	socket.setTimeout(options.timeout || 5000, function() {
 		self.closed = true;
-		mailer.emit('error', new Error(framework_utils.httpStatus(408)), self);
+		var err = new Error(framework_utils.httpStatus(408));
+		mailer.emit('error', err, self);
 		if (socket !== null)
 			socket.destroy();
 		socket = null;
+		if (self.callback)
+			self.callback(err);
 	});
 
 	socket.setEncoding('utf8');
