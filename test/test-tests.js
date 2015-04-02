@@ -1,26 +1,32 @@
 var framework = require('../index');
-//framework.http('debug', { 'port': 8001 });
 
-/*
-setTimeout(function() {
-    framework.stop();
-}, 4000);
-*/
-var interval = 0;
-var t = setInterval(function() {
+var q = SCHEMA('test').create('q');
+var x = SCHEMA('test').create('x');
 
-    if (interval > 50)
-        clearInterval(t);
+q.define('name', String, true);
+q.define('arr', '[x]', true);
+x.define('age', Number, false);
+x.define('note', String, false);
 
-    console.log('--->', interval);
+q.setValidation(function(name, value, index) {
+    console.log('–––> q', name, value);
+});
 
-    (function(interval) {
-        U.queue('test', 2, function(next) {
-            console.log(interval);
-            setTimeout(function() {
-                next();
-            }, 1000);
-        });
-    })(interval++);
+x.setValidation(function(name, value) {
+    console.log('–––> x', name, value);
+});
 
-}, 100);
+var qi = q.create();
+// console.log(qi);
+
+var xi = x.create();
+xi.age = 30;
+xi.note = 'Peter';
+qi.arr.push(xi);
+
+xi = x.create();
+xi.age = 23;
+xi.note = 'Jano';
+qi.arr.push(xi);
+
+qi.$validate();
