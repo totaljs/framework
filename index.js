@@ -169,7 +169,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 36)';
+	this.version_header = '1.7.3 (build: 37)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -319,6 +319,7 @@ function Framework() {
 			file: 0,
 			websocket: 0,
 			get: 0,
+			head: 0,
 			post: 0,
 			put: 0,
 			upload: 0,
@@ -3092,6 +3093,20 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	self.stats.response.file++;
 	self._request_stats(false, req.isStaticFile);
 
+	if (req.method === 'HEAD') {
+		if (compress)
+			returnHeaders['Content-Encoding'] = 'gzip';
+
+		res.writeHead(200, returnHeaders);
+		res.end();
+
+		if (done)
+			done();
+		if (!req.isStaticFile)
+			self.emit('request-end', req, res);
+		return self;
+	}
+
 	if (compress) {
 		returnHeaders['Content-Encoding'] = 'gzip';
 		fsStreamRead(name, function(stream, next) {
@@ -3563,6 +3578,18 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	self.stats.response.stream++;
 	self._request_stats(false, req.isStaticFile);
 
+	if (req.method === 'HEAD') {
+		if (compress)
+			returnHeaders['Content-Encoding'] = 'gzip';
+		res.writeHead(200, returnHeaders);
+		res.end();
+		if (done)
+			done();
+		if (!req.isStaticFile)
+			self.emit('request-end', req, res);
+		return self;
+	}
+
 	if (compress) {
 
 		returnHeaders['Content-Encoding'] = 'gzip';
@@ -3641,6 +3668,18 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 
 	headers[RESPONSE_HEADER_CONTENTLENGTH] = length;
 	headers['Content-Range'] = 'bytes ' + beg + '-' + end + '/' + total;
+
+	if (req.method === 'HEAD') {
+		res.writeHead(206, headers);
+		res.end();
+		self.stats.response.streaming++;
+		self._request_stats(false, req.isStaticFile);
+		if (done)
+			done();
+		if (!req.isStaticFile)
+			self.emit('request-end', req, res);
+		return self;
+	}
 
 	fsStreamRead(name, { start: beg, end: end }, function(stream, next) {
 
@@ -3783,7 +3822,10 @@ Framework.prototype.responseCode = function(req, res, code, problem) {
 	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
 	res.writeHead(status, headers);
 
-	res.end(utils.httpStatus(status));
+	if (req.method === 'HEAD')
+		res.end();
+	else
+		res.end(utils.httpStatus(status));
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -3841,7 +3883,11 @@ Framework.prototype.response500 = function(req, res, error) {
 	var status = 500;
 	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
 	res.writeHead(status, headers);
-	res.end(utils.httpStatus(status));
+
+	if (req.method === 'HEAD')
+		res.end();
+	else
+		res.end(utils.httpStatus(status));
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -3894,6 +3940,17 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 		contentType += '; charset=utf-8';
 
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
+
+	if (req.method === 'HEAD') {
+		if (gzip)
+			returnHeaders['Content-Encoding'] = 'gzip';
+		res.writeHead(code, returnHeaders);
+		res.end();
+		self._request_stats(false, req.isStaticFile);
+		if (!req.isStaticFile)
+			self.emit('request-end', req, res);
+		return self;
+	}
 
 	if (gzip) {
 		zlib.gzip(new Buffer(contentBody), function(err, data) {
@@ -4476,7 +4533,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	}
 
 	req.isProxy = headers['x-proxy'] === 'total.js';
-	req.flags = null;
 
 	req.buffer_exceeded = false;
 	req.buffer_data = new Buffer('');
@@ -4540,29 +4596,38 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	// call event request
 	self.emit('request-begin', req, res);
 	var method = req.method;
+    var first = method[0];
 
-	if (method === 'GET' || method === 'DELETE' || method === 'OPTIONS') {
-		if (method === 'DELETE')
-			self.stats.request['delete']++;
-		else
-			self.stats.request.get++;
-		new Subscribe(self, req, res, 0).end();
-		return self;
-	}
+    // [P]OST, [P]UT
+    if (first !== 'P') {
+        switch (first) {
+            case 'D':
+                self.stats.request['delete']++;
+                break;
+            case 'H':
+                self.stats.request.get++;
+                break;
+            default:
+                self.stats.request.head++;
+                break;
+        }
+        new Subscribe(self, req, res, 0).end();
+        return self;
+    }
 
-	if (self._request_check_POST && (method === 'POST' || method === 'PUT')) {
-		if (multipart.length > 0) {
-			self.stats.request.upload++;
-			new Subscribe(self, req, res, 2).multipart(multipart);
-		} else {
-			if (method === 'PUT')
-				self.stats.request.put++;
-			else
-				self.stats.request.post++;
-			new Subscribe(self, req, res, 1).urlencoded();
-		}
-		return self;
-	}
+    if (self._request_check_POST && (first === 'P')) {
+        if (multipart.length > 0) {
+            self.stats.request.upload++;
+            new Subscribe(self, req, res, 2).multipart(multipart);
+        } else {
+            if (method === 'PUT')
+                self.stats.request.put++;
+            else
+                self.stats.request.post++;
+            new Subscribe(self, req, res, 1).urlencoded();
+        }
+        return self;
+    }
 
 	self.emit('request-end', req, res);
 	self._request_stats(false, false);
@@ -9910,6 +9975,14 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
+	// Checks the HEAD method
+	if (self.req.method === 'HEAD') {
+		self.subscribe.success();
+		framework.responseContent(self.req, self.res, self.status, '', 'application/json', self.config['allow-gzip'], headers);
+		framework.stats.response.json++;
+		return self;
+	}
+
 	if (typeof(headers) === BOOLEAN) {
 		replacer = beautify;
 		beautify = headers;
@@ -10028,6 +10101,14 @@ Controller.prototype.plain = function(contentBody, headers) {
 
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
+
+	// Checks the HEAD method
+	if (self.req.method === 'HEAD') {
+		self.subscribe.success();
+		framework.responseContent(self.req, self.res, self.status, '', CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
+		framework.stats.response.plain++;
+		return self;
+	}
 
 	var type = typeof(contentBody);
 

@@ -64,7 +64,7 @@ exports.install = function(framework) {
     framework.route('/post/schema/', plain_post_schema_parse, ['post', '*test/User']);
     framework.route('/rest/', plain_rest, ['post', 'json']);
     framework.route('/rest/', plain_rest, ['put', 'json']);
-    framework.route('/rest/', plain_rest, ['get']);
+    framework.route('/rest/', plain_rest, ['get', 'head']);
     framework.route('/rest/', plain_rest, ['delete']);
 
     framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);

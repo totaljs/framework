@@ -31,6 +31,7 @@ source-code: "tabs" instead of "spaces"
 - added: `@{compile handlerbars}CONTENT TO COMPILE@{end}`
 - added: `@{compile}CONTENT TO COMPILE@{end}`
 - added: Utils.streamer(delimiter, function(value, index)) returns function
+- added: HEAD method support for (controller.json(), .view(), .plain(), .file(), .stream())
 
 - updated: (IMPORTANT): for evaluation multiple roles in routing (@role) framework validates only one role
 - updated: GZIP compression for static files (added .md, .json)
