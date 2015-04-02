@@ -623,7 +623,8 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		builder.resourcePrefix = resourcePrefix;
 
 	// self._setStateToModel(model, 1, 1);
-	return framework_utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
+	//return framework_utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
+	return framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name);
 };
 
 /**

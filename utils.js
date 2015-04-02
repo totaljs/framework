@@ -1298,51 +1298,69 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 					} else if (schema !== null && typeof(schema) === STRING) {
 
 						var isArray = schema[0] === '[';
-						if (isArray)
-							schema = schema.substring(1, schema.length - 1).trim();
 
-						if (isArray) {
+						if (!isArray) {
+							exports.validate(value, schema, prepare, error, resource, current + name, collection);
+							continue;
+						}
 
-							if (!(value instanceof Array)) {
+						schema = schema.substring(1, schema.length - 1).trim();
+
+						if (!(value instanceof Array)) {
+							error.add(name, '@', current + name, index);
+							continue;
+						}
+
+						// The schema not exists
+						if (collection[schema] === undefined) {
+
+							var result2 = prepare(name, value, current + name, schemaName, model);
+							if (result2 === undefined)
+								continue;
+
+							type = typeof(result2);
+
+							if (type === STRING) {
+								error.add(name, result2, current + name, index);
+								continue;
+							}
+
+							if (type === BOOLEAN && !result2) {
 								error.add(name, '@', current + name, index);
 								continue;
 							}
 
-							// The schema not exists
-							if (collection[schema] === undefined) {
-
-								var result2 = prepare(name, value, current + name, schemaName, model);
-								if (result2 === undefined)
-									continue;
-
-								type = typeof(result2);
-
-								if (type === STRING) {
-									error.add(name, result2, current + name, index);
-									continue;
-								}
-
-								if (type === BOOLEAN) {
-									if (!result2)
-										error.add(name, '@', current + name, index);
-									continue;
-								}
-
-								if (result2.isValid === false)
-									error.add(name, result2.error, current + name, index);
-
-								continue;
-							}
-
-
-							var sublength = value.length;
-							for (var j = 0; j < sublength; j++)
-								exports.validate(value[j], schema, prepare, error, resource, current + name, collection, j);
+							if (result2.isValid === false)
+								error.add(name, result2.error, current + name, index);
 
 							continue;
 						}
 
-						exports.validate(value, schema, prepare, error, resource, current + name, collection);
+						var result3 = prepare(name, value, current + name, schemaName, model);
+						if (result3 !== undefined) {
+
+							type = typeof(result3);
+
+							if (type === STRING) {
+								error.add(name, result3, current + name, index);
+								continue;
+							}
+
+							if (type === BOOLEAN && !result3) {
+								error.add(name, '@', current + name, index);
+								continue;
+							}
+
+							if (result3.isValid === false) {
+								error.add(name, result3.error, current + name, index);
+								continue;
+							}
+						}
+
+						var sublength = value.length;
+						for (var j = 0; j < sublength; j++)
+							exports.validate(value[j], schema, prepare, error, resource, current + name, collection, j);
+
 						continue;
 					}
 				}
@@ -1350,6 +1368,142 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 		}
 
 		var result = prepare(name, value, current + name, schemaName, model);
+
+		if (result === undefined)
+			continue;
+
+		type = typeof(result);
+
+		if (type === STRING) {
+			error.add(name, result, current + name, index);
+			continue;
+		}
+
+		if (type === BOOLEAN) {
+			if (!result)
+				error.add(name, '@', current + name, index);
+			continue;
+		}
+
+		if (result.isValid === false)
+			error.add(name, result.error, current + name, index);
+	}
+
+	return error;
+};
+
+exports.validate_builder = function(model, error, schema, collection, path, index) {
+
+	var entity = collection[schema];
+	var prepare = entity.onValidation || framework.onValidation;
+
+	var current = path === undefined ? '' : path + '.';
+	var definition = null;
+	var properties = entity.properties;
+
+	if (model === undefined || model === null)
+		model = {};
+
+	if (typeof(prepare) !== FUNCTION)
+		throw new Error('It\'s not defined onValidation delegate.');
+
+	for (var i = 0; i < properties.length; i++) {
+
+		var name = properties[i].toString();
+		var value = model[name];
+		var type = typeof(value);
+
+		if (value === undefined) {
+			error.add(name, '@', current + name);
+			continue;
+		} else if (type === FUNCTION)
+			value = model[name]();
+
+		if (type !== OBJECT) {
+			if (builders.isJoin(collection, name))
+				type = OBJECT;
+		}
+
+		if (type === OBJECT && !exports.isDate(value)) {
+			entity = collection[schema];
+
+			if (entity) {
+				entity = entity.schema[name] || null;
+
+				if (entity === Date || entity === String || entity === Number || entity === Boolean) {
+					// Empty
+				} else if (entity !== null && typeof(entity) === STRING) {
+
+					var isArray = entity[0] === '[';
+
+					if (!isArray) {
+						exports.validate_builder(value, error, schema, collection, current + name, index);
+						continue;
+					}
+
+					entity = entity.substring(1, entity.length - 1).trim();
+
+					if (!(value instanceof Array)) {
+						error.add(name, '@', current + name, index);
+						continue;
+					}
+
+					// The schema not exists
+					if (collection[entity] === undefined) {
+
+						var result2 = prepare(name, value, current + name, schema, model);
+						if (result2 === undefined)
+							continue;
+
+						type = typeof(result2);
+
+						if (type === STRING) {
+							error.add(name, result2, current + name, index);
+							continue;
+						}
+
+						if (type === BOOLEAN && !result2) {
+							error.add(name, '@', current + name, index);
+							continue;
+						}
+
+						if (result2.isValid === false)
+							error.add(name, result2.error, current + name, index);
+
+						continue;
+					}
+
+					var result3 = prepare(name, value, current + name, schema, model);
+					if (result3 !== undefined) {
+
+						type = typeof(result3);
+
+						if (type === STRING) {
+							error.add(name, result3, current + name, index);
+							continue;
+						}
+
+						if (type === BOOLEAN && !result3) {
+							error.add(name, '@', current + name, index);
+							continue;
+						}
+
+						if (result3.isValid === false) {
+							error.add(name, result3.error, current + name, index);
+							continue;
+						}
+					}
+
+					var sublength = value.length;
+					for (var j = 0; j < sublength; j++)
+						exports.validate_builder(value[j], error, entity, collection, current + name, j);
+
+					continue;
+				}
+			}
+		}
+
+		var result = prepare(name, value, current + name, schema, model);
 
 		if (result === undefined)
 			continue;
