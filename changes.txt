@@ -45,6 +45,7 @@ source-code: "tabs" instead of "spaces"
 - updated: SchemaBuilderEntity.$async(callback, [return-only-this-index])
 - updated: translation @(#KEY) (direct reading) or @(TEXT TO TRANSLATE) (hash reading)
 - updated: Utils.request(), Utils.download() supports `dnscache` flag for caching host IP
+- updated: SchemaBuilderEntity.validation()
 
 - fixed: F.usage() --> fixed queue pendings
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
@@ -55,6 +56,7 @@ source-code: "tabs" instead of "spaces"
 - fixed: auto JSON parsing in `json` request
 - fixed: Pagination.last() (Nikita Shmidt)
 - fixed: loading packages
+- fixed: callback error in MailMessage
 
 - replaced: (IMPORTANT) `uri` to `url` in F.problems, F.changes, F.errors (saves memory)
 
