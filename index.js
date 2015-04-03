@@ -135,6 +135,14 @@ global.SCHEDULE = function(date, fn) {
 	return framework.schedule(date, fn);
 };
 
+global.FINISHED = function(stream, callback) {
+	framework_internal.onFinished(stream, callback);
+};
+
+global.DESTROY = function(stream) {
+	framework_internal.destroyStream(stream);
+};
+
 global.SUCCESS = function(success, value) {
 
 	var err;
@@ -177,7 +185,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 39)';
+	this.version_header = '1.7.3 (build: 40)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
