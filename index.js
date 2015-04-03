@@ -115,6 +115,14 @@ global.SCHEMA = function(group, name, model) {
 	return Builders.load(group, name, model);
 };
 
+global.NEWSCHEMA = function(group, name) {
+	if (!name) {
+		name = group;
+		group = 'default';
+	}
+	return Builders.load(group, name);
+};
+
 global.FUNCTION = function(name) {
 	return framework.functions[name];
 };
@@ -169,7 +177,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 38)';
+	this.version_header = '1.7.3 (build: 39)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -797,7 +805,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 				schema = flags[i].substring(1).split('/');
 				if (schema.length === 1) {
 					schema[1] = schema[0];
-					schema[0] = '';
+					schema[0] = 'default';
 				}
 				continue;
 			}

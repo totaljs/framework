@@ -32,6 +32,7 @@ source-code: "tabs" instead of "spaces"
 - added: `@{compile}CONTENT TO COMPILE@{end}`
 - added: Utils.streamer(delimiter, function(value, index)) returns function
 - added: HEAD method support for (controller.json(), .view(), .plain(), .file(), .stream())
+- added: NEWSCHEMA([group], [name]) for creating new schemas (more in docs)
 
 - updated: (IMPORTANT): for evaluation multiple roles in routing (@role) framework validates only one role
 - updated: GZIP compression for static files (added .md, .json)
@@ -65,6 +66,7 @@ source-code: "tabs" instead of "spaces"
 - improved: auto-image-resizer (routes)
 - improved: Image.miniature() -> increase about 50%
 - improved: U.queue()
+- improved: (IMPORTANT) SchemaBuilder validation and preparation
 
 ======= 1.7.2
 

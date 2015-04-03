@@ -45,7 +45,17 @@ SchemaBuilder.prototype.add = function(name, obj, properties, validator) {
 	if (typeof(obj) === UNDEFINED)
 		obj = {};
 
-	self.collection[name] = new SchemaBuilderEntity(self, name, obj, validator, properties);
+	var keys = Object.keys(obj);
+	if (!properties)
+		properties = keys;
+
+	self.collection[name] = new SchemaBuilderEntity(self, name, {}, validator, properties);
+
+	for (var i = 0, length = keys.length; i < length; i++) {
+		var key = keys[i];
+		self.collection[name].define(key, obj[key]);
+	}
+
 	return self.collection[name];
 };
 
@@ -133,7 +143,8 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, primary) {
 
 	if (primary)
 		self.primary = primary;
-	self.schema[name] = type;
+
+	self.schema[name] = self.$parse(name, type, required);
 
 	if (!required)
 		return self;
@@ -146,6 +157,125 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, primary) {
 
 	self.properties.push(name);
 	return self;
+};
+
+SchemaBuilderEntity.prototype.$parse = function(name, value, required) {
+
+	var self = this;
+	var type = typeof(value);
+	var result = {};
+
+	result.raw = value;
+	result.type = 0;
+	result.length = 0;
+	result.required = required;
+	result.isArray = false;
+
+	// 0 = undefined
+	// 1 = integer
+	// 2 = float
+	// 3 = string
+	// 4 = boolean
+	// 5 = date
+	// 6 = object
+	// 7 = custom object
+
+	if (value === null)
+		return result;
+
+	if (value === '[]') {
+		result.isArray = true;
+		return result;
+	}
+
+	if (type === FUNCTION) {
+
+		if (value === Number) {
+			result.type = 2;
+			return result;
+		}
+
+		if (value === String) {
+			result.type = 3;
+			return result;
+		}
+
+		if (value === Boolean) {
+			result.type = 4;
+			return result;
+		}
+
+		if (value === Date) {
+			result.type = 5;
+			return result;
+		}
+
+		if (value === Array) {
+			result.isArray = true;
+			return result;
+		}
+
+		if (value === Object) {
+			result.type = 6;
+			return result;
+		}
+
+		return result;
+	}
+
+	if (type === OBJECT) {
+		return result;
+	}
+
+	if (value[0] === '[') {
+		value = value.substring(1, value.length - 1);
+		result.isArray = true;
+		result.raw = value;
+	}
+
+	var lower = value.toLowerCase();
+
+	if (lower === 'array') {
+		result.isArray = true;
+		return result;
+	}
+
+	if (lower.contains([STRING, 'text', 'varchar', 'nvarchar'])) {
+
+		result.type = 3;
+
+		var beg = lower.indexOf('(');
+		if (beg === -1)
+			return result;
+
+		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
+		result.length = size;
+		result.raw = lower.substring(0, beg);
+		return result;
+	}
+
+	if (lower.contains(['int', 'byte'])) {
+		result.type = 1;
+		return result;
+	}
+
+	if (lower.contains(['decimal', NUMBER, 'float', 'double'])) {
+		result.type = 2;
+		return result;
+	}
+
+	if (lower.contains('bool', BOOLEAN)) {
+		result.type = 4;
+		return result;
+	}
+
+	if (lower.contains(['date', 'time'])) {
+		result.type = 5;
+		return result;
+	}
+
+	result.type = 7;
+	return result;
 };
 
 SchemaBuilderEntity.prototype.getDependencies = function() {
@@ -420,7 +550,7 @@ SchemaBuilderEntity.prototype.addComposer = function(name, fn) {
 };
 
 /**
- * Find a entity in current group
+ * Find an entity in current group
  * @param {String} name
  * @return {SchemaBuilderEntity}
  */
@@ -899,8 +1029,7 @@ SchemaBuilderEntity.prototype.default = function() {
 	for (var i = 0, length = properties.length; i < length; i++) {
 
 		var property = properties[i];
-		var value = item[property];
-		var type = typeof(value);
+		var type = item[property];
 
 		if (defaults) {
 			var def = defaults(property, true, self.name);
@@ -910,111 +1039,39 @@ SchemaBuilderEntity.prototype.default = function() {
 			}
 		}
 
-		if (type === FUNCTION) {
-
-			if (value === Number) {
-				item[property] = 0;
-				continue;
-			}
-
-			if (value === Boolean) {
-				item[property] = false;
-				continue;
-			}
-
-			if (value === String) {
-				item[property] = '';
-				continue;
-			}
-
-			if (value === Date) {
-				item[property] = new Date();
-				continue;
-			}
-
-			if (value === Object) {
-				item[property] = null;
-				continue;
-			}
-
-			if (value === Array) {
+		switch (type.type) {
+			// undefined
+			// object
+			case 0:
+			case 7:
+				item[property] = type.isArray ? [] : null;
+				break;
+			// numbers: integer, float
+			case 1:
+			case 2:
+				item[property] = type.isArray ? [] : 0;
+				break;
+			// string
+			case 3:
+				item[property] = type.isArray ? [] : '';
+				break;
+			// boolean
+			case 4:
+				item[property] = type.isArray ? [] : false;
+				break;
+			// date
+			case 5:
+				item[property] = type.isArray ? [] : new Date();
+				break;
+			// date
+			case 6:
 				item[property] = [];
-				continue;
-			}
-
-			item[property] = value();
-			continue;
+				break;
+			// custom object
+			case 8:
+				item[property] = type.isArray ? [] : self.find(type.raw).default();
+				break;
 		}
-
-		if (type === NUMBER) {
-			item[property] = 0;
-			continue;
-		}
-
-		if (type === BOOLEAN) {
-			item[property] = false;
-			continue;
-		}
-
-		if (type === OBJECT) {
-			item[property] = value instanceof Array ? [] : {};
-			continue;
-		}
-
-		if (type !== STRING) {
-			item[property] = null;
-			continue;
-		}
-
-		var isArray = value[0] === '[';
-
-		if (isArray)
-			value = value.substring(1, value.length - 1);
-
-		if (isArray) {
-			item[property] = [];
-			continue;
-		}
-
-		var lower = value.toLowerCase();
-
-		if (lower.contains([STRING, 'text', 'varchar', 'nvarchar', 'binary', 'data', 'base64'])) {
-			item[property] = '';
-			continue;
-		}
-
-		if (lower.contains(['int', NUMBER, 'decimal', 'byte', 'float', 'double'])) {
-			item[property] = 0;
-			continue;
-		}
-
-		if (lower.contains('bool')) {
-			item[property] = false;
-			continue;
-		}
-
-		if (lower.contains(['date', 'time'])) {
-			item[property] = new Date();
-			continue;
-		}
-
-		if (lower.contains(['object'])) {
-			item[property] = {};
-			continue;
-		}
-
-		if (lower.contains(['array'])) {
-			item[property] = [];
-			continue;
-		}
-
-		if (lower.contains(['binary', 'data', 'base64'])) {
-			item[property] = null;
-			continue;
-		}
-
-		var child = self.parent.get(value);
-		item[property] = child ? child.default() : null;
 	}
 
 	return self.$make(item);
@@ -1088,223 +1145,174 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 		if (val === undefined)
 			val = '';
 
-		var value = item[property];
-		var type = typeof(value);
+		var type = item[property];
 		var typeval = typeof(val);
 
 		if (typeval === FUNCTION)
 			val = val();
 
-		if (type === FUNCTION) {
+		if (!type.isArray) {
+			switch (type.type) {
+				// undefined
+				case 0:
+					break;
+				// number: integer
+				case 1:
+					item[property] = onPrepare(property, framework_utils.parseInt(val));
+					break;
+				// number: float
+				case 2:
+					item[property] = onPrepare(property, framework_utils.parseFloat(val));
+					break;
+				// string
+				case 3:
+					tmp = val === undefined || val === null ? '' : val.toString().trim();
+					if (type.length > 0 && type.length < tmp.length)
+						tmp = tmp.substring(0, type.length);
+					item[property] = onPrepare(property, tmp);
+					break;
+				// boolean
+				case 4:
+					tmp = val.toString().toLowerCase();
+					item[property] = onPrepare(property, tmp === 'true' || tmp === '1' || tmp === 'on');
+					break;
+				// date
+				case 5:
 
-			if (value === Number) {
-				item[property] = onPrepare(property, framework_utils.parseFloat(val));
-				continue;
-			}
+					tmp = null;
 
-			if (value === Boolean) {
-				tmp = val.toString();
-				item[property] = onPrepare(property, tmp === 'true' || tmp === '1');
-				continue;
-			}
-
-			if (value === String) {
-				item[property] = onPrepare(property, val === undefined || val === null ? '' : val.toString().trim());
-				continue;
-			}
-
-			if (value === Date) {
-				tmp = null;
-				switch (typeval) {
-					case OBJECT:
+					if (typeval === STRING) {
+						if (val === '')
+							tmp = null;
+						else
+							tmp = val.trim().parseDate();
+					} else if (typeval === OBJECT) {
 						if (framework_utils.isDate(val))
 							tmp = val;
 						else
 							tmp = null;
-						break;
-
-					case NUMBER:
+					} else if (typeval === NUMBER) {
 						tmp = new Date(val);
-						break;
+					}
 
-					case STRING:
-						if (val === '')
+					if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
+						tmp = null;
+
+					if (tmp)
+						item[property] = onPrepare(property, tmp);
+					else
+						item[property] = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
+
+					break;
+
+				// object
+				case 6:
+					item[property] = onPrepare(property, model[property]);
+					break;
+
+				// schema
+				case 7:
+					entity = self.parent.get(type.raw);
+					if (entity) {
+						item[property] = entity.prepare(val);
+						if (dependencies)
+							dependencies.push({ name: type.raw, value: onPrepare(property, item[property]) });
+					}
+					else
+						item[property] = null;
+					break;
+			}
+			continue;
+		}
+
+		// ARRAY:
+		if (!(val instanceof Array)) {
+			item[property] = (defaults ? isUndefined(defaults(property, false, self.name), []) : []);
+			continue;
+		}
+
+		item[property] = [];
+		for (var j = 0, sublength = val.length; j < sublength; j++) {
+
+			tmp = model[property][j];
+			typeval = typeof(tmp);
+
+			switch (type.type) {
+				case 0:
+					tmp = onPrepare(property, tmp, j);
+					break;
+
+				case 1:
+					tmp = onPrepare(property, framework_utils.parseInt(tmp), j);
+					break;
+
+				case 2:
+					tmp = onPrepare(property, framework_utils.parseFloat(tmp), j);
+					break;
+
+				case 3:
+					tmp = tmp === undefined || tmp === null ? '' : tmp.toString().trim();
+					if (type.length > 0 && tmp.length < tmp.length)
+						tmp = tmp.substring(0, type.length);
+					tmp = onPrepare(property, tmp, j);
+					break;
+
+				case 4:
+					if (tmp)
+						tmp = tmp.toString().toLowerCase();
+					tmp = onPrepare(property, tmp === 'true' || tmp === '1' || tmp === 'on', j);
+					break;
+
+				case 5:
+
+					if (typeval === STRING) {
+						if (tmp === '')
 							tmp = null;
 						else
-							tmp = val.parseDate();
-						break;
-				}
-
-				if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
-					tmp = null;
-
-				if (tmp)
-					item[property] = onPrepare(property, tmp);
-				else
-					item[property] = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
-
-				continue;
-			}
-
-			if (value === Object) {
-				item[property] = onPrepare(property, model[property]);
-				continue;
-			}
-
-			item[property] = defaults ? isUndefined(defaults(value, false, self.name), null) : null;
-			continue;
-		}
-
-		if (type === OBJECT) {
-			item[property] = typeval === OBJECT ? onPrepare(property, val) : null;
-			continue;
-		}
-
-		if (type === NUMBER) {
-			item[property] = onPrepare(property, framework_utils.parseFloat(val));
-			continue;
-		}
-
-		if (val === null || typeval === UNDEFINED)
-			tmp = '';
-		else
-			tmp = val.toString().trim();
-
-		if (type === BOOLEAN) {
-			item[property] = onPrepare(property, tmp === 'true' || tmp === '1');
-			continue;
-		}
-
-		if (type !== STRING) {
-			item[property] = onPrepare(property, tmp);
-			continue;
-		}
-
-		var isArray = value[0] === '[' || value === 'array';
-
-		if (isArray) {
-
-			if (value[0] === '[')
-				value = value.substring(1, value.length - 1);
-			else
-				value = null;
-
-			if (!(val instanceof Array)) {
-				item[property] = (defaults ? isUndefined(defaults(property, false, self.name), []) : []);
-				continue;
-			}
-
-			item[property] = [];
-
-			for (var j = 0, sublength = val.length; j < sublength; j++) {
-
-				if (value === null) {
-					item[property].push(onPrepare(property, model[property][j], j));
-					continue;
-				}
-
-				var tmpB = model[property][j];
-
-				switch (value.toLowerCase()) {
-					case 'string':
-					case 'varchar':
-					case 'text':
-						item[property].push(onPrepare(property, (tmpB || '').toString().trim(), j));
-						break;
-					case 'bool':
-					case 'boolean':
-						tmpB = (tmpB || '').toString().toLowerCase();
-						item[property].push(onPrepare(property, tmpB === 'true' || tmpB === '1', j));
-						break;
-					case 'int':
-					case 'integer':
-						item[property].push(onPrepare(property, framework_utils.parseInt(tmpB), j));
-						break;
-					case 'number':
-						item[property].push(onPrepare(property, framework_utils.parseFloat(tmpB), j));
-						break;
-					case 'object':
-						item[property].push(onPrepare(property, tmpB, j));
-						break;
-					default:
-
-						entity = self.parent.get(value);
-
-						if (entity) {
-							item[property][j] = entity.prepare(tmpB, dependencies);
-							if (dependencies)
-								dependencies.push({ name: value, value: onPrepare(value, item[property][j], j) });
-						}
+							tmp = tmp.trim().parseDate();
+					} else if (typeval === OBJECT) {
+						if (framework_utils.isDate(tmp))
+							tmp = tmp;
 						else
-							item[property][j] = null;
+							tmp = null;
+					} else if (typeval === NUMBER) {
+						tmp = new Date(tmp);
+					}
 
-						break;
-				}
+					if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
+						tmp = null;
+
+					if (tmp)
+						tmp = onPrepare(property, tmp, j);
+					else
+						tmp = undefined;
+
+					break;
+
+				case 6:
+					tmp = onPrepare(property, tmp, j);
+					break;
+
+				case 7:
+
+					entity = self.parent.get(type.raw);
+					if (entity) {
+						tmp = entity.prepare(tmp, dependencies);
+						if (dependencies)
+							dependencies.push({ name: type.raw, value: onPrepare(property, tmp, j) });
+					}
+					else
+						tmp = null;
+
+					tmp = onPrepare(property, tmp, j);
+					break;
 			}
 
-			continue;
-		}
-
-		var lower = value.toLowerCase();
-
-		if (lower.contains([STRING, 'text', 'varchar', 'nvarchar'])) {
-
-			var beg = lower.indexOf('(');
-			if (beg === -1) {
-				item[property] = onPrepare(property, tmp.trim());
+			if (tmp === undefined)
 				continue;
-			}
 
-			var size = lower.substring(beg + 1, lower.length - 1).parseInt();
-			item[property] = onPrepare(property, tmp.max(size, ''));
-			continue;
+			item[property].push(tmp);
 		}
-
-		if (lower.contains(['int', 'byte'])) {
-			item[property] = onPrepare(property, framework_utils.parseInt(val));
-			continue;
-		}
-
-		if (lower.contains(['decimal', NUMBER, 'float', 'double'])) {
-			item[property] = onPrepare(property, framework_utils.parseFloat(val));
-			continue;
-		}
-
-		if (lower.contains('bool', BOOLEAN)) {
-			item[property] = onPrepare(property, tmp === 'true' || tmp === '1');
-			continue;
-		}
-
-		if (lower.contains(['date', 'time'])) {
-
-			if (typeval === 'date') {
-				item[property] = onPrepare(property, val);
-				continue;
-			}
-
-			if (typeval === STRING) {
-				item[property] = onPrepare(property, val.parseDate());
-				continue;
-			}
-
-			if (typeval === NUMBER) {
-				item[property] = onPrepare(property, new Date(val));
-				continue;
-			}
-
-			item[property] = isUndefined(defaults(property, false, self.name));
-			continue;
-		}
-
-		entity = self.parent.get(value);
-
-		if (entity) {
-			item[property] = entity.prepare(val);
-			if (dependencies)
-				dependencies.push({ name: value, value: onPrepare(value, item[property]) });
-		}
-		else
-			item[property] = null;
 	}
 
 	// self._setStateToModel(model, 0, 1);
@@ -1741,6 +1749,9 @@ exports.schema = function(name, obj, defaults, validator, properties) {
 };
 
 exports.load = function(group, name, model) {
+
+	if (!group)
+		group = DEFAULT_SCHEMA;
 
 	if (schemas[group] === undefined)
 		schemas[group] = new SchemaBuilder(group);
@@ -2478,7 +2489,7 @@ Pagination.prototype.last = function(format) {
 	var page = self.count;
 
 	if (self.isPrev)
-        page = self.page - 1;
+		page = self.page - 1;
 
 	format = format || self.format;
 
