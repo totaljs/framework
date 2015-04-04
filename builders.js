@@ -235,6 +235,11 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required) {
 
 	var lower = value.toLowerCase();
 
+	if (lower === 'object') {
+		result.type = 6;
+		return result;
+	}
+
 	if (lower === 'array') {
 		result.isArray = true;
 		return result;
@@ -1043,7 +1048,7 @@ SchemaBuilderEntity.prototype.default = function() {
 			// undefined
 			// object
 			case 0:
-			case 7:
+			case 6:
 				item[property] = type.isArray ? [] : null;
 				break;
 			// numbers: integer, float
@@ -1063,13 +1068,19 @@ SchemaBuilderEntity.prototype.default = function() {
 			case 5:
 				item[property] = type.isArray ? [] : new Date();
 				break;
-			// date
-			case 6:
-				item[property] = [];
-				break;
-			// custom object
-			case 8:
-				item[property] = type.isArray ? [] : self.find(type.raw).default();
+			// schema
+			case 7:
+
+				if (type.isArray) {
+					item[property] = [];
+				} else {
+					var tmp = self.find(type.raw);
+					if (!tmp) {
+						framework.error(new Error('Schema: "' + property + '.' + type.raw + '" not found in "' + self.parent.name + '".'));
+						item[property] = null;
+					} else
+						item[property] = tmp.default();
+				}
 				break;
 		}
 	}
