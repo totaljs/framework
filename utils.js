@@ -1128,6 +1128,19 @@ exports.isDate = function(obj) {
 };
 
 /**
+ * Check if the value is object
+ * @param {Object} value
+ * @return {Boolean}
+ */
+exports.isObject = function(value) {
+	try {
+		return (value && Object.getPrototypeOf(value) === Object.prototype) ? true : false;
+	} catch (e) {
+		return false;
+	}
+};
+
+/**
  * Get ContentType from file extension.
  * @param {String} ext File extension.
  * @return {String}

@@ -27,6 +27,7 @@ source-code: "tabs" instead of "spaces"
 - added: `config['default-interval-clear-dnscache'] = 2880` for clearing DNS cache of Utils.request(), Utils.download()
 - added: Utils.resolve(url, callback(err, uri)) DNS cache
 - added: Utils.clearDNS() clears DNS cache
+- added: Utils.isObject()
 - added: framework.onCompileView(name, content, model)
 - added: `@{compile handlerbars}CONTENT TO COMPILE@{end}`
 - added: `@{compile}CONTENT TO COMPILE@{end}`
