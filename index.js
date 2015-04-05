@@ -120,7 +120,7 @@ global.NEWSCHEMA = function(group, name) {
 		name = group;
 		group = 'default';
 	}
-	return Builders.load(group, name);
+	return Builders.newschema(group, name);
 };
 
 global.FUNCTION = function(name) {
@@ -185,7 +185,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 42)';
+	this.version_header = '1.7.3 (build: 43)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 

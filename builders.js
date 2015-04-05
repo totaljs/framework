@@ -1778,6 +1778,25 @@ exports.load = function(group, name, model) {
 	return model ? schema.make(model) : name ? schema : schemas[group];
 };
 
+exports.newschema = function(group, name, model) {
+
+	if (!group)
+		group = DEFAULT_SCHEMA;
+
+	if (schemas[group] === undefined)
+		schemas[group] = new SchemaBuilder(group);
+
+	var schema;
+
+	if (name) {
+		schema = schemas[group].get(name);
+		if (!schema)
+			schema = schemas[group].create(name);
+	}
+
+	return model ? schema.make(model) : name ? schema : schemas[group];
+};
+
 /**
  * Remove a schema
  * @param {String} name
