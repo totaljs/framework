@@ -283,6 +283,23 @@ function prototypeArray() {
 		else if (a === -1)
 			assert.ok(!a && b.age === 33, 'array.compare(2)');
 	});
+
+	var asyncarr = [];
+	var asyncounter = 0;
+
+	asyncarr.push(function(next) {
+		asyncounter++;
+		next();
+	});
+
+	asyncarr.push(function(next) {
+		asyncounter++;
+		next();
+	});
+
+	asyncarr.async(function() {
+		assert.ok(asyncounter === 2, 'array.async(classic)');
+	});
 }
 
 function t_callback1(a, cb) {
