@@ -137,6 +137,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('rest HEAD', function(complete) {
+		utils.request(url + 'rest/', ['head'], null, function(error, data, code, headers) {
+ 			if (error)
+				throw error;
+			assert(data === '', 'REST - HEAD');
+			complete();
+		});
+	});
+
 	async.await('rest DELETE', function(complete) {
 		utils.request(url + 'rest/', ['delete'], null, function(error, data, code, headers) {
 			if (error)
