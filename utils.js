@@ -3550,7 +3550,7 @@ Array.prototype.waiting = function(onItem, callback) {
 	@callback {Function} :: function(next) {}
 	@complete {Function} :: optional
 */
-Array.prototype.wait = function(onItem, callback, remove) {
+Array.prototype.wait = Array.prototype.each = function(onItem, callback, remove) {
 
 	var self = this;
 	var type = typeof(callback);
@@ -3584,8 +3584,8 @@ Array.prototype.wait = function(onItem, callback, remove) {
 };
 
 /**
- * Create async loop
- * @param  {Function} callback
+ * Creates a function async list
+ * @param {Function} callback Optional
  * @return {Array}
  */
 Array.prototype.async = function(callback) {
