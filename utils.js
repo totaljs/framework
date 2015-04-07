@@ -3217,6 +3217,67 @@ Array.prototype.toObject = function(name) {
 };
 
 /**
+ * Compare two arrays
+ * @param {String} id An identificator.
+ * @param {Array} b Second array.
+ * @param {Function(itemA, itemB, indexA, indexB)} executor
+ */
+Array.prototype.compare = function(id, b, executor) {
+
+	var a = this;
+	var ak = {};
+	var bk = {};
+	var al = a.length;
+	var bl = b.length;
+	var tl = Math.max(al, bl);
+	var processed = {};
+
+	for (var i = 0; i < tl; i++) {
+		var av = a[i];
+		if (av)
+			ak[av[id]] = i;
+		var bv = b[i];
+		if (bv)
+			bk[bv[id]] = i;
+	}
+
+	var index = -1;
+
+	for (var i = 0; i < tl; i++) {
+
+		var av = a[i];
+		var bv = b[i];
+		var akk;
+		var bkk;
+		var is = false;
+
+		if (av) {
+			akk = av[id];
+			if (processed[akk])
+				continue;
+			processed[akk] = true;
+			index = bk[akk];
+			if (index === undefined)
+				executor(av, undefined, i, -1);
+			else
+				executor(av, b[index], i, index);
+		}
+
+		if (bv) {
+			bkk = bv[id];
+			if (processed[bkk])
+				continue;
+			processed[bkk] = true;
+			index = ak[bkk];
+			if (index === undefined)
+				executor(undefined, bv, -1, i);
+			else
+				executor(a[index], bv, index, i);
+		}
+	}
+};
+
+/**
  * Last item in array
  * @param {Object} def Default value.
  * @return {Object}

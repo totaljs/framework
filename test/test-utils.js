@@ -270,6 +270,19 @@ function prototypeArray() {
 			assert.ok(item.join(',') === '4,5,6', 'arrray.limit(3-6)');
 	    next();
 	});
+
+	var arr1 = [{ id: 1, name: 'Peter', age: 25 }, { id: 2, name: 'Lucia', age: 19 }, { id: 3, name: 'Jozef', age: 33 }];
+	var arr2 = [{ id: 2, age: 5, name: 'Lucka' }, { id: 3, name: 'Peter', age: 50 }, { id: 1, name: 'Peter', age: 25 }, { id: 5, name: 'New', age: 33 }];
+
+	arr1.compare('id', arr2, function(a, b, ai, bi) {
+
+		if (a === 0)
+			assert.ok(JSON.stringify(a) === JSON.stringify(b), 'array.compare(0)');
+		else if (a === 1)
+			assert.ok(a.age === 19 && b.age === 5, 'array.compare(1)');
+		else if (a === -1)
+			assert.ok(!a && b.age === 33, 'array.compare(2)');
+	});
 }
 
 function t_callback1(a, cb) {
