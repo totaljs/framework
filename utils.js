@@ -3196,6 +3196,27 @@ Array.prototype.first = function(def) {
 };
 
 /**
+ * Create object from Array
+ * @param {String} name Optional, property name.
+ * @return {Object}
+ */
+Array.prototype.toObject = function(name) {
+
+	var self = this;
+	var obj = {};
+
+	for (var i = 0, length = self.length; i < length; i++) {
+		var item = self[i];
+		if (name)
+			obj[item[name]] = item;
+		else
+			obj[item] = true;
+	}
+
+	return obj;
+};
+
+/**
  * Last item in array
  * @param {Object} def Default value.
  * @return {Object}

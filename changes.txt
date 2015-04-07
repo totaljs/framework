@@ -19,7 +19,8 @@ source-code: "tabs" instead of "spaces"
 - added: callback: F.responseImageWithoutCache()
 - added: callback: F.responseStream(), controller.stream(), response.stream()
 - added: callback: F.responseStatic(), response.continue()
-- added: Array.prototype.findIndex(cb, [value]) returns Number;
+- added: Array.prototype.findIndex(cb, [value]) returns Number
+- added: Array.prototype.toObject([name]) returns Object
 - added: Image.geometry(w, h, options)
 - added: Image.thumbnail(w, h, options)
 - added: Image.filter(type)

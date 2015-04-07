@@ -211,6 +211,10 @@ function prototypeArray() {
 		{ name: '5', value: 50 }
 	];
 
+	var obj = arr.toObject('name');
+
+	assert.ok(obj['3'].value === 30, 'array.toObject(with name)');
+
 	assert.ok(arr.find(function(o) { return o.name === '4'; }).value === 40, 'array.find()');
 	assert.ok(arr.find(function(o) { return o.name === '6'; }) === null, 'array.find(): null');
 	assert.ok(arr.find('name', '4').value === 40, 'array.find(inline)');
@@ -225,6 +229,8 @@ function prototypeArray() {
 	assert.ok(arr.length === 2, 'array.remove(inline)');
 
 	arr = [1, 2, 3, 4, 5];
+	obj = arr.toObject();
+	assert.ok(obj[3] === true, 'array.toObject(without name)');
 	assert.ok(arr.skip(3).join('') === '45', 'array.skip()');
 	assert.ok(arr.take(3).join('') === '123', 'array.take()');
 
