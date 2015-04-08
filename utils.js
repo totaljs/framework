@@ -450,6 +450,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			e.emit('end', self._buffer, self.statusCode, self.headers, uri.host);
 			if (callback)
 				callback(null, self._buffer, self.statusCode, self.headers, uri.host);
+			callback = null;
 		});
 
 		res.resume();
@@ -463,11 +464,15 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 			if (callback) {
 				request.on('error', function(error) {
-					callback(error, undefined, 0, undefined, undefined, uri.host);
+					if (callback)
+						callback(error, undefined, 0, undefined, undefined, uri.host);
+					callback = null;
 				});
 
 				request.setTimeout(timeout || 10000, function() {
-					callback(new Error(exports.httpStatus(408)), undefined, 0, undefined, uri.host);
+					if (callback)
+						callback(new Error(exports.httpStatus(408)), undefined, 0, undefined, uri.host);
+					callback = null;
 				});
 			}
 
@@ -748,7 +753,8 @@ exports.send = function(name, stream, url, callback, headers, method) {
 
 		res.on('end', function() {
 			var self = this;
-			callback(null, self.body, self.statusCode, self.headers);
+			if (callback)
+				callback(null, self.body, self.statusCode, self.headers);
 		});
 
 	};
@@ -758,7 +764,9 @@ exports.send = function(name, stream, url, callback, headers, method) {
 
 	if (callback) {
 		req.on('error', function(err) {
-			callback(err, null, 0, null);
+			if (callback)
+				callback(err, null, 0, null);
+			callback = null;
 		});
 	}
 
