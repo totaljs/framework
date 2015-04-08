@@ -1778,6 +1778,24 @@ exports.load = function(group, name, model) {
 	return model ? schema.make(model) : name ? schema : schemas[group];
 };
 
+exports.getschema = function(group, name) {
+
+	if (!name) {
+		name = group;
+		group = DEFAULT_SCHEMA;
+	}
+
+	var g = schemas[group];
+	if (g === undefined)
+		throw new Error('Schema ' + group + '/' + name  + ' not found.');
+
+	var s = g.get(name);
+	if (!s)
+		throw new Error('Schema ' + group + '/' + name  + ' not found.');
+
+	return s;
+};
+
 exports.newschema = function(group, name, model) {
 
 	if (!group)
