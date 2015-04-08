@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 44)';
+	this.version_header = '1.7.3 (build: 45)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -2649,6 +2649,12 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 	}
 
 	var writer = fs.createWriteStream(merge.filename);
+
+	writer.on('finish', function() {
+		self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
+		callback();
+	});
+
 	merge.files.wait(function(filename, next) {
 
 		if (filename.startsWith('http://') || filename.startsWith('https://')) {
@@ -2698,13 +2704,10 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 
 			writer.write(output, ENCODING);
 			next();
-
 		});
 
 	}, function() {
 		writer.end();
-		self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
-		callback();
 	});
 
 	return self;
@@ -3100,7 +3103,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	var range = req.headers['range'] || '';
 
 	res.success = true;
-
 	if (range.length > 0)
 		return self.responseRange(name, range, returnHeaders, req, res, done);
 
@@ -12205,7 +12207,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 	}
 
 	if (!compress) {
-		headers[RESPONSE_HEADER_CONTENTLENGTH] = body.length;
+		// headers[RESPONSE_HEADER_CONTENTLENGTH] = Buffer.byteLength(body, ENCODING);
 		res.writeHead(code, headers);
 		res.end(body, ENCODING);
 		return self;
@@ -12221,7 +12223,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 		}
 
 		headers['Content-Encoding'] = 'gzip';
-		headers[RESPONSE_HEADER_CONTENTLENGTH] = data.length;
+		// headers[RESPONSE_HEADER_CONTENTLENGTH] = data.length;
 		res.writeHead(code, headers);
 		res.end(data, ENCODING);
 	});
