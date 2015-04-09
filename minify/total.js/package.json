@@ -20,9 +20,7 @@
         "Nikita Shmidt <https://github.com/NikSmith>"
     ],
     "description": "web framework (MVC) for node.js",
-    "devDependencies": {
-        "memwatch": "^0.2.2"
-    },
+    "devDependencies": {},
     "directories": {
         "test": "test"
     },
@@ -67,5 +65,5 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "version": "1.7.3-47"
+    "version": "1.7.3-48"
 }
