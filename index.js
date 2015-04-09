@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 45)';
+	this.version_header = '1.7.3 (build: 46)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -6969,7 +6969,7 @@ FrameworkPath.prototype.packages = function(filename) {
 	Cache class
 	@framework {Framework}
 */
-function FrameworkCache(framework) {
+function FrameworkCache() {
 	this.items = {};
 	this.count = 1;
 	this.interval = null;
@@ -7057,6 +7057,8 @@ FrameworkCache.prototype.add = function(name, value, expire) {
 	}
 
 	self.items[name] = { value: value, expire: expire };
+	framework.emit('cache-set', name, value, expire);
+
 	return value;
 };
 
