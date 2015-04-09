@@ -20,9 +20,7 @@
         "Nikita Shmidt <https://github.com/NikSmith>"
     ],
     "description": "web framework (MVC) for node.js",
-    "devDependencies": {
-        "memwatch": "^0.2.2"
-    },
+    "devDependencies": {},
     "directories": {
         "test": "test"
     },
