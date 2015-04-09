@@ -1,3 +1,9 @@
 var cube = x => x * x * x;
 
-console.log(cube(23));
+function   *a() {
+
+}
+
+var b = a;
+
+console.log(b.toString().indexOf('function*'));

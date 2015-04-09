@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 46)';
+	this.version_header = '1.7.3 (build: 47)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -791,7 +791,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	var isNOXHR = false;
 	var method = '';
 	var schema;
-	var isGENERATOR = false;
+	var isGENERATOR = funcExecute.toString().indexOf('function*') === 0;
 
 	if (flags) {
 

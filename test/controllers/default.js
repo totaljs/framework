@@ -24,7 +24,7 @@ exports.install = function(framework) {
         flags: ['unauthorize']
     });
 
-    framework.route('/sync/', synchronize, ['sync']);
+    framework.route('/sync/', synchronize);
     framework.route('/package/', '@testpackage/test');
     framework.route('/precompile/', view_precomile);
     framework.route('/homepage/', view_homepage);
