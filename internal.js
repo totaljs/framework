@@ -2582,7 +2582,7 @@ function listener(event, done) {
  */
 function onFinished(msg, listener) {
 	if (isFinished(msg) !== false)
-		setImmediate(listener, null, msg);
+		return setImmediate(listener, null, msg);
 	attachListener(msg, listener);
 	return msg;
 }
