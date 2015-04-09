@@ -791,6 +791,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	var isNOXHR = false;
 	var method = '';
 	var schema;
+	var isGENERATOR = false;
 
 	if (flags) {
 
@@ -826,6 +827,14 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 			var flag = flags[i].toString().toLowerCase();
 
 			switch (flag) {
+
+				case 'sync':
+				case 'yield':
+				case 'synchronize':
+					isGENERATOR = true;
+					count--;
+					continue;
+
 				case 'noxhr':
 				case '-xhr':
 					isNOXHR = true;
@@ -969,6 +978,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		isJSON: flags.indexOf('json') !== -1,
 		isXML: flags.indexOf('xml') !== -1,
 		isRAW: isRaw,
+		isGENERATOR: isGENERATOR,
 		isMEMBER: isMember,
 		isXSS: flags.indexOf('xss') !== -1,
 		isASTERIX: isASTERIX,
@@ -7461,7 +7471,11 @@ Subscribe.prototype.doExecute = function() {
 		if (controller.isCanceled)
 			return self;
 
-		self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
+		if (self.route.isGENERATOR)
+			async.call(controller, self.route.execute, controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route))(controller);
+		else
+			self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
+
 		return self;
 
 	} catch (err) {

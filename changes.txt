@@ -39,6 +39,7 @@ source-code: "tabs" instead of "spaces"
 - added: global.GET([group], [name]) for getting new schemas (more in docs)
 - added: global.FINISHED(res/stream, callback) --> real end of the stream
 - added: global.DESTROY(stream) --> destroys the stream
+- added: (IMPORTANT) node.js generators for the routes
 
 - updated: (IMPORTANT): for evaluation multiple roles in routing (@role) framework validates only one role
 - updated: GZIP compression for static files (added .md, .json)

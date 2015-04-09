@@ -111,6 +111,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('sync', function(complete) {
+		utils.request(url + 'sync/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(data === 'TEST', 'generator problem');
+			complete();
+		});
+	});
+
 	async.await('a/b', function(complete) {
 		utils.request(url + 'c/b/', 'GET', null, function(error, data, code, headers) {
 			if (error)
@@ -531,7 +540,6 @@ function run() {
 		});
 	});
 }
-
 /*
 var mem = require('memwatch');
 

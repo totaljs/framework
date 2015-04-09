@@ -4173,11 +4173,18 @@ exports.sync = function(fn, owner) {
 };
 
 exports.async = function(fn) {
+	var context = this;
 	return function(complete) {
 
 		var self = this;
-		var generator = fn();
+		var argv = [];
 
+		if (arguments.length > 0) {
+			for (var i = 1; i < arguments.length; i++)
+				argv.push(arguments[i]);
+		}
+
+		var generator = fn.apply(context, argv);
 		next(null);
 
 		function next(err, result) {
@@ -4345,4 +4352,4 @@ exports.minifyHTML = function(value) {
 };
 
 global.async = exports.async;
-global.sync = exports.sync;
+global.sync = global.SYNCHRONIZE = exports.sync;

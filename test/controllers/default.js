@@ -24,6 +24,7 @@ exports.install = function(framework) {
         flags: ['unauthorize']
     });
 
+    framework.route('/sync/', synchronize, ['sync']);
     framework.route('/package/', '@testpackage/test');
     framework.route('/precompile/', view_precomile);
     framework.route('/homepage/', view_homepage);
@@ -118,6 +119,12 @@ exports.install = function(framework) {
     // maximumSize
     framework.websocket('/', socket);
 };
+
+function *synchronize() {
+    var self = this;
+    var content = (yield sync(require('fs').readFile)(self.path.public('file.txt'))).toString('utf8');
+    self.plain(content);
+}
 
 function plain_rest() {
     this.plain(this.req.method);
