@@ -7042,7 +7042,7 @@ FrameworkCache.prototype.recycle = function() {
 	@expire {Date}
 	return @value
 */
-FrameworkCache.prototype.add = function(name, value, expire) {
+FrameworkCache.prototype.add = function(name, value, expire, sync) {
 	var self = this;
 	var type = typeof(expire);
 
@@ -7057,13 +7057,13 @@ FrameworkCache.prototype.add = function(name, value, expire) {
 	}
 
 	self.items[name] = { value: value, expire: expire };
-	framework.emit('cache-set', name, value, expire);
+	framework.emit('cache-set', name, value, expire, sync);
 
 	return value;
 };
 
-FrameworkCache.prototype.set = function(name, value, expire) {
-	return this.add(name, value, expire);
+FrameworkCache.prototype.set = function(name, value, expire, sync) {
+	return this.add(name, value, expire, sync);
 };
 
 /**
