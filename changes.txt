@@ -55,6 +55,7 @@ source-code: "tabs" instead of "spaces"
 - updated: Utils.request(), Utils.download() supports `dnscache` flag for caching host IP
 - updated: SchemaBuilderEntity.validation()
 - updated: F.cache.set(key, value, expire, [sync])
+- updated: NoSQL
 
 - fixed: F.usage() --> fixed queue pendings
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
