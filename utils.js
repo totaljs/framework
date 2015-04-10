@@ -1712,9 +1712,9 @@ exports.parseXML = function(xml) {
 	return obj;
 };
 
-exports.parseJSON = function() {
+exports.parseJSON = function(value) {
 	try {
-		return JSON.parse(this);
+		return JSON.parse(value);
 	} catch(e) {
 		return null;
 	}
@@ -2093,6 +2093,10 @@ String.prototype.count = function(text) {
  */
 String.prototype.parseXML = function() {
 	return exports.parseXML(this);
+};
+
+String.prototype.parseJSON = function() {
+	return exports.parseJSON(this);
 };
 
 /**
