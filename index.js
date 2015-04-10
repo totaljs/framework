@@ -115,11 +115,11 @@ global.SCHEMA = function(group, name, model) {
 	return Builders.load(group, name, model);
 };
 
-global.GET = function(group, name) {
+global.GETSCHEMA = function(group, name) {
 	return Builders.getschema(group, name);
 };
 
-global.NEW = global.NEWSCHEMA = function(group, name) {
+global.NEWSCHEMA = function(group, name) {
 	if (!name) {
 		name = group;
 		group = 'default';
