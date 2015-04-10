@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 48)';
+	this.version_header = '1.7.3 (build: 49)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -7472,7 +7472,7 @@ Subscribe.prototype.doExecute = function() {
 			return self;
 
 		if (self.route.isGENERATOR)
-			async.call(controller, self.route.execute, controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route))(controller);
+			async.call(controller, self.route.execute)(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
 		else
 			self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
 
