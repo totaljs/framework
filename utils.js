@@ -4212,9 +4212,9 @@ exports.async = function(fn) {
 
 				if (typeof(complete) === OBJECT && complete.isController) {
 					if (e instanceof ErrorBuilder)
-						complete.json(e);
+						complete.view400(e);
 					else
-						complete.throw500(e);
+						complete.view500(e);
 					return;
 				}
 

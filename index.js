@@ -7667,7 +7667,7 @@ Subscribe.prototype.doEnd = function() {
 	}
 
 	if ((req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
-		self.route400('The request validation (The content-type is not x-www-form-urlencoded).');
+		self.route400(new Error('The request validation (The content-type is not x-www-form-urlencoded).'));
 		return self;
 	}
 
@@ -10069,7 +10069,7 @@ Controller.prototype.callback = function(viewName) {
 					err.resource(self.language);
 				return self.json(err);
 			}
-			return self.throw500(err);
+			return self.view500(err);
 		}
 
 		if (typeof(viewName) === STRING)
@@ -10303,7 +10303,7 @@ Controller.prototype.throw400 = function(problem) {
 Controller.prototype.view400 = function(problem) {
 	var self = this;
 
-	if (problem && problem.length > 0)
+	if (problem && !problem.items && problem.length > 0)
 		self.problem(problem);
 
 	if (self.res.success || self.res.headersSent || !self.isConnected)
