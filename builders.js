@@ -1787,13 +1787,13 @@ exports.getschema = function(group, name) {
 
 	var g = schemas[group];
 	if (g === undefined)
-		throw new Error('Schema ' + group + '/' + name  + ' not found.');
+		return;
 
 	var s = g.get(name);
-	if (!s)
-		throw new Error('Schema ' + group + '/' + name  + ' not found.');
+	if (s)
+		return s;
 
-	return s;
+	return;
 };
 
 exports.newschema = function(group, name, model) {
