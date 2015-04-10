@@ -4206,12 +4206,19 @@ exports.async = function(fn) {
 						break;
 				}
 			} catch (e) {
-				if (complete) {
-					if (typeof(complete) === OBJECT && complete.view500)
-						complete.view500(e);
+
+				if (!complete)
+					return;
+
+				if (typeof(complete) === OBJECT && complete.isController) {
+					if (e instanceof ErrorBuilder)
+						complete.json(e);
 					else
-						complete(e);
+						complete.throw500(e);
+					return;
 				}
+
+				complete(e);
 				return;
 			}
 
