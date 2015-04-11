@@ -30,6 +30,7 @@ source-code: "tabs" instead of "spaces"
 - added: Utils.clearDNS() clears DNS cache
 - added: Utils.isObject()
 - added: String.prototype.parseJSON()
+- added: Date.prototype.diff([date], type)
 - added: framework.onCompileView(name, content, model)
 - added: framework.on('cache-set', function(name, value, expire))
 - added: `@{compile handlerbars}CONTENT TO COMPILE@{end}`

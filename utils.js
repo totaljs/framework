@@ -1895,6 +1895,65 @@ Date.prototype.add = function(type, value) {
 };
 
 /**
+ * Date difference
+ * @param  {Date/Number/String} date Optional.
+ * @param  {String} type Date type: minutes, seconds, hours, days, months, years
+ * @return {Number}
+ */
+Date.prototype.diff = function(date, type) {
+
+	if (arguments.length === 1) {
+		type = date;
+		date = Date.now();
+	} else {
+		var to = typeof(date);
+		if (to === STRING)
+			date = Date.parse(date);
+		else if (util.isDate(date))
+			date = date.getTime();
+	}
+
+	var r = this.getTime() - date;
+
+	switch (type) {
+		case 's':
+		case 'ss':
+		case 'second':
+		case 'seconds':
+			return Math.round(r / 1000);
+		case 'm':
+		case 'mm':
+		case 'minute':
+		case 'minutes':
+			return Math.round((r / 1000) / 60);
+		case 'h':
+		case 'hh':
+		case 'hour':
+		case 'hours':
+			return Math.round(((r / 1000) / 60) / 60);
+		case 'd':
+		case 'dd':
+		case 'day':
+		case 'days':
+			return Math.round((((r / 1000) / 60) / 60) / 24);
+		case 'M':
+		case 'MM':
+		case 'month':
+		case 'months':
+			// avg: 28 days per month
+			return Math.round((((r / 1000) / 60) / 60) / (24 * 28));
+		case 'y':
+		case 'yyyy':
+		case 'year':
+		case 'years':
+			// avg: 28 days per month
+			return Math.round((((r / 1000) / 60) / 60) / (24 * 28 * 12));
+	}
+
+	return;
+};
+
+/**
  * Compare dates
  * @param {Date} date
  * @return {Number} Results: -1 = current date is earlier than @date, 0 = current date is same as @date, 1 = current date is later than @date
