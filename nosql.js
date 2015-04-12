@@ -2,7 +2,7 @@
  * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2015
- * @version 3.0.0
+ * @version 3.0.1
  */
 
 'use strict';
@@ -12,7 +12,7 @@ var path = require('path');
 var util = require('util');
 var events = require('events');
 
-var VERSION = 'v3.0.0';
+var VERSION = 'v3.0.1';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -399,8 +399,8 @@ Database.prototype.all = function(fnMap, fnCallback, itemSkip, itemTake) {
 */
 Database.prototype.one = function(fnMap, fnCallback) {
 
-    var cb = function(selected) {
-        fnCallback(null, selected ? selected[0] || null : null);
+    var cb = function(err, selected) {
+        fnCallback(err, selected ? selected[0] || null : null);
     };
 
     return this.read(fnMap, cb, 0, 1, false, 'one');
