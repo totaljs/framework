@@ -645,20 +645,11 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
 		callback.success = false;
 
 		async.call(self, self.onSave)(function(err) {
-
-			if (callback.success)
+			if (!err || callback.success)
 				return;
-
 			callback.success = true;
-
-			if (!err) {
-				callback(builder.hasError() ? builder : null, model);
-				return;
-			}
-
 			builder.push(err);
 			callback(builder);
-
 		}, builder, model, helper, function(result) {
 
 			if (callback.success)
@@ -722,20 +713,11 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 
 	callback.success = false;
 	async.call(self, self.onGet)(function(err) {
-
-		if (callback.success)
+		if (!err || callback.success)
 			return;
-
 		callback.success = true;
-
-		if (!err) {
-			callback(builder.hasError() ? builder : null, output);
-			return;
-		}
-
 		builder.push(err);
 		callback(builder);
-
 	}, builder, output, helper, function(result) {
 
 		if (callback.success)
@@ -783,22 +765,11 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 
 	callback.success = false;
 	async.call(self, self.onRemove)(function(err) {
-
-		if (callback.success)
+		if (!err || callback.success)
 			return;
-
 		callback.success = true;
-
-		if (!err) {
-			callback(builder.hasError() ? builder : null);
-			return;
-		}
-
 		builder.push(err);
-
-		// global error
 		callback(builder);
-
 	}, builder, helper, function(result) {
 
 		if (callback.success)
@@ -848,20 +819,11 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 	callback.success = false;
 
 	async.call(self, self.onQuery)(function(err) {
-
-		if (callback.success)
+		if (!err || callback.success)
 			return;
-
 		callback.success = true;
-
-		if (!err) {
-			callback(builder.hasError() ? builder : null);
-			return;
-		}
-
 		builder.push(err);
 		callback(builder);
-
 	}, builder, helper, function(result) {
 
 		if (callback.success)
@@ -1545,20 +1507,11 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
 		callback.success = false;
 		async.call(self, trans)(function(err) {
-
-			if (callback.success)
+			if (!err || callback.success)
 				return;
-
 			callback.success = true;
-
-			if (!err) {
-				callback(builder.hasError() ? builder : null, model);
-				return;
-			}
-
 			builder.push(err);
 			callback(builder);
-
 		}, builder, model, helper, function(result) {
 
 			if (callback.success)
@@ -1639,20 +1592,11 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 
 		callback.success = false;
 		async.call(self, compose)(function(err) {
-
-			if (callback.success)
+			if (!err || callback.success)
 				return;
-
 			callback.success = true;
-
-			if (!err) {
-				callback(builder.hasError() ? builder : null, model);
-				return;
-			}
-
 			builder.push(err);
 			callback(builder);
-
 		}, builder, model, helper, function(result) {
 
 			if (callback.success)
@@ -1729,20 +1673,11 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 
 		callback.success = false;
 		async.call(self, workflow)(function(err) {
-
-			if (callback.success)
+			if (!err || callback.success)
 				return;
-
 			callback.success = true;
-
-			if (!err) {
-				callback(builder.hasError() ? builder : null, model);
-				return;
-			}
-
 			builder.push(err);
 			callback(builder);
-
 		}, builder, model, helper, function(result) {
 
 			if (callback.success)
@@ -1825,20 +1760,11 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 	callback.success = false;
 	async.call(self, operation)(function(err) {
-
-		if (callback.success)
-			return;
-
-		callback.success = true;
-
-		if (!err) {
-			callback(builder.hasError() ? builder : null, model);
-			return;
-		}
-
-		builder.push(err);
-		callback(builder);
-
+			if (!err || callback.success)
+				return;
+			callback.success = true;
+			builder.push(err);
+			callback(builder);
 	}, builder, model, helper, function(result) {
 
 		if (callback.success)
