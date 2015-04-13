@@ -59,6 +59,7 @@ source-code: "tabs" instead of "spaces"
 - updated: F.cache.set(key, value, expire, [sync])
 - updated: NoSQL
 
+- fixed: Image.resize()
 - fixed: F.usage() --> fixed queue pendings
 - fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
 - fixed: (CRITICAL) a package or module installation from the URL address
@@ -81,6 +82,12 @@ source-code: "tabs" instead of "spaces"
 - improved: Image.miniature() -> increase about 50%
 - improved: U.queue()
 - improved: (IMPORTANT) SchemaBuilder validation and preparation
+
+__GENERATORS__:
+
+- added: Image.$$save(filename, [writer])
+- added: Image.$$measure();
+- added: Image.$$identify();
 
 ======= 1.7.2
 
@@ -112,6 +119,7 @@ source-code: "tabs" instead of "spaces"
 - fixed: (CRITICAL) mail sender (problem with CRLF in BASE64)
 - fixed: (CRITICAL) `../src/node_http_parser.cc, line 392.`
 - fixed: the framework duplicates width/height in upload auto-parser
+- fixed: JPG width/height auto-parser
 
 ======= 1.7.1 (HOTFIX)
 

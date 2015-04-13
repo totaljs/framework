@@ -39,6 +39,7 @@ exports.measureJPG = function(buffer) {
 	o += 2;
 
 	while (o < len) {
+
 		while (0xff != buffer[o]) o++;
 		while (0xff == buffer[o]) o++;
 
@@ -175,6 +176,13 @@ Image.prototype.measure = function(callback) {
 	return self;
 };
 
+Image.prototype.$$measure = function() {
+	var self = this;
+	return function(callback) {
+		self.measure(callback);
+	};
+};
+
 /**
  * Execute commands
  * @param {String} filename
@@ -224,6 +232,13 @@ Image.prototype.save = function(filename, callback, writer) {
 		writer(cmd.stdin);
 
 	return self;
+};
+
+Image.prototype.$$save = function(filename, writer) {
+	var self = this;
+	return function(callback) {
+		self.save(filename, callback, writer);
+	};
 };
 
 /*
@@ -395,6 +410,13 @@ Image.prototype.identify = function(cb) {
 	return self;
 };
 
+Image.prototype.$$identify = function() {
+	var self = this;
+	return function(callback) {
+		self.identify(callback);
+	};
+};
+
 /*
 	Append filter to filter list
 	@key {String}
@@ -436,7 +458,7 @@ Image.prototype.resize = function(w, h, options) {
 	if (w && h)
 		size = w + 'x' + h;
 	else if (w && !h)
-		size = w;
+		size = w + 'x';
 	else if (!w && h)
 		size = 'x' + h;
 

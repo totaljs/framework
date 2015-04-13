@@ -170,7 +170,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		var wh = null;
 		switch (tmp.contentType) {
 			case 'image/jpeg':
-				wh = framework_image.measureJPG(data);
+				wh = framework_image.measureJPG(buffer.slice(start));
 				break;
 			case 'image/gif':
 				wh = framework_image.measureGIF(data);
