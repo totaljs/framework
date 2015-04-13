@@ -911,7 +911,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		priority++;
 	}
 
-	if ((flags.indexOf('json') !== -1 || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
+	if ((flags.indexOf('json') !== -1 || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('get') === -1 && flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
 		flags.push('post');
 		method += (method.length > 0 ? ',' : '') + 'post';
 		priority++;
@@ -7575,6 +7575,7 @@ Subscribe.prototype.doEnd = function() {
 	}
 
 	if (route.isJSON) {
+
 		try {
 
 			if (((req.headers['content-type'] || '').indexOf('/json') === -1)) {

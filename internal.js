@@ -435,6 +435,7 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 	for (var i = 0, length = req.flags.length; i < length; i++) {
 
 		var flag = req.flags[i];
+
 		switch (flag) {
 			case 'json':
 				if (!route.isJSON)

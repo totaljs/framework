@@ -1,9 +1,12 @@
-var cube = x => x * x * x;
+require('../index').http('debug');
 
-function   *a() {
+F.route('/',json_test,['get']);
+F.route('/',json_test_b,['post','json']);
 
+function json_test() {
+    this.plain('GET');
 }
 
-var b = a;
-
-console.log(b.toString().indexOf('function*'));
+function json_test_b() {
+    this.plain('POST');
+}
