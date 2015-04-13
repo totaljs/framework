@@ -119,6 +119,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 	this.onGet;
 	this.onRemove;
 	this.onQuery;
+	this.gcache = {};
 }
 
 /**
@@ -615,6 +616,9 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
 		helper = undefined;
 	}
 
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
+
 	var self = this;
 
 	self.$prepare(model, function(err, model) {
@@ -625,18 +629,60 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
 		}
 
 		var builder = new ErrorBuilder();
-		self.onSave(builder, model, helper, function(result) {
+
+		if (!isGenerator(self, 'save', self.onSave)) {
+			self.onSave(builder, model, helper, function(result) {
+				if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+					if (result instanceof Error || result instanceof ErrorBuilder)
+						builder.push(result);
+					result = arguments[1];
+				}
+				callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+			});
+			return;
+		}
+
+		callback.success = false;
+
+		async.call(self, self.onSave)(function(err) {
+
+			if (callback.success)
+				return;
+
+			callback.success = true;
+
+			if (!err) {
+				callback(builder.hasError() ? builder : null, model);
+				return;
+			}
+
+			builder.push(err);
+			callback(builder);
+
+		}, builder, model, helper, function(result) {
+
+			if (callback.success)
+				return;
+
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
 				if (result instanceof Error || result instanceof ErrorBuilder)
 					builder.push(result);
 				result = arguments[1];
 			}
+			callback.success = true;
 			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
 		});
+
 	});
 
 	return self;
 };
+
+function isGenerator(obj, name, fn) {
+	if (obj.gcache[name])
+		return obj.gcache[name];
+	return obj.gcache[name] = fn.toString().substring(0, 9) === 'function*';
+}
 
 /**
  * Execute onGet delegate
@@ -651,16 +697,56 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 		helper = undefined;
 	}
 
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
+
 	var self = this;
 	var builder = new ErrorBuilder();
 	var output = self.default();
 
-	self.onGet(builder, output, helper, function(result) {
+	if (!isGenerator(self, 'get', self.onGet)) {
+		self.onGet(builder, output, helper, function(result) {
+
+			if (callback.success)
+				return;
+
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+			callback(builder.hasError() ? builder : null, result === undefined ? output : result);
+		});
+		return self;
+	}
+
+	callback.success = false;
+	async.call(self, self.onGet)(function(err) {
+
+		if (callback.success)
+			return;
+
+		callback.success = true;
+
+		if (!err) {
+			callback(builder.hasError() ? builder : null, output);
+			return;
+		}
+
+		builder.push(err);
+		callback(builder);
+
+	}, builder, output, helper, function(result) {
+
+		if (callback.success)
+			return;
+
 		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
 			if (result instanceof Error || result instanceof ErrorBuilder)
 				builder.push(result);
 			result = arguments[1];
 		}
+		callback.success = true;
 		callback(builder.hasError() ? builder : null, result === undefined ? output : result);
 	});
 
@@ -683,12 +769,48 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 	var self = this;
 	var builder = new ErrorBuilder();
 
-	self.onRemove(builder, helper, function(result) {
+	if (!isGenerator(self, 'remove', self.onRemove)) {
+		self.onRemove(builder, helper, function(result) {
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+			callback(builder.hasError() ? builder : null, result === undefined ? helper : result);
+		});
+		return;
+	}
+
+	callback.success = false;
+	async.call(self, self.onRemove)(function(err) {
+
+		if (callback.success)
+			return;
+
+		callback.success = true;
+
+		if (!err) {
+			callback(builder.hasError() ? builder : null);
+			return;
+		}
+
+		builder.push(err);
+
+		// global error
+		callback(builder);
+
+	}, builder, helper, function(result) {
+
+		if (callback.success)
+			return;
+
 		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
 			if (result instanceof Error || result instanceof ErrorBuilder)
 				builder.push(result);
 			result = arguments[1];
 		}
+
+		callback.success = true;
 		callback(builder.hasError() ? builder : null, result === undefined ? helper : result);
 	});
 
@@ -711,12 +833,47 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 	var self = this;
 	var builder = new ErrorBuilder();
 
-	self.onQuery(builder, helper, function(result) {
+	if (!isGenerator(self, 'query', self.onQuery)) {
+		self.onQuery(builder, helper, function(result) {
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+			callback(builder.hasError() ? builder : null, result);
+		});
+		return self;
+	}
+
+	callback.success = false;
+
+	async.call(self, self.onQuery)(function(err) {
+
+		if (callback.success)
+			return;
+
+		callback.success = true;
+
+		if (!err) {
+			callback(builder.hasError() ? builder : null);
+			return;
+		}
+
+		builder.push(err);
+		callback(builder);
+
+	}, builder, helper, function(result) {
+
+		if (callback.success)
+			return;
+
 		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
 			if (result instanceof Error || result instanceof ErrorBuilder)
 				builder.push(result);
 			result = arguments[1];
 		}
+
+		callback.success = true;
 		callback(builder.hasError() ? builder : null, result);
 	});
 
@@ -879,6 +1036,7 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 
 				if (!err)
 					return next();
+
 				next = null;
 				var result = obj.$$result;
 				delete obj.$$result;
@@ -1354,8 +1512,8 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 		helper = undefined;
 	}
 
-	if (typeof(callback) !== 'function')
-		callback = NOOP;
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
 
 	var trans = self.transforms ? self.transforms[name] : undefined;
 
@@ -1373,9 +1531,37 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
 		var builder = new ErrorBuilder();
 
-		trans.call(self, builder, model, helper, function(result) {
+		if (!isGenerator(self, 'transform.' + name, trans)) {
+			trans.call(self, builder, model, helper, function(result) {
+				if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+					if (result instanceof Error || result instanceof ErrorBuilder)
+						builder.push(result);
+					result = arguments[1];
+				}
+				callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+			}, self.name);
+			return;
+		}
 
-			if (!callback)
+		callback.success = false;
+		async.call(self, trans)(function(err) {
+
+			if (callback.success)
+				return;
+
+			callback.success = true;
+
+			if (!err) {
+				callback(builder.hasError() ? builder : null, model);
+				return;
+			}
+
+			builder.push(err);
+			callback(builder);
+
+		}, builder, model, helper, function(result) {
+
+			if (callback.success)
 				return;
 
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
@@ -1384,8 +1570,10 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 				result = arguments[1];
 			}
 
-			callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
-		}, self.name);
+			callback.success = true;
+			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+		});
+
 	});
 
 	return self;
@@ -1415,8 +1603,8 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 		helper = undefined;
 	}
 
-	if (typeof(callback) !== 'function')
-		callback = NOOP;
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
 
 	var compose = self.composes ? self.composes[name] : undefined;
 
@@ -1435,9 +1623,39 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 		var output = self.default();
 		var builder = new ErrorBuilder();
 
-		compose.call(self, builder, output, model, helper, function(result) {
+		if (!isGenerator(self, 'compose.' + name, compose)) {
+			compose.call(self, builder, output, model, helper, function(result) {
 
-			if (!callback)
+				if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+					if (result instanceof Error || result instanceof ErrorBuilder)
+						builder.push(result);
+					result = arguments[1];
+				}
+
+				callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+			}, self.name);
+			return;
+		}
+
+		callback.success = false;
+		async.call(self, compose)(function(err) {
+
+			if (callback.success)
+				return;
+
+			callback.success = true;
+
+			if (!err) {
+				callback(builder.hasError() ? builder : null, model);
+				return;
+			}
+
+			builder.push(err);
+			callback(builder);
+
+		}, builder, model, helper, function(result) {
+
+			if (callback.success)
 				return;
 
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
@@ -1445,9 +1663,9 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 					builder.push(result);
 				result = arguments[1];
 			}
-
-			callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
-		}, self.name);
+			callback.success = true;
+			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+		});
 	});
 
 	return self;
@@ -1477,8 +1695,8 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 		helper = undefined;
 	}
 
-	if (typeof(callback) !== 'function')
-		callback = NOOP;
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
 
 	var workflow = self.workflows ? self.workflows[name] : undefined;
 
@@ -1495,9 +1713,39 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 		}
 
 		var builder = new ErrorBuilder();
-		workflow.call(self, builder, model, helper, function(result) {
+		if (!isGenerator(self, 'workflow.' + name, workflow)) {
+			workflow.call(self, builder, model, helper, function(result) {
 
-			if (!callback)
+				if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+					if (result instanceof Error || result instanceof ErrorBuilder)
+						builder.push(result);
+					result = arguments[1];
+				}
+
+				callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+			}, self.name);
+			return;
+		}
+
+		callback.success = false;
+		async.call(self, workflow)(function(err) {
+
+			if (callback.success)
+				return;
+
+			callback.success = true;
+
+			if (!err) {
+				callback(builder.hasError() ? builder : null, model);
+				return;
+			}
+
+			builder.push(err);
+			callback(builder);
+
+		}, builder, model, helper, function(result) {
+
+			if (callback.success)
 				return;
 
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
@@ -1505,9 +1753,10 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 					builder.push(result);
 				result = arguments[1];
 			}
+			callback.success = true;
+			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+		});
 
-			callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
-		}, self.name);
 	});
 
 	return self;
@@ -1548,8 +1797,8 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 		helper = undefined;
 	}
 
-	if (typeof(callback) !== 'function')
-		callback = NOOP;
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
 
 	var operation = self.operations ? self.operations[name] : undefined;
 
@@ -1560,9 +1809,39 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 	var builder = new ErrorBuilder();
 
-	operation.call(self, builder, model, helper, function(result) {
+	if (!isGenerator(self, 'workflow.' + name, operation)) {
+		operation.call(self, builder, model, helper, function(result) {
 
-		if (!callback)
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+
+			callback(builder.hasError() ? builder : null, result);
+		}, self.name);
+		return;
+	}
+
+	callback.success = false;
+	async.call(self, operation)(function(err) {
+
+		if (callback.success)
+			return;
+
+		callback.success = true;
+
+		if (!err) {
+			callback(builder.hasError() ? builder : null, model);
+			return;
+		}
+
+		builder.push(err);
+		callback(builder);
+
+	}, builder, model, helper, function(result) {
+
+		if (callback.success)
 			return;
 
 		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
@@ -1570,9 +1849,9 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 				builder.push(result);
 			result = arguments[1];
 		}
-
+		callback.success = true;
 		callback(builder.hasError() ? builder : null, result);
-	}, self.name);
+	});
 
 	return self;
 };

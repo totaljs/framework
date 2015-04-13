@@ -4277,7 +4277,10 @@ exports.async = function(fn) {
 					return;
 				}
 
-				complete(e);
+				setImmediate(function() {
+					complete(e);
+				});
+
 				return;
 			}
 

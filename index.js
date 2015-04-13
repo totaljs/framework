@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1730;
-	this.version_header = '1.7.3 (build: 50)';
+	this.version_header = '1.7.3 (build: 51)';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -8382,6 +8382,9 @@ Controller.prototype.error = function(err) {
 
 	if (err === undefined)
 		return result;
+
+	if (!self.subscribe)
+		return self;
 
 	self.subscribe.exception = err;
 	self.exception = err;
