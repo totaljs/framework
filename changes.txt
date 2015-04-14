@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.7.3
+IN DEVELOPMENT ======= 1.8.0
 
 source-code: "tabs" instead of "spaces" 
 

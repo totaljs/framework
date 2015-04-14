@@ -1,6 +1,6 @@
 /**
  * @module FrameworkInternal
- * @version 1.7.3
+ * @version 1.8.0
  */
 
 'use strict';
