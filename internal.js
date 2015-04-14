@@ -579,6 +579,13 @@ HttpFile.prototype.copy = function(filename, callback) {
 	return self;
 };
 
+HttpFile.prototype.$$copy = function(filename) {
+	var self = this;
+	return function(callback) {
+		return self.copy(filename, callback);
+	};
+};
+
 /*
 	Read file to buffer (SYNC)
 	return {Buffer}
@@ -596,6 +603,13 @@ HttpFile.prototype.read = function(callback) {
 	var self = this;
 	fs.readFile(self.path, callback);
 	return self;
+};
+
+HttpFile.prototype.$$read = function() {
+	var self = this;
+	return function(callback) {
+		self.read(callback);
+	};
 };
 
 /*
@@ -617,11 +631,19 @@ HttpFile.prototype.md5 = function(callback) {
 		callback(error, null);
 	});
 
-	stream.on('end', function() {
+	onFinished(stream, function() {
+		destroyStream(stream);
 		callback(null, md5.digest('hex'));
 	});
 
 	return self;
+};
+
+HttpFile.prototype.$$md5 = function() {
+	var self = this;
+	return function(callback) {
+		self.md5(callback);
+	};
 };
 
 /*

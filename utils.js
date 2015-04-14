@@ -233,6 +233,12 @@ exports.wait = function(fnValid, fnCallback, timeout, interval) {
 	}, timeout || 5000);
 };
 
+exports.$$wait = function(fnValid, timeout, interval) {
+	return function(callback) {
+		exports.wait(fnValid, callback, timeout, interval);
+	};
+};
+
 /**
  * Resolves an IP from the URL address
  * @param {String} url
@@ -267,6 +273,12 @@ exports.resolve = function(url, callback) {
 	        });
     	});
     });
+};
+
+exports.$$resolve = function(url) {
+	return function(callback) {
+		return exports.resolve(url, callback);
+	};
 };
 
 /**
@@ -503,6 +515,12 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	return e;
 };
 
+exports.$$request = function(url, flags, data, cookies, headers, encoding, timeout) {
+	return function(callback) {
+		exports.request(url, flags, data, callback, cookies, headers, encoding, timeout);
+	};
+};
+
 /**
  * Create a request to a specific URL
  * @param {String} url URL address.
@@ -706,6 +724,12 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	return e;
 };
 
+exports.$$download = function(url, flags, data, cookies, headers, encoding, timeout) {
+	return function(callback) {
+		exports.download(url, flags, data, callback, cookies, headers, encoding, timeout);
+	};
+};
+
 /**
  * Send a stream through HTTP
  * @param {String} name Filename with extension.
@@ -785,6 +809,12 @@ exports.send = function(name, stream, url, callback, headers, method) {
 
 	stream.pipe(req, { end: false });
 	return;
+};
+
+exports.$$send = function(name, stream, url, headers, method) {
+	return function(callback) {
+		exports.send(name, stream, url, callback, headers, method);
+	};
 };
 
 /**

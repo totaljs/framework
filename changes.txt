@@ -88,6 +88,14 @@ __GENERATORS__:
 - added: Image.$$save(filename, [writer])
 - added: Image.$$measure();
 - added: Image.$$identify();
+- added: Utils.$$request();
+- added: Utils.$$download();
+- added: Utils.$$send();
+- added: Utils.$$wait();
+- added: Utils.$$resolve();
+- added: HttpFile.$$copy()
+- added: HttpFile.$$read()
+- added: HttpFile.$$md5()
 
 ======= 1.7.2
 
