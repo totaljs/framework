@@ -202,16 +202,16 @@ exports.isEqual = function(obj1, obj2, properties) {
 };
 
 /**
- * Function checks a valid function and waits for positive result
+ * Function checks a valid function and waits for it positive result
  * @param {Function} fnValid
- * @param {Function(err)} fnCallback
+ * @param {Function(err, success)} fnCallback
  * @param {Number} timeout  Timeout, optional (default: 5000)
  * @param {Number} interval Refresh interval, optional (default: 500)
  */
 exports.wait = function(fnValid, fnCallback, timeout, interval) {
 
 	if (fnValid() === true)
-		return fnCallback(null);
+		return fnCallback(null, true);
 
 	var id_timeout = null;
 	var id_interval = setInterval(function() {
@@ -220,7 +220,7 @@ exports.wait = function(fnValid, fnCallback, timeout, interval) {
 			clearInterval(id_interval);
 			clearTimeout(id_timeout);
 			if (fnCallback)
-				fnCallback(null);
+				fnCallback(null, true);
 			return;
 		}
 
@@ -229,7 +229,7 @@ exports.wait = function(fnValid, fnCallback, timeout, interval) {
 	id_timeout = setTimeout(function() {
 		clearInterval(id_interval);
 		if (fnCallback)
-			fnCallback(new Error('Timeout.'));
+			fnCallback(new Error('Timeout.'), false);
 	}, timeout || 5000);
 };
 

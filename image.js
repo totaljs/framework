@@ -204,8 +204,11 @@ Image.prototype.save = function(filename, callback, writer) {
 	var command = self.cmd(self.filename === null ? '-' : self.filename, filename);
 
 	if (self.builder.length === 0) {
-		if (callback)
-			callback(null, filename);
+		if (!callback)
+			return;
+		setImmediate(function() {
+			callback(null, true);
+		});
 		return;
 	}
 
@@ -216,9 +219,9 @@ Image.prototype.save = function(filename, callback, writer) {
 			return;
 
 		if (error)
-			callback(error, '');
+			callback(error, false);
 		else
-			callback(null, filename);
+			callback(null, true);
 	});
 
 	if (self.currentStream) {
