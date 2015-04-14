@@ -6,7 +6,6 @@ source-code: "tabs" instead of "spaces"
 - added: SchemaBuilderEntity–>setPrefix(prefix)
 - added: SchemaBuilderEntity->setResource(resourcename)
 - added: auto-trim strings in SchemaBuilderEntity
-- added: Array.prototype.limit(max, fn(items, next), [callback])
 - added: Controller.route;
 - added: ErrorBuilder is a global class
 - added: F.on('upload-begin', function(req, file) {})
@@ -21,6 +20,8 @@ source-code: "tabs" instead of "spaces"
 - added: callback: F.responseStatic(), response.continue()
 - added: Array.prototype.findIndex(cb, [value]) returns Number
 - added: Array.prototype.toObject([name]) returns Object
+- added: Array.prototype.limit(max, fn(items, next), [callback])
+- added: Array.prototype.compare(propName, arr, comparer)
 - added: Image.geometry(w, h, options)
 - added: Image.thumbnail(w, h, options)
 - added: Image.filter(type)
