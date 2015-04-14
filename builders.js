@@ -1,6 +1,6 @@
 /**
  * @module FrameworkBuilders
- * @version 1.7.3
+ * @version 1.8.0
  */
 
 'use strict';
@@ -639,7 +639,7 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
 				}
 				callback(builder.hasError() ? builder : null, result === undefined ? model : result);
 			});
-			return;
+			return self;
 		}
 
 		callback.success = false;
@@ -760,7 +760,7 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 			}
 			callback(builder.hasError() ? builder : null, result === undefined ? helper : result);
 		});
-		return;
+		return self;
 	}
 
 	callback.success = false;
@@ -1481,7 +1481,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
 	if (!trans) {
 		callback(new ErrorBuilder().add('', 'Transform not found.'));
-		return;
+		return self;
 	}
 
 	self.$prepare(model, function(err, model) {
@@ -1563,7 +1563,7 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 
 	if (!compose) {
 		callback(new ErrorBuilder().add('', 'Composer not found.'));
-		return;
+		return self;
 	}
 
 	self.$prepare(model, function(err, model) {
@@ -1646,7 +1646,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 
 	if (!workflow) {
 		callback(new ErrorBuilder().add('', 'Workflow not found.'));
-		return;
+		return self;
 	}
 
 	self.$prepare(model, function(err, model) {
@@ -1739,7 +1739,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 	if (!operation) {
 		callback(new ErrorBuilder().add('', 'Operation not found.'));
-		return;
+		return self;
 	}
 
 	var builder = new ErrorBuilder();
@@ -1755,7 +1755,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 			callback(builder.hasError() ? builder : null, result);
 		}, self.name);
-		return;
+		return self;
 	}
 
 	callback.success = false;
