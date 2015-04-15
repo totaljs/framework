@@ -21,7 +21,7 @@ $ npm install total.js
 - [__Download__ Modules & Packages](https://github.com/totaljs/modules) (View Engines, Session, Auth, etc.)
 - [__Download__ Examples](https://github.com/totaljs/examples)
 
-__Social networks__:
+## Social networks
 
 Please support the framework on social networks.
 
@@ -33,8 +33,7 @@ Please support the framework on social networks.
 - [Follow total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
 - [Follow total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
-References
-----------
+## References
 
 - [MonitorGuru.com (Website monitoring)](https://www.monitorguru.com)
 - [Bufferwall.com (Blog portal)](https://bufferwall.com)
@@ -47,15 +46,11 @@ References
 
 ## Donate
 
-The framework needs your donation for ensure future development and improving the documentation.
-__I want to continue.__
+The framework needs your donation for ensure future development and improving the documentation. __I want to continue because total.js is really good__.
 
 [![Donation via PayPal](https://www.totaljs.com/img/donation.png)](https://www.totaljs.com/donation/)
 
----
-
-Videos on YouTube
------------------
+## Videos on YouTube
 
 - VIDEO: [Why is node.js awesome? WebSocket + nginx + total.js + HTML + JavaScript ](http://www.youtube.com/watch?v=4Vrqx0UnpYk)
 - VIDEO: [Node.js / total.js debugging of web applications](http://www.youtube.com/watch?v=4wLq_bJ_sfs)
