@@ -27,6 +27,9 @@ __Interesting__:
 
 __Social networks__:
 
+Please support the framework on social networks.
+
+- [__NEW__: Total.js blogs](https://bufferwall.com/blogs/?tag=total.js)
 - [__Discussion forum__](https://groups.google.com/forum/#!forum/totaljs)
 - [Follow total.js on GitHub](https://github.com/totaljs/framework)
 - [Follow total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
@@ -54,7 +57,16 @@ __Client-side libraries__
 - [Tangular - template engine like Angular.js](https://github.com/petersirka/Tangular)
 - [jQuery file upload (+ drag&drop)](https://github.com/petersirka/jquery.upload)
 
-***
+---
+
+## DONATE THE FRAMEWORK
+
+The framework needs your donation for ensure future development and improving the documentation. __I want to continue.__
+
+[![Donation via PayPal](https://www.totaljs.com/img/donation.png)](https://www.totaljs.com/donation/)
+
+
+---
 
 Videos on YouTube
 -----------------
