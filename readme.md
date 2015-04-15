@@ -21,16 +21,12 @@ $ npm install total.js
 - [__Download__ Modules & Packages](https://github.com/totaljs/modules) (View Engines, Session, Auth, etc.)
 - [__Download__ Examples](https://github.com/totaljs/examples)
 
-__Interesting__:
-
-- Framework supports [NoSQL Embedded database](https://github.com/petersirka/nosql) for max. 20 000 documents per database
-
 __Social networks__:
 
 Please support the framework on social networks.
 
-- [__NEW__: Total.js blogs](https://bufferwall.com/blogs/?tag=total.js)
-- [__Discussion forum__](https://groups.google.com/forum/#!forum/totaljs)
+- [Blogs on Bufferwall](https://bufferwall.com/blogs/?tag=total.js)
+- [Chat on Gitter](https://gitter.im/totaljs/framework)
 - [Follow total.js on GitHub](https://github.com/totaljs/framework)
 - [Follow total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
 - [Follow total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
@@ -42,29 +38,19 @@ References
 
 - [MonitorGuru.com (Website monitoring)](https://www.monitorguru.com)
 - [Bufferwall.com (Blog portal)](https://bufferwall.com)
-- [Warstore.sk (Ecommerce)](https://www.warstore.sk)
-- [Spektrum-bb.sk (Ecommerce)](https://www.spektrum-bb.sk)
+- [Warstore.sk (E-commerce)](https://www.warstore.sk)
 - [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)
 - [GPS Localization (WebSocket) - www.gpslocalization.com](http://www.gpslocalization.com)
 - [Online Clipboard (CouchDB) - www.online-clipboard.com](https://www.online-clipboard.com)
 
-... and many more.
-
-__Client-side libraries__
-
-- [jQuery jComponent](https://github.com/petersirka/jComponent)
-- [jQuery two way bindings](https://github.com/petersirka/jquery.bindings)
-- [Tangular - template engine like Angular.js](https://github.com/petersirka/Tangular)
-- [jQuery file upload (+ drag&drop)](https://github.com/petersirka/jquery.upload)
-
 ---
 
-## DONATE THE FRAMEWORK
+## Donate
 
-The framework needs your donation for ensure future development and improving the documentation. __I want to continue.__
+The framework needs your donation for ensure future development and improving the documentation.
+__I want to continue.__
 
 [![Donation via PayPal](https://www.totaljs.com/img/donation.png)](https://www.totaljs.com/donation/)
-
 
 ---
 
@@ -82,7 +68,7 @@ Videos on YouTube
 
 ## Contributors
 
-- Peter Širka, <https://github.com/petersirka>
+- Peter Širka (__author__), <https://github.com/petersirka>
 - Toshiaki Takahashi, <https://github.com/toshipon>
 - Bir, <https://github.com/bir>
 - Serkan Kocaman, <https://github.com/KiPSOFT>
