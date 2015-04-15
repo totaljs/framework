@@ -25,8 +25,8 @@ $ npm install total.js
 
 Please support the framework on social networks.
 
-- [Blogs on Bufferwall](https://bufferwall.com/blogs/?tag=total.js)
-- [Chat on Gitter](https://gitter.im/totaljs/framework)
+- [Blogs](https://bufferwall.com/blogs/?tag=total.js)
+- [Follow total.js on Gitter](https://gitter.im/totaljs/framework)
 - [Follow total.js on GitHub](https://github.com/totaljs/framework)
 - [Follow total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
 - [Follow total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
@@ -42,9 +42,7 @@ Please support the framework on social networks.
 - [GPS Localization (WebSocket) - www.gpslocalization.com](http://www.gpslocalization.com)
 - [Online Clipboard (CouchDB) - www.online-clipboard.com](https://www.online-clipboard.com)
 
----
-
-## Donate
+## Donate
 
 The framework needs your donation for ensure future development and improving the documentation. __I want to continue because total.js is really good__.
 
