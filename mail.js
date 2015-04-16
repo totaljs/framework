@@ -1,6 +1,6 @@
 /**
  * @module FrameworkMail
- * @version 1.7.2
+ * @version 1.8.0
  */
 
 'use strict'
@@ -15,10 +15,13 @@ var CRLF = '\r\n';
 var UNDEFINED = 'undefined';
 
 var errors = {
-    notvalid: 'E-mail address is not valid',
-    resolve: 'Cannot resolve MX of ',
-    connection: 'Cannot connect to any SMTP server.'
+	notvalid: 'E-mail address is not valid',
+	resolve: 'Cannot resolve MX of ',
+	connection: 'Cannot connect to any SMTP server.'
 };
+
+if (!global.framework_utils)
+	global.framework_utils = require('./utils');
 
 /**
  * Mailer
@@ -26,16 +29,16 @@ var errors = {
  * @property {Boolean} debug Debug mode (true/false).
  */
 function Mailer() {
-    this.debug = false;
-    this.Message = Message;
-    this.Mail = Message;
+	this.debug = false;
+	this.Message = Message;
+	this.Mail = Message;
 }
 
 Mailer.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
-    constructor: {
-        value: Mailer,
-        enumberable: false
-    }
+	constructor: {
+		value: Mailer,
+		enumberable: false
+	}
 });
 
 /**
@@ -45,13 +48,13 @@ Mailer.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
  * @return {MailMessage}
  */
 Mailer.prototype.create = function(subject, body) {
-    return new Message(subject, body);
+	return new Message(subject, body);
 };
 
 /*
-    Resolve MX
-    @domain {String}
-    @callback {Function} :: callback(error, socket);
+	Resolve MX
+	@domain {String}
+	@callback {Function} :: callback(error, socket);
 */
 /**
  * Resolve MX record
@@ -59,42 +62,42 @@ Mailer.prototype.create = function(subject, body) {
  * @param  {ResolveMxCallback} callback Callback.
  */
 function resolveMx(domain, callback) {
-    dns.resolveMx(domain, function(err, data) {
+	dns.resolveMx(domain, function(err, data) {
 
-        if (err) {
-            callback(err, data);
-            return;
-        }
+		if (err) {
+			callback(err, data);
+			return;
+		}
 
-        if (!data || data.length === 0) {
-            callback(new Error(errors.resolve + domain));
-            return;
-        }
+		if (!data || data.length === 0) {
+			callback(new Error(errors.resolve + domain));
+			return;
+		}
 
-        data.sort(function(a, b) {
-            return a.priority < b. priority;
-        });
+		data.sort(function(a, b) {
+			return a.priority < b. priority;
+		});
 
-        function tryConnect(index) {
+		function tryConnect(index) {
 
-            if (index >= data.length) {
-                callback(new Error(errors.connection));
-                return;
-            }
+			if (index >= data.length) {
+				callback(new Error(errors.connection));
+				return;
+			}
 
-            var sock = net.createConnection(25, data[index].exchange);
+			var sock = net.createConnection(25, data[index].exchange);
 
-            sock.on('error', function(err) {
-                tryConnect(++index);
-            });
+			sock.on('error', function(err) {
+				tryConnect(++index);
+			});
 
-            sock.on('connect', function() {
-                callback(null, sock);
-            });
-        }
+			sock.on('connect', function() {
+				callback(null, sock);
+			});
+		}
 
-        tryConnect(0);
-    });
+		tryConnect(0);
+	});
 }
 
 /**
@@ -112,16 +115,16 @@ function resolveMx(domain, callback) {
  * @property {String} body
  */
 function Message(subject, body) {
-    this.subject = subject || '';
-    this.body = body || '';
-    this.files = [];
-    this.addressTo = [];
-    this.addressReply = [];
-    this.addressCC = [];
-    this.addressBCC = [];
-    this.addressFrom = { name: '', address: '' };
-    this.callback = null;
-    this.closed = false;
+	this.subject = subject || '';
+	this.body = body || '';
+	this.files = [];
+	this.addressTo = [];
+	this.addressReply = [];
+	this.addressCC = [];
+	this.addressBCC = [];
+	this.addressFrom = { name: '', address: '' };
+	this.callback = null;
+	this.closed = false;
 }
 
 /**
@@ -131,7 +134,7 @@ function Message(subject, body) {
  * @return {Message}
  */
 Message.prototype.sender = function(address, name) {
-    return this.from(address, name);
+	return this.from(address, name);
 };
 
 /**
@@ -142,14 +145,14 @@ Message.prototype.sender = function(address, name) {
  */
 Message.prototype.from = function(address, name) {
 
-    if (!address.isEmail())
-        throw new Error(errors.notvalid);
+	if (!address.isEmail())
+		throw new Error(errors.notvalid);
 
-    var self = this;
+	var self = this;
 
-    self.addressFrom.name = name || '';
-    self.addressFrom.address = address;
-    return self;
+	self.addressFrom.name = name || '';
+	self.addressFrom.address = address;
+	return self;
 
 };
 
@@ -160,12 +163,12 @@ Message.prototype.from = function(address, name) {
  */
 Message.prototype.to = function(address) {
 
-    if (!address.isEmail())
-        throw new Error(errors.notvalid);
+	if (!address.isEmail())
+		throw new Error(errors.notvalid);
 
-    var self = this;
-    self.addressTo.push(address);
-    return self;
+	var self = this;
+	self.addressTo.push(address);
+	return self;
 
 };
 
@@ -176,12 +179,12 @@ Message.prototype.to = function(address) {
  */
 Message.prototype.cc = function(address) {
 
-    if (!address.isEmail())
-        throw new Error(errors.notvalid);
+	if (!address.isEmail())
+		throw new Error(errors.notvalid);
 
-    var self = this;
-    self.addressCC.push(address);
-    return self;
+	var self = this;
+	self.addressCC.push(address);
+	return self;
 
 };
 
@@ -192,12 +195,12 @@ Message.prototype.cc = function(address) {
  */
 Message.prototype.bcc = function(address) {
 
-    if (!address.isEmail())
-        throw new Error(errors.notvalid);
+	if (!address.isEmail())
+		throw new Error(errors.notvalid);
 
-    var self = this;
-    self.addressBCC.push(address);
-    return self;
+	var self = this;
+	self.addressBCC.push(address);
+	return self;
 
 };
 
@@ -208,12 +211,12 @@ Message.prototype.bcc = function(address) {
  */
 Message.prototype.reply = function(address) {
 
-    if (!address.isEmail())
-        throw new Error(errors.notvalid);
+	if (!address.isEmail())
+		throw new Error(errors.notvalid);
 
-    var self = this;
-    self.addressReply.push(address);
-    return self;
+	var self = this;
+	self.addressReply.push(address);
+	return self;
 
 };
 
@@ -224,13 +227,13 @@ Message.prototype.reply = function(address) {
  */
 Message.prototype.attachment = function(filename, name) {
 
-    var self = this;
+	var self = this;
 
-    if (name === undefined)
-        name = path.basename(filename);
+	if (name === undefined)
+		name = path.basename(filename);
 
-    self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)) });
-    return self;
+	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)) });
+	return self;
 
 };
 
@@ -246,12 +249,12 @@ Message.prototype.attachment = function(filename, name) {
  * @returns {Message}
  */
 Message.prototype.attachmentInline = function(filename, name, contentId) {
-    var self = this;
-    if (name === undefined)
-        name = path.basename(filename);
+	var self = this;
+	if (name === undefined)
+		name = path.basename(filename);
 
-    self.files.push({name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)), disposition: 'inline', contentId: contentId});
-    return self;
+	self.files.push({name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)), disposition: 'inline', contentId: contentId});
+	return self;
 };
 
 /**
@@ -263,75 +266,77 @@ Message.prototype.attachmentInline = function(filename, name, contentId) {
  */
 Message.prototype.send = function(smtp, options, fnCallback) {
 
-    var self = this;
-    smtp = smtp || null;
+	var self = this;
+	smtp = smtp || null;
 
-    if (typeof(options) === 'function') {
-        var tmp = fnCallback;
-        fnCallback = options;
-        options = tmp;
-    }
+	if (typeof(options) === 'function') {
+		var tmp = fnCallback;
+		fnCallback = options;
+		options = tmp;
+	}
 
-    self.callback = fnCallback;
+	self.callback = fnCallback;
 
-    options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000 });
+	options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000 });
 
-    if (smtp === null || smtp === '') {
+	if (smtp === null || smtp === '') {
 
-        smtp = getHostName(self.addressFrom.address);
-        resolveMx(smtp, function(err, socket) {
+		smtp = getHostName(self.addressFrom.address);
+		resolveMx(smtp, function(err, socket) {
 
-            if (err) {
-                mailer.emit('error', err, self);
+			if (err) {
+				mailer.emit('error', err, self);
 
-                if (fnCallback)
-                    fnCallback(err);
+				if (fnCallback)
+					fnCallback(err);
 
-                return;
-            }
+				return;
+			}
 
-            socket.on('error', function(err) {
-                mailer.emit('error', err, self);
+			socket.on('error', function(err) {
+				mailer.emit('error', err, self);
 
-                if (fnCallback)
-                    fnCallback(err);
+				if (fnCallback)
+					fnCallback(err);
 
-            });
+			});
 
-            self._send(socket, options);
-        });
+			self._send(socket, options);
+		});
 
-        return self;
-    }
+		return self;
+	}
 
-    var socket;
+	var socket;
 
-    if (options.secure) {
+	if (options.secure) {
+		var internal = framework_utils.copy(options);
+		internal.host = smtp;
+		socket = tls.connect(internal, function() { self._send(this, options); });
+	} else
+		socket = net.createConnection(options.port, smtp);
 
-        var internal = framework_utils.copy(options);
-        internal.host = smtp;
-        socket = tls.connect(internal, function() { self._send(this, options); });
+	socket.on('error', function(err) {
+		socket.destroy();
+		self.closed = true;
+		if (self.callback)
+			self.callback(err);
+		if (err.stack.indexOf('ECONNRESET') === -1)
+			mailer.emit('error', err, self);
+	});
 
-    } else
-        socket = net.createConnection(options.port, smtp);
+	socket.on('clientError', function(err) {
+		mailer.emit('error', err, self);
+		if (self.callback)
+			self.callback(err);
+	});
 
-    socket.on('error', function(err) {
-        socket.destroy();
-        self.closed = true;
-        if (err.stack.indexOf('ECONNRESET') === -1)
-            mailer.emit('error', err, self);
-    });
+	socket.on('connect', function() {
+		if (!options.secure)
+			self._send(socket, options);
+	});
 
-    socket.on('clientError', function(err) {
-        mailer.emit('error', err, self);
-    });
-
-    socket.on('connect', function() {
-        if (!options.secure)
-            self._send(socket, options);
-    });
-
-    return self;
+	return self;
 };
 
 /**
@@ -342,258 +347,261 @@ Message.prototype.send = function(smtp, options, fnCallback) {
  */
 Message.prototype._send = function(socket, options) {
 
-    var self = this;
-    var command = '';
-    var buffer = [];
-    var message = [];
-    var host = getHostName(self.addressFrom.address);
-    var date = new Date();
-    var boundary = '--totaljs' + date.getTime();
-    var isAuthenticated = false;
-    var isAuthorization = false;
-    var authType = '';
-    var auth = [];
-    var err = null;
-    var ending = null;
-
-    mailer.emit('send', self);
-
-    socket.setTimeout(options.timeout || 5000, function() {
-        self.closed = true;
-        mailer.emit('error', new Error(framework_utils.httpStatus(408)), self);
-        if (socket !== null)
-            socket.destroy();
-        socket = null;
-    });
-
-    socket.setEncoding('utf8');
-
-    var write = function(line) {
+	var self = this;
+	var command = '';
+	var buffer = [];
+	var message = [];
+	var host = getHostName(self.addressFrom.address);
+	var date = new Date();
+	var boundary = '--totaljs' + date.getTime();
+	var isAuthenticated = false;
+	var isAuthorization = false;
+	var authType = '';
+	var auth = [];
+	var err = null;
+	var ending = null;
+
+	mailer.emit('send', self);
+
+	socket.setTimeout(options.timeout || 5000, function() {
+		self.closed = true;
+		var err = new Error(framework_utils.httpStatus(408));
+		mailer.emit('error', err, self);
+		if (socket !== null)
+			socket.destroy();
+		socket = null;
+		if (self.callback)
+			self.callback(err);
+	});
+
+	socket.setEncoding('utf8');
+
+	var write = function(line) {
+
+		if (self.closed)
+			return;
+
+		if (mailer.debug)
+			console.log('SEND', line);
+
+		socket.write(line + CRLF);
+	};
+
+	buffer.push('MAIL FROM: <' + self.addressFrom.address + '>');
+
+	message.push('Message-ID: <' + GUID() + '@WIN-' + s4() + '>');
+	message.push('MIME-Version: 1.0');
+	message.push('From: ' + (self.addressFrom.name.length > 0 ? unicode_encode(self.addressFrom.name) + ' <' + self.addressFrom.address + '>' : self.addressFrom.address));
+
+	var length = self.addressTo.length;
+	var builder = '';
+	var mail;
+
+	if (length > 0) {
+
+		for (var i = 0; i < length; i++) {
+			mail = '<' + self.addressTo[i] + '>';
+			buffer.push('RCPT TO: ' + mail);
+			builder += (builder !== '' ? ', ' : '') + mail;
+		}
+
+		message.push('To: ' + builder);
+		builder = '';
+	}
+
+	length = self.addressCC.length;
+	if (length > 0) {
+
+		for (var i = 0; i < length; i++) {
+			mail = '<' + self.addressCC[i] + '>';
+			buffer.push('RCPT TO: ' + mail);
+			builder += (builder !== '' ? ', ' : '') + mail;
+		}
+
+		message.push('Cc: ' + builder);
+		builder = '';
+
+	}
+
+	length = self.addressBCC.length;
+	if (length > 0) {
+		for (var i = 0; i < length; i++)
+			buffer.push('RCPT TO: <' + self.addressBCC[i] + '>');
+	}
+
+	buffer.push('DATA');
+	buffer.push('QUIT');
+	buffer.push('');
+
+	message.push('Date: ' + date.toUTCString());
+	// message.push('Subject: ' + self.subject);
+	message.push('Subject: ' + unicode_encode(self.subject));
+
+	length = self.addressReply.length;
+
+	if (length > 0) {
+		for (var i = 0; i < length; i++)
+			builder += (builder !== '' ? ', ' : '') + '<' + self.addressReply[i] + '>';
+
+		message.push('Reply-To: ' + builder);
+		builder = '';
+	}
+
+	message.push('Content-Type: multipart/mixed; boundary=' + boundary);
+	message.push('');
 
-        if (self.closed)
-            return;
+	message.push('--' + boundary);
+	message.push('Content-Type: ' + (self.body.indexOf('<') !== -1 && self.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
+	message.push('Content-Transfer-Encoding: base64');
+	message.push('');
+	message.push(prepareBASE64(new Buffer(self.body.replace(/\r\n/g, '\n').replace(/\n/g, CRLF)).toString('base64')));
 
-        if (mailer.debug)
-            console.log('SEND', line);
-
-        socket.write(line + CRLF);
-    };
+	length = self.files.length;
 
-    buffer.push('MAIL FROM: <' + self.addressFrom.address + '>');
+	if (mailer.debug) {
+		socket.on('end', function() {
+			self.closed = true;
+			if (socket)
+				socket.destroy();
+		});
+	}
 
-    message.push('Message-ID: <' + GUID() + '@WIN-' + s4() + '>');
-    message.push('MIME-Version: 1.0');
-    message.push('From: ' + (self.addressFrom.name.length > 0 ? unicode_encode(self.addressFrom.name) + ' <' + self.addressFrom.address + '>' : self.addressFrom.address));
+	socket.on('data', function(data) {
 
-    var length = self.addressTo.length;
-    var builder = '';
-    var mail;
+		if (self.closed)
+			return;
 
-    if (length > 0) {
+		var response = data.toString().split(CRLF);
+		var length = response.length;
 
-        for (var i = 0; i < length; i++) {
-            mail = '<' + self.addressTo[i] + '>';
-            buffer.push('RCPT TO: ' + mail);
-            builder += (builder !== '' ? ', ' : '') + mail;
-        }
-
-        message.push('To: ' + builder);
-        builder = '';
-    }
-
-    length = self.addressCC.length;
-    if (length > 0) {
-
-        for (var i = 0; i < length; i++) {
-            mail = '<' + self.addressCC[i] + '>';
-            buffer.push('RCPT TO: ' + mail);
-            builder += (builder !== '' ? ', ' : '') + mail;
-        }
-
-        message.push('Cc: ' + builder);
-        builder = '';
-
-    }
-
-    length = self.addressBCC.length;
-    if (length > 0) {
-        for (var i = 0; i < length; i++)
-            buffer.push('RCPT TO: <' + self.addressBCC[i] + '>');
-    }
-
-    buffer.push('DATA');
-    buffer.push('QUIT');
-    buffer.push('');
-
-    message.push('Date: ' + date.toUTCString());
-    // message.push('Subject: ' + self.subject);
-    message.push('Subject: ' + unicode_encode(self.subject));
-
-    length = self.addressReply.length;
+		for (var i = 0; i < length; i++) {
 
-    if (length > 0) {
-        for (var i = 0; i < length; i++)
-            builder += (builder !== '' ? ', ' : '') + '<' + self.addressReply[i] + '>';
-
-        message.push('Reply-To: ' + builder);
-        builder = '';
-    }
+			var line = response[i];
+			if (line === '')
+				continue;
 
-    message.push('Content-Type: multipart/mixed; boundary=' + boundary);
-    message.push('');
+			if (socket)
+				socket.emit('line', line);
+		}
+	});
 
-    message.push('--' + boundary);
-    message.push('Content-Type: ' + (self.body.indexOf('<') !== -1 && self.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
-    message.push('Content-Transfer-Encoding: base64');
-    message.push('');
-    message.push(prepareBASE64(new Buffer(self.body.replace(/\r\n/g, '\n').replace(/\n/g, CRLF)).toString('base64')));
+	socket.on('line', function(line) {
+		line = line.toUpperCase();
 
-    length = self.files.length;
+		if (mailer.debug)
+			console.log('<–––', line);
 
-    if (mailer.debug) {
-        socket.on('end', function() {
-            self.closed = true;
-            if (socket)
-                socket.destroy();
-        });
-    }
+		var code = parseInt(line.match(/\d+/)[0], 10);
 
-    socket.on('data', function(data) {
+		if (code === 250 && !isAuthorization) {
+			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) || (options.user && options.password)) {
+				authType = 'plain';
+				isAuthorization = true;
+				if (line.indexOf('XOAUTH') === -1) {
+					auth.push('AUTH LOGIN');
+					auth.push(new Buffer(options.user).toString('base64'));
+					auth.push(new Buffer(options.password).toString('base64'));
+				} else
+					auth.push('AUTH PLAIN ' + new Buffer('\0'+ options.user + '\0' + options.password).toString('base64'));
+			}
+		}
 
-        if (self.closed)
-            return;
+		if (line.substring(3, 4) === '-') {
+			// help
+			return;
+		}
 
-        var response = data.toString().split(CRLF);
-        var length = response.length;
+		if (!isAuthenticated && isAuthorization) {
+			isAuthenticated = true;
+			code = 334;
+		}
 
-        for (var i = 0; i < length; i++) {
+		switch (code) {
 
-            var line = response[i];
-            if (line === '')
-                continue;
+			case 220:
 
-            if (socket)
-                socket.emit('line', line);
-        }
-    });
+				command = /\besmtp\b/i.test(line) ? 'EHLO' : 'HELO';
+				write(command + ' ' + host);
+				break;
 
-    socket.on('line', function(line) {
-        line = line.toUpperCase();
+			case 221: // BYE
+			case 250: // OPERATION
+			case 251: // FORWARD
+			case 235: // VERIFY
 
-        if (mailer.debug)
-            console.log('<–––', line);
+				write(buffer.shift());
 
-        var code = parseInt(line.match(/\d+/)[0], 10);
+				if (buffer.length === 0) {
+					mailer.emit('success', self);
 
-        if (code === 250 && !isAuthorization) {
-            if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) || (options.user && options.password)) {
-                authType = 'plain';
-                isAuthorization = true;
-                if (line.indexOf('XOAUTH') === -1) {
-                    auth.push('AUTH LOGIN');
-                    auth.push(new Buffer(options.user).toString('base64'));
-                    auth.push(new Buffer(options.password).toString('base64'));
-                } else
-                    auth.push('AUTH PLAIN ' + new Buffer('\0'+ options.user + '\0' + options.password).toString('base64'));
-            }
-        }
+					if (self.callback)
+						self.callback(null);
 
-        if (line.substring(3, 4) === '-') {
-            // help
-            return;
-        }
+					ending = setTimeout(function() {
+						if (socket !== null)
+							socket.destroy();
+						socket = null;
+					}, 500);
+				}
 
-        if (!isAuthenticated && isAuthorization) {
-            isAuthenticated = true;
-            code = 334;
-        }
+				break;
 
-        switch (code) {
+			case 334: // LOGIN
 
-            case 220:
+				var value = auth.shift();
 
-                command = /\besmtp\b/i.test(line) ? 'EHLO' : 'HELO';
-                write(command + ' ' + host);
-                break;
+				if (value === undefined) {
 
-            case 221: // BYE
-            case 250: // OPERATION
-            case 251: // FORWARD
-            case 235: // VERIFY
+					err = new Error('Forbidden.');
+					mailer.emit('error', err, self);
 
-                write(buffer.shift());
+					if (self.callback)
+						self.callback(err);
 
-                if (buffer.length === 0) {
-                    mailer.emit('success', self);
+					if (socket !== null)
+						socket.destroy();
+					socket = null;
+					break;
+				}
 
-                    if (self.callback)
-                        self.callback(null);
+				write(value);
+				break;
 
-                    ending = setTimeout(function() {
-                        if (socket !== null)
-                            socket.destroy();
-                        socket = null;
-                    }, 500);
-                }
+			case 354:
 
-                break;
+				write(message.join(CRLF));
 
-            case 334: // LOGIN
+				if (self.files.length > 0) {
+					message = null;
+					self._writeAttachment(write, boundary, socket);
+					return;
+				}
 
-                var value = auth.shift();
+				write('--' + boundary + '--');
+				write('');
+				write('.');
+				message = null;
+				break;
 
-                if (value === undefined) {
+			default:
 
-                    err = new Error('Forbidden.');
-                    mailer.emit('error', err, self);
+				if (code < 400)
+					break;
 
-                    if (self.callback)
-                        self.callback(err);
+				err = new Error(line);
 
-                    if (socket !== null)
-                        socket.destroy();
-                    socket = null;
-                    break;
-                }
+				if (socket !== null)
+					socket.destroy();
 
-                write(value);
-                break;
+				socket = null;
+				mailer.emit('error', err, self);
 
-            case 354:
+				if (self.callback)
+					self.callback(err);
 
-                write(message.join(CRLF));
-
-                if (self.files.length > 0) {
-                    message = null;
-                    self._writeAttachment(write, boundary, socket);
-                    return;
-                }
-
-                write('--' + boundary + '--');
-                write('');
-                write('.');
-                message = null;
-                break;
-
-            default:
-
-                if (code < 400)
-                    break;
-
-                err = new Error(line);
-
-                if (socket !== null)
-                    socket.destroy();
-
-                socket = null;
-                mailer.emit('error', err, self);
-
-                if (self.callback)
-                    self.callback(err);
-
-                break;
-        }
-    });
+				break;
+		}
+	});
 
 };
 
@@ -605,59 +613,59 @@ Message.prototype._send = function(socket, options) {
  */
 Message.prototype._writeAttachment = function(write, boundary, socket) {
 
-    var self = this;
-    var attachment = self.files.shift();
+	var self = this;
+	var attachment = self.files.shift();
 
-    if (attachment === undefined) {
-        write('--' + boundary + '--');
-        write('');
-        write('.');
-        return;
-    }
+	if (attachment === undefined) {
+		write('--' + boundary + '--');
+		write('');
+		write('.');
+		return;
+	}
 
-    var name = attachment.name;
-    var stream = fs.createReadStream(attachment.filename, { encoding: 'base64' });
-    var message = [];
-    var ext = path.extname(attachment.filename);
+	var name = attachment.name;
+	var stream = fs.createReadStream(attachment.filename, { encoding: 'base64' });
+	var message = [];
+	var ext = path.extname(attachment.filename);
 
-    message.push('--' + boundary);
+	message.push('--' + boundary);
 
-    if (attachment.contentId) {
-        message.push('Content-Disposition: inline; filename="' + name + '"');
-        message.push('Content-ID: <' + attachment.contentId + '>');
-    } else {
-        message.push('Content-Disposition: attachment; filename="' + name + '"');
-    }
-    message.push('Content-Type: application/octet-stream;');
-    message.push('Content-Transfer-Encoding: base64');
-    message.push(CRLF);
+	if (attachment.contentId) {
+		message.push('Content-Disposition: inline; filename="' + name + '"');
+		message.push('Content-ID: <' + attachment.contentId + '>');
+	} else {
+		message.push('Content-Disposition: attachment; filename="' + name + '"');
+	}
+	message.push('Content-Type: application/octet-stream;');
+	message.push('Content-Transfer-Encoding: base64');
+	message.push(CRLF);
 
-    write(message.join(CRLF));
+	write(message.join(CRLF));
 
-    stream.on('data', function(buf) {
+	stream.on('data', function(buf) {
 
-        var length = buf.length;
-        var count = 0;
-        var beg = 0;
+		var length = buf.length;
+		var count = 0;
+		var beg = 0;
 
-        while (count < length) {
+		while (count < length) {
 
-            count += 68;
+			count += 68;
 
-            if (count > length)
-                count = length;
+			if (count > length)
+				count = length;
 
-            write(buf.slice(beg, count).toString('base64'));
-            beg = count;
-        }
-    });
+			write(buf.slice(beg, count).toString('base64'));
+			beg = count;
+		}
+	});
 
-    stream.on('end', function() {
-        write(CRLF);
-        self._writeAttachment(write, boundary, socket);
-    });
+	stream.on('end', function() {
+		write(CRLF);
+		self._writeAttachment(write, boundary, socket);
+	});
 
-    return self;
+	return self;
 };
 
 /**
@@ -668,19 +676,19 @@ Message.prototype._writeAttachment = function(write, boundary, socket) {
  */
 function prepareBASE64(value) {
 
-    var index = 0;
-    var output = '';
-    var length = value.length;
+	var index = 0;
+	var output = '';
+	var length = value.length;
 
-    while (index < length) {
-        var max = index + 68;
-        if (max > length)
-            max = length;
-        output += value.substring(index, max) + CRLF;
-        index = max;
-    }
+	while (index < length) {
+		var max = index + 68;
+		if (max > length)
+			max = length;
+		output += value.substring(index, max) + CRLF;
+		index = max;
+	}
 
-    return output;
+	return output;
 }
 
 /**
@@ -689,7 +697,7 @@ function prepareBASE64(value) {
  * @return {String} Hostname.
  */
 function getHostName(address) {
-    return address.substring(address.indexOf('@') + 1);
+	return address.substring(address.indexOf('@') + 1);
 }
 
 /**
@@ -698,7 +706,7 @@ function getHostName(address) {
  * @return {String}
  */
 function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
+	return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
 }
 
 /**
@@ -707,13 +715,13 @@ function s4() {
  * return {String}
  */
 function GUID() {
-    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
 
 function unicode_encode(val) {
-    if (!val)
-        return '';
-    return '=?utf-8?B?' + new Buffer(val).toString('base64') + '?=';
+	if (!val)
+		return '';
+	return '=?utf-8?B?' + new Buffer(val).toString('base64') + '?=';
 }
 
 // ======================================================

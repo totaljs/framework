@@ -1,4 +1,105 @@
-======= 1.7.2 (HOTFIX)
+======= 1.8.0
+
+source-code: "tabs" instead of "spaces" 
+
+- added: SchemaBuilderEntity->setPrepare(function(name, value, index))
+- added: SchemaBuilderEntity–>setPrefix(prefix)
+- added: SchemaBuilderEntity->setResource(resourcename)
+- added: auto-trim strings in SchemaBuilderEntity
+- added: Controller.route;
+- added: ErrorBuilder is a global class
+- added: F.on('upload-begin', function(req, file) {})
+- added: F.on('upload-end', function(req, file) {})
+- added: config['static-accepts']: woff2
+- added: F.logger(filename, arg1, ...), controller.logger(...), @{logger(...)}
+- added: (IMPORTANT) F.exists(req, res, callback(next, filename))
+- added: callback: F.responseFile(), controller.file(), response.file()
+- added: callback: F.responseImage(), controller.image(), response.image()
+- added: callback: F.responseImageWithoutCache()
+- added: callback: F.responseStream(), controller.stream(), response.stream()
+- added: callback: F.responseStatic(), response.continue()
+- added: Array.prototype.findIndex(cb, [value]) returns Number
+- added: Array.prototype.toObject([name]) returns Object
+- added: Array.prototype.limit(max, fn(items, next), [callback])
+- added: Array.prototype.compare(propName, arr, comparer)
+- added: Image.geometry(w, h, options)
+- added: Image.thumbnail(w, h, options)
+- added: Image.filter(type)
+- added: `config['default-maximum-file-descriptors'] = 0` (0 = the watcher is disabled)
+- added: `config['default-interval-clear-dnscache'] = 2880` for clearing DNS cache of Utils.request(), Utils.download()
+- added: Utils.resolve(url, callback(err, uri)) DNS cache
+- added: Utils.clearDNS() clears DNS cache
+- added: Utils.isObject()
+- added: String.prototype.parseJSON()
+- added: Date.prototype.diff([date], type)
+- added: framework.onCompileView(name, content, model)
+- added: framework.on('cache-set', function(name, value, expire))
+- added: `@{compile handlerbars}CONTENT TO COMPILE@{end}`
+- added: `@{compile}CONTENT TO COMPILE@{end}`
+- added: Utils.streamer(delimiter, function(value, index)) returns function
+- added: HEAD method support for (controller.json(), .view(), .plain(), .file(), .stream())
+- added: global.NEWSCHEMA([group], name) for creating new schemas (more in docs)
+- added: global.GETSCHEMA([group], name) for getting new schemas (more in docs)
+- added: global.FINISHED(res/stream, callback) --> real end of the stream
+- added: global.DESTROY(stream) --> destroys the stream
+- added: (IMPORTANT) node.js generators for the routes
+
+- updated: (IMPORTANT): for evaluation multiple roles in routing (@role) framework validates only one role
+- updated: GZIP compression for static files (added .md, .json)
+- updated: request schema parser and XML parser -> better handling errors
+- updated: wrapped decodeURIComponent for prevention of parsing
+- updated: removed HTTP cache in DEBUG mode
+- updated: Image.miniature(w,h,color,[filter]) --> added filter
+- updated: binary supports translation files `--translate my-localization.txt`
+- updated: framework.mail() --> returns MailMessage
+- updated: controller.mail() --> returns MailMessage
+- updated: SchemaBuilderEntity.$async(callback, [return-only-this-index])
+- updated: translation @(#KEY) (direct reading) or @(TEXT TO TRANSLATE) (hash reading)
+- updated: Utils.request(), Utils.download() supports `dnscache` flag for caching host IP
+- updated: SchemaBuilderEntity.validation()
+- updated: F.cache.set(key, value, expire, [sync])
+- updated: NoSQL
+- updated: (IMPORTANT): Websocket ping is disabled by default
+
+- fixed: Image.resize()
+- fixed: F.usage() --> fixed queue pendings
+- fixed: (CRITICAL) SchemaBuilderEntity preparing (problem with prototypes)
+- fixed: (CRITICAL) a package or module installation from the URL address
+- fixed: (CRITICAL) response content-length
+- fixed: framework.redirect()
+- fixed: HTTP cache (added longer time)
+- fixed: auto JSON parsing in `json` request
+- fixed: Pagination.last() (Nikita Shmidt)
+- fixed: loading packages
+- fixed: callback error in MailMessage
+- fixed: TPM restore package
+- fixed: Utils.request() --> double calling of callback()
+- fixed: routing with `get` and `json` flag together
+
+- replaced: (IMPORTANT) `uri` to `url` in F.problems, F.changes, F.errors (saves memory)
+
+- improved: U.removeDiacritics() -> increase about 30%
+- improved: handling files
+- improved: auto-image-resizer (routes)
+- improved: Image.miniature() -> increase about 50%
+- improved: U.queue()
+- improved: (IMPORTANT) SchemaBuilder validation and preparation
+
+__GENERATORS__:
+
+- added: Image.$$save(filename, [writer])
+- added: Image.$$measure();
+- added: Image.$$identify();
+- added: Utils.$$request();
+- added: Utils.$$download();
+- added: Utils.$$send();
+- added: Utils.$$wait();
+- added: Utils.$$resolve();
+- added: HttpFile.$$copy()
+- added: HttpFile.$$read()
+- added: HttpFile.$$md5()
+
+======= 1.7.2
 
 - added: Array.prototype.extend(obj, [rewrite])
 - added: SchemaBuilderEntity->constant(name, [value])
@@ -28,6 +129,7 @@
 - fixed: (CRITICAL) mail sender (problem with CRLF in BASE64)
 - fixed: (CRITICAL) `../src/node_http_parser.cc, line 392.`
 - fixed: the framework duplicates width/height in upload auto-parser
+- fixed: JPG width/height auto-parser
 
 ======= 1.7.1 (HOTFIX)
 

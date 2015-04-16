@@ -1,8 +1,8 @@
 /**
  * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
- * @copyright Peter Širka 2012-2014
- * @version 2.0.9
+ * @copyright Peter Širka 2012-2015
+ * @version 3.0.1
  */
 
 'use strict';
@@ -12,7 +12,7 @@ var path = require('path');
 var util = require('util');
 var events = require('events');
 
-var VERSION = 'v2.0.9';
+var VERSION = 'v3.0.1';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -195,7 +195,7 @@ Database.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
 /*
     Insert data into database
     @arr {Array of Object}
-    @fnCallback {Function} :: optional, params: @count {Number}
+    @fnCallback {Function(err, count)} callback
     @changes {String} :: optional, insert description
     return {Database}
 */
@@ -219,7 +219,7 @@ Database.prototype.insert = function(arr, fnCallback, changes) {
             self.pendingWrite.push({ json: arr[i], changes: changes });
 
         if (fnCallback)
-            fnCallback(-1);
+            fnCallback(null, -1);
 
         return self;
     }
@@ -266,7 +266,7 @@ Database.prototype.insert = function(arr, fnCallback, changes) {
 
         if (fnCallback) {
             var length = builder.length;
-            setImmediate(function() { fnCallback(length); });
+            setImmediate(function() { fnCallback(null, length); });
         }
 
         builder = null;
@@ -283,10 +283,17 @@ Database.prototype.insert = function(arr, fnCallback, changes) {
     return self;
 };
 
+Database.prototype.$$insert = function(arr, changes) {
+    var self = this;
+    return function(callback) {
+        self.insert(arr, callback, changes);
+    };
+};
+
 /*
     Read data from database
     @fnMap {Function} :: params: @doc {Object}, IMPORTANT: you must return {Object}
-    @fnCallback {Function} :: params: @selected {Array of Object} or {Number} if is scalar
+    @fnCallback {Function(err, array/number)}
     @itemSkip {Number} :: optional, default 0
     @itemTake {Number} :: optional, defualt 0
     @isScalar {Boolean} :: optional, default is false
@@ -372,7 +379,7 @@ Database.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, isScal
 
         setImmediate(function() {
             self.emit(name || 'read', false, isScalar ? count : selected.length);
-            fnCallback(isScalar ? count : selected);
+            fnCallback(null, isScalar ? count : selected);
         });
     });
 
@@ -382,7 +389,7 @@ Database.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, isScal
 /*
     Read all documents from database
     @fnMap {Function} :: IMPORTANT: you must return {Object}
-    @fnCallback {Function} :: params: @doc {Array of Object}
+    @fnCallback {Function(err, array)}
     @itemSkip {Number} :: optional, default 0
     @itemTake {Number} :: optional, default 0
     return {Database}
@@ -391,19 +398,33 @@ Database.prototype.all = function(fnMap, fnCallback, itemSkip, itemTake) {
     return this.read(fnMap, fnCallback, itemSkip, itemTake, false, 'all');
 };
 
+Database.prototype.$$all = function(fnMap, itemSkip, itemTake) {
+    var self = this;
+    return function(callback) {
+        return self.all(fnMap, callback, itemSkip, itemTake);
+    };
+};
+
 /*
     Read one document from database
     @fnMap {Function} :: must return {Object}
-    @fnCallback {Function} :: params: @doc {Object}
+    @fnCallback {Function(err, doc)}
     return {Database}
 */
 Database.prototype.one = function(fnMap, fnCallback) {
 
-    var cb = function(selected) {
-        fnCallback(selected[0] || null);
+    var cb = function(err, selected) {
+        fnCallback(err, selected ? selected[0] || null : null);
     };
 
     return this.read(fnMap, cb, 0, 1, false, 'one');
+};
+
+Database.prototype.$$one = function(fnMap) {
+    var self = this;
+    return function(callback) {
+        return self.one(fnMap, callback);
+    };
 };
 
 /*
@@ -416,6 +437,13 @@ Database.prototype.top = function(max, fnMap, fnCallback) {
     return this.read(fnMap, fnCallback, 0, max, false, 'top');
 };
 
+Database.prototype.$$top = function(max, fnMap) {
+    var self = this;
+    return function(callback) {
+        return self.top(max, fnMap);
+    };
+};
+
 /*
     Count documents
     @fnFilter {Function} :: params: @doc {Object}, IMPORTANT: you must return {Boolean}
@@ -424,6 +452,13 @@ Database.prototype.top = function(max, fnMap, fnCallback) {
 */
 Database.prototype.count = function(fnFilter, fnCallback) {
     return this.read(fnFilter, fnCallback, 0, 0, true, 'count');
+};
+
+Database.prototype.$$count = function(fnFilter) {
+    var self = this;
+    return function(callback) {
+        return self.count(fnFilter, fnMap);
+    };
 };
 
 /*
@@ -499,14 +534,11 @@ Database.prototype.each = function(fnDocument, fnCallback) {
     self.emit('each', true, 0);
 
     var reader = self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
-
         onBuffer(buffer, fnItem, fnBuffer);
         return true;
-
     }, function() {
         self.countRead--;
         self.next();
-
         setImmediate(function() {
             self.emit('each', false, count);
             var length = operation.length;
@@ -516,7 +548,6 @@ Database.prototype.each = function(fnDocument, fnCallback) {
                     fn.callback();
             }
         });
-
     });
 
     return self;
@@ -528,7 +559,7 @@ Database.prototype.each = function(fnDocument, fnCallback) {
     @fnSort {Function} :: ---> array.sort()
     @itemSkip {Number}, default 0 (if itemSkip = 0 and itemTake = 0 then return all documents)
     @itemTake {Number}, default 0 (if itemSkip = 0 and itemTake = 0 then return all documents)
-    @fnCallback {Function} :: params: @doc {Object}, @count {Number}
+    @fnCallback {Function(err, selected, count)} :: params: @doc {Object}, @count {Number}
     return {Database}
 */
 Database.prototype.sort = function(fnMap, fnSort, itemSkip, itemTake, fnCallback) {
@@ -549,7 +580,7 @@ Database.prototype.sort = function(fnMap, fnSort, itemSkip, itemTake, fnCallback
         if (itemSkip > 0 || itemTake > 0)
             selected = selected.slice(itemSkip, itemSkip + itemTake);
 
-        fnCallback(selected, count);
+        fnCallback(null, selected, count);
     };
 
     var onItem = function(doc) {
@@ -564,6 +595,13 @@ Database.prototype.sort = function(fnMap, fnSort, itemSkip, itemTake, fnCallback
 
     self.each(onItem, onCallback);
     return self;
+};
+
+Database.prototype.$$sort = function(fnMap, fnSort, itemSkip, itemTake) {
+    var self = this;
+    return function(callback) {
+        self.sort(fnMap, fnSort, itemSkip, itemTake, callback);
+    };
 };
 
 /*
@@ -655,6 +693,13 @@ Database.prototype.clear = function(fnCallback, changes) {
     return self;
 };
 
+Database.prototype.$$clear = function(changes) {
+    var self = this;
+    return function(callback) {
+        self.clear(callback, changes);
+    };
+};
+
 /*
     Drop database
     @fnCallback {Function} :: optional, params: @dropped {Boolean}
@@ -696,7 +741,7 @@ Database.prototype.drop = function(fnCallback) {
                 self.emit('drop', false, true);
                 operation.forEach(function(fn) {
                     if (fn)
-                        fn();
+                        fn(null);
                 });
             });
 
@@ -715,7 +760,7 @@ Database.prototype.drop = function(fnCallback) {
                 self.emit('drop', false, err === null);
                 operation.forEach(function(fn) {
                     if (fn)
-                        fn(err === null);
+                        fn(null, err === null);
                 });
             });
         });
@@ -723,6 +768,14 @@ Database.prototype.drop = function(fnCallback) {
 
     return self;
 };
+
+Database.prototype.drop = function() {
+    var self = this;
+    return function(callback) {
+        self.drop(callback);
+    };
+};
+
 
 function noop() {};
 
@@ -839,7 +892,7 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
                     changes.push(o.changes);
 
                 if (o.callback)
-                    (function(cb,count) { setImmediate(function() { cb(count); }); })(o.callback, o.count);
+                    (function(cb,count) { setImmediate(function() { cb(null, count); }); })(o.callback, o.count);
 
             });
 
@@ -932,6 +985,13 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
     return self;
 };
 
+Database.prototype.$$update = function(fnUpdate, changes, type) {
+    var self = this;
+    return function(callback) {
+        self.update(fnUpdate, callback, changes, type);
+    };
+};
+
 /*
     Update multiple documents
     @fnUpdate {Function} :: params: @doc {Object} and IMPORTANT: you must return updated @doc;
@@ -946,6 +1006,13 @@ Database.prototype.prepare = function(fnUpdate, fnCallback, changes) {
         self.pendingLock.push(updatePrepare(fnUpdate, fnCallback, changes, 'update'));
 
     return self;
+};
+
+Database.prototype.$$prepare = function(fnUpdate, changes) {
+    var self = this;
+    return function(callback) {
+        self.prepare(fnUpdate, callback, changes);
+    };
 };
 
 /*
@@ -972,6 +1039,13 @@ Database.prototype.remove = function(fnFilter, fnCallback, changes) {
 
     self.update(filter, fnCallback, changes, 'remove');
     return self;
+};
+
+Database.prototype.$$remove = function(fnFilter, changes) {
+    var self = this;
+    return function(callback) {
+        self.remove(fnFilter, callback, changes);
+    }
 };
 
 Database.prototype.pause = function() {
@@ -1198,6 +1272,13 @@ Views.prototype.all = function(name, fnCallback, itemSkip, itemTake, fnMap) {
     return self.db;
 };
 
+Views.prototype.$$all = function(name, itemSkip, itemTake, fnMap) {
+    var self = this;
+    return function(callback) {
+        self.all(name, callback, itemSkip, itemTake, fnMap);
+    };
+};
+
 /*
     Read documents from view
     @name {String}
@@ -1224,6 +1305,13 @@ Views.prototype.top = function(name, top, fnCallback, fnMap) {
 
     view.read(fnMap, fnCallback, 0, top, true);
     return self.db;
+};
+
+Views.prototype.$$top = function(name, top, fnMap) {
+    var self = this;
+    return function(callback) {
+        self.top(name, top, callback, fnMap);
+    };
 };
 
 /*
@@ -1256,6 +1344,13 @@ Views.prototype.one = function(name, fnMap, fnCallback) {
 
     view.read(fnMap, fnCallback, 0, 1, true);
     return self.db;
+};
+
+Views.prototype.$$one = function(name, fnMap) {
+    var self = this;
+    return function(callback) {
+        self.one(name, fnMap, callback);
+    };
 };
 
 /*
@@ -1296,7 +1391,7 @@ Views.prototype.drop = function(name, fnCallback, changes) {
             if (!exists) {
 
                 if (fnCallback)
-                    fnCallback(true);
+                    fnCallback(null, true);
 
                 if (cb)
                     cb();
@@ -1310,7 +1405,7 @@ Views.prototype.drop = function(name, fnCallback, changes) {
                     self.db.emit('error', err, 'view/drop');
 
                 if (fnCallback)
-                    fnCallback(true);
+                    fnCallback(err, true);
 
                 if (cb)
                     cb();
@@ -1319,6 +1414,13 @@ Views.prototype.drop = function(name, fnCallback, changes) {
     });
 
     return self.db;
+};
+
+Views.prototype.$$drop = function(name, fnCallback, changes) {
+    var self = this;
+    return function(callback) {
+        self.drop(name, callback, changes);
+    }
 };
 
 Views.prototype.refresh = function(name, fnCallback) {
@@ -1366,7 +1468,7 @@ Views.prototype.refresh = function(name, fnCallback) {
                     schema.isReady = true;
 
                     if (fnCallback)
-                        setImmediate(function() { fnCallback(count); });
+                        setImmediate(function() { fnCallback(null, count); });
 
                     if (cb)
                         cb();
@@ -1412,6 +1514,13 @@ Views.prototype.refresh = function(name, fnCallback) {
     self.db.each(onItem, onCallback);
 };
 
+Views.prototype.$$refresh = function(name) {
+    var self = this;
+    return function(callback) {
+        self.refresh(name, callback);
+    };
+};
+
 /*
     Create view
     @name {String}
@@ -1447,6 +1556,13 @@ Views.prototype.create = function(name, fnMap, fnSort, fnCallback, changes) {
 
     self.refresh(name, fnCallback);
     return self;
+};
+
+Views.prototype.$$create = function(name, fnMap, fnSort, changes) {
+    var self = this;
+    return function(callback) {
+        self.create(name, fnMap, fnSort, callback, changes);
+    };
 };
 
 /*
@@ -1564,7 +1680,7 @@ View.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, skipCount,
 
         setImmediate(function() {
             self.emit('view', false, self.name, count);
-            fnCallback(selected, count);
+            fnCallback(null, selected, count);
         });
     });
 
@@ -1666,6 +1782,14 @@ Stored.prototype.create = function(name, fn, fnCallback, changes) {
     return self.db;
 };
 
+Stored.prototype.$$create = function(name, fn, changes) {
+    var self = this;
+    return function(callback) {
+        self.create(name, fn, callback, changes);
+    };
+};
+
+
 /*
     Remove a stored function
     @name {String}
@@ -1694,6 +1818,13 @@ Stored.prototype.remove = function(name, fnCallback, changes) {
     return self.db;
 };
 
+Stored.prototype.$$remove = function(name, changes) {
+    var self = this;
+    return function(callback) {
+        self.remove(name, callback, changes);
+    };
+};
+
 /*
     Clear all stored functions
     @fnCallback {Function} :: optional
@@ -1718,6 +1849,13 @@ Stored.prototype.clear = function(fnCallback, changes) {
     self.db._metaSave(fnCallback);
 
     return self.db;
+};
+
+Stored.prototype.$$clear = function(changes) {
+    var self = this;
+    return function(callback) {
+        self.clear(callback, changes);
+    };
 };
 
 /*
@@ -1782,6 +1920,13 @@ Stored.prototype.execute = function(name, params, fnCallback, changes) {
     return self;
 };
 
+Stored.prototype.$$execute = function(name, params, changes) {
+    var self = this;
+    return function(callback) {
+        self.execute(name, params, callback, changes);
+    };
+};
+
 // ========================================================================
 // BINARY PROTOTYPE
 // ========================================================================
@@ -1834,9 +1979,16 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
         self.db.changelog.insert(changes);
 
     if (fnCallback)
-        fnCallback(id, header);
+        fnCallback(null, id, header);
 
     return id;
+};
+
+Binary.prototype.$$insert = function(name, type, buffer, changes) {
+    var self = this;
+    return function(callback) {
+        self.insert(name, type, buf, callback, changes);
+    };
 };
 
 /*
@@ -1890,9 +2042,16 @@ Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) 
         self.db.changelog.insert(changes);
 
     if (fnCallback)
-        fnCallback(id, header);
+        fnCallback(null, id, header);
 
     return id;
+};
+
+Binary.prototype.$$update = function(id, name, type, buffer, changes) {
+    var self = this;
+    return function(callback) {
+        self.update(id, name, type, update, callback, changes);
+    };
 };
 
 /*
@@ -1924,6 +2083,13 @@ Binary.prototype.read = function(id, callback) {
     });
 
     return self.db;
+};
+
+Binary.prototype.$$read = function(id) {
+    var self = this;
+    return function(callback) {
+        self.read(id, callback);
+    };
 };
 
 /*
@@ -1958,18 +2124,25 @@ Binary.prototype.remove = function(id, fnCallback, changes) {
         if (!exists) {
 
             if (fnCallback)
-                fnCallback(false);
+                fnCallback(null, false);
 
             return;
         }
 
-        fs.unlink(filename, function() {
+        fs.unlink(filename, function(err) {
             if (fnCallback)
-                fnCallback(true);
+                fnCallback(err, true);
         });
     });
 
     return self.db;
+};
+
+Binary.prototype.$$remove = function(id, changes) {
+    var self = this;
+    return function(callback) {
+        self.remove(id, callback, changes);
+    };
 };
 
 /**
@@ -2087,6 +2260,13 @@ Changelog.prototype.read = function(fnCallback) {
     return self.db;
 };
 
+Changelog.prototype.$$read = function() {
+    var self = this;
+    return function(callback) {
+        self.read(callback);
+    }
+};
+
 /*
     Clear changelog
     fnCallback {Function} :: optional
@@ -2105,23 +2285,27 @@ Changelog.prototype.clear = function(fnCallback) {
         }
 
         fs.unlink(self.filename, function(err, data) {
-
             if (err) {
-
                 if (fnCallback)
-                    fnCallback(false);
-
+                    fnCallback(err, false);
                 return;
             }
 
             if (fnCallback)
-                fnCallback(true);
-
+                fnCallback(null, true);
         });
 
     });
     return self.db;
 };
+
+Changelog.prototype.$$clear = function() {
+    var self = this;
+    return function(callback) {
+        self.clear(callback);
+    }
+};
+
 
 // ========================================================================
 // READER PROTOTYPE
@@ -2317,8 +2501,8 @@ function dimensionJPG(buffer) {
         while (0xff == buffer[o]) o++;
 
         if (!sof[buffer[o]]) {
-                o += u16(buffer, ++o);
-                continue;
+            o += u16(buffer, ++o);
+            continue;
         }
 
         var w = u16(buffer, o + 6);

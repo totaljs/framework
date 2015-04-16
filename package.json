@@ -16,12 +16,11 @@
         "Serkan Kocaman <https://github.com/KiPSOFT>",
         "Andrea Sessa <https://github.com/asessa>",
         "Ehsan Darrudi <https://github.com/darrudi>",
-        "Tom Spaccialbelli <https://github.com/harry-stot>"
+        "Tom Spaccialbelli <https://github.com/harry-stot>",
+        "Nikita Shmidt <https://github.com/NikSmith>"
     ],
     "description": "web framework (MVC) for node.js",
-    "devDependencies": {
-        "memwatch": "^0.2.2"
-    },
+    "devDependencies": {},
     "directories": {
         "test": "test"
     },
@@ -66,5 +65,5 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "version": "1.7.2-1"
+    "version": "1.8.0"
 }

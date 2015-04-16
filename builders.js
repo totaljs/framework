@@ -1,6 +1,6 @@
 /**
  * @module FrameworkBuilders
- * @version 1.7.2
+ * @version 1.8.0
  */
 
 'use strict';
@@ -18,8 +18,8 @@ var schemas = {};
 var transforms = { pagination: {}, error: {} };
 
 function SchemaBuilder(name) {
-    this.name = name;
-    this.collection = {};
+	this.name = name;
+	this.collection = {};
 }
 
 /**
@@ -28,7 +28,7 @@ function SchemaBuilder(name) {
  * @return {Object}
  */
 SchemaBuilder.prototype.get = function(name) {
-    return this.collection[name];
+	return this.collection[name];
 };
 
 /**
@@ -40,13 +40,23 @@ SchemaBuilder.prototype.get = function(name) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilder.prototype.add = function(name, obj, properties, validator) {
-    var self = this;
+	var self = this;
 
-    if (typeof(obj) === UNDEFINED)
-        obj = {};
+	if (typeof(obj) === UNDEFINED)
+		obj = {};
 
-    self.collection[name] = new SchemaBuilderEntity(self, name, obj, validator, properties);
-    return self.collection[name];
+	var keys = Object.keys(obj);
+	if (!properties)
+		properties = keys;
+
+	self.collection[name] = new SchemaBuilderEntity(self, name, {}, validator, properties);
+
+	for (var i = 0, length = keys.length; i < length; i++) {
+		var key = keys[i];
+		self.collection[name].define(key, obj[key]);
+	}
+
+	return self.collection[name];
 };
 
 /**
@@ -55,8 +65,13 @@ SchemaBuilder.prototype.add = function(name, obj, properties, validator) {
  * @return {SchemBuilderEntity}
  */
 SchemaBuilder.prototype.create = function() {
-    var self = this;
-    return self.add.apply(self, arguments);
+	var self = this;
+	return self.add.apply(self, arguments);
+};
+
+SchemaBuilder.prototype.Create = function() {
+	var self = this;
+	return self.add.apply(self, arguments);
 };
 
 /**
@@ -65,42 +80,46 @@ SchemaBuilder.prototype.create = function() {
  * @return {SchemaBuilder}
  */
 SchemaBuilder.prototype.remove = function(name) {
-    var self = this;
+	var self = this;
 
-    if (name === undefined) {
-        delete schemas[name];
-        self.collection = null;
-        return;
-    }
+	if (name === undefined) {
+		delete schemas[name];
+		self.collection = null;
+		return;
+	}
 
-    var schema = self.collection[name];
-    if (schema)
-        schema.remove();
-    schema = null;
-    return self;
+	var schema = self.collection[name];
+	if (schema)
+		schema.remove();
+	schema = null;
+	return self;
 };
 
 SchemaBuilder.prototype.destroy = function(name) {
-    return this.remove(name);
+	return this.remove(name);
 };
 
 function SchemaBuilderEntity(parent, name, obj, validator, properties) {
-    this.parent = parent;
-    this.name = name;
-    this.primary;
-    this.schema = obj;
-    this.properties = properties === undefined ? Object.keys(obj) : properties;
-    this.transforms;
-    this.composes;
-    this.operations;
-    this.rules;
-    this.constants;
-    this.onDefault;
-    this.onValidation = validator;
-    this.onSave;
-    this.onGet;
-    this.onRemove;
-    this.onQuery;
+	this.parent = parent;
+	this.name = name;
+	this.primary;
+	this.schema = obj;
+	this.properties = properties === undefined ? Object.keys(obj) : properties;
+	this.resourcePrefix;
+	this.resourceName;
+	this.transforms;
+	this.composes;
+	this.operations;
+	this.rules;
+	this.constants;
+	this.onPrepare;
+	this.onDefault;
+	this.onValidation = validator;
+	this.onSave;
+	this.onGet;
+	this.onRemove;
+	this.onQuery;
+	this.gcache = {};
 }
 
 /**
@@ -112,60 +131,185 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
  */
 SchemaBuilderEntity.prototype.define = function(name, type, required, primary) {
 
-    var self = this;
+	var self = this;
 
-    if (name instanceof Array) {
-        for (var i = 0, length = name.length; i < length; i++)
-            self.define(name[i], type, required);
-        return self;
-    }
+	if (name instanceof Array) {
+		for (var i = 0, length = name.length; i < length; i++)
+			self.define(name[i], type, required);
+		return self;
+	}
 
-    if (type instanceof SchemaBuilderEntity)
-        type = type.name;
+	if (type instanceof SchemaBuilderEntity)
+		type = type.name;
 
-    if (primary)
-        self.primary = primary;
-    self.schema[name] = type;
+	if (primary)
+		self.primary = primary;
 
-    if (!required)
-        return self;
+	self.schema[name] = self.$parse(name, type, required);
 
-    if (self.properties === undefined || self.properties === null)
-        self.properties = [];
+	if (!required)
+		return self;
 
-    if (self.properties.indexOf(name) !== -1)
-        return self;
+	if (self.properties === undefined || self.properties === null)
+		self.properties = [];
 
-    self.properties.push(name);
-    return self;
+	if (self.properties.indexOf(name) !== -1)
+		return self;
+
+	self.properties.push(name);
+	return self;
+};
+
+SchemaBuilderEntity.prototype.$parse = function(name, value, required) {
+
+	var self = this;
+	var type = typeof(value);
+	var result = {};
+
+	result.raw = value;
+	result.type = 0;
+	result.length = 0;
+	result.required = required;
+	result.isArray = false;
+
+	// 0 = undefined
+	// 1 = integer
+	// 2 = float
+	// 3 = string
+	// 4 = boolean
+	// 5 = date
+	// 6 = object
+	// 7 = custom object
+
+	if (value === null)
+		return result;
+
+	if (value === '[]') {
+		result.isArray = true;
+		return result;
+	}
+
+	if (type === FUNCTION) {
+
+		if (value === Number) {
+			result.type = 2;
+			return result;
+		}
+
+		if (value === String) {
+			result.type = 3;
+			return result;
+		}
+
+		if (value === Boolean) {
+			result.type = 4;
+			return result;
+		}
+
+		if (value === Date) {
+			result.type = 5;
+			return result;
+		}
+
+		if (value === Array) {
+			result.isArray = true;
+			return result;
+		}
+
+		if (value === Object) {
+			result.type = 6;
+			return result;
+		}
+
+		return result;
+	}
+
+	if (type === OBJECT) {
+		return result;
+	}
+
+	if (value[0] === '[') {
+		value = value.substring(1, value.length - 1);
+		result.isArray = true;
+		result.raw = value;
+	}
+
+	var lower = value.toLowerCase();
+
+	if (lower === 'object') {
+		result.type = 6;
+		return result;
+	}
+
+	if (lower === 'array') {
+		result.isArray = true;
+		return result;
+	}
+
+	if (lower.contains([STRING, 'text', 'varchar', 'nvarchar'])) {
+
+		result.type = 3;
+
+		var beg = lower.indexOf('(');
+		if (beg === -1)
+			return result;
+
+		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
+		result.length = size;
+		result.raw = lower.substring(0, beg);
+		return result;
+	}
+
+	if (lower.contains(['int', 'byte'])) {
+		result.type = 1;
+		return result;
+	}
+
+	if (lower.contains(['decimal', NUMBER, 'float', 'double'])) {
+		result.type = 2;
+		return result;
+	}
+
+	if (lower.contains('bool', BOOLEAN)) {
+		result.type = 4;
+		return result;
+	}
+
+	if (lower.contains(['date', 'time'])) {
+		result.type = 5;
+		return result;
+	}
+
+	result.type = 7;
+	return result;
 };
 
 SchemaBuilderEntity.prototype.getDependencies = function() {
-    var self = this;
-    var arr = Object.keys(self.schema);
-    var dependencies = [];
+	var self = this;
+	var arr = Object.keys(self.schema);
+	var dependencies = [];
 
-    for (var i = 0, length = arr.length; i < length; i++) {
+	for (var i = 0, length = arr.length; i < length; i++) {
 
-        var name = arr[i];
-        var type = self.schema[name];
+		var name = arr[i];
+		var type = self.schema[name];
 
-        if (typeof(type) !== STRING)
-            continue;
+		if (typeof(type) !== STRING)
+			continue;
 
-        var isArray = type[0] === ']';
-        if (isArray)
-            type = type.substring(1, type.length - 1);
+		var isArray = type[0] === ']';
+		if (isArray)
+			type = type.substring(1, type.length - 1);
 
-        var m = self.parent.get(type);
+		var m = self.parent.get(type);
 
-        if (typeof(m) === undefined)
-            continue;
+		if (typeof(m) === undefined)
+			continue;
 
-        dependencies.push({ name: name, isArray: isArray, schema: m });
-    }
+		dependencies.push({ name: name, isArray: isArray, schema: m });
+	}
 
-    return dependencies;
+	return dependencies;
 };
 
 /**
@@ -175,20 +319,30 @@ SchemaBuilderEntity.prototype.getDependencies = function() {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
-    var self = this;
+	var self = this;
 
-    if (fn === undefined && properties instanceof Array) {
-        self.properties = properties;
-        return self;
-    }
+	if (fn === undefined && properties instanceof Array) {
+		self.properties = properties;
+		return self;
+	}
 
-    if (typeof(properties) !== FUNCTION) {
-        self.properties = properties;
-        self.onValidation = fn;
-    } else
-        self.onValidation = properties;
+	if (typeof(properties) !== FUNCTION) {
+		self.properties = properties;
+		self.onValidation = fn;
+	} else
+		self.onValidation = properties;
 
-    return self;
+	return self;
+};
+
+SchemaBuilderEntity.prototype.setPrefix = function(prefix) {
+	this.resourcePrefix = prefix;
+	return this;
+};
+
+SchemaBuilderEntity.prototype.setResource = function(name) {
+	this.resourceName = name;
+	return this;
 };
 
 /**
@@ -197,9 +351,20 @@ SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setDefault = function(fn) {
-    var self = this;
-    self.onDefault = fn;
-    return self;
+	var self = this;
+	self.onDefault = fn;
+	return self;
+};
+
+/**
+ * Set the prepare
+ * @param {Function(name, value)} fn Must return a new value.
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.setPrepare = function(fn) {
+	var self = this;
+	self.onPrepare = fn;
+	return self;
 };
 
 /**
@@ -208,9 +373,9 @@ SchemaBuilderEntity.prototype.setDefault = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setSave = function(fn) {
-    var self = this;
-    self.onSave = fn;
-    return self;
+	var self = this;
+	self.onSave = fn;
+	return self;
 };
 
 /**
@@ -219,9 +384,9 @@ SchemaBuilderEntity.prototype.setSave = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setGet = function(fn) {
-    var self = this;
-    self.onGet = fn;
-    return self;
+	var self = this;
+	self.onGet = fn;
+	return self;
 };
 
 /**
@@ -230,9 +395,9 @@ SchemaBuilderEntity.prototype.setGet = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setQuery = function(fn) {
-    var self = this;
-    self.onQuery = fn;
-    return self;
+	var self = this;
+	self.onQuery = fn;
+	return self;
 };
 
 /**
@@ -241,9 +406,9 @@ SchemaBuilderEntity.prototype.setQuery = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setRemove = function(fn) {
-    var self = this;
-    self.onRemove = fn;
-    return self;
+	var self = this;
+	self.onRemove = fn;
+	return self;
 };
 
 /**
@@ -252,9 +417,9 @@ SchemaBuilderEntity.prototype.setRemove = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setProperties = function(properties) {
-    var self = this;
-    self.properties = properties;
-    return self;
+	var self = this;
+	self.properties = properties;
+	return self;
 };
 
 /**
@@ -264,18 +429,18 @@ SchemaBuilderEntity.prototype.setProperties = function(properties) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addRule = function(name, value) {
-    var self = this;
+	var self = this;
 
-    if (value === undefined) {
-        value = name;
-        name = 'default';
-    }
+	if (value === undefined) {
+		value = name;
+		name = 'default';
+	}
 
-    if (!self.rules)
-        self.rules = {};
+	if (!self.rules)
+		self.rules = {};
 
-    self.rules[name] = value;
-    return self;
+	self.rules[name] = value;
+	return self;
 };
 
 /**
@@ -285,16 +450,16 @@ SchemaBuilderEntity.prototype.addRule = function(name, value) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.constant = function(name, value) {
-    var self = this;
+	var self = this;
 
-    if (value === undefined)
-        return self.constants ? self.constants[name] : undefined;
+	if (value === undefined)
+		return self.constants ? self.constants[name] : undefined;
 
-    if (!self.constants)
-        self.constants = {};
+	if (!self.constants)
+		self.constants = {};
 
-    self.constants[name] = value;
-    return self;
+	self.constants[name] = value;
+	return self;
 };
 
 /**
@@ -304,18 +469,18 @@ SchemaBuilderEntity.prototype.constant = function(name, value) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
-    var self = this;
+	var self = this;
 
-    if (typeof(name) === FUNCTION) {
-        fn = name;
-        name = 'default';
-    }
+	if (typeof(name) === FUNCTION) {
+		fn = name;
+		name = 'default';
+	}
 
-    if (!self.transforms)
-        self.transforms = {};
+	if (!self.transforms)
+		self.transforms = {};
 
-    self.transforms[name] = fn;
-    return self;
+	self.transforms[name] = fn;
+	return self;
 };
 
 /**
@@ -325,18 +490,18 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addOperation = function(name, fn) {
-    var self = this;
+	var self = this;
 
-    if (typeof(name) === FUNCTION) {
-        fn = name;
-        name = 'default';
-    }
+	if (typeof(name) === FUNCTION) {
+		fn = name;
+		name = 'default';
+	}
 
-    if (!self.operations)
-        self.operations = {};
+	if (!self.operations)
+		self.operations = {};
 
-    self.operations[name] = fn;
-    return self;
+	self.operations[name] = fn;
+	return self;
 };
 
 /**
@@ -346,18 +511,18 @@ SchemaBuilderEntity.prototype.addOperation = function(name, fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
-    var self = this;
+	var self = this;
 
-    if (typeof(name) === FUNCTION) {
-        fn = name;
-        name = 'default';
-    }
+	if (typeof(name) === FUNCTION) {
+		fn = name;
+		name = 'default';
+	}
 
-    if (!self.workflows)
-        self.workflows = {};
+	if (!self.workflows)
+		self.workflows = {};
 
-    self.workflows[name] = fn;
-    return self;
+	self.workflows[name] = fn;
+	return self;
 };
 
 /**
@@ -367,18 +532,18 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
-    var self = this;
+	var self = this;
 
-    if (typeof(name) === FUNCTION) {
-        fn = name;
-        name = 'default';
-    }
+	if (typeof(name) === FUNCTION) {
+		fn = name;
+		name = 'default';
+	}
 
-    if (!self.composes)
-        self.composes = {};
+	if (!self.composes)
+		self.composes = {};
 
-    self.composes[name] = fn;
-    return self;
+	self.composes[name] = fn;
+	return self;
 };
 
 /**
@@ -387,16 +552,16 @@ SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
  * @param {Function(errorBuilder, output, model, helper, next([output]), entityName)} fn
  */
 SchemaBuilderEntity.prototype.addComposer = function(name, fn) {
-    return this.addCompose(name, fn);
+	return this.addCompose(name, fn);
 };
 
 /**
- * Find a entity in current group
+ * Find an entity in current group
  * @param {String} name
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.find = function(name) {
-    return this.parent.get(name);
+	return this.parent.get(name);
 };
 
 /**
@@ -405,36 +570,36 @@ SchemaBuilderEntity.prototype.find = function(name) {
  * @return {Object}
  */
 SchemaBuilderEntity.prototype.rule = function(name, value) {
-    var self = this;
+	var self = this;
 
-    if (value)
-        return self.addRule(name, value);
+	if (value)
+		return self.addRule(name, value);
 
-    if (self.rules === undefined)
-        return undefined;
+	if (self.rules === undefined)
+		return undefined;
 
-    if (name === undefined)
-        name = 'default';
+	if (name === undefined)
+		name = 'default';
 
-    return self.rules[name];
+	return self.rules[name];
 };
 
 /**
  * Destroy current entity
  */
 SchemaBuilderEntity.prototype.destroy = function() {
-    var self = this;
-    delete self.parent.collection[self.name];
-    self.properties = null;
-    self.schema = null;
-    self.onDefault = null;
-    self.onValidation = null;
-    self.onSave = null;
-    self.onRead = null;
-    self.onRemove = null;
-    self.onQuery = null;
-    self.workflows = null;
-    self.transforms = null;
+	var self = this;
+	delete self.parent.collection[self.name];
+	self.properties = null;
+	self.schema = null;
+	self.onDefault = null;
+	self.onValidation = null;
+	self.onSave = null;
+	self.onRead = null;
+	self.onRemove = null;
+	self.onQuery = null;
+	self.workflows = null;
+	self.transforms = null;
 };
 
 /**
@@ -446,28 +611,69 @@ SchemaBuilderEntity.prototype.destroy = function() {
  */
 SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
 
-    if (callback === undefined) {
-        callback = helper;
-        helper = undefined;
-    }
+	if (callback === undefined) {
+		callback = helper;
+		helper = undefined;
+	}
 
-    var self = this;
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
 
-    self.$prepare(model, function(err, model) {
+	var self = this;
 
-        if (err) {
-            callback(err, model);
-            return;
-        }
+	self.$prepare(model, function(err, model) {
 
-        var builder = new ErrorBuilder();
-        self.onSave(builder, model, helper, function(value) {
-            callback(builder.hasError() ? builder : null, value === undefined ? model : value);
-        });
-    });
+		if (err) {
+			callback(err, model);
+			return;
+		}
 
-    return self;
+		var builder = new ErrorBuilder();
+
+		if (!isGenerator(self, 'save', self.onSave)) {
+			self.onSave(builder, model, helper, function(result) {
+				if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+					if (result instanceof Error || result instanceof ErrorBuilder)
+						builder.push(result);
+					result = arguments[1];
+				}
+				callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+			});
+			return self;
+		}
+
+		callback.success = false;
+
+		async.call(self, self.onSave)(function(err) {
+			if (!err || callback.success)
+				return;
+			callback.success = true;
+			builder.push(err);
+			callback(builder);
+		}, builder, model, helper, function(result) {
+
+			if (callback.success)
+				return;
+
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+			callback.success = true;
+			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+		});
+
+	});
+
+	return self;
 };
+
+function isGenerator(obj, name, fn) {
+	if (obj.gcache[name])
+		return obj.gcache[name];
+	return obj.gcache[name] = fn.toString().substring(0, 9) === 'function*';
+}
 
 /**
  * Execute onGet delegate
@@ -477,20 +683,56 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
  */
 SchemaBuilderEntity.prototype.get = function(helper, callback) {
 
-    if (callback === undefined) {
-        callback = helper;
-        helper = undefined;
-    }
+	if (callback === undefined) {
+		callback = helper;
+		helper = undefined;
+	}
 
-    var self = this;
-    var builder = new ErrorBuilder();
-    var output = self.default();
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
 
-    self.onGet(builder, output, helper, function(value) {
-        callback(builder.hasError() ? builder : null, value === undefined ? output : value);
-    });
+	var self = this;
+	var builder = new ErrorBuilder();
+	var output = self.default();
 
-    return self;
+	if (!isGenerator(self, 'get', self.onGet)) {
+		self.onGet(builder, output, helper, function(result) {
+
+			if (callback.success)
+				return;
+
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+			callback(builder.hasError() ? builder : null, result === undefined ? output : result);
+		});
+		return self;
+	}
+
+	callback.success = false;
+	async.call(self, self.onGet)(function(err) {
+		if (!err || callback.success)
+			return;
+		callback.success = true;
+		builder.push(err);
+		callback(builder);
+	}, builder, output, helper, function(result) {
+
+		if (callback.success)
+			return;
+
+		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+			if (result instanceof Error || result instanceof ErrorBuilder)
+				builder.push(result);
+			result = arguments[1];
+		}
+		callback.success = true;
+		callback(builder.hasError() ? builder : null, result === undefined ? output : result);
+	});
+
+	return self;
 };
 
 /**
@@ -501,19 +743,49 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
  */
 SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 
-    if (callback === undefined) {
-        callback = helper;
-        helper = undefined;
-    }
+	if (callback === undefined) {
+		callback = helper;
+		helper = undefined;
+	}
 
-    var self = this;
-    var builder = new ErrorBuilder();
+	var self = this;
+	var builder = new ErrorBuilder();
 
-    self.onRemove(builder, helper, function(value) {
-        callback(builder.hasError() ? builder : null, value === undefined ? helper : value);
-    });
+	if (!isGenerator(self, 'remove', self.onRemove)) {
+		self.onRemove(builder, helper, function(result) {
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+			callback(builder.hasError() ? builder : null, result === undefined ? helper : result);
+		});
+		return self;
+	}
 
-    return self;
+	callback.success = false;
+	async.call(self, self.onRemove)(function(err) {
+		if (!err || callback.success)
+			return;
+		callback.success = true;
+		builder.push(err);
+		callback(builder);
+	}, builder, helper, function(result) {
+
+		if (callback.success)
+			return;
+
+		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+			if (result instanceof Error || result instanceof ErrorBuilder)
+				builder.push(result);
+			result = arguments[1];
+		}
+
+		callback.success = true;
+		callback(builder.hasError() ? builder : null, result === undefined ? helper : result);
+	});
+
+	return self;
 };
 
 /**
@@ -524,19 +796,50 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
  */
 SchemaBuilderEntity.prototype.query = function(helper, callback) {
 
-    if (callback === undefined) {
-        callback = helper;
-        helper = undefined;
-    }
+	if (callback === undefined) {
+		callback = helper;
+		helper = undefined;
+	}
 
-    var self = this;
-    var builder = new ErrorBuilder();
+	var self = this;
+	var builder = new ErrorBuilder();
 
-    self.onQuery(builder, helper, function(value) {
-        callback(builder.hasError() ? builder : null, value);
-    });
+	if (!isGenerator(self, 'query', self.onQuery)) {
+		self.onQuery(builder, helper, function(result) {
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+			callback(builder.hasError() ? builder : null, result);
+		});
+		return self;
+	}
 
-    return self;
+	callback.success = false;
+
+	async.call(self, self.onQuery)(function(err) {
+		if (!err || callback.success)
+			return;
+		callback.success = true;
+		builder.push(err);
+		callback(builder);
+	}, builder, helper, function(result) {
+
+		if (callback.success)
+			return;
+
+		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+			if (result instanceof Error || result instanceof ErrorBuilder)
+				builder.push(result);
+			result = arguments[1];
+		}
+
+		callback.success = true;
+		callback(builder.hasError() ? builder : null, result);
+	});
+
+	return self;
 };
 
 /**
@@ -549,26 +852,33 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
  */
 SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder) {
 
-    var self = this;
-    var fn = self.onValidation;
+	var self = this;
+	var fn = self.onValidation;
 
-    if (builder === undefined)
-        builder = new ErrorBuilder();
+	if (builder === undefined)
+		builder = new ErrorBuilder();
 
-    if (fn === undefined || fn === null) {
-        fn = framework.onValidation;
-        if (fn === undefined || fn === null)
-            return builder;
-    }
+	if (fn === undefined || fn === null) {
+		fn = framework.onValidation;
+		if (fn === undefined || fn === null)
+			return builder;
+	}
 
-    if (resourceName)
-        builder.resourceName = resourceName;
+	if (self.resourcePrefix)
+		builder.resourcePrefix = self.resourcePrefix;
 
-    if (resourcePrefix)
-        builder.resourcePrefix = resourcePrefix;
+	if (self.resourceName)
+		builder.resourceName = self.resourceName;
 
-    // self._setStateToModel(model, 1, 1);
-    return framework_utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
+	if (resourceName)
+		builder.resourceName = resourceName;
+
+	if (resourcePrefix)
+		builder.resourcePrefix = resourcePrefix;
+
+	// self._setStateToModel(model, 1, 1);
+	//return framework_utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
+	return framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name);
 };
 
 /**
@@ -577,7 +887,11 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
  * @return {Object}
  */
 SchemaBuilderEntity.prototype.create = function() {
-    return this.default();
+	return this.default();
+};
+
+SchemaBuilderEntity.prototype.Create = function() {
+	return this.default();
 };
 
 /**
@@ -587,222 +901,238 @@ SchemaBuilderEntity.prototype.create = function() {
  */
 SchemaBuilderEntity.prototype.$make = function(obj) {
 
-    if (obj.$save)
-        return obj;
+	if (obj.$save)
+		return obj;
 
-    var self = this;
+	var self = this;
 
-    obj.$async = function(callback) {
-        if (callback === undefined)
-            callback = NOOP;
-        obj.$$async = [];
-        obj.$$result = [];
-        obj.$callback = callback;
-        setImmediate(function() {
-            obj.$$async.async(function() {
-                callback(null, obj.$$result);
-            });
-        });
-        return obj;
-    };
+	obj.$async = function(callback, index) {
+		if (callback === undefined)
+			callback = NOOP;
+		obj.$$async = [];
+		obj.$$result = [];
+		obj.$callback = callback;
+		setImmediate(function() {
+			obj.$$async.async(function() {
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				callback(null, index !== undefined ? result[index] : result);
+			});
+		});
+		return obj;
+	};
 
-    obj.$save = function(helper, callback) {
+	obj.$save = function(helper, callback) {
 
-        if (!obj.$$async) {
-            self.save(obj, helper, callback);
-            return obj;
-        }
+		if (!obj.$$async) {
+			self.save(obj, helper, callback);
+			return obj;
+		}
 
-        obj.$$async.push(function(next) {
-            self.save(obj, helper, function(err, result) {
+		obj.$$async.push(function(next) {
+			self.save(obj, helper, function(err, result) {
 
-                if (obj.$$result)
-                    obj.$$result.push(err ? null : result);
+				if (obj.$$result)
+					obj.$$result.push(err ? null : result);
 
-                if (!err)
-                    return next();
-                obj.$$async = null;
-                next = null;
-                obj.$callback(err, obj.$$result);
-            });
-        });
+				if (!err)
+					return next();
+				next = null;
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
+			});
+		});
 
-        return obj;
-    };
+		return obj;
+	};
 
-    obj.$remove = function(helper, callback) {
+	obj.$remove = function(helper, callback) {
 
-        if (!obj.$$async) {
-            self.remove(helper, callback);
-            return obj;
-        }
+		if (!obj.$$async) {
+			self.remove(helper, callback);
+			return obj;
+		}
 
-        obj.$$async.push(function(next) {
-            self.remove(obj, helper, function(err, result) {
+		obj.$$async.push(function(next) {
+			self.remove(obj, helper, function(err, result) {
 
-                if (obj.$$result)
-                    obj.$$result.push(err ? null : result);
+				if (obj.$$result)
+					obj.$$result.push(err ? null : result);
 
-                if (!err)
-                    return next();
-                obj.$$async = null;
-                next = null;
-                obj.$callback(err, obj.$$result);
-            });
-        });
+				if (!err)
+					return next();
+				next = null;
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
+			});
+		});
 
-        return obj;
-    };
+		return obj;
+	};
 
-    obj.$default = function() {
-        return self.default();
-    };
+	obj.$default = function() {
+		return self.default();
+	};
 
-    obj.$destroy = function() {
-        obj = null;
-    };
+	obj.$destroy = function() {
+		obj = null;
+	};
 
-    obj.$transform = function(name, helper, callback) {
+	obj.$transform = function(name, helper, callback) {
 
-        if (!obj.$$async) {
-            self.transform(name, obj, helper, callback);
-            return obj;
-        }
+		if (!obj.$$async) {
+			self.transform(name, obj, helper, callback);
+			return obj;
+		}
 
-        obj.$$async.push(function(next) {
-            self.transform(name, obj, helper, function(err, result) {
+		obj.$$async.push(function(next) {
+			self.transform(name, obj, helper, function(err, result) {
 
-                if (obj.$$result)
-                    obj.$$result.push(err ? null : result);
+				if (obj.$$result)
+					obj.$$result.push(err ? null : result);
 
-                if (!err)
-                    return next();
-                obj.$$async = null;
-                next = null;
-                obj.$callback(err, obj.$$result);
-            });
-        });
+				if (!err)
+					return next();
 
-        return obj;
-    };
+				next = null;
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
+			});
+		});
 
-    obj.$compose = function(name, helper, callback) {
+		return obj;
+	};
 
-        if (!obj.$$async) {
-            self.compose(name, obj, helper, callback);
-            return obj;
-        }
+	obj.$compose = function(name, helper, callback) {
 
-        obj.$$async.push(function(next) {
-            self.compose(name, obj, helper, function(err, result) {
+		if (!obj.$$async) {
+			self.compose(name, obj, helper, callback);
+			return obj;
+		}
 
-                if (obj.$$result)
-                    obj.$$result.push(err ? null : result);
+		obj.$$async.push(function(next) {
+			self.compose(name, obj, helper, function(err, result) {
 
-                if (!err)
-                    return next();
-                obj.$$async = null;
-                next = null;
-                obj.$callback(err, obj.$$result);
-            });
-        });
+				if (obj.$$result)
+					obj.$$result.push(err ? null : result);
 
-        return obj;
-    };
+				if (!err)
+					return next();
+				next = null;
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
+			});
+		});
 
-    obj.$workflow = function(name, helper, callback) {
+		return obj;
+	};
 
-        if (!obj.$$async) {
-            self.workflow(name, obj, helper, callback);
-            return obj;
-        }
+	obj.$workflow = function(name, helper, callback) {
 
-        obj.$$async.push(function(next) {
-            self.workflow(name, obj, helper, function(err, result) {
+		if (!obj.$$async) {
+			self.workflow(name, obj, helper, callback);
+			return obj;
+		}
 
-                if (obj.$$result)
-                    obj.$$result.push(err ? null : result);
+		obj.$$async.push(function(next) {
+			self.workflow(name, obj, helper, function(err, result) {
 
-                if (!err)
-                    return next();
-                obj.$$async = null;
-                next = null;
-                obj.$callback(err, obj.$$result);
-            });
-        });
+				if (obj.$$result)
+					obj.$$result.push(err ? null : result);
 
-        return obj;
-    };
+				if (!err)
+					return next();
+				next = null;
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
+			});
+		});
 
-    obj.$operation = function(name, helper, callback) {
+		return obj;
+	};
 
-        if (!obj.$$async) {
-            self.operation(name, obj, helper, callback);
-            return obj;
-        }
+	obj.$operation = function(name, helper, callback) {
 
-        obj.$$async.push(function(next) {
-            self.operation(name, obj, helper, function(err, result) {
+		if (!obj.$$async) {
+			self.operation(name, obj, helper, callback);
+			return obj;
+		}
 
-                if (obj.$$result)
-                    obj.$$result.push(err ? null : result);
+		obj.$$async.push(function(next) {
+			self.operation(name, obj, helper, function(err, result) {
 
-                if (!err)
-                    return next();
-                obj.$$async = null;
-                next = null;
-                obj.$callback(err, obj.$$result);
-            });
-        });
+				if (obj.$$result)
+					obj.$$result.push(err ? null : result);
 
-        return obj;
-    };
+				if (!err)
+					return next();
+				next = null;
+				var result = obj.$$result;
+				delete obj.$$result;
+				delete obj.$$async;
+				obj.$callback(err, result);
+			});
+		});
 
-    obj.$clean = function() {
-        return self.clean(obj);
-    };
+		return obj;
+	};
 
-    obj.$clone = function() {
-        return self.$make(JSON.parse(JSON.stringify(obj)));
-    };
+	obj.$clean = function() {
+		return self.clean(obj);
+	};
 
-    obj.$prepare = function() {
-        return self.prepare(obj);
-    };
+	obj.$clone = function() {
+		return self.$make(JSON.parse(JSON.stringify(obj)));
+	};
 
-    obj.$schema = function() {
-        return self;
-    };
+	obj.$prepare = function() {
+		return self.prepare(obj);
+	};
 
-    obj.$validate = function(resourcePrefix, resourceName, builder) {
-        return self.validate(obj, resourcePrefix, resourceName, builder);
-    };
+	obj.$schema = function() {
+		return self;
+	};
 
-    obj.$rule = function(name) {
-        return self.rule(name);
-    };
+	obj.$validate = function(resourcePrefix, resourceName, builder) {
+		return self.validate(obj, resourcePrefix, resourceName, builder);
+	};
 
-    obj.$constant = function(name) {
-        return self.constant(name);
-    };
+	obj.$rule = function(name) {
+		return self.rule(name);
+	};
 
-    return obj;
+	obj.$constant = function(name) {
+		return self.constant(name);
+	};
+
+	return obj;
 };
 
 SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
 
-    var self = this;
+	var self = this;
 
-    if (typeof(obj.$save) === FUNCTION) {
-        callback(null, obj);
-        return self;
-    }
+	if (typeof(obj.$save) === FUNCTION) {
+		callback(null, obj);
+		return self;
+	}
 
-    self.make(obj, function(err, model) {
-        callback(err, model);
-    });
+	self.make(obj, function(err, model) {
+		callback(err, model);
+	});
 
-    return self;
+	return self;
 };
 
 /**
@@ -811,161 +1141,94 @@ SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
  */
 SchemaBuilderEntity.prototype.default = function() {
 
-    var self = this;
-    var obj = self.schema;
+	var self = this;
+	var obj = self.schema;
 
-    if (obj === null)
-        return null;
+	if (obj === null)
+		return null;
 
-    var defaults = self.onDefault;
-    var item = framework_utils.extend({}, obj, true);
-    var properties = Object.keys(item);
+	var defaults = self.onDefault;
+	var item = framework_utils.extend({}, obj, true);
+	var properties = Object.keys(item);
 
-    for (var i = 0, length = properties.length; i < length; i++) {
+	for (var i = 0, length = properties.length; i < length; i++) {
 
-        var property = properties[i];
-        var value = item[property];
-        var type = typeof(value);
+		var property = properties[i];
+		var type = item[property];
 
-        if (defaults) {
-            var def = defaults(property, true, self.name);
-            if (def !== undefined) {
-                item[property] = def;
-                continue;
-            }
-        }
+		if (defaults) {
+			var def = defaults(property, true, self.name);
+			if (def !== undefined) {
+				item[property] = def;
+				continue;
+			}
+		}
 
-        if (type === FUNCTION) {
+		switch (type.type) {
+			// undefined
+			// object
+			case 0:
+			case 6:
+				item[property] = type.isArray ? [] : null;
+				break;
+			// numbers: integer, float
+			case 1:
+			case 2:
+				item[property] = type.isArray ? [] : 0;
+				break;
+			// string
+			case 3:
+				item[property] = type.isArray ? [] : '';
+				break;
+			// boolean
+			case 4:
+				item[property] = type.isArray ? [] : false;
+				break;
+			// date
+			case 5:
+				item[property] = type.isArray ? [] : new Date();
+				break;
+			// schema
+			case 7:
 
-            if (value === Number) {
-                item[property] = 0;
-                continue;
-            }
+				if (type.isArray) {
+					item[property] = [];
+				} else {
+					var tmp = self.find(type.raw);
+					if (!tmp) {
+						framework.error(new Error('Schema: "' + property + '.' + type.raw + '" not found in "' + self.parent.name + '".'));
+						item[property] = null;
+					} else
+						item[property] = tmp.default();
+				}
+				break;
+		}
+	}
 
-            if (value === Boolean) {
-                item[property] = false;
-                continue;
-            }
-
-            if (value === String) {
-                item[property] = '';
-                continue;
-            }
-
-            if (value === Date) {
-                item[property] = new Date();
-                continue;
-            }
-
-            if (value === Object) {
-                item[property] = null;
-                continue;
-            }
-
-            if (value === Array) {
-                item[property] = [];
-                continue;
-            }
-
-            item[property] = value();
-            continue;
-        }
-
-        if (type === NUMBER) {
-            item[property] = 0;
-            continue;
-        }
-
-        if (type === BOOLEAN) {
-            item[property] = false;
-            continue;
-        }
-
-        if (type === OBJECT) {
-            item[property] = value instanceof Array ? [] : {};
-            continue;
-        }
-
-        if (type !== STRING) {
-            item[property] = null;
-            continue;
-        }
-
-        var isArray = value[0] === '[';
-
-        if (isArray)
-            value = value.substring(1, value.length - 1);
-
-        if (isArray) {
-            item[property] = [];
-            continue;
-        }
-
-        var lower = value.toLowerCase();
-
-        if (lower.contains([STRING, 'text', 'varchar', 'nvarchar', 'binary', 'data', 'base64'])) {
-            item[property] = '';
-            continue;
-        }
-
-        if (lower.contains(['int', NUMBER, 'decimal', 'byte', 'float', 'double'])) {
-            item[property] = 0;
-            continue;
-        }
-
-        if (lower.contains('bool')) {
-            item[property] = false;
-            continue;
-        }
-
-        if (lower.contains(['date', 'time'])) {
-            item[property] = new Date();
-            continue;
-        }
-
-        if (lower.contains(['object'])) {
-            item[property] = {};
-            continue;
-        }
-
-        if (lower.contains(['array'])) {
-            item[property] = [];
-            continue;
-        }
-
-        if (lower.contains(['binary', 'data', 'base64'])) {
-            item[property] = null;
-            continue;
-        }
-
-        var child = self.parent.get(value);
-        item[property] = child ? child.default() : null;
-    }
-
-    return self.$make(item);
+	return self.$make(item);
 };
 
 SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = function(model, callback) {
 
-    var self = this;
-    var output = self.prepare(model);
+	var self = this;
+	var output = self.prepare(model);
 
-    if (self.onValidation === undefined) {
-        if (callback)
-            callback(null, output);
-        return output;
-    }
+	if (self.onValidation === undefined) {
+		if (callback)
+			callback(null, output);
+		return output;
+	}
 
-    var builder = self.validate(output);
-    if (builder.hasError()) {
-        if (callback)
-            callback(builder, null);
-        return output;
-    }
+	var builder = self.validate(output);
+	if (builder.hasError()) {
+		if (callback)
+			callback(builder, null);
+		return output;
+	}
 
-    if (callback)
-        callback(null, output);
-    return output;
+	if (callback)
+		callback(null, output);
+	return output;
 };
 
 /**
@@ -976,252 +1239,215 @@ SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = functi
  */
 SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
-    var self = this;
-    var obj = self.schema;
+	var self = this;
+	var obj = self.schema;
 
-    if (obj === null)
-        return null;
+	if (obj === null)
+		return null;
 
-    if (model === null || model === undefined)
-        return self.default();
+	if (model === null || model === undefined)
+		return self.default();
 
-    var tmp;
-    var entity;
-    var item = framework_utils.extend({}, obj, true);
-    var properties = Object.keys(item);
-    var defaults = self.onDefault;
+	var onPrepare = function(name, value, index) {
+		if (!self.onPrepare)
+			return value;
+		var val = self.onPrepare(name, value, index);
+		return val === undefined ? value : val;
+	};
 
-    for (var i = 0, length = properties.length; i < length; i++) {
+	var tmp;
+	var entity;
+	var item = framework_utils.extend({}, obj, true);
+	var properties = Object.keys(item);
+	var defaults = self.onDefault;
 
-        var property = properties[i];
-        var val = model[property];
+	for (var i = 0, length = properties.length; i < length; i++) {
 
+		var property = properties[i];
+		var val = model[property];
 
-        if (val === undefined && defaults)
-            val = defaults(property, false, self.name);
+		// IS PROTOTYPE? The problem was in e.g. "search" property, because search is in String prototypes.
+		if (!model.hasOwnProperty(property))
+			val = undefined;
 
-        if (val === undefined)
-            val = '';
+		if (val === undefined && defaults)
+			val = defaults(property, false, self.name);
 
-        var value = item[property];
-        var type = typeof(value);
-        var typeval = typeof(val);
+		if (val === undefined)
+			val = '';
 
-        if (typeval === FUNCTION)
-            val = val();
+		var type = item[property];
+		var typeval = typeof(val);
 
-        if (type === FUNCTION) {
+		if (typeval === FUNCTION)
+			val = val();
 
-            if (value === Number) {
-                item[property] = framework_utils.parseFloat(val);
-                continue;
-            }
+		if (!type.isArray) {
+			switch (type.type) {
+				// undefined
+				case 0:
+					break;
+				// number: integer
+				case 1:
+					item[property] = onPrepare(property, framework_utils.parseInt(val));
+					break;
+				// number: float
+				case 2:
+					item[property] = onPrepare(property, framework_utils.parseFloat(val));
+					break;
+				// string
+				case 3:
+					tmp = val === undefined || val === null ? '' : val.toString().trim();
+					if (type.length > 0 && type.length < tmp.length)
+						tmp = tmp.substring(0, type.length);
+					item[property] = onPrepare(property, tmp);
+					break;
+				// boolean
+				case 4:
+					tmp = val.toString().toLowerCase();
+					item[property] = onPrepare(property, tmp === 'true' || tmp === '1' || tmp === 'on');
+					break;
+				// date
+				case 5:
 
-            if (value === Boolean) {
-                tmp = val.toString();
-                item[property] = tmp === 'true' || tmp === '1';
-                continue;
-            }
+					tmp = null;
 
-            if (value === String) {
-                item[property] = val === undefined || val === null ? '' : val.toString();
-                continue;
-            }
+					if (typeval === STRING) {
+						if (val === '')
+							tmp = null;
+						else
+							tmp = val.trim().parseDate();
+					} else if (typeval === OBJECT) {
+						if (framework_utils.isDate(val))
+							tmp = val;
+						else
+							tmp = null;
+					} else if (typeval === NUMBER) {
+						tmp = new Date(val);
+					}
 
-            if (value === Date) {
+					if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
+						tmp = null;
 
-                tmp = null;
+					if (tmp)
+						item[property] = onPrepare(property, tmp);
+					else
+						item[property] = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
 
-                switch (typeval) {
-                    case OBJECT:
-                        if (framework_utils.isDate(val))
-                            tmp = val;
-                        else
-                            tmp = null;
-                        break;
+					break;
 
-                    case NUMBER:
-                        tmp = new Date(val);
-                        break;
+				// object
+				case 6:
+					item[property] = onPrepare(property, model[property]);
+					break;
 
-                    case STRING:
-                        if (val === '')
-                            tmp = null;
-                        else
-                            tmp = val.parseDate();
-                        break;
-                }
+				// schema
+				case 7:
+					entity = self.parent.get(type.raw);
+					if (entity) {
+						item[property] = entity.prepare(val);
+						if (dependencies)
+							dependencies.push({ name: type.raw, value: onPrepare(property, item[property]) });
+					}
+					else
+						item[property] = null;
+					break;
+			}
+			continue;
+		}
 
-                if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
-                    tmp = null;
+		// ARRAY:
+		if (!(val instanceof Array)) {
+			item[property] = (defaults ? isUndefined(defaults(property, false, self.name), []) : []);
+			continue;
+		}
 
-                item[property] = tmp || (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
-                continue;
-            }
+		item[property] = [];
+		for (var j = 0, sublength = val.length; j < sublength; j++) {
 
-            if (value === Object) {
-                item[property] = model[property];
-                continue;
-            }
+			tmp = model[property][j];
+			typeval = typeof(tmp);
 
-            item[property] = defaults ? isUndefined(defaults(value, false, self.name), null) : null;
-            continue;
-        }
+			switch (type.type) {
+				case 0:
+					tmp = onPrepare(property, tmp, j);
+					break;
 
-        if (type === OBJECT) {
-            item[property] = typeval === OBJECT ? val : null;
-            continue;
-        }
+				case 1:
+					tmp = onPrepare(property, framework_utils.parseInt(tmp), j);
+					break;
 
-        if (type === NUMBER) {
-            item[property] = framework_utils.parseFloat(val);
-            continue;
-        }
+				case 2:
+					tmp = onPrepare(property, framework_utils.parseFloat(tmp), j);
+					break;
 
-        if (val === null || typeval === UNDEFINED)
-            tmp = '';
-        else
-            tmp = val.toString();
+				case 3:
+					tmp = tmp === undefined || tmp === null ? '' : tmp.toString().trim();
+					if (type.length > 0 && tmp.length < tmp.length)
+						tmp = tmp.substring(0, type.length);
+					tmp = onPrepare(property, tmp, j);
+					break;
 
-        if (type === BOOLEAN) {
-            item[property] = tmp === 'true' || tmp === '1';
-            continue;
-        }
+				case 4:
+					if (tmp)
+						tmp = tmp.toString().toLowerCase();
+					tmp = onPrepare(property, tmp === 'true' || tmp === '1' || tmp === 'on', j);
+					break;
 
-        if (type !== STRING) {
-            item[property] = tmp;
-            continue;
-        }
+				case 5:
 
-        var isArray = value[0] === '[' || value === 'array';
+					if (typeval === STRING) {
+						if (tmp === '')
+							tmp = null;
+						else
+							tmp = tmp.trim().parseDate();
+					} else if (typeval === OBJECT) {
+						if (framework_utils.isDate(tmp))
+							tmp = tmp;
+						else
+							tmp = null;
+					} else if (typeval === NUMBER) {
+						tmp = new Date(tmp);
+					}
 
-        if (isArray) {
+					if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
+						tmp = null;
 
-            if (value[0] === '[')
-                value = value.substring(1, value.length - 1);
-            else
-                value = null;
+					if (tmp)
+						tmp = onPrepare(property, tmp, j);
+					else
+						tmp = undefined;
 
-            if (!(val instanceof Array)) {
-                item[property] = (defaults ? isUndefined(defaults(property, false, self.name), []) : []);
-                continue;
-            }
+					break;
 
-            item[property] = [];
+				case 6:
+					tmp = onPrepare(property, tmp, j);
+					break;
 
-            for (var j = 0, sublength = val.length; j < sublength; j++) {
+				case 7:
 
-                if (value === null) {
-                    item[property].push(model[property][j]);
-                    continue;
-                }
+					entity = self.parent.get(type.raw);
+					if (entity) {
+						tmp = entity.prepare(tmp, dependencies);
+						if (dependencies)
+							dependencies.push({ name: type.raw, value: onPrepare(property, tmp, j) });
+					}
+					else
+						tmp = null;
 
-                var tmpB = model[property][j];
+					tmp = onPrepare(property, tmp, j);
+					break;
+			}
 
-                switch (value.toLowerCase()) {
-                    case 'string':
-                    case 'varchar':
-                    case 'text':
-                        item[property].push((tmpB || '').toString());
-                        break;
-                    case 'bool':
-                    case 'boolean':
-                        tmpB = (tmpB || '').toString().toLowerCase();
-                        item[property].push(tmpB === 'true' || tmpB === '1');
-                        break;
-                    case 'int':
-                    case 'integer':
-                        item[property].push(framework_utils.parseInt(tmpB));
-                        break;
-                    case 'number':
-                        item[property].push(framework_utils.parseFloat(tmpB));
-                        break;
-                    case 'object':
-                        item[property].push(tmpB);
-                        break;
-                    default:
+			if (tmp === undefined)
+				continue;
 
-                        entity = self.parent.get(value);
+			item[property].push(tmp);
+		}
+	}
 
-                        if (entity) {
-                            item[property][j] = entity.prepare(tmpB, dependencies);
-                            if (dependencies)
-                                dependencies.push({ name: value, value: item[property][j] });
-                        }
-                        else
-                            item[property][j] = null;
-
-                        break;
-                }
-            }
-
-            continue;
-        }
-
-        var lower = value.toLowerCase();
-
-        if (lower.contains([STRING, 'text', 'varchar', 'nvarchar'])) {
-
-            var beg = lower.indexOf('(');
-            if (beg === -1) {
-                item[property] = tmp;
-                continue;
-            }
-
-            var size = lower.substring(beg + 1, lower.length - 1).parseInt();
-            item[property] = tmp.max(size, '');
-            continue;
-        }
-
-        if (lower.contains(['int', 'byte'])) {
-            item[property] = framework_utils.parseInt(val);
-            continue;
-        }
-
-        if (lower.contains(['decimal', NUMBER, 'float', 'double'])) {
-            item[property] = framework_utils.parseFloat(val);
-            continue;
-        }
-
-        if (lower.contains('bool', BOOLEAN)) {
-            item[property] = tmp === 'true' || tmp === '1';
-            continue;
-        }
-
-        if (lower.contains(['date', 'time'])) {
-
-            if (typeval === 'date') {
-                item[property] = val;
-                continue;
-            }
-
-            if (typeval === STRING) {
-                item[property] = val.parseDate();
-                continue;
-            }
-
-            if (typeval === NUMBER) {
-                item[property] = new Date(val);
-                continue;
-            }
-
-            item[property] = isUndefined(defaults(property, false, self.name));
-            continue;
-        }
-
-        entity = self.parent.get(value);
-
-        if (entity) {
-            item[property] = entity.prepare(val);
-            if (dependencies)
-                dependencies.push({ name: value, value: item[property] });
-        }
-        else
-            item[property] = null;
-    }
-
-    // self._setStateToModel(model, 0, 1);
-    return self.$make(item);
+	// self._setStateToModel(model, 0, 1);
+	return self.$make(item);
 };
 
 /**
@@ -1234,58 +1460,76 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
  */
 SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback) {
 
-    var self = this;
+	var self = this;
 
-    if (typeof(name) !== STRING) {
-        callback = helper;
-        helper = model;
-        model = name;
-        name = 'default';
-    }
+	if (typeof(name) !== STRING) {
+		callback = helper;
+		helper = model;
+		model = name;
+		name = 'default';
+	}
 
-    if (callback === undefined) {
-        callback = helper;
-        helper = undefined;
-    }
+	if (callback === undefined) {
+		callback = helper;
+		helper = undefined;
+	}
 
-    if (typeof(callback) !== 'function')
-        callback = undefined;
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
 
-    var trans = self.transforms ? self.transforms[name] : undefined;
+	var trans = self.transforms ? self.transforms[name] : undefined;
 
-    if (!trans) {
-        callback(new ErrorBuilder().add('', 'Transform not found.'));
-        return;
-    }
+	if (!trans) {
+		callback(new ErrorBuilder().add('', 'Transform not found.'));
+		return self;
+	}
 
-    self.$prepare(model, function(err, model) {
+	self.$prepare(model, function(err, model) {
 
-        if (err) {
-            callback(err, model);
-            return;
-        }
+		if (err) {
+			callback(err, model);
+			return;
+		}
 
-        var builder = new ErrorBuilder();
-    /*
-        var noPrepare = self._getStateOfModel(model, 0) === '1';
-        var noValidate = self._getStateOfModel(model, 1) === '1';
-        var output =  noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
-        var builder = self.onValidation === undefined || noValidate === true ? new ErrorBuilder() : self.validate(output);
-    */
-        if (builder.hasError()) {
-            if (callback)
-                callback(builder);
-            return;
-        }
+		var builder = new ErrorBuilder();
 
-        trans.call(self, builder, model, helper, function(result) {
-            if (callback)
-                callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
-        }, self.name);
+		if (!isGenerator(self, 'transform.' + name, trans)) {
+			trans.call(self, builder, model, helper, function(result) {
+				if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+					if (result instanceof Error || result instanceof ErrorBuilder)
+						builder.push(result);
+					result = arguments[1];
+				}
+				callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+			}, self.name);
+			return;
+		}
 
-    });
+		callback.success = false;
+		async.call(self, trans)(function(err) {
+			if (!err || callback.success)
+				return;
+			callback.success = true;
+			builder.push(err);
+			callback(builder);
+		}, builder, model, helper, function(result) {
 
-    return self;
+			if (callback.success)
+				return;
+
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+
+			callback.success = true;
+			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+		});
+
+	});
+
+	return self;
 };
 
 /**
@@ -1298,47 +1542,77 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
  */
 SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) {
 
-    var self = this;
+	var self = this;
 
-    if (typeof(name) !== STRING) {
-        callback = helper;
-        helper = model;
-        model = name;
-        name = 'default';
-    }
+	if (typeof(name) !== STRING) {
+		callback = helper;
+		helper = model;
+		model = name;
+		name = 'default';
+	}
 
-    if (callback === undefined) {
-        callback = helper;
-        helper = undefined;
-    }
+	if (callback === undefined) {
+		callback = helper;
+		helper = undefined;
+	}
 
-    if (typeof(callback) !== 'function')
-        callback = undefined;
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
 
-    var compose = self.composes ? self.composes[name] : undefined;
+	var compose = self.composes ? self.composes[name] : undefined;
 
-    if (!compose) {
-        callback(new ErrorBuilder().add('', 'Composer not found.'));
-        return;
-    }
+	if (!compose) {
+		callback(new ErrorBuilder().add('', 'Composer not found.'));
+		return self;
+	}
 
-    self.$prepare(model, function(err, model) {
+	self.$prepare(model, function(err, model) {
 
-        if (err) {
-            callback(err, model);
-            return;
-        }
+		if (err) {
+			callback(err, model);
+			return;
+		}
 
-        var output = self.default();
-        var builder = new ErrorBuilder();
+		var output = self.default();
+		var builder = new ErrorBuilder();
 
-        compose.call(self, builder, output, model, helper, function(result) {
-            if (callback)
-                callback(builder.hasError() ? builder : null, result === undefined ? output : result, model);
-        }, self.name);
-    });
+		if (!isGenerator(self, 'compose.' + name, compose)) {
+			compose.call(self, builder, output, model, helper, function(result) {
 
-    return self;
+				if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+					if (result instanceof Error || result instanceof ErrorBuilder)
+						builder.push(result);
+					result = arguments[1];
+				}
+
+				callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+			}, self.name);
+			return;
+		}
+
+		callback.success = false;
+		async.call(self, compose)(function(err) {
+			if (!err || callback.success)
+				return;
+			callback.success = true;
+			builder.push(err);
+			callback(builder);
+		}, builder, model, helper, function(result) {
+
+			if (callback.success)
+				return;
+
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+			callback.success = true;
+			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+		});
+	});
+
+	return self;
 };
 
 /**
@@ -1351,53 +1625,76 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
  */
 SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback) {
 
-    var self = this;
+	var self = this;
 
-    if (typeof(name) !== STRING) {
-        callback = helper;
-        helper = model;
-        model = name;
-        name = 'default';
-    }
+	if (typeof(name) !== STRING) {
+		callback = helper;
+		helper = model;
+		model = name;
+		name = 'default';
+	}
 
-    if (callback === undefined) {
-        callback = helper;
-        helper = undefined;
-    }
+	if (callback === undefined) {
+		callback = helper;
+		helper = undefined;
+	}
 
-    if (typeof(callback) !== 'function')
-        callback = undefined;
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
 
-    var workflow = self.workflows ? self.workflows[name] : undefined;
+	var workflow = self.workflows ? self.workflows[name] : undefined;
 
-    if (!workflow) {
-        callback(new ErrorBuilder().add('', 'Workflow not found.'));
-        return;
-    }
+	if (!workflow) {
+		callback(new ErrorBuilder().add('', 'Workflow not found.'));
+		return self;
+	}
 
-    self.$prepare(model, function(err, model) {
+	self.$prepare(model, function(err, model) {
 
-        var builder = new ErrorBuilder();
+		if (err) {
+			callback(err, model);
+			return;
+		}
 
-    /*
-        var noPrepare = self._getStateOfModel(model, 0) === '1';
-        var noValidate = self._getStateOfModel(model, 1) === '1';
-        var output = noPrepare === true ? framework_utils.copy(model) : self.prepare(model);
-        var builder = noValidate === true || self.onValidation === undefined ? new ErrorBuilder() : self.validate(output);
-    */
-        if (builder.hasError()) {
-            if (callback)
-                callback(builder);
-            return;
-        }
+		var builder = new ErrorBuilder();
+		if (!isGenerator(self, 'workflow.' + name, workflow)) {
+			workflow.call(self, builder, model, helper, function(result) {
 
-        workflow.call(self, builder, model, helper, function(result) {
-            if (callback)
-                callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
-        }, self.name);
-    });
+				if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+					if (result instanceof Error || result instanceof ErrorBuilder)
+						builder.push(result);
+					result = arguments[1];
+				}
 
-    return self;
+				callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+			}, self.name);
+			return;
+		}
+
+		callback.success = false;
+		async.call(self, workflow)(function(err) {
+			if (!err || callback.success)
+				return;
+			callback.success = true;
+			builder.push(err);
+			callback(builder);
+		}, builder, model, helper, function(result) {
+
+			if (callback.success)
+				return;
+
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+			callback.success = true;
+			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+		});
+
+	});
+
+	return self;
 };
 
 /**
@@ -1410,49 +1707,79 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
  */
 SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback) {
 
-    var self = this;
+	var self = this;
 
-    var tm = typeof(model);
-    var th = typeof(helper);
-    var tc = typeof(callback);
+	var tm = typeof(model);
+	var th = typeof(helper);
+	var tc = typeof(callback);
 
-    if (tc === UNDEFINED) {
-        if (th === FUNCTION) {
-            callback = helper;
-            helper = model;
-            model = undefined;
-        } else if (th === UNDEFINED) {
-            helper = model;
-            model = undefined;
-        }
-    } else if (th === UNDEFINED) {
-        helper = model;
-        model = undefined;
-    }
+	if (tc === UNDEFINED) {
+		if (th === FUNCTION) {
+			callback = helper;
+			helper = model;
+			model = undefined;
+		} else if (th === UNDEFINED) {
+			helper = model;
+			model = undefined;
+		}
+	} else if (th === UNDEFINED) {
+		helper = model;
+		model = undefined;
+	}
 
-    if (typeof(helper) === FUNCTION) {
-        callback = helper;
-        helper = undefined;
-    }
+	if (typeof(helper) === FUNCTION) {
+		callback = helper;
+		helper = undefined;
+	}
 
-    if (typeof(callback) !== 'function')
-        callback = undefined;
+	if (typeof(callback) !== FUNCTION)
+		callback = function(){};
 
-    var operation = self.operations ? self.operations[name] : undefined;
+	var operation = self.operations ? self.operations[name] : undefined;
 
-    if (!operation) {
-        callback(new ErrorBuilder().add('', 'Operation not found.'));
-        return;
-    }
+	if (!operation) {
+		callback(new ErrorBuilder().add('', 'Operation not found.'));
+		return self;
+	}
 
-    var builder = new ErrorBuilder();
+	var builder = new ErrorBuilder();
 
-    operation.call(self, builder, model, helper, function(result) {
-        if (callback)
-            callback(builder.hasError() ? builder : null, result);
-    }, self.name);
+	if (!isGenerator(self, 'workflow.' + name, operation)) {
+		operation.call(self, builder, model, helper, function(result) {
 
-    return self;
+			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+				if (result instanceof Error || result instanceof ErrorBuilder)
+					builder.push(result);
+				result = arguments[1];
+			}
+
+			callback(builder.hasError() ? builder : null, result);
+		}, self.name);
+		return self;
+	}
+
+	callback.success = false;
+	async.call(self, operation)(function(err) {
+			if (!err || callback.success)
+				return;
+			callback.success = true;
+			builder.push(err);
+			callback(builder);
+	}, builder, model, helper, function(result) {
+
+		if (callback.success)
+			return;
+
+		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
+			if (result instanceof Error || result instanceof ErrorBuilder)
+				builder.push(result);
+			result = arguments[1];
+		}
+		callback.success = true;
+		callback(builder.hasError() ? builder : null, result);
+	});
+
+	return self;
 };
 
 /**
@@ -1463,71 +1790,71 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
  */
 SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 
-    if (m === null || m === undefined)
-        return m;
+	if (m === null || m === undefined)
+		return m;
 
-    var model;
+	var model;
 
-    if (!isCopied)
-        model = framework_utils.copy(m);
-    else
-        model = m;
+	if (!isCopied)
+		model = framework_utils.copy(m);
+	else
+		model = m;
 
-    var self = this;
+	var self = this;
 
-    delete model['$$result'];
-    delete model['$$async'];
-    delete model['$clone'];
-    delete model['$async'];
-    delete model['$callback'];
-    delete model['$transform'];
-    delete model['$workflow'];
-    delete model['$operation'];
-    delete model['$destroy'];
-    delete model['$save'];
-    delete model['$remove'];
-    delete model['$clean'];
-    delete model['$prepare'];
-    delete model['$default'];
-    delete model['$schema'];
-    delete model['$validate'];
-    delete model['$compose'];
-    delete model['$rule'];
-    delete model['$constant'];
+	delete model['$$result'];
+	delete model['$$async'];
+	delete model['$clone'];
+	delete model['$async'];
+	delete model['$callback'];
+	delete model['$transform'];
+	delete model['$workflow'];
+	delete model['$operation'];
+	delete model['$destroy'];
+	delete model['$save'];
+	delete model['$remove'];
+	delete model['$clean'];
+	delete model['$prepare'];
+	delete model['$default'];
+	delete model['$schema'];
+	delete model['$validate'];
+	delete model['$compose'];
+	delete model['$rule'];
+	delete model['$constant'];
 
-    var keys = Object.keys(model);
+	var keys = Object.keys(model);
 
-    for (var i = 0, length = keys.length; i < length; i++) {
+	for (var i = 0, length = keys.length; i < length; i++) {
 
-        var key = keys[i];
-        var value = model[key];
+		var key = keys[i];
+		var value = model[key];
 
-        if (value === null)
-            continue;
+		if (value === null)
+			continue;
 
-        if (typeof(value) !== OBJECT)
-            continue;
+		if (typeof(value) !== OBJECT)
+			continue;
 
-        if (value instanceof Array) {
-            for (var j = 0, sublength = value.length; j < sublength; j++) {
+		if (value instanceof Array) {
+			for (var j = 0, sublength = value.length; j < sublength; j++) {
 
-                var item = value[j];
-                if (item === null)
-                    continue;
+				var item = value[j];
+				if (item === null)
+					continue;
 
-                if (typeof(item) !== OBJECT)
-                    continue;
+				if (typeof(item) !== OBJECT)
+					continue;
 
-                value[j] = self.clean(item, true);
-            }
+				value[j] = self.clean(item, true);
+			}
 
-            continue;
-        }
+			continue;
+		}
 
-        model[key] = self.clean(value, true);
-    }
+		model[key] = self.clean(value, true);
+	}
 
-    return model;
+	return model;
 };
 
 /**
@@ -1539,18 +1866,18 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
  */
 function ErrorBuilder(onResource) {
 
-    this.items = [];
-    this.transformName = transforms['error_default'];
-    this.onResource = onResource;
-    this.resourceName = framework.config['default-errorbuilder-resource-name'] || 'default';
-    this.resourcePrefix = framework.config['default-errorbuilder-resource-prefix'] || '';
-    this.isResourceCustom = false;
-    this.count = 0;
-    this.replacer = [];
-    this.isPrepared = false;
+	this.items = [];
+	this.transformName = transforms['error_default'];
+	this.onResource = onResource;
+	this.resourceName = framework.config['default-errorbuilder-resource-name'] || 'default';
+	this.resourcePrefix = framework.config['default-errorbuilder-resource-prefix'] || '';
+	this.isResourceCustom = false;
+	this.count = 0;
+	this.replacer = [];
+	this.isPrepared = false;
 
-    if (onResource === undefined)
-        this._resource();
+	if (onResource === undefined)
+		this._resource();
 }
 
 /**
@@ -1566,7 +1893,7 @@ function ErrorBuilder(onResource) {
  * @classdesc CRUD parameters in URL.
  */
 function UrlBuilder() {
-    this.builder = {};
+	this.builder = {};
 }
 
 /**
@@ -1583,20 +1910,20 @@ function UrlBuilder() {
  * @property {String} format Format URL. Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
  */
 function Pagination(items, page, max, format) {
-    this.isNext = false;
-    this.isPrev = false;
-    this.isFirst = false;
-    this.isLast = false;
-    this.items = items;
-    this.count = 0;
-    this.skip = 0;
-    this.take = 0;
-    this.page = 0;
-    this.max = 0;
-    this.visible = false;
-    this.format = format || '?page={0}';
-    this.refresh(items, page, max);
-    this.transformName = transforms['pagination_default'];
+	this.isNext = false;
+	this.isPrev = false;
+	this.isFirst = false;
+	this.isLast = false;
+	this.items = items;
+	this.count = 0;
+	this.skip = 0;
+	this.take = 0;
+	this.page = 0;
+	this.max = 0;
+	this.visible = false;
+	this.format = format || '?page={0}';
+	this.refresh(items, page, max);
+	this.transformName = transforms['pagination_default'];
 }
 
 /**
@@ -1609,48 +1936,88 @@ function Pagination(items, page, max, format) {
  */
 exports.schema = function(name, obj, defaults, validator, properties) {
 
-    if (obj === undefined) {
+	if (obj === undefined) {
 
-        if (schemas[name] === undefined)
-            schemas[name] = new SchemaBuilder(name);
+		if (schemas[name] === undefined)
+			schemas[name] = new SchemaBuilder(name);
 
-        return schemas[name];
-    }
+		return schemas[name];
+	}
 
-    if (schemas[DEFAULT_SCHEMA] === undefined)
-        schemas[DEFAULT_SCHEMA] = new SchemaBuilder(DEFAULT_SCHEMA);
+	if (schemas[DEFAULT_SCHEMA] === undefined)
+		schemas[DEFAULT_SCHEMA] = new SchemaBuilder(DEFAULT_SCHEMA);
 
-    if (typeof(defaults) !== FUNCTION)
-        defaults = undefined;
+	if (typeof(defaults) !== FUNCTION)
+		defaults = undefined;
 
-    if (typeof(validator) !== FUNCTION)
-        validator = undefined;
+	if (typeof(validator) !== FUNCTION)
+		validator = undefined;
 
-    if (!(properties instanceof Array))
-        properties = undefined;
+	if (!(properties instanceof Array))
+		properties = undefined;
 
-    var schema = schemas[DEFAULT_SCHEMA].add(name, obj, properties, validator);
+	var schema = schemas[DEFAULT_SCHEMA].add(name, obj, properties, validator);
 
-    if (defaults)
-        schema.setDefault(defaults);
+	if (defaults)
+		schema.setDefault(defaults);
 
-    return obj;
+	return obj;
 };
 
 exports.load = function(group, name, model) {
 
-    if (schemas[group] === undefined)
-        schemas[group] = new SchemaBuilder(group);
+	if (!group)
+		group = DEFAULT_SCHEMA;
 
-    var schema;
+	if (schemas[group] === undefined)
+		schemas[group] = new SchemaBuilder(group);
 
-    if (name) {
-        schema = schemas[group].get(name);
-        if (!schema)
-            throw new Error('Schema ' + group + '.' + name + ' not found.');
-    }
+	var schema;
 
-    return model ? schema.make(model) : name ? schema : schemas[group];
+	if (name) {
+		schema = schemas[group].get(name);
+		if (!schema)
+			throw new Error('Schema ' + group + '.' + name + ' not found.');
+	}
+
+	return model ? schema.make(model) : name ? schema : schemas[group];
+};
+
+exports.getschema = function(group, name) {
+
+	if (!name) {
+		name = group;
+		group = DEFAULT_SCHEMA;
+	}
+
+	var g = schemas[group];
+	if (g === undefined)
+		return;
+
+	var s = g.get(name);
+	if (s)
+		return s;
+
+	return;
+};
+
+exports.newschema = function(group, name, model) {
+
+	if (!group)
+		group = DEFAULT_SCHEMA;
+
+	if (schemas[group] === undefined)
+		schemas[group] = new SchemaBuilder(group);
+
+	var schema;
+
+	if (name) {
+		schema = schemas[group].get(name);
+		if (!schema)
+			schema = schemas[group].create(name);
+	}
+
+	return model ? schema.make(model) : name ? schema : schemas[group];
 };
 
 /**
@@ -1658,7 +2025,7 @@ exports.load = function(group, name, model) {
  * @param {String} name
  */
 exports.remove = function(name) {
-    delete schemas[name];
+	delete schemas[name];
 };
 
 /**
@@ -1684,13 +2051,13 @@ exports.remove = function(name) {
  * @return {Boolean}
  */
 exports.isJoin = function(collection, value) {
-    if (!value)
-        return false;
-    if (value[0] === '[')
-        return true;
-    if (collection === undefined)
-        return false;
-    return collection[value] !== undefined;
+	if (!value)
+		return false;
+	if (value[0] === '[')
+		return true;
+	if (collection === undefined)
+		return false;
+	return collection[value] !== undefined;
 };
 
 /**
@@ -1702,40 +2069,40 @@ exports.isJoin = function(collection, value) {
  */
 exports.validation = function(name, properties, fn) {
 
-    if (schemas[DEFAULT_SCHEMA] === undefined)
-        return [];
+	if (schemas[DEFAULT_SCHEMA] === undefined)
+		return [];
 
-    var schema = schemas[DEFAULT_SCHEMA].get(name);
-    if (schema === undefined)
-        return [];
+	var schema = schemas[DEFAULT_SCHEMA].get(name);
+	if (schema === undefined)
+		return [];
 
-    if (fn instanceof Array && typeof(properties) === FUNCTION) {
-        var tmp = fn;
-        fn = properties;
-        properties = fn;
-    }
+	if (fn instanceof Array && typeof(properties) === FUNCTION) {
+		var tmp = fn;
+		fn = properties;
+		properties = fn;
+	}
 
-    if (typeof(fn) === FUNCTION) {
+	if (typeof(fn) === FUNCTION) {
 
-        schema.onValidation = fn;
+		schema.onValidation = fn;
 
-        if (properties === undefined)
-            schema.properties = Object.keys(schema.schema);
-        else
-            schema.properties = properties;
+		if (properties === undefined)
+			schema.properties = Object.keys(schema.schema);
+		else
+			schema.properties = properties;
 
-        return true;
-    }
+		return true;
+	}
 
-    if (fn === undefined) {
-        var validator = schema.properties;
-        if (validator === undefined)
-            return Object.keys(schema.schema);
-        return validator || [];
-    }
+	if (fn === undefined) {
+		var validator = schema.properties;
+		if (validator === undefined)
+			return Object.keys(schema.schema);
+		return validator || [];
+	}
 
-    schema.onValidation = fn;
-    return fn;
+	schema.onValidation = fn;
+	return fn;
 };
 
 /**
@@ -1746,16 +2113,16 @@ exports.validation = function(name, properties, fn) {
  */
 exports.validate = function(name, model, resourcePrefix, resourceName) {
 
-    var schema = schemas[DEFAULT_SCHEMA];
-    if (schema === undefined)
-        return null;
+	var schema = schemas[DEFAULT_SCHEMA];
+	if (schema === undefined)
+		return null;
 
-    schema = schema.get(name);
-    if (schema === undefined)
-        return null;
+	schema = schema.get(name);
+	if (schema === undefined)
+		return null;
 
-    var fn = schema.onValidation;
-    return schema.validate(model, resourcePrefix, resourceName);
+	var fn = schema.onValidation;
+	return schema.validate(model, resourcePrefix, resourceName);
 };
 
 /**
@@ -1764,7 +2131,7 @@ exports.validate = function(name, model, resourcePrefix, resourceName) {
  * @return {Object}
  */
 exports.create = function(name) {
-    return exports.defaults(name);
+	return exports.defaults(name);
 };
 
 /**
@@ -1773,12 +2140,12 @@ exports.create = function(name) {
  * @return {Object}
  */
 exports.defaults = function(name) {
-    if (schemas[DEFAULT_SCHEMA] === undefined)
-        return null;
-    var schema = schemas[DEFAULT_SCHEMA].get(name);
-    if (schema === undefined)
-        return null;
-    return schema.default();
+	if (schemas[DEFAULT_SCHEMA] === undefined)
+		return null;
+	var schema = schemas[DEFAULT_SCHEMA].get(name);
+	if (schema === undefined)
+		return null;
+	return schema.default();
 };
 
 /**
@@ -1788,18 +2155,18 @@ exports.defaults = function(name) {
  * @return {Object} Prepared object.
  */
 exports.prepare = function(name, model) {
-    if (schemas[DEFAULT_SCHEMA] === undefined)
-        return null;
-    var schema = schemas[DEFAULT_SCHEMA].get(name);
-    if (schema === undefined)
-        return null;
-    return schema.prepare(model);
+	if (schemas[DEFAULT_SCHEMA] === undefined)
+		return null;
+	var schema = schemas[DEFAULT_SCHEMA].get(name);
+	if (schema === undefined)
+		return null;
+	return schema.prepare(model);
 };
 
 function isUndefined(value, def) {
-    if (value === undefined)
-        return def;
-    return value;
+	if (value === undefined)
+		return def;
+	return value;
 }
 
 // ======================================================
@@ -1808,19 +2175,19 @@ function isUndefined(value, def) {
 
 ErrorBuilder.prototype = {
 
-    get errors() {
-        var self = this;
-        if (!self.isPrepared)
-            self.prepare();
-        return self._transform();
-    },
+	get errors() {
+		var self = this;
+		if (!self.isPrepared)
+			self.prepare();
+		return self._transform();
+	},
 
-    get error() {
-        var self = this;
-        if (!self.isPrepared)
-            self.prepare();
-        return self._transform();
-    }
+	get error() {
+		var self = this;
+		if (!self.isPrepared)
+			self.prepare();
+		return self._transform();
+	}
 };
 
 /**
@@ -1830,11 +2197,25 @@ ErrorBuilder.prototype = {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.resource = function(name, prefix) {
-    var self = this;
-    self.isResourceCustom = true;
-    self.resourceName = name || 'default';
-    self.resourcePrefix = prefix || '';
-    return self._resource();
+	var self = this;
+	self.isResourceCustom = true;
+	self.resourceName = name || 'default';
+	self.resourcePrefix = prefix || '';
+	return self._resource();
+};
+
+ErrorBuilder.prototype.setResource = function(name) {
+	var self = this;
+	self.isResourceCustom = true;
+	self.resourceName = name || 'default';
+	return self._resource();
+};
+
+ErrorBuilder.prototype.setPrefix = function(name) {
+	var self = this;
+	self.isResourceCustom = true;
+	self.resourcePrefix = name || '';
+	return self._resource();
 };
 
 /**
@@ -1844,16 +2225,16 @@ ErrorBuilder.prototype.resource = function(name, prefix) {
  */
 ErrorBuilder.prototype._resource = function() {
 
-    var self = this;
+	var self = this;
 
-    self.onResource = function(name) {
-        var self = this;
-        if (typeof(framework) !== UNDEFINED)
-            return framework.resource(self.resourceName, self.resourcePrefix + name);
-        return '';
-    };
+	self.onResource = function(name) {
+		var self = this;
+		if (typeof(framework) !== UNDEFINED)
+			return framework.resource(self.resourceName, self.resourcePrefix + name);
+		return '';
+	};
 
-    return self;
+	return self;
 };
 
 /**
@@ -1865,45 +2246,45 @@ ErrorBuilder.prototype._resource = function() {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.add = function(name, error, path, index) {
-    var self = this;
-    self.isPrepared = false;
+	var self = this;
+	self.isPrepared = false;
 
-    if (name instanceof ErrorBuilder) {
-        if (name.hasError()) {
-            for (var i = 0, length = name.items.length; i < length; i++)
-                self.items.push(name.items[i]);
-            self.count = self.items.length;
-        }
-        return self;
-    }
+	if (name instanceof ErrorBuilder) {
+		if (name.hasError()) {
+			for (var i = 0, length = name.items.length; i < length; i++)
+				self.items.push(name.items[i]);
+			self.count = self.items.length;
+		}
+		return self;
+	}
 
-    if (typeof(name) === OBJECT) {
-        path = error;
-        error = name;
-        name = '';
-    }
+	if (typeof(name) === OBJECT) {
+		path = error;
+		error = name;
+		name = '';
+	}
 
-    if ((name === undefined || name === null) && (error === undefined || error === null))
-        return self;
+	if ((name === undefined || name === null) && (error === undefined || error === null))
+		return self;
 
-    if (error === undefined)
-        error = '@';
+	if (error === undefined)
+		error = '@';
 
-    if (error === undefined || error === null)
-        return self;
+	if (error === undefined || error === null)
+		return self;
 
-    if (error instanceof Error)
-        error = error.toString();
+	if (error instanceof Error)
+		error = error.toString();
 
-    self.items.push({
-        name: name,
-        error: typeof(error) === STRING ? error : (error || '').toString() || '@',
-        path: path,
-        index: index
-    });
+	self.items.push({
+		name: name,
+		error: typeof(error) === STRING ? error : (error || '').toString() || '@',
+		path: path,
+		index: index
+	});
 
-    self.count = self.items.length;
-    return self;
+	self.count = self.items.length;
+	return self;
 };
 
 
@@ -1916,7 +2297,7 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.push = function(name, error, path, index) {
-    return this.add(name, error, path, index);
+	return this.add(name, error, path, index);
 };
 
 /**
@@ -1925,14 +2306,14 @@ ErrorBuilder.prototype.push = function(name, error, path, index) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.remove = function(name) {
-    var self = this;
+	var self = this;
 
-    self.items = self.items.remove(function(o) {
-        return o.name === name;
-    });
+	self.items = self.items.remove(function(o) {
+		return o.name === name;
+	});
 
-    self.count = self.items.length;
-    return self;
+	self.count = self.items.length;
+	return self;
 };
 
 /**
@@ -1941,15 +2322,15 @@ ErrorBuilder.prototype.remove = function(name) {
  * @return {Boolean}
  */
 ErrorBuilder.prototype.hasError = function(name) {
-    var self = this;
+	var self = this;
 
-    if (name) {
-        return self.items.find(function(o) {
-            return o.name === name;
-        }) !== null;
-    }
+	if (name) {
+		return self.items.find(function(o) {
+			return o.name === name;
+		}) !== null;
+	}
 
-    return self.items.length > 0;
+	return self.items.length > 0;
 };
 
 /**
@@ -1959,19 +2340,19 @@ ErrorBuilder.prototype.hasError = function(name) {
  */
 ErrorBuilder.prototype.read = function(name) {
 
-    var self = this;
+	var self = this;
 
-    if (!self.isPrepared)
-        self.prepare();
+	if (!self.isPrepared)
+		self.prepare();
 
-    var error = self.items.find(function(o) {
-        return o.name === name;
-    });
+	var error = self.items.find(function(o) {
+		return o.name === name;
+	});
 
-    if (error !== null)
-        return error.error;
+	if (error !== null)
+		return error.error;
 
-    return null;
+	return null;
 };
 
 /**
@@ -1979,10 +2360,10 @@ ErrorBuilder.prototype.read = function(name) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.clear = function() {
-    var self = this;
-    self.items = [];
-    self.count = 0;
-    return self;
+	var self = this;
+	self.items = [];
+	self.count = 0;
+	return self;
 };
 
 /**
@@ -1992,10 +2373,10 @@ ErrorBuilder.prototype.clear = function() {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.replace = function(search, newvalue) {
-    var self = this;
-    self.isPrepared = false;
-    self.replacer[search] = newvalue;
-    return self;
+	var self = this;
+	self.isPrepared = false;
+	self.replacer[search] = newvalue;
+	return self;
 };
 
 /**
@@ -2005,10 +2386,10 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
  * @return {String}
  */
 ErrorBuilder.prototype.json = function(beautify, replacer) {
-    var obj = this.prepare()._transform();
-    if (beautify)
-        return JSON.stringify(obj, replacer, '\t');
-    return JSON.stringify(obj, replacer);
+	var obj = this.prepare()._transform();
+	if (beautify)
+		return JSON.stringify(obj, replacer, '\t');
+	return JSON.stringify(obj, replacer);
 };
 
 /**
@@ -2017,11 +2398,11 @@ ErrorBuilder.prototype.json = function(beautify, replacer) {
  * @return {String}
  */
 ErrorBuilder.prototype.JSON = function(beautify, replacer) {
-    return this.json(beautify, replacer);
+	return this.json(beautify, replacer);
 };
 
 ErrorBuilder.prototype.output = function() {
-    return this.prepare()._transform();
+	return this.prepare()._transform();
 };
 
 /**
@@ -2031,31 +2412,31 @@ ErrorBuilder.prototype.output = function() {
  */
 ErrorBuilder.prototype._prepare = function() {
 
-    var self = this;
+	var self = this;
 
-    if (self.onResource === null)
-        return self;
+	if (self.onResource === null)
+		return self;
 
-    var errors = self.items;
-    var length = errors.length;
+	var errors = self.items;
+	var length = errors.length;
 
-    for (var i = 0; i < length; i++) {
+	for (var i = 0; i < length; i++) {
 
-        var o = errors[i];
+		var o = errors[i];
 
-        if (o.error[0] !== '@')
-            continue;
+		if (o.error[0] !== '@')
+			continue;
 
-        if (o.error.length === 1)
-            o.error = self.onResource(o.name);
-        else
-            o.error = self.onResource(o.error.substring(1));
+		if (o.error.length === 1)
+			o.error = self.onResource(o.name);
+		else
+			o.error = self.onResource(o.error.substring(1));
 
-        if (o.error === undefined || o.error.length === 0)
-            o.error = REQUIRED.replace('@', o.name);
-    }
+		if (o.error === undefined || o.error.length === 0)
+			o.error = REQUIRED.replace('@', o.name);
+	}
 
-    return self;
+	return self;
 };
 
 /**
@@ -2065,18 +2446,18 @@ ErrorBuilder.prototype._prepare = function() {
  */
 ErrorBuilder.prototype._transform = function(name) {
 
-    var self = this;
-    var transformName = name || self.transformName;
+	var self = this;
+	var transformName = name || self.transformName;
 
-    if (!transformName)
-        return self.items;
+	if (!transformName)
+		return self.items;
 
-    var current = transforms['error'][transformName];
+	var current = transforms['error'][transformName];
 
-    if (current === undefined)
-        return self.items;
+	if (current === undefined)
+		return self.items;
 
-    return current.call(self);
+	return current.call(self);
 };
 
 /**
@@ -2085,19 +2466,19 @@ ErrorBuilder.prototype._transform = function(name) {
  */
 ErrorBuilder.prototype.toString = function() {
 
-    var self = this;
+	var self = this;
 
-    if (!self.isPrepared)
-        self.prepare();
+	if (!self.isPrepared)
+		self.prepare();
 
-    var errors = self.items;
-    var length = errors.length;
-    var builder = [];
+	var errors = self.items;
+	var length = errors.length;
+	var builder = [];
 
-    for (var i = 0; i < length; i++)
-        builder.push(errors[i].error || errors[i].name);
+	for (var i = 0; i < length; i++)
+		builder.push(errors[i].error || errors[i].name);
 
-    return builder.join('\n');
+	return builder.join('\n');
 
 };
 
@@ -2107,9 +2488,9 @@ ErrorBuilder.prototype.toString = function() {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.setTransform = function(name) {
-    var self = this;
-    self.transformName = name;
-    return self;
+	var self = this;
+	self.transformName = name;
+	return self;
 };
 
 /**
@@ -2118,8 +2499,8 @@ ErrorBuilder.prototype.setTransform = function(name) {
  * @return {Object}
  */
 ErrorBuilder.prototype.transform = function(name) {
-    var self = this;
-    return self.prepare()._transform(name);
+	var self = this;
+	return self.prepare()._transform(name);
 };
 
 /**
@@ -2129,24 +2510,24 @@ ErrorBuilder.prototype.transform = function(name) {
  */
 ErrorBuilder.prototype._prepareReplace = function() {
 
-    var self = this;
-    var errors = self.items;
-    var lengthBuilder = errors.length;
-    var keys = Object.keys(self.replacer);
-    var lengthKeys = keys.length;
+	var self = this;
+	var errors = self.items;
+	var lengthBuilder = errors.length;
+	var keys = Object.keys(self.replacer);
+	var lengthKeys = keys.length;
 
-    if (lengthBuilder === 0 || lengthKeys === 0)
-        return self;
+	if (lengthBuilder === 0 || lengthKeys === 0)
+		return self;
 
-    for (var i = 0; i < lengthBuilder; i++) {
-        var o = errors[i];
-        for (var j = 0; j < lengthKeys; j++) {
-            var key = keys[j];
-            o.error = o.error.replace(key, self.replacer[key]);
-        }
-    }
+	for (var i = 0; i < lengthBuilder; i++) {
+		var o = errors[i];
+		for (var j = 0; j < lengthKeys; j++) {
+			var key = keys[j];
+			o.error = o.error.replace(key, self.replacer[key]);
+		}
+	}
 
-    return self;
+	return self;
 };
 
 /**
@@ -2155,15 +2536,15 @@ ErrorBuilder.prototype._prepareReplace = function() {
  * @return {ErrorBuidler}
  */
 ErrorBuilder.prototype.prepare = function() {
-    var self = this;
+	var self = this;
 
-    if (self.isPrepared)
-        return self;
+	if (self.isPrepared)
+		return self;
 
-    self._prepare()._prepareReplace();
-    self.isPrepared = true;
+	self._prepare()._prepareReplace();
+	self.isPrepared = true;
 
-    return self;
+	return self;
 };
 
 /**
@@ -2173,9 +2554,9 @@ ErrorBuilder.prototype.prepare = function() {
  * @param {Boolean} isDefault Default transformation for all error builders.
  */
 ErrorBuilder.addTransform = function(name, fn, isDefault) {
-    transforms['error'][name] = fn;
-    if (isDefault)
-        ErrorBuilder.setDefaultTransform(name);
+	transforms['error'][name] = fn;
+	if (isDefault)
+		ErrorBuilder.setDefaultTransform(name);
 };
 
 /**
@@ -2183,7 +2564,7 @@ ErrorBuilder.addTransform = function(name, fn, isDefault) {
  * @param {String} name
  */
 ErrorBuilder.removeTransform = function(name) {
-    delete transforms['error'][name];
+	delete transforms['error'][name];
 };
 
 /**
@@ -2192,10 +2573,10 @@ ErrorBuilder.removeTransform = function(name) {
  * @param {Function(errorBuilder)} fn
  */
 ErrorBuilder.setDefaultTransform = function(name) {
-    if (name === undefined)
-        delete transforms['error_default'];
-    else
-        transforms['error_default'] = name;
+	if (name === undefined)
+		delete transforms['error_default'];
+	else
+		transforms['error_default'] = name;
 };
 
 /**
@@ -2205,9 +2586,9 @@ ErrorBuilder.setDefaultTransform = function(name) {
  * @param {Boolean} isDefault Default transformation for all paginations.
  */
 Pagination.addTransform = function(name, fn, isDefault) {
-    transforms['pagination'][name] = fn;
-    if (isDefault)
-        Pagination.setDefaultTransform(name);
+	transforms['pagination'][name] = fn;
+	if (isDefault)
+		Pagination.setDefaultTransform(name);
 };
 
 /**
@@ -2216,10 +2597,10 @@ Pagination.addTransform = function(name, fn, isDefault) {
  * @param {Function(pagination)} fn
  */
 Pagination.setDefaultTransform = function(name) {
-    if (name === undefined)
-        delete transforms['pagination_default'];
-    else
-        transforms['pagination_default'] = name;
+	if (name === undefined)
+		delete transforms['pagination_default'];
+	else
+		transforms['pagination_default'] = name;
 };
 
 /**
@@ -2227,7 +2608,7 @@ Pagination.setDefaultTransform = function(name) {
  * @param {String} name
  */
 Pagination.removeTransform = function(name) {
-    delete transforms['pagination'][name];
+	delete transforms['pagination'][name];
 };
 
 /**
@@ -2238,26 +2619,26 @@ Pagination.removeTransform = function(name) {
  * @return {Pagination}
  */
 Pagination.prototype.refresh = function(items, page, max) {
-    var self = this;
+	var self = this;
 
-    self.count = Math.floor(items / max) + (items % max > 0 ? 1 : 0);
-    self.page = page - 1;
+	self.count = Math.floor(items / max) + (items % max > 0 ? 1 : 0);
+	self.page = page - 1;
 
-    if (self.page < 0)
-        self.page = 0;
+	if (self.page < 0)
+		self.page = 0;
 
-    self.items = items;
-    self.skip = self.page * max;
-    self.take = max;
-    self.max = max;
-    self.isPrev = self.page > 0;
-    self.isNext = self.page < self.count - 1;
-    self.isFirst = self.count > 1;
-    self.isLast = self.count > 1;
-    self.visible = self.count > 1;
-    self.page++;
+	self.items = items;
+	self.skip = self.page * max;
+	self.take = max;
+	self.max = max;
+	self.isPrev = self.page > 0;
+	self.isNext = self.page < self.count - 1;
+	self.isFirst = self.count > 1;
+	self.isLast = self.count > 1;
+	self.visible = self.count > 1;
+	self.page++;
 
-    return self;
+	return self;
 };
 
 /**
@@ -2266,9 +2647,9 @@ Pagination.prototype.refresh = function(items, page, max) {
  * @return {Pagination}
  */
 Pagination.prototype.setTransform = function(name) {
-    var self = this;
-    self._transform = name;
-    return self;
+	var self = this;
+	self._transform = name;
+	return self;
 };
 
 /**
@@ -2284,22 +2665,22 @@ Pagination.prototype.setTransform = function(name) {
  */
 Pagination.prototype.transform = function(name) {
 
-    var self = this;
-    var transformName = name || self.transformName;
+	var self = this;
+	var transformName = name || self.transformName;
 
-    if (!transformName)
-        throw new Error('A transformation of Pagination not found.');
+	if (!transformName)
+		throw new Error('A transformation of Pagination not found.');
 
-    var current = transforms['pagination'][transformName];
+	var current = transforms['pagination'][transformName];
 
-    if (current === undefined)
-        return self.render();
+	if (current === undefined)
+		return self.render();
 
-    var param = [];
-    for (var i = 1; i < arguments.length; i++)
-        param.push(arguments[i]);
+	var param = [];
+	for (var i = 1; i < arguments.length; i++)
+		param.push(arguments[i]);
 
-    return current.apply(self, param);
+	return current.apply(self, param);
 };
 
 /**
@@ -2308,22 +2689,22 @@ Pagination.prototype.transform = function(name) {
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.prev = function(format) {
-    var self = this;
-    var page = 0;
+	var self = this;
+	var page = 0;
 
-    format = format || self.format;
+	format = format || self.format;
 
-    if (self.isPrev)
-        page = self.page - 1;
-    else
-        page = self.count;
+	if (self.isPrev)
+		page = self.page - 1;
+	else
+		page = self.count;
 
-    return {
-        url: format.format(page, self.items, self.count),
-        page: page,
-        selected: false,
-        enabled: self.isPrev
-    };
+	return {
+		url: format.format(page, self.items, self.count),
+		page: page,
+		selected: false,
+		enabled: self.isPrev
+	};
 };
 
 /**
@@ -2332,22 +2713,22 @@ Pagination.prototype.prev = function(format) {
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.next = function(format) {
-    var self = this;
-    var page = 0;
+	var self = this;
+	var page = 0;
 
-    format = format || self.format;
+	format = format || self.format;
 
-    if (self.isNext)
-        page = self.page + 1;
-    else
-        page = 1;
+	if (self.isNext)
+		page = self.page + 1;
+	else
+		page = 1;
 
-    return {
-        url: format.format(page, self.items, self.count),
-        page: page,
-        selected: false,
-        enabled: self.isNext
-    };
+	return {
+		url: format.format(page, self.items, self.count),
+		page: page,
+		selected: false,
+		enabled: self.isNext
+	};
 };
 
 /**
@@ -2357,17 +2738,20 @@ Pagination.prototype.next = function(format) {
  */
 Pagination.prototype.last = function(format) {
 
-    var self = this;
-    var page = self.count;
+	var self = this;
+	var page = self.count;
 
-    format = format || self.format;
+	if (self.isPrev)
+		page = self.page - 1;
 
-    return {
-        url: format.format(page, self.items, self.count),
-        page: page,
-        selected: false,
-        enabled: self.count > 0
-    };
+	format = format || self.format;
+
+	return {
+		url: format.format(page, self.items, self.count),
+		page: page,
+		selected: false,
+		enabled: self.count > 0
+	};
 };
 
 /**
@@ -2377,17 +2761,17 @@ Pagination.prototype.last = function(format) {
  */
 Pagination.prototype.first = function(format) {
 
-    var self = this;
-    var page = 1;
+	var self = this;
+	var page = 1;
 
-    format = format || self.format;
+	format = format || self.format;
 
-    return {
-        url: format.format(page, self.items, self.count),
-        page: page,
-        selected: false,
-        enabled: self.count > 0
-    };
+	return {
+		url: format.format(page, self.items, self.count),
+		page: page,
+		selected: false,
+		enabled: self.count > 0
+	};
 };
 
 /**
@@ -2398,65 +2782,65 @@ Pagination.prototype.first = function(format) {
  */
 Pagination.prototype.prepare = function(max, format) {
 
-    var self = this;
+	var self = this;
 
-    if (self.transformName)
-        return transforms['pagination'][self.transformName].apply(self, arguments);
+	if (self.transformName)
+		return transforms['pagination'][self.transformName].apply(self, arguments);
 
-    var builder = [];
-    format = format || self.format;
+	var builder = [];
+	format = format || self.format;
 
-    if (typeof(max) === STRING) {
-        var tmp = format;
-        format = max;
-        max = format;
-    }
+	if (typeof(max) === STRING) {
+		var tmp = format;
+		format = max;
+		max = format;
+	}
 
-    if (max === undefined || max === null) {
-        for (var i = 1; i < self.count + 1; i++)
-            builder.push({
-                url: format.format(i, self.items, self.count),
-                page: i,
-                selected: i === self.page,
-                enabled: true
-            });
-        return builder;
-    }
+	if (max === undefined || max === null) {
+		for (var i = 1; i < self.count + 1; i++)
+			builder.push({
+				url: format.format(i, self.items, self.count),
+				page: i,
+				selected: i === self.page,
+				enabled: true
+			});
+		return builder;
+	}
 
-    var half = Math.floor(max / 2);
-    var pages = self.count;
+	var half = Math.floor(max / 2);
+	var pages = self.count;
 
-    var pageFrom = self.page - half;
-    var pageTo = self.page + half;
-    var plus = 0;
+	var pageFrom = self.page - half;
+	var pageTo = self.page + half;
+	var plus = 0;
 
-    if (pageFrom <= 0) {
-        plus = Math.abs(pageFrom);
-        pageFrom = 1;
-        pageTo += plus;
-    }
+	if (pageFrom <= 0) {
+		plus = Math.abs(pageFrom);
+		pageFrom = 1;
+		pageTo += plus;
+	}
 
-    if (pageTo >= pages) {
-        pageTo = pages;
-        pageFrom = pages - max;
-    }
+	if (pageTo >= pages) {
+		pageTo = pages;
+		pageFrom = pages - max;
+	}
 
-    if (pageFrom < 0)
-        pageFrom = 1;
+	if (pageFrom < 0)
+		pageFrom = 1;
 
-    for (var i = pageFrom; i < pageTo + 1; i++)
-        builder.push({
-            url: format.format(i, self.items, self.count),
-            page: i,
-            selected: i === self.page,
-            enabled: true
-        });
+	for (var i = pageFrom; i < pageTo + 1; i++)
+		builder.push({
+			url: format.format(i, self.items, self.count),
+			page: i,
+			selected: i === self.page,
+			enabled: true
+		});
 
-    return builder;
+	return builder;
 };
 
 Pagination.prototype.render = function(max, format) {
-    return this.prepare(max, format);
+	return this.prepare(max, format);
 };
 
 /**
@@ -2466,19 +2850,19 @@ Pagination.prototype.render = function(max, format) {
  * return {UrlBuilder}
  */
 UrlBuilder.prototype.add = function(name, value) {
-    var self = this;
+	var self = this;
 
-    if (typeof(name) !== OBJECT) {
-        self.builder[name] = value;
-        return self;
-    }
+	if (typeof(name) !== OBJECT) {
+		self.builder[name] = value;
+		return self;
+	}
 
-    var arr = Object.keys(name);
+	var arr = Object.keys(name);
 
-    for (var i = 0, length = arr.length; i < length; i++)
-        self.builder[arr[i]] = name[arr[i]];
+	for (var i = 0, length = arr.length; i < length; i++)
+		self.builder[arr[i]] = name[arr[i]];
 
-    return self;
+	return self;
 };
 
 /**
@@ -2487,9 +2871,9 @@ UrlBuilder.prototype.add = function(name, value) {
  * @return {UrlBuilder}
  */
 UrlBuilder.prototype.remove = function(name) {
-    var self = this;
-    delete self.builder[name];
-    return self;
+	var self = this;
+	delete self.builder[name];
+	return self;
 };
 
 /**
@@ -2498,7 +2882,7 @@ UrlBuilder.prototype.remove = function(name) {
  * @return {Object}
  */
 UrlBuilder.prototype.read = function(name) {
-    return this.builder[name] || null;
+	return this.builder[name] || null;
 };
 
 /**
@@ -2506,9 +2890,9 @@ UrlBuilder.prototype.read = function(name) {
  * @return {UrlBuilder}
  */
 UrlBuilder.prototype.clear = function() {
-    var self = this;
-    self.builder = {};
-    return self;
+	var self = this;
+	self.builder = {};
+	return self;
 };
 
 /**
@@ -2517,36 +2901,36 @@ UrlBuilder.prototype.clear = function() {
  */
 UrlBuilder.prototype.toString = function(url, skipEmpty) {
 
-    if (typeof(url) === BOOLEAN) {
-        var tmp = skipEmpty;
-        skipEmpty = url;
-        url = tmp;
-    }
+	if (typeof(url) === BOOLEAN) {
+		var tmp = skipEmpty;
+		skipEmpty = url;
+		url = tmp;
+	}
 
-    var self = this;
-    var builder = [];
+	var self = this;
+	var builder = [];
 
-    Object.keys(self.builder).forEach(function(o) {
+	Object.keys(self.builder).forEach(function(o) {
 
-        var value = self.builder[o];
-        if (value === undefined || value === null)
-            value = '';
-        else
-            value = value.toString();
+		var value = self.builder[o];
+		if (value === undefined || value === null)
+			value = '';
+		else
+			value = value.toString();
 
-        if (skipEmpty && value === '')
-            return;
+		if (skipEmpty && value === '')
+			return;
 
-        builder.push(o + '=' + encodeURIComponent(value));
-    });
+		builder.push(o + '=' + encodeURIComponent(value));
+	});
 
-    if (typeof(url) === STRING) {
-        if (url[url.length - 1] !== '?')
-            url += '?';
-    } else
-        url = '';
+	if (typeof(url) === STRING) {
+		if (url[url.length - 1] !== '?')
+			url += '?';
+	} else
+		url = '';
 
-    return url + builder.join('&');
+	return url + builder.join('&');
 };
 
 /**
@@ -2556,21 +2940,21 @@ UrlBuilder.prototype.toString = function(url, skipEmpty) {
  */
 UrlBuilder.prototype.hasValue = function(keys) {
 
-    if (keys === undefined)
-        return false;
+	if (keys === undefined)
+		return false;
 
-    var self = this;
+	var self = this;
 
-    if (typeof(keys) === 'string')
-        keys = [keys];
+	if (typeof(keys) === 'string')
+		keys = [keys];
 
-    for (var i = 0; i < keys.length; i++) {
-        var val = self.builder[keys[i]];
-        if (val === undefined || val === null)
-            return false;
-    }
+	for (var i = 0; i < keys.length; i++) {
+		var val = self.builder[keys[i]];
+		if (val === undefined || val === null)
+			return false;
+	}
 
-    return true;
+	return true;
 };
 
 /**
@@ -2581,14 +2965,14 @@ UrlBuilder.prototype.hasValue = function(keys) {
  */
 UrlBuilder.prototype.toOne = function(keys, delimiter) {
 
-    var self = this;
-    var builder = [];
+	var self = this;
+	var builder = [];
 
-    keys.forEach(function(o) {
-        builder.push(self.builder[o] || '');
-    });
+	keys.forEach(function(o) {
+		builder.push(self.builder[o] || '');
+	});
 
-    return builder.join(delimiter || '&');
+	return builder.join(delimiter || '&');
 };
 
 // ======================================================
@@ -2599,3 +2983,4 @@ exports.SchemaBuilder = SchemaBuilder;
 exports.ErrorBuilder = ErrorBuilder;
 exports.Pagination = Pagination;
 exports.UrlBuilder = UrlBuilder;
+global.ErrorBuilder = ErrorBuilder;

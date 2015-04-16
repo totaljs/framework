@@ -1,8 +1,12 @@
-var framework = require('../index');
-framework.http('debug', { 'port': 8001 });
+require('../index').http('debug');
 
-/*
-setTimeout(function() {
-    framework.stop();
-}, 4000);
-*/
+F.route('/',json_test,['get']);
+F.route('/',json_test_b,['post','json']);
+
+function json_test() {
+    this.plain('GET');
+}
+
+function json_test_b() {
+    this.plain('POST');
+}

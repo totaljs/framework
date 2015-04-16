@@ -154,8 +154,8 @@ function prototypeString() {
 	str = 'data:image/gif;base64,R0lGODdhAQABAIAAAF5eXgAAACwAAAAAAQABAAACAkQBADs=';
 	assert.ok(str.base64ContentType() === 'image/gif', 'string.base64ContentType(): ' + str);
 
-	str = 'ľščťŽýÁíéäôúá';
-	assert.ok(str.removeDiacritics() === 'lsctZyAieaoua', 'string.removeDiacritics(): ' + str);
+	str = 'ľščťŽýÁíéäôúáűő';
+	assert.ok(str.removeDiacritics() === 'lsctZyAieaouauo', 'string.removeDiacritics(): ' + str);
 
 	str ='<xml>';
 	assert.ok(str.indent(4) === '    <xml>', 'string.indent(4): ' + str);
@@ -211,6 +211,10 @@ function prototypeArray() {
 		{ name: '5', value: 50 }
 	];
 
+	var obj = arr.toObject('name');
+
+	assert.ok(obj['3'].value === 30, 'array.toObject(with name)');
+
 	assert.ok(arr.find(function(o) { return o.name === '4'; }).value === 40, 'array.find()');
 	assert.ok(arr.find(function(o) { return o.name === '6'; }) === null, 'array.find(): null');
 	assert.ok(arr.find('name', '4').value === 40, 'array.find(inline)');
@@ -225,6 +229,8 @@ function prototypeArray() {
 	assert.ok(arr.length === 2, 'array.remove(inline)');
 
 	arr = [1, 2, 3, 4, 5];
+	obj = arr.toObject();
+	assert.ok(obj[3] === true, 'array.toObject(without name)');
 	assert.ok(arr.skip(3).join('') === '45', 'array.skip()');
 	assert.ok(arr.take(3).join('') === '123', 'array.take()');
 
@@ -256,6 +262,44 @@ function prototypeArray() {
 
 	});
 
+	arr = [1, 2, 3, 4, 5, 6];
+	arr.limit(3, function(item, next, beg, end) {
+		if (beg === 0 && end === 3)
+			assert.ok(item.join(',') === '1,2,3', 'arrray.limit(0-3)');
+		else if (beg === 3 && end === 6)
+			assert.ok(item.join(',') === '4,5,6', 'arrray.limit(3-6)');
+	    next();
+	});
+
+	var arr1 = [{ id: 1, name: 'Peter', age: 25 }, { id: 2, name: 'Lucia', age: 19 }, { id: 3, name: 'Jozef', age: 33 }];
+	var arr2 = [{ id: 2, age: 5, name: 'Lucka' }, { id: 3, name: 'Peter', age: 50 }, { id: 1, name: 'Peter', age: 25 }, { id: 5, name: 'New', age: 33 }];
+
+	arr1.compare('id', arr2, function(a, b, ai, bi) {
+
+		if (a === 0)
+			assert.ok(JSON.stringify(a) === JSON.stringify(b), 'array.compare(0)');
+		else if (a === 1)
+			assert.ok(a.age === 19 && b.age === 5, 'array.compare(1)');
+		else if (a === -1)
+			assert.ok(!a && b.age === 33, 'array.compare(2)');
+	});
+
+	var asyncarr = [];
+	var asyncounter = 0;
+
+	asyncarr.push(function(next) {
+		asyncounter++;
+		next();
+	});
+
+	asyncarr.push(function(next) {
+		asyncounter++;
+		next();
+	});
+
+	asyncarr.async(function() {
+		assert.ok(asyncounter === 2, 'array.async(classic)');
+	});
 }
 
 function t_callback1(a, cb) {
@@ -449,7 +493,7 @@ function other() {
 		assert.ok(value.join(',') === '1,2,3,4,5,6,7,8,9', 'async');
 	});
 
-	utils.request('http://www.yahoo.com', ['get'], function(err, data, code) {
+	utils.request('http://www.yahoo.com', ['get', 'dnscache'], function(err, data, code) {
 		assert.ok(code === 200, 'utils.request (success)');
 	}).on('data', function(chunk, p) {
 		assert.ok(p === 100, 'utils.request (events)');
@@ -461,7 +505,7 @@ function other() {
 		assert.ok(p === 100, 'utils.download (events)');
 	});
 
-	utils.request('http://xxxxxxx.yyy', 'get', null, function(err, data, code) {
+	utils.request('http://xxxxxxx.yyy', ['get'], null, function(err, data, code) {
 		assert.ok(err !== null, 'utils.requiest (error)');
 	});
 
@@ -549,6 +593,15 @@ function other() {
 	assert.ok(utils.minifyScript('var a = 1 ;') === 'var a=1;', 'JavaScript minifier');
 	assert.ok(utils.minifyStyle('body { margin: 0 0 0 5px }') === 'body{margin:0 0 0 5px}', 'Style minifier');
 	assert.ok(utils.minifyHTML('<b>\nTEST\n</b>') === '<b>TEST</b>', 'HTML minifier');
+
+	var streamer = utils.streamer('\n', function(value, index) {
+		assert.ok(value.trim() === index.toString(), 'Streamer problem');
+	});
+
+	streamer('0');
+	streamer('\n1\n2\n');
+	streamer('3\n');
+	streamer('4\n');
 }
 
 function onValidation(name, value, path) {

@@ -8,6 +8,10 @@ var max = 100;
 
 INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
+framework.onCompileView = function(name, html, model) {
+	return html + 'COMPILED';
+};
+
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
@@ -107,6 +111,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('sync', function(complete) {
+		utils.request(url + 'sync/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(data === 'TEST', 'generator problem');
+			complete();
+		});
+	});
+
 	async.await('a/b', function(complete) {
 		utils.request(url + 'c/b/', 'GET', null, function(error, data, code, headers) {
 			if (error)
@@ -129,6 +142,15 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			assert(data === 'GET', 'REST - GET');
+			complete();
+		});
+	});
+
+	async.await('rest HEAD', function(complete) {
+		utils.request(url + 'rest/', ['head'], null, function(error, data, code, headers) {
+ 			if (error)
+				throw error;
+			assert(data === '', 'REST - HEAD');
 			complete();
 		});
 	});
@@ -164,11 +186,11 @@ function test_routing(next) {
 		utils.request(url + 'translate/?language=', 'GET', null, function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '---translate---', 'translate problem (EN)');
+			assert(data === '---translate---######', 'translate problem (EN)');
 			utils.request(url + 'translate/?language=sk', 'GET', null, function(error, data, code, headers) {
 				if (error)
 					throw error;
-				assert(data === '---preklad---', 'translate problem (SK)');
+				assert(data === '---preklad---###preklad###', 'translate problem (SK)');
 				complete();
 			});
 		});

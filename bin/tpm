@@ -1,6 +1,6 @@
 'use strict';
 
-var VERSION = 'v1.7.0';
+var VERSION = 'v1.8.x';
 
 var fs = require('fs');
 var ph = require('path');
@@ -212,16 +212,25 @@ Backup.prototype.restoreKey = function(data) {
         return;
     }
 
-    var index = data.indexOf(':');
+    var index = -1;
+    var tmp = data;
+
+    if (read.status === 2) {
+        tmp = read.key + tmp;
+        index = tmp.indexOf(':');
+    }
+    else
+        index = tmp.indexOf(':');
 
     if (index === -1) {
         read.key += data;
+        read.status = 2;
         return;
     }
 
     read.status = 1;
-    read.key = data.substring(0, index);
-    self.restoreValue(data.substring(index + 1));
+    read.key = tmp.substring(0, index);
+    self.restoreValue(tmp.substring(index + 1));
 };
 
 Backup.prototype.restoreValue = function(data) {

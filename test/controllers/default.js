@@ -24,6 +24,7 @@ exports.install = function(framework) {
         flags: ['unauthorize']
     });
 
+    framework.route('/sync/', synchronize);
     framework.route('/package/', '@testpackage/test');
     framework.route('/precompile/', view_precomile);
     framework.route('/homepage/', view_homepage);
@@ -64,7 +65,7 @@ exports.install = function(framework) {
     framework.route('/post/schema/', plain_post_schema_parse, ['post', '*test/User']);
     framework.route('/rest/', plain_rest, ['post', 'json']);
     framework.route('/rest/', plain_rest, ['put', 'json']);
-    framework.route('/rest/', plain_rest, ['get']);
+    framework.route('/rest/', plain_rest, ['get', 'head']);
     framework.route('/rest/', plain_rest, ['delete']);
 
     framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);
@@ -118,6 +119,12 @@ exports.install = function(framework) {
     // maximumSize
     framework.websocket('/', socket);
 };
+
+function *synchronize() {
+    var self = this;
+    var content = (yield sync(require('fs').readFile)(self.path.public('file.txt'))).toString('utf8');
+    self.plain(content);
+}
 
 function plain_rest() {
     this.plain(this.req.method);
@@ -515,7 +522,8 @@ function viewViews() {
     assert.ok(output.contains('HELPER:1-<count>1</count><next>0</next>'), name + 'inline helper + foreach 1');
     assert.ok(output.contains('HELPER:2-<count>2</count><next>1</next>'), name + 'inline helper + foreach 2');
     assert.ok(output.contains('<section>SECTION</section>'), name + 'section');
-
+    assert.ok(output.contains('COMPILE_TANGULARCOMPILED'), name + 'onCompileView with name');
+    assert.ok(output.contains('COMPILE_WITHOUTCOMPILED'), name + 'onCompileView without name');
     assert.ok(output.contains('<div>4</div><div>4</div><div>FOREACH</div>'), name + 'foreach');
     assert.ok(output.contains('<div>3</div><div>3</div><div></div><div>C:10</div><div>C:11</div><div>C:12</div>'), name + 'foreach - nested');
     assert.ok(output.contains('<INLINE>5</INLINE>'), name + 'Inline assign value');

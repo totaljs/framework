@@ -267,6 +267,37 @@ function test_Schema() {
     obj.$async(function(err, result) {
         assert.ok(err === null && countW === 2 && countS === 2 && result.length === 2, 'schema $async');
     }).$save().$workflow('send');
+
+    var q = SCHEMA('test').create('q');
+    var x = SCHEMA('test').create('x');
+
+    q.define('name', String, true);
+    q.define('arr', '[x]', true);
+    x.define('age', Number, true);
+    x.define('note', String, true);
+
+    q.setValidation(function(name, value) {
+        assert.ok((name === 'name' && value.length === 0) || (name === 'arr' && value.length === 2), 'SchemaBuilderEntity.validation() 1');
+    });
+
+    x.setValidation(function(name, value) {
+        assert.ok((name === 'age' && value > 22) || (name === 'note' && value.length > 3), 'SchemaBuilderEntity.validation() 2');
+    });
+
+    var qi = q.create();
+
+    var xi = x.create();
+    xi.age = 30;
+    xi.note = 'Peter';
+    qi.arr.push(xi);
+
+    xi = x.create();
+    xi.age = 23;
+    xi.note = 'Jano';
+    qi.arr.push(xi);
+
+    qi.$validate();
+
 };
 
 function test_ErrorBuilder() {
