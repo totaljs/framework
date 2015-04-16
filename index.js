@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1800;
-	this.version_header = '1.8.0 (build: 53)';
+	this.version_header = '1.8.0';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 
@@ -271,7 +271,7 @@ function Framework() {
 		'default-interval-clear-resources': 20,
 		'default-interval-clear-cache': 7,
 		'default-interval-precompile-views': 61,
-		'default-interval-websocket-ping': 1,
+		'default-interval-websocket-ping': 0,
 		'default-interval-clear-dnscache': 2880 // 2 days
 	};
 
@@ -4375,8 +4375,9 @@ Framework.prototype._service = function(count) {
 	if (count % framework.config['default-interval-clear-dnscache'] === 0)
 		framework_utils.clearDNS();
 
-	// every 1 minute (default) is created a ping message
-	if (count % framework.config['default-interval-websocket-ping'] === 0) {
+	var ping = framework.config['default-interval-websocket-ping'];
+	if (ping > 0 && count % ping === 0) {
+		// every 1 minute (default) is created a ping message
 		Object.keys(framework.connections).wait(function(item, next) {
 			var conn = framework.connections[item];
 			if (conn && typeof(conn.ping) === TYPE_FUNCTION)
@@ -4636,10 +4637,10 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
             case 'D':
                 self.stats.request['delete']++;
                 break;
-            case 'H':
+            case 'G':
                 self.stats.request.get++;
                 break;
-            default:
+            case 'H':
                 self.stats.request.head++;
                 break;
         }

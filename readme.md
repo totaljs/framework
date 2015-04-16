@@ -35,6 +35,7 @@ Please support the framework on social networks.
 
 ## References
 
+- [__NEW__: E-commerce, CMS and Docker manager](http://nowitssimple.com/)
 - [MonitorGuru.com (Website monitoring)](https://www.monitorguru.com)
 - [Bufferwall.com (Blog portal)](https://bufferwall.com)
 - [Warstore.sk (E-commerce)](https://www.warstore.sk)

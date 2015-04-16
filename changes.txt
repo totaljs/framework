@@ -1,4 +1,4 @@
-IN DEVELOPMENT ======= 1.8.0
+======= 1.8.0
 
 source-code: "tabs" instead of "spaces" 
 
@@ -59,6 +59,7 @@ source-code: "tabs" instead of "spaces"
 - updated: SchemaBuilderEntity.validation()
 - updated: F.cache.set(key, value, expire, [sync])
 - updated: NoSQL
+- updated: (IMPORTANT): Websocket ping is disabled by default
 
 - fixed: Image.resize()
 - fixed: F.usage() --> fixed queue pendings

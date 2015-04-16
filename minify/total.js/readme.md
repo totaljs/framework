@@ -1,6 +1,6 @@
 [![NPM version][npm-version-image]][npm-url] [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
-![total.js logo](https://www.totaljs.com/download/logo-black.png)
+![total.js logo](https://www.totaljs.com/img/logo2x.png)
 
 web framework for node.js
 =========================
@@ -21,43 +21,35 @@ $ npm install total.js
 - [__Download__ Modules & Packages](https://github.com/totaljs/modules) (View Engines, Session, Auth, etc.)
 - [__Download__ Examples](https://github.com/totaljs/examples)
 
-__Interesting__:
+## Social networks
 
-- Framework supports [NoSQL Embedded database](https://github.com/petersirka/nosql) for max. 20 000 documents per database
+Please support the framework on social networks.
 
-__Social networks__:
-
-- [__Discussion forum__](https://groups.google.com/forum/#!forum/totaljs)
+- [Blogs](https://bufferwall.com/blogs/?tag=total.js)
+- [Follow total.js on Gitter](https://gitter.im/totaljs/framework)
 - [Follow total.js on GitHub](https://github.com/totaljs/framework)
 - [Follow total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
 - [Follow total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
 - [Follow total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
 - [Follow total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
-References
-----------
+## References
 
+- [__NEW__: E-commerce, CMS and Docker manager](http://nowitssimple.com/)
 - [MonitorGuru.com (Website monitoring)](https://www.monitorguru.com)
 - [Bufferwall.com (Blog portal)](https://bufferwall.com)
-- [Warstore.sk (Ecommerce)](https://www.warstore.sk)
-- [Spektrum-bb.sk (Ecommerce)](https://www.spektrum-bb.sk)
+- [Warstore.sk (E-commerce)](https://www.warstore.sk)
 - [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)
 - [GPS Localization (WebSocket) - www.gpslocalization.com](http://www.gpslocalization.com)
 - [Online Clipboard (CouchDB) - www.online-clipboard.com](https://www.online-clipboard.com)
 
-... and many more.
+## Donate
 
-__Client-side libraries__
+The framework needs your donation for ensure future development and improving the documentation. __I want to continue because total.js is really good__.
 
-- [jQuery jComponent](https://github.com/petersirka/jComponent)
-- [jQuery two way bindings](https://github.com/petersirka/jquery.bindings)
-- [Tangular - template engine like Angular.js](https://github.com/petersirka/Tangular)
-- [jQuery file upload (+ drag&drop)](https://github.com/petersirka/jquery.upload)
+[![Donation via PayPal](https://www.totaljs.com/img/donation.png)](https://www.totaljs.com/donation/)
 
-***
-
-Videos on YouTube
------------------
+## Videos on YouTube
 
 - VIDEO: [Why is node.js awesome? WebSocket + nginx + total.js + HTML + JavaScript ](http://www.youtube.com/watch?v=4Vrqx0UnpYk)
 - VIDEO: [Node.js / total.js debugging of web applications](http://www.youtube.com/watch?v=4wLq_bJ_sfs)
@@ -70,7 +62,7 @@ Videos on YouTube
 
 ## Contributors
 
-- Peter Širka, <https://github.com/petersirka>
+- Peter Širka (__author__), <https://github.com/petersirka>
 - Toshiaki Takahashi, <https://github.com/toshipon>
 - Bir, <https://github.com/bir>
 - Serkan Kocaman, <https://github.com/KiPSOFT>
