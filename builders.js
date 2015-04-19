@@ -162,7 +162,6 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, primary) {
 
 SchemaBuilderEntity.prototype.$parse = function(name, value, required) {
 
-	var self = this;
 	var type = typeof(value);
 	var result = {};
 
@@ -224,9 +223,8 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required) {
 		return result;
 	}
 
-	if (type === OBJECT) {
+	if (type === OBJECT)
 		return result;
-	}
 
 	if (value[0] === '[') {
 		value = value.substring(1, value.length - 1);
@@ -1709,7 +1707,6 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 	var self = this;
 
-	var tm = typeof(model);
 	var th = typeof(helper);
 	var tc = typeof(callback);
 
@@ -2079,7 +2076,7 @@ exports.validation = function(name, properties, fn) {
 	if (fn instanceof Array && typeof(properties) === FUNCTION) {
 		var tmp = fn;
 		fn = properties;
-		properties = fn;
+		properties = tmp;
 	}
 
 	if (typeof(fn) === FUNCTION) {
@@ -2121,7 +2118,6 @@ exports.validate = function(name, model, resourcePrefix, resourceName) {
 	if (schema === undefined)
 		return null;
 
-	var fn = schema.onValidation;
 	return schema.validate(model, resourcePrefix, resourceName);
 };
 
@@ -2793,7 +2789,7 @@ Pagination.prototype.prepare = function(max, format) {
 	if (typeof(max) === STRING) {
 		var tmp = format;
 		format = max;
-		max = format;
+		max = tmp;
 	}
 
 	if (max === undefined || max === null) {

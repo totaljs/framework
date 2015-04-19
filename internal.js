@@ -35,14 +35,12 @@ global.$STRING = function(value) {
 	@contentType {String}
 	@maximumSize {Number}
 	@tmpDirectory {String}
-	@onXSS {Function}
-	@callback {Function}
+	@subscribe {Object}
 */
-exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, onXSS, callback) {
+exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, subscribe) {
 
 	var parser = new MultipartParser();
 	var boundary = contentType.split(';')[1];
-	var isFile = false;
 	var size = 0;
 	var stream = null;
 
@@ -61,7 +59,6 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 	var ip = req.ip.replace(/\./g, '');
 	var close = 0;
-	var isXSS = false;
 	var rm = null;
 
 	boundary = boundary.substring(boundary.indexOf('=') + 1);
@@ -83,11 +80,7 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 		if (req.buffer_exceeded)
 			return;
 
-		if (isXSS)
-			return;
-
 		var header = buffer.slice(start, end).toString(ENCODING);
-
 		if (tmp.step === 1) {
 			var index = header.indexOf(';');
 			if (index === -1)
@@ -135,9 +128,6 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 	parser.onPartData = function(buffer, start, end) {
 
 		if (req.buffer_exceeded)
-			return;
-
-		if (isXSS)
 			return;
 
 		var data = buffer.slice(start, end);
@@ -215,17 +205,13 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 
 		tmp.value = tmp.value.toString(ENCODING);
 
-		if (onXSS(tmp.value))
-			isXSS = true;
-
 		var temporary = req.body[tmp.name];
-
 		if (temporary === undefined) {
 			req.body[tmp.name] = tmp.value;
 			return;
 		}
 
-		if (framework_utils.isArray(temporary)) {
+		if (temporary instanceof Array) {
 			req.body[tmp.name].push(tmp.value);
 			return;
 		}
@@ -236,25 +222,15 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, o
 	};
 
 	parser.onEnd = function() {
-
 		var cb = function() {
-
 			if (close > 0) {
 				setImmediate(cb);
 				return;
 			}
-
-			if (isXSS) {
-				req.flags.push('xss');
-				framework.stats.request.xss++;
-			}
-
 			if (rm !== null)
 				framework.unlink(rm);
-
-			callback();
+			subscribe.doEnd();
 		};
-
 		cb();
 	};
 
@@ -478,10 +454,6 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 			case 'xhr':
 			case '+xhr':
 				if (!route.isBOTH && !route.isXHR)
-					return 0;
-				continue;
-			case 'xss':
-				if (!route.isXSS)
 					return 0;
 				continue;
 		}
@@ -1034,7 +1006,6 @@ function JavaScript(source) {
 	function jsmin() {
 		theA = 13;
 		action(3);
-		var indexer = 0;
 		while (theA !== EOF) {
 			switch (theA) {
 				case 32:
@@ -2115,7 +2086,6 @@ function view_is_assign(value) {
 
 	var length = value.length;
 	var skip = 0;
-	var plus = 0;
 
 	for (var i = 0; i < length; i++) {
 
@@ -2414,8 +2384,6 @@ function compressHTML(html, minify) {
  * @return {Object}
  */
 View.prototype.read = function(path, language) {
-
-	var self = this;
 	var config = framework.config;
 	var isOut = path[0] === '.';
 	var filename = isOut ? path.substring(1) : framework.path.views(path);
@@ -2483,19 +2451,13 @@ View.prototype.load = function(name, filename, language) {
 	return {Object} :: return parsed HTML
 */
 View.prototype.dynamic = function(content, language) {
-
-	var self = this;
-	var key = content.md5();
+	var key = content.hash();
 	var generator = framework.temporary.views[key] || null;
-
 	if (generator !== null)
 		return generator;
-
 	generator = view_parse(view_parse_localization(content, language), framework.config['allow-compile-html']);
-
 	if (!framework.isDebug)
 		framework.temporary.views[key] = generator;
-
 	return generator;
 };
 

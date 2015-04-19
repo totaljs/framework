@@ -626,16 +626,15 @@ Message.prototype._writeAttachment = function(write, boundary, socket) {
 	var name = attachment.name;
 	var stream = fs.createReadStream(attachment.filename, { encoding: 'base64' });
 	var message = [];
-	var ext = path.extname(attachment.filename);
 
 	message.push('--' + boundary);
 
 	if (attachment.contentId) {
 		message.push('Content-Disposition: inline; filename="' + name + '"');
 		message.push('Content-ID: <' + attachment.contentId + '>');
-	} else {
+	} else
 		message.push('Content-Disposition: attachment; filename="' + name + '"');
-	}
+
 	message.push('Content-Type: application/octet-stream;');
 	message.push('Content-Transfer-Encoding: base64');
 	message.push(CRLF);

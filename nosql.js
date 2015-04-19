@@ -2,7 +2,7 @@
  * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2015
- * @version 3.0.1
+ * @version 3.0.2
  */
 
 'use strict';
@@ -368,15 +368,12 @@ Database.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, isScal
             resume = false;
     };
 
-    var reader = self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
-
+    self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
         onBuffer(buffer, fnItem, fnBuffer);
         return resume;
-
     }, function() {
         self.countRead--;
         self.next();
-
         setImmediate(function() {
             self.emit(name || 'read', false, isScalar ? count : selected.length);
             fnCallback(null, isScalar ? count : selected);
@@ -533,7 +530,7 @@ Database.prototype.each = function(fnDocument, fnCallback) {
 
     self.emit('each', true, 0);
 
-    var reader = self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
+    self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
         onBuffer(buffer, fnItem, fnBuffer);
         return true;
     }, function() {
@@ -938,8 +935,6 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 
         // clear buffer;
         current = '';
-
-        var skip = false;
         var value = null;
 
         for (var i = 0; i < operationLength; i++) {
@@ -968,7 +963,7 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 
     fs.appendFile(self.filenameTemp, '');
 
-    var reader = self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
+    self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
         onBuffer(buffer.toString(), fnItem, fnBuffer);
         return true;
     }, function(success) {
@@ -1663,7 +1658,7 @@ View.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, skipCount,
             resume = false;
     };
 
-    var reader = self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
+    self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
 
         if (skipCount && !resume) {
             count = -1;
@@ -1764,7 +1759,7 @@ Stored.prototype.create = function(name, fn, fnCallback, changes) {
     if (typeof(fnCallback) === STRING) {
         var tmp = changes;
         changes = fnCallback;
-        fnCallback = changes;
+        fnCallback = tmp;
     }
 
     var self = this;
@@ -1804,7 +1799,7 @@ Stored.prototype.remove = function(name, fnCallback, changes) {
     if (typeof(fnCallback) === STRING) {
         var tmp = changes;
         changes = fnCallback;
-        fnCallback = changes;
+        fnCallback = tmp;
     }
 
     if (changes)
@@ -1838,7 +1833,7 @@ Stored.prototype.clear = function(fnCallback, changes) {
     if (typeof(fnCallback) === STRING) {
         var tmp = changes;
         changes = fnCallback;
-        fnCallback = changes;
+        fnCallback = tmp;
     }
 
     if (changes)

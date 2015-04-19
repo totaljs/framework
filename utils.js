@@ -887,7 +887,9 @@ exports.noop = global.noop = global.NOOP = function() {};
  * @return {String}
  */
 exports.httpStatus = function(code, addCode) {
-	return (addCode || true ? code + ': ' : '') + http.STATUS_CODES[code];
+	if (addCode === undefined)
+		addCode = true;
+	return (addCode ? code + ': ' : '') + http.STATUS_CODES[code];
 };
 
 /**
@@ -1449,7 +1451,6 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	var prepare = entity.onValidation || framework.onValidation;
 
 	var current = path === undefined ? '' : path + '.';
-	var definition = null;
 	var properties = entity.properties;
 
 	if (model === undefined || model === null)
@@ -2665,7 +2666,6 @@ String.prototype.encrypt = function(key, isUnique) {
 	var str = '0' + this;
 	var data_count = str.length;
 	var key_count = key.length;
-	var change = str[data_count - 1];
 	var random = isUnique ? exports.random(120) + 40 : 65;
 	var count = data_count + (random % key_count);
 	var values = [];
@@ -3350,7 +3350,6 @@ Array.prototype.compare = function(id, b, executor) {
 		var bv = b[i];
 		var akk;
 		var bkk;
-		var is = false;
 
 		if (av) {
 			akk = av[id];
@@ -4348,21 +4347,17 @@ exports.getMessageLength = function(data, isLE) {
 	var length = data[1] & 0x7f;
 
 	if (length === 126) {
-
 		if (data.length < 4)
 			return -1;
-
-		var a = 211;
-		var bLength = [data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-		return converBytesToInt64(bLength, 0, isLE);
+		return converBytesToInt64([data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 0, isLE);
 	}
 
 	if (length === 127) {
 		if (data.Length < 10)
 			return -1;
-		var bLength = [data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]];
-		return converBytesToInt64(bLength, 0, isLE);
+		return converBytesToInt64([data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]], 0, isLE);
 	}
+
 	return length;
 };
 
