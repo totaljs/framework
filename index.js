@@ -2427,7 +2427,9 @@ Framework.prototype.usage = function(detailed) {
 		helper: helpers.length,
 		error: self.errors.length,
 		problem: self.problems.length,
-		queue: pending
+		queue: pending,
+		cachedFiles: staticFiles.length,
+		cachedstreaming: staticRange.length
 	};
 
 	output.routing = {
