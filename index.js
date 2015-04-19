@@ -2428,8 +2428,8 @@ Framework.prototype.usage = function(detailed) {
 		error: self.errors.length,
 		problem: self.problems.length,
 		queue: pending,
-		cachedFiles: staticFiles.length,
-		cachedstreaming: staticRange.length
+		files: staticFiles.length,
+		streaming: staticRange.length
 	};
 
 	output.routing = {
@@ -2505,9 +2505,8 @@ Framework.prototype.usage = function(detailed) {
 	output.errors = self.errors;
 	output.problems = self.problems;
 	output.changes = self.changes;
-	output.cachedFiles = staticFiles;
-	output.cachedStreaming = staticRange;
-
+	output.files = staticFiles;
+	output.streaming = staticRange;
 	return output;
 };
 
