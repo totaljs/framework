@@ -818,6 +818,9 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
 			switch (flag) {
 
+				case 'xss':
+					continue;
+
 				case 'sync':
 				case 'yield':
 				case 'synchronize':
