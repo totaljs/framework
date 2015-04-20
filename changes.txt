@@ -6,6 +6,8 @@ BETA ======= 1.8.1
 
 - removed: XSS check
 
+- fixed: binary --translate (filenames)
+
 - improved: code optimalization
 
 ======= 1.8.0
