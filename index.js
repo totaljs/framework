@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1801;
-	this.version_header = '1.8.1-0';
+	this.version_header = '1.8.1-1';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -904,7 +904,8 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		priority++;
 	}
 
-	if ((flags.indexOf('json') !== -1 || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('get') === -1 && flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
+	// commented: flags.indexOf('get') === -1 && because we can have: route('/', ..., ['json', 'get']);
+	if ((flags.indexOf('json') !== -1 || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
 		flags.push('post');
 		method += (method.length > 0 ? ',' : '') + 'post';
 		priority++;
@@ -4478,10 +4479,11 @@ Framework.prototype._request = function(req, res) {
 	if (req.isStaticFile)
 		req.extension = path.extname(req.uri.pathname).substring(1);
 
+	if (self.onLocate)
+		req.$language = self.onLocate(req, res, req.isStaticFile);
+
 	self._request_stats(true, true);
 
-	if (self.onLocate)
-		req.$language = self.onLocate(req, res);
 
 	if (self._length_request_middleware === 0)
 		return self._request_continue(req, res, headers, protocol);
