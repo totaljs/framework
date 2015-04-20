@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1801;
-	this.version_header = '1.8.1-1';
+	this.version_header = '1.8.1-2';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -4085,6 +4085,14 @@ Framework.prototype.initialize = function(http, debug, options) {
 		else
 			self.server = http.createServer(self._request);
 
+		if (self.config['allow-performance']) {
+			self.server.on('connection', function(socket) {
+				socket.setNoDelay(true);
+				socket.setTimeout(15000); // 15 seconds
+				socket.setKeepAlive(true, 10);
+			});
+		}
+
 		if (self.config['allow-websocket']) {
 			self.server.on('upgrade', function(req, socket, head) {
 				framework._upgrade(req, socket, head);
@@ -4405,10 +4413,6 @@ Framework.prototype._service = function(count) {
 Framework.prototype._request = function(req, res) {
 
 	var self = framework;
-	if (self.config['allow-performance']) {
-		req.connection.setNoDelay(true);
-		req.connection.setTimeout(0);
-	}
 
 	res.req = req;
 	self.stats.request.request++;
