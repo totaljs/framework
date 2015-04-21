@@ -20,7 +20,35 @@ var expressionCache = {};
 var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 var regexpTRIM = /^[\s]+|[\s]+$/g;
-var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
+var DIACRITICS = {
+	225: 'a',
+	228: 'a',
+	269: 'c',
+	271: 'd',
+	233: 'e',
+	283: 'e',
+	357: 't',
+	382: 'z',
+	250: 'u',
+	367: 'u',
+	252: 'u',
+	369: 'u',
+	237: 'i',
+	239: 'i',
+	244: 'o',
+	243: 'o',
+	246: 'o',
+	353: 's',
+	318: 'l',
+	314: 'l',
+	253: 'y',
+	255: 'y',
+	263: 'c',
+	345: 'r',
+	341: 'r',
+	328: 'n',
+	337: 'o'
+};
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
 var STRING = 'string';
@@ -34,122 +62,125 @@ var isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win'
 var dnscache = {};
 
 var contentTypes = {
-	'aac': 'audio/aac',
-	'ai': 'application/postscript',
+	'aac'     : 'audio/aac',
+	'ai'      : 'application/postscript',
 	'appcache': 'text/cache-manifest',
-	'avi': 'video/avi',
-	'bin': 'application/octet-stream',
-	'bmp': 'image/bmp',
-	'coffee': 'text/coffeescript',
-	'css': 'text/css',
-	'csv': 'text/csv',
-	'doc': 'application/msword',
-	'docx': 'application/msword',
-	'dtd': 'application/xml-dtd',
-	'eps': 'application/postscript',
-	'exe': 'application/octet-stream',
-	'geojson': 'application/json',
-	'gif': 'image/gif',
-	'gzip': 'application/x-gzip',
-	'htm': 'text/html',
-	'html': 'text/html',
-	'ico': 'image/x-icon',
-	'ics': 'text/calendar',
-	'ifb': 'text/calendar',
-	'jpe': 'image/jpeg',
-	'jpeg': 'image/jpeg',
-	'jpg': 'image/jpeg',
-	'js': 'text/javascript',
-	'json': 'application/json',
-	'less': 'text/css',
-	'm4a': 'audio/mp4a-latm',
-	'm4v': 'video/x-m4v',
+	'avi'     : 'video/avi',
+	'bin'     : 'application/octet-stream',
+	'bmp'     : 'image/bmp',
+	'coffee'  : 'text/coffeescript',
+	'css'     : 'text/css',
+	'csv'     : 'text/csv',
+	'doc'     : 'application/msword',
+	'docx'    : 'application/msword',
+	'dtd'     : 'application/xml-dtd',
+	'eps'     : 'application/postscript',
+	'exe'     : 'application/octet-stream',
+	'geojson' : 'application/json',
+	'gif'     : 'image/gif',
+	'gzip'    : 'application/x-gzip',
+	'htm'     : 'text/html',
+	'html'    : 'text/html',
+	'ico'     : 'image/x-icon',
+	'ics'     : 'text/calendar',
+	'ifb'     : 'text/calendar',
+	'jpe'     : 'image/jpeg',
+	'jpeg'    : 'image/jpeg',
+	'jpg'     : 'image/jpeg',
+	'js'      : 'text/javascript',
+	'json'    : 'application/json',
+	'less'    : 'text/css',
+	'm4a'     : 'audio/mp4a-latm',
+	'm4v'     : 'video/x-m4v',
 	'manifest': 'text/cache-manifest',
-	'md': 'text/x-markdown',
-	'mid': 'audio/midi',
-	'midi': 'audio/midi',
-	'mov': 'video/quicktime',
-	'mp3': 'audio/mpeg',
-	'mp4': 'video/mp4',
-	'mpe': 'video/mpeg',
-	'mpeg': 'video/mpeg',
-	'mpg': 'video/mpeg',
-	'mpga': 'audio/mpeg',
-	'mtl': 'text/plain',
-	'mv4': 'video/mv4',
-	'obj': 'text/plain',
-	'ogg': 'application/ogg',
-	'package': 'text/plain',
-	'pdf': 'application/pdf',
-	'png': 'image/png',
-	'ppt': 'application/vnd.ms-powerpoint',
-	'pptx': 'application/vnd.ms-powerpoint',
-	'ps': 'application/postscript',
-	'rar': 'application/x-rar-compressed',
-	'rtf': 'text/rtf',
-	'sass': 'text/css',
-	'scss': 'text/css',
-	'sh': 'application/x-sh',
-	'stl': 'application/sla',
-	'svg': 'image/svg+xml',
-	'swf': 'application/x-shockwave-flash',
-	'tar': 'application/x-tar',
-	'tif': 'image/tiff',
-	'tiff': 'image/tiff',
-	'txt': 'text/plain',
-	'wav': 'audio/x-wav',
-	'webp': 'image/webp',
-	'woff': 'application/font-woff',
-	'woff2': 'application/font-woff2',
-	'xht': 'application/xhtml+xml',
-	'xhtml': 'application/xhtml+xml',
-	'xls': 'application/vnd.ms-excel',
-	'xlsx': 'application/vnd.ms-excel',
-	'xml': 'application/xml',
-	'xpm': 'image/x-xpixmap',
-	'xsl': 'application/xml',
-	'xslt': 'application/xslt+xml',
-	'zip': 'application/zip'
+	'md'      : 'text/x-markdown',
+	'mid'     : 'audio/midi',
+	'midi'    : 'audio/midi',
+	'mov'     : 'video/quicktime',
+	'mp3'     : 'audio/mpeg',
+	'mp4'     : 'video/mp4',
+	'mpe'     : 'video/mpeg',
+	'mpeg'    : 'video/mpeg',
+	'mpg'     : 'video/mpeg',
+	'mpga'    : 'audio/mpeg',
+	'mtl'     : 'text/plain',
+	'mv4'     : 'video/mv4',
+	'obj'     : 'text/plain',
+	'ogg'     : 'application/ogg',
+	'package' : 'text/plain',
+	'pdf'     : 'application/pdf',
+	'png'     : 'image/png',
+	'ppt'     : 'application/vnd.ms-powerpoint',
+	'pptx'    : 'application/vnd.ms-powerpoint',
+	'ps'      : 'application/postscript',
+	'rar'     : 'application/x-rar-compressed',
+	'rtf'     : 'text/rtf',
+	'sass'    : 'text/css',
+	'scss'    : 'text/css',
+	'sh'      : 'application/x-sh',
+	'stl'     : 'application/sla',
+	'svg'     : 'image/svg+xml',
+	'swf'     : 'application/x-shockwave-flash',
+	'tar'     : 'application/x-tar',
+	'tif'     : 'image/tiff',
+	'tiff'    : 'image/tiff',
+	'txt'     : 'text/plain',
+	'wav'     : 'audio/x-wav',
+	'webp'    : 'image/webp',
+	'woff'    : 'application/font-woff',
+	'woff2'   : 'application/font-woff2',
+	'xht'     : 'application/xhtml+xml',
+	'xhtml'   : 'application/xhtml+xml',
+	'xls'     : 'application/vnd.ms-excel',
+	'xlsx'    : 'application/vnd.ms-excel',
+	'xml'     : 'application/xml',
+	'xpm'     : 'image/x-xpixmap',
+	'xsl'     : 'application/xml',
+	'xslt'    : 'application/xslt+xml',
+	'zip'     : 'application/zip'
 };
 
 if (typeof(setImmediate) === UNDEFINED) {
-	global.setImmediate = function(cb) {
+	global.setImmediate = function (cb) {
 		process.nextTick(cb);
 	};
 }
 
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 
-/*
-	Expression declaration
-	@query {String}
-	@params {String Array}
-	@values {Object Array}
-	return {Function}
-*/
+/**
+ * Expression declaration
+ * @query {String}
+ * @params {String Array}
+ * @values {Object Array}
+ * @return {Function}
+ */
 function expression(query, params) {
 
 	var name = params.join(',');
 	var fn = expressionCache[query + '-' + name];
 
 	if (!fn) {
-		fn = eval('(function(' + name +'){' + (query.indexOf('return') === -1 ? 'return ' : '') + query + '})');
+		fn = eval('(function(' + name + '){' + (query.indexOf('return') === -1 ? 'return ' : '') + query + '})');
 		expressionCache[query + name] = fn;
 	}
 
 	var values = [];
 
-	for (var i = 2; i < arguments.length; i++)
+	for (var i = 2; i < arguments.length; i++) {
 		values.push(arguments[i]);
+	}
 
-	return (function() {
+	return (function () {
 		var arr = [];
 
-		for (var i = 0; i < arguments.length; i++)
+		for (var i = 0; i < arguments.length; i++) {
 			arr.push(arguments[i]);
+		}
 
-		for (var i = 0; i < values.length; i++)
+		for (var i = 0; i < values.length; i++) {
 			arr.push(values[i]);
+		}
 
 		return fn.apply(this, arr);
 	});
@@ -163,20 +194,24 @@ global.expression = expression;
  * @param  {Object}  obj
  * @return {Boolean}
  */
-exports.isEmpty = function(obj) {
+exports.isEmpty = function (obj) {
 
-	if (obj === null)
+	if (obj === null) {
 		return true;
+	}
 
-	if (obj.length && obj.length > 0)
+	if (obj.length && obj.length > 0) {
 		return false;
+	}
 
-	if (obj.length === 0)
+	if (obj.length === 0) {
 		return true;
+	}
 
 	for (var key in obj) {
-		if (hasOwnProperty.call(obj, key))
-		return false;
+		if (hasOwnProperty.call(obj, key)) {
+			return false;
+		}
 	}
 	return true;
 };
@@ -187,14 +222,15 @@ exports.isEmpty = function(obj) {
  * @param {Object} obj2
  * @return {Boolean}
  */
-exports.isEqual = function(obj1, obj2, properties) {
+exports.isEqual = function (obj1, obj2, properties) {
 
 	var keys = properties ? properties : Object.keys(obj1);
 
 	for (var i = 0, length = keys.length; i < length; i++) {
 		var key = keys[i];
-		if (obj1[key] === obj2[key])
+		if (obj1[key] === obj2[key]) {
 			continue;
+		}
 		return false;
 	}
 
@@ -208,33 +244,36 @@ exports.isEqual = function(obj1, obj2, properties) {
  * @param {Number} timeout  Timeout, optional (default: 5000)
  * @param {Number} interval Refresh interval, optional (default: 500)
  */
-exports.wait = function(fnValid, fnCallback, timeout, interval) {
+exports.wait = function (fnValid, fnCallback, timeout, interval) {
 
-	if (fnValid() === true)
+	if (fnValid() === true) {
 		return fnCallback(null, true);
+	}
 
 	var id_timeout = null;
-	var id_interval = setInterval(function() {
+	var id_interval = setInterval(function () {
 
 		if (fnValid() === true) {
 			clearInterval(id_interval);
 			clearTimeout(id_timeout);
-			if (fnCallback)
+			if (fnCallback) {
 				fnCallback(null, true);
+			}
 			return;
 		}
 
 	}, interval || 500);
 
-	id_timeout = setTimeout(function() {
+	id_timeout = setTimeout(function () {
 		clearInterval(id_interval);
-		if (fnCallback)
+		if (fnCallback) {
 			fnCallback(new Error('Timeout.'), false);
+		}
 	}, timeout || 5000);
 };
 
-exports.$$wait = function(fnValid, timeout, interval) {
-	return function(callback) {
+exports.$$wait = function (fnValid, timeout, interval) {
+	return function (callback) {
 		exports.wait(fnValid, callback, timeout, interval);
 	};
 };
@@ -244,39 +283,40 @@ exports.$$wait = function(fnValid, timeout, interval) {
  * @param {String} url
  * @param {Function(err, uri)} callback
  */
-exports.resolve = function(url, callback) {
+exports.resolve = function (url, callback) {
 
-    var uri = parser.parse(url);
+	var uri = parser.parse(url);
 
-    if (dnscache[uri.host]) {
-        uri.host = dnscache[uri.host];
-        callback(null, uri);
-        return;
-    }
+	if (dnscache[uri.host]) {
+		uri.host = dnscache[uri.host];
+		callback(null, uri);
+		return;
+	}
 
-    Dns.resolve4(uri.hostname, function(e, addresses) {
+	Dns.resolve4(uri.hostname, function (e, addresses) {
 
-        if (!e) {
-            dnscache[uri.host] = addresses[0];
-            uri.host = addresses[0];
-	        callback(null, uri);
-            return;
-        }
+		if (!e) {
+			dnscache[uri.host] = addresses[0];
+			uri.host = addresses[0];
+			callback(null, uri);
+			return;
+		}
 
-        setImmediate(function() {
-	        Dns.resolve4(uri.hostname, function(e, addresses) {
-	            if (e)
-	                return callback(e, uri);
-	            dnscache[uri.host] = addresses[0];
-	            uri.host = addresses[0];
-		        callback(null, uri);
-	        });
-    	});
-    });
+		setImmediate(function () {
+			Dns.resolve4(uri.hostname, function (e, addresses) {
+				if (e) {
+					return callback(e, uri);
+				}
+				dnscache[uri.host] = addresses[0];
+				uri.host = addresses[0];
+				callback(null, uri);
+			});
+		});
+	});
 };
 
-exports.$$resolve = function(url) {
-	return function(callback) {
+exports.$$resolve = function (url) {
+	return function (callback) {
 		return exports.resolve(url, callback);
 	};
 };
@@ -284,7 +324,7 @@ exports.$$resolve = function(url) {
 /**
  * Clears DNS cache
  */
-exports.clearDNS = function() {
+exports.clearDNS = function () {
 	dnscache = {};
 };
 
@@ -300,7 +340,7 @@ exports.clearDNS = function() {
  * @param  {Number} timeout Request timeout.
  * return {Boolean}
  */
-exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
+exports.request = function (url, flags, data, callback, cookies, headers, encoding, timeout) {
 
 	// No data (data is optinal argument)
 	if (typeof(data) === FUNCTION) {
@@ -335,11 +375,13 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 	headers = exports.extend({}, headers || {});
 
-	if (typeof(encoding) !== STRING)
+	if (typeof(encoding) !== STRING) {
 		encoding = ENCODING;
+	}
 
-	if (data === null)
+	if (data === null) {
 		data = '';
+	}
 
 	if (flags instanceof Array) {
 		length = flags.length;
@@ -354,8 +396,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'json':
 					headers['Content-Type'] = 'application/json';
 
-					if (method === '')
+					if (method === '') {
 						method = 'POST';
+					}
 
 					type = 1;
 					break;
@@ -363,8 +406,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'xml':
 					headers['Content-Type'] = 'text/xml';
 
-					if (method === '')
+					if (method === '') {
 						method = 'POST';
+					}
 
 					type = 2;
 					break;
@@ -385,8 +429,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 					method = flags[i].toUpperCase();
 
-					if (!headers['Content-Type'])
+					if (!headers['Content-Type']) {
 						headers['Content-Type'] = 'application/x-www-form-urlencoded';
+					}
 
 					break;
 				case 'dnscache':
@@ -398,14 +443,16 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 	var isPOST = method === 'POST' || method === 'PUT';
 
-	if (typeof(data) !== STRING)
+	if (typeof(data) !== STRING) {
 		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
-	else if (data[0] === '?')
+	} else if (data[0] === '?') {
 		data = data.substring(1);
+	}
 
 	if (!isPOST) {
-		if (data.length > 0 && url.indexOf('?') === -1)
+		if (data.length > 0 && url.indexOf('?') === -1) {
 			url += '?' + data;
+		}
 		data = '';
 	}
 
@@ -421,11 +468,13 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 		length = keys.length;
 
-		for (var i = 0; i < length; i++)
+		for (var i = 0; i < length; i++) {
 			builder.push(keys[i] + '=' + encodeURIComponent(cookies[keys[i]]));
+		}
 
-		if (builder.length > 0)
+		if (builder.length > 0) {
 			headers['Cookie'] = builder.join('; ');
+		}
 	}
 
 	var buf;
@@ -438,7 +487,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	uri.agent = false;
 	uri.headers = headers;
 
-	var onResponse = function(res) {
+	var onResponse = function (res) {
 
 		res._buffer = '';
 		res._bufferlength = 0;
@@ -450,18 +499,19 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			return;
 		}
 
-		res.on('data', function(chunk) {
+		res.on('data', function (chunk) {
 			var self = this;
 			self._buffer += chunk.toString(encoding);
 			self._bufferlength += chunk.length;
 			e.emit('data', chunk, responseLength > 0 ? (self._bufferlength / responseLength) * 100 : 0);
 		});
 
-		res.on('end', function() {
+		res.on('end', function () {
 			var self = this;
 			e.emit('end', self._buffer, self.statusCode, self.headers, uri.host);
-			if (callback)
+			if (callback) {
 				callback(null, self._buffer, self.statusCode, self.headers, uri.host);
+			}
 			callback = null;
 		});
 
@@ -469,54 +519,58 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	};
 
 	var connection = uri.protocol === 'https:' ? https : http;
-	var run = function() {
-		try
-		{
+	var run = function () {
+		try {
 			var request = isPOST ? connection.request(uri, onResponse) : connection.get(uri, onResponse);
 
 			if (callback) {
-				request.on('error', function(error) {
-					if (callback)
+				request.on('error', function (error) {
+					if (callback) {
 						callback(error, undefined, 0, undefined, undefined, uri.host);
+					}
 					callback = null;
 				});
 
-				request.setTimeout(timeout || 10000, function() {
-					if (callback)
+				request.setTimeout(timeout || 10000, function () {
+					if (callback) {
 						callback(new Error(exports.httpStatus(408)), undefined, 0, undefined, uri.host);
+					}
 					callback = null;
 				});
 			}
 
-			request.on('response', function(response) {
+			request.on('response', function (response) {
 				responseLength = parseInt(response.headers['content-length']) || 0;
 				e.emit('begin', responseLength);
 			});
 
-			if (isPOST && buf)
+			if (isPOST && buf) {
 				request.end(buf);
-			else
+			} else {
 				request.end();
+			}
 
 		} catch (ex) {
-			if (callback)
+			if (callback) {
 				callback(ex, undefined, 0);
+			}
 		}
 	};
 
 	if (isDNSCACHE) {
-		exports.resolve(url, function(err, u) {
+		exports.resolve(url, function (err, u) {
 			uri.host = u.host;
 			run();
 		});
-	} else
+	} else {
 		run();
+	}
 
 	return e;
 };
 
-exports.$$request = function(url, flags, data, cookies, headers, encoding, timeout) {
-	return function(callback) {
+exports.$$request = function (url, flags, data, cookies, headers, encoding, timeout) {
+	return function (callback) {
 		exports.request(url, flags, data, callback, cookies, headers, encoding, timeout);
 	};
 };
@@ -533,7 +587,7 @@ exports.$$request = function(url, flags, data, cookies, headers, encoding, timeo
  * @param {Number} timeout Request timeout.
  * return {Boolean}
  */
-exports.download = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
+exports.download = function (url, flags, data, callback, cookies, headers, encoding, timeout) {
 
 	// No data (data is optinal argument)
 	if (typeof(data) === FUNCTION) {
@@ -568,11 +622,13 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	headers = exports.extend({}, headers || {});
 
-	if (typeof(encoding) !== STRING)
+	if (typeof(encoding) !== STRING) {
 		encoding = ENCODING;
+	}
 
-	if (data === null)
+	if (data === null) {
 		data = '';
+	}
 
 	if (flags instanceof Array) {
 		length = flags.length;
@@ -607,8 +663,9 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 				case 'post':
 				case 'put':
 					method = flags[i].toUpperCase();
-					if (!headers['Content-Type'])
+					if (!headers['Content-Type']) {
 						headers['Content-Type'] = 'application/x-www-form-urlencoded';
+					}
 					break;
 
 				case 'dnscache':
@@ -621,14 +678,16 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	var isPOST = method === 'POST' || method === 'PUT';
 
-	if (typeof(data) !== STRING)
+	if (typeof(data) !== STRING) {
 		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
-	else if (data[0] === '?')
+	} else if (data[0] === '?') {
 		data = data.substring(1);
+	}
 
 	if (!isPOST) {
-		if (data.length > 0 && url.indexOf('?') === -1)
+		if (data.length > 0 && url.indexOf('?') === -1) {
 			url += '?' + data;
+		}
 		data = '';
 	}
 
@@ -645,11 +704,13 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 		length = keys.length;
 
-		for (var i = 0; i < length; i++)
+		for (var i = 0; i < length; i++) {
 			builder.push(keys[i] + '=' + encodeURIComponent(cookies[keys[i]]));
+		}
 
-		if (builder.length > 0)
+		if (builder.length > 0) {
 			headers['Cookie'] = builder.join('; ');
+		}
 	}
 
 	var buf;
@@ -662,17 +723,17 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	uri.agent = false;
 	uri.headers = headers;
 
-	var onResponse = function(res) {
+	var onResponse = function (res) {
 
 		res._bufferlength = 0;
 
-		res.on('data', function(chunk) {
+		res.on('data', function (chunk) {
 			var self = this;
 			self._bufferlength += chunk.length;
 			e.emit('data', chunk, responseLength > 0 ? (self._bufferlength / responseLength) * 100 : 0);
 		});
 
-		res.on('end', function() {
+		res.on('end', function () {
 			var self = this;
 			e.emit('end', self.statusCode, self.headers);
 		});
@@ -682,50 +743,52 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	};
 
 	var connection = uri.protocol === 'https:' ? https : http;
-	var run = function() {
-		try
-		{
+	var run = function () {
+		try {
 			var request = isPOST ? connection.request(uri, onResponse) : connection.request(uri, onResponse);
 
 			if (callback) {
-				request.on('error', function(error) {
+				request.on('error', function (error) {
 					callback(error, null, 0, {});
 				});
 
-				request.setTimeout(timeout || 10000, function() {
+				request.setTimeout(timeout || 10000, function () {
 					callback(new Error(exports.httpStatus(408)), null, 0, null);
 				});
 			}
 
-			request.on('response', function(response) {
+			request.on('response', function (response) {
 				responseLength = parseInt(response.headers['content-length']) || 0;
 				e.emit('begin', responseLength);
 			});
 
-			if (isPOST && buf)
+			if (isPOST && buf) {
 				request.end(buf);
-			else
+			} else {
 				request.end();
+			}
 
 		} catch (ex) {
-			if (callback)
+			if (callback) {
 				callback(ex, null, 0, {});
+			}
 		}
 	};
 
 	if (isDNSCACHE) {
-		exports.resolve(url, function(err, u) {
+		exports.resolve(url, function (err, u) {
 			uri.host = u.host;
 			run();
 		});
-	} else
+	} else {
 		run();
+	}
 
 	return e;
 };
 
-exports.$$download = function(url, flags, data, cookies, headers, encoding, timeout) {
-	return function(callback) {
+exports.$$download = function (url, flags, data, cookies, headers, encoding, timeout) {
+	return function (callback) {
 		exports.download(url, flags, data, callback, cookies, headers, encoding, timeout);
 	};
 };
@@ -739,7 +802,7 @@ exports.$$download = function(url, flags, data, cookies, headers, encoding, time
  * @param {Object} headers Custom headers (optional).
  * @param {String} method HTTP method (optional, default POST).
  */
-exports.send = function(name, stream, url, callback, headers, method) {
+exports.send = function (name, stream, url, callback, headers, method) {
 
 	if (typeof(callback) === OBJECT) {
 		var tmp = headers;
@@ -747,14 +810,16 @@ exports.send = function(name, stream, url, callback, headers, method) {
 		headers = tmp;
 	}
 
-	if (typeof(stream) === STRING)
-		stream = fs.createReadStream(stream, { flags: 'r' });
+	if (typeof(stream) === STRING) {
+		stream = fs.createReadStream(stream, {flags: 'r'});
+	}
 
 	var BOUNDARY = '----' + Math.random().toString(16).substring(2);
 	var h = {};
 
-	if (headers)
+	if (headers) {
 		util._extend(h, headers);
+	}
 
 	name = path.basename(name);
 
@@ -763,22 +828,33 @@ exports.send = function(name, stream, url, callback, headers, method) {
 	h['X-Powered-By'] = 'total.js' + VERSION;
 
 	var uri = parser.parse(url);
-	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
+	var options = {
+		protocol: uri.protocol,
+		auth    : uri.auth,
+		method  : method || 'POST',
+		hostname: uri.hostname,
+		port    : uri.port,
+		path    : uri.path,
+		agent   : false,
+		headers : h
+	};
 
-	var response = function(res) {
+	var response = function (res) {
 
-		if (!callback)
+		if (!callback) {
 			return;
+		}
 
 		res.body = '';
-		res.on('data', function(chunk) {
+		res.on('data', function (chunk) {
 			this.body += chunk.toString(ENCODING);
 		});
 
-		res.on('end', function() {
+		res.on('end', function () {
 			var self = this;
-			if (callback)
+			if (callback) {
 				callback(null, self.body, self.statusCode, self.headers);
+			}
 		});
 
 	};
@@ -787,9 +863,10 @@ exports.send = function(name, stream, url, callback, headers, method) {
 	var req = connection.request(options, response);
 
 	if (callback) {
-		req.on('error', function(err) {
-			if (callback)
+		req.on('error', function (err) {
+			if (callback) {
 				callback(err, null, 0, null);
+			}
 			callback = null;
 		});
 	}
@@ -803,16 +880,15 @@ exports.send = function(name, stream, url, callback, headers, method) {
 		return;
 	}
 
-	stream.on('end', function() {
+	stream.on('end', function () {
 		req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
 	});
 
-	stream.pipe(req, { end: false });
-	return;
+	stream.pipe(req, {end: false});
 };
 
-exports.$$send = function(name, stream, url, headers, method) {
-	return function(callback) {
+exports.$$send = function (name, stream, url, headers, method) {
+	return function (callback) {
 		exports.send(name, stream, url, callback, headers, method);
 	};
 };
@@ -822,15 +898,17 @@ exports.$$send = function(name, stream, url, headers, method) {
  * @param {Object} obj
  * @return {Object}
  */
-exports.trim = function(obj) {
+exports.trim = function (obj) {
 
-	if (obj === undefined || obj === null)
+	if (obj === undefined || obj === null) {
 		return obj;
+	}
 
 	var type = typeof(obj);
 
-	if (type === STRING)
+	if (type === STRING) {
 		return obj.trim();
+	}
 
 	if (obj instanceof Array) {
 		for (var i = 0, length = obj.length; i < length; i++) {
@@ -843,8 +921,9 @@ exports.trim = function(obj) {
 				continue;
 			}
 
-			if (type !== STRING)
+			if (type !== STRING) {
 				continue;
+			}
 
 			obj[i] = item.trim();
 		}
@@ -852,10 +931,11 @@ exports.trim = function(obj) {
 		return obj;
 	}
 
-	if (type !== OBJECT)
+	if (type !== OBJECT) {
 		return obj;
+	}
 
-	Object.keys(obj).forEach(function(name) {
+	Object.keys(obj).forEach(function (name) {
 
 		var val = obj[name];
 		var type = typeof(val);
@@ -865,8 +945,9 @@ exports.trim = function(obj) {
 			return;
 		}
 
-		if (type !== STRING)
+		if (type !== STRING) {
 			return;
+		}
 
 		obj[name] = val.trim();
 	});
@@ -878,7 +959,8 @@ exports.trim = function(obj) {
  * Noop function
  * @return {Function} Empty function.
  */
-exports.noop = global.noop = global.NOOP = function() {};
+exports.noop = global.noop = global.NOOP = function () {
+};
 
 /**
  * Read HTTP status
@@ -886,9 +968,10 @@ exports.noop = global.noop = global.NOOP = function() {};
  * @param  {Boolean} addCode Add code number to HTTP status.
  * @return {String}
  */
-exports.httpStatus = function(code, addCode) {
-	if (addCode === undefined)
+exports.httpStatus = function (code, addCode) {
+	if (addCode === undefined) {
 		addCode = true;
+	}
 	return (addCode ? code + ': ' : '') + http.STATUS_CODES[code];
 };
 
@@ -899,13 +982,15 @@ exports.httpStatus = function(code, addCode) {
  * @param {Boolean} rewrite Rewrite exists values (optional, default false).
  * @return {Object} Modified object.
  */
-exports.extend = function(target, source, rewrite) {
+exports.extend = function (target, source, rewrite) {
 
-	if (target === null || source === null)
+	if (target === null || source === null) {
 		return target;
+	}
 
-	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
+	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT) {
 		return target;
+	}
 
 	var keys = Object.keys(source);
 	var i = keys.length;
@@ -914,8 +999,9 @@ exports.extend = function(target, source, rewrite) {
 
 		var key = keys[i];
 
-		if (rewrite || target[key] === undefined)
+		if (rewrite || target[key] === undefined) {
 			target[key] = source[key];
+		}
 	}
 
 	return target;
@@ -927,16 +1013,19 @@ exports.extend = function(target, source, rewrite) {
  * @param {Object} target Object target (optional)
  * @return {Object} Modified object.
  */
-exports.copy = function(source, target) {
+exports.copy = function (source, target) {
 
-	if (target === undefined)
+	if (target === undefined) {
 		return exports.extend({}, source, true);
+	}
 
-	if (target === null || source === null)
+	if (target === null || source === null) {
 		return target;
+	}
 
-	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
+	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT) {
 		return target;
+	}
 
 	var keys = Object.keys(source);
 	var i = keys.length;
@@ -944,8 +1033,9 @@ exports.copy = function(source, target) {
 	while (i--) {
 
 		var key = keys[i];
-		if (target[key] === undefined)
+		if (target[key] === undefined) {
 			continue;
+		}
 
 		target[key] = source[key];
 	}
@@ -960,22 +1050,25 @@ exports.copy = function(source, target) {
  * @param {Boolean} reverse Reverse reducing (prop will be removed), default: false.
  * @return {Object}
  */
-exports.reduce = function(source, prop, reverse) {
+exports.reduce = function (source, prop, reverse) {
 
 	if (!(prop instanceof Array)) {
-		if (typeof(prop) === OBJECT)
+		if (typeof(prop) === OBJECT) {
 			return exports.reduce(source, Object.keys(prop), reverse);
+		}
 	}
 
 	var output = {};
 
-	Object.keys(source).forEach(function(o) {
+	Object.keys(source).forEach(function (o) {
 		if (reverse) {
-			if (prop.indexOf(o) === -1)
+			if (prop.indexOf(o) === -1) {
 				output[o] = source[o];
+			}
 		} else {
-			if (prop.indexOf(o) !== -1)
+			if (prop.indexOf(o) !== -1) {
 				output[o] = source[o];
+			}
 		}
 	});
 
@@ -989,16 +1082,18 @@ exports.reduce = function(source, prop, reverse) {
  * @param {Object or Function} fn Value or Function to update.
  * @return {Object}
  */
-exports.assign = function(obj, path, fn) {
+exports.assign = function (obj, path, fn) {
 
-	if (obj === null || obj === undefined)
+	if (obj === null || obj === undefined) {
 		return obj;
+	}
 
 	var arr = path.split('.');
 	var model = obj[arr[0]];
 
-	for (var i = 1; i < arr.length - 1; i++)
+	for (var i = 1; i < arr.length - 1; i++) {
 		model = model[arr[i]];
+	}
 
 	model[arr[arr.length - 1]] = typeof (fn) === FUNCTION ? fn(model[arr[arr.length - 1]]) : fn;
 	return obj;
@@ -1009,7 +1104,7 @@ exports.assign = function(obj, path, fn) {
  * @param {String} url
  * @return {Boolean}
  */
-exports.isRelative = function(url) {
+exports.isRelative = function (url) {
 	return !(url.substring(0, 2) === '//' || url.indexOf('http://') !== -1 || url.indexOf('https://') !== -1);
 };
 
@@ -1018,27 +1113,31 @@ exports.isRelative = function(url) {
  * @param {String} delimiter
  * @param {Function(value, index)} callback
  */
-exports.streamer = function(delimiter, callback) {
-    var cache = '';
-    var length = delimiter.length;
-    var indexer = 0;
-    return function(chunk) {
-    	if (!chunk)
-    		return;
-        if (typeof(chunk) !== 'string')
-            chunk = chunk.toString('utf8');
-        cache += chunk;
-        var index = cache.indexOf(delimiter);
-        if (index === -1)
-            return;
-        while (index !== -1) {
-            callback(cache.substring(0, index + length), indexer++);
-            cache = cache.substring(index + length);
-            index = cache.indexOf(delimiter);
-            if (index === -1)
-                return;
-        }
-    };
+exports.streamer = function (delimiter, callback) {
+	var cache = '';
+	var length = delimiter.length;
+	var indexer = 0;
+	return function (chunk) {
+		if (!chunk) {
+			return;
+		}
+		if (typeof(chunk) !== 'string') {
+			chunk = chunk.toString('utf8');
+		}
+		cache += chunk;
+		var index = cache.indexOf(delimiter);
+		if (index === -1) {
+			return;
+		}
+		while (index !== -1) {
+			callback(cache.substring(0, index + length), indexer++);
+			cache = cache.substring(index + length);
+			index = cache.indexOf(delimiter);
+			if (index === -1) {
+				return;
+			}
+		}
+	};
 };
 
 /**
@@ -1046,15 +1145,17 @@ exports.streamer = function(delimiter, callback) {
  * @param {String} str
  * @return {String}
  */
-exports.encode = function(str) {
+exports.encode = function (str) {
 
-	if (str === undefined)
+	if (str === undefined) {
 		return '';
+	}
 
 	var type = typeof(str);
 
-	if (type !== STRING)
+	if (type !== STRING) {
 		str = str.toString();
+	}
 
 	return str.encode();
 };
@@ -1064,15 +1165,17 @@ exports.encode = function(str) {
  * @param {String} str
  * @return {String}
  */
-exports.decode = function(str) {
+exports.decode = function (str) {
 
-	if (str === undefined)
+	if (str === undefined) {
 		return '';
+	}
 
 	var type = typeof(str);
 
-	if (type !== STRING)
+	if (type !== STRING) {
 		str = str.toString();
+	}
 
 	return str.decode();
 };
@@ -1082,7 +1185,7 @@ exports.decode = function(str) {
  * @param {String} url
  * @return {Boolean}
  */
-exports.isStaticFile = function(url) {
+exports.isStaticFile = function (url) {
 	var pattern = /\.\w{2,8}($|\?)+/g;
 	return pattern.test(url);
 };
@@ -1092,10 +1195,11 @@ exports.isStaticFile = function(url) {
  * @param {String} str
  * @return {Boolean}
  */
-exports.isNullOrEmpty = function(str) {
+exports.isNullOrEmpty = function (str) {
 
-	if (typeof(str) !== STRING)
+	if (typeof(str) !== STRING) {
 		return true;
+	}
 
 	return str.length === 0;
 };
@@ -1106,15 +1210,17 @@ exports.isNullOrEmpty = function(str) {
  * @param {Number} def Default value (default: 0).
  * @return {Number}
  */
-exports.parseInt = function(obj, def) {
+exports.parseInt = function (obj, def) {
 
-	if (obj === undefined || obj === null)
+	if (obj === undefined || obj === null) {
 		return def || 0;
+	}
 
 	var type = typeof(obj);
 
-	if (type === NUMBER)
+	if (type === NUMBER) {
 		return obj;
+	}
 
 	var str = type !== STRING ? obj.toString() : obj;
 	return str.parseInt(def, 10);
@@ -1126,15 +1232,17 @@ exports.parseInt = function(obj, def) {
  * @param {Number} def Default value (default: 0).
  * @return {Number}
  */
-exports.parseFloat = function(obj, def) {
+exports.parseFloat = function (obj, def) {
 
-	if (obj === undefined || obj === null)
+	if (obj === undefined || obj === null) {
 		return def || 0;
+	}
 
 	var type = typeof(obj);
 
-	if (type === NUMBER)
+	if (type === NUMBER) {
 		return obj;
+	}
 
 	var str = type !== STRING ? obj.toString() : obj;
 	return str.parseFloat(def);
@@ -1145,7 +1253,7 @@ exports.parseFloat = function(obj, def) {
  * @param {Object} obj
  * @return {Boolean}
  */
-exports.isArray = function(obj) {
+exports.isArray = function (obj) {
 	return obj instanceof Array;
 };
 
@@ -1154,7 +1262,7 @@ exports.isArray = function(obj) {
  * @param {Object} obj
  * @return {Boolean}
  */
-exports.isRegExp = function(obj) {
+exports.isRegExp = function (obj) {
 	return util.isRegExp(obj);
 };
 
@@ -1163,7 +1271,7 @@ exports.isRegExp = function(obj) {
  * @param {Object} obj
  * @return {Boolean}
  */
-exports.isDate = function(obj) {
+exports.isDate = function (obj) {
 	return util.isDate(obj);
 };
 
@@ -1172,7 +1280,7 @@ exports.isDate = function(obj) {
  * @param {Object} value
  * @return {Boolean}
  */
-exports.isObject = function(value) {
+exports.isObject = function (value) {
 	try {
 		return (value && Object.getPrototypeOf(value) === Object.prototype) ? true : false;
 	} catch (e) {
@@ -1185,9 +1293,10 @@ exports.isObject = function(value) {
  * @param {String} ext File extension.
  * @return {String}
  */
-exports.getContentType = function(ext) {
-	if (ext[0] === '.')
+exports.getContentType = function (ext) {
+	if (ext[0] === '.') {
 		ext = ext.substring(1);
+	}
 	return contentTypes[ext.toLowerCase()] || 'application/octet-stream';
 };
 
@@ -1196,9 +1305,10 @@ exports.getContentType = function(ext) {
  * @param {String} ext File extension.
  * @param {String} type Content type (example: application/json).
  */
-exports.setContentType = function(ext, type) {
-	if (ext[0] === '.')
+exports.setContentType = function (ext, type) {
+	if (ext[0] === '.') {
 		ext = ext.substring(1);
+	}
 	contentTypes[ext.toLowerCase()] = type;
 	return true;
 };
@@ -1209,50 +1319,53 @@ exports.setContentType = function(ext, type) {
  * @param {String} version
  * @return {String}
  */
-exports.etag = function(text, version) {
+exports.etag = function (text, version) {
 	var sum = 0;
 	var length = text.length;
-	for (var i = 0; i < length; i++)
+	for (var i = 0; i < length; i++) {
 		sum += text.charCodeAt(i);
+	}
 	return sum.toString() + (version ? ':' + version : '');
 };
 
-/*
-	Add @delimiter to end of @path
-	@path {String} :: filename
-	@delimiter {String} :: optional, default /
-	return {String}
-*/
-exports.path = function(path, delimiter) {
+/**
+ * Add @delimiter to end of @path
+ * @path {String} :: filename
+ * @delimiter {String} :: optional, default /
+ * @return {String}
+ */
+exports.path = function (path, delimiter) {
 
-	if (!path)
+	if (!path) {
 		path = '';
+	}
 
 	delimiter = delimiter || '/';
-	if (path[path.length - 1] === delimiter)
+	if (path[path.length - 1] === delimiter) {
 		return path;
+	}
 
 	return path + delimiter;
 };
 
-/*
-	Get random number
-	@max {Number}
-	@min {Number}
-	return {Number}
-*/
-exports.random = function(max, min) {
+/**
+ * Get random number
+ * @max {Number}
+ * @min {Number}
+ * @return {Number}
+ */
+exports.random = function (max, min) {
 	max = (max || 100000);
 	min = (min || 0);
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-/*
-	Create unique identifier
-	@max {Number} :: optional, default 40
-	return {String}
-*/
-exports.GUID = function(max) {
+/**
+ * Create unique identifier
+ * @max {Number} :: optional, default 40
+ * @return {String}
+ */
+exports.GUID = function (max) {
 
 	max = max || 40;
 
@@ -1261,8 +1374,9 @@ exports.GUID = function(max) {
 	};
 
 	var str = '';
-	for (var i = 0; i < (max / 4) + 1; i++)
+	for (var i = 0; i < (max / 4) + 1; i++) {
 		str += rnd();
+	}
 
 	return str.substring(0, max);
 };
@@ -1277,7 +1391,7 @@ exports.GUID = function(max) {
  * @param {String} path Internal, current path
  * @return {ErrorBuilder}
  */
-exports.validate = function(model, properties, prepare, builder, resource, path, collection, index) {
+exports.validate = function (model, properties, prepare, builder, resource, path, collection, index) {
 
 	if (typeof(builder) === FUNCTION && resource === undefined) {
 		resource = builder;
@@ -1298,8 +1412,9 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 	var definition = null;
 	var schema;
 
-	if (!(error instanceof builders.ErrorBuilder))
+	if (!(error instanceof builders.ErrorBuilder)) {
 		error = new builders.ErrorBuilder(resource);
+	}
 
 	if (typeof(properties) === STRING) {
 		schema = collection === undefined ? builders.validation(properties) : collection[properties] === undefined ? '' : collection[properties].properties;
@@ -1308,19 +1423,23 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 			properties = schema;
 			isSchema = true;
 			definition = collection === undefined ? builders.schema('default').collection : collection;
-			if (!definition)
+			if (!definition) {
 				definition = {};
-		} else if (!empty)
+			}
+		} else if (!empty) {
 			return error;
-		else
+		} else {
 			properties = properties.replace(/\s/g, '').split(',');
+		}
 	}
 
-	if (model === undefined || model === null)
+	if (model === undefined || model === null) {
 		model = {};
+	}
 
-	if (typeof(prepare) !== FUNCTION)
+	if (typeof(prepare) !== FUNCTION) {
 		throw new Error('The validate function does not have any method to validate properties.\nYou must define the delegate: framework.onValidate ...');
+	}
 
 	for (var i = 0; i < properties.length; i++) {
 
@@ -1331,13 +1450,15 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 		if (value === undefined) {
 			error.add(name, '@', current + name);
 			continue;
-		} else if (type === FUNCTION)
+		} else if (type === FUNCTION) {
 			value = model[name]();
+		}
 
 		if (type !== OBJECT && isSchema) {
 			// collection = builders.schema('default').collection;
-			if (builders.isJoin(collection, name))
+			if (builders.isJoin(collection, name)) {
 				type = OBJECT;
+			}
 		}
 
 		if (type === OBJECT && !exports.isDate(value)) {
@@ -1368,8 +1489,9 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 						if (collection[schema] === undefined) {
 
 							var result2 = prepare(name, value, current + name, schemaName, model);
-							if (result2 === undefined)
+							if (result2 === undefined) {
 								continue;
+							}
 
 							type = typeof(result2);
 
@@ -1383,8 +1505,9 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 								continue;
 							}
 
-							if (result2.isValid === false)
+							if (result2.isValid === false) {
 								error.add(name, result2.error, current + name, index);
+							}
 
 							continue;
 						}
@@ -1411,8 +1534,9 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 						}
 
 						var sublength = value.length;
-						for (var j = 0; j < sublength; j++)
+						for (var j = 0; j < sublength; j++) {
 							exports.validate(value[j], schema, prepare, error, resource, current + name, collection, j);
+						}
 
 						continue;
 					}
@@ -1422,8 +1546,9 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 
 		var result = prepare(name, value, current + name, schemaName, model);
 
-		if (result === undefined)
+		if (result === undefined) {
 			continue;
+		}
 
 		type = typeof(result);
 
@@ -1433,19 +1558,21 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 		}
 
 		if (type === BOOLEAN) {
-			if (!result)
+			if (!result) {
 				error.add(name, '@', current + name, index);
+			}
 			continue;
 		}
 
-		if (result.isValid === false)
+		if (result.isValid === false) {
 			error.add(name, result.error, current + name, index);
+		}
 	}
 
 	return error;
 };
 
-exports.validate_builder = function(model, error, schema, collection, path, index) {
+exports.validate_builder = function (model, error, schema, collection, path, index) {
 
 	var entity = collection[schema];
 	var prepare = entity.onValidation || framework.onValidation;
@@ -1453,11 +1580,13 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	var current = path === undefined ? '' : path + '.';
 	var properties = entity.properties;
 
-	if (model === undefined || model === null)
+	if (model === undefined || model === null) {
 		model = {};
+	}
 
-	if (typeof(prepare) !== FUNCTION)
+	if (typeof(prepare) !== FUNCTION) {
 		throw new Error('It\'s not defined onValidation delegate.');
+	}
 
 	for (var i = 0; i < properties.length; i++) {
 
@@ -1468,12 +1597,14 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		if (value === undefined) {
 			error.add(name, '@', current + name);
 			continue;
-		} else if (type === FUNCTION)
+		} else if (type === FUNCTION) {
 			value = model[name]();
+		}
 
 		if (type !== OBJECT) {
-			if (builders.isJoin(collection, name))
+			if (builders.isJoin(collection, name)) {
 				type = OBJECT;
+			}
 		}
 
 		if (type === OBJECT && !exports.isDate(value)) {
@@ -1504,8 +1635,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					if (collection[entity] === undefined) {
 
 						var result2 = prepare(name, value, current + name, schema, model);
-						if (result2 === undefined)
+						if (result2 === undefined) {
 							continue;
+						}
 
 						type = typeof(result2);
 
@@ -1519,8 +1651,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 							continue;
 						}
 
-						if (result2.isValid === false)
+						if (result2.isValid === false) {
 							error.add(name, result2.error, current + name, index);
+						}
 
 						continue;
 					}
@@ -1547,8 +1680,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					}
 
 					var sublength = value.length;
-					for (var j = 0; j < sublength; j++)
+					for (var j = 0; j < sublength; j++) {
 						exports.validate_builder(value[j], error, entity, collection, current + name, j);
+					}
 
 					continue;
 				}
@@ -1557,8 +1691,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 		var result = prepare(name, value, current + name, schema, model);
 
-		if (result === undefined)
+		if (result === undefined) {
 			continue;
+		}
 
 		type = typeof(result);
 
@@ -1568,52 +1703,54 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		}
 
 		if (type === BOOLEAN) {
-			if (!result)
+			if (!result) {
 				error.add(name, '@', current + name, index);
+			}
 			continue;
 		}
 
-		if (result.isValid === false)
+		if (result.isValid === false) {
 			error.add(name, result.error, current + name, index);
+		}
 	}
 
 	return error;
 };
 
-/*
-	Validation object
-	@isValid {Boolean}
-	@error {String} :: optional, default @
-	return {Object}
-*/
-exports.isValid = function(valid, error) {
-	return { isValid: valid, error: error || '@' };
+/**
+ * Validation object
+ * @isValid {Boolean}
+ * @error {String} :: optional, default @
+ * @return {Object}
+ */
+exports.isValid = function (valid, error) {
+	return {isValid: valid, error: error || '@'};
 };
 
-/*
-	Email address validation
-	@str {String}
-	return {Boolean}
-*/
-exports.isEmail = function(str) {
+/**
+ * Email address validation
+ * @str {String}
+ * @return {Boolean}
+ */
+exports.isEmail = function (str) {
 	return (str || '').toString().isEmail();
 };
 
-/*
-	URL address validation
-	@str {String}
-	return {Boolean}
-*/
-exports.isURL = function(str) {
+/**
+ * URL address validation
+ * @str {String}
+ * @return {Boolean}
+ */
+exports.isURL = function (str) {
 	return (str || '').toString().isURL();
 };
 
-/*
-	Combine path
-	@arguments {String array}
-	return {String}
-*/
-exports.combine = function() {
+/**
+ * Combine path
+ * @arguments {String array}
+ * @return {String}
+ */
+exports.combine = function () {
 
 	var self = this;
 
@@ -1630,7 +1767,7 @@ exports.combine = function() {
  * @param {String} str
  * @return {String}
  */
-exports.removeDiacritics = function(str) {
+exports.removeDiacritics = function (str) {
 	var buf = '';
 	for (var i = 0, length = str.length; i < length; i++) {
 		var c = str[i];
@@ -1651,8 +1788,9 @@ exports.removeDiacritics = function(str) {
 		}
 
 		c = r;
-		if (isUpper)
+		if (isUpper) {
 			c = c.toUpperCase();
+		}
 		buf += c;
 	}
 	return buf;
@@ -1663,7 +1801,7 @@ exports.removeDiacritics = function(str) {
  * @param {String} xml
  * @return {Object}
  */
-exports.parseXML = function(xml) {
+exports.parseXML = function (xml) {
 
 	var beg = -1;
 	var end = 0;
@@ -1675,12 +1813,14 @@ exports.parseXML = function(xml) {
 	while (true) {
 
 		beg = xml.indexOf('<', beg + 1);
-		if (beg === -1)
+		if (beg === -1) {
 			break;
+		}
 
 		end = xml.indexOf('>', beg + 1);
-		if (end === -1)
+		if (end === -1) {
 			break;
+		}
 
 		var el = xml.substring(beg, end + 1);
 		var c = el[1];
@@ -1689,18 +1829,20 @@ exports.parseXML = function(xml) {
 
 			var o = current.pop();
 
-			if (from === -1 || o !== el.substring(2, el.length - 1))
+			if (from === -1 || o !== el.substring(2, el.length - 1)) {
 				continue;
+			}
 
 			var path = (current.length > 0 ? current.join('.') + '.' : '') + o;
 			var value = xml.substring(from, beg).decode();
 
-			if (obj[path] === undefined)
+			if (obj[path] === undefined) {
 				obj[path] = value;
-			else if (obj[path] instanceof Array)
+			} else if (obj[path] instanceof Array) {
 				obj[path].push(value);
-			else
+			} else {
 				obj[path] = [obj[path], value];
+			}
 
 			from = -1;
 			continue;
@@ -1719,15 +1861,18 @@ exports.parseXML = function(xml) {
 		var isSingle = el[el.length - 2] === '/';
 		var name = el.substring(1, tmp);
 
-		if (!isSingle)
+		if (!isSingle) {
 			current.push(name);
+		}
 
-		if (!hasAttributes)
+		if (!hasAttributes) {
 			continue;
+		}
 
 		var match = el.match(/\w+\=\".*?\"/g);
-		if (match === null)
+		if (match === null) {
 			continue;
+		}
 
 		var attr = {};
 		var length = match.length;
@@ -1743,10 +1888,10 @@ exports.parseXML = function(xml) {
 	return obj;
 };
 
-exports.parseJSON = function(value) {
+exports.parseJSON = function (value) {
 	try {
 		return JSON.parse(value);
-	} catch(e) {
+	} catch (e) {
 		return null;
 	}
 };
@@ -1759,7 +1904,7 @@ exports.parseJSON = function(value) {
  * @param {Hexa} type
  * @return {Buffer}
  */
-exports.getWebSocketFrame = function(code, message, type) {
+exports.getWebSocketFrame = function (code, message, type) {
 	var messageBuffer = getWebSocketFrameMessageBytes(code, message);
 	var messageLength = messageBuffer.length;
 	var lengthBuffer = getWebSocketFrameLengthBytes(messageLength);
@@ -1784,14 +1929,16 @@ function getWebSocketFrameMessageBytes(code, message) {
 	var messageBuffer = new Buffer(length + index);
 
 	for (var i = 0; i < length; i++) {
-		if (binary)
+		if (binary) {
 			messageBuffer[i + index] = message[i];
-		else
+		} else {
 			messageBuffer[i + index] = message.charCodeAt(i);
+		}
 	}
 
-	if (code === 0)
+	if (code === 0) {
 		return messageBuffer;
+	}
 
 	messageBuffer[0] = (code >> 8);
 	messageBuffer[1] = (code);
@@ -1837,14 +1984,6 @@ function getWebSocketFrameLengthBytes(length) {
 	return lengthBuffer;
 }
 
-/*
-	Get distance (KM) between two coordinates
-	@lat1 {Number}
-	@lot1 {Number}
-	@lat2 {Number}
-	@lot1 {Number}
-	return {Number}
-*/
 /**
  * GPS distance in KM
  * @param  {Number} lat1
@@ -1853,7 +1992,7 @@ function getWebSocketFrameLengthBytes(length) {
  * @param  {Number} lon2
  * @return {Number}
  */
-exports.distance = function(lat1, lon1, lat2, lon2) {
+exports.distance = function (lat1, lon1, lat2, lon2) {
 	var R = 6371;
 	var dLat = (lat2 - lat1).toRad();
 	var dLon = (lon2 - lon1).toRad();
@@ -1868,23 +2007,23 @@ exports.distance = function(lat1, lon1, lat2, lon2) {
  * @param  {Function(files, directories)} callback Callback
  * @param  {Function(filename)} filter Custom filter (optional).
  */
-exports.ls = function(path, callback, filter) {
+exports.ls = function (path, callback, filter) {
 	var filelist = new FileList();
 	filelist.onComplete = callback;
 	filelist.onFilter = filter || null;
 	filelist.walk(path);
 };
 
-/*
-	@type {String}
-	@value {Number}
-	return {Date}
-*/
-Date.prototype.add = function(type, value) {
+/**
+ * @type {String}
+ * @value {Number}
+ * @return {Date}
+ */
+Date.prototype.add = function (type, value) {
 	var self = this;
 	var dt = new Date(self.getTime());
 
-	switch(type) {
+	switch (type) {
 		case 's':
 		case 'ss':
 		case 'second':
@@ -1931,17 +2070,18 @@ Date.prototype.add = function(type, value) {
  * @param  {String} type Date type: minutes, seconds, hours, days, months, years
  * @return {Number}
  */
-Date.prototype.diff = function(date, type) {
+Date.prototype.diff = function (date, type) {
 
 	if (arguments.length === 1) {
 		type = date;
 		date = Date.now();
 	} else {
 		var to = typeof(date);
-		if (to === STRING)
+		if (to === STRING) {
 			date = Date.parse(date);
-		else if (util.isDate(date))
+		} else if (util.isDate(date)) {
 			date = date.getTime();
+		}
 	}
 
 	var r = this.getTime() - date;
@@ -1980,8 +2120,6 @@ Date.prototype.diff = function(date, type) {
 			// avg: 28 days per month
 			return Math.round((((r / 1000) / 60) / 60) / (24 * 28 * 12));
 	}
-
-	return;
 };
 
 /**
@@ -1989,16 +2127,18 @@ Date.prototype.diff = function(date, type) {
  * @param {Date} date
  * @return {Number} Results: -1 = current date is earlier than @date, 0 = current date is same as @date, 1 = current date is later than @date
  */
-Date.prototype.compare = function(date) {
+Date.prototype.compare = function (date) {
 
 	var self = this;
 	var r = self.getTime() - date.getTime();
 
-	if (r === 0)
+	if (r === 0) {
 		return 0;
+	}
 
-	if (r < 0)
+	if (r < 0) {
 		return -1;
+	}
 
 	return 1;
 };
@@ -2009,23 +2149,25 @@ Date.prototype.compare = function(date) {
  * @param {String or Date} d2
  * @return {Number} Results: -1 = @d1 is earlier than @d2, 0 = @d1 is same as @d2, 1 = @d1 is later than @d2
  */
-Date.compare = function(d1, d2) {
+Date.compare = function (d1, d2) {
 
-	if (typeof(d1) === STRING)
+	if (typeof(d1) === STRING) {
 		d1 = d1.parseDate();
+	}
 
-	if (typeof(d2) === STRING)
+	if (typeof(d2) === STRING) {
 		d2 = d2.parseDate();
+	}
 
 	return d1.compare(d2);
 };
 
-/*
-	Format date to string
-	@format {String}
-	return {String}
-*/
-Date.prototype.format = function(format) {
+/**
+ * Format date to string
+ * @param {String} format
+ * @return {String}
+ */
+Date.prototype.format = function (format) {
 	var self = this;
 
 	var h = self.getHours();
@@ -2044,8 +2186,9 @@ Date.prototype.format = function(format) {
 		a = 'PM';
 	}
 
-	if (h === 0)
+	if (h === 0) {
 		h = 12;
+	}
 
 	h = h.toString();
 
@@ -2056,20 +2199,21 @@ Date.prototype.format = function(format) {
 	var MM = M.padLeft(2, '0');
 	var dd = d.padLeft(2, '0');
 
-	if (format === undefined || format === null || format === '')
+	if (format === undefined || format === null || format === '') {
 		return yyyy + '-' + MM + '-' + dd + 'T' + hh + ':' + mm + ':' + ss + ':' + self.getMilliseconds().toString();
+	}
 
 	return format.replace(/yyyy/g, yyyy).replace(/yy/g, yy).replace(/MM/g, MM).replace(/M/g, M).replace(/dd/g, dd).replace(/d/g, d).replace(/HH/g, HH).replace(/H/g, H).replace(/hh/g, hh).replace(/h/g, h).replace(/mm/g, mm).replace(/m/g, m).replace(/ss/g, ss).replace(/s/g, ss).replace(/a/g, a);
 };
 
 if (!String.prototype.trim) {
-	String.prototype.trim = function() {
+	String.prototype.trim = function () {
 		return this.replace(regexpTRIM, '');
 	};
 }
 
 if (!String.prototype.replaceAt) {
-	String.prototype.replaceAt = function(index, character) {
+	String.prototype.replaceAt = function (index, character) {
 		var self = this;
 		return self.substr(0, index) + character + self.substr(index + character.length);
 	};
@@ -2082,14 +2226,15 @@ if (!String.prototype.replaceAt) {
  * @param  {Boolean} ignoreCase Ingore case sensitive.
  * @return {Boolean}
  */
-String.prototype.startsWith = function(text, ignoreCase) {
+String.prototype.startsWith = function (text, ignoreCase) {
 
 	var self = this;
 	var length = text.length;
 	var tmp = self.substring(0, length);
 
-	if (ignoreCase)
+	if (ignoreCase) {
 		return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
+	}
 
 	return tmp.length === length && tmp === text;
 };
@@ -2101,23 +2246,25 @@ String.prototype.startsWith = function(text, ignoreCase) {
  * @param  {Boolean} ignoreCase Ingore case sensitive.
  * @return {Boolean}
  */
-String.prototype.endsWith = function(text, ignoreCase) {
+String.prototype.endsWith = function (text, ignoreCase) {
 	var self = this;
 	var length = text.length;
 	var tmp = self.substring(self.length - length);
 
-	if (ignoreCase)
+	if (ignoreCase) {
 		return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
+	}
 
 	return tmp.length === length && tmp === text;
 
 };
 
-String.prototype.replacer = function(find, text) {
+String.prototype.replacer = function (find, text) {
 	var self = this;
 	var beg = self.indexOf(find);
-	if (beg === -1)
+	if (beg === -1) {
 		return self;
+	}
 	return self.substring(0, beg) + text + self.substring(beg + find.length);
 };
 
@@ -2127,10 +2274,11 @@ String.prototype.replacer = function(find, text) {
  * @param {String} salt Optional, salt.
  * @return {String}
  */
-String.prototype.hash = function(type, salt) {
+String.prototype.hash = function (type, salt) {
 	var str = this;
-	if (salt)
+	if (salt) {
 		str += salt;
+	}
 	switch ((type || '').toLowerCase()) {
 		case 'md5':
 			return str.md5();
@@ -2147,8 +2295,9 @@ String.prototype.hash = function(type, salt) {
 
 function string_hash(s) {
 	var hash = 0, i, char;
-	if (s.length === 0)
+	if (s.length === 0) {
 		return hash;
+	}
 	var l = s.length;
 	for (i = 0; i < l; i++) {
 		char = s.charCodeAt(i);
@@ -2158,20 +2307,21 @@ function string_hash(s) {
 	return hash;
 }
 
-/*
-	Count text in string
-	@text {String}
-	return {Number}
-*/
-String.prototype.count = function(text) {
+/**
+ * Count text in string
+ @ {String}
+ return {Number}
+ */
+String.prototype.count = function (text) {
 	var index = 0;
 	var count = 0;
 	do {
 
 		index = this.indexOf(text, index + text.length);
 
-		if (index > 0)
+		if (index > 0) {
 			count++;
+		}
 
 	} while (index > 0);
 	return count;
@@ -2181,11 +2331,11 @@ String.prototype.count = function(text) {
  * Parse XML
  * @return {Object}
  */
-String.prototype.parseXML = function() {
+String.prototype.parseXML = function () {
 	return exports.parseXML(this);
 };
 
-String.prototype.parseJSON = function() {
+String.prototype.parseJSON = function () {
 	return exports.parseJSON(this);
 };
 
@@ -2193,7 +2343,7 @@ String.prototype.parseJSON = function() {
  * Parse date from string
  * @return {Date}
  */
-String.prototype.parseDate = function() {
+String.prototype.parseDate = function () {
 	var self = this.trim();
 	var arr = self.indexOf(' ') === -1 ? self.split('T') : self.split(' ');
 	var index = arr[0].indexOf(':');
@@ -2205,24 +2355,29 @@ String.prototype.parseDate = function() {
 		arr[0] = tmp;
 	}
 
-	if (arr[0] === undefined)
+	if (arr[0] === undefined) {
 		arr[0] = '';
+	}
 
 	var noTime = arr[1] === undefined ? true : arr[1].length === 0;
 
 	for (var i = 0; i < length; i++) {
 		var c = arr[0].charCodeAt(i);
-		if (c > 47 && c < 58)
+		if (c > 47 && c < 58) {
 			continue;
-		if (c === 45 || c === 46)
+		}
+		if (c === 45 || c === 46) {
 			continue;
+		}
 
-		if (noTime)
+		if (noTime) {
 			return new Date(self);
+		}
 	}
 
-	if (arr[1] === undefined)
+	if (arr[1] === undefined) {
 		arr[1] = '00:00:00';
+	}
 
 	var firstDay = arr[0].indexOf('-') === -1;
 
@@ -2230,8 +2385,9 @@ String.prototype.parseDate = function() {
 	var time = (arr[1] || '').split(':');
 	var parsed = [];
 
-	if (date.length < 4 && time.length < 2)
+	if (date.length < 4 && time.length < 2) {
 		return new Date(self);
+	}
 
 	index = (time[2] || '').indexOf('.');
 
@@ -2239,8 +2395,9 @@ String.prototype.parseDate = function() {
 	if (index !== -1) {
 		time[3] = time[2].substring(index + 1);
 		time[2] = time[2].substring(0, index);
-	} else
+	} else {
 		time[3] = '0';
+	}
 
 	parsed.push(parseInt(date[firstDay ? 2 : 0], 10)); // year
 	parsed.push(parseInt(date[1], 10)); // month
@@ -2253,25 +2410,30 @@ String.prototype.parseDate = function() {
 	var def = new Date();
 
 	for (var i = 0, length = parsed.length; i < length; i++) {
-		if (isNaN(parsed[i]))
+		if (isNaN(parsed[i])) {
 			parsed[i] = 0;
+		}
 
 		var value = parsed[i];
-		if (value !== 0)
+		if (value !== 0) {
 			continue;
+		}
 
 		switch (i) {
 			case 0:
-				if (value <= 0)
+				if (value <= 0) {
 					parsed[i] = def.getFullYear();
+				}
 				break;
 			case 1:
-				if (value <= 0)
+				if (value <= 0) {
 					parsed[i] = def.getMonth() + 1;
+				}
 				break;
 			case 2:
-				if (value <= 0)
+				if (value <= 0) {
 					parsed[i] = def.getDate();
+				}
 				break;
 		}
 	}
@@ -2283,7 +2445,7 @@ String.prototype.parseDate = function() {
  * Parse expiration date
  * @return {Date}
  */
-String.prototype.parseDateExpiration = function() {
+String.prototype.parseDateExpiration = function () {
 	var self = this;
 
 	var arr = self.split(' ');
@@ -2293,12 +2455,14 @@ String.prototype.parseDateExpiration = function() {
 	for (var i = 0; i < length; i += 2) {
 
 		var num = arr[i].parseInt();
-		if (num === 0)
+		if (num === 0) {
 			continue;
+		}
 
 		var type = arr[i + 1] || '';
-		if (type === '')
+		if (type === '') {
 			continue;
+		}
 
 		dt = dt.add(type, num);
 	}
@@ -2306,28 +2470,31 @@ String.prototype.parseDateExpiration = function() {
 	return dt;
 };
 
-/*
-	Contain string a array values?
-	@value {String or String Array}
-	@mustAll {Boolean} :: optional (default false), String must contains all items in String array
-	return {Boolean}
-*/
-String.prototype.contains = function(value, mustAll) {
+/**
+ * Contain string a array values?
+ * @value {String or String Array}
+ * @mustAll {Boolean} :: optional (default false), String must contains all items in String array
+ * @return {Boolean}
+ */
+String.prototype.contains = function (value, mustAll) {
 
 	var str = this;
 
-	if (typeof(value) === STRING)
+	if (typeof(value) === STRING) {
 		return str.indexOf(value, typeof(mustAll) === NUMBER ? mustAll : 0) !== -1;
+	}
 
 	var length = value.length;
 
 	for (var i = 0; i < length; i++) {
 		var exists = str.indexOf(value[i]) !== -1;
 		if (mustAll) {
-			if (!exists)
+			if (!exists) {
 				return false;
-		} else if (exists)
+			}
+		} else if (exists) {
 			return true;
+		}
 	}
 
 	return mustAll;
@@ -2338,7 +2505,7 @@ String.prototype.contains = function(value, mustAll) {
  * @param {Object} def Default value, optional
  * @return {Object}
  */
-String.prototype.configuration = function(def) {
+String.prototype.configuration = function (def) {
 	console.log('OBSOLETE: String.configuration() -> use String.parseConfig([default])');
 	return this.parseConfig(def);
 };
@@ -2348,7 +2515,7 @@ String.prototype.configuration = function(def) {
  * @param {Object} def
  * @return {Object}
  */
-String.prototype.parseConfig = function(def) {
+String.prototype.parseConfig = function (def) {
 	var arr = this.split('\n');
 	var length = arr.length;
 	var obj = exports.extend({}, def);
@@ -2357,17 +2524,20 @@ String.prototype.parseConfig = function(def) {
 
 		var str = arr[i];
 
-		if (str === '' || str[0] === '#')
+		if (str === '' || str[0] === '#') {
 			continue;
+		}
 
-		if (str.substring(0, 2) === '//')
+		if (str.substring(0, 2) === '//') {
 			continue;
+		}
 
 		var index = str.indexOf(' :');
 		if (index === -1) {
 			index = str.indexOf('\t:');
-			if (index === -1)
+			if (index === -1) {
 				continue;
+			}
 		}
 
 		obj[str.substring(0, index).trim()] = str.substring(index + 2).trim();
@@ -2376,24 +2546,25 @@ String.prototype.parseConfig = function(def) {
 	return obj;
 };
 
-/*
-	@arguments {Object array}
-	return {String}
-*/
-String.prototype.format = function() {
+/**
+ * @arguments {Object array}
+ * @return {String}
+ */
+String.prototype.format = function () {
 	var formatted = this;
 	var length = arguments.length;
 	for (var i = 0; i < length; i++) {
 		var regexp = new RegExp('\\{' + i + '\\}', 'gi');
 		var value = arguments[i];
-		if (value === null || value === undefined)
+		if (value === null || value === undefined) {
 			value = '';
+		}
 		formatted = formatted.replace(regexp, value);
 	}
 	return formatted;
 };
 
-String.prototype.encode = function() {
+String.prototype.encode = function () {
 	var output = '';
 	for (var i = 0, length = this.length; i < length; i++) {
 		var c = this[i];
@@ -2421,34 +2592,36 @@ String.prototype.encode = function() {
 	return output;
 };
 
-String.prototype.decode = function() {
+String.prototype.decode = function () {
 	return this.replace(/&gt;/g, '>').replace(/\&lt;/g, '<').replace(/\&quot;/g, '"').replace(/&apos;/g, '\'').replace(/&amp;/g, '&');
 };
 
-String.prototype.urlEncode = function() {
+String.prototype.urlEncode = function () {
 	return encodeURIComponent(this);
 };
 
-String.prototype.urlDecode = function() {
+String.prototype.urlDecode = function () {
 	return decodeURIComponent(this);
 };
 
-/*
-	Simple templating :: Hello {name}, your score: {score}, your price: {price | ### ###.##}, date: {date | dd.MM.yyyy}
-	@obj {Object}
-	return {String}
-*/
-String.prototype.params = function(obj) {
+/**
+ * Simple templating :: Hello {name}, your score: {score}, your price: {price | ### ###.##}, date: {date | dd.MM.yyyy}
+ * @obj {Object}
+ * @return {String}
+ */
+String.prototype.params = function (obj) {
 	var formatted = this;
 
-	if (obj === undefined || obj === null)
+	if (obj === undefined || obj === null) {
 		return formatted;
+	}
 
 	var reg = /\{[^}\n]*\}/g;
 	var match = formatted.match(reg);
 
-	if (match === null)
+	if (match === null) {
 		return formatted;
+	}
 
 	var length = match.length;
 
@@ -2466,45 +2639,52 @@ String.prototype.params = function(obj) {
 			name = name.substring(0, index).trim();
 		}
 
-		if (prop.substring(0, 2) === '{!')
+		if (prop.substring(0, 2) === '{!') {
 			name = name.substring(1);
-		else
+		} else {
 			isEncode = true;
+		}
 
 		var val;
 
 		if (name.indexOf('.') !== -1) {
 			var arr = name.split('.');
 
-			if (arr.length === 2)
+			if (arr.length === 2) {
 				val = obj[arr[0]][arr[1]];
-			else if (arr.length === 3)
+			} else if (arr.length === 3) {
 				val = obj[arr[0]][arr[1]][arr[3]];
-			else if (arr.length === 4)
+			} else if (arr.length === 4) {
 				val = obj[arr[0]][arr[1]][arr[3]][arr[4]];
-			else if (arr.length === 5)
+			} else if (arr.length === 5) {
 				val = obj[arr[0]][arr[1]][arr[3]][arr[4]][arr[5]];
+			}
 
-		} else
+		} else {
 			val = name.length === 0 ? obj : obj[name];
+		}
 
-		if (typeof(val) === FUNCTION)
+		if (typeof(val) === FUNCTION) {
 			val = val(index);
+		}
 
-		if (val === undefined)
+		if (val === undefined) {
 			continue;
+		}
 
 		if (format.length > 0) {
 
 			var type = typeof(val);
 			if (type === STRING) {
 				var max = parseInt(format, 10);
-				if (!isNaN(max))
+				if (!isNaN(max)) {
 					val = val.max(max + 3, '...');
+				}
 
 			} else if (type === NUMBER || util.isDate(val)) {
-				if (format.isNumber())
+				if (format.isNumber()) {
 					format = parseInt(format);
+				}
 				val = val.format(format);
 			}
 		}
@@ -2512,115 +2692,124 @@ String.prototype.params = function(obj) {
 		val = val.toString().dollar();
 		formatted = formatted.replace(prop, isEncode ? exports.encode(val) : val);
 	}
-
 	return formatted;
 };
 
-/*
-	Set max length of string
-	@length {Number}
-	@chars {String} :: optional, default ...
-	return {String}
-*/
-String.prototype.max = function(length, chars) {
+/**
+ * Set max length of string
+ * @length {Number}
+ * @chars {String} :: optional, default ...
+ * @return {String}
+ */
+String.prototype.max = function (length, chars) {
 	var str = this;
-	if (typeof(chars) !== STRING)
+	if (typeof(chars) !== STRING) {
 		chars = '...';
+	}
 	return str.length > length ? str.substring(0, length - chars.length) + chars : str;
 };
 
-String.prototype.isJSON = function() {
+String.prototype.isJSON = function () {
 	var self = this;
-	if (self.length <= 1)
+	if (self.length <= 1) {
 		return false;
+	}
 	var a = self[0];
 	var b = self[self.length - 1];
 	return (a === '"' && b === '"') || (a === '[' && b === ']') || (a === '{' && b === '}');
 };
 
-String.prototype.isURL = function() {
+String.prototype.isURL = function () {
 	var str = this;
-	if (str.length <= 7)
+	if (str.length <= 7) {
 		return false;
+	}
 	return regexpUrl.test(str);
 };
 
-String.prototype.isEmail = function() {
+String.prototype.isEmail = function () {
 	var str = this;
-	if (str.length <= 4)
+	if (str.length <= 4) {
 		return false;
+	}
 
-	if (str[0] === '.' || str[str.length - 1] === '.')
+	if (str[0] === '.' || str[str.length - 1] === '.') {
 		return false;
+	}
 
 	return regexpMail.test(str);
 };
 
-/*
-	@def {Number} :: optional, default 0
-	return {Number}
-*/
-String.prototype.parseInt = function(def) {
+/**
+ * @def {Number} :: optional, default 0
+ * return {Number}
+ */
+String.prototype.parseInt = function (def) {
 	var num = 0;
 	var str = this;
 
-	if (str.substring(0, 1) === '0')
+	if (str.substring(0, 1) === '0') {
 		num = parseInt(str.replace(/\s/g, '').substring(1), 10);
-	else
+	} else {
 		num = parseInt(str.replace(/\s/g, ''), 10);
+	}
 
-	if (isNaN(num))
+	if (isNaN(num)) {
 		return def || 0;
+	}
 
 	return num;
 };
 
-/*
-	@def {Number} :: optional, default 0
-	return {Number}
-*/
-String.prototype.parseBool = function() {
+/**
+ * @def {Number} :: optional, default 0
+ * @return {Number}
+ */
+String.prototype.parseBool = function () {
 	var self = this.toLowerCase();
 	return self === 'true' || self === '1' || self === 'on';
 };
 
-String.prototype.parseBoolean = function() {
+String.prototype.parseBoolean = function () {
 	return this.parseBool();
 };
 
-/*
-	@def {Number} :: optional, default 0
-	return {Number}
-*/
-String.prototype.parseFloat = function(def) {
+/**
+ * @def {Number} :: optional, default 0
+ * @return {Number}
+ */
+String.prototype.parseFloat = function (def) {
 	var num = 0;
 	var str = this;
 
-	if (str.substring(0, 1) === '0')
+	if (str.substring(0, 1) === '0') {
 		num = parseFloat(str.replace(/\s/g, '').substring(1).replace(',', '.'));
-	else
+	} else {
 		num = parseFloat(str.replace(/\s/g, '').replace(',', '.'));
+	}
 
-	if (isNaN(num))
+	if (isNaN(num)) {
 		return def || 0;
+	}
 
 	return num;
 };
 
-String.prototype.toUnicode = function() {
+String.prototype.toUnicode = function () {
 	var result = '';
 	var self = this;
 	var length = self.length;
-	for(var i = 0; i < length; ++i){
-		if(self.charCodeAt(i) > 126 || self.charCodeAt(i) < 32)
+	for (var i = 0; i < length; ++i) {
+		if (self.charCodeAt(i) > 126 || self.charCodeAt(i) < 32) {
 			result += '\\u' + self.charCodeAt(i).hex(4);
-		else
+		} else {
 			result += self[i];
+		}
 	}
 	return result;
 };
 
-String.prototype.fromUnicode = function() {
+String.prototype.fromUnicode = function () {
 
 	var str = this.replace(/\\u([\d\w]{4})/gi, function (match, v) {
 		return String.fromCharCode(parseInt(v, 16));
@@ -2629,40 +2818,40 @@ String.prototype.fromUnicode = function() {
 	return unescape(str);
 };
 
-String.prototype.sha1 = function(salt) {
+String.prototype.sha1 = function (salt) {
 	var hash = crypto.createHash('sha1');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
-String.prototype.sha256 = function(salt) {
+String.prototype.sha256 = function (salt) {
 	var hash = crypto.createHash('sha256');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
-String.prototype.sha512 = function(salt) {
+String.prototype.sha512 = function (salt) {
 	var hash = crypto.createHash('sha512');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
-String.prototype.md5 = function(salt) {
+String.prototype.md5 = function (salt) {
 	var hash = crypto.createHash('md5');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
-String.prototype.toSearch = function() {
+String.prototype.toSearch = function () {
 	return this.replace(/[^a-zA-Zá-žÁ-Ž\d\s:]/g, '').trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
 };
 
-/*
-	@key {String}
-	@isUnique {Boolean}
-	return {String}
-*/
-String.prototype.encrypt = function(key, isUnique) {
+/**
+ * @key {String}
+ * @isUnique {Boolean}
+ * @return {String}
+ */
+String.prototype.encrypt = function (key, isUnique) {
 	var str = '0' + this;
 	var data_count = str.length;
 	var key_count = key.length;
@@ -2681,35 +2870,39 @@ String.prototype.encrypt = function(key, isUnique) {
 
 	var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(/\//g, '-').replace(/\+/g, '_');
 	index = hash.indexOf('=');
-	if (index > 0)
+	if (index > 0) {
 		return hash.substring(0, index);
+	}
 
 	return hash;
 };
 
-/*
-	@key {String}
-	return {String}
-*/
-String.prototype.decrypt = function(key) {
+/**
+ * @key {String}
+ * @return {String}
+ */
+String.prototype.decrypt = function (key) {
 
 	var values = this.replace(/\-/g, '/').replace(/\_/g, '+');
 	var mod = values.length % 4;
 
 	if (mod > 0) {
-		for (var i = 0; i < mod; i++)
+		for (var i = 0; i < mod; i++) {
 			values += '=';
+		}
 	}
 
 	values = new Buffer(values, 'base64').toString(ENCODING);
 
 	var index = values.indexOf('=');
-	if (index === -1)
+	if (index === -1) {
 		return null;
+	}
 
 	var counter = parseInt(values.substring(0, index), 10);
-	if (isNaN(counter))
+	if (isNaN(counter)) {
 		return null;
+	}
 
 	values = values.substring(index + 1);
 
@@ -2727,76 +2920,81 @@ String.prototype.decrypt = function(key) {
 
 	var val = decrypt_data.join('');
 
-	if (counter !== val.length + key.length)
+	if (counter !== val.length + key.length) {
 		return null;
+	}
 
 	return val;
 };
 
-/*
-	Convert value from base64 and save to file
-	@filename {String}
-	@callback {Function} :: optional
-	return {String}
-*/
-String.prototype.base64ToFile = function(filename, callback) {
+/**
+ * Convert value from base64 and save to file
+ * @filename {String}
+ * @callback {Function} :: optional
+ * @return {String}
+ */
+String.prototype.base64ToFile = function (filename, callback) {
 	var self = this;
 
 	var index = self.indexOf(',');
-	if (index === -1)
+	if (index === -1) {
 		index = 0;
-	else
+	} else {
 		index++;
+	}
 
-	if (callback)
+	if (callback) {
 		fs.writeFile(filename, self.substring(index), 'base64', callback);
-	else
+	} else {
 		fs.writeFile(filename, self.substring(index), 'base64', exports.noop);
+	}
 
 	return this;
 };
 
-/*
-	Get content type from base64
-	return {String}
-*/
-String.prototype.base64ContentType = function() {
+/**
+ * Get content type from base64
+ * @return {String}
+ */
+String.prototype.base64ContentType = function () {
 	var self = this;
 
 	var index = self.indexOf(';');
-	if (index === -1)
+	if (index === -1) {
 		return '';
+	}
 
 	return self.substring(5, index);
 };
 
-String.prototype.removeDiacritics = function() {
+String.prototype.removeDiacritics = function () {
 	return exports.removeDiacritics(this);
 };
 
-/*
-	Indent
-	@max {Number}
-	@c {String} : optional, default SPACE
-	return {String}
-*/
-String.prototype.indent = function(max, c) {
+/**
+ * Indent
+ * @max {Number}
+ * @c {String} : optional, default SPACE
+ * @return {String}
+ */
+String.prototype.indent = function (max, c) {
 	var self = this;
 	return new Array(max + 1).join(c || ' ') + self;
 };
 
-/*
-	isNumber?
-	@isDecimal {Boolean} :: optional, default false
-	return {Boolean}
-*/
-String.prototype.isNumber = function(isDecimal) {
+/**
+ * isNumber?
+ * @isDecimal {Boolean} :: optional, default false
+ * @return {Boolean}
+ */
+String.prototype.isNumber = function (isDecimal) {
 
 	var self = this;
 	var length = self.length;
 
-	if (length === 0)
+	if (length === 0) {
 		return false;
+	}
 
 	isDecimal = isDecimal || false;
 
@@ -2810,60 +3008,62 @@ String.prototype.isNumber = function(isDecimal) {
 			}
 		}
 
-		if (ascii < 48 || ascii > 57)
+		if (ascii < 48 || ascii > 57) {
 			return false;
+		}
 	}
 
 	return true;
 };
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
+/**
+ * @max {Number}
+ * @c {String} :: optional
+ * @return {String}
+ */
 
 if (!String.prototype.padLeft) {
-	String.prototype.padLeft = function(max, c) {
+	String.prototype.padLeft = function (max, c) {
 		var self = this;
 		return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
 	};
 }
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
+/**
+ * @max {Number}
+ * @c {String} :: optional
+ * @return {String}
+ */
 if (!String.prototype.padRight) {
-	String.prototype.padRight = function(max, c) {
+	String.prototype.padRight = function (max, c) {
 		var self = this;
 		return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
 	};
 }
 
-/*
-	index {Number}
-	value {String}
-	return {String}
-*/
-String.prototype.insert = function(index, value) {
+/**
+ * @index {Number}
+ * @value {String}
+ * @return {String}
+ */
+String.prototype.insert = function (index, value) {
 	var str = this;
 	var a = str.substring(0, index);
 	var b = value.toString() + str.substring(index);
 	return a + b;
 };
 
-/*
-	Prepare string for replacing double dollar
-*/
-String.prototype.dollar = function() {
+/**
+ * Prepare string for replacing double dollar
+ */
+String.prototype.dollar = function () {
 	var str = this;
 	var index = str.indexOf('$', 0);
 
 	while (index !== -1) {
-		if (str[index + 1] === '$')
+		if (str[index + 1] === '$') {
 			str = str.insert(index, '$');
+		}
 		index = str.indexOf('$', index + 2);
 	}
 	return str.toString();
@@ -2874,7 +3074,7 @@ String.prototype.dollar = function() {
  * @param  {Number} max A maximum length, default: 60 and optional.
  * @return {String}
  */
-String.prototype.linker = function(max) {
+String.prototype.linker = function (max) {
 	max = max || 60;
 
 	var self = this.trim().toLowerCase().removeDiacritics();
@@ -2885,12 +3085,14 @@ String.prototype.linker = function(max) {
 		var c = self[i];
 		var code = self.charCodeAt(i);
 
-		if (builder.length >= max)
+		if (builder.length >= max) {
 			break;
+		}
 
 		if (code > 31 && code < 48) {
-			if (builder[builder.length - 1] === '-')
+			if (builder[builder.length - 1] === '-') {
 				continue;
+			}
 			builder += '-';
 			continue;
 		}
@@ -2906,31 +3108,32 @@ String.prototype.linker = function(max) {
 		}
 	}
 	var l = builder.length - 1;
-	if (builder[l] === '-')
+	if (builder[l] === '-') {
 		return builder.substring(0, l);
+	}
 	return builder;
 };
 
-String.prototype.slug = function(max) {
+String.prototype.slug = function (max) {
 	return this.linker(max);
 };
 
-String.prototype.link = function(max) {
+String.prototype.link = function (max) {
 	console.log('String.prototype.link: OBSOLETE - Use String.prototype.linker()');
 	return this.linker(max);
 };
 
-String.prototype.pluralize = function(zero, one, few, other) {
+String.prototype.pluralize = function (zero, one, few, other) {
 	var str = this;
 	return str.parseInt().pluralize(zero, one, few, other);
 };
 
-String.prototype.isBoolean = function() {
+String.prototype.isBoolean = function () {
 	var self = this.toLowerCase();
 	return (self === 'true' || self === 'false') ? true : false;
 };
 
-String.prototype.capitalize = function() {
+String.prototype.capitalize = function () {
 	return this[0].toUpperCase() + this.substring(1);
 };
 
@@ -2938,34 +3141,34 @@ String.prototype.capitalize = function() {
  * Check if the string contains only letters and numbers.
  * @return {Boolean}
  */
-String.prototype.isAlphaNumeric = function() {
-  var regExp = /^[A-Za-z0-9]+$/;
-  return (this.match(regExp) ? true : false);
+String.prototype.isAlphaNumeric = function () {
+	var regExp = /^[A-Za-z0-9]+$/;
+	return (this.match(regExp) ? true : false);
 };
 
-/*
-	@decimals {Number}
-	return {Number}
-*/
-Number.prototype.floor = function(decimals) {
+/**
+ * @decimals {Number}
+ * @return {Number}
+ */
+Number.prototype.floor = function (decimals) {
 	return Math.floor(this * Math.pow(10, decimals)) / Math.pow(10, decimals);
 };
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
-Number.prototype.padLeft = function(max, c) {
+/**
+ * @max {Number}
+ * @c {String} :: optional
+ * @return {String}
+ */
+Number.prototype.padLeft = function (max, c) {
 	return this.toString().padLeft(max, c || '0');
 };
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
-Number.prototype.padRight = function(max, c) {
+/**
+ * @max {Number}
+ * @c {String} :: optional
+ * @return {String}
+ */
+Number.prototype.padRight = function (max, c) {
 	return this.toString().padRight(max, c || '0');
 };
 
@@ -2976,12 +3179,13 @@ Number.prototype.padRight = function(max, c) {
  * @param {String} separatorDecimal Decimal separator, default '.' if number separator is ',' or ' '.
  * @return {String}
  */
-Number.prototype.format = function(decimals, separator, separatorDecimal) {
+Number.prototype.format = function (decimals, separator, separatorDecimal) {
 
 	var self = this;
 
-	if (typeof(decimals) === STRING)
+	if (typeof(decimals) === STRING) {
 		return self.format2(decimals);
+	}
 
 	var num = self.toString();
 	var dec = '';
@@ -2994,8 +3198,9 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 		decimals = tmp;
 	}
 
-	if (separator === undefined)
+	if (separator === undefined) {
 		separator = ' ';
+	}
 
 	if (index !== -1) {
 		dec = num.substring(index + 1);
@@ -3005,30 +3210,33 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 	index = -1;
 	for (var i = num.length - 1; i >= 0; i--) {
 		index++;
-		if (index > 0 && index % 3 === 0)
+		if (index > 0 && index % 3 === 0) {
 			output = separator + output;
+		}
 		output = num[i] + output;
 	}
 
 	if (dec.length > 0 || decimals > 0) {
-		if (dec.length > decimals)
+		if (dec.length > decimals) {
 			dec = dec.substring(0, decimals);
-		else
+		} else {
 			dec = dec.padRight(decimals, '0');
+		}
 	}
 
-	if (dec.length > 0 && separatorDecimal === undefined)
+	if (dec.length > 0 && separatorDecimal === undefined) {
 		separatorDecimal = separator === '.' ? ',' : '.';
+	}
 
 	return output + (dec.length > 0 ? separatorDecimal + dec : '');
 };
 
-/*
-	Format number :: 10000 = 10 000
-	@format {Number or String} :: number is decimal and string is specified format, example: ## ###.##
-	return {String}
-*/
-Number.prototype.format2 = function(format) {
+/**
+ * Format number :: 10000 = 10 000
+ * @format {Number or String} :: number is decimal and string is specified format, example: ## ###.##
+ * @return {String}
+ */
+Number.prototype.format2 = function (format) {
 
 	console.log('OBSOLETE: Number.prototype.format(\'### ### ###\');');
 
@@ -3048,14 +3256,16 @@ Number.prototype.format2 = function(format) {
 		for (var i = 0; i < length; i++) {
 			var c = format[i];
 			if (c === '#') {
-				if (d)
+				if (d) {
 					end++;
-				else
+				} else {
 					beg++;
+				}
 			}
 
-			if (c === '.')
+			if (c === '.') {
 				d = true;
+			}
 		}
 
 		var strBeg = num;
@@ -3071,20 +3281,24 @@ Number.prototype.format2 = function(format) {
 		if (strBeg.length > beg) {
 			max = strBeg.length - beg;
 			var tmp = '';
-			for (var i = 0; i < max; i++)
+			for (var i = 0; i < max; i++) {
 				tmp += '#';
+			}
 
 			format = tmp + format;
 		}
 
-		if (strBeg.length < beg)
+		if (strBeg.length < beg) {
 			strBeg = strBeg.padLeft(beg, ' ');
+		}
 
-		if (strEnd.length < end)
+		if (strEnd.length < end) {
 			strEnd = strEnd.padRight(end, '0');
+		}
 
-		if (strEnd.length > end)
+		if (strEnd.length > end) {
 			strEnd = strEnd.substring(0, end);
+		}
 
 		d = false;
 		index = 0;
@@ -3098,8 +3312,9 @@ Number.prototype.format2 = function(format) {
 
 			if (c !== '#') {
 
-				if (skip)
+				if (skip) {
 					continue;
+				}
 
 				if (c === '.') {
 					d = true;
@@ -3112,11 +3327,13 @@ Number.prototype.format2 = function(format) {
 
 			var value = d ? strEnd[index] : strBeg[index];
 
-			if (skip)
+			if (skip) {
 				skip = [',', ' '].indexOf(value) !== -1;
+			}
 
-			if (!skip)
+			if (!skip) {
 				output += value;
+			}
 
 			index++;
 		}
@@ -3128,76 +3345,81 @@ Number.prototype.format2 = function(format) {
 	beg = num.indexOf('.');
 	max = format || 0;
 
-	if (max === 0 && beg !== -1)
+	if (max === 0 && beg !== -1) {
 		max = num.length - (beg + 1);
+	}
 
 	if (max > 0) {
 		output += '.';
-		for (var i = 0; i < max; i++)
+		for (var i = 0; i < max; i++) {
 			output += '#';
+		}
 	}
 
 	return this.format(output);
 };
 
-/*
-	Pluralize number
-	zero {String}
-	one {String}
-	few {String}
-	other {String}
-	return {String}
-*/
-Number.prototype.pluralize = function(zero, one, few, other) {
+/**
+ * Pluralize number
+ * @zero {String}
+ * @one {String}
+ * @few {String}
+ * @other {String}
+ * @return {String}
+ */
+Number.prototype.pluralize = function (zero, one, few, other) {
 
 	var num = this;
 	var value = '';
 
-	if (num == 0)
+	if (num == 0) {
 		value = zero || '';
-	else if (num == 1)
+	} else if (num == 1) {
 		value = one || '';
-	else if (num > 1 && num < 5)
+	} else if (num > 1 && num < 5) {
 		value = few || '';
-	else
+	} else {
 		value = other;
+	}
 
 	var beg = value.indexOf('#');
 	var end = value.lastIndexOf('#');
 
-	if (beg === -1)
+	if (beg === -1) {
 		return value;
+	}
 
 	var format = value.substring(beg, end + 1);
 	return num.format(format) + value.replace(format, '');
 };
 
-/*
-	@length {Number}
-	return {String}
-*/
-Number.prototype.hex = function(length) {
+/**
+ * @length {Number}
+ * @return {String}
+ */
+Number.prototype.hex = function (length) {
 	var str = this.toString(16).toUpperCase();
-	while(str.length < length)
+	while (str.length < length) {
 		str = '0' + str;
+	}
 	return str;
 };
 
-/*
-	Internal function
-*/
-Number.prototype.condition = function(ifTrue, ifFalse) {
+/**
+ * Internal function
+ */
+Number.prototype.condition = function (ifTrue, ifFalse) {
 	return (this % 2 === 0 ? ifTrue : ifFalse) || '';
 };
 
-/*
-	VAT
-	@percentage {Number}
-	@decimals {Number}, optional, default 2,
-	@includedVAT {Boolean}, optional, default true
-	return {Number}
-*/
-Number.prototype.VAT = function(percentage, decimals, includedVAT) {
+/**
+ * VAT
+ * @percentage {Number}
+ * @decimals {Number}, optional, default 2,
+ * @includedVAT {Boolean}, optional, default true
+ * @return {Number}
+ */
+Number.prototype.VAT = function (percentage, decimals, includedVAT) {
 	var num = this;
 	var type = typeof(decimals);
 
@@ -3208,34 +3430,38 @@ Number.prototype.VAT = function(percentage, decimals, includedVAT) {
 		type = typeof(decimals);
 	}
 
-	if (type === UNDEFINED)
+	if (type === UNDEFINED) {
 		decimals = 2;
+	}
 
-	if (includedVAT === undefined)
+	if (includedVAT === undefined) {
 		includedVAT = true;
+	}
 
-	if (percentage === 0 || num === 0)
+	if (percentage === 0 || num === 0) {
 		return num;
+	}
 
 	return includedVAT ? (num / ((percentage / 100) + 1)).floor(decimals) : (num * ((percentage / 100) + 1)).floor(decimals);
 };
 
-/*
-	Discount
-	@percentage {Number}
-	@decimals {Number}, optional, default 2
-	return {Number}
-*/
-Number.prototype.discount = function(percentage, decimals) {
+/**
+ * Discount
+ * @percentage {Number}
+ * @decimals {Number}, optional, default 2
+ * @return {Number}
+ */
+Number.prototype.discount = function (percentage, decimals) {
 	var num = this;
 
-	if (decimals === undefined)
+	if (decimals === undefined) {
 		decimals = 2;
+	}
 
 	return (num - (num / 100) * percentage).floor(decimals);
 };
 
-Number.prototype.parseDate = function(plus) {
+Number.prototype.parseDate = function (plus) {
 	return new Date(this + (plus || 0));
 };
 
@@ -3245,7 +3471,7 @@ if (typeof (Number.prototype.toRad) === UNDEFINED) {
 	};
 }
 
-Boolean.prototype.condition = function(ifTrue, ifFalse) {
+Boolean.prototype.condition = function (ifTrue, ifFalse) {
 	return (this ? ifTrue : ifFalse) || '';
 };
 
@@ -3254,14 +3480,15 @@ Boolean.prototype.condition = function(ifTrue, ifFalse) {
  * @param {Number} count
  * @return {Array}
  */
-Array.prototype.take = function(count) {
+Array.prototype.take = function (count) {
 	var arr = [];
 	var self = this;
 	var length = self.length;
 	for (var i = 0; i < length; i++) {
 		arr.push(self[i]);
-		if (arr.length >= count)
+		if (arr.length >= count) {
 			return arr;
+		}
 	}
 	return arr;
 };
@@ -3272,7 +3499,7 @@ Array.prototype.take = function(count) {
  * @param {Boolean} rewrite Default: false.
  * @return {Array} Returns self
  */
-Array.prototype.extend = function(obj, rewrite) {
+Array.prototype.extend = function (obj, rewrite) {
 	var isFn = typeof(obj) === FUNCTION;
 	for (var i = 0, length = this.length; i < length; i++) {
 
@@ -3291,7 +3518,7 @@ Array.prototype.extend = function(obj, rewrite) {
  * @param {Object} def Default value.
  * @return {Object}
  */
-Array.prototype.first = function(def) {
+Array.prototype.first = function (def) {
 	var item = this[0];
 	return item === undefined ? def : item;
 };
@@ -3301,17 +3528,18 @@ Array.prototype.first = function(def) {
  * @param {String} name Optional, property name.
  * @return {Object}
  */
-Array.prototype.toObject = function(name) {
+Array.prototype.toObject = function (name) {
 
 	var self = this;
 	var obj = {};
 
 	for (var i = 0, length = self.length; i < length; i++) {
 		var item = self[i];
-		if (name)
+		if (name) {
 			obj[item[name]] = item;
-		else
+		} else {
 			obj[item] = true;
+		}
 	}
 
 	return obj;
@@ -3323,7 +3551,7 @@ Array.prototype.toObject = function(name) {
  * @param {Array} b Second array.
  * @param {Function(itemA, itemB, indexA, indexB)} executor
  */
-Array.prototype.compare = function(id, b, executor) {
+Array.prototype.compare = function (id, b, executor) {
 
 	var a = this;
 	var ak = {};
@@ -3335,11 +3563,13 @@ Array.prototype.compare = function(id, b, executor) {
 
 	for (var i = 0; i < tl; i++) {
 		var av = a[i];
-		if (av)
+		if (av) {
 			ak[av[id]] = i;
+		}
 		var bv = b[i];
-		if (bv)
+		if (bv) {
 			bk[bv[id]] = i;
+		}
 	}
 
 	var index = -1;
@@ -3353,26 +3583,30 @@ Array.prototype.compare = function(id, b, executor) {
 
 		if (av) {
 			akk = av[id];
-			if (processed[akk])
+			if (processed[akk]) {
 				continue;
+			}
 			processed[akk] = true;
 			index = bk[akk];
-			if (index === undefined)
+			if (index === undefined) {
 				executor(av, undefined, i, -1);
-			else
+			} else {
 				executor(av, b[index], i, index);
+			}
 		}
 
 		if (bv) {
 			bkk = bv[id];
-			if (processed[bkk])
+			if (processed[bkk]) {
 				continue;
+			}
 			processed[bkk] = true;
 			index = ak[bkk];
-			if (index === undefined)
+			if (index === undefined) {
 				executor(undefined, bv, -1, i);
-			else
+			} else {
 				executor(a[index], bv, index, i);
+			}
 		}
 	}
 };
@@ -3382,7 +3616,7 @@ Array.prototype.compare = function(id, b, executor) {
  * @param {Object} def Default value.
  * @return {Object}
  */
-Array.prototype.last = function(def) {
+Array.prototype.last = function (def) {
 	var item = this[this.length - 1];
 	return item === undefined ? def : item;
 };
@@ -3390,10 +3624,10 @@ Array.prototype.last = function(def) {
 /**
  * Array object sorting
  * @param {String} name Property name.
- * @param {Booelan} asc
+ * @param {Boolean} asc
  * @return {Array}
  */
-Array.prototype.orderBy = function(name, asc) {
+Array.prototype.orderBy = function (name, asc) {
 
 	if (typeof(name) === BOOLEAN) {
 		var tmp = asc;
@@ -3401,15 +3635,16 @@ Array.prototype.orderBy = function(name, asc) {
 		name = tmp;
 	}
 
-	if (asc === undefined)
+	if (asc === undefined) {
 		asc = true;
+	}
 
 	var self = this;
 	var type = 0;
 	var path = (name || '').split('.');
 	var length = path.length;
 
-	self.sort(function(a, b) {
+	self.sort(function (a, b) {
 
 		var va = null;
 		var vb = null;
@@ -3448,36 +3683,42 @@ Array.prototype.orderBy = function(name, asc) {
 
 		if (type === 0) {
 			var t = typeof(va);
-			if (t === STRING)
+			if (t === STRING) {
 				type = 1;
-			else if (t === NUMBER)
+			} else if (t === NUMBER) {
 				type = 2;
-			else if (t === BOOLEAN)
+			} else if (t === BOOLEAN) {
 				type = 3;
-			else
+			} else {
 				type = 4;
+			}
 		}
 
 		// String
-		if (type === 1)
+		if (type === 1) {
 			return asc ? va.removeDiacritics().localeCompare(vb.removeDiacritics()) : vb.removeDiacritics().localeCompare(va.removeDiacritics());
+		}
 
 		if (type === 2) {
 
-			if (va > vb)
+			if (va > vb) {
 				return asc ? 1 : -1;
+			}
 
-			if (va < vb)
+			if (va < vb) {
 				return asc ? -1 : 1;
+			}
 
 			return 0;
 		}
 
 		if (type === 3) {
-			if (va === true && vb === false)
+			if (va === true && vb === false) {
 				return asc ? 1 : -1;
-			if (va === false && vb === true)
+			}
+			if (va === false && vb === true) {
 				return asc ? -1 : 1;
+			}
 			return 0;
 		}
 
@@ -3489,15 +3730,16 @@ Array.prototype.orderBy = function(name, asc) {
 };
 
 
-/*
-	Trim values
-*/
-Array.prototype.trim = function() {
+/**
+ * Trim values
+ */
+Array.prototype.trim = function () {
 	var self = this;
 	var length = self.length;
 	for (var i = 0; i < length; i++) {
-		if (typeof(self[i]) === STRING)
+		if (typeof(self[i]) === STRING) {
 			self[i] = self[i].trim();
+		}
 	}
 	return self;
 };
@@ -3507,13 +3749,14 @@ Array.prototype.trim = function() {
  * @param {Number} count
  * @return {Array}
  */
-Array.prototype.skip = function(count) {
+Array.prototype.skip = function (count) {
 	var arr = [];
 	var self = this;
 	var length = self.length;
 	for (var i = 0; i < length; i++) {
-		if (i >= count)
+		if (i >= count) {
 			arr.push(self[i]);
+		}
 	}
 	return arr;
 };
@@ -3524,7 +3767,7 @@ Array.prototype.skip = function(count) {
  * @param {Object} value Optional.
  * @return {Array}
  */
-Array.prototype.where = function(cb, value) {
+Array.prototype.where = function (cb, value) {
 
 	var self = this;
 	var selected = [];
@@ -3534,19 +3777,22 @@ Array.prototype.where = function(cb, value) {
 	for (var i = 0, length = self.length; i < length; i++) {
 
 		if (isFN) {
-			if (cb.call(self, self[i], i))
+			if (cb.call(self, self[i], i)) {
 				selected.push(self[i]);
+			}
 			continue;
 		}
 
 		if (isV) {
-			if (self[i][cb] === value)
+			if (self[i][cb] === value) {
 				selected.push(self[i]);
+			}
 			continue;
 		}
 
-		if (self[i] === cb)
+		if (self[i] === cb) {
 			selected.push(self[i]);
+		}
 	}
 
 	return selected;
@@ -3558,15 +3804,16 @@ Array.prototype.where = function(cb, value) {
  * @param {Object} value Optional.
  * @return {Array}
  */
-Array.prototype.find = function(cb, value) {
+Array.prototype.find = function (cb, value) {
 	var self = this;
 	var index = self.findIndex(cb, value);
-	if (index === -1)
+	if (index === -1) {
 		return null;
+	}
 	return self[index];
 };
 
-Array.prototype.findIndex = function(cb, value) {
+Array.prototype.findIndex = function (cb, value) {
 
 	var self = this;
 	var isFN = typeof(cb) === FUNCTION;
@@ -3575,19 +3822,22 @@ Array.prototype.findIndex = function(cb, value) {
 	for (var i = 0, length = self.length; i < length; i++) {
 
 		if (isFN) {
-			if (cb.call(self, self[i], i))
+			if (cb.call(self, self[i], i)) {
 				return i;
+			}
 			continue;
 		}
 
 		if (isV) {
-			if (self[i][cb] === value)
+			if (self[i][cb] === value) {
 				return i;
+			}
 			continue;
 		}
 
-		if (self[i] === cb)
+		if (self[i] === cb) {
 			return i;
+		}
 	}
 
 	return -1;
@@ -3599,7 +3849,7 @@ Array.prototype.findIndex = function(cb, value) {
  * @param {Object} value Optional.
  * @return {Array}
  */
-Array.prototype.remove = function(cb, value) {
+Array.prototype.remove = function (cb, value) {
 
 	var self = this;
 	var arr = [];
@@ -3609,48 +3859,51 @@ Array.prototype.remove = function(cb, value) {
 	for (var i = 0, length = self.length; i < length; i++) {
 
 		if (isFN) {
-			if (!cb.call(self, self[i], i))
+			if (!cb.call(self, self[i], i)) {
 				arr.push(self[i]);
+			}
 			continue;
 		}
 
 		if (isV) {
-			if (self[i][cb] !== value)
+			if (self[i][cb] !== value) {
 				arr.push(self[i]);
+			}
 			continue;
 		}
 
-		if (self[i] !== cb)
+		if (self[i] !== cb) {
 			arr.push(self[i]);
+		}
 	}
 	return arr;
 };
 
-/*
-	Random return item from array
-	Return {Object}
-*/
-Array.prototype.random = function() {
+/**
+ * Random return item from array
+ * @Return {Object}
+ */
+Array.prototype.random = function () {
 	var self = this;
 	return self[exports.random(self.length - 1)];
 };
 
-/*
-	Waiting list - function remove each item
-	@callback {Function} :: function(next) {}
-	@complete {Function} :: optional
-*/
-Array.prototype.waiting = function(onItem, callback) {
+/**
+ * Waiting list - function remove each item
+ * @callback {Function} :: function(next) {}
+ * @complete {Function} :: optional
+ */
+Array.prototype.waiting = function (onItem, callback) {
 	console.log('Array.prototype.waiting: OBSOLETE. Use Array.prototype.wait');
 	return this.wait(onItem, callback);
 };
 
-/*
-	Waiting list - function remove each item
-	@callback {Function} :: function(next) {}
-	@complete {Function} :: optional
-*/
-Array.prototype.wait = Array.prototype.each = function(onItem, callback, remove) {
+/**
+ * Waiting list - function remove each item
+ * @callback {Function} :: function(next) {}
+ * @complete {Function} :: optional
+ */
+Array.prototype.wait = Array.prototype.each = function (onItem, callback, remove) {
 
 	var self = this;
 	var type = typeof(callback);
@@ -3661,21 +3914,24 @@ Array.prototype.wait = Array.prototype.each = function(onItem, callback, remove)
 		callback = tmp;
 	}
 
-	if (remove === undefined)
+	if (remove === undefined) {
 		remove = 0;
+	}
 
 	var item = remove === true ? self.shift() : self[remove];
 
 	if (item === undefined) {
-		if (callback)
+		if (callback) {
 			callback();
+		}
 		return self;
 	}
 
-	onItem.call(self, item, function() {
-		setImmediate(function() {
-			if (typeof(remove) === NUMBER)
+	onItem.call(self, item, function () {
+		setImmediate(function () {
+			if (typeof(remove) === NUMBER) {
 				remove++;
+			}
 			self.wait(onItem, callback, remove);
 		});
 	});
@@ -3688,19 +3944,20 @@ Array.prototype.wait = Array.prototype.each = function(onItem, callback, remove)
  * @param {Function} callback Optional
  * @return {Array}
  */
-Array.prototype.async = function(callback) {
+Array.prototype.async = function (callback) {
 
 	var self = this;
 	var item = self.shift();
 
 	if (item === undefined) {
-		if (callback)
+		if (callback) {
 			callback();
+		}
 		return self;
 	}
 
-	item(function() {
-		setImmediate(function() {
+	item(function () {
+		setImmediate(function () {
 			self.async(callback);
 		});
 	});
@@ -3715,15 +3972,16 @@ Array.prototype.async = function(callback) {
  * @param {Controller} controller Current controller if exists, optional.
  * @return {Array}
  */
-Array.prototype._async_middleware = function(res, callback, controller) {
+Array.prototype._async_middleware = function (res, callback, controller) {
 
 	var self = this;
 
 	if (res.success || res.headersSent) {
 
 		// Prevent timeout
-		if (controller)
+		if (controller) {
 			controller.subscribe.success();
+		}
 
 		callback = null;
 		return self;
@@ -3732,13 +3990,14 @@ Array.prototype._async_middleware = function(res, callback, controller) {
 	var item = self.shift();
 
 	if (item === undefined) {
-		if (callback)
+		if (callback) {
 			callback();
+		}
 		return self;
 	}
 
-	item(function() {
-		setImmediate(function() {
+	item(function () {
+		setImmediate(function () {
 			self._async_middleware(res, callback);
 		});
 	});
@@ -3746,18 +4005,18 @@ Array.prototype._async_middleware = function(res, callback, controller) {
 	return self;
 };
 
-/*
-	Randomize array
-	Return {Array}
-*/
-Array.prototype.randomize = function() {
+/**
+ * Randomize array
+ * @Return {Array}
+ */
+Array.prototype.randomize = function () {
 
 	var self = this;
 	var random = (Math.floor(Math.random() * 100000000) * 10).toString();
 	var index = 0;
 	var old = 0;
 
-	self.sort(function(a, b) {
+	self.sort(function (a, b) {
 
 		var c = random[index++];
 
@@ -3783,10 +4042,11 @@ Array.prototype.randomize = function() {
 	return self;
 };
 
-Array.prototype.limit = function(max, fn, callback, index) {
+Array.prototype.limit = function (max, fn, callback, index) {
 
-	if (index === undefined)
+	if (index === undefined) {
 		index = 0;
+	}
 
 	var current = [];
 	var self = this;
@@ -3801,45 +4061,49 @@ Array.prototype.limit = function(max, fn, callback, index) {
 		}
 
 		if (current.length === 0) {
-			if (callback)
+			if (callback) {
 				callback();
+			}
 			return self;
 		}
 
-		fn(current, function() {
-			if (callback)
+		fn(current, function () {
+			if (callback) {
 				callback();
+			}
 		}, index, index + max);
 
 		return self;
 	}
 
 	if (current.length === 0) {
-		if (callback)
+		if (callback) {
 			callback();
+		}
 		return self;
 	}
 
-	fn(current, function() {
+	fn(current, function () {
 
 		if (length < self.length) {
 			self.limit(max, fn, callback, length);
 			return;
 		}
 
-		if (callback)
+		if (callback) {
 			callback();
+		}
 	}, index, index + max);
 
 	return self;
 };
 
-/*
-	Async class
-*/
+/**
+ * Async class
+ */
 function AsyncTask(owner, name, fn, cb, waiting) {
 	this.handlers = {
-		oncomplete: this.complete.bind(this)
+		onComplete: this.complete.bind(this)
 	};
 	this.isRunning = 0;
 	this.owner = owner;
@@ -3851,19 +4115,19 @@ function AsyncTask(owner, name, fn, cb, waiting) {
 	this.isCanceled = false;
 }
 
-AsyncTask.prototype.run = function() {
+AsyncTask.prototype.run = function () {
 	var self = this;
-	try
-	{
+	try {
 		self.isRunning = 1;
 		self.owner.tasksWaiting[self.name] = true;
 		self.owner.emit('begin', self.name);
 
 		var timeout = self.owner.tasksTimeout[self.name];
-		if (timeout > 0)
+		if (timeout > 0) {
 			self.interval = setTimeout(self.timeout.bind(self), timeout);
+		}
 
-		self.fn(self.handlers.oncomplete);
+		self.fn(self.handlers.onComplete);
 	} catch (ex) {
 		self.owner.emit('error', self.name, ex);
 		self.complete();
@@ -3871,7 +4135,7 @@ AsyncTask.prototype.run = function() {
 	return self;
 };
 
-AsyncTask.prototype.timeout = function(timeout) {
+AsyncTask.prototype.timeout = function (timeout) {
 
 	var self = this;
 
@@ -3891,21 +4155,22 @@ AsyncTask.prototype.timeout = function(timeout) {
 	return self;
 };
 
-AsyncTask.prototype.cancel = function(isTimeout) {
+AsyncTask.prototype.cancel = function (isTimeout) {
 	var self = this;
 
 	self.isCanceled = true;
 
-	if (isTimeout)
+	if (isTimeout) {
 		self.owner.emit('timeout', self.name);
-	else
+	} else {
 		self.owner.emit('cancel', self.name);
+	}
 
 	self.fn = null;
 	self.cb = null;
 };
 
-AsyncTask.prototype.complete = function() {
+AsyncTask.prototype.complete = function () {
 
 	var item = this;
 	var self = item.owner;
@@ -3916,12 +4181,12 @@ AsyncTask.prototype.complete = function() {
 	delete self.tasksWaiting[item.name];
 
 	if (!item.isCanceled) {
-		try
-		{
+		try {
 			self.emit('end', item.name);
 
-			if (item.cb)
+			if (item.cb) {
 				item.cb();
+			}
 
 		} catch (ex) {
 			self.emit('error', ex, item.name);
@@ -3964,34 +4229,36 @@ Async.prototype = {
 
 Async.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
 	constructor: {
-		value: Async,
-		enumberable: false
+		value     : Async,
+		enumerable: false
 	}
 });
 
-Async.prototype.reload = function() {
+Async.prototype.reload = function () {
 	var self = this;
 	self.tasksAll = Object.keys(self.tasksPending);
 	self.emit('percentage', self.percentage);
 	return self;
 };
 
-Async.prototype.cancel = function(name) {
+Async.prototype.cancel = function (name) {
 
 	var self = this;
 
 	if (name === undefined) {
 
-		for (var i = 0; i < self._count; i++)
+		for (var i = 0; i < self._count; i++) {
 			self.cancel(tasksAll[i]);
+		}
 
 		return true;
 	}
 
 	var task = self.tasksPending[name];
 
-	if (!task)
+	if (!task) {
 		return false;
+	}
 
 	delete self.tasksPending[name];
 	delete self.tasksWaiting[name];
@@ -4003,7 +4270,7 @@ Async.prototype.cancel = function(name) {
 	return true;
 };
 
-Async.prototype.await = function(name, fn, cb) {
+Async.prototype.await = function (name, fn, cb) {
 
 	var self = this;
 
@@ -4013,8 +4280,9 @@ Async.prototype.await = function(name, fn, cb) {
 		name = exports.GUID(6);
 	}
 
-	if (self.tasksPending[name] !== undefined)
+	if (self.tasksPending[name] !== undefined) {
 		return false;
+	}
 
 	self.tasksPending[name] = new AsyncTask(self, name, fn, cb, null);
 	self._max++;
@@ -4024,7 +4292,7 @@ Async.prototype.await = function(name, fn, cb) {
 	return true;
 };
 
-Async.prototype.wait = function(name, waitingFor, fn, cb) {
+Async.prototype.wait = function (name, waitingFor, fn, cb) {
 
 	var self = this;
 
@@ -4035,8 +4303,9 @@ Async.prototype.wait = function(name, waitingFor, fn, cb) {
 		name = exports.GUID(6);
 	}
 
-	if (self.tasksPending[name] !== undefined)
+	if (self.tasksPending[name] !== undefined) {
 		return false;
+	}
 
 	self.tasksPending[name] = new AsyncTask(self, name, fn, cb, waitingFor);
 	self._max++;
@@ -4047,54 +4316,57 @@ Async.prototype.wait = function(name, waitingFor, fn, cb) {
 
 };
 
-Async.prototype.complete = function(fn) {
+Async.prototype.complete = function (fn) {
 	return this.run(fn);
 };
 
-Async.prototype.run = function(fn) {
+Async.prototype.run = function (fn) {
 	var self = this;
 	self._isRunning = true;
 
-	if (fn)
+	if (fn) {
 		self.onComplete.push(fn);
+	}
 
 	self.refresh();
 	return self;
 };
 
-Async.prototype.isRunning = function(name) {
+Async.prototype.isRunning = function (name) {
 
 	var self = this;
 
-	if (!name)
+	if (!name) {
 		return self._isRunning;
+	}
 
 	var task = self.tasksPending[name];
-	if (!task)
+	if (!task) {
 		return false;
+	}
 
 	return task.isRunning === 1;
 };
 
-Async.prototype.isWaiting = function(name) {
+Async.prototype.isWaiting = function (name) {
 	var self = this;
 
 	var task = self.tasksPending[name];
-	if (!task)
+	if (!task) {
 		return false;
+	}
 
 	return task.isRunning === 0;
 };
 
-Async.prototype.isPending = function(name) {
+Async.prototype.isPending = function (name) {
 	var self = this;
 	var task = self.tasksPending[name];
-	if (!task)
-		return false;
-	return true;
+	return task;
+
 };
 
-Async.prototype.timeout = function(name, timeout) {
+Async.prototype.timeout = function (name, timeout) {
 
 	var self = this;
 
@@ -4107,12 +4379,13 @@ Async.prototype.timeout = function(name, timeout) {
 	return self;
 };
 
-Async.prototype.refresh = function(name) {
+Async.prototype.refresh = function (name) {
 
 	var self = this;
 
-	if (!self._isRunning)
+	if (!self._isRunning) {
 		return self;
+	}
 
 	self._count = self.tasksAll.length;
 
@@ -4120,11 +4393,13 @@ Async.prototype.refresh = function(name) {
 
 		var task = self.tasksPending[self.tasksAll[i]];
 
-		if (task.isRunning !== 0)
+		if (task.isRunning !== 0) {
 			continue;
+		}
 
-		if (task.waiting !== null && self.tasksWaiting[task.waiting] !== undefined)
+		if (task.waiting !== null && self.tasksWaiting[task.waiting] !== undefined) {
 			continue;
+		}
 
 		task.run();
 	}
@@ -4138,8 +4413,7 @@ Async.prototype.refresh = function(name) {
 		var length = complete.length;
 		self.onComplete = [];
 		for (var i = 0; i < length; i++) {
-			try
-			{
+			try {
 				complete[i]();
 			} catch (ex) {
 				self.emit('error', ex);
@@ -4159,47 +4433,51 @@ function FileList() {
 	this.onFilter = null;
 }
 
-FileList.prototype.reset = function() {
+FileList.prototype.reset = function () {
 	var self = this;
 	self.file = [];
 	self.directory = [];
 	self.pendingDirectory = [];
 };
 
-FileList.prototype.walk = function(directory) {
+FileList.prototype.walk = function (directory) {
 
 	var self = this;
 
 	if (directory instanceof Array) {
 		var length = directory.length;
 
-		for (var i = 0; i < length; i++)
+		for (var i = 0; i < length; i++) {
 			self.pendingDirectory.push(directory[i]);
+		}
 
 		self.next();
 		return;
 	}
 
-	fs.readdir(directory, function(err, arr) {
+	fs.readdir(directory, function (err, arr) {
 
-		if (err)
+		if (err) {
 			return self.next();
+		}
 
 		var length = arr.length;
-		for (var i = 0; i < length; i++)
+		for (var i = 0; i < length; i++) {
 			self.pending.push(path.join(directory, arr[i]));
+		}
 
 		self.next();
 	});
 };
 
-FileList.prototype.stat = function(path) {
+FileList.prototype.stat = function (path) {
 	var self = this;
 
-	fs.stat(path, function(err, stats) {
+	fs.stat(path, function (err, stats) {
 
-		if (err)
+		if (err) {
 			return self.next();
+		}
 
 		if (stats.isDirectory() && (self.onFilter === null || self.onFilter(path, true))) {
 			self.directory.push(path);
@@ -4208,14 +4486,15 @@ FileList.prototype.stat = function(path) {
 			return;
 		}
 
-		if (self.onFilter === null || self.onFilter(path, false))
+		if (self.onFilter === null || self.onFilter(path, false)) {
 			self.file.push(path);
+		}
 
 		self.next();
 	});
 };
 
-FileList.prototype.next = function() {
+FileList.prototype.next = function () {
 	var self = this;
 
 	if (self.pending.length > 0) {
@@ -4235,8 +4514,8 @@ FileList.prototype.next = function() {
 
 exports.Async = Async;
 
-exports.sync = function(fn, owner) {
-	return function() {
+exports.sync = function (fn, owner) {
+	return function () {
 
 		var args = [].slice.call(arguments);
 		var params;
@@ -4244,7 +4523,7 @@ exports.sync = function(fn, owner) {
 		var executed = false;
 		var self = owner || this;
 
-		args.push(function() {
+		args.push(function () {
 			params = arguments;
 			if (!executed && callback) {
 				executed = true;
@@ -4254,7 +4533,7 @@ exports.sync = function(fn, owner) {
 
 		fn.apply(self, args);
 
-		return function(cb) {
+		return function (cb) {
 			callback = cb;
 			if (!executed && params) {
 				executed = true;
@@ -4264,16 +4543,17 @@ exports.sync = function(fn, owner) {
 	};
 };
 
-exports.async = function(fn) {
+exports.async = function (fn) {
 	var context = this;
-	return function(complete) {
+	return function (complete) {
 
 		var self = this;
 		var argv = [];
 
 		if (arguments.length > 0) {
-			for (var i = 1; i < arguments.length; i++)
+			for (var i = 1; i < arguments.length; i++) {
 				argv.push(arguments[i]);
+			}
 		}
 
 		var generator = fn.apply(context, argv);
@@ -4283,8 +4563,7 @@ exports.async = function(fn) {
 
 			var g;
 
-			try
-			{
+			try {
 				switch (err === null) {
 					case true:
 						g = generator.next(result);
@@ -4295,18 +4574,20 @@ exports.async = function(fn) {
 				}
 			} catch (e) {
 
-				if (!complete)
-					return;
-
-				if (typeof(complete) === OBJECT && complete.isController) {
-					if (e instanceof ErrorBuilder)
-						complete.view400(e);
-					else
-						complete.view500(e);
+				if (!complete) {
 					return;
 				}
 
-				setImmediate(function() {
+				if (typeof(complete) === OBJECT && complete.isController) {
+					if (e instanceof ErrorBuilder) {
+						complete.view400(e);
+					} else {
+						complete.view500(e);
+					}
+					return;
+				}
+
+				setImmediate(function () {
 					complete(e);
 				});
 
@@ -4314,8 +4595,9 @@ exports.async = function(fn) {
 			}
 
 			if (g.done) {
-				if (complete && typeof(complete) !== OBJECT)
+				if (complete && typeof(complete) !== OBJECT) {
 					complete(null, g.value);
+				}
 				return;
 			}
 
@@ -4324,13 +4606,12 @@ exports.async = function(fn) {
 				return;
 			}
 
-			try
-			{
-				g.value.call(self, function() {
+			try {
+				g.value.call(self, function () {
 					next.apply(self, arguments);
 				});
 			} catch (e) {
-				setImmediate(function() {
+				setImmediate(function () {
 					next.call(self, e);
 				});
 			}
@@ -4342,19 +4623,21 @@ exports.async = function(fn) {
 
 // MIT
 // Written by Jozef Gula
-exports.getMessageLength = function(data, isLE) {
+exports.getMessageLength = function (data, isLE) {
 
 	var length = data[1] & 0x7f;
 
 	if (length === 126) {
-		if (data.length < 4)
+		if (data.length < 4) {
 			return -1;
+		}
 		return converBytesToInt64([data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 0, isLE);
 	}
 
 	if (length === 127) {
-		if (data.Length < 10)
+		if (data.Length < 10) {
 			return -1;
+		}
 		return converBytesToInt64([data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]], 0, isLE);
 	}
 
@@ -4364,8 +4647,9 @@ exports.getMessageLength = function(data, isLE) {
 // MIT
 // Written by Jozef Gula
 function converBytesToInt64(data, startIndex, isLE) {
-	if (isLE)
+	if (isLE) {
 		return (data[startIndex] | (data[startIndex + 1] << 0x08) | (data[startIndex + 2] << 0x10) | (data[startIndex + 3] << 0x18) | (data[startIndex + 4] << 0x20) | (data[startIndex + 5] << 0x28) | (data[startIndex + 6] << 0x30) | (data[startIndex + 7] << 0x38));
+	}
 	return ((data[startIndex + 7] << 0x20) | (data[startIndex + 6] << 0x28) | (data[startIndex + 5] << 0x30) | (data[startIndex + 4] << 0x38) | (data[startIndex + 3]) | (data[startIndex + 2] << 0x08) | (data[startIndex + 1] << 0x10) | (data[startIndex] << 0x18));
 }
 
@@ -4374,15 +4658,18 @@ exports.queuecache = {};
 function queue_next(name) {
 
 	var item = exports.queuecache[name];
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	item.running--;
-	if (item.running < 0)
+	if (item.running < 0) {
 		item.running = 0;
+	}
 
-	if (item.pending.length === 0)
+	if (item.pending.length === 0) {
 		return;
+	}
 
 	var fn = item.pending.shift();
 	if (!fn) {
@@ -4391,9 +4678,9 @@ function queue_next(name) {
 	}
 
 	item.running++;
-	(function(name){
-		setImmediate(function() {
-			fn(function() {
+	(function (name) {
+		setImmediate(function () {
+			fn(function () {
 				queue_next(name);
 			});
 		});
@@ -4406,18 +4693,20 @@ function queue_next(name) {
  * @param {Number} max Maximum stack.
  * @param {Function(next)} fn
  */
-exports.queue = function(name, max, fn) {
+exports.queue = function (name, max, fn) {
 
-	if (!fn)
+	if (!fn) {
 		return false;
+	}
 
 	if (!max) {
 		fn(NOOP);
 		return true;
 	}
 
-	if (exports.queuecache[name] === undefined)
-		exports.queuecache[name] = { limit: max, running: 0, pending: [] };
+	if (exports.queuecache[name] === undefined) {
+		exports.queuecache[name] = {limit: max, running: 0, pending: []};
+	}
 
 	var item = exports.queuecache[name];
 	if (item.running >= item.limit) {
@@ -4426,9 +4715,9 @@ exports.queue = function(name, max, fn) {
 	}
 
 	item.running++;
-	(function(name){
-		setImmediate(function() {
-			fn(function() {
+	(function (name) {
+		setImmediate(function () {
+			fn(function () {
 				queue_next(name);
 			});
 		});
@@ -4437,15 +4726,15 @@ exports.queue = function(name, max, fn) {
 	return true;
 };
 
-exports.minifyStyle = function(value) {
+exports.minifyStyle = function (value) {
 	return require('./internal').compile_css(value);
 };
 
-exports.minifyScript = function(value) {
+exports.minifyScript = function (value) {
 	return require('./internal').compile_javascript(value);
 };
 
-exports.minifyHTML = function(value) {
+exports.minifyHTML = function (value) {
 	return require('./internal').compile_html(value);
 };
 
