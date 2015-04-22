@@ -4740,7 +4740,7 @@ Framework.prototype._upgrade_prepare = function(req, path, headers) {
 	if (self.onAuthorization === null) {
 		var route = self.lookup_websocket(req, req.websocket.uri.pathname, true);
 		if (route === null) {
-			websocket.close();
+			req.websocket.close();
 			req.connection.destroy();
 			return;
 		}
@@ -4757,7 +4757,7 @@ Framework.prototype._upgrade_prepare = function(req, path, headers) {
 		req.flags.push(isLogged ? 'authorize' : 'unauthorize');
 		var route = self.lookup_websocket(req, req.websocket.uri.pathname, false);
 		if (route === null) {
-			websocket.close();
+			req.websocket.close();
 			req.connection.destroy();
 			return;
 		}
