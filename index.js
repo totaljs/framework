@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1801;
-	this.version_header = '1.8.1-2';
+	this.version_header = '1.8.1-3';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -1051,25 +1051,89 @@ Framework.prototype.merge = function(url) {
 	return self;
 };
 
-/**
- * Mapping of static file
- * @param {String} url
- * @param {String} path
- * @return {Framework}
- */
 Framework.prototype.mapping = function(url, path) {
 	return this.map.apply(this, arguments);
 };
 
-Framework.prototype.map = function(url, path) {
+/**
+ * Mapping of static file
+ * @param {String} url
+ * @param {String} filename	Filename or Directory.
+ * @param {Function(filename) or String Array} filter
+ * @return {Framework}
+ */
+Framework.prototype.map = function(url, filename, filter) {
 
 	if (url[0] !== '/')
 		url = '/' + url;
 
-	if (path[0] === '@')
-		path = framework.path.package(path.substring(1));
+	var isPackage = false;
+	var self = this;
 
-	this.routes.mapping[url] = path;
+	if (filename[0] === '@') {
+		filename = self.path.package(filename.substring(1));
+		isPackage = true;
+	}
+
+	var isFile = path.extname(filename).length > 0;
+	if (isFile) {
+		self.routes.mapping[url] = filename;
+		return self;
+	}
+
+	url = framework_utils.path(url);
+	filename = framework_utils.path(filename);
+
+	var replace = filename;
+	var plus = '';
+	var isRoot = false;
+
+	if (replace[0] === '/')
+		isRoot = true;
+
+	if (replace[0] === '~') {
+		plus += '~';
+		replace = replace.substring(1);
+	}
+
+	if (replace[0] === '.') {
+		plus += '.';
+		replace = replace.substring(1);
+	}
+
+	if (!isRoot && replace[0] === '/') {
+		plus += '/';
+		replace = replace.substring(1);
+	}
+
+	if (filter instanceof Array) {
+		for (var i = 0, length = filter.length; i < length; i++)
+			filter[i] = (filter[i][0] !== '.' ? '.' : '') + filter[i].toLowerCase();
+	}
+
+	setTimeout(function() {
+		framework_utils.ls(filename, function(files) {
+			for (var i = 0, length = files.length; i < length; i++) {
+				var file = files[i].replace(replace, '');
+
+				if (filter) {
+					if (typeof(filter) === 'function') {
+						if (!filter(file))
+							continue;
+					} else {
+						if (filter.indexOf(path.extname(file).toLowerCase()) === -1)
+							continue;
+					}
+				}
+
+				if (file[0] === '/')
+					file = file.substring(1);
+				var key = url + file;
+				self.routes.mapping[key] = plus + files[i];
+			}
+		});
+	}, isPackage ? 500 : 1);
+
 	return this;
 };
 

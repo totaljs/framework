@@ -3,6 +3,7 @@ BETA ======= 1.8.1
 - added: `config['disable-clear-temporary-directory'] = false` (after start)
 
 - updated: `config['allow-performance']` is set to true
+- updated: (IMPORTANT) F.map(url, filename/directory, [filter]) supports mapping directories
 
 - removed: XSS check
 
