@@ -2260,9 +2260,9 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
 		return self;
 	}
 
-	if (value instanceof Array) {
-		for (var i = 0, length = value.length; i < length; i++)
-			self.add(name, value[i], path, index);
+	if (error instanceof Array) {
+		for (var i = 0, length = error.length; i < length; i++)
+			self.add(name, error[i], path, index);
 		return self;
 	}
 
