@@ -2254,6 +2254,18 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
 		return self;
 	}
 
+	if (name instanceof Array) {
+		for (var i = 0, length = name.length; i < length; i++)
+			self.add(name[i], undefined, path, index);
+		return self;
+	}
+
+	if (value instanceof Array) {
+		for (var i = 0, length = value.length; i < length; i++)
+			self.add(name, value[i], path, index);
+		return self;
+	}
+
 	if (typeof(name) === OBJECT) {
 		path = error;
 		error = name;
