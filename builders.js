@@ -1369,7 +1369,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					break;
 				// boolean
 				case 4:
-					tmp = val.toString().toLowerCase();
+					tmp = val ? val.toString().toLowerCase() : null;
 					item[property] = onPrepare(property, tmp === 'true' || tmp === '1' || tmp === 'on');
 					break;
 				// date
