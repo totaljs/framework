@@ -127,25 +127,27 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
  * @param {String/String Array} name
  * @param {Object/String} type
  * @param {Boolean} required Is required? Default: false.
+ * @param {Number/String} custom Custom tag for search.
  * @return {SchemaBuilder}
  */
-SchemaBuilderEntity.prototype.define = function(name, type, required, primary) {
+SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 
 	var self = this;
-
 	if (name instanceof Array) {
 		for (var i = 0, length = name.length; i < length; i++)
-			self.define(name[i], type, required);
+			self.define(name[i], type, required, custom);
 		return self;
+	}
+
+	if (required !== undefined && typeof(required) !== BOOLEAN) {
+		custom = required;
+		required = false;
 	}
 
 	if (type instanceof SchemaBuilderEntity)
 		type = type.name;
 
-	if (primary)
-		self.primary = primary;
-
-	self.schema[name] = self.$parse(name, type, required);
+	self.schema[name] = self.$parse(name, type, required, custom);
 
 	if (!required)
 		return self;
@@ -160,7 +162,67 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, primary) {
 	return self;
 };
 
-SchemaBuilderEntity.prototype.$parse = function(name, value, required) {
+/**
+ * Set primary key
+ * @param {String} name
+ */
+SchemaBuilderEntity.prototype.setPrimary = function(name) {
+	this.primary = name;
+	return this;
+};
+
+/**
+ * Filters current names of the schema via custom attribute
+ * @param {Number/String} custom
+ * @param {Object} model Optional
+ * @return {Array or Object} Returns Array (with property names) if the model is undefined otherwise returns Object Name/Value.
+ */
+SchemaBuilderEntity.prototype.filter = function(custom, model) {
+	var self = this;
+	var output = model === undefined ? [] : {};
+	var type = typeof(custom);
+	var isSearch = type === STRING ? custom[0] === '*' : false;
+	var isReg = false;
+
+	if (isSearch)
+		custom = custom.substring(1);
+	else if (type === OBJECT)
+		isReg = framework_utils.isRegExp(custom);
+
+	for (var i = 0, length = self.properties.length; i < length; i++) {
+		var prop = self.properties[i];
+		var schema = self.schema[prop];
+
+		if (!schema)
+			continue;
+
+		var tv = typeof(schema.custom);
+
+		if (isSearch) {
+			if (tv === STRING) {
+				if (schema.custom.indexOf(custom) === -1);
+					continue;
+			} else
+				continue;
+		} else if (isReg) {
+			if (tv === STRING) {
+				if (!custom.test(schema.current))
+					continue;
+			} else
+				continue;
+		} if (schema.custom !== custom)
+			continue;
+
+		if (model === undefined)
+			output.push(prop);
+		else
+			output[prop] = model[prop];
+	}
+
+	return output;
+};
+
+SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 
 	var type = typeof(value);
 	var result = {};
@@ -168,8 +230,9 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required) {
 	result.raw = value;
 	result.type = 0;
 	result.length = 0;
-	result.required = required;
+	result.required = required ? true : false;
 	result.isArray = false;
+	result.custom = custom;
 
 	// 0 = undefined
 	// 1 = integer
@@ -1253,7 +1316,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 	var onPrepare = function(name, value, index) {
 		if (!self.onPrepare)
 			return value;
-		var val = self.onPrepare(name, value, index);
+		var val = self.onPrepare(name, value, index, model);
 		return val === undefined ? value : val;
 	};
 

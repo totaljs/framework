@@ -333,7 +333,10 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var e = new events.EventEmitter();
 	var isDNSCACHE = false;
 
-	headers = exports.extend({}, headers || {});
+	if (headers)
+		headers = exports.extend({}, headers);
+	else
+		headers = {};
 
 	if (typeof(encoding) !== STRING)
 		encoding = ENCODING;
@@ -566,7 +569,10 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	var e = new events.EventEmitter();
 	var isDNSCACHE = false;
 
-	headers = exports.extend({}, headers || {});
+	if (headers)
+		headers = exports.extend({}, headers);
+	else
+		headers = {};
 
 	if (typeof(encoding) !== STRING)
 		encoding = ENCODING;
@@ -896,7 +902,7 @@ exports.httpStatus = function(code, addCode) {
  * Extend object
  * @param {Object} target Target object.
  * @param {Object} source Source object.
- * @param {Boolean} rewrite Rewrite exists values (optional, default false).
+ * @param {Boolean} rewrite Rewrite exists values (optional, default true).
  * @return {Object} Modified object.
  */
 exports.extend = function(target, source, rewrite) {
@@ -906,6 +912,9 @@ exports.extend = function(target, source, rewrite) {
 
 	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
 		return target;
+
+	if (rewrite === undefined)
+		rewrite = true;
 
 	var keys = Object.keys(source);
 	var i = keys.length;

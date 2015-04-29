@@ -1,10 +1,14 @@
 BETA ======= 1.8.1
 
 - added: `config['disable-clear-temporary-directory'] = false` (after start)
+- added: SchemaBuilderEntity.filter(custom, [model]);
 
 - updated: `config['allow-performance']` is set to true
 - updated: (IMPORTANT) F.map(url, filename/directory, [filter]) supports mapping directories
 - updated: (IMPORTANT) arguments order SchemaBuilderEntity.setValidate(function(name, value, path, model, schema){})
+- updated: (IMPORTANT) U.extend(target, source, [rewrite]); --> rewrite is by default: __true__
+- updated: SchemaBuilderEntity.setPrepare(function(name, value, index, model){}) --> __model__ is new
+- updated: SchemaBuilderEntity.define(name, value, required, [custom]) --> __custom__ is new
 
 - removed: XSS check
 

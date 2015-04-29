@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1801;
-	this.version_header = '1.8.1-4';
+	this.version_header = '1.8.1-5';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -5061,7 +5061,10 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 	var length = 0;
 	var type = 0;
 
-	headers = utils.extend({}, headers || {});
+	if (headers)
+		headers = framework_utils.extend({}, headers);
+	else
+		headers = {};
 
 	if (flags instanceof Array) {
 		length = flags.length;
@@ -12610,12 +12613,14 @@ function fsStreamRead(filename, options, callback, next) {
 		options = undefined;
 	}
 
-	var opt = { flags: 'r', mode: '0666' };
+	var opt = { flags: 'r', mode: '0666', autoClose: true };
 
 	if (options)
 		framework_utils.extend(opt, options, true);
+
 	U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
 		var stream = fs.createReadStream(filename, opt);
+		stream.on('error', noop);
 		callback(stream, next);
 	});
 }
@@ -12656,6 +12661,7 @@ process.on('message', function(msg, h) {
 		Utils.wait(function() {
 			return framework.isLoaded;
 		}, function() {
+			delete framework.isLoaded;
 			framework.console();
 			framework.console = utils.noop;
 		}, 10000, 500);
