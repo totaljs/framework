@@ -4,6 +4,7 @@ BETA ======= 1.8.1
 
 - updated: `config['allow-performance']` is set to true
 - updated: (IMPORTANT) F.map(url, filename/directory, [filter]) supports mapping directories
+- updated: (IMPORTANT) arguments order SchemaBuilderEntity.setValidate(function(name, value, path, model, schema){})
 
 - removed: XSS check
 

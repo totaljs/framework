@@ -333,6 +333,10 @@ SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
 	return self;
 };
 
+SchemaBuilderEntity.prototype.setValidate = function(properties, fn) {
+	return this.setValidation(properties, fn);
+};
+
 SchemaBuilderEntity.prototype.setPrefix = function(prefix) {
 	this.resourcePrefix = prefix;
 	return this;

@@ -1,6 +1,6 @@
 /**
  * @module FrameworkUtils
- * @version 1.8.0
+ * @version 1.8.1
  */
 
 'use strict';
@@ -1503,7 +1503,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					// The schema not exists
 					if (collection[entity] === undefined) {
 
-						var result2 = prepare(name, value, current + name, schema, model);
+						var result2 = prepare(name, value, current + name, model, schema);
 						if (result2 === undefined)
 							continue;
 
@@ -1525,7 +1525,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 						continue;
 					}
 
-					var result3 = prepare(name, value, current + name, schema, model);
+					var result3 = prepare(name, value, current + name, model, schema);
 					if (result3 !== undefined) {
 
 						type = typeof(result3);
@@ -1555,7 +1555,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			}
 		}
 
-		var result = prepare(name, value, current + name, schema, model);
+		var result = prepare(name, value, current + name, model, schema);
 
 		if (result === undefined)
 			continue;

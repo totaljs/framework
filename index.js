@@ -1,6 +1,6 @@
 /**
  * @module Framework
- * @version 1.8.0
+ * @version 1.8.1
  */
 
 'use strict';
@@ -4157,11 +4157,8 @@ Framework.prototype.initialize = function(http, debug, options) {
 			});
 		}
 
-		if (self.config['allow-websocket']) {
-			self.server.on('upgrade', function(req, socket, head) {
-				framework._upgrade(req, socket, head);
-			});
-		}
+		if (self.config['allow-websocket'])
+			self.server.on('upgrade', framework._upgrade);
 
 		if (!port) {
 			if (self.config['default-port'] === 'auto') {
@@ -4711,7 +4708,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
 		return;
 
-	var self = this;
+	var self = framework;
 	var headers = req.headers;
 
 	self.emit('websocket', req, socket, head);
