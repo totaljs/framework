@@ -13,6 +13,7 @@ BETA ======= 1.8.1
 - removed: XSS check
 
 - fixed: binary --translate (filenames)
+- fixed: SchemaBuilderEntity prepare (problem with nullable Boolean)
 
 - improved: code optimalization
 
