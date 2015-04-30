@@ -33,6 +33,12 @@ Please support the framework on social networks.
 - [Follow total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
 - [Follow total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
+## Useful modules
+
+[SQL Agent: A missing ORM for node.js and total.js](https://github.com/petersirka/node-sqlagent)
+[MongoDB addons for better work with MongoDB and total.js](https://github.com/petersirka/mongodb-addons)
+[PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
+
 ## References
 
 - [__NEW__: E-commerce, CMS and Docker manager](http://nowitssimple.com/)
