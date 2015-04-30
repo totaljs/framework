@@ -35,9 +35,9 @@ Please support the framework on social networks.
 
 ## Useful modules
 
-[SQL Agent: A missing ORM for node.js and total.js](https://github.com/petersirka/node-sqlagent)
-[MongoDB addons for better work with MongoDB and total.js](https://github.com/petersirka/mongodb-addons)
-[PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
+- [SQL Agent: A missing ORM for node.js and total.js](https://github.com/petersirka/node-sqlagent)
+- [MongoDB addons for better work with MongoDB and total.js](https://github.com/petersirka/mongodb-addons)
+- [PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
 
 ## References
 
