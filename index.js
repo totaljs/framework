@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1801;
-	this.version_header = '1.8.1-5';
+	this.version_header = '1.8.1-6';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -4152,7 +4152,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 		if (self.config['allow-performance']) {
 			self.server.on('connection', function(socket) {
 				socket.setNoDelay(true);
-				socket.setTimeout(15000); // 15 seconds
+				// socket.setTimeout(5000); // 15 seconds
 				socket.setKeepAlive(true, 10);
 			});
 		}
@@ -4707,6 +4707,9 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 	if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
 		return;
+
+	// disable timeout
+	socket.setTimeout(0);
 
 	var self = framework;
 	var headers = req.headers;
@@ -11614,7 +11617,7 @@ WebSocketClient.prototype.upgrade = function(container) {
 
 	//self.socket.setTimeout(0);
 	//self.socket.setNoDelay(true);
-	self.socket.setKeepAlive(true, 0);
+	//self.socket.setKeepAlive(true, 0);
 
 	self.socket.on('data', self.handlers.ondata);
 	self.socket.on('error', self.handlers.onerror);
