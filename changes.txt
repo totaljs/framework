@@ -2,6 +2,7 @@ BETA ======= 1.8.1
 
 - added: `config['disable-clear-temporary-directory'] = false` (after start)
 - added: SchemaBuilderEntity.filter(custom, [model]);
+- added: cache for HTTP routing
 
 - updated: F.route(url, ...), F.websocket(url, ...) --> URL can be function(url, req, [flags])
 - updated: `config['allow-performance']` is set to true
