@@ -8,6 +8,9 @@ var max = 100;
 
 INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
+//framework.map('/minify/', '@testpackage', ['.html', 'js']);
+//framework.map('/minify/', 'models');
+//framework.map('/minify/', F.path.models());
 framework.onCompileView = function(name, html, model) {
 	return html + 'COMPILED';
 };
@@ -193,6 +196,15 @@ function test_routing(next) {
 				assert(data === '---preklad---###preklad###', 'translate problem (SK)');
 				complete();
 			});
+		});
+	});
+
+	async.await('custom', function(complete) {
+		utils.request(url + 'custom/route/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'CUSTOM', 'custom route problem');
+			complete();
 		});
 	});
 

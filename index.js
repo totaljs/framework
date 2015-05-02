@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1801;
-	this.version_header = '1.8.1-6';
+	this.version_header = '1.8.1-7';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -257,8 +257,8 @@ function Framework() {
 		'allow-handle-static-files': true,
 		'allow-gzip': true,
 		'allow-websocket': true,
-		'allow-compile-js': true,
-		'allow-compile-css': true,
+		'allow-compile-script': true,
+		'allow-compile-style': true,
 		'allow-compile-html': true,
 		'allow-performance': false,
 		'allow-custom-titles': false,
@@ -683,6 +683,10 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		}
 	}
 
+	var CUSTOM = typeof(url) === TYPE_FUNCTION ? url : null;
+	if (CUSTOM)
+		url = '/';
+
 	if (!skip && typeof(funcExecute) === 'string' && flags !== undefined) {
 		// ID
 		name = url;
@@ -985,6 +989,8 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		isXHR: flags.indexOf('xhr') !== -1,
 		isUPLOAD: flags.indexOf('upload') !== -1,
 		isSYSTEM: url.startsWith('/#'),
+		isCACHE: !url.startsWith('/#') && !CUSTOM && arr.length === 0 && !isASTERIX,
+		CUSTOM: CUSTOM,
 		options: options
 	});
 
@@ -1187,6 +1193,10 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
 	var tmp;
 
+	var CUSTOM = typeof(url) === TYPE_FUNCTION ? url : null;
+	if (CUSTOM)
+		url = '/';
+
 	if (url === '')
 		url = '/';
 
@@ -1321,6 +1331,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		isHTTP: flags.indexOf('http'),
 		isDEBUG: flags.indexOf('debug'),
 		isRELEASE: flags.indexOf('release'),
+		CUSTOM: CUSTOM,
 		middleware: middleware,
 		options: options
 	});
@@ -2572,6 +2583,7 @@ Framework.prototype.usage = function(detailed) {
 	output.changes = self.changes;
 	output.files = staticFiles;
 	output.streaming = staticRange;
+	output.other = Object.keys(self.temporary.other);
 	return output;
 };
 
@@ -2620,14 +2632,14 @@ Framework.prototype.compileContent = function(extension, content, filename) {
 
 	switch (extension) {
 		case 'js':
-			return self.config['allow-compile-js'] ? framework_internal.compile_javascript(content, filename) : content;
+			return self.config['allow-compile-script'] ? framework_internal.compile_javascript(content, filename) : content;
 /*
 		case 'html':
 			return self.config['allow-compile-html'] ? framework_internal.compile_html(content) : content;
 */
 		case 'css':
 
-			content = self.config['allow-compile-css'] ? framework_internal.compile_css(content, filename) : content;
+			content = self.config['allow-compile-style'] ? framework_internal.compile_css(content, filename) : content;
 
 			var matches = content.match(/url\(.*?\)/g);
 			if (matches === null)
@@ -4401,7 +4413,7 @@ Framework.prototype._service = function(count) {
 			gc();
 	}
 
-	// every 3 minutes (default) service clears static cache
+	// every 7 minutes (default) service clears static cache
 	if (count % framework.config['default-interval-clear-cache'] === 0) {
 		self.emit('clear', 'temporary', self.temporary);
 		self.temporary.path = {};
@@ -4423,7 +4435,6 @@ Framework.prototype._service = function(count) {
 
 	var ping = framework.config['default-interval-websocket-ping'];
 	if (ping > 0 && count % ping === 0) {
-		// every 1 minute (default) is created a ping message
 		Object.keys(framework.connections).wait(function(item, next) {
 			var conn = framework.connections[item];
 			if (conn && typeof(conn.ping) === TYPE_FUNCTION)
@@ -4609,6 +4620,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	req.buffer_exceeded = false;
 	req.buffer_data = new Buffer('');
 	req.buffer_has = false;
+	req.$flags = '';
 
 	var accept = headers.accept;
 
@@ -4617,39 +4629,55 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	var flags = [req.method.toLowerCase()];
 	var multipart = req.headers['content-type'] || '';
 
+	req.$flags += protocol;
 	flags.push(protocol);
 
 	if (multipart.indexOf('/form-data') === -1) {
 
-		if (multipart.indexOf('/json') !== -1)
+		if (multipart.indexOf('/json') !== -1) {
+			req.$flags += 'json';
 			flags.push('json');
-		else if (multipart.indexOf('/xml') !== -1)
+		}
+		else if (multipart.indexOf('/xml') !== -1) {
+			req.$flags += 'xml';
 			flags.push('xml');
+		}
 
 		multipart = '';
 	}
 
-	if (multipart.length > 0)
+	if (multipart.length > 0) {
+		req.$flags += 'upload';
 		flags.push('upload');
+	}
 
-	if (req.isProxy)
+	if (req.isProxy) {
+		req.$flags += 'proxy';
 		flags.push('proxy');
+	}
 
-	if (accept === 'text/event-stream')
+	if (accept === 'text/event-stream') {
+		req.$flags += 'sse';
 		flags.push('sse');
+	}
 
-	if (self.config.debug)
+	if (self.config.debug) {
+		req.$flags += 'debug';
 		flags.push('debug');
+	}
 
 	if (req.xhr) {
 		self.stats.request.xhr++;
+		req.$flags += 'xhr';
 		flags.push('xhr');
 	}
 
 	if (self._request_check_referer) {
 		var referer = headers['referer'] || '';
-		if (referer !== '' && referer.indexOf(headers['host']) !== -1)
+		if (referer !== '' && referer.indexOf(headers['host']) !== -1) {
+			req.$flags += 'referer';
 			flags.push('referer');
+		}
 	}
 
 	req.flags = flags;
@@ -4819,6 +4847,7 @@ Framework.prototype._upgrade_prepare = function(req, path, headers) {
 			req.user = user;
 
 		req.flags.push(isLogged ? 'authorize' : 'unauthorize');
+
 		var route = self.lookup_websocket(req, req.websocket.uri.pathname, false);
 		if (route === null) {
 			req.websocket.close();
@@ -5891,12 +5920,22 @@ Framework.prototype._configure = function(arr, rewrite) {
 					obj[name][tmp[j]] = true;
 				break;
 
+			case 'allow-compile-js':
+				console.log('CONFIG: allow-compile-js is obsolete, use: allow-compile-script');
+				obj['allow-compile-script'] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
+				break;
+
+			case 'allow-compile-css':
+				console.log('CONFIG: allow-compile-css is obsolete, use: allow-compile-style');
+				obj['allow-compile-style'] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
+				break;
+
 			case 'allow-gzip':
 			case 'allow-websocket':
-			case 'allow-compile-js':
-			case 'allow-compile-css':
-			case 'allow-compile-html':
 			case 'allow-performance':
+			case 'allow-compile-html':
+			case 'allow-compile-style':
+			case 'allow-compile-script':
 			case 'disable-strict-server-certificate-validation':
 			case 'disable-clear-temporary-directory':
 				obj[name] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
@@ -6082,37 +6121,49 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 	// helper for 401 http status
 	req.$isAuthorized = true;
 
+	var key = '#route' + url + '$' + req.$flags;
+	if (framework.temporary.other[key])
+		return framework.temporary.other[key];
+
 	var length = self.routes.web.length;
 	for (var i = 0; i < length; i++) {
 
 		var route = self.routes.web[i];
 
-		if (!framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
-			continue;
-
-		if (route.isASTERIX) {
-			if (!framework_internal.routeCompare(req.path, route.url, isSystem, true))
+		if (route.CUSTOM) {
+			if (!route.CUSTOM(url, req, flags))
 				continue;
 		} else {
-			if (!framework_internal.routeCompare(req.path, route.url, isSystem))
+			if (!framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
 				continue;
+
+			if (route.isASTERIX) {
+				if (!framework_internal.routeCompare(req.path, route.url, isSystem, true))
+					continue;
+			} else {
+				if (!framework_internal.routeCompare(req.path, route.url, isSystem))
+					continue;
+			}
 		}
 
 		if (isSystem) {
-			if (route.isSYSTEM)
+			if (route.isSYSTEM) {
+				framework.temporary.other[key] = route;
 				return route;
+			}
 			continue;
 		}
 
 		if (route.flags !== null && route.flags.length > 0) {
-
 			var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
 			if (result === -1)
 				req.$isAuthorized = false; // request is not authorized
-
 			if (result < 1)
 				continue;
 		}
+
+		if (route.isCACHE && req.$isAuthorized)
+			framework.temporary.other[key] = route;
 
 		return route;
 	}
@@ -6137,15 +6188,21 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 	for (var i = 0; i < length; i++) {
 
 		var route = self.routes.websockets[i];
-		if (!framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
-			continue;
 
-		if (route.isASTERIX) {
-			if (!framework_internal.routeCompare(req.path, route.url, false, true))
+		if (route.CUSTOM) {
+			if (!route.CUSTOM(url, req))
 				continue;
 		} else {
-			if (!framework_internal.routeCompare(req.path, route.url, false))
+			if (!framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
 				continue;
+
+			if (route.isASTERIX) {
+				if (!framework_internal.routeCompare(req.path, route.url, false, true))
+					continue;
+			} else {
+				if (!framework_internal.routeCompare(req.path, route.url, false))
+					continue;
+			}
 		}
 
 		if (route.flags !== null && route.flags.length > 0) {
@@ -7501,8 +7558,10 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
 
 	var self = this;
 	var req = self.req;
+	var auth = isLogged ? 'authorize' : 'unauthorize';
 
-	req.flags.push(isLogged ? 'authorize' : 'unauthorize');
+	req.flags.push(auth);
+	req.$flags += auth;
 
 	if (user)
 		req.user = user;

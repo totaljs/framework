@@ -199,6 +199,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('custom', function(complete) {
+		utils.request(url + 'custom/route/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'CUSTOM', 'custom route problem');
+			complete();
+		});
+	});
+
 /*
 	async.await('pipe', function(complete) {
 		utils.request(url + 'pipe/', 'GET', null, function(error, data, code, headers) {

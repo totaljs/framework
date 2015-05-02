@@ -2,6 +2,12 @@ var assert = require('assert');
 
 exports.install = function(framework) {
 
+    framework.route(function(url, req, flags) {
+        return url === '/custom/route/';
+    }, function() {
+        this.plain('CUSTOM');
+    });
+
     framework.route('/logged/', view_logged, {
         flags: ['authorize'],
         timeout: 1000,
