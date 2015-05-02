@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1801;
-	this.version_header = '1.8.1-7';
+	this.version_header = '1.8.1-8';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -224,6 +224,7 @@ function Framework() {
 		'directory-databases': '/databases/',
 		'directory-workers': '/workers/',
 		'directory-packages': '/packages/',
+		'directory-private': '/private/',
 
 		// all HTTP static request are routed to directory-public
 		'static-url': '',
@@ -6121,7 +6122,8 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 	// helper for 401 http status
 	req.$isAuthorized = true;
 
-	var key = '#route' + url + '$' + req.$flags;
+	var key = '#' + url + '$' + req.$flags;
+
 	if (framework.temporary.other[key])
 		return framework.temporary.other[key];
 
@@ -6890,6 +6892,15 @@ function FrameworkPath(framework) {}
 FrameworkPath.prototype.public = function(filename) {
 	framework._verify_directory('public');
 	return utils.combine(framework.config['directory-public'], filename || '').replace(/\\/g, '/');
+};
+
+/*
+	@filename {String} :: optional
+	return {String}
+*/
+FrameworkPath.prototype.private = function(filename) {
+	framework._verify_directory('private');
+	return utils.combine(framework.config['directory-private'], filename || '').replace(/\\/g, '/');
 };
 
 /*
