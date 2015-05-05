@@ -11496,14 +11496,6 @@ WebSocket.prototype.log = function() {
 	return self;
 };
 
-WebSocket.prototype.ping = function() {
-	var self = this;
-	self.all(function(client) {
-		client.ping();
-	});
-	return self;
-};
-
 WebSocket.prototype.check = function() {
 	var self = this;
 	var closed = 0;
@@ -11770,7 +11762,7 @@ WebSocketClient.prototype._ondata = function(data) {
 			// ping, response pong
 			self.socket.write(utils.getWebSocketFrame(0, '', 0x0A));
 			self.buffer = new Buffer(0);
-			self.$ping = false;
+			self.$ping = true;
 			break;
 		case 0x0a:
 			// pong
@@ -11902,6 +11894,8 @@ WebSocketClient.prototype.ping = function() {
 		return self;
 
 	self.socket.write(utils.getWebSocketFrame(0, '', 0x09));
+	self.$ping = false;
+
 	return self;
 };
 
