@@ -11496,6 +11496,29 @@ WebSocket.prototype.log = function() {
 	return self;
 };
 
+WebSocket.prototype.ping = function() {
+	var self = this;
+	self.all(function(client) {
+		client.ping();
+	});
+	return self;
+};
+
+WebSocket.prototype.check = function() {
+	var self = this;
+	var closed = 0;
+
+	self.all(function(client) {
+		if (client.$ping)
+			return;
+		client.close();
+		closed++;
+	});
+
+	console.log('CLOSED:', closed);
+	return self;
+};
+
 /*
 	Logger
 	@arguments {Object array}
@@ -11549,6 +11572,7 @@ function WebSocketClient(req, socket, head) {
 		onclose: this._onclose.bind(this)
 	};
 
+	this.$ping = true;
 	this.container = null;
 	this._id = null;
 	this.id = '';
@@ -11746,9 +11770,11 @@ WebSocketClient.prototype._ondata = function(data) {
 			// ping, response pong
 			self.socket.write(utils.getWebSocketFrame(0, '', 0x0A));
 			self.buffer = new Buffer(0);
+			self.$ping = false;
 			break;
 		case 0x0a:
 			// pong
+			self.$ping = true;
 			self.buffer = new Buffer(0);
 			break;
 	}
