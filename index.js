@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1801;
-	this.version_header = '1.8.1-8';
+	this.version_header = '1.8.1-9';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')

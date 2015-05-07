@@ -14,6 +14,7 @@ BETA ======= 1.8.1
 - updated: (IMPORTANT) U.extend(target, source, [rewrite]); --> rewrite is by default: __true__
 - updated: SchemaBuilderEntity.setPrepare(function(name, value, index, model){}) --> __model__ is new
 - updated: SchemaBuilderEntity.define(name, value, required, [custom]) --> __custom__ is new
+- updated: HTML compressor
 
 - removed: XSS check
 
