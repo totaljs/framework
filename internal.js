@@ -18,8 +18,10 @@ var BOOLEAN = 'boolean';
 var NUMBER = 'number';
 
 var REG_1 = /[\n\r\t]+/g;
-var REG_2 = /\s{3,}/g;
+var REG_2 = /\s{2,}/g;
 var REG_3 = /\/{1,}/g;
+var REG_4 = /\n\s{2,}/g;
+var REG_5 = />\s{1,}</g;
 
 var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
@@ -399,7 +401,8 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 			if (route.method !== method)
 				return 0;
 		} else if (route.flags.indexOf(method.toLowerCase()) === -1)
-				return 0;
+			return 0;
+
 		if (route.isREFERER && req.flags.indexOf('referer') === -1)
 			return 0;
 		if (!route.isMULTIPLE && route.isJSON && req.flags.indexOf('json') === -1)
@@ -411,7 +414,6 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 	for (var i = 0, length = req.flags.length; i < length; i++) {
 
 		var flag = req.flags[i];
-
 		switch (flag) {
 			case 'json':
 				if (!route.isJSON)
@@ -2365,7 +2367,9 @@ function compressHTML(html, minify) {
 		}
 	}
 
-	html = html.replace(REG_1, '').replace(REG_2, '');
+	html = html.replace(/>\n\s+/g, '>').replace(/\w\n\s+</g, function(text) {
+		return text.trim().replace(/\s/g, '');
+	}).replace(REG_4, ' ').replace(REG_1, '').replace(REG_5, '><').replace(REG_2, '');
 
 	var keys = Object.keys(cache);
 	length = keys.length;
@@ -2375,7 +2379,7 @@ function compressHTML(html, minify) {
 		html = html.replacer(key, cache[key]);
 	}
 
-	return html;
+	return html.trim();
 }
 
 /**
