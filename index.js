@@ -189,7 +189,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1801;
-	this.version_header = '1.8.1-9';
+	this.version_header = '1.8.1-10';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -331,6 +331,11 @@ function Framework() {
 
 	this.stats = {
 
+		other: {
+			websocketPing: 0,
+			websocketCleaner: 0
+		},
+
 		request: {
 			request: 0,
 			pending: 0,
@@ -346,7 +351,6 @@ function Framework() {
 			blocked: 0,
 			'delete': 0
 		},
-
 		response: {
 			view: 0,
 			json: 0,
@@ -2517,15 +2521,10 @@ Framework.prototype.usage = function(detailed) {
 		redirect: redirects.length
 	};
 
-	output.stats = {
-		request: self.stats.request,
-		response: self.stats.response
-	};
-
+	output.stats = self.stats;
 	output.redirects = redirects;
 
 	if (self.restrictions.isRestrictions) {
-
 		output.restrictions = {
 			allowed: [],
 			blocked: [],
@@ -4438,8 +4437,10 @@ Framework.prototype._service = function(count) {
 	if (ping > 0 && count % ping === 0) {
 		Object.keys(framework.connections).wait(function(item, next) {
 			var conn = framework.connections[item];
-			if (conn && typeof(conn.ping) === TYPE_FUNCTION)
-				conn.ping();
+			if (!conn)
+				return;
+			conn.check();
+			conn.ping();
 			next();
 		}, true);
 	}
@@ -11181,6 +11182,9 @@ WebSocket.prototype.ping = function() {
 	if (length === 0)
 		return self;
 
+	self.$ping = true;
+	framework.stats.other.websocketPing++;
+
 	for (var i = 0; i < length; i++)
 		self.connections[keys[i]].ping();
 
@@ -11498,16 +11502,17 @@ WebSocket.prototype.log = function() {
 
 WebSocket.prototype.check = function() {
 	var self = this;
-	var closed = 0;
+
+	if (!self.$ping)
+		return self;
 
 	self.all(function(client) {
 		if (client.$ping)
 			return;
 		client.close();
-		closed++;
+		framework.stats.other.websocketCleaner++;
 	});
 
-	console.log('CLOSED:', closed);
 	return self;
 };
 
