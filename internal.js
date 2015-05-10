@@ -1664,7 +1664,8 @@ function view_parse(content, minify) {
 			return '$EMPTY';
 		if (value[0] === ' ')
 			value = value.substring(1);
-		if (value.match(/\n|\t|\r|\'|\\/) !== null)
+		// if (value.match(/\n|\t|\r|\'|\\/) !== null)
+		if (value.match(/\n|\r|\'|\\/) !== null)
 			return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END;
 		return DELIMITER + value + DELIMITER;
 	}
