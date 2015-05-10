@@ -1660,8 +1660,10 @@ function view_parse(content, minify) {
 
 	function escaper(value) {
 		value = compressHTML(value, minify);
-		if (value === '')
+		if (value === '' || value === ' ')
 			return '$EMPTY';
+		if (value[0] === ' ')
+			value = value.substring(1);
 		if (value.match(/\n|\t|\r|\'|\\/) !== null)
 			return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END;
 		return DELIMITER + value + DELIMITER;
@@ -2367,9 +2369,12 @@ function compressHTML(html, minify) {
 		}
 	}
 
-	html = html.replace(/>\n\s+/g, '>').replace(/\w\n\s+</g, function(text) {
+	// html = html.replace(/>\n\s+/g, '>').replace(/\w\n\s+</g, function(text) {
+	html = html.replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
 		return text.trim().replace(/\s/g, '');
 	}).replace(REG_5, '><').replace(REG_4, ' ').replace(REG_1, '').replace(REG_2, '');
+
+	// html = html.replace(REG_1, '').replace(REG_2, '');
 
 	var keys = Object.keys(cache);
 	length = keys.length;

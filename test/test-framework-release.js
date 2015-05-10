@@ -140,6 +140,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('html compressor', function(complete) {
+		utils.request(url + 'html-compressor/', ['get'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '<div><p>a b c d</p><div>Price 30 &euro;</div></div><div>Name: Peter</div><div>Name: Peter</div>', 'HTML compressor');
+			complete();
+		});
+	});
+
 	async.await('rest GET', function(complete) {
 		utils.request(url + 'rest/', ['get'], null, function(error, data, code, headers) {
 			if (error)

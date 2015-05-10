@@ -30,6 +30,7 @@ exports.install = function(framework) {
         flags: ['unauthorize']
     });
 
+    framework.route('/html-compressor/', view_compressor);
     framework.route('/sync/', synchronize);
     framework.route('/package/', '@testpackage/test');
     framework.route('/precompile/', view_precomile);
@@ -667,4 +668,9 @@ function viewHTTP() {
 
 function viewHTTPS() {
     this.plain('HTTPS');
+}
+
+function view_compressor() {
+    var self = this;
+    self.view('compress', { name: 'Peter' });
 }
