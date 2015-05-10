@@ -2379,7 +2379,7 @@ function compressHTML(html, minify) {
 		html = html.replacer(key, cache[key]);
 	}
 
-	return html.trim();
+	return html;
 }
 
 /**

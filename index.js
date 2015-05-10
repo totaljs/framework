@@ -188,8 +188,8 @@ global.RELEASE = false;
 function Framework() {
 
 	this.id = null;
-	this.version = 1801;
-	this.version_header = '1.8.1-10';
+	this.version = 1810;
+	this.version_header = '1.8.1-11';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -10077,9 +10077,9 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	}
 	else {
 		if (beautify)
-			obj = JSON.stringify(obj || {}, replacer, 4);
+			obj = JSON.stringify(obj, replacer, 4);
 		else
-			obj = JSON.stringify(obj || {}, replacer);
+			obj = JSON.stringify(obj, replacer);
 	}
 
 	self.subscribe.success();
