@@ -1662,8 +1662,10 @@ function view_parse(content, minify) {
 		value = compressHTML(value, minify);
 		if (value === '' || value === ' ')
 			return '$EMPTY';
-		if (value[0] === ' ')
+
+		if (value[0] === ' ' && value[1] === '<')
 			value = value.substring(1);
+
 		// if (value.match(/\n|\t|\r|\'|\\/) !== null)
 		if (value.match(/\n|\r|\'|\\/) !== null)
 			return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END;
