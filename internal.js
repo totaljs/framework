@@ -20,7 +20,7 @@ var NUMBER = 'number';
 var REG_1 = /[\n\r\t]+/g;
 var REG_2 = /\s{2,}/g;
 var REG_3 = /\/{1,}/g;
-var REG_4 = /\n\s{2,}/g;
+var REG_4 = /\n\s{2,}./g;
 var REG_5 = />\n\s{1,}</g;
 
 var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
@@ -1659,16 +1659,23 @@ function view_parse(content, minify) {
 	var compressed = '';
 
 	function escaper(value) {
+
+		var is = value.match(/[^\>]\n\s{1,}$/);
 		value = compressHTML(value, minify);
-		if (value === '' || value === ' ')
+
+		if (value === '')
 			return '$EMPTY';
 
 		if (value[0] === ' ' && value[1] === '<')
 			value = value.substring(1);
 
+		if (is)
+			value += ' ';
+
 		// if (value.match(/\n|\t|\r|\'|\\/) !== null)
 		if (value.match(/\n|\r|\'|\\/) !== null)
 			return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END;
+
 		return DELIMITER + value + DELIMITER;
 	}
 
@@ -2375,7 +2382,12 @@ function compressHTML(html, minify) {
 	// html = html.replace(/>\n\s+/g, '>').replace(/\w\n\s+</g, function(text) {
 	html = html.replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
 		return text.trim().replace(/\s/g, '');
-	}).replace(REG_5, '><').replace(REG_4, ' ').replace(REG_1, '').replace(REG_2, '');
+	}).replace(REG_5, '><').replace(REG_4, function(text) {
+		var c = text[text.length - 1];
+		if (c === '<')
+			return c;
+		return ' ' + c;
+	}).replace(REG_1, '').replace(REG_2, '');
 
 	// html = html.replace(REG_1, '').replace(REG_2, '');
 

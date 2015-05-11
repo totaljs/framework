@@ -89,6 +89,15 @@ function test_routing(next) {
 
 	var async = new utils.Async();
 
+	async.await('html compressor', function(complete) {
+		utils.request(url + 'html-compressor/', ['get'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '<div><p>a b c d</p><div>Price 30 &euro;</div></div><div>Name: Peter</div><div>Name: Peter</div><div>Price: 1000 1 000.00</div><div>13</div><div>Name: Peter</div>', 'HTML compressor');
+			complete();
+		});
+	});
+
 	async.await('0', function(complete) {
 		utils.request(url + 'share/', 'GET', null, function(error, data, code, headers) {
 			if (error)
@@ -136,15 +145,6 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			assert(data === 'dilino gadzo', 'problem with controller.routeTo()');
-			complete();
-		});
-	});
-
-	async.await('html compressor', function(complete) {
-		utils.request(url + 'html-compressor/', ['get'], null, function(error, data, code, headers) {
-			if (error)
-				throw error;
-			assert(data === '<div><p>a b c d</p><div>Price 30 &euro;</div></div><div>Name: Peter</div><div>Name: Peter</div>', 'HTML compressor');
 			complete();
 		});
 	});
