@@ -4273,17 +4273,25 @@ exports.sync = function(fn, owner) {
 	};
 };
 
-exports.async = function(fn) {
+exports.async = function(fn, isApply) {
 	var context = this;
 	return function(complete) {
 
 		var self = this;
-		var argv = [];
+		var argv;
 
 		if (arguments.length > 0) {
-			for (var i = 1; i < arguments.length; i++)
-				argv.push(arguments[i]);
-		}
+
+			if (isApply) {
+				// index.js/Subscribe.prototype.doExecute
+				argv = arguments[1];
+			} else {
+				argv = [];
+				for (var i = 1; i < arguments.length; i++)
+					argv.push(arguments[i]);
+			}
+		} else
+			argv = new Array(0);
 
 		var generator = fn.apply(context, argv);
 		next(null);
