@@ -75,6 +75,12 @@ global.DATABASE = function() {
 	return framework.database.apply(framework, arguments);
 };
 
+global.DB = function() {
+	if (typeof(framework.database) === OBJECT)
+		return framework.database;
+	return framework.database.apply(framework, arguments);
+};
+
 global.CONFIG = function(name) {
 	return framework.config[name];
 };

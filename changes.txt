@@ -6,6 +6,7 @@ BETA ======= 1.8.1
 - added: `config['directory-private']`
 - added: F.path.private([filename])
 - added: Controller.ping() for WebSocket
+- added: global.DB() --> same as global.DATABASE()
 
 - updated: F.route(url, ...), F.websocket(url, ...) --> URL can be function(url, req, [flags])
 - updated: `config['allow-performance']` is set to true
