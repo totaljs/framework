@@ -7,6 +7,7 @@ BETA ======= 1.8.1
 - added: F.path.private([filename])
 - added: Controller.ping() for WebSocket
 - added: global.DB() --> same as global.DATABASE()
+- added: `config['allow-compatibility'] = true` - a backward compatibility mode (in newest version 1.9 will be set to `false`)
 
 - updated: F.route(url, ...), F.websocket(url, ...) --> URL can be function(url, req, [flags])
 - updated: `config['allow-performance']` is set to true
@@ -25,6 +26,9 @@ BETA ======= 1.8.1
 - fixed: SchemaBuilderEntity prepare (problem with nullable Boolean)
 
 - improved: code optimalization
+
+__IMPORTANT:__
+`exports.install = function(framework) {}` framework variable is removed but with backward compatibility (`config['allow-compatibility']`).
 
 ======= 1.8.0
 

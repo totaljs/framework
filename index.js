@@ -269,6 +269,7 @@ function Framework() {
 		'allow-compile-html': true,
 		'allow-performance': false,
 		'allow-custom-titles': false,
+		'allow-compatibility': true,
 		'disable-strict-server-certificate-validation': true,
 		'disable-clear-temporary-directory': false,
 
@@ -1914,8 +1915,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		else
 			self.sources[name] = obj;
 
-		if (typeof(obj.install) === TYPE_FUNCTION)
-			obj.install(self, options, name);
+		if (typeof(obj.install) === TYPE_FUNCTION) {
+			if (framework.config['allow-compatibility'])
+				obj.install(self, options, name);
+			else
+				obj.install(options, name);
+		}
 
 		if (!skipEmit) {
 			setTimeout(function() {
@@ -2094,8 +2099,12 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 
 	_controller = routeID;
 
-	if (typeof(obj.install) === TYPE_FUNCTION)
-		obj.install(self, options, name);
+	if (typeof(obj.install) === TYPE_FUNCTION) {
+		if (framework.config['allow-compatibility'])
+			obj.install(self, options, name);
+		else
+			obj.install(options, name);
+	}
 
 	me.processed = true;
 
@@ -2207,8 +2216,12 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		if (obj.id)
 			delete require.cache[require.resolve(obj.id)];
 
-		if (typeof(obj.uninstall) === TYPE_FUNCTION)
-			obj.uninstall(self, options, name);
+		if (typeof(obj.uninstall) === TYPE_FUNCTION) {
+			if (framework.config['allow-compatibility'])
+				obj.uninstall(self, options, name);
+			else
+				obj.uninstall(options, name);
+		}
 
 		if (type === 'model')
 			delete self.models[name];
@@ -2240,8 +2253,12 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		self.routes.websockets = self.routes.websockets.remove('controller', id);
 
 		if (obj) {
-			if (obj.uninstall)
-				obj.uninstall(self, options, name);
+			if (obj.uninstall) {
+				if (framework.config['allow-compatibility'])
+					obj.uninstall(self, options, name);
+				else
+					obj.uninstall(options, name);
+			}
 
 			if (isModule)
 				delete self.modules[name];

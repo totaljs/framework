@@ -1,6 +1,6 @@
 var assert = require('assert');
 
-exports.install = function(framework) {
+exports.install = function() {
 
     framework.route(function(url, req, flags) {
         return url === '/custom/route/';

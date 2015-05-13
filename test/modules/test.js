@@ -1,7 +1,7 @@
 var assert = require('assert');
 var app;
 
-exports.install = function(framework) {
+exports.install = function() {
 	app = framework;
 	assert.ok(typeof(framework.modules) === 'object', 'module install');
 
