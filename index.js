@@ -3093,13 +3093,13 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	if (!self.config.debug && req.headers['if-none-match'] === etag) {
 
-		if (RELEASE && !res.getHeader('ETag') && etag.length > 0)
+		if (!res.getHeader('ETag') && etag.length > 0)
 			returnHeaders['Etag'] = etag;
 
-		if (RELEASE && !res.getHeader('Expires'))
+		if (!res.getHeader('Expires'))
 			returnHeaders['Expires'] = new Date().add('M', 3);
 
-		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=86400' : '');
+		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=86400';
 
 		res.success = true;
 		res.writeHead(304, returnHeaders);
