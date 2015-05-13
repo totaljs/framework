@@ -195,7 +195,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-15';
+	this.version_header = '1.8.1-16';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -6129,7 +6129,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 	// helper for 401 http status
 	req.$isAuthorized = true;
 
-	var key = '#' + url + '$' + req.$flags;
+	var key = '#' + url + '$' + req.$flags + (subdomain ? '$' + subdomain : '');
 
 	if (framework.temporary.other[key])
 		return framework.temporary.other[key];
