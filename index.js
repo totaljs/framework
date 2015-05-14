@@ -791,7 +791,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	var isNOXHR = false;
 	var method = '';
 	var schema;
-	var isGENERATOR = funcExecute.toString().indexOf('function*') === 0;
+	var isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
 
 	if (flags) {
 
