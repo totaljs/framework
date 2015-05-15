@@ -195,7 +195,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-18';
+	this.version_header = '1.8.1-19';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -4645,7 +4645,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	req.buffer_exceeded = false;
 	req.buffer_data = new Buffer('');
 	req.buffer_has = false;
-	req.$flags = '';
+	req.$flags = req.method;
 
 	var accept = headers.accept;
 
