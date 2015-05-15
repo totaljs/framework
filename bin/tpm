@@ -324,11 +324,6 @@ Backup.prototype.createDirectory = function(p, root) {
 
     var self = this;
 
-    if (self.cache[p])
-        return;
-
-    self.cache[p] = true;
-
     if (p[0] === '/')
         p = p.substring(1);
 
@@ -359,7 +354,7 @@ Backup.prototype.createDirectory = function(p, root) {
         else
             directory += (directory.length > 0 ? '/' : '') + name;
 
-        var dir = path.join(self.path, directory);
+        var dir = ph.join(self.path, directory);
         if (root)
             dir = (is ? '\\' : '/') + dir;
 
@@ -519,10 +514,11 @@ function display_help() {
     log('');
     log(colors.underscore + '===== CREATE PACKAGE FROM THE CURRENT PATH CREATE' + colors.reset);
     log('');
-    log(colors.red + 'tpm create [important: package_name]' + colors.reset);
+    log(colors.red + 'tpm create [important: package_name] [optional: package_directory_to_pack]' + colors.reset);
     log('');
     log('EXAMPLE: tpm create my-project-template');
     log('EXAMPLE: tpm create my-module');
+    log('EXAMPLE: tpm create my-module /users/packages/my-package/');
     log('');
     log(colors.underscore + '===== ADD A NEW PACKAGE REPOSITORY' + colors.reset);
     log('');
@@ -746,19 +742,18 @@ function create() {
     var target = process.cwd();
     var name = current_package;
 
-    if (name.toLowerCase().lastIndexOf('.package') === -1)
-        name += '.package';
-
     var length = process.argv.length;
 
     if (length === 5) {
         target = process.argv[4];
         name = process.argv[3];
     } else if (length === 4) {
-        target = process.argv[3];
-        current_package = ph.basename(name);
+        current_package = process.argv[3];
         name = ph.join(process.cwd(), current_package);
     }
+
+    if (name.toLowerCase().lastIndexOf('.package') === -1)
+        name += '.package';
 
     log('');
     log('--- CREATE PACKAGE --');
@@ -772,17 +767,15 @@ function create() {
     var backup = new Backup();
     backup.backup(target, name, function(err, path) {
 
-        if (err) {
+        if (err)
             throw err;
-            return;
-        }
 
         log('Success      :', path);
         log('');
 
     }, function(path) {
+        // return path.lastIndexOf('.package') === -1;
         return true;
-        //return path.lastIndexOf('.package') === -1;
     });
 }
 
