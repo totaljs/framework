@@ -336,7 +336,7 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 	var length = self.builder.length;
 
 	for (var i = 0; i < length; i++)
-		cmd += (cmd.length > 0 ? ' ' : '') + self.builder[i].cmd;
+		cmd += (cmd ? ' ' : '') + self.builder[i].cmd;
 
 	return (self.isIM ? 'convert' : 'gm -convert') + ' "' + filenameFrom + '"' + ' ' + cmd + ' "' + filenameTo + '"';
 };

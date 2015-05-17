@@ -1790,8 +1790,7 @@ function view_parse(content, minify) {
 			builder += '}$output+=$EMPTY';
 		} else {
 			tmp = view_prepare(command.command, newCommand, functionsName);
-
-			if (tmp.length > 0) {
+			if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
 				builder += tmp;
@@ -1806,7 +1805,7 @@ function view_parse(content, minify) {
 
 	if (old !== null) {
 		text = content.substring(old.end + 1);
-		if (text.length > 0)
+		if (text)
 			builder += '+' + escaper(text);
 	}
 

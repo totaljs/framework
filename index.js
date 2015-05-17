@@ -195,7 +195,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-20';
+	this.version_header = '1.8.1-21';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -882,7 +882,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 				case 'put':
 				case 'trace':
 					tmp.push(flag);
-					method += (method.length > 0 ? ',' : '') + flag;
+					method += (method ? ',' : '') + flag;
 					break;
 				default:
 					tmp.push(flag);
@@ -923,14 +923,14 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	// commented: flags.indexOf('get') === -1 && because we can have: route('/', ..., ['json', 'get']);
 	if ((flags.indexOf('json') !== -1 || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
 		flags.push('post');
-		method += (method.length > 0 ? ',' : '') + 'post';
+		method += (method ? ',' : '') + 'post';
 		priority++;
 	}
 
 	if (flags.indexOf('upload') !== -1) {
 		if (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) {
 			flags.push('post');
-			method += (method.length > 0 ? ',' : '') + 'post';
+			method += (method ? ',' : '') + 'post';
 		}
 	}
 
@@ -945,7 +945,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		flags.indexOf('patch') === -1 &&
 		flags.indexOf('propfind') === -1) {
 			flags.push('get');
-			method += (method.length > 0 ? ',' : '') + 'get';
+			method += (method ? ',' : '') + 'get';
 		}
 
 	if (flags.indexOf('referer') !== -1)
@@ -2380,12 +2380,12 @@ Framework.prototype.onMail = function(address, subject, body, callback, replyTo)
 
 	if (replyTo)
 		message.reply(replyTo);
-	else if (tmp && tmp.length > 0 && tmp.isEmail())
+	else if (tmp && tmp.isEmail())
 		message.reply(self.config['mail.address.reply']);
 
 	tmp = self.config['mail.address.copy'];
 
-	if (tmp && tmp.length > 0 && tmp.isEmail())
+	if (tmp && tmp.isEmail())
 		message.bcc(tmp);
 
 	var opt = self.temporary['mail-settings'];
@@ -2456,7 +2456,7 @@ Framework.prototype.log = function() {
 	var length = arguments.length;
 
 	for (var i = 0; i < length; i++)
-		str += (str.length > 0 ? ' ' : '') + (arguments[i] || '');
+		str += (str ? ' ' : '') + (arguments[i] || '');
 
 	self._verify_directory('logs');
 	fs.appendFile(utils.combine(self.config['directory-logs'], filename + '.log'), time + ' | ' + str + '\n');
@@ -2471,7 +2471,7 @@ Framework.prototype.logger = function() {
 	var length = arguments.length;
 
 	for (var i = 1; i < length; i++)
-		str += (str.length > 0 ? ' ' : '') + (arguments[i] || '');
+		str += (str ? ' ' : '') + (arguments[i] || '');
 
 	self._verify_directory('logs');
 	fs.appendFile(utils.combine(self.config['directory-logs'], arguments[0] + '.log'), dt + ' | ' + str + '\n');
@@ -3093,7 +3093,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	if (!self.config.debug && req.headers['if-none-match'] === etag) {
 
-		if (!res.getHeader('ETag') && etag.length > 0)
+		if (!res.getHeader('ETag') && etag)
 			returnHeaders['Etag'] = etag;
 
 		if (!res.getHeader('Expires'))
@@ -3174,10 +3174,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
 
-	if (downloadName && downloadName.length > 0)
+	if (downloadName)
 		returnHeaders['Content-Disposition'] = 'attachment; filename="' + downloadName + '"';
 
-	if (!res.getHeader('ETag') && etag.length > 0 && RELEASE)
+	if (!res.getHeader('ETag') && etag && RELEASE)
 		returnHeaders['Etag'] = etag;
 
 	if (!returnHeaders[RESPONSE_HEADER_CONTENTTYPE])
@@ -3187,7 +3187,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	var range = req.headers['range'] || '';
 
 	res.success = true;
-	if (range.length > 0)
+	if (range)
 		return self.responseRange(name, range, returnHeaders, req, res, done);
 
 	if (self.config.debug && self.isProcessed(key))
@@ -3300,7 +3300,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 		var compress = !isGZIP && supportsGZIP && (contentType.indexOf('text/') !== -1 || contentType.lastIndexOf('javascript') !== -1 || contentType.lastIndexOf('json') !== -1);
 		var attachment = response.headers['content-disposition'] || '';
 
-		if (attachment.length > 0)
+		if (attachment)
 			res.setHeader('Content-Disposition', attachment);
 
 		res.setHeader(RESPONSE_HEADER_CONTENTTYPE, contentType);
@@ -3675,7 +3675,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 	download = download || '';
 
-	if (download.length > 0)
+	if (download)
 		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(download);
 
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
@@ -4671,7 +4671,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		multipart = '';
 	}
 
-	if (multipart.length > 0) {
+	if (multipart) {
 		req.$flags += 'upload';
 		flags.push('upload');
 	}
@@ -4730,7 +4730,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
     }
 
     if (self._request_check_POST && (first === 'P')) {
-        if (multipart.length > 0) {
+        if (multipart) {
             self.stats.request.upload++;
             new Subscribe(self, req, res, 2).multipart(multipart);
         } else {
@@ -5348,7 +5348,7 @@ Framework.prototype.testing = function(stop, callback) {
 		self.testing(stop, callback);
 	});
 
-	if (test.data && test.data.length > 0)
+	if (test.data)
 		req.end(buf);
 	else
 		req.end();
@@ -9374,7 +9374,7 @@ Controller.prototype.head = function() {
 
 	if (length === 0) {
 		framework.emit('controller-render-head', self);
-		return (self.config.author && self.config.author.length > 0 ? '<meta name="author" content="' + self.config.author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '');
+		return (self.config.author ? '<meta name="author" content="' + self.config.author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '');
 	}
 
 	var header = (self.repository[REPOSITORY_HEAD] || '');
@@ -9860,7 +9860,7 @@ Controller.prototype.$currentJS = function(path) {
  * @return {String}
  */
 Controller.prototype.$currentScript = function(path) {
-	this._currentScript = path && path.length > 0 ? path : '';
+	this._currentScript = path ? path : '';
 	return '';
 };
 
@@ -9877,7 +9877,7 @@ Controller.prototype.$currentView = function(path) {
 		return self;
 	}
 
-	self._currentView = path && path.length > 0 ? utils.path(path) : '';
+	self._currentView = path ? utils.path(path) : '';
 	return '';
 };
 
@@ -9909,7 +9909,7 @@ Controller.prototype.$currentCSS = function(path) {
  * @return {String}
  */
 Controller.prototype.$currentStyle = function(path) {
-	this._currentStyle = path && path.length > 0 ? path : '';
+	this._currentStyle = path ? path : '';
 	return '';
 };
 
@@ -9919,7 +9919,7 @@ Controller.prototype.$currentStyle = function(path) {
  * @return {String}
  */
 Controller.prototype.$currentImage = function(path) {
-	this._currentImage = path && path.length > 0 ? path : '';
+	this._currentImage = path ? path : '';
 	return '';
 };
 
@@ -9929,7 +9929,7 @@ Controller.prototype.$currentImage = function(path) {
  * @return {String}
  */
 Controller.prototype.$currentVideo = function(path) {
-	this._currentVideo = path && path.length > 0 ? path : '';
+	this._currentVideo = path ? path : '';
 	return '';
 };
 
@@ -9939,7 +9939,7 @@ Controller.prototype.$currentVideo = function(path) {
  * @return {String}
  */
 Controller.prototype.$currentDownload = function(path) {
-	this._currentDownload = path && path.length > 0 ? path : '';
+	this._currentDownload = path ? path : '';
 	return '';
 };
 
@@ -10369,7 +10369,7 @@ Controller.prototype.throw400 = function(problem) {
 Controller.prototype.view400 = function(problem) {
 	var self = this;
 
-	if (problem && !problem.items && problem.length > 0)
+	if (problem && !problem.items)
 		self.problem(problem);
 
 	if (self.res.success || self.res.headersSent || !self.isConnected)
@@ -10399,7 +10399,7 @@ Controller.prototype.throw401 = function(problem) {
 Controller.prototype.view401 = function(problem) {
 	var self = this;
 
-	if (problem && problem.length > 0)
+	if (problem)
 		self.problem(problem);
 
 	if (self.res.success || self.res.headersSent || !self.isConnected)
@@ -10429,7 +10429,7 @@ Controller.prototype.throw403 = function(problem) {
 Controller.prototype.view403 = function(problem) {
 	var self = this;
 
-	if (problem && problem.length > 0)
+	if (problem)
 		self.problem(problem);
 
 	if (self.res.success || self.res.headersSent || !self.isConnected)
@@ -10458,7 +10458,7 @@ Controller.prototype.throw404 = function(problem) {
 Controller.prototype.view404 = function(problem) {
 	var self = this;
 
-	if (problem && problem.length > 0)
+	if (problem)
 		self.problem(problem);
 
 	if (self.res.success || self.res.headersSent || !self.isConnected)
@@ -10511,7 +10511,7 @@ Controller.prototype.throw500 = function(error) {
 Controller.prototype.view501 = function(problem) {
 	var self = this;
 
-	if (problem && problem.length > 0)
+	if (problem)
 		self.problem(problem);
 
 	if (self.res.success || self.res.headersSent || !self.isConnected)
@@ -10654,12 +10654,12 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 	var newline = '\n';
 	var builder = '';
 
-	if (eventname && eventname.length > 0)
+	if (eventname)
 		builder = 'event: ' + eventname + newline;
 
 	builder += 'data: ' + data + newline;
 
-	if (id && id.toString().length > 0)
+	if (id && id.toString())
 		builder += 'id: ' + id + newline;
 
 	if (retry && retry > 0)
@@ -11896,9 +11896,8 @@ WebSocketClient.prototype.send = function(message) {
 	if (self.type !== 1) {
 
 		var data = self.type === 3 ? JSON.stringify(message) : (message || '').toString();
-		if (self.container.config['default-websocket-encodedecode'] === true && data.length > 0)
+		if (self.container.config['default-websocket-encodedecode'] === true && data)
 			data = encodeURIComponent(data);
-
 		self.socket.write(utils.getWebSocketFrame(0, data, 0x01));
 
 	} else {
@@ -12092,7 +12091,7 @@ Backup.prototype.restoreFile = function(key, value) {
 
 	if (index !== -1) {
 		p = key.substring(0, index).trim();
-		if (p.length > 0)
+		if (p)
 			self.createDirectory(p);
 	}
 
@@ -12140,9 +12139,9 @@ Backup.prototype.createDirectory = function(p, root) {
 		var name = arr[i];
 
 		if (is)
-			directory += (directory.length > 0 ? '\\' : '') + name;
+			directory += (directory ? '\\' : '') + name;
 		else
-			directory += (directory.length > 0 ? '/' : '') + name;
+			directory += (directory ? '/' : '') + name;
 
 		var dir = path.join(self.path, directory);
 		if (root)

@@ -391,7 +391,7 @@ Message.prototype._send = function(socket, options) {
 
 	message.push('Message-ID: <' + GUID() + '@WIN-' + s4() + '>');
 	message.push('MIME-Version: 1.0');
-	message.push('From: ' + (self.addressFrom.name.length > 0 ? unicode_encode(self.addressFrom.name) + ' <' + self.addressFrom.address + '>' : self.addressFrom.address));
+	message.push('From: ' + (self.addressFrom.name ? unicode_encode(self.addressFrom.name) + ' <' + self.addressFrom.address + '>' : self.addressFrom.address));
 
 	var length = self.addressTo.length;
 	var builder = '';
