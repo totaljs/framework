@@ -3730,6 +3730,9 @@ Array.prototype._async_middleware = function(res, callback, controller) {
 
 	if (res.success || res.headersSent) {
 
+		res.$middleware = null; // clear next function (memoryleak prevention)
+		self.length = 0; // clear middlewares
+
 		// Prevent timeout
 		if (controller)
 			controller.subscribe.success();
@@ -3740,18 +3743,35 @@ Array.prototype._async_middleware = function(res, callback, controller) {
 
 	var item = self.shift();
 
-	if (item === undefined) {
+	if (!item) {
 		if (callback)
 			callback();
 		return self;
 	}
 
-	item(function() {
-		setImmediate(function() {
-			self._async_middleware(res, callback);
-		});
+	res.$middleware = function() {
+		self._async_middleware(res, callback);
+	};
+
+	var output = item(function(err) {
+
+		if (err) {
+			res.$middleware = false;
+			res.throw500(err);
+			callback = null;
+			self.length = 0;
+			return;
+		}
+
+		setImmediate(res.$middleware);
 	});
 
+	if (output !== false)
+		return self;
+
+	res.$middleware = null;
+	callback = null;
+	self.length = 0;
 	return self;
 };
 

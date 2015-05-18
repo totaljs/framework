@@ -954,7 +954,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
 		self._request_check_POST = true;
 
-	if (!(middleware instanceof Array))
+	if (!middleware || (!(middleware instanceof Array)) || middleware.length === 0)
 		middleware = null;
 
 	var isMULTIPLE = false;
@@ -1323,6 +1323,9 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (!flags || (flags.indexOf('authorize') === -1))
 		isMember = true;
 
+	if (!middleware || (!(middleware instanceof Array)) || middleware.length === 0)
+		middleware = null;
+
 	self.routes.websockets.push({
 		controller: (_controller || '').length === 0 ? 'unknown' : _controller,
 		url: routeURL,
@@ -1388,6 +1391,9 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
 		for (var i = 0, length = middleware.length; i < length; i++)
 			middleware[i] = middleware[i].replace('#', '');
 	}
+
+	if (!middleware || (!(middleware instanceof Array)) || middleware.length === 0)
+		middleware = null;
 
 	self.routes.files.push({
 		controller: (_controller || '').length === 0 ? 'unknown' : _controller,
@@ -4585,23 +4591,24 @@ Framework.prototype._request = function(req, res) {
 
 	self._request_stats(true, true);
 
-
 	if (self._length_request_middleware === 0)
 		return self._request_continue(req, res, headers, protocol);
 
-	var func = [];
+	var func = new Array(self._length_request_middleware);
+	var indexer = 0;
 
 	for (var i = 0; i < self._length_request_middleware; i++) {
 		var middleware = self.routes.middleware[self.routes.request[i]];
+
 		if (!middleware) {
 			self.error('Middleware not found: ' + route.middleware[i], null, req.uri);
 			continue;
 		}
 
 		(function(middleware) {
-			func.push(function(next) {
+			func[indexer++] = function(next) {
 				middleware.call(framework, res.req, res, next);
-			});
+			};
 		})(middleware);
 	}
 
@@ -4821,7 +4828,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	if (self._length_request_middleware === 0)
 		return self._upgrade_prepare(req, path, headers);
 
-	var func = [];
+	var func = new Array(self._length_request_middleware);
+	var indexer = 0;
 
 	for (var i = 0; i < self._length_request_middleware; i++) {
 		var middleware = self.routes.middleware[self.routes.request[i]];
@@ -4831,9 +4839,9 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		}
 
 		(function(middleware) {
-			func.push(function(next) {
+			func[indexer++] = function(next) {
 				middleware.call(framework, req, req.websocket, next);
-			});
+			};
 		})(middleware);
 	}
 
@@ -4922,15 +4930,18 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 	};
 
 	if (route.middleware instanceof Array && route.middleware.length > 0) {
-		var func = [];
+		var func = new Array(route.middleware.length);
+		var indexer = 0;
 		for (var i = 0, length = route.middleware.length; i < length; i++) {
 			var middleware = framework.routes.middleware[route.middleware[i]];
+
 			if (!middleware)
 				continue;
+
 			(function(middleware) {
-				func.push(function(next) {
+				func[indexer++] = function(next) {
 					middleware.call(framework, req, socket, next, route.options);
-				});
+				};
 			})(middleware);
 		}
 		func._async_middleware(socket, next);
@@ -7489,28 +7500,24 @@ Subscribe.prototype.execute = function(status) {
 	if (framework._length_middleware === 0 || route.middleware === null)
 		return self.doExecute();
 
-	var func = [];
 	var length = route.middleware.length;
+	var func = new Array(length);
+	var indexer = 0;
 
 	for (var i = 0; i < length; i++) {
 
 		var middleware = framework.routes.middleware[route.middleware[i]];
-
 		if (!middleware) {
 			framework.error('Middleware not found: ' + route.middleware[i], controller.name, req.uri);
 			continue;
 		}
 
 		(function(middleware) {
-			func.push(function(next) {
+			func[indexer++] = function(next) {
 				middleware.call(controller, req, res, next, route.options, controller);
-			});
+			};
 		})(middleware);
-
 	}
-
-	if (func.length === 0)
-		return self.doExecute();
 
 	func._async_middleware(res, function() {
 		self.doExecute();
@@ -7840,11 +7847,12 @@ Subscribe.prototype.doEndfile = function() {
  */
 Subscribe.prototype.doEndfile_middleware = function(file) {
 
-	var func = [];
 	var length = file.middleware.length;
+	var func = new Array(length);
 	var self = this;
 	var req = self.req;
 	var res = self.res;
+	var indexer = 0;
 
 	for (var i = 0; i < length; i++) {
 
@@ -7853,9 +7861,10 @@ Subscribe.prototype.doEndfile_middleware = function(file) {
 			continue;
 
 		(function(middleware) {
-		func.push(function(next) {
-			middleware.call(framework, req, res, next, file.options);
-		})})(middleware);
+			func[indexer++] = function(next) {
+				middleware.call(framework, req, res, next, file.options);
+			};
+		})(middleware);
 	}
 
 	func._async_middleware(res, function() {
@@ -8162,20 +8171,20 @@ Controller.prototype.middleware = function(names, options, callback) {
 		options = {};
 
 	var self = this;
-	var func = [];
 	var length = names.length;
+	var func = new Array(length);
+	var indexer = 0;
 
 	for (var i = 0; i < length; i++) {
 
 		var middleware = framework.routes.middleware[names[i]];
-
 		if (!middleware)
 			continue;
 
 		(function(middleware, options) {
-			func.push(function(next) {
+			func[indexer++] = function(next) {
 				middleware.call(framework, self.req, self.res, next, options);
-			});
+			};
 		})(middleware, options[names[i]] === undefined ? options : options[names[i]]);
 
 	}

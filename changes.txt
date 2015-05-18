@@ -19,6 +19,7 @@ BETA ======= 1.8.1
 - updated: HTML compressor
 - updated: favicon (removed rel="icon")
 - updated: binary `tpm create [package] [directory]` (added argument [package], [directory])
+- updated: better handling middleware errors and added prevention of "memory leak"
 
 - removed: XSS check
 
