@@ -21,6 +21,7 @@ BETA ======= 1.8.1
 - updated: favicon (removed rel="icon")
 - updated: binary `tpm create [package] [directory]` (added argument [package], [directory])
 - updated: better handling middleware errors and added prevention of "memory leak"
+- updated: (IMPORTANT): Websocket ping is set to 3 minutes
 
 - removed: XSS check
 

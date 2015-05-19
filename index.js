@@ -278,7 +278,7 @@ function Framework() {
 		'default-interval-clear-resources': 20,
 		'default-interval-clear-cache': 7,
 		'default-interval-precompile-views': 61,
-		'default-interval-websocket-ping': 0,
+		'default-interval-websocket-ping': 3,
 		'default-interval-clear-dnscache': 2880 // 2 days
 	};
 
