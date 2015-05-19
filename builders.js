@@ -103,6 +103,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 	this.parent = parent;
 	this.name = name;
 	this.primary;
+	this.autotrim = true;
 	this.schema = obj;
 	this.properties = properties === undefined ? Object.keys(obj) : properties;
 	this.resourcePrefix;
@@ -1296,6 +1297,12 @@ SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = functi
 	return output;
 };
 
+function autotrim(context, value) {
+	if (context.autotrim)
+		return value.trim();
+	return value;
+}
+
 /**
  * Prepare model according to schema
  * @param {Object} model
@@ -1362,7 +1369,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					break;
 				// string
 				case 3:
-					tmp = val === undefined || val === null ? '' : val.toString().trim();
+					tmp = val === undefined || val === null ? '' : autotrim(self, val.toString());
 					if (type.length > 0 && type.length < tmp.length)
 						tmp = tmp.substring(0, type.length);
 					item[property] = onPrepare(property, tmp);
@@ -1447,7 +1454,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					break;
 
 				case 3:
-					tmp = tmp === undefined || tmp === null ? '' : tmp.toString().trim();
+					tmp = tmp === undefined || tmp === null ? '' : autotrim(self, tmp.toString());
 					if (type.length > 0 && tmp.length < tmp.length)
 						tmp = tmp.substring(0, type.length);
 					tmp = onPrepare(property, tmp, j);
