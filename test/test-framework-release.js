@@ -336,7 +336,7 @@ function test_routing(next) {
 		utils.request(url + 'post/schema/', ['post'], 'age=Peter123456789012345678901234567890#', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '[{"name":"name","error":"default","path":"User.name"}]', 'post-schema');
+			assert(data === '[{"name":"name","error":"default","path":"User.name"}]', 'post-schema 2');
 			complete();
 		});
 	});
@@ -436,6 +436,24 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			assert(data === 'POST-GET-PUT-DELETE', 'multiple (PUT)');
+			complete();
+		});
+	});
+
+	async.await('regexp OK', function(complete) {
+		utils.request(url + 'reg/exp/12345/', ['get'], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '12345', 'regexp routing');
+			complete();
+		});
+	});
+
+	async.await('regexp NO', function(complete) {
+		utils.request(url + 'reg/exp/a12345/', ['get'], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 404, 'regexp routing (NO)');
 			complete();
 		});
 	});

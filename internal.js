@@ -1,6 +1,6 @@
 /**
  * @module FrameworkInternal
- * @version 1.8.0
+ * @version 1.8.1
  */
 
 'use strict';
@@ -294,6 +294,49 @@ exports.routeSplit = function(url, noLower) {
 		url = url.substring(0, url.length - 1);
 
 	var arr = url.split('/');
+	if (arr.length === 1 && arr[0] === '')
+		arr[0] = '/';
+
+	return arr;
+};
+
+exports.routeSplitCreate = function(url, noLower) {
+
+	if (!noLower)
+		url = url.toLowerCase();
+
+	if (url[0] === '/')
+		url = url.substring(1);
+
+	if (url[url.length - 1] === '/')
+		url = url.substring(0, url.length - 1);
+
+	var count = 0;
+	var end = 0;
+	var arr = [];
+
+	for (var i = 0, length = url.length; i < length; i++) {
+		switch (url[i]) {
+			case '/':
+				if (count !== 0)
+					break;
+				arr.push(url.substring(end + (arr.length === 0 ? 0 : 1), i));
+				end = i;
+				break;
+
+			case '{':
+				count++;
+				break;
+
+			case '}':
+				count--;
+				break;
+		}
+	}
+
+	if (count === 0)
+		arr.push(url.substring(end + (arr.length === 0 ? 0 : 1), url.length));
+
 	if (arr.length === 1 && arr[0] === '')
 		arr[0] = '/';
 

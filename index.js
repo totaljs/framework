@@ -195,7 +195,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-22';
+	this.version_header = '1.8.1-23';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -901,14 +901,36 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1 && flags.indexOf('unlogged') === -1)
 		isMember = true;
 
-	var routeURL = framework_internal.routeSplit(url.trim());
+	var routeURL = framework_internal.routeSplitCreate(url.trim());
 	var arr = [];
+	var reg = null;
+	var regIndex = null;
 
 	if (url.indexOf('{') !== -1) {
+
 		routeURL.forEach(function(o, i) {
-			if (o.substring(0, 1) === '{')
-				arr.push(i);
+			if (o.substring(0, 1) !== '{')
+				return;
+			arr.push(i);
+
+			var sub = o.substring(1, o.length - 1);
+
+			if (sub[0] !== '/')
+				return;
+
+			var index = sub.lastIndexOf('/');
+			if (index === -1)
+				return;
+
+			if (!reg) {
+				reg = {};
+				regIndex = [];
+			}
+
+			reg[i] = new RegExp(sub.substring(1, index), sub.substring(index + 1));
+			regIndex.push(i);
 		});
+
 		priority -= arr.length;
 	}
 
@@ -1002,8 +1024,11 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		isUPLOAD: flags.indexOf('upload') !== -1,
 		isSYSTEM: url.startsWith('/#'),
 		isCACHE: !url.startsWith('/#') && !CUSTOM && arr.length === 0 && !isASTERIX,
+		isPARAM: arr.length > 0,
 		CUSTOM: CUSTOM,
-		options: options
+		options: options,
+		regexp: reg,
+		regexpIndexer: regIndex
 	});
 
 	self.emit('route-add', 'web', self.routes.web[self.routes.web.length - 1]);
@@ -1255,14 +1280,36 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		priority = (-10) - priority;
 	}
 
+	var routeURL = framework_internal.routeSplitCreate(url.trim());
 	var arr = [];
-	var routeURL = framework_internal.routeSplit(url.trim());
+	var reg = null;
+	var regIndex = null;
 
 	if (url.indexOf('{') !== -1) {
+
 		routeURL.forEach(function(o, i) {
-			if (o.substring(0, 1) === '{')
-				arr.push(i);
+			if (o.substring(0, 1) !== '{')
+				return;
+			arr.push(i);
+
+			var sub = o.substring(1, o.length - 1);
+
+			if (sub[0] !== '/')
+				return;
+
+			var index = sub.lastIndexOf('/');
+			if (index === -1)
+				return;
+
+			if (!reg) {
+				reg = {};
+				regIndex = [];
+			}
+
+			reg[i] = new RegExp(sub.substring(1, index), sub.substring(index + 1));
+			regIndex.push(i);
 		});
+
 		priority -= arr.length;
 	}
 
@@ -1348,7 +1395,10 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		isRELEASE: flags.indexOf('release'),
 		CUSTOM: CUSTOM,
 		middleware: middleware,
-		options: options
+		options: options,
+		isPARAM: arr.length > 0,
+		regexp: reg,
+		regexpIndexer: regIndex
 	});
 
 	self.emit('route-add', 'websocket', self.routes.websockets[self.routes.websockets.length - 1]);
@@ -6173,7 +6223,6 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 		} else {
 			if (!framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
 				continue;
-
 			if (route.isASTERIX) {
 				if (!framework_internal.routeCompare(req.path, route.url, isSystem, true))
 					continue;
@@ -6189,6 +6238,26 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 				return route;
 			}
 			continue;
+		}
+
+		if (route.isPARAM && route.regexp) {
+			var skip = false;
+			for (var j = 0, l = route.regexpIndexer.length; j < l; j++) {
+
+				var p = req.path[route.regexpIndexer[j]];
+				if (p === undefined) {
+					skip = true;
+					break;
+				}
+
+				if (!route.regexp[route.regexpIndexer[j]].test(p)) {
+					skip = true;
+					break;
+				}
+			}
+
+			if (skip)
+				continue;
 		}
 
 		if (route.flags !== null && route.flags.length > 0) {
@@ -6232,7 +6301,6 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 		} else {
 			if (!framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
 				continue;
-
 			if (route.isASTERIX) {
 				if (!framework_internal.routeCompare(req.path, route.url, false, true))
 					continue;
@@ -6240,6 +6308,26 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 				if (!framework_internal.routeCompare(req.path, route.url, false))
 					continue;
 			}
+		}
+
+		if (route.isPARAM && route.regexp) {
+			var skip = false;
+			for (var j = 0, l = route.regexpIndexer.length; j < l; j++) {
+
+				var p = req.path[route.regexpIndexer[j]];
+				if (p === undefined) {
+					skip = true;
+					break;
+				}
+
+				if (!route.regexp[route.regexpIndexer[j]].test(p)) {
+					skip = true;
+					break;
+				}
+			}
+
+			if (skip)
+				continue;
 		}
 
 		if (route.flags !== null && route.flags.length > 0) {
@@ -6252,7 +6340,6 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 
 			if (result < 1)
 				continue;
-
 		}
 
 		return route;

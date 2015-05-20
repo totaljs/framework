@@ -2,19 +2,26 @@ ECHO "[COMPILING]"
 cd ..
 mkdir minify/total.js/bin/
 ECHO "....... builders.js"
-uglifyjs builders.js -o minify/total.js/builders.js
+cp builders.js minify/total.js/builders.js
+#uglifyjs builders.js -o minify/total.js/builders.js
 ECHO "....... image.js"
-uglifyjs image.js -o minify/total.js/image.js
+cp image.js minify/total.js/image.js
+#uglifyjs image.js -o minify/total.js/image.js
 ECHO "....... index.js"
-uglifyjs index.js -o minify/total.js/index.js
+cp index.js minify/total.js/index.js
+#uglifyjs index.js -o minify/total.js/index.js
 ECHO "....... internal.js"
-uglifyjs internal.js -o minify/total.js/internal.js
+cp internal.js minify/total.js/internal.js
+#uglifyjs internal.js -o minify/total.js/internal.js
 ECHO "....... mail.js"
-uglifyjs mail.js -o minify/total.js/mail.js
+cp mail.js minify/total.js/mail.js
+#uglifyjs mail.js -o minify/total.js/mail.js
 ECHO "....... nosql.js"
-uglifyjs nosql.js -o minify/total.js/nosql.js
+cp nosql.js minify/total.js/nosql.js
+#uglifyjs nosql.js -o minify/total.js/nosql.js
 ECHO "....... utils.js"
-uglifyjs utils.js -o minify/total.js/utils.js
+cp utils.js minify/total.js/utils.js
+#uglifyjs utils.js -o minify/total.js/utils.js
 ECHO "....... binary - total"
 uglifyjs bin/total -o minify/total.js/bin/total
 ECHO "....... binary - tpm"

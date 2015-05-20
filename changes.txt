@@ -9,6 +9,7 @@ BETA ======= 1.8.1
 - added: Controller.ping() for WebSocket
 - added: global.DB() --> same as global.DATABASE()
 - added: `config['allow-compatibility'] = true` - a backward compatibility mode (in newest version 1.9 will be set to `false`)
+- added: RegExp routing F.route('/{/^\\d+$/}', ...)
 
 - updated: F.route(url, ...), F.websocket(url, ...) --> URL can be function(url, req, [flags])
 - updated: `config['allow-performance']` is set to true

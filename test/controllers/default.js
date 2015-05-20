@@ -38,6 +38,7 @@ exports.install = function() {
     framework.route('/usage/', view_usage);
     framework.route('/sse/', viewSSE_html);
     framework.route('/pipe/', pipe);
+    framework.route('/reg/exp/{/^\\d+$/}/', regexp);
     framework.route('/app/*', asterix);
     framework.route('/sse/', viewSSE, ['sse']);
     framework.route('/http/', viewHTTP, ['http']);
@@ -673,4 +674,8 @@ function viewHTTPS() {
 function view_compressor() {
     var self = this;
     self.view('compress', { name: 'Peter' });
+}
+
+function regexp(number) {
+    this.plain(number);
 }
