@@ -195,7 +195,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-23';
+	this.version_header = '1.8.1-24';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -973,7 +973,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	if (flags.indexOf('referer') !== -1)
 		self._request_check_referer = true;
 
-	if (!self._request_check_POST && (flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
+	if (!self._request_check_POST && (flags.indexOf('delete') !== -1 || flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
 		self._request_check_POST = true;
 
 	if (!middleware || (!(middleware instanceof Array)) || middleware.length === 0)
@@ -4769,35 +4769,34 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	var method = req.method;
     var first = method[0];
 
-    // [P]OST, [P]UT
-    if (first !== 'P') {
-        switch (first) {
-            case 'D':
-                self.stats.request['delete']++;
-                break;
-            case 'G':
-                self.stats.request.get++;
-                break;
-            case 'H':
-                self.stats.request.head++;
-                break;
-        }
-        new Subscribe(self, req, res, 0).end();
-        return self;
-    }
-
-    if (self._request_check_POST && (first === 'P')) {
-        if (multipart) {
-            self.stats.request.upload++;
-            new Subscribe(self, req, res, 2).multipart(multipart);
-        } else {
-            if (method === 'PUT')
-                self.stats.request.put++;
-            else
-                self.stats.request.post++;
+    switch (first) {
+    	case 'G':
+            self.stats.request.get++;
+	        new Subscribe(self, req, res, 0).end();
+    		return self;
+    	case 'H':
+			self.stats.request.head++;
+	        new Subscribe(self, req, res, 0).end();
+    		return self;
+    	case 'D':
+           	self.stats.request['delete']++;
             new Subscribe(self, req, res, 1).urlencoded();
-        }
-        return self;
+            return self;
+        case 'P':
+        	if (self._request_check_POST) {
+		        if (multipart) {
+		            self.stats.request.upload++;
+		            new Subscribe(self, req, res, 2).multipart(multipart);
+		        } else {
+		            if (method === 'PUT')
+		                self.stats.request.put++;
+		            else
+		                self.stats.request.post++;
+		            new Subscribe(self, req, res, 1).urlencoded();
+		        }
+	        	return self;
+		    }
+		    break;
     }
 
 	self.emit('request-end', req, res);
