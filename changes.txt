@@ -26,6 +26,7 @@ BETA ======= 1.8.1
 
 - removed: XSS check
 
+- fixed: binary (creating empty-project, bad record with smtp options)
 - fixed: calling generator action
 - fixed: binary --translate (filenames)
 - fixed: SchemaBuilderEntity prepare (problem with nullable Boolean)

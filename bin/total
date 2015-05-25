@@ -111,7 +111,7 @@ function createFileConfig(directory) {
     buffer.push("");
     buffer.push("// Mail settings");
     buffer.push("mail.smtp                : smtp.yourwebsite.com");
-    buffer.push('mail.smtp.options        : "{"secure":false,"port":25,"user":"","password":"","timeout":10000}"');
+    buffer.push('mail.smtp.options        : {"secure":false,"port":25,"user":"","password":"","timeout":10000}');
     buffer.push("mail.address.from        : your@yourwebsite.com");
     buffer.push("mail.address.reply       : your@yourwebsite.com");
     buffer.push("mail.address.bcc         : ");
