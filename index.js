@@ -195,7 +195,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-24';
+	this.version_header = '1.8.1-25';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -943,7 +943,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	}
 
 	// commented: flags.indexOf('get') === -1 && because we can have: route('/', ..., ['json', 'get']);
-	if ((flags.indexOf('json') !== -1 || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
+	if ((flags.indexOf('json') !== -1 || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('delete') === -1 && flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
 		flags.push('post');
 		method += (method ? ',' : '') + 'post';
 		priority++;
