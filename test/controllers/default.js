@@ -38,6 +38,7 @@ exports.install = function() {
     framework.route('/usage/', view_usage);
     framework.route('/sse/', viewSSE_html);
     framework.route('/pipe/', pipe);
+    framework.route('/binary/', binary);
     framework.route('/reg/exp/{/^\\d+$/}/', regexp);
     framework.route('/app/*', asterix);
     framework.route('/sse/', viewSSE, ['sse']);
@@ -641,7 +642,6 @@ function viewLive() {
     var self = this;
 
     self.mixed.beg();
-
     self.mixed.send('/users/petersirka/desktop/aaaaa/1.jpg');
 
     setTimeout(function() {
@@ -678,4 +678,8 @@ function view_compressor() {
 
 function regexp(number) {
     this.plain(number);
+}
+
+function binary() {
+    this.binary(new Buffer('čťž'), 'text/plain', 'utf8');
 }

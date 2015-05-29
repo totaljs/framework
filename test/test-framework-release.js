@@ -149,6 +149,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('binary', function(complete) {
+		utils.request(url + 'binary/', ['get'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'čťž', 'binary');
+			complete();
+		});
+	});
+
 	async.await('rest GET', function(complete) {
 		utils.request(url + 'rest/', ['get'], null, function(error, data, code, headers) {
 			if (error)

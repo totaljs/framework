@@ -1,38 +1,42 @@
 BETA ======= 1.8.1
 
 - added: `config['disable-clear-temporary-directory'] = false` (after start)
-- added: SchemaBuilderEntity.filter(custom, [model]);
-- added: SchemaBuilderEntity.autotrim = true (enable/disable trim strings (default: true))
+- added: `SchemaBuilderEntity.filter(custom, [model])`
+- added: `SchemaBuilderEntity.trim = true`(enable/disable trim strings (default: true))
 - added: cache for HTTP routing
 - added: `config['directory-private']`
-- added: F.path.private([filename])
-- added: Controller.ping() for WebSocket
-- added: global.DB() --> same as global.DATABASE()
+- added: `F.path.private([filename])`
+- added: `Controller.ping()` for WebSocket
+- added: `global.DB()` --> same as `global.DATABASE()`
 - added: `config['allow-compatibility'] = true` - a backward compatibility mode (in newest version 1.9 will be set to `false`)
 - added: RegExp routing `F.route('/{/^\\d+$/}', ...)`
+- added: `F.responseBinary(req, res, contentType, buffer, [type], [download], [headers])`
+- added: `Date.prototype.toUTC([ticksOnly])`
 
-- updated: F.route(url, ...), F.websocket(url, ...) --> URL can be function(url, req, [flags])
+- updated: `F.route(url, ...)`, `F.websocket(url, ...)` --> URL can be function(url, req, [flags])
 - updated: `config['allow-performance']` is set to true
-- updated: (IMPORTANT) F.map(url, filename/directory, [filter]) supports mapping directories
-- updated: (IMPORTANT) arguments order SchemaBuilderEntity.setValidate(function(name, value, path, model, schema){})
-- updated: (IMPORTANT) U.extend(target, source, [rewrite]); --> rewrite is by default: __true__
-- updated: SchemaBuilderEntity.setPrepare(function(name, value, index, model){}) --> __model__ is new
-- updated: SchemaBuilderEntity.define(name, value, required, [custom]) --> __custom__ is new
+- updated: (IMPORTANT) `F.map(url, filename/directory, [filter])` supports mapping directories
+- updated: (IMPORTANT) arguments order `SchemaBuilderEntity.setValidate(function(name, value, path, model, schema){})`
+- updated: (IMPORTANT) `U.extend(target, source, [rewrite]);` --> rewrite is by default: __true__
+- updated: `SchemaBuilderEntity.setPrepare(function(name, value, index, model){})` --> __model__ is new
+- updated: `SchemaBuilderEntity.define(name, value, required, [custom])` --> __custom__ is new
 - updated: HTML compressor
-- updated: favicon (removed rel="icon")
+- updated: favicon `(removed rel="icon")`
 - updated: binary `tpm create [package] [directory]` (added argument [package], [directory])
 - updated: better handling middleware errors and added prevention of "memory leak"
 - updated: (IMPORTANT): Websocket ping is set to 3 minutes
+- updated: framework responds for bad requests with HTTP 403
 
 - removed: XSS check
 
+- fixed: `controller.binary(buffer, contentType, [download], [headers])`
 - fixed: routing `DELETE`
-- fixed: binary (creating empty-project, bad record with smtp options)
+- fixed: `binary` (creating empty-project, bad record with smtp options)
 - fixed: calling generator action
-- fixed: binary --translate (filenames)
+- fixed: `binary --translate` (filenames)
 - fixed: SchemaBuilderEntity prepare (problem with nullable Boolean)
 - fixed: (IMPORTANT) 431 system route
-
+- 
 - improved: code optimalization
 
 __IMPORTANT:__

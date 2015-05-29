@@ -2071,6 +2071,11 @@ Date.prototype.format = function(format) {
 	return format.replace(/yyyy/g, yyyy).replace(/yy/g, yy).replace(/MM/g, MM).replace(/M/g, M).replace(/dd/g, dd).replace(/d/g, d).replace(/HH/g, HH).replace(/H/g, H).replace(/hh/g, hh).replace(/h/g, h).replace(/mm/g, mm).replace(/m/g, m).replace(/ss/g, ss).replace(/s/g, ss).replace(/a/g, a);
 };
 
+Date.prototype.toUTC = function(ticks) {
+	var dt = this.getTime() + this.getTimezoneOffset() * 60000;
+	return ticks ? dt : new Date(dt);
+};
+
 if (!String.prototype.trim) {
 	String.prototype.trim = function() {
 		return this.replace(regexpTRIM, '');

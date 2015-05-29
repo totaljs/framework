@@ -103,7 +103,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 	this.parent = parent;
 	this.name = name;
 	this.primary;
-	this.autotrim = true;
+	this.trim = true;
 	this.schema = obj;
 	this.properties = properties === undefined ? Object.keys(obj) : properties;
 	this.resourcePrefix;
@@ -1298,7 +1298,7 @@ SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = functi
 };
 
 function autotrim(context, value) {
-	if (context.autotrim)
+	if (context.trim)
 		return value.trim();
 	return value;
 }

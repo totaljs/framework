@@ -195,7 +195,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-25';
+	this.version_header = '1.8.1-26';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -3865,6 +3865,93 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 	return self;
 };
 
+/**
+ * Responses binary
+ * @param {ServerRequest} req
+ * @param {ServerResponse} res
+ * @param {String} contentType
+ * @param {Buffer} buffer
+ * @param {String} download Optional, download name.
+ * @param {Object} headers Optional
+ * @return {Framework}
+ */
+Framework.prototype.responseBinary = function(req, res, contentType, buffer, encoding, download, headers, done) {
+
+	var self = this;
+
+	if (res.success || res.headersSent) {
+		if (done)
+			done();
+		return self;
+	}
+
+	req.clear(true);
+
+	if (contentType.lastIndexOf('/') === -1)
+		contentType = utils.getContentType(contentType);
+
+	var accept = req.headers['accept-encoding'] || '';
+	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.lastIndexOf('gzip') !== -1;
+	var returnHeaders = {};
+
+	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public';
+	returnHeaders['Vary'] = 'Accept-Encoding';
+
+	if (headers)
+		utils.extend(returnHeaders, headers, true);
+
+	download = download || '';
+
+	if (download)
+		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(download);
+
+	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
+
+	self.stats.response.binary++;
+	self._request_stats(false, req.isStaticFile);
+
+	if (req.method === 'HEAD') {
+		if (compress)
+			returnHeaders['Content-Encoding'] = 'gzip';
+		res.writeHead(200, returnHeaders);
+		res.end();
+		if (done)
+			done();
+		if (!req.isStaticFile)
+			self.emit('request-end', req, res);
+		return self;
+	}
+
+	if (compress) {
+
+		returnHeaders['Content-Encoding'] = 'gzip';
+		res.writeHead(200, returnHeaders);
+
+		zlib.gzip(buffer.toString(encoding || 'binary'), function(err, buffer) {
+			res.end(buffer);
+		});
+
+		if (done)
+			done();
+
+		if (!req.isStaticFile)
+			self.emit('request-end', req, res);
+
+		return self;
+	}
+
+	res.writeHead(200, returnHeaders);
+	res.end(buffer.toString(encoding || 'binary'));
+
+	if (done)
+		done();
+
+	if (!req.isStaticFile)
+		self.emit('request-end', req, res);
+
+	return self;
+};
+
 /*
 	Set last modified header or Etag
 	@req {ServerRequest}
@@ -4587,7 +4674,8 @@ Framework.prototype._request = function(req, res) {
 		if (self.restrictions.isAllowedIP) {
 			if (self.restrictions.allowedIP.indexOf(req.ip) === -1) {
 				self.stats.response.restriction++;
-				req.connection.destroy();
+				res.writeHead(403);
+				res.end();
 				return self;
 			}
 		}
@@ -4595,7 +4683,8 @@ Framework.prototype._request = function(req, res) {
 		if (self.restrictions.isBlockedIP) {
 			if (self.restrictions.blockedIP.indexOf(req.ip) !== -1) {
 				self.stats.response.restriction++;
-				req.connection.destroy();
+				res.writeHead(403);
+				res.end();
 				return self;
 			}
 		}
@@ -4603,7 +4692,8 @@ Framework.prototype._request = function(req, res) {
 		if (self.restrictions.isAllowedCustom) {
 			if (!self.restrictions._allowedCustom(headers)) {
 				self.stats.response.restriction++;
-				req.connection.destroy();
+				res.writeHead(403);
+				res.end();
 				return self;
 			}
 		}
@@ -4611,7 +4701,8 @@ Framework.prototype._request = function(req, res) {
 		if (self.restrictions.isBlockedCustom) {
 			if (self.restrictions._blockedCustom(headers)) {
 				self.stats.response.restriction++;
-				req.connection.destroy();
+				res.writeHead(403);
+				res.end();
 				return self;
 			}
 		}
@@ -4802,7 +4893,8 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	self.emit('request-end', req, res);
 	self._request_stats(false, false);
 	self.stats.request.blocked++;
-	req.connection.destroy();
+	res.writeHead(403);
+	res.end();
 	return self;
 };
 
@@ -4830,7 +4922,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		if (self.restrictions.isAllowedIP) {
 			if (self.restrictions.allowedIP.indexOf(req.ip) === -1) {
 				self.stats.response.restriction++;
-				req.connection.destroy();
+				res.writeHead(403);
+				res.end();
 				return self;
 			}
 		}
@@ -4838,7 +4931,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		if (self.restrictions.isBlockedIP) {
 			if (self.restrictions.blockedIP.indexOf(req.ip) !== -1) {
 				self.stats.response.restriction++;
-				req.connection.destroy();
+				res.writeHead(403);
+				res.end();
 				return self;
 			}
 		}
@@ -4846,7 +4940,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		if (self.restrictions.isAllowedCustom) {
 			if (!self.restrictions._allowedCustom(headers)) {
 				self.stats.response.restriction++;
-				req.connection.destroy();
+				res.writeHead(403);
+				res.end();
 				return self;
 			}
 		}
@@ -4854,7 +4949,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		if (self.restrictions.isBlockedCustom) {
 			if (self.restrictions._blockedCustom(headers)) {
 				self.stats.response.restriction++;
-				req.connection.destroy();
+				res.writeHead(403);
+				res.end();
 				return self;
 			}
 		}
@@ -7466,7 +7562,8 @@ Subscribe.prototype.multipart = function(header) {
 	if (self.route === null) {
 		framework._request_stats(false, false);
 		framework.stats.request.blocked++;
-		req.connection.destroy();
+		self.res.writeHead(403);
+		self.res.end();
 		return self;
 	}
 
@@ -7484,7 +7581,8 @@ Subscribe.prototype.urlencoded = function() {
 		self.req.clear(true);
 		framework.stats.request.blocked++;
 		framework._request_stats(false, false);
-		self.req.connection.destroy();
+		self.res.writeHead(403);
+		self.res.end();
 		return self;
 	}
 
@@ -10656,30 +10754,32 @@ Controller.prototype.redirect = function(url, permanent) {
 /**
  * A binary response
  * @param {Buffer} buffer
+ * @param {String} contentType
+ * @param {String} type Transformation type: `binary`, `utf8`, `ascii`.
+ * @param {String} download Optional, download name.
+ * @param {Object} headers Optional, additional headers.
  * @return {FrameworkController}
  */
-Controller.prototype.binary = function(buffer) {
-
+Controller.prototype.binary = function(buffer, contentType, type, download, headers) {
 	var self = this;
 	var res = self.res;
-
-	if (res.success || !self.isConnected)
+	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	var req = self.req;
+	if (typeof(type) === OBJECT) {
+		var tmp = type;
+		type = download;
+		download = headers;
+		headers = tmp;
+	}
+
+	if (typeof(download) === OBJECT) {
+		headers = download;
+		download = headers;
+	}
 
 	self.subscribe.success();
-
-	req.clear(true);
-
-	res.success = true;
-	res.write(buffer.toString('binary'), 'binary');
-	res.end();
-
-	framework._request_stats(false, false);
-	framework.emit('request-end', req, res);
-	framework.stats.response.binary++;
-
+	framework.responseBinary(self.req, res, contentType, buffer, type, download, headers);
 	return self;
 };
 

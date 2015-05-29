@@ -235,6 +235,14 @@ Image.prototype.save = function(filename, callback, writer) {
 
 	var cmd = exec(command, function(error, stdout, stderr) {
 
+		FINISHED(stdout, function() {
+			DESTROY(stdout);
+		});
+
+ 		// clean up
+		cmd.kill();
+		cmd = null;
+
 		self.clear();
 		if (!callback)
 			return;
@@ -251,6 +259,10 @@ Image.prototype.save = function(filename, callback, writer) {
 		else
 			self.currentStream.pipe(cmd.stdin);
 	}
+
+	FINISHED(cmd.stdin, function() {
+		DESTROY(cmd.stdin);
+	});
 
 	if (writer)
 		writer(cmd.stdin);
