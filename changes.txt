@@ -26,6 +26,7 @@ BETA ======= 1.8.1
 - updated: better handling middleware errors and added prevention of "memory leak"
 - updated: (IMPORTANT): Websocket ping is set to 3 minutes
 - updated: framework responds for bad requests with HTTP 403
+- updated: Mail (added support for Office365)
 
 - removed: XSS check
 
