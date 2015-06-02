@@ -12,6 +12,7 @@ BETA ======= 1.8.1
 - added: RegExp routing `F.route('/{/^\\d+$/}', ...)`
 - added: `F.responseBinary(req, res, contentType, buffer, [type], [download], [headers])`
 - added: `Date.prototype.toUTC([ticksOnly])`
+- added: `Date.prototype.extend()` -> extend current datetime about new date or time (more in documentation)
 
 - updated: `F.route(url, ...)`, `F.websocket(url, ...)` --> URL can be function(url, req, [flags])
 - updated: `config['allow-performance']` is set to true
