@@ -34,6 +34,7 @@ var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var CONTENTTYPE_TEXTHTML = 'text/html';
 var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
 var TEMPORARY_KEY_REGEX = /\//g;
+var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
 
 var _controller = '';
 var _test;
@@ -195,7 +196,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-26';
+	this.version_header = '1.8.1-28';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -798,6 +799,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	var method = '';
 	var schema;
 	var isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
+	var isMOBILE = false;
 
 	if (flags) {
 
@@ -831,7 +833,6 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
 			count++;
 			var flag = flags[i].toString().toLowerCase();
-
 			switch (flag) {
 
 				case 'xss':
@@ -850,6 +851,9 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 					continue;
 				case 'raw':
 					isRaw = true;
+					break;
+				case 'mobile':
+					isMOBILE = true;
 					break;
 				case 'authorize':
 				case 'authorized':
@@ -1010,6 +1014,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		isJSON: flags.indexOf('json') !== -1,
 		isXML: flags.indexOf('xml') !== -1,
 		isRAW: isRaw,
+		isMOBILE: isMOBILE,
 		isGENERATOR: isGENERATOR,
 		isMEMBER: isMember,
 		isASTERIX: isASTERIX,
@@ -1074,7 +1079,6 @@ Framework.prototype.merge = function(url) {
 	for (var i = 1, length = arguments.length; i < length; i++) {
 
 		var items = arguments[i];
-
 		if (!(items instanceof Array))
 			items = [items];
 
@@ -1089,6 +1093,7 @@ Framework.prototype.merge = function(url) {
 	if (url[0] !== '/')
 		url = '/' + url;
 
+	url = self._version(url);
 	var filename = self.path.temp('merge-' + createTemporaryKey(url));
 	self.routes.merge[url] = { filename: filename, files: arr };
 	return self;
@@ -1112,6 +1117,8 @@ Framework.prototype.map = function(url, filename, filter) {
 
 	var isPackage = false;
 	var self = this;
+
+	url = self._version(url);
 
 	if (filename[0] === '@') {
 		filename = self.path.package(filename.substring(1));
@@ -4726,6 +4733,8 @@ Framework.prototype._request = function(req, res) {
 	req.isStaticFile = framework.config['allow-handle-static-files'] ? utils.isStaticFile(req.uri.pathname) : false;
 	if (req.isStaticFile)
 		req.extension = path.extname(req.uri.pathname).substring(1);
+	else
+		req.mobile = REG_MOBILE.test(req.headers['user-agent']);
 
 	if (self.onLocate)
 		req.$language = self.onLocate(req, res, req.isStaticFile);
@@ -4801,6 +4810,9 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 	var flags = [req.method.toLowerCase()];
 	var multipart = req.headers['content-type'] || '';
+
+	if (req.mobile)
+		req.$flags += '_m_';
 
 	req.$flags += protocol;
 	flags.push(protocol);
@@ -11042,7 +11054,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var helpers = framework.helpers;
 
 	try {
-		value = generator.call(self, self, self.repository, model, self.session, self.get, self.post, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, isPartial ? self.outputPartial : self.output, self.date, self.req.cookie, self.req.files);
+		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, isPartial ? self.outputPartial : self.output, self.date, self.req.cookie, self.req.files, self.req.mobile);
 	} catch (ex) {
 
 		var err = new Error('View: ' + name + ' - ' + ex.toString());
@@ -11054,13 +11066,10 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 		self.error(err);
 
-		if (self.isPartial) {
-			//value = self.outputPartial; // What is this? :-)
+		if (self.isPartial)
 			self.outputPartial = '';
-		} else {
-			//value = self.output; // What is this? :-)
+		else
 			self.output = '';
-		}
 
 		isLayout = false;
 		return value;

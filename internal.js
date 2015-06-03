@@ -439,13 +439,14 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 	if (!route.isWEBSOCKET) {
 		if (route.isXHR && !req.xhr)
 			return 0;
+		if (route.isMOBILE && !req.mobile)
+			return 0;
 		var method = req.method;
 		if (route.method) {
 			if (route.method !== method)
 				return 0;
 		} else if (route.flags.indexOf(method.toLowerCase()) === -1)
 			return 0;
-
 		if (route.isREFERER && req.flags.indexOf('referer') === -1)
 			return 0;
 		if (!route.isMULTIPLE && route.isJSON && req.flags.indexOf('json') === -1)
@@ -1852,7 +1853,7 @@ function view_parse(content, minify) {
 			builder += '+' + escaper(text);
 	}
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,files){var get=query;var post=body;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
 }
 
@@ -1948,6 +1949,9 @@ function view_prepare(command, dynamicCommand, functions) {
 			return '$STRING(' + command + ').encode()';
 
 		case 'files':
+			return command;
+
+		case 'mobile':
 			return command;
 
 		case 'CONFIG':

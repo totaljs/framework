@@ -39,6 +39,8 @@ exports.install = function() {
     framework.route('/sse/', viewSSE_html);
     framework.route('/pipe/', pipe);
     framework.route('/binary/', binary);
+    framework.route('/mobile/', mobile, ['mobile']);
+    framework.route('/mobile/', mobile_none);
     framework.route('/reg/exp/{/^\\d+$/}/', regexp);
     framework.route('/app/*', asterix);
     framework.route('/sse/', viewSSE, ['sse']);
@@ -526,6 +528,7 @@ function viewViews() {
     //self.framework.stop();
     //return;
 
+    assert.ok(output.contains('#mobilefalse#'), name + 'mobile');
     assert.ok(output.contains('<count>10</count>'), name + 'inline helper');
     assert.ok(output.contains('<count>40</count><next>40</next>'), name + 'inline helper + condition');
     assert.ok(output.contains('HELPER:1-<count>1</count><next>0</next>'), name + 'inline helper + foreach 1');
@@ -682,4 +685,12 @@ function regexp(number) {
 
 function binary() {
     this.binary(new Buffer('čťž'), 'text/plain', 'utf8');
+}
+
+function mobile() {
+    this.plain('X');
+}
+
+function mobile_none() {
+    this.plain('NO-MOBILE');
 }

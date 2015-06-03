@@ -149,6 +149,24 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('mobile - 1', function(complete) {
+		utils.request(url + 'mobile/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data !== 'X', 'mobile device routing problem 1');
+			complete();
+		});
+	});
+
+	async.await('mobile - 2', function(complete) {
+		utils.request(url + 'mobile/?ok=true', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'X', 'mobile device routing problem 2');
+			complete();
+		}, null, { 'user-agent': 'bla bla iPad bla' });
+	});
+
 	async.await('binary', function(complete) {
 		utils.request(url + 'binary/', ['get'], null, function(error, data, code, headers) {
 			if (error)

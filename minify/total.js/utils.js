@@ -41,6 +41,8 @@ var expressionCache = {};
 var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 var regexpTRIM = /^[\s]+|[\s]+$/g;
+var regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
+var regexpSTATIC = /\.\w{2,8}($|\?)+/;
 var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
@@ -1113,8 +1115,7 @@ exports.decode = function(str) {
  * @return {Boolean}
  */
 exports.isStaticFile = function(url) {
-	var pattern = /\.\w{2,8}($|\?)+/g;
-	return pattern.test(url);
+	return regexpSTATIC.test(url);
 };
 
 /**
@@ -2012,6 +2013,85 @@ Date.prototype.diff = function(date, type) {
 	}
 
 	return;
+};
+
+Date.prototype.extend = function(date) {
+	var dt = new Date(this);
+	var match = date.match(regexpDATE);
+
+	if (!match)
+		return dt;
+
+	for (var i = 0, length = match.length; i < length; i++) {
+		var m = match[i];
+		var arr, tmp;
+
+		if (m.indexOf(':') !== -1) {
+
+			arr = m.split(':');
+			tmp = parseInt(arr[0], 10);
+			if (!isNaN(tmp))
+				dt.setHours(tmp);
+
+			if (arr[1]) {
+				tmp = parseInt(arr[1], 10);
+				if (!isNaN(tmp))
+					dt.setMinutes(tmp);
+			}
+
+			if (arr[2]) {
+				tmp = parseInt(arr[2], 10);
+				if (!isNaN(tmp))
+					dt.setSeconds(tmp);
+			}
+
+			continue;
+		}
+
+		if (m.indexOf('-') !== -1) {
+			arr = m.split('-');
+
+			tmp = parseInt(arr[0]);
+			dt.setFullYear(tmp);
+
+			if (arr[1]) {
+				tmp = parseInt(arr[1], 10);
+				if (!isNaN(tmp))
+					dt.setMonth(tmp - 1);
+			}
+
+			if (arr[2]) {
+				tmp = parseInt(arr[2], 10);
+				if (!isNaN(tmp))
+					dt.setDate(tmp);
+			}
+
+			continue;
+		}
+
+		if (m.indexOf('.') !== -1) {
+			arr = m.split('.');
+
+			tmp = parseInt(arr[0], 10);
+			dt.setDate(tmp);
+
+			if (arr[1]) {
+				tmp = parseInt(arr[1], 10);
+				if (!isNaN(tmp))
+					dt.setMonth(tmp - 1);
+			}
+
+			if (arr[2]) {
+				tmp = parseInt(arr[2]);
+				if (!isNaN(tmp))
+					dt.setFullYear(tmp);
+			}
+
+			continue;
+		}
+	}
+
+	return dt;
 };
 
 /**
