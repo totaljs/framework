@@ -15,6 +15,7 @@ BETA ======= 1.8.1
 - added: `Date.prototype.extend()` -> extend current datetime about new date or time (more in documentation)
 - added: new flag `mobile` (mobile routing), you can create a route to mobile device
 - added: readonly `req.mobile` -> returns `boolean`
+- added: new view tag: @{mobile} –> returns `boolean`
 
 - updated: `F.route(url, ...)`, `F.websocket(url, ...)` --> URL can be function(url, req, [flags])
 - updated: `versions` affects F.map() and F.merge() 
