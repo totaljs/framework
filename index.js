@@ -6278,7 +6278,7 @@ Framework.prototype.routeStatic = function(name) {
 	return {String}
 */
 Framework.prototype._routeStatic = function(name, directory) {
-	return directory + this._version(name);
+	return this._version(directory + this._version(name));
 };
 
 /*
