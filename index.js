@@ -196,7 +196,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-28';
+	this.version_header = '1.8.1-29';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -357,7 +357,9 @@ function Framework() {
 			put: 0,
 			upload: 0,
 			blocked: 0,
-			'delete': 0
+			'delete': 0,
+			mobile: 0,
+			desktop: 0
 		},
 		response: {
 			view: 0,
@@ -4726,6 +4728,7 @@ Framework.prototype._request = function(req, res) {
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	res.success = false;
 	res.setHeader('X-Powered-By', 'total.js v' + self.version_header);
+	req.mobile = REG_MOBILE.test(req.headers['user-agent']);
 
 	if (self.isDebug)
 		res.setHeader('Mode', 'debug');
@@ -4733,8 +4736,6 @@ Framework.prototype._request = function(req, res) {
 	req.isStaticFile = framework.config['allow-handle-static-files'] ? utils.isStaticFile(req.uri.pathname) : false;
 	if (req.isStaticFile)
 		req.extension = path.extname(req.uri.pathname).substring(1);
-	else
-		req.mobile = REG_MOBILE.test(req.headers['user-agent']);
 
 	if (self.onLocate)
 		req.$language = self.onLocate(req, res, req.isStaticFile);
@@ -4811,8 +4812,11 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	var flags = [req.method.toLowerCase()];
 	var multipart = req.headers['content-type'] || '';
 
-	if (req.mobile)
+	if (req.mobile) {
 		req.$flags += '_m_';
+		self.stats.request.mobile++;
+	} else
+		self.stats.request.desktop++;
 
 	req.$flags += protocol;
 	flags.push(protocol);
