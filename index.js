@@ -253,6 +253,7 @@ function Framework() {
 		'default-websocket-request-length': 2,
 		'default-websocket-encodedecode': true,
 		'default-maximum-file-descriptors': 0,
+		'default-timezone': '',
 
 		// in milliseconds
 		'default-request-timeout': 5000,
@@ -6185,6 +6186,9 @@ Framework.prototype._configure = function(arr, rewrite) {
 		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');
 
 	process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
+
+	if (self.config['default-timezone'])
+		process.env.TZ = self.config['default-timezone'];
 
 	if (accepts !== null && accepts.length > 0) {
 		accepts.forEach(function(accept) {

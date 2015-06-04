@@ -1,6 +1,7 @@
 BETA ======= 1.8.1
 
 - added: `config['disable-clear-temporary-directory'] = false` (after start)
+- added: `config['default-timezone']`
 - added: `SchemaBuilderEntity.filter(custom, [model])`
 - added: `SchemaBuilderEntity.trim = true`(enable/disable trim strings (default: true))
 - added: cache for HTTP routing
