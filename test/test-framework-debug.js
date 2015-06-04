@@ -153,6 +153,7 @@ function test_routing(next) {
 		utils.request(url + 'mobile/', 'GET', null, function(error, data, code, headers) {
 			if (error)
 				throw error;
+			assert(headers['vary'] === 'Accept-Encoding, User-Agent', 'mobile device user-agent problem 1');
 			assert(data !== 'X', 'mobile device routing problem 1');
 			complete();
 		});
@@ -162,6 +163,7 @@ function test_routing(next) {
 		utils.request(url + 'mobile/?ok=true', 'GET', null, function(error, data, code, headers) {
 			if (error)
 				throw error;
+			assert(headers['vary'] === 'Accept-Encoding, User-Agent', 'mobile device user-agent problem 2');
 			assert(data === 'X', 'mobile device routing problem 2');
 			complete();
 		}, null, { 'user-agent': 'bla bla iPad bla' });

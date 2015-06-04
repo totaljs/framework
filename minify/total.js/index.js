@@ -217,7 +217,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-28';
+	this.version_header = '1.8.1-29';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -378,7 +378,9 @@ function Framework() {
 			put: 0,
 			upload: 0,
 			blocked: 0,
-			'delete': 0
+			'delete': 0,
+			mobile: 0,
+			desktop: 0
 		},
 		response: {
 			view: 0,
@@ -510,6 +512,31 @@ Framework.prototype._routesSort = function() {
 			return 1;
 		return 0;
 	});
+
+	var cache = {};
+	var length = self.routes.web.length;
+
+	for (var i = 0; i < length; i++) {
+		var route = self.routes.web[i];
+		if (!route.isMOBILE)
+			continue;
+		if (route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML)
+			continue;
+		if (route.flags.indexOf('get') === -1)
+			continue;
+		var url = route.url.join('/');
+		cache[url] = true;
+	}
+
+	for (var i = 0; i < length; i++) {
+		var route = self.routes.web[i];
+		if (route.isMOBILE || route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML)
+			continue;
+		if (route.flags.indexOf('get') === -1)
+			continue;
+		var url = route.url.join('/');
+		route.isMOBILE_VARY = cache[url] === true;
+	}
 
 	return self;
 };
@@ -1036,6 +1063,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		isXML: flags.indexOf('xml') !== -1,
 		isRAW: isRaw,
 		isMOBILE: isMOBILE,
+		isMOBILE_VARY: isMOBILE,
 		isGENERATOR: isGENERATOR,
 		isMEMBER: isMember,
 		isASTERIX: isASTERIX,
@@ -3253,7 +3281,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (RELEASE && !res.getHeader('Expires'))
 		returnHeaders['Expires'] = new Date().add('M', 3);
 
-	returnHeaders['Vary'] = 'Accept-Encoding';
+	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
@@ -3388,7 +3416,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 			res.setHeader('Content-Disposition', attachment);
 
 		res.setHeader(RESPONSE_HEADER_CONTENTTYPE, contentType);
-		res.setHeader('Vary', 'Accept-Encoding');
+		res.setHeader('Vary', 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : ''));
 
 		res.on('error', function() {
 			response.close();
@@ -3752,7 +3780,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (RELEASE)
 		returnHeaders['Expires'] = new Date().add('M', 3);
 
-	returnHeaders['Vary'] = 'Accept-Encoding';
+	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
@@ -3923,7 +3951,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	var returnHeaders = {};
 
 	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public';
-	returnHeaders['Vary'] = 'Accept-Encoding';
+	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
@@ -4203,7 +4231,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	var gzip = compress ? accept.lastIndexOf('gzip') !== -1 : false;
 
 	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'private';
-	returnHeaders['Vary'] = 'Accept-Encoding';
+	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
@@ -4747,6 +4775,7 @@ Framework.prototype._request = function(req, res) {
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	res.success = false;
 	res.setHeader('X-Powered-By', 'total.js v' + self.version_header);
+	req.mobile = REG_MOBILE.test(req.headers['user-agent']);
 
 	if (self.isDebug)
 		res.setHeader('Mode', 'debug');
@@ -4754,8 +4783,6 @@ Framework.prototype._request = function(req, res) {
 	req.isStaticFile = framework.config['allow-handle-static-files'] ? utils.isStaticFile(req.uri.pathname) : false;
 	if (req.isStaticFile)
 		req.extension = path.extname(req.uri.pathname).substring(1);
-	else
-		req.mobile = REG_MOBILE.test(req.headers['user-agent']);
 
 	if (self.onLocate)
 		req.$language = self.onLocate(req, res, req.isStaticFile);
@@ -4832,8 +4859,11 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	var flags = [req.method.toLowerCase()];
 	var multipart = req.headers['content-type'] || '';
 
-	if (req.mobile)
+	if (req.mobile) {
 		req.$flags += '_m_';
+		self.stats.request.mobile++;
+	} else
+		self.stats.request.desktop++;
 
 	req.$flags += protocol;
 	flags.push(protocol);
@@ -6295,7 +6325,7 @@ Framework.prototype.routeStatic = function(name) {
 	return {String}
 */
 Framework.prototype._routeStatic = function(name, directory) {
-	return directory + this._version(name);
+	return this._version(directory + this._version(name));
 };
 
 /*
@@ -7697,6 +7727,9 @@ Subscribe.prototype.execute = function(status) {
 	}
 
 	var name = route.controller;
+
+	if (route.isMOBILE_VARY)
+		req.$mobile = true;
 
 	if (route.currentViewDirectory === undefined)
 		route.currentViewDirectory = name[0] !== '#' && name !== 'default' && name !== '' ? '/' + name + '/' : '';
@@ -12511,7 +12544,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 	var headers = {};
 
 	headers[RESPONSE_HEADER_CACHECONTROL] = 'private';
-	headers['Vary'] = 'Accept-Encoding';
+	headers['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	// Safari resolve
 	if (contentType === 'application/json')

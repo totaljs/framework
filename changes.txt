@@ -17,6 +17,7 @@ BETA ======= 1.8.1
 - added: readonly `req.mobile` -> returns `boolean`
 - added: new view tag: @{mobile} –> returns `boolean`
 - added: `F.stats.request.mobile`, `F.stats.request.desktop`
+- added: `res.setHeader('Vary', 'Accept-Encoding, User-Agent')` for same url address and different devices (desktop vs mobile)
 
 - updated: `F.route(url, ...)`, `F.websocket(url, ...)` --> URL can be function(url, req, [flags])
 - updated: `versions` affects F.map() and F.merge() 

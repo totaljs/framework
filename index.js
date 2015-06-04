@@ -492,6 +492,31 @@ Framework.prototype._routesSort = function() {
 		return 0;
 	});
 
+	var cache = {};
+	var length = self.routes.web.length;
+
+	for (var i = 0; i < length; i++) {
+		var route = self.routes.web[i];
+		if (!route.isMOBILE)
+			continue;
+		if (route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML)
+			continue;
+		if (route.flags.indexOf('get') === -1)
+			continue;
+		var url = route.url.join('/');
+		cache[url] = true;
+	}
+
+	for (var i = 0; i < length; i++) {
+		var route = self.routes.web[i];
+		if (route.isMOBILE || route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML)
+			continue;
+		if (route.flags.indexOf('get') === -1)
+			continue;
+		var url = route.url.join('/');
+		route.isMOBILE_VARY = cache[url] === true;
+	}
+
 	return self;
 };
 
@@ -1017,6 +1042,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		isXML: flags.indexOf('xml') !== -1,
 		isRAW: isRaw,
 		isMOBILE: isMOBILE,
+		isMOBILE_VARY: isMOBILE,
 		isGENERATOR: isGENERATOR,
 		isMEMBER: isMember,
 		isASTERIX: isASTERIX,
@@ -3234,7 +3260,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (RELEASE && !res.getHeader('Expires'))
 		returnHeaders['Expires'] = new Date().add('M', 3);
 
-	returnHeaders['Vary'] = 'Accept-Encoding';
+	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
@@ -3369,7 +3395,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 			res.setHeader('Content-Disposition', attachment);
 
 		res.setHeader(RESPONSE_HEADER_CONTENTTYPE, contentType);
-		res.setHeader('Vary', 'Accept-Encoding');
+		res.setHeader('Vary', 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : ''));
 
 		res.on('error', function() {
 			response.close();
@@ -3733,7 +3759,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (RELEASE)
 		returnHeaders['Expires'] = new Date().add('M', 3);
 
-	returnHeaders['Vary'] = 'Accept-Encoding';
+	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
@@ -3904,7 +3930,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	var returnHeaders = {};
 
 	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public';
-	returnHeaders['Vary'] = 'Accept-Encoding';
+	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
@@ -4184,7 +4210,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	var gzip = compress ? accept.lastIndexOf('gzip') !== -1 : false;
 
 	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'private';
-	returnHeaders['Vary'] = 'Accept-Encoding';
+	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
@@ -7680,6 +7706,9 @@ Subscribe.prototype.execute = function(status) {
 	}
 
 	var name = route.controller;
+
+	if (route.isMOBILE_VARY)
+		req.$mobile = true;
 
 	if (route.currentViewDirectory === undefined)
 		route.currentViewDirectory = name[0] !== '#' && name !== 'default' && name !== '' ? '/' + name + '/' : '';
@@ -12494,7 +12523,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 	var headers = {};
 
 	headers[RESPONSE_HEADER_CACHECONTROL] = 'private';
-	headers['Vary'] = 'Accept-Encoding';
+	headers['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	// Safari resolve
 	if (contentType === 'application/json')
