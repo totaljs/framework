@@ -360,18 +360,19 @@ function install(directory) {
 }
 
 function display_help() {
-        console.log('');
-        console.log('-m or -minimal             = minimal');
-        console.log('-n or -normal              = normal (default)');
-        console.log('-a or -angular             = for angular.js application');
-        console.log('-t or -translate           = creates a resource file with the localized text from views');
-        console.log('-t or -translate "TEXT"    = creates an identificator for the resource');
-        console.log('-t or -translate filename  = translates and creates a resource file from the text file');
-        console.log('-d or -diff                = creates a differences between two resources "-diff filename1 filename2"');
-        console.log('-v or -version             = total.js version');
-        console.log('-minify filename           = minifies .js, .css or .html file into filename.min.[extension]');
-        console.log('/path/                     = target (default current directory)');
-        console.log('');
+    console.log('');
+    console.log('-m or -minimal             = minimal');
+    console.log('-n or -normal              = normal (default)');
+    console.log('-a or -angular             = for angular.js application');
+    console.log('-t or -translate           = creates a resource file with the localized text from views');
+    console.log('-t or -translate "TEXT"    = creates an identificator for the resource');
+    console.log('-t or -translate filename  = parsers and creates a resource file from the text file');
+    console.log('-t or -translatecsv        = parsers and creates CSV with localization into the current directory');
+    console.log('-d or -diff                = creates a differences between two resources "-diff filename1 filename2"');
+    console.log('-v or -version             = total.js version');
+    console.log('-minify filename           = minifies .js, .css or .html file into filename.min.[extension]');
+    console.log('/path/                     = target (default current directory)');
+    console.log('');
 }
 
 function translateFile(a) {
@@ -552,6 +553,11 @@ function main() {
             continue
         }
 
+        if (cmd === '-translate-csv' || cmd === '-translatecsv') {
+            $type = 6;
+            continue
+        }
+
         if (cmd === '-minify' || cmd === '-compress' || cmd === '-compile') {
             $type = 5;
             continue
@@ -687,6 +693,52 @@ function main() {
                 builder.push('\n// ' + keys[i] + '\n' + output[keys[i]].join('\n'));
 
             fs.writeFileSync('translate.resource', '// Total.js translation file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + builder.join('\n'));
+            console.log('total.js: the translation was created (' + count + ' texts)');
+        });
+        return;
+    }
+
+    if ($type === 6) {
+        console.log('total.js: creating translation to CSV');
+        Utils.ls(dir, function(files) {
+
+            var resource = {};
+            var texts = {};
+            var count = 0;
+            var output = ['Hash;Text;Translation'];
+
+            for (var i = 0, length = files.length; i < length; i++) {
+                var filename = files[i];
+
+                if (!filename.endsWith('.html'))
+                    continue;
+
+                var content = fs.readFileSync(filename).toString('utf8');
+                var command = Internal.findLocalization(content, 0);
+                while (command !== null) {
+
+                    // Skip for direct reading
+                    if (command.command[0] === '#' && command.command[1] !== ' ') {
+                        command = Internal.findLocalization(content, command.end);
+                        continue;
+                    }
+
+                    var key = 'T' + command.command.hash();
+                    var file = filename.substring(dir.length + 1);
+
+                    texts[key] = command.command.repla;
+
+                    if (!resource[key]) {
+                        output.push(key + ';"' + command.command.replace(/\"/g, '""') + '";');
+                        resource[key] = true;
+                        count++;
+                    }
+
+                    command = Internal.findLocalization(content, command.end);
+                }
+            }
+
+            fs.writeFileSync('translate.csv', output.join('\n'));
             console.log('total.js: the translation was created (' + count + ' texts)');
         });
         return;
