@@ -551,7 +551,8 @@ function test_routing(next) {
 	});
 
 	async.await('merge package', function(complete) {
-		utils.request(url + 'mergepackage.js', [], function(error, data, code, headers) {
+		// mergepackage2 is from versions
+		utils.request(url + 'mergepackage2.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === 'console.log(\'test\');', 'merge package');
