@@ -196,7 +196,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-30';
+	this.version_header = '1.8.1-31';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -232,6 +232,7 @@ function Framework() {
 		'directory-workers': '/workers/',
 		'directory-packages': '/packages/',
 		'directory-private': '/private/',
+		'directory-isomorphic': '/isomorphic/',
 
 		// all HTTP static request are routed to directory-public
 		'static-url': '',
@@ -315,6 +316,7 @@ function Framework() {
 	this.sources = {};
 	this.controllers = {};
 	this.dependencies = {};
+	this.isomorphic = {};
 	this.tests = [];
 	this.errors = [];
 	this.problems = [];
@@ -1119,10 +1121,11 @@ Framework.prototype.merge = function(url) {
 		}
 	}
 
+	url = self._version(url);
+
 	if (url[0] !== '/')
 		url = '/' + url;
 
-	url = self._version(url);
 	var filename = self.path.temp('merge-' + createTemporaryKey(url));
 	self.routes.merge[url] = { filename: filename, files: arr };
 	return self;
@@ -1148,6 +1151,12 @@ Framework.prototype.map = function(url, filename, filter) {
 	var self = this;
 
 	url = self._version(url);
+
+	if (filename[0] === '#') {
+		// isomorphic
+		self.routes.mapping[url] = filename;
+		return self;
+	}
 
 	if (filename[0] === '@') {
 		filename = self.path.package(filename.substring(1));
@@ -1636,6 +1645,14 @@ Framework.prototype.load = function() {
 		self.install('module', item.name, item.filename, undefined, undefined, undefined, true);
 	});
 
+	dir = path.join(directory, self.config['directory-isomorphic']);
+	arr = [];
+	listing(dir, 0, arr, '.js');
+
+	arr.forEach(function(item) {
+		self.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true);
+	});
+
 	dir = path.join(directory, self.config['directory-packages']);
 	arr = [];
 	listing(dir, 0, arr, '.package');
@@ -1915,6 +1932,59 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 			return self;
 		}
+
+		if (callback)
+			callback(null);
+
+		setTimeout(function() {
+			self.emit(type + '#' + name);
+			self.emit('install', type, name);
+		}, 500);
+
+		return self;
+	}
+
+	if (type === 'isomorphic') {
+
+		var content = '';
+
+		try {
+
+			if (useRequired) {
+				delete require.cache[require.resolve(declaration)];
+				obj = require(declaration);
+				content = fs.readFileSync(declaration).toString(ENCODING);
+				(function(name) {
+					setTimeout(function() {
+						delete require.cache[name];
+					}, 1000);
+				})(require.resolve(declaration));
+			}
+			else {
+				obj = typeof(declaration) === TYPE_FUNCTION ? eval('(' + declaration.toString() + ')()') : eval(declaration);
+				content = declaration.toString();
+			}
+
+		} catch (ex) {
+
+			self.error(ex, 'framework.install(\'' + type + '\')', null);
+
+			if (callback)
+				callback(ex);
+
+			return self;
+		}
+
+		if (typeof(obj.id) === STRING)
+			name = obj.id;
+		else if (typeof(obj.name) === STRING)
+			name = obj.name;
+
+		if (obj.url)
+			framework.map(obj.url, '#' + name);
+
+		framework.temporary.other['#isomorphic_' + name] = framework_internal.compile_javascript(content, '#' + name);
+		framework.isomorphic[name] = obj;
 
 		if (callback)
 			callback(null);
@@ -2261,6 +2331,15 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		return self;
 	}
 
+	if (type === 'isomorphic') {
+		var obj = self.isomorphic[name];
+		if (obj.url)
+			delete self.routes.mapping[self._version(obj.url)];
+		delete self.isomorphic[name];
+		self.emit('uninstall', type, name);
+		return self;
+	}
+
 	if (type === 'middleware') {
 
 		if (!self.routes.middleware[name])
@@ -2584,6 +2663,7 @@ Framework.prototype.usage = function(detailed) {
 	var connections = Object.keys(self.connections);
 	var workers = Object.keys(self.workers);
 	var modules = Object.keys(self.modules);
+	var isomorphic = Object.keys(self.isomorphic);
 	var models = Object.keys(self.models);
 	var schedules = Object.keys(self.schedules);
 	var helpers = Object.keys(self.helpers);
@@ -2616,6 +2696,7 @@ Framework.prototype.usage = function(detailed) {
 		resource: resources.length,
 		controller: controllers.length,
 		module: modules.length,
+		isomorphic: isomorphic.length,
 		cache: cache.length,
 		worker: workers.length,
 		connection: connections.length,
@@ -2851,6 +2932,12 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 			return;
 		}
 
+		if (filename[0] === '#') {
+			writer.write(prepare_isomorphic(filename.substring(1)), ENCODING);
+			next();
+			return;
+		}
+
 		if (filename[0] !== '~') {
 			var tmp = self.path.public(filename);
 			if (self.isVirtualDirectory && !fs.existsSync(tmp))
@@ -2990,12 +3077,35 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
 
 	if (!isResize) {
-		self.responseFile(req, res, filename, undefined, undefined, done);
+
+		// is isomorphic?
+		if (filename[0] !== '#') {
+			self.responseFile(req, res, filename, undefined, undefined, done);
+			return self;
+		}
+
+		var key = filename.substring(1);
+		var iso = framework.isomorphic[key];
+
+		if (!iso) {
+			self.response404(req, res);
+			return;
+		}
+
+		var etag = framework_utils.etag(filename, (iso.version || '') + '-' + (self.config['etag-version'] || ''));
+		if (RELEASE && framework.notModified(req, res, etag))
+			return;
+
+		// isomorphic
+		var headers = {};
+		headers['Etag'] = etag;
+		headers['Expires'] = new Date().add('M', 3);
+		headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=86400';
+		framework.responseContent(req, res, 200, prepare_isomorphic(key), 'text/javascript', true, headers);
 		return self;
 	}
 
 	var method = resizer.cache ? self.responseImage : self.responseImageWithoutCache;
-
 	method.call(self, req, res, filename, function(image) {
 
 		if (resizer.width || resizer.height) {
@@ -4200,6 +4310,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 	if (res.success || res.headersSent)
 		return self;
+
 	req.clear(true);
 	res.success = true;
 
@@ -4339,6 +4450,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 
 	global.DEBUG = debug;
 	global.RELEASE = !debug;
+	global.isomorphic = framework.isomorphic;
 
 	self._configure();
 	self._configure_versions();
@@ -6052,6 +6164,10 @@ Framework.prototype._configure_versions = function(content) {
 		return self;
 	}
 
+	var arr = content.split('\n');
+	content = '';
+	for (var i = 0, length = arr.length; i < length; i++)
+		content += (arr[i][0] === '/' ? '' : '/') + arr[i] + '\n';
 	self.versions = content.parseConfig();
 	return self;
 };
@@ -6308,7 +6424,7 @@ Framework.prototype.routeStatic = function(name) {
 	return {String}
 */
 Framework.prototype._routeStatic = function(name, directory) {
-	return this._version(directory + this._version(name));
+	return this._version((name[0] === '/' ? '' : directory) + this._version(name));
 };
 
 /*
@@ -6318,13 +6434,10 @@ Framework.prototype._routeStatic = function(name, directory) {
 */
 Framework.prototype._version = function(name) {
 	var self = this;
-
 	if (self.versions !== null)
 		name = self.versions[name] || name;
-
 	if (self.onVersion !== null)
 		name = self.onVersion(name) || name;
-
 	return name;
 };
 
@@ -7157,13 +7270,14 @@ FrameworkPath.prototype.public = function(filename) {
 	return utils.combine(framework.config['directory-public'], filename || '').replace(/\\/g, '/');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.private = function(filename) {
 	framework._verify_directory('private');
 	return utils.combine(framework.config['directory-private'], filename || '').replace(/\\/g, '/');
+};
+
+FrameworkPath.prototype.isomorphic = function(filename) {
+	framework._verify_directory('isomorphic');
+	return utils.combine(framework.config['directory-isomorphic'], filename || '').replace(/\\/g, '/');
 };
 
 /*
@@ -13055,3 +13169,7 @@ process.on('message', function(msg, h) {
 
 	framework.emit('message', msg, h);
 });
+
+function prepare_isomorphic(name) {
+	return 'if(window["isomorphic"]===undefined)window.isomorphic={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils){var exports={};' + (framework.temporary.other['#isomorphic_' + name] || '') + ';return exports;})(null,null,null,null,null)';
+}

@@ -19,4 +19,8 @@ mem.on('stats', function(info) {
 });
 */
 
+framework.on('load', function() {
+    framework.merge('/mergepackage.js', '@testpackage/test.js');
+});
+
 framework.http('debug', { port: 8001 });

@@ -1,24 +1,29 @@
 BETA ======= 1.8.1
 
-- added: `config['disable-clear-temporary-directory'] = false` (after start)
-- added: `config['default-timezone']`
-- added: `SchemaBuilderEntity.filter(custom, [model])`
-- added: `SchemaBuilderEntity.trim = true`(enable/disable trim strings (default: true))
-- added: cache for HTTP routing
-- added: `config['directory-private']`
-- added: `F.path.private([filename])`
-- added: `Controller.ping()` for WebSocket
-- added: `global.DB()` --> same as `global.DATABASE()`
-- added: `config['allow-compatibility'] = true` - a backward compatibility mode (in newest version 1.9 will be set to `false`)
-- added: RegExp routing `F.route('/{/^\\d+$/}', ...)`
-- added: `F.responseBinary(req, res, contentType, buffer, [type], [download], [headers])`
-- added: `Date.prototype.toUTC([ticksOnly])`
-- added: `Date.prototype.extend()` -> extend current datetime about new date or time (more in documentation)
-- added: new flag `mobile` (mobile routing), you can create a route to mobile device
+- added: (IMPORTANT) ISOMORPHIC using
+- added: (IMPORTANT) new flag `mobile` (mobile routing), you can create a route to mobile device
 - added: readonly `req.mobile` -> returns `boolean`
 - added: new view tag: @{mobile} –> returns `boolean`
+- added: new view tag: @{isomorphic} –> returns `Object` with isomorphic objects
+- added: `config['disable-clear-temporary-directory'] = false` (after start)
+- added: `config['allow-compatibility'] = true` - a backward compatibility mode (in newest version - added: `config['default-timezone']`
+- added: `config['directory-isomorphic']`
+- added: `config['directory-private']`
+- added: `F.path.private([filename])`
+- added: `F.path.isomorphic([filename])`
+- added: `Controller.ping()` for WebSocket
+- added: `global.DB()` --> same as `global.DATABASE()`
+- added: `global.isomorphic` --> returns `framework.isomorphic` --> returns isomorphic objects
+- added: cache for HTTP routing
+1.9 will be set to `false`)
+- added: RegExp routing `F.route('/{/^\\d+$/}', ...)`
+- added: `F.responseBinary(req, res, contentType, buffer, [type], [download], [headers])`
+- added: `SchemaBuilderEntity.filter(custom, [model])`
+- added: `SchemaBuilderEntity.trim = true`(enable/disable trim strings (default: true))
+- added: `Date.prototype.toUTC([ticksOnly])`
+- added: `Date.prototype.extend()` -> extend current datetime about new date or time (more in documentation)
 - added: `F.stats.request.mobile`, `F.stats.request.desktop`
-- added: `res.setHeader('Vary', 'Accept-Encoding, User-Agent')` for same url address and different devices (desktop vs mobile)
+- added: `res.setHeader('Vary', 'Accept-Encoding, User-Agent')` for same url addresses and different devices (desktop vs mobile)
 - added: binary - `total --translatecsv`
 
 - updated: `F.route(url, ...)`, `F.websocket(url, ...)` --> URL can be function(url, req, [flags])

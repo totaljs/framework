@@ -85,6 +85,7 @@ exports.install = function() {
     framework.route('/put/xml/', plain_put_xml, ['xml', 'put']);
 
     framework.route('/upload/', plain_upload, ['upload']);
+    framework.route('/index/', 'homepage');
 
 	framework.file('Resizing of images', function(req, res) {
 		return req.url.indexOf('.jpg') !== -1;
