@@ -191,6 +191,8 @@ if (typeof(setImmediate) === UNDEFINED) {
 global.DEBUG = false;
 global.TEST = false;
 global.RELEASE = false;
+global.is_client = false;
+global.is_server = true;
 
 function Framework() {
 
@@ -1833,7 +1835,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	if (type === 'version' || type === 'versions') {
 
 		self._configure_versions(declaration.toString(), true);
-
 		setTimeout(function() {
 			self.emit(type + '#' + name);
 			self.emit('install', type, name);
@@ -13171,5 +13172,5 @@ process.on('message', function(msg, h) {
 });
 
 function prepare_isomorphic(name) {
-	return 'if(window["isomorphic"]===undefined)window.isomorphic={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils){var exports={};' + (framework.temporary.other['#isomorphic_' + name] || '') + ';return exports;})(null,null,null,null,null)';
+	return 'if(window["isomorphic"]===undefined)window.isomorphic={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + (framework.temporary.other['#isomorphic_' + name] || '') + ';return exports;})(null,null,null,null,null,true,false)';
 }
