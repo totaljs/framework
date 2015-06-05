@@ -588,7 +588,7 @@ function viewViews() {
     assert.ok(output.contains('#ACAXXX#'), name + 'if');
     assert.ok(output.contains('<label><input type="radio" name="a" checked="checked" value="A" /> <span>test label</span></label>'), name + 'radio');
     assert.ok(output.contains('<div>NESTED</div>'), name + 'if - nested');
-    assert.ok(output.contains('---<div>Hello World!</div>---'), name + '- "/" view path problem');
+    assert.ok(output.contains('---<div>Hello World!</div><div>Price: 12</div>---'), name + '- "/" view path problem');
 
     self.json({
         r: true
