@@ -1942,6 +1942,10 @@ function view_prepare(command, dynamicCommand, functions) {
 			return '$STRING(' + command + ').encode()';
 		case '!cookie':
 			return '$STRING(' + command + ')';
+		case 'isomorphic':
+			return '$STRING(' + command + ').encode()';
+		case '!isomorphic':
+			return '$STRING(' + command + ')';
 
 		case 'model':
 		case 'repository':
