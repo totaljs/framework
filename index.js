@@ -5373,6 +5373,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 	var replyTo;
 
 	if (language) {
+		// @todo: Remove in future versions
 		if (language.indexOf('@') !== -1) {
 			replyTo = language;
 			language = undefined;
