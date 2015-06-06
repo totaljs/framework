@@ -198,7 +198,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-31';
+	this.version_header = '1.8.1-32';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -5362,14 +5362,28 @@ Framework.prototype._log = function(a, b, c, d) {
  * @param {String} view View name.
  * @param {Object} model Optional.
  * @param {Function(err)} callback Optional.
+ * @param {String} language Optional.
  * @return {MailMessage}
  */
-Framework.prototype.mail = function(address, subject, view, model, callback, replyTo) {
+Framework.prototype.mail = function(address, subject, view, model, callback, language) {
 	var controller = new Controller('', null, null, null, '');
+
 	controller.layoutName = '';
+
+	var replyTo;
+
+	if (language) {
+		if (language.indexOf('@') !== -1) {
+			replyTo = language;
+			language = undefined;
+		} else
+			controller.language = language;
+	}
+
 	if (typeof(repository) === OBJECT && repository !== null)
 		controller.repository = repository;
-	return controller.mail.apply(controller, arguments);
+
+	return controller.mail(address, subject, view, model, callback, replyTo);
 };
 
 /**
@@ -5378,9 +5392,10 @@ Framework.prototype.mail = function(address, subject, view, model, callback, rep
  * @param {Object} model Model.
  * @param {String} layout Layout for the view, optional. Default without layout.
  * @param {Object} repository A repository object, optional. Default empty.
+ * @param {String} language Optional.
  * @return {String}
  */
-Framework.prototype.view = function(name, model, layout, repository) {
+Framework.prototype.view = function(name, model, layout, repository, language) {
 
 	var controller = new Controller('', null, null, null, '');
 
@@ -5391,6 +5406,7 @@ Framework.prototype.view = function(name, model, layout, repository) {
 	}
 
 	controller.layoutName = layout || '';
+	controller.language = language;
 
 	if (typeof(repository) === OBJECT && repository !== null)
 		controller.repository = repository;

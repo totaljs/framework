@@ -26,6 +26,8 @@ BETA ======= 1.8.1
 - added: `res.setHeader('Vary', 'Accept-Encoding, User-Agent')` for same url addresses and different devices (desktop vs mobile)
 - added: binary - `total --translatecsv`
 
+- updated: `F.mail(address, subject, view, [model], [callback], [language])` added language
+- updated: `F.view(name, model, [layout], [repository], [language])` added language
 - updated: `F.route(url, ...)`, `F.websocket(url, ...)` --> URL can be function(url, req, [flags])
 - updated: `versions` affects F.map() and F.merge() 
 - updated: `config['allow-performance']` is set to true
