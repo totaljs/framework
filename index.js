@@ -10472,8 +10472,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 		if (self.language && !obj.isResourceCustom)
 			obj.resource(self.language);
 		obj = obj.json(beautify);
-	}
-	else {
+	} else {
 		if (beautify)
 			obj = JSON.stringify(obj, replacer, 4);
 		else
@@ -10486,6 +10485,49 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 
 	if (self.precache)
 		self.precache(obj, 'application/json', headers);
+
+	return self;
+};
+
+Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
+	var self = this;
+
+	if (self.res.success || self.res.headersSent || !self.isConnected)
+		return self;
+
+	// Checks the HEAD method
+	if (self.req.method === 'HEAD') {
+		self.subscribe.success();
+		framework.responseContent(self.req, self.res, self.status, '', 'application/x-javascript', self.config['allow-gzip'], headers);
+		framework.stats.response.json++;
+		return self;
+	}
+
+	if (typeof(headers) === BOOLEAN) {
+		replacer = beautify;
+		beautify = headers;
+	}
+
+	if (!name)
+		name = 'callback';
+
+	if (obj instanceof builders.ErrorBuilder) {
+		if (self.language && !obj.isResourceCustom)
+			obj.resource(self.language);
+		obj = obj.json(beautify);
+	} else {
+		if (beautify)
+			obj = JSON.stringify(obj, replacer, 4);
+		else
+			obj = JSON.stringify(obj, replacer);
+	}
+
+	self.subscribe.success();
+	framework.responseContent(self.req, self.res, self.status, name + '(' + obj + ')', 'application/x-javascript', self.config['allow-gzip'], headers);
+	framework.stats.response.json++;
+
+	if (self.precache)
+		self.precache(name + '(' + obj + ')', 'application/x-javascript', headers);
 
 	return self;
 };
