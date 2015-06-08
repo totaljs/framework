@@ -1704,12 +1704,12 @@ function view_parse_localization(content, language) {
  * @param {Boolean} minify
  * @return {Function}
  */
-function view_parse(content, minify) {
+function view_parse(content, minify, filename) {
 
 	if (minify)
 		content = removeComments(content);
 
-	content = compressCSS(compressJS(content, 0), 0);
+	content = compressCSS(compressJS(content, 0, filename), 0, filename);
 
 	var DELIMITER = '\'';
 	var DELIMITER_UNESCAPE = 'unescape(\'';
@@ -2327,7 +2327,7 @@ function removeComments(html) {
  * @param  {Number} index Last index.
  * @return {String}
  */
-function compressJS(html, index) {
+function compressJS(html, index, filename) {
 
 	if (!framework.config['allow-compile-script'])
 		return html;
@@ -2353,9 +2353,9 @@ function compressJS(html, index) {
 		return html;
 
 	var val = js.substring(strFrom.length, js.length - strTo.length).trim();
-	var compiled = exports.compile_javascript(val, '');
+	var compiled = exports.compile_javascript(val, filename);
 	html = html.replacer(js, strFrom + compiled.dollar().trim() + strTo.trim());
-	return compressJS(html, indexBeg + compiled.length + 9);
+	return compressJS(html, indexBeg + compiled.length + 9, filename);
 }
 
 /**
@@ -2365,7 +2365,7 @@ function compressJS(html, index) {
  * @param  {Number} index Last index.
  * @return {String}
  */
-function compressCSS(html, index) {
+function compressCSS(html, index, filename) {
 	var strFrom = '<style type="text/css">';
 	var strTo = '</style>';
 
@@ -2383,9 +2383,9 @@ function compressCSS(html, index) {
 
 	var css = html.substring(indexBeg, indexEnd + strTo.length);
 	var val = css.substring(strFrom.length, css.length - strTo.length).trim();
-	var compiled = exports.compile_css(val, '');
+	var compiled = exports.compile_css(val, filename);
 	html = html.replacer(css, (strFrom + compiled.trim() + strTo).trim());
-	return compressCSS(html, indexBeg + compiled.length + 8);
+	return compressCSS(html, indexBeg + compiled.length + 8, filename);
 }
 
 function variablesCSS(content) {
@@ -2510,7 +2510,7 @@ View.prototype.read = function(path, language) {
 	var filename = isOut ? path.substring(1) : framework.path.views(path);
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(this.modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html']);
+		return view_parse(view_parse_localization(this.modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
 
 	if (isOut)
 		return null;
@@ -2522,7 +2522,7 @@ View.prototype.read = function(path, language) {
 	filename = framework.path.views(path.substring(index + 1));
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(this.modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html']);
+		return view_parse(view_parse_localization(this.modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
 
 	return null;
 };
