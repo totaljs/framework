@@ -793,7 +793,7 @@ function compile_autovendor(css) {
 */
 function autoprefixer(value) {
 
-	var prefix = ['appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing'];
+	var prefix = ['appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 
 	value = autoprefixer_keyframes(value);
 
@@ -1012,6 +1012,15 @@ function autoprefixer_keyframes(value) {
 exports.compile_css = function(value, filename) {
 
 	if (global.framework) {
+
+		if (framework.modificators) {
+			for (var i = 0, length = framework.modificators.length; i < length; i++) {
+				var output = framework.modificators[i]('style', filename, value);
+				if (output)
+					value = output;
+			}
+		}
+
 		if (framework.onCompileStyle !== null)
 			return framework.onCompileStyle(filename, value);
 
@@ -1022,7 +1031,7 @@ exports.compile_css = function(value, filename) {
 	}
 
 	try {
-		return compile_autovendor(value);
+		return variablesCSS(compile_autovendor(value));
 	} catch (ex) {
 		framework.error(new Error('CSS compiler exception: ' + ex.message));
 		return '';
@@ -1266,11 +1275,19 @@ function JavaScript(source) {
 
 exports.compile_javascript = function(source, filename) {
 
-	var isFramework = (typeof(framework) === OBJECT);
+	var isFramework = (typeof(global.framework) === OBJECT);
 
 	try {
 
 		if (isFramework) {
+
+			if (framework.modificators) {
+				for (var i = 0, length = framework.modificators.length; i < length; i++) {
+					var output = framework.modificators[i]('script', filename, source);
+					if (output)
+						source = output;
+				}
+			}
 
 			if (framework.onCompileScript !== null)
 				return framework.onCompileScript(filename, source).trim();
@@ -1291,7 +1308,7 @@ exports.compile_javascript = function(source, filename) {
 	}
 };
 
-exports.compile_html = function(source) {
+exports.compile_html = function(source, filename) {
 	return compressHTML(source, true);
 };
 
@@ -2392,6 +2409,36 @@ function compressCSS(html, index) {
 	return compressCSS(html, indexBeg + compiled.length + 8);
 }
 
+function variablesCSS(content) {
+
+	if (!content)
+		return content;
+
+    var variables = {};
+
+    content = content.replace(/\$[a-z0-9-]+\:.*?;/gi, function(text) {
+        var index = text.indexOf(':');
+        if (index === -1)
+            return text;
+        var key = text.substring(0, index).trim();
+        variables[key] = text.substring(index + 1).trim();
+        return '';
+    });
+
+    content = content.replace(/\$[a-z0-9-]+/gi, function(text, position) {
+        var end = text.length + position;
+        var variable = variables[text];
+        if (!variable)
+            return text;
+        var index = content.substring(end, end + 2).indexOf(';');
+        if (index === -1)
+            return variable;
+        return variable.substring(0, variable.length - 1);
+    }).trim();
+
+    return content;
+}
+
 /**
  * HTML compressor
  * @private
@@ -2484,7 +2531,7 @@ View.prototype.read = function(path, language) {
 	var filename = isOut ? path.substring(1) : framework.path.views(path);
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(fs.readFileSync(filename).toString('utf8'), language), config['allow-compile-html']);
+		return view_parse(view_parse_localization(this.modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html']);
 
 	if (isOut)
 		return null;
@@ -2496,9 +2543,23 @@ View.prototype.read = function(path, language) {
 	filename = framework.path.views(path.substring(index + 1));
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(fs.readFileSync(filename).toString('utf8'), language), config['allow-compile-html']);
+		return view_parse(view_parse_localization(this.modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html']);
 
 	return null;
+};
+
+View.prototype.modify = function(value, filename) {
+
+	if (!framework.modificators)
+		return value;
+
+	for (var i = 0, length = framework.modificators.length; i < length; i++) {
+		var output = framework.modificators[i]('view', filename, value);
+		if (output)
+			value = output;
+	}
+
+	return value;
 };
 
 /**
@@ -2550,7 +2611,7 @@ View.prototype.dynamic = function(content, language) {
 	var generator = framework.temporary.views[key] || null;
 	if (generator !== null)
 		return generator;
-	generator = view_parse(view_parse_localization(content, language), framework.config['allow-compile-html']);
+	generator = view_parse(view_parse_localization(this.modify(content, ''), language), framework.config['allow-compile-html']);
 	if (!framework.isDebug)
 		framework.temporary.views[key] = generator;
 	return generator;

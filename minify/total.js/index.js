@@ -219,7 +219,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-32';
+	this.version_header = '1.8.1-33';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -330,9 +330,10 @@ function Framework() {
 		views: {},
 		merge: {},
 		mapping: {},
-		packages: {}
+		packages: {},
 	};
 
+	this.modificators = null;
 	this.helpers = {};
 	this.modules = {};
 	this.models = {};
@@ -1629,6 +1630,19 @@ Framework.prototype.module = function(name) {
 };
 
 /**
+ * Add a new modificator
+ * @param {Function(type, filename, content)} fn The `fn` must return modified value.
+ * @return {String}
+ */
+Framework.prototype.modify = function(fn) {
+	var self = this;
+	if (!self.modificators)
+		self.modificators = [];
+	self.modificators.push(fn);
+	return self;
+};
+
+/**
  * Load framework
  * @return {Framework}
  */
@@ -2722,13 +2736,14 @@ Framework.prototype.usage = function(detailed) {
 		cache: cache.length,
 		worker: workers.length,
 		connection: connections.length,
-		schedules: schedules.length,
-		helper: helpers.length,
+		schedule: schedules.length,
+		helpers: helpers.length,
 		error: self.errors.length,
 		problem: self.problems.length,
 		queue: pending,
 		files: staticFiles.length,
-		streaming: staticRange.length
+		streaming: staticRange.length,
+		modificator:  self.modificators ? self.modificators.length : 0
 	};
 
 	output.routing = {

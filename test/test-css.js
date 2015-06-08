@@ -17,6 +17,15 @@ assert.ok(internal.compile_css(css) === 'b{border-radius:1px}a{border-radius:1px
 css = '.input{ }, .input:disabled, .input:hover { background-color: red; } .required{content:"This, field is required"}';
 assert.ok(internal.compile_css(css) === '.input{},.input:disabled,.input:hover{background-color:red;}.required{content:"This, field is required"}', 'Problem with content.');
 
+buffer = [];
+buffer.push('$color: red; $font: "Times New Roman";');
+buffer.push('$radius: 4px;');
+buffer.push('body { background-color: $color; font-family: $font }');
+buffer.push('div { border-radius: $radius; }');
+
+css = buffer.join('\n');
+assert.ok(internal.compile_css(css) === 'body{background-color:red;font-family:"Times New Roman";}div{border-radius:4px;}', 'CSS variables');
+
 console.log('================================================');
 console.log('success - OK');
 console.log('================================================');
