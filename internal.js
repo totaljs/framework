@@ -2395,7 +2395,7 @@ function variablesCSS(content) {
 
     var variables = {};
 
-    content = content.replace(/\$[a-z0-9-]+\:.*?;/gi, function(text) {
+    content = content.replace(/\$[a-z0-9-_]+\:.*?;/gi, function(text) {
         var index = text.indexOf(':');
         if (index === -1)
             return text;
@@ -2404,7 +2404,7 @@ function variablesCSS(content) {
         return '';
     });
 
-    content = content.replace(/\$[a-z0-9-]+/gi, function(text, position) {
+    content = content.replace(/\$[a-z0-9-_]+/gi, function(text, position) {
         var end = text.length + position;
         var variable = variables[text];
         if (!variable)
