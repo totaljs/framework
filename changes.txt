@@ -18,7 +18,7 @@ BETA ======= 1.8.1
 1.9 will be set to `false`)
 - added: RegExp routing `F.route('/{/^\\d+$/}', ...)`
 - added: `F.responseBinary(req, res, contentType, buffer, [type], [download], [headers])`
-- added: `SchemaBuilderEntity.filter(custom, [model])`
+- added: `SchemaBuilderEntity.filter(custom, [model], [reverse])`
 - added: `SchemaBuilderEntity.trim = true`(enable/disable trim strings (default: true))
 - added: `Date.prototype.toUTC([ticksOnly])`
 - added: `Date.prototype.extend()` -> extend current datetime about new date or time (more in documentation)

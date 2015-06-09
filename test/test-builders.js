@@ -50,7 +50,6 @@ function test_PageBuilder() {
 
     var builder = new builders.Pagination(100, 1, 10);
     assert.ok(builder.render(1) === 10, name + 'default transform()');
-
 };
 
 function test_UrlBuilder() {
