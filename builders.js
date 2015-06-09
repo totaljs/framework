@@ -176,13 +176,21 @@ SchemaBuilderEntity.prototype.setPrimary = function(name) {
  * Filters current names of the schema via custom attribute
  * @param {Number/String} custom
  * @param {Object} model Optional
+ * @param {Boolean} reverse Reverse results.
  * @return {Array or Object} Returns Array (with property names) if the model is undefined otherwise returns Object Name/Value.
  */
-SchemaBuilderEntity.prototype.filter = function(custom, model) {
+SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 	var self = this;
+
+	if (typeof(model) === BOOLEAN) {
+		var tmp = reverse;
+		reverse = model;
+		model = tmp;
+	}
+
 	var output = model === undefined ? [] : {};
 	var type = typeof(custom);
-	var isSearch = type === STRING ? custom[0] === '*' : false;
+	var isSearch = type === STRING ? custom[0] === '*' || custom[0] === '%' : false;
 	var isReg = false;
 
 	if (isSearch)
@@ -190,10 +198,9 @@ SchemaBuilderEntity.prototype.filter = function(custom, model) {
 	else if (type === OBJECT)
 		isReg = framework_utils.isRegExp(custom);
 
-	for (var i = 0, length = self.properties.length; i < length; i++) {
-		var prop = self.properties[i];
-		var schema = self.schema[prop];
+	for (var prop in self.schema) {
 
+		var schema = self.schema[prop];
 		if (!schema)
 			continue;
 
@@ -201,17 +208,26 @@ SchemaBuilderEntity.prototype.filter = function(custom, model) {
 
 		if (isSearch) {
 			if (tv === STRING) {
-				if (schema.custom.indexOf(custom) === -1);
+				if (schema.custom.indexOf(custom) === -1) {
+					if (!reverse)
+						continue;
+				} else if (reverse)
 					continue;
 			} else
 				continue;
 		} else if (isReg) {
 			if (tv === STRING) {
-				if (!custom.test(schema.current))
+				if (!custom.test(schema.current)) {
+					if (!reverse)
+						continue;
+				} else if (reverse)
 					continue;
 			} else
 				continue;
-		} if (schema.custom !== custom)
+		} else if (schema.custom !== custom) {
+			if (!reverse)
+				continue;
+		} else if (reverse)
 			continue;
 
 		if (model === undefined)
@@ -1815,7 +1831,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 	var builder = new ErrorBuilder();
 
-	if (!isGenerator(self, 'workflow.' + name, operation)) {
+	if (!isGenerator(self, 'operation.' + name, operation)) {
 		operation.call(self, builder, model, helper, function(result) {
 
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
