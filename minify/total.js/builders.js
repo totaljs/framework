@@ -197,13 +197,21 @@ SchemaBuilderEntity.prototype.setPrimary = function(name) {
  * Filters current names of the schema via custom attribute
  * @param {Number/String} custom
  * @param {Object} model Optional
+ * @param {Boolean} reverse Reverse results.
  * @return {Array or Object} Returns Array (with property names) if the model is undefined otherwise returns Object Name/Value.
  */
-SchemaBuilderEntity.prototype.filter = function(custom, model) {
+SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 	var self = this;
+
+	if (typeof(model) === BOOLEAN) {
+		var tmp = reverse;
+		reverse = model;
+		model = tmp;
+	}
+
 	var output = model === undefined ? [] : {};
 	var type = typeof(custom);
-	var isSearch = type === STRING ? custom[0] === '*' : false;
+	var isSearch = type === STRING ? custom[0] === '*' || custom[0] === '%' : false;
 	var isReg = false;
 
 	if (isSearch)
@@ -211,10 +219,9 @@ SchemaBuilderEntity.prototype.filter = function(custom, model) {
 	else if (type === OBJECT)
 		isReg = framework_utils.isRegExp(custom);
 
-	for (var i = 0, length = self.properties.length; i < length; i++) {
-		var prop = self.properties[i];
-		var schema = self.schema[prop];
+	for (var prop in self.schema) {
 
+		var schema = self.schema[prop];
 		if (!schema)
 			continue;
 
@@ -222,17 +229,26 @@ SchemaBuilderEntity.prototype.filter = function(custom, model) {
 
 		if (isSearch) {
 			if (tv === STRING) {
-				if (schema.custom.indexOf(custom) === -1);
+				if (schema.custom.indexOf(custom) === -1) {
+					if (!reverse)
+						continue;
+				} else if (reverse)
 					continue;
 			} else
 				continue;
 		} else if (isReg) {
 			if (tv === STRING) {
-				if (!custom.test(schema.current))
+				if (!custom.test(schema.current)) {
+					if (!reverse)
+						continue;
+				} else if (reverse)
 					continue;
 			} else
 				continue;
-		} if (schema.custom !== custom)
+		} else if (schema.custom !== custom) {
+			if (!reverse)
+				continue;
+		} else if (reverse)
 			continue;
 
 		if (model === undefined)
@@ -369,12 +385,10 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 
 SchemaBuilderEntity.prototype.getDependencies = function() {
 	var self = this;
-	var arr = Object.keys(self.schema);
 	var dependencies = [];
 
-	for (var i = 0, length = arr.length; i < length; i++) {
+	for (var name in self.schema) {
 
-		var name = arr[i];
 		var type = self.schema[name];
 
 		if (typeof(type) !== STRING)
@@ -1236,11 +1250,9 @@ SchemaBuilderEntity.prototype.default = function() {
 
 	var defaults = self.onDefault;
 	var item = framework_utils.extend({}, obj, true);
-	var properties = Object.keys(item);
 
-	for (var i = 0, length = properties.length; i < length; i++) {
+	for (var property in item) {
 
-		var property = properties[i];
 		var type = item[property];
 
 		if (defaults) {
@@ -1351,12 +1363,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 	var tmp;
 	var entity;
 	var item = framework_utils.extend({}, obj, true);
-	var properties = Object.keys(item);
 	var defaults = self.onDefault;
 
-	for (var i = 0, length = properties.length; i < length; i++) {
+	for (var property in item) {
 
-		var property = properties[i];
 		var val = model[property];
 
 		// IS PROTOTYPE? The problem was in e.g. "search" property, because search is in String prototypes.
@@ -1836,7 +1846,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 	var builder = new ErrorBuilder();
 
-	if (!isGenerator(self, 'workflow.' + name, operation)) {
+	if (!isGenerator(self, 'operation.' + name, operation)) {
 		operation.call(self, builder, model, helper, function(result) {
 
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
@@ -1914,11 +1924,10 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 	delete model['$rule'];
 	delete model['$constant'];
 
-	var keys = Object.keys(model);
-
-	for (var i = 0, length = keys.length; i < length; i++) {
-
-		var key = keys[i];
+	// var keys = Object.keys(model);
+	// for (var i = 0, length = keys.length; i < length; i++) {
+	for (var key in model) {
+//		var key = keys[i];
 		var value = model[key];
 
 		if (value === null)

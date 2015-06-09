@@ -2486,15 +2486,8 @@ function compressHTML(html, minify) {
 		return ' ' + c;
 	}).replace(REG_1, '').replace(REG_2, '');
 
-	// html = html.replace(REG_1, '').replace(REG_2, '');
-
-	var keys = Object.keys(cache);
-	length = keys.length;
-
-	for (var i = 0; i < length; i++) {
-		var key = keys[i];
+	for (var key in cache)
 		html = html.replacer(key, cache[key]);
-	}
 
 	return html;
 }

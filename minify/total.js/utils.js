@@ -442,16 +442,13 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	headers['X-Powered-By'] = 'total.js' + VERSION;
 
 	if (cookies) {
-		var builder = [];
-		var keys = Object.keys(cookies);
+		var builder = '';
 
-		length = keys.length;
+		for (var m in cookies)
+			builder += (builder ? '; ' : '') + m + '=' + encodeURIComponent(cookies[m]);
 
-		for (var i = 0; i < length; i++)
-			builder.push(keys[i] + '=' + encodeURIComponent(cookies[keys[i]]));
-
-		if (builder.length > 0)
-			headers['Cookie'] = builder.join('; ');
+		if (builder)
+			headers['Cookie'] = builder;
 	}
 
 	var buf;
@@ -669,16 +666,13 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	headers['X-Powered-By'] = 'total.js' + VERSION;
 
 	if (cookies) {
-		var builder = [];
-		var keys = Object.keys(cookies);
+		var builder = '';
 
-		length = keys.length;
+		for (var m in cookies)
+			builder += (builder ? '; ' : '') + m + '=' + encodeURIComponent(cookies[m]);
 
-		for (var i = 0; i < length; i++)
-			builder.push(keys[i] + '=' + encodeURIComponent(cookies[keys[i]]));
-
-		if (builder.length > 0)
-			headers['Cookie'] = builder.join('; ');
+		if (builder)
+			headers['Cookie'] = builder;
 	}
 
 	var buf;
@@ -943,9 +937,7 @@ exports.extend = function(target, source, rewrite) {
 	var i = keys.length;
 
 	while (i--) {
-
 		var key = keys[i];
-
 		if (rewrite || target[key] === undefined)
 			target[key] = source[key];
 	}

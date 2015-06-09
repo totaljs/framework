@@ -219,7 +219,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-33';
+	this.version_header = '1.8.1-35';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -4775,10 +4775,10 @@ Framework.prototype._service = function(count) {
 
 	// every 61 minutes (default) services precompile all (installed) views
 	if (count % framework.config['default-interval-precompile-views'] === 0) {
-		Object.keys(self.routes.views).wait(function(key, next) {
+		for (var key in self.routes.views) {
 			var item = self.routes.views[key];
 			self.install('view', key, item.url, null, next);
-		}, true);
+		}
 	}
 
 	if (count % framework.config['default-interval-clear-dnscache'] === 0)
@@ -4786,14 +4786,13 @@ Framework.prototype._service = function(count) {
 
 	var ping = framework.config['default-interval-websocket-ping'];
 	if (ping > 0 && count % ping === 0) {
-		Object.keys(framework.connections).wait(function(item, next) {
+		for (var item in framework.connections) {
 			var conn = framework.connections[item];
 			if (!conn)
-				return;
+				continue;
 			conn.check();
 			conn.ping();
-			next();
-		}, true);
+		}
 	}
 
 	self.emit('service', count);
@@ -4802,23 +4801,23 @@ Framework.prototype._service = function(count) {
 	if (!self._schedules)
 		return self;
 
-	var keys = Object.keys(self.schedules);
 	var expire = new Date().getTime();
 	var pending = false;
 
 	// F.schedules() sets this property to true
 	self._schedules = false;
 
+	/*
 	for (var i = 0, length = keys.length; i < length; i++) {
-
 		var key = keys[i];
-		var obj = self.schedules[key];
+	*/
 
+	for (var key in self.schedules) {
+		var obj = self.schedules[key];
 		if (obj.expire > expire) {
 			pending = true;
 			continue;
 		}
-
 		delete self.schedules[key];
 		obj.fn.call(self);
 	}
@@ -7530,20 +7529,11 @@ FrameworkCache.prototype.recycle = function() {
 
 	var self = this;
 	var items = self.items;
-	var keys = Object.keys(items);
-	var length = keys.length;
+	var expire = new Date();
 
 	self.count++;
 
-	if (length === 0) {
-		framework._service(self.count);
-		return self;
-	}
-
-	var expire = new Date();
-
-	for (var i = 0; i < length; i++) {
-		var o = keys[i];
+	for (var o in items) {
 		var value = items[o];
 		if (value.expire < expire) {
 			framework.emit('cache-expire', o, value.value);
@@ -7657,21 +7647,19 @@ FrameworkCache.prototype.remove = function(name) {
 FrameworkCache.prototype.removeAll = function(search) {
 	var self = this;
 	var count = 0;
-	var keys = Object.keys(self.items);
-	var length = keys.length;
 	var isReg = utils.isRegExp(search);
 
-	for (var i = 0; i < length; i++) {
+	for (key in self.items) {
 
 		if (isReg) {
-			if (!search.test(keys[i]))
+			if (!search.test(key))
 				continue;
 		} else {
-			if (keys[i].indexOf(search) === -1)
+			if (key.indexOf(search) === -1)
 				continue;
 		}
 
-		self.remove(keys[i]);
+		self.remove(key);
 		count++;
 	}
 
@@ -9639,12 +9627,8 @@ Controller.prototype.$textarea = function(model, name, attr) {
 
 	builder += ' name="' + name + '" id="' + (attr.id || name) + ATTR_END;
 
-	var keys = Object.keys(attr);
-	var length = keys.length;
-
-	for (var i = 0; i < length; i++) {
-
-		switch (keys[i]) {
+	for (var key in attr) {
+		switch (key) {
 			case 'name':
 			case 'id':
 				break;
@@ -9652,10 +9636,10 @@ Controller.prototype.$textarea = function(model, name, attr) {
 			case 'disabled':
 			case 'readonly':
 			case 'value':
-				builder += ' ' + keys[i] + '="' + keys[i] + ATTR_END;
+				builder += ' ' + key + '="' + key + ATTR_END;
 				break;
 			default:
-				builder += ' ' + keys[i] + '="' + attr[keys[i]].toString().encode() + ATTR_END;
+				builder += ' ' + key + '="' + attr[key].toString().encode() + ATTR_END;
 				break;
 		}
 	}
@@ -9698,12 +9682,8 @@ Controller.prototype.$input = function(model, type, name, attr) {
 			builder += ' autocomplete="off"';
 	}
 
-	var keys = Object.keys(attr);
-	var length = keys.length;
-
-	for (var i = 0; i < length; i++) {
-
-		switch (keys[i]) {
+	for (var key in attr) {
+		switch (key) {
 			case 'name':
 			case 'id':
 			case 'type':
@@ -9716,10 +9696,10 @@ Controller.prototype.$input = function(model, type, name, attr) {
 			case 'disabled':
 			case 'readonly':
 			case 'autofocus':
-				builder += ' ' + keys[i] + '="' + keys[i] + ATTR_END;
+				builder += ' ' + key + '="' + key + ATTR_END;
 				break;
 			default:
-				builder += ' ' + keys[i] + '="' + attr[keys[i]].toString().encode() + ATTR_END;
+				builder += ' ' + key + '="' + attr[key].toString().encode() + ATTR_END;
 				break;
 		}
 	}
@@ -11390,11 +11370,8 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 				options.headers = headers;
 
 			if (isView) {
-				var keys = Object.keys(self.repository);
-				var length = keys.length;
 				options.repository = [];
-				for (var i = 0; i < length; i++) {
-					var name = keys[i];
+				for (name in self.repository) {
 					if (name[0] === '$' || name === 'sitemap') {
 						var value = self.repository[name];
 						if (value !== undefined)

@@ -364,12 +364,10 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 
 SchemaBuilderEntity.prototype.getDependencies = function() {
 	var self = this;
-	var arr = Object.keys(self.schema);
 	var dependencies = [];
 
-	for (var i = 0, length = arr.length; i < length; i++) {
+	for (var name in self.schema) {
 
-		var name = arr[i];
 		var type = self.schema[name];
 
 		if (typeof(type) !== STRING)
@@ -1231,11 +1229,9 @@ SchemaBuilderEntity.prototype.default = function() {
 
 	var defaults = self.onDefault;
 	var item = framework_utils.extend({}, obj, true);
-	var properties = Object.keys(item);
 
-	for (var i = 0, length = properties.length; i < length; i++) {
+	for (var property in item) {
 
-		var property = properties[i];
 		var type = item[property];
 
 		if (defaults) {
@@ -1346,12 +1342,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 	var tmp;
 	var entity;
 	var item = framework_utils.extend({}, obj, true);
-	var properties = Object.keys(item);
 	var defaults = self.onDefault;
 
-	for (var i = 0, length = properties.length; i < length; i++) {
+	for (var property in item) {
 
-		var property = properties[i];
 		var val = model[property];
 
 		// IS PROTOTYPE? The problem was in e.g. "search" property, because search is in String prototypes.
@@ -1909,11 +1903,10 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 	delete model['$rule'];
 	delete model['$constant'];
 
-	var keys = Object.keys(model);
-
-	for (var i = 0, length = keys.length; i < length; i++) {
-
-		var key = keys[i];
+	// var keys = Object.keys(model);
+	// for (var i = 0, length = keys.length; i < length; i++) {
+	for (var key in model) {
+//		var key = keys[i];
 		var value = model[key];
 
 		if (value === null)

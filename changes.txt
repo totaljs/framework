@@ -56,7 +56,7 @@ BETA ======= 1.8.1
 - fixed: `binary --translate` (filenames)
 - fixed: SchemaBuilderEntity prepare (problem with nullable Boolean)
 - fixed: (IMPORTANT) 431 system route
-- 
+
 - improved: code optimalization
 
 __IMPORTANT:__
