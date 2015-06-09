@@ -7649,7 +7649,7 @@ FrameworkCache.prototype.removeAll = function(search) {
 	var count = 0;
 	var isReg = utils.isRegExp(search);
 
-	for (key in self.items) {
+	for (var key in self.items) {
 
 		if (isReg) {
 			if (!search.test(key))
@@ -11371,7 +11371,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 			if (isView) {
 				options.repository = [];
-				for (name in self.repository) {
+				for (var name in self.repository) {
 					if (name[0] === '$' || name === 'sitemap') {
 						var value = self.repository[name];
 						if (value !== undefined)
