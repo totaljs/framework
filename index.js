@@ -4760,7 +4760,7 @@ Framework.prototype._service = function(count) {
 	if (count % framework.config['default-interval-precompile-views'] === 0) {
 		for (var key in self.routes.views) {
 			var item = self.routes.views[key];
-			self.install('view', key, item.url, null, next);
+			self.install('view', key, item.url, null);
 		}
 	}
 
