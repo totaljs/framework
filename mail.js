@@ -278,8 +278,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 	}
 
 	self.callback = fnCallback;
-
-	options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000, tls: false });
+	options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000, tls: null });
 
 	if (smtp === null || smtp === '') {
 
