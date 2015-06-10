@@ -198,7 +198,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-35';
+	this.version_header = '1.8.1-36';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -4033,6 +4033,7 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
  * @param {ServerResponse} res
  * @param {String} contentType
  * @param {Buffer} buffer
+ * @param {Encoding} type Default: "binary", optioanl
  * @param {String} download Optional, download name.
  * @param {Object} headers Optional
  * @return {Framework}
@@ -4046,6 +4047,9 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 			done();
 		return self;
 	}
+
+	if (!encoding)
+		encoding = 'binary';
 
 	req.clear(true);
 
@@ -4089,7 +4093,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 		returnHeaders['Content-Encoding'] = 'gzip';
 		res.writeHead(200, returnHeaders);
 
-		zlib.gzip(buffer.toString(encoding || 'binary'), function(err, buffer) {
+		zlib.gzip(encoding === 'binary' ? buffer : buffer.toString(encoding), function(err, buffer) {
 			res.end(buffer);
 		});
 
@@ -4103,7 +4107,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	}
 
 	res.writeHead(200, returnHeaders);
-	res.end(buffer.toString(encoding || 'binary'));
+	res.end(encoding === 'binary' ? buffer : buffer.toString(encoding));
 
 	if (done)
 		done();
