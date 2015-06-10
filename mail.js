@@ -62,6 +62,7 @@ Mailer.prototype.create = function(subject, body) {
  * @param  {ResolveMxCallback} callback Callback.
  */
 function resolveMx(domain, callback) {
+
 	dns.resolveMx(domain, function(err, data) {
 
 		if (err) {
@@ -312,6 +313,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	if (options.secure) {
 		var internal = framework_utils.copy(options);
+		internal.host = smtp;
 		socket = tls.connect(internal, function() { self._send(this, options); });
 	} else
 		socket = net.createConnection(options.port, smtp);
