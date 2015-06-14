@@ -198,7 +198,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-37';
+	this.version_header = '1.8.1-38';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -297,6 +297,8 @@ function Framework() {
 	this.isDebug = true;
 	this.isTest = false;
 	this.isLoaded = false;
+	this.isWorker = false;
+	// this.isCluster = require('cluster').isWorker;
 
 	this.routes = {
 		web: [],
@@ -412,7 +414,6 @@ function Framework() {
 	this._schedules = false;
 
 	this.isVirtualDirectory = false;
-	this.isCoffee = false;
 	this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
 }
 
@@ -554,7 +555,9 @@ Framework.prototype.stop = function(code) {
 		process.send('stop');
 
 	self.cache.stop();
-	self.server.close();
+
+	if (self.server)
+		self.server.close();
 
 	process.exit(code || 0);
 	return self;
@@ -869,6 +872,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 			switch (flag) {
 
 				case 'xss':
+					count--;
 					continue;
 
 				case 'sync':
@@ -1137,6 +1141,17 @@ Framework.prototype.merge = function(url) {
 Framework.prototype.mapping = function(url, path) {
 	return this.map.apply(this, arguments);
 };
+
+/**
+ * Send message
+ * @param  {Object} message
+ * @param  {Object} handle
+ * @return {Framework}
+ */
+Framework.prototype.send = function(message, handle) {
+	process.send(message, handle);
+	return this;
+}
 
 /**
  * Mapping of static file
@@ -1625,7 +1640,7 @@ Framework.prototype.modify = function(fn) {
  * Load framework
  * @return {Framework}
  */
-Framework.prototype.load = function() {
+Framework.prototype.$load = function(types) {
 
 	var self = this;
 	var dir = '';
@@ -1653,54 +1668,65 @@ Framework.prototype.load = function() {
 		});
 	}
 
-	dir = path.join(directory, self.config['directory-modules']);
-	arr = [];
-	listing(dir, 0, arr, '.js');
+	if (!types || types.indexOf('modules') !== -1) {
+		dir = path.join(directory, self.config['directory-modules']);
+		arr = [];
+		listing(dir, 0, arr, '.js');
 
-	arr.forEach(function(item) {
-		self.install('module', item.name, item.filename, undefined, undefined, undefined, true);
-	});
+		arr.forEach(function(item) {
+			self.install('module', item.name, item.filename, undefined, undefined, undefined, true);
+		});
+	}
 
-	dir = path.join(directory, self.config['directory-isomorphic']);
-	arr = [];
-	listing(dir, 0, arr, '.js');
+	if (!types || types.indexOf('isomorphic') !== -1) {
+		dir = path.join(directory, self.config['directory-isomorphic']);
+		arr = [];
+		listing(dir, 0, arr, '.js');
 
-	arr.forEach(function(item) {
-		self.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true);
-	});
+		arr.forEach(function(item) {
+			self.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true);
+		});
+	}
 
-	dir = path.join(directory, self.config['directory-packages']);
-	arr = [];
-	listing(dir, 0, arr, '.package');
+	if (!types || types.indexOf('packages') !== -1) {
+		dir = path.join(directory, self.config['directory-packages']);
+		arr = [];
+		listing(dir, 0, arr, '.package');
 
-	arr.forEach(function(item) {
-		self.install('package', item.name, item.filename, undefined, undefined, undefined, true);
-	});
+		arr.forEach(function(item) {
+			self.install('package', item.name, item.filename, undefined, undefined, undefined, true);
+		});
+	}
 
-	dir = path.join(directory, self.config['directory-models']);
+	if (!types || types.indexOf('models') !== -1) {
+		dir = path.join(directory, self.config['directory-models']);
+		arr = [];
+		listing(dir, 0, arr);
 
-	arr = [];
-	listing(dir, 0, arr);
+		arr.forEach(function(item) {
+			self.install('model', item.name, item.filename, undefined, undefined, undefined, true);
+		});
+	}
 
-	arr.forEach(function(item) {
-		self.install('model', item.name, item.filename, undefined, undefined, undefined, true);
-	});
+	if (!types || types.indexOf('definitions') !== -1) {
+		dir = path.join(directory, self.config['directory-definitions']);
+		arr = [];
+		listing(dir, 0, arr);
 
-	dir = path.join(directory, self.config['directory-definitions']);
-	arr = [];
-	listing(dir, 0, arr);
+		arr.forEach(function(item) {
+			self.install('definition', item.name, item.filename, undefined, undefined, undefined, true);
+		});
+	}
 
-	arr.forEach(function(item) {
-		self.install('definition', item.name, item.filename, undefined, undefined, undefined, true);
-	});
+	if (!types || types.indexOf('controllers') !== -1) {
+		arr = [];
+		dir = path.join(directory, self.config['directory-controllers']);
+		listing(dir, 0, arr);
 
-	arr = [];
-	dir = path.join(directory, self.config['directory-controllers']);
-	listing(dir, 0, arr);
-
-	arr.forEach(function(item) {
-		self.install('controller', item.name, item.filename, undefined, undefined, undefined, true);
-	});
+		arr.forEach(function(item) {
+			self.install('controller', item.name, item.filename, undefined, undefined, undefined, true);
+		});
+	}
 
 	self._routesSort();
 	return self;
@@ -4432,6 +4458,50 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 	return self;
 };
 
+Framework.prototype.load = function(debug, types, path) {
+
+	var self = this;
+
+	if (path)
+		self.directory = directory = path;
+
+	self.isWorker = true;
+	self.config.debug = debug;
+	self.isDebug = debug;
+
+	global.DEBUG = debug;
+	global.RELEASE = !debug;
+	global.isomorphic = self.isomorphic;
+
+	self._configure();
+	self._configure_versions();
+	self.cache.init();
+
+	self.emit('init');
+	self.isLoaded = true;
+
+	setTimeout(function() {
+
+		try {
+			self.emit('load', self);
+			self.emit('ready', self);
+		} catch (err) {
+			self.error(err, 'framework.on("load/ready")');
+		}
+
+		self.removeAllListeners('load');
+		self.removeAllListeners('ready');
+
+		// clear unnecessary items
+		delete framework.tests;
+		delete framework.test;
+		delete framework.testing;
+		delete framework.assert;
+	}, 500);
+
+	self.$load(types);
+};
+
 /**
  * Initialize framework
  * @param  {Object} http
@@ -4456,12 +4526,6 @@ Framework.prototype.initialize = function(http, debug, options) {
 		framework_utils.copy(options.copy, self.config);
 
 	self.isHTTPS = typeof(http.STATUS_CODES) === UNDEFINED;
-
-	process.argv.forEach(function(name) {
-		if (name.toLowerCase().indexOf('coffee') !== -1)
-			self.isCoffee = true;
-	});
-
 	if (isNaN(port) && typeof(port) !== STRING)
 		port = null;
 
@@ -4470,25 +4534,21 @@ Framework.prototype.initialize = function(http, debug, options) {
 
 	global.DEBUG = debug;
 	global.RELEASE = !debug;
-	global.isomorphic = framework.isomorphic;
+	global.isomorphic = self.isomorphic;
 
 	self._configure();
 	self._configure_versions();
-
-	if (self.config['disable-strict-server-certificate-validation'] === true)
-		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 	if (self.isTest)
 		self._configure('config-test', false);
 
 	self.cache.init();
-	self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
 	self.emit('init');
 
 	// clear static files
 	self.clear(function() {
 
-		self.load();
+		self.$load();
 
 		if (options.https)
 			self.server = http.createServer(options.https, self._request);
@@ -4739,14 +4799,6 @@ Framework.prototype._service = function(count) {
 	if (self.config.debug)
 		self.resources = {};
 
-	// every 20 minutes (default) service clears resources
-	if (count % framework.config['default-interval-clear-resources'] === 0) {
-		self.emit('clear', 'resources');
-		self.resources = {};
-		if (typeof(gc) !== UNDEFINED)
-			gc();
-	}
-
 	// every 7 minutes (default) service clears static cache
 	if (count % framework.config['default-interval-clear-cache'] === 0) {
 		self.emit('clear', 'temporary', self.temporary);
@@ -4778,6 +4830,14 @@ Framework.prototype._service = function(count) {
 		}
 	}
 
+	// every 20 minutes (default) service clears resources
+	if (count % framework.config['default-interval-clear-resources'] === 0) {
+		self.emit('clear', 'resources');
+		self.resources = {};
+		if (typeof(gc) !== UNDEFINED)
+			setTimeout(gc, 1000);
+	}
+
 	self.emit('service', count);
 
 	// Run schedules
@@ -4789,11 +4849,6 @@ Framework.prototype._service = function(count) {
 
 	// F.schedules() sets this property to true
 	self._schedules = false;
-
-	/*
-	for (var i = 0, length = keys.length; i < length; i++) {
-		var key = keys[i];
-	*/
 
 	for (var key in self.schedules) {
 		var obj = self.schedules[key];
@@ -6348,10 +6403,15 @@ Framework.prototype._configure = function(arr, rewrite) {
 		});
 	}
 
+	if (self.config['disable-strict-server-certificate-validation'] === true)
+		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 	if (self.config['allow-performance'])
 		http.globalAgent.maxSockets = 9999;
 
+	self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
 	self.emit('configure', self.config);
+
 	return self;
 };
 
