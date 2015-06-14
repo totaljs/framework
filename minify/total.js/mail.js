@@ -83,6 +83,7 @@ Mailer.prototype.create = function(subject, body) {
  * @param  {ResolveMxCallback} callback Callback.
  */
 function resolveMx(domain, callback) {
+
 	dns.resolveMx(domain, function(err, data) {
 
 		if (err) {
@@ -298,8 +299,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 	}
 
 	self.callback = fnCallback;
-
-	options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000, tls: false });
+	options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000, tls: null });
 
 	if (smtp === null || smtp === '') {
 
@@ -333,6 +333,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	if (options.secure) {
 		var internal = framework_utils.copy(options);
+		internal.host = smtp;
 		socket = tls.connect(internal, function() { self._send(this, options); });
 	} else
 		socket = net.createConnection(options.port, smtp);
