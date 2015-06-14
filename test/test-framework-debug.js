@@ -15,6 +15,18 @@ framework.onCompileView = function(name, html, model) {
 	return html + 'COMPILED';
 };
 
+framework.on('ready', function() {
+	var t = framework.worker('test');
+	var a = false;
+	t.on('message', function(msg) {
+		if (msg === 'assert')
+			a = true;
+	})
+	t.on('exit', function() {
+		assert.ok(a === true, 'F.load() in worker');
+	});
+});
+
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
@@ -609,6 +621,7 @@ function run() {
 		});
 	});
 }
+
 /*
 var mem = require('memwatch');
 

@@ -15,6 +15,18 @@ framework.onCompileView = function(name, html, model) {
 	return html + 'COMPILED';
 };
 
+framework.on('ready', function() {
+	var t = framework.worker('test');
+	var a = false;
+	t.on('message', function(msg) {
+		if (msg === 'assert')
+			a = true;
+	})
+	t.on('exit', function() {
+		assert.ok(a === true, 'F.load() in worker');
+	});
+});
+
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
@@ -609,6 +621,7 @@ function run() {
 		});
 	});
 }
+
 /*
 var mem = require('memwatch');
 
@@ -635,4 +648,4 @@ framework.on('load', function() {
 	}, 2000);
 });
 
-framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('release', { port: 8001 });
+framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('false', { port: 8001 });
