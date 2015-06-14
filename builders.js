@@ -1,6 +1,6 @@
 /**
  * @module FrameworkBuilders
- * @version 1.8.0
+ * @version 1.8.1
  */
 
 'use strict';
@@ -3049,7 +3049,7 @@ UrlBuilder.prototype.hasValue = function(keys) {
 };
 
 /**
- * Render paramerters
+ * Render parameters
  * @param {String Array} keys Keys.
  * @param {String} delimiter Delimiter (default &).
  * @return {String}
@@ -3066,8 +3066,8 @@ UrlBuilder.prototype.toOne = function(keys, delimiter) {
 	return builder.join(delimiter || '&');
 };
 
-function ObjectBuilder() {
-	this.builder = {};
+function ObjectBuilder(obj) {
+	this.builder = typeof(obj) === OBJECT ? obj : {};
 	this.transformName = transforms['objectbuilder_default'];
 }
 
@@ -3075,36 +3075,35 @@ ObjectBuilder.prototype.copy = function() {
  	return exports.extend({}, source, true);
 };
 
+ObjectBuilder.prototype.extend = function(obj) {
+	framework_utils.extend(this.builder, obj, true);
+	return this;
+}
+
 ObjectBuilder.prototype.clear = function() {
 	this.builder = {};
 	return this;
 };
 
-ObjectBuilder.prototype.set = function(name, value, assign) {
-	if (!assign) {
-		this.builder[name] = value;
-		return this;
-	}
-	framework_utils.assign(this.builder, name, value);
+ObjectBuilder.prototype.set = function(name, value) {
+	this.builder[name] = value;
 	return this;
 };
 
-ObjectBuilder.prototype.inc = function(name, value, assign) {
+ObjectBuilder.prototype.push = function(name, value) {
+	var current = this.builder[name];
+	if (current instanceof Array)
+		current.push(value);
+	else
+		this.builder[name] = [value];
+	return this;
+};
 
-	if (!assign) {
-		if (this.builder[name])
-			this.builder[name] += value;
-		else
-			this.builder[name] = value;
-		return this;
-	}
-
-	framework_utils.assign(this.builder, name, function(val) {
-		if (!val)
-			return value;
-		return val + value;
-	});
-
+ObjectBuilder.prototype.inc = function(name, value) {
+	if (this.builder[name])
+		this.builder[name] += value;
+	else
+		this.builder[name] = value;
 	return this;
 };
 
@@ -3146,7 +3145,7 @@ ObjectBuilder.prototype.output = function() {
 ObjectBuilder.prototype._transform = function(name) {
 
 	var self = this;
-	var transformName = name || self.transformName;
+	var transformName = name === undefined ? self.transformName : name;
 
 	if (!transformName)
 		return self.builder;

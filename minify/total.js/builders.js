@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 1.8.0
+ * @version 1.8.1
  */
 
 'use strict';
@@ -36,7 +36,7 @@ var REQUIRED = 'The field "@" is required.';
 var DEFAULT_SCHEMA = 'default';
 
 var schemas = {};
-var transforms = { pagination: {}, error: {} };
+var transforms = { pagination: {}, error: {}, objectbuilder: {}};
 
 function SchemaBuilder(name) {
 	this.name = name;
@@ -3070,7 +3070,7 @@ UrlBuilder.prototype.hasValue = function(keys) {
 };
 
 /**
- * Render paramerters
+ * Render parameters
  * @param {String Array} keys Keys.
  * @param {String} delimiter Delimiter (default &).
  * @return {String}
@@ -3087,6 +3087,135 @@ UrlBuilder.prototype.toOne = function(keys, delimiter) {
 	return builder.join(delimiter || '&');
 };
 
+function ObjectBuilder(obj) {
+	this.builder = typeof(obj) === OBJECT ? obj : {};
+	this.transformName = transforms['objectbuilder_default'];
+}
+
+ObjectBuilder.prototype.copy = function() {
+ 	return exports.extend({}, source, true);
+};
+
+ObjectBuilder.prototype.extend = function(obj) {
+	framework_utils.extend(this.builder, obj, true);
+	return this;
+}
+
+ObjectBuilder.prototype.clear = function() {
+	this.builder = {};
+	return this;
+};
+
+ObjectBuilder.prototype.set = function(name, value) {
+	this.builder[name] = value;
+	return this;
+};
+
+ObjectBuilder.prototype.push = function(name, value) {
+	var current = this.builder[name];
+	if (current instanceof Array)
+		current.push(value);
+	else
+		this.builder[name] = [value];
+	return this;
+};
+
+ObjectBuilder.prototype.inc = function(name, value) {
+	if (this.builder[name])
+		this.builder[name] += value;
+	else
+		this.builder[name] = value;
+	return this;
+};
+
+ObjectBuilder.prototype.get = function(name, def) {
+	var value = this.builder[name];
+	if (value === undefined)
+		return def;
+	return value;
+};
+
+ObjectBuilder.prototype.remove = function(name) {
+	delete this.builder[name];
+	return this;
+};
+
+ObjectBuilder.prototype.keys = function() {
+	return Object.keys(this.builder);
+};
+
+ObjectBuilder.prototype.toJSON = function() {
+	return JSON.stringify(this.output());
+};
+
+/**
+ * Set transformation for current Pagination
+ * @param {String} name
+ * @return {Pagination}
+ */
+ObjectBuilder.prototype.setTransform = function(name) {
+	var self = this;
+	self._transform = name;
+	return self;
+};
+
+ObjectBuilder.prototype.output = function() {
+	return this._transform();
+};
+
+ObjectBuilder.prototype._transform = function(name) {
+
+	var self = this;
+	var transformName = name === undefined ? self.transformName : name;
+
+	if (!transformName)
+		return self.builder;
+
+	var current = transforms['objectbuilder'][transformName];
+
+	if (current === undefined)
+		return self.items;
+
+	return current.call(self);
+};
+
+ObjectBuilder.prototype.transform = function(name) {
+	var self = this;
+	return self._transform(name);
+};
+
+/**
+ * STATIC: Create transformation
+ * @param {String} name
+ * @param {Function} fn
+ * @param {Boolean} isDefault Default transformation for all ObjectBuilder.
+ */
+ObjectBuilder.addTransform = function(name, fn, isDefault) {
+	transforms['objectbuilder'][name] = fn;
+	if (isDefault)
+		ObjectBuilder.setDefaultTransform(name);
+};
+
+/**
+ * STATIC: Create transformation
+ * @param {String} name
+ * @param {Function} fn
+ */
+ObjectBuilder.setDefaultTransform = function(name) {
+	if (name === undefined)
+		delete transforms['objectbuilder_default'];
+	else
+		transforms['objectbuilder_default'] = name;
+};
+
+/**
+ * STATIC: Remove transformation
+ * @param {String} name
+ */
+ObjectBuilder.removeTransform = function(name) {
+	delete transforms['objectbuilder'][name];
+};
+
 // ======================================================
 // EXPORTS
 // ======================================================
@@ -3095,4 +3224,6 @@ exports.SchemaBuilder = SchemaBuilder;
 exports.ErrorBuilder = ErrorBuilder;
 exports.Pagination = Pagination;
 exports.UrlBuilder = UrlBuilder;
+exports.ObjectBuilder = ObjectBuilder;
 global.ErrorBuilder = ErrorBuilder;
+global.ObjectBuilder = ObjectBuilder;
