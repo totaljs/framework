@@ -13287,5 +13287,6 @@ process.on('message', function(msg, h) {
 });
 
 function prepare_isomorphic(name) {
+	name = name.replace(/\.js$/i, '');
 	return 'if(window["isomorphic"]===undefined)window.isomorphic={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + (framework.temporary.other['#isomorphic_' + name] || '') + ';return exports;})(null,null,null,null,null,true,false)';
 }
