@@ -460,8 +460,11 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 		var flag = req.flags[i];
 		switch (flag) {
 			case 'json':
+				// skip
+				/*
 				if (!route.isJSON)
 					return 0;
+				*/
 				continue;
 
 			case 'proxy':

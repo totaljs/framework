@@ -219,7 +219,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-38';
+	this.version_header = '1.8.1-39';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -319,7 +319,7 @@ function Framework() {
 	this.isTest = false;
 	this.isLoaded = false;
 	this.isWorker = false;
-	// this.isCluster = require('cluster').isWorker;
+	this.isCluster = require('cluster').isWorker;
 
 	this.routes = {
 		web: [],
@@ -5053,19 +5053,25 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		self.stats.request.desktop++;
 
 	req.$flags += protocol;
+	req.$type = 0;
 	flags.push(protocol);
 
 	if (multipart.indexOf('/form-data') === -1) {
-
-		if (multipart.indexOf('/json') !== -1) {
-			req.$flags += 'json';
-			flags.push('json');
+		switch (multipart.substring(multipart.length - 4)) {
+			case 'json':
+				req.$flags += 'json';
+				flags.push('json');
+				req.$type = 1;
+				break;
+			case '/xml':
+				req.$flags += 'xml';
+				flags.push('xml');
+				req.$type = 2;
+				break;
+			case 'oded':
+				req.$type = 3;
+				break;
 		}
-		else if (multipart.indexOf('/xml') !== -1) {
-			req.$flags += 'xml';
-			flags.push('xml');
-		}
-
 		multipart = '';
 	}
 
@@ -8128,68 +8134,9 @@ Subscribe.prototype.doEnd = function() {
 		return self;
 	}
 
-	if (route.isJSON) {
-
-		try {
-
-			if (((req.headers['content-type'] || '').indexOf('/json') === -1)) {
-				self.route400(new Error('The request validation (The content-type is not application/json).'));
-				return self;
-			}
-
-			var data = req.buffer_data.trim();
-			if (!data.isJSON()) {
-				self.route400(new Error('The request validation (not valid JSON).'));
-				return self;
-			}
-
-			try
-			{
-				req.body = JSON.parse(data);
-			} catch(e) {
-				self.route400(new Error('The request validation (not valid JSON).'));
-				return self;
-			}
-
-			if (!route.schema) {
-				req.buffer_data = null;
-				self.prepare(req.flags, req.uri.pathname);
-				return self;
-			}
-
-			schema = SCHEMA(route.schema[0]).get(route.schema[1]);
-
-			if (!schema) {
-				var err = new Error('Schema not found.');
-				F.error(err, null, req.uri);
-				self.route500(err);
-				return self;
-			}
-
-			schema.make(req.body, function(err, result) {
-
-				if (err) {
-					self.route400(err);
-					return;
-				}
-
-				if (result)
-					req.body = result;
-
-				self.prepare(req.flag, req.uri.pathname);
-			});
-
-		} catch (err) {
-			F.error(err, null, req.uri);
-			self.route500(err);
-		}
-
-		return self;
-	}
-
 	if (route.isXML) {
 
-		if ((req.headers['content-type'] || '').indexOf('text/xml') === -1) {
+		if (req.$type !== 2) {
 			self.route400(new Error('The request validation (The content-type is not text/xml).'));
 			return self;
 		}
@@ -8211,12 +8158,20 @@ Subscribe.prototype.doEnd = function() {
 		return self;
 	}
 
-	if ((req.headers['content-type'] || '').indexOf('x-www-form-urlencoded') === -1) {
+	if (req.$type === 0) {
 		self.route400(new Error('The request validation (The content-type is not x-www-form-urlencoded).'));
 		return self;
 	}
 
-	req.body = qs.parse(req.buffer_data);
+	if (req.$type === 1) {
+		try {
+			req.body = JSON.parse(req.buffer_data);
+		} catch (e) {
+			self.route400(new Error('Not valid JSON data.'));
+			return self;
+		}
+	} else
+		req.body = qs.parse(req.buffer_data);
 
 	if (!route.schema) {
 		self.prepare(req.flags, req.uri.pathname);
@@ -13308,5 +13263,6 @@ process.on('message', function(msg, h) {
 });
 
 function prepare_isomorphic(name) {
+	name = name.replace(/\.js$/i, '');
 	return 'if(window["isomorphic"]===undefined)window.isomorphic={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + (framework.temporary.other['#isomorphic_' + name] || '') + ';return exports;})(null,null,null,null,null,true,false)';
 }

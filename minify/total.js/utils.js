@@ -3962,6 +3962,24 @@ Array.prototype.limit = function(max, fn, callback, index) {
 };
 
 /*
+	Get only unique elements from array
+	Return {Array}
+*/
+Array.prototype.unique = function() {
+	var self = this;
+	var result = [];
+
+	for (var i = 0, c = self.length; i < c; i++) {
+		var value = self[i];
+		if (result.indexOf(value) === -1) {
+			result.push(value);
+		}
+	}
+
+	return result;
+};
+
+/*
 	Async class
 */
 function AsyncTask(owner, name, fn, cb, waiting) {
