@@ -21,7 +21,7 @@ framework.on('ready', function() {
 	t.on('message', function(msg) {
 		if (msg === 'assert')
 			a = true;
-	})
+	});
 	t.on('exit', function() {
 		assert.ok(a === true, 'F.load() in worker');
 	});

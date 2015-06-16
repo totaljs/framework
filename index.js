@@ -198,7 +198,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-39';
+	this.version_header = '1.8.1-40';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -5035,28 +5035,36 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	req.$type = 0;
 	flags.push(protocol);
 
-	if (multipart.indexOf('/form-data') === -1) {
-		switch (multipart.substring(multipart.length - 4)) {
+	var method = req.method;
+    var first = method[0];
+
+    if (first === 'P' || first === 'D') {
+		var index = multipart.lastIndexOf(';');
+		var tmp = multipart;
+		if (index !== -1)
+			tmp = tmp.substring(0, index);
+		switch (tmp.substring(tmp.length - 4)) {
 			case 'json':
 				req.$flags += 'json';
 				flags.push('json');
 				req.$type = 1;
+				multipart = '';
 				break;
 			case '/xml':
 				req.$flags += 'xml';
 				flags.push('xml');
 				req.$type = 2;
+				multipart = '';
 				break;
 			case 'oded':
 				req.$type = 3;
+				multipart = '';
+				break;
+			case 'data':
+				req.$flags += 'upload';
+				flags.push('upload');
 				break;
 		}
-		multipart = '';
-	}
-
-	if (multipart) {
-		req.$flags += 'upload';
-		flags.push('upload');
 	}
 
 	if (req.isProxy) {
@@ -5092,8 +5100,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 	// call event request
 	self.emit('request-begin', req, res);
-	var method = req.method;
-    var first = method[0];
 
     switch (first) {
     	case 'G':
