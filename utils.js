@@ -2842,6 +2842,18 @@ String.prototype.base64ToFile = function(filename, callback) {
 	return this;
 };
 
+String.prototype.base64ToBuffer = function() {
+	var self = this;
+
+	var index = self.indexOf(',');
+	if (index === -1)
+		index = 0;
+	else
+		index++;
+
+	return new Buffer(self.substring(index), 'base64');
+};
+
 /*
 	Get content type from base64
 	return {String}
