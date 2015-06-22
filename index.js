@@ -198,7 +198,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-40';
+	this.version_header = '1.8.1-41';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -2672,8 +2672,16 @@ Framework.prototype.log = function() {
 	var str = '';
 	var length = arguments.length;
 
-	for (var i = 0; i < length; i++)
-		str += (str ? ' ' : '') + (arguments[i] || '');
+	for (var i = 0; i < length; i++) {
+		var val = arguments[i];
+		if (val === undefined)
+			val = 'undefined';
+		else if (val === null)
+			val = 'null';
+		else if (typeof(val) === OBJECT)
+			val = util.inspect(val);
+		str += (str ? ' ' : '') + val;
+	}
 
 	self._verify_directory('logs');
 	fs.appendFile(utils.combine(self.config['directory-logs'], filename + '.log'), time + ' | ' + str + '\n');
@@ -2687,8 +2695,16 @@ Framework.prototype.logger = function() {
 	var str = '';
 	var length = arguments.length;
 
-	for (var i = 1; i < length; i++)
-		str += (str ? ' ' : '') + (arguments[i] || '');
+	for (var i = 1; i < length; i++) {
+		var val = arguments[i];
+		if (val === undefined)
+			val = 'undefined';
+		else if (val === null)
+			val = 'null';
+		else if (typeof(val) === OBJECT)
+			val = util.inspect(val);
+		str += (str ? ' ' : '') + val;
+	}
 
 	self._verify_directory('logs');
 	fs.appendFile(utils.combine(self.config['directory-logs'], arguments[0] + '.log'), dt + ' | ' + str + '\n');

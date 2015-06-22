@@ -64,6 +64,7 @@ BETA ======= 1.8.1
 - fixed: `binary --translate` (filenames)
 - fixed: SchemaBuilderEntity prepare (problem with nullable Boolean)
 - fixed: (IMPORTANT) 431 system route
+- fixed: F.log(), F.logger() –> problem with objects, reported by Nikita Shmidt 
 
 - improved: code optimalization
 

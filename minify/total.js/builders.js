@@ -270,7 +270,7 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 	result.length = 0;
 	result.required = required ? true : false;
 	result.isArray = false;
-	result.custom = custom;
+	result.custom = custom || '';
 
 	// 0 = undefined
 	// 1 = integer
