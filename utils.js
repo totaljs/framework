@@ -2972,7 +2972,7 @@ String.prototype.dollar = function() {
  * @param  {Number} max A maximum length, default: 60 and optional.
  * @return {String}
  */
-String.prototype.linker = function(max) {
+String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = String.prototype.linker = function(max) {
 	max = max || 60;
 
 	var self = this.trim().toLowerCase().removeDiacritics();
@@ -3007,10 +3007,6 @@ String.prototype.linker = function(max) {
 	if (builder[l] === '-')
 		return builder.substring(0, l);
 	return builder;
-};
-
-String.prototype.slug = function(max) {
-	return this.linker(max);
 };
 
 String.prototype.link = function(max) {
