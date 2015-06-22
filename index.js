@@ -836,6 +836,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	var schema;
 	var isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
 	var isMOBILE = false;
+	var isJSON = false;
 
 	if (flags) {
 
@@ -870,6 +871,10 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 			count++;
 			var flag = flags[i].toString().toLowerCase();
 			switch (flag) {
+
+				case 'json':
+					isJSON = true;
+					continue;
 
 				case 'xss':
 					count--;
@@ -978,13 +983,13 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	if (url.indexOf('#') !== -1)
 		priority -= 100;
 
-	if (flags.indexOf('proxy') !== -1 && flags.indexOf('json') === -1) {
-		flags.push('json');
+	if (flags.indexOf('proxy') !== -1) {
+		isJSON = true;
 		priority++;
 	}
 
 	// commented: flags.indexOf('get') === -1 && because we can have: route('/', ..., ['json', 'get']);
-	if ((flags.indexOf('json') !== -1 || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('delete') === -1 && flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
+	if ((isJSON || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('delete') === -1 && flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
 		flags.push('post');
 		method += (method ? ',' : '') + 'post';
 		priority++;
@@ -1048,7 +1053,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		middleware: middleware,
 		timeout: timeout === undefined ? self.config['default-request-timeout'] : timeout,
 		isMULTIPLE: isMULTIPLE,
-		isJSON: flags.indexOf('json') !== -1,
+		isJSON: isJSON,
 		isXML: flags.indexOf('xml') !== -1,
 		isRAW: isRaw,
 		isMOBILE: isMOBILE,
