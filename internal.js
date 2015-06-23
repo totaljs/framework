@@ -1816,6 +1816,10 @@ function view_parse(content, minify, filename) {
 
 			newCommand = (cmd.substring(8, cmd.indexOf(SPACE, 8)) || '').trim();
 			index = cmd.trim().indexOf(SPACE, newCommand.length + 10);
+
+			if (index === -1)
+				index = cmd.indexOf('[', newCommand.length + 10);
+
 			builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if (!($source instanceof Array) || source.length === 0)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
 
 		} else if (cmd === 'end') {
