@@ -4240,7 +4240,6 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 
 		var date = compare === undefined ? new Date().toUTCString() : compare.toUTCString();
 
-
 		if (strict) {
 			if (new Date(Date.parse(val)) === new Date(date))
 				return false;
