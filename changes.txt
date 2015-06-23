@@ -35,6 +35,7 @@ BETA ======= 1.8.1
 - added: F.isCluster (is true when the framework is running in the cluster)
 - added: Array.unique() by Andrea Sessa
 - added: String.base64ToBuffer();
+- added: terminal -> `tpm unpack [package_name] [optional: target_directory]`
 
 - updated: (IMPORTANT) routing: `json` flag is not required for receiving incomming data as JSON
 - updated: `F.mail(address, subject, view, [model], [callback], [language])` added language
@@ -64,7 +65,7 @@ BETA ======= 1.8.1
 - fixed: `binary --translate` (filenames)
 - fixed: SchemaBuilderEntity prepare (problem with nullable Boolean)
 - fixed: (IMPORTANT) 431 system route
-- fixed: F.log(), F.logger() –> problem with objects, reported by Nikita Shmidt 
+- fixed: F.log(), F.logger() –> problem with objects, reported by Nikita Shmidt
 
 - improved: code optimalization
 

@@ -490,8 +490,6 @@ function display_help() {
     log(colors.reset);
     log('====== Total.js Package Manager ' + VERSION +' ======');
     log('');
-    log('Documentation: http://docs.totaljs.com/total-package-manager/');
-    log('');
     log(colors.underscore + '===== INSTALL PACKAGE TO THE CURRENT PATH' + colors.reset);
     log('');
     log(colors.red + 'tpm install [optional: package_name] [optional: repository_name]' + colors.reset);
@@ -530,6 +528,10 @@ function display_help() {
     log(colors.underscore + '===== SHOW ALL REGISTERED REPOSITORIES' + colors.reset);
     log('');
     log(colors.red + 'tpm repositories' + colors.reset);
+    log('');
+    log(colors.underscore + '===== UNPACK PACKAGE' + colors.reset);
+    log('');
+    log(colors.red + 'tpm unpack [package_name] [optional: target_directory]' + colors.reset);
     log('');
 }
 
@@ -637,9 +639,15 @@ function install(repository, pkgname, cb, append) {
         });
 
         response.pipe(stream);
-
     });
+}
 
+function unpack(filename, target) {
+    var backup = new Backup();
+    backup.restore(filename, target ? target : ph.dirname(filename), function() {
+        log(colors.bgGreen + colors.white + 'Status       :', 'Success' + colors.reset);
+        log('');
+    });
 }
 
 function uninstall(repository, pkgname, cb, remove) {
@@ -846,6 +854,12 @@ function main() {
             return;
         }
 
+        if (cmd === 'unpack') {
+            current_repository = '';
+            $type = 6;
+            continue;
+        }
+
         if (cmd === 'packages' || cmd === 'list') {
             $type = 5;
             continue;
@@ -943,6 +957,10 @@ function main() {
             };
 
             fn();
+            break;
+
+        case 6:
+            unpack(current_package, current_repository);
             break;
 
         default:
