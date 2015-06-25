@@ -3481,6 +3481,9 @@ Array.prototype.compare = function(id, b, executor) {
  */
 Array.prototype.pair = function(arr, property, fn, remove) {
 
+	if (!arr)
+		arr = new Array(0);
+
 	var length = arr.length;
 	var index = 0;
 
@@ -3508,7 +3511,6 @@ Array.prototype.pair = function(arr, property, fn, remove) {
 
 	return this;
 };
-
 
 /**
  * Last item in array
