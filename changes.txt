@@ -34,6 +34,7 @@ BETA ======= 1.8.1
 - added: F.isWorker (is true when is called F.load())
 - added: F.isCluster (is true when the framework is running in the cluster)
 - added: Array.unique() by Andrea Sessa
+- added: Array.pair(array, property, fn(itemA, itemB), [remove]) - pair arrays
 - added: String.base64ToBuffer();
 - added: terminal -> `tpm unpack [package_name] [optional: target_directory]`
 

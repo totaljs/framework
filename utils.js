@@ -3472,6 +3472,45 @@ Array.prototype.compare = function(id, b, executor) {
 };
 
 /**
+ * Pair arrays
+ * @param {Array} arr
+ * @param {String} property
+ * @param {Function(itemA, itemB)} fn Paired items (itemA == this, itemB == arr)
+ * @param {Boolean} remove Optional, remove item from this array if the item doesn't exist int arr (default: false).
+ * @return {Array}
+ */
+Array.prototype.pair = function(arr, property, fn, remove) {
+
+	var length = arr.length;
+	var index = 0;
+
+	while (true) {
+		var item = this[index++];
+		if (!item)
+			break;
+
+		var is = false;
+
+		for (var i = 0; i < length; i++) {
+			if (item[property] !== arr[i][property])
+				continue;
+			fn(item, arr[i]);
+			is = true;
+			break;
+		}
+
+		if (is || !remove)
+			continue;
+
+		index--;
+		this.splice(index, 1);
+	}
+
+	return this;
+};
+
+
+/**
  * Last item in array
  * @param {Object} def Default value.
  * @return {Object}
