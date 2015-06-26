@@ -26,7 +26,6 @@ var NUMBER = 'number';
 var OBJECT = 'object';
 var BOOLEAN = 'boolean';
 var EXTENSION_JS = '.js';
-var EXTENSION_COFFEE = '.coffee';
 var RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
 var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
 var RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
@@ -5872,7 +5871,7 @@ Framework.prototype.test = function(stop, names, cb) {
 			var filename = path.join(directory, filePath);
 			var ext = path.extname(filename).toLowerCase();
 
-			if (ext !== EXTENSION_JS && ext !== EXTENSION_COFFEE)
+			if (ext !== EXTENSION_JS)
 				return;
 
 			if (names.length > 0 && names.indexOf(name.substring(0, name.length - 3)) === -1)
