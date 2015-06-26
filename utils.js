@@ -1883,12 +1883,20 @@ exports.ls = function(path, callback, filter) {
 	return {Date}
 */
 Date.prototype.add = function(type, value) {
+
+	if (value === undefined) {
+		var arr = type.split(' ');
+		type = arr[1];
+		value = exports.parseInt(arr[0]);
+	}
+
 	var self = this;
 	var dt = new Date(self.getTime());
 
 	switch(type) {
 		case 's':
 		case 'ss':
+		case 'sec':
 		case 'second':
 		case 'seconds':
 			dt.setSeconds(dt.getSeconds() + value);
@@ -1896,6 +1904,7 @@ Date.prototype.add = function(type, value) {
 		case 'm':
 		case 'mm':
 		case 'minute':
+		case 'min':
 		case 'minutes':
 			dt.setMinutes(dt.getMinutes() + value);
 			return dt;
