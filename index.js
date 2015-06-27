@@ -34,6 +34,7 @@ var CONTENTTYPE_TEXTHTML = 'text/html';
 var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
 var TEMPORARY_KEY_REGEX = /\//g;
 var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
+var REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
 
 var _controller = '';
 var _test;
@@ -197,7 +198,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-43';
+	this.version_header = '1.8.1-44';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -6271,7 +6272,7 @@ Framework.prototype._configure_versions = function(content) {
 
 	if (content === undefined) {
 
-		var filename = utils.combine('/', 'versions');
+		var filename = framework_utils.combine('/', 'versions');
 
 		if (fs.existsSync(filename))
 			content = fs.readFileSync(filename).toString(ENCODING);
@@ -6281,16 +6282,35 @@ Framework.prototype._configure_versions = function(content) {
 		self.versions = null;
 	}
 
-	if ((content || '').length === 0) {
+	if (!content) {
 		self.versions = null;
 		return self;
 	}
 
 	var arr = content.split('\n');
-	content = '';
-	for (var i = 0, length = arr.length; i < length; i++)
-		content += (arr[i][0] === '/' ? '' : '/') + arr[i] + '\n';
-	self.versions = content.parseConfig();
+	var obj = {};
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+
+		var str = arr[i];
+
+		if (str === '' || str[0] === '#' || str.substring(0, 3) === '// ')
+			continue;
+
+		if (str[0] !== '/')
+			str = '/' + str;
+
+		var index = str.indexOf(' :');
+		if (index === -1) {
+			index = str.indexOf('\t:');
+			if (index === -1)
+				continue;
+		}
+
+		obj[str.substring(0, index).trim()] = str.substring(index + 2).trim();
+	}
+
+	self.versions = obj;
 	return self;
 };
 
@@ -6566,6 +6586,30 @@ Framework.prototype._version = function(name) {
 	if (self.onVersion !== null)
 		name = self.onVersion(name) || name;
 	return name;
+};
+
+Framework.prototype._version_prepare = function(html) {
+	var self = this;
+
+	var match = html.match(REG_VERSIONS);
+
+	if (!match)
+		return html;
+
+	for (var i = 0, length = match.length; i < length; i++) {
+
+		var src = match[i].toString();
+		var end = 5;
+
+		// href
+		if (src[0] === 'h')
+			end = 6;
+
+		var name = src.substring(end, src.length - 1);
+		html = html.replace(match[i], src.substring(0, end) + self._version(name) + '"');
+	}
+
+	return html;
 };
 
 /**

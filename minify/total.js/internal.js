@@ -1734,6 +1734,7 @@ function view_parse(content, minify, filename) {
 		content = removeComments(content);
 
 	content = compressCSS(compressJS(content, 0, filename), 0, filename);
+	content = framework._version_prepare(content);
 
 	var DELIMITER = '\'';
 	var DELIMITER_UNESCAPE = 'unescape(\'';

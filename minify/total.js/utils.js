@@ -1904,12 +1904,20 @@ exports.ls = function(path, callback, filter) {
 	return {Date}
 */
 Date.prototype.add = function(type, value) {
+
+	if (value === undefined) {
+		var arr = type.split(' ');
+		type = arr[1];
+		value = exports.parseInt(arr[0]);
+	}
+
 	var self = this;
 	var dt = new Date(self.getTime());
 
 	switch(type) {
 		case 's':
 		case 'ss':
+		case 'sec':
 		case 'second':
 		case 'seconds':
 			dt.setSeconds(dt.getSeconds() + value);
@@ -1917,6 +1925,7 @@ Date.prototype.add = function(type, value) {
 		case 'm':
 		case 'mm':
 		case 'minute':
+		case 'min':
 		case 'minutes':
 			dt.setMinutes(dt.getMinutes() + value);
 			return dt;
@@ -3490,6 +3499,47 @@ Array.prototype.compare = function(id, b, executor) {
 				executor(a[index], bv, index, i);
 		}
 	}
+};
+
+/**
+ * Pair arrays
+ * @param {Array} arr
+ * @param {String} property
+ * @param {Function(itemA, itemB)} fn Paired items (itemA == this, itemB == arr)
+ * @param {Boolean} remove Optional, remove item from this array if the item doesn't exist int arr (default: false).
+ * @return {Array}
+ */
+Array.prototype.pair = function(arr, property, fn, remove) {
+
+	if (!arr)
+		arr = new Array(0);
+
+	var length = arr.length;
+	var index = 0;
+
+	while (true) {
+		var item = this[index++];
+		if (!item)
+			break;
+
+		var is = false;
+
+		for (var i = 0; i < length; i++) {
+			if (item[property] !== arr[i][property])
+				continue;
+			fn(item, arr[i]);
+			is = true;
+			break;
+		}
+
+		if (is || !remove)
+			continue;
+
+		index--;
+		this.splice(index, 1);
+	}
+
+	return this;
 };
 
 /**
