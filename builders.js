@@ -15,7 +15,7 @@ var REQUIRED = 'The field "@" is required.';
 var DEFAULT_SCHEMA = 'default';
 
 var schemas = {};
-var transforms = { pagination: {}, error: {}, objectbuilder: {}};
+var transforms = { pagination: {}, error: {}, objectbuilder: {}, transformbuilder: {} };
 
 function SchemaBuilder(name) {
 	this.name = name;
@@ -3066,6 +3066,49 @@ UrlBuilder.prototype.toOne = function(keys, delimiter) {
 	return builder.join(delimiter || '&');
 };
 
+function TransformBuilder() {}
+
+TransformBuilder.transform = function(name, obj, callback) {
+
+	if (obj === undefined) {
+		obj = name;
+		name = transforms['transformbuilder_default'];
+	}
+
+	var current = transforms['transformbuilder'][name];
+	if (!current) {
+		if (callback)
+			callback(obj);
+		return obj;
+	}
+
+	return current(obj, callback);
+};
+
+/**
+ * STATIC: Create transformation
+ * @param {String} name
+ * @param {Function} fn
+ * @param {Boolean} isDefault Default transformation for all ObjectBuilder.
+ */
+TransformBuilder.addTransform = function(name, fn, isDefault) {
+	transforms['transformbuilder'][name] = fn;
+	if (isDefault)
+		TransformBuilder.setDefaultTransform(name);
+};
+
+/**
+ * STATIC: Create transformation
+ * @param {String} name
+ * @param {Function} fn
+ */
+TransformBuilder.setDefaultTransform = function(name) {
+	if (name === undefined)
+		delete transforms['transformbuilder_default'];
+	else
+		transforms['transformbuilder_default'] = name;
+};
+
 function ObjectBuilder(obj) {
 	this.builder = typeof(obj) === OBJECT ? obj : {};
 	this.transformName = transforms['objectbuilder_default'];
@@ -3151,7 +3194,6 @@ ObjectBuilder.prototype._transform = function(name) {
 		return self.builder;
 
 	var current = transforms['objectbuilder'][transformName];
-
 	if (current === undefined)
 		return self.items;
 
@@ -3204,5 +3246,7 @@ exports.ErrorBuilder = ErrorBuilder;
 exports.Pagination = Pagination;
 exports.UrlBuilder = UrlBuilder;
 exports.ObjectBuilder = ObjectBuilder;
+exports.TransformBuilder = TransformBuilder;
 global.ErrorBuilder = ErrorBuilder;
 global.ObjectBuilder = ObjectBuilder;
+global.TransformBuilder = TransformBuilder;
