@@ -352,7 +352,7 @@ function test_ErrorBuilder() {
 
 function test_TransformBuilder() {
 
-    TransformBuilder.addTransform('xml', function(obj, resume) {
+    TransformBuilder.addTransform('xml', function(obj) {
         var xml = '';
         Object.keys(obj).forEach(function(key) {
             xml += '<' + key + '>' + obj[key] + '</' + key + '>';
@@ -360,7 +360,7 @@ function test_TransformBuilder() {
         return xml;
     }, true);
 
-    assert.ok(TransformBuilder.transform('xml', { name: 'Peter' }) === '<name>Peter</name>', 'TransformBuilder problem');
+    assert.ok(TransformBuilder.transform('xml', { name: 'Peter' }, true) === '<name>Peter</name>', 'TransformBuilder problem');
     assert.ok(TransformBuilder.transform({ name: 'Peter' }) === '<name>Peter</name>', 'TransformBuilder problem (default)');
 }
 

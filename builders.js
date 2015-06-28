@@ -3068,21 +3068,31 @@ UrlBuilder.prototype.toOne = function(keys, delimiter) {
 
 function TransformBuilder() {}
 
-TransformBuilder.transform = function(name, obj, callback) {
+TransformBuilder.transform = function(name, obj) {
+
+	var index = 2;
 
 	if (obj === undefined) {
 		obj = name;
 		name = transforms['transformbuilder_default'];
+		index = 1;
 	}
 
 	var current = transforms['transformbuilder'][name];
 	if (!current) {
-		if (callback)
-			callback(obj);
 		return obj;
 	}
 
-	return current(obj, callback);
+	var sum = arguments.length - index;
+	if (sum <= 0)
+		return current.call(obj, obj);
+
+	var arr = new Array(sum + 1)
+	var indexer = 1;
+	arr[0] = obj;
+	for (var i = index; i < arguments.length; i++)
+		arr[indexer++] = arguments[i];
+	return current.apply(obj, arr);
 };
 
 /**
