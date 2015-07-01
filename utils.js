@@ -3089,6 +3089,10 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 	var num = self.toString();
 	var dec = '';
 	var output = '';
+	var minus = num[0] === '-' ? '-' : '';
+	if (minus)
+		num = num.substring(1);
+
 	var index = num.indexOf('.');
 
 	if (typeof(decimals) === STRING) {
@@ -3123,7 +3127,7 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 	if (dec.length > 0 && separatorDecimal === undefined)
 		separatorDecimal = separator === '.' ? ',' : '.';
 
-	return output + (dec.length > 0 ? separatorDecimal + dec : '');
+	return minus + output + (dec.length > 0 ? separatorDecimal + dec : '');
 };
 
 /*
@@ -3631,7 +3635,6 @@ Array.prototype.orderBy = function(name, asc) {
 
 	return self;
 };
-
 
 /*
 	Trim values
