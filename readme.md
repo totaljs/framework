@@ -81,9 +81,9 @@ The framework needs your donation for ensure future development and improving th
 
 ## Contact
 
-Peter Širka - <petersirka@gmail.com>
-Matus Szabo - <matus.szabo@gmail.com>
-Tomas Holovsky - <tomasholovsky@gmail.com>
+- Peter Širka - <petersirka@gmail.com>
+- Matus Szabo - <matus.szabo@gmail.com>
+- Tomas Holovsky - <tomasholovsky@gmail.com>
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: license.txt
