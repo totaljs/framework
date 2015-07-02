@@ -4439,6 +4439,7 @@ exports.sync = function(fn, owner) {
 
 		fn.apply(self, args);
 
+		// @TODO: WTF?
 		return function(cb) {
 			callback = cb;
 			if (!executed && params) {
@@ -4446,6 +4447,26 @@ exports.sync = function(fn, owner) {
 				callback.apply(self, params);
 			}
 		};
+	};
+};
+
+exports.sync2 = function(fn, owner) {
+	return function() {
+
+		var params;
+		var callback;
+		var executed = false;
+		var self = owner || this;
+
+		args.push(function() {
+			params = arguments;
+			if (!executed && callback) {
+				executed = true;
+				callback.apply(self, params);
+			}
+		});
+
+		fn.apply(self);
 	};
 };
 
@@ -4644,3 +4665,4 @@ exports.minifyHTML = function(value) {
 
 global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
+global.sync2 = exports.sync2;
