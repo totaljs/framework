@@ -34,6 +34,7 @@ var fs = require('fs');
 var path = require('path');
 var CRLF = '\r\n';
 var UNDEFINED = 'undefined';
+var REG_ESMTP = /\besmtp\b/i;
 
 var errors = {
 	notvalid: 'E-mail address is not valid',
@@ -576,7 +577,9 @@ Message.prototype._send = function(socket, options, autosend) {
 					return;
 				}
 
-				command = isTLS || /\besmtp\b/i.test(line) ? 'EHLO' : 'HELO';
+				//command = isTLS || /\besmtp\b/i.test(line) ? 'EHLO' : 'HELO';
+				// @CHANGED: only ESMTP supports auth, so this fix has fixed EXIM mail servers
+				command = isTLS || (options.user && options.password) || REG_ESMTP.test(line) ? 'EHLO' : 'HELO';
 				write(command + ' ' + host);
 				break;
 

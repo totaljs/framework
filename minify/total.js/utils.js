@@ -3110,6 +3110,10 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 	var num = self.toString();
 	var dec = '';
 	var output = '';
+	var minus = num[0] === '-' ? '-' : '';
+	if (minus)
+		num = num.substring(1);
+
 	var index = num.indexOf('.');
 
 	if (typeof(decimals) === STRING) {
@@ -3144,7 +3148,7 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 	if (dec.length > 0 && separatorDecimal === undefined)
 		separatorDecimal = separator === '.' ? ',' : '.';
 
-	return output + (dec.length > 0 ? separatorDecimal + dec : '');
+	return minus + output + (dec.length > 0 ? separatorDecimal + dec : '');
 };
 
 /*
@@ -3652,7 +3656,6 @@ Array.prototype.orderBy = function(name, asc) {
 
 	return self;
 };
-
 
 /*
 	Trim values
@@ -4457,6 +4460,7 @@ exports.sync = function(fn, owner) {
 
 		fn.apply(self, args);
 
+		// @TODO: WTF?
 		return function(cb) {
 			callback = cb;
 			if (!executed && params) {
@@ -4464,6 +4468,26 @@ exports.sync = function(fn, owner) {
 				callback.apply(self, params);
 			}
 		};
+	};
+};
+
+exports.sync2 = function(fn, owner) {
+	return function() {
+
+		var params;
+		var callback;
+		var executed = false;
+		var self = owner || this;
+
+		args.push(function() {
+			params = arguments;
+			if (!executed && callback) {
+				executed = true;
+				callback.apply(self, params);
+			}
+		});
+
+		fn.apply(self);
 	};
 };
 
@@ -4662,3 +4686,4 @@ exports.minifyHTML = function(value) {
 
 global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
+global.sync2 = exports.sync2;
