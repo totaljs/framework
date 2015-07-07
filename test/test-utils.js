@@ -45,6 +45,10 @@ function prototypeNumber() {
 	assert.ok(number.floor(4) === 10.1034, 'floor number: 4 decimals');
 	assert.ok(number.floor(0) === 10, 'floor number: 0 decimals');
 	assert.ok(number.hex() === 'A.1A7AB75643028', 'number to hex');
+	assert.ok(number.add('10%', 0) === 1, 'add number: 1');
+	assert.ok(number.add('+10%', 0) === 11, 'add number: 2');
+	assert.ok(number.add('-10%', 0) === 9, 'add number: 3');
+	assert.ok(number.add('*2', 0) === 20, 'add number: 4');
 }
 
 // test: string prototype
