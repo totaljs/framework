@@ -3151,6 +3151,72 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 	return minus + output + (dec.length > 0 ? separatorDecimal + dec : '');
 };
 
+Number.prototype.add = function(value, decimals) {
+
+	if (value === undefined || value === null)
+		return this;
+
+	if (typeof(value) === NUMBER)
+		return this + value;
+
+	var first = value.charCodeAt(0);
+	var is = false;
+
+	if (first < 48 || first > 57) {
+		is = true;
+		value = value.substring(1);
+	}
+
+	var length = value.length;
+	var isPercentage = false;
+	var num;
+
+	if (value[length - 1] === '%') {
+		value = value.substring(0, length - 1);
+		isPercentage = true;
+
+		if (is) {
+			var tmp = ((value.parseFloat() / 100) + 1);
+			if (first === 43 || first === 42)
+				num = this * tmp;
+			else
+				num = this / tmp;
+			return decimals !== undefined ? num.floor(decimals) : num;
+		} else {
+			num = (this / 100) * value.parseFloat();
+			return decimals !== undefined ? num.floor(decimals) : num;
+		}
+
+	} else
+		num = value.parseFloat();
+
+	switch (first) {
+		case 42:
+			num = this * num;
+			break;
+		case 43:
+			num = this + num;
+			break;
+		case 45:
+			num = this - num;
+			break;
+		case 47:
+			num = this / num;
+			break;
+		case 47:
+			num = this / num;
+			break;
+		default:
+			num = this;
+			break;
+	}
+
+	if (decimals !== undefined)
+		return num.floor(decimals);
+
+	return num;
+};
+
 /*
 	Format number :: 10000 = 10 000
 	@format {Number or String} :: number is decimal and string is specified format, example: ## ###.##

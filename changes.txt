@@ -40,7 +40,8 @@ BETA ======= 1.8.1
 - added: String.base64ToBuffer();
 - added: terminal -> `tpm unpack [package_name] [optional: target_directory]`
 - added: versions is applied to raw HTML
-- added: sync2(), e.g. sync2(fn), diff with v1: sync(fn)()
+- added: sync2(), e.g. sync2(fn), diff with v1: sync(fn)() and v2: sync2(fn)
+- added: "dependencies" file for installing dependencies (modules, packages, etc.)
 
 - updated: (IMPORTANT) routing: `json` flag is not required for receiving incomming data as JSON
 - updated: `F.mail(address, subject, view, [model], [callback], [language])` added language

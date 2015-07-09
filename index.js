@@ -198,7 +198,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1810;
-	this.version_header = '1.8.1-46';
+	this.version_header = '1.8.1-47';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -1734,6 +1734,10 @@ Framework.prototype.$load = function(types) {
 	}
 
 	self._routesSort();
+
+	if (!types || types.indexOf('dependencies') !== -1)
+		self._configure_dependencies();
+
 	return self;
 };
 
@@ -6260,6 +6264,106 @@ Framework.prototype.translator = function(language, text) {
 	return framework_internal.parseLocalization(text, language);
 };
 
+Framework.prototype._configure_dependencies = function(content) {
+
+	if (content === undefined) {
+		var filename = framework_utils.combine('/', 'dependencies');
+		if (fs.existsSync(filename))
+			content = fs.readFileSync(filename).toString(ENCODING);
+		else
+			content = '';
+	}
+
+	var self = this;
+
+	if (!content)
+		return self;
+
+	var arr = content.split('\n');
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+
+		var str = arr[i];
+
+		if (str === '' || str[0] === '#' || str.substring(0, 3) === '// ')
+			continue;
+
+		var index = str.indexOf(' :');
+		if (index === -1) {
+			index = str.indexOf('\t:');
+			if (index === -1)
+				continue;
+		}
+
+		var key = str.substring(0, index).trim();
+		var url = str.substring(index + 2).trim();
+		var options = {};
+
+		index = url.indexOf('-->');
+
+		if (index !== -1) {
+			var opt = url.substring(index + 3).trim();
+			if (opt.isJSON())
+				options = JSON.parse(opt);
+			url = url.substring(0, index).trim();
+		}
+
+		switch (key) {
+			case 'package':
+			case 'packages':
+			case 'pkg':
+				self.install('package', url, options);
+				break;
+			case 'module':
+			case 'modules':
+				self.install('module', url, options);
+				break;
+			case 'model':
+			case 'models':
+				self.install('model', url, options);
+				break;
+			case 'source':
+			case 'sources':
+				self.install('source', url, options);
+				break;
+			case 'controller':
+			case 'controllers':
+				self.install('controller', url, options);
+				break;
+			case 'controller':
+			case 'controllers':
+				self.install('controller', url, options);
+				break;
+			case 'view':
+			case 'views':
+				self.install('view', url, options);
+				break;
+			case 'version':
+			case 'versions':
+				self.install('version', url, options);
+				break;
+			case 'config':
+			case 'configuration':
+				self.install('config', url, options);
+				break;
+			case 'isomorphic':
+			case 'isomorphics':
+				self.install('isomorphic', url, options);
+				break;
+			case 'definition':
+			case 'definitions':
+				self.install('definition', url, options);
+				break;
+			case 'middleware':
+			case 'middlewares':
+				self.install('middleware', url, options);
+				break;
+		}
+	}
+
+	return self;
+};
+
 /**
  * Versions configuration
  * @private
@@ -6271,14 +6375,11 @@ Framework.prototype._configure_versions = function(content) {
 	var self = this;
 
 	if (content === undefined) {
-
 		var filename = framework_utils.combine('/', 'versions');
-
 		if (fs.existsSync(filename))
 			content = fs.readFileSync(filename).toString(ENCODING);
 		else
 			content = '';
-
 		self.versions = null;
 	}
 
