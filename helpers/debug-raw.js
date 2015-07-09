@@ -18,6 +18,12 @@ var directory = process.cwd();
 var path = require('path');
 var first = process.argv.indexOf('restart') === -1;
 
+process.on('uncaughtException', function(e) {
+    if (e.toString().indexOf('ESRCH') !== -1)
+        return;
+    console.log(e);
+});
+
 function debug() {
     var framework = require('total.js');
     var port = parseInt(process.argv[process.argv.length - 1]);
