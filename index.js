@@ -6402,13 +6402,24 @@ Framework.prototype._configure_versions = function(content) {
 			str = '/' + str;
 
 		var index = str.indexOf(' :');
+		var ismap = false;
+
 		if (index === -1) {
 			index = str.indexOf('\t:');
-			if (index === -1)
-				continue;
+			if (index === -1) {
+				index = str.indexOf('-->');
+				if (index === -1)
+					continue;
+				ismap = true;
+			}
 		}
 
-		obj[str.substring(0, index).trim()] = str.substring(index + 2).trim();
+		var len = ismap ? 3 : 2;
+		var key = str.substring(0, index).trim();
+		var filename = str.substring(index + len).trim();
+		obj[key] = filename;
+		if (ismap)
+			self.map(filename, self.path.public(key));
 	}
 
 	self.versions = obj;
