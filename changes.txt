@@ -64,6 +64,7 @@ BETA ======= 1.8.1
 - updated: framework responds for bad requests with HTTP 403
 - updated: Mail (added support for Office365)
 - updated: Date.prototype.add() supports e.g. Date.prototype.add('25 days')
+- updated: String.prototype.params() -> supports double "{{"
 
 - removed: XSS check
 

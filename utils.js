@@ -2539,7 +2539,7 @@ String.prototype.params = function(obj) {
 	if (obj === undefined || obj === null)
 		return formatted;
 
-	var reg = /\{[^}\n]*\}/g;
+	var reg = /\{{1,2}[^}\n]*\}{1,2}/g;
 	var match = formatted.match(reg);
 
 	if (match === null)
@@ -2552,6 +2552,9 @@ String.prototype.params = function(obj) {
 
 		var isEncode = false;
 		var name = prop.substring(1, prop.length - 1).trim();
+
+		if (name[0] === '{')
+			name = name.substring(1, name.length - 1).trim();
 
 		var format = '';
 		var index = name.indexOf('|');
@@ -2570,7 +2573,6 @@ String.prototype.params = function(obj) {
 
 		if (name.indexOf('.') !== -1) {
 			var arr = name.split('.');
-
 			if (arr.length === 2)
 				val = obj[arr[0]][arr[1]];
 			else if (arr.length === 3)
