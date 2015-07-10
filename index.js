@@ -4901,6 +4901,8 @@ Framework.prototype._request = function(req, res) {
 	var self = framework;
 
 	res.req = req;
+	req.res = res;
+
 	self.stats.request.request++;
 	self.emit('request', req, res);
 
@@ -4957,7 +4959,7 @@ Framework.prototype._request = function(req, res) {
 	req.uri = parser.parse(protocol + '://' + req.host + req.url);
 	req.path = framework_internal.routeSplit(req.uri.pathname);
 	req.body = {};
-	req.files = [];
+	req.files = new Array(0);
 	req.processing = 0;
 	req.session = null;
 	req.user = null;
@@ -13245,6 +13247,32 @@ http.IncomingMessage.prototype.authorization = function() {
 };
 
 /**
+ * Authorization for custom delegates
+ * @param  {Function(err, userprofile, isAuthorized)} callback
+ * @return {Request}
+ */
+http.IncomingMessage.prototype.authorize = function(callback) {
+
+	if (framework.onAuthorization === null) {
+		callback(null, null, false);
+		return this;
+	}
+
+	var req = this;
+
+	framework.onAuthorization(req, req.res, req.flags, function(isAuthorized, user) {
+		if (typeof(isAuthorized) !== BOOLEAN) {
+			user = isAuthorized;
+			isAuthorized = !user;
+		}
+		req.isAuthorized = isAuthorized;
+		callback(null, user, isAuthorized);
+	});
+
+	return this;
+};
+
+/**
  * Clear all uplaoded files
  * @private
  * @param {Boolean} isAuto
@@ -13262,7 +13290,6 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
 		return self;
 
 	var length = files.length;
-
 	if (length === 0)
 		return self;
 
