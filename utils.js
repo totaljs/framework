@@ -2540,15 +2540,7 @@ String.prototype.params = function(obj) {
 		return formatted;
 
 	var reg = /\{{2}[^}\n]*\}{2}/g;
-	var match = formatted.match(reg);
-
-	if (match === null)
-		return formatted;
-
-	var length = match.length;
-
-	for (var i = 0; i < length; i++) {
-		var prop = match[i];
+	return formatted.replace(reg, function(prop) {
 
 		var isEncode = false;
 		var name = prop.substring(2, prop.length - 2).trim();
@@ -2592,7 +2584,7 @@ String.prototype.params = function(obj) {
 			val = val(index);
 
 		if (val === undefined)
-			continue;
+			return prop;
 
 		if (format.length > 0) {
 
@@ -2610,10 +2602,8 @@ String.prototype.params = function(obj) {
 		}
 
 		val = val.toString().dollar();
-		formatted = formatted.replace(prop, isEncode ? exports.encode(val) : val);
-	}
-
-	return formatted;
+		return isEncode ? exports.encode(val) : val;
+	});
 };
 
 /*
