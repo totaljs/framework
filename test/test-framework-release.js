@@ -6,7 +6,7 @@ var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
 
-//INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
+// INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
 //framework.map('/minify/', '@testpackage', ['.html', 'js']);
 //framework.map('/minify/', 'models');
@@ -106,6 +106,15 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			assert(data === '<div><p>a b c d</p><div>Price 30 &euro;</div></div><div>Name: Peter</div><div>Name: Peter</div><div>Price: 1000 1 000.00</div><div>13</div><div>Name: Peter</div>', 'HTML compressor');
+			complete();
+		});
+	});
+
+	async.await('html nocompress', function(complete) {
+		utils.request(url + 'html-nocompress/', ['get'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('<div>\nA\n</div>') !== -1, 'HTML nocompress');
 			complete();
 		});
 	});
@@ -648,4 +657,4 @@ framework.on('load', function() {
 	}, 2000);
 });
 
-framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('false', { port: 8001 });
+framework.useConfig('my-config.txt').useConfig('/configs/my-config.config').http('release', { port: 8001 });

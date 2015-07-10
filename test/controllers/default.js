@@ -31,6 +31,7 @@ exports.install = function() {
     });
 
     framework.route('/html-compressor/', view_compressor);
+    framework.route('/html-nocompress/', view_nocompress);
     framework.route('/sync/', synchronize);
     framework.route('/package/', '@testpackage/test');
     framework.route('/precompile/', view_precomile);
@@ -678,6 +679,11 @@ function viewHTTPS() {
 function view_compressor() {
     var self = this;
     self.view('compress', { name: 'Peter' });
+}
+
+function view_nocompress() {
+    var self = this;
+    self.view('nocompress');
 }
 
 function regexp(number) {

@@ -110,6 +110,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('html nocompress', function(complete) {
+		utils.request(url + 'html-nocompress/', ['get'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('<div>\nA\n</div>') !== -1, 'HTML nocompress');
+			complete();
+		});
+	});
+
 	async.await('0', function(complete) {
 		utils.request(url + 'share/', 'GET', null, function(error, data, code, headers) {
 			if (error)
