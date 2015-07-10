@@ -2539,7 +2539,7 @@ String.prototype.params = function(obj) {
 	if (obj === undefined || obj === null)
 		return formatted;
 
-	var reg = /\{{1,2}[^}\n]*\}{1,2}/g;
+	var reg = /\{{2}[^}\n]*\}{2}/g;
 	var match = formatted.match(reg);
 
 	if (match === null)
@@ -2551,10 +2551,7 @@ String.prototype.params = function(obj) {
 		var prop = match[i];
 
 		var isEncode = false;
-		var name = prop.substring(1, prop.length - 1).trim();
-
-		if (name[0] === '{')
-			name = name.substring(1, name.length - 1).trim();
+		var name = prop.substring(2, prop.length - 2).trim();
 
 		var format = '';
 		var index = name.indexOf('|');
@@ -2564,7 +2561,7 @@ String.prototype.params = function(obj) {
 			name = name.substring(0, index).trim();
 		}
 
-		if (prop.substring(0, 2) === '{!')
+		if (name[0] === '!')
 			name = name.substring(1);
 		else
 			isEncode = true;
@@ -2573,15 +2570,21 @@ String.prototype.params = function(obj) {
 
 		if (name.indexOf('.') !== -1) {
 			var arr = name.split('.');
-			if (arr.length === 2)
-				val = obj[arr[0]][arr[1]];
-			else if (arr.length === 3)
-				val = obj[arr[0]][arr[1]][arr[3]];
+			if (arr.length === 2) {
+				if (obj[arr[0]])
+					val = obj[arr[0]][arr[1]];
+			}
+			else if (arr.length === 3) {
+				if (obj[arr[0]] && obj[arr[0]][arr[1]])
+					val = obj[arr[0]][arr[1]][arr[2]];
+			}
 			else if (arr.length === 4)
-				val = obj[arr[0]][arr[1]][arr[3]][arr[4]];
-			else if (arr.length === 5)
-				val = obj[arr[0]][arr[1]][arr[3]][arr[4]][arr[5]];
-
+				if (obj[arr[0]] && obj[arr[0]][arr[1]] && obj[arr[0]][arr[1]][arr[2]])
+					val = obj[arr[0]][arr[1]][arr[2]][arr[3]];
+			else if (arr.length === 5) {
+				if (obj[arr[0]] && obj[arr[0]][arr[1]] && obj[arr[0]][arr[1]][arr[2]] && obj[arr[0]][arr[1]][arr[2]][arr[3]])
+					val = obj[arr[0]][arr[1]][arr[2]][arr[3]][arr[4]];
+			}
 		} else
 			val = name.length === 0 ? obj : obj[name];
 
