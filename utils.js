@@ -3353,11 +3353,10 @@ Number.prototype.pluralize = function(zero, one, few, other) {
 		value = other;
 
 	var beg = value.indexOf('#');
-	var end = value.lastIndexOf('#');
-
 	if (beg === -1)
 		return value;
 
+	var end = value.lastIndexOf('#');
 	var format = value.substring(beg, end + 1);
 	return num.format(format) + value.replace(format, '');
 };
