@@ -1,6 +1,6 @@
 /**
  * @module FrameworkMail
- * @version 1.8.1
+ * @version 1.9.0
  */
 
 'use strict'
@@ -437,7 +437,7 @@ Message.prototype._send = function(socket, options, autosend) {
 		var builder = '';
 		var mail;
 
-		if (length > 0) {
+		if (length) {
 
 			for (var i = 0; i < length; i++) {
 				mail = '<' + self.addressTo[i] + '>';
@@ -450,7 +450,7 @@ Message.prototype._send = function(socket, options, autosend) {
 		}
 
 		length = self.addressCC.length;
-		if (length > 0) {
+		if (length) {
 
 			for (var i = 0; i < length; i++) {
 				mail = '<' + self.addressCC[i] + '>';
@@ -464,7 +464,7 @@ Message.prototype._send = function(socket, options, autosend) {
 		}
 
 		length = self.addressBCC.length;
-		if (length > 0) {
+		if (length) {
 			for (var i = 0; i < length; i++)
 				buffer.push('RCPT TO: <' + self.addressBCC[i] + '>');
 		}
@@ -478,7 +478,7 @@ Message.prototype._send = function(socket, options, autosend) {
 
 		length = self.addressReply.length;
 
-		if (length > 0) {
+		if (length) {
 			for (var i = 0; i < length; i++)
 				builder += (builder !== '' ? ', ' : '') + '<' + self.addressReply[i] + '>';
 
@@ -618,7 +618,7 @@ Message.prototype._send = function(socket, options, autosend) {
 
 				write(message.join(CRLF));
 
-				if (self.files.length > 0) {
+				if (self.files.length) {
 					message = null;
 					self._writeAttachment(write, boundary, socket);
 					return;

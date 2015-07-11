@@ -1,6 +1,6 @@
 /**
  * @module Framework
- * @version 1.8.1
+ * @version 1.9.0
  */
 
 'use strict';
@@ -142,8 +142,8 @@ global.ROUTING = function(name) {
 	return framework.routing(name);
 };
 
-global.SCHEDULE = function(date, fn) {
-	return framework.schedule(date, fn);
+global.SCHEDULE = function(date, each, fn) {
+	return framework.schedule(date, each, fn);
 };
 
 global.FINISHED = function(stream, callback) {
@@ -197,8 +197,8 @@ global.is_server = true;
 function Framework() {
 
 	this.id = null;
-	this.version = 1810;
-	this.version_header = '1.8.1-48';
+	this.version = 1900;
+	this.version_header = '1.9.0-1';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -292,7 +292,7 @@ function Framework() {
 	this.connections = {};
 	this.functions = {};
 	this.versions = null;
-	this.schedules = {};
+	this.schedules = [];
 
 	this.isDebug = true;
 	this.isTest = false;
@@ -411,7 +411,6 @@ function Framework() {
 	this._length_middleware = 0;
 	this._length_request_middleware = 0;
 	this._length_files = 0;
-	this._schedules = false;
 
 	this.isVirtualDirectory = false;
 	this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
@@ -625,10 +624,16 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 /**
  * Schedule job
  * @param {Date or String} date
+ * @param {Boolean} repeat Repeat schedule
  * @param {Function} fn
  * @return {Framework}
  */
-Framework.prototype.schedule = function(date, fn) {
+Framework.prototype.schedule = function(date, repeat, fn) {
+
+	if (fn === undefined) {
+		fn = repeat;
+		repeat = false;
+	}
 
 	var self = this;
 	var type = typeof(date);
@@ -639,11 +644,12 @@ Framework.prototype.schedule = function(date, fn) {
 		date = new Date(date);
 
 	var sum = date.getTime();
-	var id = Utils.GUID(5) + Utils.random(10000);
+	var id = framework_utils.GUID(5) + framework_utils.random(10000);
 
-	self.schedules[id] = { expire: sum, fn: fn };
-	self._schedules = true;
+	if (repeat)
+		repeat = repeat.replace('each', '1');
 
+	self.schedules.push({ expire: sum, fn: fn, repeat: repeat });
 	return self;
 };
 
@@ -1268,7 +1274,7 @@ Framework.prototype.middleware = function(name, funcExecute) {
 Framework.prototype.use = function(name) {
 	var self = this;
 
-	if (arguments.length > 0) {
+	if (arguments.length) {
 		for (var i = 0; i < arguments.length; i++)
 			self.routes.request.push(arguments[i]);
 	} else if (name instanceof Array) {
@@ -2287,7 +2293,7 @@ Framework.prototype.install_prepare = function(noRecursive) {
 	clearTimeout(self.temporary.other.dependencies);
 	self.temporary.other.dependencies = setTimeout(function() {
 		var keys = Object.keys(framework.temporary.dependencies);
-		if (keys.length > 0)
+		if (keys.length)
 			throw new Error('Dependency exception (module): missing dependencies for: ' + keys.join(', ').trim());
 		delete self.temporary.other.dependencies;
 	}, 1500);
@@ -2731,7 +2737,6 @@ Framework.prototype.usage = function(detailed) {
 	var modules = Object.keys(self.modules);
 	var isomorphic = Object.keys(self.isomorphic);
 	var models = Object.keys(self.models);
-	var schedules = Object.keys(self.schedules);
 	var helpers = Object.keys(self.helpers);
 	var staticFiles = Object.keys(self.temporary.path);
 	var staticRange = Object.keys(self.temporary.range);
@@ -2766,7 +2771,7 @@ Framework.prototype.usage = function(detailed) {
 		cache: cache.length,
 		worker: workers.length,
 		connection: connections.length,
-		schedule: schedules.length,
+		schedule: self.schedules.length,
 		helpers: helpers.length,
 		error: self.errors.length,
 		problem: self.problems.length,
@@ -4864,28 +4869,31 @@ Framework.prototype._service = function(count) {
 
 	self.emit('service', count);
 
+	var length = self.schedules.length;
+
 	// Run schedules
-	if (!self._schedules)
+	if (!length)
 		return self;
 
 	var expire = new Date().getTime();
-	var pending = false;
+	var index = 0;
 
-	// F.schedules() sets this property to true
-	self._schedules = false;
-
-	for (var key in self.schedules) {
-		var obj = self.schedules[key];
-		if (obj.expire > expire) {
-			pending = true;
+	while (true) {
+		var schedule = self.schedules[index++];
+		if (!schedule)
+			break;
+		if (schedule.expire > expire)
 			continue;
-		}
-		delete self.schedules[key];
+
+		index--;
+
+		if (!schedule.repeat)
+			self.schedules.splice(index, 1);
+		else
+			schedule.expire = new Date().add(schedule.repeat);
+
 		obj.fn.call(self);
 	}
-
-	if (pending)
-		self._schedules = true;
 
 	return self;
 };
@@ -5324,7 +5332,7 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 		return self;
 	}
 
-	var id = path + (route.flags.length > 0 ? '#' + route.flags.join('-') : '');
+	var id = path + (route.flags.length ? '#' + route.flags.join('-') : '');
 
 	if (route.isBINARY)
 		socket.type = 1;
@@ -5336,12 +5344,12 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 			var connection = new WebSocket(self, path, route.controller, id);
 			connection.route = route;
 			self.connections[id] = connection;
-			route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
+			route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
 		}
 		socket.upgrade(self.connections[id]);
 	};
 
-	if (route.middleware instanceof Array && route.middleware.length > 0) {
+	if (route.middleware instanceof Array && route.middleware.length) {
 		var func = new Array(route.middleware.length);
 		var indexer = 0;
 		for (var i = 0, length = route.middleware.length; i < length; i++) {
@@ -5623,7 +5631,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 		for (var i = 0; i < length; i++)
 			builder.push(keys[i] + '=' + encodeURIComponent(cookies[keys[i]]));
 
-		if (builder.length > 0)
+		if (builder.length)
 			headers['Cookie'] = builder.join('; ');
 	}
 
@@ -5771,7 +5779,7 @@ Framework.prototype.testing = function(stop, callback) {
 
 	var buf;
 
-	if (test.data && test.data.length > 0) {
+	if (test.data && test.data.length) {
 		buf = new Buffer(test.data, ENCODING);
 		test.headers[RESPONSE_HEADER_CONTENTLENGTH] = buf.length;
 	}
@@ -5881,7 +5889,7 @@ Framework.prototype.test = function(stop, names, cb) {
 			if (ext !== EXTENSION_JS)
 				return;
 
-			if (names.length > 0 && names.indexOf(name.substring(0, name.length - 3)) === -1)
+			if (names.length && names.indexOf(name.substring(0, name.length - 3)) === -1)
 				return;
 
 			var test = require(filename);
@@ -6562,7 +6570,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (self.config['default-timezone'])
 		process.env.TZ = self.config['default-timezone'];
 
-	if (accepts !== null && accepts.length > 0) {
+	if (accepts !== null && accepts.length) {
 		accepts.forEach(function(accept) {
 			self.config['static-accepts'][accept] = true;
 		});
@@ -6799,7 +6807,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 				continue;
 		}
 
-		if (route.flags !== null && route.flags.length > 0) {
+		if (route.flags !== null && route.flags.length) {
 			var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
 			if (result === -1)
 				req.$isAuthorized = false; // request is not authorized
@@ -6869,7 +6877,7 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 				continue;
 		}
 
-		if (route.flags !== null && route.flags.length > 0) {
+		if (route.flags !== null && route.flags.length) {
 
 			// var result = framework_internal.routeCompareFlags(req.flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
 			var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
@@ -8197,9 +8205,9 @@ Subscribe.prototype.doExecute = function() {
 			return self;
 
 		if (self.route.isGENERATOR)
-			async.call(controller, self.route.execute, true)(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
+			async.call(controller, self.route.execute, true)(controller, framework_internal.routeParam(self.route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
 		else
-			self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length > 0 ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
+			self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
 
 		return self;
 
@@ -9113,7 +9121,7 @@ Controller.prototype.transfer = function(url, flags) {
 			break;
 		}
 
-		if (route.flags !== null && route.flags.length > 0) {
+		if (route.flags !== null && route.flags.length) {
 			var result = framework_internal.routeCompareFlags(route.flags, flags, true);
 			if (result === -1)
 				self.req.$isAuthorized = false;
@@ -12296,7 +12304,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 
 	var origin = self.req.headers['origin'] || '';
 
-	if (allow.length > 0) {
+	if (allow.length) {
 
 		if (allow.indexOf('*') === -1) {
 			for (var i = 0; i < allow.length; i++) {
@@ -12311,7 +12319,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 			return false;
 	}
 
-	if (protocols.length > 0) {
+	if (protocols.length) {
 		for (var i = 0; i < protocols.length; i++) {
 			if (self.protocol.indexOf(protocols[i]) === -1)
 				return false;

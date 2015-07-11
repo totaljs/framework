@@ -1,6 +1,6 @@
 /**
  * @module FrameworkUtils
- * @version 1.8.1
+ * @version 1.9.0
  */
 
 'use strict';
@@ -22,6 +22,8 @@ var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\
 var regexpTRIM = /^[\s]+|[\s]+$/g;
 var regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
+var regexpDATEFORMAT = /yyyy|yy|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|a/g;
+var regexpSTRINGFORMAT = /\{\d+\}/g;
 var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
@@ -170,7 +172,7 @@ exports.isEmpty = function(obj) {
 	if (obj === null)
 		return true;
 
-	if (obj.length && obj.length > 0)
+	if (obj.length)
 		return false;
 
 	if (obj.length === 0)
@@ -409,7 +411,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		data = data.substring(1);
 
 	if (!isPOST) {
-		if (data.length > 0 && url.indexOf('?') === -1)
+		if (data.length && url.indexOf('?') === -1)
 			url += '?' + data;
 		data = '';
 	}
@@ -432,7 +434,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 	var buf;
 
-	if (data.length > 0) {
+	if (data.length) {
 		buf = new Buffer(data, ENCODING);
 		headers['Content-Length'] = buf.length;
 	}
@@ -456,7 +458,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			var self = this;
 			self._buffer += chunk.toString(encoding);
 			self._bufferlength += chunk.length;
-			e.emit('data', chunk, responseLength > 0 ? (self._bufferlength / responseLength) * 100 : 0);
+			e.emit('data', chunk, responseLength ? (self._bufferlength / responseLength) * 100 : 0);
 		});
 
 		res.on('end', function() {
@@ -632,7 +634,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		data = data.substring(1);
 
 	if (!isPOST) {
-		if (data.length > 0 && url.indexOf('?') === -1)
+		if (data.length && url.indexOf('?') === -1)
 			url += '?' + data;
 		data = '';
 	}
@@ -656,7 +658,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	var buf;
 
-	if (data.length > 0) {
+	if (data.length) {
 		buf = new Buffer(data, ENCODING);
 		headers['Content-Length'] = buf.length;
 	}
@@ -671,7 +673,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		res.on('data', function(chunk) {
 			var self = this;
 			self._bufferlength += chunk.length;
-			e.emit('data', chunk, responseLength > 0 ? (self._bufferlength / responseLength) * 100 : 0);
+			e.emit('data', chunk, responseLength ? (self._bufferlength / responseLength) * 100 : 0);
 		});
 
 		res.on('end', function() {
@@ -1694,7 +1696,7 @@ exports.parseXML = function(xml) {
 			if (from === -1 || o !== el.substring(2, el.length - 1))
 				continue;
 
-			var path = (current.length > 0 ? current.join('.') + '.' : '') + o;
+			var path = (current.length ? current.join('.') + '.' : '') + o;
 			var value = xml.substring(from, beg).decode();
 
 			if (obj[path] === undefined)
@@ -1839,14 +1841,6 @@ function getWebSocketFrameLengthBytes(length) {
 	return lengthBuffer;
 }
 
-/*
-	Get distance (KM) between two coordinates
-	@lat1 {Number}
-	@lot1 {Number}
-	@lat2 {Number}
-	@lot1 {Number}
-	return {Number}
-*/
 /**
  * GPS distance in KM
  * @param  {Number} lat1
@@ -2110,46 +2104,66 @@ Date.compare = function(d1, d2) {
 	return d1.compare(d2);
 };
 
-/*
-	Format date to string
-	@format {String}
-	return {String}
-*/
+/**
+ * Format datetime
+ * @param {String} format
+ * @return {String}
+ */
 Date.prototype.format = function(format) {
+
 	var self = this;
+	var half = false;
 
-	var h = self.getHours();
-	var m = self.getMinutes().toString();
-	var s = self.getSeconds().toString();
-	var M = (self.getMonth() + 1).toString();
-	var yyyy = self.getFullYear().toString();
-	var yy = self.getYear().toString();
-	var d = self.getDate().toString();
-
-	var a = 'AM';
-	var H = h.toString();
-
-	if (h >= 12) {
-		h -= 12;
-		a = 'PM';
+	if (format && format[0] === '!') {
+		half = true;
+		format = format.substring(1);
 	}
 
-	if (h === 0)
-		h = 12;
-
-	h = h.toString();
-
-	var hh = h.padLeft(2, '0');
-	var HH = H.padLeft(2, '0');
-	var mm = m.padLeft(2, '0');
-	var ss = s.padLeft(2, '0');
-	var MM = M.padLeft(2, '0');
-	var dd = d.padLeft(2, '0');
-
 	if (format === undefined || format === null || format === '')
-		return yyyy + '-' + MM + '-' + dd + 'T' + hh + ':' + mm + ':' + ss + ':' + self.getMilliseconds().toString();
+		return self.getFullYear() + '-' + (self.getMonth() + 1).toString().padLeft(2, '0') + '-' + self.getDate().toString().padLeft(2, '0') + 'T' + self.getHours().toString().padLeft(2, '0') + ':' + self.getMinutes().toString().padLeft(2, '0') + ':' + self.getSeconds().toString().padLeft(2, '0') + ':' + self.getMilliseconds().toString();
 
-	return format.replace(/yyyy/g, yyyy).replace(/yy/g, yy).replace(/MM/g, MM).replace(/M/g, M).replace(/dd/g, dd).replace(/d/g, d).replace(/HH/g, HH).replace(/H/g, H).replace(/hh/g, hh).replace(/h/g, h).replace(/mm/g, mm).replace(/m/g, m).replace(/ss/g, ss).replace(/s/g, ss).replace(/a/g, a);
+	var h = self.getHours();
+
+	if (half) {
+		if (h >= 12)
+			h -= 12;
+	}
+
+	return format.replace(regexpDATEFORMAT, function(key) {
+		switch (key) {
+			case 'yyyy':
+				return self.getFullYear();
+			case 'yy':
+				return self.getYear();
+			case 'MM':
+				return (self.getMonth() + 1).toString().padLeft(2, '0');
+			case 'M':
+				return (self.getMonth() + 1);
+			case 'dd':
+				return self.getDate().toString().padLeft(2, '0');
+			case 'd':
+				return self.getDate();
+			case 'HH':
+			case 'hh':
+				return h.toString().padLeft(2, '0');
+			case 'H':
+			case 'h':
+				return self.getHours();
+			case 'mm':
+				return self.getMinutes().toString().padLeft(2, '0');
+			case 'm':
+				return self.getMinutes();
+			case 'ss':
+				return self.getSeconds().toString().padLeft(2, '0');
+			case 's':
+				return self.getSeconds();
+			case 'a':
+				var a = 'AM';
+				if (self.getHours() >= 12)
+					a = 'PM';
+				return a;
+		}
+	});
 };
 
 Date.prototype.toUTC = function(ticks) {
@@ -2471,21 +2485,18 @@ String.prototype.parseConfig = function(def) {
 	return obj;
 };
 
-/*
-	@arguments {Object array}
-	return {String}
-*/
+/**
+ * String format
+ * @return {String}
+ */
 String.prototype.format = function() {
-	var formatted = this;
-	var length = arguments.length;
-	for (var i = 0; i < length; i++) {
-		var regexp = new RegExp('\\{' + i + '\\}', 'gi');
-		var value = arguments[i];
+	var arg = arguments;
+	return this.replace(regexpSTRINGFORMAT, function(text) {
+		var value = arg[parseInt(text.substring(1, text.length - 1))];
 		if (value === null || value === undefined)
 			value = '';
-		formatted = formatted.replace(regexp, value);
-	}
-	return formatted;
+		return value;
+	});
 };
 
 String.prototype.encode = function() {
@@ -2586,7 +2597,7 @@ String.prototype.params = function(obj) {
 		if (val === undefined)
 			return prop;
 
-		if (format.length > 0) {
+		if (format.length) {
 
 			var type = typeof(val);
 			if (type === STRING) {
@@ -3112,17 +3123,17 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 		output = num[i] + output;
 	}
 
-	if (dec.length > 0 || decimals > 0) {
+	if (decimals || dec.length) {
 		if (dec.length > decimals)
 			dec = dec.substring(0, decimals);
 		else
 			dec = dec.padRight(decimals, '0');
 	}
 
-	if (dec.length > 0 && separatorDecimal === undefined)
+	if (dec.length && separatorDecimal === undefined)
 		separatorDecimal = separator === '.' ? ',' : '.';
 
-	return minus + output + (dec.length > 0 ? separatorDecimal + dec : '');
+	return minus + output + (dec.length ? separatorDecimal + dec : '');
 };
 
 Number.prototype.add = function(value, decimals) {
@@ -3151,10 +3162,21 @@ Number.prototype.add = function(value, decimals) {
 
 		if (is) {
 			var tmp = ((value.parseFloat() / 100) + 1);
-			if (first === 43 || first === 42)
-				num = this * tmp;
-			else
-				num = this / tmp;
+
+			switch (first) {
+				case 42:
+					num = this * (this * tmp);
+					break;
+				case 43:
+					num = this * tmp;
+					break;
+				case 45:
+					num = this / tmp;
+					break;
+				case 47:
+					num = this / (this / tmp);
+					break;
+			}
 			return decimals !== undefined ? num.floor(decimals) : num;
 		} else {
 			num = (this / 100) * value.parseFloat();
@@ -4464,13 +4486,13 @@ FileList.prototype.stat = function(path) {
 FileList.prototype.next = function() {
 	var self = this;
 
-	if (self.pending.length > 0) {
+	if (self.pending.length) {
 		var item = self.pending.shift();
 		self.stat(item);
 		return;
 	}
 
-	if (self.pendingDirectory.length > 0) {
+	if (self.pendingDirectory.length) {
 		var directory = self.pendingDirectory.shift();
 		self.walk(directory);
 		return;
@@ -4538,7 +4560,7 @@ exports.async = function(fn, isApply) {
 		var self = this;
 		var argv;
 
-		if (arguments.length > 0) {
+		if (arguments.length) {
 
 			if (isApply) {
 				// index.js/Subscribe.prototype.doExecute

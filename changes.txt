@@ -1,4 +1,4 @@
-BETA ======= 1.8.1
+BETA ======= 1.9.0
 
 - added: (IMPORTANT) ISOMORPHIC using
 - added: (IMPORTANT) new flag `mobile` (mobile routing), you can create a route to mobile device
@@ -80,6 +80,8 @@ BETA ======= 1.8.1
 - fixed: Number formatting (problem with negative numbers)
 
 - improved: code optimalization
+- improved: Date.prototype.format()
+- imrpoved: String.prototype.format()
 
 __IMPORTANT:__
 `exports.install = function(framework) {}` framework variable is removed but with backward compatibility (`config['allow-compatibility']`).

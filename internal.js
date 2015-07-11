@@ -1,6 +1,6 @@
 /**
  * @module FrameworkInternal
- * @version 1.8.1
+ * @version 1.9.0
  */
 
 'use strict';
@@ -1926,7 +1926,7 @@ function view_parse(content, minify, filename) {
 			builder += '+' + escaper(text);
 	}
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
 }
 
