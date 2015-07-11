@@ -1,7 +1,8 @@
+![total.js logo](https://www.totaljs.com/img/logo-github.png)
+---
 [![NPM version][npm-version-image]][npm-url] [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
-![total.js logo](https://www.totaljs.com/img/logo2x.png)
-
+---
 web framework for node.js
 =========================
 

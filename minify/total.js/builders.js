@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 1.8.1
+ * @version 1.9.0
  */
 
 'use strict';
@@ -1401,7 +1401,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 				// string
 				case 3:
 					tmp = val === undefined || val === null ? '' : autotrim(self, val.toString());
-					if (type.length > 0 && type.length < tmp.length)
+					if (type.length&& type.length < tmp.length)
 						tmp = tmp.substring(0, type.length);
 					item[property] = onPrepare(property, tmp);
 					break;
@@ -1486,7 +1486,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 				case 3:
 					tmp = tmp === undefined || tmp === null ? '' : autotrim(self, tmp.toString());
-					if (type.length > 0 && tmp.length < tmp.length)
+					if (type.length && tmp.length < tmp.length)
 						tmp = tmp.substring(0, type.length);
 					tmp = onPrepare(property, tmp, j);
 					break;

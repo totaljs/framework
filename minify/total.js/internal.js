@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.8.1
+ * @version 1.9.0
  */
 
 'use strict';
@@ -1733,7 +1733,44 @@ function view_parse(content, minify, filename) {
 	if (minify)
 		content = removeComments(content);
 
-	content = compressCSS(compressJS(content, 0, filename), 0, filename);
+	var nocompressHTML = false;
+	var nocompressJS = false;
+	var nocompressCSS = false;
+
+	content = content.replace(/@\{nocompress\s\w+}/gi, function(text) {
+
+		var index = text.lastIndexOf(' ');
+		if (index === -1)
+			return '';
+
+		switch (text.substring(index, text.length - 1).trim()) {
+			case 'all':
+				nocompressHTML = true;
+				nocompressJS = true;
+				nocompressCSS = true;
+				break;
+			case 'html':
+				nocompressHTML = true;
+				break;
+			case 'js':
+			case 'script':
+			case 'javascript':
+				nocompressJS = true;
+				break;
+			case 'css':
+			case 'style':
+				nocompressCSS = true;
+				break;
+		}
+
+		return '';
+	}).trim();
+
+	if (!nocompressJS)
+		content = compressJS(content, 0, filename);
+	if (!nocompressCSS)
+		content = compressCSS(content, 0, filename);
+
 	content = framework._version_prepare(content);
 
 	var DELIMITER = '\'';
@@ -1743,22 +1780,29 @@ function view_parse(content, minify, filename) {
 	var builder = 'var $EMPTY=\'\';var $length=0;var $source=null;var $tmp=index;var $output=$EMPTY';
 	var command = view_find_command(content, 0);
 	var compressed = '';
+	var nocompress = false;
+	var isFirst = false;
 
 	function escaper(value) {
 
 		var is = value.match(/[^\>]\n\s{1,}$/);
-		value = compressHTML(value, minify);
+
+		if (!nocompressHTML)
+			value = compressHTML(value, minify);
+		else if (!isFirst) {
+			isFirst = true;
+			value = value.replace(/^\s+/, '');
+		}
 
 		if (value === '')
 			return '$EMPTY';
 
-		if (value[0] === ' ' && value[1] === '<')
+		if (!nocompressHTML && value[0] === ' ' && value[1] === '<')
 			value = value.substring(1);
 
-		if (is)
+		if (!nocompressHTML && is)
 			value += ' ';
 
-		// if (value.match(/\n|\t|\r|\'|\\/) !== null)
 		if (value.match(/\n|\r|\'|\\/) !== null)
 			return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END;
 
@@ -1879,7 +1923,11 @@ function view_parse(content, minify, filename) {
 		} else if (cmd === 'endif' || cmd === 'fi') {
 			builder += '}$output+=$EMPTY';
 		} else {
-			tmp = view_prepare(command.command, newCommand, functionsName);
+
+			tmp = view_prepare(command.command, newCommand, functionsName, function() {
+				nocompress = true;
+			});
+
 			if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
@@ -1899,7 +1947,7 @@ function view_parse(content, minify, filename) {
 			builder += '+' + escaper(text);
 	}
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length > 0 ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
 }
 
@@ -1942,6 +1990,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		return '$STRING(' + command.substring(1) + ')';
 
 	switch (name) {
+
 		case 'foreach':
 		case 'end':
 			return '';
