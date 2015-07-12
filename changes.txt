@@ -52,6 +52,7 @@ BETA ======= 1.9.0
 - updated: `F.view(name, model, [layout], [repository], [language])` added language
 - updated: `F.route(url, ...)`, `F.websocket(url, ...)` --> URL can be function(url, req, [flags])
 - updated: `versions` affects F.map() and F.merge()
+- updated: `controller.mail(address, subject, view, [model], [callback], [language])` added language
 - updated: `config['allow-performance']` is set to true
 - updated: (IMPORTANT) `F.map(url, filename/directory, [filter])` supports mapping directories
 - updated: (IMPORTANT) arguments order `SchemaBuilderEntity.setValidate(function(name, value, path, model, schema){})`

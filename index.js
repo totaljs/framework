@@ -9466,7 +9466,7 @@ Controller.prototype.models = function(name) {
  * @param {Function(err)} callback Optional.
  * @return {MailMessage}
  */
-Controller.prototype.mail = function(address, subject, view, model, callback, replyTo) {
+Controller.prototype.mail = function(address, subject, view, model, callback, language) {
 
 	if (typeof(model) === TYPE_FUNCTION) {
 		callback = model;
@@ -9476,7 +9476,7 @@ Controller.prototype.mail = function(address, subject, view, model, callback, re
 	var self = this;
 	var body = self.view(view, model, true);
 
-	return framework.onMail(address, subject, body, callback, replyTo);
+	return framework.onMail(address, subject, body, callback, language);
 };
 
 /*
