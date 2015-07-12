@@ -5581,6 +5581,11 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 					headers['X-Requested-With'] = 'XMLHttpRequest';
 					break;
 
+				case 'referer':
+				case 'referrer':
+					headers['Referer'] = url;
+					break;
+
 				case 'json':
 					headers['Content-Type'] = 'application/json';
 					type = 1;
@@ -5592,7 +5597,6 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 					break;
 
 				case 'get':
-				case 'delete':
 				case 'options':
 					method = flags[i].toUpperCase();
 					break;
@@ -5603,6 +5607,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 
 				case 'post':
 				case 'put':
+				case 'delete':
 
 					method = flags[i].toUpperCase();
 

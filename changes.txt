@@ -6,7 +6,8 @@ BETA ======= 1.9.0
 - added: new view tag: @{mobile} –> returns `boolean`
 - added: new view tag: @{isomorphic} –> returns `Object` with isomorphic objects
 - added: `config['disable-clear-temporary-directory'] = false` (after start)
-- added: `config['allow-compatibility'] = true` - a backward compatibility mode (in newest version - added: `config['default-timezone']`
+- added: `config['allow-compatibility'] = true` - a backward compatibility mode
+- added: `config['default-timezone']`
 - added: `config['directory-isomorphic']`
 - added: `config['directory-private']`
 - added: `F.path.private([filename])`
