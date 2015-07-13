@@ -17,7 +17,6 @@ BETA ======= 1.9.0
 - added: `global.isomorphic` --> returns `framework.isomorphic` --> returns isomorphic objects
 - added: `global.is_client` and `global.is_server` for isomorphic
 - added: cache for HTTP routing
-1.9 will be set to `false`)
 - added: RegExp routing `F.route('/{/^\\d+$/}', ...)`
 - added: `F.responseBinary(req, res, contentType, buffer, [type], [download], [headers])`
 - added: `SchemaBuilderEntity.filter(custom, [model], [reverse])`
@@ -36,7 +35,7 @@ BETA ======= 1.9.0
 - added: F.load(debug, load_types, [path]);
 - added: F.isWorker (is true when is called F.load())
 - added: F.isCluster (is true when the framework is running in the cluster)
-- added: Array.unique() by Andrea Sessa
+- added: Array.unique([property]) by Andrea Sessa
 - added: Array.pair(array, property, fn(itemA, itemB), [remove]) - pair arrays
 - added: String.base64ToBuffer();
 - added: terminal -> `tpm unpack [package_name] [optional: target_directory]`

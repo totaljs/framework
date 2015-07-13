@@ -293,6 +293,9 @@ function prototypeArray() {
 
 	assert.ok(arr.unique().join(',') === '1,2,3,4', 'array.unique(2)');
 
+	var b = [{ name: 'Peter' }, { name: 'Janko' }, { name: 'Peter' }, { name: 'Lucia' }, { name: 'Lucia' }, { name: 'Peter' }];
+	assert.ok(JSON.stringify(b.unique('name')) === '[{"name":"Peter"},{"name":"Janko"},{"name":"Lucia"}]', 'array.unique(property)');
+
 	var asyncarr = [];
 	var asyncounter = 0;
 
