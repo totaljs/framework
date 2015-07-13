@@ -341,7 +341,7 @@ exports.routeSplitCreate = function(url, noLower) {
 			case '/':
 				if (count !== 0)
 					break;
-				arr.push(url.substring(end + (arr.length === 0 ? 0 : 1), i));
+				arr.push(url.substring(end + (arr.length ? 1 : 0), i));
 				end = i;
 				break;
 
@@ -356,7 +356,7 @@ exports.routeSplitCreate = function(url, noLower) {
 	}
 
 	if (count === 0)
-		arr.push(url.substring(end + (arr.length === 0 ? 0 : 1), url.length));
+		arr.push(url.substring(end + (arr.length ? 1 : 0), url.length));
 
 	if (arr.length === 1 && arr[0] === '')
 		arr[0] = '/';
@@ -412,7 +412,7 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 */
 exports.routeCompareSubdomain = function(subdomain, arr) {
 
-	if (arr === null || subdomain === null || arr.length === 0)
+	if (arr === null || subdomain === null || !arr.length)
 		return true;
 
 	return arr.indexOf(subdomain) > -1;
@@ -1886,7 +1886,7 @@ function view_parse(content, minify, filename) {
 			if (index === -1)
 				index = cmd.indexOf('[', newCommand.length + 10);
 
-			builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if (!($source instanceof Array) || source.length === 0)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
+			builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if (!($source instanceof Array) || !source.length)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
 
 		} else if (cmd === 'end') {
 

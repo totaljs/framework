@@ -1,6 +1,10 @@
 var framework = require('../index');
 var url = 'http://127.0.0.1:8001/';
 
+framework.onLocate = function(req) {
+	return 'sk';
+};
+
 framework.onAuthorization = function(req, res, flags, cb) {
     req.user = { alias: 'Peter Širka' };
     req.session = { ready: true };

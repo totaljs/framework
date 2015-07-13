@@ -46,6 +46,7 @@ BETA ======= 1.9.0
 - added: "dependencies" file for installing dependencies (modules, packages, etc.)
 - added: @{nocompress html}, @{nocompress js}, @{nocompress css}, @{nocompress all}
 - added: req.authorize(callback(err, userprofile, isAuthorized))
+- added: F.localize(name, path, [middleware], [options]) - auto translating static files
 
 - updated: (IMPORTANT) routing: `json` flag is not required for receiving incomming data as JSON
 - updated: `F.mail(address, subject, view, [model], [callback], [language])` added language

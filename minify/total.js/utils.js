@@ -3240,9 +3240,6 @@ Number.prototype.add = function(value, decimals) {
 	return {String}
 */
 Number.prototype.format2 = function(format) {
-
-	console.log('OBSOLETE: Number.prototype.format(\'### ### ###\');');
-
 	var index = 0;
 	var num = this.toString();
 	var beg = 0;

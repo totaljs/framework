@@ -15,6 +15,10 @@ framework.onCompileView = function(name, html, model) {
 	return html + 'COMPILED';
 };
 
+framework.onLocate = function(req) {
+	return 'sk';
+};
+
 framework.on('ready', function() {
 	var t = framework.worker('test');
 	var a = false;
@@ -195,6 +199,15 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			assert(data === 'čťž', 'binary');
+			complete();
+		});
+	});
+
+	async.await('localize', function(complete) {
+		utils.request(url + 'templates/localization.html', ['get'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '###preklad###', 'file localization');
 			complete();
 		});
 	});

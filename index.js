@@ -198,7 +198,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-1';
+	this.version_header = '1.9.0-2';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -408,6 +408,7 @@ function Framework() {
 	this._request_check_redirect = false;
 	this._request_check_referer = false;
 	this._request_check_POST = false;
+	this._request_check_mobile = false;
 	this._length_middleware = 0;
 	this._length_request_middleware = 0;
 	this._length_files = 0;
@@ -902,6 +903,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 					break;
 				case 'mobile':
 					isMOBILE = true;
+					self._request_check_mobile = true;
 					break;
 				case 'authorize':
 				case 'authorized':
@@ -1028,7 +1030,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	if (!self._request_check_POST && (flags.indexOf('delete') !== -1 || flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
 		self._request_check_POST = true;
 
-	if (!middleware || (!(middleware instanceof Array)) || middleware.length === 0)
+	if (!middleware || (!(middleware instanceof Array)) || !middleware.length)
 		middleware = null;
 
 	var isMULTIPLE = false;
@@ -1049,7 +1051,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		priority: priority,
 		schema: schema,
 		subdomain: subdomain,
-		controller: (_controller || '').length === 0 ? 'unknown' : _controller,
+		controller: !_controller ? 'unknown' : _controller,
 		url: routeURL,
 		param: arr,
 		flags: flags || [],
@@ -1077,7 +1079,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		isXHR: flags.indexOf('xhr') !== -1,
 		isUPLOAD: flags.indexOf('upload') !== -1,
 		isSYSTEM: url.startsWith('/#'),
-		isCACHE: !url.startsWith('/#') && !CUSTOM && arr.length === 0 && !isASTERIX,
+		isCACHE: !url.startsWith('/#') && !CUSTOM && !arr.length && !isASTERIX,
 		isPARAM: arr.length > 0,
 		CUSTOM: CUSTOM,
 		options: options,
@@ -1087,7 +1089,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
 	self.emit('route-add', 'web', self.routes.web[self.routes.web.length - 1]);
 
-	if (_controller.length === 0)
+	if (!_controller)
 		self._routesSort();
 
 	return self;
@@ -1444,11 +1446,11 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (!flags || (flags.indexOf('authorize') === -1))
 		isMember = true;
 
-	if (!middleware || (!(middleware instanceof Array)) || middleware.length === 0)
+	if (!middleware || (!(middleware instanceof Array)) || !middleware.length)
 		middleware = null;
 
 	self.routes.websockets.push({
-		controller: (_controller || '').length === 0 ? 'unknown' : _controller,
+		controller: !_controller ? 'unknown' : _controller,
 		url: routeURL,
 		param: arr,
 		subdomain: subdomain,
@@ -1477,7 +1479,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
 	self.emit('route-add', 'websocket', self.routes.websockets[self.routes.websockets.length - 1]);
 
-	if (_controller.length === 0)
+	if (!_controller)
 		self._routesSort();
 
 	return self;
@@ -1516,11 +1518,11 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
 			middleware[i] = middleware[i].replace('#', '');
 	}
 
-	if (!middleware || (!(middleware instanceof Array)) || middleware.length === 0)
+	if (!middleware || (!(middleware instanceof Array)) || !middleware.length)
 		middleware = null;
 
 	self.routes.files.push({
-		controller: (_controller || '').length === 0 ? 'unknown' : _controller,
+		controller: !_controller ? 'unknown' : _controller,
 		name: name,
 		onValidation: fnValidation,
 		execute: fnExecute || fnValidation,
@@ -1531,6 +1533,49 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
 	self.emit('route-add', 'file', self.routes.files[self.routes.files.length - 1]);
 	self._length_files++;
 
+	return self;
+};
+
+/**
+ * Auto localize static files
+ * @param {String} name Description
+ * @param {String} url A relative url path (e.g. /templates/)
+ * @param {String Array} middleware Optional
+ * @param {Object} options Optional, middleware options
+ * @return {Framework}
+ */
+Framework.prototype.localize = function(name, url, middleware, options) {
+
+	var self = this;
+	url = url.replace('*', '');
+
+	var fnExecute = function(req, res, is) {
+
+		if (is)
+			return req.url.substring(0, url.length) === url && (req.extension === 'html' || req.extension === 'htm' || req.extension === 'md' || req.extension === 'txt');
+
+		var key = 'locate_' + (req.$language ? req.$language : 'default') + '_' + req.url;
+		var output = framework.temporary.other[key];
+
+		if (output) {
+			framework.responseContent(req, res, 200, output, framework_utils.getContentType(req.extension), true);
+			return;
+		}
+
+		var name = req.uri.pathname;
+		var filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
+
+		fs.readFile(filename, function(err, content) {
+			if (err)
+				return res.throw404();
+			content = framework.translator(req.$language, content.toString(ENCODING));
+			if (!framework.isDebug)
+				framework.temporary.other[key] = content;
+			framework.responseContent(req, res, 200, content, framework_utils.getContentType(req.extension), true);
+		});
+	};
+
+	self.file(name, fnExecute, middleware, options);
 	return self;
 };
 
@@ -2039,8 +2084,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (obj.url)
 			framework.map(obj.url, '#' + name);
 
-		framework.temporary.other['#isomorphic_' + name] = framework_internal.compile_javascript(content, '#' + name);
 		framework.isomorphic[name] = obj;
+		framework.isomorphic[name].$$output = framework_internal.compile_javascript(content, '#' + name);
 
 		if (callback)
 			callback(null);
@@ -2186,7 +2231,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		} catch (ex) {
 
-			self.error(ex, 'framework.install(\'' + type + '\', \'' + (name.length === 0 ? internal : '') + '\')', null);
+			self.error(ex, 'framework.install(\'' + type + '\', \'' + (name ? '' : internal) + '\')', null);
 
 			if (callback)
 				callback(ex);
@@ -2253,7 +2298,7 @@ Framework.prototype.install_prepare = function(noRecursive) {
 	var self = this;
 	var keys = Object.keys(self.temporary.dependencies);
 
-	if (keys.length === 0)
+	if (!keys.length)
 		return;
 
 	// check dependencies
@@ -2298,7 +2343,7 @@ Framework.prototype.install_prepare = function(noRecursive) {
 		delete self.temporary.other.dependencies;
 	}, 1500);
 
-	if (keys.length === 0)
+	if (!keys.length)
 		return self;
 
 	if (noRecursive)
@@ -2648,7 +2693,7 @@ Framework.prototype.onMeta = function() {
 	for (var i = 0; i < length; i++) {
 
 		var arg = utils.encode(arguments[i]);
-		if (arg === null || arg.length === 0)
+		if (arg === null || !arg.length)
 			continue;
 
 		switch (i) {
@@ -4975,16 +5020,33 @@ Framework.prototype._request = function(req, res) {
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	res.success = false;
 	res.setHeader('X-Powered-By', 'total.js v' + self.version_header);
-	req.mobile = REG_MOBILE.test(req.headers['user-agent']);
+
+	if (framework._request_check_mobile)
+		req.mobile = REG_MOBILE.test(req.headers['user-agent']);
 
 	if (self.isDebug)
 		res.setHeader('Mode', 'debug');
 
 	req.isStaticFile = framework.config['allow-handle-static-files'] ? utils.isStaticFile(req.uri.pathname) : false;
-	if (req.isStaticFile)
-		req.extension = path.extname(req.uri.pathname).substring(1);
 
-	if (self.onLocate)
+	var can = true;
+
+	if (req.isStaticFile) {
+		req.extension = path.extname(req.uri.pathname).substring(1);
+		switch (req.extension) {
+			case 'html':
+			case 'htm':
+			case 'txt':
+			case 'md':
+				can = true;
+				break;
+			default:
+				can = false;
+				break;
+		}
+	}
+
+ 	if (can && self.onLocate)
 		req.$language = self.onLocate(req, res, req.isStaticFile);
 
 	self._request_stats(true, true);
@@ -6071,7 +6133,7 @@ Framework.prototype.unlink = function(arr, callback) {
 	if (typeof(arr) === STRING)
 		arr = [arr];
 
-	if (arr.length === 0) {
+	if (!arr.length) {
 		if (callback)
 			callback();
 		return;
@@ -6103,7 +6165,7 @@ Framework.prototype.rmdir = function(arr, callback) {
 	if (typeof(arr) === STRING)
 		arr = [arr];
 
-	if (arr.length === 0) {
+	if (!arr.length) {
 		if (callback)
 			callback();
 		return;
@@ -6477,7 +6539,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (!arr instanceof Array)
 		return self;
 
-	if (arr.length === 0)
+	if (!arr.length)
 		return self;
 
 	if (rewrite === undefined)
@@ -7316,7 +7378,7 @@ FrameworkFileSystem.prototype.createStyle = function(name, content, rewrite, app
 
 	var self = this;
 
-	if ((content || '').length === 0)
+	if (!content)
 		return false;
 
 	if (name.lastIndexOf('.css') === -1)
@@ -7338,7 +7400,7 @@ FrameworkFileSystem.prototype.createScript = function(name, content, rewrite, ap
 
 	var self = this;
 
-	if ((content || '').length === 0)
+	if (!content)
 		return false;
 
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
@@ -7360,7 +7422,7 @@ FrameworkFileSystem.prototype.createDatabase = function(name, content, rewrite, 
 
 	var self = this;
 
-	if ((content || '').length === 0)
+	if (!content)
 		return false;
 
 	var filename = utils.combine(framework.config['directory-databases'], name);
@@ -7379,7 +7441,7 @@ FrameworkFileSystem.prototype.createView = function(name, content, rewrite, appe
 
 	var self = this;
 
-	if ((content || '').length === 0)
+	if (!content)
 		return false;
 
 	if (name.lastIndexOf('.html') === -1)
@@ -7403,7 +7465,7 @@ FrameworkFileSystem.prototype.createWorker = function(name, content, rewrite, ap
 
 	var self = this;
 
-	if ((content || '').length === 0)
+	if (!content)
 		return false;
 
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
@@ -7427,7 +7489,7 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
 
 	var self = this;
 
-	if ((content || '').length === 0)
+	if (!content)
 		return false;
 
 	if (name.lastIndexOf('.resource') === -1)
@@ -7524,7 +7586,7 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 		return true;
 	}
 
-	if ((content || '').length === 0)
+	if (!content)
 		return false;
 
 	var exists = fs.existsSync(filename);
@@ -8277,7 +8339,7 @@ Subscribe.prototype.doEnd = function() {
 	req.buffer_data = req.buffer_data.toString(ENCODING);
 	var schema;
 
-	if (req.buffer_data.length === 0) {
+	if (!req.buffer_data) {
 
 		if (!route || !route.schema) {
 			req.buffer_data = null;
@@ -10320,7 +10382,7 @@ Controller.prototype.$favicon = function(name) {
  * @return {String}
  */
 Controller.prototype._routeHelper = function(current, name, fn) {
-	if (current.length === 0)
+	if (!current)
 		return fn.call(framework, name);
 	if (current.substring(0, 2) === '//' || current.substring(0, 6) === 'http:/' || current.substring(0, 7) === 'https:/')
 		return fn.call(framework, current + name);
@@ -11770,7 +11832,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 	var fn = typeof(blacklist) === TYPE_FUNCTION ? blacklist : null;
 	var is = blacklist instanceof Array;
 
-	if (id === undefined || id === null || id.length === 0) {
+	if (id === undefined || id === null || !id.length) {
 
 		for (var i = 0; i < length; i++) {
 
@@ -11863,7 +11925,7 @@ WebSocket.prototype.close = function(id, message, code) {
 	if (length === 0)
 		return self;
 
-	if (id === undefined || id === null || id.length === 0) {
+	if (id === undefined || id === null || !id.length) {
 		for (var i = 0; i < length; i++) {
 			var _id = keys[i];
 			self.connections[_id].close(message, code);
@@ -13220,11 +13282,11 @@ http.IncomingMessage.prototype.cookie = function(name) {
 	if (self.cookies !== undefined)
 		return $decodeURIComponent(self.cookies[name] || '');
 
-	self.cookies = {};
-
-	var cookie = self.headers['cookie'] || '';
-	if (cookie.length === 0)
+	var cookie = self.headers['cookie'];
+	if (!cookie)
 		return '';
+
+	self.cookies = {};
 
 	var arr = cookie.split(';');
 	var length = arr.length;
@@ -13464,5 +13526,12 @@ process.on('message', function(msg, h) {
 
 function prepare_isomorphic(name) {
 	name = name.replace(/\.js$/i, '');
-	return 'if(window["isomorphic"]===undefined)window.isomorphic={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + (framework.temporary.other['#isomorphic_' + name] || '') + ';return exports;})(null,null,null,null,null,true,false)';
+
+	var content = framework.isomorphic[name];
+	if (content)
+		content = content.$$output;
+	else
+		content = '';
+
+	return 'if(window["isomorphic"]===undefined)window.isomorphic={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + content + ';return exports;})(null,null,null,null,null,true,false)';
 }
