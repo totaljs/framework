@@ -367,7 +367,7 @@ function display_help() {
     console.log('-t or -translate           = creates a resource file with the localized text from views');
     console.log('-t or -translate "TEXT"    = creates an identificator for the resource');
     console.log('-t or -translate filename  = parsers and creates a resource file from the text file');
-    console.log('-t or -translatecsv        = parsers and creates CSV with localization into the current directory');
+    console.log('-c or -translatecsv        = parsers and creates CSV with localization into the current directory');
     console.log('-d or -diff                = creates a differences between two resources "-diff filename1 filename2"');
     console.log('-v or -version             = total.js version');
     console.log('-minify filename           = minifies .js, .css or .html file into filename.min.[extension]');
@@ -553,7 +553,7 @@ function main() {
             continue
         }
 
-        if (cmd === '-translate-csv' || cmd === '-translatecsv') {
+        if (cmd === '-translate-csv' || cmd === '-translatecsv' || cmd === '-c') {
             $type = 6;
             continue
         }
