@@ -81,6 +81,7 @@ BETA ======= 1.9.0
 - fixed: (IMPORTANT) 431 system route
 - fixed: F.log(), F.logger() –> problem with objects, reported by Nikita Shmidt
 - fixed: Number formatting (problem with negative numbers)
+- fixed: Problem with double browser requesting (added req.writeContinue())
 
 - improved: code optimalization
 - improved: Date.prototype.format()
