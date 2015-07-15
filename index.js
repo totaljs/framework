@@ -198,7 +198,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-3';
+	this.version_header = '1.9.0-4';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -3326,7 +3326,7 @@ Framework.prototype.isProcessed = function(filename) {
 
 /**
  * Processing
- * @param  {String / Request}  filename Filename or Request object.
+ * @param {String / Request} filename Filename or Request object.
  * @return {Boolean}
  */
 Framework.prototype.isProcessing = function(filename) {
@@ -4625,9 +4625,9 @@ Framework.prototype.initialize = function(http, debug, options) {
 		self.$load();
 
 		if (options.https)
-			self.server = http.createServer(options.https, self._request);
+			self.server = http.createServer(options.https, self.listener);
 		else
-			self.server = http.createServer(self._request);
+			self.server = http.createServer(self.listener);
 
 		if (self.config['allow-performance']) {
 			self.server.on('connection', function(socket) {
@@ -4949,7 +4949,7 @@ Framework.prototype._service = function(count) {
  * @param {Request} req
  * @param {Response} res
  */
-Framework.prototype._request = function(req, res) {
+Framework.prototype.listener = function(req, res) {
 
 	var self = framework;
 
@@ -5045,6 +5045,9 @@ Framework.prototype._request = function(req, res) {
 				break;
 		}
 	}
+
+	// Prevent double browser requesting
+	res.writeContinue();
 
  	if (can && self.onLocate)
 		req.$language = self.onLocate(req, res, req.isStaticFile);
