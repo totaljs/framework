@@ -3592,7 +3592,13 @@ Array.prototype.compare = function(id, b, executor) {
  * @param {Boolean} remove Optional, remove item from this array if the item doesn't exist int arr (default: false).
  * @return {Array}
  */
-Array.prototype.pair = function(arr, property, fn, remove) {
+Array.prototype.pair = function(property, arr, fn, remove) {
+
+	if (property instanceof Array) {
+		var tmp = property;
+		property = arr;
+		arr = tmp;
+	}
 
 	if (!arr)
 		arr = new Array(0);
@@ -4101,18 +4107,42 @@ Array.prototype.limit = function(max, fn, callback, index) {
 	return self;
 };
 
-/*
-	Get only unique elements from array
-	Return {Array}
-*/
-Array.prototype.unique = function() {
+/**
+ * Get unique elements from Array
+ * @return {[type]} [description]
+ */
+Array.prototype.unique = function(property) {
+
 	var self = this;
 	var result = [];
+	var sublength = 0;
 
-	for (var i = 0, c = self.length; i < c; i++) {
+	for (var i = 0, length = self.length; i < length; i++) {
 		var value = self[i];
-		if (result.indexOf(value) === -1) {
+
+		if (!property) {
+			if (result.indexOf(value) === -1)
+				result.push(value);
+			continue;
+		}
+
+		if (sublength === 0) {
 			result.push(value);
+			sublength++;
+			continue;
+		}
+
+		var is = true;
+		for (var j = 0; j < sublength; j++) {
+			if (result[j][property] === value[property]) {
+				is = false;
+				break;
+			}
+		}
+
+		if (is) {
+			result.push(value);
+			sublength++;
 		}
 	}
 
