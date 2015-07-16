@@ -1,6 +1,6 @@
 'use strict';
 
-var VERSION = 'v1.8.x';
+var VERSION = 'v1.9.x';
 
 var fs = require('fs');
 var ph = require('path');
@@ -569,9 +569,16 @@ function repository_add() {
 function install(repository, pkgname, cb, append) {
 
     var name = pkgname;
-
     if (name.toLowerCase().lastIndexOf('.package') === -1)
         name += '.package';
+
+    var h = name.substring(0, 6);
+    if (h === 'http:/' || h === 'https:') {
+        var n = ph.basename(name);
+        pkgname = n;
+        repository = name.substring(0, name.length - n.length);
+        name = n;
+    }
 
     log('');
     log(colors.red + '--- INSTALL PACKAGE --' + colors.reset);

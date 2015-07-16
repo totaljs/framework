@@ -70,6 +70,7 @@ BETA ======= 1.9.0
 - updated: String.prototype.params() -> supports double "{{"
 - updated: F.schedule(date, [repeat], fn) --> added [repeat]
 - updated: `F.responseStream()` and `controller.stream()` added [nocompress] argument
+- updated: binary `tpm` supports install package from different URL
 
 - removed: XSS check
 
