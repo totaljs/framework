@@ -295,7 +295,7 @@ function Framework() {
 		'allow-compile-html': true,
 		'allow-performance': false,
 		'allow-custom-titles': false,
-		'allow-compatibility': true,
+		'allow-compatibility': false,
 		'disable-strict-server-certificate-validation': true,
 		'disable-clear-temporary-directory': false,
 
@@ -2391,8 +2391,10 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 	_controller = routeID;
 
 	if (typeof(obj.install) === TYPE_FUNCTION) {
-		if (framework.config['allow-compatibility'])
+		if (framework.config['allow-compatibility'] || obj.install.toString().indexOf('function (framework') === 0) {
+			console.warn('OBSOLETE ' + key + ': exports.install = function(framework <-- REMOVE ARGUMENT, options, name) { ...');
 			obj.install(self, options, name);
+		}
 		else
 			obj.install(options, name);
 	}
