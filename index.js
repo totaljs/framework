@@ -2186,9 +2186,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			self.sources[name] = obj;
 
 		if (typeof(obj.install) === TYPE_FUNCTION) {
-			if (framework.config['allow-compatibility'])
+			if (framework.config['allow-compatibility'] || obj.install.toString().indexOf('function (framework') === 0) {
+				console.log('OBSOLETE ' + key + ': exports.install = function(framework <-- REMOVE ARGUMENT, options, name) { ...');
 				obj.install(self, options, name);
-			else
+			} else
 				obj.install(options, name);
 		}
 
@@ -2371,7 +2372,7 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 
 	if (typeof(obj.install) === TYPE_FUNCTION) {
 		if (framework.config['allow-compatibility'] || obj.install.toString().indexOf('function (framework') === 0) {
-			console.warn('OBSOLETE ' + key + ': exports.install = function(framework <-- REMOVE ARGUMENT, options, name) { ...');
+			console.log('OBSOLETE ' + key + ': exports.install = function(framework <-- REMOVE ARGUMENT, options, name) { ...');
 			obj.install(self, options, name);
 		}
 		else
