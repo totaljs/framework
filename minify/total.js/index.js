@@ -837,7 +837,14 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		if (flags['id'])
 			name = flags['id'];
 		flags = flags['flags'] || flags['flag'];
+	} else if (flags instanceof Array && length && typeof(length) === OBJECT) {
+		options = length;
+		length = undefined;
+	} else if (flags instanceof Array && typeof(length) === NUMBER && typeof(middleware) === OBJECT && (!(middleware instanceof Array))) {
+		options = middleware;
+		middleware = undefined;
 	}
+
 
 	var self = this;
 	var priority = 0;
@@ -5066,9 +5073,6 @@ Framework.prototype.listener = function(req, res) {
 				break;
 		}
 	}
-
-	// Prevent double browser requesting
-	res.writeContinue();
 
  	if (can && self.onLocate)
 		req.$language = self.onLocate(req, res, req.isStaticFile);
@@ -13162,6 +13166,7 @@ http.ServerResponse.prototype.stream = function(contentType, stream, download, h
 	}
 	if (self.controller)
 		self.controller.subscribe.success();
+
 	framework.responseStream(self.req, self, contentType, stream, download, headers, done, nocompress);
 	return self;
 };
