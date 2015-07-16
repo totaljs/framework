@@ -816,7 +816,14 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		if (flags['id'])
 			name = flags['id'];
 		flags = flags['flags'] || flags['flag'];
+	} else if (flags instanceof Array && length && typeof(length) === OBJECT) {
+		options = length;
+		length = undefined;
+	} else if (flags instanceof Array && typeof(length) === NUMBER && typeof(middleware) === OBJECT && (!(middleware instanceof Array))) {
+		options = middleware;
+		middleware = undefined;
 	}
+
 
 	var self = this;
 	var priority = 0;
