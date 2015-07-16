@@ -3147,7 +3147,6 @@ exports.SchemaBuilder = SchemaBuilder;
 exports.ErrorBuilder = ErrorBuilder;
 exports.Pagination = Pagination;
 exports.UrlBuilder = UrlBuilder;
-exports.ObjectBuilder = ObjectBuilder;
 exports.TransformBuilder = TransformBuilder;
 global.ErrorBuilder = ErrorBuilder;
 global.TransformBuilder = TransformBuilder;

@@ -69,6 +69,7 @@ BETA ======= 1.9.0
 - updated: Date.prototype.add() supports e.g. Date.prototype.add('25 days')
 - updated: String.prototype.params() -> supports double "{{"
 - updated: F.schedule(date, [repeat], fn) --> added [repeat]
+- updated: `F.responseStream()` and `controller.stream()` added [nocompress] argument
 
 - removed: XSS check
 

@@ -219,7 +219,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-3';
+	this.version_header = '1.9.0-5';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -3347,7 +3347,7 @@ Framework.prototype.isProcessed = function(filename) {
 
 /**
  * Processing
- * @param  {String / Request}  filename Filename or Request object.
+ * @param {String / Request} filename Filename or Request object.
  * @return {Boolean}
  */
 Framework.prototype.isProcessing = function(filename) {
@@ -3984,7 +3984,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
  * @param {Object} headers Optional
  * @return {Framework}
  */
-Framework.prototype.responseStream = function(req, res, contentType, stream, download, headers, done) {
+Framework.prototype.responseStream = function(req, res, contentType, stream, download, headers, done, nocompress) {
 
 	var self = this;
 
@@ -4035,7 +4035,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		return self;
 	}
 
-	if (compress) {
+	if (compress && !nocompress) {
 
 		returnHeaders['Content-Encoding'] = 'gzip';
 		res.writeHead(200, returnHeaders);
@@ -4646,9 +4646,9 @@ Framework.prototype.initialize = function(http, debug, options) {
 		self.$load();
 
 		if (options.https)
-			self.server = http.createServer(options.https, self._request);
+			self.server = http.createServer(options.https, self.listener);
 		else
-			self.server = http.createServer(self._request);
+			self.server = http.createServer(self.listener);
 
 		if (self.config['allow-performance']) {
 			self.server.on('connection', function(socket) {
@@ -4970,7 +4970,7 @@ Framework.prototype._service = function(count) {
  * @param {Request} req
  * @param {Response} res
  */
-Framework.prototype._request = function(req, res) {
+Framework.prototype.listener = function(req, res) {
 
 	var self = framework;
 
@@ -5066,6 +5066,9 @@ Framework.prototype._request = function(req, res) {
 				break;
 		}
 	}
+
+	// Prevent double browser requesting
+	res.writeContinue();
 
  	if (can && self.onLocate)
 		req.$language = self.onLocate(req, res, req.isStaticFile);
@@ -11048,7 +11051,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, done) {
  * @param {Function} done Optinoal, callback.
  * @return {Controller}
  */
-Controller.prototype.stream = function(contentType, stream, download, headers, done) {
+Controller.prototype.stream = function(contentType, stream, download, headers, done, nocompress) {
 	var self = this;
 
 	if (self.res.success || self.res.headersSent || !self.isConnected) {
@@ -11058,7 +11061,7 @@ Controller.prototype.stream = function(contentType, stream, download, headers, d
 	}
 
 	self.subscribe.success();
-	framework.responseStream(self.req, self.res, contentType, stream, download, headers, done);
+	framework.responseStream(self.req, self.res, contentType, stream, download, headers, done, nocompress);
 	return self;
 };
 
@@ -13150,7 +13153,7 @@ http.ServerResponse.prototype.file = function(filename, download, headers, done)
  * @param {Function} done Optional, callback.
  * @return {Framework}
  */
-http.ServerResponse.prototype.stream = function(contentType, stream, download, headers, done) {
+http.ServerResponse.prototype.stream = function(contentType, stream, download, headers, done, nocompress) {
 	var self = this;
 	if (self.headersSent) {
 		if (done)
@@ -13159,7 +13162,7 @@ http.ServerResponse.prototype.stream = function(contentType, stream, download, h
 	}
 	if (self.controller)
 		self.controller.subscribe.success();
-	framework.responseStream(self.req, self, contentType, stream, download, headers, done);
+	framework.responseStream(self.req, self, contentType, stream, download, headers, done, nocompress);
 	return self;
 };
 

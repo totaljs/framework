@@ -198,7 +198,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-4';
+	this.version_header = '1.9.0-5';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -3963,7 +3963,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
  * @param {Object} headers Optional
  * @return {Framework}
  */
-Framework.prototype.responseStream = function(req, res, contentType, stream, download, headers, done) {
+Framework.prototype.responseStream = function(req, res, contentType, stream, download, headers, done, nocompress) {
 
 	var self = this;
 
@@ -4014,7 +4014,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		return self;
 	}
 
-	if (compress) {
+	if (compress && !nocompress) {
 
 		returnHeaders['Content-Encoding'] = 'gzip';
 		res.writeHead(200, returnHeaders);
@@ -11030,7 +11030,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, done) {
  * @param {Function} done Optinoal, callback.
  * @return {Controller}
  */
-Controller.prototype.stream = function(contentType, stream, download, headers, done) {
+Controller.prototype.stream = function(contentType, stream, download, headers, done, nocompress) {
 	var self = this;
 
 	if (self.res.success || self.res.headersSent || !self.isConnected) {
@@ -11040,7 +11040,7 @@ Controller.prototype.stream = function(contentType, stream, download, headers, d
 	}
 
 	self.subscribe.success();
-	framework.responseStream(self.req, self.res, contentType, stream, download, headers, done);
+	framework.responseStream(self.req, self.res, contentType, stream, download, headers, done, nocompress);
 	return self;
 };
 
@@ -13132,7 +13132,7 @@ http.ServerResponse.prototype.file = function(filename, download, headers, done)
  * @param {Function} done Optional, callback.
  * @return {Framework}
  */
-http.ServerResponse.prototype.stream = function(contentType, stream, download, headers, done) {
+http.ServerResponse.prototype.stream = function(contentType, stream, download, headers, done, nocompress) {
 	var self = this;
 	if (self.headersSent) {
 		if (done)
@@ -13141,7 +13141,7 @@ http.ServerResponse.prototype.stream = function(contentType, stream, download, h
 	}
 	if (self.controller)
 		self.controller.subscribe.success();
-	framework.responseStream(self.req, self, contentType, stream, download, headers, done);
+	framework.responseStream(self.req, self, contentType, stream, download, headers, done, nocompress);
 	return self;
 };
 
