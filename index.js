@@ -5046,9 +5046,6 @@ Framework.prototype.listener = function(req, res) {
 		}
 	}
 
-	// Prevent double browser requesting
-	res.writeContinue();
-
  	if (can && self.onLocate)
 		req.$language = self.onLocate(req, res, req.isStaticFile);
 
@@ -13141,6 +13138,7 @@ http.ServerResponse.prototype.stream = function(contentType, stream, download, h
 	}
 	if (self.controller)
 		self.controller.subscribe.success();
+
 	framework.responseStream(self.req, self, contentType, stream, download, headers, done, nocompress);
 	return self;
 };
