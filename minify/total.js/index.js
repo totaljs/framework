@@ -219,7 +219,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-5';
+	this.version_header = '1.9.0-6';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -737,6 +737,78 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
 };
 
 /**
+ * RESTful routing
+ * @param {String} url A relative url.
+ * @param {String Array} flags
+ * @param {Function} onQuery
+ * @param {Function(id)} onGet
+ * @param {Function([id])} onSave
+ * @param {Function(id)} onDelete
+ * @return {Framework}
+ */
+Framework.prototype.restful = function(url, flags, onQuery, onGet, onSave, onDelete) {
+
+	var self = this;
+	var tmp;
+
+	function remove_schema(arr) {
+		for (var i = 0, length = arr.length; i < length; i++) {
+			if (arr[i][0] !== '*')
+				continue;
+			arr.splice(i, 1);
+			return arr;
+		}
+		return arr;
+	}
+
+	if (onQuery) {
+		tmp = [];
+
+		if (flags)
+			tmp.push.apply(tmp, remove_schema(flags));
+
+		self.route(url, tmp, onQuery);
+	}
+
+	var restful = framework_utils.path(url) + '{id}';
+
+	if (onGet) {
+		tmp = [];
+
+		if (flags)
+			tmp.push.apply(tmp, remove_schema(flags));
+
+		self.route(restful, tmp, onGet);
+	}
+
+	if (onSave) {
+		tmp = ['post'];
+
+		if (flags)
+			tmp.push.apply(tmp, flags);
+
+		self.route(url, tmp, onSave);
+
+		tmp = ['put'];
+		if (flags)
+			tmp.push.apply(tmp, flags);
+
+		self.route(restful, tmp, onSave);
+	}
+
+	if (onDelete) {
+		tmp = ['delete'];
+
+		if (flags)
+			tmp.push.apply(tmp, remove_schema(flags));
+
+		self.route(restful, tmp, onDelete);
+	}
+
+	return self;
+};
+
+/**
  * Add a route
  * @param {String} url
  * @param {Function} funcExecute Action.
@@ -872,6 +944,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	var isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
 	var isMOBILE = false;
 	var isJSON = false;
+	var isDELAY = false;
 
 	if (flags) {
 
@@ -913,6 +986,11 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
 				case 'xss':
 					count--;
+					continue;
+
+				case 'delay':
+					count--;
+					isDELAY = true;
 					continue;
 
 				case 'sync':
@@ -1087,7 +1165,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		execute: funcExecute,
 		length: (length || self.config['default-request-length']) * 1024,
 		middleware: middleware,
-		timeout: timeout === undefined ? self.config['default-request-timeout'] : timeout,
+		timeout: timeout === undefined ? (isDELAY ? 0 : self.config['default-request-timeout']) : timeout,
 		isMULTIPLE: isMULTIPLE,
 		isJSON: isJSON,
 		isXML: flags.indexOf('xml') !== -1,
@@ -1109,6 +1187,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		isSYSTEM: url.startsWith('/#'),
 		isCACHE: !url.startsWith('/#') && !CUSTOM && !arr.length && !isASTERIX,
 		isPARAM: arr.length > 0,
+		isDELAY: isDELAY,
 		CUSTOM: CUSTOM,
 		options: options,
 		regexp: reg,
@@ -1577,10 +1656,18 @@ Framework.prototype.localize = function(name, url, middleware, options) {
 	var self = this;
 	url = url.replace('*', '');
 
+	var index = url.lastIndexOf('.');
+	var extension = 'html|htm|md|txt';
+
+	if (index !== -1) {
+		extension = url.substring(index + 1);
+		url = url.substring(0, index);
+	}
+
 	var fnExecute = function(req, res, is) {
 
 		if (is)
-			return req.url.substring(0, url.length) === url && (req.extension === 'html' || req.extension === 'htm' || req.extension === 'md' || req.extension === 'txt');
+			return req.url.substring(0, url.length) === url && extension.indexOf(req.extension) !== -1;
 
 		var key = 'locate_' + (req.$language ? req.$language : 'default') + '_' + req.url;
 		var output = framework.temporary.other[key];
@@ -2647,6 +2734,30 @@ Framework.prototype.onMapping = function(url, def) {
 	return {Boolean or utils.isValid() or StringErrorMessage};
 */
 Framework.prototype.onValidation = null;
+
+/**
+ * Schema parser delegate
+ * @param {Request} req
+ * @param {String} group
+ * @param {String} name
+ * @param {Function(err, body)} callback
+ */
+Framework.prototype.onSchema = function(req, group, name, callback) {
+
+	var schema = GETSCHEMA(group, name);
+
+	if (!schema) {
+		callback(new Error('Schema not found.'));
+		return;
+	}
+
+	schema.make(req.body, function(err, result) {
+		if (err)
+			callback(err);
+		else
+			callback(null, result);
+	});
+};
 
 /**
  * Mail delegate
@@ -8224,6 +8335,9 @@ Subscribe.prototype.execute = function(status) {
 		}, route.timeout);
 	}
 
+	if (route.isDELAY)
+		self.res.writeContinue();
+
 	if (framework._length_middleware === 0 || route.middleware === null)
 		return self.doExecute();
 
@@ -8378,27 +8492,17 @@ Subscribe.prototype.doEnd = function() {
 			return self;
 		}
 
-		schema = SCHEMA(route.schema[0]).get(route.schema[1]);
-
-		if (!schema) {
-			var err = new Error('Schema not found.');
-			F.error(err, null, req.uri);
-			self.route500(err);
-			return self;
-		}
-
-		schema.make(req.body, function(err, result) {
+		self.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
 
 			if (err) {
 				self.route400(err);
-				return;
+				return self;
 			}
 
-			if (result)
-				req.body = result;
-
+			req.body = body;
 			self.prepare(req.flag, req.uri.pathname);
 		});
+
 		return self;
 	}
 
@@ -8446,23 +8550,14 @@ Subscribe.prototype.doEnd = function() {
 		return self;
 	}
 
-	schema = SCHEMA(route.schema[0]).get(route.schema[1]);
-
-	if (!schema) {
-		self.route500(new Error('Schema not found.'));
-		return self;
-	}
-
-	schema.make(req.body, function(err, result) {
+	framework.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
 
 		if (err) {
 			self.route400(err);
-			return;
+			return self;
 		}
 
-		if (result)
-			req.body = result;
-
+		req.body = body;
 		self.prepare(req.flag, req.uri.pathname);
 	});
 
@@ -13106,11 +13201,29 @@ http.ServerResponse.prototype.continue = function(done) {
 	if (self.headersSent) {
 		if (done)
 			done();
-		return;
+		return self;
 	}
 	if (self.controller)
 		self.controller.subscribe.success();
 	framework.responseStatic(self.req, self, done);
+	return self;
+};
+
+/**
+ * Response custom content
+ * @param {Number} code
+ * @param {String} body
+ * @param {String} type
+ * @param {Boolean} compress Optional, default true
+ * @return {Response}
+ */
+http.ServerResponse.prototype.content = function(code, body, type, compress) {
+	var self = this;
+	if (self.headersSent)
+		return self;
+	if (self.controller)
+		self.controller.subscribe.success();
+	framework.responseContent(self.req, self, code, body, type, compress);
 	return self;
 };
 
@@ -13123,7 +13236,7 @@ http.ServerResponse.prototype.continue = function(done) {
 http.ServerResponse.prototype.redirect = function(url, permanent) {
 	var self = this;
 	if (self.headersSent)
-		return;
+		return self;
 	if (self.controller)
 		self.controller.subscribe.success();
 	framework.responseRedirect(self.req, self, url, permanent);
@@ -13143,7 +13256,7 @@ http.ServerResponse.prototype.file = function(filename, download, headers, done)
 	if (self.headersSent) {
 		if (done)
 			done();
-		return;
+		return self;
 	}
 	if (self.controller)
 		self.controller.subscribe.success();
@@ -13165,7 +13278,7 @@ http.ServerResponse.prototype.stream = function(contentType, stream, download, h
 	if (self.headersSent) {
 		if (done)
 			done();
-		return;
+		return self;
 	}
 	if (self.controller)
 		self.controller.subscribe.success();
@@ -13187,7 +13300,7 @@ http.ServerResponse.prototype.image = function(filename, fnProcess, headers, don
 	if (self.headersSent) {
 		if (done)
 			done();
-		return;
+		return self;
 	}
 	if (self.controller)
 		self.controller.subscribe.success();
