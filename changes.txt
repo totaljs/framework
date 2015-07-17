@@ -48,7 +48,7 @@ BETA ======= 1.9.0
 - added: res.content(code, body, type, [compress]) -> alias for F.responseContent()
 - added: F.localize(name, path, [middleware], [options]) - auto translating static files
 - added: F.listener(req, res) -> for multiple server listeners
-- added: F.restful(url, flag, onQuery, onGet, onSave, onDelete) -> creates routing
+- added: F.restful(url, flags, onQuery, onGet, onSave, onDelete) -> creates routing
 - added: F.onSchema(req, group, name, callback(err, body)) -> for custom schemas
 
 - updated: (IMPORTANT) routing: `json` flag is not required for receiving incomming data as JSON
