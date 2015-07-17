@@ -1556,10 +1556,18 @@ Framework.prototype.localize = function(name, url, middleware, options) {
 	var self = this;
 	url = url.replace('*', '');
 
+	var index = url.lastIndexOf('.');
+	var extension = 'html|htm|md|txt';
+
+	if (index !== -1) {
+		extension = url.substring(index + 1);
+		url = url.substring(0, index);
+	}
+
 	var fnExecute = function(req, res, is) {
 
 		if (is)
-			return req.url.substring(0, url.length) === url && (req.extension === 'html' || req.extension === 'htm' || req.extension === 'md' || req.extension === 'txt');
+			return req.url.substring(0, url.length) === url && extension.indexOf(req.extension) !== -1;
 
 		var key = 'locate_' + (req.$language ? req.$language : 'default') + '_' + req.url;
 		var output = framework.temporary.other[key];
