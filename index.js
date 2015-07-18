@@ -3229,7 +3229,7 @@ function merge_debug_writer(writer, filename, extension, index) {
 	var beg = extension === 'js' ? '/*\n' : extension === 'css' ? '/*!\n' : '<!--\n';
 	var end = extension === 'js' || extension === 'css' ? '\n */' : '\n-->';
 	var mid = extension !== 'html' ? ' * ' : ' ';
-	writer.write((index > 0 ? '\n\n' : '') + beg + mid + plus + '\n' + mid + 'MERGE: ' + filename + '\n' + mid + plus + end + '\n\n', ENCODING);
+	writer.write((index > 0 ? '\n\n' : '') + beg + mid + plus + '\n' + mid + 'MERGED: ' + filename + '\n' + mid + plus + end + '\n\n', ENCODING);
 }
 
 /**
