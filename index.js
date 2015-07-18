@@ -10377,6 +10377,31 @@ Controller.prototype.$js = function() {
 	return builder;
 };
 
+Controller.prototype.$import = function() {
+
+	var self = this;
+	var builder = '';
+
+	for (var i = 0; i < arguments.length; i++) {
+		var filename = arguments[i];
+		var extension = filename.substring(filename.lastIndexOf('.'));
+
+		switch (extension) {
+			case '.js':
+				builder += self.routeScript(filename, true);
+				break;
+			case '.css':
+				builder += self.routeStyle(filename, true);
+				break;
+			case '.ico':
+				builder += self.$favicon(filename);
+				break;
+		}
+	}
+
+	return builder;
+};
+
 /**
  * Append <link> TAG
  * @private
