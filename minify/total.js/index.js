@@ -219,7 +219,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-6';
+	this.version_header = '1.9.0-7';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -3171,6 +3171,8 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		callback();
 	});
 
+	var index = 0;
+
 	merge.files.wait(function(filename, next) {
 
 		if (filename.startsWith('http://') || filename.startsWith('https://')) {
@@ -3185,6 +3187,9 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 						output += NEWLINE;
 				}
 
+				if (framework.isDebug)
+					merge_debug_writer(writer, filename, extension, index++);
+
 				writer.write(output, ENCODING);
 				next();
 			});
@@ -3192,6 +3197,8 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		}
 
 		if (filename[0] === '#') {
+			if (framework.isDebug)
+				merge_debug_writer(writer, filename, 'js', index++);
 			writer.write(prepare_isomorphic(filename.substring(1)), ENCODING);
 			next();
 			return;
@@ -3224,6 +3231,9 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 					output += NEWLINE;
 			}
 
+			if (framework.isDebug)
+				merge_debug_writer(writer, filename, extension, index++);
+
 			writer.write(output, ENCODING);
 			next();
 		});
@@ -3234,6 +3244,14 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 
 	return self;
 };
+
+function merge_debug_writer(writer, filename, extension, index) {
+	var plus = '===========================================================================================';
+	var beg = extension === 'js' ? '/*\n' : extension === 'css' ? '/*!\n' : '<!--\n';
+	var end = extension === 'js' || extension === 'css' ? '\n */' : '\n-->';
+	var mid = extension !== 'html' ? ' * ' : ' ';
+	writer.write((index > 0 ? '\n\n' : '') + beg + mid + plus + '\n' + mid + 'MERGE: ' + filename + '\n' + mid + plus + end + '\n\n', ENCODING);
+}
 
 /**
  * Validating static file for compilation
@@ -13224,16 +13242,17 @@ http.ServerResponse.prototype.continue = function(done) {
  * @param {Number} code
  * @param {String} body
  * @param {String} type
- * @param {Boolean} compress Optional, default true
+ * @param {Boolean} compress Disallows GZIP compression. Optional, default: true.
+ * @param {Object} headers Optional, additional headers.
  * @return {Response}
  */
-http.ServerResponse.prototype.content = function(code, body, type, compress) {
+http.ServerResponse.prototype.content = function(code, body, type, compress, headers) {
 	var self = this;
 	if (self.headersSent)
 		return self;
 	if (self.controller)
 		self.controller.subscribe.success();
-	framework.responseContent(self.req, self, code, body, type, compress);
+	framework.responseContent(self.req, self, code, body, type, compress, headers);
 	return self;
 };
 

@@ -589,7 +589,7 @@ function test_routing(next) {
 		utils.request(url + 'mergepackage2.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === 'console.log(\'test\');', 'merge package');
+			assert(data.indexOf('console.log(\'test\');') !== -1, 'merge package');
 			complete();
 		});
 	});

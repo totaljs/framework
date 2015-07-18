@@ -198,7 +198,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-6';
+	this.version_header = '1.9.0-7';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -3150,6 +3150,8 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		callback();
 	});
 
+	var index = 0;
+
 	merge.files.wait(function(filename, next) {
 
 		if (filename.startsWith('http://') || filename.startsWith('https://')) {
@@ -3164,6 +3166,9 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 						output += NEWLINE;
 				}
 
+				if (framework.isDebug)
+					merge_debug_writer(writer, filename, extension, index++);
+
 				writer.write(output, ENCODING);
 				next();
 			});
@@ -3171,6 +3176,8 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		}
 
 		if (filename[0] === '#') {
+			if (framework.isDebug)
+				merge_debug_writer(writer, filename, 'js', index++);
 			writer.write(prepare_isomorphic(filename.substring(1)), ENCODING);
 			next();
 			return;
@@ -3203,6 +3210,9 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 					output += NEWLINE;
 			}
 
+			if (framework.isDebug)
+				merge_debug_writer(writer, filename, extension, index++);
+
 			writer.write(output, ENCODING);
 			next();
 		});
@@ -3213,6 +3223,14 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 
 	return self;
 };
+
+function merge_debug_writer(writer, filename, extension, index) {
+	var plus = '===========================================================================================';
+	var beg = extension === 'js' ? '/*\n' : extension === 'css' ? '/*!\n' : '<!--\n';
+	var end = extension === 'js' || extension === 'css' ? '\n */' : '\n-->';
+	var mid = extension !== 'html' ? ' * ' : ' ';
+	writer.write((index > 0 ? '\n\n' : '') + beg + mid + plus + '\n' + mid + 'MERGE: ' + filename + '\n' + mid + plus + end + '\n\n', ENCODING);
+}
 
 /**
  * Validating static file for compilation
