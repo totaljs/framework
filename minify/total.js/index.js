@@ -6678,11 +6678,20 @@ Framework.prototype._configure = function(arr, rewrite) {
 			arr = arr.concat(fs.readFileSync(filenameB).toString(ENCODING).split('\n'));
 	}
 
-	if (!arr instanceof Array)
-		return self;
+	var done = function() {
+		process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
+		self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
+	};
 
-	if (!arr.length)
+	if (!arr instanceof Array) {
+		done();
 		return self;
+	}
+
+	if (!arr.length) {
+		done();
+		return self;
+	}
 
 	if (rewrite === undefined)
 		rewrite = true;
@@ -6774,8 +6783,6 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (self.config['etag-version'] === '')
 		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');
 
-	process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
-
 	if (self.config['default-timezone'])
 		process.env.TZ = self.config['default-timezone'];
 
@@ -6791,9 +6798,8 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (self.config['allow-performance'])
 		http.globalAgent.maxSockets = 9999;
 
-	self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
+	done();
 	self.emit('configure', self.config);
-
 	return self;
 };
 
@@ -6964,7 +6970,6 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 	req.$isAuthorized = true;
 
 	var key = '#' + url + '$' + req.$flags + (subdomain ? '$' + subdomain : '');
-
 	if (framework.temporary.other[key])
 		return framework.temporary.other[key];
 
@@ -8378,7 +8383,12 @@ Subscribe.prototype.prepare = function(flags, url) {
 	var res = self.res;
 
 	if (framework.onAuthorization !== null) {
+		var length = flags.length;
 		framework.onAuthorization(req, res, flags, function(isAuthorized, user) {
+
+			if (length !== flags.length)
+				req.$flags += flags.slice(length).join('');
+
 			if (typeof(isAuthorized) !== BOOLEAN) {
 				user = isAuthorized;
 				isAuthorized = !user;
@@ -8500,7 +8510,7 @@ Subscribe.prototype.doEnd = function() {
 			}
 
 			req.body = body;
-			self.prepare(req.flag, req.uri.pathname);
+			self.prepare(req.flags, req.uri.pathname);
 		});
 
 		return self;
@@ -8558,7 +8568,7 @@ Subscribe.prototype.doEnd = function() {
 		}
 
 		req.body = body;
-		self.prepare(req.flag, req.uri.pathname);
+		self.prepare(req.flags, req.uri.pathname);
 	});
 
 	return self;
