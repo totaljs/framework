@@ -13203,16 +13203,17 @@ http.ServerResponse.prototype.continue = function(done) {
  * @param {Number} code
  * @param {String} body
  * @param {String} type
- * @param {Boolean} compress Optional, default true
+ * @param {Boolean} compress Disallows GZIP compression. Optional, default: true.
+ * @param {Object} headers Optional, additional headers.
  * @return {Response}
  */
-http.ServerResponse.prototype.content = function(code, body, type, compress) {
+http.ServerResponse.prototype.content = function(code, body, type, compress, headers) {
 	var self = this;
 	if (self.headersSent)
 		return self;
 	if (self.controller)
 		self.controller.subscribe.success();
-	framework.responseContent(self.req, self, code, body, type, compress);
+	framework.responseContent(self.req, self, code, body, type, compress, headers);
 	return self;
 };
 
