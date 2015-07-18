@@ -6657,11 +6657,20 @@ Framework.prototype._configure = function(arr, rewrite) {
 			arr = arr.concat(fs.readFileSync(filenameB).toString(ENCODING).split('\n'));
 	}
 
-	if (!arr instanceof Array)
-		return self;
+	var done = function() {
+		process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
+		self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
+	};
 
-	if (!arr.length)
+	if (!arr instanceof Array) {
+		done();
 		return self;
+	}
+
+	if (!arr.length) {
+		done();
+		return self;
+	}
 
 	if (rewrite === undefined)
 		rewrite = true;
@@ -6753,8 +6762,6 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (self.config['etag-version'] === '')
 		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');
 
-	process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
-
 	if (self.config['default-timezone'])
 		process.env.TZ = self.config['default-timezone'];
 
@@ -6770,9 +6777,8 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (self.config['allow-performance'])
 		http.globalAgent.maxSockets = 9999;
 
-	self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
+	done();
 	self.emit('configure', self.config);
-
 	return self;
 };
 
