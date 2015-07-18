@@ -6949,7 +6949,6 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 	req.$isAuthorized = true;
 
 	var key = '#' + url + '$' + req.$flags + (subdomain ? '$' + subdomain : '');
-
 	if (framework.temporary.other[key])
 		return framework.temporary.other[key];
 
@@ -8363,7 +8362,12 @@ Subscribe.prototype.prepare = function(flags, url) {
 	var res = self.res;
 
 	if (framework.onAuthorization !== null) {
+		var length = flags.length;
 		framework.onAuthorization(req, res, flags, function(isAuthorized, user) {
+
+			if (length !== flags.length)
+				req.$flags += flags.slice(length).join('');
+
 			if (typeof(isAuthorized) !== BOOLEAN) {
 				user = isAuthorized;
 				isAuthorized = !user;
@@ -8485,7 +8489,7 @@ Subscribe.prototype.doEnd = function() {
 			}
 
 			req.body = body;
-			self.prepare(req.flag, req.uri.pathname);
+			self.prepare(req.flags, req.uri.pathname);
 		});
 
 		return self;
@@ -8543,7 +8547,7 @@ Subscribe.prototype.doEnd = function() {
 		}
 
 		req.body = body;
-		self.prepare(req.flag, req.uri.pathname);
+		self.prepare(req.flags, req.uri.pathname);
 	});
 
 	return self;
