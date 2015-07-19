@@ -50,7 +50,7 @@ BETA ======= 1.9.0
 - added: F.listener(req, res) -> for multiple server listeners
 - added: F.restful(url, flags, onQuery, onGet, onSave, onDelete) -> creates routing
 - added: F.onSchema(req, group, name, callback(err, body)) -> for custom schemas
-- added: @{insert(filename1, filename2, filenameN)}
+- added: @{import(filename1, filename2, filenameN)}
 - added: SchemaBuilderEntity.setError(function(error, model, type, name));
 
 - updated: (IMPORTANT) routing: `json` flag is not required for receiving incomming data as JSON
