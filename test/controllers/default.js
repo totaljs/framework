@@ -467,8 +467,8 @@ function viewIndex() {
     self.setModified(date);
     self.setExpires(date);
 
-    assert.ok(self.routeJS('p.js') === '/js/p.js', name + 'routeJS()');
-    assert.ok(self.routeCSS('p.css') === '/css/p.css', name + 'routeCSS()');
+    assert.ok(self.routeScript('p.js') === '/js/p.js', name + 'routeScript()');
+    assert.ok(self.routeStyle('p.css') === '/css/p.css', name + 'routeStyle()');
     assert.ok(self.routeImage('p.jpg') === '/img/p.jpg', name + 'routeImage()');
     assert.ok(self.routeVideo('p.avi') === '/video/p.avi', name + 'routeVideo()');
     assert.ok(self.routeFont('p.woff') === '/fonts/p.woff', name + 'routeFont()');

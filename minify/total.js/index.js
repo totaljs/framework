@@ -219,7 +219,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-7';
+	this.version_header = '1.9.0-8';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -3250,7 +3250,7 @@ function merge_debug_writer(writer, filename, extension, index) {
 	var beg = extension === 'js' ? '/*\n' : extension === 'css' ? '/*!\n' : '<!--\n';
 	var end = extension === 'js' || extension === 'css' ? '\n */' : '\n-->';
 	var mid = extension !== 'html' ? ' * ' : ' ';
-	writer.write((index > 0 ? '\n\n' : '') + beg + mid + plus + '\n' + mid + 'MERGE: ' + filename + '\n' + mid + plus + end + '\n\n', ENCODING);
+	writer.write((index > 0 ? '\n\n' : '') + beg + mid + plus + '\n' + mid + 'MERGED: ' + filename + '\n' + mid + plus + end + '\n\n', ENCODING);
 }
 
 /**
@@ -6828,6 +6828,7 @@ Framework.prototype._configure = function(arr, rewrite) {
  * @return {String}
  */
 Framework.prototype.routeJS = function(name) {
+	console.log('OBSOLETE framework.routeJS(): use framework.routeScript()');
 	return this.routeScript(name);
 };
 
@@ -6852,6 +6853,7 @@ Framework.prototype.routeScript = function(name) {
  * @return {String}
  */
 Framework.prototype.routeCSS = function(name) {
+	console.log('OBSOLETE framework.routeCSS(): use framework.routeStyle()');
 	return this.routeStyle(name);
 };
 
@@ -10192,9 +10194,9 @@ Controller.prototype.head = function() {
 		var isRoute = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
 
 		if (val.endsWith('.css', true))
-			output += '<link type="text/css" rel="stylesheet" href="' + (isRoute ? self.routeCSS(val) : val) + '" />';
+			output += '<link type="text/css" rel="stylesheet" href="' + (isRoute ? self.routeStyle(val) : val) + '" />';
 		else if (val.endsWith(EXTENSION_JS, true) !== -1)
-			output += '<script type="text/javascript" src="' + (isRoute ? self.routeJS(val) : val) + '"></script>';
+			output += '<script type="text/javascript" src="' + (isRoute ? self.routeScript(val) : val) + '"></script>';
 	}
 
 	header += output;
@@ -10393,7 +10395,38 @@ Controller.prototype.$js = function() {
 	var builder = '';
 
 	for (var i = 0; i < arguments.length; i++)
-		builder += self.routeJS(arguments[i], true);
+		builder += self.routeScript(arguments[i], true);
+
+	return builder;
+};
+
+Controller.prototype.$import = function() {
+
+	var self = this;
+	var builder = '';
+
+	for (var i = 0; i < arguments.length; i++) {
+		var filename = arguments[i];
+		var extension = filename.substring(filename.lastIndexOf('.'));
+
+		switch (extension) {
+			case '.js':
+				builder += self.routeScript(filename, true);
+				break;
+			case '.css':
+				builder += self.routeStyle(filename, true);
+				break;
+			case '.ico':
+				builder += self.$favicon(filename);
+				break;
+			case '.jpg':
+			case '.gif':
+			case '.png':
+			case '.jpeg':
+				builder += self.routeImage(filename, true);
+				break;
+		}
+	}
 
 	return builder;
 };
@@ -10409,7 +10442,7 @@ Controller.prototype.$css = function() {
 	var builder = '';
 
 	for (var i = 0; i < arguments.length; i++)
-		builder += self.routeCSS(arguments[i], true);
+		builder += self.routeStyle(arguments[i], true);
 
 	return builder;
 };
@@ -10553,6 +10586,7 @@ Controller.prototype._routeHelper = function(current, name, fn) {
  * @return {String}
  */
 Controller.prototype.routeJS = function(name, tag) {
+	console.log('OBSOLETE controller.routeJS(): use controller.routeScript()');
 	return this.routeScript(name, tag);
 };
 
@@ -10577,6 +10611,7 @@ Controller.prototype.routeScript = function(name, tag) {
  * @return {String}
  */
 Controller.prototype.routeCSS = function(name, tag) {
+	console.log('OBSOLETE controller.routeCSS(): use controller.routeStyle()');
 	return this.routeStyle(name, tag);
 };
 
@@ -10592,7 +10627,7 @@ Controller.prototype.routeStyle = function(name, tag) {
 	if (name === undefined)
 		name = 'default.css';
 
-	var url = self._routeHelper(self._currentStyle, name, framework.routeCSS);
+	var url = self._routeHelper(self._currentStyle, name, framework.routeStyle);
 	return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
 

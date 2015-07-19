@@ -62,6 +62,7 @@ function app() {
     var pidInterval = null;
     var prefix = '------------> ';
     var isLoaded = false;
+    var isSkip = false;
 
     function onFilter(path, isDirectory) {
         return isDirectory ? true : path.indexOf('.js') !== -1 || path.indexOf('.resource') !== -1;
@@ -163,6 +164,7 @@ function app() {
         if (app !== null) {
             try
             {
+                isSkip = true;
                 process.kill(app.pid);
             } catch (err) {}
             app = null;
@@ -183,17 +185,21 @@ function app() {
 
         app.on('message', function(msg) {
 
-            if (msg.substring(0, 5) === 'name:') {
-                process.title = 'debug: ' + msg.substring(6);
-                return;
-            }
-
             if (msg === 'eaddrinuse')
                 process.exit(1);
 
         });
 
         app.on('exit', function() {
+
+            // checks unexpected exit
+            if (isSkip === false) {
+                app = null;
+                process.exit();
+                return;
+            }
+
+            isSkip = false;
             if (status !== 255)
                 return;
             app = null;
@@ -223,6 +229,7 @@ function app() {
             return;
         }
 
+        isSkip = true;
         process.kill(app.pid);
         app = null;
         process.exit(0);
@@ -243,8 +250,10 @@ function app() {
 
                 fs.unlink(pid, noop);
 
-                if (app !== null)
+                if (app !== null) {
+                    isSkip = true;
                     process.kill(app.pid);
+                }
 
                 process.exit(0);
             });

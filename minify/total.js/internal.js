@@ -2134,6 +2134,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'script':
 		case 'css':
 		case 'favicon':
+		case 'import':
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
 
 		case 'index':

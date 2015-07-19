@@ -120,6 +120,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 	this.onGet;
 	this.onRemove;
 	this.onQuery;
+	this.onError;
 	this.gcache = {};
 }
 
@@ -458,6 +459,18 @@ SchemaBuilderEntity.prototype.setSave = function(fn) {
 	return self;
 };
 
+
+/**
+ * Set error handler
+ * @param {Function(error)} fn
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.setError = function(fn) {
+	var self = this;
+	self.onError = fn;
+	return self;
+};
+
 /**
  * Set getter handler
  * @param {Function(error, model, helper, next(value))} fn
@@ -700,6 +713,7 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
 		callback = function(){};
 
 	var self = this;
+	var $type = 'save';
 
 	self.$prepare(model, function(err, model) {
 
@@ -710,14 +724,19 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
 
 		var builder = new ErrorBuilder();
 
-		if (!isGenerator(self, 'save', self.onSave)) {
+		if (!isGenerator(self, $type, self.onSave)) {
 			self.onSave(builder, model, helper, function(result) {
 				if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
 					if (result instanceof Error || result instanceof ErrorBuilder)
 						builder.push(result);
 					result = arguments[1];
 				}
-				callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+
+				var has = builder.hasError();
+				if (has && self.onError)
+					self.onError(builder, model, $type);
+
+				callback(has ? builder : null, result === undefined ? model : result);
 			});
 			return self;
 		}
@@ -729,6 +748,8 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
 				return;
 			callback.success = true;
 			builder.push(err);
+			if (self.onError)
+				self.onError(builder, model, $type);
 			callback(builder);
 		}, builder, model, helper, function(result) {
 
@@ -740,8 +761,13 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback) {
 					builder.push(result);
 				result = arguments[1];
 			}
+
+			var has = builder.hasError();
+			if (has && self.onError)
+				self.onError(builder, model, $type);
+
 			callback.success = true;
-			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+			callback(has ? builder : null, result === undefined ? model : result);
 		});
 
 	});
@@ -774,8 +800,9 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 	var self = this;
 	var builder = new ErrorBuilder();
 	var output = self.default();
+	var $type = 'get';
 
-	if (!isGenerator(self, 'get', self.onGet)) {
+	if (!isGenerator(self, $type, self.onGet)) {
 		self.onGet(builder, output, helper, function(result) {
 
 			if (callback.success)
@@ -786,7 +813,12 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 					builder.push(result);
 				result = arguments[1];
 			}
-			callback(builder.hasError() ? builder : null, result === undefined ? output : result);
+
+			var has = builder.hasError();
+			if (has && self.onError)
+				self.onError(builder, model, $type);
+
+			callback(has ? builder : null, result === undefined ? output : result);
 		});
 		return self;
 	}
@@ -797,6 +829,10 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 			return;
 		callback.success = true;
 		builder.push(err);
+
+		if (self.onError)
+			self.onError(builder, model, $type);
+
 		callback(builder);
 	}, builder, output, helper, function(result) {
 
@@ -809,7 +845,12 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 			result = arguments[1];
 		}
 		callback.success = true;
-		callback(builder.hasError() ? builder : null, result === undefined ? output : result);
+
+		var has = builder.hasError();
+		if (has && self.onError)
+			self.onError(builder, model, $type);
+
+		callback(has ? builder : null, result === undefined ? output : result);
 	});
 
 	return self;
@@ -830,15 +871,21 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 
 	var self = this;
 	var builder = new ErrorBuilder();
+	var $type = 'remove';
 
-	if (!isGenerator(self, 'remove', self.onRemove)) {
+	if (!isGenerator(self, $type, self.onRemove)) {
 		self.onRemove(builder, helper, function(result) {
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
 				if (result instanceof Error || result instanceof ErrorBuilder)
 					builder.push(result);
 				result = arguments[1];
 			}
-			callback(builder.hasError() ? builder : null, result === undefined ? helper : result);
+
+			var has = builder.hasError();
+			if (has && self.onError)
+				self.onError(builder, model, $type);
+
+			callback(has ? builder : null, result === undefined ? helper : result);
 		});
 		return self;
 	}
@@ -849,6 +896,10 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 			return;
 		callback.success = true;
 		builder.push(err);
+
+		if (self.onError)
+			self.onError(builder, model, $type);
+
 		callback(builder);
 	}, builder, helper, function(result) {
 
@@ -861,8 +912,12 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 			result = arguments[1];
 		}
 
+		var has = builder.hasError();
+		if (has && self.onError)
+			self.onError(builder, model, $type);
+
 		callback.success = true;
-		callback(builder.hasError() ? builder : null, result === undefined ? helper : result);
+		callback(has ? builder : null, result === undefined ? helper : result);
 	});
 
 	return self;
@@ -883,15 +938,21 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 
 	var self = this;
 	var builder = new ErrorBuilder();
+	var $type = 'query';
 
-	if (!isGenerator(self, 'query', self.onQuery)) {
+	if (!isGenerator(self, $type, self.onQuery)) {
 		self.onQuery(builder, helper, function(result) {
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
 				if (result instanceof Error || result instanceof ErrorBuilder)
 					builder.push(result);
 				result = arguments[1];
 			}
-			callback(builder.hasError() ? builder : null, result);
+
+			var has = builder.hasError();
+			if (has && self.onError)
+				self.onError(builder, model, $type);
+
+			callback(has ? builder : null, result);
 		});
 		return self;
 	}
@@ -903,6 +964,8 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 			return;
 		callback.success = true;
 		builder.push(err);
+		if (self.onError)
+			self.onError(builder, model, $type);
 		callback(builder);
 	}, builder, helper, function(result) {
 
@@ -914,6 +977,10 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 				builder.push(result);
 			result = arguments[1];
 		}
+
+		var has = builder.hasError();
+		if (has && self.onError)
+			self.onError(builder, model, $type);
 
 		callback.success = true;
 		callback(builder.hasError() ? builder : null, result);
@@ -1299,6 +1366,10 @@ SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = functi
 
 	var builder = self.validate(output);
 	if (builder.hasError()) {
+
+		if (self.onError)
+			self.onError(builder, model, 'make');
+
 		if (callback)
 			callback(builder, null);
 		return output;
@@ -1566,6 +1637,8 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 		return self;
 	}
 
+	var $type = 'transform';
+
 	self.$prepare(model, function(err, model) {
 
 		if (err) {
@@ -1582,7 +1655,12 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 						builder.push(result);
 					result = arguments[1];
 				}
-				callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+
+				var has = builder.hasError();
+				if (has && self.onError)
+					self.onError(builder, model, $type, name);
+
+				callback(has ? builder : null, result === undefined ? model : result, model);
 			}, self.name);
 			return;
 		}
@@ -1593,6 +1671,10 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 				return;
 			callback.success = true;
 			builder.push(err);
+
+			if (self.onError)
+				self.onError(builder, model, $type, name);
+
 			callback(builder);
 		}, builder, model, helper, function(result) {
 
@@ -1605,8 +1687,12 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 				result = arguments[1];
 			}
 
+			var has = builder.hasError();
+			if (has && self.onError)
+				self.onError(builder, model, $type, name);
+
 			callback.success = true;
-			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+			callback(has ? builder : null, result === undefined ? model : result);
 		});
 
 	});
@@ -1648,6 +1734,8 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 		return self;
 	}
 
+	var $type = 'compose';
+
 	self.$prepare(model, function(err, model) {
 
 		if (err) {
@@ -1667,7 +1755,11 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 					result = arguments[1];
 				}
 
-				callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+				var has = builder.hasError();
+				if (has && self.onError)
+					self.onError(builder, model, $type, name);
+
+				callback(has ? builder : null, result === undefined ? model : result, model);
 			}, self.name);
 			return;
 		}
@@ -1678,6 +1770,8 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 				return;
 			callback.success = true;
 			builder.push(err);
+			if (self.onError)
+				self.onError(builder, model, $type, name);
 			callback(builder);
 		}, builder, model, helper, function(result) {
 
@@ -1689,8 +1783,13 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback) 
 					builder.push(result);
 				result = arguments[1];
 			}
+
+			var has = builder.hasError();
+			if (has && self.onError)
+				self.onError(builder, model, $type, name);
+
 			callback.success = true;
-			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
+			callback(has ? builder : null, result === undefined ? model : result);
 		});
 	});
 
@@ -1731,6 +1830,8 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 		return self;
 	}
 
+	var $type = 'workflow';
+
 	self.$prepare(model, function(err, model) {
 
 		if (err) {
@@ -1748,7 +1849,11 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 					result = arguments[1];
 				}
 
-				callback(builder.hasError() ? builder : null, result === undefined ? model : result, model);
+				var has = builder.hasError();
+				if (has && self.onError)
+					self.onError(builder, model, $type, name);
+
+				callback(has ? builder : null, result === undefined ? model : result, model);
 			}, self.name);
 			return;
 		}
@@ -1759,6 +1864,8 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 				return;
 			callback.success = true;
 			builder.push(err);
+			if (self.onError)
+				self.onError(builder, model, $type, name);
 			callback(builder);
 		}, builder, model, helper, function(result) {
 
@@ -1770,10 +1877,14 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback)
 					builder.push(result);
 				result = arguments[1];
 			}
-			callback.success = true;
-			callback(builder.hasError() ? builder : null, result === undefined ? model : result);
-		});
 
+			var has = builder.hasError();
+			if (has && self.onError)
+				self.onError(builder, model, $type, name);
+
+			callback.success = true;
+			callback(has ? builder : null, result === undefined ? model : result);
+		});
 	});
 
 	return self;
@@ -1824,6 +1935,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 	}
 
 	var builder = new ErrorBuilder();
+	var $type = 'operation';
 
 	if (!isGenerator(self, 'operation.' + name, operation)) {
 		operation.call(self, builder, model, helper, function(result) {
@@ -1833,8 +1945,10 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 					builder.push(result);
 				result = arguments[1];
 			}
-
-			callback(builder.hasError() ? builder : null, result);
+			var has = builder.hasError();
+			if (has && self.onError)
+				self.onError(builder, model, $type, name);
+			callback(has ? builder : null, result);
 		}, self.name);
 		return self;
 	}
@@ -1845,6 +1959,8 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 				return;
 			callback.success = true;
 			builder.push(err);
+			if (self.onError)
+				self.onError(builder, model, $type, name);
 			callback(builder);
 	}, builder, model, helper, function(result) {
 
@@ -1856,8 +1972,13 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 				builder.push(result);
 			result = arguments[1];
 		}
+
+		var has = builder.hasError();
+		if (has && self.onError)
+			self.onError(builder, model, $type, name);
+
 		callback.success = true;
-		callback(builder.hasError() ? builder : null, result);
+		callback(has ? builder : null, result);
 	});
 
 	return self;
