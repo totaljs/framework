@@ -1,3 +1,24 @@
+// Copyright 2012-2015 (c) Peter Širka <petersirka@gmail.com>
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 /**
  * @module Framework
  * @version 1.9.0
@@ -198,7 +219,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-8';
+	this.version_header = '1.9.0-9';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -238,8 +259,8 @@ function Framework() {
 
 		// all HTTP static request are routed to directory-public
 		'static-url': '',
-		'static-url-js': '/js/',
-		'static-url-css': '/css/',
+		'static-url-script': '/js/',
+		'static-url-style': '/css/',
 		'static-url-image': '/img/',
 		'static-url-video': '/video/',
 		'static-url-font': '/fonts/',
@@ -6768,8 +6789,17 @@ Framework.prototype._configure = function(arr, rewrite) {
 				obj[name] = value;
 				break;
 
-			default:
+			case 'static-url-css':
+				console.log('OBSOLETE "config.static-url-css": use "config.static-url-style"');
+				obj['static-url-style'] = value;
+				break;
 
+			case 'static-url-js':
+				console.log('OBSOLETE "config.static-url-js": use "config.static-url-script"');
+				obj['static-url-script'] = value;
+				break;
+
+			default:
 				obj[name] = value.isNumber() ? utils.parseInt(value) : value.isNumber(true) ? utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
 				break;
 		}
@@ -6801,7 +6831,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 };
 
 /**
- * Create URL: JavaScript (according to config['static-url-js'])
+ * Create URL: JavaScript (according to config['static-url-script'])
  * @alias
  * @param {String} name
  * @return {String}
@@ -6812,7 +6842,7 @@ Framework.prototype.routeJS = function(name) {
 };
 
 /**
- * Create URL: JavaScript (according to config['static-url-js'])
+ * Create URL: JavaScript (according to config['static-url-script'])
  * @param {String} name
  * @return {String}
  */
@@ -6822,11 +6852,11 @@ Framework.prototype.routeScript = function(name) {
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		name += EXTENSION_JS;
 
-	return self._routeStatic(name, self.config['static-url-js']);
+	return self._routeStatic(name, self.config['static-url-script']);
 };
 
 /**
- * Create URL: CSS (according to config['static-url-css'])
+ * Create URL: CSS (according to config['static-url-style'])
  * @alias
  * @param {String} name
  * @return {String}
@@ -6837,7 +6867,7 @@ Framework.prototype.routeCSS = function(name) {
 };
 
 /**
- * Create URL: CSS (according to config['static-url-css'])
+ * Create URL: CSS (according to config['static-url-style'])
  * @param {String} name
  * @return {String}
  */
@@ -6847,7 +6877,7 @@ Framework.prototype.routeStyle = function(name) {
 	if (name.lastIndexOf('.css') === -1)
 		name += '.css';
 
-	return self._routeStatic(name, self.config['static-url-css']);
+	return self._routeStatic(name, self.config['static-url-style']);
 };
 
 /*
@@ -7412,7 +7442,7 @@ FrameworkFileSystem.prototype.deleteStyle = function(name) {
 	if (name.lastIndexOf('.css') === -1)
 		name += '.css';
 
-	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-css'], name);
+	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-style'], name);
 	return self.deleteFile(filename);
 };
 
@@ -7427,7 +7457,7 @@ FrameworkFileSystem.prototype.deleteScript = function(name) {
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		name += EXTENSION_JS;
 
-	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-js'], name);
+	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-script'], name);
 	return self.deleteFile(filename);
 };
 
@@ -7530,7 +7560,7 @@ FrameworkFileSystem.prototype.createStyle = function(name, content, rewrite, app
 	if (name.lastIndexOf('.css') === -1)
 		name += '.css';
 
-	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-css'], name);
+	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-style'], name);
 	return self.createFile(filename, content, append, rewrite);
 };
 
@@ -7552,7 +7582,7 @@ FrameworkFileSystem.prototype.createScript = function(name, content, rewrite, ap
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		name += EXTENSION_JS;
 
-	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-js'], name);
+	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-script'], name);
 	return self.createFile(filename, content, append, rewrite);
 };
 

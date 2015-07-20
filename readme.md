@@ -69,22 +69,9 @@ The framework needs your donation for ensure future development and improving th
 
 ## Contributors
 
-- Peter Širka (__author__), <https://github.com/petersirka>
-- Matus Szabo (__support + enterprise__), <https://github.com/matusszabo>
-- Tomas Holovsky (__support + enterprise__)
-- Toshiaki Takahashi, <https://github.com/toshipon>
-- Bir, <https://github.com/bir>
-- Serkan Kocaman, <https://github.com/KiPSOFT>
-- Andrea Sessa, <https://github.com/asessa>
-- Ehsan Darrudi, <https://github.com/darrudi>
-- Tom Spaccialbelli, <https://github.com/harry-stot>
-- Nikita Shmidt, <https://github.com/NikSmith>
-
-## Contact
-
-- Peter Širka - <petersirka@gmail.com>
-- Matus Szabo - <matus.szabo@gmail.com>
-- Tomas Holovsky - <tomasholovsky@gmail.com>
+- Peter Širka (__author__), <https://github.com/petersirka>, e-mail: <petersirka@gmail.com>
+- Matus Szabo (__support + enterprise__), <https://github.com/matusszabo>, e-mail: <matus.szabo@gmail.com>
+- Tomas Holovsky (__support + enterprise__), e-mail: <tomasholovsky@gmail.com>
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: license.txt
