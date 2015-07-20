@@ -45,7 +45,6 @@ buffer.push('        div .blue { color: blue; }');
 buffer.push('    }');
 buffer.push('}');
 
-
 assert.ok(internal.compile_css(buffer.join("\n")) === "@import url('font.css');div b{color:red;}div span{color:red;}div div{color:red}div div .blue{color:blue;}@media(max-width:960px){b{color:red;}div b{color:red;}div span{color:red;}div div{color:red}div div .blue{color:blue;}}", "CSS nested ordering");
 
 console.log('================================================');

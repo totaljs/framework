@@ -2548,6 +2548,7 @@ function nested(css, id, variable) {
 				output += css.substring(begAt - 1, index);
 				skip = false;
 				plus = '';
+				continue;
 			}
 		}
 
