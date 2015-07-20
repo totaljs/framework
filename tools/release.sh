@@ -1,3 +1,4 @@
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-cd "$DIR/total.js"
+cd "$DIR"
+cd ..
 npm publish

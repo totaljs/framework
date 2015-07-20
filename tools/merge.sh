@@ -1,3 +1,5 @@
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-cd "$DIR/total.js"
-npm publish
+cd "$DIR"
+cd ..
+cd merged
+node merge.js
