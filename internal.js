@@ -1034,7 +1034,19 @@ exports.compile_css = function(value, filename) {
 	}
 
 	try {
-		return variablesCSS(compile_autovendor(value));
+
+		var isVariable = false;
+
+		value = nested(value, '', function() {
+			isVariable = true;
+		});
+
+		value = compile_autovendor(value);
+
+		if (isVariable)
+			value = variablesCSS(value);
+
+		return value;
 	} catch (ex) {
 		framework.error(new Error('CSS compiler exception: ' + ex.message));
 		return '';
@@ -2495,6 +2507,186 @@ function variablesCSS(content) {
     }).trim();
 
     return content;
+}
+
+function nested(css, id, variable) {
+
+	if (!css)
+		return css;
+
+	var index = 0;
+	var output = '';
+	var A = false;
+	var count = 0;
+	var beg;
+	var begAt;
+	var valid = false;
+	var plus = '';
+	var skip = false;
+	var skipImport = '';
+
+	while (true) {
+		var a = css[index++];
+
+		if (!a)
+			break;
+
+		if (a === '\n' || a === '\r')
+			continue;
+
+		if (a === '$' && variable)
+			variable();
+
+		if (a === '@') {
+			begAt = index;
+			skip = true;
+		}
+
+		if (skip && !skipImport && (a === ';' || a === '{')) {
+			skipImport = a;
+			if (a === ';') {
+				output += css.substring(begAt - 1, index);
+				skip = false;
+				plus = '';
+			}
+		}
+
+		plus += a;
+
+		if (a === '{') {
+
+			if (A) {
+				count++;
+				continue;
+			}
+
+			A = true;
+			count = 0;
+			beg = index;
+			valid = false;
+			continue;
+		}
+
+		if (a === '}') {
+
+			if (count > 0) {
+				count--;
+				valid = true;
+				continue;
+			}
+
+			if (!valid) {
+				output += plus;
+				plus = '';
+				A = false;
+				skip = false;
+				skipImport = '';
+				continue;
+			}
+
+			if (skip) {
+
+				if (plus.indexOf('@keyframes') !== -1) {
+					output += plus;
+				} else {
+					begAt = plus.indexOf('{');
+					output += plus.substring(0, begAt + 1) + process_nested(plus.substring(begAt), id).trim() + '}';
+				}
+
+				A = false;
+				skip = false;
+				skipImport = '';
+				plus = '';
+
+				continue;
+			}
+
+			var ni = beg - 1;
+			var name = '';
+
+			while (true) {
+				var b = css[ni--];
+				if (b === '{')
+					continue;
+				if (b === '}' || b === '\n' || b === '\r' || b === undefined || (skipImport && skipImport === b))
+					break;
+				name = b + name;
+			}
+
+			A = false;
+			skip = false;
+			skipImport = '';
+			plus = '';
+			output += process_nested(css.substring(beg - 1, index), (id || '') + name.trim());
+		}
+	}
+
+	return output + plus;
+}
+
+function process_nested(css, name) {
+	css = css.trim();
+	css = make_nested(css.substring(1, css.length - 1), name);
+	return nested(css, name);
+}
+
+function make_nested(css, name) {
+
+	var index = 0;
+	var plus = '';
+	var output = '';
+	var count = 0;
+	var A = false;
+	var valid = false;
+	var beg;
+
+
+	while (true) {
+		var a = css[index++];
+
+		if (!a)
+			break;
+
+		if (a === '\n' || a === '\r')
+			continue;
+
+		if (a !== ' ' || plus[plus.length -1] !== ' ')
+			plus += a;
+
+		if (a === '{') {
+
+			if (A) {
+				count++;
+				continue;
+			}
+
+			A = true;
+			count = 0;
+			beg = index;
+			valid = false;
+			continue;
+		}
+
+		if (a === '}') {
+
+			if (count > 0) {
+				count--;
+				valid = true;
+				continue;
+			}
+
+			if (!valid) {
+				output += name + ' ' + plus.trim();
+				plus = '';
+				A = false;
+				continue;
+			}
+
+			output += plus;
+		}
+	}
+
+	return output;
 }
 
 /**

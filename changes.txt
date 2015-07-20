@@ -30,6 +30,7 @@ BETA ======= 1.9.0
 - added: binary - `total --translatecsv`
 - added: controller.jsonp(method_name, obj, [headers], [beautify], [replacer]);
 - added: CSS variables likes sass, example: `$color: red;`
+- added: CSS nesting
 - added: modificators for dynamic modification before compilation: views, styles and scripts
 - added: TransformBuilder
 - added: F.load(debug, load_types, [path]);

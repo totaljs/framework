@@ -219,7 +219,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-9';
+	this.version_header = '1.9.0-10';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -3088,10 +3088,6 @@ Framework.prototype.compileContent = function(extension, content, filename) {
 	switch (extension) {
 		case 'js':
 			return self.config['allow-compile-script'] ? framework_internal.compile_javascript(content, filename) : content;
-/*
-		case 'html':
-			return self.config['allow-compile-html'] ? framework_internal.compile_html(content) : content;
-*/
 		case 'css':
 
 			content = self.config['allow-compile-style'] ? framework_internal.compile_css(content, filename) : content;
