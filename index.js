@@ -219,7 +219,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-10';
+	this.version_header = '1.9.0-11';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -2727,6 +2727,36 @@ Framework.prototype.onMapping = function(url, def) {
 	return def;
 };
 
+/**
+ * Snapshot
+ * @param {String} url Relative URL.
+ * @param {String} filename Filename to save output.
+ * @param {Function} callback
+ * @return {Framework}
+ */
+Framework.prototype.snapshot = function(url, filename, callback) {
+	var self = this;
+
+	if (!url.match(/^http:|https:/gi)) {
+		if (url[0] !== '/')
+			url = '/' + url;
+		var ip = self.ip === 'auto' ? '0.0.0.0' : self.ip;
+		url = 'http://' + ip + ':' + self.port + url;
+	}
+
+	framework_utils.download(url, ['get'], function(error, response) {
+		var stream = fs.createWriteStream(filename);
+		response.pipe(stream);
+		FINISHED(stream, function() {
+			DESTROY(stream);
+			if (callback)
+				setImmediate(callback);
+		});
+	});
+
+	return self;
+};
+
 /*
 	Global framework validation
 	@name {String}
@@ -4820,7 +4850,6 @@ Framework.prototype.initialize = function(http, debug, options) {
 			}, options.sleep);
 		} else
 			self.server.listen(self.port, self.ip);
-
 
 		if (self.ip === undefined || self.ip === null)
 			self.ip = 'auto';
