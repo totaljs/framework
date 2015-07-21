@@ -2948,7 +2948,7 @@ function first(stuff, done) {
 function listener(event, done) {
 	return function(arg1) {
 		var args = new Array(arguments.length);
-		var ee = this
+		var ee = this;
 		var err = event === 'error' ? arg1 : null;
 
 		// copy args to prevent arguments escaping scope
@@ -2966,8 +2966,10 @@ function listener(event, done) {
  * https://github.com/jshttp/on-finished
  */
 function onFinished(msg, listener) {
-	if (isFinished(msg) !== false)
-		return setImmediate(listener, null, msg);
+	if (isFinished(msg) !== false) {
+		setImmediate(listener, null, msg);
+		return msg;
+	}
 	attachListener(msg, listener);
 	return msg;
 }
@@ -3060,7 +3062,7 @@ function isFinished(msg) {
 
 	// IncomingMessage
 	if (typeof msg.complete === BOOLEAN)
-		return Boolean(!socket || msg.complete || !socket.readable);
+		return Boolean(msg.upgrade || !socket || !socket.readable || (msg.complete && !msg.readable))
 
 	// don't know
 	return;
