@@ -5139,7 +5139,7 @@ Framework.prototype._service = function(count) {
 		else
 			schedule.expire = new Date().add(schedule.repeat);
 
-		obj.fn.call(self);
+		schedule.fn.call(self);
 	}
 
 	return self;
