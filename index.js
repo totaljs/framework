@@ -219,7 +219,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-11';
+	this.version_header = '1.9.0-12';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -566,11 +566,20 @@ Framework.prototype.database = function(name) {
 
 /**
  * Stop application
- * @param {Number} code Exit code, optional.
+ * @param {String} signal
  * @return {Framework}
  */
-Framework.prototype.stop = function(code) {
+Framework.prototype.stop = function(signal) {
+
 	var self = this;
+
+	for (var m in framework.workers) {
+		var worker = framework.workers[m];
+		if (worker && worker.kill)
+			worker.kill(signal || 'SIGTERM');
+	}
+
+	framework.emit('exit');
 
 	if (typeof(process.send) === TYPE_FUNCTION)
 		process.send('stop');
@@ -580,7 +589,7 @@ Framework.prototype.stop = function(code) {
 	if (self.server)
 		self.server.close();
 
-	process.exit(code || 0);
+	process.exit(signal || 'SIGTERM');
 	return self;
 };
 
@@ -13648,7 +13657,7 @@ process.on('uncaughtException', function(e) {
 		if (typeof(process.send) === TYPE_FUNCTION)
 			process.send('eaddrinuse');
 		console.log('\nThe IP address and the PORT is already in use.\nYou must change the PORT\'s number or IP address.\n');
-		process.exit(1);
+		process.exit('SIGTERM');
 		return;
 	}
 
@@ -13716,11 +13725,7 @@ process.on('SIGINT', function() {
 });
 
 process.on('exit', function() {
-
-	if (framework.onExit)
-		framework.onExit(framework);
-
-	framework.emit('exit');
+	framework.stop();
 });
 
 process.on('message', function(msg, h) {
