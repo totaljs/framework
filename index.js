@@ -175,6 +175,14 @@ global.DESTROY = function(stream) {
 	framework_internal.destroyStream(stream);
 };
 
+global.CLEANUP = function(stream, callback) {
+	FINISHED(stream, function() {
+		if (callback)
+			callback();
+		DESTROY(stream);
+	});
+};
+
 global.SUCCESS = function(success, value) {
 
 	var err;
