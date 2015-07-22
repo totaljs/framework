@@ -23,8 +23,6 @@ $ npm install total.js
 - [__Download__ Examples](https://github.com/totaljs/examples)
 - [Make a donation via PayPal](http://www.totaljs.com/#make-a-donation)
 
-[![Total.js trailer](https://www.totaljs.com/img/github-video.png)](https://vimeo.com/134131056)
-
 ## Social networks
 
 Please support the framework on social networks.
@@ -46,7 +44,7 @@ We provide a support of the framework for companies. Our support services will k
 - [Support form](http://www.totaljs.com/support/)
 - Support e-mail: <support@totaljs.com>
 
----
+[![Total.js trailer](https://www.totaljs.com/img/github-video.png)](https://vimeo.com/134131056)
 
 ## Features
 
