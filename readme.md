@@ -84,8 +84,6 @@ We provide a support of the framework for companies. Our support services will k
 | Possibility to rewrite existing functionality | 100% |
 | __You can use framework as single library__ `total.js (320 kB)` | 100% |
 
----
-
 ## Contributors
 
 | Contributor | Type | E-mail |
@@ -93,8 +91,6 @@ We provide a support of the framework for companies. Our support services will k
 | [Peter Širka](https://www.petersirka.eu) | author | <petersirka@gmail.com> |
 | [Matus Szabo](https://github.com/matusszabo) | support + enterprise | <matus.szabo@gmail.com> |
 | Tomas Holovsky | support + enterprise | <tomasholovsky@gmail.com> |
-
----
 
 ## Other
 
