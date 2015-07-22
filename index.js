@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-12';
+	this.version_header = '1.9.0-13';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -246,7 +246,6 @@ function Framework() {
 		secret: os.hostname() + '-' + os.platform() + '-' + os.arch(),
 
 		'etag-version': '',
-
 		'directory-controllers': '/controllers/',
 		'directory-views': '/views/',
 		'directory-definitions': '/definitions/',
@@ -264,6 +263,7 @@ function Framework() {
 		'directory-packages': '/packages/',
 		'directory-private': '/private/',
 		'directory-isomorphic': '/isomorphic/',
+		'directory-configs': '/configs/',
 
 		// all HTTP static request are routed to directory-public
 		'static-url': '',
@@ -5048,6 +5048,9 @@ Framework.prototype.reconnect = function() {
  */
 Framework.prototype._verify_directory = function(name) {
 
+	if (name === 'configs')
+		return self;
+
 	var self = this;
 	var prop = '$directory-' + name;
 
@@ -6732,6 +6735,25 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 		arr = [];
 
+		// read all files from "configs" directory
+		var configs = self.path.configs();
+		if (fs.existsSync(configs)) {
+			var tmp = fs.readdirSync(configs);
+			for (var i = 0, length = tmp.length; i < length; i++) {
+				var skip = tmp[i].match(/\-(debug|release|test)$/i);
+				if (skip) {
+					skip = skip[0].toString().toLowerCase();
+					if (skip === '-debug' && !self.isDebug)
+						continue;
+					if (skip === '-release' && self.isDebug)
+						continue;
+					if (skip === '-test' && !self.isTest)
+						continue;
+				}
+				arr = arr.concat(fs.readFileSync(configs + tmp[i]).toString(ENCODING).split('\n'));
+			}
+		}
+
 		if (fs.existsSync(filenameA) && fs.lstatSync(filenameA).isFile())
 			arr = arr.concat(fs.readFileSync(filenameA).toString(ENCODING).split('\n'));
 
@@ -7857,6 +7879,11 @@ FrameworkPath.prototype.private = function(filename) {
 FrameworkPath.prototype.isomorphic = function(filename) {
 	framework._verify_directory('isomorphic');
 	return utils.combine(framework.config['directory-isomorphic'], filename || '').replace(/\\/g, '/');
+};
+
+FrameworkPath.prototype.configs = function(filename) {
+	framework._verify_directory('configs');
+	return utils.combine(framework.config['directory-configs'], filename || '').replace(/\\/g, '/');
 };
 
 /*
