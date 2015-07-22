@@ -5760,6 +5760,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 		if (language.indexOf('@') !== -1) {
 			replyTo = language;
 			language = undefined;
+			console.log('OBSOLETE: F.mail(..., ..., [replyTo] --> has been replaced for [language]).');
 		} else
 			controller.language = language;
 	}
