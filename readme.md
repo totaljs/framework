@@ -12,16 +12,16 @@ __total.js__ is the web application framework for creating rich web sites and we
 $ npm install total.js
 ```
 
-- [__Download__ empty-project with the framework](https://github.com/totaljs/framework/releases)
 - [Homepage](http://www.totaljs.com)
 - [Enterprise products](http://enterprise.totaljs.com/)
 - [__Documentation__](http://docs.totaljs.com)
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
 - [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
+- [__Download__ empty-project with the framework](https://github.com/totaljs/framework/releases)
 - [__Download__ Modules & Packages](https://github.com/totaljs/modules) (View Engines, Session, Auth, etc.)
 - [__Download__ Examples](https://github.com/totaljs/examples)
-- [Make a donation via PayPal](http://www.totaljs.com/#make-a-donation)
+- [__Make a donation__ via PayPal](http://www.totaljs.com/#make-a-donation)
 
 ## Social networks
 
