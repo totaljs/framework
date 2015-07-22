@@ -23,7 +23,7 @@ $ npm install total.js
 - [__Download__ Examples](https://github.com/totaljs/examples)
 - [Make a donation via PayPal](http://www.totaljs.com/#make-a-donation)
 
-[![Total.js trailer](//www.totaljs.com/img/github-video.png)](https://vimeo.com/134131056)
+[![Total.js trailer](https://www.totaljs.com/img/github-video.png)](https://vimeo.com/134131056)
 
 ## Social networks
 
