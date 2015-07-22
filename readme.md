@@ -44,9 +44,9 @@ We provide a support of the framework for companies. Our support services will k
 - [Support form](http://www.totaljs.com/support/)
 - Support e-mail: <support@totaljs.com>
 
-[![Total.js trailer](https://www.totaljs.com/img/github-video.png)](https://vimeo.com/134131056)
-
 ## Features
+
+[![Total.js trailer](https://www.totaljs.com/img/github-video.png)](https://vimeo.com/134131056)
 
 | Name | Supports |
 |------|:--------:|
