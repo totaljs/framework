@@ -72,7 +72,7 @@ We provide a support of the framework for companies. Our support services will k
 | Supports unit testing | 100% |
 | Supports workers for heavy CPU operations | 100% |
 | Supports 4x config files (common, debug, release and test) | 100% |
-| Mailer with templating (supports Gmail, Outlook or classic SMTP servers with auth and TLS) | 100% |
+| Mailer with templating (Gmail, Outlook or classic SMTP servers with auth and TLS) | 100% |
 | Built-in view engine (layouts, nested views, conditions, loops, inline helpers, etc.) | 100% |
 | Localization with diff tool and CSV export | 100% |
 | Supports cache mechanism | 100% |
