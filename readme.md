@@ -55,33 +55,33 @@ We provide a support of the framework for companies. Our support services will k
 | HMVC architecture | 100% |
 | Clean directory structure | 100% |
 | Fully asynchronous | 100% |
-| Full web server (GZIP) with serving of static files | 100% |
-| Supports Generators (Harmony) | 100% |
+| Full web server with serving of static files | 100% |
+| Supports generators (node harmony) | 100% |
 | Isomorphic code | 100% |
 | Supports IP restrictions | 100% |
 | Supports redirections | 100% |
-| Supports just-in-time JS, CSS and HTML compressor | 100% |
+| Supports just-in-time JS, CSS (variables and nesting) and HTML compressor | 100% |
 | Supports just-in-time merging of static files (JavaScripts, CSS or HTML) | 100% |
 | Supports just-in-time mapping of files | 100% |
 | Supports media streaming (e.g. videos) | 100% |
 | Supports modules and packages | 100% |
-| Built in image processing engine via ImageMagick or GraphicsMagick | 100% |
-| Supports WebSockets (__RFC 6455__) | 100% |
+| Built-in image processing engine via ImageMagick or GraphicsMagick | 100% |
+| Supports WebSockets (__RFC 6455__) and Server-Sent events | 100% |
 | Supports RESTful routing | 100% |
-| Supports middleware (like express.js) | 100% |
+| Supports middleware (like express.js) with custom options | 100% |
 | Supports unit testing | 100% |
 | Supports workers for heavy CPU operations | 100% |
 | Supports 4x config files (common, debug, release and test) | 100% |
-| Mailer (supports Gmail, Outlook or classic SMTP servers with auth and TLS) | 100% |
+| Mailer with templating (supports Gmail, Outlook or classic SMTP servers with auth and TLS) | 100% |
 | Built-in view engine (layouts, nested views, conditions, loops, inline helpers, etc.) | 100% |
-| Localization with diff tool | 100% |
+| Localization with diff tool and CSV export | 100% |
 | Supports cache mechanism | 100% |
-| Supports schemas for creating business objects | 100% |
+| Supports schemas for creating business objects with validations, workflows, etc. | 100% |
 | Supports injecting scripts, packages and views from URL | 100% |
-| NoSQL embedded database | 100% |
 | Supports String, Date, Number and Array prototypes | 100% |
 | Supports additional utilities (e.g. create request, XML parsing, etc.) | 100% |
-| Possibility to rewrite existing functionality | 100% |
+| Possibility to rewrite existing functionality | 80% |
+| NoSQL embedded database | 100% |
 | __You can use framework as single library__ `total.js (320 kB)` | 100% |
 
 ## Contributors
