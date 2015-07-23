@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-13';
+	this.version_header = '1.9.0-14';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -264,6 +264,7 @@ function Framework() {
 		'directory-private': '/private/',
 		'directory-isomorphic': '/isomorphic/',
 		'directory-configs': '/configs/',
+		'directory-services': '/services/',
 
 		// all HTTP static request are routed to directory-public
 		'static-url': '',
@@ -429,10 +430,10 @@ function Framework() {
 	};
 
 	// intialize cache
-	this.cache = new FrameworkCache(this);
-	this.fs = new FrameworkFileSystem(this);
-	this.path = new FrameworkPath(this);
-	this.restrictions = new FrameworkRestrictions(this);
+	this.cache = new FrameworkCache();
+	this.fs = new FrameworkFileSystem();
+	this.path = new FrameworkPath();
+	this.restrictions = new FrameworkRestrictions();
 
 	this._request_check_redirect = false;
 	this._request_check_referer = false;
@@ -566,7 +567,7 @@ Framework.prototype.database = function(name) {
 	var db = self.databases[name];
 	if (db !== undefined)
 		return db;
-	self._verify_directory('databases');
+	self.path.verify('databases');
 	db = framework_nosql.load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), true);
 	self.databases[name] = db;
 	return db;
@@ -2927,7 +2928,7 @@ Framework.prototype.log = function() {
 		str += (str ? ' ' : '') + val;
 	}
 
-	self._verify_directory('logs');
+	self.path.verify('logs');
 	fs.appendFile(utils.combine(self.config['directory-logs'], filename + '.log'), time + ' | ' + str + '\n');
 	return self;
 };
@@ -2950,7 +2951,7 @@ Framework.prototype.logger = function() {
 		str += (str ? ' ' : '') + val;
 	}
 
-	self._verify_directory('logs');
+	self.path.verify('logs');
 	fs.appendFile(utils.combine(self.config['directory-logs'], arguments[0] + '.log'), dt + ' | ' + str + '\n');
 	return self;
 };
@@ -3177,7 +3178,7 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
 		}
 
 		var file = self.path.temp((self.id === null ? '' : 'instance-' + self.id + '-') + createTemporaryKey(uri.pathname));
-		self._verify_directory('temp');
+		self.path.verify('temp');
 		fs.writeFileSync(file, self.compileContent(extension, buffer.toString(ENCODING), filename), ENCODING);
 		self.temporary.path[key] = file + ';' + fs.statSync(file).size;
 		callback();
@@ -3970,7 +3971,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				return;
 			}
 
-			self._verify_directory('temp');
+			self.path.verify('temp');
 			var image = framework_image.load(stream, im);
 
 			fnProcess(image);
@@ -4023,7 +4024,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			return;
 		}
 
-		self._verify_directory('temp');
+		self.path.verify('temp');
 
 		var image = framework_image.load(filename, im);
 
@@ -4148,7 +4149,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 			return;
 		}
 
-		self._verify_directory('temp');
+		self.path.verify('temp');
 		var image = framework_image.load(filename, im);
 		fnProcess(image);
 		self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers, done);
@@ -5037,32 +5038,6 @@ Framework.prototype.reconnect = function() {
 		self.server.listen(self.port, self.ip);
 	});
 
-	return self;
-};
-
-/**
- * Verifying directory
- * @private
- * @param {String} name Directory name
- * @return {Framework}
- */
-Framework.prototype._verify_directory = function(name) {
-
-	if (name === 'configs')
-		return self;
-
-	var self = this;
-	var prop = '$directory-' + name;
-
-	if (self.temporary.path[prop])
-		return self;
-
-	var dir = utils.combine(self.config['directory-' + name]);
-
-	if (!fs.existsSync(dir))
-		fs.mkdirSync(dir);
-
-	self.temporary.path[prop] = true;
 	return self;
 };
 
@@ -7283,7 +7258,7 @@ Framework.prototype.worker = function(name, id, timeout) {
 // =================================================================================
 // *********************************************************************************
 
-function FrameworkRestrictions(framework) {
+function FrameworkRestrictions() {
 	this.isRestrictions = false;
 	this.isAllowedIP = false;
 	this.isBlockedIP = false;
@@ -7468,7 +7443,7 @@ FrameworkRestrictions.prototype._blockedCustom = function(headers) {
 // =================================================================================
 // *********************************************************************************
 
-function FrameworkFileSystem(framework) {
+function FrameworkFileSystem() {
 	this.create = {
 		style: this.createStyle.bind(this),
 		css: this.createStyle.bind(this),
@@ -7688,7 +7663,7 @@ FrameworkFileSystem.prototype.createView = function(name, content, rewrite, appe
 	if (name.lastIndexOf('.html') === -1)
 		name += '.html';
 
-	framework._verify_directory('views');
+	framework.path.verify('views');
 
 	var filename = utils.combine(framework.config['directory-views'], name);
 	return self.createFile(filename, content, append, rewrite);
@@ -7712,7 +7687,7 @@ FrameworkFileSystem.prototype.createWorker = function(name, content, rewrite, ap
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		name += EXTENSION_JS;
 
-	framework._verify_directory('workers');
+	framework.path.verify('workers');
 
 	var filename = utils.combine(framework.config['directory-workers'], name);
 	return self.createFile(filename, content, append, rewrite);
@@ -7745,7 +7720,7 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
 		});
 	}
 
-	framework._verify_directory('resources');
+	framework.path.verify('resources');
 
 	var filename = utils.combine(framework.config['directory-resources'], name);
 	return self.createFile(filename, builder, append, rewrite);
@@ -7777,7 +7752,7 @@ FrameworkFileSystem.prototype.createTemporary = function(name, stream, callback)
 		return;
 	}
 
-	framework._verify_directory('temp');
+	framework.path.verify('temp');
 
 	var filename = utils.combine(framework.config['directory-temp'], name);
 	var writer = fs.createWriteStream(filename);
@@ -7860,176 +7835,104 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 // =================================================================================
 // *********************************************************************************
 
-function FrameworkPath(framework) {}
+function FrameworkPath() {}
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
+FrameworkPath.prototype.verify = function(name) {
+	var prop = '$directory-' + name;
+	if (framework.temporary.path[prop])
+		return framework;
+	var dir = utils.combine(framework.config['directory-' + name]);
+	if (!fs.existsSync(dir))
+		fs.mkdirSync(dir);
+	framework.temporary.path[prop] = true;
+	return framework;
+};
+
 FrameworkPath.prototype.public = function(filename) {
-	framework._verify_directory('public');
-	return utils.combine(framework.config['directory-public'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-public'], filename || '');
 };
 
 FrameworkPath.prototype.private = function(filename) {
-	framework._verify_directory('private');
-	return utils.combine(framework.config['directory-private'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-private'], filename || '');
 };
 
 FrameworkPath.prototype.isomorphic = function(filename) {
-	framework._verify_directory('isomorphic');
-	return utils.combine(framework.config['directory-isomorphic'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-isomorphic'], filename || '');
 };
 
 FrameworkPath.prototype.configs = function(filename) {
-	framework._verify_directory('configs');
-	return utils.combine(framework.config['directory-configs'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-configs'], filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.virtual = function(filename) {
-	framework._verify_directory('public-virtual');
-	return utils.combine(framework.config['directory-public-virtual'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-public-virtual'], filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.logs = function(filename) {
-	framework._verify_directory('logs');
-	return utils.combine(framework.config['directory-logs'], filename || '').replace(/\\/g, '/');
+	this.verify('logs');
+	return utils.combine(framework.config['directory-logs'], filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.models = function(filename) {
-	return utils.combine(framework.config['directory-models'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-models'], filename || '');
 };
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.temp = function(filename) {
-	framework._verify_directory('temp');
-	return utils.combine(framework.config['directory-temp'], filename || '').replace(/\\/g, '/');
+	this.verify('temp');
+	return utils.combine(framework.config['directory-temp'], filename || '');
 };
 
 FrameworkPath.prototype.temporary = function(filename) {
 	return this.temp(filename);
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.views = function(filename) {
-	framework._verify_directory('views');
-	return utils.combine(framework.config['directory-views'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-views'], filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.workers = function(filename) {
-	framework._verify_directory('workers');
-	return utils.combine(framework.config['directory-workers'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-workers'], filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.databases = function(filename) {
-	framework._verify_directory('databases');
-	return utils.combine(framework.config['directory-databases'], filename || '').replace(/\\/g, '/');
+	this.verify('databases');
+	return utils.combine(framework.config['directory-databases'], filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
-FrameworkPath.prototype.contents = function(filename) {
-	framework._verify_directory('contents');
-	return utils.combine(framework.config['directory-contents'], filename || '').replace(/\\/g, '/');
-};
-
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.modules = function(filename) {
-	framework._verify_directory('modules');
-	return utils.combine(framework.config['directory-modules'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-modules'], filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.controllers = function(filename) {
-	framework._verify_directory('controllers');
-	return utils.combine(framework.config['directory-controllers'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-controllers'], filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.definitions = function(filename) {
-	framework._verify_directory('definitions');
-	return utils.combine(framework.config['directory-definitions'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-definitions'], filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.tests = function(filename) {
-	framework._verify_directory('tests');
-	return utils.combine(framework.config['directory-tests'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-tests'], filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.resources = function(filename) {
-	framework._verify_directory('resources');
-	return utils.combine(framework.config['directory-resources'], filename || '').replace(/\\/g, '/');
+	return utils.combine(framework.config['directory-resources'], filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.root = function(filename) {
 	return path.join(directory, filename || '');
 };
 
+FrameworkPath.prototype.services = function(filename) {
+	return utils.combine(framework.config['directory-services'], filename || '');
+};
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.package = function(name, filename) {
 	return path.join(directory, framework.config['directory-temp'], name, filename || '');
 };
 
-/*
-	@filename {String} :: optional
-	return {String}
-*/
 FrameworkPath.prototype.packages = function(filename) {
 	return path.join(directory, framework.config['directory-packages'], filename || '');
 };
-
 
 // *********************************************************************************
 // =================================================================================
@@ -8322,7 +8225,7 @@ Subscribe.prototype.multipart = function(header) {
 		return self;
 	}
 
-	framework._verify_directory('temp');
+	framework.path.verify('temp');
 	framework_internal.parseMULTIPART(req, header, self.route.length, framework.config['directory-temp'], self);
 	return self;
 };
