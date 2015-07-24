@@ -36,6 +36,7 @@ BETA ======= 1.9.0
 - added: F.load(debug, load_types, [path]);
 - added: F.isWorker (is true when is called F.load())
 - added: F.isCluster (is true when the framework is running in the cluster)
+- added: F.logmail(address, [subject], body, [callback]) --> send e-mail message as plain text
 - added: Array.unique([property]) by Andrea Sessa
 - added: Array.pair(array, property, fn(itemA, itemB), [remove]) - pair arrays
 - added: String.base64ToBuffer();

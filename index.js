@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-14';
+	this.version_header = '1.9.0-15';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -2954,6 +2954,25 @@ Framework.prototype.logger = function() {
 	self.path.verify('logs');
 	fs.appendFile(utils.combine(self.config['directory-logs'], arguments[0] + '.log'), dt + ' | ' + str + '\n');
 	return self;
+};
+
+Controller.prototype.logmail = function(address, subject, body, callback) {
+
+	if (typeof(body) === FUNCTION) {
+		callback = body;
+		body = subject;
+		subject = null;
+	} else if (body === undefined) {
+		body = subject;
+		subject = null;
+	}
+
+	if (!subject)
+		subject = framework.config.name + ' v' + framework.config.version;
+
+	var self = this;
+	var body = '<!DOCTYPE html><html><head><title>' + subject + '</title><meta charset="utf-8" /></head><body><pre>' + (body instanceof Array ? body.join('\n') : body) + '</pre></body></html>';
+	return framework.onMail(address, subject, body, callback);
 };
 
 /*
