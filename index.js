@@ -2956,7 +2956,7 @@ Framework.prototype.logger = function() {
 	return self;
 };
 
-Controller.prototype.logmail = function(address, subject, body, callback) {
+Framework.prototype.logmail = function(address, subject, body, callback) {
 
 	if (typeof(body) === FUNCTION) {
 		callback = body;
