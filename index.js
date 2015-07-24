@@ -2971,7 +2971,7 @@ Controller.prototype.logmail = function(address, subject, body, callback) {
 		subject = framework.config.name + ' v' + framework.config.version;
 
 	var self = this;
-	var body = '<!DOCTYPE html><html><head><title>' + subject + '</title><meta charset="utf-8" /></head><body><pre>' + (body instanceof Array ? body.join('\n') : body) + '</pre></body></html>';
+	var body = '<!DOCTYPE html><html><head><title>' + subject + '</title><meta charset="utf-8" /></head><body><pre>' + (typeof(body) === OBJECT ? JSON.stringify(body).escape() : body) + '</pre></body></html>';
 	return framework.onMail(address, subject, body, callback);
 };
 
