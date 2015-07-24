@@ -24,8 +24,7 @@ buffer.push('body { background-color: $color; font-family: $font }');
 buffer.push('div { border-radius: $radius; }');
 
 css = buffer.join('\n');
-assert.ok(internal.compile_css(css) === 'body{background-color:red;font-family:"Times New Roman";}div{border-radius:4px;}', 'CSS variables');
-
+assert.ok(internal.compile_css(css) === 'body{background-color:red;font-family:"Times New Roman"}div{border-radius:4px;}', 'CSS variables');
 
 buffer = [];
 buffer.push('@import url(\'font.css\');');

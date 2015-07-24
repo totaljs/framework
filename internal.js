@@ -2484,29 +2484,26 @@ function variablesCSS(content) {
 	if (!content)
 		return content;
 
-    var variables = {};
+	var variables = {};
 
-    content = content.replace(/\$[a-z0-9-_]+\:.*?;/gi, function(text) {
-        var index = text.indexOf(':');
-        if (index === -1)
-            return text;
-        var key = text.substring(0, index).trim();
-        variables[key] = text.substring(index + 1).trim();
-        return '';
-    });
+	content = content.replace(/\$[a-z0-9-_]+\:.*?;/gi, function(text) {
+		var index = text.indexOf(':');
+		if (index === -1)
+			return text;
+		var key = text.substring(0, index).trim();
+		variables[key] = text.substring(index + 1, text.length - 1).trim();
+		return '';
+	});
 
-    content = content.replace(/\$[a-z0-9-_]+/gi, function(text, position) {
-        var end = text.length + position;
-        var variable = variables[text];
-        if (!variable)
-            return text;
-        var index = content.substring(end, end + 2).indexOf(';');
-        if (index === -1)
-            return variable;
-        return variable.substring(0, variable.length - 1);
-    }).trim();
+	content = content.replace(/\$[a-z0-9-_]+/gi, function(text, position) {
+		var end = text.length + position;
+		var variable = variables[text];
+		if (!variable)
+			return text;
+		return variable;
+	}).trim();
 
-    return content;
+	return content;
 }
 
 function nested(css, id, variable) {
