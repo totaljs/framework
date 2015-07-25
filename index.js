@@ -3440,7 +3440,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		var headers = {};
 		headers['Etag'] = etag;
 		headers['Expires'] = new Date().add('M', 3);
-		headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=86400';
+		headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 		framework.responseContent(req, res, 200, prepare_isomorphic(key), 'text/javascript', true, headers);
 		return self;
 	}
@@ -3641,7 +3641,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		if (!res.getHeader('Expires'))
 			returnHeaders['Expires'] = new Date().add('M', 3);
 
-		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=86400';
+		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 
 		res.success = true;
 		res.writeHead(304, returnHeaders);
@@ -3706,7 +3706,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	var accept = req.headers['accept-encoding'] || '';
 
 	returnHeaders['Accept-Ranges'] = 'bytes';
-	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=86400' : '');
+	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=11111111' : '');
 
 	if (RELEASE && !res.getHeader('Expires'))
 		returnHeaders['Expires'] = new Date().add('M', 3);
@@ -4205,7 +4205,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.lastIndexOf('gzip') !== -1;
 	var returnHeaders = {};
 
-	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=86400' : '');
+	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=11111111' : '');
 
 	if (RELEASE)
 		returnHeaders['Expires'] = new Date().add('M', 3);
