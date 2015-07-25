@@ -819,7 +819,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 		});
 	}
 
-	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + utils.getContentType(path.extname(name)) + NEWLINE + NEWLINE;
+	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(path.extname(name)) + NEWLINE + NEWLINE;
 	req.write(header);
 
 	// Is Buffer
