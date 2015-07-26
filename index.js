@@ -228,7 +228,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-17';
+	this.version_header = '1.9.0-18';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -9399,7 +9399,7 @@ Controller.prototype.transfer = function(url, flags) {
 		return false;
 
 	self.cancel();
-	self.req.path = [];
+	self.req.path = new Array(0);
 	self.subscribe.isTransfer = true;
 	self.subscribe.success();
 	self.subscribe.route = selected;
@@ -11290,7 +11290,7 @@ Controller.prototype.view400 = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = [];
+	self.req.path = new Array(0);
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#400');
 	self.subscribe.exception = problem;
@@ -11320,7 +11320,7 @@ Controller.prototype.view401 = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = [];
+	self.req.path = new Array(0);
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#401');
 	self.subscribe.exception = problem;
@@ -11350,7 +11350,7 @@ Controller.prototype.view403 = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = [];
+	self.req.path = new Array(0);
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#403');
 	self.subscribe.exception = problem;
@@ -11379,7 +11379,7 @@ Controller.prototype.view404 = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = [];
+	self.req.path = new Array(0);
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#404');
 	self.subscribe.exception = problem;
@@ -11400,7 +11400,7 @@ Controller.prototype.view500 = function(error) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = [];
+	self.req.path = new Array(0);
 	self.subscribe.exception = error;
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#500');
@@ -11432,7 +11432,7 @@ Controller.prototype.view501 = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = [];
+	self.req.path = new Array(0);
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#501');
 	self.subscribe.exception = problem;

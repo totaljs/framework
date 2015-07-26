@@ -338,6 +338,9 @@ exports.routeSplit = function(url, noLower) {
 		prev = c === '/';
 	}
 
+	if (key)
+		arr.push(key);
+
 	return arr;
 };
 
