@@ -56,6 +56,7 @@ var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true
 var TEMPORARY_KEY_REGEX = /\//g;
 var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 var REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
+var REQUEST_PROXY_FLAGS = ['post', 'json'];
 
 var _controller = '';
 var _test;
@@ -227,7 +228,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-16';
+	this.version_header = '1.9.0-17';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -344,6 +345,7 @@ function Framework() {
 		packages: {},
 	};
 
+	this.behaviours = null;
 	this.modificators = null;
 	this.helpers = {};
 	this.modules = {};
@@ -461,6 +463,30 @@ Framework.prototype = {
 };
 
 Framework.prototype.__proto__ = new events.EventEmitter();
+
+/**
+ * Adds a new behaviour
+ * @param {String} url A relative URL address.
+ * @param {String Array} flags
+ * @return {Framework}
+ */
+Framework.prototype.behaviour = function(url, flags) {
+	var self = this;
+
+	if (!self.behaviours)
+		self.behaviours = {};
+
+	if (typeof(flags) === STRING)
+		flags = [flags];
+
+	if (!self.behaviours[url])
+		self.behaviours[url] = {};
+
+	for (var i = 0; i < flags.length; i++)
+		self.behaviours[url][flags[i]] = true;
+
+	return self;
+};
 
 /**
  * Refersh framework internal informations
@@ -977,6 +1003,11 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 			}
 
 			var first = flags[i][0];
+
+			if (first === '%') {
+				self.behaviour(url, flags[i].substring(1));
+				continue;
+			}
 
 			if (first === '#') {
 				if ((middleware || null) === null)
@@ -8245,7 +8276,7 @@ Subscribe.prototype.multipart = function(header) {
 	}
 
 	framework.path.verify('temp');
-	framework_internal.parseMULTIPART(req, header, self.route.length, framework.config['directory-temp'], self);
+	framework_internal.parseMULTIPART(req, header, self.route, framework.config['directory-temp'], self);
 	return self;
 };
 
@@ -8330,13 +8361,15 @@ Subscribe.prototype.execute = function(status) {
 	}
 
 	if (route === null) {
+		if (!status)
+			status = 404;
 		if (status === 400 && self.exception instanceof Builders.ErrorBuilder) {
 			if (req.$language)
 				self.exception.resource(req.$language, framework.config['default-errorbuilder-resource-prefix']);
 			framework.responseContent(req, res, 200, self.exception.json(), 'application/json', framework.config['allow-gzip']);
 		}
 		else
-			framework.responseContent(req, res, status || 404, utils.httpStatus(status || 404), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
+			framework.responseContent(req, res, status, utils.httpStatus(status), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
 		return self;
 	}
 
@@ -8446,6 +8479,12 @@ Subscribe.prototype.doExecute = function() {
 
 		if (controller.isCanceled)
 			return self;
+
+		if (!self.route.isASTERIX && !self.route.param.length) {
+			// cache internal.routeSplit()
+			if (!framework.temporary.other[req.uri.pathname])
+				framework.temporary.other[req.uri.pathname] = req.path;
+		}
 
 		if (self.route.isGENERATOR)
 			async.call(controller, self.route.execute, true)(controller, framework_internal.routeParam(self.route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
@@ -8744,8 +8783,6 @@ function Controller(name, req, res, subscribe, currentView) {
 	this.req = req;
 	this.res = res;
 	this.exception = null;
-	this.boundary = null;
-
 
 	// Sets the default language
 	if (req)
@@ -11585,9 +11622,6 @@ Controller.prototype.close = function(end) {
 		return self;
 	}
 
-	if (self.type === 2)
-		self.res.write('\r\n\r\n--' + self.boundary + '--');
-
 	self.isConnected = false;
 	self.res.success = true;
 
@@ -11628,7 +11662,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 		obj = tmp;
 	}
 
-	return utils.request(url, ['post', 'json'], obj, function(error, data, code, headers) {
+	return utils.request(url, REQUEST_PROXY_FLAGS, obj, function(error, data, code, headers) {
 
 		if (!fnCallback)
 			return;
@@ -12271,7 +12305,7 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 		obj = tmp;
 	}
 
-	return utils.request(url, ['post', 'json'], obj, function(error, data, code, headers) {
+	return utils.request(url, REQUEST_PROXY_FLAGS, obj, function(error, data, code, headers) {
 
 		if (!fnCallback)
 			return;
@@ -13481,6 +13515,38 @@ http.IncomingMessage.prototype.noCache = function() {
 	return self;
 };
 
+http.IncomingMessage.prototype.can = function(type, reverse) {
+
+	if (!framework.behaviours)
+		return reverse ? false : true;
+
+	var url = this.url;
+
+	if (!this.isStaticFile && url[url.length - 1] !== '/')
+		url += '/';
+
+	var current = framework.behaviours['*'];
+	var value;
+
+	// global
+	if (current !== undefined) {
+		current = current[type];
+		if (current !== undefined)
+			value = reverse ? !current : current;
+	}
+
+	// by specific
+	current = framework.behaviours[url];
+	if (current === undefined)
+		return value; // responds with global
+
+	current = current[type];
+	if (current === undefined)
+		return value; // responds with global
+
+	return reverse ? !current : current;
+};
+
 /**
  * Read a cookie from current request
  * @param {String} name Cookie name.
@@ -13667,7 +13733,7 @@ function fsStreamRead(filename, options, callback, next) {
 
 /**
  * Prepare URL address to temporary key (for caching)
- * @param {ServerRequest or Strign} req
+ * @param {ServerRequest or String} req
  * @return {String}
  */
 function createTemporaryKey(req) {

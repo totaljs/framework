@@ -1,18 +1,21 @@
-var Utils = require('../utils');
-var css = '.container{.b{font-weight:bold}}#neviem{.u{text-decoration:underline;}}';
-var beg = -1;
-var end = -1;
-var index = 0;
-while (true) {
+require('../index');
+var url = '/views/';
+var a = require('../internal');
+var max = 1000000;
+var ip = '127.0.0.1';
 
-    console.log(beg, end);
-
-    beg = css.indexOf('{', beg + 1);
-    if (beg === -1)
-        break;
-
-    index = css.indexOf('{', beg + 1);
-    end = css.indexOf('}', beg);
-
-    console.log(index > end);
+console.time('old');
+for (var i = 0; i < max; i++) {
+	ip.replace(/\./g, '');
 }
+console.timeEnd('old');
+
+console.time('new');
+for (var h = 0; h < max; h++) {
+	var n = '';
+	for (var i = 0, length = ip.length; i < length; i++) {
+		if (ip[i] !== '.')
+			n += ip[i];
+	}
+}
+console.timeEnd('new');

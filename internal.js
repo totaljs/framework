@@ -60,29 +60,23 @@ global.$STRING = function(value) {
 	@tmpDirectory {String}
 	@subscribe {Object}
 */
-exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, subscribe) {
+exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscribe) {
 
 	var parser = new MultipartParser();
 	var boundary = contentType.split(';')[1];
 	var size = 0;
 	var stream = null;
-
-	var tmp = {
-		name: '',
-		value: '',
-		contentType: '',
-		filename: '',
-		filenameTmp: '',
-		fileSize: 0,
-		isFile: false,
-		step: 0,
-		width: 0,
-		height: 0
-	};
-
-	var ip = req.ip.replace(/\./g, '');
+	var maximumSize = route.length;
+	var now = Date.now();
+	var tmp = new HttpFile();
 	var close = 0;
 	var rm = null;
+	var ip = '';
+
+	for (var i = 0, length = req.ip.length; i < length; i++) {
+		if (req.ip[i] !== '.')
+			ip += req.ip[i];
+	}
 
 	boundary = boundary.substring(boundary.indexOf('=') + 1);
 
@@ -92,10 +86,11 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, s
 	parser.initWithBoundary(boundary);
 
 	parser.onPartBegin = function() {
-		tmp.value = new Buffer('');
-		tmp.fileSize = 0;
-		tmp.step = 0;
-		tmp.isFile = false;
+		// Temporary data
+		tmp.$data = new Buffer('');
+		tmp.$step = 0;
+		tmp.$is = false;
+		tmp.length = 0;
 	};
 
 	parser.onHeaderValue = function(buffer, start, end) {
@@ -104,38 +99,35 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, s
 			return;
 
 		var header = buffer.slice(start, end).toString(ENCODING);
-		if (tmp.step === 1) {
+		if (tmp.$step === 1) {
 			var index = header.indexOf(';');
 			if (index === -1)
-				tmp.contentType = header.trim();
+				tmp.type = header.trim();
 			else
-				tmp.contentType = header.substring(0, index).trim();
+				tmp.type = header.substring(0, index).trim();
 
-			tmp.step = 2;
+			tmp.$step = 2;
 			return;
 		}
 
-		if (tmp.step !== 0)
+		if (tmp.$step !== 0)
 			return;
 
 		header = parse_multipart_header(header);
 
-		tmp.step = 1;
+		tmp.$step = 1;
+		tmp.$is = header[1] !== null;
 		tmp.name = header[0];
-		tmp.isFile = header[1] !== null;
 
-		if (!tmp.isFile) {
-			if (stream)
-				stream.close();
+		if (!tmp.$is) {
+			destroyStream(stream);
 			return;
 		}
 
 		tmp.filename = header[1];
-		tmp.filenameTmp = framework_utils.combine(tmpDirectory, ip + '-' + new Date().getTime() + '-' + framework_utils.random(100000) + '.upload');
+		tmp.path = framework_utils.combine(tmpDirectory, ip + '-' + now + '-' + framework_utils.random(100000) + '.upload');
 
-		stream = fs.createWriteStream(tmp.filenameTmp, {
-			flags: 'w'
-		});
+		stream = fs.createWriteStream(tmp.path, { flags: 'w' });
 
 		stream.once('close', function() {
 			close--;
@@ -162,38 +154,41 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, s
 			req.buffer_exceeded = true;
 
 			if (rm === null)
-				rm = [tmp.filenameTmp];
+				rm = [tmp.path];
 			else
-				rm.push(tmp.filenameTmp);
+				rm.push(tmp.path);
 
 			return;
 		}
 
-		if (!tmp.isFile) {
-			tmp.value = Buffer.concat([tmp.value, data]);
+		if (!tmp.$is) {
+			tmp.$data = Buffer.concat([tmp.$data, data]);
 			return;
 		}
 
-		if (tmp.fileSize) {
+		if (tmp.length) {
 			stream.write(data);
-			tmp.fileSize += length;
+			tmp.length += length;
 			return;
 		}
 
 		var wh = null;
-		switch (tmp.contentType) {
-			case 'image/jpeg':
-				wh = framework_image.measureJPG(buffer.slice(start));
-				break;
-			case 'image/gif':
-				wh = framework_image.measureGIF(data);
-				break;
-			case 'image/png':
-				wh = framework_image.measurePNG(data);
-				break;
-			case 'image/svg+xml':
-				wh = framework_image.measureSVG(data);
-				break;
+
+		if (req.can('disable-upload-dimension')) {
+			switch (tmp.type) {
+				case 'image/jpeg':
+					wh = framework_image.measureJPG(buffer.slice(start));
+					break;
+				case 'image/gif':
+					wh = framework_image.measureGIF(data);
+					break;
+				case 'image/png':
+					wh = framework_image.measurePNG(data);
+					break;
+				case 'image/svg+xml':
+					wh = framework_image.measureSVG(data);
+					break;
+			}
 		}
 
 		if (wh) {
@@ -204,9 +199,9 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, s
 			tmp.height = 0;
 		}
 
-		framework.emit('upload-begin', req, new HttpFile(tmp.name, tmp.filename, tmp.filenameTmp, 0, tmp.contentType, tmp.width, tmp.height));
+		framework.emit('upload-begin', req, tmp);
 		stream.write(data);
-		tmp.fileSize += length;
+		tmp.length += length;
 	};
 
 	parser.onPartEnd = function() {
@@ -219,28 +214,30 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, s
 		if (req.buffer_exceeded)
 			return;
 
-		if (tmp.isFile) {
-			var httpfile = new HttpFile(tmp.name, tmp.filename, tmp.filenameTmp, tmp.fileSize, tmp.contentType, tmp.width, tmp.height);
-			req.files.push(httpfile);
-			framework.emit('upload-end', req, httpfile);
+		if (tmp.$is) {
+			delete tmp.$data;
+			delete tmp.$is;
+			delete tmp.$step;
+			req.files.push(tmp);
+			framework.emit('upload-end', req, tmp);
 			return;
 		}
 
-		tmp.value = tmp.value.toString(ENCODING);
+		tmp.$data = tmp.$data.toString(ENCODING);
 
 		var temporary = req.body[tmp.name];
 		if (temporary === undefined) {
-			req.body[tmp.name] = tmp.value;
+			req.body[tmp.name] = tmp.$data;
 			return;
 		}
 
 		if (temporary instanceof Array) {
-			req.body[tmp.name].push(tmp.value);
+			req.body[tmp.name].push(tmp.$data);
 			return;
 		}
 
 		temporary = [temporary];
-		temporary.push(tmp.value);
+		temporary.push(tmp.$data);
 		req.body[tmp.name] = temporary;
 	};
 
@@ -257,8 +254,13 @@ exports.parseMULTIPART = function(req, contentType, maximumSize, tmpDirectory, s
 		cb();
 	};
 
-	req.on('data', parser.write.bind(parser));
-	req.on('end', parser.end.bind(parser));
+	req.on('data', function(chunk) {
+		parser.write(chunk);
+	});
+
+	req.on('end', function() {
+		parser.end();
+	});
 };
 
 function parse_multipart_header(header) {
@@ -296,27 +298,45 @@ function parse_multipart_header(header) {
 	return arr;
 }
 
-/*
-	Internal function / Split string (url) to array
-	@url {String}
-	return {String array}
-*/
 exports.routeSplit = function(url, noLower) {
 
-	if (!noLower)
-		url = url.toLowerCase();
+	var arr;
 
-	url = url.replace(REG_3, '/');
+	if (!noLower) {
+		arr = framework.temporary.other[url];
+		if (arr)
+			return arr;
+	}
 
-	if (url[0] === '/')
-		url = url.substring(1);
-
-	if (url[url.length - 1] === '/')
-		url = url.substring(0, url.length - 1);
-
-	var arr = url.split('/');
-	if (arr.length === 1 && arr[0] === '')
+	if (!url || url === '/') {
+		arr = new Array(1);
 		arr[0] = '/';
+		return arr;
+	}
+
+	var prev = false;
+	var key = '';
+
+	arr = [];
+
+	for (var i = 0, length = url.length; i < length; i++) {
+		var c = url[i];
+
+		if (c === '/') {
+			if (prev)
+				continue;
+
+			if (key) {
+				arr.push(key);
+				key = '';
+			}
+
+			continue;
+		}
+
+		key += noLower ? c : c.toLowerCase();
+		prev = c === '/';
+	}
 
 	return arr;
 };
@@ -555,18 +575,18 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
  * @return {String Array}
  */
 exports.routeParam = function(routeUrl, route) {
-	var arr = [];
 
 	if (!route || !routeUrl)
-		return arr;
+		return [];
 
 	var length = route.param.length;
+	var arr = new Array(length);
 	if (length === 0)
 		return arr;
 
 	for (var i = 0; i < length; i++) {
 		var value = routeUrl[route.param[i]];
-		arr.push(value === '/' ? '' : value);
+		arr[i] = value === '/' ? '' : value;
 	}
 
 	return arr;
@@ -581,14 +601,14 @@ exports.routeParam = function(routeUrl, route) {
 	@contentType {String}
 	return {HttpFile}
 */
-function HttpFile(name, filename, path, length, contentType, width, height) {
-	this.name = name;
-	this.filename = filename;
-	this.length = length;
-	this.type = contentType;
-	this.path = path;
-	this.width = width;
-	this.height = height;
+function HttpFile() {
+	this.name;
+	this.filename;
+	this.type;
+	this.path;
+	this.length = 0;
+	this.width = 0;
+	this.height = 0;
 }
 
 HttpFile.prototype = {
