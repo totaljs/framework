@@ -228,7 +228,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-19';
+	this.version_header = '1.9.0-20';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -7089,9 +7089,13 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 	// helper for 401 http status
 	req.$isAuthorized = true;
 
-	var key = '#' + url + '$' + req.$flags + (subdomain ? '$' + subdomain : '');
-	if (framework.temporary.other[key])
-		return framework.temporary.other[key];
+	var key;
+
+	if (!isSystem) {
+		key = '#' + url + '$' + req.$flags + (subdomain ? '$' + subdomain : '');
+		if (framework.temporary.other[key])
+			return framework.temporary.other[key];
+	}
 
 	var length = self.routes.web.length;
 	for (var i = 0; i < length; i++) {
@@ -7114,10 +7118,8 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 		}
 
 		if (isSystem) {
-			if (route.isSYSTEM) {
-				framework.temporary.other[key] = route;
+			if (route.isSYSTEM)
 				return route;
-			}
 			continue;
 		}
 
@@ -7149,7 +7151,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 				continue;
 		}
 
-		if (route.isCACHE && req.$isAuthorized)
+		if (key && route.isCACHE && req.$isAuthorized)
 			framework.temporary.other[key] = route;
 
 		return route;
@@ -8437,7 +8439,7 @@ Subscribe.prototype.prepare = function(flags, url) {
 	var req = self.req;
 	var res = self.res;
 
-	if (framework.onAuthorization !== null) {
+	if (framework.onAuthorization) {
 		var length = flags.length;
 		framework.onAuthorization(req, res, flags, function(isAuthorized, user) {
 
@@ -8448,6 +8450,7 @@ Subscribe.prototype.prepare = function(flags, url) {
 				user = isAuthorized;
 				isAuthorized = !user;
 			}
+
 			req.isAuthorized = isAuthorized;
 			self.doAuthorization(isAuthorized, user);
 		});
@@ -8481,11 +8484,8 @@ Subscribe.prototype.doExecute = function() {
 		if (controller.isCanceled)
 			return self;
 
-		if (!self.route.isASTERIX && !self.route.param.length) {
-			// cache internal.routeSplit()
-			if (!framework.temporary.other[req.uri.pathname])
-				framework.temporary.other[req.uri.pathname] = req.path;
-		}
+		if (self.route.isCACHE && !framework.temporary.other[req.uri.pathname])
+			framework.temporary.other[req.uri.pathname] = req.path;
 
 		if (self.route.isGENERATOR)
 			async.call(controller, self.route.execute, true)(controller, framework_internal.routeParam(self.route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
