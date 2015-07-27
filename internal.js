@@ -1817,6 +1817,7 @@ function view_parse(content, minify, filename) {
 	var compressed = '';
 	var nocompress = false;
 	var isFirst = false;
+	var pharse = '';
 
 	function escaper(value) {
 
@@ -1884,6 +1885,8 @@ function view_parse(content, minify, filename) {
 		var cmd = content.substring(command.beg + 2, command.end);
 		var cmd8 = cmd.substring(0, 8);
 		var cmd7 = cmd.substring(0, 7);
+
+		pharse = cmd;
 
 		if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
 
@@ -1966,7 +1969,7 @@ function view_parse(content, minify, filename) {
 			if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
-				builder += tmp;
+				builder += wrapCatch(wrapTry(tmp), command.command);
 			}
 		}
 
@@ -1984,6 +1987,18 @@ function view_parse(content, minify, filename) {
 
 	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
+}
+
+function wrapTry(value) {
+	if (!framework.isDebug)
+		return value;
+	return '(function(){try{return ' + value;
+}
+
+function wrapCatch(value, pharse) {
+	if (!framework.isDebug)
+		return value;
+	return value + '}catch(e){throw new Error(unescape(\'' + escape(pharse) + '\') + \' - \' + e.message.toString());}return $EMPTY})()';
 }
 
 function view_parse_plus(builder) {

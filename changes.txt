@@ -103,6 +103,7 @@ BETA ======= 1.9.0
 - improved: Date.prototype.format()
 - improved: String.prototype.format()
 - improved: Number.prototype.pluralize()
+- improved: view debugging
 
 __IMPORTANT:__
 `exports.install = function(framework) {}` framework variable is removed but with backward compatibility (`config['allow-compatibility']`).
