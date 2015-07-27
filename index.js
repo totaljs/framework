@@ -228,7 +228,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-18';
+	this.version_header = '1.9.0-19';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -5239,7 +5239,7 @@ Framework.prototype.listener = function(req, res) {
 		}
 	}
 
-	req.uri = parser.parse(protocol + '://' + req.host + req.url);
+	req.uri = framework_internal.parseURI(protocol, req.host, req.url);
 	req.path = framework_internal.routeSplit(req.uri.pathname);
 	req.body = {};
 	req.files = new Array(0);
@@ -5251,16 +5251,12 @@ Framework.prototype.listener = function(req, res) {
 	res.success = false;
 	res.setHeader('X-Powered-By', 'total.js v' + self.version_header);
 
-	if (framework._request_check_mobile)
-		req.mobile = REG_MOBILE.test(req.headers['user-agent']);
-
 	if (self.isDebug)
 		res.setHeader('Mode', 'debug');
 
-	req.isStaticFile = framework.config['allow-handle-static-files'] ? utils.isStaticFile(req.uri.pathname) : false;
+	req.isStaticFile = framework.config['allow-handle-static-files'] ? framework_utils.isStaticFile(req.uri.pathname) : false;
 
 	var can = true;
-
 	if (req.isStaticFile) {
 		req.extension = path.extname(req.uri.pathname).substring(1);
 		switch (req.extension) {
@@ -5282,6 +5278,9 @@ Framework.prototype.listener = function(req, res) {
 	self._request_stats(true, true);
 
 	if (self._length_request_middleware === 0)
+		return self._request_continue(req, res, headers, protocol);
+
+	if (!req.can('disable-middleware'))
 		return self._request_continue(req, res, headers, protocol);
 
 	var func = new Array(self._length_request_middleware);
@@ -5523,7 +5522,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		}
 	}
 
-	req.uri = parser.parse((req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' || headers['x-forwarded-protocol'] === 'wss' ? 'wss' : 'ws') + '://' + req.headers.host + req.url);
+	req.uri = framework_internal.parseURI((req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' || headers['x-forwarded-protocol'] === 'wss' ? 'wss' : 'ws'), req.headers.host, req.url);
 	req.session = null;
 	req.user = null;
 	req.flags = [req.isSecure ? 'https' : 'http', 'get'];
@@ -5539,6 +5538,9 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 	if (self._length_request_middleware === 0)
 		return self._upgrade_prepare(req, path, headers);
+
+	if (!req.can('disable-middleware'))
+		return self._request_continue(req, res, headers, protocol);
 
 	var func = new Array(self._length_request_middleware);
 	var indexer = 0;
@@ -6068,7 +6070,6 @@ Framework.prototype.testing = function(stop, callback) {
 	};
 
 	var options = parser.parse((test.url.indexOf('http://') > 0 || test.url.indexOf('https://') > 0 ? '' : 'http://' + self.ip + ':' + self.port) + test.url);
-
 	if (typeof(test.data) === TYPE_FUNCTION)
 		test.data = test.data();
 
@@ -8655,6 +8656,11 @@ Subscribe.prototype.doEndfile = function() {
 	var self = this;
 	var req = self.req;
 	var res = self.res;
+
+	if (!framework._length_files) {
+		framework.responseStatic(self.req, self.res);
+		return;
+	}
 
 	for (var i = 0; i < framework._length_files; i++) {
 		var file = framework.routes.files[i];
@@ -13475,6 +13481,12 @@ http.IncomingMessage.prototype = {
 		if (!this.$language)
 			this.$language = (((this.headers['accept-language'] || '').split(';')[0] || '').split(',')[0] || '').toLowerCase();
 		return this.$language;
+	},
+
+	get mobile() {
+		if (this.$mobile === undefined)
+			this.$mobile = REG_MOBILE.test(this.headers['user-agent']);
+		return this.$mobile;
 	},
 
 	set language(value) {

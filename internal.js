@@ -174,7 +174,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 		var wh = null;
 
-		if (req.can('disable-upload-dimension')) {
+		if (req.can('disable-measuring')) {
 			switch (tmp.type) {
 				case 'image/jpeg':
 					wh = framework_image.measureJPG(buffer.slice(start));
@@ -2897,6 +2897,47 @@ exports.appendModel = function(str) {
 
 	var end = str.substring(index + 1);
 	return str.substring(0, index) + '(model' + (end[0] === ')' ? end : ',' + end);
+};
+
+exports.parseURI = function(protocol, host, url) {
+
+	var port = host.lastIndexOf(':');
+	var hostname;
+	var search = url.indexOf('?');
+	var pathname;
+	var query = null;
+
+	if (port === -1) {
+		port = null;
+		hostname = host;
+	} else {
+		hostname = host.substring(0, port);
+		port = host.substring(port + 1);
+	}
+
+	if (search === -1) {
+		search = null;
+		pathname = url;
+	} else {
+		pathname = url.substring(0, search);
+		search = url.substring(search);
+		query = search.substring(1);
+	}
+
+	return {
+		auth: null,
+		hash: null,
+		host: host,
+		hostname: hostname,
+		href: protocol + '://' + host + url,
+		path: url,
+		pathname: pathname,
+		port: host.substring(host.lastIndexOf(':') + 1),
+		protocol: protocol + ':',
+		query: query,
+		search: search,
+		slashes: true
+	};
 };
 
 /**
