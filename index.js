@@ -4655,7 +4655,7 @@ Framework.prototype.response500 = function(req, res, error) {
 	if (req.method === 'HEAD')
 		res.end();
 	else
-		res.end(utils.httpStatus(status));
+		res.end(utils.httpStatus(status) + prepare_error(error));
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -8366,13 +8366,15 @@ Subscribe.prototype.execute = function(status) {
 	if (route === null) {
 		if (!status)
 			status = 404;
+
 		if (status === 400 && self.exception instanceof Builders.ErrorBuilder) {
 			if (req.$language)
 				self.exception.resource(req.$language, framework.config['default-errorbuilder-resource-prefix']);
 			framework.responseContent(req, res, 200, self.exception.json(), 'application/json', framework.config['allow-gzip']);
+			return self;
 		}
-		else
-			framework.responseContent(req, res, status, utils.httpStatus(status), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
+
+		framework.responseContent(req, res, status, utils.httpStatus(status) + prepare_error(self.exception), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
 		return self;
 	}
 
@@ -8428,6 +8430,8 @@ Subscribe.prototype.execute = function(status) {
 
 	return self;
 };
+
+
 
 /*
 	@flags {String Array}
@@ -13805,6 +13809,14 @@ process.on('message', function(msg, h) {
 
 	framework.emit('message', msg, h);
 });
+
+function prepare_error(e) {
+	if (!framework.isDebug || !e)
+		return '';
+	if (e.stack)
+		return ' :: ' + e.stack.toString();
+	return ' :: ' + e.toString();
+}
 
 function prepare_isomorphic(name) {
 	name = name.replace(/\.js$/i, '');
