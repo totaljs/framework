@@ -32,6 +32,7 @@ exports.install = function() {
         flags: ['unauthorize']
     });
 
+    framework.route('/exception/', 'exception');
     framework.route('/html-compressor/', view_compressor);
     framework.route('/html-nocompress/', view_nocompress);
     framework.route('/sync/', synchronize);
