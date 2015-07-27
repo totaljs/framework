@@ -5185,6 +5185,7 @@ Framework.prototype.listener = function(req, res) {
 
 	res.req = req;
 	req.res = res;
+	req.url = framework_internal.cleanURL(req.url);
 
 	self.stats.request.request++;
 	self.emit('request', req, res);

@@ -298,6 +298,25 @@ function parse_multipart_header(header) {
 	return arr;
 }
 
+exports.cleanURL = function(url) {
+	var o = '';
+	var prev;
+	var skip = false;
+	for (var i = 0, length = url.length; i < length; i++) {
+		var c = url[i];
+
+		if (c === '/' && prev === '/' && !skip)
+			continue;
+
+		if (c === '?')
+			skip = true;
+
+		prev = c;
+		o += c;
+	}
+	return o;
+};
+
 exports.routeSplit = function(url, noLower) {
 
 	var arr;
@@ -316,6 +335,7 @@ exports.routeSplit = function(url, noLower) {
 
 	var prev = false;
 	var key = '';
+	var count = 0;
 
 	arr = [];
 
@@ -328,6 +348,7 @@ exports.routeSplit = function(url, noLower) {
 
 			if (key) {
 				arr.push(key);
+				count++;
 				key = '';
 			}
 
@@ -340,6 +361,9 @@ exports.routeSplit = function(url, noLower) {
 
 	if (key)
 		arr.push(key);
+
+	if (count === 0)
+		arr.push('/');
 
 	return arr;
 };
