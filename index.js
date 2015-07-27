@@ -1005,7 +1005,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 			var first = flags[i][0];
 
 			if (first === '%') {
-				self.behaviour(url, flags[i].substring(1));
+				self.behaviour(url === '' ? '/' : url, flags[i].substring(1));
 				continue;
 			}
 
@@ -5280,7 +5280,7 @@ Framework.prototype.listener = function(req, res) {
 	if (self._length_request_middleware === 0)
 		return self._request_continue(req, res, headers, protocol);
 
-	if (!req.can('disable-middleware'))
+	if (req.behaviour('disable-middleware'))
 		return self._request_continue(req, res, headers, protocol);
 
 	var func = new Array(self._length_request_middleware);
@@ -5539,7 +5539,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	if (self._length_request_middleware === 0)
 		return self._upgrade_prepare(req, path, headers);
 
-	if (!req.can('disable-middleware'))
+	if (req.behaviour('disable-middleware'))
 		return self._request_continue(req, res, headers, protocol);
 
 	var func = new Array(self._length_request_middleware);
@@ -13531,10 +13531,10 @@ http.IncomingMessage.prototype.noCache = function() {
 	return self;
 };
 
-http.IncomingMessage.prototype.can = function(type, reverse) {
+http.IncomingMessage.prototype.behaviour = function(type) {
 
 	if (!framework.behaviours)
-		return reverse ? false : true;
+		return false;
 
 	var url = this.url;
 
@@ -13542,13 +13542,13 @@ http.IncomingMessage.prototype.can = function(type, reverse) {
 		url += '/';
 
 	var current = framework.behaviours['*'];
-	var value;
+	var value = false;
 
 	// global
 	if (current !== undefined) {
 		current = current[type];
 		if (current !== undefined)
-			value = reverse ? !current : current;
+			value = current;
 	}
 
 	// by specific
@@ -13557,10 +13557,11 @@ http.IncomingMessage.prototype.can = function(type, reverse) {
 		return value; // responds with global
 
 	current = current[type];
+
 	if (current === undefined)
 		return value; // responds with global
 
-	return reverse ? !current : current;
+	return current;
 };
 
 /**

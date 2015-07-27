@@ -174,7 +174,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 		var wh = null;
 
-		if (req.can('disable-measuring')) {
+		if (!req.behaviour('disable-measuring')) {
 			switch (tmp.type) {
 				case 'image/jpeg':
 					wh = framework_image.measureJPG(buffer.slice(start));
