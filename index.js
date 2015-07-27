@@ -228,7 +228,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-21';
+	this.version_header = '1.9.0-22';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -5237,6 +5237,13 @@ Framework.prototype.listener = function(req, res) {
 				return self;
 			}
 		}
+	}
+
+	if (!req.host) {
+		self.stats.response.destroy++;
+		res.writeHead(403);
+		res.end();
+		return self;
 	}
 
 	req.uri = framework_internal.parseURI(protocol, req.host, req.url);
