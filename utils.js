@@ -1641,13 +1641,20 @@ exports.isURL = function(str) {
 exports.combine = function() {
 
 	var self = this;
+	var p;
 
 	if (arguments[0][0] === '~') {
 		arguments[0] = arguments[0].substring(1);
-		return path.join.apply(self, arguments);
+		p = path.join.apply(self, arguments);
+		if (framework.isWindows)
+			return p.replace(/\\/g, '/');
+		return p;
 	}
 
-	return '.' + path.join.apply(self, arguments);
+	p = path.join.apply(self, arguments);
+	if (framework.isWindows)
+		return '.' + p.replace(/\\/g, '/');
+	return '.' + p;
 };
 
 /**
