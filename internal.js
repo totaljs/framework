@@ -1969,7 +1969,7 @@ function view_parse(content, minify, filename) {
 			if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
-				builder += wrapCatch(wrapTry(tmp), command.command);
+				builder += wrapTryCatch(tmp, command.command);
 			}
 		}
 
@@ -1989,16 +1989,10 @@ function view_parse(content, minify, filename) {
 	return eval(fn);
 }
 
-function wrapTry(value) {
+function wrapTryCatch(value, command) {
 	if (!framework.isDebug)
 		return value;
-	return '(function(){try{return ' + value;
-}
-
-function wrapCatch(value, pharse) {
-	if (!framework.isDebug)
-		return value;
-	return value + '}catch(e){throw new Error(unescape(\'' + escape(pharse) + '\') + \' - \' + e.message.toString());}return $EMPTY})()';
+	return '(function(){try{return ' + value + '}catch(e){throw new Error(unescape(\'' + escape(command) + '\') + \' - \' + e.message.toString());}return $EMPTY})()';
 }
 
 function view_parse_plus(builder) {
