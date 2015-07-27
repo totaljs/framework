@@ -2932,7 +2932,7 @@ exports.parseURI = function(protocol, host, url) {
 		href: protocol + '://' + host + url,
 		path: url,
 		pathname: pathname,
-		port: host.substring(host.lastIndexOf(':') + 1),
+		port: port,
 		protocol: protocol + ':',
 		query: query,
 		search: search,

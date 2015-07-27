@@ -13676,12 +13676,10 @@ http.IncomingMessage.prototype.hostname = function(path) {
 	var self = this;
 	var uri = self.uri;
 
-	if (path !== undefined) {
-		if (path[0] !== '/')
-			path = '/' + path;
-	}
+	if (path && path[0] !== '/')
+		path = '/' + path;
 
-	return uri.protocol + '//' + uri.hostname + (uri.port !== null && uri.port !== undefined && uri.port !== 80 ? ':' + uri.port : '') + (path || '');
+	return uri.protocol + '//' + uri.hostname + (uri.port && uri.port !== 80 ? ':' + uri.port : '') + (path || '');
 };
 
 var framework = new Framework();
