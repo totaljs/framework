@@ -228,7 +228,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-23';
+	this.version_header = '1.9.0-24';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -5182,16 +5182,15 @@ Framework.prototype._service = function(count) {
 Framework.prototype.listener = function(req, res) {
 
 	var self = framework;
+	var headers = req.headers;
+	var protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
 
 	res.req = req;
 	req.res = res;
-	req.url = framework_internal.cleanURL(req.url);
+	req.uri = framework_internal.parseURI(protocol, req);
 
 	self.stats.request.request++;
 	self.emit('request', req, res);
-
-	var headers = req.headers;
-	var protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
 
 	if (self._request_check_redirect) {
 		var redirect = self.routes.redirects[protocol + '://' + req.host];
@@ -5247,7 +5246,6 @@ Framework.prototype.listener = function(req, res) {
 		return self;
 	}
 
-	req.uri = framework_internal.parseURI(protocol, req.host, req.url);
 	req.path = framework_internal.routeSplit(req.uri.pathname);
 	req.body = {};
 	req.files = new Array(0);
@@ -5530,7 +5528,6 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		}
 	}
 
-	req.uri = framework_internal.parseURI((req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' || headers['x-forwarded-protocol'] === 'wss' ? 'wss' : 'ws'), req.headers.host, req.url);
 	req.session = null;
 	req.user = null;
 	req.flags = [req.isSecure ? 'https' : 'http', 'get'];

@@ -298,25 +298,6 @@ function parse_multipart_header(header) {
 	return arr;
 }
 
-exports.cleanURL = function(url) {
-	var o = '';
-	var prev;
-	var skip = false;
-	for (var i = 0, length = url.length; i < length; i++) {
-		var c = url[i];
-
-		if (c === '/' && prev === '/' && !skip)
-			continue;
-
-		if (c === '?')
-			skip = true;
-
-		prev = c;
-		o += c;
-	}
-	return o;
-};
-
 exports.routeSplit = function(url, noLower) {
 
 	var arr;
@@ -361,8 +342,7 @@ exports.routeSplit = function(url, noLower) {
 
 	if (key)
 		arr.push(key);
-
-	if (count === 0)
+	else if (count === 0)
 		arr.push('/');
 
 	return arr;
@@ -2932,38 +2912,62 @@ exports.appendModel = function(str) {
 	return str.substring(0, index) + '(model' + (end[0] === ')' ? end : ',' + end);
 };
 
-exports.parseURI = function(protocol, host, url) {
+function cleanURL(url, index) {
+	var o = url.substring(0, index);
+	var prev;
+	var skip = false;
 
-	var port = host.lastIndexOf(':');
+	for (var i = index, length = url.length; i < length; i++) {
+		var c = url[i];
+		if (c === '/' && prev === '/' && !skip)
+			continue;
+		prev = c;
+		o += c;
+	}
+
+	return o;
+};
+
+exports.parseURI = function(protocol, req) {
+
+	var port = req.host.lastIndexOf(':');
 	var hostname;
-	var search = url.indexOf('?');
+	var search = req.url.indexOf('?');
 	var pathname;
 	var query = null;
 
 	if (port === -1) {
 		port = null;
-		hostname = host;
+		hostname = req.host;
 	} else {
-		hostname = host.substring(0, port);
-		port = host.substring(port + 1);
+		hostname = req.host.substring(0, port);
+		port = req.host.substring(port + 1);
 	}
 
 	if (search === -1) {
 		search = null;
-		pathname = url;
+		pathname = req.url;
 	} else {
-		pathname = url.substring(0, search);
-		search = url.substring(search);
+		pathname = req.url.substring(0, search);
+		search = req.url.substring(search);
 		query = search.substring(1);
+	}
+
+	var index = pathname.indexOf('//');
+	if (index !== -1) {
+		pathname = cleanURL(pathname, index);
+		req.url = pathname;
+		if (search)
+			req.url += search;
 	}
 
 	return {
 		auth: null,
 		hash: null,
-		host: host,
+		host: req.host,
 		hostname: hostname,
-		href: protocol + '://' + host + url,
-		path: url,
+		href: protocol + '://' + req.host + req.url,
+		path: req.url,
 		pathname: pathname,
 		port: port,
 		protocol: protocol + ':',
