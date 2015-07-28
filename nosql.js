@@ -23,7 +23,7 @@
  * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2015
- * @version 3.0.2
+ * @version 3.0.3
  */
 
 'use strict';
@@ -33,7 +33,7 @@ var path = require('path');
 var util = require('util');
 var events = require('events');
 
-var VERSION = 'v3.0.1';
+var VERSION = 'v3.0.3';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -2253,13 +2253,14 @@ Changelog.prototype.read = function(fnCallback) {
     fs.exists(self.filename, function(exist) {
 
         if (!exist) {
-            fnCallback([]);
+            fnCallback(null, []);
             return;
         }
 
         fs.readFile(self.filename, function(err, data) {
+
             if (err) {
-                fnCallback([]);
+                fnCallback(err, []);
                 return;
             }
 
@@ -2268,9 +2269,8 @@ Changelog.prototype.read = function(fnCallback) {
             if (lines[lines.length - 1] === '')
                 lines.pop();
 
-            fnCallback(lines);
+            fnCallback(null, lines);
         });
-
     });
 
     return self.db;
