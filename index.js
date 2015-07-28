@@ -222,7 +222,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-24';
+	this.version_header = '1.9.0-25';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -5176,6 +5176,14 @@ Framework.prototype._service = function(count) {
 Framework.prototype.listener = function(req, res) {
 
 	var self = framework;
+
+	if (!req.host) {
+		self.stats.response.destroy++;
+		res.writeHead(403);
+		res.end();
+		return;
+	}
+
 	var headers = req.headers;
 	var protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
 
@@ -5480,6 +5488,9 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 	var self = framework;
 	var headers = req.headers;
+	var protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
+
+	req.uri = framework_internal.parseURI(protocol, req);
 
 	self.emit('websocket', req, socket, head);
 	self.stats.request.websocket++;
@@ -5526,7 +5537,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	req.user = null;
 	req.flags = [req.isSecure ? 'https' : 'http', 'get'];
 
-	var path = utils.path(req.uri.pathname);
+	var path = framework_utils.path(req.uri.pathname);
 	var websocket = new WebSocketClient(req, socket, head);
 
 	req.path = framework_internal.routeSplit(req.uri.pathname);
@@ -5539,7 +5550,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		return self._upgrade_prepare(req, path, headers);
 
 	if (req.behaviour('disable-middleware'))
-		return self._request_continue(req, res, headers, protocol);
+		return self._upgrade_prepare(req, path, headers);
 
 	var func = new Array(self._length_request_middleware);
 	var indexer = 0;
@@ -13477,7 +13488,7 @@ http.IncomingMessage.prototype = {
 	},
 
 	get isSecure() {
-		return this.uri.protocol === 'https' || this.uri.protocol === 'wss';
+		return this.uri.protocol === 'https:' || this.uri.protocol === 'wss:';
 	},
 
 	get language() {
