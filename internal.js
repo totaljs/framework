@@ -78,7 +78,8 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			ip += req.ip[i];
 	}
 
-	boundary = boundary.substring(boundary.indexOf('=') + 1);
+	// Why indexOf(.., 2)? Because performance
+	boundary = boundary.substring(boundary.indexOf('=', 2) + 1);
 
 	req.buffer_exceeded = false;
 	req.buffer_has = true;
@@ -2932,7 +2933,7 @@ exports.parseURI = function(protocol, req) {
 
 	var port = req.host.lastIndexOf(':');
 	var hostname;
-	var search = req.url.indexOf('?');
+	var search = req.url.indexOf('?', 1);
 	var pathname;
 	var query = null;
 
