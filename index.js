@@ -92,13 +92,7 @@ global.MODULE = function(name) {
 	return framework.module(name);
 };
 
-global.DATABASE = function() {
-	if (typeof(framework.database) === OBJECT)
-		return framework.database;
-	return framework.database.apply(framework, arguments);
-};
-
-global.DB = function() {
+global.DB = global.DATABASE = function() {
 	if (typeof(framework.database) === OBJECT)
 		return framework.database;
 	return framework.database.apply(framework, arguments);
@@ -212,7 +206,7 @@ global.SUCCESS = function(success, value) {
 	return o;
 };
 
-if (typeof(setImmediate) === UNDEFINED) {
+if (global.setImmediate === undefined) {
 	global.setImmediate = function(cb) {
 		process.nextTick(cb);
 	};
