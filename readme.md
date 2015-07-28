@@ -50,7 +50,7 @@ We provide a support of the framework for companies. Our support services will k
 
 | Name | Supports |
 |------|:--------:|
-| [Offline best documentation ever](http://docs.totaljs.com) | 100% |
+| [__Offline documentation__](http://docs.totaljs.com) | 100% |
 | __Backward compatibility__ | 90% |
 | HMVC architecture | 100% |
 | Clean directory structure | 100% |
@@ -99,6 +99,7 @@ We provide a support of the framework for companies. Our support services will k
 - [__NEW__: Todomator - Task Manager System](http://www.todomator.com)
 - [__NEW__: Componenator - Resources for web developers](http://www.componentator.com)
 - [__NEW__: E-commerce, CMS and Docker manager](http://nowitssimple.com/)
+- [__NEW__: Test your application](http://www.testerleader.com/)
 - [MonitorGuru.com (Website monitoring)](https://www.monitorguru.com)
 - [Bufferwall.com (Blog portal)](https://bufferwall.com)
 - [Warstore.sk (E-commerce)](https://www.warstore.sk)
