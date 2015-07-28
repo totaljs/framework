@@ -54,7 +54,7 @@ BETA ======= 1.9.0
 - added: F.onSchema(req, group, name, callback(err, body)) -> for custom schemas
 - added: @{import(filename1, filename2, filenameN)}
 - added: SchemaBuilderEntity.setError(function(error, model, type, name));
-- added: F.snapshop(url, filename, [callback]);
+- added: F.snapshot(url, filename, [callback]);
 - added: CLEANUP(stream, [callback]) - clean up readable streams
 - added: configs directory
 - added: F.behaviour(url, flags);
