@@ -980,12 +980,9 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	var method = '';
 	var schema;
 	var isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
-<<<<<<< HEAD
-=======
 	var isMOBILE = false;
 	var isJSON = false;
 	var isDELAY = false;
->>>>>>> v1.9.0
 
 	if (flags) {
 
