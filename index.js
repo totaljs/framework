@@ -12784,9 +12784,6 @@ WebSocketClient.prototype.parse = function() {
 	return self;
 };
 
-/*
-	Internal handler
-*/
 WebSocketClient.prototype._onerror = function(error) {
 	var self = this;
 	if (error.stack.indexOf('ECONNRESET') !== -1 || error.stack.indexOf('socket is closed') !== -1 || error.stack.indexOf('EPIPE') !== -1)
@@ -12794,9 +12791,6 @@ WebSocketClient.prototype._onerror = function(error) {
 	self.container.emit('error', error, self);
 };
 
-/*
-	Internal handler
-*/
 WebSocketClient.prototype._onclose = function() {
 	var self = this;
 
