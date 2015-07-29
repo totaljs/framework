@@ -222,7 +222,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1900;
-	this.version_header = '1.9.0-25';
+	this.version_header = '1.9.0-26';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -3655,7 +3655,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return self;
 	}
 
-	var etag = framework_utils.etag(req.url, self.config['etag-version']);
+	var allowcache = req.headers['pragma'] !== 'no-cache';
+	var etag = allowcache ? framework_utils.etag(req.url, self.config['etag-version']) : null;
 	var returnHeaders = {};
 
 	if (!self.config.debug && req.headers['if-none-match'] === etag) {
@@ -3731,9 +3732,9 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	var accept = req.headers['accept-encoding'] || '';
 
 	returnHeaders['Accept-Ranges'] = 'bytes';
-	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=11111111' : '');
+	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE && allowcache ? ', max-age=11111111' : '');
 
-	if (RELEASE && !res.getHeader('Expires'))
+	if (RELEASE && allowcache && !res.getHeader('Expires'))
 		returnHeaders['Expires'] = new Date().add('M', 3);
 
 	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
@@ -3744,7 +3745,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (downloadName)
 		returnHeaders['Content-Disposition'] = 'attachment; filename="' + downloadName + '"';
 
-	if (!res.getHeader('ETag') && etag && RELEASE)
+	if (RELEASE && allowcache && etag && !res.getHeader('ETag'))
 		returnHeaders['Etag'] = etag;
 
 	if (!returnHeaders[RESPONSE_HEADER_CONTENTTYPE])
