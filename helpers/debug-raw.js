@@ -18,6 +18,12 @@ var directory = process.cwd();
 var path = require('path');
 var first = process.argv.indexOf('restart') === -1;
 
+process.on('uncaughtException', function(e) {
+    if (e.toString().indexOf('ESRCH') !== -1)
+        return;
+    console.log(e);
+});
+
 function debug() {
     var framework = require('total.js');
     var port = parseInt(process.argv[process.argv.length - 1]);
@@ -45,7 +51,7 @@ function debug() {
 function app() {
     var fork = require('child_process').fork;
     var utils = require('total.js/utils');
-    var directories = [directory + '/controllers', directory + '/definitions', directory + '/modules', directory + '/resources', directory + '/components', directory + '/models', directory + '/source', directory + '/workers'];
+    var directories = [directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers'];
     var files = {};
     var force = false;
     var changes = [];
@@ -56,6 +62,7 @@ function app() {
     var pidInterval = null;
     var prefix = '------------> ';
     var isLoaded = false;
+    var isSkip = false;
 
     function onFilter(path, isDirectory) {
         return isDirectory ? true : path.indexOf('.js') !== -1 || path.indexOf('.resource') !== -1;
@@ -71,7 +78,7 @@ function app() {
 
             for (var i = 0; i < length; i++) {
                 var name = arr[i];
-                if (name === 'config' || name === 'config-debug' || name === 'config-release' || name === 'versions' || name.indexOf('.js') !== -1 || name.indexOf('.resource') !== -1)
+                if (name === 'config' || name === 'config-debug' || name === 'config-release' || name === 'versions' || name === 'dependencies' || name.indexOf('.js') !== -1 || name.indexOf('.resource') !== -1)
                     self.file.push(name);
             }
 
@@ -157,6 +164,7 @@ function app() {
         if (app !== null) {
             try
             {
+                isSkip = true;
                 process.kill(app.pid);
             } catch (err) {}
             app = null;
@@ -177,17 +185,21 @@ function app() {
 
         app.on('message', function(msg) {
 
-            if (msg.substring(0, 5) === 'name:') {
-                process.title = 'debug: ' + msg.substring(6);
-                return;
-            }
-
             if (msg === 'eaddrinuse')
                 process.exit(1);
 
         });
 
         app.on('exit', function() {
+
+            // checks unexpected exit
+            if (isSkip === false) {
+                app = null;
+                process.exit();
+                return;
+            }
+
+            isSkip = false;
             if (status !== 255)
                 return;
             app = null;
@@ -217,6 +229,7 @@ function app() {
             return;
         }
 
+        isSkip = true;
         process.kill(app.pid);
         app = null;
         process.exit(0);
@@ -237,8 +250,10 @@ function app() {
 
                 fs.unlink(pid, noop);
 
-                if (app !== null)
+                if (app !== null) {
+                    isSkip = true;
                     process.kill(app.pid);
+                }
 
                 process.exit(0);
             });

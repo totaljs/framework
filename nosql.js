@@ -1,8 +1,29 @@
+// Copyright 2012-2015 (c) Peter Širka <petersirka@gmail.com>
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 /**
  * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2015
- * @version 3.0.1
+ * @version 3.0.3
  */
 
 'use strict';
@@ -12,7 +33,7 @@ var path = require('path');
 var util = require('util');
 var events = require('events');
 
-var VERSION = 'v3.0.1';
+var VERSION = 'v3.0.3';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -368,15 +389,12 @@ Database.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, isScal
             resume = false;
     };
 
-    var reader = self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
-
+    self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
         onBuffer(buffer, fnItem, fnBuffer);
         return resume;
-
     }, function() {
         self.countRead--;
         self.next();
-
         setImmediate(function() {
             self.emit(name || 'read', false, isScalar ? count : selected.length);
             fnCallback(null, isScalar ? count : selected);
@@ -533,7 +551,7 @@ Database.prototype.each = function(fnDocument, fnCallback) {
 
     self.emit('each', true, 0);
 
-    var reader = self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
+    self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
         onBuffer(buffer, fnItem, fnBuffer);
         return true;
     }, function() {
@@ -938,8 +956,6 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 
         // clear buffer;
         current = '';
-
-        var skip = false;
         var value = null;
 
         for (var i = 0; i < operationLength; i++) {
@@ -968,7 +984,7 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 
     fs.appendFile(self.filenameTemp, '');
 
-    var reader = self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
+    self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
         onBuffer(buffer.toString(), fnItem, fnBuffer);
         return true;
     }, function(success) {
@@ -1663,7 +1679,7 @@ View.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, skipCount,
             resume = false;
     };
 
-    var reader = self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
+    self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
 
         if (skipCount && !resume) {
             count = -1;
@@ -1764,7 +1780,7 @@ Stored.prototype.create = function(name, fn, fnCallback, changes) {
     if (typeof(fnCallback) === STRING) {
         var tmp = changes;
         changes = fnCallback;
-        fnCallback = changes;
+        fnCallback = tmp;
     }
 
     var self = this;
@@ -1804,7 +1820,7 @@ Stored.prototype.remove = function(name, fnCallback, changes) {
     if (typeof(fnCallback) === STRING) {
         var tmp = changes;
         changes = fnCallback;
-        fnCallback = changes;
+        fnCallback = tmp;
     }
 
     if (changes)
@@ -1838,7 +1854,7 @@ Stored.prototype.clear = function(fnCallback, changes) {
     if (typeof(fnCallback) === STRING) {
         var tmp = changes;
         changes = fnCallback;
-        fnCallback = changes;
+        fnCallback = tmp;
     }
 
     if (changes)
@@ -2237,13 +2253,14 @@ Changelog.prototype.read = function(fnCallback) {
     fs.exists(self.filename, function(exist) {
 
         if (!exist) {
-            fnCallback([]);
+            fnCallback(null, []);
             return;
         }
 
         fs.readFile(self.filename, function(err, data) {
+
             if (err) {
-                fnCallback([]);
+                fnCallback(err, []);
                 return;
             }
 
@@ -2252,9 +2269,8 @@ Changelog.prototype.read = function(fnCallback) {
             if (lines[lines.length - 1] === '')
                 lines.pop();
 
-            fnCallback(lines);
+            fnCallback(null, lines);
         });
-
     });
 
     return self.db;

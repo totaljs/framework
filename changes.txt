@@ -1,6 +1,116 @@
+======= 1.9.0
+
+- added: (IMPORTANT) ISOMORPHIC using
+- added: (IMPORTANT) new flag `mobile` (mobile routing), you can create a route to mobile device
+- added: (IMPORTANT) new flag `delay` for long time operations (it removes timeout)
+- added: readonly `req.mobile` -> returns `boolean`
+- added: new view tag: @{mobile} –> returns `boolean`
+- added: new view tag: @{isomorphic} –> returns `Object` with isomorphic objects
+- added: `config['disable-clear-temporary-directory'] = false` (after start)
+- added: `config['allow-compatibility'] = false` - a backward compatibility mode
+- added: `config['default-timezone']`
+- added: `config['directory-isomorphic']`
+- added: `config['directory-private']`
+- added: `F.path.private([filename])`
+- added: `F.path.isomorphic([filename])`
+- added: `Controller.ping()` for WebSocket
+- added: `global.DB()` --> same as `global.DATABASE()`
+- added: `global.isomorphic` --> returns `framework.isomorphic` --> returns isomorphic objects
+- added: `global.is_client` and `global.is_server` for isomorphic
+- added: cache for HTTP routing
+- added: RegExp routing `F.route('/{/^\\d+$/}', ...)`
+- added: `F.responseBinary(req, res, contentType, buffer, [type], [download], [headers])`
+- added: `SchemaBuilderEntity.filter(custom, [model], [reverse])`
+- added: `SchemaBuilderEntity.trim = true`(enable/disable trim strings (default: true))
+- added: `Number.prototype.add(value, [decimals])` -> supports percentage
+- added: `Date.prototype.toUTC([ticksOnly])`
+- added: `Date.prototype.extend()` -> extend current datetime about new date or time (more in documentation)
+- added: `F.stats.request.mobile`, `F.stats.request.desktop`
+- added: `res.setHeader('Vary', 'Accept-Encoding, User-Agent')` for same url addresses and different devices (desktop vs mobile)
+- added: binary - `total --translatecsv`
+- added: controller.jsonp(method_name, obj, [headers], [beautify], [replacer]);
+- added: CSS variables likes sass, example: `$color: red;`
+- added: CSS nesting
+- added: modificators for dynamic modification before compilation: views, styles and scripts
+- added: TransformBuilder
+- added: F.load(debug, load_types, [path]);
+- added: F.isWorker (is true when is called F.load())
+- added: F.isCluster (is true when the framework is running in the cluster)
+- added: F.logmail(address, [subject], body, [callback]) --> send e-mail message as plain text
+- added: Array.unique([property]) by Andrea Sessa
+- added: Array.pair(array, property, fn(itemA, itemB), [remove]) - pair arrays
+- added: String.base64ToBuffer();
+- added: terminal -> `tpm unpack [package_name] [optional: target_directory]`
+- added: versions is applied to raw HTML
+- added: versions supports auto-mapping
+- added: sync2(), e.g. sync2(fn), diff with v1: sync(fn)() and v2: sync2(fn)
+- added: "dependencies" file for installing dependencies (modules, packages, etc.)
+- added: @{nocompress html}, @{nocompress js}, @{nocompress css}, @{nocompress all}
+- added: req.authorize(callback(err, userprofile, isAuthorized))
+- added: res.content(code, body, type, [compress]) -> alias for F.responseContent()
+- added: F.localize(name, path, [middleware], [options]) - auto translating static files
+- added: F.listener(req, res) -> for multiple server listeners
+- added: F.restful(url, flags, onQuery, onGet, onSave, onDelete) -> creates routing
+- added: F.onSchema(req, group, name, callback(err, body)) -> for custom schemas
+- added: @{import(filename1, filename2, filenameN)}
+- added: SchemaBuilderEntity.setError(function(error, model, type, name));
+- added: F.snapshot(url, filename, [callback]);
+- added: CLEANUP(stream, [callback]) - clean up readable streams
+- added: configs directory
+- added: F.behaviour(url, flags);
+- added: behaviour: disable-measuring (default: false)
+- added: behaviour: disable-middleware (default: false)
+
+- updated: (IMPORTANT) routing: `json` flag is not required for receiving incomming data as JSON
+- updated: `F.mail(address, subject, view, [model], [callback], [language])` added language
+- updated: `F.view(name, model, [layout], [repository], [language])` added language
+- updated: `F.route(url, ...)`, `F.websocket(url, ...)` --> URL can be function(url, req, [flags])
+- updated: `versions` affects F.map() and F.merge()
+- updated: `controller.mail(address, subject, view, [model], [callback], [language])` added language
+- updated: `config['allow-performance']` is set to true
+- updated: (IMPORTANT) `F.map(url, filename/directory, [filter])` supports mapping directories
+- updated: (IMPORTANT) arguments order `SchemaBuilderEntity.setValidate(function(name, value, path, model, schema){})`
+- updated: (IMPORTANT) `U.extend(target, source, [rewrite]);` --> rewrite is by default: __true__
+- updated: `SchemaBuilderEntity.setPrepare(function(name, value, index, model){})` --> __model__ is new
+- updated: `SchemaBuilderEntity.define(name, value, required, [custom])` --> __custom__ is new
+- updated: HTML compressor
+- updated: favicon `(removed rel="icon")`
+- updated: binary `tpm create [package] [directory]` (added argument [package], [directory])
+- updated: better handling middleware errors and added prevention of "memory leak"
+- updated: (IMPORTANT): Websocket ping is set to 3 minutes
+- updated: framework responds for bad requests with HTTP 403
+- updated: Mail (added support for Office365)
+- updated: Date.prototype.add() supports e.g. Date.prototype.add('25 days')
+- updated: String.prototype.params() -> supports double "{{"
+- updated: F.schedule(date, [repeat], fn) --> added [repeat]
+- updated: `F.responseStream()` and `controller.stream()` added [nocompress] argument
+- updated: binary `tpm` supports install package from different URL
+
+- removed: XSS check
+
+- fixed: `controller.binary(buffer, contentType, [download], [headers])`
+- fixed: routing `DELETE`
+- fixed: `binary` (creating empty-project, bad record with smtp options)
+- fixed: calling generator action
+- fixed: `binary --translate` (filenames)
+- fixed: SchemaBuilderEntity prepare (problem with nullable Boolean)
+- fixed: (IMPORTANT) 431 system route
+- fixed: F.log(), F.logger() –> problem with objects, reported by Nikita Shmidt
+- fixed: Number formatting (problem with negative numbers)
+
+- improved: performance +15%
+- improved: code optimalization
+- improved: Date.prototype.format()
+- improved: String.prototype.format()
+- improved: Number.prototype.pluralize()
+- improved: view debugging
+
+__IMPORTANT:__
+`exports.install = function(framework) {}` framework variable is removed but with backward compatibility (`config['allow-compatibility']`).
+
 ======= 1.8.0
 
-source-code: "tabs" instead of "spaces" 
+source-code: "tabs" instead of "spaces"
 
 - added: SchemaBuilderEntity->setPrepare(function(name, value, index))
 - added: SchemaBuilderEntity–>setPrefix(prefix)

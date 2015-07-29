@@ -50,7 +50,6 @@ function test_PageBuilder() {
 
     var builder = new builders.Pagination(100, 1, 10);
     assert.ok(builder.render(1) === 10, name + 'default transform()');
-
 };
 
 function test_UrlBuilder() {
@@ -351,10 +350,25 @@ function test_ErrorBuilder() {
     assert.ok(builder.errors === 2, name + 'transform()');
 };
 
+function test_TransformBuilder() {
+
+    TransformBuilder.addTransform('xml', function(obj) {
+        var xml = '';
+        Object.keys(obj).forEach(function(key) {
+            xml += '<' + key + '>' + obj[key] + '</' + key + '>';
+        });
+        return xml;
+    }, true);
+
+    assert.ok(TransformBuilder.transform('xml', { name: 'Peter' }, true) === '<name>Peter</name>', 'TransformBuilder problem');
+    assert.ok(TransformBuilder.transform({ name: 'Peter' }) === '<name>Peter</name>', 'TransformBuilder problem (default)');
+}
+
 test_PageBuilder();
 test_UrlBuilder();
 test_Schema();
 test_ErrorBuilder();
+test_TransformBuilder();
 
 console.log('================================================');
 console.log('success - OK');

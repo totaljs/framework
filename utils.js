@@ -1,6 +1,27 @@
+// Copyright 2012-2015 (c) Peter Širka <petersirka@gmail.com>
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 /**
  * @module FrameworkUtils
- * @version 1.8.0
+ * @version 1.9.0
  */
 
 'use strict';
@@ -20,6 +41,10 @@ var expressionCache = {};
 var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 var regexpTRIM = /^[\s]+|[\s]+$/g;
+var regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
+var regexpSTATIC = /\.\w{2,8}($|\?)+/;
+var regexpDATEFORMAT = /yyyy|yy|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|a/g;
+var regexpSTRINGFORMAT = /\{\d+\}/g;
 var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
@@ -168,7 +193,7 @@ exports.isEmpty = function(obj) {
 	if (obj === null)
 		return true;
 
-	if (obj.length && obj.length > 0)
+	if (obj.length)
 		return false;
 
 	if (obj.length === 0)
@@ -333,7 +358,10 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var e = new events.EventEmitter();
 	var isDNSCACHE = false;
 
-	headers = exports.extend({}, headers || {});
+	if (headers)
+		headers = exports.extend({}, headers);
+	else
+		headers = {};
 
 	if (typeof(encoding) !== STRING)
 		encoding = ENCODING;
@@ -404,7 +432,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		data = data.substring(1);
 
 	if (!isPOST) {
-		if (data.length > 0 && url.indexOf('?') === -1)
+		if (data.length && url.indexOf('?') === -1)
 			url += '?' + data;
 		data = '';
 	}
@@ -416,21 +444,18 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	headers['X-Powered-By'] = 'total.js' + VERSION;
 
 	if (cookies) {
-		var builder = [];
-		var keys = Object.keys(cookies);
+		var builder = '';
 
-		length = keys.length;
+		for (var m in cookies)
+			builder += (builder ? '; ' : '') + m + '=' + encodeURIComponent(cookies[m]);
 
-		for (var i = 0; i < length; i++)
-			builder.push(keys[i] + '=' + encodeURIComponent(cookies[keys[i]]));
-
-		if (builder.length > 0)
-			headers['Cookie'] = builder.join('; ');
+		if (builder)
+			headers['Cookie'] = builder;
 	}
 
 	var buf;
 
-	if (data.length > 0) {
+	if (data.length) {
 		buf = new Buffer(data, ENCODING);
 		headers['Content-Length'] = buf.length;
 	}
@@ -454,7 +479,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			var self = this;
 			self._buffer += chunk.toString(encoding);
 			self._bufferlength += chunk.length;
-			e.emit('data', chunk, responseLength > 0 ? (self._bufferlength / responseLength) * 100 : 0);
+			e.emit('data', chunk, responseLength ? (self._bufferlength / responseLength) * 100 : 0);
 		});
 
 		res.on('end', function() {
@@ -566,7 +591,10 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	var e = new events.EventEmitter();
 	var isDNSCACHE = false;
 
-	headers = exports.extend({}, headers || {});
+	if (headers)
+		headers = exports.extend({}, headers);
+	else
+		headers = {};
 
 	if (typeof(encoding) !== STRING)
 		encoding = ENCODING;
@@ -627,7 +655,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		data = data.substring(1);
 
 	if (!isPOST) {
-		if (data.length > 0 && url.indexOf('?') === -1)
+		if (data.length && url.indexOf('?') === -1)
 			url += '?' + data;
 		data = '';
 	}
@@ -640,21 +668,18 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	headers['X-Powered-By'] = 'total.js' + VERSION;
 
 	if (cookies) {
-		var builder = [];
-		var keys = Object.keys(cookies);
+		var builder = '';
 
-		length = keys.length;
+		for (var m in cookies)
+			builder += (builder ? '; ' : '') + m + '=' + encodeURIComponent(cookies[m]);
 
-		for (var i = 0; i < length; i++)
-			builder.push(keys[i] + '=' + encodeURIComponent(cookies[keys[i]]));
-
-		if (builder.length > 0)
-			headers['Cookie'] = builder.join('; ');
+		if (builder)
+			headers['Cookie'] = builder;
 	}
 
 	var buf;
 
-	if (data.length > 0) {
+	if (data.length) {
 		buf = new Buffer(data, ENCODING);
 		headers['Content-Length'] = buf.length;
 	}
@@ -669,7 +694,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		res.on('data', function(chunk) {
 			var self = this;
 			self._bufferlength += chunk.length;
-			e.emit('data', chunk, responseLength > 0 ? (self._bufferlength / responseLength) * 100 : 0);
+			e.emit('data', chunk, responseLength ? (self._bufferlength / responseLength) * 100 : 0);
 		});
 
 		res.on('end', function() {
@@ -794,7 +819,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 		});
 	}
 
-	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + utils.getContentType(path.extname(name)) + NEWLINE + NEWLINE;
+	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(path.extname(name)) + NEWLINE + NEWLINE;
 	req.write(header);
 
 	// Is Buffer
@@ -887,14 +912,16 @@ exports.noop = global.noop = global.NOOP = function() {};
  * @return {String}
  */
 exports.httpStatus = function(code, addCode) {
-	return (addCode || true ? code + ': ' : '') + http.STATUS_CODES[code];
+	if (addCode === undefined)
+		addCode = true;
+	return (addCode ? code + ': ' : '') + http.STATUS_CODES[code];
 };
 
 /**
  * Extend object
  * @param {Object} target Target object.
  * @param {Object} source Source object.
- * @param {Boolean} rewrite Rewrite exists values (optional, default false).
+ * @param {Boolean} rewrite Rewrite exists values (optional, default true).
  * @return {Object} Modified object.
  */
 exports.extend = function(target, source, rewrite) {
@@ -905,13 +932,14 @@ exports.extend = function(target, source, rewrite) {
 	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
 		return target;
 
+	if (rewrite === undefined)
+		rewrite = true;
+
 	var keys = Object.keys(source);
 	var i = keys.length;
 
 	while (i--) {
-
 		var key = keys[i];
-
 		if (rewrite || target[key] === undefined)
 			target[key] = source[key];
 	}
@@ -1081,8 +1109,7 @@ exports.decode = function(str) {
  * @return {Boolean}
  */
 exports.isStaticFile = function(url) {
-	var pattern = /\.\w{2,8}($|\?)+/g;
-	return pattern.test(url);
+	return regexpSTATIC.test(url);
 };
 
 /**
@@ -1449,7 +1476,6 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	var prepare = entity.onValidation || framework.onValidation;
 
 	var current = path === undefined ? '' : path + '.';
-	var definition = null;
 	var properties = entity.properties;
 
 	if (model === undefined || model === null)
@@ -1502,7 +1528,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					// The schema not exists
 					if (collection[entity] === undefined) {
 
-						var result2 = prepare(name, value, current + name, schema, model);
+						var result2 = prepare(name, value, current + name, model, schema);
 						if (result2 === undefined)
 							continue;
 
@@ -1524,7 +1550,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 						continue;
 					}
 
-					var result3 = prepare(name, value, current + name, schema, model);
+					var result3 = prepare(name, value, current + name, model, schema);
 					if (result3 !== undefined) {
 
 						type = typeof(result3);
@@ -1554,7 +1580,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			}
 		}
 
-		var result = prepare(name, value, current + name, schema, model);
+		var result = prepare(name, value, current + name, model, schema);
 
 		if (result === undefined)
 			continue;
@@ -1615,13 +1641,20 @@ exports.isURL = function(str) {
 exports.combine = function() {
 
 	var self = this;
+	var p;
 
 	if (arguments[0][0] === '~') {
 		arguments[0] = arguments[0].substring(1);
-		return path.join.apply(self, arguments);
+		p = path.join.apply(self, arguments);
+		if (framework.isWindows)
+			return p.replace(/\\/g, '/');
+		return p;
 	}
 
-	return '.' + path.join.apply(self, arguments);
+	p = path.join.apply(self, arguments);
+	if (framework.isWindows)
+		return '.' + p.replace(/\\/g, '/');
+	return '.' + p;
 };
 
 /**
@@ -1691,7 +1724,7 @@ exports.parseXML = function(xml) {
 			if (from === -1 || o !== el.substring(2, el.length - 1))
 				continue;
 
-			var path = (current.length > 0 ? current.join('.') + '.' : '') + o;
+			var path = (current.length ? current.join('.') + '.' : '') + o;
 			var value = xml.substring(from, beg).decode();
 
 			if (obj[path] === undefined)
@@ -1836,14 +1869,6 @@ function getWebSocketFrameLengthBytes(length) {
 	return lengthBuffer;
 }
 
-/*
-	Get distance (KM) between two coordinates
-	@lat1 {Number}
-	@lot1 {Number}
-	@lat2 {Number}
-	@lot1 {Number}
-	return {Number}
-*/
 /**
  * GPS distance in KM
  * @param  {Number} lat1
@@ -1880,12 +1905,20 @@ exports.ls = function(path, callback, filter) {
 	return {Date}
 */
 Date.prototype.add = function(type, value) {
+
+	if (value === undefined) {
+		var arr = type.split(' ');
+		type = arr[1];
+		value = exports.parseInt(arr[0]);
+	}
+
 	var self = this;
 	var dt = new Date(self.getTime());
 
 	switch(type) {
 		case 's':
 		case 'ss':
+		case 'sec':
 		case 'second':
 		case 'seconds':
 			dt.setSeconds(dt.getSeconds() + value);
@@ -1893,6 +1926,7 @@ Date.prototype.add = function(type, value) {
 		case 'm':
 		case 'mm':
 		case 'minute':
+		case 'min':
 		case 'minutes':
 			dt.setMinutes(dt.getMinutes() + value);
 			return dt;
@@ -1983,6 +2017,85 @@ Date.prototype.diff = function(date, type) {
 	return;
 };
 
+Date.prototype.extend = function(date) {
+	var dt = new Date(this);
+	var match = date.match(regexpDATE);
+
+	if (!match)
+		return dt;
+
+	for (var i = 0, length = match.length; i < length; i++) {
+		var m = match[i];
+		var arr, tmp;
+
+		if (m.indexOf(':') !== -1) {
+
+			arr = m.split(':');
+			tmp = parseInt(arr[0], 10);
+			if (!isNaN(tmp))
+				dt.setHours(tmp);
+
+			if (arr[1]) {
+				tmp = parseInt(arr[1], 10);
+				if (!isNaN(tmp))
+					dt.setMinutes(tmp);
+			}
+
+			if (arr[2]) {
+				tmp = parseInt(arr[2], 10);
+				if (!isNaN(tmp))
+					dt.setSeconds(tmp);
+			}
+
+			continue;
+		}
+
+		if (m.indexOf('-') !== -1) {
+			arr = m.split('-');
+
+			tmp = parseInt(arr[0]);
+			dt.setFullYear(tmp);
+
+			if (arr[1]) {
+				tmp = parseInt(arr[1], 10);
+				if (!isNaN(tmp))
+					dt.setMonth(tmp - 1);
+			}
+
+			if (arr[2]) {
+				tmp = parseInt(arr[2], 10);
+				if (!isNaN(tmp))
+					dt.setDate(tmp);
+			}
+
+			continue;
+		}
+
+		if (m.indexOf('.') !== -1) {
+			arr = m.split('.');
+
+			tmp = parseInt(arr[0], 10);
+			dt.setDate(tmp);
+
+			if (arr[1]) {
+				tmp = parseInt(arr[1], 10);
+				if (!isNaN(tmp))
+					dt.setMonth(tmp - 1);
+			}
+
+			if (arr[2]) {
+				tmp = parseInt(arr[2]);
+				if (!isNaN(tmp))
+					dt.setFullYear(tmp);
+			}
+
+			continue;
+		}
+	}
+
+	return dt;
+};
+
 /**
  * Compare dates
  * @param {Date} date
@@ -2019,46 +2132,71 @@ Date.compare = function(d1, d2) {
 	return d1.compare(d2);
 };
 
-/*
-	Format date to string
-	@format {String}
-	return {String}
-*/
+/**
+ * Format datetime
+ * @param {String} format
+ * @return {String}
+ */
 Date.prototype.format = function(format) {
+
 	var self = this;
+	var half = false;
 
-	var h = self.getHours();
-	var m = self.getMinutes().toString();
-	var s = self.getSeconds().toString();
-	var M = (self.getMonth() + 1).toString();
-	var yyyy = self.getFullYear().toString();
-	var yy = self.getYear().toString();
-	var d = self.getDate().toString();
-
-	var a = 'AM';
-	var H = h.toString();
-
-	if (h >= 12) {
-		h -= 12;
-		a = 'PM';
+	if (format && format[0] === '!') {
+		half = true;
+		format = format.substring(1);
 	}
 
-	if (h === 0)
-		h = 12;
-
-	h = h.toString();
-
-	var hh = h.padLeft(2, '0');
-	var HH = H.padLeft(2, '0');
-	var mm = m.padLeft(2, '0');
-	var ss = s.padLeft(2, '0');
-	var MM = M.padLeft(2, '0');
-	var dd = d.padLeft(2, '0');
-
 	if (format === undefined || format === null || format === '')
-		return yyyy + '-' + MM + '-' + dd + 'T' + hh + ':' + mm + ':' + ss + ':' + self.getMilliseconds().toString();
+		return self.getFullYear() + '-' + (self.getMonth() + 1).toString().padLeft(2, '0') + '-' + self.getDate().toString().padLeft(2, '0') + 'T' + self.getHours().toString().padLeft(2, '0') + ':' + self.getMinutes().toString().padLeft(2, '0') + ':' + self.getSeconds().toString().padLeft(2, '0') + ':' + self.getMilliseconds().toString();
 
-	return format.replace(/yyyy/g, yyyy).replace(/yy/g, yy).replace(/MM/g, MM).replace(/M/g, M).replace(/dd/g, dd).replace(/d/g, d).replace(/HH/g, HH).replace(/H/g, H).replace(/hh/g, hh).replace(/h/g, h).replace(/mm/g, mm).replace(/m/g, m).replace(/ss/g, ss).replace(/s/g, ss).replace(/a/g, a);
+	var h = self.getHours();
+
+	if (half) {
+		if (h >= 12)
+			h -= 12;
+	}
+
+	return format.replace(regexpDATEFORMAT, function(key) {
+		switch (key) {
+			case 'yyyy':
+				return self.getFullYear();
+			case 'yy':
+				return self.getYear();
+			case 'MM':
+				return (self.getMonth() + 1).toString().padLeft(2, '0');
+			case 'M':
+				return (self.getMonth() + 1);
+			case 'dd':
+				return self.getDate().toString().padLeft(2, '0');
+			case 'd':
+				return self.getDate();
+			case 'HH':
+			case 'hh':
+				return h.toString().padLeft(2, '0');
+			case 'H':
+			case 'h':
+				return self.getHours();
+			case 'mm':
+				return self.getMinutes().toString().padLeft(2, '0');
+			case 'm':
+				return self.getMinutes();
+			case 'ss':
+				return self.getSeconds().toString().padLeft(2, '0');
+			case 's':
+				return self.getSeconds();
+			case 'a':
+				var a = 'AM';
+				if (self.getHours() >= 12)
+					a = 'PM';
+				return a;
+		}
+	});
+};
+
+Date.prototype.toUTC = function(ticks) {
+	var dt = this.getTime() + this.getTimezoneOffset() * 60000;
+	return ticks ? dt : new Date(dt);
 };
 
 if (!String.prototype.trim) {
@@ -2375,21 +2513,18 @@ String.prototype.parseConfig = function(def) {
 	return obj;
 };
 
-/*
-	@arguments {Object array}
-	return {String}
-*/
+/**
+ * String format
+ * @return {String}
+ */
 String.prototype.format = function() {
-	var formatted = this;
-	var length = arguments.length;
-	for (var i = 0; i < length; i++) {
-		var regexp = new RegExp('\\{' + i + '\\}', 'gi');
-		var value = arguments[i];
+	var arg = arguments;
+	return this.replace(regexpSTRINGFORMAT, function(text) {
+		var value = arg[parseInt(text.substring(1, text.length - 1))];
 		if (value === null || value === undefined)
 			value = '';
-		formatted = formatted.replace(regexp, value);
-	}
-	return formatted;
+		return value;
+	});
 };
 
 String.prototype.encode = function() {
@@ -2443,19 +2578,11 @@ String.prototype.params = function(obj) {
 	if (obj === undefined || obj === null)
 		return formatted;
 
-	var reg = /\{[^}\n]*\}/g;
-	var match = formatted.match(reg);
-
-	if (match === null)
-		return formatted;
-
-	var length = match.length;
-
-	for (var i = 0; i < length; i++) {
-		var prop = match[i];
+	var reg = /\{{2}[^}\n]*\}{2}/g;
+	return formatted.replace(reg, function(prop) {
 
 		var isEncode = false;
-		var name = prop.substring(1, prop.length - 1).trim();
+		var name = prop.substring(2, prop.length - 2).trim();
 
 		var format = '';
 		var index = name.indexOf('|');
@@ -2465,7 +2592,7 @@ String.prototype.params = function(obj) {
 			name = name.substring(0, index).trim();
 		}
 
-		if (prop.substring(0, 2) === '{!')
+		if (name[0] === '!')
 			name = name.substring(1);
 		else
 			isEncode = true;
@@ -2474,16 +2601,21 @@ String.prototype.params = function(obj) {
 
 		if (name.indexOf('.') !== -1) {
 			var arr = name.split('.');
-
-			if (arr.length === 2)
-				val = obj[arr[0]][arr[1]];
-			else if (arr.length === 3)
-				val = obj[arr[0]][arr[1]][arr[3]];
+			if (arr.length === 2) {
+				if (obj[arr[0]])
+					val = obj[arr[0]][arr[1]];
+			}
+			else if (arr.length === 3) {
+				if (obj[arr[0]] && obj[arr[0]][arr[1]])
+					val = obj[arr[0]][arr[1]][arr[2]];
+			}
 			else if (arr.length === 4)
-				val = obj[arr[0]][arr[1]][arr[3]][arr[4]];
-			else if (arr.length === 5)
-				val = obj[arr[0]][arr[1]][arr[3]][arr[4]][arr[5]];
-
+				if (obj[arr[0]] && obj[arr[0]][arr[1]] && obj[arr[0]][arr[1]][arr[2]])
+					val = obj[arr[0]][arr[1]][arr[2]][arr[3]];
+			else if (arr.length === 5) {
+				if (obj[arr[0]] && obj[arr[0]][arr[1]] && obj[arr[0]][arr[1]][arr[2]] && obj[arr[0]][arr[1]][arr[2]][arr[3]])
+					val = obj[arr[0]][arr[1]][arr[2]][arr[3]][arr[4]];
+			}
 		} else
 			val = name.length === 0 ? obj : obj[name];
 
@@ -2491,9 +2623,9 @@ String.prototype.params = function(obj) {
 			val = val(index);
 
 		if (val === undefined)
-			continue;
+			return prop;
 
-		if (format.length > 0) {
+		if (format.length) {
 
 			var type = typeof(val);
 			if (type === STRING) {
@@ -2509,10 +2641,8 @@ String.prototype.params = function(obj) {
 		}
 
 		val = val.toString().dollar();
-		formatted = formatted.replace(prop, isEncode ? exports.encode(val) : val);
-	}
-
-	return formatted;
+		return isEncode ? exports.encode(val) : val;
+	});
 };
 
 /*
@@ -2665,7 +2795,6 @@ String.prototype.encrypt = function(key, isUnique) {
 	var str = '0' + this;
 	var data_count = str.length;
 	var key_count = key.length;
-	var change = str[data_count - 1];
 	var random = isUnique ? exports.random(120) + 40 : 65;
 	var count = data_count + (random % key_count);
 	var values = [];
@@ -2754,6 +2883,18 @@ String.prototype.base64ToFile = function(filename, callback) {
 		fs.writeFile(filename, self.substring(index), 'base64', exports.noop);
 
 	return this;
+};
+
+String.prototype.base64ToBuffer = function() {
+	var self = this;
+
+	var index = self.indexOf(',');
+	if (index === -1)
+		index = 0;
+	else
+		index++;
+
+	return new Buffer(self.substring(index), 'base64');
 };
 
 /*
@@ -2874,7 +3015,7 @@ String.prototype.dollar = function() {
  * @param  {Number} max A maximum length, default: 60 and optional.
  * @return {String}
  */
-String.prototype.linker = function(max) {
+String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = String.prototype.linker = function(max) {
 	max = max || 60;
 
 	var self = this.trim().toLowerCase().removeDiacritics();
@@ -2909,10 +3050,6 @@ String.prototype.linker = function(max) {
 	if (builder[l] === '-')
 		return builder.substring(0, l);
 	return builder;
-};
-
-String.prototype.slug = function(max) {
-	return this.linker(max);
 };
 
 String.prototype.link = function(max) {
@@ -2986,6 +3123,10 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 	var num = self.toString();
 	var dec = '';
 	var output = '';
+	var minus = num[0] === '-' ? '-' : '';
+	if (minus)
+		num = num.substring(1);
+
 	var index = num.indexOf('.');
 
 	if (typeof(decimals) === STRING) {
@@ -3010,17 +3151,94 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 		output = num[i] + output;
 	}
 
-	if (dec.length > 0 || decimals > 0) {
+	if (decimals || dec.length) {
 		if (dec.length > decimals)
 			dec = dec.substring(0, decimals);
 		else
 			dec = dec.padRight(decimals, '0');
 	}
 
-	if (dec.length > 0 && separatorDecimal === undefined)
+	if (dec.length && separatorDecimal === undefined)
 		separatorDecimal = separator === '.' ? ',' : '.';
 
-	return output + (dec.length > 0 ? separatorDecimal + dec : '');
+	return minus + output + (dec.length ? separatorDecimal + dec : '');
+};
+
+Number.prototype.add = function(value, decimals) {
+
+	if (value === undefined || value === null)
+		return this;
+
+	if (typeof(value) === NUMBER)
+		return this + value;
+
+	var first = value.charCodeAt(0);
+	var is = false;
+
+	if (first < 48 || first > 57) {
+		is = true;
+		value = value.substring(1);
+	}
+
+	var length = value.length;
+	var isPercentage = false;
+	var num;
+
+	if (value[length - 1] === '%') {
+		value = value.substring(0, length - 1);
+		isPercentage = true;
+
+		if (is) {
+			var tmp = ((value.parseFloat() / 100) + 1);
+
+			switch (first) {
+				case 42:
+					num = this * (this * tmp);
+					break;
+				case 43:
+					num = this * tmp;
+					break;
+				case 45:
+					num = this / tmp;
+					break;
+				case 47:
+					num = this / (this / tmp);
+					break;
+			}
+			return decimals !== undefined ? num.floor(decimals) : num;
+		} else {
+			num = (this / 100) * value.parseFloat();
+			return decimals !== undefined ? num.floor(decimals) : num;
+		}
+
+	} else
+		num = value.parseFloat();
+
+	switch (first) {
+		case 42:
+			num = this * num;
+			break;
+		case 43:
+			num = this + num;
+			break;
+		case 45:
+			num = this - num;
+			break;
+		case 47:
+			num = this / num;
+			break;
+		case 47:
+			num = this / num;
+			break;
+		default:
+			num = this;
+			break;
+	}
+
+	if (decimals !== undefined)
+		return num.floor(decimals);
+
+	return num;
 };
 
 /*
@@ -3029,9 +3247,6 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 	return {String}
 */
 Number.prototype.format2 = function(format) {
-
-	console.log('OBSOLETE: Number.prototype.format(\'### ### ###\');');
-
 	var index = 0;
 	var num = this.toString();
 	var beg = 0;
@@ -3163,11 +3378,10 @@ Number.prototype.pluralize = function(zero, one, few, other) {
 		value = other;
 
 	var beg = value.indexOf('#');
-	var end = value.lastIndexOf('#');
-
 	if (beg === -1)
 		return value;
 
+	var end = value.lastIndexOf('#');
 	var format = value.substring(beg, end + 1);
 	return num.format(format) + value.replace(format, '');
 };
@@ -3350,7 +3564,6 @@ Array.prototype.compare = function(id, b, executor) {
 		var bv = b[i];
 		var akk;
 		var bkk;
-		var is = false;
 
 		if (av) {
 			akk = av[id];
@@ -3376,6 +3589,53 @@ Array.prototype.compare = function(id, b, executor) {
 				executor(a[index], bv, index, i);
 		}
 	}
+};
+
+/**
+ * Pair arrays
+ * @param {Array} arr
+ * @param {String} property
+ * @param {Function(itemA, itemB)} fn Paired items (itemA == this, itemB == arr)
+ * @param {Boolean} remove Optional, remove item from this array if the item doesn't exist int arr (default: false).
+ * @return {Array}
+ */
+Array.prototype.pair = function(property, arr, fn, remove) {
+
+	if (property instanceof Array) {
+		var tmp = property;
+		property = arr;
+		arr = tmp;
+	}
+
+	if (!arr)
+		arr = new Array(0);
+
+	var length = arr.length;
+	var index = 0;
+
+	while (true) {
+		var item = this[index++];
+		if (!item)
+			break;
+
+		var is = false;
+
+		for (var i = 0; i < length; i++) {
+			if (item[property] !== arr[i][property])
+				continue;
+			fn(item, arr[i]);
+			is = true;
+			break;
+		}
+
+		if (is || !remove)
+			continue;
+
+		index--;
+		this.splice(index, 1);
+	}
+
+	return this;
 };
 
 /**
@@ -3488,7 +3748,6 @@ Array.prototype.orderBy = function(name, asc) {
 
 	return self;
 };
-
 
 /*
 	Trim values
@@ -3722,6 +3981,9 @@ Array.prototype._async_middleware = function(res, callback, controller) {
 
 	if (res.success || res.headersSent) {
 
+		res.$middleware = null; // clear next function (memoryleak prevention)
+		self.length = 0; // clear middlewares
+
 		// Prevent timeout
 		if (controller)
 			controller.subscribe.success();
@@ -3732,18 +3994,35 @@ Array.prototype._async_middleware = function(res, callback, controller) {
 
 	var item = self.shift();
 
-	if (item === undefined) {
+	if (!item) {
 		if (callback)
 			callback();
 		return self;
 	}
 
-	item(function() {
-		setImmediate(function() {
-			self._async_middleware(res, callback);
-		});
+	res.$middleware = function() {
+		self._async_middleware(res, callback);
+	};
+
+	var output = item(function(err) {
+
+		if (err) {
+			res.$middleware = false;
+			res.throw500(err);
+			callback = null;
+			self.length = 0;
+			return;
+		}
+
+		setImmediate(res.$middleware);
 	});
 
+	if (output !== false)
+		return self;
+
+	res.$middleware = null;
+	callback = null;
+	self.length = 0;
 	return self;
 };
 
@@ -3833,6 +4112,48 @@ Array.prototype.limit = function(max, fn, callback, index) {
 	}, index, index + max);
 
 	return self;
+};
+
+/**
+ * Get unique elements from Array
+ * @return {[type]} [description]
+ */
+Array.prototype.unique = function(property) {
+
+	var self = this;
+	var result = [];
+	var sublength = 0;
+
+	for (var i = 0, length = self.length; i < length; i++) {
+		var value = self[i];
+
+		if (!property) {
+			if (result.indexOf(value) === -1)
+				result.push(value);
+			continue;
+		}
+
+		if (sublength === 0) {
+			result.push(value);
+			sublength++;
+			continue;
+		}
+
+		var is = true;
+		for (var j = 0; j < sublength; j++) {
+			if (result[j][property] === value[property]) {
+				is = false;
+				break;
+			}
+		}
+
+		if (is) {
+			result.push(value);
+			sublength++;
+		}
+	}
+
+	return result;
 };
 
 /*
@@ -4219,13 +4540,13 @@ FileList.prototype.stat = function(path) {
 FileList.prototype.next = function() {
 	var self = this;
 
-	if (self.pending.length > 0) {
+	if (self.pending.length) {
 		var item = self.pending.shift();
 		self.stat(item);
 		return;
 	}
 
-	if (self.pendingDirectory.length > 0) {
+	if (self.pendingDirectory.length) {
 		var directory = self.pendingDirectory.shift();
 		self.walk(directory);
 		return;
@@ -4255,6 +4576,7 @@ exports.sync = function(fn, owner) {
 
 		fn.apply(self, args);
 
+		// @TODO: WTF?
 		return function(cb) {
 			callback = cb;
 			if (!executed && params) {
@@ -4265,17 +4587,45 @@ exports.sync = function(fn, owner) {
 	};
 };
 
-exports.async = function(fn) {
+exports.sync2 = function(fn, owner) {
+	return function() {
+
+		var params;
+		var callback;
+		var executed = false;
+		var self = owner || this;
+
+		args.push(function() {
+			params = arguments;
+			if (!executed && callback) {
+				executed = true;
+				callback.apply(self, params);
+			}
+		});
+
+		fn.apply(self);
+	};
+};
+
+exports.async = function(fn, isApply) {
 	var context = this;
 	return function(complete) {
 
 		var self = this;
-		var argv = [];
+		var argv;
 
-		if (arguments.length > 0) {
-			for (var i = 1; i < arguments.length; i++)
-				argv.push(arguments[i]);
-		}
+		if (arguments.length) {
+
+			if (isApply) {
+				// index.js/Subscribe.prototype.doExecute
+				argv = arguments[1];
+			} else {
+				argv = [];
+				for (var i = 1; i < arguments.length; i++)
+					argv.push(arguments[i]);
+			}
+		} else
+			argv = new Array(0);
 
 		var generator = fn.apply(context, argv);
 		next(null);
@@ -4348,21 +4698,17 @@ exports.getMessageLength = function(data, isLE) {
 	var length = data[1] & 0x7f;
 
 	if (length === 126) {
-
 		if (data.length < 4)
 			return -1;
-
-		var a = 211;
-		var bLength = [data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-		return converBytesToInt64(bLength, 0, isLE);
+		return converBytesToInt64([data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 0, isLE);
 	}
 
 	if (length === 127) {
 		if (data.Length < 10)
 			return -1;
-		var bLength = [data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]];
-		return converBytesToInt64(bLength, 0, isLE);
+		return converBytesToInt64([data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]], 0, isLE);
 	}
+
 	return length;
 };
 
@@ -4456,3 +4802,4 @@ exports.minifyHTML = function(value) {
 
 global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
+global.sync2 = exports.sync2;

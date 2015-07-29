@@ -1,6 +1,8 @@
+#! /usr/bin/env node
+
 'use strict';
 
-var VERSION = 'v1.8.x';
+var VERSION = 'v1.9.x';
 
 var fs = require('fs');
 var ph = require('path');
@@ -15,6 +17,7 @@ var EOF = os.platform() === 'win32' ? '\r\n' : '\n';
 var $type = 0;
 var settings = {};
 var colors = { reset: '\x1b[0m', underscore: '\x1b[4m', dim: '\x1b[2m', reverse: '\x1b[7m', white: '\x1b[37m', red: '\x1b[31m', bgRed: '\x1b[41m', bgGreen: '\x1b[42m' };
+var isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
 
 var current_repository = 'default';
 var current_package = '';
@@ -263,7 +266,7 @@ Backup.prototype.restore = function(filename, path, callback, filter) {
 
     if (!fs.existsSync(filename)) {
         if (callback)
-            callback(new Error('Backup file not found.'), path);
+            callback(new Error('Package file not found.'), path);
         return;
     }
 
@@ -279,10 +282,7 @@ Backup.prototype.restore = function(filename, path, callback, filter) {
     self.path = path;
 
     stream.on('data', function(buffer) {
-
-        var data = buffer.toString('utf8');
-        self.restoreKey(data);
-
+        self.restoreKey(buffer.toString('utf8'));
     });
 
     if (callback) {
@@ -322,27 +322,43 @@ Backup.prototype.restoreFile = function(key, value) {
     });
 };
 
-Backup.prototype.createDirectory = function(path, root) {
+Backup.prototype.createDirectory = function(p, root) {
 
-    if (path[0] === '/')
-        path = path.substring(1);
-
-    if (path[path.length - 1] === '/')
-        path = path.substring(0, path.length - 1);
-
-    var arr = path.split('/');
-    var directory = '';
     var self = this;
+
+    if (p[0] === '/')
+        p = p.substring(1);
+
+    var is = isWindows;
+
+    if (is) {
+        if (p[p.length - 1] === '\\')
+            p = p.substring(0, p.length - 1);
+    } else {
+        if (p[p.length - 1] === '/')
+            p = p.substring(0, p.length - 1);
+    }
+
+    var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
+    var directory = '';
+
+    if (is && arr[0].indexOf(':') !== -1)
+        arr.shift();
+
     var length = arr.length;
 
     for (var i = 0; i < length; i++) {
 
         var name = arr[i];
-        directory += (directory.length > 0 ? '/' : '') + name;
-        var dir = ph.join(self.path, directory);
 
+        if (is)
+            directory += (directory.length > 0 ? '\\' : '') + name;
+        else
+            directory += (directory.length > 0 ? '/' : '') + name;
+
+        var dir = ph.join(self.path, directory);
         if (root)
-            dir = '/' + dir;
+            dir = (is ? '\\' : '/') + dir;
 
         if (fs.existsSync(dir))
             continue;
@@ -476,8 +492,6 @@ function display_help() {
     log(colors.reset);
     log('====== Total.js Package Manager ' + VERSION +' ======');
     log('');
-    log('Documentation: http://docs.totaljs.com/total-package-manager/');
-    log('');
     log(colors.underscore + '===== INSTALL PACKAGE TO THE CURRENT PATH' + colors.reset);
     log('');
     log(colors.red + 'tpm install [optional: package_name] [optional: repository_name]' + colors.reset);
@@ -500,10 +514,11 @@ function display_help() {
     log('');
     log(colors.underscore + '===== CREATE PACKAGE FROM THE CURRENT PATH CREATE' + colors.reset);
     log('');
-    log(colors.red + 'tpm create [important: package_name]' + colors.reset);
+    log(colors.red + 'tpm create [important: package_name] [optional: package_directory_to_pack]' + colors.reset);
     log('');
     log('EXAMPLE: tpm create my-project-template');
     log('EXAMPLE: tpm create my-module');
+    log('EXAMPLE: tpm create my-module /users/packages/my-package/');
     log('');
     log(colors.underscore + '===== ADD A NEW PACKAGE REPOSITORY' + colors.reset);
     log('');
@@ -515,6 +530,10 @@ function display_help() {
     log(colors.underscore + '===== SHOW ALL REGISTERED REPOSITORIES' + colors.reset);
     log('');
     log(colors.red + 'tpm repositories' + colors.reset);
+    log('');
+    log(colors.underscore + '===== UNPACK PACKAGE' + colors.reset);
+    log('');
+    log(colors.red + 'tpm unpack [package_name] [optional: target_directory]' + colors.reset);
     log('');
 }
 
@@ -552,9 +571,16 @@ function repository_add() {
 function install(repository, pkgname, cb, append) {
 
     var name = pkgname;
-
     if (name.toLowerCase().lastIndexOf('.package') === -1)
         name += '.package';
+
+    var h = name.substring(0, 6);
+    if (h === 'http:/' || h === 'https:') {
+        var n = ph.basename(name);
+        pkgname = n;
+        repository = name.substring(0, name.length - n.length);
+        name = n;
+    }
 
     log('');
     log(colors.red + '--- INSTALL PACKAGE --' + colors.reset);
@@ -622,9 +648,15 @@ function install(repository, pkgname, cb, append) {
         });
 
         response.pipe(stream);
-
     });
+}
 
+function unpack(filename, target) {
+    var backup = new Backup();
+    backup.restore(filename, target ? target : ph.dirname(filename), function() {
+        log(colors.bgGreen + colors.white + 'Status       :', 'Success' + colors.reset);
+        log('');
+    });
 }
 
 function uninstall(repository, pkgname, cb, remove) {
@@ -720,12 +752,22 @@ function uninstall(repository, pkgname, cb, remove) {
         response.pipe(stream);
 
     });
-
 }
 
 function create() {
 
+    var target = process.cwd();
     var name = current_package;
+
+    var length = process.argv.length;
+
+    if (length === 5) {
+        target = process.argv[4];
+        name = process.argv[3];
+    } else if (length === 4) {
+        current_package = process.argv[3];
+        name = ph.join(process.cwd(), current_package);
+    }
 
     if (name.toLowerCase().lastIndexOf('.package') === -1)
         name += '.package';
@@ -734,21 +776,23 @@ function create() {
     log('--- CREATE PACKAGE --');
     log('');
     log('Package      :', current_package);
-    log('Directory    :', process.cwd());
+    log('Directory    :', target);
+
+    if (name[0] !== '/')
+        name = ph.join(process.cwd(), name);
 
     var backup = new Backup();
-    backup.backup(process.cwd(), ph.join(process.cwd(), name), function(err, path) {
+    backup.backup(target, name, function(err, path) {
 
-        if (err) {
+        if (err)
             throw err;
-            return;
-        }
 
         log('Success      :', path);
         log('');
 
     }, function(path) {
-        return path.lastIndexOf('.package') === -1;
+        // return path.lastIndexOf('.package') === -1;
+        return true;
     });
 }
 
@@ -817,6 +861,12 @@ function main() {
         if (cmd === 'repositories') {
             display_repositories();
             return;
+        }
+
+        if (cmd === 'unpack') {
+            current_repository = '';
+            $type = 6;
+            continue;
         }
 
         if (cmd === 'packages' || cmd === 'list') {
@@ -916,6 +966,10 @@ function main() {
             };
 
             fn();
+            break;
+
+        case 6:
+            unpack(current_package, current_repository);
             break;
 
         default:

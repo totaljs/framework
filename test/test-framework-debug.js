@@ -6,11 +6,30 @@ var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
 var max = 100;
 
-INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
+// INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
+//framework.map('/minify/', '@testpackage', ['.html', 'js']);
+//framework.map('/minify/', 'models');
+//framework.map('/minify/', F.path.models());
 framework.onCompileView = function(name, html, model) {
 	return html + 'COMPILED';
 };
+
+framework.onLocate = function(req) {
+	return 'sk';
+};
+
+framework.on('ready', function() {
+	var t = framework.worker('test');
+	var a = false;
+	t.on('message', function(msg) {
+		if (msg === 'assert')
+			a = true;
+	});
+	t.on('exit', function() {
+		assert.ok(a === true, 'F.load() in worker');
+	});
+});
 
 framework.onAuthorization = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
@@ -86,6 +105,24 @@ function test_routing(next) {
 
 	var async = new utils.Async();
 
+	async.await('html compressor', function(complete) {
+		utils.request(url + 'html-compressor/', ['get'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '<div><p>a b c d</p><div>Price 30 &euro;</div></div><div>Name: Peter</div><div>Name: Peter</div><div>Price: 1000 1 000.00</div><div>13</div><div>Name: Peter</div>', 'HTML compressor');
+			complete();
+		});
+	});
+
+	async.await('html nocompress', function(complete) {
+		utils.request(url + 'html-nocompress/', ['get'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('<div>\nA\n</div>') !== -1, 'HTML nocompress');
+			complete();
+		});
+	});
+
 	async.await('0', function(complete) {
 		utils.request(url + 'share/', 'GET', null, function(error, data, code, headers) {
 			if (error)
@@ -133,6 +170,44 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			assert(data === 'dilino gadzo', 'problem with controller.routeTo()');
+			complete();
+		});
+	});
+
+	async.await('mobile - 1', function(complete) {
+		utils.request(url + 'mobile/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(headers['vary'] === 'Accept-Encoding, User-Agent', 'mobile device user-agent problem 1');
+			assert(data !== 'X', 'mobile device routing problem 1');
+			complete();
+		});
+	});
+
+	async.await('mobile - 2', function(complete) {
+		utils.request(url + 'mobile/?ok=true', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(headers['vary'] === 'Accept-Encoding, User-Agent', 'mobile device user-agent problem 2');
+			assert(data === 'X', 'mobile device routing problem 2');
+			complete();
+		}, null, { 'user-agent': 'bla bla iPad bla' });
+	});
+
+	async.await('binary', function(complete) {
+		utils.request(url + 'binary/', ['get'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'čťž', 'binary');
+			complete();
+		});
+	});
+
+	async.await('localize', function(complete) {
+		utils.request(url + 'templates/localization.html', ['get'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '###preklad###', 'file localization');
 			complete();
 		});
 	});
@@ -193,6 +268,15 @@ function test_routing(next) {
 				assert(data === '---preklad---###preklad###', 'translate problem (SK)');
 				complete();
 			});
+		});
+	});
+
+	async.await('custom', function(complete) {
+		utils.request(url + 'custom/route/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'CUSTOM', 'custom route problem');
+			complete();
 		});
 	});
 
@@ -315,7 +399,7 @@ function test_routing(next) {
 		utils.request(url + 'post/schema/', ['post'], 'age=Peter123456789012345678901234567890#', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '[{"name":"name","error":"default","path":"User.name"}]', 'post-schema');
+			assert(data === '[{"name":"name","error":"default","path":"User.name"}]', 'post-schema 2');
 			complete();
 		});
 	});
@@ -419,6 +503,24 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('regexp OK', function(complete) {
+		utils.request(url + 'reg/exp/12345/', ['get'], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '12345', 'regexp routing');
+			complete();
+		});
+	});
+
+	async.await('regexp NO', function(complete) {
+		utils.request(url + 'reg/exp/a12345/', ['get'], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 404, 'regexp routing (NO)');
+			complete();
+		});
+	});
+
 	async.await('static-file', function(complete) {
 		utils.request(url + 'robots.txt', [], function(error, data, code, headers) {
 			if (error)
@@ -483,10 +585,11 @@ function test_routing(next) {
 	});
 
 	async.await('merge package', function(complete) {
-		utils.request(url + 'mergepackage.js', [], function(error, data, code, headers) {
+		// mergepackage2 is from versions
+		utils.request(url + 'mergepackage2.js', [], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === 'console.log(\'test\');', 'merge package');
+			assert(data.indexOf('console.log(\'test\');') !== -1, 'merge package');
 			complete();
 		});
 	});
@@ -540,6 +643,7 @@ function run() {
 		});
 	});
 }
+
 /*
 var mem = require('memwatch');
 

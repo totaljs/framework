@@ -1,0 +1,41 @@
+@{layout('')}
+@{repository.price = 1000}
+@{repository.c='3'}
+@{repository.a='1'}
+
+<div>
+    <p>
+        a
+        b
+        c
+        d
+    </p>
+    <div>
+        Price
+        30 &euro;
+    </div>
+</div>
+
+    <div>
+        Name:
+        Peter
+    </div>
+    <div>
+        Name:
+        @{model.name}
+    </div>
+
+    <div>
+        Price:
+        @{repository.price} @{repository.price.format(2)}
+    </div>
+
+    <div>
+        @{repository.a}
+        @{repository.b}
+        @{repository.c}
+    </div>
+
+    <div>
+        Name: @{model.name}
+    </div>

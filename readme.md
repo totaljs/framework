@@ -1,25 +1,26 @@
+![total.js logo](https://www.totaljs.com/img/logo-github.png)
+---
 [![NPM version][npm-version-image]][npm-url] [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
-![total.js logo](https://www.totaljs.com/img/logo2x.png)
+---
+Framework, for node.js
+======================
 
-web framework for node.js
-=========================
-
-__total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it has very good documentation + contains many examples. Please support the framework on GitHub and on other social networks.
+__total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
 ```
 $ npm install total.js
 ```
 
-- [__Download__ empty-project with the framework](https://github.com/totaljs/framework/releases)
 - [Homepage](http://www.totaljs.com)
-- [Features](http://www.totaljs.com/features/)
 - [__Documentation__](http://docs.totaljs.com)
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
 - [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
+- [__Download__ empty-project with the framework](https://github.com/totaljs/framework/releases)
 - [__Download__ Modules & Packages](https://github.com/totaljs/modules) (View Engines, Session, Auth, etc.)
 - [__Download__ Examples](https://github.com/totaljs/examples)
+- [__Make a donation__ via PayPal](http://www.totaljs.com/#make-a-donation)
 
 ## Social networks
 
@@ -33,9 +34,71 @@ Please support the framework on social networks.
 - [Follow total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
 - [Follow total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
-## References
+---
 
+## Support for companies
+
+We provide a support of the framework for companies. Our support services will keep your company worry free so you can focus on building products and growing your business.
+
+- [Support form](http://www.totaljs.com/support/)
+- Support e-mail: <support@totaljs.com>
+
+## Features
+
+[![Total.js trailer](https://www.totaljs.com/img/github-video.png)](https://vimeo.com/134131056)
+
+| Name | Supports |
+|------|:--------:|
+| [__Offline documentation__](http://docs.totaljs.com) | 100% |
+| __Backward compatibility__ | 90% |
+| HMVC architecture | 100% |
+| Clean directory structure | 100% |
+| Fully asynchronous | 100% |
+| Full web server with serving of static files | 100% |
+| Supports generators (node harmony) | 100% |
+| Isomorphic code | 100% |
+| Supports IP restrictions | 100% |
+| Supports redirections | 100% |
+| Supports just-in-time JS, CSS (variables and nesting) and HTML compressor | 100% |
+| Supports just-in-time merging of static files (JavaScripts, CSS or HTML) | 100% |
+| Supports just-in-time mapping of files | 100% |
+| Supports media streaming (e.g. videos) | 100% |
+| Supports modules and packages | 100% |
+| Built-in image processing engine via ImageMagick or GraphicsMagick | 100% |
+| Supports WebSockets (__RFC 6455__) and Server-Sent events | 100% |
+| Supports RESTful routing | 100% |
+| Supports middleware (like express.js) with custom options | 100% |
+| Supports unit testing | 100% |
+| Supports workers for heavy CPU operations | 100% |
+| Supports 4x config files (common, debug, release and test) | 100% |
+| Mailer with templating (Gmail, Outlook or classic SMTP servers with auth and TLS) | 100% |
+| Built-in view engine (layouts, nested views, conditions, loops, inline helpers, etc.) | 100% |
+| Localization with diff tool and CSV export | 100% |
+| Supports cache mechanism | 100% |
+| Supports schemas for creating business objects with validations, workflows, etc. | 100% |
+| Supports injecting scripts, packages and views from URL | 100% |
+| Supports String, Date, Number and Array prototypes | 100% |
+| Supports additional utilities (e.g. create request, XML parsing, etc.) | 100% |
+| Possibility to rewrite existing functionality | 80% |
+| NoSQL embedded database | 100% |
+| __You can use framework as single library__ `total.js (320 kB)` | 100% |
+
+## Contributors
+
+| Contributor | Type | E-mail |
+|-------------|------|--------|
+| [Peter Širka](https://www.petersirka.eu) | author | <petersirka@gmail.com> |
+| [Matus Szabo](https://github.com/matusszabo) | support + enterprise | <matus.szabo@gmail.com> |
+| Tomas Holovsky | support + enterprise | <tomasholovsky@gmail.com> |
+
+## Other
+
+#### Built with total.js
+
+- [__NEW__: Todomator - Task Manager System](http://www.todomator.com)
+- [__NEW__: Componenator - Resources for web developers](http://www.componentator.com)
 - [__NEW__: E-commerce, CMS and Docker manager](http://nowitssimple.com/)
+- [__NEW__: Test your application](http://www.testerleader.com/)
 - [MonitorGuru.com (Website monitoring)](https://www.monitorguru.com)
 - [Bufferwall.com (Blog portal)](https://bufferwall.com)
 - [Warstore.sk (E-commerce)](https://www.warstore.sk)
@@ -43,37 +106,11 @@ Please support the framework on social networks.
 - [GPS Localization (WebSocket) - www.gpslocalization.com](http://www.gpslocalization.com)
 - [Online Clipboard (CouchDB) - www.online-clipboard.com](https://www.online-clipboard.com)
 
-## Donate
+#### Useful modules
 
-The framework needs your donation for ensure future development and improving the documentation. __I want to continue because total.js is really good__.
-
-[![Donation via PayPal](https://www.totaljs.com/img/donation.png)](https://www.totaljs.com/donation/)
-
-## Videos on YouTube
-
-- VIDEO: [Why is node.js awesome? WebSocket + nginx + total.js + HTML + JavaScript ](http://www.youtube.com/watch?v=4Vrqx0UnpYk)
-- VIDEO: [Node.js / total.js debugging of web applications](http://www.youtube.com/watch?v=4wLq_bJ_sfs)
-- VIDEO: [total.js / node.js - balancing of requests](http://www.youtube.com/watch?v=1VOJ7cWoboo)
-- VIDEO: [HTML 5 Server-Sent Events (JavaScript) via total.js & node.js](http://www.youtube.com/watch?v=XoWIv3xGxR4)
-- VIDEO: [node.js / total.js - Live streaming via multipart/x-mixed-replace + CSS auto vendor prefix](http://www.youtube.com/watch?v=qZqO4c4Fw2k)
-- VIDEO: [Deployment of total.js / node.js website on appfog.com (freehosting)](http://www.youtube.com/watch?v=kZvCCyR6iBI)
-- VIDEO: [WebSocket (Real-time) HTML5 Chat in 5 minutes - node.js & total.js](http://www.youtube.com/watch?v=lW1vsKMUaKg)
-- VIDEO: [total.js / web application framework for node.js](http://www.youtube.com/watch?v=3GMQJki82Lo)
-
-## Contributors
-
-- Peter Širka (__author__), <https://github.com/petersirka>
-- Toshiaki Takahashi, <https://github.com/toshipon>
-- Bir, <https://github.com/bir>
-- Serkan Kocaman, <https://github.com/KiPSOFT>
-- Andrea Sessa, <https://github.com/asessa>
-- Ehsan Darrudi, <https://github.com/darrudi>
-- Tom Spaccialbelli, <https://github.com/harry-stot>
-- Nikita Shmidt, <https://github.com/NikSmith>
-
-## Contact
-
-Peter Širka - <petersirka@gmail.com>
+- [SQL Agent: A missing ORM for node.js and total.js](https://github.com/petersirka/node-sqlagent)
+- [MongoDB addons for better work with MongoDB and total.js](https://github.com/petersirka/mongodb-addons)
+- [PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: license.txt

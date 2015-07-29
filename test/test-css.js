@@ -17,6 +17,35 @@ assert.ok(internal.compile_css(css) === 'b{border-radius:1px}a{border-radius:1px
 css = '.input{ }, .input:disabled, .input:hover { background-color: red; } .required{content:"This, field is required"}';
 assert.ok(internal.compile_css(css) === '.input{},.input:disabled,.input:hover{background-color:red;}.required{content:"This, field is required"}', 'Problem with content.');
 
+buffer = [];
+buffer.push('$color: red; $font: "Times New Roman";');
+buffer.push('$radius: 4px;');
+buffer.push('body { background-color: $color; font-family: $font }');
+buffer.push('div { border-radius: $radius; }');
+
+css = buffer.join('\n');
+assert.ok(internal.compile_css(css) === 'body{background-color:red;font-family:"Times New Roman"}div{border-radius:4px;}', 'CSS variables');
+
+buffer = [];
+buffer.push('@import url(\'font.css\');');
+buffer.push('div {');
+buffer.push('    b { color: red; }');
+buffer.push('    span { color: red; }');
+buffer.push('    div { color: red }');
+buffer.push('    div .blue { color: blue; }');
+buffer.push('}');
+buffer.push('@media(max-width:960px){');
+buffer.push('    b { color: red; }');
+buffer.push('    div {');
+buffer.push('        b { color: red; }');
+buffer.push('        span { color: red; }');
+buffer.push('        div { color: red }');
+buffer.push('        div .blue { color: blue; }');
+buffer.push('    }');
+buffer.push('}');
+
+assert.ok(internal.compile_css(buffer.join("\n")) === "@import url('font.css');div b{color:red;}div span{color:red;}div div{color:red}div div .blue{color:blue;}@media(max-width:960px){b{color:red;}div b{color:red;}div span{color:red;}div div{color:red}div div .blue{color:blue;}}", "CSS nested ordering");
+
 console.log('================================================');
 console.log('success - OK');
 console.log('================================================');

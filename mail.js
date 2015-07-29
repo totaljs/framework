@@ -1,6 +1,27 @@
+// Copyright 2012-2015 (c) Peter Širka <petersirka@gmail.com>
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 /**
  * @module FrameworkMail
- * @version 1.8.0
+ * @version 1.9.0
  */
 
 'use strict'
@@ -13,6 +34,7 @@ var fs = require('fs');
 var path = require('path');
 var CRLF = '\r\n';
 var UNDEFINED = 'undefined';
+var REG_ESMTP = /\besmtp\b/i;
 
 var errors = {
 	notvalid: 'E-mail address is not valid',
@@ -62,6 +84,7 @@ Mailer.prototype.create = function(subject, body) {
  * @param  {ResolveMxCallback} callback Callback.
  */
 function resolveMx(domain, callback) {
+
 	dns.resolveMx(domain, function(err, data) {
 
 		if (err) {
@@ -125,6 +148,7 @@ function Message(subject, body) {
 	this.addressFrom = { name: '', address: '' };
 	this.callback = null;
 	this.closed = false;
+	this.tls = false;
 }
 
 /**
@@ -277,7 +301,10 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	self.callback = fnCallback;
 
-	options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000 });
+	if (options.secure && !options.port)
+		options.port = 465;
+
+	options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000, tls: null });
 
 	if (smtp === null || smtp === '') {
 
@@ -316,6 +343,8 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 	} else
 		socket = net.createConnection(options.port, smtp);
 
+	socket.$host = smtp;
+
 	socket.on('error', function(err) {
 		socket.destroy();
 		self.closed = true;
@@ -339,13 +368,45 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 	return self;
 };
 
+Message.prototype.switchToTLS = function(socket, options) {
+	var self = this;
+	self.tls = true;
+
+    socket.removeAllListeners('data');
+    socket.removeAllListeners('error');
+    socket.removeAllListeners('clientError');
+
+	var opt = framework_utils.copy(options.tls, { socket: socket, host: socket.$host, ciphers: 'SSLv3' });
+	var sock = tls.connect(opt, function() { self._send(this, options, true); });
+
+	sock.on('error', function(err) {
+		sock.destroy();
+		self.closed = true;
+		if (self.callback)
+			self.callback(err);
+		if (err.stack.indexOf('ECONNRESET') === -1)
+			mailer.emit('error', err, self);
+	});
+
+	sock.on('clientError', function(err) {
+		mailer.emit('error', err, self);
+		if (self.callback)
+			self.callback(err);
+	});
+
+	sock.on('connect', function() {
+		if (!options.secure)
+			self._send(sock, options);
+	});
+};
+
 /**
  * Internal: Send method
  * @private
  * @param  {Socket} socket
  * @param  {Object} options
  */
-Message.prototype._send = function(socket, options) {
+Message.prototype._send = function(socket, options, autosend) {
 
 	var self = this;
 	var command = '';
@@ -360,8 +421,19 @@ Message.prototype._send = function(socket, options) {
 	var auth = [];
 	var err = null;
 	var ending = null;
+	var isTLS = false;
 
-	mailer.emit('send', self);
+	var write = function(line) {
+		if (self.closed)
+			return;
+		if (mailer.debug)
+			console.log('SEND', line);
+		socket.write(line + CRLF);
+	};
+
+	var isAttach = !options.tls || (self.tls && options.tls);
+	if (isAttach)
+		mailer.emit('send', self);
 
 	socket.setTimeout(options.timeout || 5000, function() {
 		self.closed = true;
@@ -376,95 +448,81 @@ Message.prototype._send = function(socket, options) {
 
 	socket.setEncoding('utf8');
 
-	var write = function(line) {
+	if (isAttach) {
+		buffer.push('MAIL FROM: <' + self.addressFrom.address + '>');
+		message.push('Message-ID: <' + GUID() + '@WIN-' + s4() + '>');
+		message.push('MIME-Version: 1.0');
+		message.push('From: ' + (self.addressFrom.name ? unicode_encode(self.addressFrom.name) + ' <' + self.addressFrom.address + '>' : self.addressFrom.address));
 
-		if (self.closed)
-			return;
+		var length = self.addressTo.length;
+		var builder = '';
+		var mail;
 
-		if (mailer.debug)
-			console.log('SEND', line);
+		if (length) {
 
-		socket.write(line + CRLF);
-	};
+			for (var i = 0; i < length; i++) {
+				mail = '<' + self.addressTo[i] + '>';
+				buffer.push('RCPT TO: ' + mail);
+				builder += (builder !== '' ? ', ' : '') + mail;
+			}
 
-	buffer.push('MAIL FROM: <' + self.addressFrom.address + '>');
-
-	message.push('Message-ID: <' + GUID() + '@WIN-' + s4() + '>');
-	message.push('MIME-Version: 1.0');
-	message.push('From: ' + (self.addressFrom.name.length > 0 ? unicode_encode(self.addressFrom.name) + ' <' + self.addressFrom.address + '>' : self.addressFrom.address));
-
-	var length = self.addressTo.length;
-	var builder = '';
-	var mail;
-
-	if (length > 0) {
-
-		for (var i = 0; i < length; i++) {
-			mail = '<' + self.addressTo[i] + '>';
-			buffer.push('RCPT TO: ' + mail);
-			builder += (builder !== '' ? ', ' : '') + mail;
+			message.push('To: ' + builder);
+			builder = '';
 		}
 
-		message.push('To: ' + builder);
-		builder = '';
-	}
+		length = self.addressCC.length;
+		if (length) {
 
-	length = self.addressCC.length;
-	if (length > 0) {
+			for (var i = 0; i < length; i++) {
+				mail = '<' + self.addressCC[i] + '>';
+				buffer.push('RCPT TO: ' + mail);
+				builder += (builder !== '' ? ', ' : '') + mail;
+			}
 
-		for (var i = 0; i < length; i++) {
-			mail = '<' + self.addressCC[i] + '>';
-			buffer.push('RCPT TO: ' + mail);
-			builder += (builder !== '' ? ', ' : '') + mail;
+			message.push('Cc: ' + builder);
+			builder = '';
+
 		}
 
-		message.push('Cc: ' + builder);
-		builder = '';
+		length = self.addressBCC.length;
+		if (length) {
+			for (var i = 0; i < length; i++)
+				buffer.push('RCPT TO: <' + self.addressBCC[i] + '>');
+		}
 
+		buffer.push('DATA');
+		buffer.push('QUIT');
+		buffer.push('');
+
+		message.push('Date: ' + date.toUTCString());
+		message.push('Subject: ' + unicode_encode(self.subject));
+
+		length = self.addressReply.length;
+
+		if (length) {
+			for (var i = 0; i < length; i++)
+				builder += (builder !== '' ? ', ' : '') + '<' + self.addressReply[i] + '>';
+
+			message.push('Reply-To: ' + builder);
+			builder = '';
+		}
+
+		message.push('Content-Type: multipart/mixed; boundary=' + boundary);
+		message.push('');
+		message.push('--' + boundary);
+		message.push('Content-Type: ' + (self.body.indexOf('<') !== -1 && self.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
+		message.push('Content-Transfer-Encoding: base64');
+		message.push('');
+		message.push(prepareBASE64(new Buffer(self.body.replace(/\r\n/g, '\n').replace(/\n/g, CRLF)).toString('base64')));
+
+		length = self.files.length;
 	}
 
-	length = self.addressBCC.length;
-	if (length > 0) {
-		for (var i = 0; i < length; i++)
-			buffer.push('RCPT TO: <' + self.addressBCC[i] + '>');
-	}
-
-	buffer.push('DATA');
-	buffer.push('QUIT');
-	buffer.push('');
-
-	message.push('Date: ' + date.toUTCString());
-	// message.push('Subject: ' + self.subject);
-	message.push('Subject: ' + unicode_encode(self.subject));
-
-	length = self.addressReply.length;
-
-	if (length > 0) {
-		for (var i = 0; i < length; i++)
-			builder += (builder !== '' ? ', ' : '') + '<' + self.addressReply[i] + '>';
-
-		message.push('Reply-To: ' + builder);
-		builder = '';
-	}
-
-	message.push('Content-Type: multipart/mixed; boundary=' + boundary);
-	message.push('');
-
-	message.push('--' + boundary);
-	message.push('Content-Type: ' + (self.body.indexOf('<') !== -1 && self.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
-	message.push('Content-Transfer-Encoding: base64');
-	message.push('');
-	message.push(prepareBASE64(new Buffer(self.body.replace(/\r\n/g, '\n').replace(/\n/g, CRLF)).toString('base64')));
-
-	length = self.files.length;
-
-	if (mailer.debug) {
-		socket.on('end', function() {
-			self.closed = true;
-			if (socket)
-				socket.destroy();
-		});
-	}
+	socket.on('end', function() {
+		self.closed = true;
+		if (socket)
+			socket.destroy();
+	});
 
 	socket.on('data', function(data) {
 
@@ -492,7 +550,6 @@ Message.prototype._send = function(socket, options) {
 			console.log('<–––', line);
 
 		var code = parseInt(line.match(/\d+/)[0], 10);
-
 		if (code === 250 && !isAuthorization) {
 			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) || (options.user && options.password)) {
 				authType = 'plain';
@@ -517,10 +574,16 @@ Message.prototype._send = function(socket, options) {
 		}
 
 		switch (code) {
-
 			case 220:
 
-				command = /\besmtp\b/i.test(line) ? 'EHLO' : 'HELO';
+				if (isTLS) {
+					self.switchToTLS(socket, options);
+					return;
+				}
+
+				//command = isTLS || /\besmtp\b/i.test(line) ? 'EHLO' : 'HELO';
+				// @CHANGED: only ESMTP supports auth, so this fix has fixed EXIM mail servers
+				command = isTLS || (options.user && options.password) || REG_ESMTP.test(line) ? 'EHLO' : 'HELO';
 				write(command + ' ' + host);
 				break;
 
@@ -548,8 +611,13 @@ Message.prototype._send = function(socket, options) {
 
 			case 334: // LOGIN
 
-				var value = auth.shift();
+				if (!self.tls && !isTLS && options.tls) {
+					isTLS = true;
+					write('STARTTLS');
+					return;
+				}
 
+				var value = auth.shift();
 				if (value === undefined) {
 
 					err = new Error('Forbidden.');
@@ -571,7 +639,7 @@ Message.prototype._send = function(socket, options) {
 
 				write(message.join(CRLF));
 
-				if (self.files.length > 0) {
+				if (self.files.length) {
 					message = null;
 					self._writeAttachment(write, boundary, socket);
 					return;
@@ -603,6 +671,8 @@ Message.prototype._send = function(socket, options) {
 		}
 	});
 
+	if (autosend)
+		write('EHLO ' + host);
 };
 
 /**
@@ -626,16 +696,15 @@ Message.prototype._writeAttachment = function(write, boundary, socket) {
 	var name = attachment.name;
 	var stream = fs.createReadStream(attachment.filename, { encoding: 'base64' });
 	var message = [];
-	var ext = path.extname(attachment.filename);
 
 	message.push('--' + boundary);
 
 	if (attachment.contentId) {
 		message.push('Content-Disposition: inline; filename="' + name + '"');
 		message.push('Content-ID: <' + attachment.contentId + '>');
-	} else {
+	} else
 		message.push('Content-Disposition: attachment; filename="' + name + '"');
-	}
+
 	message.push('Content-Type: application/octet-stream;');
 	message.push('Content-Transfer-Encoding: base64');
 	message.push(CRLF);

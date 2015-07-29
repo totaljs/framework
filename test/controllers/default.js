@@ -1,6 +1,14 @@
 var assert = require('assert');
 
-exports.install = function(framework) {
+exports.install = function() {
+
+    framework.localize('templates *', '/templates/');
+
+    framework.route(function(url, req, flags) {
+        return url === '/custom/route/';
+    }, function() {
+        this.plain('CUSTOM');
+    });
 
     framework.route('/logged/', view_logged, {
         flags: ['authorize'],
@@ -24,6 +32,9 @@ exports.install = function(framework) {
         flags: ['unauthorize']
     });
 
+    framework.route('/exception/', 'exception');
+    framework.route('/html-compressor/', view_compressor);
+    framework.route('/html-nocompress/', view_nocompress);
     framework.route('/sync/', synchronize);
     framework.route('/package/', '@testpackage/test');
     framework.route('/precompile/', view_precomile);
@@ -31,6 +42,10 @@ exports.install = function(framework) {
     framework.route('/usage/', view_usage);
     framework.route('/sse/', viewSSE_html);
     framework.route('/pipe/', pipe);
+    framework.route('/binary/', binary);
+    framework.route('/mobile/', mobile, ['mobile']);
+    framework.route('/mobile/', mobile_none);
+    framework.route('/reg/exp/{/^\\d+$/}/', regexp);
     framework.route('/app/*', asterix);
     framework.route('/sse/', viewSSE, ['sse']);
     framework.route('/http/', viewHTTP, ['http']);
@@ -74,6 +89,7 @@ exports.install = function(framework) {
     framework.route('/put/xml/', plain_put_xml, ['xml', 'put']);
 
     framework.route('/upload/', plain_upload, ['upload']);
+    framework.route('/index/', 'homepage');
 
 	framework.file('Resizing of images', function(req, res) {
 		return req.url.indexOf('.jpg') !== -1;
@@ -256,7 +272,7 @@ function view_homepage() {
     console.log(this.hash('sha1', '123456', false));
 
     //this.view('homepage');
-    this.plain(this.framework.usage(true));
+    this.plain(framework.usage(true));
 }
 
 function view_layout() {
@@ -452,8 +468,8 @@ function viewIndex() {
     self.setModified(date);
     self.setExpires(date);
 
-    assert.ok(self.routeJS('p.js') === '/js/p.js', name + 'routeJS()');
-    assert.ok(self.routeCSS('p.css') === '/css/p.css', name + 'routeCSS()');
+    assert.ok(self.routeScript('p.js') === '/js/p.js', name + 'routeScript()');
+    assert.ok(self.routeStyle('p.css') === '/css/p.css', name + 'routeStyle()');
     assert.ok(self.routeImage('p.jpg') === '/img/p.jpg', name + 'routeImage()');
     assert.ok(self.routeVideo('p.avi') === '/video/p.avi', name + 'routeVideo()');
     assert.ok(self.routeFont('p.woff') === '/fonts/p.woff', name + 'routeFont()');
@@ -517,6 +533,7 @@ function viewViews() {
     //self.framework.stop();
     //return;
 
+    assert.ok(output.contains('#mobilefalse#'), name + 'mobile');
     assert.ok(output.contains('<count>10</count>'), name + 'inline helper');
     assert.ok(output.contains('<count>40</count><next>40</next>'), name + 'inline helper + condition');
     assert.ok(output.contains('HELPER:1-<count>1</count><next>0</next>'), name + 'inline helper + foreach 1');
@@ -550,6 +567,7 @@ function viewViews() {
     assert.ok(output.contains('<link rel="dns-prefetch" href="//fonts.googleapis.com" />'), name + 'dns');
     assert.ok(output.contains('<link rel="prefetch" href="http://daker.me/2013/05/hello-world.html" />'), name + 'prefetch');
     assert.ok(output.contains('<link rel="prerender" href="http://daker.me/2013/05/hello-world.html" />'), name + 'prerender');
+
     assert.ok(output.contains('<link rel="canonical" href="http://127.0.0.1:8001/a/a-b-c/" />'), name + 'canonical');
     assert.ok(output.contains('<link rel="next" href="http://127.0.0.1:8001/a/3/" />'), name + 'next');
     assert.ok(output.contains('<link rel="prev" href="http://127.0.0.1:8001/a/1/" />'), name + 'prev');
@@ -575,7 +593,7 @@ function viewViews() {
     assert.ok(output.contains('#ACAXXX#'), name + 'if');
     assert.ok(output.contains('<label><input type="radio" name="a" checked="checked" value="A" /> <span>test label</span></label>'), name + 'radio');
     assert.ok(output.contains('<div>NESTED</div>'), name + 'if - nested');
-    assert.ok(output.contains('---<div>Hello World!</div>---'), name + '- "/" view path problem');
+    assert.ok(output.contains('---<div>Hello World!</div><div>Price: 12</div>---'), name + '- "/" view path problem');
 
     self.json({
         r: true
@@ -633,7 +651,6 @@ function viewLive() {
     var self = this;
 
     self.mixed.beg();
-
     self.mixed.send('/users/petersirka/desktop/aaaaa/1.jpg');
 
     setTimeout(function() {
@@ -661,4 +678,30 @@ function viewHTTP() {
 
 function viewHTTPS() {
     this.plain('HTTPS');
+}
+
+function view_compressor() {
+    var self = this;
+    self.view('compress', { name: 'Peter' });
+}
+
+function view_nocompress() {
+    var self = this;
+    self.view('nocompress');
+}
+
+function regexp(number) {
+    this.plain(number);
+}
+
+function binary() {
+    this.binary(new Buffer('čťž'), 'text/plain', 'utf8');
+}
+
+function mobile() {
+    this.plain('X');
+}
+
+function mobile_none() {
+    this.plain('NO-MOBILE');
 }

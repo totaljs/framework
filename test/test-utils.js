@@ -45,6 +45,11 @@ function prototypeNumber() {
 	assert.ok(number.floor(4) === 10.1034, 'floor number: 4 decimals');
 	assert.ok(number.floor(0) === 10, 'floor number: 0 decimals');
 	assert.ok(number.hex() === 'A.1A7AB75643028', 'number to hex');
+	assert.ok(number.add('10%', 0) === 1, 'add number: 1');
+	assert.ok(number.add('+10%', 0) === 11, 'add number: 2');
+	assert.ok(number.add('-10%', 0) === 9, 'add number: 3');
+	assert.ok(number.add('*2', 0) === 20, 'add number: 4');
+	assert.ok(number.add('*10%', 0) === 112, 'add number: 5');
 }
 
 // test: string prototype
@@ -184,7 +189,7 @@ function prototypeString() {
 	assert.ok(num.padLeft(10) === '0000012345', 'number.padLeft(10): ' + num);
 	assert.ok(num.padRight(10) === '1234500000', 'number.padRight(10): ' + num);
 
-	str = 'Date: {now | dd.MM.yyyy HH:mm:ss}. Currency: {number | 2} and encoded: {name} and raw: {!name}';
+	str = 'Date: {{now | dd.MM.yyyy HH:mm:ss}}. Currency: {{number | 2}} and encoded: {{name}} and raw: {{!name}}';
 	assert.ok(str.params({now: new Date(), number: 23034.34, name: '<b>Peter</b>'}).length === 106, 'string.params(): ' + str);
 
 	str = 'Peter Širka Linker & - you known';
@@ -283,6 +288,13 @@ function prototypeArray() {
 		else if (a === -1)
 			assert.ok(!a && b.age === 33, 'array.compare(2)');
 	});
+
+	arr = [1, 2, 3, 1, 3, 2, 4];
+
+	assert.ok(arr.unique().join(',') === '1,2,3,4', 'array.unique(2)');
+
+	var b = [{ name: 'Peter' }, { name: 'Janko' }, { name: 'Peter' }, { name: 'Lucia' }, { name: 'Lucia' }, { name: 'Peter' }];
+	assert.ok(JSON.stringify(b.unique('name')) === '[{"name":"Peter"},{"name":"Janko"},{"name":"Lucia"}]', 'array.unique(property)');
 
 	var asyncarr = [];
 	var asyncounter = 0;

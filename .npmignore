@@ -8,5 +8,6 @@ test/
 *.DS_Store
 *.sublime-project
 *.sublime-workspace
+*.sh
 changes.txt
 roadmap.txt
