@@ -13,7 +13,6 @@ $ npm install total.js
 ```
 
 - [Homepage](http://www.totaljs.com)
-- [Enterprise products](http://enterprise.totaljs.com/)
 - [__Documentation__](http://docs.totaljs.com)
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
 - [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
