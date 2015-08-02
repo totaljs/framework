@@ -222,7 +222,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1-0';
+	this.version_header = '1.9.1-1';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -326,6 +326,7 @@ function Framework() {
 	this.isCluster = require('cluster').isWorker;
 
 	this.routes = {
+		sitemap: null,
 		web: [],
 		files: [],
 		websockets: [],
@@ -884,6 +885,16 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		middleware = timeout;
 		timeout = options;
 		options = undefined;
+	}
+
+	if (url[0] === '@') {
+		url = url.substring(1);
+		var sitemap = self.sitemap(url, true);
+		if (sitemap) {
+			name = url;
+			url = sitemap.url;
+		} else
+			throw new Error('Sitemap item "' + url + '" not found.');
 	}
 
 	if (url === '')
@@ -1459,6 +1470,16 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	var CUSTOM = typeof(url) === TYPE_FUNCTION ? url : null;
 	if (CUSTOM)
 		url = '/';
+
+	if (url[0] === '@') {
+		url = url.substring(1);
+		var sitemap = self.sitemap(url, true);
+		if (sitemap) {
+			name = url;
+			url = sitemap.url;
+		} else
+			throw new Error('Sitemap item "' + url + '" not found.');
+	}
 
 	if (url === '')
 		url = '/';
@@ -6586,6 +6607,73 @@ Framework.prototype.translator = function(language, text) {
 	return framework_internal.parseLocalization(text, language);
 };
 
+Framework.prototype._configure_sitemap = function(content) {
+
+	if (content === undefined) {
+		var filename = framework_utils.combine('/', 'sitemap');
+		if (fs.existsSync(filename))
+			content = fs.readFileSync(filename).toString(ENCODING);
+		else
+			content = '';
+	}
+
+	var self = this;
+
+	if (!content)
+		return self;
+
+	var arr = content.split('\n');
+	var sitemap = {};
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+
+		var str = arr[i];
+
+		if (str === '' || str[0] === '#' || str.substring(0, 3) === '// ')
+			continue;
+
+		var index = str.indexOf(' :');
+		if (index === -1) {
+			index = str.indexOf('\t:');
+			if (index === -1)
+				continue;
+		}
+
+		var key = str.substring(0, index).trim();
+		var val = str.substring(index + 2).trim();
+		var a = val.split('-->');
+
+		sitemap[key] = { name: a[0].trim(), url: a[1].trim(), parent: a[2] ? a[2].trim() : null };
+	}
+
+	self.routes.sitemap = sitemap;
+	return self;
+};
+
+Framework.prototype.sitemap = function(name, me) {
+
+	var self = this;
+	if (!self.routes.sitemap)
+		return new Array(0);
+
+	if (me)
+		return self.routes.sitemap[name];
+
+	var arr = [];
+	while (true) {
+		var map = self.routes.sitemap[name];
+		if (!map)
+			break;
+		arr.push(map);
+		name = map.parent;
+		if (!name)
+			break;
+	}
+
+	arr.reverse();
+	return arr;
+};
+
 Framework.prototype._configure_dependencies = function(content) {
 
 	if (content === undefined) {
@@ -9656,7 +9744,7 @@ Controller.prototype.sitemap = function(name, url, index) {
 		return self.repository.sitemap || [];
 
 	if (url === undefined)
-		url = self.req.url;
+		return framework.sitemap(name);
 
 	if (self.repository.sitemap === undefined)
 		self.repository.sitemap = [];
@@ -9682,6 +9770,10 @@ Controller.prototype.sitemap = function(name, url, index) {
 
 Controller.prototype.$sitemap = function(name, url, index) {
 	var self = this;
+
+	if (url === undefined)
+		return framework.sitemap(name);
+
 	self.sitemap.apply(self, arguments);
 	return '';
 }
