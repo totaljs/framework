@@ -322,7 +322,7 @@ function Framework() {
 	this.isDebug = true;
 	this.isTest = false;
 	this.isLoaded = false;
-	this.isWorker = false;
+	this.isWorker = true;
 	this.isCluster = require('cluster').isWorker;
 
 	this.routes = {
@@ -610,7 +610,7 @@ Framework.prototype.stop = function(signal) {
 
 	framework.emit('exit');
 
-	if (typeof(process.send) === TYPE_FUNCTION)
+	if (!self.isWorker && typeof(process.send) === TYPE_FUNCTION)
 		process.send('stop');
 
 	self.cache.stop();
@@ -5009,6 +5009,8 @@ Framework.prototype.mode = function(http, name, options) {
 	var test = false;
 	var debug = false;
 	var self = this;
+
+	self.isWorker = false;
 
 	switch (name.toLowerCase().replace(/\.|\s/g, '-')) {
 		case 'release':
