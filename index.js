@@ -4819,6 +4819,7 @@ Framework.prototype.load = function(debug, types, path) {
 
 	self._configure();
 	self._configure_versions();
+	self._configure_sitemap();
 	self.cache.init();
 
 	self.emit('init');
@@ -4882,6 +4883,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 
 	self._configure();
 	self._configure_versions();
+	self._configure_sitemap();
 
 	if (self.isTest)
 		self._configure('config-test', false);
@@ -13895,6 +13897,7 @@ process.on('message', function(msg, h) {
 	if (msg === 'reconfigure') {
 		framework._configure();
 		framework._configure_versions();
+		framework._configure_sitemap();
 		framework.emit(msg);
 		return;
 	}
