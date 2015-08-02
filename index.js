@@ -6666,7 +6666,7 @@ Framework.prototype.sitemap = function(name, me) {
 		var map = self.routes.sitemap[name];
 		if (!map)
 			break;
-		arr.push({ name: map.name, url: map.url, index: index selected: index === 0 });
+		arr.push({ name: map.name, url: map.url, last: index === 0, first: map.parent === null || map.parent === undefined || map.parent === '', selected: index === 0, index: index });
 		index++;
 		name = map.parent;
 		if (!name)
