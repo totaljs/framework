@@ -6660,11 +6660,14 @@ Framework.prototype.sitemap = function(name, me) {
 		return self.routes.sitemap[name];
 
 	var arr = [];
+	var index = 0;
+
 	while (true) {
 		var map = self.routes.sitemap[name];
 		if (!map)
 			break;
-		arr.push(map);
+		arr.push({ name: map.name, url: map.url, index: index selected: index === 0 });
+		index++;
 		name = map.parent;
 		if (!name)
 			break;

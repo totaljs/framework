@@ -78,7 +78,7 @@ function app() {
 
             for (var i = 0; i < length; i++) {
                 var name = arr[i];
-                if (name === 'config' || name === 'config-debug' || name === 'config-release' || name === 'versions' || name === 'dependencies' || name.indexOf('.js') !== -1 || name.indexOf('.resource') !== -1)
+                if (name === 'config' || name === 'config-debug' || name === 'config-release' || name === 'versions' || name === 'sitemap' || name === 'dependencies' || name.indexOf('.js') !== -1 || name.indexOf('.resource') !== -1)
                     self.file.push(name);
             }
 

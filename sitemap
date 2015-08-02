@@ -1,4 +1,0 @@
-homepage           : Úvodná stránka  --> /
-password           : Zabudnuté heslo --> /prihlasenie/password/ --> signin
-signin             : Prihlásenie     --> /prihlasenie/          --> homepage
-signup             : Registrácia     --> /registracia/          --> homepage
