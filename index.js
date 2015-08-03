@@ -498,6 +498,7 @@ Framework.prototype.refresh = function(clear) {
 
 	self._configure();
 	self._configure_versions();
+	self._configure_sitemap();
 
 	self.temporary.path = {};
 	self.temporary.range = {};
@@ -3100,6 +3101,7 @@ Framework.prototype.usage = function(detailed) {
 
 	output.routing = {
 		webpage: self.routes.web.length,
+		sitemap: self.routes.sitemap ? self.routes.sitemap.length : 0,
 		websocket: self.routes.websockets.length,
 		file: self.routes.files.length,
 		middleware: Object.keys(self.routes.middleware).length,
@@ -9745,21 +9747,37 @@ Controller.prototype.$keywords = function(value) {
 
 Controller.prototype.sitemap = function(name, url, index) {
 	var self = this;
+	var sitemap;
 
-	if (name === undefined) {
-		var id = self.repository[REPOSITORY_SITEMAP];
-		if (id)
-			return framework.sitemap(id);
+	if (!name) {
+		sitemap = self.repository[REPOSITORY_SITEMAP];
+		if (sitemap)
+			return sitemap;
 		return self.repository.sitemap || [];
 	}
 
-	if (url === undefined)
-		return framework.sitemap(name);
-
 	if (name[0] === '#') {
-		self.repository[REPOSITORY_SITEMAP] = name.substring(1);
+		name = name.substring(1);
+		if (self.subscribe.route.isCACHE) {
+			sitemap = framework.temporary.other[REPOSITORY_SITEMAP + name];
+			if (!sitemap) {
+				sitemap = framework.sitemap(name);
+				framework.temporary.other[REPOSITORY_SITEMAP + name] = sitemap;
+			}
+		} else
+			sitemap = framework.sitemap(name);
+
+		self.repository[REPOSITORY_SITEMAP] = sitemap;
+		if (!self.repository[REPOSITORY_META_TITLE]) {
+			sitemap = sitemap.last();
+			if (sitemap)
+				self.repository[REPOSITORY_META_TITLE] = sitemap.name;
+		}
 		return self;
 	}
+
+	if (!url)
+		return self.repository[REPOSITORY_SITEMAP];
 
 	if (self.repository.sitemap === undefined)
 		self.repository.sitemap = [];
