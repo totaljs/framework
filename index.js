@@ -8673,7 +8673,7 @@ Subscribe.prototype.doEnd = function() {
 			return self;
 		}
 
-		self.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
+		framework.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
 
 			if (err) {
 				self.route400(err);
