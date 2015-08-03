@@ -3101,7 +3101,7 @@ Framework.prototype.usage = function(detailed) {
 
 	output.routing = {
 		webpage: self.routes.web.length,
-		sitemap: self.routes.sitemap ? self.routes.sitemap.length : 0,
+		sitemap: self.routes.sitemap ? Object.keys(self.routes.sitemap).length : 0,
 		websocket: self.routes.websockets.length,
 		file: self.routes.files.length,
 		middleware: Object.keys(self.routes.middleware).length,
