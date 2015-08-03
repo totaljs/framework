@@ -887,14 +887,17 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		options = undefined;
 	}
 
-	if (url[0] === '@') {
+	if (url[0] === '#') {
 		url = url.substring(1);
-		var sitemap = self.sitemap(url, true);
-		if (sitemap) {
-			name = url;
-			url = sitemap.url;
+		if (url !== '400' && url !== '401' && url !== '403' && url !== '404' && url !== '408' && url !== '431' && url !== '500' && url !== '501') {
+			var sitemap = self.sitemap(url, true);
+			if (sitemap) {
+				name = url;
+				url = sitemap.url;
+			} else
+				throw new Error('Sitemap item "' + url + '" not found.');
 		} else
-			throw new Error('Sitemap item "' + url + '" not found.');
+			url = '#' + url;
 	}
 
 	if (url === '')
@@ -1471,7 +1474,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (CUSTOM)
 		url = '/';
 
-	if (url[0] === '@') {
+	if (url[0] === '#') {
 		url = url.substring(1);
 		var sitemap = self.sitemap(url, true);
 		if (sitemap) {
@@ -8321,6 +8324,7 @@ var REPOSITORY_META_DESCRIPTION = '$description';
 var REPOSITORY_META_KEYWORDS = '$keywords';
 var REPOSITORY_META_IMAGE = '$image';
 var REPOSITORY_PLACE = '$place';
+var REPOSITORY_SITEMAP = '$sitemap';
 var ATTR_END = '"';
 
 function Subscribe(framework, req, res, type) {
@@ -9672,33 +9676,19 @@ Controller.prototype.$meta = function() {
 	return framework.onMeta.call(self, repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
 };
 
-/*
-	Set Meta Title
-	@value {String}
-	return {Controller};
-*/
 Controller.prototype.title = function(value) {
 	var self = this;
 	self.$title(value);
 	return self;
 };
 
-/*
-	Set Meta Description
-	@value {String}
-	return {Controller};
-*/
 Controller.prototype.description = function(value) {
 	var self = this;
 	self.$description(value);
 	return self;
 };
 
-/*
-	Set Meta Keywords
-	@value {String}
-	return {Controller};
-*/
+
 Controller.prototype.keywords = function(value) {
 	var self = this;
 	self.$keywords(value);
@@ -9735,21 +9725,23 @@ Controller.prototype.$keywords = function(value) {
 	return '';
 };
 
-/*
-	Sitemap generator
-	@name {String}
-	@url {String}
-	@index {Number}
-	return {Controller};
-*/
 Controller.prototype.sitemap = function(name, url, index) {
 	var self = this;
 
-	if (name === undefined)
+	if (name === undefined) {
+		var id = self.repository[REPOSITORY_SITEMAP];
+		if (id)
+			return framework.sitemap(id);
 		return self.repository.sitemap || [];
+	}
 
 	if (url === undefined)
 		return framework.sitemap(name);
+
+	if (name[0] === '#') {
+		self.repository[REPOSITORY_SITEMAP] = name.substring(1);
+		return self;
+	}
 
 	if (self.repository.sitemap === undefined)
 		self.repository.sitemap = [];
@@ -9781,7 +9773,7 @@ Controller.prototype.$sitemap = function(name, url, index) {
 
 	self.sitemap.apply(self, arguments);
 	return '';
-}
+};
 
 /*
 	Module caller
