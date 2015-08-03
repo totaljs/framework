@@ -56,6 +56,7 @@ var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true
 var TEMPORARY_KEY_REGEX = /\//g;
 var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 var REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
+var REG_MULTIPART = /\/form\-data$/i;
 var REQUEST_PROXY_FLAGS = ['post', 'json'];
 
 var _controller = '';
@@ -222,7 +223,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1-4';
+	this.version_header = '1.9.1-5';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -1064,6 +1065,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 					continue;
 				case 'raw':
 					isRaw = true;
+					tmp.push(flag);
 					break;
 				case 'mobile':
 					isMOBILE = true;
@@ -3828,8 +3830,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.writeHead(200, returnHeaders);
 
 			framework_internal.onFinished(res, function(err) {
-			 	framework_internal.destroyStream(stream);
-			 	next();
+				framework_internal.destroyStream(stream);
+				next();
 			});
 
 			stream.pipe(zlib.createGzip()).pipe(res);
@@ -5329,7 +5331,7 @@ Framework.prototype.listener = function(req, res) {
 		}
 	}
 
- 	if (can && self.onLocate)
+	if (can && self.onLocate)
 		req.$language = self.onLocate(req, res, req.isStaticFile);
 
 	self._request_stats(true, true);
@@ -5418,9 +5420,9 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	flags.push(protocol);
 
 	var method = req.method;
-    var first = method[0];
+	var first = method[0];
 
-    if (first === 'P' || first === 'D') {
+	if (first === 'P' || first === 'D') {
 		var index = multipart.lastIndexOf(';');
 		var tmp = multipart;
 		if (index !== -1)
@@ -5445,6 +5447,11 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 			case 'data':
 				req.$flags += 'upload';
 				flags.push('upload');
+				break;
+			default:
+				// UNDEFINED DATA
+				multipart = '';
+				flags.push('raw');
 				break;
 		}
 	}
@@ -5483,35 +5490,35 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	// call event request
 	self.emit('request-begin', req, res);
 
-    switch (first) {
-    	case 'G':
-            self.stats.request.get++;
-	        new Subscribe(self, req, res, 0).end();
-    		return self;
-    	case 'H':
+	switch (first) {
+		case 'G':
+			self.stats.request.get++;
+			new Subscribe(self, req, res, 0).end();
+			return self;
+		case 'H':
 			self.stats.request.head++;
-	        new Subscribe(self, req, res, 0).end();
-    		return self;
-    	case 'D':
-           	self.stats.request['delete']++;
-            new Subscribe(self, req, res, 1).urlencoded();
-            return self;
-        case 'P':
-        	if (self._request_check_POST) {
-		        if (multipart) {
-		            self.stats.request.upload++;
-		            new Subscribe(self, req, res, 2).multipart(multipart);
-		        } else {
-		            if (method === 'PUT')
-		                self.stats.request.put++;
-		            else
-		                self.stats.request.post++;
-		            new Subscribe(self, req, res, 1).urlencoded();
-		        }
-	        	return self;
-		    }
-		    break;
-    }
+			new Subscribe(self, req, res, 0).end();
+			return self;
+		case 'D':
+			self.stats.request['delete']++;
+			new Subscribe(self, req, res, 1).urlencoded();
+			return self;
+		case 'P':
+			if (self._request_check_POST) {
+				if (multipart) {
+					self.stats.request.upload++;
+					new Subscribe(self, req, res, 2).multipart(multipart);
+				} else {
+					if (method === 'PUT')
+						self.stats.request.put++;
+					else
+						self.stats.request.post++;
+					new Subscribe(self, req, res, 1).urlencoded();
+				}
+				return self;
+			}
+			break;
+	}
 
 	self.emit('request-end', req, res);
 	self._request_stats(false, false);

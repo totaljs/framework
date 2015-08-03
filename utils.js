@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.0
+ * @version 1.9.1
  */
 
 'use strict';
@@ -352,7 +352,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		timeout = encoding;
 	}
 
-	var method = 'GET';
+	var method = '';
 	var length = 0;
 	var type = 0;
 	var e = new events.EventEmitter();
@@ -423,6 +423,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			}
 		}
 	}
+
+	if (!method)
+		method = 'GET';
 
 	var isPOST = method === 'POST' || method === 'PUT';
 
