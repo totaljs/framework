@@ -433,9 +433,6 @@ function viewIndex() {
     self.meta('A', 'B');
     assert.ok(self.repository['$title'] === 'A' && self.repository['$description'] === 'B', name + 'meta() - write');
 
-    self.sitemap('A', '/');
-    assert.ok(self.sitemap()[0].name === 'A', name + 'sitemap() - write');
-
     assert.ok(self.module('hatatitla') === null, name + 'module(not exists) - read');
     assert.ok(self.module('test').message() === 'message', name + 'module(exists) - read');
 

@@ -9802,6 +9802,8 @@ Controller.prototype.sitemap = function(name, url, index) {
 	if (!url)
 		return self.repository[REPOSITORY_SITEMAP];
 
+	console.log('OBSOLETE sitemap: The newest version supports new sitemap mechanism.');
+
 	if (self.repository.sitemap === undefined)
 		self.repository.sitemap = [];
 
