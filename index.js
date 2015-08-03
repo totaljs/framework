@@ -222,7 +222,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1-2';
+	this.version_header = '1.9.1-3';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -2117,6 +2117,20 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	if (type === 'version' || type === 'versions') {
 
 		self._configure_versions(declaration.toString(), true);
+		setTimeout(function() {
+			self.emit(type + '#' + name);
+			self.emit('install', type, name);
+		}, 500);
+
+		if (callback)
+			callback(null);
+
+		return self;
+	}
+
+	if (type === 'sitemap') {
+
+		self._configure_sitemap(declaration.toString(), true);
 		setTimeout(function() {
 			self.emit(type + '#' + name);
 			self.emit('install', type, name);
@@ -4821,10 +4835,14 @@ Framework.prototype.load = function(debug, types, path) {
 	global.isomorphic = self.isomorphic;
 
 	self._configure();
-	self._configure_versions();
-	self._configure_sitemap();
-	self.cache.init();
 
+	if (!types || types.indexOf('versions') !== -1)
+		self._configure_versions();
+
+	if (!types || types.indexOf('sitemap') !== -1)
+		self._configure_sitemap();
+
+	self.cache.init();
 	self.emit('init');
 	self.isLoaded = true;
 
@@ -9767,10 +9785,6 @@ Controller.prototype.sitemap = function(name, url, index) {
 
 Controller.prototype.$sitemap = function(name, url, index) {
 	var self = this;
-
-	if (url === undefined)
-		return framework.sitemap(name);
-
 	self.sitemap.apply(self, arguments);
 	return '';
 };
