@@ -1974,7 +1974,7 @@ function view_parse(content, minify, filename) {
 			if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
-				builder += wrapTryCatch(tmp, command.command);
+				builder += wrapTryCatch(tmp, command.command, command.line);
 			}
 		}
 
@@ -1994,10 +1994,10 @@ function view_parse(content, minify, filename) {
 	return eval(fn);
 }
 
-function wrapTryCatch(value, command) {
+function wrapTryCatch(value, command, line) {
 	if (!framework.isDebug)
 		return value;
-	return '(function(){try{return ' + value + '}catch(e){throw new Error(unescape(\'' + escape(command) + '\') + \' - \' + e.message.toString());}return $EMPTY})()';
+	return '(function(){try{return ' + value + '}catch(e){throw new Error(unescape(\'' + escape(command) + '\') + \' - Line: ' + line + ' - \' + e.message.toString());}return $EMPTY})()';
 }
 
 function view_parse_plus(builder) {
@@ -2366,6 +2366,7 @@ function view_find_command(content, index) {
 		return {
 			beg: index,
 			end: i,
+			line: content.substr(0, index).split('\n').length,
 			command: content.substring(index + 2, i).trim()
 		};
 	}
