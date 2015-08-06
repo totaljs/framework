@@ -2366,12 +2366,19 @@ function view_find_command(content, index) {
 		return {
 			beg: index,
 			end: i,
-			line: content.substr(0, index).split('\n').length,
+			line: view_line_counter(content.substr(0, index)),
 			command: content.substring(index + 2, i).trim()
 		};
 	}
 
 	return null;
+}
+
+function view_line_counter(value) {
+	var count = value.match(/\n/g);
+	if (count)
+		return count.length;
+	return 0;
 }
 
 function view_find_localization(content, index) {
