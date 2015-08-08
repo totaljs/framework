@@ -6806,10 +6806,6 @@ Framework.prototype._configure_dependencies = function(content) {
 			case 'controllers':
 				self.install('controller', url, options);
 				break;
-			case 'controller':
-			case 'controllers':
-				self.install('controller', url, options);
-				break;
 			case 'view':
 			case 'views':
 				self.install('view', url, options);
