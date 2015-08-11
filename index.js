@@ -35,7 +35,7 @@ var crypto = require('crypto');
 var parser = require('url');
 var events = require('events');
 var http = require('http');
-var directory = process.cwd();
+var directory = path.dirname(process.argv[1]);
 var child = require('child_process');
 var util = require('util');
 
@@ -223,7 +223,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1-5';
+	this.version_header = '1.9.1-6';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -2321,7 +2321,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				if (typeof(declaration) !== STRING)
 					declaration = declaration.toString();
 
-				var filename = directory + self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js').substring(1);
+				var filename = self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js');
 				fs.writeFileSync(filename, declaration);
 				obj = require(filename);
 
@@ -2418,7 +2418,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				if (typeof(declaration) !== STRING)
 					declaration = declaration.toString();
 
-				filename = directory + self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js').substring(1);
+				filename = self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js');
 				fs.writeFileSync(filename, declaration);
 				obj = require(filename);
 				(function(name, filename) {
