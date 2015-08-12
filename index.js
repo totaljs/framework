@@ -223,7 +223,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1-6';
+	this.version_header = '1.9.1-7';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -13908,7 +13908,7 @@ function fsStreamRead(filename, options, callback, next) {
  * @return {String}
  */
 function createTemporaryKey(req) {
-	return (req.url ? req.url : req).replace(TEMPORARY_KEY_REGEX, '-').substring(1);
+	return (req.uri ? req.uri.pathname : req).replace(TEMPORARY_KEY_REGEX, '-').substring(1);
 }
 
 process.on('SIGTERM', function() {

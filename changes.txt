@@ -8,6 +8,7 @@ BETA ======= 1.9.1 (HOTFIX)
 - fixed: F.load() --> "versions" is configurable
 - fixed: "raw" receiving of data
 - fixed: U.request(), the problem with default method
+- fixed: F.exists() - problem with URL query string
 
 ======= 1.9.0
 
