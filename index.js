@@ -7419,9 +7419,10 @@ Framework.prototype.accept = function(extension, contentType) {
 	@name {String}
 	@id {String} :: optional, Id of process
 	@timeout {Number} :: optional, timeout - default undefined (none)
+	@args {Array} :: optional, array of arguments
 	return {Worker(fork)}
 */
-Framework.prototype.worker = function(name, id, timeout) {
+Framework.prototype.worker = function(name, id, timeout, args) {
 
 	var self = this;
 	var fork = null;
@@ -7436,12 +7437,23 @@ Framework.prototype.worker = function(name, id, timeout) {
 	if (type === STRING)
 		fork = self.workers[id] || null;
 
+	if (Array.isArray(id)) {
+		args = id;
+		id = null;
+		timeout = UNDEFINED;
+	}
+
+	if (Array.isArray(timeout)) {
+		args = timeout;
+		timeout = UNDEFINED;
+	}
+
 	if (fork !== null)
 		return fork;
 
 	var filename = utils.combine(self.config['directory-workers'], name) + EXTENSION_JS;
 
-	fork = child.fork(filename, { cwd: directory });
+	fork = child.fork(filename, args, { cwd: directory });
 
 	id = name + '_' + new Date().getTime();
 	fork.__id = id;
