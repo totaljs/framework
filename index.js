@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 1.9.0
+ * @version 1.9.1
  */
 
 'use strict';
@@ -35,7 +35,7 @@ var crypto = require('crypto');
 var parser = require('url');
 var events = require('events');
 var http = require('http');
-var directory = process.cwd();
+var directory = path.dirname(process.argv[1]);
 var child = require('child_process');
 var util = require('util');
 
@@ -56,6 +56,7 @@ var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true
 var TEMPORARY_KEY_REGEX = /\//g;
 var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 var REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
+var REG_MULTIPART = /\/form\-data$/i;
 var REQUEST_PROXY_FLAGS = ['post', 'json'];
 
 var _controller = '';
@@ -221,8 +222,8 @@ global.is_server = true;
 function Framework() {
 
 	this.id = null;
-	this.version = 1900;
-	this.version_header = '1.9.0';
+	this.version = 1910;
+	this.version_header = '1.9.1-7';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -322,10 +323,11 @@ function Framework() {
 	this.isDebug = true;
 	this.isTest = false;
 	this.isLoaded = false;
-	this.isWorker = false;
+	this.isWorker = true;
 	this.isCluster = require('cluster').isWorker;
 
 	this.routes = {
+		sitemap: null,
 		web: [],
 		files: [],
 		websockets: [],
@@ -497,6 +499,7 @@ Framework.prototype.refresh = function(clear) {
 
 	self._configure();
 	self._configure_versions();
+	self._configure_sitemap();
 
 	self.temporary.path = {};
 	self.temporary.range = {};
@@ -610,7 +613,7 @@ Framework.prototype.stop = function(signal) {
 
 	framework.emit('exit');
 
-	if (typeof(process.send) === TYPE_FUNCTION)
+	if (!self.isWorker && typeof(process.send) === TYPE_FUNCTION)
 		process.send('stop');
 
 	self.cache.stop();
@@ -886,6 +889,19 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		options = undefined;
 	}
 
+	if (url[0] === '#') {
+		url = url.substring(1);
+		if (url !== '400' && url !== '401' && url !== '403' && url !== '404' && url !== '408' && url !== '431' && url !== '500' && url !== '501') {
+			var sitemap = self.sitemap(url, true);
+			if (sitemap) {
+				name = url;
+				url = sitemap.url;
+			} else
+				throw new Error('Sitemap item "' + url + '" not found.');
+		} else
+			url = '#' + url;
+	}
+
 	if (url === '')
 		url = '/';
 
@@ -1049,6 +1065,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 					continue;
 				case 'raw':
 					isRaw = true;
+					tmp.push(flag);
 					break;
 				case 'mobile':
 					isMOBILE = true;
@@ -1459,6 +1476,16 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	var CUSTOM = typeof(url) === TYPE_FUNCTION ? url : null;
 	if (CUSTOM)
 		url = '/';
+
+	if (url[0] === '#') {
+		url = url.substring(1);
+		var sitemap = self.sitemap(url, true);
+		if (sitemap) {
+			name = url;
+			url = sitemap.url;
+		} else
+			throw new Error('Sitemap item "' + url + '" not found.');
+	}
 
 	if (url === '')
 		url = '/';
@@ -2104,6 +2131,20 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		return self;
 	}
 
+	if (type === 'sitemap') {
+
+		self._configure_sitemap(declaration.toString(), true);
+		setTimeout(function() {
+			self.emit(type + '#' + name);
+			self.emit('install', type, name);
+		}, 500);
+
+		if (callback)
+			callback(null);
+
+		return self;
+	}
+
 	if (type === 'package') {
 
 		var backup = new Backup();
@@ -2280,7 +2321,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				if (typeof(declaration) !== STRING)
 					declaration = declaration.toString();
 
-				var filename = directory + self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js').substring(1);
+				var filename = self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js');
 				fs.writeFileSync(filename, declaration);
 				obj = require(filename);
 
@@ -2377,7 +2418,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				if (typeof(declaration) !== STRING)
 					declaration = declaration.toString();
 
-				filename = directory + self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js').substring(1);
+				filename = self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js');
 				fs.writeFileSync(filename, declaration);
 				obj = require(filename);
 				(function(name, filename) {
@@ -3062,6 +3103,7 @@ Framework.prototype.usage = function(detailed) {
 
 	output.routing = {
 		webpage: self.routes.web.length,
+		sitemap: self.routes.sitemap ? Object.keys(self.routes.sitemap).length : 0,
 		websocket: self.routes.websockets.length,
 		file: self.routes.files.length,
 		middleware: Object.keys(self.routes.middleware).length,
@@ -3788,8 +3830,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			res.writeHead(200, returnHeaders);
 
 			framework_internal.onFinished(res, function(err) {
-			 	framework_internal.destroyStream(stream);
-			 	next();
+				framework_internal.destroyStream(stream);
+				next();
 			});
 
 			stream.pipe(zlib.createGzip()).pipe(res);
@@ -4797,9 +4839,14 @@ Framework.prototype.load = function(debug, types, path) {
 	global.isomorphic = self.isomorphic;
 
 	self._configure();
-	self._configure_versions();
-	self.cache.init();
 
+	if (!types || types.indexOf('versions') !== -1)
+		self._configure_versions();
+
+	if (!types || types.indexOf('sitemap') !== -1)
+		self._configure_sitemap();
+
+	self.cache.init();
 	self.emit('init');
 	self.isLoaded = true;
 
@@ -4861,6 +4908,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 
 	self._configure();
 	self._configure_versions();
+	self._configure_sitemap();
 
 	if (self.isTest)
 		self._configure('config-test', false);
@@ -5009,6 +5057,8 @@ Framework.prototype.mode = function(http, name, options) {
 	var test = false;
 	var debug = false;
 	var self = this;
+
+	self.isWorker = false;
 
 	switch (name.toLowerCase().replace(/\.|\s/g, '-')) {
 		case 'release':
@@ -5281,7 +5331,7 @@ Framework.prototype.listener = function(req, res) {
 		}
 	}
 
- 	if (can && self.onLocate)
+	if (can && self.onLocate)
 		req.$language = self.onLocate(req, res, req.isStaticFile);
 
 	self._request_stats(true, true);
@@ -5370,9 +5420,9 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	flags.push(protocol);
 
 	var method = req.method;
-    var first = method[0];
+	var first = method[0];
 
-    if (first === 'P' || first === 'D') {
+	if (first === 'P' || first === 'D') {
 		var index = multipart.lastIndexOf(';');
 		var tmp = multipart;
 		if (index !== -1)
@@ -5397,6 +5447,11 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 			case 'data':
 				req.$flags += 'upload';
 				flags.push('upload');
+				break;
+			default:
+				// UNDEFINED DATA
+				multipart = '';
+				flags.push('raw');
 				break;
 		}
 	}
@@ -5435,35 +5490,35 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	// call event request
 	self.emit('request-begin', req, res);
 
-    switch (first) {
-    	case 'G':
-            self.stats.request.get++;
-	        new Subscribe(self, req, res, 0).end();
-    		return self;
-    	case 'H':
+	switch (first) {
+		case 'G':
+			self.stats.request.get++;
+			new Subscribe(self, req, res, 0).end();
+			return self;
+		case 'H':
 			self.stats.request.head++;
-	        new Subscribe(self, req, res, 0).end();
-    		return self;
-    	case 'D':
-           	self.stats.request['delete']++;
-            new Subscribe(self, req, res, 1).urlencoded();
-            return self;
-        case 'P':
-        	if (self._request_check_POST) {
-		        if (multipart) {
-		            self.stats.request.upload++;
-		            new Subscribe(self, req, res, 2).multipart(multipart);
-		        } else {
-		            if (method === 'PUT')
-		                self.stats.request.put++;
-		            else
-		                self.stats.request.post++;
-		            new Subscribe(self, req, res, 1).urlencoded();
-		        }
-	        	return self;
-		    }
-		    break;
-    }
+			new Subscribe(self, req, res, 0).end();
+			return self;
+		case 'D':
+			self.stats.request['delete']++;
+			new Subscribe(self, req, res, 1).urlencoded();
+			return self;
+		case 'P':
+			if (self._request_check_POST) {
+				if (multipart) {
+					self.stats.request.upload++;
+					new Subscribe(self, req, res, 2).multipart(multipart);
+				} else {
+					if (method === 'PUT')
+						self.stats.request.put++;
+					else
+						self.stats.request.post++;
+					new Subscribe(self, req, res, 1).urlencoded();
+				}
+				return self;
+			}
+			break;
+	}
 
 	self.emit('request-end', req, res);
 	self._request_stats(false, false);
@@ -6584,6 +6639,107 @@ Framework.prototype.translator = function(language, text) {
 	return framework_internal.parseLocalization(text, language);
 };
 
+Framework.prototype._configure_sitemap = function(content) {
+
+	if (content === undefined) {
+		var filename = framework_utils.combine('/', 'sitemap');
+		if (fs.existsSync(filename))
+			content = fs.readFileSync(filename).toString(ENCODING);
+		else
+			content = '';
+	}
+
+	var self = this;
+
+	if (!content)
+		return self;
+
+	var arr = content.split('\n');
+	var sitemap = {};
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+
+		var str = arr[i];
+
+		if (str === '' || str[0] === '#' || str.substring(0, 3) === '// ')
+			continue;
+
+		var index = str.indexOf(' :');
+		if (index === -1) {
+			index = str.indexOf('\t:');
+			if (index === -1)
+				continue;
+		}
+
+		var key = str.substring(0, index).trim();
+		var val = str.substring(index + 2).trim();
+		var a = val.split('-->');
+
+		sitemap[key] = { name: a[0].trim(), url: a[1].trim(), parent: a[2] ? a[2].trim() : null };
+	}
+
+	self.routes.sitemap = sitemap;
+	return self;
+};
+
+Framework.prototype.sitemap = function(name, me, language) {
+
+	var self = this;
+	if (!self.routes.sitemap)
+		return new Array(0);
+
+	if (typeof(me) === STRING) {
+		var tmp = language;
+		language = me;
+		me = language;
+	}
+
+	var key = REPOSITORY_SITEMAP + name + '$' + (me ? '1' : '0') + '$' + (language || '');
+	if (self.temporary.other[key])
+		return self.temporary.other[key];
+
+	var sitemap;
+
+	if (me === true) {
+		sitemap = self.routes.sitemap[name];
+		var item = { name: '', url: '', last: true, selected: true, index: 0 };
+		if (!sitemap)
+			return item;
+
+		var title = sitemap.name;
+		if (title.startsWith('@('))
+			title = self.translate(language, map.name.substring(2, map.name.length - 1).trim());
+
+		item.name = title;
+		item.url = sitemap.url;
+		self.temporary.other[key] = item;
+		return item;
+	}
+
+	var arr = [];
+	var index = 0;
+
+	while (true) {
+		sitemap = self.routes.sitemap[name];
+		if (!sitemap)
+			break;
+
+		var title = sitemap.name;
+		if (title.startsWith('@('))
+			title = self.translate(language, sitemap.name.substring(2, sitemap.name.length - 1));
+
+		arr.push({ name: title, url: sitemap.url, last: index === 0, first: sitemap.parent === null || sitemap.parent === undefined || sitemap.parent === '', selected: index === 0, index: index });
+		index++;
+		name = sitemap.parent;
+		if (!name)
+			break;
+	}
+
+	arr.reverse();
+	self.temporary.other[key] = arr;
+	return arr;
+};
+
 Framework.prototype._configure_dependencies = function(content) {
 
 	if (content === undefined) {
@@ -6645,10 +6801,6 @@ Framework.prototype._configure_dependencies = function(content) {
 			case 'source':
 			case 'sources':
 				self.install('source', url, options);
-				break;
-			case 'controller':
-			case 'controllers':
-				self.install('controller', url, options);
 				break;
 			case 'controller':
 			case 'controllers':
@@ -7267,9 +7419,10 @@ Framework.prototype.accept = function(extension, contentType) {
 	@name {String}
 	@id {String} :: optional, Id of process
 	@timeout {Number} :: optional, timeout - default undefined (none)
+	@args {Array} :: optional, array of arguments
 	return {Worker(fork)}
 */
-Framework.prototype.worker = function(name, id, timeout) {
+Framework.prototype.worker = function(name, id, timeout, args) {
 
 	var self = this;
 	var fork = null;
@@ -7284,12 +7437,23 @@ Framework.prototype.worker = function(name, id, timeout) {
 	if (type === STRING)
 		fork = self.workers[id] || null;
 
+	if (Array.isArray(id)) {
+		args = id;
+		id = null;
+		timeout = UNDEFINED;
+	}
+
+	if (Array.isArray(timeout)) {
+		args = timeout;
+		timeout = UNDEFINED;
+	}
+
 	if (fork !== null)
 		return fork;
 
 	var filename = utils.combine(self.config['directory-workers'], name) + EXTENSION_JS;
 
-	fork = child.fork(filename, { cwd: directory });
+	fork = child.fork(filename, args, { cwd: directory });
 
 	id = name + '_' + new Date().getTime();
 	fork.__id = id;
@@ -8226,6 +8390,7 @@ var REPOSITORY_META_DESCRIPTION = '$description';
 var REPOSITORY_META_KEYWORDS = '$keywords';
 var REPOSITORY_META_IMAGE = '$image';
 var REPOSITORY_PLACE = '$place';
+var REPOSITORY_SITEMAP = '$sitemap';
 var ATTR_END = '"';
 
 function Subscribe(framework, req, res, type) {
@@ -8578,7 +8743,7 @@ Subscribe.prototype.doEnd = function() {
 			return self;
 		}
 
-		self.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
+		framework.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
 
 			if (err) {
 				self.route400(err);
@@ -9577,33 +9742,19 @@ Controller.prototype.$meta = function() {
 	return framework.onMeta.call(self, repository[REPOSITORY_META_TITLE], repository[REPOSITORY_META_DESCRIPTION], repository[REPOSITORY_META_KEYWORDS], repository[REPOSITORY_META_IMAGE]);
 };
 
-/*
-	Set Meta Title
-	@value {String}
-	return {Controller};
-*/
 Controller.prototype.title = function(value) {
 	var self = this;
 	self.$title(value);
 	return self;
 };
 
-/*
-	Set Meta Description
-	@value {String}
-	return {Controller};
-*/
 Controller.prototype.description = function(value) {
 	var self = this;
 	self.$description(value);
 	return self;
 };
 
-/*
-	Set Meta Keywords
-	@value {String}
-	return {Controller};
-*/
+
 Controller.prototype.keywords = function(value) {
 	var self = this;
 	self.$keywords(value);
@@ -9640,21 +9791,33 @@ Controller.prototype.$keywords = function(value) {
 	return '';
 };
 
-/*
-	Sitemap generator
-	@name {String}
-	@url {String}
-	@index {Number}
-	return {Controller};
-*/
 Controller.prototype.sitemap = function(name, url, index) {
 	var self = this;
+	var sitemap;
 
-	if (name === undefined)
+	if (!name) {
+		sitemap = self.repository[REPOSITORY_SITEMAP];
+		if (sitemap)
+			return sitemap;
 		return self.repository.sitemap || [];
+	}
 
-	if (url === undefined)
-		url = self.req.url;
+	if (name[0] === '#') {
+		name = name.substring(1);
+		sitemap = framework.sitemap(name, false, self.language);
+		self.repository[REPOSITORY_SITEMAP] = sitemap;
+		if (!self.repository[REPOSITORY_META_TITLE]) {
+			sitemap = sitemap.last();
+			if (sitemap)
+				self.repository[REPOSITORY_META_TITLE] = sitemap.name;
+		}
+		return self;
+	}
+
+	if (!url)
+		return self.repository[REPOSITORY_SITEMAP];
+
+	console.log('OBSOLETE sitemap: The newest version supports new sitemap mechanism.');
 
 	if (self.repository.sitemap === undefined)
 		self.repository.sitemap = [];
@@ -9682,7 +9845,7 @@ Controller.prototype.$sitemap = function(name, url, index) {
 	var self = this;
 	self.sitemap.apply(self, arguments);
 	return '';
-}
+};
 
 /*
 	Module caller
@@ -13757,7 +13920,7 @@ function fsStreamRead(filename, options, callback, next) {
  * @return {String}
  */
 function createTemporaryKey(req) {
-	return (req.url ? req.url : req).replace(TEMPORARY_KEY_REGEX, '-').substring(1);
+	return (req.uri ? req.uri.pathname : req).replace(TEMPORARY_KEY_REGEX, '-').substring(1);
 }
 
 process.on('SIGTERM', function() {
@@ -13798,6 +13961,7 @@ process.on('message', function(msg, h) {
 	if (msg === 'reconfigure') {
 		framework._configure();
 		framework._configure_versions();
+		framework._configure_sitemap();
 		framework.emit(msg);
 		return;
 	}

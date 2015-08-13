@@ -643,7 +643,7 @@ function main() {
             for (var i = 0, length = files.length; i < length; i++) {
                 var filename = files[i];
 
-                if (!filename.endsWith('.html'))
+                if (filename.indexOf('sitemap') === -1 && !filename.endsWith('.html'))
                     continue;
 
                 var content = fs.readFileSync(filename).toString('utf8');

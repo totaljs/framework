@@ -426,15 +426,12 @@ function viewIndex() {
     var self = this;
     var name = 'controller: ';
 
-    assert.ok(self.path.public('file.txt') === './public/file.txt', name + 'path.public');
-    assert.ok(self.path.logs('file.txt') === './logs/file.txt', name + 'path.logs');
-    assert.ok(self.path.temp('file.txt') === './tmp/file.txt', name + 'path.temp');
+    assert.ok(self.path.public('file.txt').endsWith('/public/file.txt'), name + 'path.public');
+    assert.ok(self.path.logs('file.txt').endsWith('/logs/file.txt'), name + 'path.logs');
+    assert.ok(self.path.temp('file.txt').endsWith('/tmp/file.txt'), name + 'path.temp');
 
     self.meta('A', 'B');
     assert.ok(self.repository['$title'] === 'A' && self.repository['$description'] === 'B', name + 'meta() - write');
-
-    self.sitemap('A', '/');
-    assert.ok(self.sitemap()[0].name === 'A', name + 'sitemap() - write');
 
     assert.ok(self.module('hatatitla') === null, name + 'module(not exists) - read');
     assert.ok(self.module('test').message() === 'message', name + 'module(exists) - read');

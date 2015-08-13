@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 1.9.0
+ * @version 1.9.1
  */
 
 'use strict'
@@ -299,6 +299,8 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 		options = tmp;
 	}
 
+	self.isSent = false;
+
 	self.callback = fnCallback;
 
 	if (options.secure && !options.port)
@@ -314,7 +316,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 			if (err) {
 				mailer.emit('error', err, self);
 
-				if (fnCallback)
+				if (!self.isSent && fnCallback)
 					fnCallback(err);
 
 				return;
@@ -323,7 +325,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 			socket.on('error', function(err) {
 				mailer.emit('error', err, self);
 
-				if (fnCallback)
+				if (!self.isSent && fnCallback)
 					fnCallback(err);
 
 			});
@@ -348,7 +350,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 	socket.on('error', function(err) {
 		socket.destroy();
 		self.closed = true;
-		if (self.callback)
+		if (!self.isSent && self.callback)
 			self.callback(err);
 		if (err.stack.indexOf('ECONNRESET') === -1)
 			mailer.emit('error', err, self);
@@ -356,7 +358,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	socket.on('clientError', function(err) {
 		mailer.emit('error', err, self);
-		if (self.callback)
+		if (!self.isSent && self.callback)
 			self.callback(err);
 	});
 
@@ -382,7 +384,7 @@ Message.prototype.switchToTLS = function(socket, options) {
 	sock.on('error', function(err) {
 		sock.destroy();
 		self.closed = true;
-		if (self.callback)
+		if (!self.isSent && self.callback)
 			self.callback(err);
 		if (err.stack.indexOf('ECONNRESET') === -1)
 			mailer.emit('error', err, self);
@@ -390,7 +392,7 @@ Message.prototype.switchToTLS = function(socket, options) {
 
 	sock.on('clientError', function(err) {
 		mailer.emit('error', err, self);
-		if (self.callback)
+		if (!self.isSent && self.callback)
 			self.callback(err);
 	});
 
@@ -442,7 +444,7 @@ Message.prototype._send = function(socket, options, autosend) {
 		if (socket !== null)
 			socket.destroy();
 		socket = null;
-		if (self.callback)
+		if (!self.isSent && self.callback)
 			self.callback(err);
 	});
 
@@ -595,6 +597,8 @@ Message.prototype._send = function(socket, options, autosend) {
 				write(buffer.shift());
 
 				if (buffer.length === 0) {
+					self.isSent = true;
+
 					mailer.emit('success', self);
 
 					if (self.callback)
@@ -623,7 +627,7 @@ Message.prototype._send = function(socket, options, autosend) {
 					err = new Error('Forbidden.');
 					mailer.emit('error', err, self);
 
-					if (self.callback)
+					if (!self.isSent && self.callback)
 						self.callback(err);
 
 					if (socket !== null)
@@ -664,7 +668,7 @@ Message.prototype._send = function(socket, options, autosend) {
 				socket = null;
 				mailer.emit('error', err, self);
 
-				if (self.callback)
+				if (!self.isSent && self.callback)
 					self.callback(err);
 
 				break;
