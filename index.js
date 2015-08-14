@@ -223,7 +223,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1-7';
+	this.version_header = '1.9.1-8';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -7422,6 +7422,14 @@ Framework.prototype.accept = function(extension, contentType) {
 	@args {Array} :: optional, array of arguments
 	return {Worker(fork)}
 */
+/**
+ * Run worker
+ * @param {String} name
+ * @param {String} id Worker id, optional.
+ * @param {Number} timeout Timeout, optional.
+ * @param {Array} args Additional arguments, optional.
+ * @return {ChildProcess}
+ */
 Framework.prototype.worker = function(name, id, timeout, args) {
 
 	var self = this;
@@ -7437,21 +7445,24 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 	if (type === STRING)
 		fork = self.workers[id] || null;
 
-	if (Array.isArray(id)) {
+	if (id instanceof Array) {
 		args = id;
 		id = null;
-		timeout = UNDEFINED;
+		timeout = undefined;
 	}
 
-	if (Array.isArray(timeout)) {
+	if (timeout instanceof Array) {
 		args = timeout;
-		timeout = UNDEFINED;
+		timeout = undefined;
 	}
 
 	if (fork !== null)
 		return fork;
 
 	var filename = utils.combine(self.config['directory-workers'], name) + EXTENSION_JS;
+
+	if (!args)
+		args = new Array(0);
 
 	fork = child.fork(filename, args, { cwd: directory });
 
