@@ -19,33 +19,7 @@
     "engines": {
         "node": ">=0.8.0"
     },
-    "keywords": [
-        "total",
-        "framework",
-        "web",
-        "websocket",
-        "mvc",
-        "controller",
-        "view",
-        "angular.js",
-        "upload",
-        "picture",
-        "graphicsmagick",
-        "imagemagick",
-        "eshop",
-        "blog",
-        "forum",
-        "chat",
-        "game",
-        "nosql",
-        "database",
-        "streaming",
-        "live",
-        "server sent events",
-        "sse",
-        "multipart",
-        "x-mixed-replace"
-    ],
+    "keywords": ["total", "framework", "web", "websocket", "mvc", "controller", "view", "angular.js", "upload", "picture", "graphicsmagick", "imagemagick", "eshop", "blog", "forum", "chat", "game", "nosql", "database", "streaming", "live", "server sent events", "sse", "multipart", "x-mixed-replace"],
     "license": "MIT",
     "main": "./index.js",
     "name": "total.js",
@@ -57,7 +31,17 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "version": "1.9.1-7",
+    "contributors": [{
+        "name": "Peter Širka",
+        "email": "petersirka@gmail.com"
+    }, {
+        "name": "Jozef Gula",
+        "email": "gula.jozef@gmail.com"
+    }, {
+        "name": "Andrea Sessa",
+        "email": "andrea.sessa@gmail.com"
+    }],
+    "version": "1.9.1-9",
     "homepage": "http://www.totaljs.com",
     "bugs": {
         "url": "https://github.com/totaljs/framework/issues",
