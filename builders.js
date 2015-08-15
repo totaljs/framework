@@ -136,7 +136,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 	this.constants;
 	this.onPrepare;
 	this.onDefault;
-	this.onValidation = validator;
+	this.onValidation = validator ? validator : framework.onValidation;
 	this.onSave;
 	this.onGet;
 	this.onRemove;

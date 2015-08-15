@@ -1,6 +1,7 @@
 BETA ======= 1.9.1 (HOTFIX)
 
 - added: new sitemap system
+- added: a default schema validator is F.onValidation()
 
 - fixed: prevention for mail double callback calling (by Andrea Sessa)
 - fixed: worker messaging
