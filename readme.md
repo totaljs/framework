@@ -87,8 +87,8 @@ We provide a support of the framework for companies. Our support services will k
 
 | Contributor | Type | E-mail |
 |-------------|------|--------|
-| [Peter Širka](https://www.petersirka.eu) | author | <petersirka@gmail.com> |
-| [Jozef Gula](https://github.com/JozefGula) | support + contributor | <gula.jozef@gmail.com> |
+| [Peter Širka](https://www.petersirka.eu) | author + support | <petersirka@gmail.com> |
+| [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 
 ## Other
