@@ -585,7 +585,7 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 exports.routeParam = function(routeUrl, route) {
 
 	if (!route || !routeUrl)
-		return [];
+		return new Array(0);
 
 	var length = route.param.length;
 	var arr = new Array(length);
