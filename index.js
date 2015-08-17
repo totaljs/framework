@@ -11299,6 +11299,13 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
+	if (contentBody instanceof ErrorBuilder) {
+		var tmp = contentBody.transform();
+		if (!contentType)
+			contentType = contentBody.contentType;
+		contentBody = tmp;
+	}
+
 	self.subscribe.success();
 	framework.responseContent(self.req, self.res, self.status, contentBody, contentType || CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
 	return self;
