@@ -6224,7 +6224,7 @@ Framework.prototype.test = function(stop, names, cb) {
 			return;
 
 		console.log('');
-		console.log('====== RESULTS ======');
+		console.log('===================== RESULTS ======================');
 		console.log('');
 
 		framework.testsResults.forEach(function(fn) {
@@ -6342,7 +6342,7 @@ Framework.prototype.test = function(stop, names, cb) {
 		});
 
 		setTimeout(function() {
-			console.log('====== TESTING ======');
+			console.log('===================== TESTING ======================');
 			console.log('');
 
 			self.testing(stop, function() {
