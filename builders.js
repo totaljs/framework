@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 1.9.0
+ * @version 1.9.1
  */
 
 'use strict';
@@ -2076,6 +2076,7 @@ function ErrorBuilder(onResource) {
 	this.count = 0;
 	this.replacer = [];
 	this.isPrepared = false;
+	this.contentType = 'application/json';
 
 	if (onResource === undefined)
 		this._resource();
@@ -2404,6 +2405,11 @@ ErrorBuilder.prototype.resource = function(name, prefix) {
 	return self._resource();
 };
 
+ErrorBuilder.prototype.setContentType = function(type) {
+	this.contentType = type;
+	return this;
+};
+
 ErrorBuilder.prototype.setResource = function(name) {
 	var self = this;
 	self.isResourceCustom = true;
@@ -2598,10 +2604,14 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
  * @return {String}
  */
 ErrorBuilder.prototype.json = function(beautify, replacer) {
-	var obj = this.prepare()._transform();
+	var items;
+	if (beautify !== null)
+		items = this.prepare()._transform();
+	else
+		items = this.items;
 	if (beautify)
-		return JSON.stringify(obj, replacer, '\t');
-	return JSON.stringify(obj, replacer);
+		return JSON.stringify(items, replacer, '\t');
+	return JSON.stringify(items, replacer);
 };
 
 /**
@@ -2662,7 +2672,7 @@ ErrorBuilder.prototype._transform = function(name) {
 	var transformName = name || self.transformName;
 
 	if (!transformName)
-		return self.items;
+		return self.json(null);
 
 	var current = transforms['error'][transformName];
 

@@ -223,7 +223,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1-9';
+	this.version_header = '1.9.1-10';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -8557,7 +8557,7 @@ Subscribe.prototype.execute = function(status) {
 		if (status === 400 && self.exception instanceof Builders.ErrorBuilder) {
 			if (req.$language)
 				self.exception.resource(req.$language, framework.config['default-errorbuilder-resource-prefix']);
-			framework.responseContent(req, res, 200, self.exception.json(), 'application/json', framework.config['allow-gzip']);
+			framework.responseContent(req, res, 200, self.exception.transform(), self.exception.contentType, framework.config['allow-gzip']);
 			return self;
 		}
 
@@ -11245,7 +11245,7 @@ Controller.prototype.callback = function(viewName) {
 			if (err instanceof Builders.ErrorBuilder && !viewName) {
 				if (self.language)
 					err.resource(self.language);
-				return self.json(err);
+				return self.content(err.transform(), err.contentType);
 			}
 			return self.view500(err);
 		}
