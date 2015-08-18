@@ -266,7 +266,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 function parse_multipart_header(header) {
 
-	var arr = [];
+	var arr = new Array(2);
 	var find = ' name="';
 	var length = find.length;
 	var beg = header.indexOf(find);
