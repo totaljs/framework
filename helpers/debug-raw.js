@@ -60,7 +60,7 @@ function app() {
     var async = new utils.Async();
     var pid = '';
     var pidInterval = null;
-    var prefix = '------------> ';
+    var prefix = '------------------------------------------> ';
     var isLoaded = false;
     var isSkip = false;
 
