@@ -832,9 +832,8 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
     if (fnUpdate !== undefined)
         self.pendingLock.push(updatePrepare(fnUpdate, fnCallback, changes, type || 'update'));
 
-    if (self.status !== STATUS_UNKNOWN) {
+    if (self.status !== STATUS_UNKNOWN)
         return self;
-    }
 
     var operation = [];
 
@@ -969,6 +968,19 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
     }, function(success) {
 
         if (!success) {
+
+            self.emit('update/remove', false, countUpdate, countRemove);
+            var changes = [];
+            operation.forEach(function(o) {
+                if (o.changes !== undefined)
+                    changes.push(o.changes);
+                if (o.callback)
+                    (function(cb,count) { setImmediate(function() { cb(null, count); }); })(o.callback, o.count);
+            });
+
+            if (changes.length > 0)
+                self.changelog.insert(changes);
+
             self.next();
             return;
         }
