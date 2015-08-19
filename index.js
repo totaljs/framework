@@ -223,7 +223,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1-11';
+	this.version_header = '1.9.1-12';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -6698,10 +6698,11 @@ Framework.prototype.sitemap = function(name, me, language) {
 		return self.temporary.other[key];
 
 	var sitemap;
+	var id = name;
 
 	if (me === true) {
 		sitemap = self.routes.sitemap[name];
-		var item = { id: '', name: '', url: '', last: true, selected: true, index: 0 };
+		var item = { sitemap: id, id: '', name: '', url: '', last: true, selected: true, index: 0 };
 		if (!sitemap)
 			return item;
 
@@ -6709,6 +6710,7 @@ Framework.prototype.sitemap = function(name, me, language) {
 		if (title.startsWith('@('))
 			title = self.translate(language, map.name.substring(2, map.name.length - 1).trim());
 
+		item.sitemap = id;
 		item.id = name;
 		item.name = title;
 		item.url = sitemap.url;
@@ -6728,7 +6730,7 @@ Framework.prototype.sitemap = function(name, me, language) {
 		if (title.startsWith('@('))
 			title = self.translate(language, sitemap.name.substring(2, sitemap.name.length - 1));
 
-		arr.push({ id: name, name: title, url: sitemap.url, last: index === 0, first: sitemap.parent === null || sitemap.parent === undefined || sitemap.parent === '', selected: index === 0, index: index });
+		arr.push({ sitemap: id, id: name, name: title, url: sitemap.url, last: index === 0, first: sitemap.parent === null || sitemap.parent === undefined || sitemap.parent === '', selected: index === 0, index: index });
 		index++;
 		name = sitemap.parent;
 		if (!name)

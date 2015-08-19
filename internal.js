@@ -1964,6 +1964,8 @@ function view_parse(content, minify, filename) {
 
 		} else if (cmd.substring(0, 3) === 'if ') {
 			builder += ';if (' + cmd.substring(3) + '){$output+=$EMPTY';
+		} else if (cmd7 === 'else if') {
+			builder += '} else if (' + cmd.substring(7) + ') {$output+=$EMPTY';
 		} else if (cmd === 'else') {
 			builder += '} else {$output+=$EMPTY';
 		} else if (cmd === 'endif' || cmd === 'fi') {
