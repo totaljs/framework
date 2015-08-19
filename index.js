@@ -6675,7 +6675,7 @@ Framework.prototype._configure_sitemap = function(content) {
 		var val = str.substring(index + 2).trim();
 		var a = val.split('-->');
 
-		sitemap[key] = { id: key, name: a[0].trim(), url: a[1].trim(), parent: a[2] ? a[2].trim() : null };
+		sitemap[key] = { name: a[0].trim(), url: a[1].trim(), parent: a[2] ? a[2].trim() : null };
 	}
 
 	self.routes.sitemap = sitemap;
@@ -6702,7 +6702,7 @@ Framework.prototype.sitemap = function(name, me, language) {
 
 	if (me === true) {
 		sitemap = self.routes.sitemap[name];
-		var item = { name: '', url: '', last: true, selected: true, index: 0 };
+		var item = { id: '', name: '', url: '', last: true, selected: true, index: 0 };
 		if (!sitemap)
 			return item;
 
@@ -6710,6 +6710,7 @@ Framework.prototype.sitemap = function(name, me, language) {
 		if (title.startsWith('@('))
 			title = self.translate(language, map.name.substring(2, map.name.length - 1).trim());
 
+		item.id = name;
 		item.name = title;
 		item.url = sitemap.url;
 		self.temporary.other[key] = item;
@@ -6728,7 +6729,7 @@ Framework.prototype.sitemap = function(name, me, language) {
 		if (title.startsWith('@('))
 			title = self.translate(language, sitemap.name.substring(2, sitemap.name.length - 1));
 
-		arr.push({ name: title, url: sitemap.url, last: index === 0, first: sitemap.parent === null || sitemap.parent === undefined || sitemap.parent === '', selected: index === 0, index: index });
+		arr.push({ id: name, name: title, url: sitemap.url, last: index === 0, first: sitemap.parent === null || sitemap.parent === undefined || sitemap.parent === '', selected: index === 0, index: index });
 		index++;
 		name = sitemap.parent;
 		if (!name)
