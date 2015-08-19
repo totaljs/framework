@@ -6675,7 +6675,7 @@ Framework.prototype._configure_sitemap = function(content) {
 		var val = str.substring(index + 2).trim();
 		var a = val.split('-->');
 
-		sitemap[key] = { name: a[0].trim(), url: a[1].trim(), parent: a[2] ? a[2].trim() : null };
+		sitemap[key] = { id: key, name: a[0].trim(), url: a[1].trim(), parent: a[2] ? a[2].trim() : null };
 	}
 
 	self.routes.sitemap = sitemap;
