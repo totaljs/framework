@@ -1941,7 +1941,7 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
         buffer = new Buffer(buffer, 'base64');
 
     if (buffer.resume)
-        return this.insert_stream(name, type, buffer, callback, changes);
+        return this.insert_stream(null, name, type, buffer, callback, changes);
 
     if (typeof(fnCallback) === STRING) {
         changes = fnCallback;
@@ -1982,7 +1982,7 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
     return id;
 };
 
-Binary.prototype.insert_stream = function(name, type, stream, fnCallback, changes) {
+Binary.prototype.insert_stream = function(id, name, type, stream, fnCallback, changes) {
 
     self.check();
 
@@ -1990,7 +1990,9 @@ Binary.prototype.insert_stream = function(name, type, stream, fnCallback, change
     header.fill(' ');
     header.write(JSON.stringify({ name: name, size: size, type: type, width: 0, height: 0 }));
 
-    var id = new Date().getTime().toString() + Math.random().toString(36).substring(10);
+    if (!id)
+        id = new Date().getTime().toString() + Math.random().toString(36).substring(10);
+
     var key = self.db.name + '#' + id;
     var stream = fs.createWriteStream(path.join(self.directory, key + EXTENSION_BINARY));
 
@@ -2028,6 +2030,9 @@ Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) 
 
     if (typeof(buffer) === STRING)
         buffer = new Buffer(buffer, 'base64');
+
+    if (buffer.resume)
+        return this.insert_stream(id, name, type, buffer, callback, changes);
 
     if (typeof(fnCallback) === STRING) {
         changes = fnCallback;
@@ -2083,7 +2088,7 @@ Binary.prototype.$$update = function(id, name, type, buffer, changes) {
     @callback {Function} :: params: @err {Error}, @readStream {Stream}, @header {Object} / header.name {String}, header.size {Number}, header.type {String}
     return {Database}
 */
-Binary.prototype.read = function(id, callback, pipeProblem) {
+Binary.prototype.read = function(id, callback) {
 
     var self = this;
 
@@ -2101,20 +2106,17 @@ Binary.prototype.read = function(id, callback, pipeProblem) {
 
     stream.on('data', function(buffer) {
         var json = new Buffer(buffer, 'binary').toString('utf8').replace(/^[\s]+|[\s]+$/g, '');
-        var beg = BINARY_HEADER_LENGTH;
-        if (pipeProblem === true)
-            beg--;
-        stream = fs.createReadStream(filename, { start: beg });
+        stream = fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
         callback(null, stream, JSON.parse(json));
     });
 
     return self.db;
 };
 
-Binary.prototype.$$read = function(id, pipeProblem) {
+Binary.prototype.$$read = function(id) {
     var self = this;
     return function(callback) {
-        self.read(id, callback, pipeProblem);
+        self.read(id, callback);
     };
 };
 
