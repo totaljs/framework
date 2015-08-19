@@ -6396,7 +6396,7 @@ Framework.prototype.clear = function(callback, isInit) {
 		if (isInit) {
 			var arr = [];
 			for (var i = 0, length = files.length; i < length; i++) {
-				var filename = files[i].substring(self.config['directory-temp'].length - 1);
+				var filename = files[i].substring(dir.length);
 				if (filename.indexOf('/') === -1)
 					arr.push(files[i]);
 			}
@@ -6407,7 +6407,6 @@ Framework.prototype.clear = function(callback, isInit) {
 		self.unlink(files, function() {
 			self.rmdir(directories, callback);
 		});
-
 	});
 
 	if (!isInit) {
