@@ -559,7 +559,7 @@ Database.prototype.each = function(fnDocument, fnCallback) {
 	@fnCallback {Function(err, selected, count)} :: params: @doc {Object}, @count {Number}
 	return {Database}
 */
-Database.prototype.sort = function(fnMap, fnSort, itemSkip, itemTake, fnCallback) {
+Database.prototype.sort = function(fnMap, fnSort, fnCallback, itemSkip, itemTake) {
 
 	var self = this;
 	var selected = [];
@@ -568,10 +568,11 @@ Database.prototype.sort = function(fnMap, fnSort, itemSkip, itemTake, fnCallback
 	if (typeof(fnMap) === STRING)
 		fnMap = filterPrepare(fnMap);
 
-	itemTake = itemTake || 30;
+	itemTake = itemTake || 0;
 	itemSkip = itemSkip || 0;
 
 	var onCallback = function() {
+
 		selected.sort(fnSort);
 
 		if (itemSkip > 0 || itemTake > 0)
@@ -597,7 +598,7 @@ Database.prototype.sort = function(fnMap, fnSort, itemSkip, itemTake, fnCallback
 Database.prototype.$$sort = function(fnMap, fnSort, itemSkip, itemTake) {
 	var self = this;
 	return function(callback) {
-		self.sort(fnMap, fnSort, itemSkip, itemTake, callback);
+		self.sort(fnMap, fnSort, callback, itemSkip, itemTake);
 	};
 };
 
