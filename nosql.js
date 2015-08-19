@@ -1,29 +1,8 @@
-// Copyright 2012-2015 (c) Peter Širka <petersirka@gmail.com>
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 /**
  * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2015
- * @version 3.0.3
+ * @version 3.0.4
  */
 
 'use strict';
@@ -1961,6 +1940,9 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
     if (typeof(buffer) === STRING)
         buffer = new Buffer(buffer, 'base64');
 
+    if (buffer.resume)
+        return this.insert_stream(name, type, buffer, callback, changes);
+
     if (typeof(fnCallback) === STRING) {
         changes = fnCallback;
         fnCallback = null;
@@ -1989,6 +1971,31 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
 
     stream.write(header, 'binary');
     stream.end(buffer);
+    stream = null;
+
+    if (changes)
+        self.db.changelog.insert(changes);
+
+    if (fnCallback)
+        fnCallback(null, id, header);
+
+    return id;
+};
+
+Binary.prototype.insert_stream = function(name, type, stream, fnCallback, changes) {
+
+    self.check();
+
+    var header = new Buffer(BINARY_HEADER_LENGTH);
+    header.fill(' ');
+    header.write(JSON.stringify({ name: name, size: size, type: type, width: 0, height: 0 }));
+
+    var id = new Date().getTime().toString() + Math.random().toString(36).substring(10);
+    var key = self.db.name + '#' + id;
+    var stream = fs.createWriteStream(path.join(self.directory, key + EXTENSION_BINARY));
+
+    stream.write(header, 'binary');
+    stream.pipe(stream);
     stream = null;
 
     if (changes)
@@ -2076,7 +2083,7 @@ Binary.prototype.$$update = function(id, name, type, buffer, changes) {
     @callback {Function} :: params: @err {Error}, @readStream {Stream}, @header {Object} / header.name {String}, header.size {Number}, header.type {String}
     return {Database}
 */
-Binary.prototype.read = function(id, callback) {
+Binary.prototype.read = function(id, callback, pipeProblem) {
 
     var self = this;
 
@@ -2094,17 +2101,20 @@ Binary.prototype.read = function(id, callback) {
 
     stream.on('data', function(buffer) {
         var json = new Buffer(buffer, 'binary').toString('utf8').replace(/^[\s]+|[\s]+$/g, '');
-        stream = fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
+        var beg = BINARY_HEADER_LENGTH;
+        if (pipeProblem === true)
+            beg--;
+        stream = fs.createReadStream(filename, { start: beg });
         callback(null, stream, JSON.parse(json));
     });
 
     return self.db;
 };
 
-Binary.prototype.$$read = function(id) {
+Binary.prototype.$$read = function(id, pipeProblem) {
     var self = this;
     return function(callback) {
-        self.read(id, callback);
+        self.read(id, callback, pipeProblem);
     };
 };
 
