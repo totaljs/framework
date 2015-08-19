@@ -68,7 +68,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	var stream = null;
 	var maximumSize = route.length;
 	var now = Date.now();
-	var tmp = new HttpFile();
+	var tmp;
 	var close = 0;
 	var rm = null;
 	var ip = '';
@@ -88,6 +88,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 	parser.onPartBegin = function() {
 		// Temporary data
+		tmp = new HttpFile();
 		tmp.$data = new Buffer('');
 		tmp.$step = 0;
 		tmp.$is = false;
@@ -100,6 +101,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			return;
 
 		var header = buffer.slice(start, end).toString(ENCODING);
+
 		if (tmp.$step === 1) {
 			var index = header.indexOf(';');
 			if (index === -1)
@@ -219,6 +221,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			delete tmp.$data;
 			delete tmp.$is;
 			delete tmp.$step;
+
 			req.files.push(tmp);
 			framework.emit('upload-end', req, tmp);
 			return;
@@ -276,9 +279,9 @@ function parse_multipart_header(header) {
 		tmp = header.substring(beg + length, header.indexOf('"', beg + length));
 
 	if (!tmp)
-		arr.push('undefined_' + (Math.floor(Math.random() * 100000)).toString());
+		arr[0] = 'undefined_' + (Math.floor(Math.random() * 100000)).toString();
 	else
-		arr.push(tmp);
+		arr[0] = tmp;
 
 	find = ' filename="';
 	length = find.length;
@@ -292,9 +295,9 @@ function parse_multipart_header(header) {
 		tmp = header.substring(beg + length, header.indexOf('"', beg + length));
 
 	if (!tmp)
-		arr.push(null);
+		arr[1] = null;
 	else
-		arr.push(tmp);
+		arr[1] = tmp;
 
 	return arr;
 }
