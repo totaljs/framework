@@ -223,7 +223,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1-12';
+	this.version_header = '1.9.1-13';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -11411,7 +11411,7 @@ Controller.prototype.file = function(filename, download, headers, done) {
 	}
 
 	if (filename[0] === '~')
-		filename = '.' + filename.substring(1);
+		filename = filename.substring(1);
 	else
 		filename = framework.path.public(filename);
 
@@ -11439,7 +11439,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, done) {
 
 	if (typeof(filename) === STRING) {
 		if (filename[0] === '~')
-			filename = '.' + filename.substring(1);
+			filename = filename.substring(1);
 		else
 			filename = framework.path.public(filename);
 	}
