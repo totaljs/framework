@@ -140,11 +140,11 @@ function resolveMx(domain, callback) {
 function Message(subject, body) {
 	this.subject = subject || '';
 	this.body = body || '';
-	this.files = [];
-	this.addressTo = [];
-	this.addressReply = [];
-	this.addressCC = [];
-	this.addressBCC = [];
+	this.files = new Array(0);
+	this.addressTo = new Array(0);
+	this.addressReply = new Array(0);
+	this.addressCC = new Array(0);
+	this.addressBCC = new Array(0);
 	this.addressFrom = { name: '', address: '' };
 	this.callback = null;
 	this.closed = false;
@@ -201,10 +201,13 @@ Message.prototype.to = function(address) {
  * @param  {String} address A valid e-mail addrčess.
  * @return {Message}
  */
-Message.prototype.cc = function(address) {
+Message.prototype.cc = function(address, clear) {
 
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
+
+	if (clear)
+		self.addressCC = new Array(0);
 
 	var self = this;
 	self.addressCC.push(address);
@@ -217,10 +220,13 @@ Message.prototype.cc = function(address) {
  * @param  {String} address A valid e-mail addrčess.
  * @return {Message}
  */
-Message.prototype.bcc = function(address) {
+Message.prototype.bcc = function(address, clear) {
 
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
+
+	if (clear)
+		self.addressBCC = new Array(0);
 
 	var self = this;
 	self.addressBCC.push(address);
@@ -233,10 +239,13 @@ Message.prototype.bcc = function(address) {
  * @param  {String} address A valid e-mail addrčess.
  * @return {Message}
  */
-Message.prototype.reply = function(address) {
+Message.prototype.reply = function(address, clear) {
 
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
+
+	if (clear)
+		self.addressReply = new Array(0);
 
 	var self = this;
 	self.addressReply.push(address);

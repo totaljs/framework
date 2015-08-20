@@ -5,6 +5,10 @@ BETA ======= 1.9.1 (HOTFIX)
 - added: ErrorBuilder.setContentType() --> default application/json
 - added: View engine supports `else if`
 
+- updated: MailMessage.bcc(email, [clear]) --> added clear
+- updated: MailMessage.cc(email, [clear]) --> added clear
+- updated: MailMessage.reply(email, [clear]) --> added clear
+
 - fixed: uploading files
 - fixed: prevention for mail double callback calling (by Andrea Sessa)
 - fixed: worker messaging
