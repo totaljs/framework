@@ -206,10 +206,11 @@ Message.prototype.cc = function(address, clear) {
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
 
+	var self = this;
+
 	if (clear)
 		self.addressCC = new Array(0);
 
-	var self = this;
 	self.addressCC.push(address);
 	return self;
 
@@ -225,10 +226,11 @@ Message.prototype.bcc = function(address, clear) {
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
 
+	var self = this;
+
 	if (clear)
 		self.addressBCC = new Array(0);
 
-	var self = this;
 	self.addressBCC.push(address);
 	return self;
 
@@ -244,10 +246,11 @@ Message.prototype.reply = function(address, clear) {
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
 
+	var self = this;
+
 	if (clear)
 		self.addressReply = new Array(0);
 
-	var self = this;
 	self.addressReply.push(address);
 	return self;
 
