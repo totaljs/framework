@@ -2473,11 +2473,13 @@ function onBuffer(buffer, fnItem, fnBuffer) {
 
 	var json = fnBuffer(buffer.substring(0, index));
 
-	try
-	{
-		fnItem(null, JSON.parse(json), json);
-	} catch (ex) {
-		fnItem(ex, null, json);
+	if (json) {
+		try
+		{
+			fnItem(null, JSON.parse(json), json);
+		} catch (ex) {
+			fnItem(ex, null, json);
+		}
 	}
 
 	onBuffer(buffer.substring(index + 1), fnItem, fnBuffer);
