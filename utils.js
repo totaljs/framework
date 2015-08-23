@@ -1149,6 +1149,23 @@ exports.parseInt = function(obj, def) {
 	return str.parseInt(def, 10);
 };
 
+exports.parseBool = exports.parseBoolean = function(obj, def) {
+
+	if (obj === undefined || obj === null)
+		return def === undefined ? false : def;
+
+	var type = typeof(obj);
+
+	if (type === BOOLEAN)
+		return obj;
+
+	if (type === NUMBER)
+		return obj > 0;
+
+	var str = type !== STRING ? obj.toString() : obj;
+	return str.parseBool(def);
+};
+
 /**
  * Converts Value to float number
  * @param {Object} obj Value to convert.
@@ -2728,13 +2745,9 @@ String.prototype.parseInt = function(def) {
 	@def {Number} :: optional, default 0
 	return {Number}
 */
-String.prototype.parseBool = function() {
+String.prototype.parseBool = String.prototype.parseBoolean = function() {
 	var self = this.toLowerCase();
 	return self === 'true' || self === '1' || self === 'on';
-};
-
-String.prototype.parseBoolean = function() {
-	return this.parseBool();
 };
 
 /*
