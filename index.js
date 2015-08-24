@@ -223,7 +223,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1-14';
+	this.version_header = '1.9.1-15';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -3549,6 +3549,43 @@ Framework.prototype.responseStatic = function(req, res, done) {
 	}, undefined, done);
 
 	return self;
+};
+
+Framework.prototype.restore = function(filename, target, callback, filter) {
+	var backup = new Backup();
+	backup.restore(filename, target, callback, filter);
+};
+
+Framework.prototype.backup = function(filename, path, callback, filter) {
+
+	var length = path.length;
+	var padding = 120;
+
+	framework_utils.ls(path, function(files, directories) {
+		directories.wait(function(item, next) {
+			var dir = item.substring(length).replace(/\\/g, '/') + '/';
+			if (filter && !filter(dir))
+				return next();
+			fs.appendFile(filename, dir.padRight(padding) + ':#\n', next);
+		}, function() {
+			files.wait(function(item, next) {
+				var fil = item.substring(length).replace(/\\/g, '/');
+				if (filter && !filter(fil))
+					return next();
+				fs.readFile(item, function(err, data) {
+					zlib.gzip(data, function(err, data) {
+						if (err) {
+							framework.error(err, 'framework.backup()', filename);
+							return next();
+						}
+						fs.appendFile(filename, fil.padRight(padding) + ':' + data.toString('base64') + '\n', next);
+					});
+				});
+			}, callback);
+		});
+	});
+
+	return this;
 };
 
 Framework.prototype.exists = function(req, res, max, callback) {
