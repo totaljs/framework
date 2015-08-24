@@ -7731,6 +7731,7 @@ function FrameworkFileSystem() {
 		js: this.createScript.bind(this),
 		resource: this.createResource.bind(this),
 		temporary: this.createTemporary.bind(this),
+		temp: this.createTemporary.bind(this),
 		view: this.createView.bind(this),
 		worker: this.createWorker.bind(this)
 	};
@@ -7744,6 +7745,7 @@ function FrameworkFileSystem() {
 		script: this.deleteScript.bind(this),
 		resource: this.deleteResource.bind(this),
 		temporary: this.deleteTemporary.bind(this),
+		temp: this.deleteTemporary.bind(this),
 		view: this.deleteView.bind(this),
 		worker: this.deleteWorker.bind(this)
 	};
@@ -12093,11 +12095,9 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 			if (isView) {
 				options.repository = [];
 				for (var name in self.repository) {
-					if (name[0] === '$' || name === 'sitemap') {
-						var value = self.repository[name];
-						if (value !== undefined)
-							options.repository.push({ key: name, value: value });
-					}
+					var value = self.repository[name];
+					if (value !== undefined)
+						options.repository.push({ key: name, value: value });
 				}
 			}
 
