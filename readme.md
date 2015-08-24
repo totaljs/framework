@@ -8,9 +8,7 @@ Framework, for node.js
 
 __total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
----
 [__NEW__: Eshop written in node.js / total.js](http://eshop.totaljs.com)
----
 
 ```
 $ npm install total.js
