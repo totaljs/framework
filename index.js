@@ -9847,6 +9847,11 @@ Controller.prototype.sitemap = function(name, url, index) {
 	var self = this;
 	var sitemap;
 
+	if (name instanceof Array) {
+		self.repository[REPOSITORY_SITEMAP] = name;
+		return self;
+	}
+
 	if (!name) {
 		sitemap = self.repository[REPOSITORY_SITEMAP];
 		if (sitemap)
