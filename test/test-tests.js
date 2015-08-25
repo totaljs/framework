@@ -1,7 +1,10 @@
-require('../index').http('debug');
+var self = {};
+var message = [];
 
-F.backup(F.path.databases('my.backup'), F.path.root(), function() {
-	console.log('done');
-}, function(n) {
-	return n.lastIndexOf('.html') !== -1;
-});
+self.headers = { 'neviem': 'kokot' };
+
+var arr = Object.keys(self.headers);
+for (var i = 0, length = arr.length; i < length; i++)
+	message.push(arr[i] + ': ' + self.headers[arr[i]]);
+
+console.log(message);

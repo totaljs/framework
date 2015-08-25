@@ -223,7 +223,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1-15';
+	this.version_header = '1.9.1-16';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')

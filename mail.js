@@ -149,6 +149,8 @@ function Message(subject, body) {
 	this.callback = null;
 	this.closed = false;
 	this.tls = false;
+	// Supports (but it's hidden):
+	// this.headers;
 }
 
 /**
@@ -468,7 +470,15 @@ Message.prototype._send = function(socket, options, autosend) {
 		message.push('MIME-Version: 1.0');
 		message.push('From: ' + (self.addressFrom.name ? unicode_encode(self.addressFrom.name) + ' <' + self.addressFrom.address + '>' : self.addressFrom.address));
 
-		var length = self.addressTo.length;
+		var length;
+
+		if (self.headers) {
+			var headers = Object.keys(self.headers);
+			for (var i = 0, length = headers.length; i < length; i++)
+				message.push(headers[i] + ': ' + self.headers[headers[i]]);
+		}
+
+		length = self.addressTo.length;
 		var builder = '';
 		var mail;
 
