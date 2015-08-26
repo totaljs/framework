@@ -6555,7 +6555,7 @@ Framework.prototype.encrypt = function(value, key, isUnique) {
 
 /**
  * Cryptography (decrypt)
- * @param {Object or String} value
+ * @param {String} value
  * @param {String} key Decrypt key.
  * @param {Boolean} jsonConvert Optional, default true.
  * @return {Object or String}
