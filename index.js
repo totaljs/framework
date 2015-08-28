@@ -5089,11 +5089,30 @@ Framework.prototype.https = function(mode, options) {
  * @param {Object} options Optional, additional options.
  * @return {Framework}
  */
+/**
+ * Changes the framework mode
+ * @param {String} mode New mode (e.g. debug or release)
+ * @return {Framework}
+ */
 Framework.prototype.mode = function(http, name, options) {
 
+	var self = this;
 	var test = false;
 	var debug = false;
-	var self = this;
+
+	if (typeof(http) === STRING) {
+		switch (http) {
+			case 'debug':
+			case 'development':
+				debug = true;
+				break;
+		}
+		self.config.debug = debug;
+		self.isDebug = debug;
+		global.DEBUG = debug;
+		global.RELEASE = !debug;
+		return self;
+	}
 
 	self.isWorker = false;
 
