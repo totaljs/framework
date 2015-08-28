@@ -1745,6 +1745,16 @@ function View() {}
 
 function view_parse_localization(content, language) {
 
+	var is = false;
+
+	content = content.replace(/@\{notranslate\}/gi, function(text) {
+		is = true;
+		return '';
+	}).trim();
+
+	if (is)
+		return content;
+
 	var command = view_find_localization(content, 0);
 	var output = '';
 	var end = 0;
