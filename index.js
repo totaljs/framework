@@ -5882,6 +5882,13 @@ Framework.prototype._log = function(a, b, c, d) {
  * @return {MailMessage}
  */
 Framework.prototype.mail = function(address, subject, view, model, callback, language) {
+
+	if (typeof(callback) === STRING) {
+		tmp = language;
+		language = callback;
+		callback = tmp;
+	}
+
 	var controller = new Controller('', null, null, null, '');
 
 	controller.layoutName = '';
