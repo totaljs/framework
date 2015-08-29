@@ -2185,6 +2185,24 @@ exports.load = function(group, name, model) {
 	return model ? schema.make(model) : name ? schema : schemas[group];
 };
 
+exports.eachschema = function(group, fn) {
+
+	if (fn === undefined) {
+		fn = group;
+		group = undefined;
+	}
+
+	var groups = group ? [group] : Object.keys(schemas);
+	for (var i = 0, length = groups.length; i < length; i++) {
+		var schema = schemas[groups[i]];
+		if (!schema)
+			continue;
+		var collection = Object.keys(schema.collection);
+		for (var j = 0, jl = collection.length; j < jl; j++)
+			fn(schema.name, schema.collection[collection[j]].name, schema.collection[collection[j]]);
+	}
+};
+
 exports.getschema = function(group, name) {
 
 	if (!name) {

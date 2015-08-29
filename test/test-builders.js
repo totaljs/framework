@@ -310,12 +310,12 @@ function test_ErrorBuilder() {
     var builder = new builders.ErrorBuilder();
 
     builder.add('name');
-    assert.ok(builder.errors[0].name === 'name' && builder.errors[0].error === 'default', name + 'add');
+    assert.ok(builder.items[0].name === 'name' && builder.items[0].error === '@', name + 'add');
     builder.add('age', 'only number');
-    assert.ok(builder.errors[1].name === 'age' && builder.errors[1].error === 'only number', name + 'add (custom message)');
+    assert.ok(builder.items[1].name === 'age' && builder.items[1].error === 'only number', name + 'add (custom message)');
 
     builder.remove('age');
-    assert.ok(typeof(builder.errors[1]) === 'undefined', name + 'remove');
+    assert.ok(typeof(builder.items[1]) === 'undefined', name + 'remove');
     assert.ok(builder.hasError(), name + 'hasError');
 
     builder = new builders.ErrorBuilder(function(name) {
@@ -324,14 +324,14 @@ function test_ErrorBuilder() {
 
     builder.add('name');
     builder.prepare();
-    assert.ok(builder.errors[0].error === 'name', name + 'prepare');
+    assert.ok(builder.items[0].error === 'name', name + 'prepare');
 
     builder.clear();
     builder.add('name');
-    assert.ok(builder.json() === '[{"name":"name","error":"name"}]', name + 'json');
+    assert.ok(builder.output() === '[{"name":"name","error":"name"}]', name + 'json');
 
     builder.add(new builders.ErrorBuilder().add('age'));
-    assert.ok(builder.json() === '[{"name":"name","error":"name"},{"name":"age","error":"age"}]', name + 'add(ErrorBuilder)');
+    assert.ok(builder.output() === '[{"name":"name","error":"name"},{"name":"age","error":"age"}]', name + 'add(ErrorBuilder)');
     assert.ok(builder.read('name') === 'name', name + 'read()');
     assert.ok(builder.hasError('name'), name + 'hasError(name)');
 

@@ -151,6 +151,10 @@ global.NEWSCHEMA = function(group, name) {
 	return Builders.newschema(group, name);
 };
 
+global.EACHSCHEMA = function(group, fn) {
+	return Builders.eachschema(group, fn);
+};
+
 global.FUNCTION = function(name) {
 	return framework.functions[name];
 };
