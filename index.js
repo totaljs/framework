@@ -5539,7 +5539,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 	if (self._request_check_referer) {
 		var referer = headers['referer'] || '';
-		if (referer !== '' && referer.indexOf(headers['host']) !== -1) {
+		if (referer && referer.indexOf(headers['host']) !== -1) {
 			req.$flags += 'referer';
 			flags.push('referer');
 		}
@@ -12118,15 +12118,14 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 	var self = this;
+
+	if (disabled === true) {
+		fnTo();
+		return self;
+	}
+
 	var output = self.cache.read(key);
-
 	if (output === null) {
-
-		if (disabled === true) {
-			fnTo();
-			return self;
-		}
-
 		self.precache = function(value, contentType, headers, isView) {
 
 			var options = { content: value, type: contentType };
