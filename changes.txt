@@ -25,6 +25,7 @@ BETA ======= 1.9.1 (HOTFIX)
 - fixed: F.exists() - problem with URL query string
 - fixed: framework startup path
 - fixed: Date.format()
+- fixed: Assertion Testing
 
 ======= 1.9.0
 

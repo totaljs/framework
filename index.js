@@ -6109,8 +6109,15 @@ Framework.prototype.testing = function(stop, callback) {
 		}
 
 		var file = self.testsFiles.shift();
-		file.fn.call(self, self);
-		self.testing(stop, callback);
+		try {
+			file.fn.call(self, self);
+			self.testing(stop, callback);
+		} catch (e) {
+			console.log(new Error(e.stack, file.name, e.lineNumber));
+			framework.isTestError = true;
+			framework.testsNO++;
+			self.testing(stop, callback);
+		}
 		return self;
 	}
 
@@ -6258,7 +6265,7 @@ Framework.prototype.test = function(stop, names, cb) {
 
 	var dir = self.config['directory-tests'];
 
-	if (!fs.existsSync(utils.combine(dir))) {
+	if (!fs.existsSync(framework_utils.combine(dir))) {
 		if (cb) cb();
 		if (stop) setTimeout(function() {
 			framework.stop(0);
@@ -6307,10 +6314,9 @@ Framework.prototype.test = function(stop, names, cb) {
 	if (!framework.testsNO)
 		framework.testsNO = 0;
 
-	utils.ls(utils.combine(dir), function(files) {
-
+	framework_utils.ls(framework_utils.combine(dir), function(files) {
 		files.forEach(function(filePath) {
-			var name = path.relative(utils.combine(dir), filePath);
+			var name = path.relative(framework_utils.combine(dir), filePath);
 			var filename = filePath;
 			var ext = path.extname(filename).toLowerCase();
 
@@ -6353,7 +6359,7 @@ Framework.prototype.test = function(stop, names, cb) {
 				if (fn === null)
 					return;
 
-				self.testsFiles.push({ index: self.testsFiles.length, fn: fn, priority: framework.testsPriority });
+				self.testsFiles.push({ name: name, index: self.testsFiles.length, fn: fn, priority: framework.testsPriority });
 
 				if (test.usage) {
 					(function(test) {
