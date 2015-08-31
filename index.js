@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.1';
+	this.version_header = '1.9.2-1';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -8787,6 +8787,11 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
 
 	if (user)
 		req.user = user;
+
+	if (self.route && !self.route.isMEMBER && isLogged) {
+		self.execute(req.buffer_exceeded ? 431 : 401);
+		return;
+	}
 
 	var route = framework.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags);
 	var status = req.$isAuthorized ? 404 : 401;
