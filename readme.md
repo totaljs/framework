@@ -91,6 +91,8 @@ We provide a support of the framework for companies. Our support services will k
 |-------------|------|--------|
 | [Peter Širka](https://www.petersirka.eu) | author + support | <petersirka@gmail.com> |
 | [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
+| [Matus Szabo](https://github.com/matusszabo) | support + enterprise | <matus.szabo@gmail.com> |
+| Tomas Holovsky | support + enterprise | <tomasholovsky@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 
 ## Other
