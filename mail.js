@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 1.9.0
+ * @version 1.9.1
  */
 
 'use strict'
@@ -140,15 +140,17 @@ function resolveMx(domain, callback) {
 function Message(subject, body) {
 	this.subject = subject || '';
 	this.body = body || '';
-	this.files = [];
-	this.addressTo = [];
-	this.addressReply = [];
-	this.addressCC = [];
-	this.addressBCC = [];
+	this.files = new Array(0);
+	this.addressTo = new Array(0);
+	this.addressReply = new Array(0);
+	this.addressCC = new Array(0);
+	this.addressBCC = new Array(0);
 	this.addressFrom = { name: '', address: '' };
 	this.callback = null;
 	this.closed = false;
 	this.tls = false;
+	// Supports (but it's hidden):
+	// this.headers;
 }
 
 /**
@@ -201,12 +203,16 @@ Message.prototype.to = function(address) {
  * @param  {String} address A valid e-mail addrčess.
  * @return {Message}
  */
-Message.prototype.cc = function(address) {
+Message.prototype.cc = function(address, clear) {
 
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
 
 	var self = this;
+
+	if (clear)
+		self.addressCC = new Array(0);
+
 	self.addressCC.push(address);
 	return self;
 
@@ -217,12 +223,16 @@ Message.prototype.cc = function(address) {
  * @param  {String} address A valid e-mail addrčess.
  * @return {Message}
  */
-Message.prototype.bcc = function(address) {
+Message.prototype.bcc = function(address, clear) {
 
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
 
 	var self = this;
+
+	if (clear)
+		self.addressBCC = new Array(0);
+
 	self.addressBCC.push(address);
 	return self;
 
@@ -233,12 +243,16 @@ Message.prototype.bcc = function(address) {
  * @param  {String} address A valid e-mail addrčess.
  * @return {Message}
  */
-Message.prototype.reply = function(address) {
+Message.prototype.reply = function(address, clear) {
 
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
 
 	var self = this;
+
+	if (clear)
+		self.addressReply = new Array(0);
+
 	self.addressReply.push(address);
 	return self;
 
@@ -299,6 +313,8 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 		options = tmp;
 	}
 
+	self.isSent = false;
+
 	self.callback = fnCallback;
 
 	if (options.secure && !options.port)
@@ -314,7 +330,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 			if (err) {
 				mailer.emit('error', err, self);
 
-				if (fnCallback)
+				if (!self.isSent && fnCallback)
 					fnCallback(err);
 
 				return;
@@ -323,7 +339,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 			socket.on('error', function(err) {
 				mailer.emit('error', err, self);
 
-				if (fnCallback)
+				if (!self.isSent && fnCallback)
 					fnCallback(err);
 
 			});
@@ -348,7 +364,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 	socket.on('error', function(err) {
 		socket.destroy();
 		self.closed = true;
-		if (self.callback)
+		if (!self.isSent && self.callback)
 			self.callback(err);
 		if (err.stack.indexOf('ECONNRESET') === -1)
 			mailer.emit('error', err, self);
@@ -356,7 +372,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	socket.on('clientError', function(err) {
 		mailer.emit('error', err, self);
-		if (self.callback)
+		if (!self.isSent && self.callback)
 			self.callback(err);
 	});
 
@@ -382,7 +398,7 @@ Message.prototype.switchToTLS = function(socket, options) {
 	sock.on('error', function(err) {
 		sock.destroy();
 		self.closed = true;
-		if (self.callback)
+		if (!self.isSent && self.callback)
 			self.callback(err);
 		if (err.stack.indexOf('ECONNRESET') === -1)
 			mailer.emit('error', err, self);
@@ -390,7 +406,7 @@ Message.prototype.switchToTLS = function(socket, options) {
 
 	sock.on('clientError', function(err) {
 		mailer.emit('error', err, self);
-		if (self.callback)
+		if (!self.isSent && self.callback)
 			self.callback(err);
 	});
 
@@ -442,7 +458,7 @@ Message.prototype._send = function(socket, options, autosend) {
 		if (socket !== null)
 			socket.destroy();
 		socket = null;
-		if (self.callback)
+		if (!self.isSent && self.callback)
 			self.callback(err);
 	});
 
@@ -454,7 +470,15 @@ Message.prototype._send = function(socket, options, autosend) {
 		message.push('MIME-Version: 1.0');
 		message.push('From: ' + (self.addressFrom.name ? unicode_encode(self.addressFrom.name) + ' <' + self.addressFrom.address + '>' : self.addressFrom.address));
 
-		var length = self.addressTo.length;
+		var length;
+
+		if (self.headers) {
+			var headers = Object.keys(self.headers);
+			for (var i = 0, length = headers.length; i < length; i++)
+				message.push(headers[i] + ': ' + self.headers[headers[i]]);
+		}
+
+		length = self.addressTo.length;
 		var builder = '';
 		var mail;
 
@@ -595,6 +619,8 @@ Message.prototype._send = function(socket, options, autosend) {
 				write(buffer.shift());
 
 				if (buffer.length === 0) {
+					self.isSent = true;
+
 					mailer.emit('success', self);
 
 					if (self.callback)
@@ -623,7 +649,7 @@ Message.prototype._send = function(socket, options, autosend) {
 					err = new Error('Forbidden.');
 					mailer.emit('error', err, self);
 
-					if (self.callback)
+					if (!self.isSent && self.callback)
 						self.callback(err);
 
 					if (socket !== null)
@@ -664,7 +690,7 @@ Message.prototype._send = function(socket, options, autosend) {
 				socket = null;
 				mailer.emit('error', err, self);
 
-				if (self.callback)
+				if (!self.isSent && self.callback)
 					self.callback(err);
 
 				break;

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 1.9.0
+ * @version 1.9.1
  */
 
 'use strict';
@@ -136,7 +136,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 	this.constants;
 	this.onPrepare;
 	this.onDefault;
-	this.onValidation = validator;
+	this.onValidation = validator ? validator : framework.onValidation;
 	this.onSave;
 	this.onGet;
 	this.onRemove;
@@ -2076,6 +2076,7 @@ function ErrorBuilder(onResource) {
 	this.count = 0;
 	this.replacer = [];
 	this.isPrepared = false;
+	this.contentType = 'application/json';
 
 	if (onResource === undefined)
 		this._resource();
@@ -2182,6 +2183,24 @@ exports.load = function(group, name, model) {
 	}
 
 	return model ? schema.make(model) : name ? schema : schemas[group];
+};
+
+exports.eachschema = function(group, fn) {
+
+	if (fn === undefined) {
+		fn = group;
+		group = undefined;
+	}
+
+	var groups = group ? [group] : Object.keys(schemas);
+	for (var i = 0, length = groups.length; i < length; i++) {
+		var schema = schemas[groups[i]];
+		if (!schema)
+			continue;
+		var collection = Object.keys(schema.collection);
+		for (var j = 0, jl = collection.length; j < jl; j++)
+			fn(schema.name, schema.collection[collection[j]].name, schema.collection[collection[j]]);
+	}
 };
 
 exports.getschema = function(group, name) {
@@ -2404,6 +2423,11 @@ ErrorBuilder.prototype.resource = function(name, prefix) {
 	return self._resource();
 };
 
+ErrorBuilder.prototype.setContentType = function(type) {
+	this.contentType = type;
+	return this;
+};
+
 ErrorBuilder.prototype.setResource = function(name) {
 	var self = this;
 	self.isResourceCustom = true;
@@ -2598,10 +2622,14 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
  * @return {String}
  */
 ErrorBuilder.prototype.json = function(beautify, replacer) {
-	var obj = this.prepare()._transform();
+	var items;
+	if (beautify !== null)
+		items = this.prepare()._transform();
+	else
+		items = this.items;
 	if (beautify)
-		return JSON.stringify(obj, replacer, '\t');
-	return JSON.stringify(obj, replacer);
+		return JSON.stringify(items, replacer, '\t');
+	return JSON.stringify(items, replacer);
 };
 
 /**
@@ -2662,7 +2690,7 @@ ErrorBuilder.prototype._transform = function(name) {
 	var transformName = name || self.transformName;
 
 	if (!transformName)
-		return self.items;
+		return self.json(null);
 
 	var current = transforms['error'][transformName];
 

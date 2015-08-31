@@ -9,6 +9,7 @@ function prototypeDate() {
 
 	var dt = new Date(1404723152167);
 	assert.ok(dt.toString() === 'Mon Jul 07 2014 10:52:32 GMT+0200 (CEST)', 'date problem');
+	assert.ok(dt.format() === '2014-07-07T10:52:32.167Z', 'date format(0) problem');
 	assert.ok(dt.add('minute', 5).toString() === 'Mon Jul 07 2014 10:57:32 GMT+0200 (CEST)', 'date add');
 
 	dt = new Date();
@@ -31,6 +32,8 @@ function prototypeDate() {
 
 	dt = '12:00:00'.parseDate();
 	assert.ok(dt.compare(dt) === 0, 'time compare (same)');
+
+
 }
 
 // test: number prototype
@@ -414,7 +417,6 @@ function other() {
 	assert.ok(utils.path(str) === '/logo/', 'utils.path(): ' + str);
 
 	assert.ok(utils.GUID(40).length === 40, 'utils.GUID(40)');
-	assert.ok(utils.combine('1', '2', 'logo.jpg') === '.1/2/logo.jpg', 'utils.combine()');
 
 	assert.ok(utils.encode('<b>total.js</b>"&nbsp;') === '&lt;b&gt;total.js&lt;/b&gt;&quot;&amp;nbsp;', 'utils.encode()');
 	assert.ok(utils.decode('&lt;b&gt;total.js&lt;/b&gt;&amp;nbsp;') === '<b>total.js</b>&nbsp;', 'utils.decode()');
@@ -529,10 +531,9 @@ function other() {
 	assert.ok(error.hasError(), 'validation - hasError()');
 
 	error.prepare();
-
-	assert.ok(error.errors[0].name === 'firstName' || error.errors[0].error === 'resource-firstName', 'validation - return boolean');
-	assert.ok(error.errors[1].name === 'lastName' || error.errors[1].error === 'lastName-error', 'validation - return string');
-	assert.ok(error.errors[2].name === 'age' || error.errors[2].error === 'age-error', 'validation - return utils.isValid()');
+	assert.ok(error.items[0].name === 'firstName' || error.items[0].error === 'resource-firstName', 'validation - return boolean');
+	assert.ok(error.items[1].name === 'lastName' || error.items[1].error === 'lastName-error', 'validation - return string');
+	assert.ok(error.items[2].name === 'age' || error.items[2].error === 'age-error', 'validation - return utils.isValid()');
 
 	error.clear();
 	assert.ok(!error.hasError(), 'validation - clear() & hasError()');

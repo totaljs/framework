@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.0
+ * @version 1.9.1
  */
 
 'use strict';
@@ -68,7 +68,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	var stream = null;
 	var maximumSize = route.length;
 	var now = Date.now();
-	var tmp = new HttpFile();
+	var tmp;
 	var close = 0;
 	var rm = null;
 	var ip = '';
@@ -88,6 +88,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 	parser.onPartBegin = function() {
 		// Temporary data
+		tmp = new HttpFile();
 		tmp.$data = new Buffer('');
 		tmp.$step = 0;
 		tmp.$is = false;
@@ -100,6 +101,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			return;
 
 		var header = buffer.slice(start, end).toString(ENCODING);
+
 		if (tmp.$step === 1) {
 			var index = header.indexOf(';');
 			if (index === -1)
@@ -219,6 +221,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			delete tmp.$data;
 			delete tmp.$is;
 			delete tmp.$step;
+
 			req.files.push(tmp);
 			framework.emit('upload-end', req, tmp);
 			return;
@@ -266,7 +269,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 function parse_multipart_header(header) {
 
-	var arr = [];
+	var arr = new Array(2);
 	var find = ' name="';
 	var length = find.length;
 	var beg = header.indexOf(find);
@@ -276,9 +279,9 @@ function parse_multipart_header(header) {
 		tmp = header.substring(beg + length, header.indexOf('"', beg + length));
 
 	if (!tmp)
-		arr.push('undefined_' + (Math.floor(Math.random() * 100000)).toString());
+		arr[0] = 'undefined_' + (Math.floor(Math.random() * 100000)).toString();
 	else
-		arr.push(tmp);
+		arr[0] = tmp;
 
 	find = ' filename="';
 	length = find.length;
@@ -292,9 +295,9 @@ function parse_multipart_header(header) {
 		tmp = header.substring(beg + length, header.indexOf('"', beg + length));
 
 	if (!tmp)
-		arr.push(null);
+		arr[1] = null;
 	else
-		arr.push(tmp);
+		arr[1] = tmp;
 
 	return arr;
 }
@@ -585,7 +588,7 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 exports.routeParam = function(routeUrl, route) {
 
 	if (!route || !routeUrl)
-		return [];
+		return new Array(0);
 
 	var length = route.param.length;
 	var arr = new Array(length);
@@ -1742,6 +1745,16 @@ function View() {}
 
 function view_parse_localization(content, language) {
 
+	var is = false;
+
+	content = content.replace(/@\{notranslate\}/gi, function(text) {
+		is = true;
+		return '';
+	}).trim();
+
+	if (is)
+		return content;
+
 	var command = view_find_localization(content, 0);
 	var output = '';
 	var end = 0;
@@ -1961,6 +1974,8 @@ function view_parse(content, minify, filename) {
 
 		} else if (cmd.substring(0, 3) === 'if ') {
 			builder += ';if (' + cmd.substring(3) + '){$output+=$EMPTY';
+		} else if (cmd7 === 'else if') {
+			builder += '} else if (' + cmd.substring(7) + ') {$output+=$EMPTY';
 		} else if (cmd === 'else') {
 			builder += '} else {$output+=$EMPTY';
 		} else if (cmd === 'endif' || cmd === 'fi') {
@@ -1974,7 +1989,7 @@ function view_parse(content, minify, filename) {
 			if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
-				builder += wrapTryCatch(tmp, command.command);
+				builder += wrapTryCatch(tmp, command.command, command.line);
 			}
 		}
 
@@ -1994,10 +2009,10 @@ function view_parse(content, minify, filename) {
 	return eval(fn);
 }
 
-function wrapTryCatch(value, command) {
+function wrapTryCatch(value, command, line) {
 	if (!framework.isDebug)
 		return value;
-	return '(function(){try{return ' + value + '}catch(e){throw new Error(unescape(\'' + escape(command) + '\') + \' - \' + e.message.toString());}return $EMPTY})()';
+	return '(function(){try{return ' + value + '}catch(e){throw new Error(unescape(\'' + escape(command) + '\') + \' - Line: ' + line + ' - \' + e.message.toString());}return $EMPTY})()';
 }
 
 function view_parse_plus(builder) {
@@ -2366,11 +2381,19 @@ function view_find_command(content, index) {
 		return {
 			beg: index,
 			end: i,
+			line: view_line_counter(content.substr(0, index)),
 			command: content.substring(index + 2, i).trim()
 		};
 	}
 
 	return null;
+}
+
+function view_line_counter(value) {
+	var count = value.match(/\n/g);
+	if (count)
+		return count.length;
+	return 0;
 }
 
 function view_find_localization(content, index) {

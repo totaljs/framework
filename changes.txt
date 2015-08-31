@@ -1,3 +1,33 @@
+======= 1.9.1 (HOTFIX)
+
+- added: new sitemap system
+- added: a default schema validator is F.onValidation()
+- added: ErrorBuilder.setContentType() --> default application/json
+- added: View engine supports `else if`
+- added: U.parseBoolean(val, [def])
+- added: F.backup(filename, path, [callback], [filter]) --> backup some path to one file
+- added: F.restore(filename, target, [callback], [filter]) --> restore backup file (but not evaluating)
+- added: MailMessage supports custom headers `message.headers = { key: 'value' }`
+- added: @{notranslate} --> disables view translation
+- added: F.mode('debug') or F.mode('release') --> changes a mode of the framework
+- added: EACHSCHEMA([group], prepare(group, name, schema))
+
+- updated: MailMessage.bcc(email, [clear]) --> added clear
+- updated: MailMessage.cc(email, [clear]) --> added clear
+- updated: MailMessage.reply(email, [clear]) --> added clear
+
+- fixed: uploading files
+- fixed: prevention for mail double callback calling (by Andrea Sessa)
+- fixed: worker messaging
+- fixed: problem with schema parser (by Andrea Sessa)
+- fixed: F.load() --> "versions" is configurable
+- fixed: "raw" receiving of data
+- fixed: U.request(), the problem with default method
+- fixed: F.exists() - problem with URL query string
+- fixed: framework startup path
+- fixed: Date.format()
+- fixed: Assertion Testing
+
 ======= 1.9.0
 
 - added: (IMPORTANT) ISOMORPHIC using

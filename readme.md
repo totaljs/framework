@@ -8,6 +8,8 @@ Framework, for node.js
 
 __total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
+[__NEW__: Eshop + CMS written in node.js / total.js](http://www.totaljs.com/eshop)
+
 ```
 $ npm install total.js
 ```
@@ -87,18 +89,21 @@ We provide a support of the framework for companies. Our support services will k
 
 | Contributor | Type | E-mail |
 |-------------|------|--------|
-| [Peter Širka](https://www.petersirka.eu) | author | <petersirka@gmail.com> |
+| [Peter Širka](https://www.petersirka.eu) | author + support | <petersirka@gmail.com> |
+| [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
 | [Matus Szabo](https://github.com/matusszabo) | support + enterprise | <matus.szabo@gmail.com> |
 | Tomas Holovsky | support + enterprise | <tomasholovsky@gmail.com> |
+| [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 
 ## Other
 
 #### Built with total.js
 
-- [__NEW__: Todomator - Task Manager System](http://www.todomator.com)
-- [__NEW__: Componenator - Resources for web developers](http://www.componentator.com)
-- [__NEW__: E-commerce, CMS and Docker manager](http://nowitssimple.com/)
-- [__NEW__: Test your application](http://www.testerleader.com/)
+- [__NEW__: Eshop + CMS written in node.js / total.js](http://www.totaljs.com/eshop)
+- [Todomator - Task Manager System](http://www.todomator.com)
+- [Componenator - Resources for web developers](http://www.componentator.com)
+- [E-commerce, CMS and Docker manager](http://nowitssimple.com/)
+- [Test your application](http://www.testerleader.com/)
 - [MonitorGuru.com (Website monitoring)](https://www.monitorguru.com)
 - [Bufferwall.com (Blog portal)](https://bufferwall.com)
 - [Warstore.sk (E-commerce)](https://www.warstore.sk)

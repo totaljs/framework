@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.0
+ * @version 1.9.1
  */
 
 'use strict';
@@ -45,6 +45,7 @@ var regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
 var regexpDATEFORMAT = /yyyy|yy|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|a/g;
 var regexpSTRINGFORMAT = /\{\d+\}/g;
+var regexpPATH = /\\/g;
 var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
@@ -352,7 +353,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		timeout = encoding;
 	}
 
-	var method = 'GET';
+	var method = '';
 	var length = 0;
 	var type = 0;
 	var e = new events.EventEmitter();
@@ -423,6 +424,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			}
 		}
 	}
+
+	if (!method)
+		method = 'GET';
 
 	var isPOST = method === 'POST' || method === 'PUT';
 
@@ -1145,6 +1149,23 @@ exports.parseInt = function(obj, def) {
 	return str.parseInt(def, 10);
 };
 
+exports.parseBool = exports.parseBoolean = function(obj, def) {
+
+	if (obj === undefined || obj === null)
+		return def === undefined ? false : def;
+
+	var type = typeof(obj);
+
+	if (type === BOOLEAN)
+		return obj;
+
+	if (type === NUMBER)
+		return obj > 0;
+
+	var str = type !== STRING ? obj.toString() : obj;
+	return str.parseBool(def);
+};
+
 /**
  * Converts Value to float number
  * @param {Object} obj Value to convert.
@@ -1645,16 +1666,32 @@ exports.combine = function() {
 
 	if (arguments[0][0] === '~') {
 		arguments[0] = arguments[0].substring(1);
-		p = path.join.apply(self, arguments);
+		p = '';
+
+		for (var i = 0, length = arguments.length; i < length; i++) {
+			var v = arguments[i];
+			if (v)
+				p += (v[0] !== '/' ? (p[p.length - 1] !== '/' ? '/' : '') : '') + v;
+		}
+
 		if (framework.isWindows)
-			return p.replace(/\\/g, '/');
+			return p.replace(regexpPATH, '/');
+
 		return p;
 	}
 
-	p = path.join.apply(self, arguments);
+	p = framework.directory;
+
+	for (var i = 0, length = arguments.length; i < length; i++) {
+		var v = arguments[i];
+		if (v)
+			p += (v[0] !== '/' ? (p[p.length - 1] !== '/' ? '/' : '') : '') + v;
+	}
+
 	if (framework.isWindows)
-		return '.' + p.replace(/\\/g, '/');
-	return '.' + p;
+		return p.replace(regexpPATH, '/');
+
+	return p;
 };
 
 /**
@@ -2148,7 +2185,7 @@ Date.prototype.format = function(format) {
 	}
 
 	if (format === undefined || format === null || format === '')
-		return self.getFullYear() + '-' + (self.getMonth() + 1).toString().padLeft(2, '0') + '-' + self.getDate().toString().padLeft(2, '0') + 'T' + self.getHours().toString().padLeft(2, '0') + ':' + self.getMinutes().toString().padLeft(2, '0') + ':' + self.getSeconds().toString().padLeft(2, '0') + ':' + self.getMilliseconds().toString();
+		return self.getFullYear() + '-' + (self.getMonth() + 1).toString().padLeft(2, '0') + '-' + self.getDate().toString().padLeft(2, '0') + 'T' + self.getHours().toString().padLeft(2, '0') + ':' + self.getMinutes().toString().padLeft(2, '0') + ':' + self.getSeconds().toString().padLeft(2, '0') + '.' + self.getMilliseconds().toString().padLeft(3, '0') + 'Z';
 
 	var h = self.getHours();
 
@@ -2708,13 +2745,9 @@ String.prototype.parseInt = function(def) {
 	@def {Number} :: optional, default 0
 	return {Number}
 */
-String.prototype.parseBool = function() {
+String.prototype.parseBool = String.prototype.parseBoolean = function() {
 	var self = this.toLowerCase();
 	return self === 'true' || self === '1' || self === 'on';
-};
-
-String.prototype.parseBoolean = function() {
-	return this.parseBool();
 };
 
 /*

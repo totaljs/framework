@@ -1,6 +1,9 @@
 Makefile
 empty-project/
 examples/
+merged/
+tools/
+helpers/
 test/
 *.markdown
 *.md
