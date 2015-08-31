@@ -5907,7 +5907,7 @@ Framework.prototype._log = function(a, b, c, d) {
 Framework.prototype.mail = function(address, subject, view, model, callback, language) {
 
 	if (typeof(callback) === STRING) {
-		tmp = language;
+		var tmp = language;
 		language = callback;
 		callback = tmp;
 	}
