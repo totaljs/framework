@@ -399,7 +399,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					break;
 
 				case 'get':
-				case 'delete':
 				case 'options':
 				case 'head':
 					method = flags[i].toUpperCase();
@@ -411,9 +410,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 				case 'post':
 				case 'put':
+				case 'delete':
 
 					method = flags[i].toUpperCase();
-
 					if (!headers['Content-Type'])
 						headers['Content-Type'] = 'application/x-www-form-urlencoded';
 
@@ -428,7 +427,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	if (!method)
 		method = 'GET';
 
-	var isPOST = method === 'POST' || method === 'PUT';
+	var isPOST = method === 'POST' || method === 'PUT' || method === 'DELETE';
 
 	if (typeof(data) !== STRING)
 		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
