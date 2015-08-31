@@ -1230,6 +1230,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		length: (length || self.config['default-request-length']) * 1024,
 		middleware: middleware,
 		timeout: timeout === undefined ? (isDELAY ? 0 : self.config['default-request-timeout']) : timeout,
+		isGET: flags.indexOf('get') !== -1,
 		isMULTIPLE: isMULTIPLE,
 		isJSON: isJSON,
 		isXML: flags.indexOf('xml') !== -1,

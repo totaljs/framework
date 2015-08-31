@@ -506,7 +506,6 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 	}
 
 	var isRole = false;
-
 	for (var i = 0, length = req.flags.length; i < length; i++) {
 
 		var flag = req.flags[i];
@@ -559,8 +558,12 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 				continue;
 		}
 
-		if (noLoggedUnlogged && route.isMEMBER)
+		if (noLoggedUnlogged && route.isMEMBER) {
+			var tmp = flag.substring(0, 3);
+			if (!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1)
+				return 0;
 			continue;
+		}
 
 		var role = flag[0] === '@';
 
@@ -570,8 +573,7 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 
 		var index = route.flags.indexOf(flag);
 		if (index === -1)
-			return !route.isMEMBER ? -1 : 0;
-
+			return route.isMEMBER ? 0 : -1;
 		if (role)
 			isRole = true;
 	}
