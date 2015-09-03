@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 1.9.1
+ * @version 1.9.2
  */
 
 'use strict';
@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.2-1';
+	this.version_header = '1.9.2-2';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -4404,8 +4404,8 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 
 	var self = this;
 	var arr = range.replace(/bytes=/, '').split('-');
-	var beg = parseInt(arr[0] || '0', 10);
-	var end = parseInt(arr[1] || '0', 10);
+	var beg = +arr[0] || 0;
+	var end = +arr[1] || 0;
 	var total = self.temporary.range[name] || 0;
 
 	if (total === 0) {
@@ -4981,7 +4981,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 
 		if (!port) {
 			if (self.config['default-port'] === 'auto') {
-				var envPort = parseInt(process.env.PORT || '');
+				var envPort = +(process.env.PORT || '');
 				if (!isNaN(envPort))
 					port = envPort;
 			} else
@@ -5068,7 +5068,7 @@ Framework.prototype.http = function(mode, options) {
 		options = {};
 
 	if (!options.port)
-		options.port = parseInt(process.argv[2]);
+		options.port = +process.argv[2];
 
 	return this.mode(require('http'), mode, options);
 };

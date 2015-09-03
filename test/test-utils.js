@@ -133,10 +133,10 @@ function prototypeString() {
 	assert.ok(str.parseInt() === 0, 'string.parseInt(): ' + str);
 
 	str = '255.50';
-	assert.ok(str.parseFloat() === 255.50, 'string.parseFloat(): ' + str);
+	assert.ok(str.parseFloat() === 255.5, 'string.parseFloat(): ' + str);
 
 	str = '  255,50  ';
-	assert.ok(str.parseFloat() === 255.50, 'string.parseFloat(): ' + str);
+	assert.ok(str.parseFloat() === 255.5, 'string.parseFloat(): ' + str);
 
 	str = '  ,50  ';
 	assert.ok(str.parseFloat() === 0.50, 'string.parseFloat(): ' + str);

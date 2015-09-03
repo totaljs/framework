@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.1
+ * @version 1.9.2
  */
 
 'use strict';
@@ -897,7 +897,7 @@ function autoprefixer(value) {
 
 		if (name === 'opacity') {
 
-			var opacity = parseFloat(plus.replace('opacity', '').replace(':', '').replace(/\s/g, ''));
+			var opacity = +plus.replace('opacity', '').replace(':', '').replace(/\s/g, '');
 			if (isNaN(opacity))
 				continue;
 
