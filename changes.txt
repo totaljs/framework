@@ -1,6 +1,6 @@
 BETA ======= 1.9.2 (HOTFIX)
 
-- updated: PageBuilder (+added properties: `nextPage`, `prevPage`, `firstPage`, `lastPage`)
+- updated: PageBuilder (+added properties: `nextPage`, `prevPage`, `firstPage`, `lastPage`) by [Liao San-Kai](https://github.com/liaosankai)
 
 - fixed: U.request() --> `DELETE` method has `application/x-www-form-urlencoded` default content type
 - fixed: routing with `delete` flag
