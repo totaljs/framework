@@ -1,7 +1,10 @@
 BETA ======= 1.9.2 (HOTFIX)
 
+- updated: PageBuilder (+added properties: `nextPage`, `prevPage`, `firstPage`, `lastPage`)
+
 - fixed: U.request() --> `DELETE` method has `application/x-www-form-urlencoded` default content type
 - fixed: routing with `delete` flag
+- fixed: PageBuilder `isFirst` and `isLast`
 
 - improve: routing performance with F.onAuthorization()
 
