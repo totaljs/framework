@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.2-2';
+	this.version_header = '1.9.2-3';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[1] === '0')
@@ -4869,7 +4869,9 @@ Framework.prototype.load = function(debug, types, path) {
 
 	var self = this;
 
-	if (path)
+	if (path && path[0] === '.' && path.length < 3)
+		self.directory = directory = require('path').normalize(directory + '/..');
+	else if (path)
 		self.directory = directory = path;
 
 	self.isWorker = true;
@@ -7542,7 +7544,9 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 
 	fork = child.fork(filename, args, { cwd: directory });
 
-	id = name + '_' + new Date().getTime();
+	if (!id)
+		id = name + '_' + new Date().getTime();
+
 	fork.__id = id;
 	self.workers[id] = fork;
 
