@@ -12958,6 +12958,9 @@ WebSocketClient.prototype._ondata = function(data) {
 
 	var self = this;
 
+	if (!self)
+		return;
+
 	if (data != null)
 		self.buffer = Buffer.concat([self.buffer, data]);
 
@@ -13056,6 +13059,8 @@ WebSocketClient.prototype.parse = function() {
 
 WebSocketClient.prototype._onerror = function(error) {
 	var self = this;
+	if (!self)
+		return;
 	if (error.stack.indexOf('ECONNRESET') !== -1 || error.stack.indexOf('socket is closed') !== -1 || error.stack.indexOf('EPIPE') !== -1)
 		return;
 	self.container.emit('error', error, self);
@@ -13063,6 +13068,9 @@ WebSocketClient.prototype._onerror = function(error) {
 
 WebSocketClient.prototype._onclose = function() {
 	var self = this;
+
+	if (!self)
+		return;
 
 	if (self._isClosed)
 		return;
@@ -13082,8 +13090,7 @@ WebSocketClient.prototype._onclose = function() {
 WebSocketClient.prototype.send = function(message) {
 
 	var self = this;
-
-	if (self.isClosed)
+	if (!self || self.isClosed)
 		return self;
 
 	if (self.type !== 1) {
@@ -13111,7 +13118,7 @@ WebSocketClient.prototype.ping = function() {
 
 	var self = this;
 
-	if (self.isClosed)
+	if (!self || self.isClosed)
 		return self;
 
 	self.socket.write(utils.getWebSocketFrame(0, '', 0x09));
@@ -13129,7 +13136,7 @@ WebSocketClient.prototype.ping = function() {
 WebSocketClient.prototype.close = function(message, code) {
 	var self = this;
 
-	if (self.isClosed)
+	if (!self || self.isClosed)
 		return self;
 
 	self.isClosed = true;
