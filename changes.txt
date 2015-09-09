@@ -1,6 +1,6 @@
 BETA ======= 1.9.2 (HOTFIX)
 
-- add: support for node v4.0.0
+- added: support for node v4.0.0
 
 - updated: F.load(.., ..., [path]) path arguments supports '..' for parent directory
 - updated: PageBuilder (+added properties: `nextPage`, `prevPage`, `firstPage`, `lastPage`) by [Liao San-Kai](https://github.com/liaosankai)
