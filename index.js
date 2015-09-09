@@ -227,13 +227,13 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1910;
-	this.version_header = '1.9.2-3';
+	this.version_header = '1.9.2-4';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
-	if (version[1] === '0')
+	if (version[0] !== '0' || version[1] !== '0')
+		version = parseFloat(version)
+	else if (version[1] === '0')
 		version = parseFloat('0.' + version.substring(1));
-	else
-		version = parseFloat(version);
 
 	this.versionNode = version;
 	this.config = {
@@ -3325,7 +3325,11 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 				if (framework.isDebug)
 					merge_debug_writer(writer, filename, extension, index++);
 
-				writer.write(output, ENCODING);
+				if (framework.versionNode >= 400)
+					writer.write(output);
+				else
+					writer.write(output, ENCODING);
+
 				next();
 			});
 			return;
@@ -3334,7 +3338,12 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		if (filename[0] === '#') {
 			if (framework.isDebug)
 				merge_debug_writer(writer, filename, 'js', index++);
-			writer.write(prepare_isomorphic(filename.substring(1)), ENCODING);
+
+			if (framework.versionNode >= 400)
+				writer.write(prepare_isomorphic(filename.substring(1)));
+			else
+				writer.write(prepare_isomorphic(filename.substring(1)), ENCODING);
+
 			next();
 			return;
 		}
@@ -3369,7 +3378,11 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 			if (framework.isDebug)
 				merge_debug_writer(writer, filename, extension, index++);
 
-			writer.write(output, ENCODING);
+			if (framework.versionNode >= 400)
+				writer.write(output);
+			else
+				writer.write(output, ENCODING);
+
 			next();
 		});
 
@@ -11328,7 +11341,7 @@ Controller.prototype.callback = function(viewName) {
 	return function(err, data) {
 
 		// NoSQL embedded database
-		if (data === undefined && !util.isError(err) && (!(err instanceof Builders.ErrorBuilder))) {
+		if (data === undefined && !framework_utils.isError(err) && (!(err instanceof Builders.ErrorBuilder))) {
 			data = err;
 			err = null;
 		}

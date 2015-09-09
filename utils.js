@@ -31,7 +31,6 @@ var parser = require('url');
 var qs = require('querystring');
 var http = require('http');
 var https = require('https');
-var util = require('util');
 var path = require('path');
 var fs = require('fs');
 var events = require('events');
@@ -782,7 +781,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 	var h = {};
 
 	if (headers)
-		util._extend(h, headers);
+		exports.extend(h, headers);
 
 	name = path.basename(name);
 
@@ -1181,7 +1180,7 @@ exports.parseFloat = function(obj, def) {
 };
 
 /**
- * Check if object is Array.
+ * Check if the object is Array.
  * @param {Object} obj
  * @return {Boolean}
  */
@@ -1190,21 +1189,30 @@ exports.isArray = function(obj) {
 };
 
 /**
- * Check if object is RegExp
+ * Check if the object is RegExp
  * @param {Object} obj
  * @return {Boolean}
  */
 exports.isRegExp = function(obj) {
-	return util.isRegExp(obj);
+	return (obj && typeof(obj.test) === FUNCTION) ? true : false;
 };
 
 /**
- * Check if object is Date
+ * Check if the object is Date
  * @param {Object} obj
  * @return {Boolean}
  */
 exports.isDate = function(obj) {
-	return util.isDate(obj);
+	return (obj && typeof(obj.getTime) === FUNCTION) ? true : false;;
+};
+
+/**
+ * Check if the object is Date
+ * @param {Object} obj
+ * @return {Boolean}
+ */
+exports.isError = function(obj) {
+	return (obj && obj.stack) ? true : false;;
 };
 
 /**
@@ -2004,7 +2012,7 @@ Date.prototype.diff = function(date, type) {
 		var to = typeof(date);
 		if (to === STRING)
 			date = Date.parse(date);
-		else if (util.isDate(date))
+		else if (exports.isDate(date))
 			date = date.getTime();
 	}
 
@@ -2664,7 +2672,7 @@ String.prototype.params = function(obj) {
 				if (!isNaN(max))
 					val = val.max(max + 3, '...');
 
-			} else if (type === NUMBER || util.isDate(val)) {
+			} else if (type === NUMBER || exports.isDate(val)) {
 				if (format.isNumber())
 					format = +format;
 				val = val.format(format);
