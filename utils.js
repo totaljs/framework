@@ -4587,7 +4587,6 @@ exports.sync = function(fn, owner) {
 
 		fn.apply(self, args);
 
-		// @TODO: WTF?
 		return function(cb) {
 			callback = cb;
 			if (!executed && params) {
@@ -4605,6 +4604,7 @@ exports.sync2 = function(fn, owner) {
 		var callback;
 		var executed = false;
 		var self = owner || this;
+		var args = [].slice.call(arguments);
 
 		args.push(function() {
 			params = arguments;
@@ -4614,7 +4614,15 @@ exports.sync2 = function(fn, owner) {
 			}
 		});
 
-		fn.apply(self);
+		fn.apply(self, args);
+
+		return function(cb) {
+			callback = cb;
+			if (!executed && params) {
+				executed = true;
+				callback.apply(self, params);
+			}
+		};
 	};
 };
 
