@@ -2065,7 +2065,7 @@ function view_prepare(command, dynamicCommand, functions) {
 			tmp = command.indexOf('(');
 			if (tmp === -1)
 				return '';
-			return '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/\'/g, '') + '\'] || \'\')';
+			return '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/\'|\"/g, '') + '\'] || \'\')';
 
 		case 'log':
 		case 'LOG':

@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1920;
-	this.version_header = '1.9.2-5';
+	this.version_header = '1.9.2-6';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -10180,6 +10180,10 @@ Controller.prototype.place = function(name) {
 			val = '';
 		else
 			val = val.toString();
+
+		if (val.endsWith('.js'))
+			val = '<script src="' + val + '"></script>';
+
 		output += val;
 	}
 
