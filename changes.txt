@@ -4,6 +4,7 @@ BETA ======= 1.9.2 (HOTFIX)
 
 - updated: F.load(.., ..., [path]) path arguments supports '..' for parent directory
 - updated: PageBuilder (+added properties: `nextPage`, `prevPage`, `firstPage`, `lastPage`) by [Liao San-Kai](https://github.com/liaosankai)
+- updated: NoSQL
 
 - fixed: U.request() --> `DELETE` method has `application/x-www-form-urlencoded` default content type
 - fixed: routing with `delete` flag
