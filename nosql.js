@@ -2,7 +2,7 @@
  * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2015
- * @version 3.0.4
+ * @version 3.0.5
  */
 
 'use strict';
@@ -12,7 +12,7 @@ var path = require('path');
 var util = require('util');
 var events = require('events');
 
-var VERSION = 'v3.0.3';
+var VERSION = 'v3.0.5';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -437,7 +437,7 @@ Database.prototype.top = function(max, fnMap, fnCallback) {
 Database.prototype.$$top = function(max, fnMap) {
 	var self = this;
 	return function(callback) {
-		return self.top(max, fnMap);
+		return self.top(max, fnMap, callback);
 	};
 };
 
@@ -454,7 +454,7 @@ Database.prototype.count = function(fnFilter, fnCallback) {
 Database.prototype.$$count = function(fnFilter) {
 	var self = this;
 	return function(callback) {
-		return self.count(fnFilter, fnMap);
+		return self.count(fnFilter, fnMap, callback);
 	};
 };
 
@@ -548,6 +548,13 @@ Database.prototype.each = function(fnDocument, fnCallback) {
 	});
 
 	return self;
+};
+
+Database.prototype.$$each = function(fnDocument) {
+	var self = this;
+	return function(callback) {
+		return self.each(fnDocument, callback);
+	};
 };
 
 /*
@@ -767,13 +774,12 @@ Database.prototype.drop = function(fnCallback) {
 	return self;
 };
 
-Database.prototype.drop = function() {
+Database.prototype.$$drop = function() {
 	var self = this;
 	return function(callback) {
 		self.drop(callback);
 	};
 };
-
 
 function noop() {};
 
@@ -1433,7 +1439,7 @@ Views.prototype.$$drop = function(name, fnCallback, changes) {
 	var self = this;
 	return function(callback) {
 		self.drop(name, callback, changes);
-	}
+	};
 };
 
 Views.prototype.refresh = function(name, fnCallback) {
