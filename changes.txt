@@ -13,7 +13,7 @@
 - fixed: sync2()
 - fixed: @{place}
 - fixed: @{section}
-- fixed: controller.memorize() - problem with different layout
+- fixed: controller.memorize() - problem with different layouts
 
 - improve: routing performance with F.onAuthorization()
 
