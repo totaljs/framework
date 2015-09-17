@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1920;
-	this.version_header = '1.9.2-6';
+	this.version_header = '1.9.2';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -12155,7 +12155,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 	if (output === null) {
 		self.precache = function(value, contentType, headers, isView) {
 
-			var options = { content: value, type: contentType };
+			var options = { content: value, type: contentType, layout: self.layoutName };
 			if (headers)
 				options.headers = headers;
 
@@ -12187,6 +12187,8 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 	if (fnFrom)
 		fnFrom();
+
+	self.layoutName = output.layout;
 
 	if (output.type !== CONTENTTYPE_TEXTHTML) {
 		self.subscribe.success();
