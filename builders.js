@@ -2099,36 +2099,6 @@ function UrlBuilder() {
 }
 
 /**
- * Pagination
- * @class
- * @param {Number} items Count of items.
- * @param {Number} page Current page.
- * @param {Number} max Max items on page.
- * @param {String} format URL format for links (next, back, go to). Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
- * @property {Number} isNext Is next page?
- * @property {Number} isPrev Is previous page?
- * @property {Number} count Page count.
- * @property {Boolean} visible Is more than one page?
- * @property {String} format Format URL. Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
- */
-function Pagination(items, page, max, format) {
-	this.isNext = false;
-	this.isPrev = false;
-	this.isFirst = false;
-	this.isLast = false;
-	this.items = items;
-	this.count = 0;
-	this.skip = 0;
-	this.take = 0;
-	this.page = 0;
-	this.max = 0;
-	this.visible = false;
-	this.format = format || '?page={0}';
-	this.refresh(items, page, max);
-	this.transformName = transforms['pagination_default'];
-}
-
-/**
  * Create schema
  * @param {String} name chema name.
  * @param {Object} obj Schema definition.
@@ -2820,6 +2790,40 @@ ErrorBuilder.setDefaultTransform = function(name) {
 };
 
 /**
+ * Pagination
+ * @class
+ * @param {Number} items Count of items.
+ * @param {Number} page Current page.
+ * @param {Number} max Max items on page.
+ * @param {String} format URL format for links (next, back, go to). Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
+ * @property {Number} isNext Is next page?
+ * @property {Number} isPrev Is previous page?
+ * @property {Number} count Page count.
+ * @property {Boolean} visible Is more than one page?
+ * @property {String} format Format URL. Example: ?page={0} --- {0} = page, {1} = items count, {2} = page count
+ */
+function Pagination(items, page, max, format) {
+	this.isNext = false;
+	this.isPrev = false;
+	this.isFirst = false;
+	this.isLast = false;
+	this.nextPage = 0;
+	this.prevPage = 0;
+	this.lastPage = 0;
+	this.firstPage = 0;
+	this.items = Math.max(0, +items);
+	this.count = 0;
+	this.skip = 0;
+	this.take = 0;
+	this.page = 0;
+	this.max = 0;
+	this.visible = false;
+	this.format = format || '?page={0}';
+	this.refresh(items, page, max);
+	this.transformName = transforms['pagination_default'];
+}
+
+/**
  * STATIC: Create transformation
  * @param {String} name
  * @param {Function(pagination)} fn
@@ -2861,20 +2865,28 @@ Pagination.removeTransform = function(name) {
 Pagination.prototype.refresh = function(items, page, max) {
 	var self = this;
 
-	self.count = Math.floor(items / max) + (items % max > 0 ? 1 : 0);
-	self.page = page - 1;
+	self.page = Math.max(1, +page) - 1;
 
 	if (self.page < 0)
 		self.page = 0;
 
-	self.items = items;
-	self.skip = self.page * max;
-	self.take = max;
-	self.max = max;
+	self.items = Math.max(0, +items);
+	self.max = Math.max(1, +max);
+	self.skip = self.page * self.max;
+	self.count = Math.ceil(self.items / self.max);
+	self.take = Math.min(self.max, (self.items - self.skip));
+
+	self.lastPage = self.count;
+	self.firstPage = 1;
+	self.prevPage = self.page ? self.page : 1;
+	self.nextPage = self.page + 2 < self.count - 1 ? self.page + 2 : self.count;
+
 	self.isPrev = self.page > 0;
 	self.isNext = self.page < self.count - 1;
-	self.isFirst = self.count > 1;
-	self.isLast = self.count > 1;
+
+	self.isFirst = self.page === 0;
+	self.isLast = self.page === self.count - 1;
+
 	self.visible = self.count > 1;
 	self.page++;
 

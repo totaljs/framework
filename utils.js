@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.1
+ * @version 1.9.2
  */
 
 'use strict';
@@ -31,7 +31,6 @@ var parser = require('url');
 var qs = require('querystring');
 var http = require('http');
 var https = require('https');
-var util = require('util');
 var path = require('path');
 var fs = require('fs');
 var events = require('events');
@@ -399,7 +398,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					break;
 
 				case 'get':
-				case 'delete':
 				case 'options':
 				case 'head':
 					method = flags[i].toUpperCase();
@@ -411,9 +409,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 				case 'post':
 				case 'put':
+				case 'delete':
 
 					method = flags[i].toUpperCase();
-
 					if (!headers['Content-Type'])
 						headers['Content-Type'] = 'application/x-www-form-urlencoded';
 
@@ -428,7 +426,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	if (!method)
 		method = 'GET';
 
-	var isPOST = method === 'POST' || method === 'PUT';
+	var isPOST = method === 'POST' || method === 'PUT' || method === 'DELETE';
 
 	if (typeof(data) !== STRING)
 		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
@@ -518,7 +516,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			}
 
 			request.on('response', function(response) {
-				responseLength = parseInt(response.headers['content-length']) || 0;
+				responseLength = +response.headers['content-length'] || 0;
 				e.emit('begin', responseLength);
 			});
 
@@ -727,7 +725,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 			}
 
 			request.on('response', function(response) {
-				responseLength = parseInt(response.headers['content-length']) || 0;
+				responseLength = +response.headers['content-length'] || 0;
 				e.emit('begin', responseLength);
 			});
 
@@ -783,7 +781,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 	var h = {};
 
 	if (headers)
-		util._extend(h, headers);
+		exports.extend(h, headers);
 
 	name = path.basename(name);
 
@@ -1136,17 +1134,12 @@ exports.isNullOrEmpty = function(str) {
  * @return {Number}
  */
 exports.parseInt = function(obj, def) {
-
 	if (obj === undefined || obj === null)
 		return def || 0;
-
 	var type = typeof(obj);
-
 	if (type === NUMBER)
 		return obj;
-
-	var str = type !== STRING ? obj.toString() : obj;
-	return str.parseInt(def, 10);
+	return (type !== STRING ? obj.toString() : obj).parseInt();
 };
 
 exports.parseBool = exports.parseBoolean = function(obj, def) {
@@ -1187,7 +1180,7 @@ exports.parseFloat = function(obj, def) {
 };
 
 /**
- * Check if object is Array.
+ * Check if the object is Array.
  * @param {Object} obj
  * @return {Boolean}
  */
@@ -1196,21 +1189,30 @@ exports.isArray = function(obj) {
 };
 
 /**
- * Check if object is RegExp
+ * Check if the object is RegExp
  * @param {Object} obj
  * @return {Boolean}
  */
 exports.isRegExp = function(obj) {
-	return util.isRegExp(obj);
+	return (obj && typeof(obj.test) === FUNCTION) ? true : false;
 };
 
 /**
- * Check if object is Date
+ * Check if the object is Date
  * @param {Object} obj
  * @return {Boolean}
  */
 exports.isDate = function(obj) {
-	return util.isDate(obj);
+	return (obj && typeof(obj.getTime) === FUNCTION) ? true : false;;
+};
+
+/**
+ * Check if the object is Date
+ * @param {Object} obj
+ * @return {Boolean}
+ */
+exports.isError = function(obj) {
+	return (obj && obj.stack) ? true : false;;
 };
 
 /**
@@ -2010,7 +2012,7 @@ Date.prototype.diff = function(date, type) {
 		var to = typeof(date);
 		if (to === STRING)
 			date = Date.parse(date);
-		else if (util.isDate(date))
+		else if (exports.isDate(date))
 			date = date.getTime();
 	}
 
@@ -2068,18 +2070,18 @@ Date.prototype.extend = function(date) {
 		if (m.indexOf(':') !== -1) {
 
 			arr = m.split(':');
-			tmp = parseInt(arr[0], 10);
+			tmp = +arr[0];
 			if (!isNaN(tmp))
 				dt.setHours(tmp);
 
 			if (arr[1]) {
-				tmp = parseInt(arr[1], 10);
+				tmp = +arr[1];
 				if (!isNaN(tmp))
 					dt.setMinutes(tmp);
 			}
 
 			if (arr[2]) {
-				tmp = parseInt(arr[2], 10);
+				tmp = +arr[2];
 				if (!isNaN(tmp))
 					dt.setSeconds(tmp);
 			}
@@ -2090,17 +2092,17 @@ Date.prototype.extend = function(date) {
 		if (m.indexOf('-') !== -1) {
 			arr = m.split('-');
 
-			tmp = parseInt(arr[0]);
+			tmp = +arr[0];
 			dt.setFullYear(tmp);
 
 			if (arr[1]) {
-				tmp = parseInt(arr[1], 10);
+				tmp = +arr[1];
 				if (!isNaN(tmp))
 					dt.setMonth(tmp - 1);
 			}
 
 			if (arr[2]) {
-				tmp = parseInt(arr[2], 10);
+				tmp = +arr[2];
 				if (!isNaN(tmp))
 					dt.setDate(tmp);
 			}
@@ -2111,17 +2113,17 @@ Date.prototype.extend = function(date) {
 		if (m.indexOf('.') !== -1) {
 			arr = m.split('.');
 
-			tmp = parseInt(arr[0], 10);
+			tmp = +arr[0];
 			dt.setDate(tmp);
 
 			if (arr[1]) {
-				tmp = parseInt(arr[1], 10);
+				tmp = +arr[1];
 				if (!isNaN(tmp))
 					dt.setMonth(tmp - 1);
 			}
 
 			if (arr[2]) {
-				tmp = parseInt(arr[2]);
+				tmp = +arr[2];
 				if (!isNaN(tmp))
 					dt.setFullYear(tmp);
 			}
@@ -2416,13 +2418,13 @@ String.prototype.parseDate = function() {
 	} else
 		time[3] = '0';
 
-	parsed.push(parseInt(date[firstDay ? 2 : 0], 10)); // year
-	parsed.push(parseInt(date[1], 10)); // month
-	parsed.push(parseInt(date[firstDay ? 0 : 2], 10)); // day
-	parsed.push(parseInt(time[0], 10)); // hours
-	parsed.push(parseInt(time[1], 10)); // minutes
-	parsed.push(parseInt(time[2], 10)); // seconds
-	parsed.push(parseInt(time[3], 10)); // miliseconds
+	parsed.push(+date[firstDay ? 2 : 0]); // year
+	parsed.push(+date[1]); // month
+	parsed.push(+date[firstDay ? 0 : 2]); // day
+	parsed.push(+time[0]); // hours
+	parsed.push(+time[1]); // minutes
+	parsed.push(+time[2]); // seconds
+	parsed.push(+time[3]); // miliseconds
 
 	var def = new Date();
 
@@ -2557,7 +2559,7 @@ String.prototype.parseConfig = function(def) {
 String.prototype.format = function() {
 	var arg = arguments;
 	return this.replace(regexpSTRINGFORMAT, function(text) {
-		var value = arg[parseInt(text.substring(1, text.length - 1))];
+		var value = arg[+text.substring(1, text.length - 1)];
 		if (value === null || value === undefined)
 			value = '';
 		return value;
@@ -2666,13 +2668,13 @@ String.prototype.params = function(obj) {
 
 			var type = typeof(val);
 			if (type === STRING) {
-				var max = parseInt(format, 10);
+				var max = +format;
 				if (!isNaN(max))
 					val = val.max(max + 3, '...');
 
-			} else if (type === NUMBER || util.isDate(val)) {
+			} else if (type === NUMBER || exports.isDate(val)) {
 				if (format.isNumber())
-					format = parseInt(format);
+					format = +format;
 				val = val.format(format);
 			}
 		}
@@ -2722,50 +2724,26 @@ String.prototype.isEmail = function() {
 	return regexpMail.test(str);
 };
 
-/*
-	@def {Number} :: optional, default 0
-	return {Number}
-*/
 String.prototype.parseInt = function(def) {
-	var num = 0;
-	var str = this;
-
-	if (str.substring(0, 1) === '0')
-		num = parseInt(str.replace(/\s/g, '').substring(1), 10);
-	else
-		num = parseInt(str.replace(/\s/g, ''), 10);
-
+	var str = this.trim();
+	var num = +str;
 	if (isNaN(num))
 		return def || 0;
-
 	return num;
 };
 
-/*
-	@def {Number} :: optional, default 0
-	return {Number}
-*/
 String.prototype.parseBool = String.prototype.parseBoolean = function() {
 	var self = this.toLowerCase();
 	return self === 'true' || self === '1' || self === 'on';
 };
 
-/*
-	@def {Number} :: optional, default 0
-	return {Number}
-*/
 String.prototype.parseFloat = function(def) {
-	var num = 0;
-	var str = this;
-
-	if (str.substring(0, 1) === '0')
-		num = parseFloat(str.replace(/\s/g, '').substring(1).replace(',', '.'));
-	else
-		num = parseFloat(str.replace(/\s/g, '').replace(',', '.'));
-
+	var str = this.trim();
+	if (str.indexOf(',') !== -1)
+		str = str.replace(',', '.');
+	var num = +str;
 	if (isNaN(num))
 		return def || 0;
-
 	return num;
 };
 
@@ -2869,7 +2847,7 @@ String.prototype.decrypt = function(key) {
 	if (index === -1)
 		return null;
 
-	var counter = parseInt(values.substring(0, index), 10);
+	var counter = +values.substring(0, index);
 	if (isNaN(counter))
 		return null;
 
@@ -4609,7 +4587,6 @@ exports.sync = function(fn, owner) {
 
 		fn.apply(self, args);
 
-		// @TODO: WTF?
 		return function(cb) {
 			callback = cb;
 			if (!executed && params) {
@@ -4627,6 +4604,7 @@ exports.sync2 = function(fn, owner) {
 		var callback;
 		var executed = false;
 		var self = owner || this;
+		var args = [].slice.call(arguments);
 
 		args.push(function() {
 			params = arguments;
@@ -4636,7 +4614,15 @@ exports.sync2 = function(fn, owner) {
 			}
 		});
 
-		fn.apply(self);
+		fn.apply(self, args);
+
+		return function(cb) {
+			callback = cb;
+			if (!executed && params) {
+				executed = true;
+				callback.apply(self, params);
+			}
+		};
 	};
 };
 

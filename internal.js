@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.1
+ * @version 1.9.2
  */
 
 'use strict';
@@ -506,7 +506,6 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 	}
 
 	var isRole = false;
-
 	for (var i = 0, length = req.flags.length; i < length; i++) {
 
 		var flag = req.flags[i];
@@ -559,8 +558,12 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 				continue;
 		}
 
-		if (noLoggedUnlogged && route.isMEMBER)
+		if (noLoggedUnlogged && route.isMEMBER) {
+			var tmp = flag.substring(0, 3);
+			if (!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1)
+				return 0;
 			continue;
+		}
 
 		var role = flag[0] === '@';
 
@@ -570,8 +573,7 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 
 		var index = route.flags.indexOf(flag);
 		if (index === -1)
-			return !route.isMEMBER ? -1 : 0;
-
+			return route.isMEMBER ? 0 : -1;
 		if (role)
 			isRole = true;
 	}
@@ -895,7 +897,7 @@ function autoprefixer(value) {
 
 		if (name === 'opacity') {
 
-			var opacity = parseFloat(plus.replace('opacity', '').replace(':', '').replace(/\s/g, ''));
+			var opacity = +plus.replace('opacity', '').replace(':', '').replace(/\s/g, '');
 			if (isNaN(opacity))
 				continue;
 
@@ -2063,7 +2065,7 @@ function view_prepare(command, dynamicCommand, functions) {
 			tmp = command.indexOf('(');
 			if (tmp === -1)
 				return '';
-			return '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/\'/g, '') + '\'] || \'\')';
+			return '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/\'|\"/g, '') + '\'] || \'\')';
 
 		case 'log':
 		case 'LOG':

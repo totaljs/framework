@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 1.9.1
+ * @version 1.9.2
  */
 
 'use strict';
@@ -226,14 +226,14 @@ global.is_server = true;
 function Framework() {
 
 	this.id = null;
-	this.version = 1910;
-	this.version_header = '1.9.1';
+	this.version = 1920;
+	this.version_header = '1.9.2';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
-	if (version[1] === '0')
+	if (version[0] !== '0' || version[1] !== '0')
+		version = parseFloat(version)
+	else if (version[1] === '0')
 		version = parseFloat('0.' + version.substring(1));
-	else
-		version = parseFloat(version);
 
 	this.versionNode = version;
 	this.config = {
@@ -1230,6 +1230,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		length: (length || self.config['default-request-length']) * 1024,
 		middleware: middleware,
 		timeout: timeout === undefined ? (isDELAY ? 0 : self.config['default-request-timeout']) : timeout,
+		isGET: flags.indexOf('get') !== -1,
 		isMULTIPLE: isMULTIPLE,
 		isJSON: isJSON,
 		isXML: flags.indexOf('xml') !== -1,
@@ -3324,7 +3325,11 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 				if (framework.isDebug)
 					merge_debug_writer(writer, filename, extension, index++);
 
-				writer.write(output, ENCODING);
+				if (framework.versionNode >= 400)
+					writer.write(output);
+				else
+					writer.write(output, ENCODING);
+
 				next();
 			});
 			return;
@@ -3333,7 +3338,12 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		if (filename[0] === '#') {
 			if (framework.isDebug)
 				merge_debug_writer(writer, filename, 'js', index++);
-			writer.write(prepare_isomorphic(filename.substring(1)), ENCODING);
+
+			if (framework.versionNode >= 400)
+				writer.write(prepare_isomorphic(filename.substring(1)));
+			else
+				writer.write(prepare_isomorphic(filename.substring(1)), ENCODING);
+
 			next();
 			return;
 		}
@@ -3368,7 +3378,11 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 			if (framework.isDebug)
 				merge_debug_writer(writer, filename, extension, index++);
 
-			writer.write(output, ENCODING);
+			if (framework.versionNode >= 400)
+				writer.write(output);
+			else
+				writer.write(output, ENCODING);
+
 			next();
 		});
 
@@ -4403,8 +4417,8 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 
 	var self = this;
 	var arr = range.replace(/bytes=/, '').split('-');
-	var beg = parseInt(arr[0] || '0', 10);
-	var end = parseInt(arr[1] || '0', 10);
+	var beg = +arr[0] || 0;
+	var end = +arr[1] || 0;
 	var total = self.temporary.range[name] || 0;
 
 	if (total === 0) {
@@ -4868,7 +4882,9 @@ Framework.prototype.load = function(debug, types, path) {
 
 	var self = this;
 
-	if (path)
+	if (path && path[0] === '.' && path.length < 3)
+		self.directory = directory = require('path').normalize(directory + '/..');
+	else if (path)
 		self.directory = directory = path;
 
 	self.isWorker = true;
@@ -4980,7 +4996,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 
 		if (!port) {
 			if (self.config['default-port'] === 'auto') {
-				var envPort = parseInt(process.env.PORT || '');
+				var envPort = +(process.env.PORT || '');
 				if (!isNaN(envPort))
 					port = envPort;
 			} else
@@ -5067,7 +5083,7 @@ Framework.prototype.http = function(mode, options) {
 		options = {};
 
 	if (!options.port)
-		options.port = parseInt(process.argv[2]);
+		options.port = +process.argv[2];
 
 	return this.mode(require('http'), mode, options);
 };
@@ -7541,7 +7557,9 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 
 	fork = child.fork(filename, args, { cwd: directory });
 
-	id = name + '_' + new Date().getTime();
+	if (!id)
+		id = name + '_' + new Date().getTime();
+
 	fork.__id = id;
 	self.workers[id] = fork;
 
@@ -8787,6 +8805,11 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
 
 	if (user)
 		req.user = user;
+
+	if (self.route && !self.route.isMEMBER && isLogged) {
+		self.execute(req.buffer_exceeded ? 431 : 401);
+		return;
+	}
 
 	var route = framework.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags);
 	var status = req.$isAuthorized ? 404 : 401;
@@ -10157,6 +10180,10 @@ Controller.prototype.place = function(name) {
 			val = '';
 		else
 			val = val.toString();
+
+		if (val.endsWith('.js'))
+			val = '<script src="' + val + '"></script>';
+
 		output += val;
 	}
 
@@ -11318,7 +11345,7 @@ Controller.prototype.callback = function(viewName) {
 	return function(err, data) {
 
 		// NoSQL embedded database
-		if (data === undefined && !util.isError(err) && (!(err instanceof Builders.ErrorBuilder))) {
+		if (data === undefined && !framework_utils.isError(err) && (!(err instanceof Builders.ErrorBuilder))) {
 			data = err;
 			err = null;
 		}
@@ -12128,7 +12155,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 	if (output === null) {
 		self.precache = function(value, contentType, headers, isView) {
 
-			var options = { content: value, type: contentType };
+			var options = { content: value, type: contentType, layout: self.layoutName };
 			if (headers)
 				options.headers = headers;
 
@@ -12160,6 +12187,8 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 	if (fnFrom)
 		fnFrom();
+
+	self.layoutName = output.layout;
 
 	if (output.type !== CONTENTTYPE_TEXTHTML) {
 		self.subscribe.success();
@@ -12948,6 +12977,9 @@ WebSocketClient.prototype._ondata = function(data) {
 
 	var self = this;
 
+	if (!self)
+		return;
+
 	if (data != null)
 		self.buffer = Buffer.concat([self.buffer, data]);
 
@@ -13046,6 +13078,8 @@ WebSocketClient.prototype.parse = function() {
 
 WebSocketClient.prototype._onerror = function(error) {
 	var self = this;
+	if (!self)
+		return;
 	if (error.stack.indexOf('ECONNRESET') !== -1 || error.stack.indexOf('socket is closed') !== -1 || error.stack.indexOf('EPIPE') !== -1)
 		return;
 	self.container.emit('error', error, self);
@@ -13053,6 +13087,9 @@ WebSocketClient.prototype._onerror = function(error) {
 
 WebSocketClient.prototype._onclose = function() {
 	var self = this;
+
+	if (!self)
+		return;
 
 	if (self._isClosed)
 		return;
@@ -13072,8 +13109,7 @@ WebSocketClient.prototype._onclose = function() {
 WebSocketClient.prototype.send = function(message) {
 
 	var self = this;
-
-	if (self.isClosed)
+	if (!self || self.isClosed)
 		return self;
 
 	if (self.type !== 1) {
@@ -13101,7 +13137,7 @@ WebSocketClient.prototype.ping = function() {
 
 	var self = this;
 
-	if (self.isClosed)
+	if (!self || self.isClosed)
 		return self;
 
 	self.socket.write(utils.getWebSocketFrame(0, '', 0x09));
@@ -13119,7 +13155,7 @@ WebSocketClient.prototype.ping = function() {
 WebSocketClient.prototype.close = function(message, code) {
 	var self = this;
 
-	if (self.isClosed)
+	if (!self || self.isClosed)
 		return self;
 
 	self.isClosed = true;

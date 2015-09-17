@@ -1,3 +1,22 @@
+======= 1.9.2 (HOTFIX)
+
+- added: support for node +v4.0.0
+
+- updated: F.load(.., ..., [path]) path arguments supports '..' for parent directory
+- updated: PageBuilder (+added properties: `nextPage`, `prevPage`, `firstPage`, `lastPage`) by [Liao San-Kai](https://github.com/liaosankai)
+- updated: NoSQL
+
+- fixed: U.request() --> `DELETE` method has `application/x-www-form-urlencoded` as default content type
+- fixed: routing with `delete` flag
+- fixed: F.worker()
+- fixed: WebSocket event handlers
+- fixed: sync2()
+- fixed: @{place}
+- fixed: @{section}
+- fixed: controller.memorize() - problem with different layout
+
+- improve: routing performance with F.onAuthorization()
+
 ======= 1.9.1 (HOTFIX)
 
 - added: new sitemap system

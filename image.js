@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 1.9.0
+ * @version 1.9.2
  */
 
 'use strict';
@@ -104,7 +104,7 @@ exports.measureSVG = function(buffer) {
 
 		if (width === 0) {
 			if (value.startsWith('width="')) {
-				width = parseInt(value.match(/\d+/g));
+				width = +value.match(/\d+/g);
 				if (isNaN(width))
 					width = 0;
 			}
@@ -112,7 +112,7 @@ exports.measureSVG = function(buffer) {
 
 		if (height === 0) {
 			if (value.startsWith('height="')) {
-				height = parseInt(value.match(/\d+/g));
+				height = +value.match(/\d+/g);
 				if (isNaN(height))
 					height = 0;
 			}

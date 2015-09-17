@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 1.9.1
+ * @version 1.9.2
  */
 
 'use strict'
@@ -573,7 +573,7 @@ Message.prototype._send = function(socket, options, autosend) {
 		if (mailer.debug)
 			console.log('<–––', line);
 
-		var code = parseInt(line.match(/\d+/)[0], 10);
+		var code = +line.match(/\d+/)[0];
 		if (code === 250 && !isAuthorization) {
 			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) || (options.user && options.password)) {
 				authType = 'plain';
