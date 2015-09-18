@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.2
+ * @version 1.9.3
  */
 
 'use strict';
@@ -4598,7 +4598,7 @@ exports.sync = function(fn, owner) {
 };
 
 exports.sync2 = function(fn, owner) {
-	return function() {
+	(function() {
 
 		var params;
 		var callback;
@@ -4623,7 +4623,7 @@ exports.sync2 = function(fn, owner) {
 				callback.apply(self, params);
 			}
 		};
-	};
+	})();
 };
 
 exports.async = function(fn, isApply) {
