@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 1.9.2
+ * @version 1.9.3
  */
 
 'use strict';
@@ -226,8 +226,8 @@ global.is_server = true;
 function Framework() {
 
 	this.id = null;
-	this.version = 1920;
-	this.version_header = '1.9.2';
+	this.version = 1930;
+	this.version_header = '1.9.3-0';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')

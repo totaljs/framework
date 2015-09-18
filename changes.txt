@@ -1,3 +1,7 @@
+BETA ======= 1.9.3 (HOTFIX)
+
+- fixed: sync2()
+
 ======= 1.9.2 (HOTFIX)
 
 - added: support for node +v4.0.0
