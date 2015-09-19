@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-0';
+	this.version_header = '1.9.3-1';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1902,10 +1902,18 @@ Framework.prototype.$load = function(types) {
 		fs.readdirSync(directory).forEach(function(o) {
 			var isDirectory = fs.statSync(path.join(directory, o)).isDirectory();
 			if (isDirectory) {
+
+				if (extension === '.package' && o.endsWith(extension)) {
+					var name = o.substring(0, o.length - extension.length);
+					output.push({ name: name[0] === '/' ? name.substring(1) : name, filename: path.join(dir, o), is: true });
+					return;
+				}
+
 				level++;
 				listing(path.join(directory, o), level, output, extension);
 				return;
 			}
+
 			var ext = path.extname(o).toLowerCase();
 			if (ext !== extension)
 				return;
@@ -1940,6 +1948,30 @@ Framework.prototype.$load = function(types) {
 		listing(dir, 0, arr, '.package');
 
 		arr.forEach(function(item) {
+
+			if (item.is) {
+				framework_utils.ls(item.filename, function(files, directories) {
+					var dir = framework.path.temp(item.name);
+
+					if (!fs.existsSync(dir))
+						fs.mkdirSync(dir);
+
+					for (var i = 0, length = directories.length; i < length; i++) {
+						if (!fs.existsSync(directories[i]))
+							fs.mkdirSync(directories[i]);
+					}
+
+					files.wait(function(filename, next) {
+						var stream = fs.createReadStream(filename);
+						stream.pipe(fs.createWriteStream(path.join(dir, path.basename(filename))));
+						stream.on('end', next);
+					}, function() {
+						self.install('package2', item.name, item.filename, undefined, undefined, undefined, true);
+					});
+				});
+				return;
+			}
+
 			self.install('package', item.name, item.filename, undefined, undefined, undefined, true);
 		});
 	}
@@ -2174,6 +2206,21 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		});
 
+		return self;
+	}
+
+	if (type === 'package2') {
+		var id = path.basename(declaration, '.package');
+		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id);
+		var filename = path.join(dir, 'index.js');
+		self.install('module', id, filename, options, function(err) {
+			setTimeout(function() {
+				self.emit(type + '#' + name);
+				self.emit('install', type, name);
+			}, 500);
+			if (callback)
+				callback(err);
+		}, internal, useRequired, true);
 		return self;
 	}
 
@@ -5497,7 +5544,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 	var method = req.method;
 	var first = method[0];
-
 	if (first === 'P' || first === 'D') {
 		var index = multipart.lastIndexOf(';');
 		var tmp = multipart;
@@ -5525,9 +5571,14 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				flags.push('upload');
 				break;
 			default:
-				// UNDEFINED DATA
-				multipart = '';
-				flags.push('raw');
+				if (multipart === '') {
+					req.$type = 3;
+					multipart = '';
+				} else {
+					// UNDEFINED DATA
+					multipart = '';
+					flags.push('raw');
+				}
 				break;
 		}
 	}
@@ -8712,8 +8763,6 @@ Subscribe.prototype.execute = function(status) {
 
 	return self;
 };
-
-
 
 /*
 	@flags {String Array}
