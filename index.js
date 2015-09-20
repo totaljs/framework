@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-1';
+	this.version_header = '1.9.3-2';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1947,23 +1947,25 @@ Framework.prototype.$load = function(types) {
 		arr = [];
 		listing(dir, 0, arr, '.package');
 
+		var dirtmp = dir;
+
 		arr.forEach(function(item) {
 
 			if (item.is) {
 				framework_utils.ls(item.filename, function(files, directories) {
 					var dir = framework.path.temp(item.name);
-
 					if (!fs.existsSync(dir))
 						fs.mkdirSync(dir);
 
 					for (var i = 0, length = directories.length; i < length; i++) {
-						if (!fs.existsSync(directories[i]))
-							fs.mkdirSync(directories[i]);
+						var target = framework.path.temp(directories[i].replace(dirtmp, '').replace('.package', '') + '/');
+						if (!fs.existsSync(target))
+							fs.mkdirSync(target);
 					}
 
 					files.wait(function(filename, next) {
 						var stream = fs.createReadStream(filename);
-						stream.pipe(fs.createWriteStream(path.join(dir, path.basename(filename))));
+						stream.pipe(fs.createWriteStream(path.join(dir, filename.replace(item.filename, '').replace('.package', ''))));
 						stream.on('end', next);
 					}, function() {
 						self.install('package2', item.name, item.filename, undefined, undefined, undefined, true);
