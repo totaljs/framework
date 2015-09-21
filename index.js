@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-2';
+	this.version_header = '1.9.3-3';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1724,9 +1724,10 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
  * @param {String} url A relative url path (e.g. /templates/)
  * @param {String Array} middleware Optional
  * @param {Object} options Optional, middleware options
+ * @param {Boolean} minify Minifies HTML code, default: false
  * @return {Framework}
  */
-Framework.prototype.localize = function(name, url, middleware, options) {
+Framework.prototype.localize = function(name, url, middleware, options, minify) {
 
 	var self = this;
 	url = url.replace('*', '');
@@ -1737,6 +1738,14 @@ Framework.prototype.localize = function(name, url, middleware, options) {
 	if (index !== -1) {
 		extension = url.substring(index + 1);
 		url = url.substring(0, index);
+	}
+
+	if (middleware === true) {
+		middleware = null;
+		minify = true;
+	} else if (options === true) {
+		options = null;
+		minify = true;
 	}
 
 	var fnExecute = function(req, res, is) {
@@ -1761,6 +1770,10 @@ Framework.prototype.localize = function(name, url, middleware, options) {
 			content = framework.translator(req.$language, content.toString(ENCODING));
 			if (!framework.isDebug)
 				framework.temporary.other[key] = content;
+
+			if (minify && (req.extension === 'html' || req.extension === 'htm'))
+				content = framework_internal.compile_html(content);
+
 			framework.responseContent(req, res, 200, content, framework_utils.getContentType(req.extension), true);
 		});
 	};
