@@ -227,7 +227,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-3';
+	this.version_header = '1.9.3-4';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1772,7 +1772,7 @@ Framework.prototype.localize = function(name, url, middleware, options, minify) 
 				framework.temporary.other[key] = content;
 
 			if (minify && (req.extension === 'html' || req.extension === 'htm'))
-				content = framework_internal.compile_html(content);
+				content = framework_internal.compile_html(content, filename);
 
 			framework.responseContent(req, res, 200, content, framework_utils.getContentType(req.extension), true);
 		});

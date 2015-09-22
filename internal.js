@@ -1357,7 +1357,7 @@ exports.compile_javascript = function(source, filename) {
 };
 
 exports.compile_html = function(source, filename) {
-	return compressHTML(source, true);
+	return compressCSS(compressJS(compressHTML(source, true), 0, filename), 0, filename);
 };
 
 // *********************************************************************************
@@ -2791,14 +2791,25 @@ function compressHTML(html, minify) {
 			if (i === 0) {
 				end = value.indexOf('>');
 				len = value.indexOf('type="text/template"');
-				if (len < end && len !== -1)
-					break;
+
+				if (len < end && len !== -1) {
+					beg = html.indexOf(tagBeg, beg + tagBeg.length);
+					continue;
+				}
+
 				len = value.indexOf('type="text/html"');
-				if (len < end && len !== -1)
-					break;
+
+				if (len < end && len !== -1) {
+					beg = html.indexOf(tagBeg, beg + tagBeg.length);
+					continue;
+				}
+
 				len = value.indexOf('type="text/ng-template"');
-				if (len < end && len !== -1)
-					break;
+
+				if (len < end && len !== -1) {
+					beg = html.indexOf(tagBeg, beg + tagBeg.length);
+					continue;
+				}
 			}
 
 			cache[key] = value;
