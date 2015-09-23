@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 1.9.1
+ * @version 1.9.3
  */
 
 'use strict';
@@ -773,7 +773,7 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback, skip) {
 				return;
 
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
-				if (result instanceof Error || result instanceof ErrorBuilder)
+				if ((result instanceof Error || result instanceof ErrorBuilder) && builder !== result)
 					builder.push(result);
 				result = arguments[1];
 			}
@@ -842,7 +842,7 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 			return;
 
 		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
-			if (result instanceof Error || result instanceof ErrorBuilder)
+			if ((result instanceof Error || result instanceof ErrorBuilder) && builder !== result)
 				builder.push(result);
 			result = arguments[1];
 		}
@@ -899,7 +899,7 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 			return;
 
 		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
-			if (result instanceof Error || result instanceof ErrorBuilder)
+			if ((result instanceof Error || result instanceof ErrorBuilder) && builder !== result)
 				builder.push(result);
 			result = arguments[1];
 		}
@@ -955,7 +955,7 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 			return;
 
 		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
-			if (result instanceof Error || result instanceof ErrorBuilder)
+			if ((result instanceof Error || result instanceof ErrorBuilder) && builder !== result)
 				builder.push(result);
 			result = arguments[1];
 		}
@@ -1667,7 +1667,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 				return;
 
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
-				if (result instanceof Error || result instanceof ErrorBuilder)
+				if ((result instanceof Error || result instanceof ErrorBuilder) && builder !== result)
 					builder.push(result);
 				result = arguments[1];
 			}
@@ -1766,7 +1766,7 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback, 
 				return;
 
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
-				if (result instanceof Error || result instanceof ErrorBuilder)
+				if ((result instanceof Error || result instanceof ErrorBuilder) && builder !== result)
 					builder.push(result);
 				result = arguments[1];
 			}
@@ -1788,7 +1788,7 @@ SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builde
 	var self = this;
 
 	if (arg.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
-		if (result instanceof Error || result instanceof ErrorBuilder)
+		if ((result instanceof Error || result instanceof ErrorBuilder) && builder !== result)
 			builder.push(result);
 		result = arg[1];
 	}
@@ -1880,7 +1880,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 				return;
 
 			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
-				if (result instanceof Error || result instanceof ErrorBuilder)
+				if ((result instanceof Error || result instanceof ErrorBuilder) && builder !== result)
 					builder.push(result);
 				result = arguments[1];
 			}
@@ -1971,7 +1971,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 			return;
 
 		if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
-			if (result instanceof Error || result instanceof ErrorBuilder)
+			if ((result instanceof Error || result instanceof ErrorBuilder) && builder !== result)
 				builder.push(result);
 			result = arguments[1];
 		}
