@@ -3765,12 +3765,14 @@ Array.prototype.orderBy = function(name, asc) {
 */
 Array.prototype.trim = function() {
 	var self = this;
-	var length = self.length;
-	for (var i = 0; i < length; i++) {
+	var output = [];
+	for (var i = 0, length = self.length; i < length; i++) {
 		if (typeof(self[i]) === STRING)
 			self[i] = self[i].trim();
+		if (self[i])
+			output.push(self[i]);
 	}
-	return self;
+	return output;
 };
 
 /**
