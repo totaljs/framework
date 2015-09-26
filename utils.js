@@ -37,7 +37,7 @@ var events = require('events');
 var crypto = require('crypto');
 var expressionCache = {};
 
-var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
+var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 var regexpTRIM = /^[\s]+|[\s]+$/g;
 var regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
@@ -2717,10 +2717,6 @@ String.prototype.isEmail = function() {
 	var str = this;
 	if (str.length <= 4)
 		return false;
-
-	if (str[0] === '.' || str[str.length - 1] === '.')
-		return false;
-
 	return regexpMail.test(str);
 };
 
@@ -3409,13 +3405,6 @@ Number.prototype.hex = function(length) {
 };
 
 /*
-	Internal function
-*/
-Number.prototype.condition = function(ifTrue, ifFalse) {
-	return (this % 2 === 0 ? ifTrue : ifFalse) || '';
-};
-
-/*
 	VAT
 	@percentage {Number}
 	@decimals {Number}, optional, default 2,
@@ -3469,10 +3458,6 @@ if (typeof (Number.prototype.toRad) === UNDEFINED) {
 		return this * Math.PI / 180;
 	};
 }
-
-Boolean.prototype.condition = function(ifTrue, ifFalse) {
-	return (this ? ifTrue : ifFalse) || '';
-};
 
 /**
  * Take items from array
