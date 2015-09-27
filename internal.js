@@ -509,6 +509,7 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 	for (var i = 0, length = req.flags.length; i < length; i++) {
 
 		var flag = req.flags[i];
+
 		switch (flag) {
 			case 'json':
 				// skip
@@ -516,6 +517,11 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 				if (!route.isJSON)
 					return 0;
 				*/
+				continue;
+
+			case 'xml':
+				if (!route.isRAW)
+					return 0;
 				continue;
 
 			case 'proxy':

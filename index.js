@@ -160,7 +160,7 @@ global.MAKE = global.TRANSFORM = function(transform, fn) {
 		obj = fn;
 
 	if (transform)
-		return TransformBuilder.transform(transform, obj);
+		return TransformBuilder.transform.apply(obj, arguments);
 
 	return obj;
 };
