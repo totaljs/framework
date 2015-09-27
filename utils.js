@@ -2023,37 +2023,56 @@ Date.prototype.diff = function(date, type) {
 		case 'ss':
 		case 'second':
 		case 'seconds':
-			return Math.round(r / 1000);
+			r = Math.ceil(r / 1000);
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
 		case 'm':
 		case 'mm':
 		case 'minute':
 		case 'minutes':
-			return Math.round((r / 1000) / 60);
+			r = Math.ceil((r / 1000) / 60);
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
 		case 'h':
 		case 'hh':
 		case 'hour':
 		case 'hours':
-			return Math.round(((r / 1000) / 60) / 60);
+			r = Math.ceil(((r / 1000) / 60) / 60);
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
 		case 'd':
 		case 'dd':
 		case 'day':
 		case 'days':
-			return Math.round((((r / 1000) / 60) / 60) / 24);
+			r = Math.ceil((((r / 1000) / 60) / 60) / 24);
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
 		case 'M':
 		case 'MM':
 		case 'month':
 		case 'months':
 			// avg: 28 days per month
-			return Math.round((((r / 1000) / 60) / 60) / (24 * 28));
+			r = Math.ceil((((r / 1000) / 60) / 60) / (24 * 28));
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
+
 		case 'y':
 		case 'yyyy':
 		case 'year':
 		case 'years':
 			// avg: 28 days per month
-			return Math.round((((r / 1000) / 60) / 60) / (24 * 28 * 12));
+			r = Math.ceil((((r / 1000) / 60) / 60) / (24 * 28 * 12));
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
 	}
 
-	return;
+	return NaN;
 };
 
 Date.prototype.extend = function(date) {
@@ -4223,6 +4242,7 @@ AsyncTask.prototype.cancel = function(isTimeout) {
 
 	self.fn = null;
 	self.cb = null;
+	return self;
 };
 
 AsyncTask.prototype.complete = function() {
@@ -4303,7 +4323,7 @@ Async.prototype.cancel = function(name) {
 	if (name === undefined) {
 
 		for (var i = 0; i < self._count; i++)
-			self.cancel(tasksAll[i]);
+			self.cancel(self.tasksAll[i]);
 
 		return true;
 	}

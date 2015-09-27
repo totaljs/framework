@@ -8,6 +8,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - fixed: routing (POST request without content-type is considered as `application/x-www-form-urlencoded`)
 - fixed: sync2()
 - fixed: U.minifyHTML() - now compresses JS and CSS in HTML.
+- fixed: Async.cancel()
 
 ======= 1.9.2 (HOTFIX)
 
