@@ -143,6 +143,28 @@ global.GETSCHEMA = function(group, name) {
 	return Builders.getschema(group, name);
 };
 
+global.MAKE = global.TRANSFORM = function(transform, fn) {
+
+	if (typeof(transform) === TYPE_FUNCTION) {
+		var tmp = fn;
+		fn = transform;
+		transform = fn;
+	}
+
+	var obj;
+
+	if (typeof(fn) === TYPE_FUNCTION) {
+		obj = {};
+		fn.call(obj, obj);
+	} else
+		obj = fn;
+
+	if (transform)
+		return TransformBuilder.transform(transform, obj);
+
+	return obj;
+};
+
 global.NEWSCHEMA = function(group, name) {
 	if (!name) {
 		name = group;

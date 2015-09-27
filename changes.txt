@@ -1,5 +1,7 @@
 BETA ======= 1.9.3 (HOTFIX)
 
+- added: MAKE([transform], function(obj))
+- added: TRANSFORM([transform], obj)
 - added: packages can be stored as directories (recommended for debug mode only)
 - added: F.localize(name, url, middleware, options, minify) --> minify argument
 
