@@ -148,7 +148,7 @@ global.MAKE = global.TRANSFORM = function(transform, fn) {
 	if (typeof(transform) === TYPE_FUNCTION) {
 		var tmp = fn;
 		fn = transform;
-		transform = fn;
+		transform = tmp;
 	}
 
 	var obj;
