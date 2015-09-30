@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 1.9.2
+ * @version 1.9.3
  */
 
 'use strict'
@@ -272,7 +272,6 @@ Message.prototype.attachment = function(filename, name) {
 
 	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)) });
 	return self;
-
 };
 
 /**
@@ -291,7 +290,7 @@ Message.prototype.attachmentInline = function(filename, name, contentId) {
 	if (name === undefined)
 		name = path.basename(filename);
 
-	self.files.push({name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)), disposition: 'inline', contentId: contentId});
+	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)), disposition: 'inline', contentId: contentId });
 	return self;
 };
 
@@ -731,7 +730,15 @@ Message.prototype._writeAttachment = function(write, boundary, socket) {
 	} else
 		message.push('Content-Disposition: attachment; filename="' + name + '"');
 
-	message.push('Content-Type: application/octet-stream;');
+	var extension = 'dat';
+	var index = attachment.filename.lastIndexOf('.');
+
+	if (index === -1)
+		extension = attachment.filename.substring(index + 1).toLowerCase();
+
+	var isCalendar = extension === 'ics';
+
+	message.push('Content-Type: ' + framework_utils.getContentType(extension) + ';' + (isCalendar ? ' charset="utf-8"; method=REQUEST;' : ''));
 	message.push('Content-Transfer-Encoding: base64');
 	message.push(CRLF);
 

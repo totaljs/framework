@@ -520,9 +520,9 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 				continue;
 
 			case 'xml':
-				if (!route.isRAW)
-					return 0;
-				continue;
+				if (route.isRAW || route.isXML)
+					continue;
+				return 0;
 
 			case 'proxy':
 				if (!route.isPROXY)

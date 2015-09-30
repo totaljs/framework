@@ -4,11 +4,13 @@ BETA ======= 1.9.3 (HOTFIX)
 - added: TRANSFORM([transform], obj)
 - added: packages can be stored as directories (recommended for debug mode only)
 - added: F.localize(name, url, middleware, options, minify) --> minify argument
+- added: email supports calendar (.ics) request sending
 
 - fixed: routing (POST request without content-type is considered as `application/x-www-form-urlencoded`)
 - fixed: sync2()
 - fixed: U.minifyHTML() - now compresses JS and CSS in HTML.
 - fixed: Async.cancel()
+- fixed: email attachments
 
 ======= 1.9.2 (HOTFIX)
 
