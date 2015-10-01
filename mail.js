@@ -530,7 +530,7 @@ Message.prototype._send = function(socket, options, autosend) {
 			builder = '';
 		}
 
-		message.push('Content-Type: multipart/mixed; boundary=' + boundary);
+		message.push('Content-Type: multipart/alternative; boundary=' + boundary);
 		message.push('');
 		message.push('--' + boundary);
 		message.push('Content-Type: ' + (self.body.indexOf('<') !== -1 && self.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
@@ -721,24 +721,25 @@ Message.prototype._writeAttachment = function(write, boundary, socket) {
 	var name = attachment.name;
 	var stream = fs.createReadStream(attachment.filename, { encoding: 'base64' });
 	var message = [];
-
-	message.push('--' + boundary);
-
-	if (attachment.contentId) {
-		message.push('Content-Disposition: inline; filename="' + name + '"');
-		message.push('Content-ID: <' + attachment.contentId + '>');
-	} else
-		message.push('Content-Disposition: attachment; filename="' + name + '"');
-
 	var extension = 'dat';
 	var index = attachment.filename.lastIndexOf('.');
 
-	if (index === -1)
+	if (index !== -1)
 		extension = attachment.filename.substring(index + 1).toLowerCase();
 
 	var isCalendar = extension === 'ics';
 
-	message.push('Content-Type: ' + framework_utils.getContentType(extension) + ';' + (isCalendar ? ' charset="utf-8"; method=REQUEST;' : ''));
+	message.push('--' + boundary);
+
+	if (!isCalendar) {
+		if (attachment.contentId) {
+			message.push('Content-Disposition: inline; filename="' + name + '"');
+			message.push('Content-ID: <' + attachment.contentId + '>');
+		} else
+			message.push('Content-Disposition: attachment; filename="' + name + '"');
+	}
+
+	message.push('Content-Type: ' + framework_utils.getContentType(extension) + ';' + (isCalendar ? ' charset="utf-8"; method=REQUEST' : ''));
 	message.push('Content-Transfer-Encoding: base64');
 	message.push(CRLF);
 
