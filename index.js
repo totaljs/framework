@@ -5509,7 +5509,7 @@ Framework.prototype.listener = function(req, res) {
 		var middleware = self.routes.middleware[self.routes.request[i]];
 
 		if (!middleware) {
-			self.error('Middleware not found: ' + route.middleware[i], null, req.uri);
+			self.error('Middleware not found: ' + self.routes.request[i], null, req.uri);
 			continue;
 		}
 
