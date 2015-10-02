@@ -1672,8 +1672,11 @@ exports.combine = function() {
 
 		for (var i = 0, length = arguments.length; i < length; i++) {
 			var v = arguments[i];
-			if (v)
-				p += (v[0] !== '/' ? (p[p.length - 1] !== '/' ? '/' : '') : '') + v;
+			if (!v)
+				continue;
+			if (v[0] === '/')
+				v = v.substring(1);
+			p += (p[p.length - 1] !== '/' ? '/' : '') + v;
 		}
 
 		if (framework.isWindows)
@@ -1686,8 +1689,11 @@ exports.combine = function() {
 
 	for (var i = 0, length = arguments.length; i < length; i++) {
 		var v = arguments[i];
-		if (v)
-			p += (v[0] !== '/' ? (p[p.length - 1] !== '/' ? '/' : '') : '') + v;
+		if (!v)
+			continue;
+		if (v[0] === '/')
+			v = v.substring(1);
+		p += (p[p.length - 1] !== '/' ? '/' : '') + v;
 	}
 
 	if (framework.isWindows)
