@@ -12,6 +12,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - fixed: Async.cancel()
 - fixed: email attachments
 - fixed: throwing error in global middleware
+- fixed: Pagination.last()
 
 ======= 1.9.2 (HOTFIX)
 

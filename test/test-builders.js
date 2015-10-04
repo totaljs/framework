@@ -25,6 +25,7 @@ function test_PageBuilder() {
 	assert.ok(builder.nextPage === 2, name + 'nextPage (1)');
 	assert.ok(builder.prevPage === 1, name + 'prevPage (1)');
 	assert.ok(builder.lastPage === 9, name + 'lastPage (1)');
+	assert.ok(builder.last().page === 9, name + 'last(1)');
 
 	var output = builder.render();
 
@@ -38,6 +39,7 @@ function test_PageBuilder() {
 	assert.ok(builder.nextPage === 6, name + 'nextPage (2)');
 	assert.ok(builder.prevPage === 4, name + 'prevPage (2)');
 	assert.ok(builder.lastPage === 9, name + 'lastPage (2)');
+	assert.ok(builder.last().page === 9, name + 'last(2)');
 
 	output = builder.render(5);
 	assert.ok(output[2].selected, name + 'render - max 5 (selected page problem)');
