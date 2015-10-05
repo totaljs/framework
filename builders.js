@@ -261,6 +261,10 @@ SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 	return output;
 };
 
+SchemaBuilderEntity.prototype.make = function(fn) {
+	return fn.call(this, this);
+};
+
 SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 
 	var type = typeof(value);
