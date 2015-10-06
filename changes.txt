@@ -14,6 +14,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - fixed: email attachments
 - fixed: throwing error in global middleware
 - fixed: Pagination.last()
+- fixed: CSS auto-vendor-prefixes
 
 ======= 1.9.2 (HOTFIX)
 
