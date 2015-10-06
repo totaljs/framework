@@ -512,11 +512,6 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 
 		switch (flag) {
 			case 'json':
-				// skip
-				/*
-				if (!route.isJSON)
-					return 0;
-				*/
 				continue;
 
 			case 'xml':
@@ -868,8 +863,6 @@ function autoprefixer(value) {
 
 			// text-transform
 			var isPrefix = value.substring(index - 1, index) === '-';
-			// if (property === 'transform' && isPrefix)
-
 			if (isPrefix)
 				continue;
 
@@ -902,13 +895,10 @@ function autoprefixer(value) {
 		var updated = plus + delimiter;
 
 		if (name === 'opacity') {
-
 			var opacity = +plus.replace('opacity', '').replace(':', '').replace(/\s/g, '');
 			if (isNaN(opacity))
 				continue;
-
-			updated += 'filter:alpha(opacity=' + Math.floor(opacity * 100) + ');';
-
+			updated += 'filter:alpha(opacity=' + Math.floor(opacity * 100) + ')';
 			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
@@ -923,7 +913,7 @@ function autoprefixer(value) {
 			updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-o-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
-			updated += plus + (plus[plus.length - 1] === ';' ? '' : delimiter);
+			updated += plus; // + (plus[plus.length - 1] === ';' ? '' : delimiter);
 
 			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
