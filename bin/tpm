@@ -778,10 +778,13 @@ function create() {
     log('Package      :', current_package);
     log('Directory    :', target);
 
-    if (name[0] !== '/')
-        name = ph.join(process.cwd(), name);
+    if (!isWindows) {
+        if (name[0] !== '/')
+            name = ph.join(process.cwd(), name);
+    }
 
     var backup = new Backup();
+
     backup.backup(target, name, function(err, path) {
 
         if (err)
@@ -820,6 +823,7 @@ function main() {
     var filename = ph.join(ph.dirname(process.argv[1]), 'tpm.json');
     var dir = process.cwd();
     settings = { 'default': 'http://packages.totaljs.com/' + VERSION.replace(/\.+/g, '').replace(/\s+/g, '') + '/' };
+
 
     if (fs.existsSync(filename))
         settings = JSON.parse(fs.readFileSync(filename).toString('utf8'));
