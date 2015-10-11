@@ -32,8 +32,6 @@ function prototypeDate() {
 
 	dt = '12:00:00'.parseDate();
 	assert.ok(dt.compare(dt) === 0, 'time compare (same)');
-
-
 }
 
 // test: number prototype

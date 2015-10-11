@@ -43,6 +43,7 @@ var REG_2 = /\s{2,}/g;
 var REG_3 = /\/{1,}/g;
 var REG_4 = /\n\s{2,}./g;
 var REG_5 = />\n\s{1,}</g;
+var REG_6 = /\w+\s{2,}\w+/g;
 
 var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
@@ -2815,7 +2816,9 @@ function compressHTML(html, minify) {
 	}
 
 	// html = html.replace(/>\n\s+/g, '>').replace(/\w\n\s+</g, function(text) {
-	html = html.replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
+	html = html.replace(REG_6, function(text) {
+		return text.replace(/\s+/g, ' ');
+	}).replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
 		return text.trim().replace(/\s/g, '');
 	}).replace(REG_5, '><').replace(REG_4, function(text) {
 		var c = text[text.length - 1];
