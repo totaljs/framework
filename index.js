@@ -249,7 +249,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-12';
+	this.version_header = '1.9.3-13';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -12239,6 +12239,16 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 	var output = self.cache.read(key);
 	if (output === null) {
+
+		var pk = '$memorize' + key;
+
+		if (framework.temporary.processing[pk]) {
+			setTimeout(function() {
+				self.memorize(key, expires, disabled, fnTo, fnFrom);
+			}, 500);
+			return self;
+		}
+
 		self.precache = function(value, contentType, headers, isView) {
 
 			var options = { content: value, type: contentType, layout: self.layoutName };
@@ -12256,11 +12266,13 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 			self.cache.add(key, options, expires);
 			self.precache = null;
+			delete framework.temporary.processing[pk];
 		};
 
 		if (typeof(disabled) === TYPE_FUNCTION)
 			fnTo = disabled;
 
+		framework.temporary.processing[pk] = true;
 		fnTo();
 		return self;
 	}

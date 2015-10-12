@@ -1,3 +1,11 @@
-require('../index');
+require('../index').http('debug');
 
-console.log(U.minifyHTML('<div  class="name">'));
+F.route('/', function() {
+	var self = this;
+	console.log('SOM TU');
+	self.memorize('test', '10 minutes', function() {
+		setTimeout(function() {
+			self.plain('NOOK');
+		}, 3000);
+	});
+}, [5000]);
