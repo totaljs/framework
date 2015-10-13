@@ -32,6 +32,7 @@ exports.install = function() {
         flags: ['unauthorize']
     });
 
+    framework.route('/options/', plain_options, ['options']);
     framework.route('/exception/', 'exception');
     framework.route('/html-compressor/', view_compressor);
     framework.route('/html-nocompress/', view_nocompress);
@@ -135,6 +136,10 @@ exports.install = function() {
     // maximumSize
     framework.websocket('/', socket);
 };
+
+function plain_options() {
+    this.plain('OPTIONS');
+}
 
 function *synchronize() {
     var self = this;

@@ -105,6 +105,15 @@ function test_routing(next) {
 
 	var async = new utils.Async();
 
+	async.await('options', function(complete) {
+		utils.request(url + 'options/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(data === 'OPTIONS', 'OPTIONS method problem');
+			complete();
+		});
+	});
+
 	async.await('html compressor', function(complete) {
 		utils.request(url + 'html-compressor/', ['get'], null, function(error, data, code, headers) {
 			if (error)

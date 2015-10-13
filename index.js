@@ -249,7 +249,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-13';
+	this.version_header = '1.9.3-14';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -414,6 +414,7 @@ function Framework() {
 			file: 0,
 			websocket: 0,
 			get: 0,
+			options: 0,
 			head: 0,
 			post: 0,
 			put: 0,
@@ -5657,6 +5658,10 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	switch (first) {
 		case 'G':
 			self.stats.request.get++;
+			new Subscribe(self, req, res, 0).end();
+			return self;
+		case 'O':
+			self.stats.request.options++;
 			new Subscribe(self, req, res, 0).end();
 			return self;
 		case 'H':
