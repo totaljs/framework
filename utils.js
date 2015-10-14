@@ -4683,7 +4683,7 @@ exports.async = function(fn, isApply) {
 
 				if (typeof(complete) === OBJECT && complete.isController) {
 					if (e instanceof ErrorBuilder)
-						complete.view400(e);
+						complete.content(e);
 					else
 						complete.view500(e);
 					return;

@@ -17,6 +17,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - fixed: Pagination.last()
 - fixed: CSS auto-vendor-prefixes
 - fixed: `tpm` binary (bug in creating packages on Windows)
+- fixed: controller generators
 
 ======= 1.9.2 (HOTFIX)
 
