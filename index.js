@@ -2076,6 +2076,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				declaration = name;
 				name = '';
 			}
+		} else if (name[0] === '@') {
+			declaration = framework.path.package(name.substring(1));
+			name = path.basename(name).replace(/\.js$/i, '');
+			if (useRequired === undefined)
+				useRequired = true;
 		}
 	}
 
@@ -2145,8 +2150,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			return self;
 		}
 	}
-
-	// self._log('Install "' + type + '": ' + name);
 
 	if (type === 'middleware') {
 
