@@ -1387,7 +1387,10 @@ Framework.prototype.map = function(url, filename, filter) {
 	}
 
 	if (filename[0] === '@') {
-		filename = self.path.package(filename.substring(1));
+		if (isWindows)
+			filename = utils.combine(framework.config['directory-temp'], filename.substring(1));
+		else
+			filename = self.path.package(filename.substring(1));
 		isPackage = true;
 	}
 
@@ -1428,7 +1431,10 @@ Framework.prototype.map = function(url, filename, filter) {
 	}
 
 	setTimeout(function() {
-		framework_utils.ls(filename, function(files) {
+		framework_utils.ls(framework.isWindows ? filename.replace(/\//g, '\\') : filename, function(files) {
+
+
+			console.log(framework.isWindows ? filename.replace(/\//g, '\\') : filename, files);
 
 			for (var i = 0, length = files.length; i < length; i++) {
 
@@ -1453,6 +1459,7 @@ Framework.prototype.map = function(url, filename, filter) {
 				self.routes.mapping[key] = plus + files[i];
 			}
 
+console.log(self.routes.mapping, filename);
 		});
 	}, isPackage ? 500 : 1);
 
