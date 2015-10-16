@@ -938,6 +938,8 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	if (url.endsWith('/'))
 		url = url.substring(0, url.length - 1);
 
+	url = framework_internal.encodeUnicodeURL(url);
+
 	if (utils.isArray(length)) {
 		tmp = middleware;
 		middleware = length;
@@ -1523,6 +1525,9 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
 	if (url === '')
 		url = '/';
+
+	// Unicode encoding
+	url = framework_internal.encodeUnicodeURL(url);
 
 	if (utils.isArray(length)) {
 		tmp = middleware;

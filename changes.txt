@@ -7,6 +7,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - added: email supports calendar (.ics) request sending
 - added: SchemaBuilderEntity.make(function(schema))
 - added: F.install() supports packages mapping
+- added: Support for unicode routing
 
 - fixed: controller.memorize() - prevention for multiple requests
 - fixed: routing (POST request without content-type is considered as `application/x-www-form-urlencoded`)

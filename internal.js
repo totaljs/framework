@@ -3202,6 +3202,16 @@ function isFinished(msg) {
 	return;
 }
 
+exports.encodeUnicodeURL = function(url) {
+	var output = url;
+	for (var i = 0, length = url.length; i < length; i++) {
+		var code = url.charCodeAt(i);
+		if (code > 127)
+			output = output.replace(url[i], encodeURIComponent(url[i]));
+	}
+	return output;
+};
+
 exports.parseLocalization = view_parse_localization;
 exports.findLocalization = view_find_localization;
 exports.destroyStream = destroyStream;
