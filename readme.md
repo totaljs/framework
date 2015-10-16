@@ -85,11 +85,14 @@ We provide a support of the framework for companies. Our support services will k
 | NoSQL embedded database | 100% |
 | __You can use framework as single library__ `total.js (320 kB)` | 100% |
 
+## Benevolent Dictator For Life (BDFL)
+
+[Peter Širka](http://www.petersirka.eu), contact: <petersirka@gmail.com>
+
 ## Contributors
 
 | Contributor | Type | E-mail |
 |-------------|------|--------|
-| [Peter Širka](http://www.petersirka.eu) | author + support | <petersirka@gmail.com> |
 | [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
 | [Matus Szabo](https://github.com/matusszabo) | support + enterprise | <matus.szabo@gmail.com> |
 | Tomas Holovsky | support + enterprise | <tomasholovsky@gmail.com> |
