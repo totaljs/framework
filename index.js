@@ -1427,7 +1427,12 @@ Framework.prototype.map = function(url, filename, filter) {
 
 	setTimeout(function() {
 		framework_utils.ls(filename, function(files) {
+
 			for (var i = 0, length = files.length; i < length; i++) {
+
+				if (framework.isWindows)
+					files[i] = files[i].replace(filename, '').replace(/\\/g, '/');
+
 				var file = files[i].replace(replace, '');
 
 				if (filter) {
@@ -1445,6 +1450,7 @@ Framework.prototype.map = function(url, filename, filter) {
 				var key = url + file;
 				self.routes.mapping[key] = plus + files[i];
 			}
+
 		});
 	}, isPackage ? 500 : 1);
 
@@ -2004,7 +2010,10 @@ Framework.prototype.$load = function(types) {
 						stream.pipe(fs.createWriteStream(path.join(dir, filename.replace(item.filename, '').replace('.package', ''))));
 						stream.on('end', next);
 					}, function() {
-						self.install('package2', item.name, item.filename, undefined, undefined, undefined, true);
+						// Windows sometimes doesn't load package and delay solves the problem.
+						setTimeout(function() {
+							self.install('package2', item.name, item.filename, undefined, undefined, undefined, true);
+						}, 50);
 					});
 				});
 				return;

@@ -20,6 +20,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - fixed: `tpm` binary (bug in creating packages on Windows)
 - fixed: controller generators
 - fixed: F.install() --> problem with names via URL import
+- fixed: F.map() on Windows (problem with paths)
 
 ======= 1.9.2 (HOTFIX)
 
