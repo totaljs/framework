@@ -2340,6 +2340,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		try {
 
+			if (!name && typeof(internal) === STRING) {
+				var tmp = internal.match(/[a-z0-9]+\.js$/i);
+				if (tmp)
+					name = tmp.toString().replace(/\.js/i, '');
+			}
+
 			if (useRequired) {
 				delete require.cache[require.resolve(declaration)];
 				obj = require(declaration);
@@ -2411,6 +2417,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				if (typeof(declaration) !== STRING)
 					declaration = declaration.toString();
 
+				if (!name && typeof(internal) === STRING) {
+					var tmp = internal.match(/[a-z0-9]+\.js$/i);
+					if (tmp)
+						name = tmp.toString().replace(/\.js/i, '');
+				}
+
 				var filename = self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js');
 				fs.writeFileSync(filename, declaration);
 				obj = require(filename);
@@ -2439,6 +2451,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			name = obj.id;
 		else if (typeof(obj.name) === STRING)
 			name = obj.name;
+
+		if (!name)
+			name = (Math.random() * 10000) >> 0;
 
 		key = type + '.' + name;
 		tmp = self.dependencies[key];
@@ -2484,7 +2499,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (callback)
 			callback(null);
-
 		return self;
 	}
 
@@ -2507,6 +2521,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 				if (typeof(declaration) !== STRING)
 					declaration = declaration.toString();
+
+				if (!name && typeof(internal) === STRING) {
+					var tmp = internal.match(/[a-z0-9]+\.js$/i);
+					if (tmp)
+						name = tmp.toString().replace(/\.js/i, '');
+				}
 
 				filename = self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js');
 				fs.writeFileSync(filename, declaration);
@@ -2533,6 +2553,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			name = obj.id;
 		else if (typeof(obj.name) === STRING)
 			name = obj.name;
+
+		if (!name)
+			name = (Math.random() * 10000) >> 0;
 
 		key = type + '.' + name;
 		tmp = self.dependencies[key];
