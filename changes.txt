@@ -8,7 +8,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - added: SchemaBuilderEntity.make(function(schema))
 - added: F.install() supports packages mapping
 - added: Support for unicode routing
-- added: Packages can be loaded in framework structure (/controllers/, /modules/)
+- added: Packages can be loaded in framework structure (/controllers/, /modules/) `exports.booting = true`
 
 - fixed: controller.memorize() - prevention for multiple requests
 - fixed: routing (POST request without content-type is considered as `application/x-www-form-urlencoded`)

@@ -2580,7 +2580,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (!name)
 			name = (Math.random() * 10000) >> 0;
 
-		if (obj.boot) {
+		if (obj.booting) {
 			setTimeout(function() {
 				framework.$load(undefined, framework.path.temp(name + '/'));
 			}, 100);
