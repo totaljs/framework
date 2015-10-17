@@ -249,7 +249,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-18';
+	this.version_header = '1.9.3-19';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1936,11 +1936,14 @@ Framework.prototype.modify = function(fn) {
  * Load framework
  * @return {Framework}
  */
-Framework.prototype.$load = function(types) {
+Framework.prototype.$load = function(types, targetdirectory) {
 
 	var self = this;
-	var dir = '';
 	var arr = [];
+	var dir = '';
+
+	if (!targetdirectory)
+		targetdirectory = directory;
 
 	function listing(directory, level, output, extension) {
 		if (!fs.existsSync(dir))
@@ -1973,7 +1976,7 @@ Framework.prototype.$load = function(types) {
 	}
 
 	if (!types || types.indexOf('modules') !== -1) {
-		dir = path.join(directory, self.config['directory-modules']);
+		dir = path.join(targetdirectory, self.config['directory-modules']);
 		arr = [];
 		listing(dir, 0, arr, '.js');
 
@@ -1983,7 +1986,7 @@ Framework.prototype.$load = function(types) {
 	}
 
 	if (!types || types.indexOf('isomorphic') !== -1) {
-		dir = path.join(directory, self.config['directory-isomorphic']);
+		dir = path.join(targetdirectory, self.config['directory-isomorphic']);
 		arr = [];
 		listing(dir, 0, arr, '.js');
 
@@ -1993,7 +1996,7 @@ Framework.prototype.$load = function(types) {
 	}
 
 	if (!types || types.indexOf('packages') !== -1) {
-		dir = path.join(directory, self.config['directory-packages']);
+		dir = path.join(targetdirectory, self.config['directory-packages']);
 		arr = [];
 		listing(dir, 0, arr, '.package');
 
@@ -2032,7 +2035,7 @@ Framework.prototype.$load = function(types) {
 	}
 
 	if (!types || types.indexOf('models') !== -1) {
-		dir = path.join(directory, self.config['directory-models']);
+		dir = path.join(targetdirectory, self.config['directory-models']);
 		arr = [];
 		listing(dir, 0, arr);
 
@@ -2042,7 +2045,7 @@ Framework.prototype.$load = function(types) {
 	}
 
 	if (!types || types.indexOf('definitions') !== -1) {
-		dir = path.join(directory, self.config['directory-definitions']);
+		dir = path.join(targetdirectory, self.config['directory-definitions']);
 		arr = [];
 		listing(dir, 0, arr);
 
@@ -2053,7 +2056,7 @@ Framework.prototype.$load = function(types) {
 
 	if (!types || types.indexOf('controllers') !== -1) {
 		arr = [];
-		dir = path.join(directory, self.config['directory-controllers']);
+		dir = path.join(targetdirectory, self.config['directory-controllers']);
 		listing(dir, 0, arr);
 
 		arr.forEach(function(item) {
@@ -2576,6 +2579,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (!name)
 			name = (Math.random() * 10000) >> 0;
+
+		if (obj.boot) {
+			setTimeout(function() {
+				framework.$load(undefined, framework.path.temp(name + '/'));
+			}, 100);
+		}
 
 		key = type + '.' + name;
 		tmp = self.dependencies[key];
@@ -5054,7 +5063,8 @@ Framework.prototype.load = function(debug, types, path) {
 		delete framework.assert;
 	}, 500);
 
-	self.$load(types);
+	self.$load(types, directory);
+	return self;
 };
 
 /**
@@ -5104,7 +5114,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 	// clear static files
 	self.clear(function() {
 
-		self.$load();
+		self.$load(undefined, directory);
 
 		if (options.https)
 			self.server = http.createServer(options.https, self.listener);
