@@ -249,7 +249,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-19';
+	this.version_header = '1.9.3-20';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1000,7 +1000,6 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		middleware = undefined;
 	}
 
-
 	var self = this;
 	var priority = 0;
 	var subdomain = null;
@@ -1036,8 +1035,15 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
 		for (var i = 0; i < flags.length; i++) {
 
-			if (typeof(flags[i]) === NUMBER) {
+			var tt = typeof(flags[i]);
+
+			if (tt === NUMBER) {
 				timeout = flags[i];
+				continue;
+			}
+
+			if (tt === OBJECT) {
+				options = flags[i];
 				continue;
 			}
 
@@ -1627,6 +1633,11 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		flags = [];
 
 	for (var i = 0; i < flags.length; i++) {
+
+		if (typeof(flags[i]) === OBJECT) {
+			options = flags[i];
+			continue;
+		}
 
 		if (flags[i][0] === '#') {
 			if ((middleware || null) === null)
