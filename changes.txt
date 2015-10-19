@@ -10,6 +10,8 @@ BETA ======= 1.9.3 (HOTFIX)
 - added: Support for unicode routing
 - added: Packages can be loaded in framework structure (/controllers/, /modules/) `exports.booting = true`
 - added: route flags can contains object --> the object is an additional options for middleware
+- added: Utils.btoa(str) --> returns base64
+- added: Utils.atob(str) --> returns binary
 
 - fixed: controller.memorize() - prevention for multiple requests
 - fixed: routing (POST request without content-type is considered as `application/x-www-form-urlencoded`)

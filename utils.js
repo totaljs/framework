@@ -182,7 +182,6 @@ function expression(query, params) {
 
 global.expression = expression;
 
-
 /**
  * Checks if is object empty
  * @param  {Object}  obj
@@ -546,6 +545,14 @@ exports.$$request = function(url, flags, data, cookies, headers, encoding, timeo
 	return function(callback) {
 		exports.request(url, flags, data, callback, cookies, headers, encoding, timeout);
 	};
+};
+
+exports.btoa = function(str) {
+	return (str instanceof Buffer) ? str.toString('base64') : new Buffer(str.toString(), 'binary').toString('base64');
+};
+
+exports.atob = function(str) {
+	return new Buffer(str, 'base64').toString('binary');
 };
 
 /**
