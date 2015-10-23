@@ -12000,7 +12000,12 @@ Controller.prototype.baa = function(label) {
 	if (label === undefined)
 		return self.req.authorization();
 
-	framework.responseContent(self.req, self.res, 401, '401: NOT AUTHORIZED', CONTENTTYPE_TEXTPLAIN, false, { 'WWW-Authenticate': 'Basic realm="' + (label || 'Administration') + '"'});
+	var headers = {};
+
+	headers[RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
+	headers['WWW-Authenticate'] = 'Basic realm="' + (label || 'Administration') + '"';
+
+	framework.responseContent(self.req, self.res, 401, '401: NOT AUTHORIZED', CONTENTTYPE_TEXTPLAIN, false, headers);
 	self.subscribe.success();
 	self.cancel();
 	return null;
