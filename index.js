@@ -249,7 +249,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-22';
+	this.version_header = '1.9.3-23';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -14303,7 +14303,7 @@ function prepare_filename(name) {
 	if (name[0] === '@') {
 		if (framework.isWindows)
 			return utils.combine(framework.config['directory-temp'], name.substring(1));
-		return self.path.package(name.substring(1));
+		return framework.path.package(name.substring(1));
 	}
 
 	return utils.combine('/', name);
