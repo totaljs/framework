@@ -5494,8 +5494,12 @@ Framework.prototype.listener = function(req, res) {
 	}
 
 	if (self.restrictions.isRestrictions) {
+
 		if (self.restrictions.isAllowedIP) {
-			if (self.restrictions.allowedIP.indexOf(req.ip) === -1) {
+			for (var i = 0, length = self.restrictions.allowedIP.length; i < length; i++) {
+				var ip = self.restrictions.allowedIP[i];
+				if (req.ip.indexOf(ip) !== -1)
+					continue;
 				self.stats.response.restriction++;
 				res.writeHead(403);
 				res.end();
@@ -5504,7 +5508,10 @@ Framework.prototype.listener = function(req, res) {
 		}
 
 		if (self.restrictions.isBlockedIP) {
-			if (self.restrictions.blockedIP.indexOf(req.ip) !== -1) {
+			for (var i = 0, length = self.restrictions.blockedIP.length; i < length; i++) {
+				var ip = self.restrictions.blockedIP[i];
+				if (req.ip.indexOf(ip) === -1)
+					continue;
 				self.stats.response.restriction++;
 				res.writeHead(403);
 				res.end();
