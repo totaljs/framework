@@ -249,7 +249,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-21';
+	this.version_header = '1.9.3-22';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -2228,7 +2228,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 	if (type === 'version' || type === 'versions') {
 
-		self._configure_versions(declaration.toString(), true);
+		self._configure_versions(declaration.toString().split('\n'));
 		setTimeout(function() {
 			self.emit(type + '#' + name);
 			self.emit('install', type, name);
@@ -2242,7 +2242,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 	if (type === 'sitemap') {
 
-		self._configure_sitemap(declaration.toString(), true);
+		self._configure_sitemap(declaration.toString().split('\n'));
 		setTimeout(function() {
 			self.emit(type + '#' + name);
 			self.emit('install', type, name);
@@ -2593,7 +2593,21 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (obj.booting) {
 			setTimeout(function() {
+				framework._configure('@' + name + '/config');
+
+				if (framework.config.debug)
+					framework._configure('@' + name + '/config-debug');
+				else
+					framework._configure('@' + name + '/config-release');
+
+				if (framework.isTest)
+					framework._configure('@' + name + '/config-test');
+
+				framework._configure_versions('@' + name + '/versions');
+				framework._configure_dependencies('@' + name + '/dependencies');
+				framework._configure_sitemap('@' + name + '/sitemap');
 				framework.$load(undefined, framework.path.temp(name + '/'));
+
 			}, 100);
 		}
 
@@ -6884,28 +6898,30 @@ Framework.prototype.translator = function(language, text) {
 	return framework_internal.parseLocalization(text, language);
 };
 
-Framework.prototype._configure_sitemap = function(content) {
+Framework.prototype._configure_sitemap = function(arr, clean) {
 
-	if (content === undefined) {
-		var filename = framework_utils.combine('/', 'sitemap');
+	if (!arr || typeof(arr) === STRING) {
+		var filename = prepare_filename(arr || 'sitemap');
 		if (fs.existsSync(filename))
-			content = fs.readFileSync(filename).toString(ENCODING);
+			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
-			content = '';
+			arr = null;
 	}
 
 	var self = this;
 
-	if (!content)
+	if (!arr || !arr.length)
 		return self;
 
-	var arr = content.split('\n');
-	var sitemap = {};
+	if (clean)
+		self.routes.sitemap = {};
+
+	if (!self.routes.sitemap)
+		self.routes.sitemap = {};
 
 	for (var i = 0, length = arr.length; i < length; i++) {
 
 		var str = arr[i];
-
 		if (str === '' || str[0] === '#' || str.substring(0, 3) === '// ')
 			continue;
 
@@ -6920,10 +6936,9 @@ Framework.prototype._configure_sitemap = function(content) {
 		var val = str.substring(index + 2).trim();
 		var a = val.split('-->');
 
-		sitemap[key] = { name: a[0].trim(), url: a[1].trim(), parent: a[2] ? a[2].trim() : null };
+		self.routes.sitemap[key] = { name: a[0].trim(), url: a[1].trim(), parent: a[2] ? a[2].trim() : null };
 	}
 
-	self.routes.sitemap = sitemap;
 	return self;
 };
 
@@ -6988,22 +7003,20 @@ Framework.prototype.sitemap = function(name, me, language) {
 	return arr;
 };
 
-Framework.prototype._configure_dependencies = function(content) {
+Framework.prototype._configure_dependencies = function(arr) {
 
-	if (content === undefined) {
-		var filename = framework_utils.combine('/', 'dependencies');
+	if (!arr || typeof(arr) === STRING) {
+		var filename = prepare_filename(arr || 'dependencies');
 		if (fs.existsSync(filename))
-			content = fs.readFileSync(filename).toString(ENCODING);
+			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
-			content = '';
+			arr = null;
 	}
 
 	var self = this;
 
-	if (!content)
+	if (!arr)
 		return self;
-
-	var arr = content.split('\n');
 
 	for (var i = 0, length = arr.length; i < length; i++) {
 
@@ -7087,29 +7100,32 @@ Framework.prototype._configure_dependencies = function(content) {
 /**
  * Versions configuration
  * @private
- * @param {String} content
+ * @param {String Array} arr
  * @return {Framework}
  */
-Framework.prototype._configure_versions = function(content) {
+Framework.prototype._configure_versions = function(arr, clean) {
 
 	var self = this;
 
-	if (content === undefined) {
-		var filename = framework_utils.combine('/', 'versions');
+	if (arr === undefined || typeof(arr) === STRING) {
+		var filename = prepare_filename(arr || 'versions');
 		if (fs.existsSync(filename))
-			content = fs.readFileSync(filename).toString(ENCODING);
+			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
-			content = '';
-		self.versions = null;
+			arr = null;
 	}
 
-	if (!content) {
-		self.versions = null;
+	if (!arr) {
+		if (clean)
+			self.versions = null;
 		return self;
 	}
 
-	var arr = content.split('\n');
-	var obj = {};
+	if (!clean)
+		self.versions = {};
+
+	if (!self.versions)
+		self.versions = {};
 
 	for (var i = 0, length = arr.length; i < length; i++) {
 
@@ -7137,21 +7153,20 @@ Framework.prototype._configure_versions = function(content) {
 		var len = ismap ? 3 : 2;
 		var key = str.substring(0, index).trim();
 		var filename = str.substring(index + len).trim();
-		obj[key] = filename;
+		self.versions[key] = filename;
 		if (ismap)
 			self.map(filename, self.path.public(key));
 	}
 
-	self.versions = obj;
 	return self;
 };
 
 /**
  * Load configuration
  * @private
- * @param {[type]} arr [description]
- * @param {[type]} rewrite [description]
- * @return {[type]} [description]
+ * @param {String} arr String Array or filename.
+ * @param {Boolean} rewrite Rewrites existed values, default `true`.
+ * @return {Framework}
  */
 Framework.prototype._configure = function(arr, rewrite) {
 
@@ -7159,13 +7174,13 @@ Framework.prototype._configure = function(arr, rewrite) {
 	var type = typeof(arr);
 
 	if (type === STRING) {
-		var filename = utils.combine('/', arr);
+		var filename = prepare_filename(arr);
 		if (!fs.existsSync(filename))
 			return self;
 		arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 	}
 
-	if (arr === undefined) {
+	if (!arr) {
 
 		var filenameA = utils.combine('/', 'config');
 		var filenameB = utils.combine('/', 'config-' + (self.config.debug ? 'debug' : 'release'));
@@ -7203,12 +7218,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 		self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
 	};
 
-	if (!arr instanceof Array) {
-		done();
-		return self;
-	}
-
-	if (!arr.length) {
+	if (!arr instanceof Array || !arr.length) {
 		done();
 		return self;
 	}
@@ -14286,6 +14296,17 @@ function prepare_error(e) {
 	if (e.stack)
 		return ' :: ' + e.stack.toString();
 	return ' :: ' + e.toString();
+}
+
+function prepare_filename(name) {
+
+	if (name[0] === '@') {
+		if (framework.isWindows)
+			return utils.combine(framework.config['directory-temp'], name.substring(1));
+		return self.path.package(name.substring(1));
+	}
+
+	return utils.combine('/', name);
 }
 
 function prepare_isomorphic(name) {
