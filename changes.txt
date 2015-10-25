@@ -30,6 +30,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - fixed: controller generators
 - fixed: F.install() --> problem with names via URL import
 - fixed: F.map() on Windows (problem with paths)
+- fixed: HTML compression in views
 
 ======= 1.9.2 (HOTFIX)
 

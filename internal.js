@@ -1850,15 +1850,16 @@ function view_parse(content, minify, filename) {
 		if (value === '')
 			return '$EMPTY';
 
+/*
 		if (!nocompressHTML && value[0] === ' ' && value[1] === '<')
 			value = value.substring(1);
+*/
 
 		if (!nocompressHTML && is)
 			value += ' ';
 
 		if (value.match(/\n|\r|\'|\\/) !== null)
 			return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END;
-
 		return DELIMITER + value + DELIMITER;
 	}
 
