@@ -2284,39 +2284,34 @@ if (!String.prototype.replaceAt) {
 }
 
 /**
- * Checks if string starts with the text
+ * Checks if the string starts with the text
  * @see {@link http://docs.totaljs.com/String.prototype/#String.prototype.startsWith|Documentation}
- * @param  {String}  text       Text to find.
- * @param  {Boolean} ignoreCase Ingore case sensitive.
+ * @param {String} text Text to find.
+ * @param {Boolean/Number} ignoreCase Ingore case sensitive or position in the string.
  * @return {Boolean}
  */
 String.prototype.startsWith = function(text, ignoreCase) {
-
 	var self = this;
 	var length = text.length;
-	var tmp = self.substring(0, length);
-
-	if (ignoreCase)
+	var tmp = ignoreCase > 0 ? self.substr(ignoreCase, length) : self.substring(0, length);
+	if (ignoreCase === true)
 		return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
-
 	return tmp.length === length && tmp === text;
 };
 
 /**
- * Checks if string ends with the text
+ * Checks if the string ends with the text
  * @see {@link http://docs.totaljs.com/String.prototype/#String.prototype.endsWith|Documentation}
- * @param  {String}  text Text to find.
- * @param  {Boolean} ignoreCase Ingore case sensitive.
+ * @param {String} text Text to find.
+ * @param {Boolean/Number} ignoreCase Ingore case sensitive or position in the string.
  * @return {Boolean}
  */
 String.prototype.endsWith = function(text, ignoreCase) {
 	var self = this;
 	var length = text.length;
-	var tmp = self.substring(self.length - length);
-
+	var tmp = ignoreCase > 0 ? self.substr((self.length - ignoreCase) - length, length) : self.substring(self.length - length);
 	if (ignoreCase)
 		return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
-
 	return tmp.length === length && tmp === text;
 
 };
