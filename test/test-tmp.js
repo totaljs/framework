@@ -35,6 +35,6 @@ async.complete(function() {
 });
 
 setTimeout(function() {
-	console.log('OK');
-}, 5000);
+	console.log('END');
+}, 3000);
 

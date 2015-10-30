@@ -2293,9 +2293,18 @@ if (!String.prototype.replaceAt) {
 String.prototype.startsWith = function(text, ignoreCase) {
 	var self = this;
 	var length = text.length;
-	var tmp = ignoreCase > 0 ? self.substr(ignoreCase, length) : self.substring(0, length);
-	if (ignoreCase === true)
+	var tmp;
+
+	if (ignoreCase === true) {
+		tmp = self.substring(0, length);
 		return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
+	}
+
+	if (ignoreCase)
+		tmp = self.substr(ignoreCase, length);
+	else
+		tmp = self.substring(0, length);
+
 	return tmp.length === length && tmp === text;
 };
 
@@ -2309,9 +2318,18 @@ String.prototype.startsWith = function(text, ignoreCase) {
 String.prototype.endsWith = function(text, ignoreCase) {
 	var self = this;
 	var length = text.length;
-	var tmp = ignoreCase > 0 ? self.substr((self.length - ignoreCase) - length, length) : self.substring(self.length - length);
-	if (ignoreCase)
+	var tmp;
+
+	if (ignoreCase === true) {
+		tmp = self.substring(self.length - length);
 		return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
+	}
+
+	if (ignoreCase > 0)
+		tmp = self.substr((self.length - ignoreCase) - length, length);
+	else
+		tmp = self.substring(self.length - length);
+
 	return tmp.length === length && tmp === text;
 
 };
@@ -4185,9 +4203,6 @@ Array.prototype.unique = function(property) {
 	Async class
 */
 function AsyncTask(owner, name, fn, cb, waiting) {
-	this.handlers = {
-		oncomplete: this.complete.bind(this)
-	};
 	this.isRunning = 0;
 	this.owner = owner;
 	this.name = name;
@@ -4213,8 +4228,12 @@ AsyncTask.prototype.run = function() {
 		self.owner.emit('begin', self.name);
 		var timeout = self.owner.tasksTimeout[self.name];
 		if (timeout > 0)
-			self.interval = setTimeout(self.timeout.bind(self), timeout);
-		self.fn(self.handlers.oncomplete);
+			self.interval = setTimeout(function() { self.timeout(); }, timeout);
+
+		self.fn(function() {
+			self.complete();
+		});
+
 	} catch (ex) {
 		self.owner.emit('error', self.name, ex);
 		self.complete();
@@ -4228,17 +4247,19 @@ AsyncTask.prototype.timeout = function(timeout) {
 
 	if (timeout > 0) {
 		clearTimeout(self.interval);
-		setTimeout(self.timeout.bind(self), timeout);
+		setTimeout(function() { self.timeout(); }, timeout);
 		return self;
 	}
 
 	if (timeout <= 0) {
 		clearTimeout(self.interval);
-		setTimeout(self.timeout.bind(self), timeout);
+		setTimeout(function() { self.timeout(); }, timeout);
 		return self;
 	}
 
-	self.cancel(true);
+	setImmediate(function() {
+		self.cancel(true);
+	});
 	return self;
 };
 
@@ -4281,8 +4302,10 @@ AsyncTask.prototype.complete = function() {
 		}
 	}
 
-	self.reload();
-	self.refresh();
+	setImmediate(function() {
+		self.reload();
+		self.refresh();
+	});
 
 	return self;
 };
@@ -4292,6 +4315,7 @@ function Async(owner) {
 	this._max = 0;
 	this._count = 0;
 	this._isRunning = false;
+	this._isEnd = false;
 
 	this.owner = owner;
 	this.onComplete = [];
@@ -4469,24 +4493,41 @@ Async.prototype.refresh = function(name) {
 
 	var self = this;
 
-	if (!self._isRunning)
+	if (!self._isRunning || self._isEnd)
 		return self;
 
 	self._count = self.tasksAll.length;
+	var index = 0;
 
-	for (var i = 0; i < self._count; i++) {
-		var task = self.tasksPending[self.tasksAll[i]];
-		if (!task || self.isCanceled)
+	while (true) {
+		var name = self.tasksAll[index++];
+		if (name === undefined)
+			break;
+
+		var task = self.tasksPending[name];
+		if (task === undefined)
+			break;
+
+		if (self.isCanceled || task.isCanceled) {
+			delete self.tasksPending[name];
+			self.tasksAll.splice(index, 1);
+			self._count = self.tasksAll.length;
+			index--;
 			continue;
-		if (task.isRunning !== 0 || task.isCanceled)
+		}
+
+		if (task.isRunning !== 0)
 			continue;
+
 		if (task.waiting !== null && self.tasksWaiting[task.waiting] !== undefined)
 			continue;
+
 		task.run();
 	}
 
 	if (self._count === 0) {
 		self._isRunning = false;
+		self._isEnd = true;
 		self.emit('complete');
 		self.emit('percentage', 100);
 		self._max = 0;
