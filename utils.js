@@ -4202,14 +4202,18 @@ AsyncTask.prototype.run = function() {
 	var self = this;
 	try
 	{
+
+		if (self.isCanceled) {
+			self.complete();
+			return self;
+		}
+
 		self.isRunning = 1;
 		self.owner.tasksWaiting[self.name] = true;
 		self.owner.emit('begin', self.name);
-
 		var timeout = self.owner.tasksTimeout[self.name];
 		if (timeout > 0)
 			self.interval = setTimeout(self.timeout.bind(self), timeout);
-
 		self.fn(self.handlers.oncomplete);
 	} catch (ex) {
 		self.owner.emit('error', self.name, ex);
@@ -4250,6 +4254,7 @@ AsyncTask.prototype.cancel = function(isTimeout) {
 
 	self.fn = null;
 	self.cb = null;
+	self.complete();
 	return self;
 };
 
@@ -4295,6 +4300,7 @@ function Async(owner) {
 	this.tasksWaiting = {};
 	this.tasksAll = [];
 	this.tasksTimeout = {};
+	this.isCanceled = false;
 
 	events.EventEmitter.call(this);
 }
@@ -4306,7 +4312,10 @@ Async.prototype = {
 
 	get percentage() {
 		var self = this;
-		return 100 - Math.floor((self._count * 100) / self._max);
+		var p = 100 - Math.floor((self._count * 100) / self._max);
+		if (!p)
+			return 0;
+		return p;
 	}
 };
 
@@ -4329,15 +4338,13 @@ Async.prototype.cancel = function(name) {
 	var self = this;
 
 	if (name === undefined) {
-
+		self.isCanceled = true;
 		for (var i = 0; i < self._count; i++)
 			self.cancel(self.tasksAll[i]);
-
 		return true;
 	}
 
 	var task = self.tasksPending[name];
-
 	if (!task)
 		return false;
 
@@ -4345,6 +4352,7 @@ Async.prototype.cancel = function(name) {
 	delete self.tasksWaiting[name];
 
 	task.cancel();
+	task = null;
 	self.reload();
 	self.refresh();
 
@@ -4354,6 +4362,9 @@ Async.prototype.cancel = function(name) {
 Async.prototype.await = function(name, fn, cb) {
 
 	var self = this;
+
+	if (self.isCanceled)
+		return false;
 
 	if (typeof(name) === FUNCTION) {
 		cb = fn;
@@ -4368,7 +4379,6 @@ Async.prototype.await = function(name, fn, cb) {
 	self._max++;
 	self.reload();
 	self.refresh();
-
 	return true;
 };
 
@@ -4376,11 +4386,13 @@ Async.prototype.wait = function(name, waitingFor, fn, cb) {
 
 	var self = this;
 
+	if (self.isCanceled)
+		return false;
+
 	if (typeof(waitingFor) === FUNCTION) {
 		cb = fn;
 		fn = waitingFor;
-		waitingFor = name;
-		name = exports.GUID(6);
+		waitingFor = null;
 	}
 
 	if (self.tasksPending[name] !== undefined)
@@ -4390,9 +4402,7 @@ Async.prototype.wait = function(name, waitingFor, fn, cb) {
 	self._max++;
 	self.reload();
 	self.refresh();
-
 	return true;
-
 };
 
 Async.prototype.complete = function(fn) {
@@ -4465,15 +4475,13 @@ Async.prototype.refresh = function(name) {
 	self._count = self.tasksAll.length;
 
 	for (var i = 0; i < self._count; i++) {
-
 		var task = self.tasksPending[self.tasksAll[i]];
-
-		if (task.isRunning !== 0)
+		if (!task || self.isCanceled)
 			continue;
-
+		if (task.isRunning !== 0 || task.isCanceled)
+			continue;
 		if (task.waiting !== null && self.tasksWaiting[task.waiting] !== undefined)
 			continue;
-
 		task.run();
 	}
 
