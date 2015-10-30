@@ -4226,12 +4226,15 @@ AsyncTask.prototype.run = function() {
 		self.isRunning = 1;
 		self.owner.tasksWaiting[self.name] = true;
 		self.owner.emit('begin', self.name);
+
 		var timeout = self.owner.tasksTimeout[self.name];
 		if (timeout > 0)
 			self.interval = setTimeout(function() { self.timeout(); }, timeout);
 
 		self.fn(function() {
-			self.complete();
+			setImmediate(function() {
+				self.complete();
+			});
 		});
 
 	} catch (ex) {
@@ -4510,6 +4513,7 @@ Async.prototype.refresh = function(name) {
 
 		if (self.isCanceled || task.isCanceled) {
 			delete self.tasksPending[name];
+			delete self.tasksWaiting[name];
 			self.tasksAll.splice(index, 1);
 			self._count = self.tasksAll.length;
 			index--;
@@ -4519,7 +4523,7 @@ Async.prototype.refresh = function(name) {
 		if (task.isRunning !== 0)
 			continue;
 
-		if (task.waiting !== null && self.tasksWaiting[task.waiting] !== undefined)
+		if (task.waiting && self.tasksPending[task.waiting])
 			continue;
 
 		task.run();
