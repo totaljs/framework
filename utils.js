@@ -4557,6 +4557,9 @@ Async.prototype.refresh = function(name) {
 				self.emit('error', ex);
 			}
 		}
+		setTimeout(function() {
+			self._isEnd = false;
+		}, 100);
 	}
 
 	return self;
@@ -4898,6 +4901,6 @@ exports.minifyHTML = function(value) {
 	return require('./internal').compile_html(value);
 };
 
-global.async = exports.async;
+global.Async = global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
 global.sync2 = exports.sync2;

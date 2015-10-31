@@ -32,6 +32,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - fixed: F.install() --> problem with names via URL import
 - fixed: F.map() on Windows (problem with paths)
 - fixed: HTML compression in views
+- fixed: U.Async() object (problem with waitingFor)
 
 ======= 1.9.2 (HOTFIX)
 
