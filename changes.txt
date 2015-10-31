@@ -16,6 +16,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - updated: F.restrictions.allow('IP') --> does not have to be full IP
 - updated: F.restrictions.disallow('IP') --> does not have to be full IP
 - updated: String.startsWith() and String.endsWith() according to ES6 but with the backward compatibility
+- updated: String.parseDate() supports JSON format and classic date serialization
 
 - fixed: controller.memorize() - prevention for multiple requests
 - fixed: routing (POST request without content-type is considered as `application/x-www-form-urlencoded`)

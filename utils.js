@@ -2416,6 +2416,17 @@ String.prototype.parseJSON = function() {
  */
 String.prototype.parseDate = function() {
 	var self = this.trim();
+
+	var lc = self.charCodeAt(self.length - 1);
+
+	// Classic date
+	if (lc === 41)
+		return new Date(self);
+
+	// JSON format
+	if (lc === 90)
+		return new Date(Date.parse(self));
+
 	var arr = self.indexOf(' ') === -1 ? self.split('T') : self.split(' ');
 	var index = arr[0].indexOf(':');
 	var length = arr[0].length;
