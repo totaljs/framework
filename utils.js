@@ -4557,9 +4557,9 @@ Async.prototype.refresh = function(name) {
 				self.emit('error', ex);
 			}
 		}
-		setTimeout(function() {
+		setImmediate(function() {
 			self._isEnd = false;
-		}, 100);
+		});
 	}
 
 	return self;
