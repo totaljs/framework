@@ -249,7 +249,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-24';
+	this.version_header = '1.9.3-25';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -8426,20 +8426,22 @@ FrameworkPath.prototype.resources = function(filename) {
 	return utils.combine(framework.config['directory-resources'], filename || '');
 };
 
-FrameworkPath.prototype.root = function(filename) {
-	return path.join(directory, filename || '');
-};
-
 FrameworkPath.prototype.services = function(filename) {
 	return utils.combine(framework.config['directory-services'], filename || '');
 };
 
-FrameworkPath.prototype.package = function(name, filename) {
-	return path.join(directory, framework.config['directory-temp'], name, filename || '');
+FrameworkPath.prototype.packages = function(filename) {
+	return utils.combine(framework.config['directory-packages'], filename || '');
 };
 
-FrameworkPath.prototype.packages = function(filename) {
-	return path.join(directory, framework.config['directory-packages'], filename || '');
+FrameworkPath.prototype.root = function(filename) {
+	var p = path.join(directory, filename || '');
+	return framework.isWindows ? p.replace(/\\/g, '/') : p;
+};
+
+FrameworkPath.prototype.package = function(name, filename) {
+	var p = path.join(directory, framework.config['directory-temp'], name, filename || '');
+	return framework.isWindows ? p.replace(/\\/g, '/') : p;
 };
 
 // *********************************************************************************
