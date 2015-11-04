@@ -1,3 +1,7 @@
 require('../index');
 
-console.log(U.minifyHTML('<p id="            t7   " title="" data-test="">Test</p>'));
+F.http('debug');
+
+F.on('ready', function() {
+	F.map('/neviem.js', '~source/main.js');
+});

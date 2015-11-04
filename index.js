@@ -249,7 +249,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-25';
+	this.version_header = '1.9.3-26';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1400,6 +1400,13 @@ Framework.prototype.map = function(url, filename, filter) {
 		isPackage = true;
 	}
 
+	// Checks if the directory exists
+	if (!isPackage && !filename.startsWith(directory)) {
+		var tmp = filename[0] === '~' ? self.path.root(filename.substring(1)) : self.path.public(filename);
+		if (fs.existsSync(tmp))
+			filename = tmp;
+	}
+
 	var isFile = path.extname(filename).length > 0;
 	if (isFile) {
 		self.routes.mapping[url] = filename;
@@ -1438,7 +1445,6 @@ Framework.prototype.map = function(url, filename, filter) {
 
 	setTimeout(function() {
 		framework_utils.ls(framework.isWindows ? filename.replace(/\//g, '\\') : filename, function(files) {
-
 			for (var i = 0, length = files.length; i < length; i++) {
 
 				if (framework.isWindows)
