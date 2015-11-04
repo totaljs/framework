@@ -232,6 +232,16 @@ global.SUCCESS = function(success, value) {
 	return o;
 };
 
+global.TRY = function(fn, err) {
+	try {
+		fn()
+		return true;
+	} catch (e) {
+		if (err) err(err);
+		return false;
+	}
+};
+
 if (global.setImmediate === undefined) {
 	global.setImmediate = function(cb) {
 		process.nextTick(cb);
