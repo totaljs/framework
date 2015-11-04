@@ -35,7 +35,6 @@ var crypto = require('crypto');
 var parser = require('url');
 var events = require('events');
 var http = require('http');
-var directory = path.dirname(process.argv[1]);
 var child = require('child_process');
 var util = require('util');
 
@@ -245,11 +244,13 @@ global.RELEASE = false;
 global.is_client = false;
 global.is_server = true;
 
+var directory = framework_utils.$normalize(path.dirname(process.argv[1]));
+
 function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-26';
+	this.version_header = '1.9.3-27';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1384,14 +1385,17 @@ Framework.prototype.map = function(url, filename, filter) {
 	var isPackage = false;
 	var self = this;
 
+	filename = framework_utils.$normalize(filename);
+
 	url = self._version(url);
 
+	// isomorphic
 	if (filename[0] === '#') {
-		// isomorphic
 		self.routes.mapping[url] = filename;
 		return self;
 	}
 
+	// package
 	if (filename[0] === '@') {
 		if (framework.isWindows)
 			filename = utils.combine(framework.config['directory-temp'], filename.substring(1));
@@ -1400,6 +1404,8 @@ Framework.prototype.map = function(url, filename, filter) {
 		isPackage = true;
 	}
 
+	var isFile = path.extname(filename).length > 0;
+
 	// Checks if the directory exists
 	if (!isPackage && !filename.startsWith(directory)) {
 		var tmp = filename[0] === '~' ? self.path.root(filename.substring(1)) : self.path.public(filename);
@@ -1407,7 +1413,6 @@ Framework.prototype.map = function(url, filename, filter) {
 			filename = tmp;
 	}
 
-	var isFile = path.extname(filename).length > 0;
 	if (isFile) {
 		self.routes.mapping[url] = filename;
 		return self;
@@ -5051,9 +5056,9 @@ Framework.prototype.load = function(debug, types, path) {
 	var self = this;
 
 	if (path && path[0] === '.' && path.length < 3)
-		self.directory = directory = require('path').normalize(directory + '/..');
+		self.directory = directory = framework_utils.$normalize(require('path').normalize(directory + '/..'));
 	else if (path)
-		self.directory = directory = path;
+		self.directory = directory = framework_utils.$normalize(path);
 
 	self.isWorker = true;
 	self.config.debug = debug;

@@ -1290,6 +1290,18 @@ exports.path = function(path, delimiter) {
 	return path + delimiter;
 };
 
+/**
+ * Prepares Windows path to UNIX like format
+ * @internal
+ * @param {String} path
+ * @return {String}
+ */
+exports.$normalize = function(path) {
+	if (isWindows)
+		return path.replace(regexpPATH, '/');
+	return path;
+};
+
 /*
 	Get random number
 	@max {Number}
@@ -1686,10 +1698,7 @@ exports.combine = function() {
 			p += (p[p.length - 1] !== '/' ? '/' : '') + v;
 		}
 
-		if (framework.isWindows)
-			return p.replace(regexpPATH, '/');
-
-		return p;
+		return exports.$normalize(p);
 	}
 
 	p = framework.directory;
@@ -1703,10 +1712,7 @@ exports.combine = function() {
 		p += (p[p.length - 1] !== '/' ? '/' : '') + v;
 	}
 
-	if (framework.isWindows)
-		return p.replace(regexpPATH, '/');
-
-	return p;
+	return exports.$normalize(p);
 };
 
 /**
