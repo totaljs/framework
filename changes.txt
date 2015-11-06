@@ -2,8 +2,9 @@ BETA ======= 1.9.3 (HOTFIX)
 
 - added: MAKE([transform], function(obj))
 - added: TRANSFORM([transform], obj)
+- added: NEWTRANSFORM(name, fn, [isDefault]) --> alias for TransformBuilder.addTransform()
 - added: packages can be stored as directories (recommended for debug mode only)
-- added: F.localize(name, url, middleware, options, minify) --> minify argument
+- added: F.localize(name, url, [middleware], [options], [minify]) --> minify argument
 - added: email supports calendar (.ics) request sending
 - added: SchemaBuilderEntity.make(function(schema))
 - added: F.install() supports packages mapping

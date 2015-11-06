@@ -164,6 +164,10 @@ global.MAKE = global.TRANSFORM = function(transform, fn) {
 	return obj;
 };
 
+global.NEWTRANSFORM = function(name, fn, isDefault) {
+	return TransformBuilder.addTransform.apply(this, arguments);
+};
+
 global.NEWSCHEMA = function(group, name) {
 	if (!name) {
 		name = group;
