@@ -201,6 +201,28 @@ global.DESTROY = function(stream) {
 };
 
 global.CLEANUP = function(stream, callback) {
+
+	var fn = function() {
+		FINISHED(stream, function() {
+			if (callback)
+				callback();
+			DESTROY(stream);
+		});
+	};
+
+	if (stream.readable) {
+		if (stream.path) {
+			stream.on('end', fn);
+			return;
+		}
+	} else {
+		if (stream.path) {
+			stream.on('finish', fn);
+			return;
+		}
+	}
+
+	fn = null;
 	FINISHED(stream, function() {
 		if (callback)
 			callback();
@@ -264,7 +286,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-27';
+	this.version_header = '1.9.3-28';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -3486,7 +3508,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		return self;
 	}
 
-	var writer = fs.createWriteStream(merge.filename);
+	var writer = fs.createWriteStream(filename);
 
 	writer.on('finish', function() {
 		self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
@@ -3497,9 +3519,20 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 
 	merge.files.wait(function(filename, next) {
 
+		var block;
+
+		// Skip isomorphic
+		if (filename[0] !== '#') {
+			var blocks = filename.split('#');
+			block = blocks[1];
+			if (block)
+				filename = blocks[0];
+		}
+
 		if (filename.startsWith('http://') || filename.startsWith('https://')) {
 			Utils.request(filename, ['get'], function(err, data) {
-				var output = self.compileContent(extension, data, filename).trim();
+
+				var output = self.compileContent(extension, framework_internal.parseBlock(block, data), filename);
 
 				if (extension === 'js') {
 					if (output[output.length - 1] !== ';')
@@ -3523,6 +3556,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		}
 
 		if (filename[0] === '#') {
+
 			if (framework.isDebug)
 				merge_debug_writer(writer, filename, 'js', index++);
 
@@ -3552,7 +3586,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 				return;
 			}
 
-			var output = self.compileContent(extension, buffer.toString(ENCODING), filename).trim();
+			var output = self.compileContent(extension, framework_internal.parseBlock(block, buffer.toString(ENCODING)), filename);
 
 			if (extension === 'js') {
 				if (output[output.length - 1] !== ';')
@@ -3640,7 +3674,6 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 
 	self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
 	callback();
-
 	return self;
 };
 

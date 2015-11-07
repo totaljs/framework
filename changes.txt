@@ -1,5 +1,6 @@
 BETA ======= 1.9.3 (HOTFIX)
 
+- added: (IMPORTANT) merging supports BLOCKS (.js,.css), e.g. F.merge('merge.js', 'fileA.js#management', 'fileB.js#management')
 - added: MAKE([transform], function(obj))
 - added: TRANSFORM([transform], obj)
 - added: NEWTRANSFORM(name, fn, [isDefault]) --> alias for TransformBuilder.addTransform()
@@ -36,6 +37,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - fixed: HTML compression in views
 - fixed: U.Async() object (problem with waitingFor)
 - fixed: F.map(), problem in Windows
+- fixed: CLEANUP(stream, [callback]);
 
 ======= 1.9.2 (HOTFIX)
 

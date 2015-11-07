@@ -44,6 +44,8 @@ var REG_3 = /\/{1,}/g;
 var REG_4 = /\n\s{2,}./g;
 var REG_5 = />\n\s{1,}</g;
 var REG_6 = /(\w|\")+\s{2,}\w+/g;
+var REG_BLOCK_BEG = /\@\{block.*?\}/gi;
+var REG_BLOCK_END = /\@\{end\}/gi;
 
 var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
@@ -3211,6 +3213,67 @@ exports.encodeUnicodeURL = function(url) {
 			output = output.replace(url[i], encodeURIComponent(url[i]));
 	}
 	return output;
+};
+
+exports.parseBlock = function(name, content) {
+
+	// @{block name}
+	//
+	// @{end}
+
+	if (!name)
+		return content;
+
+	if (content.search(REG_BLOCK_BEG) === -1)
+		return content;
+
+	var newline = '\n';
+	var lines = content.split(newline);
+	var is = false;
+	var skip = false;
+	var builder = '';
+
+	for (var i = 0, length = lines.length; i < length; i++) {
+
+		var line = lines[i];
+
+		if (!line)
+			continue;
+
+		if (line.search(REG_BLOCK_END) !== -1) {
+			is = false;
+			skip = false;
+			continue;
+		}
+
+		if (is) {
+			if (skip)
+				continue;
+			builder += line + newline;
+			continue;
+		}
+
+		var index = line.search(REG_BLOCK_BEG);
+		if (!index)
+			continue;
+
+		if (index === -1) {
+			builder += line + newline;
+			continue;
+		}
+
+		is = true;
+		skip = true;
+
+		var block = line.substring(index + 8, line.indexOf('}', index)).replace(/\|\|/g, ',').replace(/\s/g, '').split(',');
+		for (var j = 0, jl = block.length; j < jl; j++) {
+			if (block[j] !== name)
+				continue;
+			skip = false;
+		}
+	}
+
+	return builder.trim();
 };
 
 exports.parseLocalization = view_parse_localization;
