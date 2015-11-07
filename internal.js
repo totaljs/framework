@@ -3233,6 +3233,8 @@ exports.parseBlock = function(name, content) {
 	var skip = false;
 	var builder = '';
 
+	name = name.replace(/\s/g, '').split(',');
+
 	for (var i = 0, length = lines.length; i < length; i++) {
 
 		var line = lines[i];
@@ -3267,9 +3269,10 @@ exports.parseBlock = function(name, content) {
 
 		var block = line.substring(index + 8, line.indexOf('}', index)).replace(/\|\|/g, ',').replace(/\s/g, '').split(',');
 		for (var j = 0, jl = block.length; j < jl; j++) {
-			if (block[j] !== name)
+			if (name.indexOf(block[j]) === -1)
 				continue;
 			skip = false;
+			break;
 		}
 	}
 

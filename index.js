@@ -3543,7 +3543,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 				}
 
 				if (framework.isDebug)
-					merge_debug_writer(writer, filename, extension, index++);
+					merge_debug_writer(writer, filename, extension, index++, block);
 
 				if (framework.versionNode >= 400)
 					writer.write(output);
@@ -3558,7 +3558,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		if (filename[0] === '#') {
 
 			if (framework.isDebug)
-				merge_debug_writer(writer, filename, 'js', index++);
+				merge_debug_writer(writer, filename, 'js', index++, block);
 
 			if (framework.versionNode >= 400)
 				writer.write(prepare_isomorphic(filename.substring(1)));
@@ -3597,7 +3597,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 			}
 
 			if (framework.isDebug)
-				merge_debug_writer(writer, filename, extension, index++);
+				merge_debug_writer(writer, filename, extension, index++, block);
 
 			if (framework.versionNode >= 400)
 				writer.write(output);
@@ -3614,12 +3614,12 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 	return self;
 };
 
-function merge_debug_writer(writer, filename, extension, index) {
+function merge_debug_writer(writer, filename, extension, index, block) {
 	var plus = '===========================================================================================';
 	var beg = extension === 'js' ? '/*\n' : extension === 'css' ? '/*!\n' : '<!--\n';
 	var end = extension === 'js' || extension === 'css' ? '\n */' : '\n-->';
 	var mid = extension !== 'html' ? ' * ' : ' ';
-	writer.write((index > 0 ? '\n\n' : '') + beg + mid + plus + '\n' + mid + 'MERGED: ' + filename + '\n' + mid + plus + end + '\n\n', ENCODING);
+	writer.write((index > 0 ? '\n\n' : '') + beg + mid + plus + '\n' + mid + 'MERGED: ' + filename + '\n' + (block ? mid + 'BLOCKS: ' + block + '\n' : '') + mid + plus + end + '\n\n', ENCODING);
 }
 
 /**
