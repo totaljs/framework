@@ -16,6 +16,7 @@ BETA ======= 1.9.3 (HOTFIX)
 - added: Utils.atob(str) --> returns binary
 - added: global.TRY(fnScope, [fnError]) --> creates safe scope (more in documentation)
 
+- updated: CSS compressor removes comments
 - updated: F.restrictions.allow('IP') --> does not have to be full IP
 - updated: F.restrictions.disallow('IP') --> does not have to be full IP
 - updated: String.startsWith() and String.endsWith() according to ES6 but with the backward compatibility

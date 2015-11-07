@@ -2583,12 +2583,32 @@ function nested(css, id, variable) {
 	var plus = '';
 	var skip = false;
 	var skipImport = '';
+	var isComment = false;
+	var comment = '';
 
 	while (true) {
-		var a = css[index++];
 
+		var a = css[index++];
 		if (!a)
 			break;
+
+		if (a === '/' && css[index] === '*') {
+			isComment = true;
+			index++;
+			comment = '';
+			continue;
+		}
+
+		if (isComment) {
+			comment += a;
+			if (a === '*' && css[index] === '/') {
+				isComment = false;
+				index++;
+				if (comment === 'auto*')
+					output += '/*auto*/';
+			}
+			continue;
+		}
 
 		if (a === '\n' || a === '\r')
 			continue;
@@ -3221,9 +3241,6 @@ exports.parseBlock = function(name, content) {
 	//
 	// @{end}
 
-	if (!name)
-		return content;
-
 	if (content.search(REG_BLOCK_BEG) === -1)
 		return content;
 
@@ -3233,7 +3250,7 @@ exports.parseBlock = function(name, content) {
 	var skip = false;
 	var builder = '';
 
-	name = name.replace(/\s/g, '').split(',');
+	name = (name || '').replace(/\s/g, '').split(',');
 
 	for (var i = 0, length = lines.length; i < length; i++) {
 
