@@ -503,13 +503,13 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			if (callback) {
 				request.on('error', function(error) {
 					if (callback)
-						callback(error, undefined, 0, undefined, undefined, uri.host);
+						callback(error, '', 0, undefined, undefined, uri.host);
 					callback = null;
 				});
 
 				request.setTimeout(timeout || 10000, function() {
 					if (callback)
-						callback(new Error(exports.httpStatus(408)), undefined, 0, undefined, uri.host);
+						callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
 					callback = null;
 				});
 			}
@@ -526,7 +526,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 		} catch (ex) {
 			if (callback)
-				callback(ex, undefined, 0);
+				callback(ex, '', 0);
 		}
 	};
 
