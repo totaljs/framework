@@ -621,6 +621,33 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('mapping-blocks-a', function(complete) {
+		utils.request(url + 'blocks-a.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('var common=true;var a=true;') !== -1, 'mapping blocks - A');
+			complete();
+		});
+	});
+
+	async.await('mapping-blocks-b', function(complete) {
+		utils.request(url + 'blocks-b.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('var common=true;var b=true;') !== -1, 'mapping blocks - B');
+			complete();
+		});
+	});
+
+	async.await('mapping-blocks-c', function(complete) {
+		utils.request(url + 'blocks-c.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('var common=true;var a=true;var b=true;') !== -1, 'mapping blocks - C');
+			complete();
+		});
+	});
+
 	async.await('virtual', function(complete) {
 		utils.request(url + 'virtual.txt', [], function(error, data, code, headers) {
 			if (error)
