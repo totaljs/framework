@@ -402,6 +402,7 @@ function Framework() {
 		merge: {},
 		mapping: {},
 		packages: {},
+		blocks: {}
 	};
 
 	this.behaviours = null;
@@ -1422,13 +1423,21 @@ Framework.prototype.map = function(url, filename, filter) {
 	var self = this;
 
 	filename = framework_utils.$normalize(filename);
-
 	url = self._version(url);
 
 	// isomorphic
 	if (filename[0] === '#') {
 		self.routes.mapping[url] = filename;
 		return self;
+	}
+
+	var index = filename.indexOf('#');
+	var block;
+
+	if (index !== -1) {
+		var tmp = filename.split('#');
+		filename = tmp[0];
+		block = tmp[1];
 	}
 
 	// package
@@ -1451,6 +1460,10 @@ Framework.prototype.map = function(url, filename, filter) {
 
 	if (isFile) {
 		self.routes.mapping[url] = filename;
+
+		if (block)
+			self.routes.blocks[url] = block;
+
 		return self;
 	}
 
@@ -1505,8 +1518,12 @@ Framework.prototype.map = function(url, filename, filter) {
 
 				if (file[0] === '/')
 					file = file.substring(1);
+
 				var key = url + file;
 				self.routes.mapping[key] = plus + files[i];
+
+				if (block)
+					self.routes.blocks[key] = block;
 			}
 
 		});
@@ -3479,7 +3496,12 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
 
 		var file = self.path.temp((self.id === null ? '' : 'instance-' + self.id + '-') + createTemporaryKey(uri.pathname));
 		self.path.verify('temp');
-		fs.writeFileSync(file, self.compileContent(extension, buffer.toString(ENCODING), filename), ENCODING);
+		var content = buffer.toString(ENCODING);
+
+		if (self.routes.blocks[uri.pathname])
+			content = framework_internal.parseBlock(self.routes.blocks[uri.pathname], content);
+
+		fs.writeFileSync(file, self.compileContent(extension, content, filename), ENCODING);
 		self.temporary.path[key] = file + ';' + fs.statSync(file).size;
 		callback();
 
