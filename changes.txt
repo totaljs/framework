@@ -42,6 +42,8 @@ BETA ======= 1.9.3 (HOTFIX)
 - fixed: F.map(), problem in Windows
 - fixed: CLEANUP(stream, [callback]);
 
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/blocks
+
 ======= 1.9.2 (HOTFIX)
 
 - added: support for node +v4.0.0
