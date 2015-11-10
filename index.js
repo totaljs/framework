@@ -286,7 +286,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-30';
+	this.version_header = '1.9.3-31';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1449,7 +1449,7 @@ Framework.prototype.map = function(url, filename, filter) {
 		isPackage = true;
 	}
 
-	var isFile = path.extname(filename).length > 0;
+	var isFile = framework_utils.getExtension(filename).length > 0;
 
 	// Checks if the directory exists
 	if (!isPackage && !filename.startsWith(directory)) {
@@ -1460,10 +1460,8 @@ Framework.prototype.map = function(url, filename, filter) {
 
 	if (isFile) {
 		self.routes.mapping[url] = filename;
-
 		if (block)
 			self.routes.blocks[url] = block;
-
 		return self;
 	}
 
@@ -1511,7 +1509,7 @@ Framework.prototype.map = function(url, filename, filter) {
 						if (!filter(file))
 							continue;
 					} else {
-						if (filter.indexOf(path.extname(file).toLowerCase()) === -1)
+						if (filter.indexOf(framework_utils.getExtension(file).toLowerCase()) === -1)
 							continue;
 					}
 				}
@@ -2042,7 +2040,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 				return;
 			}
 
-			var ext = path.extname(o).toLowerCase();
+			var ext = framework_utils.getExtension(o).toLowerCase();
 			if (ext !== extension)
 				return;
 			var name = (level > 0 ? directory.replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length);
@@ -3989,9 +3987,17 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return self;
 	}
 
-	var allowcache = req.headers['pragma'] !== 'no-cache';
+	var allowcache = true; // req.headers['cache-control'] !== 'no-cache';
 	var etag = allowcache ? framework_utils.etag(req.url, self.config['etag-version']) : null;
 	var returnHeaders = {};
+
+	var extension = req.extension;
+	if (!extension) {
+		if (key)
+			extension = framework_utils.getExtension(key);
+		if (!extension)
+			extension = framework_utils.getExtension(name);
+	}
 
 	if (!self.config.debug && req.headers['if-none-match'] === etag) {
 
@@ -4001,6 +4007,9 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		if (!res.getHeader('Expires'))
 			returnHeaders['Expires'] = new Date().add('M', 3);
 
+		returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+		returnHeaders['Access-Control-Allow-Origin'] = '*';
+		returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = framework_utils.getContentType(extension);
 		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 
 		res.success = true;
@@ -4016,14 +4025,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			self.emit('request-end', req, res);
 
 		return self;
-	}
-
-	var extension = req.extension;
-	if (!extension) {
-		if (key)
-			extension = path.extname(key);
-		if (!extension)
-			extension = path.extname(name);
 	}
 
 	// JS, CSS
@@ -4072,6 +4073,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		returnHeaders['Expires'] = new Date().add('M', 3);
 
 	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
+	returnHeaders['Access-Control-Allow-Origin'] = '*';
+	returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 
 	if (headers)
 		utils.extend(returnHeaders, headers, true);
@@ -4355,7 +4358,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
 			fnProcess(image);
 
-			var extension = path.extname(name);
+			var extension = framework_utils.getExtension(name);
 			if (extension.substring(1) !== image.outputType)
 				name = name.substring(0, name.lastIndexOf(extension)) + '.' + image.outputType;
 
@@ -4409,7 +4412,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
 		fnProcess(image);
 
-		var extension = path.extname(name);
+		var extension = framework_utils.getExtension(name);
 		if (extension.substring(1) !== image.outputType)
 			name = name.substring(0, name.lastIndexOf(extension)) + '.' + image.outputType;
 
@@ -4570,6 +4573,8 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (RELEASE)
 		returnHeaders['Expires'] = new Date().add('M', 3);
 
+	returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+	returnHeaders['Access-Control-Allow-Origin'] = '*';
 	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	if (headers)
@@ -5638,7 +5643,7 @@ Framework.prototype.listener = function(req, res) {
 
 	var can = true;
 	if (req.isStaticFile) {
-		req.extension = path.extname(req.uri.pathname).substring(1);
+		req.extension = framework_utils.getExtension(req.uri.pathname).substring(1);
 		switch (req.extension) {
 			case 'html':
 			case 'htm':
@@ -6591,8 +6596,7 @@ Framework.prototype.test = function(stop, names, cb) {
 		files.forEach(function(filePath) {
 			var name = path.relative(framework_utils.combine(dir), filePath);
 			var filename = filePath;
-			var ext = path.extname(filename).toLowerCase();
-
+			var ext = framework_utils.getExtension(filename).toLowerCase();
 			if (ext !== EXTENSION_JS)
 				return;
 

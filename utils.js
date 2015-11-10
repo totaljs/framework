@@ -828,7 +828,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 		});
 	}
 
-	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(path.extname(name)) + NEWLINE + NEWLINE;
+	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(name)) + NEWLINE + NEWLINE;
 	req.write(header);
 
 	// Is Buffer
@@ -1244,6 +1244,18 @@ exports.getContentType = function(ext) {
 	if (ext[0] === '.')
 		ext = ext.substring(1);
 	return contentTypes[ext.toLowerCase()] || 'application/octet-stream';
+};
+
+/**
+ * Get extension from filename
+ * @param {String} filename
+ * @return {String}
+ */
+exports.getExtension = function(filename) {
+	var index = filename.lastIndexOf('.');
+	if (index === -1)
+		return '';
+	return filename.substring(index);
 };
 
 /**
