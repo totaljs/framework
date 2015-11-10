@@ -286,7 +286,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-31';
+	this.version_header = '1.9.3-32';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -3759,7 +3759,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		// isomorphic
 		var headers = {};
 		headers['Etag'] = etag;
-		headers['Expires'] = new Date().add('M', 3);
+		headers['Expires'] = new Date().add('y', 1);
 		headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 		framework.responseContent(req, res, 200, prepare_isomorphic(key), 'text/javascript', true, headers);
 		return self;
@@ -4005,7 +4005,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			returnHeaders['Etag'] = etag;
 
 		if (!res.getHeader('Expires'))
-			returnHeaders['Expires'] = new Date().add('M', 3);
+			returnHeaders['Expires'] = new Date().add('y', 1);
 
 		returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 		returnHeaders['Access-Control-Allow-Origin'] = '*';
@@ -4070,7 +4070,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE && allowcache ? ', max-age=11111111' : '');
 
 	if (RELEASE && allowcache && !res.getHeader('Expires'))
-		returnHeaders['Expires'] = new Date().add('M', 3);
+		returnHeaders['Expires'] = new Date().add('y', 1);
 
 	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 	returnHeaders['Access-Control-Allow-Origin'] = '*';
@@ -4571,7 +4571,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=11111111' : '');
 
 	if (RELEASE)
-		returnHeaders['Expires'] = new Date().add('M', 3);
+		returnHeaders['Expires'] = new Date().add('y', 1);
 
 	returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 	returnHeaders['Access-Control-Allow-Origin'] = '*';
