@@ -286,7 +286,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1930;
-	this.version_header = '1.9.3-29';
+	this.version_header = '1.9.3-30';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -3496,12 +3496,7 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
 
 		var file = self.path.temp((self.id === null ? '' : 'instance-' + self.id + '-') + createTemporaryKey(uri.pathname));
 		self.path.verify('temp');
-		var content = buffer.toString(ENCODING);
-
-		if (self.routes.blocks[uri.pathname])
-			content = framework_internal.parseBlock(self.routes.blocks[uri.pathname], content);
-
-		fs.writeFileSync(file, self.compileContent(extension, content, filename), ENCODING);
+		fs.writeFileSync(file, self.compileContent(extension, framework_internal.parseBlock(self.routes.blocks[uri.pathname], buffer.toString(ENCODING)), filename), ENCODING);
 		self.temporary.path[key] = file + ';' + fs.statSync(file).size;
 		callback();
 
