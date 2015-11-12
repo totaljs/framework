@@ -99,6 +99,7 @@ We provide a support of the framework for companies. Our support services will k
 | [Matus Szabo](https://github.com/matusszabo) | support + enterprise | <matus.szabo@gmail.com> |
 | Tomas Holovsky | support + enterprise | <tomasholovsky@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
+| [Gera G. Güiles](https://github.com/DoorSoft) | contributor + support | <gerardo.gonzalezg@gmail.com> |
 
 ## Other
 
