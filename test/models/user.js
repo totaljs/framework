@@ -5,3 +5,11 @@ User.define('name', 'string(10)', true);
 User.setValidation(function(name, value) {
 	return value.length > 0;
 });
+
+NEWSCHEMA('filter').make(function(schema) {
+	schema.define('name', String, true, 'create');
+	schema.define('age', Number, true, 'update');
+	schema.setValidation(function() {
+		return false;
+	});
+});

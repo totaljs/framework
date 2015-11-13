@@ -1105,6 +1105,12 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 					schema[1] = schema[0];
 					schema[0] = 'default';
 				}
+
+				index = schema[1].indexOf('#');
+				if (index !== -1) {
+					schema[2] = schema[1].substring(index + 1);
+					schema[1] = schema[1].substring(0, index);
+				}
 				continue;
 			}
 
@@ -3085,7 +3091,7 @@ Framework.prototype.onValidation = null;
  * @param {String} name
  * @param {Function(err, body)} callback
  */
-Framework.prototype.onSchema = function(req, group, name, callback) {
+Framework.prototype.onSchema = function(req, group, name, callback, filter) {
 
 	var schema = GETSCHEMA(group, name);
 
@@ -3099,7 +3105,7 @@ Framework.prototype.onSchema = function(req, group, name, callback) {
 			callback(err);
 		else
 			callback(null, result);
-	});
+	}, filter);
 };
 
 /**
@@ -9116,7 +9122,7 @@ Subscribe.prototype.doEnd = function() {
 
 			req.body = body;
 			self.prepare(req.flags, req.uri.pathname);
-		});
+		}, route.schema[2]);
 
 		return self;
 	}
@@ -9174,7 +9180,7 @@ Subscribe.prototype.doEnd = function() {
 
 		req.body = body;
 		self.prepare(req.flags, req.uri.pathname);
-	});
+	}, route.schema[2]);
 
 	return self;
 };

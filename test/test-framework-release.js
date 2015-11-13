@@ -395,6 +395,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('post-schema-filter', function(complete) {
+		utils.request(url + 'schema-filter/', ['post'], 'EMPTY', function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '[{"name":"age","error":"The field \\"age\\" is required.","path":"filter.age"}]', 'schema filter');
+			complete();
+		});
+	});
+
 	async.await('post-schema', function(complete) {
 		utils.request(url + 'post/schema/', ['post'], 'name=Peter123456789012345678901234567890#', function(error, data, code, headers) {
 			if (error)

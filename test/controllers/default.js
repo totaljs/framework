@@ -37,6 +37,7 @@ exports.install = function() {
     framework.route('/html-compressor/', view_compressor);
     framework.route('/html-nocompress/', view_nocompress);
     framework.route('/sync/', synchronize);
+    framework.route('/schema-filter/', ['post', '*filter#update']);
     framework.route('/package/', '@testpackage/test');
     framework.route('/precompile/', view_precomile);
     framework.route('/homepage/', view_homepage);

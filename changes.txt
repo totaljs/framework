@@ -1,6 +1,7 @@
 BETA ======= 1.9.3 (HOTFIX)
 
 - added: (IMPORTANT) merging supports BLOCKS (.js,.css), e.g. F.merge('merge.js', 'fileA.js#management,common', 'fileB.js#management')
+- added: (IMPORTANT) a route with schema binding can contain filter e.g. `*Schema#update` or `*Group\Schema#create` --> the framework validates only fields by filter
 - added: MAKE([transform], function(obj))
 - added: TRANSFORM([transform], obj)
 - added: NEWTRANSFORM(name, fn, [isDefault]) --> alias for TransformBuilder.addTransform()

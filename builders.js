@@ -979,7 +979,7 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
  * @param {ErrorBuilder} builder ErrorBuilder, INTERNAL.
  * @return {ErrorBuilder}
  */
-SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder) {
+SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder, filter) {
 
 	var self = this;
 	var fn = self.onValidation;
@@ -1007,7 +1007,12 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 
 	// self._setStateToModel(model, 1, 1);
 	//return framework_utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
-	return framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name);
+
+	if (filter)
+		filter = self.filter(filter);
+
+
+	return framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name, undefined, filter);
 };
 
 /**
@@ -1335,7 +1340,7 @@ SchemaBuilderEntity.prototype.default = function() {
 	return self.$make(item);
 };
 
-SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = function(model, callback) {
+SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = function(model, callback, filter) {
 
 	var self = this;
 
@@ -1350,7 +1355,7 @@ SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = functi
 		return output;
 	}
 
-	var builder = self.validate(output);
+	var builder = self.validate(output, undefined, undefined, undefined, filter);
 	if (builder.hasError()) {
 
 		if (self.onError)

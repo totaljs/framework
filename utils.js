@@ -1524,7 +1524,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 	return error;
 };
 
-exports.validate_builder = function(model, error, schema, collection, path, index) {
+exports.validate_builder = function(model, error, schema, collection, path, index, fields) {
 
 	var entity = collection[schema];
 	var prepare = entity.onValidation || framework.onValidation;
@@ -1541,6 +1541,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	for (var i = 0; i < properties.length; i++) {
 
 		var name = properties[i].toString();
+		if (fields && fields.indexOf(name) === -1)
+			continue;
+
 		var value = model[name];
 		var type = typeof(value);
 
