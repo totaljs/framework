@@ -263,7 +263,10 @@ global.TRY = function(fn, err) {
 		fn()
 		return true;
 	} catch (e) {
-		if (err) err(err);
+		if (err)
+			err(err);
+		else
+			F.error(err);
 		return false;
 	}
 };
