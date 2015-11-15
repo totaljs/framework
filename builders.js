@@ -750,6 +750,11 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback, skip) {
 
 		var builder = new ErrorBuilder();
 
+		if (self.resourceName)
+			builder.setResource(self.resourceName);
+		if (self.resourcePrefix)
+			builder.setResource(self.resourcePrefix);
+
 		if (!isGenerator(self, $type, self.onSave)) {
 			self.onSave(builder, model, helper, function(result) {
 				self.$process(arguments, model, $type, undefined, builder, result, callback);
@@ -815,6 +820,12 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 
 	var self = this;
 	var builder = new ErrorBuilder();
+
+	if (self.resourceName)
+		builder.setResource(self.resourceName);
+	if (self.resourcePrefix)
+		builder.setResource(self.resourcePrefix);
+
 	var output = self.default();
 	var $type = 'get';
 
@@ -875,6 +886,11 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 	var builder = new ErrorBuilder();
 	var $type = 'remove';
 
+	if (self.resourceName)
+		builder.setResource(self.resourceName);
+	if (self.resourcePrefix)
+		builder.setResource(self.resourcePrefix);
+
 	if (!isGenerator(self, $type, self.onRemove)) {
 		self.onRemove(builder, helper, function(result) {
 			self.$process(arguments, undefined, $type, undefined, builder, result, callback);
@@ -932,6 +948,11 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 	var builder = new ErrorBuilder();
 	var $type = 'query';
 
+	if (self.resourceName)
+		builder.setResource(self.resourceName);
+	if (self.resourcePrefix)
+		builder.setResource(self.resourcePrefix);
+
 	if (!isGenerator(self, $type, self.onQuery)) {
 		self.onQuery(builder, helper, function(result) {
 			self.$process(arguments, undefined, $type, undefined, builder, result, callback);
@@ -984,8 +1005,13 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 	var self = this;
 	var fn = self.onValidation;
 
-	if (builder === undefined)
+	if (builder === undefined) {
 		builder = new ErrorBuilder();
+		if (self.resourceName)
+			builder.setResource(self.resourceName);
+		if (self.resourcePrefix)
+			builder.setResource(self.resourcePrefix);
+	}
 
 	if (fn === undefined || fn === null) {
 		fn = framework.onValidation;
@@ -1637,6 +1663,12 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
 	if (skip === true) {
 		var builder = new ErrorBuilder();
+
+		if (self.resourceName)
+			builder.setResource(self.resourceName);
+		if (self.resourcePrefix)
+			builder.setResource(self.resourcePrefix);
+
 		trans.call(self, builder, model, helper, function(result) {
 			self.$process(arguments, model, $type, name, builder, result, callback);
 		}, skip !== true);
@@ -1651,6 +1683,11 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 		}
 
 		var builder = new ErrorBuilder();
+
+		if (self.resourceName)
+			builder.setResource(self.resourceName);
+		if (self.resourcePrefix)
+			builder.setResource(self.resourcePrefix);
 
 		if (!isGenerator(self, 'transform.' + name, trans)) {
 			trans.call(self, builder, model, helper, function(result) {
@@ -1737,6 +1774,12 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback, 
 
 	if (skip === true) {
 		var builder = new ErrorBuilder();
+
+		if (self.resourceName)
+			builder.setResource(self.resourceName);
+		if (self.resourcePrefix)
+			builder.setResource(self.resourcePrefix);
+
 		compose.call(self, builder, model, helper, function(result) {
 			self.$process(arguments, model, $type, name, builder, result, callback);
 		}, skip !== true);
@@ -1752,6 +1795,11 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback, 
 
 		var output = self.default();
 		var builder = new ErrorBuilder();
+
+		if (self.resourceName)
+			builder.setResource(self.resourceName);
+		if (self.resourcePrefix)
+			builder.setResource(self.resourcePrefix);
 
 		if (!isGenerator(self, 'compose.' + name, compose)) {
 			compose.call(self, builder, output, model, helper, function(result) {
@@ -1853,6 +1901,12 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 
 	if (skip === true) {
 		var builder = new ErrorBuilder();
+
+		if (self.resourceName)
+			builder.setResource(self.resourceName);
+		if (self.resourcePrefix)
+			builder.setResource(self.resourcePrefix);
+
 		workflow.call(self, builder, model, helper, function(result) {
 			self.$process(arguments, model, $type, name, builder, result, callback);
 		}, skip !== true);
@@ -1867,6 +1921,12 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 		}
 
 		var builder = new ErrorBuilder();
+
+		if (self.resourceName)
+			builder.setResource(self.resourceName);
+		if (self.resourcePrefix)
+			builder.setResource(self.resourcePrefix);
+
 		if (!isGenerator(self, 'workflow.' + name, workflow)) {
 			workflow.call(self, builder, model, helper, function(result) {
 				self.$process(arguments, model, $type, name, builder, result, callback);
@@ -1957,6 +2017,11 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 	var builder = new ErrorBuilder();
 	var $type = 'operation';
+
+	if (self.resourceName)
+		builder.setResource(self.resourceName);
+	if (self.resourcePrefix)
+		builder.setResource(self.resourcePrefix);
 
 	if (!isGenerator(self, 'operation.' + name, operation)) {
 		operation.call(self, builder, model, helper, function(result) {
