@@ -11011,6 +11011,10 @@ Controller.prototype.$import = function() {
 
 	for (var i = 0; i < arguments.length; i++) {
 		var filename = arguments[i];
+
+		if (filename === 'head')
+			return self.head();
+
 		var extension = filename.substring(filename.lastIndexOf('.'));
 
 		switch (extension) {
