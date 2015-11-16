@@ -8,7 +8,8 @@ Framework, for node.js
 
 __total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
-[Simple Eshop + CMS](http://www.totaljs.com/eshop)
+- [Total.js Simple Eshop + CMS](http://www.totaljs.com/eshop)
+- [Total.js for enterprise](http://nodejsenterprise.com)
 
 
 ```
@@ -108,8 +109,7 @@ We provide a support of the framework for companies. Our support services will k
 #### Built with total.js
 
 - [__NEW__: Eshop + CMS written in node.js / total.js](http://www.totaljs.com/eshop)
-- [__NEW__: Online Clipboard - www.online-clipboard.com](https://www.online-clipboard.com)
-- [Todomator - Task Manager System](http://www.todomator.com)
+- [__NEW__: Todomator - www.todomator.com](https://www.todomator.com)
 - [Componenator - Resources for web developers](http://www.componentator.com)
 - [E-commerce, CMS and Docker manager](http://nowitssimple.com/)
 - [Test your application](http://www.testerleader.com/)
