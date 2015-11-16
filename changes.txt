@@ -18,6 +18,7 @@
 - added: global.TRY(fnScope, [fnError]) --> creates safe scope (more in documentation)
 - added: Utils.getExtension(filename)
 - added: @{head} can be imported as @{import('head')}
+- added: @{meta} can be imported as @{import('meta')}
 
 - updated: CSS compressor removes comments
 - updated: F.restrictions.allow('IP') --> does not have to be full IP
