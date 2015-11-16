@@ -1252,6 +1252,8 @@ exports.getContentType = function(ext) {
  * @return {String}
  */
 exports.getExtension = function(filename) {
+	if (filename)
+		return '';
 	var index = filename.lastIndexOf('.');
 	if (index === -1)
 		return '';

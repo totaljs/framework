@@ -4004,8 +4004,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (!extension) {
 		if (key)
 			extension = framework_utils.getExtension(key);
-		if (!extension)
+		if (!extension && name)
 			extension = framework_utils.getExtension(name);
+		if (!extension && filename)
+			extension = framework_utils.getExtension(filename);
 	}
 
 	if (!self.config.debug && req.headers['if-none-match'] === etag) {
