@@ -11013,9 +11013,9 @@ Controller.prototype.$import = function() {
 		var filename = arguments[i];
 
 		if (filename === 'head')
-			return self.head();
+			builder += self.head();
 		if (filename === 'meta')
-			return self.$meta();
+			builder += self.$meta();
 
 		var extension = filename.substring(filename.lastIndexOf('.'));
 
