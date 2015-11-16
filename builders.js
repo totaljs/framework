@@ -3311,8 +3311,10 @@ TransformBuilder.transform = function(name, obj) {
 	}
 
 	var current = transforms['transformbuilder'][name];
-	if (!current)
+	if (!current) {
+		F.error('Transformation "' + name + '" not found.', 'TransformBuilder.transform()');
 		return obj;
+	}
 
 	var sum = arguments.length - index;
 	if (sum <= 0)
