@@ -19,6 +19,8 @@
 - added: Utils.getExtension(filename)
 - added: @{head} can be imported as @{import('head')}
 - added: @{meta} can be imported as @{import('meta')}
+- added: controller.cookie('KEY') --> for reading
+- added: controller.cookie('KEY', 'VALUE', expire, [options]) --> for writting
 
 - updated: CSS compressor removes comments
 - updated: F.restrictions.allow('IP') --> does not have to be full IP

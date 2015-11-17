@@ -9518,6 +9518,22 @@ Controller.prototype = {
 // PROTOTYPES
 // ======================================================
 
+/**
+ * Read / Write cookie
+ * @param {String} name
+ * @param {String} value
+ * @param {String/Date} expires
+ * @param {Object} options
+ * @return {String/Controller}
+ */
+Controller.prototype.cookie = function(name, value, expires, options) {
+	var self = this;
+	if (value === undefined)
+		return self.req.cookie(name);
+	self.res.cookie(name, value, expires, options);
+	return self;
+};
+
 /*
 	Validation / alias for validate
 	@model {Object}
