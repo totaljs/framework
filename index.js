@@ -9392,6 +9392,14 @@ Controller.prototype = {
 		return this.req.headers['last-event-id'] || null;
 	},
 
+	get route() {
+		return this.subscribe.route;
+	},
+
+	get options() {
+		return this.subscribe.route.options;
+	},
+
 	get flags() {
 		return this.subscribe.route.flags;
 	},
