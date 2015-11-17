@@ -6048,6 +6048,7 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 		if (self.connections[id] === undefined) {
 			var connection = new WebSocket(self, path, route.controller, id);
 			connection.route = route;
+			connection.options = route.options;
 			self.connections[id] = connection;
 			route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
 		}
