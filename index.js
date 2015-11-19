@@ -3127,6 +3127,8 @@ Framework.prototype.onParseJSON = function(value) {
  * @return {Object}
  */
 Framework.prototype.onParseQuery = function(value) {
+	if (!value)
+		return {};
 	return qs.parse(value);
 };
 
