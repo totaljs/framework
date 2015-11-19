@@ -69,7 +69,7 @@ framework.onPictureUrl = function(dimension, id, width, height, alt) {
     return dimension + '-' + id + '.jpg';
 };
 
-framework.onValidation = function(name, value) {
+framework.onValidate = function(name, value) {
     return name + value;
 };
 
