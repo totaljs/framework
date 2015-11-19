@@ -2,7 +2,6 @@
 
 - added: (IMPORTANT) merging supports BLOCKS (.js,.css), e.g. F.merge('merge.js', 'fileA.js#management,common', 'fileB.js#management')
 - added: (IMPORTANT) a route with schema binding can contain filter e.g. `*Schema#update` or `*Group\Schema#create` --> the framework validates only fields by filter
-- added: MAKE([transform], function(obj))
 - added: TRANSFORM([transform], obj)
 - added: NEWTRANSFORM(name, fn, [isDefault]) --> alias for TransformBuilder.addTransform()
 - added: packages can be stored as directories (recommended for debug mode only)
@@ -21,7 +20,13 @@
 - added: @{meta} can be imported as @{import('meta')}
 - added: controller.cookie('KEY') --> for reading
 - added: controller.cookie('KEY', 'VALUE', expire, [options]) --> for writting
+- added: framework.onParseQuery(function(value)) --> for parsing values from the requests
+- added: framework.onParseXML(function(value)) --> for parsing values from the requests
+- added: framework.onParseJSON(function(value)) --> for parsing values from the requests
 
+- updated: (IMPORTANT) F.onValidation() was renamed to F.onValidate()
+- updated: (IMPORTANT) SchemaBuilderEntity.onValidation() was renamed to SchemaBuilderEntity.onValidate()
+- updated: (IMPORTANT) SchemaBuilderEntity.setValidation() was renamed to SchemaBuilderEntity.setValidate()
 - updated: CSS compressor removes comments
 - updated: F.restrictions.allow('IP') --> does not have to be full IP
 - updated: F.restrictions.disallow('IP') --> does not have to be full IP

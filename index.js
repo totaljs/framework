@@ -271,6 +271,10 @@ global.TRY = function(fn, err) {
 	}
 };
 
+global.OBSOLETE = function(name, message) {
+	console.log(':: OBSOLETE / IMPORTANT ---> "' + name + '"', message);
+};
+
 if (global.setImmediate === undefined) {
 	global.setImmediate = function(cb) {
 		process.nextTick(cb);
@@ -1825,7 +1829,7 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
 	self.routes.files.push({
 		controller: !_controller ? 'unknown' : _controller,
 		name: name,
-		onValidation: fnValidation,
+		onValidate: fnValidation,
 		execute: fnExecute || fnValidation,
 		middleware: middleware,
 		options: options
@@ -2589,7 +2593,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (typeof(obj.install) === TYPE_FUNCTION) {
 			if (framework.config['allow-compatibility'] || obj.install.toString().indexOf('function (framework') === 0) {
-				console.log('OBSOLETE ' + key + ': exports.install = function(framework <-- REMOVE ARGUMENT, options, name) { ...');
+				OBSOLETE(key, 'exports.install = function(framework <--- REMOVE THE ARGUMENT framework');
 				obj.install(self, options, name);
 			} else
 				obj.install(options, name);
@@ -2802,7 +2806,7 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 
 	if (typeof(obj.install) === TYPE_FUNCTION) {
 		if (framework.config['allow-compatibility'] || obj.install.toString().indexOf('function (framework') === 0) {
-			console.log('OBSOLETE ' + key + ': exports.install = function(framework <-- REMOVE ARGUMENT, options, name) { ...');
+			OBSOLETE(key, 'exports.install = function(framework <--- REMOVE THE ARGUMENT framework');
 			obj.install(self, options, name);
 		}
 		else
@@ -3086,6 +3090,40 @@ Framework.prototype.snapshot = function(url, filename, callback) {
 	return {Boolean or utils.isValid() or StringErrorMessage};
 */
 Framework.prototype.onValidation = null;
+
+/**
+ * Global validation
+ * @param {Function(name, value)} delegate
+ * @type {Boolean or StringErrorMessage}
+ */
+Framework.prototype.onValidate = null;
+
+/**
+ * Global XML parsing
+ * @param {String} value
+ * @return {Object}
+ */
+Framework.prototype.onParseXML = function(value) {
+	return framework_utils.parseXML(value);
+};
+
+/**
+ * Global JSON parsing
+ * @param {String} value
+ * @return {Object}
+ */
+Framework.prototype.onParseJSON = function(value) {
+	return JSON.parse(value);
+};
+
+/**
+ * Global JSON parsing
+ * @param {String} value
+ * @return {Object}
+ */
+Framework.prototype.onParseQuery = function(value) {
+	return qs.parse(value);
+};
 
 /**
  * Schema parser delegate
@@ -5179,6 +5217,11 @@ Framework.prototype.load = function(debug, types, path) {
 		delete framework.assert;
 	}, 500);
 
+	setTimeout(function() {
+		if (self.onValidation)
+			OBSOLETE('framework.onValidation()', 'The function was renamed to "framework.onValidate()');
+	}, 2000);
+
 	self.$load(types, directory);
 	return self;
 };
@@ -6209,7 +6252,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 		if (language.indexOf('@') !== -1) {
 			replyTo = language;
 			language = undefined;
-			console.log('OBSOLETE: F.mail(..., ..., [replyTo] --> has been replaced for [language]).');
+			OBSOLETE('F.mail', 'F.mail(..., ..., [replyTo] --> the argument was replaced for [language])');
 		} else
 			controller.language = language;
 	}
@@ -7371,12 +7414,12 @@ Framework.prototype._configure = function(arr, rewrite) {
 				break;
 
 			case 'allow-compile-js':
-				console.log('CONFIG: allow-compile-js is obsolete, use: allow-compile-script');
+				OBSOLETE('config', 'Instead of "allow-compile-js" use "allow-compile-script"');
 				obj['allow-compile-script'] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
 				break;
 
 			case 'allow-compile-css':
-				console.log('CONFIG: allow-compile-css is obsolete, use: allow-compile-style');
+				OBSOLETE('config', 'Instead of "allow-compile-css" use "allow-compile-style"');
 				obj['allow-compile-style'] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
 				break;
 
@@ -7400,12 +7443,12 @@ Framework.prototype._configure = function(arr, rewrite) {
 				break;
 
 			case 'static-url-css':
-				console.log('OBSOLETE "config.static-url-css": use "config.static-url-style"');
+				OBSOLETE('config', 'Instead of "static-url-css" use "static-url-style"');
 				obj['static-url-style'] = value;
 				break;
 
 			case 'static-url-js':
-				console.log('OBSOLETE "config.static-url-js": use "config.static-url-script"');
+				OBSOLETE('config', 'Instead of "static-url-js" use "static-url-script"');
 				obj['static-url-script'] = value;
 				break;
 
@@ -7447,7 +7490,7 @@ Framework.prototype._configure = function(arr, rewrite) {
  * @return {String}
  */
 Framework.prototype.routeJS = function(name) {
-	console.log('OBSOLETE framework.routeJS(): use framework.routeScript()');
+	OBSOLETE('framework.routeJS()', 'Instead of "framework.routeJS()" use "framework.routeScript()"');
 	return this.routeScript(name);
 };
 
@@ -7472,7 +7515,7 @@ Framework.prototype.routeScript = function(name) {
  * @return {String}
  */
 Framework.prototype.routeCSS = function(name) {
-	console.log('OBSOLETE framework.routeCSS(): use framework.routeStyle()');
+	OBSOLETE('framework.routeCSS()', 'Instead of "framework.routeCSS()" use "framework.routeStyle()"');
 	return this.routeStyle(name);
 };
 
@@ -9141,7 +9184,7 @@ Subscribe.prototype.doEnd = function() {
 		}
 
 		try {
-			req.body = utils.parseXML(req.buffer_data.trim());
+			req.body = framework.onParseXML(req.buffer_data.trim());
 			req.buffer_data = null;
 			self.prepare(req.flags, req.uri.pathname);
 		} catch (err) {
@@ -9164,13 +9207,13 @@ Subscribe.prototype.doEnd = function() {
 
 	if (req.$type === 1) {
 		try {
-			req.body = JSON.parse(req.buffer_data);
+			req.body = framework.onParseJSON(req.buffer_data);
 		} catch (e) {
 			self.route400(new Error('Not valid JSON data.'));
 			return self;
 		}
 	} else
-		req.body = qs.parse(req.buffer_data);
+		req.body = framework.onParseQuery(req.buffer_data);
 
 	if (!route.schema) {
 		self.prepare(req.flags, req.uri.pathname);
@@ -9222,7 +9265,7 @@ Subscribe.prototype.doEndfile = function() {
 		var file = framework.routes.files[i];
 		try {
 
-			if (file.onValidation.call(framework, req, res, true)) {
+			if (file.onValidate.call(framework, req, res, true)) {
 
 				if (file.middleware === null)
 					file.execute.call(framework, req, res, false);
@@ -9736,7 +9779,7 @@ Controller.prototype.validate = function(model, properties, prefix, name) {
 		return builders.validate(properties, model, prefix);
 
 	var error = new builders.ErrorBuilder(resource);
-	return utils.validate.call(self, model, properties, framework.onValidation, error);
+	return utils.validate.call(self, model, properties, framework.onValidate || framework.onValidation, error);
 };
 
 /*
@@ -10222,7 +10265,7 @@ Controller.prototype.sitemap = function(name, url, index) {
 	if (!url)
 		return self.repository[REPOSITORY_SITEMAP];
 
-	console.log('OBSOLETE sitemap: The newest version supports new sitemap mechanism.');
+	OBSOLETE('sitemap', 'The newest version supports new sitemap mechanism.');
 
 	if (self.repository.sitemap === undefined)
 		self.repository.sitemap = [];
@@ -11223,7 +11266,7 @@ Controller.prototype._routeHelper = function(current, name, fn) {
  * @return {String}
  */
 Controller.prototype.routeJS = function(name, tag) {
-	console.log('OBSOLETE controller.routeJS(): use controller.routeScript()');
+	OBSOLETE('controller.routeJS()', 'Instead of "controller.routeJS()" use "controller.routeScript()"');
 	return this.routeScript(name, tag);
 };
 
@@ -11248,7 +11291,7 @@ Controller.prototype.routeScript = function(name, tag) {
  * @return {String}
  */
 Controller.prototype.routeCSS = function(name, tag) {
-	console.log('OBSOLETE controller.routeCSS(): use controller.routeStyle()');
+	OBSOLETE('controller.routeCSS()', 'Instead of "controller.routeCSS()" use "controller.routeStyle()"');
 	return this.routeStyle(name, tag);
 };
 
@@ -12276,7 +12319,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 			return;
 
 		if ((headers['content-type'] || '').indexOf('application/json') !== -1)
-			data = JSON.parse(data);
+			data = framework.onParseJSON(data);
 
 		fnCallback.call(self, error, data, code, headers);
 
@@ -12930,7 +12973,7 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 			return;
 
 		if ((headers['content-type'] || '').indexOf('application/json') !== -1)
-			data = JSON.parse(data);
+			data = framework.onParseJSON(data);
 
 		fnCallback.call(self, error, data, code, headers);
 
@@ -13103,7 +13146,7 @@ WebSocket.prototype.validate = function(model, properties, prefix, name) {
 	};
 
 	var error = new builders.ErrorBuilder(resource);
-	return utils.validate.call(self, model, properties, framework.onValidation, error);
+	return utils.validate.call(self, model, properties, framework.onValidate || framework.onValidation, error);
 };
 
 /*
@@ -13362,7 +13405,7 @@ WebSocketClient.prototype.parse = function() {
 		// JSON
 		if (self.type === 3) {
 			try {
-				self.container.emit('message', self, JSON.parse(self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output));
+				self.container.emit('message', self, framework.onParseJSON(self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output));
 			} catch (ex) {
 				self.errors++;
 				self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
@@ -14063,7 +14106,7 @@ http.IncomingMessage.prototype = {
 		var self = this;
 		if (self._dataGET)
 			return self._dataGET;
-		self._dataGET = qs.parse(self.uri.query);
+		self._dataGET = framework.onParseQuery(self.uri.query);
 		return self._dataGET;
 	},
 

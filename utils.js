@@ -1529,7 +1529,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 exports.validate_builder = function(model, error, schema, collection, path, index, fields) {
 
 	var entity = collection[schema];
-	var prepare = entity.onValidation || framework.onValidation;
+	var prepare = entity.onValidate || entity.onValidation || framework.onValidate || framework.onValidation;
 
 	var current = path === undefined ? '' : path + '.';
 	var properties = entity.properties;

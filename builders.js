@@ -136,13 +136,20 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 	this.constants;
 	this.onPrepare;
 	this.onDefault;
-	this.onValidation = validator ? validator : framework.onValidation;
+	this.onValidate = validator ? validator : framework.onValidate;
 	this.onSave;
 	this.onGet;
 	this.onRemove;
 	this.onQuery;
 	this.onError;
 	this.gcache = {};
+
+	var self = this;
+
+	setTimeout(function() {
+		if (self.onValidation)
+			OBSOLETE('SchemaBuilderEntity.onValidation()', 'Instead of "SchemaBuilderEntity.onValidation()" use "SchemaBuilderEntity.setValidate()"');
+	}, 2000)
 }
 
 /**
@@ -416,7 +423,7 @@ SchemaBuilderEntity.prototype.getDependencies = function() {
  * @param {Function(propertyName, value, path, entityName, model)} fn A validation function.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
+SchemaBuilderEntity.prototype.setValidate = function(properties, fn) {
 	var self = this;
 
 	if (fn === undefined && properties instanceof Array) {
@@ -426,15 +433,16 @@ SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
 
 	if (typeof(properties) !== FUNCTION) {
 		self.properties = properties;
-		self.onValidation = fn;
+		self.onValidate = fn;
 	} else
-		self.onValidation = properties;
+		self.onValidate = properties;
 
 	return self;
 };
 
-SchemaBuilderEntity.prototype.setValidate = function(properties, fn) {
-	return this.setValidation(properties, fn);
+SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
+	OBSOLETE('SchemaBuilderEntity.setValidation()', 'Instead of "SchemaBuilderEntity.setValidation()" use "SchemaBuilderEntity.setValidate()"');
+	return this.setValidate(properties, fn);
 };
 
 SchemaBuilderEntity.prototype.setPrefix = function(prefix) {
@@ -707,6 +715,7 @@ SchemaBuilderEntity.prototype.destroy = function() {
 	self.properties = null;
 	self.schema = null;
 	self.onDefault = null;
+	self.onValidate = null;
 	self.onValidation = null;
 	self.onSave = null;
 	self.onRead = null;
@@ -1003,7 +1012,7 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder, filter) {
 
 	var self = this;
-	var fn = self.onValidation;
+	var fn = self.onValidate || self.onValidation;
 
 	if (builder === undefined) {
 		builder = new ErrorBuilder();
@@ -1014,7 +1023,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 	}
 
 	if (fn === undefined || fn === null) {
-		fn = framework.onValidation;
+		fn = framework.onValidate || framework.onValidation;
 		if (fn === undefined || fn === null)
 			return builder;
 	}
@@ -1375,7 +1384,7 @@ SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = functi
 
 	var output = self.prepare(model);
 
-	if (self.onValidation === undefined) {
+	if (!self.onValidate && !self.onValidation) {
 		if (callback)
 			callback(null, output);
 		return output;
@@ -2348,7 +2357,7 @@ exports.validation = function(name, properties, fn) {
 
 	if (typeof(fn) === FUNCTION) {
 
-		schema.onValidation = fn;
+		schema.onValidate = fn;
 
 		if (properties === undefined)
 			schema.properties = Object.keys(schema.schema);
@@ -2365,7 +2374,7 @@ exports.validation = function(name, properties, fn) {
 		return validator || [];
 	}
 
-	schema.onValidation = fn;
+	schema.onValidate = fn;
 	return fn;
 };
 
