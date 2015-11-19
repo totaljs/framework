@@ -148,7 +148,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 
 	setTimeout(function() {
 		if (self.onValidation)
-			OBSOLETE('SchemaBuilderEntity.onValidation()', 'Instead of "SchemaBuilderEntity.onValidation()" use "SchemaBuilderEntity.setValidate()"');
+			OBSOLETE(self.name, 'Instead of "SchemaBuilderEntity.onValidation()" use "SchemaBuilderEntity.setValidate()"');
 	}, 2000)
 }
 
@@ -441,7 +441,7 @@ SchemaBuilderEntity.prototype.setValidate = function(properties, fn) {
 };
 
 SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
-	OBSOLETE('SchemaBuilderEntity.setValidation()', 'Instead of "SchemaBuilderEntity.setValidation()" use "SchemaBuilderEntity.setValidate()"');
+	OBSOLETE(this.name, 'Instead of "SchemaBuilderEntity.setValidation()" use "SchemaBuilderEntity.setValidate()"');
 	return this.setValidate(properties, fn);
 };
 
