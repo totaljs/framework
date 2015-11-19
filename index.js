@@ -2155,6 +2155,11 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	if (!types || types.indexOf('dependencies') !== -1)
 		self._configure_dependencies();
 
+	setTimeout(function() {
+		if (self.onValidation)
+			OBSOLETE('framework.onValidation()', 'The function was renamed to "framework.onValidate()');
+	}, 2000);
+
 	return self;
 };
 
@@ -5216,11 +5221,6 @@ Framework.prototype.load = function(debug, types, path) {
 		delete framework.testing;
 		delete framework.assert;
 	}, 500);
-
-	setTimeout(function() {
-		if (self.onValidation)
-			OBSOLETE('framework.onValidation()', 'The function was renamed to "framework.onValidate()');
-	}, 2000);
 
 	self.$load(types, directory);
 	return self;
