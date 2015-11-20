@@ -39,7 +39,7 @@
 - fixed: controller.memorize() - prevention for multiple requests
 - fixed: routing (POST request without content-type is considered as `application/x-www-form-urlencoded`)
 - fixed: sync2()
-- fixed: U.minifyHTML() - now compresses JS and CSS in HTML.
+- fixed: U.minifyHTML() - now compresses JS and CSS in HTML
 - fixed: Async.cancel()
 - fixed: email attachments
 - fixed: throwing error in global middleware
