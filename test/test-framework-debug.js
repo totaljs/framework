@@ -105,6 +105,15 @@ function test_routing(next) {
 
 	var async = new utils.Async();
 
+	async.await('options', function(complete) {
+		utils.request(url + 'options/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(data === 'OPTIONS', 'OPTIONS method problem');
+			complete();
+		});
+	});
+
 	async.await('html compressor', function(complete) {
 		utils.request(url + 'html-compressor/', ['get'], null, function(error, data, code, headers) {
 			if (error)
@@ -386,6 +395,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('post-schema-filter', function(complete) {
+		utils.request(url + 'schema-filter/', ['post'], 'EMPTY', function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '[{"name":"age","error":"The field \\"age\\" is required.","path":"filter.age"}]', 'schema filter');
+			complete();
+		});
+	});
+
 	async.await('post-schema', function(complete) {
 		utils.request(url + 'post/schema/', ['post'], 'name=Peter123456789012345678901234567890#', function(error, data, code, headers) {
 			if (error)
@@ -590,6 +608,51 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			assert(data.indexOf('console.log(\'test\');') !== -1, 'merge package');
+			complete();
+		});
+	});
+
+	async.await('merge-blocks-a', function(complete) {
+		utils.request(url + 'merge-blocks-a.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('var common=true;var a=true;') !== -1, 'merge blocks - A');
+			complete();
+		});
+	});
+
+	async.await('merge-blocks-b', function(complete) {
+		utils.request(url + 'merge-blocks-b.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('var common=true;var b=true;') !== -1, 'merge blocks - B');
+			complete();
+		});
+	});
+
+	async.await('mapping-blocks-a', function(complete) {
+		utils.request(url + 'blocks-a.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('var common=true;var a=true;') !== -1, 'mapping blocks - A');
+			complete();
+		});
+	});
+
+	async.await('mapping-blocks-b', function(complete) {
+		utils.request(url + 'blocks-b.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('var common=true;var b=true;') !== -1, 'mapping blocks - B');
+			complete();
+		});
+	});
+
+	async.await('mapping-blocks-c', function(complete) {
+		utils.request(url + 'blocks-c.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('var common=true;var a=true;var b=true;') !== -1, 'mapping blocks - C');
 			complete();
 		});
 	});

@@ -1,21 +1,40 @@
 require('../index');
-var url = '/views/';
-var a = require('../internal');
-var max = 1000000;
-var ip = '127.0.0.1';
 
-console.time('old');
-for (var i = 0; i < max; i++) {
-	ip.replace(/\./g, '');
-}
-console.timeEnd('old');
+var async = new U.Async();
+var value = [];
 
-console.time('new');
-for (var h = 0; h < max; h++) {
-	var n = '';
-	for (var i = 0, length = ip.length; i < length; i++) {
-		if (ip[i] !== '.')
-			n += ip[i];
-	}
-}
-console.timeEnd('new');
+async.on('error', function(err, name) {
+	console.log('ERROR', err, name);
+});
+
+async.wait('0', function(next) {
+	async.cancel();
+	value.push(0);
+	console.log('---index 0');
+	next();
+});
+
+async.wait('1', function(next) {
+	value.push(1);
+	console.log('---index 1');
+	next();
+});
+
+async.wait('2', function(next) {
+	value.push(2);
+	console.log('---index 2');
+	next();
+});
+
+async.on('percentage', function(p) {
+	console.log(p + '%');
+});
+
+async.complete(function() {
+	console.log('-----> RESULT', value);
+});
+
+setTimeout(function() {
+	console.log('END');
+}, 3000);
+

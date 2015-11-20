@@ -28,3 +28,11 @@ framework.on('load', function() {
 });
 
 framework.http('debug', { port: 8001 });
+
+
+setTimeout(function() {
+	U.request('http://127.0.0.1:8001/options/', ['options'], null, function() {
+		console.log(arguments);
+		F.stop();
+	});
+}, 1000);

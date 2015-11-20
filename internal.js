@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.2
+ * @version 1.9.3
  */
 
 'use strict';
@@ -43,6 +43,9 @@ var REG_2 = /\s{2,}/g;
 var REG_3 = /\/{1,}/g;
 var REG_4 = /\n\s{2,}./g;
 var REG_5 = />\n\s{1,}</g;
+var REG_6 = /(\w|\")+\s{2,}\w+/g;
+var REG_BLOCK_BEG = /\@\{block.*?\}/gi;
+var REG_BLOCK_END = /\@\{end\}/gi;
 
 var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
@@ -509,14 +512,15 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 	for (var i = 0, length = req.flags.length; i < length; i++) {
 
 		var flag = req.flags[i];
+
 		switch (flag) {
 			case 'json':
-				// skip
-				/*
-				if (!route.isJSON)
-					return 0;
-				*/
 				continue;
+
+			case 'xml':
+				if (route.isRAW || route.isXML)
+					continue;
+				return 0;
 
 			case 'proxy':
 				if (!route.isPROXY)
@@ -862,8 +866,6 @@ function autoprefixer(value) {
 
 			// text-transform
 			var isPrefix = value.substring(index - 1, index) === '-';
-			// if (property === 'transform' && isPrefix)
-
 			if (isPrefix)
 				continue;
 
@@ -896,13 +898,10 @@ function autoprefixer(value) {
 		var updated = plus + delimiter;
 
 		if (name === 'opacity') {
-
 			var opacity = +plus.replace('opacity', '').replace(':', '').replace(/\s/g, '');
 			if (isNaN(opacity))
 				continue;
-
-			updated += 'filter:alpha(opacity=' + Math.floor(opacity * 100) + ');';
-
+			updated += 'filter:alpha(opacity=' + Math.floor(opacity * 100) + ')';
 			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
@@ -917,7 +916,7 @@ function autoprefixer(value) {
 			updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-o-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
-			updated += plus + (plus[plus.length - 1] === ';' ? '' : delimiter);
+			updated += plus; // + (plus[plus.length - 1] === ';' ? '' : delimiter);
 
 			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
@@ -1357,7 +1356,7 @@ exports.compile_javascript = function(source, filename) {
 };
 
 exports.compile_html = function(source, filename) {
-	return compressHTML(source, true);
+	return compressCSS(compressJS(compressHTML(source, true), 0, filename), 0, filename);
 };
 
 // *********************************************************************************
@@ -1853,15 +1852,16 @@ function view_parse(content, minify, filename) {
 		if (value === '')
 			return '$EMPTY';
 
+/*
 		if (!nocompressHTML && value[0] === ' ' && value[1] === '<')
 			value = value.substring(1);
+*/
 
 		if (!nocompressHTML && is)
 			value += ' ';
 
 		if (value.match(/\n|\r|\'|\\/) !== null)
 			return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END;
-
 		return DELIMITER + value + DELIMITER;
 	}
 
@@ -2583,12 +2583,32 @@ function nested(css, id, variable) {
 	var plus = '';
 	var skip = false;
 	var skipImport = '';
+	var isComment = false;
+	var comment = '';
 
 	while (true) {
-		var a = css[index++];
 
+		var a = css[index++];
 		if (!a)
 			break;
+
+		if (a === '/' && css[index] === '*') {
+			isComment = true;
+			index++;
+			comment = '';
+			continue;
+		}
+
+		if (isComment) {
+			comment += a;
+			if (a === '*' && css[index] === '/') {
+				isComment = false;
+				index++;
+				if (comment === 'auto*')
+					output += '/*auto*/';
+			}
+			continue;
+		}
 
 		if (a === '\n' || a === '\r')
 			continue;
@@ -2791,14 +2811,25 @@ function compressHTML(html, minify) {
 			if (i === 0) {
 				end = value.indexOf('>');
 				len = value.indexOf('type="text/template"');
-				if (len < end && len !== -1)
-					break;
+
+				if (len < end && len !== -1) {
+					beg = html.indexOf(tagBeg, beg + tagBeg.length);
+					continue;
+				}
+
 				len = value.indexOf('type="text/html"');
-				if (len < end && len !== -1)
-					break;
+
+				if (len < end && len !== -1) {
+					beg = html.indexOf(tagBeg, beg + tagBeg.length);
+					continue;
+				}
+
 				len = value.indexOf('type="text/ng-template"');
-				if (len < end && len !== -1)
-					break;
+
+				if (len < end && len !== -1) {
+					beg = html.indexOf(tagBeg, beg + tagBeg.length);
+					continue;
+				}
 			}
 
 			cache[key] = value;
@@ -2808,7 +2839,9 @@ function compressHTML(html, minify) {
 	}
 
 	// html = html.replace(/>\n\s+/g, '>').replace(/\w\n\s+</g, function(text) {
-	html = html.replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
+	html = html.replace(REG_6, function(text) {
+		return text.replace(/\s+/g, ' ');
+	}).replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
 		return text.trim().replace(/\s/g, '');
 	}).replace(REG_5, '><').replace(REG_4, function(text) {
 		var c = text[text.length - 1];
@@ -3191,6 +3224,77 @@ function isFinished(msg) {
 	// don't know
 	return;
 }
+
+exports.encodeUnicodeURL = function(url) {
+	var output = url;
+	for (var i = 0, length = url.length; i < length; i++) {
+		var code = url.charCodeAt(i);
+		if (code > 127)
+			output = output.replace(url[i], encodeURIComponent(url[i]));
+	}
+	return output;
+};
+
+exports.parseBlock = function(name, content) {
+
+	// @{block name}
+	//
+	// @{end}
+
+	if (content.search(REG_BLOCK_BEG) === -1)
+		return content;
+
+	var newline = '\n';
+	var lines = content.split(newline);
+	var is = false;
+	var skip = false;
+	var builder = '';
+
+	name = (name || '').replace(/\s/g, '').split(',');
+
+	for (var i = 0, length = lines.length; i < length; i++) {
+
+		var line = lines[i];
+
+		if (!line)
+			continue;
+
+		if (line.search(REG_BLOCK_END) !== -1) {
+			is = false;
+			skip = false;
+			continue;
+		}
+
+		if (is) {
+			if (skip)
+				continue;
+			builder += line + newline;
+			continue;
+		}
+
+		var index = line.search(REG_BLOCK_BEG);
+		if (!index)
+			continue;
+
+		if (index === -1) {
+			builder += line + newline;
+			continue;
+		}
+
+		is = true;
+		skip = true;
+
+		var block = line.substring(index + 8, line.indexOf('}', index)).replace(/\|\|/g, ',').replace(/\s/g, '').split(',');
+		for (var j = 0, jl = block.length; j < jl; j++) {
+			if (name.indexOf(block[j]) === -1)
+				continue;
+			skip = false;
+			break;
+		}
+	}
+
+	return builder.trim();
+};
 
 exports.parseLocalization = view_parse_localization;
 exports.findLocalization = view_find_localization;

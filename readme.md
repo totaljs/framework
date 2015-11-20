@@ -8,7 +8,9 @@ Framework, for node.js
 
 __total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
-[__NEW__: Eshop + CMS written in node.js / total.js](http://www.totaljs.com/eshop)
+- [Total.js Simple Eshop + CMS](http://www.totaljs.com/eshop)
+- [Total.js for enterprise](http://nodejsenterprise.com)
+
 
 ```
 $ npm install total.js
@@ -23,6 +25,7 @@ $ npm install total.js
 - [__Download__ Modules & Packages](https://github.com/totaljs/modules) (View Engines, Session, Auth, etc.)
 - [__Download__ Examples](https://github.com/totaljs/examples)
 - [__Make a donation__ via PayPal](http://www.totaljs.com/#make-a-donation)
+- [Enterprise](http://www.nodejsenterprise.com)
 
 ## Social networks
 
@@ -49,59 +52,64 @@ We provide a support of the framework for companies. Our support services will k
 
 [![Total.js trailer](https://www.totaljs.com/img/github-video.png)](https://vimeo.com/134131056)
 
-| Name | Supports |
-|------|:--------:|
-| [__Offline documentation__](http://docs.totaljs.com) | 100% |
-| __Backward compatibility__ | 90% |
-| HMVC architecture | 100% |
-| Clean directory structure | 100% |
-| Fully asynchronous | 100% |
-| Full web server with serving of static files | 100% |
-| Supports generators (node harmony) | 100% |
-| Isomorphic code | 100% |
-| Supports IP restrictions | 100% |
-| Supports redirections | 100% |
-| Supports just-in-time JS, CSS (variables and nesting) and HTML compressor | 100% |
-| Supports just-in-time merging of static files (JavaScripts, CSS or HTML) | 100% |
-| Supports just-in-time mapping of files | 100% |
-| Supports media streaming (e.g. videos) | 100% |
-| Supports modules and packages | 100% |
-| Built-in image processing engine via ImageMagick or GraphicsMagick | 100% |
-| Supports WebSockets (__RFC 6455__) and Server-Sent events | 100% |
-| Supports RESTful routing | 100% |
-| Supports middleware (like express.js) with custom options | 100% |
-| Supports unit testing | 100% |
-| Supports workers for heavy CPU operations | 100% |
-| Supports 4x config files (common, debug, release and test) | 100% |
-| Mailer with templating (Gmail, Outlook or classic SMTP servers with auth and TLS) | 100% |
-| Built-in view engine (layouts, nested views, conditions, loops, inline helpers, etc.) | 100% |
-| Localization with diff tool and CSV export | 100% |
-| Supports cache mechanism | 100% |
-| Supports schemas for creating business objects with validations, workflows, etc. | 100% |
-| Supports injecting scripts, packages and views from URL | 100% |
-| Supports String, Date, Number and Array prototypes | 100% |
-| Supports additional utilities (e.g. create request, XML parsing, etc.) | 100% |
-| Possibility to rewrite existing functionality | 80% |
-| NoSQL embedded database | 100% |
-| __You can use framework as single library__ `total.js (320 kB)` | 100% |
+| Name |
+|------|
+| [__Offline documentation__](http://docs.totaljs.com) |
+| __Backward compatibility__ |
+| HMVC architecture |
+| Clean directory structure |
+| Fully asynchronous |
+| Full web server with serving of static files |
+| Supports generators (node harmony) |
+| Isomorphic code |
+| Supports IP restrictions |
+| Supports redirections |
+| Supports just-in-time JS, CSS (variables and nesting) and HTML compressor |
+| Supports just-in-time merging of static files (JavaScripts, CSS or HTML) |
+| Supports just-in-time mapping of files |
+| Supports media streaming (e.g. videos) |
+| Supports modules and packages |
+| Built-in image processing engine via ImageMagick or GraphicsMagick |
+| Supports WebSockets (__RFC 6455__) and Server-Sent events |
+| Supports RESTful routing |
+| Supports middleware (like express.js) with custom options |
+| Supports unit testing |
+| Supports workers for heavy CPU operations |
+| Supports 4x config files (common, debug, release and test) |
+| Mailer with templating (Gmail, Outlook or classic SMTP servers with auth and TLS) |
+| Built-in view engine (layouts, nested views, conditions, loops, inline helpers, etc.) |
+| Localization with diff tool and CSV export |
+| Supports cache mechanism |
+| Supports schemas for creating business objects with validations, workflows, etc. |
+| Supports injecting scripts, packages and views from URL |
+| Supports String, Date, Number and Array prototypes |
+| Supports additional utilities (e.g. create request, XML parsing, etc.) |
+| Possibility to rewrite existing functionality |
+| NoSQL embedded database |
+| __You can use framework as single library__ `total.js (320 kB)` |
 
-## Contributors
+## Benevolent Dictator For Life (BDFL)
+
+[Peter Širka](http://www.petersirka.eu), contact: <petersirka@gmail.com>
+
+---
+
+## Contributors
 
 | Contributor | Type | E-mail |
 |-------------|------|--------|
-| [Peter Širka](https://www.petersirka.eu) | author + support | <petersirka@gmail.com> |
 | [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
 | [Matus Szabo](https://github.com/matusszabo) | support + enterprise | <matus.szabo@gmail.com> |
 | Tomas Holovsky | support + enterprise | <tomasholovsky@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
+| [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
 
 ## Other
 
 #### Built with total.js
 
 - [__NEW__: Eshop + CMS written in node.js / total.js](http://www.totaljs.com/eshop)
-- [__NEW__: Online Clipboard - www.online-clipboard.com](https://www.online-clipboard.com)
-- [Todomator - Task Manager System](http://www.todomator.com)
+- [__NEW__: Todomator - www.todomator.com](https://www.todomator.com)
 - [Componenator - Resources for web developers](http://www.componentator.com)
 - [E-commerce, CMS and Docker manager](http://nowitssimple.com/)
 - [Test your application](http://www.testerleader.com/)

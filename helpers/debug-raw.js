@@ -51,7 +51,7 @@ function debug() {
 function app() {
     var fork = require('child_process').fork;
     var utils = require('total.js/utils');
-    var directories = [directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers'];
+    var directories = [directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages'];
     var files = {};
     var force = false;
     var changes = [];
@@ -65,7 +65,7 @@ function app() {
     var isSkip = false;
 
     function onFilter(path, isDirectory) {
-        return isDirectory ? true : path.indexOf('.js') !== -1 || path.indexOf('.resource') !== -1;
+        return isDirectory ? true : path.indexOf('.js') !== -1 || path.indexOf('.resource') !== -1 || path.indexOf('.package') !== -1;
     };
 
     function onComplete() {

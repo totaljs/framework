@@ -1,3 +1,62 @@
+======= 1.9.3
+
+- added: (IMPORTANT) merging supports BLOCKS (.js,.css), e.g. F.merge('merge.js', 'fileA.js#management,common', 'fileB.js#management')
+- added: (IMPORTANT) a route with schema binding can contain filter e.g. `*Schema#update` or `*Group\Schema#create` --> the framework validates only fields by filter
+- added: TRANSFORM([transform], obj)
+- added: NEWTRANSFORM(name, fn, [isDefault]) --> alias for TransformBuilder.addTransform()
+- added: packages can be stored as directories (recommended for debug mode only)
+- added: F.localize(name, url, [middleware], [options], [minify]) --> minify argument
+- added: email supports calendar (.ics) request sending
+- added: SchemaBuilderEntity.make(function(schema))
+- added: F.install() supports packages mapping
+- added: Support for unicode routing
+- added: Packages can be loaded in framework structure (/controllers/, /modules/) `exports.booting = true`
+- added: route flags can contains object --> the object is an additional options for middleware
+- added: Utils.btoa(str) --> returns base64
+- added: Utils.atob(str) --> returns binary
+- added: global.TRY(fnScope, [fnError]) --> creates safe scope (more in documentation)
+- added: Utils.getExtension(filename)
+- added: @{head} can be imported as @{import('head')}
+- added: @{meta} can be imported as @{import('meta')}
+- added: controller.cookie('KEY') --> for reading
+- added: controller.cookie('KEY', 'VALUE', expire, [options]) --> for writting
+- added: framework.onParseQuery(function(value)) --> for parsing values from the requests
+- added: framework.onParseXML(function(value)) --> for parsing values from the requests
+- added: framework.onParseJSON(function(value)) --> for parsing values from the requests
+
+- updated: (IMPORTANT) F.onValidation() was renamed to F.onValidate()
+- updated: (IMPORTANT) SchemaBuilderEntity.onValidation() was renamed to SchemaBuilderEntity.onValidate()
+- updated: (IMPORTANT) SchemaBuilderEntity.setValidation() was renamed to SchemaBuilderEntity.setValidate()
+- updated: CSS compressor removes comments
+- updated: F.restrictions.allow('IP') --> does not have to be full IP
+- updated: F.restrictions.disallow('IP') --> does not have to be full IP
+- updated: String.startsWith() and String.endsWith() according to ES6 but with the backward compatibility
+- updated: String.parseDate() supports JSON format and classic date serialization
+- updated: U.request() --> response always returns string
+- updated: debug.js --> now watchs packages
+
+- fixed: framework starting path (fixed problem with PM2 module)
+- fixed: controller.memorize() - prevention for multiple requests
+- fixed: routing (POST request without content-type is considered as `application/x-www-form-urlencoded`)
+- fixed: sync2()
+- fixed: U.minifyHTML() - now compresses JS and CSS in HTML.
+- fixed: Async.cancel()
+- fixed: email attachments
+- fixed: throwing error in global middleware
+- fixed: Pagination.last()
+- fixed: CSS auto-vendor-prefixes
+- fixed: `tpm` binary (bug in creating packages on Windows)
+- fixed: controller generators
+- fixed: F.install() --> problem with names via URL import
+- fixed: F.map() on Windows (problem with paths)
+- fixed: HTML compression in views
+- fixed: U.Async() object (problem with waitingFor)
+- fixed: F.map(), problem in Windows
+- fixed: CLEANUP(stream, [callback]);
+- fixed: HTTP CACHE
+
+- EXAMPLE (NEW): https://github.com/totaljs/examples/tree/master/blocks
+
 ======= 1.9.2 (HOTFIX)
 
 - added: support for node +v4.0.0

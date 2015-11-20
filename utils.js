@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.2
+ * @version 1.9.3
  */
 
 'use strict';
@@ -37,7 +37,7 @@ var events = require('events');
 var crypto = require('crypto');
 var expressionCache = {};
 
-var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
+var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$');
 var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 var regexpTRIM = /^[\s]+|[\s]+$/g;
 var regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
@@ -181,7 +181,6 @@ function expression(query, params) {
 }
 
 global.expression = expression;
-
 
 /**
  * Checks if is object empty
@@ -504,13 +503,13 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			if (callback) {
 				request.on('error', function(error) {
 					if (callback)
-						callback(error, undefined, 0, undefined, undefined, uri.host);
+						callback(error, '', 0, undefined, undefined, uri.host);
 					callback = null;
 				});
 
 				request.setTimeout(timeout || 10000, function() {
 					if (callback)
-						callback(new Error(exports.httpStatus(408)), undefined, 0, undefined, uri.host);
+						callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
 					callback = null;
 				});
 			}
@@ -527,7 +526,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 		} catch (ex) {
 			if (callback)
-				callback(ex, undefined, 0);
+				callback(ex, '', 0);
 		}
 	};
 
@@ -546,6 +545,14 @@ exports.$$request = function(url, flags, data, cookies, headers, encoding, timeo
 	return function(callback) {
 		exports.request(url, flags, data, callback, cookies, headers, encoding, timeout);
 	};
+};
+
+exports.btoa = function(str) {
+	return (str instanceof Buffer) ? str.toString('base64') : new Buffer(str.toString(), 'binary').toString('base64');
+};
+
+exports.atob = function(str) {
+	return new Buffer(str, 'base64').toString('binary');
 };
 
 /**
@@ -821,7 +828,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 		});
 	}
 
-	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(path.extname(name)) + NEWLINE + NEWLINE;
+	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(name)) + NEWLINE + NEWLINE;
 	req.write(header);
 
 	// Is Buffer
@@ -1240,6 +1247,20 @@ exports.getContentType = function(ext) {
 };
 
 /**
+ * Get extension from filename
+ * @param {String} filename
+ * @return {String}
+ */
+exports.getExtension = function(filename) {
+	if (!filename)
+		return '';
+	var index = filename.lastIndexOf('.');
+	if (index === -1)
+		return '';
+	return filename.substring(index);
+};
+
+/**
  * Add a new content type to content types
  * @param {String} ext File extension.
  * @param {String} type Content type (example: application/json).
@@ -1281,6 +1302,18 @@ exports.path = function(path, delimiter) {
 		return path;
 
 	return path + delimiter;
+};
+
+/**
+ * Prepares Windows path to UNIX like format
+ * @internal
+ * @param {String} path
+ * @return {String}
+ */
+exports.$normalize = function(path) {
+	if (isWindows)
+		return path.replace(regexpPATH, '/');
+	return path;
 };
 
 /*
@@ -1493,10 +1526,10 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 	return error;
 };
 
-exports.validate_builder = function(model, error, schema, collection, path, index) {
+exports.validate_builder = function(model, error, schema, collection, path, index, fields) {
 
 	var entity = collection[schema];
-	var prepare = entity.onValidation || framework.onValidation;
+	var prepare = entity.onValidate || entity.onValidation || framework.onValidate || framework.onValidation;
 
 	var current = path === undefined ? '' : path + '.';
 	var properties = entity.properties;
@@ -1510,6 +1543,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	for (var i = 0; i < properties.length; i++) {
 
 		var name = properties[i].toString();
+		if (fields && fields.indexOf(name) === -1)
+			continue;
+
 		var value = model[name];
 		var type = typeof(value);
 
@@ -1672,28 +1708,28 @@ exports.combine = function() {
 
 		for (var i = 0, length = arguments.length; i < length; i++) {
 			var v = arguments[i];
-			if (v)
-				p += (v[0] !== '/' ? (p[p.length - 1] !== '/' ? '/' : '') : '') + v;
+			if (!v)
+				continue;
+			if (v[0] === '/')
+				v = v.substring(1);
+			p += (p[p.length - 1] !== '/' ? '/' : '') + v;
 		}
 
-		if (framework.isWindows)
-			return p.replace(regexpPATH, '/');
-
-		return p;
+		return exports.$normalize(p);
 	}
 
 	p = framework.directory;
 
 	for (var i = 0, length = arguments.length; i < length; i++) {
 		var v = arguments[i];
-		if (v)
-			p += (v[0] !== '/' ? (p[p.length - 1] !== '/' ? '/' : '') : '') + v;
+		if (!v)
+			continue;
+		if (v[0] === '/')
+			v = v.substring(1);
+		p += (p[p.length - 1] !== '/' ? '/' : '') + v;
 	}
 
-	if (framework.isWindows)
-		return p.replace(regexpPATH, '/');
-
-	return p;
+	return exports.$normalize(p);
 };
 
 /**
@@ -2023,37 +2059,56 @@ Date.prototype.diff = function(date, type) {
 		case 'ss':
 		case 'second':
 		case 'seconds':
-			return Math.round(r / 1000);
+			r = Math.ceil(r / 1000);
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
 		case 'm':
 		case 'mm':
 		case 'minute':
 		case 'minutes':
-			return Math.round((r / 1000) / 60);
+			r = Math.ceil((r / 1000) / 60);
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
 		case 'h':
 		case 'hh':
 		case 'hour':
 		case 'hours':
-			return Math.round(((r / 1000) / 60) / 60);
+			r = Math.ceil(((r / 1000) / 60) / 60);
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
 		case 'd':
 		case 'dd':
 		case 'day':
 		case 'days':
-			return Math.round((((r / 1000) / 60) / 60) / 24);
+			r = Math.ceil((((r / 1000) / 60) / 60) / 24);
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
 		case 'M':
 		case 'MM':
 		case 'month':
 		case 'months':
 			// avg: 28 days per month
-			return Math.round((((r / 1000) / 60) / 60) / (24 * 28));
+			r = Math.ceil((((r / 1000) / 60) / 60) / (24 * 28));
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
+
 		case 'y':
 		case 'yyyy':
 		case 'year':
 		case 'years':
 			// avg: 28 days per month
-			return Math.round((((r / 1000) / 60) / 60) / (24 * 28 * 12));
+			r = Math.ceil((((r / 1000) / 60) / 60) / (24 * 28 * 12));
+			if (r === 0)
+				return r.toString().parseInt();
+			return r;
 	}
 
-	return;
+	return NaN;
 };
 
 Date.prototype.extend = function(date) {
@@ -2252,38 +2307,51 @@ if (!String.prototype.replaceAt) {
 }
 
 /**
- * Checks if string starts with the text
+ * Checks if the string starts with the text
  * @see {@link http://docs.totaljs.com/String.prototype/#String.prototype.startsWith|Documentation}
- * @param  {String}  text       Text to find.
- * @param  {Boolean} ignoreCase Ingore case sensitive.
+ * @param {String} text Text to find.
+ * @param {Boolean/Number} ignoreCase Ingore case sensitive or position in the string.
  * @return {Boolean}
  */
 String.prototype.startsWith = function(text, ignoreCase) {
-
 	var self = this;
 	var length = text.length;
-	var tmp = self.substring(0, length);
+	var tmp;
+
+	if (ignoreCase === true) {
+		tmp = self.substring(0, length);
+		return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
+	}
 
 	if (ignoreCase)
-		return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
+		tmp = self.substr(ignoreCase, length);
+	else
+		tmp = self.substring(0, length);
 
 	return tmp.length === length && tmp === text;
 };
 
 /**
- * Checks if string ends with the text
+ * Checks if the string ends with the text
  * @see {@link http://docs.totaljs.com/String.prototype/#String.prototype.endsWith|Documentation}
- * @param  {String}  text Text to find.
- * @param  {Boolean} ignoreCase Ingore case sensitive.
+ * @param {String} text Text to find.
+ * @param {Boolean/Number} ignoreCase Ingore case sensitive or position in the string.
  * @return {Boolean}
  */
 String.prototype.endsWith = function(text, ignoreCase) {
 	var self = this;
 	var length = text.length;
-	var tmp = self.substring(self.length - length);
+	var tmp;
 
-	if (ignoreCase)
+	if (ignoreCase === true) {
+		tmp = self.substring(self.length - length);
 		return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
+	}
+
+	if (ignoreCase > 0)
+		tmp = self.substr((self.length - ignoreCase) - length, length);
+	else
+		tmp = self.substring(self.length - length);
 
 	return tmp.length === length && tmp === text;
 
@@ -2371,6 +2439,17 @@ String.prototype.parseJSON = function() {
  */
 String.prototype.parseDate = function() {
 	var self = this.trim();
+
+	var lc = self.charCodeAt(self.length - 1);
+
+	// Classic date
+	if (lc === 41)
+		return new Date(self);
+
+	// JSON format
+	if (lc === 90)
+		return new Date(Date.parse(self));
+
 	var arr = self.indexOf(' ') === -1 ? self.split('T') : self.split(' ');
 	var index = arr[0].indexOf(':');
 	var length = arr[0].length;
@@ -2717,10 +2796,6 @@ String.prototype.isEmail = function() {
 	var str = this;
 	if (str.length <= 4)
 		return false;
-
-	if (str[0] === '.' || str[str.length - 1] === '.')
-		return false;
-
 	return regexpMail.test(str);
 };
 
@@ -3409,13 +3484,6 @@ Number.prototype.hex = function(length) {
 };
 
 /*
-	Internal function
-*/
-Number.prototype.condition = function(ifTrue, ifFalse) {
-	return (this % 2 === 0 ? ifTrue : ifFalse) || '';
-};
-
-/*
 	VAT
 	@percentage {Number}
 	@decimals {Number}, optional, default 2,
@@ -3469,10 +3537,6 @@ if (typeof (Number.prototype.toRad) === UNDEFINED) {
 		return this * Math.PI / 180;
 	};
 }
-
-Boolean.prototype.condition = function(ifTrue, ifFalse) {
-	return (this ? ifTrue : ifFalse) || '';
-};
 
 /**
  * Take items from array
@@ -3765,12 +3829,14 @@ Array.prototype.orderBy = function(name, asc) {
 */
 Array.prototype.trim = function() {
 	var self = this;
-	var length = self.length;
-	for (var i = 0; i < length; i++) {
+	var output = [];
+	for (var i = 0, length = self.length; i < length; i++) {
 		if (typeof(self[i]) === STRING)
 			self[i] = self[i].trim();
+		if (self[i])
+			output.push(self[i]);
 	}
-	return self;
+	return output;
 };
 
 /**
@@ -4171,9 +4237,6 @@ Array.prototype.unique = function(property) {
 	Async class
 */
 function AsyncTask(owner, name, fn, cb, waiting) {
-	this.handlers = {
-		oncomplete: this.complete.bind(this)
-	};
 	this.isRunning = 0;
 	this.owner = owner;
 	this.name = name;
@@ -4188,15 +4251,26 @@ AsyncTask.prototype.run = function() {
 	var self = this;
 	try
 	{
+
+		if (self.isCanceled) {
+			self.complete();
+			return self;
+		}
+
 		self.isRunning = 1;
 		self.owner.tasksWaiting[self.name] = true;
 		self.owner.emit('begin', self.name);
 
 		var timeout = self.owner.tasksTimeout[self.name];
 		if (timeout > 0)
-			self.interval = setTimeout(self.timeout.bind(self), timeout);
+			self.interval = setTimeout(function() { self.timeout(); }, timeout);
 
-		self.fn(self.handlers.oncomplete);
+		self.fn(function() {
+			setImmediate(function() {
+				self.complete();
+			});
+		});
+
 	} catch (ex) {
 		self.owner.emit('error', self.name, ex);
 		self.complete();
@@ -4210,17 +4284,19 @@ AsyncTask.prototype.timeout = function(timeout) {
 
 	if (timeout > 0) {
 		clearTimeout(self.interval);
-		setTimeout(self.timeout.bind(self), timeout);
+		setTimeout(function() { self.timeout(); }, timeout);
 		return self;
 	}
 
 	if (timeout <= 0) {
 		clearTimeout(self.interval);
-		setTimeout(self.timeout.bind(self), timeout);
+		setTimeout(function() { self.timeout(); }, timeout);
 		return self;
 	}
 
-	self.cancel(true);
+	setImmediate(function() {
+		self.cancel(true);
+	});
 	return self;
 };
 
@@ -4236,6 +4312,8 @@ AsyncTask.prototype.cancel = function(isTimeout) {
 
 	self.fn = null;
 	self.cb = null;
+	self.complete();
+	return self;
 };
 
 AsyncTask.prototype.complete = function() {
@@ -4261,8 +4339,10 @@ AsyncTask.prototype.complete = function() {
 		}
 	}
 
-	self.reload();
-	self.refresh();
+	setImmediate(function() {
+		self.reload();
+		self.refresh();
+	});
 
 	return self;
 };
@@ -4272,6 +4352,7 @@ function Async(owner) {
 	this._max = 0;
 	this._count = 0;
 	this._isRunning = false;
+	this._isEnd = false;
 
 	this.owner = owner;
 	this.onComplete = [];
@@ -4280,6 +4361,7 @@ function Async(owner) {
 	this.tasksWaiting = {};
 	this.tasksAll = [];
 	this.tasksTimeout = {};
+	this.isCanceled = false;
 
 	events.EventEmitter.call(this);
 }
@@ -4291,7 +4373,10 @@ Async.prototype = {
 
 	get percentage() {
 		var self = this;
-		return 100 - Math.floor((self._count * 100) / self._max);
+		var p = 100 - Math.floor((self._count * 100) / self._max);
+		if (!p)
+			return 0;
+		return p;
 	}
 };
 
@@ -4314,15 +4399,13 @@ Async.prototype.cancel = function(name) {
 	var self = this;
 
 	if (name === undefined) {
-
+		self.isCanceled = true;
 		for (var i = 0; i < self._count; i++)
-			self.cancel(tasksAll[i]);
-
+			self.cancel(self.tasksAll[i]);
 		return true;
 	}
 
 	var task = self.tasksPending[name];
-
 	if (!task)
 		return false;
 
@@ -4330,6 +4413,7 @@ Async.prototype.cancel = function(name) {
 	delete self.tasksWaiting[name];
 
 	task.cancel();
+	task = null;
 	self.reload();
 	self.refresh();
 
@@ -4339,6 +4423,9 @@ Async.prototype.cancel = function(name) {
 Async.prototype.await = function(name, fn, cb) {
 
 	var self = this;
+
+	if (self.isCanceled)
+		return false;
 
 	if (typeof(name) === FUNCTION) {
 		cb = fn;
@@ -4353,7 +4440,6 @@ Async.prototype.await = function(name, fn, cb) {
 	self._max++;
 	self.reload();
 	self.refresh();
-
 	return true;
 };
 
@@ -4361,11 +4447,13 @@ Async.prototype.wait = function(name, waitingFor, fn, cb) {
 
 	var self = this;
 
+	if (self.isCanceled)
+		return false;
+
 	if (typeof(waitingFor) === FUNCTION) {
 		cb = fn;
 		fn = waitingFor;
-		waitingFor = name;
-		name = exports.GUID(6);
+		waitingFor = null;
 	}
 
 	if (self.tasksPending[name] !== undefined)
@@ -4375,9 +4463,7 @@ Async.prototype.wait = function(name, waitingFor, fn, cb) {
 	self._max++;
 	self.reload();
 	self.refresh();
-
 	return true;
-
 };
 
 Async.prototype.complete = function(fn) {
@@ -4444,19 +4530,34 @@ Async.prototype.refresh = function(name) {
 
 	var self = this;
 
-	if (!self._isRunning)
+	if (!self._isRunning || self._isEnd)
 		return self;
 
 	self._count = self.tasksAll.length;
+	var index = 0;
 
-	for (var i = 0; i < self._count; i++) {
+	while (true) {
+		var name = self.tasksAll[index++];
+		if (name === undefined)
+			break;
 
-		var task = self.tasksPending[self.tasksAll[i]];
+		var task = self.tasksPending[name];
+		if (task === undefined)
+			break;
+
+		if (self.isCanceled || task.isCanceled) {
+			delete self.tasksPending[name];
+			delete self.tasksWaiting[name];
+			self.tasksAll.splice(index, 1);
+			self._count = self.tasksAll.length;
+			index--;
+			continue;
+		}
 
 		if (task.isRunning !== 0)
 			continue;
 
-		if (task.waiting !== null && self.tasksWaiting[task.waiting] !== undefined)
+		if (task.waiting && self.tasksPending[task.waiting])
 			continue;
 
 		task.run();
@@ -4464,6 +4565,7 @@ Async.prototype.refresh = function(name) {
 
 	if (self._count === 0) {
 		self._isRunning = false;
+		self._isEnd = true;
 		self.emit('complete');
 		self.emit('percentage', 100);
 		self._max = 0;
@@ -4478,6 +4580,9 @@ Async.prototype.refresh = function(name) {
 				self.emit('error', ex);
 			}
 		}
+		setImmediate(function() {
+			self._isEnd = false;
+		});
 	}
 
 	return self;
@@ -4598,7 +4703,7 @@ exports.sync = function(fn, owner) {
 };
 
 exports.sync2 = function(fn, owner) {
-	return function() {
+	(function() {
 
 		var params;
 		var callback;
@@ -4623,7 +4728,7 @@ exports.sync2 = function(fn, owner) {
 				callback.apply(self, params);
 			}
 		};
-	};
+	})();
 };
 
 exports.async = function(fn, isApply) {
@@ -4670,7 +4775,7 @@ exports.async = function(fn, isApply) {
 
 				if (typeof(complete) === OBJECT && complete.isController) {
 					if (e instanceof ErrorBuilder)
-						complete.view400(e);
+						complete.content(e);
 					else
 						complete.view500(e);
 					return;
@@ -4819,6 +4924,6 @@ exports.minifyHTML = function(value) {
 	return require('./internal').compile_html(value);
 };
 
-global.async = exports.async;
+global.Async = global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
 global.sync2 = exports.sync2;

@@ -38,10 +38,16 @@
         "name": "Jozef Gula",
         "email": "gula.jozef@gmail.com"
     }, {
+        "name": "Matúš Szabo",
+        "email": "matus.szabo@gmail.com"
+    }, {
         "name": "Andrea Sessa",
         "email": "andrea.sessa@gmail.com"
+    }, {
+        "name": "Gera G. Güiles",
+        "email": "gerardo.gonzalezg@gmail.com"
     }],
-    "version": "1.9.2",
+    "version": "1.9.3",
     "homepage": "http://www.totaljs.com",
     "bugs": {
         "url": "https://github.com/totaljs/framework/issues",
