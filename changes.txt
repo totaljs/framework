@@ -35,6 +35,7 @@
 - updated: U.request() --> response always returns string
 - updated: debug.js --> now watchs packages
 
+- fixed: framework starting path (fixed problem with PM2 module)
 - fixed: controller.memorize() - prevention for multiple requests
 - fixed: routing (POST request without content-type is considered as `application/x-www-form-urlencoded`)
 - fixed: sync2()

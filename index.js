@@ -287,7 +287,7 @@ global.RELEASE = false;
 global.is_client = false;
 global.is_server = true;
 
-var directory = framework_utils.$normalize(path.dirname(require.main.filename));
+var directory = framework_utils.$normalize(require.main ? path.dirname(require.main.filename) : process.cwd());
 
 function Framework() {
 
