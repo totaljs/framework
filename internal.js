@@ -77,7 +77,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	var ip = '';
 
 	for (var i = 0, length = req.ip.length; i < length; i++) {
-		if (req.ip[i] !== '.')
+		if (req.ip[i] !== '.' && req.ip[i] !== ':')
 			ip += req.ip[i];
 	}
 
