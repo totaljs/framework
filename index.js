@@ -293,7 +293,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-1';
+	this.version_header = '1.9.4-2';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -663,7 +663,7 @@ Framework.prototype.database = function(name) {
 	if (db !== undefined)
 		return db;
 	self.path.verify('databases');
-	db = framework_nosql.load(path.join(directory, this.config['directory-databases'], name), path.join(directory, this.config['directory-databases'], name + '-binary'), true);
+	db = framework_nosql.load(self.path.databases(name), self.path.databases(name + '-binary'), true);
 	self.databases[name] = db;
 	return db;
 };
