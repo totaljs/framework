@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.3
+ * @version 1.9.4
  */
 
 'use strict';
@@ -4760,7 +4760,8 @@ exports.async = function(fn, isApply) {
 
 			try
 			{
-				switch (err === null) {
+				var can = err === null || err === undefined;
+				switch (can) {
 					case true:
 						g = generator.next(result);
 						break;
