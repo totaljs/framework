@@ -1,3 +1,8 @@
+======= 1.9.4 (BETA)
+
+- fixed: async() error handling
+- fixed: NoSQL embedded paths
+
 ======= 1.9.3
 
 - added: (IMPORTANT) merging supports BLOCKS (.js,.css), e.g. F.merge('merge.js', 'fileA.js#management,common', 'fileB.js#management')
