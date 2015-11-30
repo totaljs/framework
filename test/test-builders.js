@@ -289,11 +289,11 @@ function test_Schema() {
 	x.define('age', Number, true);
 	x.define('note', String, true);
 
-	q.setValidation(function(name, value) {
+	q.setValidate(function(name, value) {
 		assert.ok((name === 'name' && value.length === 0) || (name === 'arr' && value.length === 2), 'SchemaBuilderEntity.validation() 1');
 	});
 
-	x.setValidation(function(name, value) {
+	x.setValidate(function(name, value) {
 		assert.ok((name === 'age' && value > 22) || (name === 'note' && value.length > 3), 'SchemaBuilderEntity.validation() 2');
 	});
 
