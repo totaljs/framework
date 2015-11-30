@@ -4,6 +4,8 @@
 - fixed: NoSQL embedded paths
 - fixed: problem with empty SMTP options
 
+- improved performance of response
+
 ======= 1.9.3
 
 - added: (IMPORTANT) merging supports BLOCKS (.js,.css), e.g. F.merge('merge.js', 'fileA.js#management,common', 'fileB.js#management')

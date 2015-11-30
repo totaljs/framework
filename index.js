@@ -57,6 +57,107 @@ var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|
 var REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
 var REG_MULTIPART = /\/form\-data$/i;
 var REQUEST_PROXY_FLAGS = ['post', 'json'];
+var RANGE = { start: 0, end: 0 };
+var HEADERS = {};
+
+// Cached headers for repeated usage
+HEADERS['responseCode'] = {};
+HEADERS['responseCode'][RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
+HEADERS['responseRedirect'] = {};
+HEADERS['responseRedirect'][RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTHTML + '; charset=utf-8';
+HEADERS['sse'] = {};
+HEADERS['sse'][RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, must-revalidate';
+HEADERS['sse']['Pragma'] = 'no-cache';
+HEADERS['sse']['Expires'] = '0';
+HEADERS['sse'][RESPONSE_HEADER_CONTENTTYPE] = 'text/event-stream';
+HEADERS['proxy'] = {};
+HEADERS['proxy']['X-Proxy'] = 'total.js';
+HEADERS['responseFile.etag'] = {};
+HEADERS['responseFile.etag']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+HEADERS['responseFile.etag']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.etag'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+HEADERS['responseFile.release.compress'] = {};
+HEADERS['responseFile.release.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+HEADERS['responseFile.release.compress']['Vary'] = 'Accept-Encoding';
+HEADERS['responseFile.release.compress']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.release.compress']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+HEADERS['responseFile.release.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseFile.release.compress.range'] = {};
+HEADERS['responseFile.release.compress.range']['Accept-Ranges'] = 'bytes';
+HEADERS['responseFile.release.compress.range'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+HEADERS['responseFile.release.compress.range']['Vary'] = 'Accept-Encoding';
+HEADERS['responseFile.release.compress.range']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.release.compress.range']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+HEADERS['responseFile.release.compress.range']['Content-Encoding'] = 'gzip';
+HEADERS['responseFile.release.compress.range'][RESPONSE_HEADER_CONTENTLENGTH] = 0;
+HEADERS['responseFile.release.compress.range']['Content-Range'] = '';
+HEADERS['responseFile.release'] = {};
+HEADERS['responseFile.release'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+HEADERS['responseFile.release']['Vary'] = 'Accept-Encoding';
+HEADERS['responseFile.release']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.release']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+HEADERS['responseFile.release.range'] = {};
+HEADERS['responseFile.release.range']['Accept-Ranges'] = 'bytes';
+HEADERS['responseFile.release.range'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+HEADERS['responseFile.release.range']['Vary'] = 'Accept-Encoding';
+HEADERS['responseFile.release.range']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.release.range']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+HEADERS['responseFile.release.range'][RESPONSE_HEADER_CONTENTLENGTH] = 0;
+HEADERS['responseFile.release.range']['Content-Range'] = '';
+HEADERS['responseFile.debug.compress'] = {};
+HEADERS['responseFile.debug.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseFile.debug.compress']['Vary'] = 'Accept-Encoding';
+HEADERS['responseFile.debug.compress']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.debug.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseFile.debug.compress.range'] = {};
+HEADERS['responseFile.debug.compress.range']['Accept-Ranges'] = 'bytes';
+HEADERS['responseFile.debug.compress.range'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseFile.debug.compress.range']['Vary'] = 'Accept-Encoding';
+HEADERS['responseFile.debug.compress.range']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.debug.compress.range']['Content-Encoding'] = 'gzip';
+HEADERS['responseFile.debug.compress.range'][RESPONSE_HEADER_CONTENTLENGTH] = 0;
+HEADERS['responseFile.debug.compress.range']['Content-Range'] = '';
+HEADERS['responseFile.debug'] = {};
+HEADERS['responseFile.debug'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseFile.debug']['Vary'] = 'Accept-Encoding';
+HEADERS['responseFile.debug']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.debug.range'] = {};
+HEADERS['responseFile.debug.range']['Accept-Ranges'] = 'bytes';
+HEADERS['responseFile.debug.range'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseFile.debug.range']['Vary'] = 'Accept-Encoding';
+HEADERS['responseFile.debug.range']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.debug.range'][RESPONSE_HEADER_CONTENTLENGTH] = 0;
+HEADERS['responseFile.debug.range']['Content-Range'] = '';
+HEADERS['responseContent.mobile.compress'] = {};
+HEADERS['responseContent.mobile.compress']['Vary'] = 'Accept-Encoding, User-Agent';
+HEADERS['responseContent.mobile.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseContent.mobile'] = {};
+HEADERS['responseContent.mobile']['Vary'] = 'Accept-Encoding, User-Agent';
+HEADERS['responseContent.compress'] = {};
+HEADERS['responseContent.compress'][RESPONSE_HEADER_CACHECONTROL] = 'private';
+HEADERS['responseContent.compress']['Vary'] = 'Accept-Encoding';
+HEADERS['responseContent.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseContent'] = {};
+HEADERS['responseContent']['Vary'] = 'Accept-Encoding';
+HEADERS['responseStream.release.compress'] = {};
+HEADERS['responseStream.release.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+HEADERS['responseStream.release.compress']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseStream.release.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseStream.release'] = {};
+HEADERS['responseStream.release'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+HEADERS['responseStream.release']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseStream.debug.compress'] = {};
+HEADERS['responseStream.debug.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseStream.debug.compress']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseStream.debug.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseStream.debug'] = {};
+HEADERS['responseStream.debug'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseStream.debug']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseBinary.compress'] = {};
+HEADERS['responseBinary.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseBinary.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseBinary'] = {};
+HEADERS['responseBinary'][RESPONSE_HEADER_CACHECONTROL] = 'public';
 
 var _controller = '';
 var _test;
@@ -293,7 +394,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-2';
+	this.version_header = '1.9.4-3';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -3814,9 +3915,13 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 		// isomorphic
 		var headers = {};
-		headers['Etag'] = etag;
-		headers['Expires'] = new Date().add('y', 1);
-		headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+
+		if (RELEASE) {
+			headers['Etag'] = etag;
+			headers['Expires'] = new Date().add('y', 1);
+			headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+		}
+
 		framework.responseContent(req, res, 200, prepare_isomorphic(key), 'text/javascript', true, headers);
 		return self;
 	}
@@ -4043,11 +4148,10 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return self;
 	}
 
-	var allowcache = true; // req.headers['cache-control'] !== 'no-cache';
-	var etag = allowcache ? framework_utils.etag(req.url, self.config['etag-version']) : null;
-	var returnHeaders = {};
-
+	var etag = framework_utils.etag(req.url, self.config['etag-version']);
 	var extension = req.extension;
+	var returnHeaders;
+
 	if (!extension) {
 		if (key)
 			extension = framework_utils.getExtension(key);
@@ -4059,16 +4163,19 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	if (!self.config.debug && req.headers['if-none-match'] === etag) {
 
+		returnHeaders = HEADERS['responseFile.etag'];
+
 		if (!res.getHeader('ETag') && etag)
-			returnHeaders['Etag'] = etag;
+			returnHeaders.ETag = etag;
+		else if (returnHeaders.ETag)
+			delete returnHeaders.ETag;
 
 		if (!res.getHeader('Expires'))
-			returnHeaders['Expires'] = new Date().add('y', 1);
+			returnHeaders.Expires = new Date().add('y', 1);
+		else if (returnHeaders.Expires)
+			delete returnHeaders.Expires;
 
-		returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-		returnHeaders['Access-Control-Allow-Origin'] = '*';
 		returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = framework_utils.getContentType(extension);
-		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 
 		res.success = true;
 		res.writeHead(304, returnHeaders);
@@ -4122,53 +4229,77 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	name = name.substring(0, index);
 
+	var contentType = framework_utils.getContentType(extension);
 	var accept = req.headers['accept-encoding'] || '';
 
-	returnHeaders['Accept-Ranges'] = 'bytes';
-	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE && allowcache ? ', max-age=11111111' : '');
+	if (!accept && isGZIP(req))
+		accept = 'gzip';
 
-	if (RELEASE && allowcache && !res.getHeader('Expires'))
-		returnHeaders['Expires'] = new Date().add('y', 1);
-
-	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
-	returnHeaders['Access-Control-Allow-Origin'] = '*';
-	returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-
-	if (headers)
-		utils.extend(returnHeaders, headers, true);
-
-	if (downloadName)
-		returnHeaders['Content-Disposition'] = 'attachment; filename="' + downloadName + '"';
-
-	if (RELEASE && allowcache && etag && !res.getHeader('ETag'))
-		returnHeaders['Etag'] = etag;
-
-	if (!returnHeaders[RESPONSE_HEADER_CONTENTTYPE])
-		returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = utils.getContentType(extension);
-
-	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[returnHeaders[RESPONSE_HEADER_CONTENTTYPE]] && accept.lastIndexOf('gzip') !== -1;
+	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.indexOf('gzip') !== -1;
 	var range = req.headers['range'] || '';
 
+	if (RELEASE) {
+		if (compress)
+			returnHeaders = range ? HEADERS['responseFile.release.compress.range'] : HEADERS['responseFile.release.compress'];
+		else
+			returnHeaders = range ? HEADERS['responseFile.release.range'] : HEADERS['responseFile.release'];
+	} else {
+		if (compress)
+			returnHeaders = range ? HEADERS['responseFile.debug.compress.range'] : HEADERS['responseFile.debug.compress'];
+		else
+			returnHeaders = range ? HEADERS['responseFile.debug.range'] : HEADERS['responseFile.debug'];
+	}
+
+	if (req.$mobile)
+		returnHeaders.Vary = 'Accept-Encoding, User-Agent';
+	else
+		returnHeaders.Vary = 'Accept-Encoding';
+
+	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = framework_utils.getContentType(extension);
+
+	if (RELEASE && !res.getHeader('Expires')) {
+		var dt = new Date();
+		dt.setFullYear(dt.getFullYear() + 1);
+		returnHeaders.Expires = dt;
+	} else if (returnHeaders.Expires)
+		delete returnHeaders.Expires;
+
+	if (headers) {
+		returnHeaders = framework_utils.extend({}, returnHeaders, true);
+		framework_utils.extend(returnHeaders, headers, true);
+	}
+
+	if (downloadName)
+		returnHeaders['Content-Disposition'] = 'attachment; filename="' + encodeURIComponent(downloadName) + '"';
+	else if (returnHeaders['Content-Disposition'])
+		delete returnHeaders['Content-Disposition'];
+
+	if (RELEASE && etag && !res.getHeader('ETag'))
+		returnHeaders.Etag = etag;
+	else if (returnHeaders.Etag)
+		delete returnHeaders.Etag;
+
 	res.success = true;
-	if (range)
-		return self.responseRange(name, range, returnHeaders, req, res, done);
+
+	if (range) {
+		self.responseRange(name, range, returnHeaders, req, res, done);
+		return self;
+	}
 
 	if (self.config.debug && self.isProcessed(key))
 		delete self.temporary.path[key];
 
 	if (size !== null && size !== '0' && !compress)
 		returnHeaders[RESPONSE_HEADER_CONTENTLENGTH] = size;
+	else if (returnHeaders[RESPONSE_HEADER_CONTENTLENGTH])
+		delete returnHeaders[RESPONSE_HEADER_CONTENTLENGTH];
 
 	self.stats.response.file++;
 	self._request_stats(false, req.isStaticFile);
 
 	if (req.method === 'HEAD') {
-		if (compress)
-			returnHeaders['Content-Encoding'] = 'gzip';
-
 		res.writeHead(200, returnHeaders);
 		res.end();
-
 		if (done)
 			done();
 		if (!req.isStaticFile)
@@ -4177,18 +4308,14 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	}
 
 	if (compress) {
-		returnHeaders['Content-Encoding'] = 'gzip';
+		res.writeHead(200, returnHeaders);
 		fsStreamRead(name, function(stream, next) {
-
-			res.writeHead(200, returnHeaders);
-
 			framework_internal.onFinished(res, function(err) {
 				framework_internal.destroyStream(stream);
 				next();
 			});
 
 			stream.pipe(zlib.createGzip()).pipe(res);
-
 			if (done)
 				done();
 			if (!req.isStaticFile)
@@ -4197,10 +4324,9 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return self;
 	}
 
+	res.writeHead(200, returnHeaders);
 	fsStreamRead(name, function(stream, next) {
-		res.writeHead(200, returnHeaders);
 		stream.pipe(res);
-
 		framework_internal.onFinished(res, function(err) {
 			framework_internal.destroyStream(stream);
 			next();
@@ -4623,25 +4749,43 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		contentType = utils.getContentType(contentType);
 
 	var accept = req.headers['accept-encoding'] || '';
-	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.lastIndexOf('gzip') !== -1;
-	var returnHeaders = {};
 
-	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public' + (RELEASE ? ', max-age=11111111' : '');
+	if (!accept && isGZIP(req))
+		accept = 'gzip';
 
-	if (RELEASE)
-		returnHeaders['Expires'] = new Date().add('y', 1);
+	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.indexOf('gzip') !== -1;
+	var returnHeaders;
 
-	returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-	returnHeaders['Access-Control-Allow-Origin'] = '*';
-	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
+	if (RELEASE) {
+		if (compress)
+			returnHeaders = HEADERS['responseStream.release.compress'];
+		else
+			returnHeaders = HEADERS['responseStream.release'];
+	} else {
+		if (compress)
+			returnHeaders = HEADERS['responseStream.debug.compress'];
+		else
+			returnHeaders = HEADERS['responseStream.debug'];
+	}
 
-	if (headers)
+	returnHeaders.Vary = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
+
+	if (RELEASE) {
+		var dt = new Date();
+		dt.setFullYear(dt.getFullYear() + 1);
+		returnHeaders.Expires = dt;
+		returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+	}
+
+	if (headers) {
+		returnHeaders = framework_utils.extend({}, returnHeaders, true);
 		utils.extend(returnHeaders, headers, true);
-
-	download = download || '';
+	}
 
 	if (download)
 		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(download);
+	else if (returnHeaders['Content-Disposition'])
+		delete returnHeaders['Content-Disposition'];
 
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 
@@ -4649,8 +4793,6 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	self._request_stats(false, req.isStaticFile);
 
 	if (req.method === 'HEAD') {
-		if (compress)
-			returnHeaders['Content-Encoding'] = 'gzip';
 		res.writeHead(200, returnHeaders);
 		res.end();
 		if (done)
@@ -4662,15 +4804,12 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 	if (compress && !nocompress) {
 
-		returnHeaders['Content-Encoding'] = 'gzip';
 		res.writeHead(200, returnHeaders);
-
 		res.on('error', function() {
 			stream.close();
 		});
 
 		var gzip = zlib.createGzip();
-
 		framework_internal.onFinished(res, function() {
 			framework_internal.destroyStream(stream);
 		});
@@ -4751,10 +4890,12 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 		return self;
 	}
 
-	fsStreamRead(name, { start: beg, end: end }, function(stream, next) {
+	res.writeHead(206, headers);
 
-		res.writeHead(206, headers);
+	RANGE.start = beg;
+	RANGE.end = end;
 
+	fsStreamRead(name, RANGE, function(stream, next) {
 		framework_internal.onFinished(res, function() {
 			framework_internal.destroyStream(stream);
 			next();
@@ -4801,22 +4942,27 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	req.clear(true);
 
 	if (contentType.lastIndexOf('/') === -1)
-		contentType = utils.getContentType(contentType);
+		contentType = framework_utils.getContentType(contentType);
 
 	var accept = req.headers['accept-encoding'] || '';
-	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.lastIndexOf('gzip') !== -1;
-	var returnHeaders = {};
 
-	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'public';
+	if (!accept && isGZIP(req))
+		accept = 'gzip';
+
+	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.indexOf('gzip') !== -1;
+	var returnHeaders = compress ? HEADERS['responseBinary.compress'] : HEADERS['responseBinary'];
+
 	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
-	if (headers)
-		utils.extend(returnHeaders, headers, true);
-
-	download = download || '';
+	if (headers) {
+		returnHeaders = framework_utils.extend({}, returnHeaders, true);
+		framework_utils.extend(returnHeaders, headers, true);
+	}
 
 	if (download)
 		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(download);
+	else if (returnHeaders['Content-Disposition'])
+		delete returnHeaders['Content-Disposition'];
 
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 
@@ -4824,8 +4970,6 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	self._request_stats(false, req.isStaticFile);
 
 	if (req.method === 'HEAD') {
-		if (compress)
-			returnHeaders['Content-Encoding'] = 'gzip';
 		res.writeHead(200, returnHeaders);
 		res.end();
 		if (done)
@@ -4836,10 +4980,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	}
 
 	if (compress) {
-
-		returnHeaders['Content-Encoding'] = 'gzip';
 		res.writeHead(200, returnHeaders);
-
 		zlib.gzip(encoding === 'binary' ? buffer : buffer.toString(encoding), function(err, buffer) {
 			res.end(buffer);
 		});
@@ -4975,17 +5116,12 @@ Framework.prototype.responseCode = function(req, res, code, problem) {
 	req.clear(true);
 
 	res.success = true;
-
-	var headers = {};
-	var status = code;
-
-	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
-	res.writeHead(status, headers);
+	res.writeHead(code, HEADERS['responseCode']);
 
 	if (req.method === 'HEAD')
 		res.end();
 	else
-		res.end(utils.httpStatus(status));
+		res.end(framework_utils.httpStatus(code));
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -5039,15 +5175,12 @@ Framework.prototype.response500 = function(req, res, error) {
 	req.clear(true);
 
 	res.success = true;
-	var headers = {};
-	var status = 500;
-	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
-	res.writeHead(status, headers);
+	res.writeHead(500, HEADERS['responseCode']);
 
 	if (req.method === 'HEAD')
 		res.end();
 	else
-		res.end(utils.httpStatus(status) + prepare_error(error));
+		res.end(framework_utils.httpStatus(500) + prepare_error(error));
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -5080,22 +5213,39 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	req.clear(true);
 	res.success = true;
 
-	if (contentBody === null || contentBody === undefined)
+	if (!contentBody)
 		contentBody = '';
 
 	var accept = req.headers['accept-encoding'] || '';
-	var returnHeaders = {};
-	var gzip = compress ? accept.lastIndexOf('gzip') !== -1 : false;
 
-	returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'private';
-	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
+	if (!accept && isGZIP(req))
+		accept = 'gzip';
 
-	if (headers)
-		utils.extend(returnHeaders, headers, true);
+	var gzip = compress ? accept.indexOf('gzip') !== -1 : false;
+	var returnHeaders;
+
+	if (req.$mobile) {
+		if (gzip)
+			returnHeaders = HEADERS['responseContent.mobile.compress'];
+		else
+			returnHeaders = HEADERS['responseContent.mobile'];
+	} else {
+		if (gzip)
+			returnHeaders = HEADERS['responseContent.compress'];
+		else
+			returnHeaders = HEADERS['responseContent'];
+	}
+
+	if (headers) {
+		returnHeaders = framework_utils.extend({}, returnHeaders, true);
+		framework_utils.extend(returnHeaders, headers, true);
+	}
 
 	// Safari resolve
 	if (contentType === 'application/json')
 		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
+	else
+		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'private';
 
 	if ((/text|application/).test(contentType))
 		contentType += '; charset=utf-8';
@@ -5103,8 +5253,6 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 
 	if (req.method === 'HEAD') {
-		if (gzip)
-			returnHeaders['Content-Encoding'] = 'gzip';
 		res.writeHead(code, returnHeaders);
 		res.end();
 		self._request_stats(false, req.isStaticFile);
@@ -5114,24 +5262,13 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	}
 
 	if (gzip) {
+		res.writeHead(code, returnHeaders);
 		zlib.gzip(new Buffer(contentBody), function(err, data) {
-
-			if (err) {
-				res.writeHead(code, returnHeaders);
-				res.end(contentBody, ENCODING);
-				return;
-			}
-
-			returnHeaders['Content-Encoding'] = 'gzip';
-			res.writeHead(code, returnHeaders);
 			res.end(data, ENCODING);
 		});
-
 		self._request_stats(false, req.isStaticFile);
-
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
-
 		return self;
 	}
 
@@ -5166,9 +5303,8 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 	req.clear(true);
 	res.success = true;
 
-	var headers = { 'Location': url };
-	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTHTML + '; charset=utf-8';
-
+	var headers = HEADERS['responseRedirect'];
+	headers.Location = url;
 	res.writeHead(permanent ? 301 : 302, headers);
 	res.end();
 
@@ -5764,6 +5900,12 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 	if (req === null || res === null || res.headersSent || res.success)
 		return self;
+
+	if (DEBUG) {
+		res.setHeader(RESPONSE_HEADER_CACHECONTROL, 'no-cache, no-store, must-revalidate');
+		res.setHeader('Pragma', 'no-cache');
+		res.setHeader('Expires', '0');
+	}
 
 	// Validate if this request is a file (static file)
 	if (req.isStaticFile) {
@@ -6999,7 +7141,7 @@ Framework.prototype.resource = function(name, key) {
 	if (res !== undefined)
 		return res[key] || '';
 
-	var filename = utils.combine(self.config['directory-resources'], name + '.resource');
+	var filename = framework_utils.combine(self.config['directory-resources'], name + '.resource');
 
 	if (!fs.existsSync(filename))
 		return '';
@@ -7327,8 +7469,8 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 	if (!arr) {
 
-		var filenameA = utils.combine('/', 'config');
-		var filenameB = utils.combine('/', 'config-' + (self.config.debug ? 'debug' : 'release'));
+		var filenameA = framework_utils.combine('/', 'config');
+		var filenameB = framework_utils.combine('/', 'config-' + (self.config.debug ? 'debug' : 'release'));
 
 		arr = [];
 
@@ -7360,7 +7502,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 	var done = function() {
 		process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
-		self.isVirtualDirectory = fs.existsSync(utils.combine(self.config['directory-public-virtual']));
+		self.isVirtualDirectory = fs.existsSync(framework_utils.combine(self.config['directory-public-virtual']));
 	};
 
 	if (!arr instanceof Array || !arr.length) {
@@ -7403,7 +7545,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 			case 'default-interval-websocket-ping':
 			case 'default-maximum-file-descriptors':
 			case 'default-interval-clear-dnscache':
-				obj[name] = utils.parseInt(value);
+				obj[name] = framework_utils.parseInt(value);
 				break;
 
 			case 'static-accepts-custom':
@@ -7457,12 +7599,12 @@ Framework.prototype._configure = function(arr, rewrite) {
 				break;
 
 			default:
-				obj[name] = value.isNumber() ? utils.parseInt(value) : value.isNumber(true) ? utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
+				obj[name] = value.isNumber() ? framework_utils.parseInt(value) : value.isNumber(true) ? framework_utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
 				break;
 		}
 	}
 
-	utils.extend(self.config, obj, rewrite);
+	framework_utils.extend(self.config, obj, rewrite);
 
 	if (self.config['etag-version'] === '')
 		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');
@@ -7813,7 +7955,7 @@ Framework.prototype.accept = function(extension, contentType) {
 	self.config['static-accepts'][extension] = true;
 
 	if (contentType)
-		utils.setContentType(extension, contentType);
+		framework_utils.setContentType(extension, contentType);
 
 	return self;
 };
@@ -7862,7 +8004,7 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 	if (fork !== null)
 		return fork;
 
-	var filename = utils.combine(self.config['directory-workers'], name) + EXTENSION_JS;
+	var filename = framework_utils.combine(self.config['directory-workers'], name) + EXTENSION_JS;
 
 	if (!args)
 		args = new Array(0);
@@ -7983,8 +8125,8 @@ FrameworkRestrictions.prototype.refresh = function() {
 	self.isAllowedIP = self.allowedIP.length > 0;
 	self.isBlockedIP = self.blockedIP.length > 0;
 
-	self.isAllowedCustom = !utils.isEmpty(self.allowedCustom);
-	self.isBlockedCustom = !utils.isEmpty(self.blockedCustom);
+	self.isAllowedCustom = !framework_utils.isEmpty(self.allowedCustom);
+	self.isBlockedCustom = !framework_utils.isEmpty(self.blockedCustom);
 
 	self.allowedCustomKeys = Object.keys(self.allowedCustom);
 	self.blockedCustomKeys = Object.keys(self.blockedCustom);
@@ -8128,7 +8270,7 @@ FrameworkFileSystem.prototype.deleteStyle = function(name) {
 	if (name.lastIndexOf('.css') === -1)
 		name += '.css';
 
-	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-style'], name);
+	var filename = framework_utils.combine(framework.config['directory-public'], framework.config['static-url-style'], name);
 	return self.deleteFile(filename);
 };
 
@@ -8143,7 +8285,7 @@ FrameworkFileSystem.prototype.deleteScript = function(name) {
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		name += EXTENSION_JS;
 
-	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-script'], name);
+	var filename = framework_utils.combine(framework.config['directory-public'], framework.config['static-url-script'], name);
 	return self.deleteFile(filename);
 };
 
@@ -8158,7 +8300,7 @@ FrameworkFileSystem.prototype.deleteView = function(name) {
 	if (name.lastIndexOf('.html') === -1)
 		name += '.html';
 
-	var filename = utils.combine(framework.config['directory-views'], name);
+	var filename = framework_utils.combine(framework.config['directory-views'], name);
 	return self.deleteFile(filename);
 };
 
@@ -8169,7 +8311,7 @@ FrameworkFileSystem.prototype.deleteView = function(name) {
 */
 FrameworkFileSystem.prototype.deleteDatabase = function(name) {
 	var self = this;
-	var filename = utils.combine(framework.config['directory-databases'], name);
+	var filename = framework_utils.combine(framework.config['directory-databases'], name);
 	return self.deleteFile(filename);
 };
 
@@ -8184,7 +8326,7 @@ FrameworkFileSystem.prototype.deleteWorker = function(name) {
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		name += EXTENSION_JS;
 
-	var filename = utils.combine(framework.config['directory-workers'], name);
+	var filename = framework_utils.combine(framework.config['directory-workers'], name);
 	return self.deleteFile(filename);
 };
 
@@ -8199,7 +8341,7 @@ FrameworkFileSystem.prototype.deleteResource = function(name) {
 	if (name.lastIndexOf('.resource') === -1)
 		name += '.resource';
 
-	var filename = utils.combine(framework.config['directory-resources'], name);
+	var filename = framework_utils.combine(framework.config['directory-resources'], name);
 	return self.deleteFile(filename);
 };
 
@@ -8210,7 +8352,7 @@ FrameworkFileSystem.prototype.deleteResource = function(name) {
 */
 FrameworkFileSystem.prototype.deleteTemporary = function(name) {
 	var self = this;
-	var filename = utils.combine(framework.config['directory-temp'], name);
+	var filename = framework_utils.combine(framework.config['directory-temp'], name);
 	return self.deleteFile(filename);
 };
 
@@ -8246,7 +8388,7 @@ FrameworkFileSystem.prototype.createStyle = function(name, content, rewrite, app
 	if (name.lastIndexOf('.css') === -1)
 		name += '.css';
 
-	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-style'], name);
+	var filename = framework_utils.combine(framework.config['directory-public'], framework.config['static-url-style'], name);
 	return self.createFile(filename, content, append, rewrite);
 };
 
@@ -8268,7 +8410,7 @@ FrameworkFileSystem.prototype.createScript = function(name, content, rewrite, ap
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		name += EXTENSION_JS;
 
-	var filename = utils.combine(framework.config['directory-public'], framework.config['static-url-script'], name);
+	var filename = framework_utils.combine(framework.config['directory-public'], framework.config['static-url-script'], name);
 	return self.createFile(filename, content, append, rewrite);
 };
 
@@ -8287,7 +8429,7 @@ FrameworkFileSystem.prototype.createDatabase = function(name, content, rewrite, 
 	if (!content)
 		return false;
 
-	var filename = utils.combine(framework.config['directory-databases'], name);
+	var filename = framework_utils.combine(framework.config['directory-databases'], name);
 	return self.createFile(filename, content, append, rewrite);
 };
 
@@ -8311,7 +8453,7 @@ FrameworkFileSystem.prototype.createView = function(name, content, rewrite, appe
 
 	framework.path.verify('views');
 
-	var filename = utils.combine(framework.config['directory-views'], name);
+	var filename = framework_utils.combine(framework.config['directory-views'], name);
 	return self.createFile(filename, content, append, rewrite);
 };
 
@@ -8335,7 +8477,7 @@ FrameworkFileSystem.prototype.createWorker = function(name, content, rewrite, ap
 
 	framework.path.verify('workers');
 
-	var filename = utils.combine(framework.config['directory-workers'], name);
+	var filename = framework_utils.combine(framework.config['directory-workers'], name);
 	return self.createFile(filename, content, append, rewrite);
 };
 
@@ -8368,7 +8510,7 @@ FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, 
 
 	framework.path.verify('resources');
 
-	var filename = utils.combine(framework.config['directory-resources'], name);
+	var filename = framework_utils.combine(framework.config['directory-resources'], name);
 	return self.createFile(filename, builder, append, rewrite);
 };
 
@@ -8384,7 +8526,7 @@ FrameworkFileSystem.prototype.createTemporary = function(name, stream, callback)
 	var self = this;
 
 	if (typeof(stream) === 'string') {
-		Utils.download(stream, ['get'], function(err, response) {
+		framework_utils.download(stream, ['get'], function(err, response) {
 
 			if (err) {
 				if (callback)
@@ -8400,7 +8542,7 @@ FrameworkFileSystem.prototype.createTemporary = function(name, stream, callback)
 
 	framework.path.verify('temp');
 
-	var filename = utils.combine(framework.config['directory-temp'], name);
+	var filename = framework_utils.combine(framework.config['directory-temp'], name);
 	var writer = fs.createWriteStream(filename);
 
 	if (!callback) {
@@ -8435,7 +8577,7 @@ FrameworkFileSystem.prototype.createFile = function(filename, content, append, r
 
 	if (content.substring(0, 7) === 'http://' || content.substring(0, 8) === 'https://') {
 
-		utils.request(content, ['get'], function(err, data) {
+		framework_utils.request(content, ['get'], function(err, data) {
 
 			if (!err)
 				self.createFile(filename, data, append, rewrite);
@@ -8487,7 +8629,7 @@ FrameworkPath.prototype.verify = function(name) {
 	var prop = '$directory-' + name;
 	if (framework.temporary.path[prop])
 		return framework;
-	var dir = utils.combine(framework.config['directory-' + name]);
+	var dir = framework_utils.combine(framework.config['directory-' + name]);
 	if (!fs.existsSync(dir))
 		fs.mkdirSync(dir);
 	framework.temporary.path[prop] = true;
@@ -8495,36 +8637,36 @@ FrameworkPath.prototype.verify = function(name) {
 };
 
 FrameworkPath.prototype.public = function(filename) {
-	return utils.combine(framework.config['directory-public'], filename || '');
+	return framework_utils.combine(framework.config['directory-public'], filename || '');
 };
 
 FrameworkPath.prototype.private = function(filename) {
-	return utils.combine(framework.config['directory-private'], filename || '');
+	return framework_utils.combine(framework.config['directory-private'], filename || '');
 };
 
 FrameworkPath.prototype.isomorphic = function(filename) {
-	return utils.combine(framework.config['directory-isomorphic'], filename || '');
+	return framework_utils.combine(framework.config['directory-isomorphic'], filename || '');
 };
 
 FrameworkPath.prototype.configs = function(filename) {
-	return utils.combine(framework.config['directory-configs'], filename || '');
+	return framework_utils.combine(framework.config['directory-configs'], filename || '');
 };
 
 FrameworkPath.prototype.virtual = function(filename) {
-	return utils.combine(framework.config['directory-public-virtual'], filename || '');
+	return framework_utils.combine(framework.config['directory-public-virtual'], filename || '');
 };
 
 FrameworkPath.prototype.logs = function(filename) {
 	this.verify('logs');
-	return utils.combine(framework.config['directory-logs'], filename || '');
+	return framework_utils.combine(framework.config['directory-logs'], filename || '');
 };
 
 FrameworkPath.prototype.models = function(filename) {
-	return utils.combine(framework.config['directory-models'], filename || '');
+	return framework_utils.combine(framework.config['directory-models'], filename || '');
 };
 FrameworkPath.prototype.temp = function(filename) {
 	this.verify('temp');
-	return utils.combine(framework.config['directory-temp'], filename || '');
+	return framework_utils.combine(framework.config['directory-temp'], filename || '');
 };
 
 FrameworkPath.prototype.temporary = function(filename) {
@@ -8532,44 +8674,44 @@ FrameworkPath.prototype.temporary = function(filename) {
 };
 
 FrameworkPath.prototype.views = function(filename) {
-	return utils.combine(framework.config['directory-views'], filename || '');
+	return framework_utils.combine(framework.config['directory-views'], filename || '');
 };
 
 FrameworkPath.prototype.workers = function(filename) {
-	return utils.combine(framework.config['directory-workers'], filename || '');
+	return framework_utils.combine(framework.config['directory-workers'], filename || '');
 };
 
 FrameworkPath.prototype.databases = function(filename) {
 	this.verify('databases');
-	return utils.combine(framework.config['directory-databases'], filename || '');
+	return framework_utils.combine(framework.config['directory-databases'], filename || '');
 };
 
 FrameworkPath.prototype.modules = function(filename) {
-	return utils.combine(framework.config['directory-modules'], filename || '');
+	return framework_utils.combine(framework.config['directory-modules'], filename || '');
 };
 
 FrameworkPath.prototype.controllers = function(filename) {
-	return utils.combine(framework.config['directory-controllers'], filename || '');
+	return framework_utils.combine(framework.config['directory-controllers'], filename || '');
 };
 
 FrameworkPath.prototype.definitions = function(filename) {
-	return utils.combine(framework.config['directory-definitions'], filename || '');
+	return framework_utils.combine(framework.config['directory-definitions'], filename || '');
 };
 
 FrameworkPath.prototype.tests = function(filename) {
-	return utils.combine(framework.config['directory-tests'], filename || '');
+	return framework_utils.combine(framework.config['directory-tests'], filename || '');
 };
 
 FrameworkPath.prototype.resources = function(filename) {
-	return utils.combine(framework.config['directory-resources'], filename || '');
+	return framework_utils.combine(framework.config['directory-resources'], filename || '');
 };
 
 FrameworkPath.prototype.services = function(filename) {
-	return utils.combine(framework.config['directory-services'], filename || '');
+	return framework_utils.combine(framework.config['directory-services'], filename || '');
 };
 
 FrameworkPath.prototype.packages = function(filename) {
-	return utils.combine(framework.config['directory-packages'], filename || '');
+	return framework_utils.combine(framework.config['directory-packages'], filename || '');
 };
 
 FrameworkPath.prototype.root = function(filename) {
@@ -8751,7 +8893,7 @@ FrameworkCache.prototype.remove = function(name) {
 FrameworkCache.prototype.removeAll = function(search) {
 	var self = this;
 	var count = 0;
-	var isReg = utils.isRegExp(search);
+	var isReg = framework_utils.isRegExp(search);
 
 	for (var key in self.items) {
 
@@ -8970,7 +9112,7 @@ Subscribe.prototype.execute = function(status) {
 			return self;
 		}
 
-		framework.responseContent(req, res, status, utils.httpStatus(status) + prepare_error(self.exception), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
+		framework.responseContent(req, res, status, framework_utils.httpStatus(status) + prepare_error(self.exception), CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
 		return self;
 	}
 
@@ -9493,7 +9635,7 @@ Controller.prototype = {
 	},
 
 	get url() {
-		return utils.path(this.req.uri.pathname);
+		return framework_utils.path(this.req.uri.pathname);
 	},
 
 	get uri() {
@@ -9557,7 +9699,7 @@ Controller.prototype = {
 		var self = this;
 
 		if (typeof(self._async) === UNDEFINED)
-			self._async = new utils.Async(self);
+			self._async = new framework_utils.Async(self);
 
 		return self._async;
 	},
@@ -9783,7 +9925,7 @@ Controller.prototype.validate = function(model, properties, prefix, name) {
 		return builders.validate(properties, model, prefix);
 
 	var error = new builders.ErrorBuilder(resource);
-	return utils.validate.call(self, model, properties, framework.onValidate || framework.onValidation, error);
+	return framework_utils.validate.call(self, model, properties, framework.onValidate || framework.onValidation, error);
 };
 
 /*
@@ -9843,7 +9985,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 		header = null;
 	}
 
-	if (!utils.isArray(allow))
+	if (!framework_utils.isArray(allow))
 		allow = [allow];
 
 	var isAllowed = false;
@@ -9853,7 +9995,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 
 	if (header) {
 
-		if (!utils.isArray(header))
+		if (!framework_utils.isArray(header))
 			header = [header];
 
 		for (var i = 0; i < header.length; i++) {
@@ -9871,7 +10013,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 
 	if (method) {
 
-		if (!utils.isArray(method))
+		if (!framework_utils.isArray(method))
 			method = [method];
 
 		var current = headers['access-control-request-method'] || self.req.method;
@@ -10926,9 +11068,9 @@ Controller.prototype.$modified = function(value) {
 		date = d[0].split('-');
 		var time = (d[1] || '').split(':');
 
-		var year = utils.parseInt(date[0] || '');
-		var month = utils.parseInt(date[1] || '') - 1;
-		var day = utils.parseInt(date[2] || '') - 1;
+		var year = framework_utils.parseInt(date[0] || '');
+		var month = framework_utils.parseInt(date[1] || '') - 1;
+		var day = framework_utils.parseInt(date[2] || '') - 1;
 
 		if (month < 0)
 			month = 0;
@@ -10936,12 +11078,12 @@ Controller.prototype.$modified = function(value) {
 		if (day < 0)
 			day = 0;
 
-		var hour = utils.parseInt(time[0] || '');
-		var minute = utils.parseInt(time[1] || '');
-		var second = utils.parseInt(time[2] || '');
+		var hour = framework_utils.parseInt(time[0] || '');
+		var minute = framework_utils.parseInt(time[1] || '');
+		var second = framework_utils.parseInt(time[2] || '');
 
 		date = new Date(year, month, day, hour, minute, second, 0);
-	} else if (utils.isDate(value))
+	} else if (framework_utils.isDate(value))
 		date = value;
 
 	if (date === undefined)
@@ -10984,7 +11126,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 		arr = Object.keys(arr);
 	}
 
-	if (!utils.isArray(arr))
+	if (!framework_utils.isArray(arr))
 		arr = [arr];
 
 	selected = selected || '';
@@ -11258,8 +11400,8 @@ Controller.prototype._routeHelper = function(current, name, fn) {
 	if (current.substring(0, 2) === '//' || current.substring(0, 6) === 'http:/' || current.substring(0, 7) === 'https:/')
 		return fn.call(framework, current + name);
 	if (current[0] === '~')
-		return fn.call(framework, utils.path(current.substring(1)) + name);
-	return fn.call(framework, utils.path(current) + name);
+		return fn.call(framework, framework_utils.path(current.substring(1)) + name);
+	return fn.call(framework, framework_utils.path(current) + name);
 };
 
 /**
@@ -11396,7 +11538,7 @@ Controller.prototype.$currentView = function(path) {
 		return self;
 	}
 
-	self._currentView = path ? utils.path(path) : '';
+	self._currentView = path ? framework_utils.path(path) : '';
 	return '';
 };
 
@@ -12210,12 +12352,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 		self.subscribe.success();
 		self.req.on('close', self.close.bind(self));
 		res.success = true;
-		var headers = {
-			'Pragma': 'no-cache'
-		};
-		headers[RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, max-age=0, must-revalidate';
-		headers[RESPONSE_HEADER_CONTENTTYPE] = 'text/event-stream';
-		res.writeHead(self.status, headers);
+		res.writeHead(self.status, HEADERS['sse']);
 	}
 
 	if (typeof(data) === OBJECT)
@@ -12301,8 +12438,6 @@ Controller.prototype.close = function(end) {
 Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 
 	var self = this;
-	var headers = { 'X-Proxy': 'total.js' };
-
 	var tmp;
 
 	if (typeof(fnCallback) === NUMBER) {
@@ -12317,7 +12452,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 		obj = tmp;
 	}
 
-	return utils.request(url, REQUEST_PROXY_FLAGS, obj, function(error, data, code, headers) {
+	return framework_utils.request(url, REQUEST_PROXY_FLAGS, obj, function(error, data, code, headers) {
 
 		if (!fnCallback)
 			return;
@@ -12326,8 +12461,7 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 			data = framework.onParseJSON(data);
 
 		fnCallback.call(self, error, data, code, headers);
-
-	}, null, headers, ENCODING, timeout || 10000);
+	}, null, HEADERS['proxy'], ENCODING, timeout || 10000);
 };
 
 /*
@@ -12440,7 +12574,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (!isLayout && self.precache && self.status === 200 && !isPartial)
 		self.precache(value, CONTENTTYPE_TEXTHTML, headers, true);
 
-	if (isLayout || utils.isNullOrEmpty(self.layoutName)) {
+	if (isLayout || framework_utils.isNullOrEmpty(self.layoutName)) {
 
 		self.outputPartial = '';
 		self.output = '';
@@ -12609,7 +12743,7 @@ function WebSocket(framework, path, name, id) {
 	this.repository = {};
 	this.name = name;
 	this.isController = true;
-	this.url = utils.path(path);
+	this.url = framework_utils.path(path);
 	this.route = null;
 
 	// on('open', function(client) {});
@@ -12654,7 +12788,7 @@ WebSocket.prototype = {
 		var self = this;
 
 		if (typeof(self._async) === UNDEFINED)
-			self._async = new utils.Async(self);
+			self._async = new framework_utils.Async(self);
 
 		return self._async;
 	}
@@ -12961,9 +13095,6 @@ WebSocket.prototype.destroy = function(problem) {
 WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 
 	var self = this;
-	var headers = {
-		'X-Proxy': 'total.js'
-	};
 
 	if (typeof(obj) === TYPE_FUNCTION) {
 		var tmp = fnCallback;
@@ -12971,17 +13102,13 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 		obj = tmp;
 	}
 
-	return utils.request(url, REQUEST_PROXY_FLAGS, obj, function(error, data, code, headers) {
-
+	return framework_utils.request(url, REQUEST_PROXY_FLAGS, obj, function(error, data, code, headers) {
 		if (!fnCallback)
 			return;
-
 		if ((headers['content-type'] || '').indexOf('application/json') !== -1)
 			data = framework.onParseJSON(data);
-
 		fnCallback.call(self, error, data, code, headers);
-
-	}, headers);
+	}, HEADERS['proxy']);
 
 };
 
@@ -13150,7 +13277,7 @@ WebSocket.prototype.validate = function(model, properties, prefix, name) {
 	};
 
 	var error = new builders.ErrorBuilder(resource);
-	return utils.validate.call(self, model, properties, framework.onValidate || framework.onValidation, error);
+	return framework_utils.validate.call(self, model, properties, framework.onValidate || framework.onValidation, error);
 };
 
 /*
@@ -13283,12 +13410,12 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 		}
 	}
 
-	if (SOCKET_ALLOW_VERSION.indexOf(utils.parseInt(self.req.headers['sec-websocket-version'])) === -1)
+	if (SOCKET_ALLOW_VERSION.indexOf(framework_utils.parseInt(self.req.headers['sec-websocket-version'])) === -1)
 		return false;
 
 	self.socket.write(new Buffer(SOCKET_RESPONSE.format('total.js v' + version, self._request_accept_key(self.req)), 'binary'));
 
-	self._id = (self.ip || '').replace(/\./g, '') + utils.GUID(20);
+	self._id = (self.ip || '').replace(/\./g, '') + framework_utils.GUID(20);
 	self.id = self._id;
 
 	return true;
@@ -13366,7 +13493,7 @@ WebSocketClient.prototype._ondata = function(data) {
 			break;
 		case 0x09:
 			// ping, response pong
-			self.socket.write(utils.getWebSocketFrame(0, '', 0x0A));
+			self.socket.write(framework_utils.getWebSocketFrame(0, '', 0x0A));
 			self.buffer = new Buffer(0);
 			self.$ping = true;
 			break;
@@ -13389,7 +13516,7 @@ WebSocketClient.prototype.parse = function() {
 	if (((bLength & 0x80) >> 7) !== 1)
 		return self;
 
-	var length = utils.getMessageLength(self.buffer, framework.isLE);
+	var length = framework_utils.getMessageLength(self.buffer, framework.isLE);
 	var index = (self.buffer[1] & 0x7f);
 
 	index = (index == 126) ? 4 : (index == 127 ? 10 : 2);
@@ -13426,7 +13553,7 @@ WebSocketClient.prototype.parse = function() {
 
 	self.buffer = self.buffer.slice(index + length + 4, self.buffer.length);
 
-	if (self.buffer.length >= 2 && utils.getMessageLength(self.buffer, framework.isLE))
+	if (self.buffer.length >= 2 && framework_utils.getMessageLength(self.buffer, framework.isLE))
 		self.parse();
 
 	return self;
@@ -13473,12 +13600,12 @@ WebSocketClient.prototype.send = function(message) {
 		var data = self.type === 3 ? JSON.stringify(message) : (message || '').toString();
 		if (self.container.config['default-websocket-encodedecode'] === true && data)
 			data = encodeURIComponent(data);
-		self.socket.write(utils.getWebSocketFrame(0, data, 0x01));
+		self.socket.write(framework_utils.getWebSocketFrame(0, data, 0x01));
 
 	} else {
 
 		if (message !== null)
-			self.socket.write(utils.getWebSocketFrame(0, message, 0x02));
+			self.socket.write(framework_utils.getWebSocketFrame(0, message, 0x02));
 
 	}
 
@@ -13496,7 +13623,7 @@ WebSocketClient.prototype.ping = function() {
 	if (!self || self.isClosed)
 		return self;
 
-	self.socket.write(utils.getWebSocketFrame(0, '', 0x09));
+	self.socket.write(framework_utils.getWebSocketFrame(0, '', 0x09));
 	self.$ping = false;
 
 	return self;
@@ -13515,7 +13642,7 @@ WebSocketClient.prototype.close = function(message, code) {
 		return self;
 
 	self.isClosed = true;
-	self.socket.end(utils.getWebSocketFrame(code || 1000, message || '', 0x08));
+	self.socket.end(framework_utils.getWebSocketFrame(code || 1000, message || '', 0x08));
 
 	return self;
 };
@@ -13753,7 +13880,7 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 	var builder = [name + '=' + encodeURIComponent(value)];
 	var type = typeof(expires);
 
-	if (expires && !utils.isDate(expires) && type === OBJECT) {
+	if (expires && !framework_utils.isDate(expires) && type === OBJECT) {
 		options = expires;
 		expires = options.expires || options.expire || null;
 	}
@@ -13839,7 +13966,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 			if (!contentType)
 				contentType = 'text/plain';
 
-			body = utils.httpStatus(body);
+			body = framework_utils.httpStatus(body);
 			break;
 
 		case BOOLEAN:
@@ -13873,7 +14000,10 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 	headers[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 	framework.responseCustom(req, res);
 
-	var compress = accept.lastIndexOf('gzip') !== -1;
+	if (!accept && isGZIP(req))
+		accept = 'gzip';
+
+	var compress = accept.indexOf('gzip') !== -1;
 
 	if (isHEAD) {
 		if (compress)
@@ -14432,12 +14562,12 @@ process.on('message', function(msg, h) {
 	}
 
 	if (msg === 'debugging') {
-		Utils.wait(function() {
+		framework_utils.wait(function() {
 			return framework.isLoaded;
 		}, function() {
 			delete framework.isLoaded;
 			framework.console();
-			framework.console = utils.noop;
+			framework.console = framework_utils.noop;
 		}, 10000, 500);
 		return;
 	}
@@ -14481,11 +14611,11 @@ function prepare_filename(name) {
 
 	if (name[0] === '@') {
 		if (framework.isWindows)
-			return utils.combine(framework.config['directory-temp'], name.substring(1));
+			return framework_utils.combine(framework.config['directory-temp'], name.substring(1));
 		return framework.path.package(name.substring(1));
 	}
 
-	return utils.combine('/', name);
+	return framework_utils.combine('/', name);
 }
 
 function prepare_isomorphic(name) {
@@ -14498,4 +14628,11 @@ function prepare_isomorphic(name) {
 		content = '';
 
 	return 'if(window["isomorphic"]===undefined)window.isomorphic={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + content + ';return exports;})(null,null,null,null,null,true,false)';
+}
+
+function isGZIP(req) {
+	var ua = req.headers['user-agent'];
+	if (!ua)
+		return false;
+	return ua.lastIndexOf('Firefox') !== -1;
 }
