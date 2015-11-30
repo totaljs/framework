@@ -3205,6 +3205,8 @@ Framework.prototype.onMail = function(address, subject, body, callback, replyTo)
 		var config = self.config['mail.smtp.options'];
 		if (config && config.isJSON())
 			opt = JSON.parse(config);
+		if (opt === undefined)
+			opt = {};
 		self.temporary['mail-settings'] = opt;
 	}
 

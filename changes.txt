@@ -2,6 +2,7 @@
 
 - fixed: async() error handling
 - fixed: NoSQL embedded paths
+- fixed: problem with empty SMTP options
 
 ======= 1.9.3
 
