@@ -105,27 +105,35 @@ HEADERS['responseFile.release.range']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00
 HEADERS['responseFile.release.range'][RESPONSE_HEADER_CONTENTLENGTH] = 0;
 HEADERS['responseFile.release.range']['Content-Range'] = '';
 HEADERS['responseFile.debug.compress'] = {};
-HEADERS['responseFile.debug.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseFile.debug.compress'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
 HEADERS['responseFile.debug.compress']['Vary'] = 'Accept-Encoding';
 HEADERS['responseFile.debug.compress']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.debug.compress']['Pragma'] = 'no-cache';
+HEADERS['responseFile.debug.compress']['Expires'] = '0';
 HEADERS['responseFile.debug.compress']['Content-Encoding'] = 'gzip';
 HEADERS['responseFile.debug.compress.range'] = {};
 HEADERS['responseFile.debug.compress.range']['Accept-Ranges'] = 'bytes';
-HEADERS['responseFile.debug.compress.range'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseFile.debug.compress.range'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
 HEADERS['responseFile.debug.compress.range']['Vary'] = 'Accept-Encoding';
 HEADERS['responseFile.debug.compress.range']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseFile.debug.compress.range']['Content-Encoding'] = 'gzip';
+HEADERS['responseFile.debug.compress.range']['Pragma'] = 'no-cache';
+HEADERS['responseFile.debug.compress.range']['Expires'] = '0';
 HEADERS['responseFile.debug.compress.range'][RESPONSE_HEADER_CONTENTLENGTH] = 0;
 HEADERS['responseFile.debug.compress.range']['Content-Range'] = '';
 HEADERS['responseFile.debug'] = {};
-HEADERS['responseFile.debug'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseFile.debug'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
 HEADERS['responseFile.debug']['Vary'] = 'Accept-Encoding';
+HEADERS['responseFile.debug']['Pragma'] = 'no-cache';
+HEADERS['responseFile.debug']['Expires'] = '0';
 HEADERS['responseFile.debug']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseFile.debug.range'] = {};
 HEADERS['responseFile.debug.range']['Accept-Ranges'] = 'bytes';
-HEADERS['responseFile.debug.range'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseFile.debug.range'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
 HEADERS['responseFile.debug.range']['Vary'] = 'Accept-Encoding';
 HEADERS['responseFile.debug.range']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.debug.range']['Pragma'] = 'no-cache';
+HEADERS['responseFile.debug.range']['Expires'] = '0';
 HEADERS['responseFile.debug.range'][RESPONSE_HEADER_CONTENTLENGTH] = 0;
 HEADERS['responseFile.debug.range']['Content-Range'] = '';
 HEADERS['responseContent.mobile.compress'] = {};
@@ -147,11 +155,15 @@ HEADERS['responseStream.release'] = {};
 HEADERS['responseStream.release'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 HEADERS['responseStream.release']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseStream.debug.compress'] = {};
-HEADERS['responseStream.debug.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseStream.debug.compress'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
+HEADERS['responseStream.debug.compress']['Pragma'] = 'no-cache';
+HEADERS['responseStream.debug.compress']['Expires'] = '0';
 HEADERS['responseStream.debug.compress']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseStream.debug.compress']['Content-Encoding'] = 'gzip';
 HEADERS['responseStream.debug'] = {};
-HEADERS['responseStream.debug'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseStream.debug'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
+HEADERS['responseStream.debug']['Pragma'] = 'no-cache';
+HEADERS['responseStream.debug']['Expires'] = '0';
 HEADERS['responseStream.debug']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseBinary.compress'] = {};
 HEADERS['responseBinary.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public';
@@ -394,7 +406,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-3';
+	this.version_header = '1.9.4-4';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -5900,12 +5912,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 	if (req === null || res === null || res.headersSent || res.success)
 		return self;
-
-	if (DEBUG) {
-		res.setHeader(RESPONSE_HEADER_CACHECONTROL, 'no-cache, no-store, must-revalidate');
-		res.setHeader('Pragma', 'no-cache');
-		res.setHeader('Expires', '0');
-	}
 
 	// Validate if this request is a file (static file)
 	if (req.isStaticFile) {
