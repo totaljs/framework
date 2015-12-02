@@ -5422,7 +5422,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 	self.cache.init();
 	self.emit('init');
 
-	// clear static files
+	// clears static files
 	self.clear(function() {
 
 		self.$load(undefined, directory);
