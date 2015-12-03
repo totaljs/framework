@@ -4765,7 +4765,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (!accept && isGZIP(req))
 		accept = 'gzip';
 
-	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.indexOf('gzip') !== -1;
+	var compress = nocompress === false && self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.indexOf('gzip') !== -1;
 	var returnHeaders;
 
 	if (RELEASE) {
@@ -4814,19 +4814,19 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		return self;
 	}
 
-	if (compress && !nocompress) {
+	if (compress) {
 
 		res.writeHead(200, returnHeaders);
+
 		res.on('error', function() {
 			stream.close();
 		});
 
-		var gzip = zlib.createGzip();
+		stream.pipe(zlib.createGzip()).pipe(res);
+
 		framework_internal.onFinished(res, function() {
 			framework_internal.destroyStream(stream);
 		});
-
-		stream.pipe(gzip).pipe(res);
 
 		if (done)
 			done();
