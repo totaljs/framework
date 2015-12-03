@@ -2743,10 +2743,9 @@ ErrorBuilder.prototype._transform = function(name) {
 	var transformName = name || self.transformName;
 
 	if (!transformName)
-		return self.json(null);
+		return self.items;
 
 	var current = transforms['error'][transformName];
-
 	if (current === undefined)
 		return self.items;
 

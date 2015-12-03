@@ -3,6 +3,7 @@
 - fixed: async() error handling
 - fixed: NoSQL embedded paths
 - fixed: problem with empty SMTP options
+- fixed: ErrorBuilder default transformation to JSON
 
 - improved performance of response
 
