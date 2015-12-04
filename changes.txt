@@ -1,5 +1,8 @@
 ======= 1.9.4 (BETA)
 
+- updated: Date.format() supports "w" and "ww" for week number
+- updated: Date.add() supports "w", "ww", "week", "weeks"
+
 - fixed: async() error handling
 - fixed: NoSQL embedded paths
 - fixed: problem with empty SMTP options

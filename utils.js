@@ -42,7 +42,7 @@ var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\
 var regexpTRIM = /^[\s]+|[\s]+$/g;
 var regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
-var regexpDATEFORMAT = /yyyy|yy|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|a/g;
+var regexpDATEFORMAT = /yyyy|yy|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
 var regexpSTRINGFORMAT = /\{\d+\}/g;
 var regexpPATH = /\\/g;
 var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
@@ -2017,6 +2017,12 @@ Date.prototype.add = function(type, value) {
 		case 'days':
 			dt.setDate(dt.getDate() + value);
 			return dt;
+		case 'w':
+		case 'ww':
+		case 'week':
+		case 'weeks':
+			dt.setDate(dt.getDate() + (value * 7));
+			return dt;
 		case 'M':
 		case 'MM':
 		case 'month':
@@ -2279,6 +2285,15 @@ Date.prototype.format = function(format) {
 				return self.getSeconds().toString().padLeft(2, '0');
 			case 's':
 				return self.getSeconds();
+			case 'w':
+			case 'ww':
+				var tmp = new Date(+self);
+				tmp.setHours(0, 0, 0);
+				tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
+				tmp = Math.ceil((((tmp - new Date(tmp.getFullYear(), 0, 1)) / 8.64e7) + 1) / 7);
+				if (key === 'ww')
+					return tmp.toString().padLeft(2, '0');
+				return tmp;
 			case 'a':
 				var a = 'AM';
 				if (self.getHours() >= 12)
