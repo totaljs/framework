@@ -2694,10 +2694,6 @@ ErrorBuilder.prototype.JSON = function(beautify, replacer) {
 	return this.json(beautify, replacer);
 };
 
-ErrorBuilder.prototype.output = function() {
-	return this.prepare()._transform();
-};
-
 /**
  * Internal: Prepare error messages with onResource()
  * @private
@@ -2752,7 +2748,7 @@ ErrorBuilder.prototype._transform = function(name) {
 	return current.call(self);
 };
 
-ErrorBuilder.prototype._output = function() {
+ErrorBuilder.prototype.output = function() {
 	var self = this;
 
 	if (!self.transformName)

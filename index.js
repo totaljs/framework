@@ -9114,7 +9114,8 @@ Subscribe.prototype.execute = function(status) {
 		if (status === 400 && self.exception instanceof Builders.ErrorBuilder) {
 			if (req.$language)
 				self.exception.resource(req.$language, framework.config['default-errorbuilder-resource-prefix']);
-			framework.responseContent(req, res, 200, self.exception.transform(), self.exception.contentType, framework.config['allow-gzip']);
+			var ex = self.exception.output();
+			framework.responseContent(req, res, 200, ex, self.exception.contentType, framework.config['allow-gzip']);
 			return self;
 		}
 
@@ -11899,7 +11900,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 		return self;
 
 	if (contentBody instanceof ErrorBuilder) {
-		var tmp = contentBody._output();
+		var tmp = contentBody.output();
 		if (!contentType)
 			contentType = contentBody.contentType || 'application/json';
 		contentBody = tmp;
