@@ -150,6 +150,58 @@ Backup.prototype.backup = function(path, fileName, callback, filter) {
 
     walker.onComplete = function(directory, files) {
         self.directory = directory;
+
+        var ignore = [];
+        var index = 0;
+
+        while (true) {
+            var file = files[index++];
+            if (file === undefined)
+                break;
+            if (file.indexOf('.tpmignore') === -1)
+                continue;
+            index--;
+            ignore.push(file);
+            files.splice(index, 1);
+        }
+
+        var skip = [];
+
+        for (var i = 0, length = ignore.length; i < length; i++)
+            skip = skip.concat(fs.readFileSync(ignore[i]).toString('utf8').split('\n'));
+
+        index = 0;
+        while (true) {
+            var file = directory[index++];
+            if (file === undefined)
+                break;
+            for (var i = 0, length = skip.length; i < length; i++) {
+                if (!skip[i])
+                    continue;
+                if (file.indexOf(skip[i]) === -1)
+                    continue;
+                index--;
+                directory.splice(index, 1);
+                break;
+            }
+        }
+
+        index = 0;
+        while (true) {
+            var file = files[index++];
+            if (file === undefined)
+                break;
+            for (var i = 0, length = skip.length; i < length; i++) {
+                if (!skip[i])
+                    continue;
+                if (file.indexOf(skip[i]) === -1)
+                    continue;
+                index--;
+                files.splice(index, 1);
+                break;
+            }
+        }
+
         self.file = files;
         self.$compress();
     };
