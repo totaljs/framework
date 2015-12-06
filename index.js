@@ -11899,9 +11899,9 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 		return self;
 
 	if (contentBody instanceof ErrorBuilder) {
-		var tmp = contentBody.transform();
+		var tmp = contentBody._output();
 		if (!contentType)
-			contentType = contentBody.contentType;
+			contentType = contentBody.contentType || 'application/json';
 		contentBody = tmp;
 	}
 

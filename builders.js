@@ -2752,6 +2752,18 @@ ErrorBuilder.prototype._transform = function(name) {
 	return current.call(self);
 };
 
+ErrorBuilder.prototype._output = function() {
+	var self = this;
+
+	if (!self.transformName)
+		return self.json();
+
+	var current = transforms['error'][self.transformName];
+	if (!current)
+		return self.json()
+	return current.call(self);
+};
+
 /**
  * To string
  * @return {String}
