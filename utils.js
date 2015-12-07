@@ -46,6 +46,7 @@ var regexpDATEFORMAT = /yyyy|yy|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
 var regexpSTRINGFORMAT = /\{\d+\}/g;
 var regexpPATH = /\\/g;
 var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
+var SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
 var STRING = 'string';
@@ -310,6 +311,79 @@ exports.$$resolve = function(url) {
  */
 exports.clearDNS = function() {
 	dnscache = {};
+};
+
+exports.keywords = function(content, alternative, max_count, max_length, min_length) {
+
+	min_length = min_length || 2;
+	max_count = max_count || 200;
+	max_length = max_length || 20;
+
+	var words = [];
+	var isSoundex = alternative === 'soundex';
+
+	if (content instanceof Array) {
+		for (var i = 0, length = content.length; i < length; i++) {
+			if (!content[i])
+				continue;
+			var tmp = content[i].removeDiacritics().toLowerCase().replace(/y/g, 'i').match(/\w+/g);
+			if (!tmp || !tmp.length)
+				continue;
+			for (var j = 0, jl = tmp.length; j < jl; j++)
+				words.push(tmp[j]);
+		}
+	} else
+		words = content.removeDiacritics().toLowerCase().replace(/y/g, 'i').match(/\w+/g);
+
+	if (!words)
+		words = [];
+
+	var dic = {};
+	var counter = 0;
+
+	for (var i = 0, length = words.length; i < length; i++) {
+		var word = words[i].trim();
+
+		if (word.length < min_length)
+			continue;
+
+		if (counter >= max_count)
+			break;
+
+		word = word.replace(/\W|_/g, '').replace(/y/g, 'i');
+
+		// Gets 80% length of word
+		if (alternative) {
+			if (isSoundex)
+				word = word.soundex();
+			else
+				word = word.substring(0, (word.length / 100) * 80);
+		}
+
+		if (word.length < min_length || word.length > max_length)
+			continue;
+
+		if (dic[word])
+			dic[word]++;
+		else
+			dic[word] = 1;
+
+		counter++;
+	}
+
+	var keys = Object.keys(dic);
+
+	keys.sort(function(a, b) {
+		var countA = dic[a];
+		var countB = dic[b];
+		if (countA > countB)
+			return -1;
+		if (countA < countB)
+			return 1;
+		return 0;
+	});
+
+	return keys;
 };
 
 /**
@@ -2887,6 +2961,10 @@ String.prototype.toSearch = function() {
 	return this.replace(/[^a-zA-Zá-žÁ-Ž\d\s:]/g, '').trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
 };
 
+String.prototype.toKeywords = String.prototype.keywords = function(alternative, max_count, max_length, min_length) {
+	return exports.keywords(this, alternative, max_count, max_length, min_length);
+};
+
 /*
 	@key {String}
 	@isUnique {Boolean}
@@ -3023,8 +3101,12 @@ String.prototype.removeDiacritics = function() {
 	return {String}
 */
 String.prototype.indent = function(max, c) {
-	var self = this;
-	return new Array(max + 1).join(c || ' ') + self;
+	var plus = '';
+	if (c === undefined)
+		c = ' '
+	while (max--)
+		plus += c;
+	return plus + this;
 };
 
 /*
@@ -3068,7 +3150,14 @@ String.prototype.isNumber = function(isDecimal) {
 if (!String.prototype.padLeft) {
 	String.prototype.padLeft = function(max, c) {
 		var self = this;
-		return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
+		var len = max - self.length;
+		if (len < 0)
+			return self;
+		if (c === undefined)
+			c = ' ';
+		while (len--)
+			self = c + self;
+		return self;
 	};
 }
 
@@ -3080,7 +3169,14 @@ if (!String.prototype.padLeft) {
 if (!String.prototype.padRight) {
 	String.prototype.padRight = function(max, c) {
 		var self = this;
-		return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
+		var len = max - self.length;
+		if (len < 0)
+			return self;
+		if (c === undefined)
+			c = ' ';
+		while (len--)
+			self += c;
+		return self;
 	};
 }
 
@@ -3179,6 +3275,28 @@ String.prototype.capitalize = function() {
 String.prototype.isAlphaNumeric = function() {
   var regExp = /^[A-Za-z0-9]+$/;
   return (this.match(regExp) ? true : false);
+};
+
+String.prototype.soundex = function() {
+
+	var arr = this.toLowerCase().split('');
+	var first = arr.shift();
+	var builder = first.toUpperCase();
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var v = SOUNDEX[arr[i]];
+
+		if (v === undefined)
+			continue;
+
+		if (i) {
+			if (v !== arr[i - 1])
+				builder += v;
+		} else if (v !== SOUNDEX[first])
+			builder += v;
+	}
+
+	return (builder + '000').substring(0, 4);
 };
 
 /*
