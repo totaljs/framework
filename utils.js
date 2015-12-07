@@ -313,7 +313,10 @@ exports.clearDNS = function() {
 	dnscache = {};
 };
 
-exports.keywords = function(content, alternative, max_count, max_length, min_length) {
+exports.keywords = function(content, forSearch, alternative, max_count, max_length, min_length) {
+
+	if (forSearch === undefined)
+		forSearch = true;
 
 	min_length = min_length || 2;
 	max_count = max_count || 200;
@@ -326,14 +329,14 @@ exports.keywords = function(content, alternative, max_count, max_length, min_len
 		for (var i = 0, length = content.length; i < length; i++) {
 			if (!content[i])
 				continue;
-			var tmp = content[i].removeDiacritics().toLowerCase().replace(/y/g, 'i').match(/\w+/g);
+			var tmp = (forSearch ? content[i].removeDiacritics().toLowerCase().replace(/y/g, 'i') : content[i].toLowerCase()).split(' ');
 			if (!tmp || !tmp.length)
 				continue;
 			for (var j = 0, jl = tmp.length; j < jl; j++)
 				words.push(tmp[j]);
 		}
 	} else
-		words = content.removeDiacritics().toLowerCase().replace(/y/g, 'i').match(/\w+/g);
+		words = (forSearch ? content.removeDiacritics().toLowerCase().replace(/y/g, 'i') : content.toLowerCase()).split(' ');
 
 	if (!words)
 		words = [];
@@ -350,7 +353,8 @@ exports.keywords = function(content, alternative, max_count, max_length, min_len
 		if (counter >= max_count)
 			break;
 
-		word = word.replace(/\W|_/g, '').replace(/y/g, 'i');
+		if (forSearch)
+			word = word.replace(/\W|_/g, '');
 
 		// Gets 80% length of word
 		if (alternative) {
@@ -2961,8 +2965,8 @@ String.prototype.toSearch = function() {
 	return this.replace(/[^a-zA-Zá-žÁ-Ž\d\s:]/g, '').trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
 };
 
-String.prototype.toKeywords = String.prototype.keywords = function(alternative, max_count, max_length, min_length) {
-	return exports.keywords(this, alternative, max_count, max_length, min_length);
+String.prototype.toKeywords = String.prototype.keywords = function(forSearch, alternative, max_count, max_length, min_length) {
+	return exports.keywords(this, forSearch, alternative, max_count, max_length, min_length);
 };
 
 /*
@@ -5061,3 +5065,4 @@ exports.minifyHTML = function(value) {
 global.Async = global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
 global.sync2 = exports.sync2;
+
