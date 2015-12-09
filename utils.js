@@ -4109,22 +4109,7 @@ Array.prototype.random = function() {
 	return self[exports.random(self.length - 1)];
 };
 
-/*
-	Waiting list - function remove each item
-	@callback {Function} :: function(next) {}
-	@complete {Function} :: optional
-*/
-Array.prototype.waiting = function(onItem, callback) {
-	console.log('Array.prototype.waiting: OBSOLETE. Use Array.prototype.wait');
-	return this.wait(onItem, callback);
-};
-
-/*
-	Waiting list - function remove each item
-	@callback {Function} :: function(next) {}
-	@complete {Function} :: optional
-*/
-Array.prototype.wait = Array.prototype.each = function(onItem, callback, remove) {
+Array.prototype.wait = Array.prototype.forAsync = function(onItem, callback, remove) {
 
 	var self = this;
 	var type = typeof(callback);
