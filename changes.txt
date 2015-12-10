@@ -1,11 +1,16 @@
 ======= 1.9.4 (BETA)
 
-- added: U.keywords(content, [forSearch], [alternative(true|false|soundex)], [max_count(200)], [max_length(20)], [min_length(2)]);
-- added: String.prototype.keywords([forSearch], [alternative(true|false|soundex)], [max_count(200)], [max_length(20)], [min_length(2)])
-- added: String.prototype.soundex()
+- added: `U.keywords(content, [forSearch], [alternative(true|false|soundex)], [max_count(200)], [max_length(20)], [min_length(2)]);`
+- added: `String.prototype.keywords([forSearch], [alternative(true|false|soundex)], [max_count(200)], [max_length(20)], [min_length(2)])`
+- added: `String.prototype.soundex()`
 
-- updated: Date.format() supports "w" and "ww" for week number
-- updated: Date.add() supports "w", "ww", "week", "weeks"
+- updated: `Date.format()` supports `w` and `ww` for week number
+- updated: `Date.add()` supports `w`, `ww`, `week`, `weeks`
+- updated: MailMessage supports display name `mail.from('Name <vali@demail>');`
+- updated: MailMessage supports display name `mail.to('Name <vali@demail>');`
+- updated: MailMessage supports display name `mail.to(email, [name], [clear]);`
+- updated: MailMessage supports display name `mail.cc('Name <vali@demail>');`
+- updated: MailMessage supports display name `mail.cc(email, [name], [clear]);`
 
 - fixed: async() error handling
 - fixed: NoSQL embedded paths
