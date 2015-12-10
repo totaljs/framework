@@ -406,7 +406,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-13';
+	this.version_header = '1.9.4-14';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -11769,7 +11769,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 			obj.resource(self.language);
 		if (obj.contentType)
 			type = obj.contentType;
-		obj = obj.output(beautify);
+		obj = obj.output();
 	} else {
 		if (beautify)
 			obj = JSON.stringify(obj, replacer, 4);

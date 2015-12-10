@@ -2676,10 +2676,15 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
  */
 ErrorBuilder.prototype.json = function(beautify, replacer) {
 	var items;
+
+	items = this.prepare().items;
+
+	/*
 	if (beautify !== null)
 		items = this.prepare()._transform();
 	else
 		items = this.items;
+	*/
 	if (beautify)
 		return JSON.stringify(items, replacer, '\t');
 	return JSON.stringify(items, replacer);
@@ -2748,15 +2753,17 @@ ErrorBuilder.prototype._transform = function(name) {
 	return current.call(self);
 };
 
-ErrorBuilder.prototype.output = function(beautify) {
+ErrorBuilder.prototype.output = function() {
 	var self = this;
 
 	if (!self.transformName)
-		return self.json(beautify);
+		return self.json();
 
 	var current = transforms['error'][self.transformName];
 	if (!current)
-		return self.json(beautify)
+		return self.json();
+
+	self.prepare();
 	return current.call(self);
 };
 
