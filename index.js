@@ -406,7 +406,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-10';
+	this.version_header = '1.9.4-11';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -2027,15 +2027,15 @@ Framework.prototype.localize = function(name, url, middleware, options, minify) 
  */
 Framework.prototype.error = function(err, name, uri) {
 
-	if (err === null)
-		return this;
-
-	if (err === undefined) {
+	if (!arguments.length) {
 		return function(err) {
 			if (err)
 				framework.error(err, name, uri);
 		};
 	}
+
+	if (!err)
+		return this;
 
 	var self = this;
 

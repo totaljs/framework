@@ -11,6 +11,7 @@
 - fixed: NoSQL embedded paths
 - fixed: problem with empty SMTP options
 - fixed: ErrorBuilder default transformation to JSON
+- fixed: Error handling
 
 - improved performance of the response
 - improved total performance
