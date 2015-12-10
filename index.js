@@ -406,7 +406,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-11';
+	this.version_header = '1.9.4-12';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -11762,10 +11762,14 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 		beautify = headers;
 	}
 
+	var type = 'application/json';
+
 	if (obj instanceof builders.ErrorBuilder) {
 		if (self.language && !obj.isResourceCustom)
 			obj.resource(self.language);
-		obj = obj.json(beautify);
+		if (obj.contentType)
+			type = obj.contentType;
+		obj = obj.output(beautify);
 	} else {
 		if (beautify)
 			obj = JSON.stringify(obj, replacer, 4);
@@ -11774,7 +11778,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	}
 
 	self.subscribe.success();
-	framework.responseContent(self.req, self.res, self.status, obj, 'application/json', self.config['allow-gzip'], headers);
+	framework.responseContent(self.req, self.res, self.status, obj, type, self.config['allow-gzip'], headers);
 	framework.stats.response.json++;
 
 	if (self.precache)
@@ -11845,7 +11849,7 @@ Controller.prototype.callback = function(viewName) {
 			if (err instanceof Builders.ErrorBuilder && !viewName) {
 				if (self.language)
 					err.resource(self.language);
-				return self.content(err.transform(), err.contentType);
+				return self.content(err);
 			}
 			return self.view500(err);
 		}

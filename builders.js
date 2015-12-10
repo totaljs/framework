@@ -2748,15 +2748,15 @@ ErrorBuilder.prototype._transform = function(name) {
 	return current.call(self);
 };
 
-ErrorBuilder.prototype.output = function() {
+ErrorBuilder.prototype.output = function(beautify) {
 	var self = this;
 
 	if (!self.transformName)
-		return self.json();
+		return self.json(beautify);
 
 	var current = transforms['error'][self.transformName];
 	if (!current)
-		return self.json()
+		return self.json(beautify)
 	return current.call(self);
 };
 
