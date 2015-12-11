@@ -4109,7 +4109,7 @@ Array.prototype.random = function() {
 	return self[exports.random(self.length - 1)];
 };
 
-Array.prototype.wait = Array.prototype.forAsync = function(onItem, callback, remove) {
+Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remove) {
 
 	var self = this;
 	var type = typeof(callback);
