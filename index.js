@@ -51,6 +51,7 @@ var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
 var RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var CONTENTTYPE_TEXTHTML = 'text/html';
+var POWEREDBY = '...';
 var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
 var TEMPORARY_KEY_REGEX = /\//g;
 var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
@@ -406,7 +407,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-14';
+	this.version_header = '1.9.4-15';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -548,6 +549,9 @@ function Framework() {
 	this.isLE = os.endianness ? os.endianness() === 'LE' : true;
 	this.isHTTPS = false;
 
+	// It's hidden
+	// this.waits = {};
+
 	this.temporary = {
 		path: {},
 		processing: {},
@@ -625,6 +629,7 @@ function Framework() {
 	this._length_middleware = 0;
 	this._length_request_middleware = 0;
 	this._length_files = 0;
+	this._length_wait = 0;
 
 	this.isVirtualDirectory = false;
 	this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
@@ -4378,7 +4383,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 	if (headers)
 		utils.extend(h, headers, true);
 
-	h['X-Powered-By'] = 'total.js v' + self.version_header;
+	h['X-Powered-By'] = POWEREDBY;
 
 	var options = {
 		protocol: uri.protocol,
@@ -5205,6 +5210,19 @@ Framework.prototype.response501 = function(req, res, problem) {
 	return this.responseCode(req, res, 501, problem);
 };
 
+Framework.prototype.response503 = function(req, res) {
+	var self = this;
+	var keys = '';
+	var headers = {};
+	headers[RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
+	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTHTML;
+	res.writeHead(503, headers);
+	for (var m in self.wait)
+		keys += (keys ? ', ' : '') + '<u>' + m + '</u>';
+	res.end('<html><head><meta charset="utf-8" /></head><body style="font:normal normal 11px Arial;color:gray;line-height:16px;padding:10px;background-color:white"><div style="font-size:14px;color:#505050">Please wait (<span id="time">10</span>) for <b>' + (self.config.name + ' v' + self.config.version) + '</b> application.</div>The application is waiting for: ' + keys + '.<script>var i=10;setInterval(function(){i--;if(i<0)return;document.getElementById("time").innerHTML=(i===0?"refreshing":i);if(i===0)window.location.reload();},1000);</script></body></html>', ENCODING);
+	return self;
+};
+
 /**
  * Response content
  * @param {Request} req
@@ -5435,7 +5453,6 @@ Framework.prototype.initialize = function(http, debug, options) {
 		if (self.config['allow-performance']) {
 			self.server.on('connection', function(socket) {
 				socket.setNoDelay(true);
-				// socket.setTimeout(5000); // 15 seconds
 				socket.setKeepAlive(true, 10);
 			});
 		}
@@ -5760,6 +5777,11 @@ Framework.prototype.listener = function(req, res) {
 		return;
 	}
 
+	res.setHeader('X-Powered-By', POWEREDBY);
+
+	if (self._length_wait)
+		return self.response503(req, res);
+
 	var headers = req.headers;
 	var protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
 
@@ -5840,7 +5862,6 @@ Framework.prototype.listener = function(req, res) {
 	req.isAuthorized = true;
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	res.success = false;
-	res.setHeader('X-Powered-By', 'total.js v' + self.version_header);
 
 	if (self.isDebug)
 		res.setHeader('Mode', 'debug');
@@ -6534,7 +6555,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 	}
 
 	headers['X-Assertion-Testing'] = '1';
-	headers['X-Powered-By'] = 'total.js v' + self.version_header;
+	headers['X-Powered-By'] = POWEREDBY;
 
 	if (cookies) {
 		var builder = [];
@@ -7630,6 +7651,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (self.config['allow-performance'])
 		http.globalAgent.maxSockets = 9999;
 
+	POWEREDBY = 'total.js v' + self.version_header;
 	done();
 	self.emit('configure', self.config);
 	return self;
@@ -8041,6 +8063,38 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 	}, timeout);
 
 	return fork;
+};
+
+/**
+ * This method suspends
+ * @param {String} name Operation name.
+ * @param {Boolean} enable Enable waiting (optional, default: by the current state).
+ * @return {Boolean}
+ */
+Framework.prototype.wait = function(name, enable) {
+	var self = this;
+
+	if (!self.wait)
+		self.wait = {};
+
+	if (enable !== undefined) {
+		if (enable)
+			self.wait[name] = true;
+		else
+			delete self.wait[name];
+		self._length_wait = Object.keys(self.wait).length;
+		return enable;
+	}
+
+	if (self.wait[name]) {
+		delete self.wait[name];
+	} else {
+		self.wait[name] = true;
+		enable = true;
+	}
+
+	self._length_wait = Object.keys(self.wait).length;
+	return enable === true;
 };
 
 // *********************************************************************************
