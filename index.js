@@ -4254,8 +4254,9 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	var compress = self.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.indexOf('gzip') !== -1;
 	var range = req.headers['range'] || '';
+	var canCache = RELEASE && contentType !== 'text/cache-manifest';
 
-	if (RELEASE) {
+	if (canCache) {
 		if (compress)
 			returnHeaders = range ? HEADERS['responseFile.release.compress.range'] : HEADERS['responseFile.release.compress'];
 		else
@@ -4272,9 +4273,9 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	else
 		returnHeaders.Vary = 'Accept-Encoding';
 
-	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = framework_utils.getContentType(extension);
+	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 
-	if (RELEASE && !res.getHeader('Expires')) {
+	if (canCache && !res.getHeader('Expires')) {
 		var dt = new Date();
 		dt.setFullYear(dt.getFullYear() + 1);
 		returnHeaders.Expires = dt;
@@ -4291,7 +4292,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	else if (returnHeaders['Content-Disposition'])
 		delete returnHeaders['Content-Disposition'];
 
-	if (RELEASE && etag && !res.getHeader('ETag'))
+	if (canCache && etag && !res.getHeader('ETag'))
 		returnHeaders.Etag = etag;
 	else if (returnHeaders.Etag)
 		delete returnHeaders.Etag;

@@ -13,6 +13,7 @@
 - updated: MailMessage supports display name `mail.cc('Name <vali@demail>');`
 - updated: MailMessage supports display name `mail.cc(email, [name], [clear]);`
 
+- fixed: HTTP cache for HTML 5 offline manifest files
 - fixed: async() error handling
 - fixed: NoSQL embedded paths
 - fixed: problem with empty SMTP options
