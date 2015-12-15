@@ -19,6 +19,7 @@
 - fixed: problem with empty SMTP options
 - fixed: ErrorBuilder default transformation to JSON
 - fixed: Error handling
+- fixed: SchemaBuilder request auto-validation
 
 - improved performance of the response
 - improved total performance
