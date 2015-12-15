@@ -407,7 +407,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-15';
+	this.version_header = '1.9.4-16';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -9133,7 +9133,8 @@ Subscribe.prototype.execute = function(status) {
 	var req = self.req;
 	var res = self.res;
 
-	if ((route === null || route.controller[0] === '#') && status > 399) {
+	// if ((route === null || route.controller[0] === '#') && status > 399) {
+	if (!route && status > 399) {
 		switch (status) {
 			case 400:
 				framework.stats.response.error400++;
