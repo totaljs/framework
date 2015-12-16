@@ -4402,6 +4402,9 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 
 	var client = connection.get(options, function(response) {
 
+		if (res.success || res.headersSent)
+			return;
+
 		var contentType = response.headers['content-type'];
 		var isGZIP = (response.headers['content-encoding'] || '').lastIndexOf('gzip') !== -1;
 		var compress = !isGZIP && supportsGZIP && (contentType.indexOf('text/') !== -1 || contentType.lastIndexOf('javascript') !== -1 || contentType.lastIndexOf('json') !== -1);
@@ -4430,8 +4433,8 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 
 	});
 
-	if ((timeout || 0) > 0) {
-		client.setTimeout(timeout || 3000, function() {
+	if (timeout) {
+		client.setTimeout(timeout, function() {
 			self.response408(req, res);
 			if (callback)
 				callback();

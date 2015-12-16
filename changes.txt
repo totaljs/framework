@@ -21,6 +21,7 @@
 - fixed: Error handling
 - fixed: SchemaBuilder request auto-validation
 - fixed: String.isJSON()
+- fixed: F.responsePipe() --> problem with transmitted headers
 
 - improved performance of the response
 - improved total performance
