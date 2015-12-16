@@ -2873,8 +2873,26 @@ String.prototype.isJSON = function() {
 	var self = this;
 	if (self.length <= 1)
 		return false;
-	var a = self[0];
-	var b = self[self.length - 1];
+
+	var l = self.length - 1;
+	var a;
+	var b;
+	var i = 0;
+
+	while (true) {
+		a = self[i++];
+		if (a === ' ' || a === '\n' || a === '\r' || a === '\t')
+			continue;
+		break;
+	}
+
+	while (true) {
+		b = self[l--];
+		if (a === ' ' || a === '\n' || a === '\r' || a === '\t')
+			continue;
+		break;
+	}
+
 	return (a === '"' && b === '"') || (a === '[' && b === ']') || (a === '{' && b === '}');
 };
 

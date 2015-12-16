@@ -20,6 +20,7 @@
 - fixed: ErrorBuilder default transformation to JSON
 - fixed: Error handling
 - fixed: SchemaBuilder request auto-validation
+- fixed: String.isJSON()
 
 - improved performance of the response
 - improved total performance
