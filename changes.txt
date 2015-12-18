@@ -22,6 +22,7 @@
 - fixed: SchemaBuilder request auto-validation
 - fixed: String.isJSON()
 - fixed: F.responsePipe() --> problem with transmitted headers
+- fixed: evaluating of @{helpers.helper_name()}
 
 - improved performance of the response
 - improved total performance

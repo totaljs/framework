@@ -1906,6 +1906,13 @@ function view_parse(content, minify, filename) {
 		var cmd8 = cmd.substring(0, 8);
 		var cmd7 = cmd.substring(0, 7);
 
+		cmd = cmd.replace(/helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g, function(text) {
+			var index = text.indexOf('(');
+			if (index === -1)
+				return text;
+			return text.substring(0, index) + '.call(self, ' + text.substring(index + 1);
+		});
+
 		pharse = cmd;
 
 		if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
