@@ -668,10 +668,12 @@ function pipe() {
 
 function view_cookie() {
     var self = this;
+    self.res.cookie('cookieR', 'O', new Date().add('d', 1));
     self.res.cookie('cookie1', '1', new Date().add('d', 1));
     self.res.cookie('cookie2', '2', new Date().add('d', 1));
     self.res.cookie('cookie3', '3', new Date().add('d', 1));
     self.res.cookie('cookie4', '4', new Date().add('d', 1));
+    self.res.cookie('cookieR', 'N', new Date().add('d', 1));
     self.plain('cookie');
 }
 
