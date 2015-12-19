@@ -46,8 +46,11 @@
     }, {
         "name": "Gera G. Güiles",
         "email": "gerardo.gonzalezg@gmail.com"
+    }, {
+        "name": "Radek / rsmogura",
+        "email": ""
     }],
-    "version": "1.9.4-17",
+    "version": "1.9.4-18",
     "homepage": "http://www.totaljs.com",
     "bugs": {
         "url": "https://github.com/totaljs/framework/issues",

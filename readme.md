@@ -104,6 +104,7 @@ We provide a support of the framework for companies. Our support services will k
 | Tomas Holovsky | support + enterprise | <tomasholovsky@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
+| [Radek / rsmogura](https://github.com/rsmogura) | contributor | ... |
 
 ## Other
 

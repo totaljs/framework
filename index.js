@@ -407,7 +407,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-17';
+	this.version_header = '1.9.4-18';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -13982,7 +13982,10 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 	var arr = self.getHeader('set-cookie') || [];
 
 	// Cookie, already, can be in array, resulting in duplicate 'set-cookie' header
-	var idx = arr.findIndex(cookieStr => cookieStr.startsWith(cookieHeaderStart));
+	var idx = arr.findIndex(function(cookieStr) {
+		return cookieStr.startsWith(cookieHeaderStart);
+	});
+
 	if (idx !== -1)
 		arr.splice(idx, 1);
 
