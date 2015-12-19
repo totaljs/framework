@@ -273,6 +273,9 @@ exports.resolve = function(url, callback) {
 
     var uri = parser.parse(url);
 
+    if (!callback)
+    	return dnscache[uri.host];
+
     if (dnscache[uri.host]) {
         uri.host = dnscache[uri.host];
         callback(null, uri);

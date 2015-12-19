@@ -13,6 +13,7 @@
 - updated: MailMessage supports display name `mail.to(email, [name], [clear]);`
 - updated: MailMessage supports display name `mail.cc('Name <vali@demail>');`
 - updated: MailMessage supports display name `mail.cc(email, [name], [clear]);`
+- updated: U.resolve(url, [callback]) --> `callback` is optional
 
 - fixed: HTTP cache for HTML 5 offline manifest files
 - fixed: async() error handling
