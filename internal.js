@@ -43,7 +43,7 @@ var REG_2 = /\s{2,}/g;
 var REG_3 = /\/{1,}/g;
 var REG_4 = /\n\s{2,}./g;
 var REG_5 = />\n\s{1,}</g;
-var REG_6 = /(\w|\")+\s{2,}\w+/g;
+var REG_6 = /(\w|\"|[\u0080-\u07ff])+\s{2,}(\w|[\u0080-\u07ff])+/g;
 var REG_BLOCK_BEG = /\@\{block.*?\}/gi;
 var REG_BLOCK_END = /\@\{end\}/gi;
 
