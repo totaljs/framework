@@ -13947,7 +13947,8 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 	if (self.headersSent || self.success)
 		return;
 
-	var builder = [name + '=' + encodeURIComponent(value)];
+	var cookieHeaderStart = name + '=';
+	var builder = [cookieHeaderStart + encodeURIComponent(value)];
 	var type = typeof(expires);
 
 	if (expires && !framework_utils.isDate(expires) && type === OBJECT) {
@@ -13979,6 +13980,12 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 		builder.push('HttpOnly');
 
 	var arr = self.getHeader('set-cookie') || [];
+
+	// Cookie, already, can be in array, resulting in duplicate 'set-cookie' header
+	var idx = arr.findIndex(cookieStr => cookieStr.startsWith(cookieHeaderStart));
+	if (idx !== -1)
+		arr.splice(idx, 1);
+
 	arr.push(builder.join('; '));
 	self.setHeader('Set-Cookie', arr);
 	return self;
