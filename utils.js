@@ -1936,6 +1936,10 @@ exports.parseJSON = function(value) {
 	}
 };
 
+exports.onParseQuery = function(value) {
+	return framework.onParseQuery(value);
+};
+
 /**
  * Get WebSocket frame
  * @author Jozef Gula <gula.jozef@gmail.com>
@@ -2519,11 +2523,15 @@ String.prototype.count = function(text) {
  * @return {Object}
  */
 String.prototype.parseXML = function() {
-	return exports.parseXML(this);
+	return framework.onParseXML(this);
 };
 
 String.prototype.parseJSON = function() {
 	return exports.parseJSON(this);
+};
+
+String.prototype.parseQuery = function() {
+	return exports.parseQuery(this);
 };
 
 /**
