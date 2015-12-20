@@ -43,7 +43,7 @@ var REG_2 = /\s{2,}/g;
 var REG_3 = /\/{1,}/g;
 var REG_4 = /\n\s{2,}./g;
 var REG_5 = />\n\s{1,}</g;
-var REG_6 = /(\w|\"|[\u0080-\u07ff])+\s{2,}(\w|[\u0080-\u07ff])+/g;
+var REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
 var REG_BLOCK_BEG = /\@\{block.*?\}/gi;
 var REG_BLOCK_END = /\@\{end\}/gi;
 
@@ -1738,12 +1738,6 @@ MultipartParser.prototype.explain = function() {
 // =================================================================================
 // *********************************************************************************
 
-/*
-	View class
-	return {View}
-*/
-function View() {}
-
 function view_parse_localization(content, language) {
 
 	var is = false;
@@ -2846,9 +2840,16 @@ function compressHTML(html, minify) {
 	}
 
 	// html = html.replace(/>\n\s+/g, '>').replace(/\w\n\s+</g, function(text) {
-	html = html.replace(REG_6, function(text) {
-		return text.replace(/\s+/g, ' ');
-	}).replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
+
+	while (true) {
+		if (!html.match(REG_6))
+			break;
+		html = html.replace(REG_6, function(text) {
+			return text.replace(/\s+/g, ' ');
+		});
+	}
+
+	html = html.replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
 		return text.trim().replace(/\s/g, '');
 	}).replace(REG_5, '><').replace(REG_4, function(text) {
 		var c = text[text.length - 1];
@@ -2868,13 +2869,13 @@ function compressHTML(html, minify) {
  * @param {String} path
  * @return {Object}
  */
-View.prototype.read = function(path, language) {
+function viewengine_read(path, language) {
 	var config = framework.config;
 	var isOut = path[0] === '.';
 	var filename = isOut ? path.substring(1) : framework.path.views(path);
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(this.modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
+		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
 
 	if (isOut)
 		return null;
@@ -2886,12 +2887,12 @@ View.prototype.read = function(path, language) {
 	filename = framework.path.views(path.substring(index + 1));
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(this.modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
+		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
 
 	return null;
 };
 
-View.prototype.modify = function(value, filename) {
+function viewengine_modify(value, filename) {
 
 	if (!framework.modificators)
 		return value;
@@ -2905,19 +2906,15 @@ View.prototype.modify = function(value, filename) {
 	return value;
 };
 
-/**
- * Load view
- * @param {String} name
- * @param {String} filename
- * @return {Objec}
- */
-View.prototype.load = function(name, filename, language) {
-
-	var self = this;
+function viewengine_load(name, filename, language) {
 
 	// Is dynamic content?
-	if (name.indexOf('@{') !== -1 || name.indexOf('<') !== -1)
-		return self.dynamic(name, language);
+
+	if (framework.temporary.other[name] === undefined)
+		framework.temporary.other[name] = name.indexOf('@{') !== -1 || name.indexOf('<') !== -1;
+
+	if (framework.temporary.other[name])
+		return viewengine_dynamic(name, language);
 
 	var precompiled = framework.routes.views[name];
 
@@ -2936,38 +2933,36 @@ View.prototype.load = function(name, filename, language) {
 	if (generator !== null)
 		return generator;
 
-	generator = self.read(filename, language);
+	generator = viewengine_read(filename, language);
 
 	if (!framework.isDebug)
 		framework.temporary.views[key] = generator;
 
 	return generator;
-};
+}
 
 /*
 	Compile dynamic view
 	@content {String}
 	return {Object} :: return parsed HTML
 */
-View.prototype.dynamic = function(content, language) {
+function viewengine_dynamic(content, language) {
 	var key = content.hash();
 	var generator = framework.temporary.views[key] || null;
 	if (generator !== null)
 		return generator;
-	generator = view_parse(view_parse_localization(this.modify(content, ''), language), framework.config['allow-compile-html']);
+	generator = view_parse(view_parse_localization(viewengine_modify(content, ''), language), framework.config['allow-compile-html']);
 	if (!framework.isDebug)
 		framework.temporary.views[key] = generator;
 	return generator;
 };
 
 /*
-	Render view from file
+	Renders view from file or dynamic template
 	@name {String}
 	return {Object}
 */
-exports.generateView = function(name, plus, language) {
-	return new View().load(name, plus, language);
-};
+exports.viewEngine = viewengine_load;
 
 exports.appendModel = function(str) {
 	var index = str.indexOf('(');

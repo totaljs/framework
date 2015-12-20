@@ -25,9 +25,11 @@
 - fixed: String.isJSON()
 - fixed: F.responsePipe() --> problem with transmitted headers
 - fixed: evaluating of @{helpers.helper_name()}
+- fixed: HTML minification of UTF8 characters
 
 - improved performance of the response
 - improved total performance
+- improved view engine performance
 
 ======= 1.9.3
 

@@ -407,7 +407,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-19';
+	this.version_header = '1.9.4-20';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -12576,7 +12576,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var isLayout = self.isLayout;
 	self.isLayout = false;
 
-	if (!self.isLayout && skip === 0)
+	if (!self.isLayout && !skip)
 		filename = self._currentView + name;
 
 	if (skip === 2 || skip === 3)
@@ -12585,8 +12585,8 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (skip === 3)
 		filename = '.' + framework.path.package(filename);
 
-	var generator = framework_internal.generateView(name, filename, self.language);
-	if (generator === null) {
+	var generator = framework_internal.viewEngine(name, filename, self.language);
+	if (!generator) {
 
 		var err = new Error('View "' + filename + '" not found.');
 
