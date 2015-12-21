@@ -1333,12 +1333,29 @@ exports.getContentType = function(ext) {
  * @return {String}
  */
 exports.getExtension = function(filename) {
-	if (!filename)
-		return '';
 	var index = filename.lastIndexOf('.');
 	if (index === -1)
 		return '';
 	return filename.substring(index);
+};
+
+/**
+ * Get base name from path
+ * @param {String} path
+ * @return {String}
+ */
+exports.getName = function(path) {
+	var l = path.length - 1;
+	var c = path[l];
+	if (c === '/' || c === '\\')
+		path = path.substring(0, l);
+	var index = path.lastIndexOf('/');
+	if (index !== -1)
+		return path.substring(index + 1);
+	index = path.lastIndexOf('\\');
+	if (index !== -1)
+		return path.substring(index + 1);
+	return path;
 };
 
 /**

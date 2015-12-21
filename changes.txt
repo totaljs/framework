@@ -5,6 +5,7 @@
 - added: `String.prototype.soundex()`
 - added: `F.wait(name, [enable])` the server waits for pending task and it responds via 503 status code
 - added: `U.parseQuery()` and `String.parseQuery()`
+- added: `U.getName(path)`
 
 - updated: `Date.format()` supports `w` and `ww` for week number
 - updated: `Date.add()` supports `w`, `ww`, `week`, `weeks`
