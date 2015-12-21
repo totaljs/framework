@@ -6,6 +6,12 @@
 - added: `F.wait(name, [enable])` the server waits for pending task and it responds via 503 status code
 - added: `U.parseQuery()` and `String.parseQuery()`
 - added: `U.getName(path)`
+- added: `F.on('error400')`
+- added: `F.on('error401')`
+- added: `F.on('error403')`
+- added: `F.on('error404')`
+- added: `F.on('error408')`
+- added: `F.on('error431')`
 
 - updated: `Date.format()` supports `w` and `ww` for week number
 - updated: `Date.add()` supports `w`, `ww`, `week`, `weeks`

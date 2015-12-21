@@ -407,7 +407,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-20';
+	this.version_header = '1.9.4-21';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -5148,6 +5148,7 @@ Framework.prototype.responseCode = function(req, res, code, problem) {
 		self.emit('request-end', req, res);
 
 	var key = 'error' + code;
+	self.emit(key, req, res, problem);
 	self.stats.response[key]++;
 	return self;
 };
@@ -9164,6 +9165,8 @@ Subscribe.prototype.execute = function(status) {
 				framework.stats.response.error501++;
 				break;
 		}
+		if (status !== 500)
+			framework.emit('error' + status, req, res, self.exception);
 	}
 
 	if (route === null) {
