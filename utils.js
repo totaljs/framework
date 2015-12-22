@@ -218,8 +218,32 @@ exports.isEqual = function(obj1, obj2, properties) {
 
 	for (var i = 0, length = keys.length; i < length; i++) {
 		var key = keys[i];
-		if (obj1[key] === obj2[key])
+		var a = obj1[key];
+		var b = obj2[key];
+		var ta = typeof(a);
+		var tb = typeof(b);
+
+		if (ta !== tb)
+			return false;
+
+		if (a === b)
 			continue;
+
+		if (a instanceof Date && b instanceof Date) {
+			if (a.getTime() === b.getTime())
+				continue;
+			return false;
+		} else if (a instanceof Array && b instanceof Array) {
+			if (JSON.stringify(a) === JSON.stringify(b))
+				continue;
+			return false;
+		}
+
+		if (ta === OBJECT && tb === OBJECT) {
+			if (exports.isEqual(a, b))
+				continue;
+		}
+
 		return false;
 	}
 

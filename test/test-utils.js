@@ -595,8 +595,8 @@ function other() {
 		}, 300);
 	});
 
-	var a = { a: 1, b: 2, name: 'Peter', isActive: true };
-	var b = { a: 1, b: 2, name: 'Peter', isActive: true };
+	var a = { a: 1, b: 2, name: 'Peter', isActive: true, dt: new Date() };
+	var b = { a: 1, b: 2, name: 'Peter', isActive: true, dt: new Date() };
 
 	assert.ok(utils.isEqual(a, b), 'utils.isEqual(1)');
 

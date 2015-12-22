@@ -33,6 +33,7 @@
 - fixed: F.responsePipe() --> problem with transmitted headers
 - fixed: evaluating of @{helpers.helper_name()}
 - fixed: HTML minification of UTF8 characters
+- fixed: U.isEqual()
 
 - improved performance of the response
 - improved total performance
