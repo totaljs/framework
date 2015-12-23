@@ -221,7 +221,7 @@ Image.prototype.save = function(filename, callback, writer) {
 
 	filename = filename || self.filename || '';
 
-	var command = self.cmd(self.filename === null ? '-' : self.filename, filename);
+	var command = self.cmd(!self.filename ? '-' : self.filename, filename);
 	if (framework.isWindows)
 		command = command.replace(/\//g, '\\');
 
@@ -300,7 +300,7 @@ Image.prototype.pipe = function(stream, type, options) {
 	if (type === undefined || type === null)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, (type ? type + ':' : '') + '-'));
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(!self.filename ? '-' : self.filename, (type ? type + ':' : '') + '-'));
 
 	cmd.stderr.on('data', stream.emit.bind(stream, 'error'));
 	cmd.stdout.on('data', stream.emit.bind(stream, 'data'));
@@ -334,7 +334,7 @@ Image.prototype.stream = function(type, writer) {
 	if (type === undefined || type === null)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, (type ? type + ':' : '') + '-'));
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(!self.filename ? '-' : self.filename, (type ? type + ':' : '') + '-'));
 
 	if (self.currentStream) {
 		if (self.currentStream instanceof Buffer)
