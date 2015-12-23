@@ -34,6 +34,7 @@
 - fixed: evaluating of @{helpers.helper_name()}
 - fixed: HTML minification of UTF8 characters
 - fixed: U.isEqual()
+- fixed: FrameworkImage.save() in Windows by LiaoTzukai
 
 - improved performance of the response
 - improved total performance

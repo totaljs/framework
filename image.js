@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 1.9.2
+ * @version 1.9.4
  */
 
 'use strict';
@@ -222,8 +222,10 @@ Image.prototype.save = function(filename, callback, writer) {
 	filename = filename || self.filename || '';
 
 	var command = self.cmd(self.filename === null ? '-' : self.filename, filename);
+	if (framework.isWindows)
+		command = command.replace(/\//g, '\\');
 
-	if (self.builder.length === 0) {
+	if (!self.builder.length) {
 		if (!callback)
 			return;
 		setImmediate(function() {
@@ -292,7 +294,7 @@ Image.prototype.pipe = function(stream, type, options) {
 		type = null;
 	}
 
-	if (self.builder.length === 0)
+	if (!self.builder.length)
 		return;
 
 	if (type === undefined || type === null)
@@ -326,7 +328,7 @@ Image.prototype.stream = function(type, writer) {
 
 	var self = this;
 
-	if (self.builder.length === 0)
+	if (!self.builder.length)
 		return;
 
 	if (type === undefined || type === null)
