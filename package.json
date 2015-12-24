@@ -52,8 +52,11 @@
     },{
         "name": "LiaoTzukai",
         "email": "liaotzukai@gmail.com"
+    },{
+        "name": "deadman2000",
+        "email": ""
     }],
-    "version": "1.9.4-23",
+    "version": "1.9.4-24",
     "homepage": "http://www.totaljs.com",
     "bugs": {
         "url": "https://github.com/totaljs/framework/issues",

@@ -106,6 +106,7 @@ We provide a support of the framework for companies. Our support services will k
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
 | [Radek / rsmogura](https://github.com/rsmogura) | contributor | ... |
 | [LiaoTzukai](https://github.com/liaotzukai) | contributor | <liaotzukai@gmail.com> |
+| [deadman2000](https://github.com/deadman2000) | contributor | ... |
 
 ## Other
 
