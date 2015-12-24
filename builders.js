@@ -1525,6 +1525,15 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 				// schema
 				case 7:
+
+					if (!val) {
+						val = defaults(property, false, self.name);
+						if (val === null) {
+							item[property] = null;
+							break;
+						}
+					}
+
 					entity = self.parent.get(type.raw);
 					if (entity) {
 						item[property] = entity.prepare(val);
