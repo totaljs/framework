@@ -2219,7 +2219,8 @@ function view_prepare(command, dynamicCommand, functions) {
 			return 'self.' + command;
 
 		case 'translate':
-			return 'self.' + command;
+		case 'TRANSLATE':
+			return 'self.' + command.toLowerCase();
 
 		case 'json':
 		case 'image':
