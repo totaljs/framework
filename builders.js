@@ -1534,9 +1534,12 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						}
 					}
 
-					if (val && val.$schema && val.$schema().name === type.raw) {
-						item[property] = val;
-						break;
+					if (val && typeof(val.$schema) === FUNCTION) {
+						tmp = val.$schema();
+						if (tmp && tmp.name && tmp.name === type.raw) {
+							item[property] = val;
+							break;
+						}
 					}
 
 					entity = self.parent.get(type.raw);
