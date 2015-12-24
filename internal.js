@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.3
+ * @version 1.9.4
  */
 
 'use strict';
@@ -2008,7 +2008,7 @@ function view_parse(content, minify, filename) {
 			builder += '+' + escaper(text);
 	}
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
 }
 
@@ -2908,8 +2908,10 @@ function viewengine_modify(value, filename) {
 
 function viewengine_load(name, filename, language) {
 
-	// Is dynamic content?
+	// console.log(name, filename);
 
+	// Is dynamic content?
+	// console.log(filename);
 	if (framework.temporary.other[name] === undefined)
 		framework.temporary.other[name] = name.indexOf('@{') !== -1 || name.indexOf('<') !== -1;
 

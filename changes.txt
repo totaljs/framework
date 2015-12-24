@@ -1,10 +1,14 @@
 ======= 1.9.4 (BETA)
 
+- added: (IMPORTANT) new feature: THEMES
+- added: `@{theme}` --> return String
+- added: `controller.theme(theme_name)` --> select theme;
 - added: `U.keywords(content, [forSearch], [alternative(true|false|soundex)], [max_count(200)], [max_length(20)], [min_length(2)]);`
 - added: `String.prototype.keywords([forSearch], [alternative(true|false|soundex)], [max_count(200)], [max_length(20)], [min_length(2)])`
 - added: `String.prototype.soundex()`
 - added: `F.wait(name, [enable])` the server waits for pending task and it responds via 503 status code
 - added: `U.parseQuery()` and `String.parseQuery()`
+- added: `U.join(path1, path2, path3)`
 - added: `U.getName(path)`
 - added: `F.on('error400')`
 - added: `F.on('error401')`

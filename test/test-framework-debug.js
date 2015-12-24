@@ -316,7 +316,6 @@ function test_routing(next) {
 		});
 	});
 
-
 	async.await('package/', function(complete) {
 		utils.request(url + 'package/', 'GET', null, function(error, data, code, headers) {
 			if (error)
@@ -667,6 +666,42 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('theme-green', function(complete) {
+		utils.request(url + '/green/js/default.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'var a=1+1;', 'Themes: problem with static files.');
+			complete();
+		});
+	});
+
+	async.await('theme-green-merge', function(complete) {
+		utils.request(url + '/merge-theme.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('var a=1+1;') !== -1 && data.indexOf('var b=2+2;'), 'Themes: problem with merging static files');
+			complete();
+		});
+	});
+
+	async.await('theme-green-map', function(complete) {
+		utils.request(url + '/map-theme.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'var a=1+1;', 'Themes: problem with mapping static files.');
+			complete();
+		});
+	});
+
+	async.await('theme-green', function(complete) {
+		utils.request(url + 'theme-green/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			console.log('--->', data);
+			complete();
+		});
+	});
+
 	async.complete(function() {
 		next && next();
 	});
@@ -680,6 +715,7 @@ function run() {
 		framework.fs.rm.view('fromURL');
 
 		assert.ok(framework.global.middleware > 0, 'middleware - middleware');
+		assert.ok(framework.global.theme > 0, 'theme - initialization');
 		assert.ok(framework.global.all > 0, 'middleware - global');
 		assert.ok(framework.global.file > 0, 'middleware - file');
 		assert.ok(framework.global.timeout > 0, 'timeout');

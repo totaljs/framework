@@ -407,7 +407,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-23';
+	this.version_header = '1.9.4-24';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -445,6 +445,7 @@ function Framework() {
 		'directory-isomorphic': '/isomorphic/',
 		'directory-configs': '/configs/',
 		'directory-services': '/services/',
+		'directory-themes': '/themes/',
 
 		// all HTTP static request are routed to directory-public
 		'static-url': '',
@@ -501,6 +502,7 @@ function Framework() {
 	this.resources = {};
 	this.connections = {};
 	this.functions = {};
+	this.themes = {};
 	this.versions = null;
 	this.schedules = [];
 
@@ -558,7 +560,8 @@ function Framework() {
 		range: {},
 		views: {},
 		dependencies: {}, // temporary for module dependencies
-		other: {}
+		other: {},
+		internal: {} // internal controllers/modules names for the routing
 	};
 
 	this.stats = {
@@ -630,9 +633,10 @@ function Framework() {
 	this._length_request_middleware = 0;
 	this._length_files = 0;
 	this._length_wait = 0;
+	this._length_themes = 0;
 
 	this.isVirtualDirectory = false;
-	this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
+	this.isTheme = false;	this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
 }
 
 // ======================================================
@@ -747,6 +751,9 @@ Framework.prototype._routesSort = function() {
 
 	for (var i = 0; i < length; i++) {
 		var route = self.routes.web[i];
+		var name = self.temporary.internal[route.controller];
+		if (name)
+			route.controller = name;
 		if (!route.isMOBILE)
 			continue;
 		if (route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML)
@@ -1421,7 +1428,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		priority: priority,
 		schema: schema,
 		subdomain: subdomain,
-		controller: !_controller ? 'unknown' : _controller,
+		controller: _controller ? _controller : 'unknown',
 		url: routeURL,
 		param: arr,
 		flags: flags || [],
@@ -1507,8 +1514,11 @@ Framework.prototype.merge = function(url) {
 
 		for (var j = 0, lengthsub = items.length; j < lengthsub; j++) {
 			var fn = items[j];
-			if (fn[0] === '@')
+			var c = fn[0];
+			if (c === '@')
 				fn = '~' + framework.path.package(fn.substring(1));
+			else if (c === '=')
+				fn = '~' + framework.path.themes(fn.substring(1));
 			arr.push(fn);
 		}
 	}
@@ -1571,12 +1581,20 @@ Framework.prototype.map = function(url, filename, filter) {
 		block = tmp[1];
 	}
 
+	var c = filename[0];
+
 	// package
-	if (filename[0] === '@') {
+	if (c === '@') {
 		if (framework.isWindows)
-			filename = utils.combine(framework.config['directory-temp'], filename.substring(1));
+			filename = framework_utils.combine(framework.config['directory-temp'], filename.substring(1));
 		else
 			filename = self.path.package(filename.substring(1));
+		isPackage = true;
+	} else if (c === '=') {
+		if (framework.isWindows)
+			filename = framework_utils.combine(framework.config['directory-themes'], filename.substring(1));
+		else
+			filename = self.path.themes(filename.substring(1));
 		isPackage = true;
 	}
 
@@ -2149,7 +2167,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	if (!targetdirectory)
 		targetdirectory = directory;
 
-	function listing(directory, level, output, extension) {
+	function listing(directory, level, output, extension, isTheme) {
 		if (!fs.existsSync(dir))
 			return;
 
@@ -2158,6 +2176,12 @@ Framework.prototype.$load = function(types, targetdirectory) {
 
 		fs.readdirSync(directory).forEach(function(o) {
 			var isDirectory = fs.statSync(path.join(directory, o)).isDirectory();
+
+			if (isDirectory && isTheme) {
+				output.push({ name: o });
+				return;
+			}
+
 			if (isDirectory) {
 
 				if (extension === '.package' && o.endsWith(extension)) {
@@ -2258,11 +2282,25 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		});
 	}
 
+	if (!types || types.indexOf('themes') !== -1) {
+		arr = [];
+		dir = path.join(targetdirectory, self.config['directory-themes']);
+		listing(dir, 0, arr, undefined, true);
+		arr.forEach(function(item) {
+			var themeName = item.name;
+			var themeDirectory = path.join(dir, themeName);
+			var filename = path.join(themeDirectory, 'index.js');
+			self.themes[item.name] = framework_utils.path(themeDirectory);
+			self._length_themes++;
+			if (fs.existsSync(filename))
+				self.install('theme', item.name, filename, undefined, undefined, undefined, true);
+		});
+	}
+
 	if (!types || types.indexOf('controllers') !== -1) {
 		arr = [];
 		dir = path.join(targetdirectory, self.config['directory-controllers']);
 		listing(dir, 0, arr);
-
 		arr.forEach(function(item) {
 			self.install('controller', item.name, item.filename, undefined, undefined, undefined, true);
 		});
@@ -2475,6 +2513,37 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			}, internal, useRequired, true);
 
 		});
+
+		return self;
+	}
+
+	if (type === 'theme') {
+
+		obj = require(declaration);
+
+		if (typeof(obj.install) === TYPE_FUNCTION) {
+			if (framework.config['allow-compatibility'] || obj.install.toString().indexOf('function (framework') === 0) {
+				OBSOLETE(key, 'exports.install = function(framework <--- REMOVE THE ARGUMENT framework');
+				obj.install(self, options, name);
+			} else
+				obj.install(options, name);
+		}
+
+		if (!skipEmit) {
+			setTimeout(function() {
+				self.emit(type + '#' + name);
+				self.emit('install', type, name);
+			}, 500);
+		}
+
+		if (callback)
+			callback(null);
+
+		(function(name, filename) {
+			setTimeout(function() {
+				delete require.cache[name];
+			}, 1000);
+		})(require.resolve(declaration), declaration);
 
 		return self;
 	}
@@ -2925,6 +2994,7 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 	var routeID = me._id;
 	var type = me.type;
 
+	self.temporary.internal[me._id] = name;
 	_controller = routeID;
 
 	if (typeof(obj.install) === TYPE_FUNCTION) {
@@ -3169,10 +3239,22 @@ Framework.prototype.onVersion = null;
  * @return {String}
  */
 Framework.prototype.onMapping = function(url, def) {
+
 	if (url[0] !== '/')
 		url = '/' + url;
+
+	if (this._length_themes) {
+		var index = url.indexOf('/', 1);
+		if (index !== -1) {
+			var themeName = url.substring(1, index);
+			if (this.themes[themeName])
+				return this.themes[themeName] + 'public' + url.substring(index);
+		}
+	}
+
 	if (this.routes.mapping[url])
 		return this.routes.mapping[url];
+
 	return def;
 };
 
@@ -3906,7 +3988,6 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		} else {
 			filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
 		}
-
 	} else
 		filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
 
@@ -7678,13 +7759,11 @@ Framework.prototype.routeJS = function(name) {
  * @param {String} name
  * @return {String}
  */
-Framework.prototype.routeScript = function(name) {
+Framework.prototype.routeScript = function(name, theme) {
 	var self = this;
-
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		name += EXTENSION_JS;
-
-	return self._routeStatic(name, self.config['static-url-script']);
+	return self._routeStatic(name, self.config['static-url-script'], theme);
 };
 
 /**
@@ -7703,13 +7782,13 @@ Framework.prototype.routeCSS = function(name) {
  * @param {String} name
  * @return {String}
  */
-Framework.prototype.routeStyle = function(name) {
+Framework.prototype.routeStyle = function(name, theme) {
 	var self = this;
 
 	if (name.lastIndexOf('.css') === -1)
 		name += '.css';
 
-	return self._routeStatic(name, self.config['static-url-style']);
+	return self._routeStatic(name, self.config['static-url-style'], theme);
 };
 
 /*
@@ -7717,9 +7796,9 @@ Framework.prototype.routeStyle = function(name) {
 	@name {String} :: filename
 	return {String}
 */
-Framework.prototype.routeImage = function(name) {
+Framework.prototype.routeImage = function(name, theme) {
 	var self = this;
-	return self._routeStatic(name, self.config['static-url-image']);
+	return self._routeStatic(name, self.config['static-url-image'], theme);
 };
 
 /*
@@ -7727,9 +7806,9 @@ Framework.prototype.routeImage = function(name) {
 	@name {String} :: filename
 	return {String}
 */
-Framework.prototype.routeVideo = function(name) {
+Framework.prototype.routeVideo = function(name, theme) {
 	var self = this;
-	return self._routeStatic(name, self.config['static-url-video']);
+	return self._routeStatic(name, self.config['static-url-video'], theme);
 };
 
 /*
@@ -7737,9 +7816,9 @@ Framework.prototype.routeVideo = function(name) {
 	@name {String} :: filename
 	return {String}
 */
-Framework.prototype.routeFont = function(name) {
+Framework.prototype.routeFont = function(name, theme) {
 	var self = this;
-	return self._routeStatic(name, self.config['static-url-font']);
+	return self._routeStatic(name, self.config['static-url-font'], theme);
 };
 
 /*
@@ -7747,9 +7826,9 @@ Framework.prototype.routeFont = function(name) {
 	@name {String} :: filename
 	return {String}
 */
-Framework.prototype.routeDownload = function(name) {
+Framework.prototype.routeDownload = function(name, theme) {
 	var self = this;
-	return self._routeStatic(name, self.config['static-url-download']);
+	return self._routeStatic(name, self.config['static-url-download'], theme);
 };
 
 /*
@@ -7757,9 +7836,9 @@ Framework.prototype.routeDownload = function(name) {
 	@name {String} :: filename
 	return {String}
 */
-Framework.prototype.routeStatic = function(name) {
+Framework.prototype.routeStatic = function(name, theme) {
 	var self = this;
-	return self._routeStatic(name, self.config['static-url']);
+	return self._routeStatic(name, self.config['static-url'], theme);
 };
 
 /*
@@ -7768,8 +7847,13 @@ Framework.prototype.routeStatic = function(name) {
 	@directory {String} :: directory
 	return {String}
 */
-Framework.prototype._routeStatic = function(name, directory) {
-	return this._version((name[0] === '/' ? '' : directory) + this._version(name));
+Framework.prototype._routeStatic = function(name, directory, theme) {
+	var key = name + directory + '$' + theme;
+	var val = framework.temporary.other[key];
+	if (RELEASE && val)
+		return val;
+	var filename = framework_utils.join(theme, directory, this._version(name));
+	return framework.temporary.other[key] = this._version(filename);
 };
 
 /*
@@ -8777,6 +8861,10 @@ FrameworkPath.prototype.services = function(filename) {
 
 FrameworkPath.prototype.packages = function(filename) {
 	return framework_utils.combine(framework.config['directory-packages'], filename || '');
+};
+
+FrameworkPath.prototype.themes = function(filename) {
+	return framework_utils.combine(framework.config['directory-themes'], filename || '');
 };
 
 FrameworkPath.prototype.root = function(filename) {
@@ -10520,22 +10608,33 @@ Controller.prototype.module = function(name) {
 	return framework.module(name);
 };
 
-/*
-	Layout setter
-	@name {String} :: layout filename
-	return {Controller};
-*/
+/**
+ * Layout setter
+ * @param {String} name
+ * @return {Controller}
+ */
 Controller.prototype.layout = function(name) {
 	var self = this;
 	self.layoutName = name;
 	return self;
 };
 
-/*
-	Layout setter
-	@name {String} :: layout filename
-	return {Controller};
-*/
+/**
+ * Theme setter
+ * @param {String} name
+ * @return {Controller}
+ */
+Controller.prototype.theme = function(name) {
+	var self = this;
+	self.themeName = name;
+	return self;
+};
+
+/**
+ * Layout setter for views
+ * @param {String} name Layout name
+ * @return {String}
+ */
 Controller.prototype.$layout = function(name) {
 	var self = this;
 	self.layoutName = name;
@@ -11466,12 +11565,12 @@ Controller.prototype.$favicon = function(name) {
  */
 Controller.prototype._routeHelper = function(current, name, fn) {
 	if (!current)
-		return fn.call(framework, name);
+		return fn.call(framework, name, this.themeName);
 	if (current.substring(0, 2) === '//' || current.substring(0, 6) === 'http:/' || current.substring(0, 7) === 'https:/')
-		return fn.call(framework, current + name);
+		return fn.call(framework, current + name, this.themeName);
 	if (current[0] === '~')
-		return fn.call(framework, framework_utils.path(current.substring(1)) + name);
-	return fn.call(framework, framework_utils.path(current) + name);
+		return fn.call(framework, framework_utils.path(current.substring(1)) + name, this.themeName);
+	return fn.call(framework, framework_utils.path(current) + name, this.themeName);
 };
 
 /**
@@ -12578,9 +12677,12 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var skip = c === '/' ? 1 : c === '~' ? 2 : c === '@' ? 3 : 0;
 	var filename = name;
 	var isLayout = self.isLayout;
+
 	self.isLayout = false;
 
-	if (!self.isLayout && !skip)
+	if (self.themeName)
+		filename = '.' + framework.path.themes(self.themeName + '/views/' + name);
+	else if (!self.isLayout && !skip)
 		filename = self._currentView + name;
 
 	if (skip === 2 || skip === 3)

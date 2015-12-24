@@ -136,6 +136,8 @@ exports.install = function() {
     // allow []
     // maximumSize
     framework.websocket('/', socket);
+
+    framework.route('/theme-green/', view_theme);
 };
 
 function plain_options() {
@@ -709,4 +711,10 @@ function mobile() {
 
 function mobile_none() {
     this.plain('NO-MOBILE');
+}
+
+function view_theme() {
+    var self = this;
+    self.theme('green');
+    self.view('index');
 }

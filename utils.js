@@ -1426,6 +1426,21 @@ exports.path = function(path, delimiter) {
 	return path + delimiter;
 };
 
+exports.join = function() {
+	var path = '';
+	for (var i = 0; i < arguments.length - 1; i++) {
+		var current = arguments[i];
+		if (!current)
+			continue;
+		if (current[0] === '/')
+			current = current.substring(1);
+		path += exports.path(current);
+	}
+
+	path = path + arguments[arguments.length - 1];
+	return (path[0] !== '/' ? '/' : '') + path;
+};
+
 /**
  * Prepares Windows path to UNIX like format
  * @internal
