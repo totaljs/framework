@@ -1132,6 +1132,8 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	if (type === STRING) {
 		viewname = funcExecute;
 		funcExecute = function(name) {
+			if (viewname[0] === '~')
+				this.themeName = '';
 			this.view(viewname);
 		};
 	} else if (typeof(funcExecute) !== TYPE_FUNCTION) {
@@ -1149,6 +1151,8 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 			viewname = 'index';
 
 		funcExecute = function() {
+			if (viewname[0] === '~')
+				this.theme('');
 			this.view(viewname);
 		};
 	}
@@ -1990,6 +1994,7 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, o
 Framework.prototype.localize = function(name, url, middleware, options, minify) {
 
 	var self = this;
+
 	url = url.replace('*', '');
 
 	var index = url.lastIndexOf('.');
@@ -3225,6 +3230,13 @@ Framework.prototype.onAuthorization = null;
 	@return {String}
 */
 Framework.prototype.onLocate = null;
+
+/**
+ * Sets theme to controlller
+ * @controller {Controller}
+ * @return {String}
+ */
+Framework.prototype.onTheme = null;
 
 /*
 	Versioning static files (this delegate call LESS CSS by the background property)
@@ -6502,8 +6514,10 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 	}
 
 	var controller = new Controller('', null, null, null, '');
-
 	controller.layoutName = '';
+
+	if (this.onTheme)
+		controller.themeName = this.onTheme(controller);
 
 	var replyTo;
 
@@ -6544,6 +6558,9 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 
 	controller.layoutName = layout || '';
 	controller.language = language;
+
+	if (this.onTheme)
+		controller.themeName = this.onTheme(controller);
 
 	if (typeof(repository) === OBJECT && repository !== null)
 		controller.repository = repository;
@@ -9287,7 +9304,6 @@ Subscribe.prototype.execute = function(status, isError) {
 
 	controller.isTransfer = self.isTransfer;
 	controller.exception = self.exception;
-
 	self.controller = controller;
 
 	if (!self.isCanceled && route.timeout > 0) {
@@ -9374,6 +9390,9 @@ Subscribe.prototype.doExecute = function() {
 	var req = self.req;
 
 	try {
+
+		if (framework.onTheme)
+			controller.themeName = framework.onTheme(controller);
 
 		if (controller.isCanceled)
 			return self;
