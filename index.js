@@ -12682,7 +12682,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	self.isLayout = false;
 
-	if (self.themeName)
+	if (self.themeName && !skip)
 		filename = '.' + framework.path.themes(self.themeName + '/views/' + name);
 	else if (!self.isLayout && !skip)
 		filename = self._currentView + name;
