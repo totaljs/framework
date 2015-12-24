@@ -5249,7 +5249,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 	var ip = options.ip;
 
 	if (options.config)
-		framework_utils.copy(options.copy, self.config);
+		framework_utils.copy(options.config, self.config);
 
 	self.isHTTPS = typeof(http.STATUS_CODES) === UNDEFINED;
 	if (isNaN(port) && typeof(port) !== STRING)
