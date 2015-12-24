@@ -460,6 +460,7 @@ function Framework() {
 		// 'static-accepts-custom': [],
 
 		'default-layout': 'layout',
+		'default-theme': '',
 
 		// default maximum request size / length
 		// default 5 kB
@@ -9702,6 +9703,7 @@ function Controller(name, req, res, subscribe, currentView) {
 	this.type = 0;
 
 	this.layoutName = framework.config['default-layout'];
+	this.themeName = framework.config['default-theme'];
 	this.status = 200;
 
 	this.isLayout = false;

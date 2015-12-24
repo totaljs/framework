@@ -3,6 +3,7 @@
 - added: (IMPORTANT) new feature: THEMES
 - added: `@{theme}` --> return String
 - added: `controller.theme(theme_name)` --> select theme;
+- added: `config['default-theme']`
 - added: `U.keywords(content, [forSearch], [alternative(true|false|soundex)], [max_count(200)], [max_length(20)], [min_length(2)]);`
 - added: `String.prototype.keywords([forSearch], [alternative(true|false|soundex)], [max_count(200)], [max_length(20)], [min_length(2)])`
 - added: `String.prototype.soundex()`
