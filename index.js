@@ -407,7 +407,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1940;
-	this.version_header = '1.9.4-24';
+	this.version_header = '1.9.4-25';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -12694,23 +12694,46 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (!isPartial && self.res && self.res.success)
 		return self;
 
-	var c = name[0];
-	var skip = c === '/' ? 1 : c === '~' ? 2 : c === '@' ? 3 : 0;
-	var filename = name;
+	// theme root `~some_view`
+	// views root `~~some_view`
+	// package    `@some_view`
+
+	var key = 'view#' + name;
+	var filename = framework.temporary.other[key];
 	var isLayout = self.isLayout;
 
 	self.isLayout = false;
 
-	if (self.themeName && skip < 2)
-		filename = '.' + framework.path.themes(self.themeName + '/views/' + (skip ? name.substring(1) : name));
-	else if (!self.isLayout && !skip)
-		filename = self._currentView + name;
+	// A small cache
+	if (!filename) {
+		var c = name[0];
+		var skip = c === '/' ? 1 : c === '~' && name[1] === '~' ? 4 : c === '~' ? 2 : c === '@' ? 3 : 0;
+		var isTheme = false;
 
-	if (skip === 2 || skip === 3)
-		filename = name.substring(1);
+		filename = name;
 
-	if (skip === 3)
-		filename = '.' + framework.path.package(filename);
+		if (self.themeName && skip < 3) {
+			filename = '.' + framework.path.themes(self.themeName + '/views/' + (isLayout || skip > 0 ? '' : self._currentView.substring(1)) + (skip ? name.substring(1) : name));
+			isTheme = true;
+		}
+
+		if (skip === 4) {
+			filename = filename.substring(1);
+			name = name.substring(1);
+			skip = 2;
+		}
+
+		if (!isTheme && !isLayout && !skip)
+			filename = self._currentView + name;
+
+		if (!isTheme && (skip === 2 || skip === 3))
+			filename = name.substring(1);
+
+		if (skip === 3)
+			filename = '.' + framework.path.package(filename);
+
+		framework.temporary.other[key] = filename;
+	}
 
 	var generator = framework_internal.viewEngine(name, filename, self.language);
 	if (!generator) {
