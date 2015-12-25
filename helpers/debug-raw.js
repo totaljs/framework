@@ -17,273 +17,298 @@ var isDebugging = process.argv.indexOf('debugging') !== -1;
 var directory = process.cwd();
 var path = require('path');
 var first = process.argv.indexOf('restart') === -1;
+var VERSION = '2.0';
+var TIME = 2000;
 
 process.on('uncaughtException', function(e) {
-    if (e.toString().indexOf('ESRCH') !== -1)
-        return;
-    console.log(e);
+	if (e.toString().indexOf('ESRCH') !== -1)
+		return;
+	console.log(e);
 });
 
 function debug() {
-    var framework = require('total.js');
-    var port = parseInt(process.argv[process.argv.length - 1]);
+	var framework = require('total.js');
+	var port = parseInt(process.argv[process.argv.length - 1]);
 
-    if (!isNaN(port)) {
-        if (!options)
-            options = {};
-        options.port = port;
-    }
+	if (!isNaN(port)) {
+		if (!options)
+			options = {};
+		options.port = port;
+	}
 
-    if (port > 0 && !options.port)
-        options.port = port || 8000;
+	if (port > 0 && !options.port)
+		options.port = port || 8000;
 
-    if (options.https)
-        return framework.https('debug', options);
+	if (options.https)
+		return framework.https('debug', options);
 
-    framework.http('debug', options);
+	framework.http('debug', options);
 
-    if (first)
-        framework.emit('debug-start');
-    else
-        framework.emit('debug-restart');
+	if (first)
+		framework.emit('debug-start');
+	else
+		framework.emit('debug-restart');
 }
 
 function app() {
-    var fork = require('child_process').fork;
-    var utils = require('total.js/utils');
-    var directories = [directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes'];
-    var files = {};
-    var force = false;
-    var changes = [];
-    var app = null;
-    var status = 0;
-    var async = new utils.Async();
-    var pid = '';
-    var pidInterval = null;
-    var prefix = '----------------------------------------------------> ';
-    var isLoaded = false;
-    var isSkip = false;
+	var fork = require('child_process').fork;
+	var utils = require('total.js/utils');
+	var directories = [directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes'];
+	var files = {};
+	var force = false;
+	var changes = [];
+	var app = null;
+	var status = 0;
+	var async = new utils.Async();
+	var pid = '';
+	var pidInterval = null;
+	var prefix = '----------------------------------------------------> ';
+	var isLoaded = false;
+	var isSkip = false;
+	var pidIncrease;
+	var speed = TIME;
 
-    function onFilter(path, isDirectory) {
-        return isDirectory ? true : path.indexOf('.js') !== -1 || path.indexOf('.resource') !== -1 || path.indexOf('.package') !== -1;
-    };
+	function onFilter(path, isDirectory) {
+		if (!isDirectory && !path.match(/themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/gi))
+			return false;
+		return isDirectory ? true : path.match(/\.(js|resource|package)/gi) !== null;
+	}
 
-    function onComplete() {
+	function onIncrease(clear) {
 
-        var self = this;
+ 		if (clear) {
+			clearTimeout(pidIncrease);
+			speed = TIME;
+ 		}
 
-        fs.readdir(directory, function(err, arr) {
+		pidIncrease = setTimeout(function() {
+			speed += TIME;
+			if (speed > 20000)
+				speed = 20000;
+			onIncrease();
+		}, 120000);
+	}
 
-            var length = arr.length;
+	function onComplete() {
 
-            for (var i = 0; i < length; i++) {
-                var name = arr[i];
-                if (name === 'config' || name === 'config-debug' || name === 'config-release' || name === 'versions' || name === 'sitemap' || name === 'dependencies' || name.indexOf('.js') !== -1 || name.indexOf('.resource') !== -1)
-                    self.file.push(name);
-            }
+		var self = this;
 
-            length = self.file.length;
+		fs.readdir(directory, function(err, arr) {
 
-            for (var i = 0; i < length; i++) {
-                var name = self.file[i];
-                if (!files[name])
-                    files[name] = isLoaded ? 0 : null;
-            }
+			var length = arr.length;
 
-            refresh();
-        });
-    };
+			for (var i = 0; i < length; i++) {
+				var name = arr[i];
+				if (name === 'debug.js')
+					continue;
+				if (name.match(/config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i))
+					self.file.push(name);
+			}
 
-    function refresh() {
+			length = self.file.length;
 
-         var filenames = Object.keys(files);
-         var length = filenames.length;
+			for (var i = 0; i < length; i++) {
+				var name = self.file[i];
+				if (!files[name])
+					files[name] = isLoaded ? 0 : null;
+			}
 
-         for (var i = 0; i < length; i++) {
+			refresh();
+		});
+	}
 
-            var filename = filenames[i];
-            (function(filename) {
+	function refresh() {
 
-                async.await(function(next) {
+		 var filenames = Object.keys(files);
+		 var length = filenames.length;
 
-                    fs.stat(filename, function(err, stat) {
+		 for (var i = 0; i < length; i++) {
 
-                        if (!err) {
-                            var ticks = stat.mtime.getTime();
+			var filename = filenames[i];
+			(function(filename) {
 
-                            if (files[filename] !== null && files[filename] !== ticks) {
-                                changes.push(prefix + filename.replace(directory, '') +  (files[filename] === 0 ? ' (added)' : ' (modified)'));
-                                force = true;
-                            }
+				async.await(function(next) {
 
-                            files[filename] = ticks;
-                        }
-                        else {
-                            delete files[filename];
-                            changes.push(prefix + filename.replace(directory, '') + ' (removed)');
-                            force = true;
-                        }
+					fs.stat(filename, function(err, stat) {
 
-                        next();
-                    });
-                });
+						if (!err) {
+							var ticks = stat.mtime.getTime();
 
-            })(filename);
-         }
+							if (files[filename] !== null && files[filename] !== ticks) {
+								changes.push(prefix + filename.replace(directory, '') +  (files[filename] === 0 ? ' (added)' : ' (modified)'));
+								force = true;
+							}
 
-         async.complete(function() {
+							files[filename] = ticks;
+						}
+						else {
+							delete files[filename];
+							changes.push(prefix + filename.replace(directory, '') + ' (removed)');
+							force = true;
+						}
 
-            isLoaded = true;
-            setTimeout(refresh_directory, 2000);
+						next();
+					});
+				});
 
-            if (status !== 1)
-                return;
+			})(filename);
+		 }
 
-            if (!force)
-                return;
+		 async.complete(function() {
 
-            restart();
+			isLoaded = true;
+			setTimeout(refresh_directory, speed);
+			onIncrease();
 
-            var length = changes.length;
+			if (status !== 1)
+				return;
 
-            for (var i = 0; i < length; i++)
-                console.log(changes[i]);
+			if (!force)
+				return;
 
-            changes = [];
-            force = false;
-         });
+			onIncrease(true);
+			restart();
 
-    }
+			var length = changes.length;
 
-    function refresh_directory() {
-        utils.ls(directories, onComplete, onFilter);
-    }
+			for (var i = 0; i < length; i++)
+				console.log(changes[i]);
 
-    function restart() {
+			changes = [];
+			force = false;
+		 });
 
-        if (app !== null) {
-            try
-            {
-                isSkip = true;
-                process.kill(app.pid);
-            } catch (err) {}
-            app = null;
-        }
+	}
 
-        var arr = process.argv;
-        var port = arr.pop();
+	function refresh_directory() {
+		utils.ls(directories, onComplete, onFilter);
+	}
 
-        if (first)
-            first = false;
-        else
-            arr.push('restart');
+	function restart() {
 
-        arr.push('debugging');
-        arr.push(port);
+		if (app !== null) {
+			try
+			{
+				isSkip = true;
+				process.kill(app.pid);
+			} catch (err) {}
+			app = null;
+		}
 
-        app = fork(path.join(directory, 'debug.js'), arr);
+		var arr = process.argv;
+		var port = arr.pop();
 
-        app.on('message', function(msg) {
+		if (first)
+			first = false;
+		else
+			arr.push('restart');
 
-            if (msg === 'eaddrinuse')
-                process.exit(1);
+		arr.push('debugging');
+		arr.push(port);
 
-        });
+		app = fork(path.join(directory, 'debug.js'), arr);
 
-        app.on('exit', function() {
+		app.on('message', function(msg) {
 
-            // checks unexpected exit
-            if (isSkip === false) {
-                app = null;
-                process.exit();
-                return;
-            }
+			if (msg === 'eaddrinuse')
+				process.exit(1);
 
-            isSkip = false;
-            if (status !== 255)
-                return;
-            app = null;
-        });
+		});
 
-        if (status === 0)
-            app.send('debugging');
+		app.on('exit', function() {
 
-        status = 1;
-    }
+			// checks unexpected exit
+			if (isSkip === false) {
+				app = null;
+				process.exit();
+				return;
+			}
 
-    process.on('SIGTERM', end);
-    process.on('SIGINT', end);
-    process.on('exit', end);
+			isSkip = false;
+			if (status !== 255)
+				return;
+			app = null;
+		});
 
-    function end() {
+		if (status === 0)
+			app.send('debugging');
 
-        if (arguments.callee.isEnd)
-            return;
+		status = 1;
+	}
 
-        arguments.callee.isEnd = true;
+	process.on('SIGTERM', end);
+	process.on('SIGINT', end);
+	process.on('exit', end);
 
-        fs.unlink(pid, noop);
+	function end() {
 
-        if (app === null) {
-            process.exit(0);
-            return;
-        }
+		if (arguments.callee.isEnd)
+			return;
 
-        isSkip = true;
-        process.kill(app.pid);
-        app = null;
-        process.exit(0);
-    }
+		arguments.callee.isEnd = true;
 
-    function noop() {}
+		fs.unlink(pid, noop);
 
-    if (process.pid > 0) {
-        console.log(prefix + 'PID: ' + process.pid);
-        pid = path.join(directory, 'debug.pid');
-        fs.writeFileSync(pid, process.pid);
+		if (app === null) {
+			process.exit(0);
+			return;
+		}
 
-        pidInterval = setInterval(function() {
-            fs.exists(pid, function(exist) {
+		isSkip = true;
+		process.kill(app.pid);
+		app = null;
+		process.exit(0);
+	}
 
-                if (exist)
-                    return;
+	function noop() {}
 
-                fs.unlink(pid, noop);
+	if (process.pid > 0) {
+		console.log(prefix + 'PID: ' + process.pid + ' (v' + VERSION + ')');
+		pid = path.join(directory, 'debug.pid');
+		fs.writeFileSync(pid, process.pid);
 
-                if (app !== null) {
-                    isSkip = true;
-                    process.kill(app.pid);
-                }
+		pidInterval = setInterval(function() {
+			fs.exists(pid, function(exist) {
 
-                process.exit(0);
-            });
+				if (exist)
+					return;
 
-        }, 2000);
-    }
+				fs.unlink(pid, noop);
 
-    restart();
-    refresh_directory();
+				if (app !== null) {
+					isSkip = true;
+					process.kill(app.pid);
+				}
+
+				process.exit(0);
+			});
+
+		}, 2000);
+	}
+
+	restart();
+	refresh_directory();
 }
 
 function run() {
 
-    if (isDebugging) {
-        debug();
-        return;
-    }
+	if (isDebugging) {
+		debug();
+		return;
+	}
 
-    var filename = path.join(directory, 'debug.pid');
+	var filename = path.join(directory, 'debug.pid');
 
-    if (!fs.existsSync(filename)) {
-        app();
-        return;
-    }
+	if (!fs.existsSync(filename)) {
+		app();
+		return;
+	}
 
-    fs.unlinkSync(filename);
+	fs.unlinkSync(filename);
 
-    setTimeout(function() {
-        app();
-    }, 3000);
+	setTimeout(function() {
+		app();
+	}, 3000);
 }
 
 run();
