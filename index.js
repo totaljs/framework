@@ -7870,6 +7870,12 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 	var val = framework.temporary.other[key];
 	if (RELEASE && val)
 		return val;
+
+	if (name[0] === '~') {
+		name = name.substring(name[1] === '~' ? 2 : 1);
+		theme = '';
+	}
+
 	var filename = framework_utils.join(theme, directory, this._version(name));
 	return framework.temporary.other[key] = this._version(filename);
 };
