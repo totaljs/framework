@@ -85,6 +85,7 @@ We provide a support of the framework for companies. Our support services will k
 | Supports injecting scripts, packages and views from URL |
 | Supports String, Date, Number and Array prototypes |
 | Supports additional utilities (e.g. create request, XML parsing, etc.) |
+| Supports themes |
 | Possibility to rewrite existing functionality |
 | NoSQL embedded database |
 | __You can use framework as single library__ `total.js (320 kB)` |
@@ -105,7 +106,7 @@ We provide a support of the framework for companies. Our support services will k
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
 | [Radek / rsmogura](https://github.com/rsmogura) | contributor | ... |
-| [LiaoTzukai](https://github.com/liaotzukai) | contributor | <liaotzukai@gmail.com> |
+| [Liao San-Kai](https://github.com/liaosankai) | contributor | <liaosankai@gmail.com> |
 | [Ivan Marchukov](https://github.com/deadman2000) | contributor | <marchukov.ivan@gmail.com> |
 
 ## Other
