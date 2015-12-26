@@ -7416,7 +7416,7 @@ Framework.prototype.sitemap = function(name, me, language) {
 		if (title.startsWith('@('))
 			title = self.translate(language, sitemap.name.substring(2, sitemap.name.length - 1));
 
-		arr.push({ sitemap: id, id: name, name: title, url: sitemap.url, last: index === 0, first: sitemap.parent === null || sitemap.parent === undefined || sitemap.parent === '', selected: index === 0, index: index });
+		arr.push({ sitemap: id, id: name, name: title, url: sitemap.url, last: index === 0, first: sitemap.parent ? false : true, selected: index === 0, index: index });
 		index++;
 		name = sitemap.parent;
 		if (!name)
