@@ -387,8 +387,11 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 		if (alternative) {
 			if (isSoundex)
 				word = word.soundex();
-			else
-				word = word.substring(0, (word.length / 100) * 80);
+			else {
+				var size = (word.length / 100) * 80;
+				if (size > min_length + 1)
+					word = word.substring(0, size);
+			}
 		}
 
 		if (word.length < min_length || word.length > max_length)
@@ -1437,7 +1440,10 @@ exports.join = function() {
 		path += exports.path(current);
 	}
 
-	path = path + arguments[arguments.length - 1];
+	var last = arguments[arguments.length - 1];
+	if (last[0] === '/')
+		last = last.substring(1);
+	path = path + last;
 	return (path[0] !== '/' ? '/' : '') + path;
 };
 
@@ -1995,7 +2001,7 @@ exports.parseJSON = function(value) {
 	}
 };
 
-exports.onParseQuery = function(value) {
+exports.parseQuery = function(value) {
 	return framework.onParseQuery(value);
 };
 
