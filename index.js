@@ -66,6 +66,7 @@ HEADERS['responseCode'] = {};
 HEADERS['responseCode'][RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
 HEADERS['responseRedirect'] = {};
 HEADERS['responseRedirect'][RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTHTML + '; charset=utf-8';
+HEADERS['responseRedirect'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
 HEADERS['sse'] = {};
 HEADERS['sse'][RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, must-revalidate';
 HEADERS['sse']['Pragma'] = 'no-cache';
@@ -90,7 +91,7 @@ HEADERS['responseFile.release.compress.range']['Vary'] = 'Accept-Encoding';
 HEADERS['responseFile.release.compress.range']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseFile.release.compress.range']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 HEADERS['responseFile.release.compress.range']['Content-Encoding'] = 'gzip';
-HEADERS['responseFile.release.compress.range'][RESPONSE_HEADER_CONTENTLENGTH] = 0;
+HEADERS['responseFile.release.compress.range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
 HEADERS['responseFile.release.compress.range']['Content-Range'] = '';
 HEADERS['responseFile.release'] = {};
 HEADERS['responseFile.release'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
@@ -103,7 +104,7 @@ HEADERS['responseFile.release.range'][RESPONSE_HEADER_CACHECONTROL] = 'public, m
 HEADERS['responseFile.release.range']['Vary'] = 'Accept-Encoding';
 HEADERS['responseFile.release.range']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseFile.release.range']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-HEADERS['responseFile.release.range'][RESPONSE_HEADER_CONTENTLENGTH] = 0;
+HEADERS['responseFile.release.range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
 HEADERS['responseFile.release.range']['Content-Range'] = '';
 HEADERS['responseFile.debug.compress'] = {};
 HEADERS['responseFile.debug.compress'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
@@ -120,7 +121,7 @@ HEADERS['responseFile.debug.compress.range']['Access-Control-Allow-Origin'] = '*
 HEADERS['responseFile.debug.compress.range']['Content-Encoding'] = 'gzip';
 HEADERS['responseFile.debug.compress.range']['Pragma'] = 'no-cache';
 HEADERS['responseFile.debug.compress.range']['Expires'] = '0';
-HEADERS['responseFile.debug.compress.range'][RESPONSE_HEADER_CONTENTLENGTH] = 0;
+HEADERS['responseFile.debug.compress.range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
 HEADERS['responseFile.debug.compress.range']['Content-Range'] = '';
 HEADERS['responseFile.debug'] = {};
 HEADERS['responseFile.debug'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
@@ -135,7 +136,7 @@ HEADERS['responseFile.debug.range']['Vary'] = 'Accept-Encoding';
 HEADERS['responseFile.debug.range']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseFile.debug.range']['Pragma'] = 'no-cache';
 HEADERS['responseFile.debug.range']['Expires'] = '0';
-HEADERS['responseFile.debug.range'][RESPONSE_HEADER_CONTENTLENGTH] = 0;
+HEADERS['responseFile.debug.range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
 HEADERS['responseFile.debug.range']['Content-Range'] = '';
 HEADERS['responseContent.mobile.compress'] = {};
 HEADERS['responseContent.mobile.compress']['Vary'] = 'Accept-Encoding, User-Agent';
@@ -2278,16 +2279,6 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		});
 	}
 
-	if (!types || types.indexOf('definitions') !== -1) {
-		dir = path.join(targetdirectory, self.config['directory-definitions']);
-		arr = [];
-		listing(dir, 0, arr);
-
-		arr.forEach(function(item) {
-			self.install('definition', item.name, item.filename, undefined, undefined, undefined, true);
-		});
-	}
-
 	if (!types || types.indexOf('themes') !== -1) {
 		arr = [];
 		dir = path.join(targetdirectory, self.config['directory-themes']);
@@ -2300,6 +2291,16 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			self._length_themes++;
 			if (fs.existsSync(filename))
 				self.install('theme', item.name, filename, undefined, undefined, undefined, true);
+		});
+	}
+
+	if (!types || types.indexOf('definitions') !== -1) {
+		dir = path.join(targetdirectory, self.config['directory-definitions']);
+		arr = [];
+		listing(dir, 0, arr);
+
+		arr.forEach(function(item) {
+			self.install('definition', item.name, item.filename, undefined, undefined, undefined, true);
 		});
 	}
 
