@@ -388,6 +388,7 @@ global.TRY = function(fn, err) {
 
 global.OBSOLETE = function(name, message) {
 	console.log(':: OBSOLETE / IMPORTANT ---> "' + name + '"', message);
+	framework.stats.other.obsolete++;
 };
 
 if (global.setImmediate === undefined) {
@@ -570,7 +571,8 @@ function Framework() {
 
 		other: {
 			websocketPing: 0,
-			websocketCleaner: 0
+			websocketCleaner: 0,
+			obsolete: 0
 		},
 
 		request: {
@@ -2321,6 +2323,8 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	setTimeout(function() {
 		if (self.onValidation)
 			OBSOLETE('framework.onValidation()', 'The function was renamed to "framework.onValidate()');
+		if (self.onAuthorization)
+			OBSOLETE('framework.onAuthorization()', 'The function was renamed to "framework.onAuthorize()');
 	}, 2000);
 
 	return self;
@@ -3222,7 +3226,8 @@ Framework.prototype.onError = function(err, name, uri) {
 	@flags {String array}
 	@callback {Function} - @callback(Boolean), true is [authorize]d and false is [unauthorize]d
 */
-Framework.prototype.onAuthorization = null;
+Framework.prototype.onAuthorization = null; // OBSOLETE
+Framework.prototype.onAuthorize = null;
 
 /*
 	Sets the current language for the current request
@@ -6302,10 +6307,11 @@ Framework.prototype._upgrade = function(req, socket, head) {
 Framework.prototype._upgrade_prepare = function(req, path, headers) {
 
 	var self = this;
+	var auth = self.onAuthorize || self.onAuthorization;
 
-	if (self.onAuthorization === null) {
+	if (!auth) {
 		var route = self.lookup_websocket(req, req.websocket.uri.pathname, true);
-		if (route === null) {
+		if (!route) {
 			req.websocket.close();
 			req.connection.destroy();
 			return;
@@ -6315,7 +6321,7 @@ Framework.prototype._upgrade_prepare = function(req, path, headers) {
 		return;
 	}
 
-	self.onAuthorization.call(self, req, req.websocket, req.flags, function(isLogged, user) {
+	auth.call(self, req, req.websocket, req.flags, function(isLogged, user) {
 
 		if (user)
 			req.user = user;
@@ -9360,10 +9366,11 @@ Subscribe.prototype.prepare = function(flags, url) {
 	var self = this;
 	var req = self.req;
 	var res = self.res;
+	var auth = framework.onAuthorize || framework.onAuthorization;
 
-	if (framework.onAuthorization) {
+	if (auth) {
 		var length = flags.length;
-		framework.onAuthorization(req, res, flags, function(isAuthorized, user) {
+		auth(req, res, flags, function(isAuthorized, user) {
 
 			if (length !== flags.length)
 				req.$flags += flags.slice(length).join('');
@@ -14645,14 +14652,16 @@ http.IncomingMessage.prototype.authorization = function() {
  */
 http.IncomingMessage.prototype.authorize = function(callback) {
 
-	if (framework.onAuthorization === null) {
+	var auth = framework.onAuthorize || framework.onAuthorization;
+
+	if (!auth) {
 		callback(null, null, false);
 		return this;
 	}
 
 	var req = this;
 
-	framework.onAuthorization(req, req.res, req.flags, function(isAuthorized, user) {
+	auth(req, req.res, req.flags, function(isAuthorized, user) {
 		if (typeof(isAuthorized) !== BOOLEAN) {
 			user = isAuthorized;
 			isAuthorized = !user;

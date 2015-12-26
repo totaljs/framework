@@ -2,6 +2,7 @@
 
 - added: (IMPORTANT) new feature: THEMES
 - added: `@{theme}` --> return String
+- added: `F.onTheme` delegate
 - added: `controller.theme(theme_name)` --> select theme;
 - added: `config['default-theme']`
 - added: `U.keywords(content, [forSearch], [alternative(true|false|soundex)], [max_count(200)], [max_length(20)], [min_length(2)]);`
@@ -18,6 +19,7 @@
 - added: `F.on('error408')`
 - added: `F.on('error431')`
 
+- updated: (IMPORTANT) F.onAuthorization() was renamed to F.onAuthorize()
 - updated: `Date.format()` supports `w` and `ww` for week number
 - updated: `Date.add()` supports `w`, `ww`, `week`, `weeks`
 - updated: MailMessage supports display name `mail.from('Name <vali@demail>');`

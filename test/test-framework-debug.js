@@ -31,7 +31,7 @@ framework.on('ready', function() {
 	});
 });
 
-framework.onAuthorization = function(req, res, flags, cb) {
+framework.onAuthorize = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
 	cb(req.url !== '/unauthorize/');
