@@ -69,9 +69,14 @@ function app() {
 	var speed = TIME;
 
 	function onFilter(path, isDirectory) {
-		if (!isDirectory && !path.match(/themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/gi))
-			return false;
-		return isDirectory ? true : path.match(/\.(js|resource|package)/gi) !== null;
+
+		if (!isDirectory && path.match(/\/themes\//i)) {
+			if (!path.match(/themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/gi))
+				return false;
+			return true;
+		}
+
+		return isDirectory ? true : path.match(/\.(js|resource|package)/i) !== null;
 	}
 
 	function onIncrease(clear) {
@@ -89,9 +94,7 @@ function app() {
 		}, 120000);
 	}
 
-	function onComplete() {
-
-		var self = this;
+	function onComplete(f) {
 
 		fs.readdir(directory, function(err, arr) {
 
@@ -102,13 +105,13 @@ function app() {
 				if (name === 'debug.js')
 					continue;
 				if (name.match(/config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i))
-					self.file.push(name);
+					f.push(name);
 			}
 
-			length = self.file.length;
+			length = f.length;
 
 			for (var i = 0; i < length; i++) {
-				var name = self.file[i];
+				var name = f[i];
 				if (!files[name])
 					files[name] = isLoaded ? 0 : null;
 			}
