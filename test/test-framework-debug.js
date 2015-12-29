@@ -31,7 +31,7 @@ framework.on('ready', function() {
 	});
 });
 
-framework.onAuthorization = function(req, res, flags, cb) {
+framework.onAuthorize = function(req, res, flags, cb) {
 	req.user = { alias: 'Peter Širka' };
 	req.session = { ready: true };
 	cb(req.url !== '/unauthorize/');
@@ -316,7 +316,6 @@ function test_routing(next) {
 		});
 	});
 
-
 	async.await('package/', function(complete) {
 		utils.request(url + 'package/', 'GET', null, function(error, data, code, headers) {
 			if (error)
@@ -580,6 +579,7 @@ function test_routing(next) {
 
 			var cookie = headers['set-cookie'].join('');
 			assert(cookie.indexOf('cookie1=1;') !== -1 && cookie.indexOf('cookie2=2;') !== -1 && cookie.indexOf('cookie3=3;') !== -1, 'Cookie problem.');
+			assert(cookie.indexOf('cookieR=O;') === -1 && cookie.indexOf('cookieR=N;') !== -1 && cookie.indexOf('cookieR=') === cookie.lastIndexOf('cookieR='), 'Two cookies with same name');
 			complete();
 		});
 	});
@@ -666,6 +666,42 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('theme-green', function(complete) {
+		utils.request(url + '/green/js/default.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'var a=1+1;', 'Themes: problem with static files.');
+			complete();
+		});
+	});
+
+	async.await('theme-green-merge', function(complete) {
+		utils.request(url + '/merge-theme.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data.indexOf('var a=1+1;') !== -1 && data.indexOf('var b=2+2;'), 'Themes: problem with merging static files');
+			complete();
+		});
+	});
+
+	async.await('theme-green-map', function(complete) {
+		utils.request(url + '/map-theme.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'var a=1+1;', 'Themes: problem with mapping static files.');
+			complete();
+		});
+	});
+
+	async.await('theme-green', function(complete) {
+		utils.request(url + 'theme-green/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			console.log('--->', data);
+			complete();
+		});
+	});
+
 	async.complete(function() {
 		next && next();
 	});
@@ -679,6 +715,7 @@ function run() {
 		framework.fs.rm.view('fromURL');
 
 		assert.ok(framework.global.middleware > 0, 'middleware - middleware');
+		assert.ok(framework.global.theme > 0, 'theme - initialization');
 		assert.ok(framework.global.all > 0, 'middleware - global');
 		assert.ok(framework.global.file > 0, 'middleware - file');
 		assert.ok(framework.global.timeout > 0, 'timeout');

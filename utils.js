@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.3
+ * @version 1.9.4
  */
 
 'use strict';
@@ -42,10 +42,11 @@ var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\
 var regexpTRIM = /^[\s]+|[\s]+$/g;
 var regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
-var regexpDATEFORMAT = /yyyy|yy|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|a/g;
+var regexpDATEFORMAT = /yyyy|yy|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
 var regexpSTRINGFORMAT = /\{\d+\}/g;
 var regexpPATH = /\\/g;
 var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
+var SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 var ENCODING = 'utf8';
 var UNDEFINED = 'undefined';
 var STRING = 'string';
@@ -217,8 +218,32 @@ exports.isEqual = function(obj1, obj2, properties) {
 
 	for (var i = 0, length = keys.length; i < length; i++) {
 		var key = keys[i];
-		if (obj1[key] === obj2[key])
+		var a = obj1[key];
+		var b = obj2[key];
+		var ta = typeof(a);
+		var tb = typeof(b);
+
+		if (ta !== tb)
+			return false;
+
+		if (a === b)
 			continue;
+
+		if (a instanceof Date && b instanceof Date) {
+			if (a.getTime() === b.getTime())
+				continue;
+			return false;
+		} else if (a instanceof Array && b instanceof Array) {
+			if (JSON.stringify(a) === JSON.stringify(b))
+				continue;
+			return false;
+		}
+
+		if (ta === OBJECT && tb === OBJECT) {
+			if (exports.isEqual(a, b))
+				continue;
+		}
+
 		return false;
 	}
 
@@ -272,6 +297,9 @@ exports.resolve = function(url, callback) {
 
     var uri = parser.parse(url);
 
+    if (!callback)
+    	return dnscache[uri.host];
+
     if (dnscache[uri.host]) {
         uri.host = dnscache[uri.host];
         callback(null, uri);
@@ -310,6 +338,86 @@ exports.$$resolve = function(url) {
  */
 exports.clearDNS = function() {
 	dnscache = {};
+};
+
+exports.keywords = function(content, forSearch, alternative, max_count, max_length, min_length) {
+
+	if (forSearch === undefined)
+		forSearch = true;
+
+	min_length = min_length || 2;
+	max_count = max_count || 200;
+	max_length = max_length || 20;
+
+	var words = [];
+	var isSoundex = alternative === 'soundex';
+
+	if (content instanceof Array) {
+		for (var i = 0, length = content.length; i < length; i++) {
+			if (!content[i])
+				continue;
+			var tmp = (forSearch ? content[i].removeDiacritics().toLowerCase().replace(/y/g, 'i') : content[i].toLowerCase()).split(' ');
+			if (!tmp || !tmp.length)
+				continue;
+			for (var j = 0, jl = tmp.length; j < jl; j++)
+				words.push(tmp[j]);
+		}
+	} else
+		words = (forSearch ? content.removeDiacritics().toLowerCase().replace(/y/g, 'i') : content.toLowerCase()).split(' ');
+
+	if (!words)
+		words = [];
+
+	var dic = {};
+	var counter = 0;
+
+	for (var i = 0, length = words.length; i < length; i++) {
+		var word = words[i].trim();
+
+		if (word.length < min_length)
+			continue;
+
+		if (counter >= max_count)
+			break;
+
+		if (forSearch)
+			word = word.replace(/\W|_/g, '');
+
+		// Gets 80% length of word
+		if (alternative) {
+			if (isSoundex)
+				word = word.soundex();
+			else {
+				var size = (word.length / 100) * 80;
+				if (size > min_length + 1)
+					word = word.substring(0, size);
+			}
+		}
+
+		if (word.length < min_length || word.length > max_length)
+			continue;
+
+		if (dic[word])
+			dic[word]++;
+		else
+			dic[word] = 1;
+
+		counter++;
+	}
+
+	var keys = Object.keys(dic);
+
+	keys.sort(function(a, b) {
+		var countA = dic[a];
+		var countB = dic[b];
+		if (countA > countB)
+			return -1;
+		if (countA < countB)
+			return 1;
+		return 0;
+	});
+
+	return keys;
 };
 
 /**
@@ -1252,12 +1360,29 @@ exports.getContentType = function(ext) {
  * @return {String}
  */
 exports.getExtension = function(filename) {
-	if (!filename)
-		return '';
 	var index = filename.lastIndexOf('.');
 	if (index === -1)
 		return '';
 	return filename.substring(index);
+};
+
+/**
+ * Get base name from path
+ * @param {String} path
+ * @return {String}
+ */
+exports.getName = function(path) {
+	var l = path.length - 1;
+	var c = path[l];
+	if (c === '/' || c === '\\')
+		path = path.substring(0, l);
+	var index = path.lastIndexOf('/');
+	if (index !== -1)
+		return path.substring(index + 1);
+	index = path.lastIndexOf('\\');
+	if (index !== -1)
+		return path.substring(index + 1);
+	return path;
 };
 
 /**
@@ -1302,6 +1427,24 @@ exports.path = function(path, delimiter) {
 		return path;
 
 	return path + delimiter;
+};
+
+exports.join = function() {
+	var path = '';
+	for (var i = 0; i < arguments.length - 1; i++) {
+		var current = arguments[i];
+		if (!current)
+			continue;
+		if (current[0] === '/')
+			current = current.substring(1);
+		path += exports.path(current);
+	}
+
+	var last = arguments[arguments.length - 1];
+	if (last[0] === '/')
+		last = last.substring(1);
+	path = path + last;
+	return (path[0] !== '/' ? '/' : '') + path;
 };
 
 /**
@@ -1858,6 +2001,10 @@ exports.parseJSON = function(value) {
 	}
 };
 
+exports.parseQuery = function(value) {
+	return framework.onParseQuery(value);
+};
+
 /**
  * Get WebSocket frame
  * @author Jozef Gula <gula.jozef@gmail.com>
@@ -2016,6 +2163,12 @@ Date.prototype.add = function(type, value) {
 		case 'day':
 		case 'days':
 			dt.setDate(dt.getDate() + value);
+			return dt;
+		case 'w':
+		case 'ww':
+		case 'week':
+		case 'weeks':
+			dt.setDate(dt.getDate() + (value * 7));
 			return dt;
 		case 'M':
 		case 'MM':
@@ -2279,6 +2432,15 @@ Date.prototype.format = function(format) {
 				return self.getSeconds().toString().padLeft(2, '0');
 			case 's':
 				return self.getSeconds();
+			case 'w':
+			case 'ww':
+				var tmp = new Date(+self);
+				tmp.setHours(0, 0, 0);
+				tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
+				tmp = Math.ceil((((tmp - new Date(tmp.getFullYear(), 0, 1)) / 8.64e7) + 1) / 7);
+				if (key === 'ww')
+					return tmp.toString().padLeft(2, '0');
+				return tmp;
 			case 'a':
 				var a = 'AM';
 				if (self.getHours() >= 12)
@@ -2426,11 +2588,15 @@ String.prototype.count = function(text) {
  * @return {Object}
  */
 String.prototype.parseXML = function() {
-	return exports.parseXML(this);
+	return framework.onParseXML(this);
 };
 
 String.prototype.parseJSON = function() {
 	return exports.parseJSON(this);
+};
+
+String.prototype.parseQuery = function() {
+	return exports.parseQuery(this);
 };
 
 /**
@@ -2780,8 +2946,26 @@ String.prototype.isJSON = function() {
 	var self = this;
 	if (self.length <= 1)
 		return false;
-	var a = self[0];
-	var b = self[self.length - 1];
+
+	var l = self.length - 1;
+	var a;
+	var b;
+	var i = 0;
+
+	while (true) {
+		a = self[i++];
+		if (a === ' ' || a === '\n' || a === '\r' || a === '\t')
+			continue;
+		break;
+	}
+
+	while (true) {
+		b = self[l--];
+		if (a === ' ' || a === '\n' || a === '\r' || a === '\t')
+			continue;
+		break;
+	}
+
 	return (a === '"' && b === '"') || (a === '[' && b === ']') || (a === '{' && b === '}');
 };
 
@@ -2870,6 +3054,10 @@ String.prototype.md5 = function(salt) {
 
 String.prototype.toSearch = function() {
 	return this.replace(/[^a-zA-Zá-žÁ-Ž\d\s:]/g, '').trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
+};
+
+String.prototype.toKeywords = String.prototype.keywords = function(forSearch, alternative, max_count, max_length, min_length) {
+	return exports.keywords(this, forSearch, alternative, max_count, max_length, min_length);
 };
 
 /*
@@ -3008,8 +3196,12 @@ String.prototype.removeDiacritics = function() {
 	return {String}
 */
 String.prototype.indent = function(max, c) {
-	var self = this;
-	return new Array(max + 1).join(c || ' ') + self;
+	var plus = '';
+	if (c === undefined)
+		c = ' '
+	while (max--)
+		plus += c;
+	return plus + this;
 };
 
 /*
@@ -3053,7 +3245,14 @@ String.prototype.isNumber = function(isDecimal) {
 if (!String.prototype.padLeft) {
 	String.prototype.padLeft = function(max, c) {
 		var self = this;
-		return new Array(Math.max(0, max - self.length + 1)).join(c || ' ') + self;
+		var len = max - self.length;
+		if (len < 0)
+			return self;
+		if (c === undefined)
+			c = ' ';
+		while (len--)
+			self = c + self;
+		return self;
 	};
 }
 
@@ -3065,7 +3264,14 @@ if (!String.prototype.padLeft) {
 if (!String.prototype.padRight) {
 	String.prototype.padRight = function(max, c) {
 		var self = this;
-		return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
+		var len = max - self.length;
+		if (len < 0)
+			return self;
+		if (c === undefined)
+			c = ' ';
+		while (len--)
+			self += c;
+		return self;
 	};
 }
 
@@ -3164,6 +3370,28 @@ String.prototype.capitalize = function() {
 String.prototype.isAlphaNumeric = function() {
   var regExp = /^[A-Za-z0-9]+$/;
   return (this.match(regExp) ? true : false);
+};
+
+String.prototype.soundex = function() {
+
+	var arr = this.toLowerCase().split('');
+	var first = arr.shift();
+	var builder = first.toUpperCase();
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var v = SOUNDEX[arr[i]];
+
+		if (v === undefined)
+			continue;
+
+		if (i) {
+			if (v !== arr[i - 1])
+				builder += v;
+		} else if (v !== SOUNDEX[first])
+			builder += v;
+	}
+
+	return (builder + '000').substring(0, 4);
 };
 
 /*
@@ -3972,22 +4200,7 @@ Array.prototype.random = function() {
 	return self[exports.random(self.length - 1)];
 };
 
-/*
-	Waiting list - function remove each item
-	@callback {Function} :: function(next) {}
-	@complete {Function} :: optional
-*/
-Array.prototype.waiting = function(onItem, callback) {
-	console.log('Array.prototype.waiting: OBSOLETE. Use Array.prototype.wait');
-	return this.wait(onItem, callback);
-};
-
-/*
-	Waiting list - function remove each item
-	@callback {Function} :: function(next) {}
-	@complete {Function} :: optional
-*/
-Array.prototype.wait = Array.prototype.each = function(onItem, callback, remove) {
+Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remove) {
 
 	var self = this;
 	var type = typeof(callback);
@@ -4760,7 +4973,8 @@ exports.async = function(fn, isApply) {
 
 			try
 			{
-				switch (err === null) {
+				var can = err === null || err === undefined;
+				switch (can) {
 					case true:
 						g = generator.next(result);
 						break;
@@ -4927,3 +5141,4 @@ exports.minifyHTML = function(value) {
 global.Async = global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
 global.sync2 = exports.sync2;
+

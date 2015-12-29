@@ -1,3 +1,53 @@
+======= 1.9.4
+
+- added: (IMPORTANT) new feature: THEMES
+- added: `@{theme}` --> return String
+- added: `F.onTheme` delegate
+- added: `controller.theme(theme_name)` --> select theme;
+- added: `config['default-theme']`
+- added: `U.keywords(content, [forSearch], [alternative(true|false|soundex)], [max_count(200)], [max_length(20)], [min_length(2)]);`
+- added: `String.prototype.keywords([forSearch], [alternative(true|false|soundex)], [max_count(200)], [max_length(20)], [min_length(2)])`
+- added: `String.prototype.soundex()`
+- added: `F.wait(name, [enable])` the server waits for pending task and it responds via 503 status code
+- added: `U.parseQuery()` and `String.parseQuery()`
+- added: `U.join(path1, path2, path3)`
+- added: `U.getName(path)`
+- added: `F.on('error400')`
+- added: `F.on('error401')`
+- added: `F.on('error403')`
+- added: `F.on('error404')`
+- added: `F.on('error408')`
+- added: `F.on('error431')`
+
+- updated: (IMPORTANT) F.onAuthorization() was renamed to F.onAuthorize()
+- updated: `Date.format()` supports `w` and `ww` for week number
+- updated: `Date.add()` supports `w`, `ww`, `week`, `weeks`
+- updated: MailMessage supports display name `mail.from('Name <vali@demail>');`
+- updated: MailMessage supports display name `mail.to('Name <vali@demail>');`
+- updated: MailMessage supports display name `mail.to(email, [name], [clear]);`
+- updated: MailMessage supports display name `mail.cc('Name <vali@demail>');`
+- updated: MailMessage supports display name `mail.cc(email, [name], [clear]);`
+- updated: U.resolve(url, [callback]) --> `callback` is optional
+
+- fixed: HTTP cache for HTML 5 offline manifest files
+- fixed: async() error handling
+- fixed: NoSQL embedded paths
+- fixed: problem with empty SMTP options
+- fixed: ErrorBuilder default transformation to JSON
+- fixed: Error handling
+- fixed: SchemaBuilder request auto-validation
+- fixed: String.isJSON()
+- fixed: F.responsePipe() --> problem with transmitted headers
+- fixed: evaluating of @{helpers.helper_name()}
+- fixed: HTML minification of UTF8 characters
+- fixed: U.isEqual()
+- fixed: FrameworkImage.save() in Windows by LiaoTzukai
+- fixed: SchemaBuilder prefix by Dušan Dragula
+
+- improved performance of the response
+- improved total performance
+- improved view engine performance
+
 ======= 1.9.3
 
 - added: (IMPORTANT) merging supports BLOCKS (.js,.css), e.g. F.merge('merge.js', 'fileA.js#management,common', 'fileB.js#management')

@@ -8,6 +8,7 @@ Framework, for node.js
 
 __total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
+- [__NEW__: AppMonitor](https://github.com/totaljs/modules/tree/master/Miscellaneous/monitor) for tracking total.js applications
 - [Total.js Simple Eshop + CMS](http://www.totaljs.com/eshop)
 - [Total.js for enterprise](http://nodejsenterprise.com)
 
@@ -84,6 +85,7 @@ We provide a support of the framework for companies. Our support services will k
 | Supports injecting scripts, packages and views from URL |
 | Supports String, Date, Number and Array prototypes |
 | Supports additional utilities (e.g. create request, XML parsing, etc.) |
+| Supports themes |
 | Possibility to rewrite existing functionality |
 | NoSQL embedded database |
 | __You can use framework as single library__ `total.js (320 kB)` |
@@ -103,6 +105,10 @@ We provide a support of the framework for companies. Our support services will k
 | Tomas Holovsky | support + enterprise | <tomasholovsky@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
+| [Radek / rsmogura](https://github.com/rsmogura) | contributor | ... |
+| [Liao San-Kai](https://github.com/liaosankai) | contributor | <liaosankai@gmail.com> |
+| [Ivan Marchukov](https://github.com/deadman2000) | contributor | <marchukov.ivan@gmail.com> |
+| [Dusan Dragula](https://github.com/DusanDragulaGR) | contributor | <dusan.dragula@goodrequest.com> |
 
 ## Other
 

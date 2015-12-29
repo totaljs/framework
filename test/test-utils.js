@@ -538,6 +538,11 @@ function other() {
 	assert.ok(expression('a.id === b', ['a', 'b'], { id: 1 }, 1)(), 'expression error (true)');
 	assert.ok(!expression('a.id === b', ['a', 'b'], { id: 1 })(), 'expression error (false)');
 
+	assert.ok(utils.getName('/aaa/bbb/ccc/dddd') === 'dddd', 'problem with getName (1)');
+	assert.ok(utils.getName('\\aaa\\bbb\\ccc\\dddd') === 'dddd', 'problem with getName (2)');
+	assert.ok(utils.getName('/aaa/bbb/ccc/dddd/') === 'dddd', 'problem with getName (3)');
+	assert.ok(utils.getName('\\aaa\\bbb\\ccc\\dddd\\') === 'dddd', 'problem with getName (4)');
+
 	builders.schema('1', { name: 'string', join: '[2]' });
 	builders.schema('2', { age: Number }, function(name) {
 		if (name === 'age')
@@ -590,8 +595,8 @@ function other() {
 		}, 300);
 	});
 
-	var a = { a: 1, b: 2, name: 'Peter', isActive: true };
-	var b = { a: 1, b: 2, name: 'Peter', isActive: true };
+	var a = { a: 1, b: 2, name: 'Peter', isActive: true, dt: new Date() };
+	var b = { a: 1, b: 2, name: 'Peter', isActive: true, dt: new Date() };
 
 	assert.ok(utils.isEqual(a, b), 'utils.isEqual(1)');
 

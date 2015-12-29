@@ -7,3 +7,5 @@ framework.map('/fet.txt', framework.path.public('file.txt'));
 framework.map('/blocks-a.js', '/js/block.js#a,c,d');
 framework.map('/blocks-b.js', '/js/block.js#b');
 framework.map('/blocks-c.js', '/js/block.js#a,b');
+framework.merge('/merge-theme.js', '=green/public/js/default.js', '=green/public/js/merge.js');
+framework.map('/map-theme.js', '=green/public/js/default.js');

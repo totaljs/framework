@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.3
+ * @version 1.9.4
  */
 
 'use strict';
@@ -43,7 +43,7 @@ var REG_2 = /\s{2,}/g;
 var REG_3 = /\/{1,}/g;
 var REG_4 = /\n\s{2,}./g;
 var REG_5 = />\n\s{1,}</g;
-var REG_6 = /(\w|\")+\s{2,}\w+/g;
+var REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
 var REG_BLOCK_BEG = /\@\{block.*?\}/gi;
 var REG_BLOCK_END = /\@\{end\}/gi;
 
@@ -1738,12 +1738,6 @@ MultipartParser.prototype.explain = function() {
 // =================================================================================
 // *********************************************************************************
 
-/*
-	View class
-	return {View}
-*/
-function View() {}
-
 function view_parse_localization(content, language) {
 
 	var is = false;
@@ -1906,6 +1900,13 @@ function view_parse(content, minify, filename) {
 		var cmd8 = cmd.substring(0, 8);
 		var cmd7 = cmd.substring(0, 7);
 
+		cmd = cmd.replace(/helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g, function(text) {
+			var index = text.indexOf('(');
+			if (index === -1)
+				return text;
+			return text.substring(0, index) + '.call(self, ' + text.substring(index + 1);
+		});
+
 		pharse = cmd;
 
 		if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
@@ -2007,7 +2008,7 @@ function view_parse(content, minify, filename) {
 			builder += '+' + escaper(text);
 	}
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
 }
 
@@ -2218,7 +2219,8 @@ function view_prepare(command, dynamicCommand, functions) {
 			return 'self.' + command;
 
 		case 'translate':
-			return 'self.' + command;
+		case 'TRANSLATE':
+			return 'self.' + command.toLowerCase();
 
 		case 'json':
 		case 'image':
@@ -2839,9 +2841,16 @@ function compressHTML(html, minify) {
 	}
 
 	// html = html.replace(/>\n\s+/g, '>').replace(/\w\n\s+</g, function(text) {
-	html = html.replace(REG_6, function(text) {
-		return text.replace(/\s+/g, ' ');
-	}).replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
+
+	while (true) {
+		if (!html.match(REG_6))
+			break;
+		html = html.replace(REG_6, function(text) {
+			return text.replace(/\s+/g, ' ');
+		});
+	}
+
+	html = html.replace(/>\n\s+/g, '>').replace(/(\w|\W)\n\s+</g, function(text) {
 		return text.trim().replace(/\s/g, '');
 	}).replace(REG_5, '><').replace(REG_4, function(text) {
 		var c = text[text.length - 1];
@@ -2861,13 +2870,13 @@ function compressHTML(html, minify) {
  * @param {String} path
  * @return {Object}
  */
-View.prototype.read = function(path, language) {
+function viewengine_read(path, language) {
 	var config = framework.config;
 	var isOut = path[0] === '.';
 	var filename = isOut ? path.substring(1) : framework.path.views(path);
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(this.modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
+		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
 
 	if (isOut)
 		return null;
@@ -2879,12 +2888,12 @@ View.prototype.read = function(path, language) {
 	filename = framework.path.views(path.substring(index + 1));
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(this.modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
+		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
 
 	return null;
 };
 
-View.prototype.modify = function(value, filename) {
+function viewengine_modify(value, filename) {
 
 	if (!framework.modificators)
 		return value;
@@ -2898,19 +2907,17 @@ View.prototype.modify = function(value, filename) {
 	return value;
 };
 
-/**
- * Load view
- * @param {String} name
- * @param {String} filename
- * @return {Objec}
- */
-View.prototype.load = function(name, filename, language) {
+function viewengine_load(name, filename, language) {
 
-	var self = this;
+	// console.log(name, filename);
 
 	// Is dynamic content?
-	if (name.indexOf('@{') !== -1 || name.indexOf('<') !== -1)
-		return self.dynamic(name, language);
+	// console.log(filename);
+	if (framework.temporary.other[name] === undefined)
+		framework.temporary.other[name] = name.indexOf('@{') !== -1 || name.indexOf('<') !== -1;
+
+	if (framework.temporary.other[name])
+		return viewengine_dynamic(name, language);
 
 	var precompiled = framework.routes.views[name];
 
@@ -2929,38 +2936,36 @@ View.prototype.load = function(name, filename, language) {
 	if (generator !== null)
 		return generator;
 
-	generator = self.read(filename, language);
+	generator = viewengine_read(filename, language);
 
 	if (!framework.isDebug)
 		framework.temporary.views[key] = generator;
 
 	return generator;
-};
+}
 
 /*
 	Compile dynamic view
 	@content {String}
 	return {Object} :: return parsed HTML
 */
-View.prototype.dynamic = function(content, language) {
+function viewengine_dynamic(content, language) {
 	var key = content.hash();
 	var generator = framework.temporary.views[key] || null;
 	if (generator !== null)
 		return generator;
-	generator = view_parse(view_parse_localization(this.modify(content, ''), language), framework.config['allow-compile-html']);
+	generator = view_parse(view_parse_localization(viewengine_modify(content, ''), language), framework.config['allow-compile-html']);
 	if (!framework.isDebug)
 		framework.temporary.views[key] = generator;
 	return generator;
 };
 
 /*
-	Render view from file
+	Renders view from file or dynamic template
 	@name {String}
 	return {Object}
 */
-exports.generateView = function(name, plus, language) {
-	return new View().load(name, plus, language);
-};
+exports.viewEngine = viewengine_load;
 
 exports.appendModel = function(str) {
 	var index = str.indexOf('(');

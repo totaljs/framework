@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 1.9.2
+ * @version 1.9.4
  */
 
 'use strict';
@@ -221,9 +221,11 @@ Image.prototype.save = function(filename, callback, writer) {
 
 	filename = filename || self.filename || '';
 
-	var command = self.cmd(self.filename === null ? '-' : self.filename, filename);
+	var command = self.cmd(!self.filename ? '-' : self.filename, filename);
+	if (framework.isWindows)
+		command = command.replace(/\//g, '\\');
 
-	if (self.builder.length === 0) {
+	if (!self.builder.length) {
 		if (!callback)
 			return;
 		setImmediate(function() {
@@ -292,13 +294,13 @@ Image.prototype.pipe = function(stream, type, options) {
 		type = null;
 	}
 
-	if (self.builder.length === 0)
+	if (!self.builder.length)
 		return;
 
 	if (type === undefined || type === null)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, (type ? type + ':' : '') + '-'));
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(!self.filename ? '-' : self.filename, (type ? type + ':' : '') + '-'));
 
 	cmd.stderr.on('data', stream.emit.bind(stream, 'error'));
 	cmd.stdout.on('data', stream.emit.bind(stream, 'data'));
@@ -326,13 +328,13 @@ Image.prototype.stream = function(type, writer) {
 
 	var self = this;
 
-	if (self.builder.length === 0)
+	if (!self.builder.length)
 		return;
 
 	if (type === undefined || type === null)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename === null ? '-' : self.filename, (type ? type + ':' : '') + '-'));
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(!self.filename ? '-' : self.filename, (type ? type + ':' : '') + '-'));
 
 	if (self.currentStream) {
 		if (self.currentStream instanceof Buffer)

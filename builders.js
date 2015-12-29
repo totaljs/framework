@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 1.9.3
+ * @version 1.9.4
  */
 
 'use strict';
@@ -762,7 +762,7 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback, skip) {
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, $type, self.onSave)) {
 			self.onSave(builder, model, helper, function(result) {
@@ -833,7 +833,7 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 	if (self.resourceName)
 		builder.setResource(self.resourceName);
 	if (self.resourcePrefix)
-		builder.setResource(self.resourcePrefix);
+		builder.setPrefix(self.resourcePrefix);
 
 	var output = self.default();
 	var $type = 'get';
@@ -898,7 +898,7 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 	if (self.resourceName)
 		builder.setResource(self.resourceName);
 	if (self.resourcePrefix)
-		builder.setResource(self.resourcePrefix);
+		builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, $type, self.onRemove)) {
 		self.onRemove(builder, helper, function(result) {
@@ -960,7 +960,7 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 	if (self.resourceName)
 		builder.setResource(self.resourceName);
 	if (self.resourcePrefix)
-		builder.setResource(self.resourcePrefix);
+		builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, $type, self.onQuery)) {
 		self.onQuery(builder, helper, function(result) {
@@ -1019,7 +1019,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 	}
 
 	if (fn === undefined || fn === null) {
@@ -1385,9 +1385,12 @@ SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = functi
 	var output = self.prepare(model);
 
 	if (!self.onValidate && !self.onValidation) {
-		if (callback)
-			callback(null, output);
-		return output;
+		self.onValidate = framework.onValidate || framework.onValidation;
+		if (!self.onValidate) {
+			if (callback)
+				callback(null, output);
+			return output;
+		}
 	}
 
 	var builder = self.validate(output, undefined, undefined, undefined, filter);
@@ -1522,6 +1525,24 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 				// schema
 				case 7:
+
+					if (!val) {
+						val = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
+						// val = defaults(property, false, self.name);
+						if (val === null) {
+							item[property] = null;
+							break;
+						}
+					}
+
+					if (val && typeof(val.$schema) === FUNCTION) {
+						tmp = val.$schema();
+						if (tmp && tmp.name && tmp.name === type.raw) {
+							item[property] = val;
+							break;
+						}
+					}
+
 					entity = self.parent.get(type.raw);
 					if (entity) {
 						item[property] = entity.prepare(val);
@@ -1676,7 +1697,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		trans.call(self, builder, model, helper, function(result) {
 			self.$process(arguments, model, $type, name, builder, result, callback);
@@ -1696,7 +1717,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, 'transform.' + name, trans)) {
 			trans.call(self, builder, model, helper, function(result) {
@@ -1787,7 +1808,7 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback, 
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		compose.call(self, builder, model, helper, function(result) {
 			self.$process(arguments, model, $type, name, builder, result, callback);
@@ -1808,7 +1829,7 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback, 
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, 'compose.' + name, compose)) {
 			compose.call(self, builder, output, model, helper, function(result) {
@@ -1914,7 +1935,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		workflow.call(self, builder, model, helper, function(result) {
 			self.$process(arguments, model, $type, name, builder, result, callback);
@@ -1934,7 +1955,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, 'workflow.' + name, workflow)) {
 			workflow.call(self, builder, model, helper, function(result) {
@@ -2030,7 +2051,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 	if (self.resourceName)
 		builder.setResource(self.resourceName);
 	if (self.resourcePrefix)
-		builder.setResource(self.resourcePrefix);
+		builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, 'operation.' + name, operation)) {
 		operation.call(self, builder, model, helper, function(result) {
@@ -2676,10 +2697,15 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
  */
 ErrorBuilder.prototype.json = function(beautify, replacer) {
 	var items;
+
+	items = this.prepare().items;
+
+	/*
 	if (beautify !== null)
 		items = this.prepare()._transform();
 	else
 		items = this.items;
+	*/
 	if (beautify)
 		return JSON.stringify(items, replacer, '\t');
 	return JSON.stringify(items, replacer);
@@ -2692,10 +2718,6 @@ ErrorBuilder.prototype.json = function(beautify, replacer) {
  */
 ErrorBuilder.prototype.JSON = function(beautify, replacer) {
 	return this.json(beautify, replacer);
-};
-
-ErrorBuilder.prototype.output = function() {
-	return this.prepare()._transform();
 };
 
 /**
@@ -2743,13 +2765,26 @@ ErrorBuilder.prototype._transform = function(name) {
 	var transformName = name || self.transformName;
 
 	if (!transformName)
-		return self.json(null);
+		return self.items;
 
 	var current = transforms['error'][transformName];
-
 	if (current === undefined)
 		return self.items;
 
+	return current.call(self);
+};
+
+ErrorBuilder.prototype.output = function() {
+	var self = this;
+
+	if (!self.transformName)
+		return self.json();
+
+	var current = transforms['error'][self.transformName];
+	if (!current)
+		return self.json();
+
+	self.prepare();
 	return current.call(self);
 };
 

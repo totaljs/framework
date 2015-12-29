@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 1.9.3
+ * @version 1.9.4
  */
 
 'use strict'
@@ -34,6 +34,7 @@ var fs = require('fs');
 var path = require('path');
 var CRLF = '\r\n';
 var UNDEFINED = 'undefined';
+var BOOLEAN = 'boolean';
 var REG_ESMTP = /\besmtp\b/i;
 
 var errors = {
@@ -164,12 +165,18 @@ Message.prototype.sender = function(address, name) {
 };
 
 /**
- * Set sender
- * @param  {String} address A valid e-mail address.
- * @param  {String} name    User name.
+ * Set sender email and name
+ * @param {String} address A valid e-mail address.
+ * @param {String} name An user name.
  * @return {Message}
  */
 Message.prototype.from = function(address, name) {
+
+	if (address[address.length - 1] === '>') {
+		var index = address.indexOf('<');
+		name = address.substring(0, index - 1);
+		address = address.substring(index + 1, address.length - 1);
+	}
 
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
@@ -184,26 +191,61 @@ Message.prototype.from = function(address, name) {
 
 /**
  * Add a recipient
- * @param  {String} address A valid e-mail addrčess.
+ * @param {String} address A valid e-mail address.
+ * @param {String} name An user name (optional).
+ * @param {Boolean} clear Clear all "to" address (optional, default: false).
  * @return {Message}
  */
-Message.prototype.to = function(address) {
+Message.prototype.to = function(address, name, clear) {
+
+	if (typeof(name) === BOOLEAN) {
+		clear = name;
+		name = undefined;
+	}
+
+	if (address[address.length - 1] === '>') {
+		var index = address.indexOf('<');
+		name = address.substring(0, index - 1);
+		address = address.substring(index + 1, address.length - 1);
+	}
 
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
 
 	var self = this;
-	self.addressTo.push(address);
+
+	if (clear)
+		self.addressTo = new Array(0);
+
+	if (!name) {
+		self.addressTo.push(address);
+		return self;
+	}
+
+	self.addressTo.push({ email: address, name: name });
 	return self;
 
 };
 
 /**
  * Add a CC recipient
- * @param  {String} address A valid e-mail addrčess.
+ * @param {String} address A valid e-mail address.
+ * @param {String} name An user name (optional).
+ * @param {Boolean} clear Clear all "cc" address (optional, default: false).
  * @return {Message}
  */
-Message.prototype.cc = function(address, clear) {
+Message.prototype.cc = function(address, name, clear) {
+
+	if (typeof(name) === BOOLEAN) {
+		clear = name;
+		name = undefined;
+	}
+
+	if (address[address.length - 1] === '>') {
+		var index = address.indexOf('<');
+		name = address.substring(0, index - 1);
+		address = address.substring(index + 1, address.length - 1);
+	}
 
 	if (!address.isEmail())
 		throw new Error(errors.notvalid);
@@ -213,14 +255,19 @@ Message.prototype.cc = function(address, clear) {
 	if (clear)
 		self.addressCC = new Array(0);
 
-	self.addressCC.push(address);
-	return self;
+	if (!name) {
+		self.addressCC.push(address);
+		return self;
+	}
 
+	self.addressCC.push({ email: address, name: name });
+	return self;
 };
 
 /**
  * Add a BCC recipient
- * @param  {String} address A valid e-mail addrčess.
+ * @param  {String} address A valid e-mail address.
+ * @param {Boolean} clear Clear all "bcc" address (optional, default: false).
  * @return {Message}
  */
 Message.prototype.bcc = function(address, clear) {
@@ -235,12 +282,11 @@ Message.prototype.bcc = function(address, clear) {
 
 	self.addressBCC.push(address);
 	return self;
-
 };
 
 /**
  * Add a reply to address
- * @param  {String} address A valid e-mail addrčess.
+ * @param  {String} address A valid e-mail address.
  * @return {Message}
  */
 Message.prototype.reply = function(address, clear) {
@@ -255,7 +301,6 @@ Message.prototype.reply = function(address, clear) {
 
 	self.addressReply.push(address);
 	return self;
-
 };
 
 /**
@@ -480,31 +525,35 @@ Message.prototype._send = function(socket, options, autosend) {
 		length = self.addressTo.length;
 		var builder = '';
 		var mail;
+		var item;
 
 		if (length) {
-
 			for (var i = 0; i < length; i++) {
-				mail = '<' + self.addressTo[i] + '>';
+				item = self.addressTo[i];
+				if (item instanceof Object)
+					mail = '<' + item.email  + '>';
+				else
+					mail = '<' + item + '>';
 				buffer.push('RCPT TO: ' + mail);
-				builder += (builder !== '' ? ', ' : '') + mail;
+				builder += (builder ? ', ' : '') + (item instanceof Object ? unicode_encode(item.name) + ' ' : '') + mail;
 			}
-
 			message.push('To: ' + builder);
 			builder = '';
 		}
 
 		length = self.addressCC.length;
 		if (length) {
-
 			for (var i = 0; i < length; i++) {
-				mail = '<' + self.addressCC[i] + '>';
+				item = self.addressCC[i];
+				if (item instanceof Object)
+					mail = '<' + item.email  + '>';
+				else
+					mail = '<' + item + '>';
 				buffer.push('RCPT TO: ' + mail);
-				builder += (builder !== '' ? ', ' : '') + mail;
+				builder += (builder ? ', ' : '') + (item instanceof Object ? unicode_encode(item.name) + ' ' : '') + mail;
 			}
-
 			message.push('Cc: ' + builder);
 			builder = '';
-
 		}
 
 		length = self.addressBCC.length;
