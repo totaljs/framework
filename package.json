@@ -55,6 +55,9 @@
     },{
         "name": "Marchukov Ivan",
         "email": "marchukov.ivan@gmail.com"
+    },{
+        "name": "Dusan Dragula",
+        "email": "dusan.dragula@goodrequest.com"
     }],
     "version": "1.9.4-27",
     "homepage": "http://www.totaljs.com",
