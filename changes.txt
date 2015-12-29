@@ -42,6 +42,7 @@
 - fixed: HTML minification of UTF8 characters
 - fixed: U.isEqual()
 - fixed: FrameworkImage.save() in Windows by LiaoTzukai
+- fixed: SchemaBuilder prefix by Dušan Dragula
 
 - improved performance of the response
 - improved total performance

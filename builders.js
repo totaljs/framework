@@ -762,7 +762,7 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback, skip) {
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, $type, self.onSave)) {
 			self.onSave(builder, model, helper, function(result) {
@@ -833,7 +833,7 @@ SchemaBuilderEntity.prototype.get = function(helper, callback) {
 	if (self.resourceName)
 		builder.setResource(self.resourceName);
 	if (self.resourcePrefix)
-		builder.setResource(self.resourcePrefix);
+		builder.setPrefix(self.resourcePrefix);
 
 	var output = self.default();
 	var $type = 'get';
@@ -898,7 +898,7 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 	if (self.resourceName)
 		builder.setResource(self.resourceName);
 	if (self.resourcePrefix)
-		builder.setResource(self.resourcePrefix);
+		builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, $type, self.onRemove)) {
 		self.onRemove(builder, helper, function(result) {
@@ -960,7 +960,7 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 	if (self.resourceName)
 		builder.setResource(self.resourceName);
 	if (self.resourcePrefix)
-		builder.setResource(self.resourcePrefix);
+		builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, $type, self.onQuery)) {
 		self.onQuery(builder, helper, function(result) {
@@ -1019,7 +1019,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 	}
 
 	if (fn === undefined || fn === null) {
@@ -1697,7 +1697,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		trans.call(self, builder, model, helper, function(result) {
 			self.$process(arguments, model, $type, name, builder, result, callback);
@@ -1717,7 +1717,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, 'transform.' + name, trans)) {
 			trans.call(self, builder, model, helper, function(result) {
@@ -1808,7 +1808,7 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback, 
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		compose.call(self, builder, model, helper, function(result) {
 			self.$process(arguments, model, $type, name, builder, result, callback);
@@ -1829,7 +1829,7 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback, 
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, 'compose.' + name, compose)) {
 			compose.call(self, builder, output, model, helper, function(result) {
@@ -1935,7 +1935,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		workflow.call(self, builder, model, helper, function(result) {
 			self.$process(arguments, model, $type, name, builder, result, callback);
@@ -1955,7 +1955,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 		if (self.resourceName)
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
-			builder.setResource(self.resourcePrefix);
+			builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, 'workflow.' + name, workflow)) {
 			workflow.call(self, builder, model, helper, function(result) {
@@ -2051,7 +2051,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 	if (self.resourceName)
 		builder.setResource(self.resourceName);
 	if (self.resourcePrefix)
-		builder.setResource(self.resourcePrefix);
+		builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, 'operation.' + name, operation)) {
 		operation.call(self, builder, model, helper, function(result) {
