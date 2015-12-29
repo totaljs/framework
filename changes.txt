@@ -1,4 +1,6 @@
-======= 1.9.4
+======= 1.9.5
+
+I had to skip v1.9.4 version because of NPM (by my mistake).
 
 - added: (IMPORTANT) new feature: THEMES
 - added: `@{theme}` --> return String

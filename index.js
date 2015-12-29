@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 1.9.4
+ * @version 1.9.5
  */
 
 'use strict';
@@ -408,8 +408,8 @@ var directory = framework_utils.$normalize(require.main ? path.dirname(require.m
 function Framework() {
 
 	this.id = null;
-	this.version = 1940;
-	this.version_header = '1.9.4';
+	this.version = 1950;
+	this.version_header = '1.9.5';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
