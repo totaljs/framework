@@ -1527,7 +1527,8 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 				case 7:
 
 					if (!val) {
-						val = defaults(property, false, self.name);
+						val = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
+						// val = defaults(property, false, self.name);
 						if (val === null) {
 							item[property] = null;
 							break;
