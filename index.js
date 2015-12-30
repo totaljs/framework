@@ -409,7 +409,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1960;
-	this.version_header = '1.9.6-1';
+	this.version_header = '1.9.6-2';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -12957,7 +12957,8 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 // *********************************************************************************
 
 var NEWLINE = '\r\n';
-var SOCKET_RESPONSE = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\nSec-WebSocket-Protocol: {2}\r\n\r\n';
+var SOCKET_RESPONSE = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\n\r\n';
+var SOCKET_RESPONSE_PROTOCOL = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\nSec-WebSocket-Protocol: {2}\r\n\r\n';
 var SOCKET_RESPONSE_ERROR = 'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nX-WebSocket-Reject-Reason: 403 Forbidden\r\n\r\n';
 var SOCKET_HASH = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 var SOCKET_ALLOW_VERSION = [13];
@@ -13647,7 +13648,8 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 	if (SOCKET_ALLOW_VERSION.indexOf(framework_utils.parseInt(self.req.headers['sec-websocket-version'])) === -1)
 		return false;
 
-	self.socket.write(new Buffer(SOCKET_RESPONSE.format('total.js v' + version, self._request_accept_key(self.req), protocols), 'binary'));
+	var header = protocols.length ? SOCKET_RESPONSE_PROTOCOL.format('total.js v' + version, self._request_accept_key(self.req), protocols.join(', ')) : SOCKET_RESPONSE.format('total.js v' + version, self._request_accept_key(self.req));
+	self.socket.write(new Buffer(header, 'binary'));
 
 	self._id = (self.ip || '').replace(/\./g, '') + framework_utils.GUID(20);
 	self.id = self._id;
