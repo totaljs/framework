@@ -1,3 +1,7 @@
+======= 1.9.6 (BETA)
+
+- fixed: miss Sec-WebSocket-Protocol by Liao San-Kai
+
 ======= 1.9.5
 
 I had to skip v1.9.4 version because of NPM (my mistake).
