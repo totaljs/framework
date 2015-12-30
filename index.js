@@ -409,7 +409,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1960;
-	this.version_header = '1.9.6-2';
+	this.version_header = '1.9.6-3';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -7883,7 +7883,15 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 		theme = '';
 	}
 
-	var filename = framework_utils.join(theme, directory, this._version(name));
+	var filename;
+
+	if (name.match(/^(\/\/|https\:|http\:)+/g))
+		filename = name;
+	else if (name[0] === '/')
+		filename = framework_utils.join(theme, '', this._version(name));
+	else
+		filename = framework_utils.join(theme, directory, this._version(name));
+
 	return framework.temporary.other[key] = this._version(filename);
 };
 
@@ -11599,13 +11607,9 @@ Controller.prototype.$favicon = function(name) {
  * @return {String}
  */
 Controller.prototype._routeHelper = function(current, name, fn) {
-	if (!current)
-		return fn.call(framework, name, this.themeName);
-	if (current.substring(0, 2) === '//' || current.substring(0, 6) === 'http:/' || current.substring(0, 7) === 'https:/')
-		return fn.call(framework, current + name, this.themeName);
-	if (current[0] === '~')
-		return fn.call(framework, framework_utils.path(current.substring(1)) + name, this.themeName);
-	return fn.call(framework, framework_utils.path(current) + name, this.themeName);
+	if (current)
+		current = prepare_staticurl(current);
+	return fn.call(framework, current + prepare_staticurl(name, false), this.themeName);
 };
 
 /**
@@ -14864,6 +14868,16 @@ function prepare_filename(name) {
 	}
 
 	return framework_utils.combine('/', name);
+}
+
+function prepare_staticurl(url) {
+	if (!url)
+		return url;
+	if (url[0] === '~')
+		url = framework_utils.path(url.substring(1));
+	else if (url.substring(0, 2) === '//' || url.substring(0, 6) === 'http:/' || url.substring(0, 7) === 'https:/')
+		return url;
+	return url;
 }
 
 function prepare_isomorphic(name) {

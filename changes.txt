@@ -1,5 +1,6 @@
 ======= 1.9.6 (BETA)
 
+- fixed: static file routing (@{import()}, @{routeScript}, etc..)
 - fixed: miss Sec-WebSocket-Protocol by Liao San-Kai
 
 ======= 1.9.5
