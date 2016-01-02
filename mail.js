@@ -361,7 +361,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	self.callback = fnCallback;
 
-	if (options.secure && !options.port)
+	if (options && options.secure && !options.port)
 		options.port = 465;
 
 	options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000, tls: null });

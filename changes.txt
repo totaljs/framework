@@ -2,6 +2,7 @@
 
 - fixed: static file routing (@{import()}, @{routeScript}, etc..)
 - fixed: miss Sec-WebSocket-Protocol by Liao San-Kai
+- fixed: MailMessage.send() --> `options` argument is optional
 
 - improved: SchemaBuilder by Ivan Marchukov
 

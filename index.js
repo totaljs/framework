@@ -409,7 +409,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1960;
-	this.version_header = '1.9.6-5';
+	this.version_header = '1.9.6-6';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -10720,7 +10720,13 @@ Controller.prototype.mail = function(address, subject, view, model, callback, la
 	}
 
 	var self = this;
+
+	// Backup layout
+	var layoutName = self.layoutName;
+
 	var body = self.view(view, model, true);
+
+	self.layoutName = layoutName;
 
 	return framework.onMail(address, subject, body, callback, language);
 };
