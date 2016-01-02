@@ -283,6 +283,12 @@ global.NEWTRANSFORM = function(name, fn, isDefault) {
 	return TransformBuilder.addTransform.apply(this, arguments);
 };
 
+/**
+ * Creates schema in the specific group
+ * @param {String} [group=default]
+ * @param {String} name
+ * @return {SchemaBuilderEntity}
+ */
 global.NEWSCHEMA = function(group, name) {
 	if (!name) {
 		name = group;
