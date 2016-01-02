@@ -1896,7 +1896,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
  */
 SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 
-	if (m === null || m === undefined)
+	if (!m)
 		return m;
 
 	var model;
@@ -1906,12 +1906,23 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 	else
 		model = m;
 
-	var self = this;
+	if (model.$$async) {
+		delete model['$$result'];
+		delete model['$$async'];
+		delete model['$callback'];
+	}
 
+/*
+	@TODO: works but stays for the testing
+	var self = this;
 	for (var key in model) {
+
+		if (key === '$_schema')
+			continue;
+
 		var value = model[key];
 
-		if (value === null)
+		if (!value)
 			continue;
 
 		if (typeof(value) !== OBJECT)
@@ -1935,7 +1946,7 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 
 		model[key] = self.clean(value, true);
 	}
-
+*/
 	return model;
 };
 
@@ -2037,7 +2048,7 @@ SchemaInstance.prototype.$default = function() {
 };
 
 SchemaInstance.prototype.$destroy = function() {
-	// TODO maybe remove because unused? or deprecate
+	return this.$_schema.destroy();
 };
 
 SchemaInstance.prototype.$transform = function(name, helper, callback) {
@@ -2150,6 +2161,8 @@ SchemaInstance.prototype.$operation = function(name, helper, callback) {
 };
 
 SchemaInstance.prototype.$clean = function() {
+	if (!this.$$async)
+		return this;
 	return this.$_schema.clean(this); // TODO Maybe clean is not needed anymore. After refactoring instance looking pretty
 };
 
