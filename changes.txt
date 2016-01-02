@@ -3,6 +3,8 @@
 - fixed: static file routing (@{import()}, @{routeScript}, etc..)
 - fixed: miss Sec-WebSocket-Protocol by Liao San-Kai
 
+- improved: SchemaBuilder by Ivan Marchukov
+
 ======= 1.9.5
 
 I had to skip v1.9.4 version because of NPM (my mistake).

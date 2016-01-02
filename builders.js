@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 1.9.5
+ * @version 1.9.6
  */
 
 'use strict';
@@ -145,7 +145,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 	this.gcache = {};
 
 	this.CurrentSchemaInstance = function(){};
-	this.CurrentSchemaInstance.prototype = new SchemaInstance;
+	this.CurrentSchemaInstance.prototype = new SchemaInstance();
 	this.CurrentSchemaInstance.prototype.$_schema = this;
 
 	var self = this;
