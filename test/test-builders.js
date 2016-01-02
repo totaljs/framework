@@ -64,7 +64,7 @@ function test_PageBuilder() {
 
 	var builder = new builders.Pagination(100, 1, 10);
 	assert.ok(builder.render(1) === 10, name + 'default transform()');
-};
+}
 
 function test_UrlBuilder() {
 	var name = 'UrlBuilder: ';
@@ -286,6 +286,7 @@ function test_Schema() {
 
 	q.define('name', String, true);
 	q.define('arr', '[x]', true);
+	q.define('ref', x);
 	x.define('age', Number, true);
 	x.define('note', String, true);
 
@@ -311,7 +312,49 @@ function test_Schema() {
 
 	qi.$validate();
 
-};
+	// Relations test
+	qi = q.make({ ref: xi, arr:[xi,xi] });
+	xi.note = 'Ivan';
+	assert.ok(qi.ref.note === 'Ivan', 'schema relations');
+
+	var Cat = SCHEMA('test').create('Cat');
+	Cat.define('id', Number);
+	Cat.define('name', String);
+	Cat.define('age', Number);
+
+	// Performance test
+	var instanceCount = 80000;
+	var cats = [];
+
+	//var memwatch = require('memwatch-next');
+	//var hd = new memwatch.HeapDiff();
+
+	var __start = (new Date()).getTime();
+
+	for (var i=0; i<instanceCount; i++){
+		var c = Cat.make({
+			id: i,
+			name: 'Cat ' + i.toString(),
+			age: 3
+		});
+		cats.push(c);
+	}
+
+	var __time = (new Date()).getTime() - __start;
+	//var __mem = hd.end();
+	console.log('Create time (instance in ms): ', instanceCount / __time);
+	//console.log('Memory usage (bytes per instance): ', __mem.change.size_bytes / instanceCount);
+
+	// JSON test
+	var cat = { id: 123, name: 'Kitty', age: 4 };
+	assert.ok(JSON.stringify(Cat.make(cat)) == JSON.stringify(cat), 'schema - json stringify');
+
+	// instance prototype test test
+	Cat.instancePrototype().meou = function(){
+		return this.name;
+	};
+	assert.ok(cats[40].meou() === 'Cat 40', 'schema - add function');
+}
 
 function test_ErrorBuilder() {
 	var name = 'ErrorBuilder: ';
