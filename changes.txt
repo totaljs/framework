@@ -1,5 +1,9 @@
 ======= 1.9.6 (BETA)
 
+- added: MailMessage.manually() and removes auto-sending mail --> works only with F.mail() and controller.Mail().
+
+- updated: F.mail() supports themes with view nema like this `=default/someview'`
+
 - fixed: static file routing (@{import()}, @{routeScript}, etc..)
 - fixed: miss Sec-WebSocket-Protocol by Liao San-Kai
 - fixed: MailMessage.send() --> `options` argument is optional
