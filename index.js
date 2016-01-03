@@ -409,7 +409,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1960;
-	this.version_header = '1.9.6-6';
+	this.version_header = '1.9.6-7';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -3397,8 +3397,7 @@ Framework.prototype.onMail = function(address, subject, body, callback, replyTo)
 	var message = Mail.create(subject, body);
 
 	if (address instanceof Array) {
-		var length = address.length;
-		for (var i = 0; i < length; i++)
+		for (var i = 0, length = address.length; i < length; i++)
 			message.to(address[i]);
 	} else
 		message.to(address);
@@ -3420,16 +3419,16 @@ Framework.prototype.onMail = function(address, subject, body, callback, replyTo)
 
 	var opt = self.temporary['mail-settings'];
 
-	if (opt === undefined) {
+	if (!opt) {
 		var config = self.config['mail.smtp.options'];
 		if (config && config.isJSON())
 			opt = JSON.parse(config);
-		if (opt === undefined)
+		if (!opt)
 			opt = {};
 		self.temporary['mail-settings'] = opt;
 	}
 
-	setTimeout(function() {
+	message.$sending = setTimeout(function() {
 		message.send(self.config['mail.smtp'], opt, callback);
 	}, 2);
 
@@ -5994,7 +5993,7 @@ Framework.prototype.listener = function(req, res) {
 
 	self._request_stats(true, true);
 
-	if (self._length_request_middleware === 0)
+	if (!self._length_request_middleware)
 		return self._request_continue(req, res, headers, protocol);
 
 	if (req.behaviour('disable-middleware'))
@@ -6036,7 +6035,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 	var self = this;
 
-	if (req === null || res === null || res.headersSent || res.success)
+	if (!req || !res || res.headersSent || res.success)
 		return self;
 
 	// Validate if this request is a file (static file)
@@ -6044,7 +6043,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 		self.stats.request.file++;
 
-		if (self._length_files === 0) {
+		if (!self._length_files) {
 			self.responseStatic(req, res);
 			return self;
 		}
@@ -6106,13 +6105,13 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				flags.push('upload');
 				break;
 			default:
-				if (multipart === '') {
-					req.$type = 3;
-					multipart = '';
-				} else {
+				if (multipart) {
 					// UNDEFINED DATA
 					multipart = '';
 					flags.push('raw');
+				} else {
+					req.$type = 3;
+					multipart = '';
 				}
 				break;
 		}
@@ -6523,6 +6522,16 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 	var controller = new Controller('', null, null, null, '');
 	controller.layoutName = '';
 
+	if (view[0] === '=') {
+		// theme
+		var index = view.indexOf('/');
+		if (index !== -1) {
+			controller.themeName = view.substring(1, index);
+			var str = '=' + controller.themeName + '/';
+			view = view.replace(str + 'views/', '').replace(str, '');
+		}
+	}
+
 	if (this.onTheme)
 		controller.themeName = this.onTheme(controller);
 
@@ -6538,7 +6547,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 			controller.language = language;
 	}
 
-	if (typeof(repository) === OBJECT && repository !== null)
+	if (typeof(repository) === OBJECT && repository)
 		controller.repository = repository;
 
 	return controller.mail(address, subject, view, model, callback, replyTo);
