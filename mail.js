@@ -320,6 +320,18 @@ Message.prototype.attachment = function(filename, name) {
 };
 
 /**
+ * Clears a timeout for sending emails (if the email is sent through the F.onMail)
+ * @return {Message}
+ */
+Message.prototype.manually = function() {
+	var self = this;
+	if (!self.$sending)
+		return self;
+	clearTimeout(self.$sending);
+	return self;
+};
+
+/**
  * Adds an inline attachment.
  * Inline attachments are exactly like normal attachments except that they are represented with the 'Content-ID' (cid)
  * which can be referenced in the email's html body. For example an inline attachments (image) with a contentId of 'AB435BH'
