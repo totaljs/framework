@@ -1065,11 +1065,72 @@ exports.extend = function(target, source, rewrite) {
 	while (i--) {
 		var key = keys[i];
 		if (rewrite || target[key] === undefined)
-			target[key] = source[key];
+			target[key] = exports.clone(source[key]);
 	}
 
 	return target;
 };
+
+/**
+ * Clones object
+ * @param {Object} obj
+ * @param {Object} skip Optional, can be only object e.g. { name: true, age: true }.
+ * @param {Boolean} skipFunctions It doesn't clone functions, optional --> default false.
+ * @return {Object}
+ */
+exports.clone = function(obj, skip, skipFunctions) {
+
+	if (!obj)
+		return obj;
+
+	var type = typeof(obj);
+
+	if (type !== OBJECT)
+		return obj;
+
+	var length;
+	var o;
+
+	if (obj instanceof Array) {
+
+		length = obj.length;
+		o = new Array(length);
+
+		for (var i = 0; i < length; i++) {
+			type = typeof(obj[i]);
+			if (type !== OBJECT) {
+				if (skipFunctions && type === FUNCTION)
+					continue;
+				o[i] = obj[i];
+				continue;
+			}
+			o[i] = exports.clone(obj[i], skip, skipFunctions);
+		}
+
+		return o;
+	}
+
+	o = {};
+
+	for (var m in obj) {
+
+		if (skip && skip[m])
+			continue;
+
+		var val = obj[m];
+		var type = typeof(val);
+		if (type !== OBJECT) {
+			if (skipFunctions && type === FUNCTION)
+				continue;
+			o[m] = val;
+			continue;
+		}
+
+		o[m] = exports.clone(obj[m], skip, skipFunctions);
+	}
+
+	return o;
+}
 
 /**
  * Copy values from object to object
@@ -1092,12 +1153,10 @@ exports.copy = function(source, target) {
 	var i = keys.length;
 
 	while (i--) {
-
 		var key = keys[i];
 		if (target[key] === undefined)
 			continue;
-
-		target[key] = source[key];
+		target[key] = exports.clone(source[key]);
 	}
 
 	return target;

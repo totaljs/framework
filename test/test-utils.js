@@ -355,12 +355,13 @@ function other() {
 
 	assert.ok(JSON.stringify(utils.extend({ id: 1 })) === '{"id":1}', 'utils.extend() - undefined');
 
-	utils.copy(obj, { name: 'Peter', age: 25 });
+	var anonymous = { name: 'Peter', age: 25, arr: [1, 2, 3] };
 	assert.ok(!obj.name, 'utils.copy(2)');
-
 	assert.ok(utils.copy({ name: 'Janko' }).name === 'Janko', 'utils.copy(1)');
 
-	utils.extend(obj, { name: 'Peter', age: 25 });
+	utils.extend(obj, anonymous);
+	obj.arr.push(4);
+	assert.ok(obj.arr.length !== anonymous.length, 'utils.copy(2)');
 	assert.ok(obj.name === 'Peter' && obj.age === 25, 'utils.extend()');
 
 	utils.copy({ name: 'A', age: -1 }, obj);

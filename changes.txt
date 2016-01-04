@@ -1,6 +1,7 @@
 ======= 1.9.6 (BETA)
 
 - added: MailMessage.manually() and removes auto-sending mail --> works only with F.mail() and controller.Mail().
+- added: U.clone(obj, [skip])
 
 - updated: F.mail() supports themes with view nema like this `=default/someview'`
 - updated: @{import()} supports movies and images
