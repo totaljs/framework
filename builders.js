@@ -34,6 +34,7 @@ var NUMBER = 'number';
 var BOOLEAN = 'boolean';
 var REQUIRED = 'The field "@" is required.';
 var DEFAULT_SCHEMA = 'default';
+var SKIP = { $$schema: true, $$result: true, $callback: true };
 
 var schemas = {};
 var transforms = { pagination: {}, error: {}, objectbuilder: {}, transformbuilder: {} };
@@ -1894,45 +1895,68 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
  * @param {Boolean} isCopied Internal argument.
  * @return {Object}
  */
-SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
+SchemaBuilderEntity.prototype.clean = function(m) {
+	return clone(m);
+};
 
-	if (!m)
-		return m;
+function clone(obj) {
 
-	var model;
+	if (!obj)
+		return obj;
 
-	if (!isCopied)
-		model = framework_utils.copy(m);
-	else
-		model = m;
+	var type = typeof(obj);
+	if (type !== OBJECT)
+		return obj;
 
-	if (model.$$schema)
-		delete model.$$schema;
+	var length;
+	var o;
 
-	if (model.$$async) {
-		delete model.$$result;
-		delete model.$$async;
-		delete model.$callback;
+	if (obj instanceof Array) {
+
+		length = obj.length;
+		o = new Array(length);
+
+		for (var i = 0; i < length; i++) {
+			type = typeof(obj[i]);
+			if (type !== OBJECT) {
+				if (type === FUNCTION)
+					continue;
+				o[i] = obj[i];
+				continue;
+			}
+			o[i] = clone(obj[i]);
+		}
+
+		return o;
 	}
 
-	var self = this;
-	for (var key in model) {
-		var value = model[key];
-		if (value instanceof Array) {
-			for (var j = 0, sublength = value.length; j < sublength; j++) {
-				var item = value[j];
-				if (item instanceof SchemaInstance)
-					value[j] = self.clean(item, true);
-			}
+	o = {};
+
+	for (var m in obj) {
+
+		if (SKIP[m])
+			continue;
+
+		var val = obj[m];
+
+		if (val instanceof SchemaInstance) {
+			o[m] = clone(val);
 			continue;
 		}
 
-		if (value instanceof SchemaInstance)
-			model[key] = self.clean(value, true);
+		var type = typeof(val);
+		if (type !== OBJECT) {
+			if (type === FUNCTION)
+				continue;
+			o[m] = val;
+			continue;
+		}
+
+		o[m] = clone(obj[m]);
 	}
 
-	return model;
-};
+	return o;
+}
 
 /**
  * Returns prototype of instances
