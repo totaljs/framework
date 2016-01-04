@@ -576,7 +576,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 	var onResponse = function(res) {
 
-		res._buffer = '';
+		res._buffer = null;
 		res._bufferlength = 0;
 
 		// We have redirect
@@ -588,16 +588,21 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 		res.on('data', function(chunk) {
 			var self = this;
-			self._buffer += chunk.toString(encoding);
+			if (self._buffer)
+				self._buffer = Buffer.concat([self._buffer, chunk]);
+			else
+				self._buffer = chunk;
 			self._bufferlength += chunk.length;
 			e.emit('data', chunk, responseLength ? (self._bufferlength / responseLength) * 100 : 0);
 		});
 
 		res.on('end', function() {
 			var self = this;
-			e.emit('end', self._buffer, self.statusCode, self.headers, uri.host);
+			var str = self._buffer.toString(encoding);
+			delete self._buffer; // Free memory
+			e.emit('end', str, self.statusCode, self.headers, uri.host);
 			if (callback)
-				callback(null, self._buffer, self.statusCode, self.headers, uri.host);
+				callback(null, str, self.statusCode, self.headers, uri.host);
 			callback = null;
 		});
 
