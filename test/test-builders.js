@@ -353,6 +353,9 @@ function test_Schema() {
 		return this.name;
 	};
 	assert.ok(cats[40].meou() === 'Cat 40', 'schema - add function');
+
+	var catClone = cats[40].$clone();
+	assert.ok(catClone.meou === cats[0].meou, 'schema $clone 3')
 }
 
 function test_ErrorBuilder() {

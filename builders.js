@@ -2173,7 +2173,7 @@ SchemaInstance.prototype.$clean = function() {
 };
 
 SchemaInstance.prototype.$clone = function() {
-	return framework_utils.extend(new SchemaInstance(this.$$schema), this, true);
+	return framework_utils.extend(new this.$$schema.CurrentSchemaInstance(), this, true);
 };
 
 SchemaInstance.prototype.$prepare = function() {
