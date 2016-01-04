@@ -7890,6 +7890,13 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 	if (name[0] === '~') {
 		name = name.substring(name[1] === '~' ? 2 : 1);
 		theme = '';
+	} else if (name[0] === '=') {
+		// theme
+		var index = name.indexOf('/');
+		if (index !== -1) {
+			theme = name.substring(1, index);
+			name = name.substring(index + 1);
+		}
 	}
 
 	var filename;
@@ -14896,12 +14903,13 @@ function prepare_filename(name) {
 	return framework_utils.combine('/', name);
 }
 
-function prepare_staticurl(url) {
+function prepare_staticurl(url, isDirectory) {
 	if (!url)
 		return url;
-	if (url[0] === '~')
-		url = framework_utils.path(url.substring(1));
-	else if (url.substring(0, 2) === '//' || url.substring(0, 6) === 'http:/' || url.substring(0, 7) === 'https:/')
+	if (url[0] === '~') {
+		if (isDirectory)
+			return framework_utils.path(url.substring(1));
+	} else if (url.substring(0, 2) === '//' || url.substring(0, 6) === 'http:/' || url.substring(0, 7) === 'https:/')
 		return url;
 	return url;
 }
