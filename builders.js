@@ -146,7 +146,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 
 	this.CurrentSchemaInstance = function(){};
 	this.CurrentSchemaInstance.prototype = new SchemaInstance();
-	this.CurrentSchemaInstance.prototype.$_schema = this;
+	this.CurrentSchemaInstance.prototype.$schema = this;
 
 	var self = this;
 
@@ -1906,6 +1906,9 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 	else
 		model = m;
 
+	if (model.$schema)
+		delete model.$schema;
+
 	if (model.$$async) {
 		delete model['$$result'];
 		delete model['$$async'];
@@ -1917,7 +1920,7 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 	var self = this;
 	for (var key in model) {
 
-		if (key === '$_schema')
+		if (key === '$schema')
 			continue;
 
 		var value = model[key];
@@ -1968,7 +1971,7 @@ function SchemaInstance() {
 /**
  * @type {SchemaBuilderEntity}
  */
-SchemaInstance.prototype.$_schema = null;
+SchemaInstance.prototype.$schema = null;
 
 SchemaInstance.prototype.$async = function(callback, index) {
 	var self = this;
@@ -1993,12 +1996,12 @@ SchemaInstance.prototype.$save = function(helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$_schema.save(self, helper, callback);
+		self.$schema.save(self, helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$_schema.save(self, helper, function(err, result) {
+		self.$schema.save(self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2020,12 +2023,12 @@ SchemaInstance.prototype.$remove = function(helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$_schema.remove(helper, callback);
+		self.$schema.remove(helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$_schema.remove(self, helper, function(err, result) {
+		self.$schema.remove(self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2044,23 +2047,23 @@ SchemaInstance.prototype.$remove = function(helper, callback) {
 };
 
 SchemaInstance.prototype.$default = function() {
-	return this.$_schema.default();
+	return this.$schema.default();
 };
 
 SchemaInstance.prototype.$destroy = function() {
-	return this.$_schema.destroy();
+	return this.$schema.destroy();
 };
 
 SchemaInstance.prototype.$transform = function(name, helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$_schema.transform(name, self, helper, callback);
+		self.$schema.transform(name, self, helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$_schema.transform(name, self, helper, function(err, result) {
+		self.$schema.transform(name, self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2083,12 +2086,12 @@ SchemaInstance.prototype.$compose = function(name, helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$_schema.compose(name, self, helper, callback);
+		self.$schema.compose(name, self, helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$_schema.compose(name, self, helper, function(err, result) {
+		self.$schema.compose(name, self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2110,12 +2113,12 @@ SchemaInstance.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$_schema.workflow(name, self, helper, callback);
+		self.$schema.workflow(name, self, helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$_schema.workflow(name, self, helper, function(err, result) {
+		self.$schema.workflow(name, self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2137,12 +2140,12 @@ SchemaInstance.prototype.$operation = function(name, helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$_schema.operation(name, self, helper, callback);
+		self.$schema.operation(name, self, helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$_schema.operation(name, self, helper, function(err, result) {
+		self.$schema.operation(name, self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2161,33 +2164,31 @@ SchemaInstance.prototype.$operation = function(name, helper, callback) {
 };
 
 SchemaInstance.prototype.$clean = function() {
-	if (!this.$$async)
-		return this;
-	return this.$_schema.clean(this); // TODO Maybe clean is not needed anymore. After refactoring instance looking pretty
+	return this.$schema.clean(this);
 };
 
 SchemaInstance.prototype.$clone = function() {
-	return framework_utils.extend(new SchemaInstance(this.$_schema), this, true);
+	return framework_utils.extend(new SchemaInstance(this.$schema), this, true);
 };
 
 SchemaInstance.prototype.$prepare = function() {
-	return this.$_schema.prepare(this);
+	return this.$schema.prepare(this);
 };
 
 SchemaInstance.prototype.$schema = function() {
-	return this.$_schema;
+	return this.$schema;
 };
 
 SchemaInstance.prototype.$validate = function(resourcePrefix, resourceName, builder) {
-	return this.$_schema.validate(this, resourcePrefix, resourceName, builder);
+	return this.$schema.validate(this, resourcePrefix, resourceName, builder);
 };
 
 SchemaInstance.prototype.$rule = function(name) {
-	return this.$_schema.rule(name);
+	return this.$schema.rule(name);
 };
 
 SchemaInstance.prototype.$constant = function(name) {
-	return this.$_schema.constant(name);
+	return this.$schema.constant(name);
 };
 
 /**
