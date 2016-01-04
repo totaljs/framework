@@ -11,6 +11,7 @@
 - fixed: miss Sec-WebSocket-Protocol by Liao San-Kai
 - fixed: MailMessage.send() --> `options` argument is optional
 - fixed: problem with UTF8 in U.request() by Ivan Marchukov
+- fixed: WebSocket parser
 
 - improved: (IMPORTANT) SchemaBuilder by Ivan Marchukov
 

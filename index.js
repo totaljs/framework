@@ -13815,14 +13815,17 @@ WebSocketClient.prototype.parse = function() {
 		// JSON
 		if (self.type === 3) {
 			try {
-				self.container.emit('message', self, framework.onParseJSON(self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output));
+				output = self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output;
+				if (output.isJSON())
+					self.container.emit('message', self, framework.onParseJSON(output));
 			} catch (ex) {
-				self.errors++;
-				self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
+				if (DEBUG) {
+					self.errors++;
+					self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
+				}
 			}
 		} else
 			self.container.emit('message', self, self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output);
-
 	} else {
 		var binary = new Buffer(length);
 		for (var i = 0; i < length; i++)
