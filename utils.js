@@ -598,7 +598,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 		res.on('end', function() {
 			var self = this;
-			var str = self._buffer.toString(encoding);
+			var str = self._buffer ? self._buffer.toString(encoding) : '';
 			delete self._buffer; // Free memory
 			e.emit('end', str, self.statusCode, self.headers, uri.host);
 			if (callback)
