@@ -415,7 +415,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1960;
-	this.version_header = '1.9.6-7';
+	this.version_header = '1.9.6-8';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -463,7 +463,7 @@ function Framework() {
 		'static-url-video': '/video/',
 		'static-url-font': '/fonts/',
 		'static-url-download': '/download/',
-		'static-accepts': { '.jpg': true, '.png': true, '.gif': true, '.ico': true, '.js': true, '.css': true, '.txt': true, '.xml': true, '.woff': true, '.woff2':true, '.otf':true, '.ttf':true, '.eot':true, '.svg':true, '.zip':true, '.rar':true, '.pdf':true, '.docx':true, '.xlsx':true, '.doc':true, '.xls':true, '.html':true, '.htm':true, '.appcache':true, '.manifest':true, '.map':true, '.ogg':true, '.mp4':true, '.mp3':true, '.webp':true, '.webm':true, '.swf':true, '.package':true, '.json':true, '.md': true, '.m4v': true },
+		'static-accepts': { '.jpg': true, '.png': true, '.gif': true, '.ico': true, '.js': true, '.css': true, '.txt': true, '.xml': true, '.woff': true, '.woff2':true, '.otf':true, '.ttf':true, '.eot':true, '.svg':true, '.zip':true, '.rar':true, '.pdf':true, '.docx':true, '.xlsx':true, '.doc':true, '.xls':true, '.html':true, '.htm':true, '.appcache':true, '.manifest':true, '.map':true, '.ogv': true, '.ogg':true, '.mp4':true, '.mp3':true, '.webp':true, '.webm':true, '.swf':true, '.package':true, '.json':true, '.md': true, '.m4v': true },
 
 		// 'static-accepts-custom': [],
 
@@ -7896,6 +7896,13 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 	if (name[0] === '~') {
 		name = name.substring(name[1] === '~' ? 2 : 1);
 		theme = '';
+	} else if (name[0] === '=') {
+		// theme
+		var index = name.indexOf('/');
+		if (index !== -1) {
+			theme = name.substring(1, index);
+			name = name.substring(index + 1);
+		}
 	}
 
 	var filename;
@@ -11478,6 +11485,17 @@ Controller.prototype.$import = function() {
 			case '.ico':
 				builder += self.$favicon(filename);
 				break;
+			case '.mp4':
+			case '.avi':
+			case '.ogv':
+			case '.webm':
+			case '.mov':
+			case '.mpg':
+			case '.mpe':
+			case '.mpeg':
+			case '.m4v':
+				builder += self.routeImage(filename, true);
+				break;
 			case '.jpg':
 			case '.gif':
 			case '.png':
@@ -14891,12 +14909,13 @@ function prepare_filename(name) {
 	return framework_utils.combine('/', name);
 }
 
-function prepare_staticurl(url) {
+function prepare_staticurl(url, isDirectory) {
 	if (!url)
 		return url;
-	if (url[0] === '~')
-		url = framework_utils.path(url.substring(1));
-	else if (url.substring(0, 2) === '//' || url.substring(0, 6) === 'http:/' || url.substring(0, 7) === 'https:/')
+	if (url[0] === '~') {
+		if (isDirectory)
+			return framework_utils.path(url.substring(1));
+	} else if (url.substring(0, 2) === '//' || url.substring(0, 6) === 'http:/' || url.substring(0, 7) === 'https:/')
 		return url;
 	return url;
 }

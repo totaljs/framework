@@ -146,7 +146,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 
 	this.CurrentSchemaInstance = function(){};
 	this.CurrentSchemaInstance.prototype = new SchemaInstance();
-	this.CurrentSchemaInstance.prototype.$schema = this;
+	this.CurrentSchemaInstance.prototype.$$schema = this;
 
 	var self = this;
 
@@ -1890,7 +1890,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 /**
  * Clean model (remove state of all schemas in model).
- * @param {Object} m
+ * @param {Object} m Model.
  * @param {Boolean} isCopied Internal argument.
  * @return {Object}
  */
@@ -1906,50 +1906,31 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 	else
 		model = m;
 
-	if (model.$schema)
-		delete model.$schema;
+	if (model.$$schema)
+		delete model.$$schema;
 
 	if (model.$$async) {
-		delete model['$$result'];
-		delete model['$$async'];
-		delete model['$callback'];
+		delete model.$$result;
+		delete model.$$async;
+		delete model.$callback;
 	}
 
-/*
-	@TODO: works but stays for the testing
 	var self = this;
 	for (var key in model) {
-
-		if (key === '$schema')
-			continue;
-
 		var value = model[key];
-
-		if (!value)
-			continue;
-
-		if (typeof(value) !== OBJECT)
-			continue;
-
 		if (value instanceof Array) {
 			for (var j = 0, sublength = value.length; j < sublength; j++) {
-
 				var item = value[j];
-				if (item === null)
-					continue;
-
-				if (typeof(item) !== OBJECT)
-					continue;
-
-				value[j] = self.clean(item, true);
+				if (item instanceof SchemaInstance)
+					value[j] = self.clean(item, true);
 			}
-
 			continue;
 		}
 
-		model[key] = self.clean(value, true);
+		if (value instanceof SchemaInstance)
+			model[key] = self.clean(value, true);
 	}
-*/
+
 	return model;
 };
 
@@ -1971,7 +1952,7 @@ function SchemaInstance() {
 /**
  * @type {SchemaBuilderEntity}
  */
-SchemaInstance.prototype.$schema = null;
+SchemaInstance.prototype.$$schema = null;
 
 SchemaInstance.prototype.$async = function(callback, index) {
 	var self = this;
@@ -1996,12 +1977,12 @@ SchemaInstance.prototype.$save = function(helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$schema.save(self, helper, callback);
+		self.$$schema.save(self, helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$schema.save(self, helper, function(err, result) {
+		self.$$schema.save(self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2023,12 +2004,12 @@ SchemaInstance.prototype.$remove = function(helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$schema.remove(helper, callback);
+		self.$$schema.remove(helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$schema.remove(self, helper, function(err, result) {
+		self.$$schema.remove(self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2047,23 +2028,23 @@ SchemaInstance.prototype.$remove = function(helper, callback) {
 };
 
 SchemaInstance.prototype.$default = function() {
-	return this.$schema.default();
+	return this.$$schema.default();
 };
 
 SchemaInstance.prototype.$destroy = function() {
-	return this.$schema.destroy();
+	return this.$$schema.destroy();
 };
 
 SchemaInstance.prototype.$transform = function(name, helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$schema.transform(name, self, helper, callback);
+		self.$$schema.transform(name, self, helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$schema.transform(name, self, helper, function(err, result) {
+		self.$$schema.transform(name, self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2086,12 +2067,12 @@ SchemaInstance.prototype.$compose = function(name, helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$schema.compose(name, self, helper, callback);
+		self.$$schema.compose(name, self, helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$schema.compose(name, self, helper, function(err, result) {
+		self.$$schema.compose(name, self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2113,12 +2094,12 @@ SchemaInstance.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$schema.workflow(name, self, helper, callback);
+		self.$$schema.workflow(name, self, helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$schema.workflow(name, self, helper, function(err, result) {
+		self.$$schema.workflow(name, self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2140,12 +2121,12 @@ SchemaInstance.prototype.$operation = function(name, helper, callback) {
 	var self = this;
 
 	if (!self.$$async) {
-		self.$schema.operation(name, self, helper, callback);
+		self.$$schema.operation(name, self, helper, callback);
 		return self;
 	}
 
 	self.$$async.push(function(next) {
-		self.$schema.operation(name, self, helper, function(err, result) {
+		self.$$schema.operation(name, self, helper, function(err, result) {
 
 			if (self.$$result)
 				self.$$result.push(err ? null : result);
@@ -2164,31 +2145,31 @@ SchemaInstance.prototype.$operation = function(name, helper, callback) {
 };
 
 SchemaInstance.prototype.$clean = function() {
-	return this.$schema.clean(this);
+	return this.$$schema.clean(this);
 };
 
 SchemaInstance.prototype.$clone = function() {
-	return framework_utils.extend(new SchemaInstance(this.$schema), this, true);
+	return framework_utils.extend(new SchemaInstance(this.$$schema), this, true);
 };
 
 SchemaInstance.prototype.$prepare = function() {
-	return this.$schema.prepare(this);
+	return this.$$schema.prepare(this);
 };
 
 SchemaInstance.prototype.$schema = function() {
-	return this.$schema;
+	return this.$$schema;
 };
 
 SchemaInstance.prototype.$validate = function(resourcePrefix, resourceName, builder) {
-	return this.$schema.validate(this, resourcePrefix, resourceName, builder);
+	return this.$$schema.validate(this, resourcePrefix, resourceName, builder);
 };
 
 SchemaInstance.prototype.$rule = function(name) {
-	return this.$schema.rule(name);
+	return this.$$schema.rule(name);
 };
 
 SchemaInstance.prototype.$constant = function(name) {
-	return this.$schema.constant(name);
+	return this.$$schema.constant(name);
 };
 
 /**

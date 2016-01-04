@@ -17,7 +17,7 @@ var isDebugging = process.argv.indexOf('debugging') !== -1;
 var directory = process.cwd();
 var path = require('path');
 var first = process.argv.indexOf('restart') === -1;
-var VERSION = '2.0';
+var VERSION = '2.1';
 var TIME = 2000;
 
 process.on('uncaughtException', function(e) {
@@ -88,8 +88,8 @@ function app() {
 
 		pidIncrease = setTimeout(function() {
 			speed += TIME;
-			if (speed > 20000)
-				speed = 20000;
+			if (speed > 4000)
+				speed = 4000;
 			onIncrease();
 		}, 120000);
 	}
