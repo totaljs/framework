@@ -1890,7 +1890,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 /**
  * Clean model (remove state of all schemas in model).
- * @param {Object} m
+ * @param {Object} m Model.
  * @param {Boolean} isCopied Internal argument.
  * @return {Object}
  */
@@ -1910,46 +1910,27 @@ SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
 		delete model.$schema;
 
 	if (model.$$async) {
-		delete model['$$result'];
-		delete model['$$async'];
-		delete model['$callback'];
+		delete model.$$result;
+		delete model.$$async;
+		delete model.$callback;
 	}
 
-/*
-	@TODO: works but stays for the testing
 	var self = this;
 	for (var key in model) {
-
-		if (key === '$schema')
-			continue;
-
 		var value = model[key];
-
-		if (!value)
-			continue;
-
-		if (typeof(value) !== OBJECT)
-			continue;
-
 		if (value instanceof Array) {
 			for (var j = 0, sublength = value.length; j < sublength; j++) {
-
 				var item = value[j];
-				if (item === null)
-					continue;
-
-				if (typeof(item) !== OBJECT)
-					continue;
-
-				value[j] = self.clean(item, true);
+				if (item instanceof SchemaInstance)
+					value[j] = self.clean(item, true);
 			}
-
 			continue;
 		}
 
-		model[key] = self.clean(value, true);
+		if (value instanceof SchemaInstance)
+			model[key] = self.clean(value, true);
 	}
-*/
+
 	return model;
 };
 
