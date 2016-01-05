@@ -1085,7 +1085,7 @@ exports.clone = function(obj, skip, skipFunctions) {
 
 	var type = typeof(obj);
 
-	if (type !== OBJECT)
+	if (type !== OBJECT || obj instanceof Date)
 		return obj;
 
 	var length;
@@ -1098,7 +1098,7 @@ exports.clone = function(obj, skip, skipFunctions) {
 
 		for (var i = 0; i < length; i++) {
 			type = typeof(obj[i]);
-			if (type !== OBJECT) {
+			if (type !== OBJECT || obj[i] instanceof Date) {
 				if (skipFunctions && type === FUNCTION)
 					continue;
 				o[i] = obj[i];
@@ -1119,7 +1119,7 @@ exports.clone = function(obj, skip, skipFunctions) {
 
 		var val = obj[m];
 		var type = typeof(val);
-		if (type !== OBJECT) {
+		if (type !== OBJECT || val instanceof Date) {
 			if (skipFunctions && type === FUNCTION)
 				continue;
 			o[m] = val;

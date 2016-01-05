@@ -286,6 +286,7 @@ function test_Schema() {
 	q.define('name', String, true);
 	q.define('arr', '[x]', true);
 	q.define('ref', x);
+	q.define('created', Date);
 	x.define('age', Number, true);
 	x.define('note', String, true);
 
@@ -298,6 +299,8 @@ function test_Schema() {
 	});
 
 	var qi = q.create();
+
+	assert.ok(qi.created.getTime() === Date.now(), 'A problem with problem a default value of date');
 
 	var xi = x.create();
 	xi.age = 30;
@@ -407,6 +410,11 @@ function test_ErrorBuilder() {
 	builder.add('name');
 
 	assert.ok(builder.errors === 2, name + 'transform()');
+
+	NEWSCHEMA('default').make(function(schema) {
+		schema.define('created', Date);
+	});
+
 };
 
 function test_TransformBuilder() {
