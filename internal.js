@@ -1997,6 +1997,8 @@ function view_parse(content, minify, filename, controller) {
 
 			for (var a = 0, al = RENDERNOW.length; a < al; a++) {
 				if (tmp.startsWith(RENDERNOW[a])) {
+					if (tmp.indexOf('\'meta\'') !== -1 || tmp.indexOf('\'head\'') !== -1)
+						break;
 					if (tmp.indexOf('+') === -1)
 						can = true;
 					break;
