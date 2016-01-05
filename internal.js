@@ -1877,7 +1877,7 @@ function view_parse(content, minify, filename, controller) {
 	var compileName = '';
 	var isSitemap = false;
 	var text;
-	var RENDERNOW = ['self.$import(', 'self.route', 'self.$js', 'self.$css', 'self.$favicon', 'self.$script', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language'];
+	var RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language'];
 
 	while (command !== null) {
 
@@ -1997,9 +1997,8 @@ function view_parse(content, minify, filename, controller) {
 
 			for (var a = 0, al = RENDERNOW.length; a < al; a++) {
 				if (tmp.startsWith(RENDERNOW[a])) {
-					if (tmp.indexOf('+') === -1) {
+					if (tmp.indexOf('+') === -1)
 						can = true;
-					}
 					break;
 				}
 			}
