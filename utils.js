@@ -2990,7 +2990,7 @@ String.prototype.params = function(obj) {
 			}
 		}
 
-		val = val.toString().dollar();
+		val = val.toString();
 		return isEncode ? exports.encode(val) : val;
 	});
 };
@@ -3351,21 +3351,6 @@ String.prototype.insert = function(index, value) {
 	var a = str.substring(0, index);
 	var b = value.toString() + str.substring(index);
 	return a + b;
-};
-
-/*
-	Prepare string for replacing double dollar
-*/
-String.prototype.dollar = function() {
-	var str = this;
-	var index = str.indexOf('$', 0);
-
-	while (index !== -1) {
-		if (str[index + 1] === '$')
-			str = str.insert(index, '$');
-		index = str.indexOf('$', index + 2);
-	}
-	return str.toString();
 };
 
 /**

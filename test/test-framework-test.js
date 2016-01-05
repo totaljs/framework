@@ -1,11 +1,15 @@
 var framework = require('../index');
 var url = 'http://127.0.0.1:8001/';
 
+framework.onCompileView = function(name, html, model) {
+	return html + 'COMPILED';
+};
+
 framework.onLocate = function(req) {
 	return 'sk';
 };
 
-framework.onAuthorization = function(req, res, flags, cb) {
+framework.onAuthorize = function(req, res, flags, cb) {
     req.user = { alias: 'Peter Širka' };
     req.session = { ready: true };
     cb(req.url === '/a/');
@@ -23,16 +27,8 @@ mem.on('stats', function(info) {
 });
 */
 
-framework.on('load', function() {
-    framework.merge('/mergepackage.js', '@testpackage/test.js');
-});
-
-framework.http('debug', { port: 8001 });
-
+framework.http('release', { port: 8001 });
 
 setTimeout(function() {
-	U.request('http://127.0.0.1:8001/options/', ['options'], null, function() {
-		console.log(arguments);
-		F.stop();
-	});
-}, 1000);
+    F.stop();
+}, 5000);

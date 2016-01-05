@@ -415,7 +415,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1960;
-	this.version_header = '1.9.6-10';
+	this.version_header = '1.9.6-11';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -9782,11 +9782,6 @@ function Controller(name, req, res, subscribe, currentView) {
 	this.outputPartial = null;
 	this.$model = null;
 
-	this._currentImage = '';
-	this._currentDownload = '';
-	this._currentVideo = '';
-	this._currentScript = '';
-	this._currentStyle = '';
 	this._currentView = currentView;
 
 	if (!req)
@@ -11645,10 +11640,8 @@ Controller.prototype.$favicon = function(name) {
  * @param {Function} fn
  * @return {String}
  */
-Controller.prototype._routeHelper = function(current, name, fn) {
-	if (current)
-		current = prepare_staticurl(current);
-	return fn.call(framework, current + prepare_staticurl(name, false), this.themeName);
+Controller.prototype._routeHelper = function(name, fn) {
+	return fn.call(framework, prepare_staticurl(name, false), this.themeName);
 };
 
 /**
@@ -11673,7 +11666,7 @@ Controller.prototype.routeScript = function(name, tag) {
 	var self = this;
 	if (name === undefined)
 		name = 'default.js';
-	var url = self._routeHelper(self._currentScript, name, framework.routeScript);
+	var url = self._routeHelper(name, framework.routeScript);
 	return tag ? '<script type="text/javascript" src="' + url + '"></script>' : url;
 };
 
@@ -11700,7 +11693,7 @@ Controller.prototype.routeStyle = function(name, tag) {
 	if (name === undefined)
 		name = 'default.css';
 
-	var url = self._routeHelper(self._currentStyle, name, framework.routeStyle);
+	var url = self._routeHelper(name, framework.routeStyle);
 	return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
 
@@ -11711,7 +11704,7 @@ Controller.prototype.routeStyle = function(name, tag) {
  */
 Controller.prototype.routeImage = function(name) {
 	var self = this;
-	return self._routeHelper(self._currentImage, name, framework.routeImage);
+	return self._routeHelper(name, framework.routeImage);
 };
 
 /**
@@ -11721,7 +11714,7 @@ Controller.prototype.routeImage = function(name) {
  */
 Controller.prototype.routeVideo = function(name) {
 	var self = this;
-	return self._routeHelper(self._currentVideo, name, framework.routeVideo);
+	return self._routeHelper(name, framework.routeVideo);
 };
 
 /**
@@ -11740,7 +11733,7 @@ Controller.prototype.routeFont = function(name) {
  */
 Controller.prototype.routeDownload = function(name) {
 	var self = this;
-	return self._routeHelper(self._currentDownload, name, framework.routeDownload);
+	return self._routeHelper(name, framework.routeDownload);
 };
 
 /**
@@ -11750,185 +11743,6 @@ Controller.prototype.routeDownload = function(name) {
  */
 Controller.prototype.routeStatic = function(name) {
 	return framework.routeStatic(name);
-};
-
-/**
- * Set current "script" path
- * @alias
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentJS = function(path) {
-	return this.$currentScript(path);
-};
-
-/**
- * Set current "script" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentScript = function(path) {
-	this._currentScript = path ? path : '';
-	return '';
-};
-
-/**
- * Set current "view" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentView = function(path) {
-	var self = this;
-
-	if (path === undefined) {
-		self._currentView = self.name[0] !== '#' && self.name !== 'default' ? '/' + self.name + '/' : '';
-		return self;
-	}
-
-	self._currentView = path ? framework_utils.path(path) : '';
-	return '';
-};
-
-/**
- * Set current "view" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentView = function(path) {
-	var self = this;
-	self.$currentView(path);
-	self._defaultView = self._currentView;
-	return self;
-};
-
-/**
- * Set current "style" path
- * @alias
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentCSS = function(path) {
-	return this.$currentStyle(path);
-};
-
-/**
- * Set current "style" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentStyle = function(path) {
-	this._currentStyle = path ? path : '';
-	return '';
-};
-
-/**
- * Set current "image" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentImage = function(path) {
-	this._currentImage = path ? path : '';
-	return '';
-};
-
-/**
- * Set current "video" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentVideo = function(path) {
-	this._currentVideo = path ? path : '';
-	return '';
-};
-
-/**
- * Set current "download" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentDownload = function(path) {
-	this._currentDownload = path ? path : '';
-	return '';
-};
-
-/**
- * Set current "image" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentImage = function(path) {
-	var self = this;
-	self.$currentImage(path);
-	self._defaultImage = self._currentImage;
-	return self;
-};
-
-/**
- * Set current "download" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentDownload = function(path) {
-	var self = this;
-	self.$currentDownload(path);
-	self._defaultDownload = self._currentDownload;
-	return self;
-};
-
-/**
- * Set current "style" path
- * @alias
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.currentCSS = function(path) {
-	return this.currentStyle(path);
-};
-
-/**
- * Set current "style" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentStyle = function(path) {
-	var self = this;
-	self.$currentStyle(path);
-	self._defaultStyle = self._currentStyle;
-	return self;
-};
-
-/**
- * Set current "script" path
- * @alias
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentJS = function(path) {
-	return this.currentScript(path);
-};
-
-/**
- * Set current "script" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentScript = function(path) {
-	var self = this;
-	self.$currentScript(path);
-	self._defaultScript = self._currentScript;
-	return self;
-};
-
-/**
- * Set current "video" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentVideo = function(path) {
-	var self = this;
-	self.$currentVideo(path);
-	self._defaultVideo = self._currentVideo;
-	return self;
 };
 
 /**
@@ -12792,7 +12606,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		framework.temporary.other[key] = filename;
 	}
 
-	var generator = framework_internal.viewEngine(name, filename, self.language);
+	var generator = framework_internal.viewEngine(name, filename, self);
 	if (!generator) {
 
 		var err = new Error('View "' + filename + '" not found.');
@@ -12815,14 +12629,8 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var value = '';
 	self.$model = model;
 
-	if (isLayout) {
-		self._currentStyle = self._defaultStyle || '';
-		self._currentScript = self._defaultScript || '';
-		self._currentDownload = self._defaultDownload || '';
-		self._currentVideo = self._defaultVideo || '';
-		self._currentImage = self._defaultImage || '';
+	if (isLayout)
 		self._currentView = self._defaultView || '';
-	}
 
 	var helpers = framework.helpers;
 

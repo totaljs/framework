@@ -583,8 +583,7 @@ function viewViews() {
 
     self.repository.A = 'A';
 
-    self.currentView('current');
-    output = self.view('c', {
+    output = self.view('current/c', {
         a: 'A',
         b: 'B',
         c: true,

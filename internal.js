@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.5
+ * @version 1.9.6
  */
 
 'use strict';
@@ -1776,7 +1776,7 @@ function view_parse_localization(content, language) {
  * @param {Boolean} minify
  * @return {Function}
  */
-function view_parse(content, minify, filename) {
+function view_parse(content, minify, filename, controller) {
 
 	if (minify)
 		content = removeComments(content);
@@ -1877,19 +1877,20 @@ function view_parse(content, minify, filename) {
 	var compileName = '';
 	var isSitemap = false;
 	var text;
+	var RENDERNOW = ['self.$import(', 'self.route', 'self.$js', 'self.$css', 'self.$favicon', 'self.$script', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language'];
 
 	while (command !== null) {
 
 		if (old !== null) {
 			text = content.substring(old.end + 1, command.beg);
-			if (text !== '') {
+			if (text) {
 				if (view_parse_plus(builder))
 					builder += '+';
 				builder += escaper(text);
 			}
 		} else {
 			text = content.substring(0, command.beg);
-			if (text !== '') {
+			if (text) {
 				if (view_parse_plus(builder))
 					builder += '+';
 				builder += escaper(text);
@@ -1897,6 +1898,7 @@ function view_parse(content, minify, filename) {
 		}
 
 		var cmd = content.substring(command.beg + 2, command.end);
+
 		var cmd8 = cmd.substring(0, 8);
 		var cmd7 = cmd.substring(0, 7);
 
@@ -1909,7 +1911,9 @@ function view_parse(content, minify, filename) {
 
 		pharse = cmd;
 
-		if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
+		if (cmd[0] === '\'' || cmd[0] === '"') {
+			builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd + ')'))(controller) + DELIMITER;
+		} else if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
 
 			builderTMP = builder + '+(framework.onCompileView.call(self,\'' + (cmd8[7] === ' ' ? cmd.substring(8) : '') + '\',';
 			builder = '';
@@ -1989,7 +1993,21 @@ function view_parse(content, minify, filename) {
 				nocompress = true;
 			});
 
-			if (tmp) {
+			var can = false;
+
+			for (var a = 0, al = RENDERNOW.length; a < al; a++) {
+				if (tmp.startsWith(RENDERNOW[a])) {
+					if (tmp.indexOf('+') === -1) {
+						can = true;
+					}
+					break;
+				}
+			}
+
+			if (can) {
+				var fn = new Function('self', 'return ' + tmp);
+				builder += '+' + DELIMITER + fn(controller).replace(/\\/g, '\\\\') + DELIMITER;
+			} else if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
 				builder += wrapTryCatch(tmp, command.command, command.line);
@@ -2007,6 +2025,9 @@ function view_parse(content, minify, filename) {
 		if (text)
 			builder += '+' + escaper(text);
 	}
+
+	if (!framework.isDebug)
+		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output\=\$EMPTY\+)/g, '$output=').replace(/(\$output\+\=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+\=\$EMPTY)/g, '}').replace(/(\{\$output\+\=\$EMPTY\;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(\>\'\+\'\<)/g, '><');
 
 	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
@@ -2232,14 +2253,6 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'helper':
 		case 'download':
 		case 'selected':
-		case 'currentContent':
-		case 'currentCSS':
-		case 'currentDownload':
-		case 'currentImage':
-		case 'currentJS':
-		case 'currentTemplate':
-		case 'currentVideo':
-		case 'currentView':
 		case 'disabled':
 		case 'checked':
 		case 'etag':
@@ -2509,7 +2522,7 @@ function compressJS(html, index, filename) {
 
 	var val = js.substring(strFrom.length, js.length - strTo.length).trim();
 	var compiled = exports.compile_javascript(val, filename);
-	html = html.replacer(js, strFrom + compiled.dollar().trim() + strTo.trim());
+	html = html.replacer(js, strFrom + compiled.trim() + strTo.trim());
 	return compressJS(html, indexBeg + compiled.length + 9, filename);
 }
 
@@ -2774,8 +2787,8 @@ function make_nested(css, name) {
 /**
  * HTML compressor
  * @private
- * @param  {String} html HTML.
- * @param  {Boolean} minify Can minify?
+ * @param {String} html HTML.
+ * @param {Boolean} minify Can minify?
  * @return {String}
  */
 function compressHTML(html, minify) {
@@ -2870,13 +2883,13 @@ function compressHTML(html, minify) {
  * @param {String} path
  * @return {Object}
  */
-function viewengine_read(path, language) {
+function viewengine_read(path, language, controller) {
 	var config = framework.config;
 	var isOut = path[0] === '.';
 	var filename = isOut ? path.substring(1) : framework.path.views(path);
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
+		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
 	if (isOut)
 		return null;
@@ -2888,7 +2901,7 @@ function viewengine_read(path, language) {
 	filename = framework.path.views(path.substring(index + 1));
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
+		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
 	return null;
 };
@@ -2907,9 +2920,9 @@ function viewengine_modify(value, filename) {
 	return value;
 };
 
-function viewengine_load(name, filename, language) {
+function viewengine_load(name, filename, controller) {
 
-	// console.log(name, filename);
+	var language = controller.language;
 
 	// Is dynamic content?
 	// console.log(filename);
@@ -2917,7 +2930,7 @@ function viewengine_load(name, filename, language) {
 		framework.temporary.other[name] = name.indexOf('@{') !== -1 || name.indexOf('<') !== -1;
 
 	if (framework.temporary.other[name])
-		return viewengine_dynamic(name, language);
+		return viewengine_dynamic(name, language, controller);
 
 	var precompiled = framework.routes.views[name];
 
@@ -2932,11 +2945,10 @@ function viewengine_load(name, filename, language) {
 		key += language;
 
 	var generator = framework.temporary.views[key] || null;
-
 	if (generator !== null)
 		return generator;
 
-	generator = viewengine_read(filename, language);
+	generator = viewengine_read(filename, language, controller);
 
 	if (!framework.isDebug)
 		framework.temporary.views[key] = generator;
@@ -2949,23 +2961,16 @@ function viewengine_load(name, filename, language) {
 	@content {String}
 	return {Object} :: return parsed HTML
 */
-function viewengine_dynamic(content, language) {
+function viewengine_dynamic(content, language, controller) {
 	var key = content.hash();
 	var generator = framework.temporary.views[key] || null;
 	if (generator !== null)
 		return generator;
-	generator = view_parse(view_parse_localization(viewengine_modify(content, ''), language), framework.config['allow-compile-html']);
+	generator = view_parse(view_parse_localization(viewengine_modify(content, ''), language), framework.config['allow-compile-html'], null, controller);
 	if (!framework.isDebug)
 		framework.temporary.views[key] = generator;
 	return generator;
 };
-
-/*
-	Renders view from file or dynamic template
-	@name {String}
-	return {Object}
-*/
-exports.viewEngine = viewengine_load;
 
 exports.appendModel = function(str) {
 	var index = str.indexOf('(');
@@ -3301,6 +3306,7 @@ exports.parseBlock = function(name, content) {
 	return builder.trim();
 };
 
+exports.viewEngine = viewengine_load;
 exports.parseLocalization = view_parse_localization;
 exports.findLocalization = view_find_localization;
 exports.destroyStream = destroyStream;

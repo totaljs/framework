@@ -29,8 +29,7 @@
 #options-empty@{options(repository.optionsEmpty, 'B')}#
 #options@{options(repository.options, 'C', 'k', 'v')}#
 #view-toggle@{viewToggle(false, 'b')}#
-@{currentView('current')}
-#view@{view('b', 'model')}#
+#view@{view('current/b', 'model')}#
 #routejs-@{routeScript('p.js')}#
 #title@{title}#
 #mobile@{mobile}#
@@ -77,3 +76,4 @@ var n = '\n"\n';
 @{compile}
 COMPILE_WITHOUT
 @{end}
+@{'filename.js'}

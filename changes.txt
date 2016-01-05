@@ -1,19 +1,24 @@
 ======= 1.9.6 (BETA)
 
-- added: MailMessage.manually() and removes auto-sending mail --> works only with F.mail() and controller.Mail().
-- added: U.clone(obj, [skip])
+- added: MailMessage.manually() and removes auto-sending mail --> works only with `F.mail()` and `controller.Mail()`.
+- added: `U.clone(obj, [skip])`
+- added: view engine supports now `@{'route-to-static-file.jpg'}`
 
-- updated: F.mail() supports themes with view nema like this `=default/someview'`
-- updated: @{import()} supports movies and images
-- updated: @{import()} can contain schema name in the path like this `=YOURSCHEMA/somefile.js`
+- updated: `F.mail()` supports themes with view nema like this `=default/someview'`
+- updated: `@{import()}` supports movies and images
+- updated: `@{import()}` can contain schema name in the path like this `=YOURSCHEMA/somefile.js`
 
-- fixed: static file routing (@{import()}, @{routeScript}, etc..)
-- fixed: miss Sec-WebSocket-Protocol by Liao San-Kai
-- fixed: MailMessage.send() --> `options` argument is optional
+- fixed: static file routing (`@{import()}`, `@{routeScript}`, etc..)
+- fixed: miss `Sec-WebSocket-Protocol` by Liao San-Kai
+- fixed: `MailMessage.send()` --> `options` argument is optional
 - fixed: problem with UTF8 in U.request() by Ivan Marchukov
 - fixed: WebSocket parser
 
+- removed: all `controller.current...()` methods
+- removed: all `@{current...()}` methods
+
 - improved: (IMPORTANT) SchemaBuilder by Ivan Marchukov
+- improved: (IMPORTANT) ViewEngine performance about 15%
 
 ======= 1.9.5
 
