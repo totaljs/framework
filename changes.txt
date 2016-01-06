@@ -13,6 +13,7 @@
 - fixed: `MailMessage.send()` --> `options` argument is optional
 - fixed: problem with UTF8 in U.request() by Ivan Marchukov
 - fixed: WebSocket parser
+- fixed: U.getExtension()
 
 - removed: all `controller.current...()` methods
 - removed: all `@{current...()}` methods

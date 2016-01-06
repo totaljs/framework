@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.5
+ * @version 1.9.6
  */
 
 'use strict';
@@ -1429,7 +1429,9 @@ exports.getExtension = function(filename) {
 	var index = filename.lastIndexOf('.');
 	if (index === -1)
 		return '';
-	return filename.substring(index);
+	if (filename.indexOf('/', index - 1) === -1)
+		return filename.substring(index);
+	return '';
 };
 
 /**
