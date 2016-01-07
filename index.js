@@ -12746,6 +12746,9 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		if (skip === 3)
 			filename = '.' + framework.path.package(filename);
 
+		if (skip === 1)
+			filename = '.' + name;
+
 		framework.temporary.other[key] = filename;
 	}
 
