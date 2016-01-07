@@ -1140,9 +1140,14 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
 	if (type === STRING) {
 		viewname = funcExecute;
+		var themeName = framework_utils.parseTheme(viewname);
+		if (themeName)
+			viewname = viewname.replace('=' + themeName + '/', '');
 		funcExecute = function(name) {
 			if (viewname[0] === '~')
 				this.themeName = '';
+			else
+				this.themeName = themeName;
 			this.view(viewname);
 		};
 	} else if (typeof(funcExecute) !== TYPE_FUNCTION) {
@@ -6528,14 +6533,11 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 	var controller = new Controller('', null, null, null, '');
 	controller.layoutName = '';
 
-	if (view[0] === '=') {
-		// theme
-		var index = view.indexOf('/');
-		if (index !== -1) {
-			controller.themeName = view.substring(1, index);
-			var str = '=' + controller.themeName + '/';
-			view = view.replace(str + 'views/', '').replace(str, '');
-		}
+	controller.themeName = framework_utils.parseTheme(view);
+
+	if (controller.themeName) {
+		var str = '=' + controller.themeName + '/';
+		view = view.replace(str + 'views/', '').replace(str, '');
 	}
 
 	if (this.onTheme)
