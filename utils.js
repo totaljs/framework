@@ -5191,6 +5191,15 @@ exports.minifyHTML = function(value) {
 	return require('./internal').compile_html(value);
 };
 
+exports.parseTheme = function(value) {
+	if (value[0] !== '=')
+		return '';
+	var index = value.indexOf('/', 2);
+	if (index === -1)
+		return '';
+	return value.substring(1, index);
+};
+
 global.Async = global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
 global.sync2 = exports.sync2;

@@ -1,12 +1,14 @@
 ======= 1.9.6 (BETA)
 
 - added: MailMessage.manually() and removes auto-sending mail --> works only with `F.mail()` and `controller.Mail()`.
-- added: `U.clone(obj, [skip])`
 - added: view engine supports now `@{'route-to-static-file.jpg'}`
+- added: `U.clone(obj, [skip])`
+- added: `U.parseTheme(path)` --> parses theme name
 
 - updated: `F.mail()` supports themes with view nema like this `=default/someview'`
 - updated: `@{import()}` supports movies and images
 - updated: `@{import()}` can contain schema name in the path like this `=YOURSCHEMA/somefile.js`
+- updated: `F.route('/', '=themeName/viewname')` supports inline themes
 
 - fixed: static file routing (`@{import()}`, `@{routeScript}`, etc..)
 - fixed: miss `Sec-WebSocket-Protocol` by Liao San-Kai
