@@ -1140,16 +1140,17 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
 	if (type === STRING) {
 		viewname = funcExecute;
-		var themeName = framework_utils.parseTheme(viewname);
-		if (themeName)
-			viewname = viewname.replace('=' + themeName + '/', '');
-		funcExecute = function(name) {
-			if (viewname[0] === '~')
-				this.themeName = '';
-			else
-				this.themeName = themeName;
-			this.view(viewname);
-		};
+		funcExecute = (function(name) {
+			var themeName = framework_utils.parseTheme(name);
+			name = name.replace('=' + themeName + '/', '');
+			return function() {
+				if (name[0] === '~')
+					this.themeName = '';
+				else if (themeName)
+					this.themeName = themeName;
+				this.view(name);
+			};
+		})(viewname);
 	} else if (typeof(funcExecute) !== TYPE_FUNCTION) {
 
 		viewname = url;
@@ -1164,11 +1165,13 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		if (viewname === '' || viewname === '/')
 			viewname = 'index';
 
-		funcExecute = function() {
-			if (viewname[0] === '~')
-				this.theme('');
-			this.view(viewname);
-		};
+		funcExecute = (function(name) {
+			return function() {
+				if (name[0] === '~')
+					this.theme('');
+				this.view(name);
+			};
+		})(viewname);
 	}
 
 	if (!utils.isArray(flags) && typeof(flags) === 'object') {
@@ -12571,7 +12574,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	// views root `~~some_view`
 	// package    `@some_view`
 
-	var key = 'view#' + name;
+	var key = 'view#=' + this.themeName + '/' + name;
 	var filename = framework.temporary.other[key];
 	var isLayout = self.isLayout;
 
