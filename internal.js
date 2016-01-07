@@ -1997,10 +1997,25 @@ function view_parse(content, minify, filename, controller) {
 
 			for (var a = 0, al = RENDERNOW.length; a < al; a++) {
 				if (tmp.startsWith(RENDERNOW[a])) {
-					if (tmp.indexOf('\'meta\'') !== -1 || tmp.indexOf('\'head\'') !== -1)
-						break;
-					if (tmp.indexOf('+') === -1)
-						can = true;
+
+					if (tmp.indexOf('+') !== -1)
+						continue;
+
+					if (!a) {
+						var isMeta = tmp.indexOf('\'meta\'') !== -1;
+						var isHead = tmp.indexOf('\'head\'') !== -1;
+						tmp = tmp.replace(/\'(meta|head)\'\,/g, '').replace(/(\,\,|\,\)|\s{1,})/g, '');
+						if (isMeta || isHead) {
+							var tmpimp = '';
+							if (isMeta)
+								tmpimp += (isMeta ? '\'meta\'' : '');
+							if (isHead)
+								tmpimp += (tmpimp ? ',' : '') + (isHead ? '\'head\'' : '');
+							builder += '+self.$import(' + tmpimp + ')';
+						}
+					}
+
+					can = true;
 					break;
 				}
 			}
