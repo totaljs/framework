@@ -12946,6 +12946,10 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 
 	var self = this;
 	var keys = self._keys;
+
+	if (!keys)
+		return self;
+
 	var length = keys.length;
 
 	if (length === 0)
@@ -13007,6 +13011,10 @@ WebSocket.prototype.ping = function() {
 
 	var self = this;
 	var keys = self._keys;
+
+	if (!keys)
+		return self;
+
 	var length = keys.length;
 
 	if (length === 0)
@@ -13032,6 +13040,9 @@ WebSocket.prototype.close = function(id, message, code) {
 
 	var self = this;
 	var keys = self._keys;
+
+	if (!keys)
+		return self;
 
 	if (typeof(id) === STRING) {
 		code = message;
@@ -13125,6 +13136,10 @@ WebSocket.prototype.change = function(message) {
 WebSocket.prototype.all = function(fn) {
 
 	var self = this;
+
+	if (!self._keys)
+		return self;
+
 	var length = self._keys.length;
 
 	for (var i = 0; i < length; i++) {
@@ -13143,6 +13158,10 @@ WebSocket.prototype.all = function(fn) {
 */
 WebSocket.prototype.find = function(id) {
 	var self = this;
+
+	if (!self._keys)
+		return self;
+
 	var length = self._keys.length;
 	var isFn = typeof(id) === TYPE_FUNCTION;
 
@@ -13171,7 +13190,7 @@ WebSocket.prototype.destroy = function(problem) {
 	if (problem)
 		self.problem(problem);
 
-	if (self.connections === null && self._keys === null)
+	if (!self.connections && !self._keys)
 		return self;
 
 	self.close();
@@ -13216,6 +13235,12 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 */
 WebSocket.prototype._refresh = function() {
 	var self = this;
+
+	if (!self.connections) {
+		self.online = 0;
+		return self;
+	}
+
 	self._keys = Object.keys(self.connections);
 	self.online = self._keys.length;
 	return self;

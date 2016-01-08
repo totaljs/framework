@@ -17,6 +17,7 @@
 - fixed: problem with UTF8 in U.request() by Ivan Marchukov
 - fixed: WebSocket parser
 - fixed: U.getExtension()
+- fixed: problem with WebSocket `destroy`
 
 - removed: all `controller.current...()` methods
 - removed: all `@{current...()}` methods
