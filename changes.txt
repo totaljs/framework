@@ -18,6 +18,7 @@
 - fixed: WebSocket parser
 - fixed: U.getExtension()
 - fixed: problem with WebSocket `destroy`
+- fixed: sync2() doesn't work
 
 - removed: all `controller.current...()` methods
 - removed: all `@{current...()}` methods

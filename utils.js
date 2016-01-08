@@ -4969,7 +4969,7 @@ exports.sync = function(fn, owner) {
 };
 
 exports.sync2 = function(fn, owner) {
-	(function() {
+	return (function() {
 
 		var params;
 		var callback;
