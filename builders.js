@@ -34,7 +34,7 @@ var NUMBER = 'number';
 var BOOLEAN = 'boolean';
 var REQUIRED = 'The field "@" is required.';
 var DEFAULT_SCHEMA = 'default';
-var SKIP = { $$schema: true, $$result: true, $callback: true };
+var SKIP = { $$schema: true, $$result: true, $callback: true, $$async: true };
 
 var schemas = {};
 var transforms = { pagination: {}, error: {}, objectbuilder: {}, transformbuilder: {} };
