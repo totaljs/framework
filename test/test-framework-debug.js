@@ -289,6 +289,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('views in modules', function(complete) {
+		utils.request(url + 'view-in-modules/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'VIEW IN MODULES', 'Problem with opened path in views.');
+			complete();
+		});
+	});
+
 /*
 	async.await('pipe', function(complete) {
 		utils.request(url + 'pipe/', 'GET', null, function(error, data, code, headers) {

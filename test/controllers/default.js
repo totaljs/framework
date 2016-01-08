@@ -32,6 +32,7 @@ exports.install = function() {
         flags: ['unauthorize']
     });
 
+    framework.route('/view-in-modules/', '.' + F.path.modules('someview'));
     framework.route('/options/', plain_options, ['options']);
     framework.route('/exception/', 'exception');
     framework.route('/html-compressor/', view_compressor);

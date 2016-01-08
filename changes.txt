@@ -10,6 +10,7 @@
 - updated: `@{import()}` can contain schema name in the path like this `=YOURSCHEMA/somefile.js`
 - updated: `F.route('/', '=themeName/viewname')` supports inline themes
 
+- fixed: problem with views path (`./some/path/in/hdd/` routed view anywhere)
 - fixed: static file routing (`@{import()}`, `@{routeScript}`, etc..)
 - fixed: miss `Sec-WebSocket-Protocol` by Liao San-Kai
 - fixed: `MailMessage.send()` --> `options` argument is optional

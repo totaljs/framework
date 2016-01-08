@@ -415,7 +415,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1960;
-	this.version_header = '1.9.6-13';
+	this.version_header = '1.9.6-14';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -12582,8 +12582,15 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	// A small cache
 	if (!filename) {
+
+		// ~   --> routed into the root of views (if the controller uses a theme then is routed into the root views of the theme)
+		// ~~  --> routed into the root of views (if the controller contains theme)
+		// /   --> routed into the views (skipped)
+		// @   --> routed into the packages
+		// .   --> routed into the opened path
+
 		var c = name[0];
-		var skip = c === '/' ? 1 : c === '~' && name[1] === '~' ? 4 : c === '~' ? 2 : c === '@' ? 3 : 0;
+		var skip = c === '/' ? 1 : c === '~' && name[1] === '~' ? 4 : c === '~' ? 2 : c === '@' ? 3 : c === '.' ? 5 : 0;
 		var isTheme = false;
 
 		filename = name;
