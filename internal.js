@@ -2903,21 +2903,38 @@ function viewengine_read(path, language, controller) {
 	var config = framework.config;
 	var isOut = path[0] === '.';
 	var filename = isOut ? path.substring(1) : framework.path.views(path);
+	var key;
+
+	if (RELEASE) {
+		key = '404/' + path;
+		var is = framework.temporary.other[key];
+		if (is !== undefined)
+			return null;
+	}
 
 	if (fs.existsSync(filename))
 		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
-	if (isOut)
+	if (isOut) {
+		if (RELEASE)
+			framework.temporary.other[key]= null;
 		return null;
+	}
 
 	var index = path.lastIndexOf('/');
-	if (index === -1)
+	if (index === -1) {
+		if (RELEASE)
+			framework.temporary.other[key]= null;
 		return null;
+	}
 
 	filename = framework.path.views(path.substring(index + 1));
 
 	if (fs.existsSync(filename))
 		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
+
+	if (RELEASE)
+		framework.temporary.other[key]= null;
 
 	return null;
 };
