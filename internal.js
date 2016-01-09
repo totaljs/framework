@@ -2201,6 +2201,11 @@ function view_prepare(command, dynamicCommand, functions) {
 				return 'self.host()';
 			return 'self.' + command;
 
+		case 'href':
+			if (command.indexOf('(') === -1)
+				return 'self.href()';
+			return 'self.' + command;
+
 		case 'url':
 			if (command.indexOf('(') !== -1)
 				return 'self.$' + command;

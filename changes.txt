@@ -4,6 +4,7 @@
 - added: view engine supports now `@{'route-to-static-file.jpg'}`
 - added: `U.clone(obj, [skip])`
 - added: `U.parseTheme(path)` --> parses theme name
+- added: `@{href}` or `@{href(obj)}` or `@{href(key, value)}` --> query string manipulation (more in documentation)
 
 - updated: `F.mail()` supports themes with view nema like this `=default/someview'`
 - updated: `@{import()}` supports movies and images

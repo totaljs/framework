@@ -10948,6 +10948,35 @@ Controller.prototype.$helper = function(name) {
 	return self.helper.apply(self, arguments);
 };
 
+// @{href({ key1: 1, key2: 2 })}
+// @{href('key1=value1&key2=value2')}
+// @{href('key', 'value')}
+Controller.prototype.href = function(key, value) {
+	var self = this;
+
+	if (!arguments.length)
+		return qs.stringify(self.query);
+
+	var type = typeof(key);
+	var obj = framework_utils.copy(self.query);
+
+	if (value && type === OBJECT)
+		framework_utils.extend(obj, value);
+
+	if (value)
+		obj[key] = value;
+
+	obj = qs.stringify(obj);
+
+	if (value === undefined && type === STRING) {
+		if (obj)
+			obj += '&';
+		obj += key;
+	}
+
+	return self.url + (obj ? '?' + obj : '');
+};
+
 /*
 	Internal function for views
 	@name {String}
