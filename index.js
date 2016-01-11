@@ -12769,7 +12769,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 		self.precache = function(value, contentType, headers, isView) {
 
-			var options = { content: value, type: contentType, layout: self.layoutName };
+			var options = { content: value, type: contentType, layout: self.layoutName, theme: self.themeName };
 			if (headers)
 				options.headers = headers;
 
@@ -12805,6 +12805,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 		fnFrom();
 
 	self.layoutName = output.layout;
+	self.themeName = output.theme;
 
 	if (output.type !== CONTENTTYPE_TEXTHTML) {
 		self.subscribe.success();
