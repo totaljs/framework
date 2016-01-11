@@ -13703,8 +13703,8 @@ WebSocketClient.prototype.parse = function() {
 	} else {
 		var binary = new Buffer(length);
 		for (var i = 0; i < length; i++)
-			binary.write(self.buffer[index + 4 + i] ^ mask[i % 4]);
-		self.container.emit('message', self, binary);
+			binary[i] = self.buffer[index + 4 + i] ^ mask[i % 4];
+		self.container.emit('message', self, new Uint8Array(binary).buffer);
 	}
 
 	self.buffer = self.buffer.slice(index + length + 4, self.buffer.length);
