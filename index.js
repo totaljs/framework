@@ -415,7 +415,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1960;
-	this.version_header = '1.9.6-16';
+	this.version_header = '1.9.6-17';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -9356,6 +9356,8 @@ Subscribe.prototype.execute = function(status, isError) {
 
 	if (!self.isCanceled && route.timeout > 0) {
 		self.timeout = setTimeout(function() {
+			if (self.controller && self.controller.precache)
+				self.controller.precache(null, null, null);
 			self.doCancel();
 		}, route.timeout);
 	}
@@ -12352,6 +12354,9 @@ Controller.prototype.throw501 = function(problem) {
 Controller.prototype.redirect = function(url, permanent) {
 	var self = this;
 
+	if (self.precache)
+		self.precache(null, null, null);
+
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
@@ -12379,6 +12384,7 @@ Controller.prototype.redirect = function(url, permanent) {
 Controller.prototype.binary = function(buffer, contentType, type, download, headers) {
 	var self = this;
 	var res = self.res;
+
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
@@ -12407,6 +12413,9 @@ Controller.prototype.binary = function(buffer, contentType, type, download, head
 Controller.prototype.baa = function(label) {
 
 	var self = this;
+
+	if (self.precache)
+		self.precache(null, null, null);
 
 	if (label === undefined)
 		return self.req.authorization();
@@ -12756,18 +12765,26 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 	}
 
 	var output = self.cache.read(key);
-	if (output === null) {
+	if (!output) {
 
 		var pk = '$memorize' + key;
 
 		if (framework.temporary.processing[pk]) {
 			setTimeout(function() {
+				if (self.subscribe.isCanceled)
+					return;
 				self.memorize(key, expires, disabled, fnTo, fnFrom);
 			}, 500);
 			return self;
 		}
 
 		self.precache = function(value, contentType, headers, isView) {
+
+			if (!value && !contentType && !headers) {
+				delete framework.temporary.processing[pk];
+				self.precache = null;
+				return;
+			}
 
 			var options = { content: value, type: contentType, layout: self.layoutName, theme: self.themeName };
 			if (headers)

@@ -21,6 +21,7 @@
 - fixed: problem with WebSocket `destroy`
 - fixed: sync2() doesn't work
 - fixed: problem with themes in controller.memorize()
+- fixed: problem with timeout in controller.memorize()
 
 - removed: all `controller.current...()` methods
 - removed: all `@{current...()}` methods
