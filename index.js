@@ -647,7 +647,8 @@ function Framework() {
 	this._length_themes = 0;
 
 	this.isVirtualDirectory = false;
-	this.isTheme = false;	this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
+	this.isTheme = false;
+	this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
 }
 
 // ======================================================
@@ -1144,7 +1145,8 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		viewname = funcExecute;
 		funcExecute = (function(name) {
 			var themeName = framework_utils.parseTheme(name);
-			name = name.replace('=' + themeName + '/', '');
+			if (themeName)
+				name = prepare_viewname(name);
 			return function() {
 				if (name[0] === '~')
 					this.themeName = '';
@@ -6542,15 +6544,11 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 
 	var controller = new Controller('', null, null, null, '');
 	controller.layoutName = '';
-
 	controller.themeName = framework_utils.parseTheme(view);
 
-	if (controller.themeName) {
-		var str = '=' + controller.themeName + '/';
-		view = view.replace(str + 'views/', '').replace(str, '');
-	}
-
-	if (this.onTheme)
+	if (controller.themeName)
+		view = prepare_viewname(view);
+	else if (this.onTheme)
 		controller.themeName = this.onTheme(controller);
 
 	var replyTo;
@@ -6593,13 +6591,19 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 	controller.layoutName = layout || '';
 	controller.language = language;
 
-	if (this.onTheme)
+	var theme = framework_utils.parseTheme(name);
+	if (theme) {
+		controller.themeName = theme;
+		name = prepare_viewname(name);
+	} else if (this.onTheme)
 		controller.themeName = this.onTheme(controller);
 
 	if (typeof(repository) === OBJECT && repository !== null)
 		controller.repository = repository;
 
 	var output = controller.view(name, model, true);
+	controller.res.controller = null;
+	controller.repository = controller.res = controller.req = null;
 	controller = null;
 	return output;
 };
@@ -7914,6 +7918,8 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 		if (index !== -1) {
 			theme = name.substring(1, index);
 			name = name.substring(index + 1);
+			if (theme === '?')
+				theme = framework.config['default-theme'];
 		}
 	}
 
@@ -14862,4 +14868,9 @@ function isGZIP(req) {
 	if (!ua)
 		return false;
 	return ua.lastIndexOf('Firefox') !== -1;
+}
+
+function prepare_viewname(value) {
+	// Cleans theme name
+	return value.substring(value.indexOf('/', 2) + 1);
 }

@@ -10,6 +10,7 @@
 - added: property `req.robot`
 - added: property `controller.robot`
 - added: property `controller.mobile`
+- added: support for default theme name, e.g. `=?/index` (the framework replaces `?` for `default-theme`)
 
 - updated: (IMPORTANT) controller.isSecure was renamed to controller.secured
 - updated: (IMPORTANT) req.isSecure was renamed to req.secured

@@ -5200,7 +5200,10 @@ exports.parseTheme = function(value) {
 	var index = value.indexOf('/', 2);
 	if (index === -1)
 		return '';
-	return value.substring(1, index);
+	value = value.substring(1, index);
+	if (value === '?')
+		return framework.config['default-theme'];
+	return value;
 };
 
 global.Async = global.async = exports.async;
