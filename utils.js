@@ -2101,9 +2101,11 @@ exports.getWebSocketFrame = function(code, message, type) {
  * @return {Buffer}
  */
 function getWebSocketFrameMessageBytes(code, message) {
-	var index = code === 0 ? 0 : 2;
-	var binary = message.readUInt8 !== undefined;
+
+	var index = code ? 2 : 0;
+	var binary = message instanceof Int8Array;
 	var length = message.length;
+
 	var messageBuffer = new Buffer(length + index);
 
 	for (var i = 0; i < length; i++) {
@@ -2113,7 +2115,7 @@ function getWebSocketFrameMessageBytes(code, message) {
 			messageBuffer[i + index] = message.charCodeAt(i);
 	}
 
-	if (code === 0)
+	if (!code)
 		return messageBuffer;
 
 	messageBuffer[0] = (code >> 8);

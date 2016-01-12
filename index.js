@@ -13028,7 +13028,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 	var fn = typeof(blacklist) === TYPE_FUNCTION ? blacklist : null;
 	var is = blacklist instanceof Array;
 
-	if (id === undefined || id === null || !id.length) {
+	if (!id || !id.length) {
 
 		for (var i = 0; i < length; i++) {
 
@@ -13128,7 +13128,7 @@ WebSocket.prototype.close = function(id, message, code) {
 	if (length === 0)
 		return self;
 
-	if (id === undefined || id === null || !id.length) {
+	if (!id || !id.length) {
 		for (var i = 0; i < length; i++) {
 			var _id = keys[i];
 			self.connections[_id].close(message, code);
@@ -13793,17 +13793,13 @@ WebSocketClient.prototype.send = function(message) {
 		return self;
 
 	if (self.type !== 1) {
-
 		var data = self.type === 3 ? JSON.stringify(message) : (message || '').toString();
 		if (self.container.config['default-websocket-encodedecode'] === true && data)
 			data = encodeURIComponent(data);
 		self.socket.write(framework_utils.getWebSocketFrame(0, data, 0x01));
-
 	} else {
-
-		if (message !== null)
-			self.socket.write(framework_utils.getWebSocketFrame(0, message, 0x02));
-
+		if (message)
+			self.socket.write(framework_utils.getWebSocketFrame(0, new Int8Array(message), 0x02));
 	}
 
 	return self;
