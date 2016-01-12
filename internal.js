@@ -496,6 +496,8 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 			return 0;
 		if (route.isMOBILE && !req.mobile)
 			return 0;
+		if (route.isROBOT && !req.robot)
+			return 0;
 		var method = req.method;
 		if (route.method) {
 			if (route.method !== method)

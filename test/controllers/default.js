@@ -32,6 +32,10 @@ exports.install = function() {
         flags: ['unauthorize']
     });
 
+    framework.route('/', function() {
+        this.plain('ROBOT');
+    }, ['robot']);
+
     framework.route('/view-in-modules/', '.' + F.path.modules('someview'));
     framework.route('/options/', plain_options, ['options']);
     framework.route('/exception/', 'exception');
@@ -453,7 +457,7 @@ function viewIndex() {
     assert.ok(framework.model('user').ok === 1, 'framework: model() - 1');
     assert.ok(framework.model('other/products').ok === 2, 'framework: model() - 2');
 
-    assert.ok(self.isSecure === false, 'controller.isSecure');
+    assert.ok(self.secured === false, 'controller.secured');
     assert.ok(self.config.isDefinition === true, 'definitions()');
 
     assert.ok(!self.xhr, name + 'xhr');

@@ -203,6 +203,24 @@ function test_routing(next) {
 		}, null, { 'user-agent': 'bla bla iPad bla' });
 	});
 
+	async.await('robot - 1', function(complete) {
+		utils.request(url + '', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'ROBOT', 'robot routing problem 1');
+			complete();
+		}, null, { 'user-agent': 'I am Crawler' });
+	});
+
+	async.await('robot - 2', function(complete) {
+		utils.request(url + '', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data !== 'ROBOT', 'robot routing problem 2');
+			complete();
+		}, null, { 'user-agent': 'Chrome' });
+	});
+
 	async.await('binary', function(complete) {
 		utils.request(url + 'binary/', ['get'], null, function(error, data, code, headers) {
 			if (error)

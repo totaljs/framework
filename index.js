@@ -55,6 +55,7 @@ var POWEREDBY = '...';
 var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
 var TEMPORARY_KEY_REGEX = /\//g;
 var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
+var REG_ROBOT = /search|agent|bot|crawler/i;
 var REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
 var REG_MULTIPART = /\/form\-data$/i;
 var REQUEST_PROXY_FLAGS = ['post', 'json'];
@@ -415,7 +416,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1960;
-	this.version_header = '1.9.6-17';
+	this.version_header = '1.9.6-18';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -638,7 +639,7 @@ function Framework() {
 	this._request_check_redirect = false;
 	this._request_check_referer = false;
 	this._request_check_POST = false;
-	this._request_check_mobile = false;
+	this._request_check_robot = false;
 	this._length_middleware = 0;
 	this._length_request_middleware = 0;
 	this._length_files = 0;
@@ -758,6 +759,7 @@ Framework.prototype._routesSort = function() {
 
 	var cache = {};
 	var length = self.routes.web.length;
+	var url;
 
 	for (var i = 0; i < length; i++) {
 		var route = self.routes.web[i];
@@ -770,7 +772,7 @@ Framework.prototype._routesSort = function() {
 			continue;
 		if (route.flags.indexOf('get') === -1)
 			continue;
-		var url = route.url.join('/');
+		url = route.url.join('/');
 		cache[url] = true;
 	}
 
@@ -780,7 +782,7 @@ Framework.prototype._routesSort = function() {
 			continue;
 		if (route.flags.indexOf('get') === -1)
 			continue;
-		var url = route.url.join('/');
+	 url = route.url.join('/');
 		route.isMOBILE_VARY = cache[url] === true;
 	}
 
@@ -1219,6 +1221,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	var isMOBILE = false;
 	var isJSON = false;
 	var isDELAY = false;
+	var isROBOT = false;
 
 	if (flags) {
 
@@ -1302,7 +1305,10 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 					break;
 				case 'mobile':
 					isMOBILE = true;
-					self._request_check_mobile = true;
+					break;
+				case 'robot':
+					isROBOT = true;
+					self._request_check_robot = true;
 					break;
 				case 'authorize':
 				case 'authorized':
@@ -1465,6 +1471,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		isXML: flags.indexOf('xml') !== -1,
 		isRAW: isRaw,
 		isMOBILE: isMOBILE,
+		isROBOT: isROBOT,
 		isMOBILE_VARY: isMOBILE,
 		isGENERATOR: isGENERATOR,
 		isMEMBER: isMember,
@@ -6270,7 +6277,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 	req.session = null;
 	req.user = null;
-	req.flags = [req.isSecure ? 'https' : 'http', 'get'];
+	req.flags = [req.secured ? 'https' : 'http', 'get'];
 
 	var path = framework_utils.path(req.uri.pathname);
 	var websocket = new WebSocketClient(req, socket, head);
@@ -9895,6 +9902,10 @@ Controller.prototype = {
 		return this.req.isSecure;
 	},
 
+	get secured() {
+		return this.req.secured;
+	},
+
 	get session() {
 		return this.req.session;
 	},
@@ -9917,6 +9928,14 @@ Controller.prototype = {
 
 	set global(value) {
 		framework.global = value;
+	},
+
+	get mobile() {
+		return this.req.mobile;
+	},
+
+	get robot() {
+		return this.req.robot;
 	},
 
 	get async() {
@@ -12928,6 +12947,10 @@ WebSocket.prototype = {
 		return this.req.isSecure;
 	},
 
+	get secured() {
+		return this.req.secured;
+	},
+
 	get async() {
 
 		var self = this;
@@ -14449,6 +14472,11 @@ http.IncomingMessage.prototype = {
 	},
 
 	get isSecure() {
+		OBSOLETE('req.isSecure', 'Use req.secured');
+		return this.uri.protocol === 'https:' || this.uri.protocol === 'wss:';
+	},
+
+	get secured() {
 		return this.uri.protocol === 'https:' || this.uri.protocol === 'wss:';
 	},
 
@@ -14462,6 +14490,12 @@ http.IncomingMessage.prototype = {
 		if (this.$mobile === undefined)
 			this.$mobile = REG_MOBILE.test(this.headers['user-agent']);
 		return this.$mobile;
+	},
+
+	get robot() {
+		if (this.$robot === undefined)
+			this.$robot = REG_ROBOT.test(this.headers['user-agent']);
+		return this.$robot;
 	},
 
 	set language(value) {

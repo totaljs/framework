@@ -6,7 +6,13 @@
 - added: `U.parseTheme(path)` --> parses theme name
 - added: `@{href}` or `@{href(obj)}` or `@{href(key, value)}` --> query string manipulation (more in documentation)
 - added: `.jsx` content-type
+- added: `robot` flag into the routing (for search engines)
+- added: property `req.robot`
+- added: property `controller.robot`
+- added: property `controller.mobile`
 
+- updated: (IMPORTANT) controller.isSecure was renamed to controller.secured
+- updated: (IMPORTANT) req.isSecure was renamed to req.secured
 - updated: `F.mail()` supports themes with view nema like this `=default/someview'`
 - updated: `@{import()}` supports movies and images
 - updated: `@{import()}` can contain schema name in the path like this `=YOURSCHEMA/somefile.js`
