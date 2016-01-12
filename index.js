@@ -416,7 +416,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1960;
-	this.version_header = '1.9.6-18';
+	this.version_header = '1.9.6-19';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
