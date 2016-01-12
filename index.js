@@ -5598,7 +5598,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 
 		self.port = port || 8000;
 
-		if (ip) {
+		if (ip !== null) {
 			self.ip = ip || self.config['default-ip'] || '127.0.0.1';
 			if (self.ip === 'null' || self.ip === UNDEFINED || self.ip === 'auto')
 				self.ip = undefined;
@@ -11524,10 +11524,15 @@ Controller.prototype.$import = function() {
 	for (var i = 0; i < arguments.length; i++) {
 		var filename = arguments[i];
 
-		if (filename === 'head')
+		if (filename === 'head') {
 			builder += self.head();
-		if (filename === 'meta')
+			continue;
+		}
+
+		if (filename === 'meta') {
 			builder += self.$meta();
+			continue;
+		}
 
 		var extension = filename.substring(filename.lastIndexOf('.'));
 
@@ -11557,6 +11562,9 @@ Controller.prototype.$import = function() {
 			case '.png':
 			case '.jpeg':
 				builder += self.routeImage(filename, true);
+				break;
+			default:
+				builder += self.routeStatic(filename);
 				break;
 		}
 	}
@@ -11803,7 +11811,8 @@ Controller.prototype.routeDownload = function(name) {
  * @return {String}
  */
 Controller.prototype.routeStatic = function(name) {
-	return framework.routeStatic(name);
+	var self = this;
+	return self._routeHelper(name, framework.routeStatic);
 };
 
 /**
