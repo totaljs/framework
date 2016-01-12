@@ -2094,7 +2094,7 @@ Framework.prototype.error = function(err, name, uri) {
 
 	var self = this;
 
-	if (self.errors !== null) {
+	if (self.errors) {
 		self.errors.push({
 			error: err.stack,
 			name: name,
@@ -2121,7 +2121,7 @@ Framework.prototype.error = function(err, name, uri) {
 Framework.prototype.problem = function(message, name, uri, ip) {
 	var self = this;
 
-	if (self.problems !== null) {
+	if (self.problems) {
 		self.problems.push({
 			message: message,
 			name: name,
@@ -2148,7 +2148,7 @@ Framework.prototype.problem = function(message, name, uri, ip) {
 Framework.prototype.change = function(message, name, uri, ip) {
 	var self = this;
 
-	if (self.changes !== null) {
+	if (self.changes) {
 		self.changes.push({
 			message: message,
 			name: name,
@@ -4019,7 +4019,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 	var isResize = false;
 	var filename;
 
-	if (resizer !== null) {
+	if (resizer) {
 		name = name.substring(index + 1);
 		index = name.lastIndexOf('.');
 		isResize = resizer.extension['*'] || resizer.extension[name.substring(index).toLowerCase()];
@@ -4429,7 +4429,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (self.config.debug && self.isProcessed(key))
 		delete self.temporary.path[key];
 
-	if (size !== null && size !== '0' && !compress)
+	if (size && size !== '0' && !compress)
 		returnHeaders[RESPONSE_HEADER_CONTENTLENGTH] = size;
 	else if (returnHeaders[RESPONSE_HEADER_CONTENTLENGTH])
 		delete returnHeaders[RESPONSE_HEADER_CONTENTLENGTH];
@@ -4668,7 +4668,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	self.temporary.processing[key] = true;
 
 	// STREAM
-	if (stream !== null) {
+	if (stream) {
 		fsFileExists(name, function(exist) {
 
 			if (exist) {
@@ -4841,7 +4841,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 	var im = self.config['default-image-converter'] === 'im';
 
 	// STREAM
-	if (stream !== null) {
+	if (stream) {
 		var image = framework_image.load(stream, im);
 		fnProcess(image);
 		self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers, done);
@@ -5534,7 +5534,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 
 	var self = this;
 
-	if (self.server !== null)
+	if (self.server)
 		return self;
 
 	if (!options)
@@ -5598,7 +5598,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 
 		self.port = port || 8000;
 
-		if (ip !== null) {
+		if (ip) {
 			self.ip = ip || self.config['default-ip'] || '127.0.0.1';
 			if (self.ip === 'null' || self.ip === UNDEFINED || self.ip === 'auto')
 				self.ip = undefined;
@@ -6598,7 +6598,7 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 	} else if (this.onTheme)
 		controller.themeName = this.onTheme(controller);
 
-	if (typeof(repository) === OBJECT && repository !== null)
+	if (typeof(repository) === OBJECT && repository)
 		controller.repository = repository;
 
 	var output = controller.view(name, model, true);
@@ -7781,7 +7781,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (self.config['default-timezone'])
 		process.env.TZ = self.config['default-timezone'];
 
-	if (accepts !== null && accepts.length) {
+	if (accepts && accepts.length) {
 		accepts.forEach(function(accept) {
 			self.config['static-accepts'][accept] = true;
 		});
@@ -7942,9 +7942,9 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 */
 Framework.prototype._version = function(name) {
 	var self = this;
-	if (self.versions !== null)
+	if (self.versions)
 		name = self.versions[name] || name;
-	if (self.onVersion !== null)
+	if (self.onVersion)
 		name = self.onVersion(name) || name;
 	return name;
 };
@@ -8047,7 +8047,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 				continue;
 		}
 
-		if (route.flags !== null && route.flags.length) {
+		if (route.flags && route.flags.length) {
 			var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
 			if (result === -1)
 				req.$isAuthorized = false; // request is not authorized
@@ -8117,7 +8117,7 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 				continue;
 		}
 
-		if (route.flags !== null && route.flags.length) {
+		if (route.flags && route.flags.length) {
 
 			// var result = framework_internal.routeCompareFlags(req.flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
 			var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
@@ -8197,7 +8197,7 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 		timeout = undefined;
 	}
 
-	if (fork !== null)
+	if (fork)
 		return fork;
 
 	var filename = framework_utils.combine(self.config['directory-workers'], name) + EXTENSION_JS;
@@ -9156,7 +9156,7 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 	var self = this;
 	var value = self.read(name);
 
-	if (value !== null) {
+	if (value) {
 		if (fnCallback)
 			fnCallback(value);
 		return self;
@@ -10407,7 +10407,7 @@ Controller.prototype.transfer = function(url, flags) {
 			break;
 		}
 
-		if (route.flags !== null && route.flags.length) {
+		if (route.flags && route.flags.length) {
 			var result = framework_internal.routeCompareFlags(route.flags, flags, true);
 			if (result === -1)
 				self.req.$isAuthorized = false;
@@ -13045,7 +13045,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 
 			var conn = self.connections[_id];
 
-			if (fn !== null && !fn.call(self, _id, conn))
+			if (fn && !fn.call(self, _id, conn))
 				continue;
 
 			conn.send(message);
@@ -13068,7 +13068,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 
 		var conn = self.connections[_id];
 
-		if (fn !== null && !fn.call(self, _id, conn) === -1)
+		if (fn && !fn.call(self, _id, conn) === -1)
 			continue;
 
 		conn.send(message);
@@ -13156,7 +13156,7 @@ WebSocket.prototype.close = function(id, message, code) {
 
 		var conn = self.connections[_id];
 
-		if (fn !== null && !fn.call(self, _id, conn))
+		if (fn && !fn.call(self, _id, conn))
 			continue;
 
 		conn.close(message, code);

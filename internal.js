@@ -212,7 +212,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 	parser.onPartEnd = function() {
 
-		if (stream !== null) {
+		if (stream) {
 			stream.end();
 			stream = null;
 		}
@@ -250,11 +250,13 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 	parser.onEnd = function() {
 		var cb = function() {
-			if (close > 0) {
+
+			if (close) {
 				setImmediate(cb);
 				return;
 			}
-			if (rm !== null)
+
+			if (rm)
 				framework.unlink(rm);
 			subscribe.doEnd();
 		};
@@ -1058,10 +1060,10 @@ exports.compile_css = function(value, filename) {
 			}
 		}
 
-		if (framework.onCompileStyle !== null)
+		if (framework.onCompileStyle)
 			return framework.onCompileStyle(filename, value);
 
-		if (framework.onCompileCSS !== null) {
+		if (framework.onCompileCSS) {
 			console.log('OBSOLETE: framework.onCompileCSS() is deprecated, use framework.onCompileStyle()');
 			return framework.onCompileCSS(filename, value);
 		}
@@ -1338,10 +1340,10 @@ exports.compile_javascript = function(source, filename) {
 				}
 			}
 
-			if (framework.onCompileScript !== null)
+			if (framework.onCompileScript)
 				return framework.onCompileScript(filename, source).trim();
 
-			if (framework.onCompileJS !== null) {
+			if (framework.onCompileJS) {
 				console.log('OBSOLETE: framework.onCompileJS() is deprecated, use framework.onCompileScript()');
 				return framework.onCompileJS(filename, source).trim();
 			}
@@ -1759,9 +1761,9 @@ function view_parse_localization(content, language) {
 	if (command === null)
 		return content;
 
-	while (command !== null) {
+	while (command) {
 
-		if (command !== null)
+		if (command)
 			output += content.substring(end === 0 ? 0 : end + 1, command.beg) + framework.translate(language, command.command);
 
 		end = command.end;
@@ -1856,7 +1858,7 @@ function view_parse(content, minify, filename, controller) {
 		if (!nocompressHTML && is)
 			value += ' ';
 
-		if (value.match(/\n|\r|\'|\\/) !== null)
+		if (value.match(/\n|\r|\'|\\/))
 			return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END;
 		return DELIMITER + value + DELIMITER;
 	}
@@ -1881,9 +1883,9 @@ function view_parse(content, minify, filename, controller) {
 	var text;
 	var RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language'];
 
-	while (command !== null) {
+	while (command) {
 
-		if (old !== null) {
+		if (old) {
 			text = content.substring(old.end + 1, command.beg);
 			if (text) {
 				if (view_parse_plus(builder))
@@ -2038,7 +2040,7 @@ function view_parse(content, minify, filename, controller) {
 			isSitemap = true;
 	}
 
-	if (old !== null) {
+	if (old) {
 		text = content.substring(old.end + 1);
 		if (text)
 			builder += '+' + escaper(text);
@@ -2985,7 +2987,7 @@ function viewengine_load(name, filename, controller) {
 		key += language;
 
 	var generator = framework.temporary.views[key] || null;
-	if (generator !== null)
+	if (generator)
 		return generator;
 
 	generator = viewengine_read(filename, language, controller);
@@ -3004,7 +3006,7 @@ function viewengine_load(name, filename, controller) {
 function viewengine_dynamic(content, language, controller) {
 	var key = content.hash();
 	var generator = framework.temporary.views[key] || null;
-	if (generator !== null)
+	if (generator)
 		return generator;
 	generator = view_parse(view_parse_localization(viewengine_modify(content, ''), language), framework.config['allow-compile-html'], null, controller);
 	if (!framework.isDebug)

@@ -511,7 +511,7 @@ Message.prototype._send = function(socket, options, autosend) {
 		self.closed = true;
 		var err = new Error(framework_utils.httpStatus(408));
 		mailer.emit('error', err, self);
-		if (socket !== null)
+		if (socket)
 			socket.destroy();
 		socket = null;
 		if (!self.isSent && self.callback)
@@ -687,7 +687,7 @@ Message.prototype._send = function(socket, options, autosend) {
 						self.callback(null);
 
 					ending = setTimeout(function() {
-						if (socket !== null)
+						if (socket)
 							socket.destroy();
 						socket = null;
 					}, 500);
@@ -712,7 +712,7 @@ Message.prototype._send = function(socket, options, autosend) {
 					if (!self.isSent && self.callback)
 						self.callback(err);
 
-					if (socket !== null)
+					if (socket)
 						socket.destroy();
 					socket = null;
 					break;
@@ -744,7 +744,7 @@ Message.prototype._send = function(socket, options, autosend) {
 
 				err = new Error(line);
 
-				if (socket !== null)
+				if (socket)
 					socket.destroy();
 
 				socket = null;

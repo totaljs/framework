@@ -1641,7 +1641,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 
 					if (schema === Date || schema === String || schema === Number || schema === Boolean) {
 						// Empty
-					} else if (schema !== null && typeof(schema) === STRING) {
+					} else if (schema && typeof(schema) === STRING) {
 
 						var isArray = schema[0] === '[';
 
@@ -1780,7 +1780,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 				if (entity === Date || entity === String || entity === Number || entity === Boolean) {
 					// Empty
-				} else if (entity !== null && typeof(entity) === STRING) {
+				} else if (entity && typeof(entity) === STRING) {
 
 					var isArray = entity[0] === '[';
 
