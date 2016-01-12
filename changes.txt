@@ -5,6 +5,7 @@
 - added: `U.clone(obj, [skip])`
 - added: `U.parseTheme(path)` --> parses theme name
 - added: `@{href}` or `@{href(obj)}` or `@{href(key, value)}` --> query string manipulation (more in documentation)
+- added: `.jsx` content-type
 
 - updated: `F.mail()` supports themes with view nema like this `=default/someview'`
 - updated: `@{import()}` supports movies and images

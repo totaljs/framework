@@ -52,7 +52,7 @@ var RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var CONTENTTYPE_TEXTHTML = 'text/html';
 var POWEREDBY = '...';
-var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
+var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
 var TEMPORARY_KEY_REGEX = /\//g;
 var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 var REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
@@ -463,7 +463,7 @@ function Framework() {
 		'static-url-video': '/video/',
 		'static-url-font': '/fonts/',
 		'static-url-download': '/download/',
-		'static-accepts': { '.jpg': true, '.png': true, '.gif': true, '.ico': true, '.js': true, '.css': true, '.txt': true, '.xml': true, '.woff': true, '.woff2':true, '.otf':true, '.ttf':true, '.eot':true, '.svg':true, '.zip':true, '.rar':true, '.pdf':true, '.docx':true, '.xlsx':true, '.doc':true, '.xls':true, '.html':true, '.htm':true, '.appcache':true, '.manifest':true, '.map':true, '.ogv': true, '.ogg':true, '.mp4':true, '.mp3':true, '.webp':true, '.webm':true, '.swf':true, '.package':true, '.json':true, '.md': true, '.m4v': true },
+		'static-accepts': { '.jpg': true, '.png': true, '.gif': true, '.ico': true, '.js': true, '.css': true, '.txt': true, '.xml': true, '.woff': true, '.woff2':true, '.otf':true, '.ttf':true, '.eot':true, '.svg':true, '.zip':true, '.rar':true, '.pdf':true, '.docx':true, '.xlsx':true, '.doc':true, '.xls':true, '.html':true, '.htm':true, '.appcache':true, '.manifest':true, '.map':true, '.ogv': true, '.ogg':true, '.mp4':true, '.mp3':true, '.webp':true, '.webm':true, '.swf':true, '.package':true, '.json':true, '.md': true, '.m4v': true, '.jsx': true },
 
 		// 'static-accepts-custom': [],
 

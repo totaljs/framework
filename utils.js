@@ -87,6 +87,7 @@ var contentTypes = {
 	'jpg': 'image/jpeg',
 	'js': 'text/javascript',
 	'json': 'application/json',
+	'jsx': 'text/jsx',
 	'less': 'text/css',
 	'm4a': 'audio/mp4a-latm',
 	'm4v': 'video/x-m4v',
