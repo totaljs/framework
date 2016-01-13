@@ -46,6 +46,8 @@ var REG_5 = />\n\s{1,}</g;
 var REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
 var REG_BLOCK_BEG = /\@\{block.*?\}/gi;
 var REG_BLOCK_END = /\@\{end\}/gi;
+var REG_SKIP_1 = /\(\'|\"/g;
+var REG_SKIP_2 = /\,(\s)?\w+/g;
 
 var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
@@ -1999,28 +2001,35 @@ function view_parse(content, minify, filename, controller) {
 
 			var can = false;
 
-			for (var a = 0, al = RENDERNOW.length; a < al; a++) {
-				if (tmp.startsWith(RENDERNOW[a])) {
+			// Inline rendering is supported only in release mode
+			if (RELEASE) {
+				for (var a = 0, al = RENDERNOW.length; a < al; a++) {
+					if (tmp.startsWith(RENDERNOW[a])) {
 
-					if (tmp.indexOf('+') !== -1)
-						continue;
+						if (tmp.indexOf('+') !== -1)
+							continue;
 
-					if (!a) {
-						var isMeta = tmp.indexOf('\'meta\'') !== -1;
-						var isHead = tmp.indexOf('\'head\'') !== -1;
-						tmp = tmp.replace(/\'(meta|head)\'\,/g, '').replace(/(\,\,|\,\)|\s{1,})/g, '');
-						if (isMeta || isHead) {
-							var tmpimp = '';
-							if (isMeta)
-								tmpimp += (isMeta ? '\'meta\'' : '');
-							if (isHead)
-								tmpimp += (tmpimp ? ',' : '') + (isHead ? '\'head\'' : '');
-							builder += '+self.$import(' + tmpimp + ')';
+						// skips variables 1
+						if (!tmp.match(REG_SKIP_1) || tmp.match(REG_SKIP_2))
+							continue;
+
+						if (!a) {
+							var isMeta = tmp.indexOf('\'meta\'') !== -1;
+							var isHead = tmp.indexOf('\'head\'') !== -1;
+							tmp = tmp.replace(/\'(meta|head)\'\,/g, '').replace(/(\,\,|\,\)|\s{1,})/g, '');
+							if (isMeta || isHead) {
+								var tmpimp = '';
+								if (isMeta)
+									tmpimp += (isMeta ? '\'meta\'' : '');
+								if (isHead)
+									tmpimp += (tmpimp ? ',' : '') + (isHead ? '\'head\'' : '');
+								builder += '+self.$import(' + tmpimp + ')';
+							}
 						}
-					}
 
-					can = true;
-					break;
+						can = true;
+						break;
+					}
 				}
 			}
 
@@ -2046,8 +2055,8 @@ function view_parse(content, minify, filename, controller) {
 			builder += '+' + escaper(text);
 	}
 
-	if (!framework.isDebug)
-		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output\=\$EMPTY\+)/g, '$output=').replace(/(\$output\+\=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+\=\$EMPTY)/g, '}').replace(/(\{\$output\+\=\$EMPTY\;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(\>\'\+\'\<)/g, '><');
+	if (RELEASE)
+		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output\=\$EMPTY\+)/g, '$output=').replace(/(\$output\+\=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+\=\$EMPTY)/g, '}').replace(/(\{\$output\+\=\$EMPTY\;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(\>\'\+\'\<)/g, '><').replace(/\'\+\'/g, '');
 
 	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
@@ -2263,11 +2272,10 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'routeVideo':
 		case 'routeStatic':
 			return 'self.' + command;
-
-		case 'translate':
 		case 'TRANSLATE':
-			return 'self.' + command.toLowerCase();
-
+			return command;
+		case 'translate':
+			return 'self.' + command;
 		case 'json':
 		case 'image':
 		case 'layout':

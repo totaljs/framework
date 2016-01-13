@@ -585,6 +585,9 @@ function viewViews() {
     assert.ok(output.contains('PLACE'), name + 'place');
     assert.ok(output.contains('#dynamic<b>OK</b>#'), name + 'dynamic view');
     assert.ok(self.repository.INLINE === 6, name + 'INLINE assign 2');
+    // console.log(output);
+    assert.ok(output.contains('#RELEASETRANSLATOR1=A=A#'), name + 'INLINE TRANSLATOR FOR RELEASE MODE 1');
+    assert.ok(output.contains('#RELEASETRANSLATOR2=A=A#'), name + 'INLINE TRANSLATOR FOR RELEASE MODE 2');
 
     self.repository.A = 'A';
 
