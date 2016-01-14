@@ -14471,6 +14471,10 @@ http.IncomingMessage.prototype = {
 		return self._dataGET;
 	},
 
+	set query(value) {
+		this._dataGET = value;
+	},
+
 	get subdomain() {
 
 		var self = this;
