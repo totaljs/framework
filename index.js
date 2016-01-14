@@ -941,6 +941,12 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
 	var extension = null;
 	var index = url.lastIndexOf('.');
 
+	if (typeof(options) === STRING) {
+		extensions = path;
+		path = options;
+		options = {};
+	}
+
 	if (index !== -1)
 		extension = [url.substring(index)];
 	else
@@ -981,6 +987,7 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
 		flop: options.flop,
 		sepia: options.sepia,
 		quality: options.quality,
+		direction: options.direction || 'center',
 		cache: options.cache === false ? false : true
 	};
 
@@ -4070,7 +4077,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 		if (resizer.width || resizer.height) {
 			if (resizer.width && resizer.height)
-				image.resizeCenter(resizer.width, resizer.height);
+				image.resizeAlign(resizer.width, resizer.height, resizer.direction);
 			else
 				image.resize(resizer.width, resizer.height);
 		}

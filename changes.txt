@@ -19,6 +19,7 @@
 - updated: `@{import()}` supports movies and images
 - updated: `@{import()}` can contain schema name in the path like this `=YOURSCHEMA/somefile.js`
 - updated: `F.route('/', '=themeName/viewname')` supports inline themes
+- updated: `F.resize()` added new options parameter --> `direction` (top, center or bottom)
 
 - fixed: problem with views path (`./some/path/in/hdd/` routed view anywhere)
 - fixed: static file routing (`@{import()}`, `@{routeScript}`, etc..)
