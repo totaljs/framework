@@ -9367,7 +9367,9 @@ Subscribe.prototype.execute = function(status, isError) {
 	controller.exception = self.exception;
 	self.controller = controller;
 
-	if (!self.isCanceled && route.timeout > 0) {
+	if (!self.isCanceled && route.timeout) {
+		if (self.timeout)
+			clearTimeout(self.timeout);
 		self.timeout = setTimeout(function() {
 			if (self.controller && self.controller.precache)
 				self.controller.precache(null, null, null);
