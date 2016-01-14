@@ -2836,6 +2836,15 @@ String.prototype.configuration = function(def) {
 };
 
 /**
+ * Same functionality as as String.localeCompare() but this method works with latin.
+ * @param {String} value
+ * @return {Number}
+ */
+String.prototype.localeCompare2 = function(value) {
+	return this.removeDiacritics().localeCompare(value.removeDiacritics())
+};
+
+/**
  * Parse configuration from a string
  * @param {Object} def
  * @return {Object}
