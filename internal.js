@@ -1852,11 +1852,6 @@ function view_parse(content, minify, filename, controller) {
 		if (value === '')
 			return '$EMPTY';
 
-/*
-		if (!nocompressHTML && value[0] === ' ' && value[1] === '<')
-			value = value.substring(1);
-*/
-
 		if (!nocompressHTML && is)
 			value += ' ';
 
@@ -1918,7 +1913,7 @@ function view_parse(content, minify, filename, controller) {
 		pharse = cmd;
 
 		if (cmd[0] === '\'' || cmd[0] === '"') {
-			builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd + ')'))(controller) + DELIMITER;
+			builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd[0] + '!' + cmd.substring(1) + ')'))(controller) + DELIMITER;
 		} else if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
 
 			builderTMP = builder + '+(framework.onCompileView.call(self,\'' + (cmd8[7] === ' ' ? cmd.substring(8) : '') + '\',';

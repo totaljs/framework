@@ -11541,13 +11541,16 @@ Controller.prototype.$import = function() {
 		}
 
 		var extension = filename.substring(filename.lastIndexOf('.'));
+		var tag = filename[0] !== '!';
+		if (!tag)
+			filename = filename.substring(1);
 
 		switch (extension) {
 			case '.js':
-				builder += self.routeScript(filename, true);
+				builder += self.routeScript(filename, tag);
 				break;
 			case '.css':
-				builder += self.routeStyle(filename, true);
+				builder += self.routeStyle(filename, tag);
 				break;
 			case '.ico':
 				builder += self.$favicon(filename);
@@ -11561,13 +11564,13 @@ Controller.prototype.$import = function() {
 			case '.mpe':
 			case '.mpeg':
 			case '.m4v':
-				builder += self.routeImage(filename, true);
+				builder += self.routeVideo(filename);
 				break;
 			case '.jpg':
 			case '.gif':
 			case '.png':
 			case '.jpeg':
-				builder += self.routeImage(filename, true);
+				builder += self.routeImage(filename);
 				break;
 			default:
 				builder += self.routeStatic(filename);
