@@ -13867,8 +13867,13 @@ WebSocketClient.prototype.close = function(message, code) {
 	if (!self || self.isClosed)
 		return self;
 
+	if (message)
+		message = encodeURIComponent(message);
+	else
+		message = '';
+
 	self.isClosed = true;
-	self.socket.end(framework_utils.getWebSocketFrame(code || 1000, message || '', 0x08));
+	self.socket.end(framework_utils.getWebSocketFrame(code || 1000, message, 0x08));
 
 	return self;
 };

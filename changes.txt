@@ -27,6 +27,7 @@
 - fixed: `MailMessage.send()` --> `options` argument is optional
 - fixed: problem with UTF8 in U.request() by Ivan Marchukov
 - fixed: WebSocket parser
+- fixed: WebSocket closing message (problem with UTF8)
 - fixed: U.getExtension()
 - fixed: problem with WebSocket `destroy`
 - fixed: sync2() doesn't work
