@@ -61,6 +61,7 @@ var REG_MULTIPART = /\/form\-data$/i;
 var REQUEST_PROXY_FLAGS = ['post', 'json'];
 var RANGE = { start: 0, end: 0 };
 var HEADERS = {};
+var SUCCESSHELPER = { success: true };
 
 // Cached headers for repeated usage
 HEADERS['responseCode'] = {};
@@ -354,6 +355,12 @@ global.CLEANUP = function(stream, callback) {
 
 global.SUCCESS = function(success, value) {
 
+	if (typeof(success) === TYPE_FUNCTION) {
+		return function(err, value) {
+			success(err, SUCCESS(err, value));
+		};
+	}
+
 	var err;
 
 	if (success instanceof Error) {
@@ -365,8 +372,11 @@ global.SUCCESS = function(success, value) {
 			success = false;
 		} else
 			success = true;
-	} else if (success === null || success === undefined)
+	} else if (!success)
 		success = true;
+
+	if (success && !value)
+		return SUCCESSHELPER;
 
 	var o = { success: success };
 
