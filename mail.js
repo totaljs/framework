@@ -885,7 +885,7 @@ function GUID() {
 function unicode_encode(val) {
 	if (!val)
 		return '';
-	return '=?utf-8?B?' + new Buffer(val).toString('base64') + '?=';
+	return '=?utf-8?B?' + new Buffer(val.toString()).toString('base64') + '?=';
 }
 
 // ======================================================
