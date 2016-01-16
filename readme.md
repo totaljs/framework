@@ -109,6 +109,7 @@ We provide a support of the framework for companies. Our support services will k
 | [Liao San-Kai](https://github.com/liaosankai) | contributor | <liaosankai@gmail.com> |
 | [Ivan Marchukov](https://github.com/deadman2000) | contributor | <marchukov.ivan@gmail.com> |
 | [Dusan Dragula](https://github.com/DusanDragulaGR) | contributor | <dusan.dragula@goodrequest.com> |
+| [Сковорода Никита Андреевич](https://github.com/ChALkeR) | contributor | <chalkerx@gmail.com> |
 
 ## Other
 
