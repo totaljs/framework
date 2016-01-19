@@ -372,11 +372,13 @@ global.SUCCESS = function(success, value) {
 			success = false;
 		} else
 			success = true;
-	} else if (!success)
+	} else if (success === undefined)
 		success = true;
 
-	if (success && !value)
+	if (!value) {
+		SUCCESSHELPER.success = success;
 		return SUCCESSHELPER;
+	}
 
 	var o = { success: success };
 
