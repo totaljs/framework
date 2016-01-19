@@ -608,7 +608,7 @@ function test_routing(next) {
 			assert(cookie.indexOf('cookie1=1;') !== -1 && cookie.indexOf('cookie2=2;') !== -1 && cookie.indexOf('cookie3=3;') !== -1, 'Cookie problem.');
 			assert(cookie.indexOf('cookieR=O;') === -1 && cookie.indexOf('cookieR=N;') !== -1 && cookie.indexOf('cookieR=') === cookie.lastIndexOf('cookieR='), 'Two cookies with same name');
 			complete();
-		});
+		}, { a: 1, b: 2, c: 3 });
 	});
 
 	async.await('Authorize', function(complete) {

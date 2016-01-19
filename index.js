@@ -6843,7 +6843,7 @@ Framework.prototype.testing = function(stop, callback) {
 			var cookie = res.headers['cookie'] || '';
 			var cookies = {};
 
-			if (cookie.length !== 0) {
+			if (cookie.length) {
 
 				var arr = cookie.split(';');
 				var length = arr.length;
@@ -14635,11 +14635,13 @@ http.IncomingMessage.prototype.cookie = function(name) {
 	self.cookies = {};
 
 	var arr = cookie.split(';');
-	var length = arr.length;
 
-	for (var i = 0; i < length; i++) {
-		var c = arr[i].trim().split('=');
-		self.cookies[c.shift()] = c.join('=');
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var line = arr[i].trim();
+		var index = line.indexOf('=');
+		if (index === -1)
+			continue;
+		self.cookies[line.substring(0, index)] = line.substring(index + 1);
 	}
 
 	return $decodeURIComponent(self.cookies[name] || '');

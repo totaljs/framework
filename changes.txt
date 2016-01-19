@@ -41,6 +41,7 @@
 
 - improved: (IMPORTANT) SchemaBuilder by Ivan Marchukov
 - improved: (IMPORTANT) ViewEngine performance about 15%
+- improved: request cookie parsing
 
 ======= 1.9.5
 

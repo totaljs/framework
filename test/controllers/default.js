@@ -677,6 +677,11 @@ function pipe() {
 
 function view_cookie() {
     var self = this;
+
+    assert.ok(self.req.cookie('a') === '1', 'request cookie problem 1');
+    assert.ok(self.req.cookie('b') === '2', 'request cookie problem 2');
+    assert.ok(self.req.cookie('c') === '3', 'request cookie problem 3');
+
     self.res.cookie('cookieR', 'O', new Date().add('d', 1));
     self.res.cookie('cookie1', '1', new Date().add('d', 1));
     self.res.cookie('cookie2', '2', new Date().add('d', 1));
