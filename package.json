@@ -6,8 +6,9 @@
         "url": "http://www.petersirka.eu"
     },
     "bin": {
-        "total": "./bin/total",
-        "total.js": "./bin/total",
+        "total": "./bin/totaljs",
+        "total.js": "./bin/totaljs",
+        "totaljs": "./bin/totaljs",
         "tpm": "./bin/tpm",
         "totalpackage": "./bin/tpm"
     },
