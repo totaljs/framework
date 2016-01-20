@@ -344,7 +344,7 @@ function test_Schema() {
 
 	var __time = (new Date()).getTime() - __start;
 	//var __mem = hd.end();
-	console.log('Create time (instance in ms): ', instanceCount / __time);
+	// console.log('Create time (instance in ms): ', instanceCount / __time);
 	//console.log('Memory usage (bytes per instance): ', __mem.change.size_bytes / instanceCount);
 
 	// JSON test
