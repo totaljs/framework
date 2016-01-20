@@ -1462,6 +1462,12 @@ exports.getName = function(path) {
 exports.setContentType = function(ext, type) {
 	if (ext[0] === '.')
 		ext = ext.substring(1);
+
+	if (ext.length > 8) {
+		var tmp = regexpSTATIC.toString().replace(/\,\d+\}/, ',' + ext.length + '}').substring(1);
+		regexpSTATIC = new RegExp(tmp.substring(0, tmp.length - 1));
+	}
+
 	contentTypes[ext.toLowerCase()] = type;
 	return true;
 };
