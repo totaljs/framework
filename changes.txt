@@ -15,6 +15,7 @@
 
 - updated: (IMPORTANT) controller.isSecure was renamed to controller.secured
 - updated: (IMPORTANT) req.isSecure was renamed to req.secured
+- updated: (IMPORTANT) Array.wait(onItem, onCallback, [NEW: threadCount (Number) or removeItemFromArray (Boolean)]) supports `threads`
 - updated: `F.mail()` supports themes with view nema like this `=default/someview'`
 - updated: `@{import()}` supports movies and images
 - updated: `@{import()}` can contain schema name in the path like this `=YOURSCHEMA/somefile.js`

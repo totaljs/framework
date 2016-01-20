@@ -4257,7 +4257,7 @@ Array.prototype.remove = function(cb, value) {
 };
 
 /*
-	Random return item from array
+	Returns item from array randomly
 	Return {Object}
 */
 Array.prototype.random = function() {
@@ -4265,35 +4265,46 @@ Array.prototype.random = function() {
 	return self[exports.random(self.length - 1)];
 };
 
-Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remove) {
+Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remove, thread) {
 
 	var self = this;
-	var type = typeof(callback);
+	var init = false;
 
-	if (type === NUMBER || type === BOOLEAN) {
-		var tmp = remove;
-		remove = callback;
-		callback = tmp;
+	// INIT
+	if (!onItem.$index) {
+		onItem.$pending = 0;
+		onItem.$index = 0;
+		init = true;
 	}
 
 	if (remove === undefined)
-		remove = 0;
+		remove = 1;
 
-	var item = remove === true ? self.shift() : self[remove];
+	var item = remove === true ? self.shift() : self[onItem.$index];
+	onItem.$index++;
 
 	if (item === undefined) {
+		if (onItem.$pending)
+			return self;
 		if (callback)
 			callback();
+		onItem.$index = 0;
 		return self;
 	}
 
+	onItem.$pending++;
 	onItem.call(self, item, function() {
 		setImmediate(function() {
-			if (typeof(remove) === NUMBER)
-				remove++;
+			onItem.$pending--;
 			self.wait(onItem, callback, remove);
 		});
 	});
+
+	if (!init || remove === true)
+		return self;
+
+	for (var i = 1; i < remove; i++)
+		self.wait(onItem, callback, 0);
 
 	return self;
 };
