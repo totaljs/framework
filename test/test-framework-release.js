@@ -565,6 +565,24 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('static-file-notfound-because-directory1', function(complete) {
+		utils.request(url + 'directory.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 404, 'directory name as filename 1');
+			complete();
+		});
+	});
+
+	async.await('static-file-notfound-because-directory2', function(complete) {
+		utils.request(url + 'directory.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 404, 'directory name as filename 2');
+			complete();
+		});
+	});
+
 	async.await('static-file', function(complete) {
 		utils.request(url + 'robots.txt', [], function(error, data, code, headers) {
 			if (error)

@@ -35,6 +35,7 @@
 - fixed: problem with themes in controller.memorize()
 - fixed: problem with timeout in controller.memorize()
 - fixed: fixed unitialized memory block in `mail` (by ChALkeR)
+- fixed: problem with static files (directories with extensions)
 
 - removed: all `controller.current...()` methods
 - removed: all `@{current...()}` methods

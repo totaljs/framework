@@ -3968,44 +3968,70 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 
 	if (self.routes.merge[uri.pathname]) {
 		self.compileMerge(uri, key, extension, callback);
+		return self;
+	}
+
+	fsFileExists(filename, function(e, size) {
+
+		if (e) {
+			if (extension === 'js' || extension === 'css') {
+				if (filename.lastIndexOf('.min.') === -1 && filename.lastIndexOf('-min.') === -1) {
+					self.compileFile(uri, key, filename, extension, callback);
+					return self;
+				}
+			}
+
+			self.temporary.path[key] = filename + ';' + size;
+			callback();
+			return;
+		}
+
+		if (self.isVirtualDirectory) {
+			self.compileValidationVirtual(uri, key, filename, extension, callback);
+			return;
+		}
+
+		self.temporary.path[key] = null;
+		callback();
+	});
+
+	return self;
+};
+
+Framework.prototype.compileValidationVirtual = function(uri, key, filename, extension, callback) {
+
+	var self = this;
+
+	var tmpname = filename.replace(self.config['directory-public'], self.config['directory-public-virtual']);
+	var notfound = true;
+
+	if (tmpname === filename) {
+		self.temporary.path[key] = null;
+		callback();
 		return;
 	}
 
-	if (!fs.existsSync(filename)) {
+	filename = tmpname;
+	fsFileExists(filename, function(e, size) {
 
-		// file doesn't exist
-		if (!self.isVirtualDirectory) {
+		if (!e) {
 			self.temporary.path[key] = null;
 			callback();
-			return self;
+			return;
 		}
 
-		var tmpname = filename.replace(self.config['directory-public'], self.config['directory-public-virtual']);
-		var notfound = true;
-
-		if (tmpname !== filename) {
-			filename = tmpname;
-			notfound = !fs.existsSync(filename);
+		if (extension === 'js' || extension === 'css') {
+			if (filename.lastIndexOf('.min.') === -1 && filename.lastIndexOf('-min.') === -1) {
+				self.compileFile(uri, key, filename, extension, callback);
+				return self;
+			}
 		}
 
-		if (notfound) {
-			self.temporary.path[key] = null;
-			callback();
-			return self;
-		}
+		self.temporary.path[key] = filename + ';' + size;
+		callback();
+	});
 
-	}
-
-	if (extension === 'js' || extension === 'css') {
-		if (filename.lastIndexOf('.min.') === -1 && filename.lastIndexOf('-min.') === -1) {
-			self.compileFile(uri, key, filename, extension, callback);
-			return self;
-		}
-	}
-
-	self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
-	callback();
-	return self;
+	return;
 };
 
 /**
@@ -4368,7 +4394,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		// waiting
 		self.temporary.processing[key] = true;
 
-		// checks if the file exists
+		// checks if the file exists and counts the file size
 		self.compileValidation(req.uri, key, filename, extension, function() {
 			delete self.temporary.processing[key];
 			framework.responseFile(req, res, filename, downloadName, headers, done, key);
@@ -14780,9 +14806,9 @@ function fsFileRead(filename, callback) {
 
 function fsFileExists(filename, callback) {
 	U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
-		fs.exists(filename, function(e) {
+		fs.lstat(filename, function(err, stats) {
 			next();
-			callback(e);
+			callback(!err && stats.isFile(), stats ? stats.size : 0);
 		});
 	});
 };
