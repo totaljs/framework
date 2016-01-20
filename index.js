@@ -4050,8 +4050,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		return self;
 	}
 
-	var extension = req.extension;
-	if (!self.config['static-accepts']['.' + extension]) {
+	if (!self.config['static-accepts']['.' + req.extension]) {
 		self.response404(req, res);
 		if (done)
 			done();
