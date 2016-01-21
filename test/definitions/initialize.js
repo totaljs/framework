@@ -1,5 +1,7 @@
 var assert = require('assert');
 
+F.register(F.path.root('default.resource'));
+
 framework.onMeta = function(a,b) {
     return a + b;
 };

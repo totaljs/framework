@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1960;
-	this.version_header = '1.9.6-21';
+	this.version_header = '1.9.6-22';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -547,7 +547,8 @@ function Framework() {
 		merge: {},
 		mapping: {},
 		packages: {},
-		blocks: {}
+		blocks: {},
+		resources: {}
 	};
 
 	this.behaviours = null;
@@ -3234,6 +3235,43 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 			self.emit('uninstall', type, name);
 
 		return self;
+	}
+
+	return self;
+};
+
+/**
+ * Register internal mapping (e.g. Resource)
+ * @param {String} path
+ * @return {Framework}
+ */
+Framework.prototype.register = function(path) {
+
+	var extension = framework_utils.getExtension(path);
+	var self = this;
+	var name = framework_utils.getName(path);
+	var key;
+	var c = path[0];
+
+	if (c === '@')
+		path = framework.path.package(path.substring(1));
+	else if (c === '=') {
+		if (path[1] === '?')
+			framework.path.themes(framework.config['default-theme'] + path.substring(2));
+		else
+			path = framework.path.themes(path.substring(1));
+	}
+
+	switch (extension) {
+		case '.resource':
+			key = name.replace(extension, '');
+			if (!self.routes.resources[key])
+				self.routes.resources[key] = [path];
+			else
+				self.routes.resources[key].push(path);
+			break;
+		default:
+			throw new Error('Not supported registration type "' + extension + '".');
 	}
 
 	return self;
@@ -7350,17 +7388,27 @@ Framework.prototype.resource = function(name, key) {
 	var self = this;
 	var res = self.resources[name];
 
-	if (res !== undefined)
+	if (res)
 		return res[key] || '';
 
+	var routes = self.routes.resources[name];
+	var body = '';
+	var filename;
+
+	if (routes) {
+		for (var i = 0, length = routes.length; i < length; i++) {
+			filename = routes[i];
+			if (fs.existsSync(filename))
+				body += (body ? '\n' : '') + fs.readFileSync(filename).toString(ENCODING);
+		}
+	}
+
 	var filename = framework_utils.combine(self.config['directory-resources'], name + '.resource');
+	if (fs.existsSync(filename))
+		body += (body ? '\n' : '') + fs.readFileSync(filename).toString(ENCODING);
 
-	if (!fs.existsSync(filename))
-		return '';
-
-	var obj = fs.readFileSync(filename).toString(ENCODING).parseConfig();
+	var obj = body.parseConfig();
 	self.resources[name] = obj;
-
 	return obj[key] || '';
 };
 

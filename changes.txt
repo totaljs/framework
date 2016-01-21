@@ -12,6 +12,7 @@
 - added: property `controller.mobile`
 - added: support for default theme name, e.g. `=?/index` (the framework replaces `?` for `default-theme`)
 - added: String.localeCompare2(value) --> same as localeCompare() but this method works with diacritics
+- added: F.register(filename); --> the methods registers new e.g. resource (it solves the problem with resources in packages)
 
 - updated: (IMPORTANT) controller.isSecure was renamed to controller.secured
 - updated: (IMPORTANT) req.isSecure was renamed to req.secured
