@@ -40,6 +40,8 @@
 
 - removed: all `controller.current...()` methods
 - removed: all `@{current...()}` methods
+- removed: (IMPORTANT) `framework.fs`
+- removed: (IMPORTANT) `controller.fs`
 
 - improved: (IMPORTANT) SchemaBuilder by Ivan Marchukov
 - improved: (IMPORTANT) ViewEngine performance about 15%

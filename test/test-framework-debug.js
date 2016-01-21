@@ -757,7 +757,6 @@ function run() {
 	if (max <= 0) {
 
 		console.timeEnd('TEST');
-		framework.fs.rm.view('fromURL');
 
 		assert.ok(framework.global.middleware > 0, 'middleware - middleware');
 		assert.ok(framework.global.theme > 0, 'theme - initialization');
@@ -800,7 +799,7 @@ mem.on('stats', function(info) {
 	console.log('STATS ->', JSON.stringify(info));
 });
 */
-framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html');
+// framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html');
 
 framework.on('load', function() {
 
