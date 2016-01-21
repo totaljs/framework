@@ -3269,7 +3269,11 @@ Framework.prototype.register = function(path) {
 				self.routes.resources[key] = [path];
 			else
 				self.routes.resources[key].push(path);
+
+			// clears cache
+			delete self.resources[key];
 			break;
+
 		default:
 			throw new Error('Not supported registration type "' + extension + '".');
 	}
