@@ -372,7 +372,7 @@ global.SUCCESS = function(success, value) {
 			success = false;
 		} else
 			success = true;
-	} else if (success === undefined)
+	} else if (!success)
 		success = true;
 
 	if (!value) {
