@@ -1,4 +1,4 @@
-======= 1.9.6 (BETA)
+======= 1.9.6
 
 - added: MailMessage.manually() and removes auto-sending mail --> works only with `F.mail()` and `controller.Mail()`.
 - added: view engine supports now `@{'route-to-static-file.jpg'}`
