@@ -205,6 +205,10 @@ function prototypeString() {
 
 	str = '// Configuration\nname   : total.js\nage    : 29\n// comment1    : comment1\n# comment2     : comment2\ndebug  : false';
 	assert.ok(JSON.stringify(str.parseConfig({ comment3: 'comment3' })) === '{"comment3":"comment3","name":"total.js","age":"29","debug":"false"}', 'String.parseConfig()');
+
+	assert.ok('á'.localeCompare2('a') === 0, 'localeCompare2 - 1');
+	assert.ok('á'.localeCompare2('b') === -1, 'localeCompare2 - 2');
+	assert.ok('č'.localeCompare2('b') === 1, 'localeCompare2 - 3');
 }
 
 function prototypeArray() {
@@ -355,12 +359,13 @@ function other() {
 
 	assert.ok(JSON.stringify(utils.extend({ id: 1 })) === '{"id":1}', 'utils.extend() - undefined');
 
-	utils.copy(obj, { name: 'Peter', age: 25 });
+	var anonymous = { name: 'Peter', age: 25, arr: [1, 2, 3] };
 	assert.ok(!obj.name, 'utils.copy(2)');
-
 	assert.ok(utils.copy({ name: 'Janko' }).name === 'Janko', 'utils.copy(1)');
 
-	utils.extend(obj, { name: 'Peter', age: 25 });
+	utils.extend(obj, anonymous);
+	obj.arr.push(4);
+	assert.ok(obj.arr.length !== anonymous.length, 'utils.copy(2)');
 	assert.ok(obj.name === 'Peter' && obj.age === 25, 'utils.extend()');
 
 	utils.copy({ name: 'A', age: -1 }, obj);

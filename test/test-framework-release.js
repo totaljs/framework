@@ -203,6 +203,24 @@ function test_routing(next) {
 		}, null, { 'user-agent': 'bla bla iPad bla' });
 	});
 
+	async.await('robot - 1', function(complete) {
+		utils.request(url + '', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'ROBOT', 'robot routing problem 1');
+			complete();
+		}, null, { 'user-agent': 'I am Crawler' });
+	});
+
+	async.await('robot - 2', function(complete) {
+		utils.request(url + '', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data !== 'ROBOT', 'robot routing problem 2');
+			complete();
+		}, null, { 'user-agent': 'Chrome' });
+	});
+
 	async.await('binary', function(complete) {
 		utils.request(url + 'binary/', ['get'], null, function(error, data, code, headers) {
 			if (error)
@@ -285,6 +303,15 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			assert(data === 'CUSTOM', 'custom route problem');
+			complete();
+		});
+	});
+
+	async.await('views in modules', function(complete) {
+		utils.request(url + 'view-in-modules/', 'GET', null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'VIEW IN MODULES', 'Problem with opened path in views.');
 			complete();
 		});
 	});
@@ -538,6 +565,24 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('static-file-notfound-because-directory1', function(complete) {
+		utils.request(url + 'directory.txt', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 404, 'directory name as filename 1');
+			complete();
+		});
+	});
+
+	async.await('static-file-notfound-because-directory2', function(complete) {
+		utils.request(url + 'directory.js', [], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(code === 404, 'directory name as filename 2');
+			complete();
+		});
+	});
+
 	async.await('static-file', function(complete) {
 		utils.request(url + 'robots.txt', [], function(error, data, code, headers) {
 			if (error)
@@ -581,7 +626,7 @@ function test_routing(next) {
 			assert(cookie.indexOf('cookie1=1;') !== -1 && cookie.indexOf('cookie2=2;') !== -1 && cookie.indexOf('cookie3=3;') !== -1, 'Cookie problem.');
 			assert(cookie.indexOf('cookieR=O;') === -1 && cookie.indexOf('cookieR=N;') !== -1 && cookie.indexOf('cookieR=') === cookie.lastIndexOf('cookieR='), 'Two cookies with same name');
 			complete();
-		});
+		}, { a: 1, b: 2, c: 3 });
 	});
 
 	async.await('Authorize', function(complete) {
@@ -712,7 +757,6 @@ function run() {
 	if (max <= 0) {
 
 		console.timeEnd('TEST');
-		framework.fs.rm.view('fromURL');
 
 		assert.ok(framework.global.middleware > 0, 'middleware - middleware');
 		assert.ok(framework.global.theme > 0, 'theme - initialization');
@@ -755,7 +799,7 @@ mem.on('stats', function(info) {
 	console.log('STATS ->', JSON.stringify(info));
 });
 */
-framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html');
+// framework.fs.create.view('fromURL', 'http://www.totaljs.com/framework/test.html');
 
 framework.on('load', function() {
 
@@ -763,6 +807,8 @@ framework.on('load', function() {
 	assert.ok(MODULE('supermodule').ok, 'load module from subdirectory');
 	assert.ok(F.config['custom-config1'] === '1YES', 'custom configuration 1');
 	assert.ok(F.config['custom-config2'] === '2YES', 'custom configuration 2');
+	assert.ok(RESOURCE('default', 'name-root').length > 0, 'custom resource mapping 1');
+	assert.ok(RESOURCE('default', 'name-theme').length > 0, 'custom resource mapping 2');
 
 	setTimeout(function() {
 		console.time('TEST');

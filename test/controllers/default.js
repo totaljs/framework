@@ -32,6 +32,11 @@ exports.install = function() {
         flags: ['unauthorize']
     });
 
+    framework.route('/', function() {
+        this.plain('ROBOT');
+    }, ['robot']);
+
+    framework.route('/view-in-modules/', '.' + F.path.modules('someview'));
     framework.route('/options/', plain_options, ['options']);
     framework.route('/exception/', 'exception');
     framework.route('/html-compressor/', view_compressor);
@@ -452,7 +457,7 @@ function viewIndex() {
     assert.ok(framework.model('user').ok === 1, 'framework: model() - 1');
     assert.ok(framework.model('other/products').ok === 2, 'framework: model() - 2');
 
-    assert.ok(self.isSecure === false, 'controller.isSecure');
+    assert.ok(self.secured === false, 'controller.secured');
     assert.ok(self.config.isDefinition === true, 'definitions()');
 
     assert.ok(!self.xhr, name + 'xhr');
@@ -580,11 +585,13 @@ function viewViews() {
     assert.ok(output.contains('PLACE'), name + 'place');
     assert.ok(output.contains('#dynamic<b>OK</b>#'), name + 'dynamic view');
     assert.ok(self.repository.INLINE === 6, name + 'INLINE assign 2');
+    // console.log(output);
+    assert.ok(output.contains('#RELEASETRANSLATOR1=A=A#'), name + 'INLINE TRANSLATOR FOR RELEASE MODE 1');
+    assert.ok(output.contains('#RELEASETRANSLATOR2=A=A#'), name + 'INLINE TRANSLATOR FOR RELEASE MODE 2');
 
     self.repository.A = 'A';
 
-    self.currentView('current');
-    output = self.view('c', {
+    output = self.view('current/c', {
         a: 'A',
         b: 'B',
         c: true,
@@ -670,6 +677,11 @@ function pipe() {
 
 function view_cookie() {
     var self = this;
+
+    assert.ok(self.req.cookie('a') === '1', 'request cookie problem 1');
+    assert.ok(self.req.cookie('b') === '2', 'request cookie problem 2');
+    assert.ok(self.req.cookie('c') === '3', 'request cookie problem 3');
+
     self.res.cookie('cookieR', 'O', new Date().add('d', 1));
     self.res.cookie('cookie1', '1', new Date().add('d', 1));
     self.res.cookie('cookie2', '2', new Date().add('d', 1));

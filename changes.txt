@@ -1,3 +1,53 @@
+======= 1.9.6 (BETA)
+
+- added: MailMessage.manually() and removes auto-sending mail --> works only with `F.mail()` and `controller.Mail()`.
+- added: view engine supports now `@{'route-to-static-file.jpg'}`
+- added: `U.clone(obj, [skip])`
+- added: `U.parseTheme(path)` --> parses theme name
+- added: `@{href}` or `@{href(obj)}` or `@{href(key, value)}` --> query string manipulation (more in documentation)
+- added: `.jsx` content-type
+- added: `robot` flag into the routing (for search engines)
+- added: property `req.robot`
+- added: property `controller.robot`
+- added: property `controller.mobile`
+- added: support for default theme name, e.g. `=?/index` (the framework replaces `?` for `default-theme`)
+- added: String.localeCompare2(value) --> same as localeCompare() but this method works with diacritics
+- added: F.register(filename); --> the methods registers new e.g. resource (it solves the problem with resources in packages)
+
+- updated: (IMPORTANT) controller.isSecure was renamed to controller.secured
+- updated: (IMPORTANT) req.isSecure was renamed to req.secured
+- updated: (IMPORTANT) Array.wait(onItem, onCallback, [NEW: threadCount (Number) or removeItemFromArray (Boolean)]) supports `threads`
+- updated: `F.mail()` supports themes with view nema like this `=default/someview'`
+- updated: `@{import()}` supports movies and images
+- updated: `@{import()}` can contain schema name in the path like this `=YOURSCHEMA/somefile.js`
+- updated: `F.route('/', '=themeName/viewname')` supports inline themes
+- updated: `F.resize()` added new options parameter --> `direction` (top, center or bottom)
+- updated: SUCCESS(), now supports function as first argument and the method returns wrapped function too
+
+- fixed: problem with views path (`./some/path/in/hdd/` routed view anywhere)
+- fixed: static file routing (`@{import()}`, `@{routeScript}`, etc..)
+- fixed: miss `Sec-WebSocket-Protocol` by Liao San-Kai
+- fixed: `MailMessage.send()` --> `options` argument is optional
+- fixed: problem with UTF8 in U.request() by Ivan Marchukov
+- fixed: WebSocket parser
+- fixed: WebSocket closing message (problem with UTF8)
+- fixed: U.getExtension()
+- fixed: problem with WebSocket `destroy`
+- fixed: sync2() doesn't work
+- fixed: problem with themes in controller.memorize()
+- fixed: problem with timeout in controller.memorize()
+- fixed: fixed unitialized memory block in `mail` (by ChALkeR)
+- fixed: problem with static files (directories with extensions)
+
+- removed: all `controller.current...()` methods
+- removed: all `@{current...()}` methods
+- removed: (IMPORTANT) `framework.fs`
+- removed: (IMPORTANT) `controller.fs`
+
+- improved: (IMPORTANT) SchemaBuilder by Ivan Marchukov
+- improved: (IMPORTANT) ViewEngine performance about 15%
+- improved: request cookie parsing
+
 ======= 1.9.5
 
 I had to skip v1.9.4 version because of NPM (my mistake).

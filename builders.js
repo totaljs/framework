@@ -1,4 +1,4 @@
-// Copyright 2012-2015 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2016 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 1.9.5
+ * @version 1.9.6
  */
 
 'use strict';
@@ -34,6 +34,7 @@ var NUMBER = 'number';
 var BOOLEAN = 'boolean';
 var REQUIRED = 'The field "@" is required.';
 var DEFAULT_SCHEMA = 'default';
+var SKIP = { $$schema: true, $$result: true, $callback: true, $$async: true };
 
 var schemas = {};
 var transforms = { pagination: {}, error: {}, objectbuilder: {}, transformbuilder: {} };
@@ -83,7 +84,7 @@ SchemaBuilder.prototype.add = function(name, obj, properties, validator) {
 /**
  * Register a new schema
  * @alias
- * @return {SchemBuilderEntity}
+ * @return {SchemaBuilderEntity}
  */
 SchemaBuilder.prototype.create = function() {
 	var self = this;
@@ -144,20 +145,24 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 	this.onError;
 	this.gcache = {};
 
+	this.CurrentSchemaInstance = function(){};
+	this.CurrentSchemaInstance.prototype = new SchemaInstance();
+	this.CurrentSchemaInstance.prototype.$$schema = this;
+
 	var self = this;
 
 	setTimeout(function() {
 		if (self.onValidation)
 			OBSOLETE(self.name, 'Instead of "SchemaBuilderEntity.onValidation()" use "SchemaBuilderEntity.setValidate()"');
-	}, 2000)
+	}, 2000);
 }
 
 /**
  * Define type in schema
- * @param {String/String Array} name
+ * @param {String|String[]} name
  * @param {Object/String} type
- * @param {Boolean} required Is required? Default: false.
- * @param {Number/String} custom Custom tag for search.
+ * @param {Boolean} [required=false] Is required? Default: false.
+ * @param {Number|String} [custom] Custom tag for search.
  * @return {SchemaBuilder}
  */
 SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
@@ -206,7 +211,7 @@ SchemaBuilderEntity.prototype.setPrimary = function(name) {
  * @param {Number/String} custom
  * @param {Object} model Optional
  * @param {Boolean} reverse Reverse results.
- * @return {Array or Object} Returns Array (with property names) if the model is undefined otherwise returns Object Name/Value.
+ * @return {Array|Object} Returns Array (with property names) if the model is undefined otherwise returns Object Name/Value.
  */
 SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 	var self = this;
@@ -419,7 +424,7 @@ SchemaBuilderEntity.prototype.getDependencies = function() {
 
 /**
  * Set schema validation
- * @param {String Array} properties Properties to validate, optional.
+ * @param {String|Array} properties Properties to validate, optional.
  * @param {Function(propertyName, value, path, entityName, model)} fn A validation function.
  * @return {SchemaBuilderEntity}
  */
@@ -1069,223 +1074,7 @@ SchemaBuilderEntity.prototype.Create = function() {
  * @return {Object}
  */
 SchemaBuilderEntity.prototype.$make = function(obj) {
-
-	if (obj.$save)
-		return obj;
-
-	var self = this;
-
-	obj.$async = function(callback, index) {
-		if (callback === undefined)
-			callback = NOOP;
-		obj.$$async = [];
-		obj.$$result = [];
-		obj.$callback = callback;
-		setImmediate(function() {
-			obj.$$async.async(function() {
-				var result = obj.$$result;
-				delete obj.$$result;
-				delete obj.$$async;
-				callback(null, index !== undefined ? result[index] : result);
-			});
-		});
-		return obj;
-	};
-
-	obj.$save = function(helper, callback) {
-
-		if (!obj.$$async) {
-			self.save(obj, helper, callback);
-			return obj;
-		}
-
-		obj.$$async.push(function(next) {
-			self.save(obj, helper, function(err, result) {
-
-				if (obj.$$result)
-					obj.$$result.push(err ? null : result);
-
-				if (!err)
-					return next();
-				next = null;
-				var result = obj.$$result;
-				delete obj.$$result;
-				delete obj.$$async;
-				obj.$callback(err, result);
-			});
-		});
-
-		return obj;
-	};
-
-	obj.$remove = function(helper, callback) {
-
-		if (!obj.$$async) {
-			self.remove(helper, callback);
-			return obj;
-		}
-
-		obj.$$async.push(function(next) {
-			self.remove(obj, helper, function(err, result) {
-
-				if (obj.$$result)
-					obj.$$result.push(err ? null : result);
-
-				if (!err)
-					return next();
-				next = null;
-				var result = obj.$$result;
-				delete obj.$$result;
-				delete obj.$$async;
-				obj.$callback(err, result);
-			});
-		});
-
-		return obj;
-	};
-
-	obj.$default = function() {
-		return self.default();
-	};
-
-	obj.$destroy = function() {
-		obj = null;
-	};
-
-	obj.$transform = function(name, helper, callback) {
-
-		if (!obj.$$async) {
-			self.transform(name, obj, helper, callback);
-			return obj;
-		}
-
-		obj.$$async.push(function(next) {
-			self.transform(name, obj, helper, function(err, result) {
-
-				if (obj.$$result)
-					obj.$$result.push(err ? null : result);
-
-				if (!err)
-					return next();
-
-				next = null;
-				var result = obj.$$result;
-				delete obj.$$result;
-				delete obj.$$async;
-				obj.$callback(err, result);
-			});
-		});
-
-		return obj;
-	};
-
-	obj.$compose = function(name, helper, callback) {
-
-		if (!obj.$$async) {
-			self.compose(name, obj, helper, callback);
-			return obj;
-		}
-
-		obj.$$async.push(function(next) {
-			self.compose(name, obj, helper, function(err, result) {
-
-				if (obj.$$result)
-					obj.$$result.push(err ? null : result);
-
-				if (!err)
-					return next();
-				next = null;
-				var result = obj.$$result;
-				delete obj.$$result;
-				delete obj.$$async;
-				obj.$callback(err, result);
-			});
-		});
-
-		return obj;
-	};
-
-	obj.$workflow = function(name, helper, callback) {
-
-		if (!obj.$$async) {
-			self.workflow(name, obj, helper, callback);
-			return obj;
-		}
-
-		obj.$$async.push(function(next) {
-			self.workflow(name, obj, helper, function(err, result) {
-
-				if (obj.$$result)
-					obj.$$result.push(err ? null : result);
-
-				if (!err)
-					return next();
-				next = null;
-				var result = obj.$$result;
-				delete obj.$$result;
-				delete obj.$$async;
-				obj.$callback(err, result);
-			});
-		});
-
-		return obj;
-	};
-
-	obj.$operation = function(name, helper, callback) {
-
-		if (!obj.$$async) {
-			self.operation(name, obj, helper, callback);
-			return obj;
-		}
-
-		obj.$$async.push(function(next) {
-			self.operation(name, obj, helper, function(err, result) {
-
-				if (obj.$$result)
-					obj.$$result.push(err ? null : result);
-
-				if (!err)
-					return next();
-				next = null;
-				var result = obj.$$result;
-				delete obj.$$result;
-				delete obj.$$async;
-				obj.$callback(err, result);
-			});
-		});
-
-		return obj;
-	};
-
-	obj.$clean = function() {
-		return self.clean(obj);
-	};
-
-	obj.$clone = function() {
-		return self.$make(JSON.parse(JSON.stringify(obj)));
-	};
-
-	obj.$prepare = function() {
-		return self.prepare(obj);
-	};
-
-	obj.$schema = function() {
-		return self;
-	};
-
-	obj.$validate = function(resourcePrefix, resourceName, builder) {
-		return self.validate(obj, resourcePrefix, resourceName, builder);
-	};
-
-	obj.$rule = function(name) {
-		return self.rule(name);
-	};
-
-	obj.$constant = function(name) {
-		return self.constant(name);
-	};
-
-	return obj;
+	return obj; // TODO remove
 };
 
 SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
@@ -1306,7 +1095,7 @@ SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
 
 /**
  * Create a default object according the schema
- * @return {Object}
+ * @return {SchemaInstance}
  */
 SchemaBuilderEntity.prototype.default = function() {
 
@@ -1317,11 +1106,11 @@ SchemaBuilderEntity.prototype.default = function() {
 		return null;
 
 	var defaults = self.onDefault;
-	var item = framework_utils.extend({}, obj, true);
+	var item = new self.CurrentSchemaInstance();
 
-	for (var property in item) {
+	for (var property in obj) {
 
-		var type = item[property];
+		var type = obj[property];
 
 		if (defaults) {
 			var def = defaults(property, true, self.name);
@@ -1372,10 +1161,17 @@ SchemaBuilderEntity.prototype.default = function() {
 		}
 	}
 
-	return self.$make(item);
+	return item;
 };
 
-SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = function(model, callback, filter) {
+/**
+ * Create schema instance
+ * @param {function|object} model
+ * @param [callback]
+ * @param [filter]
+ * @returns {SchemaInstance}
+ */
+SchemaBuilderEntity.prototype.make = function(model, callback, filter) {
 
 	var self = this;
 
@@ -1409,6 +1205,8 @@ SchemaBuilderEntity.prototype.make = SchemaBuilderEntity.prototype.load = functi
 	return output;
 };
 
+SchemaBuilderEntity.prototype.load = SchemaBuilderEntity.prototype.make; // Because JSDoc is not works with double asserting
+
 function autotrim(context, value) {
 	if (context.trim)
 		return value.trim();
@@ -1418,8 +1216,8 @@ function autotrim(context, value) {
 /**
  * Prepare model according to schema
  * @param {Object} model
- * @param {String Array} dependencies INTERNAL.
- * @return {Object}
+ * @param {String|Array} [dependencies] INTERNAL.
+ * @return {SchemaInstance}
  */
 SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
@@ -1441,10 +1239,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 	var tmp;
 	var entity;
-	var item = framework_utils.extend({}, obj, true);
+	var item = new self.CurrentSchemaInstance();
 	var defaults = self.onDefault;
 
-	for (var property in item) {
+	for (var property in obj) {
 
 		var val = model[property];
 
@@ -1458,7 +1256,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 		if (val === undefined)
 			val = '';
 
-		var type = item[property];
+		var type = obj[property];
 		var typeval = typeof(val);
 
 		if (typeval === FUNCTION)
@@ -1647,7 +1445,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 	}
 
 	// self._setStateToModel(model, 0, 1);
-	return self.$make(item);
+	return item;
 };
 
 /**
@@ -1886,7 +1684,7 @@ SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builde
 
 	callback(has ? builder : null, result === undefined ? model : result, model);
 	return self;
-}
+};
 
 /**
  * Run a workflow
@@ -2062,13 +1860,13 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 	callback.success = false;
 	async.call(self, operation)(function(err) {
-			if (!err || callback.success)
-				return;
-			callback.success = true;
-			builder.push(err);
-			if (self.onError)
-				self.onError(builder, model, $type, name);
-			callback(builder);
+		if (!err || callback.success)
+			return;
+		callback.success = true;
+		builder.push(err);
+		if (self.onError)
+			self.onError(builder, model, $type, name);
+		callback(builder);
 	}, builder, model, helper, function(result) {
 
 		if (callback.success)
@@ -2093,73 +1891,309 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 /**
  * Clean model (remove state of all schemas in model).
- * @param {Object} model
+ * @param {Object} m Model.
  * @param {Boolean} isCopied Internal argument.
  * @return {Object}
  */
-SchemaBuilderEntity.prototype.clean = function(m, isCopied) {
+SchemaBuilderEntity.prototype.clean = function(m) {
+	return clone(m);
+};
 
-	if (m === null || m === undefined)
-		return m;
+function clone(obj) {
 
-	var model;
+	if (!obj)
+		return obj;
 
-	if (!isCopied)
-		model = framework_utils.copy(m);
-	else
-		model = m;
+	var type = typeof(obj);
+	if (type !== OBJECT || obj instanceof Date)
+		return obj;
 
-	var self = this;
+	var length;
+	var o;
 
-	delete model['$$result'];
-	delete model['$$async'];
-	delete model['$clone'];
-	delete model['$async'];
-	delete model['$callback'];
-	delete model['$transform'];
-	delete model['$workflow'];
-	delete model['$operation'];
-	delete model['$destroy'];
-	delete model['$save'];
-	delete model['$remove'];
-	delete model['$clean'];
-	delete model['$prepare'];
-	delete model['$default'];
-	delete model['$schema'];
-	delete model['$validate'];
-	delete model['$compose'];
-	delete model['$rule'];
-	delete model['$constant'];
+	if (obj instanceof Array) {
 
-	for (var key in model) {
-		var value = model[key];
+		length = obj.length;
+		o = new Array(length);
 
-		if (value === null)
-			continue;
-
-		if (typeof(value) !== OBJECT)
-			continue;
-
-		if (value instanceof Array) {
-			for (var j = 0, sublength = value.length; j < sublength; j++) {
-
-				var item = value[j];
-				if (item === null)
+		for (var i = 0; i < length; i++) {
+			type = typeof(obj[i]);
+			if (type !== OBJECT || obj[i] instanceof Date) {
+				if (type === FUNCTION)
 					continue;
-
-				if (typeof(item) !== OBJECT)
-					continue;
-
-				value[j] = self.clean(item, true);
+				o[i] = obj[i];
+				continue;
 			}
+			o[i] = clone(obj[i]);
+		}
 
+		return o;
+	}
+
+	o = {};
+
+	for (var m in obj) {
+
+		if (SKIP[m])
+			continue;
+
+		var val = obj[m];
+
+		if (val instanceof SchemaInstance) {
+			o[m] = clone(val);
 			continue;
 		}
 
-		model[key] = self.clean(value, true);
+		var type = typeof(val);
+		if (type !== OBJECT || val instanceof Date) {
+			if (type === FUNCTION)
+				continue;
+			o[m] = val;
+			continue;
+		}
+
+		o[m] = clone(obj[m]);
 	}
 
-	return model;
+	return o;
+}
+
+/**
+ * Returns prototype of instances
+ * @returns {Object}
+ */
+SchemaBuilderEntity.prototype.instancePrototype = function() {
+	return this.CurrentSchemaInstance.prototype;
+};
+
+/**
+ * SchemaInstance
+ * @constructor
+ */
+function SchemaInstance() {
+}
+
+/**
+ * @type {SchemaBuilderEntity}
+ */
+SchemaInstance.prototype.$$schema = null;
+
+SchemaInstance.prototype.$async = function(callback, index) {
+	var self = this;
+
+	if (callback === undefined)
+		callback = NOOP;
+	self.$$async = [];
+	self.$$result = [];
+	self.$callback = callback;
+	setImmediate(function() {
+		self.$$async.async(function() {
+			var result = self.$$result;
+			delete self.$$result;
+			delete self.$$async;
+			callback(null, index !== undefined ? result[index] : result);
+		});
+	});
+	return self;
+};
+
+SchemaInstance.prototype.$save = function(helper, callback) {
+	var self = this;
+
+	if (!self.$$async) {
+		self.$$schema.save(self, helper, callback);
+		return self;
+	}
+
+	self.$$async.push(function(next) {
+		self.$$schema.save(self, helper, function(err, result) {
+
+			if (self.$$result)
+				self.$$result.push(err ? null : result);
+
+			if (!err)
+				return next();
+			next = null;
+			var result = self.$$result;
+			delete self.$$result;
+			delete self.$$async;
+			self.$callback(err, result);
+		});
+	});
+
+	return self;
+};
+
+SchemaInstance.prototype.$remove = function(helper, callback) {
+	var self = this;
+
+	if (!self.$$async) {
+		self.$$schema.remove(helper, callback);
+		return self;
+	}
+
+	self.$$async.push(function(next) {
+		self.$$schema.remove(self, helper, function(err, result) {
+
+			if (self.$$result)
+				self.$$result.push(err ? null : result);
+
+			if (!err)
+				return next();
+			next = null;
+			var result = self.$$result;
+			delete self.$$result;
+			delete self.$$async;
+			self.$callback(err, result);
+		});
+	});
+
+	return self;
+};
+
+SchemaInstance.prototype.$default = function() {
+	return this.$$schema.default();
+};
+
+SchemaInstance.prototype.$destroy = function() {
+	return this.$$schema.destroy();
+};
+
+SchemaInstance.prototype.$transform = function(name, helper, callback) {
+	var self = this;
+
+	if (!self.$$async) {
+		self.$$schema.transform(name, self, helper, callback);
+		return self;
+	}
+
+	self.$$async.push(function(next) {
+		self.$$schema.transform(name, self, helper, function(err, result) {
+
+			if (self.$$result)
+				self.$$result.push(err ? null : result);
+
+			if (!err)
+				return next();
+
+			next = null;
+			var result = self.$$result;
+			delete self.$$result;
+			delete self.$$async;
+			self.$callback(err, result);
+		});
+	});
+
+	return self;
+};
+
+SchemaInstance.prototype.$compose = function(name, helper, callback) {
+	var self = this;
+
+	if (!self.$$async) {
+		self.$$schema.compose(name, self, helper, callback);
+		return self;
+	}
+
+	self.$$async.push(function(next) {
+		self.$$schema.compose(name, self, helper, function(err, result) {
+
+			if (self.$$result)
+				self.$$result.push(err ? null : result);
+
+			if (!err)
+				return next();
+			next = null;
+			var result = self.$$result;
+			delete self.$$result;
+			delete self.$$async;
+			self.$callback(err, result);
+		});
+	});
+
+	return self;
+};
+
+SchemaInstance.prototype.$workflow = function(name, helper, callback) {
+	var self = this;
+
+	if (!self.$$async) {
+		self.$$schema.workflow(name, self, helper, callback);
+		return self;
+	}
+
+	self.$$async.push(function(next) {
+		self.$$schema.workflow(name, self, helper, function(err, result) {
+
+			if (self.$$result)
+				self.$$result.push(err ? null : result);
+
+			if (!err)
+				return next();
+			next = null;
+			var result = self.$$result;
+			delete self.$$result;
+			delete self.$$async;
+			self.$callback(err, result);
+		});
+	});
+
+	return self;
+};
+
+SchemaInstance.prototype.$operation = function(name, helper, callback) {
+	var self = this;
+
+	if (!self.$$async) {
+		self.$$schema.operation(name, self, helper, callback);
+		return self;
+	}
+
+	self.$$async.push(function(next) {
+		self.$$schema.operation(name, self, helper, function(err, result) {
+
+			if (self.$$result)
+				self.$$result.push(err ? null : result);
+
+			if (!err)
+				return next();
+			next = null;
+			var result = self.$$result;
+			delete self.$$result;
+			delete self.$$async;
+			self.$callback(err, result);
+		});
+	});
+
+	return self;
+};
+
+SchemaInstance.prototype.$clean = function() {
+	return this.$$schema.clean(this);
+};
+
+SchemaInstance.prototype.$clone = function() {
+	return framework_utils.extend(new this.$$schema.CurrentSchemaInstance(), this, true);
+};
+
+SchemaInstance.prototype.$prepare = function() {
+	return this.$$schema.prepare(this);
+};
+
+SchemaInstance.prototype.$schema = function() {
+	return this.$$schema;
+};
+
+SchemaInstance.prototype.$validate = function(resourcePrefix, resourceName, builder) {
+	return this.$$schema.validate(this, resourcePrefix, resourceName, builder);
+};
+
+SchemaInstance.prototype.$rule = function(name) {
+	return this.$$schema.rule(name);
+};
+
+SchemaInstance.prototype.$constant = function(name) {
+	return this.$$schema.constant(name);
 };
 
 /**
@@ -2326,7 +2360,7 @@ exports.remove = function(name) {
  * Default handler
  * @callback SchemaDefaults
  * @param {String} name Property name.
- * @param {Booelan} isDefault Is default (true) or prepare (false)?
+ * @param {Boolean} isDefault Is default (true) or prepare (false)?
  * @return {Object} Property value.
  */
 
@@ -2357,9 +2391,9 @@ exports.isJoin = function(collection, value) {
 /**
  * Create validation
  * @param {String} name Schema name.
- * @param {Function or Array} fn Validator Handler or Property names as array for validating.
- * @param {String Array} properties Valid only these properties, optional.
- * @return {Function or Array}
+ * @param {Function|Array} fn Validator Handler or Property names as array for validating.
+ * @param {String|Array} properties Valid only these properties, optional.
+ * @return {Function|Array}
  */
 exports.validation = function(name, properties, fn) {
 
@@ -2538,7 +2572,7 @@ ErrorBuilder.prototype._resource = function() {
 /**
  * Add an error
  * @param {String} name  Property name.
- * @param {String or Error} error Error message.
+ * @param {String|Error} error Error message.
  * @param {String} path  Current path (in object).
  * @param {Number} index Array Index, optional.
  * @return {ErrorBuilder}
@@ -2636,8 +2670,8 @@ ErrorBuilder.prototype.hasError = function(name) {
 
 	if (name) {
 		return self.items.find(function(o) {
-			return o.name === name;
-		}) !== null;
+				return o.name === name;
+			}) !== null;
 	}
 
 	return self.items.length > 0;
@@ -2701,11 +2735,11 @@ ErrorBuilder.prototype.json = function(beautify, replacer) {
 	items = this.prepare().items;
 
 	/*
-	if (beautify !== null)
-		items = this.prepare()._transform();
-	else
-		items = this.items;
-	*/
+	 if (beautify !== null)
+	 items = this.prepare()._transform();
+	 else
+	 items = this.items;
+	 */
 	if (beautify)
 		return JSON.stringify(items, replacer, '\t');
 	return JSON.stringify(items, replacer);
@@ -2723,7 +2757,7 @@ ErrorBuilder.prototype.JSON = function(beautify, replacer) {
 /**
  * Internal: Prepare error messages with onResource()
  * @private
- * @return {ErrorBuidler}
+ * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype._prepare = function() {
 
@@ -2861,7 +2895,7 @@ ErrorBuilder.prototype._prepareReplace = function() {
 /**
  * Internal: Prepare error messages with onResource()
  * @private
- * @return {ErrorBuidler}
+ * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.prepare = function() {
 	var self = this;
@@ -2878,7 +2912,7 @@ ErrorBuilder.prototype.prepare = function() {
 /**
  * STATIC: Create transformation
  * @param {String} name
- * @param {Function(errorBuilder)} fn
+ * @param {Function(ErrorBuilder)} fn
  * @param {Boolean} isDefault Default transformation for all error builders.
  */
 ErrorBuilder.addTransform = function(name, fn, isDefault) {

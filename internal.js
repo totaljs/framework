@@ -1,4 +1,4 @@
-// Copyright 2012-2015 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2016 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.5
+ * @version 1.9.6
  */
 
 'use strict';
@@ -46,6 +46,8 @@ var REG_5 = />\n\s{1,}</g;
 var REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
 var REG_BLOCK_BEG = /\@\{block.*?\}/gi;
 var REG_BLOCK_END = /\@\{end\}/gi;
+var REG_SKIP_1 = /\(\'|\"/g;
+var REG_SKIP_2 = /\,(\s)?\w+/g;
 
 var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
@@ -212,7 +214,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 	parser.onPartEnd = function() {
 
-		if (stream !== null) {
+		if (stream) {
 			stream.end();
 			stream = null;
 		}
@@ -250,11 +252,13 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 	parser.onEnd = function() {
 		var cb = function() {
-			if (close > 0) {
+
+			if (close) {
 				setImmediate(cb);
 				return;
 			}
-			if (rm !== null)
+
+			if (rm)
 				framework.unlink(rm);
 			subscribe.doEnd();
 		};
@@ -495,6 +499,8 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 		if (route.isXHR && !req.xhr)
 			return 0;
 		if (route.isMOBILE && !req.mobile)
+			return 0;
+		if (route.isROBOT && !req.robot)
 			return 0;
 		var method = req.method;
 		if (route.method) {
@@ -1056,10 +1062,10 @@ exports.compile_css = function(value, filename) {
 			}
 		}
 
-		if (framework.onCompileStyle !== null)
+		if (framework.onCompileStyle)
 			return framework.onCompileStyle(filename, value);
 
-		if (framework.onCompileCSS !== null) {
+		if (framework.onCompileCSS) {
 			console.log('OBSOLETE: framework.onCompileCSS() is deprecated, use framework.onCompileStyle()');
 			return framework.onCompileCSS(filename, value);
 		}
@@ -1336,10 +1342,10 @@ exports.compile_javascript = function(source, filename) {
 				}
 			}
 
-			if (framework.onCompileScript !== null)
+			if (framework.onCompileScript)
 				return framework.onCompileScript(filename, source).trim();
 
-			if (framework.onCompileJS !== null) {
+			if (framework.onCompileJS) {
 				console.log('OBSOLETE: framework.onCompileJS() is deprecated, use framework.onCompileScript()');
 				return framework.onCompileJS(filename, source).trim();
 			}
@@ -1448,7 +1454,7 @@ MultipartParser.prototype.initWithBoundary = function(str) {
 
 	self.boundary = new Buffer(str.length + 4);
 
-	if (framework.versionNode > 0) {
+	if (framework.versionNode) {
 		self.boundary.write('\r\n--', 0, 'ascii');
 		self.boundary.write(str, 4, 'ascii');
 	} else {
@@ -1481,7 +1487,6 @@ MultipartParser.prototype.write = function(buffer) {
 		bufferLength = buffer.length,
 		c,
 		cl,
-
 		mark = function(name) {
 			self[name + 'Mark'] = i;
 		},
@@ -1489,21 +1494,16 @@ MultipartParser.prototype.write = function(buffer) {
 			delete self[name + 'Mark'];
 		},
 		callback = function(name, buffer, start, end) {
-			if (start !== undefined && start === end) {
+			if (start !== undefined && start === end)
 				return;
-			}
-
 			var callbackSymbol = 'on' + name.substr(0, 1).toUpperCase() + name.substr(1);
-			if (callbackSymbol in self) {
+			if (callbackSymbol in self)
 				self[callbackSymbol](buffer, start, end);
-			}
 		},
 		dataCallback = function(name, clear) {
 			var markSymbol = name + 'Mark';
-			if (!(markSymbol in self)) {
+			if (!(markSymbol in self))
 				return;
-			}
-
 			if (!clear) {
 				callback(name, buffer, self[markSymbol], buffer.length);
 				self[markSymbol] = 0;
@@ -1523,91 +1523,79 @@ MultipartParser.prototype.write = function(buffer) {
 				state = S.START_BOUNDARY;
 			case S.START_BOUNDARY:
 				if (index == boundary.length - 2) {
-					if (c == HYPHEN) {
+					if (c === HYPHEN)
 						flags |= F.LAST_BOUNDARY;
-					} else if (c != CR) {
+					else if (c !== CR)
 						return i;
-					}
 					index++;
 					break;
-				} else if (index - 1 == boundary.length - 2) {
-					if (flags & F.LAST_BOUNDARY && c == HYPHEN) {
+				} else if (index - 1 === boundary.length - 2) {
+					if (flags & F.LAST_BOUNDARY && c === HYPHEN) {
 						callback('end');
 						state = S.END;
 						flags = 0;
-					} else if (!(flags & F.LAST_BOUNDARY) && c == LF) {
+					} else if (!(flags & F.LAST_BOUNDARY) && c === LF) {
 						index = 0;
 						callback('partBegin');
 						state = S.HEADER_FIELD_START;
-					} else {
+					} else
 						return i;
-					}
 					break;
 				}
 
-				if (c != boundary[index + 2]) {
+				if (c !== boundary[index + 2])
 					index = -2;
-				}
-				if (c == boundary[index + 2]) {
+				if (c === boundary[index + 2])
 					index++;
-				}
 				break;
 			case S.HEADER_FIELD_START:
 				state = S.HEADER_FIELD;
 				mark('headerField');
 				index = 0;
 			case S.HEADER_FIELD:
-				if (c == CR) {
+				if (c === CR) {
 					clear('headerField');
 					state = S.HEADERS_ALMOST_DONE;
 					break;
 				}
 
 				index++;
-				if (c == HYPHEN) {
+				if (c === HYPHEN)
 					break;
-				}
 
-				if (c == COLON) {
-					if (index == 1) {
-						// empty header field
+				if (c === COLON) {
+					// empty header field
+					if (index === 1)
 						return i;
-					}
 					dataCallback('headerField', true);
 					state = S.HEADER_VALUE_START;
 					break;
 				}
 
 				cl = lower(c);
-				if (cl < A || cl > Z) {
+				if (cl < A || cl > Z)
 					return i;
-				}
 				break;
 			case S.HEADER_VALUE_START:
-				if (c == SPACE) {
+				if (c === SPACE)
 					break;
-				}
-
 				mark('headerValue');
 				state = S.HEADER_VALUE;
 			case S.HEADER_VALUE:
-				if (c == CR) {
+				if (c === CR) {
 					dataCallback('headerValue', true);
 					callback('headerEnd');
 					state = S.HEADER_VALUE_ALMOST_DONE;
 				}
 				break;
 			case S.HEADER_VALUE_ALMOST_DONE:
-				if (c != LF) {
+				if (c !== LF)
 					return i;
-				}
 				state = S.HEADER_FIELD_START;
 				break;
 			case S.HEADERS_ALMOST_DONE:
-				if (c != LF) {
+				if (c !== LF)
 					return i;
-				}
-
 				callback('headersEnd');
 				state = S.PART_DATA_START;
 				break;
@@ -1617,40 +1605,36 @@ MultipartParser.prototype.write = function(buffer) {
 			case S.PART_DATA:
 				prevIndex = index;
 
-				if (index === 0) {
+				if (!index) {
 					// boyer-moore derrived algorithm to safely skip non-boundary data
 					i += boundaryEnd;
-					while (i < bufferLength && !(buffer[i] in boundaryChars)) {
+					while (i < bufferLength && !(buffer[i] in boundaryChars))
 						i += boundaryLength;
-					}
 					i -= boundaryEnd;
 					c = buffer[i];
 				}
 
 				if (index < boundary.length) {
-					if (boundary[index] == c) {
-						if (index === 0) {
+					if (boundary[index] === c) {
+						if (!index)
 							dataCallback('partData', true);
-						}
 						index++;
-					} else {
+					} else
 						index = 0;
-					}
-				} else if (index == boundary.length) {
+				} else if (index === boundary.length) {
 					index++;
-					if (c == CR) {
+					if (c === CR) {
 						// CR = part boundary
 						flags |= F.PART_BOUNDARY;
-					} else if (c == HYPHEN) {
+					} else if (c === HYPHEN) {
 						// HYPHEN = end boundary
 						flags |= F.LAST_BOUNDARY;
-					} else {
+					} else
 						index = 0;
-					}
-				} else if (index - 1 == boundary.length) {
+				} else if (index - 1 === boundary.length) {
 					if (flags & F.PART_BOUNDARY) {
 						index = 0;
-						if (c == LF) {
+						if (c === LF) {
 							// unset the PART_BOUNDARY flag
 							flags &= ~F.PART_BOUNDARY;
 							callback('partEnd');
@@ -1659,30 +1643,27 @@ MultipartParser.prototype.write = function(buffer) {
 							break;
 						}
 					} else if (flags & F.LAST_BOUNDARY) {
-						if (c == HYPHEN) {
+						if (c === HYPHEN) {
 							callback('partEnd');
 							callback('end');
 							state = S.END;
 							flags = 0;
-						} else {
+						} else
 							index = 0;
-						}
-					} else {
+					} else
 						index = 0;
-					}
 				}
 
-				if (index > 0) {
+				if (index) {
 					// when matching a possible boundary, keep a lookbehind reference
 					// in case it turns out to be a false lead
 					lookbehind[index - 1] = c;
-				} else if (prevIndex > 0) {
+				} else if (prevIndex) {
 					// if our boundary turned out to be rubbish, the captured lookbehind
 					// belongs to partData
 					callback('partData', lookbehind, 0, prevIndex);
 					prevIndex = 0;
 					mark('partData');
-
 					// reconsider the current character even so it interrupted the sequence
 					// it could be the beginning of a new sequence
 					i--;
@@ -1712,13 +1693,12 @@ MultipartParser.prototype.end = function() {
 
 	var callback = function(self, name) {
 		var callbackSymbol = 'on' + name.substr(0, 1).toUpperCase() + name.substr(1);
-		if (callbackSymbol in self) {
+		if (callbackSymbol in self)
 			self[callbackSymbol]();
-		}
 	};
 
-	if ((self.state == S.HEADER_FIELD_START && self.index === 0) ||
-		(self.state == S.PART_DATA && self.index == self.boundary.length)) {
+	if ((self.state === S.HEADER_FIELD_START && self.index === 0) ||
+		(self.state === S.PART_DATA && self.index == self.boundary.length)) {
 		callback(self, 'partEnd');
 		callback(self, 'end');
 	} else if (self.state != S.END) {
@@ -1757,9 +1737,9 @@ function view_parse_localization(content, language) {
 	if (command === null)
 		return content;
 
-	while (command !== null) {
+	while (command) {
 
-		if (command !== null)
+		if (command)
 			output += content.substring(end === 0 ? 0 : end + 1, command.beg) + framework.translate(language, command.command);
 
 		end = command.end;
@@ -1776,7 +1756,7 @@ function view_parse_localization(content, language) {
  * @param {Boolean} minify
  * @return {Function}
  */
-function view_parse(content, minify, filename) {
+function view_parse(content, minify, filename, controller) {
 
 	if (minify)
 		content = removeComments(content);
@@ -1846,15 +1826,10 @@ function view_parse(content, minify, filename) {
 		if (value === '')
 			return '$EMPTY';
 
-/*
-		if (!nocompressHTML && value[0] === ' ' && value[1] === '<')
-			value = value.substring(1);
-*/
-
 		if (!nocompressHTML && is)
 			value += ' ';
 
-		if (value.match(/\n|\r|\'|\\/) !== null)
+		if (value.match(/\n|\r|\'|\\/))
 			return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END;
 		return DELIMITER + value + DELIMITER;
 	}
@@ -1877,19 +1852,20 @@ function view_parse(content, minify, filename) {
 	var compileName = '';
 	var isSitemap = false;
 	var text;
+	var RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language'];
 
-	while (command !== null) {
+	while (command) {
 
-		if (old !== null) {
+		if (old) {
 			text = content.substring(old.end + 1, command.beg);
-			if (text !== '') {
+			if (text) {
 				if (view_parse_plus(builder))
 					builder += '+';
 				builder += escaper(text);
 			}
 		} else {
 			text = content.substring(0, command.beg);
-			if (text !== '') {
+			if (text) {
 				if (view_parse_plus(builder))
 					builder += '+';
 				builder += escaper(text);
@@ -1897,6 +1873,7 @@ function view_parse(content, minify, filename) {
 		}
 
 		var cmd = content.substring(command.beg + 2, command.end);
+
 		var cmd8 = cmd.substring(0, 8);
 		var cmd7 = cmd.substring(0, 7);
 
@@ -1909,7 +1886,9 @@ function view_parse(content, minify, filename) {
 
 		pharse = cmd;
 
-		if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
+		if (cmd[0] === '\'' || cmd[0] === '"') {
+			builder += '+' + DELIMITER + (new Function('self', 'return self.$import(' + cmd[0] + '!' + cmd.substring(1) + ')'))(controller) + DELIMITER;
+		} else if (cmd7 === 'compile' && cmd.lastIndexOf(')') === -1) {
 
 			builderTMP = builder + '+(framework.onCompileView.call(self,\'' + (cmd8[7] === ' ' ? cmd.substring(8) : '') + '\',';
 			builder = '';
@@ -1989,7 +1968,44 @@ function view_parse(content, minify, filename) {
 				nocompress = true;
 			});
 
-			if (tmp) {
+			var can = false;
+
+			// Inline rendering is supported only in release mode
+			if (RELEASE) {
+				for (var a = 0, al = RENDERNOW.length; a < al; a++) {
+					if (tmp.startsWith(RENDERNOW[a])) {
+
+						if (tmp.indexOf('+') !== -1)
+							continue;
+
+						// skips variables 1
+						if (!tmp.match(REG_SKIP_1) || tmp.match(REG_SKIP_2))
+							continue;
+
+						if (!a) {
+							var isMeta = tmp.indexOf('\'meta\'') !== -1;
+							var isHead = tmp.indexOf('\'head\'') !== -1;
+							tmp = tmp.replace(/\'(meta|head)\'\,/g, '').replace(/(\,\,|\,\)|\s{1,})/g, '');
+							if (isMeta || isHead) {
+								var tmpimp = '';
+								if (isMeta)
+									tmpimp += (isMeta ? '\'meta\'' : '');
+								if (isHead)
+									tmpimp += (tmpimp ? ',' : '') + (isHead ? '\'head\'' : '');
+								builder += '+self.$import(' + tmpimp + ')';
+							}
+						}
+
+						can = true;
+						break;
+					}
+				}
+			}
+
+			if (can) {
+				var fn = new Function('self', 'return ' + tmp);
+				builder += '+' + DELIMITER + fn(controller).replace(/\\/g, '\\\\') + DELIMITER;
+			} else if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
 				builder += wrapTryCatch(tmp, command.command, command.line);
@@ -2002,11 +2018,14 @@ function view_parse(content, minify, filename) {
 			isSitemap = true;
 	}
 
-	if (old !== null) {
+	if (old) {
 		text = content.substring(old.end + 1);
 		if (text)
 			builder += '+' + escaper(text);
 	}
+
+	if (RELEASE)
+		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output\=\$EMPTY\+)/g, '$output=').replace(/(\$output\+\=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+\=\$EMPTY)/g, '}').replace(/(\{\$output\+\=\$EMPTY\;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(\>\'\+\'\<)/g, '><').replace(/\'\+\'/g, '');
 
 	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
@@ -2164,6 +2183,11 @@ function view_prepare(command, dynamicCommand, functions) {
 				return 'self.host()';
 			return 'self.' + command;
 
+		case 'href':
+			if (command.indexOf('(') === -1)
+				return 'self.href()';
+			return 'self.' + command;
+
 		case 'url':
 			if (command.indexOf('(') !== -1)
 				return 'self.$' + command;
@@ -2217,11 +2241,10 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'routeVideo':
 		case 'routeStatic':
 			return 'self.' + command;
-
-		case 'translate':
 		case 'TRANSLATE':
-			return 'self.' + command.toLowerCase();
-
+			return command;
+		case 'translate':
+			return 'self.' + command;
 		case 'json':
 		case 'image':
 		case 'layout':
@@ -2232,14 +2255,6 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'helper':
 		case 'download':
 		case 'selected':
-		case 'currentContent':
-		case 'currentCSS':
-		case 'currentDownload':
-		case 'currentImage':
-		case 'currentJS':
-		case 'currentTemplate':
-		case 'currentVideo':
-		case 'currentView':
 		case 'disabled':
 		case 'checked':
 		case 'etag':
@@ -2509,7 +2524,7 @@ function compressJS(html, index, filename) {
 
 	var val = js.substring(strFrom.length, js.length - strTo.length).trim();
 	var compiled = exports.compile_javascript(val, filename);
-	html = html.replacer(js, strFrom + compiled.dollar().trim() + strTo.trim());
+	html = html.replacer(js, strFrom + compiled.trim() + strTo.trim());
 	return compressJS(html, indexBeg + compiled.length + 9, filename);
 }
 
@@ -2774,8 +2789,8 @@ function make_nested(css, name) {
 /**
  * HTML compressor
  * @private
- * @param  {String} html HTML.
- * @param  {Boolean} minify Can minify?
+ * @param {String} html HTML.
+ * @param {Boolean} minify Can minify?
  * @return {String}
  */
 function compressHTML(html, minify) {
@@ -2870,25 +2885,42 @@ function compressHTML(html, minify) {
  * @param {String} path
  * @return {Object}
  */
-function viewengine_read(path, language) {
+function viewengine_read(path, language, controller) {
 	var config = framework.config;
 	var isOut = path[0] === '.';
 	var filename = isOut ? path.substring(1) : framework.path.views(path);
+	var key;
+
+	if (RELEASE) {
+		key = '404/' + path;
+		var is = framework.temporary.other[key];
+		if (is !== undefined)
+			return null;
+	}
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
+		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
-	if (isOut)
+	if (isOut) {
+		if (RELEASE)
+			framework.temporary.other[key]= null;
 		return null;
+	}
 
 	var index = path.lastIndexOf('/');
-	if (index === -1)
+	if (index === -1) {
+		if (RELEASE)
+			framework.temporary.other[key]= null;
 		return null;
+	}
 
 	filename = framework.path.views(path.substring(index + 1));
 
 	if (fs.existsSync(filename))
-		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename);
+		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
+
+	if (RELEASE)
+		framework.temporary.other[key]= null;
 
 	return null;
 };
@@ -2907,9 +2939,9 @@ function viewengine_modify(value, filename) {
 	return value;
 };
 
-function viewengine_load(name, filename, language) {
+function viewengine_load(name, filename, controller) {
 
-	// console.log(name, filename);
+	var language = controller.language;
 
 	// Is dynamic content?
 	// console.log(filename);
@@ -2917,7 +2949,7 @@ function viewengine_load(name, filename, language) {
 		framework.temporary.other[name] = name.indexOf('@{') !== -1 || name.indexOf('<') !== -1;
 
 	if (framework.temporary.other[name])
-		return viewengine_dynamic(name, language);
+		return viewengine_dynamic(name, language, controller);
 
 	var precompiled = framework.routes.views[name];
 
@@ -2932,11 +2964,10 @@ function viewengine_load(name, filename, language) {
 		key += language;
 
 	var generator = framework.temporary.views[key] || null;
-
-	if (generator !== null)
+	if (generator)
 		return generator;
 
-	generator = viewengine_read(filename, language);
+	generator = viewengine_read(filename, language, controller);
 
 	if (!framework.isDebug)
 		framework.temporary.views[key] = generator;
@@ -2949,23 +2980,16 @@ function viewengine_load(name, filename, language) {
 	@content {String}
 	return {Object} :: return parsed HTML
 */
-function viewengine_dynamic(content, language) {
+function viewengine_dynamic(content, language, controller) {
 	var key = content.hash();
 	var generator = framework.temporary.views[key] || null;
-	if (generator !== null)
+	if (generator)
 		return generator;
-	generator = view_parse(view_parse_localization(viewengine_modify(content, ''), language), framework.config['allow-compile-html']);
+	generator = view_parse(view_parse_localization(viewengine_modify(content, ''), language), framework.config['allow-compile-html'], null, controller);
 	if (!framework.isDebug)
 		framework.temporary.views[key] = generator;
 	return generator;
 };
-
-/*
-	Renders view from file or dynamic template
-	@name {String}
-	return {Object}
-*/
-exports.viewEngine = viewengine_load;
 
 exports.appendModel = function(str) {
 	var index = str.indexOf('(');
@@ -3301,6 +3325,7 @@ exports.parseBlock = function(name, content) {
 	return builder.trim();
 };
 
+exports.viewEngine = viewengine_load;
 exports.parseLocalization = view_parse_localization;
 exports.findLocalization = view_find_localization;
 exports.destroyStream = destroyStream;

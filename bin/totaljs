@@ -1,0 +1,440 @@
+#! /usr/bin/env node
+
+var exec = require('child_process').exec;
+var fs = require('fs');
+var path = require('path');
+var os = require('os');
+var Utils = require('total.js/utils');
+var Internal = require('total.js/internal');
+var EOF = os.platform() === 'win32' ? '\r\n' : '\n';
+var $type = 1;
+var isDirectory = false;
+
+function display_help() {
+	console.log('');
+	console.log('                           = without arguments creates empty-project');
+	console.log('-t or -translate           = creates a resource file with the localized text from views');
+	console.log('-t or -translate "TEXT"    = creates an identificator for the resource');
+	console.log('-t or -translate filename  = parsers and creates a resource file from the text file');
+	console.log('-c or -translatecsv        = parsers and creates CSV with localization into the current directory');
+	console.log('-d or -diff                = creates a differences between two resources "-diff filename1 filename2"');
+	console.log('-v or -version             = total.js version');
+	console.log('-minify filename           = minifies .js, .css or .html file into filename.min.[extension]');
+	console.log('/path/                     = target (default current directory)');
+	console.log('');
+}
+
+function translateFile(a) {
+
+	if (!fs.existsSync(a))
+		return false;
+
+	var arr = fs.readFileSync(a).toString('utf8').split('\n');
+	var builder = [];
+	var count = 0;
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var line = arr[i].trim();
+		if (line.length === 0)
+			continue;
+		builder.push('T' + line.hash().padRight(17, ' ') + ': ' + line);
+		count++;
+	}
+
+	fs.writeFileSync('translate.resource', '// Total.js translation file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + builder.join('\n'));
+	console.log('total.js: the translation was created (' + count + ' texts)');
+	return true;
+}
+
+function diff(a, b) {
+
+	if (!fs.existsSync(a)) {
+		console.log('The translation file does not exist: ' + a);
+		return;
+	}
+
+	if (!fs.existsSync(b)) {
+		console.log('The translation file does not exist: ' + b);
+		return;
+	}
+
+	var ba = fs.readFileSync(a).toString('utf8');
+	var bb = fs.readFileSync(b).toString('utf8');
+	var ca = ba.parseConfig();
+	var cb = bb.parseConfig();
+	var ka = Object.keys(ca);
+	var kb = Object.keys(cb);
+
+	ba = ba.split('\n');
+	bb = bb.split('\n');
+
+	var output = '';
+	var items = [];
+	var add = 0;
+	var rem = 0;
+	var padding = 0;
+
+	for (var i = 0, length = ba.length; i < length; i++) {
+		if (ba[i].indexOf(ka[0]) !== -1) {
+			padding = ba[i].indexOf(':');
+			break;
+		}
+	}
+
+	if (padding <= 0)
+		padding = 17;
+
+	function find_comment(arr, id) {
+		var comment = '';
+		for (var i = 0, length = arr.length; i < length; i++) {
+			if (arr[i].indexOf(id) !== -1)
+				return comment;
+			var line = arr[i];
+			if (line[0] !== '/' && line[1] !== '/')
+				continue;
+			comment = line;
+		}
+		return '';
+	}
+
+	var comment = '';
+	var prev = '';
+
+	for (var i = 0, length = ka.length; i < length; i++) {
+		var key = ka[i];
+
+		if (cb[key] !== undefined)
+			continue;
+
+		comment = find_comment(ba, key);
+
+		if (comment) {
+			if (items[items.length - 1] !== '')
+				items.push('');
+			items.push(comment);
+		}
+
+		var empty = comment === prev;
+
+		prev = comment;
+		items.push(key.padRight(padding) + ': ' + ca[key]);
+
+		if (!empty)
+			items.push('');
+
+		add++;
+	}
+
+	if (items.length > 0) {
+		output += '\n';
+		output += 'Add to "' + b + '" these:\n';
+		output += '\n';
+		output += items.join('\n');
+		output += '\n';
+	}
+
+	items = [];
+
+	for (var i = 0, length = kb.length; i < length; i++) {
+		var key = kb[i];
+
+		if (ca[key] !== undefined)
+			continue;
+
+		comment = find_comment(bb, key);
+
+		if (comment) {
+			if (items[items.length - 1] !== '')
+				items.push('');
+			items.push(comment);
+		}
+		else if (prev !== '')
+			items.push('');
+
+		var empty = comment === prev;
+
+		prev = comment;
+		items.push(key.padRight(padding) + ': ' + cb[key]);
+
+		if (!empty)
+			items.push('');
+
+		rem++;
+	}
+
+	if (items.length) {
+		output += '\n';
+		output += 'Remove from "' + b + '" these:\n';
+		output += '\n';
+		output += items.join('\n');
+		output += '\n';
+	}
+
+	var filename = path.join(path.dirname(a), path.basename(a, '.resource') + '-diff.txt');
+	fs.writeFileSync(filename, '// Total.js diff file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + output);
+	console.log('========================================');
+	console.log('Translation files differences:');
+	console.log('========================================');
+	console.log('');
+	console.log('added    : ' + add);
+	console.log('removed  : ' + rem);
+	console.log('output   : ' + filename);
+	console.log('');
+}
+
+function main() {
+
+	console.log('');
+	console.log('####################################################');
+	console.log('# total.js - web application framework for node.js #');
+	console.log('# version: v' + require('total.js').version_header.padRight(39) + '#');
+	console.log('####################################################');
+	console.log('');
+
+	var dir = process.cwd();
+	for (var i = 2; i < process.argv.length; i++) {
+		var arg = process.argv[i];
+		var cmd = arg.toLowerCase();
+
+		if (cmd.substring(0, 2) === '--')
+			cmd = cmd.substring(1);
+
+		if (cmd === '-v' || cmd === '-version')
+			return;
+
+		if (cmd === '-t' || cmd === '-translate') {
+			$type = 4;
+			continue
+		}
+
+		if (cmd === '-translate-csv' || cmd === '-translatecsv' || cmd === '-c') {
+			$type = 6;
+			continue
+		}
+
+		if (cmd === '-minify' || cmd === '-compress' || cmd === '-compile') {
+			$type = 5;
+			continue
+		}
+
+		if (cmd === '-diff') {
+			diff(process.argv[i + 1] || '', process.argv[i + 2] || '');
+			return;
+		}
+
+		if (cmd === '-a' || cmd === '-angular' || cmd === 'angular') {
+			$type = 3;
+			continue;
+		}
+
+		if (cmd === '-m' || cmd === '-minimal' || cmd === '-minimum' || cmd === 'minimum') {
+			$type = 2;
+			continue;
+		}
+
+		if (cmd === '-n' || cmd === '-normal' || cmd === 'normal') {
+			$type = 1;
+			continue;
+		}
+
+		if (cmd === '-h' || cmd === '-help' || cmd === '--help' || cmd === 'help') {
+			display_help();
+			return;
+		}
+
+		dir = arg;
+		isDirectory = true;
+		break;
+	}
+
+	if ($type === 5) {
+
+		if (!fs.existsSync(dir)) {
+			console.log('ERROR: file not found');
+			console.log('');
+			return;
+		}
+
+		var content = fs.readFileSync(dir).toString('utf8');
+		var extension = path.extname(dir);
+		var filename = dir.replace(extension, '.min' + extension);
+
+		switch (extension.toLowerCase()) {
+			case '.html':
+				fs.writeFileSync(filename, Utils.minifyHTML(content));
+				break;
+			case '.js':
+				fs.writeFileSync(filename, Utils.minifyScript(content));
+				break;
+			case '.css':
+				fs.writeFileSync(filename, Utils.minifyStyle(content));
+				break;
+		}
+
+		console.log('Minified: ' + filename);
+		return;
+	}
+
+	if ($type !== 4) {
+		if (!fs.existsSync(dir)) {
+			console.log('ERROR: directory not exists');
+			console.log('');
+			return;
+		}
+	}
+
+	if ($type === 4) {
+
+		if (isDirectory) {
+			if (translateFile(dir))
+				return;
+			console.log('T' + dir.hash().padRight(17, ' ') + ': ' + dir);
+			return;
+		}
+
+		console.log('total.js: creating translation');
+		Utils.ls(dir, function(files) {
+
+			var resource = {};
+			var texts = {};
+			var max = 0;
+			var count = 0;
+
+			for (var i = 0, length = files.length; i < length; i++) {
+				var filename = files[i];
+
+				if (filename.indexOf('sitemap') === -1 && !filename.endsWith('.html'))
+					continue;
+
+				var content = fs.readFileSync(filename).toString('utf8');
+				var command = Internal.findLocalization(content, 0);
+				while (command !== null) {
+
+					// Skip for direct reading
+					if (command.command[0] === '#' && command.command[1] !== ' ') {
+						command = Internal.findLocalization(content, command.end);
+						continue;
+					}
+
+					var key = 'T' + command.command.hash();
+					var file = filename.substring(dir.length + 1);
+
+					texts[key] = command.command;
+
+					if (resource[key]) {
+						if (resource[key].indexOf(file) === -1)
+							resource[key] += ', ' + file;
+					}
+					else
+						resource[key] = file;
+
+					count++;
+					max = Math.max(max, key.length);
+					command = Internal.findLocalization(content, command.end);
+				}
+			}
+
+			var keys = Object.keys(resource);
+			var builder = [];
+			var output = {};
+
+			for (var i = 0, length = keys.length; i < length; i++) {
+				if (!output[resource[keys[i]]])
+					output[resource[keys[i]]] = [];
+				output[resource[keys[i]]].push(keys[i].padRight(max + 5, ' ') + ': ' + texts[keys[i]]);
+			}
+
+			keys = Object.keys(output);
+			for (var i = 0, length = keys.length; i < length; i++)
+				builder.push('\n// ' + keys[i] + '\n' + output[keys[i]].join('\n'));
+
+			fs.writeFileSync('translate.resource', '// Total.js translation file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + builder.join('\n'));
+			console.log('total.js: the translation was created (' + count + ' texts)');
+		});
+		return;
+	}
+
+	if ($type === 6) {
+		console.log('total.js: creating translation to CSV');
+		Utils.ls(dir, function(files) {
+
+			var resource = {};
+			var texts = {};
+			var count = 0;
+			var output = ['Hash;Text;Translation'];
+
+			for (var i = 0, length = files.length; i < length; i++) {
+				var filename = files[i];
+
+				if (!filename.endsWith('.html'))
+					continue;
+
+				var content = fs.readFileSync(filename).toString('utf8');
+				var command = Internal.findLocalization(content, 0);
+				while (command !== null) {
+
+					// Skip for direct reading
+					if (command.command[0] === '#' && command.command[1] !== ' ') {
+						command = Internal.findLocalization(content, command.end);
+						continue;
+					}
+
+					var key = 'T' + command.command.hash();
+					var file = filename.substring(dir.length + 1);
+
+					texts[key] = command.command.repla;
+
+					if (!resource[key]) {
+						output.push(key + ';"' + command.command.replace(/\"/g, '""') + '";');
+						resource[key] = true;
+						count++;
+					}
+
+					command = Internal.findLocalization(content, command.end);
+				}
+			}
+
+			fs.writeFileSync('translate.csv', output.join('\n'));
+			console.log('total.js: the translation was created (' + count + ' texts)');
+		});
+		return;
+	}
+
+	var files = fs.readdirSync(dir);
+	if (files.length > 0) {
+
+		var can = true;
+		for (var i = 0; i < files.length; i++) {
+			var name = files[i];
+			if (name[0] === '.')
+				continue;
+			can = false;
+		}
+
+		if (!can) {
+			console.log('ERROR: directory is not empty');
+			console.log('');
+			return;
+		}
+	}
+
+	console.log('Downloading "empty-project" from www.totaljs.com');
+
+	var url = 'https://www.totaljs.com/packages/empty-project.package';
+
+	Utils.download(url, ['get'], function(err, response) {
+		var filename = Utils.join(dir, 'total.package');
+		var stream = fs.createWriteStream(filename);
+		response.pipe(stream);
+		stream.on('finish', function() {
+			console.log('Unpacking file.');
+			exec('tpm unpack total.package', function() {
+				fs.unlink(filename);
+				console.log('Done.');
+				console.log('');
+			});
+		});
+	});
+}
+
+main();

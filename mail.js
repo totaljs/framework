@@ -1,4 +1,4 @@
-// Copyright 2012-2015 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2016 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -320,6 +320,18 @@ Message.prototype.attachment = function(filename, name) {
 };
 
 /**
+ * Clears a timeout for sending emails (if the email is sent through the F.onMail)
+ * @return {Message}
+ */
+Message.prototype.manually = function() {
+	var self = this;
+	if (!self.$sending)
+		return self;
+	clearTimeout(self.$sending);
+	return self;
+};
+
+/**
  * Adds an inline attachment.
  * Inline attachments are exactly like normal attachments except that they are represented with the 'Content-ID' (cid)
  * which can be referenced in the email's html body. For example an inline attachments (image) with a contentId of 'AB435BH'
@@ -361,7 +373,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	self.callback = fnCallback;
 
-	if (options.secure && !options.port)
+	if (options && options.secure && !options.port)
 		options.port = 465;
 
 	options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000, tls: null });
@@ -499,7 +511,7 @@ Message.prototype._send = function(socket, options, autosend) {
 		self.closed = true;
 		var err = new Error(framework_utils.httpStatus(408));
 		mailer.emit('error', err, self);
-		if (socket !== null)
+		if (socket)
 			socket.destroy();
 		socket = null;
 		if (!self.isSent && self.callback)
@@ -675,7 +687,7 @@ Message.prototype._send = function(socket, options, autosend) {
 						self.callback(null);
 
 					ending = setTimeout(function() {
-						if (socket !== null)
+						if (socket)
 							socket.destroy();
 						socket = null;
 					}, 500);
@@ -700,7 +712,7 @@ Message.prototype._send = function(socket, options, autosend) {
 					if (!self.isSent && self.callback)
 						self.callback(err);
 
-					if (socket !== null)
+					if (socket)
 						socket.destroy();
 					socket = null;
 					break;
@@ -732,7 +744,7 @@ Message.prototype._send = function(socket, options, autosend) {
 
 				err = new Error(line);
 
-				if (socket !== null)
+				if (socket)
 					socket.destroy();
 
 				socket = null;
@@ -873,7 +885,7 @@ function GUID() {
 function unicode_encode(val) {
 	if (!val)
 		return '';
-	return '=?utf-8?B?' + new Buffer(val).toString('base64') + '?=';
+	return '=?utf-8?B?' + new Buffer(val.toString()).toString('base64') + '?=';
 }
 
 // ======================================================

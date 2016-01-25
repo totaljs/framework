@@ -1,0 +1,1 @@
+name-root       : RESOURCE FROM ROOT

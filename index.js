@@ -1,4 +1,4 @@
-// Copyright 2012-2015 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2016 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 1.9.5
+ * @version 1.9.6
  */
 
 'use strict';
@@ -52,14 +52,16 @@ var RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var CONTENTTYPE_TEXTHTML = 'text/html';
 var POWEREDBY = '...';
-var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
+var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
 var TEMPORARY_KEY_REGEX = /\//g;
 var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
+var REG_ROBOT = /search|agent|bot|crawler/i;
 var REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
 var REG_MULTIPART = /\/form\-data$/i;
 var REQUEST_PROXY_FLAGS = ['post', 'json'];
 var RANGE = { start: 0, end: 0 };
 var HEADERS = {};
+var SUCCESSHELPER = { success: true };
 
 // Cached headers for repeated usage
 HEADERS['responseCode'] = {};
@@ -283,6 +285,12 @@ global.NEWTRANSFORM = function(name, fn, isDefault) {
 	return TransformBuilder.addTransform.apply(this, arguments);
 };
 
+/**
+ * Creates schema in the specific group
+ * @param {String} [group=default]
+ * @param {String} name
+ * @return {SchemaBuilderEntity}
+ */
 global.NEWSCHEMA = function(group, name) {
 	if (!name) {
 		name = group;
@@ -347,6 +355,12 @@ global.CLEANUP = function(stream, callback) {
 
 global.SUCCESS = function(success, value) {
 
+	if (typeof(success) === TYPE_FUNCTION) {
+		return function(err, value) {
+			success(err, SUCCESS(err, value));
+		};
+	}
+
 	var err;
 
 	if (success instanceof Error) {
@@ -358,8 +372,13 @@ global.SUCCESS = function(success, value) {
 			success = false;
 		} else
 			success = true;
-	} else if (success === null || success === undefined)
+	} else if (!success)
 		success = true;
+
+	if (!value) {
+		SUCCESSHELPER.success = success;
+		return SUCCESSHELPER;
+	}
 
 	var o = { success: success };
 
@@ -408,8 +427,8 @@ var directory = framework_utils.$normalize(require.main ? path.dirname(require.m
 function Framework() {
 
 	this.id = null;
-	this.version = 1950;
-	this.version_header = '1.9.5';
+	this.version = 1960;
+	this.version_header = '1.9.6';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -457,7 +476,7 @@ function Framework() {
 		'static-url-video': '/video/',
 		'static-url-font': '/fonts/',
 		'static-url-download': '/download/',
-		'static-accepts': { '.jpg': true, '.png': true, '.gif': true, '.ico': true, '.js': true, '.css': true, '.txt': true, '.xml': true, '.woff': true, '.woff2':true, '.otf':true, '.ttf':true, '.eot':true, '.svg':true, '.zip':true, '.rar':true, '.pdf':true, '.docx':true, '.xlsx':true, '.doc':true, '.xls':true, '.html':true, '.htm':true, '.appcache':true, '.manifest':true, '.map':true, '.ogg':true, '.mp4':true, '.mp3':true, '.webp':true, '.webm':true, '.swf':true, '.package':true, '.json':true, '.md': true, '.m4v': true },
+		'static-accepts': { '.jpg': true, '.png': true, '.gif': true, '.ico': true, '.js': true, '.css': true, '.txt': true, '.xml': true, '.woff': true, '.woff2':true, '.otf':true, '.ttf':true, '.eot':true, '.svg':true, '.zip':true, '.rar':true, '.pdf':true, '.docx':true, '.xlsx':true, '.doc':true, '.xls':true, '.html':true, '.htm':true, '.appcache':true, '.manifest':true, '.map':true, '.ogv': true, '.ogg':true, '.mp4':true, '.mp3':true, '.webp':true, '.webm':true, '.swf':true, '.package':true, '.json':true, '.md': true, '.m4v': true, '.jsx': true },
 
 		// 'static-accepts-custom': [],
 
@@ -528,7 +547,8 @@ function Framework() {
 		merge: {},
 		mapping: {},
 		packages: {},
-		blocks: {}
+		blocks: {},
+		resources: {}
 	};
 
 	this.behaviours = null;
@@ -625,14 +645,13 @@ function Framework() {
 
 	// intialize cache
 	this.cache = new FrameworkCache();
-	this.fs = new FrameworkFileSystem();
 	this.path = new FrameworkPath();
 	this.restrictions = new FrameworkRestrictions();
 
 	this._request_check_redirect = false;
 	this._request_check_referer = false;
 	this._request_check_POST = false;
-	this._request_check_mobile = false;
+	this._request_check_robot = false;
 	this._length_middleware = 0;
 	this._length_request_middleware = 0;
 	this._length_files = 0;
@@ -640,7 +659,8 @@ function Framework() {
 	this._length_themes = 0;
 
 	this.isVirtualDirectory = false;
-	this.isTheme = false;	this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
+	this.isTheme = false;
+	this.isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
 }
 
 // ======================================================
@@ -752,6 +772,7 @@ Framework.prototype._routesSort = function() {
 
 	var cache = {};
 	var length = self.routes.web.length;
+	var url;
 
 	for (var i = 0; i < length; i++) {
 		var route = self.routes.web[i];
@@ -764,7 +785,7 @@ Framework.prototype._routesSort = function() {
 			continue;
 		if (route.flags.indexOf('get') === -1)
 			continue;
-		var url = route.url.join('/');
+		url = route.url.join('/');
 		cache[url] = true;
 	}
 
@@ -774,7 +795,7 @@ Framework.prototype._routesSort = function() {
 			continue;
 		if (route.flags.indexOf('get') === -1)
 			continue;
-		var url = route.url.join('/');
+	 url = route.url.join('/');
 		route.isMOBILE_VARY = cache[url] === true;
 	}
 
@@ -932,6 +953,12 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
 	var extension = null;
 	var index = url.lastIndexOf('.');
 
+	if (typeof(options) === STRING) {
+		extensions = path;
+		path = options;
+		options = {};
+	}
+
 	if (index !== -1)
 		extension = [url.substring(index)];
 	else
@@ -972,6 +999,7 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
 		flop: options.flop,
 		sepia: options.sepia,
 		quality: options.quality,
+		direction: options.direction || 'center',
 		cache: options.cache === false ? false : true
 	};
 
@@ -1134,11 +1162,18 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 
 	if (type === STRING) {
 		viewname = funcExecute;
-		funcExecute = function(name) {
-			if (viewname[0] === '~')
-				this.themeName = '';
-			this.view(viewname);
-		};
+		funcExecute = (function(name) {
+			var themeName = framework_utils.parseTheme(name);
+			if (themeName)
+				name = prepare_viewname(name);
+			return function() {
+				if (name[0] === '~')
+					this.themeName = '';
+				else if (themeName)
+					this.themeName = themeName;
+				this.view(name);
+			};
+		})(viewname);
 	} else if (typeof(funcExecute) !== TYPE_FUNCTION) {
 
 		viewname = url;
@@ -1153,11 +1188,13 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		if (viewname === '' || viewname === '/')
 			viewname = 'index';
 
-		funcExecute = function() {
-			if (viewname[0] === '~')
-				this.theme('');
-			this.view(viewname);
-		};
+		funcExecute = (function(name) {
+			return function() {
+				if (name[0] === '~')
+					this.theme('');
+				this.view(name);
+			};
+		})(viewname);
 	}
 
 	if (!utils.isArray(flags) && typeof(flags) === 'object') {
@@ -1205,6 +1242,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 	var isMOBILE = false;
 	var isJSON = false;
 	var isDELAY = false;
+	var isROBOT = false;
 
 	if (flags) {
 
@@ -1288,7 +1326,10 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 					break;
 				case 'mobile':
 					isMOBILE = true;
-					self._request_check_mobile = true;
+					break;
+				case 'robot':
+					isROBOT = true;
+					self._request_check_robot = true;
 					break;
 				case 'authorize':
 				case 'authorized':
@@ -1451,6 +1492,7 @@ Framework.prototype.route = function(url, funcExecute, flags, length, middleware
 		isXML: flags.indexOf('xml') !== -1,
 		isRAW: isRaw,
 		isMOBILE: isMOBILE,
+		isROBOT: isROBOT,
 		isMOBILE_VARY: isMOBILE,
 		isGENERATOR: isGENERATOR,
 		isMEMBER: isMember,
@@ -2071,7 +2113,7 @@ Framework.prototype.error = function(err, name, uri) {
 
 	var self = this;
 
-	if (self.errors !== null) {
+	if (self.errors) {
 		self.errors.push({
 			error: err.stack,
 			name: name,
@@ -2098,7 +2140,7 @@ Framework.prototype.error = function(err, name, uri) {
 Framework.prototype.problem = function(message, name, uri, ip) {
 	var self = this;
 
-	if (self.problems !== null) {
+	if (self.problems) {
 		self.problems.push({
 			message: message,
 			name: name,
@@ -2125,7 +2167,7 @@ Framework.prototype.problem = function(message, name, uri, ip) {
 Framework.prototype.change = function(message, name, uri, ip) {
 	var self = this;
 
-	if (self.changes !== null) {
+	if (self.changes) {
 		self.changes.push({
 			message: message,
 			name: name,
@@ -3199,6 +3241,47 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 };
 
 /**
+ * Register internal mapping (e.g. Resource)
+ * @param {String} path
+ * @return {Framework}
+ */
+Framework.prototype.register = function(path) {
+
+	var extension = framework_utils.getExtension(path);
+	var self = this;
+	var name = framework_utils.getName(path);
+	var key;
+	var c = path[0];
+
+	if (c === '@')
+		path = framework.path.package(path.substring(1));
+	else if (c === '=') {
+		if (path[1] === '?')
+			framework.path.themes(framework.config['default-theme'] + path.substring(2));
+		else
+			path = framework.path.themes(path.substring(1));
+	}
+
+	switch (extension) {
+		case '.resource':
+			key = name.replace(extension, '');
+			if (!self.routes.resources[key])
+				self.routes.resources[key] = [path];
+			else
+				self.routes.resources[key].push(path);
+
+			// clears cache
+			delete self.resources[key];
+			break;
+
+		default:
+			throw new Error('Not supported registration type "' + extension + '".');
+	}
+
+	return self;
+};
+
+/**
  * Run code
  * @param {String or Function} script Function to eval or Code or URL address.
  * @return {Framework}
@@ -3397,8 +3480,7 @@ Framework.prototype.onMail = function(address, subject, body, callback, replyTo)
 	var message = Mail.create(subject, body);
 
 	if (address instanceof Array) {
-		var length = address.length;
-		for (var i = 0; i < length; i++)
+		for (var i = 0, length = address.length; i < length; i++)
 			message.to(address[i]);
 	} else
 		message.to(address);
@@ -3420,16 +3502,16 @@ Framework.prototype.onMail = function(address, subject, body, callback, replyTo)
 
 	var opt = self.temporary['mail-settings'];
 
-	if (opt === undefined) {
+	if (!opt) {
 		var config = self.config['mail.smtp.options'];
 		if (config && config.isJSON())
 			opt = JSON.parse(config);
-		if (opt === undefined)
+		if (!opt)
 			opt = {};
 		self.temporary['mail-settings'] = opt;
 	}
 
-	setTimeout(function() {
+	message.$sending = setTimeout(function() {
 		message.send(self.config['mail.smtp'], opt, callback);
 	}, 2);
 
@@ -3541,7 +3623,7 @@ Framework.prototype.logmail = function(address, subject, body, callback) {
 		subject = framework.config.name + ' v' + framework.config.version;
 
 	var self = this;
-	var body = '<!DOCTYPE html><html><head><title>' + subject + '</title><meta charset="utf-8" /></head><body><pre>' + (typeof(body) === OBJECT ? JSON.stringify(body).escape() : body) + '</pre></body></html>';
+	var body = '<!DOCTYPE html><html><head><title>' + subject + '</title><meta charset="utf-8" /></head><body><pre style="max-width:600px;font-size:13px;line-height:16px">' + (typeof(body) === OBJECT ? JSON.stringify(body).escape() : body) + '</pre></body></html>';
 	return framework.onMail(address, subject, body, callback);
 };
 
@@ -3927,44 +4009,70 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 
 	if (self.routes.merge[uri.pathname]) {
 		self.compileMerge(uri, key, extension, callback);
+		return self;
+	}
+
+	fsFileExists(filename, function(e, size) {
+
+		if (e) {
+			if (extension === 'js' || extension === 'css') {
+				if (filename.lastIndexOf('.min.') === -1 && filename.lastIndexOf('-min.') === -1) {
+					self.compileFile(uri, key, filename, extension, callback);
+					return self;
+				}
+			}
+
+			self.temporary.path[key] = filename + ';' + size;
+			callback();
+			return;
+		}
+
+		if (self.isVirtualDirectory) {
+			self.compileValidationVirtual(uri, key, filename, extension, callback);
+			return;
+		}
+
+		self.temporary.path[key] = null;
+		callback();
+	});
+
+	return self;
+};
+
+Framework.prototype.compileValidationVirtual = function(uri, key, filename, extension, callback) {
+
+	var self = this;
+
+	var tmpname = filename.replace(self.config['directory-public'], self.config['directory-public-virtual']);
+	var notfound = true;
+
+	if (tmpname === filename) {
+		self.temporary.path[key] = null;
+		callback();
 		return;
 	}
 
-	if (!fs.existsSync(filename)) {
+	filename = tmpname;
+	fsFileExists(filename, function(e, size) {
 
-		// file doesn't exist
-		if (!self.isVirtualDirectory) {
+		if (!e) {
 			self.temporary.path[key] = null;
 			callback();
-			return self;
+			return;
 		}
 
-		var tmpname = filename.replace(self.config['directory-public'], self.config['directory-public-virtual']);
-		var notfound = true;
-
-		if (tmpname !== filename) {
-			filename = tmpname;
-			notfound = !fs.existsSync(filename);
+		if (extension === 'js' || extension === 'css') {
+			if (filename.lastIndexOf('.min.') === -1 && filename.lastIndexOf('-min.') === -1) {
+				self.compileFile(uri, key, filename, extension, callback);
+				return self;
+			}
 		}
 
-		if (notfound) {
-			self.temporary.path[key] = null;
-			callback();
-			return self;
-		}
+		self.temporary.path[key] = filename + ';' + size;
+		callback();
+	});
 
-	}
-
-	if (extension === 'js' || extension === 'css') {
-		if (filename.lastIndexOf('.min.') === -1 && filename.lastIndexOf('-min.') === -1) {
-			self.compileFile(uri, key, filename, extension, callback);
-			return self;
-		}
-	}
-
-	self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
-	callback();
-	return self;
+	return;
 };
 
 /**
@@ -3983,8 +4091,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		return self;
 	}
 
-	var extension = req.extension;
-	if (!self.config['static-accepts']['.' + extension]) {
+	if (!self.config['static-accepts']['.' + req.extension]) {
 		self.response404(req, res);
 		if (done)
 			done();
@@ -3997,7 +4104,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 	var isResize = false;
 	var filename;
 
-	if (resizer !== null) {
+	if (resizer) {
 		name = name.substring(index + 1);
 		index = name.lastIndexOf('.');
 		isResize = resizer.extension['*'] || resizer.extension[name.substring(index).toLowerCase()];
@@ -4048,7 +4155,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 		if (resizer.width || resizer.height) {
 			if (resizer.width && resizer.height)
-				image.resizeCenter(resizer.width, resizer.height);
+				image.resizeAlign(resizer.width, resizer.height, resizer.direction);
 			else
 				image.resize(resizer.width, resizer.height);
 		}
@@ -4327,7 +4434,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		// waiting
 		self.temporary.processing[key] = true;
 
-		// checks if the file exists
+		// checks if the file exists and counts the file size
 		self.compileValidation(req.uri, key, filename, extension, function() {
 			delete self.temporary.processing[key];
 			framework.responseFile(req, res, filename, downloadName, headers, done, key);
@@ -4407,7 +4514,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (self.config.debug && self.isProcessed(key))
 		delete self.temporary.path[key];
 
-	if (size !== null && size !== '0' && !compress)
+	if (size && size !== '0' && !compress)
 		returnHeaders[RESPONSE_HEADER_CONTENTLENGTH] = size;
 	else if (returnHeaders[RESPONSE_HEADER_CONTENTLENGTH])
 		delete returnHeaders[RESPONSE_HEADER_CONTENTLENGTH];
@@ -4646,7 +4753,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	self.temporary.processing[key] = true;
 
 	// STREAM
-	if (stream !== null) {
+	if (stream) {
 		fsFileExists(name, function(exist) {
 
 			if (exist) {
@@ -4819,7 +4926,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 	var im = self.config['default-image-converter'] === 'im';
 
 	// STREAM
-	if (stream !== null) {
+	if (stream) {
 		var image = framework_image.load(stream, im);
 		fnProcess(image);
 		self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers, done);
@@ -5512,7 +5619,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 
 	var self = this;
 
-	if (self.server !== null)
+	if (self.server)
 		return self;
 
 	if (!options)
@@ -5994,7 +6101,7 @@ Framework.prototype.listener = function(req, res) {
 
 	self._request_stats(true, true);
 
-	if (self._length_request_middleware === 0)
+	if (!self._length_request_middleware)
 		return self._request_continue(req, res, headers, protocol);
 
 	if (req.behaviour('disable-middleware'))
@@ -6036,7 +6143,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 	var self = this;
 
-	if (req === null || res === null || res.headersSent || res.success)
+	if (!req || !res || res.headersSent || res.success)
 		return self;
 
 	// Validate if this request is a file (static file)
@@ -6044,7 +6151,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 		self.stats.request.file++;
 
-		if (self._length_files === 0) {
+		if (!self._length_files) {
 			self.responseStatic(req, res);
 			return self;
 		}
@@ -6106,13 +6213,13 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				flags.push('upload');
 				break;
 			default:
-				if (multipart === '') {
-					req.$type = 3;
-					multipart = '';
-				} else {
+				if (multipart) {
 					// UNDEFINED DATA
 					multipart = '';
 					flags.push('raw');
+				} else {
+					req.$type = 3;
+					multipart = '';
 				}
 				break;
 		}
@@ -6257,7 +6364,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 	req.session = null;
 	req.user = null;
-	req.flags = [req.isSecure ? 'https' : 'http', 'get'];
+	req.flags = [req.secured ? 'https' : 'http', 'get'];
 
 	var path = framework_utils.path(req.uri.pathname);
 	var websocket = new WebSocketClient(req, socket, head);
@@ -6522,8 +6629,11 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 
 	var controller = new Controller('', null, null, null, '');
 	controller.layoutName = '';
+	controller.themeName = framework_utils.parseTheme(view);
 
-	if (this.onTheme)
+	if (controller.themeName)
+		view = prepare_viewname(view);
+	else if (this.onTheme)
 		controller.themeName = this.onTheme(controller);
 
 	var replyTo;
@@ -6538,7 +6648,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 			controller.language = language;
 	}
 
-	if (typeof(repository) === OBJECT && repository !== null)
+	if (typeof(repository) === OBJECT && repository)
 		controller.repository = repository;
 
 	return controller.mail(address, subject, view, model, callback, replyTo);
@@ -6566,13 +6676,19 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 	controller.layoutName = layout || '';
 	controller.language = language;
 
-	if (this.onTheme)
+	var theme = framework_utils.parseTheme(name);
+	if (theme) {
+		controller.themeName = theme;
+		name = prepare_viewname(name);
+	} else if (this.onTheme)
 		controller.themeName = this.onTheme(controller);
 
-	if (typeof(repository) === OBJECT && repository !== null)
+	if (typeof(repository) === OBJECT && repository)
 		controller.repository = repository;
 
 	var output = controller.view(name, model, true);
+	controller.res.controller = null;
+	controller.repository = controller.res = controller.req = null;
 	controller = null;
 	return output;
 };
@@ -6795,7 +6911,7 @@ Framework.prototype.testing = function(stop, callback) {
 			var cookie = res.headers['cookie'] || '';
 			var cookies = {};
 
-			if (cookie.length !== 0) {
+			if (cookie.length) {
 
 				var arr = cookie.split(';');
 				var length = arr.length;
@@ -7276,17 +7392,27 @@ Framework.prototype.resource = function(name, key) {
 	var self = this;
 	var res = self.resources[name];
 
-	if (res !== undefined)
+	if (res)
 		return res[key] || '';
 
+	var routes = self.routes.resources[name];
+	var body = '';
+	var filename;
+
+	if (routes) {
+		for (var i = 0, length = routes.length; i < length; i++) {
+			filename = routes[i];
+			if (fs.existsSync(filename))
+				body += (body ? '\n' : '') + fs.readFileSync(filename).toString(ENCODING);
+		}
+	}
+
 	var filename = framework_utils.combine(self.config['directory-resources'], name + '.resource');
+	if (fs.existsSync(filename))
+		body += (body ? '\n' : '') + fs.readFileSync(filename).toString(ENCODING);
 
-	if (!fs.existsSync(filename))
-		return '';
-
-	var obj = fs.readFileSync(filename).toString(ENCODING).parseConfig();
+	var obj = body.parseConfig();
 	self.resources[name] = obj;
-
 	return obj[key] || '';
 };
 
@@ -7750,7 +7876,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (self.config['default-timezone'])
 		process.env.TZ = self.config['default-timezone'];
 
-	if (accepts !== null && accepts.length) {
+	if (accepts && accepts.length) {
 		accepts.forEach(function(accept) {
 			self.config['static-accepts'][accept] = true;
 		});
@@ -7881,9 +8007,26 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 	if (name[0] === '~') {
 		name = name.substring(name[1] === '~' ? 2 : 1);
 		theme = '';
+	} else if (name[0] === '=') {
+		// theme
+		var index = name.indexOf('/');
+		if (index !== -1) {
+			theme = name.substring(1, index);
+			name = name.substring(index + 1);
+			if (theme === '?')
+				theme = framework.config['default-theme'];
+		}
 	}
 
-	var filename = framework_utils.join(theme, directory, this._version(name));
+	var filename;
+
+	if (name.match(/^(\/\/|https\:|http\:)+/g))
+		filename = name;
+	else if (name[0] === '/')
+		filename = framework_utils.join(theme, '', this._version(name));
+	else
+		filename = framework_utils.join(theme, directory, this._version(name));
+
 	return framework.temporary.other[key] = this._version(filename);
 };
 
@@ -7894,9 +8037,9 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 */
 Framework.prototype._version = function(name) {
 	var self = this;
-	if (self.versions !== null)
+	if (self.versions)
 		name = self.versions[name] || name;
-	if (self.onVersion !== null)
+	if (self.onVersion)
 		name = self.onVersion(name) || name;
 	return name;
 };
@@ -7999,7 +8142,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 				continue;
 		}
 
-		if (route.flags !== null && route.flags.length) {
+		if (route.flags && route.flags.length) {
 			var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
 			if (result === -1)
 				req.$isAuthorized = false; // request is not authorized
@@ -8069,7 +8212,7 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 				continue;
 		}
 
-		if (route.flags !== null && route.flags.length) {
+		if (route.flags && route.flags.length) {
 
 			// var result = framework_internal.routeCompareFlags(req.flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
 			var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
@@ -8149,7 +8292,7 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 		timeout = undefined;
 	}
 
-	if (fork !== null)
+	if (fork)
 		return fork;
 
 	var filename = framework_utils.combine(self.config['directory-workers'], name) + EXTENSION_JS;
@@ -8400,401 +8543,6 @@ FrameworkRestrictions.prototype._blockedCustom = function(headers) {
 	}
 
 	return false;
-};
-
-// *********************************************************************************
-// =================================================================================
-// Framework File System
-// 1.01
-// =================================================================================
-// *********************************************************************************
-
-function FrameworkFileSystem() {
-	this.create = {
-		style: this.createStyle.bind(this),
-		css: this.createStyle.bind(this),
-		database: this.createDatabase.bind(this),
-		file: this.createFile.bind(this),
-		script: this.createScript.bind(this),
-		js: this.createScript.bind(this),
-		resource: this.createResource.bind(this),
-		temporary: this.createTemporary.bind(this),
-		temp: this.createTemporary.bind(this),
-		view: this.createView.bind(this),
-		worker: this.createWorker.bind(this)
-	};
-
-	this.rm = {
-		css: this.deleteStyle.bind(this),
-		style: this.deleteStyle.bind(this),
-		database: this.deleteDatabase.bind(this),
-		file: this.deleteFile.bind(this),
-		js: this.deleteScript.bind(this),
-		script: this.deleteScript.bind(this),
-		resource: this.deleteResource.bind(this),
-		temporary: this.deleteTemporary.bind(this),
-		temp: this.deleteTemporary.bind(this),
-		view: this.deleteView.bind(this),
-		worker: this.deleteWorker.bind(this)
-	};
-}
-
-/*
-	Delete a file - CSS
-	@name {String}
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.deleteStyle = function(name) {
-	var self = this;
-
-	if (name.lastIndexOf('.css') === -1)
-		name += '.css';
-
-	var filename = framework_utils.combine(framework.config['directory-public'], framework.config['static-url-style'], name);
-	return self.deleteFile(filename);
-};
-
-/*
-	Delete a file - JS
-	@name {String}
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.deleteScript = function(name) {
-	var self = this;
-
-	if (name.lastIndexOf(EXTENSION_JS) === -1)
-		name += EXTENSION_JS;
-
-	var filename = framework_utils.combine(framework.config['directory-public'], framework.config['static-url-script'], name);
-	return self.deleteFile(filename);
-};
-
-/*
-	Delete a file - View
-	@name {String}
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.deleteView = function(name) {
-	var self = this;
-
-	if (name.lastIndexOf('.html') === -1)
-		name += '.html';
-
-	var filename = framework_utils.combine(framework.config['directory-views'], name);
-	return self.deleteFile(filename);
-};
-
-/*
-	Delete a file - Database
-	@name {String}
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.deleteDatabase = function(name) {
-	var self = this;
-	var filename = framework_utils.combine(framework.config['directory-databases'], name);
-	return self.deleteFile(filename);
-};
-
-/*
-	Delete a file - Worker
-	@name {String}
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.deleteWorker = function(name) {
-	var self = this;
-
-	if (name.lastIndexOf(EXTENSION_JS) === -1)
-		name += EXTENSION_JS;
-
-	var filename = framework_utils.combine(framework.config['directory-workers'], name);
-	return self.deleteFile(filename);
-};
-
-/*
-	Delete a file - Resource
-	@name {String}
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.deleteResource = function(name) {
-	var self = this;
-
-	if (name.lastIndexOf('.resource') === -1)
-		name += '.resource';
-
-	var filename = framework_utils.combine(framework.config['directory-resources'], name);
-	return self.deleteFile(filename);
-};
-
-/*
-	Delete a file - Temporary
-	@name {String}
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.deleteTemporary = function(name) {
-	var self = this;
-	var filename = framework_utils.combine(framework.config['directory-temp'], name);
-	return self.deleteFile(filename);
-};
-
-/*
-	Internal :: Delete a file
-	@name {String}
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.deleteFile = function(filename) {
-	fsFileExists(filename, function(exist) {
-		if (!exist)
-			return;
-		fs.unlink(filename);
-	});
-	return true;
-};
-
-/*
-	Create a file with the CSS
-	@name {String}
-	@content {String}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.createStyle = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if (!content)
-		return false;
-
-	if (name.lastIndexOf('.css') === -1)
-		name += '.css';
-
-	var filename = framework_utils.combine(framework.config['directory-public'], framework.config['static-url-style'], name);
-	return self.createFile(filename, content, append, rewrite);
-};
-
-/*
-	Create a file with the JavaScript
-	@name {String}
-	@content {String}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.createScript = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if (!content)
-		return false;
-
-	if (name.lastIndexOf(EXTENSION_JS) === -1)
-		name += EXTENSION_JS;
-
-	var filename = framework_utils.combine(framework.config['directory-public'], framework.config['static-url-script'], name);
-	return self.createFile(filename, content, append, rewrite);
-};
-
-/*
-	Create a database
-	@name {String}
-	@content {String}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.createDatabase = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if (!content)
-		return false;
-
-	var filename = framework_utils.combine(framework.config['directory-databases'], name);
-	return self.createFile(filename, content, append, rewrite);
-};
-
-/*
-	Create a file with the view
-	@name {String}
-	@content {String}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.createView = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if (!content)
-		return false;
-
-	if (name.lastIndexOf('.html') === -1)
-		name += '.html';
-
-	framework.path.verify('views');
-
-	var filename = framework_utils.combine(framework.config['directory-views'], name);
-	return self.createFile(filename, content, append, rewrite);
-};
-
-/*
-	Create a file with the worker
-	@name {String}
-	@content {String}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.createWorker = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if (!content)
-		return false;
-
-	if (name.lastIndexOf(EXTENSION_JS) === -1)
-		name += EXTENSION_JS;
-
-	framework.path.verify('workers');
-
-	var filename = framework_utils.combine(framework.config['directory-workers'], name);
-	return self.createFile(filename, content, append, rewrite);
-};
-
-/*
-	Create a file with the resource
-	@name {String}
-	@content {String or Object}
-	@rewrite {Boolean} :: optional (default false)
-	@append {Boolean} :: optional (default false)
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.createResource = function(name, content, rewrite, append) {
-
-	var self = this;
-
-	if (!content)
-		return false;
-
-	if (name.lastIndexOf('.resource') === -1)
-		name += '.resource';
-
-	var builder = content;
-
-	if (typeof(content) === OBJECT) {
-		builder = '';
-		Object.keys(content).forEach(function(o) {
-			builder += o.padRight(20, ' ') + ': ' + content[o] + '\n';
-		});
-	}
-
-	framework.path.verify('resources');
-
-	var filename = framework_utils.combine(framework.config['directory-resources'], name);
-	return self.createFile(filename, builder, append, rewrite);
-};
-
-/*
-	Create a temporary file
-	@name {String}
-	@stream {Stream}
-	@callback {Function} :: function(err, filename) {}
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.createTemporary = function(name, stream, callback) {
-
-	var self = this;
-
-	if (typeof(stream) === 'string') {
-		framework_utils.download(stream, ['get'], function(err, response) {
-
-			if (err) {
-				if (callback)
-					return callback(err);
-				F.error(err);
-				return;
-			}
-
-			self.createTemporary(name, response, callback);
-		});
-		return;
-	}
-
-	framework.path.verify('temp');
-
-	var filename = framework_utils.combine(framework.config['directory-temp'], name);
-	var writer = fs.createWriteStream(filename);
-
-	if (!callback) {
-		stream.pipe(writer);
-		return self;
-	}
-
-	writer.on('error', function(err) {
-		callback(err, filename);
-	});
-
-	writer.on('finish', function() {
-		callback(null, filename);
-	});
-
-	stream.pipe(writer);
-	return self;
-};
-
-/*
-	Internal :: Create a file with the content
-	@filename {String}
-	@content {String}
-	@append {Boolean}
-	@rewrite {Boolean}
-	@callback {Function} :: optional
-	return {Boolean}
-*/
-FrameworkFileSystem.prototype.createFile = function(filename, content, append, rewrite, callback) {
-
-	var self = this;
-
-	if (content.substring(0, 7) === 'http://' || content.substring(0, 8) === 'https://') {
-
-		framework_utils.request(content, ['get'], function(err, data) {
-
-			if (!err)
-				self.createFile(filename, data, append, rewrite);
-
-			if (typeof(callback) === TYPE_FUNCTION)
-				callback(err, filename);
-
-		});
-
-		return true;
-	}
-
-	if (!content)
-		return false;
-
-	var exists = fs.existsSync(filename);
-
-	if (exists && append) {
-		var data = fs.readFileSync(filename).toString(ENCODING);
-
-		if (data.indexOf(content) === -1) {
-			fs.appendFileSync(filename, '\n' + content);
-			return true;
-		}
-
-		return false;
-	}
-
-	if (exists && !rewrite)
-		return false;
-
-	fs.writeFileSync(filename, content, ENCODING);
-
-	if (typeof(callback) === TYPE_FUNCTION)
-		callback(null, filename);
-
-	return true;
 };
 
 // *********************************************************************************
@@ -9108,7 +8856,7 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 	var self = this;
 	var value = self.read(name);
 
-	if (value !== null) {
+	if (value) {
 		if (fnCallback)
 			fnCallback(value);
 		return self;
@@ -9319,8 +9067,12 @@ Subscribe.prototype.execute = function(status, isError) {
 	controller.exception = self.exception;
 	self.controller = controller;
 
-	if (!self.isCanceled && route.timeout > 0) {
+	if (!self.isCanceled && route.timeout) {
+		if (self.timeout)
+			clearTimeout(self.timeout);
 		self.timeout = setTimeout(function() {
+			if (self.controller && self.controller.precache)
+				self.controller.precache(null, null, null);
 			self.doCancel();
 		}, route.timeout);
 	}
@@ -9752,11 +9504,6 @@ function Controller(name, req, res, subscribe, currentView) {
 	this.outputPartial = null;
 	this.$model = null;
 
-	this._currentImage = '';
-	this._currentDownload = '';
-	this._currentVideo = '';
-	this._currentScript = '';
-	this._currentStyle = '';
 	this._currentView = currentView;
 
 	if (!req)
@@ -9789,10 +9536,6 @@ Controller.prototype = {
 
 	get path() {
 		return framework.path;
-	},
-
-	get fs() {
-		return framework.fs;
 	},
 
 	get get() {
@@ -9863,6 +9606,10 @@ Controller.prototype = {
 		return this.req.isSecure;
 	},
 
+	get secured() {
+		return this.req.secured;
+	},
+
 	get session() {
 		return this.req.session;
 	},
@@ -9885,6 +9632,14 @@ Controller.prototype = {
 
 	set global(value) {
 		framework.global = value;
+	},
+
+	get mobile() {
+		return this.req.mobile;
+	},
+
+	get robot() {
+		return this.req.robot;
 	},
 
 	get async() {
@@ -9952,8 +9707,14 @@ Controller.prototype.clear = function() {
  * @param {String} text
  * @return {String}
  */
-Controller.prototype.translate = function(text) {
-	return framework.translate(this.language, text);
+Controller.prototype.translate = function(language, text) {
+
+	if (!text) {
+		text = language;
+		language = this.language;
+	}
+
+	return framework.translate(language, text);
 };
 
 /**
@@ -10350,7 +10111,7 @@ Controller.prototype.transfer = function(url, flags) {
 			break;
 		}
 
-		if (route.flags !== null && route.flags.length) {
+		if (route.flags && route.flags.length) {
 			var result = framework_internal.routeCompareFlags(route.flags, flags, true);
 			if (result === -1)
 				self.req.$isAuthorized = false;
@@ -10712,7 +10473,13 @@ Controller.prototype.mail = function(address, subject, view, model, callback, la
 	}
 
 	var self = this;
+
+	// Backup layout
+	var layoutName = self.layoutName;
+
 	var body = self.view(view, model, true);
+
+	self.layoutName = layoutName;
 
 	return framework.onMail(address, subject, body, callback, language);
 };
@@ -10910,6 +10677,35 @@ Controller.prototype.$url = function(host) {
 Controller.prototype.$helper = function(name) {
 	var self = this;
 	return self.helper.apply(self, arguments);
+};
+
+// @{href({ key1: 1, key2: 2 })}
+// @{href('key1=value1&key2=value2')}
+// @{href('key', 'value')}
+Controller.prototype.href = function(key, value) {
+	var self = this;
+
+	if (!arguments.length)
+		return qs.stringify(self.query);
+
+	var type = typeof(key);
+	var obj = framework_utils.copy(self.query);
+
+	if (value && type === OBJECT)
+		framework_utils.extend(obj, value);
+
+	if (value)
+		obj[key] = value;
+
+	obj = qs.stringify(obj);
+
+	if (value === undefined && type === STRING) {
+		if (obj)
+			obj += '&';
+		obj += key;
+	}
+
+	return self.url + (obj ? '?' + obj : '');
 };
 
 /*
@@ -11432,28 +11228,50 @@ Controller.prototype.$import = function() {
 	for (var i = 0; i < arguments.length; i++) {
 		var filename = arguments[i];
 
-		if (filename === 'head')
+		if (filename === 'head') {
 			builder += self.head();
-		if (filename === 'meta')
+			continue;
+		}
+
+		if (filename === 'meta') {
 			builder += self.$meta();
+			continue;
+		}
 
 		var extension = filename.substring(filename.lastIndexOf('.'));
+		var tag = filename[0] !== '!';
+		if (!tag)
+			filename = filename.substring(1);
 
 		switch (extension) {
 			case '.js':
-				builder += self.routeScript(filename, true);
+				builder += self.routeScript(filename, tag);
 				break;
 			case '.css':
-				builder += self.routeStyle(filename, true);
+				builder += self.routeStyle(filename, tag);
 				break;
 			case '.ico':
 				builder += self.$favicon(filename);
+				break;
+			case '.mp4':
+			case '.avi':
+			case '.ogv':
+			case '.webm':
+			case '.mov':
+			case '.mpg':
+			case '.mpe':
+			case '.mpeg':
+			case '.m4v':
+				builder += self.routeVideo(filename);
 				break;
 			case '.jpg':
 			case '.gif':
 			case '.png':
 			case '.jpeg':
-				builder += self.routeImage(filename, true);
+				builder += self.routeImage(filename);
+				break;
+			default:
+				builder += self.routeStatic(filename);
 				break;
 		}
 	}
@@ -11598,14 +11416,8 @@ Controller.prototype.$favicon = function(name) {
  * @param {Function} fn
  * @return {String}
  */
-Controller.prototype._routeHelper = function(current, name, fn) {
-	if (!current)
-		return fn.call(framework, name, this.themeName);
-	if (current.substring(0, 2) === '//' || current.substring(0, 6) === 'http:/' || current.substring(0, 7) === 'https:/')
-		return fn.call(framework, current + name, this.themeName);
-	if (current[0] === '~')
-		return fn.call(framework, framework_utils.path(current.substring(1)) + name, this.themeName);
-	return fn.call(framework, framework_utils.path(current) + name, this.themeName);
+Controller.prototype._routeHelper = function(name, fn) {
+	return fn.call(framework, prepare_staticurl(name, false), this.themeName);
 };
 
 /**
@@ -11630,7 +11442,7 @@ Controller.prototype.routeScript = function(name, tag) {
 	var self = this;
 	if (name === undefined)
 		name = 'default.js';
-	var url = self._routeHelper(self._currentScript, name, framework.routeScript);
+	var url = self._routeHelper(name, framework.routeScript);
 	return tag ? '<script type="text/javascript" src="' + url + '"></script>' : url;
 };
 
@@ -11657,7 +11469,7 @@ Controller.prototype.routeStyle = function(name, tag) {
 	if (name === undefined)
 		name = 'default.css';
 
-	var url = self._routeHelper(self._currentStyle, name, framework.routeStyle);
+	var url = self._routeHelper(name, framework.routeStyle);
 	return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
 
@@ -11668,7 +11480,7 @@ Controller.prototype.routeStyle = function(name, tag) {
  */
 Controller.prototype.routeImage = function(name) {
 	var self = this;
-	return self._routeHelper(self._currentImage, name, framework.routeImage);
+	return self._routeHelper(name, framework.routeImage);
 };
 
 /**
@@ -11678,7 +11490,7 @@ Controller.prototype.routeImage = function(name) {
  */
 Controller.prototype.routeVideo = function(name) {
 	var self = this;
-	return self._routeHelper(self._currentVideo, name, framework.routeVideo);
+	return self._routeHelper(name, framework.routeVideo);
 };
 
 /**
@@ -11697,7 +11509,7 @@ Controller.prototype.routeFont = function(name) {
  */
 Controller.prototype.routeDownload = function(name) {
 	var self = this;
-	return self._routeHelper(self._currentDownload, name, framework.routeDownload);
+	return self._routeHelper(name, framework.routeDownload);
 };
 
 /**
@@ -11706,186 +11518,8 @@ Controller.prototype.routeDownload = function(name) {
  * @return {String}
  */
 Controller.prototype.routeStatic = function(name) {
-	return framework.routeStatic(name);
-};
-
-/**
- * Set current "script" path
- * @alias
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentJS = function(path) {
-	return this.$currentScript(path);
-};
-
-/**
- * Set current "script" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentScript = function(path) {
-	this._currentScript = path ? path : '';
-	return '';
-};
-
-/**
- * Set current "view" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentView = function(path) {
 	var self = this;
-
-	if (path === undefined) {
-		self._currentView = self.name[0] !== '#' && self.name !== 'default' ? '/' + self.name + '/' : '';
-		return self;
-	}
-
-	self._currentView = path ? framework_utils.path(path) : '';
-	return '';
-};
-
-/**
- * Set current "view" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentView = function(path) {
-	var self = this;
-	self.$currentView(path);
-	self._defaultView = self._currentView;
-	return self;
-};
-
-/**
- * Set current "style" path
- * @alias
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentCSS = function(path) {
-	return this.$currentStyle(path);
-};
-
-/**
- * Set current "style" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentStyle = function(path) {
-	this._currentStyle = path ? path : '';
-	return '';
-};
-
-/**
- * Set current "image" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentImage = function(path) {
-	this._currentImage = path ? path : '';
-	return '';
-};
-
-/**
- * Set current "video" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentVideo = function(path) {
-	this._currentVideo = path ? path : '';
-	return '';
-};
-
-/**
- * Set current "download" path
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.$currentDownload = function(path) {
-	this._currentDownload = path ? path : '';
-	return '';
-};
-
-/**
- * Set current "image" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentImage = function(path) {
-	var self = this;
-	self.$currentImage(path);
-	self._defaultImage = self._currentImage;
-	return self;
-};
-
-/**
- * Set current "download" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentDownload = function(path) {
-	var self = this;
-	self.$currentDownload(path);
-	self._defaultDownload = self._currentDownload;
-	return self;
-};
-
-/**
- * Set current "style" path
- * @alias
- * @param {String} path
- * @return {String}
- */
-Controller.prototype.currentCSS = function(path) {
-	return this.currentStyle(path);
-};
-
-/**
- * Set current "style" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentStyle = function(path) {
-	var self = this;
-	self.$currentStyle(path);
-	self._defaultStyle = self._currentStyle;
-	return self;
-};
-
-/**
- * Set current "script" path
- * @alias
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentJS = function(path) {
-	return this.currentScript(path);
-};
-
-/**
- * Set current "script" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentScript = function(path) {
-	var self = this;
-	self.$currentScript(path);
-	self._defaultScript = self._currentScript;
-	return self;
-};
-
-/**
- * Set current "video" path
- * @param {String} path
- * @return {FrameworkController}
- */
-Controller.prototype.currentVideo = function(path) {
-	var self = this;
-	self.$currentVideo(path);
-	self._defaultVideo = self._currentVideo;
-	return self;
+	return self._routeHelper(name, framework.routeStatic);
 };
 
 /**
@@ -12461,6 +12095,9 @@ Controller.prototype.throw501 = function(problem) {
 Controller.prototype.redirect = function(url, permanent) {
 	var self = this;
 
+	if (self.precache)
+		self.precache(null, null, null);
+
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
@@ -12488,6 +12125,7 @@ Controller.prototype.redirect = function(url, permanent) {
 Controller.prototype.binary = function(buffer, contentType, type, download, headers) {
 	var self = this;
 	var res = self.res;
+
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
@@ -12516,6 +12154,9 @@ Controller.prototype.binary = function(buffer, contentType, type, download, head
 Controller.prototype.baa = function(label) {
 
 	var self = this;
+
+	if (self.precache)
+		self.precache(null, null, null);
 
 	if (label === undefined)
 		return self.req.authorization();
@@ -12712,7 +12353,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	// views root `~~some_view`
 	// package    `@some_view`
 
-	var key = 'view#' + name;
+	var key = 'view#=' + this.themeName + '/' + name;
 	var filename = framework.temporary.other[key];
 	var isLayout = self.isLayout;
 
@@ -12720,8 +12361,15 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	// A small cache
 	if (!filename) {
+
+		// ~   --> routed into the root of views (if the controller uses a theme then is routed into the root views of the theme)
+		// ~~  --> routed into the root of views (if the controller contains theme)
+		// /   --> routed into the views (skipped)
+		// @   --> routed into the packages
+		// .   --> routed into the opened path
+
 		var c = name[0];
-		var skip = c === '/' ? 1 : c === '~' && name[1] === '~' ? 4 : c === '~' ? 2 : c === '@' ? 3 : 0;
+		var skip = c === '/' ? 1 : c === '~' && name[1] === '~' ? 4 : c === '~' ? 2 : c === '@' ? 3 : c === '.' ? 5 : 0;
 		var isTheme = false;
 
 		filename = name;
@@ -12749,7 +12397,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		framework.temporary.other[key] = filename;
 	}
 
-	var generator = framework_internal.viewEngine(name, filename, self.language);
+	var generator = framework_internal.viewEngine(name, filename, self);
 	if (!generator) {
 
 		var err = new Error('View "' + filename + '" not found.');
@@ -12772,14 +12420,8 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var value = '';
 	self.$model = model;
 
-	if (isLayout) {
-		self._currentStyle = self._defaultStyle || '';
-		self._currentScript = self._defaultScript || '';
-		self._currentDownload = self._defaultDownload || '';
-		self._currentVideo = self._defaultVideo || '';
-		self._currentImage = self._defaultImage || '';
+	if (isLayout)
 		self._currentView = self._defaultView || '';
-	}
 
 	var helpers = framework.helpers;
 
@@ -12864,12 +12506,14 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 	}
 
 	var output = self.cache.read(key);
-	if (output === null) {
+	if (!output) {
 
 		var pk = '$memorize' + key;
 
 		if (framework.temporary.processing[pk]) {
 			setTimeout(function() {
+				if (self.subscribe.isCanceled)
+					return;
 				self.memorize(key, expires, disabled, fnTo, fnFrom);
 			}, 500);
 			return self;
@@ -12877,7 +12521,13 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 		self.precache = function(value, contentType, headers, isView) {
 
-			var options = { content: value, type: contentType, layout: self.layoutName };
+			if (!value && !contentType && !headers) {
+				delete framework.temporary.processing[pk];
+				self.precache = null;
+				return;
+			}
+
+			var options = { content: value, type: contentType, layout: self.layoutName, theme: self.themeName };
 			if (headers)
 				options.headers = headers;
 
@@ -12913,6 +12563,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 		fnFrom();
 
 	self.layoutName = output.layout;
+	self.themeName = output.theme;
 
 	if (output.type !== CONTENTTYPE_TEXTHTML) {
 		self.subscribe.success();
@@ -12958,6 +12609,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 var NEWLINE = '\r\n';
 var SOCKET_RESPONSE = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\n\r\n';
+var SOCKET_RESPONSE_PROTOCOL = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\nSec-WebSocket-Protocol: {2}\r\n\r\n';
 var SOCKET_RESPONSE_ERROR = 'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nX-WebSocket-Reject-Reason: 403 Forbidden\r\n\r\n';
 var SOCKET_HASH = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 var SOCKET_ALLOW_VERSION = [13];
@@ -13015,6 +12667,10 @@ WebSocket.prototype = {
 
 	get isSecure() {
 		return this.req.isSecure;
+	},
+
+	get secured() {
+		return this.req.secured;
 	},
 
 	get async() {
@@ -13082,6 +12738,10 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 
 	var self = this;
 	var keys = self._keys;
+
+	if (!keys)
+		return self;
+
 	var length = keys.length;
 
 	if (length === 0)
@@ -13090,7 +12750,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 	var fn = typeof(blacklist) === TYPE_FUNCTION ? blacklist : null;
 	var is = blacklist instanceof Array;
 
-	if (id === undefined || id === null || !id.length) {
+	if (!id || !id.length) {
 
 		for (var i = 0; i < length; i++) {
 
@@ -13101,7 +12761,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 
 			var conn = self.connections[_id];
 
-			if (fn !== null && !fn.call(self, _id, conn))
+			if (fn && !fn.call(self, _id, conn))
 				continue;
 
 			conn.send(message);
@@ -13124,7 +12784,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 
 		var conn = self.connections[_id];
 
-		if (fn !== null && !fn.call(self, _id, conn) === -1)
+		if (fn && !fn.call(self, _id, conn) === -1)
 			continue;
 
 		conn.send(message);
@@ -13143,6 +12803,10 @@ WebSocket.prototype.ping = function() {
 
 	var self = this;
 	var keys = self._keys;
+
+	if (!keys)
+		return self;
+
 	var length = keys.length;
 
 	if (length === 0)
@@ -13169,6 +12833,9 @@ WebSocket.prototype.close = function(id, message, code) {
 	var self = this;
 	var keys = self._keys;
 
+	if (!keys)
+		return self;
+
 	if (typeof(id) === STRING) {
 		code = message;
 		message = id;
@@ -13183,7 +12850,7 @@ WebSocket.prototype.close = function(id, message, code) {
 	if (length === 0)
 		return self;
 
-	if (id === undefined || id === null || !id.length) {
+	if (!id || !id.length) {
 		for (var i = 0; i < length; i++) {
 			var _id = keys[i];
 			self.connections[_id].close(message, code);
@@ -13205,7 +12872,7 @@ WebSocket.prototype.close = function(id, message, code) {
 
 		var conn = self.connections[_id];
 
-		if (fn !== null && !fn.call(self, _id, conn))
+		if (fn && !fn.call(self, _id, conn))
 			continue;
 
 		conn.close(message, code);
@@ -13261,6 +12928,10 @@ WebSocket.prototype.change = function(message) {
 WebSocket.prototype.all = function(fn) {
 
 	var self = this;
+
+	if (!self._keys)
+		return self;
+
 	var length = self._keys.length;
 
 	for (var i = 0; i < length; i++) {
@@ -13279,6 +12950,10 @@ WebSocket.prototype.all = function(fn) {
 */
 WebSocket.prototype.find = function(id) {
 	var self = this;
+
+	if (!self._keys)
+		return self;
+
 	var length = self._keys.length;
 	var isFn = typeof(id) === TYPE_FUNCTION;
 
@@ -13307,7 +12982,7 @@ WebSocket.prototype.destroy = function(problem) {
 	if (problem)
 		self.problem(problem);
 
-	if (self.connections === null && self._keys === null)
+	if (!self.connections && !self._keys)
 		return self;
 
 	self.close();
@@ -13352,6 +13027,12 @@ WebSocket.prototype.proxy = function(url, obj, fnCallback) {
 */
 WebSocket.prototype._refresh = function() {
 	var self = this;
+
+	if (!self.connections) {
+		self.online = 0;
+		return self;
+	}
+
 	self._keys = Object.keys(self.connections);
 	self.online = self._keys.length;
 	return self;
@@ -13647,7 +13328,8 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 	if (SOCKET_ALLOW_VERSION.indexOf(framework_utils.parseInt(self.req.headers['sec-websocket-version'])) === -1)
 		return false;
 
-	self.socket.write(new Buffer(SOCKET_RESPONSE.format('total.js v' + version, self._request_accept_key(self.req)), 'binary'));
+	var header = protocols.length ? SOCKET_RESPONSE_PROTOCOL.format('total.js v' + version, self._request_accept_key(self.req), protocols.join(', ')) : SOCKET_RESPONSE.format('total.js v' + version, self._request_accept_key(self.req));
+	self.socket.write(new Buffer(header, 'binary'));
 
 	self._id = (self.ip || '').replace(/\./g, '') + framework_utils.GUID(20);
 	self.id = self._id;
@@ -13770,19 +13452,22 @@ WebSocketClient.prototype.parse = function() {
 		// JSON
 		if (self.type === 3) {
 			try {
-				self.container.emit('message', self, framework.onParseJSON(self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output));
+				output = self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output;
+				if (output.isJSON())
+					self.container.emit('message', self, framework.onParseJSON(output));
 			} catch (ex) {
-				self.errors++;
-				self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
+				if (DEBUG) {
+					self.errors++;
+					self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
+				}
 			}
 		} else
 			self.container.emit('message', self, self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output);
-
 	} else {
 		var binary = new Buffer(length);
 		for (var i = 0; i < length; i++)
-			binary.write(self.buffer[index + 4 + i] ^ mask[i % 4]);
-		self.container.emit('message', self, binary);
+			binary[i] = self.buffer[index + 4 + i] ^ mask[i % 4];
+		self.container.emit('message', self, new Uint8Array(binary).buffer);
 	}
 
 	self.buffer = self.buffer.slice(index + length + 4, self.buffer.length);
@@ -13830,17 +13515,13 @@ WebSocketClient.prototype.send = function(message) {
 		return self;
 
 	if (self.type !== 1) {
-
 		var data = self.type === 3 ? JSON.stringify(message) : (message || '').toString();
 		if (self.container.config['default-websocket-encodedecode'] === true && data)
 			data = encodeURIComponent(data);
 		self.socket.write(framework_utils.getWebSocketFrame(0, data, 0x01));
-
 	} else {
-
-		if (message !== null)
-			self.socket.write(framework_utils.getWebSocketFrame(0, message, 0x02));
-
+		if (message)
+			self.socket.write(framework_utils.getWebSocketFrame(0, new Int8Array(message), 0x02));
 	}
 
 	return self;
@@ -13875,8 +13556,13 @@ WebSocketClient.prototype.close = function(message, code) {
 	if (!self || self.isClosed)
 		return self;
 
+	if (message)
+		message = encodeURIComponent(message);
+	else
+		message = '';
+
 	self.isClosed = true;
-	self.socket.end(framework_utils.getWebSocketFrame(code || 1000, message || '', 0x08));
+	self.socket.end(framework_utils.getWebSocketFrame(code || 1000, message, 0x08));
 
 	return self;
 };
@@ -14488,6 +14174,10 @@ http.IncomingMessage.prototype = {
 		return self._dataGET;
 	},
 
+	set query(value) {
+		this._dataGET = value;
+	},
+
 	get subdomain() {
 
 		var self = this;
@@ -14509,6 +14199,11 @@ http.IncomingMessage.prototype = {
 	},
 
 	get isSecure() {
+		OBSOLETE('req.isSecure', 'Use req.secured');
+		return this.uri.protocol === 'https:' || this.uri.protocol === 'wss:';
+	},
+
+	get secured() {
 		return this.uri.protocol === 'https:' || this.uri.protocol === 'wss:';
 	},
 
@@ -14522,6 +14217,12 @@ http.IncomingMessage.prototype = {
 		if (this.$mobile === undefined)
 			this.$mobile = REG_MOBILE.test(this.headers['user-agent']);
 		return this.$mobile;
+	},
+
+	get robot() {
+		if (this.$robot === undefined)
+			this.$robot = REG_ROBOT.test(this.headers['user-agent']);
+		return this.$robot;
 	},
 
 	set language(value) {
@@ -14613,11 +14314,13 @@ http.IncomingMessage.prototype.cookie = function(name) {
 	self.cookies = {};
 
 	var arr = cookie.split(';');
-	var length = arr.length;
 
-	for (var i = 0; i < length; i++) {
-		var c = arr[i].trim().split('=');
-		self.cookies[c.shift()] = c.join('=');
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var line = arr[i].trim();
+		var index = line.indexOf('=');
+		if (index === -1)
+			continue;
+		self.cookies[line.substring(0, index)] = line.substring(index + 1);
 	}
 
 	return $decodeURIComponent(self.cookies[name] || '');
@@ -14754,9 +14457,9 @@ function fsFileRead(filename, callback) {
 
 function fsFileExists(filename, callback) {
 	U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
-		fs.exists(filename, function(e) {
+		fs.lstat(filename, function(err, stats) {
 			next();
-			callback(e);
+			callback(!err && stats.isFile(), stats ? stats.size : 0);
 		});
 	});
 };
@@ -14864,6 +14567,17 @@ function prepare_filename(name) {
 	return framework_utils.combine('/', name);
 }
 
+function prepare_staticurl(url, isDirectory) {
+	if (!url)
+		return url;
+	if (url[0] === '~') {
+		if (isDirectory)
+			return framework_utils.path(url.substring(1));
+	} else if (url.substring(0, 2) === '//' || url.substring(0, 6) === 'http:/' || url.substring(0, 7) === 'https:/')
+		return url;
+	return url;
+}
+
 function prepare_isomorphic(name) {
 	name = name.replace(/\.js$/i, '');
 
@@ -14881,4 +14595,9 @@ function isGZIP(req) {
 	if (!ua)
 		return false;
 	return ua.lastIndexOf('Firefox') !== -1;
+}
+
+function prepare_viewname(value) {
+	// Cleans theme name
+	return value.substring(value.indexOf('/', 2) + 1);
 }

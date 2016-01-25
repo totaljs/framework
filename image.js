@@ -1,4 +1,4 @@
-// Copyright 2012-2015 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2016 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 1.9.5
+ * @version 1.9.6
  */
 
 'use strict';
@@ -585,6 +585,18 @@ Image.prototype.resizeCenter = function(w, h, color) {
 	return this.resize(w, h, '^').background(color ? color : 'white').align('center').crop(w, h);
 };
 
+/**
+ * Resize picture to align
+ * @param {Number} w
+ * @param {Number} h
+ * @param {String} align (top, center, bottom)
+ * @param {String} color Optional, background color.
+ * @return {Image}
+ */
+Image.prototype.resizeAlign = function(w, h, align, color) {
+	return this.resize(w, h, '^').background(color ? color : 'white').align(align || 'center').crop(w, h);
+};
+
 /*
 	@w {Number}
 	@h {Number}
@@ -672,6 +684,7 @@ Image.prototype.align = function(type) {
 			break;
 		case 'center center':
 		case 'center':
+		case 'middle':
 			output = 'Center';
 			break;
 		default:

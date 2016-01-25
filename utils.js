@@ -1,4 +1,4 @@
-// Copyright 2012-2015 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2016 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.5
+ * @version 1.9.6
  */
 
 'use strict';
@@ -87,6 +87,7 @@ var contentTypes = {
 	'jpg': 'image/jpeg',
 	'js': 'text/javascript',
 	'json': 'application/json',
+	'jsx': 'text/jsx',
 	'less': 'text/css',
 	'm4a': 'audio/mp4a-latm',
 	'm4v': 'video/x-m4v',
@@ -105,6 +106,7 @@ var contentTypes = {
 	'mv4': 'video/mv4',
 	'obj': 'text/plain',
 	'ogg': 'application/ogg',
+	'ogv': 'video/ogg',
 	'package': 'text/plain',
 	'pdf': 'application/pdf',
 	'png': 'image/png',
@@ -124,6 +126,7 @@ var contentTypes = {
 	'tiff': 'image/tiff',
 	'txt': 'text/plain',
 	'wav': 'audio/x-wav',
+	'webm': 'video/webm',
 	'webp': 'image/webp',
 	'woff': 'application/font-woff',
 	'woff2': 'application/font-woff2',
@@ -574,7 +577,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 	var onResponse = function(res) {
 
-		res._buffer = '';
+		res._buffer = null;
 		res._bufferlength = 0;
 
 		// We have redirect
@@ -586,16 +589,21 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 		res.on('data', function(chunk) {
 			var self = this;
-			self._buffer += chunk.toString(encoding);
+			if (self._buffer)
+				self._buffer = Buffer.concat([self._buffer, chunk]);
+			else
+				self._buffer = chunk;
 			self._bufferlength += chunk.length;
 			e.emit('data', chunk, responseLength ? (self._bufferlength / responseLength) * 100 : 0);
 		});
 
 		res.on('end', function() {
 			var self = this;
-			e.emit('end', self._buffer, self.statusCode, self.headers, uri.host);
+			var str = self._buffer ? self._buffer.toString(encoding) : '';
+			delete self._buffer; // Free memory
+			e.emit('end', str, self.statusCode, self.headers, uri.host);
 			if (callback)
-				callback(null, self._buffer, self.statusCode, self.headers, uri.host);
+				callback(null, str, self.statusCode, self.headers, uri.host);
 			callback = null;
 		});
 
@@ -1058,11 +1066,72 @@ exports.extend = function(target, source, rewrite) {
 	while (i--) {
 		var key = keys[i];
 		if (rewrite || target[key] === undefined)
-			target[key] = source[key];
+			target[key] = exports.clone(source[key]);
 	}
 
 	return target;
 };
+
+/**
+ * Clones object
+ * @param {Object} obj
+ * @param {Object} skip Optional, can be only object e.g. { name: true, age: true }.
+ * @param {Boolean} skipFunctions It doesn't clone functions, optional --> default false.
+ * @return {Object}
+ */
+exports.clone = function(obj, skip, skipFunctions) {
+
+	if (!obj)
+		return obj;
+
+	var type = typeof(obj);
+
+	if (type !== OBJECT || obj instanceof Date)
+		return obj;
+
+	var length;
+	var o;
+
+	if (obj instanceof Array) {
+
+		length = obj.length;
+		o = new Array(length);
+
+		for (var i = 0; i < length; i++) {
+			type = typeof(obj[i]);
+			if (type !== OBJECT || obj[i] instanceof Date) {
+				if (skipFunctions && type === FUNCTION)
+					continue;
+				o[i] = obj[i];
+				continue;
+			}
+			o[i] = exports.clone(obj[i], skip, skipFunctions);
+		}
+
+		return o;
+	}
+
+	o = {};
+
+	for (var m in obj) {
+
+		if (skip && skip[m])
+			continue;
+
+		var val = obj[m];
+		var type = typeof(val);
+		if (type !== OBJECT || val instanceof Date) {
+			if (skipFunctions && type === FUNCTION)
+				continue;
+			o[m] = val;
+			continue;
+		}
+
+		o[m] = exports.clone(obj[m], skip, skipFunctions);
+	}
+
+	return o;
+}
 
 /**
  * Copy values from object to object
@@ -1085,12 +1154,10 @@ exports.copy = function(source, target) {
 	var i = keys.length;
 
 	while (i--) {
-
 		var key = keys[i];
 		if (target[key] === undefined)
 			continue;
-
-		target[key] = source[key];
+		target[key] = exports.clone(source[key]);
 	}
 
 	return target;
@@ -1363,7 +1430,9 @@ exports.getExtension = function(filename) {
 	var index = filename.lastIndexOf('.');
 	if (index === -1)
 		return '';
-	return filename.substring(index);
+	if (filename.indexOf('/', index - 1) === -1)
+		return filename.substring(index);
+	return '';
 };
 
 /**
@@ -1393,6 +1462,12 @@ exports.getName = function(path) {
 exports.setContentType = function(ext, type) {
 	if (ext[0] === '.')
 		ext = ext.substring(1);
+
+	if (ext.length > 8) {
+		var tmp = regexpSTATIC.toString().replace(/\,\d+\}/, ',' + ext.length + '}').substring(1);
+		regexpSTATIC = new RegExp(tmp.substring(0, tmp.length - 1));
+	}
+
 	contentTypes[ext.toLowerCase()] = type;
 	return true;
 };
@@ -1572,7 +1647,7 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 
 					if (schema === Date || schema === String || schema === Number || schema === Boolean) {
 						// Empty
-					} else if (schema !== null && typeof(schema) === STRING) {
+					} else if (schema && typeof(schema) === STRING) {
 
 						var isArray = schema[0] === '[';
 
@@ -1711,7 +1786,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 				if (entity === Date || entity === String || entity === Number || entity === Boolean) {
 					// Empty
-				} else if (entity !== null && typeof(entity) === STRING) {
+				} else if (entity && typeof(entity) === STRING) {
 
 					var isArray = entity[0] === '[';
 
@@ -2032,9 +2107,11 @@ exports.getWebSocketFrame = function(code, message, type) {
  * @return {Buffer}
  */
 function getWebSocketFrameMessageBytes(code, message) {
-	var index = code === 0 ? 0 : 2;
-	var binary = message.readUInt8 !== undefined;
+
+	var index = code ? 2 : 0;
+	var binary = message instanceof Int8Array;
 	var length = message.length;
+
 	var messageBuffer = new Buffer(length + index);
 
 	for (var i = 0; i < length; i++) {
@@ -2044,7 +2121,7 @@ function getWebSocketFrameMessageBytes(code, message) {
 			messageBuffer[i + index] = message.charCodeAt(i);
 	}
 
-	if (code === 0)
+	if (!code)
 		return messageBuffer;
 
 	messageBuffer[0] = (code >> 8);
@@ -2765,6 +2842,15 @@ String.prototype.configuration = function(def) {
 };
 
 /**
+ * Same functionality as as String.localeCompare() but this method works with latin.
+ * @param {String} value
+ * @return {Number}
+ */
+String.prototype.localeCompare2 = function(value) {
+	return this.removeDiacritics().localeCompare(value.removeDiacritics())
+};
+
+/**
  * Parse configuration from a string
  * @param {Object} def
  * @return {Object}
@@ -2924,7 +3010,7 @@ String.prototype.params = function(obj) {
 			}
 		}
 
-		val = val.toString().dollar();
+		val = val.toString();
 		return isEncode ? exports.encode(val) : val;
 	});
 };
@@ -3285,21 +3371,6 @@ String.prototype.insert = function(index, value) {
 	var a = str.substring(0, index);
 	var b = value.toString() + str.substring(index);
 	return a + b;
-};
-
-/*
-	Prepare string for replacing double dollar
-*/
-String.prototype.dollar = function() {
-	var str = this;
-	var index = str.indexOf('$', 0);
-
-	while (index !== -1) {
-		if (str[index + 1] === '$')
-			str = str.insert(index, '$');
-		index = str.indexOf('$', index + 2);
-	}
-	return str.toString();
 };
 
 /**
@@ -4192,7 +4263,7 @@ Array.prototype.remove = function(cb, value) {
 };
 
 /*
-	Random return item from array
+	Returns item from array randomly
 	Return {Object}
 */
 Array.prototype.random = function() {
@@ -4200,35 +4271,46 @@ Array.prototype.random = function() {
 	return self[exports.random(self.length - 1)];
 };
 
-Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remove) {
+Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remove, thread) {
 
 	var self = this;
-	var type = typeof(callback);
+	var init = false;
 
-	if (type === NUMBER || type === BOOLEAN) {
-		var tmp = remove;
-		remove = callback;
-		callback = tmp;
+	// INIT
+	if (!onItem.$index) {
+		onItem.$pending = 0;
+		onItem.$index = 0;
+		init = true;
 	}
 
 	if (remove === undefined)
-		remove = 0;
+		remove = 1;
 
-	var item = remove === true ? self.shift() : self[remove];
+	var item = remove === true ? self.shift() : self[onItem.$index];
+	onItem.$index++;
 
 	if (item === undefined) {
+		if (onItem.$pending)
+			return self;
 		if (callback)
 			callback();
+		onItem.$index = 0;
 		return self;
 	}
 
+	onItem.$pending++;
 	onItem.call(self, item, function() {
 		setImmediate(function() {
-			if (typeof(remove) === NUMBER)
-				remove++;
+			onItem.$pending--;
 			self.wait(onItem, callback, remove);
 		});
 	});
+
+	if (!init || remove === true)
+		return self;
+
+	for (var i = 1; i < remove; i++)
+		self.wait(onItem, callback, 0);
 
 	return self;
 };
@@ -4916,7 +4998,7 @@ exports.sync = function(fn, owner) {
 };
 
 exports.sync2 = function(fn, owner) {
-	(function() {
+	return (function() {
 
 		var params;
 		var callback;
@@ -5136,6 +5218,18 @@ exports.minifyScript = function(value) {
 
 exports.minifyHTML = function(value) {
 	return require('./internal').compile_html(value);
+};
+
+exports.parseTheme = function(value) {
+	if (value[0] !== '=')
+		return '';
+	var index = value.indexOf('/', 2);
+	if (index === -1)
+		return '';
+	value = value.substring(1, index);
+	if (value === '?')
+		return framework.config['default-theme'];
+	return value;
 };
 
 global.Async = global.async = exports.async;

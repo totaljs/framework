@@ -6,8 +6,9 @@
         "url": "http://www.petersirka.eu"
     },
     "bin": {
-        "total": "./bin/total",
-        "total.js": "./bin/total",
+        "total": "./bin/totaljs",
+        "total.js": "./bin/totaljs",
+        "totaljs": "./bin/totaljs",
         "tpm": "./bin/tpm",
         "totalpackage": "./bin/tpm"
     },
@@ -58,8 +59,11 @@
     },{
         "name": "Dusan Dragula",
         "email": "dusan.dragula@goodrequest.com"
+    },{
+        "name": "Сковорода Никита Андреевич",
+        "email": "chalkerx@gmail.com"
     }],
-    "version": "1.9.5",
+    "version": "1.9.6",
     "homepage": "http://www.totaljs.com",
     "bugs": {
         "url": "https://github.com/totaljs/framework/issues",

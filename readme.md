@@ -8,6 +8,8 @@ Framework, for node.js
 
 __total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
+
+- [__NEW__: Download total.js models](https://github.com/totaljs/models)
 - [__NEW__: AppMonitor](https://github.com/totaljs/modules/tree/master/Miscellaneous/monitor) for tracking total.js applications
 - [Total.js Simple Eshop + CMS](http://www.totaljs.com/eshop)
 - [Total.js for enterprise](http://nodejsenterprise.com)
@@ -109,6 +111,7 @@ We provide a support of the framework for companies. Our support services will k
 | [Liao San-Kai](https://github.com/liaosankai) | contributor | <liaosankai@gmail.com> |
 | [Ivan Marchukov](https://github.com/deadman2000) | contributor | <marchukov.ivan@gmail.com> |
 | [Dusan Dragula](https://github.com/DusanDragulaGR) | contributor | <dusan.dragula@goodrequest.com> |
+| [Сковорода Никита Андреевич](https://github.com/ChALkeR) | contributor | <chalkerx@gmail.com> |
 
 ## Other
 
