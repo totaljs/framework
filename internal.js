@@ -1454,7 +1454,7 @@ MultipartParser.prototype.initWithBoundary = function(str) {
 
 	self.boundary = new Buffer(str.length + 4);
 
-	if (framework.versionNode > 0) {
+	if (framework.versionNode) {
 		self.boundary.write('\r\n--', 0, 'ascii');
 		self.boundary.write(str, 4, 'ascii');
 	} else {
@@ -1487,7 +1487,6 @@ MultipartParser.prototype.write = function(buffer) {
 		bufferLength = buffer.length,
 		c,
 		cl,
-
 		mark = function(name) {
 			self[name + 'Mark'] = i;
 		},
@@ -1495,21 +1494,16 @@ MultipartParser.prototype.write = function(buffer) {
 			delete self[name + 'Mark'];
 		},
 		callback = function(name, buffer, start, end) {
-			if (start !== undefined && start === end) {
+			if (start !== undefined && start === end)
 				return;
-			}
-
 			var callbackSymbol = 'on' + name.substr(0, 1).toUpperCase() + name.substr(1);
-			if (callbackSymbol in self) {
+			if (callbackSymbol in self)
 				self[callbackSymbol](buffer, start, end);
-			}
 		},
 		dataCallback = function(name, clear) {
 			var markSymbol = name + 'Mark';
-			if (!(markSymbol in self)) {
+			if (!(markSymbol in self))
 				return;
-			}
-
 			if (!clear) {
 				callback(name, buffer, self[markSymbol], buffer.length);
 				self[markSymbol] = 0;
@@ -1529,91 +1523,79 @@ MultipartParser.prototype.write = function(buffer) {
 				state = S.START_BOUNDARY;
 			case S.START_BOUNDARY:
 				if (index == boundary.length - 2) {
-					if (c == HYPHEN) {
+					if (c === HYPHEN)
 						flags |= F.LAST_BOUNDARY;
-					} else if (c != CR) {
+					else if (c !== CR)
 						return i;
-					}
 					index++;
 					break;
-				} else if (index - 1 == boundary.length - 2) {
-					if (flags & F.LAST_BOUNDARY && c == HYPHEN) {
+				} else if (index - 1 === boundary.length - 2) {
+					if (flags & F.LAST_BOUNDARY && c === HYPHEN) {
 						callback('end');
 						state = S.END;
 						flags = 0;
-					} else if (!(flags & F.LAST_BOUNDARY) && c == LF) {
+					} else if (!(flags & F.LAST_BOUNDARY) && c === LF) {
 						index = 0;
 						callback('partBegin');
 						state = S.HEADER_FIELD_START;
-					} else {
+					} else
 						return i;
-					}
 					break;
 				}
 
-				if (c != boundary[index + 2]) {
+				if (c !== boundary[index + 2])
 					index = -2;
-				}
-				if (c == boundary[index + 2]) {
+				if (c === boundary[index + 2])
 					index++;
-				}
 				break;
 			case S.HEADER_FIELD_START:
 				state = S.HEADER_FIELD;
 				mark('headerField');
 				index = 0;
 			case S.HEADER_FIELD:
-				if (c == CR) {
+				if (c === CR) {
 					clear('headerField');
 					state = S.HEADERS_ALMOST_DONE;
 					break;
 				}
 
 				index++;
-				if (c == HYPHEN) {
+				if (c === HYPHEN)
 					break;
-				}
 
-				if (c == COLON) {
-					if (index == 1) {
-						// empty header field
+				if (c === COLON) {
+					// empty header field
+					if (index === 1)
 						return i;
-					}
 					dataCallback('headerField', true);
 					state = S.HEADER_VALUE_START;
 					break;
 				}
 
 				cl = lower(c);
-				if (cl < A || cl > Z) {
+				if (cl < A || cl > Z)
 					return i;
-				}
 				break;
 			case S.HEADER_VALUE_START:
-				if (c == SPACE) {
+				if (c === SPACE)
 					break;
-				}
-
 				mark('headerValue');
 				state = S.HEADER_VALUE;
 			case S.HEADER_VALUE:
-				if (c == CR) {
+				if (c === CR) {
 					dataCallback('headerValue', true);
 					callback('headerEnd');
 					state = S.HEADER_VALUE_ALMOST_DONE;
 				}
 				break;
 			case S.HEADER_VALUE_ALMOST_DONE:
-				if (c != LF) {
+				if (c !== LF)
 					return i;
-				}
 				state = S.HEADER_FIELD_START;
 				break;
 			case S.HEADERS_ALMOST_DONE:
-				if (c != LF) {
+				if (c !== LF)
 					return i;
-				}
-
 				callback('headersEnd');
 				state = S.PART_DATA_START;
 				break;
@@ -1623,40 +1605,36 @@ MultipartParser.prototype.write = function(buffer) {
 			case S.PART_DATA:
 				prevIndex = index;
 
-				if (index === 0) {
+				if (!index) {
 					// boyer-moore derrived algorithm to safely skip non-boundary data
 					i += boundaryEnd;
-					while (i < bufferLength && !(buffer[i] in boundaryChars)) {
+					while (i < bufferLength && !(buffer[i] in boundaryChars))
 						i += boundaryLength;
-					}
 					i -= boundaryEnd;
 					c = buffer[i];
 				}
 
 				if (index < boundary.length) {
-					if (boundary[index] == c) {
-						if (index === 0) {
+					if (boundary[index] === c) {
+						if (!index)
 							dataCallback('partData', true);
-						}
 						index++;
-					} else {
+					} else
 						index = 0;
-					}
-				} else if (index == boundary.length) {
+				} else if (index === boundary.length) {
 					index++;
-					if (c == CR) {
+					if (c === CR) {
 						// CR = part boundary
 						flags |= F.PART_BOUNDARY;
-					} else if (c == HYPHEN) {
+					} else if (c === HYPHEN) {
 						// HYPHEN = end boundary
 						flags |= F.LAST_BOUNDARY;
-					} else {
+					} else
 						index = 0;
-					}
-				} else if (index - 1 == boundary.length) {
+				} else if (index - 1 === boundary.length) {
 					if (flags & F.PART_BOUNDARY) {
 						index = 0;
-						if (c == LF) {
+						if (c === LF) {
 							// unset the PART_BOUNDARY flag
 							flags &= ~F.PART_BOUNDARY;
 							callback('partEnd');
@@ -1665,30 +1643,27 @@ MultipartParser.prototype.write = function(buffer) {
 							break;
 						}
 					} else if (flags & F.LAST_BOUNDARY) {
-						if (c == HYPHEN) {
+						if (c === HYPHEN) {
 							callback('partEnd');
 							callback('end');
 							state = S.END;
 							flags = 0;
-						} else {
+						} else
 							index = 0;
-						}
-					} else {
+					} else
 						index = 0;
-					}
 				}
 
-				if (index > 0) {
+				if (index) {
 					// when matching a possible boundary, keep a lookbehind reference
 					// in case it turns out to be a false lead
 					lookbehind[index - 1] = c;
-				} else if (prevIndex > 0) {
+				} else if (prevIndex) {
 					// if our boundary turned out to be rubbish, the captured lookbehind
 					// belongs to partData
 					callback('partData', lookbehind, 0, prevIndex);
 					prevIndex = 0;
 					mark('partData');
-
 					// reconsider the current character even so it interrupted the sequence
 					// it could be the beginning of a new sequence
 					i--;
@@ -1718,13 +1693,12 @@ MultipartParser.prototype.end = function() {
 
 	var callback = function(self, name) {
 		var callbackSymbol = 'on' + name.substr(0, 1).toUpperCase() + name.substr(1);
-		if (callbackSymbol in self) {
+		if (callbackSymbol in self)
 			self[callbackSymbol]();
-		}
 	};
 
-	if ((self.state == S.HEADER_FIELD_START && self.index === 0) ||
-		(self.state == S.PART_DATA && self.index == self.boundary.length)) {
+	if ((self.state === S.HEADER_FIELD_START && self.index === 0) ||
+		(self.state === S.PART_DATA && self.index == self.boundary.length)) {
 		callback(self, 'partEnd');
 		callback(self, 'end');
 	} else if (self.state != S.END) {
