@@ -1137,7 +1137,7 @@ Framework.prototype.cors = function(url, flags, credentials) {
 					methods.push(flag.toUpperCase());
 					break;
 				default:
-					headers.push(flag);
+					headers.push(flags[i]);
 					break;
 			}
 		}

@@ -145,7 +145,7 @@ exports.install = function() {
     framework.cors('/api/*');
     framework.cors('/cors/origin-all/');
     framework.cors('/cors/origin-not/', ['http://www.petersirka.eu', 'http://www.858project.com']);
-    framework.cors('/cors/headers/', ['post', 'put', 'delete', 'options'], true);
+    framework.cors('/cors/headers/', ['post', 'put', 'delete', 'options', 'X-Ping'], true);
 };
 
 function plain_options() {
