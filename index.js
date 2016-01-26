@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 1.9.6
+ * @version 1.9.7
  */
 
 'use strict';
@@ -427,8 +427,8 @@ var directory = framework_utils.$normalize(require.main ? path.dirname(require.m
 function Framework() {
 
 	this.id = null;
-	this.version = 1960;
-	this.version_header = '1.9.6';
+	this.version = 1970;
+	this.version_header = '1.9.7-1';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -6375,7 +6375,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	if (self.onLocate)
 		req.$language = self.onLocate(req, socket);
 
-	if (self._length_request_middleware === 0)
+	if (!self._length_request_middleware)
 		return self._upgrade_prepare(req, path, headers);
 
 	if (req.behaviour('disable-middleware'))
