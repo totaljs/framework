@@ -4,7 +4,7 @@ var framework = require('../index');
 var fs = require('fs');
 var url = 'http://127.0.0.1:8001/';
 var errorStatus = 0;
-var max = 100;
+var max = 1;
 
 // INSTALL('module', 'https://www.totaljs.com/framework/include.js', { test: true });
 
@@ -145,13 +145,15 @@ function test_routing(next) {
 		utils.request(url + '/cors/headers/', ['options'], null, function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert.ok(headers['access-control-allow-origin'] === '*', 'CORS, headers problem 1');
+
+			// "access-control-allow-origin" doesn't support * (wildcard) when "access-control-allow-credentials" is set to true
+			// node.js doesn't support duplicates headers
+			assert.ok(headers['access-control-allow-origin'] === 'http://www.petersirka.eu', 'CORS, headers problem 1');
 			assert.ok(headers['access-control-allow-credentials'] === 'true', 'CORS, headers problem 2');
 			assert.ok(headers['access-control-allow-methods'] === 'POST, PUT, DELETE, OPTIONS', 'CORS, headers problem 3');
 			complete();
 		}, null, { 'origin': 'http://www.petersirka.eu' });
 	});
-
 
 	async.await('options', function(complete) {
 		utils.request(url + 'options/', ['options'], null, function(error, data, code, headers) {

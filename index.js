@@ -6530,7 +6530,7 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 	var name;
 	var isOPTIONS = req.method === 'OPTIONS';
 
-	res.setHeader('Access-Control-Allow-Origin', cors.origin ? cors.origin : '*');
+	res.setHeader('Access-Control-Allow-Origin', cors.origin ? cors.origin : cors.credentials ? origin : '*');
 
 	if (cors.credentials)
 		res.setHeader('Access-Control-Allow-Credentials', 'true');
