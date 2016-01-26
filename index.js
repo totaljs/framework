@@ -1116,7 +1116,7 @@ Framework.prototype.cors = function(url, flags, credentials) {
 				continue;
 			}
 
-			if (flag === true || flag.startsWith('credential')) {
+			if (type === BOOLEAN || flag.startsWith('credential')) {
 				credentials = true;
 				continue;
 			}
