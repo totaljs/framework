@@ -80,19 +80,12 @@ exports.install = function() {
     framework.route('/rest/', plain_rest, ['put']);
     framework.route('/rest/', plain_rest, ['get', 'head']);
     framework.route('/rest/', plain_rest, ['delete']);
-
     framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);
     framework.route('/put/parse/', plain_put_parse, ['put']);
     framework.route('/put/json/', plain_put_json, ['json', 'put']);
     framework.route('/put/xml/', plain_put_xml, ['xml', 'put']);
-
     framework.route('/upload/', plain_upload, ['upload']);
     framework.route('/index/', 'homepage');
-
-	framework.file('Resizing of images', function(req, res) {
-		return req.url.indexOf('.jpg') !== -1;
-	}, resize_image);
-
     framework.route('/live/', viewLive);
     framework.route('/live/incoming/', viewLiveIncoming, ['mixed']);
 
@@ -102,7 +95,7 @@ exports.install = function() {
         var self = this;
         self.global.timeout++;
         self.plain('408');
-    }, []);
+    });
 
     assert.ok(framework.encrypt('123456', 'key', false) === 'MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'framework.encrypt(string)');
     assert.ok(framework.decrypt('MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'key', false) === '123456', 'framework.decrypt(string)');
@@ -124,6 +117,8 @@ exports.install = function() {
     framework.route('#401', function() {
         this.plain('401');
     });
+
+    framework.file('Resizing of images', (req) => req.url.indexOf('.jpg') !== -1, resize_image);
 
     // url
     // function
