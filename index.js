@@ -538,6 +538,7 @@ function Framework() {
 		sitemap: null,
 		web: [],
 		files: [],
+		cors: [],
 		websockets: [],
 		middleware: {},
 		redirects: {},
@@ -607,6 +608,7 @@ function Framework() {
 			head: 0,
 			post: 0,
 			put: 0,
+			path: 0,
 			upload: 0,
 			blocked: 0,
 			'delete': 0,
@@ -657,6 +659,7 @@ function Framework() {
 	this._length_files = 0;
 	this._length_wait = 0;
 	this._length_themes = 0;
+	this._length_cors = 0;
 
 	this.isVirtualDirectory = false;
 	this.isTheme = false;
@@ -1074,6 +1077,77 @@ Framework.prototype.restful = function(url, flags, onQuery, onGet, onSave, onDel
 
 		self.route(restful, tmp, onDelete);
 	}
+
+	return self;
+};
+
+/**
+ * Register cors
+ * @param {String} url
+ * @param {String Array or String} origin
+ * @param {String Array or String} methods
+ * @param {String Array or String} headers
+ * @param {Boolean} credentials
+ * @return {Framework}
+ */
+Framework.prototype.cors = function(url, origin, methods, credentials, headers) {
+
+	var self = this;
+	var route = {};
+	var tmp;
+
+	if (typeof(credentials) === STRING || credentials instanceof Array) {
+		tmp = headers;
+		headers = credentials;
+		credentials = tmp;
+	}
+
+	if (typeof(origin) === STRING)
+		origin = origin.split(',').trim();
+	if (typeof(methods) === STRING)
+		methods = methods.split(',').trim();
+	if (typeof(headers) === STRING)
+		headers = headers.split(',').trim();
+
+	if (!headers)
+		headers = ['*'];
+	if (!origin)
+		origin = ['*'];
+	if (!methods)
+		methods = ['*'];
+
+	route.isASTERIX = url.lastIndexOf('*') !== -1;
+
+	if (route.isASTERIX)
+		url = url.replace('*', '');
+
+	for (var i = 0, length = origin.length; i < length; i++)
+		origin[i] = origin[i].toLowerCase();
+
+	for (var i = 0, length = headers.length; i < length; i++)
+		headers[i] = headers[i].toLowerCase();
+
+	for (var i = 0, length = methods.length; i < length; i++)
+		methods[i] = methods[i].toUpperCase();
+
+	route.url = framework_internal.routeSplitCreate(framework_internal.encodeUnicodeURL(url.trim()));
+	route.origin = origin.indexOf('*') === -1 ? origin : null;
+	route.methods = methods.indexOf('*') === -1 ? methods : ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATH', 'HEAD', 'OPTIONS'];
+	route.headers = headers.indexOf('*') === -1 ? headers : null;
+	route.credentials = credentials;
+
+	self.routes.cors.push(route);
+	self._length_cors = self.routes.cors.length;
+
+	self.routes.cors.sort(function(a, b) {
+		var al = a.url.length;
+		var bl = b.url.length;
+		if (al > bl)
+			return -1;
+		if (al < bl)
+			return 1;
+		return a.isASTERIX && b.isASTERIX ? 1 : 0;
+	});
 
 	return self;
 };
@@ -6254,39 +6328,94 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		}
 	}
 
+	var skipCors = !req.headers['origin'] || !self._length_cors;
 	req.flags = flags;
-
-	// call event request
 	self.emit('request-begin', req, res);
 
 	switch (first) {
 		case 'G':
 			self.stats.request.get++;
-			new Subscribe(self, req, res, 0).end();
+
+			if (skipCors) {
+				new Subscribe(self, req, res, 0).end();
+				return self;
+			}
+
+			self._cors(req, res, function(req, res) {
+				new Subscribe(framework, req, res, 0).end();
+			});
 			return self;
+
 		case 'O':
 			self.stats.request.options++;
-			new Subscribe(self, req, res, 0).end();
+
+			if (skipCors) {
+				new Subscribe(framework, req, res, 0).end();
+				return self;
+			}
+
+			self._cors(req, res);
 			return self;
+
 		case 'H':
 			self.stats.request.head++;
-			new Subscribe(self, req, res, 0).end();
+
+			if (skipCors) {
+				new Subscribe(self, req, res, 0).end();
+				return self;
+			}
+
+			self._cors(req, res, function(req, res) {
+				new Subscribe(framework, req, res, 0).end();
+			});
+
 			return self;
+
 		case 'D':
 			self.stats.request['delete']++;
-			new Subscribe(self, req, res, 1).urlencoded();
+
+			if (skipCors) {
+				new Subscribe(self, req, res, 1).urlencoded();
+				return self;
+			}
+
+			self._cors(req, res, function(req, res) {
+				new Subscribe(framework, req, res, 1).urlencoded();
+			});
+
 			return self;
 		case 'P':
 			if (self._request_check_POST) {
 				if (multipart) {
 					self.stats.request.upload++;
-					new Subscribe(self, req, res, 2).multipart(multipart);
+
+					if (skipCors) {
+						new Subscribe(self, req, res, 2).multipart(multipart);
+						return self;
+					}
+
+					self._cors(req, res, function(req, res, multipart) {
+						new Subscribe(self, req, res, 2).multipart(multipart);
+					}, multipart);
+
+					return self;
+
 				} else {
 					if (method === 'PUT')
 						self.stats.request.put++;
+					else if (method === 'PATH')
+						self.stats.request.path++;
 					else
 						self.stats.request.post++;
-					new Subscribe(self, req, res, 1).urlencoded();
+
+					if (skipCors) {
+						new Subscribe(self, req, res, 1).urlencoded();
+						return self;
+					}
+
+					self._cors(req, res, function(req, res) {
+						new Subscribe(self, req, res, 1).urlencoded();
+					});
 				}
 				return self;
 			}
@@ -6297,6 +6426,142 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	self._request_stats(false, false);
 	self.stats.request.blocked++;
 	res.writeHead(403);
+	res.end();
+	return self;
+};
+
+Framework.prototype._cors = function(req, res, fn, arg) {
+
+	var self = this;
+	var cors;
+	var is = false;
+
+	for (var i = 0; i < self._length_cors; i++) {
+		cors = self.routes.cors[i];
+		if (!framework_internal.routeCompare(req.path, cors.url, false, cors.isASTERIX))
+			continue;
+		is = true;
+		break;
+	}
+
+	if (!is) {
+		fn = null;
+			self.emit('request-end', req, res);
+			self._request_stats(false, false);
+		self.stats.request.blocked++;
+		res.writeHead(404);
+		res.end();
+		return;
+	}
+
+	is = false;
+
+	// compare
+	var isAllowed = false;
+	var headers = req.headers;
+
+	if (cors.headers) {
+
+		for (var i = 0, length = cors.headers.length; i < length; i++) {
+			if (headers[cors.headers[i]]) {
+				isAllowed = true;
+				break;
+			}
+		}
+
+		if (!isAllowed) {
+			fn = null;
+			self.emit('request-end', req, res);
+			self._request_stats(false, false);
+			self.stats.request.blocked++;
+			res.writeHead(404);
+			res.end();
+			return;
+		}
+
+		isAllowed = false;
+	}
+
+	if (cors.methods) {
+
+		var current = headers['access-control-request-method'] || req.method;
+		if (current !== 'OPTIONS') {
+			for (var i = 0, length = cors.methods.length; i < length; i++) {
+				if (current.indexOf(cors.methods[i]) !== -1)
+					isAllowed = true;
+			}
+
+			if (!isAllowed) {
+				fn = null;
+				self.emit('request-end', req, res);
+				self._request_stats(false, false);
+				self.stats.request.blocked++;
+				res.writeHead(404);
+				res.end();
+				return;
+			}
+		}
+
+		isAllowed = false;
+	}
+
+	var origin = headers['origin'].toLowerCase();
+
+	if (cors.origin) {
+		for (var i = 0, length = cors.origin.length; i < length; i++) {
+			if (cors.origin[i].indexOf(origin) !== -1) {
+				isAllowed = true;
+				break;
+			}
+		}
+
+		if (!isAllowed) {
+			fn = null;
+			self.emit('request-end', req, res);
+			self._request_stats(false, false);
+			self.stats.request.blocked++;
+			res.writeHead(404);
+			res.end();
+			return;
+		}
+	}
+
+	var tmp;
+	var name;
+	var isOPTIONS = req.method === 'OPTIONS';
+
+	res.setHeader('Access-Control-Allow-Origin', cors.origin ? cors.origin : '*');
+
+	if (cors.credentials)
+		res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+	name = 'Access-Control-Allow-Methods';
+
+	if (cors.methods) {
+		res.setHeader(name, cors.methods.join(', '));
+	} else if (isOPTIONS) {
+		tmp = headers['access-control-request-method'];
+		if (tmp)
+			res.setHeader(name, tmp);
+	}
+
+	name = 'Access-Control-Allow-Headers';
+
+	if (cors.headers) {
+		res.setHeader(name, cors.headers.join(', '));
+	} else if (isOPTIONS) {
+		tmp = headers['access-control-request-headers'];
+		if (tmp)
+			res.setHeader(name, tmp);
+	}
+
+	if (!isOPTIONS)
+		return fn(req, res, arg);
+
+	fn = null;
+	self.emit('request-end', req, res);
+	self._request_stats(false, false);
+	res.writeHead(200);
 	res.end();
 	return self;
 };
@@ -9921,7 +10186,6 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 
 	var self = this;
 	var origin = self.req.headers['origin'];
-	var isOPTIONS = self.req.method.toUpperCase() === 'OPTIONS';
 
 	if (origin === undefined)
 		return true;
@@ -10002,6 +10266,7 @@ Controller.prototype.cors = function(allow, method, header, credentials) {
 	if (!isAllowed)
 		return false;
 
+	var isOPTIONS = self.req.method.toUpperCase() === 'OPTIONS';
 	var tmp;
 	var name;
 

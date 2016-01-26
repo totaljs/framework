@@ -1,3 +1,7 @@
+======= 1.9.7 (BETA)
+
+- added: F.cors(url, origins, methods, headers, credentials)
+
 ======= 1.9.6
 
 - added: MailMessage.manually() and removes auto-sending mail --> works only with `F.mail()` and `controller.Mail()`.

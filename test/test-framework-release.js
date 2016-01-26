@@ -105,6 +105,54 @@ function test_routing(next) {
 
 	var async = new utils.Async();
 
+	async.await('cors 1', function(complete) {
+		utils.request(url + '/cors/origin-all/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(code === 200, 'CORS, problem with "*" origin');
+			complete();
+		}, null, { 'origin': 'https://www.totaljs.com' });
+	});
+
+	async.await('cors 2', function(complete) {
+		utils.request(url + '/cors/origin-not/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(code === 404, 'CORS, problem with origin (origin is not valid)');
+			complete();
+		}, null, { 'origin': 'https://www.totaljs.com' });
+	});
+
+	async.await('cors 3', function(complete) {
+		utils.request(url + '/cors/origin-not/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(code === 200, 'CORS, problem with origin (valid origin)');
+			complete();
+		}, null, { 'origin': 'http://www.petersirka.eu' });
+	});
+
+	async.await('cors asterix / wildcard', function(complete) {
+		utils.request(url + '/api/whatever/you/need/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(code === 200, 'CORS, problem with origin (wildcard routing)');
+			complete();
+		}, null, { 'origin': 'http://www.petersirka.eu' });
+	});
+
+	async.await('cors headers', function(complete) {
+		utils.request(url + '/cors/headers/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(headers['access-control-allow-origin'] === '*', 'CORS, headers problem 1');
+			assert.ok(headers['access-control-allow-credentials'] === 'true', 'CORS, headers problem 2');
+			assert.ok(headers['access-control-allow-methods'] === 'POST, PUT, DELETE, OPTIONS', 'CORS, headers problem 3');
+			complete();
+		}, null, { 'origin': 'http://www.petersirka.eu' });
+	});
+
+
 	async.await('options', function(complete) {
 		utils.request(url + 'options/', ['options'], null, function(error, data, code, headers) {
 			if (error)
