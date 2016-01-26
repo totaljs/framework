@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-1';
+	this.version_header = '1.9.7-2';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -490,6 +490,9 @@ function Framework() {
 		'default-websocket-encodedecode': true,
 		'default-maximum-file-descriptors': 0,
 		'default-timezone': '',
+
+		// Seconds (2 minutes)
+		'default-cors-maxage': 120,
 
 		// in milliseconds
 		'default-request-timeout': 5000,
@@ -1090,51 +1093,67 @@ Framework.prototype.restful = function(url, flags, onQuery, onGet, onSave, onDel
  * @param {Boolean} credentials
  * @return {Framework}
  */
-Framework.prototype.cors = function(url, origin, methods, credentials, headers) {
+Framework.prototype.cors = function(url, flags, credentials) {
 
 	var self = this;
 	var route = {};
 	var tmp;
 
-	if (typeof(credentials) === STRING || credentials instanceof Array) {
-		tmp = headers;
-		headers = credentials;
-		credentials = tmp;
+	var origins = [];
+	var methods = [];
+	var headers = [];
+	var age;
+
+	if (flags instanceof Array) {
+		for (var i = 0, length = flags.length; i < length; i++) {
+			var flag = flags[i];
+			var type = typeof(flag);
+
+			if (type === STRING)
+				flag = flag.toLowerCase();
+			else if (type === NUMBER) {
+				age = flag;
+				continue;
+			}
+
+			if (flag === true || flag.startsWith('credential')) {
+				credentials = true;
+				continue;
+			}
+
+			if (flag.startsWith('http://') || flag.startsWith('https://')) {
+				origins.push(flag);
+				continue;
+			}
+
+			switch (flag) {
+				case 'post':
+				case 'put':
+				case 'delete':
+				case 'options':
+				case 'patch':
+				case 'head':
+				case 'get':
+					methods.push(flag.toUpperCase());
+					break;
+				default:
+					headers.push(flag);
+					break;
+			}
+		}
 	}
-
-	if (typeof(origin) === STRING)
-		origin = origin.split(',').trim();
-	if (typeof(methods) === STRING)
-		methods = methods.split(',').trim();
-	if (typeof(headers) === STRING)
-		headers = headers.split(',').trim();
-
-	if (!headers)
-		headers = ['*'];
-	if (!origin)
-		origin = ['*'];
-	if (!methods)
-		methods = ['*'];
 
 	route.isASTERIX = url.lastIndexOf('*') !== -1;
 
 	if (route.isASTERIX)
 		url = url.replace('*', '');
 
-	for (var i = 0, length = origin.length; i < length; i++)
-		origin[i] = origin[i].toLowerCase();
-
-	for (var i = 0, length = headers.length; i < length; i++)
-		headers[i] = headers[i].toLowerCase();
-
-	for (var i = 0, length = methods.length; i < length; i++)
-		methods[i] = methods[i].toUpperCase();
-
 	route.url = framework_internal.routeSplitCreate(framework_internal.encodeUnicodeURL(url.trim()));
-	route.origin = origin.indexOf('*') === -1 ? origin : null;
-	route.methods = methods.indexOf('*') === -1 ? methods : ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATH', 'HEAD', 'OPTIONS'];
-	route.headers = headers.indexOf('*') === -1 ? headers : null;
+	route.origins = origins.length ? origins : null;
+	route.methods = methods.length ? methods : null;
+	route.headers = headers.length ? headers : null;
 	route.credentials = credentials;
+	route.age = age || framework.config['default-cors-maxage'];
 
 	self.routes.cors.push(route);
 	self._length_cors = self.routes.cors.length;
@@ -6434,56 +6453,38 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 
 	var self = this;
 	var cors;
-	var is = false;
+	var isAllowed = false;
+	var stop = false;
 
 	for (var i = 0; i < self._length_cors; i++) {
 		cors = self.routes.cors[i];
 		if (!framework_internal.routeCompare(req.path, cors.url, false, cors.isASTERIX))
 			continue;
-		is = true;
+		isAllowed = true;
 		break;
 	}
 
-	if (!is) {
-		fn = null;
-			self.emit('request-end', req, res);
-			self._request_stats(false, false);
-		self.stats.request.blocked++;
-		res.writeHead(404);
-		res.end();
-		return;
-	}
+	if (!isAllowed)
+		stop = true;
 
-	is = false;
+	isAllowed = false;
 
-	// compare
-	var isAllowed = false;
 	var headers = req.headers;
 
-	if (cors.headers) {
-
+	if (!stop && cors.headers) {
+		isAllowed = false;
 		for (var i = 0, length = cors.headers.length; i < length; i++) {
 			if (headers[cors.headers[i]]) {
 				isAllowed = true;
 				break;
 			}
 		}
-
-		if (!isAllowed) {
-			fn = null;
-			self.emit('request-end', req, res);
-			self._request_stats(false, false);
-			self.stats.request.blocked++;
-			res.writeHead(404);
-			res.end();
-			return;
-		}
-
-		isAllowed = false;
+		if (!isAllowed)
+			stop = true;
 	}
 
-	if (cors.methods) {
-
+	if (!stop && cors.methods) {
+		isAllowed = false;
 		var current = headers['access-control-request-method'] || req.method;
 		if (current !== 'OPTIONS') {
 			for (var i = 0, length = cors.methods.length; i < length; i++) {
@@ -6491,68 +6492,58 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 					isAllowed = true;
 			}
 
-			if (!isAllowed) {
-				fn = null;
-				self.emit('request-end', req, res);
-				self._request_stats(false, false);
-				self.stats.request.blocked++;
-				res.writeHead(404);
-				res.end();
-				return;
-			}
+			if (!isAllowed)
+				stop = true;
 		}
-
-		isAllowed = false;
 	}
 
 	var origin = headers['origin'].toLowerCase();
-
-	if (cors.origin) {
-		for (var i = 0, length = cors.origin.length; i < length; i++) {
-			if (cors.origin[i].indexOf(origin) !== -1) {
+	if (!stop && cors.origins) {
+		isAllowed = false;
+		for (var i = 0, length = cors.origins.length; i < length; i++) {
+			if (cors.origins[i].indexOf(origin) !== -1) {
 				isAllowed = true;
 				break;
 			}
 		}
-
-		if (!isAllowed) {
-			fn = null;
-			self.emit('request-end', req, res);
-			self._request_stats(false, false);
-			self.stats.request.blocked++;
-			res.writeHead(404);
-			res.end();
-			return;
-		}
+		if (!isAllowed)
+			stop = true;
 	}
 
 	var tmp;
 	var name;
 	var isOPTIONS = req.method === 'OPTIONS';
 
-	res.setHeader('Access-Control-Allow-Origin', cors.origin ? cors.origin : cors.credentials ? origin : '*');
+	res.setHeader('Access-Control-Allow-Origin', cors.origins ? cors.origins : cors.credentials ? isAllowed ? origin : cors.origins ? cors.origins : origin : '*');
 
 	if (cors.credentials)
 		res.setHeader('Access-Control-Allow-Credentials', 'true');
 
 	name = 'Access-Control-Allow-Methods';
 
-	if (cors.methods) {
+	if (cors.methods)
 		res.setHeader(name, cors.methods.join(', '));
-	} else if (isOPTIONS) {
-		tmp = headers['access-control-request-method'];
-		if (tmp)
-			res.setHeader(name, tmp);
-	}
+	else
+		res.setHeader(name, '*');
 
 	name = 'Access-Control-Allow-Headers';
 
-	if (cors.headers) {
+	if (cors.headers)
 		res.setHeader(name, cors.headers.join(', '));
-	} else if (isOPTIONS) {
-		tmp = headers['access-control-request-headers'];
-		if (tmp)
-			res.setHeader(name, tmp);
+	else
+		res.setHeader(name, '*');
+
+	if (cors.age)
+		res.setHeader('Access-Control-Max-Age', cors.age);
+
+	if (stop) {
+		fn = null;
+		self.emit('request-end', req, res);
+		self._request_stats(false, false);
+		self.stats.request.blocked++;
+		res.writeHead(404);
+		res.end();
+		return;
 	}
 
 	if (!isOPTIONS)
@@ -8065,6 +8056,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 		var value = str.substring(index + 1).trim();
 
 		switch (name) {
+			case 'default-cors-maxage':
 			case 'default-request-length':
 			case 'default-websocket-request-length':
 			case 'default-request-timeout':

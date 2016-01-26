@@ -142,10 +142,10 @@ exports.install = function() {
     // maximumSize
     framework.websocket('/', socket);
     framework.route('/theme-green/', view_theme);
-    framework.cors('/api/*', '*');
-    framework.cors('/cors/origin-all/', '*');
+    framework.cors('/api/*');
+    framework.cors('/cors/origin-all/');
     framework.cors('/cors/origin-not/', ['http://www.petersirka.eu', 'http://www.858project.com']);
-    framework.cors('/cors/headers/', '*', 'post,put,delete,options', true);
+    framework.cors('/cors/headers/', ['post', 'put', 'delete', 'options'], true);
 };
 
 function plain_options() {
