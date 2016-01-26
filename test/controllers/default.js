@@ -10,20 +10,11 @@ exports.install = function() {
         this.plain('CUSTOM');
     });
 
-    framework.route('/logged/', view_logged, {
-        flags: ['authorize'],
-        timeout: 1000,
-        length: 3000
-    });
+    framework.route('/logged/', view_logged, ['authorize', 1000], 3000);
+    framework.route('/unauthorize/', ['unauthorize'], view_unauthorize);
 
-    framework.route('/unauthorize/', view_unauthorize, {
-        flags: ['unauthorize']
-    });
-
-    framework.route('/a/b/c/d/authorize/', function() {
+    framework.route('/a/b/c/d/authorize/', ['authorize'], function() {
         this.plain('authorize');
-    }, {
-        flags: ['authorize']
     });
 
     framework.route('/', function() {
@@ -76,7 +67,7 @@ exports.install = function() {
     framework.route('/translate/', viewTranslate);
     framework.route('/test-view/', view_test_view);
     framework.route('/login/google/callback/', aa);
-    framework.route('/timeout/', function() {}, [], null, [], 50);
+    framework.route('/timeout/', function() {}, [50]);
 
     framework.route('/get/', plain_get);
     framework.route('/post/raw/', plain_post_raw, ['post', 'raw']);

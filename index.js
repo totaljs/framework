@@ -1181,12 +1181,27 @@ Framework.prototype.cors = function(url, flags, credentials) {
  * @param {Number timeout Response timeout.
  * @return {Framework}
  */
-Framework.prototype.route = function(url, funcExecute, flags, length, middleware, timeout, options) {
+Framework.prototype.web = Framework.prototype.route = function(url, funcExecute, flags, length, middleware, timeout, options) {
 
 	var name;
 	var tmp;
 	var viewname;
 	var skip = true;
+
+	if (middleware)
+		OBSOLETE('F.route(url, fnExecute, flags, [length])', 'middleware argument is obsolete, you can define middleware in the flags e.g. ["get", "#middleware1", "#middleware2"]');
+
+	if (timeout)
+		OBSOLETE('F.route(url, fnExecute, flags, [length])', 'timeout argument is obsolete, you can define timeout in the flags, e.g. ["get", 10000]');
+
+	if (options)
+		OBSOLETE('F.route(url, fnExecute, flags, [length])', 'options argument is obsolete, you can define options in the flags, e.g. ["get", { xhr: true }]');
+
+	if (funcExecute instanceof Array && typeof(flags) === TYPE_FUNCTION) {
+		tmp = funcExecute;
+		funcExecute = flags;
+		flags = tmp;
+	}
 
 	for (var i = 0; i < arguments.length; i++) {
 		if (typeof(arguments[i]) === TYPE_FUNCTION) {
@@ -1872,6 +1887,24 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
 	var tmp;
 
+	if (typeof(protocols) === NUMBER) {
+		length = protocols;
+		protocols = undefined;
+	}
+
+
+	if (middleware)
+		OBSOLETE('F.websocket(url, fnExecute, flags, [length])', 'middleware argument is obsolete, you can define middleware in the flags e.g. ["get", "#middleware1", "#middleware2"]');
+
+	if (allow)
+		OBSOLETE('F.websocket(url, fnExecute, flags, [length])', 'origin argument is obsolete, you can define "origin" in the flags, e.g. ["get", "https://www.totaljs.com", "https://www.privater.eu"]');
+
+	if (protocols)
+		OBSOLETE('F.websocket(url, fnExecute, flags, [length])', 'protocols argument is obsolete, you can define protocols in the flags, e.g. ["get", "chat", "room"]');
+
+	if (options)
+		OBSOLETE('F.websocket(url, fnExecute, flags, [length])', 'options argument is obsolete, you can define options in the flags, e.g. ["get", { special: true }]');
+
 	var CUSTOM = typeof(url) === TYPE_FUNCTION ? url : null;
 	if (CUSTOM)
 		url = '/';
@@ -1982,40 +2015,88 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	var isJSON = false;
 	var isBINARY = false;
 	var count = 0;
+	var isMember = false;
 
 	if (flags === undefined)
 		flags = [];
 
 	for (var i = 0; i < flags.length; i++) {
 
-		if (typeof(flags[i]) === OBJECT) {
+		var flag = flags[i];
+		var type = typeof(flag);
+
+		// Middleware options
+		if (type === OBJECT) {
 			options = flags[i];
 			continue;
 		}
 
-		if (flags[i][0] === '#') {
-			if ((middleware || null) === null)
+		// Length
+		if (type === NUMBER) {
+			length = flag;
+			continue;
+		}
+
+		// Middleware
+		if (flag[0] === '#') {
+			if (!middleware)
 				middleware = [];
 			middleware.push(flags[i].substring(1));
 			continue;
 		}
 
-		flags[i] = flags[i].toString().toLowerCase();
+		flag = flag.toString().toLowerCase();
+
+		// Origins
+		if (flag.startsWith('http://') || flag.startsWith('https://')) {
+			if (!allow)
+				allow = [];
+			allow.push(flag);
+			continue;
+		}
+
 		count++;
 
-		if (flags[i] === 'json')
+		if (flag === 'json')
 			isJSON = true;
 
-		if (flags[i] === 'binary')
+		if (flag === 'binary')
 			isBINARY = true;
 
-		if (flags[i] === 'raw') {
+		if (flag === 'raw') {
 			isBINARY = false;
 			isJSON = false;
 		}
 
-		if (flags[i] !== 'json' && flags[i] !== 'binary' && flags[i] !== 'raw')
-			tmp.push(flags[i]);
+		if (flag === 'json' || flag === 'binary' || flag === 'raw')
+			continue;
+
+		switch (flag) {
+			case 'authorize':
+			case 'authorized':
+				priority++;
+				tmp.push('authorize');
+				isMember = true;
+				break;
+			case 'unauthorize':
+			case 'unauthorized':
+				priority++;
+				isMember = true;
+				tmp.push('unauthorize');
+				break;
+			case 'get':
+			case 'http':
+			case 'https':
+			case 'debug':
+			case 'release':
+				tmp.push(flag);
+				break;
+			default:
+				if (!protocols)
+					protocols = [];
+				protocols.push(flag);
+				break;
+		}
 	}
 
 	flags = tmp;
@@ -2024,11 +2105,6 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		flags.unshift('get');
 
 	priority += (count * 2);
-
-	var isMember = false;
-
-	if (!flags || (flags.indexOf('authorize') === -1))
-		isMember = true;
 
 	if (!middleware || (!(middleware instanceof Array)) || !middleware.length)
 		middleware = null;
