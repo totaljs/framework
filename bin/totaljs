@@ -423,12 +423,12 @@ function main() {
 	var url = 'https://www.totaljs.com/packages/empty-project.package';
 
 	Utils.download(url, ['get'], function(err, response) {
-		var filename = Utils.join(dir, 'total.package');
+		var filename = path.join(dir, 'total.package');
 		var stream = fs.createWriteStream(filename);
 		response.pipe(stream);
 		stream.on('finish', function() {
 			console.log('Unpacking file.');
-			exec('tpm unpack total.package', function() {
+			exec('totalpackage unpack total.package', function() {
 				fs.unlink(filename);
 				console.log('Done.');
 				console.log('');
