@@ -3,6 +3,8 @@
 - added: F.web() --> alias to F.route()
 - added: F.cors(url, origins, methods, headers, credentials)
 
+- fixed: binary / executable for Windows
+
 ======= 1.9.6
 
 - added: MailMessage.manually() and removes auto-sending mail --> works only with `F.mail()` and `controller.Mail()`.
