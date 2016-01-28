@@ -1753,7 +1753,10 @@ function validate_builder_default(name, value) {
 	if (type === STRING)
 		return value.length > 0;
 
-	if (value === null)
+	if (type === BOOLEAN)
+		return value === true;
+
+	if (value === null || value === undefined)
 		return false;
 
 	if (value instanceof Array)
