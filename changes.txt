@@ -1,7 +1,8 @@
 ======= 1.9.7 (BETA)
 
-- added: F.web() --> alias to F.route()
-- added: F.cors(url, origins, methods, headers, credentials)
+- added: `F.web()` --> alias to F.route()
+- added: `F.cors(url, origins, methods, headers, credentials)`
+- added: `config['default-response-maxage']`, default value `11111111`
 
 - fixed: binary / executable for Windows
 - fixed: SUCCESS()

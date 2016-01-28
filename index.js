@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-7';
+	this.version_header = '1.9.7-8';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -490,6 +490,8 @@ function Framework() {
 		'default-websocket-encodedecode': true,
 		'default-maximum-file-descriptors': 0,
 		'default-timezone': '',
+
+		'default-response-maxage': '11111111',
 
 		// Seconds (2 minutes)
 		'default-cors-maxage': 120,
@@ -4312,7 +4314,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		if (RELEASE) {
 			headers['Etag'] = etag;
 			headers['Expires'] = new Date().add('y', 1);
-			headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+			headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=' + framework.config['default-response-maxage'];
 		}
 
 		framework.responseContent(req, res, 200, prepare_isomorphic(key), 'text/javascript', true, headers);
@@ -8220,6 +8222,16 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 	if (self.config['allow-performance'])
 		http.globalAgent.maxSockets = 9999;
+
+	Object.keys(HEADERS).forEach(function(key) {
+		if (key.lastIndexOf('release') === -1)
+			return;
+		Object.keys(HEADERS[key]).forEach(function(subkey) {
+			if (subkey !== 'Cache-Control')
+				return;
+			HEADERS[key][subkey] = HEADERS[key][subkey].replace(/max-age=\d+/, self.config['default-response-maxage']);
+		});
+	});
 
 	POWEREDBY = 'total.js v' + self.version_header;
 	done();
