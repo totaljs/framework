@@ -1051,7 +1051,6 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 	if (filter)
 		filter = self.filter(filter);
 
-
 	return framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name, undefined, filter);
 };
 

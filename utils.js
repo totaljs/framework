@@ -1744,10 +1744,31 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 	return error;
 };
 
+function validate_builder_default(name, value) {
+	var type = typeof(value);
+
+	if (type === NUMBER)
+		return value > 0;
+
+	if (type === STRING)
+		return value.length > 0;
+
+	if (value === null)
+		return false;
+
+	if (value instanceof Array)
+		return value.length > 0;
+
+	if (value instanceof Date)
+		return value.toString()[0] !== 'I'; // Invalid Date
+
+	return true;
+}
+
 exports.validate_builder = function(model, error, schema, collection, path, index, fields) {
 
 	var entity = collection[schema];
-	var prepare = entity.onValidate || entity.onValidation || framework.onValidate || framework.onValidation;
+	var prepare = entity.onValidate || entity.onValidation || framework.onValidate || framework.onValidation || validate_builder_default;
 
 	var current = path === undefined ? '' : path + '.';
 	var properties = entity.properties;
@@ -1806,8 +1827,11 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					if (collection[entity] === undefined) {
 
 						var result2 = prepare(name, value, current + name, model, schema);
-						if (result2 === undefined)
-							continue;
+						if (result2 === undefined) {
+							result2 = validate_builder_default(name, value);
+							if (result2)
+								continue;
+						}
 
 						type = typeof(result2);
 
@@ -1828,6 +1852,12 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					}
 
 					var result3 = prepare(name, value, current + name, model, schema);
+					if (result3 === undefined) {
+						result3 = validate_builder_default(name, value);
+						if (result3)
+							continue;
+					}
+
 					if (result3 !== undefined) {
 
 						type = typeof(result3);
@@ -1858,9 +1888,11 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		}
 
 		var result = prepare(name, value, current + name, model, schema);
-
-		if (result === undefined)
-			continue;
+		if (result === undefined) {
+			result = validate_builder_default(name, value);
+			if (result)
+				continue;
+		}
 
 		type = typeof(result);
 
