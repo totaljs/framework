@@ -4,6 +4,7 @@
 - added: F.cors(url, origins, methods, headers, credentials)
 
 - fixed: binary / executable for Windows
+- fixed: SUCCESS()
 
 ======= 1.9.6
 
