@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-4';
+	this.version_header = '1.9.7-5';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -9471,13 +9471,23 @@ Subscribe.prototype.prepare = function(flags, url) {
 		return self;
 	}
 
-	if (self.route === null)
+	if (!self.route)
 		self.route = framework.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, req.flags);
 
-	if (self.route === null)
+	if (!self.route)
 		self.route = framework.lookup(req, '#404');
 
-	self.execute(req.buffer_exceeded ? 431 : 404);
+	var code = req.buffer_exceeded ? 431 : 404;
+
+	if (!self.schema || !route) {
+		self.execute(code);
+		return
+	}
+
+	self.validate(self.route, function() {
+		self.execute(code);
+	});
+
 	return self;
 };
 
@@ -9538,18 +9548,36 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
 		req.user = user;
 
 	if (self.route && !self.route.isMEMBER && isLogged) {
-		self.execute(req.buffer_exceeded ? 431 : 401, true);
+
+		if (!self.schema) {
+			self.execute(req.buffer_exceeded ? 431 : 401, true);
+			return;
+		}
+
+		self.validate(self.route, function() {
+			self.execute(code);
+		});
+
 		return;
 	}
 
 	var route = framework.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags);
 	var status = req.$isAuthorized ? 404 : 401;
 
-	if (route === null)
+	if (!route)
 		route = framework.lookup(req, '#' + status);
 
 	self.route = route;
-	self.execute(req.buffer_exceeded ? 431 : status);
+	var code = req.buffer_exceeded ? 431 : status;
+
+	if (!self.schema || !route) {
+		self.execute(code);
+		return self;
+	}
+
+	self.validate(self.route, function() {
+		self.execute(code);
+	});
 
 	return self;
 };
@@ -9578,24 +9606,10 @@ Subscribe.prototype.doEnd = function() {
 	var schema;
 
 	if (!req.buffer_data) {
-
-		if (!route || !route.schema) {
-			req.buffer_data = null;
-			self.prepare(req.flags, req.uri.pathname);
-			return self;
-		}
-
-		framework.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
-
-			if (err) {
-				self.route400(err);
-				return self;
-			}
-
-			req.body = body;
-			self.prepare(req.flags, req.uri.pathname);
-		}, route.schema[2]);
-
+		if (route && route.schema)
+			self.schema = true;
+		req.buffer_data = null;
+		self.prepare(req.flags, req.uri.pathname);
 		return self;
 	}
 
@@ -9638,23 +9652,28 @@ Subscribe.prototype.doEnd = function() {
 	} else
 		req.body = framework.onParseQuery(req.buffer_data);
 
-	if (!route.schema) {
-		self.prepare(req.flags, req.uri.pathname);
-		return self;
-	}
+	if (self.route.schema)
+		self.schema = true;
 
+	self.prepare(req.flags, req.uri.pathname);
+	return self;
+};
+
+Subscribe.prototype.validate = function(route, next) {
+	var self = this;
+	var req = self.req;
+	self.schema = false;
 	framework.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
 
 		if (err) {
 			self.route400(err);
+			next = null;
 			return self;
 		}
 
 		req.body = body;
-		self.prepare(req.flags, req.uri.pathname);
+		next();
 	}, route.schema[2]);
-
-	return self;
 };
 
 Subscribe.prototype.route400 = function(problem) {
@@ -9690,7 +9709,7 @@ Subscribe.prototype.doEndfile = function() {
 
 			if (file.onValidate.call(framework, req, res, true)) {
 
-				if (file.middleware === null)
+				if (!file.middleware)
 					file.execute.call(framework, req, res, false);
 				else
 					self.doEndfile_middleware(file);

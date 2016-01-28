@@ -5,6 +5,7 @@
 
 - fixed: binary / executable for Windows
 - fixed: SUCCESS()
+- fixed: Schema Validation is performed after F.onAuthorize().
 
 ======= 1.9.6
 
