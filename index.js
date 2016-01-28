@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-8';
+	this.version_header = '1.9.7-9';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -8229,7 +8229,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 		Object.keys(HEADERS[key]).forEach(function(subkey) {
 			if (subkey !== 'Cache-Control')
 				return;
-			HEADERS[key][subkey] = HEADERS[key][subkey].replace(/max-age=\d+/, self.config['default-response-maxage']);
+			HEADERS[key][subkey] = HEADERS[key][subkey].replace(/max-age=\d+/, 'max-age=' + self.config['default-response-maxage']);
 		});
 	});
 
