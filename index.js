@@ -484,8 +484,8 @@ function Framework() {
 		'default-theme': '',
 
 		// default maximum request size / length
-		// default 5 kB
-		'default-request-length': 5,
+		// default 10 kB
+		'default-request-length': 10,
 		'default-websocket-request-length': 2,
 		'default-websocket-encodedecode': true,
 		'default-maximum-file-descriptors': 0,
@@ -9796,7 +9796,7 @@ Subscribe.prototype.doParsepost = function(chunk) {
 	if (!req.buffer_exceeded)
 		req.buffer_data = Buffer.concat([req.buffer_data, chunk]);
 
-	if ((req.buffer_data.length / 1024) < self.route.length)
+	if (req.buffer_data.length < self.route.length)
 		return self;
 
 	req.buffer_exceeded = true;
