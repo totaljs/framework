@@ -2906,7 +2906,7 @@ String.prototype.parseConfig = function(def) {
 
 		var str = arr[i];
 
-		if (str === '' || str[0] === '#')
+		if (!str || str[0] === '#')
 			continue;
 
 		if (str.substring(0, 2) === '//')
