@@ -10,7 +10,7 @@
 - fixed: binary / executable for Windows
 - fixed: SUCCESS()
 - fixed: Schema Validation is performed after F.onAuthorize().
-- fixed: Maximum Request Length
+- fixed: checking of maximum request length
 
 ======= 1.9.6
 
