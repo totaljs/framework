@@ -42,7 +42,7 @@ var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\
 var regexpTRIM = /^[\s]+|[\s]+$/g;
 var regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
-var regexpDATEFORMAT = /yyyy|yy|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
+var regexpDATEFORMAT = /yyyy|yy|M+|dd|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
 var regexpSTRINGFORMAT = /\{\d+\}/g;
 var regexpPATH = /\\/g;
 var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
@@ -58,6 +58,7 @@ var NEWLINE = '\r\n';
 var VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version_header : '');
 var isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 var dnscache = {};
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'Juny', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 var contentTypes = {
 	'aac': 'audio/aac',
@@ -2496,7 +2497,7 @@ Date.compare = function(d1, d2) {
  * @param {String} format
  * @return {String}
  */
-Date.prototype.format = function(format) {
+Date.prototype.format = function(format, resource) {
 
 	var self = this;
 	var half = false;
@@ -2522,6 +2523,12 @@ Date.prototype.format = function(format) {
 				return self.getFullYear();
 			case 'yy':
 				return self.getYear();
+			case 'MMM':
+				var m = MONTHS[self.getMonth()];
+				return (framework ? framework.resource(resource, m) || m : m).substring(0, 3);
+			case 'MMMM':
+				var m = MONTHS[self.getMonth()];
+				return (framework ? framework.resource(resource, m) || m : m);
 			case 'MM':
 				return (self.getMonth() + 1).toString().padLeft(2, '0');
 			case 'M':
