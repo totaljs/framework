@@ -104,7 +104,7 @@ SchemaBuilder.prototype.Create = function() {
 SchemaBuilder.prototype.remove = function(name) {
 	var self = this;
 
-	if (name === undefined) {
+	if (!name) {
 		delete schemas[name];
 		self.collection = null;
 		return;
@@ -2214,8 +2214,7 @@ function ErrorBuilder(onResource) {
 	this.replacer = [];
 	this.isPrepared = false;
 	this.contentType = 'application/json';
-
-	if (onResource === undefined)
+	if (!onResource)
 		this._resource();
 }
 
@@ -2413,7 +2412,7 @@ exports.validation = function(name, properties, fn) {
 
 		schema.onValidate = fn;
 
-		if (properties === undefined)
+		if (!properties)
 			schema.properties = Object.keys(schema.schema);
 		else
 			schema.properties = properties;
@@ -2421,7 +2420,7 @@ exports.validation = function(name, properties, fn) {
 		return true;
 	}
 
-	if (fn === undefined) {
+	if (!fn) {
 		var validator = schema.properties;
 		if (validator === undefined)
 			return Object.keys(schema.schema);
@@ -2557,7 +2556,6 @@ ErrorBuilder.prototype.setPrefix = function(name) {
 ErrorBuilder.prototype._resource = function() {
 
 	var self = this;
-
 	self.onResource = function(name) {
 		var self = this;
 		if (typeof(framework) !== UNDEFINED)
@@ -2607,13 +2605,13 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
 		name = '';
 	}
 
-	if ((name === undefined || name === null) && (error === undefined || error === null))
+	if (!name && !error)
 		return self;
 
 	if (error === undefined)
 		error = '@';
 
-	if (error === undefined || error === null)
+	if (error === null)
 		return self;
 
 	if (error instanceof Error)
@@ -2650,11 +2648,7 @@ ErrorBuilder.prototype.push = function(name, error, path, index) {
  */
 ErrorBuilder.prototype.remove = function(name) {
 	var self = this;
-
-	self.items = self.items.remove(function(o) {
-		return o.name === name;
-	});
-
+	self.items = self.items.remove('name', name);
 	self.count = self.items.length;
 	return self;
 };
@@ -2666,13 +2660,8 @@ ErrorBuilder.prototype.remove = function(name) {
  */
 ErrorBuilder.prototype.hasError = function(name) {
 	var self = this;
-
-	if (name) {
-		return self.items.find(function(o) {
-				return o.name === name;
-			}) !== null;
-	}
-
+	if (name)
+		return self.items.findIndex('name', name) !== -1;
 	return self.items.length > 0;
 };
 
@@ -2688,11 +2677,8 @@ ErrorBuilder.prototype.read = function(name) {
 	if (!self.isPrepared)
 		self.prepare();
 
-	var error = self.items.find(function(o) {
-		return o.name === name;
-	});
-
-	if (error !== null)
+	var error = self.items.find('name', name);
+	if (error)
 		return error.error;
 
 	return null;
@@ -2729,16 +2715,7 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
  * @return {String}
  */
 ErrorBuilder.prototype.json = function(beautify, replacer) {
-	var items;
-
-	items = this.prepare().items;
-
-	/*
-	 if (beautify !== null)
-	 items = this.prepare()._transform();
-	 else
-	 items = this.items;
-	 */
+	var items = this.prepare().items;
 	if (beautify)
 		return JSON.stringify(items, replacer, '\t');
 	return JSON.stringify(items, replacer);
@@ -2762,7 +2739,7 @@ ErrorBuilder.prototype._prepare = function() {
 
 	var self = this;
 
-	if (self.onResource === null)
+	if (!self.onResource)
 		return self;
 
 	var errors = self.items;
@@ -2801,7 +2778,7 @@ ErrorBuilder.prototype._transform = function(name) {
 		return self.items;
 
 	var current = transforms['error'][transformName];
-	if (current === undefined)
+	if (!current)
 		return self.items;
 
 	return current.call(self);
@@ -2877,7 +2854,7 @@ ErrorBuilder.prototype._prepareReplace = function() {
 	var keys = Object.keys(self.replacer);
 	var lengthKeys = keys.length;
 
-	if (lengthBuilder === 0 || lengthKeys === 0)
+	if (!lengthBuilder || !lengthKeys)
 		return self;
 
 	for (var i = 0; i < lengthBuilder; i++) {
