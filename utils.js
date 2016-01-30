@@ -4367,8 +4367,10 @@ Array.prototype.async = function(thread, callback) {
 	var self = this;
 	var init = false;
 
-	if (typeof(thread) === FUNCTION)
+	if (typeof(thread) === FUNCTION) {
+		callback = thread;
 		thread = 1;
+	}
 
 	if (self.$pending === undefined) {
 		self.$pending = 0;
@@ -4376,7 +4378,6 @@ Array.prototype.async = function(thread, callback) {
 	}
 
 	var item = self.shift();
-
 	if (item === undefined) {
 		if (self.$pending)
 			return self;
@@ -4386,8 +4387,10 @@ Array.prototype.async = function(thread, callback) {
 	}
 
 	for (var i = 0; i < thread; i++) {
+
 		if (i)
 			item = self.shift();
+
 		self.$pending++;
 		item(function() {
 			setImmediate(function() {
