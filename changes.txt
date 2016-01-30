@@ -8,7 +8,7 @@
 - updated: Date.format(format, [resource_name]) supports name of months via `MMM` (short) and `MMMM` (full)
 - updated: Resources support months e.g. `January     : Január`
 
-
+- fixed: (IMPORTNAT) view caching
 - fixed: binary / executable for Windows
 - fixed: SUCCESS()
 - fixed: Schema Validation is performed after F.onAuthorize().
