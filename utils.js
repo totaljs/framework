@@ -5295,7 +5295,65 @@ exports.parseTheme = function(value) {
 	return value;
 };
 
+exports.set = function(obj, path, value) {
+	var cachekey = 'S+' + path;
+
+	if (global.framework && framework.temporary.other[cachekey])
+		return framework.temporary.other[cachekey](obj, value);
+
+	var arr = path.split('.');
+	var builder = [];
+	var p = '';
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+		p += (p !== '' ? '.' : '') + arr[i];
+		var type = exports.isArray(arr[i]) ? '[]' : '{}';
+
+		if (i !== length - 1) {
+			builder.push('if(typeof(w.' + p + ')!=="object"||w.' + p + '===null)w.' + p + '=' + type);
+			continue;
+		}
+
+		if (type === '{}')
+			break;
+
+		p = p.substring(0, p.lastIndexOf('['));
+		builder.push('if(!(w.' + p + ' instanceof Array))w.' + p + '=' + type);
+		break;
+	}
+
+	var fn = (new Function('w', 'a', 'b', builder.join(';') + ';w.' + path.replace(/\'/, '\'') + '=a;return a'));
+	if (global.framework)
+		framework.temporary.other[cachekey] = fn;
+	fn(obj, value, path);
+};
+
+exports.get = function(obj, path) {
+
+	var cachekey = 'G=' + path;
+
+	if (global.framework && framework.temporary.other[cachekey])
+		return framework.temporary.other[cachekey](obj);
+
+	var arr = path.split('.');
+	var builder = [];
+	var p = '';
+
+	for (var i = 0, length = arr.length - 1; i < length; i++) {
+		var tmp = arr[i];
+		var index = tmp.lastIndexOf('[');
+		if (index !== -1)
+			builder.push('if(!w.' + (p ? p + '.' : '') + tmp.substring(0, index) + ')return');
+		p += (p !== '' ? '.' : '') + arr[i];
+		builder.push('if(!w.' + p + ')return');
+	}
+
+	var fn = (new Function('w', builder.join(';') + ';return w.' + path.replace(/\'/, '\'')));
+	if (global.framework)
+		framework.temporary.other[cachekey] = fn;
+	return fn(obj);
+};
+
 global.Async = global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
 global.sync2 = exports.sync2;
-

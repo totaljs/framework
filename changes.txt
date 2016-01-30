@@ -3,6 +3,8 @@
 - added: `F.web()` --> alias to F.route()
 - added: `F.cors(url, origins, methods, headers, credentials)`
 - added: `config['default-response-maxage']`, default value `11111111`
+- added: `U.get(obj, path)` reads a value from `obj` by path
+- added: `U.set(obj, path, value)` sets a value into `obj` by path
 
 - updated: (IMPORTANT) Array.async([NEW: threadCount (Number)], [callback]) supports `threads`
 - updated: Date.format(format, [resource_name]) supports name of months via `MMM` (short) and `MMMM` (full)
