@@ -4313,7 +4313,7 @@ Array.prototype.random = function() {
 	return self[exports.random(self.length - 1)];
 };
 
-Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remove, thread) {
+Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thread) {
 
 	var self = this;
 	var init = false;
@@ -4325,10 +4325,10 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remo
 		init = true;
 	}
 
-	if (remove === undefined)
-		remove = 1;
+	if (thread === undefined)
+		thread = 1;
 
-	var item = remove === true ? self.shift() : self[onItem.$index];
+	var item = thread === true ? self.shift() : self[onItem.$index];
 	onItem.$index++;
 
 	if (item === undefined) {
@@ -4344,14 +4344,14 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remo
 	onItem.call(self, item, function() {
 		setImmediate(function() {
 			onItem.$pending--;
-			self.wait(onItem, callback, remove);
+			self.wait(onItem, callback, thread);
 		});
 	});
 
-	if (!init || remove === true)
+	if (!init || thread === true)
 		return self;
 
-	for (var i = 1; i < remove; i++)
+	for (var i = 1; i < thread; i++)
 		self.wait(onItem, callback, 0);
 
 	return self;
@@ -4362,22 +4362,40 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remo
  * @param {Function} callback Optional
  * @return {Array}
  */
-Array.prototype.async = function(callback) {
+Array.prototype.async = function(thread, callback) {
 
 	var self = this;
+	var init = false;
+
+	if (typeof(thread) === FUNCTION)
+		thread = 1;
+
+	if (self.$pending === undefined) {
+		self.$pending = 0;
+		init = true;
+	}
+
 	var item = self.shift();
 
 	if (item === undefined) {
+		if (self.$pending)
+			return self;
 		if (callback)
 			callback();
 		return self;
 	}
 
-	item(function() {
-		setImmediate(function() {
-			self.async(callback);
+	for (var i = 0; i < thread; i++) {
+		if (i)
+			item = self.shift();
+		self.$pending++;
+		item(function() {
+			setImmediate(function() {
+				self.$pending--;
+				self.async(1, callback);
+			});
 		});
-	});
+	}
 
 	return self;
 };
