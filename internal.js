@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.6
+ * @version 1.9.7
  */
 
 'use strict';
@@ -3014,6 +3014,17 @@ function cleanURL(url, index) {
 	}
 
 	return o;
+};
+
+exports.preparePATH = function(path, remove) {
+	var root = framework.config['default-root'];
+	if (!root)
+		return path;
+	if (remove)
+		return path.substring(root.length - 1);
+	if (path[0] === '/')
+		return root + path.substring(1);
+	return root + path;
 };
 
 exports.parseURI = function(protocol, req) {

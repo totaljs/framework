@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-12';
+	this.version_header = '1.9.7-13';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -490,7 +490,7 @@ function Framework() {
 		'default-websocket-encodedecode': true,
 		'default-maximum-file-descriptors': 0,
 		'default-timezone': '',
-
+		'default-root': '',
 		'default-response-maxage': '11111111',
 
 		// Seconds (2 minutes)
@@ -700,6 +700,8 @@ Framework.prototype.behaviour = function(url, flags) {
 
 	if (typeof(flags) === STRING)
 		flags = [flags];
+
+	url = framework_internal.preparePATH(url);
 
 	if (!self.behaviours[url])
 		self.behaviours[url] = {};
@@ -986,6 +988,7 @@ Framework.prototype.resize = function(url, width, height, options, path, extensi
 	if (url[url.length - 1] !== '/')
 		url += '/';
 
+	url = framework_internal.preparePATH(url);
 	path = path || url;
 
 	if (!options)
@@ -1150,7 +1153,7 @@ Framework.prototype.cors = function(url, flags, credentials) {
 	if (route.isASTERIX)
 		url = url.replace('*', '');
 
-	route.url = framework_internal.routeSplitCreate(framework_internal.encodeUnicodeURL(url.trim()));
+	route.url = framework_internal.routeSplitCreate(framework_internal.preparePATH(framework_internal.encodeUnicodeURL(url.trim())));
 	route.origins = origins.length ? origins : null;
 	route.methods = methods.length ? methods : null;
 	route.headers = headers.length ? headers : null;
@@ -1491,7 +1494,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1 && flags.indexOf('unlogged') === -1)
 		isMember = true;
 
-	var routeURL = framework_internal.routeSplitCreate(url.trim());
+	var routeURL = framework_internal.routeSplitCreate(framework_internal.preparePATH(url.trim()));
 	var arr = [];
 	var reg = null;
 	var regIndex = null;
@@ -1655,7 +1658,7 @@ Framework.prototype.routing = function(name) {
 /**
  * Merge files
  * @param {String} url Relative URL.
- * @param {String/String Array  } file1 Filename or URL.
+ * @param {String/String Array} file1 Filename or URL.
  * @param {String/String Array} file2 Filename or URL.
  * @param {String/String Array} file3 Filename or URL.
  * @param {String/String Array} fileN Filename or URL.
@@ -1683,7 +1686,7 @@ Framework.prototype.merge = function(url) {
 		}
 	}
 
-	url = self._version(url);
+	url = framework_internal.preparePATH(self._version(url));
 
 	if (url[0] !== '/')
 		url = '/' + url;
@@ -1724,7 +1727,7 @@ Framework.prototype.map = function(url, filename, filter) {
 	var self = this;
 
 	filename = framework_utils.$normalize(filename);
-	url = self._version(url);
+	url = framework_internal.preparePATH(self._version(url));
 
 	// isomorphic
 	if (filename[0] === '#') {
@@ -1970,7 +1973,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		priority = (-10) - priority;
 	}
 
-	var routeURL = framework_internal.routeSplitCreate(url.trim());
+	var routeURL = framework_internal.routeSplitCreate(framework_internal.preparePATH(url.trim()));
 	var arr = [];
 	var reg = null;
 	var regIndex = null;
@@ -2221,6 +2224,8 @@ Framework.prototype.localize = function(name, url, middleware, options, minify) 
 		url = url.substring(0, index);
 	}
 
+	url = framework_internal.preparePATH(url);
+
 	if (middleware === true) {
 		middleware = null;
 		minify = true;
@@ -2243,7 +2248,8 @@ Framework.prototype.localize = function(name, url, middleware, options, minify) 
 		}
 
 		var name = req.uri.pathname;
-		var filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
+		// var filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
+		var filename = self.onMapping(name, name, true, true);
 
 		fs.readFile(filename, function(err, content) {
 			if (err)
@@ -2902,7 +2908,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			name = obj.name;
 
 		if (obj.url)
-			framework.map(obj.url, '#' + name);
+			framework.map(framework_internal.preparePATH(obj.url), '#' + name);
 
 		framework.isomorphic[name] = obj;
 		framework.isomorphic[name].$$output = framework_internal.compile_javascript(content, '#' + name);
@@ -3511,7 +3517,7 @@ Framework.prototype.onVersion = null;
  * @param {String} def Default value.
  * @return {String}
  */
-Framework.prototype.onMapping = function(url, def) {
+Framework.prototype.onMapping = function(url, def, ispublic, encode) {
 
 	if (url[0] !== '/')
 		url = '/' + url;
@@ -3528,6 +3534,16 @@ Framework.prototype.onMapping = function(url, def) {
 	if (this.routes.mapping[url])
 		return this.routes.mapping[url];
 
+	def = framework_internal.preparePATH(def, true);
+
+	if (encode)
+		def = $decodeURIComponent(def);
+
+	if (ispublic)
+		def = framework.path.public(def);
+	else
+		def = def[0] === '~' ? def.substring(1) : name[0] === '.' ? def : framework.path.public(def);
+
 	return def;
 };
 
@@ -3540,6 +3556,8 @@ Framework.prototype.onMapping = function(url, def) {
  */
 Framework.prototype.snapshot = function(url, filename, callback) {
 	var self = this;
+
+	url = framework_internal.preparePATH(url);
 
 	if (!url.match(/^http:|https:/gi)) {
 		if (url[0] !== '/')
@@ -4121,6 +4139,25 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		else
 			filename = filename.substring(1);
 
+		var indexer = filename.indexOf('*')
+		if (indexer !== -1) {
+
+			var tmp = filename.substring(indexer + 1).toLowerCase();
+			var len = tmp.length;
+
+			framework_utils.ls(filename.substring(0, indexer), function(files, directories) {
+				for (var j = 0, l = files.length; j < l; j++)
+					merge.files.push('~' + files[j]);
+				next();
+			}, function(path, isDirectory) {
+				if (isDirectory)
+					return true;
+				return path.substring(path.length - len).toLowerCase() === tmp;
+			});
+
+			return;
+		}
+
 		fsFileRead(filename, function(err, buffer) {
 
 			if (err) {
@@ -4281,12 +4318,16 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		isResize = resizer.extension['*'] || resizer.extension[name.substring(index).toLowerCase()];
 		if (isResize) {
 			name = resizer.path + $decodeURIComponent(name);
-			filename = self.onMapping(name, name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : framework.path.public(name));
+			// filename = self.onMapping(name, name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : framework.path.public(name));
+			filename = self.onMapping(name, name, false, false);
 		} else {
-			filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
+			// filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
+			filename = self.onMapping(name, name, true, true);
 		}
-	} else
-		filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
+	} else {
+		// filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
+		filename = self.onMapping(name, name, true, true);
+	}
 
 	if (!isResize) {
 
@@ -8151,6 +8192,11 @@ Framework.prototype._configure = function(arr, rewrite) {
 				accepts = value.replace(/\s/g, '').split(',');
 				break;
 
+			case 'default-root':
+				if (value)
+					obj[name] = framework_utils.path(value);
+				break;
+
 			case 'static-accepts':
 				obj[name] = {};
 				tmp = value.replace(/\s/g, '').split(',');
@@ -8372,7 +8418,7 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 	else
 		filename = framework_utils.join(theme, directory, this._version(name));
 
-	return framework.temporary.other[key] = this._version(filename);
+	return framework.temporary.other[key] = framework_internal.preparePATH(this._version(filename));
 };
 
 /*
@@ -14932,8 +14978,10 @@ function prepare_filename(name) {
 }
 
 function prepare_staticurl(url, isDirectory) {
+
 	if (!url)
 		return url;
+
 	if (url[0] === '~') {
 		if (isDirectory)
 			return framework_utils.path(url.substring(1));

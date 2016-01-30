@@ -708,6 +708,18 @@ function test_routing(next) {
 		});
 	});
 
+	if (DEBUG) {
+		async.await('merge directory', function(complete) {
+			// mergepackage2 is from versions
+			utils.request(url + 'mergedirectory.js', [], function(error, data, code, headers) {
+				if (error)
+					throw error;
+				assert(data.indexOf('block.js') !== -1 && data.indexOf('test.js') !== -1, 'merge directory');
+				complete();
+			});
+		});
+	}
+
 	async.await('merge-blocks-a', function(complete) {
 		utils.request(url + 'merge-blocks-a.js', [], function(error, data, code, headers) {
 			if (error)
@@ -854,7 +866,9 @@ mem.on('stats', function(info) {
 
 framework.on('load', function() {
 
-	framework.merge('/mergepackage.js', '@testpackage/test.js');
+	F.merge('/mergepackage.js', '@testpackage/test.js');
+	F.merge('/mergedirectory.js', '~' + F.path.public('js') + '*.js');
+
 	assert.ok(MODULE('supermodule').ok, 'load module from subdirectory');
 	assert.ok(F.config['custom-config1'] === '1YES', 'custom configuration 1');
 	assert.ok(F.config['custom-config2'] === '2YES', 'custom configuration 2');
