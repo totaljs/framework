@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-13';
+	this.version_header = '1.9.7-14';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -3542,7 +3542,7 @@ Framework.prototype.onMapping = function(url, def, ispublic, encode) {
 	if (ispublic)
 		def = framework.path.public(def);
 	else
-		def = def[0] === '~' ? def.substring(1) : name[0] === '.' ? def : framework.path.public(def);
+		def = def[0] === '~' ? def.substring(1) : def[0] === '.' ? def : framework.path.public(def);
 
 	return def;
 };
