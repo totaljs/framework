@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 1.9.6
+ * @version 1.9.7
  */
 
 'use strict';
@@ -761,6 +761,11 @@ Image.prototype.fill = function(color) {
 
 Image.prototype.sepia = function(percentage) {
 	return this.push('-modulate', '115,0,100', 4).push('-colorize', '7,21,50', 5);
+};
+
+Image.prototype.make = function(fn) {
+	fn.call(this, this);
+	return this;
 };
 
 /*
