@@ -367,6 +367,9 @@ function main() {
 		break;
 	}
 
+	if (dir === '.')
+		dir = process.cwd();
+
 	if ($type === 5) {
 
 		if (!fs.existsSync(dir)) {
