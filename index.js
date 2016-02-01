@@ -8270,8 +8270,6 @@ Framework.prototype._configure = function(arr, rewrite) {
 		http.globalAgent.maxSockets = 9999;
 
 	Object.keys(HEADERS).forEach(function(key) {
-		if (key.lastIndexOf('release') === -1)
-			return;
 		Object.keys(HEADERS[key]).forEach(function(subkey) {
 			if (subkey !== 'Cache-Control')
 				return;
