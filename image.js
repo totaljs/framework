@@ -138,10 +138,6 @@ function Image(filename, useImageMagick, width, height) {
 	this.currentStream = type === 'object' ? filename : null;
 	this.isIM = useImageMagick === undefined || useImageMagick === null ? F.config['default-image-converter'] === 'im' : useImageMagick;
 	this.outputType = type === 'string' ? path.extname(filename).substring(1) : 'jpg';
-/*
-	if (!filename)
-		throw new Error('Image filename is undefined.');
-*/
 }
 
 /*
@@ -331,11 +327,10 @@ Image.prototype.stream = function(type, writer) {
 	if (!self.builder.length)
 		return;
 
-	if (type === undefined || type === null)
+	if (!type)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(!self.filename ? '-' : self.filename, (type ? type + ':' : '') + '-'));
-
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? self.filename : '-', (type ? type + ':' : '') + '-'));
 	if (self.currentStream) {
 		if (self.currentStream instanceof Buffer)
 			cmd.stdin.end(self.currentStream);
