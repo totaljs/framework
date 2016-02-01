@@ -3020,10 +3020,17 @@ exports.preparePATH = function(path, remove) {
 	var root = framework.config['default-root'];
 	if (!root)
 		return path;
+
+	var is = path[0] === '/';
+	if ((is && path[1] === '/') || path[4] === ':' || path[5] === ':')
+		return path;
+
 	if (remove)
 		return path.substring(root.length - 1);
-	if (path[0] === '/')
+
+	if (is)
 		return root + path.substring(1);
+
 	return root + path;
 };
 
