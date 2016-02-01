@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.6
+ * @version 1.9.7
  */
 
 'use strict';
@@ -1769,13 +1769,15 @@ function validate_builder_default(name, value) {
 	return true;
 }
 
-exports.validate_builder = function(model, error, schema, collection, path, index, fields) {
+exports.validate_builder = function(model, error, schema, collection, path, index, fields, pluspath) {
 
 	var entity = collection[schema];
 	var prepare = entity.onValidate || entity.onValidation || framework.onValidate || framework.onValidation || validate_builder_default;
-
 	var current = path === undefined ? '' : path + '.';
 	var properties = entity.properties;
+
+	if (!pluspath)
+		pluspath = '';
 
 	if (model === undefined || model === null)
 		model = {};
@@ -1793,7 +1795,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		var type = typeof(value);
 
 		if (value === undefined) {
-			error.add(name, '@', current + name);
+			error.add(pluspath + name, '@', current + name);
 			continue;
 		} else if (type === FUNCTION)
 			value = model[name]();
@@ -1816,14 +1818,14 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					var isArray = entity[0] === '[';
 
 					if (!isArray) {
-						exports.validate_builder(value, error, schema, collection, current + name, index);
+						exports.validate_builder(value, error, schema, collection, current + name, index, undefined, pluspath);
 						continue;
 					}
 
 					entity = entity.substring(1, entity.length - 1).trim();
 
 					if (!(value instanceof Array)) {
-						error.add(name, '@', current + name, index);
+						error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
 						continue;
 					}
 
@@ -1840,17 +1842,17 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 						type = typeof(result2);
 
 						if (type === STRING) {
-							error.add(name, result2, current + name, index);
+							error.add(pluspath + name, result2, current + name, index);
 							continue;
 						}
 
 						if (type === BOOLEAN && !result2) {
-							error.add(name, '@', current + name, index);
+							error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
 							continue;
 						}
 
 						if (result2.isValid === false)
-							error.add(name, result2.error, current + name, index);
+							error.add(pluspath + name, result2.error, current + name, index);
 
 						continue;
 					}
@@ -1867,24 +1869,24 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 						type = typeof(result3);
 
 						if (type === STRING) {
-							error.add(name, result3, current + name, index);
+							error.add(pluspath + name, result3, current + name, index);
 							continue;
 						}
 
 						if (type === BOOLEAN && !result3) {
-							error.add(name, '@', current + name, index);
+							error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
 							continue;
 						}
 
 						if (result3.isValid === false) {
-							error.add(name, result3.error, current + name, index);
+							error.add(pluspath + name, result3.error, current + name, index);
 							continue;
 						}
 					}
 
 					var sublength = value.length;
 					for (var j = 0; j < sublength; j++)
-						exports.validate_builder(value[j], error, entity, collection, current + name, j);
+						exports.validate_builder(value[j], error, entity, collection, current + name, j, undefined, pluspath);
 
 					continue;
 				}
@@ -1901,18 +1903,18 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		type = typeof(result);
 
 		if (type === STRING) {
-			error.add(name, result, current + name, index);
+			error.add(pluspath + name, result, current + name, index);
 			continue;
 		}
 
 		if (type === BOOLEAN) {
 			if (!result)
-				error.add(name, '@', current + name, index);
+				error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
 			continue;
 		}
 
 		if (result.isValid === false)
-			error.add(name, result.error, current + name, index);
+			error.add(pluspath + name, result.error, current + name, index);
 	}
 
 	return error;

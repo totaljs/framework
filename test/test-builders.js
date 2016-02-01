@@ -294,13 +294,13 @@ function test_Schema() {
 		assert.ok((name === 'name' && value.length === 0) || (name === 'arr' && value.length === 2), 'SchemaBuilderEntity.validation() 1');
 	});
 
-	x.setValidate(function(name, value) {
-		assert.ok((name === 'age' && value > 22) || (name === 'note' && value.length > 3), 'SchemaBuilderEntity.validation() 2');
+	x.setValidate(function(name, value, path, model) {
+		if (!path.startsWith('x.'))
+			assert.ok((name === 'age' && value > 22) || (name === 'note' && value.length > 3), 'SchemaBuilderEntity.validation() 2');
 	});
 
 	var qi = q.create();
-
-	assert.ok(qi.created.getTime() === Date.now(), 'A problem with problem a default value of date');
+	assert.ok(qi.created.format('yyyyMMddHHmmss') === new Date().format('yyyyMMddHHmmss'), 'A problem with problem a default value of date');
 
 	var xi = x.create();
 	xi.age = 30;

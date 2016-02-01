@@ -1,40 +1,26 @@
 require('../index');
 
-var async = new U.Async();
-var value = [];
-
-async.on('error', function(err, name) {
-	console.log('ERROR', err, name);
+NEWSCHEMA('B').make(function(schema) {
+	schema.define('name', String, true);
 });
 
-async.wait('0', function(next) {
-	async.cancel();
-	value.push(0);
-	console.log('---index 0');
-	next();
+NEWSCHEMA('C').make(function(schema) {
+	schema.define('name', String, true);
 });
 
-async.wait('1', function(next) {
-	value.push(1);
-	console.log('---index 1');
-	next();
+NEWSCHEMA('A').make(function(schema) {
+	schema.define('name', String, true);
+	schema.define('subB', '[B]');
+	schema.define('subC', 'C');
 });
 
-async.wait('2', function(next) {
-	value.push(2);
-	console.log('---index 2');
-	next();
+var obj = {};
+obj.name = 'asdas';
+obj.subB = [{}];
+obj.subC = { A: '' };
+
+GETSCHEMA('A').make(obj, function(err, res) {
+	console.log('------');
+	err.setPrefix('error-');
+	console.log(err.output());
 });
-
-async.on('percentage', function(p) {
-	console.log(p + '%');
-});
-
-async.complete(function() {
-	console.log('-----> RESULT', value);
-});
-
-setTimeout(function() {
-	console.log('END');
-}, 3000);
-

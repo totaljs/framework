@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 1.9.6
+ * @version 1.9.7
  */
 
 'use strict';
@@ -144,6 +144,7 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 	this.onQuery;
 	this.onError;
 	this.gcache = {};
+	this.dependencies;
 
 	this.CurrentSchemaInstance = function(){};
 	this.CurrentSchemaInstance.prototype = new SchemaInstance();
@@ -183,6 +184,13 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 		type = type.name;
 
 	self.schema[name] = self.$parse(name, type, required, custom);
+	switch (self.schema[name].type) {
+		case 7:
+			if (!self.dependencies)
+				self.dependencies = [];
+			self.dependencies.push(name);
+			break;
+	}
 
 	if (!required)
 		return self;
@@ -1014,7 +1022,7 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
  * @param {ErrorBuilder} builder ErrorBuilder, INTERNAL.
  * @return {ErrorBuilder}
  */
-SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder, filter) {
+SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder, filter, path) {
 
 	var self = this;
 	var fn = self.onValidate || self.onValidation;
@@ -1025,12 +1033,6 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 			builder.setResource(self.resourceName);
 		if (self.resourcePrefix)
 			builder.setPrefix(self.resourcePrefix);
-	}
-
-	if (fn === undefined || fn === null) {
-		fn = framework.onValidate || framework.onValidation;
-		if (fn === undefined || fn === null)
-			return builder;
 	}
 
 	if (self.resourcePrefix)
@@ -1045,13 +1047,43 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 	if (resourcePrefix)
 		builder.resourcePrefix = resourcePrefix;
 
-	// self._setStateToModel(model, 1, 1);
 	//return framework_utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
 
 	if (filter)
 		filter = self.filter(filter);
 
-	return framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name, undefined, filter);
+	if (path)
+		path += '.';
+	else
+		path = '';
+
+	framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name, undefined, filter, path);
+
+	if (!self.dependencies)
+		return builder;
+
+	for (var i = 0, length = self.dependencies.length; i < length; i++) {
+		var key = self.dependencies[i];
+		var schema = self.schema[key];
+		var s = self.parent.collection[schema.raw];
+
+		if (!s) {
+			framework.error(new Error('Schema "' + schema.raw + '" not found (validation).'));
+			continue;
+		}
+
+		if (!schema.isArray) {
+			s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key);
+			// framework_utils.validate_builder.call(self, model[key], builder, schema.raw, self.parent.collection, schema.raw, undefined, filter, key + '.');
+			continue;
+		}
+
+		var arr = model[key];
+		for (var j = 0, jl = arr.length; j < jl; j++)
+			s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']');
+	}
+
+	return builder;
 };
 
 /**
@@ -1178,16 +1210,6 @@ SchemaBuilderEntity.prototype.make = function(model, callback, filter) {
 		return model.call(self, self);
 
 	var output = self.prepare(model);
-
-	if (!self.onValidate && !self.onValidation) {
-		self.onValidate = framework.onValidate || framework.onValidation;
-		if (!self.onValidate) {
-			if (callback)
-				callback(null, output);
-			return output;
-		}
-	}
-
 	var builder = self.validate(output, undefined, undefined, undefined, filter);
 	if (builder.hasError()) {
 
@@ -1422,7 +1444,6 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					break;
 
 				case 7:
-
 					entity = self.parent.get(type.raw);
 					if (entity) {
 						tmp = entity.prepare(tmp, dependencies);

@@ -13,7 +13,8 @@
 - updated: Resources support months e.g. `January     : Január`
 - updated: `F.merge()` supports directories, e.g. `F.merge('app.js', '/js/*.js')`
 
-- fixed: (IMPORTNAT) view caching
+- fixed: (IMPORTANT) SchemaBuilder validation
+- fixed: (IMPORTANT) view caching
 - fixed: binary / executable for Windows
 - fixed: SUCCESS()
 - fixed: Schema Validation is performed after F.onAuthorize().
