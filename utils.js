@@ -360,14 +360,14 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 		for (var i = 0, length = content.length; i < length; i++) {
 			if (!content[i])
 				continue;
-			var tmp = (forSearch ? content[i].removeDiacritics().toLowerCase().replace(/y/g, 'i') : content[i].toLowerCase()).split(' ');
+			var tmp = (forSearch ? content[i].removeDiacritics().toLowerCase().replace(/y/g, 'i') : content[i].toLowerCase()).replace(/\n/g, ' ').split(' ');
 			if (!tmp || !tmp.length)
 				continue;
 			for (var j = 0, jl = tmp.length; j < jl; j++)
 				words.push(tmp[j]);
 		}
 	} else
-		words = (forSearch ? content.removeDiacritics().toLowerCase().replace(/y/g, 'i') : content.toLowerCase()).split(' ');
+		words = (forSearch ? content.removeDiacritics().toLowerCase().replace(/y/g, 'i') : content.toLowerCase()).replace(/\n/g, ' ').split(' ');
 
 	if (!words)
 		words = [];

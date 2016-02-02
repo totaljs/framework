@@ -17,6 +17,7 @@
 
 - fixed: (IMPORTANT) SchemaBuilder validation
 - fixed: (IMPORTANT) view caching
+- fixed: (IMPORTANT) U.keywords()
 - fixed: binary / executable for Windows
 - fixed: SUCCESS()
 - fixed: Schema Validation is performed after F.onAuthorize().
