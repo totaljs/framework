@@ -14566,9 +14566,9 @@ http.IncomingMessage.prototype = {
 
 		//  x-forwarded-for: client, proxy1, proxy2, ...
 		var proxy = self.headers['x-forwarded-for'];
-		if (proxy !== undefined)
-			self._ip = proxy.split(',', 1)[0] || self.connection.removiewddress;
-		else
+		if (proxy)
+			self._ip = proxy.split(',', 1)[0] || self.connection.remoteAddress;
+		else if (!self._ip)
 			self._ip = self.connection.remoteAddress;
 
 		return self._ip;
