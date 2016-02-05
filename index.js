@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-18';
+	this.version_header = '1.9.7-19';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -4077,6 +4077,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 	});
 
 	var index = 0;
+	var remove;
 
 	merge.files.wait(function(filename, next) {
 
@@ -4145,6 +4146,12 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 			var tmp = filename.substring(indexer + 1).toLowerCase();
 			var len = tmp.length;
 
+			if (!remove)
+				remove = [];
+
+			// Remove directory for all future requests
+			remove.push(arguments[0]);
+
 			framework_utils.ls(filename.substring(0, indexer), function(files, directories) {
 				for (var j = 0, l = files.length; j < l; j++)
 					merge.files.push('~' + files[j]);
@@ -4188,7 +4195,15 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		});
 
 	}, function() {
+
 		writer.end();
+
+		if (!remove)
+			return;
+
+		// Remove all directories from merge list (because the files are added into the queue)
+		for (var i = 0, length = remove.length; i < length; i++)
+			merge.files.splice(merge.files.indexOf(remove[i]), 1);
 	});
 
 	return self;
