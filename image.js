@@ -811,5 +811,7 @@ exports.load = function(filename, imageMagick, width, height) {
 };
 
 exports.middleware = function(type, fn) {
+	if (type[0] === '.')
+		type = type.substring(1);
 	middlewares[type] = fn;
 };

@@ -7,7 +7,7 @@
 - added: `U.set(obj, path, value)` sets a value into `obj` by path
 - added: (IMPORTANT) `config['default-root']` can replace root relative path
 - added: `FrameworkImage` --> `instance.make(function(image) {})`
-- added: `FrameworkImage` supports middleware `FrameworkImage.middleware(type, fn)`
+- added: `FrameworkImage` supports middleware `FrameworkImage.middleware(extension, fn)`
 
 - updated: (IMPORTANT) Array.async([NEW: threadCount (Number)], [callback]) supports `threads`
 - updated: Date.format(format, [resource_name]) supports name of months via `MMM` (short) and `MMMM` (full)
