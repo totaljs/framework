@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-19';
+	this.version_header = '1.9.7-20';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1333,7 +1333,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var subdomain = null;
 	var isASTERIX = url.indexOf('*') !== -1;
 
-	index = url.indexOf(']');
 	priority = url.count('/');
 
 	if (isASTERIX) {
@@ -1341,10 +1340,13 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		priority = priority - 100;
 	}
 
-	if (index > 0) {
-		subdomain = url.substring(1, index).trim().toLowerCase().split(',');
-		url = url.substring(index + 1);
-		priority += 2;
+	if (url[0] === '[') {
+		index = url.indexOf(']');
+		if (index > 0) {
+			subdomain = url.substring(1, index).trim().toLowerCase().split(',');
+			url = url.substring(index + 1);
+			priority += 2;
+		}
 	}
 
 	var isRaw = false;
@@ -8504,7 +8506,6 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 	for (var i = 0; i < length; i++) {
 
 		var route = self.routes.web[i];
-
 		if (route.CUSTOM) {
 			if (!route.CUSTOM(url, req, flags))
 				continue;
