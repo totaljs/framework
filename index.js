@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-21';
+	this.version_header = '1.9.7-22';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -9735,6 +9735,12 @@ Subscribe.prototype.validate = function(route, next) {
 	var self = this;
 	var req = self.req;
 	self.schema = false;
+
+	if (req.method === 'DELETE') {
+		next();
+		return;
+	}
+
 	framework.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
 
 		if (err) {
@@ -10111,10 +10117,7 @@ Controller.prototype.$save = function(helper, callback) {
 
 Controller.prototype.$remove = function(helper, callback) {
 	var self = this;
-	if (Builders.isSchema(self.body))
-		self.body.$remove(self.body, callback);
-	else
-		self.getSchema().remove(helper, callback);
+	self.getSchema().remove(helper, callback);
 	return this;
 };
 
