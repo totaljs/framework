@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-20';
+	this.version_header = '1.9.7-21';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -10087,6 +10087,80 @@ Controller.prototype = {
 // ======================================================
 // PROTOTYPES
 // ======================================================
+
+// Schema operations
+
+Controller.prototype.$get = Controller.prototype.$read = function(helper, callback) {
+	this.getSchema().get(helper, callback);
+	return this;
+};
+
+Controller.prototype.$query = function(helper, callback) {
+	this.getSchema().query(helper, callback);
+	return this;
+};
+
+Controller.prototype.$save = function(helper, callback) {
+	var self = this;
+	if (Builders.isSchema(self.body))
+		self.body.$save(helper, callback);
+	else
+		self.getSchema().default().$save(helper, callback);
+	return self;
+};
+
+Controller.prototype.$remove = function(helper, callback) {
+	var self = this;
+	if (Builders.isSchema(self.body))
+		self.body.$remove(self.body, callback);
+	else
+		self.getSchema().remove(helper, callback);
+	return this;
+};
+
+Controller.prototype.$workflow = function(name, helper, callback) {
+	var self = this;
+	if (Builders.isSchema(self.body))
+		self.body.$operation(name, helper, callback);
+	else
+		self.getSchema().workflow(name, null, helper, callback, true); // skip validation
+	return self;
+};
+
+Controller.prototype.$transform = function(name, helper, callback) {
+	var self = this;
+	if (Builders.isSchema(self.body))
+		self.body.$operation(name, helper, callback);
+	else
+		self.getSchema().transform(name, null, helper, callback, true); // skip validation
+	return self;
+};
+
+Controller.prototype.$operation = function(name, helper, callback) {
+	var self = this;
+	if (Builders.isSchema(self.body))
+		self.body.$operation(name, helper, callback);
+	else
+		self.getSchema().operation(name, null, helper, callback, true); // skip validation
+	return self;
+};
+
+Controller.prototype.$async = function(callback, index) {
+	var self = this;
+	if (Builders.isSchema(self.body))
+		return self.body.$async(callback, index);
+	return self.getSchema().default().$async(callback, index);
+};
+
+Controller.prototype.getSchema = function() {
+	var route = this.subscribe.route;
+	if (!route.schema || !route.schema[1])
+		throw new Error('The controller\'s route does not define any schema.');
+	var schema = GETSCHEMA(route.schema[0], route.schema[1]);
+	if (!schema)
+		throw new Error('Schema "{0}" does not exist.'.format(route.schema[1]));
+	return schema;
+};
 
 /**
  * Read / Write cookie

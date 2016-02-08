@@ -8,6 +8,14 @@
 - added: (IMPORTANT) `config['default-root']` can replace root relative path
 - added: `FrameworkImage` --> `instance.make(function(image) {})`
 - added: `FrameworkImage` supports middleware `FrameworkImage.middleware(extension, fn)`
+- added: `controller.$get([helper], callback)` or alias `controller.$read([helper], callback)` - schema must be defined in the route
+- added: `controller.$remove([helper], callback)` - schema must be defined in the route
+- added: `controller.$save([helper], callback)` - schema must be defined in the route
+- added: `controller.$query([helper], callback)` - schema must be defined in the route
+- added: `controller.$transform(name, [helper], callback)` - schema must be defined in the route
+- added: `controller.$workflow([name, [helper], callback)` - schema must be defined in the route
+- added: `controller.$operation(name, [helper], callback)` - schema must be defined in the route
+- added: `controller.$async(callback, [index])` - schema must be defined in the route
 
 - updated: (IMPORTANT) Array.async([NEW: threadCount (Number)], [callback]) supports `threads`
 - updated: Date.format(format, [resource_name]) supports name of months via `MMM` (short) and `MMMM` (full)

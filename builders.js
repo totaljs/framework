@@ -2293,6 +2293,10 @@ exports.schema = function(name, obj, defaults, validator, properties) {
 	return obj;
 };
 
+exports.isSchema = function(obj) {
+	return obj instanceof SchemaInstance;
+};
+
 exports.load = function(group, name, model) {
 
 	if (!group)
