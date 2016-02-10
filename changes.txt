@@ -18,6 +18,8 @@
 - added: `controller.$async(callback, [index])` - schema must be defined in the route
 
 - updated: (IMPORTANT) Array.async([NEW: threadCount (Number)], [callback]) supports `threads`
+- updated: (IMPORTANT) Array.wait(onItem(item, index), [callback], [threadCount]) supports `threads`
+- updated: (IMPORTANT) U.streamer(beg, [end], callback) --> supports "end" delimiter
 - updated: Date.format(format, [resource_name]) supports name of months via `MMM` (short) and `MMMM` (full)
 - updated: Resources support months e.g. `January     : Január`
 - updated: `F.merge()` supports directories, e.g. `F.merge('app.js', '/js/*.js')`

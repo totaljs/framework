@@ -299,36 +299,36 @@ exports.$$wait = function(fnValid, timeout, interval) {
  */
 exports.resolve = function(url, callback) {
 
-    var uri = parser.parse(url);
+	var uri = parser.parse(url);
 
-    if (!callback)
-    	return dnscache[uri.host];
+	if (!callback)
+		return dnscache[uri.host];
 
-    if (dnscache[uri.host]) {
-        uri.host = dnscache[uri.host];
-        callback(null, uri);
-        return;
-    }
+	if (dnscache[uri.host]) {
+		uri.host = dnscache[uri.host];
+		callback(null, uri);
+		return;
+	}
 
-    Dns.resolve4(uri.hostname, function(e, addresses) {
+	Dns.resolve4(uri.hostname, function(e, addresses) {
 
-        if (!e) {
-            dnscache[uri.host] = addresses[0];
-            uri.host = addresses[0];
-	        callback(null, uri);
-            return;
-        }
+		if (!e) {
+			dnscache[uri.host] = addresses[0];
+			uri.host = addresses[0];
+			callback(null, uri);
+			return;
+		}
 
-        setImmediate(function() {
-	        Dns.resolve4(uri.hostname, function(e, addresses) {
-	            if (e)
-	                return callback(e, uri);
-	            dnscache[uri.host] = addresses[0];
-	            uri.host = addresses[0];
-		        callback(null, uri);
-	        });
-    	});
-    });
+		setImmediate(function() {
+			Dns.resolve4(uri.hostname, function(e, addresses) {
+				if (e)
+					return callback(e, uri);
+				dnscache[uri.host] = addresses[0];
+				uri.host = addresses[0];
+				callback(null, uri);
+			});
+		});
+	});
 };
 
 exports.$$resolve = function(url) {
@@ -1226,30 +1226,61 @@ exports.isRelative = function(url) {
 
 /**
  * Streamer method
- * @param {String} delimiter
+ * @param {String} beg
+ * @param {String} end
  * @param {Function(value, index)} callback
  */
-exports.streamer = function(delimiter, callback) {
-    var cache = '';
-    var length = delimiter.length;
-    var indexer = 0;
-    return function(chunk) {
-    	if (!chunk)
-    		return;
-        if (typeof(chunk) !== 'string')
-            chunk = chunk.toString('utf8');
-        cache += chunk;
-        var index = cache.indexOf(delimiter);
-        if (index === -1)
-            return;
-        while (index !== -1) {
-            callback(cache.substring(0, index + length), indexer++);
-            cache = cache.substring(index + length);
-            index = cache.indexOf(delimiter);
-            if (index === -1)
-                return;
-        }
-    };
+exports.streamer = function(beg, end, callback) {
+
+	if (typeof(end) === FUNCTION) {
+		callback = end;
+		end = beg;
+	}
+
+	var cache = '';
+	var blength = beg.length;
+	var elength = end.length;
+	var bi = -1;
+	var ei = -1;
+	var indexer = 0;
+	var is = false;
+
+	return function(chunk) {
+
+		if (!chunk)
+			return;
+
+		if (typeof(chunk) !== 'string')
+			chunk = chunk.toString('utf8');
+
+		cache += chunk;
+
+		if (!is) {
+			bi = cache.indexOf(beg);
+			if (bi === -1)
+				return;
+			is = true;
+		}
+
+		if (is) {
+			ei = cache.indexOf(end, bi + blength);
+			if (ei === -1)
+				return;
+		}
+
+		while (bi !== -1) {
+			callback(cache.substring(bi, ei + elength), indexer++);
+			cache = cache.substring(ei + elength);
+			is = false;
+			bi = cache.indexOf(beg);
+			if (bi === -1)
+				return;
+			is = true;
+			ei = cache.indexOf(end, bi + blength);
+			if (ei === -1)
+				return;
+		}
+	};
 };
 
 /**
