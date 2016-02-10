@@ -55,7 +55,7 @@
 - updated: (IMPORTANT) Array.wait(onItem, onCallback, [NEW: threadCount (Number) or removeItemFromArray (Boolean)]) supports `threads`
 - updated: `F.mail()` supports themes with view nema like this `=default/someview'`
 - updated: `@{import()}` supports movies and images
-- updated: `@{import()}` can contain schema name in the path like this `=YOURSCHEMA/somefile.js`
+- updated: `@{import()}` can contain schema name in the path like this `=YOURTHEME/somefile.js`
 - updated: `F.route('/', '=themeName/viewname')` supports inline themes
 - updated: `F.resize()` added new options parameter --> `direction` (top, center or bottom)
 - updated: SUCCESS(), now supports function as first argument and the method returns wrapped function too
@@ -139,7 +139,7 @@ I had to skip v1.9.4 version because of NPM (my mistake).
 ======= 1.9.3
 
 - added: (IMPORTANT) merging supports BLOCKS (.js,.css), e.g. F.merge('merge.js', 'fileA.js#management,common', 'fileB.js#management')
-- added: (IMPORTANT) a route with schema binding can contain filter e.g. `*Schema#update` or `*Group\Schema#create` --> the framework validates only fields by filter
+- added: (IMPORTANT) a route with schema binding can contain filter e.g. `*Schema#update` or `*Group/Schema#create` --> the framework validates only fields by filter
 - added: TRANSFORM([transform], obj)
 - added: NEWTRANSFORM(name, fn, [isDefault]) --> alias for TransformBuilder.addTransform()
 - added: packages can be stored as directories (recommended for debug mode only)

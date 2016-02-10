@@ -1393,7 +1393,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 			}
 
 			if (first === '*') {
-				schema = flags[i].substring(1).split('/');
+				schema = flags[i].substring(1).replace(/\\/g, '/').split('/');
 				if (schema.length === 1) {
 					schema[1] = schema[0];
 					schema[0] = 'default';
