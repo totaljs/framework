@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-22';
+	this.version_header = '1.9.7-23';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1358,6 +1358,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var isJSON = false;
 	var isDELAY = false;
 	var isROBOT = false;
+	var isBINARY = false;
 
 	if (flags) {
 
@@ -1422,6 +1423,10 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 				case 'delay':
 					count--;
 					isDELAY = true;
+					continue;
+
+				case 'binary':
+					isBINARY = true;
 					continue;
 
 				case 'sync':
@@ -1587,6 +1592,11 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	if (name[1] === '#')
 		name = name.substring(1);
 
+	if (isBINARY && !isRaw) {
+		isBINARY = false;
+		console.warn('framework.route() skips "binary" flag because the "raw" flag is not defined.');
+	}
+
 	self.routes.web.push({
 		name: name,
 		priority: priority,
@@ -1606,6 +1616,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		isJSON: isJSON,
 		isXML: flags.indexOf('xml') !== -1,
 		isRAW: isRaw,
+		isBINARY: isBINARY,
 		isMOBILE: isMOBILE,
 		isROBOT: isROBOT,
 		isMOBILE_VARY: isMOBILE,
@@ -1898,7 +1909,6 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		length = protocols;
 		protocols = undefined;
 	}
-
 
 	if (middleware)
 		OBSOLETE('F.websocket(url, fnExecute, flags, [length])', 'middleware argument is obsolete, you can define middleware in the flags e.g. ["get", "#middleware1", "#middleware2"]');
@@ -9363,7 +9373,7 @@ Subscribe.prototype.urlencoded = function() {
 	var self = this;
 	self.route = framework.lookup(self.req, self.req.uri.pathname, self.req.flags, true);
 
-	if (self.route === null) {
+	if (!self.route) {
 		self.req.clear(true);
 		framework.stats.request.blocked++;
 		framework._request_stats(false, false);
@@ -9441,7 +9451,7 @@ Subscribe.prototype.execute = function(status, isError) {
 			framework.emit('error' + status, req, res, self.exception);
 	}
 
-	if (route === null) {
+	if (!route) {
 
 		if (!status)
 			status = 404;
@@ -9674,7 +9684,9 @@ Subscribe.prototype.doEnd = function() {
 		return self;
 	}
 
-	req.buffer_data = req.buffer_data.toString(ENCODING);
+	if (!route || !route.isBINARY)
+		req.buffer_data = req.buffer_data.toString(ENCODING);
+
 	var schema;
 
 	if (!req.buffer_data) {
@@ -9878,7 +9890,7 @@ Subscribe.prototype.doCancel = function() {
 	clearTimeout(self.timeout);
 	self.timeout = null;
 
-	if (self.controller === null)
+	if (!self.controller)
 		return;
 
 	self.controller.isTimeout = true;
@@ -10236,7 +10248,7 @@ Controller.prototype.middleware = function(names, options, callback) {
 		options = tmp;
 	}
 
-	if (options === undefined || options === null)
+	if (!options)
 		options = {};
 
 	var self = this;
@@ -10590,7 +10602,7 @@ Controller.prototype.transfer = function(url, flags) {
 	var path = framework_internal.routeSplit(url.trim());
 
 	var isSystem = url[0] === '#';
-	var noFlag = flags === null || flags === undefined || flags.length === 0;
+	var noFlag = !flags || flags.length === 0 ? true : false;
 	var selected = null;
 
 	self.req.$isAuthorized = true;
@@ -11126,7 +11138,7 @@ Controller.prototype.place = function(name) {
 	var output = '';
 	for (var i = 1; i < length; i++) {
 		var val = arguments[i];
-		if (val === null || typeof(val) === undefined)
+		if (!val)
 			val = '';
 		else
 			val = val.toString();
@@ -11615,7 +11627,7 @@ Controller.prototype.$etag = function(value) {
 Controller.prototype.$options = function(arr, selected, name, value) {
 
 	var type = typeof(arr);
-	if (arr === null || arr === undefined)
+	if (!arr)
 		return '';
 
 	var isObject = false;
@@ -11659,12 +11671,12 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 			if (name === true) {
 				val = tmp[o];
 				text = o;
-				if (value === null)
+				if (!value)
 					value = '';
 			} else {
 				val = o;
 				text = tmp[o];
-				if (text === null)
+				if (!text)
 					text = '';
 			}
 
@@ -12055,7 +12067,7 @@ Controller.prototype.helper = function(name) {
 	var self = this;
 	var helper = framework.helpers[name] || null;
 
-	if (helper === null)
+	if (!helper)
 		return '';
 
 	var length = arguments.length;
@@ -12272,9 +12284,9 @@ Controller.prototype.plain = function(contentBody, headers) {
 	if (contentBody === undefined)
 		contentBody = '';
 	else if (type === OBJECT)
-		contentBody = contentBody === null ? '' : JSON.stringify(contentBody, null, 4);
+		contentBody = contentBody ? JSON.stringify(contentBody, null, 4) : '';
 	else
-		contentBody = contentBody === null ? '' : contentBody.toString();
+		contentBody = contentBody ? contentBody.toString() : '';
 
 	self.subscribe.success();
 	framework.responseContent(self.req, self.res, self.status, contentBody, CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
@@ -13586,9 +13598,9 @@ WebSocket.prototype.model = function(name) {
  */
 WebSocket.prototype.helper = function(name) {
 	var self = this;
-	var helper = framework.helpers[name] || null;
+	var helper = framework.helpers[name];
 
-	if (helper === null)
+	if (!helper)
 		return '';
 
 	var length = arguments.length;

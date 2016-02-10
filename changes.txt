@@ -16,6 +16,7 @@
 - added: `controller.$workflow([name, [helper], callback)` - schema must be defined in the route
 - added: `controller.$operation(name, [helper], callback)` - schema must be defined in the route
 - added: `controller.$async(callback, [index])` - schema must be defined in the route
+- added: new `F.route()` flag `binary` (works only with `raw` flag)
 
 - updated: (IMPORTANT) Array.async([NEW: threadCount (Number)], [callback]) supports `threads`
 - updated: (IMPORTANT) Array.wait(onItem(item, index), [callback], [threadCount]) supports `threads`
