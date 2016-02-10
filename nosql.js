@@ -2,7 +2,7 @@
  * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2016
- * @version 3.1.0
+ * @version 3.1.1
  */
 
 'use strict';
@@ -1970,7 +1970,7 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
 
 	var self = this;
 	var size = buffer.length;
-	var dimension = { width: 0, height: 0 };
+	var dimension;
 
 	self.check();
 
@@ -1980,6 +1980,9 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
 		dimension = dimensionPNG(buffer);
 	else if (name.indexOf('.jpg') !== -1)
 		dimension = dimensionJPG(buffer);
+
+	if (!dimension)
+		dimension = { width: 0, height: 0 };
 
 	var header = new Buffer(BINARY_HEADER_LENGTH);
 	header.fill(' ');
@@ -2061,7 +2064,7 @@ Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) 
 
 	var self = this;
 	var size = buffer.length;
-	var dimension = { width: 0, height: 0 };
+	var dimension;
 	var key = id;
 
 	self.check();
@@ -2075,6 +2078,9 @@ Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) 
 		dimension = dimensionPNG(buffer);
 	else if (name.indexOf('.jpg') !== -1)
 		dimension = dimensionJPG(buffer);
+
+	if (!dimension)
+		dimension = { width: 0, height: 0 };
 
 	var header = new Buffer(BINARY_HEADER_LENGTH);
 	header.fill(' ');
