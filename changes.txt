@@ -17,6 +17,7 @@
 - added: `controller.$operation(name, [helper], callback)` - schema must be defined in the route
 - added: `controller.$async(callback, [index])` - schema must be defined in the route
 - added: new `F.route()` flag `binary` (works only with `raw` flag)
+- added: `U.ls2()` --> returns additional information about files (stat Object);
 
 - updated: (IMPORTANT) Array.async([NEW: threadCount (Number)], [callback]) supports `threads`
 - updated: (IMPORTANT) Array.wait(onItem(item, index), [callback], [threadCount]) supports `threads`
@@ -25,6 +26,7 @@
 - updated: Resources support months e.g. `January     : Január`
 - updated: `F.merge()` supports directories, e.g. `F.merge('app.js', '/js/*.js')`
 - updated: NoSQL embeddded version
+- updated: `U.ls()` --> [filter] can be `string` or `RegExp`
 
 - fixed: (IMPORTANT) SchemaBuilder validation
 - fixed: (IMPORTANT) view caching
