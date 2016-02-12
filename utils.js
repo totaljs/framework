@@ -1234,15 +1234,37 @@ exports.streamer = function(beg, end, callback) {
 
 	if (typeof(end) === FUNCTION) {
 		callback = end;
-		end = beg;
+		end = undefined;
 	}
 
 	var cache = '';
+	var indexer = 0;
+
+	if (!end) {
+		var length = beg.length;
+		return function(chunk) {
+			if (!chunk)
+				return;
+			if (typeof(chunk) !== 'string')
+				chunk = chunk.toString('utf8');
+			cache += chunk;
+			var index = cache.indexOf(beg);
+			if (index === -1)
+				return;
+			while (index !== -1) {
+				callback(cache.substring(0, index + length), indexer++);
+				cache = cache.substring(index + length);
+				index = cache.indexOf(beg);
+				if (index === -1)
+					return;
+			}
+		};
+	}
+
 	var blength = beg.length;
 	var elength = end.length;
 	var bi = -1;
 	var ei = -1;
-	var indexer = 0;
 	var is = false;
 
 	return function(chunk) {
@@ -2256,14 +2278,60 @@ exports.distance = function(lat1, lon1, lat2, lon2) {
 
 /**
  * Directory listing
- * @param  {String} path Path.
- * @param  {Function(files, directories)} callback Callback
- * @param  {Function(filename)} filter Custom filter (optional).
+ * @param {String} path Path.
+ * @param {Function(files, directories)} callback Callback
+ * @param {Function(filename),isDirectory or String or RegExp} filter Custom filter (optional).
  */
 exports.ls = function(path, callback, filter) {
 	var filelist = new FileList();
 	filelist.onComplete = callback;
-	filelist.onFilter = filter || null;
+
+	if (typeof(filter) === 'string') {
+		filter = filter.toLowerCase();
+		filter.onFilter = function(filename, is) {
+			if (is)
+				return true;
+			return filename.toLowerCase().indexOf(filter);
+		};
+	} else if (exports.isRegExp(filter)) {
+		filter.onFilter = function(filename, is) {
+			if (is)
+				return true;
+			return filename.match(filter) ? true : false;
+		};
+	} else
+		filelist.onFilter = filter || null;
+
+	filelist.walk(path);
+};
+
+/**
+ * Advanced Directory listing
+ * @param {String} path Path.
+ * @param {Function(files, directories)} callback Callback
+ * @param {Function(filename),isDirectory or String or RegExp} filter Custom filter (optional).
+ */
+exports.ls2 = function(path, callback, filter) {
+	var filelist = new FileList();
+	filelist.advanced = true;
+	filelist.onComplete = callback;
+
+	if (typeof(filter) === 'string') {
+		filter = filter.toLowerCase();
+		filter.onFilter = function(filename, is) {
+			if (is)
+				return true;
+			return filename.toLowerCase().indexOf(filter);
+		};
+	} else if (exports.isRegExp(filter)) {
+		filter.onFilter = function(filename, is) {
+			if (is)
+				return true;
+			return filename.match(filter) ? true : false;
+		};
+	} else
+		filelist.onFilter = filter || null;
+
 	filelist.walk(path);
 };
 
@@ -4908,7 +4976,7 @@ Async.prototype.timeout = function(name, timeout) {
 
 	var self = this;
 
-	if (timeout <= 0 || timeout === undefined) {
+	if (!timeout) {
 		delete self.tasksTimeout[name];
 		return self;
 	}
@@ -4929,7 +4997,7 @@ Async.prototype.refresh = function(name) {
 
 	while (true) {
 		var name = self.tasksAll[index++];
-		if (name === undefined)
+		if (!name)
 			break;
 
 		var task = self.tasksPending[name];
@@ -4986,6 +5054,7 @@ function FileList() {
 	this.file = [];
 	this.onComplete = null;
 	this.onFilter = null;
+	this.advanced = false;
 }
 
 FileList.prototype.reset = function() {
@@ -5030,15 +5099,15 @@ FileList.prototype.stat = function(path) {
 		if (err)
 			return self.next();
 
-		if (stats.isDirectory() && (self.onFilter === null || self.onFilter(path, true))) {
+		if (stats.isDirectory() && (!self.onFilter || self.onFilter(path, true))) {
 			self.directory.push(path);
 			self.pendingDirectory.push(path);
 			self.next();
 			return;
 		}
 
-		if (self.onFilter === null || self.onFilter(path, false))
-			self.file.push(path);
+		if (!self.onFilter || self.onFilter(path, false))
+			self.file.push(self.advanced ? { filename: path, stats: stats } : path);
 
 		self.next();
 	});
@@ -5059,7 +5128,7 @@ FileList.prototype.next = function() {
 		return;
 	}
 
-	self.onComplete(self.file, self.directory);
+	self.onComplete(self.advanced ? self.file.filename : self.file, self.directory);
 };
 
 exports.Async = Async;

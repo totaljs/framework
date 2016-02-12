@@ -626,6 +626,13 @@ function other() {
 	streamer('\n1\n2\n');
 	streamer('3\n');
 	streamer('4\n');
+
+	streamer = utils.streamer('<a>', '</a>', function(value, index) {
+		assert.ok(value.trim() === '<a>' + (index + 1) + '</a>', 'Streamer problem 2');
+	});
+
+	streamer('aaaa <a>1</a> adsklasdlajsdlas jd <a>2</a>');
+	streamer('aaaa <a>3</a> adsklasdlajsdlas jd <a>4</a>');
 }
 
 function onValidation(name, value, path) {
