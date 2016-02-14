@@ -8918,12 +8918,9 @@ FrameworkRestrictions.prototype._allowedCustom = function(headers) {
 
 		var arr = self.allowedCustom[key];
 		var max = arr.length;
-
 		for (var j = 0; j < max; j++) {
-
-			if (value.search(arr[j]) !== -1)
+			if (value.search(arr[j]) === -1)
 				return false;
-
 		}
 	}
 

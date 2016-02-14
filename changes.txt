@@ -36,6 +36,7 @@
 - fixed: Schema Validation is performed after F.onAuthorize().
 - fixed: checking of maximum request length
 - fixed: regexp routing
+- fixed: F.restrictions.allow()
 
 ======= 1.9.6
 
