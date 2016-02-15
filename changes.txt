@@ -37,6 +37,7 @@
 - fixed: checking of maximum request length
 - fixed: regexp routing
 - fixed: F.restrictions.allow()
+- fixed: `U.request()` and fixed `head` method, callback returns headers when is `head` method used
 
 ======= 1.9.6
 

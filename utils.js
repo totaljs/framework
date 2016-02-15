@@ -604,7 +604,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			delete self._buffer; // Free memory
 			e.emit('end', str, self.statusCode, self.headers, uri.host);
 			if (callback)
-				callback(null, str, self.statusCode, self.headers, uri.host);
+				callback(null, method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
 			callback = null;
 		});
 
