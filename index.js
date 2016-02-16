@@ -424,6 +424,9 @@ global.is_server = true;
 
 var directory = framework_utils.$normalize(require.main ? path.dirname(require.main.filename) : process.cwd());
 
+// F._service() changes the value below:
+var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
+
 function Framework() {
 
 	this.id = null;
@@ -4381,7 +4384,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 		if (RELEASE) {
 			headers['Etag'] = etag;
-			headers['Expires'] = prepare_date(new Date().add('y', 1));
+			headers['Expires'] = DATE_EXPIRES;
 			headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=' + framework.config['default-response-maxage'];
 		}
 
@@ -4634,7 +4637,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			delete returnHeaders.ETag;
 
 		if (!res.getHeader('Expires'))
-			returnHeaders.Expires = prepare_date(new Date().add('y', 1));
+			returnHeaders.Expires = DATE_EXPIRES;
 		else if (returnHeaders.Expires)
 			delete returnHeaders.Expires;
 
@@ -4722,9 +4725,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 
 	if (canCache && !res.getHeader('Expires')) {
-		var dt = new Date();
-		dt.setFullYear(dt.getFullYear() + 1);
-		returnHeaders.Expires = prepare_date(dt);
+		returnHeaders.Expires = DATE_EXPIRES;
 	} else if (returnHeaders.Expires)
 		delete returnHeaders.Expires;
 
@@ -5238,9 +5239,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	returnHeaders.Vary = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
 	if (RELEASE) {
-		var dt = new Date();
-		dt.setFullYear(dt.getFullYear() + 1);
-		returnHeaders.Expires = prepare_date(dt);
+		returnHeaders.Expires = DATE_EXPIRES;
 		returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 	}
 
@@ -6176,9 +6175,13 @@ Framework.prototype._service = function(count) {
 	if (count % framework.config['default-interval-clear-resources'] === 0) {
 		self.emit('clear', 'resources');
 		self.resources = {};
-		if (typeof(gc) !== UNDEFINED)
-			setTimeout(gc, 1000);
+		if (global.gc)
+			setTimeout(global.gc, 1000);
 	}
+
+	// Update expires date
+	if (count % 1000 === 0)
+		DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 
 	self.emit('service', count);
 
@@ -15107,10 +15110,6 @@ function isGZIP(req) {
 	if (!ua)
 		return false;
 	return ua.lastIndexOf('Firefox') !== -1;
-}
-
-function prepare_date(dt) {
-	return dt.toUTCString();
 }
 
 function prepare_viewname(value) {

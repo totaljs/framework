@@ -40,6 +40,8 @@
 - fixed: F.restrictions.allow()
 - fixed: `U.request()` and fixed `head` method, callback returns headers when is `head` method used
 
+- improved: performance in `Expires Header`
+
 ======= 1.9.6
 
 - added: MailMessage.manually() and removes auto-sending mail --> works only with `F.mail()` and `controller.Mail()`.
