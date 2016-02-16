@@ -11199,8 +11199,10 @@ Controller.prototype.$helper = function(name) {
 Controller.prototype.href = function(key, value) {
 	var self = this;
 
-	if (!arguments.length)
-		return qs.stringify(self.query);
+	if (!arguments.length) {
+		var val = qs.stringify(self.query);
+		return val ? '?' + val : '';
+	}
 
 	var type = typeof(key);
 	var obj = framework_utils.copy(self.query);
