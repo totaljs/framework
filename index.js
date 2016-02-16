@@ -11208,7 +11208,7 @@ Controller.prototype.href = function(key, value) {
 	if (value && type === OBJECT)
 		framework_utils.extend(obj, value);
 
-	if (value)
+	if (value !== undefined && value !== null)
 		obj[key] = value;
 
 	obj = qs.stringify(obj);
