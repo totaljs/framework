@@ -28,6 +28,7 @@
 - updated: `F.merge()` supports directories, e.g. `F.merge('app.js', '/js/*.js')`
 - updated: NoSQL embeddded version
 - updated: `U.ls()` --> [filter] can be `string` or `RegExp`
+- updated: `@{meta(title, [description], [keywords], [image])}` and `@{keywords(value)}` keywords can be String Array
 
 - fixed: (IMPORTANT) Expires headers (problem with Russian timezone)
 - fixed: (IMPORTANT) SchemaBuilder validation
