@@ -10692,10 +10692,19 @@ Controller.prototype.logger = function() {
 */
 Controller.prototype.meta = function() {
 	var self = this;
-	self.repository[REPOSITORY_META_TITLE] = arguments[0] || '';
-	self.repository[REPOSITORY_META_DESCRIPTION] = arguments[1] || '';
-	self.repository[REPOSITORY_META_KEYWORDS] = arguments[2] || '';
-	self.repository[REPOSITORY_META_IMAGE] = arguments[3] || '';
+
+	if (arguments[0])
+		self.repository[REPOSITORY_META_TITLE] = arguments[0];
+
+	if (arguments[1])
+		self.repository[REPOSITORY_META_DESCRIPTION] = arguments[1];
+
+	if (arguments[2] && arguments[2].length)
+		self.repository[REPOSITORY_META_KEYWORDS] = arguments[2] instanceof Array ? arguments[2].join(', ') : arguments[2];
+
+	if (arguments[3])
+		self.repository[REPOSITORY_META_IMAGE] = arguments[3];
+
 	return self;
 };
 
@@ -10834,7 +10843,7 @@ Controller.prototype.$description = function(value) {
 
 Controller.prototype.$keywords = function(value) {
 	var self = this;
-	if (value)
+	if (value && value.length)
 		self.repository[REPOSITORY_META_KEYWORDS] = value instanceof Array ? value.join(', ') : value;
 	return '';
 };
