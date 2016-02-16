@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-26';
+	this.version_header = '1.9.7-27';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -4381,7 +4381,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 		if (RELEASE) {
 			headers['Etag'] = etag;
-			headers['Expires'] = new Date().add('y', 1);
+			headers['Expires'] = prepare_date(new Date().add('y', 1));
 			headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=' + framework.config['default-response-maxage'];
 		}
 
@@ -4634,7 +4634,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			delete returnHeaders.ETag;
 
 		if (!res.getHeader('Expires'))
-			returnHeaders.Expires = new Date().add('y', 1);
+			returnHeaders.Expires = prepare_date(new Date().add('y', 1));
 		else if (returnHeaders.Expires)
 			delete returnHeaders.Expires;
 
@@ -4724,7 +4724,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (canCache && !res.getHeader('Expires')) {
 		var dt = new Date();
 		dt.setFullYear(dt.getFullYear() + 1);
-		returnHeaders.Expires = dt;
+		returnHeaders.Expires = prepare_date(dt);
 	} else if (returnHeaders.Expires)
 		delete returnHeaders.Expires;
 
@@ -5240,7 +5240,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (RELEASE) {
 		var dt = new Date();
 		dt.setFullYear(dt.getFullYear() + 1);
-		returnHeaders.Expires = dt;
+		returnHeaders.Expires = prepare_date(dt);
 		returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 	}
 
@@ -15107,6 +15107,10 @@ function isGZIP(req) {
 	if (!ua)
 		return false;
 	return ua.lastIndexOf('Firefox') !== -1;
+}
+
+function prepare_date(dt) {
+	return dt.toUTCString();
 }
 
 function prepare_viewname(value) {

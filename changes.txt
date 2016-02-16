@@ -28,6 +28,7 @@
 - updated: NoSQL embeddded version
 - updated: `U.ls()` --> [filter] can be `string` or `RegExp`
 
+- fixed: (IMPORTANT) Expires headers (problem with Russian timezone)
 - fixed: (IMPORTANT) SchemaBuilder validation
 - fixed: (IMPORTANT) view caching
 - fixed: (IMPORTANT) U.keywords()
