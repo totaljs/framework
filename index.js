@@ -10820,19 +10820,22 @@ Controller.prototype.keywords = function(value) {
 
 Controller.prototype.$title = function(value) {
 	var self = this;
-	self.repository[REPOSITORY_META_TITLE] = value;
+	if (value)
+		self.repository[REPOSITORY_META_TITLE] = value;
 	return '';
 };
 
 Controller.prototype.$description = function(value) {
 	var self = this;
-	self.repository[REPOSITORY_META_DESCRIPTION] = value;
+	if (value)
+		self.repository[REPOSITORY_META_DESCRIPTION] = value;
 	return '';
 };
 
 Controller.prototype.$keywords = function(value) {
 	var self = this;
-	self.repository[REPOSITORY_META_KEYWORDS] = value;
+	if (value)
+		self.repository[REPOSITORY_META_KEYWORDS] = value instanceof Array ? value.join(', ') : value;
 	return '';
 };
 
