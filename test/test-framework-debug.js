@@ -303,7 +303,7 @@ function test_routing(next) {
 		utils.request(url + 'rest/', ['head'], null, function(error, data, code, headers) {
  			if (error)
 				throw error;
-			assert(data === '', 'REST - HEAD');
+			assert(data.connection === 'close', 'REST - HEAD');
 			complete();
 		});
 	});
