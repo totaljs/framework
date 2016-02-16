@@ -29,6 +29,7 @@
 - updated: NoSQL embeddded version
 - updated: `U.ls()` --> [filter] can be `string` or `RegExp`
 - updated: `@{meta(title, [description], [keywords], [image])}` and `@{keywords(value)}` keywords can be String Array
+- updated: `@{section name}` can be used in the view more times
 
 - fixed: (IMPORTANT) Expires headers (problem with Russian timezone)
 - fixed: (IMPORTANT) SchemaBuilder validation

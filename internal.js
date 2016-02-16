@@ -1935,7 +1935,7 @@ function view_parse(content, minify, filename, controller) {
 					builder = builderTMP + 'unescape($EMPTY' + builder + '),model) || $EMPTY)';
 					builderTMP = '';
 				} else if (isSECTION) {
-					builder = builderTMP + builder + ';repository[\'$section_' + sectionName + '\']=$output;return $EMPTY})()';
+					builder = builderTMP + builder + ';repository[\'$section_' + sectionName + '\']=repository[\'$section_' + sectionName + '\']?repository[\'$section_' + sectionName + '\']+$output:$output;return $EMPTY})()';
 					builderTMP = '';
 				} else {
 					builder += ';return $output;}';
