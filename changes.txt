@@ -18,6 +18,7 @@
 - added: `controller.$async(callback, [index])` - schema must be defined in the route
 - added: new `F.route()` flag `binary` (works only with `raw` flag)
 - added: `U.ls2()` --> returns additional information about files (stat Object);
+- added: `Pagination` is a global variable
 
 - updated: (IMPORTANT) Array.async([NEW: threadCount (Number)], [callback]) supports `threads`
 - updated: (IMPORTANT) Array.wait(onItem(item, index), [callback], [threadCount]) supports `threads`

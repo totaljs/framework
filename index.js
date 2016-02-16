@@ -200,6 +200,7 @@ if (!global.framework_nosql)
 global.Builders = global.builders = framework_builders;
 var utils = global.Utils = global.utils = global.U = framework_utils;
 global.Mail = global.MAIL = framework_mail;
+global.Pagination = framework_builders.Pagination;
 
 global.include = global.INCLUDE = global.source = global.SOURCE = function(name, options) {
 	return framework.source(name, options);
@@ -10788,7 +10789,7 @@ Controller.prototype.$canonical = function(value) {
 Controller.prototype.$meta = function() {
 	var self = this;
 
-	if (arguments.length !== 0) {
+	if (arguments.length) {
 		self.meta.apply(self, arguments);
 		return '';
 	}
@@ -10819,30 +10820,18 @@ Controller.prototype.keywords = function(value) {
 
 Controller.prototype.$title = function(value) {
 	var self = this;
-
-	if (!value)
-		return self.repository[REPOSITORY_META_TITLE] || '';
-
 	self.repository[REPOSITORY_META_TITLE] = value;
 	return '';
 };
 
 Controller.prototype.$description = function(value) {
 	var self = this;
-
-	if (!value)
-		return self.repository[REPOSITORY_META_DESCRIPTION] || '';
-
 	self.repository[REPOSITORY_META_DESCRIPTION] = value;
 	return '';
 };
 
 Controller.prototype.$keywords = function(value) {
 	var self = this;
-
-	if (!value)
-		return self.repository[REPOSITORY_META_KEYWORDS] || '';
-
 	self.repository[REPOSITORY_META_KEYWORDS] = value;
 	return '';
 };
