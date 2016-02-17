@@ -34,7 +34,7 @@ $ npm install total.js
 
 Please support the framework on social networks.
 
-- [Blogs](https://bufferwall.com/blogs/?tag=total.js)
+- [Blogs](https://bufferwall.com/explore/?tag=total.js)
 - [Follow total.js on Gitter](https://gitter.im/totaljs/framework)
 - [Follow total.js on GitHub](https://github.com/totaljs/framework)
 - [Follow total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
