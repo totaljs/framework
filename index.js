@@ -874,49 +874,53 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 	var self = this;
 	var external = host.startsWith('http://') || host.startsWith('https');
 
-	if (external === false) {
-		if (host[0] !== '/')
-			host = '/' + host;
+	if (external) {
 
-		var flags;
+		if (host[host.length - 1] === '/')
+			host = host.substring(0, host.length - 1);
 
-		if (withPath instanceof Array) {
-			flags = withPath;
-			withPath = permanent === true;
-		} else if (permanent instanceof Array) {
-			flags = permanent;
-			withPath = withPath === true;
-		} else
-			withPath = withPath === true;
+		if (newHost[newHost.length - 1] === '/')
+			newHost = newHost.substring(0, newHost.length - 1);
 
-		permanent = withPath;
-		framework.route(host, function() {
-			if (newHost.startsWith('http://') || newHost.startsWith('https://')) {
-				this.redirect(newHost, permanent);
-				return;
-			}
+		self.routes.redirects[host] = {
+			url: newHost,
+			path: withPath,
+			permanent: permanent
+		};
 
-			if (newHost[0] !== '/')
-				newHost = '/' + newHost;
-
-			this.redirect(newHost, permanent);
-		}, flags);
+		self._request_check_redirect = true;
 		return self;
 	}
 
-	if (host[host.length - 1] === '/')
-		host = host.substring(0, host.length - 1);
+	if (host[0] !== '/')
+		host = '/' + host;
 
-	if (newHost[newHost.length - 1] === '/')
-		newHost = newHost.substring(0, newHost.length - 1);
+	var flags;
 
-	self.routes.redirects[host] = {
-		url: newHost,
-		path: withPath,
-		permanent: permanent
-	};
+	if (withPath instanceof Array) {
+		flags = withPath;
+		withPath = permanent === true;
+	} else if (permanent instanceof Array) {
+		flags = permanent;
+		withPath = withPath === true;
+	} else
+		withPath = withPath === true;
 
-	self._request_check_redirect = true;
+	permanent = withPath;
+	framework.route(host, function() {
+
+		if (newHost.startsWith('http://') || newHost.startsWith('https://')) {
+			this.redirect(newHost + this.href(), permanent);
+			return;
+		}
+
+		if (newHost[0] !== '/')
+			newHost = '/' + newHost;
+
+		this.redirect(newHost + this.href(), permanent);
+
+	}, flags);
+
 	return self;
 };
 
