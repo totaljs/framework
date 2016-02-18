@@ -2981,7 +2981,7 @@ function viewengine_load(name, filename, controller) {
 	return {Object} :: return parsed HTML
 */
 function viewengine_dynamic(content, language, controller) {
-	var key = content.hash();
+	var key = language + '_' + content.hash();
 	var generator = framework.temporary.views[key] || null;
 	if (generator)
 		return generator;
