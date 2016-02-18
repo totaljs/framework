@@ -35,6 +35,7 @@
 - fixed: (IMPORTANT) SchemaBuilder validation
 - fixed: (IMPORTANT) view caching
 - fixed: (IMPORTANT) U.keywords()
+- fixed: dynamic views translator caching
 - fixed: URL search string in `F.redirect()` (doesn't work on local relative address)
 - fixed: binary / executable for Windows
 - fixed: SUCCESS()
