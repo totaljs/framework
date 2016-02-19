@@ -2,7 +2,7 @@
  * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2016
- * @version 3.1.1
+ * @version 3.1.2
  */
 
 'use strict';
@@ -957,7 +957,13 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 			return;
 		}
 
-		var updated = JSON.stringify(value);
+		var updated;
+
+		if (value && typeof(value.$clean) === FUNCTION)
+			updated = value.$clean();
+		else
+			updated = JSON.stringify(value);
+
 		if (updated !== json) {
 			self.emit('update', value);
 			countUpdate++;
@@ -2433,7 +2439,7 @@ FileReader.prototype.read = function(fd, position, size, fnBuffer, next) {
 */
 function appendFile(filename, arr, fnCallback, db) {
 
-	if (arr.length === 0) {
+	if (!arr.length) {
 		fnCallback();
 		return;
 	}
@@ -2441,7 +2447,10 @@ function appendFile(filename, arr, fnCallback, db) {
 	var lines = '';
 
 	arr.slice(0, 30).forEach(function(o) {
-		lines += JSON.stringify(o) + NEWLINE;
+		if (o && typeof(o.$clean) === FUNCTION)
+			lines += JSON.stringify(o.$clean()) + NEWLINE;
+		else
+			lines += JSON.stringify(o) + NEWLINE;
 	});
 
 	fs.appendFile(filename, lines, function(err) {
@@ -2459,7 +2468,7 @@ function appendFile(filename, arr, fnCallback, db) {
 	return {Function}
 */
 function filterPrepare(fnFilter) {
-	if (fnFilter.length === 0)
+	if (!fnFilter.length)
 		return function() { return true; };
 	return eval('(function(doc){' + (fnFilter.indexOf('return ') === -1 ? 'return ' : '') + fnFilter + '})');
 }
