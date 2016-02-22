@@ -31,7 +31,7 @@
 - updated: `@{meta(title, [description], [keywords], [image])}` and `@{keywords(value)}` keywords can be String Array
 - updated: `@{section name}` can be used in the view more times
 
-- fixed: (IMPORTANT) Expires headers (problem with Russian timezone)
+- fixed: (IMPORTANT) Expires headers - problem with Russian timezone, reported by [Андрей Владимирович](https://github.com/anddesigner)
 - fixed: (IMPORTANT) SchemaBuilder validation
 - fixed: (IMPORTANT) view caching
 - fixed: (IMPORTANT) U.keywords()
@@ -45,6 +45,7 @@
 - fixed: F.restrictions.allow()
 - fixed: `U.request()` and fixed `head` method, callback returns headers when is `head` method used
 - fixed: Pagination by DusanDragula
+- fixed: View inline helpers - reported by [Андрей Владимирович](https://github.com/anddesigner)
 
 - improved: performance in `Expires Header`
 
