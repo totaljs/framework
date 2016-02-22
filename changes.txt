@@ -44,6 +44,7 @@
 - fixed: regexp routing
 - fixed: F.restrictions.allow()
 - fixed: `U.request()` and fixed `head` method, callback returns headers when is `head` method used
+- fixed: Pagination by DusanDragula
 
 - improved: performance in `Expires Header`
 

@@ -3020,7 +3020,7 @@ Pagination.prototype.refresh = function(items, page, max) {
 
 	self.page = Math.max(1, +page) - 1;
 
-	if (self.page < 0)
+	if (self.page <= 0)
 		self.page = 0;
 
 	self.items = Math.max(0, +items);
