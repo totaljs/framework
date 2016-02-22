@@ -3227,7 +3227,7 @@ Pagination.prototype.prepare = function(max, format) {
 		pageFrom = pages - max;
 	}
 
-	if (pageFrom <= 0)
+	if (pageFrom < 0)
 		pageFrom = 1;
 
 	for (var i = pageFrom; i < pageTo + 1; i++)
