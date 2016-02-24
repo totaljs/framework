@@ -1881,7 +1881,7 @@ function view_parse(content, minify, filename, controller) {
 			var index = text.indexOf('(');
 			if (index === -1)
 				return text;
-			return text.substring(0, index) + '.call(self' + (text.endsWith('()') ? ')' : text.substring(index + 1));
+			return text.substring(0, index) + '.call(self' + (text.endsWith('()') ? ')' : ',' + text.substring(index + 1));
 		});
 
 		pharse = cmd;
