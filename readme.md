@@ -1,6 +1,6 @@
 ![total.js logo](https://www.totaljs.com/img/logo-github.png)
 ---
-[![NPM version][npm-version-image]][npm-url] [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
+[![NPM version][npm-version-image]][npm-url] [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework) [![NPM quality][npm-quality]][npm-url]
 
 ---
 Framework, for node.js
@@ -141,6 +141,7 @@ We provide a support of the framework for companies. Our support services will k
 [npm-url]: https://npmjs.org/package/total.js
 [npm-version-image]: https://img.shields.io/npm/v/total.js.svg?style=flat
 [npm-downloads-image]: https://img.shields.io/npm/dm/total.js.svg?style=flat
+[npm-quality]: http://npm.packagequality.com/shield/total.js.svg
 
 [travis-url]: https://travis-ci.org/totaljs/framework
 [travis-image]: https://img.shields.io/travis/totaljs/framework.svg?style=flat
