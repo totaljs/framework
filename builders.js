@@ -1112,7 +1112,7 @@ SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
 
 	var self = this;
 
-	if (typeof(obj.$save) === FUNCTION) {
+	if (obj && typeof(obj.$save) === FUNCTION) {
 		callback(null, obj);
 		return self;
 	}
