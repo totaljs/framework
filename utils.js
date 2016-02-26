@@ -4319,6 +4319,8 @@ Array.prototype.where = function(cb, value) {
 		}
 
 		if (isV) {
+			if (!self[i])
+				continue;
 			if (self[i][cb] === value)
 				selected.push(self[i]);
 			continue;
@@ -4360,6 +4362,8 @@ Array.prototype.findIndex = function(cb, value) {
 		}
 
 		if (isV) {
+			if (!self[i])
+				continue;
 			if (self[i][cb] === value)
 				return i;
 			continue;
@@ -4394,6 +4398,8 @@ Array.prototype.remove = function(cb, value) {
 		}
 
 		if (isV) {
+			if (!self[i])
+				continue;
 			if (self[i][cb] !== value)
 				arr.push(self[i]);
 			continue;
