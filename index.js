@@ -51,7 +51,7 @@ var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
 var RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
 var CONTENTTYPE_TEXTPLAIN = 'text/plain';
 var CONTENTTYPE_TEXTHTML = 'text/html';
-var POWEREDBY = '...';
+var POWEREDBY = '';
 var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
 var TEMPORARY_KEY_REGEX = /\//g;
 var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
@@ -432,7 +432,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-30';
+	this.version_header = '1.9.7-31';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -5329,9 +5329,9 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 	var arr = range.replace(/bytes=/, '').split('-');
 	var beg = +arr[0] || 0;
 	var end = +arr[1] || 0;
-	var total = self.temporary.range[name] || 0;
+	var total = self.temporary.range[name];
 
-	if (total === 0) {
+	if (!total) {
 		total = fs.statSync(name).size;
 		self.temporary.range[name] = total;
 	}
@@ -8180,6 +8180,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 	};
 
 	if (!arr instanceof Array || !arr.length) {
+		POWEREDBY = 'total.js v' + self.version_header;
 		done();
 		return self;
 	}
@@ -9193,13 +9194,15 @@ FrameworkCache.prototype.read = function(key, def) {
  */
 FrameworkCache.prototype.get = function(key, def) {
 	var self = this;
-	var value = self.items[key] || null;
+	var value = self.items[key];
 
-	if (value === null)
+	if (!value)
 		return typeof(def) === UNDEFINED ? null : def;
 
-	if (value.expire < new Date())
+	if (value.expire < new Date()) {
+		delete self.items[key];
 		return typeof(def) === UNDEFINED ? null : def;
+	}
 
 	return value.value;
 };
@@ -9214,7 +9217,7 @@ FrameworkCache.prototype.setExpire = function(name, expire) {
 	var self = this;
 	var obj = self.items[name];
 
-	if (obj === undefined)
+	if (!obj)
 		return self;
 
 	if (typeof(expire) === STRING)
@@ -9232,7 +9235,6 @@ FrameworkCache.prototype.setExpire = function(name, expire) {
 FrameworkCache.prototype.remove = function(name) {
 	var self = this;
 	var value = self.items[name] || null;
-
 	delete self.items[name];
 	return value;
 };
@@ -9333,6 +9335,12 @@ Subscribe.prototype.success = function() {
 
 	self.timeout = null;
 	self.isCanceled = true;
+
+	if (self.controller && self.controller.res) {
+		self.controller.res.controller = null;
+		self.controller = null;
+	}
+
 	return self;
 };
 
@@ -9360,7 +9368,7 @@ Subscribe.prototype.multipart = function(header) {
 	self.route = framework.lookup(req, req.uri.pathname, req.flags, true);
 	self.header = header;
 
-	if (self.route === null) {
+	if (!self.route) {
 		framework._request_stats(false, false);
 		framework.stats.request.blocked++;
 		self.res.writeHead(403);
@@ -9500,7 +9508,7 @@ Subscribe.prototype.execute = function(status, isError) {
 	if (route.isDELAY)
 		self.res.writeContinue();
 
-	if (framework._length_middleware === 0 || route.middleware === null)
+	if (!framework._length_middleware || !route.middleware)
 		return self.doExecute();
 
 	var length = route.middleware.length;
@@ -9678,8 +9686,9 @@ Subscribe.prototype.doEnd = function() {
 
 	if (req.buffer_exceeded) {
 		route = framework.lookup(req, '#431');
+		req.buffer_data = null;
 
-		if (route === null) {
+		if (!route) {
 			framework.response431(req, res);
 			return self;
 		}
@@ -9706,6 +9715,7 @@ Subscribe.prototype.doEnd = function() {
 
 		if (req.$type !== 2) {
 			self.route400(new Error('The request validation (The content-type is not text/xml).'));
+			req.buffer_data = null;
 			return self;
 		}
 
@@ -9722,11 +9732,13 @@ Subscribe.prototype.doEnd = function() {
 
 	if (self.route.isRAW) {
 		req.body = req.buffer_data;
+		req.buffer_data = null;
 		self.prepare(req.flags, req.uri.pathname);
 		return self;
 	}
 
 	if (req.$type === 0) {
+		req.buffer_data = null;
 		self.route400(new Error('The request validation (The content-type is not x-www-form-urlencoded).'));
 		return self;
 	}
@@ -9734,6 +9746,7 @@ Subscribe.prototype.doEnd = function() {
 	if (req.$type === 1) {
 		try {
 			req.body = framework.onParseJSON(req.buffer_data);
+			req.buffer_data = null;
 		} catch (e) {
 			self.route400(new Error('Not valid JSON data.'));
 			return self;
@@ -9744,6 +9757,7 @@ Subscribe.prototype.doEnd = function() {
 	if (self.route.schema)
 		self.schema = true;
 
+	req.buffer_data = null;
 	self.prepare(req.flags, req.uri.pathname);
 	return self;
 };
@@ -12134,7 +12148,6 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 
 	if (self.precache)
 		self.precache(obj, 'application/json', headers);
-
 	return self;
 };
 
@@ -12227,7 +12240,6 @@ Controller.prototype.custom = function() {
 
 	framework.responseCustom(self.req, self.res);
 	return true;
-
 };
 
 /*
@@ -12301,7 +12313,6 @@ Controller.prototype.plain = function(contentBody, headers) {
 
 	if (self.precache)
 		self.precache(contentBody, CONTENTTYPE_TEXTPLAIN, headers);
-
 	return self;
 };
 
@@ -12326,7 +12337,6 @@ Controller.prototype.empty = function(headers) {
 	self.subscribe.success();
 	framework.responseContent(self.req, self.res, code, '', CONTENTTYPE_TEXTPLAIN, false, headers);
 	framework.stats.response.empty++;
-
 	return self;
 };
 
@@ -12342,7 +12352,6 @@ Controller.prototype.destroy = function(problem) {
 	self.subscribe.success();
 	self.req.connection.destroy();
 	framework.stats.response.destroy++;
-
 	return self;
 };
 
@@ -12629,7 +12638,6 @@ Controller.prototype.redirect = function(url, permanent) {
 	framework._request_stats(false, false);
 	framework.emit('request-end', self.req, self.res);
 	framework.stats.response.redirect++;
-
 	return self;
 };
 
@@ -12765,33 +12773,31 @@ Controller.prototype.close = function(end) {
 	if (!self.isConnected)
 		return self;
 
-	if (self.type === 0) {
-
+	if (self.type) {
 		self.isConnected = false;
+		self.res.success = true;
 
-		if (!self.res.success) {
+		framework._request_stats(false, false);
+		framework.emit('request-end', self.req, self.res);
+		self.type = 0;
 
-			self.res.success = true;
-
-			if (end)
-				self.res.end();
-
-			framework._request_stats(false, false);
-			framework.emit('request-end', self.req, self.res);
-		}
+		if (end)
+			self.res.end();
 
 		return self;
 	}
 
 	self.isConnected = false;
-	self.res.success = true;
+	if (!self.res.success) {
 
-	if (end)
-		self.res.end();
+		self.res.success = true;
 
-	framework._request_stats(false, false);
-	framework.emit('request-end', self.req, self.res);
-	self.type = 0;
+		framework._request_stats(false, false);
+		framework.emit('request-end', self.req, self.res);
+
+		if (end)
+			self.res.end();
+	}
 
 	return self;
 };
@@ -12822,13 +12828,10 @@ Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
 	}
 
 	return framework_utils.request(url, REQUEST_PROXY_FLAGS, obj, function(error, data, code, headers) {
-
 		if (!fnCallback)
 			return;
-
 		if ((headers['content-type'] || '').indexOf('application/json') !== -1)
 			data = framework.onParseJSON(data);
-
 		fnCallback.call(self, error, data, code, headers);
 	}, null, HEADERS['proxy'], ENCODING, timeout || 10000);
 };
@@ -12970,7 +12973,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	if (!isLayout && self.precache && self.status === 200 && !isPartial)
 		self.precache(value, CONTENTTYPE_TEXTHTML, headers, true);
 
-	if (isLayout || framework_utils.isNullOrEmpty(self.layoutName)) {
+	if (isLayout || !self.layoutName) {
 
 		self.outputPartial = '';
 		self.output = '';
@@ -12986,7 +12989,6 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 		framework.responseContent(self.req, self.res, self.status, value, CONTENTTYPE_TEXTHTML, self.config['allow-gzip'], headers);
 		framework.stats.response.view++;
-
 		return self;
 	}
 
@@ -14913,8 +14915,12 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
 	if (isAuto && self._manual)
 		return self;
 
+	self.body = null;
+	self.query = null;
+	self.cookies = null;
+
 	var length = files.length;
-	if (length === 0)
+	if (!length)
 		return self;
 
 	var arr = [];
