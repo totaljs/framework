@@ -4427,9 +4427,17 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 
 	// INIT
 	if (!onItem.$index) {
+
 		onItem.$pending = 0;
 		onItem.$index = 0;
 		init = true;
+
+		if (typeof(callback) === NUMBER) {
+			var tmp = thread;
+			thread = callback;
+			callback = tmp;
+		}
+
 	}
 
 	if (thread === undefined)
