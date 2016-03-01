@@ -595,7 +595,7 @@ Message.prototype._send = function(socket, options, autosend) {
 			builder = '';
 		}
 
-		message.push('Content-Type: multipart/alternative; boundary=' + boundary);
+		message.push('Content-Type: multipart/mixed; boundary=' + boundary);
 		message.push('');
 		message.push('--' + boundary);
 		message.push('Content-Type: ' + (self.body.indexOf('<') !== -1 && self.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
