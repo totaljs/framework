@@ -1579,6 +1579,19 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 	return self;
 };
 
+SchemaBuilderEntity.prototype.transform2 = function(name, helper, callback) {
+
+	if (typeof(helper) === FUNCTION) {
+		callback = helper;
+		helper = undefined;
+	}
+
+	if (callback === undefined)
+		callback = NOOP;
+
+	return this.transform(name, null, helper, callback, true);
+};
+
 /**
  * Compose an object
  * @param {String} name
@@ -1686,6 +1699,19 @@ SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback, 
 	});
 
 	return self;
+};
+
+SchemaBuilderEntity.prototype.compose2 = function(name, helper, callback) {
+
+	if (typeof(helper) === FUNCTION) {
+		callback = helper;
+		helper = undefined;
+	}
+
+	if (callback === undefined)
+		callback = NOOP;
+
+	return this.compose(name, null, helper, callback, true);
 };
 
 SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builder, result, callback) {
@@ -1814,6 +1840,19 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 	return self;
 };
 
+SchemaBuilderEntity.prototype.workflow2 = function(name, helper, callback) {
+
+	if (typeof(helper) === FUNCTION) {
+		callback = helper;
+		helper = undefined;
+	}
+
+	if (callback === undefined)
+		callback = NOOP;
+
+	return this.workflow(name, null, helper, callback, true);
+};
+
 /**
  * Run an operation
  * @param {String} name
@@ -1907,6 +1946,19 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 	}, skip !== true);
 
 	return self;
+};
+
+SchemaBuilderEntity.prototype.operation2 = function(name, helper, callback) {
+
+	if (typeof(helper) === FUNCTION) {
+		callback = helper;
+		helper = undefined;
+	}
+
+	if (callback === undefined)
+		callback = NOOP;
+
+	return this.operation(name, null, helper, callback, true);
 };
 
 /**
