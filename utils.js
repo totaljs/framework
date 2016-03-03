@@ -484,7 +484,21 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		length = flags.length;
 		for (var i = 0; i < length; i++) {
 
+			// timeout
+			if (flags[i] > 0) {
+				timeout = flags[i];
+				continue;
+			}
+
 			switch (flags[i].toLowerCase()) {
+
+				case 'utf8':
+				case 'ascii':
+				case 'base64':
+				case 'binary':
+				case 'hex':
+					encoding = flags[i];
+					break;
 
 				case 'xhr':
 					headers['X-Requested-With'] = 'XMLHttpRequest';
@@ -732,7 +746,21 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		length = flags.length;
 		for (var i = 0; i < length; i++) {
 
+			// timeout
+			if (flags[i] > 0) {
+				timeout = flags[i];
+				continue;
+			}
+
 			switch (flags[i].toLowerCase()) {
+
+				case 'utf8':
+				case 'ascii':
+				case 'base64':
+				case 'binary':
+				case 'hex':
+					encoding = flags[i];
+					break;
 
 				case 'xhr':
 					headers['X-Requested-With'] = 'XMLHttpRequest';
