@@ -62,6 +62,8 @@ var REQUEST_PROXY_FLAGS = ['post', 'json'];
 var RANGE = { start: 0, end: 0 };
 var HEADERS = {};
 var SUCCESSHELPER = { success: true };
+var EMPTYARRAY = new Array(0);
+var EMPTYOBJECT = {};
 
 // Cached headers for repeated usage
 HEADERS['responseCode'] = {};
@@ -432,7 +434,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-31';
+	this.version_header = '1.9.7-32';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -4600,8 +4602,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (filename[0] === '@')
 		filename = framework.path.package(filename.substring(1));
 
-	req.clear(true);
-
 	if (!key)
 		key = createTemporaryKey(req);
 
@@ -4660,6 +4660,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
 
+		req.clear(true);
 		return self;
 	}
 
@@ -4774,6 +4775,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			done();
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
+		req.clear(true);
 		return self;
 	}
 
@@ -4790,6 +4792,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 				done();
 			if (!req.isStaticFile)
 				self.emit('request-end', req, res);
+			req.clear(true);
 		});
 		return self;
 	}
@@ -4806,6 +4809,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			done();
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
+		req.clear(true);
 	});
 
 	return self;
@@ -4898,7 +4902,6 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 		if (res.success || res.headersSent)
 			return;
 
-		req.clear(true);
 		res.success = true;
 
 		self.stats.response.pipe++;
@@ -4907,6 +4910,8 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
+
+		req.clear(true);
 
 		if (callback)
 			callback();
@@ -4927,7 +4932,6 @@ Framework.prototype.responseCustom = function(req, res) {
 	if (res.success || res.headersSent)
 		return;
 
-	req.clear(true);
 	res.success = true;
 
 	self.stats.response.custom++;
@@ -4936,6 +4940,7 @@ Framework.prototype.responseCustom = function(req, res) {
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
 
+	req.clear(true);
 	return self;
 };
 
@@ -5216,8 +5221,6 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		return self;
 	}
 
-	req.clear(true);
-
 	if (contentType.lastIndexOf('/') === -1)
 		contentType = utils.getContentType(contentType);
 
@@ -5270,6 +5273,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 			done();
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
+		req.clear(true);
 		return self;
 	}
 
@@ -5293,6 +5297,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
 
+		req.clear(true);
 		return self;
 	}
 
@@ -5310,6 +5315,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
 
+	req.clear(true);
 	return self;
 };
 
@@ -5410,8 +5416,6 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	if (!encoding)
 		encoding = 'binary';
 
-	req.clear(true);
-
 	if (contentType.lastIndexOf('/') === -1)
 		contentType = framework_utils.getContentType(contentType);
 
@@ -5447,6 +5451,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 			done();
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
+		req.clear(true);
 		return self;
 	}
 
@@ -5474,6 +5479,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
 
+	req.clear(true);
 	return self;
 };
 
@@ -5584,7 +5590,6 @@ Framework.prototype.responseCode = function(req, res, code, problem) {
 		return self;
 
 	self._request_stats(false, req.isStaticFile);
-	req.clear(true);
 
 	res.success = true;
 	res.writeHead(code, HEADERS['responseCode']);
@@ -5597,6 +5602,7 @@ Framework.prototype.responseCode = function(req, res, code, problem) {
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
 
+	req.clear(true);
 	var key = 'error' + code;
 	self.emit(key, req, res, problem);
 	self.stats.response[key]++;
@@ -5644,7 +5650,6 @@ Framework.prototype.response500 = function(req, res, error) {
 		return self;
 
 	self._request_stats(false, req.isStaticFile);
-	req.clear(true);
 
 	res.success = true;
 	res.writeHead(500, HEADERS['responseCode']);
@@ -5657,6 +5662,7 @@ Framework.prototype.response500 = function(req, res, error) {
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
 
+	req.clear(true);
 	self.stats.response.error500++;
 	return self;
 };
@@ -5695,7 +5701,6 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	if (res.success || res.headersSent)
 		return self;
 
-	req.clear(true);
 	res.success = true;
 
 	if (!contentBody)
@@ -5743,6 +5748,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 		self._request_stats(false, req.isStaticFile);
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
+		req.clear(true);
 		return self;
 	}
 
@@ -5754,6 +5760,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 		self._request_stats(false, req.isStaticFile);
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
+		req.clear(true);
 		return self;
 	}
 
@@ -5765,6 +5772,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
 
+	req.clear(true);
 	return self;
 };
 
@@ -5784,10 +5792,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 		return;
 
 	self._request_stats(false, req.isStaticFile);
-
-	req.clear(true);
 	res.success = true;
-
 	var headers = HEADERS['responseRedirect'];
 	headers.Location = url;
 	res.writeHead(permanent ? 301 : 302, headers);
@@ -5796,6 +5801,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
 
+	req.clear(true);
 	return self;
 };
 
@@ -6313,11 +6319,7 @@ Framework.prototype.listener = function(req, res) {
 	}
 
 	req.path = framework_internal.routeSplit(req.uri.pathname);
-	req.body = {};
-	req.files = new Array(0);
 	req.processing = 0;
-	req.session = null;
-	req.user = null;
 	req.isAuthorized = true;
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	res.success = false;
@@ -6325,7 +6327,7 @@ Framework.prototype.listener = function(req, res) {
 	if (self.isDebug)
 		res.setHeader('Mode', 'debug');
 
-	req.isStaticFile = framework.config['allow-handle-static-files'] ? framework_utils.isStaticFile(req.uri.pathname) : false;
+	req.isStaticFile = framework.config['allow-handle-static-files'] && framework_utils.isStaticFile(req.uri.pathname);
 
 	var can = true;
 	if (req.isStaticFile) {
@@ -6407,6 +6409,10 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		return self;
 	}
 
+	req.session = null;
+	req.user = null;
+	req.body = EMPTYOBJECT;
+	req.files = EMPTYARRAY;
 	req.isProxy = headers['x-proxy'] === 'total.js';
 
 	req.buffer_exceeded = false;
@@ -9387,11 +9393,12 @@ Subscribe.prototype.urlencoded = function() {
 	self.route = framework.lookup(self.req, self.req.uri.pathname, self.req.flags, true);
 
 	if (!self.route) {
-		self.req.clear(true);
 		framework.stats.request.blocked++;
 		framework._request_stats(false, false);
 		self.res.writeHead(403);
 		self.res.end();
+		framework.emit('request-end', self.req, self.res);
+		self.req.clear(true);
 		return self;
 	}
 
@@ -12631,12 +12638,12 @@ Controller.prototype.redirect = function(url, permanent) {
 		return self;
 
 	self.subscribe.success();
-	self.req.clear(true);
 	self.res.success = true;
 	self.res.writeHead(permanent ? 301 : 302, { 'Location': url });
 	self.res.end();
 	framework._request_stats(false, false);
 	framework.emit('request-end', self.req, self.res);
+	self.req.clear(true);
 	framework.stats.response.redirect++;
 	return self;
 };
@@ -14826,7 +14833,7 @@ http.IncomingMessage.prototype.behaviour = function(type) {
 http.IncomingMessage.prototype.cookie = function(name) {
 
 	var self = this;
-	if (self.cookies !== undefined)
+	if (self.cookies)
 		return $decodeURIComponent(self.cookies[name] || '');
 
 	var cookie = self.headers['cookie'];

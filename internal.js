@@ -78,6 +78,10 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	var rm = null;
 	var ip = '';
 
+	// Replaces the EMPTYARRAY and EMPTYOBJECT in index.js
+	req.files = [];
+	req.body = {};
+
 	for (var i = 0, length = req.ip.length; i < length; i++) {
 		if (req.ip[i] !== '.' && req.ip[i] !== ':')
 			ip += req.ip[i];
