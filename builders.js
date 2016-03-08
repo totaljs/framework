@@ -2643,6 +2643,11 @@ ErrorBuilder.prototype._resource = function() {
 	return self;
 };
 
+ErrorBuilder.prototype.exception = function(message) {
+	this.items.push({ name: '', error: message });
+	return this;
+};
+
 /**
  * Add an error
  * @param {String} name  Property name.
@@ -2685,18 +2690,18 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
 	if (!name && !error)
 		return self;
 
-	if (error === undefined)
-		error = '@';
-
 	if (error === null)
 		return self;
+
+	if (!error)
+		error = '@';
 
 	if (error instanceof Error)
 		error = error.toString();
 
 	self.items.push({
 		name: name,
-		error: typeof(error) === STRING ? error : (error || '').toString() || '@',
+		error: typeof(error) === STRING ? error : error.toString(),
 		path: path,
 		index: index
 	});
@@ -2704,7 +2709,6 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
 	self.count = self.items.length;
 	return self;
 };
-
 
 /**
  * Add an error (@alias for add)
@@ -2834,7 +2838,7 @@ ErrorBuilder.prototype._prepare = function() {
 		else
 			o.error = self.onResource(o.error.substring(1));
 
-		if (o.error === undefined || o.error.length === 0)
+		if (!o.error)
 			o.error = REQUIRED.replace('@', o.name);
 	}
 

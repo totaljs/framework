@@ -22,6 +22,7 @@
 - added: `SchemaBuilder.workflow2(name, options, callback)` skips preparing and validation
 - added: `SchemaBuilder.transform2(name, options, callback)` skips preparing and validation
 - added: `SchemaBuilder.operation2(name, options, callback)` skips preparing and validation
+- added: `ErrorBuilder.exception(message)` - adds a new exception message
 
 - updated: (IMPORTANT) Array.async([NEW: threadCount (Number)], [callback]) supports `threads`
 - updated: (IMPORTANT) Array.wait(onItem(item, index), [callback], [threadCount]) supports `threads`
