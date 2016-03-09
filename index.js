@@ -10152,7 +10152,7 @@ Controller.prototype.$remove = function(helper, callback) {
 Controller.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
 	if (Builders.isSchema(self.body))
-		self.body.$operation(name, helper, callback);
+		self.body.$workflow(name, helper, callback);
 	else
 		self.getSchema().workflow(name, null, helper, callback, true); // skip validation
 	return self;
@@ -10161,7 +10161,7 @@ Controller.prototype.$workflow = function(name, helper, callback) {
 Controller.prototype.$transform = function(name, helper, callback) {
 	var self = this;
 	if (Builders.isSchema(self.body))
-		self.body.$operation(name, helper, callback);
+		self.body.$transform(name, helper, callback);
 	else
 		self.getSchema().transform(name, null, helper, callback, true); // skip validation
 	return self;
