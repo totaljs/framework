@@ -10158,6 +10158,12 @@ Controller.prototype.$workflow = function(name, helper, callback) {
 	return self;
 };
 
+Controller.prototype.$workflow2 = function(name, helper, callback) {
+	var self = this;
+	self.getSchema().workflow2(name, helper, callback);
+	return self;
+};
+
 Controller.prototype.$transform = function(name, helper, callback) {
 	var self = this;
 	if (Builders.isSchema(self.body))
@@ -10167,12 +10173,24 @@ Controller.prototype.$transform = function(name, helper, callback) {
 	return self;
 };
 
+Controller.prototype.$transform2 = function(name, helper, callback) {
+	var self = this;
+	self.getSchema().transform2(name, helper, callback);
+	return self;
+};
+
 Controller.prototype.$operation = function(name, helper, callback) {
 	var self = this;
 	if (Builders.isSchema(self.body))
 		self.body.$operation(name, helper, callback);
 	else
 		self.getSchema().operation(name, null, helper, callback, true); // skip validation
+	return self;
+};
+
+Controller.prototype.$operation2 = function(name, helper, callback) {
+	var self = this;
+	self.getSchema().operation2(name, helper, callback);
 	return self;
 };
 
