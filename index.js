@@ -1042,21 +1042,11 @@ Framework.prototype.restful = function(url, flags, onQuery, onGet, onSave, onDel
 	var self = this;
 	var tmp;
 
-	function remove_schema(arr) {
-		for (var i = 0, length = arr.length; i < length; i++) {
-			if (arr[i][0] !== '*')
-				continue;
-			arr.splice(i, 1);
-			return arr;
-		}
-		return arr;
-	}
-
 	if (onQuery) {
 		tmp = [];
 
 		if (flags)
-			tmp.push.apply(tmp, remove_schema(flags));
+			tmp.push.apply(tmp, flags);
 
 		self.route(url, tmp, onQuery);
 	}
@@ -1067,7 +1057,7 @@ Framework.prototype.restful = function(url, flags, onQuery, onGet, onSave, onDel
 		tmp = [];
 
 		if (flags)
-			tmp.push.apply(tmp, remove_schema(flags));
+			tmp.push.apply(tmp, flags);
 
 		self.route(restful, tmp, onGet);
 	}
@@ -1091,7 +1081,7 @@ Framework.prototype.restful = function(url, flags, onQuery, onGet, onSave, onDel
 		tmp = ['delete'];
 
 		if (flags)
-			tmp.push.apply(tmp, remove_schema(flags));
+			tmp.push.apply(tmp, flags);
 
 		self.route(restful, tmp, onDelete);
 	}
