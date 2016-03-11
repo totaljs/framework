@@ -13307,8 +13307,8 @@ WebSocket.prototype.date = function(type, d1, d2) {
 /**
  * Send a message
  * @param {String} message
- * @param {String Array or Function(client)} id
- * @param {String Array or Funciton(client)} blacklist
+ * @param {String Array or Function(id, client)} id
+ * @param {String Array or Funciton(id, client)} blacklist
  * @return {WebSocket}
  */
 WebSocket.prototype.send = function(message, id, blacklist) {
@@ -13316,65 +13316,53 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 	var self = this;
 	var keys = self._keys;
 
-	if (!keys)
+	if (!keys || !keys.length)
 		return self;
 
-	var length = keys.length;
+	var isA = id instanceof Array;
+	var isB = blacklist instanceof Array;
 
-	if (length === 0)
-		return self;
-
-	var fn = typeof(blacklist) === TYPE_FUNCTION ? blacklist : null;
-	var is = blacklist instanceof Array;
-
-	if (!id || !id.length) {
-
-		for (var i = 0; i < length; i++) {
-
-			var _id = keys[i];
-
-			if (is && blacklist.indexOf(_id) !== -1)
-				continue;
-
-			var conn = self.connections[_id];
-
-			if (fn && !fn.call(self, _id, conn))
-				continue;
-
-			conn.send(message);
-			framework.stats.response.websocket++;
-		}
-
-		self.emit('send', message, null, []);
-		return self;
-	}
-
-	fn = typeof(id) === TYPE_FUNCTION ? id : null;
-	is = id instanceof Array;
-
-	for (var i = 0; i < length; i++) {
+	for (var i = 0, length = keys.length; i < length; i++) {
 
 		var _id = keys[i];
-
-		if (is && id.indexOf(_id) === -1)
-			continue;
-
 		var conn = self.connections[_id];
 
-		if (fn && !fn.call(self, _id, conn) === -1)
-			continue;
+		if (id) {
+			if (isA) {
+				if (!websocket_valid_array(_id, id))
+					continue;
+			} else {
+				if (!websocket_valid_fn(_id, conn, id))
+					continue;
+			}
+		}
+
+		if (blacklist) {
+			if (isB) {
+				if (websocket_valid_array(_id, blacklist))
+					continue;
+			} else {
+				if (websocket_valid_fn(_id, conn, blacklist))
+					continue;
+			}
+		}
 
 		conn.send(message);
 		framework.stats.response.websocket++;
 	}
 
-	self.emit('send', message, id, blacklist);
 	return self;
 };
 
-WebSocket.prototype.setId = function() {
+function websocket_valid_array(id, arr) {
+	return arr.indexOf(id) !== -1;
+}
 
-};
+function websocket_valid_fn(id, client, fn) {
+	if (fn(id, client))
+		return true;
+	return false;
+}
 
 /**
  * Send a ping

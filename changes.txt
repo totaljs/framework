@@ -54,7 +54,8 @@
 - fixed: `U.request()` and fixed `head` method, callback returns headers when is `head` method used
 - fixed: Pagination by DusanDragula
 - fixed: View inline helpers - reported by [Андрей Владимирович](https://github.com/anddesigner)
-- fixed: Array.findIndex - reported by [Liao San-Kai](https://github.com/liaosankai)
+- fixed: `Array.findIndex` - reported by [Liao San-Kai](https://github.com/liaosankai)
+- fixed: `WebSocket.send()` problem with `[id]` and `[blacklist]`
 
 - improved: performance in `Expires Header`
 
