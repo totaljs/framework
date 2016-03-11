@@ -3591,6 +3591,50 @@ Framework.prototype.snapshot = function(url, filename, callback) {
 	return self;
 };
 
+/**
+ * Find WebSocket connection
+ * @param {String/RegExp} path
+ * @return {WebSocket}
+ */
+Framework.prototype.findConnection = function(path) {
+	var self = this;
+	var arr = Object.keys(self.connections);
+	var is = framework_utils.isRegExp(path);
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var key = arr[i];
+		if (is) {
+			if (path.test(key))
+				return self.connections[key];
+		} else {
+			if (key.indexOf(path) !== -1)
+				return self.connections[key];
+		}
+	}
+};
+
+/**
+ * Find WebSocket connections
+ * @param {String/RegExp} path
+ * @return {WebSocket Array}
+ */
+Framework.prototype.findConnections = function(path) {
+	var self = this;
+	var arr = Object.keys(self.connections);
+	var is = framework_utils.isRegExp(path);
+	var output = [];
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var key = arr[i];
+		if (is) {
+			if (path.test(key))
+				output.push(self.connections[key]);
+		} else {
+			if (key.indexOf(path) !== -1)
+				output.push(self.connections[key]);
+		}
+	}
+	return output;
+};
+
 /*
 	Global framework validation
 	@name {String}
@@ -6881,7 +6925,7 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 
 	var next = function() {
 		if (self.connections[id] === undefined) {
-			var connection = new WebSocket(self, path, route.controller, id);
+			var connection = new WebSocket(path, route.controller, id);
 			connection.route = route;
 			connection.options = route.options;
 			self.connections[id] = connection;
@@ -13153,12 +13197,11 @@ var SOCKET_ALLOW_VERSION = [13];
 
 /*
 	WebSocket
-	@framework {total.js}
 	@path {String}
 	@name {String} :: Controller name
 	return {WebSocket}
 */
-function WebSocket(framework, path, name, id) {
+function WebSocket(path, name, id) {
 	this._keys = [];
 	this.id = id;
 	this.online = 0;
@@ -13211,12 +13254,9 @@ WebSocket.prototype = {
 	},
 
 	get async() {
-
 		var self = this;
-
 		if (typeof(self._async) === UNDEFINED)
 			self._async = new framework_utils.Async(self);
-
 		return self._async;
 	}
 }
@@ -13330,6 +13370,10 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 
 	self.emit('send', message, id, blacklist);
 	return self;
+};
+
+WebSocket.prototype.setId = function() {
+
 };
 
 /**
