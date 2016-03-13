@@ -434,7 +434,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1970;
-	this.version_header = '1.9.7-32';
+	this.version_header = '1.9.7';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -7279,8 +7279,8 @@ Framework.prototype.testing = function(stop, callback) {
 	// !IMPORTANT! framework.isTestError is created dynamically
 	//             framework.testsFiles too
 
-	if (self.tests.length === 0) {
-		if (self.testsFiles.length === 0) {
+	if (!self.tests.length) {
+		if (!self.testsFiles.length) {
 
 			if (callback)
 				callback(framework.isTestError === true);
@@ -7473,7 +7473,7 @@ Framework.prototype.test = function(stop, names, cb) {
 
 	var results = function() {
 
-		if (framework.testsResults.length === 0)
+		if (!framework.testsResults.length)
 			return;
 
 		console.log('');
@@ -7558,7 +7558,7 @@ Framework.prototype.test = function(stop, names, cb) {
 
 		_test = '';
 
-		if (counter === 0) {
+		if (!counter) {
 
 			results();
 
@@ -11535,9 +11535,8 @@ Controller.prototype.$input = function(model, type, name, attr) {
 		value = model[name];
 
 		if (type === 'checkbox') {
-			if (value === '1' || value === 'true' || value === true)
+			if (value == '1' || value === 'true' || value === true || value === 'on')
 				builder += ' checked="checked"';
-
 			value = val || '1';
 		}
 
