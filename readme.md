@@ -133,6 +133,7 @@ We provide a support of the framework for companies. Our support services will k
 - [MongoDB addons for better work with MongoDB and total.js](https://github.com/petersirka/mongodb-addons)
 - [PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
 
+
 | Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
 |------|------|------|------|------|
 | [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) | [![Maxima Solutions](https://www.totaljs.com/img/logo-maxima.png)](https://maxima-solutions.com/) |
