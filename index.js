@@ -433,8 +433,8 @@ var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 function Framework() {
 
 	this.id = null;
-	this.version = 1970;
-	this.version_header = '1.9.7';
+	this.version = 2000;
+	this.version_header = '2.0.0-1';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
