@@ -98,7 +98,7 @@ We provide a support of the framework for companies. Our support services will k
 
 ---
 
-## Contributors and Sponsors
+## Contributors
 
 | Contributor | Type | E-mail |
 |-------------|------|--------|
@@ -113,11 +113,6 @@ We provide a support of the framework for companies. Our support services will k
 | [Dusan Dragula](https://github.com/DusanDragulaGR) | contributor | <dusan.dragula@goodrequest.com> |
 | [Сковорода Никита Андреевич](https://github.com/ChALkeR) | contributor | <chalkerx@gmail.com> |
 | [Андрей Владимирович](https://github.com/anddesigner) | contributor | <and.designer93@gmail.com> |
-
-| Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
-|------|------|------|------|------|
-| [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) | [![Maxima Solutions](https://www.totaljs.com/img/logo-maxima.png)](https://maxima-solutions.com/) |
-
 
 ## Built with total.js
 
@@ -137,6 +132,10 @@ We provide a support of the framework for companies. Our support services will k
 - [SQL Agent: A missing ORM for node.js and total.js](https://github.com/petersirka/node-sqlagent)
 - [MongoDB addons for better work with MongoDB and total.js](https://github.com/petersirka/mongodb-addons)
 - [PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
+
+| Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
+|------|------|------|------|------|
+| [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) | [![Maxima Solutions](https://www.totaljs.com/img/logo-maxima.png)](https://maxima-solutions.com/) |
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: license.txt
