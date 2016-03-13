@@ -1,4 +1,4 @@
-======= 1.9.7 (BETA)
+======= 1.9.7
 
 - added: `F.web()` --> alias to F.route()
 - added: `F.cors(url, flags, credentials)`
@@ -43,6 +43,7 @@
 - fixed: (IMPORTANT) SchemaBuilder validation
 - fixed: (IMPORTANT) view caching
 - fixed: (IMPORTANT) U.keywords()
+- fixed: @{checkbox} value binding
 - fixed: dynamic views translator caching
 - fixed: URL search string in `F.redirect()` (doesn't work on local relative address)
 - fixed: binary / executable for Windows
