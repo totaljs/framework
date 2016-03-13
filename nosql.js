@@ -11,7 +11,7 @@ var fs = require('fs');
 var path = require('path');
 var events = require('events');
 
-var VERSION = 'v3.1.0';
+var VERSION = 'v3.1.2';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
