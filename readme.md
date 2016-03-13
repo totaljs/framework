@@ -44,7 +44,7 @@ Please support the framework on social networks.
 
 ---
 
-## Support for companies
+## Support
 
 We provide a support of the framework for companies. Our support services will keep your company worry free so you can focus on building products and growing your business.
 
@@ -98,7 +98,7 @@ We provide a support of the framework for companies. Our support services will k
 
 ---
 
-## Contributors
+## Contributors and Sponsors
 
 | Contributor | Type | E-mail |
 |-------------|------|--------|
@@ -114,16 +114,12 @@ We provide a support of the framework for companies. Our support services will k
 | [Сковорода Никита Андреевич](https://github.com/ChALkeR) | contributor | <chalkerx@gmail.com> |
 | [Андрей Владимирович](https://github.com/anddesigner) | contributor | <and.designer93@gmail.com> |
 
-
-## Sponsors
-
 | Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
 |------|------|------|------|------|
 | [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) | [![Maxima Solutions](https://www.totaljs.com/img/logo-maxima.png)](https://maxima-solutions.com/) |
 
-## Other
 
-#### Built with total.js
+## Built with total.js
 
 - [__NEW__: Eshop + CMS written in node.js / total.js](http://www.totaljs.com/eshop)
 - [__NEW__: Todomator - www.todomator.com](https://www.todomator.com)
@@ -136,7 +132,7 @@ We provide a support of the framework for companies. Our support services will k
 - [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)
 - [GPS Localization (WebSocket) - www.gpslocalization.com](http://www.gpslocalization.com)
 
-#### Useful modules
+## Useful modules
 
 - [SQL Agent: A missing ORM for node.js and total.js](https://github.com/petersirka/node-sqlagent)
 - [MongoDB addons for better work with MongoDB and total.js](https://github.com/petersirka/mongodb-addons)
