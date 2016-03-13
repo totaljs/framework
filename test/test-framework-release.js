@@ -105,6 +105,57 @@ function test_routing(next) {
 
 	var async = new utils.Async();
 
+	async.await('cors 1', function(complete) {
+		utils.request(url + '/cors/origin-all/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(code === 200, 'CORS, problem with "*" origin');
+			complete();
+		}, null, { 'origin': 'https://www.totaljs.com' });
+	});
+
+	async.await('cors 2', function(complete) {
+		utils.request(url + '/cors/origin-not/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(code === 404, 'CORS, problem with origin (origin is not valid)');
+			complete();
+		}, null, { 'origin': 'https://www.totaljs.com' });
+	});
+
+	async.await('cors 3', function(complete) {
+		utils.request(url + '/cors/origin-not/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(code === 200, 'CORS, problem with origin (valid origin)');
+			complete();
+		}, null, { 'origin': 'http://www.petersirka.eu' });
+	});
+
+	async.await('cors asterix / wildcard', function(complete) {
+		utils.request(url + '/api/whatever/you/need/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert.ok(code === 200, 'CORS, problem with origin (wildcard routing)');
+			complete();
+		}, null, { 'origin': 'http://www.petersirka.eu' });
+	});
+
+	async.await('cors headers', function(complete) {
+		utils.request(url + '/cors/headers/', ['options'], null, function(error, data, code, headers) {
+			if (error)
+				throw error;
+
+			// "access-control-allow-origin" doesn't support * (wildcard) when "access-control-allow-credentials" is set to true
+			// node.js doesn't support duplicates headers
+			assert.ok(headers['access-control-allow-origin'] === 'http://www.petersirka.eu', 'CORS, headers problem 1');
+			assert.ok(headers['access-control-allow-credentials'] === 'true', 'CORS, headers problem 2');
+			assert.ok(headers['access-control-allow-methods'] === 'POST, PUT, DELETE, OPTIONS', 'CORS, headers problem 3');
+			assert.ok(headers['access-control-allow-headers'] === 'X-Ping', 'CORS, headers problem 4');
+			complete();
+		}, null, { 'origin': 'http://www.petersirka.eu' });
+	});
+
 	async.await('options', function(complete) {
 		utils.request(url + 'options/', ['options'], null, function(error, data, code, headers) {
 			if (error)
@@ -252,7 +303,7 @@ function test_routing(next) {
 		utils.request(url + 'rest/', ['head'], null, function(error, data, code, headers) {
  			if (error)
 				throw error;
-			assert(data === '', 'REST - HEAD');
+			assert(data.connection === 'close', 'REST - HEAD');
 			complete();
 		});
 	});
@@ -657,6 +708,18 @@ function test_routing(next) {
 		});
 	});
 
+	if (DEBUG) {
+		async.await('merge directory', function(complete) {
+			// mergepackage2 is from versions
+			utils.request(url + 'mergedirectory.js', [], function(error, data, code, headers) {
+				if (error)
+					throw error;
+				assert(data.indexOf('block.js') !== -1 && data.indexOf('test.js') !== -1, 'merge directory');
+				complete();
+			});
+		});
+	}
+
 	async.await('merge-blocks-a', function(complete) {
 		utils.request(url + 'merge-blocks-a.js', [], function(error, data, code, headers) {
 			if (error)
@@ -803,7 +866,9 @@ mem.on('stats', function(info) {
 
 framework.on('load', function() {
 
-	framework.merge('/mergepackage.js', '@testpackage/test.js');
+	F.merge('/mergepackage.js', '@testpackage/test.js');
+	F.merge('/mergedirectory.js', '~' + F.path.public('js') + '*.js');
+
 	assert.ok(MODULE('supermodule').ok, 'load module from subdirectory');
 	assert.ok(F.config['custom-config1'] === '1YES', 'custom configuration 1');
 	assert.ok(F.config['custom-config2'] === '2YES', 'custom configuration 2');

@@ -27,7 +27,8 @@ mem.on('stats', function(info) {
 });
 */
 
-framework.http('release', { port: 8001 });
+framework.http('debug', { port: 8001 });
+F.merge('/mergedirectory.js', '~' + F.path.public('js') + '*.js');
 
 setTimeout(function() {
     F.stop();

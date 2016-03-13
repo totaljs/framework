@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.6
+ * @version 1.9.7
  */
 
 'use strict';
@@ -77,6 +77,10 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	var close = 0;
 	var rm = null;
 	var ip = '';
+
+	// Replaces the EMPTYARRAY and EMPTYOBJECT in index.js
+	req.files = [];
+	req.body = {};
 
 	for (var i = 0, length = req.ip.length; i < length; i++) {
 		if (req.ip[i] !== '.' && req.ip[i] !== ':')
@@ -1881,7 +1885,7 @@ function view_parse(content, minify, filename, controller) {
 			var index = text.indexOf('(');
 			if (index === -1)
 				return text;
-			return text.substring(0, index) + '.call(self, ' + text.substring(index + 1);
+			return text.substring(0, index) + '.call(self' + (text.endsWith('()') ? ')' : ',' + text.substring(index + 1));
 		});
 
 		pharse = cmd;
@@ -1935,7 +1939,7 @@ function view_parse(content, minify, filename, controller) {
 					builder = builderTMP + 'unescape($EMPTY' + builder + '),model) || $EMPTY)';
 					builderTMP = '';
 				} else if (isSECTION) {
-					builder = builderTMP + builder + ';repository[\'$section_' + sectionName + '\']=$output;return $EMPTY})()';
+					builder = builderTMP + builder + ';repository[\'$section_' + sectionName + '\']=repository[\'$section_' + sectionName + '\']?repository[\'$section_' + sectionName + '\']+$output:$output;return $EMPTY})()';
 					builderTMP = '';
 				} else {
 					builder += ';return $output;}';
@@ -2981,7 +2985,7 @@ function viewengine_load(name, filename, controller) {
 	return {Object} :: return parsed HTML
 */
 function viewengine_dynamic(content, language, controller) {
-	var key = content.hash();
+	var key = language + '_' + content.hash();
 	var generator = framework.temporary.views[key] || null;
 	if (generator)
 		return generator;
@@ -3014,6 +3018,24 @@ function cleanURL(url, index) {
 	}
 
 	return o;
+};
+
+exports.preparePATH = function(path, remove) {
+	var root = framework.config['default-root'];
+	if (!root)
+		return path;
+
+	var is = path[0] === '/';
+	if ((is && path[1] === '/') || path[4] === ':' || path[5] === ':')
+		return path;
+
+	if (remove)
+		return path.substring(root.length - 1);
+
+	if (is)
+		return root + path.substring(1);
+
+	return root + path;
 };
 
 exports.parseURI = function(protocol, req) {

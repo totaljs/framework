@@ -1,3 +1,65 @@
+======= 1.9.7
+
+- added: `F.web()` --> alias to F.route()
+- added: `F.cors(url, flags, credentials)`
+- added: `config['default-response-maxage']`, default value `11111111`
+- added: `U.get(obj, path)` reads a value from `obj` by path
+- added: `U.set(obj, path, value)` sets a value into `obj` by path
+- added: (IMPORTANT) `config['default-root']` can replace root relative path
+- added: `FrameworkImage` --> `instance.make(function(image) {})`
+- added: `FrameworkImage` supports middleware `FrameworkImage.middleware(extension, fn)`
+- added: `controller.$get([helper], callback)` or alias `controller.$read([helper], callback)` - schema must be defined in the route
+- added: `controller.$remove([helper], callback)` - schema must be defined in the route
+- added: `controller.$save([helper], callback)` - schema must be defined in the route
+- added: `controller.$query([helper], callback)` - schema must be defined in the route
+- added: `controller.$transform(name, [helper], callback)` - schema must be defined in the route
+- added: `controller.$workflow([name, [helper], callback)` - schema must be defined in the route
+- added: `controller.$operation(name, [helper], callback)` - schema must be defined in the route
+- added: `controller.$async(callback, [index])` - schema must be defined in the route
+- added: new `F.route()` flag `binary` (works only with `raw` flag)
+- added: `U.ls2()` --> returns additional information about files (stat Object);
+- added: `Pagination` is a global variable
+- added: `SchemaBuilder.workflow2(name, options, callback)` skips preparing and validation
+- added: `SchemaBuilder.transform2(name, options, callback)` skips preparing and validation
+- added: `SchemaBuilder.operation2(name, options, callback)` skips preparing and validation
+- added: `ErrorBuilder.exception(message)` - adds a new exception message
+- added: `F.findConnection()` finds a websocket connection
+- added: `F.findConnections()` finds websocket connections
+
+- updated: (IMPORTANT) Array.async([NEW: threadCount (Number)], [callback]) supports `threads`
+- updated: (IMPORTANT) Array.wait(onItem(item, index), [callback], [threadCount]) supports `threads`
+- updated: (IMPORTANT) U.streamer(beg, [end], callback) --> supports "end" delimiter
+- updated: Date.format(format, [resource_name]) supports name of months via `MMM` (short) and `MMMM` (full)
+- updated: Resources support months e.g. `January     : Január`
+- updated: `F.merge()` supports directories, e.g. `F.merge('app.js', '/js/*.js')`
+- updated: NoSQL embeddded version
+- updated: `U.ls()` --> [filter] can be `string` or `RegExp`
+- updated: `@{meta(title, [description], [keywords], [image])}` and `@{keywords(value)}` keywords can be String Array
+- updated: `@{section name}` can be used in the view more times
+- updated: `U.request()` flags supports `number` for timeout and encoding `utf8`, `ascii`, etc.
+- updated: `F.restfull()` each action support SchemaBuilder
+
+- fixed: (IMPORTANT) Expires headers - problem with Russian timezone, reported by [Андрей Владимирович](https://github.com/anddesigner)
+- fixed: (IMPORTANT) SchemaBuilder validation
+- fixed: (IMPORTANT) view caching
+- fixed: (IMPORTANT) U.keywords()
+- fixed: @{checkbox} value binding
+- fixed: dynamic views translator caching
+- fixed: URL search string in `F.redirect()` (doesn't work on local relative address)
+- fixed: binary / executable for Windows
+- fixed: SUCCESS()
+- fixed: Schema Validation is performed after F.onAuthorize().
+- fixed: checking of maximum request length
+- fixed: regexp routing
+- fixed: F.restrictions.allow()
+- fixed: `U.request()` and fixed `head` method, callback returns headers when is `head` method used
+- fixed: Pagination by DusanDragula
+- fixed: View inline helpers - reported by [Андрей Владимирович](https://github.com/anddesigner)
+- fixed: `Array.findIndex` - reported by [Liao San-Kai](https://github.com/liaosankai)
+- fixed: `WebSocket.send()` problem with `[id]` and `[blacklist]`
+
+- improved: performance in `Expires Header`
+
 ======= 1.9.6
 
 - added: MailMessage.manually() and removes auto-sending mail --> works only with `F.mail()` and `controller.Mail()`.
@@ -19,7 +81,7 @@
 - updated: (IMPORTANT) Array.wait(onItem, onCallback, [NEW: threadCount (Number) or removeItemFromArray (Boolean)]) supports `threads`
 - updated: `F.mail()` supports themes with view nema like this `=default/someview'`
 - updated: `@{import()}` supports movies and images
-- updated: `@{import()}` can contain schema name in the path like this `=YOURSCHEMA/somefile.js`
+- updated: `@{import()}` can contain schema name in the path like this `=YOURTHEME/somefile.js`
 - updated: `F.route('/', '=themeName/viewname')` supports inline themes
 - updated: `F.resize()` added new options parameter --> `direction` (top, center or bottom)
 - updated: SUCCESS(), now supports function as first argument and the method returns wrapped function too
@@ -103,7 +165,7 @@ I had to skip v1.9.4 version because of NPM (my mistake).
 ======= 1.9.3
 
 - added: (IMPORTANT) merging supports BLOCKS (.js,.css), e.g. F.merge('merge.js', 'fileA.js#management,common', 'fileB.js#management')
-- added: (IMPORTANT) a route with schema binding can contain filter e.g. `*Schema#update` or `*Group\Schema#create` --> the framework validates only fields by filter
+- added: (IMPORTANT) a route with schema binding can contain filter e.g. `*Schema#update` or `*Group/Schema#create` --> the framework validates only fields by filter
 - added: TRANSFORM([transform], obj)
 - added: NEWTRANSFORM(name, fn, [isDefault]) --> alias for TransformBuilder.addTransform()
 - added: packages can be stored as directories (recommended for debug mode only)

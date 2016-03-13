@@ -10,20 +10,11 @@ exports.install = function() {
         this.plain('CUSTOM');
     });
 
-    framework.route('/logged/', view_logged, {
-        flags: ['authorize'],
-        timeout: 1000,
-        length: 3000
-    });
+    framework.route('/logged/', view_logged, ['authorize', 1000], 3000);
+    framework.route('/unauthorize/', ['unauthorize'], view_unauthorize);
 
-    framework.route('/unauthorize/', view_unauthorize, {
-        flags: ['unauthorize']
-    });
-
-    framework.route('/a/b/c/d/authorize/', function() {
+    framework.route('/a/b/c/d/authorize/', ['authorize'], function() {
         this.plain('authorize');
-    }, {
-        flags: ['authorize']
     });
 
     framework.route('/', function() {
@@ -76,7 +67,7 @@ exports.install = function() {
     framework.route('/translate/', viewTranslate);
     framework.route('/test-view/', view_test_view);
     framework.route('/login/google/callback/', aa);
-    framework.route('/timeout/', function() {}, [], null, [], 50);
+    framework.route('/timeout/', function() {}, [50]);
 
     framework.route('/get/', plain_get);
     framework.route('/post/raw/', plain_post_raw, ['post', 'raw']);
@@ -89,19 +80,12 @@ exports.install = function() {
     framework.route('/rest/', plain_rest, ['put']);
     framework.route('/rest/', plain_rest, ['get', 'head']);
     framework.route('/rest/', plain_rest, ['delete']);
-
     framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);
     framework.route('/put/parse/', plain_put_parse, ['put']);
     framework.route('/put/json/', plain_put_json, ['json', 'put']);
     framework.route('/put/xml/', plain_put_xml, ['xml', 'put']);
-
     framework.route('/upload/', plain_upload, ['upload']);
     framework.route('/index/', 'homepage');
-
-	framework.file('Resizing of images', function(req, res) {
-		return req.url.indexOf('.jpg') !== -1;
-	}, resize_image);
-
     framework.route('/live/', viewLive);
     framework.route('/live/incoming/', viewLiveIncoming, ['mixed']);
 
@@ -111,7 +95,7 @@ exports.install = function() {
         var self = this;
         self.global.timeout++;
         self.plain('408');
-    }, []);
+    });
 
     assert.ok(framework.encrypt('123456', 'key', false) === 'MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'framework.encrypt(string)');
     assert.ok(framework.decrypt('MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'key', false) === '123456', 'framework.decrypt(string)');
@@ -134,6 +118,8 @@ exports.install = function() {
         this.plain('401');
     });
 
+    framework.file('Resizing of images', (req) => req.url.indexOf('.jpg') !== -1, resize_image);
+
     // url
     // function
     // flags [json, logged, unlogged]
@@ -141,8 +127,11 @@ exports.install = function() {
     // allow []
     // maximumSize
     framework.websocket('/', socket);
-
     framework.route('/theme-green/', view_theme);
+    framework.cors('/api/*');
+    framework.cors('/cors/origin-all/');
+    framework.cors('/cors/origin-not/', ['http://www.petersirka.eu', 'http://www.858project.com']);
+    framework.cors('/cors/headers/', ['post', 'put', 'delete', 'options', 'X-Ping'], true);
 };
 
 function plain_options() {

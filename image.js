@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 1.9.6
+ * @version 1.9.7
  */
 
 'use strict';
@@ -31,6 +31,8 @@ var exec = child.exec;
 var spawn = child.spawn;
 var path = require('path');
 var sof = { 0xc0: true, 0xc1: true, 0xc2: true, 0xc3: true, 0xc5: true, 0xc6: true, 0xc7: true, 0xc9: true, 0xca: true, 0xcb: true, 0xcd: true, 0xce: true, 0xcf: true };
+var middlewares = {};
+var Fs = require('fs');
 
 function u16(buf, o) {
 	return buf[o] << 8 | buf[o + 1];
@@ -138,10 +140,6 @@ function Image(filename, useImageMagick, width, height) {
 	this.currentStream = type === 'object' ? filename : null;
 	this.isIM = useImageMagick === undefined || useImageMagick === null ? F.config['default-image-converter'] === 'im' : useImageMagick;
 	this.outputType = type === 'string' ? path.extname(filename).substring(1) : 'jpg';
-/*
-	if (!filename)
-		throw new Error('Image filename is undefined.');
-*/
 }
 
 /*
@@ -248,10 +246,25 @@ Image.prototype.save = function(filename, callback, writer) {
 		if (!callback)
 			return;
 
-		if (error)
+		if (error) {
 			callback(error, false);
-		else
-			callback(null, true);
+			return;
+		}
+
+		var middleware = middlewares[self.outputType];
+		if (!middleware)
+			return callback(null, true);
+
+		var reader = Fs.createReadStream(filename);
+		var writer = Fs.createWriteStream(filename + '_');
+
+		reader.pipe(middleware()).pipe(writer);
+
+		writer.on('finish', function() {
+			Fs.rename(filename + '_', filename, function() {
+				callback(null, true);
+			});
+		});
 	});
 
 	if (self.currentStream) {
@@ -297,7 +310,7 @@ Image.prototype.pipe = function(stream, type, options) {
 	if (!self.builder.length)
 		return;
 
-	if (type === undefined || type === null)
+	if (!type)
 		type = self.outputType;
 
 	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(!self.filename ? '-' : self.filename, (type ? type + ':' : '') + '-'));
@@ -306,7 +319,12 @@ Image.prototype.pipe = function(stream, type, options) {
 	cmd.stdout.on('data', stream.emit.bind(stream, 'data'));
 	cmd.stdout.on('end', stream.emit.bind(stream, 'end'));
 	cmd.on('error', stream.emit.bind(stream, 'error'));
-	cmd.stdout.pipe(stream, options);
+
+	var middleware = middlewares[type];
+	if (middleware)
+		cmd.stdout.pipe(middleware()).pipe(stream, options);
+	else
+		cmd.stdout.pipe(stream, options);
 
 	if (self.currentStream) {
 		if (self.currentStream instanceof Buffer)
@@ -331,11 +349,10 @@ Image.prototype.stream = function(type, writer) {
 	if (!self.builder.length)
 		return;
 
-	if (type === undefined || type === null)
+	if (!type)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(!self.filename ? '-' : self.filename, (type ? type + ':' : '') + '-'));
-
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? self.filename : '-', (type ? type + ':' : '') + '-'));
 	if (self.currentStream) {
 		if (self.currentStream instanceof Buffer)
 			cmd.stdin.end(self.currentStream);
@@ -346,7 +363,11 @@ Image.prototype.stream = function(type, writer) {
 	if (writer)
 		writer(cmd.stdin);
 
-	return cmd.stdout;
+	var middleware = middlewares[type];
+	if (!middleware)
+		return cmd.stdout;
+
+	return cmd.stdout.pipe(middleware());
 };
 
 /*
@@ -748,9 +769,6 @@ Image.prototype.colors = function(value) {
 	return this.push('-colors', value, 10);
 };
 
-/*
-	@color {String}
-*/
 Image.prototype.background = function(color) {
 	return this.push('-background', color, 2);
 };
@@ -761,6 +779,11 @@ Image.prototype.fill = function(color) {
 
 Image.prototype.sepia = function(percentage) {
 	return this.push('-modulate', '115,0,100', 4).push('-colorize', '7,21,50', 5);
+};
+
+Image.prototype.make = function(fn) {
+	fn.call(this, this);
+	return this;
 };
 
 /*
@@ -785,4 +808,10 @@ exports.init = function(filename, imageMagick, width, height) {
 
 exports.load = function(filename, imageMagick, width, height) {
 	return new Image(filename, imageMagick, width, height);
+};
+
+exports.middleware = function(type, fn) {
+	if (type[0] === '.')
+		type = type.substring(1);
+	middlewares[type] = fn;
 };

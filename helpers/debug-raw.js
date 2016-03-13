@@ -12,12 +12,13 @@ var options = {};
 // options.config = { name: 'total.js' };
 // options.https = { key: fs.readFileSync('keys/agent2-key.pem'), cert: fs.readFileSync('keys/agent2-cert.pem')};
 // options.sleep = 3000;
+// options.debugger = 40894;
 
 var isDebugging = process.argv.indexOf('debugging') !== -1;
 var directory = process.cwd();
 var path = require('path');
 var first = process.argv.indexOf('restart') === -1;
-var VERSION = '2.1';
+var VERSION = '3.0';
 var TIME = 2000;
 
 process.on('uncaughtException', function(e) {
@@ -200,6 +201,12 @@ function app() {
 
 		var arr = process.argv;
 		var port = arr.pop();
+
+		if (process.execArgv.indexOf('--debug') !== -1) {
+			var key = '--debug=' + (options.debugger || 40894);
+			if (process.execArgv.indexOf(key) === -1)
+				process.execArgv.push(key);
+		}
 
 		if (first)
 			first = false;

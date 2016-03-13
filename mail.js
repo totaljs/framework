@@ -418,6 +418,7 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 	socket.$host = smtp;
 
 	socket.on('error', function(err) {
+		socket.end();
 		socket.destroy();
 		self.closed = true;
 		if (!self.isSent && self.callback)
@@ -452,6 +453,7 @@ Message.prototype.switchToTLS = function(socket, options) {
 	var sock = tls.connect(opt, function() { self._send(this, options, true); });
 
 	sock.on('error', function(err) {
+		sock.end();
 		sock.destroy();
 		self.closed = true;
 		if (!self.isSent && self.callback)
@@ -507,12 +509,14 @@ Message.prototype._send = function(socket, options, autosend) {
 	if (isAttach)
 		mailer.emit('send', self);
 
-	socket.setTimeout(options.timeout || 5000, function() {
+	socket.setTimeout(options.timeout || 8000, function() {
 		self.closed = true;
 		var err = new Error(framework_utils.httpStatus(408));
 		mailer.emit('error', err, self);
-		if (socket)
+		if (socket) {
+			socket.end();
 			socket.destroy();
+		}
 		socket = null;
 		if (!self.isSent && self.callback)
 			self.callback(err);
@@ -591,7 +595,7 @@ Message.prototype._send = function(socket, options, autosend) {
 			builder = '';
 		}
 
-		message.push('Content-Type: multipart/alternative; boundary=' + boundary);
+		message.push('Content-Type: multipart/mixed; boundary=' + boundary);
 		message.push('');
 		message.push('--' + boundary);
 		message.push('Content-Type: ' + (self.body.indexOf('<') !== -1 && self.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
@@ -604,8 +608,10 @@ Message.prototype._send = function(socket, options, autosend) {
 
 	socket.on('end', function() {
 		self.closed = true;
-		if (socket)
+		if (!socket) {
+			socket.end();
 			socket.destroy();
+		}
 	});
 
 	socket.on('data', function(data) {
@@ -687,8 +693,10 @@ Message.prototype._send = function(socket, options, autosend) {
 						self.callback(null);
 
 					ending = setTimeout(function() {
-						if (socket)
+						if (!socket) {
+							socket.end();
 							socket.destroy();
+						}
 						socket = null;
 					}, 500);
 				}
@@ -712,8 +720,11 @@ Message.prototype._send = function(socket, options, autosend) {
 					if (!self.isSent && self.callback)
 						self.callback(err);
 
-					if (socket)
+					if (!socket) {
+						socket.end();
 						socket.destroy();
+					}
+
 					socket = null;
 					break;
 				}
@@ -744,8 +755,10 @@ Message.prototype._send = function(socket, options, autosend) {
 
 				err = new Error(line);
 
-				if (socket)
+				if (!socket) {
+					socket.end();
 					socket.destroy();
+				}
 
 				socket = null;
 				mailer.emit('error', err, self);

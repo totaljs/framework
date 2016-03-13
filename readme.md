@@ -1,6 +1,6 @@
 ![total.js logo](https://www.totaljs.com/img/logo-github.png)
 ---
-[![NPM version][npm-version-image]][npm-url] [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
+[![NPM version][npm-version-image]][npm-url] [![NPM quality][npm-quality]](http://packagequality.com/#?package=total.js) [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
 ---
 Framework, for node.js
@@ -34,7 +34,7 @@ $ npm install total.js
 
 Please support the framework on social networks.
 
-- [Blogs](https://bufferwall.com/blogs/?tag=total.js)
+- [Blogs](https://bufferwall.com/explore/?tag=total.js)
 - [Follow total.js on Gitter](https://gitter.im/totaljs/framework)
 - [Follow total.js on GitHub](https://github.com/totaljs/framework)
 - [Follow total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
@@ -44,7 +44,7 @@ Please support the framework on social networks.
 
 ---
 
-## Support for companies
+## Support
 
 We provide a support of the framework for companies. Our support services will keep your company worry free so you can focus on building products and growing your business.
 
@@ -112,10 +112,9 @@ We provide a support of the framework for companies. Our support services will k
 | [Ivan Marchukov](https://github.com/deadman2000) | contributor | <marchukov.ivan@gmail.com> |
 | [Dusan Dragula](https://github.com/DusanDragulaGR) | contributor | <dusan.dragula@goodrequest.com> |
 | [Сковорода Никита Андреевич](https://github.com/ChALkeR) | contributor | <chalkerx@gmail.com> |
+| [Андрей Владимирович](https://github.com/anddesigner) | contributor | <and.designer93@gmail.com> |
 
-## Other
-
-#### Built with total.js
+## Built with total.js
 
 - [__NEW__: Eshop + CMS written in node.js / total.js](http://www.totaljs.com/eshop)
 - [__NEW__: Todomator - www.todomator.com](https://www.todomator.com)
@@ -128,11 +127,15 @@ We provide a support of the framework for companies. Our support services will k
 - [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)
 - [GPS Localization (WebSocket) - www.gpslocalization.com](http://www.gpslocalization.com)
 
-#### Useful modules
+## Useful modules
 
 - [SQL Agent: A missing ORM for node.js and total.js](https://github.com/petersirka/node-sqlagent)
 - [MongoDB addons for better work with MongoDB and total.js](https://github.com/petersirka/mongodb-addons)
 - [PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
+
+| Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
+|------|------|------|------|------|
+| [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) | [![Maxima Solutions](https://www.totaljs.com/img/logo-maxima.png)](https://maxima-solutions.com/) |
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: license.txt
@@ -140,6 +143,7 @@ We provide a support of the framework for companies. Our support services will k
 [npm-url]: https://npmjs.org/package/total.js
 [npm-version-image]: https://img.shields.io/npm/v/total.js.svg?style=flat
 [npm-downloads-image]: https://img.shields.io/npm/dm/total.js.svg?style=flat
+[npm-quality]: http://npm.packagequality.com/shield/total.js.svg
 
 [travis-url]: https://travis-ci.org/totaljs/framework
 [travis-image]: https://img.shields.io/travis/totaljs/framework.svg?style=flat

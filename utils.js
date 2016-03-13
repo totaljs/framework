@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.6
+ * @version 1.9.7
  */
 
 'use strict';
@@ -42,7 +42,7 @@ var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\
 var regexpTRIM = /^[\s]+|[\s]+$/g;
 var regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
-var regexpDATEFORMAT = /yyyy|yy|MM|M|dd|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
+var regexpDATEFORMAT = /yyyy|yy|M+|dd|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
 var regexpSTRINGFORMAT = /\{\d+\}/g;
 var regexpPATH = /\\/g;
 var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
@@ -58,6 +58,7 @@ var NEWLINE = '\r\n';
 var VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version_header : '');
 var isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 var dnscache = {};
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'Juny', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 var contentTypes = {
 	'aac': 'audio/aac',
@@ -298,36 +299,36 @@ exports.$$wait = function(fnValid, timeout, interval) {
  */
 exports.resolve = function(url, callback) {
 
-    var uri = parser.parse(url);
+	var uri = parser.parse(url);
 
-    if (!callback)
-    	return dnscache[uri.host];
+	if (!callback)
+		return dnscache[uri.host];
 
-    if (dnscache[uri.host]) {
-        uri.host = dnscache[uri.host];
-        callback(null, uri);
-        return;
-    }
+	if (dnscache[uri.host]) {
+		uri.host = dnscache[uri.host];
+		callback(null, uri);
+		return;
+	}
 
-    Dns.resolve4(uri.hostname, function(e, addresses) {
+	Dns.resolve4(uri.hostname, function(e, addresses) {
 
-        if (!e) {
-            dnscache[uri.host] = addresses[0];
-            uri.host = addresses[0];
-	        callback(null, uri);
-            return;
-        }
+		if (!e) {
+			dnscache[uri.host] = addresses[0];
+			uri.host = addresses[0];
+			callback(null, uri);
+			return;
+		}
 
-        setImmediate(function() {
-	        Dns.resolve4(uri.hostname, function(e, addresses) {
-	            if (e)
-	                return callback(e, uri);
-	            dnscache[uri.host] = addresses[0];
-	            uri.host = addresses[0];
-		        callback(null, uri);
-	        });
-    	});
-    });
+		setImmediate(function() {
+			Dns.resolve4(uri.hostname, function(e, addresses) {
+				if (e)
+					return callback(e, uri);
+				dnscache[uri.host] = addresses[0];
+				uri.host = addresses[0];
+				callback(null, uri);
+			});
+		});
+	});
 };
 
 exports.$$resolve = function(url) {
@@ -359,14 +360,14 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 		for (var i = 0, length = content.length; i < length; i++) {
 			if (!content[i])
 				continue;
-			var tmp = (forSearch ? content[i].removeDiacritics().toLowerCase().replace(/y/g, 'i') : content[i].toLowerCase()).split(' ');
+			var tmp = (forSearch ? content[i].removeDiacritics().toLowerCase().replace(/y/g, 'i') : content[i].toLowerCase()).replace(/\n/g, ' ').split(' ');
 			if (!tmp || !tmp.length)
 				continue;
 			for (var j = 0, jl = tmp.length; j < jl; j++)
 				words.push(tmp[j]);
 		}
 	} else
-		words = (forSearch ? content.removeDiacritics().toLowerCase().replace(/y/g, 'i') : content.toLowerCase()).split(' ');
+		words = (forSearch ? content.removeDiacritics().toLowerCase().replace(/y/g, 'i') : content.toLowerCase()).replace(/\n/g, ' ').split(' ');
 
 	if (!words)
 		words = [];
@@ -483,7 +484,21 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		length = flags.length;
 		for (var i = 0; i < length; i++) {
 
+			// timeout
+			if (flags[i] > 0) {
+				timeout = flags[i];
+				continue;
+			}
+
 			switch (flags[i].toLowerCase()) {
+
+				case 'utf8':
+				case 'ascii':
+				case 'base64':
+				case 'binary':
+				case 'hex':
+					encoding = flags[i];
+					break;
 
 				case 'xhr':
 					headers['X-Requested-With'] = 'XMLHttpRequest';
@@ -603,7 +618,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			delete self._buffer; // Free memory
 			e.emit('end', str, self.statusCode, self.headers, uri.host);
 			if (callback)
-				callback(null, str, self.statusCode, self.headers, uri.host);
+				callback(null, method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
 			callback = null;
 		});
 
@@ -731,7 +746,21 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		length = flags.length;
 		for (var i = 0; i < length; i++) {
 
+			// timeout
+			if (flags[i] > 0) {
+				timeout = flags[i];
+				continue;
+			}
+
 			switch (flags[i].toLowerCase()) {
+
+				case 'utf8':
+				case 'ascii':
+				case 'base64':
+				case 'binary':
+				case 'hex':
+					encoding = flags[i];
+					break;
 
 				case 'xhr':
 					headers['X-Requested-With'] = 'XMLHttpRequest';
@@ -1225,30 +1254,83 @@ exports.isRelative = function(url) {
 
 /**
  * Streamer method
- * @param {String} delimiter
+ * @param {String} beg
+ * @param {String} end
  * @param {Function(value, index)} callback
  */
-exports.streamer = function(delimiter, callback) {
-    var cache = '';
-    var length = delimiter.length;
-    var indexer = 0;
-    return function(chunk) {
-    	if (!chunk)
-    		return;
-        if (typeof(chunk) !== 'string')
-            chunk = chunk.toString('utf8');
-        cache += chunk;
-        var index = cache.indexOf(delimiter);
-        if (index === -1)
-            return;
-        while (index !== -1) {
-            callback(cache.substring(0, index + length), indexer++);
-            cache = cache.substring(index + length);
-            index = cache.indexOf(delimiter);
-            if (index === -1)
-                return;
-        }
-    };
+exports.streamer = function(beg, end, callback) {
+
+	if (typeof(end) === FUNCTION) {
+		callback = end;
+		end = undefined;
+	}
+
+	var cache = '';
+	var indexer = 0;
+
+	if (!end) {
+		var length = beg.length;
+		return function(chunk) {
+			if (!chunk)
+				return;
+			if (typeof(chunk) !== 'string')
+				chunk = chunk.toString('utf8');
+			cache += chunk;
+			var index = cache.indexOf(beg);
+			if (index === -1)
+				return;
+			while (index !== -1) {
+				callback(cache.substring(0, index + length), indexer++);
+				cache = cache.substring(index + length);
+				index = cache.indexOf(beg);
+				if (index === -1)
+					return;
+			}
+		};
+	}
+
+	var blength = beg.length;
+	var elength = end.length;
+	var bi = -1;
+	var ei = -1;
+	var is = false;
+
+	return function(chunk) {
+
+		if (!chunk)
+			return;
+
+		if (typeof(chunk) !== 'string')
+			chunk = chunk.toString('utf8');
+
+		cache += chunk;
+
+		if (!is) {
+			bi = cache.indexOf(beg);
+			if (bi === -1)
+				return;
+			is = true;
+		}
+
+		if (is) {
+			ei = cache.indexOf(end, bi + blength);
+			if (ei === -1)
+				return;
+		}
+
+		while (bi !== -1) {
+			callback(cache.substring(bi, ei + elength), indexer++);
+			cache = cache.substring(ei + elength);
+			is = false;
+			bi = cache.indexOf(beg);
+			if (bi === -1)
+				return;
+			is = true;
+			ei = cache.indexOf(end, bi + blength);
+			if (ei === -1)
+				return;
+		}
+	};
 };
 
 /**
@@ -1744,13 +1826,39 @@ exports.validate = function(model, properties, prepare, builder, resource, path,
 	return error;
 };
 
-exports.validate_builder = function(model, error, schema, collection, path, index, fields) {
+function validate_builder_default(name, value) {
+	var type = typeof(value);
+
+	if (type === NUMBER)
+		return value > 0;
+
+	if (type === STRING)
+		return value.length > 0;
+
+	if (type === BOOLEAN)
+		return value === true;
+
+	if (value === null || value === undefined)
+		return false;
+
+	if (value instanceof Array)
+		return value.length > 0;
+
+	if (value instanceof Date)
+		return value.toString()[0] !== 'I'; // Invalid Date
+
+	return true;
+}
+
+exports.validate_builder = function(model, error, schema, collection, path, index, fields, pluspath) {
 
 	var entity = collection[schema];
-	var prepare = entity.onValidate || entity.onValidation || framework.onValidate || framework.onValidation;
-
+	var prepare = entity.onValidate || entity.onValidation || framework.onValidate || framework.onValidation || validate_builder_default;
 	var current = path === undefined ? '' : path + '.';
 	var properties = entity.properties;
+
+	if (!pluspath)
+		pluspath = '';
 
 	if (model === undefined || model === null)
 		model = {};
@@ -1768,7 +1876,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		var type = typeof(value);
 
 		if (value === undefined) {
-			error.add(name, '@', current + name);
+			error.add(pluspath + name, '@', current + name);
 			continue;
 		} else if (type === FUNCTION)
 			value = model[name]();
@@ -1791,14 +1899,14 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					var isArray = entity[0] === '[';
 
 					if (!isArray) {
-						exports.validate_builder(value, error, schema, collection, current + name, index);
+						exports.validate_builder(value, error, schema, collection, current + name, index, undefined, pluspath);
 						continue;
 					}
 
 					entity = entity.substring(1, entity.length - 1).trim();
 
 					if (!(value instanceof Array)) {
-						error.add(name, '@', current + name, index);
+						error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
 						continue;
 					}
 
@@ -1806,51 +1914,60 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					if (collection[entity] === undefined) {
 
 						var result2 = prepare(name, value, current + name, model, schema);
-						if (result2 === undefined)
-							continue;
+						if (result2 === undefined) {
+							result2 = validate_builder_default(name, value);
+							if (result2)
+								continue;
+						}
 
 						type = typeof(result2);
 
 						if (type === STRING) {
-							error.add(name, result2, current + name, index);
+							error.add(pluspath + name, result2, current + name, index);
 							continue;
 						}
 
 						if (type === BOOLEAN && !result2) {
-							error.add(name, '@', current + name, index);
+							error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
 							continue;
 						}
 
 						if (result2.isValid === false)
-							error.add(name, result2.error, current + name, index);
+							error.add(pluspath + name, result2.error, current + name, index);
 
 						continue;
 					}
 
 					var result3 = prepare(name, value, current + name, model, schema);
+					if (result3 === undefined) {
+						result3 = validate_builder_default(name, value);
+						if (result3)
+							continue;
+					}
+
 					if (result3 !== undefined) {
 
 						type = typeof(result3);
 
 						if (type === STRING) {
-							error.add(name, result3, current + name, index);
+							error.add(pluspath + name, result3, current + name, index);
 							continue;
 						}
 
 						if (type === BOOLEAN && !result3) {
-							error.add(name, '@', current + name, index);
+							error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
 							continue;
 						}
 
 						if (result3.isValid === false) {
-							error.add(name, result3.error, current + name, index);
+							error.add(pluspath + name, result3.error, current + name, index);
 							continue;
 						}
 					}
 
 					var sublength = value.length;
 					for (var j = 0; j < sublength; j++)
-						exports.validate_builder(value[j], error, entity, collection, current + name, j);
+						exports.validate_builder(value[j], error, entity, collection, current + name, j, undefined, pluspath);
 
 					continue;
 				}
@@ -1858,25 +1975,27 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		}
 
 		var result = prepare(name, value, current + name, model, schema);
-
-		if (result === undefined)
-			continue;
+		if (result === undefined) {
+			result = validate_builder_default(name, value);
+			if (result)
+				continue;
+		}
 
 		type = typeof(result);
 
 		if (type === STRING) {
-			error.add(name, result, current + name, index);
+			error.add(pluspath + name, result, current + name, index);
 			continue;
 		}
 
 		if (type === BOOLEAN) {
 			if (!result)
-				error.add(name, '@', current + name, index);
+				error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
 			continue;
 		}
 
 		if (result.isValid === false)
-			error.add(name, result.error, current + name, index);
+			error.add(pluspath + name, result.error, current + name, index);
 	}
 
 	return error;
@@ -2187,14 +2306,60 @@ exports.distance = function(lat1, lon1, lat2, lon2) {
 
 /**
  * Directory listing
- * @param  {String} path Path.
- * @param  {Function(files, directories)} callback Callback
- * @param  {Function(filename)} filter Custom filter (optional).
+ * @param {String} path Path.
+ * @param {Function(files, directories)} callback Callback
+ * @param {Function(filename),isDirectory or String or RegExp} filter Custom filter (optional).
  */
 exports.ls = function(path, callback, filter) {
 	var filelist = new FileList();
 	filelist.onComplete = callback;
-	filelist.onFilter = filter || null;
+
+	if (typeof(filter) === 'string') {
+		filter = filter.toLowerCase();
+		filter.onFilter = function(filename, is) {
+			if (is)
+				return true;
+			return filename.toLowerCase().indexOf(filter);
+		};
+	} else if (exports.isRegExp(filter)) {
+		filter.onFilter = function(filename, is) {
+			if (is)
+				return true;
+			return filename.match(filter) ? true : false;
+		};
+	} else
+		filelist.onFilter = filter || null;
+
+	filelist.walk(path);
+};
+
+/**
+ * Advanced Directory listing
+ * @param {String} path Path.
+ * @param {Function(files, directories)} callback Callback
+ * @param {Function(filename),isDirectory or String or RegExp} filter Custom filter (optional).
+ */
+exports.ls2 = function(path, callback, filter) {
+	var filelist = new FileList();
+	filelist.advanced = true;
+	filelist.onComplete = callback;
+
+	if (typeof(filter) === 'string') {
+		filter = filter.toLowerCase();
+		filter.onFilter = function(filename, is) {
+			if (is)
+				return true;
+			return filename.toLowerCase().indexOf(filter);
+		};
+	} else if (exports.isRegExp(filter)) {
+		filter.onFilter = function(filename, is) {
+			if (is)
+				return true;
+			return filename.match(filter) ? true : false;
+		};
+	} else
+		filelist.onFilter = filter || null;
+
 	filelist.walk(path);
 };
 
@@ -2461,7 +2626,7 @@ Date.compare = function(d1, d2) {
  * @param {String} format
  * @return {String}
  */
-Date.prototype.format = function(format) {
+Date.prototype.format = function(format, resource) {
 
 	var self = this;
 	var half = false;
@@ -2487,6 +2652,12 @@ Date.prototype.format = function(format) {
 				return self.getFullYear();
 			case 'yy':
 				return self.getYear();
+			case 'MMM':
+				var m = MONTHS[self.getMonth()];
+				return (framework ? framework.resource(resource, m) || m : m).substring(0, 3);
+			case 'MMMM':
+				var m = MONTHS[self.getMonth()];
+				return (framework ? framework.resource(resource, m) || m : m);
 			case 'MM':
 				return (self.getMonth() + 1).toString().padLeft(2, '0');
 			case 'M':
@@ -2864,7 +3035,7 @@ String.prototype.parseConfig = function(def) {
 
 		var str = arr[i];
 
-		if (str === '' || str[0] === '#')
+		if (!str || str[0] === '#')
 			continue;
 
 		if (str.substring(0, 2) === '//')
@@ -4176,6 +4347,8 @@ Array.prototype.where = function(cb, value) {
 		}
 
 		if (isV) {
+			if (!self[i])
+				continue;
 			if (self[i][cb] === value)
 				selected.push(self[i]);
 			continue;
@@ -4217,6 +4390,8 @@ Array.prototype.findIndex = function(cb, value) {
 		}
 
 		if (isV) {
+			if (!self[i])
+				continue;
 			if (self[i][cb] === value)
 				return i;
 			continue;
@@ -4251,6 +4426,8 @@ Array.prototype.remove = function(cb, value) {
 		}
 
 		if (isV) {
+			if (!self[i])
+				continue;
 			if (self[i][cb] !== value)
 				arr.push(self[i]);
 			continue;
@@ -4271,22 +4448,30 @@ Array.prototype.random = function() {
 	return self[exports.random(self.length - 1)];
 };
 
-Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remove, thread) {
+Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thread) {
 
 	var self = this;
 	var init = false;
 
 	// INIT
 	if (!onItem.$index) {
+
 		onItem.$pending = 0;
 		onItem.$index = 0;
 		init = true;
+
+		if (typeof(callback) === NUMBER) {
+			var tmp = thread;
+			thread = callback;
+			callback = tmp;
+		}
+
 	}
 
-	if (remove === undefined)
-		remove = 1;
+	if (thread === undefined)
+		thread = 1;
 
-	var item = remove === true ? self.shift() : self[onItem.$index];
+	var item = thread === true ? self.shift() : self[onItem.$index];
 	onItem.$index++;
 
 	if (item === undefined) {
@@ -4302,14 +4487,14 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remo
 	onItem.call(self, item, function() {
 		setImmediate(function() {
 			onItem.$pending--;
-			self.wait(onItem, callback, remove);
+			self.wait(onItem, callback, thread);
 		});
 	});
 
-	if (!init || remove === true)
+	if (!init || thread === true)
 		return self;
 
-	for (var i = 1; i < remove; i++)
+	for (var i = 1; i < thread; i++)
 		self.wait(onItem, callback, 0);
 
 	return self;
@@ -4320,22 +4505,43 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, remo
  * @param {Function} callback Optional
  * @return {Array}
  */
-Array.prototype.async = function(callback) {
+Array.prototype.async = function(thread, callback) {
 
 	var self = this;
-	var item = self.shift();
+	var init = false;
 
+	if (typeof(thread) === FUNCTION) {
+		callback = thread;
+		thread = 1;
+	}
+
+	if (self.$pending === undefined) {
+		self.$pending = 0;
+		init = true;
+	}
+
+	var item = self.shift();
 	if (item === undefined) {
+		if (self.$pending)
+			return self;
 		if (callback)
 			callback();
 		return self;
 	}
 
-	item(function() {
-		setImmediate(function() {
-			self.async(callback);
+	for (var i = 0; i < thread; i++) {
+
+		if (i)
+			item = self.shift();
+
+		self.$pending++;
+		item(function() {
+			setImmediate(function() {
+				self.$pending--;
+				self.async(1, callback);
+			});
 		});
-	});
+	}
 
 	return self;
 };
@@ -4812,7 +5018,7 @@ Async.prototype.timeout = function(name, timeout) {
 
 	var self = this;
 
-	if (timeout <= 0 || timeout === undefined) {
+	if (!timeout) {
 		delete self.tasksTimeout[name];
 		return self;
 	}
@@ -4833,7 +5039,7 @@ Async.prototype.refresh = function(name) {
 
 	while (true) {
 		var name = self.tasksAll[index++];
-		if (name === undefined)
+		if (!name)
 			break;
 
 		var task = self.tasksPending[name];
@@ -4890,6 +5096,7 @@ function FileList() {
 	this.file = [];
 	this.onComplete = null;
 	this.onFilter = null;
+	this.advanced = false;
 }
 
 FileList.prototype.reset = function() {
@@ -4934,15 +5141,15 @@ FileList.prototype.stat = function(path) {
 		if (err)
 			return self.next();
 
-		if (stats.isDirectory() && (self.onFilter === null || self.onFilter(path, true))) {
+		if (stats.isDirectory() && (!self.onFilter || self.onFilter(path, true))) {
 			self.directory.push(path);
 			self.pendingDirectory.push(path);
 			self.next();
 			return;
 		}
 
-		if (self.onFilter === null || self.onFilter(path, false))
-			self.file.push(path);
+		if (!self.onFilter || self.onFilter(path, false))
+			self.file.push(self.advanced ? { filename: path, stats: stats } : path);
 
 		self.next();
 	});
@@ -4963,7 +5170,7 @@ FileList.prototype.next = function() {
 		return;
 	}
 
-	self.onComplete(self.file, self.directory);
+	self.onComplete(self.advanced ? self.file.filename : self.file, self.directory);
 };
 
 exports.Async = Async;
@@ -5232,7 +5439,65 @@ exports.parseTheme = function(value) {
 	return value;
 };
 
+exports.set = function(obj, path, value) {
+	var cachekey = 'S+' + path;
+
+	if (global.framework && framework.temporary.other[cachekey])
+		return framework.temporary.other[cachekey](obj, value);
+
+	var arr = path.split('.');
+	var builder = [];
+	var p = '';
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+		p += (p !== '' ? '.' : '') + arr[i];
+		var type = exports.isArray(arr[i]) ? '[]' : '{}';
+
+		if (i !== length - 1) {
+			builder.push('if(typeof(w.' + p + ')!=="object"||w.' + p + '===null)w.' + p + '=' + type);
+			continue;
+		}
+
+		if (type === '{}')
+			break;
+
+		p = p.substring(0, p.lastIndexOf('['));
+		builder.push('if(!(w.' + p + ' instanceof Array))w.' + p + '=' + type);
+		break;
+	}
+
+	var fn = (new Function('w', 'a', 'b', builder.join(';') + ';w.' + path.replace(/\'/, '\'') + '=a;return a'));
+	if (global.framework)
+		framework.temporary.other[cachekey] = fn;
+	fn(obj, value, path);
+};
+
+exports.get = function(obj, path) {
+
+	var cachekey = 'G=' + path;
+
+	if (global.framework && framework.temporary.other[cachekey])
+		return framework.temporary.other[cachekey](obj);
+
+	var arr = path.split('.');
+	var builder = [];
+	var p = '';
+
+	for (var i = 0, length = arr.length - 1; i < length; i++) {
+		var tmp = arr[i];
+		var index = tmp.lastIndexOf('[');
+		if (index !== -1)
+			builder.push('if(!w.' + (p ? p + '.' : '') + tmp.substring(0, index) + ')return');
+		p += (p !== '' ? '.' : '') + arr[i];
+		builder.push('if(!w.' + p + ')return');
+	}
+
+	var fn = (new Function('w', builder.join(';') + ';return w.' + path.replace(/\'/, '\'')));
+	if (global.framework)
+		framework.temporary.other[cachekey] = fn;
+	return fn(obj);
+};
+
 global.Async = global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
 global.sync2 = exports.sync2;
-

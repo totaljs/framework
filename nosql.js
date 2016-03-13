@@ -1,18 +1,17 @@
 /**
  * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
- * @copyright Peter Širka 2012-2015
- * @version 3.0.5
+ * @copyright Peter Širka 2012-2016
+ * @version 3.1.2
  */
 
 'use strict';
 
 var fs = require('fs');
 var path = require('path');
-var util = require('util');
 var events = require('events');
 
-var VERSION = 'v3.0.5';
+var VERSION = 'v3.1.0';
 var STATUS_UNKNOWN = 0;
 var STATUS_READING = 1;
 var STATUS_WRITING = 2;
@@ -94,7 +93,7 @@ function Database(filename, directory, changes) {
 		custom: null
 	};
 
-	this.binary = (directory || '').length === 0 ? null : new Binary(this, directory);
+	this.binary = (directory || '').length ? new Binary(this, directory) : null;
 	this.changelog = new Changelog(this, this.filenameChanges);
 	this.file = new FileReader(this);
 	this.stored = new Stored(this, this.filenameStored);
@@ -173,14 +172,11 @@ function FileReader(db) {
 Database.prototype = {
 
 	get created() {
-
 		var dt = this.meta.created;
-		if (util.isDate(dt))
+		if (!(dt instanceof Date))
 			return dt;
-
-		if (dt === null || dt === undefined)
+		if (!dt.getTime())
 			return null;
-
 		return new Date(Date.parse(dt.toString()));
 	}
 };
@@ -246,7 +242,7 @@ Database.prototype.insert = function(arr, fnCallback, changes) {
 			builderChanges.push(doc.changes);
 	}
 
-	if (builder.length === 0) {
+	if (!builder.length) {
 		self.next();
 		return;
 	}
@@ -314,7 +310,7 @@ Database.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, isScal
 		return self;
 	}
 
-	if (fnCallback === undefined) {
+	if (!fnCallback) {
 		fnCallback = fnMap;
 		fnMap = function(doc) { return doc; };
 	}
@@ -322,7 +318,7 @@ Database.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, isScal
 	if (typeof(fnMap) === STRING)
 		fnMap = filterPrepare(fnMap);
 
-	if (fnMap === null)
+	if (!fnMap)
 		fnMap = function(doc) { return doc; };
 
 	self.emit(name || 'read', true, 0);
@@ -353,7 +349,7 @@ Database.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, isScal
 			return;
 
 		var item = fnMap(doc);
-		if (item === false || item === null || item === undefined)
+		if (!item)
 			return;
 
 		count++;
@@ -486,7 +482,7 @@ Database.prototype.each = function(fnDocument, fnCallback) {
 	for (var i = 0; i < length; i++)
 		operation.push(self.pendingEach[i]);
 
-	if (operation.length === 0) {
+	if (!operation.length) {
 		self.next();
 		return self;
 	}
@@ -582,7 +578,7 @@ Database.prototype.sort = function(fnMap, fnSort, fnCallback, itemSkip, itemTake
 
 		selected.sort(fnSort);
 
-		if (itemSkip > 0 || itemTake > 0)
+		if (itemSkip || itemTake)
 			selected = selected.slice(itemSkip, itemSkip + itemTake);
 
 		fnCallback(null, selected, count);
@@ -591,7 +587,7 @@ Database.prototype.sort = function(fnMap, fnSort, fnCallback, itemSkip, itemTake
 	var onItem = function(doc) {
 
 		var item = fnMap(doc);
-		if (item === false || item === null || item === undefined)
+		if (!item)
 			return;
 
 		count++;
@@ -620,9 +616,6 @@ Database.prototype.clear = function(fnCallback, changes) {
 	var self = this;
 	var type = typeof(fnCallback);
 
-	if (fnCallback === undefined)
-		fnCallback = null;
-
 	if (type === STRING) {
 		changes = fnCallback;
 		fnCallback = null;
@@ -647,7 +640,7 @@ Database.prototype.clear = function(fnCallback, changes) {
 
 	for (var i = 0; i < length; i++) {
 		var fn = self.pendingClear[i];
-		if (fn !== null)
+		if (fn)
 			operation.push(fn);
 	}
 
@@ -662,7 +655,6 @@ Database.prototype.clear = function(fnCallback, changes) {
 
 			setImmediate(function() {
 				self.emit('clear', false, true);
-
 				var length = operation.length;
 				for (var i = 0; i < length; i++) {
 					var fn = operation[i];
@@ -727,7 +719,7 @@ Database.prototype.drop = function(fnCallback) {
 	var operation = [];
 
 	self.pendingDrop.forEach(function(o) {
-		if (o !== null)
+		if (o)
 			operation.push(o);
 	});
 
@@ -808,7 +800,7 @@ Database.prototype._drop = function() {
 
 	});
 
-	if (self.binary === null)
+	if (!self.binary)
 		return self;
 
 	fs.readdirSync(self.binary.directory).forEach(function(filename) {
@@ -836,7 +828,7 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 		fnCallback = null;
 	}
 
-	if (fnUpdate !== undefined)
+	if (fnUpdate)
 		self.pendingLock.push(updatePrepare(fnUpdate, fnCallback, changes, type || 'update'));
 
 	if (self.status !== STATUS_UNKNOWN)
@@ -848,7 +840,7 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 		operation.push(fn);
 	});
 
-	if (operation.length === 0) {
+	if (!operation.length) {
 		self.next();
 		return self;
 	}
@@ -899,7 +891,7 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 
 			});
 
-			if (changes.length > 0)
+			if (changes.length)
 				self.changelog.insert(changes);
 
 			self.next();
@@ -953,19 +945,25 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 		for (var i = 0; i < operationLength; i++) {
 
 			var fn = operation[i];
-			value = fn.filter(doc) || null;
+			value = fn.filter(doc);
 
-			if (value === null)
+			if (!value)
 				break;
 		}
 
-		if (value === null) {
+		if (!value) {
 			self.emit('remove', doc);
 			countRemove++;
 			return;
 		}
 
-		var updated = JSON.stringify(value);
+		var updated;
+
+		if (value && typeof(value.$clean) === FUNCTION)
+			updated = value.$clean();
+		else
+			updated = JSON.stringify(value);
+
 		if (updated !== json) {
 			self.emit('update', value);
 			countUpdate++;
@@ -984,13 +982,13 @@ Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
 			self.emit('update/remove', false, countUpdate, countRemove);
 			var changes = [];
 			operation.forEach(function(o) {
-				if (o.changes !== undefined)
+				if (o.changes)
 					changes.push(o.changes);
 				if (o.callback)
 					(function(cb,count) { setImmediate(function() { cb(null, count); }); })(o.callback, o.count);
 			});
 
-			if (changes.length > 0)
+			if (changes.length)
 				self.changelog.insert(changes);
 
 			self.next();
@@ -1021,7 +1019,7 @@ Database.prototype.$$update = function(fnUpdate, changes, type) {
 Database.prototype.prepare = function(fnUpdate, fnCallback, changes) {
 	var self = this;
 
-	if (fnUpdate !== undefined)
+	if (fnUpdate)
 		self.pendingLock.push(updatePrepare(fnUpdate, fnCallback, changes, 'update'));
 
 	return self;
@@ -1114,36 +1112,36 @@ Database.prototype.next = function() {
 	self.status = STATUS_UNKNOWN;
 
 	// ReadStream is open, ... waiting for close
-	if (self.countRead > 0) {
+	if (self.countRead) {
 		self.status = STATUS_READING;
 		return;
 	}
 
 	// WriteStream is open, ... waiting for close
-	if (self.countWrite > 0) {
+	if (self.countWrite) {
 		self.status = STATUS_WRITING;
 		return;
 	}
 
-	if (self.pendingWrite.length > 0) {
+	if (self.pendingWrite.length) {
 		self.insert(self.pendingWrite);
 		self.pendingWrite = [];
 		return;
 	}
 
 	// large operation (truncate file)
-	if (self.pendingLock.length > 0) {
+	if (self.pendingLock.length) {
 		self.update();
 		return;
 	}
 
-	if (self.pendingEach.length > 0) {
+	if (self.pendingEach.length) {
 		self.each();
 		return;
 	}
 
 	// read data
-	if (self.pendingRead.length > 0) {
+	if (self.pendingRead.length) {
 		var max = self.pendingRead.length;
 
 		if (max > MAX_READSTREAM)
@@ -1155,12 +1153,12 @@ Database.prototype.next = function() {
 		return;
 	}
 
-	if (self.pendingDrop.length > 0) {
+	if (self.pendingDrop.length) {
 		self.drop();
 		return;
 	}
 
-	if (self.pendingClear.length > 0) {
+	if (self.pendingClear.length) {
 		self.clear();
 		return;
 	}
@@ -1173,7 +1171,7 @@ Database.prototype.next = function() {
 Database.prototype.description = function(value) {
 	var self = this;
 
-	if (value === undefined)
+	if (!value)
 		return self.meta.description;
 
 	self.meta.description = (value || '').toString();
@@ -1184,7 +1182,7 @@ Database.prototype.description = function(value) {
 Database.prototype.custom = function(value) {
 	var self = this;
 
-	if (value === undefined)
+	if (!value)
 		return self.meta.custom;
 
 	self.meta.custom = value;
@@ -1195,7 +1193,7 @@ Database.prototype.custom = function(value) {
 Database.prototype._metaSave = function() {
 	var self = this;
 
-	if (self.meta.created === undefined)
+	if (!self.meta.created)
 		self.meta.created = new Date();
 
 	fs.writeFile(self.filenameMeta, JSON.stringify(self.meta), noop);
@@ -1262,7 +1260,7 @@ Views.prototype.all = function(name, fnCallback, itemSkip, itemTake, fnMap) {
 	var self = this;
 	var view = self.views[name];
 
-	if (view === undefined) {
+	if (!view) {
 		view = self.getView(name);
 		self.views[name] = view;
 	}
@@ -1311,7 +1309,7 @@ Views.prototype.top = function(name, top, fnCallback, fnMap) {
 	var self = this;
 	var view = self.views[name];
 
-	if (view === undefined) {
+	if (!view) {
 		view = self.getView(name);
 		self.views[name] = view;
 	}
@@ -1345,12 +1343,12 @@ Views.prototype.one = function(name, fnMap, fnCallback) {
 	var self = this;
 	var view = self.views[name];
 
-	if (view === undefined) {
+	if (!view) {
 		view = self.getView(name);
 		self.views[name] = view;
 	}
 
-	if (fnCallback === undefined) {
+	if (!fnCallback) {
 		fnCallback = fnMap;
 		fnMap = null;
 	}
@@ -1389,7 +1387,7 @@ Views.prototype.drop = function(name, fnCallback, changes) {
 		fnCallback = null;
 	}
 
-	if (view === undefined) {
+	if (!view) {
 		view = self.getView(name);
 		self.views[name] = view;
 	}
@@ -1451,11 +1449,12 @@ Views.prototype.refresh = function(name, fnCallback) {
 
 	var fnSort = schema['sort'] || '';
 	var fnMap = schema['map'];
+	var helper = schema['helper'];
 
-	if (fnSort.length === 0)
-		fnSort = null;
-	else
+	if (fnSort.length)
 		fnSort = eval('(' + fnSort + ')');
+	else
+		fnSort = null;
 
 	fnMap = eval('(' + fnMap + ')');
 
@@ -1466,12 +1465,18 @@ Views.prototype.refresh = function(name, fnCallback) {
 
 	var onCallback = function() {
 
-		if (fnSort)
-			selected.sort(fnSort);
+		if (fnSort) {
+			if (helper) {
+				selected.sort(function(a, b) {
+					return fnSort(a, b, helper);
+				});
+			} else
+				selected.sort(fnSort);
+		}
 
 		var view = self.views[name];
 
-		if (view === undefined) {
+		if (!view) {
 			view = self.getView(name);
 			self.views[name] = view;
 		}
@@ -1521,13 +1526,12 @@ Views.prototype.refresh = function(name, fnCallback) {
 
 	var onItem = function(doc) {
 
-		var item = fnMap(doc) || null;
-		if (item === null)
+		var item = fnMap(doc, helper);
+		if (!item)
 			return;
 
 		count++;
 		selected.push(item);
-
 	};
 
 	self.db.each(onItem, onCallback);
@@ -1549,11 +1553,12 @@ Views.prototype.$$refresh = function(name) {
 	@changes {Function} :: optional, create description
 	return {Views}
 */
-Views.prototype.create = function(name, fnMap, fnSort, fnCallback, changes) {
+Views.prototype.create = function(name, fnMap, fnSort, fnCallback, changes, helper) {
 
 	var self = this;
 
 	if (typeof(fnCallback) === STRING) {
+		helper = changes;
 		changes = fnCallback;
 		fnCallback = null;
 	}
@@ -1564,6 +1569,7 @@ Views.prototype.create = function(name, fnMap, fnSort, fnCallback, changes) {
 	self.db.meta.views[name] = {
 		map: fnMap.toString(),
 		sort: (fnSort || '').toString(),
+		helper: helper,
 		isReady: false
 	};
 
@@ -1667,12 +1673,12 @@ View.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, skipCount,
 			return;
 
 		var item = fnMap(doc);
-		if (item === false || item === null || item === undefined)
+		if (!item)
 			return;
 
 		count++;
 
-		if (skip > 0 && count <= skip)
+		if (skip && count <= skip)
 			return;
 
 		if (!isScalar)
@@ -1715,7 +1721,7 @@ View.prototype.operation = function(fnCallback) {
 
 	var self = this;
 
-	if (fnCallback !== undefined)
+	if (fnCallback)
 		self.pendingOperation.push(fnCallback);
 
 	if (self.status !== STATUS_UNKNOWN)
@@ -1741,18 +1747,18 @@ View.prototype.next = function() {
 	self.status = STATUS_UNKNOWN;
 
 	// ReadStream is open, ... waiting for close
-	if (self.countRead > 0) {
+	if (self.countRead) {
 		self.status = STATUS_READING;
 		return;
 	}
 
-	if (self.pendingOperation.length > 0) {
+	if (self.pendingOperation.length) {
 		self.operation();
 		return;
 	}
 
 	// read data
-	if (self.pendingRead.length > 0) {
+	if (self.pendingRead.length) {
 
 		var max = self.pendingRead.length;
 
@@ -1907,32 +1913,28 @@ Stored.prototype.execute = function(name, params, fnCallback, changes) {
 
 	var fn = self.db.meta.stored[name];
 
-	if (fn === undefined) {
-
+	if (!fn) {
 		if (fnCallback)
 			fnCallback();
-
 		return;
 	}
 
 	var cache = self.cache[name];
 	self.db.emit('stored', name);
 
-	if (fn === undefined) {
-
+	if (!fn) {
 		if (fnCallback)
 			fnCallback();
-
 		return;
 	}
 
-	if (cache === undefined) {
+	if (!cache) {
 		fn = eval('(' + fn + ')');
 		self.cache[name] = fn;
 	} else
 		fn = cache;
 
-	if (fnCallback === undefined)
+	if (!fnCallback)
 		fnCallback = function() {};
 
 	fn.call(self.db, self.db, fnCallback, params || null);
@@ -1974,7 +1976,7 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
 
 	var self = this;
 	var size = buffer.length;
-	var dimension = { width: 0, height: 0 };
+	var dimension;
 
 	self.check();
 
@@ -1984,6 +1986,9 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
 		dimension = dimensionPNG(buffer);
 	else if (name.indexOf('.jpg') !== -1)
 		dimension = dimensionJPG(buffer);
+
+	if (!dimension)
+		dimension = { width: 0, height: 0 };
 
 	var header = new Buffer(BINARY_HEADER_LENGTH);
 	header.fill(' ');
@@ -2065,7 +2070,7 @@ Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) 
 
 	var self = this;
 	var size = buffer.length;
-	var dimension = { width: 0, height: 0 };
+	var dimension;
 	var key = id;
 
 	self.check();
@@ -2079,6 +2084,9 @@ Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) 
 		dimension = dimensionPNG(buffer);
 	else if (name.indexOf('.jpg') !== -1)
 		dimension = dimensionJPG(buffer);
+
+	if (!dimension)
+		dimension = { width: 0, height: 0 };
 
 	var header = new Buffer(BINARY_HEADER_LENGTH);
 	header.fill(' ');
@@ -2431,7 +2439,7 @@ FileReader.prototype.read = function(fd, position, size, fnBuffer, next) {
 */
 function appendFile(filename, arr, fnCallback, db) {
 
-	if (arr.length === 0) {
+	if (!arr.length) {
 		fnCallback();
 		return;
 	}
@@ -2439,7 +2447,10 @@ function appendFile(filename, arr, fnCallback, db) {
 	var lines = '';
 
 	arr.slice(0, 30).forEach(function(o) {
-		lines += JSON.stringify(o) + NEWLINE;
+		if (o && typeof(o.$clean) === FUNCTION)
+			lines += JSON.stringify(o.$clean()) + NEWLINE;
+		else
+			lines += JSON.stringify(o) + NEWLINE;
 	});
 
 	fs.appendFile(filename, lines, function(err) {
@@ -2457,7 +2468,7 @@ function appendFile(filename, arr, fnCallback, db) {
 	return {Function}
 */
 function filterPrepare(fnFilter) {
-	if (fnFilter.length === 0)
+	if (!fnFilter.length)
 		return function() { return true; };
 	return eval('(function(doc){' + (fnFilter.indexOf('return ') === -1 ? 'return ' : '') + fnFilter + '})');
 }

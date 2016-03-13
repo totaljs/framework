@@ -11,6 +11,10 @@ function prototypeDate() {
 	assert.ok(dt.toString() === 'Mon Jul 07 2014 10:52:32 GMT+0200 (CEST)', 'date problem');
 	assert.ok(dt.format() === '2014-07-07T10:52:32.167Z', 'date format(0) problem');
 	assert.ok(dt.add('minute', 5).toString() === 'Mon Jul 07 2014 10:57:32 GMT+0200 (CEST)', 'date add');
+	assert.ok(dt.format('MMM') === 'Jul', 'month name 1');
+	assert.ok(dt.format('MMMM') === 'July', 'month name 2');
+	assert.ok(dt.format('MMM', 'sk') === 'Júl', 'localized month name 1');
+	assert.ok(dt.format('MMMM', 'sk') === 'Júl', 'localized month name 2');
 
 	dt = new Date();
 	dt = dt.add('minute', 1);
@@ -622,6 +626,13 @@ function other() {
 	streamer('\n1\n2\n');
 	streamer('3\n');
 	streamer('4\n');
+
+	streamer = utils.streamer('<a>', '</a>', function(value, index) {
+		assert.ok(value.trim() === '<a>' + (index + 1) + '</a>', 'Streamer problem 2');
+	});
+
+	streamer('aaaa <a>1</a> adsklasdlajsdlas jd <a>2</a>');
+	streamer('aaaa <a>3</a> adsklasdlajsdlas jd <a>4</a>');
 }
 
 function onValidation(name, value, path) {
