@@ -4083,11 +4083,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 				if (framework.isDebug)
 					merge_debug_writer(writer, filename, extension, index++, block);
 
-				if (framework.versionNode >= 400)
-					writer.write(output);
-				else
-					writer.write(output, ENCODING);
-
+				writer.write(output);
 				next();
 			});
 			return;
@@ -4098,11 +4094,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 			if (framework.isDebug)
 				merge_debug_writer(writer, filename, 'js', index++, block);
 
-			if (framework.versionNode >= 400)
-				writer.write(prepare_isomorphic(filename.substring(1)));
-			else
-				writer.write(prepare_isomorphic(filename.substring(1)), ENCODING);
-
+			writer.write(prepare_isomorphic(filename.substring(1)));
 			next();
 			return;
 		}
@@ -4162,11 +4154,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 			if (framework.isDebug)
 				merge_debug_writer(writer, filename, extension, index++, block);
 
-			if (framework.versionNode >= 400)
-				writer.write(output);
-			else
-				writer.write(output, ENCODING);
-
+			writer.write(output);
 			next();
 		});
 
