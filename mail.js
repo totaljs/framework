@@ -32,12 +32,13 @@ var events = require('events');
 var dns = require('dns');
 var fs = require('fs');
 var path = require('path');
-var CRLF = '\r\n';
-var UNDEFINED = 'undefined';
-var BOOLEAN = 'boolean';
-var REG_ESMTP = /\besmtp\b/i;
 
-var errors = {
+const CRLF = '\r\n';
+const UNDEFINED = 'undefined';
+const BOOLEAN = 'boolean';
+const REG_ESMTP = /\besmtp\b/i;
+
+const errors = {
 	notvalid: 'E-mail address is not valid',
 	resolve: 'Cannot resolve MX of ',
 	connection: 'Cannot connect to any SMTP server.'

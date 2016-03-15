@@ -149,7 +149,7 @@ if (typeof(setImmediate) === UNDEFINED) {
 	};
 }
 
-var hasOwnProperty = Object.prototype.hasOwnProperty;
+const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /*
 	Expression declaration

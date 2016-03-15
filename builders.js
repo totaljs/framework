@@ -818,7 +818,7 @@ function isGenerator(obj, name, fn) {
  * @param {Function(err, result)} callback
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.get = function(helper, callback) {
+SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = function(helper, callback) {
 
 	if (callback === undefined) {
 		callback = helper;

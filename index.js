@@ -415,12 +415,6 @@ global.OBSOLETE = function(name, message) {
 	framework.stats.other.obsolete++;
 };
 
-if (global.setImmediate === undefined) {
-	global.setImmediate = function(cb) {
-		process.nextTick(cb);
-	};
-}
-
 global.DEBUG = false;
 global.TEST = false;
 global.RELEASE = false;
@@ -1225,6 +1219,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 	var type = typeof(funcExecute);
 	var index = 0;
+	var urlcache = url;
 
 	if (!name)
 		name = url;
@@ -1303,9 +1298,11 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var isDELAY = false;
 	var isROBOT = false;
 	var isBINARY = false;
+	var isCORS = false;
 	var middleware = null;
 	var timeout;
 	var options;
+	var corsflags = [];
 
 	if (flags) {
 
@@ -1355,8 +1352,15 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 				continue;
 			}
 
-			count++;
 			var flag = flags[i].toString().toLowerCase();
+
+			if (flag.startsWith('http://') || flag.startsWith('https://')) {
+				corsflags.push(flag);
+				continue;
+			}
+
+			count++;
+
 			switch (flag) {
 
 				case 'json':
@@ -1374,6 +1378,17 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 				case 'binary':
 					isBINARY = true;
+					continue;
+
+				case 'cors':
+					isCORS = true;
+					count--;
+					continue;
+
+				case 'credential':
+				case 'credentials':
+					corsflags.push(flag);
+					count--;
 					continue;
 
 				case 'sync':
@@ -1430,6 +1445,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 				case 'trace':
 					tmp.push(flag);
 					method += (method ? ',' : '') + flag;
+					corsflags.push(flag);
 					break;
 				default:
 					tmp.push(flag);
@@ -1586,6 +1602,10 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	});
 
 	self.emit('route', 'web', self.routes.web[self.routes.web.length - 1]);
+
+	// Appends cors route
+	if (isCORS)
+		F.cors(urlcache, corsflags);
 
 	if (!_controller)
 		self._routesSort();
@@ -10353,130 +10373,6 @@ Controller.prototype.host = function(path) {
 Controller.prototype.hostname = function(path) {
 	var self = this;
 	return self.req.hostname(path);
-};
-
-/*
-	Cross-origin resource sharing
-	@allow {String Array}
-	@method {String Array} :: optional, default null
-	@header {String Array} :: optional, default null
-	@credentials {Boolean} :: optional, default false
-	return {Boolean}
-*/
-Controller.prototype.cors = function(allow, method, header, credentials) {
-
-	var self = this;
-	var origin = self.req.headers['origin'];
-
-	if (origin === undefined)
-		return true;
-
-	if (allow === undefined)
-		allow = '*';
-
-	if (typeof(method) === BOOLEAN) {
-		credentials = method;
-		method = null;
-	}
-
-	if (typeof(header) === BOOLEAN) {
-		credentials = header;
-		header = null;
-	}
-
-	if (!framework_utils.isArray(allow))
-		allow = [allow];
-
-	var isAllowed = false;
-	var isAll = false;
-	var value;
-	var headers = self.req.headers;
-
-	if (header) {
-
-		if (!framework_utils.isArray(header))
-			header = [header];
-
-		for (var i = 0; i < header.length; i++) {
-			if (headers[header[i].toLowerCase()]) {
-				isAllowed = true;
-				break;
-			}
-		}
-
-		if (!isAllowed)
-			return false;
-
-		isAllowed = false;
-	}
-
-	if (method) {
-
-		if (!framework_utils.isArray(method))
-			method = [method];
-
-		var current = headers['access-control-request-method'] || self.req.method;
-
-		for (var i = 0; i < method.length; i++) {
-
-			value = method[i].toUpperCase();
-			method[i] = value;
-
-			if (current.indexOf(value) !== -1)
-				isAllowed = true;
-		}
-
-		if (!isAllowed)
-			return false;
-
-		isAllowed = false;
-	}
-
-	for (var i = 0; i < allow.length; i++) {
-
-		value = allow[i];
-
-		if (value === '*' || origin.indexOf(value) !== -1) {
-			isAll = value === '*';
-			isAllowed = true;
-			break;
-		}
-
-	}
-
-	if (!isAllowed)
-		return false;
-
-	var isOPTIONS = self.req.method.toUpperCase() === 'OPTIONS';
-	var tmp;
-	var name;
-
-	self.res.setHeader('Access-Control-Allow-Origin', isAll ? '*' : origin);
-
-	if (credentials)
-		self.res.setHeader('Access-Control-Allow-Credentials', 'true');
-
-	name = 'Access-Control-Allow-Methods';
-
-	if (method) {
-		self.res.setHeader(name, method.join(', '));
-	} else if (isOPTIONS) {
-		tmp = headers['access-control-request-method'];
-		if (tmp)
-			self.res.setHeader(name, tmp);
-	}
-
-	name = 'Access-Control-Allow-Headers';
-
-	if (header) {
-		self.res.setHeader(name, header.join(', '));
-	} else if (isOPTIONS) {
-		tmp = headers['access-control-request-headers'];
-		if (tmp)
-			self.res.setHeader(name, tmp);
-	}
-
-	return true;
 };
 
 /**

@@ -26,11 +26,12 @@
 
 'use strict';
 
+const sof = { 0xc0: true, 0xc1: true, 0xc2: true, 0xc3: true, 0xc5: true, 0xc6: true, 0xc7: true, 0xc9: true, 0xca: true, 0xcb: true, 0xcd: true, 0xce: true, 0xcf: true };
+
 var child = require('child_process');
 var exec = child.exec;
 var spawn = child.spawn;
 var path = require('path');
-var sof = { 0xc0: true, 0xc1: true, 0xc2: true, 0xc3: true, 0xc5: true, 0xc6: true, 0xc7: true, 0xc9: true, 0xca: true, 0xcb: true, 0xcd: true, 0xce: true, 0xcf: true };
 var middlewares = {};
 var Fs = require('fs');
 
