@@ -19,9 +19,7 @@ exports.install = function() {
 
     framework.route('/', function() {
         this.plain('OK');
-    }, {
-        flags: ['unauthorize']
-    });
+    }, ['unauthorize']);
 
     framework.route('/', function() {
         this.plain('ROBOT');
@@ -110,7 +108,7 @@ exports.install = function() {
 
     framework.route('/basic/', viewBAA);
 
-    framework.file('middleware.txt', file_plain_middleware, ['file']);
+    framework.file('middleware.txt', file_plain_middleware, ['#file']);
     framework.file('robots.txt', file_plain);
     framework.file('status.txt', file_plain_status);
 

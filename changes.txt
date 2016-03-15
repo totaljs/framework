@@ -1,5 +1,9 @@
 ======= 2.0.0 (BETA)
 
+- updated: `F.file()` supports flags instead of middleware and flags supports extensions `['.jpg', '.png']`
+
+- renamed: event `route-add` to `route`
+
 - removed obsolete code
 
 ======= 1.9.7

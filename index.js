@@ -1188,50 +1188,16 @@ Framework.prototype.cors = function(url, flags, credentials) {
  * @param {Number timeout Response timeout.
  * @return {Framework}
  */
-Framework.prototype.web = Framework.prototype.route = function(url, funcExecute, flags, length, middleware, timeout, options) {
+Framework.prototype.web = Framework.prototype.route = function(url, funcExecute, flags, length) {
 
 	var name;
 	var tmp;
 	var viewname;
 	var skip = true;
 
-	if (middleware)
-		OBSOLETE('F.route(url, fnExecute, flags, [length])', 'middleware argument is obsolete, you can define middleware in the flags e.g. ["get", "#middleware1", "#middleware2"]');
-
-	if (timeout)
-		OBSOLETE('F.route(url, fnExecute, flags, [length])', 'timeout argument is obsolete, you can define timeout in the flags, e.g. ["get", 10000]');
-
-	if (options)
-		OBSOLETE('F.route(url, fnExecute, flags, [length])', 'options argument is obsolete, you can define options in the flags, e.g. ["get", { xhr: true }]');
-
-	if (funcExecute instanceof Array && typeof(flags) === TYPE_FUNCTION) {
-		tmp = funcExecute;
-		funcExecute = flags;
-		flags = tmp;
-	}
-
-	for (var i = 0; i < arguments.length; i++) {
-		if (typeof(arguments[i]) === TYPE_FUNCTION) {
-			skip = false;
-			break;
-		}
-	}
-
 	var CUSTOM = typeof(url) === TYPE_FUNCTION ? url : null;
 	if (CUSTOM)
 		url = '/';
-
-	if (!skip && typeof(funcExecute) === 'string' && flags !== undefined) {
-		// ID
-		name = url;
-		url = funcExecute;
-		funcExecute = flags;
-		flags = length;
-		length = middleware;
-		middleware = timeout;
-		timeout = options;
-		options = undefined;
-	}
 
 	if (url[0] === '#') {
 		url = url.substring(1);
@@ -1256,12 +1222,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		url = url.substring(0, url.length - 1);
 
 	url = framework_internal.encodeUnicodeURL(url);
-
-	if (utils.isArray(length)) {
-		tmp = middleware;
-		middleware = length;
-		length = tmp;
-	}
 
 	var type = typeof(funcExecute);
 	var index = 0;
@@ -1312,24 +1272,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		})(viewname);
 	}
 
-	if (!utils.isArray(flags) && typeof(flags) === 'object') {
-		length = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'] || flags['size'];
-		middleware = flags['middleware'] || flags['partials'] || flags['partial'];
-		timeout = flags['timeout'];
-		options = flags['options'];
-		if (flags['name'])
-			name = flags['name'];
-		if (flags['id'])
-			name = flags['id'];
-		flags = flags['flags'] || flags['flag'];
-	} else if (flags instanceof Array && length && typeof(length) === OBJECT) {
-		options = length;
-		length = undefined;
-	} else if (flags instanceof Array && typeof(length) === NUMBER && typeof(middleware) === OBJECT && (!(middleware instanceof Array))) {
-		options = middleware;
-		middleware = undefined;
-	}
-
 	var self = this;
 	var priority = 0;
 	var subdomain = null;
@@ -1361,6 +1303,9 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var isDELAY = false;
 	var isROBOT = false;
 	var isBINARY = false;
+	var middleware = null;
+	var timeout;
+	var options;
 
 	if (flags) {
 
@@ -1389,7 +1334,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 			}
 
 			if (first === '#') {
-				if ((middleware || null) === null)
+				if (!middleware)
 					middleware = [];
 				middleware.push(flags[i].substring(1));
 				continue;
@@ -1509,10 +1454,10 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var regIndex = null;
 
 	if (url.indexOf('{') !== -1) {
-
 		routeURL.forEach(function(o, i) {
 			if (o.substring(0, 1) !== '{')
 				return;
+
 			arr.push(i);
 
 			var sub = o.substring(1, o.length - 1);
@@ -1544,7 +1489,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		priority++;
 	}
 
-	// commented: flags.indexOf('get') === -1 && because we can have: route('/', ..., ['json', 'get']);
 	if ((isJSON || flags.indexOf('xml') !== -1 || isRaw) && (flags.indexOf('delete') === -1 && flags.indexOf('post') === -1 && flags.indexOf('put') === -1) && flags.indexOf('patch') === -1) {
 		flags.push('post');
 		method += (method ? ',' : '') + 'post';
@@ -1577,9 +1521,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 	if (!self._request_check_POST && (flags.indexOf('delete') !== -1 || flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
 		self._request_check_POST = true;
-
-	if (!middleware || (!(middleware instanceof Array)) || !middleware.length)
-		middleware = null;
 
 	var isMULTIPLE = false;
 
@@ -1644,7 +1585,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		regexpIndexer: regIndex
 	});
 
-	self.emit('route-add', 'web', self.routes.web[self.routes.web.length - 1]);
+	self.emit('route', 'web', self.routes.web[self.routes.web.length - 1]);
 
 	if (!_controller)
 		self._routesSort();
@@ -1903,26 +1844,9 @@ Framework.prototype.use = function(name) {
  * @param {Object} options Optional, additional options for middleware.
  * @return {Framework}
  */
-Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, allow, length, middleware, options) {
+Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 
 	var tmp;
-
-	if (typeof(protocols) === NUMBER) {
-		length = protocols;
-		protocols = undefined;
-	}
-
-	if (middleware)
-		OBSOLETE('F.websocket(url, fnExecute, flags, [length])', 'middleware argument is obsolete, you can define middleware in the flags e.g. ["get", "#middleware1", "#middleware2"]');
-
-	if (allow)
-		OBSOLETE('F.websocket(url, fnExecute, flags, [length])', 'origin argument is obsolete, you can define "origin" in the flags, e.g. ["get", "https://www.totaljs.com", "https://www.privater.eu"]');
-
-	if (protocols)
-		OBSOLETE('F.websocket(url, fnExecute, flags, [length])', 'protocols argument is obsolete, you can define protocols in the flags, e.g. ["get", "chat", "room"]');
-
-	if (options)
-		OBSOLETE('F.websocket(url, fnExecute, flags, [length])', 'options argument is obsolete, you can define options in the flags, e.g. ["get", { special: true }]');
 
 	var CUSTOM = typeof(url) === TYPE_FUNCTION ? url : null;
 	if (CUSTOM)
@@ -1931,10 +1855,9 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (url[0] === '#') {
 		url = url.substring(1);
 		var sitemap = self.sitemap(url, true);
-		if (sitemap) {
-			name = url;
+		if (sitemap)
 			url = sitemap.url;
-		} else
+		else
 			throw new Error('Sitemap item "' + url + '" not found.');
 	}
 
@@ -1944,35 +1867,15 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	// Unicode encoding
 	url = framework_internal.encodeUnicodeURL(url);
 
-	if (utils.isArray(length)) {
-		tmp = middleware;
-		middleware = length;
-		length = tmp;
-	}
-
-	if (typeof(funcExecute) === OBJECT) {
-		tmp = flags;
-		funcExecute = flags;
-		flags = tmp;
-	}
-
-	if (!(flags instanceof Array) && typeof(flags) === OBJECT) {
-		protocols = flags['protocols'] || flags['protocol'];
-		allow = flags['allow'] || flags['origin'];
-		length = flags['max'] || flags['length'] || flags['maximum'] || flags['maximumSize'];
-		middleware = flags['middleware'];
-		options = flags['options'];
-		flags = flags['flags'];
-	}
-
-	if (middleware === undefined)
-		middleware = null;
-
 	var self = this;
 	var priority = 0;
 	var index = url.indexOf(']');
 	var subdomain = null;
 	var isASTERIX = url.indexOf('*') !== -1;
+	var middleware;
+	var allow;
+	var options;
+	var protocols;
 
 	priority = url.count('/');
 
@@ -1997,6 +1900,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		routeURL.forEach(function(o, i) {
 			if (o.substring(0, 1) !== '{')
 				return;
+
 			arr.push(i);
 
 			var sub = o.substring(1, o.length - 1);
@@ -2025,9 +1929,6 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
 	if (typeof(protocols) === STRING)
 		protocols = protocols[protocols];
-
-	if (typeof(flags) === STRING)
-		flags = flags[flags];
 
 	tmp = [];
 
@@ -2125,9 +2026,6 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 
 	priority += (count * 2);
 
-	if (!middleware || (!(middleware instanceof Array)) || !middleware.length)
-		middleware = null;
-
 	self.routes.websockets.push({
 		controller: !_controller ? 'unknown' : _controller,
 		url: routeURL,
@@ -2149,14 +2047,14 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		isDEBUG: flags.indexOf('debug'),
 		isRELEASE: flags.indexOf('release'),
 		CUSTOM: CUSTOM,
-		middleware: middleware,
+		middleware: middleware ? middleware : null,
 		options: options,
 		isPARAM: arr.length > 0,
 		regexp: reg,
 		regexpIndexer: regIndex
 	});
 
-	self.emit('route-add', 'websocket', self.routes.websockets[self.routes.websockets.length - 1]);
+	self.emit('route', 'websocket', self.routes.websockets[self.routes.websockets.length - 1]);
 
 	if (!_controller)
 		self._routesSort();
@@ -2172,44 +2070,70 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
  * @param {String Array} middleware
  * @return {Framework}
  */
-Framework.prototype.file = function(name, fnValidation, fnExecute, middleware, options) {
+Framework.prototype.file = function(name, fnValidation, fnExecute, flags) {
 
 	var self = this;
 	var a;
 
-	if (utils.isArray(fnValidation)) {
+	if (fnValidation instanceof Array) {
 		a = fnExecute;
-		var b = middleware;
-		middleware = fnValidation;
+		var b = flags;
+		flags = fnValidation;
 		fnValidation = a;
 		fnExecute = b;
-	} else if (utils.isArray(fnExecute)) {
+	} else if (fnExecute instanceof Array) {
 		a = fnExecute;
-		fnExecute = middleware;
-		middleware = a;
+		fnExecute = flags;
+		flags = a;
 	}
 
-	if (middleware === undefined)
-		middleware = null;
-
-	if (middleware) {
-		for (var i = 0, length = middleware.length; i < length; i++)
-			middleware[i] = middleware[i].replace('#', '');
+	if (!fnExecute && fnValidation) {
+		fnExecute = fnValidation;
+		fnValidation = undefined;
 	}
 
-	if (!middleware || (!(middleware instanceof Array)) || !middleware.length)
-		middleware = null;
+	var extensions;
+	var middleware;
+	var options;
+
+	if (flags) {
+		for (var i = 0, length = flags.length; i < length; i++) {
+			var flag = flags[i];
+
+			if (typeof(flag) === OBJECT) {
+				options = flag;
+				continue;
+			}
+
+			if (flag[0] === '#') {
+				if (!middleware)
+					middleware = [];
+				middleware.push(flag.substring(1));
+			}
+
+			if (flag[0] === '.') {
+				flag = flag.substring(1).toLowerCase();
+				if (!extensions)
+					extensions = {};
+				extensions[flag] = true;
+			}
+		}
+	}
+
+	if (!extensions && !fnValidation)
+		fnValidation = fnExecute;
 
 	self.routes.files.push({
 		controller: !_controller ? 'unknown' : _controller,
 		name: name,
+		extensions: extensions,
 		onValidate: fnValidation,
-		execute: fnExecute || fnValidation,
+		execute: fnExecute,
 		middleware: middleware,
 		options: options
 	});
 
-	self.emit('route-add', 'file', self.routes.files[self.routes.files.length - 1]);
+	self.emit('route', 'file', self.routes.files[self.routes.files.length - 1]);
 	self._length_files++;
 
 	return self;
@@ -9782,17 +9706,21 @@ Subscribe.prototype.doEndfile = function() {
 
 	for (var i = 0; i < framework._length_files; i++) {
 		var file = framework.routes.files[i];
+
+		if (file.extensions && !file.extensions[self.req.extension])
+			continue;
+
 		try {
 
-			if (file.onValidate.call(framework, req, res, true)) {
+			if (file.onValidate && !file.onValidate.call(framework, req, res, true))
+				continue;
 
-				if (!file.middleware)
-					file.execute.call(framework, req, res, false);
-				else
-					self.doEndfile_middleware(file);
+			if (!file.middleware)
+				file.execute.call(framework, req, res, false);
+			else
+				self.doEndfile_middleware(file);
 
-				return self;
-			}
+			return self;
 
 		} catch (err) {
 			framework.error(err, file.controller + ' :: ' + file.name, req.uri);
