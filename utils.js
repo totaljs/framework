@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 1.9.7
+ * @version 2.0.0
  */
 
 'use strict';
@@ -37,28 +37,29 @@ var events = require('events');
 var crypto = require('crypto');
 var expressionCache = {};
 
-var regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$');
-var regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
-var regexpTRIM = /^[\s]+|[\s]+$/g;
-var regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
-var regexpSTATIC = /\.\w{2,8}($|\?)+/;
-var regexpDATEFORMAT = /yyyy|yy|M+|dd|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
-var regexpSTRINGFORMAT = /\{\d+\}/g;
-var regexpPATH = /\\/g;
-var DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
-var SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
-var ENCODING = 'utf8';
-var UNDEFINED = 'undefined';
-var STRING = 'string';
-var FUNCTION = 'function';
-var NUMBER = 'number';
-var OBJECT = 'object';
-var BOOLEAN = 'boolean';
-var NEWLINE = '\r\n';
-var VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version_header : '');
-var isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
+const regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$');
+const regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
+const regexpTRIM = /^[\s]+|[\s]+$/g;
+const regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
+const regexpSTATIC = /\.\w{2,8}($|\?)+/;
+const regexpDATEFORMAT = /yyyy|yy|M+|dd|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
+const regexpSTRINGFORMAT = /\{\d+\}/g;
+const regexpPATH = /\\/g;
+const DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
+const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
+const ENCODING = 'utf8';
+const UNDEFINED = 'undefined';
+const STRING = 'string';
+const FUNCTION = 'function';
+const NUMBER = 'number';
+const OBJECT = 'object';
+const BOOLEAN = 'boolean';
+const NEWLINE = '\r\n';
+const VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version_header : '');
+const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'Juny', 'July', 'August', 'September', 'October', 'November', 'December'];
+
 var dnscache = {};
-var MONTHS = ['January', 'February', 'March', 'April', 'May', 'Juny', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 var contentTypes = {
 	'aac': 'audio/aac',
@@ -3003,16 +3004,6 @@ String.prototype.contains = function(value, mustAll) {
 };
 
 /**
- * Parse configuration from a string
- * @param {Object} def Default value, optional
- * @return {Object}
- */
-String.prototype.configuration = function(def) {
-	console.log('OBSOLETE: String.configuration() -> use String.parseConfig([default])');
-	return this.parseConfig(def);
-};
-
-/**
  * Same functionality as as String.localeCompare() but this method works with latin.
  * @param {String} value
  * @return {Number}
@@ -3584,11 +3575,6 @@ String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = St
 	if (builder[l] === '-')
 		return builder.substring(0, l);
 	return builder;
-};
-
-String.prototype.link = function(max) {
-	console.log('String.prototype.link: OBSOLETE - Use String.prototype.linker()');
-	return this.linker(max);
 };
 
 String.prototype.pluralize = function(zero, one, few, other) {

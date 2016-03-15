@@ -21,20 +21,20 @@
 
 /**
  * @module FrameworkBuilders
- * @version 1.9.7
+ * @version 2.0.0
  */
 
 'use strict';
 
-var UNDEFINED = 'undefined';
-var FUNCTION = 'function';
-var OBJECT = 'object';
-var STRING = 'string';
-var NUMBER = 'number';
-var BOOLEAN = 'boolean';
-var REQUIRED = 'The field "@" is required.';
-var DEFAULT_SCHEMA = 'default';
-var SKIP = { $$schema: true, $$result: true, $callback: true, $$async: true };
+const UNDEFINED = 'undefined';
+const FUNCTION = 'function';
+const OBJECT = 'object';
+const STRING = 'string';
+const NUMBER = 'number';
+const BOOLEAN = 'boolean';
+const REQUIRED = 'The field "@" is required.';
+const DEFAULT_SCHEMA = 'default';
+const SKIP = { $$schema: true, $$result: true, $callback: true, $$async: true };
 
 var schemas = {};
 var transforms = { pagination: {}, error: {}, objectbuilder: {}, transformbuilder: {} };
@@ -149,13 +149,6 @@ function SchemaBuilderEntity(parent, name, obj, validator, properties) {
 	this.CurrentSchemaInstance = function(){};
 	this.CurrentSchemaInstance.prototype = new SchemaInstance();
 	this.CurrentSchemaInstance.prototype.$$schema = this;
-
-	var self = this;
-
-	setTimeout(function() {
-		if (self.onValidation)
-			OBSOLETE(self.name, 'Instead of "SchemaBuilderEntity.onValidation()" use "SchemaBuilderEntity.setValidate()"');
-	}, 2000);
 }
 
 /**
@@ -451,11 +444,6 @@ SchemaBuilderEntity.prototype.setValidate = function(properties, fn) {
 		self.onValidate = properties;
 
 	return self;
-};
-
-SchemaBuilderEntity.prototype.setValidation = function(properties, fn) {
-	OBSOLETE(this.name, 'Instead of "SchemaBuilderEntity.setValidation()" use "SchemaBuilderEntity.setValidate()"');
-	return this.setValidate(properties, fn);
 };
 
 SchemaBuilderEntity.prototype.setPrefix = function(prefix) {

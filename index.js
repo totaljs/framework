@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 1.9.7
+ * @version 2.0.0
  */
 
 'use strict';
@@ -38,32 +38,34 @@ var http = require('http');
 var child = require('child_process');
 var util = require('util');
 
-var ENCODING = 'utf8';
-var UNDEFINED = 'undefined';
-var STRING = 'string';
-var TYPE_FUNCTION = 'function';
-var NUMBER = 'number';
-var OBJECT = 'object';
-var BOOLEAN = 'boolean';
-var EXTENSION_JS = '.js';
-var RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
-var RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
-var RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
-var CONTENTTYPE_TEXTPLAIN = 'text/plain';
-var CONTENTTYPE_TEXTHTML = 'text/html';
+const ENCODING = 'utf8';
+const UNDEFINED = 'undefined';
+const STRING = 'string';
+const TYPE_FUNCTION = 'function';
+const NUMBER = 'number';
+const OBJECT = 'object';
+const BOOLEAN = 'boolean';
+const EXTENSION_JS = '.js';
+const RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
+const RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
+const RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
+const CONTENTTYPE_TEXTPLAIN = 'text/plain';
+const CONTENTTYPE_TEXTHTML = 'text/html';
+
+const REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
+const TEMPORARY_KEY_REGEX = /\//g;
+const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
+const REG_ROBOT = /search|agent|bot|crawler/i;
+const REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
+const REG_MULTIPART = /\/form\-data$/i;
+const REQUEST_PROXY_FLAGS = ['post', 'json'];
+const EMPTYARRAY = new Array(0);
+const EMPTYOBJECT = {};
+
 var POWEREDBY = '';
-var REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
-var TEMPORARY_KEY_REGEX = /\//g;
-var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
-var REG_ROBOT = /search|agent|bot|crawler/i;
-var REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
-var REG_MULTIPART = /\/form\-data$/i;
-var REQUEST_PROXY_FLAGS = ['post', 'json'];
 var RANGE = { start: 0, end: 0 };
 var HEADERS = {};
 var SUCCESSHELPER = { success: true };
-var EMPTYARRAY = new Array(0);
-var EMPTYOBJECT = {};
 
 // Cached headers for repeated usage
 HEADERS['responseCode'] = {};
@@ -2551,13 +2553,6 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	if (!types || types.indexOf('dependencies') !== -1)
 		self._configure_dependencies();
 
-	setTimeout(function() {
-		if (self.onValidation)
-			OBSOLETE('framework.onValidation()', 'The function was renamed to "framework.onValidate()');
-		if (self.onAuthorization)
-			OBSOLETE('framework.onAuthorization()', 'The function was renamed to "framework.onAuthorize()');
-	}, 2000);
-
 	return self;
 };
 
@@ -2763,13 +2758,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		obj = require(declaration);
 
-		if (typeof(obj.install) === TYPE_FUNCTION) {
-			if (framework.config['allow-compatibility'] || obj.install.toString().indexOf('function (framework') === 0) {
-				OBSOLETE(key, 'exports.install = function(framework <--- REMOVE THE ARGUMENT framework');
-				obj.install(self, options, name);
-			} else
-				obj.install(options, name);
-		}
+		if (typeof(obj.install) === TYPE_FUNCTION)
+			obj.install(options, name);
 
 		if (!skipEmit) {
 			setTimeout(function() {
@@ -3025,13 +3015,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		else
 			self.sources[name] = obj;
 
-		if (typeof(obj.install) === TYPE_FUNCTION) {
-			if (framework.config['allow-compatibility'] || obj.install.toString().indexOf('function (framework') === 0) {
-				OBSOLETE(key, 'exports.install = function(framework <--- REMOVE THE ARGUMENT framework');
-				obj.install(self, options, name);
-			} else
-				obj.install(options, name);
-		}
+		if (typeof(obj.install) === TYPE_FUNCTION)
+			obj.install(options, name);
 
 		if (!skipEmit) {
 			setTimeout(function() {
@@ -3239,14 +3224,8 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 	self.temporary.internal[me._id] = name;
 	_controller = routeID;
 
-	if (typeof(obj.install) === TYPE_FUNCTION) {
-		if (framework.config['allow-compatibility'] || obj.install.toString().indexOf('function (framework') === 0) {
-			OBSOLETE(key, 'exports.install = function(framework <--- REMOVE THE ARGUMENT framework');
-			obj.install(self, options, name);
-		}
-		else
-			obj.install(options, name);
-	}
+	if (typeof(obj.install) === TYPE_FUNCTION)
+		obj.install(options, name);
 
 	me.processed = true;
 
@@ -3498,7 +3477,6 @@ Framework.prototype.onError = function(err, name, uri) {
 	@flags {String array}
 	@callback {Function} - @callback(Boolean), true is [authorize]d and false is [unauthorize]d
 */
-Framework.prototype.onAuthorization = null; // OBSOLETE
 Framework.prototype.onAuthorize = null;
 
 /*
@@ -4025,7 +4003,6 @@ Framework.prototype.onCompileView = function(name, html, model) {
 	return {String}
 */
 Framework.prototype.onCompileStyle = null;
-Framework.prototype.onCompileCSS = null; // obsolete
 
 /*
 	3rd JavaScript compiler (Sync)
@@ -4034,7 +4011,6 @@ Framework.prototype.onCompileCSS = null; // obsolete
 	return {String}
 */
 Framework.prototype.onCompileScript = null;
-Framework.prototype.onCompileJS = null;  // obsolete
 
 /**
  * Compile content (JS, CSS, HTML)
@@ -7088,15 +7064,8 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 
 	var replyTo;
 
-	if (language) {
-		// @todo: Remove in future versions
-		if (language.indexOf('@') !== -1) {
-			replyTo = language;
-			language = undefined;
-			OBSOLETE('F.mail', 'F.mail(..., ..., [replyTo] --> the argument was replaced for [language])');
-		} else
-			controller.language = language;
-	}
+	if (language)
+		controller.language = language;
 
 	if (typeof(repository) === OBJECT && repository)
 		controller.repository = repository;
@@ -8280,16 +8249,6 @@ Framework.prototype._configure = function(arr, rewrite) {
 					obj[name][tmp[j]] = true;
 				break;
 
-			case 'allow-compile-js':
-				OBSOLETE('config', 'Instead of "allow-compile-js" use "allow-compile-script"');
-				obj['allow-compile-script'] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
-				break;
-
-			case 'allow-compile-css':
-				OBSOLETE('config', 'Instead of "allow-compile-css" use "allow-compile-style"');
-				obj['allow-compile-style'] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
-				break;
-
 			case 'allow-gzip':
 			case 'allow-websocket':
 			case 'allow-performance':
@@ -8307,16 +8266,6 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 			case 'version':
 				obj[name] = value;
-				break;
-
-			case 'static-url-css':
-				OBSOLETE('config', 'Instead of "static-url-css" use "static-url-style"');
-				obj['static-url-style'] = value;
-				break;
-
-			case 'static-url-js':
-				OBSOLETE('config', 'Instead of "static-url-js" use "static-url-script"');
-				obj['static-url-script'] = value;
 				break;
 
 			default:
@@ -8361,17 +8310,6 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 /**
  * Create URL: JavaScript (according to config['static-url-script'])
- * @alias
- * @param {String} name
- * @return {String}
- */
-Framework.prototype.routeJS = function(name) {
-	OBSOLETE('framework.routeJS()', 'Instead of "framework.routeJS()" use "framework.routeScript()"');
-	return this.routeScript(name);
-};
-
-/**
- * Create URL: JavaScript (according to config['static-url-script'])
  * @param {String} name
  * @return {String}
  */
@@ -8380,17 +8318,6 @@ Framework.prototype.routeScript = function(name, theme) {
 	if (name.lastIndexOf(EXTENSION_JS) === -1)
 		name += EXTENSION_JS;
 	return self._routeStatic(name, self.config['static-url-script'], theme);
-};
-
-/**
- * Create URL: CSS (according to config['static-url-style'])
- * @alias
- * @param {String} name
- * @return {String}
- */
-Framework.prototype.routeCSS = function(name) {
-	OBSOLETE('framework.routeCSS()', 'Instead of "framework.routeCSS()" use "framework.routeStyle()"');
-	return this.routeStyle(name);
 };
 
 /**
@@ -10941,43 +10868,18 @@ Controller.prototype.sitemap = function(name, url, index) {
 		return self.repository.sitemap || [];
 	}
 
-	if (name[0] === '#') {
+	if (name[0] === '#')
 		name = name.substring(1);
-		sitemap = framework.sitemap(name, false, self.language);
-		self.repository[REPOSITORY_SITEMAP] = sitemap;
-		if (!self.repository[REPOSITORY_META_TITLE]) {
-			sitemap = sitemap.last();
-			if (sitemap)
-				self.repository[REPOSITORY_META_TITLE] = sitemap.name;
-		}
-		return self;
+
+	sitemap = framework.sitemap(name, false, self.language);
+	self.repository[REPOSITORY_SITEMAP] = sitemap;
+	if (!self.repository[REPOSITORY_META_TITLE]) {
+		sitemap = sitemap.last();
+		if (sitemap)
+			self.repository[REPOSITORY_META_TITLE] = sitemap.name;
 	}
 
-	if (!url)
-		return self.repository[REPOSITORY_SITEMAP];
-
-	OBSOLETE('sitemap', 'The newest version supports new sitemap mechanism.');
-
-	if (self.repository.sitemap === undefined)
-		self.repository.sitemap = [];
-
-	self.repository.sitemap.push({
-		name: name,
-		url: url,
-		index: index || self.repository.sitemap.length
-	});
-
-	if (index !== undefined && self.sitemap.length > 1) {
-		self.repository.sitemap.sort(function(a, b) {
-			if (a.index < b.index)
-				return -1;
-			if (a.index > b.index)
-				return 1;
-			return 0;
-		});
-	}
-
-	return self;
+	return self.repository[REPOSITORY_SITEMAP];
 };
 
 Controller.prototype.$sitemap = function(name, url, index) {
@@ -12014,18 +11916,6 @@ Controller.prototype._routeHelper = function(name, fn) {
 
 /**
  * Create URL: JavaScript
- * @alias
- * @param {String} name
- * @param {Boolean} tag Append tag?
- * @return {String}
- */
-Controller.prototype.routeJS = function(name, tag) {
-	OBSOLETE('controller.routeJS()', 'Instead of "controller.routeJS()" use "controller.routeScript()"');
-	return this.routeScript(name, tag);
-};
-
-/**
- * Create URL: JavaScript
  * @param {String} name
  * @param {Boolean} tag Append tag?
  * @return {String}
@@ -12036,17 +11926,6 @@ Controller.prototype.routeScript = function(name, tag) {
 		name = 'default.js';
 	var url = self._routeHelper(name, framework.routeScript);
 	return tag ? '<script type="text/javascript" src="' + url + '"></script>' : url;
-};
-
-/**
- * Create URL: CSS
- * @param {String} name
- * @param {Boolean} tag Append tag?
- * @return {String}
- */
-Controller.prototype.routeCSS = function(name, tag) {
-	OBSOLETE('controller.routeCSS()', 'Instead of "controller.routeCSS()" use "controller.routeStyle()"');
-	return this.routeStyle(name, tag);
 };
 
 /**
@@ -14764,11 +14643,6 @@ http.IncomingMessage.prototype = {
 
 	get host() {
 		return this.headers['host'];
-	},
-
-	get isSecure() {
-		OBSOLETE('req.isSecure', 'Use req.secured');
-		return this.uri.protocol === 'https:' || this.uri.protocol === 'wss:';
 	},
 
 	get secured() {

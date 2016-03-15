@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.7
+ * @version 2.0.0
  */
 
 'use strict';
@@ -31,25 +31,25 @@ var fs = require('fs');
 var ReadStream = require('fs').ReadStream;
 var Stream = require('stream');
 
-var ENCODING = 'utf8';
-var UNDEFINED = 'undefined';
-var FUNCTION = 'function';
-var OBJECT = 'object';
-var BOOLEAN = 'boolean';
-var NUMBER = 'number';
+const ENCODING = 'utf8';
+const UNDEFINED = 'undefined';
+const FUNCTION = 'function';
+const OBJECT = 'object';
+const BOOLEAN = 'boolean';
+const NUMBER = 'number';
 
-var REG_1 = /[\n\r\t]+/g;
-var REG_2 = /\s{2,}/g;
-var REG_3 = /\/{1,}/g;
-var REG_4 = /\n\s{2,}./g;
-var REG_5 = />\n\s{1,}</g;
-var REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
-var REG_BLOCK_BEG = /\@\{block.*?\}/gi;
-var REG_BLOCK_END = /\@\{end\}/gi;
-var REG_SKIP_1 = /\(\'|\"/g;
-var REG_SKIP_2 = /\,(\s)?\w+/g;
+const REG_1 = /[\n\r\t]+/g;
+const REG_2 = /\s{2,}/g;
+const REG_3 = /\/{1,}/g;
+const REG_4 = /\n\s{2,}./g;
+const REG_5 = />\n\s{1,}</g;
+const REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
+const REG_BLOCK_BEG = /\@\{block.*?\}/gi;
+const REG_BLOCK_END = /\@\{end\}/gi;
+const REG_SKIP_1 = /\(\'|\"/g;
+const REG_SKIP_2 = /\,(\s)?\w+/g;
 
-var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
+const HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
 global.$STRING = function(value) {
 	if (value === null || value === undefined)
@@ -638,13 +638,6 @@ function HttpFile() {
 	this.height = 0;
 }
 
-HttpFile.prototype = {
-	get contentType() {
-		console.log('OBSOLETE: The HttpFile.contentType is deprecated. Use: HttpFile.type');
-		return this.type;
-	}
-};
-
 /*
 	Read file to byte array
 	@filename {String} :: new filename
@@ -1068,11 +1061,6 @@ exports.compile_css = function(value, filename) {
 
 		if (framework.onCompileStyle)
 			return framework.onCompileStyle(filename, value);
-
-		if (framework.onCompileCSS) {
-			console.log('OBSOLETE: framework.onCompileCSS() is deprecated, use framework.onCompileStyle()');
-			return framework.onCompileCSS(filename, value);
-		}
 	}
 
 	try {
@@ -1348,11 +1336,6 @@ exports.compile_javascript = function(source, filename) {
 
 			if (framework.onCompileScript)
 				return framework.onCompileScript(filename, source).trim();
-
-			if (framework.onCompileJS) {
-				console.log('OBSOLETE: framework.onCompileJS() is deprecated, use framework.onCompileScript()');
-				return framework.onCompileJS(filename, source).trim();
-			}
 		}
 
 		return JavaScript(source).trim();
