@@ -18,7 +18,7 @@
         "test": "test"
     },
     "engines": {
-        "node": ">=0.8.0"
+        "node": ">=4.0.0"
     },
     "keywords": ["total", "framework", "web", "websocket", "mvc", "controller", "view", "angular.js", "upload", "picture", "graphicsmagick", "imagemagick", "eshop", "blog", "forum", "chat", "game", "nosql", "database", "streaming", "live", "server sent events", "sse", "multipart", "x-mixed-replace"],
     "license": "MIT",
