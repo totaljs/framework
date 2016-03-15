@@ -1929,10 +1929,9 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (url[0] === '#') {
 		url = url.substring(1);
 		var sitemap = self.sitemap(url, true);
-		if (sitemap) {
-			name = url;
+		if (sitemap)
 			url = sitemap.url;
-		} else
+		else
 			throw new Error('Sitemap item "' + url + '" not found.');
 	}
 
@@ -1948,9 +1947,9 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		length = tmp;
 	}
 
-	if (typeof(funcExecute) === OBJECT) {
+	if (typeof(funcInitialize) === OBJECT) {
 		tmp = flags;
-		funcExecute = flags;
+		funcInitialize = flags;
 		flags = tmp;
 	}
 

@@ -1,3 +1,8 @@
+======= 1.9.8 (BETA)
+
+- fixed: sitemap routing e.g. `F.route('#eshop')` by @claudioquaglia
+- fixed: `F.websocket()` input arguments by @claudioquaglia
+
 ======= 1.9.7
 
 - added: `F.web()` --> alias to F.route()
