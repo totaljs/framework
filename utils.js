@@ -190,24 +190,22 @@ global.expression = expression;
 
 /**
  * Checks if is object empty
- * @param  {Object}  obj
+ * @param {Object} obj
  * @return {Boolean}
  */
 exports.isEmpty = function(obj) {
 
-	if (obj === null)
+	if (!obj)
 		return true;
 
 	if (obj.length)
 		return false;
 
-	if (obj.length === 0)
-		return true;
-
 	for (var key in obj) {
 		if (hasOwnProperty.call(obj, key))
 		return false;
 	}
+
 	return true;
 };
 
@@ -1174,7 +1172,7 @@ exports.copy = function(source, target) {
 	if (target === undefined)
 		return exports.extend({}, source, true);
 
-	if (target === null || source === null)
+	if (!target || !source)
 		return target;
 
 	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
@@ -5248,7 +5246,7 @@ exports.async = function(fn, isApply) {
 
 			try
 			{
-				var can = err === null || err === undefined;
+				var can = err ? false : true;
 				switch (can) {
 					case true:
 						g = generator.next(result);

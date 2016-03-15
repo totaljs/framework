@@ -48,7 +48,6 @@ const REG_BLOCK_BEG = /\@\{block.*?\}/gi;
 const REG_BLOCK_END = /\@\{end\}/gi;
 const REG_SKIP_1 = /\(\'|\"/g;
 const REG_SKIP_2 = /\,(\s)?\w+/g;
-
 const HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 
 global.$STRING = function(value) {
@@ -1714,13 +1713,13 @@ function view_parse_localization(content, language) {
 	var output = '';
 	var end = 0;
 
-	if (command === null)
+	if (!command)
 		return content;
 
 	while (command) {
 
 		if (command)
-			output += content.substring(end === 0 ? 0 : end + 1, command.beg) + framework.translate(language, command.command);
+			output += content.substring(end ? end + 1 : 0, command.beg) + framework.translate(language, command.command);
 
 		end = command.end;
 		command = view_find_localization(content, command.end);
@@ -1803,7 +1802,7 @@ function view_parse(content, minify, filename, controller) {
 			value = value.replace(/^\s+/, '');
 		}
 
-		if (value === '')
+		if (!value)
 			return '$EMPTY';
 
 		if (!nocompressHTML && is)
@@ -1814,7 +1813,7 @@ function view_parse(content, minify, filename, controller) {
 		return DELIMITER + value + DELIMITER;
 	}
 
-	if (command === null)
+	if (!command)
 		builder += '+' + escaper(content);
 
 	var old = null;
@@ -2327,22 +2326,22 @@ function view_is_assign(value) {
 		var next = value[i + 1] || '';
 
 		if (c === '+' && (next === '+' || next === '=')) {
-			if (skip === 0)
+			if (!skip)
 				return true;
 		}
 
 		if (c === '-' && (next === '-' || next === '=')) {
-			if (skip === 0)
+			if (!skip)
 				return true;
 		}
 
 		if (c === '*' && (next === '*' || next === '=')) {
-			if (skip === 0)
+			if (!skip)
 				return true;
 		}
 
 		if (c === '=') {
-			if (skip === 0)
+			if (!skip)
 				return true;
 		}
 
@@ -2805,7 +2804,7 @@ function compressHTML(html, minify) {
 			var key = id + (indexer++);
 			var value = html.substring(beg, end + len);
 
-			if (i === 0) {
+			if (!i) {
 				end = value.indexOf('>');
 				len = value.indexOf('type="text/template"');
 
@@ -2925,7 +2924,7 @@ function viewengine_load(name, filename, controller) {
 
 	// Is dynamic content?
 	// console.log(filename);
-	if (framework.temporary.other[name] === undefined)
+	if (!framework.temporary.other[name])
 		framework.temporary.other[name] = name.indexOf('@{') !== -1 || name.indexOf('<') !== -1;
 
 	if (framework.temporary.other[name])
@@ -3194,7 +3193,7 @@ function attachFinishedListener(msg, callback) {
 	msg.on('socket', onSocket)
 
 	// node.js 0.8 patch
-	if (msg.socket === undefined)
+	if (!msg.socket)
 		patchAssignSocket(msg, onSocket);
 }
 

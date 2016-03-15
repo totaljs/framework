@@ -6,6 +6,8 @@
 - renamed: event `route-add` to `route`
 
 - removed obsolete code
+- removed `controller.async()`
+- removed `framework.async()`
 
 ======= 1.9.7
 

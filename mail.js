@@ -94,14 +94,12 @@ function resolveMx(domain, callback) {
 			return;
 		}
 
-		if (!data || data.length === 0) {
+		if (!data || !data.length) {
 			callback(new Error(errors.resolve + domain));
 			return;
 		}
 
-		data.sort(function(a, b) {
-			return a.priority < b. priority;
-		});
+		data.sort((a, b) => a.priority < b. priority);
 
 		function tryConnect(index) {
 
@@ -111,14 +109,8 @@ function resolveMx(domain, callback) {
 			}
 
 			var sock = net.createConnection(25, data[index].exchange);
-
-			sock.on('error', function(err) {
-				tryConnect(++index);
-			});
-
-			sock.on('connect', function() {
-				callback(null, sock);
-			});
+			sock.on('error', () => tryConnect(++index));
+			sock.on('connect', () => callback(null, sock));
 		}
 
 		tryConnect(0);
@@ -379,26 +371,22 @@ Message.prototype.send = function(smtp, options, fnCallback) {
 
 	options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000, tls: null });
 
-	if (smtp === null || smtp === '') {
+	if (!smtp) {
 
 		smtp = getHostName(self.addressFrom.address);
 		resolveMx(smtp, function(err, socket) {
 
 			if (err) {
 				mailer.emit('error', err, self);
-
 				if (!self.isSent && fnCallback)
 					fnCallback(err);
-
 				return;
 			}
 
 			socket.on('error', function(err) {
 				mailer.emit('error', err, self);
-
 				if (!self.isSent && fnCallback)
 					fnCallback(err);
-
 			});
 
 			self._send(socket, options);
@@ -527,7 +515,7 @@ Message.prototype._send = function(socket, options, autosend) {
 
 	if (isAttach) {
 		buffer.push('MAIL FROM: <' + self.addressFrom.address + '>');
-		message.push('Message-ID: <' + GUID() + '@WIN-' + s4() + '>');
+		message.push('Message-ID: <' + framework_utils.GUID() + '@WIN-' + framework_utils.GUID(4) + '>');
 		message.push('MIME-Version: 1.0');
 		message.push('From: ' + (self.addressFrom.name ? unicode_encode(self.addressFrom.name) + ' <' + self.addressFrom.address + '>' : self.addressFrom.address));
 
@@ -548,7 +536,7 @@ Message.prototype._send = function(socket, options, autosend) {
 			for (var i = 0; i < length; i++) {
 				item = self.addressTo[i];
 				if (item instanceof Object)
-					mail = '<' + item.email  + '>';
+					mail = '<' + item.email + '>';
 				else
 					mail = '<' + item + '>';
 				buffer.push('RCPT TO: ' + mail);
@@ -638,7 +626,7 @@ Message.prototype._send = function(socket, options, autosend) {
 		line = line.toUpperCase();
 
 		if (mailer.debug)
-			console.log('<–––', line);
+			console.log('<---', line);
 
 		var code = +line.match(/\d+/)[0];
 		if (code === 250 && !isAuthorization) {
@@ -685,7 +673,7 @@ Message.prototype._send = function(socket, options, autosend) {
 
 				write(buffer.shift());
 
-				if (buffer.length === 0) {
+				if (!buffer.length) {
 					self.isSent = true;
 
 					mailer.emit('success', self);
@@ -713,7 +701,7 @@ Message.prototype._send = function(socket, options, autosend) {
 				}
 
 				var value = auth.shift();
-				if (value === undefined) {
+				if (!value) {
 
 					err = new Error('Forbidden.');
 					mailer.emit('error', err, self);
@@ -876,24 +864,6 @@ function prepareBASE64(value) {
  */
 function getHostName(address) {
 	return address.substring(address.indexOf('@') + 1);
-}
-
-/**
- * Internal: Create random hexadecimal string
- * @private
- * @return {String}
- */
-function s4() {
-	return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
-}
-
-/**
- * Create GUID identificator
- * @private
- * return {String}
- */
-function GUID() {
-	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
 
 function unicode_encode(val) {

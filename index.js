@@ -677,15 +677,6 @@ function Framework() {
 // PROTOTYPES
 // ======================================================
 
-Framework.prototype = {
-	get async() {
-		var self = this;
-		if (typeof(self._async) === UNDEFINED)
-			self._async = new utils.Async(self);
-		return self._async;
-	}
-};
-
 Framework.prototype.__proto__ = new events.EventEmitter();
 
 /**
@@ -10018,16 +10009,6 @@ Controller.prototype = {
 		return this.req.robot;
 	},
 
-	get async() {
-
-		var self = this;
-
-		if (typeof(self._async) === UNDEFINED)
-			self._async = new framework_utils.Async(self);
-
-		return self._async;
-	},
-
 	get viewname() {
 		var name = this.req.path[this.req.path.length - 1];
 		if (name === '' || name === undefined || name === '/')
@@ -10487,10 +10468,6 @@ Controller.prototype.transfer = function(url, flags) {
 */
 Controller.prototype.cancel = function() {
 	var self = this;
-
-	if (typeof(self._async) !== UNDEFINED)
-		self._async.cancel();
-
 	self.isCanceled = true;
 	return self;
 };
@@ -12953,13 +12930,6 @@ WebSocket.prototype = {
 	get secured() {
 		return this.req.secured;
 	},
-
-	get async() {
-		var self = this;
-		if (typeof(self._async) === UNDEFINED)
-			self._async = new framework_utils.Async(self);
-		return self._async;
-	}
 }
 
 WebSocket.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
