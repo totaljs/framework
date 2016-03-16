@@ -1187,6 +1187,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var name;
 	var tmp;
 	var viewname;
+	var self = this;
 	var skip = true;
 
 	var CUSTOM = typeof(url) === TYPE_FUNCTION ? url : null;
@@ -1200,6 +1201,8 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 			if (sitemap) {
 				name = url;
 				url = sitemap.url;
+				if (sitemap.wildcard)
+					url += '*';
 			} else
 				throw new Error('Sitemap item "' + url + '" not found.');
 		} else
@@ -1267,7 +1270,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		})(viewname);
 	}
 
-	var self = this;
 	var priority = 0;
 	var subdomain = null;
 	var isASTERIX = url.indexOf('*') !== -1;
@@ -1875,9 +1877,11 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 	if (url[0] === '#') {
 		url = url.substring(1);
 		var sitemap = self.sitemap(url, true);
-		if (sitemap)
+		if (sitemap) {
 			url = sitemap.url;
-		else
+			if (sitemap.wildcard)
+				url += '*';
+		} else
 			throw new Error('Sitemap item "' + url + '" not found.');
 	}
 
@@ -7837,8 +7841,15 @@ Framework.prototype._configure_sitemap = function(arr, clean) {
 		var key = str.substring(0, index).trim();
 		var val = str.substring(index + 2).trim();
 		var a = val.split('-->');
+		var url = a[1].trim();
+		var wildcard = false;
 
-		self.routes.sitemap[key] = { name: a[0].trim(), url: a[1].trim(), parent: a[2] ? a[2].trim() : null };
+		if (url.endsWith('*')) {
+			wildcard = true;
+			url = url.substring(0, url.length - 1);
+		}
+
+		self.routes.sitemap[key] = { name: a[0].trim(), url: url, parent: a[2] ? a[2].trim() : null, wildcard: wildcard };
 	}
 
 	return self;
@@ -7865,13 +7876,13 @@ Framework.prototype.sitemap = function(name, me, language) {
 
 	if (me === true) {
 		sitemap = self.routes.sitemap[name];
-		var item = { sitemap: id, id: '', name: '', url: '', last: true, selected: true, index: 0 };
+		var item = { sitemap: id, id: '', name: '', url: '', last: true, selected: true, index: 0, wildcard: false };
 		if (!sitemap)
 			return item;
 
 		var title = sitemap.name;
 		if (title.startsWith('@('))
-			title = self.translate(language, map.name.substring(2, map.name.length - 1).trim());
+			title = self.translate(language, title.substring(2, title.length - 1).trim());
 
 		item.sitemap = id;
 		item.id = name;
@@ -7893,7 +7904,7 @@ Framework.prototype.sitemap = function(name, me, language) {
 		if (title.startsWith('@('))
 			title = self.translate(language, sitemap.name.substring(2, sitemap.name.length - 1));
 
-		arr.push({ sitemap: id, id: name, name: title, url: sitemap.url, last: index === 0, first: sitemap.parent ? false : true, selected: index === 0, index: index });
+		arr.push({ sitemap: id, id: name, name: title, url: sitemap.url, last: index === 0, first: sitemap.parent ? false : true, selected: index === 0, index: index, wildcard: sitemap.wildcard });
 		index++;
 		name = sitemap.parent;
 		if (!name)
