@@ -1,6 +1,7 @@
 ======= 2.0.0 (BETA)
 
 - updated: `F.file()` supports flags instead of middleware and flags supports extensions `['.jpg', '.png']`
+- updated: `F.sitemap()` returns object with a new field: `wildcard: {Boolean}`
 
 - renamed: event `route-add` to `route`
 
