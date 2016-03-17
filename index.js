@@ -2269,20 +2269,18 @@ Framework.prototype.error = function(err, name, uri) {
 */
 Framework.prototype.problem = function(message, name, uri, ip) {
 	var self = this;
-
-	if (self.problems) {
-		self.problems.push({
-			message: message,
-			name: name,
-			url: uri ? parser.format(uri) : null,
-			ip: ip
-		});
-
-		if (self.problems.length > 50)
-			self.problems.shift();
-	}
-
 	self.emit('problem', message, name, uri, ip);
+
+	if (!self.problems)
+		return self;
+
+	var obj = { message: message, name: name, url: uri ? parser.format(uri) : null, ip: ip };
+	self.problems.push(obj);
+	self.logger('problems', obj.message, obj.url, obj.name, obj.ip);
+
+	if (self.problems.length > 50)
+		self.problems.shift();
+
 	return self;
 };
 
@@ -2297,19 +2295,18 @@ Framework.prototype.problem = function(message, name, uri, ip) {
 Framework.prototype.change = function(message, name, uri, ip) {
 	var self = this;
 
-	if (self.changes) {
-		self.changes.push({
-			message: message,
-			name: name,
-			url: uri ? parser.format(uri) : null,
-			ip: ip
-		});
-
-		if (self.changes.length > 50)
-			self.changes.shift();
-	}
-
 	self.emit('change', message, name, uri, ip);
+
+	if (!self.changes)
+		return self;
+
+	var obj = { message: message, name: name, url: uri ? parser.format(uri) : null, ip: ip };
+	self.changes.push(obj);
+	self.logger('changes', obj.message, obj.url, obj.name, obj.ip);
+
+	if (self.changes.length > 50)
+		self.changes.shift();
+
 	return self;
 };
 
@@ -3551,14 +3548,6 @@ Framework.prototype.findConnections = function(path) {
 	}
 	return output;
 };
-
-/*
-	Global framework validation
-	@name {String}
-	@value {String}
-	return {Boolean or utils.isValid() or StringErrorMessage};
-*/
-Framework.prototype.onValidation = null;
 
 /**
  * Global validation
@@ -6767,7 +6756,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 Framework.prototype._upgrade_prepare = function(req, path, headers) {
 
 	var self = this;
-	var auth = self.onAuthorize || self.onAuthorization;
+	var auth = self.onAuthorize;
 
 	if (!auth) {
 		var route = self.lookup_websocket(req, req.websocket.uri.pathname, true);
@@ -9448,7 +9437,7 @@ Subscribe.prototype.prepare = function(flags, url) {
 	var self = this;
 	var req = self.req;
 	var res = self.res;
-	var auth = framework.onAuthorize || framework.onAuthorization;
+	var auth = framework.onAuthorize;
 
 	if (auth) {
 		var length = flags.length;
@@ -10325,7 +10314,7 @@ Controller.prototype.validate = function(model, properties, prefix, name) {
 		return builders.validate(properties, model, prefix);
 
 	var error = new builders.ErrorBuilder(resource);
-	return framework_utils.validate.call(self, model, properties, framework.onValidate || framework.onValidation, error);
+	return framework_utils.validate.call(self, model, properties, framework.onValidate, error);
 };
 
 /*
@@ -10374,6 +10363,13 @@ Controller.prototype.error = function(err) {
 	self.exception = err;
 
 	return self;
+};
+
+Controller.prototype.invalid = function() {
+	var self = this;
+	var builder = new ErrorBuilder();
+	setImmediate(n => self.content(builder));
+	return builder;
 };
 
 /*
@@ -13432,7 +13428,7 @@ WebSocket.prototype.validate = function(model, properties, prefix, name) {
 	};
 
 	var error = new builders.ErrorBuilder(resource);
-	return framework_utils.validate.call(self, model, properties, framework.onValidate || framework.onValidation, error);
+	return framework_utils.validate.call(self, model, properties, framework.onValidate, error);
 };
 
 /*
@@ -14590,7 +14586,7 @@ http.IncomingMessage.prototype.authorization = function() {
  */
 http.IncomingMessage.prototype.authorize = function(callback) {
 
-	var auth = framework.onAuthorize || framework.onAuthorization;
+	var auth = framework.onAuthorize;
 
 	if (!auth) {
 		callback(null, null, false);
