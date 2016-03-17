@@ -2,8 +2,8 @@
 ---
 [![NPM version][npm-version-image]][npm-url] [![NPM quality][npm-quality]](http://packagequality.com/#?package=total.js) [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
-Framework, for node.js
-======================
+Node.js web framework
+=====================
 
 __total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
