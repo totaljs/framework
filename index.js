@@ -7864,10 +7864,14 @@ Framework.prototype.sitemap = function(name, me, language) {
 		if (title.startsWith('@('))
 			title = self.translate(language, title.substring(2, title.length - 1).trim());
 
+		var url = sitemap.url;
+		if (url.startsWith('@('))
+			url = self.translate(language, url.substring(2, url.length - 1).trim());
+
 		item.sitemap = id;
 		item.id = name;
 		item.name = title;
-		item.url = sitemap.url;
+		item.url = url;
 		self.temporary.other[key] = item;
 		return item;
 	}
@@ -10645,6 +10649,26 @@ Controller.prototype.$keywords = function(value) {
 	var self = this;
 	if (value && value.length)
 		self.repository[REPOSITORY_META_KEYWORDS] = value instanceof Array ? value.join(', ') : value;
+	return '';
+};
+
+Controller.prototype.sitemap_url = function(name) {
+	var self = this;
+	if (!name)
+		name = self.repository[REPOSITORY_SITEMAP];
+	var item = F.sitemap(name, true, self.language);
+	if (item)
+		return item.url;
+	return '';
+};
+
+Controller.prototype.sitemap_name = function(name) {
+	var self = this;
+	if (!name)
+		name = self.repository[REPOSITORY_SITEMAP];
+	var item = F.sitemap(name, true, self.language);
+	if (item)
+		return item.name;
 	return '';
 };
 

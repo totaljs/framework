@@ -49,6 +49,7 @@ const REG_BLOCK_END = /\@\{end\}/gi;
 const REG_SKIP_1 = /\(\'|\"/g;
 const REG_SKIP_2 = /\,(\s)?\w+/g;
 const HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
+const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name('];
 
 global.$STRING = function(value) {
 	if (value === null || value === undefined)
@@ -1831,7 +1832,7 @@ function view_parse(content, minify, filename, controller) {
 	var compileName = '';
 	var isSitemap = false;
 	var text;
-	var RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language'];
+
 
 	while (command) {
 
@@ -2188,6 +2189,10 @@ function view_prepare(command, dynamicCommand, functions) {
 			if (command.indexOf('(') !== -1)
 				return 'self.$' + command;
 			return 'self.' + command + '()';
+
+		case 'sitemap_url':
+		case 'sitemap_name':
+			return 'self.' + command;
 
 		case 'sitemap':
 		case 'place':

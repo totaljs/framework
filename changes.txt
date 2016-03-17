@@ -1,6 +1,10 @@
 ======= 2.0.0 (BETA)
 
 - added: `controller.invalid()` creates an ErrorBuilder instance and it responds in next tick
+- added: `controller.sitemap_url([id])` returns URL from sitemap
+- added: `controller.sitemap_name([id])` returns name/title from sitemap
+- added: `@{sitemap_url([id])}` returns URL from sitemap
+- added: `@{sitemap_name([id])}` returns name/title from sitemap
 
 - updated: `F.file()` supports flags instead of middleware and flags supports extensions `['.jpg', '.png']`
 - updated: `F.sitemap()` returns object with a new field: `wildcard: {Boolean}`
