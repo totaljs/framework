@@ -1,13 +1,18 @@
 ======= 2.0.0 (BETA)
 
+- added: `controller.invalid()` creates an ErrorBuilder instance and it responds in next tick
+
 - updated: `F.file()` supports flags instead of middleware and flags supports extensions `['.jpg', '.png']`
 - updated: `F.sitemap()` returns object with a new field: `wildcard: {Boolean}`
+- updated: `F.problem()`, `F.change()`, `controller.problem()` and `controller.change()` write logs to the file
 
 - renamed: event `route-add` to `route`
 
 - removed obsolete code
 - removed `controller.async()`
 - removed `framework.async()`
+
+- improved: ErrorBuilder
 
 ======= 1.9.7
 
