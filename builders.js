@@ -2619,17 +2619,17 @@ ErrorBuilder.prototype.setPrefix = function(name) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype._resource = function() {
-
 	var self = this;
-	self.onResource = function(name) {
-		var self = this;
-		if (typeof(framework) !== UNDEFINED)
-			return framework.resource(self.resourceName, self.resourcePrefix + name);
-		return '';
-	};
-
+	self.onResource = self._resource_handler;
 	return self;
 };
+
+ErrorBuilder.prototype._resource_handler = function(name) {
+	var self = this;
+	if (typeof(framework) !== UNDEFINED)
+		return framework.resource(self.resourceName, self.resourcePrefix + name);
+	return '';
+}
 
 ErrorBuilder.prototype.exception = function(message) {
 	this.items.push({ name: '', error: message });
