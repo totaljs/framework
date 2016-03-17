@@ -280,8 +280,8 @@ function test_Schema() {
 		assert.ok(err === null && countW === 2 && countS === 2 && result.length === 2, 'schema $async');
 	}).$save().$workflow('send');
 
-	var q = SCHEMA('test').create('q');
-	var x = SCHEMA('test').create('x');
+	var q = NEWSCHEMA('test', 'q');
+	var x = NEWSCHEMA('test', 'x');
 
 	q.define('name', String, true);
 	q.define('arr', '[x]', true);
@@ -319,7 +319,7 @@ function test_Schema() {
 	xi.note = 'Ivan';
 	assert.ok(qi.ref.note === 'Ivan', 'schema relations');
 
-	var Cat = SCHEMA('test').create('Cat');
+	var Cat = NEWSCHEMA('test', 'Cat');
 	Cat.define('id', Number);
 	Cat.define('name', String);
 	Cat.define('age', Number);
