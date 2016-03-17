@@ -9658,7 +9658,7 @@ Subscribe.prototype.validate = function(route, next) {
 	var req = self.req;
 	self.schema = false;
 
-	if (req.method === 'DELETE') {
+	if (req.method === 'DELETE' || !route.schema) {
 		next();
 		return;
 	}
