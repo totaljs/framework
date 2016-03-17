@@ -2,22 +2,17 @@
 ---
 [![NPM version][npm-version-image]][npm-url] [![NPM quality][npm-quality]](http://packagequality.com/#?package=total.js) [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
-&nbsp;
-
-| Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
-|------|------|------|------|------|
-| [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) | [![Maxima Solutions](https://www.totaljs.com/img/logo-maxima.png)](https://maxima-solutions.com/) |
-
 Framework, for node.js
 ======================
 
 __total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
 
-- [Download total.js models](https://github.com/totaljs/models)
 - [Total.js AppMonitor](https://www.totaljs.com/monitor/) for tracking total.js applications
 - [Total.js Simple Eshop + CMS](http://www.totaljs.com/eshop)
-- [Total.js for enterprise](http://nodejsenterprise.com)
+- [Total.js modules and packages](https://github.com/totaljs/modules)
+- [Total.js models](https://github.com/totaljs/models)
+- [Total.js +100 examples](https://github.com/totaljs/examples)
 
 
 ```
@@ -30,10 +25,14 @@ $ npm install total.js
 - [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
 - [__Download__ empty-project with the framework](https://github.com/totaljs/framework/releases)
-- [__Download__ Modules & Packages](https://github.com/totaljs/modules) (View Engines, Session, Auth, etc.)
-- [__Download__ Examples](https://github.com/totaljs/examples)
 - [__Make a donation__ via PayPal](http://www.totaljs.com/#make-a-donation)
 - [Enterprise](http://www.nodejsenterprise.com)
+
+&nbsp;
+
+| Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
+|------|------|------|------|------|
+| [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) | [![Maxima Solutions](https://www.totaljs.com/img/logo-maxima.png)](https://maxima-solutions.com/) |
 
 ## Social networks
 
