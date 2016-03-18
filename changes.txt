@@ -24,6 +24,7 @@
 - removed: `framework.async()`
 
 - improved: ErrorBuilder
+- improved: WebSocket.send() for JSON communication
 
 ======= 1.9.7
 

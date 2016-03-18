@@ -13019,7 +13019,8 @@ WebSocket.prototype.date = function(type, d1, d2) {
  * Send a message
  * @param {String} message
  * @param {String Array or Function(id, client)} id
- * @param {String Array or Funciton(id, client)} blacklist
+ * @param {String Array or Function(id, client)} blacklist
+ * @param {String} raw internal
  * @return {WebSocket}
  */
 WebSocket.prototype.send = function(message, id, blacklist) {
@@ -13032,6 +13033,8 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 
 	var isA = id instanceof Array;
 	var isB = blacklist instanceof Array;
+	var data;
+	var raw = false;
 
 	for (var i = 0, length = keys.length; i < length; i++) {
 
@@ -13058,7 +13061,15 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 			}
 		}
 
-		conn.send(message);
+		if (data === undefined) {
+			if (conn.type === 3) {
+				raw = true;
+				data = JSON.stringify(message);
+			} else
+				data = message;
+		}
+
+		conn.send(data, raw);
 		framework.stats.response.websocket++;
 	}
 
@@ -13788,14 +13799,14 @@ WebSocketClient.prototype._onclose = function() {
 	@message {String or Object}
 	return {WebSocketClient}
 */
-WebSocketClient.prototype.send = function(message) {
+WebSocketClient.prototype.send = function(message, raw) {
 
 	var self = this;
 	if (!self || self.isClosed)
 		return self;
 
 	if (self.type !== 1) {
-		var data = self.type === 3 ? JSON.stringify(message) : (message || '').toString();
+		var data = self.type === 3 ? (raw ? message : JSON.stringify(message)) : (message || '').toString();
 		if (self.container.config['default-websocket-encodedecode'] === true && data)
 			data = encodeURIComponent(data);
 		self.socket.write(framework_utils.getWebSocketFrame(0, data, 0x01));
