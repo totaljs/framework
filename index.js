@@ -10646,23 +10646,23 @@ Controller.prototype.$keywords = function(value) {
 	return '';
 };
 
-Controller.prototype.sitemap_url = function(name) {
+Controller.prototype.sitemap_url = function(name, a, b, c, d, e, f) {
 	var self = this;
 	if (!name)
 		name = self.repository[REPOSITORY_SITEMAP];
 	var item = F.sitemap(name, true, self.language);
 	if (item)
-		return item.url;
+		return item.url.format(a, b, c, d, e, f);
 	return '';
 };
 
-Controller.prototype.sitemap_name = function(name) {
+Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
 	var self = this;
 	if (!name)
 		name = self.repository[REPOSITORY_SITEMAP];
 	var item = F.sitemap(name, true, self.language);
 	if (item)
-		return item.name;
+		return item.name.format(a, b, c, d, e, f);
 	return '';
 };
 
