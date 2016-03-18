@@ -7834,7 +7834,6 @@ Framework.prototype._configure_sitemap = function(arr, clean) {
 		var a = val.split('-->');
 		var url = a[1].trim();
 		var wildcard = false;
-
 		if (url.endsWith('*')) {
 			wildcard = true;
 			url = url.substring(0, url.length - 1);
@@ -7883,6 +7882,7 @@ Framework.prototype.sitemap = function(name, me, language) {
 		item.id = name;
 		item.name = title;
 		item.url = url;
+		item.wildcard = sitemap.wildcard;
 		self.temporary.other[key] = item;
 		return item;
 	}
@@ -10673,8 +10673,9 @@ Controller.prototype.sitemap_change = function(name, type, value) {
 
 	for (var i = 0, length = sitemap.length; i < length; i++) {
 		if (sitemap[i].id === name) {
-			if (typeof(value) === FUNCTION)
+			if (typeof(value) === FUNCTION) {
 				sitemap[i][type] = value(sitemap[i][type]);
+			}
 			else
 				sitemap[i][type] = value;
 			return this;
@@ -11986,7 +11987,7 @@ Controller.prototype.callback = function(viewName) {
 					err.resource(self.language);
 				return self.content(err);
 			}
-			return self.view500(err);
+			return self.view404(err);
 		}
 
 		if (typeof(viewName) === STRING)
