@@ -3,6 +3,7 @@
 - fixed: sitemap routing e.g. `F.route('#eshop')` by @claudioquaglia
 - fixed: `F.websocket()` input arguments by @claudioquaglia
 - fixed: Schema parsing
+- fixed: view looping
 
 ======= 1.9.7
 
