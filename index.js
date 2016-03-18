@@ -201,12 +201,12 @@ if (!global.framework_image)
 if (!global.framework_nosql)
 	global.framework_nosql = require('./nosql');
 
-global.Builders = global.builders = framework_builders;
+global.Builders = framework_builders;
 var utils = global.Utils = global.utils = global.U = framework_utils;
-global.Mail = global.MAIL = framework_mail;
+global.Mail = framework_mail;
 global.Pagination = framework_builders.Pagination;
 
-global.include = global.INCLUDE = global.source = global.SOURCE = function(name, options) {
+global.INCLUDE = global.SOURCE = function(name, options) {
 	return framework.source(name, options);
 };
 
@@ -256,12 +256,8 @@ global.MODEL = function(name) {
 	return framework.model(name);
 };
 
-global.SCHEMA = function(group, name, model) {
-	return Builders.load(group, name, model);
-};
-
 global.GETSCHEMA = function(group, name) {
-	return Builders.getschema(group, name);
+	return framework_builders.getschema(group, name);
 };
 
 global.MAKE = global.TRANSFORM = function(transform, fn) {
@@ -301,11 +297,11 @@ global.NEWSCHEMA = function(group, name) {
 		name = group;
 		group = 'default';
 	}
-	return Builders.newschema(group, name);
+	return framework_builders.newschema(group, name);
 };
 
 global.EACHSCHEMA = function(group, fn) {
-	return Builders.eachschema(group, fn);
+	return framework_builders.eachschema(group, fn);
 };
 
 global.FUNCTION = function(name) {
@@ -371,7 +367,7 @@ global.SUCCESS = function(success, value) {
 	if (success instanceof Error) {
 		err = success;
 		success = false;
-	} else if (success instanceof Builders.ErrorBuilder) {
+	} else if (success instanceof framework_builders.ErrorBuilder) {
 		if (success.hasError()) {
 			err = success.output();
 			success = false;
@@ -2492,6 +2488,38 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	return self;
 };
 
+Framework.prototype.$migrations = function(callback) {
+
+	var dir = path.join(directory, '/migrations/');
+
+	if (!fs.existsSync(dir))
+		return callback();
+
+	var run = [];
+
+	fs.readdirSync(dir).forEach(function(o) {
+		var extension = framework_utils.getExtension(o).toLowerCase();
+		if (extension !== '.js')
+			return;
+		run.push(o);
+	});
+
+	if (!run.length)
+		return callback();
+
+	run.wait(function(filename, next) {
+		var fn = dir + filename + new Date().format('yyMMdd_HHmmss');
+		fs.renameSync(dir + filename, fn);
+		var fork = child.fork(fn, [], { cwd: directory });
+		fork.on('exit', function() {
+			fork = null;
+			next();
+		});
+	}, callback);
+
+	return this;
+};
+
 /**
  * Install type with its declaration
  * @param {String} type Available types: model, module, controller, source.
@@ -3215,7 +3243,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 	var obj = null;
 
 	if (type === 'schema') {
-		Builders.remove(name);
+		framework_builders.remove(name);
 		self.emit('uninstall', type, name);
 		return self;
 	}
@@ -4281,16 +4309,12 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		isResize = resizer.extension['*'] || resizer.extension[name.substring(index).toLowerCase()];
 		if (isResize) {
 			name = resizer.path + $decodeURIComponent(name);
-			// filename = self.onMapping(name, name[0] === '~' ? name.substring(1) : name[0] === '.' ? name : framework.path.public(name));
 			filename = self.onMapping(name, name, false, false);
 		} else {
-			// filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
 			filename = self.onMapping(name, name, true, true);
 		}
-	} else {
-		// filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
+	} else
 		filename = self.onMapping(name, name, true, true);
-	}
 
 	if (!isResize) {
 
@@ -5430,9 +5454,7 @@ Framework.prototype.setModified = function(req, res, value) {
 		return self;
 	}
 
-	value = value || new Date();
 	res.setHeader('Last-Modified', value.toUTCString());
-
 	return self;
 };
 
@@ -5559,13 +5581,6 @@ Framework.prototype.response431 = function(req, res, problem) {
 	return this.responseCode(req, res, 431, problem);
 };
 
-/*
-	Response with 500 error
-	@req {ServerRequest}
-	@res {ServerResponse}
-	@error {Error}
-	return {Framework}
-*/
 Framework.prototype.response500 = function(req, res, error) {
 	var self = this;
 
@@ -5748,38 +5763,42 @@ Framework.prototype.load = function(debug, types, path) {
 	global.RELEASE = !debug;
 	global.isomorphic = self.isomorphic;
 
-	self._configure();
+	self.$migrations(function() {
 
-	if (!types || types.indexOf('versions') !== -1)
-		self._configure_versions();
+		self._configure();
 
-	if (!types || types.indexOf('sitemap') !== -1)
-		self._configure_sitemap();
+		if (!types || types.indexOf('versions') !== -1)
+			self._configure_versions();
 
-	self.cache.init();
-	self.emit('init');
-	self.isLoaded = true;
+		if (!types || types.indexOf('sitemap') !== -1)
+			self._configure_sitemap();
 
-	setTimeout(function() {
+		self.cache.init();
+		self.emit('init');
+		self.isLoaded = true;
 
-		try {
-			self.emit('load', self);
-			self.emit('ready', self);
-		} catch (err) {
-			self.error(err, 'framework.on("load/ready")');
-		}
+		setTimeout(function() {
 
-		self.removeAllListeners('load');
-		self.removeAllListeners('ready');
+			try {
+				self.emit('load', self);
+				self.emit('ready', self);
+			} catch (err) {
+				self.error(err, 'framework.on("load/ready")');
+			}
 
-		// clear unnecessary items
-		delete framework.tests;
-		delete framework.test;
-		delete framework.testing;
-		delete framework.assert;
-	}, 500);
+			self.removeAllListeners('load');
+			self.removeAllListeners('ready');
 
-	self.$load(types, directory);
+			// clear unnecessary items
+			delete framework.tests;
+			delete framework.test;
+			delete framework.testing;
+			delete framework.assert;
+		}, 500);
+
+		self.$load(types, directory);
+	});
+
 	return self;
 };
 
@@ -5881,42 +5900,33 @@ Framework.prototype.initialize = function(http, debug, options) {
 			self.console();
 
 		setTimeout(function() {
-
 			try {
 				self.emit('load', self);
 				self.emit('ready', self);
 			} catch (err) {
 				self.error(err, 'framework.on("load/ready")');
 			}
-
 			self.removeAllListeners('load');
 			self.removeAllListeners('ready');
-
 		}, 500);
 
 		if (self.isTest) {
-
 			var sleep = options.sleep || options.delay || 1000;
 			global.TEST = true;
 			global.assert = require('assert');
 			setTimeout(function() {
 				self.test(true, options.tests || options.test);
 			}, sleep);
-
 			return self;
 		}
 
 		setTimeout(function() {
-
 			if (framework.isTest)
 				return;
-
-			// clear unnecessary items
 			delete framework.tests;
 			delete framework.test;
 			delete framework.testing;
 			delete framework.assert;
-
 		}, 5000);
 
 	}, true);
@@ -6018,7 +6028,8 @@ Framework.prototype.mode = function(http, name, options) {
 			break;
 	}
 
-	return self.initialize(http, debug, options);
+	self.$migrations(n => self.initialize(http, debug, options));
+	return self;
 };
 
 /**
@@ -9364,7 +9375,7 @@ Subscribe.prototype.execute = function(status, isError) {
 		if (!status)
 			status = 404;
 
-		if (status === 400 && self.exception instanceof Builders.ErrorBuilder) {
+		if (status === 400 && self.exception instanceof framework_builders.ErrorBuilder) {
 			if (req.$language)
 				self.exception.resource(req.$language, framework.config['default-errorbuilder-resource-prefix']);
 			var ex = self.exception.output();
@@ -10028,7 +10039,7 @@ Controller.prototype.$query = function(helper, callback) {
 
 Controller.prototype.$save = function(helper, callback) {
 	var self = this;
-	if (Builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body))
 		self.body.$save(helper, callback);
 	else
 		self.getSchema().default().$save(helper, callback);
@@ -10043,7 +10054,7 @@ Controller.prototype.$remove = function(helper, callback) {
 
 Controller.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
-	if (Builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body))
 		self.body.$workflow(name, helper, callback);
 	else
 		self.getSchema().workflow(name, null, helper, callback, true); // skip validation
@@ -10058,7 +10069,7 @@ Controller.prototype.$workflow2 = function(name, helper, callback) {
 
 Controller.prototype.$transform = function(name, helper, callback) {
 	var self = this;
-	if (Builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body))
 		self.body.$transform(name, helper, callback);
 	else
 		self.getSchema().transform(name, null, helper, callback, true); // skip validation
@@ -10073,7 +10084,7 @@ Controller.prototype.$transform2 = function(name, helper, callback) {
 
 Controller.prototype.$operation = function(name, helper, callback) {
 	var self = this;
-	if (Builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body))
 		self.body.$operation(name, helper, callback);
 	else
 		self.getSchema().operation(name, null, helper, callback, true); // skip validation
@@ -10088,7 +10099,7 @@ Controller.prototype.$operation2 = function(name, helper, callback) {
 
 Controller.prototype.$async = function(callback, index) {
 	var self = this;
-	if (Builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body))
 		return self.body.$async(callback, index);
 	return self.getSchema().default().$async(callback, index);
 };
@@ -10296,29 +10307,6 @@ Controller.prototype.date = function(type, d1, d2) {
 
 	return true;
 
-};
-
-/**
- * Validate a model
- * @param {Object} model Model to validate.
- * @param {String Array} properties
- * @param {String} prefix Resource prefix.
- * @param {String} name Resource name.
- * @return {ErrorBuilder}
- */
-Controller.prototype.validate = function(model, properties, prefix, name) {
-
-	var self = this;
-
-	var resource = function(key) {
-		return self.resource(name || 'default', (prefix || '') + key);
-	};
-
-	if (typeof(properties) === STRING)
-		return builders.validate(properties, model, prefix);
-
-	var error = new builders.ErrorBuilder(resource);
-	return framework_utils.validate.call(self, model, properties, framework.onValidate, error);
 };
 
 /*
@@ -11886,7 +11874,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 
 	var type = 'application/json';
 
-	if (obj instanceof builders.ErrorBuilder) {
+	if (obj instanceof framework_builders.ErrorBuilder) {
 		if (self.language && !obj.isResourceCustom)
 			obj.resource(self.language);
 		if (obj.contentType)
@@ -11930,7 +11918,7 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 	if (!name)
 		name = 'callback';
 
-	if (obj instanceof builders.ErrorBuilder) {
+	if (obj instanceof framework_builders.ErrorBuilder) {
 		if (self.language && !obj.isResourceCustom)
 			obj.resource(self.language);
 		obj = obj.json(beautify);
@@ -11961,13 +11949,13 @@ Controller.prototype.callback = function(viewName) {
 	return function(err, data) {
 
 		// NoSQL embedded database
-		if (data === undefined && !framework_utils.isError(err) && (!(err instanceof Builders.ErrorBuilder))) {
+		if (data === undefined && !framework_utils.isError(err) && (!(err instanceof framework_builders.ErrorBuilder))) {
 			data = err;
 			err = null;
 		}
 
 		if (err) {
-			if (err instanceof Builders.ErrorBuilder && !viewName) {
+			if (err instanceof framework_builders.ErrorBuilder && !viewName) {
 				if (self.language)
 					err.resource(self.language);
 				return self.content(err);
@@ -12886,12 +12874,12 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 // =================================================================================
 // *********************************************************************************
 
-var NEWLINE = '\r\n';
-var SOCKET_RESPONSE = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\n\r\n';
-var SOCKET_RESPONSE_PROTOCOL = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\nSec-WebSocket-Protocol: {2}\r\n\r\n';
-var SOCKET_RESPONSE_ERROR = 'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nX-WebSocket-Reject-Reason: 403 Forbidden\r\n\r\n';
-var SOCKET_HASH = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
-var SOCKET_ALLOW_VERSION = [13];
+const NEWLINE = '\r\n';
+const SOCKET_RESPONSE = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\n\r\n';
+const SOCKET_RESPONSE_PROTOCOL = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\nSec-WebSocket-Protocol: {2}\r\n\r\n';
+const SOCKET_RESPONSE_ERROR = 'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nX-WebSocket-Reject-Reason: 403 Forbidden\r\n\r\n';
+const SOCKET_HASH = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+const SOCKET_ALLOW_VERSION = [13];
 
 /*
 	WebSocket
@@ -13451,7 +13439,7 @@ WebSocket.prototype.validate = function(model, properties, prefix, name) {
 		return self.resource(name || 'default', (prefix || '') + key);
 	};
 
-	var error = new builders.ErrorBuilder(resource);
+	var error = new framework_builders.ErrorBuilder(resource);
 	return framework_utils.validate.call(self, model, properties, framework.onValidate, error);
 };
 
@@ -14166,7 +14154,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 				contentType = 'application/json';
 
 			if (!isHEAD) {
-				if (body instanceof builders.ErrorBuilder)
+				if (body instanceof framework_builders.ErrorBuilder)
 					body = obj.output();
 				body = JSON.stringify(body);
 			}
