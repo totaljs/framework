@@ -10673,9 +10673,8 @@ Controller.prototype.sitemap_change = function(name, type, value) {
 
 	for (var i = 0, length = sitemap.length; i < length; i++) {
 		if (sitemap[i].id === name) {
-			if (typeof(value) === FUNCTION) {
+			if (typeof(value) === TYPE_FUNCTION)
 				sitemap[i][type] = value(sitemap[i][type]);
-			}
 			else
 				sitemap[i][type] = value;
 			return this;
