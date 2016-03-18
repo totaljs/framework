@@ -10660,7 +10660,36 @@ Controller.prototype.sitemap_name = function(name) {
 	return '';
 };
 
-Controller.prototype.sitemap = function(name, url, index) {
+Controller.prototype.sitemap_change = function(name, type, value) {
+	var sitemap = this.repository[REPOSITORY_SITEMAP];
+	if (!sitemap)
+		sitemap = this.sitemap(name);
+
+	if (!sitemap.$cloned) {
+		sitemap = framework_utils.clone(sitemap);
+		sitemap.$cloned = true;
+		this.repository[REPOSITORY_SITEMAP] = sitemap;
+	}
+
+	for (var i = 0, length = sitemap.length; i < length; i++) {
+		if (sitemap[i].id === name) {
+			if (typeof(value) === FUNCTION)
+				sitemap[i][type] = value(sitemap[i][type]);
+			else
+				sitemap[i][type] = value;
+			return this;
+		}
+	}
+
+	return this;
+};
+
+Controller.prototype.$sitemap_change = function(name, type, value) {
+	this.sitemap_change.apply(this, arguments);
+	return '';
+};
+
+Controller.prototype.sitemap = function(name) {
 	var self = this;
 	var sitemap;
 
@@ -10676,9 +10705,6 @@ Controller.prototype.sitemap = function(name, url, index) {
 		return self.repository.sitemap || [];
 	}
 
-	if (name[0] === '#')
-		name = name.substring(1);
-
 	sitemap = framework.sitemap(name, false, self.language);
 	self.repository[REPOSITORY_SITEMAP] = sitemap;
 	if (!self.repository[REPOSITORY_META_TITLE]) {
@@ -10690,7 +10716,7 @@ Controller.prototype.sitemap = function(name, url, index) {
 	return self.repository[REPOSITORY_SITEMAP];
 };
 
-Controller.prototype.$sitemap = function(name, url, index) {
+Controller.prototype.$sitemap = function(name) {
 	var self = this;
 	self.sitemap.apply(self, arguments);
 	return '';

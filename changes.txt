@@ -3,8 +3,10 @@
 - added: `controller.invalid()` creates an ErrorBuilder instance and it responds in next tick
 - added: `controller.sitemap_url([id])` returns URL from sitemap
 - added: `controller.sitemap_name([id])` returns name/title from sitemap
+- added: `controller.sitemap_change(id, property, newvalue)` can change a current value in the sitemap
 - added: `@{sitemap_url([id])}` returns URL from sitemap
 - added: `@{sitemap_name([id])}` returns name/title from sitemap
+- added: `@{sitemap_change(id, property, newvalue)}` can change a current value in the sitemap
 - added: `/migrations/` all scripts this directory are executed only one (then are renamed)
 - added: `F.route()` supports a new flag: `cors` (creates a cors route) and `credentials` (enables cookies for cors)
 

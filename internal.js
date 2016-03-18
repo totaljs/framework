@@ -2252,6 +2252,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'prefetch':
 		case 'prerender':
 		case 'prev':
+		case 'sitemap_change':
 			return 'self.$' + command;
 
 		case 'now':
