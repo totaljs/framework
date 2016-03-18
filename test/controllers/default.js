@@ -103,8 +103,8 @@ exports.install = function() {
     }, 'key', false) === 'MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'framework.encrypt(object)');
     assert.ok(framework.decrypt('MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'key').name === 'Peter', 'framework.decrypt(object)')
 
-    assert.ok(source('main').hello() === 'world', 'source');
-    assert.ok(include('main').hello() === 'world', 'source');
+    assert.ok(SOURCE('main').hello() === 'world', 'source');
+    assert.ok(INCLUDE('main').hello() === 'world', 'source');
 
     framework.route('/basic/', viewBAA);
 
@@ -476,11 +476,6 @@ function viewIndex() {
     self.layout('');
     assert.ok(self.view('test', null, true) === 'total.js', name + 'view');
     assert.ok(self.url === '/', name + 'url');
-
-    var error = self.validate({
-        A: 'B'
-    }, ['A']);
-    assert.ok(error.hasError() && error.read('A') === 'AB', 'framework.onValidation & controller.validation');
 
     self.status = 404;
     self.plain('OK');
