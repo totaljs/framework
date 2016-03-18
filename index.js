@@ -2270,9 +2270,12 @@ Framework.prototype.problem = function(message, name, uri, ip) {
 	if (!self.problems)
 		return self;
 
+	if (message instanceof framework_builders.ErrorBuilder)
+		message = message.plain();
+
 	var obj = { message: message, name: name, url: uri ? parser.format(uri) : null, ip: ip };
 	self.problems.push(obj);
-	self.logger('problems', obj.message, obj.url, obj.name, obj.ip);
+	self.logger('problems', obj.message, 'url: ' + obj.url, 'controller: ' + obj.name, 'ip: ' + obj.ip);
 
 	if (self.problems.length > 50)
 		self.problems.shift();
@@ -2296,9 +2299,12 @@ Framework.prototype.change = function(message, name, uri, ip) {
 	if (!self.changes)
 		return self;
 
+	if (message instanceof framework_builders.ErrorBuilder)
+		message = message.plain();
+
 	var obj = { message: message, name: name, url: uri ? parser.format(uri) : null, ip: ip };
 	self.changes.push(obj);
-	self.logger('changes', obj.message, obj.url, obj.name, obj.ip);
+	self.logger('changes', obj.message, 'url: ' + obj.url, 'controller: ' + obj.name, 'ip: ' + obj.ip);
 
 	if (self.changes.length > 50)
 		self.changes.shift();

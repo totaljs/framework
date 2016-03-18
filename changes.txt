@@ -9,6 +9,7 @@
 - added: `@{sitemap_change(id, property, newvalue)}` can change a current value in the sitemap
 - added: `/migrations/` all scripts this directory are executed only one (then are renamed)
 - added: `F.route()` supports a new flag: `cors` (creates a cors route) and `credentials` (enables cookies for cors)
+- added: `ErrorBuilder.plain()` returns all errors as simple string
 
 - updated: `F.file()` supports flags instead of middleware and flags supports extensions `['.jpg', '.png']`
 - updated: `F.sitemap()` returns object with a new field: `wildcard: {Boolean}`

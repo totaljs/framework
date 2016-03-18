@@ -2519,6 +2519,14 @@ ErrorBuilder.prototype.json = function(beautify, replacer) {
 	return JSON.stringify(items, replacer);
 };
 
+ErrorBuilder.prototype.plain = function() {
+	var items = this.prepare().items;
+	var output = '';
+	for (var i = 0, length = items.length; i < length; i++)
+		output += (output ? ', ' : '') + items[i].error;
+	return output;
+};
+
 /**
  * Serialize ErrorBuilder to JSON
  * @param {Boolean} beautify Beautify JSON.
