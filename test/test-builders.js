@@ -99,25 +99,26 @@ function test_UrlBuilder() {
 function test_Schema() {
 	var name = 'Schema: ';
 
-	builders.schema('tbl_user', {
-		Id: Number,
-		Name: String,
-		date: Date
-	}, function(name) {
-		if (name === 'date')
-			return 'OK';
+	NEWSCHEMA('tbl_user').make(function(schema) {
+		schema.define('Id', Number);
+		schema.define('Name', String);
+		schema.define('date', Date);
+		schema.setDefault(function(name) {
+			if (name === 'date')
+				return 'OK';
+		});
 	});
 
 	//assert.ok(builders.schema('default').get('tbl_user').schema.Id instanceof Function, name + 'schema write & read');
 	//assert.ok(JSON.stringify(builders.defaults('tbl_user')) === '{"date":"OK","Name":"","Id":0}', name + 'schema defaults');
 	//assert.ok(JSON.stringify(builders.create('tbl_user')) === '{"date":"OK","Name":"","Id":0}', name + 'schema create');
 
-	builders.schema('test', {
-		Id: Number,
-		Name: String,
-		Male: Boolean,
-		Dt: Date,
-		Price: 'decimal'
+	NEWSCHEMA('test').make(function(schema) {
+		schema.define('Id', Number);
+		schema.define('Name', String);
+		schema.define('Dt', Date);
+		schema.define('Male', Boolean);
+		schema.define('Price', 'decimal');
 	});
 
 	var model = {
@@ -153,21 +154,22 @@ function test_Schema() {
 	assert.ok(output.Name === '', name + 'defaults (String)');
 	assert.ok(output.Male === false, name + 'defaults (Boolean)');
 
-	builders.schema('1', {
-		name: 'string',
-		join: '[2]'
+	NEWSCHEMA('1').make(function(schema) {
+		schema.define('name', String);
+		schema.define('join', '[2]');
 	});
 
-	builders.schema('default').get('1').define('nums', '[number]');
+	GETSCHEMA('1').define('nums', '[number]');
 
-	builders.schema('2', {
-		age: Number
-	}, function(name) {
-		if (name === 'age')
-			return -1;
+	NEWSCHEMA('2').make(function(schema) {
+		schema.define('age', Number);
+		schema.setDefault(function(name) {
+			if (name === 'age')
+				return -1;
+		});
 	});
 
-	builders.schema('default').get('2').addTransform('xml', function(err, model, helper, next) {
+	GETSCHEMA('2').addTransform('xml', function(err, model, helper, next) {
 		next('<xml>OK</xml>');
 	}).addWorkflow('send', function(err, model, helper, next) {
 		countW++;
@@ -207,11 +209,11 @@ function test_Schema() {
 	assert.ok(output.join[0].age === -1 && output.join[1].age === 20, name + 'schema - joining models');
 	assert.ok(output.nums[2] === 2.3 && output.nums[1] === 0, name + 'schema - parse plain array');
 
-	builders.schema('default').get('2').transform('xml', output, function(err, output) {
+	GETSCHEMA('2').transform('xml', output, function(err, output) {
 		assert.ok(output === '<xml>OK</xml>', 'Builders.transform()');
 	});
 
-	builders.schema('default').get('2').workflow('send', output, function(err, output) {
+	GETSCHEMA('2').workflow('send', output, function(err, output) {
 		assert.ok(output === 'workflow', 'Builders.workflow()');
 	}).get(null, function(err, result) {
 		assert.ok(result.age === 99, 'schema - get');
@@ -237,22 +239,24 @@ function test_Schema() {
 		assert.ok(value === 3, 'schema - operation advanced 3');
 	}).constant('test', true);
 
-	assert.ok(SCHEMA('default', '2').constant('test') === true, 'schema - constant');
+	assert.ok(GETSCHEMA('2').constant('test') === true, 'schema - constant');
 
-	builders.schema('validator', {
-		name: 'string',
-		age: 'number',
-		isTerms: 'boolean'
-	}, null, function(name, value, path, schema) {
-		assert.ok(name !== 'validator', 'schema validator - problem with schema name in utils.validate()');
-		switch (name) {
-			case 'name':
-				return value.length > 0;
-			case 'age':
-				return value > 10;
-			case 'isTerms':
-				return value === true;
-		}
+	NEWSCHEMA('validator').make(function(schema) {
+		schema.define('name', String, true);
+		schema.define('age', Number, true);
+		schema.define('isTerms', Boolean, true);
+
+		schema.setValidate(function(name, value, path, schema) {
+			assert.ok(name !== 'validator', 'schema validator - problem with schema name in utils.validate()');
+			switch (name) {
+				case 'name':
+					return value.length > 0;
+				case 'age':
+					return value > 10;
+				case 'isTerms':
+					return value === true;
+			}
+		});
 	});
 
 	var builder = builders.validate('validator', {
@@ -332,7 +336,6 @@ function test_Schema() {
 	//var hd = new memwatch.HeapDiff();
 
 	var __start = (new Date()).getTime();
-
 	for (var i=0; i<instanceCount; i++){
 		var c = Cat.make({
 			id: i,

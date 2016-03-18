@@ -54,46 +54,14 @@ SchemaBuilder.prototype.get = function(name) {
 };
 
 /**
- * Register a new schema
- * @param {String} name Schema name.
- * @param {Object} obj Schema definition.
- * @param {String Array} properties Properties to validate.
- * @param {Function(propertyName, value, path, schemaName)} validator
- * @return {SchemaBuilderEntity}
- */
-SchemaBuilder.prototype.add = function(name, obj, properties, validator) {
-	var self = this;
-
-	if (typeof(obj) === UNDEFINED)
-		obj = {};
-
-	var keys = Object.keys(obj);
-	if (!properties)
-		properties = keys;
-
-	self.collection[name] = new SchemaBuilderEntity(self, name, {}, validator, properties);
-
-	for (var i = 0, length = keys.length; i < length; i++) {
-		var key = keys[i];
-		self.collection[name].define(key, obj[key]);
-	}
-
-	return self.collection[name];
-};
-
-/**
- * Register a new schema
+ * Create a new schema
  * @alias
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilder.prototype.create = function() {
+SchemaBuilder.prototype.create = function(name) {
 	var self = this;
-	return self.add.apply(self, arguments);
-};
-
-SchemaBuilder.prototype.Create = function() {
-	var self = this;
-	return self.add.apply(self, arguments);
+	self.collection[name] = new SchemaBuilderEntity(self, name);
+	return self.collection[name];
 };
 
 /**
@@ -121,23 +89,22 @@ SchemaBuilder.prototype.destroy = function(name) {
 	return this.remove(name);
 };
 
-function SchemaBuilderEntity(parent, name, obj, validator, properties) {
+function SchemaBuilderEntity(parent, name) {
 	this.parent = parent;
 	this.name = name;
 	this.primary;
 	this.trim = true;
-	this.schema = obj;
-	this.properties = properties === undefined ? Object.keys(obj) : properties;
+	this.schema = {};
+	this.properties = [];
 	this.resourcePrefix;
 	this.resourceName;
 	this.transforms;
-	this.composes;
 	this.operations;
 	this.rules;
 	this.constants;
 	this.onPrepare;
 	this.onDefault;
-	this.onValidate = validator ? validator : framework.onValidate;
+	this.onValidate = framework.onValidate;
 	this.onSave;
 	this.onGet;
 	this.onRemove;
@@ -649,36 +616,6 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
 };
 
 /**
- * Add a new composer for the entity
- * @param {String} name Composer name, optional.
- * @param {Function(errorBuilder, output, model, helper, next([output]), entityName)} fn
- * @return {SchemaBuilderEntity}
- */
-SchemaBuilderEntity.prototype.addCompose = function(name, fn) {
-	var self = this;
-
-	if (typeof(name) === FUNCTION) {
-		fn = name;
-		name = 'default';
-	}
-
-	if (!self.composes)
-		self.composes = {};
-
-	self.composes[name] = fn;
-	return self;
-};
-
-/**
- * Add a new composer for the entity
- * @param {String} name Transform name, optional.
- * @param {Function(errorBuilder, output, model, helper, next([output]), entityName)} fn
- */
-SchemaBuilderEntity.prototype.addComposer = function(name, fn) {
-	return this.addCompose(name, fn);
-};
-
-/**
  * Find an entity in current group
  * @param {String} name
  * @return {SchemaBuilderEntity}
@@ -717,7 +654,6 @@ SchemaBuilderEntity.prototype.destroy = function() {
 	self.schema = null;
 	self.onDefault = null;
 	self.onValidate = null;
-	self.onValidation = null;
 	self.onSave = null;
 	self.onRead = null;
 	self.onRemove = null;
@@ -1013,7 +949,7 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder, filter, path) {
 
 	var self = this;
-	var fn = self.onValidate || self.onValidation;
+	var fn = self.onValidate;
 
 	if (builder === undefined) {
 		builder = new ErrorBuilder();
@@ -1034,8 +970,6 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 
 	if (resourcePrefix)
 		builder.resourcePrefix = resourcePrefix;
-
-	//return framework_utils.validate.call(self, model, self.name, fn, builder, undefined, self.name, self.parent.collection);
 
 	if (filter)
 		filter = self.filter(filter);
@@ -1062,7 +996,6 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 
 		if (!schema.isArray) {
 			s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key);
-			// framework_utils.validate_builder.call(self, model[key], builder, schema.raw, self.parent.collection, schema.raw, undefined, filter, key + '.');
 			continue;
 		}
 
@@ -1580,127 +1513,6 @@ SchemaBuilderEntity.prototype.transform2 = function(name, helper, callback) {
 	return this.transform(name, null, helper, callback, true);
 };
 
-/**
- * Compose an object
- * @param {String} name
- * @param {Object} model
- * @param {Object} helper A helper object, optional.
- * @param {Function(errorBuilder, output, model)} callback
- * @param {Boolean} skip Skips preparing and validation, optional.
- * @return {SchemaBuilderEntity}
- */
-SchemaBuilderEntity.prototype.compose = function(name, model, helper, callback, skip) {
-
-	var self = this;
-
-	if (typeof(name) !== STRING) {
-		callback = helper;
-		helper = model;
-		model = name;
-		name = 'default';
-	}
-
-	if (typeof(callback) === BOOLEAN) {
-		skip = callback;
-		callback = helper;
-		helper = undefined;
-	} else if (callback === undefined) {
-		callback = helper;
-		helper = undefined;
-	}
-
-	if (typeof(callback) !== FUNCTION)
-		callback = function(){};
-
-	var compose = self.composes ? self.composes[name] : undefined;
-
-	if (!compose) {
-		callback(new ErrorBuilder().add('', 'Composer not found.'));
-		return self;
-	}
-
-	var $type = 'compose';
-
-	if (skip === true) {
-		var builder = new ErrorBuilder();
-
-		if (self.resourceName)
-			builder.setResource(self.resourceName);
-		if (self.resourcePrefix)
-			builder.setPrefix(self.resourcePrefix);
-
-		compose.call(self, builder, model, helper, function(result) {
-			self.$process(arguments, model, $type, name, builder, result, callback);
-		}, skip !== true);
-		return self;
-	}
-
-	self.$prepare(model, function(err, model) {
-
-		if (err) {
-			callback(err, model);
-			return;
-		}
-
-		var output = self.default();
-		var builder = new ErrorBuilder();
-
-		if (self.resourceName)
-			builder.setResource(self.resourceName);
-		if (self.resourcePrefix)
-			builder.setPrefix(self.resourcePrefix);
-
-		if (!isGenerator(self, 'compose.' + name, compose)) {
-			compose.call(self, builder, output, model, helper, function(result) {
-				self.$process(arguments, model, $type, name, builder, result, callback);
-			}, skip !== true);
-			return;
-		}
-
-		callback.success = false;
-		async.call(self, compose)(function(err) {
-			if (!err || callback.success)
-				return;
-			callback.success = true;
-			builder.push(err);
-			if (self.onError)
-				self.onError(builder, model, $type, name);
-			callback(builder);
-		}, builder, model, helper, function(result) {
-
-			if (callback.success)
-				return;
-
-			if (arguments.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
-				if ((result instanceof Error || result instanceof ErrorBuilder) && builder !== result)
-					builder.push(result);
-				result = arguments[1];
-			}
-
-			var has = builder.hasError();
-			if (has && self.onError)
-				self.onError(builder, model, $type, name);
-
-			callback.success = true;
-			callback(has ? builder : null, result === undefined ? model : result);
-		}, skip !== true);
-	});
-
-	return self;
-};
-
-SchemaBuilderEntity.prototype.compose2 = function(name, helper, callback) {
-
-	if (typeof(helper) === FUNCTION) {
-		callback = helper;
-		helper = undefined;
-	}
-
-	if (callback === undefined)
-		callback = NOOP;
-
-	return this.compose(name, null, helper, callback, true);
-};
 
 SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builder, result, callback) {
 
@@ -2147,33 +1959,6 @@ SchemaInstance.prototype.$transform = function(name, helper, callback) {
 	return self;
 };
 
-SchemaInstance.prototype.$compose = function(name, helper, callback) {
-	var self = this;
-
-	if (!self.$$async) {
-		self.$$schema.compose(name, self, helper, callback);
-		return self;
-	}
-
-	self.$$async.push(function(next) {
-		self.$$schema.compose(name, self, helper, function(err, result) {
-
-			if (self.$$result)
-				self.$$result.push(err ? null : result);
-
-			if (!err)
-				return next();
-			next = null;
-			var result = self.$$result;
-			delete self.$$result;
-			delete self.$$async;
-			self.$callback(err, result);
-		});
-	});
-
-	return self;
-};
-
 SchemaInstance.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
 
@@ -2295,65 +2080,8 @@ function UrlBuilder() {
 	this.builder = {};
 }
 
-/**
- * Create schema
- * @param {String} name chema name.
- * @param {Object} obj Schema definition.
- * @param {SchemaDefaults} defaults Schema defaults.
- * @param {SchemaValidator} validator Schema validator.
- * @return {Object}
- */
-exports.schema = function(name, obj, defaults, validator, properties) {
-
-	if (obj === undefined) {
-
-		if (schemas[name] === undefined)
-			schemas[name] = new SchemaBuilder(name);
-
-		return schemas[name];
-	}
-
-	if (schemas[DEFAULT_SCHEMA] === undefined)
-		schemas[DEFAULT_SCHEMA] = new SchemaBuilder(DEFAULT_SCHEMA);
-
-	if (typeof(defaults) !== FUNCTION)
-		defaults = undefined;
-
-	if (typeof(validator) !== FUNCTION)
-		validator = undefined;
-
-	if (!(properties instanceof Array))
-		properties = undefined;
-
-	var schema = schemas[DEFAULT_SCHEMA].add(name, obj, properties, validator);
-
-	if (defaults)
-		schema.setDefault(defaults);
-
-	return obj;
-};
-
 exports.isSchema = function(obj) {
 	return obj instanceof SchemaInstance;
-};
-
-exports.load = function(group, name, model) {
-
-	if (!group)
-		group = DEFAULT_SCHEMA;
-
-	if (schemas[group] === undefined)
-		schemas[group] = new SchemaBuilder(group);
-
-	var schema;
-
-	if (name) {
-		schema = schemas[group].get(name);
-		if (!schema)
-			throw new Error('Schema ' + group + '.' + name + ' not found.');
-	}
-
-	return model ? schema.make(model) : name ? schema : schemas[group];
 };
 
 exports.eachschema = function(group, fn) {
@@ -2382,7 +2110,8 @@ exports.getschema = function(group, name) {
 	}
 
 	var g = schemas[group];
-	if (g === undefined)
+
+	if (!g)
 		return;
 
 	var s = g.get(name);
@@ -2392,7 +2121,7 @@ exports.getschema = function(group, name) {
 	return;
 };
 
-exports.newschema = function(group, name, model) {
+exports.newschema = function(group, name) {
 
 	if (!group)
 		group = DEFAULT_SCHEMA;
@@ -2408,7 +2137,7 @@ exports.newschema = function(group, name, model) {
 			schema = schemas[group].create(name);
 	}
 
-	return model ? schema.make(model) : name ? schema : schemas[group];
+	return schema;
 };
 
 /**

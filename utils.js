@@ -35,7 +35,6 @@ var path = require('path');
 var fs = require('fs');
 var events = require('events');
 var crypto = require('crypto');
-var expressionCache = {};
 
 const regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$');
 const regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
@@ -143,50 +142,7 @@ var contentTypes = {
 	'zip': 'application/zip'
 };
 
-if (typeof(setImmediate) === UNDEFINED) {
-	global.setImmediate = function(cb) {
-		process.nextTick(cb);
-	};
-}
-
 const hasOwnProperty = Object.prototype.hasOwnProperty;
-
-/*
-	Expression declaration
-	@query {String}
-	@params {String Array}
-	@values {Object Array}
-	return {Function}
-*/
-function expression(query, params) {
-
-	var name = params.join(',');
-	var fn = expressionCache[query + '-' + name];
-
-	if (!fn) {
-		fn = eval('(function(' + name +'){' + (query.indexOf('return') === -1 ? 'return ' : '') + query + '})');
-		expressionCache[query + name] = fn;
-	}
-
-	var values = [];
-
-	for (var i = 2; i < arguments.length; i++)
-		values.push(arguments[i]);
-
-	return (function() {
-		var arr = [];
-
-		for (var i = 0; i < arguments.length; i++)
-			arr.push(arguments[i]);
-
-		for (var i = 0; i < values.length; i++)
-			arr.push(values[i]);
-
-		return fn.apply(this, arr);
-	});
-}
-
-global.expression = expression;
 
 /**
  * Checks if is object empty
@@ -1647,184 +1603,6 @@ exports.GUID = function(max) {
 	return str.substring(0, max);
 };
 
-/**
- * Validate object
- * @param {Object} model Model to validate.
- * @param {String Array or String} properties Properties or Schema name.
- * @param {Function(name, value, path, schema)} prepare Validate function.
- * @param {ErrorBuilder} builder Own ErrorBuilder object.
- * @param {Function(resourceName, key)} resource Resource handler.
- * @param {String} path Internal, current path
- * @return {ErrorBuilder}
- */
-exports.validate = function(model, properties, prepare, builder, resource, path, collection, index) {
-
-	if (typeof(builder) === FUNCTION && resource === undefined) {
-		resource = builder;
-		builder = null;
-	}
-
-	var empty = false;
-
-	if (collection === undefined) {
-		empty = true;
-		collection = {};
-	}
-
-	var error = builder;
-	var current = path === undefined ? '' : path + '.';
-	var isSchema = false;
-	var schemaName = '';
-	var definition = null;
-	var schema;
-
-	if (!(error instanceof builders.ErrorBuilder))
-		error = new builders.ErrorBuilder(resource);
-
-	if (typeof(properties) === STRING) {
-		schema = collection === undefined ? builders.validation(properties) : collection[properties] === undefined ? '' : collection[properties].properties;
-		if (schema.length !== 0) {
-			schemaName = properties;
-			properties = schema;
-			isSchema = true;
-			definition = collection === undefined ? builders.schema('default').collection : collection;
-			if (!definition)
-				definition = {};
-		} else if (!empty)
-			return error;
-		else
-			properties = properties.replace(/\s/g, '').split(',');
-	}
-
-	if (model === undefined || model === null)
-		model = {};
-
-	if (typeof(prepare) !== FUNCTION)
-		throw new Error('The validate function does not have any method to validate properties.\nYou must define the delegate: framework.onValidate ...');
-
-	for (var i = 0; i < properties.length; i++) {
-
-		var name = properties[i].toString();
-		var value = model[name];
-		var type = typeof(value);
-
-		if (value === undefined) {
-			error.add(name, '@', current + name);
-			continue;
-		} else if (type === FUNCTION)
-			value = model[name]();
-
-		if (type !== OBJECT && isSchema) {
-			// collection = builders.schema('default').collection;
-			if (builders.isJoin(collection, name))
-				type = OBJECT;
-		}
-
-		if (type === OBJECT && !exports.isDate(value)) {
-			if (isSchema) {
-				schema = collection[schemaName];
-				if (schema) {
-					schema = schema.schema[name] || null;
-
-					if (schema === Date || schema === String || schema === Number || schema === Boolean) {
-						// Empty
-					} else if (schema && typeof(schema) === STRING) {
-
-						var isArray = schema[0] === '[';
-
-						if (!isArray) {
-							exports.validate(value, schema, prepare, error, resource, current + name, collection);
-							continue;
-						}
-
-						schema = schema.substring(1, schema.length - 1).trim();
-
-						if (!(value instanceof Array)) {
-							error.add(name, '@', current + name, index);
-							continue;
-						}
-
-						// The schema not exists
-						if (collection[schema] === undefined) {
-
-							var result2 = prepare(name, value, current + name, schemaName, model);
-							if (result2 === undefined)
-								continue;
-
-							type = typeof(result2);
-
-							if (type === STRING) {
-								error.add(name, result2, current + name, index);
-								continue;
-							}
-
-							if (type === BOOLEAN && !result2) {
-								error.add(name, '@', current + name, index);
-								continue;
-							}
-
-							if (result2.isValid === false)
-								error.add(name, result2.error, current + name, index);
-
-							continue;
-						}
-
-						var result3 = prepare(name, value, current + name, schemaName, model);
-						if (result3 !== undefined) {
-
-							type = typeof(result3);
-
-							if (type === STRING) {
-								error.add(name, result3, current + name, index);
-								continue;
-							}
-
-							if (type === BOOLEAN && !result3) {
-								error.add(name, '@', current + name, index);
-								continue;
-							}
-
-							if (result3.isValid === false) {
-								error.add(name, result3.error, current + name, index);
-								continue;
-							}
-						}
-
-						var sublength = value.length;
-						for (var j = 0; j < sublength; j++)
-							exports.validate(value[j], schema, prepare, error, resource, current + name, collection, j);
-
-						continue;
-					}
-				}
-			}
-		}
-
-		var result = prepare(name, value, current + name, schemaName, model);
-
-		if (result === undefined)
-			continue;
-
-		type = typeof(result);
-
-		if (type === STRING) {
-			error.add(name, result, current + name, index);
-			continue;
-		}
-
-		if (type === BOOLEAN) {
-			if (!result)
-				error.add(name, '@', current + name, index);
-			continue;
-		}
-
-		if (result.isValid === false)
-			error.add(name, result.error, current + name, index);
-	}
-
-	return error;
-};
-
 function validate_builder_default(name, value) {
 	var type = typeof(value);
 
@@ -1881,7 +1659,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			value = model[name]();
 
 		if (type !== OBJECT) {
-			if (builders.isJoin(collection, name))
+			if (Builders.isJoin(collection, name))
 				type = OBJECT;
 		}
 
@@ -2650,7 +2428,7 @@ Date.prototype.format = function(format, resource) {
 			case 'yyyy':
 				return self.getFullYear();
 			case 'yy':
-				return self.getYear();
+				return self.getFullYear().toString().substring(2);
 			case 'MMM':
 				var m = MONTHS[self.getMonth()];
 				return (framework ? framework.resource(resource, m) || m : m).substring(0, 3);

@@ -533,41 +533,10 @@ function other() {
 		return 'resource-' + name;
 	};
 
-	var error = utils.validate({}, ['firstName', 'lastName', 'age'], onValidation, resource);
-	assert.ok(error.hasError(), 'validation - hasError()');
-
-	error.prepare();
-	assert.ok(error.items[0].name === 'firstName' || error.items[0].error === 'resource-firstName', 'validation - return boolean');
-	assert.ok(error.items[1].name === 'lastName' || error.items[1].error === 'lastName-error', 'validation - return string');
-	assert.ok(error.items[2].name === 'age' || error.items[2].error === 'age-error', 'validation - return utils.isValid()');
-
-	error.clear();
-	assert.ok(!error.hasError(), 'validation - clear() & hasError()');
-
-	assert.ok(expression('a.id === b', ['a', 'b'], { id: 1 }, 1)(), 'expression error (true)');
-	assert.ok(!expression('a.id === b', ['a', 'b'], { id: 1 })(), 'expression error (false)');
-
 	assert.ok(utils.getName('/aaa/bbb/ccc/dddd') === 'dddd', 'problem with getName (1)');
 	assert.ok(utils.getName('\\aaa\\bbb\\ccc\\dddd') === 'dddd', 'problem with getName (2)');
 	assert.ok(utils.getName('/aaa/bbb/ccc/dddd/') === 'dddd', 'problem with getName (3)');
 	assert.ok(utils.getName('\\aaa\\bbb\\ccc\\dddd\\') === 'dddd', 'problem with getName (4)');
-
-	builders.schema('1', { name: 'string', join: '[2]' });
-	builders.schema('2', { age: Number }, function(name) {
-		if (name === 'age')
-			return -1;
-	});
-
-	builders.validation('1', ['name', 'join']);
-	builders.validation('2', ['age']);
-
-	error = utils.validate({ name: 'Name', join: [{ age: 'A' }, { age: 4 }]}, '1', onValidation, resource);
-	assert.ok(error.hasError(), 'validation - hasError() (array)');
-
-	builders.schema('3', { name: 'string', arrNumber: '[Number]', arrString: '[string]' }, null, onValidation);
-	error = builders.validate('3', { name: 'Peter', arrNumber: 'peter' });
-
-	assert.ok(error.hasError(), 'validation - hasError() (array 2)');
 
 	var indexer = 0;
 
