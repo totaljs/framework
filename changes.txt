@@ -14,6 +14,7 @@
 - updated: `F.file()` supports flags instead of middleware and flags supports extensions `['.jpg', '.png']`
 - updated: `F.sitemap()` returns object with a new field: `wildcard: {Boolean}`
 - updated: `F.problem()`, `F.change()`, `controller.problem()` and `controller.change()` write logs to the file
+- updated: `F.mail()` and `controller.mail()` subject is translated according the language
 
 - renamed: event `route-add` to `route`
 

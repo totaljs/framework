@@ -6997,8 +6997,14 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 
 	var replyTo;
 
-	if (language)
+	// Translation
+	if (subject.startsWith('@('))
+		subject = subject.substring(2, subject.length - 1);
+
+	if (language) {
+		subject = framework.translate(language, subject);
 		controller.language = language;
+	}
 
 	if (typeof(repository) === OBJECT && repository)
 		controller.repository = repository;
@@ -10798,7 +10804,7 @@ Controller.prototype.models = function(name) {
  * @param {Function(err)} callback Optional.
  * @return {MailMessage}
  */
-Controller.prototype.mail = function(address, subject, view, model, callback, language) {
+Controller.prototype.mail = function(address, subject, view, model, callback) {
 
 	if (typeof(model) === TYPE_FUNCTION) {
 		callback = model;
@@ -10807,14 +10813,17 @@ Controller.prototype.mail = function(address, subject, view, model, callback, la
 
 	var self = this;
 
+	if (subject.startsWith('@('))
+		subject = subject.substring(2, subject.length - 1);
+
+	if (self.language)
+		subject = framework.translate(self.language, subject);
+
 	// Backup layout
 	var layoutName = self.layoutName;
-
 	var body = self.view(view, model, true);
-
 	self.layoutName = layoutName;
-
-	return framework.onMail(address, subject, body, callback, language);
+	return framework.onMail(address, subject, body, callback, self.language);
 };
 
 /*
