@@ -6998,11 +6998,8 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 	var replyTo;
 
 	// Translation
-	if (subject.startsWith('@('))
-		subject = subject.substring(2, subject.length - 1);
-
-	if (language) {
-		subject = framework.translate(language, subject);
+	if (typeof(language) === STRING) {
+		subject = subject.indexOf('@(') === -1 ? framework.translate(language, subject) : framework.translator(language, subject);
 		controller.language = language;
 	}
 
@@ -10813,11 +10810,8 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
 
 	var self = this;
 
-	if (subject.startsWith('@('))
-		subject = subject.substring(2, subject.length - 1);
-
-	if (self.language)
-		subject = framework.translate(self.language, subject);
+	if (typeof(self.language) === STRING)
+		subject = subject.indexOf('@(') === -1 ? framework.translate(self.language, subject) : framework.translator(self.language, subject);
 
 	// Backup layout
 	var layoutName = self.layoutName;
