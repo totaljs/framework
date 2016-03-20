@@ -2494,9 +2494,9 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	return self;
 };
 
-Framework.prototype.$migrations = function(callback) {
+Framework.prototype.$startup = function(callback) {
 
-	var dir = path.join(directory, '/migrations/');
+	var dir = path.join(directory, '/startup/');
 
 	if (!fs.existsSync(dir))
 		return callback();
@@ -5769,7 +5769,7 @@ Framework.prototype.load = function(debug, types, path) {
 	global.RELEASE = !debug;
 	global.isomorphic = self.isomorphic;
 
-	self.$migrations(function() {
+	self.$startup(function() {
 
 		self._configure();
 
@@ -6034,7 +6034,7 @@ Framework.prototype.mode = function(http, name, options) {
 			break;
 	}
 
-	self.$migrations(n => self.initialize(http, debug, options));
+	self.$startup(n => self.initialize(http, debug, options));
 	return self;
 };
 

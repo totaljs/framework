@@ -7,7 +7,7 @@
 - added: `@{sitemap_url([id], [arg1], [arg2], [argN])}` returns URL from sitemap
 - added: `@{sitemap_name([id], [arg1], [arg2], [argN])}` returns name/title from sitemap
 - added: `@{sitemap_change(id, property, newvalue)}` can change a current value in the sitemap
-- added: `/migrations/` all scripts this directory are executed only one (then are renamed)
+- added: `/startup/` all scripts this directory are executed only one (then are renamed)
 - added: `F.route()` supports a new flag: `cors` (creates a cors route) and `credentials` (enables cookies for cors)
 - added: `ErrorBuilder.plain()` returns all errors as simple string
 
