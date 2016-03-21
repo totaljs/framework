@@ -15,7 +15,7 @@
 - updated: `F.sitemap()` returns object with a new field: `wildcard: {Boolean}`
 - updated: `F.problem()`, `F.change()`, `controller.problem()` and `controller.change()` write logs to the file
 - updated: `F.mail()` and `controller.mail()` subject is translated according to the language
-- updated: `F.file(fnValidation/path, fnExecute, [flags])` the file routing is completely changed
+- updated: `F.file(fnValidation/relative_path, fnExecute, [flags])` the file routing is completely changed
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`
@@ -25,6 +25,7 @@
 - removed: obsolete code
 - removed: `controller.async()`
 - removed: `framework.async()`
+- rmeoved: `Utils.validate()`
 
 - improved: ErrorBuilder
 - improved: WebSocket.send() for JSON communication
