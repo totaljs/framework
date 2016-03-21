@@ -2475,7 +2475,7 @@ ErrorBuilder.prototype.read = function(name) {
 	if (!self.isPrepared)
 		self.prepare();
 
-	var error = self.items.find('name', name);
+	var error = self.items.findItem('name', name);
 	if (error)
 		return error.error;
 

@@ -229,10 +229,10 @@ function prototypeArray() {
 
 	assert.ok(obj['3'].value === 30, 'array.toObject(with name)');
 
-	assert.ok(arr.find(function(o) { return o.name === '4'; }).value === 40, 'array.find()');
-	assert.ok(arr.find(function(o) { return o.name === '6'; }) === null, 'array.find(): null');
-	assert.ok(arr.find('name', '4').value === 40, 'array.find(inline)');
-	assert.ok(arr.find('name', '6') === null, 'array.find(inline): null');
+	assert.ok(arr.findItem(function(o) { return o.name === '4'; }).value === 40, 'array.find()');
+	assert.ok(arr.findItem(function(o) { return o.name === '6'; }) === null, 'array.find(): null');
+	assert.ok(arr.findItem('name', '4').value === 40, 'array.find(inline)');
+	assert.ok(arr.findItem('name', '6') === null, 'array.find(inline): null');
 
 	arr = arr.remove(function(o) {
 		return o.value > 30;

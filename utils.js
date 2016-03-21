@@ -4129,7 +4129,7 @@ Array.prototype.where = function(cb, value) {
  * @param {Object} value Optional.
  * @return {Array}
  */
-Array.prototype.find = function(cb, value) {
+Array.prototype.findItem = Array.prototype.find = function(cb, value) {
 	var self = this;
 	var index = self.findIndex(cb, value);
 	if (index === -1)

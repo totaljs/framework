@@ -10,6 +10,7 @@
 - added: `/startup/` all scripts this directory are executed only one (then are renamed)
 - added: `F.route()` supports a new flag: `cors` (creates a cors route) and `credentials` (enables cookies for cors)
 - added: `ErrorBuilder.plain()` returns all errors as simple string
+- added: `Array.findItem()` alias to `Array.find()`
 
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
 - updated: `F.file()` supports flags instead of middleware and flags supports extensions `['.jpg', '.png']`
