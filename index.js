@@ -2081,7 +2081,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
  * @param {String Array} middleware
  * @return {Framework}
  */
-Framework.prototype.file = function(name, fnValidation, fnExecute, flags) {
+Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 
 	var self = this;
 	var a;
@@ -2106,6 +2106,8 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, flags) {
 	var extensions;
 	var middleware;
 	var options;
+	var url;
+	var wildcard = true;
 
 	if (flags) {
 		for (var i = 0, length = flags.length; i < length; i++) {
@@ -2131,12 +2133,24 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, flags) {
 		}
 	}
 
-	if (!extensions && !fnValidation)
+	if (typeof(fnValidation) === STRING) {
+		url = framework_internal.routeSplitCreate(fnValidation);
+		fnValidation = undefined;
+		a = url.last();
+		var index = a.indexOf('*.');
+		if (index !== -1) {
+			extensions = {};
+			extensions[a.substring(index + 2).trim()] = true;
+		} else if (framework_utils.getExtension(a))
+			wildcard = false;
+
+	} if (!extensions && !fnValidation)
 		fnValidation = fnExecute;
 
 	self.routes.files.push({
 		controller: !_controller ? 'unknown' : _controller,
-		name: name,
+		url: url,
+		wildcard: wildcard,
 		extensions: extensions,
 		onValidate: fnValidation,
 		execute: fnExecute,
@@ -2144,9 +2158,16 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, flags) {
 		options: options
 	});
 
+	self.routes.files.sort(function(a, b) {
+		if (!a.url)
+			return -1;
+		if (!b.url)
+			return 1;
+		return a.url.length > b.url.length ? -1 : 1;
+	});
+
 	self.emit('route', 'file', self.routes.files[self.routes.files.length - 1]);
 	self._length_files++;
-
 	return self;
 };
 
@@ -2159,7 +2180,7 @@ Framework.prototype.file = function(name, fnValidation, fnExecute, flags) {
  * @param {Boolean} minify Minifies HTML code, default: false
  * @return {Framework}
  */
-Framework.prototype.localize = function(name, url, middleware, options, minify) {
+Framework.prototype.localize = function(name, url, flags, minify) {
 
 	var self = this;
 
@@ -2175,11 +2196,8 @@ Framework.prototype.localize = function(name, url, middleware, options, minify) 
 
 	url = framework_internal.preparePATH(url);
 
-	if (middleware === true) {
-		middleware = null;
-		minify = true;
-	} else if (options === true) {
-		options = null;
+	if (flags === true) {
+		flags = null;
 		minify = true;
 	}
 
@@ -2212,9 +2230,9 @@ Framework.prototype.localize = function(name, url, middleware, options, minify) 
 
 			framework.responseContent(req, res, 200, content, framework_utils.getContentType(req.extension), true);
 		});
-	};
+	}
 
-	self.file(name, fnExecute, middleware, options);
+	self.file(fnExecute, flags);
 	return self;
 };
 
@@ -9728,14 +9746,30 @@ Subscribe.prototype.doEndfile = function() {
 	}
 
 	for (var i = 0; i < framework._length_files; i++) {
-		var file = framework.routes.files[i];
 
-		if (file.extensions && !file.extensions[self.req.extension])
-			continue;
+		var file = framework.routes.files[i];
 
 		try {
 
-			if (file.onValidate && !file.onValidate.call(framework, req, res, true))
+			if (file.extensions && !file.extensions[self.req.extension])
+				continue;
+
+			if (file.url) {
+				var skip = false;
+				var length = file.url.length;
+
+				if (!file.wildcard && length !== req.path.length)
+					continue;
+
+				for (var j = 0; j < length; j++) {
+					if (file.url[j] === req.path[j])
+						continue;
+					skip = true;
+					break;
+				}
+				if (skip)
+					continue;
+			} else if (file.onValidate && !file.onValidate.call(framework, req, res, true))
 				continue;
 
 			if (!file.middleware)
@@ -9746,7 +9780,7 @@ Subscribe.prototype.doEndfile = function() {
 			return self;
 
 		} catch (err) {
-			framework.error(err, file.controller + ' :: ' + file.name, req.uri);
+			framework.error(err, file.controller, req.uri);
 			framework.responseContent(req, res, 500, '500 - internal server error', CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
 			return self;
 		}
@@ -13961,9 +13995,7 @@ Backup.prototype.restore = function(filename, path, callback, filter) {
 
 	self.path = path;
 
-	stream.on('data', function(buffer) {
-		self.restoreKey(buffer.toString('utf8'));
-	});
+	stream.on('data', buffer => self.restoreKey(buffer.toString('utf8')));
 
 	if (!callback) {
 		stream.resume();
@@ -13982,13 +14014,9 @@ Backup.prototype.restore = function(filename, path, callback, filter) {
 
 Backup.prototype.callback = function(cb) {
 	var self = this;
-
 	if (self.pending <= 0)
 		return cb(null, cb.path);
-
-	setTimeout(function() {
-		self.callback(cb);
-	}, 100);
+	setTimeout(() => self.callback(cb), 100);
 };
 
 Backup.prototype.restoreFile = function(key, value) {
