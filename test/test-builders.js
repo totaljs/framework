@@ -227,7 +227,7 @@ function test_Schema() {
 		assert.ok(!result, 'schema - operation - result');
 	});
 
-	SCHEMA('default', '2').addOperation('test2', function(error, model, helper, next) {
+	GETSCHEMA('default', '2').addOperation('test2', function(error, model, helper, next) {
 		assert.ok(model === 1 || model === undefined, 'schema - operation problem with model');
 		assert.ok(helper === 2 || helper === undefined, 'schema - operation problem with helper');
 		next(3);
@@ -273,7 +273,7 @@ function test_Schema() {
 
 	assert.ok(!builder.hasError(), name + 'schema validator (no error)');
 
-	var obj = SCHEMA('default', '2').create();
+	var obj = GETSCHEMA('default', '2').create();
 
 	var b = obj.$clone();
 	assert.ok(obj.age === b.age, 'schema $clone 1');
