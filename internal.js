@@ -357,7 +357,7 @@ exports.routeSplit = function(url, noLower) {
 
 	if (key)
 		arr.push(key);
-	else if (count === 0)
+	else if (!count)
 		arr.push('/');
 
 	return arr;
@@ -397,7 +397,7 @@ exports.routeSplitCreate = function(url, noLower) {
 		}
 	}
 
-	if (count === 0)
+	if (!count)
 		arr.push(url.substring(end + (arr.length ? 1 : 0), url.length));
 
 	if (arr.length === 1 && arr[0] === '')
@@ -608,7 +608,7 @@ exports.routeParam = function(routeUrl, route) {
 
 	var length = route.param.length;
 	var arr = new Array(length);
-	if (length === 0)
+	if (!length)
 		return arr;
 
 	for (var i = 0; i < length; i++) {
