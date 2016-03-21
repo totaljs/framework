@@ -111,6 +111,7 @@ We provide a support of the framework for companies. Our support services will k
 | Tomas Holovsky | support + enterprise | <tomasholovsky@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
+| [Tom Spaccialbelli](https://github.com/harry-stot) | contributor | <tom.spaccialbelli@gmail.com> |
 | [Radek / rsmogura](https://github.com/rsmogura) | contributor | ... |
 | [Liao San-Kai](https://github.com/liaosankai) | contributor | <liaosankai@gmail.com> |
 | [Ivan Marchukov](https://github.com/deadman2000) | contributor | <marchukov.ivan@gmail.com> |
