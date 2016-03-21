@@ -2,713 +2,709 @@ var assert = require('assert');
 
 exports.install = function() {
 
-    framework.localize('templates *', '/templates/');
+	framework.localize('templates *', '/templates/');
 
-    framework.route(function(url, req, flags) {
-        return url === '/custom/route/';
-    }, function() {
-        this.plain('CUSTOM');
-    });
+	framework.route(function(url, req, flags) {
+		return url === '/custom/route/';
+	}, function() {
+		this.plain('CUSTOM');
+	});
 
-    framework.route('/logged/', view_logged, ['authorize', 1000], 3000);
-    framework.route('/unauthorize/', ['unauthorize'], view_unauthorize);
+	framework.route('/logged/', view_logged, ['authorize', 1000], 3000);
+	framework.route('/unauthorize/', ['unauthorize'], view_unauthorize);
 
-    framework.route('/a/b/c/d/authorize/', ['authorize'], function() {
-        this.plain('authorize');
-    });
+	framework.route('/a/b/c/d/authorize/', ['authorize'], function() {
+		this.plain('authorize');
+	});
 
-    framework.route('/', function() {
-        this.plain('OK');
-    }, ['unauthorize']);
+	framework.route('/', function() {
+		this.plain('OK');
+	}, ['unauthorize']);
 
-    framework.route('/', function() {
-        this.plain('ROBOT');
-    }, ['robot']);
+	framework.route('/', function() {
+		this.plain('ROBOT');
+	}, ['robot']);
 
-    framework.route('/view-in-modules/', '.' + F.path.modules('someview'));
-    framework.route('/options/', plain_options, ['options']);
-    framework.route('/exception/', 'exception');
-    framework.route('/html-compressor/', view_compressor);
-    framework.route('/html-nocompress/', view_nocompress);
-    framework.route('/sync/', synchronize);
-    framework.route('/schema-filter/', ['post', '*filter#update']);
-    framework.route('/package/', '@testpackage/test');
-    framework.route('/precompile/', view_precomile);
-    framework.route('/homepage/', view_homepage);
-    framework.route('/usage/', view_usage);
-    framework.route('/sse/', viewSSE_html);
-    framework.route('/pipe/', pipe);
-    framework.route('/binary/', binary);
-    framework.route('/mobile/', mobile, ['mobile']);
-    framework.route('/mobile/', mobile_none);
-    framework.route('/reg/exp/{/^\\d+$/}/', regexp);
-    framework.route('/app/*', asterix);
-    framework.route('/sse/', viewSSE, ['sse']);
-    framework.route('/http/', viewHTTP, ['http']);
-    framework.route('/https/', viewHTTPS, ['https']);
-    framework.route('/dynamic/', viewDynamic);
-    framework.route('/routeto/', viewRouteto);
-    framework.route('/f/', viewSocket);
-    framework.route('/js/', viewJS);
-    framework.route('/', viewIndex);
-    framework.route('/cookie/', view_cookie);
-    framework.route('/layout/', view_layout);
-    framework.route('/custom/', viewCustomTesting);
-    framework.route('/views/', viewViews, ["#middleware"]);
-    framework.route('/view-notfound/', viewError);
-    framework.route('/views-if/', viewViewsIf);
-    framework.route('/{a}/', viewRouteA);
-    framework.route('/{a}/{b}/', viewRouteAB);
-    framework.route('/a/{a}/', viewRouteAA);
-    framework.route('/a/b/c/', viewRouteABC);
-    framework.route('/test/', viewTest);
-    framework.route('/translate/', viewTranslate);
-    framework.route('/test-view/', view_test_view);
-    framework.route('/login/google/callback/', aa);
-    framework.route('/timeout/', function() {}, [50]);
+	framework.route('/view-in-modules/', '.' + F.path.modules('someview'));
+	framework.route('/options/', plain_options, ['options']);
+	framework.route('/exception/', 'exception');
+	framework.route('/html-compressor/', view_compressor);
+	framework.route('/html-nocompress/', view_nocompress);
+	framework.route('/sync/', synchronize);
+	framework.route('/schema-filter/', ['post', '*filter#update']);
+	framework.route('/package/', '@testpackage/test');
+	framework.route('/precompile/', view_precomile);
+	framework.route('/homepage/', view_homepage);
+	framework.route('/usage/', view_usage);
+	framework.route('/sse/', viewSSE_html);
+	framework.route('/pipe/', pipe);
+	framework.route('/binary/', binary);
+	framework.route('/mobile/', mobile, ['mobile']);
+	framework.route('/mobile/', mobile_none);
+	framework.route('/reg/exp/{/^\\d+$/}/', regexp);
+	framework.route('/app/*', asterix);
+	framework.route('/sse/', viewSSE, ['sse']);
+	framework.route('/http/', viewHTTP, ['http']);
+	framework.route('/https/', viewHTTPS, ['https']);
+	framework.route('/dynamic/', viewDynamic);
+	framework.route('/routeto/', viewRouteto);
+	framework.route('/f/', viewSocket);
+	framework.route('/js/', viewJS);
+	framework.route('/', viewIndex);
+	framework.route('/cookie/', view_cookie);
+	framework.route('/layout/', view_layout);
+	framework.route('/custom/', viewCustomTesting);
+	framework.route('/views/', viewViews, ["#middleware"]);
+	framework.route('/view-notfound/', viewError);
+	framework.route('/views-if/', viewViewsIf);
+	framework.route('/{a}/', viewRouteA);
+	framework.route('/{a}/{b}/', viewRouteAB);
+	framework.route('/a/{a}/', viewRouteAA);
+	framework.route('/a/b/c/', viewRouteABC);
+	framework.route('/test/', viewTest);
+	framework.route('/translate/', viewTranslate);
+	framework.route('/test-view/', view_test_view);
+	framework.route('/login/google/callback/', aa);
+	framework.route('/timeout/', function() {}, [50]);
 
-    framework.route('/get/', plain_get);
-    framework.route('/post/raw/', plain_post_raw, ['post', 'raw']);
-    framework.route('/post/parse/', plain_post_parse, ['post']);
-    framework.route('/post/json/', plain_post_json, ['json']);
-    framework.route('/post/xml/', plain_post_xml, ['xml']);
-    framework.route('/multiple/', plain_multiple, ['post', 'get', 'put', 'delete']);
-    framework.route('/post/schema/', plain_post_schema_parse, ['post', '*test/User']);
-    framework.route('/rest/', plain_rest, ['post']);
-    framework.route('/rest/', plain_rest, ['put']);
-    framework.route('/rest/', plain_rest, ['get', 'head']);
-    framework.route('/rest/', plain_rest, ['delete']);
-    framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);
-    framework.route('/put/parse/', plain_put_parse, ['put']);
-    framework.route('/put/json/', plain_put_json, ['json', 'put']);
-    framework.route('/put/xml/', plain_put_xml, ['xml', 'put']);
-    framework.route('/upload/', plain_upload, ['upload']);
-    framework.route('/index/', 'homepage');
-    framework.route('/live/', viewLive);
-    framework.route('/live/incoming/', viewLiveIncoming, ['mixed']);
+	framework.route('/get/', plain_get);
+	framework.route('/post/raw/', plain_post_raw, ['post', 'raw']);
+	framework.route('/post/parse/', plain_post_parse, ['post']);
+	framework.route('/post/json/', plain_post_json, ['json']);
+	framework.route('/post/xml/', plain_post_xml, ['xml']);
+	framework.route('/multiple/', plain_multiple, ['post', 'get', 'put', 'delete']);
+	framework.route('/post/schema/', plain_post_schema_parse, ['post', '*test/User']);
+	framework.route('/rest/', plain_rest, ['post']);
+	framework.route('/rest/', plain_rest, ['put']);
+	framework.route('/rest/', plain_rest, ['get', 'head']);
+	framework.route('/rest/', plain_rest, ['delete']);
+	framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);
+	framework.route('/put/parse/', plain_put_parse, ['put']);
+	framework.route('/put/json/', plain_put_json, ['json', 'put']);
+	framework.route('/put/xml/', plain_put_xml, ['xml', 'put']);
+	framework.route('/upload/', plain_upload, ['upload']);
+	framework.route('/index/', 'homepage');
+	framework.route('/live/', viewLive);
+	framework.route('/live/incoming/', viewLiveIncoming, ['mixed']);
 
-    framework.redirect('http://www.google.sk', 'http://www.petersirka.sk');
+	framework.redirect('http://www.google.sk', 'http://www.petersirka.sk');
 
-    framework.route('#408', function() {
-        var self = this;
-        self.global.timeout++;
-        self.plain('408');
-    });
+	framework.route('#408', function() {
+		var self = this;
+		self.global.timeout++;
+		self.plain('408');
+	});
 
-    assert.ok(framework.encrypt('123456', 'key', false) === 'MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'framework.encrypt(string)');
-    assert.ok(framework.decrypt('MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'key', false) === '123456', 'framework.decrypt(string)');
+	assert.ok(framework.encrypt('123456', 'key', false) === 'MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'framework.encrypt(string)');
+	assert.ok(framework.decrypt('MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'key', false) === '123456', 'framework.decrypt(string)');
 
-    assert.ok(framework.encrypt({
-        name: 'Peter'
-    }, 'key', false) === 'MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'framework.encrypt(object)');
-    assert.ok(framework.decrypt('MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'key').name === 'Peter', 'framework.decrypt(object)')
+	assert.ok(framework.encrypt({ name: 'Peter' }, 'key', false) === 'MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'framework.encrypt(object)');
+	assert.ok(framework.decrypt('MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'key').name === 'Peter', 'framework.decrypt(object)')
 
-    assert.ok(SOURCE('main').hello() === 'world', 'source');
-    assert.ok(INCLUDE('main').hello() === 'world', 'source');
+	assert.ok(SOURCE('main').hello() === 'world', 'source');
+	assert.ok(INCLUDE('main').hello() === 'world', 'source');
 
-    framework.route('/basic/', viewBAA);
+	framework.route('/basic/', viewBAA);
 
-    framework.file('middleware.txt', file_plain_middleware, ['#file']);
-    framework.file('robots.txt', file_plain);
-    framework.file('status.txt', file_plain_status);
+	framework.file(file_plain_middleware, ['#file']);
+	framework.file('/robots.txt', file_plain);
+	framework.file(file_plain_status);
 
-    framework.route('#401', function() {
-        this.plain('401');
-    });
+	framework.route('#401', function() {
+		this.plain('401');
+	});
 
-    framework.file('Resizing of images', (req) => req.url.indexOf('.jpg') !== -1, resize_image);
+	framework.file((req) => req.url.indexOf('.jpg') !== -1, resize_image);
 
-    // url
-    // function
-    // flags [json, logged, unlogged]
-    // protocols []
-    // allow []
-    // maximumSize
-    framework.websocket('/', socket);
-    framework.route('/theme-green/', view_theme);
-    framework.cors('/api/*');
-    framework.cors('/cors/origin-all/');
-    framework.cors('/cors/origin-not/', ['http://www.petersirka.eu', 'http://www.858project.com']);
-    framework.cors('/cors/headers/', ['post', 'put', 'delete', 'options', 'X-Ping'], true);
+	// url
+	// function
+	// flags [json, logged, unlogged]
+	// protocols []
+	// allow []
+	// maximumSize
+	framework.websocket('/', socket);
+	framework.route('/theme-green/', view_theme);
+	framework.cors('/api/*');
+	framework.cors('/cors/origin-all/');
+	framework.cors('/cors/origin-not/', ['http://www.petersirka.eu', 'http://www.858project.com']);
+	framework.cors('/cors/headers/', ['post', 'put', 'delete', 'options', 'X-Ping'], true);
 };
 
 function plain_options() {
-    this.plain('OPTIONS');
+	this.plain('OPTIONS');
 }
 
 function *synchronize() {
-    var self = this;
-    var content = (yield sync(require('fs').readFile)(self.path.public('file.txt'))).toString('utf8');
-    self.plain(content);
+	var self = this;
+	var content = (yield sync(require('fs').readFile)(self.path.public('file.txt'))).toString('utf8');
+	self.plain(content);
 }
 
 function plain_rest() {
-    this.plain(this.req.method);
+	this.plain(this.req.method);
 }
 
 function view_precomile() {
-    var self = this;
-    self.layout('precompile._layout');
-    self.view('precompile.homepage');
+	var self = this;
+	self.layout('precompile._layout');
+	self.view('precompile.homepage');
 }
 
 function plain_multiple() {
-    var self = this;
-    self.plain('POST-GET-PUT-DELETE');
+	var self = this;
+	self.plain('POST-GET-PUT-DELETE');
 }
 
 function plain_get() {
-    var self = this;
-    self.json(self.get);
+	var self = this;
+	self.json(self.get);
 }
 
 function plain_post_raw() {
-    var self = this;
-    self.plain(self.post);
+	var self = this;
+	self.plain(self.post);
 }
 
 function plain_post_parse() {
-    var self = this;
-    self.layout('');
-    var output = self.view('params', null, true);
-    assert.ok(output === '--body=total.js--query=query--post=total.js--get=query--', 'Problem with getting values from request body and URL.');
-    self.post.type = 'parse';
-    self.json(self.post);
+	var self = this;
+	self.layout('');
+	var output = self.view('params', null, true);
+	assert.ok(output === '--body=total.js--query=query--post=total.js--get=query--', 'Problem with getting values from request body and URL.');
+	self.post.type = 'parse';
+	self.json(self.post);
 }
 
 function plain_post_schema_parse() {
-    var self = this;
-    self.post.type = 'schema';
-    self.json(self.post);
+	var self = this;
+	self.post.type = 'schema';
+	self.json(self.post);
 }
 
 function plain_post_json() {
-    var self = this;
-    self.post.type = 'json';
-    self.json(self.post);
+	var self = this;
+	self.post.type = 'json';
+	self.json(self.post);
 }
 
 function plain_post_xml() {
-    var self = this;
-    self.post.type = 'xml';
-    self.json(self.post);
+	var self = this;
+	self.post.type = 'xml';
+	self.json(self.post);
 }
 
 function plain_put_raw() {
-    var self = this;
-    self.plain(self.post);
+	var self = this;
+	self.plain(self.post);
 }
 
 function plain_put_parse() {
-    var self = this;
-    self.post.type = 'parse';
-    self.json(self.post);
+	var self = this;
+	self.post.type = 'parse';
+	self.json(self.post);
 }
 
 function plain_put_json() {
-    var self = this;
-    self.post.type = 'json';
-    self.json(self.post);
+	var self = this;
+	self.post.type = 'json';
+	self.json(self.post);
 }
 
 function plain_put_xml() {
-    var self = this;
-    self.post.type = 'xml';
-    self.json(self.post);
+	var self = this;
+	self.post.type = 'xml';
+	self.json(self.post);
 }
 
 function plain_upload() {
-    var self = this;
-    var file = self.files[0];
-    self.json({ name: file.filename, length: file.length, type: file.type });
+	var self = this;
+	var file = self.files[0];
+	self.json({ name: file.filename, length: file.length, type: file.type });
 }
 
-function file_plain(req, res, isValidation) {
-    if (isValidation)
-        return req.url === '/robots.txt';
-    res.send(req.url);
+function file_plain(req, res, is) {
+	res.send(req.url);
 }
 
 function file_plain_middleware(req, res, isValidation) {
-    if (isValidation)
-        return req.url === '/middleware.txt';
+	if (isValidation)
+		return req.url === '/middleware.txt';
 
-    res.send({ url: req.url });
+	res.send({ url: req.url });
 }
 
 function file_plain_status(req, res, isValidation) {
-    if (isValidation)
-        return req.url === '/status.txt';
+	if (isValidation)
+		return req.url === '/status.txt';
 
-    res.send(404);
+	res.send(404);
 }
 
 function resize_image(req, res) {
-    var fs = require('fs');
-    this.responseImage(req, res, fs.createReadStream(this.path.public(req.url)), function(image) {
-    //this.responseImageWithoutCache(req, res, this.path.public(req.url), function(image) {
-        image.resize('20%');
-    });
+	var fs = require('fs');
+	this.responseImage(req, res, fs.createReadStream(this.path.public(req.url)), function(image) {
+	//this.responseImageWithoutCache(req, res, this.path.public(req.url), function(image) {
+		image.resize('20%');
+	});
 }
 
 function viewRouteto() {
-    var self = this;
-    var result = self.transfer('/router/');
-    assert.ok(result, 'controller.routeTo()');
+	var self = this;
+	var result = self.transfer('/router/');
+	assert.ok(result, 'controller.routeTo()');
 }
 
 function asterix() {
-    this.plain('ASTERIX');
+	this.plain('ASTERIX');
 }
 
 function view_homepage() {
-    /*
+	/*
 	framework.server.getConnections(function(a, b, c) {
 		console.log(a, b, c);
 	});*/
 
-    //console.log(framework.server._connection);
+	//console.log(framework.server._connection);
 
-    console.log(this.hash('sha1', '123456', false));
+	console.log(this.hash('sha1', '123456', false));
 
-    //this.view('homepage');
-    this.plain(framework.usage(true));
+	//this.view('homepage');
+	this.plain(framework.usage(true));
 }
 
 function view_layout() {
-    this.view('test');
+	this.view('test');
 }
 
 function view_usage() {
-    this.plain(this.framework.usage(true));
+	this.plain(this.framework.usage(true));
 }
 
 function viewBAA() {
 
-    var user = this.baa();
+	var user = this.baa();
 
-    if (user === null)
-        return;
+	if (user === null)
+		return;
 
-    this.json(user);
+	this.json(user);
 }
 
 function viewSSE_html() {
-    this.view('g');
+	this.view('g');
 }
 
 function view_logged() {
-    var self = this;
-    assert.ok(self.session.ready === true, 'Session problem');
-    assert.ok(self.user.alias === 'Peter Širka', 'User problem');
-    self.plain('OK');
+	var self = this;
+	assert.ok(self.session.ready === true, 'Session problem');
+	assert.ok(self.user.alias === 'Peter Širka', 'User problem');
+	self.plain('OK');
 }
 
 function view_unauthorize() {
-    var self = this;
-    self.plain('UNAUTHORIZED');
+	var self = this;
+	self.plain('UNAUTHORIZED');
 }
 
 function viewSSE() {
-    var self = this;
-    self.sse('TEST\n\nTEST');
+	var self = this;
+	self.sse('TEST\n\nTEST');
 }
 
 function viewLiveIncoming(file) {
-    console.log(file);
+	console.log(file);
 }
 
 function viewSocket() {
-    this.view('f');
+	this.view('f');
 }
 
 function view_test_view() {
-    this.view('test');
+	this.view('test');
 }
 
 function viewCustomTesting() {/*
-    this.plain(this.template('one', [{
-        name: 'A',
-        price: 10,
-        B: false
-    }, {
-        name: 'B',
-        price: 10.5,
-        B: true
-    }]));*/
-    this.plain(this.template('new', [{ tag: '<b>A</b>' }, { tag: '<b>B</b>' }]));
-    setTimeout(function() {
-        framework.stop();
-    }, 500);
+	this.plain(this.template('one', [{
+		name: 'A',
+		price: 10,
+		B: false
+	}, {
+		name: 'B',
+		price: 10.5,
+		B: true
+	}]));*/
+	this.plain(this.template('new', [{ tag: '<b>A</b>' }, { tag: '<b>B</b>' }]));
+	setTimeout(function() {
+		framework.stop();
+	}, 500);
 }
 
 function socket(self, framework) {
 
-    self.on('open', function(client) {
-        console.log('open ->', client.id);
-        console.log(client.get);
-    });
+	self.on('open', function(client) {
+		console.log('open ->', client.id);
+		console.log(client.get);
+	});
 
-    self.on('close', function(client) {
-        console.log('close ->', client.id);
-    });
+	self.on('close', function(client) {
+		console.log('close ->', client.id);
+	});
 
-    self.on('message', function(client, message) {
-        console.log('message ->', client.id, message);
+	self.on('message', function(client, message) {
+		console.log('message ->', client.id, message);
 
-        if (message === 'disconnect')
-            client.close();
-    });
+		if (message === 'disconnect')
+			client.close();
+	});
 
-    self.on('error', function(error, client) {
-        console.log('error –>', error);
-    });
+	self.on('error', function(error, client) {
+		console.log('error –>', error);
+	});
 }
 
 function aa() {
-    this.json(this.get);
+	this.json(this.get);
 }
 
 function viewTest() {
 
-    var name = 'views: ';
-    var self = this;
+	var name = 'views: ';
+	var self = this;
 
-    self.repository.arr = ['Q', 'R', 'S'];
-    self.repository.title = 'TEST';
-    self.repository.tag = '<b>A</b>';
+	self.repository.arr = ['Q', 'R', 'S'];
+	self.repository.title = 'TEST';
+	self.repository.tag = '<b>A</b>';
 
-    self.repository.optionsEmpty = [{
-        name: 'A',
-        value: 'A'
-    }, {
-        name: 'B',
-        value: 'B'
-    }];
+	self.repository.optionsEmpty = [{
+		name: 'A',
+		value: 'A'
+	}, {
+		name: 'B',
+		value: 'B'
+	}];
 
-    self.repository.options = [{
-        k: 'C',
-        v: 'C'
-    }, {
-        k: 'D',
-        v: 'D'
-    }];
-    self.repository.template = [{
-        name: 'A',
-        price: 10,
-        B: false
-    }, {
-        name: 'B',
-        price: 10.5,
-        B: true
-    }];
+	self.repository.options = [{
+		k: 'C',
+		v: 'C'
+	}, {
+		k: 'D',
+		v: 'D'
+	}];
+	self.repository.template = [{
+		name: 'A',
+		price: 10,
+		B: false
+	}, {
+		name: 'B',
+		price: 10.5,
+		B: true
+	}];
 
-    var output = self.view('a', {
-        a: 'A',
-        b: 'B',
-        arr: ['1', '2', '3']
-    });
+	var output = self.view('a', {
+		a: 'A',
+		b: 'B',
+		arr: ['1', '2', '3']
+	});
 }
 
 function viewDynamic() {
-    this.view('<b>@{model.name}</b>', {
-        name: 'Peter'
-    });
+	this.view('<b>@{model.name}</b>', {
+		name: 'Peter'
+	});
 }
 
 function viewTranslate() {
-    this.language = this.query.language || '';
-    this.view('translate');
+	this.language = this.query.language || '';
+	this.view('translate');
 }
 
 function viewIndex() {
 
-    var self = this;
-    var name = 'controller: ';
+	var self = this;
+	var name = 'controller: ';
 
-    assert.ok(self.path.public('file.txt').endsWith('/public/file.txt'), name + 'path.public');
-    assert.ok(self.path.logs('file.txt').endsWith('/logs/file.txt'), name + 'path.logs');
-    assert.ok(self.path.temp('file.txt').endsWith('/tmp/file.txt'), name + 'path.temp');
+	assert.ok(self.path.public('file.txt').endsWith('/public/file.txt'), name + 'path.public');
+	assert.ok(self.path.logs('file.txt').endsWith('/logs/file.txt'), name + 'path.logs');
+	assert.ok(self.path.temp('file.txt').endsWith('/tmp/file.txt'), name + 'path.temp');
 
-    self.meta('A', 'B');
-    assert.ok(self.repository['$title'] === 'A' && self.repository['$description'] === 'B', name + 'meta() - write');
+	self.meta('A', 'B');
+	assert.ok(self.repository['$title'] === 'A' && self.repository['$description'] === 'B', name + 'meta() - write');
 
-    assert.ok(self.module('hatatitla') === null, name + 'module(not exists) - read');
-    assert.ok(self.module('test').message() === 'message', name + 'module(exists) - read');
+	assert.ok(self.module('hatatitla') === null, name + 'module(not exists) - read');
+	assert.ok(self.module('test').message() === 'message', name + 'module(exists) - read');
 
-    self.layout('test');
-    assert.ok(self.layoutName === 'test', name + 'layout()');
+	self.layout('test');
+	assert.ok(self.layoutName === 'test', name + 'layout()');
 
-    assert.ok(self.functions('share').message() === 'message', name + 'functions()');
-    assert.ok(self.model('user').ok === 1, name + 'model()');
-    assert.ok(framework.model('user').ok === 1, 'framework: model() - 1');
-    assert.ok(framework.model('other/products').ok === 2, 'framework: model() - 2');
+	assert.ok(self.functions('share').message() === 'message', name + 'functions()');
+	assert.ok(self.model('user').ok === 1, name + 'model()');
+	assert.ok(framework.model('user').ok === 1, 'framework: model() - 1');
+	assert.ok(framework.model('other/products').ok === 2, 'framework: model() - 2');
 
-    assert.ok(self.secured === false, 'controller.secured');
-    assert.ok(self.config.isDefinition === true, 'definitions()');
+	assert.ok(self.secured === false, 'controller.secured');
+	assert.ok(self.config.isDefinition === true, 'definitions()');
 
-    assert.ok(!self.xhr, name + 'xhr');
-    assert.ok(self.flags.indexOf('get') !== -1, name + 'flags')
+	assert.ok(!self.xhr, name + 'xhr');
+	assert.ok(self.flags.indexOf('get') !== -1, name + 'flags')
 
-    assert.ok(self.resource('name') === 'default' && self.resource('default', 'name') === 'default', name + 'resource(default)');
-    assert.ok(self.resource('test', 'name') === 'test', name + 'resource(test.resource)');
+	assert.ok(self.resource('name') === 'default' && self.resource('default', 'name') === 'default', name + 'resource(default)');
+	assert.ok(self.resource('test', 'name') === 'test', name + 'resource(test.resource)');
 
-    self.log('test');
+	self.log('test');
 
-    assert.ok(self.hash('sha1', '123456', false) === '7c4a8d09ca3762af61e59520943dc26494f8941b', 'controller.hash()');
+	assert.ok(self.hash('sha1', '123456', false) === '7c4a8d09ca3762af61e59520943dc26494f8941b', 'controller.hash()');
 
-    self.setModified('123456');
+	self.setModified('123456');
 
-    var date = new Date();
-    date.setFullYear(1984);
+	var date = new Date();
+	date.setFullYear(1984);
 
-    self.setModified(date);
-    self.setExpires(date);
+	self.setModified(date);
+	self.setExpires(date);
 
-    assert.ok(self.routeScript('p.js') === '/js/p.js', name + 'routeScript()');
-    assert.ok(self.routeStyle('p.css') === '/css/p.css', name + 'routeStyle()');
-    assert.ok(self.routeImage('p.jpg') === '/img/p.jpg', name + 'routeImage()');
-    assert.ok(self.routeVideo('p.avi') === '/video/p.avi', name + 'routeVideo()');
-    assert.ok(self.routeFont('p.woff') === '/fonts/p.woff', name + 'routeFont()');
-    assert.ok(self.routeDownload('p.pdf') === '/download/p.pdf', name + 'routeDownload()');
-    assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
+	assert.ok(self.routeScript('p.js') === '/js/p.js', name + 'routeScript()');
+	assert.ok(self.routeStyle('p.css') === '/css/p.css', name + 'routeStyle()');
+	assert.ok(self.routeImage('p.jpg') === '/img/p.jpg', name + 'routeImage()');
+	assert.ok(self.routeVideo('p.avi') === '/video/p.avi', name + 'routeVideo()');
+	assert.ok(self.routeFont('p.woff') === '/fonts/p.woff', name + 'routeFont()');
+	assert.ok(self.routeDownload('p.pdf') === '/download/p.pdf', name + 'routeDownload()');
+	assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
 
-    self.layout('');
-    assert.ok(self.view('test', null, true) === 'total.js', name + 'view');
-    assert.ok(self.url === '/', name + 'url');
+	self.layout('');
+	assert.ok(self.view('test', null, true) === 'total.js', name + 'view');
+	assert.ok(self.url === '/', name + 'url');
 
-    self.status = 404;
-    self.plain('OK');
+	self.status = 404;
+	self.plain('OK');
 }
 
 function viewViews() {
-    var name = 'views: ';
-    var self = this;
+	var name = 'views: ';
+	var self = this;
 
-    self.repository.arr = ['Q', 'R', 'S'];
-    self.repository.title = 'TEST';
-    self.repository.tag = '<b>A</b>';
+	self.repository.arr = ['Q', 'R', 'S'];
+	self.repository.title = 'TEST';
+	self.repository.tag = '<b>A</b>';
 
-    self.repository.optionsEmpty = [{
-        name: 'A',
-        value: 'A'
-    }, {
-        name: 'B',
-        value: 'B'
-    }];
+	self.repository.optionsEmpty = [{
+		name: 'A',
+		value: 'A'
+	}, {
+		name: 'B',
+		value: 'B'
+	}];
 
-    self.repository.options = [{
-        k: 'C',
-        v: 'C'
-    }, {
-        k: 'D',
-        v: 'D'
-    }];
-    self.repository.template = [{
-        name: 'A',
-        price: 10,
-        B: false
-    }, {
-        name: 'B',
-        price: 10.5,
-        B: true
-    }];
+	self.repository.options = [{
+		k: 'C',
+		v: 'C'
+	}, {
+		k: 'D',
+		v: 'D'
+	}];
+	self.repository.template = [{
+		name: 'A',
+		price: 10,
+		B: false
+	}, {
+		name: 'B',
+		price: 10.5,
+		B: true
+	}];
 
-    var output = self.view('a', {
-        a: 'A',
-        b: 'B',
-        arr: ['1', '2', '3']
-    }, true);
+	var output = self.view('a', {
+		a: 'A',
+		b: 'B',
+		arr: ['1', '2', '3']
+	}, true);
 
-    //console.log('###' + output + '###');
-    //console.log('\n\n\n');
-    //self.framework.stop();
-    //return;
+	//console.log('###' + output + '###');
+	//console.log('\n\n\n');
+	//self.framework.stop();
+	//return;
 
-    assert.ok(output.contains('#mobilefalse#'), name + 'mobile');
-    assert.ok(output.contains('<count>10</count>'), name + 'inline helper');
-    assert.ok(output.contains('<count>40</count><next>40</next>'), name + 'inline helper + condition');
-    assert.ok(output.contains('HELPER:1-<count>1</count><next>0</next>'), name + 'inline helper + foreach 1');
-    assert.ok(output.contains('HELPER:2-<count>2</count><next>1</next>'), name + 'inline helper + foreach 2');
-    assert.ok(output.contains('<section>SECTION</section>'), name + 'section');
-    assert.ok(output.contains('COMPILE_TANGULARCOMPILED'), name + 'onCompileView with name');
-    assert.ok(output.contains('COMPILE_WITHOUTCOMPILED'), name + 'onCompileView without name');
-    assert.ok(output.contains('<div>4</div><div>4</div><div>FOREACH</div>'), name + 'foreach');
-    assert.ok(output.contains('<div>3</div><div>3</div><div></div><div>C:10</div><div>C:11</div><div>C:12</div>'), name + 'foreach - nested');
-    assert.ok(output.contains('<INLINE>5</INLINE>'), name + 'Inline assign value');
-    assert.ok(output.contains('var d="$\'"'), name + 'JS script special chars 1');
-    assert.ok(output.contains("var e='$\\'';"), name + "JS script special chars 2");
-    assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>'), name + ' minify html');
-    assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
-    assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');
-    assert.ok(output.contains('#helper-fn-A#'), name + 'helper function');
-    assert.ok(output.contains('#helper-fnwithout-A#'), name + 'helper function (without helper keyword)');
-    assert.ok(output.contains('#readonly readonly="readonly"#'), name + 'readonly()');
-    assert.ok(output.contains('#checked checked="checked"#'), name + 'checked()');
-    assert.ok(output.contains('#selected selected="selected"#'), name + 'selected()');
-    assert.ok(output.contains('#disabled disabled="disabled"#'), name + 'disabled()');
-    assert.ok(output.contains('#resourcedefault#'), name + 'resource()');
-    assert.ok(output.contains('#options-empty<option value="A">A</option><option value="B" selected="selected">B</option>#'), name + 'options() - without property name and value');
-    assert.ok(output.contains('#options<option value="C" selected="selected">C</option><option value="D">D</option>#'), name + 'options() - with property name and value');
-    assert.ok(output.contains('#view#bmodel##'), name + 'view() with model');
-    assert.ok(output.contains('#view-toggle#'), name + 'viewToggle()');
-    assert.ok(output.contains('#titleTITLE#'), name + 'title');
-    assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
-    assert.ok(output.contains('#<a href="/download/test.pdf" download="test">content</a>#'), name + 'download');
+	assert.ok(output.contains('#mobilefalse#'), name + 'mobile');
+	assert.ok(output.contains('<count>10</count>'), name + 'inline helper');
+	assert.ok(output.contains('<count>40</count><next>40</next>'), name + 'inline helper + condition');
+	assert.ok(output.contains('HELPER:1-<count>1</count><next>0</next>'), name + 'inline helper + foreach 1');
+	assert.ok(output.contains('HELPER:2-<count>2</count><next>1</next>'), name + 'inline helper + foreach 2');
+	assert.ok(output.contains('<section>SECTION</section>'), name + 'section');
+	assert.ok(output.contains('COMPILE_TANGULARCOMPILED'), name + 'onCompileView with name');
+	assert.ok(output.contains('COMPILE_WITHOUTCOMPILED'), name + 'onCompileView without name');
+	assert.ok(output.contains('<div>4</div><div>4</div><div>FOREACH</div>'), name + 'foreach');
+	assert.ok(output.contains('<div>3</div><div>3</div><div></div><div>C:10</div><div>C:11</div><div>C:12</div>'), name + 'foreach - nested');
+	assert.ok(output.contains('<INLINE>5</INLINE>'), name + 'Inline assign value');
+	assert.ok(output.contains('var d="$\'"'), name + 'JS script special chars 1');
+	assert.ok(output.contains("var e='$\\'';"), name + "JS script special chars 2");
+	assert.ok(output.contains('<script type="text/template"><textarea>\na</textarea>a</script>'), name + ' minify html');
+	assert.ok(output.contains('#tag-encode&lt;b&gt;A&lt;/b&gt;#'), name + 'encode value');
+	assert.ok(output.contains('#tag-raw<b>A</b>#'), name + 'raw value');
+	assert.ok(output.contains('#helper-fn-A#'), name + 'helper function');
+	assert.ok(output.contains('#helper-fnwithout-A#'), name + 'helper function (without helper keyword)');
+	assert.ok(output.contains('#readonly readonly="readonly"#'), name + 'readonly()');
+	assert.ok(output.contains('#checked checked="checked"#'), name + 'checked()');
+	assert.ok(output.contains('#selected selected="selected"#'), name + 'selected()');
+	assert.ok(output.contains('#disabled disabled="disabled"#'), name + 'disabled()');
+	assert.ok(output.contains('#resourcedefault#'), name + 'resource()');
+	assert.ok(output.contains('#options-empty<option value="A">A</option><option value="B" selected="selected">B</option>#'), name + 'options() - without property name and value');
+	assert.ok(output.contains('#options<option value="C" selected="selected">C</option><option value="D">D</option>#'), name + 'options() - with property name and value');
+	assert.ok(output.contains('#view#bmodel##'), name + 'view() with model');
+	assert.ok(output.contains('#view-toggle#'), name + 'viewToggle()');
+	assert.ok(output.contains('#titleTITLE#'), name + 'title');
+	assert.ok(output.contains('#routejs-/js/p.js#'), name + 'route to static');
+	assert.ok(output.contains('#<a href="/download/test.pdf" download="test">content</a>#'), name + 'download');
 
-    assert.ok(output.contains('<link rel="dns-prefetch" href="//fonts.googleapis.com" />'), name + 'dns');
-    assert.ok(output.contains('<link rel="prefetch" href="http://daker.me/2013/05/hello-world.html" />'), name + 'prefetch');
-    assert.ok(output.contains('<link rel="prerender" href="http://daker.me/2013/05/hello-world.html" />'), name + 'prerender');
+	assert.ok(output.contains('<link rel="dns-prefetch" href="//fonts.googleapis.com" />'), name + 'dns');
+	assert.ok(output.contains('<link rel="prefetch" href="http://daker.me/2013/05/hello-world.html" />'), name + 'prefetch');
+	assert.ok(output.contains('<link rel="prerender" href="http://daker.me/2013/05/hello-world.html" />'), name + 'prerender');
 
-    assert.ok(output.contains('<link rel="canonical" href="http://127.0.0.1:8001/a/a-b-c/" />'), name + 'canonical');
-    assert.ok(output.contains('<link rel="next" href="http://127.0.0.1:8001/a/3/" />'), name + 'next');
-    assert.ok(output.contains('<link rel="prev" href="http://127.0.0.1:8001/a/1/" />'), name + 'prev');
-    assert.ok(output.contains('<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>'), name + 'head');
-    assert.ok(output.contains('PLACE'), name + 'place');
-    assert.ok(output.contains('#dynamic<b>OK</b>#'), name + 'dynamic view');
-    assert.ok(self.repository.INLINE === 6, name + 'INLINE assign 2');
-    // console.log(output);
-    assert.ok(output.contains('#RELEASETRANSLATOR1=A=A#'), name + 'INLINE TRANSLATOR FOR RELEASE MODE 1');
-    assert.ok(output.contains('#RELEASETRANSLATOR2=A=A#'), name + 'INLINE TRANSLATOR FOR RELEASE MODE 2');
+	assert.ok(output.contains('<link rel="canonical" href="http://127.0.0.1:8001/a/a-b-c/" />'), name + 'canonical');
+	assert.ok(output.contains('<link rel="next" href="http://127.0.0.1:8001/a/3/" />'), name + 'next');
+	assert.ok(output.contains('<link rel="prev" href="http://127.0.0.1:8001/a/1/" />'), name + 'prev');
+	assert.ok(output.contains('<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>'), name + 'head');
+	assert.ok(output.contains('PLACE'), name + 'place');
+	assert.ok(output.contains('#dynamic<b>OK</b>#'), name + 'dynamic view');
+	assert.ok(self.repository.INLINE === 6, name + 'INLINE assign 2');
+	// console.log(output);
+	assert.ok(output.contains('#RELEASETRANSLATOR1=A=A#'), name + 'INLINE TRANSLATOR FOR RELEASE MODE 1');
+	assert.ok(output.contains('#RELEASETRANSLATOR2=A=A#'), name + 'INLINE TRANSLATOR FOR RELEASE MODE 2');
 
-    self.repository.A = 'A';
+	self.repository.A = 'A';
 
-    output = self.view('current/c', {
-        a: 'A',
-        b: 'B',
-        c: true,
-        d: 'hidden<b>'
-    }, true);
+	output = self.view('current/c', {
+		a: 'A',
+		b: 'B',
+		c: true,
+		d: 'hidden<b>'
+	}, true);
 
-    assert.ok(output.contains('<input type="text" name="a" id="a" class="bootstrap" value="A" />'), name + 'text');
-    assert.ok(output.contains('<input type="hidden" name="d" id="d" value="hidden&lt;b&gt;" />'), name + 'hidden');
-    assert.ok(output.contains('<label><input type="checkbox" name="c" id="c" checked="checked" value="1" /> <span>test label</span></label>'), name + 'checkbox');
-    assert.ok(output.contains('<textarea name="b" id="b" class="myarea">B</textarea>'), name + 'textarea');
-    assert.ok(output.contains('#ACAXXX#'), name + 'if');
-    assert.ok(output.contains('<label><input type="radio" name="a" checked="checked" value="A" /> <span>test label</span></label>'), name + 'radio');
-    assert.ok(output.contains('<div>NESTED</div>'), name + 'if - nested');
-    assert.ok(output.contains('---<div>Hello World!</div><div>Price: 12</div>---'), name + '- "/" view path problem');
+	assert.ok(output.contains('<input type="text" name="a" id="a" class="bootstrap" value="A" />'), name + 'text');
+	assert.ok(output.contains('<input type="hidden" name="d" id="d" value="hidden&lt;b&gt;" />'), name + 'hidden');
+	assert.ok(output.contains('<label><input type="checkbox" name="c" id="c" checked="checked" value="1" /> <span>test label</span></label>'), name + 'checkbox');
+	assert.ok(output.contains('<textarea name="b" id="b" class="myarea">B</textarea>'), name + 'textarea');
+	assert.ok(output.contains('#ACAXXX#'), name + 'if');
+	assert.ok(output.contains('<label><input type="radio" name="a" checked="checked" value="A" /> <span>test label</span></label>'), name + 'radio');
+	assert.ok(output.contains('<div>NESTED</div>'), name + 'if - nested');
+	assert.ok(output.contains('---<div>Hello World!</div><div>Price: 12</div>---'), name + '- "/" view path problem');
 
-    self.json({
-        r: true
-    });
+	self.json({
+		r: true
+	});
 }
 
 function viewViewsIf() {
-    var self = this;
-    self.layout('');
-    self.repository.A = 'A';
-    self.view('current/c', {
-        a: 'A',
-        b: 'B'
-    });
+	var self = this;
+	self.layout('');
+	self.repository.A = 'A';
+	self.view('current/c', {
+		a: 'A',
+		b: 'B'
+	});
 }
 
 function viewError() {
-    var self = this;
-    self.view('asdlkjasl');
+	var self = this;
+	self.view('asdlkjasl');
 }
 
 function viewRouteA() {
-    var self = this;
-    assert.ok(self.url === '/a/', 'routing: viewRouteA');
-    self.plain('OK');
+	var self = this;
+	assert.ok(self.url === '/a/', 'routing: viewRouteA');
+	self.plain('OK');
 }
 
 function viewRouteAB() {
-    var self = this;
-    assert.ok(self.url === '/c/b/', 'routing: viewRouteAB');
-    self.plain('OK');
+	var self = this;
+	assert.ok(self.url === '/c/b/', 'routing: viewRouteAB');
+	self.plain('OK');
 }
 
 function viewRouteAA(a) {
-    var self = this;
-    assert.ok(a === 'aaa', 'routing: viewRouteAA');
-    assert.ok(self.url === '/a/aaa/', 'routing: viewRouteAA');
-    self.plain('OK');
+	var self = this;
+	assert.ok(a === 'aaa', 'routing: viewRouteAA');
+	assert.ok(self.url === '/a/aaa/', 'routing: viewRouteAA');
+	self.plain('OK');
 }
 
 function viewRouteABC() {
-    var self = this;
-    assert.ok(self.url === '/a/b/c/', 'routing: viewRouteABC');
-    self.plain('OK');
+	var self = this;
+	assert.ok(self.url === '/a/b/c/', 'routing: viewRouteABC');
+	self.plain('OK');
 }
 
 function viewJS() {
-    var self = this;
-    self.layout('');
-    self.view('d');
+	var self = this;
+	self.layout('');
+	self.view('d');
 }
 
 function viewLive() {
 
-    var self = this;
+	var self = this;
 
-    self.mixed.beg();
-    self.mixed.send('/users/petersirka/desktop/aaaaa/1.jpg');
+	self.mixed.beg();
+	self.mixed.send('/users/petersirka/desktop/aaaaa/1.jpg');
 
-    setTimeout(function() {
-        self.mixed.send('/users/petersirka/desktop/aaaaa/2.jpg', self.mixed.end.bind(self));
-    }, 3000);
+	setTimeout(function() {
+		self.mixed.send('/users/petersirka/desktop/aaaaa/2.jpg', self.mixed.end.bind(self));
+	}, 3000);
 }
 
 function pipe() {
-    var self = this;
-    self.pipe('http://www.totaljs.com/');
+	var self = this;
+	self.pipe('http://www.totaljs.com/');
 }
 
 function view_cookie() {
-    var self = this;
+	var self = this;
 
-    assert.ok(self.req.cookie('a') === '1', 'request cookie problem 1');
-    assert.ok(self.req.cookie('b') === '2', 'request cookie problem 2');
-    assert.ok(self.req.cookie('c') === '3', 'request cookie problem 3');
+	assert.ok(self.req.cookie('a') === '1', 'request cookie problem 1');
+	assert.ok(self.req.cookie('b') === '2', 'request cookie problem 2');
+	assert.ok(self.req.cookie('c') === '3', 'request cookie problem 3');
 
-    self.res.cookie('cookieR', 'O', new Date().add('d', 1));
-    self.res.cookie('cookie1', '1', new Date().add('d', 1));
-    self.res.cookie('cookie2', '2', new Date().add('d', 1));
-    self.res.cookie('cookie3', '3', new Date().add('d', 1));
-    self.res.cookie('cookie4', '4', new Date().add('d', 1));
-    self.res.cookie('cookieR', 'N', new Date().add('d', 1));
-    self.plain('cookie');
+	self.res.cookie('cookieR', 'O', new Date().add('d', 1));
+	self.res.cookie('cookie1', '1', new Date().add('d', 1));
+	self.res.cookie('cookie2', '2', new Date().add('d', 1));
+	self.res.cookie('cookie3', '3', new Date().add('d', 1));
+	self.res.cookie('cookie4', '4', new Date().add('d', 1));
+	self.res.cookie('cookieR', 'N', new Date().add('d', 1));
+	self.plain('cookie');
 }
 
 function viewHTTP() {
-    this.plain('HTTP');
+	this.plain('HTTP');
 }
 
 function viewHTTPS() {
-    this.plain('HTTPS');
+	this.plain('HTTPS');
 }
 
 function view_compressor() {
-    var self = this;
-    self.view('compress', { name: 'Peter' });
+	var self = this;
+	self.view('compress', { name: 'Peter' });
 }
 
 function view_nocompress() {
-    var self = this;
-    self.view('nocompress');
+	var self = this;
+	self.view('nocompress');
 }
 
 function regexp(number) {
-    this.plain(number);
+	this.plain(number);
 }
 
 function binary() {
-    this.binary(new Buffer('čťž'), 'text/plain', 'utf8');
+	this.binary(new Buffer('čťž'), 'text/plain', 'utf8');
 }
 
 function mobile() {
-    this.plain('X');
+	this.plain('X');
 }
 
 function mobile_none() {
-    this.plain('NO-MOBILE');
+	this.plain('NO-MOBILE');
 }
 
 function view_theme() {
-    var self = this;
-    self.theme('green');
-    self.view('index');
+	var self = this;
+	self.theme('green');
+	self.view('index');
 }
