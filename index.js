@@ -426,7 +426,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-2';
+	this.version_header = '2.0.0-3';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -1170,6 +1170,13 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var viewname;
 	var self = this;
 	var skip = true;
+
+	if (url instanceof Array) {
+		url.forEach(function(url) {
+			self.route(url, funcExecute, flags, length);
+		});
+		return self;
+	}
 
 	var CUSTOM = typeof(url) === TYPE_FUNCTION ? url : null;
 	if (CUSTOM)
