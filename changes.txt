@@ -18,6 +18,7 @@
 - updated: `F.file(fnValidation/path, fnExecute, [flags])` the file routing is completely changed
 
 - renamed: event `route-add` to `route`
+- renamed: `F.versionNode` to `F.version_node`
 
 - removed: `SCHEMA()`
 - removed: composer from `SchemaBuilderEntity`

@@ -427,14 +427,8 @@ function Framework() {
 	this.id = null;
 	this.version = 2000;
 	this.version_header = '2.0.0-1';
+	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
-	var version = process.version.toString().replace('v', '').replace(/\./g, '');
-	if (version[0] !== '0' || version[1] !== '0')
-		version = parseFloat(version)
-	else if (version[1] === '0')
-		version = parseFloat('0.' + version.substring(1));
-
-	this.versionNode = version;
 	this.config = {
 
 		debug: false,
