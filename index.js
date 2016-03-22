@@ -8659,6 +8659,10 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 		if (self.__timeout)
 			clearTimeout(self.__timeout);
 		delete framework.workers[self.__id];
+		setImmediate(function() {
+			fork.removeAllListeners();
+			fork = null;
+		});
 	});
 
 	if (typeof(timeout) !== NUMBER)
