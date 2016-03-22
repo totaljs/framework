@@ -62,6 +62,9 @@ const REQUEST_PROXY_FLAGS = ['post', 'json'];
 const EMPTYARRAY = new Array(0);
 const EMPTYOBJECT = {};
 
+Object.freeze(EMPTYOBJECT);
+Object.freeze(EMPTYARRAY);
+
 var POWEREDBY = '';
 var RANGE = { start: 0, end: 0 };
 var HEADERS = {};
