@@ -19,6 +19,9 @@
 - updated: `F.mail()` and `controller.mail()` subject is translated according to the language
 - updated: `F.file(fnValidation/relative_path, fnExecute, [flags])` the file routing is completely changed
 
+- fixed: `FrameworkImage.save()` problem with streams
+- fixed: `CLEANUP(stream)` method
+
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`
 

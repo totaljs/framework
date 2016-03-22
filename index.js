@@ -334,24 +334,10 @@ global.CLEANUP = function(stream, callback) {
 		});
 	};
 
-	if (stream.readable) {
-		if (stream.path) {
-			stream.on('end', fn);
-			return;
-		}
-	} else {
-		if (stream.path) {
-			stream.on('finish', fn);
-			return;
-		}
-	}
-
-	fn = null;
-	FINISHED(stream, function() {
-		if (callback)
-			callback();
-		DESTROY(stream);
-	});
+	if (stream.readable)
+		stream.on('end', fn);
+	else
+		stream.on('finish', fn);
 };
 
 global.SUCCESS = function(success, value) {
@@ -426,7 +412,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-4';
+	this.version_header = '2.0.0-5';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
