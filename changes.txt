@@ -4,6 +4,8 @@
 - fixed: `F.websocket()` input arguments by @claudioquaglia
 - fixed: Schema parsing
 - fixed: view looping
+- fixed: `FrameworkImage.save()` problem with streams
+- fixed: `CLEANUP(stream)` method
 
 ======= 1.9.7
 

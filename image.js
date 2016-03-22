@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 1.9.7
+ * @version 1.9.8
  */
 
 'use strict';
@@ -234,10 +234,6 @@ Image.prototype.save = function(filename, callback, writer) {
 
 	var cmd = exec(command, function(error, stdout, stderr) {
 
-		FINISHED(stdout, function() {
-			DESTROY(stdout);
-		});
-
  		// clean up
 		cmd.kill();
 		cmd = null;
@@ -274,9 +270,7 @@ Image.prototype.save = function(filename, callback, writer) {
 			self.currentStream.pipe(cmd.stdin);
 	}
 
-	FINISHED(cmd.stdin, function() {
-		DESTROY(cmd.stdin);
-	});
+	CLEANUP(cmd.stdin);
 
 	if (writer)
 		writer(cmd.stdin);

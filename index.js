@@ -336,24 +336,10 @@ global.CLEANUP = function(stream, callback) {
 		});
 	};
 
-	if (stream.readable) {
-		if (stream.path) {
-			stream.on('end', fn);
-			return;
-		}
-	} else {
-		if (stream.path) {
-			stream.on('finish', fn);
-			return;
-		}
-	}
-
-	fn = null;
-	FINISHED(stream, function() {
-		if (callback)
-			callback();
-		DESTROY(stream);
-	});
+	if (stream.readable)
+		stream.on('end', fn);
+	else
+		stream.on('finish', fn);
 };
 
 global.SUCCESS = function(success, value) {
