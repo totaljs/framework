@@ -65,6 +65,9 @@ var SUCCESSHELPER = { success: true };
 var EMPTYARRAY = new Array(0);
 var EMPTYOBJECT = {};
 
+Object.freeze(EMPTYOBJECT);
+Object.freeze(EMPTYARRAY);
+
 // Cached headers for repeated usage
 HEADERS['responseCode'] = {};
 HEADERS['responseCode'][RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTPLAIN;
