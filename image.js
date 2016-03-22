@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 1.9.7
+ * @version 2.0.0
  */
 
 'use strict';
@@ -218,20 +218,14 @@ Image.prototype.save = function(filename, callback, writer) {
 		filename = null;
 	}
 
+	if (!self.builder.length)
+		self.minify();
+
 	filename = filename || self.filename || '';
 
 	var command = self.cmd(!self.filename ? '-' : self.filename, filename);
 	if (framework.isWindows)
 		command = command.replace(/\//g, '\\');
-
-	if (!self.builder.length) {
-		if (!callback)
-			return;
-		setImmediate(function() {
-			callback(null, true);
-		});
-		return;
-	}
 
 	var cmd = exec(command, function(error, stdout, stderr) {
 

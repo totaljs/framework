@@ -27,7 +27,9 @@
 - removed: obsolete code
 - removed: `controller.async()`
 - removed: `framework.async()`
-- rmeoved: `Utils.validate()`
+- removed: `Utils.validate()`
+
+- fixed: `FrameworkImage.save()` doens't work when it doesn't contain any operation
 
 - improved: ErrorBuilder
 - improved: WebSocket.send() for JSON communication
