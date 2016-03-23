@@ -58,6 +58,7 @@ var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|
 var REG_ROBOT = /search|agent|bot|crawler/i;
 var REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
 var REG_MULTIPART = /\/form\-data$/i;
+var REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
 var REQUEST_PROXY_FLAGS = ['post', 'json'];
 var RANGE = { start: 0, end: 0 };
 var HEADERS = {};
@@ -423,7 +424,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 1980;
-	this.version_header = '1.9.8-1';
+	this.version_header = '1.9.8';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -14034,13 +14035,19 @@ WebSocketClient.prototype.parse = function() {
 	return self;
 };
 
-WebSocketClient.prototype._onerror = function(error) {
+WebSocketClient.prototype._onerror = function(err) {
 	var self = this;
+
 	if (!self)
 		return;
-	if (error.stack.indexOf('ECONNRESET') !== -1 || error.stack.indexOf('socket is closed') !== -1 || error.stack.indexOf('EPIPE') !== -1)
+
+	if (err.stack.match(REG_WEBSOCKET_ERROR)) {
+		self.isClosed = true;
+		self._onclose();
 		return;
-	self.container.emit('error', error, self);
+	}
+
+	self.container.emit('error', err, self);
 };
 
 WebSocketClient.prototype._onclose = function() {

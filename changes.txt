@@ -6,6 +6,7 @@
 - fixed: view looping
 - fixed: `FrameworkImage.save()` problem with streams
 - fixed: `CLEANUP(stream)` method
+- fixed: Websocket unhandled exceptions
 
 ======= 1.9.7
 
