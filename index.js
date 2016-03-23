@@ -58,6 +58,7 @@ const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Min
 const REG_ROBOT = /search|agent|bot|crawler/i;
 const REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
 const REG_MULTIPART = /\/form\-data$/i;
+const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
 const REQUEST_PROXY_FLAGS = ['post', 'json'];
 const EMPTYARRAY = new Array(0);
 const EMPTYOBJECT = {};
@@ -415,7 +416,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-5';
+	this.version_header = '2.0.0-6';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -13800,22 +13801,25 @@ WebSocketClient.prototype.parse = function() {
 	return self;
 };
 
-WebSocketClient.prototype._onerror = function(error) {
+WebSocketClient.prototype._onerror = function(err) {
 	var self = this;
+
 	if (!self)
 		return;
-	if (error.stack.indexOf('ECONNRESET') !== -1 || error.stack.indexOf('socket is closed') !== -1 || error.stack.indexOf('EPIPE') !== -1)
+
+	if (err.stack.match(REG_WEBSOCKET_ERROR)) {
+		self.isClosed = true;
+		self._onclose();
 		return;
-	self.container.emit('error', error, self);
+	}
+
+	self.container.emit('error', err, self);
 };
 
 WebSocketClient.prototype._onclose = function() {
 	var self = this;
 
-	if (!self)
-		return;
-
-	if (self._isClosed)
+	if (!self || self._isClosed)
 		return;
 
 	self._isClosed = true;
