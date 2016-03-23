@@ -60,7 +60,7 @@ const REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|
 const REG_MULTIPART = /\/form\-data$/i;
 const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
 const REQUEST_PROXY_FLAGS = ['post', 'json'];
-const EMPTYARRAY = new Array(0);
+const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
 
 Object.freeze(EMPTYOBJECT);
@@ -12084,6 +12084,12 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 
 	self.subscribe.success();
 	framework.responseContent(self.req, self.res, self.status, contentBody, contentType || CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
+
+	if (self.precache && self.status === 200) {
+		self.layout('');
+		self.precache(contentBody, contentType || CONTENTTYPE_TEXTPLAIN, headers, true);
+	}
+
 	return self;
 };
 

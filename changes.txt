@@ -21,6 +21,7 @@
 
 - fixed: `FrameworkImage.save()` problem with streams
 - fixed: `CLEANUP(stream)` method
+- fixed: `controller.memorize()` problem with `controller.content()`
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`
