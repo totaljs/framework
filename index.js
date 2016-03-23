@@ -416,7 +416,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-6';
+	this.version_header = '2.0.0-7';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -4135,7 +4135,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		else
 			filename = filename.substring(1);
 
-		var indexer = filename.indexOf('*')
+		var indexer = filename.indexOf('*');
 		if (indexer !== -1) {
 
 			var tmp = filename.substring(indexer + 1).toLowerCase();
@@ -6308,8 +6308,7 @@ Framework.prototype.listener = function(req, res) {
 	if (req.behaviour('disable-middleware'))
 		return self._request_continue(req, res, headers, protocol);
 
-	var func = new Array(self._length_request_middleware);
-	var indexer = 0;
+	var func = [];
 
 	for (var i = 0; i < self._length_request_middleware; i++) {
 		var middleware = self.routes.middleware[self.routes.request[i]];
@@ -6320,9 +6319,7 @@ Framework.prototype.listener = function(req, res) {
 		}
 
 		(function(middleware) {
-			func[indexer++] = function(next) {
-				middleware.call(framework, res.req, res, next);
-			};
+			func.push(next => middleware.call(framework, res.req, res, next));
 		})(middleware);
 	}
 
@@ -6749,8 +6746,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	if (req.behaviour('disable-middleware'))
 		return self._upgrade_prepare(req, path, headers);
 
-	var func = new Array(self._length_request_middleware);
-	var indexer = 0;
+	var func = [];
 
 	for (var i = 0; i < self._length_request_middleware; i++) {
 		var middleware = self.routes.middleware[self.routes.request[i]];
@@ -6758,11 +6754,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
 			self.error('Middleware not found: ' + route.middleware[i], null, req.uri);
 			continue;
 		}
-
 		(function(middleware) {
-			func[indexer++] = function(next) {
-				middleware.call(framework, req, req.websocket, next);
-			};
+			func.push(next => middleware.call(framework, req, req.websocket, next));
 		})(middleware);
 	}
 
@@ -6853,18 +6846,13 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 	};
 
 	if (route.middleware instanceof Array && route.middleware.length) {
-		var func = new Array(route.middleware.length);
-		var indexer = 0;
+		var func = [];
 		for (var i = 0, length = route.middleware.length; i < length; i++) {
 			var middleware = framework.routes.middleware[route.middleware[i]];
-
 			if (!middleware)
 				continue;
-
 			(function(middleware) {
-				func[indexer++] = function(next) {
-					middleware.call(framework, req, socket, next, route.options);
-				};
+				func.push(next => middleware.call(framework, req, socket, next, route.options));
 			})(middleware);
 		}
 		func._async_middleware(socket, next);
@@ -7051,7 +7039,6 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 		controller.repository = repository;
 
 	var output = controller.view(name, model, true);
-	controller.res.controller = null;
 	controller.repository = controller.res = controller.req = null;
 	controller = null;
 	return output;
@@ -7867,7 +7854,7 @@ Framework.prototype.sitemap = function(name, me, language) {
 
 	var self = this;
 	if (!self.routes.sitemap)
-		return new Array(0);
+		return EMPTYARRAY;
 
 	if (typeof(me) === STRING) {
 		var tmp = language;
@@ -8645,7 +8632,7 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 	var filename = framework_utils.combine(self.config['directory-workers'], name) + EXTENSION_JS;
 
 	if (!args)
-		args = new Array(0);
+		args = [];
 
 	fork = child.fork(filename, args, { cwd: directory });
 
@@ -9243,15 +9230,17 @@ function Subscribe(framework, req, res, type) {
 	// type = 2 - POST MULTIPART
 	// type = 3 - file routing
 
-	this.controller = null;
+	// this.controller;
 	this.req = req;
 	this.res = res;
-	this.route = null;
-	this.timeout = null;
-	this.isCanceled = false;
-	this.isTransfer = false;
-	this.header = '';
-	this.error = null;
+
+	// Because of performance
+	// this.route = null;
+	// this.timeout = null;
+	// this.isCanceled = false;
+	// this.isTransfer = false;
+	// this.header = '';
+	// this.error = null;
 }
 
 Subscribe.prototype.success = function() {
@@ -9273,11 +9262,7 @@ Subscribe.prototype.success = function() {
 
 Subscribe.prototype.file = function() {
 	var self = this;
-
-	self.req.on('end', function() {
-		self.doEndfile(this);
-	});
-
+	self.req.on('end', () => self.doEndfile(this));
 	self.req.resume();
 	return self;
 };
@@ -9339,11 +9324,7 @@ Subscribe.prototype.urlencoded = function() {
 
 Subscribe.prototype.end = function() {
 	var self = this;
-
-	self.req.on('end', function() {
-		self.doEnd();
-	});
-
+	self.req.on('end', () => self.doEnd());
 	self.req.resume();
 };
 
@@ -9439,29 +9420,19 @@ Subscribe.prototype.execute = function(status, isError) {
 	if (!framework._length_middleware || !route.middleware)
 		return self.doExecute();
 
-	var length = route.middleware.length;
-	var func = new Array(length);
-	var indexer = 0;
-
-	for (var i = 0; i < length; i++) {
-
+	var func = [];
+	for (var i = 0, length = route.middleware.length; i < length; i++) {
 		var middleware = framework.routes.middleware[route.middleware[i]];
 		if (!middleware) {
 			framework.error('Middleware not found: ' + route.middleware[i], controller.name, req.uri);
 			continue;
 		}
-
 		(function(middleware) {
-			func[indexer++] = function(next) {
-				middleware.call(framework, req, res, next, route.options, controller);
-			};
+			func.push(next => middleware.call(framework, req, res, next, route.options, controller));
 		})(middleware);
 	}
 
-	func._async_middleware(res, function() {
-		self.doExecute();
-	});
-
+	func._async_middleware(res, () => self.doExecute());
 	return self;
 };
 
@@ -9507,10 +9478,7 @@ Subscribe.prototype.prepare = function(flags, url) {
 		return
 	}
 
-	self.validate(self.route, function() {
-		self.execute(code);
-	});
-
+	self.validate(self.route, () => self.execute(code));
 	return self;
 };
 
@@ -9577,10 +9545,7 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
 			return;
 		}
 
-		self.validate(self.route, function() {
-			self.execute(code);
-		});
-
+		self.validate(self.route, () => self.execute(code));
 		return;
 	}
 
@@ -9598,10 +9563,7 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
 		return self;
 	}
 
-	self.validate(self.route, function() {
-		self.execute(code);
-	});
-
+	self.validate(self.route, () => self.execute(code));
 	return self;
 };
 
@@ -9793,22 +9755,17 @@ Subscribe.prototype.doEndfile = function() {
 Subscribe.prototype.doEndfile_middleware = function(file) {
 
 	var length = file.middleware.length;
-	var func = new Array(length);
+	var func = [];
 	var self = this;
 	var req = self.req;
 	var res = self.res;
-	var indexer = 0;
 
 	for (var i = 0; i < length; i++) {
-
 		var middleware = framework.routes.middleware[file.middleware[i]];
 		if (!middleware)
 			continue;
-
 		(function(middleware) {
-			func[indexer++] = function(next) {
-				middleware.call(framework, req, res, next, file.options);
-			};
+			func.push(next => middleware.call(framework, req, res, next, file.options));
 		})(middleware);
 	}
 
@@ -9886,7 +9843,7 @@ function Controller(name, req, res, subscribe, currentView) {
 	this.name = name;
 	this.req = req;
 	this.res = res;
-	this.exception = null;
+	// this.exception;
 
 	// Sets the default language
 	if (req)
@@ -9896,33 +9853,37 @@ function Controller(name, req, res, subscribe, currentView) {
 	// controller.type === 1 - server sent events
 	this.type = 0;
 
-	this.layoutName = framework.config['default-layout'];
-	this.themeName = framework.config['default-theme'];
+	this.layoutName;
+	this.themeName;
+
+	// this.layoutName = framework.config['default-layout'];
+	// this.themeName = framework.config['default-theme'];
+
 	this.status = 200;
 
-	this.isLayout = false;
-	this.isCanceled = false;
+	// this.isLayout = false;
+	// this.isCanceled = false;
+	// this.isTimeout = false;
+	// this.isTransfer = false;
+
 	this.isConnected = true;
-	this.isTimeout = false;
 	this.isController = true;
-	this.isTransfer = false;
 	this.repository = {};
 
 	// render output
-	this.output = null;
-	this.outputPartial = null;
-	this.$model = null;
+	// this.output = null;
+	// this.outputPartial = null;
+	// this.$model = null;
 
 	this._currentView = currentView;
 
 	if (!req)
-		this.req = { uri: {}};
+		this.req = { uri: EMPTYOBJECT };
 
 	if (!res)
-		this.res = {};
-
-	// Assign controller to Response
-	this.res.controller = this;
+		this.res = EMPTYOBJECT;
+	else
+		this.res.controller = this;
 }
 
 Controller.prototype = {
@@ -10228,8 +10189,7 @@ Controller.prototype.middleware = function(names, options, callback) {
 
 	var self = this;
 	var length = names.length;
-	var func = new Array(length);
-	var indexer = 0;
+	var func = [];
 
 	for (var i = 0; i < length; i++) {
 
@@ -10238,9 +10198,7 @@ Controller.prototype.middleware = function(names, options, callback) {
 			continue;
 
 		(function(middleware, options) {
-			func[indexer++] = function(next) {
-				middleware.call(framework, self.req, self.res, next, options);
-			};
+			func.push(next => middleware.call(framework, self.req, self.res, next, options));
 		})(middleware, options[names[i]] === undefined ? options : options[names[i]]);
 
 	}
@@ -10476,7 +10434,7 @@ Controller.prototype.transfer = function(url, flags) {
 		return false;
 
 	self.cancel();
-	self.req.path = new Array(0);
+	self.req.path = EMPTYARRAY;
 	self.subscribe.isTransfer = true;
 	self.subscribe.success();
 	self.subscribe.route = selected;
@@ -12271,7 +12229,7 @@ Controller.prototype.view400 = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = new Array(0);
+	self.req.path = EMPTYARRAY;
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#400');
 	self.subscribe.exception = problem;
@@ -12301,7 +12259,7 @@ Controller.prototype.view401 = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = new Array(0);
+	self.req.path = EMPTYARRAY;
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#401');
 	self.subscribe.exception = problem;
@@ -12331,7 +12289,7 @@ Controller.prototype.view403 = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = new Array(0);
+	self.req.path = EMPTYARRAY;
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#403');
 	self.subscribe.exception = problem;
@@ -12360,7 +12318,7 @@ Controller.prototype.view404 = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = new Array(0);
+	self.req.path = EMPTYARRAY;
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#404');
 	self.subscribe.exception = problem;
@@ -12381,7 +12339,7 @@ Controller.prototype.view500 = function(error) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = new Array(0);
+	self.req.path = EMPTYARRAY;
 	self.subscribe.exception = error;
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#500');
@@ -12413,7 +12371,7 @@ Controller.prototype.view501 = function(problem) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	self.req.path = new Array(0);
+	self.req.path = EMPTYARRAY;
 	self.subscribe.success();
 	self.subscribe.route = framework.lookup(self.req, '#501');
 	self.subscribe.exception = problem;
@@ -12686,6 +12644,11 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	if (!isPartial && self.res && self.res.success)
 		return self;
+
+	if (self.layoutName === undefined)
+		self.layoutName = framework.config['default-layout'];
+	if (self.themeName === undefined)
+		self.themeName = framework.config['default-theme'];
 
 	// theme root `~some_view`
 	// views root `~~some_view`

@@ -37,6 +37,11 @@ const FUNCTION = 'function';
 const OBJECT = 'object';
 const BOOLEAN = 'boolean';
 const NUMBER = 'number';
+const EMPTYARRAY = [];
+const EMPTYOBJECT = {};
+
+Object.freeze(EMPTYOBJECT);
+Object.freeze(EMPTYARRAY);
 
 const REG_1 = /[\n\r\t]+/g;
 const REG_2 = /\s{2,}/g;
@@ -324,8 +329,7 @@ exports.routeSplit = function(url, noLower) {
 	}
 
 	if (!url || url === '/') {
-		arr = new Array(1);
-		arr[0] = '/';
+		arr = ['/'];
 		return arr;
 	}
 
@@ -603,17 +607,14 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
  */
 exports.routeParam = function(routeUrl, route) {
 
-	if (!route || !routeUrl)
-		return new Array(0);
+	if (!route || !routeUrl || !route.param.length)
+		return EMPTYARRAY;
 
-	var length = route.param.length;
-	var arr = new Array(length);
-	if (!length)
-		return arr;
+	var arr = [];
 
-	for (var i = 0; i < length; i++) {
+	for (var i = 0, length = route.param.length; i < length; i++) {
 		var value = routeUrl[route.param[i]];
-		arr[i] = value === '/' ? '' : value;
+		arr.push(value === '/' ? '' : value);
 	}
 
 	return arr;
