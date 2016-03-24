@@ -38,6 +38,7 @@
 
 - improved: ErrorBuilder
 - improved: WebSocket.send() for JSON communication
+- improved: code (a lot)
 
 ======= 1.9.7
 

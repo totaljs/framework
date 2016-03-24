@@ -283,13 +283,8 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		cb();
 	};
 
-	req.on('data', function(chunk) {
-		parser.write(chunk);
-	});
-
-	req.on('end', function() {
-		parser.end();
-	});
+	req.on('data', chunk => parser.write(chunk));
+	req.on('end', () => parser.end());
 };
 
 function parse_multipart_header(header) {
@@ -1448,17 +1443,14 @@ MultipartParser.stateToString = function(stateNumber) {
 
 MultipartParser.prototype.initWithBoundary = function(str) {
 	var self = this;
-
 	self.boundary = new Buffer(str.length + 4);
 	self.boundary.write('\r\n--', 0, 'ascii');
 	self.boundary.write(str, 4, 'ascii');
 	self.lookbehind = new Buffer(self.boundary.length + 8);
 	self.state = S.START;
-
 	self.boundaryChars = {};
-	for (var i = 0; i < self.boundary.length; i++) {
+	for (var i = 0; i < self.boundary.length; i++)
 		self.boundaryChars[self.boundary[i]] = true;
-	}
 };
 
 MultipartParser.prototype.write = function(buffer) {

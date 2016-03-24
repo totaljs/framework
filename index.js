@@ -12500,7 +12500,7 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 			retry = self.subscribe.route.timeout;
 
 		self.subscribe.success();
-		self.req.on('close', self.close.bind(self));
+		self.req.on('close', () => self.close());
 		res.success = true;
 		res.writeHead(self.status, HEADERS['sse']);
 	}
@@ -13494,25 +13494,16 @@ WebSocket.prototype.validate = function(model, properties, prefix, name) {
 	@head {Buffer}
 */
 function WebSocketClient(req, socket, head) {
-
-	this.handlers = {
-		ondata: this._ondata.bind(this),
-		onerror: this._onerror.bind(this),
-		onclose: this._onclose.bind(this)
-	};
-
 	this.$ping = true;
-	this.container = null;
-	this._id = null;
+	this.container;
+	this._id;
 	this.id = '';
 	this.socket = socket;
 	this.req = req;
-	this.isClosed = false;
-	this.isWebSocket = true;
+	// this.isClosed = false;
 	this.errors = 0;
 	this.buffer = new Buffer(0);
 	this.length = 0;
-	this.cookie = req.cookie.bind(req);
 
 	// 1 = raw - not implemented
 	// 2 = plain
@@ -13576,6 +13567,12 @@ WebSocketClient.prototype.__proto__ = Object.create(events.EventEmitter.prototyp
 	}
 });
 
+WebSocketClient.prototype.isWebSocket = true;
+
+WebSocketClient.prototype.cookie = function(name) {
+	return this.req.cookie(name);
+};
+
 /*
 	Internal function
 	@allow {String Array} :: allow origin
@@ -13638,17 +13635,15 @@ WebSocketClient.prototype.upgrade = function(container) {
 	//self.socket.setNoDelay(true);
 	//self.socket.setKeepAlive(true, 0);
 
-	self.socket.on('data', self.handlers.ondata);
-	self.socket.on('error', self.handlers.onerror);
-	self.socket.on('close', self.handlers.onclose);
-	self.socket.on('end', self.handlers.onclose);
-
+	self.socket.on('data', n => self._ondata(n));
+	self.socket.on('error', n => self._onerror(n));
+	self.socket.on('close', () => self._onclose());
+	self.socket.on('end', () => self._onclose());
 	self.container._add(self);
 	self.container._refresh();
 
 	framework.emit('websocket-begin', self.container, self);
 	self.container.emit('open', self);
-
 	return self;
 };
 
@@ -13666,7 +13661,7 @@ WebSocketClient.prototype._ondata = function(data) {
 	if (!self)
 		return;
 
-	if (data != null)
+	if (data)
 		self.buffer = Buffer.concat([self.buffer, data]);
 
 	if (self.buffer.length > self.length) {
