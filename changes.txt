@@ -7,6 +7,8 @@
 - fixed: `FrameworkImage.save()` problem with streams
 - fixed: `CLEANUP(stream)` method
 - fixed: Websocket unhandled exceptions
+- fixed: `multipart/form-data` parser
+- fixed: WebSocket `origin` validator
 
 ======= 1.9.7
 
