@@ -22,6 +22,7 @@
 - fixed: `FrameworkImage.save()` problem with streams
 - fixed: `CLEANUP(stream)` method
 - fixed: `controller.memorize()` problem with `controller.content()`
+- fixed: `multipart/form-data` parser
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`

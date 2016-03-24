@@ -72,15 +72,24 @@ global.$STRING = function(value) {
 */
 exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscribe) {
 
-	var parser = new MultipartParser();
 	var boundary = contentType.split(';')[1];
+
+	if (!boundary) {
+		framework._request_stats(false, false);
+		framework.stats.request.error400++;
+		subscribe.res.writeHead(400);
+		subscribe.res.end();
+		return;
+	}
+
+	var parser = new MultipartParser();
 	var size = 0;
-	var stream = null;
+	var stream;
 	var maximumSize = route.length;
 	var now = Date.now();
 	var tmp;
 	var close = 0;
-	var rm = null;
+	var rm;
 	var ip = '';
 
 	// Replaces the EMPTYARRAY and EMPTYOBJECT in index.js
@@ -170,7 +179,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		if (size >= maximumSize) {
 			req.buffer_exceeded = true;
 
-			if (rm === null)
+			if (!rm)
 				rm = [tmp.path];
 			else
 				rm.push(tmp.path);
