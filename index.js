@@ -416,7 +416,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-7';
+	this.version_header = '2.0.0-8';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -13594,24 +13594,20 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 	self.length = length;
 
 	var origin = self.req.headers['origin'] || '';
+	var length = allow.length;
 
-	if (allow.length) {
-
+	if (length) {
 		if (allow.indexOf('*') === -1) {
-			for (var i = 0; i < allow.length; i++) {
+			for (var i = 0; i < length; i++) {
 				if (origin.indexOf(allow[i]) === -1)
 					return false;
 			}
 		}
-
-	} else {
-
-		if (origin.indexOf(self.req.headers.host) === -1)
-			return false;
 	}
 
-	if (protocols.length) {
-		for (var i = 0; i < protocols.length; i++) {
+	length = protocols.length;
+	if (length) {
+		for (var i = 0; i < length; i++) {
 			if (self.protocol.indexOf(protocols[i]) === -1)
 				return false;
 		}
@@ -13625,7 +13621,6 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 
 	self._id = (self.ip || '').replace(/\./g, '') + framework_utils.GUID(20);
 	self.id = self._id;
-
 	return true;
 };
 
