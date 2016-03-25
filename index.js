@@ -10812,7 +10812,7 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
 	var layoutName = self.layoutName;
 	var body = self.view(view, model, true);
 	self.layoutName = layoutName;
-	return framework.onMail(address, subject, body, callback, self.language);
+	return framework.onMail(address, subject, body, callback);
 };
 
 /*
