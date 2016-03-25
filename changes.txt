@@ -9,6 +9,7 @@
 - fixed: Websocket unhandled exceptions
 - fixed: `multipart/form-data` parser
 - fixed: WebSocket `origin` validator
+- fixed: `Array.async()` without arguments
 
 ======= 1.9.7
 
