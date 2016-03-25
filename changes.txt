@@ -30,6 +30,7 @@
 
 - removed: `SCHEMA()`
 - removed: composer from `SchemaBuilderEntity`
+- removed: rules from `SchemaBuilderEntity`
 - removed: obsolete code
 - removed: `controller.async()`
 - removed: `framework.async()`
@@ -40,6 +41,7 @@
 - improved: ErrorBuilder
 - improved: WebSocket.send() for JSON communication
 - improved: code (a lot)
+- improved: preparing `SchemaBuilderEntity`
 
 ======= 1.9.7
 
