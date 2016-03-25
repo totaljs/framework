@@ -2097,7 +2097,7 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 	var middleware;
 	var options;
 	var url;
-	var wildcard = true;
+	var wildcard = false;
 
 	if (flags) {
 		for (var i = 0, length = flags.length; i < length; i++) {
@@ -2131,10 +2131,14 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 		if (index !== -1) {
 			extensions = {};
 			extensions[a.substring(index + 2).trim()] = true;
+			wildcard = false;
+			url.splice(url.length - 1, 1);
+		} else if (a === '*') {
+			wildcard = true;
+			url.splice(url.length - 1, 1);
 		} else if (framework_utils.getExtension(a))
 			wildcard = false;
-
-	} if (!extensions && !fnValidation)
+	} else if (!extensions && !fnValidation)
 		fnValidation = fnExecute;
 
 	self.routes.files.push({
@@ -9714,7 +9718,7 @@ Subscribe.prototype.doEndfile = function() {
 				var skip = false;
 				var length = file.url.length;
 
-				if (!file.wildcard && length !== req.path.length)
+				if (!file.wildcard && length !== req.path.length - 1)
 					continue;
 
 				for (var j = 0; j < length; j++) {
@@ -9723,6 +9727,7 @@ Subscribe.prototype.doEndfile = function() {
 					skip = true;
 					break;
 				}
+
 				if (skip)
 					continue;
 			} else if (file.onValidate && !file.onValidate.call(framework, req, res, true))
