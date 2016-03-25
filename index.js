@@ -2098,6 +2098,7 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 	var options;
 	var url;
 	var wildcard = false;
+	var fixedfile = false;
 
 	if (flags) {
 		for (var i = 0, length = flags.length; i < length; i++) {
@@ -2136,14 +2137,17 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 		} else if (a === '*') {
 			wildcard = true;
 			url.splice(url.length - 1, 1);
-		} else if (framework_utils.getExtension(a))
+		} else if (framework_utils.getExtension(a)) {
+			fixedfile = true;
 			wildcard = false;
+		}
 	} else if (!extensions && !fnValidation)
 		fnValidation = fnExecute;
 
 	self.routes.files.push({
 		controller: !_controller ? 'unknown' : _controller,
 		url: url,
+		fixedfile: fixedfile,
 		wildcard: wildcard,
 		extensions: extensions,
 		onValidate: fnValidation,
@@ -9718,7 +9722,7 @@ Subscribe.prototype.doEndfile = function() {
 				var skip = false;
 				var length = file.url.length;
 
-				if (!file.wildcard && length !== req.path.length - 1)
+				if (!file.wildcard && !file.fixedfile && length !== req.path.length - 1)
 					continue;
 
 				for (var j = 0; j < length; j++) {
