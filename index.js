@@ -208,7 +208,6 @@ if (!global.framework_nosql)
 global.Builders = framework_builders;
 var utils = global.Utils = global.utils = global.U = framework_utils;
 global.Mail = framework_mail;
-global.Pagination = framework_builders.Pagination;
 
 global.INCLUDE = global.SOURCE = function(name, options) {
 	return framework.source(name, options);

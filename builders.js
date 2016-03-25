@@ -1424,7 +1424,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 	var trans = self.transforms ? self.transforms[name] : undefined;
 
 	if (!trans) {
-		callback(new ErrorBuilder().add('', 'Transform not found.'));
+		callback(new ErrorBuilder().push('', 'Transform not found.'));
 		return self;
 	}
 
@@ -1567,7 +1567,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 	var workflow = self.workflows ? self.workflows[name] : undefined;
 
 	if (!workflow) {
-		callback(new ErrorBuilder().add('', 'Workflow not found.'));
+		callback(new ErrorBuilder().push('', 'Workflow not found.'));
 		return self;
 	}
 
@@ -1698,7 +1698,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 	var operation = self.operations ? self.operations[name] : undefined;
 
 	if (!operation) {
-		callback(new ErrorBuilder().add('', 'Operation not found.'));
+		callback(new ErrorBuilder().push('', 'Operation not found.'));
 		return self;
 	}
 
@@ -2374,6 +2374,18 @@ ErrorBuilder.prototype.exception = function(message) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.add = function(name, error, path, index) {
+	return this.push(name, error, path, index);
+};
+
+/**
+ * Add an error (@alias for add)
+ * @param {String} name  Property name.
+ * @param {String or Error} error Error message.
+ * @param {String} path  Current path (in object).
+ * @param {Number} index Array Index, optional.
+ * @return {ErrorBuilder}
+ */
+ErrorBuilder.prototype.push = function(name, error, path, index) {
 	var self = this;
 	self.isPrepared = false;
 
@@ -2388,13 +2400,13 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
 
 	if (name instanceof Array) {
 		for (var i = 0, length = name.length; i < length; i++)
-			self.add(name[i], undefined, path, index);
+			self.push(name[i], undefined, path, index);
 		return self;
 	}
 
 	if (error instanceof Array) {
 		for (var i = 0, length = error.length; i < length; i++)
-			self.add(name, error[i], path, index);
+			self.push(name, error[i], path, index);
 		return self;
 	}
 
@@ -2425,18 +2437,6 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
 
 	self.count = self.items.length;
 	return self;
-};
-
-/**
- * Add an error (@alias for add)
- * @param {String} name  Property name.
- * @param {String or Error} error Error message.
- * @param {String} path  Current path (in object).
- * @param {Number} index Array Index, optional.
- * @return {ErrorBuilder}
- */
-ErrorBuilder.prototype.push = function(name, error, path, index) {
-	return this.add(name, error, path, index);
 };
 
 /**
@@ -3223,3 +3223,6 @@ exports.UrlBuilder = UrlBuilder;
 exports.TransformBuilder = TransformBuilder;
 global.ErrorBuilder = ErrorBuilder;
 global.TransformBuilder = TransformBuilder;
+global.Pagination = Pagination;
+global.UrlBuilder = UrlBuilder;
+global.SchemaBuilder = SchemaBuilder;
