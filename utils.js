@@ -4275,7 +4275,8 @@ Array.prototype.async = function(thread, callback) {
 	if (typeof(thread) === FUNCTION) {
 		callback = thread;
 		thread = 1;
-	}
+	} else if (thread === undefined)
+		thread = 1;
 
 	if (self.$pending === undefined) {
 		self.$pending = 0;
