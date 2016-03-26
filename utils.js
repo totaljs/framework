@@ -3265,7 +3265,6 @@ String.prototype.isNumber = function(isDecimal) {
 	@c {String} :: optional
 	return {String}
 */
-
 if (!String.prototype.padLeft) {
 	String.prototype.padLeft = function(max, c) {
 		var self = this;
