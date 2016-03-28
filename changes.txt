@@ -1,5 +1,6 @@
 ======= 2.0.0 (BETA)
 
+- added: new NoSQL version v4.0.0 fully optimized for total.js
 - added: `controller.invalid()` creates an ErrorBuilder instance and it responds in next tick
 - added: `controller.sitemap_url([id])` returns URL from sitemap
 - added: `controller.sitemap_name([id])` returns name/title from sitemap
@@ -11,6 +12,7 @@
 - added: `F.route()` supports a new flag: `cors` (creates a cors route) and `credentials` (enables cookies for cors)
 - added: `ErrorBuilder.plain()` returns all errors as simple string
 - added: `Array.findItem()` alias to `Array.find()`
+- added: `UID()` for generating unique identificators (contains minimum 16 chars)
 
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
 - updated: `F.file()` supports flags instead of middleware and flags supports extensions `['.jpg', '.png']`
@@ -24,6 +26,7 @@
 - fixed: `controller.memorize()` problem with `controller.content()`
 - fixed: `multipart/form-data` parser
 - fixed: `Array.async()` without arguments
+- fixed: view inline helpers
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`

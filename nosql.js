@@ -1,1991 +1,938 @@
 /**
- * @module NoSQL Embedded Database
  * @author Peter Širka <petersirka@gmail.com>
  * @copyright Peter Širka 2012-2016
- * @version 3.1.2
+ * @version 4.0.0
  */
 
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var events = require('events');
+require('./index');
 
-var VERSION = 'v3.1.2';
-var STATUS_UNKNOWN = 0;
-var STATUS_READING = 1;
-var STATUS_WRITING = 2;
-var STATUS_LOCKING = 3;
-var STATUS_PENDING = 4;
-var EXTENSION = '.nosql';
-var EXTENSION_VIEW = '.nosql';
-var EXTENSION_BINARY = '.nosql-binary';
-var EXTENSION_TMP = '.nosql-tmp';
-var EXTENSION_CHANGES = '.changelog';
-var EXTENSION_STORED = '.nosql-stored';
-var EXTENSION_META = '.meta';
-var MAX_WRITESTREAM = 2;
-var MAX_READSTREAM = 4;
-var MAX_BUFFER_SIZE = 1024 * 40;
-var BINARY_HEADER_LENGTH = 2000;
-var NEWLINE = '\n';
-var STRING = 'string';
-var FUNCTION = 'function';
-var UNDEFINED = 'undefined';
-var BOOLEAN = 'boolean';
+var Fs = require('fs');
+var framework_utils = require('./utils');
+var framework_image = require('./image');
+var Path = require('path');
 
-if (typeof(setImmediate) === UNDEFINED) {
-	global.setImmediate = function(cb) {
-		process.nextTick(cb);
-	};
-}
+const EXTENSION = '.nosql';
+const EXTENSION_BINARY = '.nosql-binary';
+const EXTENSION_TMP = '.nosql-tmp';
+const EXTENSION_META = '.meta';
+const BINARY_HEADER_LENGTH = 2000;
+const NEWLINE = '\n';
+const EMPTYARRAY = [];
 
-/*
-	Database
-	@filename {String}
-	@directory {String} :: for storing binary data
-	@changes {Boolean} :: optional, default true
-*/
-function Database(filename, directory, changes) {
+Object.freeze(EMPTYARRAY);
 
-	if (typeof(directory) === BOOLEAN) {
-		changes = directory;
-		directory = null;
-	}
-
-	this.isReady = false;
-	this.status_prev = STATUS_UNKNOWN;
-	this.status = STATUS_UNKNOWN;
-	this.changes = changes === undefined ? true : changes === true;
-
-	this.countRead = 0;
-	this.countWrite = 0;
-
-	this.pendingRead = [];
-	this.pendingEach = [];
-	this.pendingLock = [];
-	this.pendingDrop = [];
-	this.pendingWrite = [];
-	this.pendingClear = [];
-
-	this.isPending = false;
-
-	if (filename.indexOf(EXTENSION) !== -1)
-		filename = filename.replace(EXTENSION, '');
-
+function Database(filename) {
 	this.filename = filename + EXTENSION;
 	this.filenameTemp = filename + EXTENSION_TMP;
-	this.filenameChanges = filename + EXTENSION_CHANGES;
-	this.filenameStored = filename + EXTENSION_STORED;
 	this.filenameMeta = filename + EXTENSION_META;
-
-	this.name = path.basename(filename);
-
-	this.directory = path.dirname(filename);
-	this.views = new Views(this);
-
-	this.meta = {
-		version: VERSION,
-		views: {},
-		stored: {},
-		description: '',
-		created: new Date(),
-		custom: null
-	};
-
-	this.binary = (directory || '').length ? new Binary(this, directory) : null;
-	this.changelog = new Changelog(this, this.filenameChanges);
-	this.file = new FileReader(this);
-	this.stored = new Stored(this, this.filenameStored);
-
-	this._metaLoad();
+	this.name = framework_utils.getName(filename);
+	this.directory = Path.dirname(filename);
+	this.pending_update = [];
+	this.pending_append = [];
+	this.pending_reader = [];
+	this.pending_reader_view = [];
+	this.pending_remove = [];
+	this.views;
+	this.step = 0;
+	this.pending_drops = false;
+	this.pending_views = false;
+	this.binary = new Binary(this, this.directory + '/' + this.name + '-binary/');
+	this.iscache = false;
+	this.metadata;
+	this.$meta();
+	this.$timeoutmeta;
 }
 
-/*
-	@db {Database}
-*/
-function Views(db) {
-	this.views = {};
-	this.db = db;
-	this.directory = db.directory;
-	this.emit = db.emit;
+exports.load = function(filename) {
+	return new Database(filename);
+};
+
+Database.prototype.meta = function(name, value) {
+	var self = this;
+	if (value === undefined)
+		return self.metadata ? self.metadata[name] : undefined;
+	if (!self.metadata)
+		self.metadata = {};
+	self.metadata[name] = value;
+	clearTimeout(self.timeoutmeta);
+	self.timeoutmeta = setTimeout(() => self.$meta(true), 500);
+	return self;
+};
+
+Database.prototype.insert = function(doc, callback) {
+	var self = this;
+	self.pending_append.push({ doc: JSON.stringify(doc.$clean ? doc.$clean() : doc), callback: callback });
+	self.next(1);
+	return self;
+};
+
+Database.prototype.update = function(doc) {
+	var self = this;
+	var builder = new DatabaseBuilder();
+	self.pending_update.push({ builder: builder, doc: doc, count: 0 });
+	setImmediate(() => self.next(2));
+	return builder;
+};
+
+Database.prototype.drop = function() {
+	var self = this;
+	self.pending_drops = true;
+	setImmediate(() => self.next(7));
+	return self;
+};
+
+Database.prototype.modify = function(doc) {
+	var self = this;
+	var builder = new DatabaseBuilder();
+	var data = doc.$clean ? doc.$clean() : doc;
+	var keys = Object.keys(data);
+
+	if (!keys.length)
+		return builder;
+
+	self.pending_update.push({ builder: builder, doc: doc, count: 0, keys: keys });
+	setImmediate(() => self.next(2));
+	return builder;
+};
+
+Database.prototype.remove = function() {
+	var self = this;
+	var builder = new DatabaseBuilder();
+	self.pending_remove.push({ builder: builder, count: 0 });
+	setImmediate(() => self.next(3));
+	return builder;
+};
+
+Database.prototype.find = function(view) {
+	var self = this;
+	var builder = new DatabaseBuilder();
+
+	if (view) {
+		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
+		setImmediate(() => self.next(6));
+	} else {
+		self.pending_reader.push({ builder: builder, count: 0, view: view });
+		setImmediate(() => self.next(4));
+	}
+
+	return builder;
+};
+
+Database.prototype.one = function(view) {
+	var self = this;
+	var builder = new DatabaseBuilder();
+	builder.first();
+
+	if (view) {
+		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
+		setImmediate(() => self.next(6));
+	} else {
+		self.pending_reader.push({ builder: builder, count: 0, view: view });
+		setImmediate(() => self.next(4));
+	}
+
+	return builder;
+};
+
+Database.prototype.top = function(max, view) {
+	var self = this;
+	var builder = new DatabaseBuilder();
+	builder.take(max);
+
+	if (view) {
+		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
+		setImmediate(() => self.next(6));
+
+	} else {
+		self.pending_reader.push({ builder: builder, count: 0, view: view });
+		setImmediate(() => self.next(4));
+	}
+
+	return builder;
+};
+
+Database.prototype.view = function(name) {
+	var builder = new DatabaseBuilder();
+	if (!this.views)
+		this.views = {};
+	this.views[name] = builder;
+	this.views[name].$filename = this.filename.replace(/\.nosql/, '#' + name + '.nosql');
+	return builder;
+};
+
+Database.prototype.next = function(type) {
+	var self = this;
+
+	if (type && self.step)
+		return self;
+
+	if (self.step !== 6 && self.pending_reader_view.length) {
+		self.$readerview();
+		return self;
+	}
+
+	if (self.step !== 4 && self.pending_reader.length) {
+		self.$reader();
+		return self;
+	}
+
+	if (self.step !== 1 && self.pending_append.length) {
+		self.$append();
+		return self;
+	}
+
+	if (self.step !== 2 && self.pending_update.length) {
+		self.$update();
+		return self;
+	}
+
+	if (self.step !== 3 && self.pending_remove.length) {
+		self.$remove();
+		return self;
+	}
+
+	if (self.step !== 5 && self.pending_views) {
+		self.$views();
+		return self;
+	}
+
+	if (self.step !== 7 && self.pending_drops) {
+		self.$drop();
+		return self;
+	}
+
+	if (self.step !== type) {
+		self.step = 0;
+		setImmediate(() => self.next(0));
+	}
+
+	return self;
+};
+
+Database.prototype.refresh = function() {
+	var self = this;
+	if (self.iscache)
+		framework.cache.removeAll('$nosql');
+	if (!self.views)
+		return self;
+	self.pending_views = true;
+	setImmediate(() => self.next(5));
+	return self;
+};
+
+// ======================================================================
+// FILE OPERATIONS
+// ======================================================================
+
+Database.prototype.$meta = function(write) {
+
+	var self = this;
+
+	if (write) {
+		Fs.writeFile(self.filenameMeta, JSON.stringify(self.metadata), NOOP);
+		return self;
+	}
+
+	try {
+		self.metadata = JSON.parse(Fs.readFileSync(self.filenameMeta).toString('utf8'));
+	} catch (err) {}
+
+	return self;
+};
+
+Database.prototype.$append = function() {
+	var self = this;
+	self.step = 1;
+
+	if (!self.pending_append.length) {
+		self.next(0);
+		return self;
+	}
+
+	self.pending_append.splice(0).limit(20, function(items, next) {
+		var json = [];
+
+		for (var i = 0, length = items.length; i < length; i++)
+			json.push(items[i].doc);
+
+		Fs.appendFile(self.filename, json.join(NEWLINE) + NEWLINE, function(err) {
+			for (var i = 0, length = items.length; i < length; i++) {
+				var callback = items[i].callback;
+				if (callback)
+					callback(err);
+			}
+			next();
+		});
+
+	}, function() {
+		setImmediate(function() {
+			self.next(0);
+			setImmediate(() => self.refresh());
+		});
+	});
+
+	return self;
+};
+
+Database.prototype.$update = function() {
+
+	var self = this;
+	self.step = 2;
+
+	if (!self.pending_update.length) {
+		self.next(0);
+		return self;
+	}
+
+	var reader = Fs.createReadStream(self.filename);
+	var writer = Fs.createWriteStream(self.filenameTemp);
+
+	var filter = self.pending_update.splice(0);
+	var length = filter.length;
+	var change = false;
+
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+		var json = JSON.parse(value.trim());
+		for (var i = 0; i < length; i++) {
+
+			var item = filter[i];
+			var builder = item.builder;
+			var output = builder.compare(json, index);
+			var doc = json;
+
+			if (output) {
+
+				if (item.keys) {
+					for (var j = 0, jl = item.keys.length; j < jl; j++) {
+						var val = item.doc[item.keys[j]];
+						if (typeof(val) === 'function')
+							doc[item.keys[j]] = val(doc[item.keys[j]]);
+						else
+							doc[item.keys[j]] = val;
+					}
+				} else
+					doc = item.doc;
+
+				item.count++;
+				change = true;
+			}
+
+			writer.write(JSON.stringify(doc) + NEWLINE);
+		}
+	}));
+
+	CLEANUP(writer, function() {
+		Fs.rename(self.filenameTemp, self.filename, function(err) {
+
+			for (var i = 0; i < length; i++) {
+				var item = filter[i];
+				if (item.builder.$callback)
+					item.builder.$callback(err, item.count);
+			}
+
+			setImmediate(function() {
+				self.next(0);
+				if (change)
+					setImmediate(() => self.refresh());
+			});
+		});
+	});
+
+	CLEANUP(reader, () => writer.end());
+	return self;
+};
+
+Database.prototype.$reader = function() {
+
+	var self = this;
+	self.step = 4;
+
+	if (!self.pending_reader.length) {
+		self.next(0);
+		return self;
+	}
+
+	var index = 0;
+	var list = self.pending_reader.splice(0);
+
+	while (true) {
+		var item = list[index++];
+		if (!item)
+			break;
+
+		var key = item.builder.$cache_key;
+		if (!key)
+			continue;
+
+		var data = framework.cache.get(key);
+		if (!data)
+			continue;
+
+		item.builder.$callback(null, data.items, data.count);
+		index--;
+		list.splice(index, 1);
+	}
+
+	if (!list.length) {
+		self.next(0);
+		return self;
+	}
+
+	self.$reader2(self.filename, list, () => self.next(0));
+	return self;
+};
+
+Database.prototype.$readerview = function() {
+
+	var self = this;
+	self.step = 6;
+
+	if (!self.pending_reader_view.length) {
+		self.next(0);
+		return self;
+	}
+
+	var group = {};
+	var skip = true;
+
+	for (var i = 0, length = self.pending_reader_view.length; i < length; i++) {
+		var item = self.pending_reader_view[i];
+		var name = self.views[item.view].$filename;
+		if (item.builder.$cache_key) {
+			var data = framework.cache.get(item.builder.$cache_key);
+			if (data) {
+				item.builder.$callback(null, data.items, data.count);
+				continue;
+			}
+		}
+
+		skip = false;
+
+		if (group[name])
+			group[name].push(item);
+		else
+			group[name] = [item];
+	}
+
+	self.pending_reader_view = [];
+
+	if (skip) {
+		self.next(0);
+		return self;
+	}
+
+	Object.keys(group).wait(function(item, next) {
+		self.$reader2(item, group[item], next);
+	}, () => self.next(0), 5);
+
+	return self;
+};
+
+Database.prototype.$reader2 = function(filename, items, callback) {
+
+	var self = this;
+	var reader = Fs.createReadStream(filename);
+	var filter = items;
+	var length = filter.length;
+
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+		var json = JSON.parse(value.trim());
+		for (var i = 0; i < length; i++) {
+
+			var item = filter[i];
+			var builder = item.builder;
+			var output = builder.compare(json, index);
+
+			if (!output)
+				continue;
+
+			item.count++;
+
+			if (!builder.$sort) {
+				if (builder.$skip && builder.$skip > index)
+					continue;
+				if (builder.$take && builder.$take < item.count)
+					continue;
+			}
+
+			if (item.response) {
+				item.response.push(output);
+				continue;
+			}
+
+			item.response = [output];
+		}
+	}));
+
+	CLEANUP(reader, function() {
+
+		for (var i = 0; i < length; i++) {
+			var item = filter[i];
+			var builder = item.builder;
+			var output;
+
+			if (!builder.$sort) {
+				if (builder.$first)
+					output = item.response[0];
+				else
+					output = item.response || EMPTYARRAY;
+
+				if (builder.$cache_key)
+					framework.cache.add(builder.$cache_key, { items: output, count: item.count }, builder.$cache_expire);
+
+				builder.$callback(null, output, item.count);
+				continue;
+			}
+
+			if (item.count) {
+				if (builder.$sort.name)
+					item.response.orderBy(builder.$sort.name, builder.$sort.asc);
+				else
+					item.response.sort(builder.$sort);
+				if (builder.$skip && builder.$take)
+					item.response = item.response.splice(builder.$skip, builder.$take);
+				else if (builder.$skip)
+					item.response = item.response.splice(builder.$skip);
+				else if (builder.$take)
+					item.response = item.response.splice(0, builder.$take);
+			}
+
+			if (builder.$first)
+				output = item.response[0];
+			else
+				output = item.response || EMPTYARRAY;
+
+			if (builder.$cache_key)
+				framework.cache.add(builder.$cache_key, { items: output, count: item.count }, builder.$cache_expire);
+
+			builder.$callback(null, output, item.count);
+			builder.done();
+		}
+
+		callback();
+	});
+
+	return self;
+};
+
+Database.prototype.$views = function() {
+
+	var self = this;
+	self.step = 5;
+
+	if (!self.pending_views) {
+		self.next(0);
+		return self;
+	}
+
+	self.pending_views = false;
+
+	var reader = Fs.createReadStream(self.filename);
+	var writers = [];
+	var views = Object.keys(self.views);
+	var length = views.length;
+	var response = [];
+
+	for (var i = 0; i < length; i++)
+		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0 });
+
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+		var json = JSON.parse(value.trim());
+		for (var j = 0; j < length; j++) {
+			var item = self.views[views[j]];
+			var output = item.compare(json, index);
+
+			if (!output)
+				continue;
+
+			response[j].count++;
+
+			if (!item.$sort) {
+				if (item.$skip && item.$skip > index)
+					continue;
+				if (item.$take && item.$take < response[j].count)
+					continue;
+			}
+
+			response[j].response.push(output);
+		}
+	}));
+
+	CLEANUP(reader, function() {
+		response.wait(function(item, next) {
+
+			var builder = item.builder;
+			var output;
+
+			if (builder.$sort) {
+				if (builder.$sort.name)
+					item.response.orderBy(builder.$sort.name, builder.$sort.asc);
+				else
+					item.response.sort(builder.$sort);
+
+				if (builder.$skip && builder.$take)
+					item.response = item.response.splice(builder.$skip, builder.$take);
+				else if (builder.$skip)
+					item.response = item.response.splice(builder.$skip);
+				else if (builder.$take)
+					item.response = item.response.splice(0, builder.$take);
+			}
+
+			var filename = builder.$filename;
+			Fs.unlink(filename, function() {
+				item.response.limit(20, function(items, next) {
+					var builder = [];
+					for (var i = 0, length = items.length; i < length; i++)
+						builder.push(JSON.stringify(items[i]));
+					Fs.appendFile(filename, builder.join(NEWLINE) + NEWLINE, next);
+				}, next);
+			});
+		}, 5);
+	});
+
+	return self;
+};
+
+Database.prototype.$remove = function() {
+
+	var self = this;
+	self.step = 3;
+
+	if (!self.pending_remove.length) {
+		self.next(0);
+		return self;
+	}
+
+	var reader = Fs.createReadStream(self.filename);
+	var writer = Fs.createWriteStream(self.filenameTemp);
+
+	var filter = self.pending_remove.splice(0);
+	var length = filter.length;
+	var change = false;
+
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+		var json = JSON.parse(value.trim());
+		for (var i = 0; i < length; i++) {
+
+			var item = filter[i];
+			var builder = item.builder;
+			var output = builder.compare(json, index);
+			var doc = json;
+
+			if (output) {
+				item.count++;
+				change = true;
+				continue;
+			}
+
+			writer.write(JSON.stringify(doc) + NEWLINE);
+		}
+	}));
+
+	CLEANUP(writer, function() {
+		Fs.rename(self.filenameTemp, self.filename, function(err) {
+
+			for (var i = 0; i < length; i++) {
+				var item = filter[i];
+				if (item.builder.$callback)
+					item.builder.$callback(err, item.count);
+			}
+
+			setImmediate(function() {
+				self.next(0);
+				if (change)
+					setImmediate(() => self.refresh());
+			});
+		});
+	});
+
+	CLEANUP(reader, () => writer.end());
+	return self;
+};
+
+Database.prototype.$drop = function() {
+	var self = this;
+	self.step = 7;
+
+	if (!self.pending_drops) {
+		self.next(0);
+		return self;
+	}
+
+	self.pending_drops = false;
+	var remove = [self.filename, self.filenameTemp];
+	Object.keys(self.views).forEach(key => remove.push(self.views[key].$filename));
+
+	Fs.readdirSync(self.binary.directory).forEach(function(filename) {
+		if (filename.indexOf(self.name + '#') === -1 || filename.lastIndexOf(EXTENSION_BINARY) === -1)
+			return;
+		remove.push(framework_utils.join(self.binary.directory, filename));
+	});
+
+	remove.wait((filename, next) => Fs.unlink(filename, next), () => self.next(0), 5);
+	return self;
+};
+
+function DatabaseBuilder() {
+	this.$take = 0;
+	this.$skip = 0;
+	this.$filter = [];
+	this.$sort;
+	this.$first = false;
+	this.$scope = 0;
+	this.$fields;
+	this.$callback = NOOP;
 }
 
-/*
-	@db {Database}
-	@name {String}
-	@filename {String} :: database filename
-*/
-function View(db, name, filename) {
-	this.db = db;
-	this.status = STATUS_UNKNOWN;
-	this.countRead = 0;
-	this.pendingRead = [];
-	this.pendingOperation = [];
-	this.filename = filename;
-	this.name = name;
-	this.emit = db.emit;
-	this.file = new FileReader(db);
+DatabaseBuilder.prototype.first = function() {
+	this.$first = true;
+	return this.take(1);
+};
+
+DatabaseBuilder.prototype.make = function(fn) {
+	fn.call(this, this);
+	return this;
+};
+
+DatabaseBuilder.prototype.compare = function(doc, index) {
+
+	var can = true;
+	var wasor = false;
+
+	for (var i = 0, length = this.$filter.length; i < length; i++) {
+		var filter = this.$filter[i];
+
+		if (wasor && filter.scope)
+			continue;
+
+		var res = filter.filter(filter, doc);
+
+		if (res) {
+			can = true;
+			if (filter.scope)
+				wasor = true;
+			continue;
+		}
+
+		if (filter.scope) {
+			can = false;
+			continue;
+		}
+
+		return;
+	}
+
+	if (!can)
+		return;
+
+	if (!this.$fields)
+		return doc;
+
+	var obj = {};
+
+	for (var i = 0, length = this.$fields.length; i < length; i++) {
+		var prop = this.$fields[i];
+		obj[prop] = doc[prop];
+	}
+
+	return obj;
+};
+
+DatabaseBuilder.prototype.filter = function(fn) {
+	this.$filter.push({ scope: this.$scope, filter: fn });
+	return this;
+};
+
+DatabaseBuilder.prototype.where = function(name, operator, value) {
+
+	var fn;
+
+	if (value === undefined) {
+		value = operator;
+		operator = '=';
+	}
+
+	switch (operator) {
+		case '=':
+			fn = compare_eq;
+			break;
+		case '<':
+			fn = compare_lt;
+			break;
+		case '<=':
+			fn = compare_eqlt;
+			break;
+		case '>':
+			fn = compare_gt;
+			break;
+		case '>=':
+			fn = compare_eqgt;
+			break;
+		case '<>':
+		case '!=':
+			fn = compare_not;
+			break;
+	}
+
+	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value });
+	return this;
+};
+
+DatabaseBuilder.prototype.like = function(name, value, where) {
+
+	var fn;
+
+	if (!where)
+		where = '*';
+
+	switch (where) {
+		case 'beg':
+			fn = compare_likebeg;
+			break;
+		case 'end':
+			fn = compare_likeend;
+			break;
+		case '*':
+			fn = compare_like;
+			break;
+	}
+
+	this.$filter.push({ scope: this.$scope, name: name, filter: fn, value: value });
+	return this;
+};
+
+DatabaseBuilder.prototype.take = function(count) {
+	this.$take = count;
+	return this;
+};
+
+DatabaseBuilder.prototype.skip = function(count) {
+	this.$skip = count;
+	return this;
+};
+
+DatabaseBuilder.prototype.callback = function(fn) {
+	this.$callback = fn;
+	return this;
+};
+
+DatabaseBuilder.prototype.sort = function(name, desc) {
+
+	if (typeof(name) === 'function') {
+		this.$sort = name;
+		return this;
+	}
+
+	this.$sort = { name: name, asc: desc ? false : true };
+	return this;
+};
+
+DatabaseBuilder.prototype.in = function(name, value) {
+	if (!(value instanceof Array))
+		value = [value];
+	this.$filter.push({ scope: this.$scope, name: name, filter: compare_in, value: value });
+	return this;
+};
+
+DatabaseBuilder.prototype.notin = function(name, value) {
+	if (!(value instanceof Array))
+		value = [value];
+	this.$filter.push({ scope: this.$scope, name: name, filter: compare_notin, value: value });
+	return this;
+};
+
+DatabaseBuilder.prototype.between = function(name, a, b) {
+	this.$filter.push({ scope: this.$scope, name: name, filter: compare_between, a: a, b: b });
+	return this;
+};
+
+DatabaseBuilder.prototype.or = function() {
+	this.$scope = 1;
+	return this;
+};
+
+DatabaseBuilder.prototype.end = function() {
+	this.$scope = 0;
+	return this;
+};
+
+DatabaseBuilder.prototype.and = function() {
+	this.$scope = 0;
+	return this;
+};
+
+DatabaseBuilder.prototype.done = function() {
+	this.$filter = null;
+	this.$sort = null;
+	return this;
+};
+
+DatabaseBuilder.prototype.cache = function(key, expire) {
+	this.$cache_key = '$nosql_' + key;
+	this.$cache_expire = expire;
+	return this;
+};
+
+DatabaseBuilder.prototype.fields = function() {
+	if (this.$fields)
+		this.$fields = [];
+	for (var i = 0, length = arguments.length; i < length; i++)
+		this.$fields.push(arguments[i]);
+	return this;
 }
 
-/*
-	@db {Database}
-*/
-function Stored(db, filename) {
-	this.filename = filename;
-	this.db = db;
-	this.stored = {};
-	this.cache = {};
-	this.isReaded = false;
-}
-
-/*
-	@db {Database}
-	@directory {String}
-*/
 function Binary(db, directory) {
 	this.db = db;
 	this.directory = directory;
 	this.exists = false;
 }
 
-/*
-	@db {Database}
-	@filename {String}
-*/
-function Changelog(db, filename) {
-	this.filename = filename;
-	this.db = db;
-}
-
-/*
-	@db {Database}
-*/
-function FileReader(db) {
-	this.db = db;
-}
-
-/*
-	PROTOTYPES
-*/
-
-Database.prototype = {
-
-	get created() {
-		var dt = this.meta.created;
-		if (!(dt instanceof Date))
-			return dt;
-		if (!dt.getTime())
-			return null;
-		return new Date(Date.parse(dt.toString()));
-	}
-};
-
-Database.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
-	constructor: {
-		value: Database,
-		enumberable: false
-	}
-});
-
-/*
-	Insert data into database
-	@arr {Array of Object}
-	@fnCallback {Function(err, count)} callback
-	@changes {String} :: optional, insert description
-	return {Database}
-*/
-Database.prototype.insert = function(arr, fnCallback, changes) {
+Binary.prototype.insert = function(name, buffer, callback) {
 
 	var self = this;
+	var type = framework_utils.getContentType(framework_utils.getExtension(name));
+	var isfn = typeof(buffer) === 'function';
 
-	if (typeof(fnCallback) === STRING) {
-		changes = fnCallback;
-		fnCallback = null;
-	}
+	if (isfn || !buffer) {
 
-	if (!(arr instanceof Array))
-		arr = [arr];
-
-	var length = arr.length;
-
-	if (self.status === STATUS_LOCKING|| self.status === STATUS_PENDING || self.countWrite >= MAX_WRITESTREAM) {
-
-		for (var i = 0; i < length; i++)
-			self.pendingWrite.push({ json: arr[i], changes: changes });
-
-		if (fnCallback)
-			fnCallback(null, -1);
-
-		return self;
-	}
-
-	var builder = [];
-	var builderChanges = [];
-
-	for (var i = 0; i < length; i++) {
-
-		var doc = arr[i];
-
-		if (doc.json === undefined) {
-			builder.push(doc);
-
-			if (changes)
-				builderChanges.push(changes);
-
-			continue;
+		if (isfn) {
+			callback = buffer;
+			buffer = undefined;
 		}
 
-		builder.push(doc.json);
-
-		if (doc.changes)
-			builderChanges.push(doc.changes);
+		var reader = Fs.createReadStream(name);
+		CLEANUP(reader);
+		return self.insert_stream(null, framework_utils.getName(name), type, reader, callback);
 	}
-
-	if (!builder.length) {
-		self.next();
-		return;
-	}
-
-	self.emit('insert', true, builder.length);
-
-	self.status = STATUS_WRITING;
-	self.countWrite++;
-
-	appendFile(self.filename, builder, function() {
-
-		self.countWrite--;
-		self.emit('insert', false, builder.length);
-		self.next();
-
-		self.changelog.insert(builderChanges);
-
-		if (fnCallback) {
-			var length = builder.length;
-			setImmediate(function() { fnCallback(null, length); });
-		}
-
-		builder = null;
-		builderChanges = null;
-		arr = null;
-
-		var keys = Object.keys(self.meta.views);
-		var length = keys.length;
-		for (var i = 0; i < length; i++)
-			self.views.refresh(keys[i]);
-
-	}, self);
-
-	return self;
-};
-
-Database.prototype.$$insert = function(arr, changes) {
-	var self = this;
-	return function(callback) {
-		self.insert(arr, callback, changes);
-	};
-};
-
-/*
-	Read data from database
-	@fnMap {Function} :: params: @doc {Object}, IMPORTANT: you must return {Object}
-	@fnCallback {Function(err, array/number)}
-	@itemSkip {Number} :: optional, default 0
-	@itemTake {Number} :: optional, defualt 0
-	@isScalar {Boolean} :: optional, default is false
-	return {Database}
-*/
-Database.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, isScalar, name) {
-
-	var self = this;
-	var skip = itemSkip || 0;
-	var take = itemTake || 0;
-
-	if (self.status === STATUS_LOCKING || self.status === STATUS_PENDING || self.countRead >= MAX_READSTREAM) {
-
-		self.pendingRead.push(function() {
-			self.read(fnMap, fnCallback, itemSkip, itemTake, isScalar);
-		});
-
-		return self;
-	}
-
-	if (!fnCallback) {
-		fnCallback = fnMap;
-		fnMap = function(doc) { return doc; };
-	}
-
-	if (typeof(fnMap) === STRING)
-		fnMap = filterPrepare(fnMap);
-
-	if (!fnMap)
-		fnMap = function(doc) { return doc; };
-
-	self.emit(name || 'read', true, 0);
-
-	// opened streams
-	self.countRead++;
-	self.status = STATUS_READING;
-
-	var selected = [];
-	var current = '';
-	var count = 0;
-	var resume = true;
-
-	var fnBuffer = function(buffer) {
-		current += buffer;
-		return current;
-	};
-
-	var fnItem = function(err, doc) {
-
-		if (!resume)
-			return;
-
-		// clear buffer;
-		current = '';
-
-		if (err)
-			return;
-
-		var item = fnMap(doc);
-		if (!item)
-			return;
-
-		count++;
-
-		if (skip > 0 && count <= skip)
-			return;
-
-		if (!isScalar)
-			selected.push(item === true ? doc : item);
-
-		if (take > 0 && selected.length === take)
-			resume = false;
-	};
-
-	self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
-		onBuffer(buffer, fnItem, fnBuffer);
-		return resume;
-	}, function() {
-		self.countRead--;
-		self.next();
-		setImmediate(function() {
-			self.emit(name || 'read', false, isScalar ? count : selected.length);
-			fnCallback(null, isScalar ? count : selected);
-		});
-	});
-
-	return self;
-};
-
-/*
-	Read all documents from database
-	@fnMap {Function} :: IMPORTANT: you must return {Object}
-	@fnCallback {Function(err, array)}
-	@itemSkip {Number} :: optional, default 0
-	@itemTake {Number} :: optional, default 0
-	return {Database}
-*/
-Database.prototype.all = function(fnMap, fnCallback, itemSkip, itemTake) {
-	return this.read(fnMap, fnCallback, itemSkip, itemTake, false, 'all');
-};
-
-Database.prototype.$$all = function(fnMap, itemSkip, itemTake) {
-	var self = this;
-	return function(callback) {
-		return self.all(fnMap, callback, itemSkip, itemTake);
-	};
-};
-
-/*
-	Read one document from database
-	@fnMap {Function} :: must return {Object}
-	@fnCallback {Function(err, doc)}
-	return {Database}
-*/
-Database.prototype.one = function(fnMap, fnCallback) {
-
-	var cb = function(err, selected) {
-		fnCallback(err, selected ? selected[0] || null : null);
-	};
-
-	return this.read(fnMap, cb, 0, 1, false, 'one');
-};
-
-Database.prototype.$$one = function(fnMap) {
-	var self = this;
-	return function(callback) {
-		return self.one(fnMap, callback);
-	};
-};
-
-/*
-	Read TOP "x" documents from database
-	@fnMap {Function} :: IMPORTANT: you must return {Object}
-	@fnCallback {Function} :: params: @doc {Array of Object}
-	return {Database}
-*/
-Database.prototype.top = function(max, fnMap, fnCallback) {
-	return this.read(fnMap, fnCallback, 0, max, false, 'top');
-};
-
-Database.prototype.$$top = function(max, fnMap) {
-	var self = this;
-	return function(callback) {
-		return self.top(max, fnMap, callback);
-	};
-};
-
-/*
-	Count documents
-	@fnFilter {Function} :: params: @doc {Object}, IMPORTANT: you must return {Boolean}
-	@fnCallback {Function} :: params: @count {Number}
-	return {Database}
-*/
-Database.prototype.count = function(fnFilter, fnCallback) {
-	return this.read(fnFilter, fnCallback, 0, 0, true, 'count');
-};
-
-Database.prototype.$$count = function(fnFilter) {
-	var self = this;
-	return function(callback) {
-		return self.count(fnFilter, fnMap, callback);
-	};
-};
-
-/*
-	Read each document from database
-	@fnDocument {Function} :: params: @doc {Object}, @offset {Number}
-	@fnCallback {Function} :: optional
-	return {Database}
-*/
-Database.prototype.each = function(fnDocument, fnCallback) {
-
-	var self = this;
-
-	if (self.status === STATUS_LOCKING || self.status === STATUS_PENDING || self.countRead >= MAX_READSTREAM) {
-
-		if (fnDocument)
-			self.pendingEach.push({ item: fnDocument, callback: fnCallback });
-
-		return self;
-	}
-
-	var operation = [];
-
-	if (fnDocument)
-		operation.push({ item: fnDocument, callback: fnCallback });
-
-	var length = self.pendingEach.length;
-
-	for (var i = 0; i < length; i++)
-		operation.push(self.pendingEach[i]);
-
-	if (!operation.length) {
-		self.next();
-		return self;
-	}
-
-	// opened streams
-	self.countRead++;
-	self.status = STATUS_READING;
-
-	var current = '';
-	var count = 0;
-
-	self.pendingEach = [];
-
-	var fnBuffer = function(buffer) {
-		current += buffer;
-		return current;
-	};
-
-	var fnItem = function(err, doc) {
-
-		// clear buffer;
-		current = '';
-
-		if (err) {
-			self.emit('error', err, 'each-buffer');
-			return;
-		}
-
-		var length = operation.length;
-		for (var i = 0; i < length; i++) {
-			try
-			{
-				operation[i].item(doc, count, 'each-buffer');
-			} catch (e) {
-				self.emit('error', e);
-			}
-		}
-
-		count++;
-	};
-
-	self.emit('each', true, 0);
-
-	self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
-		onBuffer(buffer, fnItem, fnBuffer);
-		return true;
-	}, function() {
-		self.countRead--;
-		self.next();
-		setImmediate(function() {
-			self.emit('each', false, count);
-			var length = operation.length;
-			for (var i = 0; i < length; i++) {
-				var fn = operation[i];
-				if (fn.callback)
-					fn.callback();
-			}
-		});
-	});
-
-	return self;
-};
-
-Database.prototype.$$each = function(fnDocument) {
-	var self = this;
-	return function(callback) {
-		return self.each(fnDocument, callback);
-	};
-};
-
-/*
-	Read and sort documents from database (SLOWLY)
-	@fnMap {Function} :: IMPORTANT: you must return {Object}
-	@fnSort {Function} :: ---> array.sort()
-	@itemSkip {Number}, default 0 (if itemSkip = 0 and itemTake = 0 then return all documents)
-	@itemTake {Number}, default 0 (if itemSkip = 0 and itemTake = 0 then return all documents)
-	@fnCallback {Function(err, selected, count)} :: params: @doc {Object}, @count {Number}
-	return {Database}
-*/
-Database.prototype.sort = function(fnMap, fnSort, fnCallback, itemSkip, itemTake) {
-
-	var self = this;
-	var selected = [];
-	var count = 0;
-
-	if (typeof(fnMap) === STRING)
-		fnMap = filterPrepare(fnMap);
-
-	itemTake = itemTake || 0;
-	itemSkip = itemSkip || 0;
-
-	var onCallback = function() {
-
-		selected.sort(fnSort);
-
-		if (itemSkip || itemTake)
-			selected = selected.slice(itemSkip, itemSkip + itemTake);
-
-		fnCallback(null, selected, count);
-	};
-
-	var onItem = function(doc) {
-
-		var item = fnMap(doc);
-		if (!item)
-			return;
-
-		count++;
-		selected.push(item === true ? doc : item);
-	};
-
-	self.each(onItem, onCallback);
-	return self;
-};
-
-Database.prototype.$$sort = function(fnMap, fnSort, itemSkip, itemTake) {
-	var self = this;
-	return function(callback) {
-		self.sort(fnMap, fnSort, callback, itemSkip, itemTake);
-	};
-};
-
-/*
-	Clear database
-	@fnCallback {Function} :: optional
-	@changes {String} :: optional, clear description
-	return {Database}
-*/
-Database.prototype.clear = function(fnCallback, changes) {
-
-	var self = this;
-	var type = typeof(fnCallback);
-
-	if (type === STRING) {
-		changes = fnCallback;
-		fnCallback = null;
-	}
-
-	self.pendingClear.push(function() {
-
-		if (changes)
-			self.changelog.insert(changes);
-
-		if (fnCallback)
-			fnCallback();
-	});
-
-	if (self.status !== STATUS_UNKNOWN)
-		return self;
-
-	self.status = STATUS_LOCKING;
-
-	var operation = [];
-	var length = self.pendingClear.length;
-
-	for (var i = 0; i < length; i++) {
-		var fn = self.pendingClear[i];
-		if (fn)
-			operation.push(fn);
-	}
-
-	self.emit('clear', true, false);
-	self.pendingClear = [];
-
-	fs.exists(self.filename, function(exists) {
-
-		if (!exists) {
-
-			self.next();
-
-			setImmediate(function() {
-				self.emit('clear', false, true);
-				var length = operation.length;
-				for (var i = 0; i < length; i++) {
-					var fn = operation[i];
-					if (fn)
-						fn();
-				}
-
-			});
-
-			return;
-		}
-
-		fs.unlink(self.filename, function(err) {
-
-			if (err)
-				self.emit('error', err, 'clear');
-
-			self.next();
-
-			setImmediate(function() {
-				self.emit('clear', false, err === null);
-
-				var length = operation.length;
-				for (var i = 0; i < length; i++) {
-					var fn = operation[i];
-					if (fn)
-						fn();
-				}
-			});
-		});
-	});
-
-	return self;
-};
-
-Database.prototype.$$clear = function(changes) {
-	var self = this;
-	return function(callback) {
-		self.clear(callback, changes);
-	};
-};
-
-/*
-	Drop database
-	@fnCallback {Function} :: optional, params: @dropped {Boolean}
-	return {Database}
-*/
-Database.prototype.drop = function(fnCallback) {
-
-	var self = this;
-
-	if (fnCallback === undefined)
-		fnCallback = null;
-
-	self.pendingDrop.push(fnCallback);
-
-	if (self.status !== STATUS_UNKNOWN)
-		return self;
-
-	self.status = STATUS_LOCKING;
-
-	var operation = [];
-
-	self.pendingDrop.forEach(function(o) {
-		if (o)
-			operation.push(o);
-	});
-
-	self.emit('drop', true, false);
-	self.pendingDrop = [];
-
-	self._drop();
-
-	fs.exists(self.filename, function(exists) {
-
-		if (!exists) {
-
-			self.next();
-
-			setImmediate(function() {
-				self.emit('drop', false, true);
-				operation.forEach(function(fn) {
-					if (fn)
-						fn(null);
-				});
-			});
-
-			return;
-		}
-
-		fn.unlink(self.filenameMeta, noop);
-		fs.unlink(self.filename, function(err) {
-
-			if (err)
-				self.emit('error', err, 'drop');
-
-			self.next();
-
-			setImmediate(function() {
-				self.emit('drop', false, err === null);
-				operation.forEach(function(fn) {
-					if (fn)
-						fn(null, err === null);
-				});
-			});
-		});
-	});
-
-	return self;
-};
-
-Database.prototype.$$drop = function() {
-	var self = this;
-	return function(callback) {
-		self.drop(callback);
-	};
-};
-
-function noop() {};
-
-/*
-	Internal function :: remove all files (views, binary)
-	!!! SYNC !!!
-*/
-Database.prototype._drop = function() {
-	var self = this;
-
-	fs.readdirSync(self.directory).forEach(function(filename) {
-
-		var isView = filename.indexOf(self.name + '#') !== -1 && filename.indexOf(EXTENSION_VIEW) !== -1;
-
-		if (isView) {
-			fs.unlink(path.join(self.directory, filename), noop);
-			return;
-		}
-
-		var isChange = self.name + EXTENSION_CHANGES === filename;
-
-		if (isChange) {
-			fs.unlink(path.join(self.directory, filename), noop);
-			return;
-		}
-
-	});
-
-	if (!self.binary)
-		return self;
-
-	fs.readdirSync(self.binary.directory).forEach(function(filename) {
-		if (filename.indexOf(self.name + '#') === -1 || filename.indexOf(EXTENSION_BINARY) === -1)
-			return;
-		fs.unlink(path.join(self.binary.directory, filename), noop);
-	});
-
-	return self;
-};
-
-/*
-	Update multiple documents
-	@fnUpdate {Function} :: params: @doc {Object} and IMPORTANT: you must return updated @doc;
-	@fnCallback {Function} :: optional, params: @count {Number}
-	@changes {String} :: optional, changes description
-	@type {String} :: internal, optional
-	return {Database}
-*/
-Database.prototype.update = function(fnUpdate, fnCallback, changes, type) {
-	var self = this;
-
-	if (typeof(fnCallback) === STRING) {
-		changes = fnCallback;
-		fnCallback = null;
-	}
-
-	if (fnUpdate)
-		self.pendingLock.push(updatePrepare(fnUpdate, fnCallback, changes, type || 'update'));
-
-	if (self.status !== STATUS_UNKNOWN)
-		return self;
-
-	var operation = [];
-
-	self.pendingLock.forEach(function(fn) {
-		operation.push(fn);
-	});
-
-	if (!operation.length) {
-		self.next();
-		return self;
-	}
-
-	self.status = STATUS_LOCKING;
-
-	var current = '';
-	var operationLength = operation.length;
-	var lines = [];
-
-	var countRemove = 0;
-	var countUpdate = 0;
-	var countWrite = 0;
-	var completed = false;
-
-	self.emit('update/remove', true, 0, 0);
-	self.pendingLock = [];
-
-	// rename updated file
-	var fnRename = function() {
-
-		operation.forEach(function(o) {
-
-			if (o.type === 'update') {
-				o.count = countUpdate;
-				return;
-			}
-
-			if (o.type === 'remove')
-				o.count = countRemove;
-		});
-
-		fs.rename(self.filenameTemp, self.filename, function(err) {
-
-			if (err)
-				self.emit('error', err, 'update/rename-file');
-
-			self.emit('update/remove', false, countUpdate, countRemove);
-
-			var changes = [];
-			operation.forEach(function(o) {
-
-				if (o.changes !== undefined)
-					changes.push(o.changes);
-
-				if (o.callback)
-					(function(cb,count) { setImmediate(function() { cb(null, count); }); })(o.callback, o.count);
-
-			});
-
-			if (changes.length)
-				self.changelog.insert(changes);
-
-			self.next();
-
-		});
-	};
-
-	var can = true;
-
-	// write to temporary
-	var fnWrite = function(json, valid) {
-
-		if (can) {
-			can = false;
-			fs.appendFile(self.filenameTemp, '');
-		}
-
-		if (lines.length > 25 || valid) {
-
-			if (lines.length === 0) {
-				if (completed && countWrite <= 0)
-					fnRename();
-				return;
-			}
-
-			countWrite++;
-			fs.appendFile(self.filenameTemp, lines.join(NEWLINE) + NEWLINE, function() {
-				countWrite--;
-				if (completed && countWrite <= 0)
-					fnRename();
-			});
-
-			lines = [];
-		}
-
-		if (typeof(json) === STRING)
-			lines.push(json);
-	};
-
-	var fnBuffer = function(buffer) {
-		current += buffer;
-		return current;
-	};
-
-	var fnItem = function(err, doc, json) {
-
-		// clear buffer;
-		current = '';
-		var value = null;
-
-		for (var i = 0; i < operationLength; i++) {
-
-			var fn = operation[i];
-			value = fn.filter(doc);
-
-			if (!value)
-				break;
-		}
-
-		if (!value) {
-			self.emit('remove', doc);
-			countRemove++;
-			return;
-		}
-
-		var updated;
-
-		if (value && typeof(value.$clean) === FUNCTION)
-			updated = value.$clean();
-		else
-			updated = JSON.stringify(value);
-
-		if (updated !== json) {
-			self.emit('update', value);
-			countUpdate++;
-		}
-
-		fnWrite(updated);
-	};
-
-	self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
-		onBuffer(buffer.toString(), fnItem, fnBuffer);
-		return true;
-	}, function(success) {
-
-		if (!success) {
-
-			self.emit('update/remove', false, countUpdate, countRemove);
-			var changes = [];
-			operation.forEach(function(o) {
-				if (o.changes)
-					changes.push(o.changes);
-				if (o.callback)
-					(function(cb,count) { setImmediate(function() { cb(null, count); }); })(o.callback, o.count);
-			});
-
-			if (changes.length)
-				self.changelog.insert(changes);
-
-			self.next();
-			return;
-		}
-
-		completed = true;
-		fnWrite(null, true);
-	});
-
-	return self;
-};
-
-Database.prototype.$$update = function(fnUpdate, changes, type) {
-	var self = this;
-	return function(callback) {
-		self.update(fnUpdate, callback, changes, type);
-	};
-};
-
-/*
-	Update multiple documents
-	@fnUpdate {Function} :: params: @doc {Object} and IMPORTANT: you must return updated @doc;
-	@fnCallback {Function} :: optional, params: @count {Number}
-	@changes {String} :: optional, changes description
-	return {Database}
-*/
-Database.prototype.prepare = function(fnUpdate, fnCallback, changes) {
-	var self = this;
-
-	if (fnUpdate)
-		self.pendingLock.push(updatePrepare(fnUpdate, fnCallback, changes, 'update'));
-
-	return self;
-};
-
-Database.prototype.$$prepare = function(fnUpdate, changes) {
-	var self = this;
-	return function(callback) {
-		self.prepare(fnUpdate, callback, changes);
-	};
-};
-
-/*
-	Remove data from database
-	@fnFilter {Function} :: params: @obj {Object}, IMPORTANT: you must return {Boolean}
-	@fnCallback {Function} :: params: @count {Number}
-	@changes {String} :: optional, changes description
-	return {Database}
-*/
-Database.prototype.remove = function(fnFilter, fnCallback, changes) {
-
-	var self = this;
-
-	if (typeof(fnFilter) === STRING)
-		fnFilter = filterPrepare(fnFilter);
-
-	var filter = function(item) {
-
-		if (fnFilter(item) === true)
-			return null;
-
-		return item;
-	};
-
-	self.update(filter, fnCallback, changes, 'remove');
-	return self;
-};
-
-Database.prototype.$$remove = function(fnFilter, changes) {
-	var self = this;
-	return function(callback) {
-		self.remove(fnFilter, callback, changes);
-	}
-};
-
-Database.prototype.pause = function() {
-	var self = this;
-
-	if (self.isPending === true)
-		return self;
-
-	self.isPending = true;
-
-	if (self.status === STATUS_UNKNOWN) {
-		self.status = STATUS_PENDING;
-		self.emit('pause/resume', true);
-	}
-
-	return self;
-};
-
-Database.prototype.resume = function() {
-	var self = this;
-
-	if (!self.isPending)
-		return self;
-
-	self.isPending = false;
-	self.emit('pause/resume', false);
-	self.next();
-	return self;
-};
-
-/*
-	Internal function
-*/
-Database.prototype.next = function() {
-
-	var self = this;
-
-	if (self.isPending) {
-		if (self.status !== STATUS_PENDING) {
-			self.status = STATUS_PENDING;
-			self.emit('pause');
-		}
-		return;
-	}
-
-	self.status_prev = self.status;
-	self.status = STATUS_UNKNOWN;
-
-	// ReadStream is open, ... waiting for close
-	if (self.countRead) {
-		self.status = STATUS_READING;
-		return;
-	}
-
-	// WriteStream is open, ... waiting for close
-	if (self.countWrite) {
-		self.status = STATUS_WRITING;
-		return;
-	}
-
-	if (self.pendingWrite.length) {
-		self.insert(self.pendingWrite);
-		self.pendingWrite = [];
-		return;
-	}
-
-	// large operation (truncate file)
-	if (self.pendingLock.length) {
-		self.update();
-		return;
-	}
-
-	if (self.pendingEach.length) {
-		self.each();
-		return;
-	}
-
-	// read data
-	if (self.pendingRead.length) {
-		var max = self.pendingRead.length;
-
-		if (max > MAX_READSTREAM)
-			max = MAX_READSTREAM;
-
-		for (var i = 0; i < max; i++)
-			self.pendingRead.shift()();
-
-		return;
-	}
-
-	if (self.pendingDrop.length) {
-		self.drop();
-		return;
-	}
-
-	if (self.pendingClear.length) {
-		self.clear();
-		return;
-	}
-
-	setImmediate(function() {
-		self.emit('complete', self.status_prev);
-	});
-};
-
-Database.prototype.description = function(value) {
-	var self = this;
-
-	if (!value)
-		return self.meta.description;
-
-	self.meta.description = (value || '').toString();
-	self._metaSave();
-	return self;
-};
-
-Database.prototype.custom = function(value) {
-	var self = this;
-
-	if (!value)
-		return self.meta.custom;
-
-	self.meta.custom = value;
-	self._metaSave();
-	return self;
-};
-
-Database.prototype._metaSave = function() {
-	var self = this;
-
-	if (!self.meta.created)
-		self.meta.created = new Date();
-
-	fs.writeFile(self.filenameMeta, JSON.stringify(self.meta), noop);
-	return self;
-};
-
-Database.prototype._metaLoad = function(callback) {
-
-	var self = this;
-
-	fs.readFile(self.filenameMeta, function(err, data) {
-
-		var isReady = self.isReady;
-		self.isReady = true;
-
-		if (err) {
-
-			if (!isReady) {
-				self.emit('ready');
-				self.emit('load');
-			}
-
-			if (callback)
-				callback(false, self.meta);
-
-			return;
-		}
-
-		self.meta = JSON.parse(data.toString('utf8'));
-
-		var keys = Object.keys(self.meta.views);
-		var length = keys.length;
-
-		for (var i = 0; i < length; i++)
-			self.meta.views[keys[i]].isReady = true;
-
-		if (!isReady) {
-			self.emit('ready');
-			self.emit('load');
-		}
-
-		if (callback)
-			callback(true, self.meta);
-
-	});
-
-	return self;
-};
-
-// ========================================================================
-// VIEWS PROTOTYPE
-// ========================================================================
-
-/*
-	Read documents from view
-	@name {String}
-	@fnCallback {Function} :: params: @doc {Array of Object}, @count {Number}
-	@itemSkip {Number} :: optional, default 0
-	@itemTake {Number} :: optional, default 0
-	@fnMap {Function} :: optional, IMPORTANT: you must return {Object}
-*/
-Views.prototype.all = function(name, fnCallback, itemSkip, itemTake, fnMap) {
-
-	var self = this;
-	var view = self.views[name];
-
-	if (!view) {
-		view = self.getView(name);
-		self.views[name] = view;
-	}
-
-	var type = typeof(itemSkip);
-
-	if (type === FUNCTION || type === STRING) {
-		fnMap = itemSkip;
-		itemSkip = 0;
-		itemTake = 0;
-	} else {
-		type = typeof(itemTake);
-		if (type === FUNCTION || type === STRING) {
-			fnMap = itemTake;
-			itemTake = 0;
-		}
-	}
-
-	if (typeof(fnMap) === STRING)
-		fnMap = filterPrepare(fnMap);
-
-	if (typeof(fnMap) !== FUNCTION)
-		fnMap = function(o) { return o; };
-
-	view.read(fnMap, fnCallback, itemSkip, itemTake);
-	return self.db;
-};
-
-Views.prototype.$$all = function(name, itemSkip, itemTake, fnMap) {
-	var self = this;
-	return function(callback) {
-		self.all(name, callback, itemSkip, itemTake, fnMap);
-	};
-};
-
-/*
-	Read documents from view
-	@name {String}
-	@top {Number}
-	@fnCallback {Function} :: params: @doc {Array of Object}
-	@fnMap {Function} :: optional, IMPORTANT: you must return {Object}
-	return {Database}
-*/
-Views.prototype.top = function(name, top, fnCallback, fnMap) {
-
-	var self = this;
-	var view = self.views[name];
-
-	if (!view) {
-		view = self.getView(name);
-		self.views[name] = view;
-	}
-
-	if (typeof(fnMap) === STRING)
-		fnMap = filterPrepare(fnMap);
-
-	if (typeof(fnMap) !== FUNCTION)
-		fnMap = function(o) { return o; };
-
-	view.read(fnMap, fnCallback, 0, top, true);
-	return self.db;
-};
-
-Views.prototype.$$top = function(name, top, fnMap) {
-	var self = this;
-	return function(callback) {
-		self.top(name, top, callback, fnMap);
-	};
-};
-
-/*
-	Read one document from view
-	@name {String}
-	@fnMap {Function} :: optional, IMPORTANT: you must return {Object}
-	@fnCallback {Function} :: params: @doc {Object}
-	return {Database}
-*/
-Views.prototype.one = function(name, fnMap, fnCallback) {
-
-	var self = this;
-	var view = self.views[name];
-
-	if (!view) {
-		view = self.getView(name);
-		self.views[name] = view;
-	}
-
-	if (!fnCallback) {
-		fnCallback = fnMap;
-		fnMap = null;
-	}
-
-	if (typeof(fnMap) === STRING)
-		fnMap = filterPrepare(fnMap);
-
-	if (typeof(fnMap) !== FUNCTION)
-		fnMap = function(o) { return o; };
-
-	view.read(fnMap, fnCallback, 0, 1, true);
-	return self.db;
-};
-
-Views.prototype.$$one = function(name, fnMap) {
-	var self = this;
-	return function(callback) {
-		self.one(name, fnMap, callback);
-	};
-};
-
-/*
-	Drop view
-	@name {String}
-	@fnCallback {Function} :: params: @dropped {Boolean}
-	@changes {Function} :: optional, drop description
-	return {Database}
-*/
-Views.prototype.drop = function(name, fnCallback, changes) {
-
-	var self = this;
-	var view = self.views[name];
-
-	if (typeof(fnCallback) === STRING) {
-		changes = fnCallback;
-		fnCallback = null;
-	}
-
-	if (!view) {
-		view = self.getView(name);
-		self.views[name] = view;
-	}
-
-	delete self.db.meta.views[name];
-	self.db._metaSave();
-
-	self.db.emit('view/drop', true, name);
-
-	view.operation(function(cb) {
-		fs.exists(view.filename, function(exists) {
-
-			self.db.emit('view/drop', false, name);
-
-			if (changes)
-				self.db.changelog.insert(changes);
-
-			if (!exists) {
-
-				if (fnCallback)
-					fnCallback(null, true);
-
-				if (cb)
-					cb();
-
-				return;
-			}
-
-			fs.unlink(view.filename, function(err) {
-
-				if (err)
-					self.db.emit('error', err, 'view/drop');
-
-				if (fnCallback)
-					fnCallback(err, true);
-
-				if (cb)
-					cb();
-			});
-		});
-	});
-
-	return self.db;
-};
-
-Views.prototype.$$drop = function(name, fnCallback, changes) {
-	var self = this;
-	return function(callback) {
-		self.drop(name, callback, changes);
-	};
-};
-
-Views.prototype.refresh = function(name, fnCallback) {
-
-	var self = this;
-	var schema = self.db.meta.views[name];
-
-	schema.isReady = false;
-
-	var fnSort = schema['sort'] || '';
-	var fnMap = schema['map'];
-	var helper = schema['helper'];
-
-	if (fnSort.length)
-		fnSort = eval('(' + fnSort + ')');
-	else
-		fnSort = null;
-
-	fnMap = eval('(' + fnMap + ')');
-
-	var selected = [];
-	var count = 0;
-
-	self.db.emit('view/refresh', true, name, '');
-
-	var onCallback = function() {
-
-		if (fnSort) {
-			if (helper) {
-				selected.sort(function(a, b) {
-					return fnSort(a, b, helper);
-				});
-			} else
-				selected.sort(fnSort);
-		}
-
-		var view = self.views[name];
-
-		if (!view) {
-			view = self.getView(name);
-			self.views[name] = view;
-		}
-
-		var filename = self.getFileName(name);
-
-		view.operation(function(cb) {
-
-			var fnAppend = function() {
-				appendFile(filename, selected, function() {
-
-					self.db.emit('view/refresh', false, name, count);
-					schema.isReady = true;
-
-					if (fnCallback)
-						setImmediate(function() { fnCallback(null, count); });
-
-					if (cb)
-						cb();
-
-				}, self.db);
-			};
-
-			fs.exists(filename, function(exists) {
-
-				if (!exists) {
-					fnAppend();
-					return;
-				}
-
-				fs.unlink(filename, function(err) {
-
-					if (!err) {
-						fnAppend();
-						return;
-					}
-
-					self.db.emit('error', err, 'view/refresh');
-
-					if (cb)
-						cb();
-				});
-			});
-
-		});
-	};
-
-	var onItem = function(doc) {
-
-		var item = fnMap(doc, helper);
-		if (!item)
-			return;
-
-		count++;
-		selected.push(item);
-	};
-
-	self.db.each(onItem, onCallback);
-};
-
-Views.prototype.$$refresh = function(name) {
-	var self = this;
-	return function(callback) {
-		self.refresh(name, callback);
-	};
-};
-
-/*
-	Create view
-	@name {String}
-	@fnMap {Function} :: IMPORTANT: you must return {Boolean}
-	@fnSort {Function} :: ---> array.sort()
-	@fnCallback {Function} :: params: @count {Number}
-	@changes {Function} :: optional, create description
-	return {Views}
-*/
-Views.prototype.create = function(name, fnMap, fnSort, fnCallback, changes, helper) {
-
-	var self = this;
-
-	if (typeof(fnCallback) === STRING) {
-		helper = changes;
-		changes = fnCallback;
-		fnCallback = null;
-	}
-
-	if (typeof(fnMap) === STRING)
-		fnMap = filterPrepare(fnMap);
-
-	self.db.meta.views[name] = {
-		map: fnMap.toString(),
-		sort: (fnSort || '').toString(),
-		helper: helper,
-		isReady: false
-	};
-
-	self.db._metaSave();
-	self.db.emit('view/create', true, name, 0);
-
-	if (changes)
-		self.db.changelog.insert(changes);
-
-	self.refresh(name, fnCallback);
-	return self;
-};
-
-Views.prototype.$$create = function(name, fnMap, fnSort, changes) {
-	var self = this;
-	return function(callback) {
-		self.create(name, fnMap, fnSort, callback, changes);
-	};
-};
-
-/*
-	Create view object
-	@name {String}
-	return {View}
-*/
-Views.prototype.getView = function(name) {
-	var self = this;
-	return new View(self.db, name, self.getFileName(name));
-};
-
-/*
-	Create view filename
-	@name {String}
-	return {String}
-*/
-Views.prototype.getFileName = function(name) {
-	var self = this;
-	return path.join(self.directory, self.db.name + '#' + name + EXTENSION_VIEW);
-};
-
-// ========================================================================
-// VIEW PROTOTYPE
-// ========================================================================
-
-/*
-	Read documents from view
-	@fnMap {Function} :: IMPORTANT: you must return {Object}
-	@fnCallback {Function} :: params: @selected {Array of Object}, @count {Number}
-	@itemSkip {Number} :: optional, default 0
-	@itemTake {Number} :: optional, default 0
-	@skipCount {Boolean} :: optional, default false
-	return {View}
-*/
-View.prototype.read = function(fnMap, fnCallback, itemSkip, itemTake, skipCount, isScalar) {
-
-	var self = this;
-	var skip = itemSkip || 0;
-	var take = itemTake || 0;
-
-	skipCount = skipCount || false;
-
-	if (self.status === STATUS_LOCKING || self.countRead >= MAX_READSTREAM) {
-
-		self.pendingRead.push(function() {
-			self.read(fnMap, fnCallback, itemSkip, itemTake, isScalar);
-		});
-
-		return self;
-	}
-
-	self.status = STATUS_READING;
-
-	if (typeof(fnMap) === STRING)
-		fnMap = filterPrepare(fnMap);
-
-	if (fnMap === null)
-		fnMap = function(o) { return o; };
-
-	self.db.emit('view', true, self.name, 0);
-	self.countRead++;
-
-	var selected = [];
-	var current = '';
-	var count = 0;
-	var resume = true;
-
-	var fnBuffer = function(buffer) {
-		current += buffer;
-		return current;
-	};
-
-	var fnItem = function(err, doc) {
-
-		if (!resume)
-			return;
-
-		// clear buffer;
-		current = '';
-
-		if (err)
-			return;
-
-		var item = fnMap(doc);
-		if (!item)
-			return;
-
-		count++;
-
-		if (skip && count <= skip)
-			return;
-
-		if (!isScalar)
-			selected.push(item === true ? doc : item);
-
-		if (take > 0 && selected.length === take)
-			resume = false;
-	};
-
-	self.file.open(self.filename, MAX_BUFFER_SIZE, function(buffer) {
-
-		if (skipCount && !resume) {
-			count = -1;
-			return false;
-		}
-
-		onBuffer(buffer, fnItem, fnBuffer);
-		return resume;
-
-	}, function() {
-
-		self.countRead--;
-		self.next();
-
-		setImmediate(function() {
-			self.emit('view', false, self.name, count);
-			fnCallback(null, selected, count);
-		});
-	});
-
-	return self;
-};
-
-/*
-	View internal operation
-	@fnCallback {Function}
-	return {View}
-*/
-View.prototype.operation = function(fnCallback) {
-
-	var self = this;
-
-	if (fnCallback)
-		self.pendingOperation.push(fnCallback);
-
-	if (self.status !== STATUS_UNKNOWN)
-		return self;
-
-	self.status = STATUS_LOCKING;
-	var operation = self.pendingOperation.shift();
-
-	operation(function() {
-		self.next();
-	});
-
-	return self;
-};
-
-/*
-	Internal function
-*/
-View.prototype.next = function() {
-
-	var self = this;
-
-	self.status = STATUS_UNKNOWN;
-
-	// ReadStream is open, ... waiting for close
-	if (self.countRead) {
-		self.status = STATUS_READING;
-		return;
-	}
-
-	if (self.pendingOperation.length) {
-		self.operation();
-		return;
-	}
-
-	// read data
-	if (self.pendingRead.length) {
-
-		var max = self.pendingRead.length;
-
-		if (max > MAX_READSTREAM)
-			max = MAX_READSTREAM;
-
-		for (var i = 0; i < max; i++)
-			self.pendingRead.shift()();
-
-		return;
-	}
-};
-
-// ========================================================================
-// STORED PROTOTYPE
-// ========================================================================
-
-/*
-	Create a new stored function
-	@name {String}
-	@fn {Function}
-	@fnCallback {Function} :: optional
-	@changes {String} :: optional
-	return {Database}
-*/
-Stored.prototype.create = function(name, fn, fnCallback, changes) {
-
-	if (typeof(fnCallback) === STRING) {
-		var tmp = changes;
-		changes = fnCallback;
-		fnCallback = tmp;
-	}
-
-	var self = this;
-
-	self.db.meta.stored[name] = fn.toString();
-	self.db._metaSave(fnCallback);
-
-	delete self.cache[name];
-
-	if (changes)
-		self.db.changelog.insert(changes);
-
-	self.db.emit('stored/create', name);
-
-	return self.db;
-};
-
-Stored.prototype.$$create = function(name, fn, changes) {
-	var self = this;
-	return function(callback) {
-		self.create(name, fn, callback, changes);
-	};
-};
-
-
-/*
-	Remove a stored function
-	@name {String}
-	@fnCallback {Function} :: optional
-	@changes {String} :: optional
-	return {Database}
-*/
-Stored.prototype.remove = function(name, fnCallback, changes) {
-
-	var self = this;
-
-	if (typeof(fnCallback) === STRING) {
-		var tmp = changes;
-		changes = fnCallback;
-		fnCallback = tmp;
-	}
-
-	if (changes)
-		self.db.changelog.insert(changes);
-
-	delete self.cache[name];
-	delete self.db.meta.stored[name];
-
-	self.db._metaSave(fnCallback);
-
-	return self.db;
-};
-
-Stored.prototype.$$remove = function(name, changes) {
-	var self = this;
-	return function(callback) {
-		self.remove(name, callback, changes);
-	};
-};
-
-/*
-	Clear all stored functions
-	@fnCallback {Function} :: optional
-	@changes {String} :: optional
-	return {Database}
-*/
-Stored.prototype.clear = function(fnCallback, changes) {
-
-	var self = this;
-
-	if (typeof(fnCallback) === STRING) {
-		var tmp = changes;
-		changes = fnCallback;
-		fnCallback = tmp;
-	}
-
-	if (changes)
-		self.db.changelog.insert(changes);
-
-	self.cache = {};
-	self.db.meta.stored = {};
-	self.db._metaSave(fnCallback);
-
-	return self.db;
-};
-
-Stored.prototype.$$clear = function(changes) {
-	var self = this;
-	return function(callback) {
-		self.clear(callback, changes);
-	};
-};
-
-/*
-	Execute a stored function
-	@name {String}
-	@params {Object} :: params
-	@fnCallback {Function} :: optional
-	@changes {String} :: optional
-	return {Stored}
-*/
-Stored.prototype.execute = function(name, params, fnCallback, changes) {
-
-	var self = this;
-	var type = typeof(params);
-
-	if (type === FUNCTION) {
-		changes = fnCallback;
-		fnCallback = params;
-		params = null;
-	}
-
-	if (typeof(fnCallback) === STRING) {
-		var tmp = changes;
-		changes = fnCallback;
-		fnCallback = tmp;
-	}
-
-	if (changes)
-		self.db.changelog.insert(changes);
-
-	var fn = self.db.meta.stored[name];
-
-	if (!fn) {
-		if (fnCallback)
-			fnCallback();
-		return;
-	}
-
-	var cache = self.cache[name];
-	self.db.emit('stored', name);
-
-	if (!fn) {
-		if (fnCallback)
-			fnCallback();
-		return;
-	}
-
-	if (!cache) {
-		fn = eval('(' + fn + ')');
-		self.cache[name] = fn;
-	} else
-		fn = cache;
-
-	if (!fnCallback)
-		fnCallback = function() {};
-
-	fn.call(self.db, self.db, fnCallback, params || null);
-	return self;
-};
-
-Stored.prototype.$$execute = function(name, params, changes) {
-	var self = this;
-	return function(callback) {
-		self.execute(name, params, callback, changes);
-	};
-};
-
-// ========================================================================
-// BINARY PROTOTYPE
-// ========================================================================
-
-/*
-	Insert binary file
-	@name {String} :: filename without path
-	@type {String} :: content type
-	@buffer {Buffer} :: binary data or base64
-	@fnCallback {Function} :: optional, params: @id {String}, @header {Object}
-	@changes {String} :: optional, insert description
-	return {String} :: return ID - identificator
-*/
-Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
 
 	if (typeof(buffer) === STRING)
 		buffer = new Buffer(buffer, 'base64');
+	else if (buffer.resume)
+		return self.insert_stream(null, name, type, buffer, callback);
 
-	if (buffer.resume)
-		return this.insert_stream(null, name, type, buffer, callback, changes);
-
-	if (typeof(fnCallback) === STRING) {
-		changes = fnCallback;
-		fnCallback = null;
-	}
-
-	var self = this;
 	var size = buffer.length;
 	var dimension;
+	var ext = framework_utils.getExtension(name);
 
 	self.check();
 
-	if (name.indexOf('.gif') !== -1)
-		dimension = dimensionGIF(buffer);
-	else if (name.indexOf('.png') !== -1)
-		dimension = dimensionPNG(buffer);
-	else if (name.indexOf('.jpg') !== -1)
-		dimension = dimensionJPG(buffer);
+	switch (ext) {
+		case '.gif':
+			dimension = framework_image.measureGIF(buffer);
+			break;
+		case '.png':
+			dimension = framework_image.measurePNG(buffer);
+			break;
+		case '.jpg':
+		case '.jpeg':
+			dimension = framework_image.measureJPG(buffer);
+			break;
+		case '.svg':
+			dimension = framework_image.measureSVG(buffer);
+			break;
+	}
 
 	if (!dimension)
 		dimension = { width: 0, height: 0 };
@@ -1994,96 +941,90 @@ Binary.prototype.insert = function(name, type, buffer, fnCallback, changes) {
 	header.fill(' ');
 	header.write(JSON.stringify({ name: name, size: size, type: type, width: dimension.width, height: dimension.height }));
 
-	var id = new Date().getTime().toString() + Math.random().toString(36).substring(10);
+	var id = new Date().getTime().toString() + framework_utils.GUID(10);
 	var key = self.db.name + '#' + id;
-	var stream = fs.createWriteStream(path.join(self.directory, key + EXTENSION_BINARY));
+	var stream = Fs.createWriteStream(path.join(self.directory, key + EXTENSION_BINARY));
 
 	stream.write(header, 'binary');
 	stream.end(buffer);
-	stream = null;
+	CLEANUP(stream);
 
-	if (changes)
-		self.db.changelog.insert(changes);
-
-	if (fnCallback)
-		fnCallback(null, id, header);
+	if (callback)
+		callback(null, id, header);
 
 	return id;
 };
 
-Binary.prototype.insert_stream = function(id, name, type, stream, fnCallback, changes) {
+Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 
+	var self = this;
 	self.check();
 
 	var header = new Buffer(BINARY_HEADER_LENGTH);
 	header.fill(' ');
-	header.write(JSON.stringify({ name: name, size: size, type: type, width: 0, height: 0 }));
+	header.write(JSON.stringify({ name: name, size: 0, type: type, width: 0, height: 0 }));
 
 	if (!id)
-		id = new Date().getTime().toString() + Math.random().toString(36).substring(10);
+		id = new Date().format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
 
 	var key = self.db.name + '#' + id;
-	var stream = fs.createWriteStream(path.join(self.directory, key + EXTENSION_BINARY));
+	var writer = Fs.createWriteStream(framework_utils.join(self.directory, key + EXTENSION_BINARY));
 
-	stream.write(header, 'binary');
-	stream.pipe(stream);
-	stream = null;
+	writer.write(header, 'binary');
+	stream.pipe(writer);
 
-	if (changes)
-		self.db.changelog.insert(changes);
+	CLEANUP(writer);
 
-	if (fnCallback)
-		fnCallback(null, id, header);
+	if (callback)
+		callback(null, id, header);
 
 	return id;
 };
 
-Binary.prototype.$$insert = function(name, type, buffer, changes) {
-	var self = this;
-	return function(callback) {
-		self.insert(name, type, buf, callback, changes);
-	};
-};
+Binary.prototype.update = function(id, name, buffer, callback) {
 
-/*
-	Update binary file
-	@id {String}
-	@name {String} :: filename without path
-	@type {String} :: content type
-	@buffer {Buffer} :: binary data or base64
-	@fnCallback {Function} :: optional, params: @id {String}, @header {Object}
-	@changes {String} :: optional, insert description
-	return {String} :: return ID - identificator
-*/
-Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) {
+	var type = framework_utils.getContentType(framework_utils.getExtension(name));
+	var isfn = typeof(buffer) === 'function';
+	if (isfn || !buffer) {
+
+		if (isfn) {
+			callback = buffer;
+			buffer = undefined;
+		}
+
+		var reader = Fs.createReadStream(name);
+		CLEANUP(reader);
+		return self.insert_stream(id, framework_utils.getName(name), type, reader, callback);
+	}
 
 	if (typeof(buffer) === STRING)
 		buffer = new Buffer(buffer, 'base64');
 
 	if (buffer.resume)
-		return this.insert_stream(id, name, type, buffer, callback, changes);
-
-	if (typeof(fnCallback) === STRING) {
-		changes = fnCallback;
-		fnCallback = null;
-	}
+		return this.insert_stream(id, name, type, buffer, callback);
 
 	var self = this;
 	var size = buffer.length;
 	var dimension;
-	var key = id;
+	var ext = framework_utils.getExtension(name);
 
 	self.check();
 
-	if (key.indexOf('#') === -1)
-		key = self.db.name + '#' + key;
-
-	if (name.indexOf('.gif') !== -1)
-		dimension = dimensionGIF(buffer);
-	else if (name.indexOf('.png') !== -1)
-		dimension = dimensionPNG(buffer);
-	else if (name.indexOf('.jpg') !== -1)
-		dimension = dimensionJPG(buffer);
+	switch (ext) {
+		case '.gif':
+			dimension = framework_image.measureGIF(buffer);
+			break;
+		case '.png':
+			dimension = framework_image.measurePNG(buffer);
+			break;
+		case '.jpg':
+		case '.jpeg':
+			dimension = framework_image.measureJPG(buffer);
+			break;
+		case '.svg':
+			dimension = framework_image.measureSVG(buffer);
+			break;
+	}
 
 	if (!dimension)
 		dimension = { width: 0, height: 0 };
@@ -2092,34 +1033,17 @@ Binary.prototype.update = function(id, name, type, buffer, fnCallback, changes) 
 	header.fill(' ');
 	header.write(JSON.stringify({ name: name, size: size, type: type, width: dimension.width, height: dimension.height }));
 
-	var stream = fs.createWriteStream(path.join(self.directory, key + EXTENSION_BINARY));
-
+	var stream = Fs.createWriteStream(framework_utils.join(self.directory, id + EXTENSION_BINARY));
 	stream.write(header, 'binary');
 	stream.end(buffer);
-	stream = null;
+	CLEANUP(stream);
 
-	if (changes)
-		self.db.changelog.insert(changes);
-
-	if (fnCallback)
-		fnCallback(null, id, header);
+	if (callback)
+		callback(null, id, header);
 
 	return id;
 };
 
-Binary.prototype.$$update = function(id, name, type, buffer, changes) {
-	var self = this;
-	return function(callback) {
-		self.update(id, name, type, update, callback, changes);
-	};
-};
-
-/*
-	Read binary file
-	@id {String} :: identificator
-	@callback {Function} :: params: @err {Error}, @readStream {Stream}, @header {Object} / header.name {String}, header.size {Number}, header.type {String}
-	return {Database}
-*/
 Binary.prototype.read = function(id, callback) {
 
 	var self = this;
@@ -2129,37 +1053,20 @@ Binary.prototype.read = function(id, callback) {
 	if (id.indexOf('#') === -1)
 		id = self.db.name + '#' + id;
 
-	var filename = path.join(self.directory, id + EXTENSION_BINARY);
-	var stream = fs.createReadStream(filename, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
+	var filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
+	var stream = Fs.createReadStream(filename, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
 
-	stream.on('error', function(err) {
-		callback(err, null, null);
-	});
-
+	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
 		var json = new Buffer(buffer, 'binary').toString('utf8').replace(/^[\s]+|[\s]+$/g, '');
-		stream = fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
+		stream = Fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
 		callback(null, stream, JSON.parse(json));
 	});
 
 	return self.db;
 };
 
-Binary.prototype.$$read = function(id) {
-	var self = this;
-	return function(callback) {
-		self.read(id, callback);
-	};
-};
-
-/*
-	Remove binary file
-	@id {String} :: identificator
-	@fnCallback {Function} :: params: @removed {Boolean}
-	@changes {String} :: optional, remove description
-	return {Database}
-*/
-Binary.prototype.remove = function(id, fnCallback, changes) {
+Binary.prototype.remove = function(id, callback) {
 
 	var self = this;
 	var key = id;
@@ -2169,422 +1076,99 @@ Binary.prototype.remove = function(id, fnCallback, changes) {
 	if (key.indexOf('#') === -1)
 		key = self.db.name + '#' + key;
 
-	var filename = path.join(self.directory, key + EXTENSION_BINARY);
+	var filename = framework_utils.join(self.directory, key + EXTENSION_BINARY);
 
-	if (typeof(fnCallback) === STRING) {
-		changes = fnCallback;
-		fnCallback = null;
-	}
-
-	fs.exists(filename, function(exists) {
-
-		if (changes)
-			self.db.changelog.insert(changes);
-
-		if (!exists) {
-
-			if (fnCallback)
-				fnCallback(null, false);
-
-			return;
-		}
-
-		fs.unlink(filename, function(err) {
-			if (fnCallback)
-				fnCallback(err, true);
-		});
+	Fs.unlink(filename, function(err) {
+		if (callback)
+			callback(null, err ? false : true);
 	});
 
 	return self.db;
 };
 
-Binary.prototype.$$remove = function(id, changes) {
-	var self = this;
-	return function(callback) {
-		self.remove(id, callback, changes);
-	};
-};
-
-/**
- * Check a directory existence
- * @return {Binary}
- */
 Binary.prototype.check = function() {
 
 	var self = this;
-
 	if (self.exists)
 		return self;
 
 	self.exists = true;
 
-	if (fs.existsSync(self.directory))
-		return self;
+	try {
+		Fs.mkdirSync(self.directory);
+	} catch (err) {};
 
-	fs.mkdirSync(self.directory);
 	return self;
 };
 
-// ========================================================================
-// CHANGELOG PROTOTYPE
-// ========================================================================
+// ======================================================
+// Helper functions
+// ======================================================
 
-/*
-	Append change to changelog
-	@description {String}
-	return {Database}
-*/
-Changelog.prototype.insert = function(description) {
-
-	var self = this;
-
-	if (!self.db.changes)
-		return self.db;
-
-	if (description === undefined)
-		return self.db;
-
-	if (!(description instanceof Array))
-		description = [description || ''];
-
-	if (description.length === 0)
-		return self.db;
-
-	var lines = '';
-	var dd = new Date();
-
-	var y = dd.getFullYear();
-	var M = (dd.getMonth() + 1).toString();
-	var d = dd.getDate().toString();
-	var h = dd.getHours().toString();
-	var m = dd.getMinutes().toString();
-	var s = dd.getSeconds().toString();
-
-	if (M.length === 1)
-		M = '0' + M;
-
-	if (d.length === 1)
-		d = '0' + d;
-
-	if (m.length === 1)
-		m = '0' + m;
-
-	if (h.length === 1)
-		h = '0' + h;
-
-	if (s.length === 1)
-		s = '0' + s;
-
-	var dt = y + '-' + M + '-' + d + ' ' + h + ':' + m + ':' + s;
-
-	description.forEach(function(line) {
-		lines += dt + ' | ' + line + NEWLINE;
-		self.db.emit('change', line);
-	});
-
-	fs.appendFile(self.filename, lines, function(err) {});
-	return self.db;
-};
-
-/*
-	Read changelog
-	fnCallback {Function}
-*/
-Changelog.prototype.read = function(fnCallback) {
-
-	var self = this;
-
-	fs.exists(self.filename, function(exist) {
-
-		if (!exist) {
-			fnCallback(null, []);
-			return;
-		}
-
-		fs.readFile(self.filename, function(err, data) {
-
-			if (err) {
-				fnCallback(err, []);
-				return;
-			}
-
-			var lines = data.toString('utf8').split('\n');
-
-			if (lines[lines.length - 1] === '')
-				lines.pop();
-
-			fnCallback(null, lines);
-		});
-	});
-
-	return self.db;
-};
-
-Changelog.prototype.$$read = function() {
-	var self = this;
-	return function(callback) {
-		self.read(callback);
-	}
-};
-
-/*
-	Clear changelog
-	fnCallback {Function} :: optional
-	return {Database}
-*/
-Changelog.prototype.clear = function(fnCallback) {
-	var self = this;
-	fs.exists(self.filename, function(exist) {
-
-		if (!exist) {
-
-			if (fnCallback)
-				fnCallback(false);
-
-			return;
-		}
-
-		fs.unlink(self.filename, function(err, data) {
-			if (err) {
-				if (fnCallback)
-					fnCallback(err, false);
-				return;
-			}
-
-			if (fnCallback)
-				fnCallback(null, true);
-		});
-
-	});
-	return self.db;
-};
-
-Changelog.prototype.$$clear = function() {
-	var self = this;
-	return function(callback) {
-		self.clear(callback);
-	}
-};
-
-
-// ========================================================================
-// READER PROTOTYPE
-// ========================================================================
-
-FileReader.prototype.open = function(filename, size, fnBuffer, fnCallback) {
-	var self = this;
-	fs.open(filename, 'r', function(err, fd) {
-
-		if (err) {
-			fnCallback(false);
-			return;
-		}
-
-		size = size || 1024;
-
-		var next = function next(cancel, position) {
-
-			if (cancel) {
-				fs.close(fd);
-				fd = null;
-				fnCallback(true);
-				return;
-			}
-
-			self.read(fd, position + size, size, fnBuffer, next);
-		};
-
-		self.read(fd, 0, size, fnBuffer, next);
-	});
-};
-
-FileReader.prototype.read = function(fd, position, size, fnBuffer, next) {
-	var buffer = new Buffer(size);
-	fs.read(fd, buffer, 0, size, position, function(err, num) {
-
-		var cancel = num !== size;
-		var data = buffer.toString('utf8', 0, num);
-
-		if (cancel) {
-			data = data.replace(/\s+$/g, '');
-			if (data[data.length - 1] !== NEWLINE)
-				data += NEWLINE;
-			fnBuffer(data);
-			next(true);
-			return;
-		}
-
-		try {
-			cancel = !fnBuffer(data);
-		} catch (err) {
-			cancel = true;
-		}
-
-		setImmediate(function() {
-			next(cancel, position, size);
-		});
-
-	});
-};
-
-// ========================================================================
-// INTERNAL
-// ========================================================================
-
-/*
-	Append multiple documents to file
-	@filename {String}
-	@arr {Array of Object}
-	@fnCallback {Function}
-*/
-function appendFile(filename, arr, fnCallback, db) {
-
-	if (!arr.length) {
-		fnCallback();
-		return;
-	}
-
-	var lines = '';
-
-	arr.slice(0, 30).forEach(function(o) {
-		if (o && typeof(o.$clean) === FUNCTION)
-			lines += JSON.stringify(o.$clean()) + NEWLINE;
-		else
-			lines += JSON.stringify(o) + NEWLINE;
-	});
-
-	fs.appendFile(filename, lines, function(err) {
-
-		if (err)
-			db.emit('error', err);
-
-		appendFile(filename, arr.slice(30), fnCallback, db);
-	});
+function compare_eq(item, doc) {
+	return item.value === doc[item.name];
 }
 
-/*
-	Eval string and return function
-	@fnFilter {String}
-	return {Function}
-*/
-function filterPrepare(fnFilter) {
-	if (!fnFilter.length)
-		return function() { return true; };
-	return eval('(function(doc){' + (fnFilter.indexOf('return ') === -1 ? 'return ' : '') + fnFilter + '})');
+function compare_lt(item, doc) {
+	return item.value < doc[item.name];
 }
 
-/*
-	Buffer reader (internal function)
-	@buffer {String}
-	@fnItem {Function}
-	@fnBuffer {Function}
-*/
-function onBuffer(buffer, fnItem, fnBuffer) {
+function compare_gt(item, doc) {
+	return item.value > doc[item.name];
+}
 
-	var index = buffer.indexOf(NEWLINE);
+function compare_eqlt(item, doc) {
+	return item.value <= doc[item.name];
+}
 
-	if (index === -1) {
-		fnBuffer(buffer);
-		return;
-	}
+function compare_eqgt(item, doc) {
+	return item.value >= doc[item.name];
+}
 
-	var json = fnBuffer(buffer.substring(0, index));
+function compare_not(item, doc) {
+	return item.value !== doc[item.name];
+}
 
-	if (json) {
-		try
-		{
-			fnItem(null, JSON.parse(json), json);
-		} catch (ex) {
-			fnItem(ex, null, json);
+function compare_likebeg(item, doc) {
+	var val = doc[item.name];
+	return val ? val.startsWith(item.value) : false;
+}
+
+function compare_likeend(item, doc) {
+	var val = doc[item.name];
+	return val ? val.endsWith(item.value) : false;
+}
+
+function compare_like(item, doc) {
+	var val = doc[item.name];
+	return val ? val.indexOf(item.value) !== -1 : false;
+}
+
+function compare_between(item, doc) {
+	var val = doc[item.name];
+	return val >= item.a && val <= item.b;
+}
+
+function compare_in(item, doc) {
+	var val = doc[item.name];
+	if (val instanceof Array) {
+		for (var i = 0, length = val.length; i < length; i++) {
+			if (item.value.indexOf(val[i]) !== -1)
+				return true;
 		}
+		return false;
 	}
-
-	onBuffer(buffer.substring(index + 1), fnItem, fnBuffer);
+	return item.value.indexOf(val) !== -1;
 }
 
-/*
-	Create default object for updating database (internal function)
-	@fnUpdate {Function}
-	@fnCallback {Function}
-	@type {String}
-*/
-function updatePrepare(fnUpdate, fnCallback, changes, type) {
-
-	if (typeof(fnUpdate) === STRING)
-		fnUpdate = filterPrepare(fnUpdate);
-
-	return { filter: fnUpdate, callback: fnCallback, count: 0, type: type, changes: changes };
-}
-
-// INTERNAL
-
-var sof = {
-	0xc0: true,
-	0xc1: true,
-	0xc2: true,
-	0xc3: true,
-	0xc5: true,
-	0xc6: true,
-	0xc7: true,
-	0xc9: true,
-	0xca: true,
-	0xcb: true,
-	0xcd: true,
-	0xce: true,
-	0xcf: true
-};
-
-function u16(buf, o) {
-	return buf[o] << 8 | buf[o + 1];
-}
-
-function u32(buf, o) {
-	return buf[o] << 24 | buf[o + 1] << 16 | buf[o + 2] << 8 | buf[o + 3];
-}
-
-function dimensionGIF(buffer) {
-	return { width: buffer[6], height: buffer[8] };
-};
-
-// MIT
-// Written by TJ Holowaychuk
-// visionmedia
-function dimensionJPG(buffer) {
-
-	var len = buffer.length;
-	var o = 0;
-
-	var jpeg = 0xff == buffer[0] && 0xd8 == buffer[1];
-
-	if (!jpeg)
-		return;
-
-	o += 2;
-
-	while (o < len) {
-		while (0xff != buffer[o]) o++;
-		while (0xff == buffer[o]) o++;
-
-		if (!sof[buffer[o]]) {
-			o += u16(buffer, ++o);
-			continue;
+function compare_notin(item, doc) {
+	var val = doc[item.name];
+	if (val instanceof Array) {
+		for (var i = 0, length = val.length; i < length; i++) {
+			if (item.value.indexOf(val[i]) !== -1)
+				return false;
 		}
-
-		var w = u16(buffer, o + 6);
-		var h = u16(buffer, o + 4);
-
-		return { width: w, height: h };
+		return true;
 	}
-};
-
-// MIT
-// Written by TJ Holowaychuk
-// visionmedia
-function dimensionPNG(buffer) {
-	return { width: u32(buffer, 16), height: u32(buffer, 16 + 4) };
-};
-
-exports.database = Database;
-exports.load = exports.open = exports.nosql = exports.init = function(filename, directory, changes) {
-	return new Database(filename, directory, changes);
-};
+	return item.value.indexOf(val) === -1;
+}
