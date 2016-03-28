@@ -120,6 +120,21 @@ Database.prototype.find = function(view) {
 	return builder;
 };
 
+Database.prototype.max = function(name ,view) {
+	var self = this;
+	var builder = new DatabaseBuilder();
+
+	if (view) {
+		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
+		setImmediate(() => self.next(6));
+	} else {
+		self.pending_reader.push({ builder: builder, count: 0, view: view });
+		setImmediate(() => self.next(4));
+	}
+
+	return builder;
+};
+
 Database.prototype.one = function(view) {
 	var self = this;
 	var builder = new DatabaseBuilder();
@@ -707,9 +722,9 @@ DatabaseBuilder.prototype.compare = function(doc, index) {
 		if (wasor && filter.scope)
 			continue;
 
-		var res = filter.filter(filter, doc);
+		var res = filter.filter(doc, i, filter);
 
-		if (res) {
+		if (res === true) {
 			can = true;
 			if (filter.scope)
 				wasor = true;
@@ -1105,51 +1120,51 @@ Binary.prototype.check = function() {
 // Helper functions
 // ======================================================
 
-function compare_eq(item, doc) {
+function compare_eq(doc, index, item) {
 	return item.value === doc[item.name];
 }
 
-function compare_lt(item, doc) {
+function compare_lt(doc, index, item) {
 	return item.value < doc[item.name];
 }
 
-function compare_gt(item, doc) {
+function compare_gt(doc, index, item) {
 	return item.value > doc[item.name];
 }
 
-function compare_eqlt(item, doc) {
+function compare_eqlt(doc, index, item) {
 	return item.value <= doc[item.name];
 }
 
-function compare_eqgt(item, doc) {
+function compare_eqgt(doc, index, item) {
 	return item.value >= doc[item.name];
 }
 
-function compare_not(item, doc) {
+function compare_not(doc, index, item) {
 	return item.value !== doc[item.name];
 }
 
-function compare_likebeg(item, doc) {
+function compare_likebeg(doc, index, item) {
 	var val = doc[item.name];
 	return val ? val.startsWith(item.value) : false;
 }
 
-function compare_likeend(item, doc) {
+function compare_likeend(doc, index, item) {
 	var val = doc[item.name];
 	return val ? val.endsWith(item.value) : false;
 }
 
-function compare_like(item, doc) {
+function compare_like(doc, index, item) {
 	var val = doc[item.name];
 	return val ? val.indexOf(item.value) !== -1 : false;
 }
 
-function compare_between(item, doc) {
+function compare_between(doc, index, item) {
 	var val = doc[item.name];
 	return val >= item.a && val <= item.b;
 }
 
-function compare_in(item, doc) {
+function compare_in(doc, index, item) {
 	var val = doc[item.name];
 	if (val instanceof Array) {
 		for (var i = 0, length = val.length; i < length; i++) {
@@ -1161,7 +1176,7 @@ function compare_in(item, doc) {
 	return item.value.indexOf(val) !== -1;
 }
 
-function compare_notin(item, doc) {
+function compare_notin(doc, index, item) {
 	var val = doc[item.name];
 	if (val instanceof Array) {
 		for (var i = 0, length = val.length; i < length; i++) {
