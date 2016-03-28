@@ -1470,8 +1470,8 @@ SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builde
 
 	var self = this;
 
-	if (arg.length === 2 || (result instanceof Error || result instanceof ErrorBuilder)) {
-		if ((result instanceof Error || result instanceof ErrorBuilder) && builder !== result)
+	if (arg.length > 1 || (result instanceof Error || result instanceof ErrorBuilder)) {
+		if ((result instanceof Error || result instanceof ErrorBuilder || typeof(result) === STRING) && builder !== result)
 			builder.push(result);
 		result = arg[1];
 	}
