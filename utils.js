@@ -58,9 +58,7 @@ const VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version_head
 const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'Juny', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-var dnscache = {};
-
-var contentTypes = {
+var CONTENTTYPES = {
 	'aac': 'audio/aac',
 	'ai': 'application/postscript',
 	'appcache': 'text/cache-manifest',
@@ -142,6 +140,7 @@ var contentTypes = {
 	'zip': 'application/zip'
 };
 
+var dnscache = {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /**
@@ -1455,7 +1454,7 @@ exports.isObject = function(value) {
 exports.getContentType = function(ext) {
 	if (ext[0] === '.')
 		ext = ext.substring(1);
-	return contentTypes[ext.toLowerCase()] || 'application/octet-stream';
+	return CONTENTTYPES[ext.toLowerCase()] || 'application/octet-stream';
 };
 
 /**
@@ -1471,6 +1470,7 @@ exports.getExtension = function(filename) {
 		return filename.substring(index);
 	return '';
 };
+
 
 /**
  * Get base name from path
@@ -1583,23 +1583,20 @@ exports.random = function(max, min) {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
+function rnd() {
+	return Math.floor(Math.random() * 65536).toString(16);
+}
+
 /*
 	Create unique identifier
 	@max {Number} :: optional, default 40
 	return {String}
 */
 exports.GUID = function(max) {
-
 	max = max || 40;
-
-	var rnd = function () {
-		return Math.floor(Math.random() * 65536).toString(16);
-	};
-
 	var str = '';
 	for (var i = 0; i < (max / 4) + 1; i++)
 		str += rnd();
-
 	return str.substring(0, max);
 };
 
@@ -4013,6 +4010,11 @@ Array.prototype.orderBy = function(name, asc) {
 				return 0;
 		}
 
+		if (va === undefined)
+			return 1;
+		if (vb === undefined)
+			return -1;
+
 		if (type === 0) {
 			var t = typeof(va);
 			if (t === STRING)
@@ -4049,7 +4051,6 @@ Array.prototype.orderBy = function(name, asc) {
 		}
 
 		return 0;
-
 	});
 
 	return self;
