@@ -278,7 +278,7 @@ Database.prototype.$append = function() {
 			for (var i = 0, length = items.length; i < length; i++) {
 				var callback = items[i].builder.$callback;
 				if (callback)
-					callback(err);
+					callback(err, 1);
 			}
 			next();
 		});
@@ -330,7 +330,7 @@ Database.prototype.$update = function() {
 							doc[item.keys[j]] = val;
 					}
 				} else
-					doc = item.doc;
+					doc = typeof(item.doc) === 'function' ? item.doc(doc) : item.doc;
 
 				item.count++;
 				change = true;
@@ -346,7 +346,7 @@ Database.prototype.$update = function() {
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
 				if (item.builder.$callback)
-					item.builder.$callback(err, item.count);
+					item.builder.$callback(errorhandling(err, item.builder, item.count), item.count);
 			}
 
 			setImmediate(function() {
@@ -387,7 +387,7 @@ Database.prototype.$reader = function() {
 		if (!data)
 			continue;
 
-		item.builder.$callback(null, data.items, data.count);
+		item.builder.$callback(errorhandling(err, item.builder, data.items), data.items, data.count);
 		index--;
 		list.splice(index, 1);
 	}
@@ -420,7 +420,7 @@ Database.prototype.$readerview = function() {
 		if (item.builder.$cache_key) {
 			var data = framework.cache.get(item.builder.$cache_key);
 			if (data) {
-				item.builder.$callback(null, data.items, data.count);
+				item.builder.$callback(errorhandling(err, item.builder, data.items), data.items, data.count);
 				continue;
 			}
 		}
@@ -492,14 +492,14 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 
 			if (!builder.$sort) {
 				if (builder.$first)
-					output = item.response[0];
+					output = item.response ? item.response[0] : undefined;
 				else
 					output = item.response || EMPTYARRAY;
 
 				if (builder.$cache_key)
 					framework.cache.add(builder.$cache_key, { items: output, count: item.count }, builder.$cache_expire);
 
-				builder.$callback(null, output, item.count);
+				builder.$callback(errorhandling(null, builder, output), output, item.count);
 				continue;
 			}
 
@@ -517,14 +517,14 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 			}
 
 			if (builder.$first)
-				output = item.response[0];
+				output = item.response ? item.response[0] : undefined;
 			else
 				output = item.response || EMPTYARRAY;
 
 			if (builder.$cache_key)
 				framework.cache.add(builder.$cache_key, { items: output, count: item.count }, builder.$cache_expire);
 
-			builder.$callback(null, output, item.count);
+			builder.$callback(errorhandling(null, builder, output), output, item.count);
 			builder.done();
 		}
 
@@ -654,7 +654,7 @@ Database.prototype.$remove = function() {
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
 				if (item.builder.$callback)
-					item.builder.$callback(err, item.count);
+					item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 			}
 
 			setImmediate(function() {
@@ -696,8 +696,16 @@ function DatabaseBuilder2() {
 	this.$callback = NOOP;
 }
 
-DatabaseBuilder2.prototype.callback = function(fn) {
+DatabaseBuilder2.prototype.callback = function(fn, emptyerror) {
+
+	if (typeof(fn) === 'string') {
+		var tmp = emptyerror;
+		emptyerror = fn;
+		fn = tmp;
+	}
+
 	this.$callback = fn;
+	this.$callback_emptyerror = emptyerror;
 	return this;
 };
 
@@ -752,6 +760,9 @@ DatabaseBuilder.prototype.compare = function(doc, index) {
 
 	if (!can)
 		return;
+
+	if (this.$prepare)
+		return this.$prepare(doc, index);
 
 	if (!this.$fields)
 		return doc;
@@ -850,8 +861,16 @@ DatabaseBuilder.prototype.skip = function(count) {
 	return this;
 };
 
-DatabaseBuilder.prototype.callback = function(fn) {
+DatabaseBuilder.prototype.callback = function(fn, emptyerror) {
+
+	if (typeof(fn) === 'string') {
+		var tmp = emptyerror;
+		emptyerror = fn;
+		fn = tmp;
+	}
+
 	this.$callback = fn;
+	this.$callback_emptyerror = emptyerror;
 	return this;
 };
 
@@ -919,6 +938,11 @@ DatabaseBuilder.prototype.fields = function() {
 		this.$fields.push(arguments[i]);
 	return this;
 }
+
+DatabaseBuilder.prototype.prepare = function(fn) {
+	this.$prepare = fn;
+	return this;
+};
 
 function Binary(db, directory) {
 	this.db = db;
@@ -1220,4 +1244,13 @@ function compare_notin(doc, index, item) {
 		return true;
 	}
 	return item.value.indexOf(val) === -1;
+}
+
+function errorhandling(err, builder, response) {
+	if (err)
+		return err;
+	var is = response instanceof Array;
+	if (!response || (is && !response.length))
+		return builder.$callback_emptyerror ? new ErrorBuilder().push(builder.$callback_emptyerror) : null;
+	return null;
 }
