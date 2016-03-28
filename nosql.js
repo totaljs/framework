@@ -61,11 +61,12 @@ Database.prototype.meta = function(name, value) {
 	return self;
 };
 
-Database.prototype.insert = function(doc, callback) {
+Database.prototype.insert = function(doc) {
 	var self = this;
-	self.pending_append.push({ doc: JSON.stringify(doc.$clean ? doc.$clean() : doc), callback: callback });
+	var builder = new DatabaseBuilder2();
+	self.pending_append.push({ doc: JSON.stringify(doc.$clean ? doc.$clean() : doc), builder: builder });
 	self.next(1);
-	return self;
+	return builder;
 };
 
 Database.prototype.update = function(doc) {
@@ -172,6 +173,7 @@ Database.prototype.view = function(name) {
 	var builder = new DatabaseBuilder();
 	if (!this.views)
 		this.views = {};
+	this.views[name] = {};
 	this.views[name] = builder;
 	this.views[name].$filename = this.filename.replace(/\.nosql/, '#' + name + '.nosql');
 	return builder;
@@ -274,7 +276,7 @@ Database.prototype.$append = function() {
 
 		Fs.appendFile(self.filename, json.join(NEWLINE) + NEWLINE, function(err) {
 			for (var i = 0, length = items.length; i < length; i++) {
-				var callback = items[i].callback;
+				var callback = items[i].builder.$callback;
 				if (callback)
 					callback(err);
 			}
@@ -690,6 +692,15 @@ Database.prototype.$drop = function() {
 	return self;
 };
 
+function DatabaseBuilder2() {
+	this.$callback = NOOP;
+}
+
+DatabaseBuilder2.prototype.callback = function(fn) {
+	this.$callback = fn;
+	return this;
+};
+
 function DatabaseBuilder() {
 	this.$take = 0;
 	this.$skip = 0;
@@ -795,7 +806,7 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 	return this;
 };
 
-DatabaseBuilder.prototype.like = function(name, value, where) {
+DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(name, value, where) {
 
 	var fn;
 
@@ -811,6 +822,7 @@ DatabaseBuilder.prototype.like = function(name, value, where) {
 			break;
 		case '*':
 			fn = compare_like;
+			value = value instanceof Array ? value : value.toLowerCase();
 			break;
 	}
 
@@ -821,6 +833,16 @@ DatabaseBuilder.prototype.like = function(name, value, where) {
 DatabaseBuilder.prototype.take = function(count) {
 	this.$take = count;
 	return this;
+};
+
+DatabaseBuilder.prototype.limit = function(count) {
+	this.$take = count;
+	return this;
+};
+
+DatabaseBuilder.prototype.page = function(page, limit) {
+	this.skip(value * limit)
+	return this.take(limit);
 };
 
 DatabaseBuilder.prototype.skip = function(count) {
@@ -891,7 +913,7 @@ DatabaseBuilder.prototype.cache = function(key, expire) {
 };
 
 DatabaseBuilder.prototype.fields = function() {
-	if (this.$fields)
+	if (!this.$fields)
 		this.$fields = [];
 	for (var i = 0, length = arguments.length; i < length; i++)
 		this.$fields.push(arguments[i]);
@@ -1156,7 +1178,19 @@ function compare_likeend(doc, index, item) {
 
 function compare_like(doc, index, item) {
 	var val = doc[item.name];
-	return val ? val.indexOf(item.value) !== -1 : false;
+
+	if (!val)
+		return false;
+
+	if (item.value instanceof Array) {
+		for (var i = 0, length = item.value.length; i < length; i++) {
+			if (val.indexOf(item.value[i]) !== -1)
+				return true;
+		}
+		return false;
+	}
+
+	return val.toLowerCase().indexOf(item.value) !== -1;
 }
 
 function compare_between(doc, index, item) {
