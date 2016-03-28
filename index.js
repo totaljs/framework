@@ -263,6 +263,10 @@ global.GETSCHEMA = function(group, name) {
 	return framework_builders.getschema(group, name);
 };
 
+global.UID = function() {
+	return UIDGENERATOR.date + (UIDGENERATOR.index++).padLeft(4, '0') + UIDGENERATOR.instance;
+};
+
 global.MAKE = global.TRANSFORM = function(transform, fn) {
 
 	if (typeof(transform) === TYPE_FUNCTION) {
@@ -341,6 +345,8 @@ global.CLEANUP = function(stream, callback) {
 		stream.on('end', fn);
 	else
 		stream.on('finish', fn);
+
+	stream.on('error', fn);
 };
 
 global.SUCCESS = function(success, value) {
@@ -408,14 +414,15 @@ global.is_server = true;
 
 var directory = framework_utils.$normalize(require.main ? path.dirname(require.main.filename) : process.cwd());
 
-// F._service() changes the value below:
+// F._service() changes the values below:
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
+const UIDGENERATOR = { date: new Date().format('yyMMddHHmm').substring(1), instance: 'abcdefghijklmnoprstuwxy'.split('').randomize().join('').substring(0, 3), index: 1 };
 
 function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-9';
+	this.version_header = '2.0.0-10';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -795,7 +802,7 @@ Framework.prototype.database = function(name) {
 	if (db !== undefined)
 		return db;
 	self.path.verify('databases');
-	db = framework_nosql.load(self.path.databases(name), self.path.databases(name + '-binary'), true);
+	db = framework_nosql.load(self.path.databases(name));
 	self.databases[name] = db;
 	return db;
 };
@@ -2781,7 +2788,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		return self;
 	}
 
-	var plus = self.id === null ? '' : 'instance-' + self.id + '-';
+	var plus = self.id ? 'instance-' + self.id + '-' : '';
 
 	if (type === 'view') {
 
@@ -4048,7 +4055,7 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
 			return;
 		}
 
-		var file = self.path.temp((self.id === null ? '' : 'instance-' + self.id + '-') + createTemporaryKey(uri.pathname));
+		var file = self.path.temp((self.id ? 'instance-' + self.id + '-' : '') + createTemporaryKey(uri.pathname));
 		self.path.verify('temp');
 		fs.writeFileSync(file, self.compileContent(extension, framework_internal.parseBlock(self.routes.blocks[uri.pathname], buffer.toString(ENCODING)), filename), ENCODING);
 		self.temporary.path[key] = file + ';' + fs.statSync(file).size;
@@ -4969,7 +4976,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		return;
 	}
 
-	var plus = self.id === null ? '' : 'instance-' + self.id + '-';
+	var plus = self.id ? 'instance-' + self.id + '-' : '';
 
 	name = self.path.temp(plus + key);
 	self.temporary.processing[key] = true;
@@ -6105,7 +6112,12 @@ Framework.prototype.reconnect = function() {
  * @return {Framework}
  */
 Framework.prototype._service = function(count) {
+
 	var self = this;
+	var dt = new Date();
+
+	UIDGENERATOR.date = dt.format('yyMMddHHmm').substring(1);
+	UIDGENERATOR.index = 1;
 
 	if (self.config.debug)
 		self.resources = {};
@@ -6151,7 +6163,7 @@ Framework.prototype._service = function(count) {
 
 	// Update expires date
 	if (count % 1000 === 0)
-		DATE_EXPIRES = new Date().add('y', 1).toUTCString();
+		DATE_EXPIRES = dt.add('y', 1).toUTCString();
 
 	self.emit('service', count);
 
@@ -6161,7 +6173,7 @@ Framework.prototype._service = function(count) {
 	if (!length)
 		return self;
 
-	var expire = new Date().getTime();
+	var expire = dt.getTime();
 	var index = 0;
 
 	while (true) {
@@ -6176,7 +6188,7 @@ Framework.prototype._service = function(count) {
 		if (!schedule.repeat)
 			self.schedules.splice(index, 1);
 		else
-			schedule.expire = new Date().add(schedule.repeat);
+			schedule.expire = dt.add(schedule.repeat);
 
 		schedule.fn.call(self);
 	}
@@ -13518,7 +13530,7 @@ function WebSocketClient(req, socket, head) {
 	// 3 = JSON
 
 	this.type = 2;
-	this._isClosed = false;
+	// this._isClosed = false;
 }
 
 WebSocketClient.prototype = {
