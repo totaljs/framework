@@ -45,6 +45,7 @@
 - improved: WebSocket.send() for JSON communication
 - improved: code (a lot)
 - improved: preparing `SchemaBuilderEntity`
+- improved: performance
 
 ======= 1.9.7
 

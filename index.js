@@ -182,6 +182,11 @@ HEADERS['responseBinary.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public';
 HEADERS['responseBinary.compress']['Content-Encoding'] = 'gzip';
 HEADERS['responseBinary'] = {};
 HEADERS['responseBinary'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS.redirect = { 'Location': '' };
+HEADERS.authorization = { user: '', password: '', empty: true };
+HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true }
+HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
+HEADERS.workers = { cwd: '' };
 
 var _controller = '';
 var _test;
@@ -422,7 +427,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-11';
+	this.version_header = '2.0.0-12';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -564,7 +569,7 @@ function Framework() {
 
 	this.workers = {};
 	this.databases = {};
-	this.directory = directory;
+	this.directory = HEADERS.workers.cwd = directory;
 	this.isLE = os.endianness ? os.endianness() === 'LE' : true;
 	this.isHTTPS = false;
 
@@ -4854,7 +4859,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	if (compress) {
 		res.writeHead(200, returnHeaders);
-		fsStreamRead(name, function(stream, next) {
+		fsStreamRead(name, undefined, function(stream, next) {
 			framework_internal.onFinished(res, function(err) {
 				framework_internal.destroyStream(stream);
 				next();
@@ -4871,7 +4876,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	}
 
 	res.writeHead(200, returnHeaders);
-	fsStreamRead(name, function(stream, next) {
+	fsStreamRead(name, undefined, function(stream, next) {
 		stream.pipe(res);
 		framework_internal.onFinished(res, function(err) {
 			framework_internal.destroyStream(stream);
@@ -8744,7 +8749,7 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 	if (!args)
 		args = [];
 
-	fork = child.fork(filename, args, { cwd: directory });
+	fork = child.fork(filename, args, HEADERS.worker);
 
 	if (!id)
 		id = name + '_' + new Date().getTime();
@@ -12508,9 +12513,11 @@ Controller.prototype.redirect = function(url, permanent) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
+	HEADERS.redirect.url = url;
+
 	self.subscribe.success();
 	self.res.success = true;
-	self.res.writeHead(permanent ? 301 : 302, { 'Location': url });
+	self.res.writeHead(permanent ? 301 : 302, HEADERS.redirect);
 	self.res.end();
 	framework._request_stats(false, false);
 	framework.emit('request-end', self.req, self.res);
@@ -14712,13 +14719,13 @@ http.IncomingMessage.prototype.cookie = function(name) {
 http.IncomingMessage.prototype.authorization = function() {
 
 	var self = this;
-	var authorization = self.headers['authorization'] || '';
-	var result = { user: '', password: '', empty: true };
+	var authorization = self.headers['authorization'];
 
 	if (!authorization)
-		return result;
+		return HEADERS.authorization;
 
 	var arr = new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
+	var result = { user: '', password: '', empty: true };
 	result.user = arr[0] || '';
 	result.password = arr[1] || '';
 	result.empty = !result.user || !result.password;
@@ -14845,16 +14852,21 @@ function fsFileExists(filename, callback) {
 	});
 };
 
-function fsStreamRead(filename, options, callback, next) {
+function fsStreamRead(filename, options, callback) {
+
 	if (!callback) {
 		callback = options;
 		options = undefined;
 	}
 
-	var opt = { flags: 'r', mode: '0666', autoClose: true };
+	var opt;
 
-	if (options)
-		framework_utils.extend(opt, options, true);
+	if (options) {
+		opt = HEADERS.fsStreamReadRange
+		opt.start = options.start;
+		opt.end = options.end;
+	} else
+		opt = HEADERS.fsStreamRead;
 
 	U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
 		var stream = fs.createReadStream(filename, opt);
