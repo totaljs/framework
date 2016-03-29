@@ -3968,7 +3968,10 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 
 	switch (typeof(field)) {
 		case STRING:
-			type = 1;
+			if (field.length === 26 && field[11] === 'T' && field[5] === '-')
+				type = 4;
+			else
+				type = 1;
 			break;
 		case NUMBER:
 			type = 2;
@@ -3977,7 +3980,10 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 			type = 3;
 			break;
 		default:
-			return self;
+			if (!exports.isDate(field))
+				return self;
+			type = 4;
+			break;
 	}
 
 	quicksort(self, function(a, b) {
@@ -3988,22 +3994,30 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 		// String
 		if (type === 1) {
 			if (va && vb)
-				return asc ? va.removeDiacritics().localeCompare(vb.removeDiacritics()) : vb.removeDiacritics().localeCompare(va.removeDiacritics());
-			return asc ? -1 : 1;
-		}
-
-		if (type === 2) {
+				return asc ? va.substring(0, 3).removeDiacritics().localeCompare(vb.substring(0, 3).removeDiacritics()) : vb.substring(0, 3).removeDiacritics().localeCompare(va.substring(0, 3).removeDiacritics());
+			return 0;
+		} else if (type === 2) {
 			if (va > vb)
 				return asc ? 1 : -1;
-			if (va < vb)
+			else if (va < vb)
 				return asc ? -1 : 1;
 			return 0;
-		}
-
-		if (type === 3) {
+		} else if (type === 3) {
 			if (va === true && vb === false)
 				return asc ? 1 : -1;
-			if (va === false && vb === true)
+			else if (va === false && vb === true)
+				return asc ? -1 : 1;
+			return 0;
+		} else if (type === 4) {
+			if (!va || !vb)
+				return 0;
+			if (!va.getTime)
+				va = new Date(va);
+			if (!vb.getTime)
+				vb = new Date(vb);
+			if (va.getTime() > vb.getTime())
+				return asc ? 1 : -1;
+			else if (va.getTime() < vb.getTime())
 				return asc ? -1 : 1;
 			return 0;
 		}
