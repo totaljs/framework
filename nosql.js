@@ -798,16 +798,16 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 			fn = date ? compare_eq_date : compare_eq;
 			break;
 		case '<':
-			fn = date ? compare_lt_date : compare_lt;
+			fn = date ? compare_gt_date : compare_lt;
 			break;
 		case '<=':
-			fn = date ? compare_eqlt_date : compare_eqlt;
+			fn = date ? compare_eqgt_date : compare_eqlt;
 			break;
 		case '>':
-			fn = date ? compare_gt_date : compare_gt;
+			fn = date ? compare_lt_date : compare_gt;
 			break;
 		case '>=':
-			fn = date ? compare_eqgt_date : compare_eqgt;
+			fn = date ? compare_eqlt_date : compare_eqgt;
 			break;
 		case '<>':
 		case '!=':
@@ -1197,7 +1197,7 @@ function compare_not(doc, index, item) {
 }
 
 function compare_eq_date(doc, index, item) {
-	var val = doc[item.name];
+	var val = doc[item.name]
 	if (val)
 		return item.value === new Date(val);
 	return false;
