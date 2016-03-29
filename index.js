@@ -6390,6 +6390,8 @@ Framework.prototype.listener = function(req, res) {
 	req.isAuthorized = true;
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	res.success = false;
+	req.session = null;
+	req.user = null;
 
 	if (self.isDebug)
 		res.setHeader('Mode', 'debug');
@@ -6473,8 +6475,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		return self;
 	}
 
-	req.session = null;
-	req.user = null;
 	req.body = EMPTYOBJECT;
 	req.files = EMPTYARRAY;
 	req.isProxy = headers['x-proxy'] === 'total.js';
