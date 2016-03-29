@@ -154,15 +154,8 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		tmp.path = framework_utils.combine(tmpDirectory, ip + '-' + now + '-' + framework_utils.random(100000) + '.upload');
 
 		stream = fs.createWriteStream(tmp.path, { flags: 'w' });
-
-		stream.once('close', function() {
-			close--;
-		});
-
-		stream.once('error', function() {
-			close--;
-		});
-
+		stream.once('close', () => close--);
+		stream.once('error', () => close--);
 		close++;
 	};
 
