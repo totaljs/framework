@@ -3147,6 +3147,100 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	return self;
 };
 
+Framework.prototype.restart = function() {
+	var self = this;
+	F.emit('restart');
+	setTimeout(() => self.$restart(), 1000);
+	return self;
+};
+
+Framework.prototype.$restart = function() {
+	var self = this;
+
+	self.server.close();
+
+	Object.keys(self.modules).forEach(function(key) {
+		var item = self.modules[key];
+		if (item && item.uninstall)
+			item.uninstall();
+	});
+
+	Object.keys(self.models).forEach(function(key) {
+		var item = self.models[key];
+		if (item && item.uninstall)
+			item.uninstall();
+	});
+
+	Object.keys(self.controllers).forEach(function(key) {
+		var item = self.controllers[key];
+		if (item && item.uninstall)
+			item.uninstall();
+	});
+
+	Object.keys(self.workers).forEach(function(key) {
+		var item = self.workers[key];
+		if (item && item.kill) {
+			item.removeAllListeners();
+			item.kill('SIGTERM');
+		}
+	});
+
+	Object.keys(self.connections).forEach(function(key) {
+		var item = self.connections[key];
+		if (item) {
+			item.removeAllListeners();
+			item.close();
+		}
+	});
+
+	self.cache.clear();
+	self.cache.stop();
+	self.global = {};
+	self.resources = {};
+	self.connections = {};
+	self.functions = {};
+	self.themes = {};
+	self.versions = null;
+	self.schedules = [];
+	self.isLoaded = false;
+
+	this.routes = {
+		sitemap: null,
+		web: [],
+		files: [],
+		cors: [],
+		websockets: [],
+		middleware: {},
+		redirects: {},
+		resize: {},
+		request: [],
+		views: {},
+		merge: {},
+		mapping: {},
+		packages: {},
+		blocks: {},
+		resources: {}
+	};
+
+	self.behaviours = null;
+	self.modificators = null;
+	self.helpers = {};
+	self.modules = {};
+	self.models = {};
+	self.sources = {};
+	self.controllers = {};
+	self.dependencies = {};
+	self.isomorphic = {};
+	self.tests = [];
+	self.errors = [];
+	self.problems = [];
+	self.changes = [];
+	self.workers = {};
+	self.databases = {};
+
+	setTimeout(() => self.removeAllListeners(), 2000);
+};
+
 Framework.prototype.install_prepare = function(noRecursive) {
 
 	var self = this;
@@ -5943,9 +6037,7 @@ Framework.prototype.initialize = function(http, debug, options) {
 			var sleep = options.sleep || options.delay || 1000;
 			global.TEST = true;
 			global.assert = require('assert');
-			setTimeout(function() {
-				self.test(true, options.tests || options.test);
-			}, sleep);
+			setTimeout(() => self.test(true, options.tests || options.test), sleep);
 			return self;
 		}
 
@@ -5957,7 +6049,6 @@ Framework.prototype.initialize = function(http, debug, options) {
 			delete framework.testing;
 			delete framework.assert;
 		}, 5000);
-
 	}, true);
 
 	return self;
@@ -9030,15 +9121,9 @@ function FrameworkCache() {
 	Cache init
 	return {Cache}
 */
-FrameworkCache.prototype.init = function(interval) {
-
-	var self = this;
-
-	self.interval = setInterval(function() {
-		framework.cache.recycle();
-	}, interval || 1000 * 60);
-
-	return self;
+FrameworkCache.prototype.init = function() {
+	this.interval = setInterval(() => framework.cache.recycle(), 1000 * 60);
+	return this;
 };
 
 FrameworkCache.prototype.stop = function() {
@@ -14630,15 +14715,13 @@ http.IncomingMessage.prototype.authorization = function() {
 	var authorization = self.headers['authorization'] || '';
 	var result = { user: '', password: '', empty: true };
 
-	if (authorization === '')
+	if (!authorization)
 		return result;
 
 	var arr = new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
-
 	result.user = arr[0] || '';
 	result.password = arr[1] || '';
-	result.empty = result.user.length === 0 || result.password.length === 0;
-
+	result.empty = !result.user || !result.password;
 	return result;
 };
 
