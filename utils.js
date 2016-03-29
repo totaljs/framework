@@ -1851,10 +1851,10 @@ exports.combine = function() {
 exports.removeDiacritics = function(str) {
 	var buf = '';
 	for (var i = 0, length = str.length; i < length; i++) {
+
 		var c = str[i];
 		var code = c.charCodeAt(0);
 		var isUpper = false;
-
 		var r = DIACRITICS[code];
 
 		if (r === undefined) {
@@ -1873,6 +1873,7 @@ exports.removeDiacritics = function(str) {
 			c = c.toUpperCase();
 		buf += c;
 	}
+
 	return buf;
 };
 
@@ -3951,18 +3952,11 @@ Array.prototype.last = function(def) {
 	return item === undefined ? def : item;
 };
 
-/**
- * Array object sorting
- * @param {String} name Property name.
- * @param {Booelan} asc
- * @return {Array}
- */
-Array.prototype.orderBy = function(name, asc) {
+Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 
 	if (typeof(name) === BOOLEAN) {
-		var tmp = asc;
 		asc = name;
-		name = tmp;
+		name = undefined;
 	}
 
 	if (asc === undefined)
@@ -3970,75 +3964,39 @@ Array.prototype.orderBy = function(name, asc) {
 
 	var self = this;
 	var type = 0;
-	var path = (name || '').split('.');
-	var length = path.length;
+	var field = name ? self[0][name] : self[0];
 
-	self.sort(function(a, b) {
+	switch (typeof(field)) {
+		case STRING:
+			type = 1;
+			break;
+		case NUMBER:
+			type = 2;
+			break;
+		case BOOLEAN:
+			type = 3;
+			break;
+		default:
+			return self;
+	}
 
-		var va = null;
-		var vb = null;
+	quicksort(self, function(a, b) {
 
-		switch (length) {
-			case 1:
-
-				if (path[0] === '') {
-					va = a;
-					vb = b;
-				} else {
-					va = a[path[0]];
-					vb = b[path[0]];
-				}
-
-				break;
-			case 2:
-				va = a[path[0]][path[1]];
-				vb = b[path[0]][path[1]];
-				break;
-			case 3:
-				va = a[path[0]][path[1]][path[2]];
-				vb = b[path[0]][path[1]][path[2]];
-				break;
-			case 4:
-				va = a[path[0]][path[1]][path[2]][path[3]];
-				vb = b[path[0]][path[1]][path[2]][path[3]];
-				break;
-			case 5:
-				va = a[path[0]][path[1]][path[2]][path[3]][path[4]];
-				vb = b[path[0]][path[1]][path[2]][path[3]][path[4]];
-				break;
-			default:
-				return 0;
-		}
-
-		if (va === undefined)
-			return 1;
-		if (vb === undefined)
-			return -1;
-
-		if (type === 0) {
-			var t = typeof(va);
-			if (t === STRING)
-				type = 1;
-			else if (t === NUMBER)
-				type = 2;
-			else if (t === BOOLEAN)
-				type = 3;
-			else
-				type = 4;
-		}
+		var va = name ? a[name] : a;
+		var vb = name ? b[name] : b;
 
 		// String
-		if (type === 1)
-			return asc ? va.removeDiacritics().localeCompare(vb.removeDiacritics()) : vb.removeDiacritics().localeCompare(va.removeDiacritics());
+		if (type === 1) {
+			if (va && vb)
+				return asc ? va.removeDiacritics().localeCompare(vb.removeDiacritics()) : vb.removeDiacritics().localeCompare(va.removeDiacritics());
+			return asc ? -1 : 1;
+		}
 
 		if (type === 2) {
-
 			if (va > vb)
 				return asc ? 1 : -1;
-
 			if (va < vb)
 				return asc ? -1 : 1;
-
 			return 0;
 		}
 
@@ -5264,3 +5222,115 @@ exports.get = function(obj, path) {
 global.Async = global.async = exports.async;
 global.sync = global.SYNCHRONIZE = exports.sync;
 global.sync2 = exports.sync2;
+
+// =============================================
+// FAST QUICK SORT IMPLEMENTATION
+// =============================================
+
+function swap(ary, a, b) {
+	var t = ary[a];
+	ary[a] = ary[b];
+	ary[b] = t;
+}
+
+function insertion_sort(ary, comparer) {
+	for(var i=1,l=ary.length;i<l;i++) {
+		var value = ary[i];
+		for(var j=i - 1;j>=0;j--) {
+			// if(ary[j] <= value)
+			if(comparer(value, ary[j], true))
+				break;
+			ary[j+1] = ary[j];
+		}
+		ary[j+1] = value;
+	}
+	return ary;
+}
+
+function inplace_quicksort_partition(ary, start, end, pivotIndex, comparer) {
+	var i = start, j = end;
+	var pivot = ary[pivotIndex];
+	while(true) {
+		while(comparer(pivot, ary[i])) {i++};
+		j--;
+		while(comparer(ary[j], pivot)) {j--};
+		if(!(i < j))
+			return i;
+		swap(ary,i,j);
+		i++;
+	}
+}
+
+function fast_quicksort(ary, comparer) {
+	var stack = [];
+	var entry = [0,ary.length,2 * Math.floor(Math.log(ary.length)/Math.log(2))];
+	stack.push(entry);
+	while(stack.length) {
+		entry = stack.pop();
+		var start = entry[0];
+		var end = entry[1];
+		var depth = entry[2];
+
+		if (!depth) {
+			ary = shell_sort_bound(ary, start, end, comparer);
+			continue;
+		}
+
+		depth--;
+
+		var pivot = Math.round((start + end) / 2);
+		var pivotNewIndex = inplace_quicksort_partition(ary,start,end, pivot, comparer);
+
+		if (end - pivotNewIndex > 16) {
+			entry = [pivotNewIndex,end,depth];
+			stack.push(entry);
+		}
+
+		if (pivotNewIndex - start > 16) {
+			entry = [start,pivotNewIndex,depth];
+			stack.push(entry);
+		}
+	}
+
+	ary = insertion_sort(ary, comparer);
+	return ary;
+}
+
+function shell_sort_bound(ary, start, end, comparer) {
+	var inc = Math.round((start + end) / 2), i, j, t;
+	while (inc >= start) {
+		for (i = inc; i < end; i++) {
+			t = ary[i];
+			j = i;
+			while (j >= inc && comparer(ary[j - inc], t)) {
+			// while (j >= inc && ary[j - inc] > t) {
+				ary[j] = ary[j - inc];
+				j -= inc;
+			}
+			ary[j] = t;
+		}
+		inc = Math.round(inc / 2.2);
+	}
+
+	return ary;
+}
+
+function comparer_asc(index, eq) {
+	if (eq)
+		return index === 1 || index === 0 ? true : false;
+	return index === 1;
+}
+
+function comparer_desc(index, eq) {
+	if (eq)
+		return index === -1 || index === 0 ? true : false;
+	return index === -1;
+}
+
+function quicksort(arr, comparer, desc) {
+	return fast_quicksort(arr, function(a, b, eq) {
+		if (desc)
+			return comparer_desc(comparer(a, b), eq);
+		return comparer_asc(comparer(a, b), eq);
+	});
+}
