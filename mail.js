@@ -31,7 +31,6 @@ var tls = require('tls');
 var events = require('events');
 var dns = require('dns');
 var fs = require('fs');
-var path = require('path');
 
 const CRLF = '\r\n';
 const UNDEFINED = 'undefined';
@@ -306,9 +305,9 @@ Message.prototype.attachment = function(filename, name) {
 	var self = this;
 
 	if (name === undefined)
-		name = path.basename(filename);
+		name = framework_utils.getName(filename);
 
-	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)) });
+	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(framework_utils.getExtension(name)) });
 	return self;
 };
 
@@ -338,9 +337,9 @@ Message.prototype.manually = function() {
 Message.prototype.attachmentInline = function(filename, name, contentId) {
 	var self = this;
 	if (name === undefined)
-		name = path.basename(filename);
+		name = framework_utils.getName(filename);
 
-	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)), disposition: 'inline', contentId: contentId });
+	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(framework_utils.getExtension(name)), disposition: 'inline', contentId: contentId });
 	return self;
 };
 
