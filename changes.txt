@@ -27,6 +27,7 @@
 - fixed: `multipart/form-data` parser
 - fixed: `Array.async()` without arguments
 - fixed: view inline helpers
+- fixed: `FrameworkImage.save()` doens't work when it doesn't contain any operation
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`
@@ -39,8 +40,7 @@
 - removed: `framework.async()`
 - removed: `Utils.validate()`
 
-- fixed: `FrameworkImage.save()` doens't work when it doesn't contain any operation
-
+- improved: Array.orderBy(), added quicksort algorithm
 - improved: ErrorBuilder
 - improved: WebSocket.send() for JSON communication
 - improved: code (a lot)
