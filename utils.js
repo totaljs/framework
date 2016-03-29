@@ -3954,6 +3954,10 @@ Array.prototype.last = function(def) {
 
 Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 
+	var length = this.length;
+	if (!length || length === 1)
+		return this;
+
 	if (typeof(name) === BOOLEAN) {
 		asc = name;
 		name = undefined;
