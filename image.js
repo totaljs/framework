@@ -31,9 +31,9 @@ const sof = { 0xc0: true, 0xc1: true, 0xc2: true, 0xc3: true, 0xc5: true, 0xc6: 
 var child = require('child_process');
 var exec = child.exec;
 var spawn = child.spawn;
-var path = require('path');
 var middlewares = {};
 var Fs = require('fs');
+var framework_utils = require('./utils');
 
 function u16(buf, o) {
 	return buf[o] << 8 | buf[o + 1];
@@ -140,7 +140,7 @@ function Image(filename, useImageMagick, width, height) {
 	this.filename = type === 'string' ? filename : null;
 	this.currentStream = type === 'object' ? filename : null;
 	this.isIM = useImageMagick === undefined || useImageMagick === null ? F.config['default-image-converter'] === 'im' : useImageMagick;
-	this.outputType = type === 'string' ? path.extname(filename).substring(1) : 'jpg';
+	this.outputType = type === 'string' ? framework_utils.getExtension(filename).substring(1) : 'jpg';
 }
 
 /*
@@ -250,11 +250,8 @@ Image.prototype.save = function(filename, callback, writer) {
 		var writer = Fs.createWriteStream(filename + '_');
 
 		reader.pipe(middleware()).pipe(writer);
-
 		writer.on('finish', function() {
-			Fs.rename(filename + '_', filename, function() {
-				callback(null, true);
-			});
+			Fs.rename(filename + '_', filename, () => callback(null, true));
 		});
 	});
 
@@ -803,4 +800,8 @@ exports.middleware = function(type, fn) {
 	if (type[0] === '.')
 		type = type.substring(1);
 	middlewares[type] = fn;
+};
+
+exports.restart = function() {
+	middlewares = {};
 };
