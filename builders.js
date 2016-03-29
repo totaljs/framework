@@ -45,6 +45,7 @@ function SchemaBuilder(name) {
 }
 
 /**
+ *
  * Get a schema
  * @param {String} name
  * @return {Object}
@@ -3174,3 +3175,8 @@ global.TransformBuilder = TransformBuilder;
 global.Pagination = Pagination;
 global.UrlBuilder = UrlBuilder;
 global.SchemaBuilder = SchemaBuilder;
+
+exports.restart = function() {
+	schemas = {};
+	Object.keys(transforms).forEach(key => { transforms[key] = {}; });
+};
