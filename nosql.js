@@ -791,25 +791,27 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 		operator = '=';
 	}
 
+	var date = framework_utils.isDate(value);
+
 	switch (operator) {
 		case '=':
-			fn = compare_eq;
+			fn = date ? compare_eq_date : compare_eq;
 			break;
 		case '<':
-			fn = compare_lt;
+			fn = date ? compare_lt_date : compare_lt;
 			break;
 		case '<=':
-			fn = compare_eqlt;
+			fn = date ? compare_eqlt_date : compare_eqlt;
 			break;
 		case '>':
-			fn = compare_gt;
+			fn = date ? compare_gt_date : compare_gt;
 			break;
 		case '>=':
-			fn = compare_eqgt;
+			fn = date ? compare_eqgt_date : compare_eqgt;
 			break;
 		case '<>':
 		case '!=':
-			fn = compare_not;
+			fn = date ? compare_not_date : compare_not;
 			break;
 	}
 
@@ -833,7 +835,11 @@ DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(nam
 			break;
 		case '*':
 			fn = compare_like;
-			value = value instanceof Array ? value : value.toLowerCase();
+			if (value instanceof Array) {
+				for (var i = 0, length = value.length; i < length; i++)
+					value[i] = value[i].toLowerCase();
+			} else
+				value = value.toLowerCase();
 			break;
 	}
 
@@ -1190,6 +1196,48 @@ function compare_not(doc, index, item) {
 	return item.value !== doc[item.name];
 }
 
+function compare_eq_date(doc, index, item) {
+	var val = doc[item.name];
+	if (val)
+		return item.value === new Date(val);
+	return false;
+}
+
+function compare_lt_date(doc, index, item) {
+	var val = doc[item.name];
+	if (val)
+		return item.value < new Date(val);
+	return false;
+}
+
+function compare_gt_date(doc, index, item) {
+	var val = doc[item.name];
+	if (val)
+		return item.value > new Date(val);
+	return false;
+}
+
+function compare_eqlt_date(doc, index, item) {
+	var val = doc[item.name];
+	if (val)
+		return item.value <= new Date(val);
+	return false;
+}
+
+function compare_eqgt_date(doc, index, item) {
+	var val = doc[item.name];
+	if (val)
+		return item.value >= new Date(val);
+	return false;
+}
+
+function compare_not_date(doc, index, item) {
+	var val = doc[item.name];
+	if (val)
+		return item.value !== new Date(val);
+	return false;
+}
+
 function compare_likebeg(doc, index, item) {
 	var val = doc[item.name];
 	return val ? val.startsWith(item.value) : false;
@@ -1208,7 +1256,7 @@ function compare_like(doc, index, item) {
 
 	if (item.value instanceof Array) {
 		for (var i = 0, length = item.value.length; i < length; i++) {
-			if (val.indexOf(item.value[i]) !== -1)
+			if (val.toLowerCase().indexOf(item.value[i]) !== -1)
 				return true;
 		}
 		return false;
