@@ -1,5 +1,6 @@
 ======= 1.9.8 (BETA)
 
+- fixed: `F.use()` (problem with e.g. session module)
 - fixed: sitemap routing e.g. `F.route('#eshop')` by @claudioquaglia
 - fixed: `F.websocket()` input arguments by @claudioquaglia
 - fixed: Schema parsing
