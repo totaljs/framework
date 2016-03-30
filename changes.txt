@@ -20,6 +20,7 @@
 - updated: `F.problem()`, `F.change()`, `controller.problem()` and `controller.change()` write logs to the file
 - updated: `F.mail()` and `controller.mail()` subject is translated according to the language
 - updated: `F.file(fnValidation/relative_path, fnExecute, [flags])` the file routing is completely changed
+- updated: `export.booting` can contain `root` attribute for `package` applications
 
 - fixed: `FrameworkImage.save()` problem with streams
 - fixed: `CLEANUP(stream)` method

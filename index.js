@@ -3085,20 +3085,33 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (obj.booting) {
 			setTimeout(function() {
-				framework._configure('@' + name + '/config');
 
-				if (framework.config.debug)
-					framework._configure('@' + name + '/config-debug');
-				else
-					framework._configure('@' + name + '/config-release');
+				var tmpdir = framework.path.temp(name + '/');
+				if (obj.booting === 'root') {
+					framework.directory = directory = tmpdir;
+					framework.temporary.path = {};
+					framework._configure();
+					framework._configure_versions();
+					framework._configure_dependencies();
+					framework._configure_sitemap();
+				} else {
 
-				if (framework.isTest)
-					framework._configure('@' + name + '/config-test');
+					framework._configure('@' + name + '/config');
 
-				framework._configure_versions('@' + name + '/versions');
-				framework._configure_dependencies('@' + name + '/dependencies');
-				framework._configure_sitemap('@' + name + '/sitemap');
-				framework.$load(undefined, framework.path.temp(name + '/'));
+					if (framework.config.debug)
+						framework._configure('@' + name + '/config-debug');
+					else
+						framework._configure('@' + name + '/config-release');
+
+					if (framework.isTest)
+						framework._configure('@' + name + '/config-test');
+
+					framework._configure_versions('@' + name + '/versions');
+					framework._configure_dependencies('@' + name + '/dependencies');
+					framework._configure_sitemap('@' + name + '/sitemap');
+				}
+
+				framework.$load(undefined, tmpdir);
 
 			}, 100);
 		}
