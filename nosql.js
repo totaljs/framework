@@ -6,12 +6,17 @@
 
 'use strict';
 
-require('./index');
-
 var Fs = require('fs');
-var framework_utils = require('./utils');
-var framework_image = require('./image');
 var Path = require('path');
+
+if (!global.framework_utils)
+	global.framework_utils = require('./utils');
+
+if (!global.framework_image)
+	global.framework_image = require('./image');
+
+if (!global.framework_nosql)
+	global.framework_nosql = exports;
 
 const EXTENSION = '.nosql';
 const EXTENSION_BINARY = '.nosql-binary';

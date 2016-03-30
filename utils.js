@@ -36,11 +36,14 @@ var fs = require('fs');
 var events = require('events');
 var crypto = require('crypto');
 
+if (!global.framework_utils)
+	global.framework_utils = exports;
+
+var regexpSTATIC = /\.\w{2,8}($|\?)+/;
 const regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$');
 const regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 const regexpTRIM = /^[\s]+|[\s]+$/g;
 const regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
-const regexpSTATIC = /\.\w{2,8}($|\?)+/;
 const regexpDATEFORMAT = /yyyy|yy|M+|dd|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
 const regexpSTRINGFORMAT = /\{\d+\}/g;
 const regexpPATH = /\\/g;

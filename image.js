@@ -33,7 +33,9 @@ var exec = child.exec;
 var spawn = child.spawn;
 var middlewares = {};
 var Fs = require('fs');
-var framework_utils = require('./utils');
+
+if (!global.framework_utils)
+	global.framework_utils = require('./utils');
 
 function u16(buf, o) {
 	return buf[o] << 8 | buf[o + 1];
