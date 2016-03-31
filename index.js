@@ -427,7 +427,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-15';
+	this.version_header = '2.0.0-16';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -2380,6 +2380,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	targetdirectory = '~' + targetdirectory;
 
 	function listing(directory, level, output, extension, isTheme) {
+
 		if (!existsSync(dir))
 			return;
 
@@ -2387,7 +2388,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			extension = EXTENSION_JS;
 
 		fs.readdirSync(directory).forEach(function(o) {
-			var isDirectory = fs.statSync(framework_utils.join(directory, o)).isDirectory();
+			var isDirectory = fs.statSync(path.join(directory, o)).isDirectory();
 
 			if (isDirectory && isTheme) {
 				output.push({ name: o });
@@ -2410,7 +2411,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			var ext = framework_utils.getExtension(o).toLowerCase();
 			if (ext !== extension)
 				return;
-			var name = (level > 0 ? directory.replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length);
+			var name = (level ? framework_utils.$normalize(directory).replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length);
 			output.push({ name: name[0] === '/' ? name.substring(1) : name, filename: path.join(dir, name) + extension });
 		});
 	}
@@ -2479,8 +2480,8 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		listing(dir, 0, arr, undefined, true);
 		arr.forEach(function(item) {
 			var themeName = item.name;
-			var themeDirectory = framework_utils.join(dir, themeName);
-			var filename = framework_utils.join(themeDirectory, 'index.js');
+			var themeDirectory = path.join(dir, themeName);
+			var filename = path.join(themeDirectory, 'index.js');
 			self.themes[item.name] = framework_utils.path(themeDirectory);
 			self._length_themes++;
 			if (existsSync(filename))
@@ -2717,12 +2718,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		var backup = new Backup();
 		var id = path.basename(declaration, '.package');
-		var dir = framework_utils.join(framework.path.root(), framework.config['directory-temp'], id);
+		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id);
 
 		self.routes.packages[id] = dir;
 		backup.restore(declaration, dir, function() {
 
-			var filename = framework_utils.join(dir, 'index.js');
+			var filename = path.join(dir, 'index.js');
 			self.install('module', id, filename, options, function(err) {
 
 				setTimeout(function() {
@@ -2768,8 +2769,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 	if (type === 'package2') {
 		var id = framework_utils.getName(declaration, '.package');
-		var dir = framework_utils.join(framework.path.root(), framework.config['directory-temp'], id);
-		var filename = framework_utils.join(dir, 'index.js');
+		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id);
+		var filename = path.join(dir, 'index.js');
 		self.install('module', id, filename, options, function(err) {
 			setTimeout(function() {
 				self.emit(type + '#' + name);
@@ -7033,7 +7034,7 @@ Framework.prototype.model = function(name) {
 	if (self.models[name] !== undefined)
 		return self.models[name];
 
-	var filename = framework_utils.join(directory, self.config['directory-models'], name + EXTENSION_JS);
+	var filename = path.join(directory, self.config['directory-models'], name + EXTENSION_JS);
 
 	if (existsSync(filename))
 		self.install('model', name, filename, undefined, undefined, undefined, true);
@@ -7058,7 +7059,7 @@ Framework.prototype.source = function(name, options, callback) {
 	if (self.sources[name] !== undefined)
 		return self.sources[name];
 
-	var filename = framework_utils.join(directory, self.config['directory-source'], name + EXTENSION_JS);
+	var filename = path.join(directory, self.config['directory-source'], name + EXTENSION_JS);
 	if (existsSync(filename))
 		self.install('source', name, filename, options, callback, undefined, true);
 	return self.sources[name] || null;

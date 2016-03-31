@@ -1828,6 +1828,9 @@ exports.combine = function() {
 			p += (p[p.length - 1] !== '/' ? '/' : '') + v;
 		}
 
+		if (isWindows)
+			p = p.substring(1);
+
 		return exports.$normalize(p);
 	}
 
