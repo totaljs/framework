@@ -2190,31 +2190,37 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
  * @param {Boolean} minify Minifies HTML code, default: false
  * @return {Framework}
  */
-Framework.prototype.localize = function(name, url, flags, minify) {
-
-	var self = this;
+Framework.prototype.localize = function(url, flags, minify) {
 
 	url = url.replace('*', '');
 
+	var self = this;
 	var index = url.lastIndexOf('.');
-	var extension = 'html|htm|md|txt';
+
+	if (flags === true) {
+		flags = [];
+		minify = true;
+	} else if (!flags)
+		flags = [];
+
+	if (!minify) {
+		index = flags.indexOf('minify');
+		if (index === -1)
+			index = flags.indexOf('compress');
+		minify = index !== -1;
+		if (index !== -1)
+			flags.splice(index, 1);
+	}
 
 	if (index !== -1) {
-		extension = url.substring(index + 1);
+		flags.push(url.substring(index + 1).toLowerCase());
 		url = url.substring(0, index);
-	}
+	} else
+		flags.push('.html', '.htm', '.md', '.txt');
 
 	url = framework_internal.preparePATH(url);
 
-	if (flags === true) {
-		flags = null;
-		minify = true;
-	}
-
-	var fnExecute = function(req, res, is) {
-
-		if (is)
-			return req.url.substring(0, url.length) === url && extension.indexOf(req.extension) !== -1;
+	self.file(url, function(req, res, is) {
 
 		var key = 'locate_' + (req.$language ? req.$language : 'default') + '_' + req.url;
 		var output = framework.temporary.other[key];
@@ -2225,14 +2231,15 @@ Framework.prototype.localize = function(name, url, flags, minify) {
 		}
 
 		var name = req.uri.pathname;
-		// var filename = self.onMapping(name, framework.path.public($decodeURIComponent(name)));
 		var filename = self.onMapping(name, name, true, true);
 
 		fs.readFile(filename, function(err, content) {
 			if (err)
 				return res.throw404();
+
 			content = framework.translator(req.$language, content.toString(ENCODING));
-			if (!framework.isDebug)
+
+			if (RELEASE)
 				framework.temporary.other[key] = content;
 
 			if (minify && (req.extension === 'html' || req.extension === 'htm'))
@@ -2240,9 +2247,7 @@ Framework.prototype.localize = function(name, url, flags, minify) {
 
 			framework.responseContent(req, res, 200, content, framework_utils.getContentType(req.extension), true);
 		});
-	}
-
-	self.file(fnExecute, flags);
+	}, flags);
 	return self;
 };
 
@@ -3637,9 +3642,9 @@ Framework.prototype.onMapping = function(url, def, ispublic, encode) {
 		def = $decodeURIComponent(def);
 
 	if (ispublic)
-		def = framework.path.public(def);
+		def = framework.path.public_cache(def);
 	else
-		def = def[0] === '~' ? def.substring(1) : def[0] === '.' ? def : framework.path.public(def);
+		def = def[0] === '~' ? def.substring(1) : def[0] === '.' ? def : framework.path.public_cache(def);
 
 	return def;
 };
@@ -4639,22 +4644,17 @@ Framework.prototype.isProcessed = function(filename) {
 Framework.prototype.isProcessing = function(filename) {
 
 	var self = this;
-	var name;
+	if (!filename.url)
+		return self.temporary.processing[filename] ? true : false;
 
-	if (filename.url) {
-		name = filename.url;
-		var index = name.indexOf('?');
+	var name = filename.url;
+	var index = name.indexOf('?');
 
-		if (index !== -1)
-			name = name.substring(0, index);
+	if (index !== -1)
+		name = name.substring(0, index);
 
-		filename = utils.combine(self.config['directory-public'], $decodeURIComponent(name));
-	}
-
-	name = self.temporary.processing[filename];
-	if (self.temporary.processing[filename] !== undefined)
-		return true;
-	return false;
+	filename = framework_utils.combine(self.config['directory-public'], $decodeURIComponent(name));
+	return self.temporary.processing[filename] ? true : false;
 };
 
 /**
@@ -4759,16 +4759,16 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	// JS, CSS
 	if (name === undefined) {
+
 		if (self.isProcessing(key)) {
+
 			if (req.processing > self.config['default-request-timeout']) {
-				// timeout
 				self.response408(req, res);
 				return;
 			}
+
 			req.processing += 500;
-			setTimeout(function() {
-				framework.responseFile(req, res, filename, downloadName, headers, done, key);
-			}, 500);
+			setTimeout(() => framework.responseFile(req, res, filename, downloadName, headers, done, key), 500);
 			return self;
 		}
 
@@ -9038,6 +9038,14 @@ FrameworkPath.prototype.public = function(filename) {
 	return framework_utils.combine(framework.config['directory-public'], filename);
 };
 
+FrameworkPath.prototype.public_cache = function(filename) {
+	var key = 'public_' + filename;
+	var item = framework.temporary.other[key];
+	if (item)
+		return item;
+	return framework.temporary.other[key] = framework_utils.combine(framework.config['directory-public'], filename);
+};
+
 FrameworkPath.prototype.private = function(filename) {
 	return framework_utils.combine(framework.config['directory-private'], filename);
 };
@@ -12276,7 +12284,7 @@ Controller.prototype.file = function(filename, download, headers, done) {
 	if (filename[0] === '~')
 		filename = filename.substring(1);
 	else
-		filename = framework.path.public(filename);
+		filename = framework.path.public_cache(filename);
 
 	self.subscribe.success();
 	framework.responseFile(self.req, self.res, filename, download, headers, done);
@@ -12304,7 +12312,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, done) {
 		if (filename[0] === '~')
 			filename = filename.substring(1);
 		else
-			filename = framework.path.public(filename);
+			filename = framework.path.public_cache(filename);
 	}
 
 	self.subscribe.success();

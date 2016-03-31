@@ -17,7 +17,8 @@
 - added: `F.on('restart')`
 
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
-- updated: `F.file()` supports flags instead of middleware and flags supports extensions `['.jpg', '.png']`
+- updated: `F.file()` supports flags instead of middleware and the flags supports extensions `['.jpg', '.png']`. The `name` argument has been removed.
+- updated: `F.localize()` supports flags and the `name` argument has been removed
 - updated: `F.sitemap()` returns object with a new field: `wildcard: {Boolean}`
 - updated: `F.problem()`, `F.change()`, `controller.problem()` and `controller.change()` write logs to the file
 - updated: `F.mail()` and `controller.mail()` subject is translated according to the language

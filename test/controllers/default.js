@@ -2,7 +2,7 @@ var assert = require('assert');
 
 exports.install = function() {
 
-	framework.localize('templates *', '/templates/');
+	framework.localize('/templates/');
 
 	framework.route(function(url, req, flags) {
 		return url === '/custom/route/';

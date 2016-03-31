@@ -1813,7 +1813,6 @@ exports.isURL = function(str) {
 */
 exports.combine = function() {
 
-	var self = this;
 	var p;
 
 	if (arguments[0][0] === '~') {
