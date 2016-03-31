@@ -151,7 +151,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		}
 
 		tmp.filename = header[1];
-		tmp.path = framework_utils.combine(tmpDirectory, ip + '-' + now + '-' + framework_utils.random(100000) + '.upload');
+		tmp.path = framework_utils.combine(tmpDirectory, 'u' + ip + '-' + now + '-' + framework_utils.random(100000) + '.upload');
 
 		stream = fs.createWriteStream(tmp.path, { flags: 'w' });
 		stream.once('close', () => close--);
@@ -2878,7 +2878,7 @@ function viewengine_read(path, language, controller) {
 			return null;
 	}
 
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
 	if (isOut) {
@@ -2896,7 +2896,7 @@ function viewengine_read(path, language, controller) {
 
 	filename = framework.path.views(path.substring(index + 1));
 
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
 	if (RELEASE)
@@ -3322,6 +3322,14 @@ exports.parseBlock = function(name, content) {
 
 	return builder.trim();
 };
+
+function existsSync(filename) {
+	try {
+		return fs.statSync(filename) ? true : false;
+	} catch (e) {
+		return false;
+	}
+}
 
 exports.viewEngine = viewengine_load;
 exports.parseLocalization = view_parse_localization;

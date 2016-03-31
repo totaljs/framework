@@ -1545,21 +1545,21 @@ exports.path = function(path, delimiter) {
 };
 
 exports.join = function() {
-	var path = '';
-	for (var i = 0; i < arguments.length - 1; i++) {
+	var path = [''];
+
+	for (var i = 0; i < arguments.length; i++) {
 		var current = arguments[i];
 		if (!current)
 			continue;
 		if (current[0] === '/')
 			current = current.substring(1);
-		path += exports.path(current);
+		var l = current.length - 1;
+		if (current[l] === '/')
+			current = current.substring(0, l);
+		path.push(current);
 	}
 
-	var last = arguments[arguments.length - 1];
-	if (last[0] === '/')
-		last = last.substring(1);
-	path = path + last;
-	return (path[0] !== '/' ? '/' : '') + path;
+	return path.join('/');
 };
 
 /**

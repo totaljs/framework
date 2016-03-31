@@ -1733,7 +1733,7 @@ Framework.prototype.map = function(url, filename, filter) {
 	// Checks if the directory exists
 	if (!isPackage && !filename.startsWith(directory)) {
 		var tmp = filename[0] === '~' ? self.path.root(filename.substring(1)) : self.path.public(filename);
-		if (fs.existsSync(tmp))
+		if (existsSync(tmp))
 			filename = tmp;
 	}
 
@@ -2376,14 +2376,14 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		targetdirectory = directory;
 
 	function listing(directory, level, output, extension, isTheme) {
-		if (!fs.existsSync(dir))
+		if (!existsSync(dir))
 			return;
 
 		if (!extension)
 			extension = EXTENSION_JS;
 
 		fs.readdirSync(directory).forEach(function(o) {
-			var isDirectory = fs.statSync(path.join(directory, o)).isDirectory();
+			var isDirectory = fs.statSync(framework_utils.join(directory, o)).isDirectory();
 
 			if (isDirectory && isTheme) {
 				output.push({ name: o });
@@ -2412,27 +2412,21 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	}
 
 	if (!types || types.indexOf('modules') !== -1) {
-		dir = path.join(targetdirectory, self.config['directory-modules']);
+		dir = framework_utils.join(targetdirectory, self.config['directory-modules']);
 		arr = [];
 		listing(dir, 0, arr, '.js');
-
-		arr.forEach(function(item) {
-			self.install('module', item.name, item.filename, undefined, undefined, undefined, true);
-		});
+		arr.forEach((item) => self.install('module', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	if (!types || types.indexOf('isomorphic') !== -1) {
-		dir = path.join(targetdirectory, self.config['directory-isomorphic']);
+		dir = framework_utils.join(targetdirectory, self.config['directory-isomorphic']);
 		arr = [];
 		listing(dir, 0, arr, '.js');
-
-		arr.forEach(function(item) {
-			self.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true);
-		});
+		arr.forEach((item) => self.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	if (!types || types.indexOf('packages') !== -1) {
-		dir = path.join(targetdirectory, self.config['directory-packages']);
+		dir = framework_utils.join(targetdirectory, self.config['directory-packages']);
 		arr = [];
 		listing(dir, 0, arr, '.package');
 
@@ -2443,12 +2437,12 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			if (item.is) {
 				framework_utils.ls(item.filename, function(files, directories) {
 					var dir = framework.path.temp(item.name);
-					if (!fs.existsSync(dir))
+					if (!existsSync(dir))
 						fs.mkdirSync(dir);
 
 					for (var i = 0, length = directories.length; i < length; i++) {
 						var target = framework.path.temp(directories[i].replace(dirtmp, '').replace('.package', '') + '/');
-						if (!fs.existsSync(target))
+						if (!existsSync(target))
 							fs.mkdirSync(target);
 					}
 
@@ -2458,9 +2452,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 						stream.on('end', next);
 					}, function() {
 						// Windows sometimes doesn't load package and delay solves the problem.
-						setTimeout(function() {
-							self.install('package2', item.name, item.filename, undefined, undefined, undefined, true);
-						}, 50);
+						setTimeout(() => self.install('package2', item.name, item.filename, undefined, undefined, undefined, true), 50);
 					});
 				});
 				return;
@@ -2471,47 +2463,39 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	}
 
 	if (!types || types.indexOf('models') !== -1) {
-		dir = path.join(targetdirectory, self.config['directory-models']);
+		dir = framework_utils.join(targetdirectory, self.config['directory-models']);
 		arr = [];
 		listing(dir, 0, arr);
-
-		arr.forEach(function(item) {
-			self.install('model', item.name, item.filename, undefined, undefined, undefined, true);
-		});
+		arr.forEach((item) => self.install('model', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	if (!types || types.indexOf('themes') !== -1) {
 		arr = [];
-		dir = path.join(targetdirectory, self.config['directory-themes']);
+		dir = framework_utils.join(targetdirectory, self.config['directory-themes']);
 		listing(dir, 0, arr, undefined, true);
 		arr.forEach(function(item) {
 			var themeName = item.name;
-			var themeDirectory = path.join(dir, themeName);
-			var filename = path.join(themeDirectory, 'index.js');
+			var themeDirectory = framework_utils.join(dir, themeName);
+			var filename = framework_utils.join(themeDirectory, 'index.js');
 			self.themes[item.name] = framework_utils.path(themeDirectory);
 			self._length_themes++;
-			if (fs.existsSync(filename))
+			if (existsSync(filename))
 				self.install('theme', item.name, filename, undefined, undefined, undefined, true);
 		});
 	}
 
 	if (!types || types.indexOf('definitions') !== -1) {
-		dir = path.join(targetdirectory, self.config['directory-definitions']);
+		dir = framework_utils.join(targetdirectory, self.config['directory-definitions']);
 		arr = [];
 		listing(dir, 0, arr);
-
-		arr.forEach(function(item) {
-			self.install('definition', item.name, item.filename, undefined, undefined, undefined, true);
-		});
+		arr.forEach((item) => self.install('definition', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	if (!types || types.indexOf('controllers') !== -1) {
 		arr = [];
-		dir = path.join(targetdirectory, self.config['directory-controllers']);
+		dir = framework_utils.join(targetdirectory, self.config['directory-controllers']);
 		listing(dir, 0, arr);
-		arr.forEach(function(item) {
-			self.install('controller', item.name, item.filename, undefined, undefined, undefined, true);
-		});
+		arr.forEach((item) => self.install('controller', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	self._routesSort();
@@ -2526,7 +2510,7 @@ Framework.prototype.$startup = function(callback) {
 
 	var dir = path.join(directory, '/startup/');
 
-	if (!fs.existsSync(dir))
+	if (!existsSync(dir))
 		return callback();
 
 	var run = [];
@@ -2588,7 +2572,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 	var t = typeof(declaration);
 	var key = '';
-	var tmp = null;
+	var tmp;
 
 	if (t === OBJECT) {
 		t = typeof(options);
@@ -2622,12 +2606,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					var id = path.basename(declaration, '.package');
 					var filename = framework.path.temp(id + '.package');
 					var stream = fs.createWriteStream(filename);
-
 					response.pipe(stream);
-					stream.on('finish', function() {
-						self.install(type, id, filename, options, undefined, undefined, true);
-					});
-
+					stream.on('finish', () => self.install(type, id, filename, options, undefined, undefined, true));
 				});
 
 				return self;
@@ -2650,6 +2630,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			});
 
 			return self;
+		} else if (type !== 'package') {
+			// check filesystem
+			if (declaration.indexOf(';') === -1 && existsSync(declaration))
+				useRequired = true;
 		}
 	}
 
@@ -2729,12 +2713,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		var backup = new Backup();
 		var id = path.basename(declaration, '.package');
-		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id);
+		var dir = framework_utils.join(framework.path.root(), framework.config['directory-temp'], id);
 
 		self.routes.packages[id] = dir;
 		backup.restore(declaration, dir, function() {
 
-			var filename = path.join(dir, 'index.js');
+			var filename = framework_utils.join(dir, 'index.js');
 			self.install('module', id, filename, options, function(err) {
 
 				setTimeout(function() {
@@ -2779,9 +2763,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	}
 
 	if (type === 'package2') {
-		var id = path.basename(declaration, '.package');
-		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id);
-		var filename = path.join(dir, 'index.js');
+		var id = framework_utils.getName(declaration, '.package');
+		var dir = framework_utils.join(framework.path.root(), framework.config['directory-temp'], id);
+		var filename = framework_utils.join(dir, 'index.js');
 		self.install('module', id, filename, options, function(err) {
 			setTimeout(function() {
 				self.emit(type + '#' + name);
@@ -3042,8 +3026,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 						delete require.cache[name];
 					}, 1000);
 				})(require.resolve(declaration));
-			}
-			else {
+			} else {
 
 				if (typeof(declaration) !== STRING)
 					declaration = declaration.toString();
@@ -3054,7 +3037,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 						name = tmp.toString().replace(/\.js/i, '');
 				}
 
-				filename = self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js');
+				filename = self.path.temporary('installed-' + plus + type + '-' + framework_utils.GUID(10) + '.js');
 				fs.writeFileSync(filename, declaration);
 				obj = require(filename);
 				(function(name, filename) {
@@ -4210,7 +4193,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 	var merge = self.routes.merge[uri.pathname];
 	var filename = merge.filename;
 
-	if (!self.config.debug && fs.existsSync(filename)) {
+	if (!self.config.debug && existsSync(filename)) {
 		self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
 		callback();
 		return self;
@@ -4272,7 +4255,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 
 		if (filename[0] !== '~') {
 			var tmp = self.path.public(filename);
-			if (self.isVirtualDirectory && !fs.existsSync(tmp))
+			if (self.isVirtualDirectory && !existsSync(tmp))
 				tmp = self.path.virtual(filename);
 			filename = tmp;
 		}
@@ -6073,6 +6056,10 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 			}
 			self.removeAllListeners('load');
 			self.removeAllListeners('ready');
+
+			if (options.package)
+				INSTALL('package', options.package);
+
 		}, 500);
 
 		if (self.isTest) {
@@ -7055,9 +7042,9 @@ Framework.prototype.model = function(name) {
 	if (self.models[name] !== undefined)
 		return self.models[name];
 
-	var filename = path.join(directory, self.config['directory-models'], name + EXTENSION_JS);
+	var filename = framework_utils.join(directory, self.config['directory-models'], name + EXTENSION_JS);
 
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		self.install('model', name, filename, undefined, undefined, undefined, true);
 
 	return self.models[name] || null;
@@ -7080,10 +7067,9 @@ Framework.prototype.source = function(name, options, callback) {
 	if (self.sources[name] !== undefined)
 		return self.sources[name];
 
-	var filename = path.join(directory, self.config['directory-source'], name + EXTENSION_JS);
-	if (fs.existsSync(filename))
+	var filename = framework_utils.join(directory, self.config['directory-source'], name + EXTENSION_JS);
+	if (existsSync(filename))
 		self.install('source', name, filename, options, callback, undefined, true);
-
 	return self.sources[name] || null;
 };
 
@@ -7502,8 +7488,9 @@ Framework.prototype.test = function(stop, names, cb) {
 	self.isTest = true;
 
 	var dir = self.config['directory-tests'];
+	var is = false;
 
-	if (!fs.existsSync(framework_utils.combine(dir))) {
+	if (!existsSync(framework_utils.combine(dir))) {
 		if (cb) cb();
 		if (stop) setTimeout(function() {
 			framework.stop(0);
@@ -7691,7 +7678,7 @@ Framework.prototype.clear = function(callback, isInit) {
 		}
 	}
 
-	if (!fs.existsSync(dir)) {
+	if (!existsSync(dir)) {
 		if (callback)
 			callback();
 		return self;
@@ -7907,13 +7894,13 @@ Framework.prototype.resource = function(name, key) {
 	if (routes) {
 		for (var i = 0, length = routes.length; i < length; i++) {
 			filename = routes[i];
-			if (fs.existsSync(filename))
+			if (existsSync(filename))
 				body += (body ? '\n' : '') + fs.readFileSync(filename).toString(ENCODING);
 		}
 	}
 
 	var filename = framework_utils.combine(self.config['directory-resources'], name + '.resource');
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		body += (body ? '\n' : '') + fs.readFileSync(filename).toString(ENCODING);
 
 	var obj = body.parseConfig();
@@ -7958,7 +7945,7 @@ Framework.prototype._configure_sitemap = function(arr, clean) {
 
 	if (!arr || typeof(arr) === STRING) {
 		var filename = prepare_filename(arr || 'sitemap');
-		if (fs.existsSync(filename))
+		if (existsSync(filename))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -8074,7 +8061,7 @@ Framework.prototype._configure_dependencies = function(arr) {
 
 	if (!arr || typeof(arr) === STRING) {
 		var filename = prepare_filename(arr || 'dependencies');
-		if (fs.existsSync(filename))
+		if (existsSync(filename))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -8176,7 +8163,7 @@ Framework.prototype._configure_versions = function(arr, clean) {
 
 	if (arr === undefined || typeof(arr) === STRING) {
 		var filename = prepare_filename(arr || 'versions');
-		if (fs.existsSync(filename))
+		if (existsSync(filename))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -8242,7 +8229,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 	if (type === STRING) {
 		var filename = prepare_filename(arr);
-		if (!fs.existsSync(filename))
+		if (!existsSync(filename))
 			return self;
 		arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 	}
@@ -8256,7 +8243,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 		// read all files from "configs" directory
 		var configs = self.path.configs();
-		if (fs.existsSync(configs)) {
+		if (existsSync(configs)) {
 			var tmp = fs.readdirSync(configs);
 			for (var i = 0, length = tmp.length; i < length; i++) {
 				var skip = tmp[i].match(/\-(debug|release|test)$/i);
@@ -8273,16 +8260,16 @@ Framework.prototype._configure = function(arr, rewrite) {
 			}
 		}
 
-		if (fs.existsSync(filenameA) && fs.lstatSync(filenameA).isFile())
+		if (existsSync(filenameA) && fs.lstatSync(filenameA).isFile())
 			arr = arr.concat(fs.readFileSync(filenameA).toString(ENCODING).split('\n'));
 
-		if (fs.existsSync(filenameB) && fs.lstatSync(filenameB).isFile())
+		if (existsSync(filenameB) && fs.lstatSync(filenameB).isFile())
 			arr = arr.concat(fs.readFileSync(filenameB).toString(ENCODING).split('\n'));
 	}
 
 	var done = function() {
 		process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
-		self.isVirtualDirectory = fs.existsSync(framework_utils.combine(self.config['directory-public-virtual']));
+		self.isVirtualDirectory = existsSync(framework_utils.combine(self.config['directory-public-virtual']));
 	};
 
 	if (!arr instanceof Array || !arr.length) {
@@ -8512,7 +8499,7 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 	if (name.match(/^(\/\/|https\:|http\:)+/g))
 		filename = name;
 	else if (name[0] === '/')
-		filename = framework_utils.join(theme, '', this._version(name));
+		filename = framework_utils.join(theme, this._version(name));
 	else
 		filename = framework_utils.join(theme, directory, this._version(name));
 
@@ -9047,7 +9034,7 @@ FrameworkPath.prototype.verify = function(name) {
 	if (framework.temporary.path[prop])
 		return framework;
 	var dir = framework_utils.combine(framework.config['directory-' + name]);
-	if (!fs.existsSync(dir))
+	if (!existsSync(dir))
 		fs.mkdirSync(dir);
 	framework.temporary.path[prop] = true;
 	return framework;
@@ -9136,12 +9123,12 @@ FrameworkPath.prototype.themes = function(filename) {
 };
 
 FrameworkPath.prototype.root = function(filename) {
-	var p = path.join(directory, filename || '');
+	var p = framework_utils.join(directory, filename);
 	return framework.isWindows ? p.replace(/\\/g, '/') : p;
 };
 
 FrameworkPath.prototype.package = function(name, filename) {
-	var p = path.join(directory, framework.config['directory-temp'], name, filename || '');
+	var p = framework_utils.join(directory, framework.config['directory-temp'], name, filename);
 	return framework.isWindows ? p.replace(/\\/g, '/') : p;
 };
 
@@ -10657,7 +10644,7 @@ Controller.prototype.$dns = function(value) {
 	var length = arguments.length;
 
 	for (var i = 0; i < length; i++)
-		builder += '<link rel="dns-prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
+		builder += '<link rel="dns-prefetch" href="' + self._prepareHost(arguments[i]) + '" />';
 
 	self.head(builder);
 	return '';
@@ -10675,7 +10662,7 @@ Controller.prototype.$prefetch = function() {
 	var length = arguments.length;
 
 	for (var i = 0; i < length; i++)
-		builder += '<link rel="prefetch" href="' + self._prepareHost(arguments[i] || '') + '" />';
+		builder += '<link rel="prefetch" href="' + self._prepareHost(arguments[i]) + '" />';
 
 	self.head(builder);
 	return '';
@@ -10693,7 +10680,7 @@ Controller.prototype.$prerender = function(value) {
 	var length = arguments.length;
 
 	for (var i = 0; i < length; i++)
-		builder += '<link rel="prerender" href="' + self._prepareHost(arguments[i] || '') + '" />';
+		builder += '<link rel="prerender" href="' + self._prepareHost(arguments[i]) + '" />';
 
 	self.head(builder);
 	return '';
@@ -10706,7 +10693,7 @@ Controller.prototype.$prerender = function(value) {
 */
 Controller.prototype.$next = function(value) {
 	var self = this;
-	self.head('<link rel="next" href="' + self._prepareHost(value || '') + '" />');
+	self.head('<link rel="next" href="' + self._prepareHost(value) + '" />');
 	return '';
 };
 
@@ -10717,7 +10704,7 @@ Controller.prototype.$next = function(value) {
 */
 Controller.prototype.$prev = function(value) {
 	var self = this;
-	self.head('<link rel="prev" href="' + self._prepareHost(value || '') + '" />');
+	self.head('<link rel="prev" href="' + self._prepareHost(value) + '" />');
 	return '';
 };
 
@@ -10728,7 +10715,7 @@ Controller.prototype.$prev = function(value) {
 */
 Controller.prototype.$canonical = function(value) {
 	var self = this;
-	self.head('<link rel="canonical" href="' + self._prepareHost(value || '') + '" />');
+	self.head('<link rel="canonical" href="' + self._prepareHost(value) + '" />');
 	return '';
 };
 
@@ -11446,13 +11433,11 @@ Controller.prototype.$input = function(model, type, name, attr) {
 };
 
 Controller.prototype._prepareHost = function(value) {
+	if(!value)
+		return value;
 	var tmp = value.substring(0, 5);
-
-	if (tmp !== 'http:' && tmp !== 'https://') {
-		if (tmp[0] !== '/' || tmp[1] !== '/')
-			value = this.host(value);
-	}
-
+	if (tmp !== 'http:' && tmp !== 'https' && (tmp[0] !== '/' || tmp[1] !== '/'))
+		value = this.host(value);
 	return value;
 };
 
@@ -12552,7 +12537,7 @@ Controller.prototype.redirect = function(url, permanent) {
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
-	HEADERS.redirect.url = url;
+	HEADERS.redirect.Location = url;
 
 	self.subscribe.success();
 	self.res.success = true;
@@ -12825,6 +12810,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		var isTheme = false;
 
 		filename = name;
+
 
 		if (self.themeName && skip < 3) {
 			filename = '.' + framework.path.themes(self.themeName + '/views/' + (isLayout || skip > 0 ? '' : self._currentView.substring(1)) + (skip ? name.substring(1) : name));
@@ -14087,7 +14073,7 @@ Backup.prototype.restoreValue = function(data) {
 
 Backup.prototype.restore = function(filename, path, callback, filter) {
 
-	if (!fs.existsSync(filename)) {
+	if (!existsSync(filename)) {
 		if (callback)
 			callback(new Error('Package not found.'), path);
 		return;
@@ -14199,7 +14185,7 @@ Backup.prototype.createDirectory = function(p, root) {
 		if (root)
 			dir = (is ? '\\' : '/') + dir;
 
-		if (fs.existsSync(dir))
+		if (existsSync(dir))
 			continue;
 
 		fs.mkdirSync(dir);
@@ -15033,4 +15019,12 @@ function isGZIP(req) {
 function prepare_viewname(value) {
 	// Cleans theme name
 	return value.substring(value.indexOf('/', 2) + 1);
+}
+
+function existsSync(filename) {
+	try {
+		return fs.statSync(filename) ? true : false;
+	} catch (e) {
+		return false;
+	}
 }
