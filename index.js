@@ -3167,6 +3167,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 Framework.prototype.restart = function() {
 	var self = this;
+
+	if (self.isRestart)
+		return self;
+
 	F.emit('restart');
 	setTimeout(() => self.$restart(), 1000);
 	return self;
@@ -3175,88 +3179,102 @@ Framework.prototype.restart = function() {
 Framework.prototype.$restart = function() {
 	var self = this;
 
-	self.server.close();
+	console.log('----------------------------------------------------> RESTART ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
 
-	Object.keys(self.modules).forEach(function(key) {
-		var item = self.modules[key];
-		if (item && item.uninstall)
-			item.uninstall();
+	self.server.setTimeout(0);
+	self.server.timeout = 0;
+	self.server.close(function() {
+
+		Object.keys(self.modules).forEach(function(key) {
+			var item = self.modules[key];
+			if (item && item.uninstall)
+				item.uninstall();
+		});
+
+		Object.keys(self.models).forEach(function(key) {
+			var item = self.models[key];
+			if (item && item.uninstall)
+				item.uninstall();
+		});
+
+		Object.keys(self.controllers).forEach(function(key) {
+			var item = self.controllers[key];
+			if (item && item.uninstall)
+				item.uninstall();
+		});
+
+		Object.keys(self.workers).forEach(function(key) {
+			var item = self.workers[key];
+			if (item && item.kill) {
+				item.removeAllListeners();
+				item.kill('SIGTERM');
+			}
+		});
+
+		Object.keys(self.connections).forEach(function(key) {
+			var item = self.connections[key];
+			if (item) {
+				item.removeAllListeners();
+				item.close();
+			}
+		});
+
+		framework_builders.restart();
+		framework_image.restart();
+
+		self.cache.clear();
+		self.cache.stop();
+		self.global = {};
+		self.resources = {};
+		self.connections = {};
+		self.functions = {};
+		self.themes = {};
+		self.versions = null;
+		self.schedules = [];
+		self.isLoaded = false;
+		self.isRestart = false;
+
+		this.routes = {
+			sitemap: null,
+			web: [],
+			files: [],
+			cors: [],
+			websockets: [],
+			middleware: {},
+			redirects: {},
+			resize: {},
+			request: [],
+			views: {},
+			merge: {},
+			mapping: {},
+			packages: {},
+			blocks: {},
+			resources: {}
+		};
+
+		self.behaviours = null;
+		self.modificators = null;
+		self.helpers = {};
+		self.modules = {};
+		self.models = {};
+		self.sources = {};
+		self.controllers = {};
+		self.dependencies = {};
+		self.isomorphic = {};
+		self.tests = [];
+		self.errors = [];
+		self.problems = [];
+		self.changes = [];
+		self.workers = {};
+		self.databases = {};
+
+		setTimeout(() => self.removeAllListeners(), 2000);
+		setTimeout(function() {
+			var init = self.temporary.init;
+			self.mode(init.isHTTPS ? require('https') : http, init.name, init.options);
+		}, 1000);
 	});
-
-	Object.keys(self.models).forEach(function(key) {
-		var item = self.models[key];
-		if (item && item.uninstall)
-			item.uninstall();
-	});
-
-	Object.keys(self.controllers).forEach(function(key) {
-		var item = self.controllers[key];
-		if (item && item.uninstall)
-			item.uninstall();
-	});
-
-	Object.keys(self.workers).forEach(function(key) {
-		var item = self.workers[key];
-		if (item && item.kill) {
-			item.removeAllListeners();
-			item.kill('SIGTERM');
-		}
-	});
-
-	Object.keys(self.connections).forEach(function(key) {
-		var item = self.connections[key];
-		if (item) {
-			item.removeAllListeners();
-			item.close();
-		}
-	});
-
-	self.cache.clear();
-	self.cache.stop();
-	self.global = {};
-	self.resources = {};
-	self.connections = {};
-	self.functions = {};
-	self.themes = {};
-	self.versions = null;
-	self.schedules = [];
-	self.isLoaded = false;
-
-	this.routes = {
-		sitemap: null,
-		web: [],
-		files: [],
-		cors: [],
-		websockets: [],
-		middleware: {},
-		redirects: {},
-		resize: {},
-		request: [],
-		views: {},
-		merge: {},
-		mapping: {},
-		packages: {},
-		blocks: {},
-		resources: {}
-	};
-
-	self.behaviours = null;
-	self.modificators = null;
-	self.helpers = {};
-	self.modules = {};
-	self.models = {};
-	self.sources = {};
-	self.controllers = {};
-	self.dependencies = {};
-	self.isomorphic = {};
-	self.tests = [];
-	self.errors = [];
-	self.problems = [];
-	self.changes = [];
-	self.workers = {};
-	self.databases = {};
-
-	setTimeout(() => self.removeAllListeners(), 2000);
+	return self;
 };
 
 Framework.prototype.install_prepare = function(noRecursive) {
@@ -5760,7 +5778,7 @@ Framework.prototype.response503 = function(req, res) {
 	headers[RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
 	headers[RESPONSE_HEADER_CONTENTTYPE] = CONTENTTYPE_TEXTHTML;
 	res.writeHead(503, headers);
-	for (var m in self.wait)
+	for (var m in self.waits)
 		keys += (keys ? ', ' : '') + '<u>' + m + '</u>';
 	res.end('<html><head><meta charset="utf-8" /></head><body style="font:normal normal 11px Arial;color:gray;line-height:16px;padding:10px;background-color:white"><div style="font-size:14px;color:#505050">Please wait (<span id="time">10</span>) for <b>' + (self.config.name + ' v' + self.config.version) + '</b> application.</div>The application is waiting for: ' + keys + '.<script>var i=10;setInterval(function(){i--;if(i<0)return;document.getElementById("time").innerHTML=(i===0?"refreshing":i);if(i===0)window.location.reload();},1000);</script></body></html>', ENCODING);
 	return self;
@@ -5950,12 +5968,9 @@ Framework.prototype.load = function(debug, types, path) {
  * @param  {Object} options
  * @return {Framework}
  */
-Framework.prototype.initialize = function(http, debug, options) {
+Framework.prototype.initialize = function(http, debug, options, restart) {
 
 	var self = this;
-
-	if (self.server)
-		return self;
 
 	if (!options)
 		options = {};
@@ -5992,21 +6007,6 @@ Framework.prototype.initialize = function(http, debug, options) {
 
 		self.$load(undefined, directory);
 
-		if (options.https)
-			self.server = http.createServer(options.https, self.listener);
-		else
-			self.server = http.createServer(self.listener);
-
-		if (self.config['allow-performance']) {
-			self.server.on('connection', function(socket) {
-				socket.setNoDelay(true);
-				socket.setKeepAlive(true, 10);
-			});
-		}
-
-		if (self.config['allow-websocket'])
-			self.server.on('upgrade', framework._upgrade);
-
 		if (!port) {
 			if (self.config['default-port'] === 'auto') {
 				var envPort = +(process.env.PORT || '');
@@ -6025,19 +6025,43 @@ Framework.prototype.initialize = function(http, debug, options) {
 		} else
 			self.ip = undefined;
 
-		if (typeof(options.sleep) === NUMBER) {
-			setTimeout(function() {
-				self.server.listen(self.port, self.ip);
-			}, options.sleep);
-		} else
-			self.server.listen(self.port, self.ip);
-
 		if (self.ip === undefined || self.ip === null)
 			self.ip = 'auto';
 
+
+		if (self.server) {
+			self.server.removeAllListeners();
+
+			Object.keys(self.connections).forEach(function(key) {
+				var item = self.connections[key];
+				if (!item)
+					return;
+				item.removeAllListeners();
+				item.close();
+			});
+
+			self.server.close();
+		}
+
+		if (options.https)
+			self.server = http.createServer(options.https, self.listener);
+		else
+			self.server = http.createServer(self.listener);
+
+		if (self.config['allow-performance']) {
+			self.server.on('connection', function(socket) {
+				socket.setNoDelay(true);
+				socket.setKeepAlive(true, 10);
+			});
+		}
+
+		if (self.config['allow-websocket'])
+			self.server.on('upgrade', framework._upgrade);
+
+		self.server.listen(self.port, self.ip === 'auto' ? undefined : self.ip);
 		self.isLoaded = true;
 
-		if (!process.connected)
+		if (!process.connected || restart)
 			self.console();
 
 		setTimeout(function() {
@@ -6166,7 +6190,14 @@ Framework.prototype.mode = function(http, name, options) {
 			break;
 	}
 
-	self.$startup(n => self.initialize(http, debug, options));
+	var restart = false;
+
+	if (!self.temporary.init)
+		self.temporary.init = { name: name, isHTTPS: typeof(http.STATUS_CODES) === UNDEFINED, options: options };
+	else
+		restart = true;
+
+	self.$startup(n => self.initialize(http, debug, options, restart));
 	return self;
 };
 
@@ -6176,21 +6207,16 @@ Framework.prototype.mode = function(http, name, options) {
 Framework.prototype.console = function() {
 	console.log('====================================================');
 	console.log('PID          : ' + process.pid);
-
-	if (process.argv[0] === 'iojs')
-		console.log('io.js        : ' + process.version);
-	else
-		console.log('node.js      : ' + process.version);
-
-	console.log('total.js     : v' + framework.version_header);
+	console.log('node.js      : ' + process.version);
+	console.log('total.js     : v' + F.version_header);
 	console.log('====================================================');
-	console.log('Name         : ' + framework.config.name);
-	console.log('Version      : ' + framework.config.version);
-	console.log('Author       : ' + framework.config.author);
+	console.log('Name         : ' + F.config.name);
+	console.log('Version      : ' + F.config.version);
+	console.log('Author       : ' + F.config.author);
 	console.log('Date         : ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
-	console.log('Mode         : ' + (framework.config.debug ? 'debug' : 'release'));
+	console.log('Mode         : ' + (F.config.debug ? 'debug' : 'release'));
 	console.log('====================================================\n');
-	console.log('{2}://{0}:{1}/'.format(framework.ip, framework.port, framework.isHTTPS ? 'https' : 'http'));
+	console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
 	console.log('');
 };
 
@@ -8803,26 +8829,26 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 Framework.prototype.wait = function(name, enable) {
 	var self = this;
 
-	if (!self.wait)
-		self.wait = {};
+	if (!self.waits)
+		self.waits = {};
 
 	if (enable !== undefined) {
 		if (enable)
-			self.wait[name] = true;
+			self.waits[name] = true;
 		else
-			delete self.wait[name];
-		self._length_wait = Object.keys(self.wait).length;
+			delete self.waits[name];
+		self._length_wait = Object.keys(self.waits).length;
 		return enable;
 	}
 
-	if (self.wait[name]) {
-		delete self.wait[name];
+	if (self.waits[name]) {
+		delete self.waits[name];
 	} else {
-		self.wait[name] = true;
+		self.waits[name] = true;
 		enable = true;
 	}
 
-	self._length_wait = Object.keys(self.wait).length;
+	self._length_wait = Object.keys(self.waits).length;
 	return enable === true;
 };
 
@@ -14922,7 +14948,6 @@ process.on('message', function(msg, h) {
 		}, function() {
 			delete framework.isLoaded;
 			framework.console();
-			framework.console = framework_utils.noop;
 		}, 10000, 500);
 		return;
 	}
