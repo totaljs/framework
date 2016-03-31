@@ -9123,12 +9123,12 @@ FrameworkPath.prototype.themes = function(filename) {
 };
 
 FrameworkPath.prototype.root = function(filename) {
-	var p = framework_utils.join(directory, filename);
+	var p = path.join(directory, filename);
 	return framework.isWindows ? p.replace(/\\/g, '/') : p;
 };
 
 FrameworkPath.prototype.package = function(name, filename) {
-	var p = framework_utils.join(directory, framework.config['directory-temp'], name, filename);
+	var p = path.join(directory, framework.config['directory-temp'], name, filename);
 	return framework.isWindows ? p.replace(/\\/g, '/') : p;
 };
 
