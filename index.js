@@ -2375,6 +2375,8 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	if (!targetdirectory)
 		targetdirectory = directory;
 
+	targetdirectory = '~' + targetdirectory;
+
 	function listing(directory, level, output, extension, isTheme) {
 		if (!existsSync(dir))
 			return;
@@ -2412,21 +2414,21 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	}
 
 	if (!types || types.indexOf('modules') !== -1) {
-		dir = framework_utils.join(targetdirectory, self.config['directory-modules']);
+		dir = framework_utils.combine(targetdirectory, self.config['directory-modules']);
 		arr = [];
 		listing(dir, 0, arr, '.js');
 		arr.forEach((item) => self.install('module', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	if (!types || types.indexOf('isomorphic') !== -1) {
-		dir = framework_utils.join(targetdirectory, self.config['directory-isomorphic']);
+		dir = framework_utils.combine(targetdirectory, self.config['directory-isomorphic']);
 		arr = [];
 		listing(dir, 0, arr, '.js');
 		arr.forEach((item) => self.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	if (!types || types.indexOf('packages') !== -1) {
-		dir = framework_utils.join(targetdirectory, self.config['directory-packages']);
+		dir = framework_utils.combine(targetdirectory, self.config['directory-packages']);
 		arr = [];
 		listing(dir, 0, arr, '.package');
 
@@ -2463,7 +2465,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	}
 
 	if (!types || types.indexOf('models') !== -1) {
-		dir = framework_utils.join(targetdirectory, self.config['directory-models']);
+		dir = framework_utils.combine(targetdirectory, self.config['directory-models']);
 		arr = [];
 		listing(dir, 0, arr);
 		arr.forEach((item) => self.install('model', item.name, item.filename, undefined, undefined, undefined, true));
@@ -2471,7 +2473,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 
 	if (!types || types.indexOf('themes') !== -1) {
 		arr = [];
-		dir = framework_utils.join(targetdirectory, self.config['directory-themes']);
+		dir = framework_utils.combine(targetdirectory, self.config['directory-themes']);
 		listing(dir, 0, arr, undefined, true);
 		arr.forEach(function(item) {
 			var themeName = item.name;
@@ -2485,7 +2487,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	}
 
 	if (!types || types.indexOf('definitions') !== -1) {
-		dir = framework_utils.join(targetdirectory, self.config['directory-definitions']);
+		dir = framework_utils.combine(targetdirectory, self.config['directory-definitions']);
 		arr = [];
 		listing(dir, 0, arr);
 		arr.forEach((item) => self.install('definition', item.name, item.filename, undefined, undefined, undefined, true));
@@ -2493,7 +2495,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 
 	if (!types || types.indexOf('controllers') !== -1) {
 		arr = [];
-		dir = framework_utils.join(targetdirectory, self.config['directory-controllers']);
+		dir = framework_utils.combine(targetdirectory, self.config['directory-controllers']);
 		listing(dir, 0, arr);
 		arr.forEach((item) => self.install('controller', item.name, item.filename, undefined, undefined, undefined, true));
 	}
@@ -3095,7 +3097,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				}
 
 				framework.$load(undefined, tmpdir);
-
 			}, 100);
 		}
 
@@ -6404,13 +6405,6 @@ Framework.prototype.listener = function(req, res) {
 		}
 	}
 
-	if (!req.host) {
-		self.stats.response.destroy++;
-		res.writeHead(403);
-		res.end();
-		return self;
-	}
-
 	req.path = framework_internal.routeSplit(req.uri.pathname);
 	req.processing = 0;
 	req.isAuthorized = true;
@@ -9041,36 +9035,36 @@ FrameworkPath.prototype.verify = function(name) {
 };
 
 FrameworkPath.prototype.public = function(filename) {
-	return framework_utils.combine(framework.config['directory-public'], filename || '');
+	return framework_utils.combine(framework.config['directory-public'], filename);
 };
 
 FrameworkPath.prototype.private = function(filename) {
-	return framework_utils.combine(framework.config['directory-private'], filename || '');
+	return framework_utils.combine(framework.config['directory-private'], filename);
 };
 
 FrameworkPath.prototype.isomorphic = function(filename) {
-	return framework_utils.combine(framework.config['directory-isomorphic'], filename || '');
+	return framework_utils.combine(framework.config['directory-isomorphic'], filename);
 };
 
 FrameworkPath.prototype.configs = function(filename) {
-	return framework_utils.combine(framework.config['directory-configs'], filename || '');
+	return framework_utils.combine(framework.config['directory-configs'], filename);
 };
 
 FrameworkPath.prototype.virtual = function(filename) {
-	return framework_utils.combine(framework.config['directory-public-virtual'], filename || '');
+	return framework_utils.combine(framework.config['directory-public-virtual'], filename);
 };
 
 FrameworkPath.prototype.logs = function(filename) {
 	this.verify('logs');
-	return framework_utils.combine(framework.config['directory-logs'], filename || '');
+	return framework_utils.combine(framework.config['directory-logs'], filename);
 };
 
 FrameworkPath.prototype.models = function(filename) {
-	return framework_utils.combine(framework.config['directory-models'], filename || '');
+	return framework_utils.combine(framework.config['directory-models'], filename);
 };
 FrameworkPath.prototype.temp = function(filename) {
 	this.verify('temp');
-	return framework_utils.combine(framework.config['directory-temp'], filename || '');
+	return framework_utils.combine(framework.config['directory-temp'], filename);
 };
 
 FrameworkPath.prototype.temporary = function(filename) {
@@ -9078,57 +9072,57 @@ FrameworkPath.prototype.temporary = function(filename) {
 };
 
 FrameworkPath.prototype.views = function(filename) {
-	return framework_utils.combine(framework.config['directory-views'], filename || '');
+	return framework_utils.combine(framework.config['directory-views'], filename);
 };
 
 FrameworkPath.prototype.workers = function(filename) {
-	return framework_utils.combine(framework.config['directory-workers'], filename || '');
+	return framework_utils.combine(framework.config['directory-workers'], filename);
 };
 
 FrameworkPath.prototype.databases = function(filename) {
 	this.verify('databases');
-	return framework_utils.combine(framework.config['directory-databases'], filename || '');
+	return framework_utils.combine(framework.config['directory-databases'], filename);
 };
 
 FrameworkPath.prototype.modules = function(filename) {
-	return framework_utils.combine(framework.config['directory-modules'], filename || '');
+	return framework_utils.combine(framework.config['directory-modules'], filename);
 };
 
 FrameworkPath.prototype.controllers = function(filename) {
-	return framework_utils.combine(framework.config['directory-controllers'], filename || '');
+	return framework_utils.combine(framework.config['directory-controllers'], filename);
 };
 
 FrameworkPath.prototype.definitions = function(filename) {
-	return framework_utils.combine(framework.config['directory-definitions'], filename || '');
+	return framework_utils.combine(framework.config['directory-definitions'], filename);
 };
 
 FrameworkPath.prototype.tests = function(filename) {
-	return framework_utils.combine(framework.config['directory-tests'], filename || '');
+	return framework_utils.combine(framework.config['directory-tests'], filename);
 };
 
 FrameworkPath.prototype.resources = function(filename) {
-	return framework_utils.combine(framework.config['directory-resources'], filename || '');
+	return framework_utils.combine(framework.config['directory-resources'], filename);
 };
 
 FrameworkPath.prototype.services = function(filename) {
-	return framework_utils.combine(framework.config['directory-services'], filename || '');
+	return framework_utils.combine(framework.config['directory-services'], filename);
 };
 
 FrameworkPath.prototype.packages = function(filename) {
-	return framework_utils.combine(framework.config['directory-packages'], filename || '');
+	return framework_utils.combine(framework.config['directory-packages'], filename);
 };
 
 FrameworkPath.prototype.themes = function(filename) {
-	return framework_utils.combine(framework.config['directory-themes'], filename || '');
+	return framework_utils.combine(framework.config['directory-themes'], filename);
 };
 
 FrameworkPath.prototype.root = function(filename) {
-	var p = path.join(directory, filename);
+	var p = path.join(directory, filename || '');
 	return framework.isWindows ? p.replace(/\\/g, '/') : p;
 };
 
 FrameworkPath.prototype.package = function(name, filename) {
-	var p = path.join(directory, framework.config['directory-temp'], name, filename);
+	var p = path.join(directory, framework.config['directory-temp'], name, filename || '');
 	return framework.isWindows ? p.replace(/\\/g, '/') : p;
 };
 
