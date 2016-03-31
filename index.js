@@ -773,11 +773,7 @@ Framework.prototype._routesSort = function() {
 		var name = self.temporary.internal[route.controller];
 		if (name)
 			route.controller = name;
-		if (!route.isMOBILE)
-			continue;
-		if (route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML)
-			continue;
-		if (route.flags.indexOf('get') === -1)
+		if (!route.isMOBILE || route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML || route.flags.indexOf('get') === -1)
 			continue;
 		url = route.url.join('/');
 		cache[url] = true;
@@ -785,11 +781,9 @@ Framework.prototype._routesSort = function() {
 
 	for (var i = 0; i < length; i++) {
 		var route = self.routes.web[i];
-		if (route.isMOBILE || route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML)
+		if (route.isMOBILE || route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML || route.flags.indexOf('get') === -1)
 			continue;
-		if (route.flags.indexOf('get') === -1)
-			continue;
-	 url = route.url.join('/');
+	 	url = route.url.join('/');
 		route.isMOBILE_VARY = cache[url] === true;
 	}
 
@@ -2195,13 +2189,14 @@ Framework.prototype.localize = function(url, flags, minify) {
 	url = url.replace('*', '');
 
 	var self = this;
-	var index = url.lastIndexOf('.');
 
 	if (flags === true) {
 		flags = [];
 		minify = true;
 	} else if (!flags)
 		flags = [];
+
+	var index;
 
 	if (!minify) {
 		index = flags.indexOf('minify');
@@ -2211,6 +2206,8 @@ Framework.prototype.localize = function(url, flags, minify) {
 		if (index !== -1)
 			flags.splice(index, 1);
 	}
+
+	var index = url.lastIndexOf('.');
 
 	if (index !== -1) {
 		flags.push(url.substring(index + 1).toLowerCase());
