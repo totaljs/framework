@@ -3473,9 +3473,9 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 
 	if (decimals || dec.length) {
 		if (dec.length > decimals)
-			dec = dec.substring(0, decimals);
+			dec = dec.substring(0, decimals || 0);
 		else
-			dec = dec.padRight(decimals, '0');
+			dec = dec.padRight(decimals || 0, '0');
 	}
 
 	if (dec.length && separatorDecimal === undefined)
