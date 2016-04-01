@@ -683,7 +683,7 @@ Message.prototype._send = function(socket, options, autosend) {
 						self.callback(null);
 
 					ending = setTimeout(function() {
-						if (!socket) {
+						if (socket) {
 							socket.end();
 							socket.destroy();
 						}
@@ -710,7 +710,7 @@ Message.prototype._send = function(socket, options, autosend) {
 					if (!self.isSent && self.callback)
 						self.callback(err);
 
-					if (!socket) {
+					if (socket) {
 						socket.end();
 						socket.destroy();
 					}
@@ -745,7 +745,7 @@ Message.prototype._send = function(socket, options, autosend) {
 
 				err = new Error(line);
 
-				if (!socket) {
+				if (socket) {
 					socket.end();
 					socket.destroy();
 				}
