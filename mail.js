@@ -596,10 +596,12 @@ Message.prototype._send = function(socket, options, autosend) {
 
 	socket.on('end', function() {
 		self.closed = true;
-		if (!socket) {
-			socket.end();
+
+		if (socket) {
 			socket.destroy();
+			socket = null;
 		}
+
 	});
 
 	socket.on('data', function(data) {
