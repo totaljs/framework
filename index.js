@@ -5875,7 +5875,7 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 
 	self._request_stats(false, req.isStaticFile);
 	res.success = true;
-	var headers = HEADERS['responseRedirect'];
+	var headers = HEADERS.responseRedirect;
 	headers.Location = url;
 	res.writeHead(permanent ? 301 : 302, headers);
 	res.end();
