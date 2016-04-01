@@ -25,6 +25,7 @@ const EXTENSION_META = '.meta';
 const BINARY_HEADER_LENGTH = 2000;
 const NEWLINE = '\n';
 const EMPTYARRAY = [];
+const STRING = 'string';
 
 Object.freeze(EMPTYARRAY);
 
@@ -1015,7 +1016,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 
 	var id = new Date().getTime().toString() + framework_utils.GUID(10);
 	var key = self.db.name + '#' + id;
-	var stream = Fs.createWriteStream(path.join(self.directory, key + EXTENSION_BINARY));
+	var stream = Fs.createWriteStream(Path.join(self.directory, key + EXTENSION_BINARY));
 
 	stream.write(header, 'binary');
 	stream.end(buffer);
