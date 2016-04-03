@@ -12322,6 +12322,12 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 
 	self.subscribe.success();
 	framework.responseContent(self.req, self.res, self.status, contentBody, contentType || CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
+
+	if (self.precache && self.status === 200) {
+		self.layout('');
+		self.precache(contentBody, contentType || CONTENTTYPE_TEXTPLAIN, headers, true);
+	}
+
 	return self;
 };
 

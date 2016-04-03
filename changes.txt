@@ -13,6 +13,7 @@
 - fixed: `Array.async()` without arguments
 - fixed: node.js deprecated methods
 - fixed: view inline helpers
+- fixed: `controller.memorize()` problem with `controller.content()`
 
 ======= 1.9.7
 
