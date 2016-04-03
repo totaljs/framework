@@ -344,6 +344,8 @@ global.CLEANUP = function(stream, callback) {
 		stream.on('end', fn);
 	else
 		stream.on('finish', fn);
+
+	stream.on('error', fn);
 };
 
 global.SUCCESS = function(success, value) {
