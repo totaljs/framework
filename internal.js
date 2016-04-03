@@ -2293,12 +2293,11 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'textarea':
 		case 'password':
 			return 'self.$' + exports.appendModel(command);
-
+		case 'helpers':
+			return command;
 		default:
-
 			if (framework.helpers[name])
 				return 'helpers.' + view_insert_call(command);
-
 			return '$STRING(' + (functions.indexOf(name) === -1 ? command[0] === '!' ? command.substring(1) + ')' : command + ').encode()' : command + ')');
 	}
 

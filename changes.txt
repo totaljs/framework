@@ -12,6 +12,7 @@
 - fixed: WebSocket `origin` validator
 - fixed: `Array.async()` without arguments
 - fixed: node.js deprecated methods
+- fixed: view inline helpers
 
 ======= 1.9.7
 
