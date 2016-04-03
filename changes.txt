@@ -11,6 +11,7 @@
 - fixed: `multipart/form-data` parser
 - fixed: WebSocket `origin` validator
 - fixed: `Array.async()` without arguments
+- fixed: node.js deprecated methods
 
 ======= 1.9.7
 

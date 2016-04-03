@@ -1769,7 +1769,7 @@ Framework.prototype.map = function(url, filename, filter) {
 	// Checks if the directory exists
 	if (!isPackage && !filename.startsWith(directory)) {
 		var tmp = filename[0] === '~' ? self.path.root(filename.substring(1)) : self.path.public(filename);
-		if (fs.existsSync(tmp))
+		if (existsSync(tmp))
 			filename = tmp;
 	}
 
@@ -2397,7 +2397,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		targetdirectory = directory;
 
 	function listing(directory, level, output, extension, isTheme) {
-		if (!fs.existsSync(dir))
+		if (!existsSync(dir))
 			return;
 
 		if (!extension)
@@ -2464,12 +2464,12 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			if (item.is) {
 				framework_utils.ls(item.filename, function(files, directories) {
 					var dir = framework.path.temp(item.name);
-					if (!fs.existsSync(dir))
+					if (!existsSync(dir))
 						fs.mkdirSync(dir);
 
 					for (var i = 0, length = directories.length; i < length; i++) {
 						var target = framework.path.temp(directories[i].replace(dirtmp, '').replace('.package', '') + '/');
-						if (!fs.existsSync(target))
+						if (!existsSync(target))
 							fs.mkdirSync(target);
 					}
 
@@ -2511,7 +2511,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			var filename = path.join(themeDirectory, 'index.js');
 			self.themes[item.name] = framework_utils.path(themeDirectory);
 			self._length_themes++;
-			if (fs.existsSync(filename))
+			if (existsSync(filename))
 				self.install('theme', item.name, filename, undefined, undefined, undefined, true);
 		});
 	}
@@ -4108,7 +4108,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 	var merge = self.routes.merge[uri.pathname];
 	var filename = merge.filename;
 
-	if (!self.config.debug && fs.existsSync(filename)) {
+	if (!self.config.debug && existsSync(filename)) {
 		self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
 		callback();
 		return self;
@@ -4178,7 +4178,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 
 		if (filename[0] !== '~') {
 			var tmp = self.path.public(filename);
-			if (self.isVirtualDirectory && !fs.existsSync(tmp))
+			if (self.isVirtualDirectory && !existsSync(tmp))
 				tmp = self.path.virtual(filename);
 			filename = tmp;
 		}
@@ -6986,7 +6986,7 @@ Framework.prototype.model = function(name) {
 
 	var filename = path.join(directory, self.config['directory-models'], name + EXTENSION_JS);
 
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		self.install('model', name, filename, undefined, undefined, undefined, true);
 
 	return self.models[name] || null;
@@ -7010,7 +7010,7 @@ Framework.prototype.source = function(name, options, callback) {
 		return self.sources[name];
 
 	var filename = path.join(directory, self.config['directory-source'], name + EXTENSION_JS);
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		self.install('source', name, filename, options, callback, undefined, true);
 
 	return self.sources[name] || null;
@@ -7437,7 +7437,7 @@ Framework.prototype.test = function(stop, names, cb) {
 
 	var dir = self.config['directory-tests'];
 
-	if (!fs.existsSync(framework_utils.combine(dir))) {
+	if (!existsSync(framework_utils.combine(dir))) {
 		if (cb) cb();
 		if (stop) setTimeout(function() {
 			framework.stop(0);
@@ -7625,7 +7625,7 @@ Framework.prototype.clear = function(callback, isInit) {
 		}
 	}
 
-	if (!fs.existsSync(dir)) {
+	if (!existsSync(dir)) {
 		if (callback)
 			callback();
 		return self;
@@ -7841,13 +7841,13 @@ Framework.prototype.resource = function(name, key) {
 	if (routes) {
 		for (var i = 0, length = routes.length; i < length; i++) {
 			filename = routes[i];
-			if (fs.existsSync(filename))
+			if (existsSync(filename))
 				body += (body ? '\n' : '') + fs.readFileSync(filename).toString(ENCODING);
 		}
 	}
 
 	var filename = framework_utils.combine(self.config['directory-resources'], name + '.resource');
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		body += (body ? '\n' : '') + fs.readFileSync(filename).toString(ENCODING);
 
 	var obj = body.parseConfig();
@@ -7892,7 +7892,7 @@ Framework.prototype._configure_sitemap = function(arr, clean) {
 
 	if (!arr || typeof(arr) === STRING) {
 		var filename = prepare_filename(arr || 'sitemap');
-		if (fs.existsSync(filename))
+		if (existsSync(filename))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -7997,7 +7997,7 @@ Framework.prototype._configure_dependencies = function(arr) {
 
 	if (!arr || typeof(arr) === STRING) {
 		var filename = prepare_filename(arr || 'dependencies');
-		if (fs.existsSync(filename))
+		if (existsSync(filename))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -8099,7 +8099,7 @@ Framework.prototype._configure_versions = function(arr, clean) {
 
 	if (arr === undefined || typeof(arr) === STRING) {
 		var filename = prepare_filename(arr || 'versions');
-		if (fs.existsSync(filename))
+		if (existsSync(filename))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -8165,7 +8165,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 	if (type === STRING) {
 		var filename = prepare_filename(arr);
-		if (!fs.existsSync(filename))
+		if (!existsSync(filename))
 			return self;
 		arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 	}
@@ -8179,7 +8179,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 		// read all files from "configs" directory
 		var configs = self.path.configs();
-		if (fs.existsSync(configs)) {
+		if (existsSync(configs)) {
 			var tmp = fs.readdirSync(configs);
 			for (var i = 0, length = tmp.length; i < length; i++) {
 				var skip = tmp[i].match(/\-(debug|release|test)$/i);
@@ -8196,16 +8196,16 @@ Framework.prototype._configure = function(arr, rewrite) {
 			}
 		}
 
-		if (fs.existsSync(filenameA) && fs.lstatSync(filenameA).isFile())
+		if (existsSync(filenameA) && fs.lstatSync(filenameA).isFile())
 			arr = arr.concat(fs.readFileSync(filenameA).toString(ENCODING).split('\n'));
 
-		if (fs.existsSync(filenameB) && fs.lstatSync(filenameB).isFile())
+		if (existsSync(filenameB) && fs.lstatSync(filenameB).isFile())
 			arr = arr.concat(fs.readFileSync(filenameB).toString(ENCODING).split('\n'));
 	}
 
 	var done = function() {
 		process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
-		self.isVirtualDirectory = fs.existsSync(framework_utils.combine(self.config['directory-public-virtual']));
+		self.isVirtualDirectory = existsSync(framework_utils.combine(self.config['directory-public-virtual']));
 	};
 
 	if (!arr instanceof Array || !arr.length) {
@@ -9008,7 +9008,7 @@ FrameworkPath.prototype.verify = function(name) {
 	if (framework.temporary.path[prop])
 		return framework;
 	var dir = framework_utils.combine(framework.config['directory-' + name]);
-	if (!fs.existsSync(dir))
+	if (!existsSync(dir))
 		fs.mkdirSync(dir);
 	framework.temporary.path[prop] = true;
 	return framework;
@@ -14208,7 +14208,7 @@ Backup.prototype.restoreValue = function(data) {
 
 Backup.prototype.restore = function(filename, path, callback, filter) {
 
-	if (!fs.existsSync(filename)) {
+	if (!existsSync(filename)) {
 		if (callback)
 			callback(new Error('Package not found.'), path);
 		return;
@@ -14326,7 +14326,7 @@ Backup.prototype.createDirectory = function(p, root) {
 		if (root)
 			dir = (is ? '\\' : '/') + dir;
 
-		if (fs.existsSync(dir))
+		if (existsSync(dir))
 			continue;
 
 		fs.mkdirSync(dir);
@@ -15163,4 +15163,12 @@ function isGZIP(req) {
 function prepare_viewname(value) {
 	// Cleans theme name
 	return value.substring(value.indexOf('/', 2) + 1);
+}
+
+function existsSync(filename) {
+	try {
+		return fs.statSync(filename) ? true : false;
+	} catch (e) {
+		return false;
+	}
 }
