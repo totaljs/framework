@@ -1,3 +1,20 @@
+======= 1.9.8
+
+- fixed: `Array.async()` without arguments
+- fixed: `CLEANUP(stream)` method
+- fixed: `controller.memorize()` problem with `controller.content()`
+- fixed: `F.use()` (problem with e.g. session module)
+- fixed: `F.websocket()` input arguments by @claudioquaglia
+- fixed: `FrameworkImage.save()` problem with streams
+- fixed: `multipart/form-data` parser
+- fixed: node.js deprecated methods
+- fixed: Schema parsing
+- fixed: sitemap routing e.g. `F.route('#eshop')` by @claudioquaglia
+- fixed: view inline helpers
+- fixed: view looping
+- fixed: WebSocket `origin` validator
+- fixed: WebSocket unhandled exceptions
+
 ======= 1.9.7
 
 - added: `F.web()` --> alias to F.route()

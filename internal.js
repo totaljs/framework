@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.7
+ * @version 1.9.8
  */
 
 'use strict';
@@ -67,15 +67,24 @@ global.$STRING = function(value) {
 */
 exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscribe) {
 
-	var parser = new MultipartParser();
 	var boundary = contentType.split(';')[1];
+
+	if (!boundary) {
+		framework._request_stats(false, false);
+		framework.stats.request.error400++;
+		subscribe.res.writeHead(400);
+		subscribe.res.end();
+		return;
+	}
+
+	var parser = new MultipartParser();
 	var size = 0;
-	var stream = null;
+	var stream;
 	var maximumSize = route.length;
 	var now = Date.now();
 	var tmp;
 	var close = 0;
-	var rm = null;
+	var rm;
 	var ip = '';
 
 	// Replaces the EMPTYARRAY and EMPTYOBJECT in index.js
@@ -165,7 +174,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		if (size >= maximumSize) {
 			req.buffer_exceeded = true;
 
-			if (rm === null)
+			if (!rm)
 				rm = [tmp.path];
 			else
 				rm.push(tmp.path);
@@ -1928,7 +1937,7 @@ function view_parse(content, minify, filename, controller) {
 			if (index === -1)
 				index = cmd.indexOf('[', newCommand.length + 10);
 
-			builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if (!($source instanceof Array) || !source.length)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
+			builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if (!($source instanceof Array) || !$source.length)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
 
 		} else if (cmd === 'end') {
 
@@ -2284,12 +2293,11 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'textarea':
 		case 'password':
 			return 'self.$' + exports.appendModel(command);
-
+		case 'helpers':
+			return command;
 		default:
-
 			if (framework.helpers[name])
 				return 'helpers.' + view_insert_call(command);
-
 			return '$STRING(' + (functions.indexOf(name) === -1 ? command[0] === '!' ? command.substring(1) + ')' : command + ').encode()' : command + ')');
 	}
 

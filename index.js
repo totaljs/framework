@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 1.9.7
+ * @version 1.9.8
  */
 
 'use strict';
@@ -58,12 +58,16 @@ var REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|
 var REG_ROBOT = /search|agent|bot|crawler/i;
 var REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
 var REG_MULTIPART = /\/form\-data$/i;
+var REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
 var REQUEST_PROXY_FLAGS = ['post', 'json'];
 var RANGE = { start: 0, end: 0 };
 var HEADERS = {};
 var SUCCESSHELPER = { success: true };
 var EMPTYARRAY = new Array(0);
 var EMPTYOBJECT = {};
+
+Object.freeze(EMPTYOBJECT);
+Object.freeze(EMPTYARRAY);
 
 // Cached headers for repeated usage
 HEADERS['responseCode'] = {};
@@ -336,24 +340,12 @@ global.CLEANUP = function(stream, callback) {
 		});
 	};
 
-	if (stream.readable) {
-		if (stream.path) {
-			stream.on('end', fn);
-			return;
-		}
-	} else {
-		if (stream.path) {
-			stream.on('finish', fn);
-			return;
-		}
-	}
+	if (stream.readable)
+		stream.on('end', fn);
+	else
+		stream.on('finish', fn);
 
-	fn = null;
-	FINISHED(stream, function() {
-		if (callback)
-			callback();
-		DESTROY(stream);
-	});
+	stream.on('error', fn);
 };
 
 global.SUCCESS = function(success, value) {
@@ -433,8 +425,8 @@ var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 function Framework() {
 
 	this.id = null;
-	this.version = 1970;
-	this.version_header = '1.9.7';
+	this.version = 1980;
+	this.version_header = '1.9.8';
 
 	var version = process.version.toString().replace('v', '').replace(/\./g, '');
 	if (version[0] !== '0' || version[1] !== '0')
@@ -1779,7 +1771,7 @@ Framework.prototype.map = function(url, filename, filter) {
 	// Checks if the directory exists
 	if (!isPackage && !filename.startsWith(directory)) {
 		var tmp = filename[0] === '~' ? self.path.root(filename.substring(1)) : self.path.public(filename);
-		if (fs.existsSync(tmp))
+		if (existsSync(tmp))
 			filename = tmp;
 	}
 
@@ -1929,10 +1921,9 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 	if (url[0] === '#') {
 		url = url.substring(1);
 		var sitemap = self.sitemap(url, true);
-		if (sitemap) {
-			name = url;
+		if (sitemap)
 			url = sitemap.url;
-		} else
+		else
 			throw new Error('Sitemap item "' + url + '" not found.');
 	}
 
@@ -1948,9 +1939,9 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, protocols, 
 		length = tmp;
 	}
 
-	if (typeof(funcExecute) === OBJECT) {
+	if (typeof(funcInitialize) === OBJECT) {
 		tmp = flags;
-		funcExecute = flags;
+		funcInitialize = flags;
 		flags = tmp;
 	}
 
@@ -2408,7 +2399,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		targetdirectory = directory;
 
 	function listing(directory, level, output, extension, isTheme) {
-		if (!fs.existsSync(dir))
+		if (!existsSync(dir))
 			return;
 
 		if (!extension)
@@ -2475,12 +2466,12 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			if (item.is) {
 				framework_utils.ls(item.filename, function(files, directories) {
 					var dir = framework.path.temp(item.name);
-					if (!fs.existsSync(dir))
+					if (!existsSync(dir))
 						fs.mkdirSync(dir);
 
 					for (var i = 0, length = directories.length; i < length; i++) {
 						var target = framework.path.temp(directories[i].replace(dirtmp, '').replace('.package', '') + '/');
-						if (!fs.existsSync(target))
+						if (!existsSync(target))
 							fs.mkdirSync(target);
 					}
 
@@ -2522,7 +2513,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			var filename = path.join(themeDirectory, 'index.js');
 			self.themes[item.name] = framework_utils.path(themeDirectory);
 			self._length_themes++;
-			if (fs.existsSync(filename))
+			if (existsSync(filename))
 				self.install('theme', item.name, filename, undefined, undefined, undefined, true);
 		});
 	}
@@ -4119,7 +4110,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 	var merge = self.routes.merge[uri.pathname];
 	var filename = merge.filename;
 
-	if (!self.config.debug && fs.existsSync(filename)) {
+	if (!self.config.debug && existsSync(filename)) {
 		self.temporary.path[key] = filename + ';' + fs.statSync(filename).size;
 		callback();
 		return self;
@@ -4189,7 +4180,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 
 		if (filename[0] !== '~') {
 			var tmp = self.path.public(filename);
-			if (self.isVirtualDirectory && !fs.existsSync(tmp))
+			if (self.isVirtualDirectory && !existsSync(tmp))
 				tmp = self.path.virtual(filename);
 			filename = tmp;
 		}
@@ -6357,6 +6348,8 @@ Framework.prototype.listener = function(req, res) {
 	req.isAuthorized = true;
 	req.xhr = headers['x-requested-with'] === 'XMLHttpRequest';
 	res.success = false;
+	req.session = null;
+	req.user = null;
 
 	if (self.isDebug)
 		res.setHeader('Mode', 'debug');
@@ -6443,8 +6436,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		return self;
 	}
 
-	req.session = null;
-	req.user = null;
 	req.body = EMPTYOBJECT;
 	req.files = EMPTYARRAY;
 	req.isProxy = headers['x-proxy'] === 'total.js';
@@ -6997,7 +6988,7 @@ Framework.prototype.model = function(name) {
 
 	var filename = path.join(directory, self.config['directory-models'], name + EXTENSION_JS);
 
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		self.install('model', name, filename, undefined, undefined, undefined, true);
 
 	return self.models[name] || null;
@@ -7021,7 +7012,7 @@ Framework.prototype.source = function(name, options, callback) {
 		return self.sources[name];
 
 	var filename = path.join(directory, self.config['directory-source'], name + EXTENSION_JS);
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		self.install('source', name, filename, options, callback, undefined, true);
 
 	return self.sources[name] || null;
@@ -7448,7 +7439,7 @@ Framework.prototype.test = function(stop, names, cb) {
 
 	var dir = self.config['directory-tests'];
 
-	if (!fs.existsSync(framework_utils.combine(dir))) {
+	if (!existsSync(framework_utils.combine(dir))) {
 		if (cb) cb();
 		if (stop) setTimeout(function() {
 			framework.stop(0);
@@ -7636,7 +7627,7 @@ Framework.prototype.clear = function(callback, isInit) {
 		}
 	}
 
-	if (!fs.existsSync(dir)) {
+	if (!existsSync(dir)) {
 		if (callback)
 			callback();
 		return self;
@@ -7852,13 +7843,13 @@ Framework.prototype.resource = function(name, key) {
 	if (routes) {
 		for (var i = 0, length = routes.length; i < length; i++) {
 			filename = routes[i];
-			if (fs.existsSync(filename))
+			if (existsSync(filename))
 				body += (body ? '\n' : '') + fs.readFileSync(filename).toString(ENCODING);
 		}
 	}
 
 	var filename = framework_utils.combine(self.config['directory-resources'], name + '.resource');
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		body += (body ? '\n' : '') + fs.readFileSync(filename).toString(ENCODING);
 
 	var obj = body.parseConfig();
@@ -7903,7 +7894,7 @@ Framework.prototype._configure_sitemap = function(arr, clean) {
 
 	if (!arr || typeof(arr) === STRING) {
 		var filename = prepare_filename(arr || 'sitemap');
-		if (fs.existsSync(filename))
+		if (existsSync(filename))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -8008,7 +7999,7 @@ Framework.prototype._configure_dependencies = function(arr) {
 
 	if (!arr || typeof(arr) === STRING) {
 		var filename = prepare_filename(arr || 'dependencies');
-		if (fs.existsSync(filename))
+		if (existsSync(filename))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -8110,7 +8101,7 @@ Framework.prototype._configure_versions = function(arr, clean) {
 
 	if (arr === undefined || typeof(arr) === STRING) {
 		var filename = prepare_filename(arr || 'versions');
-		if (fs.existsSync(filename))
+		if (existsSync(filename))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -8176,7 +8167,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 	if (type === STRING) {
 		var filename = prepare_filename(arr);
-		if (!fs.existsSync(filename))
+		if (!existsSync(filename))
 			return self;
 		arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 	}
@@ -8190,7 +8181,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 		// read all files from "configs" directory
 		var configs = self.path.configs();
-		if (fs.existsSync(configs)) {
+		if (existsSync(configs)) {
 			var tmp = fs.readdirSync(configs);
 			for (var i = 0, length = tmp.length; i < length; i++) {
 				var skip = tmp[i].match(/\-(debug|release|test)$/i);
@@ -8207,16 +8198,16 @@ Framework.prototype._configure = function(arr, rewrite) {
 			}
 		}
 
-		if (fs.existsSync(filenameA) && fs.lstatSync(filenameA).isFile())
+		if (existsSync(filenameA) && fs.lstatSync(filenameA).isFile())
 			arr = arr.concat(fs.readFileSync(filenameA).toString(ENCODING).split('\n'));
 
-		if (fs.existsSync(filenameB) && fs.lstatSync(filenameB).isFile())
+		if (existsSync(filenameB) && fs.lstatSync(filenameB).isFile())
 			arr = arr.concat(fs.readFileSync(filenameB).toString(ENCODING).split('\n'));
 	}
 
 	var done = function() {
 		process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
-		self.isVirtualDirectory = fs.existsSync(framework_utils.combine(self.config['directory-public-virtual']));
+		self.isVirtualDirectory = existsSync(framework_utils.combine(self.config['directory-public-virtual']));
 	};
 
 	if (!arr instanceof Array || !arr.length) {
@@ -9019,7 +9010,7 @@ FrameworkPath.prototype.verify = function(name) {
 	if (framework.temporary.path[prop])
 		return framework;
 	var dir = framework_utils.combine(framework.config['directory-' + name]);
-	if (!fs.existsSync(dir))
+	if (!existsSync(dir))
 		fs.mkdirSync(dir);
 	framework.temporary.path[prop] = true;
 	return framework;
@@ -9808,7 +9799,7 @@ Subscribe.prototype.validate = function(route, next) {
 	var req = self.req;
 	self.schema = false;
 
-	if (req.method === 'DELETE') {
+	if (req.method === 'DELETE' || !route.schema) {
 		next();
 		return;
 	}
@@ -12333,6 +12324,12 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 
 	self.subscribe.success();
 	framework.responseContent(self.req, self.res, self.status, contentBody, contentType || CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
+
+	if (self.precache && self.status === 200) {
+		self.layout('');
+		self.precache(contentBody, contentType || CONTENTTYPE_TEXTPLAIN, headers, true);
+	}
+
 	return self;
 };
 
@@ -13870,24 +13867,20 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 	self.length = length;
 
 	var origin = self.req.headers['origin'] || '';
+	var length = allow.length;
 
-	if (allow.length) {
-
+	if (length) {
 		if (allow.indexOf('*') === -1) {
-			for (var i = 0; i < allow.length; i++) {
+			for (var i = 0; i < length; i++) {
 				if (origin.indexOf(allow[i]) === -1)
 					return false;
 			}
 		}
-
-	} else {
-
-		if (origin.indexOf(self.req.headers.host) === -1)
-			return false;
 	}
 
-	if (protocols.length) {
-		for (var i = 0; i < protocols.length; i++) {
+	length = protocols.length;
+	if (length) {
+		for (var i = 0; i < length; i++) {
 			if (self.protocol.indexOf(protocols[i]) === -1)
 				return false;
 		}
@@ -13898,10 +13891,8 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 
 	var header = protocols.length ? SOCKET_RESPONSE_PROTOCOL.format('total.js v' + version, self._request_accept_key(self.req), protocols.join(', ')) : SOCKET_RESPONSE.format('total.js v' + version, self._request_accept_key(self.req));
 	self.socket.write(new Buffer(header, 'binary'));
-
 	self._id = (self.ip || '').replace(/\./g, '') + framework_utils.GUID(20);
 	self.id = self._id;
-
 	return true;
 };
 
@@ -14046,13 +14037,19 @@ WebSocketClient.prototype.parse = function() {
 	return self;
 };
 
-WebSocketClient.prototype._onerror = function(error) {
+WebSocketClient.prototype._onerror = function(err) {
 	var self = this;
+
 	if (!self)
 		return;
-	if (error.stack.indexOf('ECONNRESET') !== -1 || error.stack.indexOf('socket is closed') !== -1 || error.stack.indexOf('EPIPE') !== -1)
+
+	if (err.stack.match(REG_WEBSOCKET_ERROR)) {
+		self.isClosed = true;
+		self._onclose();
 		return;
-	self.container.emit('error', error, self);
+	}
+
+	self.container.emit('error', err, self);
 };
 
 WebSocketClient.prototype._onclose = function() {
@@ -14219,7 +14216,7 @@ Backup.prototype.restoreValue = function(data) {
 
 Backup.prototype.restore = function(filename, path, callback, filter) {
 
-	if (!fs.existsSync(filename)) {
+	if (!existsSync(filename)) {
 		if (callback)
 			callback(new Error('Package not found.'), path);
 		return;
@@ -14337,7 +14334,7 @@ Backup.prototype.createDirectory = function(p, root) {
 		if (root)
 			dir = (is ? '\\' : '/') + dir;
 
-		if (fs.existsSync(dir))
+		if (existsSync(dir))
 			continue;
 
 		fs.mkdirSync(dir);
@@ -15174,4 +15171,12 @@ function isGZIP(req) {
 function prepare_viewname(value) {
 	// Cleans theme name
 	return value.substring(value.indexOf('/', 2) + 1);
+}
+
+function existsSync(filename) {
+	try {
+		return fs.statSync(filename) ? true : false;
+	} catch (e) {
+		return false;
+	}
 }
