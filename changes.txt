@@ -36,6 +36,7 @@
 - fixed: view inline helpers
 - fixed: `FrameworkImage.save()` doens't work when it doesn't contain any operation
 - fixed: Windows paths
+- fixed: problem with `websocket.destroy()`
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`

@@ -13984,8 +13984,8 @@ WebSocketClient.prototype.close = function(message, code) {
 		message = '';
 
 	self.isClosed = true;
+	self.socket.removeAllListeners();
 	self.socket.end(framework_utils.getWebSocketFrame(code || 1000, message, 0x08));
-
 	return self;
 };
 
@@ -14009,9 +14009,7 @@ function Backup() {
 	this.pending = 0;
 	this.cache = {};
 	this.complete = function() {};
-	this.filter = function(path) {
-		return true;
-	};
+	this.filter = () => true;
 }
 
 Backup.prototype.restoreKey = function(data) {
@@ -14084,11 +14082,9 @@ Backup.prototype.restore = function(filename, path, callback, filter) {
 	self.filter = filter;
 	self.cache = {};
 	self.createDirectory(path, true);
-
-	var stream = fs.createReadStream(filename);
-
 	self.path = path;
 
+	var stream = fs.createReadStream(filename);
 	stream.on('data', buffer => self.restoreKey(buffer.toString('utf8')));
 
 	if (!callback) {
