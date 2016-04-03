@@ -148,4 +148,3 @@ We provide a support of the framework for companies. Our support services will k
 
 [travis-url]: https://travis-ci.org/totaljs/framework
 [travis-image]: https://img.shields.io/travis/totaljs/framework.svg?style=flat
-
