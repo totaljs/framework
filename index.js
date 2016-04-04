@@ -13922,6 +13922,7 @@ WebSocketClient.prototype._onclose = function() {
 	self.container._remove(self._id);
 	self.container._refresh();
 	self.container.emit('close', self);
+	self.socket.removeAllListeners();
 	framework.emit('websocket-end', self.container, self);
 };
 
@@ -13984,7 +13985,6 @@ WebSocketClient.prototype.close = function(message, code) {
 		message = '';
 
 	self.isClosed = true;
-	self.socket.removeAllListeners();
 	self.socket.end(framework_utils.getWebSocketFrame(code || 1000, message, 0x08));
 	return self;
 };
