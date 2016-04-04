@@ -44,7 +44,7 @@ const regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$
 const regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
 const regexpTRIM = /^[\s]+|[\s]+$/g;
 const regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
-const regexpDATEFORMAT = /yyyy|yy|M+|dd|d|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
+const regexpDATEFORMAT = /yyyy|yy|M+|d+|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
 const regexpSTRINGFORMAT = /\{\d+\}/g;
 const regexpPATH = /\\/g;
 const DIACRITICS = {225:'a',228:'a',269:'c',271:'d',233:'e',283:'e',357:'t',382:'z',250:'u',367:'u',252:'u',369:'u',237:'i',239:'i',244:'o',243:'o',246:'o',353:'s',318:'l',314:'l',253:'y',255:'y',263:'c',345:'r',341:'r',328:'n',337:'o'};
@@ -60,6 +60,7 @@ const NEWLINE = '\r\n';
 const VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version_header : '');
 const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'Juny', 'July', 'August', 'September', 'October', 'November', 'December'];
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 var CONTENTTYPES = {
 	'aac': 'audio/aac',
@@ -2442,6 +2443,12 @@ Date.prototype.format = function(format, resource) {
 				return (self.getMonth() + 1).toString().padLeft(2, '0');
 			case 'M':
 				return (self.getMonth() + 1);
+			case 'ddd':
+				var m = DAYS[self.getDay()];
+				return (framework ? framework.resource(resource, m) || m : m).substring(0, 3);
+			case 'dddd':
+				var m = DAYS[self.getDay()];
+				return (framework ? framework.resource(resource, m) || m : m);
 			case 'dd':
 				return self.getDate().toString().padLeft(2, '0');
 			case 'd':
