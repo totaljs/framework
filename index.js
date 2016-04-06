@@ -6695,6 +6695,9 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 		break;
 	}
 
+	if (!isAllowed)
+		return fn(req, res, arg);
+
 	var stop = false;
 	var headers = req.headers;
 
