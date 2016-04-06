@@ -17,6 +17,7 @@
 - added: `F.on('restart')`
 - added: quicksort algorithm for sorting arrays
 - added: `Array.quicksort(property_name, [asc])` for sorting arrays
+- added: `String.removeTags()` by @harry-stot
 
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
 - updated: `F.file()` supports flags instead of middleware and the flags supports extensions `['.jpg', '.png']`. The `name` argument has been removed.
