@@ -3407,6 +3407,14 @@ String.prototype.soundex = function() {
 	return (builder + '000').substring(0, 4);
 };
 
+/**
+* Remove all Html Tags from a string
+* @return {string}
+*/
+String.prototype.removeHtmlTags = function() {
+	return this.replace(/<\/?[^>]+(>|$)/g, "");
+}
+
 /*
 	@decimals {Number}
 	return {Number}
