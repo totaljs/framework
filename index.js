@@ -6589,9 +6589,10 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		}
 	}
 
-	var skipCors = !req.headers['origin'] || !self._length_cors;
 	req.flags = flags;
 	self.emit('request-begin', req, res);
+
+	var skipCors = !req.headers['origin'] || !self._length_cors;
 
 	switch (first) {
 		case 'G':
@@ -6602,9 +6603,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				return self;
 			}
 
-			self._cors(req, res, function(req, res) {
-				new Subscribe(framework, req, res, 0).end();
-			});
+			self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
 			return self;
 
 		case 'O':
@@ -6626,10 +6625,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				return self;
 			}
 
-			self._cors(req, res, function(req, res) {
-				new Subscribe(framework, req, res, 0).end();
-			});
-
+			self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
 			return self;
 
 		case 'D':
@@ -6640,11 +6636,9 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				return self;
 			}
 
-			self._cors(req, res, function(req, res) {
-				new Subscribe(framework, req, res, 1).urlencoded();
-			});
-
+			self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 1).urlencoded());
 			return self;
+
 		case 'P':
 			if (self._request_check_POST) {
 				if (multipart) {
@@ -6655,10 +6649,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 						return self;
 					}
 
-					self._cors(req, res, function(req, res, multipart) {
-						new Subscribe(self, req, res, 2).multipart(multipart);
-					}, multipart);
-
+					self._cors(req, res, (req, res, multipart) => new Subscribe(self, req, res, 2).multipart(multipart), multipart);
 					return self;
 
 				} else {
@@ -6674,10 +6665,9 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 						return self;
 					}
 
-					self._cors(req, res, function(req, res) {
-						new Subscribe(self, req, res, 1).urlencoded();
-					});
+					self._cors(req, res, (req, res) => new Subscribe(self, req, res, 1).urlencoded());
 				}
+
 				return self;
 			}
 			break;
@@ -6694,9 +6684,8 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 Framework.prototype._cors = function(req, res, fn, arg) {
 
 	var self = this;
-	var cors;
 	var isAllowed = false;
-	var stop = false;
+	var cors;
 
 	for (var i = 0; i < self._length_cors; i++) {
 		cors = self.routes.cors[i];
@@ -6706,12 +6695,13 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 		break;
 	}
 
+	var stop = false;
+	var headers = req.headers;
+
 	if (!isAllowed)
 		stop = true;
 
 	isAllowed = false;
-
-	var headers = req.headers;
 
 	if (!stop && cors.headers) {
 		isAllowed = false;
@@ -6753,10 +6743,10 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 	}
 
 	var tmp;
-	var name;
+	var name
 	var isOPTIONS = req.method === 'OPTIONS';
 
-	res.setHeader('Access-Control-Allow-Origin', cors.origins ? cors.origins : cors.credentials ? isAllowed ? origin : cors.origins ? cors.origins : origin : '*');
+	res.setHeader('Access-Control-Allow-Origin', cors.origins ? cors.origins : cors.credentials ? isAllowed ? origin : cors.origins ? cors.origins : origin : headers['origin']);
 
 	if (cors.credentials)
 		res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -6766,14 +6756,14 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 	if (cors.methods)
 		res.setHeader(name, cors.methods.join(', '));
 	else
-		res.setHeader(name, '*');
+		res.setHeader(name, isOPTIONS ? headers['access-control-request-method'] : req.method);
 
 	name = 'Access-Control-Allow-Headers';
 
 	if (cors.headers)
 		res.setHeader(name, cors.headers.join(', '));
 	else
-		res.setHeader(name, '*');
+		res.setHeader(name, headers['access-control-request-headers'] || '*');
 
 	if (cors.age)
 		res.setHeader('Access-Control-Max-Age', cors.age);
