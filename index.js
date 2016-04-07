@@ -6582,7 +6582,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	}
 
 	if (self._request_check_referer) {
-		var referer = headers['referer'] || '';
+		var referer = headers['referer'];
 		if (referer && referer.indexOf(headers['host']) !== -1) {
 			req.$flags += 'referer';
 			flags.push('referer');
@@ -6592,13 +6592,13 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	req.flags = flags;
 	self.emit('request-begin', req, res);
 
-	var skipCors = !req.headers['origin'] || !self._length_cors;
+	var isCORS = req.headers['origin'] && self._length_cors;
 
 	switch (first) {
 		case 'G':
 			self.stats.request.get++;
 
-			if (skipCors) {
+			if (!isCORS) {
 				new Subscribe(self, req, res, 0).end();
 				return self;
 			}
@@ -6609,7 +6609,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		case 'O':
 			self.stats.request.options++;
 
-			if (skipCors) {
+			if (!isCORS) {
 				new Subscribe(framework, req, res, 0).end();
 				return self;
 			}
@@ -6620,7 +6620,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		case 'H':
 			self.stats.request.head++;
 
-			if (skipCors) {
+			if (!isCORS) {
 				new Subscribe(self, req, res, 0).end();
 				return self;
 			}
@@ -6631,7 +6631,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		case 'D':
 			self.stats.request['delete']++;
 
-			if (skipCors) {
+			if (!isCORS) {
 				new Subscribe(self, req, res, 1).urlencoded();
 				return self;
 			}
@@ -6644,7 +6644,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				if (multipart) {
 					self.stats.request.upload++;
 
-					if (skipCors) {
+					if (!isCORS) {
 						new Subscribe(self, req, res, 2).multipart(multipart);
 						return self;
 					}
@@ -6660,7 +6660,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 					else
 						self.stats.request.post++;
 
-					if (skipCors) {
+					if (!isCORS) {
 						new Subscribe(self, req, res, 1).urlencoded();
 						return self;
 					}
@@ -6905,6 +6905,7 @@ Framework.prototype._upgrade_prepare = function(req, path, headers) {
 
 	if (!auth) {
 		var route = self.lookup_websocket(req, req.websocket.uri.pathname, true);
+
 		if (!route) {
 			req.websocket.close();
 			req.connection.destroy();
@@ -6923,13 +6924,15 @@ Framework.prototype._upgrade_prepare = function(req, path, headers) {
 		req.flags.push(isLogged ? 'authorize' : 'unauthorize');
 
 		var route = self.lookup_websocket(req, req.websocket.uri.pathname, false);
-		if (route === null) {
-			req.websocket.close();
-			req.connection.destroy();
+
+		if (route) {
+			self._upgrade_continue(route, req, path);
 			return;
 		}
 
-		self._upgrade_continue(route, req, path);
+		req.websocket.close();
+		req.connection.destroy();
+
 	});
 };
 
@@ -6961,14 +6964,17 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 		socket.type = 3;
 
 	var next = function() {
-		if (self.connections[id] === undefined) {
-			var connection = new WebSocket(path, route.controller, id);
-			connection.route = route;
-			connection.options = route.options;
-			self.connections[id] = connection;
-			route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
+
+		if (self.connections[id]) {
+			socket.upgrade(self.connections[id]);
+			return;
 		}
-		socket.upgrade(self.connections[id]);
+
+		var connection = new WebSocket(path, route.controller, id);
+		connection.route = route;
+		connection.options = route.options;
+		self.connections[id] = connection;
+		route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
 	};
 
 	if (route.middleware instanceof Array && route.middleware.length) {
@@ -7082,12 +7088,11 @@ Framework.prototype._log = function(a, b, c, d) {
 
 	var length = arguments.length;
 	var params = ['---->'];
+
 	for (var i = 0; i < length; i++)
 		params.push(arguments[i]);
 
-	setTimeout(function() {
-		console.log.apply(console, params);
-	}, 1000);
+	setTimeout(() => console.log.apply(console, params), 1000);
 };
 
 /**
