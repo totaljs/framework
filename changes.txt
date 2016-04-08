@@ -29,6 +29,7 @@
 - updated: `export.booting` can contain `root` attribute for `package` applications
 - updated: `Array.orderBy()` added quicksort algorithm
 - updated: `Date.format()` supports day names `ddd` (short) and `dddd` (full)
+- updated: `String.removeDiacritics()` supports multiple languages (by @Harry-Slot)
 
 - fixed: `FrameworkImage.save()` problem with streams
 - fixed: `CLEANUP(stream)` method
