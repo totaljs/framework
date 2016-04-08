@@ -2676,7 +2676,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		setTimeout(function() {
 			delete self.temporary['mail-settings'];
-			self.emit(type + '#' + name);
+			self.emit(type + '#' + name, framework.config);
 			self.emit('install', type, name);
 		}, 500);
 
@@ -2791,7 +2791,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (item === undefined) {
 			item = {};
-			item.filename = self.path.temporary('installed-' + plus + 'view-' + utils.GUID(10) + '.tmp');
+			item.filename = self.path.temporary('installed-' + plus + 'view-' + framework_utils.GUID(10) + '.tmp');
 			item.url = internal;
 			item.count = 0;
 			self.routes.views[name] = item;
@@ -2823,11 +2823,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				obj = require(declaration);
 
 				(function(name) {
-
-					setTimeout(function() {
-						delete require.cache[name];
-					}, 1000);
-
+					setTimeout(() => delete require.cache[name], 1000);
 				})(require.resolve(declaration));
 			}
 			else
@@ -2871,9 +2867,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				obj = require(declaration);
 				content = fs.readFileSync(declaration).toString(ENCODING);
 				(function(name) {
-					setTimeout(function() {
-						delete require.cache[name];
-					}, 1000);
+					setTimeout(() => delete require.cache[name], 1000);
 				})(require.resolve(declaration));
 			}
 			else {
@@ -2906,8 +2900,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			callback(null);
 
 		setTimeout(function() {
-			self.emit(type + '#' + name);
-			self.emit('install', type, name);
+			self.emit(type + '#' + name, obj);
+			self.emit('install', type, name, obj);
 		}, 500);
 
 		return self;
@@ -2920,17 +2914,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		try {
 
 			if (useRequired) {
-
 				obj = require(declaration);
-
 				(function(name) {
-
-					setTimeout(function() {
-						delete require.cache[name];
-					}, 1000);
-
+					setTimeout(() => delete require.cache[name], 1000);
 				})(require.resolve(declaration));
-
 			}
 			else {
 
@@ -2948,12 +2935,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				obj = require(filename);
 
 				(function(name, filename) {
-
 					setTimeout(function() {
 						fs.unlinkSync(filename);
 						delete require.cache[name];
 					}, 1000);
-
 				})(require.resolve(filename), filename);
 			}
 
@@ -3007,8 +2992,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (!skipEmit) {
 			setTimeout(function() {
-				self.emit(type + '#' + name);
-				self.emit('install', type, name);
+				self.emit(type + '#' + name, obj);
+				self.emit('install', type, name, obj);
 			}, 500);
 		}
 
@@ -3364,8 +3349,8 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 
 	if (!skipEmit) {
 		setTimeout(function() {
-			self.emit(type + '#' + name);
-			self.emit('install', type, name);
+			self.emit(type + '#' + name, obj);
+			self.emit('install', type, name, obj);
 		}, 500);
 	}
 
@@ -6759,7 +6744,7 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 	if (cors.methods)
 		res.setHeader(name, cors.methods.join(', '));
 	else
-		res.setHeader(name, isOPTIONS ? headers['access-control-request-method'] : req.method);
+		res.setHeader(name, isOPTIONS ? headers['access-control-request-method'] || '*' : req.method);
 
 	name = 'Access-Control-Allow-Headers';
 
