@@ -25,7 +25,6 @@ const EXTENSION_META = '.meta';
 const BINARY_HEADER_LENGTH = 2000;
 const NEWLINE = '\n';
 const EMPTYARRAY = [];
-const STRING = 'string';
 
 Object.freeze(EMPTYARRAY);
 
@@ -980,7 +979,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 		return self.insert_stream(null, framework_utils.getName(name), type, reader, callback);
 	}
 
-	if (typeof(buffer) === STRING)
+	if (typeof(buffer) === 'string')
 		buffer = new Buffer(buffer, 'base64');
 	else if (buffer.resume)
 		return self.insert_stream(null, name, type, buffer, callback);
@@ -1070,7 +1069,7 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 		return self.insert_stream(id, framework_utils.getName(name), type, reader, callback);
 	}
 
-	if (typeof(buffer) === STRING)
+	if (typeof(buffer) === 'string')
 		buffer = new Buffer(buffer, 'base64');
 
 	if (buffer.resume)

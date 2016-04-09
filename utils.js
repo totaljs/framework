@@ -50,14 +50,8 @@ const regexpPATH = /\\/g;
 const regexpTags = /<\/?[^>]+(>|$)/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
-const UNDEFINED = 'undefined';
-const STRING = 'string';
-const FUNCTION = 'function';
-const NUMBER = 'number';
-const OBJECT = 'object';
-const BOOLEAN = 'boolean';
 const NEWLINE = '\r\n';
-const VERSION = (typeof(framework) !== UNDEFINED ? ' v' + framework.version_header : '');
+const VERSION = (typeof(framework) !== 'undefined' ? ' v' + framework.version_header : '');
 const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'Juny', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -210,7 +204,7 @@ exports.isEqual = function(obj1, obj2, properties) {
 			return false;
 		}
 
-		if (ta === OBJECT && tb === OBJECT) {
+		if (ta === 'object' && tb === 'object') {
 			if (exports.isEqual(a, b))
 				continue;
 		}
@@ -406,7 +400,7 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
 
 	// No data (data is optinal argument)
-	if (typeof(data) === FUNCTION) {
+	if (typeof(data) === 'function') {
 		timeout = encoding;
 		encoding = headers;
 		headers = cookies;
@@ -415,17 +409,17 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		data = '';
 	}
 
-	if (typeof(cookies) === NUMBER) {
+	if (typeof(cookies) === 'number') {
 		cookies = null;
 		timeout = cookies;
 	}
 
-	if (typeof(headers) === NUMBER) {
+	if (typeof(headers) === 'number') {
 		headers = null;
 		timeout = headers;
 	}
 
-	if (typeof(encoding) === NUMBER) {
+	if (typeof(encoding) === 'number') {
 		encoding = null;
 		timeout = encoding;
 	}
@@ -441,7 +435,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	else
 		headers = {};
 
-	if (typeof(encoding) !== STRING)
+	if (typeof(encoding) !== 'string')
 		encoding = ENCODING;
 
 	if (data === null)
@@ -520,7 +514,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 	var isPOST = method === 'POST' || method === 'PUT' || method === 'DELETE';
 
-	if (typeof(data) !== STRING)
+	if (typeof(data) !== 'string')
 		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
 	else if (data[0] === '?')
 		data = data.substring(1);
@@ -668,7 +662,7 @@ exports.atob = function(str) {
 exports.download = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
 
 	// No data (data is optinal argument)
-	if (typeof(data) === FUNCTION) {
+	if (typeof(data) === 'function') {
 		timeout = encoding;
 		encoding = headers;
 		headers = cookies;
@@ -677,17 +671,17 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		data = '';
 	}
 
-	if (typeof(cookies) === NUMBER) {
+	if (typeof(cookies) === 'number') {
 		cookies = null;
 		timeout = cookies;
 	}
 
-	if (typeof(headers) === NUMBER) {
+	if (typeof(headers) === 'number') {
 		headers = null;
 		timeout = headers;
 	}
 
-	if (typeof(encoding) === NUMBER) {
+	if (typeof(encoding) === 'number') {
 		encoding = null;
 		timeout = encoding;
 	}
@@ -703,7 +697,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	else
 		headers = {};
 
-	if (typeof(encoding) !== STRING)
+	if (typeof(encoding) !== 'string')
 		encoding = ENCODING;
 
 	if (data === null)
@@ -770,7 +764,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	var isPOST = method === 'POST' || method === 'PUT';
 
-	if (typeof(data) !== STRING)
+	if (typeof(data) !== 'string')
 		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
 	else if (data[0] === '?')
 		data = data.substring(1);
@@ -887,13 +881,13 @@ exports.$$download = function(url, flags, data, cookies, headers, encoding, time
  */
 exports.send = function(name, stream, url, callback, headers, method) {
 
-	if (typeof(callback) === OBJECT) {
+	if (typeof(callback) === 'object') {
 		var tmp = headers;
 		callback = headers;
 		headers = tmp;
 	}
 
-	if (typeof(stream) === STRING)
+	if (typeof(stream) === 'string')
 		stream = fs.createReadStream(stream, { flags: 'r' });
 
 	var BOUNDARY = '----' + Math.random().toString(16).substring(2);
@@ -944,7 +938,7 @@ exports.send = function(name, stream, url, callback, headers, method) {
 	req.write(header);
 
 	// Is Buffer
-	if (typeof(stream.length) === NUMBER) {
+	if (typeof(stream.length) === 'number') {
 		req.end(stream.toString('utf8') + NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
 		return;
 	}
@@ -975,7 +969,7 @@ exports.trim = function(obj) {
 
 	var type = typeof(obj);
 
-	if (type === STRING)
+	if (type === 'string')
 		return obj.trim();
 
 	if (obj instanceof Array) {
@@ -984,12 +978,12 @@ exports.trim = function(obj) {
 			var item = obj[i];
 			type = typeof(item);
 
-			if (type === OBJECT) {
+			if (type === 'object') {
 				exports.trim(item);
 				continue;
 			}
 
-			if (type !== STRING)
+			if (type !== 'string')
 				continue;
 
 			obj[i] = item.trim();
@@ -998,7 +992,7 @@ exports.trim = function(obj) {
 		return obj;
 	}
 
-	if (type !== OBJECT)
+	if (type !== 'object')
 		return obj;
 
 	Object.keys(obj).forEach(function(name) {
@@ -1006,12 +1000,12 @@ exports.trim = function(obj) {
 		var val = obj[name];
 		var type = typeof(val);
 
-		if (type === OBJECT) {
+		if (type === 'object') {
 			exports.trim(val);
 			return;
 		}
 
-		if (type !== STRING)
+		if (type !== 'string')
 			return;
 
 		obj[name] = val.trim();
@@ -1050,7 +1044,7 @@ exports.extend = function(target, source, rewrite) {
 	if (target === null || source === null)
 		return target;
 
-	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
+	if (typeof(target) !== 'object' || typeof(source) !== 'object')
 		return target;
 
 	if (rewrite === undefined)
@@ -1082,7 +1076,7 @@ exports.clone = function(obj, skip, skipFunctions) {
 
 	var type = typeof(obj);
 
-	if (type !== OBJECT || obj instanceof Date)
+	if (type !== 'object' || obj instanceof Date)
 		return obj;
 
 	var length;
@@ -1095,8 +1089,8 @@ exports.clone = function(obj, skip, skipFunctions) {
 
 		for (var i = 0; i < length; i++) {
 			type = typeof(obj[i]);
-			if (type !== OBJECT || obj[i] instanceof Date) {
-				if (skipFunctions && type === FUNCTION)
+			if (type !== 'object' || obj[i] instanceof Date) {
+				if (skipFunctions && type === 'function')
 					continue;
 				o[i] = obj[i];
 				continue;
@@ -1116,8 +1110,8 @@ exports.clone = function(obj, skip, skipFunctions) {
 
 		var val = obj[m];
 		var type = typeof(val);
-		if (type !== OBJECT || val instanceof Date) {
-			if (skipFunctions && type === FUNCTION)
+		if (type !== 'object' || val instanceof Date) {
+			if (skipFunctions && type === 'function')
 				continue;
 			o[m] = val;
 			continue;
@@ -1143,7 +1137,7 @@ exports.copy = function(source, target) {
 	if (!target || !source)
 		return target;
 
-	if (typeof(target) !== OBJECT || typeof(source) !== OBJECT)
+	if (typeof(target) !== 'object' || typeof(source) !== 'object')
 		return target;
 
 	var keys = Object.keys(source);
@@ -1169,7 +1163,7 @@ exports.copy = function(source, target) {
 exports.reduce = function(source, prop, reverse) {
 
 	if (!(prop instanceof Array)) {
-		if (typeof(prop) === OBJECT)
+		if (typeof(prop) === 'object')
 			return exports.reduce(source, Object.keys(prop), reverse);
 	}
 
@@ -1206,7 +1200,7 @@ exports.assign = function(obj, path, fn) {
 	for (var i = 1; i < arr.length - 1; i++)
 		model = model[arr[i]];
 
-	model[arr[arr.length - 1]] = typeof (fn) === FUNCTION ? fn(model[arr[arr.length - 1]]) : fn;
+	model[arr[arr.length - 1]] = typeof (fn) === 'function' ? fn(model[arr[arr.length - 1]]) : fn;
 	return obj;
 };
 
@@ -1227,7 +1221,7 @@ exports.isRelative = function(url) {
  */
 exports.streamer = function(beg, end, callback) {
 
-	if (typeof(end) === FUNCTION) {
+	if (typeof(end) === 'function') {
 		callback = end;
 		end = undefined;
 	}
@@ -1312,7 +1306,7 @@ exports.encode = function(str) {
 
 	var type = typeof(str);
 
-	if (type !== STRING)
+	if (type !== 'string')
 		str = str.toString();
 
 	return str.encode();
@@ -1330,7 +1324,7 @@ exports.decode = function(str) {
 
 	var type = typeof(str);
 
-	if (type !== STRING)
+	if (type !== 'string')
 		str = str.toString();
 
 	return str.decode();
@@ -1352,7 +1346,7 @@ exports.isStaticFile = function(url) {
  */
 exports.isNullOrEmpty = function(str) {
 
-	if (typeof(str) !== STRING)
+	if (typeof(str) !== 'string')
 		return true;
 
 	return str.length === 0;
@@ -1368,9 +1362,9 @@ exports.parseInt = function(obj, def) {
 	if (obj === undefined || obj === null)
 		return def || 0;
 	var type = typeof(obj);
-	if (type === NUMBER)
+	if (type === 'number')
 		return obj;
-	return (type !== STRING ? obj.toString() : obj).parseInt();
+	return (type !== 'string' ? obj.toString() : obj).parseInt();
 };
 
 exports.parseBool = exports.parseBoolean = function(obj, def) {
@@ -1380,13 +1374,13 @@ exports.parseBool = exports.parseBoolean = function(obj, def) {
 
 	var type = typeof(obj);
 
-	if (type === BOOLEAN)
+	if (type === 'boolean')
 		return obj;
 
-	if (type === NUMBER)
+	if (type === 'number')
 		return obj > 0;
 
-	var str = type !== STRING ? obj.toString() : obj;
+	var str = type !== 'string' ? obj.toString() : obj;
 	return str.parseBool(def);
 };
 
@@ -1403,10 +1397,10 @@ exports.parseFloat = function(obj, def) {
 
 	var type = typeof(obj);
 
-	if (type === NUMBER)
+	if (type === 'number')
 		return obj;
 
-	var str = type !== STRING ? obj.toString() : obj;
+	var str = type !== 'string' ? obj.toString() : obj;
 	return str.parseFloat(def);
 };
 
@@ -1425,7 +1419,7 @@ exports.isArray = function(obj) {
  * @return {Boolean}
  */
 exports.isRegExp = function(obj) {
-	return (obj && typeof(obj.test) === FUNCTION) ? true : false;
+	return (obj && typeof(obj.test) === 'function') ? true : false;
 };
 
 /**
@@ -1434,7 +1428,7 @@ exports.isRegExp = function(obj) {
  * @return {Boolean}
  */
 exports.isDate = function(obj) {
-	return (obj && typeof(obj.getTime) === FUNCTION) ? true : false;;
+	return (obj && typeof(obj.getTime) === 'function') ? true : false;;
 };
 
 /**
@@ -1616,13 +1610,13 @@ exports.GUID = function(max) {
 function validate_builder_default(name, value) {
 	var type = typeof(value);
 
-	if (type === NUMBER)
+	if (type === 'number')
 		return value > 0;
 
-	if (type === STRING)
+	if (type === 'string')
 		return value.length > 0;
 
-	if (type === BOOLEAN)
+	if (type === 'boolean')
 		return value === true;
 
 	if (value === null || value === undefined)
@@ -1650,7 +1644,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	if (model === undefined || model === null)
 		model = {};
 
-	if (typeof(prepare) !== FUNCTION)
+	if (typeof(prepare) !== 'function')
 		throw new Error('It\'s not defined onValidate delegate.');
 
 	for (var i = 0; i < properties.length; i++) {
@@ -1665,15 +1659,15 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 		if (value === undefined) {
 			error.add(pluspath + name, '@', current + name);
 			continue;
-		} else if (type === FUNCTION)
+		} else if (type === 'function')
 			value = model[name]();
 
-		if (type !== OBJECT) {
+		if (type !== 'object') {
 			if (Builders.isJoin(collection, name))
-				type = OBJECT;
+				type = 'object';
 		}
 
-		if (type === OBJECT && !exports.isDate(value)) {
+		if (type === 'object' && !exports.isDate(value)) {
 			entity = collection[schema];
 
 			if (entity) {
@@ -1681,7 +1675,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 				if (entity === Date || entity === String || entity === Number || entity === Boolean) {
 					// Empty
-				} else if (entity && typeof(entity) === STRING) {
+				} else if (entity && typeof(entity) === 'string') {
 
 					var isArray = entity[0] === '[';
 
@@ -1709,12 +1703,12 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 						type = typeof(result2);
 
-						if (type === STRING) {
+						if (type === 'string') {
 							error.add(pluspath + name, result2, current + name, index);
 							continue;
 						}
 
-						if (type === BOOLEAN && !result2) {
+						if (type === 'boolean' && !result2) {
 							error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
 							continue;
 						}
@@ -1736,12 +1730,12 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 						type = typeof(result3);
 
-						if (type === STRING) {
+						if (type === 'string') {
 							error.add(pluspath + name, result3, current + name, index);
 							continue;
 						}
 
-						if (type === BOOLEAN && !result3) {
+						if (type === 'boolean' && !result3) {
 							error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
 							continue;
 						}
@@ -1770,12 +1764,12 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 		type = typeof(result);
 
-		if (type === STRING) {
+		if (type === 'string') {
 			error.add(pluspath + name, result, current + name, index);
 			continue;
 		}
 
-		if (type === BOOLEAN) {
+		if (type === 'boolean') {
 			if (!result)
 				error.add(pluspath + name, (pluspath ? '@' + name : '@'), current + name, index);
 			continue;
@@ -2208,7 +2202,7 @@ Date.prototype.diff = function(date, type) {
 		date = Date.now();
 	} else {
 		var to = typeof(date);
-		if (to === STRING)
+		if (to === 'string')
 			date = Date.parse(date);
 		else if (exports.isDate(date))
 			date = date.getTime();
@@ -2379,10 +2373,10 @@ Date.prototype.compare = function(date) {
  */
 Date.compare = function(d1, d2) {
 
-	if (typeof(d1) === STRING)
+	if (typeof(d1) === 'string')
 		d1 = d1.parseDate();
 
-	if (typeof(d2) === STRING)
+	if (typeof(d2) === 'string')
 		d2 = d2.parseDate();
 
 	return d1.compare(d2);
@@ -2758,8 +2752,8 @@ String.prototype.contains = function(value, mustAll) {
 
 	var str = this;
 
-	if (typeof(value) === STRING)
-		return str.indexOf(value, typeof(mustAll) === NUMBER ? mustAll : 0) !== -1;
+	if (typeof(value) === 'string')
+		return str.indexOf(value, typeof(mustAll) === 'number' ? mustAll : 0) !== -1;
 
 	var length = value.length;
 
@@ -2923,7 +2917,7 @@ String.prototype.params = function(obj) {
 		} else
 			val = name.length === 0 ? obj : obj[name];
 
-		if (typeof(val) === FUNCTION)
+		if (typeof(val) === 'function')
 			val = val(index);
 
 		if (val === undefined)
@@ -2932,12 +2926,12 @@ String.prototype.params = function(obj) {
 		if (format.length) {
 
 			var type = typeof(val);
-			if (type === STRING) {
+			if (type === 'string') {
 				var max = +format;
 				if (!isNaN(max))
 					val = val.max(max + 3, '...');
 
-			} else if (type === NUMBER || exports.isDate(val)) {
+			} else if (type === 'number' || exports.isDate(val)) {
 				if (format.isNumber())
 					format = +format;
 				val = val.format(format);
@@ -2957,7 +2951,7 @@ String.prototype.params = function(obj) {
 */
 String.prototype.max = function(length, chars) {
 	var str = this;
-	if (typeof(chars) !== STRING)
+	if (typeof(chars) !== 'string')
 		chars = '...';
 	return str.length > length ? str.substring(0, length - chars.length) + chars : str;
 };
@@ -3438,7 +3432,7 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 
 	var self = this;
 
-	if (typeof(decimals) === STRING)
+	if (typeof(decimals) === 'string')
 		return self.format2(decimals);
 
 	var num = self.toString();
@@ -3450,7 +3444,7 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 
 	var index = num.indexOf('.');
 
-	if (typeof(decimals) === STRING) {
+	if (typeof(decimals) === 'string') {
 		var tmp = separator;
 		separator = decimals;
 		decimals = tmp;
@@ -3490,7 +3484,7 @@ Number.prototype.add = function(value, decimals) {
 	if (value === undefined || value === null)
 		return this;
 
-	if (typeof(value) === NUMBER)
+	if (typeof(value) === 'number')
 		return this + value;
 
 	var first = value.charCodeAt(0);
@@ -3576,7 +3570,7 @@ Number.prototype.format2 = function(format) {
 	var output = '';
 	var length = 0;
 
-	if (typeof(format) === STRING) {
+	if (typeof(format) === 'string') {
 
 		var d = false;
 		length = format.length;
@@ -3729,14 +3723,14 @@ Number.prototype.VAT = function(percentage, decimals, includedVAT) {
 	var num = this;
 	var type = typeof(decimals);
 
-	if (type === BOOLEAN) {
+	if (type === 'boolean') {
 		var tmp = includedVAT;
 		includedVAT = decimals;
 		decimals = tmp;
 		type = typeof(decimals);
 	}
 
-	if (type === UNDEFINED)
+	if (type === 'undefined')
 		decimals = 2;
 
 	if (includedVAT === undefined)
@@ -3767,7 +3761,7 @@ Number.prototype.parseDate = function(plus) {
 	return new Date(this + (plus || 0));
 };
 
-if (typeof (Number.prototype.toRad) === UNDEFINED) {
+if (typeof (Number.prototype.toRad) === 'undefined') {
 	Number.prototype.toRad = function () {
 		return this * Math.PI / 180;
 	};
@@ -3797,7 +3791,7 @@ Array.prototype.take = function(count) {
  * @return {Array} Returns self
  */
 Array.prototype.extend = function(obj, rewrite) {
-	var isFn = typeof(obj) === FUNCTION;
+	var isFn = typeof(obj) === 'function';
 	for (var i = 0, length = this.length; i < length; i++) {
 
 		if (isFn) {
@@ -3964,7 +3958,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 	if (!length || length === 1)
 		return this;
 
-	if (typeof(name) === BOOLEAN) {
+	if (typeof(name) === 'boolean') {
 		asc = name;
 		name = undefined;
 	}
@@ -3977,16 +3971,16 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 	var field = name ? self[0][name] : self[0];
 
 	switch (typeof(field)) {
-		case STRING:
+		case 'string':
 			if (field.length === 26 && field[11] === 'T' && field[5] === '-')
 				type = 4;
 			else
 				type = 1;
 			break;
-		case NUMBER:
+		case 'number':
 			type = 2;
 			break;
-		case BOOLEAN:
+		case 'boolean':
 			type = 3;
 			break;
 		default:
@@ -4045,7 +4039,7 @@ Array.prototype.trim = function() {
 	var self = this;
 	var output = [];
 	for (var i = 0, length = self.length; i < length; i++) {
-		if (typeof(self[i]) === STRING)
+		if (typeof(self[i]) === 'string')
 			self[i] = self[i].trim();
 		if (self[i])
 			output.push(self[i]);
@@ -4122,7 +4116,7 @@ Array.prototype.findItem = Array.prototype.find = function(cb, value) {
 Array.prototype.findIndex = function(cb, value) {
 
 	var self = this;
-	var isFN = typeof(cb) === FUNCTION;
+	var isFN = typeof(cb) === 'function';
 	var isV = value !== undefined;
 
 	for (var i = 0, length = self.length; i < length; i++) {
@@ -4204,7 +4198,7 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 		onItem.$index = 0;
 		init = true;
 
-		if (typeof(callback) === NUMBER) {
+		if (typeof(callback) === 'number') {
 			var tmp = thread;
 			thread = callback;
 			callback = tmp;
@@ -4254,7 +4248,7 @@ Array.prototype.async = function(thread, callback) {
 	var self = this;
 	var init = false;
 
-	if (typeof(thread) === FUNCTION) {
+	if (typeof(thread) === 'function') {
 		callback = thread;
 		thread = 1;
 	} else if (thread === undefined)
@@ -4673,7 +4667,7 @@ Async.prototype.await = function(name, fn, cb) {
 	if (self.isCanceled)
 		return false;
 
-	if (typeof(name) === FUNCTION) {
+	if (typeof(name) === 'function') {
 		cb = fn;
 		fn = name;
 		name = exports.GUID(6);
@@ -4696,7 +4690,7 @@ Async.prototype.wait = function(name, waitingFor, fn, cb) {
 	if (self.isCanceled)
 		return false;
 
-	if (typeof(waitingFor) === FUNCTION) {
+	if (typeof(waitingFor) === 'function') {
 		cb = fn;
 		fn = waitingFor;
 		waitingFor = null;
@@ -5021,7 +5015,7 @@ exports.async = function(fn, isApply) {
 				if (!complete)
 					return;
 
-				if (typeof(complete) === OBJECT && complete.isController) {
+				if (typeof(complete) === 'object' && complete.isController) {
 					if (e instanceof ErrorBuilder)
 						complete.content(e);
 					else
@@ -5037,12 +5031,12 @@ exports.async = function(fn, isApply) {
 			}
 
 			if (g.done) {
-				if (complete && typeof(complete) !== OBJECT)
+				if (complete && typeof(complete) !== 'object')
 					complete(null, g.value);
 				return;
 			}
 
-			if (typeof(g.value) !== FUNCTION) {
+			if (typeof(g.value) !== 'function') {
 				next.call(self, null, g.value);
 				return;
 			}

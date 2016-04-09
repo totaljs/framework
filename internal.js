@@ -32,11 +32,6 @@ var ReadStream = require('fs').ReadStream;
 var Stream = require('stream');
 
 const ENCODING = 'utf8';
-const UNDEFINED = 'undefined';
-const FUNCTION = 'function';
-const OBJECT = 'object';
-const BOOLEAN = 'boolean';
-const NUMBER = 'number';
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
 
@@ -1318,7 +1313,7 @@ function JavaScript(source) {
 
 exports.compile_javascript = function(source, filename) {
 
-	var isFramework = (typeof(global.framework) === OBJECT);
+	var isFramework = (typeof(global.framework) === 'object');
 
 	try {
 
@@ -2115,7 +2110,7 @@ function view_prepare(command, dynamicCommand, functions) {
 			return command;
 
 		case 'CONFIG':
-		case 'FUNCTION':
+		case 'function':
 		case 'MODEL':
 		case 'SCHEMA':
 		case 'MODULE':
@@ -2136,7 +2131,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		case '!model':
 		case '!CONFIG':
 		case '!SCHEMA':
-		case '!FUNCTION':
+		case '!function':
 		case '!MODEL':
 		case '!MODULE':
 			return '$STRING(' + command.substring(1) + ')';
@@ -3074,17 +3069,17 @@ exports.parseURI = function(protocol, req) {
 function destroyStream(stream) {
 	if (stream instanceof ReadStream) {
 		stream.destroy();
-		if (typeof(stream.close) !== FUNCTION)
+		if (typeof(stream.close) !== 'function')
 			return stream;
 		stream.on('open', function() {
-			if (typeof(this.fd) === NUMBER)
+			if (typeof(this.fd) === 'number')
 				this.close();
 		});
 		return stream;
 	}
 	if (!(stream instanceof Stream))
 		return stream;
-	if (typeof(stream.destroy) === FUNCTION)
+	if (typeof(stream.destroy) === 'function')
 		stream.destroy();
 	return stream;
 }
@@ -3227,7 +3222,7 @@ function createListener(msg) {
 
 function patchAssignSocket(res, callback) {
 	var assignSocket = res.assignSocket;
-	if (typeof(assignSocket) !== FUNCTION)
+	if (typeof(assignSocket) !== 'function')
 		return;
 	// res.on('socket', callback) is broken in 0.8
 	res.assignSocket = function _assignSocket(socket) {
@@ -3241,11 +3236,11 @@ function isFinished(msg) {
 	var socket = msg.socket;
 
 	// OutgoingMessage
-	if (typeof msg.finished === BOOLEAN)
+	if (typeof msg.finished === 'boolean')
 		return Boolean(msg.finished || (socket && !socket.writable));
 
 	// IncomingMessage
-	if (typeof msg.complete === BOOLEAN)
+	if (typeof msg.complete === 'boolean')
 		return Boolean(msg.upgrade || !socket || !socket.readable || (msg.complete && !msg.readable))
 
 	// don't know

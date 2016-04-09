@@ -33,8 +33,6 @@ var dns = require('dns');
 var fs = require('fs');
 
 const CRLF = '\r\n';
-const UNDEFINED = 'undefined';
-const BOOLEAN = 'boolean';
 const REG_ESMTP = /\besmtp\b/i;
 
 const errors = {
@@ -190,7 +188,7 @@ Message.prototype.from = function(address, name) {
  */
 Message.prototype.to = function(address, name, clear) {
 
-	if (typeof(name) === BOOLEAN) {
+	if (typeof(name) === 'boolean') {
 		clear = name;
 		name = undefined;
 	}
@@ -228,7 +226,7 @@ Message.prototype.to = function(address, name, clear) {
  */
 Message.prototype.cc = function(address, name, clear) {
 
-	if (typeof(name) === BOOLEAN) {
+	if (typeof(name) === 'boolean') {
 		clear = name;
 		name = undefined;
 	}

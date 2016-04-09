@@ -26,12 +26,6 @@
 
 'use strict';
 
-const UNDEFINED = 'undefined';
-const FUNCTION = 'function';
-const OBJECT = 'object';
-const STRING = 'string';
-const NUMBER = 'number';
-const BOOLEAN = 'boolean';
 const REQUIRED = 'The field "@" is required.';
 const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$result: true, $callback: true, $$async: true };
@@ -135,7 +129,7 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 		return self;
 	}
 
-	if (required !== undefined && typeof(required) !== BOOLEAN) {
+	if (required !== undefined && typeof(required) !== 'boolean') {
 		custom = required;
 		required = false;
 	}
@@ -184,7 +178,7 @@ SchemaBuilderEntity.prototype.setPrimary = function(name) {
 SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 	var self = this;
 
-	if (typeof(model) === BOOLEAN) {
+	if (typeof(model) === 'boolean') {
 		var tmp = reverse;
 		reverse = model;
 		model = tmp;
@@ -192,12 +186,12 @@ SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 
 	var output = model === undefined ? [] : {};
 	var type = typeof(custom);
-	var isSearch = type === STRING ? custom[0] === '*' || custom[0] === '%' : false;
+	var isSearch = type === 'string' ? custom[0] === '*' || custom[0] === '%' : false;
 	var isReg = false;
 
 	if (isSearch)
 		custom = custom.substring(1);
-	else if (type === OBJECT)
+	else if (type === 'object')
 		isReg = framework_utils.isRegExp(custom);
 
 	for (var prop in self.schema) {
@@ -209,7 +203,7 @@ SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 		var tv = typeof(schema.custom);
 
 		if (isSearch) {
-			if (tv === STRING) {
+			if (tv === 'string') {
 				if (schema.custom.indexOf(custom) === -1) {
 					if (!reverse)
 						continue;
@@ -218,7 +212,7 @@ SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 			} else
 				continue;
 		} else if (isReg) {
-			if (tv === STRING) {
+			if (tv === 'string') {
 				if (!custom.test(schema.current)) {
 					if (!reverse)
 						continue;
@@ -270,7 +264,7 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (type === FUNCTION) {
+	if (type === 'function') {
 
 		if (value === Number) {
 			result.type = 2;
@@ -305,7 +299,7 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (type === OBJECT)
+	if (type === 'object')
 		return result;
 
 	if (value[0] === '[') {
@@ -326,7 +320,7 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (lower.contains([STRING, 'text', 'varchar', 'nvarchar'])) {
+	if (lower.contains(['string', 'text', 'varchar', 'nvarchar'])) {
 
 		result.type = 3;
 
@@ -345,12 +339,12 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (lower.contains(['decimal', NUMBER, 'float', 'double'])) {
+	if (lower.contains(['decimal', 'number', 'float', 'double'])) {
 		result.type = 2;
 		return result;
 	}
 
-	if (lower.contains('bool', BOOLEAN)) {
+	if (lower.contains('bool', 'boolean')) {
 		result.type = 4;
 		return result;
 	}
@@ -372,7 +366,7 @@ SchemaBuilderEntity.prototype.getDependencies = function() {
 
 		var type = self.schema[name];
 
-		if (typeof(type) !== STRING)
+		if (typeof(type) !== 'string')
 			continue;
 
 		var isArray = type[0] === ']';
@@ -404,7 +398,7 @@ SchemaBuilderEntity.prototype.setValidate = function(properties, fn) {
 		return self;
 	}
 
-	if (typeof(properties) !== FUNCTION) {
+	if (typeof(properties) !== 'function') {
 		self.properties = properties;
 		self.onValidate = fn;
 	} else
@@ -529,7 +523,7 @@ SchemaBuilderEntity.prototype.constant = function(name, value) {
 SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
 	var self = this;
 
-	if (typeof(name) === FUNCTION) {
+	if (typeof(name) === 'function') {
 		fn = name;
 		name = 'default';
 	}
@@ -550,7 +544,7 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
 SchemaBuilderEntity.prototype.addOperation = function(name, fn) {
 	var self = this;
 
-	if (typeof(name) === FUNCTION) {
+	if (typeof(name) === 'function') {
 		fn = name;
 		name = 'default';
 	}
@@ -571,7 +565,7 @@ SchemaBuilderEntity.prototype.addOperation = function(name, fn) {
 SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
 	var self = this;
 
-	if (typeof(name) === FUNCTION) {
+	if (typeof(name) === 'function') {
 		fn = name;
 		name = 'default';
 	}
@@ -620,7 +614,7 @@ SchemaBuilderEntity.prototype.destroy = function() {
  */
 SchemaBuilderEntity.prototype.save = function(model, helper, callback, skip) {
 
-	if (typeof(callback) === BOOLEAN) {
+	if (typeof(callback) === 'boolean') {
 		skip = callback;
 		callback = helper;
 		helper = undefined;
@@ -629,7 +623,7 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback, skip) {
 		helper = undefined;
 	}
 
-	if (typeof(callback) !== FUNCTION)
+	if (typeof(callback) !== 'function')
 		callback = function(){};
 
 	var self = this;
@@ -709,7 +703,7 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 		helper = undefined;
 	}
 
-	if (typeof(callback) !== FUNCTION)
+	if (typeof(callback) !== 'function')
 		callback = function(){};
 
 	var self = this;
@@ -981,7 +975,7 @@ SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
 
 	var self = this;
 
-	if (obj && typeof(obj.$save) === FUNCTION) {
+	if (obj && typeof(obj.$save) === 'function') {
 		callback(null, obj);
 		return self;
 	}
@@ -1075,10 +1069,10 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback) {
 
 	var self = this;
 
-	if (typeof(model) === FUNCTION)
+	if (typeof(model) === 'function')
 		return model.call(self, self);
 
-	if (typeof(filter) === FUNCTION) {
+	if (typeof(filter) === 'function') {
 		var tmp = callback;
 		callback = filter;
 		filter = tmp;
@@ -1155,7 +1149,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 		var type = obj[property];
 		var typeval = typeof(val);
 
-		if (typeval === FUNCTION)
+		if (typeval === 'function')
 			val = val();
 
 		if (!type.isArray) {
@@ -1188,21 +1182,21 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 					tmp = null;
 
-					if (typeval === STRING) {
+					if (typeval === 'string') {
 						if (val === '')
 							tmp = null;
 						else
 							tmp = val.trim().parseDate();
-					} else if (typeval === OBJECT) {
+					} else if (typeval === 'object') {
 						if (framework_utils.isDate(val))
 							tmp = val;
 						else
 							tmp = null;
-					} else if (typeval === NUMBER) {
+					} else if (typeval === 'number') {
 						tmp = new Date(val);
 					}
 
-					if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
+					if (tmp !== null && typeof(tmp) === 'object' && tmp.toString() === 'Invalid Date')
 						tmp = null;
 
 					if (tmp)
@@ -1229,7 +1223,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						}
 					}
 
-					if (val && typeof(val.$schema) === FUNCTION) {
+					if (val && typeof(val.$schema) === 'function') {
 						tmp = val.$schema();
 						if (tmp && tmp.name && tmp.name === type.raw) {
 							item[property] = val;
@@ -1290,21 +1284,21 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 				case 5:
 
-					if (typeval === STRING) {
+					if (typeval === 'string') {
 						if (tmp === '')
 							tmp = null;
 						else
 							tmp = tmp.trim().parseDate();
-					} else if (typeval === OBJECT) {
+					} else if (typeval === 'object') {
 						if (framework_utils.isDate(tmp))
 							tmp = tmp;
 						else
 							tmp = null;
-					} else if (typeval === NUMBER) {
+					} else if (typeval === 'number') {
 						tmp = new Date(tmp);
 					}
 
-					if (tmp !== null && typeof(tmp) === OBJECT && tmp.toString() === 'Invalid Date')
+					if (tmp !== null && typeof(tmp) === 'object' && tmp.toString() === 'Invalid Date')
 						tmp = null;
 
 					if (tmp)
@@ -1355,14 +1349,14 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
 	var self = this;
 
-	if (typeof(name) !== STRING) {
+	if (typeof(name) !== 'string') {
 		callback = helper;
 		helper = model;
 		model = name;
 		name = 'default';
 	}
 
-	if (typeof(callback) === BOOLEAN) {
+	if (typeof(callback) === 'boolean') {
 		skip = callback;
 		callback = helper;
 		helper = undefined;
@@ -1371,7 +1365,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 		helper = undefined;
 	}
 
-	if (typeof(callback) !== FUNCTION)
+	if (typeof(callback) !== 'function')
 		callback = function(){};
 
 	var trans = self.transforms ? self.transforms[name] : undefined;
@@ -1455,7 +1449,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
 SchemaBuilderEntity.prototype.transform2 = function(name, helper, callback) {
 
-	if (typeof(helper) === FUNCTION) {
+	if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
@@ -1472,7 +1466,7 @@ SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builde
 	var self = this;
 
 	if (arg.length > 1 || (result instanceof Error || result instanceof ErrorBuilder)) {
-		if ((result instanceof Error || result instanceof ErrorBuilder || typeof(result) === STRING) && builder !== result)
+		if ((result instanceof Error || result instanceof ErrorBuilder || typeof(result) === 'string') && builder !== result)
 			builder.push(result);
 		result = arg[1];
 	}
@@ -1498,14 +1492,14 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 
 	var self = this;
 
-	if (typeof(name) !== STRING) {
+	if (typeof(name) !== 'string') {
 		callback = helper;
 		helper = model;
 		model = name;
 		name = 'default';
 	}
 
-	if (typeof(callback) === BOOLEAN) {
+	if (typeof(callback) === 'boolean') {
 		skip = callback;
 		callback = helper;
 		helper = undefined;
@@ -1514,7 +1508,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 		helper = undefined;
 	}
 
-	if (typeof(callback) !== FUNCTION)
+	if (typeof(callback) !== 'function')
 		callback = function(){};
 
 	var workflow = self.workflows ? self.workflows[name] : undefined;
@@ -1595,7 +1589,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 
 SchemaBuilderEntity.prototype.workflow2 = function(name, helper, callback) {
 
-	if (typeof(helper) === FUNCTION) {
+	if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
@@ -1622,30 +1616,30 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 	var th = typeof(helper);
 	var tc = typeof(callback);
 
-	if (tc === UNDEFINED) {
-		if (th === FUNCTION) {
+	if (tc === 'undefined') {
+		if (th === 'function') {
 			callback = helper;
 			helper = model;
 			model = undefined;
-		} else if (th === UNDEFINED) {
+		} else if (th === 'undefined') {
 			helper = model;
 			model = undefined;
 		}
-	} else if (th === UNDEFINED) {
+	} else if (th === 'undefined') {
 		helper = model;
 		model = undefined;
-	} else if (tc === BOOLEAN) {
+	} else if (tc === 'boolean') {
 		skip = callback;
 		callback = helper;
 		helper = undefined;
 	}
 
-	if (typeof(helper) === FUNCTION) {
+	if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
 
-	if (typeof(callback) !== FUNCTION)
+	if (typeof(callback) !== 'function')
 		callback = function(){};
 
 	var operation = self.operations ? self.operations[name] : undefined;
@@ -1703,7 +1697,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 
 SchemaBuilderEntity.prototype.operation2 = function(name, helper, callback) {
 
-	if (typeof(helper) === FUNCTION) {
+	if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
@@ -1730,7 +1724,7 @@ function clone(obj) {
 		return obj;
 
 	var type = typeof(obj);
-	if (type !== OBJECT || obj instanceof Date)
+	if (type !== 'object' || obj instanceof Date)
 		return obj;
 
 	var length;
@@ -1743,8 +1737,8 @@ function clone(obj) {
 
 		for (var i = 0; i < length; i++) {
 			type = typeof(obj[i]);
-			if (type !== OBJECT || obj[i] instanceof Date) {
-				if (type === FUNCTION)
+			if (type !== 'object' || obj[i] instanceof Date) {
+				if (type === 'function')
 					continue;
 				o[i] = obj[i];
 				continue;
@@ -1770,8 +1764,8 @@ function clone(obj) {
 		}
 
 		var type = typeof(val);
-		if (type !== OBJECT || val instanceof Date) {
-			if (type === FUNCTION)
+		if (type !== 'object' || val instanceof Date) {
+			if (type === 'function')
 				continue;
 			o[m] = val;
 			continue;
@@ -2145,13 +2139,13 @@ exports.validation = function(name, properties, fn) {
 	if (schema === undefined)
 		return [];
 
-	if (fn instanceof Array && typeof(properties) === FUNCTION) {
+	if (fn instanceof Array && typeof(properties) === 'function') {
 		var tmp = fn;
 		fn = properties;
 		properties = tmp;
 	}
 
-	if (typeof(fn) === FUNCTION) {
+	if (typeof(fn) === 'function') {
 
 		schema.onValidate = fn;
 
@@ -2304,7 +2298,7 @@ ErrorBuilder.prototype._resource = function() {
 
 ErrorBuilder.prototype._resource_handler = function(name) {
 	var self = this;
-	if (typeof(framework) !== UNDEFINED)
+	if (typeof(framework) !== 'undefined')
 		return framework.resource(self.resourceName, self.resourcePrefix + name);
 	return '';
 }
@@ -2359,7 +2353,7 @@ ErrorBuilder.prototype.push = function(name, error, path, index) {
 		return self;
 	}
 
-	if (typeof(name) === OBJECT) {
+	if (typeof(name) === 'object') {
 		path = error;
 		error = name;
 		name = '';
@@ -2379,7 +2373,7 @@ ErrorBuilder.prototype.push = function(name, error, path, index) {
 
 	self.items.push({
 		name: name,
-		error: typeof(error) === STRING ? error : error.toString(),
+		error: typeof(error) === 'string' ? error : error.toString(),
 		path: path,
 		index: index
 	});
@@ -2922,7 +2916,7 @@ Pagination.prototype.prepare = function(max, format) {
 	var builder = [];
 	format = format || self.format;
 
-	if (typeof(max) === STRING) {
+	if (typeof(max) === 'string') {
 		var tmp = format;
 		format = max;
 		max = tmp;
@@ -2984,7 +2978,7 @@ Pagination.prototype.render = function(max, format) {
 UrlBuilder.prototype.add = function(name, value) {
 	var self = this;
 
-	if (typeof(name) !== OBJECT) {
+	if (typeof(name) !== 'object') {
 		self.builder[name] = value;
 		return self;
 	}
@@ -3033,7 +3027,7 @@ UrlBuilder.prototype.clear = function() {
  */
 UrlBuilder.prototype.toString = function(url, skipEmpty) {
 
-	if (typeof(url) === BOOLEAN) {
+	if (typeof(url) === 'boolean') {
 		var tmp = skipEmpty;
 		skipEmpty = url;
 		url = tmp;
@@ -3056,7 +3050,7 @@ UrlBuilder.prototype.toString = function(url, skipEmpty) {
 		builder.push(o + '=' + encodeURIComponent(value));
 	});
 
-	if (typeof(url) === STRING) {
+	if (typeof(url) === 'string') {
 		if (url[url.length - 1] !== '?')
 			url += '?';
 	} else
