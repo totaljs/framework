@@ -48,6 +48,7 @@ const regexpDATEFORMAT = /yyyy|yy|M+|d+|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
 const regexpSTRINGFORMAT = /\{\d+\}/g;
 const regexpPATH = /\\/g;
 const regexpTags = /<\/?[^>]+(>|$)/g;
+const regexpDiacritics = /[^\u0000-\u007e]/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -1858,7 +1859,7 @@ exports.combine = function() {
  * @return {String}
  */
 exports.removeDiacritics = function(str) {
-	return str.replace(/[^\u0000-\u007e]/g, function(c) {
+	return str.replace(regexpDiacritics, function(c) {
 		return DIACRITICSMAP[c] || c;
 	});
 };
