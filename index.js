@@ -6863,9 +6863,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		})(middleware);
 	}
 
-	func._async_middleware(websocket, function() {
-		self._upgrade_prepare(req, path, req.headers);
-	});
+	func._async_middleware(websocket, () => self._upgrade_prepare(req, path, req.headers));
 };
 
 /**
@@ -6876,42 +6874,55 @@ Framework.prototype._upgrade = function(req, socket, head) {
  * @param {String} path
  * @param {Object} headers
  */
-Framework.prototype._upgrade_prepare = function(req, path, headers) {
+Framework.prototype._upgrade_continue = function(route, req, path) {
 
 	var self = this;
-	var auth = self.onAuthorize;
+	var socket = req.websocket;
 
-	if (!auth) {
-		var route = self.lookup_websocket(req, req.websocket.uri.pathname, true);
-
-		if (!route) {
-			req.websocket.close();
-			req.connection.destroy();
-			return;
-		}
-
-		self._upgrade_continue(route, req, path);
-		return;
+	if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version_header)) {
+		socket.close();
+		req.connection.destroy();
+		return self;
 	}
 
-	auth.call(self, req, req.websocket, req.flags, function(isLogged, user) {
+	var id = path + (route.flags.length ? '#' + route.flags.join('-') : '');
 
-		if (user)
-			req.user = user;
+	if (route.isBINARY)
+		socket.type = 1;
+	else if (route.isJSON)
+		socket.type = 3;
 
-		req.flags.push(isLogged ? 'authorize' : 'unauthorize');
+	var next = function() {
 
-		var route = self.lookup_websocket(req, req.websocket.uri.pathname, false);
-
-		if (route) {
-			self._upgrade_continue(route, req, path);
+		if (self.connections[id]) {
+			socket.upgrade(self.connections[id]);
 			return;
 		}
 
-		req.websocket.close();
-		req.connection.destroy();
+		var connection = new WebSocket(path, route.controller, id);
+		connection.route = route;
+		connection.options = route.options;
+		self.connections[id] = connection;
+		route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
+		setImmediate(() => socket.upgrade(self.connections[id]));
+	};
 
-	});
+	if (route.middleware instanceof Array && route.middleware.length) {
+		var func = [];
+		for (var i = 0, length = route.middleware.length; i < length; i++) {
+			var middleware = framework.routes.middleware[route.middleware[i]];
+			if (!middleware)
+				continue;
+			(function(middleware) {
+				func.push(next => middleware.call(framework, req, socket, next, route.options));
+			})(middleware);
+		}
+		func._async_middleware(socket, next);
+		return self;
+	}
+
+	next();
+	return self;
 };
 
 /**

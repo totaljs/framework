@@ -4194,17 +4194,14 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 
 	// INIT
 	if (!onItem.$index) {
-
 		onItem.$pending = 0;
 		onItem.$index = 0;
 		init = true;
-
 		if (typeof(callback) === 'number') {
 			var tmp = thread;
 			thread = callback;
 			callback = tmp;
 		}
-
 	}
 
 	if (thread === undefined)
@@ -4264,6 +4261,7 @@ Array.prototype.async = function(thread, callback) {
 	if (item === undefined) {
 		if (self.$pending)
 			return self;
+		delete self.$pending;
 		if (callback)
 			callback();
 		return self;

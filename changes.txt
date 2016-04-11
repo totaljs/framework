@@ -41,6 +41,7 @@
 - fixed: Windows paths
 - fixed: problem with `websocket.destroy()`
 - fixed: `F.cors()`
+- fixed: WebSocket initialization (critical)
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`
