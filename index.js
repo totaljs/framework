@@ -6874,65 +6874,48 @@ Framework.prototype._upgrade = function(req, socket, head) {
  * @param {String} path
  * @param {Object} headers
  */
-Framework.prototype._upgrade_continue = function(route, req, path) {
+Framework.prototype._upgrade_prepare = function(req, path, headers) {
 
 	var self = this;
-	var socket = req.websocket;
+	var auth = self.onAuthorize;
 
-	if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version_header)) {
-		socket.close();
-		req.connection.destroy();
-		return self;
-	}
-
-	var id = path + (route.flags.length ? '#' + route.flags.join('-') : '');
-
-	if (route.isBINARY)
-		socket.type = 1;
-	else if (route.isJSON)
-		socket.type = 3;
-
-	var next = function() {
-
-		if (self.connections[id]) {
-			socket.upgrade(self.connections[id]);
+	if (!auth) {
+		var route = self.lookup_websocket(req, req.websocket.uri.pathname, true);
+		if (!route) {
+			req.websocket.close();
+			req.connection.destroy();
 			return;
 		}
 
-		var connection = new WebSocket(path, route.controller, id);
-		connection.route = route;
-		connection.options = route.options;
-		self.connections[id] = connection;
-		route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
-		setImmediate(() => socket.upgrade(self.connections[id]));
-	};
-
-	if (route.middleware instanceof Array && route.middleware.length) {
-		var func = [];
-		for (var i = 0, length = route.middleware.length; i < length; i++) {
-			var middleware = framework.routes.middleware[route.middleware[i]];
-			if (!middleware)
-				continue;
-			(function(middleware) {
-				func.push(next => middleware.call(framework, req, socket, next, route.options));
-			})(middleware);
-		}
-		func._async_middleware(socket, next);
-		return self;
+		self._upgrade_continue(route, req, path);
+		return;
 	}
 
-	next();
-	return self;
+	auth.call(self, req, req.websocket, req.flags, function(isLogged, user) {
+
+		if (user)
+			req.user = user;
+
+		req.flags.push(isLogged ? 'authorize' : 'unauthorize');
+
+		var route = self.lookup_websocket(req, req.websocket.uri.pathname, false);
+		if (route === null) {
+			req.websocket.close();
+			req.connection.destroy();
+			return;
+		}
+
+		self._upgrade_continue(route, req, path);
+	});
 };
 
 /**
- * WebSocket, controller caller
+ * Prepare WebSocket
  * @private
- * @param {Object} route
  * @param {HttpRequest} req
- * @param {Socket} socket
+ * @param {WebSocketClient} websocket
  * @param {String} path
- * @return {Framework}
+ * @param {Object} headers
  */
 Framework.prototype._upgrade_continue = function(route, req, path) {
 
@@ -6964,6 +6947,7 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 		connection.options = route.options;
 		self.connections[id] = connection;
 		route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
+		setImmediate(() => socket.upgrade(self.connections[id]));
 	};
 
 	if (route.middleware instanceof Array && route.middleware.length) {
