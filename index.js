@@ -12782,9 +12782,8 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 		filename = name;
 
-
 		if (self.themeName && skip < 3) {
-			filename = '.' + framework.path.themes(self.themeName + '/views/' + (isLayout || skip > 0 ? '' : self._currentView.substring(1)) + (skip ? name.substring(1) : name));
+			filename = '.' + framework.path.themes(self.themeName + '/views/' + (isLayout || skip ? '' : self._currentView.substring(1)) + (skip ? name.substring(1) : name)).replace(/\/\//g, '/');
 			isTheme = true;
 		}
 
