@@ -6947,7 +6947,7 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 		connection.options = route.options;
 		self.connections[id] = connection;
 		route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
-		setImmediate(() => socket.upgrade(self.connections[id]));
+		setImmediate(() => socket.upgrade(connection));
 	};
 
 	if (route.middleware instanceof Array && route.middleware.length) {
