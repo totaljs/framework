@@ -14934,6 +14934,8 @@ process.on('message', function(msg, h) {
 function prepare_error(e) {
 	if (!framework.isDebug || !e)
 		return '';
+	if (e instanceof ErrorBuilder)
+		return ' :: ' + e.plain();
 	if (e.stack)
 		return ' :: ' + e.stack.toString();
 	return ' :: ' + e.toString();
