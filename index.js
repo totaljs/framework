@@ -215,6 +215,10 @@ global.MODULE = function(name) {
 	return framework.module(name);
 };
 
+global.NOSQL = function(name) {
+	return framework.nosql(name);
+};
+
 global.DB = global.DATABASE = function() {
 	if (typeof(framework.database) === 'object')
 		return framework.database;
@@ -786,9 +790,18 @@ Framework.prototype._routesSort = function() {
 /**
  * Get a database instance
  * @param {String} name Database name (optional)
- * @return {Framework}
+ * @return {Database}
  */
 Framework.prototype.database = function(name) {
+	return this.nosql(name);
+};
+
+/**
+ * Get a database instance (NoSQL embedded)
+ * @param {String} name Database name (optional)
+ * @return {Database}
+ */
+Framework.prototype.nosql = function(name) {
 	var self = this;
 	var db = self.databases[name];
 	if (db !== undefined)
