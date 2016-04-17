@@ -43,6 +43,7 @@
 - fixed: problem with `websocket.destroy()`
 - fixed: `F.cors()`
 - fixed: WebSocket initialization (critical)
+- fixed: Mail sender (problem with ZOHO SMTP)
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`

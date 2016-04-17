@@ -482,6 +482,7 @@ Message.prototype._send = function(socket, options, autosend) {
 	var err = null;
 	var ending = null;
 	var isTLS = false;
+	var response = '';
 
 	var write = function(line) {
 		if (self.closed)
@@ -607,15 +608,23 @@ Message.prototype._send = function(socket, options, autosend) {
 		if (self.closed)
 			return;
 
-		var response = data.toString().split(CRLF);
-		var length = response.length;
+		data = data.toString();
 
+		if (!data.endsWith(CRLF)) {
+			response += data;
+			return;
+		}
+
+		var res = (response + data).split(CRLF);
+
+		if (response)
+			response = '';
+
+		var length = res.length;
 		for (var i = 0; i < length; i++) {
-
-			var line = response[i];
-			if (line === '')
+			var line = res[i];
+			if (!line)
 				continue;
-
 			if (socket)
 				socket.emit('line', line);
 		}
@@ -628,6 +637,7 @@ Message.prototype._send = function(socket, options, autosend) {
 			console.log('<---', line);
 
 		var code = +line.match(/\d+/)[0];
+
 		if (code === 250 && !isAuthorization) {
 			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) || (options.user && options.password)) {
 				authType = 'plain';
