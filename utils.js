@@ -466,6 +466,13 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					headers['X-Requested-With'] = 'XMLHttpRequest';
 					break;
 
+				case 'plain':
+					headers['Content-Type'] = 'text/plain';
+					break;
+				case 'html':
+					headers['Content-Type'] = 'text/html';
+					break;
+
 				case 'json':
 					headers['Content-Type'] = 'application/json';
 
@@ -726,6 +733,13 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 				case 'xhr':
 					headers['X-Requested-With'] = 'XMLHttpRequest';
+					break;
+
+				case 'plain':
+					headers['Content-Type'] = 'text/plain';
+					break;
+				case 'html':
+					headers['Content-Type'] = 'text/html';
 					break;
 
 				case 'json':
