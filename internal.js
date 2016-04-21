@@ -3331,3 +3331,4 @@ exports.parseLocalization = view_parse_localization;
 exports.findLocalization = view_find_localization;
 exports.destroyStream = destroyStream;
 exports.onFinished = onFinished;
+exports.modificator = viewengine_modify;

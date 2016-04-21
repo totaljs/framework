@@ -2804,8 +2804,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		}
 
 		item.count++;
-
-		fs.writeFileSync(item.filename, declaration);
+		fs.writeFileSync(item.filename, framework_internal.modificator(declaration, name));
 
 		setTimeout(function() {
 			self.emit(type + '#' + name);
