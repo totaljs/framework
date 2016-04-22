@@ -504,7 +504,7 @@ function Framework() {
 		'allow-custom-titles': false,
 		'allow-compatibility': false,
 		'disable-strict-server-certificate-validation': true,
-		'disable-clear-temporary-directory': false,
+		'disable-clear-temporary-directory': true,
 
 		// Used in framework._service()
 		// All values are in minutes
@@ -7647,8 +7647,17 @@ Framework.prototype.clear = function(callback, isInit) {
 
 	if (isInit) {
 		if (self.config['disable-clear-temporary-directory']) {
-			if (callback)
-				callback();
+			// clears only JS and CSS files
+			framework_utils.ls(dir, function(files, directories) {
+				self.unlink(files);
+				if (callback)
+					callback();
+			}, function(filename, dir) {
+				if (dir)
+					return false;
+				var ext = framework_utils.getExtension(filename);
+				return ext === '.js' || ext === '.css' || ext === '.tmp';
+			});
 			return self;
 		}
 	}
