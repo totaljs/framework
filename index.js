@@ -418,7 +418,7 @@ var directory = framework_utils.$normalize(require.main ? path.dirname(require.m
 
 // F._service() changes the values below:
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
-const UIDGENERATOR = { date: new Date().format('yyMMddHHmm').substring(1), instance: 'abcdefghijklmnoprstuwxy'.split('').randomize().join('').substring(0, 3), index: 1 };
+const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').randomize().join('').substring(0, 3), index: 1 };
 
 function Framework() {
 
@@ -2140,18 +2140,23 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 		url = framework_internal.routeSplitCreate(fnValidation);
 		fnValidation = undefined;
 		a = url.last();
-		var index = a.indexOf('*.');
-		if (index !== -1) {
-			extensions = {};
-			extensions[a.substring(index + 2).trim()] = true;
-			wildcard = false;
-			url.splice(url.length - 1, 1);
-		} else if (a === '*') {
+		if (a === '*.*') {
 			wildcard = true;
 			url.splice(url.length - 1, 1);
-		} else if (framework_utils.getExtension(a)) {
-			fixedfile = true;
-			wildcard = false;
+		} else {
+			var index = a.indexOf('*.');
+			if (index !== -1) {
+				extensions = {};
+				extensions[a.substring(index + 2).trim()] = true;
+				wildcard = false;
+				url.splice(url.length - 1, 1);
+			} else if (a === '*') {
+				wildcard = true;
+				url.splice(url.length - 1, 1);
+			} else if (framework_utils.getExtension(a)) {
+				fixedfile = true;
+				wildcard = false;
+			}
 		}
 	} else if (!extensions && !fnValidation)
 		fnValidation = fnExecute;
