@@ -2906,7 +2906,7 @@ Pagination.prototype.first = function(format) {
  * @param {String} format Custom format (optional).
  * @return {Object Array} Example: [{ url: String, page: Number, selected: Boolean }]
  */
-Pagination.prototype.prepare = function(max, format) {
+Pagination.prototype.prepare = function(max, format, type) {
 
 	var self = this;
 
@@ -2922,8 +2922,16 @@ Pagination.prototype.prepare = function(max, format) {
 		max = tmp;
 	}
 
+	var isHTML = type === 'html';
+
 	if (max === undefined || max === null) {
 		for (var i = 1; i < self.count + 1; i++)
+
+			if (isHTML) {
+				builder.push(self.prepare_html(format, i, self.count, self.items, i === self.page));
+				continue;
+			}
+
 			builder.push({
 				url: format.format(i, self.items, self.count),
 				page: i,
@@ -2949,24 +2957,42 @@ Pagination.prototype.prepare = function(max, format) {
 	if (pageTo >= pages) {
 		pageTo = pages;
 		pageFrom = pages - max;
+		if (pageFrom <= 0)
+			pageFrom = 1;
 	}
 
-	if (pageFrom < 0)
-		pageFrom = 1;
+	for (var i = pageFrom; i < pageTo + 1; i++) {
 
-	for (var i = pageFrom; i < pageTo + 1; i++)
+		if (isHTML) {
+			builder.push(self.prepare_html(format, i, self.count, self.items, i === self.page));
+			continue;
+		}
+
 		builder.push({
 			url: format.format(i, self.items, self.count),
 			page: i,
 			selected: i === self.page,
 			enabled: true
 		});
+	}
 
 	return builder;
 };
 
+Pagination.prototype.prepare_html = function(format, page, pages, items, selected) {
+	return '<a href="' + format.format(page, items, pages) + '"' + (selected ? ' class="selected">' : '>') + page + '</a>';
+};
+
 Pagination.prototype.render = function(max, format) {
 	return this.prepare(max, format);
+};
+
+Pagination.prototype.html = function(max, format) {
+	return this.prepare(max, format, 'html').join('');
+};
+
+Pagination.prototype.json = function(max, format) {
+	return JSON.stringify(this.prepare(max, format));
 };
 
 /**

@@ -20,6 +20,8 @@
 - added: `String.removeTags()` by @harry-stot
 - added: F.nosql(name) + NOSQL(name) --> alias for NoSQL embedded database (it can be used with e.g. SQL Agent)
 - added: modificators can handle `INSTALL('view', ...)`
+- added: `Pagination.html(max, format)` returns `String`
+- added: `Pagination.json(max, format)` returns `String`
 
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
 - updated: `F.file()` supports flags instead of middleware and the flags supports extensions `['.jpg', '.png']`. The `name` argument has been removed.
