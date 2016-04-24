@@ -3560,20 +3560,19 @@ Number.prototype.add = function(value, decimals) {
 		isPercentage = true;
 
 		if (is) {
-			var tmp = ((value.parseFloat() / 100) + 1);
-
+			var val = value.parseFloat();
 			switch (first) {
 				case 42:
-					num = this * (this * tmp);
+					num = this * ((this / 100) * val);
 					break;
 				case 43:
-					num = this * tmp;
+					num = this + ((this / 100) * val);
 					break;
 				case 45:
-					num = this / tmp;
+					num = this - ((this / 100) * val);
 					break;
 				case 47:
-					num = this / (this / tmp);
+					num = this / ((this / 100) * val);
 					break;
 			}
 			return decimals !== undefined ? num.floor(decimals) : num;
