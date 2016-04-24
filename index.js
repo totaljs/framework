@@ -39,7 +39,6 @@ var child = require('child_process');
 var util = require('util');
 
 const ENCODING = 'utf8';
-const EXTENSION_JS = '.js';
 const RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
 const RESPONSE_HEADER_CONTENTTYPE = 'Content-Type';
 const RESPONSE_HEADER_CONTENTLENGTH = 'Content-Length';
@@ -266,7 +265,8 @@ global.GETSCHEMA = function(group, name) {
 };
 
 global.UID = function() {
-	return UIDGENERATOR.date + (UIDGENERATOR.index++).padLeft(4, '0') + UIDGENERATOR.instance;
+	var plus = UIDGENERATOR.index % 2 ? 1 : 0;
+	return UIDGENERATOR.date + (UIDGENERATOR.index++).padLeft(4, '0') + UIDGENERATOR.instance + plus;
 };
 
 global.MAKE = global.TRANSFORM = function(transform, fn) {
@@ -424,7 +424,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-21';
+	this.version_header = '2.0.0-22';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -1770,8 +1770,11 @@ Framework.prototype.map = function(url, filename, filter) {
 	}
 
 	if (filter instanceof Array) {
-		for (var i = 0, length = filter.length; i < length; i++)
-			filter[i] = (filter[i][0] !== '.' ? '.' : '') + filter[i].toLowerCase();
+		for (var i = 0, length = filter.length; i < length; i++) {
+			if (filter[i][0] === '.')
+				filter[i] = filter[i].substring(1);
+			filter[i] = filter[i].toLowerCase();
+		}
 	}
 
 	setTimeout(function() {
@@ -2396,7 +2399,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			return;
 
 		if (!extension)
-			extension = EXTENSION_JS;
+			extension = '.js';
 
 		fs.readdirSync(directory).forEach(function(o) {
 			var isDirectory = fs.statSync(path.join(directory, o)).isDirectory();
@@ -2420,6 +2423,8 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			}
 
 			var ext = framework_utils.getExtension(o).toLowerCase();
+			if (ext)
+				ext = '.' + ext;
 			if (ext !== extension)
 				return;
 			var name = (level ? framework_utils.$normalize(directory).replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length);
@@ -2533,7 +2538,7 @@ Framework.prototype.$startup = function(callback) {
 
 	fs.readdirSync(dir).forEach(function(o) {
 		var extension = framework_utils.getExtension(o).toLowerCase();
-		if (extension !== '.js')
+		if (extension !== 'js')
 			return;
 		run.push(o);
 	});
@@ -3520,7 +3525,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
  */
 Framework.prototype.register = function(path) {
 
-	var extension = framework_utils.getExtension(path);
+	var extension = '.' + framework_utils.getExtension(path);
 	var self = this;
 	var name = framework_utils.getName(path);
 	var key;
@@ -5107,8 +5112,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			fnProcess(image);
 
 			var extension = framework_utils.getExtension(name);
-			if (extension.substring(1) !== image.outputType)
-				name = name.substring(0, name.lastIndexOf(extension)) + '.' + image.outputType;
+			if (extension !== image.outputType)
+				name = name.substring(0, name.lastIndexOf('.' + extension)) + '.' + image.outputType;
 
 			image.save(name, function(err) {
 
@@ -5161,8 +5166,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		fnProcess(image);
 
 		var extension = framework_utils.getExtension(name);
-		if (extension.substring(1) !== image.outputType)
-			name = name.substring(0, name.lastIndexOf(extension)) + '.' + image.outputType;
+		if (extension !== image.outputType)
+			name = name.substring(0, name.lastIndexOf('.' + extension)) + '.' + image.outputType;
 
 		image.save(name, function(err) {
 
@@ -6413,7 +6418,7 @@ Framework.prototype.listener = function(req, res) {
 
 	var can = true;
 	if (req.isStaticFile) {
-		req.extension = framework_utils.getExtension(req.uri.pathname).substring(1);
+		req.extension = framework_utils.getExtension(req.uri.pathname);
 		switch (req.extension) {
 			case 'html':
 			case 'htm':
@@ -7023,7 +7028,7 @@ Framework.prototype.model = function(name) {
 	if (self.models[name] !== undefined)
 		return self.models[name];
 
-	var filename = path.join(directory, self.config['directory-models'], name + EXTENSION_JS);
+	var filename = path.join(directory, self.config['directory-models'], name + '.js');
 
 	if (existsSync(filename))
 		self.install('model', name, filename, undefined, undefined, undefined, true);
@@ -7048,7 +7053,7 @@ Framework.prototype.source = function(name, options, callback) {
 	if (self.sources[name] !== undefined)
 		return self.sources[name];
 
-	var filename = path.join(directory, self.config['directory-source'], name + EXTENSION_JS);
+	var filename = path.join(directory, self.config['directory-source'], name + '.js');
 	if (existsSync(filename))
 		self.install('source', name, filename, options, callback, undefined, true);
 	return self.sources[name] || null;
@@ -7524,7 +7529,7 @@ Framework.prototype.test = function(stop, names, cb) {
 			var name = path.relative(framework_utils.combine(dir), filePath);
 			var filename = filePath;
 			var ext = framework_utils.getExtension(filename).toLowerCase();
-			if (ext !== EXTENSION_JS)
+			if (ext !== 'js')
 				return;
 
 			if (names.length && names.indexOf(name.substring(0, name.length - 3)) === -1)
@@ -7661,7 +7666,7 @@ Framework.prototype.clear = function(callback, isInit) {
 				if (dir)
 					return false;
 				var ext = framework_utils.getExtension(filename);
-				return ext === '.js' || ext === '.css' || ext === '.tmp';
+				return ext === 'js' || ext === 'css' || ext === 'tmp';
 			});
 			return self;
 		}
@@ -8388,8 +8393,8 @@ Framework.prototype._configure = function(arr, rewrite) {
  */
 Framework.prototype.routeScript = function(name, theme) {
 	var self = this;
-	if (name.lastIndexOf(EXTENSION_JS) === -1)
-		name += EXTENSION_JS;
+	if (name.lastIndexOf('.js') === -1)
+		name += '.js';
 	return self._routeStatic(name, self.config['static-url-script'], theme);
 };
 
@@ -8759,7 +8764,7 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 	if (fork)
 		return fork;
 
-	var filename = framework_utils.combine(self.config['directory-workers'], name) + EXTENSION_JS;
+	var filename = framework_utils.combine(self.config['directory-workers'], name) + '.js';
 
 	if (!args)
 		args = [];
@@ -11470,8 +11475,8 @@ Controller.prototype.head = function() {
 
 		if (val.endsWith('.css', true))
 			output += '<link type="text/css" rel="stylesheet" href="' + (isRoute ? self.routeStyle(val) : val) + '" />';
-		else if (val.endsWith(EXTENSION_JS, true) !== -1)
-			output += '<script type="text/javascript" src="' + (isRoute ? self.routeScript(val) : val) + '"></script>';
+		else if (val.endsWith('.js', true) !== -1)
+			output += '<script src="' + (isRoute ? self.routeScript(val) : val) + '"></script>';
 	}
 
 	header += output;

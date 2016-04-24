@@ -991,17 +991,17 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	self.check();
 
 	switch (ext) {
-		case '.gif':
+		case 'gif':
 			dimension = framework_image.measureGIF(buffer);
 			break;
-		case '.png':
+		case 'png':
 			dimension = framework_image.measurePNG(buffer);
 			break;
-		case '.jpg':
-		case '.jpeg':
+		case 'jpg':
+		case 'jpeg':
 			dimension = framework_image.measureJPG(buffer);
 			break;
-		case '.svg':
+		case 'svg':
 			dimension = framework_image.measureSVG(buffer);
 			break;
 	}
@@ -1083,17 +1083,17 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 	self.check();
 
 	switch (ext) {
-		case '.gif':
+		case 'gif':
 			dimension = framework_image.measureGIF(buffer);
 			break;
-		case '.png':
+		case 'png':
 			dimension = framework_image.measurePNG(buffer);
 			break;
-		case '.jpg':
-		case '.jpeg':
+		case 'jpg':
+		case 'jpeg':
 			dimension = framework_image.measureJPG(buffer);
 			break;
-		case '.svg':
+		case 'svg':
 			dimension = framework_image.measureSVG(buffer);
 			break;
 	}

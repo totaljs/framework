@@ -12,7 +12,7 @@
 - added: `F.route()` supports a new flag: `cors` (creates a cors route) and `credentials` (enables cookies for cors)
 - added: `ErrorBuilder.plain()` returns all errors as a simple string
 - added: `Array.findItem()` alias to `Array.find()`
-- added: `UID()` for generating unique identificators (contains minimum 16 chars)
+- added: `UID()` for generating unique identificators (contains minimum 18 chars)
 - added: `F.restart()` for restarting app
 - added: `F.on('restart')`
 - added: quicksort algorithm for sorting arrays
@@ -20,6 +20,10 @@
 - added: `String.removeTags()` by @harry-stot
 - added: F.nosql(name) + NOSQL(name) --> alias for NoSQL embedded database (it can be used with e.g. SQL Agent)
 - added: modificators can handle `INSTALL('view', ...)`
+- added: `String.isPhone()` for phone number validation
+- added: `String.isUID()` for UID() validation
+- added: `String.toCamelCase()`
+- added: new schemabuilder types `Email` (string, maxlength 120), `Phone` (string, maxlength 20), `Zip` (string, maxlength 10), `Camelize` (string), `Lowerize` (string), `Upperize` (string), `UID` (string, minlength 18, maxlength 20)
 
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
 - updated: `F.file()` supports flags instead of middleware and the flags supports extensions `['.jpg', '.png']`. The `name` argument has been removed.
@@ -32,6 +36,7 @@
 - updated: `Array.orderBy()` added quicksort algorithm
 - updated: `Date.format()` supports day names `ddd` (short) and `dddd` (full)
 - updated: `String.removeDiacritics()` supports multiple languages (by @Harry-Slot)
+- updated: (IMPORTANT) `U.getExtension(filename)` --> returns extension without `.` dot
 
 - fixed: `FrameworkImage.save()` problem with streams
 - fixed: `CLEANUP(stream)` method

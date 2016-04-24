@@ -29,6 +29,8 @@
 const REQUIRED = 'The field "@" is required.';
 const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$result: true, $callback: true, $$async: true };
+const REGEXP_CLEAN_EMAIL = /\s/g;
+const REGEXP_CLEAN_PHONE = /\s|\.|\-|\(|\)/g;
 
 var schemas = {};
 var transforms = { pagination: {}, error: {}, objectbuilder: {}, transformbuilder: {} };
@@ -321,16 +323,81 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 	}
 
 	if (lower.contains(['string', 'text', 'varchar', 'nvarchar'])) {
-
 		result.type = 3;
-
 		var beg = lower.indexOf('(');
 		if (beg === -1)
 			return result;
-
 		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
 		result.length = size;
 		result.raw = lower.substring(0, beg);
+		return result;
+	}
+
+	if (lower.contains(['camelize', 'camelcase', 'camel'])) {
+		result.type = 3;
+		var beg = lower.indexOf('(');
+		if (beg === -1)
+			return result;
+		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
+		result.length = size;
+		result.raw = lower.substring(0, beg);
+		result.subtype = 'camelcase';
+		return result;
+	}
+
+	if (lower.contains(['lowerize', 'lowercase', 'lower'])) {
+		result.type = 3;
+		var beg = lower.indexOf('(');
+		if (beg === -1)
+			return result;
+		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
+		result.length = size;
+		result.raw = lower.substring(0, beg);
+		result.subtype = 'lowercase';
+		return result;
+	}
+
+	if (lower.contains(['upperize', 'uppercase', 'upper'])) {
+		result.type = 3;
+		var beg = lower.indexOf('(');
+		if (beg === -1)
+			return result;
+		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
+		result.length = size;
+		result.raw = lower.substring(0, beg);
+		result.subtype = 'uppercase';
+		return result;
+	}
+
+	if (lower.contains(['uid'])) {
+		result.type = 3;
+		result.length = 20;
+		result.raw = 'string';
+		result.subtype = 'uid';
+		return result;
+	}
+
+	if (lower.contains(['email'])) {
+		result.type = 3;
+		result.length = 120;
+		result.raw = 'string';
+		result.subtype = 'email';
+		return result;
+	}
+
+	if (lower.contains(['zip'])) {
+		result.type = 3;
+		result.length = 10;
+		result.raw = 'string';
+		result.subtype = 'zip';
+		return result;
+	}
+
+	if (lower.contains(['phone'])) {
+		result.type = 3;
+		result.length = 20;
+		result.raw = 'string';
+		result.subtype = 'phone';
 		return result;
 	}
 
@@ -972,18 +1039,11 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 };
 
 SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
-
 	var self = this;
-
-	if (obj && typeof(obj.$save) === 'function') {
+	if (obj && typeof(obj.$save) === 'function')
 		callback(null, obj);
-		return self;
-	}
-
-	self.make(obj, function(err, model) {
-		callback(err, model);
-	});
-
+	else
+		self.make(obj, (err, model) => callback(err, model));
 	return self;
 };
 
@@ -1069,8 +1129,10 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback) {
 
 	var self = this;
 
-	if (typeof(model) === 'function')
-		return model.call(self, self);
+	if (typeof(model) === 'function') {
+		model.call(self, self);
+		return self;
+	}
 
 	if (typeof(filter) === 'function') {
 		var tmp = callback;
@@ -1165,13 +1227,28 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 				case 2:
 					item[property] = self.$onprepare(property, framework_utils.parseFloat(val), undefined, model);
 					break;
+
 				// string
 				case 3:
 					tmp = val === undefined || val === null ? '' : autotrim(self, val.toString());
-					if (type.length&& type.length < tmp.length)
+					if (type.length && type.length < tmp.length)
 						tmp = tmp.substring(0, type.length);
+
+					switch (type.subtype) {
+						case 'email':
+							tmp = tmp.toLowerCase().replace(REGEXP_CLEAN_EMAIL, '');
+							break;
+						case 'phone':
+							tmp = tmp.replace(REGEXP_CLEAN_PHONE, '');
+							break;
+						case 'camelcase':
+							tmp = tmp.toCamelCase();
+							break;
+					}
+
 					item[property] = self.$onprepare(property, tmp, undefined, model);
 					break;
+
 				// boolean
 				case 4:
 					tmp = val ? val.toString().toLowerCase() : null;
@@ -1273,6 +1350,25 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					tmp = tmp === undefined || tmp === null ? '' : autotrim(self, tmp.toString());
 					if (type.length && tmp.length < tmp.length)
 						tmp = tmp.substring(0, type.length);
+
+					switch (type.subtype) {
+						case 'email':
+							tmp = tmp.toLowerCase().replace(REGEXP_CLEAN_EMAIL, '');
+							break;
+						case 'phone':
+							tmp = tmp.replace(REGEXP_CLEAN_PHONE, '');
+							break;
+						case 'camelcase':
+							tmp = tmp.toCamelCase();
+							break;
+						case 'lowercase':
+							tmp = tmp.toLowerCase();
+							break;
+						case 'uppercase':
+							tmp = tmp.toUpperCase();
+							break;
+					}
+
 					tmp = self.$onprepare(property, tmp, j, model);
 					break;
 

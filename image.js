@@ -142,7 +142,7 @@ function Image(filename, useImageMagick, width, height) {
 	this.filename = type === 'string' ? filename : null;
 	this.currentStream = type === 'object' ? filename : null;
 	this.isIM = useImageMagick === undefined || useImageMagick === null ? F.config['default-image-converter'] === 'im' : useImageMagick;
-	this.outputType = type === 'string' ? framework_utils.getExtension(filename).substring(1) : 'jpg';
+	this.outputType = type === 'string' ? framework_utils.getExtension(filename) : 'jpg';
 }
 
 /*

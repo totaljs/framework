@@ -42,6 +42,7 @@ if (!global.framework_utils)
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
 const regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$');
 const regexpUrl = new RegExp('^(http[s]?:\\/\\/(www\\.)?|ftp:\\/\\/(www\\.)?|www\\.){1}([0-9A-Za-z-\\.@:%_\+~#=]+)+((\\.[a-zA-Z]{2,3})+)(/(.)*)?(\\?(.)*)?');
+const regexpPhone = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im;
 const regexpTRIM = /^[\s]+|[\s]+$/g;
 const regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
 const regexpDATEFORMAT = /yyyy|yy|M+|d+|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
@@ -49,6 +50,8 @@ const regexpSTRINGFORMAT = /\{\d+\}/g;
 const regexpPATH = /\\/g;
 const regexpTags = /<\/?[^>]+(>|$)/g;
 const regexpDiacritics = /[^\u0000-\u007e]/g;
+const regexpUID = /^\d{14,}[a-z]{3}[01]{1}$/;
+const regexpZIP = /^\d{5}(?:[-\s]\d{4})?$/;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -1489,7 +1492,7 @@ exports.getExtension = function(filename) {
 	if (index === -1)
 		return '';
 	if (filename.indexOf('/', index - 1) === -1)
-		return filename.substring(index);
+		return filename.substring(index + 1);
 	return '';
 };
 
@@ -1622,8 +1625,23 @@ exports.GUID = function(max) {
 	return str.substring(0, max);
 };
 
-function validate_builder_default(name, value) {
+function validate_builder_default(name, value, entity) {
+
 	var type = typeof(value);
+
+	switch (entity.subtype) {
+		case 'uid':
+			var number = parseInt(value.substring(10, value.length - 4), 10);
+			if (isNaN(number))
+				return false;
+			return value[value.length - 1] === (number % 2 ? '1' : '0');
+		case 'zip':
+			return regexpZIP.test(value);
+		case 'email':
+			return value.isEmail();
+		case 'phone':
+			return regexpPhone.test(value);
+	}
 
 	if (type === 'number')
 		return value > 0;
@@ -1670,6 +1688,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 
 		var value = model[name];
 		var type = typeof(value);
+		var TYPE = collection[schema].schema[name];
 
 		if (value === undefined) {
 			error.add(pluspath + name, '@', current + name);
@@ -1709,9 +1728,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					// The schema not exists
 					if (collection[entity] === undefined) {
 
-						var result2 = prepare(name, value, current + name, model, schema);
+						var result2 = prepare(name, value, current + name, model, schema, TYPE);
 						if (result2 === undefined) {
-							result2 = validate_builder_default(name, value);
+							result2 = validate_builder_default(name, value, TYPE);
 							if (result2)
 								continue;
 						}
@@ -1734,9 +1753,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 						continue;
 					}
 
-					var result3 = prepare(name, value, current + name, model, schema);
+					var result3 = prepare(name, value, current + name, model, schema, TYPE);
 					if (result3 === undefined) {
-						result3 = validate_builder_default(name, value);
+						result3 = validate_builder_default(name, value, TYPE);
 						if (result3)
 							continue;
 					}
@@ -1770,9 +1789,9 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 			}
 		}
 
-		var result = prepare(name, value, current + name, model, schema);
+		var result = prepare(name, value, current + name, model, schema, TYPE);
 		if (result === undefined) {
-			result = validate_builder_default(name, value);
+			result = validate_builder_default(name, value, TYPE);
 			if (result)
 				continue;
 		}
@@ -3012,6 +3031,20 @@ String.prototype.isEmail = function() {
 	return regexpMail.test(str);
 };
 
+String.prototype.isPhone = function() {
+	var str = this;
+	if (str.length < 6)
+		return false;
+	return regexpPhone.test(str);
+};
+
+String.prototype.isUID = function() {
+	var str = this;
+	if (str.length < 18)
+		return false;
+	return regexpUID.test(str);
+};
+
 String.prototype.parseInt = function(def) {
 	var str = this.trim();
 	var num = +str;
@@ -3033,6 +3066,14 @@ String.prototype.parseFloat = function(def) {
 	if (isNaN(num))
 		return def || 0;
 	return num;
+};
+
+String.prototype.toCamelCase = function() {
+	var arr = this.split(' ');
+	var builder = [];
+	for (var i = 0, length = arr.length; i < length; i++)
+		builder.push(arr[i][0].toUpperCase() + arr[i].substring(1));
+	return builder.join(' ');
 };
 
 String.prototype.toUnicode = function() {
