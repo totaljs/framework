@@ -568,14 +568,16 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 				continue;
 		}
 
+		var role = flag[0] === '@';
+
 		if (noLoggedUnlogged && route.isMEMBER) {
 			var tmp = flag.substring(0, 3);
 			if (!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1)
 				return 0;
+			if (route.flags.indexOf(flag) == -1)
+				return 0;
 			continue;
 		}
-
-		var role = flag[0] === '@';
 
 		// Is some role verified?
 		if (role && isRole)
