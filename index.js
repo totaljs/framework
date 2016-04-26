@@ -424,7 +424,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-22';
+	this.version_header = '2.0.0-23';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -939,67 +939,71 @@ Framework.prototype.schedule = function(date, repeat, fn) {
 /**
  * Auto resize picture according the path
  * @param {String} url Relative path.
- * @param {String} width New width (optional).
- * @param {String} height New height (optional).
- * @param {Object} options Additional options.
- * @param {String Array} ext Allowed file extension (optional).
- * @param {String} path Source directory (optional).
+ * @param {Function(image)} fn Processing.
+ * @param {String Array} flags Optional, can contains extensions `.jpg`, `.gif' or watching path `/img/gallery/`
  * @return {Framework}
  */
-Framework.prototype.resize = function(url, width, height, options, path, extensions) {
-	var self = this;
-	var extension = null;
-	var index = url.lastIndexOf('.');
+Framework.prototype.resize = function(url, fn, flags) {
 
-	if (typeof(options) === 'string') {
-		extensions = path;
-		path = options;
-		options = {};
+	var self = this;
+	var extensions = {};
+	var cache = true;
+
+	if (typeof(flags) === 'function') {
+		var tmp = flags;
+		flags = fn;
+		fn = tmp;
 	}
 
-	if (index !== -1)
-		extension = [url.substring(index)];
-	else
-		extension = extensions || ['.jpg', '.png', '.gif'];
+	var ext = url.match(/\*.\*$|\*?\.(jpg|png|gif|jpeg)$/gi);
+	if (ext) {
+		url = url.replace(ext, '');
+		switch (ext.toString().toLowerCase()) {
+			case '*.*':
+				extensions['*'] = true;
+				break;
+			case '*.jpg':
+			case '*.gif':
+			case '*.png':
+			case '*.jpeg':
+				extensions[ext.toString().toLowerCase().replace(/\*/g, '')] = true;
+				break;
+		}
+	}
 
-	var length = extension.length;
-	for (var i = 0; i < length; i++)
-		extension[i] = (extension[i][0] !== '.' ? '.' : '') + extension[i].toLowerCase();
+	var path = url;
 
-	index = url.lastIndexOf('/');
-	if (index !== -1)
-		url = url.substring(0, index);
+	if (flags && flags.length) {
+		for (var i = 0, length = flags.length; i < length; i++) {
+			var flag = flags[i];
 
-	if (url[0] !== '/')
-		url = '/' + url;
+			if (flag[0] === '.') {
+				extensions[flag] = true;
+				continue;
+			}
 
-	if (url[url.length - 1] !== '/')
-		url += '/';
+			if (flag[0] === '/') {
+				path = flag;
+				continue;
+			}
 
-	url = framework_internal.preparePATH(url);
-	path = path || url;
+			if (flag === 'nocache')
+				cache = false;
+		}
+	}
 
-	if (!options)
-		options = {};
-
-	var ext = {};
-	for (var i = 0, length = extension.length; i < length; i++)
-		ext[extension[i]] = true;
+	if (!extensions.length) {
+		extensions['.jpg'] = true;
+		extensions['.jpeg'] = true;
+		extensions['.png'] = true;
+		extensions['.gif'] = true;
+	}
 
 	self.routes.resize[url] = {
-		width: width,
-		height: height,
-		extension: ext,
+		fn: fn,
 		path: path || url,
-		grayscale: options.grayscale,
-		blur: options.blur,
-		rotate: options.rotate,
-		flip: options.flip,
-		flop: options.flop,
-		sepia: options.sepia,
-		quality: options.quality,
-		direction: options.direction || 'center',
-		cache: options.cache === false ? false : true
+		extension: extensions,
+		cache: cache
 	};
 
 	return self;
@@ -4496,41 +4500,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 	}
 
 	var method = resizer.cache ? self.responseImage : self.responseImageWithoutCache;
-	method.call(self, req, res, filename, function(image) {
-
-		if (resizer.width || resizer.height) {
-			if (resizer.width && resizer.height)
-				image.resizeAlign(resizer.width, resizer.height, resizer.direction);
-			else
-				image.resize(resizer.width, resizer.height);
-		}
-
-		if (resizer.grayscale)
-			image.grayscale();
-
-		if (resizer.blur)
-			image.blur(typeof(resizer.blur) === 'number' ? resizer.blur : 1);
-
-		if (resizer.rotate && typeof(resizer.rotate) == 'number')
-			image.rotate(resizer.rotate);
-
-		if (resizer.flop)
-			image.flop();
-
-		if (resizer.flip)
-			image.flip();
-
-		if (resizer.sepia)
-			image.sepia(typeof(resizer.sepia) === 'number' ? resizer.sepia : 100);
-
-		if (resizer.quality)
-			image.quality(resizer.quality);
-		else
-			image.quality(self.config['default-image-quality']);
-
-		image.minify();
-	}, undefined, done);
-
+	method.call(self, req, res, filename, (image) => resizer.fn.call(image, image), undefined, done);
 	return self;
 };
 
