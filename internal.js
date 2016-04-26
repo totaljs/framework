@@ -574,7 +574,7 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 			var tmp = flag.substring(0, 3);
 			if (!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1)
 				return 0;
-			if (route.flags.indexOf(flag) == -1)
+			if (role && route.flags.indexOf(flag) == -1)
 				return 0;
 			continue;
 		}
