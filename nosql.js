@@ -126,7 +126,7 @@ Database.prototype.find = function(view) {
 	return builder;
 };
 
-Database.prototype.max = function(name ,view) {
+Database.prototype.max = function(name, view) {
 	var self = this;
 	var builder = new DatabaseBuilder();
 
