@@ -52,6 +52,7 @@ const regexpTags = /<\/?[^>]+(>|$)/g;
 const regexpDiacritics = /[^\u0000-\u007e]/g;
 const regexpUID = /^\d{14,}[a-z]{3}[01]{1}$/;
 const regexpZIP = /^\d{5}(?:[-\s]\d{4})?$/;
+const regexpXML = /\w+\=\".*?\"/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -1964,7 +1965,7 @@ exports.parseXML = function(xml) {
 		if (!hasAttributes)
 			continue;
 
-		var match = el.match(/\w+\=\".*?\"/g);
+		var match = el.match(regexpXML);
 		if (match === null)
 			continue;
 
