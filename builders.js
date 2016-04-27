@@ -31,6 +31,7 @@ const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$result: true, $callback: true, $$async: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|\-|\(|\)/g;
+const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 var schemas = {};
 var transforms = { pagination: {}, error: {}, objectbuilder: {}, transformbuilder: {} };
@@ -1199,7 +1200,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 		var val = model[property];
 
 		// IS PROTOTYPE? The problem was in e.g. "search" property, because search is in String prototypes.
-		if (!model.hasOwnProperty(property))
+		if (!hasOwnProperty.call(model, property))
 			val = undefined;
 
 		if (val === undefined && defaults)

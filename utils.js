@@ -169,7 +169,7 @@ exports.isEmpty = function(obj) {
 
 	for (var key in obj) {
 		if (hasOwnProperty.call(obj, key))
-		return false;
+			return false;
 	}
 
 	return true;
