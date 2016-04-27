@@ -2797,6 +2797,17 @@ function Pagination(items, page, max, format) {
 	this.transformName = transforms['pagination_default'];
 }
 
+function Page(url, page, selected, enabled) {
+	this.url = url;
+	this.page = page;
+	this.selected = selected;
+	this.enabled = enabled;
+}
+
+Page.prototype.html = function() {
+	return '<a href="' + this.url + '"' + (this.selected ? ' class="selected">' : '>') + this.page + '</a>';
+};
+
 /**
  * STATIC: Create transformation
  * @param {String} name
@@ -2925,12 +2936,7 @@ Pagination.prototype.prev = function(format) {
 	else
 		page = self.count;
 
-	return {
-		url: format.format(page, self.items, self.count),
-		page: page,
-		selected: false,
-		enabled: self.isPrev
-	};
+	return new Page(format.format(page, self.items, self.count), page, false, self.isPrev);
 };
 
 /**
@@ -2949,12 +2955,7 @@ Pagination.prototype.next = function(format) {
 	else
 		page = 1;
 
-	return {
-		url: format.format(page, self.items, self.count),
-		page: page,
-		selected: false,
-		enabled: self.isNext
-	};
+	return new Page(format.format(page, self.items, self.count), page, false, self.isNext);
 };
 
 /**
@@ -2963,18 +2964,10 @@ Pagination.prototype.next = function(format) {
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.last = function(format) {
-
 	var self = this;
 	var page = self.count;
-
 	format = format || self.format;
-
-	return {
-		url: format.format(page, self.items, self.count),
-		page: page,
-		selected: false,
-		enabled: self.count > 0
-	};
+	return new Page(format.format(page, self.items, self.count), page, false, self.count > 0);
 };
 
 /**
@@ -2983,18 +2976,10 @@ Pagination.prototype.last = function(format) {
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.first = function(format) {
-
 	var self = this;
 	var page = 1;
-
 	format = format || self.format;
-
-	return {
-		url: format.format(page, self.items, self.count),
-		page: page,
-		selected: false,
-		enabled: self.count > 0
-	};
+	return new Page(format.format(page, self.items, self.count), page, false, self.count > 0);
 };
 
 /**
@@ -3022,19 +3007,12 @@ Pagination.prototype.prepare = function(max, format, type) {
 	var isHTML = type === 'html';
 
 	if (max === undefined || max === null) {
-		for (var i = 1; i < self.count + 1; i++)
-
-			if (isHTML) {
+		for (var i = 1; i < self.count + 1; i++) {
+			if (isHTML)
 				builder.push(self.prepare_html(format, i, self.count, self.items, i === self.page));
-				continue;
-			}
-
-			builder.push({
-				url: format.format(i, self.items, self.count),
-				page: i,
-				selected: i === self.page,
-				enabled: true
-			});
+			else
+				builder.push(new Page(format.format(i, self.items, self.count), i, i === self.page, true));
+		}
 		return builder;
 	}
 
@@ -3059,18 +3037,10 @@ Pagination.prototype.prepare = function(max, format, type) {
 	}
 
 	for (var i = pageFrom; i < pageTo + 1; i++) {
-
-		if (isHTML) {
+		if (isHTML)
 			builder.push(self.prepare_html(format, i, self.count, self.items, i === self.page));
-			continue;
-		}
-
-		builder.push({
-			url: format.format(i, self.items, self.count),
-			page: i,
-			selected: i === self.page,
-			enabled: true
-		});
+		else
+			builder.push(new Page(format.format(i, self.items, self.count), i, i === self.page, true));
 	}
 
 	return builder;
