@@ -982,7 +982,7 @@ Framework.prototype.resize = function(url, fn, flags) {
 				continue;
 			}
 
-			if (flag[0] === '/') {
+			if (flag[0] === '/' || flag.match(/^http\:|https\:/gi)) {
 				path = flag;
 				continue;
 			}
@@ -1002,6 +1002,7 @@ Framework.prototype.resize = function(url, fn, flags) {
 	self.routes.resize[url] = {
 		fn: fn,
 		path: path || url,
+		ishttp: path.match(/http\:|https\:/gi) ? true : false,
 		extension: extensions,
 		cache: cache
 	};
@@ -4460,9 +4461,8 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		if (isResize) {
 			name = resizer.path + $decodeURIComponent(name);
 			filename = self.onMapping(name, name, false, false);
-		} else {
+		} else
 			filename = self.onMapping(name, name, true, true);
-		}
 	} else
 		filename = self.onMapping(name, name, true, true);
 
@@ -4475,16 +4475,21 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		}
 
 		var key = filename.substring(1);
-		var iso = framework.isomorphic[key];
+		var iso = self.isomorphic[key];
 
 		if (!iso) {
 			self.response404(req, res);
+			if (done)
+				done();
 			return;
 		}
 
 		var etag = framework_utils.etag(filename, (iso.version || '') + '-' + (self.config['etag-version'] || ''));
-		if (RELEASE && framework.notModified(req, res, etag))
+		if (RELEASE && self.notModified(req, res, etag)) {
+			if (done)
+				done();
 			return;
+		}
 
 		// isomorphic
 		var headers = {};
@@ -4492,15 +4497,56 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		if (RELEASE) {
 			headers['Etag'] = etag;
 			headers['Expires'] = DATE_EXPIRES;
-			headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=' + framework.config['default-response-maxage'];
+			headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=' + self.config['default-response-maxage'];
 		}
 
-		framework.responseContent(req, res, 200, prepare_isomorphic(key), 'text/javascript', true, headers);
+		self.responseContent(req, res, 200, prepare_isomorphic(key), 'text/javascript', true, headers);
+		if (done)
+			done();
 		return self;
 	}
 
-	var method = resizer.cache ? self.responseImage : self.responseImageWithoutCache;
-	method.call(self, req, res, filename, (image) => resizer.fn.call(image, image), undefined, done);
+	if (!resizer.ishttp) {
+		var method = resizer.cache ? self.responseImage : self.responseImageWithoutCache;
+		method.call(self, req, res, filename, (image) => resizer.fn.call(image, image), undefined, done);
+		return;
+	}
+
+	if (self.temporary.processing[req.uri.pathname]) {
+		setTimeout(() => self.responseStatic(req, res, done), 500);
+		return;
+	}
+
+	var key = createTemporaryKey(req);
+	var tmp = self.path.temp(key);
+
+	if (self.temporary.path[key]) {
+		self.responseFile(req, res, req.uri.pathname, undefined, undefined, done);
+		return self;
+	}
+
+	self.temporary.processing[req.uri.pathname] = true;
+
+	framework_utils.download(name, ['get', 'dnscache'], function(err, response) {
+		var writer = fs.createWriteStream(tmp);
+		response.pipe(writer);
+		CLEANUP(writer, function() {
+
+			delete self.temporary.processing[req.uri.pathname];
+			var contentType = response.headers['content-type'];
+
+			if (response.statusCode !== 200 || !contentType || !contentType.startsWith('image/')) {
+				self.response404(req, res);
+				if (done)
+					done();
+				return;
+			}
+
+			var method = resizer.cache ? self.responseImage : self.responseImageWithoutCache;
+			method.call(self, req, res, tmp, (image) => resizer.fn.call(image, image), undefined, done);
+		});
+	});
+
 	return self;
 };
 
@@ -5052,9 +5098,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		}
 
 		req.processing += 500;
-		setTimeout(function() {
-			self.responseImage(req, res, filename, fnProcess, headers, done);
-		}, 500);
+		setTimeout(() => self.responseImage(req, res, filename, fnProcess, headers, done), 500);
 		return;
 	}
 
