@@ -396,7 +396,7 @@ exports.routeSplitCreate = function(url, noLower) {
 	if (!count)
 		arr.push(url.substring(end + (arr.length ? 1 : 0), url.length));
 
-	if (arr.length === 1 && arr[0] === '')
+	if (arr.length === 1 && !arr[0])
 		arr[0] = '/';
 
 	return arr;
@@ -449,11 +449,21 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 	return {Boolean}
 */
 exports.routeCompareSubdomain = function(subdomain, arr) {
-
-	if (arr === null || subdomain === null || !arr.length)
+	if ((!subdomain && !arr) || (subdomain && !arr))
 		return true;
-
-	return arr.indexOf(subdomain) > -1;
+	if (!subdomain && arr)
+		return false;
+	for (var i = 0, length = arr.length; i < length; i++) {
+		if (arr[i] === '*')
+			return true;
+		var index = arr[i].lastIndexOf('*');
+		if (index === -1) {
+			if (arr[i] === subdomain)
+				return true;
+		} else if (subdomain.indexOf(arr[i].replace('*', '')) !== -1)
+			return true;
+	}
+	return false;
 };
 
 exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
@@ -2772,7 +2782,7 @@ function make_nested(css, name) {
  */
 function compressHTML(html, minify) {
 
-	if (html === null || html === '' || !minify)
+	if (!html || !minify)
 		return html;
 
 	html = removeComments(html);

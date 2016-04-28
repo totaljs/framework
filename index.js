@@ -655,6 +655,8 @@ function Framework() {
 	this._length_wait = 0;
 	this._length_themes = 0;
 	this._length_cors = 0;
+	this._length_subdomain_web = 0;
+	this._length_subdomain_websocket = 0;
 
 	this.isVirtualDirectory = false;
 	this.isTheme = false;
@@ -1203,7 +1205,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 			url = '#' + url;
 	}
 
-	if (url === '')
+	if (!url)
 		url = '/';
 
 	if (url[0] !== '[' && url[0] !== '/')
@@ -1252,7 +1254,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		if (index !== -1)
 			viewname = viewname.substring(index + 1);
 
-		if (viewname === '' || viewname === '/')
+		if (!viewname || viewname === '/')
 			viewname = 'index';
 
 		funcExecute = (function(name) {
@@ -1266,22 +1268,23 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 	var priority = 0;
 	var subdomain = null;
-	var isASTERIX = url.indexOf('*') !== -1;
 
 	priority = url.count('/');
-
-	if (isASTERIX) {
-		url = url.replace('*', '').replace('//', '/');
-		priority = priority - 100;
-	}
 
 	if (url[0] === '[') {
 		index = url.indexOf(']');
 		if (index > 0) {
 			subdomain = url.substring(1, index).trim().toLowerCase().split(',');
 			url = url.substring(index + 1);
-			priority += 2;
+			priority += subdomain.indexOf('*') !== -1 ? 50 : 100;
 		}
+	}
+
+	var isASTERIX = url.indexOf('*') !== -1;
+
+	if (isASTERIX) {
+		url = url.replace('*', '').replace('//', '/');
+		priority = priority - 100;
 	}
 
 	var isRaw = false;
@@ -1551,6 +1554,9 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		isBINARY = false;
 		console.warn('framework.route() skips "binary" flag because the "raw" flag is not defined.');
 	}
+
+	if (subdomain)
+		self._length_subdomain_web++;
 
 	self.routes.web.push({
 		name: name,
@@ -1892,7 +1898,6 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 	var priority = 0;
 	var index = url.indexOf(']');
 	var subdomain = null;
-	var isASTERIX = url.indexOf('*') !== -1;
 	var middleware;
 	var allow;
 	var options;
@@ -1903,9 +1908,10 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 	if (index > 0) {
 		subdomain = url.substring(1, index).trim().toLowerCase().split(',');
 		url = url.substring(index + 1);
-		priority += 2;
+		priority += subdomain.indexOf('*') !== -1 ? 50 : 100;
 	}
 
+	var isASTERIX = url.indexOf('*') !== -1;
 	if (isASTERIX) {
 		url = url.replace('*', '').replace('//', '/');
 		priority = (-10) - priority;
@@ -2046,6 +2052,9 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 		flags.unshift('get');
 
 	priority += (count * 2);
+
+	if (subdomain)
+		self._length_subdomain_websocket++;
 
 	self.routes.websockets.push({
 		controller: !_controller ? 'unknown' : _controller,
@@ -3226,7 +3235,7 @@ Framework.prototype.$restart = function() {
 		self.isLoaded = false;
 		self.isRestart = false;
 
-		this.routes = {
+		self.routes = {
 			sitemap: null,
 			web: [],
 			files: [],
@@ -3259,6 +3268,21 @@ Framework.prototype.$restart = function() {
 		self.changes = [];
 		self.workers = {};
 		self.databases = {};
+
+		self._request_check_redirect = false;
+		self._request_check_referer = false;
+		self._request_check_POST = false;
+		self._request_check_robot = false;
+		self._length_middleware = 0;
+		self._length_request_middleware = 0;
+		self._length_files = 0;
+		self._length_wait = 0;
+		self._length_themes = 0;
+		self._length_cors = 0;
+		self._length_subdomain_web = 0;
+		self._length_subdomain_websocket = 0;
+		self.isVirtualDirectory = false;
+		self.isTheme = false;
 
 		setTimeout(() => self.removeAllListeners(), 2000);
 		setTimeout(function() {
@@ -7973,7 +7997,7 @@ Framework.prototype._configure_sitemap = function(arr, clean) {
 	for (var i = 0, length = arr.length; i < length; i++) {
 
 		var str = arr[i];
-		if (str === '' || str[0] === '#' || str.substring(0, 3) === '// ')
+		if (!str || str[0] === '#' || str.substring(0, 3) === '// ')
 			continue;
 
 		var index = str.indexOf(' :');
@@ -8084,7 +8108,7 @@ Framework.prototype._configure_dependencies = function(arr) {
 
 		var str = arr[i];
 
-		if (str === '' || str[0] === '#' || str.substring(0, 3) === '// ')
+		if (!str || str[0] === '#' || str.substring(0, 3) === '// ')
 			continue;
 
 		var index = str.indexOf(' :');
@@ -8193,7 +8217,7 @@ Framework.prototype._configure_versions = function(arr, clean) {
 
 		var str = arr[i];
 
-		if (str === '' || str[0] === '#' || str.substring(0, 3) === '// ')
+		if (!str || str[0] === '#' || str.substring(0, 3) === '// ')
 			continue;
 
 		if (str[0] !== '/')
@@ -8297,7 +8321,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 	for (var i = 0; i < length; i++) {
 		var str = arr[i];
 
-		if (str === '' || str[0] === '#' || (str[0] === '/' || str[1] === '/'))
+		if (!str || str[0] === '#' || (str[0] === '/' || str[1] === '/'))
 			continue;
 
 		var index = str.indexOf(':');
@@ -8368,7 +8392,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 	framework_utils.extend(self.config, obj, rewrite);
 
-	if (self.config['etag-version'] === '')
+	if (!self.config['etag-version'])
 		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');
 
 	if (self.config['default-timezone'])
@@ -8564,7 +8588,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 
 	var self = this;
 	var isSystem = url[0] === '#';
-	var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
+	var subdomain = self._length_subdomain_web && req.subdomain ? req.subdomain.join('.') : null;
 
 	if (isSystem)
 		req.path = [url];
@@ -8588,7 +8612,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 			if (!route.CUSTOM(url, req, flags))
 				continue;
 		} else {
-			if (!framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
+			if (self._length_subdomain_web && !framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
 				continue;
 			if (route.isASTERIX) {
 				if (!framework_internal.routeCompare(req.path, route.url, isSystem, true))
@@ -8651,7 +8675,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 
 	var self = this;
-	var subdomain = req.subdomain === null ? null : req.subdomain.join('.');
+	var subdomain = self._length_subdomain_websocket && req.subdomain ? req.subdomain.join('.') : null;
 	var length = self.routes.websockets.length;
 
 	req.$isAuthorized = true;
@@ -8664,7 +8688,7 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 			if (!route.CUSTOM(url, req))
 				continue;
 		} else {
-			if (!framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
+			if (self._length_subdomain_websocket && !framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
 				continue;
 			if (route.isASTERIX) {
 				if (!framework_internal.routeCompare(req.path, route.url, false, true))
@@ -10166,7 +10190,7 @@ Controller.prototype = {
 
 	get viewname() {
 		var name = this.req.path[this.req.path.length - 1];
-		if (name === '' || name === undefined || name === '/')
+		if (!name || name === '/')
 			name = 'index';
 		return name;
 	}
