@@ -1640,6 +1640,8 @@ function validate_builder_default(name, value, entity) {
 			return regexpZIP.test(value);
 		case 'email':
 			return value.isEmail();
+		case 'url':
+			return value.isURL();
 		case 'phone':
 			return regexpPhone.test(value);
 	}
@@ -1784,7 +1786,6 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 					var sublength = value.length;
 					for (var j = 0; j < sublength; j++)
 						exports.validate_builder(value[j], error, entity, collection, current + name, j, undefined, pluspath);
-
 					continue;
 				}
 			}

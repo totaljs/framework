@@ -386,6 +386,14 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
+	if (lower.contains(['url'])) {
+		result.type = 3;
+		result.length = 500;
+		result.raw = 'string';
+		result.subtype = 'url';
+		return result;
+	}
+
 	if (lower.contains(['zip'])) {
 		result.type = 3;
 		result.length = 10;
@@ -956,7 +964,7 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
  * @param {ErrorBuilder} builder ErrorBuilder, INTERNAL.
  * @return {ErrorBuilder}
  */
-SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder, filter, path) {
+SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder, filter, path, index) {
 
 	var self = this;
 	var fn = self.onValidate;
@@ -989,7 +997,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 	else
 		path = '';
 
-	framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name, undefined, filter, path);
+	framework_utils.validate_builder.call(self, model, builder, self.name, self.parent.collection, self.name, index, filter, path);
 
 	if (!self.dependencies)
 		return builder;
@@ -1005,13 +1013,13 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		}
 
 		if (!schema.isArray) {
-			s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key);
+			s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, j);
 			continue;
 		}
 
 		var arr = model[key];
 		for (var j = 0, jl = arr.length; j < jl; j++)
-			s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']');
+			s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']', j);
 	}
 
 	return builder;
@@ -1245,6 +1253,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 							if (tmp && !type.required && !tmp.isEmail())
 								tmp = '';
 							break;
+						case 'url':
+							if (tmp && !type.required && !tmp.isURL())
+								tmp = '';
+							break;
 						case 'phone':
 							tmp = tmp.replace(REGEXP_CLEAN_PHONE, '');
 							if (tmp && !type.required && !tmp.isPhone())
@@ -1369,6 +1381,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					switch (type.subtype) {
 						case 'uid':
 							if (tmp && !type.required && !tmp.isUID())
+								tmp = '';
+							break;
+						case 'url':
+							if (tmp && !type.required && !tmp.isURL())
 								tmp = '';
 							break;
 						case 'email':
