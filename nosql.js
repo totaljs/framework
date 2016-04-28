@@ -1009,9 +1009,10 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	if (!dimension)
 		dimension = { width: 0, height: 0 };
 
+	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height };
 	var header = new Buffer(BINARY_HEADER_LENGTH);
 	header.fill(' ');
-	header.write(JSON.stringify({ name: name, size: size, type: type, width: dimension.width, height: dimension.height }));
+	header.write(JSON.stringify(h));
 
 	var id = new Date().getTime().toString() + framework_utils.GUID(10);
 	var key = self.db.name + '#' + id;
@@ -1022,7 +1023,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	CLEANUP(stream);
 
 	if (callback)
-		callback(null, id, header);
+		callback(null, id, h);
 
 	return id;
 };
@@ -1032,9 +1033,10 @@ Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 	var self = this;
 	self.check();
 
+	var h = { name: name, size: 0, type: type, width: 0, height: 0 };
 	var header = new Buffer(BINARY_HEADER_LENGTH);
 	header.fill(' ');
-	header.write(JSON.stringify({ name: name, size: 0, type: type, width: 0, height: 0 }));
+	header.write(JSON.stringify(h));
 
 	if (!id)
 		id = new Date().format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
@@ -1048,7 +1050,7 @@ Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 	CLEANUP(writer);
 
 	if (callback)
-		callback(null, id, header);
+		callback(null, id, h);
 
 	return id;
 };
@@ -1101,9 +1103,10 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 	if (!dimension)
 		dimension = { width: 0, height: 0 };
 
+	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height };
 	var header = new Buffer(BINARY_HEADER_LENGTH);
 	header.fill(' ');
-	header.write(JSON.stringify({ name: name, size: size, type: type, width: dimension.width, height: dimension.height }));
+	header.write(JSON.stringify(h));
 
 	var stream = Fs.createWriteStream(framework_utils.join(self.directory, id + EXTENSION_BINARY));
 	stream.write(header, 'binary');
@@ -1111,7 +1114,7 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 	CLEANUP(stream);
 
 	if (callback)
-		callback(null, id, header);
+		callback(null, id, h);
 
 	return id;
 };
