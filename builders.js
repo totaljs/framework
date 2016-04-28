@@ -1237,14 +1237,18 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 					switch (type.subtype) {
 						case 'uid':
-							if (!tmp.isUID())
+							if (tmp && !type.required && !tmp.isUID())
 								tmp = '';
 							break;
 						case 'email':
 							tmp = tmp.toLowerCase().replace(REGEXP_CLEAN_EMAIL, '');
+							if (tmp && !type.required && !tmp.isEmail())
+								tmp = '';
 							break;
 						case 'phone':
 							tmp = tmp.replace(REGEXP_CLEAN_PHONE, '');
+							if (tmp && !type.required && !tmp.isPhone())
+								tmp = '';
 							break;
 						case 'camelcase':
 							tmp = tmp.toCamelCase();
@@ -1364,14 +1368,18 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 					switch (type.subtype) {
 						case 'uid':
-							if (!tmp.isUID())
+							if (tmp && !type.required && !tmp.isUID())
 								tmp = '';
 							break;
 						case 'email':
 							tmp = tmp.toLowerCase().replace(REGEXP_CLEAN_EMAIL, '');
+							if (tmp && !type.required && !tmp.isEmail())
+								tmp = '';
 							break;
 						case 'phone':
 							tmp = tmp.replace(REGEXP_CLEAN_PHONE, '');
+							if (tmp && !type.required && !tmp.isPhone())
+								tmp = '';
 							break;
 						case 'camelcase':
 							tmp = tmp.toCamelCase();
@@ -1429,8 +1437,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						tmp = entity.prepare(tmp, dependencies);
 						if (dependencies)
 							dependencies.push({ name: type.raw, value: self.$onprepare(property, tmp, j, model) });
-					}
-					else
+					} else
 						tmp = null;
 
 					tmp = self.$onprepare(property, tmp, j, model);
