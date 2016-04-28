@@ -118,6 +118,7 @@ We provide a support of the framework for companies. Our support services will k
 | [Dusan Dragula](https://github.com/DusanDragulaGR) | contributor | <dusan.dragula@goodrequest.com> |
 | [Сковорода Никита Андреевич](https://github.com/ChALkeR) | contributor | <chalkerx@gmail.com> |
 | [Андрей Владимирович](https://github.com/anddesigner) | contributor | <and.designer93@gmail.com> |
+| [Guy Fraser](https://github.com/aubergine10) | contributor | <guy.fraser1@gmail.com> |
 
 ## Built with total.js
 
