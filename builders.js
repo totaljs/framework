@@ -1236,6 +1236,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						tmp = tmp.substring(0, type.length);
 
 					switch (type.subtype) {
+						case 'uid':
+							if (!tmp.isUID())
+								tmp = '';
+							break;
 						case 'email':
 							tmp = tmp.toLowerCase().replace(REGEXP_CLEAN_EMAIL, '');
 							break;
@@ -1244,6 +1248,12 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 							break;
 						case 'camelcase':
 							tmp = tmp.toCamelCase();
+							break;
+						case 'lowercase':
+							tmp = tmp.toLowerCase();
+							break;
+						case 'uppercase':
+							tmp = tmp.toUpperCase();
 							break;
 					}
 
@@ -1353,6 +1363,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						tmp = tmp.substring(0, type.length);
 
 					switch (type.subtype) {
+						case 'uid':
+							if (!tmp.isUID())
+								tmp = '';
+							break;
 						case 'email':
 							tmp = tmp.toLowerCase().replace(REGEXP_CLEAN_EMAIL, '');
 							break;
