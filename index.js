@@ -10281,18 +10281,6 @@ Controller.prototype.cookie = function(name, value, expires, options) {
 	return self;
 };
 
-/*
-	Validation / alias for validate
-	@model {Object}
-	@properties {String Array}
-	@prefix {String} :: optional - prefix in a resource
-	@name {String} :: optional - a resource name
-	return {ErrorBuilder}
-*/
-Controller.prototype.validation = function(model, properties, prefix, name) {
-	return this.validate(model, properties, prefix, name);
-};
-
 /**
  * Clear uploaded files
  * @return {Controller}
@@ -13609,34 +13597,6 @@ WebSocket.prototype.logger = function() {
 	var self = this;
 	framework.logger.apply(framework, arguments);
 	return self;
-};
-
-/*
-	Validation / alias for validate
-	return {ErrorBuilder}
-*/
-WebSocket.prototype.validation = function(model, properties, prefix, name) {
-	return this.validate(model, properties, prefix, name);
-};
-
-/*
-	Validation object
-	@model {Object} :: object to validate
-	@properties {String array} : what properties?
-	@prefix {String} :: prefix for resource = prefix + model name
-	@name {String} :: name of resource
-	return {ErrorBuilder}
-*/
-WebSocket.prototype.validate = function(model, properties, prefix, name) {
-
-	var self = this;
-
-	var resource = function(key) {
-		return self.resource(name || 'default', (prefix || '') + key);
-	};
-
-	var error = new framework_builders.ErrorBuilder(resource);
-	return framework_utils.validate.call(self, model, properties, framework.onValidate, error);
 };
 
 /*
