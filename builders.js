@@ -336,37 +336,51 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 
 	if (lower.contains(['camelize', 'camelcase', 'camel'])) {
 		result.type = 3;
+		result.subtype = 'camelcase';
+
 		var beg = lower.indexOf('(');
-		if (beg === -1)
+		if (beg === -1) {
+			result.raw = 'string';
 			return result;
+		}
+
 		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
 		result.length = size;
 		result.raw = lower.substring(0, beg);
-		result.subtype = 'camelcase';
 		return result;
 	}
 
 	if (lower.contains(['lowerize', 'lowercase', 'lower'])) {
+
+		result.subtype = 'lowercase';
 		result.type = 3;
+
 		var beg = lower.indexOf('(');
-		if (beg === -1)
+		if (beg === -1) {
+			result.raw = 'string';
 			return result;
+		}
+
 		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
 		result.length = size;
 		result.raw = lower.substring(0, beg);
-		result.subtype = 'lowercase';
 		return result;
 	}
 
 	if (lower.contains(['upperize', 'uppercase', 'upper'])) {
+
+		result.subtype = 'uppercase';
 		result.type = 3;
+
 		var beg = lower.indexOf('(');
-		if (beg === -1)
+		if (beg === -1) {
+			result.raw = 'string';
 			return result;
+		}
+
 		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
 		result.length = size;
 		result.raw = lower.substring(0, beg);
-		result.subtype = 'uppercase';
 		return result;
 	}
 
