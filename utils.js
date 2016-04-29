@@ -1819,34 +1819,6 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 };
 
 /*
-	Validation object
-	@isValid {Boolean}
-	@error {String} :: optional, default @
-	return {Object}
-*/
-exports.isValid = function(valid, error) {
-	return { isValid: valid, error: error || '@' };
-};
-
-/*
-	Email address validation
-	@str {String}
-	return {Boolean}
-*/
-exports.isEmail = function(str) {
-	return (str || '').toString().isEmail();
-};
-
-/*
-	URL address validation
-	@str {String}
-	return {Boolean}
-*/
-exports.isURL = function(str) {
-	return (str || '').toString().isURL();
-};
-
-/*
 	Combine path
 	@arguments {String array}
 	return {String}
