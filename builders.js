@@ -109,6 +109,7 @@ function SchemaBuilderEntity(parent, name) {
 	this.onError;
 	this.gcache = {};
 	this.dependencies;
+	this.fields;
 
 	this.CurrentSchemaInstance = function(){};
 	this.CurrentSchemaInstance.prototype = new SchemaInstance();
@@ -148,6 +149,8 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 			self.dependencies.push(name);
 			break;
 	}
+
+	self.fields = Object.keys(self.schema);
 
 	if (!required)
 		return self;
@@ -238,6 +241,16 @@ SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 	return output;
 };
 
+function parseLength(lower, result) {
+	result.raw = 'string';
+	var beg = lower.indexOf('(');
+	if (beg === -1)
+		return result;
+	result.length = lower.substring(beg + 1, lower.length - 1).parseInt();
+	result.raw = lower.substring(0, beg);
+	return result;
+}
+
 SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 
 	var type = typeof(value);
@@ -325,66 +338,28 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 
 	if (lower.contains(['string', 'text', 'varchar', 'nvarchar'])) {
 		result.type = 3;
-		var beg = lower.indexOf('(');
-		if (beg === -1)
-			return result;
-		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
-		result.length = size;
-		result.raw = lower.substring(0, beg);
-		return result;
+		return parseLength(lower, result);
 	}
 
-	if (lower.contains(['camelize', 'camelcase', 'camel'])) {
+	if (lower.indexOf('camel') !== -1) {
 		result.type = 3;
 		result.subtype = 'camelcase';
-
-		var beg = lower.indexOf('(');
-		if (beg === -1) {
-			result.raw = 'string';
-			return result;
-		}
-
-		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
-		result.length = size;
-		result.raw = lower.substring(0, beg);
-		return result;
+		return parseLength(lower, result);
 	}
 
-	if (lower.contains(['lowerize', 'lowercase', 'lower'])) {
-
+	if (lower.indexOf('lower') !== -1) {
 		result.subtype = 'lowercase';
 		result.type = 3;
-
-		var beg = lower.indexOf('(');
-		if (beg === -1) {
-			result.raw = 'string';
-			return result;
-		}
-
-		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
-		result.length = size;
-		result.raw = lower.substring(0, beg);
-		return result;
+		return parseLength(lower, result);
 	}
 
-	if (lower.contains(['upperize', 'uppercase', 'upper'])) {
-
+	if (lower.indexOf('upper') !== -1) {
 		result.subtype = 'uppercase';
 		result.type = 3;
-
-		var beg = lower.indexOf('(');
-		if (beg === -1) {
-			result.raw = 'string';
-			return result;
-		}
-
-		var size = lower.substring(beg + 1, lower.length - 1).parseInt();
-		result.length = size;
-		result.raw = lower.substring(0, beg);
-		return result;
+		return parseLength(lower, result);
 	}
 
-	if (lower.contains(['uid'])) {
+	if (lower === 'uid') {
 		result.type = 3;
 		result.length = 20;
 		result.raw = 'string';
@@ -392,7 +367,7 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (lower.contains(['email'])) {
+	if (lower === 'email') {
 		result.type = 3;
 		result.length = 120;
 		result.raw = 'string';
@@ -400,7 +375,7 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (lower.contains(['url'])) {
+	if (lower === 'url') {
 		result.type = 3;
 		result.length = 500;
 		result.raw = 'string';
@@ -408,7 +383,7 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (lower.contains(['zip'])) {
+	if (lower === 'zip') {
 		result.type = 3;
 		result.length = 10;
 		result.raw = 'string';
@@ -416,7 +391,7 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (lower.contains(['phone'])) {
+	if (lower === 'phone') {
 		result.type = 3;
 		result.length = 20;
 		result.raw = 'string';
@@ -434,7 +409,7 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (lower.contains('bool', 'boolean')) {
+	if (lower.indexOf('bool') !== -1) {
 		result.type = 4;
 		return result;
 	}
@@ -1269,6 +1244,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 							break;
 						case 'url':
 							if (tmp && !type.required && !tmp.isURL())
+								tmp = '';
+							break;
+						case 'zip':
+							if (tmp && !type.required && !tmp.isZIP())
 								tmp = '';
 							break;
 						case 'phone':

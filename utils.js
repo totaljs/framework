@@ -3026,6 +3026,11 @@ String.prototype.isURL = function() {
 	return regexpUrl.test(str);
 };
 
+String.prototype.isZIP = function() {
+	var str = this;
+	return regexpZIP.test(str);
+};
+
 String.prototype.isEmail = function() {
 	var str = this;
 	if (str.length <= 4)

@@ -361,7 +361,49 @@ function test_Schema() {
 	assert.ok(cats[40].meou() === 'Cat 40', 'schema - add function');
 
 	var catClone = cats[40].$clone();
-	assert.ok(catClone.meou === cats[0].meou, 'schema $clone 3')
+	assert.ok(catClone.meou === cats[0].meou, 'schema $clone 3');
+
+	var NewTypes = NEWSCHEMA('NewTypes').make(function(schema) {
+		schema.define('camelize', 'Camelize');
+		schema.define('camelize10', 'Camelize(10)');
+		schema.define('lower', 'Lower');
+		schema.define('lower10', 'Lower(10)');
+		schema.define('upper', 'Upper');
+		schema.define('upper10', 'Upper(10)');
+		schema.define('zip', 'Zip');
+		schema.define('phone', 'Phone');
+		schema.define('url', 'Url');
+		schema.define('uid', 'UID');
+
+		var obj = {};
+		schema.fields.forEach(n => obj[n] = 'total fraMEWOrk');
+		obj.zip = '83102';
+		obj.phone = '+421 903 163 302';
+		obj.url = 'https://www.totaljs.com';
+		obj.uid = UID();
+
+		var res = schema.make(obj);
+		assert.ok(res.camelize === 'Total FraMEWOrk', 'SchemaBuilder: Camelize');
+		assert.ok(res.camelize10 === 'Total FraM', 'SchemaBuilder: Camelize(10)');
+		assert.ok(res.lower === 'total framework', 'SchemaBuilder: Lower');
+		assert.ok(res.lower10 === 'total fram', 'SchemaBuilder: Lower(10)');
+		assert.ok(res.upper === 'TOTAL FRAMEWORK', 'SchemaBuilder: Upper');
+		assert.ok(res.upper10 === 'TOTAL FRAM', 'SchemaBuilder: Upper(10)');
+		assert.ok(res.zip === '83102', 'SchemaBuilder: Zip');
+		assert.ok(res.phone === '+421903163302', 'SchemaBuilder: Phone');
+		assert.ok(res.url === 'https://www.totaljs.com', 'SchemaBuilder: URL');
+		assert.ok(res.uid ? true : false, 'SchemaBuilder: UID');
+
+		obj.phone = '+4210000';
+		obj.uid = U.GUID(10);
+		obj.url = 'totaljs.com';
+		obj.zip = 'A349393';
+		res = schema.make(obj);
+		assert.ok(res.zip ? false : true, 'SchemaBuilder: Zip must be empty');
+		assert.ok(res.phone ? false : true, 'SchemaBuilder: Phone must be empty');
+		assert.ok(res.url ? false : true, 'SchemaBuilder: URL must be empty');
+		assert.ok(res.uid ? false : true, 'SchemaBuilder: UID must be empty');
+	});
 }
 
 function test_ErrorBuilder() {
