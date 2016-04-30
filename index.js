@@ -424,7 +424,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-26';
+	this.version_header = '2.0.0-27';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -1962,7 +1962,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 	var isJSON = false;
 	var isBINARY = false;
 	var count = 0;
-	var isMember = false;
+	var isMember = true;
 
 	if (flags === undefined)
 		flags = [];
@@ -2023,12 +2023,12 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 			case 'authorized':
 				priority++;
 				tmp.push('authorize');
-				isMember = true;
+				isMember = false;
 				break;
 			case 'unauthorize':
 			case 'unauthorized':
 				priority++;
-				isMember = true;
+				isMember = false;
 				tmp.push('unauthorize');
 				break;
 			case 'get':
@@ -8688,6 +8688,7 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 			if (!route.CUSTOM(url, req))
 				continue;
 		} else {
+
 			if (self._length_subdomain_websocket && !framework_internal.routeCompareSubdomain(subdomain, route.subdomain))
 				continue;
 			if (route.isASTERIX) {
