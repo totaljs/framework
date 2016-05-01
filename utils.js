@@ -3048,11 +3048,17 @@ String.prototype.parseFloat = function(def) {
 };
 
 String.prototype.toCamelCase = function() {
-	var arr = this.split(' ');
 	var builder = [];
-	for (var i = 0, length = arr.length; i < length; i++)
-		builder.push(arr[i][0].toUpperCase() + arr[i].substring(1));
-	return builder.join(' ');
+	var c;
+	for (var i = 0, length = this.length; i < length; i++) {
+		var c = this[i - 1];
+		if (!c || c === ' ' || c === '\t' || c === '\n')
+			c = this[i].toUpperCase();
+		else
+			c = this[i];
+		builder.push(c);
+	}
+	return builder.join('');
 };
 
 String.prototype.toUnicode = function() {
