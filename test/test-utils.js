@@ -203,7 +203,7 @@ function prototypeString() {
 	assert.ok(str.slug() === 'peter-sirka-linker-you-known', 'string.slug(): ' + str);
 	assert.ok(str.slug(11) === 'peter-sirka', 'string.slug(): ' + str);
 
-	assert.ok('total.js'.capitalize() === 'Total.js', 'string.capitalize()');
+	assert.ok('total Js'.capitalize() === 'Total Js', 'string.capitalize()');
 	assert.ok('totaljs'.isAlphaNumeric(), 'string.isAlphaNumeric(true)');
 	assert.ok('total js'.isAlphaNumeric() === false, 'string.isAlphaNumeric(false)');
 
