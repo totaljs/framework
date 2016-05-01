@@ -58,6 +58,7 @@
 - fixed: WebSocket initialization (critical)
 - fixed: Mail sender (problem with ZOHO SMTP)
 - fixed: `Number.add()` problem with percentage
+- fixed: `U.isDate()` by Guy Fraser
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`
