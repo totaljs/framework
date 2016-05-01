@@ -1447,7 +1447,7 @@ exports.isRegExp = function(obj) {
  * @return {Boolean}
  */
 exports.isDate = function(obj) {
-	return obj instanceof Date && typeof(obj.getTime) === 'function' ? true : false;
+	return obj instanceof Date && obj.getTime() > -1 ? true : false;
 };
 
 /**

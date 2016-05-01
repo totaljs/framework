@@ -1280,27 +1280,17 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					tmp = null;
 
 					if (typeval === 'string') {
-						if (val === '')
-							tmp = null;
-						else
+						if (val)
 							tmp = val.trim().parseDate();
-					} else if (typeval === 'object') {
-						if (framework_utils.isDate(val))
-							tmp = val;
-						else
-							tmp = null;
-					} else if (typeval === 'number') {
+					} else if (typeval === 'number')
 						tmp = new Date(val);
-					}
 
-					if (tmp !== null && typeof(tmp) === 'object' && tmp.toString() === 'Invalid Date')
-						tmp = null;
-
-					if (tmp)
-						item[property] = self.$onprepare(property, tmp, undefined, model);
+					if (framework_utils.isDate(tmp))
+						tmp = self.$onprepare(property, tmp, undefined, model)
 					else
-						item[property] = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
+						tmp = (defaults ? isUndefined(defaults(property, false, self.name), null) : null);
 
+					item[property] = tmp;
 					break;
 
 				// object
@@ -1413,23 +1403,12 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 				case 5:
 
 					if (typeval === 'string') {
-						if (tmp === '')
-							tmp = null;
-						else
+						if (tmp)
 							tmp = tmp.trim().parseDate();
-					} else if (typeval === 'object') {
-						if (framework_utils.isDate(tmp))
-							tmp = tmp;
-						else
-							tmp = null;
-					} else if (typeval === 'number') {
+					} else if (typeval === 'number')
 						tmp = new Date(tmp);
-					}
 
-					if (tmp !== null && typeof(tmp) === 'object' && tmp.toString() === 'Invalid Date')
-						tmp = null;
-
-					if (tmp)
+					if (framework_utils.isDate(tmp))
 						tmp = self.$onprepare(property, tmp, j, model);
 					else
 						tmp = undefined;
