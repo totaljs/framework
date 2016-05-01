@@ -1854,7 +1854,7 @@ function view_parse(content, minify, filename, controller) {
 			}
 		}
 
-		var cmd = content.substring(command.beg + 2, command.end);
+		var cmd = content.substring(command.beg + 2, command.end).trim();
 
 		var cmd8 = cmd.substring(0, 8);
 		var cmd7 = cmd.substring(0, 7);
