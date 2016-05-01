@@ -364,8 +364,8 @@ function test_Schema() {
 	assert.ok(catClone.meou === cats[0].meou, 'schema $clone 3');
 
 	var NewTypes = NEWSCHEMA('NewTypes').make(function(schema) {
-		schema.define('camelize', 'Camelize');
-		schema.define('camelize10', 'Camelize(10)');
+		schema.define('capitalize', 'Capitalize');
+		schema.define('capitalize10', 'Capitalize(10)');
 		schema.define('lower', 'Lower');
 		schema.define('lower10', 'Lower(10)');
 		schema.define('upper', 'Upper');
@@ -383,8 +383,8 @@ function test_Schema() {
 		obj.uid = UID();
 
 		var res = schema.make(obj);
-		assert.ok(res.camelize === 'Total FraMEWOrk', 'SchemaBuilder: Camelize');
-		assert.ok(res.camelize10 === 'Total FraM', 'SchemaBuilder: Camelize(10)');
+		assert.ok(res.capitalize === 'Total FraMEWOrk', 'SchemaBuilder: Capitalize');
+		assert.ok(res.capitalize10 === 'Total FraM', 'SchemaBuilder: Capitalize(10)');
 		assert.ok(res.lower === 'total framework', 'SchemaBuilder: Lower');
 		assert.ok(res.lower10 === 'total fram', 'SchemaBuilder: Lower(10)');
 		assert.ok(res.upper === 'TOTAL FRAMEWORK', 'SchemaBuilder: Upper');

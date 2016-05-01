@@ -3047,7 +3047,7 @@ String.prototype.parseFloat = function(def) {
 	return num;
 };
 
-String.prototype.toCamelCase = function() {
+String.prototype.capitalize = function() {
 	var builder = [];
 	var c;
 	for (var i = 0, length = this.length; i < length; i++) {
@@ -3391,10 +3391,6 @@ String.prototype.pluralize = function(zero, one, few, other) {
 String.prototype.isBoolean = function() {
 	var self = this.toLowerCase();
 	return (self === 'true' || self === 'false') ? true : false;
-};
-
-String.prototype.capitalize = function() {
-	return this[0].toUpperCase() + this.substring(1);
 };
 
 /**

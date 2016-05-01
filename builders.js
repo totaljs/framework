@@ -341,9 +341,9 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return parseLength(lower, result);
 	}
 
-	if (lower.indexOf('camel') !== -1) {
+	if (lower.indexOf('capitalize') !== -1 || lower.indexOf('camel') !== -1) {
 		result.type = 3;
-		result.subtype = 'camelcase';
+		result.subtype = 'capitalize';
 		return parseLength(lower, result);
 	}
 
@@ -1255,8 +1255,8 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 							if (tmp && !type.required && !tmp.isPhone())
 								tmp = '';
 							break;
-						case 'camelcase':
-							tmp = tmp.toCamelCase();
+						case 'capitalize':
+							tmp = tmp.capitalize();
 							break;
 						case 'lowercase':
 							tmp = tmp.toLowerCase();
@@ -1390,8 +1390,8 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 							if (tmp && !type.required && !tmp.isPhone())
 								tmp = '';
 							break;
-						case 'camelcase':
-							tmp = tmp.toCamelCase();
+						case 'capitalize':
+							tmp = tmp.capitalize();
 							break;
 						case 'lowercase':
 							tmp = tmp.toLowerCase();
