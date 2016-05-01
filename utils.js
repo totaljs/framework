@@ -1438,7 +1438,7 @@ exports.isArray = function(obj) {
  * @return {Boolean}
  */
 exports.isRegExp = function(obj) {
-	return (obj && typeof(obj.test) === 'function') ? true : false;
+	return obj && 'function' === typeof(obj.test) ? true : false;
 };
 
 /**
@@ -1447,7 +1447,7 @@ exports.isRegExp = function(obj) {
  * @return {Boolean}
  */
 exports.isDate = function(obj) {
-	return (obj && typeof(obj.getTime) === 'function') ? true : false;;
+	return obj instanceof Date && 'function' === typeof(obj.getTime) ? true : false;
 };
 
 /**
