@@ -27,6 +27,7 @@
 - added: `Pagination.html(max, format)` returns `String`
 - added: `Pagination.json(max, format)` returns `String`
 - added: `SchemaBuilderEntity.fields` and it contains all field names in array.
+- added: `Mail.send(smtp, options, messages, [callback])` messages must be array
 
 - updated: subdomain routing supports wildcard routing `F.route('[*]/', 'homepage')` (`F.websocket()` is supported too)
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
@@ -73,6 +74,7 @@
 - removed: `Utils.isURL()`
 - removed: `Utils.isValid()`
 
+- improved: SMTP sender
 - improved: redirecting
 - improved: Array.orderBy(), added quicksort algorithm
 - improved: ErrorBuilder
