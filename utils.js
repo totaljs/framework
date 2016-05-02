@@ -605,9 +605,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			var request = isPOST ? connection.request(uri, onResponse) : connection.get(uri, onResponse);
 
 			if (callback) {
-				request.on('error', function(error) {
+				request.on('error', function(err) {
 					if (callback)
-						callback(error, '', 0, undefined, undefined, uri.host);
+						callback(err, '', 0, undefined, undefined, uri.host);
 					callback = null;
 				});
 
@@ -826,14 +826,14 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		res._bufferlength = 0;
 
 		res.on('data', function(chunk) {
-			var self = this;
-			self._bufferlength += chunk.length;
-			e.emit('data', chunk, responseLength ? (self._bufferlength / responseLength) * 100 : 0);
+			this._bufferlength += chunk.length;
+			e.emit('data', chunk, responseLength ? (this._bufferlength / responseLength) * 100 : 0);
 		});
 
 		res.on('end', function() {
-			var self = this;
-			e.emit('end', self.statusCode, self.headers);
+			e.emit('end', this.statusCode, this.headers);
+			e.removeAllListeners();
+			e = null;
 		});
 
 		callback(null, res);
@@ -846,15 +846,17 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		{
 			var request = isPOST ? connection.request(uri, onResponse) : connection.request(uri, onResponse);
 
-			if (callback) {
-				request.on('error', function(error) {
-					callback(error, null, 0, {});
-				});
+			request.on('error', function(err) {
+				e.removeAllListeners();
+				e = null;
+				callback(err);
+			});
 
-				request.setTimeout(timeout || 10000, function() {
-					callback(new Error(exports.httpStatus(408)), null, 0, null);
-				});
-			}
+			request.setTimeout(timeout || 10000, function() {
+				e.removeAllListeners();
+				e = null;
+				callback(new Error(exports.httpStatus(408)));
+			});
 
 			request.on('response', function(response) {
 				responseLength = +response.headers['content-length'] || 0;
@@ -867,8 +869,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 				request.end();
 
 		} catch (ex) {
-			if (callback)
-				callback(ex, null, 0, {});
+			callback(ex);
 		}
 	};
 
@@ -909,13 +910,13 @@ exports.send = function(name, stream, url, callback, headers, method) {
 	if (typeof(stream) === 'string')
 		stream = fs.createReadStream(stream, { flags: 'r' });
 
-	var BOUNDARY = '----' + Math.random().toString(16).substring(2);
+	var BOUNDARY = '----totaljs' + Math.random().toString(16).substring(2);
 	var h = {};
 
 	if (headers)
 		exports.extend(h, headers);
 
-	name = path.basename(name);
+	name = exports.getName(name);
 
 	h['Cache-Control'] = 'max-age=0';
 	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
@@ -923,51 +924,46 @@ exports.send = function(name, stream, url, callback, headers, method) {
 
 	var uri = parser.parse(url);
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
+	var e = new events.EventEmitter();
 
 	var response = function(res) {
-
-		if (!callback)
-			return;
-
 		res.body = '';
-		res.on('data', function(chunk) {
-			this.body += chunk.toString(ENCODING);
-		});
-
+		res.on('data', (chunk) => res.body += chunk.toString(ENCODING));
 		res.on('end', function() {
 			var self = this;
-			if (callback)
-				callback(null, self.body, self.statusCode, self.headers);
+			e.emit('end', self.statusCode, self.headers);
+			e.removeAllListeners();
+			e = null;
+			callback(null, self.body, self.statusCode, self.headers);
 		});
-
 	};
 
 	var connection = options.protocol === 'https:' ? https : http;
 	var req = connection.request(options, response);
 
-	if (callback) {
-		req.on('error', function(err) {
-			if (callback)
-				callback(err, null, 0, null);
-			callback = null;
-		});
-	}
+	req.on('error', function(err) {
+		e.removeAllListeners();
+		e = null;
+		callback(err);
+	});
 
 	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(name)) + NEWLINE + NEWLINE;
 	req.write(header);
 
 	// Is Buffer
-	if (typeof(stream.length) === 'number') {
+	if (stream.length) {
 		req.end(stream.toString('utf8') + NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
-		return;
+		e.emit('data', null, 100);
+		return e;
 	}
 
 	stream.on('end', function() {
 		req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
+		e.emit('data', null, 100);
 	});
 
 	stream.pipe(req, { end: false });
-	return;
+	return e;
 };
 
 exports.$$send = function(name, stream, url, headers, method) {
@@ -983,7 +979,7 @@ exports.$$send = function(name, stream, url, headers, method) {
  */
 exports.trim = function(obj) {
 
-	if (obj === undefined || obj === null)
+	if (!obj)
 		return obj;
 
 	var type = typeof(obj);
@@ -1496,7 +1492,6 @@ exports.getExtension = function(filename) {
 		return filename.substring(index + 1);
 	return '';
 };
-
 
 /**
  * Get base name from path
