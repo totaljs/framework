@@ -5103,7 +5103,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	if (typeof(filename) === 'object')
 		stream = filename;
 	else if (filename[0] === '@')
-		filename = framework.path.package(filename.substring(1));
+		filename = self.path.package(filename.substring(1));
 
 	if (name !== undefined) {
 		self.responseFile(req, res, '', undefined, headers, done, key);
