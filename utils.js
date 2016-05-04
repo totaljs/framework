@@ -1607,7 +1607,7 @@ exports.random = function(max, min) {
 };
 
 function rnd() {
-	return Math.floor(Math.random() * 65536).toString(16);
+	return Math.floor(Math.random() * 65536).toString(36);
 }
 
 /*

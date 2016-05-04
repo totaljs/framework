@@ -44,6 +44,7 @@
 - updated: (IMPORTANT) `U.getExtension(filename)` --> returns extension without `.` dot
 - updated: (IMPORTANT) `F.resize(url, action(image), [flags])` new resize routing
 - updated: `F.resize()` flags can contain http/https `path` e.g. `F.resize('/img/*.*', (image) => image.minify(), ['https://www.totaljs.com/img/']);`
+- updated: `U.GUID()` supports better charset by Guy Fraser
 
 - fixed: `FrameworkImage.save()` problem with streams
 - fixed: `CLEANUP(stream)` method
