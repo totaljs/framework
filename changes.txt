@@ -28,6 +28,7 @@
 - added: `Pagination.json(max, format)` returns `String`
 - added: `SchemaBuilderEntity.fields` and it contains all field names in array.
 - added: `Mail.send(smtp, options, messages, [callback])` messages must be array
+- added: `Mail.try(smtp, options, callback)` tries to open a SMTP
 
 - updated: subdomain routing supports wildcard routing `F.route('[*]/', 'homepage')` (`F.websocket()` is supported too)
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot

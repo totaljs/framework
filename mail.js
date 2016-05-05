@@ -34,6 +34,7 @@ var fs = require('fs');
 const CRLF = '\r\n';
 const REG_ESMTP = /\besmtp\b/i;
 const REG_STATE = /\d+/;
+const EMPTYARRAY = [];
 
 const errors = {
 	notvalid: 'E-mail address is not valid',
@@ -345,7 +346,7 @@ Mailer.prototype.switchToTLS = function(obj, options) {
 			self.callback = null;
 		}
 
-		if (err.stack.indexOf('ECONNRESET') !== -1)
+		if (obj.try || err.stack.indexOf('ECONNRESET') !== -1)
 			return;
 
 		try {
@@ -358,15 +359,18 @@ Mailer.prototype.switchToTLS = function(obj, options) {
 	obj.socket2.on('clientError', function(err) {
 		mailer.destroy(obj);
 
+		if (self.callback) {
+			self.callback(err);
+			self.callback = null;
+		}
+
+		if (obj.try)
+			return;
+
 		try {
 			mailer.emit('error', err, obj);
 		} catch(e) {
 			F.error(err, 'FrameworkMail');
-		}
-
-		if (self.callback) {
-			self.callback(err);
-			self.callback = null;
 		}
 	});
 
@@ -463,6 +467,10 @@ Mailer.prototype._writeattachment = function(obj) {
 	return this;
 };
 
+Mailer.prototype.try = function(smtp, options, callback) {
+	return this.send(smtp, options, undefined, callback);
+};
+
 Mailer.prototype.send = function(smtp, options, messages, callback) {
 
 	var self = this;
@@ -472,7 +480,8 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	var obj = self.connections[id];
 
     obj.id = id;
-	obj.messages = messages instanceof Array ? messages : [messages];
+	obj.try = messages === undefined;
+	obj.messages = obj.try ? EMPTYARRAY : messages instanceof Array ? messages : [messages];
 	obj.callback = callback;
 	obj.closed = false;
 	obj.message = null;
@@ -507,7 +516,7 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 			obj.callback = null;
 		}
 
-		if (err.stack.indexOf('ECONNRESET') !== -1)
+		if (obj.try || err.stack.indexOf('ECONNRESET') !== -1)
 			return;
 
 		try {
@@ -521,15 +530,18 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 
 		mailer.destroy(obj);
 
+		if (obj.callback) {
+			obj.callback(err);
+			obj.callback = null;
+		}
+
+		if (obj.try)
+			return;
+
 		try {
 			mailer.emit('error', err, obj);
 		} catch(e) {
 			F.error(err, 'FrameworkMail');
-		}
-
-		if (obj.callback) {
-			obj.callback(err);
-			obj.callback = null;
 		}
 	});
 
@@ -681,17 +693,20 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 		var err = new Error(framework_utils.httpStatus(408));
 
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
-
 		mailer.destroy(obj);
 
 		if (obj.callback) {
 			obj.callback(err);
 			obj.callback = null;
+		}
+
+		if (obj.try)
+			return;
+
+		try {
+			mailer.emit('error', err, obj);
+		} catch(e) {
+			F.error(err, 'FrameworkMail');
 		}
 	});
 
@@ -802,7 +817,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 				mailer.destroy(obj);
 
 				if (obj.callback) {
-					obj.callback(null, obj.count);
+					obj.callback(null, obj.try ? true : obj.count);
 					obj.callback = null;
 				}
 
@@ -821,17 +836,20 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 					var err = new Error('Forbidden.');
 
-					try {
-						mailer.emit('error', err, obj);
-					} catch(e) {
-						F.error(err, 'FrameworkMail');
-					}
-
 					mailer.destroy(obj);
 
 					if (obj.callback) {
 						obj.callback(err);
 						obj.callback = null;
+					}
+
+					if (obj.try)
+						return;
+
+					try {
+						mailer.emit('error', err, obj);
+					} catch(e) {
+						F.error(err, 'FrameworkMail');
 					}
 
 					return;
@@ -854,10 +872,12 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 				var err = new Error(line);
 
-				try {
-					mailer.emit('error', err, obj);
-				} catch(e) {
-					F.error(err, 'FrameworkMail');
+				if (!obj.try) {
+					try {
+						mailer.emit('error', err, obj);
+					} catch(e) {
+						F.error(err, 'FrameworkMail');
+					}
 				}
 
 				if (obj.messagecallback) {
