@@ -473,6 +473,15 @@ Mailer.prototype.try = function(smtp, options, callback) {
 
 Mailer.prototype.send = function(smtp, options, messages, callback) {
 
+	if (options instanceof Array) {
+		callback = messages;
+		messages = options;
+		options = {};
+	} else if (typeof(options) === 'function') {
+		callback = options;
+		options = {};
+	}
+
 	var self = this;
 	var id = framework_utils.GUID(10);
 
