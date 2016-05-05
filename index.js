@@ -6960,7 +6960,7 @@ Framework.prototype._upgrade_prepare = function(req, path, headers) {
 		req.flags.push(isLogged ? 'authorize' : 'unauthorize');
 
 		var route = self.lookup_websocket(req, req.websocket.uri.pathname, false);
-		if (route === null) {
+		if (!route) {
 			req.websocket.close();
 			req.connection.destroy();
 			return;
