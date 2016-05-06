@@ -590,11 +590,15 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		res.on('end', function() {
 			var self = this;
 			var str = self._buffer ? self._buffer.toString(encoding) : '';
-			delete self._buffer; // Free memory
+			delete self._buffer;
 			e.emit('end', str, self.statusCode, self.headers, uri.host);
 			if (callback)
 				callback(null, method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
 			callback = null;
+			request.removeAllListeners();
+			request = null;
+			e.removeAllListeners();
+			e = null;
 		});
 
 		res.resume();
@@ -611,9 +615,17 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					if (callback)
 						callback(err, '', 0, undefined, undefined, uri.host);
 					callback = null;
+					request.removeAllListeners();
+					request = null;
+					e.removeAllListeners();
+					e = null;
 				});
 
 				request.setTimeout(timeout || 10000, function() {
+					request.removeAllListeners();
+					request = null;
+					e.removeAllListeners();
+					e = null;
 					if (callback)
 						callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
 					callback = null;
@@ -667,7 +679,7 @@ exports.atob = function(str) {
  * @param {String Array} flags Request flags.
  * @param {String or Object} data Request data (optional).
  * @param {Function(error, response)} callback Callback.
- * @param {Object} headers Custom cookies (optional, default: null).
+ * @param {Object} cookies Custom cookies (optional, default: null).
  * @param {Object} headers Custom headers (optional, default: null).
  * @param {String} encoding Encoding (optional, default: UTF8)
  * @param {Number} timeout Request timeout.
@@ -805,10 +817,8 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	if (cookies) {
 		var builder = '';
-
 		for (var m in cookies)
 			builder += (builder ? '; ' : '') + m + '=' + encodeURIComponent(cookies[m]);
-
 		if (builder)
 			headers['Cookie'] = builder;
 	}
@@ -836,6 +846,8 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 			e.emit('end', this.statusCode, this.headers);
 			e.removeAllListeners();
 			e = null;
+			request.removeAllListeners();
+			request = null;
 		});
 
 		callback(null, res);
@@ -851,10 +863,14 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 			request.on('error', function(err) {
 				e.removeAllListeners();
 				e = null;
+				request.removeAllListeners();
+				request = null;
 				callback(err);
 			});
 
-			request.setTimeout(timeout || 10000, function() {
+			request.setTimeout(timeout || 60000, function() {
+				request.removeAllListeners();
+				request = null;
 				e.removeAllListeners();
 				e = null;
 				callback(new Error(exports.httpStatus(408)));
@@ -900,14 +916,9 @@ exports.$$download = function(url, flags, data, cookies, headers, encoding, time
  * @param {Function} callback Callback.
  * @param {Object} headers Custom headers (optional).
  * @param {String} method HTTP method (optional, default POST).
+ * @param {Number} timeout Request timeout, default: 60000 (1 minute)
  */
-exports.send = function(name, stream, url, callback, headers, method) {
-
-	if (typeof(callback) === 'object') {
-		var tmp = headers;
-		callback = headers;
-		headers = tmp;
-	}
+exports.send = function(name, stream, url, callback, cookies, headers, method, timeout) {
 
 	if (typeof(stream) === 'string')
 		stream = fs.createReadStream(stream, STREAM_READONLY);
@@ -918,35 +929,69 @@ exports.send = function(name, stream, url, callback, headers, method) {
 	if (headers)
 		exports.extend(h, headers);
 
+	if (cookies) {
+		var builder = '';
+		for (var m in cookies)
+			builder += (builder ? '; ' : '') + m + '=' + encodeURIComponent(cookies[m]);
+		if (builder)
+			h['Cookie'] = builder;
+	}
+
 	name = exports.getName(name);
 
 	h['Cache-Control'] = 'max-age=0';
 	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
 	h['X-Powered-By'] = 'total.js' + VERSION;
 
+	var e = new events.EventEmitter();
 	var uri = parser.parse(url);
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
-	var e = new events.EventEmitter();
+	var responseLength = 0;
 
 	var response = function(res) {
+
 		res.body = '';
-		res.on('data', (chunk) => res.body += chunk.toString(ENCODING));
+		res._bufferlength = 0;
+
+		res.on('data', function(chunk) {
+			res.body += chunk.toString(ENCODING);
+			this._bufferlength += chunk.length;
+			e.emit('data', chunk, responseLength ? (this._bufferlength / responseLength) * 100 : 0);
+		});
+
 		res.on('end', function() {
 			var self = this;
 			e.emit('end', self.statusCode, self.headers);
 			e.removeAllListeners();
 			e = null;
-			callback(null, self.body, self.statusCode, self.headers);
+			if (callback)
+				callback(null, self.body, self.statusCode, self.headers);
+			self.body = null;
 		});
 	};
 
 	var connection = options.protocol === 'https:' ? https : http;
 	var req = connection.request(options, response);
 
+	req.on('response', function(response) {
+		responseLength = +response.headers['content-length'] || 0;
+		e.emit('begin', responseLength);
+	});
+
+	req.setTimeout(timeout || 60000, function() {
+		req.removeAllListeners();
+		req = null;
+		e.removeAllListeners();
+		e = null;
+		if (callback)
+			callback(new Error(exports.httpStatus(408)));
+	});
+
 	req.on('error', function(err) {
 		e.removeAllListeners();
 		e = null;
-		callback(err);
+		if (callback)
+			callback(err);
 	});
 
 	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(name)) + NEWLINE + NEWLINE;
@@ -954,23 +999,18 @@ exports.send = function(name, stream, url, callback, headers, method) {
 
 	// Is Buffer
 	if (stream.length) {
-		req.end(stream.toString('utf8') + NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
-		e.emit('data', null, 100);
+		req.end(stream.toString(ENCODING) + NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
 		return e;
 	}
 
-	stream.on('end', function() {
-		req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--');
-		e.emit('data', null, 100);
-	});
-
+	stream.on('end', () => req.end(NEWLINE + NEWLINE + '--' + BOUNDARY + '--'));
 	stream.pipe(req, STREAM_END);
 	return e;
 };
 
-exports.$$send = function(name, stream, url, headers, method) {
+exports.$$send = function(name, stream, url, cookies, headers, method, timeout) {
 	return function(callback) {
-		exports.send(name, stream, url, callback, headers, method);
+		exports.send(name, stream, url, callback, cookies, headers, method, timeout);
 	};
 };
 
@@ -2136,13 +2176,17 @@ exports.ls2 = function(path, callback, filter) {
 */
 Date.prototype.add = function(type, value) {
 
+	var self = this;
+
+	if (type.constructor === Number)
+		return self.getTime() + (type - type%1);
+
 	if (value === undefined) {
 		var arr = type.split(' ');
 		type = arr[1];
 		value = exports.parseInt(arr[0]);
 	}
 
-	var self = this;
 	var dt = new Date(self.getTime());
 
 	switch(type) {

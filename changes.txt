@@ -46,6 +46,8 @@
 - updated: (IMPORTANT) `F.resize(url, action(image), [flags])` new resize routing
 - updated: `F.resize()` flags can contain http/https `path` e.g. `F.resize('/img/*.*', (image) => image.minify(), ['https://www.totaljs.com/img/']);`
 - updated: `U.GUID()` supports better charset by Guy Fraser
+- updated: `Date.add(number)` supports number increase/decrease in milliseconds
+- updated: `U.send(name, stream, url, callback, [cookies], [headers], [method], [timeout])` supports cookies and timeout
 
 - fixed: `FrameworkImage.save()` problem with streams
 - fixed: `CLEANUP(stream)` method
