@@ -2179,7 +2179,7 @@ Date.prototype.add = function(type, value) {
 	var self = this;
 
 	if (type.constructor === Number)
-		return self.getTime() + (type - type%1);
+		return new Date(self.getTime() + (type - type%1));
 
 	if (value === undefined) {
 		var arr = type.split(' ');
