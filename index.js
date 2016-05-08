@@ -428,7 +428,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-28';
+	this.version_header = '2.0.0-29';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -573,6 +573,7 @@ function Framework() {
 	this.directory = HEADERS.workers.cwd = directory;
 	this.isLE = os.endianness ? os.endianness() === 'LE' : true;
 	this.isHTTPS = false;
+	this.datetime = new Date();
 
 	// It's hidden
 	// this.waits = {};
@@ -592,7 +593,8 @@ function Framework() {
 		other: {
 			websocketPing: 0,
 			websocketCleaner: 0,
-			obsolete: 0
+			obsolete: 0,
+			restart: 0
 		},
 
 		request: {
@@ -3288,6 +3290,7 @@ Framework.prototype.$restart = function() {
 		self._length_subdomain_websocket = 0;
 		self.isVirtualDirectory = false;
 		self.isTheme = false;
+		self.stats.other.restart++;
 
 		setTimeout(() => self.removeAllListeners(), 2000);
 		setTimeout(function() {
@@ -6275,11 +6278,9 @@ Framework.prototype.reconnect = function() {
 Framework.prototype._service = function(count) {
 
 	var self = this;
-	var dt = new Date();
+	self.datetime = new Date();
 
-	framework.
-
-	UIDGENERATOR.date = dt.format('yyMMddHHmm').substring(1);
+	UIDGENERATOR.date = framework.datetime.format('yyMMddHHmm').substring(1);
 	UIDGENERATOR.index = 1;
 
 	if (self.config.debug)
@@ -6328,7 +6329,7 @@ Framework.prototype._service = function(count) {
 
 	// Update expires date
 	if (count % 1000 === 0)
-		DATE_EXPIRES = dt.add('y', 1).toUTCString();
+		DATE_EXPIRES = framework.datetime.add('y', 1).toUTCString();
 
 	self.emit('service', count);
 
@@ -6338,7 +6339,7 @@ Framework.prototype._service = function(count) {
 	if (!length)
 		return self;
 
-	var expire = dt.getTime();
+	var expire = framework.datetime.getTime();
 	var index = 0;
 
 	while (true) {

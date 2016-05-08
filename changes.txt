@@ -29,6 +29,8 @@
 - added: `SchemaBuilderEntity.fields` and it contains all field names in array.
 - added: `Mail.send(smtp, options, messages, [callback])` messages must be array
 - added: `Mail.try(smtp, options, callback)` tries to open a SMTP
+- added: `F.datetime` contains current datetime and each 1 minute is the value increased
+- added: `F.stats.other.restart` contains a new property with count of restarting
 
 - updated: subdomain routing supports wildcard routing `F.route('[*]/', 'homepage')` (`F.websocket()` is supported too)
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
