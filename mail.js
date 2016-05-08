@@ -26,10 +26,10 @@
 
 'use strict'
 
-var net = require('net');
-var tls = require('tls');
-var events = require('events');
-var fs = require('fs');
+const net = require('net');
+const tls = require('tls');
+const events = require('events');
+const fs = require('fs');
 
 const CRLF = '\r\n';
 const REG_ESMTP = /\besmtp\b/i;

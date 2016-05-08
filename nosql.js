@@ -6,8 +6,8 @@
 
 'use strict';
 
-var Fs = require('fs');
-var Path = require('path');
+const Fs = require('fs');
+const Path = require('path');
 
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');

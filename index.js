@@ -26,17 +26,17 @@
 
 'use strict';
 
-var qs = require('querystring');
-var os = require('os');
-var fs = require('fs');
-var zlib = require('zlib');
-var path = require('path');
-var crypto = require('crypto');
-var parser = require('url');
-var events = require('events');
-var http = require('http');
-var child = require('child_process');
-var util = require('util');
+const qs = require('querystring');
+const os = require('os');
+const fs = require('fs');
+const zlib = require('zlib');
+const path = require('path');
+const crypto = require('crypto');
+const parser = require('url');
+const events = require('events');
+const http = require('http');
+const child = require('child_process');
+const util = require('util');
 
 const ENCODING = 'utf8';
 const RESPONSE_HEADER_CACHECONTROL = 'Cache-Control';
@@ -50,6 +50,10 @@ const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Min
 const REG_ROBOT = /search|agent|bot|crawler/i;
 const REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
 const REG_MULTIPART = /\/form\-data$/i;
+const REG_COMPILECSS = /url\(.*?\)/g;
+const REG_ROUTESTATIC = /^(\/\/|https\:|http\:)+/g;
+const REG_EMPTY = /\s/g;
+const REG_SANITIZE_BACKSLASH = /\/\//g;
 const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
 const REQUEST_PROXY_FLAGS = ['post', 'json'];
 const EMPTYARRAY = [];
@@ -4165,8 +4169,8 @@ Framework.prototype.compileContent = function(extension, content, filename) {
 
 			content = self.config['allow-compile-style'] ? framework_internal.compile_css(content, filename) : content;
 
-			var matches = content.match(/url\(.*?\)/g);
-			if (matches === null)
+			var matches = content.match(REG_COMPILECSS);
+			if (!matches)
 				return content;
 
 			matches.forEach(function(o) {
@@ -6258,10 +6262,7 @@ Framework.prototype.reconnect = function() {
 	if (self.config['default-ip'] !== undefined)
 		self.ip = self.config['default-ip'];
 
-	self.server.close(function() {
-		self.server.listen(self.port, self.ip);
-	});
-
+	self.server.close(() => self.server.listen(self.port, self.ip));
 	return self;
 };
 
@@ -6275,6 +6276,8 @@ Framework.prototype._service = function(count) {
 
 	var self = this;
 	var dt = new Date();
+
+	framework.
 
 	UIDGENERATOR.date = dt.format('yyMMddHHmm').substring(1);
 	UIDGENERATOR.index = 1;
@@ -6299,8 +6302,10 @@ Framework.prototype._service = function(count) {
 		}
 	}
 
-	if (count % framework.config['default-interval-clear-dnscache'] === 0)
+	if (count % framework.config['default-interval-clear-dnscache'] === 0) {
+		self.emit('clear', 'dns');
 		framework_utils.clearDNS();
+	}
 
 	var ping = framework.config['default-interval-websocket-ping'];
 	if (ping > 0 && count % ping === 0) {
@@ -8301,7 +8306,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 	}
 
 	var done = function() {
-		process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(/\s/g, '-').substring(0, 8);
+		process.title = 'total: ' + self.config.name.removeDiacritics().toLowerCase().replace(REG_EMPTY, '-').substring(0, 8);
 		self.isVirtualDirectory = existsSync(framework_utils.combine(self.config['directory-public-virtual']));
 	};
 
@@ -8351,7 +8356,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 				break;
 
 			case 'static-accepts-custom':
-				accepts = value.replace(/\s/g, '').split(',');
+				accepts = value.replace(REG_EMPTY, '').split(',');
 				break;
 
 			case 'default-root':
@@ -8361,7 +8366,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 			case 'static-accepts':
 				obj[name] = {};
-				tmp = value.replace(/\s/g, '').split(',');
+				tmp = value.replace(REG_EMPTY, '').split(',');
 				for (var j = 0; j < tmp.length; j++)
 					obj[name][tmp[j]] = true;
 				break;
@@ -8529,7 +8534,7 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 
 	var filename;
 
-	if (name.match(/^(\/\/|https\:|http\:)+/g))
+	if (name.match(REG_ROUTESTATIC))
 		filename = name;
 	else if (name[0] === '/')
 		filename = framework_utils.join(theme, this._version(name));
@@ -12842,7 +12847,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		filename = name;
 
 		if (self.themeName && skip < 3) {
-			filename = '.' + framework.path.themes(self.themeName + '/views/' + (isLayout || skip ? '' : self._currentView.substring(1)) + (skip ? name.substring(1) : name)).replace(/\/\//g, '/');
+			filename = '.' + framework.path.themes(self.themeName + '/views/' + (isLayout || skip ? '' : self._currentView.substring(1)) + (skip ? name.substring(1) : name)).replace(REG_SANITIZE_BACKSLASH, '/');
 			isTheme = true;
 		}
 
@@ -13654,7 +13659,7 @@ function WebSocketClient(req, socket, head) {
 WebSocketClient.prototype = {
 
 	get protocol() {
-		return (this.req.headers['sec-websocket-protocol'] || '').replace(/\s/g, '').split(',');
+		return (this.req.headers['sec-websocket-protocol'] || '').replace(REG_EMPTY, '').split(',');
 	},
 
 	get ip() {
@@ -14061,7 +14066,7 @@ Backup.prototype.restoreValue = function(data) {
 	}
 
 	read.value += data.substring(0, index);
-	self.restoreFile(read.key.replace(/\s/g, ''), read.value.replace(/\s/g, ''));
+	self.restoreFile(read.key.replace(REG_EMPTY, ''), read.value.replace(REG_EMPTY, ''));
 
 	read.status = 0;
 	read.value = '';

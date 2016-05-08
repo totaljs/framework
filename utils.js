@@ -26,15 +26,15 @@
 
 'use strict';
 
-var Dns = require('dns');
-var parser = require('url');
-var qs = require('querystring');
-var http = require('http');
-var https = require('https');
-var path = require('path');
-var fs = require('fs');
-var events = require('events');
-var crypto = require('crypto');
+const Dns = require('dns');
+const parser = require('url');
+const qs = require('querystring');
+const http = require('http');
+const https = require('https');
+const path = require('path');
+const fs = require('fs');
+const events = require('events');
+const crypto = require('crypto');
 
 if (!global.framework_utils)
 	global.framework_utils = exports;
@@ -595,8 +595,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			if (callback)
 				callback(null, method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
 			callback = null;
-			request.removeAllListeners();
-			request = null;
 			e.removeAllListeners();
 			e = null;
 		});
@@ -608,39 +606,42 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var run = function() {
 		try
 		{
-			var request = isPOST ? connection.request(uri, onResponse) : connection.get(uri, onResponse);
+			var req = isPOST ? connection.request(uri, onResponse) : connection.get(uri, onResponse);
 
 			if (callback) {
-				request.on('error', function(err) {
-					if (callback)
-						callback(err, '', 0, undefined, undefined, uri.host);
+				req.on('error', function(err) {
+					callback(err, '', 0, undefined, uri.host);
 					callback = null;
-					request.removeAllListeners();
-					request = null;
+					req.removeAllListeners();
+					req = null;
 					e.removeAllListeners();
 					e = null;
 				});
 
-				request.setTimeout(timeout || 10000, function() {
-					request.removeAllListeners();
-					request = null;
+				req.setTimeout(timeout || 10000, function() {
+					req.removeAllListeners();
+					req = null;
 					e.removeAllListeners();
 					e = null;
-					if (callback)
-						callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
+					callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
 					callback = null;
 				});
 			}
 
-			request.on('response', function(response) {
+			req.on('close', function() {
+				req.removeAllListeners();
+				req = null;
+			});
+
+			req.on('response', function(response) {
 				responseLength = +response.headers['content-length'] || 0;
 				e.emit('begin', responseLength);
 			});
 
 			if (isPOST && buf)
-				request.end(buf);
+				req.end(buf);
 			else
-				request.end();
+				req.end();
 
 		} catch (ex) {
 			if (callback)
@@ -846,8 +847,6 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 			e.emit('end', this.statusCode, this.headers);
 			e.removeAllListeners();
 			e = null;
-			request.removeAllListeners();
-			request = null;
 		});
 
 		callback(null, res);
@@ -858,33 +857,38 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	var run = function() {
 		try
 		{
-			var request = isPOST ? connection.request(uri, onResponse) : connection.request(uri, onResponse);
+			var req = isPOST ? connection.request(uri, onResponse) : connection.request(uri, onResponse);
 
-			request.on('error', function(err) {
+			req.on('error', function(err) {
 				e.removeAllListeners();
 				e = null;
-				request.removeAllListeners();
-				request = null;
+				req.removeAllListeners();
+				req = null;
 				callback(err);
 			});
 
-			request.setTimeout(timeout || 60000, function() {
-				request.removeAllListeners();
-				request = null;
+			req.on('close', function() {
+				req.removeAllListeners();
+				req = null;
+			});
+
+			req.setTimeout(timeout || 60000, function() {
+				req.removeAllListeners();
+				req = null;
 				e.removeAllListeners();
 				e = null;
 				callback(new Error(exports.httpStatus(408)));
 			});
 
-			request.on('response', function(response) {
+			req.on('response', function(response) {
 				responseLength = +response.headers['content-length'] || 0;
 				e.emit('begin', responseLength);
 			});
 
 			if (isPOST && buf)
-				request.end(buf);
+				req.end(buf);
 			else
-				request.end();
+				req.end();
 
 		} catch (ex) {
 			callback(ex);
@@ -965,7 +969,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 			e.removeAllListeners();
 			e = null;
 			if (callback)
-				callback(null, self.body, self.statusCode, self.headers);
+				callback(null, self.body, self.statusCode, self.headers, uri.host);
 			self.body = null;
 		});
 	};
@@ -984,14 +988,21 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 		e.removeAllListeners();
 		e = null;
 		if (callback)
-			callback(new Error(exports.httpStatus(408)));
+			callback(new Error(exports.httpStatus(408)), '', 408, undefined, uri.host);
 	});
 
 	req.on('error', function(err) {
+		req.removeAllListeners();
+		req = null;
 		e.removeAllListeners();
 		e = null;
 		if (callback)
-			callback(err);
+			callback(err, '', 0, undefined, uri.host);
+	});
+
+	req.on('close', function() {
+		req.removeAllListeners();
+		req = null;
 	});
 
 	var header = NEWLINE + NEWLINE + '--' + BOUNDARY + NEWLINE + 'Content-Disposition: form-data; name="File"; filename="' + name + '"' + NEWLINE + 'Content-Type: ' + exports.getContentType(exports.getExtension(name)) + NEWLINE + NEWLINE;
@@ -1658,7 +1669,7 @@ function rnd() {
 exports.GUID = function(max) {
 	max = max || 40;
 	var str = '';
-	for (var i = 0; i < (max / 4) + 1; i++)
+	for (var i = 0; i < (max / 3) + 1; i++)
 		str += rnd();
 	return str.substring(0, max);
 };
@@ -5396,7 +5407,6 @@ function shell_sort_bound(ary, start, end, comparer) {
 			t = ary[i];
 			j = i;
 			while (j >= inc && comparer(ary[j - inc], t)) {
-			// while (j >= inc && ary[j - inc] > t) {
 				ary[j] = ary[j - inc];
 				j -= inc;
 			}
