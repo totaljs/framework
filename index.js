@@ -6280,14 +6280,14 @@ Framework.prototype._service = function(count) {
 	var self = this;
 	self.datetime = new Date();
 
-	UIDGENERATOR.date = framework.datetime.format('yyMMddHHmm').substring(1);
+	UIDGENERATOR.date = self.datetime.format('yyMMddHHmm').substring(1);
 	UIDGENERATOR.index = 1;
 
 	if (self.config.debug)
 		self.resources = {};
 
 	// every 7 minutes (default) service clears static cache
-	if (count % framework.config['default-interval-clear-cache'] === 0) {
+	if (count % self.config['default-interval-clear-cache'] === 0) {
 		self.emit('clear', 'temporary', self.temporary);
 		self.temporary.path = {};
 		self.temporary.range = {};
@@ -6296,22 +6296,22 @@ Framework.prototype._service = function(count) {
 	}
 
 	// every 61 minutes (default) services precompile all (installed) views
-	if (count % framework.config['default-interval-precompile-views'] === 0) {
+	if (count % self.config['default-interval-precompile-views'] === 0) {
 		for (var key in self.routes.views) {
 			var item = self.routes.views[key];
 			self.install('view', key, item.url, null);
 		}
 	}
 
-	if (count % framework.config['default-interval-clear-dnscache'] === 0) {
+	if (count % self.config['default-interval-clear-dnscache'] === 0) {
 		self.emit('clear', 'dns');
 		framework_utils.clearDNS();
 	}
 
-	var ping = framework.config['default-interval-websocket-ping'];
+	var ping = self.config['default-interval-websocket-ping'];
 	if (ping > 0 && count % ping === 0) {
-		for (var item in framework.connections) {
-			var conn = framework.connections[item];
+		for (var item in self.connections) {
+			var conn = self.connections[item];
 			if (!conn)
 				continue;
 			conn.check();
@@ -6320,7 +6320,7 @@ Framework.prototype._service = function(count) {
 	}
 
 	// every 20 minutes (default) service clears resources
-	if (count % framework.config['default-interval-clear-resources'] === 0) {
+	if (count % self.config['default-interval-clear-resources'] === 0) {
 		self.emit('clear', 'resources');
 		self.resources = {};
 		if (global.gc)
@@ -6329,7 +6329,7 @@ Framework.prototype._service = function(count) {
 
 	// Update expires date
 	if (count % 1000 === 0)
-		DATE_EXPIRES = framework.datetime.add('y', 1).toUTCString();
+		DATE_EXPIRES = self.datetime.add('y', 1).toUTCString();
 
 	self.emit('service', count);
 
@@ -6339,7 +6339,7 @@ Framework.prototype._service = function(count) {
 	if (!length)
 		return self;
 
-	var expire = framework.datetime.getTime();
+	var expire = self.datetime.getTime();
 	var index = 0;
 
 	while (true) {
@@ -6354,7 +6354,7 @@ Framework.prototype._service = function(count) {
 		if (!schedule.repeat)
 			self.schedules.splice(index, 1);
 		else
-			schedule.expire = dt.add(schedule.repeat);
+			schedule.expire = self.datetime.add(schedule.repeat);
 
 		schedule.fn.call(self);
 	}
