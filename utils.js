@@ -3035,7 +3035,7 @@ String.prototype.isJSON = function() {
 
 	while (true) {
 		b = self[l--];
-		if (a === ' ' || a === '\n' || a === '\r' || a === '\t')
+		if (b === ' ' || b === '\n' || b === '\r' || b === '\t')
 			continue;
 		break;
 	}
