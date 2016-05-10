@@ -2160,13 +2160,17 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 	}
 
 	if (typeof(fnValidation) === 'string') {
-		url = framework_internal.routeSplitCreate(fnValidation);
+
+		if (fnValidation === '/')
+			fnValidation = '';
+
+		url = fnValidation ? framework_internal.routeSplitCreate(fnValidation) : EMPTYARRAY;
 		fnValidation = undefined;
 		a = url.last();
 		if (a === '*.*') {
 			wildcard = true;
 			url.splice(url.length - 1, 1);
-		} else {
+		} else if (a) {
 			var index = a.indexOf('*.');
 			if (index !== -1) {
 				extensions = {};
@@ -2183,6 +2187,7 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 		}
 	} else if (!extensions && !fnValidation)
 		fnValidation = fnExecute;
+
 
 	self.routes.files.push({
 		controller: !_controller ? 'unknown' : _controller,
@@ -2244,13 +2249,12 @@ Framework.prototype.localize = function(url, flags, minify) {
 	var index = url.lastIndexOf('.');
 
 	if (index !== -1) {
-		flags.push(url.substring(index + 1).toLowerCase());
+		flags.push(url.substring(index).toLowerCase());
 		url = url.substring(0, index);
 	} else
 		flags.push('.html', '.htm', '.md', '.txt');
 
 	url = framework_internal.preparePATH(url);
-
 	self.file(url, function(req, res, is) {
 
 		var key = 'locate_' + (req.$language ? req.$language : 'default') + '_' + req.url;
@@ -2270,11 +2274,11 @@ Framework.prototype.localize = function(url, flags, minify) {
 
 			content = framework.translator(req.$language, content.toString(ENCODING));
 
-			if (RELEASE)
-				framework.temporary.other[key] = content;
-
 			if (minify && (req.extension === 'html' || req.extension === 'htm'))
 				content = framework_internal.compile_html(content, filename);
+
+			if (RELEASE)
+				framework.temporary.other[key] = content;
 
 			framework.responseContent(req, res, 200, content, framework_utils.getContentType(req.extension), true);
 		});
@@ -9910,6 +9914,7 @@ Subscribe.prototype.doEndfile = function() {
 
 				if (skip)
 					continue;
+
 			} else if (file.onValidate && !file.onValidate.call(framework, req, res, true))
 				continue;
 
