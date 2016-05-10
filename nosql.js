@@ -28,12 +28,12 @@ const EMPTYARRAY = [];
 
 Object.freeze(EMPTYARRAY);
 
-function Database(filename) {
+function Database(name, filename) {
 	this.filename = filename + EXTENSION;
 	this.filenameTemp = filename + EXTENSION_TMP;
 	this.filenameMeta = filename + EXTENSION_META;
-	this.name = framework_utils.getName(filename);
 	this.directory = Path.dirname(filename);
+	this.name = name;
 	this.pending_update = [];
 	this.pending_append = [];
 	this.pending_reader = [];
@@ -86,6 +86,12 @@ Database.prototype.drop = function() {
 	var self = this;
 	self.pending_drops = true;
 	setImmediate(() => self.next(7));
+	return self;
+};
+
+Database.prototype.free = function() {
+	var self = this;
+	delete framework.databases[self.name];
 	return self;
 };
 

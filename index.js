@@ -812,10 +812,10 @@ Framework.prototype.database = function(name) {
 Framework.prototype.nosql = function(name) {
 	var self = this;
 	var db = self.databases[name];
-	if (db !== undefined)
+	if (db)
 		return db;
 	self.path.verify('databases');
-	db = framework_nosql.load(self.path.databases(name));
+	db = framework_nosql.load(name, self.path.databases(name));
 	self.databases[name] = db;
 	return db;
 };
