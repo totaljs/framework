@@ -333,7 +333,7 @@ Mailer.prototype.switchToTLS = function(obj, options) {
     // obj.socket.removeAllListeners('clientError');
     // obj.socket.removeAllListeners('line');
 
-	var opt = framework_utils.copy(options.tls, { socket: socket, host: socket.$host, ciphers: 'SSLv3' });
+	var opt = framework_utils.copy(options.tls, { socket: obj.socket, host: obj.socket.$host, ciphers: 'SSLv3' });
 	obj.socket2 = tls.connect(opt, () => self._send(obj, options, true));
 
 	obj.socket2.on('error', function(err) {
@@ -688,7 +688,6 @@ Mailer.prototype._send = function(obj, options, autosend) {
 	var command = '';
 	var auth = [];
 	var ending = null;
-	var isTLS = false;
 	var response = '';
 	var socket = obj.socket2 ? obj.socket2 : obj.socket;
 	var host = obj.host;
@@ -786,12 +785,12 @@ Mailer.prototype._send = function(obj, options, autosend) {
 		switch (code) {
 			case 220:
 
-				if (isTLS) {
+				if (obj.isTLS) {
 					mailer.switchToTLS(obj, options);
 					return;
 				}
 
-				command = isTLS || (options.user && options.password) || REG_ESMTP.test(line) ? 'EHLO' : 'HELO';
+				command = obj.isTLS || (options.user && options.password) || REG_ESMTP.test(line) ? 'EHLO' : 'HELO';
 				mailer._writeline(obj, command + ' ' + host);
 				break;
 
@@ -834,9 +833,9 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 			case 334: // LOGIN
 
-				if (!self.tls && !isTLS && options.tls) {
-					isTLS = true;
-					mail._writeline(obj, 'STARTTLS');
+				if (!self.tls && !obj.isTLS && options.tls) {
+					obj.isTLS = true;
+					mailer._writeline(obj, 'STARTTLS');
 					return;
 				}
 
