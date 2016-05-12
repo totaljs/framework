@@ -51,9 +51,7 @@ const HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DE
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name('];
 
 global.$STRING = function(value) {
-	if (value === null || value === undefined)
-		return '';
-	return value.toString();
+	return value != null ? value.toString() : '';
 };
 
 /*
