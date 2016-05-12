@@ -9529,33 +9529,7 @@ Subscribe.prototype.execute = function(status, isError) {
 	var res = self.res;
 
 	if (isError || !route) {
-		switch (status) {
-			case 400:
-				framework.stats.response.error400++;
-				break;
-			case 401:
-				framework.stats.response.error401++;
-				break;
-			case 403:
-				framework.stats.response.error403++;
-				break;
-			case 404:
-				framework.stats.response.error404++;
-				break;
-			case 408:
-				framework.stats.response.error408++;
-				break;
-			case 431:
-				framework.stats.response.error431++;
-				break;
-			case 500:
-				framework.stats.response.error500++;
-				break;
-			case 501:
-				framework.stats.response.error501++;
-				break;
-		}
-
+		framework.stats.response['error' + status]++;
 		if (status !== 500)
 			framework.emit('error' + status, req, res, self.exception);
 	}
