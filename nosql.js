@@ -33,6 +33,7 @@ function Database(name, filename) {
 	this.filenameTemp = filename + EXTENSION_TMP;
 	this.filenameMeta = filename + EXTENSION_META;
 	this.directory = Path.dirname(filename);
+	this.filenameBackup = framework_utils.join(this.directory, name + '_backup' + EXTENSION);
 	this.name = name;
 	this.pending_update = [];
 	this.pending_append = [];
@@ -50,8 +51,8 @@ function Database(name, filename) {
 	this.$timeoutmeta;
 }
 
-exports.load = function(filename) {
-	return new Database(filename);
+exports.load = function(name, filename) {
+	return new Database(name, filename);
 };
 
 Database.prototype.meta = function(name, value) {
@@ -82,6 +83,37 @@ Database.prototype.update = function(doc) {
 	return builder;
 };
 
+Database.prototype.backup = function(filename, remove) {
+
+	if (typeof(filename) === 'boolean') {
+		remove = filename;
+		filename = '';
+	}
+
+	var self = this;
+	if (remove)
+		return self.remove(filename || '');
+
+	var builder = new DatabaseBuilder2();
+	var stream = Fs.createReadStream(self.filename);
+
+	stream.pipe(Fs.createWriteStream(filename || self.filenameBackup));
+
+	stream.on('error', function(err) {
+		if (builder.$callback)
+			builder.$callback(errorhandling(err, builder));
+		builder.$callback = null;
+	});
+
+	stream.on('end', function() {
+		if (builder.$callback)
+			builder.$callback(errorhandling(null, builder, true), true);
+		builder.$callback = null;
+	});
+
+	return builder;
+};
+
 Database.prototype.drop = function() {
 	var self = this;
 	self.pending_drops = true;
@@ -109,10 +141,10 @@ Database.prototype.modify = function(doc) {
 	return builder;
 };
 
-Database.prototype.remove = function() {
+Database.prototype.remove = function(filename) {
 	var self = this;
 	var builder = new DatabaseBuilder();
-	self.pending_remove.push({ builder: builder, count: 0 });
+	self.pending_remove.push({ builder: builder, count: 0, backup: filename === undefined ? undefined : filename || self.filenameBackup });
 	setImmediate(() => self.next(3));
 	return builder;
 };
@@ -647,15 +679,20 @@ Database.prototype.$remove = function() {
 			var item = filter[i];
 			var builder = item.builder;
 			var output = builder.compare(json, index);
-			var doc = json;
 
-			if (output) {
-				item.count++;
-				change = true;
-				continue;
+			if (!output) {
+				writer.write(value);
+				return;
 			}
 
-			writer.write(JSON.stringify(doc) + NEWLINE);
+			if (item.backup) {
+				if (!item.backuper)
+					item.backuper = Fs.createWriteStream(item.backup);
+				item.backuper.write(value);
+			}
+
+			item.count++;
+			change = true;
 		}
 	}));
 
@@ -666,6 +703,8 @@ Database.prototype.$remove = function() {
 				var item = filter[i];
 				if (item.builder.$callback)
 					item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
+				if (item.backuper)
+					item.backuper.end();
 			}
 
 			setImmediate(function() {
