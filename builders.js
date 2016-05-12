@@ -1340,7 +1340,8 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 		item[property] = [];
 		for (var j = 0, sublength = val.length; j < sublength; j++) {
 
-			tmp = model[property][j];
+			// tmp = model[property][j];
+			tmp = val[j];
 			typeval = typeof(tmp);
 
 			switch (type.type) {
