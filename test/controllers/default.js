@@ -451,7 +451,7 @@ function viewIndex() {
 
 	self.log('test');
 
-	assert.ok(self.hash('sha1', '123456', false) === '7c4a8d09ca3762af61e59520943dc26494f8941b', 'controller.hash()');
+	assert.ok(F.hash('sha1', '123456', false) === '7c4a8d09ca3762af61e59520943dc26494f8941b', 'controller.hash()');
 
 	self.setModified('123456');
 
