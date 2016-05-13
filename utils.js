@@ -53,6 +53,7 @@ const regexpDiacritics = /[^\u0000-\u007e]/g;
 const regexpUID = /^\d{14,}[a-z]{3}[01]{1}$/;
 const regexpZIP = /^\d{5}(?:[-\s]\d{4})?$/;
 const regexpXML = /\w+\=\".*?\"/g;
+const regexpDECODE = /&gt;|\&lt;|\&quot;|&apos;|&amp;/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -2914,7 +2915,17 @@ String.prototype.encode = function() {
 };
 
 String.prototype.decode = function() {
-	return this.replace(/&gt;/g, '>').replace(/\&lt;/g, '<').replace(/\&quot;/g, '"').replace(/&apos;/g, '\'').replace(/&amp;/g, '&');
+	return this.replace(regexpDECODE, function(text) {
+		switch (text) {
+			case '&gt;': return '>';
+			case '&lt;': return '<';
+			case '&quot;': return '"';
+			case '&apos;': return '\'';
+			case '&amp;': return '&';
+			default:
+				return text;
+		}
+	});
 };
 
 String.prototype.urlEncode = function() {
