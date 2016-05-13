@@ -2338,6 +2338,8 @@ Framework.prototype.problem = function(message, name, uri, ip) {
 
 	if (message instanceof framework_builders.ErrorBuilder)
 		message = message.plain();
+	else if (typeof(message) === 'object')
+		message = JSON.stringify(message);
 
 	var obj = { message: message, name: name, url: uri ? parser.format(uri) : null, ip: ip };
 	self.logger('problems', obj.message, 'url: ' + obj.url, 'controller: ' + obj.name, 'ip: ' + obj.ip);
@@ -2368,6 +2370,8 @@ Framework.prototype.change = function(message, name, uri, ip) {
 
 	if (message instanceof framework_builders.ErrorBuilder)
 		message = message.plain();
+	else if (typeof(message) === 'object')
+		message = JSON.stringify(message);
 
 	var obj = { message: message, name: name, url: uri ? parser.format(uri) : null, ip: ip };
 	self.logger('changes', obj.message, 'url: ' + obj.url, 'controller: ' + obj.name, 'ip: ' + obj.ip);
@@ -2401,6 +2405,8 @@ Framework.prototype.trace = function(message, name, uri, ip) {
 
 	if (message instanceof framework_builders.ErrorBuilder)
 		message = message.plain();
+	else if (typeof(message) === 'object')
+		message = JSON.stringify(message);
 
 	var obj = { message: message, name: name, url: uri ? parser.format(uri) : null, ip: ip };
 	self.logger('traces', obj.message, 'url: ' + obj.url, 'controller: ' + obj.name, 'ip: ' + obj.ip);
