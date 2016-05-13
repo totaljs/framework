@@ -549,7 +549,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		var builder = '';
 
 		for (var m in cookies)
-			builder += (builder ? '; ' : '') + m + '=' + encodeURIComponent(cookies[m]);
+			builder += (builder ? '; ' : '') + m + '=' + cookies[m];
 
 		if (builder)
 			headers['Cookie'] = builder;
@@ -819,7 +819,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	if (cookies) {
 		var builder = '';
 		for (var m in cookies)
-			builder += (builder ? '; ' : '') + m + '=' + encodeURIComponent(cookies[m]);
+			builder += (builder ? '; ' : '') + m + '=' + cookies[m];
 		if (builder)
 			headers['Cookie'] = builder;
 	}
@@ -936,7 +936,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 	if (cookies) {
 		var builder = '';
 		for (var m in cookies)
-			builder += (builder ? '; ' : '') + m + '=' + encodeURIComponent(cookies[m]);
+			builder += (builder ? '; ' : '') + m + '=' + cookies[m];
 		if (builder)
 			h['Cookie'] = builder;
 	}
