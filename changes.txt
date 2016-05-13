@@ -31,6 +31,9 @@
 - added: `Mail.try(smtp, options, callback)` tries to open a SMTP
 - added: `F.datetime` contains current datetime and each 1 minute is the value increased
 - added: `F.stats.other.restart` contains a new property with count of restarting
+- added: `F.config.trace` for enable/disable tracing, `Boolean`, in a debug mode: `true`, release mode: `false`
+- added: `F.trace(message, [name], [uri], [ip])`
+- added: `controller.trace(message)`
 
 - updated: subdomain routing supports wildcard routing `F.route('[*]/', 'homepage')` (`F.websocket()` is supported too)
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
@@ -50,7 +53,6 @@
 - updated: `U.GUID()` supports better charset by Guy Fraser
 - updated: `Date.add(number)` supports number increase/decrease in milliseconds
 - updated: `U.send(name, stream, url, callback, [cookies], [headers], [method], [timeout])` supports cookies and timeout
-- updaded: `controller.error(error_builder)` responses (to client) according to the `error_builder`
 
 - fixed: `String.isJSON()` the problem with `\n` character
 - fixed: `FrameworkImage.save()` problem with streams
@@ -81,7 +83,6 @@
 - removed: `Utils.isEmail()`
 - removed: `Utils.isURL()`
 - removed: `Utils.isValid()`
-- removed: `controller.hash()`, use `F.hash()`
 
 - improved: SMTP sender
 - improved: redirecting
@@ -91,7 +92,6 @@
 - improved: code (a lot)
 - improved: preparing `SchemaBuilderEntity`
 - improved: performance
-- improved: `SUCCESS()`
 
 ======= 1.9.7
 
