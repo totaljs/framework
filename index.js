@@ -14248,7 +14248,7 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 		return;
 
 	var cookieHeaderStart = name + '=';
-	var builder = [cookieHeaderStart + encodeURIComponent(value)];
+	var builder = [cookieHeaderStart + value];
 	var type = typeof(expires);
 
 	if (expires && !framework_utils.isDate(expires) && type === 'object') {
