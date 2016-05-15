@@ -40,7 +40,7 @@ function Database(name, filename) {
 	this.pending_reader = [];
 	this.pending_reader_view = [];
 	this.pending_remove = [];
-	this.views;
+	this.views = {};
 	this.step = 0;
 	this.pending_drops = false;
 	this.pending_views = false;
@@ -214,8 +214,6 @@ Database.prototype.top = function(max, view) {
 
 Database.prototype.view = function(name) {
 	var builder = new DatabaseBuilder();
-	if (!this.views)
-		this.views = {};
 	this.views[name] = {};
 	this.views[name] = builder;
 	this.views[name].$filename = this.filename.replace(/\.nosql/, '#' + name + '.nosql');
