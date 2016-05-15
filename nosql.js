@@ -25,6 +25,7 @@ const EXTENSION_META = '.meta';
 const BINARY_HEADER_LENGTH = 2000;
 const NEWLINE = '\n';
 const EMPTYARRAY = [];
+const REG_CLEAN = /^[\s]+|[\s]+$/g;
 
 Object.freeze(EMPTYARRAY);
 
@@ -587,15 +588,21 @@ Database.prototype.$views = function() {
 
 	self.pending_views = false;
 
-	var reader = Fs.createReadStream(self.filename);
-	var writers = [];
 	var views = Object.keys(self.views);
 	var length = views.length;
+
+	if (!length) {
+		self.next(0);
+		return self;
+	}
+
 	var response = [];
+	var writers = [];
 
 	for (var i = 0; i < length; i++)
 		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0 });
 
+	var reader = Fs.createReadStream(self.filename);
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var json = JSON.parse(value.trim());
 		for (var j = 0; j < length; j++) {
@@ -847,16 +854,16 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 			fn = date ? compare_eq_date : compare_eq;
 			break;
 		case '<':
-			fn = date ? compare_gt_date : compare_lt;
+			fn = date ? compare_gt_date : compare_gt;
 			break;
 		case '<=':
-			fn = date ? compare_eqgt_date : compare_eqlt;
+			fn = date ? compare_eqgt_date : compare_eqgt;
 			break;
 		case '>':
-			fn = date ? compare_lt_date : compare_gt;
+			fn = date ? compare_lt_date : compare_lt;
 			break;
 		case '>=':
-			fn = date ? compare_eqlt_date : compare_eqgt;
+			fn = date ? compare_eqlt_date : compare_eqlt;
 			break;
 		case '<>':
 		case '!=':
@@ -1058,7 +1065,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
-	var id = new Date().getTime().toString() + framework_utils.GUID(10);
+	var id = new Date().format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
 	var key = self.db.name + '#' + id;
 	var stream = Fs.createWriteStream(Path.join(self.directory, key + EXTENSION_BINARY));
 
@@ -1173,11 +1180,12 @@ Binary.prototype.read = function(id, callback) {
 		id = self.db.name + '#' + id;
 
 	var filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
+
 	var stream = Fs.createReadStream(filename, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
 
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
-		var json = new Buffer(buffer, 'binary').toString('utf8').replace(/^[\s]+|[\s]+$/g, '');
+		var json = new Buffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '');
 		stream = Fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
 		callback(null, stream, JSON.parse(json));
 	});
