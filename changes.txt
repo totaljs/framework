@@ -34,6 +34,7 @@
 - added: `F.config.trace` for enable/disable tracing, `Boolean`, in a debug mode: `true`, release mode: `false`
 - added: `F.trace(message, [name], [uri], [ip])`
 - added: `controller.trace(message)`
+- added: `req.split` contains splitted url
 
 - updated: subdomain routing supports wildcard routing `F.route('[*]/', 'homepage')` (`F.websocket()` is supported too)
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot

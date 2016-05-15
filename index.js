@@ -7050,7 +7050,7 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 		connection.route = route;
 		connection.options = route.options;
 		self.connections[id] = connection;
-		route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, route));
+		route.onInitialize.apply(connection, framework_internal.routeParam(route.param.length ? req.split : req.path, route));
 		setImmediate(() => socket.upgrade(connection));
 	};
 
@@ -9701,9 +9701,9 @@ Subscribe.prototype.doExecute = function() {
 			framework.temporary.other[req.uri.pathname] = req.path;
 
 		if (self.route.isGENERATOR)
-			async.call(controller, self.route.execute, true)(controller, framework_internal.routeParam(self.route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
+			async.call(controller, self.route.execute, true)(controller, framework_internal.routeParam(self.route.param.length ? req.split : req.path, self.route));
 		else
-			self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length ? framework_internal.routeSplit(req.uri.pathname, true) : req.path, self.route));
+			self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length ? req.split : req.path, self.route));
 
 		return self;
 
@@ -14646,6 +14646,12 @@ http.IncomingMessage.prototype = {
 
 	get host() {
 		return this.headers['host'];
+	},
+
+	get split() {
+		if (this.$path)
+			return this.$path;
+		return this.$path = framework_internal.routeSplit(this.uri.pathname, true);
 	},
 
 	get secured() {
