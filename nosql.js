@@ -730,11 +730,12 @@ Database.prototype.$drop = function() {
 	var remove = [self.filename, self.filenameTemp];
 	Object.keys(self.views).forEach(key => remove.push(self.views[key].$filename));
 
-	Fs.readdirSync(self.binary.directory).forEach(function(filename) {
-		if (filename.indexOf(self.name + '#') === -1 || filename.lastIndexOf(EXTENSION_BINARY) === -1)
-			return;
-		remove.push(framework_utils.join(self.binary.directory, filename));
-	});
+	try {
+		Fs.readdirSync(self.binary.directory).forEach(function(filename) {
+			if (filename.startsWith(self.name + '#') && filename.endsWith(EXTENSION_BINARY))
+				remove.push(framework_utils.join(self.binary.directory, filename));
+		});
+	} catch (e) {}
 
 	remove.wait((filename, next) => Fs.unlink(filename, next), () => self.next(0), 5);
 	return self;
