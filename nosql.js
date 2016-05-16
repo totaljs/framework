@@ -145,7 +145,12 @@ Database.prototype.modify = function(doc) {
 Database.prototype.remove = function(filename) {
 	var self = this;
 	var builder = new DatabaseBuilder();
-	self.pending_remove.push({ builder: builder, count: 0, backup: filename === undefined ? undefined : filename || self.filenameBackup });
+	var backup = filename === undefined ? undefined : filename || self.filenameBackup;
+
+	if (backup)
+		backup = new Backuper(backup);
+
+	self.pending_remove.push({ builder: builder, count: 0, backup: backup });
 	setImmediate(() => self.next(3));
 	return builder;
 };
@@ -690,11 +695,8 @@ Database.prototype.$remove = function() {
 				return;
 			}
 
-			if (item.backup) {
-				if (!item.backuper)
-					item.backuper = Fs.createWriteStream(item.backup);
-				item.backuper.write(value);
-			}
+			if (item.backup)
+				item.backup.write(value);
 
 			item.count++;
 			change = true;
@@ -708,8 +710,6 @@ Database.prototype.$remove = function() {
 				var item = filter[i];
 				if (item.builder.$callback)
 					item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
-				if (item.backuper)
-					item.backuper.end();
 			}
 
 			setImmediate(function() {
@@ -1225,6 +1225,39 @@ Binary.prototype.check = function() {
 		Fs.mkdirSync(self.directory);
 	} catch (err) {};
 
+	return self;
+};
+
+function Backuper(filename) {
+	this.filename = filename;
+	this.items = [];
+	this.is = false;
+	this.callback;
+}
+
+Backuper.prototype.write = function(value) {
+	this.items.push(value);
+	this.flush();
+	return this;
+};
+
+Backuper.prototype.flush = function() {
+	var self = this;
+	if (self.is)
+		return self;
+
+	if (!self.items.length)
+		return self;
+
+	var value = self.items.join('');
+	self.is = true;
+
+	Fs.appendFile(self.filename, value, function() {
+		self.is = false;
+		self.flush();
+	});
+
+	self.items = [];
 	return self;
 };
 
