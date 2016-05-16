@@ -87,6 +87,7 @@
 - removed: `Utils.isURL()`
 - removed: `Utils.isValid()`
 
+- improved: Controller initialization by Guy Fraser
 - improved: SMTP sender
 - improved: redirecting
 - improved: Array.orderBy(), added quicksort algorithm

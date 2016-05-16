@@ -58,9 +58,11 @@ const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
 const REQUEST_PROXY_FLAGS = ['post', 'json'];
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
+const EMPTYREQUEST = { uri: {} };
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
+Object.freeze(EMPTYREQUEST);
 
 var POWEREDBY = '';
 var RANGE = { start: 0, end: 0 };
@@ -10053,20 +10055,18 @@ function Controller(name, req, res, subscribe, currentView) {
 
 	this.subscribe = subscribe;
 	this.name = name;
-	this.req = req;
-	this.res = res;
 	// this.exception;
 
 	// Sets the default language
-	if (req)
+	if (req) {
 		this.language = req.$language;
+		this.req = req;
+	} else
+		this.req = EMPTYREQUEST;
 
 	// controller.type === 0 - classic
 	// controller.type === 1 - server sent events
 	this.type = 0;
-
-	this.layoutName;
-	this.themeName;
 
 	// this.layoutName = framework.config['default-layout'];
 	// this.themeName = framework.config['default-theme'];
@@ -10089,13 +10089,11 @@ function Controller(name, req, res, subscribe, currentView) {
 
 	this._currentView = currentView;
 
-	if (!req)
-		this.req = { uri: EMPTYOBJECT };
-
-	if (!res)
-		this.res = EMPTYOBJECT;
-	else
+	if (res) {
+		this.res = res;
 		this.res.controller = this;
+	} else
+		this.res = EMPTYOBJECT;
 }
 
 Controller.prototype = {
