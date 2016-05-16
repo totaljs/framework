@@ -5002,6 +5002,16 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 };
 
 /**
+ * Clears file information in release mode
+ * @param {String/Request} url
+ * @return {Framework}
+ */
+Framework.prototype.touch = function(url) {
+	delete this.temporary.path[createTemporaryKey(url)];
+	return this;
+};
+
+/**
  * Creates a pipe between the current request and target URL
  * @param {Request} req
  * @param {Response} res
@@ -9115,6 +9125,11 @@ FrameworkPath.prototype.verify = function(name) {
 	if (!existsSync(dir))
 		fs.mkdirSync(dir);
 	framework.temporary.path[prop] = true;
+	return framework;
+};
+
+FrameworkPath.prototype.exists = function(path, callback) {
+	fsFileExists(path, callback);
 	return framework;
 };
 

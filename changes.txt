@@ -35,6 +35,8 @@
 - added: `F.trace(message, [name], [uri], [ip])`
 - added: `controller.trace(message)`
 - added: `req.split` contains splitted url
+- added: `F.touch(url/req)` for clearing internal cache of cached static files (it works only in release mode)
+- added: `F.path.exists(path, callback(exist))` for check of existing file
 
 - updated: subdomain routing supports wildcard routing `F.route('[*]/', 'homepage')` (`F.websocket()` is supported too)
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
