@@ -3277,6 +3277,7 @@ Framework.prototype.$restart = function() {
 		framework_builders.restart();
 		framework_image.restart();
 		framework_mail.restart();
+		framework_utils.restart();
 
 		self.cache.clear();
 		self.cache.stop();

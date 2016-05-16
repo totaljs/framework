@@ -5195,7 +5195,7 @@ function queue_next(name) {
 	if (item.running < 0)
 		item.running = 0;
 
-	if (item.pending.length === 0)
+	if (!item.pending.length)
 		return;
 
 	var fn = item.pending.shift();
@@ -5261,6 +5261,11 @@ exports.minifyScript = function(value) {
 
 exports.minifyHTML = function(value) {
 	return require('./internal').compile_html(value);
+};
+
+exports.restart = function() {
+	exports.queuecache = {};
+	dnscache = {};
 };
 
 exports.parseTheme = function(value) {
