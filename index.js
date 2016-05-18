@@ -5984,14 +5984,13 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 	return self;
 };
 
-Framework.prototype.load = function(debug, types, path) {
+Framework.prototype.load = function(debug, types, pwd) {
 
 	var self = this;
-
-	if (path && path[0] === '.' && path.length < 3)
-		self.directory = directory = framework_utils.$normalize(require('path').normalize(directory + '/..'));
-	else if (path)
-		self.directory = directory = framework_utils.$normalize(path);
+	if (pwd && pwd[0] === '.' && pwd.length < 4) {
+		self.directory = directory = framework_utils.$normalize(path.normalize(directory + '/..'));
+	} else if (pwd)
+		self.directory = directory = framework_utils.$normalize(pwd);
 
 	self.isWorker = true;
 	self.config.debug = debug;
@@ -8862,7 +8861,7 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 	if (!args)
 		args = [];
 
-	fork = child.fork(filename, args, HEADERS.worker);
+	fork = child.fork(filename, args, HEADERS.workers);
 
 	if (!id)
 		id = name + '_' + new Date().getTime();
