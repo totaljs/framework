@@ -72,6 +72,7 @@
 - fixed: Mail sender (problem with ZOHO SMTP)
 - fixed: `Number.add()` problem with percentage
 - fixed: `U.isDate()` by Guy Fraser
+- fixed: `U.parseXML` problem with `CDATA`
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`

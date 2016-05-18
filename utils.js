@@ -1935,6 +1935,18 @@ exports.parseXML = function(xml) {
 	var from = -1;
 
 	while (true) {
+		beg = xml.indexOf('<![CDATA[', beg);
+		if (beg === -1)
+			break;
+		end = xml.indexOf(']]>', beg + 9);
+		xml = xml.substring(0, beg) + xml.substring(beg + 9, end).trim().encode() + xml.substring(end + 3);
+		beg += 9;
+	}
+
+	beg = -1;
+	end = 0;
+
+	while (true) {
 
 		beg = xml.indexOf('<', beg + 1);
 		if (beg === -1)
