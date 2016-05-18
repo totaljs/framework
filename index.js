@@ -1375,10 +1375,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 					isJSON = true;
 					continue;
 
-				case 'xss':
-					count--;
-					continue;
-
 				case 'delay':
 					count--;
 					isDELAY = true;
