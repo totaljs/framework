@@ -68,6 +68,9 @@
     },{
         "name": "Guy Fraser",
         "email": "guy.fraser1@gmail.com"
+    },{
+        "name": "Martin Smola",
+        "email": "smola.martin@gmail.com"
     }],
     "version": "2.0.0-36",
     "homepage": "http://www.totaljs.com",

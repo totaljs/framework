@@ -107,8 +107,6 @@ We provide a support of the framework for companies. Our support services will k
 | Contributor | Type | E-mail |
 |-------------|------|--------|
 | [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
-| [Matus Szabo](https://github.com/matusszabo) | support + enterprise | <matus.szabo@gmail.com> |
-| Tomas Holovsky | support + enterprise | <tomasholovsky@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
 | [Tom Spaccialbelli](https://github.com/harry-stot) | contributor | <tom.spaccialbelli@gmail.com> |
@@ -119,6 +117,7 @@ We provide a support of the framework for companies. Our support services will k
 | [Сковорода Никита Андреевич](https://github.com/ChALkeR) | contributor | <chalkerx@gmail.com> |
 | [Андрей Владимирович](https://github.com/anddesigner) | contributor | <and.designer93@gmail.com> |
 | [Guy Fraser](https://github.com/aubergine10) | contributor | <guy.fraser1@gmail.com> |
+| [Martin Smola](https://github.com/molda) | contributor | <smola.martin@gmail.com> |
 
 ## Built with total.js
 
