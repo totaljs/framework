@@ -73,6 +73,7 @@
 - fixed: `Number.add()` problem with percentage
 - fixed: `U.isDate()` by Guy Fraser
 - fixed: `U.parseXML` problem with `CDATA`
+- fixed: `U.join()` problem with Windows path by Martin Smola
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`

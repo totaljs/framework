@@ -1617,7 +1617,7 @@ exports.path = function(path, delimiter) {
 };
 
 exports.join = function() {
-	var path = [''];
+	var path = isWindows ? [] : [''];
 
 	for (var i = 0; i < arguments.length; i++) {
 		var current = arguments[i];
