@@ -576,13 +576,15 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 		}
 
 		var role = flag[0] === '@';
-
 		if (noLoggedUnlogged && route.isMEMBER) {
 			var tmp = flag.substring(0, 3);
 			if (!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1)
 				return 0;
-			if (role && route.flags.indexOf(flag) == -1)
+			/*
+			This was a problem with routes which don't have authorize/unauthorize flags and any @flags
+			if (role && route.flags.indexOf(flag) === -1)
 				return 0;
+			*/
 			continue;
 		}
 
