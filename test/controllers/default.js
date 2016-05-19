@@ -91,7 +91,7 @@ exports.install = function() {
 
 	framework.route('#408', function() {
 		var self = this;
-		self.global.timeout++;
+		F.global.timeout++;
 		self.plain('408');
 	});
 
