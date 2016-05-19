@@ -1617,7 +1617,7 @@ exports.path = function(path, delimiter) {
 };
 
 exports.join = function() {
-	var path = isWindows ? [] : [''];
+	var path = [''];
 
 	for (var i = 0; i < arguments.length; i++) {
 		var current = arguments[i];
@@ -1631,7 +1631,8 @@ exports.join = function() {
 		path.push(current);
 	}
 
-	return path.join('/');
+	var path = path.join('/');
+	return !isWindows ? path : path.indexOf(':') > -1 ? path.substring(1) : path;
 };
 
 /**
