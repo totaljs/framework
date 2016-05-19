@@ -97,6 +97,7 @@
 - improved: code (a lot)
 - improved: preparing `SchemaBuilderEntity`
 - improved: performance
+- improved: a lot of code by Guy Fraser
 
 ======= 1.9.7
 

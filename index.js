@@ -426,6 +426,22 @@ var directory = framework_utils.$normalize(require.main ? path.dirname(require.m
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').randomize().join('').substring(0, 3), index: 1 };
 
+const controller_error_status = function(controller, status, problem) {
+
+	if (status !== 500 && problem)
+		controller.problem(problem);
+
+	if (controller.res.success || controller.res.headersSent || !controller.isConnected)
+		return controller;
+
+	controller.req.path = EMPTYARRAY;
+	controller.subscribe.success();
+	controller.subscribe.route = framework.lookup(controller.req, '#' + status);
+	controller.subscribe.exception = problem;
+	controller.subscribe.execute(status, true);
+	return controller;
+};
+
 function Framework() {
 
 	this.id = null;
@@ -791,7 +807,7 @@ Framework.prototype._routesSort = function() {
 		var route = self.routes.web[i];
 		if (route.isMOBILE || route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML || route.flags.indexOf('get') === -1)
 			continue;
-	 	url = route.url.join('/');
+		url = route.url.join('/');
 		route.isMOBILE_VARY = cache[url] === true;
 	}
 
@@ -3681,7 +3697,7 @@ Framework.prototype.onLocate = null;
 
 /**
  * Sets theme to controlller
- * @controller {FrameworkController}
+ * @controller {Controller}
  * @return {String}
  */
 Framework.prototype.onTheme = null;
@@ -5680,7 +5696,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	if @value === {String} set ETag
 	if @value === {Date} set LastModified
 
-	return {FrameworkController};
+	return {Controller};
 */
 Framework.prototype.setModified = function(req, res, value) {
 
@@ -10337,7 +10353,7 @@ Controller.prototype.cookie = function(name, value, expires, options) {
 
 /**
  * Clears uploaded files
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.clear = function() {
 	var self = this;
@@ -10365,7 +10381,7 @@ Controller.prototype.translate = function(language, text) {
  * @param {String Array} names Middleware name.
  * @param {Object} options Custom options for middleware.
  * @param {Function} callback
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.middleware = function(names, options, callback) {
 
@@ -10406,7 +10422,7 @@ Controller.prototype.middleware = function(names, options, callback) {
  * @param {String} url
  * @param {Object} headers Optional, custom headers.
  * @param {Function(err)} callback Optional.
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.pipe = function(url, headers, callback) {
 
@@ -10504,7 +10520,7 @@ Controller.prototype.date = function(type, d1, d2) {
 	Set response header
 	@name {String}
 	@value {String}
-	return {FrameworkController}
+	return {Controller}
 */
 Controller.prototype.header = function(name, value) {
 	var self = this;
@@ -10564,7 +10580,7 @@ Controller.prototype.invalid = function() {
 /**
  * Registers a new problem
  * @param {String} message
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.problem = function(message) {
 	var self = this;
@@ -10575,7 +10591,7 @@ Controller.prototype.problem = function(message) {
 /**
  * Registers a new change
  * @param {String} message
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.change = function(message) {
 	var self = this;
@@ -10586,7 +10602,7 @@ Controller.prototype.change = function(message) {
 /**
  * Trace
  * @param {String} message
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.trace = function(message) {
 	var self = this;
@@ -10660,7 +10676,7 @@ Controller.prototype.transfer = function(url, flags) {
 	Cancel execute controller function
 	Note: you can cancel controller function execute in on('controller') or controller.request();
 
-	return {FrameworkController}
+	return {Controller}
 */
 Controller.prototype.cancel = function() {
 	var self = this;
@@ -10671,7 +10687,7 @@ Controller.prototype.cancel = function() {
 /*
 	Log
 	@arguments {Object array}
-	return {FrameworkController};
+	return {Controller};
 */
 Controller.prototype.log = function() {
 	var self = this;
@@ -10688,7 +10704,7 @@ Controller.prototype.logger = function() {
 /*
 	META Tags for views
 	@arguments {String array}
-	return {FrameworkController};
+	return {Controller};
 */
 Controller.prototype.meta = function() {
 	var self = this;
@@ -10942,7 +10958,7 @@ Controller.prototype.module = function(name) {
 /**
  * Layout setter
  * @param {String} name
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.layout = function(name) {
 	var self = this;
@@ -10953,7 +10969,7 @@ Controller.prototype.layout = function(name) {
 /**
  * Theme setter
  * @param {String} name
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.theme = function(name) {
 	var self = this;
@@ -11051,7 +11067,7 @@ Controller.prototype.notModified = function(compare, strict) {
 	if @value === {String} set ETag
 	if @value === {Date} set LastModified
 
-	return {FrameworkController};
+	return {Controller};
 */
 Controller.prototype.setModified = function(value) {
 	var self = this;
@@ -11063,7 +11079,7 @@ Controller.prototype.setModified = function(value) {
 	Set Expires header
 	@date {Date}
 
-	return {FrameworkController};
+	return {Controller};
 */
 Controller.prototype.setExpires = function(date) {
 	var self = this;
@@ -12083,7 +12099,7 @@ Controller.prototype.helper = function(name) {
  * @param {Object} headers Custom headers, optional.
  * @param {Boolean} beautify Beautify JSON.
  * @param {Function(key, value)} replacer JSON replacer.
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	var self = this;
@@ -12204,7 +12220,7 @@ Controller.prototype.callback = function(viewName) {
 
 /**
  * Set custom response
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.custom = function() {
 
@@ -12222,7 +12238,7 @@ Controller.prototype.custom = function() {
 /*
 	Manul clear request data
 	@enable {Boolean} :: enable manual clear - controller.clear()
-	return {FrameworkController}
+	return {Controller}
 */
 Controller.prototype.noClear = function(enable) {
 	var self = this;
@@ -12235,7 +12251,7 @@ Controller.prototype.noClear = function(enable) {
  * @param {String} contentBody
  * @param {String} contentType
  * @param {Object} headers Custom headers, optional.
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.content = function(contentBody, contentType, headers) {
 
@@ -12265,7 +12281,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 	Response plain text
 	@contentBody {String}
 	@headers {Object} :: optional
-	return {FrameworkController};
+	return {Controller};
 */
 Controller.prototype.plain = function(contentBody, headers) {
 	var self = this;
@@ -12302,7 +12318,7 @@ Controller.prototype.plain = function(contentBody, headers) {
 /*
 	Response empty content
 	@headers {Object} :: optional
-	return {FrameworkController};
+	return {Controller};
 */
 Controller.prototype.empty = function(headers) {
 	var self = this;
@@ -12344,7 +12360,7 @@ Controller.prototype.destroy = function(problem) {
  * @param {String} download Optional, a download name.
  * @param {Object} headers Optional, additional headers.
  * @param {Function} done Optinoal, callback.
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.file = function(filename, download, headers, done) {
 	var self = this;
@@ -12371,7 +12387,7 @@ Controller.prototype.file = function(filename, download, headers, done) {
  * @param {Function(image)} fnProcess
  * @param {Object} headers Optional, additional headers.
  * @param {Function} done Optional, callback.
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.image = function(filename, fnProcess, headers, done) {
 	var self = this;
@@ -12401,7 +12417,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, done) {
  * @param {String} download Optional, a download name.
  * @param {Object} headers Optional, additional headers.
  * @param {Function} done Optinoal, callback.
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.stream = function(contentType, stream, download, headers, done, nocompress) {
 	var self = this;
@@ -12420,189 +12436,64 @@ Controller.prototype.stream = function(contentType, stream, download, headers, d
 /**
  * Throw 401 - Bad request.
  * @param  {String} problem Description of problem (optional)
- * @return {FrameworkController}
+ * @return {Controller}
  */
-Controller.prototype.throw400 = function(problem) {
-	return this.view400(problem);
-};
-
-/*
-	Response 400
-	return {FrameworkController};
-*/
-Controller.prototype.view400 = function(problem) {
-	var self = this;
-
-	if (problem && !problem.items)
-		self.problem(problem);
-
-	if (self.res.success || self.res.headersSent || !self.isConnected)
-		return self;
-
-	self.req.path = EMPTYARRAY;
-	self.subscribe.success();
-	self.subscribe.route = framework.lookup(self.req, '#400');
-	self.subscribe.exception = problem;
-	self.subscribe.execute(400, true);
-	return self;
+Controller.prototype.throw400 = Controller.prototype.view400 = function(problem) {
+	return controller_error_status(this, 400, problem);
 };
 
 /**
  * Throw 401 - Unauthorized.
  * @param  {String} problem Description of problem (optional)
- * @return {FrameworkController}
+ * @return {Controller}
  */
-Controller.prototype.throw401 = function(problem) {
-	return this.view401(problem);
-};
-
-/*
-	Response 401
-	return {FrameworkController};
-*/
-Controller.prototype.view401 = function(problem) {
-	var self = this;
-
-	if (problem)
-		self.problem(problem);
-
-	if (self.res.success || self.res.headersSent || !self.isConnected)
-		return self;
-
-	self.req.path = EMPTYARRAY;
-	self.subscribe.success();
-	self.subscribe.route = framework.lookup(self.req, '#401');
-	self.subscribe.exception = problem;
-	self.subscribe.execute(401, true);
-	return self;
+Controller.prototype.throw401 = Controller.prototype.view401 = function(problem) {
+	return controller_error_status(this, 401, problem);
 };
 
 /**
  * Throw 403 - Forbidden.
  * @param  {String} problem Description of problem (optional)
- * @return {FrameworkController}
+ * @return {Controller}
  */
-Controller.prototype.throw403 = function(problem) {
-	return this.view403(problem);
-};
-
-/*
-	Response 403
-	return {FrameworkController};
-*/
-Controller.prototype.view403 = function(problem) {
-	var self = this;
-
-	if (problem)
-		self.problem(problem);
-
-	if (self.res.success || self.res.headersSent || !self.isConnected)
-		return self;
-
-	self.req.path = EMPTYARRAY;
-	self.subscribe.success();
-	self.subscribe.route = framework.lookup(self.req, '#403');
-	self.subscribe.exception = problem;
-	self.subscribe.execute(403, true);
-	return self;
+Controller.prototype.throw403 = Controller.prototype.view403 = function(problem) {
+	return controller_error_status(this, 403, problem);
 };
 
 /**
  * Throw 404 - Not found.
  * @param  {String} problem Description of problem (optional)
- * @return {FrameworkController}
+ * @return {Controller}
  */
-Controller.prototype.throw404 = function(problem) {
-	return this.view404(problem);
-};
-/*
-	Response 404
-	return {FrameworkController};
-*/
-Controller.prototype.view404 = function(problem) {
-	var self = this;
-
-	if (problem)
-		self.problem(problem);
-
-	if (self.res.success || self.res.headersSent || !self.isConnected)
-		return self;
-
-	self.req.path = EMPTYARRAY;
-	self.subscribe.success();
-	self.subscribe.route = framework.lookup(self.req, '#404');
-	self.subscribe.exception = problem;
-	self.subscribe.execute(404, true);
-	return self;
+Controller.prototype.throw404 = Controller.prototype.view404 = function(problem) {
+	return controller_error_status(this, 404, problem);
 };
 
-/*
-	Response 500
-	@error {String}
-	return {FrameworkController};
-*/
-Controller.prototype.view500 = function(error) {
+/**
+ * Throw 500 - Internal Server Error.
+ * @param {Error} error
+ * @return {Controller}
+ */
+Controller.prototype.throw500 = Controller.prototype.view500 = function(error) {
 	var self = this;
-
 	framework.error(typeof(error) === 'string' ? new Error(error) : error, self.name, self.req.uri);
-
-	if (self.res.success || self.res.headersSent || !self.isConnected)
-		return self;
-
-	self.req.path = EMPTYARRAY;
-	self.subscribe.exception = error;
-	self.subscribe.success();
-	self.subscribe.route = framework.lookup(self.req, '#500');
-	self.subscribe.exception = error;
-	self.subscribe.execute(500, true);
-	return self;
-};
-
-/**
- * Throw 500 - Internal Server Error
- * @param  {Error} error
- * @return {FrameworkController}
- */
-Controller.prototype.throw500 = function(error) {
-	return this.view500(error);
+	return controller_error_status(self, 500, error);
 };
 
 /**
  * Throw 501 - Not implemented
  * @param  {String} problem Description of the problem (optional)
- * @return {FrameworkController}
+ * @return {Controller}
  */
-Controller.prototype.view501 = function(problem) {
-	var self = this;
-
-	if (problem)
-		self.problem(problem);
-
-	if (self.res.success || self.res.headersSent || !self.isConnected)
-		return self;
-
-	self.req.path = EMPTYARRAY;
-	self.subscribe.success();
-	self.subscribe.route = framework.lookup(self.req, '#501');
-	self.subscribe.exception = problem;
-	self.subscribe.execute(501, true);
-	return self;
-};
-
-/**
- * Throw 501 - Not implemented
- * @param  {String} problem Description of the problem (optional)
- * @return {FrameworkController}
- */
-Controller.prototype.throw501 = function(problem) {
-	return this.view501(problem);
+Controller.prototype.throw501 = Controller.prototype.view501 = function(problem) {
+	return controller_error_status(this, 501, problem);
 };
 
 /*
 	Response redirect
 	@url {String}
 	@permanent {Boolean} :: optional default false
-	return {FrameworkController};
+	return {Controller};
 */
 Controller.prototype.redirect = function(url, permanent) {
 	var self = this;
@@ -12633,7 +12524,7 @@ Controller.prototype.redirect = function(url, permanent) {
  * @param {String} type Transformation type: `binary`, `utf8`, `ascii`.
  * @param {String} download Optional, download name.
  * @param {Object} headers Optional, additional headers.
- * @return {FrameworkController}
+ * @return {Controller}
  */
 Controller.prototype.binary = function(buffer, contentType, type, download, headers) {
 	var self = this;
@@ -12688,7 +12579,7 @@ Controller.prototype.baa = function(label) {
 	@eventname {String} :: optional
 	@id {String} :: optional
 	@retry {Number} :: optional, reconnection in milliseconds
-	return {FrameworkController};
+	return {Controller};
 */
 Controller.prototype.sse = function(data, eventname, id, retry) {
 
@@ -12698,13 +12589,13 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 	if (!self.isConnected)
 		return self;
 
-	if (self.type === 0 && res.success)
+	if (!self.type && res.success)
 		throw new Error('Response was sent.');
 
 	if (self.type > 0 && self.type !== 1)
 		throw new Error('Response was used.');
 
-	if (self.type === 0) {
+	if (!self.type) {
 
 		self.type = 1;
 
@@ -12740,15 +12631,14 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 
 	res.write(builder);
 	framework.stats.response.sse++;
-
 	return self;
 };
 
-/*
-	Close a response
-	@end {Boolean} :: end response? - default true
-	return {FrameworkController}
-*/
+/**
+ * Close a response
+ * @param {Boolean} end
+ * @return {Controller}
+ */
 Controller.prototype.close = function(end) {
 	var self = this;
 
@@ -12773,16 +12663,17 @@ Controller.prototype.close = function(end) {
 	}
 
 	self.isConnected = false;
-	if (!self.res.success) {
 
-		self.res.success = true;
+	if (self.res.success)
+		return self;
 
-		framework._request_stats(false, false);
-		framework.emit('request-end', self.req, self.res);
+	self.res.success = true;
 
-		if (end)
-			self.res.end();
-	}
+	framework._request_stats(false, false);
+	framework.emit('request-end', self.req, self.res);
+
+	if (end)
+		self.res.end();
 
 	return self;
 };
@@ -13006,7 +12897,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	@disabled {Boolean} :: disabled for debug mode
 	@fnTo {Function} :: if cache not exist
 	@fnFrom {Function} :: optional, if cache is exist
-	return {FrameworkController}
+	return {Controller}
 */
 Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
