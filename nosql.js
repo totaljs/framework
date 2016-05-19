@@ -367,7 +367,6 @@ Database.prototype.$update = function() {
 			var doc = json;
 
 			if (output) {
-
 				if (item.keys) {
 					for (var j = 0, jl = item.keys.length; j < jl; j++) {
 						var val = item.doc[item.keys[j]];
@@ -378,13 +377,12 @@ Database.prototype.$update = function() {
 					}
 				} else
 					doc = typeof(item.doc) === 'function' ? item.doc(doc) : item.doc;
-
 				item.count++;
 				change = true;
 			}
-
-			writer.write(JSON.stringify(doc) + NEWLINE);
 		}
+
+		writer.write(JSON.stringify(doc) + NEWLINE);
 	}));
 
 	CLEANUP(writer, function() {
@@ -684,6 +682,7 @@ Database.prototype.$remove = function() {
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var json = JSON.parse(value.trim());
+		var is = false;
 		for (var i = 0; i < length; i++) {
 
 			var item = filter[i];
