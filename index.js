@@ -343,18 +343,20 @@ global.CLEANUP = function(stream, callback) {
 
 	var fn = function() {
 		FINISHED(stream, function() {
-			if (callback)
-				callback();
 			DESTROY(stream);
+			if (callback) {
+				callback();
+				callback = null;
+			}
 		});
 	};
+
+	stream.on('error', fn);
 
 	if (stream.readable)
 		stream.on('end', fn);
 	else
 		stream.on('finish', fn);
-
-	stream.on('error', fn);
 };
 
 global.SUCCESS = function(success, value) {
