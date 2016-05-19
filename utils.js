@@ -1631,7 +1631,7 @@ exports.join = function() {
 		path.push(current);
 	}
 
-	var path = path.join('/');
+	path = path.join('/');
 	return !isWindows ? path : path.indexOf(':') > -1 ? path.substring(1) : path;
 };
 
