@@ -446,7 +446,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-34';
+	this.version_header = '2.0.0-35';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -2034,6 +2034,12 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 		if (flag === 'raw') {
 			isBINARY = false;
 			isJSON = false;
+		}
+
+
+		if (flag[0] === '@' || flag[0] === '!') {
+			tmp.push(flag);
+			continue;
 		}
 
 		if (flag === 'json' || flag === 'binary' || flag === 'raw')
@@ -8790,13 +8796,9 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 		}
 
 		if (route.flags && route.flags.length) {
-
-			// var result = framework_internal.routeCompareFlags(req.flags, route.flags, noLoggedUnlogged ? true : route.isMEMBER);
 			var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
-
 			if (result === -1)
 				req.$isAuthorized = false;
-
 			if (result < 1)
 				continue;
 		}
