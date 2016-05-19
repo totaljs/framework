@@ -10218,14 +10218,6 @@ Controller.prototype = {
 		this.req.user = value;
 	},
 
-	get global() {
-		return framework.global;
-	},
-
-	set global(value) {
-		framework.global = value;
-	},
-
 	get mobile() {
 		return this.req.mobile;
 	},
