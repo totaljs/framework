@@ -28,6 +28,7 @@
 - added: `Pagination.json(max, format)` returns `String`
 - added: `SchemaBuilderEntity.fields` and it contains all field names in array.
 - added: `Mail.send(smtp, options, messages, [callback])` messages must be array
+- added: `Mail.send2(messages, [callback])` sends messages according to the framework configuration
 - added: `Mail.try(smtp, options, callback)` tries to open a SMTP
 - added: `F.datetime` contains current datetime and each 1 minute is the value increased
 - added: `F.stats.other.restart` contains a new property with count of restarting

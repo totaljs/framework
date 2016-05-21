@@ -471,6 +471,22 @@ Mailer.prototype.try = function(smtp, options, callback) {
 	return this.send(smtp, options, undefined, callback);
 };
 
+Mailer.prototype.send2 = function(messages, callback) {
+
+	var opt = framework.temporary['mail-settings'];
+
+	if (!opt) {
+		var config = framework.config['mail.smtp.options'];
+		if (config && config.isJSON())
+			opt = JSON.parse(config);
+		if (!opt)
+			opt = {};
+		framework.temporary['mail-settings'] = opt;
+	}
+
+	return this.send(framework.config['mail.smtp'], opt, messages, callback);
+};
+
 Mailer.prototype.send = function(smtp, options, messages, callback) {
 
 	if (options instanceof Array) {
