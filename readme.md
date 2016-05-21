@@ -32,7 +32,7 @@ $ npm install total.js
 
 | Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
 |------|------|------|------|------|
-| [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) | [![Maxima Solutions](https://www.totaljs.com/img/logo-maxima.png)](https://maxima-solutions.com/) |
+| [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) | [![Weida Web](https://www.totaljs.com/img/logo-weidaweb.png)](https://www.weidaweb.com/) |
 
 ## Social networks
 
