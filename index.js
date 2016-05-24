@@ -4012,7 +4012,7 @@ Framework.prototype.log = function() {
 	}
 
 	self.path.verify('logs');
-	fs.appendFile(utils.combine(self.config['directory-logs'], filename + '.log'), time + ' | ' + str + '\n');
+	framework_utils.queue('framework.log', 5, (next) => fs.appendFile(framework_utils.combine(self.config['directory-logs'], filename + '.log'), time + ' | ' + str + '\n', next));
 	return self;
 };
 
@@ -4035,7 +4035,7 @@ Framework.prototype.logger = function() {
 	}
 
 	self.path.verify('logs');
-	fs.appendFile(utils.combine(self.config['directory-logs'], arguments[0] + '.log'), dt + ' | ' + str + '\n');
+	framework_utils.queue('framework.logger', 5, (next) => fs.appendFile(utils.combine(self.config['directory-logs'], arguments[0] + '.log'), dt + ' | ' + str + '\n', next));
 	return self;
 };
 

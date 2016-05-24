@@ -58,6 +58,7 @@
 - updated: `Date.add(number)` supports number increase/decrease in milliseconds
 - updated: `U.send(name, stream, url, callback, [cookies], [headers], [method], [timeout])` supports cookies and timeout
 
+- fixed: Too many open files with `F.log()` and `F.logger()`
 - fixed: `String.isJSON()` the problem with `\n` character
 - fixed: `FrameworkImage.save()` problem with streams
 - fixed: `CLEANUP(stream)` method
