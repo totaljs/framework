@@ -1868,35 +1868,13 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
 	return error;
 };
 
-/*
-	Combine path
-	@arguments {String array}
-	return {String}
-*/
+/**
+ * Combine paths
+ * @return {String}
+ */
 exports.combine = function() {
 
-	var p;
-
-	if (arguments[0][0] === '~') {
-		arguments[0] = arguments[0].substring(1);
-		p = '';
-
-		for (var i = 0, length = arguments.length; i < length; i++) {
-			var v = arguments[i];
-			if (!v)
-				continue;
-			if (v[0] === '/')
-				v = v.substring(1);
-			p += (p[p.length - 1] !== '/' ? '/' : '') + v;
-		}
-
-		if (isWindows)
-			p = p.substring(1);
-
-		return exports.$normalize(p);
-	}
-
-	p = framework.directory;
+	var p = framework.directory;
 
 	for (var i = 0, length = arguments.length; i < length; i++) {
 		var v = arguments[i];
@@ -1904,8 +1882,17 @@ exports.combine = function() {
 			continue;
 		if (v[0] === '/')
 			v = v.substring(1);
-		p += (p[p.length - 1] !== '/' ? '/' : '') + v;
+
+		if (v[0] === '~')
+			p = v.substring(1);
+		else
+			p += (p[p.length - 1] !== '/' ? '/' : '') + v;
 	}
+
+	/*
+	if (isWindows)
+		p = p.substring(1);
+	*/
 
 	return exports.$normalize(p);
 };
