@@ -2482,7 +2482,16 @@ Framework.prototype.$load = function(types, targetdirectory) {
 	targetdirectory = '~' + targetdirectory;
 
 	function listing(directory, level, output, extension, isTheme) {
+		
+		var arrdirectory = directory.split('/');
+		arrdirectory.forEach(function(value, index){
+			if(value == '..'){
+				arrdirectory.splice(index - 1 , 2);
+			}
+		});
 
+		directory = arrdirectory.join('/');
+		
 		if (!existsSync(dir))
 			return;
 
@@ -2516,7 +2525,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			if (ext !== extension)
 				return;
 			var name = (level ? framework_utils.$normalize(directory).replace(dir, '') + '/' : '') + o.substring(0, o.length - ext.length);
-			output.push({ name: name[0] === '/' ? name.substring(1) : name, filename: path.join(dir, name) + extension });
+			output.push({ name: name[0] === '/' ? name.substring(1) : name, filename: path.join(dir, name.split('/').last()) + extension });
 		});
 	}
 
