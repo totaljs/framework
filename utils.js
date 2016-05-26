@@ -1889,7 +1889,13 @@ exports.combine = function() {
 				v = v.substring(1);
 			p += (p[p.length - 1] !== '/' ? '/' : '') + v;
 		}
-
+		var temp = p.split('/');
+		temp.forEach(function(value, index){
+			if(value == '..'){
+				temp.splice(index - 1 , 2);
+			}
+		});
+		p = temp.join('/')
 		if (isWindows)
 			p = p.substring(1);
 
