@@ -5107,6 +5107,7 @@ exports.async = function(fn, isApply) {
 						g = generator.throw(err);
 						break;
 				}
+
 			} catch (e) {
 
 				if (!complete)
@@ -5119,11 +5120,7 @@ exports.async = function(fn, isApply) {
 						complete.view500(e);
 					return;
 				}
-
-				setImmediate(function() {
-					complete(e);
-				});
-
+				setImmediate(() => complete(e));
 				return;
 			}
 
@@ -5133,20 +5130,26 @@ exports.async = function(fn, isApply) {
 				return;
 			}
 
-			if (typeof(g.value) !== 'function') {
+			var promise = g.value instanceof Promise;
+
+			if (typeof(g.value) !== 'function' && !promise) {
 				next.call(self, null, g.value);
 				return;
 			}
 
 			try
 			{
+				if (promise) {
+					g.value.then((value) => next.call(self, null, value));
+					return;
+				}
+
 				g.value.call(self, function() {
 					next.apply(self, arguments);
 				});
+
 			} catch (e) {
-				setImmediate(function() {
-					next.call(self, e);
-				});
+				setImmediate(() => next.call(self, e));
 			}
 		}
 
