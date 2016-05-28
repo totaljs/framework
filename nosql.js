@@ -1179,7 +1179,6 @@ Binary.prototype.read = function(id, callback) {
 		id = self.db.name + '#' + id;
 
 	var filename = framework_utils.join(self.directory, id + EXTENSION_BINARY);
-
 	var stream = Fs.createReadStream(filename, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
 
 	stream.on('error', err => callback(err));
