@@ -55,6 +55,7 @@ const REG_ROUTESTATIC = /^(\/\/|https\:|http\:)+/g;
 const REG_EMPTY = /\s/g;
 const REG_SANITIZE_BACKSLASH = /\/\//g;
 const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
+const REG_SCRIPTCONTENT = /\<|\>|;/g;
 const REQUEST_PROXY_FLAGS = ['post', 'json'];
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
@@ -2737,12 +2738,16 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				self.install(type, name, data, options, callback, declaration);
 
 			});
-
 			return self;
-		} else if (type !== 'package') {
-			// check filesystem
-			if (declaration.indexOf(';') === -1 && existsSync(declaration))
+		} else {
+
+			if (declaration[0] === '~')
+				declaration = declaration.substring(1);
+			if (type !== 'package' && !REG_SCRIPTCONTENT.test(declaration)) {
+				if (!existsSync(declaration))
+					throw new Error('The ' + type + ': ' + declaration + ' doesn\'t exist.');
 				useRequired = true;
+			}
 		}
 	}
 
@@ -2828,6 +2833,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		backup.restore(declaration, dir, function() {
 
 			var filename = path.join(dir, 'index.js');
+			if (!existsSync(filename))
+				return;
+
 			self.install('module', id, filename, options, function(err) {
 
 				setTimeout(function() {
@@ -2839,7 +2847,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					callback(err);
 
 			}, internal, useRequired, true);
-
 		});
 
 		return self;
@@ -3111,7 +3118,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		var _ID = _controller = 'TMP' + Utils.random(10000);
 
 		try {
-
 			if (useRequired) {
 				obj = require(declaration);
 				(function(name) {
