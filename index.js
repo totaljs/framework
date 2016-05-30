@@ -65,7 +65,6 @@ Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
 Object.freeze(EMPTYREQUEST);
 
-var POWEREDBY = '';
 var RANGE = { start: 0, end: 0 };
 var HEADERS = {};
 var SUCCESSHELPER = { success: true };
@@ -449,7 +448,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-39';
+	this.version_header = '2.0.0-40';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -5065,8 +5064,6 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 	if (headers)
 		utils.extend(h, headers, true);
 
-	h['X-Powered-By'] = POWEREDBY;
-
 	var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 	var connection = options.protocol === 'https:' ? require('https') : http;
 	var supportsGZIP = (req.headers['accept-encoding'] || '').lastIndexOf('gzip') !== -1;
@@ -6454,8 +6451,6 @@ Framework.prototype.listener = function(req, res) {
 		return;
 	}
 
-	res.setHeader('X-Powered-By', POWEREDBY);
-
 	if (self._length_wait)
 		return self.response503(req, res);
 
@@ -7375,7 +7370,6 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 	}
 
 	headers['X-Assertion-Testing'] = '1';
-	headers['X-Powered-By'] = POWEREDBY;
 
 	if (cookies) {
 		var builder = [];
@@ -8384,7 +8378,6 @@ Framework.prototype._configure = function(arr, rewrite) {
 	};
 
 	if (!arr instanceof Array || !arr.length) {
-		POWEREDBY = 'total.js v' + self.version_header;
 		done();
 		return self;
 	}
@@ -8496,7 +8489,6 @@ Framework.prototype._configure = function(arr, rewrite) {
 		});
 	});
 
-	POWEREDBY = 'total.js v' + self.version_header;
 	done();
 	self.emit('configure', self.config);
 	return self;
@@ -10465,13 +10457,10 @@ Controller.prototype.decrypt = function() {
 	return framework.decrypt.apply(framework, arguments);
 };
 
-/*
-	Hash value
-	@type {String} :: sha1, sha256, sha512, md5
-	@value {Object}
-	@salt {String or Boolean} :: custom salt {String} or secret as salt {undefined or Boolean}
-	return {String}
-*/
+/**
+ * Creates a hash (alias for F.hash())
+ * @return {Controller}
+ */
 Controller.prototype.hash = function() {
 	return framework.hash.apply(framework, arguments);
 };
@@ -10510,26 +10499,25 @@ Controller.prototype.date = function(type, d1, d2) {
 	}
 
 	return true;
-
 };
 
-/*
-	Set response header
-	@name {String}
-	@value {String}
-	return {Controller}
-*/
+/**
+ * Sets a response header
+ * @param {String} name
+ * @param {String} value
+ * @return {Controller}
+ */
 Controller.prototype.header = function(name, value) {
 	var self = this;
 	self.res.setHeader(name, value);
 	return self;
 };
 
-/*
-	Get host name
-	@path {String} :: optional
-	return {String}
-*/
+/**
+ * Gets a hostname
+ * @param {String} path
+ * @return {Controller}
+ */
 Controller.prototype.host = function(path) {
 	var self = this;
 	return self.req.hostname(path);
@@ -10538,6 +10526,10 @@ Controller.prototype.host = function(path) {
 Controller.prototype.hostname = function(path) {
 	var self = this;
 	return self.req.hostname(path);
+};
+
+Controller.prototype.resource = function(name, key) {
+	return framework.resource(name, key);
 };
 
 /**
@@ -10669,23 +10661,16 @@ Controller.prototype.transfer = function(url, flags) {
 
 };
 
-/*
-	Cancel execute controller function
-	Note: you can cancel controller function execute in on('controller') or controller.request();
-
-	return {Controller}
-*/
+/**
+ * Cancels controller executions
+ * @return {Controller}
+ */
 Controller.prototype.cancel = function() {
 	var self = this;
 	self.isCanceled = true;
 	return self;
 };
 
-/*
-	Log
-	@arguments {Object array}
-	return {Controller};
-*/
 Controller.prototype.log = function() {
 	var self = this;
 	framework.log.apply(framework, arguments);
@@ -10833,7 +10818,6 @@ Controller.prototype.description = function(value) {
 	return self;
 };
 
-
 Controller.prototype.keywords = function(value) {
 	var self = this;
 	self.$keywords(value);
@@ -10943,11 +10927,11 @@ Controller.prototype.$sitemap = function(name) {
 	return '';
 };
 
-/*
-	Module caller
-	@name {String}
-	return {Module};
-*/
+/**
+ * Gets a module instance
+ * @param {String} name
+ * @return {Object}
+ */
 Controller.prototype.module = function(name) {
 	return framework.module(name);
 };
@@ -10985,23 +10969,13 @@ Controller.prototype.$layout = function(name) {
 	return '';
 };
 
-/*
-	Get a model
-	@name {String} :: name of controller
-	return {Object};
-*/
+/**
+ * Gets a model instance
+ * @param {String} name
+ * @return {Object}
+ */
 Controller.prototype.model = function(name) {
 	return framework.model(name);
-};
-
-/*
-	Controller models reader
-	@name {String} :: name of controller
-	return {Object};
-*/
-Controller.prototype.models = function(name) {
-	var self = this;
-	return (self.controllers[name || self.name] || {}).models;
 };
 
 /**
@@ -11030,16 +11004,6 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
 	var body = self.view(view, model, true);
 	self.layoutName = layoutName;
 	return framework.onMail(address, subject, body, callback);
-};
-
-/*
-	Controller functions reader
-	@name {String} :: name of controller
-	return {Object};
-*/
-Controller.prototype.functions = function(name) {
-	var self = this;
-	return (self.controllers[name || self.name] || {}).functions;
 };
 
 /*
@@ -11072,16 +11036,14 @@ Controller.prototype.setModified = function(value) {
 	return self;
 };
 
-/*
-	Set Expires header
-	@date {Date}
-
-	return {Controller};
-*/
+/**
+ * Sets expire headers
+ * @param {Date} date
+ */
 Controller.prototype.setExpires = function(date) {
 	var self = this;
 
-	if (date === undefined)
+	if (!date)
 		return self;
 
 	self.res.setHeader('Expires', date.toUTCString());
@@ -11160,6 +11122,14 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
 	return value;
 };
 
+/**
+ * Adds a place into the places.
+ * @param {String} name A place name.
+ * @param {String} arg1 A content 1, optional
+ * @param {String} arg2 A content 2, optional
+ * @param {String} argN A content 2, optional
+ * @return {String/Controller} String is returned when the method contains only `name` argument
+ */
 Controller.prototype.place = function(name) {
 
 	var self = this;
@@ -11188,6 +11158,13 @@ Controller.prototype.place = function(name) {
 	return self;
 };
 
+/**
+ * Adds a content into the section
+ * @param {String} name A section name.
+ * @param {String} value A content.
+ * @param {Boolean} replace Optional, default `false` otherwise concats contents.
+ * @return {String/Controller} String is returned when the method contains only `name` argument
+ */
 Controller.prototype.section = function(name, value, replace) {
 
 	var self = this;
@@ -12047,44 +12024,29 @@ Controller.prototype.routeStatic = function(name) {
 };
 
 /**
- * Read resource
- * @param {String} name Optional, resource file name. Default: "default".
- * @param {String} key
+ * Creates a string from the view
+ * @param {String} name A view name without `.html` extension.
+ * @param {Object} model A model, optional.
  * @return {String}
  */
-Controller.prototype.resource = function(name, key) {
-	return framework.resource(name, key);
-};
-
-/*
-	Render template to string
-	@name {String} :: filename
-	@model {Object}
-	@nameEmpty {String} :: filename for empty Contents
-	@repository {Object}
-	@cb {Function} :: callback(string)
-	return {String}
-*/
 Controller.prototype.template = function(name, model) {
 	return this.view(name, model, true);
 };
 
-/*
-	Render component to string
-	@name {String}
-	return {String}
-*/
+/**
+ * Renders a custom helper to a string
+ * @param {String} name A helper name.
+ * @return {String}
+ */
 Controller.prototype.helper = function(name) {
 	var self = this;
-	var helper = framework.helpers[name] || null;
-
+	var helper = framework.helpers[name];
 	if (!helper)
 		return '';
 
-	var length = arguments.length;
-	var params = [];
 
-	for (var i = 1; i < length; i++)
+	var params = [];
+	for (var i = 1; i < arguments.length; i++)
 		params.push(arguments[i]);
 
 	return helper.apply(self, params);
@@ -12141,6 +12103,15 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	return self;
 };
 
+/**
+ * Responds with JSONP
+ * @param {String} name A method name.
+ * @param {Object} obj Object to serialize.
+ * @param {Object} headers A custom headers.
+ * @param {Boolean} beautify Should be the JSON prettified? Optional, default `false`
+ * @param {Function} replacer Optional, the JSON replacer.
+ * @return {Controller}
+ */
 Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 	var self = this;
 
@@ -12232,11 +12203,11 @@ Controller.prototype.custom = function() {
 	return true;
 };
 
-/*
-	Manul clear request data
-	@enable {Boolean} :: enable manual clear - controller.clear()
-	return {Controller}
-*/
+/**
+ * Prevents cleaning uploaded files (need to call `controller.clear()` manually).
+ * @param {Boolean} enable Optional, default `true`.
+ * @return {Controller}
+ */
 Controller.prototype.noClear = function(enable) {
 	var self = this;
 	self.req._manual = enable === undefined ? true : enable;
@@ -12274,13 +12245,13 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 	return self;
 };
 
-/*
-	Response plain text
-	@contentBody {String}
-	@headers {Object} :: optional
-	return {Controller};
-*/
-Controller.prototype.plain = function(contentBody, headers) {
+/**
+ * Responds with plain/text body
+ * @param {String} body A response body (object is serialized into the JSON automatically).
+ * @param {Boolean} headers A custom headers.
+ * @return {Controller}
+ */
+Controller.prototype.plain = function(body, headers) {
 	var self = this;
 
 	if (self.res.success || self.res.headersSent || !self.isConnected)
@@ -12294,29 +12265,29 @@ Controller.prototype.plain = function(contentBody, headers) {
 		return self;
 	}
 
-	var type = typeof(contentBody);
+	var type = typeof(body);
 
-	if (contentBody === undefined)
-		contentBody = '';
+	if (body === undefined)
+		body = '';
 	else if (type === 'object')
-		contentBody = contentBody ? JSON.stringify(contentBody, null, 4) : '';
+		body = body ? JSON.stringify(body, null, 4) : '';
 	else
-		contentBody = contentBody ? contentBody.toString() : '';
+		body = body ? body.toString() : '';
 
 	self.subscribe.success();
-	framework.responseContent(self.req, self.res, self.status, contentBody, CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
+	framework.responseContent(self.req, self.res, self.status, body, CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
 	framework.stats.response.plain++;
 
 	if (self.precache)
-		self.precache(contentBody, CONTENTTYPE_TEXTPLAIN, headers);
+		self.precache(body, CONTENTTYPE_TEXTPLAIN, headers);
 	return self;
 };
 
-/*
-	Response empty content
-	@headers {Object} :: optional
-	return {Controller};
-*/
+/**
+ * Creates an empty response
+ * @param {Object/Number} headers A custom headers or a custom HTTP status.
+ * @return {Controller}
+ */
 Controller.prototype.empty = function(headers) {
 	var self = this;
 
@@ -12336,6 +12307,11 @@ Controller.prototype.empty = function(headers) {
 	return self;
 };
 
+/**
+ * Destroys a request (closes it)
+ * @param {String} problem Optional.
+ * @return {Controller}
+ */
 Controller.prototype.destroy = function(problem) {
 	var self = this;
 
@@ -12486,12 +12462,12 @@ Controller.prototype.throw501 = Controller.prototype.view501 = function(problem)
 	return controller_error_status(this, 501, problem);
 };
 
-/*
-	Response redirect
-	@url {String}
-	@permanent {Boolean} :: optional default false
-	return {Controller};
-*/
+/**
+ * Creates a redirect
+ * @param {String} url
+ * @param {Boolean} permanent Is permanent? Default: `false`
+ * @return {Controller}
+ */
 Controller.prototype.redirect = function(url, permanent) {
 	var self = this;
 
@@ -12502,7 +12478,6 @@ Controller.prototype.redirect = function(url, permanent) {
 		return self;
 
 	HEADERS.redirect.Location = url;
-
 	self.subscribe.success();
 	self.res.success = true;
 	self.res.writeHead(permanent ? 301 : 302, HEADERS.redirect);
@@ -12570,14 +12545,14 @@ Controller.prototype.baa = function(label) {
 	return null;
 };
 
-/*
-	Send data via [S]erver-[s]ent [e]vents
-	@data {String or Object}
-	@eventname {String} :: optional
-	@id {String} :: optional
-	@retry {Number} :: optional, reconnection in milliseconds
-	return {Controller};
-*/
+/**
+ * Sends server-sent event message
+ * @param {String/Object} data
+ * @param {String} eventname Optional, an event name.
+ * @param {String} id Optional, a custom ID.
+ * @param {Number} retry A reconnection timeout in milliseconds when is an unexpected problem.
+ * @return {Controller}
+ */
 Controller.prototype.sse = function(data, eventname, id, retry) {
 
 	var self = this;
@@ -12618,10 +12593,10 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 
 	builder += 'data: ' + data + newline;
 
-	if (id && id.toString())
+	if (id)
 		builder += 'id: ' + id + newline;
 
-	if (retry && retry > 0)
+	if (retry > 0)
 		builder += 'retry: ' + retry + newline;
 
 	builder += newline;
@@ -12675,59 +12650,48 @@ Controller.prototype.close = function(end) {
 	return self;
 };
 
-/*
-	Send proxy request
-	@url {String}
-	@obj {Object}
-	@fnCallback {Function} :: optional
-	@timeout {Number} :: optional
-	return {EventEmitter}
-*/
-Controller.prototype.proxy = function(url, obj, fnCallback, timeout) {
+/**
+ * Sends an object to another total.js application (POST + JSON)
+ * @param {String} url
+ * @param {Object} obj
+ * @param {Funciton(err, data, code, headers)} callback
+ * @param {Number} timeout Timeout, optional default 10 seconds.
+ * @return {EventEmitter}
+ */
+Controller.prototype.proxy = function(url, obj, callback, timeout) {
 
 	var self = this;
 	var tmp;
 
-	if (typeof(fnCallback) === 'number') {
+	if (typeof(callback) === 'number') {
 		tmp = timeout;
-		timeout = fnCallback;
-		fnCallback = tmp;
+		timeout = callback;
+		callback = tmp;
 	}
 
 	if (typeof(obj) === 'function') {
-		tmp = fnCallback;
-		fnCallback = obj;
+		tmp = callback;
+		callback = obj;
 		obj = tmp;
 	}
 
 	return framework_utils.request(url, REQUEST_PROXY_FLAGS, obj, function(error, data, code, headers) {
-		if (!fnCallback)
+		if (!callback)
 			return;
-		if ((headers['content-type'] || '').indexOf('application/json') !== -1)
+		if ((headers['content-type'] || '').lastIndexOf('/json') !== -1)
 			data = framework.onParseJSON(data);
-		fnCallback.call(self, error, data, code, headers);
+		callback.call(self, error, data, code, headers);
 	}, null, HEADERS['proxy'], ENCODING, timeout || 10000);
 };
 
-/*
-	Return database
-	@name {String}
-	return {NoSQL};
-*/
-Controller.prototype.database = function() {
-	if (typeof(framework.database) === 'object')
-		return framework.database;
-	return framework.database.apply(framework, arguments);
-};
-
-/*
-	Response view
-	@name {String}
-	@model {Object} :: optional
-	@headers {Object} :: optional
-	@isPartial {Boolean} :: optional
-	return {Controller or String}; string is returned when isPartial == true
-*/
+/**
+ * Renders view to response
+ * @param {String} name View name without `.html` extension.
+ * @param {Object} model A model, optional default: `undefined`.
+ * @param {Object} headers A custom headers, optional.
+ * @param {Boolean} isPartial When is `true` the method returns rendered HTML as `String`
+ * @return {Controller/String}
+ */
 Controller.prototype.view = function(name, model, headers, isPartial) {
 
 	var self = this;
@@ -12887,15 +12851,15 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	return self;
 };
 
-/*
-	Memorize a view (without layout) into the cache
-	@key {String} :: cache key
-	@expires {Date} :: expiration
-	@disabled {Boolean} :: disabled for debug mode
-	@fnTo {Function} :: if cache not exist
-	@fnFrom {Function} :: optional, if cache is exist
-	return {Controller}
-*/
+/**
+ * Creates a cache for the response without caching layout
+ * @param {String} key
+ * @param {String} expires Expiration, e.g. `1 minute`
+ * @param {Boolean} disabled Disables a caching, optinoal (e.g. for debug mode you can disable a cache), default: `false`
+ * @param {Function()} fnTo This method is executed when the content is prepared for the cache.
+ * @param {Function()} fnFrom This method is executed when the content is readed from the cache.
+ * @return {Controller}
+ */
 Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 
 	var self = this;
@@ -13008,8 +12972,8 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 // *********************************************************************************
 
 const NEWLINE = '\r\n';
-const SOCKET_RESPONSE = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\n\r\n';
-const SOCKET_RESPONSE_PROTOCOL = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nX-Powered-By: {0}\r\nSec-WebSocket-Accept: {1}\r\nSec-WebSocket-Protocol: {2}\r\n\r\n';
+const SOCKET_RESPONSE = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {0}\r\n\r\n';
+const SOCKET_RESPONSE_PROTOCOL = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {0}\r\nSec-WebSocket-Protocol: {1}\r\n\r\n';
 const SOCKET_RESPONSE_ERROR = 'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nX-WebSocket-Reject-Reason: 403 Forbidden\r\n\r\n';
 const SOCKET_HASH = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 const SOCKET_ALLOW_VERSION = [13];
@@ -13117,7 +13081,7 @@ WebSocket.prototype.date = function(type, d1, d2) {
 };
 
 /**
- * Send a message
+ * Sends a message
  * @param {String} message
  * @param {String Array or Function(id, client)} id
  * @param {String Array or Function(id, client)} blacklist
@@ -13188,7 +13152,7 @@ function websocket_valid_fn(id, client, fn) {
 }
 
 /**
- * Send a ping
+ * Sends a ping message
  * @return {WebSocket}
  */
 WebSocket.prototype.ping = function() {
@@ -13213,13 +13177,13 @@ WebSocket.prototype.ping = function() {
 	return self;
 };
 
-/*
-	Close connection
-	@id {String Array} :: optional, default null
-	@message {String} :: optional
-	@code {Number} :: optional, default 1000
-	return {WebSocket}
-*/
+/**
+ * Closes a connection
+ * @param {String Array} id Client id, optional, default `null`.
+ * @param {String} message A message for the browser.
+ * @param {Number} code Optional default 1000.
+ * @return {Websocket}
+ */
 WebSocket.prototype.close = function(id, message, code) {
 
 	var self = this;
@@ -13234,12 +13198,8 @@ WebSocket.prototype.close = function(id, message, code) {
 		id = null;
 	}
 
-	if (keys === null)
-		return self;
-
 	var length = keys.length;
-
-	if (length === 0)
+	if (!length)
 		return self;
 
 	if (!id || !id.length) {
@@ -13258,12 +13218,10 @@ WebSocket.prototype.close = function(id, message, code) {
 	for (var i = 0; i < length; i++) {
 
 		var _id = keys[i];
-
 		if (is && id.indexOf(_id) === -1)
 			continue;
 
 		var conn = self.connections[_id];
-
 		if (fn && !fn.call(self, _id, conn))
 			continue;
 
@@ -13283,63 +13241,58 @@ WebSocket.prototype.close = function(id, message, code) {
 WebSocket.prototype.error = function(err) {
 	var self = this;
 	var result = framework.error(typeof(err) === 'string' ? new Error(err) : err, self.name, self.path);
-
 	if (err === undefined)
 		return result;
-
 	return self;
 };
 
-/*
-	Problem
-	@message {String}
-	return {Framework}
-*/
+/**
+ * Creates a problem
+ * @param {String} message
+ * @return {WebSocket}
+ */
 WebSocket.prototype.problem = function(message) {
 	var self = this;
 	framework.problem(message, self.name, self.uri);
 	return self;
 };
 
-/*
-	Change
-	@message {String}
-	return {Framework}
-*/
+/**
+ * Creates a change
+ * @param {String} message
+ * @return {WebSocket}
+ */
 WebSocket.prototype.change = function(message) {
 	var self = this;
 	framework.change(message, self.name, self.uri, self.ip);
 	return self;
 };
 
-/*
-	All connections (forEach)
-	@fn {Function} :: function(client, index) {}
-	return {WebSocketClient};
-*/
+/**
+ * The method executes a provided function once per client.
+ * @param {Function(connection, index)} fn
+ * @return {WebSocket}
+ */
 WebSocket.prototype.all = function(fn) {
 
 	var self = this;
-
 	if (!self._keys)
 		return self;
 
-	var length = self._keys.length;
-
-	for (var i = 0; i < length; i++) {
+	for (var i = 0, length = self._keys.length; i < length; i++) {
 		var id = self._keys[i];
 		if (fn(self.connections[id], i))
-			break;
+			return self;
 	}
 
 	return self;
 };
 
-/*
-	Find a connection
-	@id {String or Function} :: function(client, id) {}
-	return {WebSocketClient}
-*/
+/**
+ * Finds a connection
+ * @param {String} id
+ * @return {WebSocketClient}
+ */
 WebSocket.prototype.find = function(id) {
 	var self = this;
 
@@ -13365,9 +13318,11 @@ WebSocket.prototype.find = function(id) {
 	return null;
 };
 
-/*
-	Destroy a websocket
-*/
+/**
+ * Destroyes a WebSocket controller
+ * @param {String} problem Optional.
+ * @return {WebSocket}
+ */
 WebSocket.prototype.destroy = function(problem) {
 	var self = this;
 
@@ -13386,37 +13341,43 @@ WebSocket.prototype.destroy = function(problem) {
 	return self;
 };
 
-/*
-	Send proxy request
-	@url {String}
-	@obj {Object}
-	@fnCallback {Function} :: optional
-	return {EvetEmitter}
-*/
-WebSocket.prototype.proxy = function(url, obj, fnCallback) {
+/**
+ * Sends an object to another total.js application (POST + JSON)
+ * @param {String} url
+ * @param {Object} obj
+ * @param {Funciton(err, data, code, headers)} callback
+ * @param {Number} timeout Timeout, optional default 10 seconds.
+ * @return {EventEmitter}
+ */
+WebSocket.prototype.proxy = function(url, obj, callback, timeout) {
 
 	var self = this;
 
+	if (typeof(callback) === 'number') {
+		tmp = timeout;
+		timeout = callback;
+		callback = tmp;
+	}
+
 	if (typeof(obj) === 'function') {
-		var tmp = fnCallback;
-		fnCallback = obj;
+		tmp = callback;
+		callback = obj;
 		obj = tmp;
 	}
 
 	return framework_utils.request(url, REQUEST_PROXY_FLAGS, obj, function(error, data, code, headers) {
-		if (!fnCallback)
+		if (!callback)
 			return;
-		if ((headers['content-type'] || '').indexOf('application/json') !== -1)
+		if ((headers['content-type'] || '').lastIndexOf('/json') !== -1)
 			data = framework.onParseJSON(data);
-		fnCallback.call(self, error, data, code, headers);
-	}, HEADERS['proxy']);
-
+		callback.call(self, error, data, code, headers);
+	}, null, HEADERS['proxy'], ENCODING, timeout || 10000);
 };
 
-/*
-	Internal function
-	return {WebSocket}
-*/
+/**
+ * Internal function
+ * @return {WebSocket}
+ */
 WebSocket.prototype._refresh = function() {
 	var self = this;
 
@@ -13430,42 +13391,42 @@ WebSocket.prototype._refresh = function() {
 	return self;
 };
 
-/*
-	Internal function
-	@id {String}
-	return {WebSocket}
-*/
+/**
+ * Internal function
+ * @param {String} id
+ * @return {WebSocket}
+ */
 WebSocket.prototype._remove = function(id) {
 	var self = this;
 	delete self.connections[id];
 	return self;
 };
 
-/*
-	Internal function
-	@client {WebSocketClient}
-	return {WebSocket}
-*/
+/**
+ * Internal function
+ * @param {WebSocketClient} client
+ * @return {WebSocket}
+ */
 WebSocket.prototype._add = function(client) {
 	var self = this;
 	self.connections[client._id] = client;
 	return self;
 };
 
-/*
-	Module caller
-	@name {String}
-	return {Module};
-*/
+/**
+ * Gets a module instance
+ * @param {String} name
+ * @return {Object}
+ */
 WebSocket.prototype.module = function(name) {
 	return framework.module(name);
 };
 
-/*
-	Get a model
-	@name {String} :: name of model
-	return {Object};
-*/
+/**
+ * Gets a model instance
+ * @param {String} name
+ * @return {Object}
+ */
 WebSocket.prototype.model = function(name) {
 	return framework.model(name);
 };
@@ -13491,44 +13452,25 @@ WebSocket.prototype.helper = function(name) {
 	return helper.apply(self, params);
 };
 
-/*
-	Controller functions reader
-	@name {String} :: name of controller
-	return {Object};
-*/
-WebSocket.prototype.functions = function(name) {
-	return (framework.controllers[name] || {}).functions;
-};
-
-/*
-	Return database
-	@name {String}
-	return {Database};
-*/
-WebSocket.prototype.database = function() {
-	if (typeof(framework.database) === 'object')
-		return framework.database;
-	return framework.database.apply(framework, arguments);
-};
-
-/*
-	Resource reader
-	@name {String} :: filename
-	@key {String}
-	return {String};
-*/
+/**
+ * A resource header
+ * @param {String} name A resource name.
+ * @param {String} key A resource key.
+ * @return {String}
+ */
 WebSocket.prototype.resource = function(name, key) {
 	return framework.resource(name, key);
 };
 
-/*
-	Log
-	@arguments {Object array}
-	return {WebSocket};
-*/
 WebSocket.prototype.log = function() {
 	var self = this;
 	framework.log.apply(framework, arguments);
+	return self;
+};
+
+WebSocket.prototype.logger = function() {
+	var self = this;
+	framework.logger.apply(framework, arguments);
 	return self;
 };
 
@@ -13548,23 +13490,12 @@ WebSocket.prototype.check = function() {
 	return self;
 };
 
-/*
-	Logger
-	@arguments {Object array}
-	return {WebSocket};
-*/
-WebSocket.prototype.logger = function() {
-	var self = this;
-	framework.logger.apply(framework, arguments);
-	return self;
-};
-
-/*
-	WebSocketClient
-	@req {Request}
-	@socket {Socket}
-	@head {Buffer}
-*/
+/**
+ * WebSocket controller
+ * @param {Request} req
+ * @param {Socket} socket
+ * @param {String} head
+ */
 function WebSocketClient(req, socket, head) {
 	this.$ping = true;
 	this.container;
@@ -13645,13 +13576,6 @@ WebSocketClient.prototype.cookie = function(name) {
 	return this.req.cookie(name);
 };
 
-/*
-	Internal function
-	@allow {String Array} :: allow origin
-	@protocols {String Array} :: allow protocols
-	@flags {String Array} :: flags
-	return {Boolean}
-*/
 WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, version) {
 
 	var self = this;
@@ -13685,7 +13609,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 	if (SOCKET_ALLOW_VERSION.indexOf(framework_utils.parseInt(self.req.headers['sec-websocket-version'])) === -1)
 		return false;
 
-	var header = protocols.length ? SOCKET_RESPONSE_PROTOCOL.format('total.js v' + version, self._request_accept_key(self.req), protocols.join(', ')) : SOCKET_RESPONSE.format('total.js v' + version, self._request_accept_key(self.req));
+	var header = protocols.length ? SOCKET_RESPONSE_PROTOCOL.format(self._request_accept_key(self.req), protocols.join(', ')) : SOCKET_RESPONSE.format(self._request_accept_key(self.req));
 	self.socket.write(new Buffer(header, 'binary'));
 
 	self._id = (self.ip || '').replace(/\./g, '') + framework_utils.GUID(20);
@@ -13719,13 +13643,11 @@ WebSocketClient.prototype.upgrade = function(container) {
 	return self;
 };
 
-/*
-	MIT
-	Written by Jozef Gula
-	---------------------
-	Internal handler
-	@data {Buffer}
-*/
+/**
+ * Internal handler written by Jozef Gula
+ * @param {Buffer} data
+ * @return {Framework}
+ */
 WebSocketClient.prototype._ondata = function(data) {
 
 	var self = this;
@@ -13849,10 +13771,8 @@ WebSocketClient.prototype._onerror = function(err) {
 
 WebSocketClient.prototype._onclose = function() {
 	var self = this;
-
 	if (!self || self._isClosed)
 		return;
-
 	self._isClosed = true;
 	self.container._remove(self._id);
 	self.container._refresh();
@@ -13861,11 +13781,12 @@ WebSocketClient.prototype._onclose = function() {
 	framework.emit('websocket-end', self.container, self);
 };
 
-/*
-	Send message
-	@message {String or Object}
-	return {WebSocketClient}
-*/
+/**
+ * Sends a message
+ * @param {String/Object} message
+ * @param {Boolean} raw The message won't be converted e.g. to JSON.
+ * @return {WebSocketClient}
+ */
 WebSocketClient.prototype.send = function(message, raw) {
 
 	var self = this;
@@ -14179,10 +14100,7 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 	var arr = self.getHeader('set-cookie') || [];
 
 	// Cookie, already, can be in array, resulting in duplicate 'set-cookie' header
-	var idx = arr.findIndex(function(cookieStr) {
-		return cookieStr.startsWith(cookieHeaderStart);
-	});
-
+	var idx = arr.findIndex(cookieStr => cookieStr.startsWith(cookieHeaderStart));
 	if (idx !== -1)
 		arr.splice(idx, 1);
 
@@ -14232,32 +14150,25 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 
 	switch (typeof(body)) {
 		case 'string':
-
 			if (!contentType)
 				contentType = 'text/html';
-
 			break;
 
 		case 'number':
-
 			if (!contentType)
 				contentType = 'text/plain';
-
 			body = framework_utils.httpStatus(body);
 			break;
 
 		case 'boolean':
 		case 'object':
-
 			if (!contentType)
 				contentType = 'application/json';
-
 			if (!isHEAD) {
 				if (body instanceof framework_builders.ErrorBuilder)
 					body = obj.output();
 				body = JSON.stringify(body);
 			}
-
 			break;
 	}
 

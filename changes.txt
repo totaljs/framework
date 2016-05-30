@@ -80,6 +80,7 @@
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`
 
+- removed: (IMPORTANT) `X-Powered-By` header
 - removed: `SCHEMA()`
 - removed: composer from `SchemaBuilderEntity`
 - removed: rules from `SchemaBuilderEntity`
@@ -91,6 +92,9 @@
 - removed: `Utils.isURL()`
 - removed: `Utils.isValid()`
 - removed: `controller.global` property by Guy Fraser (a problem with referrencing)
+- removed: `controller.database()`, use `F.database()`
+- removed: `controller.functions()`
+- removed: `controller.models()`
 
 - improved: Controller initialization by Guy Fraser
 - improved: SMTP sender

@@ -2149,10 +2149,10 @@ function view_prepare(command, dynamicCommand, functions) {
 
 		case 'language':
 			return command;
-
 		case 'resource':
-		case 'RESOURCE':
 			return '$STRING(self.' + command + ').encode()';
+		case 'RESOURCE':
+			return '$STRING(self.' + command.toLowerCase() + ').encode()';
 
 		case '!resource':
 		case '!RESOURCE':

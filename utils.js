@@ -57,7 +57,6 @@ const regexpDECODE = /&gt;|\&lt;|\&quot;|&apos;|&amp;/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
-const VERSION = (typeof(framework) !== 'undefined' ? ' v' + framework.version_header : '');
 const isWindows = require('os').platform().substring(0, 3).toLowerCase() === 'win';
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'Juny', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -544,7 +543,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var responseLength = 0;
 
 	uri.method = method;
-	headers['X-Powered-By'] = 'total.js' + VERSION;
 
 	if (cookies) {
 		var builder = '';
@@ -815,8 +813,6 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	uri.method = method;
 
-	headers['X-Powered-By'] = 'total.js' + VERSION;
-
 	if (cookies) {
 		var builder = '';
 		for (var m in cookies)
@@ -946,7 +942,6 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 
 	h['Cache-Control'] = 'max-age=0';
 	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
-	h['X-Powered-By'] = 'total.js' + VERSION;
 
 	var e = new events.EventEmitter();
 	var uri = parser.parse(url);

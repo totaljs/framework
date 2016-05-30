@@ -435,7 +435,7 @@ function viewIndex() {
 	self.layout('test');
 	assert.ok(self.layoutName === 'test', name + 'layout()');
 
-	assert.ok(self.functions('share').message() === 'message', name + 'functions()');
+	// assert.ok(self.functions('share').message() === 'message', name + 'functions()');
 	assert.ok(self.model('user').ok === 1, name + 'model()');
 	assert.ok(framework.model('user').ok === 1, 'framework: model() - 1');
 	assert.ok(framework.model('other/products').ok === 2, 'framework: model() - 2');
