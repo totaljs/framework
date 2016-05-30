@@ -6537,6 +6537,7 @@ Framework.prototype.listener = function(req, res) {
 	req.isStaticFile = framework.config['allow-handle-static-files'] && framework_utils.isStaticFile(req.uri.pathname);
 
 	var can = true;
+
 	if (req.isStaticFile) {
 		req.extension = framework_utils.getExtension(req.uri.pathname);
 		switch (req.extension) {
@@ -6578,9 +6579,7 @@ Framework.prototype.listener = function(req, res) {
 		})(middleware);
 	}
 
-	func._async_middleware(res, function() {
-		self._request_continue(res.req, res, res.req.headers, protocol);
-	});
+	func._async_middleware(res, () => self._request_continue(res.req, res, res.req.headers, protocol));
 };
 
 /**
@@ -6604,10 +6603,8 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 		self.stats.request.file++;
 
-		if (!self._length_files) {
-			self.responseStatic(req, res);
-			return self;
-		}
+		if (!self._length_files)
+			return self.responseStatic(req, res);
 
 		new Subscribe(self, req, res, 3).file();
 		return self;
@@ -8411,12 +8408,10 @@ Framework.prototype._configure = function(arr, rewrite) {
 			continue;
 
 		var name = str.substring(0, index).trim();
-
 		if (name === 'debug' || name === 'resources')
 			continue;
 
 		var value = str.substring(index + 1).trim();
-
 		switch (name) {
 			case 'default-cors-maxage':
 			case 'default-request-length':
