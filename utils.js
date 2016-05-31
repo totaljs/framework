@@ -1578,7 +1578,7 @@ exports.setContentType = function(ext, type) {
 		regexpSTATIC = new RegExp(tmp.substring(0, tmp.length - 1));
 	}
 
-	contentTypes[ext.toLowerCase()] = type;
+	CONTENTTYPES[ext.toLowerCase()] = type;
 	return true;
 };
 
