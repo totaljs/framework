@@ -1325,6 +1325,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var isROBOT = false;
 	var isBINARY = false;
 	var isCORS = false;
+	var isROLE = false;
 	var middleware = null;
 	var timeout;
 	var options;
@@ -1470,6 +1471,8 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 					corsflags.push(flag);
 					break;
 				default:
+					if (flag[0] === '@')
+						isROLE = true;
 					tmp.push(flag);
 					break;
 			}
@@ -1607,6 +1610,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		isGENERATOR: isGENERATOR,
 		isMEMBER: isMember,
 		isASTERIX: isASTERIX,
+		isROLE: isROLE,
 		isREFERER: flags.indexOf('referer') !== -1,
 		isHTTPS: flags.indexOf('https') !== -1,
 		isHTTP: flags.indexOf('http') !== -1,
@@ -1984,6 +1988,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 
 	var isJSON = false;
 	var isBINARY = false;
+	var isROLE = false;
 	var count = 0;
 	var isMember = true;
 
@@ -2039,7 +2044,8 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 		}
 
 
-		if (flag[0] === '@' || flag[0] === '!') {
+		if (flag[0] === '@') {
+			isROLE = true;
 			tmp.push(flag);
 			continue;
 		}
@@ -2100,6 +2106,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 		isMEMBER: isMember,
 		isJSON: isJSON,
 		isBINARY: isBINARY,
+		isROLE: isROLE,
 		isASTERIX: isASTERIX,
 		isHTTPS: flags.indexOf('https'),
 		isHTTP: flags.indexOf('http'),

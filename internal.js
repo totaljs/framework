@@ -576,20 +576,16 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 		}
 
 		var role = flag[0] === '@';
+
 		if (noLoggedUnlogged && route.isMEMBER) {
 			var tmp = flag.substring(0, 3);
-			if (!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1)
+			if ((!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1) || (route.isROLE && role && route.flags.indexOf(flag) === -1) || (route.isROLE && !role))
 				return 0;
-			/*
-			This was a problem with routes which don't have authorize/unauthorize flags and any @flags
-			if (role && route.flags.indexOf(flag) === -1)
-				return 0;
-			*/
 			continue;
 		}
 
 		// Is some role verified?
-		if (role && isRole)
+		if (role && isRole && !route.isROLE)
 			continue;
 
 		var index = route.flags.indexOf(flag);
