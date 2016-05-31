@@ -38,6 +38,7 @@
 - added: `req.split` contains splitted url
 - added: `F.touch(url/req)` for clearing internal cache of cached static files (it works only in release mode)
 - added: `F.path.exists(path, callback(exist))` for check of existing file
+- added: `U.chunker(name, [max])` creates the chunker (for streaming some items)
 
 - updated: subdomain routing supports wildcard routing `F.route('[*]/', 'homepage')` (`F.websocket()` is supported too)
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
