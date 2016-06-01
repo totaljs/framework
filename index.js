@@ -1696,7 +1696,7 @@ Framework.prototype.merge = function(url) {
 	if (url[0] !== '/')
 		url = '/' + url;
 
-	var filename = self.path.temp('merge-' + createTemporaryKey(url));
+	var filename = self.path.temp((self.id ? 'i-' + self.id + '_' : '') + 'merge-' + createTemporaryKey(url));
 	self.routes.merge[url] = { filename: filename, files: arr };
 	return self;
 };
@@ -2899,7 +2899,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		return self;
 	}
 
-	var plus = self.id ? 'instance-' + self.id + '-' : '';
+	var plus = self.id ? 'i-' + self.id + '_' : '';
 
 	if (type === 'view') {
 
@@ -2908,7 +2908,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (item === undefined) {
 			item = {};
-			item.filename = self.path.temporary('installed-' + plus + 'view-' + framework_utils.GUID(10) + '.tmp');
+			item.filename = self.path.temporary(plus + 'installed-view-' + framework_utils.GUID(10) + '.tmp');
 			item.url = internal;
 			item.count = 0;
 			self.routes.views[name] = item;
@@ -3046,7 +3046,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 						name = tmp.toString().replace(/\.js/i, '');
 				}
 
-				var filename = self.path.temporary('installed-' + plus + type + '-' + utils.GUID(10) + '.js');
+				var filename = self.path.temporary(plus + 'installed-' + type + '-' + utils.GUID(10) + '.js');
 				fs.writeFileSync(filename, declaration);
 				obj = require(filename);
 
@@ -3142,7 +3142,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 						name = tmp.toString().replace(/\.js/i, '');
 				}
 
-				filename = self.path.temporary('installed-' + plus + type + '-' + framework_utils.GUID(10) + '.js');
+				filename = self.path.temporary(plus + 'installed-' + type + '-' + framework_utils.GUID(10) + '.js');
 				fs.writeFileSync(filename, declaration);
 				obj = require(filename);
 				(function(name, filename) {
@@ -4291,7 +4291,7 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
 			return;
 		}
 
-		var file = self.path.temp((self.id ? 'instance-' + self.id + '-' : '') + createTemporaryKey(uri.pathname));
+		var file = self.path.temp((self.id ? 'i-' + self.id + '_' : '') + createTemporaryKey(uri.pathname));
 		self.path.verify('temp');
 		fs.writeFileSync(file, self.compileContent(extension, framework_internal.parseBlock(self.routes.blocks[uri.pathname], buffer.toString(ENCODING)), filename), ENCODING);
 		self.temporary.path[key] = file + ';' + fs.statSync(file).size;
@@ -5219,7 +5219,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		return;
 	}
 
-	var plus = self.id ? 'instance-' + self.id + '-' : '';
+	var plus = self.id ? 'i-' + self.id + '_' : '';
 
 	name = self.path.temp(plus + key);
 	self.temporary.processing[key] = true;
@@ -7772,6 +7772,7 @@ Framework.prototype.clear = function(callback, isInit) {
 
 	var self = this;
 	var dir = self.path.temp();
+	var plus = self.id ? 'i-' + self.id + '_' : '';
 
 	if (isInit) {
 		if (self.config['disable-clear-temporary-directory']) {
@@ -7780,19 +7781,19 @@ Framework.prototype.clear = function(callback, isInit) {
 				self.unlink(files);
 				if (callback)
 					callback();
-			}, function(filename, dir) {
-				if (dir)
+			}, function(filename, folder) {
+				if (folder || (plus && !filename.substring(dir.length).startsWith(plus)))
 					return false;
 				var ext = framework_utils.getExtension(filename);
-				return ext === 'js' || ext === 'css' || ext === 'tmp';
+				return ext === 'js' || ext === 'css' || ext === 'tmp' || ext === 'upload' || ext === 'html' || ext === 'htm';
 			});
+
 			return self;
 		}
 	}
 
 	if (!existsSync(dir)) {
-		if (callback)
-			callback();
+		callback && callback();
 		return self;
 	}
 
@@ -7802,6 +7803,8 @@ Framework.prototype.clear = function(callback, isInit) {
 			var arr = [];
 			for (var i = 0, length = files.length; i < length; i++) {
 				var filename = files[i].substring(dir.length);
+				if (plus && !filename.startsWith(plus))
+					continue;
 				if (filename.indexOf('/') === -1)
 					arr.push(files[i]);
 			}
@@ -7809,9 +7812,7 @@ Framework.prototype.clear = function(callback, isInit) {
 			directories = [];
 		}
 
-		self.unlink(files, function() {
-			self.rmdir(directories, callback);
-		});
+		self.unlink(files, () => self.rmdir(directories, callback));
 	});
 
 	if (!isInit) {

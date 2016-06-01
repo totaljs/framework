@@ -77,6 +77,7 @@
 - fixed: `U.isDate()` by Guy Fraser
 - fixed: `U.parseXML` problem with `CDATA`
 - fixed: `U.join()` problem with Windows path by Martin Smola
+- fixed: uploading files (problem with unexpected closed requests)
 
 - renamed: event `route-add` to `route`
 - renamed: `F.versionNode` to `F.version_node`

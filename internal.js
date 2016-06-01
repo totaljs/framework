@@ -65,7 +65,6 @@ global.$STRING = function(value) {
 exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscribe) {
 
 	var boundary = contentType.split(';')[1];
-
 	if (!boundary) {
 		framework._request_stats(false, false);
 		framework.stats.request.error400++;
@@ -73,6 +72,12 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		subscribe.res.end();
 		return;
 	}
+
+	// For unexpected closing
+	req.once('close', function() {
+		if (!req.$upload)
+			req.clear();
+	});
 
 	var parser = new MultipartParser();
 	var size = 0;
@@ -143,11 +148,11 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		}
 
 		tmp.filename = header[1];
-		tmp.path = framework_utils.combine(tmpDirectory, 'u' + ip + '-' + now + '-' + framework_utils.random(100000) + '.upload');
+		tmp.path = framework_utils.combine(tmpDirectory, (framework.id ? 'i-' + framework.id + '_' : '') + 'u' + ip + '-' + now + '-' + framework_utils.random(100000) + '.upload');
 
 		stream = fs.createWriteStream(tmp.path, { flags: 'w' });
 		stream.once('close', () => close--);
-		stream.once('error', () => close--);
+		stream.once('error', (e) => close--);
 		close++;
 	};
 
@@ -210,6 +215,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			tmp.height = 0;
 		}
 
+		req.files.push(tmp);
 		framework.emit('upload-begin', req, tmp);
 		stream.write(data);
 		tmp.length += length;
@@ -229,8 +235,6 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			delete tmp.$data;
 			delete tmp.$is;
 			delete tmp.$step;
-
-			req.files.push(tmp);
 			framework.emit('upload-end', req, tmp);
 			return;
 		}
@@ -269,7 +273,11 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	};
 
 	req.on('data', chunk => parser.write(chunk));
-	req.on('end', () => parser.end());
+	req.on('end', function() {
+		if (!req.buffer_exceeded)
+			req.$upload = true;
+		parser.end();
+	});
 };
 
 function parse_multipart_header(header) {
