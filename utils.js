@@ -439,6 +439,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var type = 0;
 	var e = new events.EventEmitter();
 	var isDNSCACHE = false;
+	var max = 0;
 
 	if (headers)
 		headers = exports.extend({}, headers);
@@ -461,8 +462,12 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				continue;
 			}
 
-			switch (flags[i].toLowerCase()) {
+			if (flags[i][0] === '<') {
+				max = flags[i].substring(1).trim().parseInt() * 1024; // kB
+				continue;
+			}
 
+			switch (flags[i].toLowerCase()) {
 				case 'utf8':
 				case 'ascii':
 				case 'base64':
@@ -470,18 +475,15 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'hex':
 					encoding = flags[i];
 					break;
-
 				case 'xhr':
 					headers['X-Requested-With'] = 'XMLHttpRequest';
 					break;
-
 				case 'plain':
 					headers['Content-Type'] = 'text/plain';
 					break;
 				case 'html':
 					headers['Content-Type'] = 'text/html';
 					break;
-
 				case 'json':
 					headers['Content-Type'] = 'application/json';
 
@@ -490,7 +492,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 					type = 1;
 					break;
-
 				case 'xml':
 					headers['Content-Type'] = 'text/xml';
 
@@ -581,6 +582,8 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 		res.on('data', function(chunk) {
 			var self = this;
+			if (max && self._bufferlength > max)
+				return;
 			if (self._buffer)
 				self._buffer = Buffer.concat([self._buffer, chunk]);
 			else
