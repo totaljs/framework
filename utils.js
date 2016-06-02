@@ -407,7 +407,7 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
  * @param  {Number} timeout Request timeout.
  * return {Boolean}
  */
-exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
+exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout, e) {
 
 	// No data (data is optinal argument)
 	if (typeof(data) === 'function') {
@@ -437,9 +437,11 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var method = '';
 	var length = 0;
 	var type = 0;
-	var e = new events.EventEmitter();
 	var isDNSCACHE = false;
 	var max = 0;
+
+	if (!e)
+		e = new events.EventEmitter();
 
 	if (headers)
 		headers = exports.extend({}, headers);
@@ -575,7 +577,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 		// We have redirect
 		if (res.statusCode === 301) {
-			exports.request(res.headers['location'], flags, data, callback, cookies, headers, encoding, timeout);
+			exports.request(res.headers['location'], flags, data, callback, cookies, headers, encoding, timeout, e);
 			res = null;
 			return;
 		}
@@ -600,6 +602,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			if (callback)
 				callback(null, method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
 			callback = null;
+			res.removeAllListeners();
 			e.removeAllListeners();
 			e = null;
 		});
