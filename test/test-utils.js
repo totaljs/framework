@@ -392,12 +392,6 @@ function other() {
 	str = '/logo/';
 	assert.ok(utils.isStaticFile(str) === false, 'utils.isStaticFile(): ' + str);
 
-	str = null;
-	assert.ok(utils.isNullOrEmpty(str) === true, 'utils.isNullOrEmpty(): null');
-
-	str = '';
-	assert.ok(utils.isNullOrEmpty(str) === true, 'utils.isNullOrEmpty(): ' + str);
-
 	str = 'gif';
 	assert.ok(utils.getContentType(str) === 'image/gif', 'utils.getContentType(): ' + str);
 

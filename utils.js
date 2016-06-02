@@ -1410,19 +1410,6 @@ exports.isStaticFile = function(url) {
 };
 
 /**
- * Checks if string is null or empty
- * @param {String} str
- * @return {Boolean}
- */
-exports.isNullOrEmpty = function(str) {
-
-	if (typeof(str) !== 'string')
-		return true;
-
-	return str.length === 0;
-};
-
-/**
  * Converts Value to number
  * @param {Object} obj Value to convert.
  * @param {Number} def Default value (default: 0).
@@ -5296,7 +5283,7 @@ exports.set = function(obj, path, value) {
 
 	for (var i = 0, length = arr.length; i < length; i++) {
 		p += (p !== '' ? '.' : '') + arr[i];
-		var type = exports.isArray(arr[i]) ? '[]' : '{}';
+		var type = arr[i] instanceof Array ? '[]' : '{}';
 
 		if (i !== length - 1) {
 			builder.push('if(typeof(w.' + p + ')!=="object"||w.' + p + '===null)w.' + p + '=' + type);

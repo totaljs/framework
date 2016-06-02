@@ -94,6 +94,7 @@
 - removed: `Utils.isEmail()`
 - removed: `Utils.isURL()`
 - removed: `Utils.isValid()`
+- removed: `Utils.isNullOrEmpty()`
 - removed: `controller.global` property by Guy Fraser (a problem with referrencing)
 - removed: `controller.database()`, use `F.database()`
 - removed: `controller.functions()`
