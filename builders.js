@@ -1567,7 +1567,6 @@ SchemaBuilderEntity.prototype.transform2 = function(name, helper, callback) {
 	return this.transform(name, null, helper, callback, true);
 };
 
-
 SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builder, result, callback) {
 
 	var self = this;
@@ -2110,6 +2109,10 @@ function ErrorBuilder(onResource) {
 	this.replacer = [];
 	this.isPrepared = false;
 	this.contentType = 'application/json';
+
+	// Hidden: when the .push() contains a classic Error instance
+	// this.unexpected;
+
 	if (!onResource)
 		this._resource();
 }
@@ -2475,8 +2478,11 @@ ErrorBuilder.prototype.push = function(name, error, path, index) {
 	if (!error)
 		error = '@';
 
-	if (error instanceof Error)
+	if (error instanceof Error) {
+		// Why? The answer is in controller.callback(); It's a reason for throwing 500 - internal server error
+		self.unexpected = true;
 		error = error.toString();
+	}
 
 	self.items.push({
 		name: name,

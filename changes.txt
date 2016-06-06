@@ -59,6 +59,7 @@
 - updated: `Date.add(number)` supports number increase/decrease in milliseconds
 - updated: `U.send(name, stream, url, callback, [cookies], [headers], [method], [timeout])` supports cookies and timeout
 - updated: `U.request()` supports a new flag `< 200` (kB), it means that the method stores a content with maxixmum size 200 kB.
+- updated: `ErrorBuilder` instance contains a new property `instance.unexpected` when is `instance.push()` a classic Error's instance.
 
 - fixed: Too many open files with `F.log()` and `F.logger()`
 - fixed: `String.isJSON()` the problem with `\n` character

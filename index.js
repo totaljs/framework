@@ -12172,19 +12172,21 @@ Controller.prototype.callback = function(viewName) {
 	var self = this;
 	return function(err, data) {
 
+		var is = err instanceof framework_builders.ErrorBuilder;
+
 		// NoSQL embedded database
-		if (data === undefined && !framework_utils.isError(err) && (!(err instanceof framework_builders.ErrorBuilder))) {
+		if (data === undefined && !framework_utils.isError(err) && !is) {
 			data = err;
 			err = null;
 		}
 
 		if (err) {
-			if (err instanceof framework_builders.ErrorBuilder && !viewName) {
+			if (is && !viewName) {
 				if (self.language)
 					err.resource(self.language);
 				return self.content(err);
 			}
-			return self.view404(err);
+			return is && err.unexpected ? self.view500(err) : self.view404(err);
 		}
 
 		if (typeof(viewName) === 'string')
