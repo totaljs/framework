@@ -781,7 +781,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 					break;
 
 				case 'get':
-				case 'delete':
+				case 'head':
 				case 'options':
 					method = flags[i].toUpperCase();
 					break;
@@ -791,6 +791,8 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 					break;
 
 				case 'post':
+				case 'path':
+				case 'delete':
 				case 'put':
 					method = flags[i].toUpperCase();
 					if (!headers['Content-Type'])
