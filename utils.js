@@ -506,7 +506,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'get':
 				case 'options':
 				case 'head':
-				case 'path':
 					method = flags[i].toUpperCase();
 					break;
 
@@ -517,6 +516,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'post':
 				case 'put':
 				case 'delete':
+				case 'path':
 
 					method = flags[i].toUpperCase();
 					if (!headers['Content-Type'])
