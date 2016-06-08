@@ -506,6 +506,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'get':
 				case 'options':
 				case 'head':
+				case 'path':
 					method = flags[i].toUpperCase();
 					break;
 
