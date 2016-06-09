@@ -3947,17 +3947,21 @@ Framework.prototype.onMail = function(address, subject, body, callback, replyTo)
 
 	if (!opt) {
 		var config = self.config['mail.smtp.options'];
-		if (config && config.isJSON())
-			opt = JSON.parse(config);
+		if (config) {
+			var type = typeof(config);
+			if (type === 'string')
+				opt = config.parseJSON();
+			else if (type === 'object')
+				opt = config;
+		}
+
 		if (!opt)
 			opt = {};
+
 		self.temporary['mail-settings'] = opt;
 	}
 
-	message.$sending = setTimeout(function() {
-		message.send(self.config['mail.smtp'], opt, callback);
-	}, 2);
-
+	message.$sending = setTimeout(() => message.send(self.config['mail.smtp'], opt, callback), 5);
 	return message;
 };
 
