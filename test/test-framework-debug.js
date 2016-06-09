@@ -29,6 +29,8 @@ framework.on('ready', function() {
 	t.on('exit', function() {
 		assert.ok(a === true, 'F.load() in worker');
 	});
+
+	assert.ok(F.config.array.length === 4, 'Problem with config sub types.');
 });
 
 framework.onAuthorize = function(req, res, flags, cb) {

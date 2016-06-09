@@ -8413,6 +8413,14 @@ Framework.prototype._configure = function(arr, rewrite) {
 			continue;
 
 		var value = str.substring(index + 1).trim();
+		var subtype;
+
+		index = name.indexOf('(');
+		if (index !== -1) {
+			subtype = name.substring(index + 1, name.indexOf(')')).trim().toLowerCase();
+			name = name.substring(0, index).trim();
+		}
+
 		switch (name) {
 			case 'default-cors-maxage':
 			case 'default-request-length':
@@ -8464,8 +8472,24 @@ Framework.prototype._configure = function(arr, rewrite) {
 				break;
 
 			default:
-				obj[name] = value.isNumber() ? framework_utils.parseInt(value) : value.isNumber(true) ? framework_utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
+
+				if (subtype === 'string')
+					obj[name] = value;
+				else if (subtype === 'number' || subtype === 'currency' || subtype === 'float' || subtype === 'double')
+					obj[name] = value.isNumber(true) ? value.parseFloat() : value.parseInt();
+				else if (subtype === 'boolean' || subtype === 'bool')
+					obj[name] = value.parseBoolean();
+				else if (subtype === 'eval' || subtype === 'object' || subtype === 'array')
+					obj[name] = new Function('return ' + value)();
+				else if (subtype === 'json')
+					obj[name] = value.parseJSON();
+				else if (subtype === 'date' || subtype === 'datetime' || subtype === 'time')
+					obj[name] = value.parseDate();
+				else
+					obj[name] = value.isNumber() ? framework_utils.parseInt(value) : value.isNumber(true) ? framework_utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
+
 				break;
+
 		}
 	}
 

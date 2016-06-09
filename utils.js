@@ -2860,7 +2860,47 @@ String.prototype.parseConfig = function(def) {
 				continue;
 		}
 
-		obj[str.substring(0, index).trim()] = str.substring(index + 2).trim();
+		var name = str.substring(0, index).trim();
+		var value = str.substring(index + 2).trim();
+		var subtype;
+
+		index = name.indexOf('(');
+		if (index !== -1) {
+			subtype = name.substring(index + 1, name.indexOf(')')).trim().toLowerCase();
+			name = name.substring(0, index).trim();
+		}
+
+		switch (subtype) {
+			case 'string':
+				obj[name] = value;
+				break;
+			case 'number':
+			case 'float':
+			case 'double':
+			case 'currency':
+				obj[name] = value.isNumber(true) ? value.parseFloat() : value.parseInt();
+				break;
+			case 'boolean':
+			case 'bool':
+				obj[name] = value.parseBoolean();
+				break;
+			case 'eval':
+			case 'object':
+			case 'array':
+				obj[name] = new Function('return ' + value)();
+				break;
+			case 'json':
+				obj[name] = value.parseJSON();
+				break;
+			case 'date':
+			case 'time':
+			case 'datetime':
+				obj[name] = value.parseDate();
+				break;
+			default:
+				obj[name] = value;
+				break;
+		}
 	}
 
 	return obj;
@@ -3326,7 +3366,7 @@ String.prototype.isNumber = function(isDecimal) {
 	var self = this;
 	var length = self.length;
 
-	if (length === 0)
+	if (!length)
 		return false;
 
 	isDecimal = isDecimal || false;
