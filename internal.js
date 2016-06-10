@@ -3026,19 +3026,28 @@ exports.preparePATH = function(path, remove) {
 
 exports.parseURI = function(protocol, req) {
 
-	var port = req.host.lastIndexOf(':');
+	var cache = framework.temporary.other[req.host];
+	var port;
 	var hostname;
-	var search = req.url.indexOf('?', 1);
-	var pathname;
-	var query = null;
 
-	if (port === -1) {
-		port = null;
-		hostname = req.host;
+	if (cache) {
+		port = cache.port;
+		hostname = cache.hostname;
 	} else {
-		hostname = req.host.substring(0, port);
-		port = req.host.substring(port + 1);
+ 		port = req.host.lastIndexOf(':')
+		if (port === -1) {
+			port = null;
+			hostname = req.host;
+		} else {
+			hostname = req.host.substring(0, port);
+			port = req.host.substring(port + 1);
+		}
+		framework.temporary.other[req.host] = { port: port, hostname: hostname };
 	}
+
+	var search = req.url.indexOf('?', 1);
+	var query = null;
+	var pathname;
 
 	if (search === -1) {
 		search = null;
