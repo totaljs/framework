@@ -8965,7 +8965,7 @@ Framework.prototype.worker2 = function(name, args, callback, timeout) {
 	fork.on('exit', function() {
 		if (!callback)
 			return;
-		callback(e);
+		callback();
 		callback = null;
 	});
 
