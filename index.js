@@ -8861,13 +8861,6 @@ Framework.prototype.accept = function(extension, contentType) {
 	return self;
 };
 
-/*
-	@name {String}
-	@id {String} :: optional, Id of process
-	@timeout {Number} :: optional, timeout - default undefined (none)
-	@args {Array} :: optional, array of arguments
-	return {Worker(fork)}
-*/
 /**
  * Run worker
  * @param {String} name
@@ -8933,11 +8926,48 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 		return fork;
 
 	fork.__timeout = setTimeout(function() {
-
 		fork.kill();
 		fork = null;
-
 	}, timeout);
+
+	return fork;
+};
+
+Framework.prototype.worker2 = function(name, args, callback, timeout) {
+
+	var self = this;
+
+	if (typeof(args) === 'function') {
+		timeout = callback;
+		callback = args;
+		args = undefined;
+	} else if (typeof(callback) === 'number') {
+		var tmp = timeout;
+		timeout = callback;
+		callback = tmp;
+	}
+
+	if (args && !(args instanceof Array))
+		args = [args];
+
+	var fork = self.worker(name, name, timeout, args);
+	if (fork.__worker2)
+		return fork;
+
+	fork.__worker2 = true;
+	fork.on('error', function(e) {
+		if (!callback)
+			return;
+		callback(e);
+		callback = null;
+	});
+
+	fork.on('exit', function() {
+		if (!callback)
+			return;
+		callback(e);
+		callback = null;
+	});
 
 	return fork;
 };
