@@ -62,6 +62,7 @@
 - updated: `U.request()` supports a new flag `< 200` (kB), it means that the method stores a content with maxixmum size 200 kB.
 - updated: `ErrorBuilder` instance contains a new property `instance.unexpected` when is `instance.push()` a classic Error's instance.
 - updated: configuration files + resources support types like String, Number, Array, Date, etc. via `key (type) : value`
+- updated: `F.use(name, [url], [types])` - now supports new attributes `url`, and `types`
 
 - fixed: Too many open files with `F.log()` and `F.logger()`
 - fixed: `String.isJSON()` the problem with `\n` character

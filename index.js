@@ -711,7 +711,7 @@ Framework.prototype.behaviour = function(url, flags) {
 	if (typeof(flags) === 'string')
 		flags = [flags];
 
-	url = framework_internal.preparePATH(url);
+	url = framework_internal.preparePath(url);
 
 	if (!self.behaviours[url])
 		self.behaviours[url] = {};
@@ -1165,7 +1165,7 @@ Framework.prototype.cors = function(url, flags, credentials) {
 	if (route.isASTERIX)
 		url = url.replace('*', '');
 
-	route.url = framework_internal.routeSplitCreate(framework_internal.preparePATH(framework_internal.encodeUnicodeURL(url.trim())));
+	route.url = framework_internal.routeSplitCreate(framework_internal.preparePath(framework_internal.encodeUnicodeURL(url.trim())));
 	route.origins = origins.length ? origins : null;
 	route.methods = methods.length ? methods : null;
 	route.headers = headers.length ? headers : null;
@@ -1489,7 +1489,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1 && flags.indexOf('unlogged') === -1)
 		isMember = true;
 
-	var routeURL = framework_internal.routeSplitCreate(framework_internal.preparePATH(url.trim()));
+	var routeURL = framework_internal.routeSplitCreate(framework_internal.preparePath(url.trim()));
 	var arr = [];
 	var reg = null;
 	var regIndex = null;
@@ -1691,7 +1691,7 @@ Framework.prototype.merge = function(url) {
 		}
 	}
 
-	url = framework_internal.preparePATH(self._version(url));
+	url = framework_internal.preparePath(self._version(url));
 
 	if (url[0] !== '/')
 		url = '/' + url;
@@ -1732,7 +1732,7 @@ Framework.prototype.map = function(url, filename, filter) {
 	var self = this;
 
 	filename = framework_utils.$normalize(filename);
-	url = framework_internal.preparePATH(self._version(url));
+	url = framework_internal.preparePath(self._version(url));
 
 	// isomorphic
 	if (filename[0] === '#') {
@@ -1863,26 +1863,84 @@ Framework.prototype.middleware = function(name, funcExecute) {
 };
 
 /**
- * Add a global middleware
- * @param {String} name
+ * Uses middleware
+ * @name {String or String Array} name
+ * @url {String} url A url address (optional)
+ * @types {String Array} types It can be `web`, `file` or `websocket`
  * @return {Framework}
  */
-Framework.prototype.use = function(name) {
+Framework.prototype.use = function(name, url, types) {
 	var self = this;
 
-	if (arguments.length) {
-		for (var i = 0; i < arguments.length; i++)
-			self.routes.request.push(arguments[i]);
-	} else if (name instanceof Array) {
-		for (var i = 0; i < name.length; i++)
-			self.routes.request.push(name[i]);
-	} else
-		self.routes.request.push(name);
+	if (!url && !types) {
+		if (name instanceof Array) {
+			for (var i = 0; i < name.length; i++)
+				self.routes.request.push(name[i]);
+		} else
+			self.routes.request.push(name);
+		self._length_request_middleware = self.routes.request.length;
+		return self;
+	}
 
-	self._length_request_middleware = self.routes.request.length;
+	if (url instanceof Array) {
+		types = url;
+		url = null;
+	}
+
+	var route;
+
+	if (url)
+		url = framework_internal.routeSplitCreate(framework_internal.preparePath(url.trim())).join('/');
+
+	if (!types || types.indexOf('web') !== -1) {
+		for (var i = 0, length = self.routes.web.length; i < length; i++) {
+			route = self.routes.web[i];
+			if (url && !route.url.join('/').startsWith(url))
+				continue;
+			if (!route.middleware)
+				route.middleware = [];
+			merge_middleware(route.middleware, name);
+		}
+	}
+
+	if (!types || types.indexOf('file') !== -1 || types.indexOf('files') !== -1) {
+		for (var i = 0, length = self.routes.files.length; i < length; i++) {
+			route = self.routes.files[i];
+			if (url && !route.url.join('/').startsWith(url))
+				continue;
+			if (!route.middleware)
+				route.middleware = [];
+			merge_middleware(route.middleware, name);
+		}
+	}
+
+	if (!types || types.indexOf('websocket') !== -1 || types.indexOf('websockets') !== -1) {
+		for (var i = 0, length = self.routes.websockets.length; i < length; i++) {
+			route = self.routes.websockets[i];
+			if (url && !route.url.join('/').startsWith(url))
+				continue;
+			if (!route.middleware)
+				route.middleware = [];
+			merge_middleware(route.middleware, name);
+		}
+	}
 
 	return self;
 };
+
+function merge_middleware(a, b) {
+
+	if (typeof(b) === 'string')
+		b = [b];
+
+	for (var i = 0, length = b.length; i < length; i++) {
+		var index = a.indexOf(b[i]);
+		if (index === -1)
+			a.push(b[i]);
+	}
+
+	return a;
+}
 
 /**
  * Add a new websocket route
@@ -1944,7 +2002,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 		priority = (-10) - priority;
 	}
 
-	var routeURL = framework_internal.routeSplitCreate(framework_internal.preparePATH(url.trim()));
+	var routeURL = framework_internal.routeSplitCreate(framework_internal.preparePath(url.trim()));
 	var arr = [];
 	var reg = null;
 	var regIndex = null;
@@ -2284,7 +2342,7 @@ Framework.prototype.localize = function(url, flags, minify) {
 	} else
 		flags.push('.html', '.htm', '.md', '.txt');
 
-	url = framework_internal.preparePATH(url);
+	url = framework_internal.preparePath(url);
 	self.file(url, function(req, res, is) {
 
 		var key = 'locate_' + (req.$language ? req.$language : 'default') + '_' + req.url;
@@ -3007,7 +3065,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			name = obj.name;
 
 		if (obj.url)
-			framework.map(framework_internal.preparePATH(obj.url), '#' + name);
+			framework.map(framework_internal.preparePath(obj.url), '#' + name);
 
 		framework.isomorphic[name] = obj;
 		framework.isomorphic[name].$$output = framework_internal.compile_javascript(content, '#' + name);
@@ -3752,7 +3810,7 @@ Framework.prototype.onMapping = function(url, def, ispublic, encode) {
 	if (this.routes.mapping[url])
 		return this.routes.mapping[url];
 
-	def = framework_internal.preparePATH(def, true);
+	def = framework_internal.preparePath(def, true);
 
 	if (encode)
 		def = $decodeURIComponent(def);
@@ -3775,7 +3833,7 @@ Framework.prototype.onMapping = function(url, def, ispublic, encode) {
 Framework.prototype.snapshot = function(url, filename, callback) {
 	var self = this;
 
-	url = framework_internal.preparePATH(url);
+	url = framework_internal.preparePath(url);
 
 	if (!url.match(/^http:|https:/gi)) {
 		if (url[0] !== '/')
@@ -6564,10 +6622,7 @@ Framework.prototype.listener = function(req, res) {
 
 	self._request_stats(true, true);
 
-	if (!self._length_request_middleware)
-		return self._request_continue(req, res, headers, protocol);
-
-	if (req.behaviour('disable-middleware'))
+	if (!self._length_request_middleware || req.behaviour('disable-middleware'))
 		return self._request_continue(req, res, headers, protocol);
 
 	var func = [];
@@ -6989,10 +7044,7 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	if (self.onLocate)
 		req.$language = self.onLocate(req, socket);
 
-	if (!self._length_request_middleware)
-		return self._upgrade_prepare(req, path, headers);
-
-	if (req.behaviour('disable-middleware'))
+	if (!self._length_request_middleware || req.behaviour('disable-middleware'))
 		return self._upgrade_prepare(req, path, headers);
 
 	var func = [];
@@ -8641,7 +8693,7 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 	else
 		filename = framework_utils.join(theme, directory, this._version(name));
 
-	return framework.temporary.other[key] = framework_internal.preparePATH(this._version(filename));
+	return framework.temporary.other[key] = framework_internal.preparePath(this._version(filename));
 };
 
 /*
