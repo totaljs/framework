@@ -3006,7 +3006,7 @@ function cleanURL(url, index) {
 	return o;
 };
 
-exports.preparePATH = function(path, remove) {
+exports.preparePath = function(path, remove) {
 	var root = framework.config['default-root'];
 	if (!root)
 		return path;
