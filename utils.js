@@ -599,7 +599,8 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			var self = this;
 			var str = self._buffer ? self._buffer.toString(encoding) : '';
 			delete self._buffer;
-			e.emit('end', str, self.statusCode, self.headers, uri.host);
+			if (e)
+				e.emit('end', str, self.statusCode, self.headers, uri.host);
 			if (callback)
 				callback(null, method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
 			callback = null;
