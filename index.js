@@ -10677,8 +10677,12 @@ Controller.prototype.error = function(err) {
 	return self;
 };
 
-Controller.prototype.invalid = function() {
+Controller.prototype.invalid = function(status) {
 	var self = this;
+
+	if (status)
+		self.status = status;
+
 	var builder = new ErrorBuilder();
 	setImmediate(n => self.content(builder));
 	return builder;

@@ -1,7 +1,7 @@
 ======= 2.0.0 (BETA)
 
 - added: new NoSQL version v4.0.0 is fully optimized for total.js
-- added: `controller.invalid()` creates the ErrorBuilder instance and it responds in the next tick
+- added: `controller.invalid([status])` creates the ErrorBuilder instance and it responds in the next tick
 - added: `controller.sitemap_url([id])` returns an URL from the sitemap
 - added: `controller.sitemap_name([id])` returns a name/title from the sitemap
 - added: `controller.sitemap_change(id, property, newvalue)` can change a current value in the sitemap
