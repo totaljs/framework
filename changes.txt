@@ -64,6 +64,7 @@
 - updated: configuration files + resources support types like String, Number, Array, Date, etc. via `key (type) : value`
 - updated: `F.use(name, [url], [types])` - now supports new attributes `url`, and `types`
 
+- fixed: `Websocket.destroy()`
 - fixed: Too many open files with `F.log()` and `F.logger()`
 - fixed: `String.isJSON()` the problem with `\n` character
 - fixed: `FrameworkImage.save()` problem with streams
