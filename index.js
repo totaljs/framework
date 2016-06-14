@@ -7407,8 +7407,18 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 					break;
 
 				case 'get':
+				case 'head':
 				case 'options':
 					method = flags[i].toUpperCase();
+
+					if (data) {
+						if (typeof(data) === 'object')
+							url += '?' + qs.stringify(data);
+						else
+							url += data[0] === '?' ? data : '?' + data;
+						data = '';
+					}
+
 					break;
 
 				case 'upload':
@@ -7612,7 +7622,7 @@ Framework.prototype.testing = function(stop, callback) {
 	options.headers = test.headers;
 
 	var con = options.protocol === 'https:' ? https : http;
-	var req = test.method === 'POST' || test.method === 'PUT' ? con.request(options, response) : con.get(options, response);
+	var req = test.method === 'POST' || test.method === 'PUT' || test.method === 'DELETE' || test.method === 'PATH' ? con.request(options, response) : con.get(options, response);
 
 	req.on('error', function(e) {
 		req.removeAllListeners();
