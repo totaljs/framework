@@ -448,7 +448,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-46';
+	this.version_header = '2.0.0-47';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -13464,7 +13464,6 @@ WebSocket.prototype.destroy = function(problem) {
 	delete framework.connections[self.id];
 	self.emit('destroy');
 	self.removeAllListeners();
-	self.socket.removeAllListeners();
 	return self;
 };
 
