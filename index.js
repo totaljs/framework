@@ -6347,6 +6347,7 @@ Framework.prototype.mode = function(http, name, options) {
 		case 'test':
 		case 'testing':
 		case 'test-debug':
+		case 'debug-test':
 		case 'testing-debug':
 			test = true;
 			debug = true;
@@ -6354,6 +6355,7 @@ Framework.prototype.mode = function(http, name, options) {
 			break;
 
 		case 'test-release':
+		case 'release-test':
 		case 'testing-release':
 		case 'test-production':
 		case 'testing-production':
@@ -7413,6 +7415,20 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 					headers['Content-Type'] = 'multipart/form-data';
 					break;
 
+				case 'robot':
+					if (headers['User-Agent'])
+						headers['User-Agent'] += ' Bot';
+					else
+						headers['User-Agent'] = 'Bot';
+					break;
+
+				case 'mobile':
+					if (headers['User-Agent'])
+						headers['User-Agent'] += ' iPhone';
+					else
+						headers['User-Agent'] = 'iPhone';
+					break;
+
 				case 'post':
 				case 'put':
 				case 'delete':
@@ -7492,15 +7508,9 @@ Framework.prototype.testing = function(stop, callback) {
 		}
 
 		var file = self.testsFiles.shift();
-		try {
+		if (file)
 			file.fn.call(self, self);
-			self.testing(stop, callback);
-		} catch (e) {
-			console.log(new Error(e.stack, file.name, e.lineNumber));
-			framework.isTestError = true;
-			framework.testsNO++;
-			self.testing(stop, callback);
-		}
+		self.testing(stop, callback);
 		return self;
 	}
 
@@ -7522,41 +7532,38 @@ Framework.prototype.testing = function(stop, callback) {
 	var beg = new Date();
 
 	if (test.run) {
-		try {
 
-			// Is used in: process.on('uncaughtException')
-			framework.testContinue = function(err) {
-				logger(key, beg, err);
-				if (err)
-					framework.testsNO++;
-				else
-					framework.testsOK++;
-				self.testing(stop, callback);
-			};
-
-			test.run.call(self, function() {
-				self.testContinue();
-			}, key);
-
-		} catch (e) {
-			logger(key, beg, e);
-			framework.isTestError = true;
-			framework.testsNO++;
+		// Is used in: process.on('uncaughtException')
+		framework.testContinue = function(err) {
+			logger(key, beg, err);
+			if (err)
+				framework.testsNO++;
+			else
+				framework.testsOK++;
 			self.testing(stop, callback);
-		}
+		};
+
+		test.run.call(self, function() {
+			logger(key, beg);
+			framework.testsOK++;
+			self.testing(stop, callback);
+		}, key);
 
 		return self;
 	}
 
 	var response = function(res) {
 
-		res._buffer = '';
-
 		res.on('data', function(chunk) {
-			this._buffer += chunk.toString(ENCODING);
+			if (this._buffer)
+				this._buffer = Buffer.concat([this._buffer, chunk]);
+			else
+				this._buffer = chunk;
 		});
 
 		res.on('end', function() {
+
+			res.removeAllListeners();
 
 			var cookie = res.headers['cookie'] || '';
 			var cookies = {};
@@ -7573,22 +7580,21 @@ Framework.prototype.testing = function(stop, callback) {
 			}
 
 			try {
-				test.callback(null, res._buffer, res.statusCode, res.headers, cookies, key);
+				test.callback(null, this._buffer ? this._buffer.toString(ENCODING) : '', res.statusCode, res.headers, cookies, key);
 				logger(key, beg);
 				framework.testsOK++;
-				self.testing(stop, callback);
 			} catch (e) {
 				framework.testsNO++;
 				logger(key, beg, e);
-				self.testing(stop, callback);
-				throw e;
 			}
+
+			self.testing(stop, callback);
 		});
 
 		res.resume();
 	};
 
-	var options = parser.parse((test.url.indexOf('http://') > 0 || test.url.indexOf('https://') > 0 ? '' : 'http://' + self.ip + ':' + self.port) + test.url);
+	var options = parser.parse((test.url.startsWith('http://', true) || test.url.startsWith('https://', true) ? '' : 'http://' + self.ip + ':' + self.port) + test.url);
 	if (typeof(test.data) === 'function')
 		test.data = test.data();
 
@@ -7609,16 +7615,13 @@ Framework.prototype.testing = function(stop, callback) {
 	var req = test.method === 'POST' || test.method === 'PUT' ? con.request(options, response) : con.get(options, response);
 
 	req.on('error', function(e) {
+		req.removeAllListeners();
 		logger(key, beg, e);
 		self.testsNO++;
 		self.testing(stop, callback);
 	});
 
-	if (test.data)
-		req.end(buf);
-	else
-		req.end();
-
+	req.end(buf);
 	return self;
 };
 
@@ -7650,10 +7653,8 @@ Framework.prototype.test = function(stop, names, cb) {
 	var is = false;
 
 	if (!existsSync(framework_utils.combine(dir))) {
-		if (cb) cb();
-		if (stop) setTimeout(function() {
-			framework.stop(0);
-		}, 500);
+		cb && cb();
+		stop && setTimeout(() => framework.stop(0), 500);
 		return self;
 	}
 
@@ -7673,18 +7674,12 @@ Framework.prototype.test = function(stop, names, cb) {
 	};
 
 	var results = function() {
-
 		if (!framework.testsResults.length)
 			return;
-
 		console.log('');
 		console.log('===================== RESULTS ======================');
 		console.log('');
-
-		framework.testsResults.forEach(function(fn) {
-			fn();
-		});
-
+		framework.testsResults.forEach((fn) => fn());
 	};
 
 	framework.testsFiles = [];
@@ -7723,11 +7718,7 @@ Framework.prototype.test = function(stop, names, cb) {
 				if (test.disabled === true)
 					return;
 
-				if (test.order === undefined)
-					framework.testsPriority = test.priority === undefined ? self.testsFiles.length : test.priority;
-				else
-					framework.testsPriority = test.priority;
-
+				framework.testsPriority = test.priority === undefined ? self.testsFiles.length : test.priority;
 				var fn = null;
 
 				if (isRun)
@@ -7746,7 +7737,7 @@ Framework.prototype.test = function(stop, names, cb) {
 
 				if (test.usage) {
 					(function(test) {
-						framework.testsResults.push(function() { test.usage(name); });
+						framework.testsResults.push(() => test.usage(name));
 					})(test);
 				}
 
@@ -7760,19 +7751,13 @@ Framework.prototype.test = function(stop, names, cb) {
 		_test = '';
 
 		if (!counter) {
-
 			results();
-
-			if (cb)
-				cb();
+			cb && cb();
 
 			if (!stop)
 				return self;
 
-			setTimeout(function() {
-				framework.stop(1);
-			}, 500);
-
+			setTimeout(() => framework.stop(1), 500);
 			return self;
 		}
 
