@@ -6596,10 +6596,6 @@ Framework.prototype.listener = function(req, res) {
 	res.success = false;
 	req.session = null;
 	req.user = null;
-
-	if (self.isDebug)
-		res.setHeader('Mode', 'debug');
-
 	req.isStaticFile = framework.config['allow-handle-static-files'] && framework_utils.isStaticFile(req.uri.pathname);
 
 	var can = true;
@@ -6676,7 +6672,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	req.body = EMPTYOBJECT;
 	req.files = EMPTYARRAY;
 	req.isProxy = headers['x-proxy'] === 'total.js';
-
 	req.buffer_exceeded = false;
 	req.buffer_data = new Buffer('');
 	req.buffer_has = false;
@@ -7621,7 +7616,7 @@ Framework.prototype.testing = function(stop, callback) {
 	options.method = test.method;
 	options.headers = test.headers;
 
-	var con = options.protocol === 'https:' ? https : http;
+	var con = options.protocol === 'https:' ? require('https') : http;
 	var req = test.method === 'POST' || test.method === 'PUT' || test.method === 'DELETE' || test.method === 'PATH' ? con.request(options, response) : con.get(options, response);
 
 	req.on('error', function(e) {
