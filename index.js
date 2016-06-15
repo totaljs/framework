@@ -12563,7 +12563,7 @@ Controller.prototype.throw404 = Controller.prototype.view404 = function(problem)
  */
 Controller.prototype.throw500 = Controller.prototype.view500 = function(error) {
 	var self = this;
-	framework.error(typeof(error) === 'string' ? new Error(error) : error, self.name, self.req.uri);
+	framework.error(error instanceof Error ? error : new Error((error || '').toString()), self.name, self.req.uri);
 	return controller_error_status(self, 500, error);
 };
 
