@@ -23,7 +23,7 @@
 - added: `String.isPhone()` for phone number validation
 - added: `String.isUID()` for UID() validation
 - added: `String.isZIP()`
-- added: new schemabuilder types `Email` (string, maxlength 120), `Phone` (string, maxlength 20), `Zip` (string, maxlength 10), `Capitalize` (string), `Lowerize` (string), `Upperize` (string), `UID` (string, minlength 18, maxlength 20) and `Url` (string, maxlength 500)
+- added: new schemabuilder types `Email` (string, maxlength 120), `Phone` (string, maxlength 20), `Zip` (string, maxlength 10), `Capitalize` (string), `Lowerize` (string), `Upperize` (string), `UID` (string, minlength 18, maxlength 20), `Url` (string, maxlength 500), `JSON` (string)
 - added: `Pagination.html(max, format)` returns `String`
 - added: `Pagination.json(max, format)` returns `String`
 - added: `SchemaBuilderEntity.fields` and it contains all field names in array.

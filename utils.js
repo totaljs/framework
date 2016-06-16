@@ -1668,6 +1668,8 @@ function validate_builder_default(name, value, entity) {
 			return regexpZIP.test(value);
 		case 'email':
 			return value.isEmail();
+		case 'json':
+			return value.isJSON();
 		case 'url':
 			return value.isURL();
 		case 'phone':

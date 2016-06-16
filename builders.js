@@ -375,6 +375,13 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
+	if (lower === 'json') {
+		result.type = 3;
+		result.raw = 'string';
+		result.subtype = 'json';
+		return result;
+	}
+
 	if (lower === 'url') {
 		result.type = 3;
 		result.length = 500;
@@ -1264,6 +1271,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 						case 'uppercase':
 							tmp = tmp.toUpperCase();
 							break;
+						case 'json':
+							if (tmp && !type.required && !tmp.isJSON())
+								tmp = '';
+							break;
 					}
 
 					item[property] = self.$onprepare(property, tmp, undefined, model);
@@ -1389,6 +1400,10 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 							break;
 						case 'uppercase':
 							tmp = tmp.toUpperCase();
+							break;
+						case 'json':
+							if (tmp && !type.required && !tmp.isJSON())
+								tmp = '';
 							break;
 					}
 
