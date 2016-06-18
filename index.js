@@ -7501,6 +7501,7 @@ Framework.prototype.testing = function(stop, callback) {
 	//             framework.testsFiles too
 
 	if (!self.tests.length) {
+
 		if (!self.testsFiles.length) {
 
 			if (callback)
@@ -7657,12 +7658,6 @@ Framework.prototype.test = function(stop, names, cb) {
 	var dir = self.config['directory-tests'];
 	var is = false;
 
-	if (!existsSync(framework_utils.combine(dir))) {
-		cb && cb();
-		stop && setTimeout(() => framework.stop(0), 500);
-		return self;
-	}
-
 	self._configure('config-test', true);
 
 	var logger = function(name, start, err) {
@@ -7755,17 +7750,6 @@ Framework.prototype.test = function(stop, names, cb) {
 
 		_test = '';
 
-		if (!counter) {
-			results();
-			cb && cb();
-
-			if (!stop)
-				return self;
-
-			setTimeout(() => framework.stop(1), 500);
-			return self;
-		}
-
 		self.testsFiles.sort(function(a, b) {
 
 			if (a.priority > b.priority)
@@ -7785,7 +7769,9 @@ Framework.prototype.test = function(stop, names, cb) {
 
 		setTimeout(function() {
 			console.log('===================== TESTING ======================');
-			console.log('');
+
+			if (counter)
+				console.log('');
 
 			self.testing(stop, function() {
 
