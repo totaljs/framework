@@ -2828,6 +2828,10 @@ String.prototype.parseConfig = function(def) {
 	var arr = this.split('\n');
 	var length = arr.length;
 	var obj = exports.extend({}, def);
+	var subtype;
+	var name;
+	var index;
+	var value;
 
 	for (var i = 0; i < length; i++) {
 
@@ -2839,22 +2843,22 @@ String.prototype.parseConfig = function(def) {
 		if (str.substring(0, 2) === '//')
 			continue;
 
-		var index = str.indexOf(' :');
+		index = str.indexOf(' :');
 		if (index === -1) {
 			index = str.indexOf('\t:');
 			if (index === -1)
 				continue;
 		}
 
-		var name = str.substring(0, index).trim();
-		var value = str.substring(index + 2).trim();
-		var subtype;
+		name = str.substring(0, index).trim();
+		value = str.substring(index + 2).trim();
 
 		index = name.indexOf('(');
 		if (index !== -1) {
 			subtype = name.substring(index + 1, name.indexOf(')')).trim().toLowerCase();
 			name = name.substring(0, index).trim();
-		}
+		} else
+			subtype = '';
 
 		switch (subtype) {
 			case 'string':
