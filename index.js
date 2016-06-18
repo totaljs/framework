@@ -13397,8 +13397,7 @@ WebSocket.prototype.all = function(fn) {
 
 	for (var i = 0, length = self._keys.length; i < length; i++) {
 		var id = self._keys[i];
-		if (fn(self.connections[id], i))
-			return self;
+		fn(self.connections[id], i);
 	}
 
 	return self;
