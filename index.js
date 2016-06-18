@@ -8443,6 +8443,8 @@ Framework.prototype._configure = function(arr, rewrite) {
 	var accepts = null;
 	var length = arr.length;
 	var tmp;
+	var subtype;
+	var value;
 
 	for (var i = 0; i < length; i++) {
 		var str = arr[i];
@@ -8458,14 +8460,14 @@ Framework.prototype._configure = function(arr, rewrite) {
 		if (name === 'debug' || name === 'resources')
 			continue;
 
-		var value = str.substring(index + 1).trim();
-		var subtype;
-
+		value = str.substring(index + 1).trim();
 		index = name.indexOf('(');
+
 		if (index !== -1) {
 			subtype = name.substring(index + 1, name.indexOf(')')).trim().toLowerCase();
 			name = name.substring(0, index).trim();
-		}
+		} else
+			subtype = '';
 
 		switch (name) {
 			case 'default-cors-maxage':
@@ -9933,7 +9935,7 @@ Subscribe.prototype.doEnd = function() {
 	if (route.isXML) {
 
 		if (req.$type !== 2) {
-			self.route400(new Error('The request validation (The content-type is not text/xml).'));
+			self.route400('Invalid "Content-Type".');
 			req.buffer_data = null;
 			return self;
 		}
@@ -9956,9 +9958,9 @@ Subscribe.prototype.doEnd = function() {
 		return self;
 	}
 
-	if (req.$type === 0) {
+	if (!req.$type) {
 		req.buffer_data = null;
-		self.route400(new Error('The request validation (The content-type is not x-www-form-urlencoded).'));
+		self.route400('Invalid "Content-Type".');
 		return self;
 	}
 
@@ -9967,7 +9969,7 @@ Subscribe.prototype.doEnd = function() {
 			req.body = framework.onParseJSON(req.buffer_data);
 			req.buffer_data = null;
 		} catch (e) {
-			self.route400(new Error('Not valid JSON data.'));
+			self.route400('Invalid JSON data.');
 			return self;
 		}
 	} else
