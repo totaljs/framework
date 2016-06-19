@@ -5013,9 +5013,9 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
 
-	if (canCache && !res.getHeader('Expires')) {
+	if (canCache && !res.getHeader('Expires'))
 		returnHeaders.Expires = DATE_EXPIRES;
-	} else if (returnHeaders.Expires)
+	else if (returnHeaders.Expires)
 		delete returnHeaders.Expires;
 
 	if (headers) {
