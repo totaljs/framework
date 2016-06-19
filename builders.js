@@ -110,11 +110,27 @@ function SchemaBuilderEntity(parent, name) {
 	this.gcache = {};
 	this.dependencies;
 	this.fields;
+	this.fields_allow;
 
 	this.CurrentSchemaInstance = function(){};
 	this.CurrentSchemaInstance.prototype = new SchemaInstance();
 	this.CurrentSchemaInstance.prototype.$$schema = this;
 }
+
+SchemaBuilderEntity.prototype.allow = function(name) {
+	var self = this;
+
+	if (!self.fields_allow)
+		self.fields_allow = [];
+
+	for (var i = 0, length = arguments.length; i < length; i++) {
+		if (arguments[i] instanceof Array)
+			arguments[i].forEach(item => self.fields_allow.push(item));
+		else
+			self.fields_allow.push(arguments[i]);
+	}
+	return self;
+};
 
 /**
  * Define type in schema
@@ -1452,6 +1468,15 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 				continue;
 
 			item[property].push(tmp);
+		}
+	}
+
+	if (self.fields_allow) {
+		for (var i = 0, length = self.fields_allow.length; i < length; i++) {
+			var name = self.fields_allow[i];
+			var val = model[name];
+			if (val !== undefined)
+				item[name] = val;
 		}
 	}
 

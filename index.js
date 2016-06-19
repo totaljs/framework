@@ -9974,10 +9974,8 @@ Subscribe.prototype.validate = function(route, next) {
 	var req = self.req;
 	self.schema = false;
 
-	if (req.method === 'DELETE' || !route.schema) {
-		next();
-		return;
-	}
+	if (!route.schema || req.method === 'DELETE')
+		return next();
 
 	framework.onSchema(req, route.schema[0], route.schema[1], function(err, body) {
 
@@ -10022,7 +10020,6 @@ Subscribe.prototype.doEndfile = function() {
 	for (var i = 0; i < framework._length_files; i++) {
 
 		var file = framework.routes.files[i];
-
 		try {
 
 			if (file.extensions && !file.extensions[self.req.extension])
