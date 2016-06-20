@@ -5120,7 +5120,7 @@ exports.async = function(fn, isApply) {
 
 		function next(err, result) {
 
-			var g;
+			var g, type;
 
 			try
 			{
@@ -5139,19 +5139,24 @@ exports.async = function(fn, isApply) {
 				if (!complete)
 					return;
 
-				if (typeof(complete) === 'object' && complete.isController) {
+				type = typeof(complete);
+
+				if (type === 'object' && complete.isController) {
 					if (e instanceof ErrorBuilder)
 						complete.content(e);
 					else
 						complete.view500(e);
 					return;
 				}
-				setImmediate(() => complete(e));
+
+				if (type === 'function')
+					setImmediate(() => complete(e));
+
 				return;
 			}
 
 			if (g.done) {
-				if (complete && typeof(complete) !== 'object')
+				if (typeof(complete) === 'function')
 					complete(null, g.value);
 				return;
 			}
