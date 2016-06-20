@@ -41,6 +41,8 @@
 - added: `U.chunker(name, [max])` creates the chunker (for streaming some items)
 - added: `F.worker2(name, [args], [callback], [timeout])`
 - added: `SchemaBuilderEntity.allow('fieldname1', 'fieldnameN')` - allows other keys out of defined fields
+- added: `global.EMPTYOBJECT`
+- added: `global.EMPTYARRAY`
 
 - updated: subdomain routing supports wildcard routing `F.route('[*]/', 'homepage')` (`F.websocket()` is supported too)
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot

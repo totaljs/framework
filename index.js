@@ -65,6 +65,9 @@ Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
 Object.freeze(EMPTYREQUEST);
 
+global.EMPTYOBJECT = EMPTYOBJECT;
+global.EMPTYARRAY = EMPTYARRAY;
+
 var RANGE = { start: 0, end: 0 };
 var HEADERS = {};
 var SUCCESSHELPER = { success: true };
