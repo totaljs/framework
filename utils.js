@@ -417,7 +417,8 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		cookies = callback;
 		callback = data;
 		data = '';
-	}
+	} else if (!data)
+		data = '';
 
 	if (typeof(cookies) === 'number') {
 		cookies = null;
@@ -450,9 +451,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 	if (typeof(encoding) !== 'string')
 		encoding = ENCODING;
-
-	if (!data)
-		data = '';
 
 	if (flags instanceof Array) {
 		length = flags.length;
@@ -618,10 +616,10 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 		if (callback) {
 			req.on('error', function(err) {
+				if (!callback)
+					return;
 				callback(err, '', 0, undefined, uri.host);
 				callback = null;
-				req.removeAllListeners();
-				req = null;
 				e.removeAllListeners();
 				e = null;
 			});
@@ -629,10 +627,12 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			req.setTimeout(timeout || 10000, function() {
 				req.removeAllListeners();
 				req = null;
-				e.removeAllListeners();
-				e = null;
+				if (!callback)
+					return;
 				callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
 				callback = null;
+				e.removeAllListeners();
+				e = null;
 			});
 		}
 
@@ -860,11 +860,12 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		var req = isPOST ? connection.request(uri, onResponse) : connection.request(uri, onResponse);
 
 		req.on('error', function(err) {
+			if (!callback)
+				return;
 			e.removeAllListeners();
 			e = null;
-			req.removeAllListeners();
-			req = null;
 			callback(err);
+			callback = null;
 		});
 
 		req.on('close', function() {
@@ -873,11 +874,12 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		});
 
 		req.setTimeout(timeout || 60000, function() {
-			req.removeAllListeners();
-			req = null;
+			if (!callback)
+				return;
 			e.removeAllListeners();
 			e = null;
 			callback(new Error(exports.httpStatus(408)));
+			callback = null;
 		});
 
 		req.on('response', function(response) {
