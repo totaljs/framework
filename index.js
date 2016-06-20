@@ -5565,15 +5565,9 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 		res.writeHead(200, returnHeaders);
 
-		res.on('error', function() {
-			stream.close();
-		});
-
+		res.on('error', () => stream.close());
 		stream.pipe(zlib.createGzip()).pipe(res);
-
-		framework_internal.onFinished(res, function() {
-			framework_internal.destroyStream(stream);
-		});
+		framework_internal.onFinished(res, () => framework_internal.destroyStream(stream));
 
 		if (done)
 			done();
@@ -5586,11 +5580,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	}
 
 	res.writeHead(200, returnHeaders);
-
-	framework_internal.onFinished(res, function(err) {
-		framework_internal.destroyStream(stream);
-	});
-
+	framework_internal.onFinished(res, (err) => framework_internal.destroyStream(stream));
 	stream.pipe(res);
 
 	if (done)
@@ -6201,7 +6191,6 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 
 		if (self.ip === undefined || self.ip === null)
 			self.ip = 'auto';
-
 
 		if (self.server) {
 			self.server.removeAllListeners();
