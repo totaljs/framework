@@ -60,6 +60,7 @@ const REQUEST_PROXY_FLAGS = ['post', 'json'];
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
 const EMPTYREQUEST = { uri: {} };
+const SINGLETONS = {};
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -298,6 +299,10 @@ global.MAKE = global.TRANSFORM = function(transform, fn) {
 		return TransformBuilder.transform.apply(obj, arguments);
 
 	return obj;
+};
+
+global.SINGLETON = function(name) {
+	return SINGLETONS[name] || (SINGLETONS[name] = {});
 };
 
 global.NEWTRANSFORM = function(name, fn, isDefault) {
