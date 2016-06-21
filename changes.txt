@@ -37,7 +37,7 @@
 - added: `controller.trace(message)`
 - added: `req.split` contains splitted url
 - added: `F.touch(url/req)` for clearing internal cache of cached static files (it works only in release mode)
-- added: `F.path.exists(path, callback(exist))` for check of existing file
+- added: `F.path.exists(path, callback(exist, size, isFile))` for check of existing file
 - added: `U.chunker(name, [max])` creates the chunker (for streaming some items)
 - added: `F.worker2(name, [args], [callback], [timeout])`
 - added: `SchemaBuilderEntity.allow('fieldname1', 'fieldnameN')` - allows other keys out of defined fields

@@ -14822,7 +14822,7 @@ function fsFileExists(filename, callback) {
 	U.queue('framework.files', F.config['default-maximum-file-descriptors'], function(next) {
 		fs.lstat(filename, function(err, stats) {
 			next();
-			callback(!err && stats.isFile(), stats ? stats.size : 0);
+			callback(!err && stats.isFile(), stats ? stats.size : 0, stats ? stats.isFile() : false);
 		});
 	});
 };
