@@ -1660,7 +1660,7 @@ Framework.prototype.routing = function(name) {
 	for (var i = 0, length = self.routes.web.length; i < length; i++) {
 		var route = self.routes.web[i];
 		if (route.name === name) {
-			var url =  Utils.path(route.url.join('/'));
+			var url = framework_utils.path(route.url.join('/'));
 			if (url[0] !== '/')
 				url = '/' + url;
 			return { controller: route.controller, url: url, id: route.id, flags: route.flags, middleware: route.middleware, execute: route.execute, timeout: route.timeout, options: route.options, length: route.length };
@@ -2776,7 +2776,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 			if (type === 'package') {
 
-				utils.download(declaration, ['get'], function(err, response) {
+				framework_utils.download(declaration, ['get'], function(err, response) {
 
 					if (err) {
 						self.error(err, 'framework.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
@@ -2795,7 +2795,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				return self;
 			}
 
-			utils.request(declaration, ['get'], function(err, data, code) {
+			framework_utils.request(declaration, ['get'], function(err, data, code) {
 
 				if (code !== 200 && !err)
 					err = new Error(data);
@@ -3112,7 +3112,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 						name = tmp.toString().replace(/\.js/i, '');
 				}
 
-				var filename = self.path.temporary(plus + 'installed-' + type + '-' + utils.GUID(10) + '.js');
+				var filename = self.path.temporary(plus + 'installed-' + type + '-' + framework_utils.GUID(10) + '.js');
 				fs.writeFileSync(filename, declaration);
 				obj = require(filename);
 
@@ -3187,7 +3187,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	if (type === 'module' || type === 'controller') {
 
 		// for inline routes
-		var _ID = _controller = 'TMP' + Utils.random(10000);
+		var _ID = _controller = 'TMP' + framework_utils.random(10000);
 
 		try {
 			if (useRequired) {
@@ -4047,7 +4047,7 @@ Framework.prototype.onMeta = function() {
 
 	for (var i = 0; i < length; i++) {
 
-		var arg = utils.encode(arguments[i]);
+		var arg = framework_utils.encode(arguments[i]);
 		if (arg === null || !arg.length)
 			continue;
 
@@ -4117,7 +4117,7 @@ Framework.prototype.logger = function() {
 	}
 
 	self.path.verify('logs');
-	framework_utils.queue('framework.logger', 5, (next) => fs.appendFile(utils.combine(self.config['directory-logs'], arguments[0] + '.log'), dt + ' | ' + str + '\n', next));
+	framework_utils.queue('framework.logger', 5, (next) => fs.appendFile(framework_utils.combine(self.config['directory-logs'], arguments[0] + '.log'), dt + ' | ' + str + '\n', next));
 	return self;
 };
 
@@ -4415,7 +4415,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		}
 
 		if (filename.startsWith('http://') || filename.startsWith('https://')) {
-			Utils.request(filename, ['get'], function(err, data) {
+			framework_utils.request(filename, ['get'], function(err, data) {
 
 				var output = self.compileContent(extension, framework_internal.parseBlock(block, data), filename);
 
@@ -5144,7 +5144,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 	h[RESPONSE_HEADER_CACHECONTROL] = 'private';
 
 	if (headers)
-		utils.extend(h, headers, true);
+		framework_utils.extend(h, headers, true);
 
 	var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 	var connection = options.protocol === 'https:' ? require('https') : http;
@@ -5476,7 +5476,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 	if (stream) {
 		var image = framework_image.load(stream, im);
 		fnProcess(image);
-		self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers, done);
+		self.responseStream(req, res, framework_utils.getContentType(image.outputType), image.stream(), null, headers, done);
 		return self;
 	}
 
@@ -5493,7 +5493,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 		self.path.verify('temp');
 		var image = framework_image.load(filename, im);
 		fnProcess(image);
-		self.responseStream(req, res, utils.getContentType(image.outputType), image.stream(), null, headers, done);
+		self.responseStream(req, res, framework_utils.getContentType(image.outputType), image.stream(), null, headers, done);
 	});
 	return self;
 };
@@ -5519,7 +5519,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	}
 
 	if (contentType.lastIndexOf('/') === -1)
-		contentType = utils.getContentType(contentType);
+		contentType = framework_utils.getContentType(contentType);
 
 	var accept = req.headers['accept-encoding'] || '';
 
@@ -5550,7 +5550,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 
 	if (headers) {
 		returnHeaders = framework_utils.extend({}, returnHeaders, true);
-		utils.extend(returnHeaders, headers, true);
+		framework_utils.extend(returnHeaders, headers, true);
 	}
 
 	if (download)
