@@ -5116,7 +5116,7 @@ Framework.prototype.touch = function(url) {
 	if (url)
 		delete this.temporary.path[createTemporaryKey(url)];
 	else
-		delete this.temporary.path = {};
+		this.temporary.path = {};
 
 	return this;
 };
