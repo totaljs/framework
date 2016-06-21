@@ -8087,7 +8087,7 @@ Framework.prototype._configure_sitemap = function(arr, clean) {
 
 	if (!arr || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'sitemap');
-		if (existsSync(filename))
+		if (existsSync(filename, true))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -8203,7 +8203,7 @@ Framework.prototype._configure_dependencies = function(arr) {
 
 	if (!arr || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'dependencies');
-		if (existsSync(filename))
+		if (existsSync(filename, true))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -8305,7 +8305,7 @@ Framework.prototype._configure_versions = function(arr, clean) {
 
 	if (arr === undefined || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'versions');
-		if (existsSync(filename))
+		if (existsSync(filename, true))
 			arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 		else
 			arr = null;
@@ -8371,7 +8371,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 	if (type === 'string') {
 		var filename = prepare_filename(arr);
-		if (!existsSync(filename))
+		if (!existsSync(filename, true))
 			return self;
 		arr = fs.readFileSync(filename).toString(ENCODING).split('\n');
 	}
@@ -14968,9 +14968,12 @@ function prepare_viewname(value) {
 	return value.substring(value.indexOf('/', 2) + 1);
 }
 
-function existsSync(filename) {
+function existsSync(filename, file) {
 	try {
-		return fs.statSync(filename) ? true : false;
+		var val = fs.statSync(filename);
+		if (val)
+			return file ? val.isFile() : true;
+		return false;
 	} catch (e) {
 		return false;
 	}
