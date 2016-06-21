@@ -5112,7 +5112,12 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
  * @return {Framework}
  */
 Framework.prototype.touch = function(url) {
-	delete this.temporary.path[createTemporaryKey(url)];
+
+	if (url)
+		delete this.temporary.path[createTemporaryKey(url)];
+	else
+		delete this.temporary.path = {};
+
 	return this;
 };
 
