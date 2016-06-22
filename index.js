@@ -456,7 +456,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-49';
+	this.version_header = '2.0.0-50';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -9659,10 +9659,7 @@ Subscribe.prototype.urlencoded = function() {
 	// THROWS (in OSX): Assertion failed: (Buffer::HasInstance(args[0]) == true), function Execute, file ../src/node_http_parser.cc, line 392.
 	//self.req.socket.setEncoding(ENCODING);
 
-	self.req.on('data', function(chunk) {
-		self.doParsepost(chunk);
-	});
-
+	self.req.on('data', (chunk) => self.doParsepost(chunk));
 	self.end();
 	return self;
 };
