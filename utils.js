@@ -948,13 +948,13 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 
 	var response = function(res) {
 
-		res.body = '';
+		res.body = new Buffer(0);
 		res._bufferlength = 0;
 
 		res.on('data', function(chunk) {
-			res.body += chunk.toString(ENCODING);
-			this._bufferlength += chunk.length;
-			e.emit('data', chunk, responseLength ? (this._bufferlength / responseLength) * 100 : 0);
+			res.body = Buffer.concat([res.body, chunk]);
+			res._bufferlength += chunk.length;
+			e.emit('data', chunk, responseLength ? (res._bufferlength / responseLength) * 100 : 0);
 		});
 
 		res.on('end', function() {
@@ -963,7 +963,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 			e.removeAllListeners();
 			e = null;
 			if (callback)
-				callback(null, self.body, self.statusCode, self.headers, uri.host);
+				callback(null, self.body.toString('utf8'), self.statusCode, self.headers, uri.host);
 			self.body = null;
 		});
 	};
@@ -1288,24 +1288,30 @@ exports.streamer = function(beg, end, callback) {
 		end = undefined;
 	}
 
-	var cache = '';
 	var indexer = 0;
+	var buffer = new Buffer(0);
+
+	beg = new Buffer(beg, 'utf8');
+	if (end)
+		end = new Buffer(end, 'utf8');
 
 	if (!end) {
 		var length = beg.length;
 		return function(chunk) {
+
 			if (!chunk)
 				return;
-			if (typeof(chunk) !== 'string')
-				chunk = chunk.toString('utf8');
-			cache += chunk;
-			var index = cache.indexOf(beg);
+
+			buffer = Buffer.concat([buffer, chunk]);
+
+			var index = buffer.indexOf(beg);
 			if (index === -1)
 				return;
+
 			while (index !== -1) {
-				callback(cache.substring(0, index + length), indexer++);
-				cache = cache.substring(index + length);
-				index = cache.indexOf(beg);
+				callback(buffer.toString('utf8', 0, index + length), indexer++);
+				buffer = buffer.slice(index + length);
+				index = buffer.indexOf(beg);
 				if (index === -1)
 					return;
 			}
@@ -1323,33 +1329,30 @@ exports.streamer = function(beg, end, callback) {
 		if (!chunk)
 			return;
 
-		if (typeof(chunk) !== 'string')
-			chunk = chunk.toString('utf8');
-
-		cache += chunk;
+		buffer = Buffer.concat([buffer, chunk]);
 
 		if (!is) {
-			bi = cache.indexOf(beg);
+			bi = buffer.indexOf(beg);
 			if (bi === -1)
 				return;
 			is = true;
 		}
 
 		if (is) {
-			ei = cache.indexOf(end, bi + blength);
+			ei = buffer.indexOf(end, bi + blength);
 			if (ei === -1)
 				return;
 		}
 
 		while (bi !== -1) {
-			callback(cache.substring(bi, ei + elength), indexer++);
-			cache = cache.substring(ei + elength);
+			callback(buffer.toString('utf8', bi, ei + elength), indexer++);
+			buffer = buffer.slice(ei + elength);
 			is = false;
-			bi = cache.indexOf(beg);
+			bi = buffer.indexOf(beg);
 			if (bi === -1)
 				return;
 			is = true;
-			ei = cache.indexOf(end, bi + blength);
+			ei = buffer.indexOf(end, bi + blength);
 			if (ei === -1)
 				return;
 		}
@@ -1870,12 +1873,6 @@ exports.combine = function() {
 		else
 			p += (p[p.length - 1] !== '/' ? '/' : '') + v;
 	}
-
-	/*
-	if (isWindows)
-		p = p.substring(1);
-	*/
-
 	return exports.$normalize(p);
 };
 
@@ -1885,9 +1882,7 @@ exports.combine = function() {
  * @return {String}
  */
 exports.removeDiacritics = function(str) {
-	return str.replace(regexpDiacritics, function(c) {
-		return DIACRITICSMAP[c] || c;
-	});
+	return str.replace(regexpDiacritics, c => DIACRITICSMAP[c] || c);
 };
 
 /**
