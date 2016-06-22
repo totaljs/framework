@@ -71,6 +71,9 @@
     },{
         "name": "Martin Smola",
         "email": "smola.martin@gmail.com"
+    },{
+        "name": "Peter Štolc",
+        "email": "stolcp@gmail.com"
     }],
     "version": "2.0.0-50",
     "homepage": "http://www.totaljs.com",

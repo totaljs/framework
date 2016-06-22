@@ -1,13 +1,14 @@
-![total.js logo](https://www.totaljs.com/img/logo-github.png)
+![Total.js logo](https://www.totaljs.com/img/logo-github.png)
 ---
 [![NPM version][npm-version-image]][npm-url] [![NPM quality][npm-quality]](http://packagequality.com/#?package=total.js) [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
 Node.js web framework
 =====================
 
-__total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
+__Total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
 
+- [__NEW__: Total.js OpenPlatform](https://www.totaljs.com/openplatform/) is a simple enterprise ready platform
 - [Total.js AppMonitor](https://www.totaljs.com/monitor/) for tracking total.js applications
 - [Total.js Simple Eshop + CMS](http://www.totaljs.com/eshop)
 - [Total.js modules and packages](https://github.com/totaljs/modules)
@@ -20,13 +21,12 @@ $ npm install total.js
 ```
 
 - [Homepage](http://www.totaljs.com)
+- [__Get Started__](http://www.totaljs.com/get-started/)
 - [__Documentation__](http://docs.totaljs.com)
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
 - [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
-- [__Download__ empty-project with the framework](https://github.com/totaljs/framework/releases)
 - [__Make a donation__ via PayPal](http://www.totaljs.com/#make-a-donation)
-- [Enterprise](http://www.nodejsenterprise.com)
 
 &nbsp;
 
@@ -39,12 +39,12 @@ $ npm install total.js
 Please support the framework on social networks.
 
 - [Blogs](https://bufferwall.com/explore/?tag=total.js)
-- [Follow total.js on Gitter](https://gitter.im/totaljs/framework)
-- [Follow total.js on GitHub](https://github.com/totaljs/framework)
-- [Follow total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
-- [Follow total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
-- [Follow total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
-- [Follow total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
+- [Follow Total.js on Gitter](https://gitter.im/totaljs/framework)
+- [Follow Total.js on GitHub](https://github.com/totaljs/framework)
+- [Follow Total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
+- [Follow Total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
+- [Follow Total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
+- [Follow Total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
 ---
 
@@ -118,10 +118,12 @@ We provide a support of the framework for companies. Our support services will k
 | [Андрей Владимирович](https://github.com/anddesigner) | contributor | <and.designer93@gmail.com> |
 | [Guy Fraser](https://github.com/aubergine10) | contributor | <guy.fraser1@gmail.com> |
 | [Martin Smola](https://github.com/molda) | contributor | <smola.martin@gmail.com> |
+| [Peter Štolc](https://github.com/fokinko) | contributor | <stolcp@gmail.com> |
 
-## Built with total.js
+## Built with Total.js
 
-- [__NEW__: Eshop + CMS written in node.js / total.js](http://www.totaljs.com/eshop)
+- [__NEW__: OpenPlatform](http://www.totaljs.com/openplatform/)
+- [__NEW__: Eshop + CMS written in Node.js / Total.js](http://www.totaljs.com/eshop/)
 - [__NEW__: Todomator - www.todomator.com](https://www.todomator.com)
 - [Componenator - Resources for web developers](http://www.componentator.com)
 - [E-commerce, CMS and Docker manager](http://nowitssimple.com/)
