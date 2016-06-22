@@ -136,8 +136,7 @@ We provide a support of the framework for companies. Our support services will k
 
 ## Useful modules
 
-- [SQL Agent: A missing ORM for node.js and total.js](https://github.com/petersirka/node-sqlagent)
-- [MongoDB addons for better work with MongoDB and total.js](https://github.com/petersirka/mongodb-addons)
+- [SQL Agent: A missing ORM for Node.js and Total.js](https://github.com/petersirka/node-sqlagent)
 - [PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
