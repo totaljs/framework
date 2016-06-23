@@ -95,16 +95,16 @@ function prototypeString() {
 	assert.ok('[}'.isJSON() === false, 'string.isJSON([})');
 	assert.ok('["'.isJSON() === false, 'string.isJSON([")');
 
-	str = 'www.google.sk';
-	assert.ok(str.isURL() === true, 'string.isURL(): ' + str);
-
 	str = 'google.sk';
 	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
 
 	str = 'google';
 	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
 
-	str = 'http://google.com';
+	str = 'http://www.google.com';
+	assert.ok(str.isURL() === true, 'string.isURL(): ' + str);
+
+	str = 'http://127.0.0.1:8000';
 	assert.ok(str.isURL() === true, 'string.isURL(): ' + str);
 
 	str = 'https://mail.google.com';
