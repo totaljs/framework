@@ -55,7 +55,7 @@ const REG_ROUTESTATIC = /^(\/\/|https\:|http\:)+/g;
 const REG_EMPTY = /\s/g;
 const REG_SANITIZE_BACKSLASH = /\/\//g;
 const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
-const REG_SCRIPTCONTENT = /\<|\>|;/g;
+const REG_SCRIPTCONTENT = /\<|\>|;/;
 const REQUEST_PROXY_FLAGS = ['post', 'json'];
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
@@ -13959,12 +13959,13 @@ function Backup() {
 	this.file = [];
 	this.directory = [];
 	this.path = '';
-	this.fileName = '';
-	this.read = { key: '', value: '', status: 0 };
+	this.read = { key: new Buffer(0), value: new Buffer(0), status: 0 };
 	this.pending = 0;
 	this.cache = {};
-	this.complete = function() {};
+	this.complete = NOOP;
 	this.filter = () => true;
+	this.bufKey = new Buffer(':');
+	this.bufNew = new Buffer('\n');
 }
 
 Backup.prototype.restoreKey = function(data) {
@@ -13981,21 +13982,21 @@ Backup.prototype.restoreKey = function(data) {
 	var tmp = data;
 
 	if (read.status === 2) {
-		tmp = read.key + tmp;
-		index = tmp.indexOf(':');
-	}
-	else
-		index = tmp.indexOf(':');
+		tmp = Buffer.concat([read.key, tmp]);
+		index = tmp.indexOf(self.bufKey);
+	} else
+		index = tmp.indexOf(self.bufKey);
 
 	if (index === -1) {
-		read.key += data;
+		read.key = Buffer.concat([read.key, data]);
 		read.status = 2;
 		return;
 	}
 
 	read.status = 1;
-	read.key = tmp.substring(0, index);
-	self.restoreValue(tmp.substring(index + 1));
+	read.key = tmp.slice(0, index);
+	self.restoreValue(tmp.slice(index + 1));
+	tmp = null;
 };
 
 Backup.prototype.restoreValue = function(data) {
@@ -14008,20 +14009,20 @@ Backup.prototype.restoreValue = function(data) {
 		return;
 	}
 
-	var index = data.indexOf('\n');
+	var index = data.indexOf(self.bufNew);
 	if (index === -1) {
 		read.value += data;
 		return;
 	}
 
-	read.value += data.substring(0, index);
-	self.restoreFile(read.key.replace(REG_EMPTY, ''), read.value.replace(REG_EMPTY, ''));
+	read.value = Buffer.concat([read.value, data.slice(0, index)]);
+	self.restoreFile(read.key.toString('utf8').replace(REG_EMPTY, ''), read.value.toString('utf8').replace(REG_EMPTY, ''));
 
 	read.status = 0;
-	read.value = '';
-	read.key = '';
+	read.value = new Buffer(0);
+	read.key = new Buffer(0);
 
-	self.restoreKey(data.substring(index + 1));
+	self.restoreKey(data.slice(index + 1));
 };
 
 Backup.prototype.restore = function(filename, path, callback, filter) {
@@ -14040,7 +14041,7 @@ Backup.prototype.restore = function(filename, path, callback, filter) {
 	self.path = path;
 
 	var stream = fs.createReadStream(filename);
-	stream.on('data', buffer => self.restoreKey(buffer.toString('utf8')));
+	stream.on('data', buffer => self.restoreKey(buffer));
 
 	if (!callback) {
 		stream.resume();
@@ -14087,8 +14088,7 @@ Backup.prototype.restoreFile = function(key, value) {
 	var buffer = new Buffer(value, 'base64');
 	self.pending++;
 	zlib.gunzip(buffer, function(err, data) {
-		fs.writeFileSync(path.join(self.path, key), data);
-		self.pending--;
+		fs.writeFile(path.join(self.path, key), data, () => self.pending--);
 		buffer = null;
 	});
 };
@@ -14121,12 +14121,8 @@ Backup.prototype.createDirectory = function(p, root) {
 	if (is && arr[0].indexOf(':') !== -1)
 		arr.shift();
 
-	var length = arr.length;
-
-	for (var i = 0; i < length; i++) {
-
+	for (var i = 0, length = arr.length; i < length; i++) {
 		var name = arr[i];
-
 		if (is)
 			directory += (directory ? '\\' : '') + name;
 		else
