@@ -407,7 +407,7 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
  * @param  {Number} timeout Request timeout.
  * return {Boolean}
  */
-exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout, e) {
+exports.request = function(url, flags, data, callback, cookies, headers, encoding, timeout) {
 
 	// No data (data is optinal argument)
 	if (typeof(data) === 'function') {
@@ -435,35 +435,26 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		timeout = encoding;
 	}
 
-	var method = '';
-	var length = 0;
+	var options = { length: 0, timeout: 10000, evt: new events.EventEmitter(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false };
+	var method;
 	var type = 0;
-	var isDNSCACHE = false;
-	var max = 0;
-
-	if (!e)
-		e = new events.EventEmitter();
 
 	if (headers)
 		headers = exports.extend({}, headers);
 	else
 		headers = {};
 
-	if (typeof(encoding) !== 'string')
-		encoding = ENCODING;
-
 	if (flags instanceof Array) {
-		length = flags.length;
-		for (var i = 0; i < length; i++) {
+		for (var i = 0, length = flags.length; i < length; i++) {
 
 			// timeout
 			if (flags[i] > 0) {
-				timeout = flags[i];
+				options.timeout = flags[i];
 				continue;
 			}
 
 			if (flags[i][0] === '<') {
-				max = flags[i].substring(1).trim().parseInt() * 1024; // kB
+				options.max = flags[i].substring(1).trim().parseInt() * 1024; // kB
 				continue;
 			}
 
@@ -473,7 +464,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'base64':
 				case 'binary':
 				case 'hex':
-					encoding = flags[i];
+					options.encoding = flags[i];
 					break;
 				case 'xhr':
 					headers['X-Requested-With'] = 'XMLHttpRequest';
@@ -487,7 +478,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'json':
 					headers['Content-Type'] = 'application/json';
 
-					if (method === '')
+					if (!method)
 						method = 'POST';
 
 					type = 1;
@@ -495,7 +486,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'xml':
 					headers['Content-Type'] = 'text/xml';
 
-					if (method === '')
+					if (!method)
 						method = 'POST';
 
 					type = 2;
@@ -522,145 +513,157 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 					break;
 				case 'dnscache':
-					isDNSCACHE = true;
+					options.resolve = true;
 					break;
 			}
 		}
 	}
 
-	if (!method)
+	if (method)
+		options.post = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATH';
+	else
 		method = 'GET';
-
-	var isPOST = method === 'POST' || method === 'PUT' || method === 'DELETE';
 
 	if (typeof(data) !== 'string')
 		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
 	else if (data[0] === '?')
 		data = data.substring(1);
 
-	if (!isPOST) {
+	if (!options.post) {
 		if (data.length && url.indexOf('?') === -1)
 			url += '?' + data;
 		data = '';
 	}
 
-	var uri = parser.parse(url);
-	var responseLength = 0;
-
-	uri.method = method;
-
 	if (cookies) {
 		var builder = '';
-
 		for (var m in cookies)
 			builder += (builder ? '; ' : '') + m + '=' + cookies[m];
-
 		if (builder)
 			headers['Cookie'] = builder;
 	}
 
-	var buf;
-
 	if (data.length) {
-		buf = new Buffer(data, ENCODING);
-		headers['Content-Length'] = buf.length;
+		options.data = new Buffer(data, ENCODING);
+		headers['Content-Length'] = options.data.length;
 	}
 
+	var uri = parser.parse(url);
+	uri.method = method;
 	uri.agent = false;
 	uri.headers = headers;
 
-	var onResponse = function(res) {
-
-		res._buffer = null;
-		res._bufferlength = 0;
-
-		// We have redirect
-		if (res.statusCode === 301) {
-			exports.request(res.headers['location'], flags, data, callback, cookies, headers, encoding, timeout, e);
-			res = null;
-			return;
-		}
-
-		res.on('data', function(chunk) {
-			var self = this;
-			if (max && self._bufferlength > max)
-				return;
-			if (self._buffer)
-				self._buffer = Buffer.concat([self._buffer, chunk]);
-			else
-				self._buffer = chunk;
-			self._bufferlength += chunk.length;
-			e.emit('data', chunk, responseLength ? (self._bufferlength / responseLength) * 100 : 0);
-		});
-
-		res.on('end', function() {
-			var self = this;
-			var str = self._buffer ? self._buffer.toString(encoding) : '';
-			delete self._buffer;
-			if (e)
-				e.emit('end', str, self.statusCode, self.headers, uri.host);
-			if (callback)
-				callback(null, method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
-			callback = null;
-			res.removeAllListeners();
-			e.removeAllListeners();
-			e = null;
-		});
-
-		res.resume();
-	};
-
-	var connection = uri.protocol === 'https:' ? https : http;
-	var run = function() {
-		var req = isPOST ? connection.request(uri, onResponse) : connection.get(uri, onResponse);
-
-		if (callback) {
-			req.on('error', function(err) {
-				if (!callback)
-					return;
-				callback(err, '', 0, undefined, uri.host);
-				callback = null;
-				e.removeAllListeners();
-				e = null;
-			});
-
-			req.setTimeout(timeout || 10000, function() {
-				req.removeAllListeners();
-				req = null;
-				if (!callback)
-					return;
-				callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
-				callback = null;
-				e.removeAllListeners();
-				e = null;
-			});
-		}
-
-		req.on('close', function() {
-			if (!req)
-				return;
-			req.removeAllListeners();
-			req = null;
-		});
-
-		req.on('response', function(response) {
-			responseLength = +response.headers['content-length'] || 0;
-			e.emit('begin', responseLength);
-		});
-
-		req.end(buf);
-	};
-
-	if (isDNSCACHE) {
+	if (options.resolve) {
 		exports.resolve(url, function(err, u) {
-			uri.host = u.host;
-			run();
+			if (!err)
+				uri.host = u.host;
+			request_call(uri, options);
 		});
 	} else
-		run();
+		request_call(uri, options);
 
-	return e;
+	return options.evt;
 };
+
+function request_call(uri, options) {
+
+	options.length = 0;
+
+	var connection = uri.protocol === 'https:' ? https : http;
+	var req = options.post ? connection.request(uri, (res) => request_response(res, uri, options)) : connection.get(uri, (res) => request_response(res, uri, options));
+
+	if (!options.callback) {
+		req.on('error', NOOP);
+		return;
+	}
+
+	req.on('error', function(err) {
+		if (!options.callback)
+			return;
+		options.callback(err, '', 0, undefined, uri.host);
+		options.callback = null;
+		options.evt.removeAllListeners();
+		options.evt = null;
+	});
+
+	req.setTimeout(options.timeout, function() {
+		if (!options.callback)
+			return;
+		options.callback(new Error(exports.httpStatus(408)), '', 0, undefined, uri.host);
+		options.callback = null;
+		options.evt.removeAllListeners();
+		options.evt = null;
+	});
+
+	req.on('response', function(response) {
+		response.req = req;
+		options.length = +response.headers['content-length'] || 0;
+		options.evt && options.evt.emit('begin', options.length);
+	});
+
+	req.end(options.data);
+}
+
+function request_response(res, uri, options) {
+
+	res._buffer = null;
+	res._bufferlength = 0;
+
+	// We have redirect
+	if (res.statusCode === 301) {
+
+		var tmp = parser.parse(res.headers['location']);
+		tmp.headers = uri.headers;
+		tmp.agent = false;
+		tmp.method = uri.method;
+
+		res.req.removeAllListeners();
+		res.req = null;
+
+		if (!options.resolve) {
+			res.removeAllListeners();
+			res = null;
+			return request_call(tmp, options);
+		}
+
+		exports.resolve(res.headers['location'], function(err, u) {
+			if (!err)
+				tmp.host = u.host;
+			res.removeAllListeners();
+			res = null;
+			request_call(tmp, options);
+		});
+
+		return;
+	}
+
+	res.on('data', function(chunk) {
+		var self = this;
+		if (options.max && self._bufferlength > options.max)
+			return;
+		if (self._buffer)
+			self._buffer = Buffer.concat([self._buffer, chunk]);
+		else
+			self._buffer = chunk;
+		self._bufferlength += chunk.length;
+		options.evt && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
+	});
+
+	res.on('end', function() {
+		var self = this;
+		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
+		delete self._buffer;
+		options.evt && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
+		options.callback && options.callback(null, uri.method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
+		options.callback = null;
+		options.evt.removeAllListeners();
+		options.evt = null;
+		res.req && res.req.removeAllListeners();
+		res.removeAllListeners();
+	});
+
+	res.resume();
+}
 
 exports.$$request = function(url, flags, data, cookies, headers, encoding, timeout) {
 	return function(callback) {
