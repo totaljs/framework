@@ -545,7 +545,7 @@ function Framework() {
 		'default-interval-clear-cache': 7,
 		'default-interval-precompile-views': 61,
 		'default-interval-websocket-ping': 3,
-		'default-interval-clear-dnscache': 2880 // 2 days
+		'default-interval-clear-dnscache': 120
 	};
 
 	this.global = {};
