@@ -435,7 +435,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		timeout = encoding;
 	}
 
-	var options = { length: 0, timeout: 10000, evt: new events.EventEmitter(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false };
+	var options = { length: 0, timeout: 10000, evt: new events.EventEmitter(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
 
@@ -505,7 +505,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'post':
 				case 'put':
 				case 'delete':
-				case 'path':
+				case 'patch':
 
 					method = flags[i].toUpperCase();
 					if (!headers['Content-Type'])
@@ -520,7 +520,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	}
 
 	if (method)
-		options.post = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATH';
+		options.post = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
 	else
 		method = 'GET';
 
@@ -565,9 +565,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	return options.evt;
 };
 
-function request_call(uri, options) {
-
-	options.length = 0;
+function request_call(uri, options, counter) {
 
 	var connection = uri.protocol === 'https:' ? https : http;
 	var req = options.post ? connection.request(uri, (res) => request_response(res, uri, options)) : connection.get(uri, (res) => request_response(res, uri, options));
@@ -610,7 +608,19 @@ function request_response(res, uri, options) {
 	res._bufferlength = 0;
 
 	// We have redirect
-	if (res.statusCode === 301) {
+	if (res.statusCode === 301 || res.statusCode === 302) {
+
+		if (options.redirect > 3) {
+			if (options.callback)
+				options.callback(new Error('Too many redirects.'), '', 0, undefined, uri.host);
+			res.req.removeAllListeners();
+			res.req = null;
+			res.removeAllListeners();
+			res = null;
+			return;
+		}
+
+		options.redirect++;
 
 		var tmp = parser.parse(res.headers['location']);
 		tmp.headers = uri.headers;
@@ -718,30 +728,27 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 		timeout = encoding;
 	}
 
+	if (typeof(encoding) !== 'string')
+		encoding = ENCODING;
+
 	var method = 'GET';
-	var length = 0;
 	var type = 0;
-	var e = new events.EventEmitter();
-	var isDNSCACHE = false;
+	var options = { callback: callback, resolve: false, length: 0, evt: new events.EventEmitter(), timeout: timeout || 60000, post: false, encoding: encoding };
 
 	if (headers)
 		headers = exports.extend({}, headers);
 	else
 		headers = {};
 
-	if (typeof(encoding) !== 'string')
-		encoding = ENCODING;
-
 	if (data === null)
 		data = '';
 
 	if (flags instanceof Array) {
-		length = flags.length;
-		for (var i = 0; i < length; i++) {
+		for (var i = 0, length = flags.length; i < length; i++) {
 
 			// timeout
 			if (flags[i] > 0) {
-				timeout = flags[i];
+				options.timeout = flags[i];
 				continue;
 			}
 
@@ -752,7 +759,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 				case 'base64':
 				case 'binary':
 				case 'hex':
-					encoding = flags[i];
+					options.encoding = flags[i];
 					break;
 
 				case 'xhr':
@@ -787,7 +794,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 					break;
 
 				case 'post':
-				case 'path':
+				case 'patch':
 				case 'delete':
 				case 'put':
 					method = flags[i].toUpperCase();
@@ -796,30 +803,25 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 					break;
 
 				case 'dnscache':
-					isDNSCACHE = true;
+					options.resolve = true;
 					break;
 
 			}
 		}
 	}
 
-	var isPOST = method === 'POST' || method === 'PUT';
+	options.post = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
 
 	if (typeof(data) !== 'string')
 		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
 	else if (data[0] === '?')
 		data = data.substring(1);
 
-	if (!isPOST) {
+	if (!options.post) {
 		if (data.length && url.indexOf('?') === -1)
 			url += '?' + data;
 		data = '';
 	}
-
-	var uri = parser.parse(url);
-	var responseLength = 0;
-
-	uri.method = method;
 
 	if (cookies) {
 		var builder = '';
@@ -829,80 +831,131 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 			headers['Cookie'] = builder;
 	}
 
-	var buf;
-
-	if (data.length) {
-		buf = new Buffer(data, ENCODING);
-		headers['Content-Length'] = buf.length;
-	}
-
+	var uri = parser.parse(url);
+	uri.method = method;
 	uri.agent = false;
 	uri.headers = headers;
 
-	var onResponse = function(res) {
+	if (data.length) {
+		options.data = new Buffer(data, ENCODING);
+		headers['Content-Length'] = options.data.length;
+	}
 
-		res._bufferlength = 0;
-
-		res.on('data', function(chunk) {
-			this._bufferlength += chunk.length;
-			e.emit('data', chunk, responseLength ? (this._bufferlength / responseLength) * 100 : 0);
-		});
-
-		res.on('end', function() {
-			e.emit('end', this.statusCode, this.headers);
-			e.removeAllListeners();
-			e = null;
-		});
-
-		callback(null, res);
-		res.resume();
-	};
-
-	var connection = uri.protocol === 'https:' ? https : http;
-	var run = function() {
-		var req = isPOST ? connection.request(uri, onResponse) : connection.request(uri, onResponse);
-
-		req.on('error', function(err) {
-			if (!callback)
-				return;
-			e.removeAllListeners();
-			e = null;
-			callback(err);
-			callback = null;
-		});
-
-		req.on('close', function() {
-			req.removeAllListeners();
-			req = null;
-		});
-
-		req.setTimeout(timeout || 60000, function() {
-			if (!callback)
-				return;
-			e.removeAllListeners();
-			e = null;
-			callback(new Error(exports.httpStatus(408)));
-			callback = null;
-		});
-
-		req.on('response', function(response) {
-			responseLength = +response.headers['content-length'] || 0;
-			e.emit('begin', responseLength);
-		});
-
-		req.end(buf);
-	};
-
-	if (isDNSCACHE) {
+	if (options.resolve) {
 		exports.resolve(url, function(err, u) {
-			uri.host = u.host;
-			run();
+			if (!err)
+				uri.host = u.host;
+			download_call(uri, options);
 		});
 	} else
-		run();
+		download_call(uri, options);
 
-	return e;
+	return options.evt;
 };
+
+function download_call(uri, options) {
+
+	options.length = 0;
+
+	var connection = uri.protocol === 'https:' ? https : http;
+	var req = options.post ? connection.request(uri, (res) => download_response(res, uri, options)) : connection.get(uri, (res) => download_response(res, uri, options));
+
+	if (!options.callback) {
+		req.on('error', NOOP);
+		return;
+	}
+
+	req.on('error', function(err) {
+		if (!options.callback)
+			return;
+		options.callback(err);
+		options.callback = null;
+		options.evt.removeAllListeners();
+		options.evt = null;
+	});
+
+	req.setTimeout(options.timeout, function() {
+		if (!options.callback)
+			return;
+		options.callback(new Error(exports.httpStatus(408)));
+		options.callback = null;
+		options.evt.removeAllListeners();
+		options.evt = null;
+	});
+
+	req.on('response', function(response) {
+		response.req = req;
+		options.length = +response.headers['content-length'] || 0;
+		options.evt && options.evt.emit('begin', options.length);
+	});
+
+	req.end(options.data);
+}
+
+function download_response(res, uri, options) {
+
+	res._bufferlength = 0;
+
+	// We have redirect
+	if (res.statusCode === 301 || res.statusCode === 302) {
+
+		if (options.redirect > 3) {
+			if (options.callback)
+				options.callback(new Error('Too many redirects.'));
+			res.req.removeAllListeners();
+			res.req = null;
+			res.removeAllListeners();
+			res = null;
+			return;
+		}
+
+		options.redirect++;
+
+		var tmp = parser.parse(res.headers['location']);
+		tmp.headers = uri.headers;
+		tmp.agent = false;
+		tmp.method = uri.method;
+
+		res.req.removeAllListeners();
+		res.req = null;
+
+		if (!options.resolve) {
+			res.removeAllListeners();
+			res = null;
+			return download_call(tmp, options);
+		}
+
+		exports.resolve(res.headers['location'], function(err, u) {
+			if (!err)
+				tmp.host = u.host;
+			res.removeAllListeners();
+			res = null;
+			download_call(tmp, options);
+		});
+
+		return;
+	}
+
+	res.on('data', function(chunk) {
+		var self = this;
+		self._bufferlength += chunk.length;
+		options.evt && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
+	});
+
+	res.on('end', function() {
+		var self = this;
+		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
+		delete self._buffer;
+		options.evt && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
+		options.evt.removeAllListeners();
+		options.evt = null;
+		res.req && res.req.removeAllListeners();
+		res.removeAllListeners();
+	});
+
+	res.resume();
+	options.callback(null, res);
+}
 
 exports.$$download = function(url, flags, data, cookies, headers, encoding, timeout) {
 	return function(callback) {
@@ -965,8 +1018,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 			e.emit('end', self.statusCode, self.headers);
 			e.removeAllListeners();
 			e = null;
-			if (callback)
-				callback(null, self.body.toString('utf8'), self.statusCode, self.headers, uri.host);
+			callback && callback(null, self.body.toString('utf8'), self.statusCode, self.headers, uri.host);
 			self.body = null;
 		});
 	};
@@ -984,8 +1036,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 		req = null;
 		e.removeAllListeners();
 		e = null;
-		if (callback)
-			callback(new Error(exports.httpStatus(408)), '', 408, undefined, uri.host);
+		callback && callback(new Error(exports.httpStatus(408)), '', 408, undefined, uri.host);
 	});
 
 	req.on('error', function(err) {
@@ -993,8 +1044,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 		req = null;
 		e.removeAllListeners();
 		e = null;
-		if (callback)
-			callback(err, '', 0, undefined, uri.host);
+		callback && callback(err, '', 0, undefined, uri.host);
 	});
 
 	req.on('close', function() {
@@ -1068,9 +1118,7 @@ exports.trim = function(obj) {
 		if (type === 'object') {
 			exports.trim(val);
 			return;
-		}
-
-		if (type !== 'string')
+		} else if (type !== 'string')
 			return;
 
 		obj[name] = val.trim();

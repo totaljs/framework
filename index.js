@@ -6832,7 +6832,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				} else {
 					if (method === 'PUT')
 						self.stats.request.put++;
-					else if (method === 'PATH')
+					else if (method === 'PATCH')
 						self.stats.request.path++;
 					else
 						self.stats.request.post++;
@@ -7620,7 +7620,7 @@ Framework.prototype.testing = function(stop, callback) {
 	options.headers = test.headers;
 
 	var con = options.protocol === 'https:' ? require('https') : http;
-	var req = test.method === 'POST' || test.method === 'PUT' || test.method === 'DELETE' || test.method === 'PATH' ? con.request(options, response) : con.get(options, response);
+	var req = test.method === 'POST' || test.method === 'PUT' || test.method === 'DELETE' || test.method === 'PATCH' ? con.request(options, response) : con.get(options, response);
 
 	req.on('error', function(e) {
 		req.removeAllListeners();

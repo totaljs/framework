@@ -507,20 +507,26 @@ function other() {
 		assert.ok(value.join(',') === '1,2,3,4,5,6,7,8,9', 'async');
 	});
 
-	utils.request('https://www.google.com', ['get', 'dnscache'], function(err, data, code) {
-		assert.ok(code === 302, 'utils.request (success)');
+	utils.request('http://www.totaljs.com', ['get', 'dnscache'], function(err, data, code) {
+		assert.ok(code === 200, 'utils.request (success)');
 	}).on('data', function(chunk, p) {
-		assert.ok(p === 100, 'utils.request (events)');
+		assert.ok(p === 0, 'utils.request (events)');
 	});
 
-	utils.download('https://www.google.com', ['get'], function(err, res) {
-		assert.ok(res.statusCode === 302, 'utils.download (success)');
+	utils.request('https://www.totaljs.com', ['get'], function(err, data, code) {
+		assert.ok(code === 200, 'utils.request (success)');
+	}).on('data', function(chunk, p) {
+		assert.ok(p === 0, 'utils.request (events)');
+	});
+
+	utils.download('http://www.totaljs.com/img/logo.png', ['get'], function(err, res) {
+		assert.ok(res.statusCode === 200, 'utils.download (success)');
 	}).on('data', function(chunk, p) {
 		assert.ok(p === 100, 'utils.download (events)');
 	});
 
 	utils.request('http://xxxxxxx.yyy', ['get'], null, function(err, data, code) {
-		assert.ok(err !== null, 'utils.requiest (error)');
+		assert.ok(err !== null, 'utils.request (error)');
 	});
 
 	var resource = function(name) {
