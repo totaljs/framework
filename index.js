@@ -456,7 +456,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-50';
+	this.version_header = '2.0.0-51';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -8204,6 +8204,42 @@ Framework.prototype.sitemap = function(name, me, language) {
 	return arr;
 };
 
+/**
+ * Gets a list of all items in sitemap
+ * @param {String} parent
+ * @param {String} language Optional, language
+ * @return {Array}
+ */
+Framework.prototype.sitemap_navigation = function(parent, language) {
+
+	var self = this;
+	var key = REPOSITORY_SITEMAP + '_n_' + (parent || '') + '$' + (language || '');;
+
+	if (self.temporary.other[key])
+		return self.temporary.other[key];
+
+	var keys = Object.keys(self.routes.sitemap);
+	var arr = [];
+	var index = 0;
+
+	for (var i = 0, length = keys.length; i < length; i++) {
+		var item = self.routes.sitemap[keys[i]];
+		if ((parent && item.parent !== parent) || (!parent && item.parent))
+			continue;
+
+		var title = item.name;
+		if (title.startsWith('@('))
+			title = self.translate(language, item.name.substring(2, item.name.length - 1));
+
+		arr.push({ id: parent || '', name: title, url: item.url, last: index === 0, first: item.parent ? false : true, selected: index === 0, index: index, wildcard: item.wildcard });
+		index++;
+	}
+
+	arr.quicksort('name');
+	self.temporary.other[key] = arr;
+	return arr;
+};
+
 Framework.prototype._configure_dependencies = function(arr) {
 
 	if (!arr || typeof(arr) === 'string') {
@@ -9558,15 +9594,15 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 // =================================================================================
 // *********************************************************************************
 
-var REPOSITORY_HEAD = '$head';
-var REPOSITORY_META = '$meta';
-var REPOSITORY_META_TITLE = '$title';
-var REPOSITORY_META_DESCRIPTION = '$description';
-var REPOSITORY_META_KEYWORDS = '$keywords';
-var REPOSITORY_META_IMAGE = '$image';
-var REPOSITORY_PLACE = '$place';
-var REPOSITORY_SITEMAP = '$sitemap';
-var ATTR_END = '"';
+const REPOSITORY_HEAD = '$head';
+const REPOSITORY_META = '$meta';
+const REPOSITORY_META_TITLE = '$title';
+const REPOSITORY_META_DESCRIPTION = '$description';
+const REPOSITORY_META_KEYWORDS = '$keywords';
+const REPOSITORY_META_IMAGE = '$image';
+const REPOSITORY_PLACE = '$place';
+const REPOSITORY_SITEMAP = '$sitemap';
+const ATTR_END = '"';
 
 function Subscribe(framework, req, res, type) {
 
@@ -10939,6 +10975,10 @@ Controller.prototype.$keywords = function(value) {
 	if (value && value.length)
 		self.repository[REPOSITORY_META_KEYWORDS] = value instanceof Array ? value.join(', ') : value;
 	return '';
+};
+
+Controller.prototype.sitemap_navigation = function(name, language) {
+	return framework.sitemap_navigation(name, language || this.language);
 };
 
 Controller.prototype.sitemap_url = function(name, a, b, c, d, e, f) {

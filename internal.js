@@ -2197,6 +2197,7 @@ function view_prepare(command, dynamicCommand, functions) {
 
 		case 'sitemap_url':
 		case 'sitemap_name':
+		case 'sitemap_navigation':
 			return 'self.' + command;
 
 		case 'sitemap':

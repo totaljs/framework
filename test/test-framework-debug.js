@@ -877,6 +877,12 @@ framework.on('load', function() {
 	assert.ok(RESOURCE('default', 'name-root').length > 0, 'custom resource mapping 1');
 	assert.ok(RESOURCE('default', 'name-theme').length > 0, 'custom resource mapping 2');
 
+	var sa = F.sitemap_navigation();
+	var sb = F.sitemap_navigation('b');
+
+	assert.ok(sa[0].url === '/', 'F.sitemap_navigation()');
+	assert.ok(sb[0].url === '/c/', 'F.sitemap_navigation("b")');
+
 	setTimeout(function() {
 		console.time('TEST');
 		run();
