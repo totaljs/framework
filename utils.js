@@ -4123,7 +4123,7 @@ Array.prototype.last = function(def) {
 	return item === undefined ? def : item;
 };
 
-Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
+Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlength) {
 
 	var length = this.length;
 	if (!length || length === 1)
@@ -4133,6 +4133,9 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 		asc = name;
 		name = undefined;
 	}
+
+	if (maxlength === undefined)
+		maxlength = 3;
 
 	if (asc === undefined)
 		asc = true;
@@ -4169,7 +4172,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc) {
 		// String
 		if (type === 1) {
 			if (va && vb)
-				return asc ? va.substring(0, 3).removeDiacritics().localeCompare(vb.substring(0, 3).removeDiacritics()) : vb.substring(0, 3).removeDiacritics().localeCompare(va.substring(0, 3).removeDiacritics());
+				return asc ? va.substring(0, maxlength).removeDiacritics().localeCompare(vb.substring(0, maxlength).removeDiacritics()) : vb.substring(0, maxlength).removeDiacritics().localeCompare(va.substring(0, maxlength).removeDiacritics());
 			return 0;
 		} else if (type === 2) {
 			if (va > vb)

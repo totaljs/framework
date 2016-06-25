@@ -18,7 +18,7 @@
 - added: `F.restart()` for restarting app
 - added: `F.on('restart')`
 - added: quicksort algorithm for sorting arrays
-- added: `Array.quicksort(property_name, [asc])` for sorting arrays
+- added: `Array.quicksort(property_name, [asc], [maxlength])` for sorting arrays
 - added: `String.removeTags()` by @harry-stot
 - added: F.nosql(name) + NOSQL(name) --> alias for NoSQL embedded database (it can be used with e.g. SQL Agent)
 - added: modificators can handle `INSTALL('view', ...)`
