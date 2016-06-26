@@ -593,12 +593,7 @@ function request_call(uri, options, counter) {
 		options.evt = null;
 	});
 
-	req.on('response', function(response) {
-		response.req = req;
-		options.length = +response.headers['content-length'] || 0;
-		options.evt && options.evt.emit('begin', options.length);
-	});
-
+	req.on('response', (response) => response.req = req);
 	req.end(options.data);
 }
 
@@ -647,6 +642,9 @@ function request_response(res, uri, options) {
 		return;
 	}
 
+	options.length = +res.headers['content-length'] || 0;
+	options.evt.emit('begin', options.length);
+
 	res.on('data', function(chunk) {
 		var self = this;
 		if (options.max && self._bufferlength > options.max)
@@ -663,11 +661,18 @@ function request_response(res, uri, options) {
 		var self = this;
 		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
 		delete self._buffer;
-		options.evt && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
-		options.callback && options.callback(null, uri.method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
-		options.callback = null;
-		options.evt.removeAllListeners();
-		options.evt = null;
+
+		if (options.evt) {
+			options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
+			options.evt.removeAllListeners();
+			options.evt = null;
+		}
+
+		if (options.callback) {
+			options.callback(null, uri.method === 'HEAD' ? self.headers : str, self.statusCode, self.headers, uri.host);
+			options.callback = null;
+		}
+
 		res.req && res.req.removeAllListeners();
 		res.removeAllListeners();
 	});
