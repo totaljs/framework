@@ -435,6 +435,9 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		timeout = encoding;
 	}
 
+	if (callback === NOOP)
+		callback = null;
+
 	var options = { length: 0, timeout: 10000, evt: new events.EventEmitter(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
@@ -608,6 +611,12 @@ function request_response(res, uri, options) {
 		if (options.redirect > 3) {
 			if (options.callback)
 				options.callback(new Error('Too many redirects.'), '', 0, undefined, uri.host);
+
+			if (options.evt) {
+				options.evt.removeAllListeners();
+				options.evt = null;
+			}
+
 			res.req.removeAllListeners();
 			res.req = null;
 			res.removeAllListeners();
@@ -643,7 +652,7 @@ function request_response(res, uri, options) {
 	}
 
 	options.length = +res.headers['content-length'] || 0;
-	options.evt.emit('begin', options.length);
+	options.evt && options.evt.emit('begin', options.length);
 
 	res.on('data', function(chunk) {
 		var self = this;
