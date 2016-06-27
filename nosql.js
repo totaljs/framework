@@ -170,15 +170,15 @@ Database.prototype.find = function(view) {
 	return builder;
 };
 
-Database.prototype.max = function(name, view) {
+Database.prototype.count = function(view) {
 	var self = this;
 	var builder = new DatabaseBuilder();
 
 	if (view) {
-		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
+		self.pending_reader_view.push({ builder: builder, count: 0, view: view, type: 1 });
 		setImmediate(() => self.next(6));
 	} else {
-		self.pending_reader.push({ builder: builder, count: 0, view: view });
+		self.pending_reader.push({ builder: builder, count: 0, view: view, type: 1 });
 		setImmediate(() => self.next(4));
 	}
 
@@ -519,6 +519,9 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 					continue;
 			}
 
+			if (item.type)
+				continue;
+
 			if (item.response) {
 				item.response.push(output);
 				continue;
@@ -536,6 +539,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 			var output;
 
 			if (!builder.$sort) {
+
 				if (builder.$first)
 					output = item.response ? item.response[0] : undefined;
 				else
@@ -544,13 +548,13 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 				if (builder.$cache_key)
 					framework.cache.add(builder.$cache_key, { items: output, count: item.count }, builder.$cache_expire);
 
-				builder.$callback(errorhandling(null, builder, output), output, item.count);
+				builder.$callback(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 				continue;
 			}
 
 			if (item.count) {
 				if (builder.$sort.name)
-					item.response.orderBy(builder.$sort.name, builder.$sort.asc);
+					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
 				else
 					item.response.sort(builder.$sort);
 				if (builder.$skip && builder.$take)
@@ -569,7 +573,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 			if (builder.$cache_key)
 				framework.cache.add(builder.$cache_key, { items: output, count: item.count }, builder.$cache_expire);
 
-			builder.$callback(errorhandling(null, builder, output), output, item.count);
+			builder.$callback(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 			builder.done();
 		}
 
@@ -624,7 +628,8 @@ Database.prototype.$views = function() {
 					continue;
 			}
 
-			response[j].response.push(output);
+			if (!item.type)
+				response[j].response.push(output);
 		}
 	}));
 
@@ -636,10 +641,9 @@ Database.prototype.$views = function() {
 
 			if (builder.$sort) {
 				if (builder.$sort.name)
-					item.response.orderBy(builder.$sort.name, builder.$sort.asc);
+					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
 				else
 					item.response.sort(builder.$sort);
-
 				if (builder.$skip && builder.$take)
 					item.response = item.response.splice(builder.$skip, builder.$take);
 				else if (builder.$skip)
