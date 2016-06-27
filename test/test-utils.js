@@ -55,6 +55,17 @@ function prototypeNumber() {
 	assert.ok(number.add('-10%', 0) === 9, 'add number: 3');
 	assert.ok(number.add('*2', 0) === 20, 'add number: 4');
 	assert.ok(number.add('*10%', 0) === 10, 'add number: 5');
+
+	var num = 5;
+	var count = 0;
+
+	num.async(function(index, next) {
+		count += index;
+		setTimeout(next, 100);
+	}, function() {
+		assert.ok(count === 15, 'Number.async() problem');
+	});
+
 }
 
 // test: string prototype

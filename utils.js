@@ -3608,6 +3608,25 @@ Number.prototype.padRight = function(max, c) {
 };
 
 /**
+ * Async decrements
+ * @param {Function(index, next)} fn
+ * @param {Function} callback
+ * @return {Number}
+ */
+Number.prototype.async = function(fn, callback) {
+
+	var number = this;
+
+	if (!number) {
+		callback && callback();
+		return number;
+	}
+
+	fn(number--, () => setImmediate(() => number.async(fn, callback)));
+	return number;
+};
+
+/**
  * Format number
  * @param {Number} decimals Maximum decimal numbers
  * @param {String} separator Number separator, default ' '
@@ -4400,8 +4419,7 @@ Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thre
 	if (item === undefined) {
 		if (onItem.$pending)
 			return self;
-		if (callback)
-			callback();
+		callback && callback();
 		onItem.$index = 0;
 		return self;
 	}
@@ -4449,8 +4467,7 @@ Array.prototype.async = function(thread, callback) {
 		if (self.$pending)
 			return self;
 		delete self.$pending;
-		if (callback)
-			callback();
+		callback && callback();
 		return self;
 	}
 
@@ -4525,23 +4542,17 @@ Array.prototype.limit = function(max, fn, callback, index) {
 			continue;
 		}
 
-		if (current.length === 0) {
-			if (callback)
-				callback();
+		if (!current.length) {
+			callback && callback();
 			return self;
 		}
 
-		fn(current, function() {
-			if (callback)
-				callback();
-		}, index, index + max);
-
+		fn(current, () => callback && callback(), index, index + max);
 		return self;
 	}
 
-	if (current.length === 0) {
-		if (callback)
-			callback();
+	if (!current.length) {
+		callback && callback();
 		return self;
 	}
 
@@ -4552,8 +4563,7 @@ Array.prototype.limit = function(max, fn, callback, index) {
 			return;
 		}
 
-		if (callback)
-			callback();
+		callback && callback();
 	}, index, index + max);
 
 	return self;
