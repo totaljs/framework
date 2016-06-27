@@ -4212,7 +4212,7 @@ Framework.prototype.usage = function(detailed) {
 	output.stats = self.stats;
 	output.redirects = redirects;
 
-	if (self.restrictions.isRestrictions) {
+	if (self.restrictions.is) {
 		output.restrictions = {
 			allowed: [],
 			blocked: [],
@@ -6542,54 +6542,12 @@ Framework.prototype.listener = function(req, res) {
 		if (redirect) {
 			self.stats.response.forward++;
 			self.responseRedirect(req, res, redirect.url + (redirect.path ? req.url : ''), redirect.permanent);
-			return self;
+			return;
 		}
 	}
 
-	if (self.restrictions.isRestrictions) {
-
-		if (self.restrictions.isAllowedIP) {
-			for (var i = 0, length = self.restrictions.allowedIP.length; i < length; i++) {
-				var ip = self.restrictions.allowedIP[i];
-				if (req.ip.indexOf(ip) !== -1)
-					continue;
-				self.stats.response.restriction++;
-				res.writeHead(403);
-				res.end();
-				return self;
-			}
-		}
-
-		if (self.restrictions.isBlockedIP) {
-			for (var i = 0, length = self.restrictions.blockedIP.length; i < length; i++) {
-				var ip = self.restrictions.blockedIP[i];
-				if (req.ip.indexOf(ip) === -1)
-					continue;
-				self.stats.response.restriction++;
-				res.writeHead(403);
-				res.end();
-				return self;
-			}
-		}
-
-		if (self.restrictions.isAllowedCustom) {
-			if (!self.restrictions._allowedCustom(headers)) {
-				self.stats.response.restriction++;
-				res.writeHead(403);
-				res.end();
-				return self;
-			}
-		}
-
-		if (self.restrictions.isBlockedCustom) {
-			if (self.restrictions._blockedCustom(headers)) {
-				self.stats.response.restriction++;
-				res.writeHead(403);
-				res.end();
-				return self;
-			}
-		}
-	}
+	if (self.restrictions.is && self._request_restriction(req, res, headers))
+		return;
 
 	req.path = framework_internal.routeSplit(req.uri.pathname);
 	req.processing = 0;
@@ -6622,25 +6580,59 @@ Framework.prototype.listener = function(req, res) {
 
 	self._request_stats(true, true);
 
-	if (!self._length_request_middleware || req.behaviour('disable-middleware'))
-		return self._request_continue(req, res, headers, protocol);
+	if (self._length_request_middleware && !req.behaviour('disable-middleware'))
+		return async_middleware(0, req, res, self.routes.request, () => self._request_continue(res.req, res, res.req.headers, protocol));
 
-	var func = [];
+	self._request_continue(req, res, headers, protocol);
+};
 
-	for (var i = 0; i < self._length_request_middleware; i++) {
-		var middleware = self.routes.middleware[self.routes.request[i]];
+Framework.prototype._request_restriction = function(req, res, headers) {
 
-		if (!middleware) {
-			self.error('Middleware not found: ' + self.routes.request[i], null, req.uri);
-			continue;
+	var self = this;
+
+	if (self.restrictions.isAllowedIP) {
+		for (var i = 0, length = self.restrictions.allowedIP.length; i < length; i++) {
+			var ip = self.restrictions.allowedIP[i];
+			if (req.ip.indexOf(ip) !== -1)
+				continue;
+			self.stats.response.restriction++;
+			res.writeHead(403);
+			res.end();
+			return true;
 		}
-
-		(function(middleware) {
-			func.push(next => middleware.call(framework, res.req, res, next));
-		})(middleware);
 	}
 
-	func._async_middleware(res, () => self._request_continue(res.req, res, res.req.headers, protocol));
+	if (self.restrictions.isBlockedIP) {
+		for (var i = 0, length = self.restrictions.blockedIP.length; i < length; i++) {
+			var ip = self.restrictions.blockedIP[i];
+			if (req.ip.indexOf(ip) === -1)
+				continue;
+			self.stats.response.restriction++;
+			res.writeHead(403);
+			res.end();
+			return true;
+		}
+	}
+
+	if (self.restrictions.isAllowedCustom) {
+		if (!self.restrictions._allowedCustom(headers)) {
+			self.stats.response.restriction++;
+			res.writeHead(403);
+			res.end();
+			return true;
+		}
+	}
+
+	if (self.restrictions.isBlockedCustom) {
+		if (self.restrictions._blockedCustom(headers)) {
+			self.stats.response.restriction++;
+			res.writeHead(403);
+			res.end();
+			return true;
+		}
+	}
+
+	return false;
 };
 
 /**
@@ -6654,19 +6646,16 @@ Framework.prototype.listener = function(req, res) {
  */
 Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
+	if (!req || !res || res.headersSent || res.success)
+		return;
+
 	var self = this;
 
-	if (!req || !res || res.headersSent || res.success)
-		return self;
-
-	// Validate if this request is a file (static file)
+	// Validates if this request is the file (static file)
 	if (req.isStaticFile) {
-
 		self.stats.request.file++;
-
 		if (!self._length_files)
 			return self.responseStatic(req, res);
-
 		new Subscribe(self, req, res, 3).file();
 		return self;
 	}
@@ -6678,9 +6667,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	req.buffer_data = new Buffer('');
 	req.buffer_has = false;
 	req.$flags = req.method;
-
-	var accept = headers.accept;
-
 	self.stats.request.web++;
 
 	var flags = [req.method.toLowerCase()];
@@ -6742,7 +6728,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 		flags.push('proxy');
 	}
 
-	if (accept === 'text/event-stream') {
+	if (headers.accept === 'text/event-stream') {
 		req.$flags += 'sse';
 		flags.push('sse');
 	}
@@ -6992,43 +6978,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	self.emit('websocket', req, socket, head);
 	self.stats.request.websocket++;
 
-	if (self.restrictions.isRestrictions) {
-		if (self.restrictions.isAllowedIP) {
-			if (self.restrictions.allowedIP.indexOf(req.ip) === -1) {
-				self.stats.response.restriction++;
-				res.writeHead(403);
-				res.end();
-				return self;
-			}
-		}
-
-		if (self.restrictions.isBlockedIP) {
-			if (self.restrictions.blockedIP.indexOf(req.ip) !== -1) {
-				self.stats.response.restriction++;
-				res.writeHead(403);
-				res.end();
-				return self;
-			}
-		}
-
-		if (self.restrictions.isAllowedCustom) {
-			if (!self.restrictions._allowedCustom(headers)) {
-				self.stats.response.restriction++;
-				res.writeHead(403);
-				res.end();
-				return self;
-			}
-		}
-
-		if (self.restrictions.isBlockedCustom) {
-			if (self.restrictions._blockedCustom(headers)) {
-				self.stats.response.restriction++;
-				res.writeHead(403);
-				res.end();
-				return self;
-			}
-		}
-	}
+	if (self.restrictions.is && self._request_restriction(req, res, headers))
+		return;
 
 	req.session = null;
 	req.user = null;
@@ -7043,23 +6994,10 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	if (self.onLocate)
 		req.$language = self.onLocate(req, socket);
 
-	if (!self._length_request_middleware || req.behaviour('disable-middleware'))
-		return self._upgrade_prepare(req, path, headers);
+	if (self._length_request_middleware && !req.behaviour('disable-middleware'))
+		return async_middleware(0, req, req.websocket, self.routes.request, () => self._upgrade_prepare(req, path, req.headers));
 
-	var func = [];
-
-	for (var i = 0; i < self._length_request_middleware; i++) {
-		var middleware = self.routes.middleware[self.routes.request[i]];
-		if (!middleware) {
-			self.error('Middleware not found: ' + route.middleware[i], null, req.uri);
-			continue;
-		}
-		(function(middleware) {
-			func.push(next => middleware.call(framework, req, req.websocket, next));
-		})(middleware);
-	}
-
-	func._async_middleware(websocket, () => self._upgrade_prepare(req, path, req.headers));
+	self._upgrade_prepare(req, path, headers);
 };
 
 /**
@@ -7121,7 +7059,7 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 	if (!socket.prepare(route.flags, route.protocols, route.allow, route.length, self.version_header)) {
 		socket.close();
 		req.connection.destroy();
-		return self;
+		return;
 	}
 
 	var id = path + (route.flags.length ? '#' + route.flags.join('-') : '');
@@ -7146,22 +7084,7 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 		setImmediate(() => socket.upgrade(connection));
 	};
 
-	if (route.middleware instanceof Array && route.middleware.length) {
-		var func = [];
-		for (var i = 0, length = route.middleware.length; i < length; i++) {
-			var middleware = framework.routes.middleware[route.middleware[i]];
-			if (!middleware)
-				continue;
-			(function(middleware) {
-				func.push(next => middleware.call(framework, req, socket, next, route.options));
-			})(middleware);
-		}
-		func._async_middleware(socket, next);
-		return self;
-	}
-
-	next();
-	return self;
+	async_middleware(0, req, req.websocket, route.middleware, next, route.options);
 };
 
 /**
@@ -9080,7 +9003,7 @@ Framework.prototype.wait = function(name, enable) {
 // *********************************************************************************
 
 function FrameworkRestrictions() {
-	this.isRestrictions = false;
+	this.is = false;
 	this.isAllowedIP = false;
 	this.isBlockedIP = false;
 	this.isAllowedCustom = false;
@@ -9166,8 +9089,7 @@ FrameworkRestrictions.prototype.refresh = function() {
 	self.allowedCustomKeys = Object.keys(self.allowedCustom);
 	self.blockedCustomKeys = Object.keys(self.blockedCustom);
 
-	self.isRestrictions = self.isAllowedIP || self.isBlockedIP || self.isAllowedCustom || self.isBlockedCustom;
-
+	self.is = self.isAllowedIP || self.isBlockedIP || self.isAllowedCustom || self.isBlockedCustom;
 	return framework;
 };
 
@@ -9772,20 +9694,7 @@ Subscribe.prototype.execute = function(status, isError) {
 	if (!framework._length_middleware || !route.middleware)
 		return self.doExecute();
 
-	var func = [];
-	for (var i = 0, length = route.middleware.length; i < length; i++) {
-		var middleware = framework.routes.middleware[route.middleware[i]];
-		if (!middleware) {
-			framework.error('Middleware not found: ' + route.middleware[i], controller.name, req.uri);
-			continue;
-		}
-		(function(middleware) {
-			func.push(next => middleware.call(framework, req, res, next, route.options, controller));
-		})(middleware);
-	}
-
-	func._async_middleware(res, () => self.doExecute());
-	return self;
+	async_middleware(0, req, res, route.middleware, () => self.doExecute(), route.options, controller);
 };
 
 /*
@@ -10104,33 +10013,15 @@ Subscribe.prototype.doEndfile = function() {
  * @return {Subscribe}
  */
 Subscribe.prototype.doEndfile_middleware = function(file) {
-
-	var length = file.middleware.length;
-	var func = [];
 	var self = this;
-	var req = self.req;
-	var res = self.res;
-
-	for (var i = 0; i < length; i++) {
-		var middleware = framework.routes.middleware[file.middleware[i]];
-		if (!middleware)
-			continue;
-		(function(middleware) {
-			func.push(next => middleware.call(framework, req, res, next, file.options));
-		})(middleware);
-	}
-
-	func._async_middleware(res, function() {
+	async_middleware(0, self.req, self.res, file.middleware, function() {
 		try {
-			file.execute.call(framework, req, res, false);
+			file.execute.call(framework, self.req, self.res, false);
 		} catch (err) {
-			framework.error(err, file.controller + ' :: ' + file.name, req.uri);
-			framework.responseContent(req, res, 500, '500 - internal server error', CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
-			return self;
+			framework.error(err, file.controller + ' :: ' + file.name, self.req.uri);
+			framework.responseContent(self.req, self.res, 500, '500 - internal server error', CONTENTTYPE_TEXTPLAIN, framework.config['allow-gzip']);
 		}
-	});
-
-	return self;
+	}, file.options);
 };
 
 /**
@@ -10515,22 +10406,11 @@ Controller.prototype.middleware = function(names, options, callback) {
 		options = {};
 
 	var self = this;
-	var length = names.length;
-	var func = [];
 
-	for (var i = 0; i < length; i++) {
+	async_middleware(0, self.req, self.res, names, function() {
+		callback && callback();
+	}, options, self);
 
-		var middleware = framework.routes.middleware[names[i]];
-		if (!middleware)
-			continue;
-
-		(function(middleware, options) {
-			func.push(next => middleware.call(framework, self.req, self.res, next, options));
-		})(middleware, options[names[i]] === undefined ? options : options[names[i]]);
-
-	}
-
-	func._async_middleware(self.res, callback, controller);
 	return self;
 };
 
@@ -15016,3 +14896,42 @@ function existsSync(filename, file) {
 		return false;
 	}
 }
+
+function async_middleware(index, req, res, middleware, callback, options, controller) {
+
+	if (res.success || res.headersSent) {
+
+		// Prevents timeout
+		if (controller)
+			controller.subscribe.success();
+
+		callback = null;
+		return;
+	}
+
+	var name = middleware[index++];
+	if (!name)
+		return callback && callback();
+
+	var item = framework.routes.middleware[name];
+	if (!item) {
+		framework.error('Middleware not found: ' + name, null, req.uri);
+		return async_middleware(index, req, res, middleware, callback, options, controller);
+	}
+
+	var output = item.call(framework, req, res, function(err) {
+
+		if (err) {
+			res.throw500(err);
+			callback = null;
+			return;
+		}
+
+		async_middleware(index, req, res, middleware, callback, options, controller);
+	}, options, controller);
+
+	if (output !== false)
+		return;
+
+	callback = null;
+};
