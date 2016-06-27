@@ -1835,9 +1835,7 @@ function view_parse(content, minify, filename, controller) {
 	var builderTMP = '';
 	var sectionName = '';
 	var compileName = '';
-	var isSitemap = false;
 	var text;
-
 
 	while (command) {
 
@@ -1903,6 +1901,7 @@ function view_parse(content, minify, filename, controller) {
 			if (cmd.indexOf('foreach var ') !== -1)
 				cmd = cmd.replace(' var ', SPACE);
 
+			cmd = view_prepare_keywords(cmd);
 			newCommand = (cmd.substring(8, cmd.indexOf(SPACE, 8)) || '').trim();
 			index = cmd.trim().indexOf(SPACE, newCommand.length + 10);
 
@@ -1940,19 +1939,16 @@ function view_parse(content, minify, filename, controller) {
 			}
 
 		} else if (cmd.substring(0, 3) === 'if ') {
-			builder += ';if (' + cmd.substring(3) + '){$output+=$EMPTY';
+			builder += ';if (' + view_prepare_keywords(cmd).substring(3) + '){$output+=$EMPTY';
 		} else if (cmd7 === 'else if') {
-			builder += '} else if (' + cmd.substring(7) + ') {$output+=$EMPTY';
+			builder += '} else if (' + view_prepare_keywords(cmd).substring(7) + ') {$output+=$EMPTY';
 		} else if (cmd === 'else') {
 			builder += '} else {$output+=$EMPTY';
 		} else if (cmd === 'endif' || cmd === 'fi') {
 			builder += '}$output+=$EMPTY';
 		} else {
 
-			tmp = view_prepare(command.command, newCommand, functionsName, function() {
-				nocompress = true;
-			});
-
+			tmp = view_prepare(command.command, newCommand, functionsName, () => nocompress = true);
 			var can = false;
 
 			// Inline rendering is supported only in release mode
@@ -1999,8 +1995,6 @@ function view_parse(content, minify, filename, controller) {
 
 		old = command;
 		command = view_find_command(content, command.end);
-		if (command && command.command && command.command.indexOf('sitemap(') !== -1)
-			isSitemap = true;
 	}
 
 	if (old) {
@@ -2012,8 +2006,12 @@ function view_parse(content, minify, filename, controller) {
 	if (RELEASE)
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output\=\$EMPTY\+)/g, '$output=').replace(/(\$output\+\=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+\=\$EMPTY)/g, '}').replace(/(\{\$output\+\=\$EMPTY\;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(\>\'\+\'\<)/g, '><').replace(/\'\+\'/g, '');
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
+}
+
+function view_prepare_keywords(cmd) {
+	return cmd.replace(/\s+(sitemap_navigation\(|sitemap\()+/g, text => ' self.' + text.trim());
 }
 
 function wrapTryCatch(value, command, line) {
