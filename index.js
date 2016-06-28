@@ -2815,7 +2815,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 			if (declaration[0] === '~')
 				declaration = declaration.substring(1);
-			if (type !== 'package' && !REG_SCRIPTCONTENT.test(declaration)) {
+			if (type !== 'config' && type !== 'resource' && type !== 'package' && !REG_SCRIPTCONTENT.test(declaration)) {
 				if (!existsSync(declaration))
 					throw new Error('The ' + type + ': ' + declaration + ' doesn\'t exist.');
 				useRequired = true;
@@ -5823,12 +5823,11 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 	}
 
 	var isEtag = type === 'string';
-
 	var val = req.headers[isEtag ? 'if-none-match' : 'if-modified-since'];
 
 	if (isEtag) {
 
-		if (val === undefined)
+		if (!val)
 			return false;
 
 		var myetag = compare + ':' + self.config['etag-version'];
@@ -5838,7 +5837,7 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 
 	} else {
 
-		if (val === undefined)
+		if (!val)
 			return false;
 
 		var date = compare === undefined ? new Date().toUTCString() : compare.toUTCString();
@@ -12891,52 +12890,8 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 	}
 
 	var output = self.cache.read(key);
-	if (!output) {
-
-		var pk = '$memorize' + key;
-
-		if (framework.temporary.processing[pk]) {
-			setTimeout(function() {
-				if (self.subscribe.isCanceled)
-					return;
-				self.memorize(key, expires, disabled, fnTo, fnFrom);
-			}, 500);
-			return self;
-		}
-
-		self.precache = function(value, contentType, headers, isView) {
-
-			if (!value && !contentType && !headers) {
-				delete framework.temporary.processing[pk];
-				self.precache = null;
-				return;
-			}
-
-			var options = { content: value, type: contentType, layout: self.layoutName, theme: self.themeName };
-			if (headers)
-				options.headers = headers;
-
-			if (isView) {
-				options.repository = [];
-				for (var name in self.repository) {
-					var value = self.repository[name];
-					if (value !== undefined)
-						options.repository.push({ key: name, value: value });
-				}
-			}
-
-			self.cache.add(key, options, expires);
-			self.precache = null;
-			delete framework.temporary.processing[pk];
-		};
-
-		if (typeof(disabled) === 'function')
-			fnTo = disabled;
-
-		framework.temporary.processing[pk] = true;
-		fnTo();
-		return self;
-	}
+	if (!output)
+		return self.$memorize_prepare(key, expires, disabled, fnTo, fnFrom);
 
 	if (typeof(disabled) === 'function') {
 		var tmp = fnTo;
@@ -12969,8 +12924,11 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 	}
 
 	var length = output.repository.length;
-	for (var i = 0; i < length; i++)
-		self.repository[output.repository[i].key] = output.repository[i].value;
+	for (var i = 0; i < length; i++) {
+		var key = output.repository[i].key;
+		if (self.repository[key] === undefined)
+			self.repository[key] = output.repository[i].value;
+	}
 
 	if (!self.layoutName) {
 		self.subscribe.success();
@@ -12983,6 +12941,54 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 	self.output = output.content;
 	self.isLayout = true;
 	self.view(self.layoutName, null);
+	return self;
+};
+
+Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, fnFrom) {
+
+	var self = this;
+	var pk = '$memorize' + key;
+
+	if (framework.temporary.processing[pk]) {
+		setTimeout(function() {
+			if (self.subscribe.isCanceled)
+				return;
+			self.memorize(key, expires, disabled, fnTo, fnFrom);
+		}, 500);
+		return self;
+	}
+
+	self.precache = function(value, contentType, headers, isView) {
+
+		if (!value && !contentType && !headers) {
+			delete framework.temporary.processing[pk];
+			self.precache = null;
+			return;
+		}
+
+		var options = { content: value, type: contentType, layout: self.layoutName, theme: self.themeName };
+		if (headers)
+			options.headers = headers;
+
+		if (isView) {
+			options.repository = [];
+			for (var name in self.repository) {
+				var value = self.repository[name];
+				if (value !== undefined)
+					options.repository.push({ key: name, value: value });
+			}
+		}
+
+		self.cache.add(key, options, expires);
+		self.precache = null;
+		delete framework.temporary.processing[pk];
+	};
+
+	if (typeof(disabled) === 'function')
+		fnTo = disabled;
+
+	framework.temporary.processing[pk] = true;
+	fnTo();
 	return self;
 };
 
