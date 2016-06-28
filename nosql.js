@@ -160,10 +160,10 @@ Database.prototype.find = function(view) {
 	var builder = new DatabaseBuilder();
 
 	if (view) {
-		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
+		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
 		setImmediate(() => self.next(6));
 	} else {
-		self.pending_reader.push({ builder: builder, count: 0, view: view });
+		self.pending_reader.push({ builder: builder, count: 0, counter: 0, view: view });
 		setImmediate(() => self.next(4));
 	}
 
@@ -207,11 +207,10 @@ Database.prototype.top = function(max, view) {
 	builder.take(max);
 
 	if (view) {
-		self.pending_reader_view.push({ builder: builder, count: 0, view: view });
+		self.pending_reader_view.push({ builder: builder, count: 0, counter: 0, view: view });
 		setImmediate(() => self.next(6));
-
 	} else {
-		self.pending_reader.push({ builder: builder, count: 0, view: view });
+		self.pending_reader.push({ builder: builder, count: 0, counter: 0, view: view });
 		setImmediate(() => self.next(4));
 	}
 
@@ -513,11 +512,11 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 			item.count++;
 
 			if (!builder.$sort) {
-				if (builder.$skip && builder.$skip > index)
-					continue;
-				if (builder.$take && builder.$take < item.count)
+				if ((builder.$skip && builder.$skip > index) || (builder.$take && builder.$take <= item.counter))
 					continue;
 			}
+
+			item.counter++;
 
 			if (item.type)
 				continue;
@@ -607,7 +606,7 @@ Database.prototype.$views = function() {
 	var writers = [];
 
 	for (var i = 0; i < length; i++)
-		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0 });
+		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0, counter: 0 });
 
 	var reader = Fs.createReadStream(self.filename);
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
@@ -622,11 +621,11 @@ Database.prototype.$views = function() {
 			response[j].count++;
 
 			if (!item.$sort) {
-				if (item.$skip && item.$skip > index)
-					continue;
-				if (item.$take && item.$take < response[j].count)
+				if ((item.$skip && item.$skip > index) || (item.$take && item.$take < response[j].counter))
 					continue;
 			}
+
+			response[j].counter++;
 
 			if (!item.type)
 				response[j].response.push(output);
