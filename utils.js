@@ -1770,18 +1770,15 @@ function validate_builder_default(name, value, entity) {
 exports.validate_builder = function(model, error, schema, collection, path, index, fields, pluspath) {
 
 	var entity = collection[schema];
-	var prepare = entity.onValidate || framework.onValidate || validate_builder_default;
+	var prepare = entity.onValidate || framework.onValidate || NOOP;
 	var current = path === undefined ? '' : path + '.';
 	var properties = entity.properties;
 
 	if (!pluspath)
 		pluspath = '';
 
-	if (model === undefined || model === null)
+	if (model == null)
 		model = {};
-
-	if (typeof(prepare) !== 'function')
-		throw new Error('It\'s not defined onValidate delegate.');
 
 	for (var i = 0; i < properties.length; i++) {
 

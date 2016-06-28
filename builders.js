@@ -171,7 +171,7 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 	if (!required)
 		return self;
 
-	if (self.properties === undefined || self.properties === null)
+	if (self.properties == null)
 		self.properties = [];
 
 	if (self.properties.indexOf(name) !== -1)
