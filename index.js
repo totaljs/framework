@@ -5318,8 +5318,13 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			fnProcess(image);
 
 			var extension = framework_utils.getExtension(name);
-			if (extension !== image.outputType)
-				name = name.substring(0, name.lastIndexOf('.' + extension)) + '.' + image.outputType;
+			if (extension !== image.outputType) {
+				var index = name.lastIndexOf('.' + extension);
+				if (index !== -1)
+					name = name.substring(0, index) + '.' + image.outputType;
+				else
+					name += '.' + image.outputType;
+			}
 
 			image.save(name, function(err) {
 
@@ -5372,8 +5377,13 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		fnProcess(image);
 
 		var extension = framework_utils.getExtension(name);
-		if (extension !== image.outputType)
-			name = name.substring(0, name.lastIndexOf('.' + extension)) + '.' + image.outputType;
+		if (extension !== image.outputType) {
+			var index = name.lastIndexOf('.' + extension);
+			if (index !== -1)
+				name = name.substring(0, index) + '.' + image.outputType;
+			else
+				name +=  '.' + image.outputType;
+		}
 
 		image.save(name, function(err) {
 
