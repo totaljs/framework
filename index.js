@@ -56,6 +56,7 @@ const REG_EMPTY = /\s/g;
 const REG_SANITIZE_BACKSLASH = /\/\//g;
 const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
 const REG_SCRIPTCONTENT = /\<|\>|;/;
+const REG_HTTPHTTPS = /^(\/)?(http|https)\:\/\//i;
 const REQUEST_PROXY_FLAGS = ['post', 'json'];
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
@@ -8592,8 +8593,12 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 		filename = name;
 	else if (name[0] === '/')
 		filename = framework_utils.join(theme, this._version(name));
-	else
+	else {
 		filename = framework_utils.join(theme, directory, this._version(name));
+		if (REG_HTTPHTTPS.test(filename)) {
+			filename = filename.substring(1);
+		}
+	}
 
 	return framework.temporary.other[key] = framework_internal.preparePath(this._version(filename));
 };
@@ -11943,7 +11948,7 @@ Controller.prototype.routeScript = function(name, tag) {
 	if (name === undefined)
 		name = 'default.js';
 	var url = self._routeHelper(name, framework.routeScript);
-	return tag ? '<script type="text/javascript" src="' + url + '"></script>' : url;
+	return tag ? '<script src="' + url + '"></script>' : url;
 };
 
 /**
@@ -14818,10 +14823,8 @@ function prepare_filename(name) {
 }
 
 function prepare_staticurl(url, isDirectory) {
-
 	if (!url)
 		return url;
-
 	if (url[0] === '~') {
 		if (isDirectory)
 			return framework_utils.path(url.substring(1));
