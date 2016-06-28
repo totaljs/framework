@@ -7084,7 +7084,10 @@ Framework.prototype._upgrade_continue = function(route, req, path) {
 		setImmediate(() => socket.upgrade(connection));
 	};
 
-	async_middleware(0, req, req.websocket, route.middleware, next, route.options);
+	if (route.middleware)
+		async_middleware(0, req, req.websocket, route.middleware, next, route.options);
+	else
+		next();
 };
 
 /**
