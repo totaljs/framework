@@ -917,7 +917,7 @@ DatabaseBuilder.prototype.limit = function(count) {
 };
 
 DatabaseBuilder.prototype.page = function(page, limit) {
-	this.skip(value * limit)
+	this.skip(page * limit)
 	return this.take(limit);
 };
 
