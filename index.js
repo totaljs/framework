@@ -456,7 +456,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-53';
+	this.version_header = '2.0.0-54';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -2618,19 +2618,20 @@ Framework.prototype.$load = function(types, targetdirectory) {
 
 			if (item.is) {
 				framework_utils.ls(item.filename, function(files, directories) {
-					var dir = framework.path.temp(item.name);
+					var dir = framework.path.temp(item.name) + '.package';
+
 					if (!existsSync(dir))
 						fs.mkdirSync(dir);
 
 					for (var i = 0, length = directories.length; i < length; i++) {
-						var target = framework.path.temp(directories[i].replace(dirtmp, '').replace('.package', '') + '/');
+						var target = framework.path.temp(directories[i].replace(dirtmp, '') + '/');
 						if (!existsSync(target))
 							fs.mkdirSync(target);
 					}
 
 					files.wait(function(filename, next) {
 						var stream = fs.createReadStream(filename);
-						stream.pipe(fs.createWriteStream(path.join(dir, filename.replace(item.filename, '').replace('.package', ''))));
+						stream.pipe(fs.createWriteStream(path.join(dir, filename.replace(item.filename, '').replace(/\.package$/i, ''))));
 						stream.on('end', next);
 					}, function() {
 						// Windows sometimes doesn't load package and delay solves the problem.
@@ -2899,7 +2900,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		var backup = new Backup();
 		var id = path.basename(declaration, '.package');
-		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id);
+		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id + '.package');
 
 		self.routes.packages[id] = dir;
 		backup.restore(declaration, dir, function() {
@@ -4620,15 +4621,13 @@ Framework.prototype.responseStatic = function(req, res, done) {
 	var self = this;
 
 	if (res.success || res.headersSent) {
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
 
 	if (!self.config['static-accepts']['.' + req.extension]) {
 		self.response404(req, res);
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
 
@@ -4663,15 +4662,13 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 		if (!iso) {
 			self.response404(req, res);
-			if (done)
-				done();
+			done && done();
 			return;
 		}
 
 		var etag = framework_utils.etag(filename, (iso.version || '') + '-' + (self.config['etag-version'] || ''));
 		if (RELEASE && self.notModified(req, res, etag)) {
-			if (done)
-				done();
+			done && done();
 			return;
 		}
 
@@ -4685,8 +4682,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		}
 
 		self.responseContent(req, res, 200, prepare_isomorphic(key), 'text/javascript', true, headers);
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
 
@@ -4721,8 +4717,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 			if (response.statusCode !== 200 || !contentType || !contentType.startsWith('image/')) {
 				self.response404(req, res);
-				if (done)
-					done();
+				done && done();
 				return;
 			}
 
@@ -4884,8 +4879,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	var self = this;
 
 	if (res.success || res.headersSent) {
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
 
@@ -4903,10 +4897,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			delete self.temporary.path[key];
 
 		self.response404(req, res);
-
-		if (done)
-			done();
-
+		done && done();
 		return self;
 	}
 
@@ -4945,8 +4936,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		self.stats.response.notModified++;
 		self._request_stats(false, req.isStaticFile);
 
-		if (done)
-			done();
+		done && done();
 
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
@@ -5062,8 +5052,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (req.method === 'HEAD') {
 		res.writeHead(200, returnHeaders);
 		res.end();
-		if (done)
-			done();
+		done && done();
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
 		req.clear(true);
@@ -5079,8 +5068,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			});
 
 			stream.pipe(zlib.createGzip()).pipe(res);
-			if (done)
-				done();
+			done && done();
 			if (!req.isStaticFile)
 				self.emit('request-end', req, res);
 			req.clear(true);
@@ -5096,8 +5084,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			next();
 		});
 
-		if (done)
-			done();
+		done && done();
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
 		req.clear(true);
@@ -5261,8 +5248,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	var name = self.temporary.path[key];
 	if (name === null) {
 		self.response404(req, res);
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
 
@@ -5284,8 +5270,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
 		if (req.processing > self.config['default-request-timeout']) {
 			self.response408(req, res);
-			if (done)
-				done();
+			done && done();
 			return;
 		}
 
@@ -5334,9 +5319,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
 					self.temporary.path[key] = null;
 					self.response500(req, res, err);
-
-					if (done)
-						done();
+					done && done();
 
 					if (self.isDebug)
 						delete self.temporary.path[key];
@@ -5360,9 +5343,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			delete self.temporary.processing[key];
 			self.temporary.path[key] = null;
 			self.response404(req, res);
-
-			if (done)
-				done();
+			done && done();
 
 			if (self.isDebug)
 				delete self.temporary.path[key];
@@ -5392,9 +5373,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			if (err) {
 				self.temporary.path[key] = null;
 				self.response500(req, res, err);
-
-				if (done)
-					done();
+				done && done();
 
 				if (self.isDebug)
 					delete self.temporary.path[key];
@@ -5419,10 +5398,7 @@ Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProce
 	var name = self.temporary.path[key];
 	if (name === null) {
 		self.response404(req, res);
-
-		if (done)
-			done();
-
+		done && done();
 		return self;
 	}
 
@@ -5434,24 +5410,19 @@ Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProce
 	if (self.isProcessing(key)) {
 		if (req.processing > self.config['default-request-timeout']) {
 			self.response408(req, res);
-			if (done)
-				done();
+			done && done();
 			return;
 		}
 
 		req.processing += 500;
-		setTimeout(function() {
-			self.responseImage(req, res, filename, fnProcess, headers, done);
-		}, 500);
-
+		setTimeout(() => self.responseImage(req, res, filename, fnProcess, headers, done), 500);
 		return;
 	}
 
 	fnPrepare.call(self, function(filename) {
 		if (!filename) {
 			self.response404(req, res);
-			if (done)
-				done();
+			done && done();
 			return;
 		}
 		self.responseImage(req, res, filename, fnProcess, headers, done);
@@ -5495,8 +5466,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 
 		if (!exist) {
 			self.response404(req, res);
-			if (done)
-				done();
+			done && done();
 			return;
 		}
 
@@ -5523,8 +5493,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	var self = this;
 
 	if (res.success || res.headersSent) {
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
 
@@ -5576,8 +5545,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	if (req.method === 'HEAD') {
 		res.writeHead(200, returnHeaders);
 		res.end();
-		if (done)
-			done();
+		done && done();
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
 		req.clear(true);
@@ -5585,16 +5553,11 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	}
 
 	if (compress) {
-
 		res.writeHead(200, returnHeaders);
-
 		res.on('error', () => stream.close());
 		stream.pipe(zlib.createGzip()).pipe(res);
 		framework_internal.onFinished(res, () => framework_internal.destroyStream(stream));
-
-		if (done)
-			done();
-
+		done && done();
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
 
@@ -5606,8 +5569,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 	framework_internal.onFinished(res, (err) => framework_internal.destroyStream(stream));
 	stream.pipe(res);
 
-	if (done)
-		done();
+	done && done();
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -5657,8 +5619,7 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 		res.end();
 		self.stats.response.streaming++;
 		self._request_stats(false, req.isStaticFile);
-		if (done)
-			done();
+		done && done();
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
 		return self;
@@ -5670,6 +5631,7 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 	RANGE.end = end;
 
 	fsStreamRead(name, RANGE, function(stream, next) {
+
 		framework_internal.onFinished(res, function() {
 			framework_internal.destroyStream(stream);
 			next();
@@ -5678,9 +5640,7 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 		stream.pipe(res);
 		self.stats.response.streaming++;
 		self._request_stats(false, req.isStaticFile);
-
-		if (done)
-			done();
+		done && done();
 
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
@@ -5705,8 +5665,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	var self = this;
 
 	if (res.success || res.headersSent) {
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
 
@@ -5744,8 +5703,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	if (req.method === 'HEAD') {
 		res.writeHead(200, returnHeaders);
 		res.end();
-		if (done)
-			done();
+		done && done();
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
 		req.clear(true);
@@ -5754,24 +5712,17 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 
 	if (compress) {
 		res.writeHead(200, returnHeaders);
-		zlib.gzip(encoding === 'binary' ? buffer : buffer.toString(encoding), function(err, buffer) {
-			res.end(buffer);
-		});
-
-		if (done)
-			done();
-
+		zlib.gzip(encoding === 'binary' ? buffer : buffer.toString(encoding), (err, buffer) => res.end(buffer));
+		done && done();
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
-
 		return self;
 	}
 
 	res.writeHead(200, returnHeaders);
 	res.end(encoding === 'binary' ? buffer : buffer.toString(encoding));
 
-	if (done)
-		done();
+	done && done();
 
 	if (!req.isStaticFile)
 		self.emit('request-end', req, res);
@@ -9308,7 +9259,16 @@ FrameworkPath.prototype.root = function(filename) {
 };
 
 FrameworkPath.prototype.package = function(name, filename) {
-	var p = path.join(directory, framework.config['directory-temp'], name, filename || '');
+
+	if (filename === undefined) {
+		var index = name.indexOf('/');
+		if (index !== -1) {
+			filename = name.substring(index + 1);
+			name = name.substring(0, index);
+		}
+	}
+
+	var p = path.join(directory, framework.config['directory-temp'], name + '.package', filename || '');
 	return framework.isWindows ? p.replace(/\\/g, '/') : p;
 };
 
@@ -12369,8 +12329,7 @@ Controller.prototype.file = function(filename, download, headers, done) {
 	var self = this;
 
 	if (self.res.success || self.res.headersSent || !self.isConnected) {
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
 
@@ -12396,8 +12355,7 @@ Controller.prototype.image = function(filename, fnProcess, headers, done) {
 	var self = this;
 
 	if (self.res.success || self.res.headersSent || !self.isConnected) {
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
 
@@ -12426,8 +12384,7 @@ Controller.prototype.stream = function(contentType, stream, download, headers, d
 	var self = this;
 
 	if (self.res.success || self.res.headersSent || !self.isConnected) {
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
 
@@ -14316,12 +14273,10 @@ http.ServerResponse.prototype.throw501 = function(problem) {
 http.ServerResponse.prototype.continue = function(done) {
 	var self = this;
 	if (self.headersSent) {
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
-	if (self.controller)
-		self.controller.subscribe.success();
+	self.controller && self.controller.subscribe.success();
 	framework.responseStatic(self.req, self, done);
 	return self;
 };
@@ -14372,12 +14327,10 @@ http.ServerResponse.prototype.redirect = function(url, permanent) {
 http.ServerResponse.prototype.file = function(filename, download, headers, done) {
 	var self = this;
 	if (self.headersSent) {
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
-	if (self.controller)
-		self.controller.subscribe.success();
+	self.controller && self.controller.subscribe.success();
 	framework.responseFile(self.req, self, filename, download, headers, done);
 	return self;
 };
@@ -14394,13 +14347,11 @@ http.ServerResponse.prototype.file = function(filename, download, headers, done)
 http.ServerResponse.prototype.stream = function(contentType, stream, download, headers, done, nocompress) {
 	var self = this;
 	if (self.headersSent) {
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
-	if (self.controller)
-		self.controller.subscribe.success();
 
+	self.controller && self.controller.subscribe.success();
 	framework.responseStream(self.req, self, contentType, stream, download, headers, done, nocompress);
 	return self;
 };
@@ -14416,12 +14367,10 @@ http.ServerResponse.prototype.stream = function(contentType, stream, download, h
 http.ServerResponse.prototype.image = function(filename, fnProcess, headers, done) {
 	var self = this;
 	if (self.headersSent) {
-		if (done)
-			done();
+		done && done();
 		return self;
 	}
-	if (self.controller)
-		self.controller.subscribe.success();
+	self.controller && self.controller.subscribe.success();
 	framework.responseImage(self.req, self, filename, fnProcess, headers, done);
 	return self;
 };
