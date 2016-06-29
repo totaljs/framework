@@ -57,6 +57,7 @@ const REG_SANITIZE_BACKSLASH = /\/\//g;
 const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
 const REG_SCRIPTCONTENT = /\<|\>|;/;
 const REG_HTTPHTTPS = /^(\/)?(http|https)\:\/\//i;
+const REG_TEXTAPPLICATION = /text|application/;
 const REQUEST_PROXY_FLAGS = ['post', 'json'];
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
@@ -5011,6 +5012,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		returnHeaders.Vary = 'Accept-Encoding';
 
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
+	if (REG_TEXTAPPLICATION.test(contentType))
+		returnHeaders[RESPONSE_HEADER_CONTENTTYPE] += '; charset=utf-8';
 
 	if (canCache && !res.getHeader('Expires'))
 		returnHeaders.Expires = DATE_EXPIRES;
@@ -5976,7 +5979,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	else
 		returnHeaders[RESPONSE_HEADER_CACHECONTROL] = 'private';
 
-	if ((/text|application/).test(contentType))
+	if (REG_TEXTAPPLICATION.test(contentType))
 		contentType += '; charset=utf-8';
 
 	returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = contentType;
@@ -5993,9 +5996,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 
 	if (gzip) {
 		res.writeHead(code, returnHeaders);
-		zlib.gzip(new Buffer(contentBody), function(err, data) {
-			res.end(data, ENCODING);
-		});
+		zlib.gzip(new Buffer(contentBody), (err, data) => res.end(data, ENCODING));
 		self._request_stats(false, req.isStaticFile);
 		if (!req.isStaticFile)
 			self.emit('request-end', req, res);
