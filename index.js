@@ -1763,13 +1763,13 @@ Framework.prototype.map = function(url, filename, filter) {
 	// package
 	if (c === '@') {
 		if (framework.isWindows)
-			filename = framework_utils.combine(framework.config['directory-temp'], filename.substring(1));
+			filename = framework_utils.combine(framework.config['directory-temp'], prepare_package(filename.substring(1)));
 		else
 			filename = self.path.package(filename.substring(1));
 		isPackage = true;
 	} else if (c === '=') {
 		if (framework.isWindows)
-			filename = framework_utils.combine(framework.config['directory-themes'], filename.substring(1));
+			filename = framework_utils.combine(framework.config['directory-themes'], prepare_package(filename.substring(1)));
 		else
 			filename = self.path.themes(filename.substring(1));
 		isPackage = true;
@@ -14809,6 +14809,17 @@ function prepare_error(e) {
 	if (e.stack)
 		return ' :: ' + e.stack.toString();
 	return ' :: ' + e.toString();
+}
+
+function prepare_package(name) {
+	var index = name.indexOf('/');
+
+	if (index === -1)
+		return name + '.package';
+
+	var filename = name.substring(index + 1);
+	name = name.substring(0, index);
+	return name + '.package' + (filename ? '/' + filename : '');
 }
 
 function prepare_filename(name) {
