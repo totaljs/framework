@@ -2614,19 +2614,20 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		arr = [];
 		listing(dir, 0, arr, '.package');
 
-		var dirtmp = dir;
+		var dirtmp = framework_utils.$normalize(dir);
 
 		arr.forEach(function(item) {
 
 			if (item.is) {
 				framework_utils.ls(item.filename, function(files, directories) {
+
 					var dir = framework.path.temp(item.name) + '.package';
 
 					if (!existsSync(dir))
 						fs.mkdirSync(dir);
 
 					for (var i = 0, length = directories.length; i < length; i++) {
-						var target = framework.path.temp(directories[i].replace(dirtmp, '') + '/');
+						var target = framework.path.temp(framework_utils.$normalize(directories[i]).replace(dirtmp, '') + '/');
 						if (!existsSync(target))
 							fs.mkdirSync(target);
 					}
