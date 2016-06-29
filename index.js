@@ -55,6 +55,7 @@ const REG_ROUTESTATIC = /^(\/\/|https\:|http\:)+/g;
 const REG_EMPTY = /\s/g;
 const REG_SANITIZE_BACKSLASH = /\/\//g;
 const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
+const REG_WINDOWSPATH = /\\/g;
 const REG_SCRIPTCONTENT = /\<|\>|;/;
 const REG_HTTPHTTPS = /^(\/)?(http|https)\:\/\//i;
 const REG_TEXTAPPLICATION = /text|application/;
@@ -1763,10 +1764,7 @@ Framework.prototype.map = function(url, filename, filter) {
 
 	// package
 	if (c === '@') {
-		if (framework.isWindows)
-			filename = framework_utils.combine(framework.config['directory-temp'], filename.substring(1));
-		else
-			filename = self.path.package(filename.substring(1));
+		filename = self.path.package(filename.substring(1));
 		isPackage = true;
 	} else if (c === '=') {
 		if (framework.isWindows)
@@ -9276,7 +9274,7 @@ FrameworkPath.prototype.package = function(name, filename) {
 	}
 
 	var p = path.join(directory, framework.config['directory-temp'], name + '.package', filename || '');
-	return framework.isWindows ? p.replace(/\\/g, '/') : p;
+	return framework.isWindows ? p.replace(REG_WINDOWSPATH, '/') : p;
 };
 
 // *********************************************************************************
