@@ -30,8 +30,8 @@ const sof = { 0xc0: true, 0xc1: true, 0xc2: true, 0xc3: true, 0xc5: true, 0xc6: 
 const child = require('child_process');
 const exec = child.exec;
 const spawn = child.spawn;
-const middlewares = {};
 const Fs = require('fs');
+var middlewares = {};
 
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
