@@ -459,7 +459,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-56';
+	this.version_header = '2.0.0-57';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -3074,9 +3074,13 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		else if (typeof(obj.name) === 'string')
 			name = obj.name;
 
-		if (obj.url)
-			framework.map(framework_internal.preparePath(obj.url), '#' + name);
+		if (obj.url) {
+			if (obj.url[0] !== '/')
+				obj.url = '/' + obj.url;
+		} else
+			obj.url = '/' + name + '.js';
 
+		framework.map(framework_internal.preparePath(obj.url), '#' + name);
 		framework.isomorphic[name] = obj;
 		framework.isomorphic[name].$$output = framework_internal.compile_javascript(content, '#' + name);
 
@@ -11947,7 +11951,20 @@ Controller.prototype.routeScript = function(name, tag) {
 	var self = this;
 	if (name === undefined)
 		name = 'default.js';
-	var url = self._routeHelper(name, framework.routeScript);
+
+	var url;
+
+	// isomorphic
+	if (name[0] === '#') {
+		var tmp = framework.isomorphic[name.substring(1)];
+		if (tmp)
+			url = tmp.url;
+		else {
+			F.error('Isomorphic library {0} doesn\'t exist.'.format(name.substring(1)));
+			return '';
+		}
+	} else
+		url = self._routeHelper(name, framework.routeScript);
 	return tag ? '<script src="' + url + '"></script>' : url;
 };
 
