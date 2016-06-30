@@ -459,7 +459,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2000;
-	this.version_header = '2.0.0-57';
+	this.version_header = '2.0.0-58';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -2782,18 +2782,16 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (declaration.startsWith('http://') || declaration.startsWith('https://')) {
 
 			if (type === 'package') {
-
 				framework_utils.download(declaration, ['get'], function(err, response) {
 
 					if (err) {
 						self.error(err, 'framework.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
-						if (callback)
-							callback(err);
+						callback && callback(err);
 						return;
 					}
 
 					var id = path.basename(declaration, '.package');
-					var filename = framework.path.temp(id + '.package');
+					var filename = framework.path.temp(id + '.download');
 					var stream = fs.createWriteStream(filename);
 					response.pipe(stream);
 					stream.on('finish', () => self.install(type, id, filename, options, undefined, undefined, true));
@@ -2809,8 +2807,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 				if (err) {
 					self.error(err, 'framework.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
-					if (callback)
-						callback(err);
+					callback && callback(err);
 					return;
 				}
 
@@ -2835,8 +2832,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		self.routes.middleware[name] = typeof(declaration) === 'function' ? declaration : eval(declaration);
 		self._length_middleware = Object.keys(self.routes.middleware).length;
 
-		if (callback)
-			callback(null);
+		callback && callback(null);
 
 		key = type + '.' + name;
 
@@ -2868,9 +2864,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			self.emit('install', type, name);
 		}, 500);
 
-		if (callback)
-			callback(null);
-
+		callback && callback(null);
 		return self;
 	}
 
@@ -2882,9 +2876,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			self.emit('install', type, name);
 		}, 500);
 
-		if (callback)
-			callback(null);
-
+		callback && callback(null);
 		return self;
 	}
 
@@ -2896,16 +2888,14 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			self.emit('install', type, name);
 		}, 500);
 
-		if (callback)
-			callback(null);
-
+		callback && callback(null);
 		return self;
 	}
 
 	if (type === 'package') {
 
 		var backup = new Backup();
-		var id = path.basename(declaration, '.package');
+		var id = path.basename(declaration, '.' + framework_utils.getExtension(declaration));
 		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id + '.package');
 
 		self.routes.packages[id] = dir;
@@ -2922,9 +2912,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					self.emit('install', type, name);
 				}, 500);
 
-				if (callback)
-					callback(err);
-
+				callback && callback(err);
 			}, internal, useRequired, true);
 		});
 
@@ -2945,15 +2933,13 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			}, 500);
 		}
 
-		if (callback)
-			callback(null);
+		callback && callback(null);
 
 		(function(name, filename) {
 			setTimeout(function() {
 				delete require.cache[name];
 			}, 1000);
 		})(require.resolve(declaration), declaration);
-
 		return self;
 	}
 
@@ -2966,8 +2952,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				self.emit(type + '#' + name);
 				self.emit('install', type, name);
 			}, 500);
-			if (callback)
-				callback(err);
+			callback && callback(err);
 		}, internal, useRequired, true);
 		return self;
 	}
@@ -2995,9 +2980,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			self.emit('install', type, name);
 		}, 500);
 
-		if (callback)
-			callback(null);
-
+		callback && callback(null);
 		return self;
 	}
 
@@ -3019,17 +3002,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				obj = typeof(declaration) === 'function' ? eval('(' + declaration.toString() + ')()') : eval(declaration);
 
 		} catch (ex) {
-
 			self.error(ex, 'framework.install(\'' + type + '\')', null);
-
-			if (callback)
-				callback(ex);
-
+			callback && callback(ex);
 			return self;
 		}
 
-		if (callback)
-			callback(null);
+		callback && callback(null);
 
 		setTimeout(function() {
 			self.emit(type + '#' + name);
@@ -3065,12 +3043,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			}
 
 		} catch (ex) {
-
 			self.error(ex, 'framework.install(\'' + type + '\')', null);
-
-			if (callback)
-				callback(ex);
-
+			callback && callback(ex);
 			return self;
 		}
 
@@ -3089,8 +3063,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		framework.isomorphic[name] = obj;
 		framework.isomorphic[name].$$output = framework_internal.compile_javascript(content, '#' + name);
 
-		if (callback)
-			callback(null);
+		callback && callback(null);
 
 		setTimeout(function() {
 			self.emit(type + '#' + name, obj);
@@ -3136,12 +3109,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			}
 
 		} catch (ex) {
-
 			self.error(ex, 'framework.install(\'' + type + '\', \'' + name + '\')', null);
-
-			if (callback)
-				callback(ex);
-
+			callback && callback(ex);
 			return self;
 		}
 
@@ -3190,8 +3159,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			}, 500);
 		}
 
-		if (callback)
-			callback(null);
+		callback && callback(null);
 		return self;
 	}
 
@@ -3231,12 +3199,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			}
 
 		} catch (ex) {
-
 			self.error(ex, 'framework.install(\'' + type + '\', \'' + (name ? '' : internal) + '\')', null);
-
-			if (callback)
-				callback(ex);
-
+			callback && callback(ex);
 			return self;
 		}
 
@@ -9165,7 +9129,8 @@ FrameworkPath.prototype.verify = function(name) {
 	var prop = '$directory-' + name;
 	if (framework.temporary.path[prop])
 		return framework;
-	var dir = framework_utils.combine(framework.config['directory-' + name]);
+	var directory = framework.config['directory-' + name] || name;
+	var dir = framework_utils.combine(directory);
 	if (!existsSync(dir))
 		fs.mkdirSync(dir);
 	framework.temporary.path[prop] = true;
