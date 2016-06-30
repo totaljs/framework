@@ -10181,6 +10181,10 @@ Controller.prototype = {
 		return this.req.user;
 	},
 
+	get referrer() {
+		return this.req.headers['referer'] || '';
+	},
+
 	set user(value) {
 		this.req.user = value;
 	},
