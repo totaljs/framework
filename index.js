@@ -1039,6 +1039,11 @@ Framework.prototype.resize = function(url, fn, flags) {
 		extensions['.gif'] = true;
 	}
 
+	if (extensions['.jpg'] && !extensions['.jpeg'])
+		extensions['.jpeg'] = true;
+	else if (extensions['.jpeg'] && !extensions['.jpg'])
+		extensions['.jpg'] = true;
+
 	self.routes.resize[url] = {
 		fn: fn,
 		path: path || url,
