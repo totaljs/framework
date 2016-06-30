@@ -11764,6 +11764,9 @@ Controller.prototype.$import = function() {
 		if (!tag)
 			filename = filename.substring(1);
 
+		if (filename[0] === '#')
+			extension = '.js';
+
 		switch (extension) {
 			case '.js':
 				builder += self.routeScript(filename, tag);
@@ -11949,6 +11952,7 @@ Controller.prototype._routeHelper = function(name, fn) {
  */
 Controller.prototype.routeScript = function(name, tag) {
 	var self = this;
+
 	if (name === undefined)
 		name = 'default.js';
 
