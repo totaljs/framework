@@ -48,6 +48,8 @@
 - added: `global.EMPTYARRAY`
 - added: `global.SINGLETON(name)` returns a singleton object instance
 - added: `controller.referrer` returns a value from `req.headers['referer']`
+- added: `controller.author(value)` can change `<meta name="author"`
+- added: `@{author(value)}` can change `<meta name="author"`
 
 - updated: subdomain routing supports wildcard routing `F.route('[*]/', 'homepage')` (`F.websocket()` is supported too)
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot

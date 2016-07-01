@@ -64,6 +64,16 @@ const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
 const EMPTYREQUEST = { uri: {} };
 const SINGLETONS = {};
+const REPOSITORY_HEAD = '$head';
+const REPOSITORY_META = '$meta';
+const REPOSITORY_META_TITLE = '$title';
+const REPOSITORY_META_DESCRIPTION = '$description';
+const REPOSITORY_META_KEYWORDS = '$keywords';
+const REPOSITORY_META_AUTHOR = '$author';
+const REPOSITORY_META_IMAGE = '$image';
+const REPOSITORY_PLACE = '$place';
+const REPOSITORY_SITEMAP = '$sitemap';
+const ATTR_END = '"';
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -389,7 +399,7 @@ global.SUCCESS = function(success, value) {
 			success = false;
 		} else
 			success = true;
-	} else if (success === null || success === undefined)
+	} else if (success == null)
 		success = true;
 
 	if (!value) {
@@ -4023,7 +4033,7 @@ Framework.prototype.onMeta = function() {
 	for (var i = 0; i < length; i++) {
 
 		var arg = framework_utils.encode(arguments[i]);
-		if (arg === null || !arg.length)
+		if (arg == null || !arg.length)
 			continue;
 
 		switch (i) {
@@ -6136,7 +6146,7 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 		} else
 			self.ip = undefined;
 
-		if (self.ip === undefined || self.ip === null)
+		if (self.ip == null)
 			self.ip = 'auto';
 
 		if (self.server) {
@@ -9467,16 +9477,6 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 // =================================================================================
 // *********************************************************************************
 
-const REPOSITORY_HEAD = '$head';
-const REPOSITORY_META = '$meta';
-const REPOSITORY_META_TITLE = '$title';
-const REPOSITORY_META_DESCRIPTION = '$description';
-const REPOSITORY_META_KEYWORDS = '$keywords';
-const REPOSITORY_META_IMAGE = '$image';
-const REPOSITORY_PLACE = '$place';
-const REPOSITORY_SITEMAP = '$sitemap';
-const ATTR_END = '"';
-
 function Subscribe(framework, req, res, type) {
 
 	// type = 0 - GET, DELETE
@@ -10791,6 +10791,12 @@ Controller.prototype.keywords = function(value) {
 	return self;
 };
 
+Controller.prototype.author = function(value) {
+	var self = this;
+	self.$author(value);
+	return self;
+};
+
 Controller.prototype.$title = function(value) {
 	var self = this;
 	if (value)
@@ -10809,6 +10815,13 @@ Controller.prototype.$keywords = function(value) {
 	var self = this;
 	if (value && value.length)
 		self.repository[REPOSITORY_META_KEYWORDS] = value instanceof Array ? value.join(', ') : value;
+	return '';
+};
+
+Controller.prototype.$author = function(value) {
+	var self = this;
+	if (value)
+		self.repository[REPOSITORY_META_AUTHOR] = value;
 	return '';
 };
 
@@ -11192,7 +11205,7 @@ Controller.prototype.href = function(key, value) {
 	if (value && type === 'object')
 		framework_utils.extend(obj, value);
 
-	if (value !== undefined && value !== null)
+	if (value != null)
 		obj[key] = value;
 
 	obj = qs.stringify(obj);
@@ -11478,40 +11491,35 @@ Controller.prototype._prepareHost = function(value) {
 	return value;
 };
 
-/*
-	Internal function for views
-	@arguments {String}
-	return {String}
-*/
 Controller.prototype.head = function() {
 
 	var self = this;
-
 	var length = arguments.length;
 
 	if (!length) {
 		framework.emit('controller-render-head', self);
-		return (self.config.author ? '<meta name="author" content="' + self.config.author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '');
+		var author = self.repository[REPOSITORY_META_AUTHOR] || self.config.author;
+		return (author ? '<meta name="author" content="' + author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '');
 	}
 
 	var header = (self.repository[REPOSITORY_HEAD] || '');
-
 	var output = '';
+
 	for (var i = 0; i < length; i++) {
 
 		var val = arguments[i];
-		if (val.indexOf('<') !== -1) {
+		if (val[0] === '<') {
 			output += val;
 			continue;
 		}
 
 		var tmp = val.substring(0, 7);
-		var isRoute = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
+		var is = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
 
 		if (val.endsWith('.css', true))
-			output += '<link type="text/css" rel="stylesheet" href="' + (isRoute ? self.routeStyle(val) : val) + '" />';
+			output += '<link type="text/css" rel="stylesheet" href="' + (is ? self.routeStyle(val) : val) + '" />';
 		else if (val.endsWith('.js', true) !== -1)
-			output += '<script src="' + (isRoute ? self.routeScript(val) : val) + '"></script>';
+			output += '<script src="' + (is ? self.routeScript(val) : val) + '"></script>';
 	}
 
 	header += output;
@@ -11525,21 +11533,11 @@ Controller.prototype.$head = function() {
 	return '';
 };
 
-/*
-	Internal function for views
-	@bool {Boolean}
-	@charBeg {String}
-	@charEnd {String}
-	@value {String}
-	return {String}
-*/
 Controller.prototype.$isValue = function(bool, charBeg, charEnd, value) {
 	if (!bool)
 		return '';
-
 	charBeg = charBeg || ' ';
 	charEnd = charEnd || '';
-
 	return charBeg + value + charEnd;
 };
 
