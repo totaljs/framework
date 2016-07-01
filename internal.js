@@ -584,7 +584,6 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 		}
 
 		var role = flag[0] === '@';
-
 		if (noLoggedUnlogged && route.isMEMBER) {
 			var tmp = flag.substring(0, 3);
 			if ((!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1) || (route.isROLE && role && route.flags.indexOf(flag) === -1) || (route.isROLE && !role))
@@ -597,8 +596,12 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 			continue;
 
 		var index = route.flags.indexOf(flag);
-		if (index === -1)
-			return route.isMEMBER ? 0 : -1;
+		if (index === -1) {
+			if (role && !route.isROLE) {
+				// the route doesn't contain any role but the request flags contain role
+			} else
+				return route.isMEMBER ? 0 : -1;
+		}
 		if (role)
 			isRole = true;
 	}
