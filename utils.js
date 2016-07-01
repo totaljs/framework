@@ -54,6 +54,7 @@ const regexpUID = /^\d{14,}[a-z]{3}[01]{1}$/;
 const regexpZIP = /^\d{5}(?:[-\s]\d{4})?$/;
 const regexpXML = /\w+\=\".*?\"/g;
 const regexpDECODE = /&gt;|\&lt;|\&quot;|&apos;|&amp;/g;
+const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -1168,7 +1169,7 @@ exports.httpStatus = function(code, addCode) {
  */
 exports.extend = function(target, source, rewrite) {
 
-	if (target === null || source === null)
+	if (!target || !source)
 		return target;
 
 	if (typeof(target) !== 'object' || typeof(source) !== 'object')
@@ -1318,7 +1319,7 @@ exports.reduce = function(source, prop, reverse) {
  */
 exports.assign = function(obj, path, fn) {
 
-	if (obj === null || obj === undefined)
+	if (obj == null)
 		return obj;
 
 	var arr = path.split('.');
@@ -1431,7 +1432,7 @@ exports.streamer = function(beg, end, callback) {
  */
 exports.encode = function(str) {
 
-	if (str === undefined)
+	if (str == null)
 		return '';
 
 	var type = typeof(str);
@@ -1449,7 +1450,7 @@ exports.encode = function(str) {
  */
 exports.decode = function(str) {
 
-	if (str === undefined)
+	if (str == null)
 		return '';
 
 	var type = typeof(str);
@@ -1476,7 +1477,7 @@ exports.isStaticFile = function(url) {
  * @return {Number}
  */
 exports.parseInt = function(obj, def) {
-	if (obj === undefined || obj === null)
+	if (obj == null)
 		return def || 0;
 	var type = typeof(obj);
 	if (type === 'number')
@@ -1486,11 +1487,10 @@ exports.parseInt = function(obj, def) {
 
 exports.parseBool = exports.parseBoolean = function(obj, def) {
 
-	if (obj === undefined || obj === null)
+	if (obj == null)
 		return def === undefined ? false : def;
 
 	var type = typeof(obj);
-
 	if (type === 'boolean')
 		return obj;
 
@@ -1509,11 +1509,10 @@ exports.parseBool = exports.parseBoolean = function(obj, def) {
  */
 exports.parseFloat = function(obj, def) {
 
-	if (obj === undefined || obj === null)
+	if (obj == null)
 		return def || 0;
 
 	var type = typeof(obj);
-
 	if (type === 'number')
 		return obj;
 
@@ -1755,7 +1754,7 @@ function validate_builder_default(name, value, entity) {
 	if (type === 'boolean')
 		return value === true;
 
-	if (value === null || value === undefined)
+	if (value == null)
 		return false;
 
 	if (value instanceof Array)
@@ -2497,7 +2496,7 @@ Date.prototype.format = function(format, resource) {
 		format = format.substring(1);
 	}
 
-	if (format === undefined || format === null || format === '')
+	if (!format)
 		return self.getFullYear() + '-' + (self.getMonth() + 1).toString().padLeft(2, '0') + '-' + self.getDate().toString().padLeft(2, '0') + 'T' + self.getHours().toString().padLeft(2, '0') + ':' + self.getMinutes().toString().padLeft(2, '0') + ':' + self.getSeconds().toString().padLeft(2, '0') + '.' + self.getMilliseconds().toString().padLeft(3, '0') + 'Z';
 
 	var h = self.getHours();
@@ -2963,9 +2962,7 @@ String.prototype.format = function() {
 	var arg = arguments;
 	return this.replace(regexpSTRINGFORMAT, function(text) {
 		var value = arg[+text.substring(1, text.length - 1)];
-		if (value === null || value === undefined)
-			value = '';
-		return value;
+		return value == null ? '' : value;
 	});
 };
 
@@ -3027,11 +3024,10 @@ String.prototype.urlDecode = function() {
 String.prototype.params = function(obj) {
 	var formatted = this;
 
-	if (obj === undefined || obj === null)
+	if (obj == null)
 		return formatted;
 
-	var reg = /\{{2}[^}\n]*\}{2}/g;
-	return formatted.replace(reg, function(prop) {
+	return formatted.replace(regexpPARAM, function(prop) {
 
 		var isEncode = false;
 		var name = prop.substring(2, prop.length - 2).trim();
@@ -3069,7 +3065,7 @@ String.prototype.params = function(obj) {
 					val = obj[arr[0]][arr[1]][arr[2]][arr[3]][arr[4]];
 			}
 		} else
-			val = name.length === 0 ? obj : obj[name];
+			val = name.length ? obj[name] : obj;
 
 		if (typeof(val) === 'function')
 			val = val(index);
@@ -3078,7 +3074,6 @@ String.prototype.params = function(obj) {
 			return prop;
 
 		if (format.length) {
-
 			var type = typeof(val);
 			if (type === 'string') {
 				var max = +format;
@@ -3683,7 +3678,7 @@ Number.prototype.format = function(decimals, separator, separatorDecimal) {
 
 Number.prototype.add = function(value, decimals) {
 
-	if (value === undefined || value === null)
+	if (value == null)
 		return this;
 
 	if (typeof(value) === 'number')
@@ -3962,7 +3957,7 @@ Number.prototype.parseDate = function(plus) {
 	return new Date(this + (plus || 0));
 };
 
-if (typeof (Number.prototype.toRad) === 'undefined') {
+if (!Number.prototype.toRad) {
 	Number.prototype.toRad = function () {
 		return this * Math.PI / 180;
 	};
@@ -4808,7 +4803,7 @@ Async.prototype.await = function(name, fn, cb) {
 		name = exports.GUID(6);
 	}
 
-	if (self.tasksPending[name] !== undefined)
+	if (self.tasksPending[name])
 		return false;
 
 	self.tasksPending[name] = new AsyncTask(self, name, fn, cb, null);
@@ -4831,7 +4826,7 @@ Async.prototype.wait = function(name, waitingFor, fn, cb) {
 		waitingFor = null;
 	}
 
-	if (self.tasksPending[name] !== undefined)
+	if (self.tasksPending[name])
 		return false;
 
 	self.tasksPending[name] = new AsyncTask(self, name, fn, cb, waitingFor);
@@ -4917,7 +4912,7 @@ Async.prototype.refresh = function(name) {
 			break;
 
 		var task = self.tasksPending[name];
-		if (task === undefined)
+		if (!task)
 			break;
 
 		if (self.isCanceled || task.isCanceled) {
@@ -5253,9 +5248,7 @@ function queue_next(name) {
 	item.running++;
 	(function(name){
 		setImmediate(function() {
-			fn(function() {
-				queue_next(name);
-			});
+			fn(() => queue_next(name));
 		});
 	})(name);
 }
@@ -5276,7 +5269,7 @@ exports.queue = function(name, max, fn) {
 		return true;
 	}
 
-	if (exports.queuecache[name] === undefined)
+	if (!exports.queuecache[name])
 		exports.queuecache[name] = { limit: max, running: 0, pending: [] };
 
 	var item = exports.queuecache[name];

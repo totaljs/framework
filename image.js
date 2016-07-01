@@ -132,15 +132,13 @@ exports.measureSVG = function(buffer) {
 	@useImageMagick {Boolean} :: default false
 */
 function Image(filename, useImageMagick, width, height) {
-
 	var type = typeof(filename);
-
 	this.width = width;
 	this.height = height;
 	this.builder = [];
 	this.filename = type === 'string' ? filename : null;
 	this.currentStream = type === 'object' ? filename : null;
-	this.isIM = useImageMagick === undefined || useImageMagick === null ? F.config['default-image-converter'] === 'im' : useImageMagick;
+	this.isIM = useImageMagick == null ? F.config['default-image-converter'] === 'im' : useImageMagick;
 	this.outputType = type === 'string' ? framework_utils.getExtension(filename) : 'jpg';
 }
 

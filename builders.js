@@ -463,7 +463,7 @@ SchemaBuilderEntity.prototype.getDependencies = function() {
 
 		var m = self.parent.get(type);
 
-		if (typeof(m) === undefined)
+		if (m === undefined)
 			continue;
 
 		dependencies.push({ name: name, isArray: isArray, schema: m });
@@ -1207,7 +1207,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 	if (obj === null)
 		return null;
 
-	if (model === null || model === undefined)
+	if (model == null)
 		return self.default();
 
 	var tmp;
@@ -1251,7 +1251,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 
 				// string
 				case 3:
-					tmp = val === undefined || val === null ? '' : autotrim(self, val.toString());
+					tmp = val == null ? '' : autotrim(self, val.toString());
 					if (type.length && type.length < tmp.length)
 						tmp = tmp.substring(0, type.length);
 
@@ -1385,7 +1385,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					break;
 
 				case 3:
-					tmp = tmp === undefined || tmp === null ? '' : autotrim(self, tmp.toString());
+					tmp = tmp == null ? '' : autotrim(self, tmp.toString());
 					if (type.length && tmp.length < tmp.length)
 						tmp = tmp.substring(0, type.length);
 
@@ -3062,7 +3062,7 @@ Pagination.prototype.prepare = function(max, format, type) {
 
 	var isHTML = type === 'html';
 
-	if (max === undefined || max === null) {
+	if (max == null) {
 		for (var i = 1; i < self.count + 1; i++) {
 			if (isHTML)
 				builder.push(self.prepare_html(format, i, self.count, self.items, i === self.page));
@@ -3188,7 +3188,7 @@ UrlBuilder.prototype.toString = function(url, skipEmpty) {
 	Object.keys(self.builder).forEach(function(o) {
 
 		var value = self.builder[o];
-		if (value === undefined || value === null)
+		if (value == null)
 			value = '';
 		else
 			value = value.toString();
@@ -3225,7 +3225,7 @@ UrlBuilder.prototype.hasValue = function(keys) {
 
 	for (var i = 0; i < keys.length; i++) {
 		var val = self.builder[keys[i]];
-		if (val === undefined || val === null)
+		if (val == null)
 			return false;
 	}
 
