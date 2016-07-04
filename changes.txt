@@ -50,6 +50,7 @@
 - added: `controller.referrer` returns a value from `req.headers['referer']`
 - added: `controller.author(value)` can change `<meta name="author"`
 - added: `@{author(value)}` can change `<meta name="author"`
+- added: view engine supports looping with objects `@{foreach m in model} key: @{m.key} and value: @{m.value} @{end}`
 
 - updated: subdomain routing supports wildcard routing `F.route('[*]/', 'homepage')` (`F.websocket()` is supported too)
 - updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot

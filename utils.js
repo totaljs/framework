@@ -5585,3 +5585,13 @@ Chunker.prototype.destroy = function() {
 exports.chunker = function(name, max) {
 	return new Chunker(name, max);
 };
+
+exports.ObjectToArray = function(obj) {
+	if (obj == null)
+		return EMPTYARRAY;
+	var keys = Object.keys(obj);
+	var output = [];
+	for (var i = 0, length = keys.length; i < length; i++)
+		output.push({ key: keys[i], value: obj[keys[i]]});
+	return output;
+};
