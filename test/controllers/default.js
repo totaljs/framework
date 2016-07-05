@@ -470,7 +470,7 @@ function viewIndex() {
 	assert.ok(self.routeStatic('/p.zip') === '/p.zip', name + 'routeStatic()');
 
 	self.layout('');
-	assert.ok(self.view('test', null, true) === 'total.js', name + 'view');
+	assert.ok(self.view('test', null, true) === 'Total.js', name + 'view');
 	assert.ok(self.url === '/', name + 'url');
 
 	self.status = 404;
