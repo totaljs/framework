@@ -1,4 +1,4 @@
-======= 2.0.0 (BETA)
+======= 2.0.0
 
 - added: new NoSQL version v4.0.0 is fully optimized for total.js
 - added: `controller.invalid([status])` creates the ErrorBuilder instance and it responds in the next tick
