@@ -122,7 +122,7 @@
 - improved: redirecting
 - improved: Array.orderBy(), added quicksort algorithm
 - improved: ErrorBuilder
-- improved: WebSocket.send() for JSON communication
+- improved: `WebSocket.send()` for JSON communication
 - improved: code (a lot)
 - improved: preparing `SchemaBuilderEntity`
 - improved: performance
