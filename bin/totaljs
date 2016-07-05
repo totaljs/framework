@@ -425,8 +425,9 @@ function main() {
 
 			for (var i = 0, length = files.length; i < length; i++) {
 				var filename = files[i];
+				var ext = Utils.getExtension(filename);
 
-				if (filename.indexOf('sitemap') === -1 && !filename.endsWith('.html'))
+				if (filename.indexOf('sitemap') === -1 && ext !== '.html' && ext !== '.js')
 					continue;
 
 				var content = fs.readFileSync(filename).toString('utf8');
@@ -488,8 +489,9 @@ function main() {
 
 			for (var i = 0, length = files.length; i < length; i++) {
 				var filename = files[i];
+				var ext = Utils.getExtension(filename);
 
-				if (!filename.endsWith('.html'))
+				if (ext !== '.html' && ext !== '.js')
 					continue;
 
 				var content = fs.readFileSync(filename).toString('utf8');

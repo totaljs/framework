@@ -54,7 +54,18 @@ function prototypeNumber() {
 	assert.ok(number.add('+10%', 0) === 11, 'add number: 2');
 	assert.ok(number.add('-10%', 0) === 9, 'add number: 3');
 	assert.ok(number.add('*2', 0) === 20, 'add number: 4');
-	assert.ok(number.add('*10%', 0) === 112, 'add number: 5');
+	assert.ok(number.add('*10%', 0) === 10, 'add number: 5');
+
+	var num = 5;
+	var count = 0;
+
+	num.async(function(index, next) {
+		count += index;
+		setTimeout(next, 100);
+	}, function() {
+		assert.ok(count === 15, 'Number.async() problem');
+	});
+
 }
 
 // test: string prototype
@@ -95,16 +106,16 @@ function prototypeString() {
 	assert.ok('[}'.isJSON() === false, 'string.isJSON([})');
 	assert.ok('["'.isJSON() === false, 'string.isJSON([")');
 
-	str = 'www.google.sk';
-	assert.ok(str.isURL() === true, 'string.isURL(): ' + str);
-
 	str = 'google.sk';
 	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
 
 	str = 'google';
 	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
 
-	str = 'http://google.com';
+	str = 'http://www.google.com';
+	assert.ok(str.isURL() === true, 'string.isURL(): ' + str);
+
+	str = 'http://127.0.0.1:8000';
 	assert.ok(str.isURL() === true, 'string.isURL(): ' + str);
 
 	str = 'https://mail.google.com';
@@ -203,7 +214,7 @@ function prototypeString() {
 	assert.ok(str.slug() === 'peter-sirka-linker-you-known', 'string.slug(): ' + str);
 	assert.ok(str.slug(11) === 'peter-sirka', 'string.slug(): ' + str);
 
-	assert.ok('total.js'.capitalize() === 'Total.js', 'string.capitalize()');
+	assert.ok('total Js'.capitalize() === 'Total Js', 'string.capitalize()');
 	assert.ok('totaljs'.isAlphaNumeric(), 'string.isAlphaNumeric(true)');
 	assert.ok('total js'.isAlphaNumeric() === false, 'string.isAlphaNumeric(false)');
 
@@ -229,10 +240,10 @@ function prototypeArray() {
 
 	assert.ok(obj['3'].value === 30, 'array.toObject(with name)');
 
-	assert.ok(arr.find(function(o) { return o.name === '4'; }).value === 40, 'array.find()');
-	assert.ok(arr.find(function(o) { return o.name === '6'; }) === null, 'array.find(): null');
-	assert.ok(arr.find('name', '4').value === 40, 'array.find(inline)');
-	assert.ok(arr.find('name', '6') === null, 'array.find(inline): null');
+	assert.ok(arr.findItem(function(o) { return o.name === '4'; }).value === 40, 'array.find()');
+	assert.ok(arr.findItem(function(o) { return o.name === '6'; }) === null, 'array.find(): null');
+	assert.ok(arr.findItem('name', '4').value === 40, 'array.find(inline)');
+	assert.ok(arr.findItem('name', '6') === null, 'array.find(inline): null');
 
 	arr = arr.remove(function(o) {
 		return o.value > 30;
@@ -392,12 +403,6 @@ function other() {
 	str = '/logo/';
 	assert.ok(utils.isStaticFile(str) === false, 'utils.isStaticFile(): ' + str);
 
-	str = null;
-	assert.ok(utils.isNullOrEmpty(str) === true, 'utils.isNullOrEmpty(): null');
-
-	str = '';
-	assert.ok(utils.isNullOrEmpty(str) === true, 'utils.isNullOrEmpty(): ' + str);
-
 	str = 'gif';
 	assert.ok(utils.getContentType(str) === 'image/gif', 'utils.getContentType(): ' + str);
 
@@ -513,61 +518,36 @@ function other() {
 		assert.ok(value.join(',') === '1,2,3,4,5,6,7,8,9', 'async');
 	});
 
-	utils.request('http://www.yahoo.com', ['get', 'dnscache'], function(err, data, code) {
+	utils.request('http://www.totaljs.com', ['get', 'dnscache'], function(err, data, code) {
 		assert.ok(code === 200, 'utils.request (success)');
 	}).on('data', function(chunk, p) {
-		assert.ok(p === 100, 'utils.request (events)');
+		assert.ok(p === 0, 'utils.request (events)');
 	});
 
-	utils.download('http://www.yahoo.com', ['get'], function(err, res) {
-		assert.ok(res.statusCode === 301, 'utils.download (success)');
+	utils.request('https://www.totaljs.com', ['get'], function(err, data, code) {
+		assert.ok(code === 200, 'utils.request (success)');
+	}).on('data', function(chunk, p) {
+		assert.ok(p === 0, 'utils.request (events)');
+	});
+
+	utils.download('http://www.totaljs.com/img/logo.png', ['get'], function(err, res) {
+		assert.ok(res.statusCode === 200, 'utils.download (success)');
 	}).on('data', function(chunk, p) {
 		assert.ok(p === 100, 'utils.download (events)');
 	});
 
 	utils.request('http://xxxxxxx.yyy', ['get'], null, function(err, data, code) {
-		assert.ok(err !== null, 'utils.requiest (error)');
+		assert.ok(err !== null, 'utils.request (error)');
 	});
 
 	var resource = function(name) {
 		return 'resource-' + name;
 	};
 
-	var error = utils.validate({}, ['firstName', 'lastName', 'age'], onValidation, resource);
-	assert.ok(error.hasError(), 'validation - hasError()');
-
-	error.prepare();
-	assert.ok(error.items[0].name === 'firstName' || error.items[0].error === 'resource-firstName', 'validation - return boolean');
-	assert.ok(error.items[1].name === 'lastName' || error.items[1].error === 'lastName-error', 'validation - return string');
-	assert.ok(error.items[2].name === 'age' || error.items[2].error === 'age-error', 'validation - return utils.isValid()');
-
-	error.clear();
-	assert.ok(!error.hasError(), 'validation - clear() & hasError()');
-
-	assert.ok(expression('a.id === b', ['a', 'b'], { id: 1 }, 1)(), 'expression error (true)');
-	assert.ok(!expression('a.id === b', ['a', 'b'], { id: 1 })(), 'expression error (false)');
-
 	assert.ok(utils.getName('/aaa/bbb/ccc/dddd') === 'dddd', 'problem with getName (1)');
 	assert.ok(utils.getName('\\aaa\\bbb\\ccc\\dddd') === 'dddd', 'problem with getName (2)');
 	assert.ok(utils.getName('/aaa/bbb/ccc/dddd/') === 'dddd', 'problem with getName (3)');
 	assert.ok(utils.getName('\\aaa\\bbb\\ccc\\dddd\\') === 'dddd', 'problem with getName (4)');
-
-	builders.schema('1', { name: 'string', join: '[2]' });
-	builders.schema('2', { age: Number }, function(name) {
-		if (name === 'age')
-			return -1;
-	});
-
-	builders.validation('1', ['name', 'join']);
-	builders.validation('2', ['age']);
-
-	error = utils.validate({ name: 'Name', join: [{ age: 'A' }, { age: 4 }]}, '1', onValidation, resource);
-	assert.ok(error.hasError(), 'validation - hasError() (array)');
-
-	builders.schema('3', { name: 'string', arrNumber: '[Number]', arrString: '[string]' }, null, onValidation);
-	error = builders.validate('3', { name: 'Peter', arrNumber: 'peter' });
-
-	assert.ok(error.hasError(), 'validation - hasError() (array 2)');
 
 	var indexer = 0;
 
@@ -622,17 +602,17 @@ function other() {
 		assert.ok(value.trim() === index.toString(), 'Streamer problem');
 	});
 
-	streamer('0');
-	streamer('\n1\n2\n');
-	streamer('3\n');
-	streamer('4\n');
+	streamer(new Buffer('0'));
+	streamer(new Buffer('\n1\n2\n'));
+	streamer(new Buffer('3\n'));
+	streamer(new Buffer('4\n'));
 
 	streamer = utils.streamer('<a>', '</a>', function(value, index) {
 		assert.ok(value.trim() === '<a>' + (index + 1) + '</a>', 'Streamer problem 2');
 	});
 
-	streamer('aaaa <a>1</a> adsklasdlajsdlas jd <a>2</a>');
-	streamer('aaaa <a>3</a> adsklasdlajsdlas jd <a>4</a>');
+	streamer(new Buffer('aaaa <a>1</a> adsklasdlajsdlas jd <a>2</a>'));
+	streamer(new Buffer('aaaa <a>3</a> adsklasdlajsdlas jd <a>4</a>'));
 }
 
 function onValidation(name, value, path) {

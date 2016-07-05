@@ -21,40 +21,37 @@
 
 /**
  * @module FrameworkInternal
- * @version 1.9.8
+ * @version 2.0.0
  */
 
 'use strict';
 
-var crypto = require('crypto');
-var fs = require('fs');
-var ReadStream = require('fs').ReadStream;
-var Stream = require('stream');
+const crypto = require('crypto');
+const fs = require('fs');
+const ReadStream = require('fs').ReadStream;
+const Stream = require('stream');
+const ENCODING = 'utf8';
+const EMPTYARRAY = [];
+const EMPTYOBJECT = {};
 
-var ENCODING = 'utf8';
-var UNDEFINED = 'undefined';
-var FUNCTION = 'function';
-var OBJECT = 'object';
-var BOOLEAN = 'boolean';
-var NUMBER = 'number';
+Object.freeze(EMPTYOBJECT);
+Object.freeze(EMPTYARRAY);
 
-var REG_1 = /[\n\r\t]+/g;
-var REG_2 = /\s{2,}/g;
-var REG_3 = /\/{1,}/g;
-var REG_4 = /\n\s{2,}./g;
-var REG_5 = />\n\s{1,}</g;
-var REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
-var REG_BLOCK_BEG = /\@\{block.*?\}/gi;
-var REG_BLOCK_END = /\@\{end\}/gi;
-var REG_SKIP_1 = /\(\'|\"/g;
-var REG_SKIP_2 = /\,(\s)?\w+/g;
-
-var HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
+const REG_1 = /[\n\r\t]+/g;
+const REG_2 = /\s{2,}/g;
+const REG_3 = /\/{1,}/g;
+const REG_4 = /\n\s{2,}./g;
+const REG_5 = />\n\s{1,}</g;
+const REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
+const REG_BLOCK_BEG = /\@\{block.*?\}/gi;
+const REG_BLOCK_END = /\@\{end\}/gi;
+const REG_SKIP_1 = /\(\'|\"/g;
+const REG_SKIP_2 = /\,(\s)?\w+/g;
+const HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
+const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name('];
 
 global.$STRING = function(value) {
-	if (value === null || value === undefined)
-		return '';
-	return value.toString();
+	return value != null ? value.toString() : '';
 };
 
 /*
@@ -68,7 +65,6 @@ global.$STRING = function(value) {
 exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscribe) {
 
 	var boundary = contentType.split(';')[1];
-
 	if (!boundary) {
 		framework._request_stats(false, false);
 		framework.stats.request.error400++;
@@ -76,6 +72,12 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		subscribe.res.end();
 		return;
 	}
+
+	// For unexpected closing
+	req.once('close', function() {
+		if (!req.$upload)
+			req.clear();
+	});
 
 	var parser = new MultipartParser();
 	var size = 0;
@@ -146,18 +148,11 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		}
 
 		tmp.filename = header[1];
-		tmp.path = framework_utils.combine(tmpDirectory, ip + '-' + now + '-' + framework_utils.random(100000) + '.upload');
+		tmp.path = framework_utils.combine(tmpDirectory, (framework.id ? 'i-' + framework.id + '_' : '') + 'u' + ip + '-' + now + '-' + framework_utils.random(100000) + '.upload');
 
 		stream = fs.createWriteStream(tmp.path, { flags: 'w' });
-
-		stream.once('close', function() {
-			close--;
-		});
-
-		stream.once('error', function() {
-			close--;
-		});
-
+		stream.once('close', () => close--);
+		stream.once('error', (e) => close--);
 		close++;
 	};
 
@@ -220,6 +215,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			tmp.height = 0;
 		}
 
+		req.files.push(tmp);
 		framework.emit('upload-begin', req, tmp);
 		stream.write(data);
 		tmp.length += length;
@@ -239,8 +235,6 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			delete tmp.$data;
 			delete tmp.$is;
 			delete tmp.$step;
-
-			req.files.push(tmp);
 			framework.emit('upload-end', req, tmp);
 			return;
 		}
@@ -278,11 +272,10 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		cb();
 	};
 
-	req.on('data', function(chunk) {
-		parser.write(chunk);
-	});
-
+	req.on('data', chunk => parser.write(chunk));
 	req.on('end', function() {
+		if (!req.buffer_exceeded)
+			req.$upload = true;
 		parser.end();
 	});
 };
@@ -333,8 +326,7 @@ exports.routeSplit = function(url, noLower) {
 	}
 
 	if (!url || url === '/') {
-		arr = new Array(1);
-		arr[0] = '/';
+		arr = ['/'];
 		return arr;
 	}
 
@@ -366,7 +358,7 @@ exports.routeSplit = function(url, noLower) {
 
 	if (key)
 		arr.push(key);
-	else if (count === 0)
+	else if (!count)
 		arr.push('/');
 
 	return arr;
@@ -406,10 +398,10 @@ exports.routeSplitCreate = function(url, noLower) {
 		}
 	}
 
-	if (count === 0)
+	if (!count)
 		arr.push(url.substring(end + (arr.length ? 1 : 0), url.length));
 
-	if (arr.length === 1 && arr[0] === '')
+	if (arr.length === 1 && !arr[0])
 		arr[0] = '/';
 
 	return arr;
@@ -462,11 +454,21 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 	return {Boolean}
 */
 exports.routeCompareSubdomain = function(subdomain, arr) {
-
-	if (arr === null || subdomain === null || !arr.length)
+	if ((!subdomain && !arr) || (subdomain && !arr))
 		return true;
-
-	return arr.indexOf(subdomain) > -1;
+	if (!subdomain && arr)
+		return false;
+	for (var i = 0, length = arr.length; i < length; i++) {
+		if (arr[i] === '*')
+			return true;
+		var index = arr[i].lastIndexOf('*');
+		if (index === -1) {
+			if (arr[i] === subdomain)
+				return true;
+		} else if (subdomain.indexOf(arr[i].replace('*', '')) !== -1)
+			return true;
+	}
+	return false;
 };
 
 exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
@@ -581,22 +583,25 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 				continue;
 		}
 
+		var role = flag[0] === '@';
 		if (noLoggedUnlogged && route.isMEMBER) {
 			var tmp = flag.substring(0, 3);
-			if (!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1)
+			if ((!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1) || (route.isROLE && role && route.flags.indexOf(flag) === -1) || (route.isROLE && !role))
 				return 0;
 			continue;
 		}
 
-		var role = flag[0] === '@';
-
 		// Is some role verified?
-		if (role && isRole)
+		if (role && isRole && !route.isROLE)
 			continue;
 
 		var index = route.flags.indexOf(flag);
-		if (index === -1)
-			return route.isMEMBER ? 0 : -1;
+		if (index === -1) {
+			if (role && !route.isROLE) {
+				// the route doesn't contain any role but the request flags contain role
+			} else
+				return route.isMEMBER ? 0 : -1;
+		}
 		if (role)
 			isRole = true;
 	}
@@ -612,17 +617,14 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
  */
 exports.routeParam = function(routeUrl, route) {
 
-	if (!route || !routeUrl)
-		return new Array(0);
+	if (!route || !routeUrl || !route.param.length)
+		return EMPTYARRAY;
 
-	var length = route.param.length;
-	var arr = new Array(length);
-	if (length === 0)
-		return arr;
+	var arr = [];
 
-	for (var i = 0; i < length; i++) {
+	for (var i = 0, length = route.param.length; i < length; i++) {
 		var value = routeUrl[route.param[i]];
-		arr[i] = value === '/' ? '' : value;
+		arr.push(value === '/' ? '' : value);
 	}
 
 	return arr;
@@ -646,13 +648,6 @@ function HttpFile() {
 	this.width = 0;
 	this.height = 0;
 }
-
-HttpFile.prototype = {
-	get contentType() {
-		console.log('OBSOLETE: The HttpFile.contentType is deprecated. Use: HttpFile.type');
-		return this.type;
-	}
-};
 
 /*
 	Read file to byte array
@@ -1077,11 +1072,6 @@ exports.compile_css = function(value, filename) {
 
 		if (framework.onCompileStyle)
 			return framework.onCompileStyle(filename, value);
-
-		if (framework.onCompileCSS) {
-			console.log('OBSOLETE: framework.onCompileCSS() is deprecated, use framework.onCompileStyle()');
-			return framework.onCompileCSS(filename, value);
-		}
 	}
 
 	try {
@@ -1341,7 +1331,7 @@ function JavaScript(source) {
 
 exports.compile_javascript = function(source, filename) {
 
-	var isFramework = (typeof(global.framework) === OBJECT);
+	var isFramework = (typeof(global.framework) === 'object');
 
 	try {
 
@@ -1357,11 +1347,6 @@ exports.compile_javascript = function(source, filename) {
 
 			if (framework.onCompileScript)
 				return framework.onCompileScript(filename, source).trim();
-
-			if (framework.onCompileJS) {
-				console.log('OBSOLETE: framework.onCompileJS() is deprecated, use framework.onCompileScript()');
-				return framework.onCompileJS(filename, source).trim();
-			}
 		}
 
 		return JavaScript(source).trim();
@@ -1464,24 +1449,14 @@ MultipartParser.stateToString = function(stateNumber) {
 
 MultipartParser.prototype.initWithBoundary = function(str) {
 	var self = this;
-
 	self.boundary = new Buffer(str.length + 4);
-
-	if (framework.versionNode) {
-		self.boundary.write('\r\n--', 0, 'ascii');
-		self.boundary.write(str, 4, 'ascii');
-	} else {
-		self.boundary.write('\r\n--', 'ascii', 0);
-		self.boundary.write(str, 'ascii', 4);
-	}
-
+	self.boundary.write('\r\n--', 0, 'ascii');
+	self.boundary.write(str, 4, 'ascii');
 	self.lookbehind = new Buffer(self.boundary.length + 8);
 	self.state = S.START;
-
 	self.boundaryChars = {};
-	for (var i = 0; i < self.boundary.length; i++) {
+	for (var i = 0; i < self.boundary.length; i++)
 		self.boundaryChars[self.boundary[i]] = true;
-	}
 };
 
 MultipartParser.prototype.write = function(buffer) {
@@ -1747,13 +1722,13 @@ function view_parse_localization(content, language) {
 	var output = '';
 	var end = 0;
 
-	if (command === null)
+	if (!command)
 		return content;
 
 	while (command) {
 
 		if (command)
-			output += content.substring(end === 0 ? 0 : end + 1, command.beg) + framework.translate(language, command.command);
+			output += content.substring(end ? end + 1 : 0, command.beg) + framework.translate(language, command.command);
 
 		end = command.end;
 		command = view_find_localization(content, command.end);
@@ -1836,7 +1811,7 @@ function view_parse(content, minify, filename, controller) {
 			value = value.replace(/^\s+/, '');
 		}
 
-		if (value === '')
+		if (!value)
 			return '$EMPTY';
 
 		if (!nocompressHTML && is)
@@ -1847,7 +1822,7 @@ function view_parse(content, minify, filename, controller) {
 		return DELIMITER + value + DELIMITER;
 	}
 
-	if (command === null)
+	if (!command)
 		builder += '+' + escaper(content);
 
 	var old = null;
@@ -1863,9 +1838,7 @@ function view_parse(content, minify, filename, controller) {
 	var builderTMP = '';
 	var sectionName = '';
 	var compileName = '';
-	var isSitemap = false;
 	var text;
-	var RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language'];
 
 	while (command) {
 
@@ -1885,7 +1858,7 @@ function view_parse(content, minify, filename, controller) {
 			}
 		}
 
-		var cmd = content.substring(command.beg + 2, command.end);
+		var cmd = content.substring(command.beg + 2, command.end).trim();
 
 		var cmd8 = cmd.substring(0, 8);
 		var cmd7 = cmd.substring(0, 7);
@@ -1931,13 +1904,14 @@ function view_parse(content, minify, filename, controller) {
 			if (cmd.indexOf('foreach var ') !== -1)
 				cmd = cmd.replace(' var ', SPACE);
 
+			cmd = view_prepare_keywords(cmd);
 			newCommand = (cmd.substring(8, cmd.indexOf(SPACE, 8)) || '').trim();
 			index = cmd.trim().indexOf(SPACE, newCommand.length + 10);
 
 			if (index === -1)
 				index = cmd.indexOf('[', newCommand.length + 10);
 
-			builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if (!($source instanceof Array) || !$source.length)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
+			builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if(!($source instanceof Array))$source=framework_utils.ObjectToArray($source);if(!$source.length)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
 
 		} else if (cmd === 'end') {
 
@@ -1968,19 +1942,16 @@ function view_parse(content, minify, filename, controller) {
 			}
 
 		} else if (cmd.substring(0, 3) === 'if ') {
-			builder += ';if (' + cmd.substring(3) + '){$output+=$EMPTY';
+			builder += ';if (' + view_prepare_keywords(cmd).substring(3) + '){$output+=$EMPTY';
 		} else if (cmd7 === 'else if') {
-			builder += '} else if (' + cmd.substring(7) + ') {$output+=$EMPTY';
+			builder += '} else if (' + view_prepare_keywords(cmd).substring(7) + ') {$output+=$EMPTY';
 		} else if (cmd === 'else') {
 			builder += '} else {$output+=$EMPTY';
 		} else if (cmd === 'endif' || cmd === 'fi') {
 			builder += '}$output+=$EMPTY';
 		} else {
 
-			tmp = view_prepare(command.command, newCommand, functionsName, function() {
-				nocompress = true;
-			});
-
+			tmp = view_prepare(command.command, newCommand, functionsName, () => nocompress = true);
 			var can = false;
 
 			// Inline rendering is supported only in release mode
@@ -2027,8 +1998,6 @@ function view_parse(content, minify, filename, controller) {
 
 		old = command;
 		command = view_find_command(content, command.end);
-		if (command && command.command && command.command.indexOf('sitemap(') !== -1)
-			isSitemap = true;
 	}
 
 	if (old) {
@@ -2040,8 +2009,12 @@ function view_parse(content, minify, filename, controller) {
 	if (RELEASE)
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output\=\$EMPTY\+)/g, '$output=').replace(/(\$output\+\=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+\=\$EMPTY)/g, '}').replace(/(\{\$output\+\=\$EMPTY\;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(\>\'\+\'\<)/g, '><').replace(/\'\+\'/g, '');
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (isSitemap ? 'var sitemap=function(){return self.sitemap.apply(self,arguments);};' : '') + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
+}
+
+function view_prepare_keywords(cmd) {
+	return cmd.replace(/\s+(sitemap_navigation\(|sitemap\()+/g, text => ' self.' + text.trim());
 }
 
 function wrapTryCatch(value, command, line) {
@@ -2153,7 +2126,7 @@ function view_prepare(command, dynamicCommand, functions) {
 			return command;
 
 		case 'CONFIG':
-		case 'FUNCTION':
+		case 'function':
 		case 'MODEL':
 		case 'SCHEMA':
 		case 'MODULE':
@@ -2174,17 +2147,17 @@ function view_prepare(command, dynamicCommand, functions) {
 		case '!model':
 		case '!CONFIG':
 		case '!SCHEMA':
-		case '!FUNCTION':
+		case '!function':
 		case '!MODEL':
 		case '!MODULE':
 			return '$STRING(' + command.substring(1) + ')';
 
 		case 'language':
 			return command;
-
 		case 'resource':
-		case 'RESOURCE':
 			return '$STRING(self.' + command + ').encode()';
+		case 'RESOURCE':
+			return '$STRING(self.' + command.toLowerCase() + ').encode()';
 
 		case '!resource':
 		case '!RESOURCE':
@@ -2222,6 +2195,11 @@ function view_prepare(command, dynamicCommand, functions) {
 			if (command.indexOf('(') !== -1)
 				return 'self.$' + command;
 			return 'self.' + command + '()';
+
+		case 'sitemap_url':
+		case 'sitemap_name':
+		case 'sitemap_navigation':
+			return 'self.' + command;
 
 		case 'sitemap':
 		case 'place':
@@ -2281,6 +2259,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'prefetch':
 		case 'prerender':
 		case 'prev':
+		case 'sitemap_change':
 			return 'self.$' + command;
 
 		case 'now':
@@ -2295,6 +2274,7 @@ function view_prepare(command, dynamicCommand, functions) {
 			return 'self.$' + exports.appendModel(command);
 		case 'helpers':
 			return command;
+
 		default:
 			if (framework.helpers[name])
 				return 'helpers.' + view_insert_call(command);
@@ -2359,22 +2339,22 @@ function view_is_assign(value) {
 		var next = value[i + 1] || '';
 
 		if (c === '+' && (next === '+' || next === '=')) {
-			if (skip === 0)
+			if (!skip)
 				return true;
 		}
 
 		if (c === '-' && (next === '-' || next === '=')) {
-			if (skip === 0)
+			if (!skip)
 				return true;
 		}
 
 		if (c === '*' && (next === '*' || next === '=')) {
-			if (skip === 0)
+			if (!skip)
 				return true;
 		}
 
 		if (c === '=') {
-			if (skip === 0)
+			if (!skip)
 				return true;
 		}
 
@@ -2807,7 +2787,7 @@ function make_nested(css, name) {
  */
 function compressHTML(html, minify) {
 
-	if (html === null || html === '' || !minify)
+	if (!html || !minify)
 		return html;
 
 	html = removeComments(html);
@@ -2837,7 +2817,7 @@ function compressHTML(html, minify) {
 			var key = id + (indexer++);
 			var value = html.substring(beg, end + len);
 
-			if (i === 0) {
+			if (!i) {
 				end = value.indexOf('>');
 				len = value.indexOf('type="text/template"');
 
@@ -2910,7 +2890,7 @@ function viewengine_read(path, language, controller) {
 			return null;
 	}
 
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
 	if (isOut) {
@@ -2928,7 +2908,7 @@ function viewengine_read(path, language, controller) {
 
 	filename = framework.path.views(path.substring(index + 1));
 
-	if (fs.existsSync(filename))
+	if (existsSync(filename))
 		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
 	if (RELEASE)
@@ -2957,7 +2937,7 @@ function viewengine_load(name, filename, controller) {
 
 	// Is dynamic content?
 	// console.log(filename);
-	if (framework.temporary.other[name] === undefined)
+	if (!framework.temporary.other[name])
 		framework.temporary.other[name] = name.indexOf('@{') !== -1 || name.indexOf('<') !== -1;
 
 	if (framework.temporary.other[name])
@@ -3028,7 +3008,7 @@ function cleanURL(url, index) {
 	return o;
 };
 
-exports.preparePATH = function(path, remove) {
+exports.preparePath = function(path, remove) {
 	var root = framework.config['default-root'];
 	if (!root)
 		return path;
@@ -3048,19 +3028,28 @@ exports.preparePATH = function(path, remove) {
 
 exports.parseURI = function(protocol, req) {
 
-	var port = req.host.lastIndexOf(':');
+	var cache = framework.temporary.other[req.host];
+	var port;
 	var hostname;
-	var search = req.url.indexOf('?', 1);
-	var pathname;
-	var query = null;
 
-	if (port === -1) {
-		port = null;
-		hostname = req.host;
+	if (cache) {
+		port = cache.port;
+		hostname = cache.hostname;
 	} else {
-		hostname = req.host.substring(0, port);
-		port = req.host.substring(port + 1);
+ 		port = req.host.lastIndexOf(':')
+		if (port === -1) {
+			port = null;
+			hostname = req.host;
+		} else {
+			hostname = req.host.substring(0, port);
+			port = req.host.substring(port + 1);
+		}
+		framework.temporary.other[req.host] = { port: port, hostname: hostname };
 	}
+
+	var search = req.url.indexOf('?', 1);
+	var query = null;
+	var pathname;
 
 	if (search === -1) {
 		search = null;
@@ -3106,17 +3095,17 @@ exports.parseURI = function(protocol, req) {
 function destroyStream(stream) {
 	if (stream instanceof ReadStream) {
 		stream.destroy();
-		if (typeof(stream.close) !== FUNCTION)
+		if (typeof(stream.close) !== 'function')
 			return stream;
 		stream.on('open', function() {
-			if (typeof(this.fd) === NUMBER)
+			if (typeof(this.fd) === 'number')
 				this.close();
 		});
 		return stream;
 	}
 	if (!(stream instanceof Stream))
 		return stream;
-	if (typeof(stream.destroy) === FUNCTION)
+	if (typeof(stream.destroy) === 'function')
 		stream.destroy();
 	return stream;
 }
@@ -3226,7 +3215,7 @@ function attachFinishedListener(msg, callback) {
 	msg.on('socket', onSocket)
 
 	// node.js 0.8 patch
-	if (msg.socket === undefined)
+	if (!msg.socket)
 		patchAssignSocket(msg, onSocket);
 }
 
@@ -3259,7 +3248,7 @@ function createListener(msg) {
 
 function patchAssignSocket(res, callback) {
 	var assignSocket = res.assignSocket;
-	if (typeof(assignSocket) !== FUNCTION)
+	if (typeof(assignSocket) !== 'function')
 		return;
 	// res.on('socket', callback) is broken in 0.8
 	res.assignSocket = function _assignSocket(socket) {
@@ -3273,11 +3262,11 @@ function isFinished(msg) {
 	var socket = msg.socket;
 
 	// OutgoingMessage
-	if (typeof msg.finished === BOOLEAN)
+	if (typeof msg.finished === 'boolean')
 		return Boolean(msg.finished || (socket && !socket.writable));
 
 	// IncomingMessage
-	if (typeof msg.complete === BOOLEAN)
+	if (typeof msg.complete === 'boolean')
 		return Boolean(msg.upgrade || !socket || !socket.readable || (msg.complete && !msg.readable))
 
 	// don't know
@@ -3355,8 +3344,17 @@ exports.parseBlock = function(name, content) {
 	return builder.trim();
 };
 
+function existsSync(filename) {
+	try {
+		return fs.statSync(filename) ? true : false;
+	} catch (e) {
+		return false;
+	}
+}
+
 exports.viewEngine = viewengine_load;
 exports.parseLocalization = view_parse_localization;
 exports.findLocalization = view_find_localization;
 exports.destroyStream = destroyStream;
 exports.onFinished = onFinished;
+exports.modificator = viewengine_modify;
