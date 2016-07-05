@@ -550,7 +550,7 @@ function Framework() {
 		'allow-custom-titles': false,
 		'allow-compatibility': false,
 		'disable-strict-server-certificate-validation': true,
-		'disable-clear-temporary-directory': true,
+		'disable-clear-temporary-directory': false,
 
 		// Used in framework._service()
 		// All values are in minutes
