@@ -21,22 +21,23 @@
 
 /**
  * @module FrameworkMail
- * @version 2.0.0
+ * @version 1.9.4
  */
 
 'use strict'
 
-const net = require('net');
-const tls = require('tls');
-const events = require('events');
-const fs = require('fs');
+var net = require('net');
+var tls = require('tls');
+var events = require('events');
+var dns = require('dns');
+var fs = require('fs');
+var path = require('path');
+var CRLF = '\r\n';
+var UNDEFINED = 'undefined';
+var BOOLEAN = 'boolean';
+var REG_ESMTP = /\besmtp\b/i;
 
-const CRLF = '\r\n';
-const REG_ESMTP = /\besmtp\b/i;
-const REG_STATE = /\d+/;
-const EMPTYARRAY = [];
-
-const errors = {
+var errors = {
 	notvalid: 'E-mail address is not valid',
 	resolve: 'Cannot resolve MX of ',
 	connection: 'Cannot connect to any SMTP server.'
@@ -54,7 +55,6 @@ function Mailer() {
 	this.debug = false;
 	this.Message = Message;
 	this.Mail = Message;
-	this.connections = {};
 }
 
 Mailer.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
@@ -74,6 +74,56 @@ Mailer.prototype.create = function(subject, body) {
 	return new Message(subject, body);
 };
 
+/*
+	Resolve MX
+	@domain {String}
+	@callback {Function} :: callback(error, socket);
+*/
+/**
+ * Resolve MX record
+ * @param  {String}   domain   Domain name.
+ * @param  {ResolveMxCallback} callback Callback.
+ */
+function resolveMx(domain, callback) {
+
+	dns.resolveMx(domain, function(err, data) {
+
+		if (err) {
+			callback(err, data);
+			return;
+		}
+
+		if (!data || data.length === 0) {
+			callback(new Error(errors.resolve + domain));
+			return;
+		}
+
+		data.sort(function(a, b) {
+			return a.priority < b. priority;
+		});
+
+		function tryConnect(index) {
+
+			if (index >= data.length) {
+				callback(new Error(errors.connection));
+				return;
+			}
+
+			var sock = net.createConnection(25, data[index].exchange);
+
+			sock.on('error', function(err) {
+				tryConnect(++index);
+			});
+
+			sock.on('connect', function() {
+				callback(null, sock);
+			});
+		}
+
+		tryConnect(0);
+	});
+}
+
 /**
  * Message send callback
  * @callback ResolveMxCallback
@@ -91,22 +141,17 @@ Mailer.prototype.create = function(subject, body) {
 function Message(subject, body) {
 	this.subject = subject || '';
 	this.body = body || '';
-	this.files;
-	this.addressTo = [];
-	this.addressReply;
-	this.addressCC;
-	this.addressBCC;
+	this.files = new Array(0);
+	this.addressTo = new Array(0);
+	this.addressReply = new Array(0);
+	this.addressCC = new Array(0);
+	this.addressBCC = new Array(0);
 	this.addressFrom = { name: '', address: '' };
+	this.callback = null;
 	this.closed = false;
 	this.tls = false;
-	this.$callback;
 	// Supports (but it's hidden):
 	// this.headers;
-}
-
-Message.prototype.callback = function(fn) {
-	this.$callback = fn;
-	return this;
 }
 
 /**
@@ -153,7 +198,7 @@ Message.prototype.from = function(address, name) {
  */
 Message.prototype.to = function(address, name, clear) {
 
-	if (typeof(name) === 'boolean') {
+	if (typeof(name) === BOOLEAN) {
 		clear = name;
 		name = undefined;
 	}
@@ -170,7 +215,7 @@ Message.prototype.to = function(address, name, clear) {
 	var self = this;
 
 	if (clear)
-		self.addressTo = [];
+		self.addressTo = new Array(0);
 
 	if (!name) {
 		self.addressTo.push(address);
@@ -191,7 +236,7 @@ Message.prototype.to = function(address, name, clear) {
  */
 Message.prototype.cc = function(address, name, clear) {
 
-	if (typeof(name) === 'boolean') {
+	if (typeof(name) === BOOLEAN) {
 		clear = name;
 		name = undefined;
 	}
@@ -207,8 +252,8 @@ Message.prototype.cc = function(address, name, clear) {
 
 	var self = this;
 
-	if (clear || !self.addressCC)
-		self.addressCC = [];
+	if (clear)
+		self.addressCC = new Array(0);
 
 	if (!name) {
 		self.addressCC.push(address);
@@ -232,8 +277,8 @@ Message.prototype.bcc = function(address, clear) {
 
 	var self = this;
 
-	if (clear || !self.addressBCC)
-		self.addressBCC = [];
+	if (clear)
+		self.addressBCC = new Array(0);
 
 	self.addressBCC.push(address);
 	return self;
@@ -241,8 +286,7 @@ Message.prototype.bcc = function(address, clear) {
 
 /**
  * Add a reply to address
- * @param {String} address A valid e-mail address.
- * @param {String} name Optional, a custom attachment name.
+ * @param  {String} address A valid e-mail address.
  * @return {Message}
  */
 Message.prototype.reply = function(address, clear) {
@@ -252,8 +296,8 @@ Message.prototype.reply = function(address, clear) {
 
 	var self = this;
 
-	if (clear || !self.addressReply)
-		self.addressReply = [];
+	if (clear)
+		self.addressReply = new Array(0);
 
 	self.addressReply.push(address);
 	return self;
@@ -261,17 +305,17 @@ Message.prototype.reply = function(address, clear) {
 
 /**
  * Add an attachment
- * @param {String} filename Filename with extension.
+ * @param  {String} filename Filename with extension.
  * @return {Message}
  */
 Message.prototype.attachment = function(filename, name) {
+
 	var self = this;
-	if (!name)
-		name = framework_utils.getName(filename);
-	var extension = framework_utils.getExtension(name);
-	if (!self.files)
-		self.files = [];
-	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(extension), extension: extension });
+
+	if (name === undefined)
+		name = path.basename(filename);
+
+	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)) });
 	return self;
 };
 
@@ -301,12 +345,9 @@ Message.prototype.manually = function() {
 Message.prototype.attachmentInline = function(filename, name, contentId) {
 	var self = this;
 	if (name === undefined)
-		name = framework_utils.getName(filename);
+		name = path.basename(filename);
 
-	if (!self.files)
-		self.files = [];
-	var extension = framework_utils.getExtension(name);
-	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(extension), disposition: 'inline', contentId: contentId, extension: extension });
+	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(path.extname(name)), disposition: 'inline', contentId: contentId });
 	return self;
 };
 
@@ -317,464 +358,288 @@ Message.prototype.attachmentInline = function(filename, name, contentId) {
  * @param {Function(err)} fnCallback
  * @return {Message}
  */
-Message.prototype.send = function(smtp, options, callback) {
-	mailer.send(smtp, options, this, callback);
-	return this;
-};
-
-Mailer.prototype.switchToTLS = function(obj, options) {
+Message.prototype.send = function(smtp, options, fnCallback) {
 
 	var self = this;
-
-	obj.tls = true;
-	obj.socket.removeAllListeners();
-    // obj.socket.removeAllListeners('data');
-    // obj.socket.removeAllListeners('error');
-    // obj.socket.removeAllListeners('clientError');
-    // obj.socket.removeAllListeners('line');
-
-	var opt = framework_utils.copy(options.tls, { socket: obj.socket, host: obj.socket.$host, ciphers: 'SSLv3' });
-	obj.socket2 = tls.connect(opt, () => self._send(obj, options, true));
-
-	obj.socket2.on('error', function(err) {
-
-		mailer.destroy(obj);
-		self.closed = true;
-
-		if (self.callback) {
-			self.callback(err);
-			self.callback = null;
-		}
-
-		if (obj.try || err.stack.indexOf('ECONNRESET') !== -1)
-			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
-	});
-
-	obj.socket2.on('clientError', function(err) {
-		mailer.destroy(obj);
-
-		if (self.callback) {
-			self.callback(err);
-			self.callback = null;
-		}
-
-		if (obj.try)
-			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
-	});
-
-	obj.socket2.on('connect', function() {
-		if (!options.secure)
-			self._send(obj, options);
-	});
-};
-
-Mailer.prototype.destroy = function(obj) {
-
-	if (obj.destroyed)
-		return this;
-
-	obj.destroyed = true;
-	obj.closed = true;
-
-	if (obj.socket) {
-		obj.socket.removeAllListeners();
-		obj.socket.end();
-		obj.socket.destroy();
-		obj.socket = null;
-	}
-
-	if (obj.socket2) {
-		obj.socket2.removeAllListeners();
-		obj.socket2.end();
-		obj.socket2.destroy();
-		obj.socket2 = null;
-	}
-
-	delete this.connections[obj.id];
-	return this;
-};
-
-/**
- * Internal: Write attachment into the current socket
- * @param  {Function} write  Write function.
- * @param  {String} boundary Boundary.
- * @param  {Socket} socket   Current socket.
- */
-Mailer.prototype._writeattachment = function(obj) {
-
-	var attachment = obj.files ? obj.files.shift() : false;
-	if (!attachment) {
-		mailer._writeline(obj, '--' + obj.boundary + '--', '', '.');
-		return this;
-	}
-
-	var name = attachment.name;
-	var stream = fs.createReadStream(attachment.filename, { encoding: 'base64' });
-	var message = [];
-	var extension = attachment.extension;
-	var isCalendar = extension === 'ics';
-
-	message.push('--' + obj.boundary);
-
-	if (!isCalendar) {
-		if (attachment.contentId) {
-			message.push('Content-Disposition: inline; filename="' + name + '"');
-			message.push('Content-ID: <' + attachment.contentId + '>');
-		} else
-			message.push('Content-Disposition: attachment; filename="' + name + '"');
-	}
-
-	message.push('Content-Type: ' + extension + ';' + (isCalendar ? ' charset="utf-8"; method=REQUEST' : ''));
-	message.push('Content-Transfer-Encoding: base64');
-	message.push(CRLF);
-	mailer._writeline(obj, message.join(CRLF));
-
-	stream.on('data', function(buf) {
-
-		var length = buf.length;
-		var count = 0;
-		var beg = 0;
-
-		while (count < length) {
-
-			count += 68;
-
-			if (count > length)
-				count = length;
-
-			mailer._writeline(obj, buf.slice(beg, count).toString('base64'));
-			beg = count;
-		}
-	});
-
-	CLEANUP(stream, function() {
-		mailer._writeline(obj, CRLF);
-		mailer._writeattachment(obj);
-	});
-
-	return this;
-};
-
-Mailer.prototype.try = function(smtp, options, callback) {
-	return this.send(smtp, options, undefined, callback);
-};
-
-Mailer.prototype.send2 = function(messages, callback) {
-
-	var opt = framework.temporary['mail-settings'];
-
-	if (!opt) {
-		var config = framework.config['mail.smtp.options'];
-		if (config && config.isJSON())
-			opt = JSON.parse(config);
-		if (!opt)
-			opt = {};
-		framework.temporary['mail-settings'] = opt;
-	}
-
-	return this.send(framework.config['mail.smtp'], opt, messages, callback);
-};
-
-Mailer.prototype.send = function(smtp, options, messages, callback) {
-
-	if (options instanceof Array) {
-		callback = messages;
-		messages = options;
-		options = {};
-	} else if (typeof(options) === 'function') {
-		callback = options;
-		options = {};
-	}
-
-	var self = this;
-	var id = framework_utils.GUID(10);
-
-	self.connections[id] = {};
-	var obj = self.connections[id];
-
-    obj.id = id;
-	obj.try = messages === undefined;
-	obj.messages = obj.try ? EMPTYARRAY : messages instanceof Array ? messages : [messages];
-	obj.callback = callback;
-	obj.closed = false;
-	obj.message = null;
-	obj.files = null;
-	obj.count = 0;
-	obj.socket;
-	obj.tls = false;
-	obj.date = new Date();
-
 	smtp = smtp || null;
+
+	if (typeof(options) === 'function') {
+		var tmp = fnCallback;
+		fnCallback = options;
+		options = tmp;
+	}
+
+	self.isSent = false;
+
+	self.callback = fnCallback;
 
 	if (options && options.secure && !options.port)
 		options.port = 465;
 
 	options = framework_utils.copy(options, { secure: false, port: 25, user: '', password: '', timeout: 10000, tls: null });
 
+	if (smtp === null || smtp === '') {
+
+		smtp = getHostName(self.addressFrom.address);
+		resolveMx(smtp, function(err, socket) {
+
+			if (err) {
+				mailer.emit('error', err, self);
+
+				if (!self.isSent && fnCallback)
+					fnCallback(err);
+
+				return;
+			}
+
+			socket.on('error', function(err) {
+				mailer.emit('error', err, self);
+
+				if (!self.isSent && fnCallback)
+					fnCallback(err);
+
+			});
+
+			self._send(socket, options);
+		});
+
+		return self;
+	}
+
+	var socket;
+
 	if (options.secure) {
 		var internal = framework_utils.copy(options);
 		internal.host = smtp;
-		obj.socket = tls.connect(internal, () => mailer._send(obj, options));
+		socket = tls.connect(internal, function() { self._send(this, options); });
 	} else
-		obj.socket = net.createConnection(options.port, smtp);
+		socket = net.createConnection(options.port, smtp);
 
-	obj.socket.$host = smtp;
-	obj.host = smtp.substring(smtp.lastIndexOf('.', smtp.lastIndexOf('.') - 1) + 1);
-	obj.socket.on('error', function(err) {
+	socket.$host = smtp;
 
-		mailer.destroy(obj);
-
-		if (obj.callback) {
-			obj.callback(err);
-			obj.callback = null;
-		}
-
-		if (obj.try || err.stack.indexOf('ECONNRESET') !== -1)
-			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+	socket.on('error', function(err) {
+		socket.end();
+		socket.destroy();
+		self.closed = true;
+		if (!self.isSent && self.callback)
+			self.callback(err);
+		if (err.stack.indexOf('ECONNRESET') === -1)
+			mailer.emit('error', err, self);
 	});
 
-	obj.socket.on('clientError', function(err) {
-
-		mailer.destroy(obj);
-
-		if (obj.callback) {
-			obj.callback(err);
-			obj.callback = null;
-		}
-
-		if (obj.try)
-			return;
-
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
-		}
+	socket.on('clientError', function(err) {
+		mailer.emit('error', err, self);
+		if (!self.isSent && self.callback)
+			self.callback(err);
 	});
 
-	obj.socket.on('connect', function() {
+	socket.on('connect', function() {
 		if (!options.secure)
-			mailer._send(obj, options);
+			self._send(socket, options);
 	});
 
 	return self;
 };
 
-Mailer.prototype._writemessage = function(obj, buffer) {
-
+Message.prototype.switchToTLS = function(socket, options) {
 	var self = this;
-	var msg = obj.messages.shift();
-	var message = [];
+	self.tls = true;
 
-	obj.boundary = '--totaljs' + obj.date.getTime() + obj.count;
-	obj.files = msg.files;
-	obj.count++;
+    socket.removeAllListeners('data');
+    socket.removeAllListeners('error');
+    socket.removeAllListeners('clientError');
 
-	buffer.push('MAIL FROM: <' + msg.addressFrom.address + '>');
-	message.push('Message-ID: <' + framework_utils.GUID() + '@WIN-' + framework_utils.GUID(4) + '>');
-	message.push('MIME-Version: 1.0');
-	message.push('From: ' + (msg.addressFrom.name ? unicode_encode(msg.addressFrom.name) + ' <' + msg.addressFrom.address + '>' : msg.addressFrom.address));
+	var opt = framework_utils.copy(options.tls, { socket: socket, host: socket.$host, ciphers: 'SSLv3' });
+	var sock = tls.connect(opt, function() { self._send(this, options, true); });
 
-	var length;
+	sock.on('error', function(err) {
+		sock.end();
+		sock.destroy();
+		self.closed = true;
+		if (!self.isSent && self.callback)
+			self.callback(err);
+		if (err.stack.indexOf('ECONNRESET') === -1)
+			mailer.emit('error', err, self);
+	});
 
-	if (msg.headers) {
-		var headers = Object.keys(msg.headers);
-		for (var i = 0, length = headers.length; i < length; i++)
-			message.push(headers[i] + ': ' + msg.headers[headers[i]]);
-	}
+	sock.on('clientError', function(err) {
+		mailer.emit('error', err, self);
+		if (!self.isSent && self.callback)
+			self.callback(err);
+	});
 
-	length = msg.addressTo.length;
-
-	var builder = '';
-	var mail;
-	var item;
-
-	if (length) {
-		for (var i = 0; i < length; i++) {
-			item = msg.addressTo[i];
-			if (item instanceof Object)
-				mail = '<' + item.email + '>';
-			else
-				mail = '<' + item + '>';
-			buffer.push('RCPT TO: ' + mail);
-			builder += (builder ? ', ' : '') + (item instanceof Object ? unicode_encode(item.name) + ' ' : '') + mail;
-		}
-		message.push('To: ' + builder);
-		builder = '';
-	}
-
-
-	if (msg.addressCC) {
-		length = msg.addressCC.length;
-		for (var i = 0; i < length; i++) {
-			item = msg.addressCC[i];
-			if (item instanceof Object)
-				mail = '<' + item.email  + '>';
-			else
-				mail = '<' + item + '>';
-			buffer.push('RCPT TO: ' + mail);
-			builder += (builder ? ', ' : '') + (item instanceof Object ? unicode_encode(item.name) + ' ' : '') + mail;
-		}
-		message.push('Cc: ' + builder);
-		builder = '';
-	}
-
-	if (msg.addressBCC) {
-		length = msg.addressBCC.length;
-		for (var i = 0; i < length; i++)
-			buffer.push('RCPT TO: <' + msg.addressBCC[i] + '>');
-	}
-
-	buffer.push('DATA');
-	// buffer.push('QUIT');
-	buffer.push('');
-
-	message.push('Date: ' + obj.date.toUTCString());
-	message.push('Subject: ' + unicode_encode(msg.subject));
-
-	if (msg.addressReply) {
-		length = msg.addressReply.length;
-		for (var i = 0; i < length; i++)
-			builder += (builder !== '' ? ', ' : '') + '<' + msg.addressReply[i] + '>';
-		message.push('Reply-To: ' + builder);
-		builder = '';
-	}
-
-	message.push('Content-Type: multipart/mixed; boundary=' + obj.boundary);
-	message.push('');
-	message.push('--' + obj.boundary);
-	message.push('Content-Type: ' + (msg.body.indexOf('<') !== -1 && msg.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
-	message.push('Content-Transfer-Encoding: base64');
-	message.push('');
-	message.push(prepareBASE64(new Buffer(msg.body.replace(/\r\n/g, '\n').replace(/\n/g, CRLF)).toString('base64')));
-
-	obj.message = message.join(CRLF);
-	obj.messagecallback = msg.$callback;
-
-	message = null;
-	return self;
+	sock.on('connect', function() {
+		if (!options.secure)
+			self._send(sock, options);
+	});
 };
 
-Mailer.prototype._writeline = function(obj) {
-
-	if (obj.closed)
-		return false;
-
-	var socket = obj.socket2 ? obj.socket2 : obj.socket;
-
-	for (var i = 1; i < arguments.length; i++) {
-		var line = arguments[i];
-		if (!line)
-			continue;
-		if (mailer.debug)
-			console.log('SEND', line);
-		socket.write(line + CRLF);
-	}
-
-	return true;
-};
-
-Mailer.prototype._send = function(obj, options, autosend) {
+/**
+ * Internal: Send method
+ * @private
+ * @param  {Socket} socket
+ * @param  {Object} options
+ */
+Message.prototype._send = function(socket, options, autosend) {
 
 	var self = this;
+	var command = '';
 	var buffer = [];
+	var message = [];
+	var host = getHostName(self.addressFrom.address);
 	var date = new Date();
 	var boundary = '--totaljs' + date.getTime();
 	var isAuthenticated = false;
 	var isAuthorization = false;
 	var authType = '';
-	var command = '';
 	var auth = [];
+	var err = null;
 	var ending = null;
-	var response = '';
-	var socket = obj.socket2 ? obj.socket2 : obj.socket;
-	var host = obj.host;
+	var isTLS = false;
 
-	var isAttach = !options.tls || (obj.tls && options.tls);
-	if (isAttach)
-		mailer.emit('send', obj);
-
-	socket.setEncoding('utf8');
-	socket.setTimeout(options.timeout || 8000, function() {
-
-		var err = new Error(framework_utils.httpStatus(408));
-
-		mailer.destroy(obj);
-
-		if (obj.callback) {
-			obj.callback(err);
-			obj.callback = null;
-		}
-
-		if (obj.try)
+	var write = function(line) {
+		if (self.closed)
 			return;
+		if (mailer.debug)
+			console.log('SEND', line);
+		socket.write(line + CRLF);
+	};
 
-		try {
-			mailer.emit('error', err, obj);
-		} catch(e) {
-			F.error(err, 'FrameworkMail');
+	var isAttach = !options.tls || (self.tls && options.tls);
+	if (isAttach)
+		mailer.emit('send', self);
+
+	socket.setTimeout(options.timeout || 8000, function() {
+		self.closed = true;
+		var err = new Error(framework_utils.httpStatus(408));
+		mailer.emit('error', err, self);
+		if (socket) {
+			socket.end();
+			socket.destroy();
 		}
+		socket = null;
+		if (!self.isSent && self.callback)
+			self.callback(err);
 	});
 
+	socket.setEncoding('utf8');
+
+	if (isAttach) {
+		buffer.push('MAIL FROM: <' + self.addressFrom.address + '>');
+		message.push('Message-ID: <' + GUID() + '@WIN-' + s4() + '>');
+		message.push('MIME-Version: 1.0');
+		message.push('From: ' + (self.addressFrom.name ? unicode_encode(self.addressFrom.name) + ' <' + self.addressFrom.address + '>' : self.addressFrom.address));
+
+		var length;
+
+		if (self.headers) {
+			var headers = Object.keys(self.headers);
+			for (var i = 0, length = headers.length; i < length; i++)
+				message.push(headers[i] + ': ' + self.headers[headers[i]]);
+		}
+
+		length = self.addressTo.length;
+		var builder = '';
+		var mail;
+		var item;
+
+		if (length) {
+			for (var i = 0; i < length; i++) {
+				item = self.addressTo[i];
+				if (item instanceof Object)
+					mail = '<' + item.email  + '>';
+				else
+					mail = '<' + item + '>';
+				buffer.push('RCPT TO: ' + mail);
+				builder += (builder ? ', ' : '') + (item instanceof Object ? unicode_encode(item.name) + ' ' : '') + mail;
+			}
+			message.push('To: ' + builder);
+			builder = '';
+		}
+
+		length = self.addressCC.length;
+		if (length) {
+			for (var i = 0; i < length; i++) {
+				item = self.addressCC[i];
+				if (item instanceof Object)
+					mail = '<' + item.email  + '>';
+				else
+					mail = '<' + item + '>';
+				buffer.push('RCPT TO: ' + mail);
+				builder += (builder ? ', ' : '') + (item instanceof Object ? unicode_encode(item.name) + ' ' : '') + mail;
+			}
+			message.push('Cc: ' + builder);
+			builder = '';
+		}
+
+		length = self.addressBCC.length;
+		if (length) {
+			for (var i = 0; i < length; i++)
+				buffer.push('RCPT TO: <' + self.addressBCC[i] + '>');
+		}
+
+		buffer.push('DATA');
+		buffer.push('QUIT');
+		buffer.push('');
+
+		message.push('Date: ' + date.toUTCString());
+		message.push('Subject: ' + unicode_encode(self.subject));
+
+		length = self.addressReply.length;
+
+		if (length) {
+			for (var i = 0; i < length; i++)
+				builder += (builder !== '' ? ', ' : '') + '<' + self.addressReply[i] + '>';
+
+			message.push('Reply-To: ' + builder);
+			builder = '';
+		}
+
+		message.push('Content-Type: multipart/mixed; boundary=' + boundary);
+		message.push('');
+		message.push('--' + boundary);
+		message.push('Content-Type: ' + (self.body.indexOf('<') !== -1 && self.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
+		message.push('Content-Transfer-Encoding: base64');
+		message.push('');
+		message.push(prepareBASE64(new Buffer(self.body.replace(/\r\n/g, '\n').replace(/\n/g, CRLF)).toString('base64')));
+
+		length = self.files.length;
+	}
+
 	socket.on('end', function() {
-		mailer.destroy(obj);
-		if (obj.callback) {
-			obj.callback();
-			obj.callback = null;
+		self.closed = true;
+		if (!socket) {
+			socket.end();
+			socket.destroy();
 		}
 	});
 
 	socket.on('data', function(data) {
 
-		if (obj.closed)
+		if (self.closed)
 			return;
 
-		data = data.toString('utf8');
+		var response = data.toString().split(CRLF);
+		var length = response.length;
 
-		if (!data.endsWith(CRLF)) {
-			response += data;
-			return;
-		}
+		for (var i = 0; i < length; i++) {
 
-		var res = (response + data).split(CRLF);
+			var line = response[i];
+			if (line === '')
+				continue;
 
-		if (response)
-			response = '';
-
-		for (var i = 0, length = res.length; i < length; i++) {
-			var line = res[i];
-			if (line && socket)
+			if (socket)
 				socket.emit('line', line);
 		}
 	});
 
 	socket.on('line', function(line) {
-
 		line = line.toUpperCase();
 
 		if (mailer.debug)
-			console.log('<---', line);
+			console.log('<–––', line);
 
-		var code = +line.match(REG_STATE)[0];
-
+		var code = +line.match(/\d+/)[0];
 		if (code === 250 && !isAuthorization) {
 			if ((line.indexOf('AUTH LOGIN PLAIN') !== -1 || line.indexOf('AUTH PLAIN LOGIN') !== -1) || (options.user && options.password)) {
 				authType = 'plain';
@@ -801,135 +666,183 @@ Mailer.prototype._send = function(obj, options, autosend) {
 		switch (code) {
 			case 220:
 
-				if (obj.isTLS) {
-					mailer.switchToTLS(obj, options);
+				if (isTLS) {
+					self.switchToTLS(socket, options);
 					return;
 				}
 
-				command = obj.isTLS || (options.user && options.password) || REG_ESMTP.test(line) ? 'EHLO' : 'HELO';
-				mailer._writeline(obj, command + ' ' + host);
+				//command = isTLS || /\besmtp\b/i.test(line) ? 'EHLO' : 'HELO';
+				// @CHANGED: only ESMTP supports auth, so this fix has fixed EXIM mail servers
+				command = isTLS || (options.user && options.password) || REG_ESMTP.test(line) ? 'EHLO' : 'HELO';
+				write(command + ' ' + host);
 				break;
 
+			case 221: // BYE
 			case 250: // OPERATION
 			case 251: // FORWARD
 			case 235: // VERIFY
-			case 999: // total.js again
 
-				if (obj.messagecallback) {
-					obj.messagecallback();
-					obj.messagecallback = null;
+				write(buffer.shift());
+
+				if (buffer.length === 0) {
+					self.isSent = true;
+
+					mailer.emit('success', self);
+
+					if (self.callback)
+						self.callback(null);
+
+					ending = setTimeout(function() {
+						if (!socket) {
+							socket.end();
+							socket.destroy();
+						}
+						socket = null;
+					}, 500);
 				}
 
-				mailer._writeline(obj, buffer.shift());
-
-				if (buffer.length)
-					return;
-
-				// NEW MESSAGE
-				if (obj.messages.length) {
-					mailer._writemessage(obj, buffer);
-					mailer._writeline(obj, buffer.shift());
-					return;
-				}
-
-				// end
-				mailer._writeline(obj, 'QUIT');
-				return;
-
-			case 221: // BYE
-
-				mailer.destroy(obj);
-
-				if (obj.callback) {
-					obj.callback(null, obj.try ? true : obj.count);
-					obj.callback = null;
-				}
-
-				return;
+				break;
 
 			case 334: // LOGIN
 
-				if (!self.tls && !obj.isTLS && options.tls) {
-					obj.isTLS = true;
-					mailer._writeline(obj, 'STARTTLS');
+				if (!self.tls && !isTLS && options.tls) {
+					isTLS = true;
+					write('STARTTLS');
 					return;
 				}
 
 				var value = auth.shift();
-				if (!value) {
+				if (value === undefined) {
 
-					var err = new Error('Forbidden.');
+					err = new Error('Forbidden.');
+					mailer.emit('error', err, self);
 
-					mailer.destroy(obj);
+					if (!self.isSent && self.callback)
+						self.callback(err);
 
-					if (obj.callback) {
-						obj.callback(err);
-						obj.callback = null;
+					if (!socket) {
+						socket.end();
+						socket.destroy();
 					}
 
-					if (obj.try)
-						return;
-
-					try {
-						mailer.emit('error', err, obj);
-					} catch(e) {
-						F.error(err, 'FrameworkMail');
-					}
-
-					return;
+					socket = null;
+					break;
 				}
 
-				mailer._writeline(obj, value);
-				return;
+				write(value);
+				break;
 
 			case 354:
 
-				mailer._writeline(obj, obj.message);
-				mailer._writeattachment(obj);
-				obj.message = null;
-				return;
+				write(message.join(CRLF));
+
+				if (self.files.length) {
+					message = null;
+					self._writeAttachment(write, boundary, socket);
+					return;
+				}
+
+				write('--' + boundary + '--');
+				write('');
+				write('.');
+				message = null;
+				break;
 
 			default:
 
 				if (code < 400)
-					return;
+					break;
 
-				var err = new Error(line);
+				err = new Error(line);
 
-				if (!obj.try) {
-					try {
-						mailer.emit('error', err, obj);
-					} catch(e) {
-						F.error(err, 'FrameworkMail');
-					}
+				if (!socket) {
+					socket.end();
+					socket.destroy();
 				}
 
-				if (obj.messagecallback) {
-					obj.messagecallback(err);
-					obj.messagecallback = null;
-				}
+				socket = null;
+				mailer.emit('error', err, self);
 
-				if (obj.message) {
-					// a problem
-					buffer = [];
-					obj.count--;
-					socket.emit('line', '999 TRY NEXT MESSAGE');
-					return;
-				}
+				if (!self.isSent && self.callback)
+					self.callback(err);
 
-				mailer.destroy(obj);
-
-				if (obj.callback) {
-					obj.callback(err);
-					obj.callback = null;
-				}
-
-				return;
+				break;
 		}
 	});
 
 	if (autosend)
-		self._writeline(obj, 'EHLO ' + host);
+		write('EHLO ' + host);
+};
+
+/**
+ * Internal: Write attachment into the current socket
+ * @param  {Function} write  Write function.
+ * @param  {String} boundary Boundary.
+ * @param  {Socket} socket   Current socket.
+ */
+Message.prototype._writeAttachment = function(write, boundary, socket) {
+
+	var self = this;
+	var attachment = self.files.shift();
+
+	if (attachment === undefined) {
+		write('--' + boundary + '--');
+		write('');
+		write('.');
+		return;
+	}
+
+	var name = attachment.name;
+	var stream = fs.createReadStream(attachment.filename, { encoding: 'base64' });
+	var message = [];
+	var extension = 'dat';
+	var index = attachment.filename.lastIndexOf('.');
+
+	if (index !== -1)
+		extension = attachment.filename.substring(index + 1).toLowerCase();
+
+	var isCalendar = extension === 'ics';
+
+	message.push('--' + boundary);
+
+	if (!isCalendar) {
+		if (attachment.contentId) {
+			message.push('Content-Disposition: inline; filename="' + name + '"');
+			message.push('Content-ID: <' + attachment.contentId + '>');
+		} else
+			message.push('Content-Disposition: attachment; filename="' + name + '"');
+	}
+
+	message.push('Content-Type: ' + framework_utils.getContentType(extension) + ';' + (isCalendar ? ' charset="utf-8"; method=REQUEST' : ''));
+	message.push('Content-Transfer-Encoding: base64');
+	message.push(CRLF);
+
+	write(message.join(CRLF));
+
+	stream.on('data', function(buf) {
+
+		var length = buf.length;
+		var count = 0;
+		var beg = 0;
+
+		while (count < length) {
+
+			count += 68;
+
+			if (count > length)
+				count = length;
+
+			write(buf.slice(beg, count).toString('base64'));
+			beg = count;
+		}
+	});
+
+	stream.on('end', function() {
+		write(CRLF);
+		self._writeAttachment(write, boundary, socket);
+	});
+
+	return self;
 };
 
 /**
@@ -961,8 +874,25 @@ function prepareBASE64(value) {
  * @return {String} Hostname.
  */
 function getHostName(address) {
-	// var index = address.indexOf('@');
-	// return address.substring( + 1);
+	return address.substring(address.indexOf('@') + 1);
+}
+
+/**
+ * Internal: Create random hexadecimal string
+ * @private
+ * @return {String}
+ */
+function s4() {
+	return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
+}
+
+/**
+ * Create GUID identificator
+ * @private
+ * return {String}
+ */
+function GUID() {
+	return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
 
 function unicode_encode(val) {
@@ -974,11 +904,6 @@ function unicode_encode(val) {
 // ======================================================
 // EXPORTS
 // ======================================================
-
-exports.restart = function() {
-	mailer.removeAllListeners();
-	mailer.debug = false;
-};
 
 var mailer = new Mailer();
 module.exports = mailer;

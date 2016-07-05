@@ -21,24 +21,18 @@
 
 /**
  * @module FrameworkImage
-<<<<<<< HEAD
  * @version 1.9.8
-=======
- * @version 2.0.0
->>>>>>> v2.0.0
  */
 
 'use strict';
 
-const sof = { 0xc0: true, 0xc1: true, 0xc2: true, 0xc3: true, 0xc5: true, 0xc6: true, 0xc7: true, 0xc9: true, 0xca: true, 0xcb: true, 0xcd: true, 0xce: true, 0xcf: true };
-const child = require('child_process');
-const exec = child.exec;
-const spawn = child.spawn;
-const Fs = require('fs');
+var child = require('child_process');
+var exec = child.exec;
+var spawn = child.spawn;
+var path = require('path');
+var sof = { 0xc0: true, 0xc1: true, 0xc2: true, 0xc3: true, 0xc5: true, 0xc6: true, 0xc7: true, 0xc9: true, 0xca: true, 0xcb: true, 0xcd: true, 0xce: true, 0xcf: true };
 var middlewares = {};
-
-if (!global.framework_utils)
-	global.framework_utils = require('./utils');
+var Fs = require('fs');
 
 function u16(buf, o) {
 	return buf[o] << 8 | buf[o + 1];
@@ -136,14 +130,16 @@ exports.measureSVG = function(buffer) {
 	@useImageMagick {Boolean} :: default false
 */
 function Image(filename, useImageMagick, width, height) {
+
 	var type = typeof(filename);
+
 	this.width = width;
 	this.height = height;
 	this.builder = [];
 	this.filename = type === 'string' ? filename : null;
 	this.currentStream = type === 'object' ? filename : null;
-	this.isIM = useImageMagick == null ? F.config['default-image-converter'] === 'im' : useImageMagick;
-	this.outputType = type === 'string' ? framework_utils.getExtension(filename) : 'jpg';
+	this.isIM = useImageMagick === undefined || useImageMagick === null ? F.config['default-image-converter'] === 'im' : useImageMagick;
+	this.outputType = type === 'string' ? path.extname(filename).substring(1) : 'jpg';
 }
 
 /*
@@ -221,14 +217,20 @@ Image.prototype.save = function(filename, callback, writer) {
 		filename = null;
 	}
 
-	if (!self.builder.length)
-		self.minify();
-
 	filename = filename || self.filename || '';
 
 	var command = self.cmd(!self.filename ? '-' : self.filename, filename);
 	if (framework.isWindows)
 		command = command.replace(/\//g, '\\');
+
+	if (!self.builder.length) {
+		if (!callback)
+			return;
+		setImmediate(function() {
+			callback(null, true);
+		});
+		return;
+	}
 
 	var cmd = exec(command, function(error, stdout, stderr) {
 
@@ -253,8 +255,11 @@ Image.prototype.save = function(filename, callback, writer) {
 		var writer = Fs.createWriteStream(filename + '_');
 
 		reader.pipe(middleware()).pipe(writer);
+
 		writer.on('finish', function() {
-			Fs.rename(filename + '_', filename, () => callback(null, true));
+			Fs.rename(filename + '_', filename, function() {
+				callback(null, true);
+			});
 		});
 	});
 
@@ -803,8 +808,4 @@ exports.middleware = function(type, fn) {
 	if (type[0] === '.')
 		type = type.substring(1);
 	middlewares[type] = fn;
-};
-
-exports.restart = function() {
-	middlewares = {};
 };
