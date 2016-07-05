@@ -18,7 +18,7 @@
         "test": "test"
     },
     "engines": {
-        "node": ">=0.8.0"
+        "node": ">=4.0.0"
     },
     "keywords": ["total", "framework", "web", "websocket", "mvc", "controller", "view", "angular.js", "upload", "picture", "graphicsmagick", "imagemagick", "eshop", "blog", "forum", "chat", "game", "nosql", "database", "streaming", "live", "server sent events", "sse", "multipart", "x-mixed-replace"],
     "license": "MIT",
@@ -45,6 +45,9 @@
         "name": "Andrea Sessa",
         "email": "andrea.sessa@gmail.com"
     }, {
+        "name": "Tom Spaccialbelli",
+        "email": "tom.spaccialbelli@gmail.com"
+    }, {
         "name": "Gera G. Güiles",
         "email": "gerardo.gonzalezg@gmail.com"
     }, {
@@ -62,8 +65,21 @@
     },{
         "name": "Сковорода Никита Андреевич",
         "email": "chalkerx@gmail.com"
+    },{
+        "name": "Guy Fraser",
+        "email": "guy.fraser1@gmail.com"
+    },{
+        "name": "Martin Smola",
+        "email": "smola.martin@gmail.com"
+    },{
+        "name": "Peter Štolc",
+        "email": "stolcp@gmail.com"
     }],
+<<<<<<< HEAD
     "version": "1.9.8",
+=======
+    "version": "2.0.0",
+>>>>>>> v2.0.0
     "homepage": "http://www.totaljs.com",
     "bugs": {
         "url": "https://github.com/totaljs/framework/issues",

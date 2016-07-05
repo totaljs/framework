@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ======= 1.9.8
 
 - fixed: `Array.async()` without arguments
@@ -14,6 +15,137 @@
 - fixed: view looping
 - fixed: WebSocket `origin` validator
 - fixed: WebSocket unhandled exceptions
+=======
+======= 2.0.0 (BETA)
+
+- added: new NoSQL version v4.0.0 is fully optimized for total.js
+- added: `controller.invalid([status])` creates the ErrorBuilder instance and it responds in the next tick
+- added: `controller.sitemap_url([id])` returns an URL from the sitemap
+- added: `controller.sitemap_name([id])` returns a name/title from the sitemap
+- added: `controller.sitemap_change(id, property, newvalue)` can change a current value in the sitemap
+- added: `controller.sitemap_navigation([parent], [langauge])` can get list of all items according to the parent
+- added: `@{sitemap_url([id], [arg1], [arg2], [argN])}` returns an URL from the sitemap
+- added: `@{sitemap_name([id], [arg1], [arg2], [argN])}` returns a name/title from the sitemap
+- added: `@{sitemap_change(id, property, newvalue)}` can change a current value in the sitemap
+- added: `@{sitemap_navigation([parent], [language])` can get list of all items according to the parent
+- added: `/startup/` all scripts in this directory are executed only one (then are renamed automatically)
+- added: `F.route()` supports a new flag: `cors` (creates a cors route) and `credentials` (enables cookies for cors)
+- added: `ErrorBuilder.plain()` returns all errors as a simple string
+- added: `Array.findItem()` alias to `Array.find()`
+- added: `Number.async(fn(index, next), callback)` for asynchronous operations
+- added: `UID()` for generating unique identificators (contains minimum 18 chars)
+- added: `F.restart()` for restarting app
+- added: `F.on('restart')`
+- added: quicksort algorithm for sorting arrays
+- added: `Array.quicksort(property_name, [asc], [maxlength])` for sorting arrays
+- added: `String.removeTags()` by @harry-stot
+- added: F.nosql(name) + NOSQL(name) --> alias for NoSQL embedded database (it can be used with e.g. SQL Agent)
+- added: modificators can handle `INSTALL('view', ...)`
+- added: `String.isPhone()` for phone number validation
+- added: `String.isUID()` for UID() validation
+- added: `String.isZIP()`
+- added: `Pagination.html(max, format)` returns `String`
+- added: `Pagination.json(max, format)` returns `String`
+- added: new schemabuilder types `Email` (string, maxlength 120), `Phone` (string, maxlength 20), `Zip` (string, maxlength 10), `Capitalize` (string), `Lowerize` (string), `Upperize` (string), `UID` (string, minlength 18, maxlength 20), `Url` (string, maxlength 500), `JSON` (string)
+- added: `SchemaBuilderEntity.fields` and it contains all field names in array.
+- added: `Mail.send(smtp, options, messages, [callback])` messages must be array
+- added: `Mail.send2(messages, [callback])` sends messages according to the framework configuration
+- added: `Mail.try(smtp, options, callback)` tries to open a SMTP
+- added: `F.datetime` contains current datetime and each 1 minute is the value increased
+- added: `F.stats.other.restart` contains a new property with count of restarting
+- added: `F.config.trace` for enable/disable tracing, `Boolean`, in a debug mode: `true`, release mode: `false`
+- added: `F.trace(message, [name], [uri], [ip])`
+- added: `controller.trace(message)`
+- added: `req.split` contains splitted url
+- added: `F.touch(url/req)` for clearing internal cache of cached static files (it works only in release mode)
+- added: `F.path.exists(path, callback(exist, size, isFile))` for check of existing file
+- added: `U.chunker(name, [max])` creates the chunker (for streaming some items)
+- added: `F.worker2(name, [args], [callback], [timeout])`
+- added: `SchemaBuilderEntity.allow('fieldname1', 'fieldnameN')` - allows other keys out of defined fields
+- added: `global.EMPTYOBJECT`
+- added: `global.EMPTYARRAY`
+- added: `global.SINGLETON(name)` returns a singleton object instance
+- added: `controller.referrer` returns a value from `req.headers['referer']`
+- added: `controller.author(value)` can change `<meta name="author"`
+- added: `@{author(value)}` can change `<meta name="author"`
+- added: view engine supports looping with objects `@{foreach m in model} key: @{m.key} and value: @{m.value} @{end}`
+
+- updated: subdomain routing supports wildcard routing `F.route('[*]/', 'homepage')` (`F.websocket()` is supported too)
+- updated: `F.route(url, ...)` - `url`can be String Array with multiple relative paths by @Harry-Stot
+- updated: `F.file()` supports flags instead of middleware and the flags supports extensions `['.jpg', '.png']`. The `name` argument has been removed.
+- updated: `F.localize()` supports flags and the `name` argument has been removed
+- updated: `F.sitemap()` returns object with a new field: `wildcard: {Boolean}`
+- updated: `F.problem()`, `F.change()`, `controller.problem()` and `controller.change()` write logs to the file
+- updated: `F.mail()` and `controller.mail()` subject is translated according to the language
+- updated: `F.file(fnValidation/relative_path, fnExecute, [flags])` the file routing is completely changed
+- updated: `export.booting` can contain `root` attribute for `package` applications
+- updated: `Array.orderBy()` added quicksort algorithm
+- updated: `Date.format()` supports day names `ddd` (short) and `dddd` (full)
+- updated: `String.removeDiacritics()` supports multiple languages (by @Harry-Slot)
+- updated: (IMPORTANT) `U.getExtension(filename)` --> returns extension without `.` dot
+- updated: (IMPORTANT) `F.resize(url, action(image), [flags])` new resize routing
+- updated: `F.resize()` flags can contain http/https `path` e.g. `F.resize('/img/*.*', (image) => image.minify(), ['https://www.totaljs.com/img/']);`
+- updated: `U.GUID()` supports better charset by Guy Fraser
+- updated: `Date.add(number)` supports number increase/decrease in milliseconds
+- updated: `U.send(name, stream, url, callback, [cookies], [headers], [method], [timeout])` supports cookies and timeout
+- updated: `U.request()` supports a new flag `< 200` (kB), it means that the method stores a content with maxixmum size 200 kB.
+- updated: `ErrorBuilder` instance contains a new property `instance.unexpected` when is `instance.push()` a classic Error's instance.
+- updated: configuration files + resources support types like String, Number, Array, Date, etc. via `key (type) : value`
+- updated: `F.use(name, [url], [types])` - now supports new attributes `url`, and `types`
+
+- fixed: `Websocket.destroy()`
+- fixed: Too many open files with `F.log()` and `F.logger()`
+- fixed: `String.isJSON()` the problem with `\n` character
+- fixed: `FrameworkImage.save()` problem with streams
+- fixed: `CLEANUP(stream)` method
+- fixed: `controller.memorize()` problem with `controller.content()`
+- fixed: `multipart/form-data` parser
+- fixed: `Array.async()` without arguments
+- fixed: view inline helpers
+- fixed: `FrameworkImage.save()` doens't work when it doesn't contain any operation
+- fixed: Windows paths
+- fixed: problem with `websocket.destroy()`
+- fixed: `F.cors()`
+- fixed: WebSocket initialization (critical)
+- fixed: Mail sender (problem with ZOHO SMTP)
+- fixed: `Number.add()` problem with percentage
+- fixed: `U.isDate()` by Guy Fraser
+- fixed: `U.parseXML` problem with `CDATA`
+- fixed: `U.join()` problem with Windows path by Martin Smola
+- fixed: uploading files (problem with unexpected closed requests)
+- fixed: `F.assert()` a problem with external URL address
+
+- renamed: event `route-add` to `route`
+- renamed: `F.versionNode` to `F.version_node`
+
+- removed: (IMPORTANT) `X-Powered-By` header
+- removed: `SCHEMA()`
+- removed: composer from `SchemaBuilderEntity`
+- removed: rules from `SchemaBuilderEntity`
+- removed: obsolete code
+- removed: `controller.async()`
+- removed: `framework.async()`
+- removed: `Utils.validate()`
+- removed: `Utils.isEmail()`
+- removed: `Utils.isURL()`
+- removed: `Utils.isValid()`
+- removed: `Utils.isNullOrEmpty()`
+- removed: `controller.global` property by Guy Fraser (a problem with referrencing)
+- removed: `controller.database()`, use `F.database()`
+- removed: `controller.functions()`
+- removed: `controller.models()`
+
+- improved: Controller initialization by Guy Fraser
+- improved: SMTP sender
+- improved: redirecting
+- improved: Array.orderBy(), added quicksort algorithm
+- improved: ErrorBuilder
+- improved: WebSocket.send() for JSON communication
+- improved: code (a lot)
+- improved: preparing `SchemaBuilderEntity`
+- improved: performance
+- improved: a lot of code by Guy Fraser
+>>>>>>> v2.0.0
 
 ======= 1.9.7
 

@@ -99,25 +99,26 @@ function test_UrlBuilder() {
 function test_Schema() {
 	var name = 'Schema: ';
 
-	builders.schema('tbl_user', {
-		Id: Number,
-		Name: String,
-		date: Date
-	}, function(name) {
-		if (name === 'date')
-			return 'OK';
+	NEWSCHEMA('tbl_user').make(function(schema) {
+		schema.define('Id', Number);
+		schema.define('Name', String);
+		schema.define('date', Date);
+		schema.setDefault(function(name) {
+			if (name === 'date')
+				return 'OK';
+		});
 	});
 
 	//assert.ok(builders.schema('default').get('tbl_user').schema.Id instanceof Function, name + 'schema write & read');
 	//assert.ok(JSON.stringify(builders.defaults('tbl_user')) === '{"date":"OK","Name":"","Id":0}', name + 'schema defaults');
 	//assert.ok(JSON.stringify(builders.create('tbl_user')) === '{"date":"OK","Name":"","Id":0}', name + 'schema create');
 
-	builders.schema('test', {
-		Id: Number,
-		Name: String,
-		Male: Boolean,
-		Dt: Date,
-		Price: 'decimal'
+	NEWSCHEMA('test').make(function(schema) {
+		schema.define('Id', Number);
+		schema.define('Name', String);
+		schema.define('Dt', Date);
+		schema.define('Male', Boolean);
+		schema.define('Price', 'decimal');
 	});
 
 	var model = {
@@ -153,21 +154,22 @@ function test_Schema() {
 	assert.ok(output.Name === '', name + 'defaults (String)');
 	assert.ok(output.Male === false, name + 'defaults (Boolean)');
 
-	builders.schema('1', {
-		name: 'string',
-		join: '[2]'
+	NEWSCHEMA('1').make(function(schema) {
+		schema.define('name', String);
+		schema.define('join', '[2]');
 	});
 
-	builders.schema('default').get('1').define('nums', '[number]');
+	GETSCHEMA('1').define('nums', '[number]');
 
-	builders.schema('2', {
-		age: Number
-	}, function(name) {
-		if (name === 'age')
-			return -1;
+	NEWSCHEMA('2').make(function(schema) {
+		schema.define('age', Number);
+		schema.setDefault(function(name) {
+			if (name === 'age')
+				return -1;
+		});
 	});
 
-	builders.schema('default').get('2').addTransform('xml', function(err, model, helper, next) {
+	GETSCHEMA('2').addTransform('xml', function(err, model, helper, next) {
 		next('<xml>OK</xml>');
 	}).addWorkflow('send', function(err, model, helper, next) {
 		countW++;
@@ -207,11 +209,11 @@ function test_Schema() {
 	assert.ok(output.join[0].age === -1 && output.join[1].age === 20, name + 'schema - joining models');
 	assert.ok(output.nums[2] === 2.3 && output.nums[1] === 0, name + 'schema - parse plain array');
 
-	builders.schema('default').get('2').transform('xml', output, function(err, output) {
+	GETSCHEMA('2').transform('xml', output, function(err, output) {
 		assert.ok(output === '<xml>OK</xml>', 'Builders.transform()');
 	});
 
-	builders.schema('default').get('2').workflow('send', output, function(err, output) {
+	GETSCHEMA('2').workflow('send', output, function(err, output) {
 		assert.ok(output === 'workflow', 'Builders.workflow()');
 	}).get(null, function(err, result) {
 		assert.ok(result.age === 99, 'schema - get');
@@ -225,7 +227,7 @@ function test_Schema() {
 		assert.ok(!result, 'schema - operation - result');
 	});
 
-	SCHEMA('default', '2').addOperation('test2', function(error, model, helper, next) {
+	GETSCHEMA('default', '2').addOperation('test2', function(error, model, helper, next) {
 		assert.ok(model === 1 || model === undefined, 'schema - operation problem with model');
 		assert.ok(helper === 2 || helper === undefined, 'schema - operation problem with helper');
 		next(3);
@@ -237,22 +239,24 @@ function test_Schema() {
 		assert.ok(value === 3, 'schema - operation advanced 3');
 	}).constant('test', true);
 
-	assert.ok(SCHEMA('default', '2').constant('test') === true, 'schema - constant');
+	assert.ok(GETSCHEMA('2').constant('test') === true, 'schema - constant');
 
-	builders.schema('validator', {
-		name: 'string',
-		age: 'number',
-		isTerms: 'boolean'
-	}, null, function(name, value, path, schema) {
-		assert.ok(name !== 'validator', 'schema validator - problem with schema name in utils.validate()');
-		switch (name) {
-			case 'name':
-				return value.length > 0;
-			case 'age':
-				return value > 10;
-			case 'isTerms':
-				return value === true;
-		}
+	NEWSCHEMA('validator').make(function(schema) {
+		schema.define('name', String, true);
+		schema.define('age', Number, true);
+		schema.define('isTerms', Boolean, true);
+
+		schema.setValidate(function(name, value, path, schema) {
+			assert.ok(name !== 'validator', 'schema validator - problem with schema name in utils.validate()');
+			switch (name) {
+				case 'name':
+					return value.length > 0;
+				case 'age':
+					return value > 10;
+				case 'isTerms':
+					return value === true;
+			}
+		});
 	});
 
 	var builder = builders.validate('validator', {
@@ -269,7 +273,7 @@ function test_Schema() {
 
 	assert.ok(!builder.hasError(), name + 'schema validator (no error)');
 
-	var obj = SCHEMA('default', '2').create();
+	var obj = GETSCHEMA('default', '2').create();
 
 	var b = obj.$clone();
 	assert.ok(obj.age === b.age, 'schema $clone 1');
@@ -280,8 +284,8 @@ function test_Schema() {
 		assert.ok(err === null && countW === 2 && countS === 2 && result.length === 2, 'schema $async');
 	}).$save().$workflow('send');
 
-	var q = SCHEMA('test').create('q');
-	var x = SCHEMA('test').create('x');
+	var q = NEWSCHEMA('test', 'q');
+	var x = NEWSCHEMA('test', 'x');
 
 	q.define('name', String, true);
 	q.define('arr', '[x]', true);
@@ -319,7 +323,7 @@ function test_Schema() {
 	xi.note = 'Ivan';
 	assert.ok(qi.ref.note === 'Ivan', 'schema relations');
 
-	var Cat = SCHEMA('test').create('Cat');
+	var Cat = NEWSCHEMA('test', 'Cat');
 	Cat.define('id', Number);
 	Cat.define('name', String);
 	Cat.define('age', Number);
@@ -332,7 +336,6 @@ function test_Schema() {
 	//var hd = new memwatch.HeapDiff();
 
 	var __start = (new Date()).getTime();
-
 	for (var i=0; i<instanceCount; i++){
 		var c = Cat.make({
 			id: i,
@@ -358,7 +361,49 @@ function test_Schema() {
 	assert.ok(cats[40].meou() === 'Cat 40', 'schema - add function');
 
 	var catClone = cats[40].$clone();
-	assert.ok(catClone.meou === cats[0].meou, 'schema $clone 3')
+	assert.ok(catClone.meou === cats[0].meou, 'schema $clone 3');
+
+	var NewTypes = NEWSCHEMA('NewTypes').make(function(schema) {
+		schema.define('capitalize', 'Capitalize');
+		schema.define('capitalize10', 'Capitalize(10)');
+		schema.define('lower', 'Lower');
+		schema.define('lower10', 'Lower(10)');
+		schema.define('upper', 'Upper');
+		schema.define('upper10', 'Upper(10)');
+		schema.define('zip', 'Zip');
+		schema.define('phone', 'Phone');
+		schema.define('url', 'Url');
+		schema.define('uid', 'UID');
+
+		var obj = {};
+		schema.fields.forEach(n => obj[n] = 'total fraMEWOrk');
+		obj.zip = '83102';
+		obj.phone = '+421 903 163 302';
+		obj.url = 'https://www.totaljs.com';
+		obj.uid = UID();
+
+		var res = schema.make(obj);
+		assert.ok(res.capitalize === 'Total FraMEWOrk', 'SchemaBuilder: Capitalize');
+		assert.ok(res.capitalize10 === 'Total FraM', 'SchemaBuilder: Capitalize(10)');
+		assert.ok(res.lower === 'total framework', 'SchemaBuilder: Lower');
+		assert.ok(res.lower10 === 'total fram', 'SchemaBuilder: Lower(10)');
+		assert.ok(res.upper === 'TOTAL FRAMEWORK', 'SchemaBuilder: Upper');
+		assert.ok(res.upper10 === 'TOTAL FRAM', 'SchemaBuilder: Upper(10)');
+		assert.ok(res.zip === '83102', 'SchemaBuilder: Zip');
+		assert.ok(res.phone === '+421903163302', 'SchemaBuilder: Phone');
+		assert.ok(res.url === 'https://www.totaljs.com', 'SchemaBuilder: URL');
+		assert.ok(res.uid ? true : false, 'SchemaBuilder: UID');
+
+		obj.phone = '+4210000';
+		obj.uid = U.GUID(10);
+		obj.url = 'totaljs.com';
+		obj.zip = 'A349393';
+		res = schema.make(obj);
+		assert.ok(res.zip ? false : true, 'SchemaBuilder: Zip must be empty');
+		assert.ok(res.phone ? false : true, 'SchemaBuilder: Phone must be empty');
+		assert.ok(res.url ? false : true, 'SchemaBuilder: URL must be empty');
+		assert.ok(res.uid ? false : true, 'SchemaBuilder: UID must be empty');
+	});
 }
 
 function test_ErrorBuilder() {
