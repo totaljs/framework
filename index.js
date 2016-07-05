@@ -477,7 +477,7 @@ function Framework() {
 		debug: false,
 		trace: true,
 
-		name: 'total.js',
+		name: 'Total.js',
 		version: '1.0.0',
 		author: '',
 		secret: os.hostname() + '-' + os.platform() + '-' + os.arch(),
