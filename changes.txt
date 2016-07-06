@@ -1,3 +1,7 @@
+======= 2.0.1 (BETA)
+
+- fixed: binary `totaljs`, fixed problem with creating localization
+
 ======= 2.0.0
 
 - added: new NoSQL version v4.0.0 is fully optimized for total.js

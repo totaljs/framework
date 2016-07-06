@@ -75,7 +75,7 @@
         "name": "Peter Štolc",
         "email": "stolcp@gmail.com"
     }],
-    "version": "2.0.0",
+    "version": "2.0.1-1",
     "homepage": "http://www.totaljs.com",
     "bugs": {
         "url": "https://github.com/totaljs/framework/issues",
