@@ -1,6 +1,6 @@
 ======= 2.0.1 (BETA)
 
-- fixed: binary `totaljs`, fixed problem with creating localization
+- fixed: binary `totaljs`, fixed problem with creating localized texts
 
 ======= 2.0.0
 
