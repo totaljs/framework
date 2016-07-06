@@ -380,16 +380,16 @@ function main() {
 
 		var content = fs.readFileSync(dir).toString('utf8');
 		var extension = path.extname(dir);
-		var filename = dir.replace(extension, '.min' + extension);
+		var filename = dir.replace(extension, '.min.' + extension);
 
 		switch (extension.toLowerCase()) {
-			case '.html':
+			case 'html':
 				fs.writeFileSync(filename, Utils.minifyHTML(content));
 				break;
-			case '.js':
+			case 'js':
 				fs.writeFileSync(filename, Utils.minifyScript(content));
 				break;
-			case '.css':
+			case 'css':
 				fs.writeFileSync(filename, Utils.minifyStyle(content));
 				break;
 		}
@@ -427,7 +427,7 @@ function main() {
 				var filename = files[i];
 				var ext = Utils.getExtension(filename);
 
-				if (filename.indexOf('sitemap') === -1 && ext !== '.html' && ext !== '.js')
+				if (filename.indexOf('sitemap') === -1 && ext !== 'html' && ext !== 'js')
 					continue;
 
 				var content = fs.readFileSync(filename).toString('utf8');
@@ -491,7 +491,7 @@ function main() {
 				var filename = files[i];
 				var ext = Utils.getExtension(filename);
 
-				if (ext !== '.html' && ext !== '.js')
+				if (ext !== 'html' && ext !== 'js')
 					continue;
 
 				var content = fs.readFileSync(filename).toString('utf8');
@@ -507,7 +507,7 @@ function main() {
 					var key = 'T' + command.command.hash();
 					var file = filename.substring(dir.length + 1);
 
-					texts[key] = command.command.repla;
+					texts[key] = command.command;
 
 					if (!resource[key]) {
 						output.push(key + ';"' + command.command.replace(/\"/g, '""') + '";');
