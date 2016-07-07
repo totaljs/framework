@@ -4888,12 +4888,17 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	var etag = framework_utils.etag(req.url, self.config['etag-version']);
 	var extension = req.extension;
 	var returnHeaders;
+	var index;
 
 	if (!extension) {
 		if (key)
 			extension = framework_utils.getExtension(key);
-		if (!extension && name)
+		if (!extension && name) {
 			extension = framework_utils.getExtension(name);
+			index = extension.lastIndexOf(';');
+			if (index !== -1)
+				extension = extension.substring(0, index);
+		}
 		if (!extension && filename)
 			extension = framework_utils.getExtension(filename);
 	}
@@ -4956,7 +4961,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return self;
 	}
 
-	var index = name.lastIndexOf(';');
+	index = name.lastIndexOf(';');
 	var size = null;
 
 	if (index === -1)
@@ -6261,6 +6266,9 @@ Framework.prototype.mode = function(http, name, options) {
 	var self = this;
 	var test = false;
 	var debug = false;
+
+	if (options.directory)
+		directory = options.directory;
 
 	if (typeof(http) === 'string') {
 		switch (http) {

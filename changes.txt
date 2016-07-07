@@ -1,6 +1,9 @@
 ======= 2.0.1 (BETA)
 
+- added: binary supports webserver `totaljs 8000` run webserver and current directory is a public directory
+
 - fixed: binary `totaljs`, fixed problem with creating localized texts
+- fixed: `F.responseFile()` problem with cached filename, extension was broken when the framework reads the file from cache
 
 ======= 2.0.0
 
