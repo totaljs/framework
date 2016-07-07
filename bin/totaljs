@@ -301,6 +301,19 @@ function main() {
 		if (cmd.substring(0, 2) === '--')
 			cmd = cmd.substring(1);
 
+		if (i === 2) {
+			var port = cmd.parseInt();
+			if (port) {
+				F.config['directory-temp'] = '~' + path.join(dir, '/tmp/');
+				F.config['directory-public'] = '~' + dir;
+				F.http('debug', { port: port, directory: dir });
+				F.route('/', function() {
+					this.file('index.html', '');
+				});
+				return;
+			}
+		}
+
 		if (cmd === '-v' || cmd === '-version')
 			return;
 
