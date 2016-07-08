@@ -2139,7 +2139,7 @@ SchemaInstance.prototype.$operation = function(name, helper, callback) {
 	return self;
 };
 
-SchemaInstance.prototype.$clean = function() {
+SchemaInstance.prototype.$clean = SchemaInstance.prototype.$plain = function() {
 	return this.$$schema.clean(this);
 };
 
