@@ -54,7 +54,7 @@ const REG_COMPILECSS = /url\(.*?\)/g;
 const REG_ROUTESTATIC = /^(\/\/|https\:|http\:)+/g;
 const REG_EMPTY = /\s/g;
 const REG_SANITIZE_BACKSLASH = /\/\//g;
-const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
+const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/i;
 const REG_WINDOWSPATH = /\\/g;
 const REG_SCRIPTCONTENT = /\<|\>|;/;
 const REG_HTTPHTTPS = /^(\/)?(http|https)\:\/\//i;
@@ -13768,7 +13768,7 @@ WebSocketClient.prototype.parse = function() {
 WebSocketClient.prototype._onerror = function(err) {
 	var self = this;
 
-	if (!self)
+	if (!self || self.isClosed)
 		return;
 
 	if (err.stack.match(REG_WEBSOCKET_ERROR)) {
