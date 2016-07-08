@@ -519,6 +519,24 @@ function test_ErrorBuilder() {
 		async.$transform('3');
 	});
 
+	NEWSCHEMA('Repository').make(function(schema) {
+
+		schema.addWorkflow('1', function(error, model, options, callback) {
+			model.$repository('valid', true);
+			callback();
+		});
+
+		schema.addWorkflow('2', function(error, model, options, callback) {
+			callback();
+		});
+
+		var model = schema.create();
+
+		model.$async(function(err, response) {
+			assert.ok(model.$repository('valid') === true, 'SchemaBuilder.$repository()');
+		}).$workflow('1').$workflow('2');
+	});
+
 };
 
 function test_TransformBuilder() {
