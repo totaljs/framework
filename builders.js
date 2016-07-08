@@ -1948,71 +1948,131 @@ SchemaInstance.prototype.$async = function(callback, index) {
 
 	if (callback === undefined)
 		callback = NOOP;
+
 	self.$$async = [];
 	self.$$result = [];
 	self.$callback = callback;
+
 	setImmediate(function() {
-		self.$$async.async(function() {
+		async_queue(self.$$async, function() {
 			var result = self.$$result;
-			delete self.$$result;
 			delete self.$$async;
+			delete self.$$result;
+			delete self.$callback;
 			callback(null, index !== undefined ? result[index] : result);
 		});
 	});
+
 	return self;
+};
+
+SchemaInstance.prototype.$push = function(type, name, helper, first) {
+
+	var self = this;
+	var fn;
+
+	if (type === 'save' || type === 'remove') {
+
+		helper = name;
+		name = undefined;
+
+		fn = function(next) {
+			self.$$schema[type](self, helper, function(err, result) {
+				self.$$result && self.$$result.push(err ? null : result);
+				if (!err)
+					return next();
+				next = null;
+				var result = self.$$result;
+				delete self.$$result;
+				delete self.$$async;
+				self.$callback(err, result);
+			});
+		};
+
+	} else if (type === 'query' || type === 'get' || type === 'read') {
+
+		helper = name;
+		name = undefined;
+
+		fn = function(next) {
+			self.$$schema[type](helper, function(err, result) {
+				self.$$result && self.$$result.push(err ? null : result);
+				if (!err)
+					return next();
+				next = null;
+				var result = self.$$result;
+				delete self.$$result;
+				delete self.$$async;
+				self.$callback(err, result);
+			});
+		};
+
+	} else {
+
+		fn = function(next) {
+			self.$$schema[type](name, self, helper, function(err, result) {
+				self.$$result && self.$$result.push(err ? null : result);
+				if (!err)
+					return next();
+				next = null;
+				var result = self.$$result;
+				delete self.$$result;
+				delete self.$$async;
+				self.$callback(err, result);
+			});
+		};
+
+	}
+
+	if (first)
+		self.$$async.unshift(fn);
+	else
+		self.$$async.push(fn);
+
+	return self;
+};
+
+SchemaInstance.prototype.$next = function(type, name, helper) {
+	return this.$push(type, name, helper, true);
 };
 
 SchemaInstance.prototype.$save = function(helper, callback) {
 	var self = this;
 
-	if (!self.$$async) {
-		self.$$schema.save(self, helper, callback);
-		return self;
-	}
+	if (self.$$async)
+		return self.$push('save', helper);
 
-	self.$$async.push(function(next) {
-		self.$$schema.save(self, helper, function(err, result) {
+	self.$$schema.save(self, helper, callback);
+	return self;
+};
 
-			if (self.$$result)
-				self.$$result.push(err ? null : result);
+SchemaInstance.prototype.$query = function(helper, callback) {
+	var self = this;
 
-			if (!err)
-				return next();
-			next = null;
-			var result = self.$$result;
-			delete self.$$result;
-			delete self.$$async;
-			self.$callback(err, result);
-		});
-	});
+	if (self.$$async)
+		return self.$push('query', helper);
 
+	self.$$schema.query(self, helper, callback);
+	return self;
+};
+
+SchemaInstance.prototype.$read = SchemaInstance.prototype.$get = function(helper, callback) {
+	var self = this;
+
+	if (self.$$async)
+		return self.$push('get', helper);
+
+	self.$$schema.get(self, helper, callback);
 	return self;
 };
 
 SchemaInstance.prototype.$remove = function(helper, callback) {
 	var self = this;
 
-	if (!self.$$async) {
-		self.$$schema.remove(helper, callback);
-		return self;
-	}
+	if (self.$$async)
+		return self.$push('remove', helper);
 
-	self.$$async.push(function(next) {
-		self.$$schema.remove(self, helper, function(err, result) {
-
-			if (self.$$result)
-				self.$$result.push(err ? null : result);
-
-			if (!err)
-				return next();
-			next = null;
-			var result = self.$$result;
-			delete self.$$result;
-			delete self.$$async;
-			self.$callback(err, result);
-		});
-	});
-
+	self.$$schema.remove(helper, callback);
 	return self;
 };
 
@@ -2027,82 +2087,30 @@ SchemaInstance.prototype.$destroy = function() {
 SchemaInstance.prototype.$transform = function(name, helper, callback) {
 	var self = this;
 
-	if (!self.$$async) {
-		self.$$schema.transform(name, self, helper, callback);
-		return self;
-	}
+	if (self.$$async)
+		return self.$push('transform', name, helper);
 
-	self.$$async.push(function(next) {
-		self.$$schema.transform(name, self, helper, function(err, result) {
-
-			if (self.$$result)
-				self.$$result.push(err ? null : result);
-
-			if (!err)
-				return next();
-
-			next = null;
-			var result = self.$$result;
-			delete self.$$result;
-			delete self.$$async;
-			self.$callback(err, result);
-		});
-	});
-
+	self.$$schema.transform(name, self, helper, callback);
 	return self;
 };
 
 SchemaInstance.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
 
-	if (!self.$$async) {
-		self.$$schema.workflow(name, self, helper, callback);
-		return self;
-	}
+	if (self.$$async)
+		return self.$push('workflow', name, helper);
 
-	self.$$async.push(function(next) {
-		self.$$schema.workflow(name, self, helper, function(err, result) {
-
-			if (self.$$result)
-				self.$$result.push(err ? null : result);
-
-			if (!err)
-				return next();
-			next = null;
-			var result = self.$$result;
-			delete self.$$result;
-			delete self.$$async;
-			self.$callback(err, result);
-		});
-	});
-
+	self.$$schema.workflow(name, self, helper, callback);
 	return self;
 };
 
 SchemaInstance.prototype.$operation = function(name, helper, callback) {
 	var self = this;
 
-	if (!self.$$async) {
-		self.$$schema.operation(name, self, helper, callback);
-		return self;
-	}
+	if (!self.$$async)
+		return self.$push('operation', name, helper);
 
-	self.$$async.push(function(next) {
-		self.$$schema.operation(name, self, helper, function(err, result) {
-
-			if (self.$$result)
-				self.$$result.push(err ? null : result);
-
-			if (!err)
-				return next();
-			next = null;
-			var result = self.$$result;
-			delete self.$$result;
-			delete self.$$async;
-			self.$callback(err, result);
-		});
-	});
-
+	self.$$schema.operation(name, self, helper, callback);
 	return self;
 };
 
@@ -3302,6 +3310,13 @@ TransformBuilder.setDefaultTransform = function(name) {
 		delete transforms['transformbuilder_default'];
 	else
 		transforms['transformbuilder_default'] = name;
+};
+
+function async_queue(arr, callback) {
+	var item = arr.shift();
+	if (item === undefined)
+		return callback();
+	item(() => async_queue(arr, callback));
 };
 
 // ======================================================

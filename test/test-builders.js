@@ -460,6 +460,65 @@ function test_ErrorBuilder() {
 		schema.define('created', Date);
 	});
 
+	NEWSCHEMA('Async').make(function(schema) {
+
+		var arr = [];
+
+		schema.define('name', String);
+
+		schema.addWorkflow('1', function(error, model, options, callback) {
+			arr.push('workflow1');
+			model.$next('workflow', '2');
+			callback();
+		});
+
+		schema.addWorkflow('2', function(error, model, options, callback) {
+			arr.push('workflow2');
+			callback();
+		});
+
+		schema.addWorkflow('3', function(error, model, options, callback) {
+			arr.push('workflow3');
+			callback();
+		});
+
+		schema.addTransform('1', function(error, model, options, callback) {
+			arr.push('transform1');
+			model.$next('transform', '2');
+			model.$push('transform', '4');
+			callback();
+		});
+
+		schema.addTransform('2', function(error, model, options, callback) {
+			arr.push('transform2');
+			callback();
+		});
+
+		schema.addTransform('3', function(error, model, options, callback) {
+			arr.push('transform3');
+			callback();
+		});
+
+		schema.addTransform('4', function(error, model, options, callback) {
+			arr.push('transform4');
+			callback();
+		});
+
+		var model = schema.create();
+		model.name = 'Peter';
+
+		var async = model.$async(function(err, response) {
+			assert.ok(arr.indexOf('workflow2') === 1, 'SchemaBuilderEntit.$next()');
+			assert.ok(arr.indexOf('transform2') === 4, 'SchemaBuilderEntit.$next()');
+			assert.ok(arr.pop() === 'transform4', 'SchemaBuilderEntit.$push()');
+		});
+
+		async.$workflow('1');
+		async.$workflow('3');
+		async.$transform('1');
+		async.$transform('3');
+	});
+
 };
 
 function test_TransformBuilder() {
