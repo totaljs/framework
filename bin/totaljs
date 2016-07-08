@@ -289,8 +289,8 @@ function main() {
 
 	console.log('');
 	console.log('####################################################');
-	console.log('# total.js - web application framework for node.js #');
-	console.log('# version: v' + require('total.js').version_header.padRight(39) + '#');
+	console.log('# Total.js - Web framework for Node.js             #');
+	console.log('# Version: v' + require('total.js').version_header.padRight(39) + '#');
 	console.log('####################################################');
 	console.log('');
 
@@ -305,7 +305,7 @@ function main() {
 		if (i === 2) {
 			var port = cmd.parseInt();
 			if (port) {
-				F.config['directory-temp'] = '~' + path.join(dir, '/tmp/');
+				F.config['directory-temp'] = '~' + path.join(os.tmpdir(), 'totaljs' + dir.hash());
 				F.config['directory-public'] = '~' + dir;
 				F.http('debug', { port: port, directory: dir });
 				F.route('/', function() {
