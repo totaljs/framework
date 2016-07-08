@@ -28,7 +28,7 @@
 
 const REQUIRED = 'The field "@" is required.';
 const DEFAULT_SCHEMA = 'default';
-const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, $$index: true, $$repository: true };
+const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, $$index: true, $$repository: true, $$can: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|\-|\(|\)/g;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -1953,8 +1953,10 @@ SchemaInstance.prototype.$async = function(callback, index) {
 	self.$$result = [];
 	self.$$index = index;
 	self.$$callback = callback;
+	self.$$can = true;
 
 	setImmediate(function() {
+		self.$$can = false;
 		async_queue(self.$$async, function() {
 			self.$$callback(null, self.$$index !== undefined ? self.$$result[self.$$index] : self.$$result);
 			self.$$callback = null;
@@ -2064,7 +2066,7 @@ SchemaInstance.prototype.$next = function(type, name, helper) {
 SchemaInstance.prototype.$save = function(helper, callback) {
 	var self = this;
 
-	if (self.$$async)
+	if (self.$$can && self.$$async)
 		return self.$push('save', helper);
 
 	self.$$schema.save(self, helper, callback);
@@ -2074,7 +2076,7 @@ SchemaInstance.prototype.$save = function(helper, callback) {
 SchemaInstance.prototype.$query = function(helper, callback) {
 	var self = this;
 
-	if (self.$$async)
+	if (self.$$can && self.$$async)
 		return self.$push('query', helper);
 
 	self.$$schema.query(self, helper, callback);
@@ -2084,7 +2086,7 @@ SchemaInstance.prototype.$query = function(helper, callback) {
 SchemaInstance.prototype.$read = SchemaInstance.prototype.$get = function(helper, callback) {
 	var self = this;
 
-	if (self.$$async)
+	if (self.$$can && self.$$async)
 		return self.$push('get', helper);
 
 	self.$$schema.get(self, helper, callback);
@@ -2094,7 +2096,7 @@ SchemaInstance.prototype.$read = SchemaInstance.prototype.$get = function(helper
 SchemaInstance.prototype.$remove = function(helper, callback) {
 	var self = this;
 
-	if (self.$$async)
+	if (self.$$can && self.$$async)
 		return self.$push('remove', helper);
 
 	self.$$schema.remove(helper, callback);
@@ -2112,7 +2114,7 @@ SchemaInstance.prototype.$destroy = function() {
 SchemaInstance.prototype.$transform = function(name, helper, callback) {
 	var self = this;
 
-	if (self.$$async)
+	if (self.$$can && self.$$async)
 		return self.$push('transform', name, helper);
 
 	self.$$schema.transform(name, self, helper, callback);
@@ -2122,7 +2124,7 @@ SchemaInstance.prototype.$transform = function(name, helper, callback) {
 SchemaInstance.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
 
-	if (self.$$async)
+	if (self.$$can && self.$$async)
 		return self.$push('workflow', name, helper);
 
 	self.$$schema.workflow(name, self, helper, callback);
@@ -2132,7 +2134,7 @@ SchemaInstance.prototype.$workflow = function(name, helper, callback) {
 SchemaInstance.prototype.$operation = function(name, helper, callback) {
 	var self = this;
 
-	if (!self.$$async)
+	if (self.$$can && self.$$async)
 		return self.$push('operation', name, helper);
 
 	self.$$schema.operation(name, self, helper, callback);
