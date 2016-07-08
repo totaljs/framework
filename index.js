@@ -8429,12 +8429,18 @@ Framework.prototype._configure = function(arr, rewrite) {
 					obj[name] = value.isNumber(true) ? value.parseFloat() : value.parseInt();
 				else if (subtype === 'boolean' || subtype === 'bool')
 					obj[name] = value.parseBoolean();
-				else if (subtype === 'eval' || subtype === 'object' || subtype === 'array')
-					obj[name] = new Function('return ' + value)();
-				else if (subtype === 'json')
+				else if (subtype === 'eval' || subtype === 'object' || subtype === 'array') {
+					try {
+						obj[name] = new Function('return ' + value)();
+					} catch (e) {
+						F.error(e, 'F.configure(' + name + ')');
+					}
+				} else if (subtype === 'json')
 					obj[name] = value.parseJSON();
 				else if (subtype === 'date' || subtype === 'datetime' || subtype === 'time')
 					obj[name] = value.parseDate();
+				else if (subtype === 'env' || subtype === 'environment')
+					obj[name] = process.env[value];
 				else
 					obj[name] = value.isNumber() ? framework_utils.parseInt(value) : value.isNumber(true) ? framework_utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
 
