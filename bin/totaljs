@@ -21,8 +21,9 @@ function display_help() {
 	console.log('-merge source target       = merges first resource into the second "-merge filename_source filename_target"');
 	console.log('-clean source              = cleans a resource file "-clean filename_source"');
 	console.log('-minify filename           = minifies .js, .css or .html file into filename.min.[extension]');
-	console.log('-v or -version             = total.js version');
+	console.log('-v or -version             = Total.js version');
 	console.log('/path/                     = target (default current directory)');
+	console.log('8000                       = starts a server');
 	console.log('');
 }
 
