@@ -28,7 +28,7 @@
 
 const REQUIRED = 'The field "@" is required.';
 const DEFAULT_SCHEMA = 'default';
-const SKIP = { $$schema: true, $$result: true, $callback: true, $$async: true };
+const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|\-|\(|\)/g;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -1951,15 +1951,13 @@ SchemaInstance.prototype.$async = function(callback, index) {
 
 	self.$$async = [];
 	self.$$result = [];
-	self.$callback = callback;
+	self.$$callback = callback;
 
 	setImmediate(function() {
 		async_queue(self.$$async, function() {
-			var result = self.$$result;
 			self.$$async = null;
-			self.$$result = null;
-			self.$callback = null;
-			callback(null, index !== undefined ? result[index] : result);
+			self.$$callback = null;
+			callback(null, index !== undefined ? self.$$result[index] : self.$$result);
 		});
 	});
 
@@ -1982,10 +1980,9 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 				if (!err)
 					return next();
 				next = null;
-				var result = self.$$result;
-				delete self.$$result;
-				delete self.$$async;
-				self.$callback(err, result);
+				self.$$async = null;
+				self.$$callback(err, self.$$result);
+				self.$$callback = null;
 			});
 		};
 
@@ -2000,10 +1997,9 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 				if (!err)
 					return next();
 				next = null;
-				var result = self.$$result;
-				delete self.$$result;
-				delete self.$$async;
-				self.$callback(err, result);
+				self.$$async = null;
+				self.$$callback(err, self.$$result);
+				self.$$callback = null;
 			});
 		};
 
@@ -2015,10 +2011,9 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 				if (!err)
 					return next();
 				next = null;
-				var result = self.$$result;
-				delete self.$$result;
-				delete self.$$async;
-				self.$callback(err, result);
+				self.$$async = null;
+				self.$$callback(err, self.$$result);
+				self.$$callback = null;
 			});
 		};
 
