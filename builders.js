@@ -1956,9 +1956,9 @@ SchemaInstance.prototype.$async = function(callback, index) {
 	setImmediate(function() {
 		async_queue(self.$$async, function() {
 			var result = self.$$result;
-			delete self.$$async;
-			delete self.$$result;
-			delete self.$callback;
+			self.$$async = null;
+			self.$$result = null;
+			self.$callback = null;
 			callback(null, index !== undefined ? result[index] : result);
 		});
 	});
