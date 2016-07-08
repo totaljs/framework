@@ -28,7 +28,7 @@
 
 const REQUIRED = 'The field "@" is required.';
 const DEFAULT_SCHEMA = 'default';
-const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true };
+const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, $$index: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|\-|\(|\)/g;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -1951,17 +1951,30 @@ SchemaInstance.prototype.$async = function(callback, index) {
 
 	self.$$async = [];
 	self.$$result = [];
+	self.$$index = index;
 	self.$$callback = callback;
 
 	setImmediate(function() {
 		async_queue(self.$$async, function() {
 			self.$$async = null;
+			self.$$callback(null, self.$$index !== undefined ? self.$$result[self.$$index] : self.$$result);
 			self.$$callback = null;
-			callback(null, index !== undefined ? self.$$result[index] : self.$$result);
 		});
 	});
 
 	return self;
+};
+
+SchemaInstance.prototype.$index = function(index) {
+	if (typeof(index) === 'string')
+		this.$$index = (this.$$index || 0).add(index);
+	this.$$index = index;
+	return this;
+};
+
+SchemaInstance.prototype.$callback = function(callback) {
+	this.$$callback = callback;
+	return this;
 };
 
 SchemaInstance.prototype.$push = function(type, name, helper, first) {
