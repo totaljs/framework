@@ -6,6 +6,7 @@
 - added: `SchemaBuilderEntity.$push(type, [name], helper)` --> adds a new operation (type: `workflow`, `transform`, `operation`, `save`, `read`, `query`, `remove`) to async list as last step
 - added: `SchemaBuilderEntity.$index(index)` can changed `obj.$async()` index (the index can be string e.g. `+1` or `-1`)
 - added: `SchemaBuilderEntity.$callback(fn)` can changed `obj.$async()` callback
+- added: `SchemaBuilderEntity.$repository(name, [value])` can get / set temporary value
 
 - fixed: binary `totaljs`, fixed problem with creating localized texts
 - fixed: `F.responseFile()` problem with cached filename, extension was broken when the framework reads the file from cache
