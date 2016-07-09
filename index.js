@@ -6336,8 +6336,8 @@ Framework.prototype.mode = function(http, name, options) {
 Framework.prototype.console = function() {
 	console.log('====================================================');
 	console.log('PID          : ' + process.pid);
-	console.log('node.js      : ' + process.version);
-	console.log('total.js     : v' + F.version_header);
+	console.log('Node.js      : ' + process.version);
+	console.log('Total.js     : v' + F.version_header);
 	console.log('====================================================');
 	console.log('Name         : ' + F.config.name);
 	console.log('Version      : ' + F.config.version);
