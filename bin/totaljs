@@ -317,36 +317,45 @@ function main() {
 				F.http('debug', { port: port, directory: dir });
 
 				F.route('/*', function() {
+
 					var self = this;
 					var dir = F.path.public(self.url.substring(1));
+					var filename = path.join(self.url, 'index.html').substring(1);
 
-					fs.readdir(dir, function(err, items) {
+					F.path.exists(filename, function(e) {
 
-						var render = function(controller, directories, files) {
-							controller.content('<!DOCTYPE html><html><head><title>Directory listing: {0}</title><meta charset="utf-8" /><style>body{font-family:Arial;font-size:16px;padding:10px 30px 30px}a{display:block}.directory:last-child{margin-bottom:10px}.directory{padding:2px 10px;background-color:#F8F8F8;margin-bottom:2px;text-decoration:none;color:black;font-weight:bold;font-size:18px}.directory-back{text-decoration:none;font-size:50px;margin:0 0 10px 5px;color:gray}.file{color:gray;text-decoration:none;font-size:14px;padding:3px 10px;border-bottom:1px solid #F0F0F0;}.file span{float:right;font-size:12px;margin:2px 0 0 0;color:#A0A0A0}.file:hover{background-color:#F8F8F8}</style></head><body><div class="directories">{1}</div><div class="files">{2}</div></body></html>'.format(controller.url, directories.join(''), files.join('')), 'text/html')
-						};
+						if (e)
+							return self.file(filename, '');
 
-						var directories = [];
-						var files = [];
+						fs.readdir(dir, function(err, items) {
 
-						if (self.url !== '/')
-							directories.push('<a href=".." class="directory-back">..</a>');
+							var render = function(controller, directories, files) {
+								controller.content('<!DOCTYPE html><html><head><title>Directory listing: {0}</title><meta charset="utf-8" /><style>body{font-family:Arial;font-size:16px;padding:10px 30px 30px}a{display:block}.directory:last-child{margin-bottom:10px}.directory{padding:2px 10px;background-color:#F8F8F8;margin-bottom:2px;text-decoration:none;color:black;font-weight:bold;font-size:18px}.directory-back{text-decoration:none;font-size:50px;margin:0 0 10px 5px;color:gray}.file{color:gray;text-decoration:none;font-size:14px;padding:3px 10px;border-bottom:1px solid #F0F0F0;}.file span{float:right;font-size:12px;margin:2px 0 0 0;color:#A0A0A0}.file:hover{background-color:#F8F8F8}</style></head><body><div class="directories">{1}</div><div class="files">{2}</div></body></html>'.format(controller.url, directories.join(''), files.join('')), 'text/html')
+							};
 
-						if (err)
-							return render(self, directories, files);
+							var directories = [];
+							var files = [];
 
-						items.wait(function(item, next) {
-							var filename = path.join(dir, item);
-							fs.stat(filename, function(err, info) {
+							if (self.url !== '/')
+								directories.push('<a href=".." class="directory-back">..</a>');
 
-								if (info.isFile())
-									files.push('<a href="{1}" class="file">{0}<span>{2} kB</span></a>'.format(item, self.url + item, (info.size / 1024).format(2)));
-								else
-									directories.push('<a href="{1}/" class="directory">{0}</a>'.format(item, self.url + item));
+							if (err)
+								return render(self, directories, files);
 
-								next();
-							});
-						}, () => render(self, directories, files));
+							items.wait(function(item, next) {
+								var filename = path.join(dir, item);
+								fs.stat(filename, function(err, info) {
+
+									if (info.isFile())
+										files.push('<a href="{1}" class="file">{0}<span>{2} kB</span></a>'.format(item, self.url + item, (info.size / 1024).format(2)));
+									else
+										directories.push('<a href="{1}/" class="directory">{0}</a>'.format(item, self.url + item));
+
+									next();
+								});
+							}, () => render(self, directories, files));
+						});
+
 					});
 				});
 
