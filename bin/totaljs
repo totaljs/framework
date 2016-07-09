@@ -307,6 +307,9 @@ function main() {
 			if (port) {
 				F.config['directory-temp'] = '~' + path.join(os.tmpdir(), 'totaljs' + dir.hash());
 				F.config['directory-public'] = '~' + dir;
+				F.config['allow-compile-html'] = false;
+				F.config['allow-compile-script'] = false;
+				F.config['allow-compile-style'] = false;
 				F.http('debug', { port: port, directory: dir });
 				F.route('/', function() {
 					this.file('index.html', '');
