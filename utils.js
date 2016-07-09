@@ -2314,53 +2314,35 @@ Date.prototype.diff = function(date, type) {
 		case 'ss':
 		case 'second':
 		case 'seconds':
-			r = Math.ceil(r / 1000);
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil(r / 1000);
 		case 'm':
 		case 'mm':
 		case 'minute':
 		case 'minutes':
-			r = Math.ceil((r / 1000) / 60);
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil((r / 1000) / 60);
 		case 'h':
 		case 'hh':
 		case 'hour':
 		case 'hours':
-			r = Math.ceil(((r / 1000) / 60) / 60);
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil(((r / 1000) / 60) / 60);
 		case 'd':
 		case 'dd':
 		case 'day':
 		case 'days':
-			r = Math.ceil((((r / 1000) / 60) / 60) / 24);
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil((((r / 1000) / 60) / 60) / 24);
 		case 'M':
 		case 'MM':
 		case 'month':
 		case 'months':
 			// avg: 28 days per month
-			r = Math.ceil((((r / 1000) / 60) / 60) / (24 * 28));
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil((((r / 1000) / 60) / 60) / (24 * 28));
 
 		case 'y':
 		case 'yyyy':
 		case 'year':
 		case 'years':
 			// avg: 28 days per month
-			r = Math.ceil((((r / 1000) / 60) / 60) / (24 * 28 * 12));
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil((((r / 1000) / 60) / 60) / (24 * 28 * 12));
 	}
 
 	return NaN;
