@@ -1910,6 +1910,9 @@ Framework.prototype.use = function(name, url, types) {
 		url = null;
 	}
 
+	if (url === '*')
+		url = null;
+
 	var route;
 
 	if (url)
