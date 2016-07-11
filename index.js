@@ -2909,7 +2909,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		var backup = new Backup();
 		var id = path.basename(declaration, '.' + framework_utils.getExtension(declaration));
-		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id + '.package');
+		var dir = framework.config['directory-temp'][0] === '~' ? path.join(framework.config['directory-temp'].substring(1), id + '.package') : path.join(framework.path.root(), framework.config['directory-temp'], id + '.package');
 
 		self.routes.packages[id] = dir;
 		backup.restore(declaration, dir, function() {
@@ -2958,7 +2958,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 	if (type === 'package2') {
 		var id = framework_utils.getName(declaration, '.package');
-		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id);
+		var dir = framework.config['directory-temp'][0] === '~' ? path.join(framework.config['directory-temp'].substring(1), id) : path.join(framework.path.root(), framework.config['directory-temp'], id);
 		var filename = path.join(dir, 'index.js');
 		self.install('module', id, filename, options, function(err) {
 			setTimeout(function() {
@@ -8446,13 +8446,14 @@ Framework.prototype._configure = function(arr, rewrite) {
 					obj[name] = process.env[value];
 				else
 					obj[name] = value.isNumber() ? framework_utils.parseInt(value) : value.isNumber(true) ? framework_utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
-
 				break;
-
 		}
 	}
 
 	framework_utils.extend(self.config, obj, rewrite);
+
+	if (!self.config['directory-temp'])
+		self.config['directory-temp'] = '~' + framework_utils.path(path.join(os.tmpdir(), 'totaljs' + self.directory.hash()));
 
 	if (!self.config['etag-version'])
 		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');
@@ -8460,11 +8461,8 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (self.config['default-timezone'])
 		process.env.TZ = self.config['default-timezone'];
 
-	if (accepts && accepts.length) {
-		accepts.forEach(function(accept) {
-			self.config['static-accepts'][accept] = true;
-		});
-	}
+	if (accepts && accepts.length)
+		accepts.forEach(accept => self.config['static-accepts'][accept] = true);
 
 	if (self.config['disable-strict-server-certificate-validation'] === true)
 		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -9274,7 +9272,8 @@ FrameworkPath.prototype.package = function(name, filename) {
 		}
 	}
 
-	var p = path.join(directory, framework.config['directory-temp'], name + '.package', filename || '');
+	var tmp = framework.config['directory-temp'];
+	var p = tmp[0] === '~' ? path.join(tmp.substring(1), name + '.package', filename || '') : path.join(directory, tmp, name + '.package', filename || '');
 	return framework.isWindows ? p.replace(REG_WINDOWSPATH, '/') : p;
 };
 

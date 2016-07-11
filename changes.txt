@@ -8,6 +8,8 @@
 - added: `SchemaBuilderEntity.$callback(fn)` can changed `obj.$async()` callback
 - added: `SchemaBuilderEntity.$repository(name, [value])` can get / set temporary value
 
+- updated: when the config contains `directory-temp` with empty value then the framework uses system temporary directory
+
 - fixed: binary `totaljs`, fixed problem with creating localized texts
 - fixed: `F.responseFile()` problem with cached filename, extension was broken when the framework reads the file from cache
 
