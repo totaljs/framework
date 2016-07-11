@@ -2922,6 +2922,10 @@ String.prototype.parseConfig = function(def) {
 			case 'json':
 				obj[name] = value.parseJSON();
 				break;
+			case 'env':
+			case 'environment':
+				obj[name] = process.env[value];
+				break;
 			case 'date':
 			case 'time':
 			case 'datetime':
