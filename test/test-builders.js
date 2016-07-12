@@ -537,6 +537,29 @@ function test_ErrorBuilder() {
 		}).$workflow('1').$workflow('2');
 	});
 
+
+	NEWSCHEMA('Output').make(function(schema) {
+
+		schema.addWorkflow('1', function(error, model, options, callback) {
+			callback(1);
+		});
+
+		schema.addWorkflow('2', function(error, model, options, callback) {
+			model.$output();
+			callback(2);
+		});
+
+		schema.addWorkflow('3', function(error, model, options, callback) {
+			callback(3);
+		});
+
+		var model = schema.create();
+
+		model.$async(function(err, response) {
+			assert.ok(response === 2, 'SchemaBuilderEntity.$output()');
+		}).$workflow('1').$workflow('2').$workflow('3');
+	});
+
 };
 
 function test_TransformBuilder() {

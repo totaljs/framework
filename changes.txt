@@ -7,6 +7,7 @@
 - added: `SchemaBuilderEntity.$index(index)` can changed `obj.$async()` index (the index can be string e.g. `+1` or `-1`)
 - added: `SchemaBuilderEntity.$callback(fn)` can changed `obj.$async()` callback
 - added: `SchemaBuilderEntity.$repository(name, [value])` can get / set temporary value
+- added: `SchemaBuilderEntity.$output()` sets the current `callback(value)` as output/result for `obj.$async(function(err, output))`
 
 - updated: when the config contains `directory-temp` with empty value then the framework uses system temporary directory
 

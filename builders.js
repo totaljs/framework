@@ -1996,6 +1996,11 @@ SchemaInstance.prototype.$callback = function(callback) {
 	return this;
 };
 
+SchemaInstance.prototype.$output = function() {
+	this.$$index = this.$$result.length;
+	return this;
+};
+
 SchemaInstance.prototype.$push = function(type, name, helper, first) {
 
 	var self = this;
