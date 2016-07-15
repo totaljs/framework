@@ -54,6 +54,8 @@ global.$STRING = function(value) {
 	return value != null ? value.toString() : '';
 };
 
+global.$VIEWCACHE = [];
+
 /*
 	Internal function / Parse data from Request
 	@req {ServerRequest}
@@ -1790,8 +1792,6 @@ function view_parse(content, minify, filename, controller) {
 	content = framework._version_prepare(content);
 
 	var DELIMITER = '\'';
-	var DELIMITER_UNESCAPE = 'unescape(\'';
-	var DELIMITER_UNESCAPE_END = '\')';
 	var SPACE = ' ';
 	var builder = 'var $EMPTY=\'\';var $length=0;var $source=null;var $tmp=index;var $output=$EMPTY';
 	var command = view_find_command(content, 0);
@@ -1799,6 +1799,7 @@ function view_parse(content, minify, filename, controller) {
 	var nocompress = false;
 	var isFirst = false;
 	var pharse = '';
+	var txtindex = -1;
 
 	function escaper(value) {
 
@@ -1817,8 +1818,17 @@ function view_parse(content, minify, filename, controller) {
 		if (!nocompressHTML && is)
 			value += ' ';
 
-		if (value.match(/\n|\r|\'|\\/))
-			return DELIMITER_UNESCAPE + escape(value) + DELIMITER_UNESCAPE_END;
+		if (value.match(/\n|\r|\'|\\/)) {
+			txtindex = $VIEWCACHE.indexOf(value);
+
+			if (txtindex === -1) {
+				txtindex = $VIEWCACHE.length;
+				$VIEWCACHE.push(value);
+			}
+
+			return '$VIEWCACHE[' + txtindex + ']';
+		}
+
 		return DELIMITER + value + DELIMITER;
 	}
 

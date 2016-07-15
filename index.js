@@ -6393,6 +6393,8 @@ Framework.prototype._service = function(count) {
 		self.temporary.range = {};
 		self.temporary.views = {};
 		self.temporary.other = {};
+		if (global.$VIEWCACHE && global.$VIEWCACHE.length)
+			global.$VIEWCACHE = [];
 	}
 
 	// every 61 minutes (default) services precompile all (installed) views
@@ -9163,7 +9165,7 @@ FrameworkPath.prototype.verify = function(name) {
 };
 
 FrameworkPath.prototype.exists = function(path, callback) {
-	fsFileExists(path, callback);
+	fs.lstat(path, (err, stats) => callback(err ? false : true, stats ? stats.size : 0, stats ? stats.isFile() : false));
 	return framework;
 };
 
