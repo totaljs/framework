@@ -6380,7 +6380,7 @@ Framework.prototype._service = function(count) {
 	var self = this;
 	self.datetime = new Date();
 
-	UIDGENERATOR.date = self.datetime.format('yyMMddHHmm').substring(1);
+	UIDGENERATOR.date = self.datetime.format('yyMMddHHmm');
 	UIDGENERATOR.index = 1;
 
 	if (self.config.debug)

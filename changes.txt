@@ -14,6 +14,7 @@
 - fixed: binary `totaljs`, fixed problem with creating localized texts
 - fixed: `F.responseFile()` problem with cached filename, extension was broken when the framework reads the file from cache
 - fixed: preparing values with subtype for array in SchemaBuilder
+- fixed: generation UID
 
 - improved: view engine rendering
 - improved: view engine memory consumption
