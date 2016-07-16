@@ -1392,21 +1392,21 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					switch (type.subtype) {
 						case 'uid':
 							if (tmp && !type.required && !tmp.isUID())
-								tmp = '';
+								continue;
 							break;
 						case 'url':
 							if (tmp && !type.required && !tmp.isURL())
-								tmp = '';
+								continue;
 							break;
 						case 'email':
 							tmp = tmp.toLowerCase().replace(REGEXP_CLEAN_EMAIL, '');
 							if (tmp && !type.required && !tmp.isEmail())
-								tmp = '';
+								continue;
 							break;
 						case 'phone':
 							tmp = tmp.replace(REGEXP_CLEAN_PHONE, '');
 							if (tmp && !type.required && !tmp.isPhone())
-								tmp = '';
+								continue;
 							break;
 						case 'capitalize':
 							tmp = tmp.capitalize();
@@ -1419,7 +1419,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 							break;
 						case 'json':
 							if (tmp && !type.required && !tmp.isJSON())
-								tmp = '';
+								continue;
 							break;
 					}
 
