@@ -469,7 +469,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2001;
-	this.version_header = '2.0.1-4';
+	this.version_header = '2.0.1-5';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -3589,6 +3589,27 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		delete self.routes.middleware[name];
 		delete self.dependencies[type + '.' + name];
 		self._length_middleware = Object.keys(self.routes.middleware).length;
+
+		var tmp;
+
+		for (var i = 0, length = self.routes.web.length; i < length; i++) {
+			tmp = self.routes.web[i];
+			if (tmp.middleware && tmp.middleware.length)
+				tmp.middleware = tmp.middleware.remove(name);
+		}
+
+		for (var i = 0, length = self.routes.websocket.length; i < length; i++) {
+			tmp = self.routes.websocket[i];
+			if (tmp.middleware && tmp.middleware.length)
+				tmp.middleware = tmp.middleware.remove(name);
+		}
+
+		for (var i = 0, length = self.routes.web.length; i < length; i++) {
+			tmp = self.routes.files[i];
+			if (tmp.middleware && tmp.middleware.length)
+				tmp.middleware = tmp.middleware.remove(name);
+		}
+
 		self.emit('uninstall', type, name);
 		return self;
 	}
@@ -3609,9 +3630,8 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		delete self.routes.views[name];
 		delete self.dependencies[type + '.' + name];
 
-		fsFileExists(obj.filename, function(exist) {
-			if (exist)
-				fs.unlink(obj.filename);
+		fsFileExists(obj.filename, function(e) {
+			e && fs.unlink(obj.filename);
 		});
 
 		self.emit('uninstall', type, name);
