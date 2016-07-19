@@ -127,6 +127,9 @@ function prototypeString() {
 	str = 'petersirka@gmail';
 	assert.ok(str.isEmail() === false, 'string.isEmail(): ' + str);
 
+	str = 'anything@addons.business';
+	assert.ok(str.isEmail() === true, 'string.isEmail(): ' + str);
+
 	str = 'a@a.a';
 	assert.ok(str.isEmail() === false, 'string.isEmail(): ' + str);
 
