@@ -427,7 +427,7 @@ function main() {
 				var filename = files[i];
 				var ext = Utils.getExtension(filename);
 
-				if (filename.indexOf('sitemap') === -1 && ext !== '.html' && ext !== '.js')
+				if (filename.indexOf('sitemap') === -1 && ext !== 'html' && ext !== 'js')
 					continue;
 
 				var content = fs.readFileSync(filename).toString('utf8');
@@ -491,7 +491,7 @@ function main() {
 				var filename = files[i];
 				var ext = Utils.getExtension(filename);
 
-				if (ext !== '.html' && ext !== '.js')
+				if (ext !== 'html' && ext !== 'js')
 					continue;
 
 				var content = fs.readFileSync(filename).toString('utf8');
