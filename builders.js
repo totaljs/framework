@@ -555,7 +555,7 @@ SchemaBuilderEntity.prototype.setError = function(fn) {
  * @param {Function(error, model, helper, next(value))} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setGet = function(fn) {
+SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = function(fn) {
 	var self = this;
 	self.onGet = fn;
 	return self;
