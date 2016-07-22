@@ -106,6 +106,8 @@ function prototypeString() {
 	assert.ok('[}'.isJSON() === false, 'string.isJSON([})');
 	assert.ok('["'.isJSON() === false, 'string.isJSON([")');
 
+	assert.ok(UID().isUID(), 'string.isUID()');
+
 	str = 'google.sk';
 	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
 
