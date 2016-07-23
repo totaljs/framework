@@ -10,6 +10,7 @@
 - added: `SchemaBuilderEntity.$output()` sets the current `callback(value)` as output/result for `obj.$async(function(err, output))`
 
 - updated: when the config contains `directory-temp` with empty value then the framework uses system temporary directory
+- updated: `U.reduce()` supports array
 
 - fixed: binary `totaljs`, fixed problem with creating localized texts
 - fixed: `F.responseFile()` problem with cached filename, extension was broken when the framework reads the file from cache

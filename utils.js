@@ -1295,6 +1295,16 @@ exports.reduce = function(source, prop, reverse) {
 			return exports.reduce(source, Object.keys(prop), reverse);
 	}
 
+	if (source instanceof Array) {
+
+		var arr = [];
+
+		for (var i = 0, length = source.length; i < length; i++)
+			arr.push(exports.reduce(source[i], prop, reverse));
+
+		return arr;
+	}
+
 	var output = {};
 
 	Object.keys(source).forEach(function(o) {

@@ -397,6 +397,9 @@ function other() {
 	assert.ok(typeof(a.age) === 'undefined', 'utils.reduce()');
 	assert.ok(typeof(b.age) === 'number', 'utils.reduce() - reverse');
 
+	assert.ok(utils.reduce([{ name: 'Peter', age: 27 }, { name: 'Lucia', age: 22 }], ['name'])[0].age === undefined, 'utils.reduce() - array');
+	assert.ok(utils.reduce([{ name: 'Peter', age: 27 }, { name: 'Lucia', age: 22 }], ['name'], true)[0].name === undefined, 'utils.reduce() - array reverse');
+
 	var str = 'http://www.google.sk';
 	assert.ok(utils.isRelative(str) === false, 'utils.isRelative(): ' + str);
 
