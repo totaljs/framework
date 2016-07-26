@@ -124,20 +124,6 @@ service you're supporting the framework and its products..
 | [Martin Smola](https://github.com/molda) | contributor | <smola.martin@gmail.com> |
 | [Peter Štolc](https://github.com/fokinko) | contributor | <stolcp@gmail.com> |
 
-## Built with Total.js
-
-- [__NEW__: OpenPlatform](http://www.totaljs.com/openplatform/)
-- [__NEW__: Eshop + CMS written in Node.js / Total.js](http://www.totaljs.com/eshop/)
-- [__NEW__: Todomator - www.todomator.com](https://www.todomator.com)
-- [Componenator - Resources for web developers](http://www.componentator.com)
-- [E-commerce, CMS and Docker manager](http://nowitssimple.com/)
-- [Test your application](http://www.testerleader.com/)
-- [MonitorGuru.com (Website monitoring)](https://www.monitorguru.com)
-- [Bufferwall.com (Blog portal)](https://bufferwall.com)
-- [Warstore.sk (E-commerce)](https://www.warstore.sk)
-- [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)
-- [GPS Localization (WebSocket) - www.gpslocalization.com](http://www.gpslocalization.com)
-
 ## Useful modules
 
 - [SQL Agent: A missing ORM for Node.js and Total.js](https://github.com/petersirka/node-sqlagent)
