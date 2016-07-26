@@ -7,14 +7,16 @@ Node.js web framework
 
 __Total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
+[![Support](https://www.totaljs.com/img/button-support.png)](https://www.totaljs.com/support/)
 
-- [__NEW__: Total.js OpenPlatform](https://www.totaljs.com/openplatform/) is a simple enterprise ready platform
+- [__NEW__: Total.js Simple Eshop + CMS for free](http://www.totaljs.com/eshop/)
+- [__NEW__: Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
+- [__NEW__: Total.js HelpDesk](https://www.totaljs.com/helpdesk/)
+- [Total.js OpenPlatform](https://www.totaljs.com/openplatform/) is a simple enterprise ready platform
 - [Total.js AppMonitor](https://www.totaljs.com/monitor/) for tracking total.js applications
-- [Total.js Simple Eshop + CMS](http://www.totaljs.com/eshop)
 - [Total.js modules and packages](https://github.com/totaljs/modules)
 - [Total.js models](https://github.com/totaljs/models)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
-
 
 ```
 $ npm install total.js
@@ -51,7 +53,8 @@ Please support the framework on social networks.
 
 ## Support
 
-We provide a support of the framework for companies. Our support services will keep your company worry free so you can focus on building products and growing your business.
+Our support service is the only way for us to rise money for development. By purchasing our support
+service you're supporting the framework and its products..
 
 - [Support form](http://www.totaljs.com/support/)
 - Support e-mail: <support@totaljs.com>

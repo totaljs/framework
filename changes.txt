@@ -1,4 +1,4 @@
-======= 2.0.1 (BETA)
+======= 2.0.1
 
 - added: binary supports webserver `totaljs 8000` starts webserver on 8000 port and the current directory will be a public directory
 - added: configuration supports new subtype (`env` or `environment`) for binding values from `process.env`
