@@ -103,16 +103,13 @@ service you're supporting the framework and its products..
 | NoSQL embedded database |
 | __You can use framework as single library__ `total.js (320 kB)` |
 
-## Benevolent Dictator For Life (BDFL)
-
-[Peter Širka](http://www.petersirka.eu), contact: <petersirka@gmail.com>
-
 ---
 
 ## Contributors
 
 | Contributor | Type | E-mail |
 |-------------|------|--------|
+| [Peter Širka](https://github.com/JozefGula) | BDFL + contributor + support | <petersirka@gmail.com> |
 | [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
@@ -131,6 +128,10 @@ service you're supporting the framework and its products..
 
 - [SQL Agent: A missing ORM for Node.js and Total.js](https://github.com/petersirka/node-sqlagent)
 - [PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
+
+## Contact
+
+<https://www.totaljs.com/contact/>
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: license.txt
