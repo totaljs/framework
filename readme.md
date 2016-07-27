@@ -9,7 +9,7 @@ __Total.js__ is the web application framework for creating rich web sites and we
 
 ---
 
-[![Support](https://www.totaljs.com/img/button-support.png)](https://www.totaljs.com/support/)
+[![Support](https://www.totaljs.com/img/button-support.png)](https://www.totaljs.com/support/) [![Donate](https://www.totaljs.com/img/button-donate.png)](https://www.totaljs.com/#make-a-donation)
 
 - [__NEW__: Total.js Simple Eshop + CMS for free](http://www.totaljs.com/eshop/)
 - [__NEW__: Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
