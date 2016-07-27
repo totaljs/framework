@@ -131,7 +131,7 @@ service you're supporting the framework and its products..
 
 ## Contact
 
-<https://www.totaljs.com/contact/>
+Do you have any questions? Contact us <https://www.totaljs.com/contact/>
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: license.txt
