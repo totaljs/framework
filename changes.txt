@@ -16,7 +16,7 @@
 - fixed: `F.responseFile()` problem with cached filename, extension was broken when the framework reads the file from cache
 - fixed: preparing values with subtype for array in SchemaBuilder
 - fixed: generation UID
-- fixed: problem uninstalling middleware
+- fixed: problem with uninstalling middleware
 - fixed: email validation, a problem with e.g. `blabla@somedomain.business` by @VarunBatraIT
 
 - improved: view engine rendering
