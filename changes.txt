@@ -1,3 +1,27 @@
+======= 2.0.1
+
+- added: binary supports webserver `totaljs 8000` starts webserver on 8000 port and the current directory will be a public directory
+- added: configuration supports new subtype (`env` or `environment`) for binding values from `process.env`
+- added: `SchemaBuilderEntity.$next(type, [name], helper)` --> adds a new operation (type: `workflow`, `transform`, `operation`, `save`, `read`, `query`, `remove`) to async list as next step
+- added: `SchemaBuilderEntity.$push(type, [name], helper)` --> adds a new operation (type: `workflow`, `transform`, `operation`, `save`, `read`, `query`, `remove`) to async list as last step
+- added: `SchemaBuilderEntity.$index(index)` can changed `obj.$async()` index (the index can be string e.g. `+1` or `-1`)
+- added: `SchemaBuilderEntity.$callback(fn)` can changed `obj.$async()` callback
+- added: `SchemaBuilderEntity.$repository(name, [value])` can get / set temporary value
+- added: `SchemaBuilderEntity.$output()` sets the current `callback(value)` as output/result for `obj.$async(function(err, output))`
+
+- updated: when the config contains `directory-temp` with empty value then the framework uses system temporary directory
+- updated: `U.reduce()` supports array
+
+- fixed: binary `totaljs`, fixed problem with creating localized texts
+- fixed: `F.responseFile()` problem with cached filename, extension was broken when the framework reads the file from cache
+- fixed: preparing values with subtype for array in SchemaBuilder
+- fixed: generation UID
+- fixed: problem uninstalling middleware
+- fixed: email validation, a problem with e.g. `blabla@somedomain.business` by @VarunBatraIT
+
+- improved: view engine rendering
+- improved: view engine memory consumption
+
 ======= 2.0.0
 
 - added: new NoSQL version v4.0.0 is fully optimized for total.js

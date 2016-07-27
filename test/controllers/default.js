@@ -423,8 +423,8 @@ function viewIndex() {
 	var name = 'controller: ';
 
 	assert.ok(self.path.public('file.txt').endsWith('/public/file.txt'), name + 'path.public');
-	assert.ok(self.path.logs('file.txt').endsWith('/logs/file.txt'), name + 'path.logs');
-	assert.ok(self.path.temp('file.txt').endsWith('/tmp/file.txt'), name + 'path.temp');
+	assert.ok(self.path.logs('file.txt').endsWith('/file.txt'), name + 'path.logs');
+	assert.ok(self.path.temp('file.txt').endsWith('/file.txt'), name + 'path.temp');
 
 	self.meta('A', 'B');
 	assert.ok(self.repository['$title'] === 'A' && self.repository['$description'] === 'B', name + 'meta() - write');

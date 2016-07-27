@@ -7,32 +7,38 @@ Node.js web framework
 
 __Total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
 
+---
 
-- [__NEW__: Total.js OpenPlatform](https://www.totaljs.com/openplatform/) is a simple enterprise ready platform
+[![Support](https://www.totaljs.com/img/button-support.png)](https://www.totaljs.com/support/) [![Donate](https://www.totaljs.com/img/button-donate.png)](https://www.totaljs.com/#make-a-donation)
+
+- [__NEW__: Total.js Simple Eshop + CMS for free](http://www.totaljs.com/eshop/)
+- [__NEW__: Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
+- [__NEW__: Total.js HelpDesk](https://www.totaljs.com/helpdesk/)
+- [__NEW__: Download +89 client-side components (jComponent) for free](https://www.componentator.com)
+- [Total.js OpenPlatform](https://www.totaljs.com/openplatform/) is a simple enterprise ready platform
 - [Total.js AppMonitor](https://www.totaljs.com/monitor/) for tracking total.js applications
-- [Total.js Simple Eshop + CMS](http://www.totaljs.com/eshop)
 - [Total.js modules and packages](https://github.com/totaljs/modules)
 - [Total.js models](https://github.com/totaljs/models)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
-
 
 ```
 $ npm install total.js
 ```
 
 - [Homepage](http://www.totaljs.com)
+- [__Make a donation__ via PayPal](http://www.totaljs.com/#make-a-donation)
 - [__Get Started__](http://www.totaljs.com/get-started/)
 - [__Documentation__](http://docs.totaljs.com)
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
 - [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
-- [__Make a donation__ via PayPal](http://www.totaljs.com/#make-a-donation)
 
 &nbsp;
 
 | Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
 |------|------|------|------|------|
-| [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) | [![Weida Web](https://www.totaljs.com/img/logo-weidaweb.png)](https://www.weidaweb.com/) |
+| [![Casperise](https://www.totaljs.com/img/logo-casperise.png)](https://www.casperise.com/) | [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) |
+| | | [![Weida Web](https://www.totaljs.com/img/logo-weidaweb.png)](https://www.weidaweb.com/) |
 
 ## Social networks
 
@@ -50,7 +56,8 @@ Please support the framework on social networks.
 
 ## Support
 
-We provide a support of the framework for companies. Our support services will keep your company worry free so you can focus on building products and growing your business.
+Our support service is the only way for us to rise money for development. By purchasing our support
+service you're supporting the framework and its products..
 
 - [Support form](http://www.totaljs.com/support/)
 - Support e-mail: <support@totaljs.com>
@@ -96,16 +103,13 @@ We provide a support of the framework for companies. Our support services will k
 | NoSQL embedded database |
 | __You can use framework as single library__ `total.js (320 kB)` |
 
-## Benevolent Dictator For Life (BDFL)
-
-[Peter Širka](http://www.petersirka.eu), contact: <petersirka@gmail.com>
-
 ---
 
 ## Contributors
 
 | Contributor | Type | E-mail |
 |-------------|------|--------|
+| [Peter Širka](https://github.com/JozefGula) | BDFL + contributor + support | <petersirka@gmail.com> |
 | [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
@@ -120,24 +124,14 @@ We provide a support of the framework for companies. Our support services will k
 | [Martin Smola](https://github.com/molda) | contributor | <smola.martin@gmail.com> |
 | [Peter Štolc](https://github.com/fokinko) | contributor | <stolcp@gmail.com> |
 
-## Built with Total.js
-
-- [__NEW__: OpenPlatform](http://www.totaljs.com/openplatform/)
-- [__NEW__: Eshop + CMS written in Node.js / Total.js](http://www.totaljs.com/eshop/)
-- [__NEW__: Todomator - www.todomator.com](https://www.todomator.com)
-- [Componenator - Resources for web developers](http://www.componentator.com)
-- [E-commerce, CMS and Docker manager](http://nowitssimple.com/)
-- [Test your application](http://www.testerleader.com/)
-- [MonitorGuru.com (Website monitoring)](https://www.monitorguru.com)
-- [Bufferwall.com (Blog portal)](https://bufferwall.com)
-- [Warstore.sk (E-commerce)](https://www.warstore.sk)
-- [Privater (WebSocket) - www.privater.eu](https://www.privater.eu)
-- [GPS Localization (WebSocket) - www.gpslocalization.com](http://www.gpslocalization.com)
-
 ## Useful modules
 
 - [SQL Agent: A missing ORM for Node.js and Total.js](https://github.com/petersirka/node-sqlagent)
 - [PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
+
+## Contact
+
+Do you have any questions? Contact us <https://www.totaljs.com/contact/>
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: license.txt

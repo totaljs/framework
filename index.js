@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.0.0
+ * @version 2.0.1
  */
 
 'use strict';
@@ -54,7 +54,7 @@ const REG_COMPILECSS = /url\(.*?\)/g;
 const REG_ROUTESTATIC = /^(\/\/|https\:|http\:)+/g;
 const REG_EMPTY = /\s/g;
 const REG_SANITIZE_BACKSLASH = /\/\//g;
-const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/gi;
+const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/i;
 const REG_WINDOWSPATH = /\\/g;
 const REG_SCRIPTCONTENT = /\<|\>|;/;
 const REG_HTTPHTTPS = /^(\/)?(http|https)\:\/\//i;
@@ -468,8 +468,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.id = null;
-	this.version = 2000;
-	this.version_header = '2.0.0';
+	this.version = 2010;
+	this.version_header = '2.0.1';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -1910,6 +1910,9 @@ Framework.prototype.use = function(name, url, types) {
 		url = null;
 	}
 
+	if (url === '*')
+		url = null;
+
 	var route;
 
 	if (url)
@@ -2906,7 +2909,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		var backup = new Backup();
 		var id = path.basename(declaration, '.' + framework_utils.getExtension(declaration));
-		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id + '.package');
+		var dir = framework.config['directory-temp'][0] === '~' ? path.join(framework.config['directory-temp'].substring(1), id + '.package') : path.join(framework.path.root(), framework.config['directory-temp'], id + '.package');
 
 		self.routes.packages[id] = dir;
 		backup.restore(declaration, dir, function() {
@@ -2955,7 +2958,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 	if (type === 'package2') {
 		var id = framework_utils.getName(declaration, '.package');
-		var dir = path.join(framework.path.root(), framework.config['directory-temp'], id);
+		var dir = framework.config['directory-temp'][0] === '~' ? path.join(framework.config['directory-temp'].substring(1), id) : path.join(framework.path.root(), framework.config['directory-temp'], id);
 		var filename = path.join(dir, 'index.js');
 		self.install('module', id, filename, options, function(err) {
 			setTimeout(function() {
@@ -3586,6 +3589,27 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		delete self.routes.middleware[name];
 		delete self.dependencies[type + '.' + name];
 		self._length_middleware = Object.keys(self.routes.middleware).length;
+
+		var tmp;
+
+		for (var i = 0, length = self.routes.web.length; i < length; i++) {
+			tmp = self.routes.web[i];
+			if (tmp.middleware && tmp.middleware.length)
+				tmp.middleware = tmp.middleware.remove(name);
+		}
+
+		for (var i = 0, length = self.routes.websocket.length; i < length; i++) {
+			tmp = self.routes.websocket[i];
+			if (tmp.middleware && tmp.middleware.length)
+				tmp.middleware = tmp.middleware.remove(name);
+		}
+
+		for (var i = 0, length = self.routes.web.length; i < length; i++) {
+			tmp = self.routes.files[i];
+			if (tmp.middleware && tmp.middleware.length)
+				tmp.middleware = tmp.middleware.remove(name);
+		}
+
 		self.emit('uninstall', type, name);
 		return self;
 	}
@@ -3606,9 +3630,8 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		delete self.routes.views[name];
 		delete self.dependencies[type + '.' + name];
 
-		fsFileExists(obj.filename, function(exist) {
-			if (exist)
-				fs.unlink(obj.filename);
+		fsFileExists(obj.filename, function(e) {
+			e && fs.unlink(obj.filename);
 		});
 
 		self.emit('uninstall', type, name);
@@ -4888,12 +4911,17 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	var etag = framework_utils.etag(req.url, self.config['etag-version']);
 	var extension = req.extension;
 	var returnHeaders;
+	var index;
 
 	if (!extension) {
 		if (key)
 			extension = framework_utils.getExtension(key);
-		if (!extension && name)
+		if (!extension && name) {
 			extension = framework_utils.getExtension(name);
+			index = extension.lastIndexOf(';');
+			if (index !== -1)
+				extension = extension.substring(0, index);
+		}
 		if (!extension && filename)
 			extension = framework_utils.getExtension(filename);
 	}
@@ -4956,7 +4984,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return self;
 	}
 
-	var index = name.lastIndexOf(';');
+	index = name.lastIndexOf(';');
 	var size = null;
 
 	if (index === -1)
@@ -6262,6 +6290,9 @@ Framework.prototype.mode = function(http, name, options) {
 	var test = false;
 	var debug = false;
 
+	if (options.directory)
+		directory = options.directory;
+
 	if (typeof(http) === 'string') {
 		switch (http) {
 			case 'debug':
@@ -6328,8 +6359,8 @@ Framework.prototype.mode = function(http, name, options) {
 Framework.prototype.console = function() {
 	console.log('====================================================');
 	console.log('PID          : ' + process.pid);
-	console.log('node.js      : ' + process.version);
-	console.log('total.js     : v' + F.version_header);
+	console.log('Node.js      : ' + process.version);
+	console.log('Total.js     : v' + F.version_header);
 	console.log('====================================================');
 	console.log('Name         : ' + F.config.name);
 	console.log('Version      : ' + F.config.version);
@@ -6369,7 +6400,7 @@ Framework.prototype._service = function(count) {
 	var self = this;
 	self.datetime = new Date();
 
-	UIDGENERATOR.date = self.datetime.format('yyMMddHHmm').substring(1);
+	UIDGENERATOR.date = self.datetime.format('yyMMddHHmm');
 	UIDGENERATOR.index = 1;
 
 	if (self.config.debug)
@@ -6382,6 +6413,8 @@ Framework.prototype._service = function(count) {
 		self.temporary.range = {};
 		self.temporary.views = {};
 		self.temporary.other = {};
+		if (global.$VIEWCACHE && global.$VIEWCACHE.length)
+			global.$VIEWCACHE = [];
 	}
 
 	// every 61 minutes (default) services precompile all (installed) views
@@ -8421,21 +8454,28 @@ Framework.prototype._configure = function(arr, rewrite) {
 					obj[name] = value.isNumber(true) ? value.parseFloat() : value.parseInt();
 				else if (subtype === 'boolean' || subtype === 'bool')
 					obj[name] = value.parseBoolean();
-				else if (subtype === 'eval' || subtype === 'object' || subtype === 'array')
-					obj[name] = new Function('return ' + value)();
-				else if (subtype === 'json')
+				else if (subtype === 'eval' || subtype === 'object' || subtype === 'array') {
+					try {
+						obj[name] = new Function('return ' + value)();
+					} catch (e) {
+						F.error(e, 'F.configure(' + name + ')');
+					}
+				} else if (subtype === 'json')
 					obj[name] = value.parseJSON();
 				else if (subtype === 'date' || subtype === 'datetime' || subtype === 'time')
 					obj[name] = value.parseDate();
+				else if (subtype === 'env' || subtype === 'environment')
+					obj[name] = process.env[value];
 				else
 					obj[name] = value.isNumber() ? framework_utils.parseInt(value) : value.isNumber(true) ? framework_utils.parseFloat(value) : value.isBoolean() ? value.toLowerCase() === 'true' : value;
-
 				break;
-
 		}
 	}
 
 	framework_utils.extend(self.config, obj, rewrite);
+
+	if (!self.config['directory-temp'])
+		self.config['directory-temp'] = '~' + framework_utils.path(path.join(os.tmpdir(), 'totaljs' + self.directory.hash()));
 
 	if (!self.config['etag-version'])
 		self.config['etag-version'] = self.config.version.replace(/\.|\s/g, '');
@@ -8443,11 +8483,8 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (self.config['default-timezone'])
 		process.env.TZ = self.config['default-timezone'];
 
-	if (accepts && accepts.length) {
-		accepts.forEach(function(accept) {
-			self.config['static-accepts'][accept] = true;
-		});
-	}
+	if (accepts && accepts.length)
+		accepts.forEach(accept => self.config['static-accepts'][accept] = true);
 
 	if (self.config['disable-strict-server-certificate-validation'] === true)
 		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -9148,7 +9185,7 @@ FrameworkPath.prototype.verify = function(name) {
 };
 
 FrameworkPath.prototype.exists = function(path, callback) {
-	fsFileExists(path, callback);
+	fs.lstat(path, (err, stats) => callback(err ? false : true, stats ? stats.size : 0, stats ? stats.isFile() : false));
 	return framework;
 };
 
@@ -9257,7 +9294,8 @@ FrameworkPath.prototype.package = function(name, filename) {
 		}
 	}
 
-	var p = path.join(directory, framework.config['directory-temp'], name + '.package', filename || '');
+	var tmp = framework.config['directory-temp'];
+	var p = tmp[0] === '~' ? path.join(tmp.substring(1), name + '.package', filename || '') : path.join(directory, tmp, name + '.package', filename || '');
 	return framework.isWindows ? p.replace(REG_WINDOWSPATH, '/') : p;
 };
 
@@ -13324,13 +13362,17 @@ WebSocket.prototype.destroy = function(problem) {
 		return self;
 
 	self.close();
-	self.connections = null;
-	self._keys = null;
-	self.route = null;
-	self.buffer = null;
-	delete framework.connections[self.id];
-	self.emit('destroy');
-	self.removeAllListeners();
+
+	setTimeout(function() {
+		self.connections = null;
+		self._keys = null;
+		self.route = null;
+		self.buffer = null;
+		delete framework.connections[self.id];
+		self.emit('destroy');
+		self.removeAllListeners();
+	}, 1000);
+
 	return self;
 };
 
@@ -13750,7 +13792,7 @@ WebSocketClient.prototype.parse = function() {
 WebSocketClient.prototype._onerror = function(err) {
 	var self = this;
 
-	if (!self)
+	if (!self || self.isClosed)
 		return;
 
 	if (err.stack.match(REG_WEBSOCKET_ERROR)) {
@@ -13771,6 +13813,7 @@ WebSocketClient.prototype._onclose = function() {
 	self.container._refresh();
 	self.container.emit('close', self);
 	self.socket.removeAllListeners();
+	self.removeAllListeners();
 	framework.emit('websocket-end', self.container, self);
 };
 

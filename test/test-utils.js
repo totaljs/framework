@@ -106,6 +106,8 @@ function prototypeString() {
 	assert.ok('[}'.isJSON() === false, 'string.isJSON([})');
 	assert.ok('["'.isJSON() === false, 'string.isJSON([")');
 
+	assert.ok(UID().isUID(), 'string.isUID()');
+
 	str = 'google.sk';
 	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
 
@@ -126,6 +128,9 @@ function prototypeString() {
 
 	str = 'petersirka@gmail';
 	assert.ok(str.isEmail() === false, 'string.isEmail(): ' + str);
+
+	str = 'anything@addons.business';
+	assert.ok(str.isEmail() === true, 'string.isEmail(): ' + str);
 
 	str = 'a@a.a';
 	assert.ok(str.isEmail() === false, 'string.isEmail(): ' + str);
@@ -391,6 +396,9 @@ function other() {
 
 	assert.ok(typeof(a.age) === 'undefined', 'utils.reduce()');
 	assert.ok(typeof(b.age) === 'number', 'utils.reduce() - reverse');
+
+	assert.ok(utils.reduce([{ name: 'Peter', age: 27 }, { name: 'Lucia', age: 22 }], ['name'])[0].age === undefined, 'utils.reduce() - array');
+	assert.ok(utils.reduce([{ name: 'Peter', age: 27 }, { name: 'Lucia', age: 22 }], ['name'], true)[0].name === undefined, 'utils.reduce() - array reverse');
 
 	var str = 'http://www.google.sk';
 	assert.ok(utils.isRelative(str) === false, 'utils.isRelative(): ' + str);

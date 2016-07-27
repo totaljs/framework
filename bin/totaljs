@@ -21,8 +21,9 @@ function display_help() {
 	console.log('-merge source target       = merges first resource into the second "-merge filename_source filename_target"');
 	console.log('-clean source              = cleans a resource file "-clean filename_source"');
 	console.log('-minify filename           = minifies .js, .css or .html file into filename.min.[extension]');
-	console.log('-v or -version             = total.js version');
+	console.log('-v or -version             = Total.js version');
 	console.log('/path/                     = target (default current directory)');
+	console.log('8000                       = starts a server');
 	console.log('');
 }
 
@@ -288,8 +289,8 @@ function main() {
 
 	console.log('');
 	console.log('####################################################');
-	console.log('# total.js - web application framework for node.js #');
-	console.log('# version: v' + require('total.js').version_header.padRight(39) + '#');
+	console.log('# Total.js - Web framework for Node.js             #');
+	console.log('# Version: v' + require('total.js').version_header.padRight(39) + '#');
 	console.log('####################################################');
 	console.log('');
 
@@ -300,6 +301,73 @@ function main() {
 
 		if (cmd.substring(0, 2) === '--')
 			cmd = cmd.substring(1);
+
+		if (i === 2) {
+			var port = cmd.parseInt();
+			if (port) {
+
+				F.config['directory-temp'] = '~' + path.join(os.tmpdir(), 'totaljs' + dir.hash());
+				F.config['directory-public'] = '~' + dir;
+				F.config['allow-compile-html'] = false;
+				F.config['allow-compile-script'] = false;
+				F.config['allow-compile-style'] = false;
+
+				F.accept('.less', 'text/less');
+
+				F.http('debug', { port: port, directory: dir });
+
+				F.route('/*', function() {
+
+					var self = this;
+					var dir = F.path.public(self.url.substring(1));
+					var filename = path.join(self.url, 'index.html').substring(1);
+
+					F.path.exists(filename, function(e) {
+
+						if (e)
+							return self.file(filename, '');
+
+						fs.readdir(dir, function(err, items) {
+
+							var render = function(controller, directories, files) {
+								controller.content('<!DOCTYPE html><html><head><title>Directory listing: {0}</title><meta charset="utf-8" /><style>body{font-family:Arial;font-size:16px;padding:10px 30px 30px}a{display:block}.directory:last-child{margin-bottom:10px}.directory{padding:2px 10px;background-color:#F8F8F8;margin-bottom:2px;text-decoration:none;color:black;font-weight:bold;font-size:18px}.directory-back{text-decoration:none;font-size:50px;margin:0 0 10px 5px;color:gray}.file{color:gray;text-decoration:none;font-size:14px;padding:3px 10px;border-bottom:1px solid #F0F0F0;}.file span{float:right;font-size:12px;margin:2px 0 0 0;color:#A0A0A0}.file:hover{background-color:#F8F8F8}</style></head><body><div class="directories">{1}</div><div class="files">{2}</div></body></html>'.format(controller.url, directories.join(''), files.join('')), 'text/html')
+							};
+
+							var directories = [];
+							var files = [];
+
+							if (self.url !== '/')
+								directories.push('<a href=".." class="directory-back">..</a>');
+
+							if (err)
+								return render(self, directories, files);
+
+							items.wait(function(item, next) {
+								var filename = path.join(dir, item);
+								fs.stat(filename, function(err, info) {
+
+									if (info.isFile())
+										files.push('<a href="{1}" class="file">{0}<span>{2} kB</span></a>'.format(item, self.url + item, (info.size / 1024).format(2)));
+									else
+										directories.push('<a href="{1}/" class="directory">{0}</a>'.format(item, self.url + item));
+
+									next();
+								});
+							}, () => render(self, directories, files));
+						});
+
+					});
+				});
+
+				F.route('/proxy/', function() {
+					var self = this;
+					var method = self.req.method;
+					U.request(self.query.url, [self.req.method], method === 'POST' || method === 'PUT' || method === 'DELETE' ? self.body : null, (err, response, status, headers) => self.content(response, headers['content-type']));
+				}, ['get', 'post', 'put', 'delete'], 5120);
+
+				return;
+			}
+		}
 
 		if (cmd === '-v' || cmd === '-version')
 			return;
@@ -380,16 +448,16 @@ function main() {
 
 		var content = fs.readFileSync(dir).toString('utf8');
 		var extension = path.extname(dir);
-		var filename = dir.replace(extension, '.min' + extension);
+		var filename = dir.replace(extension, '.min.' + extension);
 
 		switch (extension.toLowerCase()) {
-			case '.html':
+			case 'html':
 				fs.writeFileSync(filename, Utils.minifyHTML(content));
 				break;
-			case '.js':
+			case 'js':
 				fs.writeFileSync(filename, Utils.minifyScript(content));
 				break;
-			case '.css':
+			case 'css':
 				fs.writeFileSync(filename, Utils.minifyStyle(content));
 				break;
 		}
@@ -427,7 +495,7 @@ function main() {
 				var filename = files[i];
 				var ext = Utils.getExtension(filename);
 
-				if (filename.indexOf('sitemap') === -1 && ext !== '.html' && ext !== '.js')
+				if (filename.indexOf('sitemap') === -1 && ext !== 'html' && ext !== 'js')
 					continue;
 
 				var content = fs.readFileSync(filename).toString('utf8');
@@ -491,7 +559,7 @@ function main() {
 				var filename = files[i];
 				var ext = Utils.getExtension(filename);
 
-				if (ext !== '.html' && ext !== '.js')
+				if (ext !== 'html' && ext !== 'js')
 					continue;
 
 				var content = fs.readFileSync(filename).toString('utf8');
@@ -507,7 +575,7 @@ function main() {
 					var key = 'T' + command.command.hash();
 					var file = filename.substring(dir.length + 1);
 
-					texts[key] = command.command.repla;
+					texts[key] = command.command;
 
 					if (!resource[key]) {
 						output.push(key + ';"' + command.command.replace(/\"/g, '""') + '";');

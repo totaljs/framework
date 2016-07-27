@@ -40,7 +40,7 @@ if (!global.framework_utils)
 	global.framework_utils = exports;
 
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
-const regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$');
+const regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
 const regexpUrl = /^(http|https):\/\/(?:(?:(?:[\w\.\-\+!$&'\(\)*\+,;=]|%[0-9a-f]{2})+:)*(?:[\w\.\-\+%!$&'\(\)*\+,;=]|%[0-9a-f]{2})+@)?(?:(?:[a-z0-9\-\.]|%[0-9a-f]{2})+|(?:\[(?:[0-9a-f]{0,4}:)*(?:[0-9a-f]{0,4})\]))(?::[0-9]+)?(?:[\/|\?](?:[\w#!:\.\?\+=&@!$'~*,;\/\(\)\[\]\-]|%[0-9a-f]{2})*)?$/i;
 const regexpPhone = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im;
 const regexpTRIM = /^[\s]+|[\s]+$/g;
@@ -1295,6 +1295,16 @@ exports.reduce = function(source, prop, reverse) {
 			return exports.reduce(source, Object.keys(prop), reverse);
 	}
 
+	if (source instanceof Array) {
+
+		var arr = [];
+
+		for (var i = 0, length = source.length; i < length; i++)
+			arr.push(exports.reduce(source[i], prop, reverse));
+
+		return arr;
+	}
+
 	var output = {};
 
 	Object.keys(source).forEach(function(o) {
@@ -2314,53 +2324,35 @@ Date.prototype.diff = function(date, type) {
 		case 'ss':
 		case 'second':
 		case 'seconds':
-			r = Math.ceil(r / 1000);
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil(r / 1000);
 		case 'm':
 		case 'mm':
 		case 'minute':
 		case 'minutes':
-			r = Math.ceil((r / 1000) / 60);
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil((r / 1000) / 60);
 		case 'h':
 		case 'hh':
 		case 'hour':
 		case 'hours':
-			r = Math.ceil(((r / 1000) / 60) / 60);
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil(((r / 1000) / 60) / 60);
 		case 'd':
 		case 'dd':
 		case 'day':
 		case 'days':
-			r = Math.ceil((((r / 1000) / 60) / 60) / 24);
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil((((r / 1000) / 60) / 60) / 24);
 		case 'M':
 		case 'MM':
 		case 'month':
 		case 'months':
 			// avg: 28 days per month
-			r = Math.ceil((((r / 1000) / 60) / 60) / (24 * 28));
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil((((r / 1000) / 60) / 60) / (24 * 28));
 
 		case 'y':
 		case 'yyyy':
 		case 'year':
 		case 'years':
 			// avg: 28 days per month
-			r = Math.ceil((((r / 1000) / 60) / 60) / (24 * 28 * 12));
-			if (r === 0)
-				return r.toString().parseInt();
-			return r;
+			return Math.ceil((((r / 1000) / 60) / 60) / (24 * 28 * 12));
 	}
 
 	return NaN;
@@ -2939,6 +2931,10 @@ String.prototype.parseConfig = function(def) {
 				break;
 			case 'json':
 				obj[name] = value.parseJSON();
+				break;
+			case 'env':
+			case 'environment':
+				obj[name] = process.env[value];
 				break;
 			case 'date':
 			case 'time':
