@@ -468,7 +468,7 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.id = null;
-	this.version = 201;
+	this.version = 2010;
 	this.version_header = '2.0.1';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
