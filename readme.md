@@ -26,12 +26,12 @@ $ npm install total.js
 ```
 
 - [Homepage](http://www.totaljs.com)
+- [__Make a donation__ via PayPal](http://www.totaljs.com/#make-a-donation)
 - [__Get Started__](http://www.totaljs.com/get-started/)
 - [__Documentation__](http://docs.totaljs.com)
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
 - [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
-- [__Make a donation__ via PayPal](http://www.totaljs.com/#make-a-donation)
 
 &nbsp;
 
