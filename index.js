@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.0.1
+ * @version 2.0.2
  */
 
 'use strict';
@@ -425,9 +425,9 @@ global.TRY = function(fn, err) {
 		return true;
 	} catch (e) {
 		if (err)
-			err(err);
+			err(e);
 		else
-			F.error(err);
+			F.error(e);
 		return false;
 	}
 };
@@ -468,8 +468,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.id = null;
-	this.version = 2010;
-	this.version_header = '2.0.1';
+	this.version = 2020;
+	this.version_header = '2.0.2';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
