@@ -8143,6 +8143,17 @@ Framework.prototype.sitemap_navigation = function(parent, language) {
 	return arr;
 };
 
+/**
+ * Adds an item(s) to sitemap
+ * @param {String|Array} obj - 'ID : Title ---> URL --> [Parent]' parent is optional
+ * @return {framework}
+ */
+Framework.prototype.sitemap_add = function (obj) {
+    var self = this;
+    self._configure_sitemap(typeof(obj) === 'array' ? obj : [obj]);
+    return self;
+};
+
 Framework.prototype._configure_dependencies = function(arr) {
 
 	if (!arr || typeof(arr) === 'string') {
