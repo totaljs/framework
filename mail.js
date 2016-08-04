@@ -932,6 +932,12 @@ Mailer.prototype._send = function(obj, options, autosend) {
 		self._writeline(obj, 'EHLO ' + host);
 };
 
+Mailer.prototype.restart = function() {
+	var self = this;
+	self.removeAllListeners();
+	self.debug = false;
+};
+
 /**
  * Split Base64 to lines with 68 characters
  * @private
@@ -974,11 +980,6 @@ function unicode_encode(val) {
 // ======================================================
 // EXPORTS
 // ======================================================
-
-exports.restart = function() {
-	mailer.removeAllListeners();
-	mailer.debug = false;
-};
 
 var mailer = new Mailer();
 module.exports = mailer;
