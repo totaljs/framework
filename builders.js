@@ -1890,7 +1890,7 @@ SchemaBuilderEntity.prototype.hook2 = function(name, helper, callback) {
 	if (callback === undefined)
 		callback = NOOP;
 
-	return this.hook(name, self.create(), helper, callback, true);
+	return this.hook(name, this.create(), helper, callback, true);
 };
 
 /**
@@ -1998,7 +1998,7 @@ SchemaBuilderEntity.prototype.operation2 = function(name, helper, callback) {
 	if (callback === undefined)
 		callback = NOOP;
 
-	return this.operation(name, self.create(), helper, callback, true);
+	return this.operation(name, this.create(), helper, callback, true);
 };
 
 /**
