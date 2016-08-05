@@ -1,6 +1,6 @@
 ======= 2.0.2 (BETA)
 
-- added: `F.sitemap_add()` for adding entries to sitemap
+- added: `F.sitemap_add(string)` for adding entries to sitemap
 
 - fixed: `TRY()`
 
