@@ -204,6 +204,7 @@ HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 
 HEADERS.workers = { cwd: '' };
 
 var _controller = '';
+var _owner = '';
 var _test;
 
 // GO ONLINE MODE
@@ -716,6 +717,14 @@ function Framework() {
 // ======================================================
 
 Framework.prototype.__proto__ = new events.EventEmitter();
+
+/**
+ * Internal function
+ * @return {String} Returns current (dependency type and name) owner.
+ */
+Framework.prototype.$owner = function() {
+	return _owner;
+};
 
 /**
  * Adds a new behaviour
@@ -2934,7 +2943,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 	if (type === 'theme') {
 
+		_owner = type + '#' + name;
 		obj = require(declaration);
+		obj.$owner = _owner;
 
 		if (typeof(obj.install) === 'function')
 			obj.install(options, name);
@@ -3000,6 +3011,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	if (type === 'definition' || type === 'eval') {
 
 		_controller = '';
+		_owner = type + '#' + name;
 
 		try {
 
@@ -3089,6 +3101,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	if (type === 'model' || type === 'source') {
 
 		_controller = '';
+		_owner = type + '#' + name;
 
 		try {
 
@@ -3131,6 +3144,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			name = obj.id;
 		else if (typeof(obj.name) === 'string')
 			name = obj.name;
+
+		obj.$owner = _owner;
 
 		if (!name)
 			name = (Math.random() * 10000) >> 0;
@@ -3180,6 +3195,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		// for inline routes
 		var _ID = _controller = 'TMP' + framework_utils.random(10000);
+		_owner = type + '#' + name;
 
 		try {
 			if (useRequired) {
@@ -3224,6 +3240,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (!name)
 			name = (Math.random() * 10000) >> 0;
+
+		obj.$owner = _owner;
 
 		if (obj.booting) {
 			setTimeout(function() {
@@ -10290,7 +10308,7 @@ Controller.prototype.$workflow = function(name, helper, callback) {
 	if (framework_builders.isSchema(self.body))
 		self.body.$workflow(name, helper, callback);
 	else
-		self.getSchema().workflow(name, null, helper, callback, true); // skip validation
+		self.getSchema().workflow(name, {}, helper, callback, true); // skip validation
 	return self;
 };
 
@@ -10300,12 +10318,27 @@ Controller.prototype.$workflow2 = function(name, helper, callback) {
 	return self;
 };
 
+Controller.prototype.$hook = function(name, helper, callback) {
+	var self = this;
+	if (framework_builders.isSchema(self.body))
+		self.body.$hook(name, helper, callback);
+	else
+		self.getSchema().hook(name, {}, helper, callback, true); // skip validation
+	return self;
+};
+
+Controller.prototype.$hook2 = function(name, helper, callback) {
+	var self = this;
+	self.getSchema().hook2(name, helper, callback);
+	return self;
+};
+
 Controller.prototype.$transform = function(name, helper, callback) {
 	var self = this;
 	if (framework_builders.isSchema(self.body))
 		self.body.$transform(name, helper, callback);
 	else
-		self.getSchema().transform(name, null, helper, callback, true); // skip validation
+		self.getSchema().transform(name, {}, helper, callback, true); // skip validation
 	return self;
 };
 
@@ -10320,7 +10353,7 @@ Controller.prototype.$operation = function(name, helper, callback) {
 	if (framework_builders.isSchema(self.body))
 		self.body.$operation(name, helper, callback);
 	else
-		self.getSchema().operation(name, null, helper, callback, true); // skip validation
+		self.getSchema().operation(name, {}, helper, callback, true); // skip validation
 	return self;
 };
 

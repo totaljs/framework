@@ -97,6 +97,8 @@ function SchemaBuilderEntity(parent, name) {
 	this.resourcePrefix;
 	this.resourceName;
 	this.transforms;
+	this.workflows;
+	this.hooks;
 	this.operations;
 	this.constants;
 	this.onPrepare;
@@ -662,6 +664,20 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
 		self.workflows = {};
 
 	self.workflows[name] = fn;
+	return self;
+};
+
+SchemaBuilderEntity.prototype.addHook = function(name, fn) {
+
+	var self = this;
+
+	if (!self.hooks)
+		self.hooks = {};
+
+	if (!self.hooks[name])
+		self.hooks[name] = [];
+
+	self.hooks[name].push({ owner: framework.$owner(), fn: fn });
 	return self;
 };
 
@@ -1625,6 +1641,18 @@ SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builde
 	return self;
 };
 
+SchemaBuilderEntity.prototype.$process_hook = function(model, type, name, builder, result, callback) {
+
+	var self = this;
+
+	var has = builder.hasError();
+	if (has && self.onError)
+		self.onError(builder, model, type, name);
+
+	callback(has ? builder : null, model);
+	return self;
+};
+
 /**
  * Run a workflow
  * @param {String} name
@@ -1744,6 +1772,127 @@ SchemaBuilderEntity.prototype.workflow2 = function(name, helper, callback) {
 		callback = NOOP;
 
 	return this.workflow(name, null, helper, callback, true);
+};
+
+/**
+ * Run hooks
+ * @param {String} name
+ * @param {Object} model
+ * @param {Object} helper A helper object, optional.
+ * @param {Function(errorBuilder, output, model)} callback
+ * @param {Boolean} skip Skips preparing and validation, optional.
+ * @return {SchemaBuilderEntity}
+ */
+SchemaBuilderEntity.prototype.hook = function(name, model, helper, callback, skip) {
+
+	var self = this;
+
+	if (typeof(name) !== 'string') {
+		callback = helper;
+		helper = model;
+		model = name;
+		name = 'default';
+	}
+
+	if (typeof(callback) === 'boolean') {
+		skip = callback;
+		callback = helper;
+		helper = undefined;
+	} else if (callback === undefined) {
+		callback = helper;
+		helper = undefined;
+	}
+
+	if (typeof(callback) !== 'function')
+		callback = function(){};
+
+	var hook = self.hooks ? self.hooks[name] : undefined;
+
+	if (!hook || !hook.length) {
+		callback(null, model);
+		return self;
+	}
+
+	var $type = 'hook';
+
+	if (skip === true) {
+		var builder = new ErrorBuilder();
+
+		if (self.resourceName)
+			builder.setResource(self.resourceName);
+		if (self.resourcePrefix)
+			builder.setPrefix(self.resourcePrefix);
+
+		var output = [];
+
+		async_wait(hook, function(item, next) {
+			item.fn.call(self, builder, model, helper, function(result) {
+				output.push(result == undefined ? model : result);
+				next();
+			}, skip !== true);
+		}, function() {
+			self.$process_hook(model, $type, name, builder, output, callback);
+		}, 0);
+
+		return self;
+	}
+
+	self.$prepare(model, function(err, model) {
+
+		if (err) {
+			callback(err, model);
+			return;
+		}
+
+		var builder = new ErrorBuilder();
+		var output = [];
+
+		if (self.resourceName)
+			builder.setResource(self.resourceName);
+		if (self.resourcePrefix)
+			builder.setPrefix(self.resourcePrefix);
+
+		async_wait(hook, function(item, next, index) {
+
+			if (!isGenerator(self, 'hook.' + name + '.' + index, item.fn)) {
+				item.fn.call(self, builder, model, helper, function(result) {
+					output.push(result == undefined ? model : result);
+					next();
+				}, skip !== true);
+				return;
+			}
+
+			callback.success = false;
+
+			async.call(self, item.fn)(function(err) {
+				if (!err)
+					return;
+				builder.push(err);
+				next();
+			}, builder, model, helper, function(result) {
+				output.push(result == undefined ? model : result);
+				next();
+			}, skip !== true);
+
+		}, function() {
+			self.$process_hook(model, $type, name, builder, output, callback);
+		}, 0);
+	});
+
+	return self;
+};
+
+SchemaBuilderEntity.prototype.hook2 = function(name, helper, callback) {
+
+	if (typeof(helper) === 'function') {
+		callback = helper;
+		helper = undefined;
+	}
+
+	if (callback === undefined)
+		callback = NOOP;
+
+	return this.hook(name, null, helper, callback, true);
 };
 
 /**
@@ -2133,6 +2282,16 @@ SchemaInstance.prototype.$workflow = function(name, helper, callback) {
 		return self.$push('workflow', name, helper);
 
 	self.$$schema.workflow(name, self, helper, callback);
+	return self;
+};
+
+SchemaInstance.prototype.$hook = function(name, helper, callback) {
+	var self = this;
+
+	if (self.$$can && self.$$async)
+		return self.$push('hook', name, helper);
+
+	self.$$schema.hook(name, self, helper, callback);
 	return self;
 };
 
@@ -3346,10 +3505,18 @@ TransformBuilder.setDefaultTransform = function(name) {
 
 function async_queue(arr, callback) {
 	var item = arr.shift();
-	if (item === undefined)
+	if (!item)
 		return callback();
 	item(() => async_queue(arr, callback));
 };
+
+function async_wait(arr, onItem, onCallback, index) {
+	var item = arr[index];
+	if (item)
+		onItem(item, () => async_wait(arr, onItem, onCallback, index + 1), index);
+	else
+		onCallback();
+}
 
 // ======================================================
 // EXPORTS

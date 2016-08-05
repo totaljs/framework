@@ -1,6 +1,9 @@
 ======= 2.0.2 (BETA)
 
 - added: `F.sitemap_add(string)` for adding entries to sitemap
+- added: SchemaBuilderEntity `schema.addHook(name, fn(error, model, options, callback))`
+- added: SchemaBuilderEntity `schema.hook(name, model, [helper], callback)`
+- added: `controller.$hook(name, [helper], callback)`
 
 - fixed: `TRY()`
 
