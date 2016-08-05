@@ -10308,7 +10308,7 @@ Controller.prototype.$workflow = function(name, helper, callback) {
 	if (framework_builders.isSchema(self.body))
 		self.body.$workflow(name, helper, callback);
 	else
-		self.getSchema().workflow(name, {}, helper, callback, true); // skip validation
+		self.getSchema().workflow2(name, helper, callback);
 	return self;
 };
 
@@ -10323,7 +10323,7 @@ Controller.prototype.$hook = function(name, helper, callback) {
 	if (framework_builders.isSchema(self.body))
 		self.body.$hook(name, helper, callback);
 	else
-		self.getSchema().hook(name, {}, helper, callback, true); // skip validation
+		self.getSchema().hook2(name, helper, callback);
 	return self;
 };
 
@@ -10338,7 +10338,7 @@ Controller.prototype.$transform = function(name, helper, callback) {
 	if (framework_builders.isSchema(self.body))
 		self.body.$transform(name, helper, callback);
 	else
-		self.getSchema().transform(name, {}, helper, callback, true); // skip validation
+		self.getSchema().transform2(name, helper, callback);
 	return self;
 };
 
@@ -10353,7 +10353,7 @@ Controller.prototype.$operation = function(name, helper, callback) {
 	if (framework_builders.isSchema(self.body))
 		self.body.$operation(name, helper, callback);
 	else
-		self.getSchema().operation(name, {}, helper, callback, true); // skip validation
+		self.getSchema().operation2(name, helper, callback);
 	return self;
 };
 
