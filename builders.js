@@ -1184,13 +1184,11 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback) {
 		if (self.onError)
 			self.onError(builder, model, 'make');
 
-		if (callback)
-			callback(builder, null);
+		callback && callback(builder, null);
 		return output;
 	}
 
-	if (callback)
-		callback(null, output);
+	callback && callback(null, output);
 	return output;
 };
 
@@ -1620,7 +1618,7 @@ SchemaBuilderEntity.prototype.transform2 = function(name, helper, callback) {
 	if (callback === undefined)
 		callback = NOOP;
 
-	return this.transform(name, self.create(), helper, callback, true);
+	return this.transform(name, this.create(), helper, callback, true);
 };
 
 SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builder, result, callback) {
@@ -1771,7 +1769,7 @@ SchemaBuilderEntity.prototype.workflow2 = function(name, helper, callback) {
 	if (callback === undefined)
 		callback = NOOP;
 
-	return this.workflow(name, self.create(), helper, callback, true);
+	return this.workflow(name, this.create(), helper, callback, true);
 };
 
 /**
