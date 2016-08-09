@@ -458,7 +458,7 @@ const controller_error_status = function(controller, status, problem) {
 	if (controller.res.success || controller.res.headersSent || !controller.isConnected)
 		return controller;
 
-	controller && controller.precache(null, null, null);
+	controller.precache && controller.precache(null, null, null);
 	controller.req.path = EMPTYARRAY;
 	controller.subscribe.success();
 	controller.subscribe.route = framework.lookup(controller.req, '#' + status);
@@ -471,7 +471,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2020;
-	this.version_header = '2.0.2-1';
+	this.version_header = '2.0.2-2';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
