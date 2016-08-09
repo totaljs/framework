@@ -458,6 +458,7 @@ const controller_error_status = function(controller, status, problem) {
 	if (controller.res.success || controller.res.headersSent || !controller.isConnected)
 		return controller;
 
+	controller && controller.precache(null, null, null);
 	controller.req.path = EMPTYARRAY;
 	controller.subscribe.success();
 	controller.subscribe.route = framework.lookup(controller.req, '#' + status);
@@ -470,7 +471,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2020;
-	this.version_header = '2.0.2';
+	this.version_header = '2.0.2-1';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -12998,9 +12999,8 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 
 	if (framework.temporary.processing[pk]) {
 		setTimeout(function() {
-			if (self.subscribe.isCanceled)
-				return;
-			self.memorize(key, expires, disabled, fnTo, fnFrom);
+			if (!self.subscribe.isCanceled)
+				self.memorize(key, expires, disabled, fnTo, fnFrom);
 		}, 500);
 		return self;
 	}
@@ -13021,8 +13021,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 			options.repository = [];
 			for (var name in self.repository) {
 				var value = self.repository[name];
-				if (value !== undefined)
-					options.repository.push({ key: name, value: value });
+				value !== undefined && options.repository.push({ key: name, value: value });
 			}
 		}
 

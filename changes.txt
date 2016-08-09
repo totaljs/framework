@@ -5,6 +5,7 @@
 - added: SchemaBuilderEntity `schema.hook(name, model, [helper], callback)`
 - added: `controller.$hook(name, [helper], callback)`
 
+- fixed: `controller.memorize()` threw a timeout when the action contains some error in the memorize scope
 - fixed: `TRY()`
 
 ======= 2.0.1
