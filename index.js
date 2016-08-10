@@ -8069,7 +8069,7 @@ Framework.prototype.sitemap = function(name, me, language) {
 	if (typeof(me) === 'string') {
 		var tmp = language;
 		language = me;
-		me = language;
+		me = tmp;
 	}
 
 	var key = REPOSITORY_SITEMAP + name + '$' + (me ? '1' : '0') + '$' + (language || '');

@@ -7,6 +7,7 @@
 
 - fixed: `controller.memorize()` threw a timeout when the action contains some error in the memorize scope
 - fixed: `TRY()`
+- fixed: `F.sitemap()` fixed problem with `me` argument
 
 ======= 2.0.1
 
