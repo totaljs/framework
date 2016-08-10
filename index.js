@@ -8067,9 +8067,8 @@ Framework.prototype.sitemap = function(name, me, language) {
 		return EMPTYARRAY;
 
 	if (typeof(me) === 'string') {
-		var tmp = language;
 		language = me;
-		me = tmp;
+		me = false;
 	}
 
 	var key = REPOSITORY_SITEMAP + name + '$' + (me ? '1' : '0') + '$' + (language || '');
