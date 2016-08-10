@@ -3498,9 +3498,8 @@ String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = St
 			break;
 
 		if (code > 31 && code < 48) {
-			if (builder[builder.length - 1] === '-')
-				continue;
-			builder += '-';
+			if (builder[builder.length - 1] !== '-')
+				builder += '-';
 			continue;
 		}
 
