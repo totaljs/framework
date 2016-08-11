@@ -3560,9 +3560,7 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 		}, 500);
 	}
 
-	if (callback)
-		callback(null);
-
+	callback && callback(null);
 	return self;
 };
 
@@ -3882,8 +3880,7 @@ Framework.prototype.snapshot = function(url, filename, callback) {
 		response.pipe(stream);
 		FINISHED(stream, function() {
 			DESTROY(stream);
-			if (callback)
-				setImmediate(callback);
+			callback && callback();
 		});
 	});
 
@@ -3978,20 +3975,10 @@ Framework.prototype.onParseQuery = function(value) {
  * @param {Function(err, body)} callback
  */
 Framework.prototype.onSchema = function(req, group, name, callback, filter) {
-
 	var schema = GETSCHEMA(group, name);
-
-	if (!schema) {
-		callback(new Error('Schema not found.'));
-		return;
-	}
-
-	schema.make(req.body, function(err, result) {
-		if (err)
-			callback(err);
-		else
-			callback(null, result);
-	}, filter);
+	if (!schema)
+		return callback(new Error('Schema not found.'));
+	schema.make(req.body, (err, result) => err ? callback(err) : callback(null, result), filter);
 };
 
 /**
@@ -5230,9 +5217,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 			self.emit('request-end', req, res);
 
 		req.clear(true);
-
-		if (callback)
-			callback();
+		callback && callback();
 	});
 
 	return self;
@@ -7427,19 +7412,13 @@ Framework.prototype.testing = function(stop, callback) {
 	if (!self.tests.length) {
 
 		if (!self.testsFiles.length) {
-
-			if (callback)
-				callback(framework.isTestError === true);
-
-			if (stop)
-				self.stop(framework.isTestError ? 1 : 0);
-
+			callback && callback(framework.isTestError === true);
+			stop && self.stop(framework.isTestError ? 1 : 0);
 			return self;
 		}
 
 		var file = self.testsFiles.shift();
-		if (file)
-			file.fn.call(self, self);
+		file && file.fn.call(self, self);
 		self.testing(stop, callback);
 		return self;
 	}
@@ -7735,8 +7714,7 @@ Framework.prototype.clear = function(callback, isInit) {
 			// clears only JS and CSS files
 			framework_utils.ls(dir, function(files, directories) {
 				self.unlink(files);
-				if (callback)
-					callback();
+				callback && callback();
 			}, function(filename, folder) {
 				if (folder || (plus && !filename.substring(dir.length).startsWith(plus)))
 					return false;
@@ -7793,22 +7771,17 @@ Framework.prototype.unlink = function(arr, callback) {
 		arr = [arr];
 
 	if (!arr.length) {
-		if (callback)
-			callback();
-		return;
+		callback && callback();
+		return self;
 	}
 
 	var filename = arr.shift();
 	if (!filename) {
-		if (callback)
-			callback();
-		return;
+		callback && callback();
+		return self;
 	}
 
-	fs.unlink(filename, function(err) {
-		self.unlink(arr, callback);
-	});
-
+	fs.unlink(filename, (err) => self.unlink(arr, callback));
 	return self;
 };
 
@@ -7825,22 +7798,17 @@ Framework.prototype.rmdir = function(arr, callback) {
 		arr = [arr];
 
 	if (!arr.length) {
-		if (callback)
-			callback();
-		return;
+		callback && callback();
+		return self;
 	}
 
 	var path = arr.shift();
 	if (!path) {
-		if (callback)
-			callback();
-		return;
+		callback && callback();
+		return self;
 	}
 
-	fs.rmdir(path, function() {
-		self.rmdir(arr, callback);
-	});
-
+	fs.rmdir(path, () => self.rmdir(arr, callback));
 	return self;
 };
 
@@ -8921,13 +8889,10 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 
 	fork.on('exit', function() {
 		var self = this;
-		if (self.__timeout)
-			clearTimeout(self.__timeout);
+		self.__timeout && clearTimeout(self.__timeout);
 		delete framework.workers[self.__id];
-		setImmediate(function() {
-			fork.removeAllListeners();
-			fork = null;
-		});
+		fork.removeAllListeners();
+		fork = null;
 	});
 
 	if (typeof(timeout) !== 'number')
@@ -10473,8 +10438,7 @@ Controller.prototype.pipe = function(url, headers, callback) {
 
 	framework.responsePipe(self.req, self.res, url, headers, null, function() {
 		self.subscribe.success();
-		if (callback)
-			callback();
+		callback && callback();
 	});
 
 	return self;
@@ -14007,8 +13971,7 @@ Backup.prototype.restoreValue = function(data) {
 Backup.prototype.restore = function(filename, path, callback, filter) {
 
 	if (!existsSync(filename)) {
-		if (callback)
-			callback(new Error('Package not found.'), path);
+		callback && callback(new Error('Package not found.'), path);
 		return;
 	}
 

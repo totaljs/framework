@@ -267,8 +267,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 				return;
 			}
 
-			if (rm)
-				framework.unlink(rm);
+			rm && framework.unlink(rm);
 			subscribe.doEnd();
 		};
 		cb();

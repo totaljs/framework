@@ -323,8 +323,7 @@ Database.prototype.$append = function() {
 		Fs.appendFile(self.filename, json.join(NEWLINE) + NEWLINE, function(err) {
 			for (var i = 0, length = items.length; i < length; i++) {
 				var callback = items[i].builder.$callback;
-				if (callback)
-					callback(err, 1);
+				callback && callback(err, 1);
 			}
 			next();
 		});
@@ -1074,10 +1073,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	stream.write(header, 'binary');
 	stream.end(buffer);
 	CLEANUP(stream);
-
-	if (callback)
-		callback(null, id, h);
-
+	callback && callback(null, id, h);
 	return id;
 };
 
@@ -1099,12 +1095,8 @@ Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 
 	writer.write(header, 'binary');
 	stream.pipe(writer);
-
 	CLEANUP(writer);
-
-	if (callback)
-		callback(null, id, h);
-
+	callback && callback(null, id, h);
 	return id;
 };
 
@@ -1165,10 +1157,7 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 	stream.write(header, 'binary');
 	stream.end(buffer);
 	CLEANUP(stream);
-
-	if (callback)
-		callback(null, id, h);
-
+	callback && callback(null, id, h);
 	return id;
 };
 
@@ -1205,12 +1194,7 @@ Binary.prototype.remove = function(id, callback) {
 		key = self.db.name + '#' + key;
 
 	var filename = framework_utils.join(self.directory, key + EXTENSION_BINARY);
-
-	Fs.unlink(filename, function(err) {
-		if (callback)
-			callback(null, err ? false : true);
-	});
-
+	Fs.unlink(filename, (err) => callback && callback(null, err ? false : true));
 	return self.db;
 };
 

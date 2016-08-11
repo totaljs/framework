@@ -4631,9 +4631,7 @@ AsyncTask.prototype.run = function() {
 			self.interval = setTimeout(function() { self.timeout(); }, timeout);
 
 		self.fn(function() {
-			setImmediate(function() {
-				self.complete();
-			});
+			setImmediate(() => self.complete());
 		});
 
 	} catch (ex) {
@@ -4659,9 +4657,7 @@ AsyncTask.prototype.timeout = function(timeout) {
 		return self;
 	}
 
-	setImmediate(function() {
-		self.cancel(true);
-	});
+	setImmediate(() => self.cancel(true));
 	return self;
 };
 
@@ -4945,9 +4941,7 @@ Async.prototype.refresh = function(name) {
 				self.emit('error', ex);
 			}
 		}
-		setImmediate(function() {
-			self._isEnd = false;
-		});
+		setImmediate(() => self._isEnd = false);
 	}
 
 	return self;
