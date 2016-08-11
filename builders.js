@@ -999,10 +999,8 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 
 	if (builder === undefined) {
 		builder = new ErrorBuilder();
-		if (self.resourceName)
-			builder.setResource(self.resourceName);
-		if (self.resourcePrefix)
-			builder.setPrefix(self.resourcePrefix);
+		self.resourceName && builder.setResource(self.resourceName);
+		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 	}
 
 	if (self.resourcePrefix)
@@ -1041,13 +1039,13 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		}
 
 		if (!schema.isArray) {
-			s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, j);
+			(model[key] != null || schema.required) && s.validate(model[key], resourcePrefix, resourceName, builder, filter, path + key, j);
 			continue;
 		}
 
 		var arr = model[key];
 		for (var j = 0, jl = arr.length; j < jl; j++)
-			s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']', j);
+			(model[key][j] != null || schema.required) && s.validate(model[key][j], resourcePrefix, resourceName, builder, filter, path + key + '[' + j + ']', j);
 	}
 
 	return builder;
@@ -1180,10 +1178,7 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback) {
 	var output = self.prepare(model);
 	var builder = self.validate(output, undefined, undefined, undefined, filter);
 	if (builder.hasError()) {
-
-		if (self.onError)
-			self.onError(builder, model, 'make');
-
+		self.onError && self.onError(builder, model, 'make');
 		callback && callback(builder, null);
 		return output;
 	}
@@ -1195,9 +1190,7 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback) {
 SchemaBuilderEntity.prototype.load = SchemaBuilderEntity.prototype.make; // Because JSDoc is not works with double asserting
 
 function autotrim(context, value) {
-	if (context.trim)
-		return value.trim();
-	return value;
+	return context.trim ? value.trim() : value;
 }
 
 SchemaBuilderEntity.prototype.$onprepare = function(name, value, index, model) {
@@ -1362,10 +1355,8 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					entity = self.parent.get(type.raw);
 					if (entity) {
 						item[property] = entity.prepare(val, undefined);
-						if (dependencies)
-							dependencies.push({ name: type.raw, value: self.$onprepare(property, item[property], undefined, model) });
-					}
-					else
+						dependencies && dependencies.push({ name: type.raw, value: self.$onprepare(property, item[property], undefined, model) });
+					} else
 						item[property] = null;
 					break;
 			}
