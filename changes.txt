@@ -10,6 +10,7 @@
 - fixed: `F.sitemap()` fixed problem with `me` argument
 - fixed: SchemaBuilderEntity preparing and validation
 - fixed: QuickSort algorithm (problem with dates)
+- fixed: `TRY()` scope
 
 ======= 2.0.1
 

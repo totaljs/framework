@@ -422,13 +422,10 @@ global.SUCCESS = function(success, value) {
 
 global.TRY = function(fn, err) {
 	try {
-		fn()
+		fn();
 		return true;
 	} catch (e) {
-		if (err)
-			err(e);
-		else
-			F.error(e);
+		err && err(e);
 		return false;
 	}
 };
