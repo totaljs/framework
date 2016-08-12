@@ -4166,7 +4166,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 
 	switch (typeof(field)) {
 		case 'string':
-			if (field.length > 20 && field[11] === 'T' && field[5] === '-')
+			if (field.length > 20 && field[10] === 'T' && field[4] === '-')
 				type = 4;
 			else
 				type = 1;
