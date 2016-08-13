@@ -3244,7 +3244,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (obj.booting) {
 			setTimeout(function() {
 
-				var tmpdir = framework.path.temp(name + '/');
+				var tmpdir = framework.path.temp(name + '.package/');
 				if (obj.booting === 'root') {
 					framework.directory = directory = tmpdir;
 					framework.temporary.path = {};
