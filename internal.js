@@ -49,6 +49,12 @@ const REG_SKIP_1 = /\(\'|\"/g;
 const REG_SKIP_2 = /\,(\s)?\w+/g;
 const HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name('];
+const REG_NOTRANSLATE = /@\{notranslate\}/gi;
+const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
+const REG_TAGREMOVE = /[^\>]\n\s{1,}$/;
+const REG_EMPTY = /\n|\r|\'|\\/;
+const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
+const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
 
 global.$STRING = function(value) {
 	return value != null ? value.toString() : '';
@@ -1711,7 +1717,7 @@ function view_parse_localization(content, language) {
 
 	var is = false;
 
-	content = content.replace(/@\{notranslate\}/gi, function(text) {
+	content = content.replace(REG_NOTRANSLATE, function(text) {
 		is = true;
 		return '';
 	}).trim();
@@ -1754,7 +1760,7 @@ function view_parse(content, minify, filename, controller) {
 	var nocompressJS = false;
 	var nocompressCSS = false;
 
-	content = content.replace(/@\{nocompress\s\w+}/gi, function(text) {
+	content = content.replace(REG_NOCOMPRESS, function(text) {
 
 		var index = text.lastIndexOf(' ');
 		if (index === -1)
@@ -1802,7 +1808,7 @@ function view_parse(content, minify, filename, controller) {
 
 	function escaper(value) {
 
-		var is = value.match(/[^\>]\n\s{1,}$/);
+		var is = value.match(REG_TAGREMOVE);
 
 		if (!nocompressHTML)
 			value = compressHTML(value, minify);
@@ -1817,7 +1823,7 @@ function view_parse(content, minify, filename, controller) {
 		if (!nocompressHTML && is)
 			value += ' ';
 
-		if (value.match(/\n|\r|\'|\\/)) {
+		if (value.match(REG_EMPTY)) {
 			txtindex = $VIEWCACHE.indexOf(value);
 
 			if (txtindex === -1) {
@@ -1872,7 +1878,7 @@ function view_parse(content, minify, filename, controller) {
 		var cmd8 = cmd.substring(0, 8);
 		var cmd7 = cmd.substring(0, 7);
 
-		cmd = cmd.replace(/helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g, function(text) {
+		cmd = cmd.replace(REG_HELPERS, function(text) {
 			var index = text.indexOf('(');
 			if (index === -1)
 				return text;
@@ -2023,7 +2029,7 @@ function view_parse(content, minify, filename, controller) {
 }
 
 function view_prepare_keywords(cmd) {
-	return cmd.replace(/\s+(sitemap_navigation\(|sitemap\()+/g, text => ' self.' + text.trim());
+	return cmd.replace(REG_SITEMAP, text => ' self.' + text.trim());
 }
 
 function wrapTryCatch(value, command, line) {
@@ -2902,16 +2908,29 @@ function viewengine_read(path, language, controller) {
 	if (existsSync(filename))
 		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
+	var index;
+
 	if (isOut) {
+
+		if (controller.themeName) {
+			index = filename.lastIndexOf('/');
+			if (index !== -1) {
+				filename = filename.substring(0, filename.lastIndexOf('/', index - 1)) + filename.substring(index);
+				if (existsSync(filename))
+					return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
+			}
+		}
+
 		if (RELEASE)
-			framework.temporary.other[key]= null;
+			framework.temporary.other[key] = null;
+
 		return null;
 	}
 
-	var index = path.lastIndexOf('/');
+	index = path.lastIndexOf('/');
 	if (index === -1) {
 		if (RELEASE)
-			framework.temporary.other[key]= null;
+			framework.temporary.other[key] = null;
 		return null;
 	}
 
@@ -2921,7 +2940,7 @@ function viewengine_read(path, language, controller) {
 		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
 	if (RELEASE)
-		framework.temporary.other[key]= null;
+		framework.temporary.other[key] = null;
 
 	return null;
 };
@@ -2945,7 +2964,6 @@ function viewengine_load(name, filename, controller) {
 	var language = controller.language;
 
 	// Is dynamic content?
-	// console.log(filename);
 	if (!framework.temporary.other[name])
 		framework.temporary.other[name] = name.indexOf('@{') !== -1 || name.indexOf('<') !== -1;
 
