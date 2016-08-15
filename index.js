@@ -9650,7 +9650,7 @@ Subscribe.prototype.execute = function(status, isError) {
 		req.$mobile = true;
 
 	if (route.currentViewDirectory === undefined)
-		route.currentViewDirectory = name[0] !== '#' && name !== 'default' && name !== '' && name !== 'unknown' ? '/' + name + '/' : '';
+		route.currentViewDirectory = name && name[0] !== '#' && name !== 'default' && name !== 'unknown' ? '/' + name + '/' : '';
 
 	var controller = new Controller(name, req, res, self, route.currentViewDirectory);
 
