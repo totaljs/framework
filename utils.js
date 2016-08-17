@@ -55,6 +55,8 @@ const regexpZIP = /^\d{5}(?:[-\s]\d{4})?$/;
 const regexpXML = /\w+\=\".*?\"/g;
 const regexpDECODE = /&gt;|\&lt;|\&quot;|&apos;|&amp;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
+const regexpINTEGER = /[\-0-9]+/g;
+const regexpFLOAT = /[\-0-9\.\,]+/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -3167,6 +3169,20 @@ String.prototype.parseInt = function(def) {
 	if (isNaN(num))
 		return def || 0;
 	return num;
+};
+
+String.prototype.parseInt2 = function(def) {
+	var num = this.match(regexpINTEGER);
+	if (num)
+		return +num;
+	return def || 0;
+};
+
+String.prototype.parseFloat2 = function(def) {
+	var num = this.match(regexpFLOAT);
+	if (num)
+		return +num.toString().replace(/\,/g, '.');
+	return def || 0;
 };
 
 String.prototype.parseBool = String.prototype.parseBoolean = function() {
