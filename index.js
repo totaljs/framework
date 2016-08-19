@@ -10821,6 +10821,14 @@ Controller.prototype.$title = function(value) {
 	return '';
 };
 
+Controller.prototype.$title2 = function(value) {
+	var self = this;
+	var current = self.repository[REPOSITORY_META_TITLE];
+	if (value)
+		self.repository[REPOSITORY_META_TITLE] = (current ? current : '') + value;
+	return '';
+};
+
 Controller.prototype.$description = function(value) {
 	var self = this;
 	if (value)

@@ -2201,6 +2201,9 @@ function view_prepare(command, dynamicCommand, functions) {
 				return 'self.$' + command;
 			return '(repository[\'$' + command + '\'] || \'\').toString().encode()';
 
+		case 'title2':
+			return 'self.$' + command;;
+
 		case '!title':
 		case '!description':
 		case '!keywords':
