@@ -51,7 +51,7 @@ const REG_ROBOT = /search|agent|bot|crawler/i;
 const REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
 const REG_MULTIPART = /\/form\-data$/i;
 const REG_COMPILECSS = /url\(.*?\)/g;
-const REG_ROUTESTATIC = /^(\/\/|https\:|http\:)+/g;
+const REG_ROUTESTATIC = /^(\/\/|https\:|http\:)+/;
 const REG_EMPTY = /\s/g;
 const REG_SANITIZE_BACKSLASH = /\/\//g;
 const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/i;
@@ -8583,9 +8583,8 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 		filename = framework_utils.join(theme, this._version(name));
 	else {
 		filename = framework_utils.join(theme, directory, this._version(name));
-		if (REG_HTTPHTTPS.test(filename)) {
+		if (REG_HTTPHTTPS.test(filename))
 			filename = filename.substring(1);
-		}
 	}
 
 	return framework.temporary.other[key] = framework_internal.preparePath(this._version(filename));
