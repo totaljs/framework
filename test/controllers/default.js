@@ -568,6 +568,7 @@ function viewViews() {
 	assert.ok(output.contains('#RELEASETRANSLATOR2=A=A#'), name + 'INLINE TRANSLATOR FOR RELEASE MODE 2');
 	assert.ok(output.contains('#absolute1=<script src="http://127.0.0.1:8001/js/filename.js"></script>#'), name + 'absolute problem without hostname');
 	assert.ok(output.contains('#absolute2=<script src="https://www.google.sk/js/filename.js"></script>#'), name + 'aboslute problem with hostname');
+	assert.ok(output.contains('#absolute3=<script src="http://localhost:8000/js/default.js"></script><script src="http://localhost:8000/js/home.js"></script>#'), name + 'aboslute problem array + with hostname');
 
 	self.repository.A = 'A';
 
