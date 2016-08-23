@@ -12012,9 +12012,8 @@ Controller.prototype.routeScript = function(name, tag, path) {
 		}
 	} else {
 		url = this._routeHelper(name, framework.routeScript);
-		if (path && framework_utils.isRelative(url)) {
-			url = framework_utils.join(path, url).substring(1);
-		}
+		if (path && framework_utils.isRelative(url))
+			url = framework.isWindows ? framework_utils.join(path, url) : framework_utils.join(path, url).substring(1);
 	}
 
 	return tag ? '<script src="' + url + '"></script>' : url;
@@ -12034,7 +12033,7 @@ Controller.prototype.routeStyle = function(name, tag, path) {
 
 	var url = self._routeHelper(name, framework.routeStyle);
 	if (path && framework_utils.isRelative(url))
-		url = framework_utils.join(path, url).substring(1);
+		url = framework.isWindows ? framework_utils.join(path, url) : framework_utils.join(path, url).substring(1);
 
 	return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
@@ -12083,7 +12082,7 @@ Controller.prototype.routeDownload = function(name) {
 Controller.prototype.routeStatic = function(name, path) {
 	var url = this._routeHelper(name, framework.routeStatic);
 	if (path && framework_utils.isRelative(url))
-		url = framework_utils.join(path, url).substring(1);
+		return framework.isWindows ? framework_utils.join(path, url) : framework_utils.join(path, url).substring(1);
 	return url;
 };
 
