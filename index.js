@@ -11737,6 +11737,48 @@ Controller.prototype.$js = function() {
 	return builder;
 };
 
+/**
+ * Append <script> or <style> TAG
+ * @private
+ * @return {String}
+ */
+Controller.prototype.$absolute = function() {
+
+	var self = this;
+	var builder = '';
+	var built = [];
+	
+	var base = arguments[1] || '';
+	var files = arguments[0];
+	
+	var ftype = 'js';
+	var isArray = framework_utils.isArray(files);
+	
+	if(isArray) {
+		var f = files[0];
+		ftype = framework_utils.getExtension(f);
+	}
+	
+	if(isArray) {
+		for (var i = 0; i < files.length; i++) {
+			if(ftype == 'js')
+				builder += self.routeScript(files[i], true, base);
+			
+			if(ftype == 'css')
+				builder += self.routeStyle(files[i], true, base);
+		}
+	}
+	else {		
+		if(ftype == 'js')
+			builder = self.routeScript(files, true, base);
+		
+		if(ftype == 'css')
+			builder = self.routeStyle(files, true, base);
+	}
+	
+	return builder;
+};
+
 Controller.prototype.$import = function() {
 
 	var self = this;
@@ -11946,7 +11988,7 @@ Controller.prototype._routeHelper = function(name, fn) {
  * @param {Boolean} tag Append tag?
  * @return {String}
  */
-Controller.prototype.routeScript = function(name, tag) {
+Controller.prototype.routeScript = function(name, tag, base_path) {
 	var self = this;
 
 	if (name === undefined)
@@ -11963,8 +12005,14 @@ Controller.prototype.routeScript = function(name, tag) {
 			F.error('Isomorphic library {0} doesn\'t exist.'.format(name.substring(1)));
 			return '';
 		}
-	} else
+	} else {
+		var bp = base_path || '';
+		
 		url = self._routeHelper(name, framework.routeScript);
+		
+		if(bp && framework_utils.isRelative(url))
+			url = framework_utils.join(bp, url);
+	}
 	return tag ? '<script src="' + url + '"></script>' : url;
 };
 
@@ -11974,13 +12022,19 @@ Controller.prototype.routeScript = function(name, tag) {
  * @param {Boolean} tag Append tag?
  * @return {String}
  */
-Controller.prototype.routeStyle = function(name, tag) {
+Controller.prototype.routeStyle = function(name, tag, base_path) {
 	var self = this;
 
 	if (name === undefined)
 		name = 'default.css';
 
 	var url = self._routeHelper(name, framework.routeStyle);
+	
+	var bp = base_path || '';
+	
+	if(bp && framework_utils.isRelative(url))
+		url = framework_utils.join(bp, url);
+			
 	return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
 
