@@ -9,6 +9,7 @@
 - added: `@{title2('this content will be added to end of current title')}`
 - added: `String.parseInt2()` the method searchs number and converts it to integer
 - added: `String.parseFloat2()` the method searchs number and converts it to float
+- added: `@{absolute(url, [hostname])}` for importing links with absolute URL by George Okojie Davis <https://github.com/binarygeotech>
 
 - fixed: `controller.memorize()` threw a timeout when the action contains some error in the memorize scope
 - fixed: `TRY()`

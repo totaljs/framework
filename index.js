@@ -468,7 +468,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2020;
-	this.version_header = '2.0.2-2';
+	this.version_header = '2.0.2-3';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -11742,41 +11742,47 @@ Controller.prototype.$js = function() {
  * @private
  * @return {String}
  */
-Controller.prototype.$absolute = function() {
+Controller.prototype.$absolute = function(files, base) {
 
 	var self = this;
-	var builder = '';
-	var built = [];
-	
-	var base = arguments[1] || '';
-	var files = arguments[0];
-	
-	var ftype = 'js';
-	var isArray = framework_utils.isArray(files);
-	
-	if(isArray) {
-		var f = files[0];
-		ftype = framework_utils.getExtension(f);
-	}
-	
-	if(isArray) {
-		for (var i = 0; i < files.length; i++) {
-			if(ftype == 'js')
-				builder += self.routeScript(files[i], true, base);
-			
-			if(ftype == 'css')
-				builder += self.routeStyle(files[i], true, base);
+	var builder;
+	var ftype;
+
+	if (!base)
+		base = self.hostname();
+
+	if (files instanceof Array) {
+
+		ftype = framework_utils.getExtension(files[0]);
+		builder = '';
+
+		for (var i = 0, length = files.length; i < length; i++) {
+			switch (ftype) {
+				case 'js':
+					builder += self.routeScript(files[i], true, base);
+					break;
+				case 'css':
+					builder += self.routeStyle(files[i], true, base);
+					break;
+				default:
+					builder += self.routeStatic(files[i], base);
+					break;
+			}
 		}
+
+		return builder;
 	}
-	else {		
-		if(ftype == 'js')
-			builder = self.routeScript(files, true, base);
-		
-		if(ftype == 'css')
-			builder = self.routeStyle(files, true, base);
+
+	ftype = framework_utils.getExtension(files);
+
+	switch (ftype) {
+		case 'js':
+			return self.routeScript(files, true, base);
+		case 'css':
+			return self.routeStyle(files, true, base);
 	}
-	
-	return builder;
+
+	return self.routeStatic(files, base);
 };
 
 Controller.prototype.$import = function() {
@@ -11988,8 +11994,7 @@ Controller.prototype._routeHelper = function(name, fn) {
  * @param {Boolean} tag Append tag?
  * @return {String}
  */
-Controller.prototype.routeScript = function(name, tag, base_path) {
-	var self = this;
+Controller.prototype.routeScript = function(name, tag, path) {
 
 	if (name === undefined)
 		name = 'default.js';
@@ -12006,13 +12011,12 @@ Controller.prototype.routeScript = function(name, tag, base_path) {
 			return '';
 		}
 	} else {
-		var bp = base_path || '';
-		
-		url = self._routeHelper(name, framework.routeScript);
-		
-		if(bp && framework_utils.isRelative(url))
-			url = framework_utils.join(bp, url);
+		url = this._routeHelper(name, framework.routeScript);
+		if (path && framework_utils.isRelative(url)) {
+			url = framework_utils.join(path, url).substring(1);
+		}
 	}
+
 	return tag ? '<script src="' + url + '"></script>' : url;
 };
 
@@ -12022,19 +12026,16 @@ Controller.prototype.routeScript = function(name, tag, base_path) {
  * @param {Boolean} tag Append tag?
  * @return {String}
  */
-Controller.prototype.routeStyle = function(name, tag, base_path) {
+Controller.prototype.routeStyle = function(name, tag, path) {
 	var self = this;
 
 	if (name === undefined)
 		name = 'default.css';
 
 	var url = self._routeHelper(name, framework.routeStyle);
-	
-	var bp = base_path || '';
-	
-	if(bp && framework_utils.isRelative(url))
-		url = framework_utils.join(bp, url);
-			
+	if (path && framework_utils.isRelative(url))
+		url = framework_utils.join(path, url).substring(1);
+
 	return tag ? '<link type="text/css" rel="stylesheet" href="' + url + '" />' : url;
 };
 
@@ -12044,8 +12045,7 @@ Controller.prototype.routeStyle = function(name, tag, base_path) {
  * @return {String}
  */
 Controller.prototype.routeImage = function(name) {
-	var self = this;
-	return self._routeHelper(name, framework.routeImage);
+	return this._routeHelper(name, framework.routeImage);
 };
 
 /**
@@ -12054,8 +12054,7 @@ Controller.prototype.routeImage = function(name) {
  * @return {String}
  */
 Controller.prototype.routeVideo = function(name) {
-	var self = this;
-	return self._routeHelper(name, framework.routeVideo);
+	return this._routeHelper(name, framework.routeVideo);
 };
 
 /**
@@ -12073,8 +12072,7 @@ Controller.prototype.routeFont = function(name) {
  * @return {String}
  */
 Controller.prototype.routeDownload = function(name) {
-	var self = this;
-	return self._routeHelper(name, framework.routeDownload);
+	return this._routeHelper(name, framework.routeDownload);
 };
 
 /**
@@ -12082,9 +12080,11 @@ Controller.prototype.routeDownload = function(name) {
  * @param {String} name
  * @return {String}
  */
-Controller.prototype.routeStatic = function(name) {
-	var self = this;
-	return self._routeHelper(name, framework.routeStatic);
+Controller.prototype.routeStatic = function(name, path) {
+	var url = this._routeHelper(name, framework.routeStatic);
+	if (path && framework_utils.isRelative(url))
+		url = framework_utils.join(path, url).substring(1);
+	return url;
 };
 
 /**
@@ -12107,7 +12107,6 @@ Controller.prototype.helper = function(name) {
 	var helper = framework.helpers[name];
 	if (!helper)
 		return '';
-
 
 	var params = [];
 	for (var i = 1; i < arguments.length; i++)
