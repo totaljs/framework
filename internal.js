@@ -675,7 +675,6 @@ HttpFile.prototype.copy = function(filename, callback) {
 
 	reader.on('close', callback);
 	reader.pipe(writer);
-
 	return self;
 };
 
@@ -723,17 +722,16 @@ HttpFile.prototype.md5 = function(callback) {
 	var md5 = crypto.createHash('md5');
 	var stream = fs.createReadStream(self.path);
 
-	stream.on('data', function(buffer) {
-		md5.update(buffer);
-	});
+	stream.on('data', (buffer) => md5.update(buffer));
 
 	stream.on('error', function(error) {
 		callback(error, null);
+		callback = null;
 	});
 
 	onFinished(stream, function() {
 		destroyStream(stream);
-		callback(null, md5.digest('hex'));
+		callback && callback(null, md5.digest('hex'));
 	});
 
 	return self;
@@ -1065,6 +1063,106 @@ function autoprefixer_keyframes(value) {
 	return value;
 }
 
+function minify_javascript(data) {
+
+	var index = 0;
+	var output = [];
+	var scope;
+	var prev;
+	var next;
+	var isCS = false;
+	var isCI = false;
+	var last;
+	var alpha = /[0-9a-z]/i;
+	var chars = /[a-z]/i;
+	var white = /\W/;
+	var skip = { '$': true, '_': true };
+	var regexp = false;
+
+	while (true) {
+
+		var c = data[index];
+		var prev = data[index - 1];
+		var next = data[index + 1];
+
+		index++;
+
+		if (c === undefined)
+			break;
+
+		if (!scope) {
+
+			if (!regexp) {
+				if (c === '/' && next === '*') {
+					isCS = true;
+					continue;
+				} else if (c === '*' && next === '/') {
+					isCS = false;
+					index++;
+					continue;
+				}
+
+				if (isCS)
+					continue;
+
+				if (c === '/' && next === '/') {
+					isCI = true;
+					continue;
+				} else if (isCI && (c === '\n' || c === '\r')) {
+					isCI = false;
+					if (alpha.test(last))
+						output.push(' ');
+					last = '';
+					continue;
+				}
+
+				if (isCI)
+					continue;
+			}
+
+			if (c === '\t' || c === '\n' || c === '\r') {
+				if (!last || !alpha.test(last))
+					continue;
+				output.push(' ');
+				last = '';
+				continue;
+			}
+
+			if (!regexp && (c === ' ' && (white.test(prev) || white.test(next)))) {
+				if (!skip[prev] && !skip[next])
+					continue;
+			}
+
+			if (regexp) {
+				if (last !== '\\' && c === '/')
+					regexp = false;
+			} else
+				regexp = (last === '=' || last === '(') && (c === '/');
+		}
+
+		if (!regexp && (c === '"' || c === '\'' || c === '`') && prev !== '\\') {
+
+			if (scope && scope !== c) {
+				output.push(c);
+				continue;
+			}
+
+			if (c === scope)
+				scope = 0;
+			else
+				scope = c;
+		}
+
+		if (c === '}' && last === ';')
+			output.pop();
+
+		output.push(c);
+		last = c;
+	}
+
+	return output.join('');
+}
+
 exports.compile_css = function(value, filename) {
 
 	if (global.framework) {
@@ -1101,241 +1199,6 @@ exports.compile_css = function(value, filename) {
 	}
 };
 
-// *********************************************************************************
-// =================================================================================
-// JavaScript compressor
-// =================================================================================
-// *********************************************************************************
-
-// Copyright (c) 2002 Douglas Crockford  (www.crockford.com)
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-/*
-	Minify JS
-	@source {String}
-	return {String}
-*/
-function JavaScript(source) {
-
-	var EOF = -1;
-	var sb = [];
-	var theA; // int
-	var theB; // int
-	var theLookahead = EOF; // int
-	var index = 0;
-
-	function jsmin() {
-		theA = 13;
-		action(3);
-		while (theA !== EOF) {
-			switch (theA) {
-				case 32:
-					if (isAlphanum(theB))
-						action(1);
-					else
-						action(2);
-					break;
-				case 13:
-					switch (theB) {
-						case 123:
-						case 91:
-						case 40:
-						case 43:
-						case 45:
-							action(1);
-							break;
-						case 32:
-							action(3);
-							break;
-						default:
-							if (isAlphanum(theB))
-								action(1);
-							else
-								action(2);
-							break;
-					}
-					break;
-				default:
-					switch (theB) {
-						case 32:
-							if (isAlphanum(theA)) {
-								action(1);
-								break;
-							}
-							action(3);
-							break;
-
-						case 13:
-							switch (theA) {
-								case 125:
-								case 93:
-								case 41:
-								case 43:
-								case 45:
-								case 34:
-								case 92:
-									action(1);
-									break;
-								default:
-									if (isAlphanum(theA))
-										action(1);
-									else
-										action(3);
-									break;
-							}
-							break;
-						default:
-							action(1);
-							break;
-					}
-					break;
-			}
-		}
-	}
-
-	function action(d) {
-		if (d <= 1) {
-			put(theA);
-		}
-		if (d <= 2) {
-			theA = theB;
-			if (theA === 39 || theA === 34) {
-				for (;;) {
-					put(theA);
-					theA = get();
-					if (theA === theB) {
-						break;
-					}
-					if (theA <= 13) {
-						if (framework)
-							framework.error('Error: JSMIN unterminated string literal: ' + theA, 'JavaScript compressor');
-						return;
-					}
-					if (theA === 92) {
-						put(theA);
-						theA = get();
-					}
-				}
-			}
-		}
-		if (d <= 3) {
-			theB = next();
-			if (theB === 47 && (theA === 40 || theA === 44 || theA === 61 ||
-				theA === 91 || theA === 33 || theA === 58 ||
-				theA === 38 || theA === 124 || theA === 63 ||
-				theA === 123 || theA === 125 || theA === 59 ||
-				theA === 13)) {
-				put(theA);
-				put(theB);
-				for (;;) {
-					theA = get();
-					if (theA === 47) {
-						break;
-					} else if (theA === 92) {
-						put(theA);
-						theA = get();
-					} else if (theA <= 13) {
-						c = EOF;
-						return;
-					}
-					put(theA);
-				}
-				theB = next();
-			}
-		}
-	}
-
-	function next() {
-		var c = get();
-
-		if (c !== 47)
-			return c;
-
-		switch (peek()) {
-			case 47:
-				for (;;) {
-					c = get();
-					if (c <= 13)
-						return c;
-				}
-				break;
-			case 42:
-				get();
-				for (;;) {
-					switch (get()) {
-						case 42:
-							if (peek() === 47) {
-								get();
-								return 32;
-							}
-							break;
-						case EOF:
-							c = EOF;
-							return;
-					}
-				}
-				break;
-			default:
-				return c;
-		}
-
-		return c;
-	}
-
-	function peek() {
-		theLookahead = get();
-		return theLookahead;
-	}
-
-	function get() {
-		var c = theLookahead;
-		theLookahead = EOF;
-		if (c === EOF) {
-			c = source.charCodeAt(index++);
-			if (isNaN(c))
-				c = EOF;
-		}
-		if (c >= 32 || c === 13 || c === EOF) {
-			return c;
-		}
-		if (c === 10)
-			return 13;
-		return 32;
-	}
-
-	function put(c) {
-		if (c === 13 || c === 10)
-			sb.push(' ');
-		else
-			sb.push(String.fromCharCode(c));
-	}
-
-	function isAlphanum(c) {
-		return ((c >= 97 && c <= 122) || (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || c === 95 || c === 36 || c === 92 || c > 126);
-	}
-
-	jsmin();
-	return sb.join('');
-}
-
 exports.compile_javascript = function(source, filename) {
 
 	var isFramework = (typeof(global.framework) === 'object');
@@ -1356,7 +1219,7 @@ exports.compile_javascript = function(source, filename) {
 				return framework.onCompileScript(filename, source).trim();
 		}
 
-		return JavaScript(source).trim();
+		return minify_javascript(source);
 	} catch (ex) {
 
 		if (isFramework)
@@ -2003,7 +1866,7 @@ function view_parse(content, minify, filename, controller) {
 
 			if (can) {
 				var fn = new Function('self', 'return ' + tmp);
-				builder += '+' + DELIMITER + fn(controller).replace(/\\/g, '\\\\') + DELIMITER;
+				builder += '+' + DELIMITER + fn(controller).replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + DELIMITER;
 			} else if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
