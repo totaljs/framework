@@ -11,8 +11,8 @@ __Total.js__ is the web application framework for creating rich web sites and we
 
 [![Support](https://www.totaljs.com/img/button-support.png)](https://www.totaljs.com/support/) [![Donate](https://www.totaljs.com/img/button-donate.png)](https://www.totaljs.com/#make-a-donation)
 
-- [__NEW__: Total.js Simple Eshop + CMS for free](http://www.totaljs.com/eshop/)
 - [__NEW__: Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
+- [__NEW__: Total.js Simple Eshop + CMS for free](http://www.totaljs.com/eshop/)
 - [__NEW__: Total.js HelpDesk](https://www.totaljs.com/helpdesk/)
 - [__NEW__: Download +89 client-side components (jComponent) for free](https://www.componentator.com)
 - [Total.js OpenPlatform](https://www.totaljs.com/openplatform/) is a simple enterprise ready platform
