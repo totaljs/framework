@@ -38,7 +38,7 @@ $ npm install total.js
 | Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
 |------|------|------|------|------|
 | [![Casperise](https://www.totaljs.com/img/logo-casperise.png)](https://www.casperise.com/) | [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) |
-| | | [![Weida Web](https://www.totaljs.com/img/logo-weidaweb.png)](https://www.weidaweb.com/) |
+| [![JRB System](https://www.totaljs.com/img/logo-jrbsystem.png)](http://www.jrbsystem.com/) | [![Weida Web](https://www.totaljs.com/img/logo-weidaweb.png)](https://www.weidaweb.com/) | |
 
 ## Social networks
 
