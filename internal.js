@@ -834,6 +834,7 @@ function compile_autovendor(css) {
 
 	if (isAuto)
 		css = autoprefixer(css);
+
 	return css.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(reg6, function(search, index, text) {
 		for (var i = index; i > 0; i--) {
 			if (text[i] === '\'' || text[i] === '"') {
@@ -2410,6 +2411,7 @@ function compressJS(html, index, filename) {
  * @return {String}
  */
 function compressCSS(html, index, filename) {
+
 	var strFrom = '<style type="text/css">';
 	var strTo = '</style>';
 
@@ -2476,6 +2478,8 @@ function nested(css, id, variable) {
 	var skipImport = '';
 	var isComment = false;
 	var comment = '';
+	var skipView = false;
+	var skipType;
 
 	while (true) {
 
@@ -2506,6 +2510,29 @@ function nested(css, id, variable) {
 
 		if (a === '$' && variable)
 			variable();
+
+		if (a === '@' && css[index] === '{')
+			skipView = true;
+
+		if (skipView) {
+			plus += a;
+			if (a === '}')
+				skipView = false;
+			continue;
+		}
+
+		if (a === '\'' || a === '"') {
+			if (a === skipType && css[index] !== '\\')
+				skipType = '';
+			else if (!skipType) {
+				skipType = a;
+			}
+		}
+
+		if (skipType) {
+			plus += a;
+			continue;
+		}
 
 		if (a === '@') {
 			begAt = index;

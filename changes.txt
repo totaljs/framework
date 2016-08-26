@@ -18,6 +18,7 @@
 - fixed: QuickSort algorithm (problem with dates)
 - fixed: `TRY()` scope
 - fixed: problem with resources in views
+- fixed: CSS compressor
 
 ======= 2.0.1
 
