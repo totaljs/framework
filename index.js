@@ -10886,10 +10886,19 @@ Controller.prototype.sitemap_change = function(name, type, value, format) {
 
 	for (var i = 0, length = sitemap.length; i < length; i++) {
 		if (sitemap[i].id === name) {
+
+			var tmp = sitemap[i][type];
+
 			if (typeof(value) === 'function')
 				sitemap[i][type] = value(sitemap[i][type]);
 			else
 				sitemap[i][type] = format ? sitemap[i][type].format(value) : value;
+
+			if (type === 'name') {
+				if (this.repository[REPOSITORY_META_TITLE] === tmp)
+					this.repository[REPOSITORY_META_TITLE] = sitemap[i][type];
+			}
+
 			return this;
 		}
 	}
@@ -10910,8 +10919,11 @@ Controller.prototype.sitemap_replace = function(name, title, url, format) {
 
 	for (var i = 0, length = sitemap.length; i < length; i++) {
 		if (sitemap[i].id === name) {
+			var is = this.repository[REPOSITORY_META_TITLE] === sitemap[i].name;
 			sitemap[i].name = format ? sitemap[i].name.format(title) : typeof(title) === 'function' ? title(sitemap[i].name) : title;
 			sitemap[i].url = format ? sitemap[i].url.format(url) : typeof(url) === 'function' ? url(sitemap[i].url) : url;
+			if (is)
+				this.repository[REPOSITORY_META_TITLE] = sitemap[i].name;
 			return this;
 		}
 	}
