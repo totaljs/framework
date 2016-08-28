@@ -369,7 +369,7 @@ Database.prototype.$update = function() {
 					for (var j = 0, jl = item.keys.length; j < jl; j++) {
 						var val = item.doc[item.keys[j]];
 						if (typeof(val) === 'function')
-							doc[item.keys[j]] = val(doc[item.keys[j]]);
+							doc[item.keys[j]] = val(doc[item.keys[j]], doc);
 						else
 							doc[item.keys[j]] = val;
 					}
