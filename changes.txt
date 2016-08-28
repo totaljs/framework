@@ -10,7 +10,10 @@
 - added: `String.parseInt2()` the method searchs number and converts it to integer
 - added: `String.parseFloat2()` the method searchs number and converts it to float
 - added: `@{absolute(url, [hostname])}` for importing links with absolute URL by George Okojie Davis <https://github.com/binarygeotech>
+- added: `sitemap_replace(name, title, url, [format])` can change sitemap `title` and `url` onetime
 - added: new JavaScript minificator algorithm because of Douglas Crockford "Good, not Evil"
+
+- updated: `sitemap_chnage(name, property, value, [format])` new argument format `Boolean`
 
 - fixed: `controller.memorize()` threw a timeout when the action contains some error in the memorize scope
 - fixed: `F.sitemap()` fixed problem with `me` argument

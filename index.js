@@ -10873,7 +10873,7 @@ Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
 	return '';
 };
 
-Controller.prototype.sitemap_change = function(name, type, value) {
+Controller.prototype.sitemap_change = function(name, type, value, format) {
 	var sitemap = this.repository[REPOSITORY_SITEMAP];
 	if (!sitemap)
 		sitemap = this.sitemap(name);
@@ -10889,7 +10889,7 @@ Controller.prototype.sitemap_change = function(name, type, value) {
 			if (typeof(value) === 'function')
 				sitemap[i][type] = value(sitemap[i][type]);
 			else
-				sitemap[i][type] = value;
+				sitemap[i][type] = format ? sitemap[i][type].format(value) : value;
 			return this;
 		}
 	}
@@ -10897,8 +10897,35 @@ Controller.prototype.sitemap_change = function(name, type, value) {
 	return this;
 };
 
-Controller.prototype.$sitemap_change = function(name, type, value) {
+Controller.prototype.sitemap_replace = function(name, title, url, format) {
+	var sitemap = this.repository[REPOSITORY_SITEMAP];
+	if (!sitemap)
+		sitemap = this.sitemap(name);
+
+	if (!sitemap.$cloned) {
+		sitemap = framework_utils.clone(sitemap);
+		sitemap.$cloned = true;
+		this.repository[REPOSITORY_SITEMAP] = sitemap;
+	}
+
+	for (var i = 0, length = sitemap.length; i < length; i++) {
+		if (sitemap[i].id === name) {
+			sitemap[i].name = format ? sitemap[i].name.format(title) : typeof(title) === 'function' ? title(sitemap[i].name) : title;
+			sitemap[i].url = format ? sitemap[i].url.format(url) : typeof(url) === 'function' ? url(sitemap[i].url) : url;
+			return this;
+		}
+	}
+
+	return this;
+};
+
+Controller.prototype.$sitemap_change = function(name, type, value, format) {
 	this.sitemap_change.apply(this, arguments);
+	return '';
+};
+
+Controller.prototype.$sitemap_replace = function(name, title, url, format) {
+	this.sitemap_replace.apply(this, arguments);
 	return '';
 };
 
@@ -10915,7 +10942,7 @@ Controller.prototype.sitemap = function(name) {
 		sitemap = self.repository[REPOSITORY_SITEMAP];
 		if (sitemap)
 			return sitemap;
-		return self.repository.sitemap || [];
+		return self.repository.sitemap || EMPTYARRAY;
 	}
 
 	sitemap = framework.sitemap(name, false, self.language);

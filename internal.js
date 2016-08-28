@@ -2143,6 +2143,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'prerender':
 		case 'prev':
 		case 'sitemap_change':
+		case 'sitemap_replace':
 			return 'self.$' + command;
 
 		case 'now':
