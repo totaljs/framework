@@ -22,6 +22,7 @@
 - fixed: `TRY()` scope
 - fixed: problem with resources in views
 - fixed: CSS compressor
+- fixed: CORS
 
 ======= 2.0.1
 
