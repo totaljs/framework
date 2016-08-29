@@ -6729,7 +6729,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				return self;
 			}
 
-			self._cors(req, res);
+			self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
 			return self;
 
 		case 'H':
@@ -11163,9 +11163,7 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
 	if (value === null)
 		return '';
 
-	if (expire)
-		self.cache.add(cache, value, expire);
-
+	expire && self.cache.add(cache, value, expire);
 	return value;
 };
 
@@ -11190,10 +11188,11 @@ Controller.prototype.place = function(name) {
 	var output = '';
 	for (var i = 1; i < length; i++) {
 		var val = arguments[i];
-		if (!val)
-			val = '';
-		else
+
+		if (val)
 			val = val.toString();
+		else
+			val = '';
 
 		if (val.endsWith('.js'))
 			val = '<script src="' + val + '"></script>';
@@ -11225,10 +11224,10 @@ Controller.prototype.section = function(name, value, replace) {
 		return self;
 	}
 
-	if (!self.repository[key])
-		self.repository[key] = value;
-	else
+	if (self.repository[key])
 		self.repository[key] += value;
+	else
+		self.repository[key] = value;
 
 	return self;
 };
@@ -11265,8 +11264,7 @@ Controller.prototype.href = function(key, value) {
 	var type = typeof(key);
 	var obj = framework_utils.copy(self.query);
 
-	if (value && type === 'object')
-		framework_utils.extend(obj, value);
+	value && type === 'object' && framework_utils.extend(obj, value);
 
 	if (value != null)
 		obj[key] = value;
@@ -11453,8 +11451,7 @@ Controller.prototype.$textarea = function(model, name, attr) {
 	if (model === undefined)
 		return builder + '></textarea>';
 
-	var value = (model[name] || attr.value) || '';
-	return builder + '>' + value.toString().encode() + '</textarea>';
+	return builder + '>' + ((model[name] || attr.value) || '') + '</textarea>';
 };
 
 /*

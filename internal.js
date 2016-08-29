@@ -2061,6 +2061,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'title':
 		case 'description':
 		case 'keywords':
+		case 'author':
 			if (command.indexOf('(') !== -1)
 				return 'self.$' + command;
 			return '(repository[\'$' + command + '\'] || \'\').toString().encode()';
@@ -2071,6 +2072,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		case '!title':
 		case '!description':
 		case '!keywords':
+		case '!author':
 			return '(repository[\'$' + command.substring(1) + '\'] || \'\')';
 
 		case 'head':
