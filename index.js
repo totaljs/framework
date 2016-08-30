@@ -12004,7 +12004,6 @@ Controller.prototype.$favicon = function(name) {
 
 	name = framework.routeStatic('/' + name);
 	return framework.temporary.other[key] = '<link rel="shortcut icon" href="' + name + '" type="' + contentType + '" />';
-
 };
 
 /**
@@ -12190,9 +12189,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	self.subscribe.success();
 	framework.responseContent(self.req, self.res, self.status, obj, type, self.config['allow-gzip'], headers);
 	framework.stats.response.json++;
-
-	if (self.precache)
-		self.precache(obj, 'application/json', headers);
+	self.precache && self.precache(obj, 'application/json', headers);
 	return self;
 };
 
@@ -12241,10 +12238,7 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 	self.subscribe.success();
 	framework.responseContent(self.req, self.res, self.status, name + '(' + obj + ')', 'application/x-javascript', self.config['allow-gzip'], headers);
 	framework.stats.response.json++;
-
-	if (self.precache)
-		self.precache(name + '(' + obj + ')', 'application/x-javascript', headers);
-
+	self.precache && self.precache(name + '(' + obj + ')', 'application/x-javascript', headers);
 	return self;
 };
 
@@ -12267,8 +12261,7 @@ Controller.prototype.callback = function(viewName) {
 
 		if (err) {
 			if (is && !viewName) {
-				if (self.language)
-					err.resource(self.language);
+				self.language && err.resource(self.language);
 				return self.content(err);
 			}
 			return is && err.unexpected ? self.view500(err) : self.view404(err);
@@ -12372,9 +12365,7 @@ Controller.prototype.plain = function(body, headers) {
 	self.subscribe.success();
 	framework.responseContent(self.req, self.res, self.status, body, CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
 	framework.stats.response.plain++;
-
-	if (self.precache)
-		self.precache(body, CONTENTTYPE_TEXTPLAIN, headers);
+	self.precache && self.precache(body, CONTENTTYPE_TEXTPLAIN, headers);
 	return self;
 };
 
@@ -12809,6 +12800,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	// theme root `~some_view`
 	// views root `~~some_view`
 	// package    `@some_view`
+	// theme      `=theme/view`
 
 	var key = 'view#=' + this.themeName + '/' + self._currentView + '/' + name;
 	var filename = framework.temporary.other[key];
@@ -12824,9 +12816,10 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		// /   --> routed into the views (skipped)
 		// @   --> routed into the packages
 		// .   --> routed into the opened path
+		// =   --> routed into the theme
 
 		var c = name[0];
-		var skip = c === '/' ? 1 : c === '~' && name[1] === '~' ? 4 : c === '~' ? 2 : c === '@' ? 3 : c === '.' ? 5 : 0;
+		var skip = c === '/' ? 1 : c === '~' && name[1] === '~' ? 4 : c === '~' ? 2 : c === '@' ? 3 : c === '.' ? 5 : c === '=' ? 6 : 0;
 		var isTheme = false;
 
 		filename = name;
@@ -12850,6 +12843,12 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 		if (skip === 3)
 			filename = '.' + framework.path.package(filename);
+
+		if (skip === 6) {
+			c = framework_utils.parseTheme(filename);
+			name = name.substring(name.indexOf('/') + 1);
+			filename = '.' + framework.path.themes(c + '/views/' + name).replace(REG_SANITIZE_BACKSLASH, '/');
+		}
 
 		framework.temporary.other[key] = filename;
 	}
@@ -14180,17 +14179,10 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 
 	options.path = options.path || '/';
 
-	if (expires)
-		builder.push('Expires=' + expires.toUTCString());
-
-	if (options.domain)
-		builder.push('Domain=' + options.domain);
-
-	if (options.path)
-		builder.push('Path=' + options.path);
-
-	if (options.secure)
-		builder.push('Secure');
+	expires &&  builder.push('Expires=' + expires.toUTCString());
+	options.domain && builder.push('Domain=' + options.domain);
+	options.path && builder.push('Path=' + options.path);
+	options.secure && builder.push('Secure');
 
 	if (options.httpOnly || options.httponly || options.HttpOnly)
 		builder.push('HttpOnly');
@@ -14199,9 +14191,7 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 
 	// Cookie, already, can be in array, resulting in duplicate 'set-cookie' header
 	var idx = arr.findIndex(cookieStr => cookieStr.startsWith(cookieHeaderStart));
-	if (idx !== -1)
-		arr.splice(idx, 1);
-
+	idx !== -1 && arr.splice(idx, 1);
 	arr.push(builder.join('; '));
 	self.setHeader('Set-Cookie', arr);
 	return self;
@@ -14233,8 +14223,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 	if (self.headersSent)
 		return self;
 
-	if (self.controller)
-		self.controller.subscribe.success();
+	self.controller && self.controller.subscribe.success();
 
 	var res = self;
 	var req = self.req;
@@ -14325,50 +14314,42 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 };
 
 http.ServerResponse.prototype.throw400 = function(problem) {
-	if (this.controller)
-		this.controller.subscribe.success();
+	this.controller && this.controller.subscribe.success();
 	framework.response400(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw401 = function(problem) {
-	if (this.controller)
-		this.controller.subscribe.success();
+	this.controller && this.controller.subscribe.success();
 	framework.response401(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw403 = function(problem) {
-	if (this.controller)
-		this.controller.subscribe.success();
+	this.controller && this.controller.subscribe.success();
 	framework.response403(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw404 = function(problem) {
-	if (this.controller)
-		this.controller.subscribe.success();
+	this.controller && this.controller.subscribe.success();
 	framework.response404(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw408 = function(problem) {
-	if (this.controller)
-		this.controller.subscribe.success();
+	this.controller && this.controller.subscribe.success();
 	framework.response408(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw431 = function(problem) {
-	if (this.controller)
-		this.controller.subscribe.success();
+	this.controller && this.controller.subscribe.success();
 	framework.response431(this.req, this, problem);
 };
 
 http.ServerResponse.prototype.throw500 = function(error) {
-	if (this.controller)
-		this.controller.subscribe.success();
+	this.controller && this.controller.subscribe.success();
 	framework.response500(this.req, this, error);
 };
 
 http.ServerResponse.prototype.throw501 = function(problem) {
-	if (this.controller)
-		this.controller.subscribe.success();
+	this.controller && this.controller.subscribe.success();
 	framework.response501(this.req, this, problem);
 };
 
@@ -14973,11 +14954,8 @@ function existsSync(filename, file) {
 function async_middleware(index, req, res, middleware, callback, options, controller) {
 
 	if (res.success || res.headersSent) {
-
 		// Prevents timeout
-		if (controller)
-			controller.subscribe.success();
-
+		controller && controller.subscribe.success();
 		callback = null;
 		return;
 	}

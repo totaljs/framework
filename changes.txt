@@ -14,6 +14,7 @@
 - added: new JavaScript minificator algorithm because of Douglas Crockford "Good, not Evil"
 
 - updated: `sitemap_chnage(name, property, value, [format])` new argument format `Boolean`
+- updated: `framework.view()`, `controller.view()` and `@{view()}` supports `=theme/viewname`
 
 - fixed: `controller.memorize()` threw a timeout when the action contains some error in the memorize scope
 - fixed: `F.sitemap()` fixed problem with `me` argument
