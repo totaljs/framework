@@ -750,6 +750,10 @@ Framework.prototype.behaviour = function(url, flags) {
 	return self;
 };
 
+Framework.prototype.isSuccess = function(obj) {
+	return obj === SUCCESSHELPER;
+};
+
 /**
  * Refersh framework internal informations
  * @param {Boolean} clear Clear temporary files, optional

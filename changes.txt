@@ -21,8 +21,12 @@
 - fixed: QuickSort algorithm (problem with dates)
 - fixed: `TRY()` scope
 - fixed: problem with resources in views
+<<<<<<< Updated upstream
 - fixed: CSS compressor
 - fixed: CORS
+=======
+- fixed: problem with SUCCESS() and async schemas
+>>>>>>> Stashed changes
 
 ======= 2.0.1
 

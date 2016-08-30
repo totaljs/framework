@@ -2002,6 +2002,13 @@ SchemaBuilderEntity.prototype.clean = function(m) {
 	return clone(m);
 };
 
+// For async operations, because SUCCESS() returns singleton instance everytime
+function copy(obj) {
+	if (framework.isSuccess(obj))
+		return { success: obj.success, value: obj.value };
+	return obj;
+}
+
 function clone(obj) {
 
 	if (!obj)
@@ -2151,7 +2158,7 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 
 		fn = function(next) {
 			self.$$schema[type](self, helper, function(err, result) {
-				self.$$result && self.$$result.push(err ? null : result);
+				self.$$result && self.$$result.push(err ? null : copy(result));
 				if (!err)
 					return next();
 				next = null;
@@ -2168,7 +2175,7 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 
 		fn = function(next) {
 			self.$$schema[type](helper, function(err, result) {
-				self.$$result && self.$$result.push(err ? null : result);
+				self.$$result && self.$$result.push(err ? null : copy(result));
 				if (!err)
 					return next();
 				next = null;
@@ -2182,7 +2189,7 @@ SchemaInstance.prototype.$push = function(type, name, helper, first) {
 
 		fn = function(next) {
 			self.$$schema[type](name, self, helper, function(err, result) {
-				self.$$result && self.$$result.push(err ? null : result);
+				self.$$result && self.$$result.push(err ? null : copy(result));
 				if (!err)
 					return next();
 				next = null;
