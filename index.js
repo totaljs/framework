@@ -5562,8 +5562,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		res.writeHead(200, returnHeaders);
 		res.end();
 		done && done();
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
+		!req.isStaticFile && self.emit('request-end', req, res);
 		req.clear(true);
 		return self;
 	}
@@ -5574,9 +5573,7 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		stream.pipe(zlib.createGzip()).pipe(res);
 		framework_internal.onFinished(res, () => framework_internal.destroyStream(stream));
 		done && done();
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
-
+		!req.isStaticFile && self.emit('request-end', req, res);
 		req.clear(true);
 		return self;
 	}
@@ -5633,8 +5630,7 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 		self.stats.response.streaming++;
 		self._request_stats(false, req.isStaticFile);
 		done && done();
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
+		!req.isStaticFile && self.emit('request-end', req, res);
 		return self;
 	}
 
@@ -5654,9 +5650,7 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 		self.stats.response.streaming++;
 		self._request_stats(false, req.isStaticFile);
 		done && done();
-
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
+		!req.isStaticFile && self.emit('request-end', req, res);
 	});
 
 	return self;
@@ -5717,8 +5711,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 		res.writeHead(200, returnHeaders);
 		res.end();
 		done && done();
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
+		!req.isStaticFile && self.emit('request-end', req, res);
 		req.clear(true);
 		return self;
 	}
@@ -5727,8 +5720,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 		res.writeHead(200, returnHeaders);
 		zlib.gzip(encoding === 'binary' ? buffer : buffer.toString(encoding), (err, buffer) => res.end(buffer));
 		done && done();
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
+		!req.isStaticFile && self.emit('request-end', req, res);
 		return self;
 	}
 
@@ -5994,8 +5986,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 		res.writeHead(code, returnHeaders);
 		zlib.gzip(new Buffer(contentBody || ''), (err, data) => res.end(data, ENCODING));
 		self._request_stats(false, req.isStaticFile);
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
+		!req.isStaticFile && self.emit('request-end', req, res);
 		req.clear(true);
 		return self;
 	}
