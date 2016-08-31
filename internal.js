@@ -1075,11 +1075,11 @@ function minify_javascript(data) {
 	var white = /\W/;
 	var skip = { '$': true, '_': true };
 	var regexp = false;
+	var skipnext = false;
 	var scope;
 	var prev;
 	var next;
 	var last;
-	var skipnext = false;
 
 	while (true) {
 
