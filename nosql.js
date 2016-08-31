@@ -1005,6 +1005,11 @@ Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 
 	var self = this;
 
+	if (id instanceof Array) {
+		id.forEach(n => self.hit(n, count));
+		return self;
+	}
+
 	if (!self.cache)
 		self.cache = {};
 
@@ -1012,6 +1017,23 @@ Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 		self.cache[id] += count || 1;
 	else
 		self.cache[id] = count || 1;
+
+	if (!self.timeout)
+		self.timeout = setTimeout(() => self.save(), self.TIMEOUT);
+
+	return self;
+};
+
+Counter.prototype.remove = function(id, callback) {
+	var self = this;
+
+	if (!self.cache)
+		self.cache = {};
+
+	if (id instanceof Array)
+		id.forEach(n => self.cache[n] = null);
+	else
+		self.cache[id] = null;
 
 	if (!self.timeout)
 		self.timeout = setTimeout(() => self.save(), self.TIMEOUT);
@@ -1035,7 +1057,7 @@ Counter.prototype.read = function(id, type, callback) {
 
 	var self = this;
 
-	if (self.type !== 0) {
+	if (self.type) {
 		setTimeout(() => self.read(type, callback), 200);
 		return self;
 	}
@@ -1124,7 +1146,7 @@ function counter_parse_months(value) {
 Counter.prototype.save = function() {
 	var self = this;
 
-	if (self.type !== 0) {
+	if (self.type) {
 		setTimeout(() => self.save(), 200);
 		return self;
 	}
@@ -1135,7 +1157,7 @@ Counter.prototype.save = function() {
 	var dt = F.datetime.format('yyyyMM') + '=';
 	var cache = self.cache;
 
-	self.cache = {};
+	self.cache = null;
 	self.type = 1;
 
 	var flush = function() {
@@ -1150,8 +1172,9 @@ Counter.prototype.save = function() {
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
 		var id = value.substring(0, value.indexOf('='));
+
 		if (!cache[id]) {
-			writer.write(value);
+			cache[id] !== null && writer.write(value);
 			return;
 		}
 
