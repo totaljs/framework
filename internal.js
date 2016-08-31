@@ -1068,17 +1068,17 @@ function minify_javascript(data) {
 
 	var index = 0;
 	var output = [];
-	var scope;
-	var prev;
-	var next;
 	var isCS = false;
 	var isCI = false;
-	var last;
 	var alpha = /[0-9a-z]/i;
 	var chars = /[a-z]/i;
 	var white = /\W/;
 	var skip = { '$': true, '_': true };
 	var regexp = false;
+	var scope;
+	var prev;
+	var next;
+	var last;
 
 	while (true) {
 
