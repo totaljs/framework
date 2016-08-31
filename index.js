@@ -884,8 +884,7 @@ Framework.prototype.stop = function(signal) {
 
 	for (var m in framework.workers) {
 		var worker = framework.workers[m];
-		if (worker && worker.kill)
-			worker.kill(signal || 'SIGTERM');
+		worker && worker.kill && worker.kill(signal || 'SIGTERM');
 	}
 
 	framework.emit('exit');
@@ -894,11 +893,9 @@ Framework.prototype.stop = function(signal) {
 		process.send('stop');
 
 	self.cache.stop();
+	self.server && self.server.close();
 
-	if (self.server)
-		self.server.close();
-
-	process.exit(signal || 'SIGTERM');
+	setTimeout(() => process.exit(signal || 'SIGTERM'), 2000);
 	return self;
 };
 
@@ -1043,7 +1040,7 @@ Framework.prototype.resize = function(url, fn, flags) {
 				continue;
 			}
 
-			if (flag[0] === '/' || flag.match(/^http\:|https\:/gi)) {
+			if (flag[0] === '~' || flag[0] === '/' || flag.match(/^http\:|https\:/gi)) {
 				path = flag;
 				continue;
 			}
@@ -1067,7 +1064,7 @@ Framework.prototype.resize = function(url, fn, flags) {
 
 	self.routes.resize[url] = {
 		fn: fn,
-		path: path || url,
+		path: framework_utils.path(path || url),
 		ishttp: path.match(/http\:|https\:/gi) ? true : false,
 		extension: extensions,
 		cache: cache
@@ -1670,8 +1667,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	self.emit('route', 'web', self.routes.web[self.routes.web.length - 1]);
 
 	// Appends cors route
-	if (isCORS)
-		F.cors(urlcache, corsflags);
+	isCORS && F.cors(urlcache, corsflags);
 
 	if (!_controller)
 		self._routesSort();
