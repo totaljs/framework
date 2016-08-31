@@ -1079,6 +1079,7 @@ function minify_javascript(data) {
 	var prev;
 	var next;
 	var last;
+	var skipnext = false;
 
 	while (true) {
 
@@ -1141,7 +1142,15 @@ function minify_javascript(data) {
 				regexp = (last === '=' || last === '(') && (c === '/');
 		}
 
-		if (!regexp && (c === '"' || c === '\'' || c === '`') && prev !== '\\') {
+		if (scope && prev === '\\' && c === '\\') {
+			output.push(c);
+			skipnext = true;
+			continue;
+		}
+
+		if (!regexp && (c === '"' || c === '\'' || c === '`') && (prev !== '\\' || skipnext)) {
+
+			skipnext = false;
 
 			if (scope && scope !== c) {
 				output.push(c);
