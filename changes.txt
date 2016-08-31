@@ -12,6 +12,7 @@
 - added: `@{absolute(url, [hostname])}` for importing links with absolute URL by George Okojie Davis <https://github.com/binarygeotech>
 - added: `sitemap_replace(name, title, url, [format])` can change sitemap `title` and `url` onetime
 - added: new JavaScript minificator algorithm because of Douglas Crockford "Good, not Evil"
+- added: NoSQL supports counter for e.g. views or downloads, etc., more in documentation
 
 - updated: `sitemap_chnage(name, property, value, [format])` new argument format `Boolean`
 - updated: `framework.view()`, `controller.view()` and `@{view()}` supports `=theme/viewname`
