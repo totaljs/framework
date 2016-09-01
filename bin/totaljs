@@ -447,8 +447,8 @@ function main() {
 		}
 
 		var content = fs.readFileSync(dir).toString('utf8');
-		var extension = path.extname(dir);
-		var filename = dir.replace(extension, '.min.' + extension);
+		var extension = U.getExtension(dir);
+		var filename = dir.replace('.' + extension, '.min.' + extension);
 
 		switch (extension.toLowerCase()) {
 			case 'html':
