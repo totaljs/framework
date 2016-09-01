@@ -600,6 +600,7 @@ Database.prototype.$views = function() {
 		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0, counter: 0 });
 
 	var reader = Fs.createReadStream(self.filename);
+
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var json = JSON.parse(value.trim());
 		for (var j = 0; j < length; j++) {
@@ -649,7 +650,7 @@ Database.prototype.$views = function() {
 					Fs.appendFile(filename, builder.join(NEWLINE) + NEWLINE, next);
 				}, next);
 			});
-		}, 5);
+		}, () => self.next(0), 5);
 	});
 
 	return self;
