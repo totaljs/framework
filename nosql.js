@@ -1042,14 +1042,32 @@ Counter.prototype.remove = function(id, callback) {
 };
 
 Counter.prototype.count = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
 	return this.read(id, 0, callback);
 };
 
 Counter.prototype.yearly = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
 	return this.read(id, 1, callback);
 };
 
 Counter.prototype.monthly = function(id, callback) {
+
+	if (typeof(id) === 'function') {
+		callback = id;
+		id = null;
+	}
+
 	return this.read(id, 2, callback);
 };
 
@@ -1058,7 +1076,7 @@ Counter.prototype.read = function(id, type, callback) {
 	var self = this;
 
 	if (self.type) {
-		setTimeout(() => self.read(type, callback), 200);
+		setTimeout(() => self.read(id, type, callback), 200);
 		return self;
 	}
 
@@ -1067,43 +1085,63 @@ Counter.prototype.read = function(id, type, callback) {
 
 	var filename = self.db.filename + '-counter';
 	var reader = Fs.createReadStream(filename);
-	var output = {};
 	var keys = {};
 	var single = false;
+	var all = id ? false : true;
+	var output = all && !type ? 0 : {};
 
 	if (typeof(id) === 'string') {
 		id = [id];
 		single = true;
 	}
 
-	id.forEach(id => keys[id] = true);
+	id && id.forEach(id => keys[id] = true);
 	self.type = 2;
 
 	reader.on('error', function() {
 		self.type = 0;
-		callback(null, single ? (type ? output : 0) : output);
+		callback(null, single ? (type ? output : 0) : (all ? EMPTYARRAY : output));
 	});
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var index = value.indexOf('=');
 		var key = value.substring(0, index);
-		if (!keys[key])
-			return;
-		switch (type) {
-			case 0:
-				output[key] = +value.substring(index + 1, value.indexOf(';'));
-				break;
-			case 1:
-				output[key] = counter_parse_years(value);
-				break;
-			case 2:
-				output[key] = counter_parse_months(value);
-				break;
-		}
+		if (all || keys[key])
+			switch (type) {
+				case 0:
+					if (all)
+						output += +value.substring(index + 1, value.indexOf(';'));
+					else
+						output[key] = +value.substring(index + 1, value.indexOf(';'));
+					break;
+				case 1:
+					if (all)
+						counter_parse_years_all(output, value);
+					else
+						output[key] = counter_parse_years(value);
+					break;
+				case 2:
+					if (all)
+						counter_parse_months_all(output, value);
+					else
+						output[key] = counter_parse_months(value);
+					break;
+			}
 	}));
 
 	reader.on('end', function() {
 		self.type = 0;
+
+		// Array conversation
+		if (all && type) {
+			var tmp = [];
+			if (type === 2)
+				Object.keys(output).forEach(key => tmp.push({ key: key, year: +key.substring(0, 4), month: +key.substring(4, 6), value: output[key] }));
+			else
+				Object.keys(output).forEach(key => tmp.push({ year: +key, value: output[key] }));
+			output = tmp;
+		}
+
 		callback(null, single ? (type ? output[id[0]] || EMPTYOBJECT : output[id[0]] || 0) : output);
 	});
 
@@ -1122,10 +1160,7 @@ function counter_parse_years(value) {
 		tmp[key] = val;
 	}
 
-	Object.keys(tmp).forEach(function(key) {
-		output.push({ year: +key, value: tmp[key] });
-	});
-
+	Object.keys(tmp).forEach(key => output.push({ year: +key, value: tmp[key] }));
 	return output;
 }
 
@@ -1137,10 +1172,34 @@ function counter_parse_months(value) {
 	for (var i = 1, length = arr.length; i < length; i++) {
 		var val = +arr[i].substring(7);
 		var key = arr[i].substring(0, 6);
-		tmp.push({ key: key, year: +arr[i].substring(0, 4), month: parseInt(arr[i].substring(4, 6), 10), value: val });
+		tmp.push({ key: key, year: +arr[i].substring(0, 4), month: +arr[i].substring(4, 6), value: val });
 	}
 
 	return tmp;
+}
+
+function counter_parse_years_all(output, value) {
+	var arr = value.trim().split(';');
+	for (var i = 1, length = arr.length; i < length; i++) {
+		var val = +arr[i].substring(7);
+		var key = arr[i].substring(0, 4);
+		if (output[key])
+			output[key] += val;
+		else
+			output[key] = val;
+	}
+}
+
+function counter_parse_months_all(output, value) {
+	var arr = value.trim().split(';');
+	for (var i = 1, length = arr.length; i < length; i++) {
+		var val = +arr[i].substring(7);
+		var key = arr[i].substring(0, 6);
+		if (output[key])
+			output[key] += val;
+		else
+			output[key] = val;
+	}
 }
 
 Counter.prototype.save = function() {
@@ -1215,6 +1274,24 @@ Counter.prototype.save = function() {
 			self.timeout = 0;
 			self.type = 0;
 		});
+	});
+
+	return self;
+};
+
+Counter.prototype.clear = function(callback) {
+	var self = this;
+
+	if (self.type) {
+		setTimeout(() => self.clear(callback), 200);
+		return self;
+	}
+
+	self.type = 3;
+
+	Fs.unlink(self.db.filename + '-counter', function() {
+		self.type = 0;
+		callback && callback();
 	});
 
 	return self;
