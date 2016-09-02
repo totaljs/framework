@@ -1239,6 +1239,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var viewname;
 	var self = this;
 	var skip = true;
+	var sitemap;
 
 	if (url instanceof Array) {
 		url.forEach(function(url) {
@@ -1254,7 +1255,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	if (url[0] === '#') {
 		url = url.substring(1);
 		if (url !== '400' && url !== '401' && url !== '403' && url !== '404' && url !== '408' && url !== '431' && url !== '500' && url !== '501') {
-			var sitemap = self.sitemap(url, true);
+			sitemap = self.sitemap(url, true);
 			if (sitemap) {
 				name = url;
 				url = sitemap.url;
@@ -1292,18 +1293,19 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 	if (type === 'string') {
 		viewname = funcExecute;
-		funcExecute = (function(name) {
+		funcExecute = (function(name, sitemap) {
 			var themeName = framework_utils.parseTheme(name);
 			if (themeName)
 				name = prepare_viewname(name);
 			return function() {
+				sitemap && this.sitemap(sitemap.id);
 				if (name[0] === '~')
 					this.themeName = '';
 				else if (themeName)
 					this.themeName = themeName;
 				this.view(name);
 			};
-		})(viewname);
+		})(viewname, sitemap);
 	} else if (typeof(funcExecute) !== 'function') {
 
 		viewname = url;
@@ -1318,13 +1320,13 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		if (!viewname || viewname === '/')
 			viewname = 'index';
 
-		funcExecute = (function(name) {
+		funcExecute = (function(name, sitemap) {
 			return function() {
-				if (name[0] === '~')
-					this.theme('');
+				sitemap && this.sitemap(sitemap.id);
+				name[0] === '~' && this.theme('');
 				this.view(name);
 			};
-		})(viewname);
+		})(viewname, sitemap);
 	}
 
 	var priority = 0;

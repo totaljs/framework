@@ -485,6 +485,10 @@ function viewViews() {
 	self.repository.title = 'TEST';
 	self.repository.tag = '<b>A</b>';
 
+	self.repository.a = 'a';
+	self.repository.b = 'b';
+	self.repository.c = 'c';
+
 	self.repository.optionsEmpty = [{
 		name: 'A',
 		value: 'A'
@@ -569,6 +573,8 @@ function viewViews() {
 	assert.ok(output.contains('#absolute1=<script src="http://127.0.0.1:8001/js/filename.js"></script>#'), name + 'absolute problem without hostname');
 	assert.ok(output.contains('#absolute2=<script src="https://www.google.sk/js/filename.js"></script>#'), name + 'aboslute problem with hostname');
 	assert.ok(output.contains('#absolute3=<script src="http://localhost:8000/js/default.js"></script><script src="http://localhost:8000/js/home.js"></script>#'), name + 'aboslute problem array + with hostname');
+
+	assert.ok(output.contains('#d429c9c776604a9e15d04d9bd90dba27e0155965=a+b+c#'), name + 'https://github.com/totaljs/framework/commit/d429c9c776604a9e15d04d9bd90dba27e0155965');
 
 	self.repository.A = 'A';
 
