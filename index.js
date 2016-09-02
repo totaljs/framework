@@ -6411,8 +6411,7 @@ Framework.prototype._service = function(count) {
 	if (count % self.config['default-interval-clear-resources'] === 0) {
 		self.emit('clear', 'resources');
 		self.resources = {};
-		if (global.gc)
-			setTimeout(global.gc, 1000);
+		global.gc && setTimeout(global.gc, 1000);
 	}
 
 	// Update expires date
@@ -6439,10 +6438,10 @@ Framework.prototype._service = function(count) {
 
 		index--;
 
-		if (!schedule.repeat)
-			self.schedules.splice(index, 1);
-		else
+		if (schedule.repeat)
 			schedule.expire = self.datetime.add(schedule.repeat);
+		else
+			self.schedules.splice(index, 1);
 
 		schedule.fn.call(self);
 	}
