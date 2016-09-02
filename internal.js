@@ -1696,18 +1696,14 @@ function view_parse(content, minify, filename, controller) {
 		if (!nocompressHTML && is)
 			value += ' ';
 
-		if (value.match(REG_EMPTY)) {
-			txtindex = $VIEWCACHE.indexOf(value);
+		txtindex = $VIEWCACHE.indexOf(value);
 
-			if (txtindex === -1) {
-				txtindex = $VIEWCACHE.length;
-				$VIEWCACHE.push(value);
-			}
-
-			return '$VIEWCACHE[' + txtindex + ']';
+		if (txtindex === -1) {
+			txtindex = $VIEWCACHE.length;
+			$VIEWCACHE.push(value);
 		}
 
-		return DELIMITER + value + DELIMITER;
+		return '$VIEWCACHE[' + txtindex + ']';
 	}
 
 	if (!command)
