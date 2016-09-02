@@ -55,6 +55,7 @@ const REG_TAGREMOVE = /[^\>]\n\s{1,}$/;
 const REG_EMPTY = /\n|\r|\'|\\/;
 const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
 const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
+const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 
 global.$STRING = function(value) {
 	return value != null ? value.toString() : '';
@@ -62,14 +63,6 @@ global.$STRING = function(value) {
 
 global.$VIEWCACHE = [];
 
-/*
-	Internal function / Parse data from Request
-	@req {ServerRequest}
-	@contentType {String}
-	@maximumSize {Number}
-	@tmpDirectory {String}
-	@subscribe {Object}
-*/
 exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscribe) {
 
 	var boundary = contentType.split(';')[1];
@@ -82,10 +75,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	}
 
 	// For unexpected closing
-	req.once('close', function() {
-		if (!req.$upload)
-			req.clear();
-	});
+	req.once('close', () => !req.$upload && req.clear());
 
 	var parser = new MultipartParser();
 	var size = 0;
@@ -177,10 +167,10 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		if (size >= maximumSize) {
 			req.buffer_exceeded = true;
 
-			if (!rm)
-				rm = [tmp.path];
-			else
+			if (rm)
 				rm.push(tmp.path);
+			else
+				rm = [tmp.path];
 
 			return;
 		}
@@ -298,10 +288,10 @@ function parse_multipart_header(header) {
 	if (beg !== -1)
 		tmp = header.substring(beg + length, header.indexOf('"', beg + length));
 
-	if (!tmp)
-		arr[0] = 'undefined_' + (Math.floor(Math.random() * 100000)).toString();
-	else
+	if (tmp)
 		arr[0] = tmp;
+	else
+		arr[0] = 'undefined_' + (Math.floor(Math.random() * 100000)).toString();
 
 	find = ' filename="';
 	length = find.length;
@@ -314,10 +304,10 @@ function parse_multipart_header(header) {
 	if (beg !== -1)
 		tmp = header.substring(beg + length, header.indexOf('"', beg + length));
 
-	if (!tmp)
-		arr[1] = null;
-	else
+	if (tmp)
 		arr[1] = tmp;
+	else
+		arr[1] = null;
 
 	return arr;
 }
@@ -637,15 +627,6 @@ exports.routeParam = function(routeUrl, route) {
 	return arr;
 };
 
-/*
-	HttpFile class
-	@name {String}
-	@filename {String}
-	@path {String}
-	@length {Number}
-	@contentType {String}
-	return {HttpFile}
-*/
 function HttpFile() {
 	this.name;
 	this.filename;
@@ -656,11 +637,6 @@ function HttpFile() {
 	this.height = 0;
 }
 
-/*
-	Read file to byte array
-	@filename {String} :: new filename
-	return {HttpFile}
-*/
 HttpFile.prototype.copy = function(filename, callback) {
 
 	var self = this;
@@ -685,19 +661,10 @@ HttpFile.prototype.$$copy = function(filename) {
 	};
 };
 
-/*
-	Read file to buffer (SYNC)
-	return {Buffer}
-*/
 HttpFile.prototype.readSync = function() {
 	return fs.readFileSync(this.path);
 };
 
-/*
-	Read file to buffer (ASYNC)
-	@callback {Function} :: function(error, data);
-	return {HttpFile}
-*/
 HttpFile.prototype.read = function(callback) {
 	var self = this;
 	fs.readFile(self.path, callback);
@@ -711,19 +678,11 @@ HttpFile.prototype.$$read = function() {
 	};
 };
 
-/*
-	Create MD5 hash from a file
-	@callback {Function} :: function(error, hash);
-	return {HttpFile}
-*/
 HttpFile.prototype.md5 = function(callback) {
-
 	var self = this;
 	var md5 = crypto.createHash('md5');
 	var stream = fs.createReadStream(self.path);
-
 	stream.on('data', (buffer) => md5.update(buffer));
-
 	stream.on('error', function(error) {
 		callback(error, null);
 		callback = null;
@@ -744,64 +703,30 @@ HttpFile.prototype.$$md5 = function() {
 	};
 };
 
-/*
-	Get a stream
-	@options {Object} :: optional
-	return {Stream}
-*/
 HttpFile.prototype.stream = function(options) {
-	var self = this;
-	return fs.createReadStream(self.path, options);
+	return fs.createReadStream(this.path, options);
 };
 
-/*
-	Pipe a stream
-	@stream {Stream}
-	@options {Object} :: optional
-	return {Stream}
-*/
 HttpFile.prototype.pipe = function(stream, options) {
-	var self = this;
-	return fs.createReadStream(self.path, options).pipe(stream, options);
+	return fs.createReadStream(this.path, options).pipe(stream, options);
 };
 
-/*
-	return {Boolean}
-*/
 HttpFile.prototype.isImage = function() {
-	var self = this;
-	return self.type.indexOf('image/') !== -1;
+	return this.type.indexOf('image/') !== -1;
 };
 
-/*
-	return {Boolean}
-*/
 HttpFile.prototype.isVideo = function() {
-	var self = this;
-	return self.type.indexOf('video/') !== -1;
+	return this.type.indexOf('video/') !== -1;
 };
 
-/*
-	return {Boolean}
-*/
 HttpFile.prototype.isAudio = function() {
-	var self = this;
-	return self.type.indexOf('audio/') !== -1;
+	return this.type.indexOf('audio/') !== -1;
 };
 
-/*
-	@imageMagick {Boolean} :: optional - default false
-	return {Image} :: look at ./lib/image.js
-*/
 HttpFile.prototype.image = function(imageMagick) {
-
 	var im = imageMagick;
-
-	// Not a clean solution because the framework hasn't a direct dependence.
-	// This is hack :-)
 	if (im === undefined)
 		im = framework.config['default-image-converter'] === 'im';
-
 	return framework_image.init(this.path, im, this.width, this.height);
 };
 
@@ -837,10 +762,8 @@ function compile_autovendor(css) {
 
 	return css.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(reg6, function(search, index, text) {
 		for (var i = index; i > 0; i--) {
-			if (text[i] === '\'' || text[i] === '"') {
-				if (text[i - 1] === ':')
-					return search;
-			}
+			if ((text[i] === '\'' || text[i] === '"') && (text[i - 1] === ':'))
+				return search;
 		}
 		return ',';
 	}).replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
@@ -853,8 +776,6 @@ function compile_autovendor(css) {
 */
 function autoprefixer(value) {
 
-	var prefix = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
-
 	value = autoprefixer_keyframes(value);
 
 	var builder = [];
@@ -862,9 +783,9 @@ function autoprefixer(value) {
 	var property;
 
 	// properties
-	for (var i = 0; i < prefix.length; i++) {
+	for (var i = 0, length = AUTOVENDOR.length; i < length; i++) {
 
-		property = prefix[i];
+		property = AUTOVENDOR[i];
 		index = 0;
 
 		while (index !== -1) {
@@ -898,10 +819,7 @@ function autoprefixer(value) {
 			if (css.substring(0, end + 1).replace(/\s/g, '') !== property + ':')
 				continue;
 
-			builder.push({
-				name: property,
-				property: css
-			});
+			builder.push({ name: property, property: css });
 		}
 	}
 
@@ -928,16 +846,13 @@ function autoprefixer(value) {
 		}
 
 		if (name === 'background' || name === 'background-image') {
-
 			if (property.indexOf('linear-gradient') === -1)
 				continue;
-
 			updated = plus.replacer('linear-', '-webkit-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-o-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
-			updated += plus; // + (plus[plus.length - 1] === ';' ? '' : delimiter);
-
+			updated += plus;
 			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
@@ -952,14 +867,11 @@ function autoprefixer(value) {
 		}
 
 		if (name === 'display') {
-
 			if (property.indexOf('box') === -1)
 				continue;
-
 			updated = plus + delimiter;
 			updated += plus.replacer('box', '-webkit-box') + delimiter;
 			updated += plus.replacer('box', '-moz-box');
-
 			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
@@ -983,8 +895,6 @@ function autoprefixer(value) {
 
 	output = null;
 	builder = null;
-	prefix = null;
-
 	return value;
 }
 
