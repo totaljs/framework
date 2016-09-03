@@ -1049,7 +1049,7 @@ function minify_javascript(data) {
 				if (last !== '\\' && c === '/')
 					regexp = false;
 			} else
-				regexp = (last === '=' || last === '(') && (c === '/');
+				regexp = (last === '=' || last === '(' || last === ':') && (c === '/');
 		}
 
 		if (scope && prev === '\\' && c === '\\') {
