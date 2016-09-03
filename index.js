@@ -468,7 +468,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2020;
-	this.version_header = '2.0.2-6';
+	this.version_header = '2.0.2-7';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -884,13 +884,13 @@ Framework.prototype.stop = function(signal) {
 
 	for (var m in framework.workers) {
 		var worker = framework.workers[m];
-		worker && worker.kill && worker.kill(signal || 'SIGTERM');
+		TRY(() => worker && worker.kill && worker.kill(signal || 'SIGTERM'));
 	}
 
 	framework.emit('exit');
 
 	if (!self.isWorker && typeof(process.send) === 'function')
-		process.send('stop');
+		TRY(() => process.send('stop'));
 
 	self.cache.stop();
 	self.server && self.server.close();
@@ -10877,22 +10877,23 @@ Controller.prototype.sitemap_change = function(name, type, value, format) {
 	}
 
 	for (var i = 0, length = sitemap.length; i < length; i++) {
-		if (sitemap[i].id === name) {
 
-			var tmp = sitemap[i][type];
+		if (sitemap[i].id !== name)
+			continue;
 
-			if (typeof(value) === 'function')
-				sitemap[i][type] = value(sitemap[i][type]);
-			else
-				sitemap[i][type] = format ? sitemap[i][type].format(value) : value;
+		var tmp = sitemap[i][type];
 
-			if (type === 'name') {
-				if (this.repository[REPOSITORY_META_TITLE] === tmp)
-					this.repository[REPOSITORY_META_TITLE] = sitemap[i][type];
-			}
+		if (typeof(value) === 'function')
+			sitemap[i][type] = value(sitemap[i][type]);
+		else
+			sitemap[i][type] = format ? sitemap[i][type].format(value) : value;
 
-			return this;
+		if (type === 'name') {
+			if (this.repository[REPOSITORY_META_TITLE] === tmp)
+				this.repository[REPOSITORY_META_TITLE] = sitemap[i][type];
 		}
+
+		return this;
 	}
 
 	return this;

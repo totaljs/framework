@@ -28,6 +28,7 @@
 - fixed: CSS compressor
 - fixed: CORS
 - fixed: problem with SUCCESS() and async schemas
+- fixed: killing the process
 
 ======= 2.0.1
 
