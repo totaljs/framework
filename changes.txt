@@ -16,6 +16,7 @@
 
 - updated: `sitemap_chnage(name, property, value, [format])` new argument format `Boolean`
 - updated: `framework.view()`, `controller.view()` and `@{view()}` supports `=theme/viewname`
+- updated: sitemap routing supports localization
 
 - fixed: (critical) NoSQL views
 - fixed: `F.resize()` additional path `~`

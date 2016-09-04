@@ -1090,10 +1090,7 @@ Framework.prototype.restful = function(url, flags, onQuery, onGet, onSave, onDel
 
 	if (onQuery) {
 		tmp = [];
-
-		if (flags)
-			tmp.push.apply(tmp, flags);
-
+		flags && tmp.push.apply(tmp, flags);
 		self.route(url, tmp, onQuery);
 	}
 
@@ -1101,34 +1098,22 @@ Framework.prototype.restful = function(url, flags, onQuery, onGet, onSave, onDel
 
 	if (onGet) {
 		tmp = [];
-
-		if (flags)
-			tmp.push.apply(tmp, flags);
-
+		flags && tmp.push.apply(tmp, flags);
 		self.route(restful, tmp, onGet);
 	}
 
 	if (onSave) {
 		tmp = ['post'];
-
-		if (flags)
-			tmp.push.apply(tmp, flags);
-
+		flags && tmp.push.apply(tmp, flags);
 		self.route(url, tmp, onSave);
-
 		tmp = ['put'];
-		if (flags)
-			tmp.push.apply(tmp, flags);
-
+		flags && tmp.push.apply(tmp, flags);
 		self.route(restful, tmp, onSave);
 	}
 
 	if (onDelete) {
 		tmp = ['delete'];
-
-		if (flags)
-			tmp.push.apply(tmp, flags);
-
+		flags && tmp.push.apply(tmp, flags);
 		self.route(restful, tmp, onDelete);
 	}
 
@@ -1232,7 +1217,7 @@ Framework.prototype.cors = function(url, flags, credentials) {
  * @param {Number timeout Response timeout.
  * @return {Framework}
  */
-Framework.prototype.web = Framework.prototype.route = function(url, funcExecute, flags, length) {
+Framework.prototype.web = Framework.prototype.route = function(url, funcExecute, flags, length, language) {
 
 	var name;
 	var tmp;
@@ -1240,11 +1225,10 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var self = this;
 	var skip = true;
 	var sitemap;
+	var sitemap_language = language !== undefined;
 
 	if (url instanceof Array) {
-		url.forEach(function(url) {
-			self.route(url, funcExecute, flags, length);
-		});
+		url.forEach(url => self.route(url, funcExecute, flags, length));
 		return self;
 	}
 
@@ -1255,12 +1239,42 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	if (url[0] === '#') {
 		url = url.substring(1);
 		if (url !== '400' && url !== '401' && url !== '403' && url !== '404' && url !== '408' && url !== '431' && url !== '500' && url !== '501') {
-			sitemap = self.sitemap(url, true);
+
+			var sitemapflags = funcExecute instanceof Array ? funcExecute : flags;
+			if (!(sitemapflags instanceof Array))
+				sitemapflags = EMPTYARRAY;
+
+			sitemap = self.sitemap(url, true, language);
 			if (sitemap) {
+
 				name = url;
 				url = sitemap.url;
 				if (sitemap.wildcard)
 					url += '*';
+
+				if (sitemap.localizeUrl) {
+					if (!F.temporary.internal.resources) {
+						try {
+							F.temporary.internal.resources = fs.readdirSync(self.path.resources()).map(n => n.substring(0, n.lastIndexOf('.')));
+						} catch (e) {
+							F.temporary.internal.resources = [];
+						}
+					}
+
+					if (language === undefined) {
+						sitemap_language = true;
+						var sitemaproutes = {};
+
+						F.temporary.internal.resources.forEach(function(language) {
+							var item = self.sitemap(sitemap.id, true, language);
+							if (item.url && item.url !== url)
+								sitemaproutes[item.url] = { name: sitemap.id, language: language };
+						});
+
+						Object.keys(sitemaproutes).forEach(key => self.route('#' + sitemap.id, funcExecute, flags, length, sitemaproutes[key].language));
+					}
+				}
+
 			} else
 				throw new Error('Sitemap item "' + url + '" not found.');
 		} else
@@ -1293,22 +1307,24 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 	if (type === 'string') {
 		viewname = funcExecute;
-		funcExecute = (function(name, sitemap) {
+		funcExecute = (function(name, sitemap, language) {
+			if (language && !this.language)
+				this.language = language;
 			var themeName = framework_utils.parseTheme(name);
 			if (themeName)
 				name = prepare_viewname(name);
 			return function() {
-				sitemap && this.sitemap(sitemap.id);
+				sitemap && this.sitemap(sitemap.id, language);
 				if (name[0] === '~')
 					this.themeName = '';
 				else if (themeName)
 					this.themeName = themeName;
 				this.view(name);
 			};
-		})(viewname, sitemap);
+		})(viewname, sitemap, language);
 	} else if (typeof(funcExecute) !== 'function') {
 
-		viewname = url;
+		viewname = sitemap_language ? sitemap.id : url;
 
 		if (viewname.endsWith('/'))
 			viewname = viewname.substring(0, viewname.length - 1);
@@ -1320,13 +1336,15 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		if (!viewname || viewname === '/')
 			viewname = 'index';
 
-		funcExecute = (function(name, sitemap) {
+		funcExecute = (function(name, sitemap, language) {
 			return function() {
-				sitemap && this.sitemap(sitemap.id);
+				if (language && !this.language)
+					this.language = language;
+				sitemap && this.sitemap(sitemap.id, language);
 				name[0] === '~' && this.theme('');
 				this.view(name);
 			};
-		})(viewname, sitemap);
+		})(viewname, sitemap, language);
 	}
 
 	var priority = 0;
@@ -1387,6 +1405,12 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 			}
 
 			var first = flags[i][0];
+
+			if (first === '&') {
+				// resource (sitemap localization)
+				// doesn't used now
+				continue;
+			}
 
 			if (first === '%') {
 				self.behaviour(url === '' ? '/' : url, flags[i].substring(1));
@@ -7952,14 +7976,10 @@ Framework.prototype._configure_sitemap = function(arr, clean) {
 	}
 
 	var self = this;
-
 	if (!arr || !arr.length)
 		return self;
 
-	if (clean)
-		self.routes.sitemap = {};
-
-	if (!self.routes.sitemap)
+	if (clean || !self.routes.sitemap)
 		self.routes.sitemap = {};
 
 	for (var i = 0, length = arr.length; i < length; i++) {
@@ -7980,12 +8000,23 @@ Framework.prototype._configure_sitemap = function(arr, clean) {
 		var a = val.split('-->');
 		var url = a[1].trim();
 		var wildcard = false;
+
 		if (url.endsWith('*')) {
 			wildcard = true;
 			url = url.substring(0, url.length - 1);
 		}
 
-		self.routes.sitemap[key] = { name: a[0].trim(), url: url, parent: a[2] ? a[2].trim() : null, wildcard: wildcard };
+		var name = a[0].trim();
+		var localizeName = name.startsWith('@(');
+		var localizeUrl = url.startsWith('@(');
+
+		if (localizeName)
+			name = name.substring(2, name.length - 1).trim();
+
+		if (localizeUrl)
+			url = url.substring(2, url.length - 1).trim();
+
+		self.routes.sitemap[key] = { name: name, url: url, parent: a[2] ? a[2].trim() : null, wildcard: wildcard, formatName: name.indexOf('{') !== -1, formatUrl: url.indexOf('{') !== -1, localizeName: localizeName, localizeUrl: localizeUrl };
 	}
 
 	return self;
@@ -8003,28 +8034,35 @@ Framework.prototype.sitemap = function(name, me, language) {
 	}
 
 	var key = REPOSITORY_SITEMAP + name + '$' + (me ? '1' : '0') + '$' + (language || '');
+
 	if (self.temporary.other[key])
 		return self.temporary.other[key];
 
 	var sitemap;
 	var id = name;
+	var url;
+	var title;
 
 	if (me === true) {
 		sitemap = self.routes.sitemap[name];
-		var item = { sitemap: id, id: '', name: '', url: '', last: true, selected: true, index: 0, wildcard: false };
+		var item = { sitemap: id, id: '', name: '', url: '', last: true, selected: true, index: 0, wildcard: false, formatName: false, formatUrl: false };
 		if (!sitemap)
 			return item;
 
-		var title = sitemap.name;
-		if (title.startsWith('@('))
-			title = self.translate(language, title.substring(2, title.length - 1).trim());
+		title = sitemap.name;
+		if (sitemap.localizeName)
+			title = self.translate(language, title);
 
-		var url = sitemap.url;
-		if (url.startsWith('@('))
-			url = self.translate(language, url.substring(2, url.length - 1).trim());
+		url = sitemap.url;
+		if (sitemap.localizeUrl)
+			url = self.translate(language, url);
 
 		item.sitemap = id;
 		item.id = name;
+		item.formatName = sitemap.formatName;
+		item.formatUrl = sitemap.formatUrl;
+		item.localizeUrl = sitemap.localizeUrl;
+		item.localizeName = sitemap.localizeName;
 		item.name = title;
 		item.url = url;
 		item.wildcard = sitemap.wildcard;
@@ -8040,11 +8078,16 @@ Framework.prototype.sitemap = function(name, me, language) {
 		if (!sitemap)
 			break;
 
-		var title = sitemap.name;
-		if (title.startsWith('@('))
-			title = self.translate(language, sitemap.name.substring(2, sitemap.name.length - 1));
+		title = sitemap.name;
+		url = sitemap.url;
 
-		arr.push({ sitemap: id, id: name, name: title, url: sitemap.url, last: index === 0, first: sitemap.parent ? false : true, selected: index === 0, index: index, wildcard: sitemap.wildcard });
+		if (sitemap.localizeName)
+			title = self.translate(language, sitemap.name);
+
+		if (sitemap.localizeUrl)
+			url = self.translate(language, url);
+
+		arr.push({ sitemap: id, id: name, name: title, url: url, last: index === 0, first: sitemap.parent ? false : true, selected: index === 0, index: index, wildcard: sitemap.wildcard, formatName: sitemap.formatName, formatUrl: sitemap.formatUrl, localizeName: sitemap.localizeName, localizeUrl: sitemap.localizeUrl });
 		index++;
 		name = sitemap.parent;
 		if (!name)
@@ -8066,7 +8109,6 @@ Framework.prototype.sitemap_navigation = function(parent, language) {
 
 	var self = this;
 	var key = REPOSITORY_SITEMAP + '_n_' + (parent || '') + '$' + (language || '');;
-
 	if (self.temporary.other[key])
 		return self.temporary.other[key];
 
@@ -8080,10 +8122,15 @@ Framework.prototype.sitemap_navigation = function(parent, language) {
 			continue;
 
 		var title = item.name;
-		if (title.startsWith('@('))
-			title = self.translate(language, item.name.substring(2, item.name.length - 1));
+		var url = item.url;
 
-		arr.push({ id: parent || '', name: title, url: item.url, last: index === 0, first: item.parent ? false : true, selected: index === 0, index: index, wildcard: item.wildcard });
+		if (item.localizeName)
+			title = self.translate(language, title);
+
+		if (item.localizeUrl)
+			url = self.translate(language, url);
+
+		arr.push({ id: parent || '', name: title, url: url, last: index === 0, first: item.parent ? false : true, selected: index === 0, index: index, wildcard: item.wildcard, formatName: item.formatName, formatUrl: item.formatUrl });
 		index++;
 	}
 
@@ -8332,6 +8379,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 	var tmp;
 	var subtype;
 	var value;
+	var resources = false;
 
 	for (var i = 0; i < length; i++) {
 		var str = arr[i];
@@ -10866,62 +10914,74 @@ Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
 };
 
 Controller.prototype.sitemap_change = function(name, type, value, format) {
-	var sitemap = this.repository[REPOSITORY_SITEMAP];
+
+	var self = this;
+	var sitemap = self.repository[REPOSITORY_SITEMAP];
+
 	if (!sitemap)
-		sitemap = this.sitemap(name);
+		sitemap = self.sitemap(name);
 
 	if (!sitemap.$cloned) {
 		sitemap = framework_utils.clone(sitemap);
 		sitemap.$cloned = true;
-		this.repository[REPOSITORY_SITEMAP] = sitemap;
+		self.repository[REPOSITORY_SITEMAP] = sitemap;
 	}
+
+	var isFn = typeof(value) === 'function';
 
 	for (var i = 0, length = sitemap.length; i < length; i++) {
 
-		if (sitemap[i].id !== name)
+		var item = sitemap[i];
+		if (item.id !== name)
 			continue;
 
-		var tmp = sitemap[i][type];
+		var tmp = item[type];
 
-		if (typeof(value) === 'function')
-			sitemap[i][type] = value(sitemap[i][type]);
+		if (isFn)
+			item[type] = value(item[type]);
+		else if (type === 'name')
+			item[type] = item.formatName ? item[type].format(value) : value;
+		else if (type === 'url')
+			item[type] = item.formatUrl ? item[type].format(value) : value;
 		else
-			sitemap[i][type] = format ? sitemap[i][type].format(value) : value;
+			item[type] = value;
 
 		if (type === 'name') {
-			if (this.repository[REPOSITORY_META_TITLE] === tmp)
-				this.repository[REPOSITORY_META_TITLE] = sitemap[i][type];
+			if (self.repository[REPOSITORY_META_TITLE] === tmp)
+				self.repository[REPOSITORY_META_TITLE] = item[type];
 		}
 
-		return this;
+		return self;
 	}
 
-	return this;
+	return self;
 };
 
 Controller.prototype.sitemap_replace = function(name, title, url, format) {
-	var sitemap = this.repository[REPOSITORY_SITEMAP];
+	var self = this;
+	var sitemap = self.repository[REPOSITORY_SITEMAP];
 	if (!sitemap)
-		sitemap = this.sitemap(name);
+		sitemap = self.sitemap(name);
 
 	if (!sitemap.$cloned) {
 		sitemap = framework_utils.clone(sitemap);
 		sitemap.$cloned = true;
-		this.repository[REPOSITORY_SITEMAP] = sitemap;
+		self.repository[REPOSITORY_SITEMAP] = sitemap;
 	}
 
 	for (var i = 0, length = sitemap.length; i < length; i++) {
-		if (sitemap[i].id === name) {
-			var is = this.repository[REPOSITORY_META_TITLE] === sitemap[i].name;
-			sitemap[i].name = format ? sitemap[i].name.format(title) : typeof(title) === 'function' ? title(sitemap[i].name) : title;
-			sitemap[i].url = format ? sitemap[i].url.format(url) : typeof(url) === 'function' ? url(sitemap[i].url) : url;
-			if (is)
-				this.repository[REPOSITORY_META_TITLE] = sitemap[i].name;
-			return this;
-		}
+		var item = sitemap[i];
+		if (item.id !== name)
+			continue;
+		var is = self.repository[REPOSITORY_META_TITLE] === item.name;
+		item.name = item.formatName ? item.name.format(title) : typeof(title) === 'function' ? title(item.name) : title;
+		item.url = item.formatUrl ? item.url.format(url) : typeof(url) === 'function' ? url(item.url) : url;
+		if (is)
+			self.repository[REPOSITORY_META_TITLE] = item.name;
+		return self;
 	}
 
-	return this;
+	return self;
 };
 
 Controller.prototype.$sitemap_change = function(name, type, value, format) {

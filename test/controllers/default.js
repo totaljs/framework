@@ -25,6 +25,7 @@ exports.install = function() {
 		this.plain('ROBOT');
 	}, ['robot']);
 
+	framework.route('#route');
 	framework.route('/view-in-modules/', '.' + F.path.modules('someview'));
 	framework.route('/options/', plain_options, ['options']);
 	framework.route('/exception/', 'exception');
