@@ -641,7 +641,7 @@ Image.prototype.align = function(type) {
 			break;
 	}
 
-	ouptut && this.push('-gravity', output, 3);
+	output && this.push('-gravity', output, 3);
 	return this;
 };
 
