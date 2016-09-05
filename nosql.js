@@ -422,7 +422,7 @@ Database.prototype.$reader = function() {
 		if (!key)
 			continue;
 
-		var data = framework.cache.get(key);
+		var data = framework.cache.read2(key);
 		if (!data)
 			continue;
 
@@ -457,7 +457,7 @@ Database.prototype.$readerview = function() {
 		var item = self.pending_reader_view[i];
 		var name = self.views[item.view].$filename;
 		if (item.builder.$cache_key) {
-			var data = framework.cache.get(item.builder.$cache_key);
+			var data = framework.cache.read2(item.builder.$cache_key);
 			if (data) {
 				item.builder.$callback(errorhandling(err, item.builder, data.items), data.items, data.count);
 				continue;

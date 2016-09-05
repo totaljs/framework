@@ -468,7 +468,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2020;
-	this.version_header = '2.0.2-8';
+	this.version_header = '2.0.2-9';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -7086,21 +7086,12 @@ Framework.prototype._request_stats = function(beg, isStaticFile) {
  * @return {Object}
  */
 Framework.prototype.model = function(name) {
-
 	var self = this;
 	var model = self.models[name];
-
 	if (model || model === null)
 		return model;
-
-	if (self.models[name] !== undefined)
-		return self.models[name];
-
 	var filename = path.join(directory, self.config['directory-models'], name + '.js');
-
-	if (existsSync(filename))
-		self.install('model', name, filename, undefined, undefined, undefined, true);
-
+	existsSync(filename) && self.install('model', name, filename, undefined, undefined, undefined, true);
 	return self.models[name] || null;
 };
 
@@ -7118,12 +7109,8 @@ Framework.prototype.source = function(name, options, callback) {
 	if (model || model === null)
 		return model;
 
-	if (self.sources[name] !== undefined)
-		return self.sources[name];
-
 	var filename = path.join(directory, self.config['directory-source'], name + '.js');
-	if (existsSync(filename))
-		self.install('source', name, filename, options, callback, undefined, true);
+	existsSync(filename) && self.install('source', name, filename, options, callback, undefined, true);
 	return self.sources[name] || null;
 };
 
@@ -7625,11 +7612,9 @@ Framework.prototype.test = function(stop, names, cb) {
 
 				self.testsFiles.push({ name: name, index: self.testsFiles.length, fn: fn, priority: framework.testsPriority });
 
-				if (test.usage) {
-					(function(test) {
-						framework.testsResults.push(() => test.usage(name));
-					})(test);
-				}
+				test.usage && (function(test) {
+					framework.testsResults.push(() => test.usage(name));
+				})(test);
 
 				counter++;
 
@@ -7672,11 +7657,8 @@ Framework.prototype.test = function(stop, names, cb) {
 
 				results();
 				self.isTest = false;
-
 				console.log('');
-
-				if (cb)
-					cb();
+				cb && cb();
 			});
 		}, 100);
 	});
@@ -7726,8 +7708,7 @@ Framework.prototype.clear = function(callback, isInit) {
 				var filename = files[i].substring(dir.length);
 				if (plus && !filename.startsWith(plus))
 					continue;
-				if (filename.indexOf('/') === -1)
-					arr.push(files[i]);
+				filename.indexOf('/') === -1 && arr.push(files[i]);
 			}
 			files = arr;
 			directories = [];
@@ -7763,12 +7744,12 @@ Framework.prototype.unlink = function(arr, callback) {
 	}
 
 	var filename = arr.shift();
-	if (!filename) {
-		callback && callback();
-		return self;
-	}
 
-	fs.unlink(filename, (err) => self.unlink(arr, callback));
+	if (filename)
+		fs.unlink(filename, (err) => self.unlink(arr, callback));
+	else
+		callback && callback();
+
 	return self;
 };
 
@@ -7790,12 +7771,12 @@ Framework.prototype.rmdir = function(arr, callback) {
 	}
 
 	var path = arr.shift();
-	if (!path) {
-		callback && callback();
-		return self;
-	}
 
-	fs.rmdir(path, () => self.rmdir(arr, callback));
+	if (path)
+		fs.rmdir(path, () => self.rmdir(arr, callback));
+	else
+		callback && callback();
+
 	return self;
 };
 
@@ -8181,7 +8162,7 @@ Framework.prototype._configure_dependencies = function(arr) {
 
 		var key = str.substring(0, index).trim();
 		var url = str.substring(index + 2).trim();
-		var options = {};
+		var options = EMPTYOBJECT;
 
 		index = url.indexOf('-->');
 
@@ -8301,8 +8282,7 @@ Framework.prototype._configure_versions = function(arr, clean) {
 		var key = str.substring(0, index).trim();
 		var filename = str.substring(index + len).trim();
 		self.versions[key] = filename;
-		if (ismap)
-			self.map(filename, self.path.public(key));
+		ismap && self.map(filename, self.path.public(key));
 	}
 
 	return self;
@@ -8376,10 +8356,10 @@ Framework.prototype._configure = function(arr, rewrite) {
 	var obj = {};
 	var accepts = null;
 	var length = arr.length;
+	var resources = false;
 	var tmp;
 	var subtype;
 	var value;
-	var resources = false;
 
 	for (var i = 0; i < length; i++) {
 		var str = arr[i];
@@ -8502,9 +8482,8 @@ Framework.prototype._configure = function(arr, rewrite) {
 
 	Object.keys(HEADERS).forEach(function(key) {
 		Object.keys(HEADERS[key]).forEach(function(subkey) {
-			if (subkey !== 'Cache-Control')
-				return;
-			HEADERS[key][subkey] = HEADERS[key][subkey].replace(/max-age=\d+/, 'max-age=' + self.config['default-response-maxage']);
+			if (subkey === 'Cache-Control')
+				HEADERS[key][subkey] = HEADERS[key][subkey].replace(/max-age=\d+/, 'max-age=' + self.config['default-response-maxage']);
 		});
 	});
 
@@ -8520,7 +8499,7 @@ Framework.prototype._configure = function(arr, rewrite) {
  */
 Framework.prototype.routeScript = function(name, theme) {
 	var self = this;
-	if (name.lastIndexOf('.js') === -1)
+	if (!name.endsWith('.js'))
 		name += '.js';
 	return self._routeStatic(name, self.config['static-url-script'], theme);
 };
@@ -8532,10 +8511,8 @@ Framework.prototype.routeScript = function(name, theme) {
  */
 Framework.prototype.routeStyle = function(name, theme) {
 	var self = this;
-
-	if (name.lastIndexOf('.css') === -1)
+	if (!name.endsWith('.css'))
 		name += '.css';
-
 	return self._routeStatic(name, self.config['static-url-style'], theme);
 };
 
@@ -8648,7 +8625,6 @@ Framework.prototype._version_prepare = function(html) {
 	var self = this;
 
 	var match = html.match(REG_VERSIONS);
-
 	if (!match)
 		return html;
 
@@ -8840,10 +8816,7 @@ Framework.prototype.accept = function(extension, contentType) {
 		extension = '.' + extension;
 
 	self.config['static-accepts'][extension] = true;
-
-	if (contentType)
-		framework_utils.setContentType(extension, contentType);
-
+	contentType && framework_utils.setContentType(extension, contentType);
 	return self;
 };
 
@@ -8939,16 +8912,12 @@ Framework.prototype.worker2 = function(name, args, callback, timeout) {
 
 	fork.__worker2 = true;
 	fork.on('error', function(e) {
-		if (!callback)
-			return;
-		callback(e);
+		callback && callback(e);
 		callback = null;
 	});
 
 	fork.on('exit', function() {
-		if (!callback)
-			return;
-		callback();
+		callback && callback();
 		callback = null;
 	});
 
@@ -8976,9 +8945,9 @@ Framework.prototype.wait = function(name, enable) {
 		return enable;
 	}
 
-	if (self.waits[name]) {
+	if (self.waits[name])
 		delete self.waits[name];
-	} else {
+	else {
 		self.waits[name] = true;
 		enable = true;
 	}
@@ -9019,17 +8988,17 @@ FrameworkRestrictions.prototype.allow = function(name, value) {
 	var self = this;
 
 	// IP address
-	if (value === undefined) {
+	if (!value) {
 		self.allowedIP.push(name);
 		self.refresh();
 		return framework;
 	}
 
 	// Custom header
-	if (self.allowedCustom[name] === undefined)
-		self.allowedCustom[name] = [value];
-	else
+	if (self.allowedCustom[name])
 		self.allowedCustom[name].push(value);
+	else
+		self.allowedCustom[name] = [value];
 
 	self.refresh();
 	return framework;
@@ -9054,10 +9023,10 @@ FrameworkRestrictions.prototype.disallow = function(name, value) {
 	}
 
 	// Custom header
-	if (self.blockedCustom[name] === undefined)
-		self.blockedCustom[name] = [value];
-	else
+	if (self.blockedCustom[name])
 		self.blockedCustom[name].push(value);
+	else
+		self.blockedCustom[name] = [value];
 
 	self.refresh();
 	return framework;
@@ -9182,8 +9151,7 @@ FrameworkPath.prototype.verify = function(name) {
 		return framework;
 	var directory = framework.config['directory-' + name] || name;
 	var dir = framework_utils.combine(directory);
-	if (!existsSync(dir))
-		fs.mkdirSync(dir);
+	!existsSync(dir) && fs.mkdirSync(dir);
 	framework.temporary.path[prop] = true;
 	return framework;
 };
@@ -9309,20 +9277,12 @@ FrameworkPath.prototype.package = function(name, filename) {
 // =================================================================================
 // *********************************************************************************
 
-/*
-	Cache class
-	@framework {Framework}
-*/
 function FrameworkCache() {
 	this.items = {};
 	this.count = 1;
-	this.interval = null;
+	this.interval;
 }
 
-/*
-	Cache init
-	return {Cache}
-*/
 FrameworkCache.prototype.init = function() {
 	this.interval = setInterval(() => framework.cache.recycle(), 1000 * 60);
 	return this;
@@ -9340,10 +9300,6 @@ FrameworkCache.prototype.clear = function() {
 	return self;
 };
 
-/*
-	Internal function
-	return {Cache}
-*/
 FrameworkCache.prototype.recycle = function() {
 
 	var self = this;
@@ -9354,7 +9310,9 @@ FrameworkCache.prototype.recycle = function() {
 
 	for (var o in items) {
 		var value = items[o];
-		if (value.expire < expire) {
+		if (!value)
+			delete items[o];
+		else if (value.expire < expire) {
 			framework.emit('cache-expire', o, value.value);
 			delete items[o];
 		}
@@ -9364,14 +9322,7 @@ FrameworkCache.prototype.recycle = function() {
 	return self;
 };
 
-/*
-	Add item to cache
-	@name {String}
-	@value {Object}
-	@expire {Date}
-	return @value
-*/
-FrameworkCache.prototype.add = function(name, value, expire, sync) {
+FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync) {
 	var self = this;
 	var type = typeof(expire);
 
@@ -9387,83 +9338,59 @@ FrameworkCache.prototype.add = function(name, value, expire, sync) {
 
 	self.items[name] = { value: value, expire: expire };
 	framework.emit('cache-set', name, value, expire, sync);
-
 	return value;
 };
 
-FrameworkCache.prototype.set = function(name, value, expire, sync) {
-	return this.add(name, value, expire, sync);
-};
-
-/**
- * Get item from the cache
- * @alias FrameworkCache.prototype.get
- * @param {String} key
- * @param {Object} def Default value.
- * @return {Object}
- */
-FrameworkCache.prototype.read = function(key, def) {
-	return this.get(key);
-};
-
-/**
- * Get item from the cache
- * @param {String} key
- * @param {Object} def Default value.
- * @return {Object}
- */
-FrameworkCache.prototype.get = function(key, def) {
+FrameworkCache.prototype.read = FrameworkCache.prototype.get = function(key, def) {
 	var self = this;
 	var value = self.items[key];
 
 	if (!value)
-		return typeof(def) === 'undefined' ? null : def;
+		return def;
 
 	if (value.expire < new Date()) {
-		delete self.items[key];
-		return typeof(def) === 'undefined' ? null : def;
+		self.items[key] = undefined;
+		framework.emit('cache-expire', key, value.value);
+		return def;
 	}
 
 	return value.value;
 };
 
-/*
-	Update cache item expiration
-	@name {String}
-	@expire {Date}
-	return {Cache}
-*/
+FrameworkCache.prototype.read2 = function(key, def) {
+	var self = this;
+	var value = self.items[key];
+
+	if (!value)
+		return def;
+
+	if (value.expire < F.datetime) {
+		self.items[key] = undefined;
+		framework.emit('cache-expire', key, value.value);
+		return def;
+	}
+
+	return value.value;
+};
+
 FrameworkCache.prototype.setExpire = function(name, expire) {
 	var self = this;
 	var obj = self.items[name];
 
-	if (!obj)
-		return self;
+	if (obj)
+		obj.expire = typeof(expire) === 'string' ? expire.parseDateExpiration() : expire;
 
-	if (typeof(expire) === 'string')
-		expire = expire.parseDateExpiration();
-
-	obj.expire = expire;
 	return self;
 };
 
-/*
-	Remove item from cache
-	@name {String}
-	return {Object} :: return value;
-*/
 FrameworkCache.prototype.remove = function(name) {
 	var self = this;
-	var value = self.items[name] || null;
-	delete self.items[name];
+	var value = self.items[name];
+	if (value)
+		self.items[name] = undefined;
 	return value;
 };
 
-/*
-	Remove all
-	@search {String}
-	return {Number}
-*/
 FrameworkCache.prototype.removeAll = function(search) {
 	var self = this;
 	var count = 0;
@@ -9486,28 +9413,19 @@ FrameworkCache.prototype.removeAll = function(search) {
 	return count;
 };
 
-/*
-	Cache function value
-	@name {String}
-	@fnCache {Function} :: params, @value {Object}, @expire {Date}
-	@fnCallback {Function} :: params, @value {Object}
-	return {Cache}
-*/
 FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 
 	var self = this;
-	var value = self.read(name);
+	var value = self.read2(name);
 
 	if (value) {
-		if (fnCallback)
-			fnCallback(value);
+		fnCallback && fnCallback(value);
 		return self;
 	}
 
 	fnCache(function(value, expire) {
 		self.add(name, value, expire);
-		if (fnCallback)
-			fnCallback(value);
+		fnCallback && fnCallback(value);
 	});
 
 	return self;
@@ -9542,9 +9460,7 @@ function Subscribe(framework, req, res, type) {
 Subscribe.prototype.success = function() {
 	var self = this;
 
-	if (self.timeout)
-		clearTimeout(self.timeout);
-
+	self.timeout && clearTimeout(self.timeout);
 	self.timeout = null;
 	self.isCanceled = true;
 
@@ -9636,8 +9552,7 @@ Subscribe.prototype.execute = function(status, isError) {
 
 	if (isError || !route) {
 		framework.stats.response['error' + status]++;
-		if (status !== 500)
-			framework.emit('error' + status, req, res, self.exception);
+		status !== 500 && framework.emit('error' + status, req, res, self.exception);
 	}
 
 	if (!route) {
@@ -9646,8 +9561,7 @@ Subscribe.prototype.execute = function(status, isError) {
 			status = 404;
 
 		if (status === 400 && self.exception instanceof framework_builders.ErrorBuilder) {
-			if (req.$language)
-				self.exception.resource(req.$language, framework.config['default-errorbuilder-resource-prefix']);
+			req.$language && self.exception.resource(req.$language, framework.config['default-errorbuilder-resource-prefix']);
 			var ex = self.exception.output();
 			framework.responseContent(req, res, 200, ex, self.exception.contentType, framework.config['allow-gzip']);
 			return self;
@@ -9672,17 +9586,14 @@ Subscribe.prototype.execute = function(status, isError) {
 	self.controller = controller;
 
 	if (!self.isCanceled && route.timeout) {
-		if (self.timeout)
-			clearTimeout(self.timeout);
+		self.timeout && clearTimeout(self.timeout);
 		self.timeout = setTimeout(function() {
-			if (self.controller && self.controller.precache)
-				self.controller.precache(null, null, null);
+			self.controller && self.controller.precache && self.controller.precache(null, null, null);
 			self.doCancel();
 		}, route.timeout);
 	}
 
-	if (route.isDELAY)
-		self.res.writeContinue();
+	route.isDELAY && self.res.writeContinue();
 
 	if (!framework._length_middleware || !route.middleware)
 		return self.doExecute();
@@ -9690,10 +9601,6 @@ Subscribe.prototype.execute = function(status, isError) {
 	async_middleware(0, req, res, route.middleware, () => self.doExecute(), route.options, controller);
 };
 
-/*
-	@flags {String Array}
-	@url {String}
-*/
 Subscribe.prototype.prepare = function(flags, url) {
 
 	var self = this;
@@ -9727,12 +9634,11 @@ Subscribe.prototype.prepare = function(flags, url) {
 
 	var code = req.buffer_exceeded ? 431 : 404;
 
-	if (!self.schema || !self.route) {
+	if (!self.schema || !self.route)
 		self.execute(code);
-		return
-	}
+	else
+		self.validate(self.route, () => self.execute(code));
 
-	self.validate(self.route, () => self.execute(code));
 	return self;
 };
 
@@ -9793,13 +9699,10 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
 		req.user = user;
 
 	if (self.route && !self.route.isMEMBER && isLogged) {
-
-		if (!self.schema) {
+		if (self.schema)
+			self.validate(self.route, () => self.execute(code));
+		else
 			self.execute(req.buffer_exceeded ? 431 : 401, true);
-			return;
-		}
-
-		self.validate(self.route, () => self.execute(code));
 		return;
 	}
 
@@ -9812,12 +9715,11 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
 	self.route = route;
 	var code = req.buffer_exceeded ? 431 : status;
 
-	if (!self.schema || !route) {
+	if (!self.schema || !route)
 		self.execute(code);
-		return self;
-	}
+	else
+		self.validate(self.route, () => self.execute(code));
 
-	self.validate(self.route, () => self.execute(code));
 	return self;
 };
 
@@ -9982,10 +9884,10 @@ Subscribe.prototype.doEndfile = function() {
 			} else if (file.onValidate && !file.onValidate.call(framework, req, res, true))
 				continue;
 
-			if (!file.middleware)
-				file.execute.call(framework, req, res, false);
-			else
+			if (file.middleware)
 				self.doEndfile_middleware(file);
+			else
+				file.execute.call(framework, req, res, false);
 
 			return self;
 
@@ -10415,14 +10317,10 @@ Controller.prototype.middleware = function(names, options, callback) {
 	}
 
 	if (!options)
-		options = {};
+		options = EMPTYOBJECT;
 
 	var self = this;
-
-	async_middleware(0, self.req, self.res, names, function() {
-		callback && callback();
-	}, options, self);
-
+	async_middleware(0, self.req, self.res, names, () => callback && callback(), options, self);
 	return self;
 };
 
@@ -10527,9 +10425,8 @@ Controller.prototype.date = function(type, d1, d2) {
  * @return {Controller}
  */
 Controller.prototype.header = function(name, value) {
-	var self = this;
-	self.res.setHeader(name, value);
-	return self;
+	this.res.setHeader(name, value);
+	return this;
 };
 
 /**
@@ -10538,13 +10435,11 @@ Controller.prototype.header = function(name, value) {
  * @return {Controller}
  */
 Controller.prototype.host = function(path) {
-	var self = this;
-	return self.req.hostname(path);
+	return this.req.hostname(path);
 };
 
 Controller.prototype.hostname = function(path) {
-	var self = this;
-	return self.req.hostname(path);
+	return this.req.hostname(path);
 };
 
 Controller.prototype.resource = function(name, key) {
@@ -10570,11 +10465,11 @@ Controller.prototype.error = function(err) {
 	if (err === undefined)
 		return result;
 
-	if (!self.subscribe)
-		return self;
+	if (self.subscribe) {
+		self.subscribe.exception = err;
+		self.exception = err;
+	}
 
-	self.subscribe.exception = err;
-	self.exception = err;
 	return self;
 };
 
@@ -10595,9 +10490,8 @@ Controller.prototype.invalid = function(status) {
  * @return {Controller}
  */
 Controller.prototype.problem = function(message) {
-	var self = this;
-	framework.problem(message, self.name, self.uri, self.ip);
-	return self;
+	framework.problem(message, this.name, this.uri, this.ip);
+	return this;
 };
 
 /**
@@ -10606,9 +10500,8 @@ Controller.prototype.problem = function(message) {
  * @return {Controller}
  */
 Controller.prototype.change = function(message) {
-	var self = this;
-	framework.change(message, self.name, self.uri, self.ip);
-	return self;
+	framework.change(message, this.name, this.uri, this.ip);
+	return this;
 };
 
 /**
@@ -10617,9 +10510,8 @@ Controller.prototype.change = function(message) {
  * @return {Controller}
  */
 Controller.prototype.trace = function(message) {
-	var self = this;
-	framework.trace(message, self.name, self.uri, self.ip);
-	return self;
+	framework.trace(message, this.name, this.uri, this.ip);
+	return this;
 };
 
 /**
@@ -10679,7 +10571,6 @@ Controller.prototype.transfer = function(url, flags) {
 	self.subscribe.success();
 	self.subscribe.route = selected;
 	self.subscribe.execute(404);
-
 	return true;
 
 };
@@ -10689,28 +10580,20 @@ Controller.prototype.transfer = function(url, flags) {
  * @return {Controller}
  */
 Controller.prototype.cancel = function() {
-	var self = this;
-	self.isCanceled = true;
-	return self;
+	this.isCanceled = true;
+	return this;
 };
 
 Controller.prototype.log = function() {
-	var self = this;
 	framework.log.apply(framework, arguments);
-	return self;
+	return this;
 };
 
 Controller.prototype.logger = function() {
-	var self = this;
 	framework.logger.apply(framework, arguments);
-	return self;
+	return this;
 };
 
-/*
-	META Tags for views
-	@arguments {String array}
-	return {Controller};
-*/
 Controller.prototype.meta = function() {
 	var self = this;
 
@@ -10729,90 +10612,54 @@ Controller.prototype.meta = function() {
 	return self;
 };
 
-/*
-	Internal function for views
-	@arguments {String}
-	return {String}
-*/
 Controller.prototype.$dns = function(value) {
 
 	var builder = '';
-	var self = this;
 	var length = arguments.length;
 
 	for (var i = 0; i < length; i++)
-		builder += '<link rel="dns-prefetch" href="' + self._prepareHost(arguments[i]) + '" />';
+		builder += '<link rel="dns-prefetch" href="' + this._preparehostname(arguments[i]) + '" />';
 
-	self.head(builder);
+	this.head(builder);
 	return '';
 };
 
-/*
-	Internal function for views
-	@arguments {String}
-	return {String}
-*/
 Controller.prototype.$prefetch = function() {
 
 	var builder = '';
-	var self = this;
 	var length = arguments.length;
 
 	for (var i = 0; i < length; i++)
-		builder += '<link rel="prefetch" href="' + self._prepareHost(arguments[i]) + '" />';
+		builder += '<link rel="prefetch" href="' + this._preparehostname(arguments[i]) + '" />';
 
-	self.head(builder);
+	this.head(builder);
 	return '';
 };
 
-/*
-	Internal function for views
-	@arguments {String}
-	return {String}
-*/
 Controller.prototype.$prerender = function(value) {
 
 	var builder = '';
-	var self = this;
 	var length = arguments.length;
 
 	for (var i = 0; i < length; i++)
-		builder += '<link rel="prerender" href="' + self._prepareHost(arguments[i]) + '" />';
+		builder += '<link rel="prerender" href="' + this._preparehostname(arguments[i]) + '" />';
 
-	self.head(builder);
+	this.head(builder);
 	return '';
 };
 
-/*
-	Internal function for views
-	@value {String}
-	return {String}
-*/
 Controller.prototype.$next = function(value) {
-	var self = this;
-	self.head('<link rel="next" href="' + self._prepareHost(value) + '" />');
+	this.head('<link rel="next" href="' + this._preparehostname(value) + '" />');
 	return '';
 };
 
-/*
-	Internal function for views
-	@arguments {String}
-	return {String}
-*/
 Controller.prototype.$prev = function(value) {
-	var self = this;
-	self.head('<link rel="prev" href="' + self._prepareHost(value) + '" />');
+	this.head('<link rel="prev" href="' + this._preparehostname(value) + '" />');
 	return '';
 };
 
-/*
-	Internal function for views
-	@arguments {String}
-	return {String}
-*/
 Controller.prototype.$canonical = function(value) {
-	var self = this;
-	self.head('<link rel="canonical" href="' + self._prepareHost(value) + '" />');
+	this.head('<link rel="canonical" href="' + this._preparehostname(value) + '" />');
 	return '';
 };
 
@@ -10830,62 +10677,53 @@ Controller.prototype.$meta = function() {
 };
 
 Controller.prototype.title = function(value) {
-	var self = this;
-	self.$title(value);
-	return self;
+	this.$title(value);
+	return this;
 };
 
 Controller.prototype.description = function(value) {
-	var self = this;
-	self.$description(value);
-	return self;
+	this.$description(value);
+	return this;
 };
 
 Controller.prototype.keywords = function(value) {
-	var self = this;
-	self.$keywords(value);
-	return self;
+	this.$keywords(value);
+	return this;
 };
 
 Controller.prototype.author = function(value) {
-	var self = this;
-	self.$author(value);
-	return self;
+	this.$author(value);
+	return this;
 };
 
 Controller.prototype.$title = function(value) {
-	var self = this;
 	if (value)
-		self.repository[REPOSITORY_META_TITLE] = value;
+		this.repository[REPOSITORY_META_TITLE] = value;
 	return '';
 };
 
 Controller.prototype.$title2 = function(value) {
-	var self = this;
-	var current = self.repository[REPOSITORY_META_TITLE];
+	var current = this.repository[REPOSITORY_META_TITLE];
 	if (value)
-		self.repository[REPOSITORY_META_TITLE] = (current ? current : '') + value;
+		this.repository[REPOSITORY_META_TITLE] = (current ? current : '') + value;
 	return '';
 };
 
 Controller.prototype.$description = function(value) {
-	var self = this;
 	if (value)
-		self.repository[REPOSITORY_META_DESCRIPTION] = value;
+		this.repository[REPOSITORY_META_DESCRIPTION] = value;
 	return '';
 };
 
 Controller.prototype.$keywords = function(value) {
-	var self = this;
 	if (value && value.length)
-		self.repository[REPOSITORY_META_KEYWORDS] = value instanceof Array ? value.join(', ') : value;
+		this.repository[REPOSITORY_META_KEYWORDS] = value instanceof Array ? value.join(', ') : value;
 	return '';
 };
 
 Controller.prototype.$author = function(value) {
-	var self = this;
 	if (value)
-		self.repository[REPOSITORY_META_AUTHOR] = value;
+		this.repository[REPOSITORY_META_AUTHOR] = value;
 	return '';
 };
 
@@ -10894,20 +10732,18 @@ Controller.prototype.sitemap_navigation = function(name, language) {
 };
 
 Controller.prototype.sitemap_url = function(name, a, b, c, d, e, f) {
-	var self = this;
 	if (!name)
-		name = self.repository[REPOSITORY_SITEMAP];
-	var item = F.sitemap(name, true, self.language);
+		name = this.repository[REPOSITORY_SITEMAP];
+	var item = F.sitemap(name, true, this.language);
 	if (item)
 		return item.url.format(a, b, c, d, e, f);
 	return '';
 };
 
 Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
-	var self = this;
 	if (!name)
-		name = self.repository[REPOSITORY_SITEMAP];
-	var item = F.sitemap(name, true, self.language);
+		name = this.repository[REPOSITORY_SITEMAP];
+	var item = F.sitemap(name, true, this.language);
 	if (item)
 		return item.name.format(a, b, c, d, e, f);
 	return '';
@@ -11027,31 +10863,16 @@ Controller.prototype.$sitemap = function(name) {
 	return '';
 };
 
-/**
- * Gets a module instance
- * @param {String} name
- * @return {Object}
- */
 Controller.prototype.module = function(name) {
 	return framework.module(name);
 };
 
-/**
- * Layout setter
- * @param {String} name
- * @return {Controller}
- */
 Controller.prototype.layout = function(name) {
 	var self = this;
 	self.layoutName = name;
 	return self;
 };
 
-/**
- * Theme setter
- * @param {String} name
- * @return {Controller}
- */
 Controller.prototype.theme = function(name) {
 	var self = this;
 	self.themeName = name;
@@ -11069,11 +10890,6 @@ Controller.prototype.$layout = function(name) {
 	return '';
 };
 
-/**
- * Gets a model instance
- * @param {String} name
- * @return {Object}
- */
 Controller.prototype.model = function(name) {
 	return framework.model(name);
 };
@@ -11117,8 +10933,7 @@ Controller.prototype.mail = function(address, subject, view, model, callback) {
 	return {Boolean};
 */
 Controller.prototype.notModified = function(compare, strict) {
-	var self = this;
-	return framework.notModified(self.req, self.res, compare, strict);
+	return framework.notModified(this.req, this.res, compare, strict);
 };
 
 /*
@@ -11131,9 +10946,8 @@ Controller.prototype.notModified = function(compare, strict) {
 	return {Controller};
 */
 Controller.prototype.setModified = function(value) {
-	var self = this;
-	framework.setModified(self.req, self.res, value);
-	return self;
+	framework.setModified(this.req, this.res, value);
+	return this;
 };
 
 /**
@@ -11141,13 +10955,9 @@ Controller.prototype.setModified = function(value) {
  * @param {Date} date
  */
 Controller.prototype.setExpires = function(date) {
-	var self = this;
-
-	if (!date)
-		return self;
-
-	self.res.setHeader('Expires', date.toUTCString());
-	return self;
+	if (date)
+		this.res.setHeader('Expires', date.toUTCString());
+	return this;
 };
 
 /**
@@ -11202,7 +11012,7 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
 
 	if (expire) {
 		cache = '$view.' + name + '.' + (key || '');
-		var output = self.cache.read(cache);
+		var output = self.cache.read2(cache);
 		if (output)
 			return output;
 	}
@@ -11213,7 +11023,7 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
 	var value = self.view(name, model, null, true);
 	self.layoutName = layout;
 
-	if (value === null)
+	if (!value)
 		return '';
 
 	expire && self.cache.add(cache, value, expire);
@@ -11230,13 +11040,11 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
  */
 Controller.prototype.place = function(name) {
 
-	var self = this;
-
 	var key = REPOSITORY_PLACE + '_' + name;
 	var length = arguments.length;
 
 	if (length === 1)
-		return self.repository[key] || '';
+		return this.repository[key] || '';
 
 	var output = '';
 	for (var i = 1; i < length; i++) {
@@ -11253,8 +11061,8 @@ Controller.prototype.place = function(name) {
 		output += val;
 	}
 
-	self.repository[key] = (self.repository[key] || '') + output;
-	return self;
+	this.repository[key] = (this.repository[key] || '') + output;
+	return this;
 };
 
 /**
@@ -11266,23 +11074,22 @@ Controller.prototype.place = function(name) {
  */
 Controller.prototype.section = function(name, value, replace) {
 
-	var self = this;
 	var key = '$section_' + name;
 
 	if (value === undefined)
-		return self.repository[key];
+		return this.repository[key];
 
 	if (replace) {
-		self.repository[key] = value;
-		return self;
+		this.repository[key] = value;
+		return this;
 	}
 
-	if (self.repository[key])
-		self.repository[key] += value;
+	if (this.repository[key])
+		this.repository[key] += value;
 	else
-		self.repository[key] = value;
+		this.repository[key] = value;
 
-	return self;
+	return this;
 };
 
 Controller.prototype.$place = function() {
@@ -11294,13 +11101,11 @@ Controller.prototype.$place = function() {
 };
 
 Controller.prototype.$url = function(host) {
-	var self = this;
-	return host ? self.req.hostname(self.url) : self.url;
+	return host ? this.req.hostname(this.url) : this.url;
 };
 
 Controller.prototype.$helper = function(name) {
-	var self = this;
-	return self.helper.apply(self, arguments);
+	return this.helper.apply(this, arguments);
 };
 
 // @{href({ key1: 1, key2: 2 })}
@@ -11333,38 +11138,16 @@ Controller.prototype.href = function(key, value) {
 	return self.url + (obj ? '?' + obj : '');
 };
 
-/*
-	Internal function for views
-	@name {String}
-	return {String}
-*/
 Controller.prototype.$checked = function(bool, charBeg, charEnd) {
-	var self = this;
-	return self.$isValue(bool, charBeg, charEnd, 'checked="checked"');
+	return this.$isValue(bool, charBeg, charEnd, 'checked="checked"');
 };
 
-/*
-	Internal function for views
-	@bool {Boolean}
-	@charBeg {String}
-	@charEnd {String}
-	return {String}
-*/
 Controller.prototype.$disabled = function(bool, charBeg, charEnd) {
-	var self = this;
-	return self.$isValue(bool, charBeg, charEnd, 'disabled="disabled"');
+	return this.$isValue(bool, charBeg, charEnd, 'disabled="disabled"');
 };
 
-/*
-	Internal function for views
-	@bool {Boolean}
-	@charBeg {String}
-	@charEnd {String}
-	return {String}
-*/
 Controller.prototype.$selected = function(bool, charBeg, charEnd) {
-	var self = this;
-	return self.$isValue(bool, charBeg, charEnd, 'selected="selected"');
+	return this.$isValue(bool, charBeg, charEnd, 'selected="selected"');
 };
 
 /**
@@ -11377,110 +11160,56 @@ Controller.prototype.$set = function(value) {
 	return '';
 };
 
-/*
-	Internal function for views
-	@bool {Boolean}
-	@charBeg {String}
-	@charEnd {String}
-	return {String}
-*/
 Controller.prototype.$readonly = function(bool, charBeg, charEnd) {
-	var self = this;
-	return self.$isValue(bool, charBeg, charEnd, 'readonly="readonly"');
+	return this.$isValue(bool, charBeg, charEnd, 'readonly="readonly"');
 };
 
-/*
-	Internal function for views
-	@name {String}
-	@value {String}
-	return {String}
-*/
 Controller.prototype.$header = function(name, value) {
 	this.header(name, value);
 	return '';
 };
 
-/*
-	Internal function for views
-	@model {Object}
-	@name {String}
-	@attr {Object} :: optional
-	return {String}
-*/
 Controller.prototype.$text = function(model, name, attr) {
 	return this.$input(model, 'text', name, attr);
 };
 
-/*
-	Internal function for views
-	@model {Object}
-	@name {String} :: optional
-	@attr {Object} :: optional
-	return {String}
-*/
 Controller.prototype.$password = function(model, name, attr) {
 	return this.$input(model, 'password', name, attr);
 };
 
-/*
-	Internal function for views
-	@model {Object}
-	@name {String}
-	@attr {Object} :: optional
-	return {String}
-*/
 Controller.prototype.$hidden = function(model, name, attr) {
 	return this.$input(model, 'hidden', name, attr);
 };
 
-/*
-	Internal function for views
-	@model {Object}
-	@name {String}
-	@attr {Object} :: optional
-	return {String}
-*/
 Controller.prototype.$radio = function(model, name, value, attr) {
 
-	if (typeof(attr) === 'string')
-		attr = {
-			label: attr
-		};
+	if (typeof(attr) === 'string') {
+		var label = attr;
+		attr = SINGLETON('!$radio');
+		attr.label = label;
+	}
 
 	attr.value = value;
 	return this.$input(model, 'radio', name, attr);
 };
 
-/*
-	Internal function for views
-	@model {Object}
-	@name {String}
-	@attr {Object} :: optional
-	return {String}
-*/
 Controller.prototype.$checkbox = function(model, name, attr) {
 
-	if (typeof(attr) === 'string')
-		attr = {
-			label: attr
-		};
+	if (typeof(attr) === 'string') {
+		var label = attr;
+		attr = SINGLETON('!$checkbox');
+		attr.label = label;
+	}
 
 	return this.$input(model, 'checkbox', name, attr);
 };
 
-/*
-	Internal function for views
-	@model {Object}
-	@name {String}
-	@attr {Object} :: optional
-	return {String}
-*/
 Controller.prototype.$textarea = function(model, name, attr) {
 
 	var builder = '<textarea';
 
 	if (typeof(attr) !== 'object')
-		attr = {};
+		attr = EMPTYOBJECT;
 
 	builder += ' name="' + name + '" id="' + (attr.id || name) + ATTR_END;
 
@@ -11520,7 +11249,7 @@ Controller.prototype.$input = function(model, type, name, attr) {
 	var builder = ['<input'];
 
 	if (typeof(attr) !== 'object')
-		attr = {};
+		attr = EMPTYOBJECT;
 
 	var val = attr.value || '';
 
@@ -11595,12 +11324,12 @@ Controller.prototype.$input = function(model, type, name, attr) {
 	return builder;
 };
 
-Controller.prototype._prepareHost = function(value) {
+Controller.prototype._preparehostname = function(value) {
 	if(!value)
 		return value;
 	var tmp = value.substring(0, 5);
 	if (tmp !== 'http:' && tmp !== 'https' && (tmp[0] !== '/' || tmp[1] !== '/'))
-		value = this.host(value);
+		return this.host(value);
 	return value;
 };
 
@@ -11641,8 +11370,7 @@ Controller.prototype.head = function() {
 };
 
 Controller.prototype.$head = function() {
-	var self = this;
-	self.head.apply(self, arguments);
+	this.head.apply(this, arguments);
 	return '';
 };
 
@@ -11806,8 +11534,7 @@ Controller.prototype.$options = function(arr, selected, name, value) {
  * @return {String}
  */
 Controller.prototype.$script = function() {
-	var self = this;
-	return self.$js.apply(self, arguments);
+	return arguments.length === 1 ? this.$js(arguments[0]) : this.$js.apply(this, arguments);
 };
 
 /**
@@ -12048,7 +11775,7 @@ Controller.prototype.$favicon = function(name) {
 
 	var contentType = 'image/x-icon';
 
-	if (name === undefined)
+	if (name == null)
 		name = 'favicon.ico';
 
 	var key = 'favicon#' + name;
@@ -12060,8 +11787,7 @@ Controller.prototype.$favicon = function(name) {
 	else if (name.lastIndexOf('.gif') !== -1)
 		contentType = 'image/gif';
 
-	name = framework.routeStatic('/' + name);
-	return framework.temporary.other[key] = '<link rel="shortcut icon" href="' + name + '" type="' + contentType + '" />';
+	return framework.temporary.other[key] = '<link rel="shortcut icon" href="' + framework.routeStatic('/' + name) + '" type="' + contentType + '" />';
 };
 
 /**
@@ -12190,7 +11916,6 @@ Controller.prototype.template = function(name, model) {
  * @return {String}
  */
 Controller.prototype.helper = function(name) {
-	var self = this;
 	var helper = framework.helpers[name];
 	if (!helper)
 		return '';
@@ -12199,7 +11924,7 @@ Controller.prototype.helper = function(name) {
 	for (var i = 1; i < arguments.length; i++)
 		params.push(arguments[i]);
 
-	return helper.apply(self, params);
+	return helper.apply(this, params);
 };
 
 /**
@@ -12337,15 +12062,10 @@ Controller.prototype.callback = function(viewName) {
  * @return {Controller}
  */
 Controller.prototype.custom = function() {
-
-	var self = this;
-
-	self.subscribe.success();
-
-	if (self.res.success || self.res.headersSent || !self.isConnected)
+	this.subscribe.success();
+	if (this.res.success || this.res.headersSent || !this.isConnected)
 		return false;
-
-	framework.responseCustom(self.req, self.res);
+	framework.responseCustom(this.req, this.res);
 	return true;
 };
 
@@ -12355,9 +12075,8 @@ Controller.prototype.custom = function() {
  * @return {Controller}
  */
 Controller.prototype.noClear = function(enable) {
-	var self = this;
-	self.req._manual = enable === undefined ? true : enable;
-	return self;
+	this.req._manual = enable === undefined ? true : enable;
+	return this;
 };
 
 /**
@@ -12459,9 +12178,7 @@ Controller.prototype.empty = function(headers) {
 Controller.prototype.destroy = function(problem) {
 	var self = this;
 
-	if (problem)
-		self.problem(problem);
-
+	problem && self.problem(problem);
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
 
@@ -12611,9 +12328,7 @@ Controller.prototype.throw501 = Controller.prototype.view501 = function(problem)
  */
 Controller.prototype.redirect = function(url, permanent) {
 	var self = this;
-
-	if (self.precache)
-		self.precache(null, null, null);
+	self.precache && self.precache(null, null, null);
 
 	if (self.res.success || self.res.headersSent || !self.isConnected)
 		return self;
@@ -12671,14 +12386,12 @@ Controller.prototype.binary = function(buffer, contentType, type, download, head
 Controller.prototype.baa = function(label) {
 
 	var self = this;
-
-	if (self.precache)
-		self.precache(null, null, null);
+	self.precache && self.precache(null, null, null);
 
 	if (label === undefined)
 		return self.req.authorization();
 
-	var headers = {};
+	var headers = SINGLETON('!controller.baa');
 	headers['WWW-Authenticate'] = 'Basic realm="' + (label || 'Administration') + '"';
 	framework.responseContent(self.req, self.res, 401, '401: NOT AUTHORIZED', CONTENTTYPE_TEXTPLAIN, false, headers);
 	self.subscribe.success();
@@ -12741,7 +12454,6 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 		builder += 'retry: ' + retry + newline;
 
 	builder += newline;
-
 	res.write(builder);
 	framework.stats.response.sse++;
 	return self;
@@ -12764,14 +12476,10 @@ Controller.prototype.close = function(end) {
 	if (self.type) {
 		self.isConnected = false;
 		self.res.success = true;
-
 		framework._request_stats(false, false);
 		framework.emit('request-end', self.req, self.res);
 		self.type = 0;
-
-		if (end)
-			self.res.end();
-
+		end && self.res.end();
 		return self;
 	}
 
@@ -12781,13 +12489,9 @@ Controller.prototype.close = function(end) {
 		return self;
 
 	self.res.success = true;
-
 	framework._request_stats(false, false);
 	framework.emit('request-end', self.req, self.res);
-
-	if (end)
-		self.res.end();
-
+	end && self.res.end();
 	return self;
 };
 
@@ -12833,21 +12537,21 @@ Controller.prototype.proxy = function(url, obj, callback, timeout) {
  * @param {Boolean} isPartial When is `true` the method returns rendered HTML as `String`
  * @return {Controller/String}
  */
-Controller.prototype.view = function(name, model, headers, isPartial) {
+Controller.prototype.view = function(name, model, headers, partial) {
 
 	var self = this;
 
 	if (typeof(name) !== 'string') {
-		isPartial = headers;
+		partial = headers;
 		headers = model;
 		model = name;
 		name = self.viewname;
-	} else if (isPartial === undefined && typeof(headers) === 'boolean') {
-		isPartial = headers;
+	} else if (partial === undefined && typeof(headers) === 'boolean') {
+		partial = headers;
 		headers = null;
 	}
 
-	if (!isPartial && self.res && self.res.success)
+	if (!partial && self.res && self.res.success)
 		return self;
 
 	if (self.layoutName === undefined)
@@ -12916,7 +12620,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 
 		var err = new Error('View "' + filename + '" not found.');
 
-		if (isPartial) {
+		if (partial) {
 			framework.error(err, self.name, self.uri);
 			return self.outputPartial;
 		}
@@ -12940,19 +12644,19 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 	var helpers = framework.helpers;
 
 	try {
-		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, isPartial ? self.outputPartial : self.output, self.date, self.req.cookie, self.req.files, self.req.mobile);
+		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, partial ? self.outputPartial : self.output, self.date, self.req.cookie, self.req.files, self.req.mobile);
 	} catch (ex) {
 
 		var err = new Error('View: ' + name + ' - ' + ex.toString());
 
-		if (!isPartial) {
+		if (!partial) {
 			self.view500(err);
-			return;
+			return self;
 		}
 
 		self.error(err);
 
-		if (self.isPartial)
+		if (self.partial)
 			self.outputPartial = '';
 		else
 			self.output = '';
@@ -12961,7 +12665,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		return value;
 	}
 
-	if (!isLayout && self.precache && self.status === 200 && !isPartial)
+	if (!isLayout && self.precache && self.status === 200 && !partial)
 		self.precache(value, CONTENTTYPE_TEXTHTML, headers, true);
 
 	if (isLayout || !self.layoutName) {
@@ -12970,7 +12674,7 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		self.output = '';
 		isLayout = false;
 
-		if (isPartial)
+		if (partial)
 			return value;
 
 		self.subscribe.success();
@@ -12983,15 +12687,15 @@ Controller.prototype.view = function(name, model, headers, isPartial) {
 		return self;
 	}
 
-	if (isPartial)
+	if (partial)
 		self.outputPartial = value;
 	else
 		self.output = value;
 
 	self.isLayout = true;
-	value = self.view(self.layoutName, self.$model, headers, isPartial);
+	value = self.view(self.layoutName, self.$model, headers, partial);
 
-	if (isPartial) {
+	if (partial) {
 		self.outputPartial = '';
 		self.isLayout = false;
 		return value;
@@ -13018,7 +12722,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 		return self;
 	}
 
-	var output = self.cache.read(key);
+	var output = self.cache.read2(key);
 	if (!output)
 		return self.$memorize_prepare(key, expires, disabled, fnTo, fnFrom);
 
@@ -13028,9 +12732,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 		fnFrom = tmp;
 	}
 
-	if (fnFrom)
-		fnFrom();
-
+	fnFrom && fnFrom();
 	self.layoutName = output.layout;
 	self.themeName = output.theme;
 
@@ -13433,10 +13135,8 @@ WebSocket.prototype.all = function(fn) {
 	if (!self._keys)
 		return self;
 
-	for (var i = 0, length = self._keys.length; i < length; i++) {
-		var id = self._keys[i];
-		fn(self.connections[id], i);
-	}
+	for (var i = 0, length = self._keys.length; i < length; i++)
+		fn(self.connections[self._keys[i]], i);
 
 	return self;
 };
@@ -13479,9 +13179,7 @@ WebSocket.prototype.find = function(id) {
 WebSocket.prototype.destroy = function(problem) {
 	var self = this;
 
-	if (problem)
-		self.problem(problem);
-
+	problem && self.problem(problem);
 	if (!self.connections && !self._keys)
 		return self;
 
@@ -13888,8 +13586,7 @@ WebSocketClient.prototype.parse = function() {
 		if (self.type === 3) {
 			try {
 				output = self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output;
-				if (output.isJSON())
-					self.container.emit('message', self, framework.onParseJSON(output));
+				output.isJSON() && self.container.emit('message', self, framework.onParseJSON(output));
 			} catch (ex) {
 				if (DEBUG) {
 					self.errors++;
@@ -13958,10 +13655,8 @@ WebSocketClient.prototype.send = function(message, raw) {
 		if (self.container.config['default-websocket-encodedecode'] === true && data)
 			data = encodeURIComponent(data);
 		self.socket.write(framework_utils.getWebSocketFrame(0, data, 0x01));
-	} else {
-		if (message)
-			self.socket.write(framework_utils.getWebSocketFrame(0, new Int8Array(message), 0x02));
-	}
+	} else
+		message && self.socket.write(framework_utils.getWebSocketFrame(0, new Int8Array(message), 0x02));
 
 	return self;
 };
@@ -13979,7 +13674,6 @@ WebSocketClient.prototype.ping = function() {
 
 	self.socket.write(framework_utils.getWebSocketFrame(0, '', 0x09));
 	self.$ping = false;
-
 	return self;
 };
 
@@ -14141,12 +13835,12 @@ Backup.prototype.restoreFile = function(key, value) {
 
 	if (index !== -1) {
 		p = key.substring(0, index).trim();
-		if (p)
-			self.createDirectory(p);
+		p && self.createDirectory(p);
 	}
 
 	var buffer = new Buffer(value, 'base64');
 	self.pending++;
+
 	zlib.gunzip(buffer, function(err, data) {
 		fs.writeFile(path.join(self.path, key), data, () => self.pending--);
 		buffer = null;
@@ -14156,7 +13850,6 @@ Backup.prototype.restoreFile = function(key, value) {
 Backup.prototype.createDirectory = function(p, root) {
 
 	var self = this;
-
 	if (self.cache[p])
 		return;
 
@@ -14192,10 +13885,8 @@ Backup.prototype.createDirectory = function(p, root) {
 		if (root)
 			dir = (is ? '\\' : '/') + dir;
 
-		if (existsSync(dir))
-			continue;
-
-		fs.mkdirSync(dir);
+		if (!existsSync(dir))
+			fs.mkdirSync(dir);
 	}
 };
 
@@ -14236,7 +13927,6 @@ http.ServerResponse.prototype.cookie = function(name, value, expires, options) {
 		options = {};
 
 	options.path = options.path || '/';
-
 	expires &&  builder.push('Expires=' + expires.toUTCString());
 	options.domain && builder.push('Domain=' + options.domain);
 	options.path && builder.push('Path=' + options.path);
@@ -14440,8 +14130,7 @@ http.ServerResponse.prototype.content = function(code, body, type, compress, hea
 	var self = this;
 	if (self.headersSent)
 		return self;
-	if (self.controller)
-		self.controller.subscribe.success();
+	self.controller && self.controller.subscribe.success();
 	framework.responseContent(self.req, self, code, body, type, compress, headers);
 	return self;
 };
@@ -14456,8 +14145,7 @@ http.ServerResponse.prototype.redirect = function(url, permanent) {
 	var self = this;
 	if (self.headersSent)
 		return self;
-	if (self.controller)
-		self.controller.subscribe.success();
+	self.controller && self.controller.subscribe.success();
 	framework.responseRedirect(self.req, self, url, permanent);
 	return self;
 };
@@ -14793,7 +14481,6 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
 
 	framework.unlink(arr);
 	self.files = null;
-
 	return self;
 };
 
@@ -14828,8 +14515,7 @@ process.on('uncaughtException', function(e) {
 
 	if (framework.isTest) {
 		// HACK: this method is created dynamically in framework.testing();
-		if (framework.testContinue)
-			framework.testContinue(e);
+		framework.testContinue && framework.testContinue(e);
 		return;
 	}
 
@@ -14886,17 +14572,9 @@ function createTemporaryKey(req) {
 	return (req.uri ? req.uri.pathname : req).replace(TEMPORARY_KEY_REGEX, '-').substring(1);
 }
 
-process.on('SIGTERM', function() {
-	framework.stop();
-});
-
-process.on('SIGINT', function() {
-	framework.stop();
-});
-
-process.on('exit', function() {
-	framework.stop();
-});
+process.on('SIGTERM', () => framework.stop());
+process.on('SIGINT', () => framework.stop());
+process.on('exit', () => framework.stop());
 
 process.on('message', function(msg, h) {
 

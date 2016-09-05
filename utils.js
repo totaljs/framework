@@ -57,6 +57,7 @@ const regexpDECODE = /&gt;|\&lt;|\&quot;|&apos;|&amp;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
 const regexpINTEGER = /[\-0-9]+/g;
 const regexpFLOAT = /[\-0-9\.\,]+/g;
+const regexpALPHA = /^[A-Za-z0-9]+$/;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -917,8 +918,7 @@ function download_response(res, uri, options) {
 	if (res.statusCode === 301 || res.statusCode === 302) {
 
 		if (options.redirect > 3) {
-			if (options.callback)
-				options.callback(new Error('Too many redirects.'));
+			options.callback && options.callback(new Error('Too many redirects.'));
 			res.req.removeAllListeners();
 			res.req = null;
 			res.removeAllListeners();
@@ -932,7 +932,6 @@ function download_response(res, uri, options) {
 		tmp.headers = uri.headers;
 		tmp.agent = false;
 		tmp.method = uri.method;
-
 		res.req.removeAllListeners();
 		res.req = null;
 
@@ -2571,8 +2570,7 @@ if (!String.prototype.trim) {
 
 if (!String.prototype.replaceAt) {
 	String.prototype.replaceAt = function(index, character) {
-		var self = this;
-		return self.substr(0, index) + character + self.substr(index + character.length);
+		return this.substr(0, index) + character + this.substr(index + character.length);
 	};
 }
 
@@ -2681,12 +2679,9 @@ String.prototype.count = function(text) {
 	var index = 0;
 	var count = 0;
 	do {
-
 		index = this.indexOf(text, index + text.length);
-
 		if (index > 0)
 			count++;
-
 	} while (index > 0);
 	return count;
 };
@@ -2842,15 +2837,12 @@ String.prototype.parseDateExpiration = function() {
 	return {Boolean}
 */
 String.prototype.contains = function(value, mustAll) {
-
 	var str = this;
 
 	if (typeof(value) === 'string')
 		return str.indexOf(value, typeof(mustAll) === 'number' ? mustAll : 0) !== -1;
 
-	var length = value.length;
-
-	for (var i = 0; i < length; i++) {
+	for (var i = 0, length = value.length; i < length; i++) {
 		var exists = str.indexOf(value[i]) !== -1;
 		if (mustAll) {
 			if (!exists)
@@ -3014,11 +3006,6 @@ String.prototype.urlDecode = function() {
 	return decodeURIComponent(this);
 };
 
-/*
-	Simple templating :: Hello {name}, your score: {score}, your price: {price | ### ###.##}, date: {date | dd.MM.yyyy}
-	@obj {Object}
-	return {String}
-*/
 String.prototype.params = function(obj) {
 	var formatted = this;
 
@@ -3228,11 +3215,7 @@ String.prototype.toUnicode = function() {
 };
 
 String.prototype.fromUnicode = function() {
-
-	var str = this.replace(/\\u([\d\w]{4})/gi, function (match, v) {
-		return String.fromCharCode(parseInt(v, 16));
-	});
-
+	var str = this.replace(/\\u([\d\w]{4})/gi, (match, v) => String.fromCharCode(parseInt(v, 16)));
 	return unescape(str);
 };
 
@@ -3268,11 +3251,6 @@ String.prototype.toKeywords = String.prototype.keywords = function(forSearch, al
 	return exports.keywords(this, forSearch, alternative, max_count, max_length, min_length);
 };
 
-/*
-	@key {String}
-	@isUnique {Boolean}
-	return {String}
-*/
 String.prototype.encrypt = function(key, isUnique) {
 	var str = '0' + this;
 	var data_count = str.length;
@@ -3298,10 +3276,6 @@ String.prototype.encrypt = function(key, isUnique) {
 	return hash;
 };
 
-/*
-	@key {String}
-	return {String}
-*/
 String.prototype.decrypt = function(key) {
 
 	var values = this.replace(/\-/g, '/').replace(/\_/g, '+');
@@ -3337,19 +3311,12 @@ String.prototype.decrypt = function(key) {
 	}
 
 	var val = decrypt_data.join('');
-
 	if (counter !== val.length + key.length)
 		return null;
 
 	return val;
 };
 
-/*
-	Convert value from base64 and save to file
-	@filename {String}
-	@callback {Function} :: optional
-	return {String}
-*/
 String.prototype.base64ToFile = function(filename, callback) {
 	var self = this;
 
@@ -3359,11 +3326,7 @@ String.prototype.base64ToFile = function(filename, callback) {
 	else
 		index++;
 
-	if (callback)
-		fs.writeFile(filename, self.substring(index), 'base64', callback);
-	else
-		fs.writeFile(filename, self.substring(index), 'base64', exports.noop);
-
+	fs.writeFile(filename, self.substring(index), 'base64', callback || exports.noop);
 	return this;
 };
 
@@ -3444,11 +3407,6 @@ String.prototype.isNumber = function(isDecimal) {
 	return true;
 };
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
 if (!String.prototype.padLeft) {
 	String.prototype.padLeft = function(max, c) {
 		var self = this;
@@ -3463,11 +3421,7 @@ if (!String.prototype.padLeft) {
 	};
 }
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
+
 if (!String.prototype.padRight) {
 	String.prototype.padRight = function(max, c) {
 		var self = this;
@@ -3482,11 +3436,6 @@ if (!String.prototype.padRight) {
 	};
 }
 
-/*
-	index {Number}
-	value {String}
-	return {String}
-*/
 String.prototype.insert = function(index, value) {
 	var str = this;
 	var a = str.substring(0, index);
@@ -3536,8 +3485,7 @@ String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = St
 };
 
 String.prototype.pluralize = function(zero, one, few, other) {
-	var str = this;
-	return str.parseInt().pluralize(zero, one, few, other);
+	return this.parseInt().pluralize(zero, one, few, other);
 };
 
 String.prototype.isBoolean = function() {
@@ -3550,8 +3498,7 @@ String.prototype.isBoolean = function() {
  * @return {Boolean}
  */
 String.prototype.isAlphaNumeric = function() {
-  var regExp = /^[A-Za-z0-9]+$/;
-  return (this.match(regExp) ? true : false);
+  return this.match(regexpALPHA) ? true : false;
 };
 
 String.prototype.soundex = function() {
@@ -3562,10 +3509,8 @@ String.prototype.soundex = function() {
 
 	for (var i = 0, length = arr.length; i < length; i++) {
 		var v = SOUNDEX[arr[i]];
-
 		if (v === undefined)
 			continue;
-
 		if (i) {
 			if (v !== arr[i - 1])
 				builder += v;
@@ -3584,28 +3529,14 @@ String.prototype.removeTags = function() {
 	return this.replace(regexpTags, '');
 };
 
-/*
-	@decimals {Number}
-	return {Number}
-*/
 Number.prototype.floor = function(decimals) {
 	return Math.floor(this * Math.pow(10, decimals)) / Math.pow(10, decimals);
 };
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
 Number.prototype.padLeft = function(max, c) {
 	return this.toString().padLeft(max, c || '0');
 };
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
 Number.prototype.padRight = function(max, c) {
 	return this.toString().padRight(max, c || '0');
 };
@@ -3617,15 +3548,11 @@ Number.prototype.padRight = function(max, c) {
  * @return {Number}
  */
 Number.prototype.async = function(fn, callback) {
-
 	var number = this;
-
-	if (!number) {
+	if (number)
+		fn(number--, () => setImmediate(() => number.async(fn, callback)));
+	else
 		callback && callback();
-		return number;
-	}
-
-	fn(number--, () => setImmediate(() => number.async(fn, callback)));
 	return number;
 };
 
@@ -3763,11 +3690,6 @@ Number.prototype.add = function(value, decimals) {
 	return num;
 };
 
-/*
-	Format number :: 10000 = 10 000
-	@format {Number or String} :: number is decimal and string is specified format, example: ## ###.##
-	return {String}
-*/
 Number.prototype.format2 = function(format) {
 	var index = 0;
 	var num = this.toString();
@@ -3877,14 +3799,6 @@ Number.prototype.format2 = function(format) {
 	return this.format(output);
 };
 
-/*
-	Pluralize number
-	zero {String}
-	one {String}
-	few {String}
-	other {String}
-	return {String}
-*/
 Number.prototype.pluralize = function(zero, one, few, other) {
 
 	var num = this;
@@ -3908,10 +3822,6 @@ Number.prototype.pluralize = function(zero, one, few, other) {
 	return num.format(format) + value.replace(format, '');
 };
 
-/*
-	@length {Number}
-	return {String}
-*/
 Number.prototype.hex = function(length) {
 	var str = this.toString(16).toUpperCase();
 	while(str.length < length)
@@ -3919,13 +3829,6 @@ Number.prototype.hex = function(length) {
 	return str;
 };
 
-/*
-	VAT
-	@percentage {Number}
-	@decimals {Number}, optional, default 2,
-	@includedVAT {Boolean}, optional, default true
-	return {Number}
-*/
 Number.prototype.VAT = function(percentage, decimals, includedVAT) {
 	var num = this;
 	var type = typeof(decimals);
@@ -3949,18 +3852,10 @@ Number.prototype.VAT = function(percentage, decimals, includedVAT) {
 	return includedVAT ? (num / ((percentage / 100) + 1)).floor(decimals) : (num * ((percentage / 100) + 1)).floor(decimals);
 };
 
-/*
-	Discount
-	@percentage {Number}
-	@decimals {Number}, optional, default 2
-	return {Number}
-*/
 Number.prototype.discount = function(percentage, decimals) {
 	var num = this;
-
 	if (decimals === undefined)
 		decimals = 2;
-
 	return (num - (num / 100) * percentage).floor(decimals);
 };
 
@@ -4251,8 +4146,7 @@ Array.prototype.trim = function() {
 	for (var i = 0, length = self.length; i < length; i++) {
 		if (typeof(self[i]) === 'string')
 			self[i] = self[i].trim();
-		if (self[i])
-			output.push(self[i]);
+		self[i] && output.push(self[i]);
 	}
 	return output;
 };
@@ -4266,10 +4160,8 @@ Array.prototype.skip = function(count) {
 	var arr = [];
 	var self = this;
 	var length = self.length;
-	for (var i = 0; i < length; i++) {
-		if (i >= count)
-			arr.push(self[i]);
-	}
+	for (var i = 0; i < length; i++)
+		i >= count && arr.push(self[i]);
 	return arr;
 };
 
@@ -4289,21 +4181,16 @@ Array.prototype.where = function(cb, value) {
 	for (var i = 0, length = self.length; i < length; i++) {
 
 		if (isFN) {
-			if (cb.call(self, self[i], i))
-				selected.push(self[i]);
+			cb.call(self, self[i], i) && selected.push(self[i]);
 			continue;
 		}
 
 		if (isV) {
-			if (!self[i])
-				continue;
-			if (self[i][cb] === value)
-				selected.push(self[i]);
+			self[i] && self[i][cb] === value && selected.push(self[i]);
 			continue;
 		}
 
-		if (self[i] === cb)
-			selected.push(self[i]);
+		self[i] === cb && selected.push(self[i]);
 	}
 
 	return selected;
@@ -4338,9 +4225,7 @@ Array.prototype.findIndex = function(cb, value) {
 		}
 
 		if (isV) {
-			if (!self[i])
-				continue;
-			if (self[i][cb] === value)
+			if (self[i] && self[i][cb] === value)
 				return i;
 			continue;
 		}
@@ -4368,21 +4253,16 @@ Array.prototype.remove = function(cb, value) {
 	for (var i = 0, length = self.length; i < length; i++) {
 
 		if (isFN) {
-			if (!cb.call(self, self[i], i))
-				arr.push(self[i]);
+			!cb.call(self, self[i], i) && arr.push(self[i]);
 			continue;
 		}
 
 		if (isV) {
-			if (!self[i])
-				continue;
-			if (self[i][cb] !== value)
-				arr.push(self[i]);
+			self[i] && self[i][cb] !== value && arr.push(self[i]);
 			continue;
 		}
 
-		if (self[i] !== cb)
-			arr.push(self[i]);
+		self[i] !== cb && arr.push(self[i]);
 	}
 	return arr;
 };
@@ -4392,8 +4272,7 @@ Array.prototype.remove = function(cb, value) {
 	Return {Object}
 */
 Array.prototype.random = function() {
-	var self = this;
-	return self[exports.random(self.length - 1)];
+	return this[exports.random(this.length - 1)];
 };
 
 Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thread) {
@@ -4586,8 +4465,7 @@ Array.prototype.unique = function(property) {
 		var value = self[i];
 
 		if (!property) {
-			if (result.indexOf(value) === -1)
-				result.push(value);
+			result.indexOf(value) === -1 && result.push(value);
 			continue;
 		}
 
@@ -4707,10 +4585,7 @@ AsyncTask.prototype.complete = function() {
 		try
 		{
 			self.emit('end', item.name);
-
-			if (item.cb)
-				item.cb();
-
+			item.cb && item.cb();
 		} catch (ex) {
 			self.emit('error', ex, item.name);
 		}
@@ -4749,11 +4624,8 @@ Async.prototype = {
 	},
 
 	get percentage() {
-		var self = this;
-		var p = 100 - Math.floor((self._count * 100) / self._max);
-		if (!p)
-			return 0;
-		return p;
+		var p = 100 - Math.floor((this._count * 100) / this._max);
+		return p ? p : 0;
 	}
 };
 
@@ -4850,10 +4722,7 @@ Async.prototype.complete = function(fn) {
 Async.prototype.run = function(fn) {
 	var self = this;
 	self._isRunning = true;
-
-	if (fn)
-		self.onComplete.push(fn);
-
+	fn && self.onComplete.push(fn);
 	self.refresh();
 	return self;
 };
@@ -4895,7 +4764,7 @@ Async.prototype.timeout = function(name, timeout) {
 	var self = this;
 
 	if (!timeout) {
-		delete self.tasksTimeout[name];
+		self.tasksTimeout[name] = undefined;
 		return self;
 	}
 
@@ -5286,9 +5155,7 @@ exports.queue = function(name, max, fn) {
 	item.running++;
 	(function(name){
 		setImmediate(function() {
-			fn(function() {
-				queue_next(name);
-			});
+			fn(() => queue_next(name));
 		});
 	})(name);
 

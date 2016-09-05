@@ -813,10 +813,8 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 	var self = this;
 	var builder = new ErrorBuilder();
 
-	if (self.resourceName)
-		builder.setResource(self.resourceName);
-	if (self.resourcePrefix)
-		builder.setPrefix(self.resourcePrefix);
+	self.resourceName && builder.setResource(self.resourceName);
+	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 	var output = self.default();
 	var $type = 'get';
@@ -834,10 +832,7 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 			return;
 		callback.success = true;
 		builder.push(err);
-
-		if (self.onError)
-			self.onError(builder, model, $type);
-
+		self.onError && self.onError(builder, model, $type);
 		callback(builder);
 	}, builder, output, helper, function(result) {
 
@@ -878,10 +873,8 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 	var builder = new ErrorBuilder();
 	var $type = 'remove';
 
-	if (self.resourceName)
-		builder.setResource(self.resourceName);
-	if (self.resourcePrefix)
-		builder.setPrefix(self.resourcePrefix);
+	self.resourceName && builder.setResource(self.resourceName);
+	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, $type, self.onRemove)) {
 		self.onRemove(builder, helper, function(result) {
@@ -896,10 +889,7 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 			return;
 		callback.success = true;
 		builder.push(err);
-
-		if (self.onError)
-			self.onError(builder, model, $type);
-
+		self.onError && self.onError(builder, model, $type);
 		callback(builder);
 	}, builder, helper, function(result) {
 
@@ -940,10 +930,8 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 	var builder = new ErrorBuilder();
 	var $type = 'query';
 
-	if (self.resourceName)
-		builder.setResource(self.resourceName);
-	if (self.resourcePrefix)
-		builder.setPrefix(self.resourcePrefix);
+	self.resourceName && builder.setResource(self.resourceName);
+	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, $type, self.onQuery)) {
 		self.onQuery(builder, helper, function(result) {
@@ -959,8 +947,7 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 			return;
 		callback.success = true;
 		builder.push(err);
-		if (self.onError)
-			self.onError(builder, model, $type);
+		self.onError && self.onError(builder, model, $type);
 		callback(builder);
 	}, builder, helper, function(result) {
 
@@ -1552,10 +1539,8 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
 		var builder = new ErrorBuilder();
 
-		if (self.resourceName)
-			builder.setResource(self.resourceName);
-		if (self.resourcePrefix)
-			builder.setPrefix(self.resourcePrefix);
+		self.resourceName && builder.setResource(self.resourceName);
+		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, 'transform.' + name, trans)) {
 			trans.call(self, builder, model, helper, function(result) {
@@ -1570,10 +1555,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 				return;
 			callback.success = true;
 			builder.push(err);
-
-			if (self.onError)
-				self.onError(builder, model, $type, name);
-
+			self.onError && self.onError(builder, model, $type, name);
 			callback(builder);
 		}, builder, model, helper, function(result) {
 
@@ -1675,7 +1657,6 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 		callback = function(){};
 
 	var workflow = self.workflows ? self.workflows[name] : undefined;
-
 	if (!workflow) {
 		callback(new ErrorBuilder().push('', 'Workflow not found.'));
 		return self;
@@ -1685,12 +1666,8 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 
 	if (skip === true) {
 		var builder = new ErrorBuilder();
-
-		if (self.resourceName)
-			builder.setResource(self.resourceName);
-		if (self.resourcePrefix)
-			builder.setPrefix(self.resourcePrefix);
-
+		self.resourceName && builder.setResource(self.resourceName);
+		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 		workflow.call(self, builder, model, helper, function(result) {
 			self.$process(arguments, model, $type, name, builder, result, callback);
 		}, skip !== true);
@@ -1706,10 +1683,8 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 
 		var builder = new ErrorBuilder();
 
-		if (self.resourceName)
-			builder.setResource(self.resourceName);
-		if (self.resourcePrefix)
-			builder.setPrefix(self.resourcePrefix);
+		self.resourceName && builder.setResource(self.resourceName);
+		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 		if (!isGenerator(self, 'workflow.' + name, workflow)) {
 			workflow.call(self, builder, model, helper, function(result) {
@@ -1724,8 +1699,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 				return;
 			callback.success = true;
 			builder.push(err);
-			if (self.onError)
-				self.onError(builder, model, $type, name);
+			self.onError && self.onError(builder, model, $type, name);
 			callback(builder);
 		}, builder, model, helper, function(result) {
 
@@ -1807,10 +1781,8 @@ SchemaBuilderEntity.prototype.hook = function(name, model, helper, callback, ski
 	if (skip === true) {
 		var builder = new ErrorBuilder();
 
-		if (self.resourceName)
-			builder.setResource(self.resourceName);
-		if (self.resourcePrefix)
-			builder.setPrefix(self.resourcePrefix);
+		self.resourceName && builder.setResource(self.resourceName);
+		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 		var output = [];
 
@@ -1836,10 +1808,8 @@ SchemaBuilderEntity.prototype.hook = function(name, model, helper, callback, ski
 		var builder = new ErrorBuilder();
 		var output = [];
 
-		if (self.resourceName)
-			builder.setResource(self.resourceName);
-		if (self.resourcePrefix)
-			builder.setPrefix(self.resourcePrefix);
+		self.resourceName && builder.setResource(self.resourceName);
+		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 		async_wait(hook, function(item, next, index) {
 
@@ -1936,10 +1906,8 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 	var builder = new ErrorBuilder();
 	var $type = 'operation';
 
-	if (self.resourceName)
-		builder.setResource(self.resourceName);
-	if (self.resourcePrefix)
-		builder.setPrefix(self.resourcePrefix);
+	self.resourceName && builder.setResource(self.resourceName);
+	self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 
 	if (!isGenerator(self, 'operation.' + name, operation)) {
 		operation.call(self, builder, model, helper, function(result) {
@@ -1954,8 +1922,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 			return;
 		callback.success = true;
 		builder.push(err);
-		if (self.onError)
-			self.onError(builder, model, $type, name);
+		self.onError && self.onError(builder, model, $type, name);
 		callback(builder);
 	}, builder, model, helper, function(result) {
 
@@ -2437,22 +2404,6 @@ exports.remove = function(name) {
 };
 
 /**
- * Default handler
- * @callback SchemaDefaults
- * @param {String} name Property name.
- * @param {Boolean} isDefault Is default (true) or prepare (false)?
- * @return {Object} Property value.
- */
-
-/**
- * Validator handler
- * @callback SchemaValidator
- * @param {String} name Property name.
- * @param {Object} value Property value.
- * @return {Boolean} Is valid?
- */
-
-/**
  * Check if property value is joined to other class
  * @private
  * @param {String} value Property value from Schema definition.
@@ -2478,11 +2429,11 @@ exports.isJoin = function(collection, value) {
 exports.validation = function(name, properties, fn) {
 
 	if (schemas[DEFAULT_SCHEMA] === undefined)
-		return [];
+		return EMPTYARRAY;
 
 	var schema = schemas[DEFAULT_SCHEMA].get(name);
 	if (schema === undefined)
-		return [];
+		return EMPTYARRAY;
 
 	if (fn instanceof Array && typeof(properties) === 'function') {
 		var tmp = fn;
@@ -2491,14 +2442,11 @@ exports.validation = function(name, properties, fn) {
 	}
 
 	if (typeof(fn) === 'function') {
-
 		schema.onValidate = fn;
-
-		if (!properties)
-			schema.properties = Object.keys(schema.schema);
-		else
+		if (properties)
 			schema.properties = properties;
-
+		else
+			schema.properties = Object.keys(schema.schema);
 		return true;
 	}
 
@@ -2584,15 +2532,13 @@ ErrorBuilder.prototype = {
 
 	get errors() {
 		var self = this;
-		if (!self.isPrepared)
-			self.prepare();
+		!self.isPrepared && self.prepare();
 		return self._transform();
 	},
 
 	get error() {
 		var self = this;
-		if (!self.isPrepared)
-			self.prepare();
+		!self.isPrepared && self.prepare();
 		return self._transform();
 	}
 };
@@ -2762,9 +2708,7 @@ ErrorBuilder.prototype.hasError = function(name) {
 ErrorBuilder.prototype.read = function(name) {
 
 	var self = this;
-
-	if (!self.isPrepared)
-		self.prepare();
+	!self.isPrepared && self.prepare();
 
 	var error = self.items.findItem('name', name);
 	if (error)
@@ -2884,15 +2828,15 @@ ErrorBuilder.prototype._transform = function(name) {
 ErrorBuilder.prototype.output = function() {
 	var self = this;
 
-	if (!self.transformName)
-		return self.json();
+	if (!this.transformName)
+		return this.json();
 
-	var current = transforms['error'][self.transformName];
+	var current = transforms['error'][this.transformName];
 	if (!current)
-		return self.json();
+		return this.json();
 
-	self.prepare();
-	return current.call(self);
+	this.prepare();
+	return current.call(this);
 };
 
 /**
@@ -2901,12 +2845,9 @@ ErrorBuilder.prototype.output = function() {
  */
 ErrorBuilder.prototype.toString = function() {
 
-	var self = this;
+	!this.isPrepared && this.prepare();
 
-	if (!self.isPrepared)
-		self.prepare();
-
-	var errors = self.items;
+	var errors = this.items;
 	var length = errors.length;
 	var builder = [];
 
@@ -2923,9 +2864,8 @@ ErrorBuilder.prototype.toString = function() {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.setTransform = function(name) {
-	var self = this;
-	self.transformName = name;
-	return self;
+	this.transformName = name;
+	return this;
 };
 
 /**
@@ -2934,8 +2874,7 @@ ErrorBuilder.prototype.setTransform = function(name) {
  * @return {Object}
  */
 ErrorBuilder.prototype.transform = function(name) {
-	var self = this;
-	return self.prepare()._transform(name);
+	return this.prepare()._transform(name);
 };
 
 /**
@@ -2971,15 +2910,11 @@ ErrorBuilder.prototype._prepareReplace = function() {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.prepare = function() {
-	var self = this;
-
-	if (self.isPrepared)
-		return self;
-
-	self._prepare()._prepareReplace();
-	self.isPrepared = true;
-
-	return self;
+	if (this.isPrepared)
+		return this;
+	this._prepare()._prepareReplace();
+	this.isPrepared = true;
+	return this;
 };
 
 /**
@@ -2990,8 +2925,7 @@ ErrorBuilder.prototype.prepare = function() {
  */
 ErrorBuilder.addTransform = function(name, fn, isDefault) {
 	transforms['error'][name] = fn;
-	if (isDefault)
-		ErrorBuilder.setDefaultTransform(name);
+	isDefault && ErrorBuilder.setDefaultTransform(name);
 };
 
 /**
@@ -3434,14 +3368,9 @@ UrlBuilder.prototype.hasValue = function(keys) {
  * @return {String}
  */
 UrlBuilder.prototype.toOne = function(keys, delimiter) {
-
 	var self = this;
 	var builder = [];
-
-	keys.forEach(function(o) {
-		builder.push(self.builder[o] || '');
-	});
-
+	keys.forEach(key => builder.push(self.builder[key] || ''));
 	return builder.join(delimiter || '&');
 };
 
@@ -3483,8 +3412,7 @@ TransformBuilder.transform = function(name, obj) {
  */
 TransformBuilder.addTransform = function(name, fn, isDefault) {
 	transforms['transformbuilder'][name] = fn;
-	if (isDefault)
-		TransformBuilder.setDefaultTransform(name);
+	isDefault && TransformBuilder.setDefaultTransform(name);
 };
 
 /**
