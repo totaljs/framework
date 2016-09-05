@@ -150,6 +150,18 @@ function prototypeString() {
 	str = '';
 	assert.ok(str.parseInt() === 0, 'string.parseInt(): ' + str);
 
+	str = 'Abc 334';
+	assert.ok(str.parseInt2() === 334, 'string.parseInt2(): ' + str);
+
+	str = 'Abc 334.33';
+	assert.ok(str.parseFloat2() === 334.33, 'string.parseFloat2(): ' + str);
+
+	str = '';
+	assert.ok(str.parseInt2() === 0, 'string.parseInt2(): ' + str);
+
+	str = '';
+	assert.ok(str.parseFloat2() === 0, 'string.parseFloat2(): ' + str);
+
 	str = '255.50';
 	assert.ok(str.parseFloat() === 255.5, 'string.parseFloat(): ' + str);
 
