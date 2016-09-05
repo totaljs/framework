@@ -1137,7 +1137,7 @@ Counter.prototype.read = function(id, type, callback) {
 		if (all && type) {
 			var tmp = [];
 			if (type === 2)
-				Object.keys(output).forEach(key => tmp.push({ key: key, year: +key.substring(0, 4), month: +key.substring(4, 6), value: output[key] }));
+				Object.keys(output).forEach(key => tmp.push({ id: key, year: +key.substring(0, 4), month: +key.substring(4, 6), value: output[key] }));
 			else
 				Object.keys(output).forEach(key => tmp.push({ year: +key, value: output[key] }));
 			output = tmp;
@@ -1148,6 +1148,103 @@ Counter.prototype.read = function(id, type, callback) {
 
 	return self;
 };
+
+Counter.prototype.stats = function(top, year, month, callback) {
+
+	var self = this;
+
+	if (self.type) {
+		setTimeout(() => self.stats(top, year, month, callback), 200);
+		return self;
+	}
+
+	if (arguments.length === 3) {
+		callback = month;
+		month = null;
+	} else if (arguments.length === 2) {
+		callback = year;
+		year = month = null;
+	}
+
+	var filename = self.db.filename + '-counter';
+	var reader = Fs.createReadStream(filename);
+	var date;
+	var output = [];
+
+	self.type = 3;
+
+	if (year != null) {
+		date = year.toString();
+		if (month != null) {
+			date += month.padLeft(2, '0');
+			date = new RegExp(';' + date + '=\\d+', 'g');
+		} else
+			date = new RegExp(';' + date + '\\d+=\\d+', 'g');
+	}
+
+	reader.on('error', function() {
+		self.type = 0;
+		callback && callback(null, output);
+	});
+
+	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+		var index = value.indexOf('=');
+		var count;
+		if (date) {
+			var matches = value.match(date);
+			if (!matches)
+				return;
+			count = counter_parse_stats(matches);
+		} else
+			count = +value.substring(index + 1, value.indexOf(';', index));
+		counter_parse_stats_avg(output, top, value.substring(0, index), count);
+	}));
+
+	reader.on('end', function() {
+		self.type = 0;
+		callback && callback(null, output);
+	});
+
+	return self;
+};
+
+function counter_parse_stats_avg(group, top, key, count) {
+
+	if (group.length < top) {
+		group.push({ id: key, count: count });
+		group.length === top && group.sort((a, b) => a.count > b.count ? -1 : a.count === b.count ? 0 : 1);
+		return;
+	}
+
+	for (var i = 0, length = group.length; i < length; i++) {
+		var item = group[i];
+		if (item.count > count)
+			continue;
+
+		for (var j = length - 1; j > i; j--) {
+			group[j].id = group[j - 1].id;
+			group[j].count = group[j - 1].count;
+		}
+
+		item.id = key;
+		item.count = count;
+		return;
+	}
+}
+
+function counter_parse_stats(matches) {
+
+	var value = 0;
+
+	for (var i = 0, length = matches.length; i < length; i++) {
+		var item = matches[i];
+		var val = +item.substring(item.indexOf('=', 5) + 1);
+		if (val > 0)
+			value += val;
+	}
+
+	return value;
+}
 
 function counter_parse_years(value) {
 
@@ -1173,7 +1270,7 @@ function counter_parse_months(value) {
 	for (var i = 1, length = arr.length; i < length; i++) {
 		var val = +arr[i].substring(7);
 		var key = arr[i].substring(0, 6);
-		tmp.push({ key: key, year: +arr[i].substring(0, 4), month: +arr[i].substring(4, 6), value: val });
+		tmp.push({ id: key, year: +arr[i].substring(0, 4), month: +arr[i].substring(4, 6), value: val });
 	}
 
 	return tmp;
