@@ -31,6 +31,7 @@ const child = require('child_process');
 const exec = child.exec;
 const spawn = child.spawn;
 const Fs = require('fs');
+const REGEXP_SVG = /(width=\"\d+\")+|(height=\"\d+\")+/g;
 var middlewares = {};
 
 if (!global.framework_utils)
@@ -75,10 +76,7 @@ exports.measureJPG = function(buffer) {
 		var w = u16(buffer, o + 6);
 		var h = u16(buffer, o + 4);
 
-		return {
-			width: w,
-			height: h
-		};
+		return { width: w, height: h };
 	}
 
 	return null;
@@ -93,7 +91,7 @@ exports.measurePNG = function(buffer) {
 
 exports.measureSVG = function(buffer) {
 
-	var match = buffer.toString('utf8').match(/(width=\"\d+\")+|(height=\"\d+\")+/g);
+	var match = buffer.toString('utf8').match(REGEXP_SVG);
 	if (!match)
 		return;
 
@@ -106,21 +104,11 @@ exports.measureSVG = function(buffer) {
 		if (width > 0 && height > 0)
 			break;
 
-		if (width === 0) {
-			if (value.startsWith('width="')) {
-				width = +value.match(/\d+/g);
-				if (isNaN(width))
-					width = 0;
-			}
-		}
+		if (!width && value.startsWith('width="'))
+			width = value.parseInt2();
 
-		if (height === 0) {
-			if (value.startsWith('height="')) {
-				height = +value.match(/\d+/g);
-				if (isNaN(height))
-					height = 0;
-			}
-		}
+		if (!height && value.startsWith('height="'))
+			height = value.parseInt2();
 	}
 
 	return { width: width, height: height };
@@ -168,10 +156,7 @@ Image.prototype.measure = function(callback) {
 	}
 
 	var extension = self.filename.substring(index).toLowerCase();
-	var stream = require('fs').createReadStream(self.filename, {
-		start: 0,
-		end: extension === '.jpg' ? 40000 : 24
-	});
+	var stream = require('fs').createReadStream(self.filename, { start: 0, end: extension === '.jpg' ? 40000 : 24 });
 
 	stream.on('data', function(buffer) {
 
@@ -217,9 +202,7 @@ Image.prototype.save = function(filename, callback, writer) {
 		filename = null;
 	}
 
-	if (!self.builder.length)
-		self.minify();
-
+	!self.builder.length && self.minify();
 	filename = filename || self.filename || '';
 
 	var command = self.cmd(!self.filename ? '-' : self.filename, filename);
@@ -233,6 +216,7 @@ Image.prototype.save = function(filename, callback, writer) {
 		cmd = null;
 
 		self.clear();
+
 		if (!callback)
 			return;
 
@@ -262,9 +246,7 @@ Image.prototype.save = function(filename, callback, writer) {
 	}
 
 	CLEANUP(cmd.stdin);
-
-	if (writer)
-		writer(cmd.stdin);
+	writer && writer(cmd.stdin);
 
 	return self;
 };
@@ -345,8 +327,7 @@ Image.prototype.stream = function(type, writer) {
 			self.currentStream.pipe(cmd.stdin);
 	}
 
-	if (writer)
-		writer(cmd.stdin);
+	writer && writer(cmd.stdin);
 
 	var middleware = middlewares[type];
 	if (!middleware)
@@ -381,22 +362,13 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 	return (self.isIM ? 'convert' : 'gm -convert') + ' "' + filenameFrom + '"' + ' ' + cmd + ' "' + filenameTo + '"';
 };
 
-/*
-	Internal function
-	@filenameFrom {String}
-	@filenameTo {String}
-	return {String}
-*/
 Image.prototype.arg = function(first, last) {
 
 	var self = this;
 	var arr = [];
 
-	if (!self.isIM)
-		arr.push('-convert');
-
-	if (first)
-		arr.push(first);
+	!self.isIM && arr.push('-convert');
+	first && arr.push(first);
 
 	self.builder.sort(function(a, b) {
 		if (a.priority > b.priority)
@@ -418,9 +390,7 @@ Image.prototype.arg = function(first, last) {
 		}
 	}
 
-	if (last)
-		arr.push(last);
-
+	last && arr.push(last);
 	return arr;
 };
 
@@ -432,7 +402,7 @@ Image.prototype.arg = function(first, last) {
 Image.prototype.identify = function(cb) {
 	var self = this;
 
-	exec((self.isIM ? 'identify' : 'gm identify') + ' "' + self.fileName + '"', function(error, stdout, stderr) {
+	exec((self.isIM ? 'identify' : 'gm identify') + ' "' + self.filename + '"', function(error, stdout, stderr) {
 
 		if (error) {
 			cb(error, null);
@@ -441,12 +411,7 @@ Image.prototype.identify = function(cb) {
 
 		var arr = stdout.split(' ');
 		var size = arr[2].split('x');
-		var obj = {
-			type: arr[1],
-			width: framework_utils.parseInt(size[0]),
-			height: framework_utils.parseInt(size[1])
-		};
-
+		var obj = { type: arr[1], width: framework_utils.parseInt(size[0]), height: framework_utils.parseInt(size[1]) };
 		cb(null, obj);
 	});
 
@@ -460,38 +425,20 @@ Image.prototype.$$identify = function() {
 	};
 };
 
-/*
-	Append filter to filter list
-	@key {String}
-	@value {String}
-	@priority {Number}
-	return {Image}
-*/
 Image.prototype.push = function(key, value, priority) {
 	var self = this;
-	self.builder.push({
-		cmd: key + (value ? ' "' + value + '"' : ''),
-		priority: priority
-	});
+	self.builder.push({ cmd: key + (value ? ' "' + value + '"' : ''), priority: priority });
 	return self;
 };
 
 Image.prototype.output = function(type) {
 	var self = this;
-
 	if (type[0] === '.')
 		type = type.substring(1);
-
 	self.outputType = type;
 	return self;
 };
 
-/*
-	@w {Number}
-	@h {Number}
-	@options {String}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-resize
-*/
 Image.prototype.resize = function(w, h, options) {
 	options = options || '';
 
@@ -549,10 +496,6 @@ Image.prototype.trim = function() {
 	return this.push('-trim +repage', 1);
 };
 
-/*
-	@w {Number}
-	@h {Number}
-*/
 Image.prototype.extent = function(w, h) {
 
 	var self = this;
@@ -649,9 +592,9 @@ Image.prototype.quality = function(percentage) {
 */
 Image.prototype.align = function(type) {
 
-	var output = '';
+	var output;
 
-	switch (type.toLowerCase().replace('-', '')) {
+	switch (type) {
 		case 'left top':
 		case 'top left':
 			output = 'NorthWest';
@@ -698,20 +641,14 @@ Image.prototype.align = function(type) {
 			break;
 	}
 
-	return this.push('-gravity', output, 3);
+	ouptut && this.push('-gravity', output, 3);
+	return this;
 };
 
-/*
-	@type {String}
-*/
 Image.prototype.gravity = function(type) {
 	return this.align(type);
 };
 
-/*
-	@radius {Number}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-blur
-*/
 Image.prototype.blur = function(radius) {
 	return this.push('-blur', radius, 10);
 };
@@ -720,20 +657,14 @@ Image.prototype.normalize = function() {
 	return this.push('-normalize', null, 10);
 };
 
-/*
-	@deg {Number}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-rotate
-*/
 Image.prototype.rotate = function(deg) {
 	return this.push('-rotate', deg || 0, 8);
 };
 
-// http://www.graphicsmagick.org/GraphicsMagick.html#details-flip
 Image.prototype.flip = function() {
 	return this.push('-flip', null, 10);
 };
 
-// http://www.graphicsmagick.org/GraphicsMagick.html#details-flop
 Image.prototype.flop = function() {
 	return this.push('-flop', null, 10);
 };
@@ -771,10 +702,6 @@ Image.prototype.make = function(fn) {
 	return this;
 };
 
-/*
-	@cmd {String}
-	@priority {Number}
-*/
 Image.prototype.command = function(key, value, priority) {
 	return this.push(key, value, priority || 10);
 };
@@ -782,11 +709,6 @@ Image.prototype.command = function(key, value, priority) {
 exports.Image = Image;
 exports.Picture = Image;
 
-/*
-	Init image class
-	@filename {String}
-	@imageMagick {Boolean} :: default false
-*/
 exports.init = function(filename, imageMagick, width, height) {
 	return new Image(filename, imageMagick, width, height);
 };
