@@ -895,7 +895,7 @@ Framework.prototype.stop = function(signal) {
 	self.cache.stop();
 	self.server && self.server.close();
 
-	setTimeout(() => process.exit(signal || 'SIGTERM'), 2000);
+	setTimeout(() => process.exit(signal || 'SIGTERM'), TEST ? 2000 : 100);
 	return self;
 };
 
