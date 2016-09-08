@@ -97,6 +97,10 @@ HEADERS['sse'][RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, must-revalid
 HEADERS['sse']['Pragma'] = 'no-cache';
 HEADERS['sse']['Expires'] = '0';
 HEADERS['sse'][RESPONSE_HEADER_CONTENTTYPE] = 'text/event-stream';
+HEADERS['mmr'] = {};
+HEADERS['mmr'][RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, must-revalidate';
+HEADERS['mmr']['Pragma'] = 'no-cache';
+HEADERS['mmr']['Expires'] = '0';
 HEADERS['proxy'] = {};
 HEADERS['proxy']['X-Proxy'] = 'total.js';
 HEADERS['responseFile.etag'] = {};
@@ -202,6 +206,7 @@ HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true }
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
 HEADERS.workers = { cwd: '' };
+HEADERS.mmrpipe = { end: false };
 
 var _controller = '';
 var _owner = '';
@@ -468,7 +473,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2020;
-	this.version_header = '2.0.2-10';
+	this.version_header = '2.0.2-11';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -589,7 +594,8 @@ function Framework() {
 		mapping: {},
 		packages: {},
 		blocks: {},
-		resources: {}
+		resources: {},
+		mmr: {}
 	};
 
 	this.behaviours = null;
@@ -652,6 +658,7 @@ function Framework() {
 			put: 0,
 			path: 0,
 			upload: 0,
+			mmr: 0,
 			blocked: 0,
 			'delete': 0,
 			mobile: 0,
@@ -676,6 +683,7 @@ function Framework() {
 			restriction: 0,
 			notModified: 0,
 			sse: 0,
+			mmr: 0,
 			error400: 0,
 			error401: 0,
 			error403: 0,
@@ -1694,10 +1702,16 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 	// Appends cors route
 	isCORS && F.cors(urlcache, corsflags);
+	!_controller && self._routesSort();
 
-	if (!_controller)
-		self._routesSort();
+	return self;
+};
 
+Framework.prototype.mmr = function(url, process) {
+	var self = this;
+	url = framework_internal.preparePath(framework_utils.path(url));
+	self.routes.mmr[url] = { exec: process };
+	self._request_check_POST = true;
 	return self;
 };
 
@@ -3434,7 +3448,8 @@ Framework.prototype.$restart = function() {
 			mapping: {},
 			packages: {},
 			blocks: {},
-			resources: {}
+			resources: {},
+			mmr: {}
 		};
 
 		self.behaviours = null;
@@ -4243,7 +4258,8 @@ Framework.prototype.usage = function(detailed) {
 		websocket: self.routes.websockets.length,
 		file: self.routes.files.length,
 		middleware: Object.keys(self.routes.middleware).length,
-		redirect: redirects.length
+		redirect: redirects.length,
+		mmr: Object.keys(self.routes.mmr).length
 	};
 
 	output.stats = self.stats;
@@ -6664,12 +6680,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				req.$type = 1;
 				multipart = '';
 				break;
-			case '/xml':
-				req.$flags += 'xml';
-				flags.push('xml');
-				req.$type = 2;
-				multipart = '';
-				break;
 			case 'oded':
 				req.$type = 3;
 				multipart = '';
@@ -6677,6 +6687,17 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 			case 'data':
 				req.$flags += 'upload';
 				flags.push('upload');
+				break;
+			case '/xml':
+				req.$flags += 'xml';
+				flags.push('xml');
+				req.$type = 2;
+				multipart = '';
+				break;
+			case 'lace':
+				req.$type = 4;
+				flags.push('mmr');
+				req.$flags += 'mmr';
 				break;
 			default:
 				if (multipart) {
@@ -6772,15 +6793,20 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 		case 'P':
 			if (self._request_check_POST) {
+
 				if (multipart) {
-					self.stats.request.upload++;
 
 					if (!isCORS) {
-						new Subscribe(self, req, res, 2).multipart(multipart);
+
+						if (req.$type === 4)
+							self._request_mmr(req, res, multipart);
+						else
+							new Subscribe(self, req, res, 2).multipart(multipart);
+
 						return self;
 					}
 
-					self._cors(req, res, (req, res, multipart) => new Subscribe(self, req, res, 2).multipart(multipart), multipart);
+					self._cors(req, res, (req, res, multipart) => req.$type === 4 ? self._request_mmr(req, res, multipart) : new Subscribe(self, req, res, 2).multipart(multipart), multipart);
 					return self;
 
 				} else {
@@ -6809,6 +6835,25 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	self.stats.request.blocked++;
 	res.writeHead(403);
 	res.end();
+	return self;
+};
+
+Framework.prototype._request_mmr = function(req, res, header) {
+	var self = this;
+	var route = self.routes.mmr[req.url];
+	self.stats.request.mmr++;
+
+	if (!route) {
+		self.emit('request-end', req, res);
+		self._request_stats(false, false);
+		self.stats.request.blocked++;
+		res.writeHead(403);
+		res.end();
+		return;
+	}
+
+	self.path.verify('temp');
+	framework_internal.parseMULTIPART_MIXED(req, header, self.config['directory-temp'], route.exec);
 	return self;
 };
 
@@ -9489,6 +9534,7 @@ Subscribe.prototype.multipart = function(header) {
 	var self = this;
 	var req = self.req;
 
+	self.stats.request.upload++;
 	self.route = framework.lookup(req, req.uri.pathname, req.flags, true);
 	self.header = header;
 
@@ -12456,6 +12502,46 @@ Controller.prototype.sse = function(data, eventname, id, retry) {
 	builder += newline;
 	res.write(builder);
 	framework.stats.response.sse++;
+	return self;
+};
+
+Controller.prototype.mmr = function(name, stream, callback) {
+
+	var self = this;
+	var res = self.res;
+
+	if (typeof(stream) === 'function') {
+		var tmp = callback;
+		callback = stream;
+		stream = name;
+	}
+
+	if (!stream)
+		stream = name;
+
+	if (!self.isConnected || (!self.type && res.success) || (self.type && self.type !== 2)) {
+		callback = null;
+		return self;
+	}
+
+	if (!self.type) {
+		self.type = 2;
+		self.boundary = '----totaljs' + framework_utils.GUID(10);
+		self.subscribe.success();
+		self.req.on('close', () => self.close());
+		res.success = true;
+		HEADERS.mmr[RESPONSE_HEADER_CONTENTTYPE] = 'multipart/x-mixed-replace; boundary=' + self.boundary;
+		res.writeHead(self.status, HEADERS.mmr);
+	}
+
+	res.write('--' + self.boundary + NEWLINE + RESPONSE_HEADER_CONTENTTYPE + ': ' + framework_utils.getContentType(framework_utils.getExtension(name)) + NEWLINE + NEWLINE);
+	framework.stats.response.mmr++;
+
+	if (typeof(stream) === 'string')
+		stream = fs.createReadStream(stream);
+
+	stream.pipe(res, HEADERS.mmrpipe);
+	CLEANUP(stream, () => callback && callback());
 	return self;
 };
 
