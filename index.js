@@ -9534,7 +9534,7 @@ Subscribe.prototype.multipart = function(header) {
 	var self = this;
 	var req = self.req;
 
-	self.stats.request.upload++;
+	framework.stats.request.upload++;
 	self.route = framework.lookup(req, req.uri.pathname, req.flags, true);
 	self.header = header;
 
