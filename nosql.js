@@ -1025,7 +1025,7 @@ Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 	return self;
 };
 
-Counter.prototype.remove = function(id, callback) {
+Counter.prototype.remove = function(id) {
 	var self = this;
 
 	if (!self.cache)
@@ -1158,10 +1158,10 @@ Counter.prototype.stats = function(top, year, month, callback) {
 		return self;
 	}
 
-	if (arguments.length === 3) {
+	if (typeof(month) == 'function') {
 		callback = month;
 		month = null;
-	} else if (arguments.length === 2) {
+	} else if (typeof(year) === 'function') {
 		callback = year;
 		year = month = null;
 	}
