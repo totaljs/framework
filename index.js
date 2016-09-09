@@ -10795,7 +10795,7 @@ Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
 	return '';
 };
 
-Controller.prototype.sitemap_change = function(name, type, value, format) {
+Controller.prototype.sitemap_change = function(name, type, value) {
 
 	var self = this;
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
@@ -10839,7 +10839,7 @@ Controller.prototype.sitemap_change = function(name, type, value, format) {
 	return self;
 };
 
-Controller.prototype.sitemap_replace = function(name, title, url, format) {
+Controller.prototype.sitemap_replace = function(name, title, url) {
 	var self = this;
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
 	if (!sitemap)
