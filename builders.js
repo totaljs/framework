@@ -77,8 +77,7 @@ SchemaBuilder.prototype.remove = function(name) {
 	}
 
 	var schema = self.collection[name];
-	if (schema)
-		schema.remove();
+	schema && schema.remove();
 	schema = null;
 	return self;
 };
