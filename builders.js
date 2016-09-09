@@ -176,10 +176,7 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 	if (self.properties == null)
 		self.properties = [];
 
-	if (self.properties.indexOf(name) !== -1)
-		return self;
-
-	self.properties.push(name);
+	self.properties.indexOf(name) === -1 && self.properties.push(name);
 	return self;
 };
 
@@ -464,11 +461,7 @@ SchemaBuilderEntity.prototype.getDependencies = function() {
 			type = type.substring(1, type.length - 1);
 
 		var m = self.parent.get(type);
-
-		if (m === undefined)
-			continue;
-
-		dependencies.push({ name: name, isArray: isArray, schema: m });
+		m && dependencies.push({ name: name, isArray: isArray, schema: m });
 	}
 
 	return dependencies;
@@ -741,12 +734,8 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback, skip) {
 		}
 
 		var builder = new ErrorBuilder();
-
-		if (self.resourceName)
-			builder.setResource(self.resourceName);
-		if (self.resourcePrefix)
-			builder.setPrefix(self.resourcePrefix);
-
+		self.resourceName && builder.setResource(self.resourceName);
+		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 		if (!isGenerator(self, $type, self.onSave)) {
 			self.onSave(builder, model, helper, function(result) {
 				self.$process(arguments, model, $type, undefined, builder, result, callback);
@@ -761,8 +750,7 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback, skip) {
 				return;
 			callback.success = true;
 			builder.push(err);
-			if (self.onError)
-				self.onError(builder, model, $type);
+			self.onError && self.onError(builder, model, $type);
 			callback(builder);
 		}, builder, model, helper, function(result) {
 
@@ -1518,12 +1506,8 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 
 	if (skip === true) {
 		var builder = new ErrorBuilder();
-
-		if (self.resourceName)
-			builder.setResource(self.resourceName);
-		if (self.resourcePrefix)
-			builder.setPrefix(self.resourcePrefix);
-
+		self.resourceName && builder.setResource(self.resourceName);
+		self.resourcePrefix && builder.setPrefix(self.resourcePrefix);
 		trans.call(self, builder, model, helper, function(result) {
 			self.$process(arguments, model, $type, name, builder, result, callback);
 		}, skip !== true);
@@ -2365,15 +2349,7 @@ exports.getschema = function(group, name) {
 	}
 
 	var g = schemas[group];
-
-	if (!g)
-		return;
-
-	var s = g.get(name);
-	if (s)
-		return s;
-
-	return;
+	return g ? g.get(name) : undefined;
 };
 
 exports.newschema = function(group, name) {
@@ -3001,8 +2977,7 @@ Page.prototype.html = function() {
  */
 Pagination.addTransform = function(name, fn, isDefault) {
 	transforms['pagination'][name] = fn;
-	if (isDefault)
-		Pagination.setDefaultTransform(name);
+	isDefault && Pagination.setDefaultTransform(name);
 };
 
 /**
@@ -3094,7 +3069,6 @@ Pagination.prototype.transform = function(name) {
 		throw new Error('A transformation of Pagination not found.');
 
 	var current = transforms['pagination'][transformName];
-
 	if (current === undefined)
 		return self.render();
 
