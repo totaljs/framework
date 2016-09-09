@@ -9538,16 +9538,16 @@ Subscribe.prototype.multipart = function(header) {
 	self.route = framework.lookup(req, req.uri.pathname, req.flags, true);
 	self.header = header;
 
-	if (!self.route) {
-		framework._request_stats(false, false);
-		framework.stats.request.blocked++;
-		self.res.writeHead(403);
-		self.res.end();
+	if (self.route) {
+		framework.path.verify('temp');
+		framework_internal.parseMULTIPART(req, header, self.route, framework.config['directory-temp'], self);
 		return self;
 	}
 
-	framework.path.verify('temp');
-	framework_internal.parseMULTIPART(req, header, self.route, framework.config['directory-temp'], self);
+	framework._request_stats(false, false);
+	framework.stats.request.blocked++;
+	self.res.writeHead(403);
+	self.res.end();
 	return self;
 };
 
@@ -9556,24 +9556,21 @@ Subscribe.prototype.urlencoded = function() {
 	var self = this;
 	self.route = framework.lookup(self.req, self.req.uri.pathname, self.req.flags, true);
 
-	if (!self.route) {
-		framework.stats.request.blocked++;
-		framework._request_stats(false, false);
-		self.res.writeHead(403);
-		self.res.end();
-		framework.emit('request-end', self.req, self.res);
-		self.req.clear(true);
+	if (self.route) {
+		self.req.buffer_has = true;
+		self.req.buffer_exceeded = false;
+		self.req.on('data', (chunk) => self.doParsepost(chunk));
+		self.end();
 		return self;
 	}
 
-	self.req.buffer_has = true;
-	self.req.buffer_exceeded = false;
+	framework.stats.request.blocked++;
+	framework._request_stats(false, false);
+	self.res.writeHead(403);
+	self.res.end();
+	framework.emit('request-end', self.req, self.res);
+	self.req.clear(true);
 
-	// THROWS (in OSX): Assertion failed: (Buffer::HasInstance(args[0]) == true), function Execute, file ../src/node_http_parser.cc, line 392.
-	//self.req.socket.setEncoding(ENCODING);
-
-	self.req.on('data', (chunk) => self.doParsepost(chunk));
-	self.end();
 	return self;
 };
 
@@ -10439,7 +10436,7 @@ Controller.prototype.date = function(type, d1, d2) {
 
 	if (d2 === undefined) {
 		d2 = d1;
-		d1 = new Date();
+		d1 = framework.datetime;
 	}
 
 	var beg = typeof(d1) === 'string' ? d1.parseDate() : d1;
@@ -10781,18 +10778,14 @@ Controller.prototype.sitemap_url = function(name, a, b, c, d, e, f) {
 	if (!name)
 		name = this.repository[REPOSITORY_SITEMAP];
 	var item = F.sitemap(name, true, this.language);
-	if (item)
-		return item.url.format(a, b, c, d, e, f);
-	return '';
+	return item ? item.url.format(a, b, c, d, e, f) : '';
 };
 
 Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
 	if (!name)
 		name = this.repository[REPOSITORY_SITEMAP];
 	var item = F.sitemap(name, true, this.language);
-	if (item)
-		return item.name.format(a, b, c, d, e, f);
-	return '';
+	return item ? item.name.format(a, b, c, d, e, f) : '';
 };
 
 Controller.prototype.sitemap_change = function(name, type, value) {
@@ -10828,10 +10821,8 @@ Controller.prototype.sitemap_change = function(name, type, value) {
 		else
 			item[type] = value;
 
-		if (type === 'name') {
-			if (self.repository[REPOSITORY_META_TITLE] === tmp)
-				self.repository[REPOSITORY_META_TITLE] = item[type];
-		}
+		if (type === 'name' && self.repository[REPOSITORY_META_TITLE] === tmp)
+			self.repository[REPOSITORY_META_TITLE] = item[type];
 
 		return self;
 	}
@@ -10887,9 +10878,7 @@ Controller.prototype.sitemap = function(name) {
 
 	if (!name) {
 		sitemap = self.repository[REPOSITORY_SITEMAP];
-		if (sitemap)
-			return sitemap;
-		return self.repository.sitemap || EMPTYARRAY;
+		return sitemap ? sitemap : self.repository.sitemap || EMPTYARRAY;
 	}
 
 	sitemap = framework.sitemap(name, false, self.language);
@@ -11001,8 +10990,7 @@ Controller.prototype.setModified = function(value) {
  * @param {Date} date
  */
 Controller.prototype.setExpires = function(date) {
-	if (date)
-		this.res.setHeader('Expires', date.toUTCString());
+	date && this.res.setHeader('Expires', date.toUTCString());
 	return this;
 };
 
@@ -11064,7 +11052,6 @@ Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
 	}
 
 	var layout = self.layoutName;
-
 	self.layoutName = '';
 	var value = self.view(name, model, null, true);
 	self.layoutName = layout;
@@ -11363,11 +11350,7 @@ Controller.prototype.$input = function(model, type, name, attr) {
 		builder += ' value="' + (attr.value || '').toString().encode() + ATTR_END;
 
 	builder += ' />';
-
-	if (attr.label)
-		return '<label>' + builder + ' <span>' + attr.label + '</span></label>';
-
-	return builder;
+	return attr.label ? ('<label>' + builder + ' <span>' + attr.label + '</span></label>') : builder;
 };
 
 Controller.prototype._preparehostname = function(value) {
@@ -11466,10 +11449,7 @@ Controller.prototype.$modified = function(value) {
 	} else if (framework_utils.isDate(value))
 		date = value;
 
-	if (date === undefined)
-		return '';
-
-	self.setModified(date);
+	date && self.setModified(date);
 	return '';
 };
 
@@ -11516,7 +11496,6 @@ Controller.prototype.$options = function(arr, selected, name, value) {
 	if (!isObject) {
 		if (value === undefined)
 			value = value || name || 'value';
-
 		if (name === undefined)
 			name = name || 'name';
 	}
@@ -11589,13 +11568,10 @@ Controller.prototype.$script = function() {
  * @return {String}
  */
 Controller.prototype.$js = function() {
-
 	var self = this;
 	var builder = '';
-
 	for (var i = 0; i < arguments.length; i++)
 		builder += self.routeScript(arguments[i], true);
-
 	return builder;
 };
 
@@ -11804,11 +11780,7 @@ Controller.prototype.$json = function(obj, id, beautify) {
 	}
 
 	var value = beautify ? JSON.stringify(obj, null, 4) : JSON.stringify(obj);
-
-	if (!id)
-		return value;
-
-	return '<script type="application/json" id="' + id + '">' + value + '</script>';
+	return id ? ('<script type="application/json" id="' + id + '">' + value + '</script>') : value;
 };
 
 /**
