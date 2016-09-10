@@ -526,10 +526,8 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 
 			item.count++;
 
-			if (!builder.$sort) {
-				if ((builder.$skip && builder.$skip > index) || (builder.$take && builder.$take <= item.counter))
-					continue;
-			}
+			if (!builder.$sort && ((builder.$skip && builder.$skip >= item.count) || (builder.$take && builder.$take <= item.counter)))
+				continue;
 
 			item.counter++;
 
@@ -632,10 +630,8 @@ Database.prototype.$views = function() {
 
 			response[j].count++;
 
-			if (!item.$sort) {
-				if ((item.$skip && item.$skip > index) || (item.$take && item.$take < response[j].counter))
-					continue;
-			}
+			if (!item.$sort && ((item.$skip && item.$skip >= response[j].count) || (item.$take && item.$take < response[j].counter)))
+				continue;
 
 			response[j].counter++;
 			!item.type && response[j].response.push(output);
