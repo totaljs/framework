@@ -11,10 +11,12 @@ __Total.js__ is the web application framework for creating rich web sites and we
 
 [![Support](https://www.totaljs.com/img/button-support.png?v=2)](https://www.totaljs.com/support/)
 
-- [__NEW__: Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
-- [__NEW__: Total.js Simple Eshop + CMS for free](http://www.totaljs.com/eshop/)
-- [__NEW__: Total.js HelpDesk](https://www.totaljs.com/helpdesk/)
-- [__NEW__: Download +89 client-side components (jComponent) for free](https://www.componentator.com)
+- [__NEW__: Total.js Dashboard](https://www.totaljs.com/superadmin/)
+- [__NEW__: Total.js BlogEngine](https://www.totaljs.com/blogengine/)
+- [Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
+- [Total.js Simple Eshop + CMS for free](http://www.totaljs.com/eshop/)
+- [Total.js HelpDesk](https://www.totaljs.com/helpdesk/)
+- [Download +89 client-side components (jComponent) for free](https://www.componentator.com)
 - [Total.js OpenPlatform](https://www.totaljs.com/openplatform/) is a simple enterprise ready platform
 - [Total.js AppMonitor](https://www.totaljs.com/monitor/) for tracking total.js applications
 - [Total.js modules and packages](https://github.com/totaljs/modules)
@@ -85,6 +87,7 @@ service you're supporting the framework and its products..
 | Supports modules and packages |
 | Built-in image processing engine via ImageMagick or GraphicsMagick |
 | Supports WebSockets (__RFC 6455__) and Server-Sent events |
+| __NEW__ Supports `multipart/x-mixed-replace` (IP camera streaming) uploading and sending |
 | Supports RESTful routing |
 | Supports middleware (like express.js) with custom options |
 | Supports unit testing |
