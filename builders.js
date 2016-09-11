@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.0.1
+ * @version 2.1.0
  */
 
 'use strict';
@@ -714,7 +714,7 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback, skip) {
 		skip = callback;
 		callback = helper;
 		helper = undefined;
-	} else if (callback === undefined) {
+	} else if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
@@ -763,9 +763,7 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback, skip) {
 			}
 
 			var has = builder.hasError();
-			if (has && self.onError)
-				self.onError(builder, model, $type);
-
+			has && self.onError && self.onError(builder, model, $type);
 			callback.success = true;
 			callback(has ? builder : null, result === undefined ? model : result);
 		}, skip !== true);
@@ -789,7 +787,7 @@ function isGenerator(obj, name, fn) {
  */
 SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = function(helper, callback) {
 
-	if (callback === undefined) {
+	if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
@@ -831,12 +829,10 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
 				builder.push(result);
 			result = arguments[1];
 		}
+
 		callback.success = true;
-
 		var has = builder.hasError();
-		if (has && self.onError)
-			self.onError(builder, model, $type);
-
+		has && self.onError && self.onError(builder, model, $type);
 		callback(has ? builder : null, result === undefined ? output : result);
 	});
 
@@ -851,7 +847,7 @@ SchemaBuilderEntity.prototype.get = SchemaBuilderEntity.prototype.read = functio
  */
 SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 
-	if (callback === undefined) {
+	if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
@@ -890,9 +886,7 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
 		}
 
 		var has = builder.hasError();
-		if (has && self.onError)
-			self.onError(builder, model, $type);
-
+		has && self.onError && self.onError(builder, model, $type);
 		callback.success = true;
 		callback(has ? builder : null, result === undefined ? helper : result);
 	});
@@ -908,7 +902,7 @@ SchemaBuilderEntity.prototype.remove = function(helper, callback) {
  */
 SchemaBuilderEntity.prototype.query = function(helper, callback) {
 
-	if (callback === undefined) {
+	if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
@@ -948,9 +942,7 @@ SchemaBuilderEntity.prototype.query = function(helper, callback) {
 		}
 
 		var has = builder.hasError();
-		if (has && self.onError)
-			self.onError(builder, model, $type);
-
+		has && self.onError && self.onError(builder, model, $type);
 		callback.success = true;
 		callback(builder.hasError() ? builder : null, result);
 	});
@@ -1486,7 +1478,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 		skip = callback;
 		callback = helper;
 		helper = undefined;
-	} else if (callback === undefined) {
+	} else if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
@@ -1552,9 +1544,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 			}
 
 			var has = builder.hasError();
-			if (has && self.onError)
-				self.onError(builder, model, $type, name);
-
+			has && self.onError && self.onError(builder, model, $type, name);
 			callback.success = true;
 			callback(has ? builder : null, result === undefined ? model : result);
 		}, skip !== true);
@@ -1571,8 +1561,8 @@ SchemaBuilderEntity.prototype.transform2 = function(name, helper, callback) {
 		helper = undefined;
 	}
 
-	if (callback === undefined)
-		callback = NOOP;
+	if (!callback)
+		callback = function(){};
 
 	return this.transform(name, this.create(), helper, callback, true);
 };
@@ -1588,21 +1578,15 @@ SchemaBuilderEntity.prototype.$process = function(arg, model, type, name, builde
 	}
 
 	var has = builder.hasError();
-	if (has && self.onError)
-		self.onError(builder, model, type, name);
-
+	has && self.onError && self.onError(builder, model, type, name);
 	callback(has ? builder : null, result === undefined ? model : result, model);
 	return self;
 };
 
 SchemaBuilderEntity.prototype.$process_hook = function(model, type, name, builder, result, callback) {
-
 	var self = this;
-
 	var has = builder.hasError();
-	if (has && self.onError)
-		self.onError(builder, model, type, name);
-
+	has && self.onError && self.onError(builder, model, type, name);
 	callback(has ? builder : null, model);
 	return self;
 };
@@ -1631,7 +1615,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 		skip = callback;
 		callback = helper;
 		helper = undefined;
-	} else if (callback === undefined) {
+	} else if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
@@ -1696,9 +1680,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 			}
 
 			var has = builder.hasError();
-			if (has && self.onError)
-				self.onError(builder, model, $type, name);
-
+			has && self.onError && self.onError(builder, model, $type, name);
 			callback.success = true;
 			callback(has ? builder : null, result === undefined ? model : result);
 		}, skip !== true);
@@ -1714,8 +1696,8 @@ SchemaBuilderEntity.prototype.workflow2 = function(name, helper, callback) {
 		helper = undefined;
 	}
 
-	if (callback === undefined)
-		callback = NOOP;
+	if (!callback)
+		callback = function(){};
 
 	return this.workflow(name, this.create(), helper, callback, true);
 };
@@ -1744,7 +1726,7 @@ SchemaBuilderEntity.prototype.hook = function(name, model, helper, callback, ski
 		skip = callback;
 		callback = helper;
 		helper = undefined;
-	} else if (callback === undefined) {
+	} else if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
@@ -1831,8 +1813,8 @@ SchemaBuilderEntity.prototype.hook2 = function(name, helper, callback) {
 		helper = undefined;
 	}
 
-	if (callback === undefined)
-		callback = NOOP;
+	if (!callback)
+		callback = function(){};
 
 	return this.hook(name, this.create(), helper, callback, true);
 };
@@ -1919,9 +1901,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 		}
 
 		var has = builder.hasError();
-		if (has && self.onError)
-			self.onError(builder, model, $type, name);
-
+		has && self.onError && self.onError(builder, model, $type, name);
 		callback.success = true;
 		callback(has ? builder : null, result);
 	}, skip !== true);
@@ -1936,8 +1916,8 @@ SchemaBuilderEntity.prototype.operation2 = function(name, helper, callback) {
 		helper = undefined;
 	}
 
-	if (callback === undefined)
-		callback = NOOP;
+	if (!callback)
+		callback = function(){};
 
 	return this.operation(name, this.create(), helper, callback, true);
 };
@@ -1979,9 +1959,8 @@ function clone(obj) {
 		for (var i = 0; i < length; i++) {
 			type = typeof(obj[i]);
 			if (type !== 'object' || obj[i] instanceof Date) {
-				if (type === 'function')
-					continue;
-				o[i] = obj[i];
+				if (type !== 'function')
+					o[i] = obj[i];
 				continue;
 			}
 			o[i] = clone(obj[i]);
@@ -2006,9 +1985,8 @@ function clone(obj) {
 
 		var type = typeof(val);
 		if (type !== 'object' || val instanceof Date) {
-			if (type === 'function')
-				continue;
-			o[m] = val;
+			if (type !== 'function')
+				o[m] = val;
 			continue;
 		}
 
@@ -2041,8 +2019,8 @@ SchemaInstance.prototype.$$schema = null;
 SchemaInstance.prototype.$async = function(callback, index) {
 	var self = this;
 
-	if (callback === undefined)
-		callback = NOOP;
+	if (!callback)
+		callback = function(){};
 
 	self.$$async = [];
 	self.$$result = [];
@@ -2670,9 +2648,7 @@ ErrorBuilder.prototype.remove = function(name) {
  */
 ErrorBuilder.prototype.hasError = function(name) {
 	var self = this;
-	if (name)
-		return self.items.findIndex('name', name) !== -1;
-	return self.items.length > 0;
+	return name ? self.items.findIndex('name', name) !== -1 : self.items.length > 0;
 };
 
 /**
@@ -2681,15 +2657,10 @@ ErrorBuilder.prototype.hasError = function(name) {
  * @return {String}
  */
 ErrorBuilder.prototype.read = function(name) {
-
 	var self = this;
 	!self.isPrepared && self.prepare();
-
 	var error = self.items.findItem('name', name);
-	if (error)
-		return error.error;
-
-	return null;
+	return error ? error.error : null;
 };
 
 /**
@@ -2724,9 +2695,7 @@ ErrorBuilder.prototype.replace = function(search, newvalue) {
  */
 ErrorBuilder.prototype.json = function(beautify, replacer) {
 	var items = this.prepare().items;
-	if (beautify)
-		return JSON.stringify(items, replacer, '\t');
-	return JSON.stringify(items, replacer);
+	return beautify ? JSON.stringify(items, replacer, '\t') : JSON.stringify(items, replacer);
 };
 
 ErrorBuilder.prototype.plain = function() {
