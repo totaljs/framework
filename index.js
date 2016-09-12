@@ -5188,9 +5188,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 	var h = {};
 
 	h[RESPONSE_HEADER_CACHECONTROL] = 'private';
-
-	if (headers)
-		framework_utils.extend(h, headers, true);
+	headers && framework_utils.extend(h, headers, true);
 
 	var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 	var connection = options.protocol === 'https:' ? require('https') : http;
@@ -5206,18 +5204,14 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 		var compress = !isGZIP && supportsGZIP && (contentType.indexOf('text/') !== -1 || contentType.lastIndexOf('javascript') !== -1 || contentType.lastIndexOf('json') !== -1);
 		var attachment = response.headers['content-disposition'] || '';
 
-		if (attachment)
-			res.setHeader('Content-Disposition', attachment);
-
+		attachment && res.setHeader('Content-Disposition', attachment);
 		res.setHeader(RESPONSE_HEADER_CONTENTTYPE, contentType);
 		res.setHeader('Vary', 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : ''));
 
 		res.on('error', function(err) {
 			response.close();
-			if (callback) {
-				callback(err);
-				callback = null;
-			}
+			callback && callback(err);
+			callback = null;
 		});
 
 		if (compress) {
@@ -5235,10 +5229,8 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 	if (timeout) {
 		client.setTimeout(timeout, function() {
 			self.response408(req, res);
-			if (callback) {
-				callback(new Error(framework_utils.httpStatus(408)));
-				callback = null;
-			}
+			callback && callback(new Error(framework_utils.httpStatus(408)));
+			callback = null;
 		});
 	}
 
@@ -5251,10 +5243,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 		self.stats.response.pipe++;
 		self._request_stats(false, req.isStaticFile);
 		res.success = true;
-
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
-
+		!req.isStaticFile && self.emit('request-end', req, res);
 		req.clear(true);
 		callback && callback();
 	});
@@ -5276,7 +5265,6 @@ Framework.prototype.responseCustom = function(req, res) {
 		return;
 
 	res.success = true;
-
 	self.stats.response.custom++;
 	self._request_stats(false, req.isStaticFile);
 	!req.isStaticFile && self.emit('request-end', req, res);
@@ -5783,17 +5771,11 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	return {Controller};
 */
 Framework.prototype.setModified = function(req, res, value) {
-
-	var self = this;
-	var isEtag = typeof(value) === 'string';
-
-	if (isEtag) {
-		res.setHeader('Etag', value + ':' + self.config['etag-version']);
-		return self;
-	}
-
-	res.setHeader('Last-Modified', value.toUTCString());
-	return self;
+	if (typeof(value) === 'string')
+		res.setHeader('Etag', value + ':' + this.config['etag-version']);
+	else
+		res.setHeader('Last-Modified', value.toUTCString());
+	return this;
 };
 
 /*
@@ -5865,8 +5847,7 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 Framework.prototype.responseCode = function(req, res, code, problem) {
 	var self = this;
 
-	if (problem)
-		self.problem(problem, 'response' + code + '()', req.uri, req.ip);
+	problem && self.problem(problem, 'response' + code + '()', req.uri, req.ip);
 
 	if (res.success || res.headersSent)
 		return self;
@@ -5915,9 +5896,7 @@ Framework.prototype.response431 = function(req, res, problem) {
 
 Framework.prototype.response500 = function(req, res, error) {
 	var self = this;
-
-	if (error)
-		self.error(error, null, req.uri);
+	error && self.error(error, null, req.uri);
 
 	if (res.success || res.headersSent)
 		return self;
@@ -6066,9 +6045,9 @@ Framework.prototype.responseRedirect = function(req, res, url, permanent) {
 Framework.prototype.load = function(debug, types, pwd) {
 
 	var self = this;
-	if (pwd && pwd[0] === '.' && pwd.length < 4) {
+	if (pwd && pwd[0] === '.' && pwd.length < 4)
 		self.directory = directory = framework_utils.$normalize(path.normalize(directory + '/..'));
-	} else if (pwd)
+	else if (pwd)
 		self.directory = directory = framework_utils.$normalize(pwd);
 
 	self.isWorker = true;
@@ -6152,10 +6131,7 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 	self._configure();
 	self._configure_versions();
 	self._configure_sitemap();
-
-	if (self.isTest)
-		self._configure('config-test', false);
-
+	self.isTest && self._configure('config-test', false);
 	self.cache.init();
 	self.emit('init');
 
@@ -13943,8 +13919,7 @@ Backup.prototype.createDirectory = function(p, root) {
 		if (root)
 			dir = (is ? '\\' : '/') + dir;
 
-		if (!existsSync(dir))
-			fs.mkdirSync(dir);
+		!existsSync(dir) && fs.mkdirSync(dir);
 	}
 };
 
@@ -14095,7 +14070,6 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 	}
 
 	if (!compress) {
-		// headers[RESPONSE_HEADER_CONTENTLENGTH] = Buffer.byteLength(body, ENCODING);
 		res.writeHead(code, headers);
 		res.end(body, ENCODING);
 		return self;
@@ -14111,7 +14085,6 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 		}
 
 		headers['Content-Encoding'] = 'gzip';
-		// headers[RESPONSE_HEADER_CONTENTLENGTH] = data.length;
 		res.writeHead(code, headers);
 		res.end(data, ENCODING);
 	});
@@ -14274,8 +14247,6 @@ http.ServerResponse.prototype.image = function(filename, fnProcess, headers, don
  */
 http.ServerResponse.prototype.json = function(obj) {
 	var self = this;
-	// self.removeHeader('Etag');
-	// self.removeHeader('Last-Modified');
 	return self.send(200, obj, 'application/json');
 };
 
@@ -14452,9 +14423,8 @@ http.IncomingMessage.prototype.cookie = function(name) {
 	for (var i = 0, length = arr.length; i < length; i++) {
 		var line = arr[i].trim();
 		var index = line.indexOf('=');
-		if (index === -1)
-			continue;
-		self.cookies[line.substring(0, index)] = line.substring(index + 1);
+		if (index !== -1)
+			self.cookies[line.substring(0, index)] = line.substring(index + 1);
 	}
 
 	return $decodeURIComponent(self.cookies[name] || '');
@@ -14519,10 +14489,7 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
 	var self = this;
 	var files = self.files;
 
-	if (!files)
-		return self;
-
-	if (isAuto && self._manual)
+	if (!files || (isAuto && self._manual))
 		return self;
 
 	self.body = null;
@@ -14642,10 +14609,8 @@ process.on('message', function(msg, h) {
 	}
 
 	if (msg === 'debugging') {
-		framework_utils.wait(function() {
-			return framework.isLoaded;
-		}, function() {
-			delete framework.isLoaded;
+		framework_utils.wait(() => framework.isLoaded, function() {
+			framework.isLoaded = undefined;
 			framework.console();
 		}, 10000, 500);
 		return;
@@ -14689,13 +14654,8 @@ function prepare_error(e) {
 }
 
 function prepare_filename(name) {
-
-	if (name[0] === '@') {
-		if (framework.isWindows)
-			return framework_utils.combine(framework.config['directory-temp'], name.substring(1));
-		return framework.path.package(name.substring(1));
-	}
-
+	if (name[0] === '@')
+		return framework.isWindows ? framework_utils.combine(framework.config['directory-temp'], name.substring(1)) : framework.path.package(name.substring(1));
 	return framework_utils.combine('/', name);
 }
 
@@ -14724,9 +14684,7 @@ function prepare_isomorphic(name) {
 
 function isGZIP(req) {
 	var ua = req.headers['user-agent'];
-	if (!ua)
-		return false;
-	return ua.lastIndexOf('Firefox') !== -1;
+	return ua && ua.lastIndexOf('Firefox') !== -1;
 }
 
 function prepare_viewname(value) {
