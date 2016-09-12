@@ -1184,7 +1184,7 @@ function minify_javascript(data) {
 			}
 
 			if (regexp) {
-				if (last !== '\\' && c === '/')
+				if ((last !== '\\' && c === '/') || (last === '\\' && c === '/' && output[output.length - 2] === '\\'))
 					regexp = false;
 			} else
 				regexp = (last === '=' || last === '(' || last === ':') && (c === '/');
