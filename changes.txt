@@ -15,6 +15,7 @@
 - added: NoSQL supports counter for e.g. views or downloads, etc., more in documentation
 - added: new routing mechanism `F.mmr(url, action)` for streaming `multipart/x-mixed-replace` types (client-->server)
 - added: `controller.mmr(filename, [stream], callback)` for streaming `multipart/x-mixed-replace` (server-->client)
+- added: `setTimeout2(key, fn, timeout)` resets old and creates a new `setTimeout` according to the `key`
 
 - updated: `framework.view()`, `controller.view()` and `@{view()}` supports `=theme/viewname`
 - updated: sitemap routing supports localization

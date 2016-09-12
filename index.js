@@ -14738,3 +14738,9 @@ function async_middleware(index, req, res, middleware, callback, options, contro
 
 	callback = null;
 };
+
+global.setTimeout2 = function(name, fn, timeout) {
+	var key = ':' + name;
+	framework.temporary.internal[key] && clearTimeout(framework.temporary.internal[key]);
+	return framework.temporary.internal[key] = setTimeout(fn, timeout);
+};
