@@ -473,7 +473,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2100;
-	this.version_header = '2.1.0-12';
+	this.version_header = '2.1.0-13';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -5184,68 +5184,67 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 	if (res.success || res.headersSent)
 		return self;
 
-	var uri = parser.parse(url);
-	var h = {};
+	framework_utils.resolve(url, function(err, uri) {
+		var h = {};
 
-	h[RESPONSE_HEADER_CACHECONTROL] = 'private';
-	headers && framework_utils.extend(h, headers, true);
+		h[RESPONSE_HEADER_CACHECONTROL] = 'private';
+		headers && framework_utils.extend(h, headers, true);
 
-	var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
-	var connection = options.protocol === 'https:' ? require('https') : http;
-	var supportsGZIP = (req.headers['accept-encoding'] || '').lastIndexOf('gzip') !== -1;
+		var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
+		var connection = options.protocol === 'https:' ? require('https') : http;
+		var supportsGZIP = (req.headers['accept-encoding'] || '').lastIndexOf('gzip') !== -1;
 
-	var client = connection.get(options, function(response) {
+		var client = connection.get(options, function(response) {
 
-		if (res.success || res.headersSent)
-			return;
+			if (res.success || res.headersSent)
+				return;
 
-		var contentType = response.headers['content-type'];
-		var isGZIP = (response.headers['content-encoding'] || '').lastIndexOf('gzip') !== -1;
-		var compress = !isGZIP && supportsGZIP && (contentType.indexOf('text/') !== -1 || contentType.lastIndexOf('javascript') !== -1 || contentType.lastIndexOf('json') !== -1);
-		var attachment = response.headers['content-disposition'] || '';
+			var contentType = response.headers['content-type'];
+			var isGZIP = (response.headers['content-encoding'] || '').lastIndexOf('gzip') !== -1;
+			var compress = !isGZIP && supportsGZIP && (contentType.indexOf('text/') !== -1 || contentType.lastIndexOf('javascript') !== -1 || contentType.lastIndexOf('json') !== -1);
+			var attachment = response.headers['content-disposition'] || '';
 
-		attachment && res.setHeader('Content-Disposition', attachment);
-		res.setHeader(RESPONSE_HEADER_CONTENTTYPE, contentType);
-		res.setHeader('Vary', 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : ''));
+			attachment && res.setHeader('Content-Disposition', attachment);
+			res.setHeader(RESPONSE_HEADER_CONTENTTYPE, contentType);
+			res.setHeader('Vary', 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : ''));
 
-		res.on('error', function(err) {
-			response.close();
-			callback && callback(err);
-			callback = null;
+			res.on('error', function(err) {
+				response.close();
+				callback && callback(err);
+				callback = null;
+			});
+
+			if (compress) {
+				res.setHeader('Content-Encoding', 'gzip');
+				response.pipe(zlib.createGzip()).pipe(res);
+				return;
+			}
+
+			if (!supportsGZIP && isGZIP)
+				response.pipe(zlib.createGunzip()).pipe(res);
+			else
+				response.pipe(res);
 		});
 
-		if (compress) {
-			res.setHeader('Content-Encoding', 'gzip');
-			response.pipe(zlib.createGzip()).pipe(res);
-			return;
-		}
-
-		if (!supportsGZIP && isGZIP)
-			response.pipe(zlib.createGunzip()).pipe(res);
-		else
-			response.pipe(res);
-	});
-
-	if (timeout) {
-		client.setTimeout(timeout, function() {
+		timeout && client.setTimeout(timeout, function() {
 			self.response408(req, res);
 			callback && callback(new Error(framework_utils.httpStatus(408)));
 			callback = null;
 		});
-	}
 
-	client.on('close', function() {
+		client.on('close', function() {
 
-		if (res.success || res.headersSent)
-			return;
+			if (res.success || res.headersSent)
+				return;
 
-		res.success = true;
-		self.stats.response.pipe++;
-		self._request_stats(false, req.isStaticFile);
-		res.success = true;
-		!req.isStaticFile && self.emit('request-end', req, res);
-		req.clear(true);
-		callback && callback();
+			res.success = true;
+			self.stats.response.pipe++;
+			self._request_stats(false, req.isStaticFile);
+			res.success = true;
+			!req.isStaticFile && self.emit('request-end', req, res);
+			req.clear(true);
+			callback && callback();
+		});
 	});
 
 	return self;
