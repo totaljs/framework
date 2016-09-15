@@ -12754,11 +12754,11 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 		fnFrom = tmp;
 	}
 
-	fnFrom && fnFrom();
 	self.layoutName = output.layout;
 	self.themeName = output.theme;
 
 	if (output.type !== CONTENTTYPE_TEXTHTML) {
+		fnFrom && fnFrom();
 		self.subscribe.success();
 		framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
 		return;
@@ -12783,11 +12783,11 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 			self.repository[key] = output.repository[i].value;
 	}
 
+	fnFrom && fnFrom();
+
 	if (!self.layoutName) {
 		self.subscribe.success();
-		if (!self.isConnected)
-			return self;
-		framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
+		self.isConnected && framework.responseContent(self.req, self.res, self.status, output.content, output.type, self.config['allow-gzip'], output.headers);
 		return self;
 	}
 
@@ -12804,8 +12804,7 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 
 	if (framework.temporary.processing[pk]) {
 		setTimeout(function() {
-			if (!self.subscribe.isCanceled)
-				self.memorize(key, expires, disabled, fnTo, fnFrom);
+			!self.subscribe.isCanceled && self.memorize(key, expires, disabled, fnTo, fnFrom);
 		}, 500);
 		return self;
 	}
