@@ -408,21 +408,10 @@ global.SUCCESS = function(success, value) {
 	} else if (success == null)
 		success = true;
 
-	if (!value) {
-		SUCCESSHELPER.success = success ? true : false;
-		return SUCCESSHELPER;
-	}
-
-	var o = { success: success };
-
-	if (err)
-		o.error = err;
-
-	if (value === undefined)
-		return o;
-
-	o.value = value;
-	return o;
+	SUCCESSHELPER.success = success ? true : false;
+	SUCCESSHELPER.value = value == null ? undefined : value;
+	SUCCESSHELPER.error = err ? o.error : undefined;
+	return SUCCESSHELPER;
 };
 
 global.TRY = function(fn, err) {
