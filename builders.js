@@ -743,7 +743,6 @@ SchemaBuilderEntity.prototype.save = function(model, helper, callback, skip) {
 		}
 
 		callback.success = false;
-
 		async.call(self, self.onSave)(function(err) {
 			if (!err || callback.success)
 				return;
@@ -1934,9 +1933,7 @@ SchemaBuilderEntity.prototype.clean = function(m) {
 
 // For async operations, because SUCCESS() returns singleton instance everytime
 function copy(obj) {
-	if (framework.isSuccess(obj))
-		return { success: obj.success, value: obj.value };
-	return obj;
+	return framework.isSuccess(obj) ? { success: obj.success, value: obj.value } : obj;
 }
 
 function clone(obj) {
