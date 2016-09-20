@@ -970,7 +970,7 @@ function download_response(res, uri, options) {
 	});
 
 	res.resume();
-	options.callback(null, res);
+	options.callback && options.callback(null, res);
 }
 
 exports.$$download = function(url, flags, data, cookies, headers, encoding, timeout) {
