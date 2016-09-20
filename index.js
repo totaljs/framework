@@ -462,7 +462,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2100;
-	this.version_header = '2.1.0-14';
+	this.version_header = '2.1.0-15';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -9712,9 +9712,6 @@ Subscribe.prototype.doExecute = function() {
 	return self;
 };
 
-/*
-	@isLogged {Boolean}
-*/
 Subscribe.prototype.doAuthorization = function(isLogged, user, roles) {
 
 	var self = this;
@@ -9743,10 +9740,10 @@ Subscribe.prototype.doAuthorization = function(isLogged, user, roles) {
 
 	self.route = route;
 
-	if (route && route.schema)
-		self.validate(route, () => self.execute(code));
-	else
+	if (!self.schema || !self.route)
 		self.execute(code);
+	else
+		self.validate(self.route, () => self.execute(code));
 
 	return self;
 };
