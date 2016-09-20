@@ -660,7 +660,7 @@ exports.routeCompareFlags2 = function(req, route, membertype) {
 		if (route.method) {
 			if (route.method !== method)
 				return 0;
-		} else if (!route[method.toLowerCase()])
+		} else if (!route.flags2[method.toLowerCase()])
 			return 0;
 		if ((route.isREFERER && req.flags.indexOf('referer') === -1) || (!route.isMULTIPLE && route.isJSON && req.flags.indexOf('json') === -1))
 			return 0;
