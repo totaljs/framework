@@ -47,7 +47,7 @@ const REG_BLOCK_BEG = /\@\{block.*?\}/gi;
 const REG_BLOCK_END = /\@\{end\}/gi;
 const REG_SKIP_1 = /\(\'|\"/g;
 const REG_SKIP_2 = /\,(\s)?\w+/g;
-const HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
+const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
 const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
@@ -606,7 +606,7 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
 	return false;
 };
 
-exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
+exports.routeCompareFlags = function(arr1, arr2, membertype) {
 
 	var hasVerb = false;
 	var a1 = arr1;
@@ -628,51 +628,53 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 		if (c === '!' || c === '#' || c === '$' || c === '@' || c === '+') // ignore roles
 			continue;
 
-		if (noLoggedUnlogged && (value === AUTHORIZE || value === UNAUTHORIZE))
+		if (!membertype && (value === AUTHORIZE || value === UNAUTHORIZE))
 			continue;
 
 		var index = compare.indexOf(value);
-		var method = value.toUpperCase();
-
-		if (index === -1 && !HTTPVERBS[method])
+		if (index === -1 && !HTTPVERBS[value])
 			return value === AUTHORIZE || value === UNAUTHORIZE ? -1 : 0;
 
-		hasVerb = hasVerb || (index !== -1 && HTTPVERBS[method]);
+		hasVerb = hasVerb || (index !== -1 && HTTPVERBS[value]);
 	}
 
 	return hasVerb ? 1 : 0;
 };
 
-exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
+exports.routeCompareFlags2 = function(req, route, membertype) {
+
+	// membertype 0 -> not specified
+	// membertype 1 -> auth
+	// membertype 2 -> unauth
+
+	// 1. upload --> 0
+	// 2. doAuth --> 1 or 2
+
+	if (membertype && membertype !== 1 && route.MEMBER === 1)
+		return -1;
 
 	if (!route.isWEBSOCKET) {
-		if (route.isXHR && !req.xhr)
-			return 0;
-		if (route.isMOBILE && !req.mobile)
-			return 0;
-		if (route.isROBOT && !req.robot)
+		if ((route.isXHR && !req.xhr) || (route.isMOBILE && !req.mobile) || (route.isROBOT && !req.robot))
 			return 0;
 		var method = req.method;
 		if (route.method) {
 			if (route.method !== method)
 				return 0;
-		} else if (route.flags.indexOf(method.toLowerCase()) === -1)
+		} else if (!route[method.toLowerCase()])
 			return 0;
-		if (route.isREFERER && req.flags.indexOf('referer') === -1)
-			return 0;
-		if (!route.isMULTIPLE && route.isJSON && req.flags.indexOf('json') === -1)
+		if ((route.isREFERER && req.flags.indexOf('referer') === -1) || (!route.isMULTIPLE && route.isJSON && req.flags.indexOf('json') === -1))
 			return 0;
 	}
 
 	var isRole = false;
+	var hasRoles = false;
+
 	for (var i = 0, length = req.flags.length; i < length; i++) {
 
 		var flag = req.flags[i];
-
 		switch (flag) {
 			case 'json':
 				continue;
-
 			case 'xml':
 				if (route.isRAW || route.isXML)
 					continue;
@@ -719,9 +721,10 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 		}
 
 		var role = flag[0] === '@';
-		if (noLoggedUnlogged && route.isMEMBER) {
+
+		if (membertype !== 1 && route.MEMBER !== 1) {
 			var tmp = flag.substring(0, 3);
-			if ((!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1) || (route.isROLE && role && route.flags.indexOf(flag) === -1) || (route.isROLE && !role))
+			if ((!route.isGET && !role && !route.flags2[flag]) || (route.isROLE && role && !route.flags2[flag]) || (route.isROLE && !role))
 				return 0;
 			continue;
 		}
@@ -730,18 +733,17 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 		if (role && isRole && !route.isROLE)
 			continue;
 
-		var index = route.flags.indexOf(flag);
-		if (index === -1) {
-			if (role && !route.isROLE) {
-				// the route doesn't contain any role but the request flags contain role
-			} else
-				return route.isMEMBER ? 0 : -1;
+		if (!role && !route.flags2[flag])
+			return 0;
+
+		if (role) {
+			if (route.flags2[flag])
+				isRole = true;
+			hasRoles = true;
 		}
-		if (role)
-			isRole = true;
 	}
 
-	return 1;
+	return (route.isROLE && hasRoles) ? isRole ? 1 : -1 : 1;
 };
 
 /**
@@ -861,8 +863,7 @@ HttpFile.prototype.isAudio = function() {
 	return this.type.indexOf('audio/') !== -1;
 };
 
-HttpFile.prototype.image = function(imageMagick) {
-	var im = imageMagick;
+HttpFile.prototype.image = function(im) {
 	if (im === undefined)
 		im = framework.config['default-image-converter'] === 'im';
 	return framework_image.init(this.path, im, this.width, this.height);

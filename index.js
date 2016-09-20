@@ -452,7 +452,7 @@ const controller_error_status = function(controller, status, problem) {
 	controller.precache && controller.precache(null, null, null);
 	controller.req.path = EMPTYARRAY;
 	controller.subscribe.success();
-	controller.subscribe.route = framework.lookup(controller.req, '#' + status);
+	controller.subscribe.route = framework.lookup(controller.req, '#' + status, EMPTYARRAY, 0);
 	controller.subscribe.exception = problem;
 	controller.subscribe.execute(status, true);
 	return controller;
@@ -799,7 +799,7 @@ Framework.prototype.useConfig = function(name) {
  * Sort all routes
  * @return {Framework}
  */
-Framework.prototype._routesSort = function() {
+Framework.prototype._routesSort = function(type) {
 
 	var self = this;
 
@@ -841,6 +841,13 @@ Framework.prototype._routesSort = function() {
 		url = route.url.join('/');
 		route.isMOBILE_VARY = cache[url] === true;
 	}
+
+	(!type || type === 1) && self.routes.web.forEach(function(route) {
+		var tmp = self.routes.web.findItem(function(item) {
+			return item.hash === route.hash && item !== route;
+		});
+		route.isUNIQUE = tmp == null;
+	});
 
 	return self;
 };
@@ -1181,7 +1188,10 @@ Framework.prototype.cors = function(url, flags, credentials) {
 	if (route.isASTERIX)
 		url = url.replace('*', '');
 
-	route.url = framework_internal.routeSplitCreate(framework_internal.preparePath(framework_internal.encodeUnicodeURL(url.trim())));
+	url = framework_internal.preparePath(framework_internal.encodeUnicodeURL(url.trim()));
+
+	route.hash = url.hash();
+	route.url = framework_internal.routeSplitCreate(url);
 	route.origins = origins.length ? origins : null;
 	route.methods = methods.length ? methods : null;
 	route.headers = headers.length ? headers : null;
@@ -1381,6 +1391,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var timeout;
 	var options;
 	var corsflags = [];
+	var membertype = 0;
 
 	if (flags) {
 
@@ -1495,19 +1506,16 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 					break;
 				case 'authorize':
 				case 'authorized':
+				case 'logged':
+					membertype = 1;
 					priority += 2;
 					tmp.push('authorize');
 					break;
 				case 'unauthorize':
 				case 'unauthorized':
-					priority += 2;
-					tmp.push('unauthorize');
-					break;
-				case 'logged':
-					priority += 2;
-					tmp.push('authorize');
-					break;
 				case 'unlogged':
+					membertype = 2;
+					priority += 2;
 					tmp.push('unauthorize');
 					break;
 				case 'referer':
@@ -1541,12 +1549,9 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		method = 'get';
 	}
 
-	var isMember = false;
-
-	if (flags.indexOf('logged') === -1 && flags.indexOf('authorize') === -1 && flags.indexOf('unauthorize') === -1 && flags.indexOf('unlogged') === -1)
-		isMember = true;
-
-	var routeURL = framework_internal.routeSplitCreate(framework_internal.preparePath(url.trim()));
+	var url2 = framework_internal.preparePath(url.trim());
+	var hash = url2.hash();
+	var routeURL = framework_internal.routeSplitCreate(url2);
 	var arr = [];
 	var reg = null;
 	var regIndex = null;
@@ -1642,6 +1647,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		self._length_subdomain_web++;
 
 	self.routes.web.push({
+		hash: hash,
 		name: name,
 		priority: priority,
 		schema: schema,
@@ -1649,7 +1655,8 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		controller: _controller ? _controller : 'unknown',
 		url: routeURL,
 		param: arr,
-		flags: flags || [],
+		flags: flags || EMPTYARRAY,
+		flags2: flags_to_object(flags),
 		method: method,
 		execute: funcExecute,
 		length: (length || self.config['default-request-length']) * 1024,
@@ -1665,7 +1672,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		isROBOT: isROBOT,
 		isMOBILE_VARY: isMOBILE,
 		isGENERATOR: isGENERATOR,
-		isMEMBER: isMember,
+		MEMBER: membertype,
 		isASTERIX: isASTERIX,
 		isROLE: isROLE,
 		isREFERER: flags.indexOf('referer') !== -1,
@@ -1691,10 +1698,18 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 	// Appends cors route
 	isCORS && F.cors(urlcache, corsflags);
-	!_controller && self._routesSort();
+	!_controller && self._routesSort(1);
 
 	return self;
 };
+
+function flags_to_object(flags) {
+	var obj = {};
+	flags.forEach(function(flag) {
+		obj[flag] = true;
+	});
+	return obj;
+}
 
 Framework.prototype.mmr = function(url, process) {
 	var self = this;
@@ -1997,8 +2012,7 @@ function merge_middleware(a, b) {
 
 	for (var i = 0, length = b.length; i < length; i++) {
 		var index = a.indexOf(b[i]);
-		if (index === -1)
-			a.push(b[i]);
+		index === -1 && a.push(b[i]);
 	}
 
 	return a;
@@ -2064,10 +2078,12 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 		priority = (-10) - priority;
 	}
 
-	var routeURL = framework_internal.routeSplitCreate(framework_internal.preparePath(url.trim()));
+	var url2 = framework_internal.preparePath(url.trim());
+	var routeURL = framework_internal.routeSplitCreate(url2);
 	var arr = [];
 	var reg = null;
 	var regIndex = null;
+	var hash = url2.hash();
 
 	if (url.indexOf('{') !== -1) {
 
@@ -2110,7 +2126,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 	var isBINARY = false;
 	var isROLE = false;
 	var count = 0;
-	var isMember = true;
+	var membertype = 0;
 
 	if (flags === undefined)
 		flags = [];
@@ -2176,14 +2192,16 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 		switch (flag) {
 			case 'authorize':
 			case 'authorized':
+			case 'logged':
+				membertype = 1;
 				priority++;
 				tmp.push('authorize');
-				isMember = false;
 				break;
 			case 'unauthorize':
 			case 'unauthorized':
+			case 'unlogged':
+				membertype = 2;
 				priority++;
-				isMember = false;
 				tmp.push('unauthorize');
 				break;
 			case 'get':
@@ -2203,27 +2221,27 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 
 	flags = tmp;
 
-	if (flags.indexOf('get') === -1)
-		flags.unshift('get');
-
+	flags.indexOf('get') === -1 && flags.unshift('get');
 	priority += (count * 2);
 
 	if (subdomain)
 		self._length_subdomain_websocket++;
 
 	self.routes.websockets.push({
+		hash: hash,
 		controller: !_controller ? 'unknown' : _controller,
 		url: routeURL,
 		param: arr,
 		subdomain: subdomain,
 		priority: priority,
-		flags: flags || [],
+		flags: flags || EMPTYARRAY,
+		flags2: flags_to_object(flags),
 		onInitialize: funcInitialize,
-		protocols: protocols || [],
+		protocols: protocols || EMPTYARRAY,
 		allow: allow || [],
 		length: (length || self.config['default-websocket-request-length']) * 1024,
 		isWEBSOCKET: true,
-		isMEMBER: isMember,
+		MEMBER: membertype,
 		isJSON: isJSON,
 		isBINARY: isBINARY,
 		isROLE: isROLE,
@@ -2241,10 +2259,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 	});
 
 	self.emit('route', 'websocket', self.routes.websockets[self.routes.websockets.length - 1]);
-
-	if (!_controller)
-		self._routesSort();
-
+	!_controller && self._routesSort(2);
 	return self;
 };
 
@@ -8658,10 +8673,10 @@ Framework.prototype._version_prepare = function(html) {
  * @param {HttpRequest} req
  * @param {String} url URL address.
  * @param {String Array} flags
- * @param {Boolean} noLoggedUnlogged A helper argument.
+ * @param {Boolean} membertype Not defined = 0, Authorized = 1, Unauthorized = 2
  * @return {Object}
  */
-Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
+Framework.prototype.lookup = function(req, url, flags, membertype) {
 
 	var self = this;
 	var isSystem = url[0] === '#';
@@ -8676,7 +8691,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 	var key;
 
 	if (!isSystem) {
-		key = '#' + url + '$' + req.$flags + (subdomain ? '$' + subdomain : '');
+		key = '#' + url + '$' + membertype + req.$flags + (subdomain ? '$' + subdomain : '');
 		if (framework.temporary.other[key])
 			return framework.temporary.other[key];
 	}
@@ -8727,7 +8742,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 		}
 
 		if (route.flags && route.flags.length) {
-			var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
+			var result = framework_internal.routeCompareFlags2(req, route, membertype);
 			if (result === -1)
 				req.$isAuthorized = false; // request is not authorized
 			if (result < 1)
@@ -8749,7 +8764,7 @@ Framework.prototype.lookup = function(req, url, flags, noLoggedUnlogged) {
 	@url {String}
 	return {WebSocketRoute}
 */
-Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
+Framework.prototype.lookup_websocket = function(req, url, membertype) {
 
 	var self = this;
 	var subdomain = self._length_subdomain_websocket && req.subdomain ? req.subdomain.join('.') : null;
@@ -8798,7 +8813,7 @@ Framework.prototype.lookup_websocket = function(req, url, noLoggedUnlogged) {
 		}
 
 		if (route.flags && route.flags.length) {
-			var result = framework_internal.routeCompareFlags2(req, route, noLoggedUnlogged ? true : route.isMEMBER);
+			var result = framework_internal.routeCompareFlags2(req, route, membertype);
 			if (result === -1)
 				req.$isAuthorized = false;
 			if (result < 1)
@@ -9499,7 +9514,7 @@ Subscribe.prototype.multipart = function(header) {
 	var req = self.req;
 
 	framework.stats.request.upload++;
-	self.route = framework.lookup(req, req.uri.pathname, req.flags, true);
+	self.route = framework.lookup(req, req.uri.pathname, req.flags, 0);
 	self.header = header;
 
 	if (self.route) {
@@ -9518,7 +9533,7 @@ Subscribe.prototype.multipart = function(header) {
 Subscribe.prototype.urlencoded = function() {
 
 	var self = this;
-	self.route = framework.lookup(self.req, self.req.uri.pathname, self.req.flags, true);
+	self.route = framework.lookup(self.req, self.req.uri.pathname, self.req.flags, 0);
 
 	if (self.route) {
 		self.req.buffer_has = true;
@@ -9619,7 +9634,9 @@ Subscribe.prototype.prepare = function(flags, url) {
 		var length = flags.length;
 		auth(req, res, flags, function(isAuthorized, user) {
 
-			if (length !== flags.length)
+			var hasRoles = length !== flags.length;
+
+			if (hasRoles)
 				req.$flags += flags.slice(length).join('');
 
 			if (typeof(isAuthorized) !== 'boolean') {
@@ -9628,16 +9645,16 @@ Subscribe.prototype.prepare = function(flags, url) {
 			}
 
 			req.isAuthorized = isAuthorized;
-			self.doAuthorization(isAuthorized, user);
+			self.doAuthorization(isAuthorized, user, hasRoles);
 		});
 		return self;
 	}
 
 	if (!self.route)
-		self.route = framework.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, req.flags);
+		self.route = framework.lookup(req, req.buffer_exceeded ? '#431' : url || req.uri.pathname, req.flags, 0);
 
 	if (!self.route)
-		self.route = framework.lookup(req, '#404');
+		self.route = framework.lookup(req, '#404', EMPTYARRAY, 0);
 
 	var code = req.buffer_exceeded ? 431 : 404;
 
@@ -9683,7 +9700,7 @@ Subscribe.prototype.doExecute = function() {
 		controller = null;
 		framework.error(err, name, req.uri);
 		self.exception = err;
-		self.route = framework.lookup(req, '#500');
+		self.route = framework.lookup(req, '#500', EMPTYARRAY, 0);
 		self.execute(500, true);
 	}
 
@@ -9693,19 +9710,19 @@ Subscribe.prototype.doExecute = function() {
 /*
 	@isLogged {Boolean}
 */
-Subscribe.prototype.doAuthorization = function(isLogged, user) {
+Subscribe.prototype.doAuthorization = function(isLogged, user, roles) {
 
 	var self = this;
 	var req = self.req;
 	var auth = isLogged ? 'authorize' : 'unauthorize';
+	req.$flags += auth
 
-	req.flags.push(auth);
-	req.$flags += auth;
+	var membertype = isLogged ? 1 : 2;
 
 	if (user)
 		req.user = user;
 
-	if (self.route && !self.route.isMEMBER && isLogged) {
+	if (self.route && self.route.isUNIQUE && !roles && (!self.route.MEMBER || self.route.MEMBER === membertype)) {
 		if (self.schema)
 			self.validate(self.route, () => self.execute(code));
 		else
@@ -9713,19 +9730,19 @@ Subscribe.prototype.doAuthorization = function(isLogged, user) {
 		return;
 	}
 
-	var route = framework.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags);
+	var route = framework.lookup(req, req.buffer_exceeded ? '#431' : req.uri.pathname, req.flags, req.buffer_exceeded ? 0 : membertype);
 	var status = req.$isAuthorized ? 404 : 401;
-
-	if (!route)
-		route = framework.lookup(req, '#' + status);
-
-	self.route = route;
 	var code = req.buffer_exceeded ? 431 : status;
 
-	if (!self.schema || !route)
-		self.execute(code);
+	if (!route)
+		route = framework.lookup(req, '#' + status, EMPTYARRAY, 0);
+
+	self.route = route;
+
+	if (route && route.schema)
+		self.validate(route, () => self.execute(code));
 	else
-		self.validate(self.route, () => self.execute(code));
+		self.execute(code);
 
 	return self;
 };
@@ -9738,7 +9755,7 @@ Subscribe.prototype.doEnd = function() {
 	var route = self.route;
 
 	if (req.buffer_exceeded) {
-		route = framework.lookup(req, '#431');
+		route = framework.lookup(req, '#431', EMPTYARRAY, 0);
 		req.buffer_data = null;
 
 		if (!route) {
@@ -9838,7 +9855,7 @@ Subscribe.prototype.validate = function(route, next) {
 
 Subscribe.prototype.route400 = function(problem) {
 	var self = this;
-	self.route = framework.lookup(self.req, '#400');
+	self.route = framework.lookup(self.req, '#400', EMPTYARRAY, 0);
 	self.exception = problem;
 	self.execute(400, true);
 	return self;
@@ -9846,7 +9863,7 @@ Subscribe.prototype.route400 = function(problem) {
 
 Subscribe.prototype.route500 = function(problem) {
 	var self = this;
-	self.route = framework.lookup(self.req, '#500');
+	self.route = framework.lookup(self.req, '#500', EMPTYARRAY, 0);
 	self.exception = problem;
 	self.execute(500, true);
 	return self;
@@ -9963,7 +9980,7 @@ Subscribe.prototype.doCancel = function() {
 
 	self.controller.isTimeout = true;
 	self.controller.isCanceled = true;
-	self.route = framework.lookup(self.req, '#408');
+	self.route = framework.lookup(self.req, '#408', EMPTYARRAY, 0);
 	self.execute(408, true);
 };
 
