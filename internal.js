@@ -2813,8 +2813,6 @@ function compressHTML(html, minify) {
 		}
 	}
 
-	// html = html.replace(/>\n\s+/g, '>').replace(/\w\n\s+</g, function(text) {
-
 	while (true) {
 		if (!html.match(REG_6))
 			break;
