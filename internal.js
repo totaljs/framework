@@ -572,11 +572,8 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 		if (!isSystem && (!skip && value[0] === '{'))
 			continue;
 
-		if (url[i] !== value) {
-			if (!isSystem)
-				return isAsterix ? i >= lengthRoute : false;
-			return false;
-		}
+		if (url[i] !== value)
+			return isSystem ? false : isAsterix ? i >= lengthRoute : false;
 	}
 
 	return true;

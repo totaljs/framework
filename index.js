@@ -6627,34 +6627,36 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	req.files = EMPTYARRAY;
 	req.isProxy = headers['x-proxy'] === 'total.js';
 	req.buffer_exceeded = false;
-	req.buffer_data = new Buffer('');
 	req.buffer_has = false;
-	req.$flags = req.method;
+	req.$flags = req.method[0] + req.method[1];
 	self.stats.request.web++;
 
 	var flags = [req.method.toLowerCase()];
 	var multipart = req.headers['content-type'] || '';
 
 	if (req.mobile) {
-		req.$flags += '_m_';
+		req.$flags += 'a';
 		self.stats.request.mobile++;
 	} else
 		self.stats.request.desktop++;
 
-	req.$flags += protocol;
+	if (protocol[5])
+		req.$flags += protocol[5];
+
 	req.$type = 0;
 	flags.push(protocol);
 
 	var method = req.method;
 	var first = method[0];
 	if (first === 'P' || first === 'D') {
+		req.buffer_data = new Buffer('');
 		var index = multipart.lastIndexOf(';');
 		var tmp = multipart;
 		if (index !== -1)
 			tmp = tmp.substring(0, index);
 		switch (tmp.substring(tmp.length - 4)) {
 			case 'json':
-				req.$flags += 'json';
+				req.$flags += 'b';
 				flags.push('json');
 				req.$type = 1;
 				multipart = '';
@@ -6664,11 +6666,11 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				multipart = '';
 				break;
 			case 'data':
-				req.$flags += 'upload';
+				req.$flags += 'c';
 				flags.push('upload');
 				break;
 			case '/xml':
-				req.$flags += 'xml';
+				req.$flags += 'd';
 				flags.push('xml');
 				req.$type = 2;
 				multipart = '';
@@ -6676,7 +6678,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 			case 'lace':
 				req.$type = 4;
 				flags.push('mmr');
-				req.$flags += 'mmr';
+				req.$flags += 'e';
 				break;
 			default:
 				if (multipart) {
@@ -6692,30 +6694,33 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	}
 
 	if (req.isProxy) {
-		req.$flags += 'proxy';
+		req.$flags += 'f';
 		flags.push('proxy');
 	}
 
 	if (headers.accept === 'text/event-stream') {
-		req.$flags += 'sse';
+		req.$flags += 'g';
 		flags.push('sse');
 	}
 
 	if (self.config.debug) {
-		req.$flags += 'debug';
+		req.$flags += 'h';
 		flags.push('debug');
 	}
 
 	if (req.xhr) {
 		self.stats.request.xhr++;
-		req.$flags += 'xhr';
+		req.$flags += 'i';
 		flags.push('xhr');
 	}
+
+	if (self._request_check_robot && req.robot)
+		req.$flags += 'j';
 
 	if (self._request_check_referer) {
 		var referer = headers['referer'];
 		if (referer && referer.indexOf(headers['host']) !== -1) {
-			req.$flags += 'referer';
+			req.$flags += 'k';
 			flags.push('referer');
 		}
 	}
@@ -9714,10 +9719,9 @@ Subscribe.prototype.doAuthorization = function(isLogged, user, roles) {
 
 	var self = this;
 	var req = self.req;
-	var auth = isLogged ? 'authorize' : 'unauthorize';
-	req.$flags += auth
-
 	var membertype = isLogged ? 1 : 2;
+
+	req.$flags += membertype
 
 	if (user)
 		req.user = user;
@@ -9768,7 +9772,7 @@ Subscribe.prototype.doEnd = function() {
 		return self;
 	}
 
-	if (!route || !route.isBINARY)
+	if (req.buffer_data && (!route || !route.isBINARY))
 		req.buffer_data = req.buffer_data.toString(ENCODING);
 
 	var schema;
