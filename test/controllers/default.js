@@ -17,10 +17,11 @@ exports.install = function() {
 		this.plain('authorize');
 	});
 
+/*
 	framework.route('/', function() {
 		this.plain('OK');
 	}, ['unauthorize']);
-
+*/
 	framework.route('/', function() {
 		this.plain('ROBOT');
 	}, ['robot']);
