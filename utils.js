@@ -673,7 +673,7 @@ function request_response(res, uri, options) {
 	res.on('end', function() {
 		var self = this;
 		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
-		delete self._buffer;
+		self._buffer = undefined;
 
 		if (options.evt) {
 			options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
@@ -961,10 +961,15 @@ function download_response(res, uri, options) {
 	res.on('end', function() {
 		var self = this;
 		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
-		delete self._buffer;
-		options.evt && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
-		options.evt.removeAllListeners();
-		options.evt = null;
+
+		self._buffer = undefined;
+
+		if (options.evt) {
+			options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
+			options.evt.removeAllListeners();
+			options.evt = null;
+		}
+
 		res.req && res.req.removeAllListeners();
 		res.removeAllListeners();
 	});
@@ -4348,7 +4353,7 @@ Array.prototype.async = function(thread, callback) {
 	if (item === undefined) {
 		if (self.$pending)
 			return self;
-		delete self.$pending;
+		self.$pending = undefined;
 		callback && callback();
 		return self;
 	}
