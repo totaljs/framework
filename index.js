@@ -8623,7 +8623,7 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 
 	var filename;
 
-	if (name.match(REG_ROUTESTATIC))
+	if (REG_ROUTESTATIC.test(name))
 		filename = name;
 	else if (name[0] === '/')
 		filename = framework_utils.join(theme, this._version(name));
@@ -13655,7 +13655,7 @@ WebSocketClient.prototype._onerror = function(err) {
 	if (!self || self.isClosed)
 		return;
 
-	if (err.stack.match(REG_WEBSOCKET_ERROR)) {
+	if (REG_WEBSOCKET_ERROR.test(err.stack)) {
 		self.isClosed = true;
 		self._onclose();
 		return;

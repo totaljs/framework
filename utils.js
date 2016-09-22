@@ -2042,7 +2042,7 @@ exports.parseXML = function(xml) {
 			continue;
 
 		var match = el.match(regexpXML);
-		if (match === null)
+		if (!match)
 			continue;
 
 		var attr = {};
@@ -2197,7 +2197,7 @@ exports.ls = function(path, callback, filter) {
 		filter.onFilter = function(filename, is) {
 			if (is)
 				return true;
-			return filename.match(filter) ? true : false;
+			return filter.test(filename);
 		};
 	} else
 		filelist.onFilter = filter || null;
@@ -2219,15 +2219,11 @@ exports.ls2 = function(path, callback, filter) {
 	if (typeof(filter) === 'string') {
 		filter = filter.toLowerCase();
 		filter.onFilter = function(filename, is) {
-			if (is)
-				return true;
-			return filename.toLowerCase().indexOf(filter);
+			return is ? true : filename.toLowerCase().indexOf(filter);
 		};
 	} else if (exports.isRegExp(filter)) {
 		filter.onFilter = function(filename, is) {
-			if (is)
-				return true;
-			return filename.match(filter) ? true : false;
+			return is ? true : filter.test(filename);
 		};
 	} else
 		filelist.onFilter = filter || null;
@@ -3503,7 +3499,7 @@ String.prototype.isBoolean = function() {
  * @return {Boolean}
  */
 String.prototype.isAlphaNumeric = function() {
-  return this.match(regexpALPHA) ? true : false;
+  return regexpALPHA.test(this);
 };
 
 String.prototype.soundex = function() {

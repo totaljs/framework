@@ -1727,7 +1727,7 @@ function view_parse(content, minify, filename, controller) {
 
 	function escaper(value) {
 
-		var is = value.match(REG_TAGREMOVE);
+		var is = REG_TAGREMOVE.test(value);
 
 		if (!nocompressHTML)
 			value = compressHTML(value, minify);
@@ -1893,7 +1893,7 @@ function view_parse(content, minify, filename, controller) {
 							continue;
 
 						// skips variables 1
-						if (!tmp.match(REG_SKIP_1) || tmp.match(REG_SKIP_2))
+						if (!REG_SKIP_1.test(tmp) || REG_SKIP_2.test(tmp))
 							continue;
 
 						if (!a) {
@@ -2811,7 +2811,7 @@ function compressHTML(html, minify) {
 	}
 
 	while (true) {
-		if (!html.match(REG_6))
+		if (!REG_6.test(html))
 			break;
 		html = html.replace(REG_6, function(text) {
 			return text.replace(/\s+/g, ' ');
