@@ -33,6 +33,7 @@
 - fixed: CORS
 - fixed: problem with SUCCESS() and async schemas
 - fixed: killing the process
+- fixed: HTML compressor in views
 
 ======= 2.0.1
 

@@ -1730,7 +1730,7 @@ function view_parse(content, minify, filename, controller) {
 		var is = REG_TAGREMOVE.test(value);
 
 		if (!nocompressHTML)
-			value = compressHTML(value, minify);
+			value = compressHTML(value, minify, true);
 		else if (!isFirst) {
 			isFirst = true;
 			value = value.replace(/^\s+/, '');
@@ -2748,7 +2748,7 @@ function make_nested(css, name) {
  * @param {Boolean} minify Can minify?
  * @return {String}
  */
-function compressHTML(html, minify) {
+function compressHTML(html, minify, isChunk) {
 
 	if (!html || !minify)
 		return html;
@@ -2774,8 +2774,12 @@ function compressHTML(html, minify) {
 		while (beg !== -1) {
 
 			end = html.indexOf(tagEnd, beg + 3);
-			if (end === -1)
-				break;
+			if (end === -1) {
+				if (isChunk)
+					end = html.length;
+				else
+					break;
+			}
 
 			var key = id + (indexer++);
 			var value = html.substring(beg, end + len);
