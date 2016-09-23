@@ -13668,6 +13668,7 @@ WebSocketClient.prototype._onclose = function() {
 	var self = this;
 	if (!self || self._isClosed)
 		return;
+	self.isClosed = true;
 	self._isClosed = true;
 	self.container._remove(self._id);
 	self.container._refresh();
