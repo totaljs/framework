@@ -2462,8 +2462,7 @@ Framework.prototype.error = function(err, name, uri) {
 
 	if (!arguments.length) {
 		return function(err) {
-			if (err)
-				framework.error(err, name, uri);
+			err && framework.error(err, name, uri);
 		};
 	}
 
@@ -2473,15 +2472,8 @@ Framework.prototype.error = function(err, name, uri) {
 	var self = this;
 
 	if (self.errors) {
-		self.errors.push({
-			error: err.stack,
-			name: name,
-			url: uri ? parser.format(uri) : null,
-			date: new Date()
-		});
-
-		if (self.errors.length > 50)
-			self.errors.shift();
+		self.errors.push({ error: err.stack, name: name, url: uri ? parser.format(uri) : null, date: new Date() });
+		self.errors.length > 50 && self.errors.shift();
 	}
 
 	self.onError(err, name, uri);
@@ -2544,10 +2536,7 @@ Framework.prototype.change = function(message, name, uri, ip) {
 		return self;
 
 	self.changes.push(obj);
-
-	if (self.changes.length > 50)
-		self.changes.shift();
-
+	self.changes.length > 50 && self.changes.shift();
 	return self;
 };
 
@@ -2579,10 +2568,7 @@ Framework.prototype.trace = function(message, name, uri, ip) {
 		return self;
 
 	self.traces.push(obj);
-
-	if (self.traces.length > 50)
-		self.traces.shift();
-
+	self.traces.length > 50 && self.traces.shift();
 	return self;
 };
 
@@ -2770,9 +2756,8 @@ Framework.prototype.$startup = function(callback) {
 
 	fs.readdirSync(dir).forEach(function(o) {
 		var extension = framework_utils.getExtension(o).toLowerCase();
-		if (extension !== 'js')
-			return;
-		run.push(o);
+		if (extension === 'js')
+			run.push(o);
 	});
 
 	if (!run.length)
@@ -4872,17 +4857,12 @@ Framework.prototype.isProcessed = function(filename) {
 	if (filename.url) {
 		var name = filename.url;
 		var index = name.indexOf('?');
-
 		if (index !== -1)
 			name = name.substring(0, index);
-
 		filename = framework.path.public($decodeURIComponent(name));
 	}
 
-	if (self.temporary.path[filename] !== undefined)
-		return true;
-
-	return false;
+	return self.temporary.path[filename] !== undefined;
 };
 
 /**
@@ -6183,16 +6163,12 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 		else
 			self.server = http.createServer(self.listener);
 
-		if (self.config['allow-performance']) {
-			self.server.on('connection', function(socket) {
-				socket.setNoDelay(true);
-				socket.setKeepAlive(true, 10);
-			});
-		}
+		self.config['allow-performance'] && self.server.on('connection', function(socket) {
+			socket.setNoDelay(true);
+			socket.setKeepAlive(true, 10);
+		});
 
-		if (self.config['allow-websocket'])
-			self.server.on('upgrade', framework._upgrade);
-
+		self.config['allow-websocket'] && self.server.on('upgrade', framework._upgrade);
 		self.server.listen(self.port, self.ip === 'auto' ? undefined : self.ip);
 		self.isLoaded = true;
 
@@ -6206,12 +6182,10 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 			} catch (err) {
 				self.error(err, 'framework.on("load/ready")');
 			}
+
 			self.removeAllListeners('load');
 			self.removeAllListeners('ready');
-
-			if (options.package)
-				INSTALL('package', options.package);
-
+			options.package && INSTALL('package', options.package);
 		}, 500);
 
 		if (self.isTest) {
@@ -6544,9 +6518,9 @@ Framework.prototype.listener = function(req, res) {
 	self._request_stats(true, true);
 
 	if (self._length_request_middleware && !req.behaviour('disable-middleware'))
-		return async_middleware(0, req, res, self.routes.request, () => self._request_continue(res.req, res, res.req.headers, protocol));
-
-	self._request_continue(req, res, headers, protocol);
+		async_middleware(0, req, res, self.routes.request, () => self._request_continue(res.req, res, res.req.headers, protocol));
+	else
+		self._request_continue(req, res, headers, protocol);
 };
 
 Framework.prototype._request_restriction = function(req, res, headers) {
@@ -6733,46 +6707,34 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	switch (first) {
 		case 'G':
 			self.stats.request.get++;
-
-			if (!isCORS) {
+			if (isCORS)
+				self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
+			else
 				new Subscribe(self, req, res, 0).end();
-				return self;
-			}
-
-			self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
 			return self;
 
 		case 'O':
 			self.stats.request.options++;
-
-			if (!isCORS) {
+			if (isCORS)
+				self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
+			else
 				new Subscribe(framework, req, res, 0).end();
-				return self;
-			}
-
-			self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
 			return self;
 
 		case 'H':
 			self.stats.request.head++;
-
-			if (!isCORS) {
+			if (isCORS)
+				self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
+			else
 				new Subscribe(self, req, res, 0).end();
-				return self;
-			}
-
-			self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 0).end());
 			return self;
 
 		case 'D':
 			self.stats.request['delete']++;
-
-			if (!isCORS) {
+			if (isCORS)
+				self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 1).urlencoded());
+			else
 				new Subscribe(self, req, res, 1).urlencoded();
-				return self;
-			}
-
-			self._cors(req, res, (req, res) => new Subscribe(framework, req, res, 1).urlencoded());
 			return self;
 
 		case 'P':
@@ -6800,13 +6762,10 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 						self.stats.request.path++;
 					else
 						self.stats.request.post++;
-
-					if (!isCORS) {
+					if (isCORS)
+						self._cors(req, res, (req, res) => new Subscribe(self, req, res, 1).urlencoded());
+					else
 						new Subscribe(self, req, res, 1).urlencoded();
-						return self;
-					}
-
-					self._cors(req, res, (req, res) => new Subscribe(self, req, res, 1).urlencoded());
 				}
 
 				return self;
@@ -6827,18 +6786,17 @@ Framework.prototype._request_mmr = function(req, res, header) {
 	var route = self.routes.mmr[req.url];
 	self.stats.request.mmr++;
 
-	if (!route) {
-		self.emit('request-end', req, res);
-		self._request_stats(false, false);
-		self.stats.request.blocked++;
-		res.writeHead(403);
-		res.end();
+	if (route) {
+		self.path.verify('temp');
+		framework_internal.parseMULTIPART_MIXED(req, header, self.config['directory-temp'], route.exec);
 		return;
 	}
 
-	self.path.verify('temp');
-	framework_internal.parseMULTIPART_MIXED(req, header, self.config['directory-temp'], route.exec);
-	return self;
+	self.emit('request-end', req, res);
+	self._request_stats(false, false);
+	self.stats.request.blocked++;
+	res.writeHead(403);
+	res.end();
 };
 
 Framework.prototype._cors = function(req, res, fn, arg) {
@@ -6849,10 +6807,10 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 
 	for (var i = 0; i < self._length_cors; i++) {
 		cors = self.routes.cors[i];
-		if (!framework_internal.routeCompare(req.path, cors.url, false, cors.isASTERIX))
-			continue;
-		isAllowed = true;
-		break;
+		if (framework_internal.routeCompare(req.path, cors.url, false, cors.isASTERIX)) {
+			isAllowed = true;
+			break;
+		}
 	}
 
 	if (!isAllowed)
@@ -6910,9 +6868,7 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 	var isOPTIONS = req.method === 'OPTIONS';
 
 	res.setHeader('Access-Control-Allow-Origin', cors.origins ? cors.origins : cors.credentials ? isAllowed ? origin : cors.origins ? cors.origins : origin : headers['origin']);
-
-	if (cors.credentials)
-		res.setHeader('Access-Control-Allow-Credentials', 'true');
+	cors.credentials && res.setHeader('Access-Control-Allow-Credentials', 'true');
 
 	name = 'Access-Control-Allow-Methods';
 
@@ -6928,8 +6884,7 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 	else
 		res.setHeader(name, headers['access-control-request-headers'] || '*');
 
-	if (cors.age)
-		res.setHeader('Access-Control-Max-Age', cors.age);
+	cors.age && res.setHeader('Access-Control-Max-Age', cors.age);
 
 	if (stop) {
 		fn = null;
@@ -6992,9 +6947,9 @@ Framework.prototype._upgrade = function(req, socket, head) {
 		req.$language = self.onLocate(req, socket);
 
 	if (self._length_request_middleware && !req.behaviour('disable-middleware'))
-		return async_middleware(0, req, req.websocket, self.routes.request, () => self._upgrade_prepare(req, path, req.headers));
-
-	self._upgrade_prepare(req, path, headers);
+		async_middleware(0, req, req.websocket, self.routes.request, () => self._upgrade_prepare(req, path, req.headers));
+	else
+		self._upgrade_prepare(req, path, headers);
 };
 
 /**
@@ -7012,13 +6967,12 @@ Framework.prototype._upgrade_prepare = function(req, path, headers) {
 
 	if (!auth) {
 		var route = self.lookup_websocket(req, req.websocket.uri.pathname, true);
-		if (!route) {
+		if (route) {
+			self._upgrade_continue(route, req, path);
+		} else {
 			req.websocket.close();
 			req.connection.destroy();
-			return;
 		}
-
-		self._upgrade_continue(route, req, path);
 		return;
 	}
 
@@ -7030,13 +6984,12 @@ Framework.prototype._upgrade_prepare = function(req, path, headers) {
 		req.flags.push(isLogged ? 'authorize' : 'unauthorize');
 
 		var route = self.lookup_websocket(req, req.websocket.uri.pathname, false);
-		if (!route) {
+		if (route) {
+			self._upgrade_continue(route, req, path);
+		} else {
 			req.websocket.close();
 			req.connection.destroy();
-			return;
 		}
-
-		self._upgrade_continue(route, req, path);
 	});
 };
 
@@ -7270,12 +7223,7 @@ Framework.prototype.assert = function(name, url, flags, callback, data, cookies,
 
 	// !IMPORTANT! framework.testsPriority is created dynamically in framework.test()
 	if (typeof(url) === 'function') {
-		self.tests.push({
-			name: _test + ': ' + name,
-			priority: framework.testsPriority,
-			index: self.tests.length,
-			run: url
-		});
+		self.tests.push({ name: _test + ': ' + name, priority: framework.testsPriority, index: self.tests.length, run: url });
 		return self;
 	}
 
@@ -7959,10 +7907,7 @@ Framework.prototype.translate = function(language, text) {
 		return this.resource(language, text.substring(1));
 
 	var value = this.resource(language, 'T' + text.hash());
-	if (!value)
-		return text;
-
-	return value;
+	return value ? value : text;
 };
 
 /**
@@ -9031,7 +8976,6 @@ FrameworkRestrictions.prototype.allow = function(name, value) {
 
 	self.refresh();
 	return framework;
-
 };
 
 /*
@@ -9059,7 +9003,6 @@ FrameworkRestrictions.prototype.disallow = function(name, value) {
 
 	self.refresh();
 	return framework;
-
 };
 
 /*
@@ -9448,13 +9391,13 @@ FrameworkCache.prototype.fn = function(name, fnCache, fnCallback) {
 	var value = self.read2(name);
 
 	if (value) {
-		fnCallback && fnCallback(value);
+		fnCallback && fnCallback(value, true);
 		return self;
 	}
 
 	fnCache(function(value, expire) {
 		self.add(name, value, expire);
-		fnCallback && fnCallback(value);
+		fnCallback && fnCallback(value, false);
 	});
 
 	return self;
@@ -9623,9 +9566,9 @@ Subscribe.prototype.execute = function(status, isError) {
 	route.isDELAY && self.res.writeContinue();
 
 	if (!framework._length_middleware || !route.middleware)
-		return self.doExecute();
-
-	async_middleware(0, req, res, route.middleware, () => self.doExecute(), route.options, controller);
+		self.doExecute();
+	else
+		async_middleware(0, req, res, route.middleware, () => self.doExecute(), route.options, controller);
 };
 
 Subscribe.prototype.prepare = function(flags, url) {
@@ -9699,8 +9642,6 @@ Subscribe.prototype.doExecute = function() {
 		else
 			self.route.execute.apply(controller, framework_internal.routeParam(self.route.param.length ? req.split : req.path, self.route));
 
-		return self;
-
 	} catch (err) {
 		controller = null;
 		framework.error(err, name, req.uri);
@@ -9740,7 +9681,7 @@ Subscribe.prototype.doAuthorization = function(isLogged, user, roles) {
 
 	self.route = route;
 
-	if (!self.schema || !self.route)
+	if (!self.route || !self.schema)
 		self.execute(code);
 	else
 		self.validate(self.route, () => self.execute(code));
@@ -12008,8 +11949,7 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 		name = 'callback';
 
 	if (obj instanceof framework_builders.ErrorBuilder) {
-		if (self.language && !obj.isResourceCustom)
-			obj.resource(self.language);
+		self.language && !obj.isResourceCustom && obj.resource(self.language);
 		obj = obj.json(beautify);
 	} else {
 		if (beautify)
@@ -13548,9 +13488,6 @@ WebSocketClient.prototype._ondata = function(data) {
 
 	var self = this;
 
-	if (!self)
-		return;
-
 	if (data)
 		self.buffer = Buffer.concat([self.buffer, data]);
 
@@ -13562,18 +13499,12 @@ WebSocketClient.prototype._ondata = function(data) {
 
 	switch (self.buffer[0] & 0x0f) {
 		case 0x01:
-
 			// text message or JSON message
-			if (self.type !== 1)
-				self.parse();
-
+			self.type !== 1 && self.parse();
 			break;
 		case 0x02:
-
 			// binary message
-			if (self.type === 1)
-				self.parse();
-
+			self.type === 1 && self.parse();
 			break;
 		case 0x08:
 			// close

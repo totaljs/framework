@@ -20,6 +20,7 @@
 
 - updated: `framework.view()`, `controller.view()` and `@{view()}` supports `=theme/viewname`
 - updated: sitemap routing supports localization
+- updated: `F.cache.fn(name, fnCache, fnCallback(value, isFromCache))` - added argument `isFromCache`
 
 - fixed: (critical) NoSQL views
 - fixed: `F.resize()` additional path `~`
