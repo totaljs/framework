@@ -2826,7 +2826,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	}
 
 	// Check if declaration is a valid URL address
-	if (typeof(declaration) === 'string') {
+	if (type !== 'eval' && typeof(declaration) === 'string') {
 
 		if (declaration.startsWith('http://') || declaration.startsWith('https://')) {
 
