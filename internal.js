@@ -1843,7 +1843,6 @@ function view_parse(content, minify, filename, controller) {
 				index = cmd.indexOf('[', newCommand.length + 10);
 
 			builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if(!($source instanceof Array))$source=framework_utils.ObjectToArray($source);if(!$source.length)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
-
 		} else if (cmd === 'end') {
 
 		  if (isFN && counter <= 0) {
@@ -1917,7 +1916,7 @@ function view_parse(content, minify, filename, controller) {
 				}
 			}
 
-			if (can) {
+			if (can && !counter) {
 				var fn = new Function('self', 'return ' + tmp);
 				builder += '+' + DELIMITER + fn(controller).replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + DELIMITER;
 			} else if (tmp) {

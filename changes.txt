@@ -23,7 +23,8 @@
 - updated: `F.cache.fn(name, fnCache, fnCallback(value, isFromCache))` - added argument `isFromCache`
 
 - fixed: (critical) NoSQL views
-- fixed: `F.eval()`
+- fixed: (critical) view compilation in release mode (problem with just-in-time rendering)
+- fixed: (critical) `F.eval()`
 - fixed: `F.resize()` additional path `~`
 - fixed: `controller.memorize()` threw a timeout when the action contains some error in the memorize scope
 - fixed: `F.sitemap()` fixed problem with `me` argument
