@@ -647,7 +647,8 @@ exports.routeCompareFlags2 = function(req, route, membertype) {
 	// 1. upload --> 0
 	// 2. doAuth --> 1 or 2
 
-	if (membertype && membertype !== 1 && route.MEMBER === 1)
+	// if (membertype && ((membertype !== 1 && route.MEMBER === 1) || (membertype !== 2 && route.MEMBER === 2)))
+	if (membertype && route.MEMBER && membertype !== route.MEMBER)
 		return -1;
 
 	if (!route.isWEBSOCKET) {
