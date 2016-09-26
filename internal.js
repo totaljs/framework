@@ -1885,17 +1885,9 @@ function view_parse(content, minify, filename, controller) {
 			var can = false;
 
 			// Inline rendering is supported only in release mode
-			if (RELEASE) {
+			if (RELEASE && tmp.indexOf('+') === -1 && REG_SKIP_1.test(tmp) && !REG_SKIP_2.test(tmp)) {
 				for (var a = 0, al = RENDERNOW.length; a < al; a++) {
 					if (tmp.startsWith(RENDERNOW[a])) {
-
-						if (tmp.indexOf('+') !== -1)
-							continue;
-
-						// skips variables 1
-						if (!REG_SKIP_1.test(tmp) || REG_SKIP_2.test(tmp))
-							continue;
-
 						if (!a) {
 							var isMeta = tmp.indexOf('\'meta\'') !== -1;
 							var isHead = tmp.indexOf('\'head\'') !== -1;
@@ -1909,7 +1901,6 @@ function view_parse(content, minify, filename, controller) {
 								builder += '+self.$import(' + tmpimp + ')';
 							}
 						}
-
 						can = true;
 						break;
 					}
@@ -1922,9 +1913,8 @@ function view_parse(content, minify, filename, controller) {
 					builder += '+' + DELIMITER + fn(controller).replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + DELIMITER;
 				} catch (e) {
 
-					// @TODO: remove
-					console.log('---> VIEW EXCEPTION:', filename, tmp, e);
-					self.errors.push({ error: e.stack, name: name, url: filename, date: new Date() });
+					console.log('VIEW EXCEPTION --->', filename, e, tmp);
+					framework.errors.push({ error: e.stack, name: filename, url: null, date: new Date() });
 
 					if (view_parse_plus(builder))
 						builder += '+';
