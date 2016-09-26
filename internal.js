@@ -1917,8 +1917,19 @@ function view_parse(content, minify, filename, controller) {
 			}
 
 			if (can && !counter) {
-				var fn = new Function('self', 'return ' + tmp);
-				builder += '+' + DELIMITER + fn(controller).replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + DELIMITER;
+				try {
+					var fn = new Function('self', 'return ' + tmp);
+					builder += '+' + DELIMITER + fn(controller).replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + DELIMITER;
+				} catch (e) {
+
+					// @TODO: remove
+					console.log('---> VIEW EXCEPTION:', filename, tmp, e);
+					self.errors.push({ error: e.stack, name: name, url: filename, date: new Date() });
+
+					if (view_parse_plus(builder))
+						builder += '+';
+					builder += wrapTryCatch(tmp, command.command, command.line);
+				}
 			} else if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
