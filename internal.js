@@ -3148,11 +3148,10 @@ function listener(event, done) {
  * https://github.com/jshttp/on-finished
  */
 function onFinished(msg, listener) {
-	if (isFinished(msg) !== false) {
+	if (isFinished(msg) !== false)
 		setImmediate(listener, null, msg);
-		return msg;
-	}
-	attachListener(msg, listener);
+	else
+		attachListener(msg, listener);
 	return msg;
 }
 
@@ -3192,8 +3191,7 @@ function attachFinishedListener(msg, callback) {
 	msg.on('socket', onSocket)
 
 	// node.js 0.8 patch
-	if (!msg.socket)
-		patchAssignSocket(msg, onSocket);
+	!msg.socket && patchAssignSocket(msg, onSocket);
 }
 
 function attachListener(msg, listener) {
@@ -3235,7 +3233,6 @@ function patchAssignSocket(res, callback) {
 }
 
 function isFinished(msg) {
-
 	var socket = msg.socket;
 
 	// OutgoingMessage
@@ -3245,9 +3242,6 @@ function isFinished(msg) {
 	// IncomingMessage
 	if (typeof msg.complete === 'boolean')
 		return Boolean(msg.upgrade || !socket || !socket.readable || (msg.complete && !msg.readable))
-
-	// don't know
-	return;
 }
 
 exports.encodeUnicodeURL = function(url) {
