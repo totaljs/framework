@@ -293,6 +293,10 @@ global.GETSCHEMA = function(group, name) {
 	return framework_builders.getschema(group, name);
 };
 
+global.CREATE = function(group, name) {
+	return framework_builders.getschema(group, name).default();
+};
+
 global.UID = function() {
 	var plus = UIDGENERATOR.index % 2 ? 1 : 0;
 	return UIDGENERATOR.date + (UIDGENERATOR.index++).padLeft(4, '0') + UIDGENERATOR.instance + plus;
@@ -314,10 +318,7 @@ global.MAKE = global.TRANSFORM = function(transform, fn) {
 	} else
 		obj = fn;
 
-	if (transform)
-		return TransformBuilder.transform.apply(obj, arguments);
-
-	return obj;
+	return transform ? TransformBuilder.transform.apply(obj, arguments) : obj;
 };
 
 global.SINGLETON = function(name) {
@@ -1943,7 +1944,7 @@ Framework.prototype.middleware = function(name, funcExecute) {
  * @types {String Array} types It can be `web`, `file` or `websocket`
  * @return {Framework}
  */
-Framework.prototype.use = function(name, url, types) {
+Framework.prototype.use = function(name, url, types, first) {
 	var self = this;
 
 	if (!url && !types) {
@@ -1976,7 +1977,7 @@ Framework.prototype.use = function(name, url, types) {
 				continue;
 			if (!route.middleware)
 				route.middleware = [];
-			merge_middleware(route.middleware, name);
+			merge_middleware(route.middleware, name, first);
 		}
 	}
 
@@ -1987,7 +1988,7 @@ Framework.prototype.use = function(name, url, types) {
 				continue;
 			if (!route.middleware)
 				route.middleware = [];
-			merge_middleware(route.middleware, name);
+			merge_middleware(route.middleware, name, first);
 		}
 	}
 
@@ -1998,21 +1999,26 @@ Framework.prototype.use = function(name, url, types) {
 				continue;
 			if (!route.middleware)
 				route.middleware = [];
-			merge_middleware(route.middleware, name);
+			merge_middleware(route.middleware, name, first);
 		}
 	}
 
 	return self;
 };
 
-function merge_middleware(a, b) {
+function merge_middleware(a, b, first) {
 
 	if (typeof(b) === 'string')
 		b = [b];
 
 	for (var i = 0, length = b.length; i < length; i++) {
 		var index = a.indexOf(b[i]);
-		index === -1 && a.push(b[i]);
+		if (index === -1) {
+			if (first)
+				a.unshift(b[i]);
+			else
+				a.push(b[i]);
+		}
 	}
 
 	return a;

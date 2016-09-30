@@ -16,11 +16,13 @@
 - added: new routing mechanism `F.mmr(url, action)` for streaming `multipart/x-mixed-replace` types (client-->server)
 - added: `controller.mmr(filename, [stream], callback)` for streaming `multipart/x-mixed-replace` (server-->client)
 - added: `setTimeout2(key, fn, timeout)` resets old and creates a new `setTimeout` according to the `key`
-- added `dnscache` into the `controller.pipe()` and `F.responsePipe()`
+- added: `dnscache` into the `controller.pipe()` and `F.responsePipe()`
+- added: `CREATE([group], name)` the methods create an empty object according to the schema
 
 - updated: `framework.view()`, `controller.view()` and `@{view()}` supports `=theme/viewname`
 - updated: sitemap routing supports localization
 - updated: `F.cache.fn(name, fnCache, fnCallback(value, isFromCache))` - added argument `isFromCache`
+- updated: `F.use(name, url, types, [first])` - `first` (default: `false`) argument adds a new middleware to the beginning of a route middleware
 
 - fixed: (critical) NoSQL views
 - fixed: (critical) view compilation in release mode (problem with just-in-time rendering)
