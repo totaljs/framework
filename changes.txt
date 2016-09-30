@@ -18,6 +18,7 @@
 - added: `setTimeout2(key, fn, timeout)` resets old and creates a new `setTimeout` according to the `key`
 - added: `dnscache` into the `controller.pipe()` and `F.responsePipe()`
 - added: `CREATE([group], name)` the methods create an empty object according to the schema
+- added: `F.group(flags, fn)` for extending routes (web, websocket, file) flags
 
 - updated: `framework.view()`, `controller.view()` and `@{view()}` supports `=theme/viewname`
 - updated: sitemap routing supports localization

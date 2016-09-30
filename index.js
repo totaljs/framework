@@ -211,6 +211,7 @@ HEADERS.mmrpipe = { end: false };
 var _controller = '';
 var _owner = '';
 var _test;
+var _flags;
 
 // GO ONLINE MODE
 if (!global.framework_internal)
@@ -463,7 +464,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2100;
-	this.version_header = '2.1.0-21';
+	this.version_header = '2.1.0-22';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -1215,6 +1216,13 @@ Framework.prototype.cors = function(url, flags, credentials) {
 	return self;
 };
 
+Framework.prototype.group = function(flags, fn) {
+	_flags = flags;
+	fn.call(this);
+	_flags = undefined;
+	return this;
+};
+
 /**
  * Add a route
  * @param {String} url
@@ -1393,6 +1401,15 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var options;
 	var corsflags = [];
 	var membertype = 0;
+
+	if (_flags) {
+		if (!flags)
+			flags = [];
+		_flags.forEach(function(flag) {
+			if (flags.indexOf(flag) === -1)
+				flags.push(flag);
+		});
+	}
 
 	if (flags) {
 
@@ -2134,8 +2151,13 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 	var count = 0;
 	var membertype = 0;
 
-	if (flags === undefined)
+	if (!flags)
 		flags = [];
+
+	_flags && _flags.forEach(function(flag) {
+		if (flags.indexOf(flag) === -1)
+			flags.push(flag);
+	});
 
 	for (var i = 0; i < flags.length; i++) {
 
@@ -2305,6 +2327,15 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 	var url;
 	var wildcard = false;
 	var fixedfile = false;
+
+	if (_flags) {
+		if (!flags)
+			flags = [];
+		_flags.forEach(function(flag) {
+			if (flags.indexOf(flag) === -1)
+				flags.push(flag);
+		});
+	}
 
 	if (flags) {
 		for (var i = 0, length = flags.length; i < length; i++) {
