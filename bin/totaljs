@@ -45,7 +45,7 @@ function translateFile(a) {
 	}
 
 	fs.writeFileSync('translate.resource', '// Total.js translation file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + builder.join('\n'));
-	console.log('total.js: the translation was created (' + count + ' texts)');
+	console.log('Total.js: the translation was created (' + count + ' texts)');
 	return true;
 }
 
@@ -483,7 +483,7 @@ function main() {
 			return;
 		}
 
-		console.log('total.js: creating translation');
+		console.log('Total.js: creating translation');
 		Utils.ls(dir, function(files) {
 
 			var resource = {};
@@ -541,13 +541,13 @@ function main() {
 				builder.push('\n// ' + keys[i] + '\n' + output[keys[i]].join('\n'));
 
 			fs.writeFileSync('translate.resource', '// Total.js translation file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + builder.join('\n'));
-			console.log('total.js: the translation was created (' + count + ' texts)');
+			console.log('Total.js: the translation was created (' + count + ' texts)');
 		});
 		return;
 	}
 
 	if ($type === 6) {
-		console.log('total.js: creating translation to CSV');
+		console.log('Total.js: creating translation to CSV');
 		Utils.ls(dir, function(files) {
 
 			var resource = {};
@@ -588,7 +588,7 @@ function main() {
 			}
 
 			fs.writeFileSync('translate.csv', output.join('\n'));
-			console.log('total.js: the translation was created (' + count + ' texts)');
+			console.log('Total.js: the translation was created (' + count + ' texts)');
 		});
 		return;
 	}
