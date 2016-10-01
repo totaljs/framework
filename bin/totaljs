@@ -15,8 +15,8 @@ function display_help() {
 	console.log('without arguments          = creates empty-project');
 	console.log('-translate                 = creates a resource file with the localized text from views');
 	console.log('-translate "TEXT"          = creates an identificator for the resource');
-	console.log('-translate filename        = parsers and creates a resource file from the text file');
-	console.log('-translatecsv              = parsers and creates CSV with localization into the current directory');
+	console.log('-translate filename        = parses and creates a resource file from the text file');
+	console.log('-translatecsv              = parses and creates CSV with localization in the current directory');
 	console.log('-diff source target        = creates differences between two resources "-diff filename_source filename_target"');
 	console.log('-merge source target       = merges first resource into the second "-merge filename_source filename_target"');
 	console.log('-clean source              = cleans a resource file "-clean filename_source"');
@@ -468,7 +468,7 @@ function main() {
 
 	if ($type !== 4) {
 		if (!fs.existsSync(dir)) {
-			console.log('ERROR: directory not exists');
+			console.log('ERROR: directory does not exist');
 			console.log('');
 			return;
 		}
