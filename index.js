@@ -412,7 +412,7 @@ global.SUCCESS = function(success, value) {
 
 	SUCCESSHELPER.success = success ? true : false;
 	SUCCESSHELPER.value = value == null ? undefined : value;
-	SUCCESSHELPER.error = err ? o.error : undefined;
+	SUCCESSHELPER.error = err ? err : undefined;
 	return SUCCESSHELPER;
 };
 
