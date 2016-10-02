@@ -58,6 +58,11 @@ const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
 const regexpINTEGER = /[\-0-9]+/g;
 const regexpFLOAT = /[\-0-9\.\,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
+const regexpSEARCH = /[^a-zA-Zá-žÁ-Ž\d\s:]/g;
+const regexpSPACES = /\s{2,}/;
+const regexpDECRYPT = /\-|\_/g;
+const regexpENCRYPT = /\/|\+/g;
+const regexpY = /y/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -1209,7 +1214,6 @@ exports.clone = function(obj, skip, skipFunctions) {
 		return obj;
 
 	var type = typeof(obj);
-
 	if (type !== 'object' || obj instanceof Date)
 		return obj;
 
@@ -1268,10 +1272,7 @@ exports.copy = function(source, target) {
 	if (target === undefined)
 		return exports.extend({}, source, true);
 
-	if (!target || !source)
-		return target;
-
-	if (typeof(target) !== 'object' || typeof(source) !== 'object')
+	if (!target || !source || typeof(target) !== 'object' || typeof(source) !== 'object')
 		return target;
 
 	var keys = Object.keys(source);
@@ -1279,9 +1280,8 @@ exports.copy = function(source, target) {
 
 	while (i--) {
 		var key = keys[i];
-		if (target[key] === undefined)
-			continue;
-		target[key] = exports.clone(source[key]);
+		if (target[key] !== undefined)
+			target[key] = exports.clone(source[key]);
 	}
 
 	return target;
@@ -1302,12 +1302,9 @@ exports.reduce = function(source, prop, reverse) {
 	}
 
 	if (source instanceof Array) {
-
 		var arr = [];
-
 		for (var i = 0, length = source.length; i < length; i++)
 			arr.push(exports.reduce(source[i], prop, reverse));
-
 		return arr;
 	}
 
@@ -1705,9 +1702,7 @@ exports.join = function() {
  * @return {String}
  */
 exports.$normalize = function(path) {
-	if (isWindows)
-		return path.replace(regexpPATH, '/');
-	return path;
+	return isWindows ? path.replace(regexpPATH, '/') : path;
 };
 
 /*
@@ -2189,15 +2184,11 @@ exports.ls = function(path, callback, filter) {
 	if (typeof(filter) === 'string') {
 		filter = filter.toLowerCase();
 		filter.onFilter = function(filename, is) {
-			if (is)
-				return true;
-			return filename.toLowerCase().indexOf(filter);
+			return is ? true : filename.toLowerCase().indexOf(filter);
 		};
 	} else if (exports.isRegExp(filter)) {
 		filter.onFilter = function(filename, is) {
-			if (is)
-				return true;
-			return filter.test(filename);
+			return is ? true : filter.test(filename);
 		};
 	} else
 		filelist.onFilter = filter || null;
@@ -2375,19 +2366,16 @@ Date.prototype.extend = function(date) {
 
 			arr = m.split(':');
 			tmp = +arr[0];
-			if (!isNaN(tmp))
-				dt.setHours(tmp);
+			!isNaN(tmp) && dt.setHours(tmp);
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				if (!isNaN(tmp))
-					dt.setMinutes(tmp);
+				!isNaN(tmp) && dt.setMinutes(tmp);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				if (!isNaN(tmp))
-					dt.setSeconds(tmp);
+				!isNaN(tmp) && dt.setSeconds(tmp);
 			}
 
 			continue;
@@ -2401,14 +2389,12 @@ Date.prototype.extend = function(date) {
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				if (!isNaN(tmp))
-					dt.setMonth(tmp - 1);
+				!isNaN(tmp) && dt.setMonth(tmp - 1);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				if (!isNaN(tmp))
-					dt.setDate(tmp);
+				!isNaN(tmp) && dt.setDate(tmp);
 			}
 
 			continue;
@@ -2422,14 +2408,12 @@ Date.prototype.extend = function(date) {
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				if (!isNaN(tmp))
-					dt.setMonth(tmp - 1);
+				!isNaN(tmp) && dt.setMonth(tmp - 1);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				if (!isNaN(tmp))
-					dt.setFullYear(tmp);
+				!isNaN(tmp) && dt.setFullYear(tmp);
 			}
 
 			continue;
@@ -2617,7 +2601,7 @@ String.prototype.endsWith = function(text, ignoreCase) {
 		return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
 	}
 
-	if (ignoreCase > 0)
+	if (ignoreCase)
 		tmp = self.substr((self.length - ignoreCase) - length, length);
 	else
 		tmp = self.substring(self.length - length);
@@ -3245,7 +3229,7 @@ String.prototype.md5 = function(salt) {
 };
 
 String.prototype.toSearch = function() {
-	return this.replace(/[^a-zA-Zá-žÁ-Ž\d\s:]/g, '').trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
+	return this.replace(regexpSEARCH, '').trim().replace(regexpSPACES, ' ').toLowerCase().removeDiacritics().replace(regexpY, 'i');
 };
 
 String.prototype.toKeywords = String.prototype.keywords = function(forSearch, alternative, max_count, max_length, min_length) {
@@ -3269,7 +3253,7 @@ String.prototype.encrypt = function(key, isUnique) {
 		values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
 	}
 
-	var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(/\//g, '-').replace(/\+/g, '_');
+	var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(regexpENCRYPT, text => text === '+' ? '_' : '-');
 	index = hash.indexOf('=');
 	if (index > 0)
 		return hash.substring(0, index);
@@ -3279,10 +3263,10 @@ String.prototype.encrypt = function(key, isUnique) {
 
 String.prototype.decrypt = function(key) {
 
-	var values = this.replace(/\-/g, '/').replace(/\_/g, '+');
+	var values = this.replace(regexpDECRYPT, text => text === '-' ? '/' : '+');
 	var mod = values.length % 4;
 
-	if (mod > 0) {
+	if (mod) {
 		for (var i = 0; i < mod; i++)
 			values += '=';
 	}
@@ -3349,12 +3333,8 @@ String.prototype.base64ToBuffer = function() {
 */
 String.prototype.base64ContentType = function() {
 	var self = this;
-
 	var index = self.indexOf(';');
-	if (index === -1)
-		return '';
-
-	return self.substring(5, index);
+	return index === -1 ? '' : self.substring(5, index);
 };
 
 String.prototype.removeDiacritics = function() {
