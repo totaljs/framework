@@ -3460,9 +3460,7 @@ String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = St
 		}
 	}
 	var l = builder.length - 1;
-	if (builder[l] === '-')
-		return builder.substring(0, l);
-	return builder;
+	return builder[l] === '-' ? builder.substring(0, l) : builder;
 };
 
 String.prototype.pluralize = function(zero, one, few, other) {
