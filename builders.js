@@ -3034,7 +3034,7 @@ Pagination.prototype.transform = function(name) {
 		throw new Error('A transformation of Pagination not found.');
 
 	var current = transforms['pagination'][transformName];
-	if (current === undefined)
+	if (!current)
 		return self.render();
 
 	var param = [];
