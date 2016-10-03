@@ -81,7 +81,7 @@ function prototypeString() {
 
 	str = ' A PeTer Širka   Je krááály. ';
 
-	assert.ok(str.toSearch() === 'a peter sirka je kraaali', 'string.toSearch()');
+	assert.ok(str.toSearch() === 'a peter sirka je krali', 'string.toSearch()');
 
 	str = 'Great function.';
 

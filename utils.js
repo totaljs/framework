@@ -59,10 +59,8 @@ const regexpINTEGER = /[\-0-9]+/g;
 const regexpFLOAT = /[\-0-9\.\,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
 const regexpSEARCH = /[^a-zA-Zá-žÁ-Ž\d\s:]/g;
-const regexpSPACES = /\s{2,}/;
 const regexpDECRYPT = /\-|\_/g;
 const regexpENCRYPT = /\/|\+/g;
-const regexpY = /y/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -3229,7 +3227,20 @@ String.prototype.md5 = function(salt) {
 };
 
 String.prototype.toSearch = function() {
-	return this.replace(regexpSEARCH, '').trim().replace(regexpSPACES, ' ').toLowerCase().removeDiacritics().replace(regexpY, 'i');
+	var str = this.replace(regexpSEARCH, '').trim().toLowerCase().removeDiacritics();
+	var buf = [];
+	var prev = '';
+	for (var i = 0, length = str.length; i < length; i++) {
+		var c = str[i];
+		if (c === 'y')
+			c = 'i';
+		if (c === prev)
+			continue;
+		prev = c;
+		buf.push(c);
+	}
+
+	return buf.join('');
 };
 
 String.prototype.toKeywords = String.prototype.keywords = function(forSearch, alternative, max_count, max_length, min_length) {

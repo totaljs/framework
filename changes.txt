@@ -24,6 +24,7 @@
 - updated: sitemap routing supports localization
 - updated: `F.cache.fn(name, fnCache, fnCallback(value, isFromCache))` - added argument `isFromCache`
 - updated: `F.use(name, url, types, [first])` - `first` (default: `false`) argument adds a new middleware to the beginning of a route middleware
+- updated: `String.toSearch()` - removes duplicates characters + better performance
 
 - fixed: (critical) NoSQL views
 - fixed: (critical) view compilation in release mode (problem with just-in-time rendering)
