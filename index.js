@@ -47,7 +47,7 @@ const CONTENTTYPE_TEXTHTML = 'text/html';
 const REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': true, 'text/css': true, 'text/jsx': true, 'application/x-javascript': true, 'application/json': true, 'text/xml': true, 'image/svg+xml': true, 'text/x-markdown': true, 'text/html': true };
 const TEMPORARY_KEY_REGEX = /\//g;
 const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
-const REG_ROBOT = /search|agent|bot|crawler/i;
+const REG_ROBOT = /search|agent|bot|crawler|spider/i;
 const REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
 const REG_MULTIPART = /\/form\-data$/i;
 const REG_COMPILECSS = /url\(.*?\)/g;
