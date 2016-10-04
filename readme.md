@@ -114,6 +114,7 @@ service you're supporting the framework and its products..
 | Contributor | Type | E-mail |
 |-------------|------|--------|
 | [Peter Širka](https://github.com/JozefGula) | BDFL + contributor + support | <petersirka@gmail.com> |
+| [Martin Smola](https://github.com/molda) | contributor + support | <smola.martin@gmail.com> |
 | [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
@@ -125,7 +126,6 @@ service you're supporting the framework and its products..
 | [Сковорода Никита Андреевич](https://github.com/ChALkeR) | contributor | <chalkerx@gmail.com> |
 | [Андрей Владимирович](https://github.com/anddesigner) | contributor | <and.designer93@gmail.com> |
 | [Guy Fraser](https://github.com/aubergine10) | contributor | <guy.fraser1@gmail.com> |
-| [Martin Smola](https://github.com/molda) | contributor | <smola.martin@gmail.com> |
 | [Peter Štolc](https://github.com/fokinko) | contributor | <stolcp@gmail.com> |
 
 ## Useful modules
