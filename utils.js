@@ -2653,11 +2653,6 @@ function string_hash(s) {
 	return hash;
 }
 
-/*
-	Count text in string
-	@text {String}
-	return {Number}
-*/
 String.prototype.count = function(text) {
 	var index = 0;
 	var count = 0;
