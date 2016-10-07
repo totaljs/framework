@@ -3122,10 +3122,7 @@ String.prototype.isPhone = function() {
 };
 
 String.prototype.isUID = function() {
-	var str = this;
-	if (str.length < 18)
-		return false;
-	return regexpUID.test(str);
+	return this.length < 18 ? false : regexpUID.test(this);
 };
 
 String.prototype.parseInt = function(def) {
