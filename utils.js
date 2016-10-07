@@ -2964,31 +2964,12 @@ String.prototype.format = function() {
 };
 
 String.prototype.encode = function() {
-	var output = '';
-	for (var i = 0, length = this.length; i < length; i++) {
-		var c = this[i];
-		switch (c) {
-			case '<':
-				output += '&lt;';
-				break;
-			case '>':
-				output += '&gt;';
-				break;
-			case '"':
-				output += '&quot;';
-				break;
-			case '\'':
-				output += '&apos;';
-				break;
-			case '&':
-				output += '&amp;';
-				break;
-			default:
-				output += c;
-				break;
-		}
-	}
-	return output;
+    if (str.length === 0) {
+        return '';
+    }
+    return str.replace(/<|>|"|'|&/g, function(s) {
+        return CHAR_S_INDEX[s];
+    });
 };
 
 String.prototype.decode = function() {
