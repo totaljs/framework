@@ -1273,6 +1273,7 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 					tmp = val ? val.toString().toLowerCase() : null;
 					item[property] = self.$onprepare(property, tmp === 'true' || tmp === '1' || tmp === 'on', undefined, model);
 					break;
+
 				// date
 				case 5:
 
@@ -1283,6 +1284,8 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 							tmp = val.trim().parseDate();
 					} else if (typeval === 'number')
 						tmp = new Date(val);
+					else
+						tmp = val;
 
 					if (framework_utils.isDate(tmp))
 						tmp = self.$onprepare(property, tmp, undefined, model)

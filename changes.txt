@@ -29,6 +29,7 @@
 - fixed: (critical) NoSQL views
 - fixed: (critical) view compilation in release mode (problem with just-in-time rendering)
 - fixed: (critical) `F.eval()`
+- fixed: (critical) parsing Date instance as Date instance in SchemaBuilder
 - fixed: `F.resize()` additional path `~`
 - fixed: `controller.memorize()` threw a timeout when the action contains some error in the memorize scope
 - fixed: `F.sitemap()` fixed problem with `me` argument
