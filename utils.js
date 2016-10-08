@@ -164,6 +164,35 @@ var CONTENTTYPES = {
 	'zip': 'application/zip'
 };
 
+var ALPHA_INDEX = {
+	'&lt': '<',
+	'&gt': '>',
+	'&quot': '"',
+	'&apos': '\'',
+	'&amp': '&',
+	'&lt;': '<',
+	'&gt;': '>',
+	'&quot;': '"',
+	'&apos;': '\'',
+	'&amp;': '&'
+};
+
+var CHAR_INDEX = {
+	60: 'lt',
+	62: 'gt',
+	34: 'quot',
+	39: 'apos',
+	38: 'amp'
+};
+
+var CHAR_S_INDEX = {
+	'<': '&lt;',
+	'>': '&gt;',
+	'"': '&quot;',
+	'\'': '&apos;',
+	'&': '&amp;'
+};
+
 var dnscache = {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
@@ -2935,44 +2964,30 @@ String.prototype.format = function() {
 };
 
 String.prototype.encode = function() {
-	var output = '';
-	for (var i = 0, length = this.length; i < length; i++) {
-		var c = this[i];
-		switch (c) {
-			case '<':
-				output += '&lt;';
-				break;
-			case '>':
-				output += '&gt;';
-				break;
-			case '"':
-				output += '&quot;';
-				break;
-			case '\'':
-				output += '&apos;';
-				break;
-			case '&':
-				output += '&amp;';
-				break;
-			default:
-				output += c;
-				break;
-		}
-	}
-	return output;
+    if (str.length === 0) {
+        return '';
+    }
+    return str.replace(/<|>|"|'|&/g, function(s) {
+        return CHAR_S_INDEX[s];
+    });
 };
 
 String.prototype.decode = function() {
-	return this.replace(regexpDECODE, function(text) {
-		switch (text) {
-			case '&gt;': return '>';
-			case '&lt;': return '<';
-			case '&quot;': return '"';
-			case '&apos;': return '\'';
-			case '&amp;': return '&';
-			default:
-				return text;
+	if (this.length === 0) {
+		return '';
+	}
+	return this.replace(/&#?[0-9a-zA-Z]+;?/g, function(s) {
+		if (s.charAt(1) === '#') {
+			var code = s.charAt(2).toLowerCase() === 'x' ?
+				parseInt(s.substr(3), 16) :
+				parseInt(s.substr(2));
+
+			if (isNaN(code) || code < -32768 || code > 65535) {
+				return '';
+			}
+			return String.fromCharCode(code);
 		}
+		return ALPHA_INDEX[s] || s;
 	});
 };
 
