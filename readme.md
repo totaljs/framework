@@ -13,6 +13,7 @@ __Total.js__ is the web application framework for creating rich web sites and we
 
 - [__NEW__: Total.js Dashboard](https://www.totaljs.com/superadmin/)
 - [__NEW__: Total.js BlogEngine](https://www.totaljs.com/blogengine/)
+- [__NEW__: NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
 - [Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
 - [Total.js Eshop](http://www.totaljs.com/eshop/)
 - [Total.js CMS](http://www.totaljs.com/cms/)
