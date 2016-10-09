@@ -1159,8 +1159,7 @@ function minify_javascript(data) {
 					continue;
 				} else if (isCI && (c === '\n' || c === '\r')) {
 					isCI = false;
-					if (alpha.test(last))
-						output.push(' ');
+					alpha.test(last) && output.push(' ');
 					last = '';
 					continue;
 				}
@@ -1189,11 +1188,14 @@ function minify_javascript(data) {
 				regexp = (last === '=' || last === '(' || last === ':') && (c === '/');
 		}
 
+/*
+		WTF? For what?
 		if (scope && prev === '\\' && c === '\\') {
 			output.push(c);
 			skipnext = true;
 			continue;
 		}
+*/
 
 		if (!regexp && (c === '"' || c === '\'' || c === '`') && (prev !== '\\' || skipnext)) {
 
