@@ -53,7 +53,7 @@ const regexpDiacritics = /[^\u0000-\u007e]/g;
 const regexpUID = /^\d{14,}[a-z]{3}[01]{1}$/;
 const regexpZIP = /^\d{5}(?:[-\s]\d{4})?$/;
 const regexpXML = /\w+\=\".*?\"/g;
-const regexpDECODE = /&gt;|\&lt;|\&quot;|&apos;|&amp;/g;
+const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
 const regexpINTEGER = /[\-0-9]+/g;
 const regexpFLOAT = /[\-0-9\.\,]+/g;
@@ -70,6 +70,7 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 const DIACRITICSMAP = {};
 const STREAM_READONLY = { flags: 'r' };
 const STREAM_END = { end: false };
+const ALPHA_INDEX = { '&lt': '<', '&gt': '>', '&quot': '"', '&apos': '\'', '&amp': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': '\'', '&amp;': '&' };
 const EMPTYARRAY = [];
 
 Object.freeze(EMPTYARRAY);
@@ -2963,16 +2964,11 @@ String.prototype.encode = function() {
 };
 
 String.prototype.decode = function() {
-	return this.replace(regexpDECODE, function(text) {
-		switch (text) {
-			case '&gt;': return '>';
-			case '&lt;': return '<';
-			case '&quot;': return '"';
-			case '&apos;': return '\'';
-			case '&amp;': return '&';
-			default:
-				return text;
-		}
+	return this.replace(regexpDECODE, function(s) {
+		if (s.charAt(1) !== '#')
+			return ALPHA_INDEX[s] || s;
+		var code = s[2].toLowerCase() === 'x' ? parseInt(s.substr(3), 16) : parseInt(s.substr(2));
+		return !code || code < -32768 || code > 65535 ? '' : String.fromCharCode(code);
 	});
 };
 
