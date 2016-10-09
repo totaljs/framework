@@ -1122,7 +1122,6 @@ function minify_javascript(data) {
 	var white = /\W/;
 	var skip = { '$': true, '_': true };
 	var regexp = false;
-	var skipnext = false;
 	var scope;
 	var prev;
 	var next;
@@ -1188,18 +1187,15 @@ function minify_javascript(data) {
 				regexp = (last === '=' || last === '(' || last === ':') && (c === '/');
 		}
 
-/*
-		WTF? For what?
-		if (scope && prev === '\\' && c === '\\') {
+		if (scope && c === '\\') {
 			output.push(c);
-			skipnext = true;
+			output.push(next);
+			index++;
+			last = next;
 			continue;
 		}
-*/
 
-		if (!regexp && (c === '"' || c === '\'' || c === '`') && (prev !== '\\' || skipnext)) {
-
-			skipnext = false;
+		if (!regexp && (c === '"' || c === '\'' || c === '`')) {
 
 			if (scope && scope !== c) {
 				output.push(c);
@@ -1219,7 +1215,7 @@ function minify_javascript(data) {
 		last = c;
 	}
 
-	return output.join('');
+	return output.join('').trim();
 }
 
 exports.compile_css = function(value, filename) {
