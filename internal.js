@@ -542,13 +542,6 @@ exports.routeSplitCreate = function(url, noLower) {
 	return arr;
 };
 
-/*
-	Internal function / Compare route with url
-	@route {String array}
-	@url {String}
-	@isSystem {Boolean}
-	return {Boolean}
-*/
 exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
 	var length = url.length;
@@ -579,12 +572,6 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 	return true;
 };
 
-/*
-	Internal function / Compare subdomain
-	@subdomain {String}
-	@arr {String array}
-	return {Boolean}
-*/
 exports.routeCompareSubdomain = function(subdomain, arr) {
 	if ((!subdomain && !arr) || (subdomain && !arr))
 		return true;
@@ -745,7 +732,7 @@ exports.routeCompareFlags2 = function(req, route, membertype) {
 };
 
 /**
- * Create arguments for controller action
+ * Create arguments for controller's action
  * @param {String Array} routeUrl
  * @param {Object} route
  * @return {String Array}
@@ -906,11 +893,6 @@ function compile_autovendor(css) {
 	}).replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
 }
 
-/*
-	Auto vendor prefixer
-	@value {String} :: Raw CSS
-	return {String}
-*/
 function autoprefixer(value) {
 
 	value = autoprefixer_keyframes(value);
@@ -928,7 +910,6 @@ function autoprefixer(value) {
 		while (index !== -1) {
 
 			index = value.indexOf(property, index + 1);
-
 			if (index === -1)
 				continue;
 
@@ -950,10 +931,7 @@ function autoprefixer(value) {
 			var css = value.substring(index, end);
 			end = css.indexOf(':');
 
-			if (end === -1)
-				continue;
-
-			if (css.substring(0, end + 1).replace(/\s/g, '') !== property + ':')
+			if (end === -1 || css.substring(0, end + 1).replace(/\s/g, '') !== property + ':')
 				continue;
 
 			builder.push({ name: property, property: css });
@@ -1021,7 +999,6 @@ function autoprefixer(value) {
 			updated += delimiter + '-ms-' + plus;
 
 		updated += delimiter + '-o-' + plus;
-
 		value = value.replacer(property, '@[[' + output.length + ']]');
 		output.push(updated);
 	}
@@ -1983,7 +1960,6 @@ function view_prepare(command, dynamicCommand, functions) {
 		index = command.length;
 
 	var name = command.substring(0, index);
-
 	if (name === dynamicCommand)
 		return '$STRING(' + command + ').encode()';
 
@@ -2943,11 +2919,6 @@ function viewengine_load(name, filename, controller) {
 	return generator;
 }
 
-/*
-	Compile dynamic view
-	@content {String}
-	return {Object} :: return parsed HTML
-*/
 function viewengine_dynamic(content, language, controller) {
 	var key = language + '_' + content.hash();
 	var generator = framework.temporary.views[key] || null;

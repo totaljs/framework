@@ -4109,14 +4109,6 @@ Framework.prototype.onMail = function(address, subject, body, callback, replyTo)
 	return message;
 };
 
-/*
-	Render HTML for views
-	@argument {String params}
-
-	this === controller
-
-	return {String}
-*/
 Framework.prototype.onMeta = function() {
 
 	var self = this;
@@ -4218,11 +4210,6 @@ Framework.prototype.logmail = function(address, subject, body, callback) {
 	return framework.onMail(address, subject, body, callback);
 };
 
-/*
-	Return string of framework usage information
-	@detailed {Boolean} :: default (false)
-	return {String}
-*/
 Framework.prototype.usage = function(detailed) {
 	var self = this;
 	var memory = process.memoryUsage();
@@ -4275,7 +4262,8 @@ Framework.prototype.usage = function(detailed) {
 		queue: pending,
 		files: staticFiles.length,
 		streaming: staticRange.length,
-		modificator:  self.modificators ? self.modificators.length : 0
+		modificator:  self.modificators ? self.modificators.length : 0,
+		viewphrases: $VIEWCACHE.length
 	};
 
 	output.routing = {
@@ -5780,7 +5768,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 };
 
 /*
-	Set last modified header or Etag
+	Sets the last modified header or Etag
 	@req {Request}
 	@res {Response}
 	@value {String or Date}
@@ -5799,7 +5787,7 @@ Framework.prototype.setModified = function(req, res, value) {
 };
 
 /*
-	Check if ETag or Last Modified has modified
+	Checks if ETag or Last Modified has modified
 	@req {Request}
 	@res {Response}
 	@compare {String or Date}
@@ -5808,7 +5796,7 @@ Framework.prototype.setModified = function(req, res, value) {
 	if @compare === {String} compare if-none-match
 	if @compare === {Date} compare if-modified-since
 
-	this method automatically flush response (if not modified)
+	this method automatically flushes response (if it's not modified)
 	--> response 304
 
 	return {Boolean};
@@ -5834,7 +5822,6 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 			return false;
 
 		var myetag = compare + ':' + self.config['etag-version'];
-
 		if (val !== myetag)
 			return false;
 
@@ -5844,7 +5831,6 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 			return false;
 
 		var date = compare === undefined ? new Date().toUTCString() : compare.toUTCString();
-
 		if (strict) {
 			if (new Date(Date.parse(val)) === new Date(date))
 				return false;
@@ -8527,62 +8513,31 @@ Framework.prototype.routeStyle = function(name, theme) {
 	return self._routeStatic(name, self.config['static-url-style'], theme);
 };
 
-/*
-	Static file routing
-	@name {String} :: filename
-	return {String}
-*/
 Framework.prototype.routeImage = function(name, theme) {
 	var self = this;
 	return self._routeStatic(name, self.config['static-url-image'], theme);
 };
 
-/*
-	Static file routing
-	@name {String} :: filename
-	return {String}
-*/
 Framework.prototype.routeVideo = function(name, theme) {
 	var self = this;
 	return self._routeStatic(name, self.config['static-url-video'], theme);
 };
 
-/*
-	Static file routing
-	@name {String} :: filename
-	return {String}
-*/
 Framework.prototype.routeFont = function(name, theme) {
 	var self = this;
 	return self._routeStatic(name, self.config['static-url-font'], theme);
 };
 
-/*
-	Static file routing
-	@name {String} :: filename
-	return {String}
-*/
 Framework.prototype.routeDownload = function(name, theme) {
 	var self = this;
 	return self._routeStatic(name, self.config['static-url-download'], theme);
 };
 
-/*
-	Static file routing
-	@name {String} :: filename
-	return {String}
-*/
 Framework.prototype.routeStatic = function(name, theme) {
 	var self = this;
 	return self._routeStatic(name, self.config['static-url'], theme);
 };
 
-/*
-	Internal static file routing
-	@name {String} :: filename
-	@directory {String} :: directory
-	return {String}
-*/
 Framework.prototype._routeStatic = function(name, directory, theme) {
 	var key = name + directory + '$' + theme;
 	var val = framework.temporary.other[key];
@@ -8618,11 +8573,6 @@ Framework.prototype._routeStatic = function(name, directory, theme) {
 	return framework.temporary.other[key] = framework_internal.preparePath(this._version(filename));
 };
 
-/*
-	Internal mapping function
-	@name {String} :: filename
-	return {String}
-*/
 Framework.prototype._version = function(name) {
 	var self = this;
 	if (self.versions)
@@ -8745,12 +8695,6 @@ Framework.prototype.lookup = function(req, url, flags, membertype) {
 	return null;
 };
 
-/*
-	Internal function
-	@req {HttpRequest}
-	@url {String}
-	return {WebSocketRoute}
-*/
 Framework.prototype.lookup_websocket = function(req, url, membertype) {
 
 	var self = this;
@@ -8988,12 +8932,6 @@ function FrameworkRestrictions() {
 	this.blockedCustomKeys = [];
 };
 
-/*
-	Allow IP or custom header
-	@name {String} :: IP or Header name
-	@value {RegExp} :: optional, header value
-	return {Framework}
-*/
 FrameworkRestrictions.prototype.allow = function(name, value) {
 
 	var self = this;
@@ -9015,12 +8953,6 @@ FrameworkRestrictions.prototype.allow = function(name, value) {
 	return framework;
 };
 
-/*
-	Disallow IP or custom header
-	@name {String} :: IP or Header name
-	@value {RegExp} :: optional, header value
-	return {Framework}
-*/
 FrameworkRestrictions.prototype.disallow = function(name, value) {
 
 	var self = this;
@@ -9042,10 +8974,6 @@ FrameworkRestrictions.prototype.disallow = function(name, value) {
 	return framework;
 };
 
-/*
-	INTERNAL: Refresh internal informations
-	return {Framework}
-*/
 FrameworkRestrictions.prototype.refresh = function() {
 
 	var self = this;
@@ -9063,10 +8991,6 @@ FrameworkRestrictions.prototype.refresh = function() {
 	return framework;
 };
 
-/*
-	Clear all restrictions for IP
-	return {Framework}
-*/
 FrameworkRestrictions.prototype.clearIP = function() {
 	var self = this;
 	self.allowedIP = [];
@@ -9075,10 +8999,6 @@ FrameworkRestrictions.prototype.clearIP = function() {
 	return framework;
 }
 
-/*
-	Clear all restrictions for custom headers
-	return {Framework}
-*/
 FrameworkRestrictions.prototype.clearHeaders = function() {
 	var self = this;
 	self.allowedCustom = {};
@@ -9089,10 +9009,6 @@ FrameworkRestrictions.prototype.clearHeaders = function() {
 	return framework;
 }
 
-/*
-	INTERNAL: Restrictions using
-	return {Framework}
-*/
 FrameworkRestrictions.prototype._allowedCustom = function(headers) {
 
 	var self = this;
@@ -9116,10 +9032,6 @@ FrameworkRestrictions.prototype._allowedCustom = function(headers) {
 	return true;
 };
 
-/*
-	INTERNAL: Restrictions using
-	return {Framework}
-*/
 FrameworkRestrictions.prototype._blockedCustom = function(headers) {
 
 	var self = this;
@@ -10355,24 +10267,10 @@ Controller.prototype.pipe = function(url, headers, callback) {
 	return self;
 };
 
-/*
-	Cryptography (encrypt)
-	@value {String}
-	@key {String}
-	@isUniqe {Boolean} :: optional, default true
-	return {String}
-*/
 Controller.prototype.encrypt = function() {
 	return framework.encrypt.apply(framework, arguments);
 };
 
-/*
-	Cryptography (decrypt)
-	@value {String}
-	@key {String}
-	@jsonConvert {Boolean} :: optional (convert string to JSON)
-	return {String or Object}
-*/
 Controller.prototype.decrypt = function() {
 	return framework.decrypt.apply(framework, arguments);
 };
@@ -11229,14 +11127,6 @@ Controller.prototype.$textarea = function(model, name, attr) {
 	return builder + '>' + ((model[name] || attr.value) || '') + '</textarea>';
 };
 
-/*
-	Internal function for views
-	@model {Object}
-	@type {String}
-	@name {String}
-	@attr {Object} :: optional
-	return {String}
-*/
 Controller.prototype.$input = function(model, type, name, attr) {
 
 	var builder = ['<input'];
@@ -11371,11 +11261,6 @@ Controller.prototype.$isValue = function(bool, charBeg, charEnd, value) {
 	return charBeg + value + charEnd;
 };
 
-/*
-	Internal function for views
-	@date {String or Date or Number} :: if {String} date format must has YYYY-MM-DD HH:MM:SS, {Number} represent Ticks (.getTime())
-	return {String} :: empty string
-*/
 Controller.prototype.$modified = function(value) {
 
 	var self = this;
@@ -11413,24 +11298,11 @@ Controller.prototype.$modified = function(value) {
 	return '';
 };
 
-/*
-	Internal function for views
-	@value {String}
-	return {String} :: empty string
-*/
 Controller.prototype.$etag = function(value) {
 	this.setModified(value);
 	return '';
 };
 
-/*
-	Internal function for views
-	@arr {Array} :: array of object or plain value array
-	@selected {Object} :: value for selecting item
-	@name {String} :: name of name property, default: name
-	@value {String} :: name of value property, default: value
-	return {String}
-*/
 Controller.prototype.$options = function(arr, selected, name, value) {
 
 	var type = typeof(arr);
@@ -11661,15 +11533,6 @@ Controller.prototype.$css = function() {
 	return builder;
 };
 
-/*
-	Append <img> TAG
-	@name {String} :: filename
-	@width {Number} :: optional
-	@height {Number} :: optional
-	@alt {String} :: optional
-	@className {String} :: optional
-	return {String}
-*/
 Controller.prototype.$image = function(name, width, height, alt, className) {
 
 	var style = '';
@@ -12850,12 +12713,6 @@ const SOCKET_RESPONSE_ERROR = 'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nX-
 const SOCKET_HASH = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 const SOCKET_ALLOW_VERSION = [13];
 
-/*
-	WebSocket
-	@path {String}
-	@name {String} :: Controller name
-	return {WebSocket}
-*/
 function WebSocket(path, name, id) {
 	this._keys = [];
 	this.id = id;

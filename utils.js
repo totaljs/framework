@@ -1657,12 +1657,6 @@ exports.etag = function(text, version) {
 	return sum.toString() + (version ? ':' + version : '');
 };
 
-/*
-	Add @delimiter to end of @path
-	@path {String} :: filename
-	@delimiter {String} :: optional, default /
-	return {String}
-*/
 exports.path = function(path, delimiter) {
 
 	if (!path)
@@ -1704,12 +1698,6 @@ exports.$normalize = function(path) {
 	return isWindows ? path.replace(regexpPATH, '/') : path;
 };
 
-/*
-	Get random number
-	@max {Number}
-	@min {Number}
-	return {Number}
-*/
 exports.random = function(max, min) {
 	max = (max || 100000);
 	min = (min || 0);
@@ -1720,11 +1708,6 @@ function rnd() {
 	return Math.floor(Math.random() * 65536).toString(36);
 }
 
-/*
-	Create unique identifier
-	@max {Number} :: optional, default 40
-	return {String}
-*/
 exports.GUID = function(max) {
 	max = max || 40;
 	var str = '';
@@ -2221,11 +2204,6 @@ exports.ls2 = function(path, callback, filter) {
 	filelist.walk(path);
 };
 
-/*
-	@type {String}
-	@value {Number}
-	return {Date}
-*/
 Date.prototype.add = function(type, value) {
 
 	var self = this;
@@ -2809,12 +2787,6 @@ String.prototype.parseDateExpiration = function() {
 	return dt;
 };
 
-/*
-	Contain string a array values?
-	@value {String or String Array}
-	@mustAll {Boolean} :: optional (default false), String must contains all items in String array
-	return {Boolean}
-*/
 String.prototype.contains = function(value, mustAll) {
 	var str = this;
 
@@ -3051,12 +3023,6 @@ String.prototype.params = function(obj) {
 	});
 };
 
-/*
-	Set max length of string
-	@length {Number}
-	@chars {String} :: optional, default ...
-	return {String}
-*/
 String.prototype.max = function(length, chars) {
 	var str = this;
 	if (typeof(chars) !== 'string')
@@ -3326,10 +3292,6 @@ String.prototype.base64ToBuffer = function() {
 	return new Buffer(self.substring(index), 'base64');
 };
 
-/*
-	Get content type from base64
-	return {String}
-*/
 String.prototype.base64ContentType = function() {
 	var self = this;
 	var index = self.indexOf(';');
@@ -3340,12 +3302,6 @@ String.prototype.removeDiacritics = function() {
 	return exports.removeDiacritics(this);
 };
 
-/*
-	Indent
-	@max {Number}
-	@c {String} : optional, default SPACE
-	return {String}
-*/
 String.prototype.indent = function(max, c) {
 	var plus = '';
 	if (c === undefined)
@@ -3355,11 +3311,6 @@ String.prototype.indent = function(max, c) {
 	return plus + this;
 };
 
-/*
-	isNumber?
-	@isDecimal {Boolean} :: optional, default false
-	return {Boolean}
-*/
 String.prototype.isNumber = function(isDecimal) {
 
 	var self = this;
@@ -4115,9 +4066,6 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 	return self;
 };
 
-/*
-	Trim values
-*/
 Array.prototype.trim = function() {
 	var self = this;
 	var output = [];
@@ -4245,10 +4193,6 @@ Array.prototype.remove = function(cb, value) {
 	return arr;
 };
 
-/*
-	Returns item from array randomly
-	Return {Object}
-*/
 Array.prototype.random = function() {
 	return this[exports.random(this.length - 1)];
 };
@@ -4348,10 +4292,6 @@ Array.prototype.async = function(thread, callback) {
 	return self;
 };
 
-/*
-	Randomize array
-	Return {Array}
-*/
 Array.prototype.randomize = function() {
 
 	var self = this;
@@ -4470,9 +4410,6 @@ Array.prototype.unique = function(property) {
 	return result;
 };
 
-/*
-	Async class
-*/
 function AsyncTask(owner, name, fn, cb, waiting) {
 	this.isRunning = 0;
 	this.owner = owner;

@@ -114,11 +114,6 @@ exports.measureSVG = function(buffer) {
 	return { width: width, height: height };
 };
 
-/*
-	Image class
-	@filename {String}
-	@useImageMagick {Boolean} :: default false
-*/
 function Image(filename, useImageMagick, width, height) {
 	var type = typeof(filename);
 	this.width = width;
@@ -130,10 +125,6 @@ function Image(filename, useImageMagick, width, height) {
 	this.outputType = type === 'string' ? framework_utils.getExtension(filename) : 'jpg';
 }
 
-/*
-	Clear all filter
-	return {Image}
-*/
 Image.prototype.clear = function() {
 	var self = this;
 	self.builder = [];
@@ -258,13 +249,6 @@ Image.prototype.$$save = function(filename, writer) {
 	};
 };
 
-/*
-	Pipe stream
-	@stream {Stream}
-	@type {String} :: optional, image type (png, jpg, gif)
-	@options {Object} :: Stream object
-	return {Image}
-*/
 Image.prototype.pipe = function(stream, type, options) {
 
 	var self = this;
@@ -336,12 +320,6 @@ Image.prototype.stream = function(type, writer) {
 	return cmd.stdout.pipe(middleware());
 };
 
-/*
-	Internal function
-	@filenameFrom {String}
-	@filenameTo {String}
-	return {String}
-*/
 Image.prototype.cmd = function(filenameFrom, filenameTo) {
 
 	var self = this;
@@ -394,11 +372,6 @@ Image.prototype.arg = function(first, last) {
 	return arr;
 };
 
-/*
-	Identify image
-	cb {Function} :: function(err, info) {} :: info.type {String} == 'JPEG' | 'PNG', info.width {Number}, info.height {Number}
-	return {Image}
-*/
 Image.prototype.identify = function(cb) {
 	var self = this;
 
@@ -546,12 +519,6 @@ Image.prototype.resizeAlign = function(w, h, align, color) {
 	return this.resize(w, h, '^').background(color ? color : 'white').align(align || 'center').crop(w, h);
 };
 
-/*
-	@w {Number}
-	@h {Number}
-	@options {String}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-scale
-*/
 Image.prototype.scale = function(w, h, options) {
 	options = options || '';
 
@@ -568,28 +535,14 @@ Image.prototype.scale = function(w, h, options) {
 	return self.push('-scale', size + options, 1);
 };
 
-/*
-	@w {Number}
-	@h {Number}
-	@x {Number}
-	@y {Number}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-crop
-*/
 Image.prototype.crop = function(w, h, x, y) {
 	return this.push('-crop', w + 'x' + h + '+' + (x || 0) + '+' + (y || 0), 4);
 };
 
-/*
-	@percentage {Number}
-	http://www.graphicsmagick.org/GraphicsMagick.html#details-quality
-*/
 Image.prototype.quality = function(percentage) {
 	return this.push('-quality', percentage || 80, 5);
 };
 
-/*
-	@type {String}
-*/
 Image.prototype.align = function(type) {
 
 	var output;
