@@ -347,7 +347,7 @@ function main() {
 								fs.stat(filename, function(err, info) {
 
 									if (info.isFile())
-										files.push('<a href="{1}" class="file">{0}<span>{2} kB</span></a>'.format(item, self.url + item, (info.size / 1024).format(2)));
+										files.push('<a href="{1}" class="file">{0}<span>{2}</span></a>'.format(item, self.url + item, info.size.filesize()));
 									else
 										directories.push('<a href="{1}/" class="directory">{0}</a>'.format(item, self.url + item));
 
