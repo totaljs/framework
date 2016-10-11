@@ -11,6 +11,8 @@ __Total.js framework__ is a server-side framework for Node.js written in `pure` 
 $ npm install -g total.js
 ```
 
+---
+
 [![Support](https://www.totaljs.com/img/button-support.png?v=2)](https://www.totaljs.com/support/)
 
 - [__NEW__: Total.js Dashboard](https://www.totaljs.com/superadmin/)
