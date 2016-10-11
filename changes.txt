@@ -20,6 +20,7 @@
 - added: `CREATE([group], name)` the methods create an empty object according to the schema
 - added: `F.group(flags, fn)` for extending routes (web, websocket, file) flags
 - added: `Number.prototype.filesize([decimals], [type])` formatting file sizes
+- added: `binary` importing CSV `-csv`
 
 - updated: `framework.view()`, `controller.view()` and `@{view()}` supports `=theme/viewname`
 - updated: sitemap routing supports localization
