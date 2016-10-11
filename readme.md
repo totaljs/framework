@@ -2,6 +2,10 @@
 
 [![NPM version][npm-version-image]][npm-url] [![NPM quality][npm-quality]](http://packagequality.com/#?package=total.js) [![NPM downloads][npm-downloads-image]][npm-url] [![MIT License][license-image]][license-url] [![Build Status][travis-image]][travis-url] [![Gitter chat](https://badges.gitter.im/totaljs/framework.png)](https://gitter.im/totaljs/framework)
 
+```
+$ npm install -g total.js
+```
+
 Node.js web framework
 =====================
 
@@ -25,9 +29,7 @@ __Total.js framework__ is a server-side framework for Node.js written in `pure` 
 - [Total.js +100 examples](https://github.com/totaljs/examples)
 - [Download +89 client-side components (jComponent) for free](https://www.componentator.com)
 
-```
-$ npm install total.js
-```
+---
 
 - [Homepage](http://www.totaljs.com)
 - [__Get Started__](http://www.totaljs.com/get-started/)
