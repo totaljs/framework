@@ -5,7 +5,7 @@
 Node.js web framework
 =====================
 
-__Total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
+__Total.js framework__ is a server-side framework for Node.js written in `pure` JavaScript similar to PHP's Laravel or Python's Django or ASP.NET MVC.
 
 ---
 
@@ -18,23 +18,24 @@ __Total.js__ is the web application framework for creating rich web sites and we
 - [Total.js Eshop](http://www.totaljs.com/eshop/)
 - [Total.js CMS](http://www.totaljs.com/cms/)
 - [Total.js HelpDesk](https://www.totaljs.com/helpdesk/)
-- [Download +89 client-side components (jComponent) for free](https://www.componentator.com)
 - [Total.js OpenPlatform](https://www.totaljs.com/openplatform/) is a simple enterprise ready platform
 - [Total.js AppMonitor](https://www.totaljs.com/monitor/) for tracking total.js applications
-- [Total.js modules and packages](https://github.com/totaljs/modules)
-- [Total.js models](https://github.com/totaljs/models)
+- [Total.js AppDesigner](https://www.totaljs.com/designer/) for designing models
+- [Total.js modules and packages](https://modules.totaljs.com)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
+- [Download +89 client-side components (jComponent) for free](https://www.componentator.com)
 
 ```
 $ npm install total.js
 ```
 
 - [Homepage](http://www.totaljs.com)
-- [__Make a donation__ via PayPal](http://www.totaljs.com/#make-a-donation)
 - [__Get Started__](http://www.totaljs.com/get-started/)
 - [__Documentation__](http://docs.totaljs.com)
+- [__HelpDesk__](https://helpdesk.totaljs.com)
+- [__Blogs__](https://blogs.totaljs.com)
+- [__Membership__](https://my.totaljs.com)
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
-- [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
 
 &nbsp;
@@ -48,7 +49,6 @@ $ npm install total.js
 
 Please support the framework on social networks.
 
-- [Blogs](https://bufferwall.com/explore/?tag=total.js)
 - [Follow Total.js on Gitter](https://gitter.im/totaljs/framework)
 - [Follow Total.js on GitHub](https://github.com/totaljs/framework)
 - [Follow Total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
