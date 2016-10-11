@@ -7,7 +7,7 @@ Node.js web framework
 
 __Total.js framework__ is a server-side framework for Node.js written in `pure` JavaScript similar to PHP's Laravel or Python's Django or ASP.NET MVC.
 
-```
+```bash
 $ npm install -g total.js
 ```
 
