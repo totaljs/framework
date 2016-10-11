@@ -18,9 +18,9 @@ __Total.js framework__ is a server-side framework for Node.js written in `pure` 
 - [Total.js Eshop](http://www.totaljs.com/eshop/)
 - [Total.js CMS](http://www.totaljs.com/cms/)
 - [Total.js HelpDesk](https://www.totaljs.com/helpdesk/)
-- [Total.js OpenPlatform](https://www.totaljs.com/openplatform/) is a simple enterprise ready platform
-- [Total.js AppMonitor](https://www.totaljs.com/monitor/) for tracking total.js applications
-- [Total.js AppDesigner](https://www.totaljs.com/designer/) for designing models
+- [Total.js OpenPlatform](https://www.totaljs.com/openplatform/)
+- [Total.js AppMonitor](https://www.totaljs.com/monitor/)
+- [Total.js AppDesigner](https://www.totaljs.com/designer/)
 - [Total.js modules and packages](https://modules.totaljs.com)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
 - [Download +89 client-side components (jComponent) for free](https://www.componentator.com)
