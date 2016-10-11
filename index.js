@@ -5121,8 +5121,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		res.writeHead(200, returnHeaders);
 		res.end();
 		done && done();
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
+		!req.isStaticFile && self.emit('request-end', req, res);
 		req.clear(true);
 		return self;
 	}
@@ -5137,8 +5136,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 			stream.pipe(zlib.createGzip()).pipe(res);
 			done && done();
-			if (!req.isStaticFile)
-				self.emit('request-end', req, res);
+			!req.isStaticFile && self.emit('request-end', req, res);
 			req.clear(true);
 		});
 		return self;
@@ -5153,8 +5151,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		});
 
 		done && done();
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
+		!req.isStaticFile && self.emit('request-end', req, res);
 		req.clear(true);
 	});
 
@@ -5229,7 +5226,7 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 				return;
 			}
 
-			if (!supportsGZIP && isGZIP)
+			if (isGZIP && !supportsGZIP)
 				response.pipe(zlib.createGunzip()).pipe(res);
 			else
 				response.pipe(res);
@@ -6941,8 +6938,9 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	if ((req.headers.upgrade || '').toLowerCase() !== 'websocket')
 		return;
 
-	// disable timeout
+	// disables timeout
 	socket.setTimeout(0);
+	socket.on('error', NOOP);
 
 	var self = framework;
 	var headers = req.headers;
