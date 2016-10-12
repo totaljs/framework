@@ -14573,3 +14573,15 @@ global.setTimeout2 = function(name, fn, timeout) {
 	framework.temporary.internal[key] && clearTimeout(framework.temporary.internal[key]);
 	return framework.temporary.internal[key] = setTimeout(fn, timeout);
 };
+
+global.clearTimeout2 = function(name) {
+	var key = ':' + name;
+
+	if (framework.temporary.internal[key]) {
+		clearTimeout(framework.temporary.internal[key]);
+		framework.temporary.internal[key] = undefined;
+		return true;
+	}
+
+	return false;
+};
