@@ -13070,6 +13070,24 @@ WebSocket.prototype.destroy = function(problem) {
 };
 
 /**
+ * Enables auto-destroy websocket controller when any user is not online
+ * @param {Function} callback
+ * @return {WebSocket]
+ */
+WebSocket.prototype.autodestroy = function(callback) {
+	var self = this;
+	var key = 'websocket:' + self.id;
+	self.on('open', () => clearTimeout2(key));
+	self.on('close', function() {
+		!self.online && setTimeout2(key, function() {
+			callback && callback.call(self);
+			self.destroy();
+		}, 5000);
+	});
+	return self;
+};
+
+/**
  * Sends an object to another total.js application (POST + JSON)
  * @param {String} url
  * @param {Object} obj

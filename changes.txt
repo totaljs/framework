@@ -22,6 +22,7 @@
 - added: `F.group(flags, fn)` for extending routes (web, websocket, file) flags
 - added: `Number.prototype.filesize([decimals], [type])` formatting file sizes
 - added: `binary` importing CSV `-csv`
+- added: `controller.autodestroy([callback])` only for websocket
 
 - updated: `framework.view()`, `controller.view()` and `@{view()}` supports `=theme/viewname`
 - updated: sitemap routing supports localization
