@@ -1,4 +1,4 @@
-======= 2.1.0 (BETA)
+======= 2.1.0
 
 - added: `F.sitemap_add(string)` for adding entries to sitemap by Martin Smola <https://github.com/molda>
 - added: SchemaBuilderEntity `schema.addHook(name, fn(error, model, options, callback))`
