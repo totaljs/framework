@@ -13055,14 +13055,24 @@ WebSocket.prototype.destroy = function(problem) {
 		return self;
 
 	self.close();
+	self.emit('destroy');
 
 	setTimeout(function() {
+
+		self._keys.forEach(function(key) {
+			var conn = self.connections[key];
+			if (conn) {
+				conn._isClosed = true;
+				conn.socket.removeAllListeners();
+				conn.removeAllListeners();
+			}
+		});
+
 		self.connections = null;
 		self._keys = null;
 		self.route = null;
 		self.buffer = null;
 		delete framework.connections[self.id];
-		self.emit('destroy');
 		self.removeAllListeners();
 	}, 1000);
 
@@ -13144,7 +13154,8 @@ WebSocket.prototype._refresh = function() {
  */
 WebSocket.prototype._remove = function(id) {
 	var self = this;
-	delete self.connections[id];
+	if (self.connections)
+		delete self.connections[id];
 	return self;
 };
 
