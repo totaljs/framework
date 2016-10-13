@@ -16,7 +16,7 @@ framework.onCompileView = function(name, html, model) {
 };
 
 framework.onLocate = function(req) {
-	return 'sk';
+	return !req.url.startsWith('/abc') ? 'sk' : '';
 };
 
 framework.on('ready', function() {
@@ -26,10 +26,7 @@ framework.on('ready', function() {
 		if (msg === 'assert')
 			a = true;
 	});
-	t.on('exit', function() {
-		assert.ok(a === true, 'F.load() in worker');
-	});
-
+	t.on('exit', () => assert.ok(a === true, 'F.load() in worker'));
 	assert.ok(F.config.array.length === 4, 'Problem with config sub types.');
 });
 
@@ -67,22 +64,18 @@ function end() {
 }
 
 function test_controller_functions(next) {
-	utils.request(url, 'GET', null, function(error, data, code, headers) {
-
-		if (error)
-			assert.ok(false, 'test_controller_functions: ' + error.toString());
-
+	utils.request(url, ['get'], function(error, data, code, headers) {
+		error && assert.ok(false, 'test_controller_functions: ' + error.toString());
 		assert.ok(code === 404, 'controller: statusCode ' + code);
 		assert.ok(headers['etag'] === '123456:1', 'controller: setModified(etag)');
 		assert.ok(headers['last-modified'].toString().indexOf('1984') !== -1, 'controller: setModified(date)');
 		assert.ok(headers['expires'].toString().indexOf('1984') !== -1, 'controller: setExpires(date)');
-
 		next();
 	});
 }
 
 function test_view_functions(next) {
-	utils.request(url + 'views/', 'GET', null, function(error, data, code, headers) {
+	utils.request(url + 'views/', ['get'], function(error, data, code, headers) {
 
 		if (error)
 			assert.ok(false, 'test_view_functions: ' + error.toString());
@@ -94,7 +87,7 @@ function test_view_functions(next) {
 
 function test_view_error(next) {
 	errorStatus = 1;
-	utils.request(url + 'view-notfound/', 'GET', null, function(error, data, code, headers) {
+	utils.request(url + 'view-notfound/', ['get'], function(error, data, code, headers) {
 
 		if (error)
 			assert.ok(false, 'test_view_error: ' + error.toString());
@@ -108,7 +101,7 @@ function test_routing(next) {
 	var async = new utils.Async();
 
 	async.await('cors 1', function(complete) {
-		utils.request(url + '/cors/origin-all/', ['options'], null, function(error, data, code, headers) {
+		utils.request(url + '/cors/origin-all/', ['options'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert.ok(code === 200, 'CORS, problem with "*" origin');
@@ -117,7 +110,7 @@ function test_routing(next) {
 	});
 
 	async.await('cors 2', function(complete) {
-		utils.request(url + '/cors/origin-not/', ['options'], null, function(error, data, code, headers) {
+		utils.request(url + '/cors/origin-not/', ['options'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert.ok(code === 404, 'CORS, problem with origin (origin is not valid)');
@@ -126,7 +119,7 @@ function test_routing(next) {
 	});
 
 	async.await('cors 3', function(complete) {
-		utils.request(url + '/cors/origin-not/', ['options'], null, function(error, data, code, headers) {
+		utils.request(url + '/cors/origin-not/', ['options'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert.ok(code === 200, 'CORS, problem with origin (valid origin)');
@@ -135,7 +128,7 @@ function test_routing(next) {
 	});
 
 	async.await('cors asterix / wildcard', function(complete) {
-		utils.request(url + '/api/whatever/you/need/', ['options'], null, function(error, data, code, headers) {
+		utils.request(url + '/api/whatever/you/need/', ['options'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert.ok(code === 200, 'CORS, problem with origin (wildcard routing)');
@@ -144,7 +137,7 @@ function test_routing(next) {
 	});
 
 	async.await('cors headers', function(complete) {
-		utils.request(url + '/cors/headers/', ['options'], null, function(error, data, code, headers) {
+		utils.request(url + '/cors/headers/', ['options'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 
@@ -159,7 +152,7 @@ function test_routing(next) {
 	});
 
 	async.await('options', function(complete) {
-		utils.request(url + 'options/', ['options'], null, function(error, data, code, headers) {
+		utils.request(url + 'options/', ['options'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert.ok(data === 'OPTIONS', 'OPTIONS method problem');
@@ -168,7 +161,7 @@ function test_routing(next) {
 	});
 
 	async.await('html compressor', function(complete) {
-		utils.request(url + 'html-compressor/', ['get'], null, function(error, data, code, headers) {
+		utils.request(url + 'html-compressor/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === '<div><p>a b c d</p><div>Price 30 &euro;</div></div><div>Name: Peter</div><div>Name: Peter</div><div>Price: 1000 1 000.00</div><div>13</div><div>Name: Peter</div>', 'HTML compressor');
@@ -177,7 +170,7 @@ function test_routing(next) {
 	});
 
 	async.await('html nocompress', function(complete) {
-		utils.request(url + 'html-nocompress/', ['get'], null, function(error, data, code, headers) {
+		utils.request(url + 'html-nocompress/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data.indexOf('<div>\nA\n</div>') !== -1, 'HTML nocompress');
@@ -186,7 +179,7 @@ function test_routing(next) {
 	});
 
 	async.await('0', function(complete) {
-		utils.request(url + 'share/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'share/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert.ok(data === 'OK', 'controller view directory');
@@ -195,7 +188,7 @@ function test_routing(next) {
 	});
 
 	async.await('a', function(complete) {
-		utils.request(url + 'a/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'a/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			complete();
@@ -203,7 +196,7 @@ function test_routing(next) {
 	});
 
 	async.await('a/aaa', function(complete) {
-		utils.request(url + 'a/aaa/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'a/aaa/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			complete();
@@ -211,7 +204,7 @@ function test_routing(next) {
 	});
 
 	async.await('sync', function(complete) {
-		utils.request(url + 'sync/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'sync/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert.ok(data === 'TEST', 'generator problem');
@@ -220,7 +213,7 @@ function test_routing(next) {
 	});
 
 	async.await('a/b', function(complete) {
-		utils.request(url + 'c/b/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'c/b/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			complete();
@@ -228,7 +221,7 @@ function test_routing(next) {
 	});
 
 	async.await('router', function(complete) {
-		utils.request(url + 'routeto/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'routeto/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === 'dilino gadzo', 'problem with controller.routeTo()');
@@ -237,7 +230,7 @@ function test_routing(next) {
 	});
 
 	async.await('mobile - 1', function(complete) {
-		utils.request(url + 'mobile/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'mobile/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(headers['vary'] === 'Accept-Encoding, User-Agent', 'mobile device user-agent problem 1');
@@ -247,7 +240,7 @@ function test_routing(next) {
 	});
 
 	async.await('mobile - 2', function(complete) {
-		utils.request(url + 'mobile/?ok=true', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'mobile/?ok=true', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(headers['vary'] === 'Accept-Encoding, User-Agent', 'mobile device user-agent problem 2');
@@ -257,7 +250,7 @@ function test_routing(next) {
 	});
 
 	async.await('robot - 1', function(complete) {
-		utils.request(url + '', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + '', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === 'ROBOT', 'robot routing problem 1');
@@ -266,7 +259,7 @@ function test_routing(next) {
 	});
 
 	async.await('robot - 2', function(complete) {
-		utils.request(url + '', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + '', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data !== 'ROBOT', 'robot routing problem 2');
@@ -275,7 +268,7 @@ function test_routing(next) {
 	});
 
 	async.await('binary', function(complete) {
-		utils.request(url + 'binary/', ['get'], null, function(error, data, code, headers) {
+		utils.request(url + 'binary/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === 'čťž', 'binary');
@@ -284,7 +277,7 @@ function test_routing(next) {
 	});
 
 	async.await('localize', function(complete) {
-		utils.request(url + 'templates/localization.html', ['get'], null, function(error, data, code, headers) {
+		utils.request(url + 'templates/localization.html', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === '###preklad###', 'file localization');
@@ -338,11 +331,11 @@ function test_routing(next) {
 	});
 
 	async.await('translate', function(complete) {
-		utils.request(url + 'translate/?language=', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'translate/?language=', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === '---translate---######', 'translate problem (EN)');
-			utils.request(url + 'translate/?language=sk', 'GET', null, function(error, data, code, headers) {
+			utils.request(url + 'translate/?language=sk', ['get'], function(error, data, code, headers) {
 				if (error)
 					throw error;
 				assert(data === '---preklad---###preklad###', 'translate problem (SK)');
@@ -352,7 +345,7 @@ function test_routing(next) {
 	});
 
 	async.await('custom', function(complete) {
-		utils.request(url + 'custom/route/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'custom/route/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === 'CUSTOM', 'custom route problem');
@@ -361,7 +354,7 @@ function test_routing(next) {
 	});
 
 	async.await('views in modules', function(complete) {
-		utils.request(url + 'view-in-modules/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'view-in-modules/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === 'VIEW IN MODULES', 'Problem with opened path in views.');
@@ -369,18 +362,26 @@ function test_routing(next) {
 		});
 	});
 
-/*
-	async.await('pipe', function(complete) {
-		utils.request(url + 'pipe/', 'GET', null, function(error, data, code, headers) {
+	async.await('sitemap routing 1', function(complete) {
+		utils.request(url + 'abcdefgh/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert.ok(data.toString('utf8').indexOf('telephone=no') !== -1, 'controller.pipe() / responsePipe() problem');
+			assert(data === '#DEFAULT#', 'Sitemap routing and localization 1');
 			complete();
 		});
 	});
-*/
+
+	async.await('sitemap routing 2', function(complete) {
+		utils.request(url + 'abcdefgh-sk/', ['get'], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === '#SK#', 'Sitemap routing and localization 2');
+			complete();
+		});
+	});
+
 	async.await('asterix', function(complete) {
-		utils.request(url + 'app/a/b/c/d', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'app/a/b/c/d', ['get'], function(error, data, code, headers) {
 			assert(data === 'ASTERIX', 'asterix routing problem');
 			if (error)
 				throw error;
@@ -389,7 +390,7 @@ function test_routing(next) {
 	});
 
 	async.await('a/b/c/', function(complete) {
-		utils.request(url + 'a/b/c/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'a/b/c/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			complete();
@@ -397,7 +398,7 @@ function test_routing(next) {
 	});
 
 	async.await('package/', function(complete) {
-		utils.request(url + 'package/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'package/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert.ok(data === '<div>PACKAGELAYOUT</div><div>PACKAGEVIEW</div>', 'package view problem');
@@ -406,7 +407,7 @@ function test_routing(next) {
 	});
 
 	async.await('precompile', function(complete) {
-		utils.request(url + 'precompile/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'precompile/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert.ok(data.indexOf('precompile') === -1, 'framework.precompile() problem');
@@ -415,7 +416,7 @@ function test_routing(next) {
 	});
 
 	async.await('subshare', function(complete) {
-		utils.request(url + 'sub/share/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'sub/share/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === 'SUBSHARE', 'problem with controller in subdirectory.');
@@ -424,7 +425,7 @@ function test_routing(next) {
 	});
 
 	async.await('logged', function(complete) {
-		utils.request(url + 'logged/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'logged/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			complete();
@@ -432,7 +433,7 @@ function test_routing(next) {
 	});
 
 	async.await('unauthorize', function(complete) {
-		utils.request(url + 'unauthorize/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'unauthorize/', ['get'], function(error, data, code, headers) {
 			assert.ok(data === 'UNAUTHORIZED', 'unauthorize flag problem');
 			if (error)
 				throw error;
@@ -441,14 +442,14 @@ function test_routing(next) {
 	});
 
 	async.await('timeout', function(complete) {
-		utils.request(url + 'timeout/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'timeout/', ['get'], function(error, data, code, headers) {
 			assert(data === '408', 'timeout problem');
 			complete();
 		});
 	});
 
 	async.await('http', function(complete) {
-		utils.request(url + 'http/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'http/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			assert(data === 'HTTP', 'HTTP flag routing problem');
@@ -671,7 +672,7 @@ function test_routing(next) {
 	});
 
 	async.await('cookie', function(complete) {
-		utils.request(url + 'cookie/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'cookie/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 
@@ -804,7 +805,7 @@ function test_routing(next) {
 	});
 
 	async.await('theme-green', function(complete) {
-		utils.request(url + 'theme-green/', 'GET', null, function(error, data, code, headers) {
+		utils.request(url + 'theme-green/', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
 			console.log('--->', data);

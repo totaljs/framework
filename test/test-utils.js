@@ -56,6 +56,18 @@ function prototypeNumber() {
 	assert.ok(number.add('*2', 0) === 20, 'add number: 4');
 	assert.ok(number.add('*10%', 0) === 10, 'add number: 5');
 
+	number = 1024;
+	assert.ok(number.filesize() === '1 KB', 'filesize decimals: auto');
+	assert.ok(number.filesize('MB') === '0 MB', 'filesize decimals: MB');
+	assert.ok(number.filesize('GB') === '0 GB', 'filesize decimals: GB');
+	assert.ok(number.filesize('TB') === '0 TB', 'filesize decimals: TB');
+
+	number = 1248576;
+	assert.ok(number.filesize() === '1.19 MB', 'filesize decimals: auto');
+	assert.ok(number.filesize('MB') === '1.19 MB', 'filesize decimals: MB');
+	assert.ok(number.filesize('TB') === '0 TB', 'filesize decimals: TB');
+	assert.ok(number.filesize('KB') === '1 219.31 KB', 'filesize decimals: KB');
+
 	var num = 5;
 	var count = 0;
 
@@ -81,7 +93,7 @@ function prototypeString() {
 
 	str = ' A PeTer Širka   Je krááály. ';
 
-	assert.ok(str.toSearch() === 'a peter sirka je kraaali', 'string.toSearch()');
+	assert.ok(str.toSearch() === 'a peter sirka je krali', 'string.toSearch()');
 
 	str = 'Great function.';
 
@@ -149,6 +161,18 @@ function prototypeString() {
 
 	str = '';
 	assert.ok(str.parseInt() === 0, 'string.parseInt(): ' + str);
+
+	str = 'Abc 334';
+	assert.ok(str.parseInt2() === 334, 'string.parseInt2(): ' + str);
+
+	str = 'Abc 334.33';
+	assert.ok(str.parseFloat2() === 334.33, 'string.parseFloat2(): ' + str);
+
+	str = '';
+	assert.ok(str.parseInt2() === 0, 'string.parseInt2(): ' + str);
+
+	str = '';
+	assert.ok(str.parseFloat2() === 0, 'string.parseFloat2(): ' + str);
 
 	str = '255.50';
 	assert.ok(str.parseFloat() === 255.5, 'string.parseFloat(): ' + str);

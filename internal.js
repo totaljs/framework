@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 'use strict';
@@ -45,10 +45,18 @@ const REG_5 = />\n\s{1,}</g;
 const REG_6 = /[\<\w\"\u0080-\u07ff\u0400-\u04FF]+\s{2,}[\w\u0080-\u07ff\u0400-\u04FF\>]+/;
 const REG_BLOCK_BEG = /\@\{block.*?\}/gi;
 const REG_BLOCK_END = /\@\{end\}/gi;
-const REG_SKIP_1 = /\(\'|\"/g;
-const REG_SKIP_2 = /\,(\s)?\w+/g;
-const HTTPVERBS = { 'GET': true, 'POST': true, 'OPTIONS': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'upload': true, 'HEAD': true, 'TRACE': true, 'PROPFIND': true };
+const REG_SKIP_1 = /\(\'|\"/;
+const REG_SKIP_2 = /\,(\s)?\w+/;
+const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name('];
+const REG_NOTRANSLATE = /@\{notranslate\}/gi;
+const REG_NOCOMPRESS = /@\{nocompress\s\w+}/gi;
+const REG_TAGREMOVE = /[^\>]\n\s{1,}$/;
+const REG_EMPTY = /\n|\r|\'|\\/;
+const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
+const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
+const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
+const WRITESTREAM = { flags: 'w' };
 
 global.$STRING = function(value) {
 	return value != null ? value.toString() : '';
@@ -56,14 +64,6 @@ global.$STRING = function(value) {
 
 global.$VIEWCACHE = [];
 
-/*
-	Internal function / Parse data from Request
-	@req {ServerRequest}
-	@contentType {String}
-	@maximumSize {Number}
-	@tmpDirectory {String}
-	@subscribe {Object}
-*/
 exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscribe) {
 
 	var boundary = contentType.split(';')[1];
@@ -76,16 +76,12 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	}
 
 	// For unexpected closing
-	req.once('close', function() {
-		if (!req.$upload)
-			req.clear();
-	});
+	req.once('close', () => !req.$upload && req.clear());
 
 	var parser = new MultipartParser();
 	var size = 0;
 	var stream;
 	var maximumSize = route.length;
-	var now = Date.now();
 	var tmp;
 	var close = 0;
 	var rm;
@@ -99,6 +95,8 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		if (req.ip[i] !== '.' && req.ip[i] !== ':')
 			ip += req.ip[i];
 	}
+
+	var path = framework_utils.combine(tmpDirectory, (framework.id ? 'i-' + framework.id + '_' : '') + 'mixed' + ip + '-' + Date.now() + '-');
 
 	// Why indexOf(.., 2)? Because performance
 	boundary = boundary.substring(boundary.indexOf('=', 2) + 1);
@@ -150,9 +148,9 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		}
 
 		tmp.filename = header[1];
-		tmp.path = framework_utils.combine(tmpDirectory, (framework.id ? 'i-' + framework.id + '_' : '') + 'u' + ip + '-' + now + '-' + framework_utils.random(100000) + '.upload');
+		tmp.path = path + framework_utils.random(100000) + '.upload';
 
-		stream = fs.createWriteStream(tmp.path, { flags: 'w' });
+		stream = fs.createWriteStream(tmp.path, WRITESTREAM);
 		stream.once('close', () => close--);
 		stream.once('error', (e) => close--);
 		close++;
@@ -171,10 +169,10 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		if (size >= maximumSize) {
 			req.buffer_exceeded = true;
 
-			if (!rm)
-				rm = [tmp.path];
-			else
+			if (rm)
 				rm.push(tmp.path);
+			else
+				rm = [tmp.path];
 
 			return;
 		}
@@ -234,9 +232,9 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 			return;
 
 		if (tmp.$is) {
-			delete tmp.$data;
-			delete tmp.$is;
-			delete tmp.$step;
+			tmp.$data = undefined;
+			tmp.$is = undefined;
+			tmp.$step = undefined;
 			framework.emit('upload-end', req, tmp);
 			return;
 		}
@@ -267,8 +265,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 				return;
 			}
 
-			if (rm)
-				framework.unlink(rm);
+			rm && framework.unlink(rm);
 			subscribe.doEnd();
 		};
 		cb();
@@ -282,6 +279,145 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	});
 };
 
+exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) {
+
+	var boundary = contentType.split(';')[1];
+	if (!boundary) {
+		framework._request_stats(false, false);
+		framework.stats.request.error400++;
+		req.res.writeHead(400);
+		req.res.end();
+		return;
+	}
+
+	// For unexpected closing
+	req.once('close', () => !req.$upload && req.clear());
+
+	var parser = new MultipartParser();
+	var size = 0;
+	var close = 0;
+	var stream;
+	var tmp;
+	var ip = '';
+	var counter = 0;
+
+	for (var i = 0, length = req.ip.length; i < length; i++) {
+		if (req.ip[i] !== '.' && req.ip[i] !== ':')
+			ip += req.ip[i];
+	}
+
+	var path = framework_utils.combine(tmpDirectory, (framework.id ? 'i-' + framework.id + '_' : '') + 'mixed' + ip + '-' + Date.now() + '-');
+
+	boundary = boundary.substring(boundary.indexOf('=', 2) + 1);
+	req.buffer_exceeded = false;
+	req.buffer_has = true;
+
+	parser.initWithBoundary(boundary);
+
+	parser.onPartBegin = function() {
+		// Temporary data
+		tmp = new HttpFile();
+		tmp.$step = 0;
+		tmp.$is = false;
+		tmp.length = 0;
+	};
+
+	parser.onHeaderValue = function(buffer, start, end) {
+
+		if (req.buffer_exceeded)
+			return;
+
+		var header = buffer.slice(start, end).toString(ENCODING);
+
+		if (tmp.$step === 1) {
+			var index = header.indexOf(';');
+			if (index === -1)
+				tmp.type = header.trim();
+			else
+				tmp.type = header.substring(0, index).trim();
+			tmp.$step = 2;
+			return;
+		}
+
+		if (tmp.$step !== 0)
+			return;
+
+		header = parse_multipart_header(header);
+
+		tmp.$step = 1;
+		tmp.$is = header[1] !== null;
+		tmp.name = header[0];
+
+		if (!tmp.$is) {
+			destroyStream(stream);
+			return;
+		}
+
+		tmp.filename = header[1];
+		tmp.path = path + framework_utils.random(100000) + '.upload';
+
+		stream = fs.createWriteStream(tmp.path, WRITESTREAM);
+		stream.once('close', () => close--);
+		stream.once('error', (e) => close--);
+		close++;
+	};
+
+	parser.onPartData = function(buffer, start, end) {
+
+		if (req.buffer_exceeded)
+			return;
+
+		var data = buffer.slice(start, end);
+		var length = data.length;
+
+		size += length;
+
+		if (!tmp.$is)
+			return;
+
+		if (tmp.length) {
+			stream.write(data);
+			tmp.length += length;
+			return;
+		}
+
+		stream.write(data);
+		tmp.length += length;
+		onFile(req, tmp, counter++);
+	};
+
+	parser.onPartEnd = function() {
+
+		if (stream) {
+			stream.end();
+			stream = null;
+		}
+
+		if (req.buffer_exceeded || !tmp.$is)
+			return;
+
+		tmp.$is = undefined;
+		tmp.$step = undefined;
+	};
+
+	parser.onEnd = function() {
+		var cb = function() {
+
+			if (close) {
+				setImmediate(cb);
+				return;
+			}
+
+			onFile(req, null);
+			framework.responseContent(req, req.res, 200, '', 'text/plain', false);
+		};
+		cb();
+	};
+
+	req.on('data', chunk => parser.write(chunk));
+	req.on('end', () => parser.end());
+};
+
 function parse_multipart_header(header) {
 
 	var arr = new Array(2);
@@ -293,10 +429,10 @@ function parse_multipart_header(header) {
 	if (beg !== -1)
 		tmp = header.substring(beg + length, header.indexOf('"', beg + length));
 
-	if (!tmp)
-		arr[0] = 'undefined_' + (Math.floor(Math.random() * 100000)).toString();
-	else
+	if (tmp)
 		arr[0] = tmp;
+	else
+		arr[0] = 'undefined_' + (Math.floor(Math.random() * 100000)).toString();
 
 	find = ' filename="';
 	length = find.length;
@@ -306,13 +442,10 @@ function parse_multipart_header(header) {
 	if (beg !== -1)
 		tmp = header.substring(beg + length, header.indexOf('"', beg + length));
 
-	if (beg !== -1)
-		tmp = header.substring(beg + length, header.indexOf('"', beg + length));
-
-	if (!tmp)
-		arr[1] = null;
-	else
+	if (tmp)
 		arr[1] = tmp;
+	else
+		arr[1] = null;
 
 	return arr;
 }
@@ -409,13 +542,6 @@ exports.routeSplitCreate = function(url, noLower) {
 	return arr;
 };
 
-/*
-	Internal function / Compare route with url
-	@route {String array}
-	@url {String}
-	@isSystem {Boolean}
-	return {Boolean}
-*/
 exports.routeCompare = function(url, route, isSystem, isAsterix) {
 
 	var length = url.length;
@@ -439,22 +565,13 @@ exports.routeCompare = function(url, route, isSystem, isAsterix) {
 		if (!isSystem && (!skip && value[0] === '{'))
 			continue;
 
-		if (url[i] !== value) {
-			if (!isSystem)
-				return isAsterix ? i >= lengthRoute : false;
-			return false;
-		}
+		if (url[i] !== value)
+			return isSystem ? false : isAsterix ? i >= lengthRoute : false;
 	}
 
 	return true;
 };
 
-/*
-	Internal function / Compare subdomain
-	@subdomain {String}
-	@arr {String array}
-	return {Boolean}
-*/
 exports.routeCompareSubdomain = function(subdomain, arr) {
 	if ((!subdomain && !arr) || (subdomain && !arr))
 		return true;
@@ -473,7 +590,7 @@ exports.routeCompareSubdomain = function(subdomain, arr) {
 	return false;
 };
 
-exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
+exports.routeCompareFlags = function(arr1, arr2, membertype) {
 
 	var hasVerb = false;
 	var a1 = arr1;
@@ -495,51 +612,54 @@ exports.routeCompareFlags = function(arr1, arr2, noLoggedUnlogged) {
 		if (c === '!' || c === '#' || c === '$' || c === '@' || c === '+') // ignore roles
 			continue;
 
-		if (noLoggedUnlogged && (value === AUTHORIZE || value === UNAUTHORIZE))
+		if (!membertype && (value === AUTHORIZE || value === UNAUTHORIZE))
 			continue;
 
 		var index = compare.indexOf(value);
-		var method = value.toUpperCase();
-
-		if (index === -1 && !HTTPVERBS[method])
+		if (index === -1 && !HTTPVERBS[value])
 			return value === AUTHORIZE || value === UNAUTHORIZE ? -1 : 0;
 
-		hasVerb = hasVerb || (index !== -1 && HTTPVERBS[method]);
+		hasVerb = hasVerb || (index !== -1 && HTTPVERBS[value]);
 	}
 
 	return hasVerb ? 1 : 0;
 };
 
-exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
+exports.routeCompareFlags2 = function(req, route, membertype) {
+
+	// membertype 0 -> not specified
+	// membertype 1 -> auth
+	// membertype 2 -> unauth
+
+	// 1. upload --> 0
+	// 2. doAuth --> 1 or 2
+
+	// if (membertype && ((membertype !== 1 && route.MEMBER === 1) || (membertype !== 2 && route.MEMBER === 2)))
+	if (membertype && route.MEMBER && membertype !== route.MEMBER)
+		return -1;
 
 	if (!route.isWEBSOCKET) {
-		if (route.isXHR && !req.xhr)
-			return 0;
-		if (route.isMOBILE && !req.mobile)
-			return 0;
-		if (route.isROBOT && !req.robot)
+		if ((route.isXHR && !req.xhr) || (route.isMOBILE && !req.mobile) || (route.isROBOT && !req.robot))
 			return 0;
 		var method = req.method;
 		if (route.method) {
 			if (route.method !== method)
 				return 0;
-		} else if (route.flags.indexOf(method.toLowerCase()) === -1)
+		} else if (!route.flags2[method.toLowerCase()])
 			return 0;
-		if (route.isREFERER && req.flags.indexOf('referer') === -1)
-			return 0;
-		if (!route.isMULTIPLE && route.isJSON && req.flags.indexOf('json') === -1)
+		if ((route.isREFERER && req.flags.indexOf('referer') === -1) || (!route.isMULTIPLE && route.isJSON && req.flags.indexOf('json') === -1))
 			return 0;
 	}
 
 	var isRole = false;
+	var hasRoles = false;
+
 	for (var i = 0, length = req.flags.length; i < length; i++) {
 
 		var flag = req.flags[i];
-
 		switch (flag) {
 			case 'json':
 				continue;
-
 			case 'xml':
 				if (route.isRAW || route.isXML)
 					continue;
@@ -586,9 +706,10 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 		}
 
 		var role = flag[0] === '@';
-		if (noLoggedUnlogged && route.isMEMBER) {
+
+		if (membertype !== 1 && route.MEMBER !== 1) {
 			var tmp = flag.substring(0, 3);
-			if ((!route.isGET && (tmp !== 'aut' && tmp !== 'una') && route.flags.indexOf(flag) === -1) || (route.isROLE && role && route.flags.indexOf(flag) === -1) || (route.isROLE && !role))
+			if ((!route.isGET && !role && !route.flags2[flag]) || (route.isROLE && role && !route.flags2[flag]) || (route.isROLE && !role))
 				return 0;
 			continue;
 		}
@@ -597,22 +718,21 @@ exports.routeCompareFlags2 = function(req, route, noLoggedUnlogged) {
 		if (role && isRole && !route.isROLE)
 			continue;
 
-		var index = route.flags.indexOf(flag);
-		if (index === -1) {
-			if (role && !route.isROLE) {
-				// the route doesn't contain any role but the request flags contain role
-			} else
-				return route.isMEMBER ? 0 : -1;
+		if (!role && !route.flags2[flag])
+			return 0;
+
+		if (role) {
+			if (route.flags2[flag])
+				isRole = true;
+			hasRoles = true;
 		}
-		if (role)
-			isRole = true;
 	}
 
-	return 1;
+	return (route.isROLE && hasRoles) ? isRole ? 1 : -1 : 1;
 };
 
 /**
- * Create arguments for controller action
+ * Create arguments for controller's action
  * @param {String Array} routeUrl
  * @param {Object} route
  * @return {String Array}
@@ -632,15 +752,6 @@ exports.routeParam = function(routeUrl, route) {
 	return arr;
 };
 
-/*
-	HttpFile class
-	@name {String}
-	@filename {String}
-	@path {String}
-	@length {Number}
-	@contentType {String}
-	return {HttpFile}
-*/
 function HttpFile() {
 	this.name;
 	this.filename;
@@ -651,11 +762,6 @@ function HttpFile() {
 	this.height = 0;
 }
 
-/*
-	Read file to byte array
-	@filename {String} :: new filename
-	return {HttpFile}
-*/
 HttpFile.prototype.copy = function(filename, callback) {
 
 	var self = this;
@@ -670,7 +776,6 @@ HttpFile.prototype.copy = function(filename, callback) {
 
 	reader.on('close', callback);
 	reader.pipe(writer);
-
 	return self;
 };
 
@@ -681,19 +786,10 @@ HttpFile.prototype.$$copy = function(filename) {
 	};
 };
 
-/*
-	Read file to buffer (SYNC)
-	return {Buffer}
-*/
 HttpFile.prototype.readSync = function() {
 	return fs.readFileSync(this.path);
 };
 
-/*
-	Read file to buffer (ASYNC)
-	@callback {Function} :: function(error, data);
-	return {HttpFile}
-*/
 HttpFile.prototype.read = function(callback) {
 	var self = this;
 	fs.readFile(self.path, callback);
@@ -707,28 +803,19 @@ HttpFile.prototype.$$read = function() {
 	};
 };
 
-/*
-	Create MD5 hash from a file
-	@callback {Function} :: function(error, hash);
-	return {HttpFile}
-*/
 HttpFile.prototype.md5 = function(callback) {
-
 	var self = this;
 	var md5 = crypto.createHash('md5');
 	var stream = fs.createReadStream(self.path);
-
-	stream.on('data', function(buffer) {
-		md5.update(buffer);
-	});
-
+	stream.on('data', (buffer) => md5.update(buffer));
 	stream.on('error', function(error) {
 		callback(error, null);
+		callback = null;
 	});
 
 	onFinished(stream, function() {
 		destroyStream(stream);
-		callback(null, md5.digest('hex'));
+		callback && callback(null, md5.digest('hex'));
 	});
 
 	return self;
@@ -741,64 +828,29 @@ HttpFile.prototype.$$md5 = function() {
 	};
 };
 
-/*
-	Get a stream
-	@options {Object} :: optional
-	return {Stream}
-*/
 HttpFile.prototype.stream = function(options) {
-	var self = this;
-	return fs.createReadStream(self.path, options);
+	return fs.createReadStream(this.path, options);
 };
 
-/*
-	Pipe a stream
-	@stream {Stream}
-	@options {Object} :: optional
-	return {Stream}
-*/
 HttpFile.prototype.pipe = function(stream, options) {
-	var self = this;
-	return fs.createReadStream(self.path, options).pipe(stream, options);
+	return fs.createReadStream(this.path, options).pipe(stream, options);
 };
 
-/*
-	return {Boolean}
-*/
 HttpFile.prototype.isImage = function() {
-	var self = this;
-	return self.type.indexOf('image/') !== -1;
+	return this.type.indexOf('image/') !== -1;
 };
 
-/*
-	return {Boolean}
-*/
 HttpFile.prototype.isVideo = function() {
-	var self = this;
-	return self.type.indexOf('video/') !== -1;
+	return this.type.indexOf('video/') !== -1;
 };
 
-/*
-	return {Boolean}
-*/
 HttpFile.prototype.isAudio = function() {
-	var self = this;
-	return self.type.indexOf('audio/') !== -1;
+	return this.type.indexOf('audio/') !== -1;
 };
 
-/*
-	@imageMagick {Boolean} :: optional - default false
-	return {Image} :: look at ./lib/image.js
-*/
-HttpFile.prototype.image = function(imageMagick) {
-
-	var im = imageMagick;
-
-	// Not a clean solution because the framework hasn't a direct dependence.
-	// This is hack :-)
+HttpFile.prototype.image = function(im) {
 	if (im === undefined)
 		im = framework.config['default-image-converter'] === 'im';
-
 	return framework_image.init(this.path, im, this.width, this.height);
 };
 
@@ -831,25 +883,17 @@ function compile_autovendor(css) {
 
 	if (isAuto)
 		css = autoprefixer(css);
+
 	return css.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(reg6, function(search, index, text) {
 		for (var i = index; i > 0; i--) {
-			if (text[i] === '\'' || text[i] === '"') {
-				if (text[i - 1] === ':')
-					return search;
-			}
+			if ((text[i] === '\'' || text[i] === '"') && (text[i - 1] === ':'))
+				return search;
 		}
 		return ',';
 	}).replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
 }
 
-/*
-	Auto vendor prefixer
-	@value {String} :: Raw CSS
-	return {String}
-*/
 function autoprefixer(value) {
-
-	var prefix = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 
 	value = autoprefixer_keyframes(value);
 
@@ -858,15 +902,14 @@ function autoprefixer(value) {
 	var property;
 
 	// properties
-	for (var i = 0; i < prefix.length; i++) {
+	for (var i = 0, length = AUTOVENDOR.length; i < length; i++) {
 
-		property = prefix[i];
+		property = AUTOVENDOR[i];
 		index = 0;
 
 		while (index !== -1) {
 
 			index = value.indexOf(property, index + 1);
-
 			if (index === -1)
 				continue;
 
@@ -888,16 +931,10 @@ function autoprefixer(value) {
 			var css = value.substring(index, end);
 			end = css.indexOf(':');
 
-			if (end === -1)
+			if (end === -1 || css.substring(0, end + 1).replace(/\s/g, '') !== property + ':')
 				continue;
 
-			if (css.substring(0, end + 1).replace(/\s/g, '') !== property + ':')
-				continue;
-
-			builder.push({
-				name: property,
-				property: css
-			});
+			builder.push({ name: property, property: css });
 		}
 	}
 
@@ -924,16 +961,13 @@ function autoprefixer(value) {
 		}
 
 		if (name === 'background' || name === 'background-image') {
-
 			if (property.indexOf('linear-gradient') === -1)
 				continue;
-
 			updated = plus.replacer('linear-', '-webkit-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-moz-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-o-linear-') + delimiter;
 			updated += plus.replacer('linear-', '-ms-linear-') + delimiter;
-			updated += plus; // + (plus[plus.length - 1] === ';' ? '' : delimiter);
-
+			updated += plus;
 			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
@@ -948,14 +982,11 @@ function autoprefixer(value) {
 		}
 
 		if (name === 'display') {
-
 			if (property.indexOf('box') === -1)
 				continue;
-
 			updated = plus + delimiter;
 			updated += plus.replacer('box', '-webkit-box') + delimiter;
 			updated += plus.replacer('box', '-moz-box');
-
 			value = value.replacer(property, '@[[' + output.length + ']]');
 			output.push(updated);
 			continue;
@@ -968,7 +999,6 @@ function autoprefixer(value) {
 			updated += delimiter + '-ms-' + plus;
 
 		updated += delimiter + '-o-' + plus;
-
 		value = value.replacer(property, '@[[' + output.length + ']]');
 		output.push(updated);
 	}
@@ -979,8 +1009,6 @@ function autoprefixer(value) {
 
 	output = null;
 	builder = null;
-	prefix = null;
-
 	return value;
 }
 
@@ -1060,6 +1088,113 @@ function autoprefixer_keyframes(value) {
 	return value;
 }
 
+function minify_javascript(data) {
+
+	var index = 0;
+	var output = [];
+	var isCS = false;
+	var isCI = false;
+	var alpha = /[0-9a-z]/i;
+	var chars = /[a-z]/i;
+	var white = /\W/;
+	var skip = { '$': true, '_': true };
+	var regexp = false;
+	var scope;
+	var prev;
+	var next;
+	var last;
+
+	while (true) {
+
+		var c = data[index];
+		var prev = data[index - 1];
+		var next = data[index + 1];
+
+		index++;
+
+		if (c === undefined)
+			break;
+
+		if (!scope) {
+
+			if (!regexp) {
+				if (c === '/' && next === '*') {
+					isCS = true;
+					continue;
+				} else if (c === '*' && next === '/') {
+					isCS = false;
+					index++;
+					continue;
+				}
+
+				if (isCS)
+					continue;
+
+				if (c === '/' && next === '/') {
+					isCI = true;
+					continue;
+				} else if (isCI && (c === '\n' || c === '\r')) {
+					isCI = false;
+					alpha.test(last) && output.push(' ');
+					last = '';
+					continue;
+				}
+
+				if (isCI)
+					continue;
+			}
+
+			if (c === '\t' || c === '\n' || c === '\r') {
+				if (!last || !alpha.test(last))
+					continue;
+				output.push(' ');
+				last = '';
+				continue;
+			}
+
+			if (!regexp && (c === ' ' && (white.test(prev) || white.test(next)))) {
+				if (!skip[prev] && !skip[next])
+					continue;
+			}
+
+			if (regexp) {
+				if ((last !== '\\' && c === '/') || (last === '\\' && c === '/' && output[output.length - 2] === '\\'))
+					regexp = false;
+			} else
+				regexp = (last === '=' || last === '(' || last === ':') && (c === '/');
+		}
+
+		if (scope && c === '\\') {
+			output.push(c);
+			output.push(next);
+			index++;
+			last = next;
+			continue;
+		}
+
+		if (!regexp && (c === '"' || c === '\'' || c === '`')) {
+
+			if (scope && scope !== c) {
+				output.push(c);
+				continue;
+			}
+
+			if (c === scope)
+				scope = 0;
+			else
+				scope = c;
+		}
+
+		if (c === '}' && last === ';')
+			output.pop();
+
+		output.push(c);
+		last = c;
+	}
+
+	return output.join('').trim();
+}
+
 exports.compile_css = function(value, filename) {
 
 	if (global.framework) {
@@ -1096,241 +1231,6 @@ exports.compile_css = function(value, filename) {
 	}
 };
 
-// *********************************************************************************
-// =================================================================================
-// JavaScript compressor
-// =================================================================================
-// *********************************************************************************
-
-// Copyright (c) 2002 Douglas Crockford  (www.crockford.com)
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-/*
-	Minify JS
-	@source {String}
-	return {String}
-*/
-function JavaScript(source) {
-
-	var EOF = -1;
-	var sb = [];
-	var theA; // int
-	var theB; // int
-	var theLookahead = EOF; // int
-	var index = 0;
-
-	function jsmin() {
-		theA = 13;
-		action(3);
-		while (theA !== EOF) {
-			switch (theA) {
-				case 32:
-					if (isAlphanum(theB))
-						action(1);
-					else
-						action(2);
-					break;
-				case 13:
-					switch (theB) {
-						case 123:
-						case 91:
-						case 40:
-						case 43:
-						case 45:
-							action(1);
-							break;
-						case 32:
-							action(3);
-							break;
-						default:
-							if (isAlphanum(theB))
-								action(1);
-							else
-								action(2);
-							break;
-					}
-					break;
-				default:
-					switch (theB) {
-						case 32:
-							if (isAlphanum(theA)) {
-								action(1);
-								break;
-							}
-							action(3);
-							break;
-
-						case 13:
-							switch (theA) {
-								case 125:
-								case 93:
-								case 41:
-								case 43:
-								case 45:
-								case 34:
-								case 92:
-									action(1);
-									break;
-								default:
-									if (isAlphanum(theA))
-										action(1);
-									else
-										action(3);
-									break;
-							}
-							break;
-						default:
-							action(1);
-							break;
-					}
-					break;
-			}
-		}
-	}
-
-	function action(d) {
-		if (d <= 1) {
-			put(theA);
-		}
-		if (d <= 2) {
-			theA = theB;
-			if (theA === 39 || theA === 34) {
-				for (;;) {
-					put(theA);
-					theA = get();
-					if (theA === theB) {
-						break;
-					}
-					if (theA <= 13) {
-						if (framework)
-							framework.error('Error: JSMIN unterminated string literal: ' + theA, 'JavaScript compressor');
-						return;
-					}
-					if (theA === 92) {
-						put(theA);
-						theA = get();
-					}
-				}
-			}
-		}
-		if (d <= 3) {
-			theB = next();
-			if (theB === 47 && (theA === 40 || theA === 44 || theA === 61 ||
-				theA === 91 || theA === 33 || theA === 58 ||
-				theA === 38 || theA === 124 || theA === 63 ||
-				theA === 123 || theA === 125 || theA === 59 ||
-				theA === 13)) {
-				put(theA);
-				put(theB);
-				for (;;) {
-					theA = get();
-					if (theA === 47) {
-						break;
-					} else if (theA === 92) {
-						put(theA);
-						theA = get();
-					} else if (theA <= 13) {
-						c = EOF;
-						return;
-					}
-					put(theA);
-				}
-				theB = next();
-			}
-		}
-	}
-
-	function next() {
-		var c = get();
-
-		if (c !== 47)
-			return c;
-
-		switch (peek()) {
-			case 47:
-				for (;;) {
-					c = get();
-					if (c <= 13)
-						return c;
-				}
-				break;
-			case 42:
-				get();
-				for (;;) {
-					switch (get()) {
-						case 42:
-							if (peek() === 47) {
-								get();
-								return 32;
-							}
-							break;
-						case EOF:
-							c = EOF;
-							return;
-					}
-				}
-				break;
-			default:
-				return c;
-		}
-
-		return c;
-	}
-
-	function peek() {
-		theLookahead = get();
-		return theLookahead;
-	}
-
-	function get() {
-		var c = theLookahead;
-		theLookahead = EOF;
-		if (c === EOF) {
-			c = source.charCodeAt(index++);
-			if (isNaN(c))
-				c = EOF;
-		}
-		if (c >= 32 || c === 13 || c === EOF) {
-			return c;
-		}
-		if (c === 10)
-			return 13;
-		return 32;
-	}
-
-	function put(c) {
-		if (c === 13 || c === 10)
-			sb.push(' ');
-		else
-			sb.push(String.fromCharCode(c));
-	}
-
-	function isAlphanum(c) {
-		return ((c >= 97 && c <= 122) || (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || c === 95 || c === 36 || c === 92 || c > 126);
-	}
-
-	jsmin();
-	return sb.join('');
-}
-
 exports.compile_javascript = function(source, filename) {
 
 	var isFramework = (typeof(global.framework) === 'object');
@@ -1351,7 +1251,7 @@ exports.compile_javascript = function(source, filename) {
 				return framework.onCompileScript(filename, source).trim();
 		}
 
-		return JavaScript(source).trim();
+		return minify_javascript(source);
 	} catch (ex) {
 
 		if (isFramework)
@@ -1712,7 +1612,7 @@ function view_parse_localization(content, language) {
 
 	var is = false;
 
-	content = content.replace(/@\{notranslate\}/gi, function(text) {
+	content = content.replace(REG_NOTRANSLATE, function(text) {
 		is = true;
 		return '';
 	}).trim();
@@ -1755,7 +1655,7 @@ function view_parse(content, minify, filename, controller) {
 	var nocompressJS = false;
 	var nocompressCSS = false;
 
-	content = content.replace(/@\{nocompress\s\w+}/gi, function(text) {
+	content = content.replace(REG_NOCOMPRESS, function(text) {
 
 		var index = text.lastIndexOf(' ');
 		if (index === -1)
@@ -1803,10 +1703,10 @@ function view_parse(content, minify, filename, controller) {
 
 	function escaper(value) {
 
-		var is = value.match(/[^\>]\n\s{1,}$/);
+		var is = REG_TAGREMOVE.test(value);
 
 		if (!nocompressHTML)
-			value = compressHTML(value, minify);
+			value = compressHTML(value, minify, true);
 		else if (!isFirst) {
 			isFirst = true;
 			value = value.replace(/^\s+/, '');
@@ -1818,18 +1718,14 @@ function view_parse(content, minify, filename, controller) {
 		if (!nocompressHTML && is)
 			value += ' ';
 
-		if (value.match(/\n|\r|\'|\\/)) {
-			txtindex = $VIEWCACHE.indexOf(value);
+		txtindex = $VIEWCACHE.indexOf(value);
 
-			if (txtindex === -1) {
-				txtindex = $VIEWCACHE.length;
-				$VIEWCACHE.push(value);
-			}
-
-			return '$VIEWCACHE[' + txtindex + ']';
+		if (txtindex === -1) {
+			txtindex = $VIEWCACHE.length;
+			$VIEWCACHE.push(value);
 		}
 
-		return DELIMITER + value + DELIMITER;
+		return '$VIEWCACHE[' + txtindex + ']';
 	}
 
 	if (!command)
@@ -1873,7 +1769,7 @@ function view_parse(content, minify, filename, controller) {
 		var cmd8 = cmd.substring(0, 8);
 		var cmd7 = cmd.substring(0, 7);
 
-		cmd = cmd.replace(/helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g, function(text) {
+		cmd = cmd.replace(REG_HELPERS, function(text) {
 			var index = text.indexOf('(');
 			if (index === -1)
 				return text;
@@ -1922,7 +1818,6 @@ function view_parse(content, minify, filename, controller) {
 				index = cmd.indexOf('[', newCommand.length + 10);
 
 			builder += '+(function(){var $source=' + cmd.substring(index).trim() + ';if(!($source instanceof Array))$source=framework_utils.ObjectToArray($source);if(!$source.length)return $EMPTY;var $length=$source.length;var $output=$EMPTY;var index=0;for(var i=0;i<$length;i++){index = i;var ' + newCommand + '=$source[i];$output+=$EMPTY';
-
 		} else if (cmd === 'end') {
 
 		  if (isFN && counter <= 0) {
@@ -1965,17 +1860,9 @@ function view_parse(content, minify, filename, controller) {
 			var can = false;
 
 			// Inline rendering is supported only in release mode
-			if (RELEASE) {
+			if (RELEASE && tmp.indexOf('+') === -1 && REG_SKIP_1.test(tmp) && !REG_SKIP_2.test(tmp)) {
 				for (var a = 0, al = RENDERNOW.length; a < al; a++) {
 					if (tmp.startsWith(RENDERNOW[a])) {
-
-						if (tmp.indexOf('+') !== -1)
-							continue;
-
-						// skips variables 1
-						if (!tmp.match(REG_SKIP_1) || tmp.match(REG_SKIP_2))
-							continue;
-
 						if (!a) {
 							var isMeta = tmp.indexOf('\'meta\'') !== -1;
 							var isHead = tmp.indexOf('\'head\'') !== -1;
@@ -1989,16 +1876,25 @@ function view_parse(content, minify, filename, controller) {
 								builder += '+self.$import(' + tmpimp + ')';
 							}
 						}
-
 						can = true;
 						break;
 					}
 				}
 			}
 
-			if (can) {
-				var fn = new Function('self', 'return ' + tmp);
-				builder += '+' + DELIMITER + fn(controller).replace(/\\/g, '\\\\') + DELIMITER;
+			if (can && !counter) {
+				try {
+					var fn = new Function('self', 'return ' + tmp);
+					builder += '+' + DELIMITER + fn(controller).replace(/\\/g, '\\\\').replace(/\'/g, '\\\'') + DELIMITER;
+				} catch (e) {
+
+					console.log('VIEW EXCEPTION --->', filename, e, tmp);
+					framework.errors.push({ error: e.stack, name: filename, url: null, date: new Date() });
+
+					if (view_parse_plus(builder))
+						builder += '+';
+					builder += wrapTryCatch(tmp, command.command, command.line);
+				}
 			} else if (tmp) {
 				if (view_parse_plus(builder))
 					builder += '+';
@@ -2024,7 +1920,7 @@ function view_parse(content, minify, filename, controller) {
 }
 
 function view_prepare_keywords(cmd) {
-	return cmd.replace(/\s+(sitemap_navigation\(|sitemap\()+/g, text => ' self.' + text.trim());
+	return cmd.replace(REG_SITEMAP, text => ' self.' + text.trim());
 }
 
 function wrapTryCatch(value, command, line) {
@@ -2064,7 +1960,6 @@ function view_prepare(command, dynamicCommand, functions) {
 		index = command.length;
 
 	var name = command.substring(0, index);
-
 	if (name === dynamicCommand)
 		return '$STRING(' + command + ').encode()';
 
@@ -2192,13 +2087,18 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'title':
 		case 'description':
 		case 'keywords':
+		case 'author':
 			if (command.indexOf('(') !== -1)
 				return 'self.$' + command;
 			return '(repository[\'$' + command + '\'] || \'\').toString().encode()';
 
+		case 'title2':
+			return 'self.$' + command;;
+
 		case '!title':
 		case '!description':
 		case '!keywords':
+		case '!author':
 			return '(repository[\'$' + command.substring(1) + '\'] || \'\')';
 
 		case 'head':
@@ -2227,6 +2127,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'css':
 		case 'favicon':
 		case 'import':
+		case 'absolute':
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
 
 		case 'index':
@@ -2270,6 +2171,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'prerender':
 		case 'prev':
 		case 'sitemap_change':
+		case 'sitemap_replace':
 			return 'self.$' + command;
 
 		case 'now':
@@ -2538,6 +2440,7 @@ function compressJS(html, index, filename) {
  * @return {String}
  */
 function compressCSS(html, index, filename) {
+
 	var strFrom = '<style type="text/css">';
 	var strTo = '</style>';
 
@@ -2604,6 +2507,8 @@ function nested(css, id, variable) {
 	var skipImport = '';
 	var isComment = false;
 	var comment = '';
+	var skipView = false;
+	var skipType;
 
 	while (true) {
 
@@ -2634,6 +2539,29 @@ function nested(css, id, variable) {
 
 		if (a === '$' && variable)
 			variable();
+
+		if (a === '@' && css[index] === '{')
+			skipView = true;
+
+		if (skipView) {
+			plus += a;
+			if (a === '}')
+				skipView = false;
+			continue;
+		}
+
+		if (a === '\'' || a === '"') {
+			if (a === skipType && css[index] !== '\\')
+				skipType = '';
+			else if (!skipType) {
+				skipType = a;
+			}
+		}
+
+		if (skipType) {
+			plus += a;
+			continue;
+		}
 
 		if (a === '@') {
 			begAt = index;
@@ -2795,7 +2723,7 @@ function make_nested(css, name) {
  * @param {Boolean} minify Can minify?
  * @return {String}
  */
-function compressHTML(html, minify) {
+function compressHTML(html, minify, isChunk) {
 
 	if (!html || !minify)
 		return html;
@@ -2821,8 +2749,12 @@ function compressHTML(html, minify) {
 		while (beg !== -1) {
 
 			end = html.indexOf(tagEnd, beg + 3);
-			if (end === -1)
-				break;
+			if (end === -1) {
+				if (isChunk)
+					end = html.length;
+				else
+					break;
+			}
 
 			var key = id + (indexer++);
 			var value = html.substring(beg, end + len);
@@ -2857,10 +2789,8 @@ function compressHTML(html, minify) {
 		}
 	}
 
-	// html = html.replace(/>\n\s+/g, '>').replace(/\w\n\s+</g, function(text) {
-
 	while (true) {
-		if (!html.match(REG_6))
+		if (!REG_6.test(html))
 			break;
 		html = html.replace(REG_6, function(text) {
 			return text.replace(/\s+/g, ' ');
@@ -2903,16 +2833,29 @@ function viewengine_read(path, language, controller) {
 	if (existsSync(filename))
 		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
+	var index;
+
 	if (isOut) {
+
+		if (controller.themeName) {
+			index = filename.lastIndexOf('/');
+			if (index !== -1) {
+				filename = filename.substring(0, filename.lastIndexOf('/', index - 1)) + filename.substring(index);
+				if (existsSync(filename))
+					return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
+			}
+		}
+
 		if (RELEASE)
-			framework.temporary.other[key]= null;
+			framework.temporary.other[key] = null;
+
 		return null;
 	}
 
-	var index = path.lastIndexOf('/');
+	index = path.lastIndexOf('/');
 	if (index === -1) {
 		if (RELEASE)
-			framework.temporary.other[key]= null;
+			framework.temporary.other[key] = null;
 		return null;
 	}
 
@@ -2922,7 +2865,7 @@ function viewengine_read(path, language, controller) {
 		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
 	if (RELEASE)
-		framework.temporary.other[key]= null;
+		framework.temporary.other[key] = null;
 
 	return null;
 };
@@ -2946,7 +2889,6 @@ function viewengine_load(name, filename, controller) {
 	var language = controller.language;
 
 	// Is dynamic content?
-	// console.log(filename);
 	if (!framework.temporary.other[name])
 		framework.temporary.other[name] = name.indexOf('@{') !== -1 || name.indexOf('<') !== -1;
 
@@ -2977,11 +2919,6 @@ function viewengine_load(name, filename, controller) {
 	return generator;
 }
 
-/*
-	Compile dynamic view
-	@content {String}
-	return {Object} :: return parsed HTML
-*/
 function viewengine_dynamic(content, language, controller) {
 	var key = language + '_' + content.hash();
 	var generator = framework.temporary.views[key] || null;
@@ -3181,11 +3118,10 @@ function listener(event, done) {
  * https://github.com/jshttp/on-finished
  */
 function onFinished(msg, listener) {
-	if (isFinished(msg) !== false) {
+	if (isFinished(msg) !== false)
 		setImmediate(listener, null, msg);
-		return msg;
-	}
-	attachListener(msg, listener);
+	else
+		attachListener(msg, listener);
 	return msg;
 }
 
@@ -3225,8 +3161,7 @@ function attachFinishedListener(msg, callback) {
 	msg.on('socket', onSocket)
 
 	// node.js 0.8 patch
-	if (!msg.socket)
-		patchAssignSocket(msg, onSocket);
+	!msg.socket && patchAssignSocket(msg, onSocket);
 }
 
 function attachListener(msg, listener) {
@@ -3268,7 +3203,6 @@ function patchAssignSocket(res, callback) {
 }
 
 function isFinished(msg) {
-
 	var socket = msg.socket;
 
 	// OutgoingMessage
@@ -3278,9 +3212,6 @@ function isFinished(msg) {
 	// IncomingMessage
 	if (typeof msg.complete === 'boolean')
 		return Boolean(msg.upgrade || !socket || !socket.readable || (msg.complete && !msg.readable))
-
-	// don't know
-	return;
 }
 
 exports.encodeUnicodeURL = function(url) {

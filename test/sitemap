@@ -2,3 +2,5 @@ a           : A  --> /
 b           : B  --> /b/ --> a
 c           : C  --> /c/ --> b
 d           : D  --> /d/ --> c
+
+route       : ROUTE --> @(/abcdefgh/) --> a

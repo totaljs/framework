@@ -5,32 +5,39 @@
 Node.js web framework
 =====================
 
-__Total.js__ is the web application framework for creating rich web sites and web services. The framework doesn't have any dependencies and it's written from the scratch. Please support the framework on social networks.
+__Total.js framework__ is a server-side framework for Node.js written in `pure` JavaScript similar to PHP's Laravel or Python's Django or ASP.NET MVC.
+
+```bash
+$ npm install -g total.js
+```
 
 ---
 
-[![Support](https://www.totaljs.com/img/button-support.png)](https://www.totaljs.com/support/) [![Donate](https://www.totaljs.com/img/button-donate.png)](https://www.totaljs.com/#make-a-donation)
+[![Support](https://www.totaljs.com/img/button-support.png?v=2)](https://www.totaljs.com/support/)
 
-- [__NEW__: Total.js Simple Eshop + CMS for free](http://www.totaljs.com/eshop/)
-- [__NEW__: Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
-- [__NEW__: Total.js HelpDesk](https://www.totaljs.com/helpdesk/)
-- [__NEW__: Download +89 client-side components (jComponent) for free](https://www.componentator.com)
-- [Total.js OpenPlatform](https://www.totaljs.com/openplatform/) is a simple enterprise ready platform
-- [Total.js AppMonitor](https://www.totaljs.com/monitor/) for tracking total.js applications
-- [Total.js modules and packages](https://github.com/totaljs/modules)
-- [Total.js models](https://github.com/totaljs/models)
+- [__NEW__: Total.js Dashboard](https://www.totaljs.com/superadmin/)
+- [__NEW__: Total.js BlogEngine](https://www.totaljs.com/blogengine/)
+- [__NEW__: NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
+- [Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
+- [Total.js Eshop](http://www.totaljs.com/eshop/)
+- [Total.js CMS](http://www.totaljs.com/cms/)
+- [Total.js HelpDesk](https://www.totaljs.com/helpdesk/)
+- [Total.js OpenPlatform](https://www.totaljs.com/openplatform/)
+- [Total.js AppMonitor](https://www.totaljs.com/monitor/)
+- [Total.js AppDesigner](https://www.totaljs.com/designer/)
+- [Total.js modules and packages](https://modules.totaljs.com)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
+- [Download +89 client-side components (jComponent) for free](https://www.componentator.com)
 
-```
-$ npm install total.js
-```
+---
 
 - [Homepage](http://www.totaljs.com)
-- [__Make a donation__ via PayPal](http://www.totaljs.com/#make-a-donation)
 - [__Get Started__](http://www.totaljs.com/get-started/)
 - [__Documentation__](http://docs.totaljs.com)
+- [__HelpDesk with professional support__](https://helpdesk.totaljs.com)
+- [__Blogs__](https://blogs.totaljs.com)
+- [__Membership__](https://my.totaljs.com)
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
-- [Discussion forum](https://groups.google.com/forum/#!forum/totaljs)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
 
 &nbsp;
@@ -38,13 +45,12 @@ $ npm install total.js
 | Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
 |------|------|------|------|------|
 | [![Casperise](https://www.totaljs.com/img/logo-casperise.png)](https://www.casperise.com/) | [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) |
-| | | [![Weida Web](https://www.totaljs.com/img/logo-weidaweb.png)](https://www.weidaweb.com/) |
+| [![JRB System](https://www.totaljs.com/img/logo-jrbsystem.png)](http://www.jrbsystem.com/) | [![Weida Web](https://www.totaljs.com/img/logo-weidaweb.png)](https://www.weidaweb.com/) | |
 
 ## Social networks
 
 Please support the framework on social networks.
 
-- [Blogs](https://bufferwall.com/explore/?tag=total.js)
 - [Follow Total.js on Gitter](https://gitter.im/totaljs/framework)
 - [Follow Total.js on GitHub](https://github.com/totaljs/framework)
 - [Follow Total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
@@ -85,6 +91,7 @@ service you're supporting the framework and its products..
 | Supports modules and packages |
 | Built-in image processing engine via ImageMagick or GraphicsMagick |
 | Supports WebSockets (__RFC 6455__) and Server-Sent events |
+| __NEW__ Supports `multipart/x-mixed-replace` (IP camera streaming) uploading and sending |
 | Supports RESTful routing |
 | Supports middleware (like express.js) with custom options |
 | Supports unit testing |
@@ -110,6 +117,7 @@ service you're supporting the framework and its products..
 | Contributor | Type | E-mail |
 |-------------|------|--------|
 | [Peter Širka](https://github.com/JozefGula) | BDFL + contributor + support | <petersirka@gmail.com> |
+| [Martin Smola](https://github.com/molda) | contributor + support | <smola.martin@gmail.com> |
 | [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
@@ -121,7 +129,6 @@ service you're supporting the framework and its products..
 | [Сковорода Никита Андреевич](https://github.com/ChALkeR) | contributor | <chalkerx@gmail.com> |
 | [Андрей Владимирович](https://github.com/anddesigner) | contributor | <and.designer93@gmail.com> |
 | [Guy Fraser](https://github.com/aubergine10) | contributor | <guy.fraser1@gmail.com> |
-| [Martin Smola](https://github.com/molda) | contributor | <smola.martin@gmail.com> |
 | [Peter Štolc](https://github.com/fokinko) | contributor | <stolcp@gmail.com> |
 
 ## Useful modules

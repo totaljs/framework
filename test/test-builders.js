@@ -404,6 +404,33 @@ function test_Schema() {
 		assert.ok(res.url ? false : true, 'SchemaBuilder: URL must be empty');
 		assert.ok(res.uid ? false : true, 'SchemaBuilder: UID must be empty');
 	});
+
+	NEWSCHEMA('Hooks').make(function(schema) {
+
+		schema.addHook('1', function(error, model, options, callback) {
+			model.counter = 1;
+			callback();
+		});
+
+		schema.addHook('1', function(error, model, options, callback) {
+			model.counter++;
+			callback();
+		});
+
+		schema.addHook('1', function(error, model, options, callback) {
+			model.counter++;
+			callback();
+		});
+
+		schema.addHook('1', function(error, model, options, callback) {
+			model.counter++;
+			callback();
+		});
+
+		schema.hook('1', null, null, function(err, response) {
+			assert.ok(response.counter === 4, 'Problem with hooks');
+		});
+	});
 }
 
 function test_ErrorBuilder() {

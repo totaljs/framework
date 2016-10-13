@@ -1,3 +1,53 @@
+======= 2.1.0
+
+- added: `F.sitemap_add(string)` for adding entries to sitemap by Martin Smola <https://github.com/molda>
+- added: SchemaBuilderEntity `schema.addHook(name, fn(error, model, options, callback))`
+- added: SchemaBuilderEntity `schema.hook(name, model, [helper], callback)`
+- added: `controller.$hook(name, [helper], callback)`
+- added: `String.parseInt2()` the method searchs number and converts it to integer
+- added: `String.parseFloat2()` the method searchs number and converts it to float
+- added: `@{title2('this content will be added to end of current title')}`
+- added: `String.parseInt2()` the method searchs number and converts it to integer
+- added: `String.parseFloat2()` the method searchs number and converts it to float
+- added: `@{absolute(url, [hostname])}` for importing links with absolute URL by George Okojie Davis <https://github.com/binarygeotech>
+- added: `sitemap_replace(name, title, url)` can change sitemap `title` and `url` onetime
+- added: new JavaScript minificator algorithm because of Douglas Crockford "Good, not Evil"
+- added: NoSQL supports counter for e.g. views or downloads, etc., more in documentation
+- added: new routing mechanism `F.mmr(url, action)` for streaming `multipart/x-mixed-replace` types (client-->server)
+- added: `controller.mmr(filename, [stream], callback)` for streaming `multipart/x-mixed-replace` (server-->client)
+- added: `setTimeout2(key, fn, timeout)` resets old and creates a new `setTimeout` according to the `key`
+- added: `clearTimeou2(key)` resets existing timeout
+- added: `dnscache` into the `controller.pipe()` and `F.responsePipe()`
+- added: `CREATE([group], name)` the methods create an empty object according to the schema
+- added: `F.group(flags, fn)` for extending routes (web, websocket, file) flags
+- added: `Number.prototype.filesize([decimals], [type])` formatting file sizes
+- added: `binary` importing CSV `-csv`
+- added: `controller.autodestroy([callback])` only for websocket
+
+- updated: `framework.view()`, `controller.view()` and `@{view()}` supports `=theme/viewname`
+- updated: sitemap routing supports localization
+- updated: `F.cache.fn(name, fnCache, fnCallback(value, isFromCache))` - added argument `isFromCache`
+- updated: `F.use(name, url, types, [first])` - `first` (default: `false`) argument adds a new middleware to the beginning of a route middleware
+- updated: `String.toSearch()` - removes duplicates characters + better performance
+- updated: `String.decode()` - improves decoding by Tom Spaccialbelli <https://github.com/harry-stot>
+
+- fixed: (critical) NoSQL views
+- fixed: (critical) view compilation in release mode (problem with just-in-time rendering)
+- fixed: (critical) `F.eval()`
+- fixed: (critical) parsing Date instance as Date instance in SchemaBuilder
+- fixed: `F.resize()` additional path `~`
+- fixed: `controller.memorize()` threw a timeout when the action contains some error in the memorize scope
+- fixed: `F.sitemap()` fixed problem with `me` argument
+- fixed: SchemaBuilderEntity preparing and validation
+- fixed: QuickSort algorithm (problem with dates)
+- fixed: `TRY()` scope
+- fixed: problem with resources in views
+- fixed: CSS compressor
+- fixed: CORS
+- fixed: problem with SUCCESS() and async schemas
+- fixed: killing the process
+- fixed: HTML compressor in views
+
 ======= 2.0.1
 
 - added: binary supports webserver `totaljs 8000` starts webserver on 8000 port and the current directory will be a public directory
@@ -7,6 +57,7 @@
 - added: `SchemaBuilderEntity.$index(index)` can changed `obj.$async()` index (the index can be string e.g. `+1` or `-1`)
 - added: `SchemaBuilderEntity.$callback(fn)` can changed `obj.$async()` callback
 - added: `SchemaBuilderEntity.$repository(name, [value])` can get / set temporary value
+
 - added: `SchemaBuilderEntity.$output()` sets the current `callback(value)` as output/result for `obj.$async(function(err, output))`
 
 - updated: when the config contains `directory-temp` with empty value then the framework uses system temporary directory

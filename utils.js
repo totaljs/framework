@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 'use strict';
@@ -53,8 +53,14 @@ const regexpDiacritics = /[^\u0000-\u007e]/g;
 const regexpUID = /^\d{14,}[a-z]{3}[01]{1}$/;
 const regexpZIP = /^\d{5}(?:[-\s]\d{4})?$/;
 const regexpXML = /\w+\=\".*?\"/g;
-const regexpDECODE = /&gt;|\&lt;|\&quot;|&apos;|&amp;/g;
+const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
+const regexpINTEGER = /[\-0-9]+/g;
+const regexpFLOAT = /[\-0-9\.\,]+/g;
+const regexpALPHA = /^[A-Za-z0-9]+$/;
+const regexpSEARCH = /[^a-zA-Zá-žÁ-Ž\d\s:]/g;
+const regexpDECRYPT = /\-|\_/g;
+const regexpENCRYPT = /\/|\+/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -64,6 +70,7 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 const DIACRITICSMAP = {};
 const STREAM_READONLY = { flags: 'r' };
 const STREAM_END = { end: false };
+const ALPHA_INDEX = { '&lt': '<', '&gt': '>', '&quot': '"', '&apos': '\'', '&amp': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': '\'', '&amp;': '&' };
 const EMPTYARRAY = [];
 
 Object.freeze(EMPTYARRAY);
@@ -670,7 +677,7 @@ function request_response(res, uri, options) {
 	res.on('end', function() {
 		var self = this;
 		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
-		delete self._buffer;
+		self._buffer = undefined;
 
 		if (options.evt) {
 			options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
@@ -915,8 +922,7 @@ function download_response(res, uri, options) {
 	if (res.statusCode === 301 || res.statusCode === 302) {
 
 		if (options.redirect > 3) {
-			if (options.callback)
-				options.callback(new Error('Too many redirects.'));
+			options.callback && options.callback(new Error('Too many redirects.'));
 			res.req.removeAllListeners();
 			res.req = null;
 			res.removeAllListeners();
@@ -930,7 +936,6 @@ function download_response(res, uri, options) {
 		tmp.headers = uri.headers;
 		tmp.agent = false;
 		tmp.method = uri.method;
-
 		res.req.removeAllListeners();
 		res.req = null;
 
@@ -960,16 +965,21 @@ function download_response(res, uri, options) {
 	res.on('end', function() {
 		var self = this;
 		var str = self._buffer ? self._buffer.toString(options.encoding) : '';
-		delete self._buffer;
-		options.evt && options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
-		options.evt.removeAllListeners();
-		options.evt = null;
+
+		self._buffer = undefined;
+
+		if (options.evt) {
+			options.evt.emit('end', str, self.statusCode, self.headers, uri.host);
+			options.evt.removeAllListeners();
+			options.evt = null;
+		}
+
 		res.req && res.req.removeAllListeners();
 		res.removeAllListeners();
 	});
 
 	res.resume();
-	options.callback(null, res);
+	options.callback && options.callback(null, res);
 }
 
 exports.$$download = function(url, flags, data, cookies, headers, encoding, timeout) {
@@ -1203,7 +1213,6 @@ exports.clone = function(obj, skip, skipFunctions) {
 		return obj;
 
 	var type = typeof(obj);
-
 	if (type !== 'object' || obj instanceof Date)
 		return obj;
 
@@ -1262,10 +1271,7 @@ exports.copy = function(source, target) {
 	if (target === undefined)
 		return exports.extend({}, source, true);
 
-	if (!target || !source)
-		return target;
-
-	if (typeof(target) !== 'object' || typeof(source) !== 'object')
+	if (!target || !source || typeof(target) !== 'object' || typeof(source) !== 'object')
 		return target;
 
 	var keys = Object.keys(source);
@@ -1273,9 +1279,8 @@ exports.copy = function(source, target) {
 
 	while (i--) {
 		var key = keys[i];
-		if (target[key] === undefined)
-			continue;
-		target[key] = exports.clone(source[key]);
+		if (target[key] !== undefined)
+			target[key] = exports.clone(source[key]);
 	}
 
 	return target;
@@ -1296,12 +1301,9 @@ exports.reduce = function(source, prop, reverse) {
 	}
 
 	if (source instanceof Array) {
-
 		var arr = [];
-
 		for (var i = 0, length = source.length; i < length; i++)
 			arr.push(exports.reduce(source[i], prop, reverse));
-
 		return arr;
 	}
 
@@ -1655,12 +1657,6 @@ exports.etag = function(text, version) {
 	return sum.toString() + (version ? ':' + version : '');
 };
 
-/*
-	Add @delimiter to end of @path
-	@path {String} :: filename
-	@delimiter {String} :: optional, default /
-	return {String}
-*/
 exports.path = function(path, delimiter) {
 
 	if (!path)
@@ -1699,17 +1695,9 @@ exports.join = function() {
  * @return {String}
  */
 exports.$normalize = function(path) {
-	if (isWindows)
-		return path.replace(regexpPATH, '/');
-	return path;
+	return isWindows ? path.replace(regexpPATH, '/') : path;
 };
 
-/*
-	Get random number
-	@max {Number}
-	@min {Number}
-	return {Number}
-*/
 exports.random = function(max, min) {
 	max = (max || 100000);
 	min = (min || 0);
@@ -1720,11 +1708,6 @@ function rnd() {
 	return Math.floor(Math.random() * 65536).toString(36);
 }
 
-/*
-	Create unique identifier
-	@max {Number} :: optional, default 40
-	return {String}
-*/
 exports.GUID = function(max) {
 	max = max || 40;
 	var str = '';
@@ -2036,7 +2019,7 @@ exports.parseXML = function(xml) {
 			continue;
 
 		var match = el.match(regexpXML);
-		if (match === null)
+		if (!match)
 			continue;
 
 		var attr = {};
@@ -2183,15 +2166,11 @@ exports.ls = function(path, callback, filter) {
 	if (typeof(filter) === 'string') {
 		filter = filter.toLowerCase();
 		filter.onFilter = function(filename, is) {
-			if (is)
-				return true;
-			return filename.toLowerCase().indexOf(filter);
+			return is ? true : filename.toLowerCase().indexOf(filter);
 		};
 	} else if (exports.isRegExp(filter)) {
 		filter.onFilter = function(filename, is) {
-			if (is)
-				return true;
-			return filename.match(filter) ? true : false;
+			return is ? true : filter.test(filename);
 		};
 	} else
 		filelist.onFilter = filter || null;
@@ -2213,15 +2192,11 @@ exports.ls2 = function(path, callback, filter) {
 	if (typeof(filter) === 'string') {
 		filter = filter.toLowerCase();
 		filter.onFilter = function(filename, is) {
-			if (is)
-				return true;
-			return filename.toLowerCase().indexOf(filter);
+			return is ? true : filename.toLowerCase().indexOf(filter);
 		};
 	} else if (exports.isRegExp(filter)) {
 		filter.onFilter = function(filename, is) {
-			if (is)
-				return true;
-			return filename.match(filter) ? true : false;
+			return is ? true : filter.test(filename);
 		};
 	} else
 		filelist.onFilter = filter || null;
@@ -2229,11 +2204,6 @@ exports.ls2 = function(path, callback, filter) {
 	filelist.walk(path);
 };
 
-/*
-	@type {String}
-	@value {Number}
-	return {Date}
-*/
 Date.prototype.add = function(type, value) {
 
 	var self = this;
@@ -2373,19 +2343,16 @@ Date.prototype.extend = function(date) {
 
 			arr = m.split(':');
 			tmp = +arr[0];
-			if (!isNaN(tmp))
-				dt.setHours(tmp);
+			!isNaN(tmp) && dt.setHours(tmp);
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				if (!isNaN(tmp))
-					dt.setMinutes(tmp);
+				!isNaN(tmp) && dt.setMinutes(tmp);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				if (!isNaN(tmp))
-					dt.setSeconds(tmp);
+				!isNaN(tmp) && dt.setSeconds(tmp);
 			}
 
 			continue;
@@ -2399,14 +2366,12 @@ Date.prototype.extend = function(date) {
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				if (!isNaN(tmp))
-					dt.setMonth(tmp - 1);
+				!isNaN(tmp) && dt.setMonth(tmp - 1);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				if (!isNaN(tmp))
-					dt.setDate(tmp);
+				!isNaN(tmp) && dt.setDate(tmp);
 			}
 
 			continue;
@@ -2420,14 +2385,12 @@ Date.prototype.extend = function(date) {
 
 			if (arr[1]) {
 				tmp = +arr[1];
-				if (!isNaN(tmp))
-					dt.setMonth(tmp - 1);
+				!isNaN(tmp) && dt.setMonth(tmp - 1);
 			}
 
 			if (arr[2]) {
 				tmp = +arr[2];
-				if (!isNaN(tmp))
-					dt.setFullYear(tmp);
+				!isNaN(tmp) && dt.setFullYear(tmp);
 			}
 
 			continue;
@@ -2569,8 +2532,7 @@ if (!String.prototype.trim) {
 
 if (!String.prototype.replaceAt) {
 	String.prototype.replaceAt = function(index, character) {
-		var self = this;
-		return self.substr(0, index) + character + self.substr(index + character.length);
+		return this.substr(0, index) + character + this.substr(index + character.length);
 	};
 }
 
@@ -2616,7 +2578,7 @@ String.prototype.endsWith = function(text, ignoreCase) {
 		return tmp.length === length && tmp.toLowerCase() === text.toLowerCase();
 	}
 
-	if (ignoreCase > 0)
+	if (ignoreCase)
 		tmp = self.substr((self.length - ignoreCase) - length, length);
 	else
 		tmp = self.substring(self.length - length);
@@ -2670,21 +2632,13 @@ function string_hash(s) {
 	return hash;
 }
 
-/*
-	Count text in string
-	@text {String}
-	return {Number}
-*/
 String.prototype.count = function(text) {
 	var index = 0;
 	var count = 0;
 	do {
-
 		index = this.indexOf(text, index + text.length);
-
 		if (index > 0)
 			count++;
-
 	} while (index > 0);
 	return count;
 };
@@ -2833,22 +2787,13 @@ String.prototype.parseDateExpiration = function() {
 	return dt;
 };
 
-/*
-	Contain string a array values?
-	@value {String or String Array}
-	@mustAll {Boolean} :: optional (default false), String must contains all items in String array
-	return {Boolean}
-*/
 String.prototype.contains = function(value, mustAll) {
-
 	var str = this;
 
 	if (typeof(value) === 'string')
 		return str.indexOf(value, typeof(mustAll) === 'number' ? mustAll : 0) !== -1;
 
-	var length = value.length;
-
-	for (var i = 0; i < length; i++) {
+	for (var i = 0, length = value.length; i < length; i++) {
 		var exists = str.indexOf(value[i]) !== -1;
 		if (mustAll) {
 			if (!exists)
@@ -2991,16 +2936,11 @@ String.prototype.encode = function() {
 };
 
 String.prototype.decode = function() {
-	return this.replace(regexpDECODE, function(text) {
-		switch (text) {
-			case '&gt;': return '>';
-			case '&lt;': return '<';
-			case '&quot;': return '"';
-			case '&apos;': return '\'';
-			case '&amp;': return '&';
-			default:
-				return text;
-		}
+	return this.replace(regexpDECODE, function(s) {
+		if (s.charAt(1) !== '#')
+			return ALPHA_INDEX[s] || s;
+		var code = s[2].toLowerCase() === 'x' ? parseInt(s.substr(3), 16) : parseInt(s.substr(2));
+		return !code || code < -32768 || code > 65535 ? '' : String.fromCharCode(code);
 	});
 };
 
@@ -3012,11 +2952,6 @@ String.prototype.urlDecode = function() {
 	return decodeURIComponent(this);
 };
 
-/*
-	Simple templating :: Hello {name}, your score: {score}, your price: {price | ### ###.##}, date: {date | dd.MM.yyyy}
-	@obj {Object}
-	return {String}
-*/
 String.prototype.params = function(obj) {
 	var formatted = this;
 
@@ -3088,12 +3023,6 @@ String.prototype.params = function(obj) {
 	});
 };
 
-/*
-	Set max length of string
-	@length {Number}
-	@chars {String} :: optional, default ...
-	return {String}
-*/
 String.prototype.max = function(length, chars) {
 	var str = this;
 	if (typeof(chars) !== 'string')
@@ -3155,10 +3084,7 @@ String.prototype.isPhone = function() {
 };
 
 String.prototype.isUID = function() {
-	var str = this;
-	if (str.length < 18)
-		return false;
-	return regexpUID.test(str);
+	return this.length < 18 ? false : regexpUID.test(this);
 };
 
 String.prototype.parseInt = function(def) {
@@ -3167,6 +3093,20 @@ String.prototype.parseInt = function(def) {
 	if (isNaN(num))
 		return def || 0;
 	return num;
+};
+
+String.prototype.parseInt2 = function(def) {
+	var num = this.match(regexpINTEGER);
+	if (num)
+		return +num;
+	return def || 0;
+};
+
+String.prototype.parseFloat2 = function(def) {
+	var num = this.match(regexpFLOAT);
+	if (num)
+		return +num.toString().replace(/\,/g, '.');
+	return def || 0;
 };
 
 String.prototype.parseBool = String.prototype.parseBoolean = function() {
@@ -3212,11 +3152,7 @@ String.prototype.toUnicode = function() {
 };
 
 String.prototype.fromUnicode = function() {
-
-	var str = this.replace(/\\u([\d\w]{4})/gi, function (match, v) {
-		return String.fromCharCode(parseInt(v, 16));
-	});
-
+	var str = this.replace(/\\u([\d\w]{4})/gi, (match, v) => String.fromCharCode(parseInt(v, 16)));
 	return unescape(str);
 };
 
@@ -3245,18 +3181,26 @@ String.prototype.md5 = function(salt) {
 };
 
 String.prototype.toSearch = function() {
-	return this.replace(/[^a-zA-Zá-žÁ-Ž\d\s:]/g, '').trim().replace(/\s{2,}/g, ' ').toLowerCase().removeDiacritics().replace(/y/g, 'i');
+	var str = this.replace(regexpSEARCH, '').trim().toLowerCase().removeDiacritics();
+	var buf = [];
+	var prev = '';
+	for (var i = 0, length = str.length; i < length; i++) {
+		var c = str[i];
+		if (c === 'y')
+			c = 'i';
+		if (c === prev)
+			continue;
+		prev = c;
+		buf.push(c);
+	}
+
+	return buf.join('');
 };
 
 String.prototype.toKeywords = String.prototype.keywords = function(forSearch, alternative, max_count, max_length, min_length) {
 	return exports.keywords(this, forSearch, alternative, max_count, max_length, min_length);
 };
 
-/*
-	@key {String}
-	@isUnique {Boolean}
-	return {String}
-*/
 String.prototype.encrypt = function(key, isUnique) {
 	var str = '0' + this;
 	var data_count = str.length;
@@ -3274,7 +3218,7 @@ String.prototype.encrypt = function(key, isUnique) {
 		values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
 	}
 
-	var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(/\//g, '-').replace(/\+/g, '_');
+	var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(regexpENCRYPT, text => text === '+' ? '_' : '-');
 	index = hash.indexOf('=');
 	if (index > 0)
 		return hash.substring(0, index);
@@ -3282,16 +3226,12 @@ String.prototype.encrypt = function(key, isUnique) {
 	return hash;
 };
 
-/*
-	@key {String}
-	return {String}
-*/
 String.prototype.decrypt = function(key) {
 
-	var values = this.replace(/\-/g, '/').replace(/\_/g, '+');
+	var values = this.replace(regexpDECRYPT, text => text === '-' ? '/' : '+');
 	var mod = values.length % 4;
 
-	if (mod > 0) {
+	if (mod) {
 		for (var i = 0; i < mod; i++)
 			values += '=';
 	}
@@ -3321,19 +3261,12 @@ String.prototype.decrypt = function(key) {
 	}
 
 	var val = decrypt_data.join('');
-
 	if (counter !== val.length + key.length)
 		return null;
 
 	return val;
 };
 
-/*
-	Convert value from base64 and save to file
-	@filename {String}
-	@callback {Function} :: optional
-	return {String}
-*/
 String.prototype.base64ToFile = function(filename, callback) {
 	var self = this;
 
@@ -3343,11 +3276,7 @@ String.prototype.base64ToFile = function(filename, callback) {
 	else
 		index++;
 
-	if (callback)
-		fs.writeFile(filename, self.substring(index), 'base64', callback);
-	else
-		fs.writeFile(filename, self.substring(index), 'base64', exports.noop);
-
+	fs.writeFile(filename, self.substring(index), 'base64', callback || exports.noop);
 	return this;
 };
 
@@ -3363,30 +3292,16 @@ String.prototype.base64ToBuffer = function() {
 	return new Buffer(self.substring(index), 'base64');
 };
 
-/*
-	Get content type from base64
-	return {String}
-*/
 String.prototype.base64ContentType = function() {
 	var self = this;
-
 	var index = self.indexOf(';');
-	if (index === -1)
-		return '';
-
-	return self.substring(5, index);
+	return index === -1 ? '' : self.substring(5, index);
 };
 
 String.prototype.removeDiacritics = function() {
 	return exports.removeDiacritics(this);
 };
 
-/*
-	Indent
-	@max {Number}
-	@c {String} : optional, default SPACE
-	return {String}
-*/
 String.prototype.indent = function(max, c) {
 	var plus = '';
 	if (c === undefined)
@@ -3396,11 +3311,6 @@ String.prototype.indent = function(max, c) {
 	return plus + this;
 };
 
-/*
-	isNumber?
-	@isDecimal {Boolean} :: optional, default false
-	return {Boolean}
-*/
 String.prototype.isNumber = function(isDecimal) {
 
 	var self = this;
@@ -3428,11 +3338,6 @@ String.prototype.isNumber = function(isDecimal) {
 	return true;
 };
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
 if (!String.prototype.padLeft) {
 	String.prototype.padLeft = function(max, c) {
 		var self = this;
@@ -3447,11 +3352,7 @@ if (!String.prototype.padLeft) {
 	};
 }
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
+
 if (!String.prototype.padRight) {
 	String.prototype.padRight = function(max, c) {
 		var self = this;
@@ -3466,11 +3367,6 @@ if (!String.prototype.padRight) {
 	};
 }
 
-/*
-	index {Number}
-	value {String}
-	return {String}
-*/
 String.prototype.insert = function(index, value) {
 	var str = this;
 	var a = str.substring(0, index);
@@ -3498,9 +3394,8 @@ String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = St
 			break;
 
 		if (code > 31 && code < 48) {
-			if (builder[builder.length - 1] === '-')
-				continue;
-			builder += '-';
+			if (builder[builder.length - 1] !== '-')
+				builder += '-';
 			continue;
 		}
 
@@ -3515,14 +3410,11 @@ String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = St
 		}
 	}
 	var l = builder.length - 1;
-	if (builder[l] === '-')
-		return builder.substring(0, l);
-	return builder;
+	return builder[l] === '-' ? builder.substring(0, l) : builder;
 };
 
 String.prototype.pluralize = function(zero, one, few, other) {
-	var str = this;
-	return str.parseInt().pluralize(zero, one, few, other);
+	return this.parseInt().pluralize(zero, one, few, other);
 };
 
 String.prototype.isBoolean = function() {
@@ -3535,8 +3427,7 @@ String.prototype.isBoolean = function() {
  * @return {Boolean}
  */
 String.prototype.isAlphaNumeric = function() {
-  var regExp = /^[A-Za-z0-9]+$/;
-  return (this.match(regExp) ? true : false);
+  return regexpALPHA.test(this);
 };
 
 String.prototype.soundex = function() {
@@ -3547,10 +3438,8 @@ String.prototype.soundex = function() {
 
 	for (var i = 0, length = arr.length; i < length; i++) {
 		var v = SOUNDEX[arr[i]];
-
 		if (v === undefined)
 			continue;
-
 		if (i) {
 			if (v !== arr[i - 1])
 				builder += v;
@@ -3569,28 +3458,14 @@ String.prototype.removeTags = function() {
 	return this.replace(regexpTags, '');
 };
 
-/*
-	@decimals {Number}
-	return {Number}
-*/
 Number.prototype.floor = function(decimals) {
 	return Math.floor(this * Math.pow(10, decimals)) / Math.pow(10, decimals);
 };
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
 Number.prototype.padLeft = function(max, c) {
 	return this.toString().padLeft(max, c || '0');
 };
 
-/*
-	@max {Number}
-	@c {String} :: optional
-	return {String}
-*/
 Number.prototype.padRight = function(max, c) {
 	return this.toString().padRight(max, c || '0');
 };
@@ -3602,15 +3477,11 @@ Number.prototype.padRight = function(max, c) {
  * @return {Number}
  */
 Number.prototype.async = function(fn, callback) {
-
 	var number = this;
-
-	if (!number) {
+	if (number)
+		fn(number--, () => setImmediate(() => number.async(fn, callback)));
+	else
 		callback && callback();
-		return number;
-	}
-
-	fn(number--, () => setImmediate(() => number.async(fn, callback)));
 	return number;
 };
 
@@ -3748,11 +3619,6 @@ Number.prototype.add = function(value, decimals) {
 	return num;
 };
 
-/*
-	Format number :: 10000 = 10 000
-	@format {Number or String} :: number is decimal and string is specified format, example: ## ###.##
-	return {String}
-*/
 Number.prototype.format2 = function(format) {
 	var index = 0;
 	var num = this.toString();
@@ -3862,14 +3728,6 @@ Number.prototype.format2 = function(format) {
 	return this.format(output);
 };
 
-/*
-	Pluralize number
-	zero {String}
-	one {String}
-	few {String}
-	other {String}
-	return {String}
-*/
 Number.prototype.pluralize = function(zero, one, few, other) {
 
 	var num = this;
@@ -3893,10 +3751,6 @@ Number.prototype.pluralize = function(zero, one, few, other) {
 	return num.format(format) + value.replace(format, '');
 };
 
-/*
-	@length {Number}
-	return {String}
-*/
 Number.prototype.hex = function(length) {
 	var str = this.toString(16).toUpperCase();
 	while(str.length < length)
@@ -3904,13 +3758,6 @@ Number.prototype.hex = function(length) {
 	return str;
 };
 
-/*
-	VAT
-	@percentage {Number}
-	@decimals {Number}, optional, default 2,
-	@includedVAT {Boolean}, optional, default true
-	return {Number}
-*/
 Number.prototype.VAT = function(percentage, decimals, includedVAT) {
 	var num = this;
 	var type = typeof(decimals);
@@ -3934,18 +3781,10 @@ Number.prototype.VAT = function(percentage, decimals, includedVAT) {
 	return includedVAT ? (num / ((percentage / 100) + 1)).floor(decimals) : (num * ((percentage / 100) + 1)).floor(decimals);
 };
 
-/*
-	Discount
-	@percentage {Number}
-	@decimals {Number}, optional, default 2
-	return {Number}
-*/
 Number.prototype.discount = function(percentage, decimals) {
 	var num = this;
-
 	if (decimals === undefined)
 		decimals = 2;
-
 	return (num - (num / 100) * percentage).floor(decimals);
 };
 
@@ -3957,6 +3796,75 @@ if (!Number.prototype.toRad) {
 	Number.prototype.toRad = function () {
 		return this * Math.PI / 180;
 	};
+}
+
+
+Number.prototype.filesize = function(decimals, type) {
+
+	if (typeof(decimals) === 'string') {
+		var tmp = type;
+		type = decimals;
+		decimals = tmp;
+	}
+
+	var value;
+
+	// this === bytes
+	switch (type) {
+		case 'bytes':
+			value = this;
+			break;
+		case 'KB':
+			value = this / 1024;
+			break;
+		case 'MB':
+			value = filesizehelper(this, 2);
+			break;
+		case 'GB':
+			value = filesizehelper(this, 3);
+			break;
+		case 'TB':
+			value = filesizehelper(this, 4);
+			break;
+		default:
+
+			type = 'bytes';
+			value = this;
+
+			if (value > 1023) {
+				value = value / 1024;
+				type = 'KB';
+			}
+
+			if (value > 1023) {
+				value = value / 1024;
+				type = 'MB';
+			}
+
+			if (value > 1023) {
+				value = value / 1024;
+				type = 'GB';
+			}
+
+			if (value > 1023) {
+				value = value / 1024;
+				type = 'TB';
+			}
+
+			break;
+	}
+
+	type = ' ' + type;
+	return (decimals === undefined ? value.format(2).replace('.00', '') : value.format(decimals)) + type;
+};
+
+function filesizehelper(number, count) {
+	while (count--) {
+		number = number / 1024;
+		if (number.toFixed(3) === '0.000')
+			return 0;
+	}
+	return number;
 }
 
 /**
@@ -4167,7 +4075,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 
 	switch (typeof(field)) {
 		case 'string':
-			if (field.length > 20 && field[11] === 'T' && field[5] === '-')
+			if (field.length > 20 && field[10] === 'T' && field[4] === '-')
 				type = 4;
 			else
 				type = 1;
@@ -4227,17 +4135,13 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 	return self;
 };
 
-/*
-	Trim values
-*/
 Array.prototype.trim = function() {
 	var self = this;
 	var output = [];
 	for (var i = 0, length = self.length; i < length; i++) {
 		if (typeof(self[i]) === 'string')
 			self[i] = self[i].trim();
-		if (self[i])
-			output.push(self[i]);
+		self[i] && output.push(self[i]);
 	}
 	return output;
 };
@@ -4251,10 +4155,8 @@ Array.prototype.skip = function(count) {
 	var arr = [];
 	var self = this;
 	var length = self.length;
-	for (var i = 0; i < length; i++) {
-		if (i >= count)
-			arr.push(self[i]);
-	}
+	for (var i = 0; i < length; i++)
+		i >= count && arr.push(self[i]);
 	return arr;
 };
 
@@ -4274,21 +4176,16 @@ Array.prototype.where = function(cb, value) {
 	for (var i = 0, length = self.length; i < length; i++) {
 
 		if (isFN) {
-			if (cb.call(self, self[i], i))
-				selected.push(self[i]);
+			cb.call(self, self[i], i) && selected.push(self[i]);
 			continue;
 		}
 
 		if (isV) {
-			if (!self[i])
-				continue;
-			if (self[i][cb] === value)
-				selected.push(self[i]);
+			self[i] && self[i][cb] === value && selected.push(self[i]);
 			continue;
 		}
 
-		if (self[i] === cb)
-			selected.push(self[i]);
+		self[i] === cb && selected.push(self[i]);
 	}
 
 	return selected;
@@ -4323,9 +4220,7 @@ Array.prototype.findIndex = function(cb, value) {
 		}
 
 		if (isV) {
-			if (!self[i])
-				continue;
-			if (self[i][cb] === value)
+			if (self[i] && self[i][cb] === value)
 				return i;
 			continue;
 		}
@@ -4353,32 +4248,22 @@ Array.prototype.remove = function(cb, value) {
 	for (var i = 0, length = self.length; i < length; i++) {
 
 		if (isFN) {
-			if (!cb.call(self, self[i], i))
-				arr.push(self[i]);
+			!cb.call(self, self[i], i) && arr.push(self[i]);
 			continue;
 		}
 
 		if (isV) {
-			if (!self[i])
-				continue;
-			if (self[i][cb] !== value)
-				arr.push(self[i]);
+			self[i] && self[i][cb] !== value && arr.push(self[i]);
 			continue;
 		}
 
-		if (self[i] !== cb)
-			arr.push(self[i]);
+		self[i] !== cb && arr.push(self[i]);
 	}
 	return arr;
 };
 
-/*
-	Returns item from array randomly
-	Return {Object}
-*/
 Array.prototype.random = function() {
-	var self = this;
-	return self[exports.random(self.length - 1)];
+	return this[exports.random(this.length - 1)];
 };
 
 Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thread) {
@@ -4454,7 +4339,7 @@ Array.prototype.async = function(thread, callback) {
 	if (item === undefined) {
 		if (self.$pending)
 			return self;
-		delete self.$pending;
+		self.$pending = undefined;
 		callback && callback();
 		return self;
 	}
@@ -4476,10 +4361,6 @@ Array.prototype.async = function(thread, callback) {
 	return self;
 };
 
-/*
-	Randomize array
-	Return {Array}
-*/
 Array.prototype.randomize = function() {
 
 	var self = this;
@@ -4571,8 +4452,7 @@ Array.prototype.unique = function(property) {
 		var value = self[i];
 
 		if (!property) {
-			if (result.indexOf(value) === -1)
-				result.push(value);
+			result.indexOf(value) === -1 && result.push(value);
 			continue;
 		}
 
@@ -4599,9 +4479,6 @@ Array.prototype.unique = function(property) {
 	return result;
 };
 
-/*
-	Async class
-*/
 function AsyncTask(owner, name, fn, cb, waiting) {
 	this.isRunning = 0;
 	this.owner = owner;
@@ -4632,9 +4509,7 @@ AsyncTask.prototype.run = function() {
 			self.interval = setTimeout(function() { self.timeout(); }, timeout);
 
 		self.fn(function() {
-			setImmediate(function() {
-				self.complete();
-			});
+			setImmediate(() => self.complete());
 		});
 
 	} catch (ex) {
@@ -4660,9 +4535,7 @@ AsyncTask.prototype.timeout = function(timeout) {
 		return self;
 	}
 
-	setImmediate(function() {
-		self.cancel(true);
-	});
+	setImmediate(() => self.cancel(true));
 	return self;
 };
 
@@ -4696,10 +4569,7 @@ AsyncTask.prototype.complete = function() {
 		try
 		{
 			self.emit('end', item.name);
-
-			if (item.cb)
-				item.cb();
-
+			item.cb && item.cb();
 		} catch (ex) {
 			self.emit('error', ex, item.name);
 		}
@@ -4738,11 +4608,8 @@ Async.prototype = {
 	},
 
 	get percentage() {
-		var self = this;
-		var p = 100 - Math.floor((self._count * 100) / self._max);
-		if (!p)
-			return 0;
-		return p;
+		var p = 100 - Math.floor((this._count * 100) / this._max);
+		return p ? p : 0;
 	}
 };
 
@@ -4839,10 +4706,7 @@ Async.prototype.complete = function(fn) {
 Async.prototype.run = function(fn) {
 	var self = this;
 	self._isRunning = true;
-
-	if (fn)
-		self.onComplete.push(fn);
-
+	fn && self.onComplete.push(fn);
 	self.refresh();
 	return self;
 };
@@ -4884,7 +4748,7 @@ Async.prototype.timeout = function(name, timeout) {
 	var self = this;
 
 	if (!timeout) {
-		delete self.tasksTimeout[name];
+		self.tasksTimeout[name] = undefined;
 		return self;
 	}
 
@@ -4946,9 +4810,7 @@ Async.prototype.refresh = function(name) {
 				self.emit('error', ex);
 			}
 		}
-		setImmediate(function() {
-			self._isEnd = false;
-		});
+		setImmediate(() => self._isEnd = false);
 	}
 
 	return self;
@@ -5277,9 +5139,7 @@ exports.queue = function(name, max, fn) {
 	item.running++;
 	(function(name){
 		setImmediate(function() {
-			fn(function() {
-				queue_next(name);
-			});
+			fn(() => queue_next(name));
 		});
 	})(name);
 

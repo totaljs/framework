@@ -12,18 +12,18 @@ var isDirectory = false;
 
 function display_help() {
 	console.log('');
-	console.log('without arguments          = creates empty-project');
-	console.log('-translate                 = creates a resource file with the localized text from views');
-	console.log('-translate "TEXT"          = creates an identificator for the resource');
-	console.log('-translate filename        = parsers and creates a resource file from the text file');
-	console.log('-translatecsv              = parsers and creates CSV with localization into the current directory');
-	console.log('-diff source target        = creates differences between two resources "-diff filename_source filename_target"');
-	console.log('-merge source target       = merges first resource into the second "-merge filename_source filename_target"');
-	console.log('-clean source              = cleans a resource file "-clean filename_source"');
-	console.log('-minify filename           = minifies .js, .css or .html file into filename.min.[extension]');
-	console.log('-v or -version             = Total.js version');
-	console.log('/path/                     = target (default current directory)');
-	console.log('8000                       = starts a server');
+	console.log('without arguments      : creates empty-project');
+	console.log('-translate             : creates a resource file with the localized text from views');
+	console.log('-translate "TEXT"      : creates an identificator for the resource');
+	console.log('-translate filename    : parses and creates a resource file from the text file');
+	console.log('-translatecsv          : parses and creates CSV with localization in the current directory');
+	console.log('-csv filename          : parses CSV and creates resources from CSV file');
+	console.log('-diff source target    : creates differences between two resources "-diff source target"');
+	console.log('-merge source target   : merges first resource into the second "-merge source target"');
+	console.log('-clean source          : cleans a resource file "-clean source"');
+	console.log('-minify filename       : minifies .js, .css or .html file into filename.min.[extension]');
+	console.log('-v or -version         : Total.js version');
+	console.log('8000                   : starts a server');
 	console.log('');
 }
 
@@ -45,7 +45,7 @@ function translateFile(a) {
 	}
 
 	fs.writeFileSync('translate.resource', '// Total.js translation file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + builder.join('\n'));
-	console.log('total.js: the translation was created (' + count + ' texts)');
+	console.log('Total.js: the translation was created (' + count + ' texts)');
 	return true;
 }
 
@@ -285,13 +285,44 @@ function clean_resource(content) {
 	return output.join('\n');
 }
 
+function parse_csv(content) {
+	var output = {};
+	var max = 0;
+
+	content.split('\n').forEach(function(line) {
+		line = line.trim();
+		if (!line)
+			return;
+		var arr = line.split(';');
+		if (arr.length <= 1)
+			return;
+
+		var key = arr[0].trim().replace(/(^\")|(\"$)/g, '');
+		var value = arr[1].trim().replace(/(^\")|(\"$)/g, '');
+		if (!key || !value)
+			return;
+
+		max = Math.max(key.length, max);
+		output[key] = value;
+	});
+
+	var builder = [];
+	max += 10;
+
+	Object.keys(output).forEach(function(key) {
+		builder.push('{0}: {1}'.format(key.padRight(max, ' '), output[key]));
+	});
+
+	return '\n' + builder.join('\n');
+}
+
 function main() {
 
 	console.log('');
-	console.log('####################################################');
-	console.log('# Total.js - Web framework for Node.js             #');
-	console.log('# Version: v' + require('total.js').version_header.padRight(39) + '#');
-	console.log('####################################################');
+	console.log('|==================================================|');
+	console.log('| Total.js - Web framework for Node.js             |');
+	console.log('| Version: v' + require('total.js').version_header.padRight(39) + '|');
+	console.log('|==================================================|');
 	console.log('');
 
 	var dir = process.cwd();
@@ -347,7 +378,7 @@ function main() {
 								fs.stat(filename, function(err, info) {
 
 									if (info.isFile())
-										files.push('<a href="{1}" class="file">{0}<span>{2} kB</span></a>'.format(item, self.url + item, (info.size / 1024).format(2)));
+										files.push('<a href="{1}" class="file">{0}<span>{2}</span></a>'.format(item, self.url + item, info.size.filesize()));
 									else
 										directories.push('<a href="{1}/" class="directory">{0}</a>'.format(item, self.url + item));
 
@@ -385,6 +416,19 @@ function main() {
 		if (cmd === '-translate-csv' || cmd === '-translatecsv' || cmd === '-c') {
 			$type = 6;
 			continue;
+		}
+
+		if (cmd === '-csv') {
+			var tmp = process.argv[i + 1] || '';
+			var tt = path.join(path.dirname(tmp), path.basename(tmp, '.csv') + '.resource');
+			fs.writeFileSync(tt, '// Total.js resource file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + parse_csv(fs.readFileSync(tmp).toString('utf8')));
+			console.log('========================================');
+			console.log('Parsed CSV:');
+			console.log('========================================');
+			console.log('');
+			console.log('output   : ' + tt);
+			console.log('');
+			return;
 		}
 
 		if (cmd === '-minify' || cmd === '-compress' || cmd === '-compile') {
@@ -447,8 +491,8 @@ function main() {
 		}
 
 		var content = fs.readFileSync(dir).toString('utf8');
-		var extension = path.extname(dir);
-		var filename = dir.replace(extension, '.min.' + extension);
+		var extension = U.getExtension(dir);
+		var filename = dir.replace('.' + extension, '.min.' + extension);
 
 		switch (extension.toLowerCase()) {
 			case 'html':
@@ -468,7 +512,7 @@ function main() {
 
 	if ($type !== 4) {
 		if (!fs.existsSync(dir)) {
-			console.log('ERROR: directory not exists');
+			console.log('ERROR: directory does not exist');
 			console.log('');
 			return;
 		}
@@ -483,7 +527,7 @@ function main() {
 			return;
 		}
 
-		console.log('total.js: creating translation');
+		console.log('Total.js: creating translation');
 		Utils.ls(dir, function(files) {
 
 			var resource = {};
@@ -541,13 +585,13 @@ function main() {
 				builder.push('\n// ' + keys[i] + '\n' + output[keys[i]].join('\n'));
 
 			fs.writeFileSync('translate.resource', '// Total.js translation file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + builder.join('\n'));
-			console.log('total.js: the translation was created (' + count + ' texts)');
+			console.log('Total.js: the translation was created (' + count + ' texts)');
 		});
 		return;
 	}
 
 	if ($type === 6) {
-		console.log('total.js: creating translation to CSV');
+		console.log('Total.js: creating translation to CSV');
 		Utils.ls(dir, function(files) {
 
 			var resource = {};
@@ -588,7 +632,7 @@ function main() {
 			}
 
 			fs.writeFileSync('translate.csv', output.join('\n'));
-			console.log('total.js: the translation was created (' + count + ' texts)');
+			console.log('Total.js: the translation was created (' + count + ' texts)');
 		});
 		return;
 	}

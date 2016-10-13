@@ -4,8 +4,8 @@
 // http://www.totaljs.com
 // ===================================================
 
-var fs = require('fs');
-var options = {};
+const fs = require('fs');
+const options = {};
 
 // options.ip = '127.0.0.1';
 // options.port = parseInt(process.argv[2]);
@@ -14,17 +14,15 @@ var options = {};
 // options.sleep = 3000;
 // options.debugger = 40894;
 
-var isDebugging = process.argv.indexOf('debugging') !== -1;
-var directory = process.cwd();
-var path = require('path');
-var first = process.argv.indexOf('restart') === -1;
-var VERSION = '3.0';
-var TIME = 2000;
+const isDebugging = process.argv.indexOf('debugging') !== -1;
+const directory = process.cwd();
+const path = require('path');
+const first = process.argv.indexOf('restart') === -1;
+const VERSION = '4.0';
+const TIME = 2000;
 
 process.on('uncaughtException', function(e) {
-	if (e.toString().indexOf('ESRCH') !== -1)
-		return;
-	console.log(e);
+	e.toString().indexOf('ESRCH') == -1 && console.log(e);
 });
 
 function debug() {
@@ -70,13 +68,8 @@ function app() {
 	var speed = TIME;
 
 	function onFilter(path, isDirectory) {
-
-		if (!isDirectory && path.match(/\/themes\//i)) {
-			if (!path.match(/themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/gi))
-				return false;
-			return true;
-		}
-
+		if (!isDirectory && path.match(/\/themes\//i))
+			return path.match(/themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/gi) ? true : false;
 		return isDirectory ? true : path.match(/\.(js|resource|package)/i) !== null;
 	}
 
@@ -103,10 +96,7 @@ function app() {
 
 			for (var i = 0; i < length; i++) {
 				var name = arr[i];
-				if (name === 'debug.js')
-					continue;
-				if (name.match(/config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i))
-					f.push(name);
+				name !== 'debug.js' && name.match(/config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i) && f.push(name);
 			}
 
 			length = f.length;
@@ -127,28 +117,22 @@ function app() {
 		 var length = filenames.length;
 
 		 for (var i = 0; i < length; i++) {
-
 			var filename = filenames[i];
 			(function(filename) {
-
 				async.await(function(next) {
-
 					fs.stat(filename, function(err, stat) {
 
-						if (!err) {
-							var ticks = stat.mtime.getTime();
-
-							if (files[filename] !== null && files[filename] !== ticks) {
-								changes.push(prefix + filename.replace(directory, '') +  (files[filename] === 0 ? ' (added)' : ' (modified)'));
-								force = true;
-							}
-
-							files[filename] = ticks;
-						}
-						else {
+						if (err) {
 							delete files[filename];
 							changes.push(prefix + filename.replace(directory, '') + ' (removed)');
 							force = true;
+						} else {
+							var ticks = stat.mtime.getTime();
+							if (files[filename] && files[filename] !== ticks) {
+								changes.push(prefix + filename.replace(directory, '') +  (files[filename] === 0 ? ' (added)' : ' (modified)'));
+								force = true;
+							}
+							files[filename] = ticks;
 						}
 
 						next();
@@ -164,17 +148,13 @@ function app() {
 			setTimeout(refresh_directory, speed);
 			onIncrease();
 
-			if (status !== 1)
-				return;
-
-			if (!force)
+			if (status !== 1 || !force)
 				return;
 
 			onIncrease(true);
 			restart();
 
 			var length = changes.length;
-
 			for (var i = 0; i < length; i++)
 				console.log(changes[i]);
 
@@ -204,8 +184,7 @@ function app() {
 
 		if (process.execArgv.indexOf('--debug') !== -1) {
 			var key = '--debug=' + (options.debugger || 40894);
-			if (process.execArgv.indexOf(key) === -1)
-				process.execArgv.push(key);
+			process.execArgv.indexOf(key) === -1 && process.execArgv.push(key);
 		}
 
 		if (first)
@@ -219,10 +198,7 @@ function app() {
 		app = fork(path.join(directory, 'debug.js'), arr);
 
 		app.on('message', function(msg) {
-
-			if (msg === 'eaddrinuse')
-				process.exit(1);
-
+			msg === 'eaddrinuse' && process.exit(1);
 		});
 
 		app.on('exit', function() {
@@ -235,14 +211,11 @@ function app() {
 			}
 
 			isSkip = false;
-			if (status !== 255)
-				return;
-			app = null;
+			if (status === 255)
+				app = null;
 		});
 
-		if (status === 0)
-			app.send('debugging');
-
+		status === 0 && app.send('debugging');
 		status = 1;
 	}
 
@@ -256,7 +229,6 @@ function app() {
 			return;
 
 		arguments.callee.isEnd = true;
-
 		fs.unlink(pid, noop);
 
 		if (app === null) {
@@ -315,10 +287,7 @@ function run() {
 	}
 
 	fs.unlinkSync(filename);
-
-	setTimeout(function() {
-		app();
-	}, 3000);
+	setTimeout(function() { app() }, 3000);
 }
 
 run();
