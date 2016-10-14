@@ -17,16 +17,21 @@ const options = {};
 const isDebugging = process.argv.indexOf('debugging') !== -1;
 const directory = process.cwd();
 const path = require('path');
-const first = process.argv.indexOf('restart') === -1;
-const VERSION = '4.0';
+const VERSION = '5.0';
 const TIME = 2000;
+const REG_FILES = /config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i;
+const REG_THEMES = /\/themes\//i;
+const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/i;
+const REG_EXTENSION = /\.(js|resource|package)/i;
+
+var first = process.argv.indexOf('restart') === -1;
 
 process.on('uncaughtException', function(e) {
 	e.toString().indexOf('ESRCH') == -1 && console.log(e);
 });
 
 function debug() {
-	var framework = require('total.js');
+	require('total.js');
 	var port = parseInt(process.argv[process.argv.length - 1]);
 
 	if (!isNaN(port)) {
@@ -39,38 +44,38 @@ function debug() {
 		options.port = port || 8000;
 
 	if (options.https)
-		return framework.https('debug', options);
+		return F.https('debug', options);
 
-	framework.http('debug', options);
+	F.http('debug', options);
 
 	if (first)
-		framework.emit('debug-start');
+		F.emit('debug-start');
 	else
-		framework.emit('debug-restart');
+		F.emit('debug-restart');
 }
 
 function app() {
-	var fork = require('child_process').fork;
-	var utils = require('total.js/utils');
-	var directories = [directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes'];
+	const fork = require('child_process').fork;
+	const utils = require('total.js/utils');
+	const directories = [directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes'];
+	const async = new utils.Async();
+	const prefix = '----------------------------------------------------> ';
 	var files = {};
 	var force = false;
 	var changes = [];
 	var app = null;
 	var status = 0;
-	var async = new utils.Async();
 	var pid = '';
 	var pidInterval = null;
-	var prefix = '----------------------------------------------------> ';
 	var isLoaded = false;
 	var isSkip = false;
 	var pidIncrease;
 	var speed = TIME;
 
 	function onFilter(path, isDirectory) {
-		if (!isDirectory && path.match(/\/themes\//i))
-			return path.match(/themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/gi) ? true : false;
-		return isDirectory ? true : path.match(/\.(js|resource|package)/i) !== null;
+		if (!isDirectory && REG_THEMES.test(path))
+			return REG_THEMES_INDEX.test(path);
+		return isDirectory ? true : REG_EXTENSION.test(path);
 	}
 
 	function onIncrease(clear) {
@@ -96,7 +101,7 @@ function app() {
 
 			for (var i = 0; i < length; i++) {
 				var name = arr[i];
-				name !== 'debug.js' && name.match(/config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i) && f.push(name);
+				name !== 'debug.js' && REG_FILES.test(name) && f.push(name);
 			}
 
 			length = f.length;
@@ -250,9 +255,9 @@ function app() {
 		fs.writeFileSync(pid, process.pid);
 
 		pidInterval = setInterval(function() {
-			fs.exists(pid, function(exist) {
+			fs.exists(pid, function(e) {
 
-				if (exist)
+				if (e)
 					return;
 
 				fs.unlink(pid, noop);
