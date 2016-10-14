@@ -322,8 +322,8 @@ global.MAKE = global.TRANSFORM = function(transform, fn) {
 	return transform ? TransformBuilder.transform.apply(obj, arguments) : obj;
 };
 
-global.SINGLETON = function(name) {
-	return SINGLETONS[name] || (SINGLETONS[name] = {});
+global.SINGLETON = function(name, def) {
+	return SINGLETONS[name] || (SINGLETONS[name] = (new Function(def || '{}'))());
 };
 
 global.NEWTRANSFORM = function(name, fn, isDefault) {
@@ -463,8 +463,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.id = null;
-	this.version = 2100;
-	this.version_header = '2.1.0';
+	this.version = 2200;
+	this.version_header = '2.2.0-1';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
