@@ -650,6 +650,10 @@ Image.prototype.sepia = function(percentage) {
 	return this.push('-modulate', '115,0,100', 4).push('-colorize', '7,21,50', 5);
 };
 
+Image.prototype.watermark = function(filename, x, y, w, h) {
+	return this.push('-draw', 'image over {1},{2} {3},{4} \'{0}\''.format(filename, x || 0, y || 0, w || 0, h || 0), 6);
+};
+
 Image.prototype.make = function(fn) {
 	fn.call(this, this);
 	return this;

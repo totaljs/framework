@@ -1,6 +1,7 @@
 ======= 2.2.0 (BETA)
 
 - added: `controller.proxy2(url, [callback], [headers], [timeout])` creates a proxy between current request and new URL
+- added: `Image.watermark(filename, [x], [y], [width], [height])` creates a watermark
 
 - updated: `SINGLETON(name, [def = {}])`
 
