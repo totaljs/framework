@@ -5996,24 +5996,16 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	if (req.method === 'HEAD') {
 		res.writeHead(code, returnHeaders);
 		res.end();
-		self._request_stats(false, req.isStaticFile);
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
-		req.clear(true);
-		return self;
+	} else {
+		if (gzip) {
+			res.writeHead(code, returnHeaders);
+			zlib.gzip(new Buffer(contentBody || ''), (err, data) => res.end(data, ENCODING));
+		} else {
+			res.writeHead(code, returnHeaders);
+			res.end(contentBody || '', ENCODING);
+		}
 	}
 
-	if (gzip) {
-		res.writeHead(code, returnHeaders);
-		zlib.gzip(new Buffer(contentBody || ''), (err, data) => res.end(data, ENCODING));
-		self._request_stats(false, req.isStaticFile);
-		!req.isStaticFile && self.emit('request-end', req, res);
-		req.clear(true);
-		return self;
-	}
-
-	res.writeHead(code, returnHeaders);
-	res.end(contentBody || '', ENCODING);
 	self._request_stats(false, req.isStaticFile);
 	!req.isStaticFile && self.emit('request-end', req, res);
 	req.clear(true);
@@ -11865,7 +11857,7 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 };
 
 /**
- * Create View or JSON callback
+ * Creates View or JSON callback
  * @param {String} viewName Optional, if is undefined or null then returns JSON.
  * @return {Function}
  */
@@ -11896,10 +11888,6 @@ Controller.prototype.callback = function(viewName) {
 	};
 };
 
-/**
- * Set custom response
- * @return {Controller}
- */
 Controller.prototype.custom = function() {
 	this.subscribe.success();
 	if (this.res.success || this.res.headersSent || !this.isConnected)
@@ -11918,13 +11906,6 @@ Controller.prototype.noClear = function(enable) {
 	return this;
 };
 
-/**
- * Response a custom content
- * @param {String} contentBody
- * @param {String} contentType
- * @param {Object} headers Custom headers, optional.
- * @return {Controller}
- */
 Controller.prototype.content = function(contentBody, contentType, headers) {
 
 	var self = this;
