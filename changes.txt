@@ -1,5 +1,7 @@
 ======= 2.2.0 (BETA)
 
+- added: `controller.proxy2(url, [callback], [headers], [timeout])` creates a proxy between current request and new URL
+
 - updated: `SINGLETON(name, [def = {}])`
 
 ======= 2.1.0

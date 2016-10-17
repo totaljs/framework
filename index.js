@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.1.0
+ * @version 2.2.0
  */
 
 'use strict';
@@ -59,6 +59,7 @@ const REG_WINDOWSPATH = /\\/g;
 const REG_SCRIPTCONTENT = /\<|\>|;/;
 const REG_HTTPHTTPS = /^(\/)?(http|https)\:\/\//i;
 const REG_TEXTAPPLICATION = /text|application/;
+const REG_ENCODINGCLEANER = /[\;\s]charset=utf\-8/g;
 const REQUEST_PROXY_FLAGS = ['post', 'json'];
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
@@ -323,7 +324,7 @@ global.MAKE = global.TRANSFORM = function(transform, fn) {
 };
 
 global.SINGLETON = function(name, def) {
-	return SINGLETONS[name] || (SINGLETONS[name] = (new Function(def || '{}'))());
+	return SINGLETONS[name] || (SINGLETONS[name] = (new Function('return ' + (def || '{}')))());
 };
 
 global.NEWTRANSFORM = function(name, fn, isDefault) {
@@ -464,7 +465,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2200;
-	this.version_header = '2.2.0-1';
+	this.version_header = '2.2.0-2';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -12398,13 +12399,84 @@ Controller.prototype.proxy = function(url, obj, callback, timeout) {
 		obj = tmp;
 	}
 
-	return framework_utils.request(url, REQUEST_PROXY_FLAGS, obj, function(error, data, code, headers) {
+	return framework_utils.request(url, REQUEST_PROXY_FLAGS, obj, function(err, data, code, headers) {
 		if (!callback)
 			return;
 		if ((headers['content-type'] || '').lastIndexOf('/json') !== -1)
 			data = framework.onParseJSON(data);
-		callback.call(self, error, data, code, headers);
+		callback.call(self, err, data, code, headers);
 	}, null, HEADERS['proxy'], ENCODING, timeout || 10000);
+};
+
+/**
+ * Creates a proxy between current request and new URL
+ * @param {String} url
+ * @param {Function(err, response, headers)} callback Optional.
+ * @param {Object} headers Optional, additional headers.
+ * @param {Number} timeout Optional, timeout (default: 10000)
+ * @return {EventEmitter}
+ */
+Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
+
+	if (typeof(callback) === 'object') {
+		timeout = headers;
+		headers = callback;
+		callback = undefined;
+	}
+
+	var self = this;
+	var flags = [];
+	var req = self.req;
+	var type = req.headers['content-type'];
+	var h = {};
+
+	flags.push(req.method);
+	flags.push('dnscache');
+
+	if (type === 'application/json')
+		flags.push('json');
+
+	var c = req.method[0];
+	var tmp;
+
+	if (c === 'G' || c === 'H' || c === 'O') {
+		if (url.indexOf('?') === -1) {
+			tmp = qs.stringify(self.query);
+			if (tmp)
+				url += '?' + tmp;
+		}
+	}
+
+	Object.keys(req.headers).forEach(function(item) {
+		switch (item) {
+			case 'x-forwarded-for':
+			case 'x-forwarded-protocol':
+			case 'x-nginx-proxy':
+			case 'connection':
+			case 'content-type':
+			case 'host':
+			case 'accept-encoding':
+				break;
+			default:
+				h[item] = req.headers[item];
+				break;
+		}
+	});
+
+	headers && Object.keys(headers).forEach(item => h[item] = headers[item]);
+
+	return framework_utils.request(url, flags, self.body, function(err, data, code, headers) {
+
+		if (err) {
+			callback && callback(err);
+			self.invalid().push(err);
+			return;
+		}
+
+		self.status = code;
+		callback && callback(err, data, headers);
+		self.content(data, (headers['content-type'] || 'text/plain').replace(REG_ENCODINGCLEANER, ''));
+	}, null, h, ENCODING, timeout || 10000);
 };
 
 /**
