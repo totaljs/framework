@@ -4,6 +4,7 @@
 - added: `Image.watermark(filename, [x], [y], [width], [height])` creates a watermark
 
 - updated: `SINGLETON(name, [def = {}])`
+- updated: `debug.js` add timestamps
 
 ======= 2.1.0
 
