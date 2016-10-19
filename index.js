@@ -6327,20 +6327,18 @@ Framework.prototype.mode = function(http, name, options) {
 	return self;
 };
 
-/**
- * Show framework informations
- */
 Framework.prototype.console = function() {
 	console.log('====================================================');
-	console.log('PID          : ' + process.pid);
-	console.log('Node.js      : ' + process.version);
-	console.log('Total.js     : v' + F.version_header);
+	console.log('PID         : ' + process.pid);
+	console.log('Node.js     : ' + process.version);
+	console.log('Total.js    : v' + F.version_header);
+	console.log('OS          : ' + os.platform() + ' ' + os.release());
 	console.log('====================================================');
-	console.log('Name         : ' + F.config.name);
-	console.log('Version      : ' + F.config.version);
-	console.log('Author       : ' + F.config.author);
-	console.log('Date         : ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
-	console.log('Mode         : ' + (F.config.debug ? 'debug' : 'release'));
+	console.log('Name        : ' + F.config.name);
+	console.log('Version     : ' + F.config.version);
+	console.log('Author      : ' + F.config.author);
+	console.log('Date        : ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
+	console.log('Mode        : ' + (F.config.debug ? 'debug' : 'release'));
 	console.log('====================================================\n');
 	console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
 	console.log('');
