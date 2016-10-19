@@ -1,7 +1,7 @@
 // ===================================================
 // IMPORTANT: only for development
-// total.js - web application framework for node.js
-// http://www.totaljs.com
+// Total.js - framework for Node.js
+// https://www.totaljs.com
 // ===================================================
 
 const fs = require('fs');
@@ -9,7 +9,7 @@ const options = {};
 
 // options.ip = '127.0.0.1';
 // options.port = parseInt(process.argv[2]);
-// options.config = { name: 'total.js' };
+// options.config = { name: 'Total.js' };
 // options.https = { key: fs.readFileSync('keys/agent2-key.pem'), cert: fs.readFileSync('keys/agent2-cert.pem')};
 // options.sleep = 3000;
 // options.debugger = 40894;
@@ -108,7 +108,7 @@ function app() {
 
 			for (var i = 0; i < length; i++) {
 				var name = f[i];
-				if (!files[name])
+				if (files[name] === undefined)
 					files[name] = isLoaded ? 0 : null;
 			}
 
@@ -127,16 +127,16 @@ function app() {
 				async.await(function(next) {
 					fs.stat(filename, function(err, stat) {
 
-						var stamp = '--- ' + new Date().format('yyyy-MM-dd-HH:mm:ss') + ' ';
+						var stamp = '--- # --- [ ' + new Date().format('yyyy-MM-dd HH:mm:ss') + ' ] ';
 
 						if (err) {
 							delete files[filename];
-							changes.push(stamp + prefix + filename.replace(directory, '') + ' (removed)');
+							changes.push(stamp.replace('#', 'REM') + prefix + filename.replace(directory, ''));
 							force = true;
 						} else {
 							var ticks = stat.mtime.getTime();
-							if (files[filename] && files[filename] !== ticks) {
-								changes.push(stamp + prefix + filename.replace(directory, '') +  (files[filename] === 0 ? ' (added)' : ' (modified)'));
+							if (files[filename] != null && files[filename] !== ticks) {
+								changes.push(stamp.replace('#', files[filename] === 0 ? 'ADD' : 'UPD') + prefix + filename.replace(directory, ''));
 								force = true;
 							}
 							files[filename] = ticks;
