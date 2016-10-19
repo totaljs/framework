@@ -4828,9 +4828,9 @@ function FileList() {
 
 FileList.prototype.reset = function() {
 	var self = this;
-	self.file = [];
-	self.directory = [];
-	self.pendingDirectory = [];
+	self.file.length = 0;
+	self.directory.length = 0;
+	self.pendingDirectory.length = 0;
 };
 
 FileList.prototype.walk = function(directory) {
