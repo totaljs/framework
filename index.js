@@ -1341,7 +1341,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		})(viewname, sitemap, language);
 	} else if (typeof(funcExecute) !== 'function') {
 
-		viewname = sitemap && sitemap.url !== '/' ? sitemap.id : url;
+		viewname = (sitemap && sitemap.url !== '/' ? sitemap.id : url) || '';
 
 		if (viewname.endsWith('/'))
 			viewname = viewname.substring(0, viewname.length - 1);
