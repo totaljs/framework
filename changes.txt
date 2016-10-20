@@ -2,6 +2,7 @@
 
 - added: `controller.proxy2(url, [callback], [headers], [timeout])` creates a proxy between current request and new URL
 - added: `Image.watermark(filename, [x], [y], [width], [height])` creates a watermark
+- added: hidden hack `req.noCompress = true` disables compilation of `.js` or `.css`
 
 - updated: `SINGLETON(name, [def = {}])`
 - updated: `debug.js` add timestamps

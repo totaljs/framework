@@ -58,6 +58,7 @@ const REG_WEBSOCKET_ERROR = /ECONNRESET|EHOSTUNREACH|EPIPE|is closed/i;
 const REG_WINDOWSPATH = /\\/g;
 const REG_SCRIPTCONTENT = /\<|\>|;/;
 const REG_HTTPHTTPS = /^(\/)?(http|https)\:\/\//i;
+const REG_NOCOMPRESS = /[\.|-]+min\.(css|js)$/i;
 const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[\;\s]charset=utf\-8/g;
 const REQUEST_PROXY_FLAGS = ['post', 'json'];
@@ -4409,25 +4410,20 @@ Framework.prototype.compileContent = function(extension, content, filename) {
 
 	var self = this;
 
-	if (filename && (filename.indexOf('.min.') !== -1 || filename.indexOf('-min.') !== -1))
+	if (filename && REG_NOCOMPRESS.test(filename))
 		return content;
 
 	switch (extension) {
 		case 'js':
 			return self.config['allow-compile-script'] ? framework_internal.compile_javascript(content, filename) : content;
+
 		case 'css':
-
 			content = self.config['allow-compile-style'] ? framework_internal.compile_css(content, filename) : content;
-
 			var matches = content.match(REG_COMPILECSS);
-			if (!matches)
-				return content;
-
-			matches.forEach(function(o) {
+			matches && matches.forEach(function(o) {
 				var url = o.substring(4, o.length - 1);
 				content = content.replace(o, 'url(' + self._version(url) + ')');
 			});
-
 			return content;
 	}
 
@@ -4522,9 +4518,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 						output += NEWLINE;
 				}
 
-				if (framework.isDebug)
-					merge_debug_writer(writer, filename, extension, index++, block);
-
+				framework.isDebug && merge_debug_writer(writer, filename, extension, index++, block);
 				writer.write(output);
 				next();
 			});
@@ -4532,10 +4526,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		}
 
 		if (filename[0] === '#') {
-
-			if (framework.isDebug)
-				merge_debug_writer(writer, filename, 'js', index++, block);
-
+			framework.isDebug && merge_debug_writer(writer, filename, 'js', index++, block);
 			writer.write(prepare_isomorphic(filename.substring(1)));
 			next();
 			return;
@@ -4567,9 +4558,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 					merge.files.push('~' + files[j]);
 				next();
 			}, function(path, isDirectory) {
-				if (isDirectory)
-					return true;
-				return path.substring(path.length - len).toLowerCase() === tmp;
+				return isDirectory ? true : path.substring(path.length - len).toLowerCase() === tmp;
 			});
 
 			return;
@@ -4593,9 +4582,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 					output += NEWLINE;
 			}
 
-			if (framework.isDebug)
-				merge_debug_writer(writer, filename, extension, index++, block);
-
+			framework.isDebug && merge_debug_writer(writer, filename, extension, index++, block);
 			writer.write(output);
 			next();
 		});
@@ -4604,12 +4591,11 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 
 		writer.end();
 
-		if (!remove)
-			return;
-
-		// Remove all directories from merge list (because the files are added into the queue)
-		for (var i = 0, length = remove.length; i < length; i++)
-			merge.files.splice(merge.files.indexOf(remove[i]), 1);
+		// Removes all directories from merge list (because the files are added into the queue)
+		if (remove) {
+			for (var i = 0, length = remove.length; i < length; i++)
+				merge.files.splice(merge.files.indexOf(remove[i]), 1);
+		}
 	});
 
 	return self;
@@ -4632,7 +4618,7 @@ function merge_debug_writer(writer, filename, extension, index, block) {
  * @param {Function()} callback
  * @return {Framework}
  */
-Framework.prototype.compileValidation = function(uri, key, filename, extension, callback) {
+Framework.prototype.compileValidation = function(uri, key, filename, extension, callback, noCompress) {
 
 	var self = this;
 
@@ -4644,12 +4630,9 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 	fsFileExists(filename, function(e, size) {
 
 		if (e) {
-			if (extension === 'js' || extension === 'css') {
-				if (filename.lastIndexOf('.min.') === -1 && filename.lastIndexOf('-min.') === -1) {
-					self.compileFile(uri, key, filename, extension, callback);
-					return self;
-				}
-			}
+
+			if (!noCompress && (extension === 'js' || extension === 'css') && !REG_NOCOMPRESS.test(filename))
+				return self.compileFile(uri, key, filename, extension, callback);
 
 			self.temporary.path[key] = filename + ';' + size;
 			callback();
@@ -4657,7 +4640,7 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 		}
 
 		if (self.isVirtualDirectory) {
-			self.compileValidationVirtual(uri, key, filename, extension, callback);
+			self.compileValidationVirtual(uri, key, filename, extension, callback, noCompress);
 			return;
 		}
 
@@ -4668,7 +4651,7 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 	return self;
 };
 
-Framework.prototype.compileValidationVirtual = function(uri, key, filename, extension, callback) {
+Framework.prototype.compileValidationVirtual = function(uri, key, filename, extension, callback, noCompress) {
 
 	var self = this;
 
@@ -4690,12 +4673,8 @@ Framework.prototype.compileValidationVirtual = function(uri, key, filename, exte
 			return;
 		}
 
-		if (extension === 'js' || extension === 'css') {
-			if (filename.lastIndexOf('.min.') === -1 && filename.lastIndexOf('-min.') === -1) {
-				self.compileFile(uri, key, filename, extension, callback);
-				return self;
-			}
-		}
+		if (!noCompress && (extension === 'js' || extension === 'css') && !REG_NOCOMPRESS.test(filename))
+			return self.compileFile(uri, key, filename, extension, callback);
 
 		self.temporary.path[key] = filename + ';' + size;
 		callback();
@@ -4885,13 +4864,10 @@ Framework.prototype.exists = function(req, res, max, callback) {
 
 	framework_utils.queue('framework.exists', max, function(next) {
 		fsFileExists(filename, function(e) {
-
-			if (e) {
+			if (e)
 				framework.responseFile(req, res, filename, undefined, undefined, next);
-				return;
-			}
-
-			callback(next, filename);
+			else
+				callback(next, filename);
 		});
 	});
 
@@ -4947,8 +4923,7 @@ Framework.prototype.isProcessing = function(filename) {
  */
 Framework.prototype.noCache = function(req, res) {
 	req.noCache();
-	if (res)
-		res.noCache();
+	res && res.noCache();
 	return this;
 };
 
@@ -5031,10 +5006,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		self._request_stats(false, req.isStaticFile);
 
 		done && done();
-
-		if (!req.isStaticFile)
-			self.emit('request-end', req, res);
-
+		!req.isStaticFile && self.emit('request-end', req, res);
 		req.clear(true);
 		return self;
 	}
@@ -5061,7 +5033,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		self.compileValidation(req.uri, key, filename, extension, function() {
 			delete self.temporary.processing[key];
 			framework.responseFile(req, res, filename, downloadName, headers, done, key);
-		});
+		}, req.noCompress);
 
 		return self;
 	}
@@ -5495,12 +5467,12 @@ Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProce
 	}
 
 	fnPrepare.call(self, function(filename) {
-		if (!filename) {
+		if (filename) {
+			self.responseImage(req, res, filename, fnProcess, headers, done);
+		} else {
 			self.response404(req, res);
 			done && done();
-			return;
 		}
-		self.responseImage(req, res, filename, fnProcess, headers, done);
 	});
 
 	return self;
@@ -6273,11 +6245,7 @@ Framework.prototype.http = function(mode, options) {
  * @return {Framework}
  */
 Framework.prototype.https = function(mode, options) {
-
-	if (options === undefined)
-		options = {};
-
-	return this.mode(require('https'), mode, options);
+	return this.mode(require('https'), mode, options || {});
 };
 
 /**
@@ -6343,11 +6311,10 @@ Framework.prototype.mode = function(http, name, options) {
 	}
 
 	var restart = false;
-
-	if (!self.temporary.init)
-		self.temporary.init = { name: name, isHTTPS: typeof(http.STATUS_CODES) === 'undefined', options: options };
-	else
+	if (self.temporary.init)
 		restart = true;
+	else
+		self.temporary.init = { name: name, isHTTPS: typeof(http.STATUS_CODES) === 'undefined', options: options };
 
 	self.config.trace = debug;
 	self.$startup(n => self.initialize(http, debug, options, restart));
@@ -6433,10 +6400,10 @@ Framework.prototype._service = function(count) {
 	if (ping > 0 && count % ping === 0) {
 		for (var item in self.connections) {
 			var conn = self.connections[item];
-			if (!conn)
-				continue;
-			conn.check();
-			conn.ping();
+			if (conn) {
+				conn.check();
+				conn.ping();
+			}
 		}
 	}
 
@@ -6491,13 +6458,6 @@ Framework.prototype._service = function(count) {
 Framework.prototype.listener = function(req, res) {
 
 	var self = framework;
-
-	if (!req.host) {
-		self.stats.response.destroy++;
-		res.writeHead(403);
-		res.end();
-		return;
-	}
 
 	if (self._length_wait)
 		return self.response503(req, res);
