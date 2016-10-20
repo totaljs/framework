@@ -5033,7 +5033,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		self.compileValidation(req.uri, key, filename, extension, function() {
 			delete self.temporary.processing[key];
 			framework.responseFile(req, res, filename, downloadName, headers, done, key);
-		}, req.noCompress);
+		}, res.noCompress);
 
 		return self;
 	}
