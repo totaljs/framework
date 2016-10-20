@@ -714,7 +714,23 @@ function Framework() {
 // PROTOTYPES
 // ======================================================
 
-Framework.prototype.__proto__ = new events.EventEmitter();
+Framework.prototype = {
+	get onLocate() {
+		return this.onLocale;
+	},
+	set onLocate(value) {
+		OBSOLETE('F.onLocate', 'Rename "F.onLocate" method for "F.onLocale".');
+		this.onLocale = value;
+	}
+}
+
+Framework.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
+	constructor: {
+		value: WebSocket,
+		enumberable: false
+	}
+});
+
 
 /**
  * Internal function
@@ -3869,7 +3885,8 @@ Framework.prototype.onAuthorize = null;
 	@res {Response} OR {WebSocketClient}
 	@return {String}
 */
-Framework.prototype.onLocate = null;
+Framework.prototype.onLocale = null;
+// OLD: Framework.prototype.onLocate = null;
 
 /**
  * Sets theme to controlller
@@ -6523,8 +6540,8 @@ Framework.prototype.listener = function(req, res) {
 		}
 	}
 
-	if (can && self.onLocate)
-		req.$language = self.onLocate(req, res, req.isStaticFile);
+	if (can && self.onLocale)
+		req.$language = self.onLocale(req, res, req.isStaticFile);
 
 	self._request_stats(true, true);
 
@@ -6955,8 +6972,8 @@ Framework.prototype._upgrade = function(req, socket, head) {
 	req.path = framework_internal.routeSplit(req.uri.pathname);
 	req.websocket = websocket;
 
-	if (self.onLocate)
-		req.$language = self.onLocate(req, socket);
+	if (self.onLocale)
+		req.$language = self.onLocale(req, socket);
 
 	if (self._length_request_middleware && !req.behaviour('disable-middleware'))
 		async_middleware(0, req, req.websocket, self.routes.request, () => self._upgrade_prepare(req, path, req.headers));

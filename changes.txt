@@ -6,6 +6,8 @@
 - updated: `SINGLETON(name, [def = {}])`
 - updated: `debug.js` add timestamps
 
+-renamed: `F.onLocate` renamed to `F.onLocale`
+
 ======= 2.1.0
 
 - added: `F.sitemap_add(string)` for adding entries to sitemap by Martin Smola <https://github.com/molda>

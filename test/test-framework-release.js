@@ -15,7 +15,7 @@ framework.onCompileView = function(name, html, model) {
 	return html + 'COMPILED';
 };
 
-framework.onLocate = function(req) {
+framework.onLocale = function(req) {
 	return !req.url.startsWith('/abc') ? 'sk' : '';
 };
 
