@@ -5,6 +5,7 @@
 
 - updated: `SINGLETON(name, [def = {}])`
 - updated: `debug.js` add timestamps
+- updated: `F.redirect()` can contain a relative URL of file
 
 -renamed: `F.onLocate` renamed to `F.onLocale`
 

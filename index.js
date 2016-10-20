@@ -968,6 +968,17 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 		withPath = withPath === true;
 
 	permanent = withPath;
+
+	if (framework_utils.isStaticFile(host)) {
+		framework.file(host, function(req, res) {
+			if (newHost.startsWith('http://') || newHost.startsWith('https://'))
+				res.redirect(newHost, permanent);
+			else
+				res.redirect(newHost[0] !== '/' ? '/' + newHost : newHost, permanent);
+		});
+		return;
+	}
+
 	framework.route(host, function() {
 
 		if (newHost.startsWith('http://') || newHost.startsWith('https://')) {
@@ -979,7 +990,6 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 			newHost = '/' + newHost;
 
 		this.redirect(newHost + this.href(), permanent);
-
 	}, flags);
 
 	return self;
