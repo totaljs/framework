@@ -14338,11 +14338,15 @@ http.IncomingMessage.prototype.authorization = function() {
 	if (!authorization)
 		return HEADERS.authorization;
 
-	var arr = new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
 	var result = { user: '', password: '', empty: true };
-	result.user = arr[0] || '';
-	result.password = arr[1] || '';
-	result.empty = !result.user || !result.password;
+
+	try {
+		var arr = new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
+		result.user = arr[0] || '';
+		result.password = arr[1] || '';
+		result.empty = !result.user || !result.password;
+	} catch (e) {}
+
 	return result;
 };
 
