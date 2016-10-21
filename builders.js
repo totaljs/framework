@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.1.0
+ * @version 2.2.0
  */
 
 'use strict';
@@ -32,6 +32,7 @@ const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, 
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|\-|\(|\)/g;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
+const Qs = require('querystring');
 
 var schemas = {};
 var transforms = { pagination: {}, error: {}, objectbuilder: {}, transformbuilder: {} };
@@ -3384,15 +3385,223 @@ function async_wait(arr, onItem, onCallback, index) {
 		onCallback();
 }
 
+function RESTBuilder(url) {
+	this.$url = url;
+	this.$headers = { 'User-Agent': 'Total.js/v' + framework.version_header };
+	this.$method = 'GET';
+	this.$timeout = 10000;
+	this.$type = 1; // 1=json, 2=urlencode, 3=raw
+	this.$schema;
+	// this.$flags;
+	// this.$data = {};
+	// this.$nodnscache = true;
+	// this.$cache_expire;
+	// this.$cache_nocache;
+}
+
+RESTBuilder.prototype.timeout = function(number) {
+	this.$timeout = number;
+	return this;
+};
+
+RESTBuilder.prototype.schema = function(group, schema) {
+	this.$schema = exports.getschema(group, name);
+	return this;
+};
+
+RESTBuilder.prototype.noDnsCache = function() {
+	this.$nodnscache = true;
+	this.$flags.length = 0;
+	return this;
+};
+
+RESTBuilder.prototype.noCache = function() {
+	this.$nocache = true;
+	return this;
+};
+
+RESTBuilder.prototype.make = function(fn) {
+	fn.call(this, this);
+	return this;
+};
+
+RESTBuilder.prototype.xhr = function() {
+	this.$headers['X-Requested-With'] = 'XMLHttpRequest';
+	return this;
+};
+
+RESTBuilder.prototype.method = function(method) {
+	this.$method = method;
+	this.$flags = null;
+	return this;
+};
+
+RESTBuilder.prototype.json = function(data) {
+
+	if (this.$type !== 1)
+		this.$flags = null;
+
+	data && this.raw(data);
+	this.$type = 1;
+
+	if (this.$method === 'GET')
+		this.$method = 'POST';
+
+	this.$headers['Accept'] = 'application/json, text/plain, text/plain, text/xml';
+	return this;
+};
+
+RESTBuilder.prototype.urlencoded = function(data) {
+
+	if (this.$type !== 2)
+		this.$flags = null;
+
+	if (this.$method === 'GET')
+		this.$method = 'POST';
+
+	this.$type = 2;
+	this.$headers['Accept'] = 'application/json, text/plain, text/plain, text/xml';
+	data && this.raw(data);
+	return this;
+};
+
+RESTBuilder.prototype.accept = function(ext) {
+	var type = framework_utils.getContentType(ext);
+	if (this.$headers['Accept'] !== type)
+		this.$flags = null;
+	this.$headers['Accept'] = type;
+	return this;
+};
+
+RESTBuilder.prototype.xml = function(data) {
+
+	if (this.$type !== 3)
+		this.$flags = null;
+
+	if (this.$method === 'GET')
+		this.$method = 'POST';
+
+	this.$type = 3;
+	data && this.raw(data);
+	return this;
+};
+
+RESTBuilder.prototype.raw = function(value) {
+	this.$data = value;
+	return this;
+};
+
+RESTBuilder.prototype.cookie = function(name, value) {
+	if (!this.$cookies)
+		this.$cookies = {};
+	this.$cookies[name] = value;
+	return this;
+};
+
+RESTBuilder.prototype.header = function(name, value) {
+	this.$headers[name] = value;
+	return this;
+};
+
+RESTBuilder.prototype.cache = function(expire) {
+	this.$cache_expire = expire;
+	return this;
+};
+
+RESTBuilder.prototype.set = function(name, value) {
+
+	if (!this.$data)
+		this.$data = {};
+
+	if (typyof(name) !== 'object') {
+		this.$data[name] = value;
+		return this;
+	}
+
+	var arr = Object.keys(name);
+	for (var i = 0, length = arr.length; i < length; i++)
+		this.$data[arr[i]] = name[arr[i]];
+
+	return this;
+};
+
+RESTBuilder.prototype.rem = function(name) {
+	if (this.$data && this.$data[name])
+		this.$data[name] = undefined;
+	return this;
+};
+
+RESTBuilder.prototype.exec = function(callback) {
+
+	var self = this;
+	var flags = self.$flags ? self.$flags : [self.$method];
+	var key;
+
+	if (!self.$flags) {
+
+		!self.$nodnscache && flags.push('dnscache');
+
+		switch (self.$type) {
+			case 1:
+				flags.push('json');
+				break;
+			case 3:
+				flags.push('xml');
+				break;
+		}
+
+		self.$flags = flags;
+	}
+
+	if (self.$cache_expire && !self.$nocache) {
+		key = '$rest_' + (self.$url + flags.join(',') + (self.$data ? Qs.stringify(self.$data) : '')).hash();
+		var data = framework.cache.read2(key);
+		if (data) {
+			var evt = new events.EventEmitter();
+
+			setImmediate(function() {
+				evt.removeAllListeners();
+				evt = null;
+			});
+
+			callback(null, this.$schema ? this.$schema.make(data.parsed) : data.parsed, data.status, data.headers, data.response, data.hostname, true);
+			return evt;
+		}
+	}
+
+	return U.request(self.$url, flags, self.$data, function(err, response, status, headers, hostname) {
+
+		var parsed = response.isJSON() ? framework.onParseJSON(response) : response;
+		if (self.$schema) {
+
+			if (err)
+				return callback(err, null, status, headers, response, hostname, false);
+
+			self.$schema.make(parsed, function(err, model) {
+				!err && key && framework.cache.add(key, { parsed: parsed, status: status, response: response, headers: headers, hostname: hostname }, self.$cache_expire);
+				callback(err, model, status, headers, response, hostname, false);
+			});
+
+			return;
+		}
+
+		!err && key && framework.cache.add(key, { parsed: parsed, status: status, response: response, headers: headers, hostname: hostname }, self.$cache_expire);
+		callback(err, parsed, status, headers, response, hostname, false);
+
+	}, self.$cookies, self.$headers, undefined, self.$timeout);
+};
+
 // ======================================================
 // EXPORTS
 // ======================================================
 
 exports.SchemaBuilder = SchemaBuilder;
+exports.RESTBuilder = RESTBuilder;
 exports.ErrorBuilder = ErrorBuilder;
 exports.Pagination = Pagination;
 exports.UrlBuilder = UrlBuilder;
 exports.TransformBuilder = TransformBuilder;
+global.RESTBuilder = RESTBuilder;
 global.ErrorBuilder = ErrorBuilder;
 global.TransformBuilder = TransformBuilder;
 global.Pagination = Pagination;
