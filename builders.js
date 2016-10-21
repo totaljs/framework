@@ -3388,10 +3388,11 @@ function async_wait(arr, onItem, onCallback, index) {
 function RESTBuilder(url) {
 	this.$url = url;
 	this.$headers = { 'User-Agent': 'Total.js/v' + framework.version_header };
-	this.$method = 'GET';
+	this.$method = 'get';
 	this.$timeout = 10000;
-	this.$type = 1; // 1=json, 2=urlencode, 3=raw
+	this.$type = 0; // 1=json, 2=urlencode, 3=raw
 	this.$schema;
+	this.$length = 0;
 	// this.$flags;
 	// this.$data = {};
 	// this.$nodnscache = true;
@@ -3404,6 +3405,17 @@ RESTBuilder.prototype.timeout = function(number) {
 	return this;
 };
 
+RESTBuilder.prototype.maxlength = function(number) {
+	this.$length = number;
+	this.$flags = null;
+	return this;
+};
+
+RESTBuilder.prototype.auth = function(user, password) {
+	this.$headers['authorization'] = 'Basic ' + new Buffer(user + ':' + password).toString('base64');
+	return this;
+};
+
 RESTBuilder.prototype.schema = function(group, schema) {
 	this.$schema = exports.getschema(group, name);
 	return this;
@@ -3411,7 +3423,7 @@ RESTBuilder.prototype.schema = function(group, schema) {
 
 RESTBuilder.prototype.noDnsCache = function() {
 	this.$nodnscache = true;
-	this.$flags.length = 0;
+	this.$flags = null;
 	return this;
 };
 
@@ -3513,7 +3525,7 @@ RESTBuilder.prototype.set = function(name, value) {
 	if (!this.$data)
 		this.$data = {};
 
-	if (typyof(name) !== 'object') {
+	if (typeof(name) !== 'object') {
 		this.$data[name] = value;
 		return this;
 	}
@@ -3531,6 +3543,30 @@ RESTBuilder.prototype.rem = function(name) {
 	return this;
 };
 
+RESTBuilder.prototype.stream = function(callback) {
+	var self = this;
+	var flags = self.$flags ? self.$flags : [self.$method];
+	var key;
+
+	if (!self.$flags) {
+
+		!self.$nodnscache && flags.push('dnscache');
+
+		switch (self.$type) {
+			case 1:
+				flags.push('json');
+				break;
+			case 3:
+				flags.push('xml');
+				break;
+		}
+
+		self.$flags = flags;
+	}
+
+	return U.download(self.$url, flags, self.$data, callback, self.$cookies, self.$headers, undefined, self.$timeout);
+};
+
 RESTBuilder.prototype.exec = function(callback) {
 
 	var self = this;
@@ -3540,6 +3576,7 @@ RESTBuilder.prototype.exec = function(callback) {
 	if (!self.$flags) {
 
 		!self.$nodnscache && flags.push('dnscache');
+		self.$length && flags.push('<' + self.$length);
 
 		switch (self.$type) {
 			case 1:
