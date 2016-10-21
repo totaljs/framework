@@ -774,6 +774,11 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 				continue;
 			}
 
+			if (flags[i][0] === '<') {
+				// max length is not supported
+				continue;
+			}
+
 			switch (flags[i].toLowerCase()) {
 
 				case 'utf8':
@@ -979,7 +984,7 @@ function download_response(res, uri, options) {
 	});
 
 	res.resume();
-	options.callback && options.callback(null, res);
+	options.callback && options.callback(null, res, res.statusCode, res.headers, uri.host);
 }
 
 exports.$$download = function(url, flags, data, cookies, headers, encoding, timeout) {
