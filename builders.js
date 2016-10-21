@@ -3443,8 +3443,26 @@ RESTBuilder.prototype.xhr = function() {
 };
 
 RESTBuilder.prototype.method = function(method) {
-	this.$method = method;
+	this.$method = method.toLowerCase();
 	this.$flags = null;
+	return this;
+};
+
+RESTBuilder.prototype.put = function(data) {
+	if (this.$method !== 'put') {
+		this.$flags = null;
+		this.$method = 'put';
+	}
+	data && this.raw(data);
+	return this;
+};
+
+RESTBuilder.prototype.post = function(data) {
+	if (this.$method !== 'post') {
+		this.$flags = null;
+		this.$method = 'post';
+	}
+	data && this.raw(data);
 	return this;
 };
 
@@ -3456,8 +3474,8 @@ RESTBuilder.prototype.json = function(data) {
 	data && this.raw(data);
 	this.$type = 1;
 
-	if (this.$method === 'GET')
-		this.$method = 'POST';
+	if (this.$method === 'get')
+		this.$method = 'post';
 
 	this.$headers['Accept'] = 'application/json, text/plain, text/plain, text/xml';
 	return this;
@@ -3468,8 +3486,8 @@ RESTBuilder.prototype.urlencoded = function(data) {
 	if (this.$type !== 2)
 		this.$flags = null;
 
-	if (this.$method === 'GET')
-		this.$method = 'POST';
+	if (this.$method === 'get')
+		this.$method = 'post';
 
 	this.$type = 2;
 	this.$headers['Accept'] = 'application/json, text/plain, text/plain, text/xml';
@@ -3490,8 +3508,8 @@ RESTBuilder.prototype.xml = function(data) {
 	if (this.$type !== 3)
 		this.$flags = null;
 
-	if (this.$method === 'GET')
-		this.$method = 'POST';
+	if (this.$method === 'get')
+		this.$method = 'post';
 
 	this.$type = 3;
 	data && this.raw(data);
