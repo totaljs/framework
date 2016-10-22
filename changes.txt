@@ -3,10 +3,10 @@
 - added: `controller.proxy2(url, [callback], [headers], [timeout])` creates a proxy between current request and new URL
 - added: `Image.watermark(filename, [x], [y], [width], [height])` creates a watermark
 - added: hidden hack `res.noCompress = true` disables compilation of `.js` or `.css`
-- added: `RESTBuilder` for creating REST requests
+- added: `RESTBuilder` for creating REST requests (more in docs)
 
-- updated: `SINGLETON(name, [def = {}])`
-- updated: `debug.js` add timestamps
+- updated: `SINGLETON(name, [def = {}])` about `def` argument
+- updated: `debug.js` adds timestamps
 - updated: `F.redirect()` can contain a relative URL of file
 
 - renamed: `F.onLocate` renamed to `F.onLocale`

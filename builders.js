@@ -3390,7 +3390,7 @@ function RESTBuilder(url) {
 	this.$headers = { 'User-Agent': 'Total.js/v' + framework.version_header };
 	this.$method = 'get';
 	this.$timeout = 10000;
-	this.$type = 0; // 1=json, 2=urlencode, 3=raw
+	this.$type = 0; // 0 = query, 1 = json, 2 = urlencode, 3 = raw
 	this.$schema;
 	this.$length = 0;
 	// this.$flags;
@@ -3399,6 +3399,12 @@ function RESTBuilder(url) {
 	// this.$cache_expire;
 	// this.$cache_nocache;
 }
+
+RESTBuilder.make = function(fn) {
+	var instance = new RESTBuilder();
+	fn(instance);
+	return instance;
+};
 
 RESTBuilder.prototype.timeout = function(number) {
 	this.$timeout = number;
