@@ -6457,6 +6457,12 @@ Framework.prototype._service = function(count) {
  */
 Framework.prototype.listener = function(req, res) {
 
+	if (!req.host) {
+		res.writeHead(403);
+		res.end();
+		return;
+	}
+
 	var self = framework;
 
 	if (self._length_wait)
