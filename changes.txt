@@ -9,7 +9,9 @@
 - updated: `debug.js` adds timestamps
 - updated: `F.redirect()` can contain a relative URL of file
 
-- improve: `@{href(key, value)}` performance
+- improved: `@{href(key, value)}` performance
+
+- fixed: (critical) NoSQL `nosql.modify()` and problem with updating `undefined` values
 
 - renamed: `F.onLocate` renamed to `F.onLocale`
 
