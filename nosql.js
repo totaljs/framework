@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 2.1.0
+ * @version 2.2.0
  */
 
 'use strict';
@@ -374,18 +374,19 @@ Database.prototype.$update = function() {
 	var change = false;
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
-		var json = JSON.parse(value.trim());
+		var doc = JSON.parse(value.trim());
 		for (var i = 0; i < length; i++) {
 
 			var item = filter[i];
 			var builder = item.builder;
-			var output = builder.compare(json, index);
-			var doc = json;
+			var output = builder.compare(doc, index);
 
 			if (output) {
 				if (item.keys) {
 					for (var j = 0, jl = item.keys.length; j < jl; j++) {
 						var val = item.doc[item.keys[j]];
+						if (val === undefined)
+							continue;
 						if (typeof(val) === 'function')
 							doc[item.keys[j]] = val(doc[item.keys[j]], doc);
 						else
@@ -534,12 +535,10 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 			if (item.type)
 				continue;
 
-			if (item.response) {
+			if (item.response)
 				item.response.push(output);
-				continue;
-			}
-
-			item.response = [output];
+			else
+				item.response = [output];
 		}
 	}));
 
@@ -743,8 +742,7 @@ Database.prototype.$drop = function() {
 
 	try {
 		Fs.readdirSync(self.binary.directory).forEach(function(filename) {
-			if (filename.startsWith(self.name + '#') && filename.endsWith(EXTENSION_BINARY))
-				remove.push(framework_utils.join(self.binary.directory, filename));
+			filename.startsWith(self.name + '#') && filename.endsWith(EXTENSION_BINARY) && remove.push(framework_utils.join(self.binary.directory, filename));
 		});
 	} catch (e) {}
 
