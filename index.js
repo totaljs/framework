@@ -11008,6 +11008,8 @@ Controller.prototype.href = function(key, value) {
 			for (var i = 2; i < arguments.length; i++)
 				obj[arguments[i]] = undefined;
 
+			obj[key] = '\0';
+
 			var arr = Object.keys(obj);
 			for (var i = 0, length = arr.length; i < length; i++) {
 				var val = obj[arr[i]];
@@ -11027,7 +11029,7 @@ Controller.prototype.href = function(key, value) {
 			str = str.substring(0, beg) + str.substring(end === -1 ? str.length : end + 1);
 		}
 
-		return str;
+		return str ? '?' + str : '';
 	}
 
 	if (value) {
