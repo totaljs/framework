@@ -9,6 +9,8 @@
 - updated: `debug.js` adds timestamps
 - updated: `F.redirect()` can contain a relative URL of file
 
+- improve: `@{href(key, value)}` performance
+
 - renamed: `F.onLocate` renamed to `F.onLocale`
 
 ======= 2.1.0
