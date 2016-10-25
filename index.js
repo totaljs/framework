@@ -556,7 +556,8 @@ function Framework() {
 		'default-interval-clear-cache': 7,
 		'default-interval-precompile-views': 61,
 		'default-interval-websocket-ping': 3,
-		'default-interval-clear-dnscache': 120
+		'default-interval-clear-dnscache': 120,
+		'default-interval-cache-snapshot': 0
 	};
 
 	this.global = {};
@@ -6363,7 +6364,6 @@ Framework.prototype.reconnect = function() {
 Framework.prototype._service = function(count) {
 
 	var self = this;
-	self.datetime = new Date();
 
 	UIDGENERATOR.date = self.datetime.format('yyMMddHHmm');
 	UIDGENERATOR.index = 1;
@@ -7689,7 +7689,7 @@ Framework.prototype.clear = function(callback, isInit) {
 				var filename = files[i].substring(dir.length);
 				if (plus && !filename.startsWith(plus))
 					continue;
-				filename.indexOf('/') === -1 && arr.push(files[i]);
+				filename.indexOf('/') === -1 && !filename.endsWith('.jsoncache') && arr.push(files[i]);
 			}
 			files = arr;
 			directories = [];
@@ -8373,6 +8373,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 			case 'default-interval-websocket-ping':
 			case 'default-maximum-file-descriptors':
 			case 'default-interval-clear-dnscache':
+			case 'default-interval-cache-snapshot':
 				obj[name] = framework_utils.parseInt(value);
 				break;
 
@@ -9186,8 +9187,28 @@ function FrameworkCache() {
 }
 
 FrameworkCache.prototype.init = function() {
+	clearInterval(this.interval);
 	this.interval = setInterval(() => framework.cache.recycle(), 1000 * 60);
+	framework.config['default-interval-cache-snapshot'] && this.load();
 	return this;
+};
+
+FrameworkCache.prototype.save = function() {
+	var self = this;
+	Fs.writeFile(framework.path.temp((framework.id ? 'i-' + framework.id + '_' : '') + 'framework.jsoncache'), JSON.stringify(this.items), NOOP);
+	return self;
+};
+
+FrameworkCache.prototype.load = function() {
+	var self = this;
+	Fs.readFile(framework.path.temp((framework.id ? 'i-' + framework.id + '_' : '') + 'framework.jsoncache'), function(err, response) {
+		if (err)
+			return;
+		var data = response.parseJSON();
+		if (data)
+			self.items = data;
+	});
+	return self;
 };
 
 FrameworkCache.prototype.stop = function() {
@@ -9206,7 +9227,7 @@ FrameworkCache.prototype.recycle = function() {
 
 	var self = this;
 	var items = self.items;
-	var expire = new Date();
+	var expire = framework.datetime = new Date();
 
 	self.count++;
 
@@ -9220,7 +9241,10 @@ FrameworkCache.prototype.recycle = function() {
 		}
 	}
 
+	var snapshot = framework.config['default-interval-cache-snapshot'];
+	snapshot && snapshot % self.count === 0 && self.save();
 	framework._service(self.count);
+
 	return self;
 };
 
@@ -9234,7 +9258,7 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 			break;
 
 		case 'undefined':
-			expire = new Date().add('m', 5);
+			expire = framework.datetime.add('m', 5);
 			break;
 	}
 
@@ -9259,7 +9283,7 @@ FrameworkCache.prototype.read = FrameworkCache.prototype.get = function(key, def
 	return value.value;
 };
 
-FrameworkCache.prototype.read2 = function(key, def) {
+FrameworkCache.prototype.read2 = FrameworkCache.prototype.get2 = function(key, def) {
 	var self = this;
 	var value = self.items[key];
 
