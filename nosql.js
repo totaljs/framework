@@ -317,7 +317,7 @@ Database.prototype.$meta = function(write) {
 	}
 
 	try {
-		self.metadata = JSON.parse(Fs.readFileSync(self.filenameMeta).toString('utf8'));
+		self.metadata = JSON.parse(Fs.readFileSync(self.filenameMeta).toString('utf8'), jsonparser);
 	} catch (err) {}
 
 	return self;
@@ -515,7 +515,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 	var length = filter.length;
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
-		var json = JSON.parse(value.trim());
+		var json = JSON.parse(value.trim(), jsonparser);
 		for (var i = 0; i < length; i++) {
 
 			var item = filter[i];
@@ -1781,4 +1781,8 @@ function errorhandling(err, builder, response) {
 	if (!response || (is && !response.length))
 		return builder.$callback_emptyerror ? new ErrorBuilder().push(builder.$callback_emptyerror) : null;
 	return null;
+}
+
+function jsonparser(key, value) {
+	return typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value;
 }
