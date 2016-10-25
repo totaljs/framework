@@ -2,1040 +2,985 @@
 
 'use strict';
 
-var VERSION = 'v2.x.x';
+const VERSION = 'v2.2.0';
+const PADDING = 120;
 
-var fs = require('fs');
-var ph = require('path');
-var parser = require('url');
-var zlib = require('zlib');
-var http = require('http');
-var https = require('https');
-var padding = 120;
-var exec = require('child_process').exec;
-var os = require('os');
-var EOF = os.platform() === 'win32' ? '\r\n' : '\n';
+const Fs = require('fs');
+const Path = require('path');
+const parser = require('url');
+const Zlib = require('zlib');
+const Http = require('http');
+const Https = require('https');
+const Os = require('os');
+const EOF = Os.platform() === 'win32' ? '\r\n' : '\n';
+const REG_EMPTY = /\s/g;
+const isWindows = Os.platform().substring(0, 3).toLowerCase() === 'win';
+
 var $type = 0;
 var settings = {};
-var colors = { reset: '\x1b[0m', underscore: '\x1b[4m', dim: '\x1b[2m', reverse: '\x1b[7m', white: '\x1b[37m', red: '\x1b[31m', bgRed: '\x1b[41m', bgGreen: '\x1b[42m' };
-var isWindows = os.platform().substring(0, 3).toLowerCase() === 'win';
+var colors = { reset: '\x1b[0m', underscore: '\x1b[4m', dim: '\x1b[33m', reverse: '\x1b[7m', white: '\x1b[37m', red: '\x1b[31m', bgRed: '\x1b[41m', bgGreen: '\x1b[42m' };
 
 var current_repository = 'default';
 var current_package = '';
 
 String.prototype.padRight = function(max, c) {
-    var self = this;
-    return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
+	var self = this;
+	return self + new Array(Math.max(0, max - self.length + 1)).join(c || ' ');
 };
 
 function Backup() {
-    this.file = [];
-    this.directory = [];
-    this.path = '';
-    this.fileName = '';
+	this.file = [];
+	this.directory = [];
+	this.path = '';
+	this.filename = '';
+	this.pending = 0;
 
-    this.read = { key: '', value: '', status: 0 };
+	this.read = { key: new Buffer(0), value: new Buffer(0), status: 0 };
+	this.bufKey = new Buffer(':');
+	this.bufNew = new Buffer('\n');
 
-    this.complete = function() {};
-    this.filter = function(path) {
-        return true;
-    };
+	this.complete = function() {};
+	this.filter = () => true;
 }
 
 function Walker() {
-    this.pending = [];
-    this.pendingDirectory = [];
-    this.directory = [];
-    this.file = [];
-    this.options = { sort: true, addEmptyDirectory: false };
-    this.onComplete = null;
-    this.onFilter = null;
+	this.pending = [];
+	this.pendingDirectory = [];
+	this.directory = [];
+	this.file = [];
+	this.options = { sort: true, addEmptyDirectory: false };
+	this.onComplete = null;
+	this.onFilter = null;
 }
 
 Walker.prototype.reset = function() {
-    var self = this;
-    self.file = [];
-    self.directory = [];
-    self.pendingDirectory = [];
+	var self = this;
+	self.file = [];
+	self.directory = [];
+	self.pendingDirectory = [];
 };
 
 Walker.prototype.walk = function(path) {
 
-    var self = this;
+	var self = this;
 
-    if (path instanceof Array) {
-        var length = path.length;
+	if (path instanceof Array) {
+		var length = path.length;
 
-        for (var i = 0; i < length; i++)
-            self.pendingDirectory.push(path[i]);
+		for (var i = 0; i < length; i++)
+			self.pendingDirectory.push(path[i]);
 
-        self.next();
-        return;
-    }
+		self.next();
+		return;
+	}
 
-    fs.readdir(path, function(err, arr) {
+	Fs.readdir(path, function(err, arr) {
 
-        if (err)
-            return self.next();
+		if (err)
+			return self.next();
 
-        if (arr.length === 0 || self.options.addEmptyDirectory) {
-            if (self.onFilter === null || self.onFilter(path))
-                self.directory.push(path);
-        }
+		if (arr.length === 0 || self.options.addEmptyDirectory) {
+			if (self.onFilter === null || self.onFilter(path))
+				self.directory.push(path);
+		}
 
-        var length = arr.length;
-        for (var i = 0; i < length; i++)
-            self.pending.push(ph.join(path, arr[i]));
+		var length = arr.length;
+		for (var i = 0; i < length; i++)
+			self.pending.push(Path.join(path, arr[i]));
 
-        self.next();
-    });
+		self.next();
+	});
 };
 
 Walker.prototype.stat = function(path) {
-    var self = this;
+	var self = this;
 
-    fs.stat(path, function(err, stats) {
+	Fs.stat(path, function(err, stats) {
 
-        if (err)
-            return self.next();
+		if (err)
+			return self.next();
 
-        if (stats.isDirectory())
-            self.pendingDirectory.push(path);
-        else if (self.onFilter === null || self.onFilter(path))
-            self.file.push(path);
+		if (stats.isDirectory())
+			self.pendingDirectory.push(path);
+		else if (!self.onFilter || self.onFilter(path))
+			self.file.push(path);
 
-        self.next();
-    });
+		self.next();
+	});
 };
 
 Walker.prototype.next = function() {
-    var self = this;
+	var self = this;
 
-    if (self.pending.length > 0) {
-        var item = self.pending.shift();
-        self.stat(item);
-        return;
-    }
+	if (self.pending.length) {
+		var item = self.pending.shift();
+		self.stat(item);
+		return;
+	}
 
-    if (self.pendingDirectory.length > 0) {
-        var directory = self.pendingDirectory.shift();
-        self.walk(directory);
-        return;
-    }
+	if (self.pendingDirectory.length) {
+		var directory = self.pendingDirectory.shift();
+		self.walk(directory);
+		return;
+	}
 
-    if (self.options.sort) {
-        self.file.sort(function(a, b) {
-            return a.localeCompare(b);
-        });
-    }
+	self.options.sort && self.file.sort(function(a, b) {
+		return a.localeCompare(b);
+	});
 
-    self.onComplete(self.directory, self.file);
+	self.onComplete(self.directory, self.file);
 };
 
-Backup.prototype.backup = function(path, fileName, callback, filter) {
+Backup.prototype.backup = function(path, filename, callback, filter) {
 
-    if (fs.existsSync(fileName))
-        fs.unlinkSync(fileName);
+	Fs.existsSync(filename) && Fs.unlinkSync(filename);
 
-    var walker = new Walker();
-    var self = this;
+	var walker = new Walker();
+	var self = this;
 
-    self.fileName = fileName;
-    self.path = path;
+	self.filename = filename;
+	self.path = path;
 
-    if (callback)
-        self.complete = callback;
+	if (callback)
+		self.complete = callback;
 
-    if (filter)
-        self.filter = filter;
+	if (filter)
+		self.filter = filter;
 
-    walker.onComplete = function(directory, files) {
-        self.directory = directory;
+	walker.onComplete = function(directory, files) {
+		self.directory = directory;
 
-        var ignore = [];
-        var index = 0;
+		var ignore = [];
+		var index = 0;
 
-        while (true) {
-            var file = files[index++];
-            if (file === undefined)
-                break;
-            if (file.indexOf('.tpmignore') === -1)
-                continue;
-            index--;
-            ignore.push(file);
-            files.splice(index, 1);
-        }
+		while (true) {
+			var file = files[index++];
+			if (file === undefined)
+				break;
+			if (file.indexOf('.tpmignore') === -1)
+				continue;
+			index--;
+			ignore.push(file);
+			files.splice(index, 1);
+		}
 
-        var skip = [];
+		var skip = ['.DS_Store', '.git', 'thumbs.db'];
+		for (var i = 0, length = ignore.length; i < length; i++)
+			skip = skip.concat(Fs.readFileSync(ignore[i]).toString('utf8').split('\n'));
 
-        for (var i = 0, length = ignore.length; i < length; i++)
-            skip = skip.concat(fs.readFileSync(ignore[i]).toString('utf8').split('\n'));
+		index = 0;
+		while (true) {
+			var file = directory[index++];
+			if (file === undefined)
+				break;
+			for (var i = 0, length = skip.length; i < length; i++) {
+				if (!skip[i])
+					continue;
+				if (file.indexOf(skip[i]) === -1)
+					continue;
+				index--;
+				directory.splice(index, 1);
+				break;
+			}
+		}
 
-        index = 0;
-        while (true) {
-            var file = directory[index++];
-            if (file === undefined)
-                break;
-            for (var i = 0, length = skip.length; i < length; i++) {
-                if (!skip[i])
-                    continue;
-                if (file.indexOf(skip[i]) === -1)
-                    continue;
-                index--;
-                directory.splice(index, 1);
-                break;
-            }
-        }
+		index = 0;
+		while (true) {
+			var file = files[index++];
+			if (file === undefined)
+				break;
+			for (var i = 0, length = skip.length; i < length; i++) {
+				if (!skip[i] || (file.indexOf(skip[i]) === -1 && file.substring(self.path.length).indexOf('/tmp/') !== 0))
+					continue;
+				index--;
+				files.splice(index, 1);
+				break;
+			}
+		}
 
-        index = 0;
-        while (true) {
-            var file = files[index++];
-            if (file === undefined)
-                break;
-            for (var i = 0, length = skip.length; i < length; i++) {
-                if (!skip[i])
-                    continue;
-                if (file.indexOf(skip[i]) === -1)
-                    continue;
-                index--;
-                files.splice(index, 1);
-                break;
-            }
-        }
+		self.file = files;
+		self.$compress();
+	};
 
-        self.file = files;
-        self.$compress();
-    };
-
-    walker.walk(path);
+	walker.walk(path);
 };
-
 
 Backup.prototype.$compress = function() {
 
-    var self = this;
-    var length = self.path.length;
-    var len = 0;
+	var self = this;
+	var length = self.path.length;
+	var len = 0;
 
-    if (self.directory.length > 0) {
+	if (self.directory.length) {
 
-        len = self.directory.length;
+		len = self.directory.length;
 
-        for (var i = 0; i < len; i++) {
-            var o = self.directory[i];
-            if (self.filter(o.substring(length)))
-                fs.appendFileSync(self.fileName, (o.replace(self.path, '').replace(/\\/g, '/') + '/').padRight(padding) + ':#\n');
-        }
+		for (var i = 0; i < len; i++) {
+			var o = self.directory[i];
+			self.filter(o.substring(length)) && Fs.appendFileSync(self.filename, (o.replace(self.path, '').replace(/\\/g, '/') + '/').padRight(PADDING) + ':#\n');
+		}
 
-        self.directory = [];
-    }
+		self.directory = [];
+	}
 
-    var fileName = self.file.shift();
+	var filename = self.file.shift();
 
-    if (typeof(fileName) === 'undefined') {
-        self.complete(null, self.fileName);
-        return;
-    }
+	if (!filename) {
+		self.complete(null, self.filename);
+		return;
+	}
 
-    if (!self.filter(fileName.substring(length))) {
-        self.$compress();
-        return;
-    }
+	if (!self.filter(filename.substring(length))) {
+		self.$compress();
+		return;
+	}
 
-    var buffer = '';
+	var buffer = '';
 
-    fs.readFile(fileName, function(err, data) {
-        zlib.gzip(data, function(err, data) {
+	Fs.readFile(filename, function(err, data) {
+		Zlib.gzip(data, function(err, data) {
 
-            if (err)
-                return;
+			if (err)
+				return;
 
-            var name = fileName.replace(self.path, '').replace(/\\/g, '/');
-            fs.appendFile(self.fileName, name.padRight(padding) + ':' + data.toString('base64') + '\n', function(err) {
-                self.$compress();
-            });
-        });
-    });
+			var name = filename.replace(self.path, '').replace(/\\/g, '/');
+			Fs.appendFile(self.filename, name.padRight(PADDING) + ':' + data.toString('base64') + '\n', () => self.$compress());
+		});
+	});
 };
 
 Backup.prototype.restoreKey = function(data) {
 
-    var self = this;
-    var read = self.read;
+	var self = this;
+	var read = self.read;
 
-    if (read.status === 1) {
-        self.restoreValue(data);
-        return;
-    }
+	if (read.status === 1) {
+		self.restoreValue(data);
+		return;
+	}
 
-    var index = -1;
-    var tmp = data;
+	var index = -1;
+	var tmp = data;
 
-    if (read.status === 2) {
-        tmp = read.key + tmp;
-        index = tmp.indexOf(':');
-    }
-    else
-        index = tmp.indexOf(':');
+	if (read.status === 2) {
+		tmp = Buffer.concat([read.key, tmp]);
+		index = tmp.indexOf(self.bufKey);
+	} else
+		index = tmp.indexOf(self.bufKey);
 
-    if (index === -1) {
-        read.key += data;
-        read.status = 2;
-        return;
-    }
+	if (index === -1) {
+		read.key = Buffer.concat([read.key, data]);
+		read.status = 2;
+		return;
+	}
 
-    read.status = 1;
-    read.key = tmp.substring(0, index);
-    self.restoreValue(tmp.substring(index + 1));
+	read.status = 1;
+	read.key = tmp.slice(0, index);
+	self.restoreValue(tmp.slice(index + 1));
+	tmp = null;
 };
 
 Backup.prototype.restoreValue = function(data) {
 
-    var self = this;
-    var read = self.read;
+	var self = this;
+	var read = self.read;
 
-    if (read.status !== 1) {
-        self.restoreKey(data);
-        return;
-    }
+	if (read.status !== 1) {
+		self.restoreKey(data);
+		return;
+	}
 
-    var index = data.indexOf('\n');
-    if (index === -1) {
-        read.value += data;
-        return;
-    }
+	var index = data.indexOf(self.bufNew);
+	if (index === -1) {
+		read.value = Buffer.concat([read.value, data]);
+		return;
+	}
 
-    read.value += data.substring(0, index);
-    self.restoreFile(read.key.replace(/\s/g, ''), read.value.replace(/\s/g, ''));
+	read.value = Buffer.concat([read.value, data.slice(0, index)]);
+	self.restoreFile(read.key.toString('utf8').replace(REG_EMPTY, ''), read.value.toString('utf8').replace(REG_EMPTY, ''));
 
-    read.status = 0;
-    read.value = '';
-    read.key = '';
+	read.status = 0;
+	read.value = new Buffer(0);
+	read.key = new Buffer(0);
 
-    self.restoreKey(data.substring(index + 1));
+	self.restoreKey(data.slice(index + 1));
 };
 
 Backup.prototype.restore = function(filename, path, callback, filter) {
 
-    if (!fs.existsSync(filename)) {
-        if (callback)
-            callback(new Error('Package file not found.'), path);
-        return;
-    }
+	if (!Fs.existsSync(filename)) {
+		callback && callback(new Error('Package not found.'), path);
+		return;
+	}
 
-    var self = this;
-    self.filter = filter;
-    self.createDirectory(path, true);
+	var self = this;
 
-    var stream = fs.createReadStream(filename);
-    var key = '';
-    var value = '';
-    var status = 0;
+	self.filter = filter;
+	self.cache = {};
+	self.createDirectory(path, true);
+	self.path = path;
 
-    self.path = path;
+	var stream = Fs.createReadStream(filename);
+	stream.on('data', buffer => self.restoreKey(buffer));
 
-    stream.on('data', function(buffer) {
-        self.restoreKey(buffer.toString('utf8'));
-    });
+	if (!callback) {
+		stream.resume();
+		return;
+	}
 
-    if (callback) {
-        stream.on('end', function() {
-            callback(null, path);
-            stream = null;
-        });
-    }
+	callback.path = path;
 
-    stream.resume();
+	stream.on('end', function() {
+		self.callback(callback);
+		stream = null;
+	});
+
+	stream.resume();
+};
+
+Backup.prototype.callback = function(cb) {
+	var self = this;
+	if (self.pending <= 0)
+		return cb(null, cb.path);
+	setTimeout(() => self.callback(cb), 100);
 };
 
 Backup.prototype.restoreFile = function(key, value) {
-    var self = this;
+	var self = this;
 
-    if (typeof(self.filter) === 'function' && !self.filter(key))
-        return;
+	if (typeof(self.filter) === 'function' && !self.filter(key))
+		return;
 
-    if (value === '#') {
-        self.createDirectory(key);
-        return;
-    }
+	if (value === '#') {
+		self.createDirectory(key);
+		return;
+	}
 
-    var path = key;
-    var index = key.lastIndexOf('/');
+	var p = key;
+	var index = key.lastIndexOf('/');
 
-    if (index !== -1) {
-        path = key.substring(0, index).trim();
-        if (path.length > 0)
-            self.createDirectory(path);
-    }
+	if (index !== -1) {
+		p = key.substring(0, index).trim();
+		p && self.createDirectory(p);
+	}
 
-    var buffer = new Buffer(value, 'base64');
-    zlib.gunzip(buffer, function(err, data) {
-        fs.writeFileSync(ph.join(self.path, key), data);
-        buffer = null;
-    });
+	var buffer = new Buffer(value, 'base64');
+	self.pending++;
+
+	Zlib.gunzip(buffer, function(err, data) {
+		Fs.writeFile(Path.join(self.path, key), data, () => self.pending--);
+		buffer = null;
+	});
 };
 
 Backup.prototype.createDirectory = function(p, root) {
 
-    var self = this;
+	var self = this;
 
-    if (p[0] === '/')
-        p = p.substring(1);
+	if (p[0] === '/')
+		p = p.substring(1);
 
-    var is = isWindows;
+	var is = isWindows;
 
-    if (is) {
-        if (p[p.length - 1] === '\\')
-            p = p.substring(0, p.length - 1);
-    } else {
-        if (p[p.length - 1] === '/')
-            p = p.substring(0, p.length - 1);
-    }
+	if (is) {
+		if (p[p.length - 1] === '\\')
+			p = p.substring(0, p.length - 1);
+	} else {
+		if (p[p.length - 1] === '/')
+			p = p.substring(0, p.length - 1);
+	}
 
-    var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
-    var directory = '';
+	var arr = is ? p.replace(/\//g, '\\').split('\\') : p.split('/');
+	var directory = '';
 
-    if (is && arr[0].indexOf(':') !== -1)
-        arr.shift();
+	if (is && arr[0].indexOf(':') !== -1)
+		arr.shift();
 
-    var length = arr.length;
+	var length = arr.length;
 
-    for (var i = 0; i < length; i++) {
+	for (var i = 0; i < length; i++) {
 
-        var name = arr[i];
+		var name = arr[i];
 
-        if (is)
-            directory += (directory.length > 0 ? '\\' : '') + name;
-        else
-            directory += (directory.length > 0 ? '/' : '') + name;
+		if (is)
+			directory += (directory.length > 0 ? '\\' : '') + name;
+		else
+			directory += (directory.length > 0 ? '/' : '') + name;
 
-        var dir = ph.join(self.path, directory);
-        if (root)
-            dir = (is ? '\\' : '/') + dir;
+		var dir = Path.join(self.path, directory);
+		if (root)
+			dir = (is ? '\\' : '/') + dir;
 
-        if (fs.existsSync(dir))
-            continue;
-
-        fs.mkdirSync(dir);
-    }
+		!Fs.existsSync(dir) && Fs.mkdirSync(dir);
+	}
 };
 
 Backup.prototype.clear = function(path, callback, filter) {
 
-    var self = this;
-    var walker = new Walker();
-    walker.options.addEmptyDirectory = true;
+	var self = this;
+	var walker = new Walker();
+	walker.options.addEmptyDirectory = true;
 
-    if (callback)
-        self.complete = callback;
+	if (callback)
+		self.complete = callback;
 
-    if (filter)
-        self.filter = filter;
+	if (filter)
+		self.filter = filter;
 
-    walker.onComplete = function(directory, files) {
+	walker.onComplete = function(directory, files) {
 
-        self.file = [];
-        self.directory = [];
+		self.file = [];
+		self.directory = [];
 
-        if (typeof(filter) !== 'function')
-            filter = function(o) { return true; };
+		if (typeof(filter) !== 'function')
+			filter = function(o) { return true; };
 
-        var length = files.length;
+		var length = files.length;
 
-        for (var i = 0; i < length; i++) {
-            var o = files[i];
-            if (filter(o))
-                self.file.push(o);
-        }
+		for (var i = 0; i < length; i++) {
+			var o = files[i];
+			filter(o) && self.file.push(o);
+		}
 
-        length = directory.length;
-        for (var i = 0; i < length; i++) {
+		length = directory.length;
+		for (var i = 0; i < length; i++) {
+			var o = files[i];
+			if (o === path)
+				return;
+			filter(o) && self.directory.push(o);
+		}
 
-            var o = files[i];
+		self.directory.sort(function(a, b) {
+			if (a.length < b.length)
+				return 1;
+			else
+				return -1;
+		});
 
-            if (o === path)
-                return;
+		self.removeFile();
+	};
 
-            if (filter(o))
-                self.directory.push(o);
-        }
-
-        self.directory.sort(function(a, b) {
-            if (a.length < b.length)
-                return 1;
-            else
-                return -1;
-        });
-
-        self.removeFile();
-    };
-
-    walker.walk(path);
+	walker.walk(path);
 };
 
 Backup.prototype.removeFile = function() {
 
-    var self = this;
-    var filename = self.file.shift();
-
-    if (typeof(filename) === 'undefined') {
-        self.removeDirectory();
-        return;
-    }
-
-    fs.unlink(filename, function() {
-        self.removeFile();
-    });
+	var self = this;
+	var filename = self.file.shift();
+	if (filename)
+		Fs.unlink(filename, () => self.removeFile());
+	else
+		self.removeDirectory();
 };
 
 Backup.prototype.removeDirectory = function() {
-
-    var self = this;
-    var directory = self.directory.shift();
-
-    if (typeof(directory) === 'undefined') {
-        self.complete();
-        return;
-    }
-
-    fs.rmdir(directory, function() {
-        self.removeDirectory();
-    });
+	var self = this;
+	var directory = self.directory.shift();
+	if (directory)
+		Fs.rmdir(directory, () => self.removeDirectory());
+	else
+		self.complete();
 };
 
 function download(url, callback) {
+	var uri = parser.parse(url);
+	var h = {};
+	var encoding = 'utf8';
 
-    var uri = parser.parse(url);
-    var h = {};
-    var encoding = 'utf8';
+	h['X-Powered-By'] = 'Total.js Package Manager';
 
-    h['X-Powered-By'] = 'total.js package manager';
+	var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
+	var con = options.protocol === 'https:' ? Https : Http;
+	var req = con.get(options, res => callback(null, res));
 
-    var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
-
-    var response = function(res) {
-        callback(null, res);
-    };
-
-    var con = options.protocol === 'https:' ? https : http;
-
-    try
-    {
-
-        var req = con.get(options, response);
-
-        if (callback) {
-            req.on('error', function(error) {
-                callback(error, null);
-            });
-        }
-
-        req.end();
-
-    } catch (ex) {
-        if (callback)
-            callback(ex, null);
-        return false;
-    }
-
-    return true;
+	req.on('error', error => callback(error, null));
+	req.end();
+	return true;
 }
 
 function display_help() {
-    log(colors.reset);
-    log('====== Total.js Package Manager ' + VERSION +' ======');
-    log('');
-    log(colors.underscore + '===== INSTALL PACKAGE TO THE CURRENT PATH' + colors.reset);
-    log('');
-    log(colors.red + 'tpm install [optional: package_name] [optional: repository_name]' + colors.reset);
-    log('');
-    log('EXAMPLE: tpm install ddos');
-    log('EXAMPLE: tpm install ddos local-repository');
-    log('');
-    log(colors.dim + 'Install all total.js packages from package.json:' + colors.reset);
-    log('EXAMPLE: tpm install');
-    log('');
-    log(colors.underscore + '===== UNINSTALL PACKAGE FROM THE CURRENT PATH' + colors.reset);
-    log('');
-    log(colors.red + 'tpm uninstall [optional: package_name] [optional: repository_name]' + colors.reset);
-    log('');
-    log('EXAMPLE: tpm uninstall ddos');
-    log('EXAMPLE: tpm uninstall ddos local-repository');
-    log('');
-    log(colors.dim + 'Uninstall all total.js packages from package.json:' + colors.reset);
-    log('EXAMPLE: tpm uninstall');
-    log('');
-    log(colors.underscore + '===== CREATE PACKAGE FROM THE CURRENT PATH CREATE' + colors.reset);
-    log('');
-    log(colors.red + 'tpm create [important: package_name] [optional: package_directory_to_pack]' + colors.reset);
-    log('');
-    log('EXAMPLE: tpm create my-project-template');
-    log('EXAMPLE: tpm create my-module');
-    log('EXAMPLE: tpm create my-module /users/packages/my-package/');
-    log('');
-    log(colors.underscore + '===== ADD A NEW PACKAGE REPOSITORY' + colors.reset);
-    log('');
-    log(colors.red + 'tpm repository [repository_name] [repository_url]' + colors.reset);
-    log('');
-    log('EXAMPLE: tpm repository local http://127.0.0.1:8000/');
-    log('EXAMPLE: tpm repository enterprise http://repository.yourcompany.com/packages/totaljs/');
-    log('');
-    log(colors.underscore + '===== SHOW ALL REGISTERED REPOSITORIES' + colors.reset);
-    log('');
-    log(colors.red + 'tpm repositories' + colors.reset);
-    log('');
-    log(colors.underscore + '===== UNPACK PACKAGE' + colors.reset);
-    log('');
-    log(colors.red + 'tpm unpack [package_name] [optional: target_directory]' + colors.reset);
-    log('');
-}
+	log(colors.reset);
+	log('====== Total.js Package Manager ' + VERSION +' ======');
+	log('');
+	log(colors.red + '$ tpm install [optional: package_name] [optional: repository_name]' + colors.reset);
+	log('');
+	log(colors.dim + 'EXAMPLE: tpm install ddos');
+	log('EXAMPLE: tpm install ddos local-repository' + colors.reset);
+	log('');
+	log('Install all Total.js packages from "package.json":');
+	log(colors.dim + 'EXAMPLE: tpm install' + colors.reset);
+	log('');
+	log('--- --- --- --- ---');
+	log('');
+	log(colors.red + '$ tpm uninstall [optional: package_name] [optional: repository_name]' + colors.reset);
+	log('');
+	log(colors.dim + 'EXAMPLE: tpm uninstall ddos');
+	log('EXAMPLE: tpm uninstall ddos local-repository' + colors.reset);
+	log('');
+	log('Uninstall all Total.js packages from package.json:');
+	log(colors.dim + 'EXAMPLE: tpm uninstall' + colors.reset);
+	log('');
+	log('--- --- --- --- ---');
+	log('');
+	log(colors.red + '$ tpm create [important: package_name] [optional: package_directory_to_pack]' + colors.reset);
+	log('');
+	log(colors.dim + 'EXAMPLE: tpm create my-project-template');
+	log('EXAMPLE: tpm create my-module');
+	log('EXAMPLE: tpm create my-module /users/packages/my-package/' + colors.reset);
+	log('');
+	log('--- --- --- --- ---');
+	log('');
+	log(colors.red + '$ tpm repository [repository_name] [repository_url]' + colors.reset);
+	log('');
+	log(colors.dim + 'EXAMPLE: tpm repository local http://127.0.0.1:8000/');
+	log('EXAMPLE: tpm repository enterprise http://repository.yourcompany.com/packages/totaljs/' + colors.reset);
+	log('');
+	log('--- --- --- --- ---');
+	log('');
+	log(colors.red + '$ tpm repositories' + colors.reset);
+	log('');
+	log('--- --- --- --- ---');
+	log('');
+	log(colors.red + '$ tpm unpack [package_name] [optional: target_directory]' + colors.reset);
+	log('');
+}colors.dim +
 
 function display_repositories() {
-    log('');
-    log('--- REPOSITORIES ---');
-    log('');
-    log('Filename: ' + ph.join(ph.dirname(process.argv[1]), 'tpm.json'));
-    log('');
-    Object.keys(settings).forEach(function(key) {
-        log(key.padRight(33) + ': ' + settings[key]);
-    });
-    log('');
+	log('');
+	log('--- REPOSITORIES ---');
+	log('');
+	log('Filename: ' + Path.join(Path.dirname(process.argv[1]), 'tpm.json'));
+	log('');
+	Object.keys(settings).forEach(function(key) {
+		log(key.padRight(33) + ': ' + settings[key]);
+	});
+	log('');
 }
 
 function repository_add() {
 
-    if (current_package.length === 0 || current_repository.length === 0) {
-        display_repositories();
-        return;
-    }
+	if (!current_package.length || !current_repository.length) {
+		display_repositories();
+		return;
+	}
 
-    var filename = ph.join(ph.dirname(process.argv[1]), 'tpm.json');
+	var filename = Path.join(Path.dirname(process.argv[1]), 'tpm.json');
+	var last = current_repository[current_repository.length - 1];
+	if (last !== '=' && last !== '?' && last !== '/')
+		current_repository += '/';
 
-    var last = current_repository[current_repository.length - 1];
-    if (last !== '=' && last !== '?' && last !== '/')
-        current_repository += '/';
-
-    settings[current_package] = current_repository;
-    fs.writeFileSync(filename, JSON.stringify(settings));
-
-    display_repositories();
+	settings[current_package] = current_repository;
+	Fs.writeFileSync(filename, JSON.stringify(settings));
+	display_repositories();
 }
 
 function install(repository, pkgname, cb, append) {
 
-    var name = pkgname;
-    if (name.toLowerCase().lastIndexOf('.package') === -1)
-        name += '.package';
+	var name = pkgname;
+	if (name.toLowerCase().lastIndexOf('.package') === -1)
+		name += '.package';
 
-    var h = name.substring(0, 6);
-    if (h === 'http:/' || h === 'https:') {
-        var n = ph.basename(name);
-        pkgname = n;
-        repository = name.substring(0, name.length - n.length);
-        name = n;
-    }
+	var h = name.substring(0, 6);
+	if (h === 'http:/' || h === 'https:') {
+		var n = Path.basename(name);
+		pkgname = n;
+		repository = name.substring(0, name.length - n.length);
+		name = n;
+	}
 
-    log('');
-    log(colors.red + '--- INSTALL PACKAGE --' + colors.reset);
-    log('');
-    log('Package      :', pkgname);
-    log('Directory    :', process.cwd());
-    log('Download     :', repository + name);
+	log('');
+	log(colors.red + '--- INSTALL PACKAGE --' + colors.reset);
+	log('');
+	log('Package      :', pkgname);
+	log('Directory    :', process.cwd());
+	log('Download     :', repository + name);
 
-    download(repository + name, function (err, response) {
+	download(repository + name, function (err, response) {
 
-        if (err) {
+		if (err) {
 
-            log(colors.bgRed + colors.white + 'Error        :', err + colors.reset);
+			log(colors.bgRed + colors.white + 'Error        :', err + colors.reset);
 
-            if (cb)
-                cb();
+			if (cb)
+				cb();
 
-            return;
-        }
+			return;
+		}
 
-        if (response.statusCode !== 200) {
-            log(colors.bgRed + colors.white + 'Error        :', response.statusCode + colors.reset);
-            log('');
+		if (response.statusCode !== 200) {
+			log(colors.bgRed + colors.white + 'Error        :', response.statusCode + colors.reset);
+			log('');
 
-            if (cb)
-                cb();
+			if (cb)
+				cb();
 
-            return;
-        }
+			return;
+		}
 
-        var filename = ph.join(process.cwd(), name);
-        var stream = fs.createWriteStream(filename);
+		var filename = Path.join(process.cwd(), name);
+		var stream = Fs.createWriteStream(filename);
 
-        response.on('end', function () {
+		response.on('end', function () {
 
-            log('Installing   :', filename);
+			log('Installing   :', filename);
 
-            var backup = new Backup();
-            backup.restore(filename, ph.dirname(filename), function() {
-                log('Removing     :', filename);
-                fs.unlinkSync(filename);
-                log(colors.bgGreen + colors.white + 'Status       :', 'Success' + colors.reset);
-                log('');
-                if (append) {
-                    filename = ph.join(process.cwd(), 'package.json');
+			var backup = new Backup();
+			backup.restore(filename, Path.dirname(filename), function() {
+				log('Removing     :', filename);
+				Fs.unlinkSync(filename);
+				log(colors.bgGreen + colors.white + 'Status       :', 'Success' + colors.reset);
+				log('');
+				if (append) {
+					filename = Path.join(process.cwd(), 'package.json');
 
-                    if (fs.existsSync(filename)) {
-                        var obj = JSON.parse(fs.readFileSync(filename).toString('utf8'));
-                        if (!obj.tpm)
-                            obj.tpm = {};
-                        obj.tpm[pkgname] = repository;
-                    } else {
-                        obj = { tpm: {} };
-                        obj.tpm[pkgname] = repository;
-                    }
+					if (Fs.existsSync(filename)) {
+						var obj = JSON.parse(Fs.readFileSync(filename).toString('utf8'));
+						if (!obj.tpm)
+							obj.tpm = {};
+						obj.tpm[pkgname] = repository;
+					} else {
+						obj = { tpm: {} };
+						obj.tpm[pkgname] = repository;
+					}
 
-                    fs.writeFileSync(filename, JSON.stringify(obj, null, 4));
-                }
+					Fs.writeFileSync(filename, JSON.stringify(obj, null, 4));
+				}
 
-                if (cb)
-                    cb();
+				if (cb)
+					cb();
 
-            });
+			});
 
-        });
+		});
 
-        response.pipe(stream);
-    });
+		response.pipe(stream);
+	});
 }
 
 function unpack(filename, target) {
-    var backup = new Backup();
-    backup.restore(filename, target ? target : ph.dirname(filename), function() {
-        log(colors.bgGreen + colors.white + 'Status       :', 'Success' + colors.reset);
-        log('');
-    });
+	var backup = new Backup();
+	backup.restore(filename, target ? target : Path.dirname(filename), function() {
+		log(colors.bgGreen + colors.white + 'Status       :', 'Success' + colors.reset);
+		log('');
+	});
 }
 
 function uninstall(repository, pkgname, cb, remove) {
 
-    var name = pkgname;
+	var name = pkgname;
 
-    if (name.toLowerCase().lastIndexOf('.package') === -1)
-        name += '.package';
+	if (name.toLowerCase().lastIndexOf('.package') === -1)
+		name += '.package';
 
-    log('');
-    log(colors.red + '--- UNINSTALL PACKAGE --' + colors.reset);
-    log('');
-    log('Package      :', pkgname);
-    log('Directory    :', process.cwd());
-    log('Download     :', repository + name);
+	log('');
+	log(colors.red + '--- UNINSTALL PACKAGE --' + colors.reset);
+	log('');
+	log('Package      :', pkgname);
+	log('Directory    :', process.cwd());
+	log('Download     :', repository + name);
 
-    download(repository + name, function (err, response) {
+	download(repository + name, function (err, response) {
 
-        if (err) {
+		if (err) {
 
-            log(colors.bgRed + colors.white + 'Error        :', err + colors.reset);
+			log(colors.bgRed + colors.white + 'Error        :', err + colors.reset);
 
-            if (cb)
-                cb();
+			if (cb)
+				cb();
 
-            return;
-        }
+			return;
+		}
 
-        if (response.statusCode !== 200) {
-            log(colors.bgRed + colors.white + 'Error        :', response.statusCode + colors.reset);
-            log('');
+		if (response.statusCode !== 200) {
+			log(colors.bgRed + colors.white + 'Error        :', response.statusCode + colors.reset);
+			log('');
 
-            if (cb)
-                cb();
+			if (cb)
+				cb();
 
-            return;
-        }
+			return;
+		}
 
-        var filename = ph.join(process.cwd(), name);
-        var stream = fs.createWriteStream(filename);
-        var arr = [];
+		var filename = Path.join(process.cwd(), name);
+		var stream = Fs.createWriteStream(filename);
+		var arr = [];
 
-        response.on('end', function () {
+		response.on('end', function () {
 
-            log('Reading      :', filename);
+			log('Reading      :', filename);
 
-            var backup = new Backup();
-            backup.restore(filename, ph.dirname(filename), function() {
+			var backup = new Backup();
+			backup.restore(filename, Path.dirname(filename), function() {
 
-                arr.sort(function(a, b) {
-                    if (a.length > b.length)
-                        return -1;
-                    if (a.length < b.length)
-                        return 1;
-                    return a.localeCompare(b);
-                });
+				arr.sort(function(a, b) {
+					if (a.length > b.length)
+						return -1;
+					if (a.length < b.length)
+						return 1;
+					return a.localeCompare(b);
+				});
 
-                arr.forEach(function(path) {
-                    try
-                    {
-                        log('Removing     :', path);
-                        unlink(path);
-                    } catch (e) {}
-                });
+				arr.forEach(function(path) {
+					try
+					{
+						log('Removing     :', path);
+						unlink(path);
+					} catch (e) {}
+				});
 
-                log('Removing     :', filename);
-                fs.unlinkSync(filename);
-                log(colors.bgGreen + colors.white + 'Status       :', 'Success' + colors.reset);
-                log('');
+				log('Removing     :', filename);
+				Fs.unlinkSync(filename);
+				log(colors.bgGreen + colors.white + 'Status       :', 'Success' + colors.reset);
+				log('');
 
-                if (remove) {
-                    filename = ph.join(process.cwd(), 'package.json');
+				if (remove) {
+					filename = Path.join(process.cwd(), 'package.json');
 
-                    if (fs.existsSync(filename)) {
-                        var obj = JSON.parse(fs.readFileSync(filename).toString('utf8'));
-                        if (obj.tpm)
-                            delete obj.tpm[pkgname];
-                        fs.writeFileSync(filename, JSON.stringify(obj, null, 4));
-                    }
+					if (Fs.existsSync(filename)) {
+						var obj = JSON.parse(Fs.readFileSync(filename).toString('utf8'));
+						if (obj.tpm)
+							obj.tpm[pkgname] = undefined;
+						Fs.writeFileSync(filename, JSON.stringify(obj, null, 4));
+					}
 
-                }
+				}
 
-                if (cb)
-                    cb();
+				cb && cb();
 
-            }, function(path) {
-                arr.push(path);
-                return false;
-            });
+			}, function(path) {
+				arr.push(path);
+				return false;
+			});
 
-        });
+		});
 
-        response.pipe(stream);
+		response.pipe(stream);
 
-    });
+	});
 }
 
 function create() {
 
-    var target = process.cwd();
-    var name = current_package;
+	var target = process.cwd();
+	var name = current_package;
 
-    var length = process.argv.length;
+	var length = process.argv.length;
 
-    if (length === 5) {
-        target = process.argv[4];
-        name = process.argv[3];
-    } else if (length === 4) {
-        current_package = process.argv[3];
-        name = ph.join(process.cwd(), current_package);
-    }
+	if (length === 5) {
+		target = process.argv[4];
+		name = process.argv[3];
+	} else if (length === 4) {
+		current_package = process.argv[3];
+		name = Path.join(process.cwd(), current_package);
+	}
 
-    if (name.toLowerCase().lastIndexOf('.package') === -1)
-        name += '.package';
+	if (name.toLowerCase().lastIndexOf('.package') === -1)
+		name += '.package';
 
-    log('');
-    log('--- CREATE PACKAGE --');
-    log('');
-    log('Package      :', current_package);
-    log('Directory    :', target);
+	log('');
+	log('--- CREATE PACKAGE --');
+	log('');
+	log('Package      :', current_package);
+	log('Directory    :', target);
 
-    if (!isWindows) {
-        if (name[0] !== '/')
-            name = ph.join(process.cwd(), name);
-    }
+	if (!isWindows) {
+		if (name[0] !== '/')
+			name = Path.join(process.cwd(), name);
+	}
 
-    var backup = new Backup();
+	var backup = new Backup();
 
-    backup.backup(target, name, function(err, path) {
+	backup.backup(target, name, function(err, path) {
 
-        if (err)
-            throw err;
+		if (err)
+			throw err;
 
-        log('Success      :', path);
-        log('');
+		log('Success      :', path);
+		log('');
 
-    }, function(path) {
-        // return path.lastIndexOf('.package') === -1;
-        return true;
-    });
+	}, function(path) {
+		// return path.lastIndexOf('.package') === -1;
+		return true;
+	});
 }
 
 function unlink(path) {
 
-    var p = ph.join(process.cwd(), path);
+	var p = Path.join(process.cwd(), path);
 
-    if (!fs.existsSync(p))
-        return;
+	if (!Fs.existsSync(p))
+		return;
 
-    var stats = fs.statSync(p);
+	var stats = Fs.statSync(p);
 
-    if (stats.isFile()) {
-        fs.unlinkSync(p);
-        unlink(ph.dirname(path));
-        return;
-    }
+	if (stats.isFile()) {
+		Fs.unlinkSync(p);
+		unlink(Path.dirname(path));
+		return;
+	}
 
-     if (fs.readdirSync(p).length === 0)
-        fs.rmdirSync(p);
+	 !Fs.readdirSync(p).length && Fs.rmdirSync(p);
 }
 
 function main() {
 
-    var filename = ph.join(ph.dirname(process.argv[1]), 'tpm.json');
-    var dir = process.cwd();
-    settings = { 'default': 'http://packages.totaljs.com/' + VERSION.replace(/\.+/g, '').replace(/\s+/g, '') + '/' };
+	var filename = Path.join(Path.dirname(process.argv[1]), 'tpm.json');
+	var dir = process.cwd();
+	settings = { 'default': 'https://modules.totaljs.com/packages/' };
 
+	if (Fs.existsSync(filename))
+		settings = JSON.parse(Fs.readFileSync(filename).toString('utf8'));
 
-    if (fs.existsSync(filename))
-        settings = JSON.parse(fs.readFileSync(filename).toString('utf8'));
+	if (process.argv.length === 2) {
+		display_help();
+		return;
+	}
 
-    if (process.argv.length === 2) {
-        display_help();
-        return;
-    }
+	for (var i = 2; i < process.argv.length; i++) {
+		var arg = process.argv[i];
+		var cmd = arg.toLowerCase();
 
-    for (var i = 2; i < process.argv.length; i++) {
-        var arg = process.argv[i];
-        var cmd = arg.toLowerCase();
+		if (cmd === '-v' || cmd === '-version') {
+			log(VERSION);
+			return;
+		}
 
-        if (cmd === '-v' || cmd === '-version') {
-            log(VERSION);
-            return;
-        }
+		if (cmd === 'install') {
+			$type = 1;
+			continue;
+		}
 
-        if (cmd === 'install') {
-            $type = 1;
-            continue;
-        }
+		if (cmd === 'uninstall') {
+			$type = 4;
+			continue;
+		}
 
-        if (cmd === 'uninstall') {
-            $type = 4;
-            continue;
-        }
+		if (cmd === 'create') {
+			$type = 2;
+			continue;
+		}
 
-        if (cmd === 'create') {
-            $type = 2;
-            continue;
-        }
+		if (cmd === 'repository') {
+			$type = 3;
+			continue;
+		}
 
-        if (cmd === 'repository') {
-            $type = 3;
-            continue;
-        }
+		if (cmd === 'repositories') {
+			display_repositories();
+			return;
+		}
 
-        if (cmd === 'repositories') {
-            display_repositories();
-            return;
-        }
+		if (cmd === 'unpack') {
+			current_repository = '';
+			$type = 6;
+			continue;
+		}
 
-        if (cmd === 'unpack') {
-            current_repository = '';
-            $type = 6;
-            continue;
-        }
+		if (cmd === 'packages' || cmd === 'list') {
+			$type = 5;
+			continue;
+		}
 
-        if (cmd === 'packages' || cmd === 'list') {
-            $type = 5;
-            continue;
-        }
+		if (cmd === '-h' || cmd === '-help' || cmd === '--help' || cmd === 'help') {
+			display_help();
+			return;
+		}
 
-        if (cmd === '-h' || cmd === '-help' || cmd === '--help' || cmd === 'help') {
-            display_help();
-            return;
-        }
+		if (current_package.length > 0)
+			current_repository = arg;
+		else
+			current_package = arg;
 
-        if (current_package.length > 0)
-            current_repository = arg;
-        else
-            current_package = arg;
+		continue;
+	}
 
-        continue;
-    }
+	switch ($type) {
 
-    switch ($type) {
+		case 1:
 
-        case 1:
+			if (current_package.length) {
+				install(settings[current_repository], current_package, null, true);
+				return;
+			}
 
-            if (current_package.length !== 0) {
-                install(settings[current_repository], current_package, null, true);
-                return;
-            }
+			var filename = Path.join(process.cwd(), 'package.json');
+			var packagejson = {};
 
-            var filename = ph.join(process.cwd(), 'package.json');
-            var packagejson = {};
+			if (!Fs.existsSync(filename))
+				return;
 
-            if (!fs.existsSync(filename))
-                return;
+			packagejson = JSON.parse(Fs.readFileSync(filename).toString('utf8'));
 
-            packagejson = JSON.parse(fs.readFileSync(filename).toString('utf8'));
+			if (!packagejson.tpm)
+				return;
 
-            if (!packagejson.tpm)
-                return;
+			var index = 0;
+			var fn = function() {
+				var key = Object.keys(packagejson.tpm)[index++];
 
-            var index = 0;
-            var fn = function() {
-                var key = Object.keys(packagejson.tpm)[index++];
+				if (typeof(key) === 'undefined')
+					return;
 
-                if (typeof(key) === 'undefined')
-                    return;
+				var url = packagejson.tpm[key];
+				install(url, key, () => fn());
+			};
 
-                var url = packagejson.tpm[key];
+			fn();
 
-                install(url, key, function() {
-                    fn();
-                });
-            };
+			break;
 
-            fn();
+		case 2:
+			create();
+			break;
 
-            break;
+		case 3:
+			repository_add();
+			break;
 
-        case 2:
-            create();
-            break;
+		case 4:
 
-        case 3:
-            repository_add();
-            break;
+			if (current_package.length) {
+				uninstall(settings[current_repository], current_package, null, true);
+				return;
+			}
 
-        case 4:
+			var filename = Path.join(process.cwd(), 'package.json');
+			var packagejson = {};
 
-            if (current_package.length !== 0) {
-                uninstall(settings[current_repository], current_package, null, true);
-                return;
-            }
+			if (!Fs.existsSync(filename))
+				return;
 
-            var filename = ph.join(process.cwd(), 'package.json');
-            var packagejson = {};
+			packagejson = JSON.parse(Fs.readFileSync(filename).toString('utf8'));
 
-            if (!fs.existsSync(filename))
-                return;
+			if (!packagejson.tpm)
+				return;
 
-            packagejson = JSON.parse(fs.readFileSync(filename).toString('utf8'));
+			var index = 0;
+			var fn = function() {
+				var key = Object.keys(packagejson.tpm)[index++];
 
-            if (!packagejson.tpm)
-                return;
+				if (typeof(key) === 'undefined')
+					return;
 
-            var index = 0;
-            var fn = function() {
-                var key = Object.keys(packagejson.tpm)[index++];
+				var url = packagejson.tpm[key];
+				uninstall(url, key, () => fn(), true);
+			};
 
-                if (typeof(key) === 'undefined')
-                    return;
+			fn();
+			break;
 
-                var url = packagejson.tpm[key];
+		case 6:
+			unpack(current_package, current_repository);
+			break;
 
-                uninstall(url, key, function() {
-                    fn();
-                }, true);
-            };
-
-            fn();
-            break;
-
-        case 6:
-            unpack(current_package, current_repository);
-            break;
-
-        default:
-            display_help();
-            break;
-    }
+		default:
+			display_help();
+			break;
+	}
 }
 
 function log() {
-    console.log.apply(console, arguments);
+	console.log.apply(console, arguments);
 }
 
 main();

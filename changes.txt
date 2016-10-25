@@ -10,6 +10,7 @@
 - updated: `F.redirect()` can contain a relative URL of file
 
 - improved: `@{href(key, value)}` performance
+- improved: Total Package Manager `$ tpm --help`
 
 - fixed: (critical) NoSQL `nosql.modify()` and problem with updating `undefined` values
 
