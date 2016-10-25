@@ -9,6 +9,8 @@
 - updated: `SINGLETON(name, [def = {}])` about `def` argument
 - updated: `debug.js` adds timestamps
 - updated: `F.redirect()` can contain a relative URL of file
+- updated: NoSQL embedded parser, dates are parsed as date object
+- updated: `Pagination.next()`, `Pagination.prev()`, `Pagination.last()` and `Pagination.first()` supports new argument `.html([link_inner_html])`
 
 - improved: `@{href(key, value)}` performance
 - improved: Total Package Manager `$ tpm --help`
