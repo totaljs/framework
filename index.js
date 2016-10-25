@@ -3742,7 +3742,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		delete self.dependencies[type + '.' + name];
 
 		fsFileExists(obj.filename, function(e) {
-			e && Fs.unlink(obj.filename);
+			e && Fs.unlink(obj.filename, NOOP);
 		});
 
 		self.emit('uninstall', type, name);
