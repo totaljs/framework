@@ -35,7 +35,7 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
 var schemas = {};
-var transforms = { pagination: {}, error: {}, ransformbuilder: {}, restbuilder: {} };
+var transforms = { pagination: {}, error: {}, transformbuilder: {}, restbuilder: {} };
 
 function SchemaBuilder(name) {
 	this.name = name;
@@ -2934,8 +2934,8 @@ function Page(url, page, selected, enabled) {
 	this.enabled = enabled;
 }
 
-Page.prototype.html = function() {
-	return '<a href="' + this.url + '"' + (this.selected ? ' class="selected">' : '>') + this.page + '</a>';
+Page.prototype.html = function(body) {
+	return '<a href="' + this.url + '"' + (this.selected ? ' class="selected">' : '>') + (body || this.page) + '</a>';
 };
 
 /**
