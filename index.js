@@ -547,6 +547,7 @@ function Framework() {
 		'allow-performance': false,
 		'allow-custom-titles': false,
 		'allow-compatibility': false,
+		'allow-cache-snapshot': false,
 		'disable-strict-server-certificate-validation': true,
 		'disable-clear-temporary-directory': false,
 
@@ -556,8 +557,7 @@ function Framework() {
 		'default-interval-clear-cache': 7,
 		'default-interval-precompile-views': 61,
 		'default-interval-websocket-ping': 3,
-		'default-interval-clear-dnscache': 120,
-		'default-interval-cache-snapshot': 0
+		'default-interval-clear-dnscache': 120
 	};
 
 	this.global = {};
@@ -8373,7 +8373,6 @@ Framework.prototype._configure = function(arr, rewrite) {
 			case 'default-interval-websocket-ping':
 			case 'default-maximum-file-descriptors':
 			case 'default-interval-clear-dnscache':
-			case 'default-interval-cache-snapshot':
 				obj[name] = framework_utils.parseInt(value);
 				break;
 
@@ -8402,6 +8401,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 			case 'disable-strict-server-certificate-validation':
 			case 'disable-clear-temporary-directory':
 			case 'trace':
+			case 'allow-cache-snapshot':
 				obj[name] = value.toLowerCase() === 'true' || value === '1' || value === 'on';
 				break;
 
@@ -9189,7 +9189,7 @@ function FrameworkCache() {
 FrameworkCache.prototype.init = function() {
 	clearInterval(this.interval);
 	this.interval = setInterval(() => framework.cache.recycle(), 1000 * 60);
-	framework.config['default-interval-cache-snapshot'] && this.load();
+	framework.config['allow-cache-snapshot'] && this.load();
 	return this;
 };
 
@@ -9201,10 +9201,10 @@ FrameworkCache.prototype.save = function() {
 
 FrameworkCache.prototype.load = function() {
 	var self = this;
-	Fs.readFile(framework.path.temp((framework.id ? 'i-' + framework.id + '_' : '') + 'framework.jsoncache'), function(err, response) {
+	Fs.readFile(framework.path.temp((framework.id ? 'i-' + framework.id + '_' : '') + 'framework.jsoncache'), function(err, data) {
 		if (err)
 			return;
-		var data = response.parseJSON();
+		data = data.toString('utf8').parseJSON();
 		if (data)
 			self.items = data;
 	});
@@ -9241,10 +9241,8 @@ FrameworkCache.prototype.recycle = function() {
 		}
 	}
 
-	var snapshot = framework.config['default-interval-cache-snapshot'];
-	snapshot && snapshot % self.count === 0 && self.save();
+	framework.config['allow-cache-snapshot'] && self.save();
 	framework._service(self.count);
-
 	return self;
 };
 
