@@ -9204,9 +9204,11 @@ FrameworkCache.prototype.load = function() {
 	Fs.readFile(framework.path.temp((framework.id ? 'i-' + framework.id + '_' : '') + 'framework.jsoncache'), function(err, data) {
 		if (err)
 			return;
-		data = data.toString('utf8').parseJSON();
-		if (data)
+
+		try {
+			data = JSON.parse(data.toString('utf8'), (key, value) => typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value);
 			self.items = data;
+		} catch (e) {}
 	});
 	return self;
 };
