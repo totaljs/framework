@@ -35,7 +35,7 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
 var schemas = {};
-var transforms = { pagination: {}, error: {}, objectbuilder: {}, transformbuilder: {} };
+var transforms = { pagination: {}, error: {}, ransformbuilder: {}, restbuilder: {} };
 
 function SchemaBuilder(name) {
 	this.name = name;
@@ -3348,21 +3348,16 @@ TransformBuilder.transform = function(name, obj) {
 };
 
 /**
- * STATIC: Create transformation
+ * STATIC: Create a transformation
  * @param {String} name
  * @param {Function} fn
- * @param {Boolean} isDefault Default transformation for all ObjectBuilder.
+ * @param {Boolean} isDefault Default transformation for all TransformBuilders.
  */
 TransformBuilder.addTransform = function(name, fn, isDefault) {
 	transforms['transformbuilder'][name] = fn;
 	isDefault && TransformBuilder.setDefaultTransform(name);
 };
 
-/**
- * STATIC: Create transformation
- * @param {String} name
- * @param {Function} fn
- */
 TransformBuilder.setDefaultTransform = function(name) {
 	if (name === undefined)
 		delete transforms['transformbuilder_default'];
@@ -3387,12 +3382,14 @@ function async_wait(arr, onItem, onCallback, index) {
 
 function RESTBuilder(url) {
 	this.$url = url;
-	this.$headers = { 'User-Agent': 'Total.js/v' + framework.version_header };
+	this.$headers = { 'User-Agent': 'Total.js/v' + framework.version_header, Accept: 'application/json, text/plain, text/plain, text/xml' };
 	this.$method = 'get';
 	this.$timeout = 10000;
 	this.$type = 0; // 0 = query, 1 = json, 2 = urlencode, 3 = raw
 	this.$schema;
 	this.$length = 0;
+	this.$transform = transforms['restbuilder_default'];
+
 	// this.$flags;
 	// this.$data = {};
 	// this.$nodnscache = true;
@@ -3405,6 +3402,43 @@ RESTBuilder.make = function(fn) {
 	fn(instance);
 	return instance;
 };
+
+/**
+ * STATIC: Create a transformation
+ * @param {String} name
+ * @param {Function} fn
+ * @param {Boolean} isDefault Default transformation for all RESTBuilders.
+ */
+RESTBuilder.addTransform = function(name, fn, isDefault) {
+	transforms['restbuilder'][name] = fn;
+	isDefault && RESTBuilder.setDefaultTransform(name);
+};
+
+RESTBuilder.setDefaultTransform = function(name) {
+	if (name === undefined)
+		delete transforms['restbuilder_default'];
+	else
+		transforms['restbuilder_default'] = name;
+};
+
+RESTBuilder.prototype.setTransform = function(name) {
+	this.$transform = name;
+	return this;
+};
+
+RESTBuilder.prototype.url = function(url) {
+	this.$url = url;
+	return this;
+};
+
+RESTBuilder.prototype.maketransform = function(obj, data) {
+	if (!this.$transform)
+		return obj;
+	var fn = transforms['restbuilder'][this.$transform];
+	return fn ? fn(obj, data) : obj;
+};
+
+RESTBuilder.prototype.$trasnformname
 
 RESTBuilder.prototype.timeout = function(number) {
 	this.$timeout = number;
@@ -3454,10 +3488,40 @@ RESTBuilder.prototype.method = function(method) {
 	return this;
 };
 
+RESTBuilder.prototype.referer = RESTBuilder.prototype.referrer = function(value) {
+	this.$headers['Referer'] = value;
+	return this;
+};
+
+RESTBuilder.prototype.origin = function(value) {
+	this.$headers['Origin'] = value;
+	return this;
+};
+
 RESTBuilder.prototype.put = function(data) {
 	if (this.$method !== 'put') {
 		this.$flags = null;
 		this.$method = 'put';
+		this.$type = 1;
+	}
+	data && this.raw(data);
+	return this;
+};
+
+RESTBuilder.prototype.delete = function(data) {
+	if (this.$method !== 'delete') {
+		this.$flags = null;
+		this.$method = 'delete';
+		this.$type = 1;
+	}
+	data && this.raw(data);
+	return this;
+};
+
+RESTBuilder.prototype.get = function(data) {
+	if (this.$method !== 'get') {
+		this.$flags = null;
+		this.$method = 'get';
 	}
 	data && this.raw(data);
 	return this;
@@ -3467,6 +3531,7 @@ RESTBuilder.prototype.post = function(data) {
 	if (this.$method !== 'post') {
 		this.$flags = null;
 		this.$method = 'post';
+		this.$type = 1;
 	}
 	data && this.raw(data);
 	return this;
@@ -3483,7 +3548,6 @@ RESTBuilder.prototype.json = function(data) {
 	if (this.$method === 'get')
 		this.$method = 'post';
 
-	this.$headers['Accept'] = 'application/json, text/plain, text/plain, text/xml';
 	return this;
 };
 
@@ -3496,7 +3560,6 @@ RESTBuilder.prototype.urlencoded = function(data) {
 		this.$method = 'post';
 
 	this.$type = 2;
-	this.$headers['Accept'] = 'application/json, text/plain, text/plain, text/xml';
 	data && this.raw(data);
 	return this;
 };
@@ -3523,7 +3586,7 @@ RESTBuilder.prototype.xml = function(data) {
 };
 
 RESTBuilder.prototype.raw = function(value) {
-	this.$data = value;
+	this.$data = value && value.$clean ? value.$clean() : value;
 	return this;
 };
 
@@ -3593,6 +3656,9 @@ RESTBuilder.prototype.stream = function(callback) {
 
 RESTBuilder.prototype.exec = function(callback) {
 
+	if (!callback)
+		callback = NOOP;
+
 	var self = this;
 	var flags = self.$flags ? self.$flags : [self.$method];
 	var key;
@@ -3625,31 +3691,77 @@ RESTBuilder.prototype.exec = function(callback) {
 				evt = null;
 			});
 
-			callback(null, this.$schema ? this.$schema.make(data.parsed) : data.parsed, data.status, data.headers, data.response, data.hostname, true);
+			callback(null, self.maketransform(this.$schema ? this.$schema.make(data.json) : data.json, data), data);
 			return evt;
 		}
 	}
 
 	return U.request(self.$url, flags, self.$data, function(err, response, status, headers, hostname) {
 
-		var parsed = response.isJSON() ? framework.onParseJSON(response) : response;
+		var output = new RESTBuilderResponse();
+		output.json = response.isJSON() ? framework.onParseJSON(response) : null;
+		output.response = response;
+		output.status = status;
+		output.headers = headers;
+		output.hostname = hostname;
+		output.cache = false;
+		output.datetime = F.datetime;
+
 		if (self.$schema) {
 
 			if (err)
-				return callback(err, null, status, headers, response, hostname, false);
+				return callback(err, null, output);
 
 			self.$schema.make(parsed, function(err, model) {
-				!err && key && framework.cache.add(key, { parsed: parsed, status: status, response: response, headers: headers, hostname: hostname }, self.$cache_expire);
-				callback(err, model, status, headers, response, hostname, false);
+				!err && key && framework.cache.add(key, output, self.$cache_expire);
+				callback(err, err ? null : self.maketransform(output.json, output), output);
+				output.cache = true;
 			});
 
 			return;
 		}
 
-		!err && key && framework.cache.add(key, { parsed: parsed, status: status, response: response, headers: headers, hostname: hostname }, self.$cache_expire);
-		callback(err, parsed, status, headers, response, hostname, false);
+		!err && key && framework.cache.add(key, output, self.$cache_expire);
+		callback(err, self.maketransform(output.json, output), output);
+		output.cache = true;
 
 	}, self.$cookies, self.$headers, undefined, self.$timeout);
+};
+
+function RESTBuilderResponse() {}
+
+RESTBuilderResponse.prototype.cookie = function(name) {
+	var self = this;
+
+	if (self.cookies)
+		return $decodeURIComponent(self.cookies[name] || '');
+
+	var cookie = self.headers['cookie'];
+	if (!cookie)
+		return '';
+
+	self.cookies = {};
+
+	var arr = cookie.split(';');
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var line = arr[i].trim();
+		var index = line.indexOf('=');
+		if (index !== -1)
+			self.cookies[line.substring(0, index)] = line.substring(index + 1);
+	}
+
+	return $decodeURIComponent(self.cookies[name] || '');
+};
+
+// Handle errors of decodeURIComponent
+function $decodeURIComponent(value) {
+	try
+	{
+		return decodeURIComponent(value);
+	} catch (e) {
+		return value;
+	}
 };
 
 // ======================================================
@@ -3671,5 +3783,8 @@ global.SchemaBuilder = SchemaBuilder;
 
 exports.restart = function() {
 	schemas = {};
-	Object.keys(transforms).forEach(key => { transforms[key] = {}; });
+	Object.keys(transforms).forEach(function(key) {
+		if (key.indexOf('_') === -1)
+			transforms[key] = {};
+	});
 };
