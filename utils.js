@@ -2532,6 +2532,16 @@ Date.prototype.toUTC = function(ticks) {
 	return ticks ? dt : new Date(dt);
 };
 
+// +v2.2.0 parses JSON dates as dates and this is the fallback for backward compatibility
+Date.prototype.parseDate = function() {
+	return this;
+};
+
+String.prototype.isJSONDate = function() {
+	var l = this.length - 1;
+	return l > 22 && l < 30 && this[l] === 'Z' && this[10] === 'T' && this[4] === '-' && this[13] === ':' && this[16] === ':';
+};
+
 if (!String.prototype.trim) {
 	String.prototype.trim = function() {
 		return this.replace(regexpTRIM, '');
@@ -4083,7 +4093,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 
 	switch (typeof(field)) {
 		case 'string':
-			if (field.length > 20 && field[10] === 'T' && field[4] === '-')
+			if (field.isJSONDate())
 				type = 4;
 			else
 				type = 1;
