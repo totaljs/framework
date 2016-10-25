@@ -2,7 +2,7 @@
 
 'use strict';
 
-var VERSION = 'v2.0.x';
+var VERSION = 'v2.x.x';
 
 var fs = require('fs');
 var ph = require('path');
