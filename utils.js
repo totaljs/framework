@@ -617,8 +617,11 @@ function request_response(res, uri, options) {
 	if (res.statusCode === 301 || res.statusCode === 302) {
 
 		if (options.redirect > 3) {
-			if (options.callback)
+
+			if (options.callback) {
 				options.callback(new Error('Too many redirects.'), '', 0, undefined, uri.host);
+				options.callback = null;
+			}
 
 			if (options.evt) {
 				options.evt.removeAllListeners();
