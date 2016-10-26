@@ -7193,6 +7193,7 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 
 	controller.layoutName = layout || '';
 	controller.language = language;
+	controller.isConnected = false;
 
 	var theme = framework_utils.parseTheme(name);
 	if (theme) {
