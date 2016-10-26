@@ -1973,6 +1973,117 @@ Framework.prototype.map = function(url, filename, filter) {
 };
 
 /**
+ * Multiple Mapping of static file
+ * @param {Object or String Array} urls
+ * @param {String Array} filenames	Filenames or Directories.
+ * @param {Function(filename) or String Array} filter
+ * @return {Framework}
+ */
+Framework.prototype.mmap = function(urls, filenames, filters) {
+	var routes = urls || [];
+	var files = filenames || [];
+	var filters = filters || [];
+	
+	var self = this;
+	
+	if(routes.urls) {
+		var suffix = routes.suffix || '';
+
+		var ln = (routes instanceof Array && routes.length) || (typeof(routes) === 'object' && Object.keys(routes).length);
+
+		if(ln > 0) {
+			routes.urls.forEach(function(url) {
+				if(suffix !== '' && (suffix instanceof Array && suffix.length > 0)) {
+					if(suffix instanceof Array) {
+						var fln = files.length;
+
+						for(var i = 0; i < fln; i++) {
+							var link = url;
+							
+							if(link !== '') {
+								if(suffix[i] !== undefined) {
+									if(link[-1] === '/')
+										link = link + '/' + suffix[i];
+									else
+										link = link + '' + suffix[i]; 
+								}
+
+								if(files[i] !== '') {
+									if(filters.length > 0)
+										self.map(link, files[i], filters);
+									else 
+										self.map(link, files[i]);                                
+								}
+							}
+						}
+					}
+					else {
+						if(url !== '') {
+							if(url[-1] === '/')
+								url = url + '/' + suffix;
+							else
+								url = url + '' + suffix;
+							
+							if(files instanceof Array && files.length > 0) {
+								files.forEach(function(file) {
+									if(file !== '') {
+										if(filters.length > 0)
+											self.map(url, file, filters);
+										else
+											self.map(url, file);
+									}
+								});
+							}
+						}
+					}
+				}
+				else {
+					if(url !== '') {
+						if(files instanceof Array && files.length > 0) {
+							files.forEach(function(file) {
+								if(file !== '') {
+									if(filters.length > 0) {
+										filters.forEach(function(filter) {
+											self.map(url, file, filter);
+										});
+									}
+									else
+										self.map(url, file);
+								}
+							});
+						}
+					}
+				}
+			});
+		}
+	}
+	else {
+		if(routes.length > 0) {
+			routes.forEach(function(url) {
+				if(url !== '') {
+					if(files instanceof Array && files.length > 0) {
+						files.forEach(function(file) {
+							if(file !== '') {
+								if(filters.length > 0) {
+									filters.forEach(function(filter) {
+										self.map(url, file, filter);
+									});
+								}
+								else {
+									self.map(url, file);
+								}
+							}
+						});
+					}
+				}
+			});
+		}
+	}
+	
+	return this;
+};
+
+/**
  * Add a middleware
  * @param {String} name
  * @param {Function(req, res, next, options)} funcExecute
