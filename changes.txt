@@ -10,7 +10,7 @@
 - updated: `debug.js` adds timestamps
 - updated: `F.redirect()` can contain a relative URL of file
 - updated: NoSQL embedded parser, dates are parsed as date object
-- updated: `Pagination.next()`, `Pagination.prev()`, `Pagination.last()` and `Pagination.first()` supports new argument `.html([link_inner_html])`
+- updated: `Pagination.next()`, `Pagination.prev()`, `Pagination.last()` and `Pagination.first()` supports new arguments `.html([link_inner_html], [class_name])`
 
 - improved: `@{href(key, value)}` performance
 - improved: Total Package Manager `$ tpm --help`

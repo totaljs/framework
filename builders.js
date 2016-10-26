@@ -2934,8 +2934,11 @@ function Page(url, page, selected, enabled) {
 	this.enabled = enabled;
 }
 
-Page.prototype.html = function(body) {
-	return '<a href="' + this.url + '"' + (this.selected ? ' class="selected">' : '>') + (body || this.page) + '</a>';
+Page.prototype.html = function(body, cls) {
+	var classname = cls ? cls : '';
+	if (this.selected)
+		classname += (classname ? ' ' : '') + 'selected';
+	return '<a href="' + this.url + '"' + (classname ? (' class="' + classname + '"') : '') + '>' + (body || this.page) + '</a>';
 };
 
 /**
