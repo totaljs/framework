@@ -11,6 +11,7 @@
 - updated: `F.redirect()` can contain a relative URL of file
 - updated: NoSQL embedded parser, dates are parsed as date object
 - updated: `Pagination.next()`, `Pagination.prev()`, `Pagination.last()` and `Pagination.first()` supports new arguments `.html([link_inner_html], [class_name])`
+- updated: `F.worker()` supports packages `F.worker('@eshop/myworker-script')`
 
 - improved: `@{href(key, value)}` performance
 - improved: Total Package Manager `$ tpm --help`

@@ -8779,7 +8779,7 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 	}
 
 	if (type === 'string')
-		fork = self.workers[id] || null;
+		fork = self.workers[id];
 
 	if (id instanceof Array) {
 		args = id;
@@ -8795,12 +8795,13 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 	if (fork)
 		return fork;
 
-	var filename = framework_utils.combine(self.config['directory-workers'], name) + '.js';
+	// @TODO: dokončiť
+	var filename = name[0] === '@' ? framework.path.package(name.substring(1)) : framework_utils.combine(self.config['directory-workers'], name);
 
 	if (!args)
 		args = [];
 
-	fork = Child.fork(filename, args, HEADERS.workers);
+	fork = Child.fork(filename[filename.length - 3] === '.' ? filename : filename + '.js', args, HEADERS.workers);
 
 	if (!id)
 		id = name + '_' + new Date().getTime();
