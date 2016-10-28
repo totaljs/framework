@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 2.0.0
+ * @version 2.2.0
  */
 
 'use strict';
@@ -32,6 +32,10 @@ const exec = child.exec;
 const spawn = child.spawn;
 const Fs = require('fs');
 const REGEXP_SVG = /(width=\"\d+\")+|(height=\"\d+\")+/g;
+const REGEXP_PATH = /\//g;
+const REGEXP_ENCODE = /(["\s'$`\\])/g;
+
+var CACHE = {};
 var middlewares = {};
 
 if (!global.framework_utils)
@@ -119,7 +123,7 @@ function Image(filename, useImageMagick, width, height) {
 	this.width = width;
 	this.height = height;
 	this.builder = [];
-	this.filename = type === 'string' ? filename : null;
+	this.filename = type === 'string' ? encode_bash(filename) : null;
 	this.currentStream = type === 'object' ? filename : null;
 	this.isIM = useImageMagick == null ? F.config['default-image-converter'] === 'im' : useImageMagick;
 	this.outputType = type === 'string' ? framework_utils.getExtension(filename) : 'jpg';
@@ -191,14 +195,15 @@ Image.prototype.save = function(filename, callback, writer) {
 	if (typeof(filename) === 'function') {
 		callback = filename;
 		filename = null;
-	}
+	} else if (filename)
+		filename = encode_bash(filename);
 
 	!self.builder.length && self.minify();
 	filename = filename || self.filename || '';
 
-	var command = self.cmd(!self.filename ? '-' : self.filename, filename);
+	var command = self.cmd(self.filename ? self.filename : '-', filename);
 	if (framework.isWindows)
-		command = command.replace(/\//g, '\\');
+		command = command.replace(REGEXP_PATH, '\\');
 
 	var cmd = exec(command, function(error, stdout, stderr) {
 
@@ -325,15 +330,9 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 	var self = this;
 	var cmd = '';
 
-	self.builder.sort(function(a, b) {
-		if (a.priority > b.priority)
-			return 1;
-		else
-			return -1;
-	});
+	self.builder.sort((a, b) => a.priority > b.priority ? 1 : -1);
 
 	var length = self.builder.length;
-
 	for (var i = 0; i < length; i++)
 		cmd += (cmd ? ' ' : '') + self.builder[i].cmd;
 
@@ -400,7 +399,17 @@ Image.prototype.$$identify = function() {
 
 Image.prototype.push = function(key, value, priority) {
 	var self = this;
-	self.builder.push({ cmd: key + (value ? ' "' + value + '"' : ''), priority: priority });
+	var cmd = key + (value ? ' "' + value.toString().replace(REGEXP_ENCODE, '') + '"' : '');
+	var obj = CACHE[cmd];
+
+	if (obj) {
+		obj.priority = priority;
+		self.builder.push(obj);
+	} else {
+		CACHE[cmd] = { cmd: cmd, priority: priority };
+		self.builder.push(CACHE[cmd]);
+	}
+
 	return self;
 };
 
@@ -683,3 +692,11 @@ exports.middleware = function(type, fn) {
 exports.restart = function() {
 	middlewares = {};
 };
+
+exports.clear = function() {
+	CACHE = {};
+};
+
+function encode_bash(filename) {
+	return filename.replace(REGEXP_ENCODE, '');
+}

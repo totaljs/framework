@@ -6383,6 +6383,9 @@ Framework.prototype._service = function(count) {
 		self.temporary.other = {};
 		if (global.$VIEWCACHE && global.$VIEWCACHE.length)
 			global.$VIEWCACHE = [];
+
+		// Clears command cache
+		Image.clear();
 	}
 
 	// every 61 minutes (default) services precompile all (installed) views

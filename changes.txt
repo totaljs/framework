@@ -15,8 +15,10 @@
 
 - improved: `@{href(key, value)}` performance
 - improved: Total Package Manager `$ tpm --help`
+- improved: FrameworkImage command building
 
 - fixed: (critical) NoSQL `nosql.modify()` and problem with updating `undefined` values
+- fixed: (critical) security with GM and IM --> 10000x thanks for Luis Figueiredo <luisf@hexasoftware.com>
 
 - renamed: `F.onLocate` renamed to `F.onLocale`
 
