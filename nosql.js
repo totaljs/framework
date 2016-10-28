@@ -1272,7 +1272,10 @@ function counter_parse_years(value) {
 		tmp[key] = val;
 	}
 
-	Object.keys(tmp).forEach(key => output.push({ year: +key, value: tmp[key] }));
+	var keys = Object.keys(tmp);
+	for (var i = 0, length = keys.length; i < length; i++)
+	 	output.push({ year: +keys[i], value: tmp[keys[i]] });
+
 	return output;
 }
 

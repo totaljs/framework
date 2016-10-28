@@ -1143,19 +1143,18 @@ exports.trim = function(obj) {
 	if (type !== 'object')
 		return obj;
 
-	Object.keys(obj).forEach(function(name) {
+	var keys = Object.keys(obj);
 
-		var val = obj[name];
+	for (var i = 0, length = keys.length; i < length; i++) {
+		var val = obj[keys[i]];
 		var type = typeof(val);
-
 		if (type === 'object') {
 			exports.trim(val);
-			return;
+			continue;
 		} else if (type !== 'string')
-			return;
-
-		obj[name] = val.trim();
-	});
+			continue;
+		obj[keys[i]] = val.trim();
+	}
 
 	return obj;
 };

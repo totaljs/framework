@@ -4420,10 +4420,13 @@ Framework.prototype.compileContent = function(extension, content, filename) {
 		case 'css':
 			content = self.config['allow-compile-style'] ? framework_internal.compile_css(content, filename) : content;
 			var matches = content.match(REG_COMPILECSS);
-			matches && matches.forEach(function(o) {
-				var url = o.substring(4, o.length - 1);
-				content = content.replace(o, 'url(' + self._version(url) + ')');
-			});
+			if (matches) {
+				for (var i = 0, length = matches.length; i < length; i++) {
+					var key = matches[i];
+					var url = key.substring(4, key.length - 1);
+					content = content.replace(key, 'url(' + self._version(url) + ')');
+				}
+			}
 			return content;
 	}
 
@@ -12473,6 +12476,7 @@ Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
 
 	var c = req.method[0];
 	var tmp;
+	var keys;
 
 	if (c === 'G' || c === 'H' || c === 'O') {
 		if (url.indexOf('?') === -1) {
@@ -12482,8 +12486,9 @@ Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
 		}
 	}
 
-	Object.keys(req.headers).forEach(function(item) {
-		switch (item) {
+	keys = Object.keys(req.headers);
+	for (var i = 0, length = keys.length; i < length; i++) {
+		switch (keys[i]) {
 			case 'x-forwarded-for':
 			case 'x-forwarded-protocol':
 			case 'x-nginx-proxy':
@@ -12493,12 +12498,16 @@ Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
 			case 'accept-encoding':
 				break;
 			default:
-				h[item] = req.headers[item];
+				h[keys[i]] = req.headers[keys[i]];
 				break;
 		}
-	});
+	}
 
-	headers && Object.keys(headers).forEach(item => h[item] = headers[item]);
+	if (headers) {
+		keys = Object.keys(headers);
+		for (var i = 0, length = keys.length; i < length; i++)
+			h[keys[i]] = headers[keys[i]];
+	}
 
 	return framework_utils.request(url, flags, self.body, function(err, data, code, headers) {
 
