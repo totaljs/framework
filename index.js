@@ -5416,7 +5416,6 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				name = name.substring(0, index) + '.' + image.outputType;
 		}
 
-		name = name + '\';ls;\'"echo>1"1.jpg';
 		image.save(name, function(err) {
 
 			delete self.temporary.processing[key];
