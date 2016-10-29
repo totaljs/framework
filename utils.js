@@ -2912,10 +2912,6 @@ String.prototype.parseConfig = function(def) {
 	return obj;
 };
 
-/**
- * String format
- * @return {String}
- */
 String.prototype.format = function() {
 	var arg = arguments;
 	return this.replace(regexpSTRINGFORMAT, function(text) {
@@ -3171,6 +3167,25 @@ String.prototype.toUnicode = function() {
 String.prototype.fromUnicode = function() {
 	var str = this.replace(/\\u([\d\w]{4})/gi, (match, v) => String.fromCharCode(parseInt(v, 16)));
 	return unescape(str);
+};
+
+String.prototype.escape_bash = function() {
+	var output = '';
+	for (var i = 0, length = this.length; i < length; i++) {
+		var c = this[i];
+		switch (c) {
+			case '$':
+			case '"':
+			case '\'':
+			case '`':
+			case '\n':
+				continue;
+			default:
+				output += c;
+				continue;
+		}
+	}
+	return output;
 };
 
 String.prototype.sha1 = function(salt) {

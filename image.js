@@ -33,7 +33,6 @@ const spawn = child.spawn;
 const Fs = require('fs');
 const REGEXP_SVG = /(width=\"\d+\")+|(height=\"\d+\")+/g;
 const REGEXP_PATH = /\//g;
-const REGEXP_ENCODE = /(["\s'$`\\])/g;
 
 var CACHE = {};
 var middlewares = {};
@@ -123,7 +122,7 @@ function Image(filename, useImageMagick, width, height) {
 	this.width = width;
 	this.height = height;
 	this.builder = [];
-	this.filename = type === 'string' ? encode_bash(filename) : null;
+	this.filename = type === 'string' ? framework_utils.escape_bash(filename) : null;
 	this.currentStream = type === 'object' ? filename : null;
 	this.isIM = useImageMagick == null ? F.config['default-image-converter'] === 'im' : useImageMagick;
 	this.outputType = type === 'string' ? framework_utils.getExtension(filename) : 'jpg';
@@ -196,7 +195,7 @@ Image.prototype.save = function(filename, callback, writer) {
 		callback = filename;
 		filename = null;
 	} else if (filename)
-		filename = encode_bash(filename);
+		filename = framework_utils.escape_bash(filename);
 
 	!self.builder.length && self.minify();
 	filename = filename || self.filename || '';
@@ -205,7 +204,7 @@ Image.prototype.save = function(filename, callback, writer) {
 	if (framework.isWindows)
 		command = command.replace(REGEXP_PATH, '\\');
 
-	var cmd = exec(command, function(error, stdout, stderr) {
+	var cmd = exec(command, function(err, stdout, stderr) {
 
  		// clean up
 		cmd.kill();
@@ -216,8 +215,8 @@ Image.prototype.save = function(filename, callback, writer) {
 		if (!callback)
 			return;
 
-		if (error) {
-			callback(error, false);
+		if (err) {
+			callback(err, false);
 			return;
 		}
 
@@ -263,13 +262,12 @@ Image.prototype.pipe = function(stream, type, options) {
 		type = null;
 	}
 
-	if (!self.builder.length)
-		return;
+	!self.builder.length && self.minify();
 
 	if (!type)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(!self.filename ? '-' : self.filename, (type ? type + ':' : '') + '-'));
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? self.filename : '-', (type ? type + ':' : '') + '-'));
 
 	cmd.stderr.on('data', stream.emit.bind(stream, 'error'));
 	cmd.stdout.on('data', stream.emit.bind(stream, 'data'));
@@ -302,8 +300,7 @@ Image.prototype.stream = function(type, writer) {
 
 	var self = this;
 
-	if (!self.builder.length)
-		return;
+	!self.builder.length && self.minify();
 
 	if (!type)
 		type = self.outputType;
@@ -371,20 +368,20 @@ Image.prototype.arg = function(first, last) {
 	return arr;
 };
 
-Image.prototype.identify = function(cb) {
+Image.prototype.identify = function(callback) {
 	var self = this;
 
-	exec((self.isIM ? 'identify' : 'gm identify') + ' "' + self.filename + '"', function(error, stdout, stderr) {
+	exec((self.isIM ? 'identify' : 'gm identify') + ' "' + self.filename + '"', function(err, stdout, stderr) {
 
-		if (error) {
-			cb(error, null);
+		if (err) {
+			callback(err, null);
 			return;
 		}
 
 		var arr = stdout.split(' ');
 		var size = arr[2].split('x');
 		var obj = { type: arr[1], width: framework_utils.parseInt(size[0]), height: framework_utils.parseInt(size[1]) };
-		cb(null, obj);
+		callback(null, obj);
 	});
 
 	return self;
@@ -397,11 +394,18 @@ Image.prototype.$$identify = function() {
 	};
 };
 
-Image.prototype.push = function(key, value, priority) {
+Image.prototype.push = function(key, value, priority, encode) {
 	var self = this;
-	var cmd = key + (value ? ' "' + value.toString().replace(REGEXP_ENCODE, '') + '"' : '');
-	var obj = CACHE[cmd];
+	var cmd = key;
 
+	if (value != null) {
+		if (encode && typeof(value) === 'string')
+			cmd += ' "' + framework_utils.escape_bash(value);
+		else
+			cmd += ' "' + value + '"';
+	}
+
+	var obj = CACHE[cmd];
 	if (obj) {
 		obj.priority = priority;
 		self.builder.push(obj);
@@ -434,7 +438,7 @@ Image.prototype.resize = function(w, h, options) {
 	else if (!w && h)
 		size = 'x' + h;
 
-	return self.push('-resize', size + options, 1);
+	return self.push('-resize', size + options, 1, true);
 };
 
 Image.prototype.thumbnail = function(w, h, options) {
@@ -450,7 +454,7 @@ Image.prototype.thumbnail = function(w, h, options) {
 	else if (!w && h)
 		size = 'x' + h;
 
-	return self.push('-thumbnail', size + options, 1);
+	return self.push('-thumbnail', size + options, 1, true);
 };
 
 Image.prototype.geometry = function(w, h, options) {
@@ -466,12 +470,12 @@ Image.prototype.geometry = function(w, h, options) {
 	else if (!w && h)
 		size = 'x' + h;
 
-	return self.push('-geometry', size + options, 1);
+	return self.push('-geometry', size + options, 1, true);
 };
 
 
 Image.prototype.filter = function(type) {
-	return this.push('-filter', type, 1);
+	return this.push('-filter', type, 1, true);
 };
 
 Image.prototype.trim = function() {
@@ -490,7 +494,7 @@ Image.prototype.extent = function(w, h) {
 	else if (!w && h)
 		size = 'x' + h;
 
-	return self.push('-extent', size, 4);
+	return self.push('-extent', size, 4, true);
 };
 
 /**
@@ -541,15 +545,15 @@ Image.prototype.scale = function(w, h, options) {
 	else if (!w && h)
 		size = 'x' + h;
 
-	return self.push('-scale', size + options, 1);
+	return self.push('-scale', size + options, 1, true);
 };
 
 Image.prototype.crop = function(w, h, x, y) {
-	return this.push('-crop', w + 'x' + h + '+' + (x || 0) + '+' + (y || 0), 4);
+	return this.push('-crop', w + 'x' + h + '+' + (x || 0) + '+' + (y || 0), 4, true);
 };
 
 Image.prototype.quality = function(percentage) {
-	return this.push('-quality', percentage || 80, 5);
+	return this.push('-quality', percentage || 80, 5, true);
 };
 
 Image.prototype.align = function(type) {
@@ -603,7 +607,7 @@ Image.prototype.align = function(type) {
 			break;
 	}
 
-	output && this.push('-gravity', output, 3);
+	output && this.push('-gravity', output, 3, true);
 	return this;
 };
 
@@ -612,7 +616,7 @@ Image.prototype.gravity = function(type) {
 };
 
 Image.prototype.blur = function(radius) {
-	return this.push('-blur', radius, 10);
+	return this.push('-blur', radius, 10, true);
 };
 
 Image.prototype.normalize = function() {
@@ -620,7 +624,7 @@ Image.prototype.normalize = function() {
 };
 
 Image.prototype.rotate = function(deg) {
-	return this.push('-rotate', deg || 0, 8);
+	return this.push('-rotate', deg || 0, 8, true);
 };
 
 Image.prototype.flip = function() {
@@ -640,22 +644,22 @@ Image.prototype.grayscale = function() {
 };
 
 Image.prototype.bitdepth = function(value) {
-	return this.push('-depth', value, 10);
+	return this.push('-depth', value, 10, true);
 };
 
 Image.prototype.colors = function(value) {
-	return this.push('-colors', value, 10);
+	return this.push('-colors', value, 10, true);
 };
 
 Image.prototype.background = function(color) {
-	return this.push('-background', color, 2);
+	return this.push('-background', color, 2, true);
 };
 
 Image.prototype.fill = function(color) {
-	return this.push('-fill', color, 2);
+	return this.push('-fill', color, 2, true);
 };
 
-Image.prototype.sepia = function(percentage) {
+Image.prototype.sepia = function() {
 	return this.push('-modulate', '115,0,100', 4).push('-colorize', '7,21,50', 5);
 };
 
@@ -668,8 +672,8 @@ Image.prototype.make = function(fn) {
 	return this;
 };
 
-Image.prototype.command = function(key, value, priority) {
-	return this.push(key, value, priority || 10);
+Image.prototype.command = function(key, value, priority, esc) {
+	return this.push(key, value, priority || 10, esc);
 };
 
 exports.Image = Image;
@@ -696,7 +700,3 @@ exports.restart = function() {
 exports.clear = function() {
 	CACHE = {};
 };
-
-function encode_bash(filename) {
-	return filename.replace(REGEXP_ENCODE, '');
-}

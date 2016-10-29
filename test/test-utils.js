@@ -91,6 +91,9 @@ function prototypeString() {
 	assert.ok('&lt;b&gt;total.js&lt;/b&gt;&amp;nbsp;'.decode() === '<b>total.js</b>&nbsp;', 'string.decode()');
 	assert.ok(str.trim().replaceAt(5, ';') === 'total;js', 'string.replaceAt()');
 
+	str = '$("echo > 1")';
+	assert.ok(str.escape_bash() === '(echo > 1)', 'string.escape_bash()');
+
 	str = ' A PeTer Širka   Je krááály. ';
 
 	assert.ok(str.toSearch() === 'a peter sirka je krali', 'string.toSearch()');

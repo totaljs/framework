@@ -5,6 +5,7 @@
 - added: hidden hack `res.noCompress = true` disables compilation of `.js` or `.css`
 - added: `RESTBuilder` for creating REST requests (more in docs)
 - added: new config item `allow-cache-snapshot` - to prevent cache when the framework is restarted
+- added: `String.prototype.escape_bash(command)` - to prevent bash injections
 
 - updated: `SINGLETON(name, [def = {}])` about `def` argument
 - updated: `debug.js` adds timestamps
@@ -12,6 +13,7 @@
 - updated: NoSQL embedded parser, dates are parsed as date object
 - updated: `Pagination.next()`, `Pagination.prev()`, `Pagination.last()` and `Pagination.first()` supports new arguments `.html([link_inner_html], [class_name])`
 - updated: `F.worker()` supports packages `F.worker('@eshop/myworker-script')`
+- update: `FrameworkImage` when the instance contains no command then `.minify()` method is performed automatically for preventing of empty response
 
 - improved: `@{href(key, value)}` performance
 - improved: Total Package Manager `$ tpm --help`
