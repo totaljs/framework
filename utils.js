@@ -3169,25 +3169,6 @@ String.prototype.fromUnicode = function() {
 	return unescape(str);
 };
 
-String.prototype.escape_bash = function() {
-	var output = '';
-	for (var i = 0, length = this.length; i < length; i++) {
-		var c = this[i];
-		switch (c) {
-			case '$':
-			case '"':
-			case '\'':
-			case '`':
-			case '\n':
-				continue;
-			default:
-				output += c;
-				continue;
-		}
-	}
-	return output;
-};
-
 String.prototype.sha1 = function(salt) {
 	var hash = crypto.createHash('sha1');
 	hash.update(this + (salt || ''), ENCODING);

@@ -33,6 +33,7 @@ const spawn = child.spawn;
 const Fs = require('fs');
 const REGEXP_SVG = /(width=\"\d+\")+|(height=\"\d+\")+/g;
 const REGEXP_PATH = /\//g;
+const REGEXP_ARG = /\'/g;
 
 var CACHE = {};
 var middlewares = {};
@@ -122,7 +123,7 @@ function Image(filename, useImageMagick, width, height) {
 	this.width = width;
 	this.height = height;
 	this.builder = [];
-	this.filename = type === 'string' ? filename.escape_bash() : null;
+	this.filename = type === 'string' ? filename : null;
 	this.currentStream = type === 'object' ? filename : null;
 	this.isIM = useImageMagick == null ? F.config['default-image-converter'] === 'im' : useImageMagick;
 	this.outputType = type === 'string' ? framework_utils.getExtension(filename) : 'jpg';
@@ -194,8 +195,7 @@ Image.prototype.save = function(filename, callback, writer) {
 	if (typeof(filename) === 'function') {
 		callback = filename;
 		filename = null;
-	} else if (filename)
-		filename = filename.escape_bash();
+	}
 
 	!self.builder.length && self.minify();
 	filename = filename || self.filename || '';
@@ -228,9 +228,7 @@ Image.prototype.save = function(filename, callback, writer) {
 		var writer = Fs.createWriteStream(filename + '_');
 
 		reader.pipe(middleware()).pipe(writer);
-		writer.on('finish', function() {
-			Fs.rename(filename + '_', filename, () => callback(null, true));
-		});
+		writer.on('finish', () => Fs.rename(filename + '_', filename, () => callback(null, true)));
 	});
 
 	if (self.currentStream) {
@@ -267,7 +265,7 @@ Image.prototype.pipe = function(stream, type, options) {
 	if (!type)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? self.filename : '-', (type ? type + ':' : '') + '-'));
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'));
 
 	cmd.stderr.on('data', stream.emit.bind(stream, 'error'));
 	cmd.stdout.on('data', stream.emit.bind(stream, 'data'));
@@ -305,7 +303,7 @@ Image.prototype.stream = function(type, writer) {
 	if (!type)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? self.filename : '-', (type ? type + ':' : '') + '-'));
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'));
 	if (self.currentStream) {
 		if (self.currentStream instanceof Buffer)
 			cmd.stdin.end(self.currentStream);
@@ -333,7 +331,7 @@ Image.prototype.cmd = function(filenameFrom, filenameTo) {
 	for (var i = 0; i < length; i++)
 		cmd += (cmd ? ' ' : '') + self.builder[i].cmd;
 
-	return (self.isIM ? 'convert' : 'gm -convert') + ' "' + filenameFrom + '"' + ' ' + cmd + ' "' + filenameTo + '"';
+	return (self.isIM ? 'convert' : 'gm -convert') + wrap(filenameFrom, true) + ' ' + cmd + wrap(filenameTo, true);
 };
 
 Image.prototype.arg = function(first, last) {
@@ -371,7 +369,7 @@ Image.prototype.arg = function(first, last) {
 Image.prototype.identify = function(callback) {
 	var self = this;
 
-	exec((self.isIM ? 'identify' : 'gm identify') + ' "' + self.filename + '"', function(err, stdout, stderr) {
+	exec((self.isIM ? 'identify' : 'gm identify') + wrap(self.filename, true), function(err, stdout, stderr) {
 
 		if (err) {
 			callback(err, null);
@@ -400,9 +398,9 @@ Image.prototype.push = function(key, value, priority, encode) {
 
 	if (value != null) {
 		if (encode && typeof(value) === 'string')
-			cmd += ' "' + value.escape_bash() + '"';
+			cmd += wrap(value, true);
 		else
-			cmd += ' "' + value + '"';
+			cmd += ' \'' + value + '\'';
 	}
 
 	var obj = CACHE[cmd];
@@ -675,6 +673,13 @@ Image.prototype.make = function(fn) {
 Image.prototype.command = function(key, value, priority, esc) {
 	return this.push(key, value, priority || 10, esc);
 };
+
+function wrap(command, empty) {
+	var cmd = '';
+	for (var i = 0, length = command.length; i < length; i++)
+		cmd += command[i] === '\'' ? '\\' + command[i] : command[i];
+	return (empty ? ' ' : '') + '\'' + cmd + '\'';
+}
 
 exports.Image = Image;
 exports.Picture = Image;
