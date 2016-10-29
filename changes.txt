@@ -21,7 +21,7 @@
 - fixed: (critical) NoSQL `nosql.modify()` and problem with updating `undefined` values
 - fixed: (critical) security with GM and IM --> 10000x thanks for Luis Figueiredo <luisf@hexasoftware.com>
 
-- renamed: `F.onLocate` renamed to `F.onLocale`
+- renamed: `F.onLocate` renamed to __`F.onLocale`__
 
 ======= 2.1.0
 
