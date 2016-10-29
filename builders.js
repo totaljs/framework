@@ -2887,10 +2887,10 @@ ErrorBuilder.removeTransform = function(name) {
  * @param {Function(errorBuilder)} fn
  */
 ErrorBuilder.setDefaultTransform = function(name) {
-	if (name === undefined)
-		delete transforms['error_default'];
-	else
+	if (name)
 		transforms['error_default'] = name;
+	else
+		delete transforms['error_default'];
 };
 
 /**
@@ -2958,10 +2958,10 @@ Pagination.addTransform = function(name, fn, isDefault) {
  * @param {Function(pagination)} fn
  */
 Pagination.setDefaultTransform = function(name) {
-	if (name === undefined)
-		delete transforms['pagination_default'];
-	else
+	if (name)
 		transforms['pagination_default'] = name;
+	else
+		delete transforms['pagination_default'];
 };
 
 /**
@@ -3139,10 +3139,8 @@ Pagination.prototype.prepare = function(max, format, type) {
 
 	if (max == null) {
 		for (var i = 1; i < self.count + 1; i++) {
-			if (isHTML)
-				builder.push(self.prepare_html(format, i, self.count, self.items, i === self.page));
-			else
-				builder.push(new Page(format.format(i, self.items, self.count), i, i === self.page, true));
+			var page = new Page(format.format(i, self.items, self.count), i, i === self.page, true);
+			builder.push(isHTML ? page.html() : page);
 		}
 		return builder;
 	}
@@ -3168,17 +3166,11 @@ Pagination.prototype.prepare = function(max, format, type) {
 	}
 
 	for (var i = pageFrom; i < pageTo + 1; i++) {
-		if (isHTML)
-			builder.push(self.prepare_html(format, i, self.count, self.items, i === self.page));
-		else
-			builder.push(new Page(format.format(i, self.items, self.count), i, i === self.page, true));
+		var page = new Page(format.format(i, self.items, self.count), i, i === self.page, true);
+		builder.push(isHTML ? page.html() : page);
 	}
 
 	return builder;
-};
-
-Pagination.prototype.prepare_html = function(format, page, pages, items, selected) {
-	return '<a href="' + format.format(page, items, pages) + '"' + (selected ? ' class="selected">' : '>') + page + '</a>';
 };
 
 Pagination.prototype.render = function(max, format) {
@@ -3362,10 +3354,10 @@ TransformBuilder.addTransform = function(name, fn, isDefault) {
 };
 
 TransformBuilder.setDefaultTransform = function(name) {
-	if (name === undefined)
-		delete transforms['transformbuilder_default'];
-	else
+	if (name)
 		transforms['transformbuilder_default'] = name;
+	else
+		delete transforms['transformbuilder_default'];
 };
 
 function async_queue(arr, callback) {
@@ -3418,10 +3410,10 @@ RESTBuilder.addTransform = function(name, fn, isDefault) {
 };
 
 RESTBuilder.setDefaultTransform = function(name) {
-	if (name === undefined)
-		delete transforms['restbuilder_default'];
-	else
+	if (name)
 		transforms['restbuilder_default'] = name;
+	else
+		delete transforms['restbuilder_default'];
 };
 
 RESTBuilder.prototype.setTransform = function(name) {
@@ -3775,12 +3767,14 @@ exports.SchemaBuilder = SchemaBuilder;
 exports.RESTBuilder = RESTBuilder;
 exports.ErrorBuilder = ErrorBuilder;
 exports.Pagination = Pagination;
+exports.Page = Page;
 exports.UrlBuilder = UrlBuilder;
 exports.TransformBuilder = TransformBuilder;
 global.RESTBuilder = RESTBuilder;
 global.ErrorBuilder = ErrorBuilder;
 global.TransformBuilder = TransformBuilder;
 global.Pagination = Pagination;
+global.Page = Page;
 global.UrlBuilder = UrlBuilder;
 global.SchemaBuilder = SchemaBuilder;
 
