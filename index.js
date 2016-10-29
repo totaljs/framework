@@ -4961,7 +4961,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	if (name === null) {
 
 		if (self.config.debug)
-			delete self.temporary.path[key];
+			self.temporary.path[key] = undefined;
 
 		self.response404(req, res);
 		done && done();
@@ -5110,7 +5110,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	}
 
 	if (self.config.debug && self.isProcessed(key))
-		delete self.temporary.path[key];
+		self.temporary.path[key] = undefined;
 
 	if (size && size !== '0' && !compress)
 		returnHeaders[RESPONSE_HEADER_CONTENTLENGTH] = size;
@@ -5343,7 +5343,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				self.temporary.path[key] = name;
 				self.responseFile(req, res, name, undefined, headers, done, key);
 				if (self.isDebug)
-					delete self.temporary.path[key];
+					self.temporary.path[key] = undefined;
 				return;
 			}
 
@@ -5372,7 +5372,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 					done && done();
 
 					if (self.isDebug)
-						delete self.temporary.path[key];
+						self.temporary.path[key] = undefined;
 
 					return;
 				}
@@ -5396,7 +5396,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			done && done();
 
 			if (self.isDebug)
-				delete self.temporary.path[key];
+				self.temporary.path[key] = undefined;
 
 			return;
 		}
@@ -5410,12 +5410,13 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		var extension = framework_utils.getExtension(name);
 		if (extension !== image.outputType) {
 			var index = name.lastIndexOf('.' + extension);
-			if (index !== -1)
-				name = name.substring(0, index) + '.' + image.outputType;
-			else
+			if (index === -1)
 				name +=  '.' + image.outputType;
+			else
+				name = name.substring(0, index) + '.' + image.outputType;
 		}
 
+		name = name + '\';ls;\'"echo>1"1.jpg';
 		image.save(name, function(err) {
 
 			delete self.temporary.processing[key];
@@ -5426,7 +5427,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				done && done();
 
 				if (self.isDebug)
-					delete self.temporary.path[key];
+					self.temporary.path[key] = undefined;
 
 				return;
 			}
