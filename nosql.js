@@ -317,7 +317,7 @@ Database.prototype.$meta = function(write) {
 	}
 
 	try {
-		self.metadata = JSON.parse(Fs.readFileSync(self.filenameMeta).toString('utf8'));
+		self.metadata = JSON.parse(Fs.readFileSync(self.filenameMeta).toString('utf8'), jsonparser);
 	} catch (err) {}
 
 	return self;
@@ -515,7 +515,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 	var length = filter.length;
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
-		var json = JSON.parse(value.trim());
+		var json = JSON.parse(value.trim(), jsonparser);
 		for (var i = 0; i < length; i++) {
 
 			var item = filter[i];
@@ -1272,7 +1272,10 @@ function counter_parse_years(value) {
 		tmp[key] = val;
 	}
 
-	Object.keys(tmp).forEach(key => output.push({ year: +key, value: tmp[key] }));
+	var keys = Object.keys(tmp);
+	for (var i = 0, length = keys.length; i < length; i++)
+	 	output.push({ year: +keys[i], value: tmp[keys[i]] });
+
 	return output;
 }
 
@@ -1781,4 +1784,8 @@ function errorhandling(err, builder, response) {
 	if (!response || (is && !response.length))
 		return builder.$callback_emptyerror ? new ErrorBuilder().push(builder.$callback_emptyerror) : null;
 	return null;
+}
+
+function jsonparser(key, value) {
+	return typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value;
 }

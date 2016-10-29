@@ -617,8 +617,11 @@ function request_response(res, uri, options) {
 	if (res.statusCode === 301 || res.statusCode === 302) {
 
 		if (options.redirect > 3) {
-			if (options.callback)
+
+			if (options.callback) {
 				options.callback(new Error('Too many redirects.'), '', 0, undefined, uri.host);
+				options.callback = null;
+			}
 
 			if (options.evt) {
 				options.evt.removeAllListeners();
@@ -771,6 +774,11 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 			// timeout
 			if (flags[i] > 0) {
 				options.timeout = flags[i];
+				continue;
+			}
+
+			if (flags[i][0] === '<') {
+				// max length is not supported
 				continue;
 			}
 
@@ -979,7 +987,7 @@ function download_response(res, uri, options) {
 	});
 
 	res.resume();
-	options.callback && options.callback(null, res);
+	options.callback && options.callback(null, res, res.statusCode, res.headers, uri.host);
 }
 
 exports.$$download = function(url, flags, data, cookies, headers, encoding, timeout) {
@@ -1135,19 +1143,18 @@ exports.trim = function(obj) {
 	if (type !== 'object')
 		return obj;
 
-	Object.keys(obj).forEach(function(name) {
+	var keys = Object.keys(obj);
 
-		var val = obj[name];
+	for (var i = 0, length = keys.length; i < length; i++) {
+		var val = obj[keys[i]];
 		var type = typeof(val);
-
 		if (type === 'object') {
 			exports.trim(val);
-			return;
+			continue;
 		} else if (type !== 'string')
-			return;
-
-		obj[name] = val.trim();
-	});
+			continue;
+		obj[keys[i]] = val.trim();
+	}
 
 	return obj;
 };
@@ -2524,6 +2531,16 @@ Date.prototype.toUTC = function(ticks) {
 	return ticks ? dt : new Date(dt);
 };
 
+// +v2.2.0 parses JSON dates as dates and this is the fallback for backward compatibility
+Date.prototype.parseDate = function() {
+	return this;
+};
+
+String.prototype.isJSONDate = function() {
+	var l = this.length - 1;
+	return l > 22 && l < 30 && this[l] === 'Z' && this[10] === 'T' && this[4] === '-' && this[13] === ':' && this[16] === ':';
+};
+
 if (!String.prototype.trim) {
 	String.prototype.trim = function() {
 		return this.replace(regexpTRIM, '');
@@ -2895,10 +2912,6 @@ String.prototype.parseConfig = function(def) {
 	return obj;
 };
 
-/**
- * String format
- * @return {String}
- */
 String.prototype.format = function() {
 	var arg = arguments;
 	return this.replace(regexpSTRINGFORMAT, function(text) {
@@ -4075,7 +4088,7 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 
 	switch (typeof(field)) {
 		case 'string':
-			if (field.length > 20 && field[10] === 'T' && field[4] === '-')
+			if (field.isJSONDate())
 				type = 4;
 			else
 				type = 1;
@@ -4828,9 +4841,9 @@ function FileList() {
 
 FileList.prototype.reset = function() {
 	var self = this;
-	self.file = [];
-	self.directory = [];
-	self.pendingDirectory = [];
+	self.file.length = 0;
+	self.directory.length = 0;
+	self.pendingDirectory.length = 0;
 };
 
 FileList.prototype.walk = function(directory) {

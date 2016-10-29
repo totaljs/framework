@@ -1,3 +1,28 @@
+======= 2.2.0
+
+- added: `controller.proxy2(url, [callback], [headers], [timeout])` creates a proxy between current request and new URL
+- added: `Image.watermark(filename, [x], [y], [width], [height])` creates a watermark
+- added: hidden hack `res.noCompress = true` disables compilation of `.js` or `.css`
+- added: `RESTBuilder` for creating REST requests (more in docs)
+- added: new config item `allow-cache-snapshot` - to prevent cache when the framework is restarted
+
+- updated: `SINGLETON(name, [def = {}])` about `def` argument
+- updated: `debug.js` adds timestamps
+- updated: `F.redirect()` can contain a relative URL of file
+- updated: NoSQL embedded parser, dates are parsed as date object
+- updated: `Pagination.next()`, `Pagination.prev()`, `Pagination.last()` and `Pagination.first()` supports new arguments `.html([link_inner_html], [class_name])`
+- updated: `F.worker()` supports packages `F.worker('@eshop/myworker-script')`
+- update: `FrameworkImage` when the instance contains no command then `.minify()` method is performed automatically for preventing of empty response
+
+- improved: `@{href(key, value)}` performance
+- improved: Total Package Manager `$ tpm --help`
+- improved: FrameworkImage command building
+
+- fixed: (critical) NoSQL `nosql.modify()` and problem with updating `undefined` values
+- fixed: (critical) security with GM and IM --> 10000x thanks for Luis Figueiredo <luisf@hexasoftware.com>
+
+- renamed: `F.onLocate` renamed to __`F.onLocale`__
+
 ======= 2.1.0
 
 - added: `F.sitemap_add(string)` for adding entries to sitemap by Martin Smola <https://github.com/molda>

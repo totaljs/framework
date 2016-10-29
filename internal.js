@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.1.0
+ * @version 2.2.0
  */
 
 'use strict';
@@ -85,18 +85,12 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	var tmp;
 	var close = 0;
 	var rm;
-	var ip = '';
 
 	// Replaces the EMPTYARRAY and EMPTYOBJECT in index.js
 	req.files = [];
 	req.body = {};
 
-	for (var i = 0, length = req.ip.length; i < length; i++) {
-		if (req.ip[i] !== '.' && req.ip[i] !== ':')
-			ip += req.ip[i];
-	}
-
-	var path = framework_utils.combine(tmpDirectory, (framework.id ? 'i-' + framework.id + '_' : '') + 'mixed' + ip + '-' + Date.now() + '-');
+	var path = framework_utils.combine(tmpDirectory, (framework.id ? 'i-' + framework.id + '_' : '') + Math.random().toString(36).substring(2) + '-');
 
 	// Why indexOf(.., 2)? Because performance
 	boundary = boundary.substring(boundary.indexOf('=', 2) + 1);
@@ -148,7 +142,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		}
 
 		tmp.filename = header[1];
-		tmp.path = path + framework_utils.random(100000) + '.upload';
+		tmp.path = path + (Math.random() * 1000000 >> 0) + '.upload';
 
 		stream = fs.createWriteStream(tmp.path, WRITESTREAM);
 		stream.once('close', () => close--);
@@ -259,14 +253,12 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 	parser.onEnd = function() {
 		var cb = function() {
-
 			if (close) {
 				setImmediate(cb);
-				return;
+			} else {
+				rm && framework.unlink(rm);
+				subscribe.doEnd();
 			}
-
-			rm && framework.unlink(rm);
-			subscribe.doEnd();
 		};
 		cb();
 	};
@@ -298,15 +290,9 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) 
 	var close = 0;
 	var stream;
 	var tmp;
-	var ip = '';
 	var counter = 0;
 
-	for (var i = 0, length = req.ip.length; i < length; i++) {
-		if (req.ip[i] !== '.' && req.ip[i] !== ':')
-			ip += req.ip[i];
-	}
-
-	var path = framework_utils.combine(tmpDirectory, (framework.id ? 'i-' + framework.id + '_' : '') + 'mixed' + ip + '-' + Date.now() + '-');
+	var path = framework_utils.combine(tmpDirectory, (framework.id ? 'i-' + framework.id + '_' : '') + 'mixed' + Math.random().toString(36).substring(2) + '-');
 
 	boundary = boundary.substring(boundary.indexOf('=', 2) + 1);
 	req.buffer_exceeded = false;
@@ -354,7 +340,7 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) 
 		}
 
 		tmp.filename = header[1];
-		tmp.path = path + framework_utils.random(100000) + '.upload';
+		tmp.path = path + (Math.random() * 1000000 >> 0) + '.upload';
 
 		stream = fs.createWriteStream(tmp.path, WRITESTREAM);
 		stream.once('close', () => close--);
@@ -1628,10 +1614,8 @@ function view_parse_localization(content, language) {
 		return content;
 
 	while (command) {
-
 		if (command)
 			output += content.substring(end ? end + 1 : 0, command.beg) + framework.translate(language, command.command);
-
 		end = command.end;
 		command = view_find_localization(content, command.end);
 	}
@@ -2314,9 +2298,7 @@ function view_find_command(content, index) {
 
 function view_line_counter(value) {
 	var count = value.match(/\n/g);
-	if (count)
-		return count.length;
-	return 0;
+	return count ? count.length : 0;
 }
 
 function view_find_localization(content, index) {
@@ -2338,11 +2320,9 @@ function view_find_localization(content, index) {
 
 		if (c !== ')')
 			continue;
-		else {
-			if (count > 0) {
-				count--;
-				continue;
-			}
+		else if (count) {
+			count--;
+			continue;
 		}
 
 		return {

@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.1.0
+ * @version 2.2.0
  */
 
 'use strict';
@@ -32,9 +32,10 @@ const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, 
 const REGEXP_CLEAN_EMAIL = /\s/g;
 const REGEXP_CLEAN_PHONE = /\s|\.|\-|\(|\)/g;
 const hasOwnProperty = Object.prototype.hasOwnProperty;
+const Qs = require('querystring');
 
 var schemas = {};
-var transforms = { pagination: {}, error: {}, objectbuilder: {}, transformbuilder: {} };
+var transforms = { pagination: {}, error: {}, transformbuilder: {}, restbuilder: {} };
 
 function SchemaBuilder(name) {
 	this.name = name;
@@ -2886,10 +2887,10 @@ ErrorBuilder.removeTransform = function(name) {
  * @param {Function(errorBuilder)} fn
  */
 ErrorBuilder.setDefaultTransform = function(name) {
-	if (name === undefined)
-		delete transforms['error_default'];
-	else
+	if (name)
 		transforms['error_default'] = name;
+	else
+		delete transforms['error_default'];
 };
 
 /**
@@ -2933,8 +2934,11 @@ function Page(url, page, selected, enabled) {
 	this.enabled = enabled;
 }
 
-Page.prototype.html = function() {
-	return '<a href="' + this.url + '"' + (this.selected ? ' class="selected">' : '>') + this.page + '</a>';
+Page.prototype.html = function(body, cls) {
+	var classname = cls ? cls : '';
+	if (this.selected)
+		classname += (classname ? ' ' : '') + 'selected';
+	return '<a href="' + this.url + '"' + (classname ? (' class="' + classname + '"') : '') + '>' + (body || this.page) + '</a>';
 };
 
 /**
@@ -2954,10 +2958,10 @@ Pagination.addTransform = function(name, fn, isDefault) {
  * @param {Function(pagination)} fn
  */
 Pagination.setDefaultTransform = function(name) {
-	if (name === undefined)
-		delete transforms['pagination_default'];
-	else
+	if (name)
 		transforms['pagination_default'] = name;
+	else
+		delete transforms['pagination_default'];
 };
 
 /**
@@ -3135,10 +3139,8 @@ Pagination.prototype.prepare = function(max, format, type) {
 
 	if (max == null) {
 		for (var i = 1; i < self.count + 1; i++) {
-			if (isHTML)
-				builder.push(self.prepare_html(format, i, self.count, self.items, i === self.page));
-			else
-				builder.push(new Page(format.format(i, self.items, self.count), i, i === self.page, true));
+			var page = new Page(format.format(i, self.items, self.count), i, i === self.page, true);
+			builder.push(isHTML ? page.html() : page);
 		}
 		return builder;
 	}
@@ -3164,17 +3166,11 @@ Pagination.prototype.prepare = function(max, format, type) {
 	}
 
 	for (var i = pageFrom; i < pageTo + 1; i++) {
-		if (isHTML)
-			builder.push(self.prepare_html(format, i, self.count, self.items, i === self.page));
-		else
-			builder.push(new Page(format.format(i, self.items, self.count), i, i === self.page, true));
+		var page = new Page(format.format(i, self.items, self.count), i, i === self.page, true);
+		builder.push(isHTML ? page.html() : page);
 	}
 
 	return builder;
-};
-
-Pagination.prototype.prepare_html = function(format, page, pages, items, selected) {
-	return '<a href="' + format.format(page, items, pages) + '"' + (selected ? ' class="selected">' : '>') + page + '</a>';
 };
 
 Pagination.prototype.render = function(max, format) {
@@ -3347,26 +3343,21 @@ TransformBuilder.transform = function(name, obj) {
 };
 
 /**
- * STATIC: Create transformation
+ * STATIC: Create a transformation
  * @param {String} name
  * @param {Function} fn
- * @param {Boolean} isDefault Default transformation for all ObjectBuilder.
+ * @param {Boolean} isDefault Default transformation for all TransformBuilders.
  */
 TransformBuilder.addTransform = function(name, fn, isDefault) {
 	transforms['transformbuilder'][name] = fn;
 	isDefault && TransformBuilder.setDefaultTransform(name);
 };
 
-/**
- * STATIC: Create transformation
- * @param {String} name
- * @param {Function} fn
- */
 TransformBuilder.setDefaultTransform = function(name) {
-	if (name === undefined)
-		delete transforms['transformbuilder_default'];
-	else
+	if (name)
 		transforms['transformbuilder_default'] = name;
+	else
+		delete transforms['transformbuilder_default'];
 };
 
 function async_queue(arr, callback) {
@@ -3384,22 +3375,413 @@ function async_wait(arr, onItem, onCallback, index) {
 		onCallback();
 }
 
+function RESTBuilder(url) {
+	this.$url = url;
+	this.$headers = { 'User-Agent': 'Total.js/v' + framework.version_header, Accept: 'application/json, text/plain, text/plain, text/xml' };
+	this.$method = 'get';
+	this.$timeout = 10000;
+	this.$type = 0; // 0 = query, 1 = json, 2 = urlencode, 3 = raw
+	this.$schema;
+	this.$length = 0;
+	this.$transform = transforms['restbuilder_default'];
+
+	// this.$flags;
+	// this.$data = {};
+	// this.$nodnscache = true;
+	// this.$cache_expire;
+	// this.$cache_nocache;
+}
+
+RESTBuilder.make = function(fn) {
+	var instance = new RESTBuilder();
+	fn(instance);
+	return instance;
+};
+
+/**
+ * STATIC: Create a transformation
+ * @param {String} name
+ * @param {Function} fn
+ * @param {Boolean} isDefault Default transformation for all RESTBuilders.
+ */
+RESTBuilder.addTransform = function(name, fn, isDefault) {
+	transforms['restbuilder'][name] = fn;
+	isDefault && RESTBuilder.setDefaultTransform(name);
+};
+
+RESTBuilder.setDefaultTransform = function(name) {
+	if (name)
+		transforms['restbuilder_default'] = name;
+	else
+		delete transforms['restbuilder_default'];
+};
+
+RESTBuilder.prototype.setTransform = function(name) {
+	this.$transform = name;
+	return this;
+};
+
+RESTBuilder.prototype.url = function(url) {
+	this.$url = url;
+	return this;
+};
+
+RESTBuilder.prototype.maketransform = function(obj, data) {
+	if (!this.$transform)
+		return obj;
+	var fn = transforms['restbuilder'][this.$transform];
+	return fn ? fn(obj, data) : obj;
+};
+
+RESTBuilder.prototype.$trasnformname
+
+RESTBuilder.prototype.timeout = function(number) {
+	this.$timeout = number;
+	return this;
+};
+
+RESTBuilder.prototype.maxlength = function(number) {
+	this.$length = number;
+	this.$flags = null;
+	return this;
+};
+
+RESTBuilder.prototype.auth = function(user, password) {
+	this.$headers['authorization'] = 'Basic ' + new Buffer(user + ':' + password).toString('base64');
+	return this;
+};
+
+RESTBuilder.prototype.schema = function(group, schema) {
+	this.$schema = exports.getschema(group, name);
+	return this;
+};
+
+RESTBuilder.prototype.noDnsCache = function() {
+	this.$nodnscache = true;
+	this.$flags = null;
+	return this;
+};
+
+RESTBuilder.prototype.noCache = function() {
+	this.$nocache = true;
+	return this;
+};
+
+RESTBuilder.prototype.make = function(fn) {
+	fn.call(this, this);
+	return this;
+};
+
+RESTBuilder.prototype.xhr = function() {
+	this.$headers['X-Requested-With'] = 'XMLHttpRequest';
+	return this;
+};
+
+RESTBuilder.prototype.method = function(method) {
+	this.$method = method.toLowerCase();
+	this.$flags = null;
+	return this;
+};
+
+RESTBuilder.prototype.referer = RESTBuilder.prototype.referrer = function(value) {
+	this.$headers['Referer'] = value;
+	return this;
+};
+
+RESTBuilder.prototype.origin = function(value) {
+	this.$headers['Origin'] = value;
+	return this;
+};
+
+RESTBuilder.prototype.put = function(data) {
+	if (this.$method !== 'put') {
+		this.$flags = null;
+		this.$method = 'put';
+		this.$type = 1;
+	}
+	data && this.raw(data);
+	return this;
+};
+
+RESTBuilder.prototype.delete = function(data) {
+	if (this.$method !== 'delete') {
+		this.$flags = null;
+		this.$method = 'delete';
+		this.$type = 1;
+	}
+	data && this.raw(data);
+	return this;
+};
+
+RESTBuilder.prototype.get = function(data) {
+	if (this.$method !== 'get') {
+		this.$flags = null;
+		this.$method = 'get';
+	}
+	data && this.raw(data);
+	return this;
+};
+
+RESTBuilder.prototype.post = function(data) {
+	if (this.$method !== 'post') {
+		this.$flags = null;
+		this.$method = 'post';
+		this.$type = 1;
+	}
+	data && this.raw(data);
+	return this;
+};
+
+RESTBuilder.prototype.json = function(data) {
+
+	if (this.$type !== 1)
+		this.$flags = null;
+
+	data && this.raw(data);
+	this.$type = 1;
+
+	if (this.$method === 'get')
+		this.$method = 'post';
+
+	return this;
+};
+
+RESTBuilder.prototype.urlencoded = function(data) {
+
+	if (this.$type !== 2)
+		this.$flags = null;
+
+	if (this.$method === 'get')
+		this.$method = 'post';
+
+	this.$type = 2;
+	data && this.raw(data);
+	return this;
+};
+
+RESTBuilder.prototype.accept = function(ext) {
+	var type = framework_utils.getContentType(ext);
+	if (this.$headers['Accept'] !== type)
+		this.$flags = null;
+	this.$headers['Accept'] = type;
+	return this;
+};
+
+RESTBuilder.prototype.xml = function(data) {
+
+	if (this.$type !== 3)
+		this.$flags = null;
+
+	if (this.$method === 'get')
+		this.$method = 'post';
+
+	this.$type = 3;
+	data && this.raw(data);
+	return this;
+};
+
+RESTBuilder.prototype.raw = function(value) {
+	this.$data = value && value.$clean ? value.$clean() : value;
+	return this;
+};
+
+RESTBuilder.prototype.cookie = function(name, value) {
+	if (!this.$cookies)
+		this.$cookies = {};
+	this.$cookies[name] = value;
+	return this;
+};
+
+RESTBuilder.prototype.header = function(name, value) {
+	this.$headers[name] = value;
+	return this;
+};
+
+RESTBuilder.prototype.cache = function(expire) {
+	this.$cache_expire = expire;
+	return this;
+};
+
+RESTBuilder.prototype.set = function(name, value) {
+
+	if (!this.$data)
+		this.$data = {};
+
+	if (typeof(name) !== 'object') {
+		this.$data[name] = value;
+		return this;
+	}
+
+	var arr = Object.keys(name);
+	for (var i = 0, length = arr.length; i < length; i++)
+		this.$data[arr[i]] = name[arr[i]];
+
+	return this;
+};
+
+RESTBuilder.prototype.rem = function(name) {
+	if (this.$data && this.$data[name])
+		this.$data[name] = undefined;
+	return this;
+};
+
+RESTBuilder.prototype.stream = function(callback) {
+	var self = this;
+	var flags = self.$flags ? self.$flags : [self.$method];
+	var key;
+
+	if (!self.$flags) {
+
+		!self.$nodnscache && flags.push('dnscache');
+
+		switch (self.$type) {
+			case 1:
+				flags.push('json');
+				break;
+			case 3:
+				flags.push('xml');
+				break;
+		}
+
+		self.$flags = flags;
+	}
+
+	return U.download(self.$url, flags, self.$data, callback, self.$cookies, self.$headers, undefined, self.$timeout);
+};
+
+RESTBuilder.prototype.exec = function(callback) {
+
+	if (!callback)
+		callback = NOOP;
+
+	var self = this;
+	var flags = self.$flags ? self.$flags : [self.$method];
+	var key;
+
+	if (!self.$flags) {
+
+		!self.$nodnscache && flags.push('dnscache');
+		self.$length && flags.push('<' + self.$length);
+
+		switch (self.$type) {
+			case 1:
+				flags.push('json');
+				break;
+			case 3:
+				flags.push('xml');
+				break;
+		}
+
+		self.$flags = flags;
+	}
+
+	if (self.$cache_expire && !self.$nocache) {
+		key = '$rest_' + (self.$url + flags.join(',') + (self.$data ? Qs.stringify(self.$data) : '')).hash();
+		var data = framework.cache.read2(key);
+		if (data) {
+			var evt = new events.EventEmitter();
+
+			setImmediate(function() {
+				evt.removeAllListeners();
+				evt = null;
+			});
+
+			callback(null, self.maketransform(this.$schema ? this.$schema.make(data.json) : data.json, data), data);
+			return evt;
+		}
+	}
+
+	return U.request(self.$url, flags, self.$data, function(err, response, status, headers, hostname) {
+
+		var output = new RESTBuilderResponse();
+		output.json = response.isJSON() ? framework.onParseJSON(response) : null;
+		output.response = response;
+		output.status = status;
+		output.headers = headers;
+		output.hostname = hostname;
+		output.cache = false;
+		output.datetime = F.datetime;
+
+		if (self.$schema) {
+
+			if (err)
+				return callback(err, null, output);
+
+			self.$schema.make(parsed, function(err, model) {
+				!err && key && framework.cache.add(key, output, self.$cache_expire);
+				callback(err, err ? null : self.maketransform(output.json, output), output);
+				output.cache = true;
+			});
+
+			return;
+		}
+
+		!err && key && framework.cache.add(key, output, self.$cache_expire);
+		callback(err, self.maketransform(output.json, output), output);
+		output.cache = true;
+
+	}, self.$cookies, self.$headers, undefined, self.$timeout);
+};
+
+function RESTBuilderResponse() {}
+
+RESTBuilderResponse.prototype.cookie = function(name) {
+	var self = this;
+
+	if (self.cookies)
+		return $decodeURIComponent(self.cookies[name] || '');
+
+	var cookie = self.headers['cookie'];
+	if (!cookie)
+		return '';
+
+	self.cookies = {};
+
+	var arr = cookie.split(';');
+
+	for (var i = 0, length = arr.length; i < length; i++) {
+		var line = arr[i].trim();
+		var index = line.indexOf('=');
+		if (index !== -1)
+			self.cookies[line.substring(0, index)] = line.substring(index + 1);
+	}
+
+	return $decodeURIComponent(self.cookies[name] || '');
+};
+
+// Handle errors of decodeURIComponent
+function $decodeURIComponent(value) {
+	try
+	{
+		return decodeURIComponent(value);
+	} catch (e) {
+		return value;
+	}
+};
+
 // ======================================================
 // EXPORTS
 // ======================================================
 
 exports.SchemaBuilder = SchemaBuilder;
+exports.RESTBuilder = RESTBuilder;
 exports.ErrorBuilder = ErrorBuilder;
 exports.Pagination = Pagination;
+exports.Page = Page;
 exports.UrlBuilder = UrlBuilder;
 exports.TransformBuilder = TransformBuilder;
+global.RESTBuilder = RESTBuilder;
 global.ErrorBuilder = ErrorBuilder;
 global.TransformBuilder = TransformBuilder;
 global.Pagination = Pagination;
+global.Page = Page;
 global.UrlBuilder = UrlBuilder;
 global.SchemaBuilder = SchemaBuilder;
 
 exports.restart = function() {
 	schemas = {};
-	Object.keys(transforms).forEach(key => { transforms[key] = {}; });
+	Object.keys(transforms).forEach(function(key) {
+		if (key.indexOf('_') === -1)
+			transforms[key] = {};
+	});
 };

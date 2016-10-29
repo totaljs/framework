@@ -112,13 +112,14 @@ function prototypeString() {
 	assert.ok(str.isJSON() === false, 'string.isJSON()');
 	assert.ok('[]'.isJSON() === true, 'string.isJSON([])');
 	assert.ok('{}'.isJSON() === true, 'string.isJSON({})');
+	assert.ok('    {}     '.isJSON() === true, 'string.isJSON({})');
 	assert.ok('"'.isJSON() === false, 'string.isJSON(")');
 	assert.ok('""'.isJSON() === true, 'string.isJSON("")');
 	assert.ok('12'.isJSON() === false, 'string.isJSON(12)');
 	assert.ok('[}'.isJSON() === false, 'string.isJSON([})');
 	assert.ok('["'.isJSON() === false, 'string.isJSON([")');
-
-	assert.ok(UID().isUID(), 'string.isUID()');
+	assert.ok(str.isJSON() === false, 'string.isJSON()');
+	assert.ok(JSON.parse(JSON.stringify(new Date())).isJSONDate(), 'string.isJSONDate()');
 
 	str = 'google.sk';
 	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
