@@ -122,7 +122,7 @@ function Image(filename, useImageMagick, width, height) {
 	this.width = width;
 	this.height = height;
 	this.builder = [];
-	this.filename = type === 'string' ? framework_utils.escape_bash(filename) : null;
+	this.filename = type === 'string' ? filename.escape_bash() : null;
 	this.currentStream = type === 'object' ? filename : null;
 	this.isIM = useImageMagick == null ? F.config['default-image-converter'] === 'im' : useImageMagick;
 	this.outputType = type === 'string' ? framework_utils.getExtension(filename) : 'jpg';
@@ -195,7 +195,7 @@ Image.prototype.save = function(filename, callback, writer) {
 		callback = filename;
 		filename = null;
 	} else if (filename)
-		filename = framework_utils.escape_bash(filename);
+		filename = filename.escape_bash();
 
 	!self.builder.length && self.minify();
 	filename = filename || self.filename || '';
@@ -400,7 +400,7 @@ Image.prototype.push = function(key, value, priority, encode) {
 
 	if (value != null) {
 		if (encode && typeof(value) === 'string')
-			cmd += ' "' + framework_utils.escape_bash(value);
+			cmd += ' "' + value.escape_bash();
 		else
 			cmd += ' "' + value + '"';
 	}
