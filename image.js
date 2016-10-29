@@ -674,11 +674,6 @@ Image.prototype.command = function(key, value, priority, esc) {
 	return this.push(key, value, priority || 10, esc);
 };
 
-// Clears cache with commands
-Image.clear = function() {
-	CACHE = {};
-};
-
 function wrap(command, empty) {
 	var cmd = '';
 	for (var i = 0, length = command.length; i < length; i++)
@@ -705,4 +700,9 @@ exports.middleware = function(type, fn) {
 
 exports.restart = function() {
 	middlewares = {};
+};
+
+// Clears cache with commands
+exports.clear = function() {
+	CACHE = {};
 };
