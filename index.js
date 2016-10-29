@@ -12521,7 +12521,7 @@ Controller.prototype.proxy2 = function(url, callback, headers, timeout) {
 		}
 
 		self.status = code;
-		callback && callback(err, data, headers);
+		callback && callback(err, data, code, headers);
 		self.content(data, (headers['content-type'] || 'text/plain').replace(REG_ENCODINGCLEANER, ''));
 	}, null, h, ENCODING, timeout || 10000);
 };
