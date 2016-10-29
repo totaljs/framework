@@ -677,7 +677,7 @@ Image.prototype.command = function(key, value, priority, esc) {
 function wrap(command, empty) {
 	var cmd = '';
 	for (var i = 0, length = command.length; i < length; i++)
-		cmd += command[i] === '\'' ? '\\' + command[i] : command[i];
+		cmd += command[i] === '\'' ? '"' : command[i];
 	return (empty ? ' ' : '') + '\'' + cmd + '\'';
 }
 
