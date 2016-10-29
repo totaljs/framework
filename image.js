@@ -400,7 +400,7 @@ Image.prototype.push = function(key, value, priority, encode) {
 
 	if (value != null) {
 		if (encode && typeof(value) === 'string')
-			cmd += ' "' + value.escape_bash();
+			cmd += ' "' + value.escape_bash() + '"';
 		else
 			cmd += ' "' + value + '"';
 	}
