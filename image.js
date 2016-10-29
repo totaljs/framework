@@ -303,7 +303,9 @@ Image.prototype.stream = function(type, writer) {
 	if (!type)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'));
+	// Possible vulnerability with self.filename.
+	// WTF?? I don't know why, but wrap(self.filename) doesn't work with spawn() - but it works with exec() and with another spawn in image.pipe()
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? self.filename : '-', (type ? type + ':' : '') + '-'));
 	if (self.currentStream) {
 		if (self.currentStream instanceof Buffer)
 			cmd.stdin.end(self.currentStream);
@@ -341,13 +343,7 @@ Image.prototype.arg = function(first, last) {
 
 	!self.isIM && arr.push('-convert');
 	first && arr.push(first);
-
-	self.builder.sort(function(a, b) {
-		if (a.priority > b.priority)
-			return 1;
-		else
-			return -1;
-	});
+	self.builder.sort((a, b) => a.priority > b.priority ? 1 : -1);
 
 	var length = self.builder.length;
 
