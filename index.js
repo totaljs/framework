@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.2.0
+ * @version 2.2.1
  */
 
 'use strict';
@@ -913,7 +913,7 @@ Framework.prototype.stop = function(signal) {
 		TRY(() => worker && worker.kill && worker.kill(signal || 'SIGTERM'));
 	}
 
-	framework.emit('exit');
+	framework.emit('exit', signal);
 
 	if (!self.isWorker && typeof(process.send) === 'function')
 		TRY(() => process.send('stop'));
