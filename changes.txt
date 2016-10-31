@@ -1,5 +1,7 @@
 ======= 2.2.1 (HOTFIX)
 
+- updated: `F.on('exit', function(signal) {})` added a signal code
+
 - fixed: Image.stream()
 
 ======= 2.2.0
