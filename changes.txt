@@ -1,4 +1,7 @@
-======= 2.2.1 (HOTFIX)
+======= 2.3.0 (BETA)
+
+- added: `ShcemaBuilderEntity.$exec(name, callback)` (more in documentation)
+- added: support for `/workflows` file (more in documentation)
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 

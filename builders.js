@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.2.0
+ * @version 2.3.0
  */
 
 'use strict';
@@ -132,6 +132,11 @@ SchemaBuilderEntity.prototype.allow = function(name) {
 			self.fields_allow.push(arguments[i]);
 	}
 	return self;
+};
+
+SchemaBuilderEntity.prototype.describe = function(body) {
+	this.description = body;
+	return this;
 };
 
 /**
@@ -2142,13 +2147,31 @@ SchemaInstance.prototype.$next = function(type, name, helper) {
 	return this.$push(type, name, helper, true);
 };
 
+SchemaInstance.prototype.$exec = function(name, helper, callback) {
+	var self = this;
+
+	if (typeof(helper) === 'function') {
+		callback = helper;
+		helper = undefined;
+	}
+
+	var workflow = framework.workflows[name];
+	if (workflow)
+		workflow(self, helper, callback);
+	else
+		callback(new ErrorBuilder().push('Schema workflow "' + name + '" not found in workflows.'));
+
+	return self;
+};
+
 SchemaInstance.prototype.$save = function(helper, callback) {
 	var self = this;
 
 	if (self.$$can && self.$$async)
-		return self.$push('save', helper);
+		self.$push('save', helper);
+	else
+		self.$$schema.save(self, helper, callback);
 
-	self.$$schema.save(self, helper, callback);
 	return self;
 };
 
@@ -2156,9 +2179,10 @@ SchemaInstance.prototype.$query = function(helper, callback) {
 	var self = this;
 
 	if (self.$$can && self.$$async)
-		return self.$push('query', helper);
+		self.$push('query', helper);
+	else
+		self.$$schema.query(self, helper, callback);
 
-	self.$$schema.query(self, helper, callback);
 	return self;
 };
 
@@ -2166,9 +2190,10 @@ SchemaInstance.prototype.$read = SchemaInstance.prototype.$get = function(helper
 	var self = this;
 
 	if (self.$$can && self.$$async)
-		return self.$push('get', helper);
+		self.$push('get', helper);
+	else
+		self.$$schema.get(self, helper, callback);
 
-	self.$$schema.get(self, helper, callback);
 	return self;
 };
 
@@ -2176,9 +2201,10 @@ SchemaInstance.prototype.$remove = function(helper, callback) {
 	var self = this;
 
 	if (self.$$can && self.$$async)
-		return self.$push('remove', helper);
+		self.$push('remove', helper);
+	else
+		self.$$schema.remove(helper, callback);
 
-	self.$$schema.remove(helper, callback);
 	return self;
 };
 
@@ -2194,9 +2220,10 @@ SchemaInstance.prototype.$transform = function(name, helper, callback) {
 	var self = this;
 
 	if (self.$$can && self.$$async)
-		return self.$push('transform', name, helper);
+		self.$push('transform', name, helper);
+	else
+		self.$$schema.transform(name, self, helper, callback);
 
-	self.$$schema.transform(name, self, helper, callback);
 	return self;
 };
 
@@ -2204,9 +2231,10 @@ SchemaInstance.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
 
 	if (self.$$can && self.$$async)
-		return self.$push('workflow', name, helper);
+		self.$push('workflow', name, helper);
+	else
+		self.$$schema.workflow(name, self, helper, callback);
 
-	self.$$schema.workflow(name, self, helper, callback);
 	return self;
 };
 
@@ -2214,9 +2242,10 @@ SchemaInstance.prototype.$hook = function(name, helper, callback) {
 	var self = this;
 
 	if (self.$$can && self.$$async)
-		return self.$push('hook', name, helper);
+		self.$push('hook', name, helper);
+	else
+		self.$$schema.hook(name, self, helper, callback);
 
-	self.$$schema.hook(name, self, helper, callback);
 	return self;
 };
 
@@ -2224,9 +2253,10 @@ SchemaInstance.prototype.$operation = function(name, helper, callback) {
 	var self = this;
 
 	if (self.$$can && self.$$async)
-		return self.$push('operation', name, helper);
+		self.$push('operation', name, helper);
+	else
+		self.$$schema.operation(name, self, helper, callback);
 
-	self.$$schema.operation(name, self, helper, callback);
 	return self;
 };
 

@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.2.1
+ * @version 2.3.0
  */
 
 'use strict';
@@ -466,8 +466,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.id = null;
-	this.version = 2210;
-	this.version_header = '2.2.1-1';
+	this.version = 2300;
+	this.version_header = '2.3.0-1';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -566,6 +566,7 @@ function Framework() {
 	this.functions = {};
 	this.themes = {};
 	this.versions = null;
+	this.workflows = null;
 	this.schedules = [];
 
 	this.isDebug = true;
@@ -2996,6 +2997,18 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		return self;
 	}
 
+	if (type === 'workflow' || type === 'workflows') {
+
+		self._configure_workflows(declaration.toString().split('\n'));
+		setTimeout(function() {
+			self.emit(type + '#' + name);
+			self.emit('install', type, name);
+		}, 500);
+
+		callback && callback(null);
+		return self;
+	}
+
 	if (type === 'sitemap') {
 
 		self._configure_sitemap(declaration.toString().split('\n'));
@@ -3348,6 +3361,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					framework._configure_versions();
 					framework._configure_dependencies();
 					framework._configure_sitemap();
+					framework._configure_workflows();
 				} else {
 
 					framework._configure('@' + name + '/config');
@@ -3357,12 +3371,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					else
 						framework._configure('@' + name + '/config-release');
 
-					if (framework.isTest)
-						framework._configure('@' + name + '/config-test');
-
+					framework.isTest && framework._configure('@' + name + '/config-test');
 					framework._configure_versions('@' + name + '/versions');
 					framework._configure_dependencies('@' + name + '/dependencies');
 					framework._configure_sitemap('@' + name + '/sitemap');
+					framework._configure_workflows('@' + name + '/workflows');
 				}
 
 				framework.$load(undefined, tmpdir);
@@ -6063,6 +6076,9 @@ Framework.prototype.load = function(debug, types, pwd) {
 		if (!types || types.indexOf('versions') !== -1)
 			self._configure_versions();
 
+		if (!types || types.indexOf('workflows') !== -1)
+			self._configure_workflows();
+
 		if (!types || types.indexOf('sitemap') !== -1)
 			self._configure_sitemap();
 
@@ -6128,6 +6144,7 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 
 	self._configure();
 	self._configure_versions();
+	self._configure_workflows();
 	self._configure_sitemap();
 	self.isTest && self._configure('config-test', false);
 	self.cache.init();
@@ -8210,12 +8227,60 @@ Framework.prototype._configure_dependencies = function(arr) {
 	return self;
 };
 
-/**
- * Versions configuration
- * @private
- * @param {String Array} arr
- * @return {Framework}
- */
+Framework.prototype._configure_workflows = function(arr, clean) {
+
+	var self = this;
+
+	if (arr === undefined || typeof(arr) === 'string') {
+		var filename = prepare_filename(arr || 'workflows');
+		if (existsSync(filename, true))
+			arr = Fs.readFileSync(filename).toString(ENCODING).split('\n');
+		else
+			arr = null;
+	}
+
+	if (!arr) {
+		if (clean)
+			self.workflows = null;
+		return self;
+	}
+
+	var w = {};
+
+	arr.forEach(function(line) {
+		line = line.trim();
+		if (line.startsWith('//'))
+			return;
+		var index = line.indexOf(':');
+		if (index === -1)
+			return;
+
+		var key = line.substring(0, index).trim();
+		var response = -1;
+		var builder = [];
+
+		line.substring(index + 1).split('-->').forEach(function(operation, index) {
+			operation = operation.trim().replace(/\"/g, '\'');
+
+			if (operation.endsWith('(response)')) {
+				response = index;
+				operation = operation.replace('(response)', '').trim();
+			}
+
+			var what = operation.split(':');
+			if (what.length === 2)
+				builder.push('$' + what[0].trim() + '(' + what[1].trim() + ', options)');
+			else
+				builder.push('$' + what[0] + '(options)');
+		});
+
+		w[key] = new Function('model', 'options', 'callback', 'return model.$async(callback' + (response === -1 ? '' : ', ' + response) + ').' + builder.join('.') + ';');
+	});
+
+	self.workflows = w;
+	return this;
+};
+
 Framework.prototype._configure_versions = function(arr, clean) {
 
 	var self = this;
@@ -8273,13 +8338,6 @@ Framework.prototype._configure_versions = function(arr, clean) {
 	return self;
 };
 
-/**
- * Load configuration
- * @private
- * @param {String} arr String Array or filename.
- * @param {Boolean} rewrite Rewrites existed values, default `true`.
- * @return {Framework}
- */
 Framework.prototype._configure = function(arr, rewrite) {
 
 	var self = this;
@@ -14605,6 +14663,7 @@ process.on('message', function(msg, h) {
 	if (msg === 'reconfigure') {
 		framework._configure();
 		framework._configure_versions();
+		framework._configure_workflows();
 		framework._configure_sitemap();
 		framework.emit(msg);
 		return;
