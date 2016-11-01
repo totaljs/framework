@@ -2157,9 +2157,9 @@ SchemaInstance.prototype.$exec = function(name, helper, callback) {
 
 	var workflow = framework.workflows[name];
 	if (workflow)
-		workflow(self, helper, callback);
+		workflow(self, helper || EMPTYOBJECT, callback || NOOP);
 	else
-		callback(new ErrorBuilder().push('Schema workflow "' + name + '" not found in workflows.'));
+		callback && callback(new ErrorBuilder().push('Schema workflow "' + name + '" not found in workflows.'));
 
 	return self;
 };
