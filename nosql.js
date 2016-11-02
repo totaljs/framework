@@ -1734,7 +1734,7 @@ function compare_likeend(doc, index, item) {
 function compare_like(doc, index, item) {
 	var val = doc[item.name];
 
-	if (!val)
+	if (!val || !val.toLowerCase)
 		return false;
 
 	if (item.value instanceof Array) {
