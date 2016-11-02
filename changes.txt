@@ -4,6 +4,7 @@
 - added: support for `/workflows` file (more in documentation)
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
+- updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
 
 - fixed: Image.stream()
 

@@ -467,7 +467,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2300;
-	this.version_header = '2.3.0-1';
+	this.version_header = '2.3.0-3';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -9584,6 +9584,8 @@ Subscribe.prototype.execute = function(status, isError) {
 	}
 
 	route.isDELAY && self.res.writeContinue();
+	if (self.isSchema)
+		req.body.$$controller = controller;
 
 	if (!framework._length_middleware || !route.middleware)
 		self.doExecute();
@@ -9811,6 +9813,7 @@ Subscribe.prototype.validate = function(route, next) {
 		}
 
 		req.body = body;
+		self.isSchema = true;
 		next();
 	}, route.schema[2]);
 };
@@ -10007,6 +10010,10 @@ function Controller(name, req, res, subscribe, currentView) {
 
 Controller.prototype = {
 
+	get schema() {
+		return this.route.schema[0] === 'default' ? this.route.schema[1] : this.route.schema.join('/');
+	},
+
 	get sseID() {
 		return this.req.headers['last-event-id'] || null;
 	},
@@ -10142,95 +10149,109 @@ Controller.prototype = {
 // Schema operations
 
 Controller.prototype.$get = Controller.prototype.$read = function(helper, callback) {
-	this.getSchema().get(helper, callback);
+	this.getSchema().get(helper, callback, this);
 	return this;
 };
 
 Controller.prototype.$query = function(helper, callback) {
-	this.getSchema().query(helper, callback);
+	this.getSchema().query(helper, callback, this);
 	return this;
 };
 
 Controller.prototype.$save = function(helper, callback) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		self.body.$save(helper, callback);
-	else
-		self.getSchema().default().$save(helper, callback);
+	} else {
+		var model = self.getSchema().default();
+		model.$$controller = self;
+		model.$save(helper, callback);
+	}
 	return self;
 };
 
 Controller.prototype.$remove = function(helper, callback) {
 	var self = this;
-	self.getSchema().remove(helper, callback);
+	self.getSchema().remove(helper, callback, self);
 	return this;
 };
 
 Controller.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		self.body.$workflow(name, helper, callback);
-	else
-		self.getSchema().workflow2(name, helper, callback);
+	} else
+		self.getSchema().workflow2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$workflow2 = function(name, helper, callback) {
 	var self = this;
-	self.getSchema().workflow2(name, helper, callback);
+	self.getSchema().workflow2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$hook = function(name, helper, callback) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		self.body.$hook(name, helper, callback);
-	else
-		self.getSchema().hook2(name, helper, callback);
+	} else
+		self.getSchema().hook2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$hook2 = function(name, helper, callback) {
 	var self = this;
-	self.getSchema().hook2(name, helper, callback);
+	self.getSchema().hook2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$transform = function(name, helper, callback) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		self.body.$transform(name, helper, callback);
-	else
-		self.getSchema().transform2(name, helper, callback);
+	} else
+		self.getSchema().transform2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$transform2 = function(name, helper, callback) {
 	var self = this;
-	self.getSchema().transform2(name, helper, callback);
+	self.getSchema().transform2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$operation = function(name, helper, callback) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		self.body.$operation(name, helper, callback);
-	else
-		self.getSchema().operation2(name, helper, callback);
+	} else
+		self.getSchema().operation2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$operation2 = function(name, helper, callback) {
 	var self = this;
-	self.getSchema().operation2(name, helper, callback);
+	self.getSchema().operation2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$async = function(callback, index) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		return self.body.$async(callback, index);
-	return self.getSchema().default().$async(callback, index);
+	}
+
+	var model = self.getSchema().default();
+	model.$$controller = self;
+	return model.$async(callback, index);
 };
 
 Controller.prototype.getSchema = function() {
