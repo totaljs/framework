@@ -11934,6 +11934,10 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 			type = obj.contentType;
 		obj = obj.output();
 	} else {
+
+		if (framework_builders.isSchema(obj))
+			obj = obj.$clean();
+
 		if (beautify)
 			obj = JSON.stringify(obj, replacer, 4);
 		else
@@ -11982,6 +11986,10 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 		self.language && !obj.isResourceCustom && obj.resource(self.language);
 		obj = obj.json(beautify);
 	} else {
+
+		if (framework_builders.isSchema(obj))
+			obj = obj.$clean();
+
 		if (beautify)
 			obj = JSON.stringify(obj, replacer, 4);
 		else
@@ -12091,11 +12099,13 @@ Controller.prototype.plain = function(body, headers) {
 
 	var type = typeof(body);
 
-	if (body === undefined)
+	if (body == null)
 		body = '';
-	else if (type === 'object')
+	else if (type === 'object') {
+		if (framework_builders.isSchema(body))
+			body = body.$clean();
 		body = body ? JSON.stringify(body, null, 4) : '';
-	else
+	} else
 		body = body ? body.toString() : '';
 
 	self.subscribe.success();
