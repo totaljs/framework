@@ -444,8 +444,8 @@ var directory = framework_utils.$normalize(require.main ? Path.dirname(require.m
 
 // F._service() changes the values below:
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
-const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').randomize().join('').substring(0, 3), index: 1 };
 
+const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').randomize().join('').substring(0, 3), index: 1 };
 const controller_error_status = function(controller, status, problem) {
 
 	if (status !== 500 && problem)
@@ -7196,7 +7196,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 };
 
 /**
- * Render view
+ * Renders view
  * @param {String} name View name.
  * @param {Object} model Model.
  * @param {String} layout Layout for the view, optional. Default without layout.
@@ -7206,7 +7206,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
  */
 Framework.prototype.view = function(name, model, layout, repository, language) {
 
-	var controller = new Controller('', null, null, null, '');
+	var controller = EMPTYCONTROLLER;
 
 	if (typeof(layout) === 'object') {
 		var tmp = repository;
@@ -7215,8 +7215,9 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 	}
 
 	controller.layoutName = layout || '';
-	controller.language = language;
+	controller.language = language || '';
 	controller.isConnected = false;
+	controller.repository = typeof(repository) === 'object' && repository ? repository : EMPTYOBJECT;
 
 	var theme = framework_utils.parseTheme(name);
 	if (theme) {
@@ -7225,13 +7226,35 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 	} else if (this.onTheme)
 		controller.themeName = this.onTheme(controller);
 
-	if (typeof(repository) === 'object' && repository)
-		controller.repository = repository;
+	return controller.view(name, model, true);
+};
 
-	var output = controller.view(name, model, true);
-	controller.repository = controller.res = controller.req = null;
-	controller = null;
-	return output;
+/**
+ * Compiles and renders view
+ * @param {String} body HTML body.
+ * @param {Object} model Model.
+ * @param {String} layout Layout for the view, optional. Default without layout.
+ * @param {Object} repository A repository object, optional. Default empty.
+ * @param {String} language Optional.
+ * @return {String}
+ */
+Framework.prototype.viewCompile = function(body, model, layout, repository, language) {
+
+	var controller = EMPTYCONTROLLER;
+
+	if (typeof(layout) === 'object') {
+		var tmp = repository;
+		repository = layout;
+		layout = tmp;
+	}
+
+	controller.layoutName = layout || '';
+	controller.language = language || '';
+	controller.isConnected = false;
+	controller.themeName = '';
+	controller.repository = typeof(repository) === 'object' && repository ? repository : EMPTYOBJECT;
+
+	return controller.viewCompile(body, model, true);
 };
 
 /**
@@ -10944,48 +10967,27 @@ Controller.prototype.setExpires = function(date) {
 	return this;
 };
 
-/**
- * INTERNAL: Render view in view
- * @private
- * @param {String} name
- * @param {Object} model Custom model, optional.
- * @return {String}
- */
 Controller.prototype.$template = function(name, model, expire, key) {
 	return this.$viewToggle(true, name, model, expire, key);
 };
 
-/**
- * INTERNAL: Render view in view
- * @private
- * @param {Boolean} visible
- * @param {String} name
- * @param {Object} model Custom model, optional.
- * @return {String}
- */
 Controller.prototype.$templateToggle = function(visible, name, model, expire, key) {
 	return this.$viewToggle(visible, name, model, expire, key);
 };
 
-/**
- * INTERNAL: Render view in view
- * @private
- * @param {String} name
- * @param {Object} model Custom model, optional.
- * @return {String}
- */
 Controller.prototype.$view = function(name, model, expire, key) {
 	return this.$viewToggle(true, name, model, expire, key);
 };
 
-/**
- * INTERNAL: Render view in view
- * @private
- * @param {Boolean} visible
- * @param {String} name
- * @param {Object} model Custom model, optional.
- * @return {String}
- */
+Controller.prototype.$viewCompile = function(body, model) {
+	var self = this;
+	var layout = self.layoutName;
+	self.layoutName = '';
+	var value = self.viewCompile(body, model, null, true);
+	self.layoutName = layout;
+	return value || '';
+};
+
 Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
 
 	if (!visible)
@@ -12701,10 +12703,27 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		framework.temporary.other[key] = filename;
 	}
 
-	var generator = framework_internal.viewEngine(name, filename, self);
+	return self.$viewrender(filename, framework_internal.viewEngine(name, filename, self), model, headers, partial, isLayout);
+};
+
+Controller.prototype.viewCompile = function(body, model, headers, partial) {
+
+	if (headers === true) {
+		partial = true;
+		headers = undefined;
+	}
+
+	return this.$viewrender('[dynamic view]', framework_internal.viewEngineCompile(body, this.language, this), model, headers, partial);
+};
+
+Controller.prototype.$viewrender = function(filename, generator, model, headers, partial, isLayout) {
+
+	var self = this;
+	var err;
+
 	if (!generator) {
 
-		var err = new Error('View "' + filename + '" not found.');
+		err = new Error('View "' + filename + '" not found.');
 
 		if (partial) {
 			framework.error(err, self.name, self.uri);
@@ -12714,11 +12733,11 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		if (isLayout) {
 			self.subscribe.success();
 			framework.response500(self.req, self.res, err);
-			return;
+			return self;
 		}
 
 		self.view500(err);
-		return;
+		return self;
 	}
 
 	var value = '';
@@ -12733,7 +12752,7 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, partial ? self.outputPartial : self.output, self.date, self.req.cookie, self.req.files, self.req.mobile);
 	} catch (ex) {
 
-		var err = new Error('View: ' + name + ' - ' + ex.toString());
+		err = new Error('View "' + filename + '": ' + ex.toString);
 
 		if (!partial) {
 			self.view500(err);
@@ -12766,7 +12785,7 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		self.subscribe.success();
 
 		if (!self.isConnected)
-			return;
+			return self;
 
 		framework.responseContent(self.req, self.res, self.status, value, CONTENTTYPE_TEXTHTML, self.config['allow-gzip'], headers);
 		framework.stats.response.view++;
@@ -14827,3 +14846,7 @@ global.clearTimeout2 = function(name) {
 
 	return false;
 };
+
+// Because of controller prototypes
+// It's used in F.view() and F.viewCompile()
+const EMPTYCONTROLLER = new Controller('', null, null, null, '');

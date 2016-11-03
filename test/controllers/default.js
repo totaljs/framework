@@ -409,9 +409,7 @@ function viewTest() {
 }
 
 function viewDynamic() {
-	this.view('<b>@{model.name}</b>', {
-		name: 'Peter'
-	});
+	this.viewCompile('<b>@{model.name}</b>', { name: 'Peter' });
 }
 
 function viewTranslate() {

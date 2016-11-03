@@ -2137,6 +2137,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'template':
 		case 'templateToggle':
 		case 'view':
+		case 'viewCompile':
 		case 'viewToggle':
 		case 'helper':
 		case 'download':
@@ -2872,8 +2873,10 @@ function viewengine_load(name, filename, controller) {
 	if (!framework.temporary.other[name])
 		framework.temporary.other[name] = name.indexOf('@{') !== -1 || name.indexOf('<') !== -1;
 
-	if (framework.temporary.other[name])
-		return viewengine_dynamic(name, language, controller);
+	if (framework.temporary.other[name]) {
+		OBSOLETE('controller.view()', 'Instead of controller.view() use controller.viewCompile(body, model, [headers], [partial])');
+		return viewengine_dynamic(name, language, controller, 'view' + language + '_' + name.hash());
+	}
 
 	var precompiled = framework.routes.views[name];
 
@@ -2899,14 +2902,17 @@ function viewengine_load(name, filename, controller) {
 	return generator;
 }
 
-function viewengine_dynamic(content, language, controller) {
-	var key = language + '_' + content.hash();
-	var generator = framework.temporary.views[key] || null;
+function viewengine_dynamic(content, language, controller, cachekey) {
+
+	var generator = cachekey ? (framework.temporary.views[cachekey] || null) : null;
 	if (generator)
 		return generator;
+
 	generator = view_parse(view_parse_localization(viewengine_modify(content, ''), language), framework.config['allow-compile-html'], null, controller);
-	if (!framework.isDebug)
-		framework.temporary.views[key] = generator;
+
+	if (cachekey && !framework.isDebug)
+		framework.temporary.views[cachekey] = generator;
+
 	return generator;
 };
 
@@ -3273,6 +3279,7 @@ function existsSync(filename) {
 	}
 }
 
+exports.viewEngineCompile = viewengine_dynamic;
 exports.viewEngine = viewengine_load;
 exports.parseLocalization = view_parse_localization;
 exports.findLocalization = view_find_localization;
