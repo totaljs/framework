@@ -6280,7 +6280,7 @@ Framework.prototype.mode = function(http, name, options) {
 	var debug = false;
 
 	if (options.directory)
-		directory = options.directory;
+		self.directory = directory = options.directory;
 
 	if (typeof(http) === 'string') {
 		switch (http) {
