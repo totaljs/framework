@@ -38,6 +38,9 @@ if (!global.framework_image)
 if (!global.framework_nosql)
 	global.framework_nosql = exports;
 
+if (!global.framework_builders)
+	global.framework_builders = require('./builders');
+
 const EXTENSION = '.nosql';
 const EXTENSION_BINARY = '.nosql-binary';
 const EXTENSION_TMP = '.nosql-tmp';
@@ -92,7 +95,7 @@ Database.prototype.meta = function(name, value) {
 Database.prototype.insert = function(doc) {
 	var self = this;
 	var builder = new DatabaseBuilder2();
-	self.pending_append.push({ doc: JSON.stringify(doc.$clean ? doc.$clean() : doc), builder: builder });
+	self.pending_append.push({ doc: JSON.stringify(framework_builders.isSchema(doc) ? doc.$clean() : doc), builder: builder });
 	self.next(1);
 	return builder;
 };
@@ -100,7 +103,7 @@ Database.prototype.insert = function(doc) {
 Database.prototype.update = function(doc) {
 	var self = this;
 	var builder = new DatabaseBuilder();
-	self.pending_update.push({ builder: builder, doc: doc, count: 0 });
+	self.pending_update.push({ builder: builder, doc: framework_builders.isSchema(doc) ? doc.$clean() : doc, count: 0 });
 	setImmediate(() => self.next(2));
 	return builder;
 };
@@ -156,7 +159,7 @@ Database.prototype.modify = function(doc) {
 	if (!keys.length)
 		return builder;
 
-	self.pending_update.push({ builder: builder, doc: doc, count: 0, keys: keys });
+	self.pending_update.push({ builder: builder, doc: framework_builders.isSchema(doc) ? doc.$clean() : doc, count: 0, keys: keys });
 	setImmediate(() => self.next(2));
 	return builder;
 };
