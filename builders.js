@@ -93,6 +93,7 @@ function SchemaBuilderEntity(parent, name) {
 	this.primary;
 	this.trim = true;
 	this.schema = {};
+	this.descriptions = {};
 	this.properties = [];
 	this.resourcePrefix;
 	this.resourceName;
@@ -132,11 +133,6 @@ SchemaBuilderEntity.prototype.allow = function(name) {
 			self.fields_allow.push(arguments[i]);
 	}
 	return self;
-};
-
-SchemaBuilderEntity.prototype.describe = function(body) {
-	this.description = body;
-	return this;
 };
 
 /**
@@ -532,9 +528,10 @@ SchemaBuilderEntity.prototype.setPrepare = function(fn) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setSave = function(fn) {
+SchemaBuilderEntity.prototype.setSave = function(fn, description) {
 	var self = this;
 	self.onSave = fn;
+	self.descriptions.save = description;
 	return self;
 };
 
@@ -555,31 +552,36 @@ SchemaBuilderEntity.prototype.setError = function(fn) {
  * @param {Function(error, model, helper, next(value), controller)} fn
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = function(fn) {
+SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = function(fn, description) {
 	var self = this;
 	self.onGet = fn;
+	self.descriptions.get = description;
 	return self;
 };
 
 /**
  * Set query handler
  * @param {Function(error, helper, next(value), controller)} fn
+ * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setQuery = function(fn) {
+SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
 	var self = this;
 	self.onQuery = fn;
+	self.descriptions.query = description;
 	return self;
 };
 
 /**
  * Set remove handler
  * @param {Function(error, helper, next(value), controller)} fn
+ * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.setRemove = function(fn) {
+SchemaBuilderEntity.prototype.setRemove = function(fn, description) {
 	var self = this;
 	self.onRemove = fn;
+	self.descriptions.remove = description;
 	return self;
 };
 
@@ -587,9 +589,10 @@ SchemaBuilderEntity.prototype.setRemove = function(fn) {
  * Add a new constant for the schema
  * @param {String} name Constant name, optional.
  * @param {Object} value
+ * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.constant = function(name, value) {
+SchemaBuilderEntity.prototype.constant = function(name, value, description) {
 	var self = this;
 
 	if (value === undefined)
@@ -599,6 +602,7 @@ SchemaBuilderEntity.prototype.constant = function(name, value) {
 		self.constants = {};
 
 	self.constants[name] = value;
+	self.descriptions['constant#' + name] = description;
 	return self;
 };
 
@@ -606,9 +610,10 @@ SchemaBuilderEntity.prototype.constant = function(name, value) {
  * Add a new transformation for the entity
  * @param {String} name Transform name, optional.
  * @param {Function(errorBuilder, model, helper, next([output]), controller)} fn
+ * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
+SchemaBuilderEntity.prototype.addTransform = function(name, fn, description) {
 	var self = this;
 
 	if (typeof(name) === 'function') {
@@ -620,6 +625,7 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
 		self.transforms = {};
 
 	self.transforms[name] = fn;
+	self.descriptions['transform#' + name] = description;
 	return self;
 };
 
@@ -627,9 +633,10 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn) {
  * Add a new operation for the entity
  * @param {String} name Operation name, optional.
  * @param {Function(errorBuilder, [model], helper, next([output]), controller)} fn
+ * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.addOperation = function(name, fn) {
+SchemaBuilderEntity.prototype.addOperation = function(name, fn, description) {
 	var self = this;
 
 	if (typeof(name) === 'function') {
@@ -641,6 +648,7 @@ SchemaBuilderEntity.prototype.addOperation = function(name, fn) {
 		self.operations = {};
 
 	self.operations[name] = fn;
+	self.descriptions['operation#' + name] = description;
 	return self;
 };
 
@@ -648,9 +656,10 @@ SchemaBuilderEntity.prototype.addOperation = function(name, fn) {
  * Add a new workflow for the entity
  * @param {String} name Workflow name, optional.
  * @param {Function(errorBuilder, model, helper, next([output]), controller)} fn
+ * @param {String} description Optional.
  * @return {SchemaBuilderEntity}
  */
-SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
+SchemaBuilderEntity.prototype.addWorkflow = function(name, fn, description) {
 	var self = this;
 
 	if (typeof(name) === 'function') {
@@ -662,10 +671,11 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn) {
 		self.workflows = {};
 
 	self.workflows[name] = fn;
+	self.descriptions['workflow#' + name] = description;
 	return self;
 };
 
-SchemaBuilderEntity.prototype.addHook = function(name, fn) {
+SchemaBuilderEntity.prototype.addHook = function(name, fn, description) {
 
 	var self = this;
 
@@ -676,6 +686,7 @@ SchemaBuilderEntity.prototype.addHook = function(name, fn) {
 		self.hooks[name] = [];
 
 	self.hooks[name].push({ owner: framework.$owner(), fn: fn });
+	self.descriptions['hook#' + name] = description;
 	return self;
 };
 

@@ -679,6 +679,7 @@ function wrap(command, empty) {
 
 exports.Image = Image;
 exports.Picture = Image;
+global.Image = Image;
 
 exports.init = function(filename, imageMagick, width, height) {
 	return new Image(filename, imageMagick, width, height);

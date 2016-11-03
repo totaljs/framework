@@ -2,11 +2,15 @@
 
 - added: `ShcemaBuilderEntity.$exec(name, callback)` (more in documentation)
 - added: support for `/workflows` file (more in documentation)
+- added: a new argument `description` to each SchemaBuilder `set` + `add` method e.g. `.setSave()`, `.addWorkflow()`, etc..
+- added: `SchemaBuilder.descriptions` contains all registered handlers with their descriptions
+- added: a property `controller.schema`
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
 
 - fixed: Image.stream()
+- fixed: global variable `Image` (in a single library)
 
 ======= 2.2.0
 
