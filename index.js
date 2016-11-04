@@ -4084,7 +4084,13 @@ Framework.prototype.onSchema = function(req, group, name, callback, filter) {
 	var schema = GETSCHEMA(group, name);
 	if (!schema)
 		return callback(new Error('Schema not found.'));
-	schema.make(req.body, (err, result) => err ? callback(err) : callback(null, result), filter);
+	schema.make(req.body, function(err, result) {
+		if (err) {
+			req.$language && !err.isResourceCustom && err.setResource(req.$language);
+			callback(err);
+		} else
+			callback(null, result);
+	}, filter);
 };
 
 /**

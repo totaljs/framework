@@ -2314,7 +2314,7 @@ function ErrorBuilder(onResource) {
 	this.items = [];
 	this.transformName = transforms['error_default'];
 	this.onResource = onResource;
-	this.resourceName = framework.config['default-errorbuilder-resource-name'] || 'default';
+	this.resourceName = framework.config['default-errorbuilder-resource-name'];
 	this.resourcePrefix = framework.config['default-errorbuilder-resource-prefix'] || '';
 	this.isResourceCustom = false;
 	this.count = 0;
@@ -2554,7 +2554,7 @@ ErrorBuilder.prototype = {
 ErrorBuilder.prototype.resource = function(name, prefix) {
 	var self = this;
 	self.isResourceCustom = true;
-	self.resourceName = name || 'default';
+	self.resourceName = name;
 	self.resourcePrefix = prefix || '';
 	return self._resource();
 };
@@ -2567,7 +2567,7 @@ ErrorBuilder.prototype.setContentType = function(type) {
 ErrorBuilder.prototype.setResource = function(name) {
 	var self = this;
 	self.isResourceCustom = true;
-	self.resourceName = name || 'default';
+	self.resourceName = name;
 	return self._resource();
 };
 
@@ -2591,9 +2591,7 @@ ErrorBuilder.prototype._resource = function() {
 
 ErrorBuilder.prototype._resource_handler = function(name) {
 	var self = this;
-	if (typeof(framework) !== 'undefined')
-		return framework.resource(self.resourceName, self.resourcePrefix + name);
-	return '';
+	return typeof(framework) !== 'undefined' ? framework.resource(self.resourceName || 'default', self.resourcePrefix + name) : '';
 }
 
 ErrorBuilder.prototype.exception = function(message) {
