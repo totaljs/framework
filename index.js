@@ -13677,7 +13677,6 @@ WebSocketClient.prototype._ondata = function(data) {
 WebSocketClient.prototype.parse = function() {
 
 	var self = this;
-
 	var bLength = self.buffer[1];
 
 	if (((bLength & 0x80) >> 7) !== 1)
