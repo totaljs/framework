@@ -467,7 +467,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2300;
-	this.version_header = '2.3.0-3';
+	this.version_header = '2.3.0-4';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -4084,13 +4084,7 @@ Framework.prototype.onSchema = function(req, group, name, callback, filter) {
 	var schema = GETSCHEMA(group, name);
 	if (!schema)
 		return callback(new Error('Schema not found.'));
-	schema.make(req.body, function(err, result) {
-		if (err) {
-			req.$language && !err.isResourceCustom && err.setResource(req.$language);
-			callback(err);
-		} else
-			callback(null, result);
-	}, filter);
+	schema.make(req.body, (err, res) => err ? callback(err) : callback(null, res), filter);
 };
 
 /**
@@ -9580,9 +9574,8 @@ Subscribe.prototype.execute = function(status, isError) {
 			status = 404;
 
 		if (status === 400 && self.exception instanceof framework_builders.ErrorBuilder) {
-			req.$language && self.exception.resource(req.$language, framework.config['default-errorbuilder-resource-prefix']);
-			var ex = self.exception.output();
-			framework.responseContent(req, res, 200, ex, self.exception.contentType, framework.config['allow-gzip']);
+			req.$language && self.exception.setResource(req.$language);
+			framework.responseContent(req, res, 200, self.exception.output(), self.exception.contentType, framework.config['allow-gzip']);
 			return self;
 		}
 
@@ -11936,8 +11929,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	var type = 'application/json';
 
 	if (obj instanceof framework_builders.ErrorBuilder) {
-		if (self.language && !obj.isResourceCustom)
-			obj.resource(self.language);
+		self.req.$language && !obj.isResourceCustom && obj.setResource(self.req.$language);
 		if (obj.contentType)
 			type = obj.contentType;
 		obj = obj.output();
@@ -11991,7 +11983,7 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 		name = 'callback';
 
 	if (obj instanceof framework_builders.ErrorBuilder) {
-		self.language && !obj.isResourceCustom && obj.resource(self.language);
+		self.req.$language && !obj.isResourceCustom && obj.setResource(self.req.$language);
 		obj = obj.json(beautify);
 	} else {
 
@@ -12030,7 +12022,7 @@ Controller.prototype.callback = function(viewName) {
 
 		if (err) {
 			if (is && !viewName) {
-				self.language && err.resource(self.language);
+				self.req.$language && !err.isResourceCustom && err.setResource(self.req.$language);
 				return self.content(err);
 			}
 			return is && err.unexpected ? self.view500(err) : self.view404(err);

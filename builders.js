@@ -2573,7 +2573,6 @@ ErrorBuilder.prototype.setResource = function(name) {
 
 ErrorBuilder.prototype.setPrefix = function(name) {
 	var self = this;
-	self.isResourceCustom = true;
 	self.resourcePrefix = name || '';
 	return self._resource();
 };
@@ -2780,7 +2779,6 @@ ErrorBuilder.prototype._prepare = function() {
 	for (var i = 0; i < length; i++) {
 
 		var o = errors[i];
-
 		if (o.error[0] !== '@')
 			continue;
 
