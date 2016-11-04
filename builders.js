@@ -93,7 +93,7 @@ function SchemaBuilderEntity(parent, name) {
 	this.primary;
 	this.trim = true;
 	this.schema = {};
-	this.descriptions = {};
+	this.meta = {};
 	this.properties = [];
 	this.resourcePrefix;
 	this.resourceName;
@@ -531,7 +531,7 @@ SchemaBuilderEntity.prototype.setPrepare = function(fn) {
 SchemaBuilderEntity.prototype.setSave = function(fn, description) {
 	var self = this;
 	self.onSave = fn;
-	self.descriptions.save = description;
+	self.meta.save = description;
 	return self;
 };
 
@@ -555,7 +555,7 @@ SchemaBuilderEntity.prototype.setError = function(fn) {
 SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = function(fn, description) {
 	var self = this;
 	self.onGet = fn;
-	self.descriptions.get = description;
+	self.meta.get = description;
 	return self;
 };
 
@@ -568,7 +568,7 @@ SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = f
 SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
 	var self = this;
 	self.onQuery = fn;
-	self.descriptions.query = description;
+	self.meta.query = description;
 	return self;
 };
 
@@ -581,7 +581,7 @@ SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
 SchemaBuilderEntity.prototype.setRemove = function(fn, description) {
 	var self = this;
 	self.onRemove = fn;
-	self.descriptions.remove = description;
+	self.meta.remove = description;
 	return self;
 };
 
@@ -602,7 +602,7 @@ SchemaBuilderEntity.prototype.constant = function(name, value, description) {
 		self.constants = {};
 
 	self.constants[name] = value;
-	self.descriptions['constant#' + name] = description;
+	self.meta['constant#' + name] = description;
 	return self;
 };
 
@@ -625,7 +625,7 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn, description) {
 		self.transforms = {};
 
 	self.transforms[name] = fn;
-	self.descriptions['transform#' + name] = description;
+	self.meta['transform#' + name] = description;
 	return self;
 };
 
@@ -648,7 +648,7 @@ SchemaBuilderEntity.prototype.addOperation = function(name, fn, description) {
 		self.operations = {};
 
 	self.operations[name] = fn;
-	self.descriptions['operation#' + name] = description;
+	self.meta['operation#' + name] = description;
 	return self;
 };
 
@@ -671,7 +671,7 @@ SchemaBuilderEntity.prototype.addWorkflow = function(name, fn, description) {
 		self.workflows = {};
 
 	self.workflows[name] = fn;
-	self.descriptions['workflow#' + name] = description;
+	self.meta['workflow#' + name] = description;
 	return self;
 };
 
@@ -686,7 +686,7 @@ SchemaBuilderEntity.prototype.addHook = function(name, fn, description) {
 		self.hooks[name] = [];
 
 	self.hooks[name].push({ owner: framework.$owner(), fn: fn });
-	self.descriptions['hook#' + name] = description;
+	self.meta['hook#' + name] = description;
 	return self;
 };
 
