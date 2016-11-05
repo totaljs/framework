@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 2.2.0
+ * @version 2.3.0
  */
 
 'use strict';
