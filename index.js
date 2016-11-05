@@ -7216,7 +7216,6 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 
 	controller.layoutName = layout || '';
 	controller.language = language || '';
-	controller.isConnected = false;
 	controller.repository = typeof(repository) === 'object' && repository ? repository : EMPTYOBJECT;
 
 	var theme = framework_utils.parseTheme(name);
@@ -7250,7 +7249,6 @@ Framework.prototype.viewCompile = function(body, model, layout, repository, lang
 
 	controller.layoutName = layout || '';
 	controller.language = language || '';
-	controller.isConnected = false;
 	controller.themeName = '';
 	controller.repository = typeof(repository) === 'object' && repository ? repository : EMPTYOBJECT;
 
@@ -10260,6 +10258,21 @@ Controller.prototype.$operation = function(name, helper, callback) {
 Controller.prototype.$operation2 = function(name, helper, callback) {
 	var self = this;
 	self.getSchema().operation2(name, helper, callback, self);
+	return self;
+};
+
+Controller.prototype.$exec = function(name, helper, callback) {
+	var self = this;
+
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
+		self.body.$exec(name, helper, callback);
+		return self;
+	}
+
+	var tmp = self.getSchema().create();
+	tmp.$$controller = self;
+	tmp.$exec(name, helper, callback);
 	return self;
 };
 
@@ -14847,3 +14860,4 @@ global.clearTimeout2 = function(name) {
 // Because of controller prototypes
 // It's used in F.view() and F.viewCompile()
 const EMPTYCONTROLLER = new Controller('', null, null, null, '');
+EMPTYCONTROLLER.isConnected = false;

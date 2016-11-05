@@ -1,7 +1,8 @@
 ======= 2.3.0 (BETA)
 
-- added: `ShcemaBuilderEntity.$exec(name, callback)` (more in documentation)
 - added: support for `/workflows` file (more in documentation)
+- added: `ShcemaBuilderEntity.$exec(name, callback)` (more in documentation)
+- added: `controller.$exec(name, [options], [callback])` (more in documentation)
 - added: a new argument `description` to each SchemaBuilder `set` + `add` method e.g. `.setSave()`, `.addWorkflow()`, etc..
 - added: `SchemaBuilder.meta` contains all registered handlers with their descriptions
 - added: a property `controller.schema`
