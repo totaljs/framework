@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkMail
- * @version 2.0.0
+ * @version 2.3.0
  */
 
 'use strict'
@@ -133,11 +133,7 @@ Message.prototype.from = function(address, name) {
 		address = address.substring(index + 1, address.length - 1);
 	}
 
-	if (!address.isEmail())
-		throw new Error(errors.notvalid);
-
 	var self = this;
-
 	self.addressFrom.name = name || '';
 	self.addressFrom.address = address;
 	return self;
@@ -163,9 +159,6 @@ Message.prototype.to = function(address, name, clear) {
 		name = address.substring(0, index - 1);
 		address = address.substring(index + 1, address.length - 1);
 	}
-
-	if (!address.isEmail())
-		throw new Error(errors.notvalid);
 
 	var self = this;
 
@@ -200,9 +193,6 @@ Message.prototype.cc = function(address, name, clear) {
 		address = address.substring(index + 1, address.length - 1);
 	}
 
-	if (!address.isEmail())
-		throw new Error(errors.notvalid);
-
 	var self = this;
 
 	if (clear || !self.addressCC)
@@ -224,9 +214,6 @@ Message.prototype.cc = function(address, name, clear) {
  */
 Message.prototype.bcc = function(address, clear) {
 
-	if (!address.isEmail())
-		throw new Error(errors.notvalid);
-
 	var self = this;
 
 	if (clear || !self.addressBCC)
@@ -243,9 +230,6 @@ Message.prototype.bcc = function(address, clear) {
  * @return {Message}
  */
 Message.prototype.reply = function(address, clear) {
-
-	if (!address.isEmail())
-		throw new Error(errors.notvalid);
 
 	var self = this;
 
@@ -295,7 +279,7 @@ Message.prototype.manually = function() {
  */
 Message.prototype.attachmentInline = function(filename, name, contentId) {
 	var self = this;
-	if (name === undefined)
+	if (!name)
 		name = framework_utils.getName(filename);
 	if (!self.files)
 		self.files = [];
@@ -883,8 +867,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 		}
 	});
 
-	if (autosend)
-		self._writeline(obj, 'EHLO ' + host);
+	autosend && self._writeline(obj, 'EHLO ' + host);
 };
 
 Mailer.prototype.restart = function() {
@@ -917,9 +900,7 @@ function prepareBASE64(value) {
 }
 
 function unicode_encode(val) {
-	if (!val)
-		return '';
-	return '=?utf-8?B?' + new Buffer(val.toString()).toString('base64') + '?=';
+	return val ? '=?utf-8?B?' + new Buffer(val.toString()).toString('base64') + '?=' : '';
 }
 
 // ======================================================
