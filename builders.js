@@ -114,7 +114,6 @@ function SchemaBuilderEntity(parent, name) {
 	this.dependencies;
 	this.fields;
 	this.fields_allow;
-
 	this.CurrentSchemaInstance = function(){};
 	this.CurrentSchemaInstance.prototype = new SchemaInstance();
 	this.CurrentSchemaInstance.prototype.$$schema = this;
@@ -2173,11 +2172,14 @@ SchemaInstance.prototype.$exec = function(name, helper, callback) {
 		helper = undefined;
 	}
 
-	var workflow = framework.workflows[name];
+	var group = self.$$schema.parent.name;
+	var key = group !== 'default' ? group + '/' + self.$$schema.name : self.$$schema.name;
+	var workflow = framework.workflows[key + '#' + name] || framework.workflows[name];
+
 	if (workflow)
 		workflow(self, helper || EMPTYOBJECT, callback || NOOP);
 	else
-		callback && callback(new ErrorBuilder().push('Schema workflow "' + name + '" not found in workflows.'));
+		callback && callback(new ErrorBuilder().push('Workflow "' + name + '" not found in workflows.'));
 
 	return self;
 };

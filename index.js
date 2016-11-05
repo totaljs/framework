@@ -566,7 +566,7 @@ function Framework() {
 	this.functions = {};
 	this.themes = {};
 	this.versions = null;
-	this.workflows = null;
+	this.workflows = {};
 	this.schedules = [];
 
 	this.isDebug = true;
@@ -1352,48 +1352,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		flags = tmp;
 	}
 
-	if (type === 'string') {
-		viewname = funcExecute;
-		funcExecute = (function(name, sitemap, language) {
-			if (language && !this.language)
-				this.language = language;
-			var themeName = framework_utils.parseTheme(name);
-			if (themeName)
-				name = prepare_viewname(name);
-			return function() {
-				sitemap && this.sitemap(sitemap.id, language);
-				if (name[0] === '~')
-					this.themeName = '';
-				else if (themeName)
-					this.themeName = themeName;
-				this.view(name);
-			};
-		})(viewname, sitemap, language);
-	} else if (typeof(funcExecute) !== 'function') {
-
-		viewname = (sitemap && sitemap.url !== '/' ? sitemap.id : url) || '';
-
-		if (viewname.endsWith('/'))
-			viewname = viewname.substring(0, viewname.length - 1);
-
-		index = viewname.lastIndexOf('/');
-		if (index !== -1)
-			viewname = viewname.substring(index + 1);
-
-		if (!viewname || viewname === '/')
-			viewname = 'index';
-
-		funcExecute = (function(name, sitemap, language) {
-			return function() {
-				if (language && !this.language)
-					this.language = language;
-				sitemap && this.sitemap(sitemap.id, language);
-				name[0] === '~' && this.theme('');
-				this.view(name);
-			};
-		})(viewname, sitemap, language);
-	}
-
 	var priority = 0;
 	var subdomain = null;
 
@@ -1409,7 +1367,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	}
 
 	var isASTERIX = url.indexOf('*') !== -1;
-
 	if (isASTERIX) {
 		url = url.replace('*', '').replace('//', '/');
 		priority = priority - 100;
@@ -1419,7 +1376,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var isNOXHR = false;
 	var method = '';
 	var schema;
-	var isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
+	var workflow;
 	var isMOBILE = false;
 	var isJSON = false;
 	var isDELAY = false;
@@ -1432,6 +1389,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var options;
 	var corsflags = [];
 	var membertype = 0;
+	var isGENERATOR = false;
 
 	if (_flags) {
 		if (!flags)
@@ -1482,7 +1440,19 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 			}
 
 			if (first === '*') {
-				schema = flags[i].substring(1).replace(/\\/g, '/').split('/');
+
+				workflow = flags[i].trim().substring(1);
+				index = workflow.indexOf('-->');
+
+				if (index !== -1) {
+					schema = workflow.substring(0, index).trim();
+					workflow = workflow.substring(index + 3).trim();
+				} else {
+					schema = workflow;
+					workflow = null;
+				}
+				schema = schema.replace(/\\/g, '/').split('/');
+
 				if (schema.length === 1) {
 					schema[1] = schema[0];
 					schema[0] = 'default';
@@ -1490,9 +1460,10 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 				index = schema[1].indexOf('#');
 				if (index !== -1) {
-					schema[2] = schema[1].substring(index + 1);
-					schema[1] = schema[1].substring(0, index);
+					schema[2] = schema[1].substring(index + 1).trim();
+					schema[1] = schema[1].substring(0, index).trim();
 				}
+
 				continue;
 			}
 
@@ -1598,6 +1569,71 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		method = 'get';
 	}
 
+	if (type === 'string') {
+		viewname = funcExecute;
+		funcExecute = (function(name, sitemap, language) {
+			if (language && !this.language)
+				this.language = language;
+			var themeName = framework_utils.parseTheme(name);
+			if (themeName)
+				name = prepare_viewname(name);
+			return function() {
+				sitemap && this.sitemap(sitemap.id, language);
+				if (name[0] === '~')
+					this.themeName = '';
+				else if (themeName)
+					this.themeName = themeName;
+
+				if (!this.route.workflow)
+					return this.view(name);
+				var self = this;
+				this.$exec(this.route.workflow, this, function(err, response) {
+					if (err)
+						self.content(err);
+					else
+						self.view(name, response);
+				});
+			};
+		})(viewname, sitemap, language);
+	} else if (typeof(funcExecute) !== 'function') {
+
+		viewname = (sitemap && sitemap.url !== '/' ? sitemap.id : workflow ? '' : url) || '';
+
+		if (!workflow || (!viewname && !workflow)) {
+			if (viewname.endsWith('/'))
+				viewname = viewname.substring(0, viewname.length - 1);
+
+			index = viewname.lastIndexOf('/');
+			if (index !== -1)
+				viewname = viewname.substring(index + 1);
+
+			if (!viewname || viewname === '/')
+				viewname = 'index';
+
+			funcExecute = (function(name, sitemap, language) {
+				return function() {
+					if (language && !this.language)
+						this.language = language;
+					sitemap && this.sitemap(sitemap.id, language);
+					name[0] === '~' && this.theme('');
+					if (!this.route.workflow)
+						return this.view(name);
+					var self = this;
+					this.$exec(this.route.workflow, this, function(err, response) {
+						if (err)
+							self.content(err);
+						else
+							self.view(name, response);
+					});
+				};
+			})(viewname, sitemap, language);
+		} else if (workflow)
+			funcExecute = controller_json_workflow;
+	}
+
+	if (!isGENERATOR)
+		isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
+
 	var url2 = framework_internal.preparePath(url.trim());
 	var hash = url2.hash();
 	var routeURL = framework_internal.routeSplitCreate(url2);
@@ -1700,6 +1736,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		name: name,
 		priority: priority,
 		schema: schema,
+		workflow: workflow,
 		subdomain: subdomain,
 		controller: _controller ? _controller : 'unknown',
 		url: routeURL,
@@ -8260,13 +8297,11 @@ Framework.prototype._configure_workflows = function(arr, clean) {
 			arr = null;
 	}
 
-	if (!arr) {
-		if (clean)
-			self.workflows = null;
-		return self;
-	}
+	if (clean)
+		self.workflows = {};
 
-	var w = {};
+	if (!arr || !arr.length)
+		return self;
 
 	arr.forEach(function(line) {
 		line = line.trim();
@@ -8279,6 +8314,15 @@ Framework.prototype._configure_workflows = function(arr, clean) {
 		var key = line.substring(0, index).trim();
 		var response = -1;
 		var builder = [];
+
+		// sub-type
+		var subindex = key.indexOf('(');
+		if (subindex !== -1) {
+			var type = key.substring(subindex + 1, key.indexOf(')', subindex + 1)).trim();
+			key = key.substring(0, subindex).trim();
+			type = type.replace(/^default\//gi, '');
+			key = type + '#' + key;
+		}
 
 		line.substring(index + 1).split('-->').forEach(function(operation, index) {
 			operation = operation.trim().replace(/\"/g, '\'');
@@ -8295,10 +8339,9 @@ Framework.prototype._configure_workflows = function(arr, clean) {
 				builder.push('$' + what[0] + '(options)');
 		});
 
-		w[key] = new Function('model', 'options', 'callback', 'return model.$async(callback' + (response === -1 ? '' : ', ' + response) + ').' + builder.join('.') + ';');
+		self.workflows[key] = new Function('model', 'options', 'callback', 'return model.$async(callback' + (response === -1 ? '' : ', ' + response) + ').' + builder.join('.') + ';');
 	});
 
-	self.workflows = w;
 	return this;
 };
 
@@ -10034,6 +10077,10 @@ Controller.prototype = {
 		return this.route.schema[0] === 'default' ? this.route.schema[1] : this.route.schema.join('/');
 	},
 
+	get workflow() {
+		return this.route.schema_workflow;
+	},
+
 	get sseID() {
 		return this.req.headers['last-event-id'] || null;
 	},
@@ -10055,6 +10102,7 @@ Controller.prototype = {
 	},
 
 	get get() {
+		OBSOLETE('controller.get', 'Instead of controller.get use controller.query');
 		return this.req.query;
 	},
 
@@ -10063,6 +10111,7 @@ Controller.prototype = {
 	},
 
 	get post() {
+		OBSOLETE('controller.post', 'Instead of controller.post use controller.body');
 		return this.req.body;
 	},
 
@@ -14856,6 +14905,13 @@ global.clearTimeout2 = function(name) {
 
 	return false;
 };
+
+// Default action for workflow routing
+function controller_json_workflow(id) {
+	var self = this;
+	self.id = id;
+	self.$exec(self.route.workflow, self, self.callback());
+}
 
 // Because of controller prototypes
 // It's used in F.view() and F.viewCompile()
