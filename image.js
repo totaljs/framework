@@ -396,7 +396,7 @@ Image.prototype.push = function(key, value, priority, encode) {
 		if (encode && typeof(value) === 'string')
 			cmd += wrap(value, true);
 		else
-			cmd += ' \'' + value + '\'';
+			cmd += framework.isWindows ? ' "' + value + '"' : ' \'' + value + '\'';
 	}
 
 	var obj = CACHE[cmd];
