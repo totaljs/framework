@@ -9,6 +9,8 @@
 - added: `F.viewCompile(body, [model], [layout], [repository], [language])` - dynamic views
 - added: `controller.viewCompile(body, [model], [headers], [partial])` - dynamic views
 - added: `{viewCompile(body, [model])}` - dynamic views
+- added: `Controller` is a global variable for extending prototype
+- added: `F.validators` with Regular Expressions
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
@@ -16,6 +18,8 @@
 
 - fixed: Image.stream()
 - fixed: global variable `Image` (in a single library)
+
+- improved: code
 
 ======= 2.2.0
 

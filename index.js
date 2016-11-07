@@ -611,6 +611,14 @@ function Framework() {
 	this.port = 0;
 	this.ip = '';
 
+	this.validators = {
+		email: new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'),
+		url: /^(http|https):\/\/(?:(?:(?:[\w\.\-\+!$&'\(\)*\+,;=]|%[0-9a-f]{2})+:)*(?:[\w\.\-\+%!$&'\(\)*\+,;=]|%[0-9a-f]{2})+@)?(?:(?:[a-z0-9\-\.]|%[0-9a-f]{2})+|(?:\[(?:[0-9a-f]{0,4}:)*(?:[0-9a-f]{0,4})\]))(?::[0-9]+)?(?:[\/|\?](?:[\w#!:\.\?\+=&@!$'~*,;\/\(\)\[\]\-]|%[0-9a-f]{2})*)?$/i,
+		phone: /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im,
+		zip: /^\d{5}(?:[-\s]\d{4})?$/,
+		uid: /^\d{14,}[a-z]{3}[01]{1}$/
+	};
+
 	this.workers = {};
 	this.databases = {};
 	this.directory = HEADERS.workers.cwd = directory;
@@ -14675,6 +14683,7 @@ http.IncomingMessage.prototype.hostname = function(path) {
 
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
+global.Controller = Controller;
 
 process.on('uncaughtException', function(e) {
 

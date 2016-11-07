@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 2.1.0
+ * @version 2.2.0
  */
 
 'use strict';
@@ -40,9 +40,6 @@ if (!global.framework_utils)
 	global.framework_utils = exports;
 
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
-const regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
-const regexpUrl = /^(http|https):\/\/(?:(?:(?:[\w\.\-\+!$&'\(\)*\+,;=]|%[0-9a-f]{2})+:)*(?:[\w\.\-\+%!$&'\(\)*\+,;=]|%[0-9a-f]{2})+@)?(?:(?:[a-z0-9\-\.]|%[0-9a-f]{2})+|(?:\[(?:[0-9a-f]{0,4}:)*(?:[0-9a-f]{0,4})\]))(?::[0-9]+)?(?:[\/|\?](?:[\w#!:\.\?\+=&@!$'~*,;\/\(\)\[\]\-]|%[0-9a-f]{2})*)?$/i;
-const regexpPhone = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im;
 const regexpTRIM = /^[\s]+|[\s]+$/g;
 const regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
 const regexpDATEFORMAT = /yyyy|yy|M+|d+|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
@@ -50,8 +47,6 @@ const regexpSTRINGFORMAT = /\{\d+\}/g;
 const regexpPATH = /\\/g;
 const regexpTags = /<\/?[^>]+(>|$)/g;
 const regexpDiacritics = /[^\u0000-\u007e]/g;
-const regexpUID = /^\d{14,}[a-z]{3}[01]{1}$/;
-const regexpZIP = /^\d{5}(?:[-\s]\d{4})?$/;
 const regexpXML = /\w+\=\".*?\"/g;
 const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
@@ -1734,7 +1729,7 @@ function validate_builder_default(name, value, entity) {
 				return false;
 			return value[value.length - 1] === (number % 2 ? '1' : '0');
 		case 'zip':
-			return regexpZIP.test(value);
+			return value.isZIP();
 		case 'email':
 			return value.isEmail();
 		case 'json':
@@ -1742,7 +1737,7 @@ function validate_builder_default(name, value, entity) {
 		case 'url':
 			return value.isURL();
 		case 'phone':
-			return regexpPhone.test(value);
+			return value.isPhone();
 	}
 
 	if (type === 'number')
@@ -3071,55 +3066,39 @@ String.prototype.isJSON = function() {
 };
 
 String.prototype.isURL = function() {
-	var str = this;
-	if (str.length <= 7)
-		return false;
-	return regexpUrl.test(str);
+	return this.length <= 7 ? false : framework.validators.url.test(this);
 };
 
 String.prototype.isZIP = function() {
-	var str = this;
-	return regexpZIP.test(str);
+	return framework.validators.zip.test(this);
 };
 
 String.prototype.isEmail = function() {
-	var str = this;
-	if (str.length <= 4)
-		return false;
-	return regexpMail.test(str);
+	return this.length <= 4 ? false : framework.validators.email.test(this);
 };
 
 String.prototype.isPhone = function() {
-	var str = this;
-	if (str.length < 6)
-		return false;
-	return regexpPhone.test(str);
+	return this.length < 6 ? false : framework.validators.phone.test(this);
 };
 
 String.prototype.isUID = function() {
-	return this.length < 18 ? false : regexpUID.test(this);
+	return this.length < 18 ? false : framework.validators.uid.test(this);
 };
 
 String.prototype.parseInt = function(def) {
 	var str = this.trim();
 	var num = +str;
-	if (isNaN(num))
-		return def || 0;
-	return num;
+	return isNaN(num) ? (def || 0) : num;
 };
 
 String.prototype.parseInt2 = function(def) {
 	var num = this.match(regexpINTEGER);
-	if (num)
-		return +num;
-	return def || 0;
+	return num ? +num : def || 0;
 };
 
 String.prototype.parseFloat2 = function(def) {
 	var num = this.match(regexpFLOAT);
-	if (num)
-		return +num.toString().replace(/\,/g, '.');
-	return def || 0;
+	return num ? +num.toString().replace(/\,/g, '.') : def || 0;
 };
 
 String.prototype.parseBool = String.prototype.parseBoolean = function() {
@@ -3132,9 +3111,7 @@ String.prototype.parseFloat = function(def) {
 	if (str.indexOf(',') !== -1)
 		str = str.replace(',', '.');
 	var num = +str;
-	if (isNaN(num))
-		return def || 0;
-	return num;
+	return isNaN(num) ? (def || 0) : num;
 };
 
 String.prototype.capitalize = function() {
@@ -3233,10 +3210,7 @@ String.prototype.encrypt = function(key, isUnique) {
 
 	var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(regexpENCRYPT, text => text === '+' ? '_' : '-');
 	index = hash.indexOf('=');
-	if (index > 0)
-		return hash.substring(0, index);
-
-	return hash;
+	return index > 0 ? hash.substring(0, index) : hash;
 };
 
 String.prototype.decrypt = function(key) {
@@ -3274,10 +3248,7 @@ String.prototype.decrypt = function(key) {
 	}
 
 	var val = decrypt_data.join('');
-	if (counter !== val.length + key.length)
-		return null;
-
-	return val;
+	return counter !== val.length + key.length ? null : val;
 };
 
 String.prototype.base64ToFile = function(filename, callback) {
@@ -5191,7 +5162,7 @@ exports.parseTheme = function(value) {
 exports.set = function(obj, path, value) {
 	var cachekey = 'S+' + path;
 
-	if (global.framework && framework.temporary.other[cachekey])
+	if (framework.temporary.other[cachekey])
 		return framework.temporary.other[cachekey](obj, value);
 
 	var arr = path.split('.');
@@ -5225,7 +5196,7 @@ exports.get = function(obj, path) {
 
 	var cachekey = 'G=' + path;
 
-	if (global.framework && framework.temporary.other[cachekey])
+	if (framework.temporary.other[cachekey])
 		return framework.temporary.other[cachekey](obj);
 
 	var arr = path.split('.');
@@ -5464,3 +5435,5 @@ exports.ObjectToArray = function(obj) {
 		output.push({ key: keys[i], value: obj[keys[i]]});
 	return output;
 };
+
+!global.framework && require('./index');
