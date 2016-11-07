@@ -386,11 +386,7 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 	keys.sort(function(a, b) {
 		var countA = dic[a];
 		var countB = dic[b];
-		if (countA > countB)
-			return -1;
-		if (countA < countB)
-			return 1;
-		return 0;
+		return countA > countB ? -1 : countA < countB ? 1 : 0;
 	});
 
 	return keys;
