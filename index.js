@@ -293,8 +293,8 @@ global.MODEL = function(name) {
 	return framework.model(name);
 };
 
-global.GETSCHEMA = function(group, name) {
-	return framework_builders.getschema(group, name);
+global.GETSCHEMA = function(group, name, fn) {
+	return framework_builders.getschema(group, name, fn);
 };
 
 global.CREATE = function(group, name) {

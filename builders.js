@@ -2369,12 +2369,16 @@ exports.eachschema = function(group, fn) {
 	}
 };
 
-exports.getschema = function(group, name) {
+exports.getschema = function(group, name, fn, timeout) {
 
-	if (!name) {
+	if (!name || typeof(name) === 'function') {
+		fn = name;
 		name = group;
 		group = DEFAULT_SCHEMA;
 	}
+
+	if (fn)
+		return framework_utils.wait(n => schemas[group], err => fn(err, schemas[group]), timeout || 20000);
 
 	var g = schemas[group];
 	return g ? g.get(name) : undefined;

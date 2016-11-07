@@ -15,6 +15,7 @@
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
 - updated: removed all validators of email addresses from FrameworkMail
+- updated: `GETSCHEMA([group], name, [callback(err, schema)])` can wait for a schema
 
 - fixed: Image.stream()
 - fixed: global variable `Image` (in a single library)
