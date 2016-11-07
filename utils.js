@@ -246,8 +246,7 @@ exports.wait = function(fnValid, fnCallback, timeout, interval) {
 		if (fnValid() === true) {
 			clearInterval(id_interval);
 			clearTimeout(id_timeout);
-			if (fnCallback)
-				fnCallback(null, true);
+			fnCallback && fnCallback(null, true);
 			return;
 		}
 
@@ -255,8 +254,7 @@ exports.wait = function(fnValid, fnCallback, timeout, interval) {
 
 	id_timeout = setTimeout(function() {
 		clearInterval(id_interval);
-		if (fnCallback)
-			fnCallback(new Error('Timeout.'), false);
+		fnCallback && fnCallback(new Error('Timeout.'), false);
 	}, timeout || 5000);
 };
 
