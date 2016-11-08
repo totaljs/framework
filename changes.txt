@@ -19,6 +19,7 @@
 
 - fixed: Image.stream()
 - fixed: global variable `Image` (in a single library)
+- fixed: JavaScript compressor (problem with Regular Expressions)
 
 - improved: code
 

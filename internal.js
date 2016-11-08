@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.2.0
+ * @version 2.3.0
  */
 
 'use strict';
@@ -1147,7 +1147,7 @@ function minify_javascript(data) {
 				if ((last !== '\\' && c === '/') || (last === '\\' && c === '/' && output[output.length - 2] === '\\'))
 					regexp = false;
 			} else
-				regexp = (last === '=' || last === '(' || last === ':') && (c === '/');
+				regexp = (last === '=' || last === '(' || last === ':' || last === '{' || last === '[') && (c === '/');
 		}
 
 		if (scope && c === '\\') {
