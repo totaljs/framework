@@ -1753,11 +1753,16 @@ function view_parse(content, minify, filename, controller) {
 		var cmd8 = cmd.substring(0, 8);
 		var cmd7 = cmd.substring(0, 7);
 
+		if (cmd === 'continue') {
+			builder += ';continue;';
+			old = command;
+			command = view_find_command(content, command.end);
+			continue;
+		}
+
 		cmd = cmd.replace(REG_HELPERS, function(text) {
 			var index = text.indexOf('(');
-			if (index === -1)
-				return text;
-			return text.substring(0, index) + '.call(self' + (text.endsWith('()') ? ')' : ',' + text.substring(index + 1));
+			return index === - 1 ? text : text.substring(0, index) + '.call(self' + (text.endsWith('()') ? ')' : ',' + text.substring(index + 1));
 		});
 
 		pharse = cmd;
@@ -1908,16 +1913,12 @@ function view_prepare_keywords(cmd) {
 }
 
 function wrapTryCatch(value, command, line) {
-	if (!framework.isDebug)
-		return value;
-	return '(function(){try{return ' + value + '}catch(e){throw new Error(unescape(\'' + escape(command) + '\') + \' - Line: ' + line + ' - \' + e.message.toString());}return $EMPTY})()';
+	return framework.isDebug ? ('(function(){try{return ' + value + '}catch(e){throw new Error(unescape(\'' + escape(command) + '\') + \' - Line: ' + line + ' - \' + e.message.toString());}return $EMPTY})()') : value;
 }
 
 function view_parse_plus(builder) {
 	var c = builder[builder.length - 1];
-	if (c !== '!' && c !== '?' && c !== '+' && c !== '.' && c !== ':')
-		return true;
-	return false;
+	return c !== '!' && c !== '?' && c !== '+' && c !== '.' && c !== ':';
 }
 
 function view_prepare(command, dynamicCommand, functions) {
@@ -2013,6 +2014,9 @@ function view_prepare(command, dynamicCommand, functions) {
 
 		case 'mobile':
 			return command;
+
+		case 'continue':
+			return 'continue';
 
 		case 'CONFIG':
 		case 'function':

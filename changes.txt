@@ -11,6 +11,7 @@
 - added: `{viewCompile(body, [model])}` - dynamic views
 - added: `Controller` is a global variable for extending prototype
 - added: `F.validators` with Regular Expressions
+- added: View Engine supports `@{continue}` command for looping
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
@@ -20,6 +21,7 @@
 - fixed: Image.stream()
 - fixed: global variable `Image` (in a single library)
 - fixed: JavaScript compressor (problem with Regular Expressions)
+- fixed: custom paths in `F.model()` and `F.source()`
 
 - improved: code
 

@@ -467,7 +467,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2300;
-	this.version_header = '2.3.0-6';
+	this.version_header = '2.3.0-7';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -7144,7 +7144,7 @@ Framework.prototype.model = function(name) {
 	var model = self.models[name];
 	if (model || model === null)
 		return model;
-	var filename = Path.join(directory, self.config['directory-models'], name + '.js');
+	var filename = framework_utils.combine(self.config['directory-models'], name + '.js');
 	existsSync(filename) && self.install('model', name, filename, undefined, undefined, undefined, true);
 	return self.models[name] || null;
 };
@@ -7163,7 +7163,7 @@ Framework.prototype.source = function(name, options, callback) {
 	if (model || model === null)
 		return model;
 
-	var filename = Path.join(directory, self.config['directory-source'], name + '.js');
+	var filename = framework_utils.combine(self.config['directory-source'], name + '.js');
 	existsSync(filename) && self.install('source', name, filename, options, callback, undefined, true);
 	return self.sources[name] || null;
 };
@@ -9238,6 +9238,7 @@ FrameworkPath.prototype.logs = function(filename) {
 FrameworkPath.prototype.models = function(filename) {
 	return framework_utils.combine(framework.config['directory-models'], filename);
 };
+
 FrameworkPath.prototype.temp = function(filename) {
 	this.verify('temp');
 	return framework_utils.combine(framework.config['directory-temp'], filename);
