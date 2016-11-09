@@ -1753,8 +1753,8 @@ function view_parse(content, minify, filename, controller) {
 		var cmd8 = cmd.substring(0, 8);
 		var cmd7 = cmd.substring(0, 7);
 
-		if (cmd === 'continue') {
-			builder += ';continue;';
+		if (cmd === 'continue' || cmd === 'break') {
+			builder += ';' + cmd + ';';
 			old = command;
 			command = view_find_command(content, command.end);
 			continue;
@@ -1959,9 +1959,7 @@ function view_prepare(command, dynamicCommand, functions) {
 
 		case 'section':
 			tmp = command.indexOf('(');
-			if (tmp === -1)
-				return '';
-			return '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/\'|\"/g, '') + '\'] || \'\')';
+			return tmp === -1 ? '' : '(repository[\'$section_' + command.substring(tmp + 1, command.length - 1).replace(/\'|\"/g, '') + '\'] || \'\')';
 
 		case 'log':
 		case 'LOG':
@@ -1993,30 +1991,25 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'user':
 		case 'config':
 		case 'controller':
-
 			if (view_is_assign(command))
 				return 'self.$set(' + command + ')';
-
 			return '$STRING(' + command + ').encode()';
 
 		case 'body':
-
 			if (view_is_assign(command))
 				return 'self.$set(' + command + ')';
-
 			if (command.lastIndexOf('.') === -1)
 				return 'output';
-
 			return '$STRING(' + command + ').encode()';
 
 		case 'files':
-			return command;
-
 		case 'mobile':
-			return command;
-
 		case 'continue':
-			return 'continue';
+		case 'break':
+		case 'language':
+		case 'TRANSLATE':
+		case 'helpers':
+			return command;
 
 		case 'CONFIG':
 		case 'function':
@@ -2045,8 +2038,6 @@ function view_prepare(command, dynamicCommand, functions) {
 		case '!MODULE':
 			return '$STRING(' + command.substring(1) + ')';
 
-		case 'language':
-			return command;
 		case 'resource':
 			return '$STRING(self.' + command + ').encode()';
 		case 'RESOURCE':
@@ -2131,8 +2122,6 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'routeVideo':
 		case 'routeStatic':
 			return 'self.' + command;
-		case 'TRANSLATE':
-			return command;
 		case 'translate':
 			return 'self.' + command;
 		case 'json':
@@ -2173,8 +2162,6 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'textarea':
 		case 'password':
 			return 'self.$' + exports.appendModel(command);
-		case 'helpers':
-			return command;
 
 		default:
 			if (framework.helpers[name])

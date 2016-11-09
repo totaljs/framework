@@ -11,7 +11,7 @@
 - added: `{viewCompile(body, [model])}` - dynamic views
 - added: `Controller` is a global variable for extending prototype
 - added: `F.validators` with Regular Expressions
-- added: View Engine supports `@{continue}` command for looping
+- added: View Engine supports `@{continue}` and `@{break}` command for looping
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
