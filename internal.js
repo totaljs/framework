@@ -1184,15 +1184,7 @@ function minify_javascript(data) {
 exports.compile_css = function(value, filename) {
 
 	if (global.framework) {
-
-		if (framework.modificators) {
-			for (var i = 0, length = framework.modificators.length; i < length; i++) {
-				var output = framework.modificators[i]('style', filename, value);
-				if (output)
-					value = output;
-			}
-		}
-
+		value = modificators(value, filename, 'style');
 		if (framework.onCompileStyle)
 			return framework.onCompileStyle(filename, value);
 	}
@@ -1219,32 +1211,13 @@ exports.compile_css = function(value, filename) {
 
 exports.compile_javascript = function(source, filename) {
 
-	var isFramework = (typeof(global.framework) === 'object');
-
-	try {
-
-		if (isFramework) {
-
-			if (framework.modificators) {
-				for (var i = 0, length = framework.modificators.length; i < length; i++) {
-					var output = framework.modificators[i]('script', filename, source);
-					if (output)
-						source = output;
-				}
-			}
-
-			if (framework.onCompileScript)
-				return framework.onCompileScript(filename, source).trim();
-		}
-
-		return minify_javascript(source);
-	} catch (ex) {
-
-		if (isFramework)
-			framework.error(ex, 'JavaScript compressor');
-
-		return source;
+	if (global.framework) {
+		source = modificators(source, filename, 'script');
+		if (framework.onCompileScript)
+			return framework.onCompileScript(filename, source).trim();
 	}
+
+	return minify_javascript(source);
 };
 
 exports.compile_html = function(source, filename) {
@@ -2803,7 +2776,7 @@ function viewengine_read(path, language, controller) {
 	}
 
 	if (existsSync(filename))
-		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
+		return view_parse(view_parse_localization(modificators(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
 	var index;
 
@@ -2814,7 +2787,7 @@ function viewengine_read(path, language, controller) {
 			if (index !== -1) {
 				filename = filename.substring(0, filename.lastIndexOf('/', index - 1)) + filename.substring(index);
 				if (existsSync(filename))
-					return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
+					return view_parse(view_parse_localization(modificators(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 			}
 		}
 
@@ -2834,7 +2807,7 @@ function viewengine_read(path, language, controller) {
 	filename = framework.path.views(path.substring(index + 1));
 
 	if (existsSync(filename))
-		return view_parse(view_parse_localization(viewengine_modify(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
+		return view_parse(view_parse_localization(modificators(fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
 
 	if (RELEASE)
 		framework.temporary.other[key] = null;
@@ -2842,13 +2815,13 @@ function viewengine_read(path, language, controller) {
 	return null;
 };
 
-function viewengine_modify(value, filename) {
+function modificators(value, filename, type) {
 
 	if (!framework.modificators)
 		return value;
 
 	for (var i = 0, length = framework.modificators.length; i < length; i++) {
-		var output = framework.modificators[i]('view', filename, value);
+		var output = framework.modificators[i](type || 'view', filename, value);
 		if (output)
 			value = output;
 	}
@@ -2899,7 +2872,7 @@ function viewengine_dynamic(content, language, controller, cachekey) {
 	if (generator)
 		return generator;
 
-	generator = view_parse(view_parse_localization(viewengine_modify(content, ''), language), framework.config['allow-compile-html'], null, controller);
+	generator = view_parse(view_parse_localization(modificators(content, ''), language), framework.config['allow-compile-html'], null, controller);
 
 	if (cachekey && !framework.isDebug)
 		framework.temporary.views[cachekey] = generator;
@@ -3276,4 +3249,4 @@ exports.parseLocalization = view_parse_localization;
 exports.findLocalization = view_find_localization;
 exports.destroyStream = destroyStream;
 exports.onFinished = onFinished;
-exports.modificator = viewengine_modify;
+exports.modificators = modificators;

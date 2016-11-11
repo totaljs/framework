@@ -17,6 +17,8 @@
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
 - updated: removed all validators of email addresses from FrameworkMail
 - updated: `GETSCHEMA([group], name, [callback(err, schema)])` can wait for a schema
+- updated: `F.localize()` supports modificators as `static` type
+- updated: `F.modify()` supports a new type `static`, it's group of `.html`, `.txt` and `.md` files
 
 - fixed: Image.stream()
 - fixed: global variable `Image` (in a single library)

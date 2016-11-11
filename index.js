@@ -2492,15 +2492,6 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 	return self;
 };
 
-/**
- * Auto localize static files
- * @param {String} name Description
- * @param {String} url A relative url path (e.g. /templates/)
- * @param {String Array} middleware Optional
- * @param {Object} options Optional, middleware options
- * @param {Boolean} minify Minifies HTML code, default: false
- * @return {Framework}
- */
 Framework.prototype.localize = function(url, flags, minify) {
 
 	url = url.replace('*', '');
@@ -2547,10 +2538,11 @@ Framework.prototype.localize = function(url, flags, minify) {
 		var filename = self.onMapping(name, name, true, true);
 
 		Fs.readFile(filename, function(err, content) {
+
 			if (err)
 				return res.throw404();
 
-			content = framework.translator(req.$language, content.toString(ENCODING));
+			content = framework.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static'));
 
 			if (minify && (req.extension === 'html' || req.extension === 'htm'))
 				content = framework_internal.compile_html(content, filename);
@@ -2560,6 +2552,7 @@ Framework.prototype.localize = function(url, flags, minify) {
 
 			framework.responseContent(req, res, 200, content, framework_utils.getContentType(req.extension), true);
 		});
+
 	}, flags);
 	return self;
 };
@@ -2617,10 +2610,7 @@ Framework.prototype.problem = function(message, name, uri, ip) {
 		return self;
 
 	self.problems.push(obj);
-
-	if (self.problems.length > 50)
-		self.problems.shift();
-
+	self.problems.length > 50 && self.problems.shift();
 	return self;
 };
 
@@ -3149,7 +3139,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		}
 
 		item.count++;
-		Fs.writeFileSync(item.filename, framework_internal.modificator(declaration, name));
+		Fs.writeFileSync(item.filename, framework_internal.modificators(declaration, name));
 
 		setTimeout(function() {
 			self.emit(type + '#' + name);
@@ -3498,20 +3488,17 @@ Framework.prototype.$restart = function() {
 
 		Object.keys(self.modules).forEach(function(key) {
 			var item = self.modules[key];
-			if (item && item.uninstall)
-				item.uninstall();
+			item && item.uninstall && item.uninstall();
 		});
 
 		Object.keys(self.models).forEach(function(key) {
 			var item = self.models[key];
-			if (item && item.uninstall)
-				item.uninstall();
+			item && item.uninstall && item.uninstall();
 		});
 
 		Object.keys(self.controllers).forEach(function(key) {
 			var item = self.controllers[key];
-			if (item && item.uninstall)
-				item.uninstall();
+			item && item.uninstall && item.uninstall();
 		});
 
 		Object.keys(self.workers).forEach(function(key) {
@@ -4127,9 +4114,10 @@ Framework.prototype.onParseQuery = function(value) {
  */
 Framework.prototype.onSchema = function(req, group, name, callback, filter) {
 	var schema = GETSCHEMA(group, name);
-	if (!schema)
-		return callback(new Error('Schema not found.'));
-	schema.make(req.body, (err, res) => err ? callback(err) : callback(null, res), filter);
+	if (schema)
+		schema.make(req.body, (err, res) => err ? callback(err) : callback(null, res), filter);
+	else
+		callback(new Error('Schema "' + group + '/' + name + '" not found.'));
 };
 
 /**
