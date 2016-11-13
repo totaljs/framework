@@ -239,6 +239,10 @@ global.Builders = framework_builders;
 var utils = global.Utils = global.utils = global.U = framework_utils;
 global.Mail = framework_mail;
 
+global.WTF = function(message, name, uri) {
+	return framework.problem(message, name, uri);
+};
+
 global.INCLUDE = global.SOURCE = function(name, options) {
 	return framework.source(name, options);
 };
@@ -2594,7 +2598,7 @@ Framework.prototype.error = function(err, name, uri) {
  * @param {String} ip
  * @return {Framework}
  */
-Framework.prototype.problem = function(message, name, uri, ip) {
+Framework.prototype.problem = Framework.prototype.wtf = function(message, name, uri, ip) {
 	var self = this;
 	self.emit('problem', message, name, uri, ip);
 
@@ -10563,7 +10567,7 @@ Controller.prototype.invalid = function(status) {
  * @param {String} message
  * @return {Controller}
  */
-Controller.prototype.problem = function(message) {
+Controller.prototype.wtf = Controller.prototype.problem = function(message) {
 	framework.problem(message, this.name, this.uri, this.ip);
 	return this;
 };
@@ -13262,7 +13266,7 @@ WebSocket.prototype.error = function(err) {
  * @param {String} message
  * @return {WebSocket}
  */
-WebSocket.prototype.problem = function(message) {
+WebSocket.prototype.wtf = WebSocket.prototype.problem = function(message) {
 	var self = this;
 	framework.problem(message, self.name, self.uri);
 	return self;
