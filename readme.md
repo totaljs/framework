@@ -13,7 +13,7 @@ $ npm install -g total.js
 
 [![Support](https://www.totaljs.com/img/button-support.png?v=2)](https://www.totaljs.com/support/)
 
-- [__NEW__: Total.js Dashboard](https://www.totaljs.com/superadmin/)
+- [__NEW__: Total.js Dashboard](https://www.totaljs.com/dashboard/)
 - [__NEW__: Total.js BlogEngine](https://www.totaljs.com/blogengine/)
 - [__NEW__: NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
 - [Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
