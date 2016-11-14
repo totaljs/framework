@@ -646,7 +646,7 @@ Image.prototype.colors = function(value) {
 };
 
 Image.prototype.background = function(color) {
-	return this.push('-background', color, 2, true);
+	return this.push('-background', color, 2, true).push('-extent 0x0', null, 2);
 };
 
 Image.prototype.fill = function(color) {
