@@ -24,6 +24,7 @@
 - fixed: global variable `Image` (in a single library)
 - fixed: JavaScript compressor (problem with Regular Expressions)
 - fixed: custom paths in `F.model()` and `F.source()`
+- fixed: NoSQL removing documents (problem with different filters in one queue)
 
 - improved: code
 

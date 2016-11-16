@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 2.2.0
+ * @version 2.3.0
  */
 
 'use strict';
@@ -692,23 +692,26 @@ Database.prototype.$remove = function() {
 	var change = false;
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
+
 		var json = JSON.parse(value.trim());
 		var is = false;
-		for (var i = 0; i < length; i++) {
+		var removed = false;
 
+		for (var i = 0; i < length; i++) {
 			var item = filter[i];
 			var builder = item.builder;
-			var output = builder.compare(json, index);
-
-			if (!output) {
-				writer.write(value);
-				return;
+			if (builder.compare(json, index)) {
+				removed = true;
+				break;
 			}
+		}
 
+		if (removed) {
 			item.backup && item.backup.write(value);
 			item.count++;
 			change = true;
-		}
+		} else
+			writer.write(value);
 	}));
 
 	CLEANUP(writer, function() {
