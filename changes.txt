@@ -12,6 +12,7 @@
 - added: `Controller` is a global variable for extending prototype
 - added: `F.validators` with Regular Expressions
 - added: View Engine supports `@{continue}` and `@{break}` command for looping
+- added: `URLBuilder.make(fn)`
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
@@ -19,6 +20,7 @@
 - updated: `GETSCHEMA([group], name, [callback(err, schema)])` can wait for a schema
 - updated: `F.localize()` supports modificators as `static` type
 - updated: `F.modify()` supports a new type `static`, it's group of `.html`, `.txt` and `.md` files
+- updated: `U.trim(obj, [clean])` supports a new argument `clean` (default `false`) and when it's `true` and a value is `''` then it sets the value to `undefined`
 
 - fixed: Image.stream()
 - fixed: global variable `Image` (in a single library)
