@@ -1099,15 +1099,16 @@ exports.$$send = function(name, stream, url, cookies, headers, method, timeout) 
  * @param {Object} obj
  * @return {Object}
  */
-exports.trim = function(obj) {
+exports.trim = function(obj, clean) {
 
 	if (!obj)
 		return obj;
 
 	var type = typeof(obj);
-
-	if (type === 'string')
-		return obj.trim();
+	if (type === 'string') {
+		obj = obj.trim();
+		return clean && !obj ? undefined : obj;
+	}
 
 	if (obj instanceof Array) {
 		for (var i = 0, length = obj.length; i < length; i++) {
@@ -1116,7 +1117,7 @@ exports.trim = function(obj) {
 			type = typeof(item);
 
 			if (type === 'object') {
-				exports.trim(item);
+				exports.trim(item, clean);
 				continue;
 			}
 
@@ -1124,6 +1125,8 @@ exports.trim = function(obj) {
 				continue;
 
 			obj[i] = item.trim();
+			if (clean && !obj[i])
+				obj[i] = undefined;
 		}
 
 		return obj;
@@ -1133,16 +1136,17 @@ exports.trim = function(obj) {
 		return obj;
 
 	var keys = Object.keys(obj);
-
 	for (var i = 0, length = keys.length; i < length; i++) {
 		var val = obj[keys[i]];
 		var type = typeof(val);
 		if (type === 'object') {
-			exports.trim(val);
+			exports.trim(val, clean);
 			continue;
 		} else if (type !== 'string')
 			continue;
 		obj[keys[i]] = val.trim();
+		if (clean && !obj[keys[i]])
+			obj[keys[i]] = undefined;
 	}
 
 	return obj;
@@ -1595,11 +1599,7 @@ exports.getContentType = function(ext) {
  */
 exports.getExtension = function(filename) {
 	var index = filename.lastIndexOf('.');
-	if (index === -1)
-		return '';
-	if (filename.indexOf('/', index - 1) === -1)
-		return filename.substring(index + 1);
-	return '';
+	return index !== -1 && filename.indexOf('/', index - 1) === -1 ? filename.substring(index + 1) : '';
 };
 
 /**
@@ -2590,7 +2590,6 @@ String.prototype.endsWith = function(text, ignoreCase) {
 		tmp = self.substring(self.length - length);
 
 	return tmp.length === length && tmp === text;
-
 };
 
 String.prototype.replacer = function(find, text) {
