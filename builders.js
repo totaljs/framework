@@ -2242,7 +2242,7 @@ SchemaInstance.prototype.$transform = function(name, helper, callback) {
 	if (self.$$can && self.$$async)
 		self.$push('transform', name, helper);
 	else
-		self.$$schema.transform(name, self, helper, callback, self.$$controller);
+		self.$$schema.transform(name, self, helper, callback, undefined, self.$$controller);
 
 	return self;
 };
@@ -2253,7 +2253,7 @@ SchemaInstance.prototype.$workflow = function(name, helper, callback) {
 	if (self.$$can && self.$$async)
 		self.$push('workflow', name, helper);
 	else
-		self.$$schema.workflow(name, self, helper, callback, self.$$controller);
+		self.$$schema.workflow(name, self, helper, callback, undefined, self.$$controller);
 
 	return self;
 };
@@ -2264,7 +2264,7 @@ SchemaInstance.prototype.$hook = function(name, helper, callback) {
 	if (self.$$can && self.$$async)
 		self.$push('hook', name, helper);
 	else
-		self.$$schema.hook(name, self, helper, callback, self.$$controller);
+		self.$$schema.hook(name, self, helper, callback, undefined, self.$$controller);
 
 	return self;
 };
@@ -2275,7 +2275,7 @@ SchemaInstance.prototype.$operation = function(name, helper, callback) {
 	if (self.$$can && self.$$async)
 		self.$push('operation', name, helper);
 	else
-		self.$$schema.operation(name, self, helper, callback, self.$$controller);
+		self.$$schema.operation(name, self, helper, callback, undefined, self.$$controller);
 
 	return self;
 };
