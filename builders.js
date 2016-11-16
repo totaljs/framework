@@ -3235,6 +3235,12 @@ Pagination.prototype.json = function(max, format) {
 	return JSON.stringify(this.prepare(max, format));
 };
 
+UrlBuilder.make = function(fn) {
+	var b = new UrlBuilder();
+	fn.call(b, b);
+	return b;
+};
+
 /**
  * Add parameter
  * @param {String} name
