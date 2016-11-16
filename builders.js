@@ -3831,7 +3831,7 @@ global.ErrorBuilder = ErrorBuilder;
 global.TransformBuilder = TransformBuilder;
 global.Pagination = Pagination;
 global.Page = Page;
-global.UrlBuilder = UrlBuilder;
+global.UrlBuilder = global.URLBuilder = UrlBuilder;
 global.SchemaBuilder = SchemaBuilder;
 
 exports.restart = function() {
