@@ -21,6 +21,8 @@
 - updated: `F.localize()` supports modificators as `static` type
 - updated: `F.modify()` supports a new type `static`, it's group of `.html`, `.txt` and `.md` files
 - updated: `U.trim(obj, [clean])` supports a new argument `clean` (default `false`) and when it's `true` and a value is `''` then it sets the value to `undefined`
+- updated: `nosql.update(docToUpdate, [docToInsert])` when the document for updating doesn't exist then database performs insert
+- updated: `nosql.modify(docToUpdate, [docToInsert])` when the document for updating doesn't exist then database performs insert
 
 - fixed: Image.stream()
 - fixed: global variable `Image` (in a single library)
