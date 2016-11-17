@@ -13,6 +13,7 @@
 - added: `F.validators` with Regular Expressions
 - added: View Engine supports `@{continue}` and `@{break}` command for looping
 - added: `URLBuilder.make(fn)`
+- added: `nosql.upsert(doc)` inserts a new document where document doesn't exist in DB
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`

@@ -100,6 +100,26 @@ Database.prototype.insert = function(doc) {
 	return builder;
 };
 
+Database.prototype.upsert = function(doc) {
+	var self = this;
+	var builder = self.find();
+	var callback;
+
+	builder.callback(function(err, d) {
+		if (d)
+			callback && callback(null, 0);
+		else
+			self.insert(doc).callback(callback);
+	});
+
+	builder.first().callback = function(fn) {
+		callback = fn;
+		return builder;
+	};
+
+	return builder;
+};
+
 Database.prototype.update = function(doc, insert) {
 	var self = this;
 	var builder = new DatabaseBuilder();
