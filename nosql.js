@@ -411,7 +411,7 @@ Database.prototype.$update = function() {
 			for (var i = 0; i < length; i++) {
 				var item = filter[i];
 				if (item.insert && !item.count)
-					self.insert(self.insert).$callback = item.builder.$callback;
+					self.insert(item.insert).$callback = item.builder.$callback;
 				else
 					item.builder.$callback && item.builder.$callback(errorhandling(err, item.builder, item.count), item.count);
 			}
