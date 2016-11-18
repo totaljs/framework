@@ -30,6 +30,7 @@
 - fixed: JavaScript compressor (problem with Regular Expressions)
 - fixed: custom paths in `F.model()` and `F.source()`
 - fixed: NoSQL removing documents (problem with different filters in one queue)
+- fixed: fix view compiler error message.
 
 - improved: code
 

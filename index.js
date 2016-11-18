@@ -471,7 +471,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2300;
-	this.version_header = '2.3.0-9';
+	this.version_header = '2.3.0-10';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -12813,7 +12813,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, partial ? self.outputPartial : self.output, self.date, self.req.cookie, self.req.files, self.req.mobile);
 	} catch (ex) {
 
-		err = new Error('View "' + filename + '": ' + ex.toString);
+		err = new Error('View "' + filename + '": ' + ex.message);
 
 		if (!partial) {
 			self.view500(err);
