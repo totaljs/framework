@@ -1157,16 +1157,14 @@ function DatabaseBuilder() {
 	this.$callback = NOOP;
 }
 
-DatabaseBuilder.prototype.$callback2 = function(err, response) {
+DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 	var self = this;
 
 	if (err || !self.$join)
-		return self.$callback(err, response);
+		return self.$callback(err, response, count);
 
 	if (self.$joincount) {
-		setImmediate(function() {
-			self.$callback2(err, response);
-		});
+		setImmediate(() => self.$callback2(err, response, count));
 		return self;
 	}
 
@@ -1184,7 +1182,7 @@ DatabaseBuilder.prototype.$callback2 = function(err, response) {
 	} else if (response)
 		response[join.field] = join.items.findItem(join.a, response[join.b]);
 
-	self.$callback(err, response);
+	self.$callback(err, response, count);
 	return self;
 };
 
