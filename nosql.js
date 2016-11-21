@@ -901,7 +901,11 @@ Database.prototype.$views = function() {
 					for (var i = 0, length = items.length; i < length; i++)
 						builder.push(JSON.stringify(items[i]));
 					Fs.appendFile(filename, builder.join(NEWLINE) + NEWLINE, next);
-				}, next);
+				}, function() {
+					// clears in-memory
+					self.inmemory[item.name] = undefined;
+					next();
+				});
 			});
 		}, () => self.next(0), 5);
 	});
