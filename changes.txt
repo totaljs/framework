@@ -14,7 +14,7 @@
 - added: View Engine supports `@{continue}` and `@{break}` command for looping
 - added: `URLBuilder.make(fn)`
 - added: `nosql.upsert(doc)` inserts a new document where document doesn't exist in DB
-- added: `NOSQLMEMORY(dbName)` enables in-memory database
+- added: `NOSQLMEMORY(dbName, [viewName])` enables in-memory database collection
 - added: `nosql.join(field, dbName, [view])` returns `DatabaseBuilder` with updated `.where(field_JoinedDB, field_currentdb)` method (it supports `.fields()` too)
 
 - updated: `F.on('exit', function(signal) {})` added a signal code

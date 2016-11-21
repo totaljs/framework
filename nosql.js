@@ -72,9 +72,7 @@ function Database(name, filename) {
 	this.binary = new Binary(this, this.directory + '/' + this.name + '-binary/');
 	this.counter = new Counter(this);
 	this.iscache = false;
-	this.inmemory = INMEMORY[name] === true;
-	// this.inmemory = true;
-	this.inmemorydata = {};
+	this.inmemory = {};
 	this.metadata;
 	this.$meta();
 	this.$timeoutmeta;
@@ -84,7 +82,9 @@ exports.load = function(name, filename) {
 	return new Database(name, filename);
 };
 
-exports.memory = function(name) {
+exports.memory = exports.inmemory = function(name, view) {
+	if (view)
+		name += '#' + view;
 	return INMEMORY[name] = true;
 };
 
@@ -292,7 +292,7 @@ Database.prototype.next = function(type) {
 	}
 
 	if (self.step !== 1 && self.pending_append.length) {
-		if (self.$inmemory)
+		if (INMEMORY[self.name])
 			self.$append_inmemory();
 		else
 			self.$append();
@@ -300,7 +300,7 @@ Database.prototype.next = function(type) {
 	}
 
 	if (self.step !== 2 && self.pending_update.length) {
-		if (self.$inmemory)
+		if (INMEMORY[self.name])
 			self.$update_inmemory();
 		else
 			self.$update();
@@ -308,7 +308,7 @@ Database.prototype.next = function(type) {
 	}
 
 	if (self.step !== 3 && self.pending_remove.length) {
-		if (self.$inmemory)
+		if (INMEMORY[self.name])
 			self.$remove_inmemory();
 		else
 			self.$remove();
@@ -316,7 +316,7 @@ Database.prototype.next = function(type) {
 	}
 
 	if (self.step !== 5 && self.pending_views) {
-		if (self.$inmemory)
+		if (INMEMORY[self.name])
 			self.$views_inmemory();
 		else
 			self.$views();
@@ -353,7 +353,7 @@ Database.prototype.refresh = function() {
 Database.prototype.$save = function(view) {
 	var self = this;
 	setTimeout2('nosql.' + self.name + '.' + view, function() {
-		var data = self.inmemorydata[view] || EMPTYARRAY;
+		var data = self.inmemory[view] || EMPTYARRAY;
 		var builder = [];
 		for (var i = 0, length = data.length; i < length; i++)
 			builder.push(JSON.stringify(data[i]));
@@ -370,14 +370,14 @@ Database.prototype.$save = function(view) {
 Database.prototype.$inmemory = function(view, callback) {
 	var self = this;
 
-	if (self.inmemorydata[view])
+	if (self.inmemory[view])
 		return callback();
 
 	var filename = self.filename;
 	if (view !== '#')
 		filename = filename.replace(/\.nosql/, '#' + view + '.nosql');
 
-	self.inmemorydata[view] = [];
+	self.inmemory[view] = [];
 
 	Fs.readFile(filename, function(err, data) {
 		if (err)
@@ -389,7 +389,7 @@ Database.prototype.$inmemory = function(view, callback) {
 				continue;
 			try {
 				item = JSON.parse(item.trim(), jsonparser);
-				item && self.inmemorydata[view].push(item);
+				item && self.inmemory[view].push(item);
 			} catch (e) {};
 		}
 
@@ -462,7 +462,7 @@ Database.prototype.$append_inmemory = function() {
 	return self.$inmemory('#', function() {
 
 		for (var i = 0, length = items.length; i < length; i++) {
-			self.inmemorydata['#'].push(JSON.parse(items[i].doc, jsonparser));
+			self.inmemory['#'].push(JSON.parse(items[i].doc, jsonparser));
 			var callback = items[i].builder.$callback;
 			callback && callback(null, 1);
 		}
@@ -560,7 +560,7 @@ Database.prototype.$update_inmemory = function() {
 
 	return self.$inmemory('#', function() {
 
-		var data = self.inmemorydata['#'];
+		var data = self.inmemory['#'];
 		var doc = JSON.parse(value.trim());
 
 		for (var j = 0, jl = data.length; j < jl; j++) {
@@ -620,7 +620,7 @@ Database.prototype.$reader = function() {
 	var index = 0;
 	var list = self.pending_reader.splice(0);
 
-	if (self.inmemory)
+	if (INMEMORY[self.name])
 		self.$reader2_inmemory('#', list, () => self.next(0));
 	else
 		self.$reader2(self.filename, list, () => self.next(0));
@@ -643,7 +643,7 @@ Database.prototype.$readerview = function() {
 
 	for (var i = 0, length = self.pending_reader_view.length; i < length; i++) {
 		var item = self.pending_reader_view[i];
-		var name = self.inmemory ? item.view : self.views[item.view].$filename;
+		var name = INMEMORY[self.name] || INMEMORY[self.name + '#' + item.view] ? item.view : self.views[item.view].$filename;
 
 		skip = false;
 
@@ -661,7 +661,7 @@ Database.prototype.$readerview = function() {
 	}
 
 	Object.keys(group).wait(function(item, next) {
-		if (self.inmemory)
+		if (INMEMORY[self.name] || INMEMORY[self.name + '#' + item])
 			self.$reader2_inmemory(item, group[item], next);
 		else
 			self.$reader2(item, group[item], next);
@@ -759,7 +759,7 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 
 	return self.$inmemory(name, function() {
 
-		var data = self.inmemorydata[name];
+		var data = self.inmemory[name];
 
 		for (var j = 0, jl = data.length; j < jl; j++) {
 			var json = data[j];
@@ -935,7 +935,7 @@ Database.prototype.$views_inmemory = function() {
 		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0, counter: 0 });
 
 	return self.$inmemory('#', function() {
-		var data = self.inmemorydata['#'];
+		var data = self.inmemory['#'];
 
 		for (var j = 0, jl = data.length; j < jl; j++) {
 			var json = data[j];
@@ -970,7 +970,7 @@ Database.prototype.$views_inmemory = function() {
 					item.response = item.response.splice(0, builder.$take);
 			}
 
-			self.inmemorydata[item.name] = item.response;
+			self.inmemory[item.name] = item.response;
 			self.$save(item.name);
 		}
 
@@ -1056,7 +1056,7 @@ Database.prototype.$remove_inmemory = function() {
 
 	return self.$inmemory('#', function() {
 
-		var data = self.inmemorydata['#'];
+		var data = self.inmemory['#'];
 		var arr = [];
 
 		for (var j = 0, jl = data.length; j < jl; j++) {
@@ -1085,7 +1085,7 @@ Database.prototype.$remove_inmemory = function() {
 		}
 
 		if (change) {
-			self.inmemorydata['#'] = arr;
+			self.inmemory['#'] = arr;
 			self.$save('#');
 		}
 
@@ -1120,8 +1120,8 @@ Database.prototype.$drop = function() {
 
 	remove.wait((filename, next) => Fs.unlink(filename, next), () => self.next(0), 5);
 
-	self.inmemory && Object.keys(self.inmemorydata).forEach(function(key) {
-		self.inmemorydata[key] = undefined;
+	Object.keys(self.inmemory).forEach(function(key) {
+		self.inmemory[key] = undefined;
 	});
 
 	return self;
