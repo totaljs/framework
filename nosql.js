@@ -561,7 +561,6 @@ Database.prototype.$update_inmemory = function() {
 	return self.$inmemory('#', function() {
 
 		var data = self.inmemory['#'];
-		var doc = JSON.parse(value.trim());
 
 		for (var j = 0, jl = data.length; j < jl; j++) {
 			var doc = data[j];
@@ -597,7 +596,7 @@ Database.prototype.$update_inmemory = function() {
 			if (item.insert && !item.count)
 				self.insert(item.insert).$callback = item.builder.$callback;
 			else
-				item.builder.$callback && item.builder.$callback(errorhandling(err, item.builder, item.count), item.count);
+				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
 		}
 
 		setImmediate(function() {
