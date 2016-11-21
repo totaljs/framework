@@ -255,6 +255,10 @@ global.NOSQL = function(name) {
 	return framework.nosql(name);
 };
 
+global.NOSQLMEMORY = function(name) {
+	return global.framework_nosql.memory(name);
+};
+
 global.DB = global.DATABASE = function() {
 	if (typeof(framework.database) === 'object')
 		return framework.database;
@@ -471,7 +475,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2300;
-	this.version_header = '2.3.0-10';
+	this.version_header = '2.3.0-11';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
