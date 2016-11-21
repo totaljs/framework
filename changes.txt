@@ -14,6 +14,8 @@
 - added: View Engine supports `@{continue}` and `@{break}` command for looping
 - added: `URLBuilder.make(fn)`
 - added: `nosql.upsert(doc)` inserts a new document where document doesn't exist in DB
+- added: `NOSQLMEMORY(dbName)` enables in-memory database
+- added: `nosql.join(field, dbName, [view])` returns `DatabaseBuilder` with updated `.where(field_JoinedDB, field_currentdb)` method (it supports `.fields()` too)
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
@@ -31,6 +33,8 @@
 - fixed: custom paths in `F.model()` and `F.source()`
 - fixed: NoSQL removing documents (problem with different filters in one queue)
 - fixed: fix view compiler error message.
+
+- removed: `nosql` doesn't support cache (`DatabaseBuilder.cache` is obsolete)
 
 - improved: code
 

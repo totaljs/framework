@@ -49,6 +49,7 @@ const BINARY_HEADER_LENGTH = 2000;
 const NEWLINE = '\n';
 const EMPTYARRAY = [];
 const REG_CLEAN = /^[\s]+|[\s]+$/g;
+const INMEMORY = {};
 
 Object.freeze(EMPTYARRAY);
 
@@ -71,6 +72,9 @@ function Database(name, filename) {
 	this.binary = new Binary(this, this.directory + '/' + this.name + '-binary/');
 	this.counter = new Counter(this);
 	this.iscache = false;
+	this.inmemory = INMEMORY[name] === true;
+	// this.inmemory = true;
+	this.inmemorydata = {};
 	this.metadata;
 	this.$meta();
 	this.$timeoutmeta;
@@ -78,6 +82,10 @@ function Database(name, filename) {
 
 exports.load = function(name, filename) {
 	return new Database(name, filename);
+};
+
+exports.memory = function(name) {
+	return INMEMORY[name] = true;
 };
 
 Database.prototype.meta = function(name, value) {
@@ -102,7 +110,7 @@ Database.prototype.insert = function(doc) {
 
 Database.prototype.upsert = function(doc) {
 	var self = this;
-	var builder = self.find();
+	var builder = self.one();
 	var callback;
 
 	builder.callback(function(err, d) {
@@ -112,7 +120,7 @@ Database.prototype.upsert = function(doc) {
 			self.insert(doc).callback(callback);
 	});
 
-	builder.first().callback = function(fn) {
+	builder.callback = function(fn) {
 		callback = fn;
 		return builder;
 	};
@@ -284,22 +292,34 @@ Database.prototype.next = function(type) {
 	}
 
 	if (self.step !== 1 && self.pending_append.length) {
-		self.$append();
+		if (self.$inmemory)
+			self.$append_inmemory();
+		else
+			self.$append();
 		return self;
 	}
 
 	if (self.step !== 2 && self.pending_update.length) {
-		self.$update();
+		if (self.$inmemory)
+			self.$update_inmemory();
+		else
+			self.$update();
 		return self;
 	}
 
 	if (self.step !== 3 && self.pending_remove.length) {
-		self.$remove();
+		if (self.$inmemory)
+			self.$remove_inmemory();
+		else
+			self.$remove();
 		return self;
 	}
 
 	if (self.step !== 5 && self.pending_views) {
-		self.$views();
+		if (self.$inmemory)
+			self.$views_inmemory();
+		else
+			self.$views();
 		return self;
 	}
 
@@ -318,7 +338,6 @@ Database.prototype.next = function(type) {
 
 Database.prototype.refresh = function() {
 	var self = this;
-	self.iscache && framework.cache.removeAll('$nosql');
 	if (!self.views)
 		return self;
 	self.pending_views = true;
@@ -329,6 +348,56 @@ Database.prototype.refresh = function() {
 // ======================================================================
 // FILE OPERATIONS
 // ======================================================================
+
+// InMemory saving
+Database.prototype.$save = function(view) {
+	var self = this;
+	setTimeout2('nosql.' + self.name + '.' + view, function() {
+		var data = self.inmemorydata[view] || EMPTYARRAY;
+		var builder = [];
+		for (var i = 0, length = data.length; i < length; i++)
+			builder.push(JSON.stringify(data[i]));
+
+		var filename = self.filename;
+		if (view !== '#')
+			filename = filename.replace(/\.nosql/, '#' + view + '.nosql');
+
+		Fs.writeFile(filename, builder.join(NEWLINE) + NEWLINE, NOOP);
+	}, 50);
+	return self;
+};
+
+Database.prototype.$inmemory = function(view, callback) {
+	var self = this;
+
+	if (self.inmemorydata[view])
+		return callback();
+
+	var filename = self.filename;
+	if (view !== '#')
+		filename = filename.replace(/\.nosql/, '#' + view + '.nosql');
+
+	self.inmemorydata[view] = [];
+
+	Fs.readFile(filename, function(err, data) {
+		if (err)
+			return callback();
+		var arr = data.toString('utf8').split('\n');
+		for (var i = 0, length = arr.length; i < length; i++) {
+			var item = arr[i];
+			if (!item)
+				continue;
+			try {
+				item = JSON.parse(item.trim(), jsonparser);
+				item && self.inmemorydata[view].push(item);
+			} catch (e) {};
+		}
+
+		callback();
+	});
+
+	return self;
+};
 
 Database.prototype.$meta = function(write) {
 
@@ -377,6 +446,34 @@ Database.prototype.$append = function() {
 	});
 
 	return self;
+};
+
+Database.prototype.$append_inmemory = function() {
+	var self = this;
+	self.step = 1;
+
+	if (!self.pending_append.length) {
+		self.next(0);
+		return self;
+	}
+
+	var items = self.pending_append.splice(0);
+
+	return self.$inmemory('#', function() {
+
+		for (var i = 0, length = items.length; i < length; i++) {
+			self.inmemorydata['#'].push(JSON.parse(items[i].doc, jsonparser));
+			var callback = items[i].builder.$callback;
+			callback && callback(null, 1);
+		}
+
+		self.$save('#');
+
+		setImmediate(function() {
+			self.next(0);
+			setImmediate(() => self.refresh());
+		});
+	});
 };
 
 Database.prototype.$update = function() {
@@ -447,6 +544,69 @@ Database.prototype.$update = function() {
 	return self;
 };
 
+Database.prototype.$update_inmemory = function() {
+
+	var self = this;
+	self.step = 2;
+
+	if (!self.pending_update.length) {
+		self.next(0);
+		return self;
+	}
+
+	var filter = self.pending_update.splice(0);
+	var length = filter.length;
+	var change = false;
+
+	return self.$inmemory('#', function() {
+
+		var data = self.inmemorydata['#'];
+		var doc = JSON.parse(value.trim());
+
+		for (var j = 0, jl = data.length; j < jl; j++) {
+			var doc = data[j];
+			for (var i = 0; i < length; i++) {
+
+				var item = filter[i];
+				var builder = item.builder;
+				var output = builder.compare(doc, j);
+
+				if (output) {
+					if (item.keys) {
+						for (var j = 0, jl = item.keys.length; j < jl; j++) {
+							var val = item.doc[item.keys[j]];
+							if (val === undefined)
+								continue;
+							if (typeof(val) === 'function')
+								doc[item.keys[j]] = val(doc[item.keys[j]], doc);
+							else
+								doc[item.keys[j]] = val;
+						}
+					} else
+						doc = typeof(item.doc) === 'function' ? item.doc(doc) : item.doc;
+					item.count++;
+					change = true;
+				}
+			}
+		}
+
+		self.$save('#');
+
+		for (var i = 0; i < length; i++) {
+			var item = filter[i];
+			if (item.insert && !item.count)
+				self.insert(item.insert).$callback = item.builder.$callback;
+			else
+				item.builder.$callback && item.builder.$callback(errorhandling(err, item.builder, item.count), item.count);
+		}
+
+		setImmediate(function() {
+			self.next(0);
+			change && setImmediate(() => self.refresh());
+		});
+	});
+};
+
 Database.prototype.$reader = function() {
 
 	var self = this;
@@ -460,30 +620,11 @@ Database.prototype.$reader = function() {
 	var index = 0;
 	var list = self.pending_reader.splice(0);
 
-	while (true) {
-		var item = list[index++];
-		if (!item)
-			break;
+	if (self.inmemory)
+		self.$reader2_inmemory('#', list, () => self.next(0));
+	else
+		self.$reader2(self.filename, list, () => self.next(0));
 
-		var key = item.builder.$cache_key;
-		if (!key)
-			continue;
-
-		var data = framework.cache.read2(key);
-		if (!data)
-			continue;
-
-		item.builder.$callback(errorhandling(err, item.builder, data.items), data.items, data.count);
-		index--;
-		list.splice(index, 1);
-	}
-
-	if (!list.length) {
-		self.next(0);
-		return self;
-	}
-
-	self.$reader2(self.filename, list, () => self.next(0));
 	return self;
 };
 
@@ -502,14 +643,7 @@ Database.prototype.$readerview = function() {
 
 	for (var i = 0, length = self.pending_reader_view.length; i < length; i++) {
 		var item = self.pending_reader_view[i];
-		var name = self.views[item.view].$filename;
-		if (item.builder.$cache_key) {
-			var data = framework.cache.read2(item.builder.$cache_key);
-			if (data) {
-				item.builder.$callback(errorhandling(err, item.builder, data.items), data.items, data.count);
-				continue;
-			}
-		}
+		var name = self.inmemory ? item.view : self.views[item.view].$filename;
 
 		skip = false;
 
@@ -527,7 +661,10 @@ Database.prototype.$readerview = function() {
 	}
 
 	Object.keys(group).wait(function(item, next) {
-		self.$reader2(item, group[item], next);
+		if (self.inmemory)
+			self.$reader2_inmemory(item, group[item], next);
+		else
+			self.$reader2(item, group[item], next);
 	}, () => self.next(0), 5);
 
 	return self;
@@ -582,8 +719,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 				else
 					output = item.response || EMPTYARRAY;
 
-				builder.$cache_key && framework.cache.add(builder.$cache_key, { items: output, count: item.count }, builder.$cache_expire);
-				builder.$callback(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
+				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 				continue;
 			}
 
@@ -605,8 +741,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 			else
 				output = item.response || EMPTYARRAY;
 
-			builder.$cache_key && framework.cache.add(builder.$cache_key, { items: output, count: item.count }, builder.$cache_expire);
-			builder.$callback(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
+			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
 			builder.done();
 		}
 
@@ -614,6 +749,84 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 	});
 
 	return self;
+};
+
+Database.prototype.$reader2_inmemory = function(name, items, callback) {
+
+	var self = this;
+	var filter = items;
+	var length = filter.length;
+
+	return self.$inmemory(name, function() {
+
+		var data = self.inmemorydata[name];
+
+		for (var j = 0, jl = data.length; j < jl; j++) {
+			var json = data[j];
+			for (var i = 0; i < length; i++) {
+				var item = filter[i];
+				var builder = item.builder;
+				var output = builder.compare(U.clone(json), j);
+				if (!output)
+					continue;
+
+				item.count++;
+
+				if (!builder.$sort && ((builder.$skip && builder.$skip >= item.count) || (builder.$take && builder.$take <= item.counter)))
+					continue;
+
+				item.counter++;
+
+				if (item.type)
+					continue;
+
+				if (item.response)
+					item.response.push(output);
+				else
+					item.response = [output];
+			}
+		}
+
+		for (var i = 0; i < length; i++) {
+			var item = filter[i];
+			var builder = item.builder;
+			var output;
+
+			if (!builder.$sort) {
+
+				if (builder.$first)
+					output = item.response ? item.response[0] : undefined;
+				else
+					output = item.response || EMPTYARRAY;
+
+				builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
+				continue;
+			}
+
+			if (item.count) {
+				if (builder.$sort.name)
+					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
+				else
+					item.response.sort(builder.$sort);
+				if (builder.$skip && builder.$take)
+					item.response = item.response.splice(builder.$skip, builder.$take);
+				else if (builder.$skip)
+					item.response = item.response.splice(builder.$skip);
+				else if (builder.$take)
+					item.response = item.response.splice(0, builder.$take);
+			}
+
+			if (builder.$first)
+				output = item.response ? item.response[0] : undefined;
+			else
+				output = item.response || EMPTYARRAY;
+
+			builder.$callback2(errorhandling(null, builder, output), item.type === 1 ? item.count : output, item.count);
+			builder.done();
+		}
+
+		callback();
+	});
 };
 
 Database.prototype.$views = function() {
@@ -667,7 +880,6 @@ Database.prototype.$views = function() {
 		response.wait(function(item, next) {
 
 			var builder = item.builder;
-			var output;
 
 			if (builder.$sort) {
 				if (builder.$sort.name)
@@ -695,6 +907,75 @@ Database.prototype.$views = function() {
 	});
 
 	return self;
+};
+
+Database.prototype.$views_inmemory = function() {
+
+	var self = this;
+	self.step = 5;
+
+	if (!self.pending_views) {
+		self.next(0);
+		return self;
+	}
+
+	self.pending_views = false;
+
+	var views = Object.keys(self.views);
+	var length = views.length;
+
+	if (!length) {
+		self.next(0);
+		return self;
+	}
+
+	var response = [];
+
+	for (var i = 0; i < length; i++)
+		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0, counter: 0 });
+
+	return self.$inmemory('#', function() {
+		var data = self.inmemorydata['#'];
+
+		for (var j = 0, jl = data.length; j < jl; j++) {
+			var json = data[j];
+			for (var i = 0; i < length; i++) {
+				var item = self.views[views[i]];
+				var output = item.compare(json, j);
+				if (!output)
+					continue;
+				response[i].count++;
+				if (!item.$sort && ((item.$skip && item.$skip >= response[i].count) || (item.$take && item.$take < response[i].counter)))
+					continue;
+				response[i].counter++;
+				!item.type && response[i].response.push(output);
+			}
+		}
+
+		for (var j = 0, jl = response.length; j < jl; j++) {
+
+			var item = response[j];
+			var builder = item.builder;
+
+			if (builder.$sort) {
+				if (builder.$sort.name)
+					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
+				else
+					item.response.sort(builder.$sort);
+				if (builder.$skip && builder.$take)
+					item.response = item.response.splice(builder.$skip, builder.$take);
+				else if (builder.$skip)
+					item.response = item.response.splice(builder.$skip);
+				else if (builder.$take)
+					item.response = item.response.splice(0, builder.$take);
+			}
+
+			self.inmemorydata[item.name] = item.response;
+			self.$save(item.name);
+		}
+
+		self.next(0);
+	});
 };
 
 Database.prototype.$remove = function() {
@@ -730,8 +1011,11 @@ Database.prototype.$remove = function() {
 		}
 
 		if (removed) {
-			item.backup && item.backup.write(value);
-			item.count++;
+			for (var i = 0; i < length; i++) {
+				var item = filter[i];
+				item.backup && item.backup.write(value);
+				item.count++;
+			}
 			change = true;
 		} else
 			writer.write(value);
@@ -756,6 +1040,65 @@ Database.prototype.$remove = function() {
 	return self;
 };
 
+Database.prototype.$remove_inmemory = function() {
+
+	var self = this;
+	self.step = 3;
+
+	if (!self.pending_remove.length) {
+		self.next(0);
+		return self;
+	}
+
+	var filter = self.pending_remove.splice(0);
+	var length = filter.length;
+	var change = false;
+
+	return self.$inmemory('#', function() {
+
+		var data = self.inmemorydata['#'];
+		var arr = [];
+
+		for (var j = 0, jl = data.length; j < jl; j++) {
+			var json = data[j];
+			var is = false;
+			var removed = false;
+
+			for (var i = 0; i < length; i++) {
+				var item = filter[i];
+				var builder = item.builder;
+				if (builder.compare(json, j)) {
+					removed = true;
+					break;
+				}
+			}
+
+			if (removed) {
+				for (var i = 0; i < length; i++) {
+					var item = filter[i];
+					item.backup && item.backup.write(JSON.stringify(json));
+					item.count++;
+				}
+				change = true;
+			} else
+				arr.push(json);
+		}
+
+		if (change) {
+			self.inmemorydata['#'] = arr;
+			self.$save('#');
+		}
+
+		for (var i = 0; i < length; i++) {
+			var item = filter[i];
+			item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
+		}
+
+		self.next(0);
+		change && setImmediate(() => self.refresh());
+	});
+};
+
 Database.prototype.$drop = function() {
 	var self = this;
 	self.step = 7;
@@ -776,6 +1119,11 @@ Database.prototype.$drop = function() {
 	} catch (e) {}
 
 	remove.wait((filename, next) => Fs.unlink(filename, next), () => self.next(0), 5);
+
+	self.inmemory && Object.keys(self.inmemorydata).forEach(function(key) {
+		self.inmemorydata[key] = undefined;
+	});
+
 	return self;
 };
 
@@ -804,8 +1152,79 @@ function DatabaseBuilder() {
 	this.$first = false;
 	this.$scope = 0;
 	this.$fields;
+	this.$join;
+	this.$joincount;
 	this.$callback = NOOP;
 }
+
+DatabaseBuilder.prototype.$callback2 = function(err, response) {
+	var self = this;
+
+	if (err || !self.$join)
+		return self.$callback(err, response);
+
+	if (self.$joincount) {
+		setImmediate(function() {
+			self.$callback2(err, response);
+		});
+		return self;
+	}
+
+	var keys = Object.keys(self.$join);
+	var jl = keys.length;
+
+	if (response instanceof Array) {
+		for (var i = 0, length = response.length; i < length; i++) {
+			var item = response[i];
+			for (var j = 0; j < jl; j++) {
+				var join = self.$join[keys[j]];
+				item[join.field] = join.items.findItem(join.a, item[join.b]);
+			}
+		}
+	} else if (response)
+		response[join.field] = join.items.findItem(join.a, response[join.b]);
+
+	self.$callback(err, response);
+	return self;
+};
+
+DatabaseBuilder.prototype.join = function(field, name, view) {
+	var self = this;
+
+	if (!self.$join) {
+		self.$join = {};
+		self.$joincount = 0;
+	}
+
+	var key = name + '.' + (view || '');
+	if (self.$join[key])
+		return join;
+
+	self.$join[key] = {};
+	self.$join[key].field = field;
+	self.$join[key].pending = true;
+	self.$joincount++;
+
+	var join = NOSQL(name).find(view);
+
+	join.where = function(a, b) {
+		self.$join[key].a = a;
+		self.$join[key].b = b;
+		return join;
+	};
+
+	join.callback(function(err, docs) {
+		self.$join[key].pending = false;
+		self.$join[key].items = docs;
+		self.$joincount--;
+	});
+
+	setImmediate(function() {
+		join.$fields && join.fields(self.$join[key].b);
+	});
+
+	return join;
+};
 
 DatabaseBuilder.prototype.first = function() {
 	this.$first = true;
@@ -1019,8 +1438,9 @@ DatabaseBuilder.prototype.done = function() {
 };
 
 DatabaseBuilder.prototype.cache = function(key, expire) {
-	this.$cache_key = '$nosql_' + key;
-	this.$cache_expire = expire;
+	// this.$cache_key = '$nosql_' + key;
+	// this.$cache_expire = expire;
+	OBSOLETE('DatabaseBuilder.cache()', 'NoSQL database supports in-memory mode.');
 	return this;
 };
 
