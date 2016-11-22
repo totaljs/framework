@@ -73,6 +73,7 @@ function Database(name, filename) {
 	this.counter = new Counter(this);
 	this.iscache = false;
 	this.inmemory = {};
+	this.inmemorylastusage;
 	this.metadata;
 	this.$meta();
 	this.$timeoutmeta;
@@ -189,6 +190,13 @@ Database.prototype.drop = function() {
 Database.prototype.free = function() {
 	var self = this;
 	delete framework.databases[self.name];
+	return self;
+};
+
+Database.prototype.release = function() {
+	var self = this;
+	self.inmemory = {};
+	self.inmemorylastusage = undefined;
 	return self;
 };
 
@@ -373,6 +381,9 @@ Database.prototype.$save = function(view) {
 
 Database.prototype.$inmemory = function(view, callback) {
 	var self = this;
+
+	// Last usage
+	self.inmemorylastusage = global.framework ? global.framework.datetime : undefined;
 
 	if (self.inmemory[view])
 		return callback();
