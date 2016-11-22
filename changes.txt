@@ -18,6 +18,7 @@
 - added: `nosql.join(field, dbName, [view])` returns `DatabaseBuilder` with updated `.where(field_JoinedDB, field_currentdb)` method (it supports `.fields()` too)
 - added: `nosql.join()` supports scalar operation too, e.g. `nosql.join(...).scalar('count')`
 - added: `nosql.scalar(type, [field])` - types: `sum`, `min`, `max`, `avg` and `count`
+- added: `nosql.release()` for releasing of in-memory DB (framework clears unused in-memory databases automatically)
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
@@ -37,6 +38,7 @@
 - fixed: fix view compiler error message.
 
 - removed: `nosql` doesn't support cache (`DatabaseBuilder.cache` is obsolete)
+- removed: `F.refresh()` the method was useless
 
 - improved: code
 
