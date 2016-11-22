@@ -1179,15 +1179,31 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 			var item = response[i];
 			for (var j = 0; j < jl; j++) {
 				var join = self.$join[keys[j]];
-				item[join.field] = join.items.findItem(join.a, item[join.b]);
+				item[join.field] = join.first ? findItem(join.items, join.a, item[join.b]) : findItems(join.items, join.a, item[join.b]);
 			}
 		}
 	} else if (response)
-		response[join.field] = join.items.findItem(join.a, response[join.b]);
+		response[join.field] = join.first ? findItem(join.items, join.a, response[join.b]) : findItems(join.items, join.a, response[join.b]);
 
 	self.$callback(err, response, count);
 	return self;
 };
+
+function findItem(items, field, value) {
+	for (var i = 0, length = items.length; i < length; i++) {
+		if (items[i][field] === value)
+			return items[i];
+	}
+}
+
+function findItems(items, field, value) {
+	var arr = [];
+	for (var i = 0, length = items.length; i < length; i++) {
+		if (items[i][field] === value)
+			arr.push(items[i]);
+	}
+	return arr;
+}
 
 DatabaseBuilder.prototype.join = function(field, name, view) {
 	var self = this;
@@ -1211,6 +1227,11 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 	join.where = function(a, b) {
 		self.$join[key].a = a;
 		self.$join[key].b = b;
+		return join;
+	};
+
+	join.first = function() {
+		self.$join[key].first = true;
 		return join;
 	};
 
