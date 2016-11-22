@@ -791,32 +791,6 @@ Framework.prototype.isSuccess = function(obj) {
 };
 
 /**
- * Refersh framework internal informations
- * @param {Boolean} clear Clear temporary files, optional
- * @return {Framework}
- */
-Framework.prototype.refresh = function(clear) {
-	var self = this;
-
-	self.emit('clear', 'refresh');
-
-	self.resources = {};
-	self.databases = {};
-
-	self._configure();
-	self._configure_versions();
-	self._configure_sitemap();
-
-	self.temporary.path = {};
-	self.temporary.range = {};
-	self.temporary.views = {};
-	self.temporary.other = {};
-
-	self.emit('reconfigure');
-	return self;
-};
-
-/**
  * Get a controller
  * @param {String} name
  * @return {Object}
@@ -6434,16 +6408,22 @@ Framework.prototype._service = function(count) {
 
 	// every 7 minutes (default) service clears static cache
 	if (count % self.config['default-interval-clear-cache'] === 0) {
+
 		self.emit('clear', 'temporary', self.temporary);
 		self.temporary.path = {};
 		self.temporary.range = {};
 		self.temporary.views = {};
 		self.temporary.other = {};
+
 		if (global.$VIEWCACHE && global.$VIEWCACHE.length)
 			global.$VIEWCACHE = [];
 
 		// Clears command cache
 		Image.clear();
+
+		var dt = F.datetime.add('-5 minutes');
+		for (var key in self.databases)
+			self.databases[key] && self.databases[key].inmemorylastusage < dt && self.databases[key].release();
 	}
 
 	// every 61 minutes (default) services precompile all (installed) views
