@@ -220,6 +220,10 @@ Database.prototype.find = function(view) {
 	return builder;
 };
 
+Database.prototype.scalar = function(type, field, view) {
+	return this.find(view).scalar(type, field);
+};
+
 Database.prototype.count = function(view) {
 	var self = this;
 	var builder = new DatabaseBuilder();
@@ -678,6 +682,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var json = JSON.parse(value.trim(), jsonparser);
+		var val;
 		for (var i = 0; i < length; i++) {
 
 			var item = filter[i];
@@ -697,10 +702,33 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 			if (item.type)
 				continue;
 
-			if (item.response)
-				item.response.push(output);
-			else
-				item.response = [output];
+			switch (builder.$scalar) {
+				case 'count':
+					item.scalar = item.scalar ? item.scalar + 1 : 1;
+					break;
+				case 'sum':
+					val = json[builder.$scalarfield] || 0;
+					item.scalar = item.scalar ? item.scalar + val : val;
+					break;
+				case 'min':
+					val = json[builder.$scalarfield] || 0;
+					item.scalar = item.scalar ? Math.min(item.scalar, val) : val;
+					break;
+				case 'max':
+					val = json[builder.$scalarfield] || 0;
+					item.scalar = item.scalar ? Math.max(item.scalar, val) : val;
+					break;
+				case 'avg':
+					val = json[builder.$scalarfield] || 0;
+					item.scalar = item.scalar ? item.scalar + val : val;
+					break;
+				default:
+					if (item.response)
+						item.response.push(output);
+					else
+						item.response = [output];
+					break;
+			}
 		}
 	}));
 
@@ -711,9 +739,11 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 			var builder = item.builder;
 			var output;
 
-			if (!builder.$sort) {
+			if (builder.$scalar || !builder.$sort) {
 
-				if (builder.$first)
+				if (builder.$scalar)
+					output = builder.$scalar === 'avg' ? item.scalar / item.counter : item.scalar;
+				else if (builder.$first)
 					output = item.response ? item.response[0] : undefined;
 				else
 					output = item.response || EMPTYARRAY;
@@ -759,6 +789,7 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 	return self.$inmemory(name, function() {
 
 		var data = self.inmemory[name];
+		var val;
 
 		for (var j = 0, jl = data.length; j < jl; j++) {
 			var json = data[j];
@@ -779,10 +810,33 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 				if (item.type)
 					continue;
 
-				if (item.response)
-					item.response.push(output);
-				else
-					item.response = [output];
+				switch (builder.$scalar) {
+					case 'count':
+						item.scalar = item.scalar ? item.scalar + 1 : 1;
+						break;
+					case 'sum':
+						val = json[builder.$scalarfield] || 0;
+						item.scalar = item.scalar ? item.scalar + val : val;
+						break;
+					case 'min':
+						val = json[builder.$scalarfield] || 0;
+						item.scalar = item.scalar ? Math.min(item.scalar, val) : val;
+						break;
+					case 'max':
+						val = json[builder.$scalarfield] || 0;
+						item.scalar = item.scalar ? Math.max(item.scalar, val) : val;
+						break;
+					case 'avg':
+						val = json[builder.$scalarfield] || 0;
+						item.scalar = item.scalar ? item.scalar + val : 0;
+						break;
+					default:
+						if (item.response)
+							item.response.push(output);
+						else
+							item.response = [output];
+						break;
+				}
 			}
 		}
 
@@ -791,9 +845,11 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 			var builder = item.builder;
 			var output;
 
-			if (!builder.$sort) {
+			if (builder.$scalar || !builder.$sort) {
 
-				if (builder.$first)
+				if (builder.$scalar)
+					output = builder.$scalar === 'avg' ? item.scalar / item.counter : item.scalar;
+				else if (builder.$first)
 					output = item.response ? item.response[0] : undefined;
 				else
 					output = item.response || EMPTYARRAY;
@@ -1158,6 +1214,8 @@ function DatabaseBuilder() {
 	this.$join;
 	this.$joincount;
 	this.$callback = NOOP;
+	this.$scalar;
+	this.$scalarfield;
 }
 
 DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
@@ -1179,15 +1237,54 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 			var item = response[i];
 			for (var j = 0; j < jl; j++) {
 				var join = self.$join[keys[j]];
-				item[join.field] = join.first ? findItem(join.items, join.a, item[join.b]) : findItems(join.items, join.a, item[join.b]);
+				item[join.field] = join.scalar ? scalar(join.items, join.scalar, join.scalarfield, join.a, join.b != null ? item[join.b] : undefined) : join.first ? findItem(join.items, join.a, item[join.b], join.scalar, join.scalarfield) : findItems(join.items, join.a, item[join.b]);
 			}
 		}
 	} else if (response)
-		response[join.field] = join.first ? findItem(join.items, join.a, response[join.b]) : findItems(join.items, join.a, response[join.b]);
+		response[join.field] = join.scalar ? scalar(join.items, join.scalar, join.scalarfield, join.a, join.b != null ? response[join.b] : undefined) : join.first ? findItem(join.items, join.a, response[join.b]) : findItems(join.items, join.a, response[join.b]);
 
 	self.$callback(err, response, count);
 	return self;
 };
+
+function scalar(items, type, field, where, value) {
+	if (type === 'count' && !where)
+		return items.length;
+
+	var val = type !== 'min' && type !== 'max' ? 0 : null;
+	var count = 0;
+
+	for (var i = 0, length = items.length; i < length; i++) {
+		var item = items[i];
+
+		if (where && item[where] !== value)
+			continue;
+
+		switch (type) {
+			case 'count':
+				val++;
+				break;
+			case 'sum':
+				val += item[field] || 0;
+				break;
+			case 'avg':
+				val += item[field] || 0;
+				count++;
+				break;
+			case 'min':
+				val = val === null ? item[field] : Math.min(val, item[field]);
+				break;
+			case 'max':
+				val = val === null ? item[field] : Math.max(val, item[field]);
+				break;
+		}
+	}
+
+	if (type === 'avg')
+		val = val / count;
+
+	return val || 0;
+}
 
 function findItem(items, field, value) {
 	for (var i = 0, length = items.length; i < length; i++) {
@@ -1230,6 +1327,12 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 		return join;
 	};
 
+	join.scalar = function(type, field) {
+		self.$join[key].scalar = type;
+		self.$join[key].scalarfield = field;
+		return join;
+	};
+
 	join.first = function() {
 		self.$join[key].first = true;
 		return join;
@@ -1243,6 +1346,7 @@ DatabaseBuilder.prototype.join = function(field, name, view) {
 
 	setImmediate(function() {
 		join.$fields && join.fields(self.$join[key].b);
+		join.$fields && self.$join[key].scalarfield && join.fields(self.$join[key].scalarfield);
 	});
 
 	return join;
@@ -1307,6 +1411,12 @@ DatabaseBuilder.prototype.compare = function(doc, index) {
 
 DatabaseBuilder.prototype.filter = function(fn) {
 	this.$filter.push({ scope: this.$scope, filter: fn });
+	return this;
+};
+
+DatabaseBuilder.prototype.scalar = function(type, name) {
+	this.$scalar = type;
+	this.$scalarfield = name;
 	return this;
 };
 
