@@ -1468,6 +1468,111 @@ DatabaseBuilder.prototype.where = function(name, operator, value) {
 	return this;
 };
 
+DatabaseBuilder.prototype.month = function(name, operator, value) {
+
+	var fn;
+
+	if (value === undefined) {
+		value = operator;
+		operator = '=';
+	}
+
+	switch (operator) {
+		case '=':
+			fn = compare_eq_dtmonth;
+			break;
+		case '<':
+			fn = compare_gt_dtmonth;
+			break;
+		case '<=':
+			fn = compare_eqgt_dtmonth;
+			break;
+		case '>':
+			fn = compare_lt_dtmonth;
+			break;
+		case '>=':
+			fn = compare_eqlt_dtmonth;
+			break;
+		case '<>':
+		case '!=':
+			fn = compare_not_dtmonth;
+			break;
+	}
+
+	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value });
+	return this;
+};
+
+DatabaseBuilder.prototype.day = function(name, operator, value) {
+
+	var fn;
+
+	if (value === undefined) {
+		value = operator;
+		operator = '=';
+	}
+
+	switch (operator) {
+		case '=':
+			fn = compare_eq_dtday;
+			break;
+		case '<':
+			fn = compare_gt_dtday;
+			break;
+		case '<=':
+			fn = compare_eqgt_dtday;
+			break;
+		case '>':
+			fn = compare_lt_dtday;
+			break;
+		case '>=':
+			fn = compare_eqlt_dtday;
+			break;
+		case '<>':
+		case '!=':
+			fn = compare_not_dtday;
+			break;
+	}
+
+	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value });
+	return this;
+};
+
+DatabaseBuilder.prototype.year = function(name, operator, value) {
+
+	var fn;
+
+	if (value === undefined) {
+		value = operator;
+		operator = '=';
+	}
+
+	switch (operator) {
+		case '=':
+			fn = compare_eq_dtyear;
+			break;
+		case '<':
+			fn = compare_gt_dtyear;
+			break;
+		case '<=':
+			fn = compare_eqgt_dtyear;
+			break;
+		case '>':
+			fn = compare_lt_dtyear;
+			break;
+		case '>=':
+			fn = compare_eqlt_dtyear;
+			break;
+		case '<>':
+		case '!=':
+			fn = compare_not_dtyear;
+			break;
+	}
+
+	this.$filter.push({ scope: this.$scope, filter: fn, name: name, value: value });
+	return this;
+};
+
 DatabaseBuilder.prototype.like = DatabaseBuilder.prototype.search = function(name, value, where) {
 
 	var fn;
@@ -2274,42 +2379,42 @@ function compare_not(doc, index, item) {
 function compare_eq_date(doc, index, item) {
 	var val = doc[item.name]
 	if (val)
-		return item.value === new Date(val);
+		return item.value === (val instanceof Date ? val : new Date(val));
 	return false;
 }
 
 function compare_lt_date(doc, index, item) {
 	var val = doc[item.name];
 	if (val)
-		return item.value < new Date(val);
+		return item.value < (val instanceof Date ? val : new Date(val));
 	return false;
 }
 
 function compare_gt_date(doc, index, item) {
 	var val = doc[item.name];
 	if (val)
-		return item.value > new Date(val);
+		return item.value > (val instanceof Date ? val : new Date(val));
 	return false;
 }
 
 function compare_eqlt_date(doc, index, item) {
 	var val = doc[item.name];
 	if (val)
-		return item.value <= new Date(val);
+		return item.value <= (val instanceof Date ? val : new Date(val));
 	return false;
 }
 
 function compare_eqgt_date(doc, index, item) {
 	var val = doc[item.name];
 	if (val)
-		return item.value >= new Date(val);
+		return item.value >= (val instanceof Date ? val : new Date(val));
 	return false;
 }
 
 function compare_not_date(doc, index, item) {
 	var val = doc[item.name];
 	if (val)
-		return item.value !== new Date(val);
+		return item.value !== (val instanceof Date ? val : new Date(val));
 	return false;
 }
 
@@ -2367,6 +2472,103 @@ function compare_notin(doc, index, item) {
 		return true;
 	}
 	return item.value.indexOf(val) === -1;
+}
+
+function compare_datetype(type, eqtype, val, doc) {
+
+	if (!doc)
+		return false;
+	else if (!doc.getTime) {
+		doc = new Date(doc);
+		if (isNaN(doc))
+			return false;
+	}
+
+	switch (type) {
+		case 'month':
+			doc = doc.getMonth() + 1;
+			break;
+		case 'day':
+			doc = doc.getDate();
+			break;
+		case 'year':
+			doc = doc.getFullYear();
+			break;
+	}
+
+	return eqtype === '=' ? val === doc : eqtype === '>' ? val > doc : eqtype === '<' ? val < doc : eqtype === '>=' ? val >= doc : eqtype === '<=' ? val <= doc : val !== doc;
+};
+
+function compare_eq_dtmonth(doc, index, item) {
+	return compare_datetype('month', '=', item.value, doc[item.name]);
+}
+
+function compare_lt_dtmonth(doc, index, item) {
+	return compare_datetype('month', '<', item.value, doc[item.name]);
+}
+
+function compare_gt_dtmonth(doc, index, item) {
+	return compare_datetype('month', '>', item.value, doc[item.name]);
+}
+
+function compare_eqlt_dtmonth(doc, index, item) {
+	return compare_datetype('month', '<=', item.value, doc[item.name]);
+}
+
+function compare_eqgt_dtmonth(doc, index, item) {
+	return compare_datetype('month', '>=', item.value, doc[item.name]);
+}
+
+function compare_not_dtmonth(doc, index, item) {
+	return compare_datetype('month', '!=', item.value, doc[item.name]);
+}
+
+function compare_eq_dtyear(doc, index, item) {
+	return compare_datetype('year', '=', item.value, doc[item.name]);
+}
+
+function compare_lt_dtyear(doc, index, item) {
+	return compare_datetype('year', '<', item.value, doc[item.name]);
+}
+
+function compare_gt_dtyear(doc, index, item) {
+	return compare_datetype('year', '>', item.value, doc[item.name]);
+}
+
+function compare_eqlt_dtyear(doc, index, item) {
+	return compare_datetype('year', '<=', item.value, doc[item.name]);
+}
+
+function compare_eqgt_dtyear(doc, index, item) {
+	return compare_datetype('year', '>=', item.value, doc[item.name]);
+}
+
+function compare_not_dtyear(doc, index, item) {
+	return compare_datetype('year', '!=', item.value, doc[item.name]);
+}
+
+function compare_eq_dtday(doc, index, item) {
+	return compare_datetype('day', '=', item.value, doc[item.name]);
+}
+
+function compare_lt_dtday(doc, index, item) {
+	return compare_datetype('day', '<', item.value, doc[item.name]);
+}
+
+function compare_gt_dtday(doc, index, item) {
+	return compare_datetype('day', '>', item.value, doc[item.name]);
+}
+
+function compare_eqlt_dtday(doc, index, item) {
+	return compare_datetype('day', '<=', item.value, doc[item.name]);
+}
+
+function compare_eqgt_dtday(doc, index, item) {
+	return compare_datetype('day', '>=', item.value, doc[item.name]);
+}
+
+function compare_not_dtday(doc, index, item) {
+	return compare_datetype('day', '!=', item.value, doc[item.name]);
 }
 
 function errorhandling(err, builder, response) {

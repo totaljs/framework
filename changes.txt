@@ -13,12 +13,15 @@
 - added: `F.validators` with Regular Expressions
 - added: View Engine supports `@{continue}` and `@{break}` command for looping
 - added: `URLBuilder.make(fn)`
-- added: `nosql.upsert(doc)` inserts a new document where document doesn't exist in DB
 - added: `NOSQLMEMORY(dbName, [viewName])` enables in-memory database collection
-- added: `nosql.join(field, dbName, [view])` returns `DatabaseBuilder` with updated `.where(field_JoinedDB, field_currentdb)` method (it supports `.fields()` too)
-- added: `nosql.join()` supports scalar operation too, e.g. `nosql.join(...).scalar('count')`
-- added: `nosql.scalar(type, [field])` - types: `sum`, `min`, `max`, `avg` and `count`
-- added: `nosql.release()` for releasing of in-memory DB (framework clears unused in-memory databases automatically)
+- added: NoSQL `nosql.upsert(doc)` inserts a new document where document doesn't exist in DB
+- added: NoSQL `nosql.release()` for releasing of in-memory DB (framework clears unused in-memory databases automatically)
+- added: NoSQL `DatabaseBuilder.join(field, dbName, [view])` returns `DatabaseBuilder` with updated `.where(field_JoinedDB, field_currentdb)` method (it supports `.fields()` too)
+- added: NoSQL `DatabaseBuilder.join()` supports scalar operation too, e.g. `nosql.join(...).scalar('count')`
+- added: NoSQL `DatabaseBuilder.scalar(type, [field])` - types: `sum`, `min`, `max`, `avg` and `count`
+- added: NoSQL `DatabaseBuilder.month(field, [operator], value)` filters `Date` fields according its month number
+- added: NoSQL `DatabaseBuilder.year(field, [operator], value)` filters `Date` fields according its year number
+- added: NoSQL `DatabaseBuilder.day(field, [operator], value)` filters `Date` fields according its day number
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
