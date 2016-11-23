@@ -255,7 +255,7 @@ global.NOSQL = function(name) {
 	return framework.nosql(name);
 };
 
-global.NOSQLMEMORY = global.NOSQLINMEMORY = function(name, view) {
+global.NOSQLMEMORY = function(name, view) {
 	return global.framework_nosql.inmemory(name, view);
 };
 
