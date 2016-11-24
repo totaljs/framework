@@ -733,6 +733,15 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 					val = json[builder.$scalarfield] || 0;
 					item.scalar = item.scalar ? item.scalar + val : val;
 					break;
+				case 'group':
+					val = json[builder.$scalarfield];
+					if (!item.scalar)
+						item.scalar = {};
+					if (item.scalar[val])
+						item.scalar[val]++;
+					else
+						item.scalar[val] = 1;
+					break;
 				default:
 					if (item.response)
 						item.response.push(output);
@@ -841,6 +850,16 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 						val = json[builder.$scalarfield] || 0;
 						item.scalar = item.scalar ? item.scalar + val : 0;
 						break;
+					case 'group':
+						val = json[builder.$scalarfield];
+						if (!item.scalar)
+							item.scalar = {};
+						if (item.scalar[val])
+							item.scalar[val]++;
+						else
+							item.scalar[val] = 1;
+						break;
+
 					default:
 						if (item.response)
 							item.response.push(output);
@@ -1259,10 +1278,11 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 };
 
 function scalar(items, type, field, where, value) {
+
 	if (type === 'count' && !where)
 		return items.length;
 
-	var val = type !== 'min' && type !== 'max' ? 0 : null;
+	var val = type !== 'min' && type !== 'max' ? type === 'group' ? {} : 0 : null;
 	var count = 0;
 
 	for (var i = 0, length = items.length; i < length; i++) {
@@ -1284,6 +1304,12 @@ function scalar(items, type, field, where, value) {
 				break;
 			case 'min':
 				val = val === null ? item[field] : Math.min(val, item[field]);
+				break;
+			case 'group':
+				if (val[item[field]])
+					val[item[field]]++;
+				else
+					val[item[field]] = 1;
 				break;
 			case 'max':
 				val = val === null ? item[field] : Math.max(val, item[field]);
@@ -2609,6 +2635,14 @@ function compare_eqgt_dtday(doc, index, item) {
 
 function compare_not_dtday(doc, index, item) {
 	return compare_datetype('day', '!=', item.value, doc[item.name]);
+}
+
+function scalar_group(obj) {
+	var keys = Object.keys(obj);
+	var output = [];
+	for (var i = 0, length = keys.length; i < length; i++)
+		output.push({ key: keys[i], count: obj[i] });
+	return output;
 }
 
 function errorhandling(err, builder, response) {
