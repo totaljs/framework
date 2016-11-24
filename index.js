@@ -895,7 +895,7 @@ Framework.prototype.nosql = function(name) {
  * @param {String} signal
  * @return {Framework}
  */
-Framework.prototype.stop = function(signal) {
+Framework.prototype.stop = Framework.prototype.kill = function(signal) {
 
 	var self = this;
 

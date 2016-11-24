@@ -22,6 +22,7 @@
 - added: NoSQL `DatabaseBuilder.month(field, [operator], value)` filters `Date` fields according its month number
 - added: NoSQL `DatabaseBuilder.year(field, [operator], value)` filters `Date` fields according its year number
 - added: NoSQL `DatabaseBuilder.day(field, [operator], value)` filters `Date` fields according its day number
+- added: `F.kill(signal)` for killing an instance of the framework
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
