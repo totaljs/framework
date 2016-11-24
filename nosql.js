@@ -2334,13 +2334,18 @@ Binary.prototype.listing = function(callback) {
 
 		var target = framework_utils.join(self.directory);
 		var output = [];
+		var le = EXTENSION_BINARY.length;
 
 		pending.wait(function(item, next) {
+
 			var stream = Fs.createReadStream(target + '/' + item, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
 
 			stream.on('data', function(buffer) {
 				var json = new Buffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON();
-				json && output.push(json);
+				if (json) {
+					json.id = item.substring(l, item.length - le);
+					output.push(json);
+				}
 			});
 
 			CLEANUP(stream, next);
