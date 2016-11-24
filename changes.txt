@@ -16,6 +16,7 @@
 - added: `NOSQLMEMORY(dbName, [viewName])` enables in-memory database collection
 - added: NoSQL `nosql.upsert(doc)` inserts a new document where document doesn't exist in DB
 - added: NoSQL `nosql.release()` for releasing of in-memory DB (framework clears unused in-memory databases automatically)
+- added: NoSQL `nosql.binary.listing(callback)` browses all stored files
 - added: NoSQL `DatabaseBuilder.join(field, dbName, [view])` returns `DatabaseBuilder` with updated `.where(field_JoinedDB, field_currentdb)` method (it supports `.fields()` too)
 - added: NoSQL `DatabaseBuilder.join()` supports scalar operation too, e.g. `nosql.join(...).scalar('count')`
 - added: NoSQL `DatabaseBuilder.scalar(type, [field])` - types: `sum`, `min`, `max`, `avg` and `count`
@@ -33,6 +34,7 @@
 - updated: `U.trim(obj, [clean])` supports a new argument `clean` (default `false`) and when it's `true` and a value is `''` then it sets the value to `undefined`
 - updated: `nosql.update(docToUpdate, [docToInsert])` when the document for updating doesn't exist then database performs insert
 - updated: `nosql.modify(docToUpdate, [docToInsert])` when the document for updating doesn't exist then database performs insert
+- updated: `nosql.binary` stores a creation date as meta info
 
 - fixed: Image.stream()
 - fixed: global variable `Image` (in a single library)

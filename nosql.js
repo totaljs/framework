@@ -2163,7 +2163,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	if (!dimension)
 		dimension = { width: 0, height: 0 };
 
-	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height };
+	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, created: F.created };
 	var header = new Buffer(BINARY_HEADER_LENGTH);
 	header.fill(' ');
 	header.write(JSON.stringify(h));
@@ -2250,7 +2250,7 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 	if (!dimension)
 		dimension = { width: 0, height: 0 };
 
-	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height };
+	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, created: F.datetime };
 	var header = new Buffer(BINARY_HEADER_LENGTH);
 	header.fill(' ');
 	header.write(JSON.stringify(h));
@@ -2313,6 +2313,41 @@ Binary.prototype.check = function() {
 	} catch (err) {};
 
 	return self;
+};
+
+Binary.prototype.listing = function(callback) {
+	var self = this;
+
+	self.check();
+
+	Fs.readdir(self.directory, function(err, response) {
+
+		if (err)
+			return callback(err, EMPTYARRAY);
+
+		var pending = [];
+		var key = self.db.name + '#';
+		var l = key.length;
+
+		for (var i = 0, length = response.length; i < length; i++)
+			response[i].substring(0, l) === key && pending.push(response[i]);
+
+		var target = framework_utils.join(self.directory);
+		var output = [];
+
+		pending.wait(function(item, next) {
+			var stream = Fs.createReadStream(target + '/' + item, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
+
+			stream.on('data', function(buffer) {
+				var json = new Buffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON();
+				json && output.push(json);
+			});
+
+			CLEANUP(stream, next);
+		}, () => callback(null, output), 2);
+	});
+
+	return self.db;
 };
 
 function Backuper(filename) {
