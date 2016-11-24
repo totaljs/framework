@@ -259,7 +259,11 @@ global.NOBIN = function(name) {
 	return framework.nosql(name).binary;
 };
 
-global.NOSQLMEMORY = function(name, view) {
+global.NOCOUNTER = function(name) {
+	return framework.nosql(name).counter;
+};
+
+global.NOMEM = global.NOSQLMEMORY = function(name, view) {
 	return global.framework_nosql.inmemory(name, view);
 };
 
