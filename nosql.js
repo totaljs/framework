@@ -72,7 +72,6 @@ function Database(name, filename) {
 	this.pending_views = false;
 	this.binary = new Binary(this, this.directory + '/' + this.name + '-binary/');
 	this.counter = new Counter(this);
-	this.iscache = false;
 	this.inmemory = {};
 	this.inmemorylastusage;
 	this.metadata;
