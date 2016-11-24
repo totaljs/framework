@@ -2315,7 +2315,7 @@ Binary.prototype.check = function() {
 	return self;
 };
 
-Binary.prototype.listing = function(callback) {
+Binary.prototype.all = function(callback) {
 	var self = this;
 
 	self.check();
