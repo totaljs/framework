@@ -1514,7 +1514,7 @@ SchemaBuilderEntity.prototype.transform = function(name, model, helper, callback
 	var trans = self.transforms ? self.transforms[name] : undefined;
 
 	if (!trans) {
-		callback(new ErrorBuilder().push('', 'Transform not found.'));
+		callback(new ErrorBuilder().push('', 'Transform "{0}" not found.'.format(name)));
 		return self;
 	}
 
@@ -1650,7 +1650,7 @@ SchemaBuilderEntity.prototype.workflow = function(name, model, helper, callback,
 
 	var workflow = self.workflows ? self.workflows[name] : undefined;
 	if (!workflow) {
-		callback(new ErrorBuilder().push('', 'Workflow not found.'));
+		callback(new ErrorBuilder().push('', 'Workflow "{0}" not found.'.format(name)));
 		return self;
 	}
 
@@ -1889,7 +1889,7 @@ SchemaBuilderEntity.prototype.operation = function(name, model, helper, callback
 	var operation = self.operations ? self.operations[name] : undefined;
 
 	if (!operation) {
-		callback(new ErrorBuilder().push('', 'Operation not found.'));
+		callback(new ErrorBuilder().push('', 'Operation "{0}" not found.'.format(name)));
 		return self;
 	}
 
