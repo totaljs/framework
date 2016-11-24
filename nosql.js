@@ -28,6 +28,7 @@
 
 const Fs = require('fs');
 const Path = require('path');
+const Events = require('events');
 
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
@@ -79,6 +80,13 @@ function Database(name, filename) {
 	this.$timeoutmeta;
 }
 
+Database.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
+	constructor: {
+		value: Database,
+		enumberable: false
+	}
+});
+
 exports.load = function(name, filename) {
 	return new Database(name, filename);
 };
@@ -104,8 +112,10 @@ Database.prototype.meta = function(name, value) {
 Database.prototype.insert = function(doc) {
 	var self = this;
 	var builder = new DatabaseBuilder2();
-	self.pending_append.push({ doc: JSON.stringify(framework_builders.isSchema(doc) ? doc.$clean() : doc), builder: builder });
+	var json = framework_builders.isSchema(doc) ? doc.$clean() : doc;
+	self.pending_append.push({ doc: JSON.stringify(json), builder: builder });
 	self.next(1);
+	self.emit('insert', json);
 	return builder;
 };
 
@@ -189,6 +199,7 @@ Database.prototype.drop = function() {
 
 Database.prototype.free = function() {
 	var self = this;
+	self.removeAllListeners();
 	delete framework.databases[self.name];
 	return self;
 };
@@ -200,7 +211,7 @@ Database.prototype.release = function() {
 	return self;
 };
 
-Database.prototype.remove = function(filename) {
+Database.prototype.clear = Database.prototype.remove = function(filename) {
 	var self = this;
 	var builder = new DatabaseBuilder();
 	var backup = filename === undefined ? undefined : filename || self.filenameBackup;
@@ -529,6 +540,7 @@ Database.prototype.$update = function() {
 					}
 				} else
 					doc = typeof(item.doc) === 'function' ? item.doc(doc) : item.doc;
+				self.emit(item.keys ? 'modify' : 'update', doc);
 				item.count++;
 				change = true;
 			}
@@ -598,6 +610,8 @@ Database.prototype.$update_inmemory = function() {
 						}
 					} else
 						doc = typeof(item.doc) === 'function' ? item.doc(doc) : item.doc;
+
+					self.emit(item.keys ? 'modify' : 'update', doc);
 					item.count++;
 					change = true;
 				}
@@ -610,8 +624,10 @@ Database.prototype.$update_inmemory = function() {
 			var item = filter[i];
 			if (item.insert && !item.count)
 				self.insert(item.insert).$callback = item.builder.$callback;
-			else
+			else {
+				item.count && self.emit(item.keys ? 'modify' : 'update', item.doc);
 				item.builder.$callback && item.builder.$callback(errorhandling(null, item.builder, item.count), item.count);
+			}
 		}
 
 		setImmediate(function() {
@@ -1105,6 +1121,7 @@ Database.prototype.$remove = function() {
 				item.backup && item.backup.write(value);
 				item.count++;
 			}
+			self.emit('remove', json);
 			change = true;
 		} else
 			writer.write(value);
@@ -1169,6 +1186,7 @@ Database.prototype.$remove_inmemory = function() {
 					item.count++;
 				}
 				change = true;
+				self.emit('remove', json);
 			} else
 				arr.push(json);
 		}
@@ -1739,6 +1757,13 @@ function Counter(db) {
 	this.type = 0; // 1 === saving, 2 === reading
 }
 
+Counter.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
+	constructor: {
+		value: Counter,
+		enumberable: false
+	}
+});
+
 Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 
 	var self = this;
@@ -1759,6 +1784,7 @@ Counter.prototype.inc = Counter.prototype.hit = function(id, count) {
 	if (!self.timeout)
 		self.timeout = setTimeout(() => self.save(), self.TIMEOUT);
 
+	self.emit('hit', id, count || 1);
 	return self;
 };
 
@@ -1776,6 +1802,7 @@ Counter.prototype.remove = function(id) {
 	if (!self.timeout)
 		self.timeout = setTimeout(() => self.save(), self.TIMEOUT);
 
+	self.emit('remove', id, count || 1);
 	return self;
 };
 
@@ -2129,6 +2156,7 @@ Counter.prototype.clear = function(callback) {
 
 	Fs.unlink(self.db.filename + '-counter', function() {
 		self.type = 0;
+		self.emit('clear');
 		callback && callback();
 	});
 
@@ -2140,6 +2168,13 @@ function Binary(db, directory) {
 	this.directory = directory;
 	this.exists = false;
 }
+
+Binary.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
+	constructor: {
+		value: Binary,
+		enumberable: false
+	}
+});
 
 Binary.prototype.insert = function(name, buffer, callback) {
 
@@ -2202,6 +2237,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	stream.end(buffer);
 	CLEANUP(stream);
 	callback && callback(null, id, h);
+	self.emit('insert', id, h);
 	return id;
 };
 
@@ -2225,6 +2261,7 @@ Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 	stream.pipe(writer);
 	CLEANUP(writer);
 	callback && callback(null, id, h);
+	self.emit('insert', id, h);
 	return id;
 };
 
@@ -2286,6 +2323,7 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 	stream.end(buffer);
 	CLEANUP(stream);
 	callback && callback(null, id, h);
+	self.emit('insert', id, h);
 	return id;
 };
 
@@ -2308,7 +2346,7 @@ Binary.prototype.read = function(id, callback) {
 		callback(null, stream, JSON.parse(json));
 	});
 
-	return self.db;
+	return self;
 };
 
 Binary.prototype.remove = function(id, callback) {
@@ -2323,7 +2361,8 @@ Binary.prototype.remove = function(id, callback) {
 
 	var filename = framework_utils.join(self.directory, key + EXTENSION_BINARY);
 	Fs.unlink(filename, (err) => callback && callback(null, err ? false : true));
-	return self.db;
+	self.emit('remove', id, name, type);
+	return self;
 };
 
 Binary.prototype.check = function() {
@@ -2337,6 +2376,29 @@ Binary.prototype.check = function() {
 	try {
 		Fs.mkdirSync(self.directory);
 	} catch (err) {};
+
+	return self;
+};
+
+Binary.prototype.clear = function(callback) {
+	var self = this;
+
+	Fs.readdir(self.directory, function(err, response) {
+
+		if (err)
+			return callback(err);
+
+		var pending = [];
+		var key = self.db.name + '#';
+		var l = key.length;
+		var target = framework_utils.join(self.directory);
+
+		for (var i = 0, length = response.length; i < length; i++)
+			response[i].substring(0, l) === key && pending.push(target + '/' + response[i]);
+
+		self.emit('clear');
+		framework.unlink(pending, callback);
+	});
 
 	return self;
 };
@@ -2378,7 +2440,7 @@ Binary.prototype.all = function(callback) {
 		}, () => callback(null, output), 2);
 	});
 
-	return self.db;
+	return self;
 };
 
 function Backuper(filename) {
