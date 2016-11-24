@@ -1802,7 +1802,7 @@ Counter.prototype.remove = function(id) {
 	if (!self.timeout)
 		self.timeout = setTimeout(() => self.save(), self.TIMEOUT);
 
-	self.emit('remove', id, count || 1);
+	self.emit('remove', id);
 	return self;
 };
 
@@ -2361,7 +2361,7 @@ Binary.prototype.remove = function(id, callback) {
 
 	var filename = framework_utils.join(self.directory, key + EXTENSION_BINARY);
 	Fs.unlink(filename, (err) => callback && callback(null, err ? false : true));
-	self.emit('remove', id, name, type);
+	self.emit('remove', id);
 	return self;
 };
 
@@ -2396,7 +2396,7 @@ Binary.prototype.clear = function(callback) {
 		for (var i = 0, length = response.length; i < length; i++)
 			response[i].substring(0, l) === key && pending.push(target + '/' + response[i]);
 
-		self.emit('clear');
+		self.emit('clear', pending.length);
 		framework.unlink(pending, callback);
 	});
 
