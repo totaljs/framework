@@ -1119,7 +1119,7 @@ SchemaBuilderEntity.prototype.default = function() {
 				break;
 			// date
 			case 5:
-				item[property] = type.isArray ? [] : new Date();
+				item[property] = type.isArray ? [] : F.datetime;
 				break;
 			// schema
 			case 7:
