@@ -2680,6 +2680,7 @@ function compressHTML(html, minify, isChunk) {
 	var cache = {};
 	var indexer = 0;
 	var length = tags.length;
+	var chars = 65;
 
 	for (var i = 0; i < length; i++) {
 		var o = tags[i];
@@ -2701,7 +2702,10 @@ function compressHTML(html, minify, isChunk) {
 					break;
 			}
 
-			var key = id + (indexer++);
+			var key = id + (indexer++) + String.fromCharCode(chars++);
+			if (chars > 90)
+				chars = 65;
+
 			var value = html.substring(beg, end + len);
 
 			if (!i) {
