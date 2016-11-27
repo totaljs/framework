@@ -483,7 +483,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2300;
-	this.version_header = '2.3.0-12';
+	this.version_header = '2.3.0-13';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -619,7 +619,6 @@ function Framework() {
 	this.controllers = {};
 	this.dependencies = {};
 	this.isomorphic = {};
-	this.I = this.isomorphic;
 	this.tests = [];
 	this.errors = [];
 	this.problems = [];
@@ -6091,7 +6090,7 @@ Framework.prototype.load = function(debug, types, pwd) {
 
 	global.DEBUG = debug;
 	global.RELEASE = !debug;
-	global.isomorphic = self.isomorphic;
+	global.I = global.isomorphic = self.isomorphic;
 
 	self.$startup(function() {
 
@@ -14669,7 +14668,6 @@ http.IncomingMessage.prototype.hostname = function(path) {
 
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
-global.I=framework.I;
 global.Controller = Controller;
 
 process.on('uncaughtException', function(e) {
@@ -14840,9 +14838,7 @@ function prepare_viewname(value) {
 function existsSync(filename, file) {
 	try {
 		var val = Fs.statSync(filename);
-		if (val)
-			return file ? val.isFile() : true;
-		return false;
+		return val ? (file ? val.isFile() : true) : false;
 	} catch (e) {
 		return false;
 	}
