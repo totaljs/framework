@@ -619,6 +619,7 @@ function Framework() {
 	this.controllers = {};
 	this.dependencies = {};
 	this.isomorphic = {};
+	this.I = this.isomorphic;
 	this.tests = [];
 	this.errors = [];
 	this.problems = [];
@@ -14668,6 +14669,7 @@ http.IncomingMessage.prototype.hostname = function(path) {
 
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
+global.I=framework.I;
 global.Controller = Controller;
 
 process.on('uncaughtException', function(e) {
@@ -14822,7 +14824,7 @@ function prepare_isomorphic(name) {
 	else
 		content = '';
 
-	return 'if(window["isomorphic"]===undefined)window.isomorphic={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + content + ';return exports;})(null,null,null,null,null,true,false)';
+	return 'if(window["isomorphic"]===undefined)window.isomorphic=window.I={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + content + ';return exports;})(null,null,null,null,null,true,false)';
 }
 
 function isGZIP(req) {
