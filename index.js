@@ -759,7 +759,6 @@ Framework.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
 	}
 });
 
-
 /**
  * Internal function
  * @return {String} Returns current (dependency type and name) owner.
