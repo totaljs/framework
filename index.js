@@ -2949,10 +2949,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				if (err) {
 					self.error(err, 'framework.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
 					callback && callback(err);
-					return;
-				}
-
-				self.install(type, name, data, options, callback, declaration);
+				} else
+					self.install(type, name, data, options, callback, declaration);
 
 			});
 			return self;
@@ -11389,12 +11387,10 @@ Controller.prototype.$input = function(model, type, name, attr) {
 };
 
 Controller.prototype._preparehostname = function(value) {
-	if(!value)
+	if (!value)
 		return value;
 	var tmp = value.substring(0, 5);
-	if (tmp !== 'http:' && tmp !== 'https' && (tmp[0] !== '/' || tmp[1] !== '/'))
-		return this.host(value);
-	return value;
+	return tmp !== 'http:' && tmp !== 'https' && (tmp[0] !== '/' || tmp[1] !== '/') ? this.host(value) : value;
 };
 
 Controller.prototype.head = function() {
@@ -13114,24 +13110,22 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 			if (id instanceof Array) {
 				if (!websocket_valid_array(_id, id))
 					continue;
-			} else if(id instanceof Function) {
+			} else if (id instanceof Function) {
 				if (!websocket_valid_fn(_id, conn, id))
 					continue;
-			} else {
-				throw new Error('Unknown value in "id" argument!')	
-			}
+			} else
+				throw new Error('Invalid "id" argument.');
 		}
 
 		if (blacklist) {
 			if (blacklist instanceof Array) {
 				if (websocket_valid_array(_id, blacklist))
 					continue;
-			} else if(blacklist instanceof Function) {
+			} else if (blacklist instanceof Function) {
 				if (websocket_valid_fn(_id, conn, blacklist))
 					continue;
-			} else {
-				throw new Error('Unknown value in "blacklist" argument!')	
-			}
+			} else
+				throw new Error('Invalid "blacklist" argument.');
 		}
 
 		if (data === undefined) {
@@ -13154,11 +13148,7 @@ function websocket_valid_array(id, arr) {
 }
 
 function websocket_valid_fn(id, client, fn) {
-	if (!fn)
-		return false;
-	if (fn(id, client))
-		return true;
-	return false;
+	return fn && fn(id, client) ? true : false;
 }
 
 /**
