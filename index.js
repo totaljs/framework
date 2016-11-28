@@ -13102,8 +13102,6 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 	if (!keys || !keys.length)
 		return self;
 
-	var isA = id instanceof Array;
-	var isB = blacklist instanceof Array;
 	var data;
 	var raw = false;
 
@@ -13113,22 +13111,26 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 		var conn = self.connections[_id];
 
 		if (id) {
-			if (isA) {
+			if (id instanceof Array) {
 				if (!websocket_valid_array(_id, id))
 					continue;
-			} else {
+			} else if(id instanceof Function) {
 				if (!websocket_valid_fn(_id, conn, id))
 					continue;
+			} else {
+				throw new Error('Unknown value in "id" argument!')	
 			}
 		}
 
 		if (blacklist) {
-			if (isB) {
+			if (blacklist instanceof Array) {
 				if (websocket_valid_array(_id, blacklist))
 					continue;
-			} else {
+			} else if(blacklist instanceof Function) {
 				if (websocket_valid_fn(_id, conn, blacklist))
 					continue;
+			} else {
+				throw new Error('Unknown value in "blacklist" argument!')	
 			}
 		}
 
@@ -13152,6 +13154,8 @@ function websocket_valid_array(id, arr) {
 }
 
 function websocket_valid_fn(id, client, fn) {
+	if (!fn)
+		return false;
 	if (fn(id, client))
 		return true;
 	return false;
