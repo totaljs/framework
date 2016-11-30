@@ -3108,17 +3108,17 @@ String.prototype.parseFloat = function(def) {
 };
 
 String.prototype.capitalize = function() {
-	var builder = [];
+	var builder = '';
 	var c;
 	for (var i = 0, length = this.length; i < length; i++) {
 		var c = this[i - 1];
-		if (!c || c === ' ' || c === '\t' || c === '\n')
+		if (!c || (c === ' ' || c === '\t' || c === '\n'))
 			c = this[i].toUpperCase();
 		else
 			c = this[i];
-		builder.push(c);
+		builder += c;
 	}
-	return builder.join('');
+	return builder;
 };
 
 String.prototype.toUnicode = function() {
@@ -4403,13 +4403,10 @@ Array.prototype.limit = function(max, fn, callback, index) {
 	}
 
 	fn(current, function() {
-
-		if (length < self.length) {
+		if (length < self.length)
 			self.limit(max, fn, callback, length);
-			return;
-		}
-
-		callback && callback();
+		else
+			callback && callback();
 	}, index, index + max);
 
 	return self;
