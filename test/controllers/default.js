@@ -594,6 +594,10 @@ function viewViews() {
 	assert.ok(output.contains('<div>NESTED</div>'), name + 'if - nested');
 	assert.ok(output.contains('---<div>Hello World!</div><div>Price: 12</div>---'), name + '- "/" view path problem');
 
+	F.script('lowercase', 'peter', function(err, val) {
+		assert.ok(val ==='Peter', 'SCRIPT: lowercase');
+	});
+
 	self.json({
 		r: true
 	});
