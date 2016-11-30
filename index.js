@@ -516,6 +516,7 @@ function Framework() {
 		'directory-isomorphic': '/isomorphic/',
 		'directory-configs': '/configs/',
 		'directory-services': '/services/',
+		'directory-scripts': '/scripts/',
 		'directory-themes': '/themes/',
 
 		// all HTTP static request are routed to directory-public
@@ -581,6 +582,7 @@ function Framework() {
 	this.connections = {};
 	this.functions = {};
 	this.themes = {};
+	this.scripts = {};
 	this.versions = null;
 	this.workflows = {};
 	this.schedules = [];
@@ -870,6 +872,26 @@ Framework.prototype._routesSort = function(type) {
 	});
 
 	return self;
+};
+
+Framework.prototype.script = function(name, value, type, callback) {
+	var self = this;
+	var fn = self.scripts[name];
+
+	if (typeof(type) === 'function') {
+		callback = type;
+		type = undefined;
+	}
+
+	if (fn === undefined)
+		return callback(new Error('Script "{0}" not found.'.format(name)));
+
+	fn.call(EMPTYOBJECT, function(value) {
+		if (value instanceof Error)
+			callback(value);
+		else
+			callback(null, value);
+	}, value, type, F.datetime);
 };
 
 /**
@@ -2815,6 +2837,13 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		});
 	}
 
+	if (!types || types.indexOf('scripts') !== -1) {
+		dir = framework_utils.combine(targetdirectory, self.config['directory-scripts']);
+		arr = [];
+		listing(dir, 0, arr, '.js');
+		arr.forEach((item) => self.install('script', item.name, Fs.readFileSync(item.filename).toString(ENCODING), undefined, undefined, undefined, true));
+	}
+
 	if (!types || types.indexOf('definitions') !== -1) {
 		dir = framework_utils.combine(targetdirectory, self.config['directory-definitions']);
 		arr = [];
@@ -2917,6 +2946,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		name = '';
 	}
 
+	if (typeof(options) === 'function') {
+		callback = options;
+		options = undefined;
+	}
+
 	// Check if declaration is a valid URL address
 	if (type !== 'eval' && typeof(declaration) === 'string') {
 
@@ -2958,7 +2992,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 			if (declaration[0] === '~')
 				declaration = declaration.substring(1);
-			if (type !== 'config' && type !== 'resource' && type !== 'package' && !REG_SCRIPTCONTENT.test(declaration)) {
+			if (type !== 'config' && type !== 'resource' && type !== 'script' && type !== 'package' && !REG_SCRIPTCONTENT.test(declaration)) {
 				if (!existsSync(declaration))
 					throw new Error('The ' + type + ': ' + declaration + ' doesn\'t exist.');
 				useRequired = true;
@@ -3004,6 +3038,23 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		}, 500);
 
 		callback && callback(null);
+		return self;
+	}
+
+	if (type === 'script') {
+
+		try {
+			self.scripts[name] = new Function('next', 'value', 'type', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I;try{' + declaration + '}catch(e){next(e)}');
+		} catch (e) {}
+
+		if (self.scripts[name]) {
+			setTimeout(function() {
+				self.emit(type + '#' + name);
+				self.emit('install', type, name);
+			}, 500);
+			callback && callback(null);
+		}
+
 		return self;
 	}
 
@@ -3516,6 +3567,7 @@ Framework.prototype.$restart = function() {
 		self.connections = {};
 		self.functions = {};
 		self.themes = {};
+		self.scripts = {};
 		self.versions = null;
 		self.schedules = [];
 		self.isLoaded = false;
@@ -3705,6 +3757,13 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 
 	if (type === 'schema') {
 		framework_builders.remove(name);
+		self.emit('uninstall', type, name);
+		return self;
+	}
+
+	if (type === 'script') {
+		self.scripts[name];
+		delete self.scripts[name];
 		self.emit('uninstall', type, name);
 		return self;
 	}

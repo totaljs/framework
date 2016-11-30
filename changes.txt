@@ -32,6 +32,9 @@
 - added: a new alias `NOCOUNTER(dbName)` witch it returns `NOSQL(dbName).counter` (a counter instance)
 - added: `F.kill(signal)` for killing an instance of the framework
 - added: `I` alias for `isomorphic code on server-side and client-side together by hhhaker6@gmail.com <https://github.com/Creeplays>
+- added: secure `scripts`
+- added: new directory `/scripts`
+- added: `F.script(name, value, [type], callback(err, value))`
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`
@@ -43,6 +46,7 @@
 - updated: `nosql.update(docToUpdate, [docToInsert])` when the document for updating doesn't exist then database performs insert
 - updated: `nosql.modify(docToUpdate, [docToInsert])` when the document for updating doesn't exist then database performs insert
 - updated: `nosql.binary` stores a creation date as meta info
+- updated: `F.install()` supports a new type `script`, e.g. `INSTALL('script', 'name', 'next(value * 5)');`
 
 - fixed: Image.stream()
 - fixed: global variable `Image` (in a single library)
@@ -50,6 +54,7 @@
 - fixed: custom paths in `F.model()` and `F.source()`
 - fixed: NoSQL removing documents (problem with different filters in one queue)
 - fixed: fix view compiler error message.
+- fixed: `String.prototype.capitalize`
 
 - removed: `nosql` doesn't support cache (`DatabaseBuilder.cache` is obsolete)
 - removed: `F.refresh()` the method was useless
