@@ -317,6 +317,10 @@ global.CREATE = function(group, name) {
 	return framework_builders.getschema(group, name).default();
 };
 
+global.SCRIPT = function(body, value, callback) {
+	return F.script(body, value, callback);
+};
+
 global.UID = function() {
 	var plus = UIDGENERATOR.index % 2 ? 1 : 0;
 	return UIDGENERATOR.date + (UIDGENERATOR.index++).padLeft(4, '0') + UIDGENERATOR.instance + plus;
