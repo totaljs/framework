@@ -10850,7 +10850,7 @@ Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
 	return item ? item.name.format(a, b, c, d, e, f) : '';
 };
 
-Controller.prototype.sitemap_change = function(name, type, value) {
+Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
 
 	var self = this;
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
@@ -10864,7 +10864,7 @@ Controller.prototype.sitemap_change = function(name, type, value) {
 		self.repository[REPOSITORY_SITEMAP] = sitemap;
 	}
 
-	var isFn = typeof(value) === 'function';
+	var isFn = typeof(a) === 'function';
 
 	for (var i = 0, length = sitemap.length; i < length; i++) {
 
@@ -10875,13 +10875,13 @@ Controller.prototype.sitemap_change = function(name, type, value) {
 		var tmp = item[type];
 
 		if (isFn)
-			item[type] = value(item[type]);
+			item[type] = a(item[type]);
 		else if (type === 'name')
-			item[type] = item.formatName ? item[type].format(value) : value;
+			item[type] = item.formatName ? item[type].format(a, b, c, d, e, f) : a;
 		else if (type === 'url')
-			item[type] = item.formatUrl ? item[type].format(value) : value;
+			item[type] = item.formatUrl ? item[type].format(a, b, c, d, e, f) : a;
 		else
-			item[type] = value;
+			item[type] = a;
 
 		if (type === 'name' && self.repository[REPOSITORY_META_TITLE] === tmp)
 			self.repository[REPOSITORY_META_TITLE] = item[type];
