@@ -46,7 +46,6 @@
 - updated: `nosql.update(docToUpdate, [docToInsert])` when the document for updating doesn't exist then database performs insert
 - updated: `nosql.modify(docToUpdate, [docToInsert])` when the document for updating doesn't exist then database performs insert
 - updated: `nosql.binary` stores a creation date as meta info
-- updated: `F.install()` supports a new type `script`, e.g. `INSTALL('script', 'name', 'next(value * 5)');`
 
 - fixed: Image.stream()
 - fixed: global variable `Image` (in a single library)
