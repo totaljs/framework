@@ -4339,6 +4339,11 @@ Array.prototype.async = function(thread, callback) {
 };
 
 Array.prototype.randomize = function() {
+	OBSOLETE('Array.randomize()', 'Use Array.random().');
+	return this.random();
+};
+
+Array.prototype.random = function() {
 
 	var self = this;
 	var random = (Math.floor(Math.random() * 100000000) * 10).toString();

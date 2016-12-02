@@ -791,7 +791,7 @@ Database.prototype.$reader2 = function(filename, items, callback) {
 				if (builder.$sort.name)
 					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
 				else if (builder.$sort === EMPTYOBJECT)
-					item.response.randomize();
+					item.response.random();
 				else
 					item.response.sort(builder.$sort);
 
@@ -910,7 +910,7 @@ Database.prototype.$reader2_inmemory = function(name, items, callback) {
 				if (builder.$sort.name)
 					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
 				else if (builder.$sort === EMPTYOBJECT)
-					item.response.randomize();
+					item.response.random();
 				else
 					item.response.sort(builder.$sort);
 
@@ -991,7 +991,7 @@ Database.prototype.$views = function() {
 				if (builder.$sort.name)
 					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
 				else if (builder.$sort === EMPTYOBJECT)
-					item.response.randomize();
+					item.response.random();
 				else
 					item.response.sort(builder.$sort);
 				if (builder.$skip && builder.$take)
@@ -1073,7 +1073,7 @@ Database.prototype.$views_inmemory = function() {
 				if (builder.$sort.name)
 					item.response.quicksort(builder.$sort.name, builder.$sort.asc);
 				else if (builder.$sort === EMPTYOBJECT)
-					item.response.randomize();
+					item.response.random();
 				else
 					item.response.sort(builder.$sort);
 				if (builder.$skip && builder.$take)
@@ -1687,7 +1687,7 @@ DatabaseBuilder.prototype.callback = function(fn, emptyerror) {
 	return this;
 };
 
-DatabaseBuilder.prototype.randomize = function() {
+DatabaseBuilder.prototype.random = function() {
 	this.$sort = EMPTYOBJECT;
 	return this;
 };

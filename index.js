@@ -451,7 +451,8 @@ global.TRY = function(fn, err) {
 
 global.OBSOLETE = function(name, message) {
 	console.log(':: OBSOLETE / IMPORTANT ---> "' + name + '"', message);
-	framework.stats.other.obsolete++;
+	if (global.framework)
+		framework.stats.other.obsolete++;
 };
 
 global.DEBUG = false;
@@ -465,7 +466,7 @@ var directory = framework_utils.$normalize(require.main ? Path.dirname(require.m
 // F._service() changes the values below:
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 
-const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').randomize().join('').substring(0, 3), index: 1 };
+const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').random().join('').substring(0, 3), index: 1 };
 const controller_error_status = function(controller, status, problem) {
 
 	if (status !== 500 && problem)
