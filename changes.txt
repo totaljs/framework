@@ -19,6 +19,7 @@
 - added: NoSQL `nosql.scalar(type, dbName, [view])` performs scalar operation by type: `sum`, `min`, `max`, `avg`, `count` or `group`
 - added: NoSQL `nosql.binary.all(callback)` browses all stored files
 - added: NoSQL `nosql.binary.clear(callback)`removes all stored files
+- added: NoSQL `DatabaseBuilder.randomize()`
 - added: NoSQL `DatabaseBuilder.join(field, dbName, [view])` returns `DatabaseBuilder` with updated `.where(field_JoinedDB, field_currentdb)` method (it supports `.fields()` too)
 - added: NoSQL `DatabaseBuilder.join()` supports scalar operation too, e.g. `nosql.join(...).scalar('count')`
 - added: NoSQL `DatabaseBuilder.scalar(type, [field])` - types: `sum`, `min`, `max`, `avg`, `count` or `group`
