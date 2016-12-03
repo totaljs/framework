@@ -4993,15 +4993,12 @@ exports.async = function(fn, isApply) {
 					return;
 				}
 
-				if (type === 'function')
-					setImmediate(() => complete(e));
-
+				type === 'function' && setImmediate(() => complete(e));
 				return;
 			}
 
 			if (g.done) {
-				if (typeof(complete) === 'function')
-					complete(null, g.value);
+				typeof(complete) === 'function' && complete(null, g.value);
 				return;
 			}
 
@@ -5038,17 +5035,11 @@ exports.getMessageLength = function(data, isLE) {
 
 	var length = data[1] & 0x7f;
 
-	if (length === 126) {
-		if (data.length < 4)
-			return -1;
-		return converBytesToInt64([data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 0, isLE);
-	}
+	if (length === 126)
+		return data.length < 4 ? -1 : converBytesToInt64([data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 0, isLE);
 
-	if (length === 127) {
-		if (data.Length < 10)
-			return -1;
-		return converBytesToInt64([data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]], 0, isLE);
-	}
+	if (length === 127)
+		return data.Length < 10 ? -1 : converBytesToInt64([data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]], 0, isLE);
 
 	return length;
 };
@@ -5056,9 +5047,7 @@ exports.getMessageLength = function(data, isLE) {
 // MIT
 // Written by Jozef Gula
 function converBytesToInt64(data, startIndex, isLE) {
-	if (isLE)
-		return (data[startIndex] | (data[startIndex + 1] << 0x08) | (data[startIndex + 2] << 0x10) | (data[startIndex + 3] << 0x18) | (data[startIndex + 4] << 0x20) | (data[startIndex + 5] << 0x28) | (data[startIndex + 6] << 0x30) | (data[startIndex + 7] << 0x38));
-	return ((data[startIndex + 7] << 0x20) | (data[startIndex + 6] << 0x28) | (data[startIndex + 5] << 0x30) | (data[startIndex + 4] << 0x38) | (data[startIndex + 3]) | (data[startIndex + 2] << 0x08) | (data[startIndex + 1] << 0x10) | (data[startIndex] << 0x18));
+	return isLE ? (data[startIndex] | (data[startIndex + 1] << 0x08) | (data[startIndex + 2] << 0x10) | (data[startIndex + 3] << 0x18) | (data[startIndex + 4] << 0x20) | (data[startIndex + 5] << 0x28) | (data[startIndex + 6] << 0x30) | (data[startIndex + 7] << 0x38)) : ((data[startIndex + 7] << 0x20) | (data[startIndex + 6] << 0x28) | (data[startIndex + 5] << 0x30) | (data[startIndex + 4] << 0x38) | (data[startIndex + 3]) | (data[startIndex + 2] << 0x08) | (data[startIndex + 1] << 0x10) | (data[startIndex] << 0x18));
 }
 
 exports.queuecache = {};
@@ -5309,22 +5298,16 @@ function shell_sort_bound(ary, start, end, comparer) {
 }
 
 function comparer_asc(index, eq) {
-	if (eq)
-		return index === 1 || index === 0 ? true : false;
-	return index === 1;
+	return eq ? (index === 1 || index === 0 ? true : false) : index === 1;
 }
 
 function comparer_desc(index, eq) {
-	if (eq)
-		return index === -1 || index === 0 ? true : false;
-	return index === -1;
+	return eq ? (index === -1 || index === 0 ? true : false) : index === -1;
 }
 
 function quicksort(arr, comparer, desc) {
 	return fast_quicksort(arr, function(a, b, eq) {
-		if (desc)
-			return comparer_desc(comparer(a, b), eq);
-		return comparer_asc(comparer(a, b), eq);
+		return desc ? comparer_desc(comparer(a, b), eq) : comparer_asc(comparer(a, b), eq);
 	});
 }
 
@@ -5392,8 +5375,9 @@ Chunker.prototype.read = function(index, callback) {
 
 	fs.readFile(self.filename + index + '.json', function(err, data) {
 		if (err)
-			return callback(null, EMPTYARRAY);
-		callback(null, data.toString('utf8').parseJSON());
+			callback(null, EMPTYARRAY);
+		else
+			callback(null, data.toString('utf8').parseJSON());
 	});
 	return self;
 };
