@@ -35,6 +35,7 @@
 - added: `I` alias for `isomorphic code on server-side and client-side together by hhhaker6@gmail.com <https://github.com/Creeplays>
 - added: `F.script(body, value, callback(err, value))` evaluates script securly in safe scope (more in documentation)
 - added: new alias `SCRIPT()` for `F.script()`
+- added: `HttpFile.rename(filename, [callback(err)])` moves file to another directory
 
 - updated: `F.on('exit', function(signal) {})` added a signal code
 - updated: SchemaBuilderEntity contains new argument `controller`, e.g. `.setSave(function(error, model, options, callback, controller) { ..`

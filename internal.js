@@ -746,7 +746,22 @@ function HttpFile() {
 	this.length = 0;
 	this.width = 0;
 	this.height = 0;
+	this.rem = true;
 }
+
+HttpFile.prototype.rename = function(filename, callback) {
+	var self = this;
+	fs.rename(self.path, filename, function(err) {
+
+		if (!err) {
+			self.path = filename;
+			self.rem = false;
+		}
+
+		callback && callback(err);
+	});
+	return self;
+};
 
 HttpFile.prototype.copy = function(filename, callback) {
 
@@ -763,6 +778,13 @@ HttpFile.prototype.copy = function(filename, callback) {
 	reader.on('close', callback);
 	reader.pipe(writer);
 	return self;
+};
+
+HttpFile.prototype.$$rename = function(filename) {
+	var self = this;
+	return function(callback) {
+		return self.rename(filename, callback);
+	};
 };
 
 HttpFile.prototype.$$copy = function(filename) {

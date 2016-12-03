@@ -488,7 +488,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2300;
-	this.version_header = '2.3.0-14';
+	this.version_header = '2.3.0-15';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -888,20 +888,17 @@ Framework.prototype.script = function(body, value, callback) {
 		return this;
 	}
 
-	if (fn)
-		fn.call(EMPTYOBJECT, function(value) {
+	fn.call(EMPTYOBJECT, function(value) {
 
-			if (!callback)
-				return;
+		if (!callback)
+			return;
 
-			if (value instanceof Error)
-				callback(value);
-			else
-				callback(null, value);
+		if (value instanceof Error)
+			callback(value);
+		else
+			callback(null, value);
 
-		}, value, this.datetime);
-	else
-		callback(new Error(''));
+	}, value, this.datetime);
 
 	return this;
 };
@@ -14675,7 +14672,7 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
 
 	var arr = [];
 	for (var i = 0; i < length; i++)
-		arr.push(files[i].path);
+		files[i].rem && arr.push(files[i].path);
 
 	framework.unlink(arr);
 	self.files = null;
