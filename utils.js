@@ -1716,12 +1716,14 @@ function validate_builder_default(name, value, entity) {
 
 	var type = typeof(value);
 
+	// Enum + KeyValue (8+9)
+	if (entity.type > 7)
+		return value !== undefined;
+
 	switch (entity.subtype) {
 		case 'uid':
 			var number = parseInt(value.substring(10, value.length - 4), 10);
-			if (isNaN(number))
-				return false;
-			return value[value.length - 1] === (number % 2 ? '1' : '0');
+			return isNaN(number) ? false : value[value.length - 1] === (number % 2 ? '1' : '0');
 		case 'zip':
 			return value.isZIP();
 		case 'email':
@@ -1737,7 +1739,7 @@ function validate_builder_default(name, value, entity) {
 	if (type === 'number')
 		return value > 0;
 
-	if (type === 'string')
+	if (type === 'string' || value instanceof Array)
 		return value.length > 0;
 
 	if (type === 'boolean')
@@ -1745,9 +1747,6 @@ function validate_builder_default(name, value, entity) {
 
 	if (value == null)
 		return false;
-
-	if (value instanceof Array)
-		return value.length > 0;
 
 	if (value instanceof Date)
 		return value.toString()[0] !== 'I'; // Invalid Date
@@ -4237,10 +4236,6 @@ Array.prototype.remove = function(cb, value) {
 		self[i] !== cb && arr.push(self[i]);
 	}
 	return arr;
-};
-
-Array.prototype.random = function() {
-	return this[exports.random(this.length - 1)];
 };
 
 Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thread) {

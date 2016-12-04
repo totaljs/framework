@@ -330,8 +330,14 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 		return result;
 	}
 
-	if (type === 'object')
+	if (type === 'object') {
+		if (value instanceof Array) {
+			result.type = 8; // enum
+			result.subtype = typeof(value[0]);
+		} else
+			result.type = 9; // keyvalue
 		return result;
+	}
 
 	if (value[0] === '[') {
 		value = value.substring(1, value.length - 1);
@@ -1135,6 +1141,11 @@ SchemaBuilderEntity.prototype.default = function() {
 						item[property] = tmp.default();
 				}
 				break;
+			// enum + keyvalue
+			case 8:
+			case 9:
+				item[property] = undefined;
+				break;
 		}
 	}
 
@@ -1321,6 +1332,20 @@ SchemaBuilderEntity.prototype.prepare = function(model, dependencies) {
 				// object
 				case 6:
 					item[property] = self.$onprepare(property, model[property], undefined, model);
+					break;
+
+				// enum
+				case 8:
+					tmp = self.$onprepare(property, model[property], undefined, model);
+					if (type.subtype === 'number' && typeof(tmp) === 'string')
+						tmp = tmp.parseFloat(null);
+					item[property] = tmp != null && type.raw.indexOf(tmp) !== -1 ? tmp : undefined;
+					break;
+
+				// keyvalue
+				case 9:
+					tmp = self.$onprepare(property, model[property], undefined, model);
+					item[property] = tmp != null ? type.raw[tmp] : undefined;
 					break;
 
 				// schema

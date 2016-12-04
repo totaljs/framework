@@ -2,6 +2,7 @@
 
 - added: support for `/workflows` file (more in documentation)
 - added: `ShcemaBuilderEntity.$exec(name, callback)` (more in documentation)
+- added: `SchemaBuilder` supports new types `enum` and `keyvalue`
 - added: `controller.$exec(name, [options], [callback])` (more in documentation)
 - added: a new argument `description` to each SchemaBuilder `set` + `add` method e.g. `.setSave()`, `.addWorkflow()`, etc..
 - added: `SchemaBuilder.meta` contains all registered handlers with their descriptions
