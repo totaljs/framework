@@ -77,9 +77,9 @@ $ npm install -g total.js
 | Supports String, Date, Number and Array prototypes |
 | Supports additional utilities (e.g. create request, XML parsing, etc.) |
 | Supports themes |
-| Supports scripting |
+| __NEW__ Supports scripting |
 | Possibility to rewrite existing functionality |
-| NoSQL embedded database |
+| NoSQL embedded database (__NEW: joins, scalar operations and in-memory mode__) |
 | __You can use framework as single library__ `total.js (320 kB)` |
 
 ## Contributors
