@@ -11,7 +11,7 @@ __Total.js framework__ is a server-side framework for Node.js written in `pure` 
 $ npm install -g total.js
 ```
 
-[![Support](https://www.totaljs.com/img/button-support.png?v=2)](https://www.totaljs.com/support/)
+[![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
 - [__NEW__: Total.js Dashboard](https://www.totaljs.com/dashboard/)
 - [__NEW__: Total.js BlogEngine](https://www.totaljs.com/blogengine/)
@@ -37,8 +37,6 @@ $ npm install -g total.js
 - [__Membership__](https://my.totaljs.com)
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
-
----
 
 ## Official support
 
@@ -84,13 +82,11 @@ $ npm install -g total.js
 | NoSQL embedded database |
 | __You can use framework as single library__ `total.js (320 kB)` |
 
----
-
 ## Contributors
 
 | Contributor | Type | E-mail |
 |-------------|------|--------|
-| [Peter Širka](https://github.com/JozefGula) | BDFL + contributor + support | <petersirka@gmail.com> |
+| [Peter Širka](https://github.com/JozefGula) | author + support | <petersirka@gmail.com> |
 | [Martin Smola](https://github.com/molda) | contributor + support | <smola.martin@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
@@ -123,6 +119,7 @@ Please support the framework on social networks.
 ## Contact
 
 Do you have any questions? Contact us <https://www.totaljs.com/contact/>
+<info@totaljs.com>
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: license.txt
