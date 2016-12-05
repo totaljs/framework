@@ -1,4 +1,4 @@
-======= 2.3.0 (BETA)
+======= 2.3.0
 
 - added: support for `/workflows` file (more in documentation)
 - added: `ShcemaBuilderEntity.$exec(name, callback)` (more in documentation)
@@ -54,7 +54,7 @@
 - fixed: JavaScript compressor (problem with Regular Expressions)
 - fixed: custom paths in `F.model()` and `F.source()`
 - fixed: NoSQL removing documents (problem with different filters in one queue)
-- fixed: fix view compiler error message.
+- fixed: fix view compiler error message
 - fixed: `String.prototype.capitalize`
 
 - removed: `nosql` doesn't support cache (`DatabaseBuilder.cache` is obsolete)
