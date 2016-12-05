@@ -38,17 +38,6 @@ $ npm install -g total.js
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
 
-## Social networks
-
-Please support the framework on social networks.
-
-- [Follow Total.js on Gitter](https://gitter.im/totaljs/framework)
-- [Follow Total.js on GitHub](https://github.com/totaljs/framework)
-- [Follow Total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
-- [Follow Total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
-- [Follow Total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
-- [Follow Total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
-
 ---
 
 ## Official support
@@ -56,11 +45,7 @@ Please support the framework on social networks.
 - [Support form](http://www.totaljs.com/support/)
 - Support e-mail: <support@totaljs.com>
 
-## Features
-
-[![Total.js trailer](https://www.totaljs.com/img/github-video.png)](https://vimeo.com/134131056)
-
-| Name |
+| Top features |
 |------|
 | [__Offline documentation__](http://docs.totaljs.com) |
 | __Backward compatibility__ |
@@ -123,6 +108,17 @@ Please support the framework on social networks.
 
 - [SQL Agent: A missing ORM for Node.js and Total.js](https://github.com/petersirka/node-sqlagent)
 - [PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
+
+## Social networks
+
+Please support the framework on social networks.
+
+- [Follow Total.js on Gitter](https://gitter.im/totaljs/framework)
+- [Follow Total.js on GitHub](https://github.com/totaljs/framework)
+- [Follow Total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
+- [Follow Total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
+- [Follow Total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
+- [Follow Total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
 
 ## Contact
 
