@@ -21,7 +21,7 @@
 
 /**
  * @module Framework
- * @version 2.2.0
+ * @version 2.3.0
  */
 
 'use strict';
@@ -230,7 +230,7 @@ if (!global.framework_mail)
 	global.framework_mail = require('./mail');
 
 if (!global.framework_image)
-	global.framework_image = global.Image = require('./image');
+	global.framework_image = require('./image');
 
 if (!global.framework_nosql)
 	global.framework_nosql = require('./nosql');
@@ -238,6 +238,10 @@ if (!global.framework_nosql)
 global.Builders = framework_builders;
 var utils = global.Utils = global.utils = global.U = framework_utils;
 global.Mail = framework_mail;
+
+global.WTF = function(message, name, uri) {
+	return framework.problem(message, name, uri);
+};
 
 global.INCLUDE = global.SOURCE = function(name, options) {
 	return framework.source(name, options);
@@ -249,6 +253,18 @@ global.MODULE = function(name) {
 
 global.NOSQL = function(name) {
 	return framework.nosql(name);
+};
+
+global.NOBIN = function(name) {
+	return framework.nosql(name).binary;
+};
+
+global.NOCOUNTER = function(name) {
+	return framework.nosql(name).counter;
+};
+
+global.NOMEM = global.NOSQLMEMORY = function(name, view) {
+	return global.framework_nosql.inmemory(name, view);
 };
 
 global.DB = global.DATABASE = function() {
@@ -293,12 +309,16 @@ global.MODEL = function(name) {
 	return framework.model(name);
 };
 
-global.GETSCHEMA = function(group, name) {
-	return framework_builders.getschema(group, name);
+global.GETSCHEMA = function(group, name, fn, timeout) {
+	return framework_builders.getschema(group, name, fn, timeout);
 };
 
 global.CREATE = function(group, name) {
 	return framework_builders.getschema(group, name).default();
+};
+
+global.SCRIPT = function(body, value, callback) {
+	return F.script(body, value, callback);
 };
 
 global.UID = function() {
@@ -431,7 +451,8 @@ global.TRY = function(fn, err) {
 
 global.OBSOLETE = function(name, message) {
 	console.log(':: OBSOLETE / IMPORTANT ---> "' + name + '"', message);
-	framework.stats.other.obsolete++;
+	if (global.framework)
+		framework.stats.other.obsolete++;
 };
 
 global.DEBUG = false;
@@ -444,8 +465,8 @@ var directory = framework_utils.$normalize(require.main ? Path.dirname(require.m
 
 // F._service() changes the values below:
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
-const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').randomize().join('').substring(0, 3), index: 1 };
 
+const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').random().join('').substring(0, 3), index: 1 };
 const controller_error_status = function(controller, status, problem) {
 
 	if (status !== 500 && problem)
@@ -466,8 +487,8 @@ const controller_error_status = function(controller, status, problem) {
 function Framework() {
 
 	this.id = null;
-	this.version = 2200;
-	this.version_header = '2.2.0';
+	this.version = 2300;
+	this.version_header = '2.3.0';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -566,6 +587,7 @@ function Framework() {
 	this.functions = {};
 	this.themes = {};
 	this.versions = null;
+	this.workflows = {};
 	this.schedules = [];
 
 	this.isDebug = true;
@@ -609,6 +631,14 @@ function Framework() {
 	this.server = null;
 	this.port = 0;
 	this.ip = '';
+
+	this.validators = {
+		email: new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'),
+		url: /^(http|https):\/\/(?:(?:(?:[\w\.\-\+!$&'\(\)*\+,;=]|%[0-9a-f]{2})+:)*(?:[\w\.\-\+%!$&'\(\)*\+,;=]|%[0-9a-f]{2})+@)?(?:(?:[a-z0-9\-\.]|%[0-9a-f]{2})+|(?:\[(?:[0-9a-f]{0,4}:)*(?:[0-9a-f]{0,4})\]))(?::[0-9]+)?(?:[\/|\?](?:[\w#!:\.\?\+=&@!$'~*,;\/\(\)\[\]\-]|%[0-9a-f]{2})*)?$/i,
+		phone: /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im,
+		zip: /^\d{5}(?:[-\s]\d{4})?$/,
+		uid: /^\d{14,}[a-z]{3}[01]{1}$/
+	};
 
 	this.workers = {};
 	this.databases = {};
@@ -734,7 +764,6 @@ Framework.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
 	}
 });
 
-
 /**
  * Internal function
  * @return {String} Returns current (dependency type and name) owner.
@@ -771,32 +800,6 @@ Framework.prototype.behaviour = function(url, flags) {
 
 Framework.prototype.isSuccess = function(obj) {
 	return obj === SUCCESSHELPER;
-};
-
-/**
- * Refersh framework internal informations
- * @param {Boolean} clear Clear temporary files, optional
- * @return {Framework}
- */
-Framework.prototype.refresh = function(clear) {
-	var self = this;
-
-	self.emit('clear', 'refresh');
-
-	self.resources = {};
-	self.databases = {};
-
-	self._configure();
-	self._configure_versions();
-	self._configure_sitemap();
-
-	self.temporary.path = {};
-	self.temporary.range = {};
-	self.temporary.views = {};
-	self.temporary.other = {};
-
-	self.emit('reconfigure');
-	return self;
 };
 
 /**
@@ -874,6 +877,32 @@ Framework.prototype._routesSort = function(type) {
 	return self;
 };
 
+Framework.prototype.script = function(body, value, callback) {
+
+	var fn;
+
+	try {
+		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;try{' + body + '}catch(e){next(e)}');
+	} catch(e) {
+		callback && callback(e);
+		return this;
+	}
+
+	fn.call(EMPTYOBJECT, function(value) {
+
+		if (!callback)
+			return;
+
+		if (value instanceof Error)
+			callback(value);
+		else
+			callback(null, value);
+
+	}, value, this.datetime);
+
+	return this;
+};
+
 /**
  * Get a database instance
  * @param {String} name Database name (optional)
@@ -904,7 +933,7 @@ Framework.prototype.nosql = function(name) {
  * @param {String} signal
  * @return {Framework}
  */
-Framework.prototype.stop = function(signal) {
+Framework.prototype.stop = Framework.prototype.kill = function(signal) {
 
 	var self = this;
 
@@ -913,7 +942,7 @@ Framework.prototype.stop = function(signal) {
 		TRY(() => worker && worker.kill && worker.kill(signal || 'SIGTERM'));
 	}
 
-	framework.emit('exit');
+	framework.emit('exit', signal);
 
 	if (!self.isWorker && typeof(process.send) === 'function')
 		TRY(() => process.send('stop'));
@@ -1351,48 +1380,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		flags = tmp;
 	}
 
-	if (type === 'string') {
-		viewname = funcExecute;
-		funcExecute = (function(name, sitemap, language) {
-			if (language && !this.language)
-				this.language = language;
-			var themeName = framework_utils.parseTheme(name);
-			if (themeName)
-				name = prepare_viewname(name);
-			return function() {
-				sitemap && this.sitemap(sitemap.id, language);
-				if (name[0] === '~')
-					this.themeName = '';
-				else if (themeName)
-					this.themeName = themeName;
-				this.view(name);
-			};
-		})(viewname, sitemap, language);
-	} else if (typeof(funcExecute) !== 'function') {
-
-		viewname = (sitemap && sitemap.url !== '/' ? sitemap.id : url) || '';
-
-		if (viewname.endsWith('/'))
-			viewname = viewname.substring(0, viewname.length - 1);
-
-		index = viewname.lastIndexOf('/');
-		if (index !== -1)
-			viewname = viewname.substring(index + 1);
-
-		if (!viewname || viewname === '/')
-			viewname = 'index';
-
-		funcExecute = (function(name, sitemap, language) {
-			return function() {
-				if (language && !this.language)
-					this.language = language;
-				sitemap && this.sitemap(sitemap.id, language);
-				name[0] === '~' && this.theme('');
-				this.view(name);
-			};
-		})(viewname, sitemap, language);
-	}
-
 	var priority = 0;
 	var subdomain = null;
 
@@ -1408,7 +1395,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	}
 
 	var isASTERIX = url.indexOf('*') !== -1;
-
 	if (isASTERIX) {
 		url = url.replace('*', '').replace('//', '/');
 		priority = priority - 100;
@@ -1418,7 +1404,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var isNOXHR = false;
 	var method = '';
 	var schema;
-	var isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
+	var workflow;
 	var isMOBILE = false;
 	var isJSON = false;
 	var isDELAY = false;
@@ -1431,6 +1417,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var options;
 	var corsflags = [];
 	var membertype = 0;
+	var isGENERATOR = false;
 
 	if (_flags) {
 		if (!flags)
@@ -1481,7 +1468,19 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 			}
 
 			if (first === '*') {
-				schema = flags[i].substring(1).replace(/\\/g, '/').split('/');
+
+				workflow = flags[i].trim().substring(1);
+				index = workflow.indexOf('-->');
+
+				if (index !== -1) {
+					schema = workflow.substring(0, index).trim();
+					workflow = workflow.substring(index + 3).trim();
+				} else {
+					schema = workflow;
+					workflow = null;
+				}
+				schema = schema.replace(/\\/g, '/').split('/');
+
 				if (schema.length === 1) {
 					schema[1] = schema[0];
 					schema[0] = 'default';
@@ -1489,9 +1488,10 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 				index = schema[1].indexOf('#');
 				if (index !== -1) {
-					schema[2] = schema[1].substring(index + 1);
-					schema[1] = schema[1].substring(0, index);
+					schema[2] = schema[1].substring(index + 1).trim();
+					schema[1] = schema[1].substring(0, index).trim();
 				}
+
 				continue;
 			}
 
@@ -1597,6 +1597,71 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		method = 'get';
 	}
 
+	if (type === 'string') {
+		viewname = funcExecute;
+		funcExecute = (function(name, sitemap, language) {
+			if (language && !this.language)
+				this.language = language;
+			var themeName = framework_utils.parseTheme(name);
+			if (themeName)
+				name = prepare_viewname(name);
+			return function() {
+				sitemap && this.sitemap(sitemap.id, language);
+				if (name[0] === '~')
+					this.themeName = '';
+				else if (themeName)
+					this.themeName = themeName;
+
+				if (!this.route.workflow)
+					return this.view(name);
+				var self = this;
+				this.$exec(this.route.workflow, this, function(err, response) {
+					if (err)
+						self.content(err);
+					else
+						self.view(name, response);
+				});
+			};
+		})(viewname, sitemap, language);
+	} else if (typeof(funcExecute) !== 'function') {
+
+		viewname = (sitemap && sitemap.url !== '/' ? sitemap.id : workflow ? '' : url) || '';
+
+		if (!workflow || (!viewname && !workflow)) {
+			if (viewname.endsWith('/'))
+				viewname = viewname.substring(0, viewname.length - 1);
+
+			index = viewname.lastIndexOf('/');
+			if (index !== -1)
+				viewname = viewname.substring(index + 1);
+
+			if (!viewname || viewname === '/')
+				viewname = 'index';
+
+			funcExecute = (function(name, sitemap, language) {
+				return function() {
+					if (language && !this.language)
+						this.language = language;
+					sitemap && this.sitemap(sitemap.id, language);
+					name[0] === '~' && this.theme('');
+					if (!this.route.workflow)
+						return this.view(name);
+					var self = this;
+					this.$exec(this.route.workflow, this, function(err, response) {
+						if (err)
+							self.content(err);
+						else
+							self.view(name, response);
+					});
+				};
+			})(viewname, sitemap, language);
+		} else if (workflow)
+			funcExecute = controller_json_workflow;
+	}
+
+	if (!isGENERATOR)
+		isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
+
 	var url2 = framework_internal.preparePath(url.trim());
 	var hash = url2.hash();
 	var routeURL = framework_internal.routeSplitCreate(url2);
@@ -1699,6 +1764,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		name: name,
 		priority: priority,
 		schema: schema,
+		workflow: workflow,
 		subdomain: subdomain,
 		controller: _controller ? _controller : 'unknown',
 		url: routeURL,
@@ -2446,15 +2512,6 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 	return self;
 };
 
-/**
- * Auto localize static files
- * @param {String} name Description
- * @param {String} url A relative url path (e.g. /templates/)
- * @param {String Array} middleware Optional
- * @param {Object} options Optional, middleware options
- * @param {Boolean} minify Minifies HTML code, default: false
- * @return {Framework}
- */
 Framework.prototype.localize = function(url, flags, minify) {
 
 	url = url.replace('*', '');
@@ -2501,10 +2558,11 @@ Framework.prototype.localize = function(url, flags, minify) {
 		var filename = self.onMapping(name, name, true, true);
 
 		Fs.readFile(filename, function(err, content) {
+
 			if (err)
 				return res.throw404();
 
-			content = framework.translator(req.$language, content.toString(ENCODING));
+			content = framework.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static'));
 
 			if (minify && (req.extension === 'html' || req.extension === 'htm'))
 				content = framework_internal.compile_html(content, filename);
@@ -2514,6 +2572,7 @@ Framework.prototype.localize = function(url, flags, minify) {
 
 			framework.responseContent(req, res, 200, content, framework_utils.getContentType(req.extension), true);
 		});
+
 	}, flags);
 	return self;
 };
@@ -2555,7 +2614,7 @@ Framework.prototype.error = function(err, name, uri) {
  * @param {String} ip
  * @return {Framework}
  */
-Framework.prototype.problem = function(message, name, uri, ip) {
+Framework.prototype.problem = Framework.prototype.wtf = function(message, name, uri, ip) {
 	var self = this;
 	self.emit('problem', message, name, uri, ip);
 
@@ -2571,10 +2630,7 @@ Framework.prototype.problem = function(message, name, uri, ip) {
 		return self;
 
 	self.problems.push(obj);
-
-	if (self.problems.length > 50)
-		self.problems.shift();
-
+	self.problems.length > 50 && self.problems.shift();
 	return self;
 };
 
@@ -2892,6 +2948,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		name = '';
 	}
 
+	if (typeof(options) === 'function') {
+		callback = options;
+		options = undefined;
+	}
+
 	// Check if declaration is a valid URL address
 	if (type !== 'eval' && typeof(declaration) === 'string') {
 
@@ -2924,10 +2985,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				if (err) {
 					self.error(err, 'framework.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
 					callback && callback(err);
-					return;
-				}
-
-				self.install(type, name, data, options, callback, declaration);
+				} else
+					self.install(type, name, data, options, callback, declaration);
 
 			});
 			return self;
@@ -2987,6 +3046,18 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	if (type === 'version' || type === 'versions') {
 
 		self._configure_versions(declaration.toString().split('\n'));
+		setTimeout(function() {
+			self.emit(type + '#' + name);
+			self.emit('install', type, name);
+		}, 500);
+
+		callback && callback(null);
+		return self;
+	}
+
+	if (type === 'workflow' || type === 'workflows') {
+
+		self._configure_workflows(declaration.toString().split('\n'));
 		setTimeout(function() {
 			self.emit(type + '#' + name);
 			self.emit('install', type, name);
@@ -3091,7 +3162,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		}
 
 		item.count++;
-		Fs.writeFileSync(item.filename, framework_internal.modificator(declaration, name));
+		Fs.writeFileSync(item.filename, framework_internal.modificators(declaration, name));
 
 		setTimeout(function() {
 			self.emit(type + '#' + name);
@@ -3348,6 +3419,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					framework._configure_versions();
 					framework._configure_dependencies();
 					framework._configure_sitemap();
+					framework._configure_workflows();
 				} else {
 
 					framework._configure('@' + name + '/config');
@@ -3357,12 +3429,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					else
 						framework._configure('@' + name + '/config-release');
 
-					if (framework.isTest)
-						framework._configure('@' + name + '/config-test');
-
+					framework.isTest && framework._configure('@' + name + '/config-test');
 					framework._configure_versions('@' + name + '/versions');
 					framework._configure_dependencies('@' + name + '/dependencies');
 					framework._configure_sitemap('@' + name + '/sitemap');
+					framework._configure_workflows('@' + name + '/workflows');
 				}
 
 				framework.$load(undefined, tmpdir);
@@ -3440,20 +3511,17 @@ Framework.prototype.$restart = function() {
 
 		Object.keys(self.modules).forEach(function(key) {
 			var item = self.modules[key];
-			if (item && item.uninstall)
-				item.uninstall();
+			item && item.uninstall && item.uninstall();
 		});
 
 		Object.keys(self.models).forEach(function(key) {
 			var item = self.models[key];
-			if (item && item.uninstall)
-				item.uninstall();
+			item && item.uninstall && item.uninstall();
 		});
 
 		Object.keys(self.controllers).forEach(function(key) {
 			var item = self.controllers[key];
-			if (item && item.uninstall)
-				item.uninstall();
+			item && item.uninstall && item.uninstall();
 		});
 
 		Object.keys(self.workers).forEach(function(key) {
@@ -4069,9 +4137,10 @@ Framework.prototype.onParseQuery = function(value) {
  */
 Framework.prototype.onSchema = function(req, group, name, callback, filter) {
 	var schema = GETSCHEMA(group, name);
-	if (!schema)
-		return callback(new Error('Schema not found.'));
-	schema.make(req.body, (err, result) => err ? callback(err) : callback(null, result), filter);
+	if (schema)
+		schema.make(req.body, (err, res) => err ? callback(err) : callback(null, res), filter);
+	else
+		callback(new Error('Schema "' + group + '/' + name + '" not found.'));
 };
 
 /**
@@ -6054,7 +6123,7 @@ Framework.prototype.load = function(debug, types, pwd) {
 
 	global.DEBUG = debug;
 	global.RELEASE = !debug;
-	global.isomorphic = self.isomorphic;
+	global.I = global.isomorphic = self.isomorphic;
 
 	self.$startup(function() {
 
@@ -6062,6 +6131,9 @@ Framework.prototype.load = function(debug, types, pwd) {
 
 		if (!types || types.indexOf('versions') !== -1)
 			self._configure_versions();
+
+		if (!types || types.indexOf('workflows') !== -1)
+			self._configure_workflows();
 
 		if (!types || types.indexOf('sitemap') !== -1)
 			self._configure_sitemap();
@@ -6128,6 +6200,7 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 
 	self._configure();
 	self._configure_versions();
+	self._configure_workflows();
 	self._configure_sitemap();
 	self.isTest && self._configure('config-test', false);
 	self.cache.init();
@@ -6263,7 +6336,7 @@ Framework.prototype.mode = function(http, name, options) {
 	var debug = false;
 
 	if (options.directory)
-		directory = options.directory;
+		self.directory = directory = options.directory;
 
 	if (typeof(http) === 'string') {
 		switch (http) {
@@ -6376,16 +6449,22 @@ Framework.prototype._service = function(count) {
 
 	// every 7 minutes (default) service clears static cache
 	if (count % self.config['default-interval-clear-cache'] === 0) {
+
 		self.emit('clear', 'temporary', self.temporary);
 		self.temporary.path = {};
 		self.temporary.range = {};
 		self.temporary.views = {};
 		self.temporary.other = {};
+
 		if (global.$VIEWCACHE && global.$VIEWCACHE.length)
 			global.$VIEWCACHE = [];
 
 		// Clears command cache
 		Image.clear();
+
+		var dt = F.datetime.add('-5 minutes');
+		for (var key in self.databases)
+			self.databases[key] && self.databases[key].inmemorylastusage < dt && self.databases[key].release();
 	}
 
 	// every 61 minutes (default) services precompile all (installed) views
@@ -7082,7 +7161,7 @@ Framework.prototype.model = function(name) {
 	var model = self.models[name];
 	if (model || model === null)
 		return model;
-	var filename = Path.join(directory, self.config['directory-models'], name + '.js');
+	var filename = framework_utils.combine(self.config['directory-models'], name + '.js');
 	existsSync(filename) && self.install('model', name, filename, undefined, undefined, undefined, true);
 	return self.models[name] || null;
 };
@@ -7101,7 +7180,7 @@ Framework.prototype.source = function(name, options, callback) {
 	if (model || model === null)
 		return model;
 
-	var filename = Path.join(directory, self.config['directory-source'], name + '.js');
+	var filename = framework_utils.combine(self.config['directory-source'], name + '.js');
 	existsSync(filename) && self.install('source', name, filename, options, callback, undefined, true);
 	return self.sources[name] || null;
 };
@@ -7179,7 +7258,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 };
 
 /**
- * Render view
+ * Renders view
  * @param {String} name View name.
  * @param {Object} model Model.
  * @param {String} layout Layout for the view, optional. Default without layout.
@@ -7189,7 +7268,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
  */
 Framework.prototype.view = function(name, model, layout, repository, language) {
 
-	var controller = new Controller('', null, null, null, '');
+	var controller = EMPTYCONTROLLER;
 
 	if (typeof(layout) === 'object') {
 		var tmp = repository;
@@ -7198,8 +7277,8 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 	}
 
 	controller.layoutName = layout || '';
-	controller.language = language;
-	controller.isConnected = false;
+	controller.language = language || '';
+	controller.repository = typeof(repository) === 'object' && repository ? repository : EMPTYOBJECT;
 
 	var theme = framework_utils.parseTheme(name);
 	if (theme) {
@@ -7208,13 +7287,34 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 	} else if (this.onTheme)
 		controller.themeName = this.onTheme(controller);
 
-	if (typeof(repository) === 'object' && repository)
-		controller.repository = repository;
+	return controller.view(name, model, true);
+};
 
-	var output = controller.view(name, model, true);
-	controller.repository = controller.res = controller.req = null;
-	controller = null;
-	return output;
+/**
+ * Compiles and renders view
+ * @param {String} body HTML body.
+ * @param {Object} model Model.
+ * @param {String} layout Layout for the view, optional. Default without layout.
+ * @param {Object} repository A repository object, optional. Default empty.
+ * @param {String} language Optional.
+ * @return {String}
+ */
+Framework.prototype.viewCompile = function(body, model, layout, repository, language) {
+
+	var controller = EMPTYCONTROLLER;
+
+	if (typeof(layout) === 'object') {
+		var tmp = repository;
+		repository = layout;
+		layout = tmp;
+	}
+
+	controller.layoutName = layout || '';
+	controller.language = language || '';
+	controller.themeName = '';
+	controller.repository = typeof(repository) === 'object' && repository ? repository : EMPTYOBJECT;
+
+	return controller.viewCompile(body, model, true);
 };
 
 /**
@@ -8210,12 +8310,66 @@ Framework.prototype._configure_dependencies = function(arr) {
 	return self;
 };
 
-/**
- * Versions configuration
- * @private
- * @param {String Array} arr
- * @return {Framework}
- */
+Framework.prototype._configure_workflows = function(arr, clean) {
+
+	var self = this;
+
+	if (arr === undefined || typeof(arr) === 'string') {
+		var filename = prepare_filename(arr || 'workflows');
+		if (existsSync(filename, true))
+			arr = Fs.readFileSync(filename).toString(ENCODING).split('\n');
+		else
+			arr = null;
+	}
+
+	if (clean)
+		self.workflows = {};
+
+	if (!arr || !arr.length)
+		return self;
+
+	arr.forEach(function(line) {
+		line = line.trim();
+		if (line.startsWith('//'))
+			return;
+		var index = line.indexOf(':');
+		if (index === -1)
+			return;
+
+		var key = line.substring(0, index).trim();
+		var response = -1;
+		var builder = [];
+
+		// sub-type
+		var subindex = key.indexOf('(');
+		if (subindex !== -1) {
+			var type = key.substring(subindex + 1, key.indexOf(')', subindex + 1)).trim();
+			key = key.substring(0, subindex).trim();
+			type = type.replace(/^default\//gi, '');
+			key = type + '#' + key;
+		}
+
+		line.substring(index + 1).split('-->').forEach(function(operation, index) {
+			operation = operation.trim().replace(/\"/g, '\'');
+
+			if (operation.endsWith('(response)')) {
+				response = index;
+				operation = operation.replace('(response)', '').trim();
+			}
+
+			var what = operation.split(':');
+			if (what.length === 2)
+				builder.push('$' + what[0].trim() + '(' + what[1].trim() + ', options)');
+			else
+				builder.push('$' + what[0] + '(options)');
+		});
+
+		self.workflows[key] = new Function('model', 'options', 'callback', 'return model.$async(callback' + (response === -1 ? '' : ', ' + response) + ').' + builder.join('.') + ';');
+	});
+
+	return this;
+};
+
 Framework.prototype._configure_versions = function(arr, clean) {
 
 	var self = this;
@@ -8273,13 +8427,6 @@ Framework.prototype._configure_versions = function(arr, clean) {
 	return self;
 };
 
-/**
- * Load configuration
- * @private
- * @param {String} arr String Array or filename.
- * @param {Boolean} rewrite Rewrites existed values, default `true`.
- * @return {Framework}
- */
 Framework.prototype._configure = function(arr, rewrite) {
 
 	var self = this;
@@ -9108,6 +9255,7 @@ FrameworkPath.prototype.logs = function(filename) {
 FrameworkPath.prototype.models = function(filename) {
 	return framework_utils.combine(framework.config['directory-models'], filename);
 };
+
 FrameworkPath.prototype.temp = function(filename) {
 	this.verify('temp');
 	return framework_utils.combine(framework.config['directory-temp'], filename);
@@ -9493,9 +9641,8 @@ Subscribe.prototype.execute = function(status, isError) {
 			status = 404;
 
 		if (status === 400 && self.exception instanceof framework_builders.ErrorBuilder) {
-			req.$language && self.exception.resource(req.$language, framework.config['default-errorbuilder-resource-prefix']);
-			var ex = self.exception.output();
-			framework.responseContent(req, res, 200, ex, self.exception.contentType, framework.config['allow-gzip']);
+			req.$language && self.exception.setResource(req.$language);
+			framework.responseContent(req, res, 200, self.exception.output(), self.exception.contentType, framework.config['allow-gzip']);
 			return self;
 		}
 
@@ -9526,6 +9673,8 @@ Subscribe.prototype.execute = function(status, isError) {
 	}
 
 	route.isDELAY && self.res.writeContinue();
+	if (self.isSchema)
+		req.body.$$controller = controller;
 
 	if (!framework._length_middleware || !route.middleware)
 		self.doExecute();
@@ -9753,6 +9902,7 @@ Subscribe.prototype.validate = function(route, next) {
 		}
 
 		req.body = body;
+		self.isSchema = true;
 		next();
 	}, route.schema[2]);
 };
@@ -9949,6 +10099,14 @@ function Controller(name, req, res, subscribe, currentView) {
 
 Controller.prototype = {
 
+	get schema() {
+		return this.route.schema[0] === 'default' ? this.route.schema[1] : this.route.schema.join('/');
+	},
+
+	get workflow() {
+		return this.route.schema_workflow;
+	},
+
 	get sseID() {
 		return this.req.headers['last-event-id'] || null;
 	},
@@ -9970,6 +10128,7 @@ Controller.prototype = {
 	},
 
 	get get() {
+		OBSOLETE('controller.get', 'Instead of controller.get use controller.query');
 		return this.req.query;
 	},
 
@@ -9978,6 +10137,7 @@ Controller.prototype = {
 	},
 
 	get post() {
+		OBSOLETE('controller.post', 'Instead of controller.post use controller.body');
 		return this.req.body;
 	},
 
@@ -10084,95 +10244,124 @@ Controller.prototype = {
 // Schema operations
 
 Controller.prototype.$get = Controller.prototype.$read = function(helper, callback) {
-	this.getSchema().get(helper, callback);
+	this.getSchema().get(helper, callback, this);
 	return this;
 };
 
 Controller.prototype.$query = function(helper, callback) {
-	this.getSchema().query(helper, callback);
+	this.getSchema().query(helper, callback, this);
 	return this;
 };
 
 Controller.prototype.$save = function(helper, callback) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		self.body.$save(helper, callback);
-	else
-		self.getSchema().default().$save(helper, callback);
+	} else {
+		var model = self.getSchema().default();
+		model.$$controller = self;
+		model.$save(helper, callback);
+	}
 	return self;
 };
 
 Controller.prototype.$remove = function(helper, callback) {
 	var self = this;
-	self.getSchema().remove(helper, callback);
+	self.getSchema().remove(helper, callback, self);
 	return this;
 };
 
 Controller.prototype.$workflow = function(name, helper, callback) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		self.body.$workflow(name, helper, callback);
-	else
-		self.getSchema().workflow2(name, helper, callback);
+	} else
+		self.getSchema().workflow2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$workflow2 = function(name, helper, callback) {
 	var self = this;
-	self.getSchema().workflow2(name, helper, callback);
+	self.getSchema().workflow2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$hook = function(name, helper, callback) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		self.body.$hook(name, helper, callback);
-	else
-		self.getSchema().hook2(name, helper, callback);
+	} else
+		self.getSchema().hook2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$hook2 = function(name, helper, callback) {
 	var self = this;
-	self.getSchema().hook2(name, helper, callback);
+	self.getSchema().hook2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$transform = function(name, helper, callback) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		self.body.$transform(name, helper, callback);
-	else
-		self.getSchema().transform2(name, helper, callback);
+	} else
+		self.getSchema().transform2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$transform2 = function(name, helper, callback) {
 	var self = this;
-	self.getSchema().transform2(name, helper, callback);
+	self.getSchema().transform2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$operation = function(name, helper, callback) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		self.body.$operation(name, helper, callback);
-	else
-		self.getSchema().operation2(name, helper, callback);
+	} else
+		self.getSchema().operation2(name, helper, callback, self);
 	return self;
 };
 
 Controller.prototype.$operation2 = function(name, helper, callback) {
 	var self = this;
-	self.getSchema().operation2(name, helper, callback);
+	self.getSchema().operation2(name, helper, callback, self);
+	return self;
+};
+
+Controller.prototype.$exec = function(name, helper, callback) {
+	var self = this;
+
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
+		self.body.$exec(name, helper, callback);
+		return self;
+	}
+
+	var tmp = self.getSchema().create();
+	tmp.$$controller = self;
+	tmp.$exec(name, helper, callback);
 	return self;
 };
 
 Controller.prototype.$async = function(callback, index) {
 	var self = this;
-	if (framework_builders.isSchema(self.body))
+
+	if (framework_builders.isSchema(self.body)) {
+		self.body.$$controller = self;
 		return self.body.$async(callback, index);
-	return self.getSchema().default().$async(callback, index);
+	}
+
+	var model = self.getSchema().default();
+	model.$$controller = self;
+	return model.$async(callback, index);
 };
 
 Controller.prototype.getSchema = function() {
@@ -10403,7 +10592,7 @@ Controller.prototype.invalid = function(status) {
  * @param {String} message
  * @return {Controller}
  */
-Controller.prototype.problem = function(message) {
+Controller.prototype.wtf = Controller.prototype.problem = function(message) {
 	framework.problem(message, this.name, this.uri, this.ip);
 	return this;
 };
@@ -10659,7 +10848,7 @@ Controller.prototype.sitemap_name = function(name, a, b, c, d, e, f) {
 	return item ? item.name.format(a, b, c, d, e, f) : '';
 };
 
-Controller.prototype.sitemap_change = function(name, type, value) {
+Controller.prototype.sitemap_change = function(name, type, a, b, c, d, e, f) {
 
 	var self = this;
 	var sitemap = self.repository[REPOSITORY_SITEMAP];
@@ -10673,7 +10862,7 @@ Controller.prototype.sitemap_change = function(name, type, value) {
 		self.repository[REPOSITORY_SITEMAP] = sitemap;
 	}
 
-	var isFn = typeof(value) === 'function';
+	var isFn = typeof(a) === 'function';
 
 	for (var i = 0, length = sitemap.length; i < length; i++) {
 
@@ -10684,13 +10873,13 @@ Controller.prototype.sitemap_change = function(name, type, value) {
 		var tmp = item[type];
 
 		if (isFn)
-			item[type] = value(item[type]);
+			item[type] = a(item[type]);
 		else if (type === 'name')
-			item[type] = item.formatName ? item[type].format(value) : value;
+			item[type] = item.formatName ? item[type].format(a, b, c, d, e, f) : a;
 		else if (type === 'url')
-			item[type] = item.formatUrl ? item[type].format(value) : value;
+			item[type] = item.formatUrl ? item[type].format(a, b, c, d, e, f) : a;
 		else
-			item[type] = value;
+			item[type] = a;
 
 		if (type === 'name' && self.repository[REPOSITORY_META_TITLE] === tmp)
 			self.repository[REPOSITORY_META_TITLE] = item[type];
@@ -10865,48 +11054,27 @@ Controller.prototype.setExpires = function(date) {
 	return this;
 };
 
-/**
- * INTERNAL: Render view in view
- * @private
- * @param {String} name
- * @param {Object} model Custom model, optional.
- * @return {String}
- */
 Controller.prototype.$template = function(name, model, expire, key) {
 	return this.$viewToggle(true, name, model, expire, key);
 };
 
-/**
- * INTERNAL: Render view in view
- * @private
- * @param {Boolean} visible
- * @param {String} name
- * @param {Object} model Custom model, optional.
- * @return {String}
- */
 Controller.prototype.$templateToggle = function(visible, name, model, expire, key) {
 	return this.$viewToggle(visible, name, model, expire, key);
 };
 
-/**
- * INTERNAL: Render view in view
- * @private
- * @param {String} name
- * @param {Object} model Custom model, optional.
- * @return {String}
- */
 Controller.prototype.$view = function(name, model, expire, key) {
 	return this.$viewToggle(true, name, model, expire, key);
 };
 
-/**
- * INTERNAL: Render view in view
- * @private
- * @param {Boolean} visible
- * @param {String} name
- * @param {Object} model Custom model, optional.
- * @return {String}
- */
+Controller.prototype.$viewCompile = function(body, model) {
+	var self = this;
+	var layout = self.layoutName;
+	self.layoutName = '';
+	var value = self.viewCompile(body, model, null, true);
+	self.layoutName = layout;
+	return value || '';
+};
+
 Controller.prototype.$viewToggle = function(visible, name, model, expire, key) {
 
 	if (!visible)
@@ -11255,12 +11423,10 @@ Controller.prototype.$input = function(model, type, name, attr) {
 };
 
 Controller.prototype._preparehostname = function(value) {
-	if(!value)
+	if (!value)
 		return value;
 	var tmp = value.substring(0, 5);
-	if (tmp !== 'http:' && tmp !== 'https' && (tmp[0] !== '/' || tmp[1] !== '/'))
-		return this.host(value);
-	return value;
+	return tmp !== 'http:' && tmp !== 'https' && (tmp[0] !== '/' || tmp[1] !== '/') ? this.host(value) : value;
 };
 
 Controller.prototype.head = function() {
@@ -11849,12 +12015,15 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	var type = 'application/json';
 
 	if (obj instanceof framework_builders.ErrorBuilder) {
-		if (self.language && !obj.isResourceCustom)
-			obj.resource(self.language);
+		self.req.$language && !obj.isResourceCustom && obj.setResource(self.req.$language);
 		if (obj.contentType)
 			type = obj.contentType;
 		obj = obj.output();
 	} else {
+
+		if (framework_builders.isSchema(obj))
+			obj = obj.$clean();
+
 		if (beautify)
 			obj = JSON.stringify(obj, replacer, 4);
 		else
@@ -11900,9 +12069,13 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 		name = 'callback';
 
 	if (obj instanceof framework_builders.ErrorBuilder) {
-		self.language && !obj.isResourceCustom && obj.resource(self.language);
+		self.req.$language && !obj.isResourceCustom && obj.setResource(self.req.$language);
 		obj = obj.json(beautify);
 	} else {
+
+		if (framework_builders.isSchema(obj))
+			obj = obj.$clean();
+
 		if (beautify)
 			obj = JSON.stringify(obj, replacer, 4);
 		else
@@ -11935,7 +12108,7 @@ Controller.prototype.callback = function(viewName) {
 
 		if (err) {
 			if (is && !viewName) {
-				self.language && err.resource(self.language);
+				self.req.$language && !err.isResourceCustom && err.setResource(self.req.$language);
 				return self.content(err);
 			}
 			return is && err.unexpected ? self.view500(err) : self.view404(err);
@@ -12012,11 +12185,13 @@ Controller.prototype.plain = function(body, headers) {
 
 	var type = typeof(body);
 
-	if (body === undefined)
+	if (body == null)
 		body = '';
-	else if (type === 'object')
+	else if (type === 'object') {
+		if (framework_builders.isSchema(body))
+			body = body.$clean();
 		body = body ? JSON.stringify(body, null, 4) : '';
-	else
+	} else
 		body = body ? body.toString() : '';
 
 	self.subscribe.success();
@@ -12612,10 +12787,27 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		framework.temporary.other[key] = filename;
 	}
 
-	var generator = framework_internal.viewEngine(name, filename, self);
+	return self.$viewrender(filename, framework_internal.viewEngine(name, filename, self), model, headers, partial, isLayout);
+};
+
+Controller.prototype.viewCompile = function(body, model, headers, partial) {
+
+	if (headers === true) {
+		partial = true;
+		headers = undefined;
+	}
+
+	return this.$viewrender('[dynamic view]', framework_internal.viewEngineCompile(body, this.language, this), model, headers, partial);
+};
+
+Controller.prototype.$viewrender = function(filename, generator, model, headers, partial, isLayout) {
+
+	var self = this;
+	var err;
+
 	if (!generator) {
 
-		var err = new Error('View "' + filename + '" not found.');
+		err = new Error('View "' + filename + '" not found.');
 
 		if (partial) {
 			framework.error(err, self.name, self.uri);
@@ -12625,11 +12817,11 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		if (isLayout) {
 			self.subscribe.success();
 			framework.response500(self.req, self.res, err);
-			return;
+			return self;
 		}
 
 		self.view500(err);
-		return;
+		return self;
 	}
 
 	var value = '';
@@ -12644,7 +12836,7 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, partial ? self.outputPartial : self.output, self.date, self.req.cookie, self.req.files, self.req.mobile);
 	} catch (ex) {
 
-		var err = new Error('View: ' + name + ' - ' + ex.toString());
+		err = new Error('View "' + filename + '": ' + ex.message);
 
 		if (!partial) {
 			self.view500(err);
@@ -12677,7 +12869,7 @@ Controller.prototype.view = function(name, model, headers, partial) {
 		self.subscribe.success();
 
 		if (!self.isConnected)
-			return;
+			return self;
 
 		framework.responseContent(self.req, self.res, self.status, value, CONTENTTYPE_TEXTHTML, self.config['allow-gzip'], headers);
 		framework.stats.response.view++;
@@ -12942,8 +13134,6 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 	if (!keys || !keys.length)
 		return self;
 
-	var isA = id instanceof Array;
-	var isB = blacklist instanceof Array;
 	var data;
 	var raw = false;
 
@@ -12953,23 +13143,25 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 		var conn = self.connections[_id];
 
 		if (id) {
-			if (isA) {
+			if (id instanceof Array) {
 				if (!websocket_valid_array(_id, id))
 					continue;
-			} else {
+			} else if (id instanceof Function) {
 				if (!websocket_valid_fn(_id, conn, id))
 					continue;
-			}
+			} else
+				throw new Error('Invalid "id" argument.');
 		}
 
 		if (blacklist) {
-			if (isB) {
+			if (blacklist instanceof Array) {
 				if (websocket_valid_array(_id, blacklist))
 					continue;
-			} else {
+			} else if (blacklist instanceof Function) {
 				if (websocket_valid_fn(_id, conn, blacklist))
 					continue;
-			}
+			} else
+				throw new Error('Invalid "blacklist" argument.');
 		}
 
 		if (data === undefined) {
@@ -12992,9 +13184,7 @@ function websocket_valid_array(id, arr) {
 }
 
 function websocket_valid_fn(id, client, fn) {
-	if (fn(id, client))
-		return true;
-	return false;
+	return fn && fn(id, client) ? true : false;
 }
 
 /**
@@ -13097,7 +13287,7 @@ WebSocket.prototype.error = function(err) {
  * @param {String} message
  * @return {WebSocket}
  */
-WebSocket.prototype.problem = function(message) {
+WebSocket.prototype.wtf = WebSocket.prototype.problem = function(message) {
 	var self = this;
 	framework.problem(message, self.name, self.uri);
 	return self;
@@ -13569,7 +13759,6 @@ WebSocketClient.prototype._ondata = function(data) {
 WebSocketClient.prototype.parse = function() {
 
 	var self = this;
-
 	var bLength = self.buffer[1];
 
 	if (((bLength & 0x80) >> 7) !== 1)
@@ -14483,7 +14672,7 @@ http.IncomingMessage.prototype.clear = function(isAuto) {
 
 	var arr = [];
 	for (var i = 0; i < length; i++)
-		arr.push(files[i].path);
+		files[i].rem && arr.push(files[i].path);
 
 	framework.unlink(arr);
 	self.files = null;
@@ -14508,6 +14697,7 @@ http.IncomingMessage.prototype.hostname = function(path) {
 
 var framework = new Framework();
 global.framework = global.F = module.exports = framework;
+global.Controller = Controller;
 
 process.on('uncaughtException', function(e) {
 
@@ -14605,6 +14795,7 @@ process.on('message', function(msg, h) {
 	if (msg === 'reconfigure') {
 		framework._configure();
 		framework._configure_versions();
+		framework._configure_workflows();
 		framework._configure_sitemap();
 		framework.emit(msg);
 		return;
@@ -14660,7 +14851,7 @@ function prepare_isomorphic(name) {
 	else
 		content = '';
 
-	return 'if(window["isomorphic"]===undefined)window.isomorphic={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + content + ';return exports;})(null,null,null,null,null,true,false)';
+	return 'if(window["isomorphic"]===undefined)window.isomorphic=window.I={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + content + ';return exports;})(null,null,null,null,null,true,false)';
 }
 
 function isGZIP(req) {
@@ -14676,9 +14867,7 @@ function prepare_viewname(value) {
 function existsSync(filename, file) {
 	try {
 		var val = Fs.statSync(filename);
-		if (val)
-			return file ? val.isFile() : true;
-		return false;
+		return val ? (file ? val.isFile() : true) : false;
 	} catch (e) {
 		return false;
 	}
@@ -14737,3 +14926,15 @@ global.clearTimeout2 = function(name) {
 
 	return false;
 };
+
+// Default action for workflow routing
+function controller_json_workflow(id) {
+	var self = this;
+	self.id = id;
+	self.$exec(self.route.workflow, self, self.callback());
+}
+
+// Because of controller prototypes
+// It's used in F.view() and F.viewCompile()
+const EMPTYCONTROLLER = new Controller('', null, null, null, '');
+EMPTYCONTROLLER.isConnected = false;

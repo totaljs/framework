@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 2.2.0
+ * @version 2.3.0
  */
 
 'use strict';
@@ -303,7 +303,9 @@ Image.prototype.stream = function(type, writer) {
 	if (!type)
 		type = self.outputType;
 
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'));
+	// Possible vulnerability with self.filename.
+	// WTF?? I don't know why, but wrap(self.filename) doesn't work with spawn() - but it works with exec() and with another spawn in image.pipe()
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? self.filename : '-', (type ? type + ':' : '') + '-'));
 	if (self.currentStream) {
 		if (self.currentStream instanceof Buffer)
 			cmd.stdin.end(self.currentStream);
@@ -341,13 +343,7 @@ Image.prototype.arg = function(first, last) {
 
 	!self.isIM && arr.push('-convert');
 	first && arr.push(first);
-
-	self.builder.sort(function(a, b) {
-		if (a.priority > b.priority)
-			return 1;
-		else
-			return -1;
-	});
+	self.builder.sort((a, b) => a.priority > b.priority ? 1 : -1);
 
 	var length = self.builder.length;
 
@@ -400,7 +396,7 @@ Image.prototype.push = function(key, value, priority, encode) {
 		if (encode && typeof(value) === 'string')
 			cmd += wrap(value, true);
 		else
-			cmd += ' \'' + value + '\'';
+			cmd += framework.isWindows ? ' "' + value + '"' : ' \'' + value + '\'';
 	}
 
 	var obj = CACHE[cmd];
@@ -650,7 +646,7 @@ Image.prototype.colors = function(value) {
 };
 
 Image.prototype.background = function(color) {
-	return this.push('-background', color, 2, true);
+	return this.push('-background', color, 2, true).push('-extent 0x0', null, 2);
 };
 
 Image.prototype.fill = function(color) {
@@ -676,9 +672,15 @@ Image.prototype.command = function(key, value, priority, esc) {
 
 function wrap(command, empty) {
 	var cmd = '';
-	for (var i = 0, length = command.length; i < length; i++)
-		cmd += command[i] === '\'' ? '"' : command[i];
-	return (empty ? ' ' : '') + '\'' + cmd + '\'';
+	if (framework.isWindows) {
+		for (var i = 0, length = command.length; i < length; i++)
+			cmd += command[i] === '\"' ? '\'' : command[i];
+		return (empty ? ' ' : '') + '"' + cmd + '"';
+	} else {
+		for (var i = 0, length = command.length; i < length; i++)
+			cmd += command[i] === '\'' ? '"' : command[i];
+		return (empty ? ' ' : '') + '\'' + cmd + '\'';
+	}
 }
 
 exports.Image = Image;
@@ -706,3 +708,5 @@ exports.restart = function() {
 exports.clear = function() {
 	CACHE = {};
 };
+
+global.Image = exports;

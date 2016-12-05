@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkUtils
- * @version 2.1.0
+ * @version 2.3.0
  */
 
 'use strict';
@@ -40,9 +40,6 @@ if (!global.framework_utils)
 	global.framework_utils = exports;
 
 var regexpSTATIC = /\.\w{2,8}($|\?)+/;
-const regexpMail = new RegExp('^[a-zA-Z0-9-_.+]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
-const regexpUrl = /^(http|https):\/\/(?:(?:(?:[\w\.\-\+!$&'\(\)*\+,;=]|%[0-9a-f]{2})+:)*(?:[\w\.\-\+%!$&'\(\)*\+,;=]|%[0-9a-f]{2})+@)?(?:(?:[a-z0-9\-\.]|%[0-9a-f]{2})+|(?:\[(?:[0-9a-f]{0,4}:)*(?:[0-9a-f]{0,4})\]))(?::[0-9]+)?(?:[\/|\?](?:[\w#!:\.\?\+=&@!$'~*,;\/\(\)\[\]\-]|%[0-9a-f]{2})*)?$/i;
-const regexpPhone = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im;
 const regexpTRIM = /^[\s]+|[\s]+$/g;
 const regexpDATE = /(\d{1,2}\.\d{1,2}\.\d{4})|(\d{4}\-\d{1,2}\-\d{1,2})|(\d{1,2}\:\d{1,2}(\:\d{1,2})?)/g;
 const regexpDATEFORMAT = /yyyy|yy|M+|d+|HH|H|hh|h|mm|m|ss|s|a|ww|w/g;
@@ -50,8 +47,6 @@ const regexpSTRINGFORMAT = /\{\d+\}/g;
 const regexpPATH = /\\/g;
 const regexpTags = /<\/?[^>]+(>|$)/g;
 const regexpDiacritics = /[^\u0000-\u007e]/g;
-const regexpUID = /^\d{14,}[a-z]{3}[01]{1}$/;
-const regexpZIP = /^\d{5}(?:[-\s]\d{4})?$/;
 const regexpXML = /\w+\=\".*?\"/g;
 const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
@@ -251,8 +246,7 @@ exports.wait = function(fnValid, fnCallback, timeout, interval) {
 		if (fnValid() === true) {
 			clearInterval(id_interval);
 			clearTimeout(id_timeout);
-			if (fnCallback)
-				fnCallback(null, true);
+			fnCallback && fnCallback(null, true);
 			return;
 		}
 
@@ -260,8 +254,7 @@ exports.wait = function(fnValid, fnCallback, timeout, interval) {
 
 	id_timeout = setTimeout(function() {
 		clearInterval(id_interval);
-		if (fnCallback)
-			fnCallback(new Error('Timeout.'), false);
+		fnCallback && fnCallback(new Error('Timeout.'), false);
 	}, timeout || 5000);
 };
 
@@ -393,11 +386,7 @@ exports.keywords = function(content, forSearch, alternative, max_count, max_leng
 	keys.sort(function(a, b) {
 		var countA = dic[a];
 		var countB = dic[b];
-		if (countA > countB)
-			return -1;
-		if (countA < countB)
-			return 1;
-		return 0;
+		return countA > countB ? -1 : countA < countB ? 1 : 0;
 	});
 
 	return keys;
@@ -1110,15 +1099,16 @@ exports.$$send = function(name, stream, url, cookies, headers, method, timeout) 
  * @param {Object} obj
  * @return {Object}
  */
-exports.trim = function(obj) {
+exports.trim = function(obj, clean) {
 
 	if (!obj)
 		return obj;
 
 	var type = typeof(obj);
-
-	if (type === 'string')
-		return obj.trim();
+	if (type === 'string') {
+		obj = obj.trim();
+		return clean && !obj ? undefined : obj;
+	}
 
 	if (obj instanceof Array) {
 		for (var i = 0, length = obj.length; i < length; i++) {
@@ -1127,7 +1117,7 @@ exports.trim = function(obj) {
 			type = typeof(item);
 
 			if (type === 'object') {
-				exports.trim(item);
+				exports.trim(item, clean);
 				continue;
 			}
 
@@ -1135,6 +1125,8 @@ exports.trim = function(obj) {
 				continue;
 
 			obj[i] = item.trim();
+			if (clean && !obj[i])
+				obj[i] = undefined;
 		}
 
 		return obj;
@@ -1144,16 +1136,17 @@ exports.trim = function(obj) {
 		return obj;
 
 	var keys = Object.keys(obj);
-
 	for (var i = 0, length = keys.length; i < length; i++) {
 		var val = obj[keys[i]];
 		var type = typeof(val);
 		if (type === 'object') {
-			exports.trim(val);
+			exports.trim(val, clean);
 			continue;
 		} else if (type !== 'string')
 			continue;
 		obj[keys[i]] = val.trim();
+		if (clean && !obj[keys[i]])
+			obj[keys[i]] = undefined;
 	}
 
 	return obj;
@@ -1606,11 +1599,7 @@ exports.getContentType = function(ext) {
  */
 exports.getExtension = function(filename) {
 	var index = filename.lastIndexOf('.');
-	if (index === -1)
-		return '';
-	if (filename.indexOf('/', index - 1) === -1)
-		return filename.substring(index + 1);
-	return '';
+	return index !== -1 && filename.indexOf('/', index - 1) === -1 ? filename.substring(index + 1) : '';
 };
 
 /**
@@ -1727,14 +1716,16 @@ function validate_builder_default(name, value, entity) {
 
 	var type = typeof(value);
 
+	// Enum + KeyValue (8+9)
+	if (entity.type > 7)
+		return value !== undefined;
+
 	switch (entity.subtype) {
 		case 'uid':
 			var number = parseInt(value.substring(10, value.length - 4), 10);
-			if (isNaN(number))
-				return false;
-			return value[value.length - 1] === (number % 2 ? '1' : '0');
+			return isNaN(number) ? false : value[value.length - 1] === (number % 2 ? '1' : '0');
 		case 'zip':
-			return regexpZIP.test(value);
+			return value.isZIP();
 		case 'email':
 			return value.isEmail();
 		case 'json':
@@ -1742,13 +1733,13 @@ function validate_builder_default(name, value, entity) {
 		case 'url':
 			return value.isURL();
 		case 'phone':
-			return regexpPhone.test(value);
+			return value.isPhone();
 	}
 
 	if (type === 'number')
 		return value > 0;
 
-	if (type === 'string')
+	if (type === 'string' || value instanceof Array)
 		return value.length > 0;
 
 	if (type === 'boolean')
@@ -1756,9 +1747,6 @@ function validate_builder_default(name, value, entity) {
 
 	if (value == null)
 		return false;
-
-	if (value instanceof Array)
-		return value.length > 0;
 
 	if (value instanceof Date)
 		return value.toString()[0] !== 'I'; // Invalid Date
@@ -2601,7 +2589,6 @@ String.prototype.endsWith = function(text, ignoreCase) {
 		tmp = self.substring(self.length - length);
 
 	return tmp.length === length && tmp === text;
-
 };
 
 String.prototype.replacer = function(find, text) {
@@ -3071,55 +3058,39 @@ String.prototype.isJSON = function() {
 };
 
 String.prototype.isURL = function() {
-	var str = this;
-	if (str.length <= 7)
-		return false;
-	return regexpUrl.test(str);
+	return this.length <= 7 ? false : framework.validators.url.test(this);
 };
 
 String.prototype.isZIP = function() {
-	var str = this;
-	return regexpZIP.test(str);
+	return framework.validators.zip.test(this);
 };
 
 String.prototype.isEmail = function() {
-	var str = this;
-	if (str.length <= 4)
-		return false;
-	return regexpMail.test(str);
+	return this.length <= 4 ? false : framework.validators.email.test(this);
 };
 
 String.prototype.isPhone = function() {
-	var str = this;
-	if (str.length < 6)
-		return false;
-	return regexpPhone.test(str);
+	return this.length < 6 ? false : framework.validators.phone.test(this);
 };
 
 String.prototype.isUID = function() {
-	return this.length < 18 ? false : regexpUID.test(this);
+	return this.length < 18 ? false : framework.validators.uid.test(this);
 };
 
 String.prototype.parseInt = function(def) {
 	var str = this.trim();
 	var num = +str;
-	if (isNaN(num))
-		return def || 0;
-	return num;
+	return isNaN(num) ? (def || 0) : num;
 };
 
 String.prototype.parseInt2 = function(def) {
 	var num = this.match(regexpINTEGER);
-	if (num)
-		return +num;
-	return def || 0;
+	return num ? +num : def || 0;
 };
 
 String.prototype.parseFloat2 = function(def) {
 	var num = this.match(regexpFLOAT);
-	if (num)
-		return +num.toString().replace(/\,/g, '.');
-	return def || 0;
+	return num ? +num.toString().replace(/\,/g, '.') : def || 0;
 };
 
 String.prototype.parseBool = String.prototype.parseBoolean = function() {
@@ -3132,23 +3103,21 @@ String.prototype.parseFloat = function(def) {
 	if (str.indexOf(',') !== -1)
 		str = str.replace(',', '.');
 	var num = +str;
-	if (isNaN(num))
-		return def || 0;
-	return num;
+	return isNaN(num) ? (def || 0) : num;
 };
 
 String.prototype.capitalize = function() {
-	var builder = [];
+	var builder = '';
 	var c;
 	for (var i = 0, length = this.length; i < length; i++) {
 		var c = this[i - 1];
-		if (!c || c === ' ' || c === '\t' || c === '\n')
+		if (!c || (c === ' ' || c === '\t' || c === '\n'))
 			c = this[i].toUpperCase();
 		else
 			c = this[i];
-		builder.push(c);
+		builder += c;
 	}
-	return builder.join('');
+	return builder;
 };
 
 String.prototype.toUnicode = function() {
@@ -3233,10 +3202,7 @@ String.prototype.encrypt = function(key, isUnique) {
 
 	var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(regexpENCRYPT, text => text === '+' ? '_' : '-');
 	index = hash.indexOf('=');
-	if (index > 0)
-		return hash.substring(0, index);
-
-	return hash;
+	return index > 0 ? hash.substring(0, index) : hash;
 };
 
 String.prototype.decrypt = function(key) {
@@ -3274,10 +3240,7 @@ String.prototype.decrypt = function(key) {
 	}
 
 	var val = decrypt_data.join('');
-	if (counter !== val.length + key.length)
-		return null;
-
-	return val;
+	return counter !== val.length + key.length ? null : val;
 };
 
 String.prototype.base64ToFile = function(filename, callback) {
@@ -4275,10 +4238,6 @@ Array.prototype.remove = function(cb, value) {
 	return arr;
 };
 
-Array.prototype.random = function() {
-	return this[exports.random(this.length - 1)];
-};
-
 Array.prototype.wait = Array.prototype.waitFor = function(onItem, callback, thread) {
 
 	var self = this;
@@ -4375,6 +4334,11 @@ Array.prototype.async = function(thread, callback) {
 };
 
 Array.prototype.randomize = function() {
+	OBSOLETE('Array.randomize()', 'Use Array.random().');
+	return this.random();
+};
+
+Array.prototype.random = function() {
 
 	var self = this;
 	var random = (Math.floor(Math.random() * 100000000) * 10).toString();
@@ -4439,13 +4403,10 @@ Array.prototype.limit = function(max, fn, callback, index) {
 	}
 
 	fn(current, function() {
-
-		if (length < self.length) {
+		if (length < self.length)
 			self.limit(max, fn, callback, length);
-			return;
-		}
-
-		callback && callback();
+		else
+			callback && callback();
 	}, index, index + max);
 
 	return self;
@@ -5027,15 +4988,12 @@ exports.async = function(fn, isApply) {
 					return;
 				}
 
-				if (type === 'function')
-					setImmediate(() => complete(e));
-
+				type === 'function' && setImmediate(() => complete(e));
 				return;
 			}
 
 			if (g.done) {
-				if (typeof(complete) === 'function')
-					complete(null, g.value);
+				typeof(complete) === 'function' && complete(null, g.value);
 				return;
 			}
 
@@ -5072,17 +5030,11 @@ exports.getMessageLength = function(data, isLE) {
 
 	var length = data[1] & 0x7f;
 
-	if (length === 126) {
-		if (data.length < 4)
-			return -1;
-		return converBytesToInt64([data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 0, isLE);
-	}
+	if (length === 126)
+		return data.length < 4 ? -1 : converBytesToInt64([data[3], data[2], 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], 0, isLE);
 
-	if (length === 127) {
-		if (data.Length < 10)
-			return -1;
-		return converBytesToInt64([data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]], 0, isLE);
-	}
+	if (length === 127)
+		return data.Length < 10 ? -1 : converBytesToInt64([data[9], data[8], data[7], data[6], data[5], data[4], data[3], data[2]], 0, isLE);
 
 	return length;
 };
@@ -5090,9 +5042,7 @@ exports.getMessageLength = function(data, isLE) {
 // MIT
 // Written by Jozef Gula
 function converBytesToInt64(data, startIndex, isLE) {
-	if (isLE)
-		return (data[startIndex] | (data[startIndex + 1] << 0x08) | (data[startIndex + 2] << 0x10) | (data[startIndex + 3] << 0x18) | (data[startIndex + 4] << 0x20) | (data[startIndex + 5] << 0x28) | (data[startIndex + 6] << 0x30) | (data[startIndex + 7] << 0x38));
-	return ((data[startIndex + 7] << 0x20) | (data[startIndex + 6] << 0x28) | (data[startIndex + 5] << 0x30) | (data[startIndex + 4] << 0x38) | (data[startIndex + 3]) | (data[startIndex + 2] << 0x08) | (data[startIndex + 1] << 0x10) | (data[startIndex] << 0x18));
+	return isLE ? (data[startIndex] | (data[startIndex + 1] << 0x08) | (data[startIndex + 2] << 0x10) | (data[startIndex + 3] << 0x18) | (data[startIndex + 4] << 0x20) | (data[startIndex + 5] << 0x28) | (data[startIndex + 6] << 0x30) | (data[startIndex + 7] << 0x38)) : ((data[startIndex + 7] << 0x20) | (data[startIndex + 6] << 0x28) | (data[startIndex + 5] << 0x30) | (data[startIndex + 4] << 0x38) | (data[startIndex + 3]) | (data[startIndex + 2] << 0x08) | (data[startIndex + 1] << 0x10) | (data[startIndex] << 0x18));
 }
 
 exports.queuecache = {};
@@ -5191,7 +5141,7 @@ exports.parseTheme = function(value) {
 exports.set = function(obj, path, value) {
 	var cachekey = 'S+' + path;
 
-	if (global.framework && framework.temporary.other[cachekey])
+	if (framework.temporary.other[cachekey])
 		return framework.temporary.other[cachekey](obj, value);
 
 	var arr = path.split('.');
@@ -5225,7 +5175,7 @@ exports.get = function(obj, path) {
 
 	var cachekey = 'G=' + path;
 
-	if (global.framework && framework.temporary.other[cachekey])
+	if (framework.temporary.other[cachekey])
 		return framework.temporary.other[cachekey](obj);
 
 	var arr = path.split('.');
@@ -5343,22 +5293,16 @@ function shell_sort_bound(ary, start, end, comparer) {
 }
 
 function comparer_asc(index, eq) {
-	if (eq)
-		return index === 1 || index === 0 ? true : false;
-	return index === 1;
+	return eq ? (index === 1 || index === 0 ? true : false) : index === 1;
 }
 
 function comparer_desc(index, eq) {
-	if (eq)
-		return index === -1 || index === 0 ? true : false;
-	return index === -1;
+	return eq ? (index === -1 || index === 0 ? true : false) : index === -1;
 }
 
 function quicksort(arr, comparer, desc) {
 	return fast_quicksort(arr, function(a, b, eq) {
-		if (desc)
-			return comparer_desc(comparer(a, b), eq);
-		return comparer_asc(comparer(a, b), eq);
+		return desc ? comparer_desc(comparer(a, b), eq) : comparer_asc(comparer(a, b), eq);
 	});
 }
 
@@ -5426,8 +5370,9 @@ Chunker.prototype.read = function(index, callback) {
 
 	fs.readFile(self.filename + index + '.json', function(err, data) {
 		if (err)
-			return callback(null, EMPTYARRAY);
-		callback(null, data.toString('utf8').parseJSON());
+			callback(null, EMPTYARRAY);
+		else
+			callback(null, data.toString('utf8').parseJSON());
 	});
 	return self;
 };
@@ -5464,3 +5409,5 @@ exports.ObjectToArray = function(obj) {
 		output.push({ key: keys[i], value: obj[keys[i]]});
 	return output;
 };
+
+!global.framework && require('./index');

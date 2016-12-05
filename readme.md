@@ -11,11 +11,9 @@ __Total.js framework__ is a server-side framework for Node.js written in `pure` 
 $ npm install -g total.js
 ```
 
----
+[![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
-[![Support](https://www.totaljs.com/img/button-support.png?v=2)](https://www.totaljs.com/support/)
-
-- [__NEW__: Total.js Dashboard](https://www.totaljs.com/superadmin/)
+- [__NEW__: Total.js Dashboard](https://www.totaljs.com/dashboard/)
 - [__NEW__: Total.js BlogEngine](https://www.totaljs.com/blogengine/)
 - [__NEW__: NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
 - [Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
@@ -35,44 +33,17 @@ $ npm install -g total.js
 - [__Get Started__](http://www.totaljs.com/get-started/)
 - [__Documentation__](http://docs.totaljs.com)
 - [__HelpDesk with professional support__](https://helpdesk.totaljs.com)
-- [__Blogs__](https://blogs.totaljs.com)
+- [__Blogs__](https://blog.totaljs.com)
 - [__Membership__](https://my.totaljs.com)
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
 
-&nbsp;
-
-| Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
-|------|------|------|------|------|
-| [![Casperise](https://www.totaljs.com/img/logo-casperise.png)](https://www.casperise.com/) | [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) |
-| [![JRB System](https://www.totaljs.com/img/logo-jrbsystem.png)](http://www.jrbsystem.com/) | [![Weida Web](https://www.totaljs.com/img/logo-weidaweb.png)](https://www.weidaweb.com/) | |
-
-## Social networks
-
-Please support the framework on social networks.
-
-- [Follow Total.js on Gitter](https://gitter.im/totaljs/framework)
-- [Follow Total.js on GitHub](https://github.com/totaljs/framework)
-- [Follow Total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
-- [Follow Total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
-- [Follow Total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
-- [Follow Total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
-
----
-
-## Support
-
-Our support service is the only way for us to rise money for development. By purchasing our support
-service you're supporting the framework and its products..
+## Official support
 
 - [Support form](http://www.totaljs.com/support/)
 - Support e-mail: <support@totaljs.com>
 
-## Features
-
-[![Total.js trailer](https://www.totaljs.com/img/github-video.png)](https://vimeo.com/134131056)
-
-| Name |
+| Top features |
 |------|
 | [__Offline documentation__](http://docs.totaljs.com) |
 | __Backward compatibility__ |
@@ -106,19 +77,17 @@ service you're supporting the framework and its products..
 | Supports String, Date, Number and Array prototypes |
 | Supports additional utilities (e.g. create request, XML parsing, etc.) |
 | Supports themes |
+| __NEW__ Supports scripting |
 | Possibility to rewrite existing functionality |
-| NoSQL embedded database |
+| NoSQL embedded database (__NEW: joins, scalar operations and in-memory mode__) |
 | __You can use framework as single library__ `total.js (320 kB)` |
-
----
 
 ## Contributors
 
 | Contributor | Type | E-mail |
 |-------------|------|--------|
-| [Peter Širka](https://github.com/JozefGula) | BDFL + contributor + support | <petersirka@gmail.com> |
+| [Peter Širka](https://github.com/JozefGula) | author + support | <petersirka@gmail.com> |
 | [Martin Smola](https://github.com/molda) | contributor + support | <smola.martin@gmail.com> |
-| [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
 | [Tom Spaccialbelli](https://github.com/harry-stot) | contributor | <tom.spaccialbelli@gmail.com> |
@@ -136,9 +105,21 @@ service you're supporting the framework and its products..
 - [SQL Agent: A missing ORM for Node.js and Total.js](https://github.com/petersirka/node-sqlagent)
 - [PayPal Express Checkout](https://github.com/petersirka/node-paypal-express-checkout)
 
+## Social networks
+
+Please support the framework on social networks.
+
+- [Follow Total.js on Gitter](https://gitter.im/totaljs/framework)
+- [Follow Total.js on GitHub](https://github.com/totaljs/framework)
+- [Follow Total.js on Twitter - __@totalframework__](https://twitter.com/totalframework)
+- [Follow Total.js on Facebook](https://www.facebook.com/totaljs.web.framework)
+- [Follow Total.js on Google Plus](https://plus.google.com/u/0/113175077493180148081/posts)
+- [Follow Total.js on LinkedIn](https://www.linkedin.com/groups/totaljs-8109884)
+
 ## Contact
 
-Do you have any questions? Contact us <https://www.totaljs.com/contact/>
+- contact form <https://www.totaljs.com/contact/>
+- <info@totaljs.com>
 
 [license-image]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat
 [license-url]: license.txt

@@ -431,6 +431,25 @@ function test_Schema() {
 			assert.ok(response.counter === 4, 'Problem with hooks');
 		});
 	});
+
+	NEWSCHEMA('EnumKeyValue').make(function(schema) {
+		schema.define('enum_int', [1, 2, 0.3, 4], true);
+		schema.define('enum_string', ['Peter', 'Širka'], true);
+		schema.define('keyvalue', { 'peter': 1, 'lucia': 2 }, true);
+
+		schema.make({ enum_int: '0.3', 'keyvalue': 'lucia', enum_string: 'Širka' }, function(err, response) {
+			assert.ok(response.enum_int === 0.3, 'Schema enums (int)');
+			assert.ok(response.enum_string === 'Širka', 'Schema enums (int)');
+			assert.ok(response.keyvalue === 2, 'Schema keyvalue');
+		});
+
+		schema.make({ enum_int: '5', 'keyvalue': 'luciaa', enum_string: 'Širkaa' }, function(err) {
+			assert.ok(err.items[0].path === 'EnumKeyValue.enum_int', 'Schema enums (int) 2');
+			assert.ok(err.items[1].path === 'EnumKeyValue.enum_string', 'Schema enums (string) 2');
+			assert.ok(err.items[2].path === 'EnumKeyValue.keyvalue', 'Schema keyvalue 2');
+		});
+
+	});
 }
 
 function test_ErrorBuilder() {

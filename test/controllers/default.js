@@ -2,121 +2,121 @@ var assert = require('assert');
 
 exports.install = function() {
 
-	framework.localize('/templates/');
+	F.localize('/templates/');
 
-	framework.route(function(url, req, flags) {
+	F.route(function(url, req, flags) {
 		return url === '/custom/route/';
 	}, function() {
 		this.plain('CUSTOM');
 	});
 
-	framework.route('/logged/', view_logged, ['authorize', 1000], 3000);
-	framework.route('/unauthorize/', ['unauthorize'], view_unauthorize);
+	F.route('/logged/', view_logged, ['authorize', 1000], 3000);
+	F.route('/unauthorize/', ['unauthorize'], view_unauthorize);
 
-	framework.route('/a/b/c/d/authorize/', ['authorize'], function() {
+	F.route('/a/b/c/d/authorize/', ['authorize'], function() {
 		this.plain('authorize');
 	});
 
 /*
-	framework.route('/', function() {
+	F.route('/', function() {
 		this.plain('OK');
 	}, ['unauthorize']);
 */
-	framework.route('/', function() {
+	F.route('/', function() {
 		this.plain('ROBOT');
 	}, ['robot']);
 
-	framework.route('#route');
-	framework.route('/view-in-modules/', '.' + F.path.modules('someview'));
-	framework.route('/options/', plain_options, ['options']);
-	framework.route('/exception/', 'exception');
-	framework.route('/html-compressor/', view_compressor);
-	framework.route('/html-nocompress/', view_nocompress);
-	framework.route('/sync/', synchronize);
-	framework.route('/schema-filter/', ['post', '*filter#update']);
-	framework.route('/package/', '@testpackage/test');
-	framework.route('/precompile/', view_precomile);
-	framework.route('/homepage/', view_homepage);
-	framework.route('/usage/', view_usage);
-	framework.route('/sse/', viewSSE_html);
-	framework.route('/pipe/', pipe);
-	framework.route('/binary/', binary);
-	framework.route('/mobile/', mobile, ['mobile']);
-	framework.route('/mobile/', mobile_none);
-	framework.route('/reg/exp/{/^\\d+$/}/', regexp);
-	framework.route('/app/*', asterix);
-	framework.route('/sse/', viewSSE, ['sse']);
-	framework.route('/http/', viewHTTP, ['http']);
-	framework.route('/https/', viewHTTPS, ['https']);
-	framework.route('/dynamic/', viewDynamic);
-	framework.route('/routeto/', viewRouteto);
-	framework.route('/f/', viewSocket);
-	framework.route('/js/', viewJS);
-	framework.route('/', viewIndex);
-	framework.route('/cookie/', view_cookie);
-	framework.route('/layout/', view_layout);
-	framework.route('/custom/', viewCustomTesting);
-	framework.route('/views/', viewViews, ["#middleware"]);
-	framework.route('/view-notfound/', viewError);
-	framework.route('/views-if/', viewViewsIf);
-	framework.route('/{a}/', viewRouteA);
-	framework.route('/{a}/{b}/', viewRouteAB);
-	framework.route('/a/{a}/', viewRouteAA);
-	framework.route('/a/b/c/', viewRouteABC);
-	framework.route('/test/', viewTest);
-	framework.route('/translate/', viewTranslate);
-	framework.route('/test-view/', view_test_view);
-	framework.route('/login/google/callback/', aa);
-	framework.route('/timeout/', function() {}, [50]);
+	F.route('#route');
+	F.route('/view-in-modules/', '.' + F.path.modules('someview'));
+	F.route('/options/', plain_options, ['options']);
+	F.route('/exception/', 'exception');
+	F.route('/html-compressor/', view_compressor);
+	F.route('/html-nocompress/', view_nocompress);
+	F.route('/sync/', synchronize);
+	F.route('/schema-filter/', ['post', '*filter#update']);
+	F.route('/package/', '@testpackage/test');
+	F.route('/precompile/', view_precomile);
+	F.route('/homepage/', view_homepage);
+	F.route('/usage/', view_usage);
+	F.route('/sse/', viewSSE_html);
+	F.route('/pipe/', pipe);
+	F.route('/binary/', binary);
+	F.route('/mobile/', mobile, ['mobile']);
+	F.route('/mobile/', mobile_none);
+	F.route('/reg/exp/{/^\\d+$/}/', regexp);
+	F.route('/app/*', asterix);
+	F.route('/sse/', viewSSE, ['sse']);
+	F.route('/http/', viewHTTP, ['http']);
+	F.route('/https/', viewHTTPS, ['https']);
+	F.route('/dynamic/', viewDynamic);
+	F.route('/routeto/', viewRouteto);
+	F.route('/f/', viewSocket);
+	F.route('/js/', viewJS);
+	F.route('/', viewIndex);
+	F.route('/cookie/', view_cookie);
+	F.route('/layout/', view_layout);
+	F.route('/custom/', viewCustomTesting);
+	F.route('/views/', viewViews, ["#middleware"]);
+	F.route('/view-notfound/', viewError);
+	F.route('/views-if/', viewViewsIf);
+	F.route('/{a}/', viewRouteA);
+	F.route('/{a}/{b}/', viewRouteAB);
+	F.route('/a/{a}/', viewRouteAA);
+	F.route('/a/b/c/', viewRouteABC);
+	F.route('/test/', viewTest);
+	F.route('/translate/', viewTranslate);
+	F.route('/test-view/', view_test_view);
+	F.route('/login/google/callback/', aa);
+	F.route('/timeout/', function() {}, [50]);
 
-	framework.route('/get/', plain_get);
-	framework.route('/post/raw/', plain_post_raw, ['post', 'raw']);
-	framework.route('/post/parse/', plain_post_parse, ['post']);
-	framework.route('/post/json/', plain_post_json, ['json']);
-	framework.route('/post/xml/', plain_post_xml, ['xml']);
-	framework.route('/multiple/', plain_multiple, ['post', 'get', 'put', 'delete']);
-	framework.route('/post/schema/', plain_post_schema_parse, ['post', '*test/User']);
-	framework.route('/rest/', plain_rest, ['post']);
-	framework.route('/rest/', plain_rest, ['put']);
-	framework.route('/rest/', plain_rest, ['get', 'head']);
-	framework.route('/rest/', plain_rest, ['delete']);
-	framework.route('/put/raw/', plain_put_raw, ['put', 'raw']);
-	framework.route('/put/parse/', plain_put_parse, ['put']);
-	framework.route('/put/json/', plain_put_json, ['json', 'put']);
-	framework.route('/put/xml/', plain_put_xml, ['xml', 'put']);
-	framework.route('/upload/', plain_upload, ['upload']);
-	framework.route('/index/', 'homepage');
-	framework.route('/live/', viewLive);
-	framework.route('/live/incoming/', viewLiveIncoming, ['mixed']);
+	F.route('/get/', plain_get);
+	F.route('/post/raw/', plain_post_raw, ['post', 'raw']);
+	F.route('/post/parse/', plain_post_parse, ['post']);
+	F.route('/post/json/', plain_post_json, ['json']);
+	F.route('/post/xml/', plain_post_xml, ['xml']);
+	F.route('/multiple/', plain_multiple, ['post', 'get', 'put', 'delete']);
+	F.route('/post/schema/', plain_post_schema_parse, ['post', '*test/User']);
+	F.route('/rest/', plain_rest, ['post']);
+	F.route('/rest/', plain_rest, ['put']);
+	F.route('/rest/', plain_rest, ['get', 'head']);
+	F.route('/rest/', plain_rest, ['delete']);
+	F.route('/put/raw/', plain_put_raw, ['put', 'raw']);
+	F.route('/put/parse/', plain_put_parse, ['put']);
+	F.route('/put/json/', plain_put_json, ['json', 'put']);
+	F.route('/put/xml/', plain_put_xml, ['xml', 'put']);
+	F.route('/upload/', plain_upload, ['upload']);
+	F.route('/index/', 'homepage');
+	F.route('/live/', viewLive);
+	F.route('/live/incoming/', viewLiveIncoming, ['mixed']);
 
-	framework.redirect('http://www.google.sk', 'http://www.petersirka.sk');
+	F.redirect('http://www.google.sk', 'http://www.petersirka.sk');
 
-	framework.route('#408', function() {
+	F.route('#408', function() {
 		var self = this;
 		F.global.timeout++;
 		self.plain('408');
 	});
 
-	assert.ok(framework.encrypt('123456', 'key', false) === 'MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'framework.encrypt(string)');
-	assert.ok(framework.decrypt('MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'key', false) === '123456', 'framework.decrypt(string)');
+	assert.ok(F.encrypt('123456', 'key', false) === 'MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'F.encrypt(string)');
+	assert.ok(F.decrypt('MjM9QR8HExlaHQJQBxcGAEoaFQoGGgAW', 'key', false) === '123456', 'F.decrypt(string)');
 
-	assert.ok(framework.encrypt({ name: 'Peter' }, 'key', false) === 'MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'framework.encrypt(object)');
-	assert.ok(framework.decrypt('MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'key').name === 'Peter', 'framework.decrypt(object)')
+	assert.ok(F.encrypt({ name: 'Peter' }, 'key', false) === 'MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'F.encrypt(object)');
+	assert.ok(F.decrypt('MzM9QVUXTkwCThBbF3RXQRlYBkUFVRdOTAJOEFsXdFdBGQ', 'key').name === 'Peter', 'F.decrypt(object)')
 
 	assert.ok(SOURCE('main').hello() === 'world', 'source');
 	assert.ok(INCLUDE('main').hello() === 'world', 'source');
 
-	framework.route('/basic/', viewBAA);
+	F.route('/basic/', viewBAA);
 
-	framework.file(file_plain_middleware, ['#file']);
-	framework.file('/robots.txt', file_plain);
-	framework.file(file_plain_status);
+	F.file(file_plain_middleware, ['#file']);
+	F.file('/robots.txt', file_plain);
+	F.file(file_plain_status);
 
-	framework.route('#401', function() {
+	F.route('#401', function() {
 		this.plain('401');
 	});
 
-	framework.file((req) => req.url.indexOf('.jpg') !== -1, resize_image);
+	F.file((req) => req.url.indexOf('.jpg') !== -1, resize_image);
 
 	// url
 	// function
@@ -124,12 +124,12 @@ exports.install = function() {
 	// protocols []
 	// allow []
 	// maximumSize
-	framework.websocket('/', socket);
-	framework.route('/theme-green/', view_theme);
-	framework.cors('/api/*');
-	framework.cors('/cors/origin-all/');
-	framework.cors('/cors/origin-not/', ['http://www.petersirka.eu', 'http://www.858project.com']);
-	framework.cors('/cors/headers/', ['post', 'put', 'delete', 'options', 'X-Ping'], true);
+	F.websocket('/', socket);
+	F.route('/theme-green/', view_theme);
+	F.cors('/api/*');
+	F.cors('/cors/origin-all/');
+	F.cors('/cors/origin-not/', ['http://www.petersirka.eu', 'http://www.858project.com']);
+	F.cors('/cors/headers/', ['post', 'put', 'delete', 'options', 'X-Ping'], true);
 };
 
 function plain_options() {
@@ -159,12 +159,12 @@ function plain_multiple() {
 
 function plain_get() {
 	var self = this;
-	self.json(self.get);
+	self.json(self.query);
 }
 
 function plain_post_raw() {
 	var self = this;
-	self.plain(self.post);
+	self.plain(self.body);
 }
 
 function plain_post_parse() {
@@ -172,49 +172,49 @@ function plain_post_parse() {
 	self.layout('');
 	var output = self.view('params', null, true);
 	assert.ok(output === '--body=total.js--query=query--post=total.js--get=query--', 'Problem with getting values from request body and URL.');
-	self.post.type = 'parse';
-	self.json(self.post);
+	self.body.type = 'parse';
+	self.json(self.body);
 }
 
 function plain_post_schema_parse() {
 	var self = this;
-	self.post.type = 'schema';
-	self.json(self.post);
+	self.body.type = 'schema';
+	self.json(self.body);
 }
 
 function plain_post_json() {
 	var self = this;
-	self.post.type = 'json';
-	self.json(self.post);
+	self.body.type = 'json';
+	self.json(self.body);
 }
 
 function plain_post_xml() {
 	var self = this;
-	self.post.type = 'xml';
-	self.json(self.post);
+	self.body.type = 'xml';
+	self.json(self.body);
 }
 
 function plain_put_raw() {
 	var self = this;
-	self.plain(self.post);
+	self.plain(self.body);
 }
 
 function plain_put_parse() {
 	var self = this;
-	self.post.type = 'parse';
-	self.json(self.post);
+	self.body.type = 'parse';
+	self.json(self.body);
 }
 
 function plain_put_json() {
 	var self = this;
-	self.post.type = 'json';
-	self.json(self.post);
+	self.body.type = 'json';
+	self.json(self.body);
 }
 
 function plain_put_xml() {
 	var self = this;
-	self.post.type = 'xml';
-	self.json(self.post);
+	self.body.type = 'xml';
+	self.json(self.body);
 }
 
 function plain_upload() {
@@ -409,9 +409,7 @@ function viewTest() {
 }
 
 function viewDynamic() {
-	this.view('<b>@{model.name}</b>', {
-		name: 'Peter'
-	});
+	this.viewCompile('<b>@{model.name}</b>', { name: 'Peter' });
 }
 
 function viewTranslate() {
@@ -595,6 +593,10 @@ function viewViews() {
 	assert.ok(output.contains('<label><input type="radio" name="a" checked="checked" value="A" /> <span>test label</span></label>'), name + 'radio');
 	assert.ok(output.contains('<div>NESTED</div>'), name + 'if - nested');
 	assert.ok(output.contains('---<div>Hello World!</div><div>Price: 12</div>---'), name + '- "/" view path problem');
+
+	F.script('next(value.toLowerCase())', 'PETER', function(err, val) {
+		assert.ok(val ==='peter', 'SCRIPT: lowercase');
+	});
 
 	self.json({
 		r: true
