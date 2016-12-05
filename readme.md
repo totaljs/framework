@@ -38,13 +38,6 @@ $ npm install -g total.js
 - [Gitter - Chat for GitHub](https://gitter.im/totaljs/framework)
 - [Changelog](https://github.com/totaljs/framework/blob/master/changes.txt)
 
-&nbsp;
-
-| Sponsor | Sponsor | Sponsor | Sponsor | Sponsor |
-|------|------|------|------|------|
-| [![Casperise](https://www.totaljs.com/img/logo-casperise.png)](https://www.casperise.com/) | [![Payius](https://www.totaljs.com/img/logo-payius.png)](http://www.payius.com) | [![DATALAN](https://www.totaljs.com/img/logo-datalan.png)](http://www.datalan.sk) | [![858 Project](https://www.totaljs.com/img/logo-858.png)](http://www.858project.com) | [![BlueBox](https://www.totaljs.com/img/logo-bluebox.png)](http://www.bbox.es/) |
-| [![JRB System](https://www.totaljs.com/img/logo-jrbsystem.png)](http://www.jrbsystem.com/) | [![Weida Web](https://www.totaljs.com/img/logo-weidaweb.png)](https://www.weidaweb.com/) | |
-
 ## Social networks
 
 Please support the framework on social networks.
@@ -58,10 +51,7 @@ Please support the framework on social networks.
 
 ---
 
-## Support
-
-Our support service is the only way for us to rise money for development. By purchasing our support
-service you're supporting the framework and its products..
+## Official support
 
 - [Support form](http://www.totaljs.com/support/)
 - Support e-mail: <support@totaljs.com>
@@ -104,6 +94,7 @@ service you're supporting the framework and its products..
 | Supports String, Date, Number and Array prototypes |
 | Supports additional utilities (e.g. create request, XML parsing, etc.) |
 | Supports themes |
+| Supports scripting |
 | Possibility to rewrite existing functionality |
 | NoSQL embedded database |
 | __You can use framework as single library__ `total.js (320 kB)` |
@@ -116,7 +107,6 @@ service you're supporting the framework and its products..
 |-------------|------|--------|
 | [Peter Širka](https://github.com/JozefGula) | BDFL + contributor + support | <petersirka@gmail.com> |
 | [Martin Smola](https://github.com/molda) | contributor + support | <smola.martin@gmail.com> |
-| [Jozef Gula](https://github.com/JozefGula) | contributor + support | <gula.jozef@gmail.com> |
 | [Andrea Sessa](https://github.com/asessa) | contributor | <andrea.sessa@gmail.com> |
 | [Gera G. Güiles](https://github.com/Maxima-Solutions) | contributor | <gerardo.gonzalezg@gmail.com> |
 | [Tom Spaccialbelli](https://github.com/harry-stot) | contributor | <tom.spaccialbelli@gmail.com> |
