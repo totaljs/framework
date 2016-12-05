@@ -1,3 +1,7 @@
+======= 2.4.0 (BETA)
+
+- updated: new error message `The field "@" is invalid.`
+
 ======= 2.3.0
 
 - added: support for `/workflows` file (more in documentation)
