@@ -80,7 +80,7 @@ $ npm install -g total.js
 | __NEW__ Supports scripting |
 | Possibility to rewrite existing functionality |
 | NoSQL embedded database (__NEW: joins, scalar operations and in-memory mode__) |
-| __You can use framework as single library__ `total.js (320 kB)` |
+| __You can use framework as single library__ `total.js (415 kB)` |
 
 ## Contributors
 
