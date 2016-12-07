@@ -1,6 +1,7 @@
 ======= 2.4.0 (BETA)
 
 - updated: new error message `The field "@" is invalid.`
+- updated: `NOSQL().insert(doc, [unique])`
 
 ======= 2.3.0
 

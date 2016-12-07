@@ -108,9 +108,30 @@ Database.prototype.meta = function(name, value) {
 	return self;
 };
 
-Database.prototype.insert = function(doc) {
+Database.prototype.insert = function(doc, unique) {
 	var self = this;
-	var builder = new DatabaseBuilder2();
+	var builder;
+
+	if (unique) {
+		builder = self.one();
+		var callback;
+
+		builder.callback(function(err, d) {
+			if (d)
+				callback && callback(null, 0);
+			else
+				self.insert(doc).callback(callback);
+		});
+
+		builder.callback = function(fn) {
+			callback = fn;
+			return builder;
+		};
+
+		return self;
+	}
+
+	builder = new DatabaseBuilder2();
 	var json = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	self.pending_append.push({ doc: JSON.stringify(json), builder: builder });
 	setImmediate(() => self.next(1));
@@ -119,23 +140,7 @@ Database.prototype.insert = function(doc) {
 };
 
 Database.prototype.upsert = function(doc) {
-	var self = this;
-	var builder = self.one();
-	var callback;
-
-	builder.callback(function(err, d) {
-		if (d)
-			callback && callback(null, 0);
-		else
-			self.insert(doc).callback(callback);
-	});
-
-	builder.callback = function(fn) {
-		callback = fn;
-		return builder;
-	};
-
-	return builder;
+	return this.insert(doc, true);
 };
 
 Database.prototype.update = function(doc, insert) {
