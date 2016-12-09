@@ -666,7 +666,7 @@ function main() {
 		stream.on('finish', function() {
 			console.log('Unpacking file.');
 			exec('totalpackage unpack total.package', function() {
-				fs.unlink(filename);
+				fs.unlink(filename, NOOP);
 				console.log('Done.');
 				console.log('');
 			});
