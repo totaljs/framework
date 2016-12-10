@@ -3,6 +3,8 @@
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`
 
+- fixed: JS minificator
+
 ======= 2.3.0
 
 - added: support for `/workflows` file (more in documentation)

@@ -1112,6 +1112,8 @@ function minify_javascript(data) {
 	var next;
 	var last;
 
+	console.log(data);
+
 	while (true) {
 
 		var c = data[index];
@@ -1169,7 +1171,7 @@ function minify_javascript(data) {
 				if ((last !== '\\' && c === '/') || (last === '\\' && c === '/' && output[output.length - 2] === '\\'))
 					regexp = false;
 			} else
-				regexp = (last === '=' || last === '(' || last === ':' || last === '{' || last === '[') && (c === '/');
+				regexp = (last === '=' || last === '(' || last === ':' || last === '{' || last === '[' || last === '?') && (c === '/');
 		}
 
 		if (scope && c === '\\') {
@@ -1202,6 +1204,8 @@ function minify_javascript(data) {
 
 	return output.join('').trim();
 }
+
+console.log(minify_javascript('var d = false;var f = d?/\\\\|\\\//:/g/g;'));
 
 exports.compile_css = function(value, filename) {
 
@@ -3172,7 +3176,7 @@ function patchAssignSocket(res, callback) {
 	if (typeof(assignSocket) !== 'function')
 		return;
 	// res.on('socket', callback) is broken in 0.8
-	res.assignSocket = function _assignSocket(socket) {
+	res.assignSocket = function(socket) {
 		assignSocket.call(this, socket);
 		callback(socket);
 	};
