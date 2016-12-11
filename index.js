@@ -450,7 +450,7 @@ global.TRY = function(fn, err) {
 };
 
 global.OBSOLETE = function(name, message) {
-	console.log(':: OBSOLETE / IMPORTANT ---> "' + name + '"', message);
+	console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss') + ' :: OBSOLETE / IMPORTANT ---> "' + name + '"', message);
 	if (global.framework)
 		framework.stats.other.obsolete++;
 };
