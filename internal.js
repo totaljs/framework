@@ -1205,8 +1205,6 @@ function minify_javascript(data) {
 	return output.join('').trim();
 }
 
-console.log(minify_javascript('var d = false;var f = d?/\\\\|\\\//:/g/g;'));
-
 exports.compile_css = function(value, filename) {
 
 	if (global.framework) {
