@@ -1112,8 +1112,6 @@ function minify_javascript(data) {
 	var next;
 	var last;
 
-	console.log(data);
-
 	while (true) {
 
 		var c = data[index];
