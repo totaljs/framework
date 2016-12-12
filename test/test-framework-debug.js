@@ -479,7 +479,7 @@ function test_routing(next) {
 		utils.request(url + 'schema-filter/', ['post'], 'EMPTY', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '[{"name":"age","error":"The field \\"age\\" is required.","path":"filter.age"}]', 'schema filter');
+			assert(data === '[{"name":"age","error":"The field \\"age\\" is invalid.","path":"filter.age"}]', 'schema filter');
 			complete();
 		});
 	});

@@ -2265,18 +2265,22 @@ function view_find_command(content, index) {
 
 		if (c !== '}')
 			continue;
-		else {
-			if (count > 0) {
-				count--;
-				continue;
-			}
+		else if (count > 0) {
+			count--;
+			continue;
 		}
+
+		var command = content.substring(index + 2, i).trim();
+
+		// @{{ SKIP }}
+		if (command[0] === '{')
+			return view_find_command(content, index + 1);
 
 		return {
 			beg: index,
 			end: i,
 			line: view_line_counter(content.substr(0, index)),
-			command: content.substring(index + 2, i).trim()
+			command: command
 		};
 	}
 

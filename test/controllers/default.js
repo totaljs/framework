@@ -525,6 +525,7 @@ function viewViews() {
 	//self.framework.stop();
 	//return;
 
+	assert.ok(output.contains('#<div>@{{ vue_command }}</div>#'), name + 'VUE command');
 	assert.ok(output.contains('#mobilefalse#'), name + 'mobile');
 	assert.ok(output.contains('<count>10</count>'), name + 'inline helper');
 	assert.ok(output.contains('<count>40</count><next>40</next>'), name + 'inline helper + condition');
