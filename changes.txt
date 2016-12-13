@@ -2,6 +2,7 @@
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`
+- updated: `quicksort` algorithm has been replaced for `shellsort` (increased performance of sorting about 10-15%)
 
 - fixed: JS minificator
 
