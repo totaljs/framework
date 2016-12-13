@@ -1879,7 +1879,7 @@ Counter.prototype.read = function(id, type, callback) {
 		single = true;
 	}
 
-	id && id.forEach(id => keys[id] = true);
+	id instanceof Array && id.forEach(id => keys[id] = true);
 	self.type = 2;
 
 	reader.on('error', function() {
@@ -1890,7 +1890,7 @@ Counter.prototype.read = function(id, type, callback) {
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var index = value.indexOf('=');
 		var key = value.substring(0, index);
-		if (all || keys[key])
+		if (all || id === true || keys[key])
 			switch (type) {
 				case 0:
 					if (all)
