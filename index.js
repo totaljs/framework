@@ -6679,9 +6679,10 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	// Validates if this request is the file (static file)
 	if (req.isStaticFile) {
 		self.stats.request.file++;
-		if (!self._length_files)
-			return self.responseStatic(req, res);
-		new Subscribe(self, req, res, 3).file();
+		if (self._length_files)
+			new Subscribe(self, req, res, 3).file();
+		else
+			self.responseStatic(req, res);
 		return self;
 	}
 
@@ -6830,17 +6831,13 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 				if (multipart) {
 
-					if (!isCORS) {
+					if (isCORS)
+						self._cors(req, res, (req, res, multipart) => req.$type === 4 ? self._request_mmr(req, res, multipart) : new Subscribe(self, req, res, 2).multipart(multipart), multipart);
+					else if (req.$type === 4)
+						self._request_mmr(req, res, multipart);
+					else
+						new Subscribe(self, req, res, 2).multipart(multipart);
 
-						if (req.$type === 4)
-							self._request_mmr(req, res, multipart);
-						else
-							new Subscribe(self, req, res, 2).multipart(multipart);
-
-						return self;
-					}
-
-					self._cors(req, res, (req, res, multipart) => req.$type === 4 ? self._request_mmr(req, res, multipart) : new Subscribe(self, req, res, 2).multipart(multipart), multipart);
 					return self;
 
 				} else {
