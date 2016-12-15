@@ -1850,13 +1850,16 @@ function view_parse(content, minify, filename, controller) {
 						if (!a) {
 							var isMeta = tmp.indexOf('\'meta\'') !== -1;
 							var isHead = tmp.indexOf('\'head\'') !== -1;
-							tmp = tmp.replace(/\'(meta|head)\'\,/g, '').replace(/(\,\,|\,\)|\s{1,})/g, '');
-							if (isMeta || isHead) {
+							var isComponent = tmp.indexOf('\'components\'') !== -1;
+							tmp = tmp.replace(/\'(meta|head|components)\'\,/g, '').replace(/(\,\,|\,\)|\s{1,})/g, '');
+							if (isMeta || isHead || isComponent) {
 								var tmpimp = '';
 								if (isMeta)
 									tmpimp += (isMeta ? '\'meta\'' : '');
 								if (isHead)
 									tmpimp += (tmpimp ? ',' : '') + (isHead ? '\'head\'' : '');
+								if (isComponent)
+									tmpimp += (tmpimp ? ',' : '') + (isComponent ? '\'components\'' : '');
 								builder += '+self.$import(' + tmpimp + ')';
 							}
 						}
@@ -2107,6 +2110,7 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'index':
 			return '(' + command + ')';
 
+		case 'component':
 		case 'routeJS':
 		case 'routeCSS':
 		case 'routeScript':

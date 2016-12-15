@@ -490,6 +490,7 @@ function Framework() {
 	this.version = 2400;
 	this.version_header = '2.4.0-5';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
+	this.version_components = '';
 
 	this.config = {
 
@@ -503,6 +504,7 @@ function Framework() {
 
 		'etag-version': '',
 		'directory-controllers': '/controllers/',
+		'directory-components': '/components/',
 		'directory-views': '/views/',
 		'directory-definitions': '/definitions/',
 		'directory-temp': '/tmp/',
@@ -531,6 +533,7 @@ function Framework() {
 		'static-url-video': '/video/',
 		'static-url-font': '/fonts/',
 		'static-url-download': '/download/',
+		'static-url-components': '/@components',
 		'static-accepts': { '.jpg': true, '.png': true, '.gif': true, '.ico': true, '.js': true, '.css': true, '.txt': true, '.xml': true, '.woff': true, '.woff2': true, '.otf': true, '.ttf': true, '.eot': true, '.svg': true, '.zip': true, '.rar': true, '.pdf': true, '.docx': true, '.xlsx': true, '.doc': true, '.xls': true, '.html': true, '.htm': true, '.appcache': true, '.manifest': true, '.map': true, '.ogv': true, '.ogg': true, '.mp4': true, '.mp3': true, '.webp': true, '.webm': true, '.swf': true, '.package': true, '.json': true, '.md': true, '.m4v': true, '.jsx': true },
 
 		// 'static-accepts-custom': [],
@@ -624,6 +627,7 @@ function Framework() {
 	this.controllers = {};
 	this.dependencies = {};
 	this.isomorphic = {};
+	this.components = {};
 	this.tests = [];
 	this.errors = [];
 	this.problems = [];
@@ -1328,18 +1332,9 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 					url += '*';
 
 				if (sitemap.localizeUrl) {
-					if (!F.temporary.internal.resources) {
-						try {
-							F.temporary.internal.resources = Fs.readdirSync(self.path.resources()).map(n => n.substring(0, n.lastIndexOf('.')));
-						} catch (e) {
-							F.temporary.internal.resources = [];
-						}
-					}
-
 					if (language === undefined) {
 						sitemap_language = true;
 						var sitemaproutes = {};
-
 						F.temporary.internal.resources.forEach(function(language) {
 							var item = self.sitemap(sitemap.id, true, language);
 							if (item.url && item.url !== url)
@@ -2771,6 +2766,13 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		});
 	}
 
+	try {
+		// Reads name of resources
+		F.temporary.internal.resources = Fs.readdirSync(self.path.resources()).map(n => n.substring(0, n.lastIndexOf('.')));
+	} catch (e) {
+		F.temporary.internal.resources = [];
+	}
+
 	if (!types || types.indexOf('modules') !== -1) {
 		dir = framework_utils.combine(targetdirectory, self.config['directory-modules']);
 		arr = [];
@@ -2841,8 +2843,12 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			var filename = Path.join(themeDirectory, 'index.js');
 			self.themes[item.name] = framework_utils.path(themeDirectory);
 			self._length_themes++;
-			if (existsSync(filename))
-				self.install('theme', item.name, filename, undefined, undefined, undefined, true);
+			existsSync(filename) && self.install('theme', item.name, filename, undefined, undefined, undefined, true);
+
+			var components = [];
+			var components_dir = framework_utils.combine(targetdirectory, self.config['directory-themes'], themeName, self.config['directory-components']);
+			existsSync(components_dir) && listing(components_dir, 0, components, '.html', true);
+			components_dir && components.forEach((item) => self.install('component', themeName + '/' + item.name, item.filename, undefined, undefined, undefined));
 		});
 	}
 
@@ -2858,6 +2864,13 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		dir = framework_utils.combine(targetdirectory, self.config['directory-controllers']);
 		listing(dir, 0, arr);
 		arr.forEach((item) => self.install('controller', item.name, item.filename, undefined, undefined, undefined, true));
+	}
+
+	if (!types || types.indexOf('components') !== -1) {
+		arr = [];
+		dir = framework_utils.combine(targetdirectory, self.config['directory-components']);
+		listing(dir, 0, arr, '.html');
+		arr.forEach((item) => self.install('component', item.name, item.filename, undefined, undefined, undefined));
 	}
 
 	self._routesSort();
@@ -2934,6 +2947,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	var t = typeof(declaration);
 	var key = '';
 	var tmp;
+	var content;
 
 	if (t === 'object') {
 		t = typeof(options);
@@ -2991,10 +3005,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			});
 			return self;
 		} else {
-
 			if (declaration[0] === '~')
 				declaration = declaration.substring(1);
-			if (type !== 'config' && type !== 'resource' && type !== 'package' && !REG_SCRIPTCONTENT.test(declaration)) {
+			if (type !== 'config' && type !== 'resource' && type !== 'package' && type !== 'component' && !REG_SCRIPTCONTENT.test(declaration)) {
 				if (!existsSync(declaration))
 					throw new Error('The ' + type + ': ' + declaration + ' doesn\'t exist.');
 				useRequired = true;
@@ -3076,6 +3089,28 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		}, 500);
 
 		callback && callback(null);
+		return self;
+	}
+
+	if (type === 'component') {
+		content = parseComponent(Fs.readFileSync(declaration).toString(ENCODING), name);
+
+		content.js && Fs.appendFileSync(framework.path.temp((self.id ? 'i-' + self.id + '_' : '') + 'components.js'), (self.config.debug ? component_debug(name, content.js, 'js') : content.js) + '\n');
+		content.css && Fs.appendFileSync(framework.path.temp((self.id ? 'i-' + self.id + '_' : '') + 'components.css'), (self.config.debug ? component_debug(name, content.css, 'css') : content.css) + '\n');
+
+		self.components[name] = framework_internal.viewEngineCompile(content.body, '', EMPTYCONTROLLER);
+
+		content.body.indexOf('@(') !== -1 && F.temporary.internal.resources.forEach(function(resource) {
+			self.components[name + '#' + resource] = framework_internal.viewEngineCompile(content.body, resource, EMPTYCONTROLLER);
+		});
+
+		self.version_components = U.GUID(5);
+
+		setTimeout(function() {
+			self.emit(type + '#' + name);
+			self.emit('install', type, name);
+		}, 500);
+
 		return self;
 	}
 
@@ -3209,7 +3244,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 	if (type === 'isomorphic') {
 
-		var content = '';
+		content = '';
 
 		try {
 
@@ -4681,6 +4716,14 @@ function merge_debug_writer(writer, filename, extension, index, block) {
 	writer.write((index > 0 ? '\n\n' : '') + beg + mid + plus + '\n' + mid + 'MERGED: ' + filename + '\n' + (block ? mid + 'BLOCKS: ' + block + '\n' : '') + mid + plus + end + '\n\n', ENCODING);
 }
 
+function component_debug(filename, value, extension) {
+	var plus = '===========================================================================================';
+	var beg = extension === 'js' ? '/*\n' : extension === 'css' ? '/*!\n' : '<!--\n';
+	var end = extension === 'js' || extension === 'css' ? '\n */' : '\n-->';
+	var mid = extension !== 'html' ? ' * ' : ' ';
+	return beg + mid + plus + '\n' + mid + 'COMPONENT: ' + filename + '\n' + mid + plus + end + '\n\n' + value;
+}
+
 /**
  * Validating static file for compilation
  * @param {URI} uri
@@ -4798,6 +4841,11 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 		// is isomorphic?
 		if (filename[0] !== '#') {
+
+		// static-url-components
+			if (req.uri.pathname === self.config['static-url-components'] + '.' + req.extension)
+				filename = self.path.temp('components.' + req.extension);
+
 			self.responseFile(req, res, filename, undefined, undefined, done);
 			return self;
 		}
@@ -8301,6 +8349,11 @@ Framework.prototype._configure_dependencies = function(arr) {
 			case 'middlewares':
 				self.install('middleware', url, options);
 				break;
+			case 'component':
+			case 'components':
+				self.install('component', url, options);
+				break;
+
 		}
 	}
 
@@ -10263,6 +10316,13 @@ Controller.prototype.$save = function(helper, callback) {
 	return self;
 };
 
+Controller.prototype.component = function(name) {
+	var self = this;
+	var key = name + (self.language ? '#' + self.language : '');
+	var fn = framework.components[key];
+	return fn ? fn.call(self, self, self.repository, self.$model, self.session, self.query, self.body, self.url, framework.global, framework.helpers, self.user, self.config, framework.functions, 0, self.outputPartial, self.date, self.req.cookie, self.req.files, self.req.mobile) : '';
+};
+
 Controller.prototype.$remove = function(helper, callback) {
 	var self = this;
 	self.getSchema().remove(helper, callback, self);
@@ -11684,6 +11744,15 @@ Controller.prototype.$import = function() {
 
 		if (filename === 'meta') {
 			builder += self.$meta();
+			continue;
+		}
+
+		if (filename === 'components') {
+			if (framework.version_components) {
+				var link = framework.config['static-url-components'];
+				builder += '<script src="{0}.js?version={1}"></script>'.format(link, framework.version_components);
+				builder += '<link type="text/css" rel="stylesheet" href="{0}.css?version={1}" />'.format(link, framework.version_components);
+			}
 			continue;
 		}
 
@@ -14923,6 +14992,50 @@ global.clearTimeout2 = function(name) {
 
 	return false;
 };
+
+function parseComponent(body, filename) {
+	var response = {};
+	response.css = '';
+	response.js = '';
+
+	var beg = 0;
+	var end = 0;
+	var tmp;
+
+	while (true) {
+		beg = body.indexOf('<style');
+		if (beg === -1)
+			break;
+		end = body.indexOf('</style>', beg);
+		if (end === -1)
+			break;
+		response.css += (response.css ? '\n' : '') + body.substring(beg, end).replace(/<(\/)?style.*?>/g, '');
+		body = body.substring(0, beg).trim() + body.substring(end + 8).trim();
+	}
+
+	while (true) {
+		beg = body.indexOf('<script>');
+		if (beg === -1) {
+			beg = body.indexOf('<script type="text/javascript">');
+			if (beg === -1)
+				break;
+		}
+		end = body.indexOf('</script>', beg);
+		if (end === -1)
+			break;
+		response.js += (response.js ? '\n' : '') + body.substring(beg, end).replace(/<(\/)?script.*?>/g, '');
+		body = body.substring(0, beg).trim() + body.substring(end + 9).trim();
+	}
+
+	if (response.js)
+		response.js = framework_internal.compile_javascript(response.js, filename);
+
+	if (response.css)
+		response.css = framework_internal.compile_css(response.css, filename);
+
+	response.body = body;
+	return response;
+}
 
 // Default action for workflow routing
 function controller_json_workflow(id) {

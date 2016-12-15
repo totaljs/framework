@@ -21,6 +21,7 @@ const VERSION = '6.0';
 const TIME = 2000;
 const REG_FILES = /config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i;
 const REG_THEMES = /\/themes\//i;
+const REG_COMPONENTS = /components\/.*?\.html/i;
 const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/i;
 const REG_EXTENSION = /\.(js|resource|package)/i;
 
@@ -57,7 +58,7 @@ function debug() {
 function app() {
 	const fork = require('child_process').fork;
 	const utils = require('total.js/utils');
-	const directories = [directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes'];
+	const directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes'];
 	const async = new utils.Async();
 	const prefix = '---------------------------------> ';
 	var files = {};
@@ -75,7 +76,7 @@ function app() {
 	function onFilter(path, isDirectory) {
 		if (!isDirectory && REG_THEMES.test(path))
 			return REG_THEMES_INDEX.test(path);
-		return isDirectory ? true : REG_EXTENSION.test(path);
+		return isDirectory ? true : REG_EXTENSION.test(path) || REG_COMPONENTS.test(path);
 	}
 
 	function onIncrease(clear) {
@@ -98,7 +99,6 @@ function app() {
 		fs.readdir(directory, function(err, arr) {
 
 			var length = arr.length;
-
 			for (var i = 0; i < length; i++) {
 				var name = arr[i];
 				name !== 'debug.js' && REG_FILES.test(name) && f.push(name);
