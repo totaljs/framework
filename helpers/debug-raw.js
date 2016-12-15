@@ -17,7 +17,7 @@ const options = {};
 const isDebugging = process.argv.indexOf('debugging') !== -1;
 const directory = process.cwd();
 const path = require('path');
-const VERSION = '6.0';
+const VERSION = '7.0';
 const TIME = 2000;
 const REG_FILES = /config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i;
 const REG_THEMES = /\/themes\//i;
