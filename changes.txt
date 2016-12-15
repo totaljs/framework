@@ -90,7 +90,8 @@
 - updated: NoSQL embedded parser, dates are parsed as date object
 - updated: `Pagination.next()`, `Pagination.prev()`, `Pagination.last()` and `Pagination.first()` supports new arguments `.html([link_inner_html], [class_name])`
 - updated: `F.worker()` supports packages `F.worker('@eshop/myworker-script')`
-- update: `FrameworkImage` when the instance contains no command then `.minify()` method is performed automatically for preventing of empty response
+- updated: `FrameworkImage` when the instance contains no command then `.minify()` method is performed automatically for preventing of empty response
+- updated: `F.config['static-accepts']` removed dots from all extensions
 
 - improved: `@{href(key, value)}` performance
 - improved: Total Package Manager `$ tpm --help`
@@ -98,6 +99,7 @@
 
 - fixed: (critical) NoSQL `nosql.modify()` and problem with updating `undefined` values
 - fixed: (critical) security with GM and IM --> 10000x thanks for Luis Figueiredo <luisf@hexasoftware.com>
+- fixed: `Image.stream()` and `Image.pipe()`
 
 - renamed: `F.onLocate` renamed to __`F.onLocale`__
 
