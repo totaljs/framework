@@ -8,6 +8,9 @@
 - updated: `NOSQL().counter.monthly(true, ...)` shows all stats by ID
 - updated: `NOSQL().counter.yearly(true, ...)` shows all stats by ID
 
+- removed: behaviours
+- removed: restrictions
+
 - fixed: JS minificator
 
 ======= 2.3.0

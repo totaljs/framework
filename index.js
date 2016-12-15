@@ -489,7 +489,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2400;
-	this.version_header = '2.4.0-6';
+	this.version_header = '2.4.0-7';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -708,7 +708,6 @@ function Framework() {
 			empty: 0,
 			redirect: 0,
 			forward: 0,
-			restriction: 0,
 			notModified: 0,
 			sse: 0,
 			mmr: 0,
@@ -726,7 +725,6 @@ function Framework() {
 	// intialize cache
 	this.cache = new FrameworkCache();
 	this.path = new FrameworkPath();
-	this.restrictions = new FrameworkRestrictions();
 
 	this._request_check_redirect = false;
 	this._request_check_referer = false;
@@ -4396,15 +4394,6 @@ Framework.prototype.usage = function(detailed) {
 	output.stats = self.stats;
 	output.redirects = redirects;
 
-	if (self.restrictions.is) {
-		output.restrictions = {
-			allowed: [],
-			blocked: [],
-			allowedHeaders: self.restrictions.allowedCustomKeys,
-			blockedHeaders: self.restrictions.blockedCustomKeys
-		};
-	}
-
 	if (!detailed)
 		return output;
 
@@ -6591,9 +6580,6 @@ Framework.prototype.listener = function(req, res) {
 		}
 	}
 
-	if (framework.restrictions.is && framework._request_restriction(req, res, headers))
-		return;
-
 	req.path = framework_internal.routeSplit(req.uri.pathname);
 	req.processing = 0;
 	req.isAuthorized = true;
@@ -6628,55 +6614,6 @@ Framework.prototype.listener = function(req, res) {
 		async_middleware(0, req, res, framework.routes.request, () => framework._request_continue(res.req, res, res.req.headers, protocol));
 	else
 		framework._request_continue(req, res, headers, protocol);
-};
-
-Framework.prototype._request_restriction = function(req, res, headers) {
-
-	var self = this;
-
-	if (self.restrictions.isAllowedIP) {
-		for (var i = 0, length = self.restrictions.allowedIP.length; i < length; i++) {
-			var ip = self.restrictions.allowedIP[i];
-			if (req.ip.indexOf(ip) !== -1)
-				continue;
-			self.stats.response.restriction++;
-			res.writeHead(403);
-			res.end();
-			return true;
-		}
-	}
-
-	if (self.restrictions.isBlockedIP) {
-		for (var i = 0, length = self.restrictions.blockedIP.length; i < length; i++) {
-			var ip = self.restrictions.blockedIP[i];
-			if (req.ip.indexOf(ip) === -1)
-				continue;
-			self.stats.response.restriction++;
-			res.writeHead(403);
-			res.end();
-			return true;
-		}
-	}
-
-	if (self.restrictions.isAllowedCustom) {
-		if (!self.restrictions._allowedCustom(headers)) {
-			self.stats.response.restriction++;
-			res.writeHead(403);
-			res.end();
-			return true;
-		}
-	}
-
-	if (self.restrictions.isBlockedCustom) {
-		if (self.restrictions._blockedCustom(headers)) {
-			self.stats.response.restriction++;
-			res.writeHead(403);
-			res.end();
-			return true;
-		}
-	}
-
-	return false;
 };
 
 /**
@@ -7034,9 +6971,6 @@ Framework.prototype._upgrade = function(req, socket, head) {
 
 	self.emit('websocket', req, socket, head);
 	self.stats.request.websocket++;
-
-	if (self.restrictions.is && self._request_restriction(req, res, headers))
-		return;
 
 	req.session = null;
 	req.user = null;
@@ -9053,152 +8987,6 @@ Framework.prototype.wait = function(name, enable) {
 
 	self._length_wait = Object.keys(self.waits).length;
 	return enable === true;
-};
-
-// *********************************************************************************
-// =================================================================================
-// Framework Restrictions
-// 2.0.0
-// =================================================================================
-// *********************************************************************************
-
-function FrameworkRestrictions() {
-	this.is = false;
-	this.isAllowedIP = false;
-	this.isBlockedIP = false;
-	this.isAllowedCustom = false;
-	this.isBlockedCustom = false;
-	this.allowedIP = [];
-	this.blockedIP = [];
-	this.allowedCustom = {};
-	this.blockedCustom = {};
-	this.allowedCustomKeys = [];
-	this.blockedCustomKeys = [];
-};
-
-FrameworkRestrictions.prototype.allow = function(name, value) {
-
-	var self = this;
-
-	// IP address
-	if (!value) {
-		self.allowedIP.push(name);
-		self.refresh();
-		return framework;
-	}
-
-	// Custom header
-	if (self.allowedCustom[name])
-		self.allowedCustom[name].push(value);
-	else
-		self.allowedCustom[name] = [value];
-
-	self.refresh();
-	return framework;
-};
-
-FrameworkRestrictions.prototype.disallow = function(name, value) {
-
-	var self = this;
-
-	// IP address
-	if (value === undefined) {
-		self.blockedIP.push(name);
-		self.refresh();
-		return framework;
-	}
-
-	// Custom header
-	if (self.blockedCustom[name])
-		self.blockedCustom[name].push(value);
-	else
-		self.blockedCustom[name] = [value];
-
-	self.refresh();
-	return framework;
-};
-
-FrameworkRestrictions.prototype.refresh = function() {
-
-	var self = this;
-
-	self.isAllowedIP = self.allowedIP.length > 0;
-	self.isBlockedIP = self.blockedIP.length > 0;
-
-	self.isAllowedCustom = !framework_utils.isEmpty(self.allowedCustom);
-	self.isBlockedCustom = !framework_utils.isEmpty(self.blockedCustom);
-
-	self.allowedCustomKeys = Object.keys(self.allowedCustom);
-	self.blockedCustomKeys = Object.keys(self.blockedCustom);
-
-	self.is = self.isAllowedIP || self.isBlockedIP || self.isAllowedCustom || self.isBlockedCustom;
-	return framework;
-};
-
-FrameworkRestrictions.prototype.clearIP = function() {
-	var self = this;
-	self.allowedIP = [];
-	self.blockedIP = [];
-	self.refresh();
-	return framework;
-}
-
-FrameworkRestrictions.prototype.clearHeaders = function() {
-	var self = this;
-	self.allowedCustom = {};
-	self.blockedCustom = {};
-	self.allowedCustomKeys = [];
-	self.blockedCustomKeys = [];
-	self.refresh();
-	return framework;
-}
-
-FrameworkRestrictions.prototype._allowedCustom = function(headers) {
-
-	var self = this;
-	var length = self.allowedCustomKeys.length;
-
-	for (var i = 0; i < length; i++) {
-
-		var key = self.allowedCustomKeys[i];
-		var value = headers[key];
-		if (value === undefined)
-			return false;
-
-		var arr = self.allowedCustom[key];
-		var max = arr.length;
-		for (var j = 0; j < max; j++) {
-			if (value.search(arr[j]) === -1)
-				return false;
-		}
-	}
-
-	return true;
-};
-
-FrameworkRestrictions.prototype._blockedCustom = function(headers) {
-
-	var self = this;
-	var length = self.blockedCustomKeys.length;
-
-	for (var i = 0; i < length; i++) {
-
-		var key = self.blockedCustomKeys[i];
-		var value = headers[key];
-
-		if (value === undefined)
-			return false;
-
-		var arr = self.blockedCustom[key];
-		var max = arr.length;
-
-		for (var j = 0; j < max; j++) {
-			if (value.search(arr[j]) !== -1)
-				return true;
-		}
-	}
-
-	return false;
 };
 
 // *********************************************************************************
@@ -11451,21 +11239,21 @@ Controller.prototype.head = function() {
 	}
 
 	var header = (self.repository[REPOSITORY_HEAD] || '');
-	var output = '';
 
-	if (!self.$head)
-		self.$head = {};
+	if (!self.$headcache)
+		self.$headcache = {};
 
 	for (var i = 0; i < arguments.length; i++) {
 
 		var val = arguments[i];
-		if (self.$head[val])
+
+		if (self.$headcache[val])
 			continue;
 
-		self.$head[val] = true;
+		self.$headcache[val] = true;
 
 		if (val[0] === '<') {
-			output += val;
+			header += val;
 			continue;
 		}
 
@@ -11473,12 +11261,11 @@ Controller.prototype.head = function() {
 		var is = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
 
 		if (val.endsWith('.css', true))
-			output += '<link type="text/css" rel="stylesheet" href="' + (is ? self.routeStyle(val) : val) + '" />';
+			header += '<link type="text/css" rel="stylesheet" href="' + (is ? self.routeStyle(val) : val) + '" />';
 		else if (val.endsWith('.js', true) !== -1)
-			output += '<script src="' + (is ? self.routeScript(val) : val) + '"></script>';
+			header += '<script src="' + (is ? self.routeScript(val) : val) + '"></script>';
 	}
 
-	header += output;
 	self.repository[REPOSITORY_HEAD] = header;
 	return self;
 };
