@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkInternal
- * @version 2.3.0
+ * @version 2.4.0
  */
 
 'use strict';
@@ -167,7 +167,6 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 				rm.push(tmp.path);
 			else
 				rm = [tmp.path];
-
 			return;
 		}
 
@@ -184,21 +183,19 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 
 		var wh = null;
 
-		if (!req.behaviour('disable-measuring')) {
-			switch (tmp.type) {
-				case 'image/jpeg':
-					wh = framework_image.measureJPG(buffer.slice(start));
-					break;
-				case 'image/gif':
-					wh = framework_image.measureGIF(data);
-					break;
-				case 'image/png':
-					wh = framework_image.measurePNG(data);
-					break;
-				case 'image/svg+xml':
-					wh = framework_image.measureSVG(data);
-					break;
-			}
+		switch (tmp.type) {
+			case 'image/jpeg':
+				wh = framework_image.measureJPG(buffer.slice(start));
+				break;
+			case 'image/gif':
+				wh = framework_image.measureGIF(data);
+				break;
+			case 'image/png':
+				wh = framework_image.measurePNG(data);
+				break;
+			case 'image/svg+xml':
+				wh = framework_image.measureSVG(data);
+				break;
 		}
 
 		if (wh) {
@@ -238,17 +235,13 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		var temporary = req.body[tmp.name];
 		if (temporary === undefined) {
 			req.body[tmp.name] = tmp.$data;
-			return;
-		}
-
-		if (temporary instanceof Array) {
+		} else if (temporary instanceof Array) {
 			req.body[tmp.name].push(tmp.$data);
-			return;
+		} else {
+			temporary = [temporary];
+			temporary.push(tmp.$data);
+			req.body[tmp.name] = temporary;
 		}
-
-		temporary = [temporary];
-		temporary.push(tmp.$data);
-		req.body[tmp.name] = temporary;
 	};
 
 	parser.onEnd = function() {
@@ -291,7 +284,6 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) 
 	var stream;
 	var tmp;
 	var counter = 0;
-
 	var path = framework_utils.combine(tmpDirectory, (framework.id ? 'i-' + framework.id + '_' : '') + 'mixed' + Math.random().toString(36).substring(2) + '-');
 
 	boundary = boundary.substring(boundary.indexOf('=', 2) + 1);
