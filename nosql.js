@@ -128,7 +128,7 @@ Database.prototype.insert = function(doc, unique) {
 			return builder;
 		};
 
-		return self;
+		return builder;
 	}
 
 	builder = new DatabaseBuilder2();
