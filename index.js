@@ -570,7 +570,6 @@ function Framework() {
 		'allow-compile-html': true,
 		'allow-performance': false,
 		'allow-custom-titles': false,
-		'allow-compatibility': false,
 		'allow-cache-snapshot': false,
 		'disable-strict-server-certificate-validation': true,
 		'disable-clear-temporary-directory': false,
@@ -626,7 +625,7 @@ function Framework() {
 	this.controllers = {};
 	this.dependencies = {};
 	this.isomorphic = {};
-	this.components = { has: false, css: false, js: false, items: {}, version: null };
+	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null };
 	this.tests = [];
 	this.errors = [];
 	this.problems = [];
@@ -1739,6 +1738,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		workflow: workflow,
 		subdomain: subdomain,
 		controller: _controller ? _controller : 'unknown',
+		owner: _owner,
 		url: routeURL,
 		param: arr,
 		flags: flags || EMPTYARRAY,
@@ -2325,7 +2325,8 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 
 	self.routes.websockets.push({
 		hash: hash,
-		controller: !_controller ? 'unknown' : _controller,
+		controller: _controller ? _controller : 'unknown',
+		owner: _owner,
 		url: routeURL,
 		param: arr,
 		subdomain: subdomain,
@@ -2460,7 +2461,8 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 
 
 	self.routes.files.push({
-		controller: !_controller ? 'unknown' : _controller,
+		controller: _controller ? _controller : 'unknown',
+		owner: _owner,
 		url: url,
 		fixedfile: fixedfile,
 		wildcard: wildcard,
@@ -2472,11 +2474,7 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 	});
 
 	self.routes.files.sort(function(a, b) {
-		if (!a.url)
-			return -1;
-		if (!b.url)
-			return 1;
-		return a.url.length > b.url.length ? -1 : 1;
+		return !a.url ? -1 : !b.url ? 1 : a.url.length > b.url.length ? -1 : 1;
 	});
 
 	self.emit('route', 'file', self.routes.files[self.routes.files.length - 1]);
@@ -2821,10 +2819,13 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			self.themes[item.name] = framework_utils.path(themeDirectory);
 			self._length_themes++;
 			existsSync(filename) && self.install('theme', item.name, filename, undefined, undefined, undefined, true);
+			/*
+			@TODO: FOR FUTURE VERSION
 			var components = [];
 			var components_dir = framework_utils.combine(targetdirectory, self.config['directory-themes'], themeName, self.config['directory-components']);
 			existsSync(components_dir) && listing(components_dir, 0, components, '.html', true);
 			components_dir && components.forEach((item) => self.install('component', themeName + '/' + item.name, item.filename, undefined, undefined, undefined));
+			*/
 		});
 	}
 
@@ -2947,10 +2948,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	if (type !== 'eval' && typeof(declaration) === 'string') {
 
 		if (declaration.startsWith('http://') || declaration.startsWith('https://')) {
-
 			if (type === 'package') {
 				framework_utils.download(declaration, ['get'], function(err, response) {
-
 					if (err) {
 						self.error(err, 'framework.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
 						callback && callback(err);
@@ -2963,7 +2962,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					response.pipe(stream);
 					stream.on('finish', () => self.install(type, id, filename, options, undefined, undefined, true));
 				});
-
 				return self;
 			}
 
@@ -3021,7 +3019,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	if (type === 'config' || type === 'configuration' || type === 'settings') {
 
 		self._configure(declaration instanceof Array ? declaration : declaration.toString().split('\n'), true);
-
 		setTimeout(function() {
 			delete self.temporary['mail-settings'];
 			self.emit(type + '#' + name, framework.config);
@@ -3069,10 +3066,14 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	}
 
 	if (type === 'component') {
-		content = parseComponent(Fs.readFileSync(declaration).toString(ENCODING), name);
 
-		content.js && Fs.appendFileSync(framework.path.temp((self.id ? 'i-' + self.id + '_' : '') + 'components.js'), (self.config.debug ? component_debug(name, content.js, 'js') : content.js) + '\n');
-		content.css && Fs.appendFileSync(framework.path.temp((self.id ? 'i-' + self.id + '_' : '') + 'components.css'), (self.config.debug ? component_debug(name, content.css, 'css') : content.css) + '\n');
+		if (!name && internal)
+			name = framework_utils.getName(internal).replace(/\.html/gi, '').trim();
+
+		var temporary = (self.id ? 'i-' + self.id + '_' : '') + 'components';
+		content = parseComponent(internal ? declaration : Fs.readFileSync(declaration).toString(ENCODING), name);
+		content.js && Fs.appendFileSync(framework.path.temp(temporary + '.js'), (self.config.debug ? component_debug(name, content.js, 'js') : content.js) + '\n');
+		content.css && Fs.appendFileSync(framework.path.temp(temporary + '.css'), (self.config.debug ? component_debug(name, content.css, 'css') : content.css) + '\n');
 
 		if (content.js)
 			self.components.js = true;
@@ -3080,20 +3081,38 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (content.css)
 			self.components.css = true;
 
-		self.components.items[name] = framework_internal.viewEngineCompile(content.body, '', EMPTYCONTROLLER);
+		self.components.views[name] = framework_internal.viewEngineCompile(content.body, '', EMPTYCONTROLLER);
 		self.components.has = true;
 
 		content.body.indexOf('@(') !== -1 && F.temporary.internal.resources.forEach(function(resource) {
-			self.components.items[name + '#' + resource] = framework_internal.viewEngineCompile(content.body, resource, EMPTYCONTROLLER);
+			self.components.views[name + '#' + resource] = framework_internal.viewEngineCompile(content.body, resource, EMPTYCONTROLLER);
 		});
 
 		self.components.version = U.GUID(5);
 
-		setTimeout(function() {
+		if (!internal) {
+			var js = declaration.replace(/\.html$/, '.js');
+			if (existsSync(js)) {
+				_owner = type + '#' + name;
+				obj = require(js);
+				obj.$owner = _owner;
+				self.components.instances[name] = obj;
+				typeof(obj.install) === 'function' && obj.install(options, name);
+				(function(name, filename) {
+					setTimeout(function() {
+						delete require.cache[name];
+					}, 1000);
+				})(require.resolve(declaration), declaration);
+				_controller = '';
+			}
+		}
+
+		!skipEmit && setTimeout(function() {
 			self.emit(type + '#' + name);
 			self.emit('install', type, name);
 		}, 500);
 
+		callback && callback(null);
 		return self;
 	}
 
@@ -3129,16 +3148,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		_owner = type + '#' + name;
 		obj = require(declaration);
 		obj.$owner = _owner;
-
-		if (typeof(obj.install) === 'function')
-			obj.install(options, name);
-
-		if (!skipEmit) {
-			setTimeout(function() {
-				self.emit(type + '#' + name);
-				self.emit('install', type, name);
-			}, 500);
-		}
+		typeof(obj.install) === 'function' && obj.install(options, name);
+		!skipEmit && setTimeout(function() {
+			self.emit(type + '#' + name);
+			self.emit('install', type, name);
+		}, 500);
 
 		callback && callback(null);
 
@@ -3755,29 +3769,18 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 
 	var self = this;
 	var obj = null;
+	var id = type + '#' + name;
 
 	if (type === 'schema') {
 		framework_builders.remove(name);
-		self.emit('uninstall', type, name);
-		return self;
-	}
-
-	if (type === 'mapping') {
+	} else if (type === 'mapping') {
 		delete self.routes.mapping[name];
-		self.emit('uninstall', type, name);
-		return self;
-	}
-
-	if (type === 'isomorphic') {
+	} else if (type === 'isomorphic') {
 		var obj = self.isomorphic[name];
 		if (obj.url)
 			delete self.routes.mapping[self._version(obj.url)];
 		delete self.isomorphic[name];
-		self.emit('uninstall', type, name);
-		return self;
-	}
-
-	if (type === 'middleware') {
+	} else if (type === 'middleware') {
 
 		if (!self.routes.middleware[name])
 			return self;
@@ -3806,17 +3809,11 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 				tmp.middleware = tmp.middleware.remove(name);
 		}
 
-		self.emit('uninstall', type, name);
-		return self;
-	}
-
-	if (type === 'package') {
+	} else if (type === 'package') {
 		delete self.routes.packages[name];
 		self.uninstall('module', name, options, true);
 		return self;
-	}
-
-	if (type === 'view' || type === 'precompile') {
+	} else if (type === 'view' || type === 'precompile') {
 
 		obj = self.routes.views[name];
 
@@ -3830,11 +3827,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 			e && Fs.unlink(obj.filename, NOOP);
 		});
 
-		self.emit('uninstall', type, name);
-		return self;
-	}
-
-	if (type === 'model' || type === 'source') {
+	} else if (type === 'model' || type === 'source') {
 
 		obj = type === 'model' ? self.models[name] : self.sources[name];
 
@@ -3844,12 +3837,11 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		if (obj.id)
 			delete require.cache[require.resolve(obj.id)];
 
-		if (typeof(obj.uninstall) === 'function') {
-			if (framework.config['allow-compatibility'])
-				obj.uninstall(self, options, name);
-			else
-				obj.uninstall(options, name);
-		}
+		self.routes.web = self.routes.web.remove('owner', id);
+		self.routes.files = self.routes.files.remove('owner', id);
+		self.routes.websockets = self.routes.websockets.remove('owner', id);
+
+		typeof(obj.uninstall) === 'function' && obj.uninstall(options, name);
 
 		if (type === 'model')
 			delete self.models[name];
@@ -3857,13 +3849,9 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 			delete self.sources[name];
 
 		delete self.dependencies[type + '.' + name];
-
 		self._routesSort();
-		self.emit('uninstall', type, name);
-		return self;
-	}
 
-	if (type === 'module' || type === 'controller') {
+	} else if (type === 'module' || type === 'controller') {
 
 		var isModule = type === 'module';
 		obj = isModule ? self.modules[name] : self.controllers[name];
@@ -3874,20 +3862,16 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		if (obj.id)
 			delete require.cache[require.resolve(obj.id)];
 
-		var id = (isModule ? '#' : '') + name;
-
-		self.routes.web = self.routes.web.remove('controller', id);
-		self.routes.files = self.routes.files.remove('controller', id);
-		self.routes.websockets = self.routes.websockets.remove('controller', id);
+		var controller = (isModule ? '#' : '') + name;
+		self.routes.web = self.routes.web.remove('controller', controller);
+		self.routes.files = self.routes.files.remove('controller', controller);
+		self.routes.websockets = self.routes.websockets.remove('controller', controller);
+		self.routes.web = self.routes.web.remove('owner', id);
+		self.routes.files = self.routes.files.remove('owner', id);
+		self.routes.websockets = self.routes.websockets.remove('owner', id);
 
 		if (obj) {
-			if (obj.uninstall) {
-				if (framework.config['allow-compatibility'])
-					obj.uninstall(self, options, name);
-				else
-					obj.uninstall(options, name);
-			}
-
+			obj.uninstall && obj.uninstall(options, name);
 			if (isModule)
 				delete self.modules[name];
 			else
@@ -3895,14 +3879,28 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		}
 
 		self._routesSort();
-		delete self.dependencies[type + '.' + name];
 
-		if (!skipEmit)
-			self.emit('uninstall', type, name);
+	} else if (type === 'component') {
 
-		return self;
+		obj = self.components.instances[name];
+		if (!obj)
+			return self;
+
+		self.routes.web = self.routes.web.remove('owner', id);
+		self.routes.files = self.routes.files.remove('owner', id);
+		self.routes.websockets = self.routes.websockets.remove('owner', id);
+
+		if (obj) {
+			obj.uninstall && obj.uninstall(options, name);
+			delete self.components.instances[name];
+			delete self.components.views[name];
+		}
+
+		// @TODO: rebuild CSS and JS?
+		self._routesSort();
 	}
 
+	!skipEmit && self.emit('uninstall', type, name);
 	return self;
 };
 
@@ -10057,11 +10055,14 @@ Controller.prototype.$save = function(helper, callback) {
 	return self;
 };
 
-Controller.prototype.component = function(name) {
+Controller.prototype.component = function(name, settings) {
 	var self = this;
 	var key = name + (self.language ? '#' + self.language : '');
-	var fn = framework.components.items[key];
-	return fn ? fn.call(self, self, self.repository, self.$model, self.session, self.query, self.body, self.url, framework.global, framework.helpers, self.user, self.config, framework.functions, 0, self.outputPartial, self.date, self.req.cookie, self.req.files, self.req.mobile) : '';
+	var fn = framework.components.views[key];
+	if (fn)
+		return fn.call(self, self, self.repository, self.$model, self.session, self.query, self.body, self.url, framework.global, framework.helpers, self.user, self.config, framework.functions, 0, self.outputPartial, self.date, self.req.cookie, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
+	F.error('Error: A component "{0}" doesn\'t exist.'.format(name), self.name, self.uri);
+	return '';
 };
 
 Controller.prototype.$remove = function(helper, callback) {
@@ -10167,9 +10168,9 @@ Controller.prototype.getSchema = function() {
 	if (!route.schema || !route.schema[1])
 		throw new Error('The controller\'s route does not define any schema.');
 	var schema = GETSCHEMA(route.schema[0], route.schema[1]);
-	if (!schema)
-		throw new Error('Schema "{0}" does not exist.'.format(route.schema[1]));
-	return schema;
+	if (schema)
+		return schema;
+	throw new Error('Schema "{0}" does not exist.'.format(route.schema[1]));
 };
 
 /**
@@ -12651,7 +12652,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 	var helpers = framework.helpers;
 
 	try {
-		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, partial ? self.outputPartial : self.output, self.date, self.req.cookie, self.req.files, self.req.mobile);
+		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, framework.global, helpers, self.user, self.config, framework.functions, 0, partial ? self.outputPartial : self.output, self.date, self.req.cookie, self.req.files, self.req.mobile, EMPTYOBJECT);
 	} catch (ex) {
 
 		err = new Error('View "' + filename + '": ' + ex.message);
