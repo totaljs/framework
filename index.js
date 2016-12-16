@@ -10058,7 +10058,7 @@ Controller.prototype.$save = function(helper, callback) {
 Controller.prototype.component = function(name, settings) {
 	var self = this;
 	var key = name + (self.language ? '#' + self.language : '');
-	var fn = framework.components.views[key];
+	var fn = framework.components.views[key] || framework.components.views[name];
 	if (fn)
 		return fn.call(self, self, self.repository, self.$model, self.session, self.query, self.body, self.url, framework.global, framework.helpers, self.user, self.config, framework.functions, 0, self.outputPartial, self.date, self.req.cookie, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
 	F.error('Error: A component "{0}" doesn\'t exist.'.format(name), self.name, self.uri);
