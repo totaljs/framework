@@ -489,7 +489,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2400;
-	this.version_header = '2.4.0-9';
+	this.version_header = '2.4.0-10';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -3090,12 +3090,24 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		self.components.version = U.GUID(5);
 
-		if (!internal) {
-			var js = declaration.replace(/\.html$/, '.js');
+		if (content.install) {
+			try {
+				_owner = type + '#' + name;
+				var obj = (new Function('var exports={};' + content.install + ';return exports;'))();
+				obj.$owner = _owner;
+				_controller = '';
+				self.components.instances[name] = obj;
+				obj = typeof(obj.install) === 'function' && obj.install(options, name);
+			} catch(e) {
+				F.error(e, 'F.install(\'component\', \'{0}\')'.format(name));
+			}
+		} else if (!internal) {
+			var js = declaration.replace(/\.html$/i, '.js');
 			if (existsSync(js)) {
 				_owner = type + '#' + name;
 				obj = require(js);
 				obj.$owner = _owner;
+				_controller = '';
 				self.components.instances[name] = obj;
 				typeof(obj.install) === 'function' && obj.install(options, name);
 				(function(name, filename) {
@@ -3103,7 +3115,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 						delete require.cache[name];
 					}, 1000);
 				})(require.resolve(declaration), declaration);
-				_controller = '';
 			}
 		}
 
@@ -14715,12 +14726,25 @@ global.clearTimeout2 = function(name) {
 
 function parseComponent(body, filename) {
 	var response = {};
+
 	response.css = '';
 	response.js = '';
+	response.install = '';
 
 	var beg = 0;
 	var end = 0;
 	var tmp;
+
+	while (true) {
+		beg = body.indexOf('<script type="text/totaljs">');
+		if (beg === -1)
+			break;
+		end = body.indexOf('</script>', beg);
+		if (end === -1)
+			break;
+		response.install += (response.install ? '\n' : '') + body.substring(beg, end).replace(/<(\/)?script.*?>/g, '');
+		body = body.substring(0, beg).trim() + body.substring(end + 9).trim();
+	}
 
 	while (true) {
 		beg = body.indexOf('<style');

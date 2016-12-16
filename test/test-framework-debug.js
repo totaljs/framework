@@ -886,6 +886,7 @@ framework.on('load', function() {
 	assert.ok(F.config['custom-config2'] === '2YES', 'custom configuration 2');
 	assert.ok(RESOURCE('default', 'name-root').length > 0, 'custom resource mapping 1');
 	assert.ok(RESOURCE('default', 'name-theme').length > 0, 'custom resource mapping 2');
+	assert.ok(F.global.newslettercomponent, 'components: inline <script type="text/totaljs"> --> newsletter');
 
 	var sa = F.sitemap_navigation();
 	var sb = F.sitemap_navigation('b');
