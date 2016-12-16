@@ -619,6 +619,15 @@ function test_routing(next) {
 		});
 	});
 
+	async.await('components routing', function(complete) {
+		utils.request(url + 'components/contactform/', ['get'], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'CONTACTFORM COMPONENTS', 'components: routing');
+			complete();
+		});
+	});
+
 	async.await('static-file-notfound-because-directory1', function(complete) {
 		utils.request(url + 'directory.txt', [], function(error, data, code, headers) {
 			if (error)
