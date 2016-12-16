@@ -1894,7 +1894,7 @@ function view_parse(content, minify, filename, controller) {
 	if (RELEASE)
 		builder = builder.replace(/(\+\$EMPTY\+)/g, '+').replace(/(\$output\=\$EMPTY\+)/g, '$output=').replace(/(\$output\+\=\$EMPTY\+)/g, '$output+=').replace(/(\}\$output\+\=\$EMPTY)/g, '}').replace(/(\{\$output\+\=\$EMPTY\;)/g, '{').replace(/(\+\$EMPTY\+)/g, '+').replace(/(\>\'\+\'\<)/g, '><').replace(/\'\+\'/g, '');
 
-	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
+	var fn = '(function(self,repository,model,session,query,body,url,global,helpers,user,config,functions,index,output,date,cookie,files,mobile,settings){var get=query;var post=body;var theme=this.themeName;var language=this.language;var cookie=function(name){return controller.req.cookie(name);};' + (functions.length ? functions.join('') + ';' : '') + 'var controller=self;' + builder + ';return $output;})';
 	return eval(fn);
 }
 
@@ -1962,12 +1962,8 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'console':
 			return '(' + command + '?$EMPTY:$EMPTY)';
 
-		case 'cookie':
-			return '$STRING(' + command + ').encode()';
 		case '!cookie':
 			return '$STRING(' + command + ')';
-		case 'isomorphic':
-			return '$STRING(' + command + ').encode()';
 		case '!isomorphic':
 			return '$STRING(' + command + ')';
 
@@ -2001,6 +1997,9 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'helpers':
 			return command;
 
+		case 'cookie':
+		case 'isomorphic':
+		case 'settings':
 		case 'CONFIG':
 		case 'function':
 		case 'MODEL':
