@@ -1625,6 +1625,7 @@ function view_parse(content, minify, filename, controller) {
 	var nocompressHTML = false;
 	var nocompressJS = false;
 	var nocompressCSS = false;
+	var hascomponents = content.indexOf('@{component(') !== -1;
 
 	content = content.replace(REG_NOCOMPRESS, function(text) {
 

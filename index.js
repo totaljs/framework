@@ -70,6 +70,7 @@ const EMPTYREQUEST = { uri: {} };
 const SINGLETONS = {};
 const REPOSITORY_HEAD = '$head';
 const REPOSITORY_META = '$meta';
+const REPOSITORY_COMPONENTS = '$components';
 const REPOSITORY_META_TITLE = '$title';
 const REPOSITORY_META_DESCRIPTION = '$description';
 const REPOSITORY_META_KEYWORDS = '$keywords';
@@ -489,7 +490,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2400;
-	this.version_header = '2.4.0-10';
+	this.version_header = '2.4.0-11';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -3088,7 +3089,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			self.components.views[name + '#' + resource] = framework_internal.viewEngineCompile(content.body, resource, EMPTYCONTROLLER);
 		});
 
+		var link = framework.config['static-url-components'];
 		self.components.version = U.GUID(5);
+		self.components.links = (self.components.js ? '<script src="{0}js?version={1}"></script>'.format(link, self.components.version) : '') + (self.components.css ? '<link type="text/css" rel="stylesheet" href="{0}css?version={1}" />'.format(link, self.components.version) : '');
 
 		if (content.install) {
 			try {
@@ -10066,16 +10069,6 @@ Controller.prototype.$save = function(helper, callback) {
 	return self;
 };
 
-Controller.prototype.component = function(name, settings) {
-	var self = this;
-	var key = name + (self.language ? '#' + self.language : '');
-	var fn = framework.components.views[key] || framework.components.views[name];
-	if (fn)
-		return fn.call(self, self, self.repository, self.$model, self.session, self.query, self.body, self.url, framework.global, framework.helpers, self.user, self.config, framework.functions, 0, self.outputPartial, self.date, self.req.cookie, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
-	F.error('Error: A component "{0}" doesn\'t exist.'.format(name), self.name, self.uri);
-	return '';
-};
-
 Controller.prototype.$remove = function(helper, callback) {
 	var self = this;
 	self.getSchema().remove(helper, callback, self);
@@ -10182,6 +10175,26 @@ Controller.prototype.getSchema = function() {
 	if (schema)
 		return schema;
 	throw new Error('Schema "{0}" does not exist.'.format(route.schema[1]));
+};
+
+/**
+ * Renders component
+ * @param {String} name A component name
+ * @param {Object} settings Optional, settings.
+ * @return {String}
+ */
+Controller.prototype.component = function(name, settings) {
+	var self = this;
+	var key = name + (self.language ? '#' + self.language : '');
+	var fn = framework.components.views[key] || framework.components.views[name];
+
+	if (fn) {
+		self.repository[REPOSITORY_COMPONENTS] = true;
+		return fn.call(self, self, self.repository, self.$model, self.session, self.query, self.body, self.url, framework.global, framework.helpers, self.user, self.config, framework.functions, 0, self.outputPartial, self.date, self.req.cookie, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
+	}
+
+	F.error('Error: A component "{0}" doesn\'t exist.'.format(name), self.name, self.uri);
+	return '';
 };
 
 /**
@@ -11247,22 +11260,20 @@ Controller.prototype.head = function() {
 		// OBSOLETE: this is useless
 		// framework.emit('controller-render-head', self);
 		var author = self.repository[REPOSITORY_META_AUTHOR] || self.config.author;
-		return (author ? '<meta name="author" content="' + author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '');
+		return (author ? '<meta name="author" content="' + author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '') + (self.repository[REPOSITORY_COMPONENTS] ? framework.components.links : '');
 	}
 
 	var header = (self.repository[REPOSITORY_HEAD] || '');
 
-	if (!self.$headcache)
-		self.$headcache = {};
-
 	for (var i = 0; i < arguments.length; i++) {
 
 		var val = arguments[i];
+		var key = '$head-' + val;
 
-		if (self.$headcache[val])
+		if (self.repository[key])
 			continue;
 
-		self.$headcache[val] = true;
+		self.repository[key] = true;
 
 		if (val[0] === '<') {
 			header += val;
@@ -11271,10 +11282,10 @@ Controller.prototype.head = function() {
 
 		var tmp = val.substring(0, 7);
 		var is = (tmp[0] !== '/' && tmp[1] !== '/') && tmp !== 'http://' && tmp !== 'https:/';
-
-		if (val.endsWith('.css', true))
+		var ext = framework_utils.getExtension(val);
+		if (ext === 'css')
 			header += '<link type="text/css" rel="stylesheet" href="' + (is ? self.routeStyle(val) : val) + '" />';
-		else if (val.endsWith('.js', true) !== -1)
+		else if (ext === 'js')
 			header += '<script src="' + (is ? self.routeScript(val) : val) + '"></script>';
 	}
 
@@ -11507,18 +11518,8 @@ Controller.prototype.$import = function() {
 			continue;
 		}
 
-		if (filename === 'components') {
-			if (framework.components.has) {
-				var link = framework.config['static-url-components'];
-
-				if (framework.components.js)
-					builder += '<script src="{0}js?version={1}"></script>'.format(link, framework.components.version);
-
-				if (framework.components.css)
-					builder += '<link type="text/css" rel="stylesheet" href="{0}css?version={1}" />'.format(link, framework.components.version);
-			}
+		if (filename === 'components')
 			continue;
-		}
 
 		var extension = filename.substring(filename.lastIndexOf('.'));
 		var tag = filename[0] !== '!';
@@ -11863,7 +11864,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	self.subscribe.success();
 	framework.responseContent(self.req, self.res, self.status, obj, type, self.config['allow-gzip'], headers);
 	framework.stats.response.json++;
-	self.precache && self.precache(obj, 'application/json', headers);
+	self.precache && self.precache(obj, type, headers);
 	return self;
 };
 
@@ -11921,10 +11922,10 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 
 /**
  * Creates View or JSON callback
- * @param {String} viewName Optional, if is undefined or null then returns JSON.
+ * @param {String} view Optional, undefined or null returns JSON.
  * @return {Function}
  */
-Controller.prototype.callback = function(viewName) {
+Controller.prototype.callback = function(view) {
 	var self = this;
 	return function(err, data) {
 
@@ -11937,17 +11938,17 @@ Controller.prototype.callback = function(viewName) {
 		}
 
 		if (err) {
-			if (is && !viewName) {
+			if (is && !view) {
 				self.req.$language && !err.isResourceCustom && err.setResource(self.req.$language);
 				return self.content(err);
 			}
 			return is && err.unexpected ? self.view500(err) : self.view404(err);
 		}
 
-		if (typeof(viewName) === 'string')
-			return self.view(viewName, data);
-
-		self.json(data);
+		if (typeof(view) === 'string')
+			self.view(view, data);
+		else
+			self.json(data);
 	};
 };
 

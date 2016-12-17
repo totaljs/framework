@@ -1589,7 +1589,7 @@ exports.isObject = function(value) {
 exports.getContentType = function(ext) {
 	if (ext[0] === '.')
 		ext = ext.substring(1);
-	return CONTENTTYPES[ext.toLowerCase()] || 'application/octet-stream';
+	return CONTENTTYPES[ext] || 'application/octet-stream';
 };
 
 /**
@@ -1598,8 +1598,17 @@ exports.getContentType = function(ext) {
  * @return {String}
  */
 exports.getExtension = function(filename) {
-	var index = filename.lastIndexOf('.');
-	return index !== -1 && filename.indexOf('/', index - 1) === -1 ? filename.substring(index + 1) : '';
+	var end = filename.length;
+	for (var i = filename.length; i > 1; i--) {
+		var c = filename[i];
+		if (c === ' ' || c === '?')
+			end = i;
+		else if (c === '.')
+			return filename.substring(i + 1, end);
+		else if (c === '/')
+			return '';
+	}
+	return '';
 };
 
 /**
@@ -1635,7 +1644,7 @@ exports.setContentType = function(ext, type) {
 		regexpSTATIC = new RegExp(tmp.substring(0, tmp.length - 1));
 	}
 
-	CONTENTTYPES[ext.toLowerCase()] = type;
+	CONTENTTYPES[ext] = type;
 	return true;
 };
 
@@ -2609,7 +2618,7 @@ String.prototype.hash = function(type, salt) {
 	var str = this;
 	if (salt)
 		str += salt;
-	switch ((type || '').toLowerCase()) {
+	switch (type) {
 		case 'md5':
 			return str.md5();
 		case 'sha1':
