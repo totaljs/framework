@@ -10,9 +10,9 @@ if (process.argv.indexOf('--minify') !== -1) {
     var options = {};
     options.fromString = true;
     options.mangle = true;
-    output = UglifyJS.minify(fs.readFileSync(path.join(process.cwd(), 'total.min.js')).toString('utf8'), options).code;
-    fs.writeFileSync(path.join(process.cwd(), 'total.min.js'), license + output);
-    fs.renameSync(path.join(process.cwd(), 'total.min.js'), path.join(process.cwd(), 'total.js'));
+    options.quote_style = 1;
+    output = fs.readFileSync(path.join(process.cwd(), 'total.js')).toString('utf8');
+    fs.writeFileSync(path.join(process.cwd(), 'total.js'), license + output);
     return;
 }
 
