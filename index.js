@@ -490,7 +490,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2400;
-	this.version_header = '2.4.0-11';
+	this.version_header = '2.4.0-12';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -1030,7 +1030,6 @@ Framework.prototype.schedule = function(date, repeat, fn) {
 		date = new Date(date);
 
 	var sum = date.getTime();
-	var id = framework_utils.GUID(5) + framework_utils.random(10000);
 
 	if (repeat)
 		repeat = repeat.replace('each', '1');
@@ -1178,8 +1177,6 @@ Framework.prototype.cors = function(url, flags, credentials) {
 
 	var self = this;
 	var route = {};
-	var tmp;
-
 	var origins = [];
 	var methods = [];
 	var headers = [];
@@ -1278,7 +1275,6 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var tmp;
 	var viewname;
 	var self = this;
-	var skip = true;
 	var sitemap;
 	var sitemap_language = language !== undefined;
 
@@ -4332,7 +4328,6 @@ Framework.prototype.logmail = function(address, subject, body, callback) {
 	if (!subject)
 		subject = framework.config.name + ' v' + framework.config.version;
 
-	var self = this;
 	var body = '<!DOCTYPE html><html><head><title>' + subject + '</title><meta charset="utf-8" /></head><body><pre style="max-width:600px;font-size:13px;line-height:16px">' + (typeof(body) === 'object' ? JSON.stringify(body).escape() : body) + '</pre></body></html>';
 	return framework.onMail(address, subject, body, callback);
 };
@@ -4756,8 +4751,6 @@ Framework.prototype.compileValidationVirtual = function(uri, key, filename, exte
 	var self = this;
 
 	var tmpname = filename.replace(self.config['directory-public'], self.config['directory-public-virtual']);
-	var notfound = true;
-
 	if (tmpname === filename) {
 		self.temporary.path[key] = null;
 		callback();
@@ -6916,7 +6909,6 @@ Framework.prototype._cors = function(req, res, fn, arg) {
 			stop = true;
 	}
 
-	var tmp;
 	var name
 	var isOPTIONS = req.method === 'OPTIONS';
 
@@ -7581,7 +7573,6 @@ Framework.prototype.test = function(stop, names, cb) {
 	self.isTest = true;
 
 	var dir = self.config['directory-tests'];
-	var is = false;
 
 	self._configure('config-test', true);
 
@@ -8450,7 +8441,6 @@ Framework.prototype._configure = function(arr, rewrite) {
 	var obj = {};
 	var accepts = null;
 	var length = arr.length;
-	var resources = false;
 	var tmp;
 	var subtype;
 	var value;
@@ -9626,8 +9616,6 @@ Subscribe.prototype.doEnd = function() {
 
 	if (req.buffer_data && (!route || !route.isBINARY))
 		req.buffer_data = req.buffer_data.toString(ENCODING);
-
-	var schema;
 
 	if (!req.buffer_data) {
 		if (route && route.schema)
@@ -12351,7 +12339,6 @@ Controller.prototype.mmr = function(name, stream, callback) {
 	var res = self.res;
 
 	if (typeof(stream) === 'function') {
-		var tmp = callback;
 		callback = stream;
 		stream = name;
 	}
@@ -14734,7 +14721,6 @@ function parseComponent(body, filename) {
 
 	var beg = 0;
 	var end = 0;
-	var tmp;
 
 	while (true) {
 		beg = body.indexOf('<script type="text/totaljs">');

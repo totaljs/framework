@@ -33,7 +33,6 @@ const spawn = child.spawn;
 const Fs = require('fs');
 const REGEXP_SVG = /(width=\"\d+\")+|(height=\"\d+\")+/g;
 const REGEXP_PATH = /\//g;
-const REGEXP_ARG = /\'/g;
 const REGEXP_ESCAPE = /\$\(.*?\)|\'/g;
 
 var CACHE = {};

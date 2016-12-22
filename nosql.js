@@ -651,9 +651,7 @@ Database.prototype.$reader = function() {
 		return self;
 	}
 
-	var index = 0;
 	var list = self.pending_reader.splice(0);
-
 	if (INMEMORY[self.name])
 		self.$reader2_inmemory('#', list, () => self.next(0));
 	else
@@ -961,7 +959,6 @@ Database.prototype.$views = function() {
 	}
 
 	var response = [];
-	var writers = [];
 
 	for (var i = 0; i < length; i++)
 		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0, counter: 0 });
@@ -1117,7 +1114,6 @@ Database.prototype.$remove = function() {
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
 		var json = JSON.parse(value.trim());
-		var is = false;
 		var removed = false;
 
 		for (var i = 0; i < length; i++) {
@@ -1181,7 +1177,6 @@ Database.prototype.$remove_inmemory = function() {
 
 		for (var j = 0, jl = data.length; j < jl; j++) {
 			var json = data[j];
-			var is = false;
 			var removed = false;
 
 			for (var i = 0; i < length; i++) {
@@ -2718,14 +2713,6 @@ function compare_eqgt_dtday(doc, index, item) {
 
 function compare_not_dtday(doc, index, item) {
 	return compare_datetype('day', '!=', item.value, doc[item.name]);
-}
-
-function scalar_group(obj) {
-	var keys = Object.keys(obj);
-	var output = [];
-	for (var i = 0, length = keys.length; i < length; i++)
-		output.push({ key: keys[i], count: obj[i] });
-	return output;
 }
 
 function errorhandling(err, builder, response) {

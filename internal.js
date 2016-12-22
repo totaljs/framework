@@ -686,7 +686,6 @@ exports.routeCompareFlags2 = function(req, route, membertype) {
 		var role = flag[0] === '@';
 
 		if (membertype !== 1 && route.MEMBER !== 1) {
-			var tmp = flag.substring(0, 3);
 			if ((!route.isGET && !role && !route.flags2[flag]) || (route.isROLE && role && !route.flags2[flag]) || (route.isROLE && !role))
 				return 0;
 			continue;
@@ -1095,7 +1094,6 @@ function minify_javascript(data) {
 	var isCS = false;
 	var isCI = false;
 	var alpha = /[0-9a-z]/i;
-	var chars = /[a-z]/i;
 	var white = /\W/;
 	var skip = { '$': true, '_': true };
 	var regexp = false;
@@ -2447,11 +2445,8 @@ function variablesCSS(content) {
 	});
 
 	content = content.replace(/\$[a-z0-9-_]+/gi, function(text, position) {
-		var end = text.length + position;
 		var variable = variables[text];
-		if (!variable)
-			return text;
-		return variable;
+		return variable ? variable : text;
 	}).trim();
 
 	return content;

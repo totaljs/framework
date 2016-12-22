@@ -989,7 +989,6 @@ SchemaBuilderEntity.prototype.query = function(helper, callback, controller) {
 SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder, filter, path, index) {
 
 	var self = this;
-	var fn = self.onValidate;
 
 	if (builder === undefined) {
 		builder = new ErrorBuilder();
@@ -2831,30 +2830,19 @@ ErrorBuilder.prototype._prepare = function() {
  * @return {Object}
  */
 ErrorBuilder.prototype._transform = function(name) {
-
-	var self = this;
-	var transformName = name || self.transformName;
-
+	var transformName = name || this.transformName;
 	if (!transformName)
-		return self.items;
-
+		return this.items;
 	var current = transforms['error'][transformName];
-	if (!current)
-		return self.items;
-
-	return current.call(self);
+	return current ? current.call(this) : this.items;
 };
 
 ErrorBuilder.prototype.output = function() {
-	var self = this;
-
 	if (!this.transformName)
 		return this.json();
-
 	var current = transforms['error'][this.transformName];
 	if (!current)
 		return this.json();
-
 	this.prepare();
 	return current.call(this);
 };
@@ -3709,12 +3697,9 @@ RESTBuilder.prototype.rem = function(name) {
 RESTBuilder.prototype.stream = function(callback) {
 	var self = this;
 	var flags = self.$flags ? self.$flags : [self.$method];
-	var key;
 
 	if (!self.$flags) {
-
 		!self.$nodnscache && flags.push('dnscache');
-
 		switch (self.$type) {
 			case 1:
 				flags.push('json');
@@ -3723,7 +3708,6 @@ RESTBuilder.prototype.stream = function(callback) {
 				flags.push('xml');
 				break;
 		}
-
 		self.$flags = flags;
 	}
 

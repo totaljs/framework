@@ -14,6 +14,8 @@
 
 - fixed: JS minificator
 
+- improved: code
+
 ======= 2.3.0
 
 - added: support for `/workflows` file (more in documentation)

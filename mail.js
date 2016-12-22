@@ -36,12 +36,6 @@ const REG_ESMTP = /\besmtp\b/i;
 const REG_STATE = /\d+/;
 const EMPTYARRAY = [];
 
-const errors = {
-	notvalid: 'E-mail address is not valid',
-	resolve: 'Cannot resolve MX of ',
-	connection: 'Cannot connect to any SMTP server.'
-};
-
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
 
@@ -648,8 +642,7 @@ Mailer.prototype._writeline = function(obj) {
 		var line = arguments[i];
 		if (!line)
 			continue;
-		if (mailer.debug)
-			console.log('SEND', line);
+		mailer.debug && console.log('SEND', line);
 		socket.write(line + CRLF);
 	}
 
@@ -660,14 +653,11 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 	var self = this;
 	var buffer = [];
-	var date = new Date();
-	var boundary = '--totaljs' + date.getTime();
 	var isAuthenticated = false;
 	var isAuthorization = false;
 	var authType = '';
 	var command = '';
 	var auth = [];
-	var ending = null;
 	var response = '';
 	var socket = obj.socket2 ? obj.socket2 : obj.socket;
 	var host = obj.host;
@@ -727,9 +717,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 	socket.on('line', function(line) {
 
 		line = line.toUpperCase();
-
-		if (mailer.debug)
-			console.log('<---', line);
+		mailer.debug && console.log('<---', line);
 
 		var code = +line.match(REG_STATE)[0];
 
