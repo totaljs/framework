@@ -2248,7 +2248,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
-	var id = new Date().format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
+	var id = framework.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
 	var key = self.db.name + '#' + id;
 	var stream = Fs.createWriteStream(Path.join(self.directory, key + EXTENSION_BINARY));
 
@@ -2271,7 +2271,7 @@ Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 	header.write(JSON.stringify(h));
 
 	if (!id)
-		id = new Date().format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
+		id = framework.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
 
 	var key = self.db.name + '#' + id;
 	var writer = Fs.createWriteStream(framework_utils.join(self.directory, key + EXTENSION_BINARY));
@@ -2334,10 +2334,12 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 
 	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, created: F.datetime };
 	var header = new Buffer(BINARY_HEADER_LENGTH);
+	var key = self.db.name + '#' + id;
+
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
-	var stream = Fs.createWriteStream(framework_utils.join(self.directory, id + EXTENSION_BINARY));
+	var stream = Fs.createWriteStream(framework_utils.join(self.directory, key + EXTENSION_BINARY));
 	stream.write(header, 'binary');
 	stream.end(buffer);
 	CLEANUP(stream);
