@@ -1046,10 +1046,7 @@ function autoprefixer_keyframes(value) {
 			continue;
 
 		var css = value.substring(index, end + 1);
-		builder.push({
-			name: 'keyframes',
-			property: css
-		});
+		builder.push({ name: 'keyframes', property: css });
 	}
 
 	var output = [];
@@ -1080,9 +1077,6 @@ function autoprefixer_keyframes(value) {
 
 	for (var i = 0; i < length; i++)
 		value = value.replace('@[[' + i + ']]', output[i]);
-
-	builder = null;
-	output = null;
 
 	return value;
 }
