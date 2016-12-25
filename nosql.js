@@ -2522,44 +2522,32 @@ function compare_not(doc, index, item) {
 
 function compare_eq_date(doc, index, item) {
 	var val = doc[item.name]
-	if (val)
-		return item.value === (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value === (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_lt_date(doc, index, item) {
 	var val = doc[item.name];
-	if (val)
-		return item.value < (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value < (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_gt_date(doc, index, item) {
 	var val = doc[item.name];
-	if (val)
-		return item.value > (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value > (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_eqlt_date(doc, index, item) {
 	var val = doc[item.name];
-	if (val)
-		return item.value <= (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value <= (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_eqgt_date(doc, index, item) {
 	var val = doc[item.name];
-	if (val)
-		return item.value >= (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value >= (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_not_date(doc, index, item) {
 	var val = doc[item.name];
-	if (val)
-		return item.value !== (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value !== (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_likebeg(doc, index, item) {
