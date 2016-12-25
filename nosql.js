@@ -160,7 +160,7 @@ Database.prototype.modify = function(doc, insert) {
 	if (!keys.length)
 		return builder;
 
-	self.pending_update.push({ builder: builder, doc: framework_builders.isSchema(doc) ? doc.$clean() : doc, count: 0, keys: keys, insert: insert });
+	self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, insert: insert });
 	setImmediate(() => self.next(2));
 	return builder;
 };
