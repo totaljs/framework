@@ -55,6 +55,15 @@ const REG_TAGREMOVE = /[^\>]\n\s{1,}$/;
 const REG_EMPTY = /\n|\r|\'|\\/;
 const REG_HELPERS = /helpers\.[a-z0-9A-Z_$]+\(.*?\)+/g;
 const REG_SITEMAP = /\s+(sitemap_navigation\(|sitemap\()+/g;
+const REG_CSS_1 = /\n|\s{2,}/g;
+const REG_CSS_2 = /\s?\{\s{1,}/g;
+const REG_CSS_3 = /\s?\}\s{1,}/g;
+const REG_CSS_4 = /\s?\:\s{1,}/g;
+const REG_CSS_5 = /\s?\;\s{1,}/g;
+const REG_CSS_6 = /\,\s{1,}/g;
+const REG_CSS_7 = /\s\}/g;
+const REG_CSS_8 = /\s\{/g;
+const REG_CSS_9 = /\;\}/g;
 const AUTOVENDOR = ['filter', 'appearance', 'column-count', 'column-gap', 'column-rule', 'display', 'transform', 'transform-style', 'transform-origin', 'transition', 'user-select', 'animation', 'perspective', 'animation-name', 'animation-duration', 'animation-timing-function', 'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-play-state', 'opacity', 'background', 'background-image', 'font-smoothing', 'text-size-adjust', 'backface-visibility', 'box-sizing', 'overflow-scrolling'];
 const WRITESTREAM = { flags: 'w' };
 
@@ -860,36 +869,17 @@ HttpFile.prototype.image = function(im) {
 // *********************************************************************************
 
 function compile_autovendor(css) {
-
-	var reg1 = /\n|\s{2,}/g;
-	var reg2 = /\s?\{\s{1,}/g;
-	var reg3 = /\s?\}\s{1,}/g;
-	var reg4 = /\s?\:\s{1,}/g;
-	var reg5 = /\s?\;\s{1,}/g;
-	var reg6 = /\,\s{1,}/g;
-
-	var avp = '@#auto-vendor-prefix#@';
-	var isAuto = css.startsWith(avp);
-
+	var avp = '/*auto*/';
+	var isAuto = css.substring(0, 100).indexOf(avp) !== -1;
 	if (isAuto)
-		css = css.replace(avp, '');
-	else {
-		avp = '/*auto*/';
-		isAuto = css.indexOf(avp) !== -1;
-		if (isAuto)
-			css = css.replace(avp, '');
-	}
-
-	if (isAuto)
-		css = autoprefixer(css);
-
-	return css.replace(reg1, '').replace(reg2, '{').replace(reg3, '}').replace(reg4, ':').replace(reg5, ';').replace(reg6, function(search, index, text) {
+		css = autoprefixer(css.replace(avp, ''));
+	return css.replace(REG_CSS_1, '').replace(REG_CSS_2, '{').replace(REG_CSS_3, '}').replace(REG_CSS_4, ':').replace(REG_CSS_5, ';').replace(REG_CSS_6, function(search, index, text) {
 		for (var i = index; i > 0; i--) {
 			if ((text[i] === '\'' || text[i] === '"') && (text[i - 1] === ':'))
 				return search;
 		}
 		return ',';
-	}).replace(/\s\}/g, '}').replace(/\s\{/g, '{').trim();
+	}).replace(REG_CSS_7, '}').replace(REG_CSS_8, '{').replace(REG_CSS_9, '}').trim();
 }
 
 function autoprefixer(value) {
