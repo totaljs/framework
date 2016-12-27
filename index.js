@@ -355,12 +355,6 @@ global.NEWTRANSFORM = function(name, fn, isDefault) {
 	return TransformBuilder.addTransform.apply(this, arguments);
 };
 
-/**
- * Creates schema in the specific group
- * @param {String} [group=default]
- * @param {String} name
- * @return {SchemaBuilderEntity}
- */
 global.NEWSCHEMA = function(group, name) {
 	if (!name) {
 		name = group;
@@ -883,20 +877,10 @@ Framework.prototype.script = function(body, value, callback) {
 	return this;
 };
 
-/**
- * Get a database instance
- * @param {String} name Database name (optional)
- * @return {Database}
- */
 Framework.prototype.database = function(name) {
 	return this.nosql(name);
 };
 
-/**
- * Get a database instance (NoSQL embedded)
- * @param {String} name Database name (optional)
- * @return {Database}
- */
 Framework.prototype.nosql = function(name) {
 	var self = this;
 	var db = self.databases[name];
@@ -908,11 +892,6 @@ Framework.prototype.nosql = function(name) {
 	return db;
 };
 
-/**
- * Stop application
- * @param {String} signal
- * @return {Framework}
- */
 Framework.prototype.stop = Framework.prototype.kill = function(signal) {
 
 	var self = this;
@@ -934,14 +913,7 @@ Framework.prototype.stop = Framework.prototype.kill = function(signal) {
 	return self;
 };
 
-/**
- * Add a route redirect
- * @param {String} host Domain with protocol.
- * @param {String} newHost Domain with protocol.
- * @param {Boolean} withPath Copy path (default: true).
- * @param {Boolean} permanent Is permanent redirect (302)? (default: false)
- * @return {Framework}
- */
+
 Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 
 	var self = this;
@@ -10489,10 +10461,6 @@ Controller.prototype.transfer = function(url, flags) {
 
 };
 
-/**
- * Cancels controller executions
- * @return {Controller}
- */
 Controller.prototype.cancel = function() {
 	this.isCanceled = true;
 	return this;
