@@ -102,22 +102,26 @@ HEADERS['sse'][RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, must-revalid
 HEADERS['sse']['Pragma'] = 'no-cache';
 HEADERS['sse']['Expires'] = '0';
 HEADERS['sse'][RESPONSE_HEADER_CONTENTTYPE] = 'text/event-stream';
+HEADERS['sse']['X-Powered-By'] = 'Total.js';
 HEADERS['mmr'] = {};
 HEADERS['mmr'][RESPONSE_HEADER_CACHECONTROL] = 'no-cache, no-store, must-revalidate';
 HEADERS['mmr']['Pragma'] = 'no-cache';
 HEADERS['mmr']['Expires'] = '0';
+HEADERS['mmr']['X-Powered-By'] = 'Total.js';
 HEADERS['proxy'] = {};
 HEADERS['proxy']['X-Proxy'] = 'total.js';
 HEADERS['responseFile.etag'] = {};
 HEADERS['responseFile.etag']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 HEADERS['responseFile.etag']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseFile.etag'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+HEADERS['responseFile.etag']['X-Powered-By'] = 'Total.js';
 HEADERS['responseFile.release.compress'] = {};
 HEADERS['responseFile.release.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 HEADERS['responseFile.release.compress']['Vary'] = 'Accept-Encoding';
 HEADERS['responseFile.release.compress']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseFile.release.compress']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 HEADERS['responseFile.release.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseFile.release.compress']['X-Powered-By'] = 'Total.js';
 HEADERS['responseFile.release.compress.range'] = {};
 HEADERS['responseFile.release.compress.range']['Accept-Ranges'] = 'bytes';
 HEADERS['responseFile.release.compress.range'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
@@ -127,11 +131,13 @@ HEADERS['responseFile.release.compress.range']['Last-Modified'] = 'Mon, 01 Jan 2
 HEADERS['responseFile.release.compress.range']['Content-Encoding'] = 'gzip';
 HEADERS['responseFile.release.compress.range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
 HEADERS['responseFile.release.compress.range']['Content-Range'] = '';
+HEADERS['responseFile.release.compress.range']['X-Powered-By'] = 'Total.js';
 HEADERS['responseFile.release'] = {};
 HEADERS['responseFile.release'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 HEADERS['responseFile.release']['Vary'] = 'Accept-Encoding';
 HEADERS['responseFile.release']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseFile.release']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
+HEADERS['responseFile.release']['X-Powered-By'] = 'Total.js';
 HEADERS['responseFile.release.range'] = {};
 HEADERS['responseFile.release.range']['Accept-Ranges'] = 'bytes';
 HEADERS['responseFile.release.range'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
@@ -140,6 +146,7 @@ HEADERS['responseFile.release.range']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseFile.release.range']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 HEADERS['responseFile.release.range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
 HEADERS['responseFile.release.range']['Content-Range'] = '';
+HEADERS['responseFile.release.range']['X-Powered-By'] = 'Total.js';
 HEADERS['responseFile.debug.compress'] = {};
 HEADERS['responseFile.debug.compress'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
 HEADERS['responseFile.debug.compress']['Vary'] = 'Accept-Encoding';
@@ -147,6 +154,7 @@ HEADERS['responseFile.debug.compress']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseFile.debug.compress']['Pragma'] = 'no-cache';
 HEADERS['responseFile.debug.compress']['Expires'] = '0';
 HEADERS['responseFile.debug.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseFile.debug.compress']['X-Powered-By'] = 'Total.js';
 HEADERS['responseFile.debug.compress.range'] = {};
 HEADERS['responseFile.debug.compress.range']['Accept-Ranges'] = 'bytes';
 HEADERS['responseFile.debug.compress.range'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
@@ -157,12 +165,14 @@ HEADERS['responseFile.debug.compress.range']['Pragma'] = 'no-cache';
 HEADERS['responseFile.debug.compress.range']['Expires'] = '0';
 HEADERS['responseFile.debug.compress.range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
 HEADERS['responseFile.debug.compress.range']['Content-Range'] = '';
+HEADERS['responseFile.debug.compress.range']['X-Powered-By'] = 'Total.js';
 HEADERS['responseFile.debug'] = {};
 HEADERS['responseFile.debug'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
 HEADERS['responseFile.debug']['Vary'] = 'Accept-Encoding';
 HEADERS['responseFile.debug']['Pragma'] = 'no-cache';
 HEADERS['responseFile.debug']['Expires'] = '0';
 HEADERS['responseFile.debug']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.debug']['X-Powered-By'] = 'Total.js';
 HEADERS['responseFile.debug.range'] = {};
 HEADERS['responseFile.debug.range']['Accept-Ranges'] = 'bytes';
 HEADERS['responseFile.debug.range'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
@@ -172,40 +182,50 @@ HEADERS['responseFile.debug.range']['Pragma'] = 'no-cache';
 HEADERS['responseFile.debug.range']['Expires'] = '0';
 HEADERS['responseFile.debug.range'][RESPONSE_HEADER_CONTENTLENGTH] = '0';
 HEADERS['responseFile.debug.range']['Content-Range'] = '';
+HEADERS['responseFile.debug.range']['X-Powered-By'] = 'Total.js';
 HEADERS['responseContent.mobile.compress'] = {};
 HEADERS['responseContent.mobile.compress']['Vary'] = 'Accept-Encoding, User-Agent';
 HEADERS['responseContent.mobile.compress']['Content-Encoding'] = 'gzip';
 HEADERS['responseContent.mobile'] = {};
 HEADERS['responseContent.mobile']['Vary'] = 'Accept-Encoding, User-Agent';
+HEADERS['responseContent.mobile']['X-Powered-By'] = 'Total.js';
 HEADERS['responseContent.compress'] = {};
 HEADERS['responseContent.compress'][RESPONSE_HEADER_CACHECONTROL] = 'private';
 HEADERS['responseContent.compress']['Vary'] = 'Accept-Encoding';
 HEADERS['responseContent.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseContent.compress']['X-Powered-By'] = 'Total.js';
 HEADERS['responseContent'] = {};
 HEADERS['responseContent']['Vary'] = 'Accept-Encoding';
+HEADERS['responseContent']['X-Powered-By'] = 'Total.js';
 HEADERS['responseStream.release.compress'] = {};
 HEADERS['responseStream.release.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 HEADERS['responseStream.release.compress']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseStream.release.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseStream.release.compress']['X-Powered-By'] = 'Total.js';
 HEADERS['responseStream.release'] = {};
 HEADERS['responseStream.release'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 HEADERS['responseStream.release']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseStream.release']['X-Powered-By'] = 'Total.js';
 HEADERS['responseStream.debug.compress'] = {};
 HEADERS['responseStream.debug.compress'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
 HEADERS['responseStream.debug.compress']['Pragma'] = 'no-cache';
 HEADERS['responseStream.debug.compress']['Expires'] = '0';
 HEADERS['responseStream.debug.compress']['Access-Control-Allow-Origin'] = '*';
 HEADERS['responseStream.debug.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseStream.debug.compress']['X-Powered-By'] = 'Total.js';
 HEADERS['responseStream.debug'] = {};
 HEADERS['responseStream.debug'][RESPONSE_HEADER_CACHECONTROL] = 'private, no-cache, no-store, must-revalidate';
 HEADERS['responseStream.debug']['Pragma'] = 'no-cache';
 HEADERS['responseStream.debug']['Expires'] = '0';
 HEADERS['responseStream.debug']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseStream.debug']['X-Powered-By'] = 'Total.js';
 HEADERS['responseBinary.compress'] = {};
 HEADERS['responseBinary.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public';
 HEADERS['responseBinary.compress']['Content-Encoding'] = 'gzip';
+HEADERS['responseBinary.compress']['X-Powered-By'] = 'Total.js';
 HEADERS['responseBinary'] = {};
 HEADERS['responseBinary'][RESPONSE_HEADER_CACHECONTROL] = 'public';
+HEADERS['responseBinary']['X-Powered-By'] = 'Total.js';
 HEADERS.redirect = { 'Location': '' };
 HEADERS.authorization = { user: '', password: '', empty: true };
 HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true }
@@ -8476,6 +8496,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 			case 'allow-compile-html':
 			case 'allow-compile-style':
 			case 'allow-compile-script':
+			case 'disable-xpoweredby':
 			case 'disable-strict-server-certificate-validation':
 			case 'disable-clear-temporary-directory':
 			case 'trace':
@@ -8541,6 +8562,8 @@ Framework.prototype._configure = function(arr, rewrite) {
 		Object.keys(HEADERS[key]).forEach(function(subkey) {
 			if (subkey === 'Cache-Control')
 				HEADERS[key][subkey] = HEADERS[key][subkey].replace(/max-age=\d+/, 'max-age=' + self.config['default-response-maxage']);
+			if (self.config['disable-xpoweredby'] && subkey === 'X-Powered-By')
+				delete HEADERS[key][subkey];
 		});
 	});
 
