@@ -6210,7 +6210,7 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 
 	global.DEBUG = debug;
 	global.RELEASE = !debug;
-	global.isomorphic = self.isomorphic;
+	global.I = global.isomorphic = self.isomorphic;
 
 	self._configure();
 	self._configure_versions();

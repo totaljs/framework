@@ -14,6 +14,7 @@
 - removed: `F.config['allow-compatibility']` (not used)
 
 - fixed: JS minificator
+- fixed: global alias `I` for isomorphic code
 
 - improved: CSS compression
 - improved: code
