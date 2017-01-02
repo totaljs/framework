@@ -2,6 +2,7 @@
 
 - added: `components` more in docs
 - added: `X-Powered-By` header again with option to disable it in the framework config `disable-xpoweredby   : false`
+- adedd: `UPTODATE(type, url, [options], interval, [callback(err)])` more in docs
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`
