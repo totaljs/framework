@@ -5725,7 +5725,8 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 
 	if (!total) {
 		total = Fs.statSync(name).size;
-		self.temporary.range[name] = total;
+		if (RELEASE)
+			self.temporary.range[name] = total;
 	}
 
 	if (end === 0)
