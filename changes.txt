@@ -15,6 +15,7 @@
 
 - fixed: JS minificator
 - fixed: global alias `I` for isomorphic code
+- fixed: streaming files in `debug` mode (removed cache)
 
 - improved: CSS compression
 - improved: code
