@@ -2467,20 +2467,20 @@ Date.prototype.format = function(format, resource) {
 				return self.getFullYear().toString().substring(2);
 			case 'MMM':
 				var m = MONTHS[self.getMonth()];
-				return F.resource(resource, m).substring(0, 3);
+				return (F.resource(resource, m) || m).substring(0, 3);
 			case 'MMMM':
 				var m = MONTHS[self.getMonth()];
-				return F.resource(resource, m);
+				return (F.resource(resource, m) || m);
 			case 'MM':
 				return (self.getMonth() + 1).toString().padLeft(2, '0');
 			case 'M':
 				return (self.getMonth() + 1);
 			case 'ddd':
 				var m = DAYS[self.getDay()];
-				return F.resource(resource, m).substring(0, 3);
+				return (F.resource(resource, m) || m).substring(0, 3);
 			case 'dddd':
 				var m = DAYS[self.getDay()];
-				return F.resource(resource, m);
+				return (F.resource(resource, m) || m);
 			case 'dd':
 				return self.getDate().toString().padLeft(2, '0');
 			case 'd':
