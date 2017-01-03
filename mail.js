@@ -38,8 +38,8 @@ const EMPTYARRAY = [];
 const REG_WINLINE = /\r\n/g;
 const REG_NEWLINE = /\n/g;
 
-const INDEXSENDER = 0;
-const INDEXATTACHMENT = 0;
+var INDEXSENDER = 0;
+var INDEXATTACHMENT = 0;
 
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
