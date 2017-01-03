@@ -2862,14 +2862,14 @@ Framework.prototype.uptodate = function(type, url, options, interval, callback) 
 		options = null;
 	}
 
-	var obj = { type: type, name: '', url: url, interval: interval, options: options, updated: null, created: F.datetime, errors: [], callback: callback };
+	var obj = { type: type, name: '', url: url, interval: interval, options: options, count: 0, updated: F.datetime, errors: [], callback: callback };
 
 	if (!F.uptodates)
 		F.uptodates = [];
 
 	F.uptodates.push(obj);
 	F.install(type, url, options, function(err, name) {
-		err && obj.errors.puhs(err);
+		err && obj.errors.push(err);
 		obj.name = name;
 		obj.callback && obj.callback(err, name);
 	});
@@ -6410,16 +6410,19 @@ Framework.prototype._service = function(count) {
 	}
 
 	F.uptodates && (count % F.config['default-interval-uptodate'] === 0) && F.uptodates.length && F.uptodates.wait(function(item, next) {
-		if (item.latest > F.datetime)
+		if (item.updated.add(item.interval) > F.datetime)
 			return next();
-		item.latest = F.datetime;
+		item.updated = F.datetime;
 		item.name && F.uninstall(item.type, item.name);
+		item.count++;
 		F.install(item.type, item.url, item.options, function(err, name) {
 			if (err) {
 				item.errors.push(err);
 				item.errors.length > 50 && F.errors.shift();
-			} else
+			} else {
 				item.name = name;
+				F.emit('uptodate', item.type, name);
+			}
 			item.callback && item.callback(err, name);
 			next();
 		});
@@ -8033,6 +8036,8 @@ Framework.prototype._configure_dependencies = function(arr) {
 	if (!arr)
 		return F;
 
+	var type;
+
 	for (var i = 0, length = arr.length; i < length; i++) {
 
 		var str = arr[i];
@@ -8050,9 +8055,15 @@ Framework.prototype._configure_dependencies = function(arr) {
 		var key = str.substring(0, index).trim();
 		var url = str.substring(index + 2).trim();
 		var options = EMPTYOBJECT;
+		var interval;
+
+		index = key.indexOf('(');
+		if (index !== -1) {
+			interval = key.substring(index, key.indexOf(')', index)).replace(/\(|\)/g, '').trim();
+			key = key.substring(0, index).trim();
+		}
 
 		index = url.indexOf('-->');
-
 		if (index !== -1) {
 			var opt = url.substring(index + 3).trim();
 			if (opt.isJSON())
@@ -8064,52 +8075,59 @@ Framework.prototype._configure_dependencies = function(arr) {
 			case 'package':
 			case 'packages':
 			case 'pkg':
-				F.install('package', url, options);
+				type = 'package';
 				break;
 			case 'module':
 			case 'modules':
-				F.install('module', url, options);
+				type = 'module';
 				break;
 			case 'model':
 			case 'models':
-				F.install('model', url, options);
+				type = 'model';
 				break;
 			case 'source':
 			case 'sources':
-				F.install('source', url, options);
+				type = 'source';
 				break;
 			case 'controller':
 			case 'controllers':
-				F.install('controller', url, options);
+				type = 'controller';
 				break;
 			case 'view':
 			case 'views':
-				F.install('view', url, options);
+				type = 'view';
 				break;
 			case 'version':
 			case 'versions':
-				F.install('version', url, options);
+				type = 'version';
 				break;
 			case 'config':
 			case 'configuration':
-				F.install('config', url, options);
+				type = 'config';
 				break;
 			case 'isomorphic':
 			case 'isomorphics':
-				F.install('isomorphic', url, options);
+				type = 'isomorphic';
 				break;
 			case 'definition':
 			case 'definitions':
-				F.install('definition', url, options);
+				type = 'definition';
 				break;
 			case 'middleware':
 			case 'middlewares':
-				F.install('middleware', url, options);
+				type = 'middleware';
 				break;
 			case 'component':
 			case 'components':
-				F.install('component', url, options);
+				type = 'component';
 				break;
+		}
+
+		if (type) {
+			if (interval)
+				F.uptodate(type, url, options, interval);
+			else
+				F.install(type, url, options);
 		}
 	}
 

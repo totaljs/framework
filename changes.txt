@@ -2,13 +2,15 @@
 
 - added: `components` more in docs
 - added: `X-Powered-By` header again with option to disable it in the framework config `disable-xpoweredby   : false`
-- adedd: `UPTODATE(type, url, [options], interval, [callback(err)])` more in docs
+- added: `UPTODATE(type, url, [options], interval, [callback(err)])` more in docs
+- added: `F.on('uptodate', function(type, name) {})` new event for up-to-date dependencies
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`
 - updated: `quicksort` algorithm has been replaced for `shellsort` (increased performance of sorting about 10-15%)
 - updated: `NOSQL().counter.monthly(true, ...)` shows all stats by ID
 - updated: `NOSQL().counter.yearly(true, ...)` shows all stats by ID
+- updated: `dependencies` supports up-to-date features e.g. `module (1 day)   : https://......js`
 
 - removed: behaviours
 - removed: restrictions
@@ -1231,7 +1233,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: controller.throw500(error)
 - added: controller.throw501([problem])
 - added: request.signature()
-- adedd: Builders.create(schemaName)
+- added: Builders.create(schemaName)
 - added: controller.exception
 - added: framework.onMail(address, subject, body, callback)
 - added: controller.mail(address, subject, viewName, [model], [callback])
