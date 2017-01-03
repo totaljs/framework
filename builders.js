@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.3.0
+ * @version 2.4.0
  */
 
 'use strict';
@@ -104,7 +104,7 @@ function SchemaBuilderEntity(parent, name) {
 	this.constants;
 	this.onPrepare;
 	this.onDefault;
-	this.onValidate = framework.onValidate;
+	this.onValidate = F.onValidate;
 	this.onSave;
 	this.onGet;
 	this.onRemove;
@@ -690,7 +690,7 @@ SchemaBuilderEntity.prototype.addHook = function(name, fn, description) {
 	if (!self.hooks[name])
 		self.hooks[name] = [];
 
-	self.hooks[name].push({ owner: framework.$owner(), fn: fn });
+	self.hooks[name].push({ owner: F.$owner(), fn: fn });
 	self.meta['hook#' + name] = description;
 	return self;
 };
@@ -1027,7 +1027,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		var s = self.parent.collection[schema.raw];
 
 		if (!s) {
-			framework.error(new Error('Schema "' + schema.raw + '" not found (validation).'));
+			F.error(new Error('Schema "' + schema.raw + '" not found (validation).'));
 			continue;
 		}
 
@@ -1134,7 +1134,7 @@ SchemaBuilderEntity.prototype.default = function() {
 				} else {
 					var tmp = self.find(type.raw);
 					if (!tmp) {
-						framework.error(new Error('Schema: "' + property + '.' + type.raw + '" not found in "' + self.parent.name + '".'));
+						F.error(new Error('Schema: "' + property + '.' + type.raw + '" not found in "' + self.parent.name + '".'));
 						item[property] = null;
 					} else
 						item[property] = tmp.default();
@@ -1983,7 +1983,7 @@ SchemaBuilderEntity.prototype.clean = function(m) {
 
 // For async operations, because SUCCESS() returns singleton instance everytime
 function copy(obj) {
-	return framework.isSuccess(obj) ? { success: obj.success, value: obj.value } : obj;
+	return F.isSuccess(obj) ? { success: obj.success, value: obj.value } : obj;
 }
 
 function clone(obj) {
@@ -2198,7 +2198,7 @@ SchemaInstance.prototype.$exec = function(name, helper, callback) {
 
 	var group = self.$$schema.parent.name;
 	var key = group !== 'default' ? group + '/' + self.$$schema.name : self.$$schema.name;
-	var workflow = framework.workflows[key + '#' + name] || framework.workflows[name];
+	var workflow = F.workflows[key + '#' + name] || F.workflows[name];
 
 	if (workflow)
 		workflow(self, helper || EMPTYOBJECT, callback || NOOP);
@@ -2340,8 +2340,8 @@ function ErrorBuilder(onResource) {
 	this.items = [];
 	this.transformName = transforms['error_default'];
 	this.onResource = onResource;
-	this.resourceName = framework.config['default-errorbuilder-resource-name'];
-	this.resourcePrefix = framework.config['default-errorbuilder-resource-prefix'] || '';
+	this.resourceName = F.config['default-errorbuilder-resource-name'];
+	this.resourcePrefix = F.config['default-errorbuilder-resource-prefix'] || '';
 	this.isResourceCustom = false;
 	this.count = 0;
 	this.replacer = [];
@@ -2620,7 +2620,7 @@ ErrorBuilder.prototype._resource = function() {
 
 ErrorBuilder.prototype._resource_handler = function(name) {
 	var self = this;
-	return typeof(framework) !== 'undefined' ? framework.resource(self.resourceName || 'default', self.resourcePrefix + name) : '';
+	return typeof(framework) !== 'undefined' ? F.resource(self.resourceName || 'default', self.resourcePrefix + name) : '';
 }
 
 ErrorBuilder.prototype.exception = function(message) {
@@ -3446,7 +3446,7 @@ function async_wait(arr, onItem, onCallback, index) {
 
 function RESTBuilder(url) {
 	this.$url = url;
-	this.$headers = { 'User-Agent': 'Total.js/v' + framework.version_header, Accept: 'application/json, text/plain, text/plain, text/xml' };
+	this.$headers = { 'User-Agent': 'Total.js/v' + F.version_header, Accept: 'application/json, text/plain, text/plain, text/xml' };
 	this.$method = 'get';
 	this.$timeout = 10000;
 	this.$type = 0; // 0 = query, 1 = json, 2 = urlencode, 3 = raw
@@ -3742,7 +3742,7 @@ RESTBuilder.prototype.exec = function(callback) {
 
 	if (self.$cache_expire && !self.$nocache) {
 		key = '$rest_' + (self.$url + flags.join(',') + (self.$data ? Qs.stringify(self.$data) : '')).hash();
-		var data = framework.cache.read2(key);
+		var data = F.cache.read2(key);
 		if (data) {
 			var evt = new events.EventEmitter();
 
@@ -3759,7 +3759,7 @@ RESTBuilder.prototype.exec = function(callback) {
 	return U.request(self.$url, flags, self.$data, function(err, response, status, headers, hostname) {
 
 		var output = new RESTBuilderResponse();
-		output.json = response.isJSON() ? framework.onParseJSON(response) : null;
+		output.json = response.isJSON() ? F.onParseJSON(response) : null;
 		output.response = response;
 		output.status = status;
 		output.headers = headers;
@@ -3773,7 +3773,7 @@ RESTBuilder.prototype.exec = function(callback) {
 				return callback(err, null, output);
 
 			self.$schema.make(parsed, function(err, model) {
-				!err && key && framework.cache.add(key, output, self.$cache_expire);
+				!err && key && F.cache.add(key, output, self.$cache_expire);
 				callback(err, err ? null : self.maketransform(output.json, output), output);
 				output.cache = true;
 			});
@@ -3781,7 +3781,7 @@ RESTBuilder.prototype.exec = function(callback) {
 			return;
 		}
 
-		!err && key && framework.cache.add(key, output, self.$cache_expire);
+		!err && key && F.cache.add(key, output, self.$cache_expire);
 		callback(err, self.maketransform(output.json, output), output);
 		output.cache = true;
 

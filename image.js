@@ -201,7 +201,7 @@ Image.prototype.save = function(filename, callback, writer) {
 	filename = filename || self.filename || '';
 
 	var command = self.cmd(self.filename ? self.filename : '-', filename);
-	if (framework.isWindows)
+	if (F.isWindows)
 		command = command.replace(REGEXP_PATH, '\\');
 
 	var cmd = exec(command, function(err, stdout, stderr) {

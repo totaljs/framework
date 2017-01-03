@@ -21,20 +21,25 @@
 
 /**
  * @module FrameworkMail
- * @version 2.3.0
+ * @version 2.4.0
  */
 
 'use strict'
 
-const net = require('net');
-const tls = require('tls');
-const events = require('events');
-const fs = require('fs');
+const Net = require('net');
+const Tls = require('tls');
+const Events = require('events');
+const Fs = require('fs');
 
 const CRLF = '\r\n';
 const REG_ESMTP = /\besmtp\b/i;
 const REG_STATE = /\d+/;
 const EMPTYARRAY = [];
+const REG_WINLINE = /\r\n/g;
+const REG_NEWLINE = /\n/g;
+
+const INDEXSENDER = 0;
+const INDEXATTACHMENT = 0;
 
 if (!global.framework_utils)
 	global.framework_utils = require('./utils');
@@ -51,7 +56,7 @@ function Mailer() {
 	this.connections = {};
 }
 
-Mailer.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
+Mailer.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
 	constructor: {
 		value: Mailer,
 		enumberable: false
@@ -103,22 +108,10 @@ Message.prototype.callback = function(fn) {
 	return this;
 }
 
-/**
- * Set sender
- * @param {String} address A valid e-mail address.
- * @param {String} name User name.
- * @return {Message}
- */
 Message.prototype.sender = function(address, name) {
 	return this.from(address, name);
 };
 
-/**
- * Set sender email and name
- * @param {String} address A valid e-mail address.
- * @param {String} name An user name.
- * @return {Message}
- */
 Message.prototype.from = function(address, name) {
 
 	if (address[address.length - 1] === '>') {
@@ -131,16 +124,8 @@ Message.prototype.from = function(address, name) {
 	self.addressFrom.name = name || '';
 	self.addressFrom.address = address;
 	return self;
-
 };
 
-/**
- * Add a recipient
- * @param {String} address A valid e-mail address.
- * @param {String} name An user name (optional).
- * @param {Boolean} clear Clear all "to" address (optional, default: false).
- * @return {Message}
- */
 Message.prototype.to = function(address, name, clear) {
 
 	if (typeof(name) === 'boolean') {
@@ -167,13 +152,6 @@ Message.prototype.to = function(address, name, clear) {
 	return self;
 };
 
-/**
- * Add a CC recipient
- * @param {String} address A valid e-mail address.
- * @param {String} name An user name (optional).
- * @param {Boolean} clear Clear all "cc" address (optional, default: false).
- * @return {Message}
- */
 Message.prototype.cc = function(address, name, clear) {
 
 	if (typeof(name) === 'boolean') {
@@ -200,12 +178,6 @@ Message.prototype.cc = function(address, name, clear) {
 	return self;
 };
 
-/**
- * Add a BCC recipient
- * @param  {String} address A valid e-mail address.
- * @param {Boolean} clear Clear all "bcc" address (optional, default: false).
- * @return {Message}
- */
 Message.prototype.bcc = function(address, clear) {
 
 	var self = this;
@@ -217,12 +189,6 @@ Message.prototype.bcc = function(address, clear) {
 	return self;
 };
 
-/**
- * Add a reply to address
- * @param {String} address A valid e-mail address.
- * @param {String} name Optional, a custom attachment name.
- * @return {Message}
- */
 Message.prototype.reply = function(address, clear) {
 
 	var self = this;
@@ -234,11 +200,6 @@ Message.prototype.reply = function(address, clear) {
 	return self;
 };
 
-/**
- * Add an attachment
- * @param {String} filename Filename with extension.
- * @return {Message}
- */
 Message.prototype.attachment = function(filename, name) {
 	var self = this;
 	if (!name)
@@ -300,13 +261,9 @@ Mailer.prototype.switchToTLS = function(obj, options) {
 
 	obj.tls = true;
 	obj.socket.removeAllListeners();
-    // obj.socket.removeAllListeners('data');
-    // obj.socket.removeAllListeners('error');
-    // obj.socket.removeAllListeners('clientError');
-    // obj.socket.removeAllListeners('line');
 
 	var opt = framework_utils.copy(options.tls, { socket: obj.socket, host: obj.socket.$host, ciphers: 'SSLv3' });
-	obj.socket2 = tls.connect(opt, () => self._send(obj, options, true));
+	obj.socket2 = Tls.connect(opt, () => self._send(obj, options, true));
 
 	obj.socket2.on('error', function(err) {
 
@@ -384,7 +341,7 @@ Mailer.prototype._writeattachment = function(obj) {
 	}
 
 	var name = attachment.name;
-	var stream = fs.createReadStream(attachment.filename, { encoding: 'base64' });
+	var stream = Fs.createReadStream(attachment.filename, { encoding: 'base64' });
 	var message = [];
 	var extension = attachment.extension;
 	var isCalendar = extension === 'ics';
@@ -435,10 +392,10 @@ Mailer.prototype.try = function(smtp, options, callback) {
 
 Mailer.prototype.send2 = function(messages, callback) {
 
-	var opt = framework.temporary['mail-settings'];
+	var opt = F.temporary['mail-settings'];
 
 	if (!opt) {
-		var config = framework.config['mail.smtp.options'];
+		var config = F.config['mail.smtp.options'];
 		if (config) {
 			if (typeof(config) === 'object')
 				opt = config;
@@ -449,10 +406,10 @@ Mailer.prototype.send2 = function(messages, callback) {
 		if (!opt)
 			opt = {};
 
-		framework.temporary['mail-settings'] = opt;
+		F.temporary['mail-settings'] = opt;
 	}
 
-	return this.send(framework.config['mail.smtp'], opt, messages, callback);
+	return this.send(F.config['mail.smtp'], opt, messages, callback);
 };
 
 Mailer.prototype.send = function(smtp, options, messages, callback) {
@@ -467,12 +424,12 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	}
 
 	var self = this;
-	var id = framework_utils.GUID(10);
+	var id = 'abcdefghijkl' + (INDEXSENDER++);
 
 	self.connections[id] = {};
 	var obj = self.connections[id];
 
-    obj.id = id;
+	obj.id = id;
 	obj.try = messages === undefined;
 	obj.messages = obj.try ? EMPTYARRAY : messages instanceof Array ? messages : [messages];
 	obj.callback = callback;
@@ -482,7 +439,7 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	obj.count = 0;
 	obj.socket;
 	obj.tls = false;
-	obj.date = new Date();
+	obj.date = global.F ? global.F.datetime : new Date();
 
 	smtp = smtp || null;
 
@@ -494,9 +451,9 @@ Mailer.prototype.send = function(smtp, options, messages, callback) {
 	if (options.secure) {
 		var internal = framework_utils.copy(options);
 		internal.host = smtp;
-		obj.socket = tls.connect(internal, () => mailer._send(obj, options));
+		obj.socket = Tls.connect(internal, () => mailer._send(obj, options));
 	} else
-		obj.socket = net.createConnection(options.port, smtp);
+		obj.socket = Net.createConnection(options.port, smtp);
 
 	obj.socket.$host = smtp;
 	obj.host = smtp.substring(smtp.lastIndexOf('.', smtp.lastIndexOf('.') - 1) + 1);
@@ -547,7 +504,7 @@ Mailer.prototype._writemessage = function(obj, buffer) {
 	obj.count++;
 
 	buffer.push('MAIL FROM: <' + msg.addressFrom.address + '>');
-	message.push('Message-ID: <' + framework_utils.GUID() + '@WIN-' + framework_utils.GUID(4) + '>');
+	message.push('Message-ID: <total' + (INDEXATTACHMENT++) + '@WIN-t' + (INDEXATTACHMENT) + '>');
 	message.push('MIME-Version: 1.0');
 	message.push('From: ' + (msg.addressFrom.name ? unicode_encode(msg.addressFrom.name) + ' <' + msg.addressFrom.address + '>' : msg.addressFrom.address));
 
@@ -602,7 +559,6 @@ Mailer.prototype._writemessage = function(obj, buffer) {
 	}
 
 	buffer.push('DATA');
-	// buffer.push('QUIT');
 	buffer.push('');
 
 	message.push('Date: ' + obj.date.toUTCString());
@@ -622,7 +578,7 @@ Mailer.prototype._writemessage = function(obj, buffer) {
 	message.push('Content-Type: ' + (msg.body.indexOf('<') !== -1 && msg.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
 	message.push('Content-Transfer-Encoding: base64');
 	message.push('');
-	message.push(prepareBASE64(new Buffer(msg.body.replace(/\r\n/g, '\n').replace(/\n/g, CRLF)).toString('base64')));
+	message.push(prepareBASE64(new Buffer(msg.body.replace(REG_WINLINE, '\n').replace(REG_NEWLINE, CRLF)).toString('base64')));
 
 	obj.message = message.join(CRLF);
 	obj.messagecallback = msg.$callback;
@@ -709,8 +665,7 @@ Mailer.prototype._send = function(obj, options, autosend) {
 
 		for (var i = 0, length = res.length; i < length; i++) {
 			var line = res[i];
-			if (line && socket)
-				socket.emit('line', line);
+			line && socket && socket.emit('line', line);
 		}
 	});
 
@@ -862,14 +817,11 @@ Mailer.prototype.restart = function() {
 	var self = this;
 	self.removeAllListeners();
 	self.debug = false;
+	INDEXSENDER = 0;
+	INDEXATTACHMENT = 0;
 };
 
-/**
- * Split Base64 to lines with 68 characters
- * @private
- * @param  {String} value Base64 message.
- * @return {String}
- */
+// Split Base64 to lines with 68 characters
 function prepareBASE64(value) {
 
 	var index = 0;

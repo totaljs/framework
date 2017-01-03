@@ -27,14 +27,14 @@
 'use strict';
 
 const Dns = require('dns');
-const parser = require('url');
-const qs = require('querystring');
-const http = require('http');
-const https = require('https');
-const path = require('path');
-const fs = require('fs');
-const events = require('events');
-const crypto = require('crypto');
+const Url = require('url');
+const Qs = require('querystring');
+const Http = require('http');
+const Https = require('https');
+const Path = require('path');
+const Fs = require('fs');
+const Events = require('events');
+const Crypto = require('crypto');
 
 if (!global.framework_utils)
 	global.framework_utils = exports;
@@ -56,6 +56,7 @@ const regexpALPHA = /^[A-Za-z0-9]+$/;
 const regexpSEARCH = /[^a-zA-Zá-žÁ-Ž\d\s:]/g;
 const regexpDECRYPT = /\-|\_/g;
 const regexpENCRYPT = /\/|\+/g;
+const regexpUNICODE = /\\u([\d\w]{4})/gi;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -271,7 +272,7 @@ exports.$$wait = function(fnValid, timeout, interval) {
  */
 exports.resolve = function(url, callback) {
 
-	var uri = parser.parse(url);
+	var uri = Url.parse(url);
 
 	if (!callback)
 		return dnscache[uri.host];
@@ -435,7 +436,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	if (callback === NOOP)
 		callback = null;
 
-	var options = { length: 0, timeout: 10000, evt: new events.EventEmitter(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
+	var options = { length: 0, timeout: 10000, evt: new Events.EventEmitter(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
 
@@ -525,7 +526,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		method = 'GET';
 
 	if (typeof(data) !== 'string')
-		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
+		data = type === 1 ? JSON.stringify(data) : Qs.stringify(data);
 	else if (data[0] === '?')
 		data = data.substring(1);
 
@@ -548,7 +549,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		headers['Content-Length'] = options.data.length;
 	}
 
-	var uri = parser.parse(url);
+	var uri = Url.parse(url);
 	uri.method = method;
 	uri.agent = false;
 	uri.headers = headers;
@@ -567,7 +568,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 function request_call(uri, options, counter) {
 
-	var connection = uri.protocol === 'https:' ? https : http;
+	var connection = uri.protocol === 'https:' ? Https : Http;
 	var req = options.post ? connection.request(uri, (res) => request_response(res, uri, options)) : connection.get(uri, (res) => request_response(res, uri, options));
 
 	if (!options.callback) {
@@ -626,7 +627,7 @@ function request_response(res, uri, options) {
 
 		options.redirect++;
 
-		var tmp = parser.parse(res.headers['location']);
+		var tmp = Url.parse(res.headers['location']);
 		tmp.headers = uri.headers;
 		tmp.agent = false;
 		tmp.method = uri.method;
@@ -747,7 +748,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	var method = 'GET';
 	var type = 0;
-	var options = { callback: callback, resolve: false, length: 0, evt: new events.EventEmitter(), timeout: timeout || 60000, post: false, encoding: encoding };
+	var options = { callback: callback, resolve: false, length: 0, evt: new Events.EventEmitter(), timeout: timeout || 60000, post: false, encoding: encoding };
 
 	if (headers)
 		headers = exports.extend({}, headers);
@@ -832,7 +833,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	options.post = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
 
 	if (typeof(data) !== 'string')
-		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
+		data = type === 1 ? JSON.stringify(data) : Qs.stringify(data);
 	else if (data[0] === '?')
 		data = data.substring(1);
 
@@ -850,7 +851,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 			headers['Cookie'] = builder;
 	}
 
-	var uri = parser.parse(url);
+	var uri = Url.parse(url);
 	uri.method = method;
 	uri.agent = false;
 	uri.headers = headers;
@@ -876,7 +877,7 @@ function download_call(uri, options) {
 
 	options.length = 0;
 
-	var connection = uri.protocol === 'https:' ? https : http;
+	var connection = uri.protocol === 'https:' ? Https : Http;
 	var req = options.post ? connection.request(uri, (res) => download_response(res, uri, options)) : connection.get(uri, (res) => download_response(res, uri, options));
 
 	if (!options.callback) {
@@ -929,7 +930,7 @@ function download_response(res, uri, options) {
 
 		options.redirect++;
 
-		var tmp = parser.parse(res.headers['location']);
+		var tmp = Url.parse(res.headers['location']);
 		tmp.headers = uri.headers;
 		tmp.agent = false;
 		tmp.method = uri.method;
@@ -998,7 +999,7 @@ exports.$$download = function(url, flags, data, cookies, headers, encoding, time
 exports.send = function(name, stream, url, callback, cookies, headers, method, timeout) {
 
 	if (typeof(stream) === 'string')
-		stream = fs.createReadStream(stream, STREAM_READONLY);
+		stream = Fs.createReadStream(stream, STREAM_READONLY);
 
 	var BOUNDARY = '----totaljs' + Math.random().toString(16).substring(2);
 	var h = {};
@@ -1019,8 +1020,8 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 	h['Cache-Control'] = 'max-age=0';
 	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
 
-	var e = new events.EventEmitter();
-	var uri = parser.parse(url);
+	var e = new Events.EventEmitter();
+	var uri = Url.parse(url);
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 	var responseLength = 0;
 
@@ -1045,7 +1046,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 		});
 	};
 
-	var connection = options.protocol === 'https:' ? https : http;
+	var connection = options.protocol === 'https:' ? Https : Http;
 	var req = connection.request(options, response);
 
 	req.on('response', function(response) {
@@ -1167,7 +1168,7 @@ exports.noop = global.noop = global.NOOP = function() {};
 exports.httpStatus = function(code, addCode) {
 	if (addCode === undefined)
 		addCode = true;
-	return (addCode ? code + ': ' : '') + http.STATUS_CODES[code];
+	return (addCode ? code + ': ' : '') + Http.STATUS_CODES[code];
 };
 
 /**
@@ -1625,9 +1626,7 @@ exports.getName = function(path) {
 	if (index !== -1)
 		return path.substring(index + 1);
 	index = path.lastIndexOf('\\');
-	if (index !== -1)
-		return path.substring(index + 1);
-	return path;
+	return index === -1 ? path : path.substring(index + 1);
 };
 
 /**
@@ -1663,15 +1662,10 @@ exports.etag = function(text, version) {
 };
 
 exports.path = function(path, delimiter) {
-
 	if (!path)
 		path = '';
-
 	delimiter = delimiter || '/';
-	if (path[path.length - 1] === delimiter)
-		return path;
-
-	return path + delimiter;
+	return path[path.length - 1] === delimiter ? path : path + delimiter;
 };
 
 exports.join = function() {
@@ -1766,7 +1760,7 @@ function validate_builder_default(name, value, entity) {
 exports.validate_builder = function(model, error, schema, collection, path, index, fields, pluspath) {
 
 	var entity = collection[schema];
-	var prepare = entity.onValidate || framework.onValidate || NOOP;
+	var prepare = entity.onValidate || F.onValidate || NOOP;
 	var current = path === undefined ? '' : path + '.';
 	var properties = entity.properties;
 
@@ -1917,7 +1911,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
  */
 exports.combine = function() {
 
-	var p = framework.directory;
+	var p = F.directory;
 
 	for (var i = 0, length = arguments.length; i < length; i++) {
 		var v = arguments[i];
@@ -2049,7 +2043,7 @@ exports.parseJSON = function(value) {
 };
 
 exports.parseQuery = function(value) {
-	return framework.onParseQuery(value);
+	return F.onParseQuery(value);
 };
 
 /**
@@ -2473,20 +2467,20 @@ Date.prototype.format = function(format, resource) {
 				return self.getFullYear().toString().substring(2);
 			case 'MMM':
 				var m = MONTHS[self.getMonth()];
-				return (framework ? framework.resource(resource, m) || m : m).substring(0, 3);
+				return F.resource(resource, m).substring(0, 3);
 			case 'MMMM':
 				var m = MONTHS[self.getMonth()];
-				return (framework ? framework.resource(resource, m) || m : m);
+				return F.resource(resource, m);
 			case 'MM':
 				return (self.getMonth() + 1).toString().padLeft(2, '0');
 			case 'M':
 				return (self.getMonth() + 1);
 			case 'ddd':
 				var m = DAYS[self.getDay()];
-				return (framework ? framework.resource(resource, m) || m : m).substring(0, 3);
+				return F.resource(resource, m).substring(0, 3);
 			case 'dddd':
 				var m = DAYS[self.getDay()];
-				return (framework ? framework.resource(resource, m) || m : m);
+				return F.resource(resource, m);
 			case 'dd':
 				return self.getDate().toString().padLeft(2, '0');
 			case 'd':
@@ -2511,14 +2505,9 @@ Date.prototype.format = function(format, resource) {
 				tmp.setHours(0, 0, 0);
 				tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
 				tmp = Math.ceil((((tmp - new Date(tmp.getFullYear(), 0, 1)) / 8.64e7) + 1) / 7);
-				if (key === 'ww')
-					return tmp.toString().padLeft(2, '0');
-				return tmp;
+				return key === 'ww' ? tmp.toString().padLeft(2, '0') : tmp;
 			case 'a':
-				var a = 'AM';
-				if (self.getHours() >= 12)
-					a = 'PM';
-				return a;
+				return self.getHours() >= 12 ? 'PM' : 'AM';
 		}
 	});
 };
@@ -2603,9 +2592,7 @@ String.prototype.endsWith = function(text, ignoreCase) {
 String.prototype.replacer = function(find, text) {
 	var self = this;
 	var beg = self.indexOf(find);
-	if (beg === -1)
-		return self;
-	return self.substring(0, beg) + text + self.substring(beg + find.length);
+	return beg === -1 ? self : (self.substring(0, beg) + text + self.substring(beg + find.length));
 };
 
 /**
@@ -2656,12 +2643,8 @@ String.prototype.count = function(text) {
 	return count;
 };
 
-/**
- * Parse XML
- * @return {Object}
- */
 String.prototype.parseXML = function() {
-	return framework.onParseXML(this);
+	return F.onParseXML(this);
 };
 
 String.prototype.parseJSON = function() {
@@ -2672,10 +2655,6 @@ String.prototype.parseQuery = function() {
 	return exports.parseQuery(this);
 };
 
-/**
- * Parse date from string
- * @return {Date}
- */
 String.prototype.parseDate = function() {
 	var self = this.trim();
 
@@ -2706,11 +2685,8 @@ String.prototype.parseDate = function() {
 
 	for (var i = 0; i < length; i++) {
 		var c = arr[0].charCodeAt(i);
-		if (c > 47 && c < 58)
+		if (c === 45 || c === 46 || (c > 47 && c < 58))
 			continue;
-		if (c === 45 || c === 46)
-			continue;
-
 		if (noTime)
 			return new Date(self);
 	}
@@ -2773,10 +2749,6 @@ String.prototype.parseDate = function() {
 	return new Date(parsed[0], parsed[1] - 1, parsed[2], parsed[3], parsed[4], parsed[5]);
 };
 
-/**
- * Parse expiration date
- * @return {Date}
- */
 String.prototype.parseDateExpiration = function() {
 	var self = this;
 
@@ -2785,16 +2757,12 @@ String.prototype.parseDateExpiration = function() {
 	var length = arr.length;
 
 	for (var i = 0; i < length; i += 2) {
-
 		var num = arr[i].parseInt();
 		if (num === 0)
 			continue;
-
-		var type = arr[i + 1] || '';
-		if (type === '')
-			continue;
-
-		dt = dt.add(type, num);
+		var type = arr[i + 1];
+		if (type)
+			dt = dt.add(type, num);
 	}
 
 	return dt;
@@ -2844,11 +2812,7 @@ String.prototype.parseConfig = function(def) {
 	for (var i = 0; i < length; i++) {
 
 		var str = arr[i];
-
-		if (!str || str[0] === '#')
-			continue;
-
-		if (str.substring(0, 2) === '//')
+		if (!str || str[0] === '#' || str.substring(0, 2) === '//')
 			continue;
 
 		index = str.indexOf(' :');
@@ -2962,8 +2926,10 @@ String.prototype.urlDecode = function() {
 };
 
 String.prototype.params = function(obj) {
-	var formatted = this;
 
+	OBSOLETE('String.params()', 'The method is deprecated instead of it use F.viewCompile() or String.format().');
+
+	var formatted = this;
 	if (obj == null)
 		return formatted;
 
@@ -3067,23 +3033,23 @@ String.prototype.isJSON = function() {
 };
 
 String.prototype.isURL = function() {
-	return this.length <= 7 ? false : framework.validators.url.test(this);
+	return this.length <= 7 ? false : F.validators.url.test(this);
 };
 
 String.prototype.isZIP = function() {
-	return framework.validators.zip.test(this);
+	return F.validators.zip.test(this);
 };
 
 String.prototype.isEmail = function() {
-	return this.length <= 4 ? false : framework.validators.email.test(this);
+	return this.length <= 4 ? false : F.validators.email.test(this);
 };
 
 String.prototype.isPhone = function() {
-	return this.length < 6 ? false : framework.validators.phone.test(this);
+	return this.length < 6 ? false : F.validators.phone.test(this);
 };
 
 String.prototype.isUID = function() {
-	return this.length < 18 ? false : framework.validators.uid.test(this);
+	return this.length < 18 ? false : F.validators.uid.test(this);
 };
 
 String.prototype.parseInt = function(def) {
@@ -3143,30 +3109,29 @@ String.prototype.toUnicode = function() {
 };
 
 String.prototype.fromUnicode = function() {
-	var str = this.replace(/\\u([\d\w]{4})/gi, (match, v) => String.fromCharCode(parseInt(v, 16)));
-	return unescape(str);
+	return unescape(this.replace(regexpUNICODE, (match, v) => String.fromCharCode(parseInt(v, 16))));
 };
 
 String.prototype.sha1 = function(salt) {
-	var hash = crypto.createHash('sha1');
+	var hash = Crypto.createHash('sha1');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
 String.prototype.sha256 = function(salt) {
-	var hash = crypto.createHash('sha256');
+	var hash = Crypto.createHash('sha256');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
 String.prototype.sha512 = function(salt) {
-	var hash = crypto.createHash('sha512');
+	var hash = Crypto.createHash('sha512');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
 String.prototype.md5 = function(salt) {
-	var hash = crypto.createHash('md5');
+	var hash = Crypto.createHash('md5');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
@@ -3261,7 +3226,7 @@ String.prototype.base64ToFile = function(filename, callback) {
 	else
 		index++;
 
-	fs.writeFile(filename, self.substring(index), 'base64', callback || exports.noop);
+	Fs.writeFile(filename, self.substring(index), 'base64', callback || exports.noop);
 	return this;
 };
 
@@ -3384,15 +3349,8 @@ String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = St
 			continue;
 		}
 
-		if (code > 47 && code < 58) {
+		if ((code > 47 && code < 58) || (code > 94 && code < 123))
 			builder += c;
-			continue;
-		}
-
-		if (code > 94 && code < 123) {
-			builder += c;
-			continue;
-		}
 	}
 	var l = builder.length - 1;
 	return builder[l] === '-' ? builder.substring(0, l) : builder;
@@ -3878,13 +3836,10 @@ Array.prototype.take = function(count) {
 Array.prototype.extend = function(obj, rewrite) {
 	var isFn = typeof(obj) === 'function';
 	for (var i = 0, length = this.length; i < length; i++) {
-
-		if (isFn) {
+		if (isFn)
 			this[i] = obj(this[i], i);
-			continue;
-		}
-
-		this[i] = exports.extend(this[i], obj, rewrite);
+		else
+			this[i] = exports.extend(this[i], obj, rewrite);
 	}
 	return this;
 };
@@ -4085,21 +4040,11 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 
 		// String
 		if (type === 1) {
-			if (va && vb)
-				return asc ? va.substring(0, maxlength).removeDiacritics().localeCompare(vb.substring(0, maxlength).removeDiacritics()) : vb.substring(0, maxlength).removeDiacritics().localeCompare(va.substring(0, maxlength).removeDiacritics());
-			return 0;
+			return va && vb ? (asc ? va.substring(0, maxlength).removeDiacritics().localeCompare(vb.substring(0, maxlength).removeDiacritics()) : vb.substring(0, maxlength).removeDiacritics().localeCompare(va.substring(0, maxlength).removeDiacritics())) : 0;
 		} else if (type === 2) {
-			if (va > vb)
-				return asc ? 1 : -1;
-			else if (va < vb)
-				return asc ? -1 : 1;
-			return 0;
+			return va > vb ? (asc ? 1 : -1) : va < vb ? (asc ? -1 : 1) : 0;
 		} else if (type === 3) {
-			if (va === true && vb === false)
-				return asc ? 1 : -1;
-			else if (va === false && vb === true)
-				return asc ? -1 : 1;
-			return 0;
+			return va === true && vb === false ? (asc ? 1 : -1) : va === false && vb === true ? (asc ? -1 : 1) : 0;
 		} else if (type === 4) {
 			if (!va || !vb)
 				return 0;
@@ -4107,13 +4052,10 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 				va = new Date(va);
 			if (!vb.getTime)
 				vb = new Date(vb);
-			if (va.getTime() > vb.getTime())
-				return asc ? 1 : -1;
-			else if (va.getTime() < vb.getTime())
-				return asc ? -1 : 1;
-			return 0;
+			var at = va.getTime();
+			var bt = vb.getTime();
+			return at > bt ? (asc ? 1 : -1) : at < bt ? (asc ? -1 : 1) : 0;
 		}
-
 		return 0;
 	});
 
@@ -4582,7 +4524,7 @@ function Async(owner) {
 	this.tasksTimeout = {};
 	this.isCanceled = false;
 
-	events.EventEmitter.call(this);
+	Events.EventEmitter.call(this);
 }
 
 Async.prototype = {
@@ -4596,7 +4538,7 @@ Async.prototype = {
 	}
 };
 
-Async.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
+Async.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
 	constructor: {
 		value: Async,
 		enumberable: false
@@ -4687,56 +4629,35 @@ Async.prototype.complete = function(fn) {
 };
 
 Async.prototype.run = function(fn) {
-	var self = this;
-	self._isRunning = true;
-	fn && self.onComplete.push(fn);
-	self.refresh();
-	return self;
+	this._isRunning = true;
+	fn && this.onComplete.push(fn);
+	this.refresh();
+	return this;
 };
 
 Async.prototype.isRunning = function(name) {
-
-	var self = this;
-
 	if (!name)
-		return self._isRunning;
-
-	var task = self.tasksPending[name];
-	if (!task)
-		return false;
-
-	return task.isRunning === 1;
+		return this._isRunning;
+	var task = this.tasksPending[name];
+	return task ? task.isRunning === 1 : false;
 };
 
 Async.prototype.isWaiting = function(name) {
-	var self = this;
-
-	var task = self.tasksPending[name];
-	if (!task)
-		return false;
-
-	return task.isRunning === 0;
+	var task = this.tasksPending[name];
+	return task ? task.isRunning === 0 : false;
 };
 
 Async.prototype.isPending = function(name) {
-	var self = this;
-	var task = self.tasksPending[name];
-	if (!task)
-		return false;
-	return true;
+	var task = this.tasksPending[name];
+	return taks ? true : false;
 };
 
 Async.prototype.timeout = function(name, timeout) {
-
-	var self = this;
-
-	if (!timeout) {
-		self.tasksTimeout[name] = undefined;
-		return self;
-	}
-
-	self.tasksTimeout[name] = timeout;
-	return self;
+	if (timeout)
+		this.tasksTimeout[name] = timeout;
+	else
+		this.tasksTimeout[name] = undefined;
+	return this;
 };
 
 Async.prototype.refresh = function(name) {
@@ -4767,10 +4688,7 @@ Async.prototype.refresh = function(name) {
 			continue;
 		}
 
-		if (task.isRunning !== 0)
-			continue;
-
-		if (task.waiting && self.tasksPending[task.waiting])
+		if (task.isRunning !== 0 || (task.waiting && self.tasksPending[task.waiting]))
 			continue;
 
 		task.run();
@@ -4830,14 +4748,14 @@ FileList.prototype.walk = function(directory) {
 		return;
 	}
 
-	fs.readdir(directory, function(err, arr) {
+	Fs.readdir(directory, function(err, arr) {
 
 		if (err)
 			return self.next();
 
 		var length = arr.length;
 		for (var i = 0; i < length; i++)
-			self.pending.push(path.join(directory, arr[i]));
+			self.pending.push(Path.join(directory, arr[i]));
 
 		self.next();
 	});
@@ -4846,7 +4764,7 @@ FileList.prototype.walk = function(directory) {
 FileList.prototype.stat = function(path) {
 	var self = this;
 
-	fs.stat(path, function(err, stats) {
+	Fs.stat(path, function(err, stats) {
 
 		if (err)
 			return self.next();
@@ -5142,16 +5060,14 @@ exports.parseTheme = function(value) {
 	if (index === -1)
 		return '';
 	value = value.substring(1, index);
-	if (value === '?')
-		return framework.config['default-theme'];
-	return value;
+	return value === '?' ? F.config['default-theme'] : value;
 };
 
 exports.set = function(obj, path, value) {
 	var cachekey = 'S+' + path;
 
-	if (framework.temporary.other[cachekey])
-		return framework.temporary.other[cachekey](obj, value);
+	if (F.temporary.other[cachekey])
+		return F.temporary.other[cachekey](obj, value);
 
 	var arr = path.split('.');
 	var builder = [];
@@ -5175,8 +5091,7 @@ exports.set = function(obj, path, value) {
 	}
 
 	var fn = (new Function('w', 'a', 'b', builder.join(';') + ';w.' + path.replace(/\'/, '\'') + '=a;return a'));
-	if (global.framework)
-		framework.temporary.other[cachekey] = fn;
+	F.temporary.other[cachekey] = fn;
 	fn(obj, value, path);
 };
 
@@ -5184,8 +5099,8 @@ exports.get = function(obj, path) {
 
 	var cachekey = 'G=' + path;
 
-	if (framework.temporary.other[cachekey])
-		return framework.temporary.other[cachekey](obj);
+	if (F.temporary.other[cachekey])
+		return F.temporary.other[cachekey](obj);
 
 	var arr = path.split('.');
 	var builder = [];
@@ -5201,8 +5116,7 @@ exports.get = function(obj, path) {
 	}
 
 	var fn = (new Function('w', builder.join(';') + ';return w.' + path.replace(/\'/, '\'')));
-	if (global.framework)
-		framework.temporary.other[cachekey] = fn;
+	F.temporary.other[cachekey] = fn;
 	return fn(obj);
 };
 
@@ -5244,8 +5158,7 @@ function Chunker(name, max) {
 	this.filename = 'chunker_{0}-'.format(name);
 	this.stack = [];
 	this.flushing = 0;
-	if (global.framework)
-		this.filename = global.framework.path.temp(this.filename);
+	this.filename = F.path.temp(this.filename);
 }
 
 Chunker.prototype.append = Chunker.prototype.write = function(obj) {
@@ -5255,7 +5168,7 @@ Chunker.prototype.append = Chunker.prototype.write = function(obj) {
 
 	if (self.stack.length >= self.max) {
 		self.flushing++;
-		fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
+		Fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
 		self.stack = [];
 	}
 
@@ -5267,7 +5180,7 @@ Chunker.prototype.end = function() {
 
 	if (self.stack.length) {
 		self.flushing++;
-		fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
+		Fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
 		self.stack = [];
 	}
 
@@ -5299,7 +5212,7 @@ Chunker.prototype.read = function(index, callback) {
 		return;
 	}
 
-	fs.readFile(self.filename + index + '.json', function(err, data) {
+	Fs.readFile(self.filename + index + '.json', function(err, data) {
 		if (err)
 			callback(null, EMPTYARRAY);
 		else
@@ -5313,7 +5226,7 @@ Chunker.prototype.clear = function() {
 	var files = [];
 	for (var i = 0; i < self.index; i++)
 		files.push(self.filename + i + '.json');
-	files.wait((filename, next) => fs.unlink(filename, next));
+	files.wait((filename, next) => Fs.unlink(filename, next));
 	return self;
 };
 
@@ -5341,4 +5254,4 @@ exports.ObjectToArray = function(obj) {
 	return output;
 };
 
-!global.framework && require('./index');
+!global.F && require('./index');
