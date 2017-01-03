@@ -2655,9 +2655,17 @@ String.prototype.parseQuery = function() {
 	return exports.parseQuery(this);
 };
 
+String.prototype.parseTerminal = function(fn, skip) {
+	var lines = this.trim().split('\n');
+	if (!skip)
+		skip = 0;
+	for (var i = skip, length = lines.length - skip; i < length; i++)
+		fn(lines[i].split(' ').trim(), i, length);
+	return this;
+};
+
 String.prototype.parseDate = function() {
 	var self = this.trim();
-
 	var lc = self.charCodeAt(self.length - 1);
 
 	// Classic date
