@@ -26,6 +26,8 @@
 
 - improved: CSS compression
 - improved: code
+- improved: CPU and memory consumption
+- improved: performance
 
 ======= 2.3.0
 
