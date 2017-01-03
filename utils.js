@@ -2659,8 +2659,9 @@ String.prototype.parseTerminal = function(fn, skip) {
 	var lines = this.trim().split('\n');
 	if (!skip)
 		skip = 0;
+	var indexer = 0;
 	for (var i = skip, length = lines.length - skip; i < length; i++)
-		fn(lines[i].split(' ').trim(), i, length);
+		fn(lines[i].split(' ').trim(), indexer++, length, i);
 	return this;
 };
 
