@@ -235,9 +235,6 @@ function prototypeString() {
 	assert.ok(num.padLeft(10) === '0000012345', 'number.padLeft(10): ' + num);
 	assert.ok(num.padRight(10) === '1234500000', 'number.padRight(10): ' + num);
 
-	str = 'Date: {{now | dd.MM.yyyy HH:mm:ss}}. Currency: {{number | 2}} and encoded: {{name}} and raw: {{!name}}';
-	assert.ok(str.params({now: new Date(), number: 23034.34, name: '<b>Peter</b>'}).length === 106, 'string.params(): ' + str);
-
 	str = 'Peter Širka Linker & - you known';
 	assert.ok(str.linker() === 'peter-sirka-linker-you-known', 'string.link(): ' + str);
 	assert.ok(str.linker(11) === 'peter-sirka', 'string.link(): ' + str);
