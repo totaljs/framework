@@ -4198,6 +4198,7 @@ Framework.prototype.onMeta = function() {
 
 	var builder = '';
 	var length = arguments.length;
+	var self = this;
 
 	for (var i = 0; i < length; i++) {
 
@@ -4217,7 +4218,7 @@ Framework.prototype.onMeta = function() {
 				break;
 			case 3:
 				var tmp = arg.substring(0, 6);
-				var img = tmp === 'http:/' || tmp === 'https:' || arg.substring(0, 2) === '//' ? arg : F.hostname(F.routeImage(arg));
+				var img = tmp === 'http:/' || tmp === 'https:' || arg.substring(0, 2) === '//' ? arg : self.hostname(self.routeImage(arg));
 				builder += '<meta property="og:image" content="' + img + '" /><meta name="twitter:image" content="' + img + '" />';
 				break;
 		}
