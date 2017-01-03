@@ -499,6 +499,10 @@ Mailer.prototype._writemessage = function(obj, buffer) {
 	var msg = obj.messages.shift();
 	var message = [];
 
+
+	if (global.F)
+		global.F.stats.other.mail++;
+
 	obj.boundary = '--totaljs' + obj.date.getTime() + obj.count;
 	obj.files = msg.files;
 	obj.count++;
@@ -535,7 +539,6 @@ Mailer.prototype._writemessage = function(obj, buffer) {
 		message.push('To: ' + builder);
 		builder = '';
 	}
-
 
 	if (msg.addressCC) {
 		length = msg.addressCC.length;
@@ -596,10 +599,10 @@ Mailer.prototype._writeline = function(obj) {
 
 	for (var i = 1; i < arguments.length; i++) {
 		var line = arguments[i];
-		if (!line)
-			continue;
-		mailer.debug && console.log('SEND', line);
-		socket.write(line + CRLF);
+		if (line) {
+			mailer.debug && console.log('SEND', line);
+			socket.write(line + CRLF);
+		}
 	}
 
 	return true;

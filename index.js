@@ -689,7 +689,8 @@ function Framework() {
 			websocketPing: 0,
 			websocketCleaner: 0,
 			obsolete: 0,
-			restart: 0
+			restart: 0,
+			mail: 0
 		},
 
 		request: {
@@ -706,6 +707,7 @@ function Framework() {
 			put: 0,
 			path: 0,
 			upload: 0,
+			schema: 0,
 			mmr: 0,
 			blocked: 0,
 			'delete': 0,
@@ -721,6 +723,7 @@ function Framework() {
 			binary: 0,
 			pipe: 0,
 			file: 0,
+			image: 0,
 			destroy: 0,
 			stream: 0,
 			streaming: 0,
@@ -731,6 +734,7 @@ function Framework() {
 			notModified: 0,
 			sse: 0,
 			mmr: 0,
+			errorBuilder: 0,
 			error400: 0,
 			error401: 0,
 			error403: 0,
@@ -829,19 +833,11 @@ Framework.prototype._routesSort = function(type) {
 	var self = this;
 
 	self.routes.web.sort(function(a, b) {
-		if (a.priority > b.priority)
-			return -1;
-		if (a.priority < b.priority)
-			return 1;
-		return 0;
+		return a.priority > b.priority ? -1 : a.priority < b.priority ? 1 : 0;
 	});
 
 	self.routes.websockets.sort(function(a, b) {
-		if (a.priority > b.priority)
-			return -1;
-		if (a.priority < b.priority)
-			return 1;
-		return 0;
+		return a.priority > b.priority ? -1 : a.priority < b.priority ? 1 : 0;
 	});
 
 	var cache = {};
@@ -4345,7 +4341,8 @@ Framework.prototype.usage = function(detailed) {
 		files: staticFiles.length,
 		streaming: staticRange.length,
 		modificator:  F.modificators ? F.modificators.length : 0,
-		viewphrases: $VIEWCACHE.length
+		viewphrases: $VIEWCACHE.length,
+		uptodates: F.uptodates ? F.uptodates.length : 0
 	};
 
 	output.routing = {
@@ -4368,41 +4365,30 @@ Framework.prototype.usage = function(detailed) {
 
 	controllers.forEach(function(o) {
 		var item = F.controllers[o];
-		output.controllers.push({
-			name: o,
-			usage: item.usage === undefined ? null : item.usage()
-		});
+		output.controllers.push({ name: o, usage: item.usage ? item.usage() : null });
 	});
 
 	output.connections = [];
 
 	connections.forEach(function(o) {
-		output.connections.push({
-			name: o,
-			online: F.connections[o].online
-		});
+		output.connections.push({ name: o, online: F.connections[o].online });
 	});
 
 	output.modules = [];
 
 	modules.forEach(function(o) {
 		var item = F.modules[o];
-		output.modules.push({
-			name: o,
-			usage: item.usage === undefined ? null : item.usage()
-		});
+		output.modules.push({ name: o, usage: item.usage ? item.usage() : null });
 	});
 
 	output.models = [];
 
 	models.forEach(function(o) {
 		var item = F.models[o];
-		output.models.push({
-			name: o,
-			usage: item.usage === undefined ? null : item.usage()
-		});
+		output.models.push({ name: o, usage: item.usage ? item.usage() : null });
 	});
 
+	output.uptodates = F.uptodates;
 	output.helpers = helpers;
 	output.cache = cache;
 	output.resources = resources;
@@ -5381,6 +5367,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 					name += '.' + image.outputType;
 			}
 
+			F.stats.response.image++;
 			image.save(name, function(err) {
 
 				delete F.temporary.processing[key];
@@ -5434,6 +5421,7 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				name = name.substring(0, index) + '.' + image.outputType;
 		}
 
+		F.stats.response.image++;
 		image.save(name, function(err) {
 
 			delete F.temporary.processing[key];
@@ -5475,11 +5463,10 @@ Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProce
 		if (req.processing > F.config['default-request-timeout']) {
 			F.response408(req, res);
 			done && done();
-			return;
+		} else {
+			req.processing += 500;
+			setTimeout(() => F.responseImage(req, res, filename, fnProcess, headers, done), 500);
 		}
-
-		req.processing += 500;
-		setTimeout(() => F.responseImage(req, res, filename, fnProcess, headers, done), 500);
 		return;
 	}
 
@@ -5519,6 +5506,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 	if (stream) {
 		var image = framework_image.load(stream, im);
 		fnProcess(image);
+		F.stats.response.image++;
 		F.responseStream(req, res, framework_utils.getContentType(image.outputType), image, null, headers, done);
 		return F;
 	}
@@ -5530,6 +5518,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 			F.path.verify('temp');
 			var image = framework_image.load(filename, im);
 			fnProcess(image);
+			F.stats.response.image++;
 			F.responseStream(req, res, framework_utils.getContentType(image.outputType), image, null, headers, done);
 		} else {
 			F.response404(req, res);
@@ -9289,6 +9278,7 @@ Subscribe.prototype.execute = function(status, isError) {
 			status = 404;
 
 		if (status === 400 && self.exception instanceof framework_builders.ErrorBuilder) {
+			F.stats.response.errorBuilder++;
 			req.$language && self.exception.setResource(req.$language);
 			F.responseContent(req, res, 200, self.exception.output(), self.exception.contentType, F.config['allow-gzip']);
 			return self;
@@ -9545,6 +9535,7 @@ Subscribe.prototype.validate = function(route, next) {
 			self.route400(err);
 			next = null;
 		} else {
+			F.stats.request.schema++;
 			req.body = body;
 			self.isSchema = true;
 			next();
@@ -9575,10 +9566,8 @@ Subscribe.prototype.doEndfile = function() {
 	var req = self.req;
 	var res = self.res;
 
-	if (!F._length_files) {
-		F.responseStatic(self.req, self.res);
-		return;
-	}
+	if (!F._length_files)
+		return F.responseStatic(self.req, self.res);
 
 	for (var i = 0; i < F._length_files; i++) {
 
@@ -9623,7 +9612,6 @@ Subscribe.prototype.doEndfile = function() {
 	}
 
 	F.responseStatic(self.req, self.res);
-	return self;
 };
 
 /**
@@ -11689,6 +11677,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 		if (obj.contentType)
 			type = obj.contentType;
 		obj = obj.output();
+		F.stats.response.errorBuilder++;
 	} else {
 
 		if (framework_builders.isSchema(obj))
@@ -11741,6 +11730,7 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 	if (obj instanceof framework_builders.ErrorBuilder) {
 		self.req.$language && !obj.isResourceCustom && obj.setResource(self.req.$language);
 		obj = obj.json(beautify);
+		F.stats.response.errorBuilder++;
 	} else {
 
 		if (framework_builders.isSchema(obj))
@@ -11820,6 +11810,7 @@ Controller.prototype.content = function(contentBody, contentType, headers) {
 		if (!contentType)
 			contentType = contentBody.contentType || 'application/json';
 		contentBody = tmp;
+		F.stats.response.errorBuilder++;
 	}
 
 	self.subscribe.success();
@@ -13863,12 +13854,15 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 
 		case 'boolean':
 		case 'object':
-			if (!contentType)
-				contentType = 'application/json';
 			if (!isHEAD) {
-				if (body instanceof framework_builders.ErrorBuilder)
+				if (body instanceof framework_builders.ErrorBuilder) {
 					body = obj.output();
-				body = JSON.stringify(body);
+					contentType = obj.contentType;
+					F.stats.response.errorBuilder++;
+				} else
+					body = JSON.stringify(body);
+				if (!contentType)
+					contentType = 'application/json';
 			}
 			break;
 	}

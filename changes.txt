@@ -4,6 +4,10 @@
 - added: `X-Powered-By` header again with option to disable it in the framework config `disable-xpoweredby   : false`
 - added: `UPTODATE(type, url, [options], interval, [callback(err)])` more in docs
 - added: `F.on('uptodate', function(type, name) {})` new event for up-to-date dependencies
+- added: `F.stats.other.mail` with a count of sent emails
+- added: `F.stats.response.errorBuilder` with count of sent ErrorBuilders
+- added: `F.stats.response.image` with count of processed images via GM or IM
+- added: `F.stats.request.schema` with count of request to SchemaBuilder
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`
