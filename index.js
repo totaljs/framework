@@ -6916,34 +6916,30 @@ Framework.prototype._upgrade = function(req, socket, head) {
  * @param {Object} headers
  */
 Framework.prototype._upgrade_prepare = function(req, path, headers) {
-
 	var auth = F.onAuthorize;
-	if (!auth) {
-		var route = F.lookup_websocket(req, req.websocket.uri.pathname, true);
+	if (auth) {
+		auth.call(F, req, req.websocket, req.flags, function(isLogged, user) {
+
+			if (user)
+				req.user = user;
+
+			var route = F.lookup_websocket(req, req.websocket.uri.pathname, isLogged ? 1 : 2);
+			if (route) {
+				F._upgrade_continue(route, req, path);
+			} else {
+				req.websocket.close();
+				req.connection.destroy();
+			}
+		});
+	} else {
+		var route = F.lookup_websocket(req, req.websocket.uri.pathname, 0);
 		if (route) {
 			F._upgrade_continue(route, req, path);
 		} else {
 			req.websocket.close();
 			req.connection.destroy();
 		}
-		return;
 	}
-
-	auth.call(F, req, req.websocket, req.flags, function(isLogged, user) {
-
-		if (user)
-			req.user = user;
-
-		req.flags.push(isLogged ? 'authorize' : 'unauthorize');
-
-		var route = F.lookup_websocket(req, req.websocket.uri.pathname, false);
-		if (route) {
-			F._upgrade_continue(route, req, path);
-		} else {
-			req.websocket.close();
-			req.connection.destroy();
-		}
-	});
 };
 
 /**
@@ -9355,7 +9351,7 @@ Subscribe.prototype.prepare = function(flags, url) {
 			}
 
 			req.isAuthorized = isAuthorized;
-			self.doAuthorization(isAuthorized, user, hasRoles);
+			self.doAuthorize(isAuthorized, user, hasRoles);
 		});
 		return self;
 	}
@@ -9415,7 +9411,7 @@ Subscribe.prototype.doExecute = function() {
 	return self;
 };
 
-Subscribe.prototype.doAuthorization = function(isLogged, user, roles) {
+Subscribe.prototype.doAuthorize = function(isLogged, user, roles) {
 
 	var self = this;
 	var req = self.req;

@@ -27,6 +27,7 @@
 - fixed: JS minificator
 - fixed: global alias `I` for isomorphic code
 - fixed: streaming files in `debug` mode (removed cache)
+- fixed: (critical) a bug with authorization in WebSocket
 
 - improved: CSS compression
 - improved: code
