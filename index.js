@@ -4072,7 +4072,9 @@ Framework.prototype.findConnections = function(path) {
 	var output = [];
 	for (var i = 0, length = arr.length; i < length; i++) {
 		var key = arr[i];
-		if (is)
+		if (!path)
+ 			output.push(F.connections[key]);
+		else if (is)
 			path.test(key) && output.push(F.connections[key]);
 		else
 			key.indexOf(path) !== -1 && output.push(F.connections[key]);

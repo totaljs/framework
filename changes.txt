@@ -16,6 +16,7 @@
 - updated: `NOSQL().counter.monthly(true, ...)` shows all stats by ID
 - updated: `NOSQL().counter.yearly(true, ...)` shows all stats by ID
 - updated: `dependencies` supports up-to-date features e.g. `module (1 day)   : https://......js`
+- updated: `F.findConnections([path])` a `path` argument is optional
 
 - removed: behaviours
 - removed: restrictions
