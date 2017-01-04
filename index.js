@@ -3521,8 +3521,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 };
 
 Framework.prototype.restart = function() {
-	if (F.isRestart)
+	if (F.isRestarted)
 		return F;
+	F.isRestarted = true;
 	F.emit('restart');
 	setTimeout(() => F.$restart(), 1000);
 	return F;
@@ -3584,7 +3585,7 @@ Framework.prototype.$restart = function() {
 		F.versions = null;
 		F.schedules = [];
 		F.isLoaded = false;
-		F.isRestart = false;
+		F.isRestarted = false;
 
 		F.routes = {
 			sitemap: null,
@@ -3617,6 +3618,7 @@ Framework.prototype.$restart = function() {
 		F.errors = [];
 		F.problems = [];
 		F.changes = [];
+		F.traces = [];
 		F.workers = {};
 		F.databases = {};
 
