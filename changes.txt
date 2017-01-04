@@ -9,6 +9,8 @@
 - added: `F.stats.response.image` with count of processed images via GM or IM
 - added: `F.stats.request.schema` with count of request to SchemaBuilder
 - added: `String.prototype.parseTerminal = function(fn(values, index, count, realIndex), [skipLines])`
+- added: `TRACE(message, [name], [url], [ip])` is an alias for `F.trace()`
+- added: `F.config['trace-console']` (default: `true`) shows tracing on the console
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`

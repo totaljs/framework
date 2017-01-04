@@ -327,6 +327,10 @@ global.LOG = function() {
 	return F.log.apply(F, arguments);
 };
 
+global.TRACE = function(message, name, uri, ip) {
+	return F.trace(message, name, uri, ip);
+};
+
 global.LOGGER = function() {
 	return F.logger.apply(F, arguments);
 };
@@ -515,6 +519,7 @@ function Framework() {
 
 		debug: false,
 		trace: true,
+		'trace-console': true,
 
 		name: 'Total.js',
 		version: '1.0.0',
@@ -2536,7 +2541,7 @@ Framework.prototype.error = function(err, name, uri) {
 		return F;
 
 	if (F.errors) {
-		F.errors.push({ error: err.stack, name: name, url: uri ? Parser.format(uri) : null, date: new Date() });
+		F.errors.push({ error: err.stack, name: name, url: uri ? Parser.format(uri) : undefined, date: new Date() });
 		F.errors.length > 50 && F.errors.shift();
 	}
 
@@ -2560,14 +2565,14 @@ Framework.prototype.problem = Framework.prototype.wtf = function(message, name, 
 	else if (typeof(message) === 'object')
 		message = JSON.stringify(message);
 
-	var obj = { message: message, name: name, url: uri ? Parser.format(uri) : null, ip: ip };
-	F.logger('problems', obj.message, 'url: ' + obj.url, 'controller: ' + obj.name, 'ip: ' + obj.ip);
+	var obj = { message: message, name: name, url: uri ? Parser.format(uri) : undefined, ip: ip };
+	F.logger('problems', obj.message, 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
-	if (!F.problems)
-		return F;
+	if (F.problems) {
+		F.problems.push(obj);
+		F.problems.length > 50 && F.problems.shift();
+	}
 
-	F.problems.push(obj);
-	F.problems.length > 50 && F.problems.shift();
 	return F;
 };
 
@@ -2587,14 +2592,14 @@ Framework.prototype.change = function(message, name, uri, ip) {
 	else if (typeof(message) === 'object')
 		message = JSON.stringify(message);
 
-	var obj = { message: message, name: name, url: uri ? Parser.format(uri) : null, ip: ip };
-	F.logger('changes', obj.message, 'url: ' + obj.url, 'controller: ' + obj.name, 'ip: ' + obj.ip);
+	var obj = { message: message, name: name, url: uri ? Parser.format(uri) : undefined, ip: ip };
+	F.logger('changes', obj.message, 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
-	if (!F.changes)
-		return F;
+	if (F.changes) {
+		F.changes.push(obj);
+		F.changes.length > 50 && F.changes.shift();
+	}
 
-	F.changes.push(obj);
-	F.changes.length > 50 && F.changes.shift();
 	return F;
 };
 
@@ -2607,6 +2612,7 @@ Framework.prototype.change = function(message, name, uri, ip) {
  * @return {Framework}
  */
 Framework.prototype.trace = function(message, name, uri, ip) {
+
 	if (!F.config.trace)
 		return F;
 
@@ -2617,14 +2623,17 @@ Framework.prototype.trace = function(message, name, uri, ip) {
 	else if (typeof(message) === 'object')
 		message = JSON.stringify(message);
 
-	var obj = { message: message, name: name, url: uri ? Parser.format(uri) : null, ip: ip };
-	F.logger('traces', obj.message, 'url: ' + obj.url, 'controller: ' + obj.name, 'ip: ' + obj.ip);
+	var dt = new Date();
+	var obj = { message: message, name: name, url: uri ? Parser.format(uri) : undefined, ip: ip, date: dt };
+	F.logger('traces', obj.message, 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
-	if (!F.traces)
-		return F;
+	F.config['trace-console'] && console.log(dt.format('yyyy-MM-dd HH:mm:ss'), '[trace]', message, '|', 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
-	F.traces.push(obj);
-	F.traces.length > 50 && F.traces.shift();
+	if (F.traces) {
+		F.traces.push(obj);
+		F.traces.length > 50 && F.traces.shift();
+	}
+
 	return F;
 };
 
