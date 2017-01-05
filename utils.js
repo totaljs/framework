@@ -1259,7 +1259,7 @@ exports.clone = function(obj, skip, skipFunctions) {
 	}
 
 	return o;
-}
+};
 
 /**
  * Copy values from object to object
