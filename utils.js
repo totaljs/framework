@@ -2655,12 +2655,14 @@ String.prototype.parseQuery = function() {
 	return exports.parseQuery(this);
 };
 
-String.prototype.parseTerminal = function(fn, skip) {
+String.prototype.parseTerminal = function(fn, skip, take) {
 	var lines = this.trim().split('\n');
 	if (!skip)
 		skip = 0;
+	if (!take)
+		take = lines.length;
 	var indexer = 0;
-	for (var i = skip, length = lines.length - skip; i < length; i++)
+	for (var i = skip, length = take; i < length; i++)
 		fn(lines[i].split(' ').trim(), indexer++, length, i);
 	return this;
 };
