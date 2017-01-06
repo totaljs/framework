@@ -5777,17 +5777,6 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 	return F;
 };
 
-/*
-	Sets the last modified header or Etag
-	@req {Request}
-	@res {Response}
-	@value {String or Date}
-
-	if @value === {String} set ETag
-	if @value === {Date} set LastModified
-
-	return {Controller};
-*/
 Framework.prototype.setModified = function(req, res, value) {
 	if (typeof(value) === 'string')
 		res.setHeader('Etag', value + ':' + F.config['etag-version']);
@@ -5796,21 +5785,6 @@ Framework.prototype.setModified = function(req, res, value) {
 	return F;
 };
 
-/*
-	Checks if ETag or Last Modified has modified
-	@req {Request}
-	@res {Response}
-	@compare {String or Date}
-	@strict {Boolean} :: if strict then use equal date else use great than date (default: false)
-
-	if @compare === {String} compare if-none-match
-	if @compare === {Date} compare if-modified-since
-
-	this method automatically flushes response (if it's not modified)
-	--> response 304
-
-	return {Boolean};
-*/
 Framework.prototype.notModified = function(req, res, compare, strict) {
 
 	var type = typeof(compare);
@@ -13933,6 +13907,11 @@ http.ServerResponse.prototype.throw400 = function(problem) {
 	F.response400(this.req, this, problem);
 };
 
+http.ServerResponse.prototype.setModified = function(value) {
+	F.setModified(this.req, this, value);
+	return this;
+};
+
 http.ServerResponse.prototype.throw401 = function(problem) {
 	this.controller && this.controller.subscribe.success();
 	F.response401(this.req, this, problem);
@@ -14202,6 +14181,10 @@ http.IncomingMessage.prototype.noCache = function() {
 	delete self.headers['if-none-match'];
 	delete self.headers['if-modified-since'];
 	return self;
+};
+
+http.IncomingMessage.prototype.notModified = function(compare, strict) {
+	return F.notModified(this, this.res, compare, strict);
 };
 
 /**
