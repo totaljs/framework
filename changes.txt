@@ -28,6 +28,7 @@
 - fixed: global alias `I` for isomorphic code
 - fixed: streaming files in `debug` mode (removed cache)
 - fixed: (critical) a bug with authorization in WebSocket
+- fixed: `nosql_builder.join()` a problem with using `nosql_builder.first()` by @yexing (Xing Ye)
 
 - improved: CSS compression
 - improved: code

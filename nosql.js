@@ -1297,8 +1297,12 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 				item[join.field] = join.scalar ? scalar(join.items, join.scalar, join.scalarfield, join.a, join.b != null ? item[join.b] : undefined) : join.first ? findItem(join.items, join.a, item[join.b], join.scalar, join.scalarfield) : findItems(join.items, join.a, item[join.b]);
 			}
 		}
-	} else if (response)
-		response[join.field] = join.scalar ? scalar(join.items, join.scalar, join.scalarfield, join.a, join.b != null ? response[join.b] : undefined) : join.first ? findItem(join.items, join.a, response[join.b]) : findItems(join.items, join.a, response[join.b]);
+	} else if (response) {
+		for (var j = 0; j < jl; j++) {
+			var join = self.$join[keys[j]];
+			response[join.field] = join.scalar ? scalar(join.items, join.scalar, join.scalarfield, join.a, join.b != null ? response[join.b] : undefined) : join.first ? findItem(join.items, join.a, response[join.b], join.scalar, join.scalarfield) : findItems(join.items, join.a, response[join.b]);
+		}
+	}
 
 	self.$callback(err, response, count);
 	return self;
