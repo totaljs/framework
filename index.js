@@ -826,14 +826,19 @@ Framework.prototype.convert = function(value, convertor) {
 		else if (typeof(convertor) === 'string') {
 			switch (convertor.toLowerCase()) {
 				case 'json':
-					return U.parseJSON;
+					convertor = U.parseJSON;
+					break;
 				case 'float':
 				case 'number':
 				case 'double':
-					return U.parseFloat;
+					convertor = U.parseFloat;
+					break;
 				case 'int':
 				case 'integer':
-					return U.parseInt2;
+					convertor = U.parseInt2;
+					break;
+				default:
+					return console.log('F.convert unknown convertor type:', convertor);
 			}
 		}
 
