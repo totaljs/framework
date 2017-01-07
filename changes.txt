@@ -1,7 +1,7 @@
 ======= 2.4.0 (BETA)
 
 - added: `components` more in docs
-- added: `X-Powered-By` header again with option to disable it in the framework config `disable-xpoweredby   : false`
+- added: `X-Powered-By` header again with option to change/remove it in the framework config `default-xpoweredby   : Total.js`
 - added: `UPTODATE(type, url, [options], interval, [callback(err)])` more in docs
 - added: `F.on('uptodate', function(type, name) {})` new event for up-to-date dependencies
 - added: `F.stats.other.mail` with a count of sent emails
@@ -12,7 +12,7 @@
 - added: `TRACE(message, [name], [url], [ip])` is an alias for `F.trace()`
 - added: `F.config['trace-console']` (default: `true`) shows tracing on the console
 - added: `F.convert(name, type/function(val))` registers a new convertor (convertors uses QueryParser (GET/POST))
-- added: `F.convert(obj)` perform convertor for an object
+- added: `F.convert(obj)` performs convertor for an object
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`

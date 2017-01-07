@@ -526,6 +526,7 @@ function Framework() {
 		author: '',
 		secret: Os.hostname() + '-' + Os.platform() + '-' + Os.arch(),
 
+		'default-xpoweredby': 'Total.js',
 		'etag-version': '',
 		'directory-controllers': '/controllers/',
 		'directory-components': '/components/',
@@ -2585,7 +2586,7 @@ Framework.prototype.error = function(err, name, uri) {
 		return F;
 
 	if (F.errors) {
-		F.errors.push({ error: err.stack, name: name, url: uri ? Parser.format(uri) : undefined, date: new Date() });
+		F.errors.push({ error: err.stack, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, date: new Date() });
 		F.errors.length > 50 && F.errors.shift();
 	}
 
@@ -2609,7 +2610,7 @@ Framework.prototype.problem = Framework.prototype.wtf = function(message, name, 
 	else if (typeof(message) === 'object')
 		message = JSON.stringify(message);
 
-	var obj = { message: message, name: name, url: uri ? Parser.format(uri) : undefined, ip: ip };
+	var obj = { message: message, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, ip: ip };
 	F.logger('problems', obj.message, 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
 	if (F.problems) {
@@ -2636,7 +2637,7 @@ Framework.prototype.change = function(message, name, uri, ip) {
 	else if (typeof(message) === 'object')
 		message = JSON.stringify(message);
 
-	var obj = { message: message, name: name, url: uri ? Parser.format(uri) : undefined, ip: ip };
+	var obj = { message: message, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, ip: ip };
 	F.logger('changes', obj.message, 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
 	if (F.changes) {
@@ -2668,7 +2669,7 @@ Framework.prototype.trace = function(message, name, uri, ip) {
 		message = JSON.stringify(message);
 
 	var dt = new Date();
-	var obj = { message: message, name: name, url: uri ? Parser.format(uri) : undefined, ip: ip, date: dt };
+	var obj = { message: message, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, ip: ip, date: dt };
 	F.logger('traces', obj.message, 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
 	F.config['trace-console'] && console.log(dt.format('yyyy-MM-dd HH:mm:ss'), '[trace]', message, '|', 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
@@ -8447,8 +8448,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (F.config['default-timezone'])
 		process.env.TZ = F.config['default-timezone'];
 
-	if (accepts && accepts.length)
-		accepts.forEach(accept => F.config['static-accepts'][accept] = true);
+	accepts && accepts.length && accepts.forEach(accept => F.config['static-accepts'][accept] = true);
 
 	if (F.config['disable-strict-server-certificate-validation'] === true)
 		process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -8456,12 +8456,19 @@ Framework.prototype._configure = function(arr, rewrite) {
 	if (F.config['allow-performance'])
 		http.globalAgent.maxSockets = 9999;
 
+	var xpowered = F.config['default-xpoweredby'];
+
 	Object.keys(HEADERS).forEach(function(key) {
 		Object.keys(HEADERS[key]).forEach(function(subkey) {
 			if (subkey === 'Cache-Control')
 				HEADERS[key][subkey] = HEADERS[key][subkey].replace(/max-age=\d+/, 'max-age=' + F.config['default-response-maxage']);
-			if (F.config['disable-xpoweredby'] && subkey === 'X-Powered-By')
-				delete HEADERS[key][subkey];
+			if (subkey === 'X-Powered-By') {
+				if (xpowered)
+					HEADERS[key][subkey] = xpowered;
+				else
+					delete HEADERS[key][subkey];
+
+			}
 		});
 	});
 
