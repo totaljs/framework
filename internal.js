@@ -26,7 +26,7 @@
 
 'use strict';
 
-const crypto = require('crypto');
+const Crypto = require('crypto');
 const Fs = require('fs');
 const ReadStream = Fs.ReadStream;
 const Stream = require('stream');
@@ -815,7 +815,7 @@ HttpFile.prototype.$$read = function() {
 
 HttpFile.prototype.md5 = function(callback) {
 	var self = this;
-	var md5 = crypto.createHash('md5');
+	var md5 = Crypto.createHash('md5');
 	var stream = Fs.createReadStream(self.path);
 	stream.on('data', (buffer) => md5.update(buffer));
 	stream.on('error', function(error) {

@@ -1449,7 +1449,6 @@ exports.encode = function(str) {
 		return '';
 
 	var type = typeof(str);
-
 	if (type !== 'string')
 		str = str.toString();
 
@@ -1467,7 +1466,6 @@ exports.decode = function(str) {
 		return '';
 
 	var type = typeof(str);
-
 	if (type !== 'string')
 		str = str.toString();
 
@@ -1493,9 +1491,7 @@ exports.parseInt = function(obj, def) {
 	if (obj == null)
 		return def || 0;
 	var type = typeof(obj);
-	if (type === 'number')
-		return obj;
-	return (type !== 'string' ? obj.toString() : obj).parseInt();
+	return type === 'number' ? obj : (type !== 'string' ? obj.toString() : obj).parseInt();
 };
 
 exports.parseBool = exports.parseBoolean = function(obj, def) {
