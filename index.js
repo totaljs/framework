@@ -6441,7 +6441,7 @@ Framework.prototype._service = function(count) {
 		if (item.updated.add(item.interval) > F.datetime)
 			return next();
 		item.updated = F.datetime;
-		item.name && F.uninstall(item.type, item.name);
+		item.name && F.uninstall(item.type, item.name, 'uptodate');
 		item.count++;
 		F.install(item.type, item.url, item.options, function(err, name) {
 			if (err) {
