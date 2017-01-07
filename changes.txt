@@ -11,6 +11,8 @@
 - added: `String.prototype.parseTerminal = function(fn(values, index, count, realIndex), [skipLines], [takeLines])`
 - added: `TRACE(message, [name], [url], [ip])` is an alias for `F.trace()`
 - added: `F.config['trace-console']` (default: `true`) shows tracing on the console
+- added: `F.convert(name, type/function(val))` registers a new convertor (convertors uses QueryParser (GET/POST))
+- added: `F.convert(obj)` perform convertor for an object
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`

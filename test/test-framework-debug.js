@@ -458,10 +458,10 @@ function test_routing(next) {
 	});
 
 	async.await('get', function(complete) {
-		utils.request(url + 'get/?name=total&age=30', ['get'], function(error, data, code, headers) {
+		utils.request(url + 'get/?name=total&age=30&page=30', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '{"name":"total","age":"30"}', 'get');
+			assert(data === '{"name":"total","age":"30","page":30}', 'get');
 			complete();
 		});
 	});
@@ -512,10 +512,10 @@ function test_routing(next) {
 	});
 
 	async.await('post-xml', function(complete) {
-		utils.request(url + 'post/xml/', ['xml', 'post'], '<root><name>total.js</name></root>', function(error, data, code, headers) {
+		utils.request(url + 'post/xml/', ['xml', 'post'], '<root><name>total.js</name><page>20</page></root>', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '{"root.name":"total.js","type":"xml"}', 'post-xml');
+			assert(data === '{"root.name":"total.js","root.page":20,"type":"xml"}', 'post-xml');
 			complete();
 		});
 	});
