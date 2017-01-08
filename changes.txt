@@ -8,7 +8,7 @@
 - added: `F.stats.response.errorBuilder` with count of sent ErrorBuilders
 - added: `F.stats.response.image` with count of processed images via GM or IM
 - added: `F.stats.request.schema` with count of request to SchemaBuilder
-- added: `String.prototype.parseTerminal = function(fn(values, index, count, realIndex), [skipLines], [takeLines])`
+- added: `String.prototype.parseTerminal(fields, fn(values, index, count, realIndex), [skipLines], [takeLines])`
 - added: `TRACE(message, [name], [url], [ip])` is an alias for `F.trace()`
 - added: `F.config['trace-console']` (default: `true`) shows tracing on the console
 - added: `F.convert(name, type/function(val))` registers a new convertor (convertors uses QueryParser (GET/POST))
@@ -21,6 +21,7 @@
 - updated: `NOSQL().counter.yearly(true, ...)` shows all stats by ID
 - updated: `dependencies` supports up-to-date features e.g. `module (1 day)   : https://......js`
 - updated: `F.findConnections([path])` a `path` argument is optional
+- updated: `U.streamer(beg, [end], function, [skip])` add a new argument `skip`
 
 - removed: behaviours
 - removed: restrictions
@@ -31,6 +32,8 @@
 - fixed: streaming files in `debug` mode (removed cache)
 - fixed: (critical) a bug with authorization in WebSocket
 - fixed: `nosql_builder.join()` a problem with using `nosql_builder.first()` by @yexing (Xing Ye)
+- fixed: `String.parseInt2()` - a possible NaN value
+- fixed: `String.parseFloat2()` - a possible NaN value
 
 - improved: CSS compression
 - improved: code

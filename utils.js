@@ -50,13 +50,14 @@ const regexpDiacritics = /[^\u0000-\u007e]/g;
 const regexpXML = /\w+\=\".*?\"/g;
 const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
-const regexpINTEGER = /[\-0-9]+/g;
-const regexpFLOAT = /[\-0-9\.\,]+/g;
+const regexpINTEGER = /(^\-|\s-)?[0-9]+/g;
+const regexpFLOAT = /(^\-|\s-)?[0-9\.\,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
 const regexpSEARCH = /[^a-zA-Zá-žÁ-Ž\d\s:]/g;
 const regexpDECRYPT = /\-|\_/g;
 const regexpENCRYPT = /\/|\+/g;
 const regexpUNICODE = /\\u([\d\w]{4})/gi;
+const regexpTERMINAL = /[\w\S]+/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -1360,15 +1361,19 @@ exports.isRelative = function(url) {
  * @param {String} end
  * @param {Function(value, index)} callback
  */
-exports.streamer = function(beg, end, callback) {
+exports.streamer = function(beg, end, callback, skip) {
 
 	if (typeof(end) === 'function') {
+		skip = callback;
 		callback = end;
 		end = undefined;
 	}
 
 	var indexer = 0;
 	var buffer = new Buffer(0);
+
+	if (skip === undefined)
+		skip = 0;
 
 	beg = new Buffer(beg, 'utf8');
 	if (end)
@@ -1388,7 +1393,12 @@ exports.streamer = function(beg, end, callback) {
 				return;
 
 			while (index !== -1) {
-				callback(buffer.toString('utf8', 0, index + length), indexer++);
+
+				if (skip)
+					skip--;
+				else
+					callback(buffer.toString('utf8', 0, index + length), indexer++);
+
 				buffer = buffer.slice(index + length);
 				index = buffer.indexOf(beg);
 				if (index === -1)
@@ -1424,7 +1434,12 @@ exports.streamer = function(beg, end, callback) {
 		}
 
 		while (bi !== -1) {
-			callback(buffer.toString('utf8', bi, ei + elength), indexer++);
+
+			if (skip)
+				skip--;
+			else
+				callback(buffer.toString('utf8', bi, ei + elength), indexer++);
+
 			buffer = buffer.slice(ei + elength);
 			is = false;
 			bi = buffer.indexOf(beg);
@@ -2651,17 +2666,117 @@ String.prototype.parseQuery = function() {
 	return exports.parseQuery(this);
 };
 
-String.prototype.parseTerminal = function(fn, skip, take) {
-	var lines = this.trim().split('\n');
-	if (!skip)
+String.prototype.parseTerminal = function(fields, fn, skip, take) {
+
+	var lines = this.split('\n');
+
+	if (typeof(fields) === 'function') {
+		take = skip;
+		skip = fn;
+		fn = fields;
+		parseTerminal2(lines, fn, skip, take);
+		return this;
+	}
+
+	if (skip === undefined)
 		skip = 0;
-	if (!take)
+	if (take === undefined)
 		take = lines.length;
+
+	var output = [];
+	var headers = [];
 	var indexer = 0;
-	for (var i = skip, length = take; i < length; i++)
-		fn(lines[i].split(' ').trim(), indexer++, length, i);
+	var line = lines[0];
+
+	if (!line) {
+		line = lines[1];
+		skip++;
+	}
+
+	if (!line) {
+		line = lines[2];
+		skip++;
+	}
+
+	if (!line)
+		return this;
+
+	var fieldslength = fields.length;
+	var tmp;
+
+	for (var i = 0, length = fieldslength; i < length; i++) {
+		var field = fields[i];
+
+		var beg = -1;
+		var end = -1;
+		var type = typeof(field);
+
+		if (type === 'object' && field.test) {
+			tmp = line.match(field);
+			if (tmp) {
+				beg = tmp.index;
+				end = beg + tmp.toString().length;
+			} else {
+				beg = -1;
+				end = -1;
+			}
+		} else if (type === 'string') {
+			tmp = line.indexOf(field);
+			if (tmp === -1) {
+				beg = -1;
+				end = -1;
+			} else {
+				beg = tmp;
+				end = line.indexOf(' ', beg + field.length);
+				if (end === -1)
+					end = line.length;
+			}
+		}
+
+		headers.push({ beg: end, end: beg });
+	}
+
+	for (var i = skip + 1, length = skip + 1 + take; i < length; i++) {
+
+		var line = lines[i];
+		if (!line)
+			continue;
+
+		var arr = [];
+		var is = false;
+
+		for (var j = 0; j < fieldslength; j++) {
+			var header = headers[j];
+			if (header.beg === -1 || headers.end === -1)
+				arr.push('');
+			else {
+				is = true;
+				arr.push(line.substring(header.beg, header.end).trim());
+			}
+		}
+
+		is && fn(arr, indexer++, length, i);
+	}
+
 	return this;
 };
+
+function parseTerminal2(lines, fn, skip, take) {
+	var indexer = 0;
+
+	if (skip === undefined)
+		skip = 0;
+	if (take === undefined)
+		take = lines.length;
+
+	for (var i = skip, length = skip + take; i < length; i++) {
+		var line = lines[i];
+		if (!line)
+			continue;
+		var m = line.match(regexpTERMINAL);
+		m && fn(m, indexer++, length, i);
+	}
+}
 
 String.prototype.parseDate = function() {
 	var self = this.trim();
@@ -3067,12 +3182,12 @@ String.prototype.parseInt = function(def) {
 
 String.prototype.parseInt2 = function(def) {
 	var num = this.match(regexpINTEGER);
-	return num ? +num : def || 0;
+	return num ? +num[0] : def || 0;
 };
 
 String.prototype.parseFloat2 = function(def) {
 	var num = this.match(regexpFLOAT);
-	return num ? +num.toString().replace(/\,/g, '.') : def || 0;
+	return num ? +num[0].toString().replace(/\,/g, '.') : def || 0;
 };
 
 String.prototype.parseBool = String.prototype.parseBoolean = function() {
