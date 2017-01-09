@@ -8,7 +8,7 @@
 - added: `F.stats.response.errorBuilder` with count of sent ErrorBuilders
 - added: `F.stats.response.image` with count of processed images via GM or IM
 - added: `F.stats.request.schema` with count of request to SchemaBuilder
-- added: `String.prototype.parseTerminal(fields, fn(values, index, count, realIndex), [skipLines], [takeLines])`
+- added: `String.prototype.parseTerminal([fields], fn(values, index, count, realIndex), [skipLines], [takeLines])`
 - added: `TRACE(message, [name], [url], [ip])` is an alias for `F.trace()`
 - added: `F.config['trace-console']` (default: `true`) shows tracing on the console
 - added: `F.convert(name, type/function(val))` registers a new convertor (convertors uses QueryParser (GET/POST))
@@ -35,8 +35,8 @@
 - fixed: `String.parseInt2()` - a possible NaN value
 - fixed: `String.parseFloat2()` - a possible NaN value
 
-- improved: CSS compression
 - improved: code
+- improved: CSS compression
 - improved: CPU and memory consumption
 - improved: performance
 
