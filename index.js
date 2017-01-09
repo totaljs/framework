@@ -880,7 +880,7 @@ Framework.prototype.useConfig = function(name) {
  * Sort all routes
  * @return {Framework}
  */
-Framework.prototype._routesSort = function(type) {
+Framework.prototype.$routesSort = function(type) {
 
 	var self = this;
 
@@ -920,6 +920,12 @@ Framework.prototype._routesSort = function(type) {
 			return item.hash === route.hash && item !== route;
 		});
 		route.isUNIQUE = tmp == null;
+	});
+
+	// Clears cache
+	Object.keys(F.temporary.other).forEach(function(key) {
+		if (key[0] === '#')
+			F.temporary.other[key] = undefined;
 	});
 
 	return self;
@@ -1816,7 +1822,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 	// Appends cors route
 	isCORS && F.cors(urlcache, corsflags);
-	!_controller && self._routesSort(1);
+	!_controller && self.$routesSort(1);
 
 	return self;
 };
@@ -2381,7 +2387,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 	});
 
 	F.emit('route', 'websocket', F.routes.websockets[F.routes.websockets.length - 1]);
-	!_controller && F._routesSort(2);
+	!_controller && F.$routesSort(2);
 	return F;
 };
 
@@ -2867,7 +2873,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		arr.forEach((item) => self.install('component', item.name, item.filename, undefined, undefined, undefined));
 	}
 
-	self._routesSort();
+	self.$routesSort();
 
 	if (!types || types.indexOf('dependencies') !== -1)
 		self._configure_dependencies();
@@ -3785,7 +3791,7 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 			F.routes.files[i].controller = id;
 	}
 
-	F._routesSort();
+	F.$routesSort();
 	_controller = '';
 
 	if (!skipEmit) {
@@ -3881,7 +3887,6 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		F.routes.web = F.routes.web.remove('owner', id);
 		F.routes.files = F.routes.files.remove('owner', id);
 		F.routes.websockets = F.routes.websockets.remove('owner', id);
-
 		typeof(obj.uninstall) === 'function' && obj.uninstall(options, name);
 
 		if (type === 'model')
@@ -3890,7 +3895,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 			delete F.sources[name];
 
 		delete F.dependencies[type + '.' + name];
-		F._routesSort();
+		F.$routesSort();
 
 	} else if (type === 'module' || type === 'controller') {
 
@@ -3919,17 +3924,22 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 				delete F.controllers[name];
 		}
 
-		F._routesSort();
+		F.$routesSort();
 
 	} else if (type === 'component') {
 
+		if (!F.components.instances[name])
+			return F;
+
 		obj = F.components.instances[name];
+
 		if (obj) {
 			F.routes.web = F.routes.web.remove('owner', id);
 			F.routes.files = F.routes.files.remove('owner', id);
 			F.routes.websockets = F.routes.websockets.remove('owner', id);
 			obj.uninstall && obj.uninstall(options, name);
-			F._routesSort();
+			F.$routesSort();
+			delete F.components.instances[name];
 		}
 
 		delete F.components.instances[name];
@@ -4844,8 +4854,10 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 		// is isomorphic?
 		if (filename[0] !== '#') {
-			if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension)
+			if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension) {
+				res.noCompress = true;
 				filename = F.path.temp('components.' + req.extension);
+			}
 			F.responseFile(req, res, filename, undefined, undefined, done);
 			return F;
 		}
@@ -8515,7 +8527,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 Framework.prototype.routeScript = function(name, theme) {
 	if (!name.endsWith('.js'))
 		name += '.js';
-	return F._routeStatic(name, F.config['static-url-script'], theme);
+	return F.$routeStatic(name, F.config['static-url-script'], theme);
 };
 
 /**
@@ -8524,30 +8536,30 @@ Framework.prototype.routeScript = function(name, theme) {
  * @return {String}
  */
 Framework.prototype.routeStyle = function(name, theme) {
-	return F._routeStatic(name + (name.endsWith('.css') ? '' : '.css'), F.config['static-url-style'], theme);
+	return F.$routeStatic(name + (name.endsWith('.css') ? '' : '.css'), F.config['static-url-style'], theme);
 };
 
 Framework.prototype.routeImage = function(name, theme) {
-	return F._routeStatic(name, F.config['static-url-image'], theme);
+	return F.$routeStatic(name, F.config['static-url-image'], theme);
 };
 
 Framework.prototype.routeVideo = function(name, theme) {
-	return F._routeStatic(name, F.config['static-url-video'], theme);
+	return F.$routeStatic(name, F.config['static-url-video'], theme);
 };
 
 Framework.prototype.routeFont = function(name, theme) {
-	return F._routeStatic(name, F.config['static-url-font'], theme);
+	return F.$routeStatic(name, F.config['static-url-font'], theme);
 };
 
 Framework.prototype.routeDownload = function(name, theme) {
-	return F._routeStatic(name, F.config['static-url-download'], theme);
+	return F.$routeStatic(name, F.config['static-url-download'], theme);
 };
 
 Framework.prototype.routeStatic = function(name, theme) {
-	return F._routeStatic(name, F.config['static-url'], theme);
+	return F.$routeStatic(name, F.config['static-url'], theme);
 };
 
-Framework.prototype._routeStatic = function(name, directory, theme) {
+Framework.prototype.$routeStatic = function(name, directory, theme) {
 	var key = name + directory + '$' + theme;
 	var val = F.temporary.other[key];
 	if (RELEASE && val)
