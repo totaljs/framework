@@ -6444,17 +6444,19 @@ Framework.prototype._service = function(count) {
 		item.updated = F.datetime;
 		item.name && F.uninstall(item.type, item.name, 'uptodate');
 		item.count++;
-		F.install(item.type, item.url, item.options, function(err, name) {
-			if (err) {
-				item.errors.push(err);
-				item.errors.length > 50 && F.errors.shift();
-			} else {
-				item.name = name;
-				F.emit('uptodate', item.type, name);
-			}
-			item.callback && item.callback(err, name);
-			next();
-		});
+		setTimeout(function() {
+			F.install(item.type, item.url, item.options, function(err, name) {
+				if (err) {
+					item.errors.push(err);
+					item.errors.length > 50 && F.errors.shift();
+				} else {
+					item.name = name;
+					F.emit('uptodate', item.type, name);
+				}
+				item.callback && item.callback(err, name);
+				next();
+			});
+		}, item.name ? 500 : 1);
 	});
 
 	// every 20 minutes (default) service clears resources
