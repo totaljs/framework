@@ -2395,7 +2395,6 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
  */
 Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 
-	var self = this;
 	var a;
 
 	if (fnValidation instanceof Array) {

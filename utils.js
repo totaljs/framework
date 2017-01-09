@@ -2683,7 +2683,6 @@ String.prototype.parseTerminal = function(fields, fn, skip, take) {
 	if (take === undefined)
 		take = lines.length;
 
-	var output = [];
 	var headers = [];
 	var indexer = 0;
 	var line = lines[0];
@@ -4777,8 +4776,7 @@ Async.prototype.isWaiting = function(name) {
 };
 
 Async.prototype.isPending = function(name) {
-	var task = this.tasksPending[name];
-	return taks ? true : false;
+	return this.tasksPending[name] ? true : false;
 };
 
 Async.prototype.timeout = function(name, timeout) {
