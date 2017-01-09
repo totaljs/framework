@@ -235,6 +235,8 @@ HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 
 HEADERS.workers = { cwd: '' };
 HEADERS.mmrpipe = { end: false };
 
+Object.freeze(HEADERS.authorization);
+
 var _controller = '';
 var _owner = '';
 var _test;
@@ -3391,6 +3393,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		else if (typeof(obj.name) === 'string')
 			name = obj.name;
 
+		_owner = type + '#' + name;
 		obj.$owner = _owner;
 
 		if (!name)
@@ -3484,6 +3487,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (!name)
 			name = (Math.random() * 10000) >> 0;
 
+		_owner = type + '#' + name;
 		obj.$owner = _owner;
 
 		obj.booting && setTimeout(function() {
@@ -8397,7 +8401,6 @@ Framework.prototype._configure = function(arr, rewrite) {
 			case 'allow-compile-html':
 			case 'allow-compile-style':
 			case 'allow-compile-script':
-			case 'disable-xpoweredby':
 			case 'disable-strict-server-certificate-validation':
 			case 'disable-clear-temporary-directory':
 			case 'trace':
@@ -14229,8 +14232,7 @@ http.IncomingMessage.prototype.__proto__ = _tmp;
  * @return {Request}
  */
 http.IncomingMessage.prototype.signature = function(key) {
-	var self = this;
-	return F.encrypt((self.headers['user-agent'] || '') + '#' + self.ip + '#' + self.url + '#' + (key || ''), 'request-signature', false);
+	return F.encrypt((this.headers['user-agent'] || '') + '#' + this.ip + '#' + this.url + '#' + (key || ''), 'request-signature', false);
 };
 
 /**
@@ -14238,10 +14240,9 @@ http.IncomingMessage.prototype.signature = function(key) {
  * @return {Request}
  */
 http.IncomingMessage.prototype.noCache = function() {
-	var self = this;
-	delete self.headers['if-none-match'];
-	delete self.headers['if-modified-since'];
-	return self;
+	delete this.headers['if-none-match'];
+	delete this.headers['if-modified-since'];
+	return this;
 };
 
 http.IncomingMessage.prototype.notModified = function(compare, strict) {
@@ -14255,15 +14256,14 @@ http.IncomingMessage.prototype.notModified = function(compare, strict) {
  */
 http.IncomingMessage.prototype.cookie = function(name) {
 
-	var self = this;
-	if (self.cookies)
-		return $decodeURIComponent(self.cookies[name] || '');
+	if (this.cookies)
+		return $decodeURIComponent(this.cookies[name] || '');
 
-	var cookie = self.headers['cookie'];
+	var cookie = this.headers['cookie'];
 	if (!cookie)
 		return '';
 
-	self.cookies = {};
+	this.cookies = {};
 
 	var arr = cookie.split(';');
 
@@ -14271,10 +14271,10 @@ http.IncomingMessage.prototype.cookie = function(name) {
 		var line = arr[i].trim();
 		var index = line.indexOf('=');
 		if (index !== -1)
-			self.cookies[line.substring(0, index)] = line.substring(index + 1);
+			this.cookies[line.substring(0, index)] = line.substring(index + 1);
 	}
 
-	return $decodeURIComponent(self.cookies[name] || '');
+	return $decodeURIComponent(this.cookies[name] || '');
 };
 
 /**
@@ -14283,9 +14283,7 @@ http.IncomingMessage.prototype.cookie = function(name) {
  */
 http.IncomingMessage.prototype.authorization = function() {
 
-	var self = this;
-	var authorization = self.headers['authorization'];
-
+	var authorization = this.headers['authorization'];
 	if (!authorization)
 		return HEADERS.authorization;
 
@@ -14497,19 +14495,11 @@ process.on('message', function(msg, h) {
 });
 
 function prepare_error(e) {
-	if (!F.isDebug || !e)
-		return '';
-	if (e instanceof ErrorBuilder)
-		return ' :: ' + e.plain();
-	if (e.stack)
-		return ' :: ' + e.stack.toString();
-	return ' :: ' + e.toString();
+	return (!F.isDebug || !e) ? '' : ' :: ' + (e instanceof ErrorBuilder ? e.plain() : e.stack ? e.stack.toString() : e.toString());
 }
 
 function prepare_filename(name) {
-	if (name[0] === '@')
-		return F.isWindows ? U.combine(F.config['directory-temp'], name.substring(1)) : F.path.package(name.substring(1));
-	return U.combine('/', name);
+	return name[0] === '@' ? (F.isWindows ? U.combine(F.config['directory-temp'], name.substring(1)) : F.path.package(name.substring(1))) : U.combine('/', name);
 }
 
 function prepare_staticurl(url, isDirectory) {
@@ -14525,14 +14515,8 @@ function prepare_staticurl(url, isDirectory) {
 
 function prepare_isomorphic(name) {
 	name = name.replace(/\.js$/i, '');
-
 	var content = F.isomorphic[name];
-	if (content)
-		content = content.$$output;
-	else
-		content = '';
-
-	return 'if(window["isomorphic"]===undefined)window.isomorphic=window.I={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + content + ';return exports;})(null,null,null,null,null,true,false)';
+	return 'if(window["isomorphic"]===undefined)window.isomorphic=window.I={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + (content ? content.$$output : '') + ';return exports;})(null,null,null,null,null,true,false)';
 }
 
 function isGZIP(req) {
