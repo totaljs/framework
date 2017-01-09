@@ -3105,10 +3105,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (!name && internal)
 			name = U.getName(internal).replace(/\.html/gi, '').trim();
 
+		var hash = '\n/*' + name.hash() + '*/\n';
 		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
 		content = parseComponent(internal ? declaration : Fs.readFileSync(declaration).toString(ENCODING), name);
-		content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + '\n');
-		content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + '\n');
+		content.js && Fs.appendFileSync(F.path.temp(temporary + '.js'), hash + (F.config.debug ? component_debug(name, content.js, 'js') : content.js) + hash.substring(0, hash.length - 1));
+		content.css && Fs.appendFileSync(F.path.temp(temporary + '.css'), hash + (F.config.debug ? component_debug(name, content.css, 'css') : content.css) + hash.substring(0, hash.length - 1));
 
 		if (content.js)
 			F.components.js = true;
@@ -3923,21 +3924,46 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 	} else if (type === 'component') {
 
 		obj = F.components.instances[name];
-		if (!obj)
-			return F;
-
-		F.routes.web = F.routes.web.remove('owner', id);
-		F.routes.files = F.routes.files.remove('owner', id);
-		F.routes.websockets = F.routes.websockets.remove('owner', id);
-
 		if (obj) {
+			F.routes.web = F.routes.web.remove('owner', id);
+			F.routes.files = F.routes.files.remove('owner', id);
+			F.routes.websockets = F.routes.websockets.remove('owner', id);
 			obj.uninstall && obj.uninstall(options, name);
-			delete F.components.instances[name];
-			delete F.components.views[name];
+			F._routesSort();
 		}
 
-		// @TODO: rebuild CSS and JS?
-		F._routesSort();
+		delete F.components.instances[name];
+		delete F.components.views[name];
+
+		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
+		var data;
+		var index;
+		var beg = '\n/*' + name.hash() + '*/\n';
+		var end = beg.substring(0, beg.length - 1);
+		var is = false;
+
+		if (F.components.js) {
+			data = Fs.readFileSync(F.path.temp(temporary + '.js')).toString('utf-8');
+			index = data.indexOf(beg);
+			if (index !== -1) {
+				data = data.substring(0, index) + data.substring(data.indexOf(end, index + end.length) + end.length);
+				Fs.writeFileSync(F.path.temp(temporary + '.js'), data);
+				is = true;
+			}
+		}
+
+		if (F.components.css) {
+			data = Fs.readFileSync(F.path.temp(temporary + '.css')).toString('utf-8');
+			index = data.indexOf(beg);
+			if (index !== -1) {
+				data = data.substring(0, index) + data.substring(data.indexOf(end, index +end.length) + end.length);
+				Fs.writeFileSync(F.path.temp(temporary + '.css'), data);
+				is = true;
+			}
+		}
+
+		if (is)
+			F.components.version = U.GUID(5);
 	}
 
 	!skipEmit && F.emit('uninstall', type, name);
