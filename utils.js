@@ -69,6 +69,7 @@ const STREAM_READONLY = { flags: 'r' };
 const STREAM_END = { end: false };
 const ALPHA_INDEX = { '&lt': '<', '&gt': '>', '&quot': '"', '&apos': '\'', '&amp': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': '\'', '&amp;': '&' };
 const EMPTYARRAY = [];
+const NODEVERSION = parseFloat(process.version.toString().replace('v', '').replace(/\./g, ''));
 
 Object.freeze(EMPTYARRAY);
 
@@ -546,7 +547,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	}
 
 	if (data.length) {
-		options.data = new Buffer(data, ENCODING);
+		options.data = exports.createBuffer(data, ENCODING);
 		headers['Content-Length'] = options.data.length;
 	}
 
@@ -698,11 +699,11 @@ exports.$$request = function(url, flags, data, cookies, headers, encoding, timeo
 };
 
 exports.btoa = function(str) {
-	return (str instanceof Buffer) ? str.toString('base64') : new Buffer(str.toString(), 'binary').toString('base64');
+	return (str instanceof Buffer) ? str.toString('base64') : exports.createBuffer(str.toString(), 'binary').toString('base64');
 };
 
 exports.atob = function(str) {
-	return new Buffer(str, 'base64').toString('binary');
+	return exports.createBuffer(str, 'base64').toString('binary');
 };
 
 /**
@@ -858,7 +859,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	uri.headers = headers;
 
 	if (data.length) {
-		options.data = new Buffer(data, ENCODING);
+		options.data = exports.createBuffer(data, ENCODING);
 		headers['Content-Length'] = options.data.length;
 	}
 
@@ -1028,7 +1029,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 
 	var response = function(res) {
 
-		res.body = new Buffer(0);
+		res.body = exports.createBufferSize();
 		res._bufferlength = 0;
 
 		res.on('data', function(chunk) {
@@ -1370,14 +1371,14 @@ exports.streamer = function(beg, end, callback, skip) {
 	}
 
 	var indexer = 0;
-	var buffer = new Buffer(0);
+	var buffer = exports.createBufferSize();
 
 	if (skip === undefined)
 		skip = 0;
 
-	beg = new Buffer(beg, 'utf8');
+	beg = exports.createBuffer(beg, 'utf8');
 	if (end)
-		end = new Buffer(end, 'utf8');
+		end = exports.createBuffer(end, 'utf8');
 
 	if (!end) {
 		var length = beg.length;
@@ -2069,7 +2070,7 @@ exports.getWebSocketFrame = function(code, message, type) {
 	var messageBuffer = getWebSocketFrameMessageBytes(code, message);
 	var messageLength = messageBuffer.length;
 	var lengthBuffer = getWebSocketFrameLengthBytes(messageLength);
-	var frameBuffer = new Buffer(1 + lengthBuffer.length + messageLength);
+	var frameBuffer = exports.createBufferSize(1 + lengthBuffer.length + messageLength);
 	frameBuffer[0] = 0x80 | type;
 	lengthBuffer.copy(frameBuffer, 1, 0, lengthBuffer.length);
 	messageBuffer.copy(frameBuffer, lengthBuffer.length + 1, 0, messageLength);
@@ -2089,7 +2090,7 @@ function getWebSocketFrameMessageBytes(code, message) {
 	var binary = message instanceof Int8Array;
 	var length = message.length;
 
-	var messageBuffer = new Buffer(length + index);
+	var messageBuffer = exports.createBufferSize(length + index);
 
 	for (var i = 0; i < length; i++) {
 		if (binary)
@@ -2117,20 +2118,20 @@ function getWebSocketFrameLengthBytes(length) {
 	var lengthBuffer = null;
 
 	if (length <= 125) {
-		lengthBuffer = new Buffer(1);
+		lengthBuffer = exports.createBufferSize(1);
 		lengthBuffer[0] = length;
 		return lengthBuffer;
 	}
 
 	if (length <= 65535) {
-		lengthBuffer = new Buffer(3);
+		lengthBuffer = exports.createBufferSize(3);
 		lengthBuffer[0] = 126;
 		lengthBuffer[1] = (length >> 8) & 255;
 		lengthBuffer[2] = (length) & 255;
 		return lengthBuffer;
 	}
 
-	lengthBuffer = new Buffer(9);
+	lengthBuffer = exports.createBufferSize(9);
 
 	lengthBuffer[0] = 127;
 	lengthBuffer[1] = 0x00;
@@ -3302,7 +3303,7 @@ String.prototype.encrypt = function(key, isUnique) {
 		values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
 	}
 
-	var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(regexpENCRYPT, text => text === '+' ? '_' : '-');
+	var hash = exports.createBuffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(regexpENCRYPT, text => text === '+' ? '_' : '-');
 	index = hash.indexOf('=');
 	return index > 0 ? hash.substring(0, index) : hash;
 };
@@ -3317,7 +3318,7 @@ String.prototype.decrypt = function(key) {
 			values += '=';
 	}
 
-	values = new Buffer(values, 'base64').toString(ENCODING);
+	values = exports.createBuffer(values, 'base64').toString(ENCODING);
 
 	var index = values.indexOf('=');
 	if (index === -1)
@@ -3367,7 +3368,7 @@ String.prototype.base64ToBuffer = function() {
 	else
 		index++;
 
-	return new Buffer(self.substring(index), 'base64');
+	return exports.createBuffer(self.substring(index), 'base64');
 };
 
 String.prototype.base64ContentType = function() {
@@ -5380,5 +5381,13 @@ exports.ObjectToArray = function(obj) {
 		output.push({ key: keys[i], value: obj[keys[i]]});
 	return output;
 };
+
+if (NODEVERSION > 699) {
+	exports.createBufferSize = (size) => Buffer.alloc(size || 0);
+	exports.createBuffer = (val, type) => Buffer.from(val || '', type);
+} else {
+	exports.createBufferSize = (size) => new Buffer(size || 0);
+	exports.createBuffer = (val, type) => new Buffer(val || '', type);
+}
 
 !global.F && require('./index');

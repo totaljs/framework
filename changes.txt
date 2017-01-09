@@ -22,6 +22,7 @@
 - updated: `dependencies` supports up-to-date features e.g. `module (1 day)   : https://......js`
 - updated: `F.findConnections([path])` a `path` argument is optional
 - updated: `U.streamer(beg, [end], function, [skip])` add a new argument `skip`
+- updated: deprecated methods in Node.js v7
 
 - removed: behaviours
 - removed: restrictions

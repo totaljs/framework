@@ -6069,10 +6069,10 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	} else {
 		if (gzip) {
 			res.writeHead(code, returnHeaders);
-			Zlib.gzip(new Buffer(contentBody || ''), (err, data) => res.end(data, ENCODING));
+			Zlib.gzip(framework_utils.createBuffer(contentBody), (err, data) => res.end(data, ENCODING));
 		} else {
 			res.writeHead(code, returnHeaders);
-			res.end(contentBody || '', ENCODING);
+			res.end(contentBody, ENCODING);
 		}
 	}
 
@@ -6658,7 +6658,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	var method = req.method;
 	var first = method[0];
 	if (first === 'P' || first === 'D') {
-		req.buffer_data = new Buffer('');
+		req.buffer_data = framework_utils.createBuffer();
 		var index = multipart.lastIndexOf(';');
 		var tmp = multipart;
 		if (index !== -1)
@@ -7481,7 +7481,7 @@ Framework.prototype.testing = function(stop, callback) {
 	var buf;
 
 	if (test.data && test.data.length) {
-		buf = new Buffer(test.data, ENCODING);
+		buf = framework_utils.createBuffer(test.data, ENCODING);
 		test.headers[RESPONSE_HEADER_CONTENTLENGTH] = buf.length;
 	}
 
@@ -9735,8 +9735,7 @@ Subscribe.prototype.doParsepost = function(chunk) {
 		return self;
 
 	req.buffer_exceeded = true;
-	req.buffer_data = new Buffer('');
-
+	req.buffer_data = framework_utils.createBuffer();
 	return self;
 };
 
@@ -13313,7 +13312,7 @@ function WebSocketClient(req, socket, head) {
 	this.req = req;
 	// this.isClosed = false;
 	this.errors = 0;
-	this.buffer = new Buffer(0);
+	this.buffer = framework_utils.createBufferSize();
 	this.length = 0;
 
 	// 1 = raw - not implemented
@@ -13418,7 +13417,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 		return false;
 
 	var header = protocols.length ? SOCKET_RESPONSE_PROTOCOL.format(self._request_accept_key(self.req), protocols.join(', ')) : SOCKET_RESPONSE.format(self._request_accept_key(self.req));
-	self.socket.write(new Buffer(header, 'binary'));
+	self.socket.write(framework_utils.createBuffer(header, 'binary'));
 
 	self._id = (self.ip || '').replace(/\./g, '') + U.GUID(20);
 	self.id = self._id;
@@ -13485,13 +13484,13 @@ WebSocketClient.prototype._ondata = function(data) {
 		case 0x09:
 			// ping, response pong
 			self.socket.write(U.getWebSocketFrame(0, '', 0x0A));
-			self.buffer = new Buffer(0);
+			self.buffer = framework_utils.createBufferSize();
 			self.$ping = true;
 			break;
 		case 0x0a:
 			// pong
 			self.$ping = true;
-			self.buffer = new Buffer(0);
+			self.buffer = framework_utils.createBufferSize();
 			break;
 	}
 };
@@ -13510,11 +13509,10 @@ WebSocketClient.prototype.parse = function() {
 	var index = (self.buffer[1] & 0x7f);
 
 	index = (index == 126) ? 4 : (index == 127 ? 10 : 2);
-
 	if ((index + length + 4) > (self.buffer.length))
 		return self;
 
-	var mask = new Buffer(4);
+	var mask = framework_utils.createBufferSize(4);
 	self.buffer.copy(mask, 0, index, index + 4);
 
 	// TEXT
@@ -13537,33 +13535,27 @@ WebSocketClient.prototype.parse = function() {
 		} else
 			self.container.emit('message', self, self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output);
 	} else {
-		var binary = new Buffer(length);
+		var binary = framework_utils.createBufferSize(length);
 		for (var i = 0; i < length; i++)
 			binary[i] = self.buffer[index + 4 + i] ^ mask[i % 4];
 		self.container.emit('message', self, new Uint8Array(binary).buffer);
 	}
 
 	self.buffer = self.buffer.slice(index + length + 4, self.buffer.length);
-
-	if (self.buffer.length >= 2 && U.getMessageLength(self.buffer, F.isLE))
-		self.parse();
-
+	self.buffer.length >= 2 && U.getMessageLength(self.buffer, F.isLE) && self.parse();
 	return self;
 };
 
 WebSocketClient.prototype._onerror = function(err) {
 	var self = this;
-
 	if (!self || self.isClosed)
 		return;
 
 	if (REG_WEBSOCKET_ERROR.test(err.stack)) {
 		self.isClosed = true;
 		self._onclose();
-		return;
-	}
-
-	self.container.emit('error', err, self);
+	} else
+		self.container.emit('error', err, self);
 };
 
 WebSocketClient.prototype._onclose = function() {
@@ -13656,13 +13648,13 @@ function Backup() {
 	this.file = [];
 	this.directory = [];
 	this.path = '';
-	this.read = { key: new Buffer(0), value: new Buffer(0), status: 0 };
+	this.read = { key: framework_utils.createBufferSize(), value: framework_utils.createBufferSize(), status: 0 };
 	this.pending = 0;
 	this.cache = {};
 	this.complete = NOOP;
 	this.filter = () => true;
-	this.bufKey = new Buffer(':');
-	this.bufNew = new Buffer('\n');
+	this.bufKey = framework_utils.createBuffer(':');
+	this.bufNew = framework_utils.createBuffer('\n');
 }
 
 Backup.prototype.restoreKey = function(data) {
@@ -13716,8 +13708,8 @@ Backup.prototype.restoreValue = function(data) {
 	self.restoreFile(read.key.toString('utf8').replace(REG_EMPTY, ''), read.value.toString('utf8').replace(REG_EMPTY, ''));
 
 	read.status = 0;
-	read.value = new Buffer(0);
-	read.key = new Buffer(0);
+	read.value = framework_utils.createBufferSize();
+	read.key = framework_utils.createBufferSize();
 
 	self.restoreKey(data.slice(index + 1));
 };
@@ -13780,7 +13772,7 @@ Backup.prototype.restoreFile = function(key, value) {
 		p && self.createDirectory(p);
 	}
 
-	var buffer = new Buffer(value, 'base64');
+	var buffer = framework_utils.createBuffer(value, 'base64');
 	self.pending++;
 
 	Zlib.gunzip(buffer, function(err, data) {
@@ -13986,7 +13978,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 		return self;
 	}
 
-	var buffer = new Buffer(body);
+	var buffer = framework_utils.createBuffer(body);
 	Zlib.gzip(buffer, function(err, data) {
 
 		if (err) {
@@ -14327,7 +14319,7 @@ http.IncomingMessage.prototype.authorization = function() {
 	var result = { user: '', password: '', empty: true };
 
 	try {
-		var arr = new Buffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
+		var arr = framework_utils.createBuffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
 		result.user = arr[0] || '';
 		result.password = arr[1] || '';
 		result.empty = !result.user || !result.password;

@@ -115,7 +115,7 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 	parser.onPartBegin = function() {
 		// Temporary data
 		tmp = new HttpFile();
-		tmp.$data = new Buffer('');
+		tmp.$data = framework_utils.createBufferSize();
 		tmp.$step = 0;
 		tmp.$is = false;
 		tmp.length = 0;
@@ -1308,10 +1308,10 @@ MultipartParser.stateToString = function(stateNumber) {
 
 MultipartParser.prototype.initWithBoundary = function(str) {
 	var self = this;
-	self.boundary = new Buffer(str.length + 4);
+	self.boundary = framework_utils.createBufferSize(str.length + 4);
 	self.boundary.write('\r\n--', 0, 'ascii');
 	self.boundary.write(str, 4, 'ascii');
-	self.lookbehind = new Buffer(self.boundary.length + 8);
+	self.lookbehind = framework_utils.createBufferSize(self.boundary.length + 8);
 	self.state = S.START;
 	self.boundaryChars = {};
 	for (var i = 0; i < self.boundary.length; i++)

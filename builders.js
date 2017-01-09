@@ -3516,7 +3516,7 @@ RESTBuilder.prototype.maxlength = function(number) {
 };
 
 RESTBuilder.prototype.auth = function(user, password) {
-	this.$headers['authorization'] = 'Basic ' + new Buffer(user + ':' + password).toString('base64');
+	this.$headers['authorization'] = 'Basic ' + framework_utils.createBuffer(user + ':' + password).toString('base64');
 	return this;
 };
 

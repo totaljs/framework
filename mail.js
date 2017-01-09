@@ -581,7 +581,7 @@ Mailer.prototype._writemessage = function(obj, buffer) {
 	message.push('Content-Type: ' + (msg.body.indexOf('<') !== -1 && msg.body.lastIndexOf('>') !== -1 ? 'text/html' : 'text/plain') + '; charset=utf-8');
 	message.push('Content-Transfer-Encoding: base64');
 	message.push('');
-	message.push(prepareBASE64(new Buffer(msg.body.replace(REG_WINLINE, '\n').replace(REG_NEWLINE, CRLF)).toString('base64')));
+	message.push(prepareBASE64(framework_utils.createBuffer(msg.body.replace(REG_WINLINE, '\n').replace(REG_NEWLINE, CRLF)).toString('base64')));
 
 	obj.message = message.join(CRLF);
 	obj.messagecallback = msg.$callback;
@@ -685,10 +685,10 @@ Mailer.prototype._send = function(obj, options, autosend) {
 				isAuthorization = true;
 				if (line.indexOf('XOAUTH') === -1) {
 					auth.push('AUTH LOGIN');
-					auth.push(new Buffer(options.user).toString('base64'));
-					auth.push(new Buffer(options.password).toString('base64'));
+					auth.push(framework_utils.createBuffer(options.user).toString('base64'));
+					auth.push(framework_utils.createBuffer(options.password).toString('base64'));
 				} else
-					auth.push('AUTH PLAIN ' + new Buffer('\0'+ options.user + '\0' + options.password).toString('base64'));
+					auth.push('AUTH PLAIN ' + framework_utils.createBuffer('\0'+ options.user + '\0' + options.password).toString('base64'));
 			}
 		}
 
@@ -843,7 +843,7 @@ function prepareBASE64(value) {
 }
 
 function unicode_encode(val) {
-	return val ? '=?utf-8?B?' + new Buffer(val.toString()).toString('base64') + '?=' : '';
+	return val ? '=?utf-8?B?' + framework_utils.createBuffer(val.toString()).toString('base64') + '?=' : '';
 }
 
 // ======================================================
