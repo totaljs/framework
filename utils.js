@@ -2728,12 +2728,10 @@ String.prototype.parseTerminal = function(fields, fn, skip, take) {
 			} else {
 				beg = tmp;
 				end = line.indexOf(' ', beg + field.length);
-				if (end === -1)
-					end = line.length;
 			}
 		}
 
-		headers.push({ beg: end, end: beg });
+		headers.push({ beg: beg, end: end });
 	}
 
 	for (var i = skip + 1, length = skip + 1 + take; i < length; i++) {
@@ -2744,15 +2742,24 @@ String.prototype.parseTerminal = function(fields, fn, skip, take) {
 
 		var arr = [];
 		var is = false;
+		var beg;
 
 		for (var j = 0; j < fieldslength; j++) {
 			var header = headers[j];
-			if (header.beg === -1 || headers.end === -1)
-				arr.push('');
-			else {
+			if (header.beg !== -1) {
 				is = true;
-				arr.push(line.substring(header.beg, header.end).trim());
-			}
+				beg = 0;
+
+				for (var k = header.beg; k > -1; k--) {
+					if (line[k] === ' ') {
+						beg = k + 1;
+						break;
+					}
+				}
+
+				arr.push(line.substring(beg, header.end === -1 ? undefined : header.end).trim());
+			} else
+				arr.push('');
 		}
 
 		is && fn(arr, indexer++, length, i);
