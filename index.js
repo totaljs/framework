@@ -3111,6 +3111,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (!name && internal)
 			name = U.getName(internal).replace(/\.html/gi, '').trim();
 
+		F.uninstall(type, name);
+
 		var hash = '\n/*' + name.hash() + '*/\n';
 		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
 		content = parseComponent(internal ? declaration : Fs.readFileSync(declaration).toString(ENCODING), name);
