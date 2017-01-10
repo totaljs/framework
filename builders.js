@@ -2413,18 +2413,10 @@ exports.newschema = function(group, name) {
 	if (!group)
 		group = DEFAULT_SCHEMA;
 
-	if (schemas[group] === undefined)
+	if (!schemas[group])
 		schemas[group] = new SchemaBuilder(group);
 
-	var schema;
-
-	if (name) {
-		schema = schemas[group].get(name);
-		if (!schema)
-			schema = schemas[group].create(name);
-	}
-
-	return schema;
+	return schemas[group].create(name);
 };
 
 /**
