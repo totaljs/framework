@@ -647,6 +647,7 @@ function Framework() {
 		mmr: {}
 	};
 
+	this.owners = [];
 	this.modificators = null;
 	this.helpers = {};
 	this.modules = {};
@@ -810,7 +811,7 @@ Framework.prototype.$owner = function() {
 
 Framework.prototype.behaviour = function(url, flags) {
 	OBSOLETE('F.behaviour()', 'This functionality has been removed.');
-	return this;
+	return F;
 };
 
 Framework.prototype.isSuccess = function(obj) {
@@ -852,7 +853,7 @@ Framework.prototype.convert = function(value, convertor) {
 	}
 
 	for (var i = 0, length = F.convertors.length; i < length; i++) {
-		if (value[F.convertors[i].name] !== undefined)
+		if (value[F.convertors[i].name])
 			value[F.convertors[i].name] = F.convertors[i].convertor(value[F.convertors[i].name]);
 	}
 
@@ -865,7 +866,7 @@ Framework.prototype.convert = function(value, convertor) {
  * @return {Object}
  */
 Framework.prototype.controller = function(name) {
-	return this.controllers[name] || null;
+	return F.controllers[name] || null;
 };
 
 /**
@@ -874,7 +875,7 @@ Framework.prototype.controller = function(name) {
  * @return {Framework}
  */
 Framework.prototype.useConfig = function(name) {
-	return this._configure(name, true);
+	return F._configure(name, true);
 };
 
 /**
@@ -883,23 +884,21 @@ Framework.prototype.useConfig = function(name) {
  */
 Framework.prototype.$routesSort = function(type) {
 
-	var self = this;
-
-	self.routes.web.sort(function(a, b) {
+	F.routes.web.sort(function(a, b) {
 		return a.priority > b.priority ? -1 : a.priority < b.priority ? 1 : 0;
 	});
 
-	self.routes.websockets.sort(function(a, b) {
+	F.routes.websockets.sort(function(a, b) {
 		return a.priority > b.priority ? -1 : a.priority < b.priority ? 1 : 0;
 	});
 
 	var cache = {};
-	var length = self.routes.web.length;
+	var length = F.routes.web.length;
 	var url;
 
 	for (var i = 0; i < length; i++) {
-		var route = self.routes.web[i];
-		var name = self.temporary.internal[route.controller];
+		var route = F.routes.web[i];
+		var name = F.temporary.internal[route.controller];
 		if (name)
 			route.controller = name;
 		if (!route.isMOBILE || route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML || route.flags.indexOf('get') === -1)
@@ -909,15 +908,15 @@ Framework.prototype.$routesSort = function(type) {
 	}
 
 	for (var i = 0; i < length; i++) {
-		var route = self.routes.web[i];
+		var route = F.routes.web[i];
 		if (route.isMOBILE || route.isUPLOAD || route.isXHR || route.isJSON || route.isSYSTEM || route.isXML || route.flags.indexOf('get') === -1)
 			continue;
 		url = route.url.join('/');
 		route.isMOBILE_VARY = cache[url] === true;
 	}
 
-	(!type || type === 1) && self.routes.web.forEach(function(route) {
-		var tmp = self.routes.web.findItem(function(item) {
+	(!type || type === 1) && F.routes.web.forEach(function(route) {
+		var tmp = F.routes.web.findItem(function(item) {
 			return item.hash === route.hash && item !== route;
 		});
 		route.isUNIQUE = tmp == null;
@@ -929,7 +928,7 @@ Framework.prototype.$routesSort = function(type) {
 			F.temporary.other[key] = undefined;
 	});
 
-	return self;
+	return F;
 };
 
 Framework.prototype.script = function(body, value, callback) {
@@ -940,7 +939,7 @@ Framework.prototype.script = function(body, value, callback) {
 		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE;try{' + body + '}catch(e){next(e)}');
 	} catch(e) {
 		callback && callback(e);
-		return this;
+		return F;
 	}
 
 	fn.call(EMPTYOBJECT, function(value) {
@@ -953,53 +952,48 @@ Framework.prototype.script = function(body, value, callback) {
 		else
 			callback(null, value);
 
-	}, value, this.datetime);
+	}, value, F.datetime);
 
-	return this;
+	return F;
 };
 
 Framework.prototype.database = function(name) {
-	return this.nosql(name);
+	return F.nosql(name);
 };
 
 Framework.prototype.nosql = function(name) {
-	var self = this;
-	var db = self.databases[name];
+	var db = F.databases[name];
 	if (db)
 		return db;
-	self.path.verify('databases');
-	db = framework_nosql.load(name, self.path.databases(name));
-	self.databases[name] = db;
+	F.path.verify('databases');
+	db = framework_nosql.load(name, F.path.databases(name));
+	F.databases[name] = db;
 	return db;
 };
 
 Framework.prototype.stop = Framework.prototype.kill = function(signal) {
 
-	var self = this;
-
-	for (var m in self.workers) {
-		var worker = self.workers[m];
+	for (var m in F.workers) {
+		var worker = F.workers[m];
 		TRY(() => worker && worker.kill && worker.kill(signal || 'SIGTERM'));
 	}
 
-	self.emit('exit', signal);
+	F.emit('exit', signal);
 
-	if (!self.isWorker && typeof(process.send) === 'function')
+	if (!F.isWorker && typeof(process.send) === 'function')
 		TRY(() => process.send('stop'));
 
-	self.cache.stop();
-	self.server && self.server.close();
+	F.cache.stop();
+	F.server && F.server.close();
 
 	setTimeout(() => process.exit(signal || 'SIGTERM'), TEST ? 2000 : 100);
-	return self;
+	return F;
 };
 
 
 Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 
-	var self = this;
 	var external = host.startsWith('http://') || host.startsWith('https');
-
 	if (external) {
 
 		if (host[host.length - 1] === '/')
@@ -1008,9 +1002,10 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 		if (newHost[newHost.length - 1] === '/')
 			newHost = newHost.substring(0, newHost.length - 1);
 
-		self.routes.redirects[host] = { url: newHost, path: withPath, permanent: permanent };
-		self._request_check_redirect = true;
-		return self;
+		F.routes.redirects[host] = { url: newHost, path: withPath, permanent: permanent };
+		F._request_check_redirect = true;
+		F.owners.push({ type: 'redirects', owner: _owner, id: host });
+		return F;
 	}
 
 	if (host[0] !== '/')
@@ -1030,16 +1025,16 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 	permanent = withPath;
 
 	if (U.isStaticFile(host)) {
-		self.file(host, function(req, res) {
+		F.file(host, function(req, res) {
 			if (newHost.startsWith('http://') || newHost.startsWith('https://'))
 				res.redirect(newHost, permanent);
 			else
 				res.redirect(newHost[0] !== '/' ? '/' + newHost : newHost, permanent);
 		});
-		return self;
+		return F;
 	}
 
-	self.route(host, function() {
+	F.route(host, function() {
 
 		if (newHost.startsWith('http://') || newHost.startsWith('https://')) {
 			this.redirect(newHost + this.href(), permanent);
@@ -1052,7 +1047,7 @@ Framework.prototype.redirect = function(host, newHost, withPath, permanent) {
 		this.redirect(newHost + this.href(), permanent);
 	}, flags);
 
-	return self;
+	return F;
 };
 
 /**
@@ -1069,7 +1064,6 @@ Framework.prototype.schedule = function(date, repeat, fn) {
 		repeat = false;
 	}
 
-	var self = this;
 	var type = typeof(date);
 
 	if (type === 'string')
@@ -1082,8 +1076,8 @@ Framework.prototype.schedule = function(date, repeat, fn) {
 	if (repeat)
 		repeat = repeat.replace('each', '1');
 
-	self.schedules.push({ expire: sum, fn: fn, repeat: repeat });
-	return self;
+	F.schedules.push({ expire: sum, fn: fn, repeat: repeat, owner: _owner });
+	return F;
 };
 
 /**
@@ -1095,7 +1089,6 @@ Framework.prototype.schedule = function(date, repeat, fn) {
  */
 Framework.prototype.resize = function(url, fn, flags) {
 
-	var self = this;
 	var extensions = {};
 	var cache = true;
 
@@ -1126,18 +1119,11 @@ Framework.prototype.resize = function(url, fn, flags) {
 	if (flags && flags.length) {
 		for (var i = 0, length = flags.length; i < length; i++) {
 			var flag = flags[i];
-
-			if (flag[0] === '.') {
+			if (flag[0] === '.')
 				extensions[flag.substring(1)] = true;
-				continue;
-			}
-
-			if (flag[0] === '~' || flag[0] === '/' || flag.match(/^http\:|https\:/gi)) {
+			else if (flag[0] === '~' || flag[0] === '/' || flag.match(/^http\:|https\:/gi))
 				path = flag;
-				continue;
-			}
-
-			if (flag === 'nocache')
+			else if (flag === 'nocache')
 				cache = false;
 		}
 	}
@@ -1154,15 +1140,9 @@ Framework.prototype.resize = function(url, fn, flags) {
 	else if (extensions['jpeg'] && !extensions['jpg'])
 		extensions['jpg'] = true;
 
-	self.routes.resize[url] = {
-		fn: fn,
-		path: U.path(path || url),
-		ishttp: path.match(/http\:|https\:/gi) ? true : false,
-		extension: extensions,
-		cache: cache
-	};
-
-	return self;
+	F.routes.resize[url] = { fn: fn, path: U.path(path || url), ishttp: path.match(/http\:|https\:/gi) ? true : false, extension: extensions, cache: cache };
+	F.owners.push({ type: 'resize', owner: _owner, id: url });
+	return F;
 };
 
 /**
@@ -1275,6 +1255,7 @@ Framework.prototype.cors = function(url, flags, credentials) {
 	url = framework_internal.preparePath(framework_internal.encodeUnicodeURL(url.trim()));
 
 	route.hash = url.hash();
+	route.owner = _owner;
 	route.url = framework_internal.routeSplitCreate(url);
 	route.origins = origins.length ? origins : null;
 	route.methods = methods.length ? methods : null;
@@ -1316,13 +1297,12 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var name;
 	var tmp;
 	var viewname;
-	var self = this;
 	var sitemap;
 	var sitemap_language = language !== undefined;
 
 	if (url instanceof Array) {
-		url.forEach(url => self.route(url, funcExecute, flags, length));
-		return self;
+		url.forEach(url => F.route(url, funcExecute, flags, length));
+		return F;
 	}
 
 	var CUSTOM = typeof(url) === 'function' ? url : null;
@@ -1337,7 +1317,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 			if (!(sitemapflags instanceof Array))
 				sitemapflags = EMPTYARRAY;
 
-			sitemap = self.sitemap(url, true, language);
+			sitemap = F.sitemap(url, true, language);
 			if (sitemap) {
 
 				name = url;
@@ -1350,12 +1330,12 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 						sitemap_language = true;
 						var sitemaproutes = {};
 						F.temporary.internal.resources.forEach(function(language) {
-							var item = self.sitemap(sitemap.id, true, language);
+							var item = F.sitemap(sitemap.id, true, language);
 							if (item.url && item.url !== url)
 								sitemaproutes[item.url] = { name: sitemap.id, language: language };
 						});
 
-						Object.keys(sitemaproutes).forEach(key => self.route('#' + sitemap.id, funcExecute, flags, length, sitemaproutes[key].language));
+						Object.keys(sitemaproutes).forEach(key => F.route('#' + sitemap.id, funcExecute, flags, length, sitemaproutes[key].language));
 					}
 				}
 
@@ -1466,7 +1446,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 			// TODO: remove in future versions
 			if (first === '%') {
-				self.behaviour();
+				F.behaviour();
 				continue;
 			}
 
@@ -1560,7 +1540,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 					break;
 				case 'robot':
 					isROBOT = true;
-					self._request_check_robot = true;
+					F._request_check_robot = true;
 					break;
 				case 'authorize':
 				case 'authorized':
@@ -1743,10 +1723,10 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		}
 
 	if (flags.indexOf('referer') !== -1)
-		self._request_check_referer = true;
+		F._request_check_referer = true;
 
-	if (!self._request_check_POST && (flags.indexOf('delete') !== -1 || flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
-		self._request_check_POST = true;
+	if (!F._request_check_POST && (flags.indexOf('delete') !== -1 || flags.indexOf('post') !== -1 || flags.indexOf('put') !== -1 || flags.indexOf('upload') !== -1 || flags.indexOf('json') !== -1 || flags.indexOf('patch') !== -1 || flags.indexOf('options') !== -1))
+		F._request_check_POST = true;
 
 	var isMULTIPLE = false;
 
@@ -1767,9 +1747,9 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	}
 
 	if (subdomain)
-		self._length_subdomain_web++;
+		F._length_subdomain_web++;
 
-	self.routes.web.push({
+	F.routes.web.push({
 		hash: hash,
 		name: name,
 		priority: priority,
@@ -1784,9 +1764,9 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		flags2: flags_to_object(flags),
 		method: method,
 		execute: funcExecute,
-		length: (length || self.config['default-request-length']) * 1024,
+		length: (length || F.config['default-request-length']) * 1024,
 		middleware: middleware,
-		timeout: timeout === undefined ? (isDELAY ? 0 : self.config['default-request-timeout']) : timeout,
+		timeout: timeout === undefined ? (isDELAY ? 0 : F.config['default-request-timeout']) : timeout,
 		isGET: flags.indexOf('get') !== -1,
 		isMULTIPLE: isMULTIPLE,
 		isJSON: isJSON,
@@ -1819,13 +1799,13 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		regexpIndexer: regIndex
 	});
 
-	self.emit('route', 'web', self.routes.web[self.routes.web.length - 1]);
+	F.emit('route', 'web', F.routes.web[F.routes.web.length - 1]);
 
 	// Appends cors route
 	isCORS && F.cors(urlcache, corsflags);
-	!_controller && self.$routesSort(1);
+	!_controller && F.$routesSort(1);
 
-	return self;
+	return F;
 };
 
 function flags_to_object(flags) {
@@ -1897,6 +1877,7 @@ Framework.prototype.merge = function(url) {
 
 	var filename = F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'merge-' + createTemporaryKey(url));
 	F.routes.merge[url] = { filename: filename, files: arr };
+	F.owners.push({ type: 'merge', owner: _owner, id: url });
 	return F;
 };
 
@@ -1934,6 +1915,7 @@ Framework.prototype.map = function(url, filename, filter) {
 
 	// isomorphic
 	if (filename[0] === '#') {
+		F.owners.push({ type: 'mapping', owner: _owner, id: url });
 		F.routes.mapping[url] = filename;
 		return F;
 	}
@@ -1972,8 +1954,11 @@ Framework.prototype.map = function(url, filename, filter) {
 
 	if (isFile) {
 		F.routes.mapping[url] = filename;
-		if (block)
+		F.owners.push({ type: 'mapping', owner: _owner, id: url });
+		if (block) {
+			F.owners.push({ type: 'blocks', owner: _owner, id: url });
 			F.routes.blocks[url] = block;
+		}
 		return F;
 	}
 
@@ -2034,9 +2019,12 @@ Framework.prototype.map = function(url, filename, filter) {
 
 				var key = url + file;
 				F.routes.mapping[key] = plus + files[i];
+				F.owners.push({ type: 'mapping', owner: _owner, id: key });
 
-				if (block)
+				if (block) {
+					F.owners.push({ type: 'blocks', owner: _owner, id: key });
 					F.routes.blocks[key] = block;
+				}
 			}
 
 		});
@@ -2053,6 +2041,7 @@ Framework.prototype.map = function(url, filename, filter) {
  */
 Framework.prototype.middleware = function(name, funcExecute) {
 	F.install('middleware', name, funcExecute);
+	_owner && F.owners.push({ type: 'middleware', owner: _owner, id: name });
 	return F;
 };
 
@@ -2594,7 +2583,8 @@ Framework.prototype.error = function(err, name, uri) {
 		return F;
 
 	if (F.errors) {
-		F.errors.push({ error: err.stack, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, date: new Date() });
+		F.datetime = new Date();
+		F.errors.push({ error: err.stack, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, date: F.datetime });
 		F.errors.length > 50 && F.errors.shift();
 	}
 
@@ -2676,11 +2666,11 @@ Framework.prototype.trace = function(message, name, uri, ip) {
 	else if (typeof(message) === 'object')
 		message = JSON.stringify(message);
 
-	var dt = new Date();
-	var obj = { message: message, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, ip: ip, date: dt };
+	F.datetime = new Date();
+	var obj = { message: message, name: name, url: uri ? typeof(uri) === 'string' ? uri : Parser.format(uri) : undefined, ip: ip, date: F.datetime };
 	F.logger('traces', obj.message, 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
-	F.config['trace-console'] && console.log(dt.format('yyyy-MM-dd HH:mm:ss'), '[trace]', message, '|', 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
+	F.config['trace-console'] && console.log(F.datetime.format('yyyy-MM-dd HH:mm:ss'), '[trace]', message, '|', 'url: ' + obj.url, 'source: ' + obj.name, 'ip: ' + obj.ip);
 
 	if (F.traces) {
 		F.traces.push(obj);
@@ -2708,6 +2698,7 @@ Framework.prototype.modify = function(fn) {
 	if (!F.modificators)
 		F.modificators = [];
 	F.modificators.push(fn);
+	fn.$owner = owner;
 	return F;
 };
 
@@ -2717,7 +2708,6 @@ Framework.prototype.modify = function(fn) {
  */
 Framework.prototype.$load = function(types, targetdirectory) {
 
-	var self = this;
 	var arr = [];
 	var dir = '';
 
@@ -2767,27 +2757,27 @@ Framework.prototype.$load = function(types, targetdirectory) {
 
 	try {
 		// Reads name of resources
-		F.temporary.internal.resources = Fs.readdirSync(self.path.resources()).map(n => n.substring(0, n.lastIndexOf('.')));
+		F.temporary.internal.resources = Fs.readdirSync(F.path.resources()).map(n => n.substring(0, n.lastIndexOf('.')));
 	} catch (e) {
 		F.temporary.internal.resources = [];
 	}
 
 	if (!types || types.indexOf('modules') !== -1) {
-		dir = U.combine(targetdirectory, self.config['directory-modules']);
+		dir = U.combine(targetdirectory, F.config['directory-modules']);
 		arr = [];
 		listing(dir, 0, arr, '.js');
-		arr.forEach((item) => self.install('module', item.name, item.filename, undefined, undefined, undefined, true));
+		arr.forEach((item) => F.install('module', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	if (!types || types.indexOf('isomorphic') !== -1) {
-		dir = U.combine(targetdirectory, self.config['directory-isomorphic']);
+		dir = U.combine(targetdirectory, F.config['directory-isomorphic']);
 		arr = [];
 		listing(dir, 0, arr, '.js');
-		arr.forEach((item) => self.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true));
+		arr.forEach((item) => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	if (!types || types.indexOf('packages') !== -1) {
-		dir = U.combine(targetdirectory, self.config['directory-packages']);
+		dir = U.combine(targetdirectory, F.config['directory-packages']);
 		arr = [];
 		listing(dir, 0, arr, '.package');
 
@@ -2815,71 +2805,71 @@ Framework.prototype.$load = function(types, targetdirectory) {
 						stream.on('end', next);
 					}, function() {
 						// Windows sometimes doesn't load package and delay solves the problem.
-						setTimeout(() => self.install('package2', item.name, item.filename, undefined, undefined, undefined, true), 50);
+						setTimeout(() => F.install('package2', item.name, item.filename, undefined, undefined, undefined, true), 50);
 					});
 				});
 				return;
 			}
 
-			self.install('package', item.name, item.filename, undefined, undefined, undefined, true);
+			F.install('package', item.name, item.filename, undefined, undefined, undefined, true);
 		});
 	}
 
 	if (!types || types.indexOf('models') !== -1) {
-		dir = U.combine(targetdirectory, self.config['directory-models']);
+		dir = U.combine(targetdirectory, F.config['directory-models']);
 		arr = [];
 		listing(dir, 0, arr);
-		arr.forEach((item) => self.install('model', item.name, item.filename, undefined, undefined, undefined, true));
+		arr.forEach((item) => F.install('model', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	if (!types || types.indexOf('themes') !== -1) {
 		arr = [];
-		dir = U.combine(targetdirectory, self.config['directory-themes']);
+		dir = U.combine(targetdirectory, F.config['directory-themes']);
 		listing(dir, 0, arr, undefined, true);
 		arr.forEach(function(item) {
 			var themeName = item.name;
 			var themeDirectory = Path.join(dir, themeName);
 			var filename = Path.join(themeDirectory, 'index.js');
-			self.themes[item.name] = U.path(themeDirectory);
-			self._length_themes++;
-			existsSync(filename) && self.install('theme', item.name, filename, undefined, undefined, undefined, true);
+			F.themes[item.name] = U.path(themeDirectory);
+			F._length_themes++;
+			existsSync(filename) && F.install('theme', item.name, filename, undefined, undefined, undefined, true);
 			/*
 			@TODO: FOR FUTURE VERSION
 			var components = [];
-			var components_dir = U.combine(targetdirectory, self.config['directory-themes'], themeName, self.config['directory-components']);
+			var components_dir = U.combine(targetdirectory, F.config['directory-themes'], themeName, F.config['directory-components']);
 			existsSync(components_dir) && listing(components_dir, 0, components, '.html', true);
-			components_dir && components.forEach((item) => self.install('component', themeName + '/' + item.name, item.filename, undefined, undefined, undefined));
+			components_dir && components.forEach((item) => F.install('component', themeName + '/' + item.name, item.filename, undefined, undefined, undefined));
 			*/
 		});
 	}
 
 	if (!types || types.indexOf('definitions') !== -1) {
-		dir = U.combine(targetdirectory, self.config['directory-definitions']);
+		dir = U.combine(targetdirectory, F.config['directory-definitions']);
 		arr = [];
 		listing(dir, 0, arr);
-		arr.forEach((item) => self.install('definition', item.name, item.filename, undefined, undefined, undefined, true));
+		arr.forEach((item) => F.install('definition', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	if (!types || types.indexOf('controllers') !== -1) {
 		arr = [];
-		dir = U.combine(targetdirectory, self.config['directory-controllers']);
+		dir = U.combine(targetdirectory, F.config['directory-controllers']);
 		listing(dir, 0, arr);
-		arr.forEach((item) => self.install('controller', item.name, item.filename, undefined, undefined, undefined, true));
+		arr.forEach((item) => F.install('controller', item.name, item.filename, undefined, undefined, undefined, true));
 	}
 
 	if (!types || types.indexOf('components') !== -1) {
 		arr = [];
-		dir = U.combine(targetdirectory, self.config['directory-components']);
+		dir = U.combine(targetdirectory, F.config['directory-components']);
 		listing(dir, 0, arr, '.html');
-		arr.forEach((item) => self.install('component', item.name, item.filename, undefined, undefined, undefined));
+		arr.forEach((item) => F.install('component', item.name, item.filename, undefined, undefined, undefined));
 	}
 
-	self.$routesSort();
+	F.$routesSort();
 
 	if (!types || types.indexOf('dependencies') !== -1)
-		self._configure_dependencies();
+		F._configure_dependencies();
 
-	return self;
+	return F;
 };
 
 Framework.prototype.$startup = function(callback) {
@@ -2968,6 +2958,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 	var tmp;
 	var content;
 
+	F.datetime = new Date();
+
 	if (t === 'object') {
 		t = typeof(options);
 		if (t === 'function')
@@ -2992,6 +2984,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (declaration.startsWith('http://') || declaration.startsWith('https://')) {
 			if (type === 'package') {
 				U.download(declaration, REQUEST_INSTALL_FLAGS, function(err, response) {
+
 					if (err) {
 						F.error(err, 'F.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
 						callback && callback(err);
@@ -3041,9 +3034,9 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		key = type + '.' + name;
 
 		if (F.dependencies[key]) {
-			F.dependencies[key].updated = new Date();
+			F.dependencies[key].updated = F.datetime;
 		} else {
-			F.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0 };
+			F.dependencies[key] = { name: name, type: type, installed: F.datetime, updated: null, count: 0 };
 			if (internal)
 				F.dependencies[key].url = internal;
 		}
@@ -3415,10 +3408,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (tmp) {
 			F.dependencies[key] = tmp;
-			F.dependencies[key].updated = new Date();
+			F.dependencies[key].updated = F.datetime;
 		}
 		else {
-			F.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0 };
+			F.dependencies[key] = { name: name, type: type, installed: F.datetime, updated: null, count: 0 };
 			if (internal)
 				F.dependencies[key].url = internal;
 		}
@@ -3536,10 +3529,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (tmp) {
 			F.dependencies[key] = tmp;
-			F.dependencies[key].updated = new Date();
+			F.dependencies[key].updated = F.datetime;
 		}
 		else {
-			F.dependencies[key] = { name: name, type: type, installed: new Date(), updated: null, count: 0, _id: _ID };
+			F.dependencies[key] = { name: name, type: type, installed: F.datetime, updated: null, count: 0, _id: _ID };
 			if (internal)
 				F.dependencies[key].url = internal;
 		}
@@ -3572,7 +3565,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			F.controllers[name] = obj;
 
 		F.install_prepare();
-		return F;
 	}
 
 	return F;
@@ -3847,13 +3839,13 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 				tmp.middleware = tmp.middleware.remove(name);
 		}
 
-		for (var i = 0, length = F.routes.websocket.length; i < length; i++) {
+		for (var i = 0, length = F.routes.websockets.length; i < length; i++) {
 			tmp = F.routes.websocket[i];
 			if (tmp.middleware && tmp.middleware.length)
 				tmp.middleware = tmp.middleware.remove(name);
 		}
 
-		for (var i = 0, length = F.routes.web.length; i < length; i++) {
+		for (var i = 0, length = F.routes.files.length; i < length; i++) {
 			tmp = F.routes.files[i];
 			if (tmp.middleware && tmp.middleware.length)
 				tmp.middleware = tmp.middleware.remove(name);
@@ -3887,9 +3879,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		if (obj.id)
 			delete require.cache[require.resolve(obj.id)];
 
-		F.routes.web = F.routes.web.remove('owner', id);
-		F.routes.files = F.routes.files.remove('owner', id);
-		F.routes.websockets = F.routes.websockets.remove('owner', id);
+		F.$uninstall(id);
 		typeof(obj.uninstall) === 'function' && obj.uninstall(options, name);
 
 		if (type === 'model')
@@ -3898,7 +3888,6 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 			delete F.sources[name];
 
 		delete F.dependencies[type + '.' + name];
-		F.$routesSort();
 
 	} else if (type === 'module' || type === 'controller') {
 
@@ -3911,13 +3900,7 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		if (obj.id)
 			delete require.cache[require.resolve(obj.id)];
 
-		var controller = (isModule ? '#' : '') + name;
-		F.routes.web = F.routes.web.remove('controller', controller);
-		F.routes.files = F.routes.files.remove('controller', controller);
-		F.routes.websockets = F.routes.websockets.remove('controller', controller);
-		F.routes.web = F.routes.web.remove('owner', id);
-		F.routes.files = F.routes.files.remove('owner', id);
-		F.routes.websockets = F.routes.websockets.remove('owner', id);
+		F.$uninstall(id, (isModule ? '#' : '') + name);
 
 		if (obj) {
 			obj.uninstall && obj.uninstall(options, name);
@@ -3927,8 +3910,6 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 				delete F.controllers[name];
 		}
 
-		F.$routesSort();
-
 	} else if (type === 'component') {
 
 		if (!F.components.instances[name])
@@ -3937,11 +3918,8 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		obj = F.components.instances[name];
 
 		if (obj) {
-			F.routes.web = F.routes.web.remove('owner', id);
-			F.routes.files = F.routes.files.remove('owner', id);
-			F.routes.websockets = F.routes.websockets.remove('owner', id);
+			F.$uninstall(id);
 			obj.uninstall && obj.uninstall(options, name);
-			F.$routesSort();
 			delete F.components.instances[name];
 		}
 
@@ -3980,6 +3958,64 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 	}
 
 	!skipEmit && F.emit('uninstall', type, name);
+	return F;
+};
+
+Framework.prototype.$uninstall = function(owner, controller) {
+
+	if (controller) {
+		F.routes.web = F.routes.web.remove('controller', controller);
+		F.routes.files = F.routes.files.remove('controller', controller);
+		F.routes.websockets = F.routes.websockets.remove('controller', controller);
+	}
+
+	F.routes.web = F.routes.web.remove('owner', owner);
+	F.routes.files = F.routes.files.remove('owner', owner);
+	F.routes.websockets = F.routes.websockets.remove('owner', owner);
+	F.routes.cors = F.routes.cors.remove('owner', owner);
+	F.schedules = F.schedules.remove('owner', owner);
+	F.modificators = F.schedules.remove('$owner', owner);
+
+	var owners = [];
+	var redirects = false;
+
+	for (var i = 0, length = F.owners.length; i < length; i++) {
+
+		var m = F.owners[i];
+		if (m.owner !== owner) {
+			owners.push(m);
+			continue;
+		}
+
+		switch (m.type) {
+			case 'redirects':
+				delete F.routes.redirects[m.id];
+				redirects = true;
+				break;
+			case 'resize':
+				delete F.routes.resize[m.id];
+				break;
+			case 'merge':
+				delete F.routes.merge[m.id];
+				break;
+			case 'mapping':
+				delete F.routes.mapping[m.id];
+				break;
+			case 'blocks':
+				delete F.routes.blocks[m.id];
+				break;
+			case 'middleware':
+				UNINSTALL('middleware', m.id);
+				break;
+		}
+
+	}
+
+	if (redirects)
+		F._request_check_redirect = Object.keys(F.routes.redirects).length > 0;
+
+	F.owners = owners;
+	F.$routesSort();
 	return F;
 };
 
@@ -4039,7 +4075,8 @@ Framework.prototype.eval = function(script) {
  * @return {Framework}
  */
 Framework.prototype.onError = function(err, name, uri) {
-	console.log('======= ' + (new Date().format('yyyy-MM-dd HH:mm:ss')) + ': ' + (name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + Parser.format(uri) + ')' : ''), err.stack);
+	F.datetime = new Date();
+	console.log('======= ' + (F.datetime.format('yyyy-MM-dd HH:mm:ss')) + ': ' + (name ? name + ' ---> ' : '') + err.toString() + (uri ? ' (' + Parser.format(uri) + ')' : ''), err.stack);
 	return F;
 };
 
@@ -4326,9 +4363,9 @@ Framework.prototype.onMeta = function() {
 // @arguments {Object params}
 Framework.prototype.log = function() {
 
-	var now = new Date();
-	var filename = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padLeft(2, '0') + '-' + now.getDate().toString().padLeft(2, '0');
-	var time = now.getHours().toString().padLeft(2, '0') + ':' + now.getMinutes().toString().padLeft(2, '0') + ':' + now.getSeconds().toString().padLeft(2, '0');
+	F.datetime = new Date();
+	var filename = F.datetime.getFullYear() + '-' + (F.datetime.getMonth() + 1).toString().padLeft(2, '0') + '-' + F.datetime.getDate().toString().padLeft(2, '0');
+	var time = F.datetime.getHours().toString().padLeft(2, '0') + ':' + F.datetime.getMinutes().toString().padLeft(2, '0') + ':' + F.datetime.getSeconds().toString().padLeft(2, '0');
 	var str = '';
 	var length = arguments.length;
 
@@ -4349,8 +4386,8 @@ Framework.prototype.log = function() {
 };
 
 Framework.prototype.logger = function() {
-	var now = new Date();
-	var dt = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padLeft(2, '0') + '-' + now.getDate().toString().padLeft(2, '0') + ' ' + now.getHours().toString().padLeft(2, '0') + ':' + now.getMinutes().toString().padLeft(2, '0') + ':' + now.getSeconds().toString().padLeft(2, '0');
+	F.datetime = new Date();
+	var dt = F.datetime.getFullYear() + '-' + (F.datetime.getMonth() + 1).toString().padLeft(2, '0') + '-' + F.datetime.getDate().toString().padLeft(2, '0') + ' ' + F.datetime.getHours().toString().padLeft(2, '0') + ':' + F.datetime.getMinutes().toString().padLeft(2, '0') + ':' + F.datetime.getSeconds().toString().padLeft(2, '0');
 	var str = '';
 	var length = arguments.length;
 
@@ -6164,8 +6201,6 @@ Framework.prototype.load = function(debug, types, pwd) {
  */
 Framework.prototype.initialize = function(http, debug, options, restart) {
 
-	var self = this;
-
 	if (!options)
 		options = {};
 
@@ -6173,103 +6208,103 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 	var ip = options.ip;
 
 	if (options.config)
-		U.copy(options.config, self.config);
+		U.copy(options.config, F.config);
 
-	self.isHTTPS = typeof(http.STATUS_CODES) === 'undefined';
+	F.isHTTPS = typeof(http.STATUS_CODES) === 'undefined';
 	if (isNaN(port) && typeof(port) !== 'string')
 		port = null;
 
-	self.config.debug = debug;
-	self.isDebug = debug;
+	F.config.debug = debug;
+	F.isDebug = debug;
 
 	global.DEBUG = debug;
 	global.RELEASE = !debug;
-	global.I = global.isomorphic = self.isomorphic;
+	global.I = global.isomorphic = F.isomorphic;
 
-	self._configure();
-	self._configure_versions();
-	self._configure_workflows();
-	self._configure_sitemap();
-	self.isTest && self._configure('config-test', false);
-	self.cache.init();
-	self.emit('init');
+	F._configure();
+	F._configure_versions();
+	F._configure_workflows();
+	F._configure_sitemap();
+	F.isTest && F._configure('config-test', false);
+	F.cache.init();
+	F.emit('init');
 
 	// clears static files
-	self.clear(function() {
+	F.clear(function() {
 
-		self.$load(undefined, directory);
+		F.$load(undefined, directory);
 
 		if (!port) {
-			if (self.config['default-port'] === 'auto') {
+			if (F.config['default-port'] === 'auto') {
 				var envPort = +(process.env.PORT || '');
 				if (!isNaN(envPort))
 					port = envPort;
 			} else
-				port = self.config['default-port'];
+				port = F.config['default-port'];
 		}
 
-		self.port = port || 8000;
+		F.port = port || 8000;
 
 		if (ip !== null) {
-			self.ip = ip || self.config['default-ip'] || '127.0.0.1';
-			if (self.ip === 'null' || self.ip === 'undefined' || self.ip === 'auto')
-				self.ip = undefined;
+			F.ip = ip || F.config['default-ip'] || '127.0.0.1';
+			if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
+				F.ip = undefined;
 		} else
-			self.ip = undefined;
+			F.ip = undefined;
 
-		if (self.ip == null)
-			self.ip = 'auto';
+		if (F.ip == null)
+			F.ip = 'auto';
 
-		if (self.server) {
-			self.server.removeAllListeners();
+		if (F.server) {
+			F.server.removeAllListeners();
 
-			Object.keys(self.connections).forEach(function(key) {
-				var item = self.connections[key];
+			Object.keys(F.connections).forEach(function(key) {
+				var item = F.connections[key];
 				if (!item)
 					return;
 				item.removeAllListeners();
 				item.close();
 			});
 
-			self.server.close();
+			F.server.close();
 		}
 
 		if (options.https)
-			self.server = http.createServer(options.https, self.listener);
+			F.server = http.createServer(options.https, F.listener);
 		else
-			self.server = http.createServer(self.listener);
+			F.server = http.createServer(F.listener);
 
-		self.config['allow-performance'] && self.server.on('connection', function(socket) {
+		F.config['allow-performance'] && F.server.on('connection', function(socket) {
 			socket.setNoDelay(true);
 			socket.setKeepAlive(true, 10);
 		});
 
-		self.config['allow-websocket'] && self.server.on('upgrade', F._upgrade);
-		self.server.listen(self.port, self.ip === 'auto' ? undefined : self.ip);
-		self.isLoaded = true;
+		F.config['allow-websocket'] && F.server.on('upgrade', F._upgrade);
+		F.server.listen(F.port, F.ip === 'auto' ? undefined : F.ip);
+		F.isLoaded = true;
 
 		if (!process.connected || restart)
-			self.console();
+			F.console();
 
 		setTimeout(function() {
 			try {
-				self.emit('load', self);
-				self.emit('ready', self);
+				F.emit('load', F);
+				F.emit('ready', F);
 			} catch (err) {
-				self.error(err, 'F.on("load/ready")');
+				F.error(err, 'F.on("load/ready")');
 			}
 
-			self.removeAllListeners('load');
-			self.removeAllListeners('ready');
+			F.removeAllListeners('load');
+			F.removeAllListeners('ready');
 			options.package && INSTALL('package', options.package);
 		}, 500);
 
-		if (self.isTest) {
+		if (F.isTest) {
 			var sleep = options.sleep || options.delay || 1000;
 			global.TEST = true;
 			global.assert = require('assert');
-			setTimeout(() => self.test(true, options.tests || options.test), sleep);
-			return self;
+			setTimeout(() => F.test(true, options.tests || options.test), sleep);
+			return F;
 		}
 
 		setTimeout(function() {
@@ -6282,7 +6317,7 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 		}, 5000);
 	}, true);
 
-	return self;
+	return F;
 };
 
 /**
@@ -6425,10 +6460,6 @@ Framework.prototype._service = function(count) {
 	UIDGENERATOR.date = F.datetime.format('yyMMddHHmm');
 	UIDGENERATOR.index = 1;
 
-	// @TODO: remove when it doesn't cause problems
-	// if (F.config.debug)
-	// F.resources = {};
-
 	// every 7 minutes (default) service clears static cache
 	if (count % F.config['default-interval-clear-cache'] === 0) {
 
@@ -6507,10 +6538,8 @@ Framework.prototype._service = function(count) {
 
 	F.emit('service', count);
 
-	var length = F.schedules.length;
-
 	// Run schedules
-	if (!length)
+	if (!F.schedules.length)
 		return F;
 
 	var expire = F.datetime.getTime();
@@ -9066,9 +9095,8 @@ FrameworkCache.prototype.init = function() {
 };
 
 FrameworkCache.prototype.save = function() {
-	var self = this;
 	Fs.writeFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'F.jsoncache'), JSON.stringify(this.items), NOOP);
-	return self;
+	return this;
 };
 
 FrameworkCache.prototype.load = function() {
@@ -9086,24 +9114,21 @@ FrameworkCache.prototype.load = function() {
 };
 
 FrameworkCache.prototype.stop = function() {
-	var self = this;
-	clearInterval(self.interval);
-	return self;
+	clearInterval(this.interval);
+	return this;
 };
 
 FrameworkCache.prototype.clear = function() {
-	var self = this;
-	self.items = {};
-	return self;
+	this.items = {};
+	return this;
 };
 
 FrameworkCache.prototype.recycle = function() {
 
-	var self = this;
-	var items = self.items;
+	var items = this.items;
 	var expire = F.datetime = new Date();
 
-	self.count++;
+	this.count++;
 
 	for (var o in items) {
 		var value = items[o];
@@ -9115,13 +9140,12 @@ FrameworkCache.prototype.recycle = function() {
 		}
 	}
 
-	F.config['allow-cache-snapshot'] && self.save();
-	F._service(self.count);
-	return self;
+	F.config['allow-cache-snapshot'] && this.save();
+	F._service(this.count);
+	return this;
 };
 
 FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, value, expire, sync) {
-	var self = this;
 	var type = typeof(expire);
 
 	switch (type) {
@@ -9133,20 +9157,21 @@ FrameworkCache.prototype.set = FrameworkCache.prototype.add = function(name, val
 			break;
 	}
 
-	self.items[name] = { value: value, expire: expire };
+	this.items[name] = { value: value, expire: expire };
 	F.emit('cache-set', name, value, expire, sync);
 	return value;
 };
 
 FrameworkCache.prototype.read = FrameworkCache.prototype.get = function(key, def) {
-	var self = this;
-	var value = self.items[key];
 
+	var value = this.items[key];
 	if (!value)
 		return def;
 
-	if (value.expire < new Date()) {
-		self.items[key] = undefined;
+	F.datetime = new Date();
+
+	if (value.expire < F.datetime) {
+		this.items[key] = undefined;
 		F.emit('cache-expire', key, value.value);
 		return def;
 	}
@@ -9155,14 +9180,13 @@ FrameworkCache.prototype.read = FrameworkCache.prototype.get = function(key, def
 };
 
 FrameworkCache.prototype.read2 = FrameworkCache.prototype.get2 = function(key, def) {
-	var self = this;
-	var value = self.items[key];
+	var value = this.items[key];
 
 	if (!value)
 		return def;
 
 	if (value.expire < F.datetime) {
-		self.items[key] = undefined;
+		this.items[key] = undefined;
 		F.emit('cache-expire', key, value.value);
 		return def;
 	}
@@ -9171,29 +9195,24 @@ FrameworkCache.prototype.read2 = FrameworkCache.prototype.get2 = function(key, d
 };
 
 FrameworkCache.prototype.setExpire = function(name, expire) {
-	var self = this;
-	var obj = self.items[name];
-
+	var obj = this.items[name];
 	if (obj)
 		obj.expire = typeof(expire) === 'string' ? expire.parseDateExpiration() : expire;
-
-	return self;
+	return this;
 };
 
 FrameworkCache.prototype.remove = function(name) {
-	var self = this;
-	var value = self.items[name];
+	var value = this.items[name];
 	if (value)
-		self.items[name] = undefined;
+		this.items[name] = undefined;
 	return value;
 };
 
 FrameworkCache.prototype.removeAll = function(search) {
-	var self = this;
 	var count = 0;
 	var isReg = U.isRegExp(search);
 
-	for (var key in self.items) {
+	for (var key in this.items) {
 
 		if (isReg) {
 			if (!search.test(key))
@@ -9203,7 +9222,7 @@ FrameworkCache.prototype.removeAll = function(search) {
 				continue;
 		}
 
-		self.remove(key);
+		this.remove(key);
 		count++;
 	}
 
@@ -10214,42 +10233,6 @@ Controller.prototype.decrypt = function() {
  */
 Controller.prototype.hash = function() {
 	return F.hash.apply(framework, arguments);
-};
-
-/**
- * Compare DateTime
- * @param {String} type Compare type ('<', '>', '=', '>=', '<=')
- * @param {String or Date} d1 String (yyyy-MM-dd [HH:mm:ss]), (optional) - default current date
- * @param {String or Date} d2 String (yyyy-MM-dd [HH:mm:ss])
- * @return {Boolean}
- */
-Controller.prototype.date = function(type, d1, d2) {
-
-	if (d2 === undefined) {
-		d2 = d1;
-		d1 = F.datetime;
-	}
-
-	var beg = typeof(d1) === 'string' ? d1.parseDate() : d1;
-	var end = typeof(d2) === 'string' ? d2.parseDate() : d2;
-	var r = beg.compare(end);
-
-	switch (type) {
-		case '>':
-			return r === 1;
-		case '>=':
-		case '=>':
-			return r === 1 || r === 0;
-		case '<':
-			return r === -1;
-		case '<=':
-		case '=<':
-			return r === -1 || r === 0;
-		case '=':
-			return r === 0;
-	}
-
-	return true;
 };
 
 /**
@@ -12818,42 +12801,6 @@ WebSocket.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
 		enumberable: false
 	}
 });
-
-/**
- * Compare Date/Time
- * @param {String} type Compare type ('<', '>', '=', '>=', '<=')
- * @param {String or Date} d1 String (yyyy-MM-dd [HH:mm:ss]), (optional) - default current date
- * @param {String or Date} d2 String (yyyy-MM-dd [HH:mm:ss])
- * @return {Boolean}
- */
-WebSocket.prototype.date = function(type, d1, d2) {
-
-	if (d2 === undefined) {
-		d2 = d1;
-		d1 = new Date();
-	}
-
-	var beg = typeof(d1) === 'string' ? d1.parseDate() : d1;
-	var end = typeof(d2) === 'string' ? d2.parseDate() : d2;
-	var r = beg.compare(end);
-
-	switch (type) {
-		case '>':
-			return r === 1;
-		case '>=':
-		case '=>':
-			return r === 1 || r === 0;
-		case '<':
-			return r === -1;
-		case '<=':
-		case '=<':
-			return r === -1 || r === 0;
-		case '=':
-			return r === 0;
-	}
-
-	return true;
-};
 
 /**
  * Sends a message
