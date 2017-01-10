@@ -65,6 +65,7 @@ const REG_TEXTAPPLICATION = /text|application/;
 const REG_ENCODINGCLEANER = /[\;\s]charset=utf\-8/g;
 const REQUEST_PROXY_FLAGS = ['post', 'json'];
 const REQUEST_INSTALL_FLAGS = ['get'];
+const REQUEST_DOWNLOAD_FLAGS = ['get', 'dnscache'];
 const QUERYPARSEROPTIONS = { maxKeys: 69 };
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
@@ -4109,25 +4110,16 @@ Framework.prototype.onMapping = function(url, def, ispublic, encode) {
 
 	return def;
 };
-
-/**
- * Snapshot
- * @param {String} url Relative URL.
- * @param {String} filename Filename to save output.
- * @param {Function} callback
- * @return {Framework}
- */
-Framework.prototype.snapshot = function(url, filename, callback) {
+Framework.prototype.download = Framework.prototype.snapshot = function(url, filename, callback) {
 
 	url = framework_internal.preparePath(url);
 	if (!url.match(/^http:|https:/gi)) {
 		if (url[0] !== '/')
 			url = '/' + url;
-		var ip = F.ip === 'auto' ? '0.0.0.0' : F.ip;
-		url = 'http://' + ip + ':' + F.port + url;
+		url = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
 	}
 
-	U.download(url, ['get'], function(error, response) {
+	U.download(url, REQUEST_INSTALL_FLAGS, function(error, response) {
 		var stream = Fs.createWriteStream(filename);
 		response.pipe(stream);
 		FINISHED(stream, function() {
@@ -4638,7 +4630,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 		}
 
 		if (filename.startsWith('http://') || filename.startsWith('https://')) {
-			U.request(filename, ['get'], function(err, data) {
+			U.request(filename, REQUEST_DOWNLOAD_FLAGS, function(err, data) {
 
 				var output = F.compileContent(extension, framework_internal.parseBlock(block, data), filename);
 
@@ -4914,7 +4906,7 @@ Framework.prototype.responseStatic = function(req, res, done) {
 
 	F.temporary.processing[req.uri.pathname] = true;
 
-	U.download(name, ['get', 'dnscache'], function(err, response) {
+	U.download(name, REQUEST_DOWNLOAD_FLAGS, function(err, response) {
 		var writer = Fs.createWriteStream(tmp);
 		response.pipe(writer);
 		CLEANUP(writer, function() {
