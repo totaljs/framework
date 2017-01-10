@@ -121,6 +121,11 @@ function prototypeString() {
 	assert.ok(str.isJSON() === false, 'string.isJSON()');
 	assert.ok(JSON.parse(JSON.stringify(new Date())).isJSONDate(), 'string.isJSONDate()');
 
+	var dt = new Date();
+	var ts = dt.getTime();
+
+	assert.ok(JSON.stringify({ date: dt }).parseJSON(true).date.getTime() === ts, 'string.parseJSON(true) - problem with Date parsing');
+
 	str = 'google.sk';
 	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
 

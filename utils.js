@@ -2046,9 +2046,9 @@ exports.parseXML = function(xml) {
 	return obj;
 };
 
-exports.parseJSON = function(value) {
+exports.parseJSON = function(value, date) {
 	try {
-		return JSON.parse(value);
+		return JSON.parse(value, date? jsonparser : undefined);
 	} catch(e) {
 		return null;
 	}
@@ -2057,6 +2057,10 @@ exports.parseJSON = function(value) {
 exports.parseQuery = function(value) {
 	return F.onParseQuery(value);
 };
+
+function jsonparser(key, value) {
+	return typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value;
+}
 
 /**
  * Get WebSocket frame
@@ -2659,8 +2663,8 @@ String.prototype.parseXML = function() {
 	return F.onParseXML(this);
 };
 
-String.prototype.parseJSON = function() {
-	return exports.parseJSON(this);
+String.prototype.parseJSON = function(date) {
+	return exports.parseJSON(this, date);
 };
 
 String.prototype.parseQuery = function() {

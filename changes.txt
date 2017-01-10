@@ -24,6 +24,7 @@
 - updated: `F.findConnections([path])` a `path` argument is optional
 - updated: `U.streamer(beg, [end], function, [skip])` add a new argument `skip`
 - updated: deprecated methods in Node.js v7
+- updated: `String.parseJSON([date])` added `date` argument (date fields will be converted to `datetime`)
 
 - removed: behaviours
 - removed: restrictions

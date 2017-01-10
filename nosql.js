@@ -2449,7 +2449,7 @@ Binary.prototype.all = function(callback) {
 			var stream = Fs.createReadStream(target + '/' + item, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
 
 			stream.on('data', function(buffer) {
-				var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON();
+				var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
 				if (json) {
 					json.id = item.substring(l, item.length - le);
 					output.push(json);
