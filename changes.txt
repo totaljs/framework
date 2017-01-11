@@ -26,6 +26,7 @@
 - updated: deprecated methods in Node.js v7
 - updated: `String.parseJSON([date])` added `date` argument (date fields will be converted to `datetime`)
 - updated: `F.script()` can compile code to function e.g.: `F.script('next(a + b)')` returns a compiled function
+- updated: `String.captialize([onlyFirst])` add a new argument `onlyFirst`
 
 - removed: behaviours
 - removed: restrictions

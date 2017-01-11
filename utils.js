@@ -3214,9 +3214,14 @@ String.prototype.parseFloat = function(def) {
 	return isNaN(num) ? (def || 0) : num;
 };
 
-String.prototype.capitalize = function() {
+String.prototype.capitalize = function(first) {
+
+	if (first)
+		return this[0].toUpperCase() + this.substring(1);
+
 	var builder = '';
 	var c;
+
 	for (var i = 0, length = this.length; i < length; i++) {
 		var c = this[i - 1];
 		if (!c || (c === ' ' || c === '\t' || c === '\n'))
@@ -3225,8 +3230,10 @@ String.prototype.capitalize = function() {
 			c = this[i];
 		builder += c;
 	}
+
 	return builder;
 };
+
 
 String.prototype.toUnicode = function() {
 	var result = '';
