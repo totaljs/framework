@@ -945,8 +945,13 @@ Framework.prototype.script = function(body, value, callback) {
 
 	if (compilation) {
 		return (function() {
-			return function(model, next) {
-				return fn(next, model, F.datetime);
+			return function(model, callback) {
+				return fn.call(EMPTYOBJECT, function(value) {
+					if (value instanceof Error)
+						callback(value);
+					else
+						callback(null, value);
+				}, model, F.datetime);
 			};
 		})();
 	}
