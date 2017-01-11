@@ -943,8 +943,13 @@ Framework.prototype.script = function(body, value, callback) {
 		return compilation ? null : F;
 	}
 
-	if (compilation)
-		return fn;
+	if (compilation) {
+		return (function() {
+			return function(model, next) {
+				return fn(next, model, F.datetime);
+			};
+		})();
+	}
 
 	fn.call(EMPTYOBJECT, function(value) {
 
