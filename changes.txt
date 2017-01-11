@@ -25,6 +25,7 @@
 - updated: `U.streamer(beg, [end], function, [skip])` add a new argument `skip`
 - updated: deprecated methods in Node.js v7
 - updated: `String.parseJSON([date])` added `date` argument (date fields will be converted to `datetime`)
+- updated: `F.script()` can compile code to function e.g.: `F.script('next(a + b)', true)` returns a compiled function
 
 - removed: behaviours
 - removed: restrictions
