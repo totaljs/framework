@@ -342,7 +342,7 @@ global.MODEL = function(name) {
 	return F.model(name);
 };
 
-global.GETSCHEMA = function(group, name, fn, timeout) {
+global.$$$ = global.GETSCHEMA = function(group, name, fn, timeout) {
 	return framework_builders.getschema(group, name, fn, timeout);
 };
 

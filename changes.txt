@@ -14,6 +14,7 @@
 - added: `F.convert(name, type/function(val))` registers a new convertor (convertors uses QueryParser (GET/POST))
 - added: `F.convert(obj)` performs convertor for an object
 - added: `F.download(url, filename, [callback])` a new alias for `F.snapshot()`
+- added: `$$$([group], name)` for `GETSCHEMA([group], name)`
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`
