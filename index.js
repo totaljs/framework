@@ -4170,12 +4170,26 @@ Framework.prototype.download = Framework.prototype.snapshot = function(url, file
 		url = 'http://' + (F.ip === 'auto' ? '0.0.0.0' : F.ip) + ':' + F.port + url;
 	}
 
-	U.download(url, REQUEST_INSTALL_FLAGS, function(error, response) {
+	U.download(url, REQUEST_INSTALL_FLAGS, function(err, response) {
+
+		if (err) {
+			callback && callback(err);
+			callback = null;
+			return;
+		}
+
 		var stream = Fs.createWriteStream(filename);
 		response.pipe(stream);
-		FINISHED(stream, function() {
+
+		response.on('error', function(err) {
+			callback && callback(err);
+			callback = null;
+		});
+
+		CLEANUP(stream, function() {
 			DESTROY(stream);
-			callback && callback();
+			callback && callback(null, filename);
+			callback = null;
 		});
 	});
 
