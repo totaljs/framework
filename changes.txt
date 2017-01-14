@@ -41,6 +41,7 @@
 - fixed: `nosql_builder.join()` a problem with using `nosql_builder.first()` by @yexing (Xing Ye)
 - fixed: `String.parseInt2()` - a possible NaN value
 - fixed: `String.parseFloat2()` - a possible NaN value
+- fixed: `F.snapshot()`
 
 - improved: code
 - improved: CSS compression
