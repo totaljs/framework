@@ -9140,7 +9140,7 @@ FrameworkCache.prototype.clear = function() {
 FrameworkCache.prototype.recycle = function() {
 
 	var items = this.items;
-	var expire = F.datetime = new Date();
+	F.datetime = new Date();
 
 	this.count++;
 
@@ -9148,7 +9148,7 @@ FrameworkCache.prototype.recycle = function() {
 		var value = items[o];
 		if (!value)
 			delete items[o];
-		else if (value.expire < expire) {
+		else if (value.expire < F.datetime) {
 			F.emit('cache-expire', o, value.value);
 			delete items[o];
 		}
