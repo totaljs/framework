@@ -33,6 +33,7 @@
 - removed: restrictions
 - removed: `F.config['allow-compatibility']` (not used)
 - removed: `controller.date()` method has been useless
+- removed: dynamic view compilation through `.view()` method
 
 - fixed: JS minificator
 - fixed: global alias `I` for isomorphic code
@@ -42,6 +43,8 @@
 - fixed: `String.parseInt2()` - a possible NaN value
 - fixed: `String.parseFloat2()` - a possible NaN value
 - fixed: `F.snapshot()`
+- fixed: HTML compression (a fixed problem with HTML comments)
+- fixed: restarting framework (missing cleaning of `F.temporary`)
 
 - improved: code
 - improved: CSS compression
@@ -49,6 +52,7 @@
 - improved: performance
 - improved: updating of `F.datetime`
 - improved: `uninstall` dependencies
+- improved: installing 3rd-party dependencies (framework compares same content)
 
 ======= 2.3.0
 
