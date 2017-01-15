@@ -2329,14 +2329,12 @@ function removeComments(html) {
 			break;
 
 		var comment = html.substring(beg, end + 3);
-
 		if (comment.indexOf('[if') !== -1 || comment.indexOf('[endif') !== -1) {
 			beg = html.indexOf(tagBeg, end + 3);
-			continue;
+		} else {
+			html = html.replacer(comment, '');
+			beg = html.indexOf(tagBeg, beg);
 		}
-
-		html = html.replacer(comment, '');
-		beg = html.indexOf(tagBeg, end + 3);
 	}
 
 	return html;
@@ -2748,7 +2746,7 @@ function compressHTML(html, minify, isChunk) {
  * @param {String} path
  * @return {Object}
  */
-function viewengine_read(path, language, controller) {
+function viewengine_read(path, controller) {
 	var config = F.config;
 	var out = path[0] === '.';
 	var filename = out ? path.substring(1) : F.path.views(path);
@@ -2762,7 +2760,7 @@ function viewengine_read(path, language, controller) {
 	}
 
 	if (existsSync(filename))
-		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
+		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config['allow-compile-html'], filename, controller);
 
 	var index;
 
@@ -2773,7 +2771,7 @@ function viewengine_read(path, language, controller) {
 			if (index !== -1) {
 				filename = filename.substring(0, filename.lastIndexOf('/', index - 1)) + filename.substring(index);
 				if (existsSync(filename))
-					return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
+					return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config['allow-compile-html'], filename, controller);
 			}
 		}
 
@@ -2793,7 +2791,7 @@ function viewengine_read(path, language, controller) {
 	filename = F.path.views(path.substring(index + 1));
 
 	if (existsSync(filename))
-		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), language), config['allow-compile-html'], filename, controller);
+		return view_parse(view_parse_localization(modificators(Fs.readFileSync(filename).toString('utf8'), filename), controller.language), config['allow-compile-html'], filename, controller);
 
 	if (RELEASE)
 		F.temporary.other[key] = null;
@@ -2817,34 +2815,18 @@ function modificators(value, filename, type) {
 
 function viewengine_load(name, filename, controller) {
 
-	var language = controller.language;
-
-	// Is dynamic content?
-	if (!F.temporary.other[name])
-		F.temporary.other[name] = name.indexOf('@{') !== -1 || name.indexOf('<') !== -1;
-
-	if (F.temporary.other[name]) {
-		OBSOLETE('controller.view()', 'Instead of controller.view() use controller.viewCompile(body, model, [headers], [partial])');
-		return viewengine_dynamic(name, language, controller, 'view' + language + '_' + name.hash());
-	}
-
 	var precompiled = F.routes.views[name];
-
 	if (precompiled)
 		filename = '.' + precompiled.filename;
 	else
 		filename += '.html';
 
-	var key = 'view#' + filename;
-
-	if (language)
-		key += language;
-
-	var generator = F.temporary.views[key] || null;
+	var key = 'view#' + filename + (controller.language || '');
+	var generator = F.temporary.views[key];
 	if (generator)
 		return generator;
 
-	generator = viewengine_read(filename, language, controller);
+	generator = viewengine_read(filename, controller);
 
 	if (!F.isDebug)
 		F.temporary.views[key] = generator;
@@ -3016,6 +2998,7 @@ function listener(event, done) {
 		// copy args to prevent arguments escaping scope
 		for (var i = 0; i < args.length; i++)
 			args[i] = arguments[i];
+
 		done(err, ee, event, args);
 	}
 }
