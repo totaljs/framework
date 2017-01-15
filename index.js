@@ -515,7 +515,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2400;
-	this.version_header = '2.4.0-18';
+	this.version_header = '2.4.0-19';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -689,6 +689,7 @@ function Framework() {
 		processing: {},
 		range: {},
 		views: {},
+		versions: {},
 		dependencies: {}, // temporary for module dependencies
 		other: {},
 		internal: {} // internal controllers/modules names for the routing
@@ -2947,10 +2948,13 @@ Framework.prototype.uptodate = function(type, url, options, interval, callback) 
  * @param {Object} internal Internal/Temporary options, optional.
  * @param {Boolean} useRequired Internal, optional.
  * @param {Boolean} skipEmit Internal, optional.
+ * @param {String} uptodateName Internal, optional.
  * @return {Framework}
  */
-Framework.prototype.install = function(type, name, declaration, options, callback, internal, useRequired, skipEmit) {
+Framework.prototype.install = function(type, name, declaration, options, callback, internal, useRequired, skipEmit, uptodateName) {
+
 	var obj = null;
+
 	if (type !== 'config' && type !== 'version' && typeof(name) === 'string') {
 		if (name.startsWith('http://') || name.startsWith('https://')) {
 			if (typeof(declaration) === 'object') {
@@ -3008,8 +3012,22 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					var id = Path.basename(declaration, '.package');
 					var filename = F.path.temp(id + '.download');
 					var stream = Fs.createWriteStream(filename);
+					var md5 = Crypto.createHash('md5');
+
+					response.on('data', (buffer) => md5.update(buffer));
 					response.pipe(stream);
-					stream.on('finish', () => F.install(type, id, filename, options, undefined, undefined, true));
+
+					stream.on('finish', function() {
+						var hash = md5.digest('hex');
+
+						if (F.temporary.versions[declaration] === hash) {
+							callback && callback(null, uptodateName || name, true);
+							return;
+						}
+
+						F.temporary.versions[declaration] = hash;
+						F.install(type, id, filename, options, callback, undefined, undefined, true, uptodateName);
+					});
 				});
 				return F;
 			}
@@ -3022,8 +3040,19 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				if (err) {
 					F.error(err, 'F.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
 					callback && callback(err);
-				} else
-					F.install(type, name, data, options, callback, declaration);
+				} else {
+
+					var hash = data.hash('md5');
+
+					if (F.temporary.versions[declaration] === hash) {
+						console.log('SKIP');
+						callback && callback(null, uptodateName || name, true);
+						return;
+					}
+
+					F.temporary.versions[declaration] = hash;
+					F.install(type, name, data, options, callback, declaration, undefined, undefined, uptodateName);
+				}
 
 			});
 			return F;
@@ -3119,7 +3148,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (!name && internal)
 			name = U.getName(internal).replace(/\.html/gi, '').trim();
 
-		F.uninstall(type, name);
+		F.uninstall(type, uptodateName || name, uptodateName ? 'uptodate' : undefined);
 
 		var hash = '\n/*' + name.hash() + '*/\n';
 		var temporary = (F.id ? 'i-' + F.id + '_' : '') + 'components';
@@ -3133,15 +3162,13 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (content.css)
 			F.components.css = true;
 
-		F.components.views[name] = framework_internal.viewEngineCompile(content.body, '', EMPTYCONTROLLER);
+		F.components.views[name] = '.' + F.path.temp('component_' + name);
 		F.components.has = true;
 
-		content.body.indexOf('@(') !== -1 && F.temporary.internal.resources.forEach(function(resource) {
-			F.components.views[name + '#' + resource] = framework_internal.viewEngineCompile(content.body, resource, EMPTYCONTROLLER);
-		});
+		Fs.writeFile(F.components.views[name].substring(1) + '.html', U.minifyHTML(content.body), NOOP);
 
 		var link = F.config['static-url-components'];
-		F.components.version = U.GUID(5);
+		F.components.version = F.datetime.getTime();
 		F.components.links = (F.components.js ? '<script src="{0}js?version={1}"></script>'.format(link, F.components.version) : '') + (F.components.css ? '<link type="text/css" rel="stylesheet" href="{0}css?version={1}" />'.format(link, F.components.version) : '');
 
 		if (content.install) {
@@ -3418,7 +3445,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		key = type + '.' + name;
 		tmp = F.dependencies[key];
 
-		F.uninstall(type, name);
+		F.uninstall(type, uptodateName || name, uptodateName ? 'uptodate' : undefined);
 
 		if (tmp) {
 			F.dependencies[key] = tmp;
@@ -3539,7 +3566,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		key = type + '.' + name;
 		tmp = F.dependencies[key];
 
-		F.uninstall(type, name);
+		F.uninstall(type, uptodateName || name, uptodateName ? 'uptodate' : undefined);
 
 		if (tmp) {
 			F.dependencies[key] = tmp;
@@ -3585,11 +3612,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 };
 
 Framework.prototype.restart = function() {
-	if (F.isRestarted)
-		return F;
-	F.isRestarted = true;
-	F.emit('restart');
-	setTimeout(() => F.$restart(), 1000);
+	if (!F.isRestarted) {
+		F.isRestarted = true;
+		F.emit('restart');
+		setTimeout(() => F.$restart(), 1000);
+	}
 	return F;
 };
 
@@ -3668,6 +3695,17 @@ Framework.prototype.$restart = function() {
 			blocks: {},
 			resources: {},
 			mmr: {}
+		};
+
+		F.temporary = {
+			path: {},
+			processing: {},
+			range: {},
+			views: {},
+			versions: {},
+			dependencies: {},
+			other: {},
+			internal: {}
 		};
 
 		F.modificators = null;
@@ -6532,26 +6570,50 @@ Framework.prototype._service = function(count) {
 		}
 	}
 
-	F.uptodates && (count % F.config['default-interval-uptodate'] === 0) && F.uptodates.length && F.uptodates.wait(function(item, next) {
-		if (item.updated.add(item.interval) > F.datetime)
-			return next();
-		item.updated = F.datetime;
-		item.name && F.uninstall(item.type, item.name, 'uptodate');
-		item.count++;
-		setTimeout(function() {
-			F.install(item.type, item.url, item.options, function(err, name) {
-				if (err) {
-					item.errors.push(err);
-					item.errors.length > 50 && F.errors.shift();
-				} else {
-					item.name = name;
-					F.emit('uptodate', item.type, name);
-				}
-				item.callback && item.callback(err, name);
-				next();
-			});
-		}, item.name ? 500 : 1);
-	});
+	if (F.uptodates && (count % F.config['default-interval-uptodate'] === 0) && F.uptodates.length) {
+		var hasUpdate = false;
+		F.uptodates.wait(function(item, next) {
+
+			if (item.updated.add(item.interval) > F.datetime)
+				return next();
+
+			item.updated = F.datetime;
+			item.count++;
+
+			setTimeout(function() {
+
+				F.install(item.type, item.url, item.options, function(err, name, skip) {
+
+					if (skip)
+						return next();
+
+					if (err) {
+						item.errors.push(err);
+						item.errors.length > 50 && F.errors.shift();
+					} else {
+						hasUpdate = true;
+						item.name = name;
+						F.emit('uptodate', item.type, name);
+					}
+
+					item.callback && item.callback(err, name);
+					next();
+
+				}, undefined, undefined, undefined, undefined, item.name);
+
+			}, item.name ? 500 : 1);
+
+		}, function() {
+			if (hasUpdate) {
+				F.temporary.path = {};
+				F.temporary.range = {};
+				F.temporary.views = {};
+				F.temporary.other = {};
+				if (global.$VIEWCACHE && global.$VIEWCACHE.length)
+					global.$VIEWCACHE = [];
+			}
+		});
+	}
 
 	// every 20 minutes (default) service clears resources
 	if (count % F.config['default-interval-clear-resources'] === 0) {
@@ -10140,12 +10202,14 @@ Controller.prototype.getSchema = function() {
  */
 Controller.prototype.component = function(name, settings) {
 	var self = this;
-	var key = name + (self.language ? '#' + self.language : '');
-	var fn = F.components.views[key] || F.components.views[name];
+	var filename = F.components.views[name];
 
-	if (fn) {
-		self.repository[REPOSITORY_COMPONENTS] = true;
-		return fn.call(self, self, self.repository, self.$model, self.session, self.query, self.body, self.url, F.global, F.helpers, self.user, self.config, F.functions, 0, self.outputPartial, self.date, self.req.cookie, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
+	if (filename) {
+		var generator = framework_internal.viewEngine(name, filename, self);
+		if (generator) {
+			self.repository[REPOSITORY_COMPONENTS] = true;
+			return generator.call(self, self, self.repository, self.$model, self.session, self.query, self.body, self.url, F.global, F.helpers, self.user, self.config, F.functions, 0, self.outputPartial, self.date, self.req.cookie, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
+		}
 	}
 
 	F.error('Error: A component "{0}" doesn\'t exist.'.format(name), self.name, self.uri);
