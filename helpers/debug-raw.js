@@ -14,6 +14,8 @@ const options = {};
 // options.sleep = 3000;
 // options.debugger = 40894;
 
+require('total.js');
+
 const isDebugging = process.argv.indexOf('debugging') !== -1;
 const directory = process.cwd();
 const path = require('path');
@@ -25,7 +27,6 @@ const REG_THEMES = /\/themes\//i;
 const REG_COMPONENTS = /components\/.*?\.html/i;
 const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/i;
 const REG_EXTENSION = /\.(js|resource|package)/i;
-
 var first = process.argv.indexOf('restart') === -1;
 
 process.on('uncaughtException', function(e) {
@@ -35,7 +36,6 @@ process.on('uncaughtException', function(e) {
 process.title = 'total: debug';
 
 function debug() {
-	require('total.js');
 	var port = parseInt(process.argv[process.argv.length - 1]);
 
 	if (!isNaN(port)) {
@@ -60,9 +60,8 @@ function debug() {
 
 function app() {
 	const fork = require('child_process').fork;
-	const utils = require('total.js/utils');
 	const directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes', directory + '/configs'];
-	const async = new utils.Async();
+	const async = new U.Async();
 	const prefix = '---------------------------------> ';
 
 	var files = {};
@@ -174,7 +173,7 @@ function app() {
 	}
 
 	function refresh_directory() {
-		utils.ls(directories, onComplete, onFilter);
+		U.ls(directories, onComplete, onFilter);
 	}
 
 	function restart() {
