@@ -32,6 +32,8 @@ process.on('uncaughtException', function(e) {
 	e.toString().indexOf('ESRCH') == -1 && console.log(e);
 });
 
+process.title = 'total: debug';
+
 function debug() {
 	require('total.js');
 	var port = parseInt(process.argv[process.argv.length - 1]);
