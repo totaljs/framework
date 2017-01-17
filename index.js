@@ -3045,7 +3045,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					var hash = data.hash('md5');
 
 					if (F.temporary.versions[declaration] === hash) {
-						console.log('SKIP');
 						callback && callback(null, uptodateName || name, true);
 						return;
 					}
@@ -3218,8 +3217,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		backup.restore(declaration, dir, function() {
 
 			var filename = Path.join(dir, 'index.js');
-			if (!existsSync(filename))
+			if (!existsSync(filename)) {
+				callback && callback(null, name);
 				return;
+			}
 
 			F.install('module', id, filename, options, function(err) {
 
@@ -3504,7 +3505,6 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 					if (tmp)
 						name = tmp.toString().replace(/\.js/i, '');
 				}
-
 				filename = F.path.temporary(plus + 'installed-' + type + '-' + U.GUID(10) + '.js');
 				Fs.writeFileSync(filename, declaration);
 				obj = require(filename);
@@ -8235,7 +8235,7 @@ Framework.prototype._configure_dependencies = function(arr) {
 
 		var key = str.substring(0, index).trim();
 		var url = str.substring(index + 2).trim();
-		var options = EMPTYOBJECT;
+		var options;
 		var interval;
 
 		index = key.indexOf('(');
