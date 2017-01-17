@@ -8218,6 +8218,8 @@ Framework.prototype._configure_dependencies = function(arr) {
 		return F;
 
 	var type;
+	var options;
+	var interval;
 
 	for (var i = 0, length = arr.length; i < length; i++) {
 
@@ -8235,8 +8237,9 @@ Framework.prototype._configure_dependencies = function(arr) {
 
 		var key = str.substring(0, index).trim();
 		var url = str.substring(index + 2).trim();
-		var options;
-		var interval;
+
+		options = undefined;
+		interval = undefined;
 
 		index = key.indexOf('(');
 		if (index !== -1) {
