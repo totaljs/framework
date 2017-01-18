@@ -656,7 +656,7 @@ function main() {
 
 	console.log('Downloading "empty-project" from www.totaljs.com');
 
-	var url = 'https://www.totaljs.com/packages/empty-project.package';
+	var url = 'https://cdn.totaljs.com/empty-project.package';
 
 	Utils.download(url, ['get'], function(err, response) {
 		var filename = path.join(dir, 'total.package');
