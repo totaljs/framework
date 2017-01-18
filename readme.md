@@ -25,7 +25,7 @@ $ npm install -g total.js
 - [Total.js AppDesigner](https://www.totaljs.com/designer/)
 - [Total.js modules and packages](https://modules.totaljs.com)
 - [Total.js +100 examples](https://github.com/totaljs/examples)
-- [Download +89 client-side components (jComponent) for free](https://www.componentator.com)
+- [Download +89 client-side components (jComponent) for free](https://componentator.com)
 
 ---
 
