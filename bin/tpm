@@ -45,7 +45,7 @@ function Backup() {
 	this.filename = '';
 	this.pending = 0;
 
-	this.read = { key: createBufferSize(), createBufferSize(), status: 0 };
+	this.read = { key: createBufferSize(), value: createBufferSize(), status: 0 };
 	this.bufKey = createBuffer(':');
 	this.bufNew = createBuffer('\n');
 
