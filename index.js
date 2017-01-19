@@ -10211,7 +10211,7 @@ Controller.prototype.component = function(name, settings) {
 		var generator = framework_internal.viewEngine(name, filename, self);
 		if (generator) {
 			self.repository[REPOSITORY_COMPONENTS] = true;
-			return generator.call(self, self, self.repository, self.$model, self.session, self.query, self.body, self.url, F.global, F.helpers, self.user, self.config, F.functions, 0, self.outputPartial, self.date, self.req.cookie, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
+			return generator.call(self, self, self.repository, self.$model, self.session, self.query, self.body, self.url, F.global, F.helpers, self.user, self.config, F.functions, 0, self.outputPartial, self.req.cookie, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
 		}
 	}
 
@@ -12648,7 +12648,7 @@ Controller.prototype.$viewrender = function(filename, generator, model, headers,
 	var helpers = F.helpers;
 
 	try {
-		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, F.global, helpers, self.user, self.config, F.functions, 0, partial ? self.outputPartial : self.output, self.date, self.req.cookie, self.req.files, self.req.mobile, EMPTYOBJECT);
+		value = generator.call(self, self, self.repository, model, self.session, self.query, self.body, self.url, F.global, helpers, self.user, self.config, F.functions, 0, partial ? self.outputPartial : self.output, self.req.cookie, self.req.files, self.req.mobile, EMPTYOBJECT);
 	} catch (ex) {
 
 		err = new Error('View "' + filename + '": ' + ex.message);
