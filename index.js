@@ -1422,6 +1422,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var corsflags = [];
 	var membertype = 0;
 	var isGENERATOR = false;
+	var description;
 
 	if (_flags) {
 		if (!flags)
@@ -1497,6 +1498,12 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 					schema[1] = schema[1].substring(0, index).trim();
 				}
 
+				continue;
+			}
+
+			// Comment
+			if (flags[i].substring(0, 3) === '// ') {
+				description = flags[i].substring(3).trim();
 				continue;
 			}
 
@@ -1668,7 +1675,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
 
 	var url2 = framework_internal.preparePath(url.trim());
-	var urlraw = U.path(url2);
+	var urlraw = U.path(url2) + (isASTERIX ? '*' : '');
 	var hash = url2.hash();
 	var routeURL = framework_internal.routeSplitCreate(url2);
 	var arr = [];
