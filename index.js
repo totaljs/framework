@@ -1668,6 +1668,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		isGENERATOR = (funcExecute.constructor.name === 'GeneratorFunction' || funcExecute.toString().indexOf('function*') === 0);
 
 	var url2 = framework_internal.preparePath(url.trim());
+	var urlraw = U.path(url2);
 	var hash = url2.hash();
 	var routeURL = framework_internal.routeSplitCreate(url2);
 	var arr = [];
@@ -1773,6 +1774,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		subdomain: subdomain,
 		controller: _controller ? _controller : 'unknown',
 		owner: _owner,
+		urlraw: urlraw,
 		url: routeURL,
 		param: arr,
 		flags: flags || EMPTYARRAY,
