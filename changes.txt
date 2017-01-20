@@ -15,6 +15,7 @@
 - added: `F.convert(obj)` performs convertor for an object
 - added: `F.download(url, filename, [callback])` a new alias for `F.snapshot()`
 - added: `$$$([group], name)` for `GETSCHEMA([group], name)`
+- added: configuration files supports options for all dependencies `module#mymodulename    (Object)   : { name: 'A custom options for dependency' }`
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`

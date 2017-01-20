@@ -3187,7 +3187,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				obj.$owner = _owner;
 				_controller = '';
 				F.components.instances[name] = obj;
-				obj = typeof(obj.install) === 'function' && obj.install(options, name);
+				obj = typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
 			} catch(e) {
 				F.error(e, 'F.install(\'component\', \'{0}\')'.format(name));
 			}
@@ -3199,7 +3199,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 				obj.$owner = _owner;
 				_controller = '';
 				F.components.instances[name] = obj;
-				typeof(obj.install) === 'function' && obj.install(options, name);
+				typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
 				(function(name, filename) {
 					setTimeout(function() {
 						delete require.cache[name];
@@ -3252,7 +3252,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		obj = require(declaration);
 		obj.$owner = _owner;
 
-		typeof(obj.install) === 'function' && obj.install(options, name);
+		typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
 
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name);
@@ -3480,7 +3480,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		else
 			F.sources[name] = obj;
 
-		typeof(obj.install) === 'function' && obj.install(options, name);
+		typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
 
 		!skipEmit && setTimeout(function() {
 			F.emit(type + '#' + name, obj);
@@ -3608,7 +3608,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			}
 		}
 
-		F.install_make(key, name, obj, options, callback, skipEmit);
+		F.install_make(key, name, obj, options, callback, skipEmit, type);
 
 		if (type === 'module')
 			F.modules[name] = obj;
@@ -3796,7 +3796,7 @@ Framework.prototype.install_prepare = function(noRecursive) {
 		else
 			F.controllers[b.name] = a.obj;
 
-		F.install_make(k, b.name, a.obj, a.options, a.callback, a.skipEmit);
+		F.install_make(k, b.name, a.obj, a.options, a.callback, a.skipEmit, b.type);
 	}
 
 	keys = Object.keys(F.temporary.dependencies);
@@ -3816,7 +3816,7 @@ Framework.prototype.install_prepare = function(noRecursive) {
 	return F;
 };
 
-Framework.prototype.install_make = function(key, name, obj, options, callback, skipEmit) {
+Framework.prototype.install_make = function(key, name, obj, options, callback, skipEmit, type) {
 
 	var me = F.dependencies[key];
 	var routeID = me._id;
@@ -3825,8 +3825,10 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 	F.temporary.internal[me._id] = name;
 	_controller = routeID;
 
-	typeof(obj.install) === 'function' && obj.install(options, name);
+	_owner = type + '#' + name.replace(/\.package$/gi, '');
+	var tmp;
 
+	typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
 	me.processed = true;
 
 	var id = (type === 'module' ? '#' : '') + name;
