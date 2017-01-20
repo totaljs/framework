@@ -53,7 +53,7 @@
 - improved: performance
 - improved: updating of `F.datetime`
 - improved: `uninstall` dependencies
-- improved: installing 3rd-party dependencies (framework compares same content)
+- improved: installing 3rd-party dependencies (framework compares same contents)
 
 ======= 2.3.0
 
