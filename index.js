@@ -9681,7 +9681,7 @@ Subscribe.prototype.doEnd = function() {
 		}
 
 		try {
-			req.body = F.onParseXML(req.buffer_data.trim());
+			req.body = F.onParseXML(req.buffer_data.trim(), req);
 			req.buffer_data = null;
 			self.prepare(req.flags, req.uri.pathname);
 		} catch (err) {
@@ -9706,14 +9706,14 @@ Subscribe.prototype.doEnd = function() {
 
 	if (req.$type === 1) {
 		try {
-			req.body = F.onParseJSON(req.buffer_data);
+			req.body = F.onParseJSON(req.buffer_data, req);
 			req.buffer_data = null;
 		} catch (e) {
 			self.route400('Invalid JSON data.');
 			return self;
 		}
 	} else
-		req.body = F.onParseQuery(req.buffer_data);
+		req.body = F.onParseQuery(req.buffer_data, req);
 
 	if (self.route.schema)
 		self.schema = true;
@@ -12919,11 +12919,9 @@ WebSocket.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
  */
 WebSocket.prototype.send = function(message, id, blacklist) {
 
-	var self = this;
-	var keys = self._keys;
-
+	var keys = this._keys;
 	if (!keys || !keys.length)
-		return self;
+		return this;
 
 	var data;
 	var raw = false;
@@ -12931,7 +12929,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 	for (var i = 0, length = keys.length; i < length; i++) {
 
 		var _id = keys[i];
-		var conn = self.connections[_id];
+		var conn = this.connections[_id];
 
 		if (id) {
 			if (id instanceof Array) {
@@ -12967,7 +12965,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 		F.stats.response.websocket++;
 	}
 
-	return self;
+	return this;
 };
 
 function websocket_valid_array(id, arr) {
@@ -12984,24 +12982,21 @@ function websocket_valid_fn(id, client, fn) {
  */
 WebSocket.prototype.ping = function() {
 
-	var self = this;
-	var keys = self._keys;
-
+	var keys = this._keys;
 	if (!keys)
-		return self;
+		return this;
 
 	var length = keys.length;
+	if (!length)
+		return this;
 
-	if (length === 0)
-		return self;
-
-	self.$ping = true;
+	this.$ping = true;
 	F.stats.other.websocketPing++;
 
 	for (var i = 0; i < length; i++)
-		self.connections[keys[i]].ping();
+		this.connections[keys[i]].ping();
 
-	return self;
+	return this;
 };
 
 /**
@@ -13013,11 +13008,10 @@ WebSocket.prototype.ping = function() {
  */
 WebSocket.prototype.close = function(id, message, code) {
 
-	var self = this;
-	var keys = self._keys;
+	var keys = this._keys;
 
 	if (!keys)
-		return self;
+		return this;
 
 	if (typeof(id) === 'string') {
 		code = message;
@@ -13027,16 +13021,16 @@ WebSocket.prototype.close = function(id, message, code) {
 
 	var length = keys.length;
 	if (!length)
-		return self;
+		return this;
 
 	if (!id || !id.length) {
 		for (var i = 0; i < length; i++) {
 			var _id = keys[i];
-			self.connections[_id].close(message, code);
-			self._remove(_id);
+			this.connections[_id].close(message, code);
+			this._remove(_id);
 		}
-		self._refresh();
-		return self;
+		this._refresh();
+		return this;
 	}
 
 	var is = id instanceof Array;
@@ -13048,16 +13042,16 @@ WebSocket.prototype.close = function(id, message, code) {
 		if (is && id.indexOf(_id) === -1)
 			continue;
 
-		var conn = self.connections[_id];
-		if (fn && !fn.call(self, _id, conn))
+		var conn = this.connections[_id];
+		if (fn && !fn.call(this, _id, conn))
 			continue;
 
 		conn.close(message, code);
-		self._remove(_id);
+		this._remove(_id);
 	}
 
-	self._refresh();
-	return self;
+	this._refresh();
+	return this;
 };
 
 /**
@@ -13066,9 +13060,8 @@ WebSocket.prototype.close = function(id, message, code) {
  * @return {WebSocket/Function}
  */
 WebSocket.prototype.error = function(err) {
-	var self = this;
-	var result = F.error(typeof(err) === 'string' ? new Error(err) : err, self.name, self.path);
-	return err === undefined ? result : self;
+	var result = F.error(typeof(err) === 'string' ? new Error(err) : err, this.name, this.path);
+	return err === undefined ? result : this;
 };
 
 /**
@@ -13077,9 +13070,8 @@ WebSocket.prototype.error = function(err) {
  * @return {WebSocket}
  */
 WebSocket.prototype.wtf = WebSocket.prototype.problem = function(message) {
-	var self = this;
-	F.problem(message, self.name, self.uri);
-	return self;
+	F.problem(message, this.name, this.uri);
+	return this;
 };
 
 /**
@@ -13088,9 +13080,8 @@ WebSocket.prototype.wtf = WebSocket.prototype.problem = function(message) {
  * @return {WebSocket}
  */
 WebSocket.prototype.change = function(message) {
-	var self = this;
-	F.change(message, self.name, self.uri, self.ip);
-	return self;
+	F.change(message, this.name, this.uri, this.ip);
+	return this;
 };
 
 /**
@@ -13099,15 +13090,11 @@ WebSocket.prototype.change = function(message) {
  * @return {WebSocket}
  */
 WebSocket.prototype.all = function(fn) {
-
-	var self = this;
-	if (!self._keys)
-		return self;
-
-	for (var i = 0, length = self._keys.length; i < length; i++)
-		fn(self.connections[self._keys[i]], i);
-
-	return self;
+	if (this._keys) {
+		for (var i = 0, length = this._keys.length; i < length; i++)
+			fn(this.connections[this._keys[i]], i);
+	}
+	return this;
 };
 
 /**
@@ -13196,53 +13183,16 @@ WebSocket.prototype.autodestroy = function(callback) {
 };
 
 /**
- * Sends an object to another total.js application (POST + JSON)
- * @param {String} url
- * @param {Object} obj
- * @param {Funciton(err, data, code, headers)} callback
- * @param {Number} timeout Timeout, optional default 10 seconds.
- * @return {EventEmitter}
- */
-WebSocket.prototype.proxy = function(url, obj, callback, timeout) {
-
-	var self = this;
-
-	if (typeof(callback) === 'number') {
-		tmp = timeout;
-		timeout = callback;
-		callback = tmp;
-	}
-
-	if (typeof(obj) === 'function') {
-		tmp = callback;
-		callback = obj;
-		obj = tmp;
-	}
-
-	return U.request(url, REQUEST_PROXY_FLAGS, obj, function(error, data, code, headers) {
-		if (!callback)
-			return;
-		if ((headers['content-type'] || '').lastIndexOf('/json') !== -1)
-			data = F.onParseJSON(data);
-		callback.call(self, error, data, code, headers);
-	}, null, HEADERS['proxy'], ENCODING, timeout || 10000);
-};
-
-/**
  * Internal function
  * @return {WebSocket}
  */
 WebSocket.prototype._refresh = function() {
-	var self = this;
-
-	if (!self.connections) {
-		self.online = 0;
-		return self;
-	}
-
-	self._keys = Object.keys(self.connections);
-	self.online = self._keys.length;
-	return self;
+	if (this.connections) {
+		this._keys = Object.keys(this.connections);
+		this.online = this._keys.length;
+	} else
+		this.online = 0;
+	return this;
 };
 
 /**
@@ -13251,10 +13201,9 @@ WebSocket.prototype._refresh = function() {
  * @return {WebSocket}
  */
 WebSocket.prototype._remove = function(id) {
-	var self = this;
-	if (self.connections)
-		delete self.connections[id];
-	return self;
+	if (this.connections)
+		delete this.connections[id];
+	return this;
 };
 
 /**
@@ -13263,48 +13212,8 @@ WebSocket.prototype._remove = function(id) {
  * @return {WebSocket}
  */
 WebSocket.prototype._add = function(client) {
-	var self = this;
-	self.connections[client._id] = client;
-	return self;
-};
-
-/**
- * Gets a module instance
- * @param {String} name
- * @return {Object}
- */
-WebSocket.prototype.module = function(name) {
-	return F.module(name);
-};
-
-/**
- * Gets a model instance
- * @param {String} name
- * @return {Object}
- */
-WebSocket.prototype.model = function(name) {
-	return F.model(name);
-};
-
-/**
- * Render helper to string
- * @param {String} name
- * @return {String}
- */
-WebSocket.prototype.helper = function(name) {
-	var self = this;
-	var helper = F.helpers[name];
-
-	if (!helper)
-		return '';
-
-	var length = arguments.length;
-	var params = [];
-
-	for (var i = 1; i < length; i++)
-		params.push(arguments[i]);
-
-	return helper.apply(self, params);
+	this.connections[client._id] = client;
+	return this;
 };
 
 /**
@@ -13318,31 +13227,28 @@ WebSocket.prototype.resource = function(name, key) {
 };
 
 WebSocket.prototype.log = function() {
-	var self = this;
 	F.log.apply(framework, arguments);
-	return self;
+	return this;
 };
 
 WebSocket.prototype.logger = function() {
-	var self = this;
 	F.logger.apply(framework, arguments);
-	return self;
+	return this;
 };
 
 WebSocket.prototype.check = function() {
-	var self = this;
 
-	if (!self.$ping)
-		return self;
+	if (!this.$ping)
+		return this;
 
-	self.all(function(client) {
+	this.all(function(client) {
 		if (client.$ping)
 			return;
 		client.close();
 		F.stats.other.websocketCleaner++;
 	});
 
-	return self;
+	return this;
 };
 
 /**
@@ -13433,15 +13339,13 @@ WebSocketClient.prototype.cookie = function(name) {
 
 WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, version) {
 
-	var self = this;
+	flags = flags || EMPTYARRAY;
+	protocols = protocols || EMPTYARRAY;
+	allow = allow || EMPTYARRAY;
 
-	flags = flags || [];
-	protocols = protocols || [];
-	allow = allow || [];
+	this.length = length;
 
-	self.length = length;
-
-	var origin = self.req.headers['origin'] || '';
+	var origin = this.req.headers['origin'] || '';
 	var length = allow.length;
 
 	if (length) {
@@ -13456,19 +13360,19 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 	length = protocols.length;
 	if (length) {
 		for (var i = 0; i < length; i++) {
-			if (self.protocol.indexOf(protocols[i]) === -1)
+			if (this.protocol.indexOf(protocols[i]) === -1)
 				return false;
 		}
 	}
 
-	if (SOCKET_ALLOW_VERSION.indexOf(U.parseInt(self.req.headers['sec-websocket-version'])) === -1)
+	if (SOCKET_ALLOW_VERSION.indexOf(U.parseInt(this.req.headers['sec-websocket-version'])) === -1)
 		return false;
 
-	var header = protocols.length ? SOCKET_RESPONSE_PROTOCOL.format(self._request_accept_key(self.req), protocols.join(', ')) : SOCKET_RESPONSE.format(self._request_accept_key(self.req));
-	self.socket.write(framework_utils.createBuffer(header, 'binary'));
+	var header = protocols.length ? SOCKET_RESPONSE_PROTOCOL.format(this._request_accept_key(this.req), protocols.join(', ')) : SOCKET_RESPONSE.format(this._request_accept_key(this.req));
+	this.socket.write(framework_utils.createBuffer(header, 'binary'));
 
-	self._id = (self.ip || '').replace(/\./g, '') + U.GUID(20);
-	self.id = self._id;
+	this._id = (this.ip || '').replace(/\./g, '') + U.GUID(20);
+	this.id = this._id;
 	return true;
 };
 
@@ -13505,40 +13409,38 @@ WebSocketClient.prototype.upgrade = function(container) {
  */
 WebSocketClient.prototype._ondata = function(data) {
 
-	var self = this;
-
 	if (data)
-		self.buffer = Buffer.concat([self.buffer, data]);
+		this.buffer = Buffer.concat([this.buffer, data]);
 
-	if (self.buffer.length > self.length) {
-		self.errors++;
-		self.container.emit('error', new Error('Maximum request length exceeded.'), self);
+	if (this.buffer.length > this.length) {
+		this.errors++;
+		this.container.emit('error', new Error('Maximum request length exceeded.'), this);
 		return;
 	}
 
-	switch (self.buffer[0] & 0x0f) {
+	switch (this.buffer[0] & 0x0f) {
 		case 0x01:
 			// text message or JSON message
-			self.type !== 1 && self.parse();
+			this.type !== 1 && this.parse();
 			break;
 		case 0x02:
 			// binary message
-			self.type === 1 && self.parse();
+			this.type === 1 && this.parse();
 			break;
 		case 0x08:
 			// close
-			self.close();
+			this.close();
 			break;
 		case 0x09:
 			// ping, response pong
-			self.socket.write(U.getWebSocketFrame(0, '', 0x0A));
-			self.buffer = framework_utils.createBufferSize();
-			self.$ping = true;
+			this.socket.write(U.getWebSocketFrame(0, '', 0x0A));
+			this.buffer = framework_utils.createBufferSize();
+			this.$ping = true;
 			break;
 		case 0x0a:
 			// pong
-			self.$ping = true;
-			self.buffer = framework_utils.createBufferSize();
+			this.$ping = true;
+			this.buffer = framework_utils.createBufferSize();
 			break;
 	}
 };
@@ -13547,77 +13449,74 @@ WebSocketClient.prototype._ondata = function(data) {
 // Written by Jozef Gula
 WebSocketClient.prototype.parse = function() {
 
-	var self = this;
-	var bLength = self.buffer[1];
-
+	var bLength = this.buffer[1];
 	if (((bLength & 0x80) >> 7) !== 1)
-		return self;
+		return this;
 
-	var length = U.getMessageLength(self.buffer, F.isLE);
-	var index = (self.buffer[1] & 0x7f);
+	var length = U.getMessageLength(this.buffer, F.isLE);
+	var index = (this.buffer[1] & 0x7f);
 
 	index = (index == 126) ? 4 : (index == 127 ? 10 : 2);
-	if ((index + length + 4) > (self.buffer.length))
-		return self;
+	if ((index + length + 4) > (this.buffer.length))
+		return this;
 
 	var mask = framework_utils.createBufferSize(4);
-	self.buffer.copy(mask, 0, index, index + 4);
+	this.buffer.copy(mask, 0, index, index + 4);
 
 	// TEXT
-	if (self.type !== 1) {
+	if (this.type !== 1) {
 		var output = '';
 		for (var i = 0; i < length; i++)
-			output += String.fromCharCode(self.buffer[index + 4 + i] ^ mask[i % 4]);
+			output += String.fromCharCode(this.buffer[index + 4 + i] ^ mask[i % 4]);
 
 		// JSON
-		if (self.type === 3) {
+		if (this.type === 3) {
 			try {
-				output = self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output;
-				output.isJSON() && self.container.emit('message', self, F.onParseJSON(output));
+				output = this.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output;
+				output.isJSON() && this.container.emit('message', this, F.onParseJSON(output, this.req));
 			} catch (ex) {
 				if (DEBUG) {
-					self.errors++;
-					self.container.emit('error', new Error('JSON parser: ' + ex.toString()), self);
+					this.errors++;
+					this.container.emit('error', new Error('JSON parser: ' + ex.toString()), this);
 				}
 			}
 		} else
-			self.container.emit('message', self, self.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output);
+			this.container.emit('message', this, this.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output);
 	} else {
 		var binary = framework_utils.createBufferSize(length);
 		for (var i = 0; i < length; i++)
-			binary[i] = self.buffer[index + 4 + i] ^ mask[i % 4];
-		self.container.emit('message', self, new Uint8Array(binary).buffer);
+			binary[i] = this.buffer[index + 4 + i] ^ mask[i % 4];
+		this.container.emit('message', this, new Uint8Array(binary).buffer);
 	}
 
-	self.buffer = self.buffer.slice(index + length + 4, self.buffer.length);
-	self.buffer.length >= 2 && U.getMessageLength(self.buffer, F.isLE) && self.parse();
-	return self;
+	this.buffer = this.buffer.slice(index + length + 4, this.buffer.length);
+	this.buffer.length >= 2 && U.getMessageLength(this.buffer, F.isLE) && this.parse();
+	return this;
 };
 
 WebSocketClient.prototype._onerror = function(err) {
-	var self = this;
-	if (!self || self.isClosed)
+
+	if (this.isClosed)
 		return;
 
 	if (REG_WEBSOCKET_ERROR.test(err.stack)) {
-		self.isClosed = true;
-		self._onclose();
+		this.isClosed = true;
+		this._onclose();
 	} else
-		self.container.emit('error', err, self);
+		this.container.emit('error', err, this);
 };
 
 WebSocketClient.prototype._onclose = function() {
-	var self = this;
-	if (!self || self._isClosed)
+	if (this._isClosed)
 		return;
-	self.isClosed = true;
-	self._isClosed = true;
-	self.container._remove(self._id);
-	self.container._refresh();
-	self.container.emit('close', self);
-	self.socket.removeAllListeners();
-	self.removeAllListeners();
-	F.emit('websocket-end', self.container, self);
+	this.isClosed = true;
+	this._isClosed = true;
+	this.container._remove(this._id);
+	this.container._refresh();
+	this.container.emit('close', this);
+	this.socket.removeAllListeners();
+	this.removeAllListeners();
+	F.emit('websocket-end', this.container, this);
 };
 
 /**
@@ -13628,19 +13527,18 @@ WebSocketClient.prototype._onclose = function() {
  */
 WebSocketClient.prototype.send = function(message, raw) {
 
-	var self = this;
-	if (!self || self.isClosed)
-		return self;
+	if (this.isClosed)
+		return this;
 
-	if (self.type !== 1) {
-		var data = self.type === 3 ? (raw ? message : JSON.stringify(message)) : (message || '').toString();
-		if (self.container.config['default-websocket-encodedecode'] === true && data)
+	if (this.type !== 1) {
+		var data = this.type === 3 ? (raw ? message : JSON.stringify(message)) : (message || '').toString();
+		if (this.container.config['default-websocket-encodedecode'] === true && data)
 			data = encodeURIComponent(data);
-		self.socket.write(U.getWebSocketFrame(0, data, 0x01));
+		this.socket.write(U.getWebSocketFrame(0, data, 0x01));
 	} else
-		message && self.socket.write(U.getWebSocketFrame(0, new Int8Array(message), 0x02));
+		message && this.socket.write(U.getWebSocketFrame(0, new Int8Array(message), 0x02));
 
-	return self;
+	return this;
 };
 
 /**
@@ -13649,14 +13547,12 @@ WebSocketClient.prototype.send = function(message, raw) {
  */
 WebSocketClient.prototype.ping = function() {
 
-	var self = this;
+	if (this.isClosed)
+		return this;
 
-	if (!self || self.isClosed)
-		return self;
-
-	self.socket.write(U.getWebSocketFrame(0, '', 0x09));
-	self.$ping = false;
-	return self;
+	this.socket.write(U.getWebSocketFrame(0, '', 0x09));
+	this.$ping = false;
+	return this;
 };
 
 /**
@@ -13666,19 +13562,12 @@ WebSocketClient.prototype.ping = function() {
  * @return {WebSocketClient}
  */
 WebSocketClient.prototype.close = function(message, code) {
-	var self = this;
+	if (this.isClosed)
+		return this;
 
-	if (!self || self.isClosed)
-		return self;
-
-	if (message)
-		message = encodeURIComponent(message);
-	else
-		message = '';
-
-	self.isClosed = true;
-	self.socket.end(U.getWebSocketFrame(code || 1000, message, 0x08));
-	return self;
+	this.isClosed = true;
+	this.socket.end(U.getWebSocketFrame(code || 1000,  message ? encodeURIComponent(message) : '', 0x08));
+	return this;
 };
 
 /**
@@ -14230,7 +14119,7 @@ http.IncomingMessage.prototype = {
 		var self = this;
 		if (self._dataGET)
 			return self._dataGET;
-		self._dataGET = F.onParseQuery(self.uri.query);
+		self._dataGET = F.onParseQuery(self.uri.query, self);
 		return self._dataGET;
 	},
 

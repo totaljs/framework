@@ -29,12 +29,16 @@
 - updated: `String.parseJSON([date])` added `date` argument (date fields will be converted to `datetime`)
 - updated: `F.script()` can compile code to function e.g.: `F.script('next(a + b)')` returns a compiled function
 - updated: `String.captialize([onlyFirst])` add a new argument `onlyFirst`
+- updated: `F.onParseQuery(value, req)` add a new argument `req`
+- updated: `F.onParseXML(value, req)` add a new argument `req`
+- updated: `F.onParseJSON(value, req)` add a new argument `req`
 
 - removed: behaviours
 - removed: restrictions
 - removed: `F.config['allow-compatibility']` (not used)
 - removed: `controller.date()` method has been useless
 - removed: dynamic view compilation through `.view()` method
+- removed: `contorller.proxy()` in WebSocket controller
 
 - fixed: JS minificator
 - fixed: global alias `I` for isomorphic code
