@@ -2048,7 +2048,7 @@ exports.parseXML = function(xml) {
 
 exports.parseJSON = function(value, date) {
 	try {
-		return JSON.parse(value, date? jsonparser : undefined);
+		return JSON.parse(value, date ? jsonparser : undefined);
 	} catch(e) {
 		return null;
 	}
@@ -2985,7 +2985,7 @@ String.prototype.parseConfig = function(def) {
 				obj[name] = new Function('return ' + value)();
 				break;
 			case 'json':
-				obj[name] = value.parseJSON();
+				obj[name] = value.parseJSON(true);
 				break;
 			case 'env':
 			case 'environment':
@@ -5355,7 +5355,7 @@ Chunker.prototype.read = function(index, callback) {
 		if (err)
 			callback(null, EMPTYARRAY);
 		else
-			callback(null, data.toString('utf8').parseJSON());
+			callback(null, data.toString('utf8').parseJSON(true));
 	});
 	return self;
 };
