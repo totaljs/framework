@@ -5297,6 +5297,8 @@ function Chunker(name, max) {
 	this.filename = 'chunker_{0}-'.format(name);
 	this.stack = [];
 	this.flushing = 0;
+	this.pages = 0;
+	this.count = 0;
 	this.filename = F.path.temp(this.filename);
 }
 
@@ -5305,8 +5307,12 @@ Chunker.prototype.append = Chunker.prototype.write = function(obj) {
 
 	self.stack.push(obj);
 
-	if (self.stack.length >= self.max) {
+	var tmp = self.stack.length;
+
+	if (tmp >= self.max) {
 		self.flushing++;
+		self.pages++;
+		self.count += tmp;
 		Fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
 		self.stack = [];
 	}
@@ -5316,9 +5322,11 @@ Chunker.prototype.append = Chunker.prototype.write = function(obj) {
 
 Chunker.prototype.end = function() {
 	var self = this;
-
-	if (self.stack.length) {
+	var tmp = self.stack.length;
+	if (tmp) {
 		self.flushing++;
+		self.pages++;
+		self.count += tmp;
 		Fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
 		self.stack = [];
 	}
@@ -5361,22 +5369,20 @@ Chunker.prototype.read = function(index, callback) {
 };
 
 Chunker.prototype.clear = function() {
-	var self = this;
 	var files = [];
-	for (var i = 0; i < self.index; i++)
-		files.push(self.filename + i + '.json');
+	for (var i = 0; i < this.index; i++)
+		files.push(this.filename + i + '.json');
 	files.wait((filename, next) => Fs.unlink(filename, next));
-	return self;
+	return this;
 };
 
 Chunker.prototype.destroy = function() {
-	var self = this;
-	self.clear();
-	self.indexer = 0;
-	self.flushing = 0;
-	clearTimeout(self.flushing_timeout);
-	self.stack = null;
-	return self;
+	this.clear();
+	this.indexer = 0;
+	this.flushing = 0;
+	clearTimeout(this.flushing_timeout);
+	this.stack = null;
+	return this;
 };
 
 exports.chunker = function(name, max) {

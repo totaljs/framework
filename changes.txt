@@ -16,6 +16,8 @@
 - added: `F.download(url, filename, [callback])` a new alias for `F.snapshot()`
 - added: `$$$([group], name)` for `GETSCHEMA([group], name)`
 - added: configuration files supports options for all dependencies `module#mymodulename    (Object)   : { name: 'A custom options for dependency' }`
+- added: `U.chunker()` added a new property `chunker.pages` with count of all stored pages
+- added: `U.chunker()` added a new property `chunker.count` with count of all stored items
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`
