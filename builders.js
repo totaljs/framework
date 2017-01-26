@@ -3403,7 +3403,7 @@ RESTBuilder.make = function(fn) {
 };
 
 /**
- * STATIC: Create a transformation
+ * STATIC: Creates a transformation
  * @param {String} name
  * @param {Function} fn
  * @param {Boolean} isDefault Default transformation for all RESTBuilders.
@@ -3426,6 +3426,8 @@ RESTBuilder.prototype.setTransform = function(name) {
 };
 
 RESTBuilder.prototype.url = function(url) {
+	if (url === undefined)
+		return this.$url;
 	this.$url = url;
 	return this;
 };
@@ -3694,8 +3696,14 @@ RESTBuilder.prototype.exec = function(callback) {
 
 	return U.request(self.$url, flags, self.$data, function(err, response, status, headers, hostname) {
 
+		var type = err ? '' : headers['content-type'];
 		var output = new RESTBuilderResponse();
-		output.json = response.isJSON() ? F.onParseJSON(response) : null;
+
+		output.value = type.indexOf('/xml') === -1 ? response.isJSON() ? F.onParseJSON(response) : F.onParseQuery(response) : response.parseXML();
+
+		if (output.value == null)
+			output.value = EMPTYOBJECT;
+
 		output.response = response;
 		output.status = status;
 		output.headers = headers;
@@ -3706,11 +3714,11 @@ RESTBuilder.prototype.exec = function(callback) {
 		if (self.$schema) {
 
 			if (err)
-				return callback(err, null, output);
+				return callback(err, EMPTYOBJECT, output);
 
-			self.$schema.make(parsed, function(err, model) {
+			self.$schema.make(self.maketransform(output.value, output), function(err, model) {
 				!err && key && F.cache.add(key, output, self.$cache_expire);
-				callback(err, err ? null : self.maketransform(output.json, output), output);
+				callback(err, err ? EMPTYOBJECT : model, output);
 				output.cache = true;
 			});
 
@@ -3718,7 +3726,7 @@ RESTBuilder.prototype.exec = function(callback) {
 		}
 
 		!err && key && F.cache.add(key, output, self.$cache_expire);
-		callback(err, self.maketransform(output.json, output), output);
+		callback(err, self.maketransform(output.value, output), output);
 		output.cache = true;
 
 	}, self.$cookies, self.$headers, undefined, self.$timeout);

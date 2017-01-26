@@ -34,6 +34,8 @@
 - updated: `F.onParseQuery(value, req)` add a new argument `req`
 - updated: `F.onParseXML(value, req)` add a new argument `req`
 - updated: `F.onParseJSON(value, req)` add a new argument `req`
+- updated: `RESTBuilder.url()` without argument returns a current URL
+- updated: `RESTBuilder.exec(function(err, value, response))` when the `error` exists the `value` is still `EMPTYOBJECT`
 
 - removed: behaviours
 - removed: restrictions
