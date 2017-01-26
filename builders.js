@@ -35,6 +35,7 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
 var schemas = {};
+var operations = {};
 var transforms = { pagination: {}, error: {}, transformbuilder: {}, restbuilder: {} };
 
 function SchemaBuilder(name) {
@@ -2387,7 +2388,9 @@ exports.newschema = function(group, name) {
 	if (!schemas[group])
 		schemas[group] = new SchemaBuilder(group);
 
-	return schemas[group].create(name);
+	var o = schemas[group].create(name);
+	o.owner = F.$owner();
+	return o;
 };
 
 /**
@@ -3319,6 +3322,8 @@ function TransformBuilder() {}
 
 TransformBuilder.transform = function(name, obj) {
 
+	OBSOLETE('TransformBuilder', 'Builders.TransformBuilder will be removed in next versions.');
+
 	var index = 2;
 
 	if (obj === undefined) {
@@ -3768,6 +3773,34 @@ function $decodeURIComponent(value) {
 	}
 };
 
+global.NEWOPERATION = function(name, fn) {
+	operations[name] = fn;
+	operations[name].$owner = F.$owner();
+};
+
+global.OPERATION = function(name, model, callback) {
+
+	if (callback === undefined) {
+		callback = model;
+		model = EMPTYOBJECT;
+	}
+
+	var fn = operations[name];
+	var error = new ErrorBuilder();
+	if (fn) {
+		fn(error, function(value) {
+			if (value instanceof Error) {
+				error.push(value);
+				value = EMPTYOBJECT;
+			}
+			callback(error.hasError() ? error : null, value);
+		}, model);
+	} else {
+		error.push('Operation "{0}" not found.'.format(name));
+		callback(error, EMPTYOBJECT);
+	}
+};
+
 // ======================================================
 // EXPORTS
 // ======================================================
@@ -3787,8 +3820,25 @@ global.Page = Page;
 global.UrlBuilder = global.URLBuilder = UrlBuilder;
 global.SchemaBuilder = SchemaBuilder;
 
+// Uninstall owners
+exports.uninstall = function(owner) {
+
+	if (!owner)
+		return;
+
+	Object.keys(operations).forEach(function(key) {
+		if (operations[key].$owner === owner)
+			delete operations[key];
+	});
+
+	eachschema(function(group, name, schema) {
+		schema.owner === owner && schema.destroy();
+	});
+};
+
 exports.restart = function() {
 	schemas = {};
+	operations = {};
 	Object.keys(transforms).forEach(function(key) {
 		if (key.indexOf('_') === -1)
 			transforms[key] = {};

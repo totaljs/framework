@@ -515,7 +515,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2400;
-	this.version_header = '2.4.0-21';
+	this.version_header = '2.4.0-22';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -938,7 +938,7 @@ Framework.prototype.script = function(body, value, callback) {
 	var compilation = value === undefined && callback === undefined;
 
 	try {
-		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE;try{' + body + '}catch(e){next(e)}');
+		fn = new Function('next', 'value', 'now', 'var model=value;var global,require,process,GLOBAL,root,clearImmediate,clearInterval,clearTimeout,setImmediate,setInterval,setTimeout,console,$STRING,$VIEWCACHE,framework_internal,TransformBuilder,Pagination,Page,URLBuilder,UrlBuilder,SchemaBuilder,framework_builders,framework_utils,framework_mail,Image,framework_image,framework_nosql,Builders,U,utils,Utils,Mail,WTF,SOURCE,INCLUDE,MODULE,NOSQL,NOBIN,NOCOUNTER,NOSQLMEMORY,NOMEM,DATABASE,DB,CONFIG,INSTALL,UNINSTALL,RESOURCE,TRANSLATOR,LOG,LOGGER,MODEL,GETSCHEMA,CREATE,UID,TRANSFORM,MAKE,SINGLETON,NEWTRANSFORM,NEWSCHEMA,EACHSCHEMA,FUNCTION,ROUTING,SCHEDULE,OBSOLETE,DEBUG,TEST,RELEASE,is_client,is_server,F,framework,Controller,setTimeout2,clearTimeout2,String,Number,Boolean,Object,Function,Date,isomorphic,I,eval;UPTODATE,NEWOPERATION,OPERATION;try{' + body + '}catch(e){next(e)}');
 	} catch(e) {
 		callback && callback(e);
 		return compilation ? null : F;
@@ -4038,7 +4038,9 @@ Framework.prototype.$uninstall = function(owner, controller) {
 	F.routes.websockets = F.routes.websockets.remove('owner', owner);
 	F.routes.cors = F.routes.cors.remove('owner', owner);
 	F.schedules = F.schedules.remove('owner', owner);
-	F.modificators = F.schedules.remove('$owner', owner);
+	F.modificators = F.modificators.remove('$owner', owner);
+
+	framework_builders.uninstall(owner);
 
 	var owners = [];
 	var redirects = false;
@@ -7280,7 +7282,7 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 		callback = tmp;
 	}
 
-	var controller = new Controller('', null, null, null, '');
+	var controller = EMPTYCONTROLLER;
 	controller.layoutName = '';
 	controller.themeName = U.parseTheme(view);
 
@@ -7288,6 +7290,8 @@ Framework.prototype.mail = function(address, subject, view, model, callback, lan
 		view = prepare_viewname(view);
 	else if (this.onTheme)
 		controller.themeName = this.onTheme(controller);
+	else
+		controller.themeName = '';
 
 	var replyTo;
 
@@ -7332,6 +7336,8 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 		name = prepare_viewname(name);
 	} else if (this.onTheme)
 		controller.themeName = this.onTheme(controller);
+	else
+		controller.themeName = '';
 
 	return controller.view(name, model, true);
 };

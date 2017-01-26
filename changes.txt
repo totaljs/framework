@@ -18,6 +18,8 @@
 - added: configuration files supports options for all dependencies `module#mymodulename    (Object)   : { name: 'A custom options for dependency' }`
 - added: `U.chunker()` added a new property `chunker.pages` with count of all stored pages
 - added: `U.chunker()` added a new property `chunker.count` with count of all stored items
+- added: `NEWOPERATION(name, fn(error, callback(response), value))` - registers a new operation (same as schemas)
+- added: `OPERATION('name', function(err, response))` - executes an operation (same as schemas)
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`
@@ -39,6 +41,7 @@
 
 - removed: behaviours
 - removed: restrictions
+- removed: `TransformBuilder`
 - removed: `F.config['allow-compatibility']` (not used)
 - removed: `controller.date()` method has been useless
 - removed: dynamic view compilation through `.view()` method
