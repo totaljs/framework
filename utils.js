@@ -1659,20 +1659,6 @@ exports.setContentType = function(ext, type) {
 	return true;
 };
 
-/**
- * Create eTag hash from text
- * @param {String} text
- * @param {String} version
- * @return {String}
- */
-exports.etag = function(text, version) {
-	var sum = 0;
-	var length = text.length;
-	for (var i = 0; i < length; i++)
-		sum += text.charCodeAt(i);
-	return sum.toString() + (version ? ':' + version : '');
-};
-
 exports.path = function(path, delimiter) {
 	if (!path)
 		path = '';
