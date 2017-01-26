@@ -82,6 +82,7 @@ const REPOSITORY_META_IMAGE = '$image';
 const REPOSITORY_PLACE = '$place';
 const REPOSITORY_SITEMAP = '$sitemap';
 const ATTR_END = '"';
+const ETAG = '858';
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -113,11 +114,10 @@ HEADERS['mmr']['Expires'] = '0';
 HEADERS['mmr']['X-Powered-By'] = 'Total.js';
 HEADERS['proxy'] = {};
 HEADERS['proxy']['X-Proxy'] = 'total.js';
-HEADERS['responseFile.etag'] = {};
-HEADERS['responseFile.etag']['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
-HEADERS['responseFile.etag']['Access-Control-Allow-Origin'] = '*';
-HEADERS['responseFile.etag'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
-HEADERS['responseFile.etag']['X-Powered-By'] = 'Total.js';
+HEADERS['responseFile.lastmodified'] = {};;
+HEADERS['responseFile.lastmodified']['Access-Control-Allow-Origin'] = '*';
+HEADERS['responseFile.lastmodified'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
+HEADERS['responseFile.lastmodified']['X-Powered-By'] = 'Total.js';
 HEADERS['responseFile.release.compress'] = {};
 HEADERS['responseFile.release.compress'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 HEADERS['responseFile.release.compress']['Vary'] = 'Accept-Encoding';
@@ -515,7 +515,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2400;
-	this.version_header = '2.4.0-22';
+	this.version_header = '2.4.0-23';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -1891,6 +1891,8 @@ Framework.prototype.merge = function(url) {
 				fn = '~' + F.path.package(fn.substring(1));
 			else if (c === '=')
 				fn = '~' + F.path.themes(fn.substring(1));
+			else if (c === '#')
+				fn = '~' + F.path.temp('isomorphic_' + fn.substring(1) + '.min.js');
 			arr.push(fn);
 		}
 	}
@@ -1900,8 +1902,8 @@ Framework.prototype.merge = function(url) {
 	if (url[0] !== '/')
 		url = '/' + url;
 
-	var filename = F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'merge-' + createTemporaryKey(url));
-	F.routes.merge[url] = { filename: filename, files: arr };
+	var filename = F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'merged_' + createTemporaryKey(url));
+	F.routes.merge[url] = { filename: filename.replace(/\.(js|css)/g, ext => '.min' + ext), files: arr };
 	F.owners.push({ type: 'merge', owner: _owner, id: url });
 	return F;
 };
@@ -1941,7 +1943,7 @@ Framework.prototype.map = function(url, filename, filter) {
 	// isomorphic
 	if (filename[0] === '#') {
 		F.owners.push({ type: 'mapping', owner: _owner, id: url });
-		F.routes.mapping[url] = filename;
+		F.routes.mapping[url] = F.path.temp('isomorphic_' + filename.substring(1) + '.min.js');
 		return F;
 	}
 
@@ -3386,10 +3388,10 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		} else
 			obj.url = '/' + name + '.js';
 
-		F.map(framework_internal.preparePath(obj.url), '#' + name);
+		tmp = F.path.temp('isomorphic_' + name + '.min.js');
+		F.map(framework_internal.preparePath(obj.url), tmp);
 		F.isomorphic[name] = obj;
-		F.isomorphic[name].$$output = framework_internal.compile_javascript(content, '#' + name);
-
+		Fs.writeFileSync(tmp, prepare_isomorphic(name, framework_internal.compile_javascript(content, '#' + name)));
 		callback && callback(null, name);
 
 		setTimeout(function() {
@@ -4038,7 +4040,9 @@ Framework.prototype.$uninstall = function(owner, controller) {
 	F.routes.websockets = F.routes.websockets.remove('owner', owner);
 	F.routes.cors = F.routes.cors.remove('owner', owner);
 	F.schedules = F.schedules.remove('owner', owner);
-	F.modificators = F.modificators.remove('$owner', owner);
+
+	if (F.modificators)
+		F.modificators = F.modificators.remove('$owner', owner);
 
 	framework_builders.uninstall(owner);
 
@@ -4699,7 +4703,8 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
 		var file = F.path.temp((F.id ? 'i-' + F.id + '_' : '') + createTemporaryKey(uri.pathname));
 		F.path.verify('temp');
 		Fs.writeFileSync(file, F.compileContent(extension, framework_internal.parseBlock(F.routes.blocks[uri.pathname], buffer.toString(ENCODING)), filename), ENCODING);
-		F.temporary.path[key] = file + ';' + Fs.statSync(file).size;
+		var stats = Fs.statSync(file);
+		F.temporary.path[key] = [file, stats.size, stats.mtime.toUTCString()];
 		callback();
 	});
 	return F;
@@ -4719,7 +4724,8 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 	var filename = merge.filename;
 
 	if (!F.config.debug && existsSync(filename)) {
-		F.temporary.path[key] = filename + ';' + Fs.statSync(filename).size;
+		var stats = Fs.statSync(filename);
+		F.temporary.path[key] = [filename, stats.size, stats.mtime.toUTCString()];
 		callback();
 		return F;
 	}
@@ -4727,7 +4733,8 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 	var writer = Fs.createWriteStream(filename);
 
 	writer.on('finish', function() {
-		F.temporary.path[key] = filename + ';' + Fs.statSync(filename).size;
+		var stats = Fs.statSync(filename);
+		F.temporary.path[key] = [filename, stats.size, stats.mtime.toUTCString()];
 		callback();
 	});
 
@@ -4763,13 +4770,6 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 				writer.write(output);
 				next();
 			});
-			return;
-		}
-
-		if (filename[0] === '#') {
-			F.isDebug && merge_debug_writer(writer, filename, 'js', index++, block);
-			writer.write(prepare_isomorphic(filename.substring(1)));
-			next();
 			return;
 		}
 
@@ -4873,25 +4873,18 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 		return F;
 	}
 
-	fsFileExists(filename, function(e, size) {
-
+	fsFileExists(filename, function(e, size, sfile, stats) {
 		if (e) {
-
 			if (!noCompress && (extension === 'js' || extension === 'css') && !REG_NOCOMPRESS.test(filename))
 				return F.compileFile(uri, key, filename, extension, callback);
-
-			F.temporary.path[key] = filename + ';' + size;
+			F.temporary.path[key] = [filename, size, stats.mtime.toUTCString()];
 			callback();
-			return;
-		}
-
-		if (F.isVirtualDirectory) {
+		} else if (F.isVirtualDirectory)
 			F.compileValidationVirtual(uri, key, filename, extension, callback, noCompress);
-			return;
+		else {
+			F.temporary.path[key] = null;
+			callback();
 		}
-
-		F.temporary.path[key] = null;
-		callback();
 	});
 
 	return F;
@@ -4907,7 +4900,7 @@ Framework.prototype.compileValidationVirtual = function(uri, key, filename, exte
 	}
 
 	filename = tmpname;
-	fsFileExists(filename, function(e, size) {
+	fsFileExists(filename, function(e, size, sfile, stats) {
 
 		if (!e) {
 			F.temporary.path[key] = null;
@@ -4918,7 +4911,7 @@ Framework.prototype.compileValidationVirtual = function(uri, key, filename, exte
 		if (!noCompress && (extension === 'js' || extension === 'css') && !REG_NOCOMPRESS.test(filename))
 			return F.compileFile(uri, key, filename, extension, callback);
 
-		F.temporary.path[key] = filename + ';' + size;
+		F.temporary.path[key] = [filename, size, stats.mtime.toUTCString()];
 		callback();
 	});
 
@@ -4962,43 +4955,11 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		filename = F.onMapping(name, name, true, true);
 
 	if (!canResize) {
-
-		// is isomorphic?
-		if (filename[0] !== '#') {
-			if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension) {
-				res.noCompress = true;
-				filename = F.path.temp('components.' + req.extension);
-			}
-			F.responseFile(req, res, filename, undefined, undefined, done);
-			return F;
+		if (F.components.has && F.components[req.extension] && req.uri.pathname === F.config['static-url-components'] + req.extension) {
+			res.noCompress = true;
+			filename = F.path.temp('components.' + req.extension);
 		}
-
-		var key = filename.substring(1);
-		var iso = F.isomorphic[key];
-
-		if (!iso) {
-			F.response404(req, res);
-			done && done();
-			return;
-		}
-
-		var etag = U.etag(filename, (iso.version || '') + '-' + (F.config['etag-version'] || ''));
-		if (RELEASE && F.notModified(req, res, etag)) {
-			done && done();
-			return;
-		}
-
-		// isomorphic
-		var headers = {};
-
-		if (RELEASE) {
-			headers['Etag'] = etag;
-			headers['Expires'] = DATE_EXPIRES;
-			headers[RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=' + F.config['default-response-maxage'];
-		}
-
-		F.responseContent(req, res, 200, prepare_isomorphic(key), 'text/javascript', true, headers);
-		done && done();
+		F.responseFile(req, res, filename, undefined, undefined, done);
 		return F;
 	}
 
@@ -5094,8 +5055,7 @@ Framework.prototype.exists = function(req, res, max, callback) {
 	var httpcachevalid = false;
 
 	if (RELEASE) {
-		var etag = U.etag(req.url, F.config['etag-version']);
-		if (req.headers['if-none-match'] === etag)
+		if (req.headers['if-none-match'] === ETAG + F.config['etag-version'])
 			httpcachevalid = true;
 	}
 
@@ -5193,16 +5153,13 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	var name = F.temporary.path[key];
 	if (name === null) {
-
 		if (F.config.debug)
 			F.temporary.path[key] = undefined;
-
 		F.response404(req, res);
 		done && done();
 		return F;
 	}
 
-	var etag = U.etag(req.url, F.config['etag-version']);
 	var extension = req.extension;
 	var returnHeaders;
 	var index;
@@ -5220,28 +5177,30 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			extension = U.getExtension(filename);
 	}
 
-	if (!F.config.debug && req.headers['if-none-match'] === etag) {
+	if (name && RELEASE && req.headers['if-modified-since'] === name[2]) {
 
-		returnHeaders = HEADERS['responseFile.etag'];
+		returnHeaders = HEADERS['responseFile.lastmodified'];
+		if (res.getHeader('Last-Modified'))
+			delete returnHeaders['Last-Modified'];
+		else
+			returnHeaders['Last-Modified'] = name[2];
 
-		if (!res.getHeader('ETag') && etag)
-			returnHeaders.ETag = etag;
-		else if (returnHeaders.ETag)
-			delete returnHeaders.ETag;
-
-		if (!res.getHeader('Expires'))
-			returnHeaders.Expires = DATE_EXPIRES;
-		else if (returnHeaders.Expires)
+		if (res.getHeader('Expires'))
 			delete returnHeaders.Expires;
+		else
+			returnHeaders.Expires = DATE_EXPIRES;
+
+		if (res.getHeader('ETag'))
+			delete returnHeaders.Etag;
+		else
+			returnHeaders.Etag = ETAG + F.config['etag-version'];
 
 		returnHeaders[RESPONSE_HEADER_CONTENTTYPE] = U.getContentType(extension);
-
 		res.success = true;
 		res.writeHead(304, returnHeaders);
 		res.end();
 		F.stats.response.notModified++;
 		F._request_stats(false, req.isStaticFile);
-
 		done && done();
 		!req.isStaticFile && F.emit('request-end', req, res);
 		req.clear(true);
@@ -5250,16 +5209,13 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	// JS, CSS
 	if (name === undefined) {
-
 		if (F.isProcessing(key)) {
-
 			if (req.processing > F.config['default-request-timeout'])
 				F.response408(req, res);
 			else {
 				req.processing += 500;
 				setTimeout(() => F.responseFile(req, res, filename, downloadName, headers, done, key), 500);
 			}
-
 			return F;
 		}
 
@@ -5275,16 +5231,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return F;
 	}
 
-	index = name.lastIndexOf(';');
-	var size = null;
-
-	if (index === -1)
-		index = name.length;
-	else
-		size = name.substring(index + 1);
-
-	name = name.substring(0, index);
-
 	var contentType = U.getContentType(extension);
 	var accept = req.headers['accept-encoding'] || '';
 
@@ -5292,7 +5238,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		accept = 'gzip';
 
 	var compress = F.config['allow-gzip'] && REQUEST_COMPRESS_CONTENTTYPE[contentType] && accept.indexOf('gzip') !== -1;
-	var range = req.headers['range'] || '';
+	var range = req.headers['range'];
 	var canCache = RELEASE && contentType !== 'text/cache-manifest';
 
 	if (canCache) {
@@ -5331,23 +5277,24 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	else if (returnHeaders['Content-Disposition'])
 		delete returnHeaders['Content-Disposition'];
 
-	if (canCache && etag && !res.getHeader('ETag'))
-		returnHeaders.Etag = etag;
-	else if (returnHeaders.Etag)
-		delete returnHeaders.Etag;
+	if (res.getHeader('Last-Modified'))
+		delete returnHeaders['Last-Modified'];
+	else
+		returnHeaders['Last-Modified'] = name[2];
 
+	returnHeaders.Etag = ETAG + F.config['etag-version'];
 	res.success = true;
 
 	if (range) {
-		F.responseRange(name, range, returnHeaders, req, res, done);
+		F.responseRange(name[0], range, returnHeaders, req, res, done);
 		return F;
 	}
 
 	if (F.config.debug && F.isProcessed(key))
 		F.temporary.path[key] = undefined;
 
-	if (size && size !== '0' && !compress)
-		returnHeaders[RESPONSE_HEADER_CONTENTLENGTH] = size;
+	if (name[1] && !compress)
+		returnHeaders[RESPONSE_HEADER_CONTENTLENGTH] = name[1];
 	else if (returnHeaders[RESPONSE_HEADER_CONTENTLENGTH])
 		delete returnHeaders[RESPONSE_HEADER_CONTENTLENGTH];
 
@@ -5365,7 +5312,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	if (compress) {
 		res.writeHead(200, returnHeaders);
-		fsStreamRead(name, undefined, function(stream, next) {
+		fsStreamRead(name[0], undefined, function(stream, next) {
 			framework_internal.onFinished(res, function(err) {
 				framework_internal.destroyStream(stream);
 				next();
@@ -5380,7 +5327,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	}
 
 	res.writeHead(200, returnHeaders);
-	fsStreamRead(name, undefined, function(stream, next) {
+	fsStreamRead(name[0], undefined, function(stream, next) {
 		stream.pipe(res);
 		framework_internal.onFinished(res, function(err) {
 			framework_internal.destroyStream(stream);
@@ -5573,7 +5520,6 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
 			F.path.verify('temp');
 			var image = framework_image.load(stream, im);
-
 			fnProcess(image);
 
 			var extension = U.getExtension(name);
@@ -5602,7 +5548,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 					return;
 				}
 
-				F.temporary.path[key] = name + ';' + Fs.statSync(name).size;
+				var stats = Fs.statSync(name);
+				F.temporary.path[key] = [name, stats.size, stats.mtime.toUTCString()];
 				F.responseFile(req, res, name, undefined, headers, done, key);
 			});
 		});
@@ -5653,7 +5600,8 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				return;
 			}
 
-			F.temporary.path[key] = name + ';' + Fs.statSync(name).size;
+			var stats = Fs.statSync(name);
+			F.temporary.path[key] = [name, stats.size, stats.mtime.toUTCString()];
 			F.responseFile(req, res, name, undefined, headers, done, key);
 		});
 
@@ -5984,7 +5932,7 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 
 Framework.prototype.setModified = function(req, res, value) {
 	if (typeof(value) === 'string')
-		res.setHeader('Etag', value + ':' + F.config['etag-version']);
+		res.setHeader('Etag', value + F.config['etag-version']);
 	else
 		res.setHeader('Last-Modified', value.toUTCString());
 	return F;
@@ -6008,7 +5956,7 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 		if (!val)
 			return false;
 
-		var myetag = compare + ':' + F.config['etag-version'];
+		var myetag = compare + F.config['etag-version'];
 		if (val !== myetag)
 			return false;
 
@@ -7337,7 +7285,7 @@ Framework.prototype.view = function(name, model, layout, repository, language) {
 	} else if (this.onTheme)
 		controller.themeName = this.onTheme(controller);
 	else
-		controller.themeName = '';
+		controller.themeName = undefined;
 
 	return controller.view(name, model, true);
 };
@@ -7363,7 +7311,7 @@ Framework.prototype.viewCompile = function(body, model, layout, repository, lang
 
 	controller.layoutName = layout || '';
 	controller.language = language || '';
-	controller.themeName = '';
+	controller.themeName = undefined;
 	controller.repository = typeof(repository) === 'object' && repository ? repository : EMPTYOBJECT;
 
 	return controller.viewCompile(body, model, true);
@@ -14382,7 +14330,7 @@ function fsFileExists(filename, callback) {
 	U.queue('F.files', F.config['default-maximum-file-descriptors'], function(next) {
 		Fs.lstat(filename, function(err, stats) {
 			next();
-			callback(!err && stats.isFile(), stats ? stats.size : 0, stats ? stats.isFile() : false);
+			callback(!err && stats.isFile(), stats ? stats.size : 0, stats ? stats.isFile() : false, stats);
 		});
 	});
 };
@@ -14485,10 +14433,8 @@ function prepare_staticurl(url, isDirectory) {
 	return url;
 }
 
-function prepare_isomorphic(name) {
-	name = name.replace(/\.js$/i, '');
-	var content = F.isomorphic[name];
-	return 'if(window["isomorphic"]===undefined)window.isomorphic=window.I={};isomorphic["' + name + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + (content ? content.$$output : '') + ';return exports;})(null,null,null,null,null,true,false)';
+function prepare_isomorphic(name, value) {
+	return 'if(window["isomorphic"]===undefined)window.isomorphic=window.I={};isomorphic["' + name.replace(/\.js$/i, '') + '"]=(function(framework,F,U,utils,Utils,is_client,is_server){var module={},exports=module.exports={};' + value + ';return exports;})(null,null,null,null,null,true,false)';
 }
 
 function isGZIP(req) {
