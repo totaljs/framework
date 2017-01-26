@@ -610,15 +610,14 @@ function test_ErrorBuilder() {
 
 function test_Operations() {
 
-	NEWOPERATION('testA', function(error, callback, value) {
+	NEWOPERATION('testA', function(error, value, callback) {
 		callback(SUCCESS(true, value));
 	});
 
-	NEWOPERATION('testB', function(error, callback, value) {
+	NEWOPERATION('testB', function(error, value, callback) {
 		error.push('bug');
 		callback();
 	});
-
 
 	OPERATION('testA', 123456, function(err, response) {
 		assert.ok(err === null, 'OPERATIONS: errors');

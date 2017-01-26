@@ -3778,23 +3778,23 @@ global.NEWOPERATION = function(name, fn) {
 	operations[name].$owner = F.$owner();
 };
 
-global.OPERATION = function(name, model, callback) {
+global.OPERATION = function(name, value, callback) {
 
 	if (callback === undefined) {
-		callback = model;
-		model = EMPTYOBJECT;
+		callback = value;
+		value = EMPTYOBJECT;
 	}
 
 	var fn = operations[name];
 	var error = new ErrorBuilder();
 	if (fn) {
-		fn(error, function(value) {
+		fn(error, value, function(value) {
 			if (value instanceof Error) {
 				error.push(value);
 				value = EMPTYOBJECT;
 			}
 			callback(error.hasError() ? error : null, value);
-		}, model);
+		});
 	} else {
 		error.push('Operation "{0}" not found.'.format(name));
 		callback(error, EMPTYOBJECT);
