@@ -1507,23 +1507,14 @@ exports.parseInt = function(obj, def) {
 	if (obj == null)
 		return def || 0;
 	var type = typeof(obj);
-	return type === 'number' ? obj : (type !== 'string' ? obj.toString() : obj).parseInt();
+	return type === 'number' ? obj : (type !== 'string' ? obj.toString() : obj).parseInt(def);
 };
 
 exports.parseBool = exports.parseBoolean = function(obj, def) {
-
 	if (obj == null)
 		return def === undefined ? false : def;
-
 	var type = typeof(obj);
-	if (type === 'boolean')
-		return obj;
-
-	if (type === 'number')
-		return obj > 0;
-
-	var str = type !== 'string' ? obj.toString() : obj;
-	return str.parseBool(def);
+	return type === 'boolean' ? obj : type === 'number' ? obj > 0 : (type !== 'string' ? obj.toString() : obj).parseBool(def);
 };
 
 /**
@@ -1533,16 +1524,10 @@ exports.parseBool = exports.parseBoolean = function(obj, def) {
  * @return {Number}
  */
 exports.parseFloat = function(obj, def) {
-
 	if (obj == null)
 		return def || 0;
-
 	var type = typeof(obj);
-	if (type === 'number')
-		return obj;
-
-	var str = type !== 'string' ? obj.toString() : obj;
-	return str.parseFloat(def);
+	return type === 'number' ? obj : (type !== 'string' ? obj.toString() : obj).parseFloat(def);
 };
 
 /**

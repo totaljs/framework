@@ -165,6 +165,9 @@ function prototypeString() {
 	str = '   a  ';
 	assert.ok(str.parseInt() === 0, 'string.parseInt(): ' + str);
 
+	str = '   a  ';
+	assert.ok(str.parseInt(-1) === -1, 'string.parseInt(): ' + str + ' / default');
+
 	str = '';
 	assert.ok(str.parseInt() === 0, 'string.parseInt(): ' + str);
 
@@ -446,15 +449,6 @@ function other() {
 
 	str = '.xFx';
 	assert.ok(utils.getContentType(str) === 'application/octet-stream', 'utils.getContentType(): ' + str);
-
-	str = 'logo.jpg';
-	assert.ok(utils.etag(str) === '800', 'utils.etag(): ' + str);
-
-	str = 'logo.jpg?=1';
-	assert.ok(utils.etag(str) === '973', 'utils.etag(): ' + str);
-
-	str = 'logo.jpg?=2';
-	assert.ok(utils.etag(str) === '974', 'utils.etag(): ' + str);
 
 	str = '/logo';
 	assert.ok(utils.path(str) === '/logo/', 'utils.path(): ' + str);
