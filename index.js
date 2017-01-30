@@ -6627,6 +6627,8 @@ Framework.prototype.listener = function(req, res) {
 
 	if (F._length_wait)
 		return F.response503(req, res);
+	else if (!req.host) // HTTP 1.0 without host
+		return F.response400(req, res);
 
 	var headers = req.headers;
 	var protocol = req.connection.encrypted || headers['x-forwarded-protocol'] === 'https' ? 'https' : 'http';
@@ -12102,7 +12104,7 @@ Controller.prototype.stream = function(contentType, stream, download, headers, d
 };
 
 /**
- * Throw 401 - Bad request.
+ * Throw 400 - Bad request.
  * @param  {String} problem Description of problem (optional)
  * @return {Controller}
  */
