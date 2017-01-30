@@ -1428,8 +1428,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		if (!flags)
 			flags = [];
 		_flags.forEach(function(flag) {
-			if (flags.indexOf(flag) === -1)
-				flags.push(flag);
+			flags.indexOf(flag) === -1 && flags.push(flag);
 		});
 	}
 
@@ -1776,6 +1775,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 		hash: hash,
 		name: name,
 		priority: priority,
+		sitemap: sitemap ? sitemap.id : '',
 		schema: schema,
 		workflow: workflow,
 		subdomain: subdomain,
