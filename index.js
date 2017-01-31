@@ -7742,11 +7742,10 @@ Framework.prototype.clear = function(callback, isInit) {
 	if (isInit) {
 		if (F.config['disable-clear-temporary-directory']) {
 			// clears only JS and CSS files
-			F.wait('files processing', true);
 			U.ls(dir, function(files, directories) {
-				F.unlink(files);
-				callback && callback();
-				F.wait('files processing', false);
+				F.unlink(files, function() {
+					callback && callback();
+				});
 			}, function(filename, folder) {
 				if (folder || (plus && !filename.substring(dir.length).startsWith(plus)))
 					return false;
@@ -7763,7 +7762,6 @@ Framework.prototype.clear = function(callback, isInit) {
 		return F;
 	}
 
-	F.wait('files processing', true);
 	U.ls(dir, function(files, directories) {
 
 		if (isInit) {
@@ -7780,7 +7778,6 @@ Framework.prototype.clear = function(callback, isInit) {
 
 		F.unlink(files, function() {
 			F.rmdir(directories, callback);
-			F.wait('files processing', false);
 		});
 	});
 
