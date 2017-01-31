@@ -48,7 +48,7 @@ const REQUEST_COMPRESS_CONTENTTYPE = { 'text/plain': true, 'text/javascript': tr
 const TEMPORARY_KEY_REGEX = /\//g;
 const REG_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i;
 const REG_ROBOT = /search|agent|bot|crawler|spider/i;
-const REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|mp4|ogg|package|pdf)"/gi;
+const REG_VERSIONS = /(href|src)="[a-zA-Z0-9\/\:\-\.]+\.(jpg|js|css|png|gif|svg|html|ico|json|less|sass|scss|swf|txt|webp|woff|woff2|xls|xlsx|xml|xsl|xslt|zip|rar|csv|doc|docx|eps|gzip|jpe|jpeg|manifest|mov|mp3|flac|mp4|ogg|package|pdf)"/gi;
 const REG_MULTIPART = /\/form\-data$/i;
 const REG_COMPILECSS = /url\(.*?\)/g;
 const REG_ROUTESTATIC = /^(\/\/|https\:|http\:)+/;
@@ -238,6 +238,7 @@ HEADERS.mmrpipe = { end: false };
 
 Object.freeze(HEADERS.authorization);
 
+var IMAGEMAGICK = false;
 var _controller = '';
 var _owner = '';
 var _test;
@@ -562,7 +563,7 @@ function Framework() {
 		'static-url-font': '/fonts/',
 		'static-url-download': '/download/',
 		'static-url-components': '/components.',
-		'static-accepts': { 'jpg': true, 'png': true, 'gif': true, 'ico': true, 'js': true, 'css': true, 'txt': true, 'xml': true, 'woff': true, 'woff2': true, 'otf': true, 'ttf': true, 'eot': true, 'svg': true, 'zip': true, 'rar': true, 'pdf': true, 'docx': true, 'xlsx': true, 'doc': true, 'xls': true, 'html': true, 'htm': true, 'appcache': true, 'manifest': true, 'map': true, 'ogv': true, 'ogg': true, 'mp4': true, 'mp3': true, 'webp': true, 'webm': true, 'swf': true, 'package': true, 'json': true, 'md': true, 'm4v': true, 'jsx': true },
+		'static-accepts': { 'flac': true, 'jpg': true, 'png': true, 'gif': true, 'ico': true, 'js': true, 'css': true, 'txt': true, 'xml': true, 'woff': true, 'woff2': true, 'otf': true, 'ttf': true, 'eot': true, 'svg': true, 'zip': true, 'rar': true, 'pdf': true, 'docx': true, 'xlsx': true, 'doc': true, 'xls': true, 'html': true, 'htm': true, 'appcache': true, 'manifest': true, 'map': true, 'ogv': true, 'ogg': true, 'mp4': true, 'mp3': true, 'webp': true, 'webm': true, 'swf': true, 'package': true, 'json': true, 'md': true, 'm4v': true, 'jsx': true },
 
 		// 'static-accepts-custom': [],
 
@@ -605,7 +606,7 @@ function Framework() {
 		// Used in F._service()
 		// All values are in minutes
 		'default-interval-clear-resources': 20,
-		'default-interval-clear-cache': 7,
+		'default-interval-clear-cache': 10,
 		'default-interval-precompile-views': 61,
 		'default-interval-websocket-ping': 3,
 		'default-interval-clear-dnscache': 120,
@@ -686,13 +687,14 @@ function Framework() {
 
 	this.temporary = {
 		path: {},
+		notfound: {},
 		processing: {},
 		range: {},
 		views: {},
 		versions: {},
 		dependencies: {}, // temporary for module dependencies
 		other: {},
-		internal: {} // internal controllers/modules names for the routing
+		internal: {} // controllers/modules names for the routing
 	};
 
 	this.stats = {
@@ -1904,6 +1906,7 @@ Framework.prototype.merge = function(url) {
 
 	var filename = F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'merged_' + createTemporaryKey(url));
 	F.routes.merge[url] = { filename: filename.replace(/\.(js|css)/g, ext => '.min' + ext), files: arr };
+	Fs.unlink(F.routes.merge[url].filename, NOOP);
 	F.owners.push({ type: 'merge', owner: _owner, id: url });
 	return F;
 };
@@ -3551,6 +3554,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			if (obj.booting === 'root') {
 				F.directory = directory = tmpdir;
 				F.temporary.path = {};
+				F.temporary.notfound = {};
 				F._configure();
 				F._configure_versions();
 				F._configure_dependencies();
@@ -3711,6 +3715,7 @@ Framework.prototype.$restart = function() {
 
 		F.temporary = {
 			path: {},
+			notfound: {},
 			processing: {},
 			range: {},
 			views: {},
@@ -4521,6 +4526,7 @@ Framework.prototype.usage = function(detailed) {
 	var models = Object.keys(F.models);
 	var helpers = Object.keys(F.helpers);
 	var staticFiles = Object.keys(F.temporary.path);
+	var staticNotfound = Object.keys(F.temporary.notfound);
 	var staticRange = Object.keys(F.temporary.range);
 	var redirects = Object.keys(F.routes.redirects);
 	var output = {};
@@ -4559,6 +4565,7 @@ Framework.prototype.usage = function(detailed) {
 		problem: F.problems.length,
 		queue: pending,
 		files: staticFiles.length,
+		notfound: staticNotfound.length,
 		streaming: staticRange.length,
 		modificator:  F.modificators ? F.modificators.length : 0,
 		viewphrases: $VIEWCACHE.length,
@@ -4695,7 +4702,7 @@ Framework.prototype.compileFile = function(uri, key, filename, extension, callba
 
 		if (err) {
 			F.error(err, filename, uri);
-			F.temporary.path[key] = null;
+			F.temporary.notfound[key] = true;
 			callback();
 			return;
 		}
@@ -4766,7 +4773,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 						output += NEWLINE;
 				}
 
-				F.isDebug && merge_debug_writer(writer, filename, extension, index++, block);
+				DEBUG && merge_debug_writer(writer, filename, extension, index++, block);
 				writer.write(output);
 				next();
 			});
@@ -4822,7 +4829,7 @@ Framework.prototype.compileMerge = function(uri, key, extension, callback) {
 					output += NEWLINE;
 			}
 
-			F.isDebug && merge_debug_writer(writer, filename, extension, index++, block);
+			DEBUG && merge_debug_writer(writer, filename, extension, index++, block);
 			writer.write(output);
 			next();
 		});
@@ -4882,7 +4889,7 @@ Framework.prototype.compileValidation = function(uri, key, filename, extension, 
 		} else if (F.isVirtualDirectory)
 			F.compileValidationVirtual(uri, key, filename, extension, callback, noCompress);
 		else {
-			F.temporary.path[key] = null;
+			F.temporary.notfound[key] = true;
 			callback();
 		}
 	});
@@ -4894,7 +4901,7 @@ Framework.prototype.compileValidationVirtual = function(uri, key, filename, exte
 
 	var tmpname = filename.replace(F.config['directory-public'], F.config['directory-public-virtual']);
 	if (tmpname === filename) {
-		F.temporary.path[key] = null;
+		F.temporary.notfound[key] = true;
 		callback();
 		return;
 	}
@@ -4903,7 +4910,7 @@ Framework.prototype.compileValidationVirtual = function(uri, key, filename, exte
 	fsFileExists(filename, function(e, size, sfile, stats) {
 
 		if (!e) {
-			F.temporary.path[key] = null;
+			F.temporary.notfound[key] = true;
 			callback();
 			return;
 		}
@@ -4932,6 +4939,13 @@ Framework.prototype.responseStatic = function(req, res, done) {
 	}
 
 	if (!F.config['static-accepts'][req.extension]) {
+		F.response404(req, res);
+		done && done();
+		return F;
+	}
+
+	req.$key = createTemporaryKey(req);
+	if (F.temporary.notfound[req.$key]) {
 		F.response404(req, res);
 		done && done();
 		return F;
@@ -4974,10 +4988,8 @@ Framework.prototype.responseStatic = function(req, res, done) {
 		return;
 	}
 
-	var key = createTemporaryKey(req);
-	var tmp = F.path.temp(key);
-
-	if (F.temporary.path[key]) {
+	var tmp = F.path.temp(req.$key);
+	if (F.temporary.path[req.$key]) {
 		F.responseFile(req, res, req.uri.pathname, undefined, undefined, done);
 		return F;
 	}
@@ -5054,10 +5066,7 @@ Framework.prototype.exists = function(req, res, max, callback) {
 	var filename = F.path.temp(name);
 	var httpcachevalid = false;
 
-	if (RELEASE) {
-		if (req.headers['if-none-match'] === ETAG + F.config['etag-version'])
-			httpcachevalid = true;
-	}
+	RELEASE && (req.headers['if-none-match'] === ETAG + F.config['etag-version']) && (httpcachevalid = true);
 
 	if (F.isProcessed(name) || httpcachevalid) {
 		F.responseFile(req, res, filename);
@@ -5091,7 +5100,7 @@ Framework.prototype.isProcessed = function(filename) {
 		filename = F.path.public($decodeURIComponent(name));
 	}
 
-	return F.temporary.path[filename] !== undefined;
+	return !F.temporary.notfound[filename] && F.temporary.path[filename] !== undefined;
 };
 
 /**
@@ -5149,17 +5158,16 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		filename = F.path.package(filename.substring(1));
 
 	if (!key)
-		key = createTemporaryKey(req);
+		key = req.$key || createTemporaryKey(req);
 
-	var name = F.temporary.path[key];
-	if (name === null) {
-		if (F.config.debug)
-			F.temporary.path[key] = undefined;
+	if (F.temporary.notfound[key]) {
+		F.config.debug && (F.temporary.notfound[key] = undefined);
 		F.response404(req, res);
 		done && done();
 		return F;
 	}
 
+	var name = F.temporary.path[key];
 	var extension = req.extension;
 	var returnHeaders;
 	var index;
@@ -5209,6 +5217,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 
 	// JS, CSS
 	if (name === undefined) {
+
 		if (F.isProcessing(key)) {
 			if (req.processing > F.config['default-request-timeout'])
 				F.response408(req, res);
@@ -5290,8 +5299,7 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 		return F;
 	}
 
-	if (F.config.debug && F.isProcessed(key))
-		F.temporary.path[key] = undefined;
+	DEBUG && F.isProcessed(key) && (F.temporary.path[key] = undefined);
 
 	if (name[1] && !compress)
 		returnHeaders[RESPONSE_HEADER_CONTENTLENGTH] = name[1];
@@ -5317,7 +5325,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 				framework_internal.destroyStream(stream);
 				next();
 			});
-
 			stream.pipe(Zlib.createGzip()).pipe(res);
 			done && done();
 			!req.isStaticFile && F.emit('request-end', req, res);
@@ -5333,7 +5340,6 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 			framework_internal.destroyStream(stream);
 			next();
 		});
-
 		done && done();
 		!req.isStaticFile && F.emit('request-end', req, res);
 		req.clear(true);
@@ -5348,10 +5354,14 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
  * @return {Framework}
  */
 Framework.prototype.touch = function(url) {
-	if (url)
-		delete F.temporary.path[createTemporaryKey(url)];
-	else
+	if (url) {
+		var key = createTemporaryKey(url);
+		delete F.temporary.path[key];
+		delete F.temporary.notfound[key];
+	} else {
 		F.temporary.path = {};
+		F.temporary.notfound = {};
+	}
 	return F;
 };
 
@@ -5465,15 +5475,15 @@ Framework.prototype.responseCustom = function(req, res) {
  */
 Framework.prototype.responseImage = function(req, res, filename, fnProcess, headers, done) {
 
-	var key = createTemporaryKey(req);
-	var name = F.temporary.path[key];
-	if (name === null) {
+	var key = req.$key || createTemporaryKey(req);
+	if (F.temporary.notfound[key]) {
 		F.response404(req, res);
 		done && done();
 		return F;
 	}
 
-	var stream = null;
+	var name = F.temporary.path[key];
+	var stream;
 
 	if (typeof(filename) === 'object')
 		stream = filename;
@@ -5485,19 +5495,15 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 		return F;
 	}
 
-	var im = F.config['default-image-converter'] === 'im';
-
 	if (F.isProcessing(key)) {
-
 		if (req.processing > F.config['default-request-timeout']) {
 			F.response408(req, res);
 			done && done();
-			return;
+		} else {
+			req.processing += 500;
+			setTimeout(() => F.responseImage(req, res, filename, fnProcess, headers, done), 500);
 		}
-
-		req.processing += 500;
-		setTimeout(() => F.responseImage(req, res, filename, fnProcess, headers, done), 500);
-		return;
+		return F;
 	}
 
 	var plus = F.id ? 'i-' + F.id + '_' : '';
@@ -5513,13 +5519,12 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				delete F.temporary.processing[key];
 				F.temporary.path[key] = name;
 				F.responseFile(req, res, name, undefined, headers, done, key);
-				if (F.isDebug)
-					F.temporary.path[key] = undefined;
+				DEBUG && (F.temporary.path[key] = undefined);
 				return;
 			}
 
 			F.path.verify('temp');
-			var image = framework_image.load(stream, im);
+			var image = framework_image.load(stream, IMAGEMAGICK);
 			fnProcess(image);
 
 			var extension = U.getExtension(name);
@@ -5537,14 +5542,10 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 				delete F.temporary.processing[key];
 
 				if (err) {
-
-					F.temporary.path[key] = null;
+					F.temporary.notfound[key] = true;
 					F.response500(req, res, err);
 					done && done();
-
-					if (F.isDebug)
-						F.temporary.path[key] = undefined;
-
+					DEBUG && (F.temporary.notfound[key] = undefined);
 					return;
 				}
 
@@ -5561,27 +5562,23 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 	fsFileExists(filename, function(exist) {
 
 		if (!exist) {
-
 			delete F.temporary.processing[key];
-			F.temporary.path[key] = null;
+			F.temporary.notfound[key] = true;
 			F.response404(req, res);
 			done && done();
-
-			if (F.isDebug)
-				F.temporary.path[key] = undefined;
-
+			DEBUG && (F.temporary.notfound[key] = undefined);
 			return;
 		}
 
 		F.path.verify('temp');
-		var image = framework_image.load(filename, im);
+		var image = framework_image.load(filename, IMAGEMAGICK);
 		fnProcess(image);
 
 		var extension = U.getExtension(name);
 		if (extension !== image.outputType) {
 			var index = name.lastIndexOf('.' + extension);
 			if (index === -1)
-				name +=  '.' + image.outputType;
+				name += '.' + image.outputType;
 			else
 				name = name.substring(0, index) + '.' + image.outputType;
 		}
@@ -5592,11 +5589,10 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			delete F.temporary.processing[key];
 
 			if (err) {
-				F.temporary.path[key] = null;
+				F.temporary.notfound[key] = true;
 				F.response500(req, res, err);
 				done && done();
-				if (F.isDebug)
-					F.temporary.path[key] = undefined;
+				DEBUG && (F.temporary.notfound[key] = undefined);
 				return;
 			}
 
@@ -5604,7 +5600,6 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 			F.temporary.path[key] = [name, stats.size, stats.mtime.toUTCString()];
 			F.responseFile(req, res, name, undefined, headers, done, key);
 		});
-
 	});
 
 	return F;
@@ -5612,15 +5607,17 @@ Framework.prototype.responseImage = function(req, res, filename, fnProcess, head
 
 Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProcess, headers, done) {
 
-	var key = createTemporaryKey(req);
-	var name = F.temporary.path[key];
-	if (name === null) {
+	var key = req.$key || createTemporaryKey(req);
+
+	if (F.temporary.notfound[key]) {
 		F.response404(req, res);
 		done && done();
+		DEBUG && (F.temporary.notfound[key] = undefined);
 		return F;
 	}
 
-	if (name !== undefined) {
+	var name = F.temporary.path[key];
+	if (name) {
 		F.responseFile(req, res, '', undefined, headers, done, key);
 		return F;
 	}
@@ -5661,16 +5658,15 @@ Framework.prototype.responseImagePrepare = function(req, res, fnPrepare, fnProce
 Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnProcess, headers, done) {
 
 	var stream;
+
 	if (typeof(filename) === 'object')
 		stream = filename;
 	else if (filename[0] === '@')
 		filename = F.path.package(filename.substring(1));
 
-	var im = F.config['default-image-converter'] === 'im';
-
 	// STREAM
 	if (stream) {
-		var image = framework_image.load(stream, im);
+		var image = framework_image.load(stream, IMAGEMAGICK);
 		fnProcess(image);
 		F.stats.response.image++;
 		F.responseStream(req, res, U.getContentType(image.outputType), image, null, headers, done);
@@ -5682,7 +5678,7 @@ Framework.prototype.responseImageWithoutCache = function(req, res, filename, fnP
 
 		if (e) {
 			F.path.verify('temp');
-			var image = framework_image.load(filename, im);
+			var image = framework_image.load(filename, IMAGEMAGICK);
 			fnProcess(image);
 			F.stats.response.image++;
 			F.responseStream(req, res, U.getContentType(image.outputType), image, null, headers, done);
@@ -5806,8 +5802,7 @@ Framework.prototype.responseRange = function(name, range, headers, req, res, don
 
 	if (!total) {
 		total = Fs.statSync(name).size;
-		if (RELEASE)
-			F.temporary.range[name] = total;
+		RELEASE && (F.temporary.range[name] = total);
 	}
 
 	if (end === 0)
@@ -6457,7 +6452,7 @@ Framework.prototype.console = function() {
 	console.log('Name        : ' + F.config.name);
 	console.log('Version     : ' + F.config.version);
 	console.log('Author      : ' + F.config.author);
-	console.log('Date        : ' + new Date().format('yyyy-MM-dd HH:mm:ss'));
+	console.log('Date        : ' + F.datetime.format('yyyy-MM-dd HH:mm:ss'));
 	console.log('Mode        : ' + (F.config.debug ? 'debug' : 'release'));
 	console.log('====================================================\n');
 	console.log('{2}://{0}:{1}/'.format(F.ip, F.port, F.isHTTPS ? 'https' : 'http'));
@@ -6488,6 +6483,11 @@ Framework.prototype._service = function(count) {
 	UIDGENERATOR.date = F.datetime.format('yyMMddHHmm');
 	UIDGENERATOR.index = 1;
 
+	var releasegc = false;
+
+	// clears temporary memory for non-exist files
+	F.temporary.notfound = {};
+
 	// every 7 minutes (default) service clears static cache
 	if (count % F.config['default-interval-clear-cache'] === 0) {
 
@@ -6496,9 +6496,7 @@ Framework.prototype._service = function(count) {
 		F.temporary.range = {};
 		F.temporary.views = {};
 		F.temporary.other = {};
-
-		if (global.$VIEWCACHE && global.$VIEWCACHE.length)
-			global.$VIEWCACHE = [];
+		global.$VIEWCACHE && global.$VIEWCACHE.length && (global.$VIEWCACHE = []);
 
 		// Clears command cache
 		Image.clear();
@@ -6506,6 +6504,8 @@ Framework.prototype._service = function(count) {
 		var dt = F.datetime.add('-5 minutes');
 		for (var key in F.databases)
 			F.databases[key] && F.databases[key].inmemorylastusage < dt && F.databases[key].release();
+
+		releasegc = true;
 	}
 
 	// every 61 minutes (default) services precompile all (installed) views
@@ -6571,8 +6571,7 @@ Framework.prototype._service = function(count) {
 				F.temporary.range = {};
 				F.temporary.views = {};
 				F.temporary.other = {};
-				if (global.$VIEWCACHE && global.$VIEWCACHE.length)
-					global.$VIEWCACHE = [];
+				global.$VIEWCACHE && global.$VIEWCACHE.length && (global.$VIEWCACHE = []);
 			}
 		});
 	}
@@ -6581,14 +6580,14 @@ Framework.prototype._service = function(count) {
 	if (count % F.config['default-interval-clear-resources'] === 0) {
 		F.emit('clear', 'resources');
 		F.resources = {};
-		global.gc && setTimeout(global.gc, 1000);
+		releasegc = true;
 	}
 
 	// Update expires date
-	if (count % 1000 === 0)
-		DATE_EXPIRES = F.datetime.add('y', 1).toUTCString();
+	count % 1000 === 0 && (DATE_EXPIRES = F.datetime.add('y', 1).toUTCString());
 
 	F.emit('service', count);
+	releasegc && global.gc && setTimeout(() => global.gc(), 1000);
 
 	// Run schedules
 	if (!F.schedules.length)
@@ -7202,7 +7201,7 @@ Framework.prototype.include = function(name, options, callback) {
  */
 Framework.prototype._log = function(a, b, c, d) {
 
-	if (!F.isDebug)
+	if (RELEASE)
 		return false;
 
 	var length = arguments.length;
@@ -7743,9 +7742,11 @@ Framework.prototype.clear = function(callback, isInit) {
 	if (isInit) {
 		if (F.config['disable-clear-temporary-directory']) {
 			// clears only JS and CSS files
+			F.wait('files processing', true);
 			U.ls(dir, function(files, directories) {
 				F.unlink(files);
 				callback && callback();
+				F.wait('files processing', false);
 			}, function(filename, folder) {
 				if (folder || (plus && !filename.substring(dir.length).startsWith(plus)))
 					return false;
@@ -7762,6 +7763,7 @@ Framework.prototype.clear = function(callback, isInit) {
 		return F;
 	}
 
+	F.wait('files processing', true);
 	U.ls(dir, function(files, directories) {
 
 		if (isInit) {
@@ -7776,13 +7778,17 @@ Framework.prototype.clear = function(callback, isInit) {
 			directories = [];
 		}
 
-		F.unlink(files, () => F.rmdir(directories, callback));
+		F.unlink(files, function() {
+			F.rmdir(directories, callback);
+			F.wait('files processing', false);
+		});
 	});
 
 	if (!isInit) {
 		// clear static cache
 		F.temporary.path = {};
 		F.temporary.range = {};
+		F.temporary.notfound = {};
 	}
 
 	return F;
@@ -8598,6 +8604,7 @@ Framework.prototype._configure = function(arr, rewrite) {
 		});
 	});
 
+	IMAGEMAGICK = F.config['default-image-converter'] === 'im';
 	done();
 	F.emit('configure', F.config);
 	return F;
@@ -14417,7 +14424,7 @@ process.on('message', function(msg, h) {
 });
 
 function prepare_error(e) {
-	return (!F.isDebug || !e) ? '' : ' :: ' + (e instanceof ErrorBuilder ? e.plain() : e.stack ? e.stack.toString() : e.toString());
+	return (RELEASE || !e) ? '' : ' :: ' + (e instanceof ErrorBuilder ? e.plain() : e.stack ? e.stack.toString() : e.toString());
 }
 
 function prepare_filename(name) {

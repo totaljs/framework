@@ -96,6 +96,7 @@ var CONTENTTYPES = {
 	'dtd': 'application/xml-dtd',
 	'eps': 'application/postscript',
 	'exe': 'application/octet-stream',
+	'flac': 'audio/x-flac',
 	'geojson': 'application/json',
 	'gif': 'image/gif',
 	'gzip': 'application/x-gzip',
@@ -4838,10 +4839,10 @@ function FileList() {
 }
 
 FileList.prototype.reset = function() {
-	var self = this;
-	self.file.length = 0;
-	self.directory.length = 0;
-	self.pendingDirectory.length = 0;
+	this.file.length = 0;
+	this.directory.length = 0;
+	this.pendingDirectory.length = 0;
+	return this;
 };
 
 FileList.prototype.walk = function(directory) {
@@ -4850,23 +4851,18 @@ FileList.prototype.walk = function(directory) {
 
 	if (directory instanceof Array) {
 		var length = directory.length;
-
 		for (var i = 0; i < length; i++)
 			self.pendingDirectory.push(directory[i]);
-
 		self.next();
 		return;
 	}
 
 	Fs.readdir(directory, function(err, arr) {
-
 		if (err)
 			return self.next();
-
 		var length = arr.length;
 		for (var i = 0; i < length; i++)
 			self.pending.push(Path.join(directory, arr[i]));
-
 		self.next();
 	});
 };

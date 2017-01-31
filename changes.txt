@@ -20,6 +20,7 @@
 - added: `U.chunker()` added a new property `chunker.count` with count of all stored items
 - added: `NEWOPERATION(name, fn(error, callback(response), value))` - registers a new operation (same as schemas)
 - added: `OPERATION('name', function(err, response))` - executes an operation (same as schemas)
+- added: `.flac` file extensions
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`
@@ -59,6 +60,7 @@
 - fixed: restarting framework (missing cleaning of `F.temporary`)
 
 - improved: code
+- improved: memory consumption for static files
 - improved: CSS compression
 - improved: CPU and memory consumption
 - improved: performance
