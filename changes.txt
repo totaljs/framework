@@ -21,6 +21,7 @@
 - added: `NEWOPERATION(name, fn(error, callback(response), value))` - registers a new operation (same as schemas)
 - added: `OPERATION('name', function(err, response))` - executes an operation (same as schemas)
 - added: `.flac` file extensions
+- added: a new method for `MailMessage` object `message.unsubscribe('your URL or email address')`
 
 - updated: new error message `The field "@" is invalid.`
 - updated: `NOSQL().insert(doc, [unique])`

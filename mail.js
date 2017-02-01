@@ -101,7 +101,14 @@ function Message(subject, body) {
 	this.$callback;
 	// Supports (but it's hidden):
 	// this.headers;
+	// this.$unsubscribe;
 }
+
+Message.prototype.unsubscribe = function(url) {
+	var tmp = url.substring(0, 6);
+	this.$unsubscribe = tmp === 'http:/' || tmp === 'https:' ? '<' + url + '>' : '<mailto:' + url + '>';
+	return this;
+};
 
 Message.prototype.callback = function(fn) {
 	this.$callback = fn;
@@ -120,10 +127,9 @@ Message.prototype.from = function(address, name) {
 		address = address.substring(index + 1, address.length - 1);
 	}
 
-	var self = this;
-	self.addressFrom.name = name || '';
-	self.addressFrom.address = address;
-	return self;
+	this.addressFrom.name = name || '';
+	this.addressFrom.address = address;
+	return this;
 };
 
 Message.prototype.to = function(address, name, clear) {
@@ -139,17 +145,15 @@ Message.prototype.to = function(address, name, clear) {
 		address = address.substring(index + 1, address.length - 1);
 	}
 
-	var self = this;
-
 	if (clear)
-		self.addressTo = [];
+		this.addressTo = [];
 
 	if (name)
-		self.addressTo.push({ email: address, name: name });
+		this.addressTo.push({ email: address, name: name });
 	else
-		self.addressTo.push(address);
+		this.addressTo.push(address);
 
-	return self;
+	return this;
 };
 
 Message.prototype.cc = function(address, name, clear) {
@@ -165,50 +169,39 @@ Message.prototype.cc = function(address, name, clear) {
 		address = address.substring(index + 1, address.length - 1);
 	}
 
-	var self = this;
-
-	if (clear || !self.addressCC)
-		self.addressCC = [];
+	if (clear || !this.addressCC)
+		this.addressCC = [];
 
 	if (name)
-		self.addressCC.push({ email: address, name: name });
+		this.addressCC.push({ email: address, name: name });
 	else
-		self.addressCC.push(address);
+		this.addressCC.push(address);
 
-	return self;
+	return this;
 };
 
 Message.prototype.bcc = function(address, clear) {
-
-	var self = this;
-
-	if (clear || !self.addressBCC)
-		self.addressBCC = [];
-
-	self.addressBCC.push(address);
-	return self;
+	if (clear || !this.addressBCC)
+		this.addressBCC = [];
+	this.addressBCC.push(address);
+	return this;
 };
 
 Message.prototype.reply = function(address, clear) {
-
-	var self = this;
-
-	if (clear || !self.addressReply)
-		self.addressReply = [];
-
-	self.addressReply.push(address);
-	return self;
+	if (clear || !this.addressReply)
+		this.addressReply = [];
+	this.addressReply.push(address);
+	return this;
 };
 
 Message.prototype.attachment = function(filename, name) {
-	var self = this;
 	if (!name)
 		name = framework_utils.getName(filename);
 	var extension = framework_utils.getExtension(name);
-	if (!self.files)
-		self.files = [];
-	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(extension), extension: extension });
-	return self;
+	if (!this.files)
+		this.files = [];
+	this.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(extension), extension: extension });
+	return this;
 };
 
 /**
@@ -216,9 +209,8 @@ Message.prototype.attachment = function(filename, name) {
  * @return {Message}
  */
 Message.prototype.manually = function() {
-	var self = this;
-	self.$sending && clearTimeout(self.$sending);
-	return self;
+	this.$sending && clearTimeout(this.$sending);
+	return this;
 };
 
 /**
@@ -233,14 +225,13 @@ Message.prototype.manually = function() {
  * @returns {Message}
  */
 Message.prototype.attachmentInline = function(filename, name, contentId) {
-	var self = this;
 	if (!name)
 		name = framework_utils.getName(filename);
-	if (!self.files)
-		self.files = [];
+	if (!this.files)
+		this.files = [];
 	var extension = framework_utils.getExtension(name);
-	self.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(extension), disposition: 'inline', contentId: contentId, extension: extension });
-	return self;
+	this.files.push({ name: name, filename: filename, contentType: framework_utils.getContentType(extension), disposition: 'inline', contentId: contentId, extension: extension });
+	return this;
 };
 
 /**
@@ -566,6 +557,7 @@ Mailer.prototype._writemessage = function(obj, buffer) {
 
 	message.push('Date: ' + obj.date.toUTCString());
 	message.push('Subject: ' + unicode_encode(msg.subject));
+	msg.$unsubscribe && message.push('List-Unsubscribe: ' + msg.$unsubscribe);
 
 	if (msg.addressReply) {
 		length = msg.addressReply.length;
