@@ -3463,7 +3463,7 @@ RESTBuilder.prototype.auth = function(user, password) {
 	return this;
 };
 
-RESTBuilder.prototype.schema = function(group, schema) {
+RESTBuilder.prototype.schema = function(group, name) {
 	this.$schema = exports.getschema(group, name);
 	return this;
 };
