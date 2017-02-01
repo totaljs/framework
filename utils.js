@@ -1204,6 +1204,31 @@ exports.extend = function(target, source, rewrite) {
 	return target;
 };
 
+exports.extend_headers = function(first, second) {
+	var keys = Object.keys(first);
+	var headers = {};
+
+	var i = keys.length;
+	while (i--)
+		headers[keys[i]] = first[keys[i]];
+
+	keys = Object.keys(second);
+	i = keys.length;
+
+	while (i--)
+		headers[keys[i]] = second[keys[i]];
+
+	return headers;
+};
+
+exports.extend_headers2 = function(first, second) {
+	var keys = Object.keys(second);
+	var i = keys.length;
+	while (i--)
+		first[keys[i]] = second[keys[i]];
+	return first;
+};
+
 /**
  * Clones object
  * @param {Object} obj

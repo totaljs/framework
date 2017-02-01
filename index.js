@@ -235,6 +235,9 @@ HEADERS.fsStreamRead = { flags: 'r', mode: '0666', autoClose: true }
 HEADERS.fsStreamReadRange = { flags: 'r', mode: '0666', autoClose: true, start: 0, end: 0 };
 HEADERS.workers = { cwd: '' };
 HEADERS.mmrpipe = { end: false };
+HEADERS['responseLocalize'] = {};
+HEADERS['responseNotModified'] = {};
+HEADERS['responseNotModified'][RESPONSE_HEADER_CACHECONTROL] = 'public, max-age=11111111';
 
 Object.freeze(HEADERS.authorization);
 
@@ -264,7 +267,7 @@ if (!global.framework_nosql)
 	global.framework_nosql = require('./nosql');
 
 global.Builders = framework_builders;
-var utils = global.Utils = global.utils = global.U = framework_utils;
+var utils = U = global.Utils = global.utils = global.U = global.framework_utils;
 global.Mail = framework_mail;
 
 global.WTF = function(message, name, uri) {
@@ -495,7 +498,7 @@ var directory = U.$normalize(require.main ? Path.dirname(require.main.filename) 
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 
 const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').random().join('').substring(0, 3), index: 1 };
-const EMPTYBUFFER = framework_utils.createBufferSize(0);
+const EMPTYBUFFER = U.createBufferSize(0);
 global.EMPTYBUFFER = EMPTYBUFFER;
 
 const controller_error_status = function(controller, status, problem) {
@@ -2570,7 +2573,10 @@ Framework.prototype.localize = function(url, flags, minify) {
 		var output = F.temporary.other[key];
 
 		if (output) {
-			F.responseContent(req, res, 200, output, U.getContentType(req.extension), true);
+			if (!F.$notModified(req, res, output.$mtime)) {
+				HEADERS.responseLocalize['Last-Modified'] = output.$mtime;
+				F.responseContent(req, res, 200, output, U.getContentType(req.extension), true);
+			}
 			return;
 		}
 
@@ -2584,17 +2590,39 @@ Framework.prototype.localize = function(url, flags, minify) {
 
 			content = F.translator(req.$language, framework_internal.modificators(content.toString(ENCODING), filename, 'static'));
 
-			if (minify && (req.extension === 'html' || req.extension === 'htm'))
-				content = framework_internal.compile_html(content, filename);
+			Fs.lstat(filename, function(err, stats) {
 
-			if (RELEASE)
-				F.temporary.other[key] = framework_utils.createBuffer(content);
+				var mtime = stats.mtime.toUTCString();
 
-			F.responseContent(req, res, 200, content, U.getContentType(req.extension), true);
+				if (minify && (req.extension === 'html' || req.extension === 'htm'))
+					content = framework_internal.compile_html(content, filename);
+
+				if (RELEASE) {
+					F.temporary.other[key] = U.createBuffer(content);
+					F.temporary.other[key].$mtime = mtime;
+					if (F.$notModified(req, res, mtime))
+						return;
+				}
+
+				HEADERS.responseLocalize['Last-Modified'] = mtime;
+				F.responseContent(req, res, 200, content, U.getContentType(req.extension), true, HEADERS.responseLocalize);
+			});
 		});
 
 	}, flags);
 	return F;
+};
+
+Framework.prototype.$notModified = function(req, res, date) {
+	if (date === req.headers['if-modified-since']) {
+		HEADERS.responseNotModified['Last-Modified'] = date;
+		res.success = true;
+		res.writeHead(304, HEADERS.responseNotModified);
+		res.end();
+		F.stats.response.notModified++;
+		F._request_stats(false, req.isStaticFile);
+		return true;
+	}
 };
 
 /**
@@ -5279,10 +5307,8 @@ Framework.prototype.responseFile = function(req, res, filename, downloadName, he
 	else if (returnHeaders.Expires)
 		delete returnHeaders.Expires;
 
-	if (headers) {
-		returnHeaders = U.extend({}, returnHeaders, true);
-		U.extend(returnHeaders, headers, true);
-	}
+	if (headers)
+		returnHeaders = U.extend_headers(returnHeaders, headers);
 
 	if (downloadName)
 		returnHeaders['Content-Disposition'] = 'attachment; filename="' + encodeURIComponent(downloadName) + '"';
@@ -5387,7 +5413,9 @@ Framework.prototype.responsePipe = function(req, res, url, headers, timeout, cal
 		var h = {};
 
 		h[RESPONSE_HEADER_CACHECONTROL] = 'private';
-		headers && U.extend(h, headers, true);
+
+		if (headers)
+			U.extend_headers2(h, headers);
 
 		var options = { protocol: uri.protocol, auth: uri.auth, method: 'GET', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 		var connection = options.protocol === 'https:' ? require('https') : http;
@@ -5741,10 +5769,8 @@ Framework.prototype.responseStream = function(req, res, contentType, stream, dow
 		returnHeaders['Last-Modified'] = 'Mon, 01 Jan 2001 08:00:00 GMT';
 	}
 
-	if (headers) {
-		returnHeaders = U.extend({}, returnHeaders, true);
-		U.extend(returnHeaders, headers, true);
-	}
+	if (headers)
+		returnHeaders = U.extend_headers(returnHeaders, headers);
 
 	if (download)
 		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(download);
@@ -5887,10 +5913,8 @@ Framework.prototype.responseBinary = function(req, res, contentType, buffer, enc
 
 	returnHeaders['Vary'] = 'Accept-Encoding' + (req.$mobile ? ', User-Agent' : '');
 
-	if (headers) {
-		returnHeaders = U.extend({}, returnHeaders, true);
-		U.extend(returnHeaders, headers, true);
-	}
+	if (headers)
+		returnHeaders = U.extend_headers(returnHeaders, headers);
 
 	if (download)
 		returnHeaders['Content-Disposition'] = 'attachment; filename=' + encodeURIComponent(download);
@@ -5950,14 +5974,8 @@ Framework.prototype.notModified = function(req, res, compare, strict) {
 	var val = req.headers[isEtag ? 'if-none-match' : 'if-modified-since'];
 
 	if (isEtag) {
-
-		if (!val)
+		if (val !== (compare + F.config['etag-version']))
 			return false;
-
-		var myetag = compare + F.config['etag-version'];
-		if (val !== myetag)
-			return false;
-
 	} else {
 
 		if (!val)
@@ -5989,7 +6007,6 @@ Framework.prototype.responseCode = function(req, res, code, problem) {
 		return F;
 
 	F._request_stats(false, req.isStaticFile);
-
 	res.success = true;
 	res.writeHead(code, HEADERS['responseCode']);
 
@@ -6036,7 +6053,6 @@ Framework.prototype.response500 = function(req, res, error) {
 		return F;
 
 	F._request_stats(false, req.isStaticFile);
-
 	res.success = true;
 	res.writeHead(500, HEADERS['responseCode']);
 
@@ -6092,22 +6108,13 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	var gzip = compress ? accept.indexOf('gzip') !== -1 : false;
 	var returnHeaders;
 
-	if (req.$mobile) {
-		if (gzip)
-			returnHeaders = HEADERS['responseContent.mobile.compress'];
-		else
-			returnHeaders = HEADERS['responseContent.mobile'];
-	} else {
-		if (gzip)
-			returnHeaders = HEADERS['responseContent.compress'];
-		else
-			returnHeaders = HEADERS['responseContent'];
-	}
+	if (req.$mobile)
+		returnHeaders = gzip ? HEADERS['responseContent.mobile.compress'] : HEADERS['responseContent.mobile'];
+	else
+		returnHeaders = gzip ? HEADERS['responseContent.compress'] : HEADERS.responseContent;
 
-	if (headers) {
-		returnHeaders = U.extend({}, returnHeaders, true);
-		U.extend(returnHeaders, headers, true);
-	}
+	if (headers)
+		returnHeaders = U.extend_headers(returnHeaders, headers);
 
 	// Safari resolve
 	if (contentType === 'application/json')
@@ -6126,7 +6133,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	} else {
 		if (gzip) {
 			res.writeHead(code, returnHeaders);
-			Zlib.gzip(contentBody instanceof Buffer ? contentBody : framework_utils.createBuffer(contentBody), (err, data) => res.end(data, ENCODING));
+			Zlib.gzip(contentBody instanceof Buffer ? contentBody : U.createBuffer(contentBody), (err, data) => res.end(data, ENCODING));
 		} else {
 			res.writeHead(code, returnHeaders);
 			res.end(contentBody, ENCODING);
@@ -6737,7 +6744,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 	var method = req.method;
 	var first = method[0];
 	if (first === 'P' || first === 'D') {
-		req.buffer_data = framework_utils.createBuffer();
+		req.buffer_data = U.createBuffer();
 		var index = multipart.lastIndexOf(';');
 		var tmp = multipart;
 		if (index !== -1)
@@ -7564,7 +7571,7 @@ Framework.prototype.testing = function(stop, callback) {
 	var buf;
 
 	if (test.data && test.data.length) {
-		buf = framework_utils.createBuffer(test.data);
+		buf = U.createBuffer(test.data);
 		test.headers[RESPONSE_HEADER_CONTENTLENGTH] = buf.length;
 	}
 
@@ -9816,7 +9823,7 @@ Subscribe.prototype.doParsepost = function(chunk) {
 		return self;
 
 	req.buffer_exceeded = true;
-	req.buffer_data = framework_utils.createBuffer();
+	req.buffer_data = U.createBuffer();
 	return self;
 };
 
@@ -12748,7 +12755,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 		return self;
 	}
 
-	self.output = framework_utils.createBuffer(output.content);
+	self.output = U.createBuffer(output.content);
 	self.isLayout = true;
 	self.view(self.layoutName, null);
 	return self;
@@ -13229,7 +13236,7 @@ function WebSocketClient(req, socket, head) {
 	this.req = req;
 	// this.isClosed = false;
 	this.errors = 0;
-	this.buffer = framework_utils.createBufferSize();
+	this.buffer = U.createBufferSize();
 	this.length = 0;
 
 	// 1 = raw - not implemented
@@ -13332,7 +13339,7 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 		return false;
 
 	var header = protocols.length ? SOCKET_RESPONSE_PROTOCOL.format(this._request_accept_key(this.req), protocols.join(', ')) : SOCKET_RESPONSE.format(this._request_accept_key(this.req));
-	this.socket.write(framework_utils.createBuffer(header, 'binary'));
+	this.socket.write(U.createBuffer(header, 'binary'));
 
 	this._id = (this.ip || '').replace(/\./g, '') + U.GUID(20);
 	this.id = this._id;
@@ -13397,13 +13404,13 @@ WebSocketClient.prototype._ondata = function(data) {
 		case 0x09:
 			// ping, response pong
 			this.socket.write(U.getWebSocketFrame(0, '', 0x0A));
-			this.buffer = framework_utils.createBufferSize();
+			this.buffer = U.createBufferSize();
 			this.$ping = true;
 			break;
 		case 0x0a:
 			// pong
 			this.$ping = true;
-			this.buffer = framework_utils.createBufferSize();
+			this.buffer = U.createBufferSize();
 			break;
 	}
 };
@@ -13423,7 +13430,7 @@ WebSocketClient.prototype.parse = function() {
 	if ((index + length + 4) > (this.buffer.length))
 		return this;
 
-	var mask = framework_utils.createBufferSize(4);
+	var mask = U.createBufferSize(4);
 	this.buffer.copy(mask, 0, index, index + 4);
 
 	// TEXT
@@ -13446,7 +13453,7 @@ WebSocketClient.prototype.parse = function() {
 		} else
 			this.container.emit('message', this, this.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output);
 	} else {
-		var binary = framework_utils.createBufferSize(length);
+		var binary = U.createBufferSize(length);
 		for (var i = 0; i < length; i++)
 			binary[i] = this.buffer[index + 4 + i] ^ mask[i % 4];
 		this.container.emit('message', this, new Uint8Array(binary).buffer);
@@ -13548,13 +13555,13 @@ function Backup() {
 	this.file = [];
 	this.directory = [];
 	this.path = '';
-	this.read = { key: framework_utils.createBufferSize(), value: framework_utils.createBufferSize(), status: 0 };
+	this.read = { key: U.createBufferSize(), value: U.createBufferSize(), status: 0 };
 	this.pending = 0;
 	this.cache = {};
 	this.complete = NOOP;
 	this.filter = () => true;
-	this.bufKey = framework_utils.createBuffer(':');
-	this.bufNew = framework_utils.createBuffer('\n');
+	this.bufKey = U.createBuffer(':');
+	this.bufNew = U.createBuffer('\n');
 }
 
 Backup.prototype.restoreKey = function(data) {
@@ -13608,8 +13615,8 @@ Backup.prototype.restoreValue = function(data) {
 	self.restoreFile(read.key.toString('utf8').replace(REG_EMPTY, ''), read.value.toString('utf8').replace(REG_EMPTY, ''));
 
 	read.status = 0;
-	read.value = framework_utils.createBufferSize();
-	read.key = framework_utils.createBufferSize();
+	read.value = U.createBufferSize();
+	read.key = U.createBufferSize();
 
 	self.restoreKey(data.slice(index + 1));
 };
@@ -13672,7 +13679,7 @@ Backup.prototype.restoreFile = function(key, value) {
 		p && self.createDirectory(p);
 	}
 
-	var buffer = framework_utils.createBuffer(value, 'base64');
+	var buffer = U.createBuffer(value, 'base64');
 	self.pending++;
 
 	Zlib.gunzip(buffer, function(err, data) {
@@ -13878,7 +13885,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 		return self;
 	}
 
-	var buffer = framework_utils.createBuffer(body);
+	var buffer = U.createBuffer(body);
 	Zlib.gzip(buffer, function(err, data) {
 
 		if (err) {
@@ -14219,7 +14226,7 @@ http.IncomingMessage.prototype.authorization = function() {
 	var result = { user: '', password: '', empty: true };
 
 	try {
-		var arr = framework_utils.createBuffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
+		var arr = U.createBuffer(authorization.replace('Basic ', '').trim(), 'base64').toString(ENCODING).split(':');
 		result.user = arr[0] || '';
 		result.password = arr[1] || '';
 		result.empty = !result.user || !result.password;
