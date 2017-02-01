@@ -391,14 +391,12 @@ exports.parseMULTIPART_MIXED = function(req, contentType, tmpDirectory, onFile) 
 
 	parser.onEnd = function() {
 		var cb = function() {
-
-			if (close) {
+			if (close)
 				setImmediate(cb);
-				return;
+			else {
+				onFile(req, null);
+				F.responseContent(req, req.res, 200, EMPTYBUFFER, 'text/plain', false);
 			}
-
-			onFile(req, null);
-			F.responseContent(req, req.res, 200, '', 'text/plain', false);
 		};
 		cb();
 	};
@@ -464,15 +462,11 @@ exports.routeSplit = function(url, noLower) {
 		var c = url[i];
 
 		if (c === '/') {
-			if (prev)
-				continue;
-
-			if (key) {
+			if (key && !prev) {
 				arr.push(key);
 				count++;
 				key = '';
 			}
-
 			continue;
 		}
 
@@ -522,8 +516,7 @@ exports.routeSplitCreate = function(url, noLower) {
 		}
 	}
 
-	if (!count)
-		arr.push(url.substring(end + (arr.length ? 1 : 0), url.length));
+	!count && arr.push(url.substring(end + (arr.length ? 1 : 0), url.length));
 
 	if (arr.length === 1 && !arr[0])
 		arr[0] = '/';

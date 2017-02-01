@@ -495,6 +495,9 @@ var directory = U.$normalize(require.main ? Path.dirname(require.main.filename) 
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 
 const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').random().join('').substring(0, 3), index: 1 };
+const EMPTYBUFFER = framework_utils.createBufferSize(0);
+global.EMPTYBUFFER = EMPTYBUFFER;
+
 const controller_error_status = function(controller, status, problem) {
 
 	if (status !== 500 && problem)
@@ -2548,17 +2551,17 @@ Framework.prototype.localize = function(url, flags, minify) {
 		if (index === -1)
 			index = flags.indexOf('compress');
 		minify = index !== -1;
-		if (index !== -1)
-			flags.splice(index, 1);
+		index !== -1 && flags.splice(index, 1);
 	}
 
 	var index = url.lastIndexOf('.');
 
-	if (index !== -1) {
+	if (index === -1)
+		flags.push('.html', '.htm', '.md', '.txt');
+	else {
 		flags.push(url.substring(index).toLowerCase());
 		url = url.substring(0, index);
-	} else
-		flags.push('.html', '.htm', '.md', '.txt');
+	}
 
 	url = framework_internal.preparePath(url);
 	F.file(url, function(req, res, is) {
@@ -2585,7 +2588,7 @@ Framework.prototype.localize = function(url, flags, minify) {
 				content = framework_internal.compile_html(content, filename);
 
 			if (RELEASE)
-				F.temporary.other[key] = content;
+				F.temporary.other[key] = framework_utils.createBuffer(content);
 
 			F.responseContent(req, res, 200, content, U.getContentType(req.extension), true);
 		});
@@ -6123,7 +6126,7 @@ Framework.prototype.responseContent = function(req, res, code, contentBody, cont
 	} else {
 		if (gzip) {
 			res.writeHead(code, returnHeaders);
-			Zlib.gzip(framework_utils.createBuffer(contentBody), (err, data) => res.end(data, ENCODING));
+			Zlib.gzip(contentBody instanceof Buffer ? contentBody : framework_utils.createBuffer(contentBody), (err, data) => res.end(data, ENCODING));
 		} else {
 			res.writeHead(code, returnHeaders);
 			res.end(contentBody, ENCODING);
@@ -7561,7 +7564,7 @@ Framework.prototype.testing = function(stop, callback) {
 	var buf;
 
 	if (test.data && test.data.length) {
-		buf = framework_utils.createBuffer(test.data, ENCODING);
+		buf = framework_utils.createBuffer(test.data);
 		test.headers[RESPONSE_HEADER_CONTENTLENGTH] = buf.length;
 	}
 
@@ -11787,7 +11790,7 @@ Controller.prototype.json = function(obj, headers, beautify, replacer) {
 	// Checks the HEAD method
 	if (self.req.method === 'HEAD') {
 		self.subscribe.success();
-		F.responseContent(self.req, self.res, self.status, '', 'application/json', self.config['allow-gzip'], headers);
+		F.responseContent(self.req, self.res, self.status, EMPTYBUFFER, 'application/json', self.config['allow-gzip'], headers);
 		F.stats.response.json++;
 		return self;
 	}
@@ -11841,7 +11844,7 @@ Controller.prototype.jsonp = function(name, obj, headers, beautify, replacer) {
 	// Checks the HEAD method
 	if (self.req.method === 'HEAD') {
 		self.subscribe.success();
-		F.responseContent(self.req, self.res, self.status, '', 'application/x-javascript', self.config['allow-gzip'], headers);
+		F.responseContent(self.req, self.res, self.status, EMPTYBUFFER, 'application/x-javascript', self.config['allow-gzip'], headers);
 		F.stats.response.json++;
 		return self;
 	}
@@ -11966,7 +11969,7 @@ Controller.prototype.plain = function(body, headers) {
 	// Checks the HEAD method
 	if (self.req.method === 'HEAD') {
 		self.subscribe.success();
-		F.responseContent(self.req, self.res, self.status, '', CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
+		F.responseContent(self.req, self.res, self.status, EMPTYBUFFER, CONTENTTYPE_TEXTPLAIN, self.config['allow-gzip'], headers);
 		F.stats.response.plain++;
 		return self;
 	}
@@ -12008,7 +12011,7 @@ Controller.prototype.empty = function(headers) {
 	}
 
 	self.subscribe.success();
-	F.responseContent(self.req, self.res, code, '', CONTENTTYPE_TEXTPLAIN, false, headers);
+	F.responseContent(self.req, self.res, code, EMPTYBUFFER, CONTENTTYPE_TEXTPLAIN, false, headers);
 	F.stats.response.empty++;
 	return self;
 };
@@ -12745,7 +12748,7 @@ Controller.prototype.memorize = function(key, expires, disabled, fnTo, fnFrom) {
 		return self;
 	}
 
-	self.output = output.content;
+	self.output = framework_utils.createBuffer(output.content);
 	self.isLayout = true;
 	self.view(self.layoutName, null);
 	return self;
