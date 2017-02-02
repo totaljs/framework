@@ -59,6 +59,7 @@
 - fixed: `F.snapshot()`
 - fixed: HTML compression (a fixed problem with HTML comments)
 - fixed: restarting framework (missing cleaning of `F.temporary`)
+- fixed: `U.isDate()` a problem with older dates than 1970, reported by @docgit
 
 - improved: code
 - improved: memory consumption for static files

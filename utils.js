@@ -1580,7 +1580,7 @@ exports.isRegExp = function(obj) {
  * @return {Boolean}
  */
 exports.isDate = function(obj) {
-	return obj instanceof Date && obj.getTime() > -1 ? true : false;
+	return obj instanceof Date && !isNaN(obj.getTime()) ? true : false;
 };
 
 /**
