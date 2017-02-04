@@ -11606,15 +11606,20 @@ Controller.prototype.$download = function(filename, innerHTML, downloadName, cla
  * @param {Boolean} beautify Optional.
  * @return {String}
  */
-Controller.prototype.$json = function(obj, id, beautify) {
+Controller.prototype.$json = function(obj, id, beautify, preparator) {
 
 	if (typeof(id) === 'boolean') {
-		var tmp = id;
-		id = beautify;
-		beautify = tmp;
+		preparator = beautify;
+		beautify = id;
+		id = null;
 	}
 
-	var value = beautify ? JSON.stringify(obj, null, 4) : JSON.stringify(obj);
+	if (typeof(beautify) === 'function') {
+		preparator = beautify;
+		beautify = false;
+	}
+
+	var value = beautify ? JSON.stringify(obj, preparator, 4) : JSON.stringify(obj, preparator);
 	return id ? ('<script type="application/json" id="' + id + '">' + value + '</script>') : value;
 };
 
