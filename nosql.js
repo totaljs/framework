@@ -1234,7 +1234,10 @@ Database.prototype.$drop = function() {
 		});
 	} catch (e) {}
 
-	remove.wait((filename, next) => Fs.unlink(filename, next), () => self.next(0), 5);
+	remove.wait((filename, next) => Fs.unlink(filename, next), function() {
+		self.next(0);
+		self.free();
+	}, 5);
 
 	Object.keys(self.inmemory).forEach(function(key) {
 		self.inmemory[key] = undefined;
