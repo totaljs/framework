@@ -11606,20 +11606,20 @@ Controller.prototype.$download = function(filename, innerHTML, downloadName, cla
  * @param {Boolean} beautify Optional.
  * @return {String}
  */
-Controller.prototype.$json = function(obj, id, beautify, preparator) {
+Controller.prototype.$json = function(obj, id, beautify, replacer) {
 
 	if (typeof(id) === 'boolean') {
-		preparator = beautify;
+		replacer = beautify;
 		beautify = id;
 		id = null;
 	}
 
 	if (typeof(beautify) === 'function') {
-		preparator = beautify;
+		replacer = beautify;
 		beautify = false;
 	}
 
-	var value = beautify ? JSON.stringify(obj, preparator, 4) : JSON.stringify(obj, preparator);
+	var value = beautify ? JSON.stringify(obj, replacer, 4) : JSON.stringify(obj, replacer);
 	return id ? ('<script type="application/json" id="' + id + '">' + value + '</script>') : value;
 };
 
@@ -12892,7 +12892,7 @@ WebSocket.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
  * @param {String} raw internal
  * @return {WebSocket}
  */
-WebSocket.prototype.send = function(message, id, blacklist) {
+WebSocket.prototype.send = function(message, id, blacklist, replacer) {
 
 	var keys = this._keys;
 	if (!keys || !keys.length)
@@ -12931,7 +12931,7 @@ WebSocket.prototype.send = function(message, id, blacklist) {
 		if (data === undefined) {
 			if (conn.type === 3) {
 				raw = true;
-				data = JSON.stringify(message);
+				data = JSON.stringify(message, replacer);
 			} else
 				data = message;
 		}
@@ -13500,13 +13500,13 @@ WebSocketClient.prototype._onclose = function() {
  * @param {Boolean} raw The message won't be converted e.g. to JSON.
  * @return {WebSocketClient}
  */
-WebSocketClient.prototype.send = function(message, raw) {
+WebSocketClient.prototype.send = function(message, raw, replacer) {
 
 	if (this.isClosed)
 		return this;
 
 	if (this.type !== 1) {
-		var data = this.type === 3 ? (raw ? message : JSON.stringify(message)) : (message || '').toString();
+		var data = this.type === 3 ? (raw ? message : JSON.stringify(message, replacer)) : (message || '').toString();
 		if (this.container.config['default-websocket-encodedecode'] === true && data)
 			data = encodeURIComponent(data);
 		this.socket.write(U.getWebSocketFrame(0, data, 0x01));
@@ -13521,10 +13521,8 @@ WebSocketClient.prototype.send = function(message, raw) {
  * @return {WebSocketClient}
  */
 WebSocketClient.prototype.ping = function() {
-
 	if (this.isClosed)
 		return this;
-
 	this.socket.write(U.getWebSocketFrame(0, '', 0x09));
 	this.$ping = false;
 	return this;
@@ -13539,7 +13537,6 @@ WebSocketClient.prototype.ping = function() {
 WebSocketClient.prototype.close = function(message, code) {
 	if (this.isClosed)
 		return this;
-
 	this.isClosed = true;
 	this.socket.end(U.getWebSocketFrame(code || 1000,  message ? encodeURIComponent(message) : '', 0x08));
 	return this;

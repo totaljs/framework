@@ -40,6 +40,7 @@
 - updated: `F.onParseJSON(value, req)` add a new argument `req`
 - updated: `RESTBuilder.url()` without argument returns a current URL
 - updated: `RESTBuilder.exec(function(err, value, response))` when the `error` exists the `value` is still `EMPTYOBJECT`
+- updated: addded a new argument `replacer` to `controller.send(message, [id], [blacklist], [replacer])` and `client.send(message, [raw], [replacer])`
 
 - removed: behaviours
 - removed: restrictions
