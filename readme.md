@@ -13,9 +13,10 @@ $ npm install -g total.js
 
 [![Support](https://www.totaljs.com/img/button-support.png?v=3)](https://www.totaljs.com/support/)
 
-- [__NEW__: Total.js Dashboard](https://www.totaljs.com/dashboard/)
-- [__NEW__: Total.js BlogEngine](https://www.totaljs.com/blogengine/)
-- [__NEW__: NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
+- [__NEW__: Total.js Messenger](https://www.totaljs.com/messenger/)
+- [Total.js Dashboard](https://www.totaljs.com/dashboard/)
+- [Total.js BlogEngine](https://www.totaljs.com/blogengine/)
+- [NoSQL embedded database explorer](https://www.totaljs.com/nosql/)
 - [Total.js SuperAdmin](https://www.totaljs.com/superadmin/)
 - [Total.js Eshop](http://www.totaljs.com/eshop/)
 - [Total.js CMS](http://www.totaljs.com/cms/)
@@ -32,6 +33,7 @@ $ npm install -g total.js
 - [Homepage](http://www.totaljs.com)
 - [__Get Started__](http://www.totaljs.com/get-started/)
 - [__Documentation__](http://docs.totaljs.com)
+- [__Chat with professional support__](https://messenger.totaljs.com)
 - [__HelpDesk with professional support__](https://helpdesk.totaljs.com)
 - [__Blogs__](https://blog.totaljs.com)
 - [__Membership__](https://my.totaljs.com)
@@ -55,6 +57,7 @@ $ npm install -g total.js
 | Isomorphic code |
 | Supports IP restrictions |
 | Supports redirections |
+| Supports reusable components |
 | Supports just-in-time JS, CSS (variables and nesting) and HTML compressor |
 | Supports just-in-time merging of static files (JavaScripts, CSS or HTML) |
 | Supports just-in-time mapping of files |
