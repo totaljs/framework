@@ -586,7 +586,7 @@ function main() {
 
 			fs.writeFileSync('translate.resource', '// Total.js translation file\n// Created: ' + new Date().format('yyyy-MM-dd HH:mm') + '\n' + builder.join('\n'));
 			console.log('Total.js: the translation was created (' + count + ' texts)');
-		});
+		}, (path, dir) => dir ? path.indexOf('/node_modules/') === -1 && path.indexOf('/tmp/') === -1 : true);
 		return;
 	}
 
@@ -633,7 +633,7 @@ function main() {
 
 			fs.writeFileSync('translate.csv', output.join('\n'));
 			console.log('Total.js: the translation was created (' + count + ' texts)');
-		});
+		}, (path, dir) => dir ? path.indexOf('/node_modules/') === -1 && path.indexOf('/tmp/') === -1 : true);
 		return;
 	}
 
@@ -643,9 +643,8 @@ function main() {
 		var can = true;
 		for (var i = 0; i < files.length; i++) {
 			var name = files[i];
-			if (name[0] === '.')
-				continue;
-			can = false;
+			if (name[0] !== '.')
+				can = false;
 		}
 
 		if (!can) {
@@ -657,7 +656,7 @@ function main() {
 
 	console.log('Downloading "empty-project" from www.totaljs.com');
 
-	var url = 'https://www.totaljs.com/packages/empty-project.package';
+	var url = 'https://cdn.totaljs.com/empty-project.package';
 
 	Utils.download(url, ['get'], function(err, response) {
 		var filename = path.join(dir, 'total.package');
@@ -666,7 +665,7 @@ function main() {
 		stream.on('finish', function() {
 			console.log('Unpacking file.');
 			exec('totalpackage unpack total.package', function() {
-				fs.unlink(filename);
+				fs.unlink(filename, NOOP);
 				console.log('Done.');
 				console.log('');
 			});

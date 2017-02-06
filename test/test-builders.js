@@ -304,7 +304,7 @@ function test_Schema() {
 	});
 
 	var qi = q.create();
-	assert.ok(qi.created.format('yyyyMMddHHmmss') === new Date().format('yyyyMMddHHmmss'), 'A problem with problem a default value of date');
+	assert.ok(qi.created.format('yyyyMMddHHmmss') === F.datetime.format('yyyyMMddHHmmss'), 'A problem with problem a default value of date');
 
 	var xi = x.create();
 	xi.age = 30;
@@ -608,25 +608,33 @@ function test_ErrorBuilder() {
 
 };
 
-function test_TransformBuilder() {
+function test_Operations() {
 
-	TransformBuilder.addTransform('xml', function(obj) {
-		var xml = '';
-		Object.keys(obj).forEach(function(key) {
-			xml += '<' + key + '>' + obj[key] + '</' + key + '>';
-		});
-		return xml;
-	}, true);
+	NEWOPERATION('testA', function(error, value, callback) {
+		callback(SUCCESS(true, value));
+	});
 
-	assert.ok(TransformBuilder.transform('xml', { name: 'Peter' }, true) === '<name>Peter</name>', 'TransformBuilder problem');
-	assert.ok(TransformBuilder.transform({ name: 'Peter' }) === '<name>Peter</name>', 'TransformBuilder problem (default)');
+	NEWOPERATION('testB', function(error, value, callback) {
+		error.push('bug');
+		callback();
+	});
+
+	OPERATION('testA', 123456, function(err, response) {
+		assert.ok(err === null, 'OPERATIONS: errors');
+		assert.ok(response.success && response.value === 123456, 'OPERATIONS: response');
+	});
+
+	OPERATION('testB', function(err, response) {
+		assert.ok(err.hasError('bug'), 'OPERATIONS: ErrorHandling 1');
+		assert.ok(response === undefined, 'OPERATIONS: ErrorHandling 2');
+	});
 }
 
 test_PageBuilder();
 test_UrlBuilder();
 test_Schema();
 test_ErrorBuilder();
-test_TransformBuilder();
+test_Operations();
 
 console.log('================================================');
 console.log('success - OK');

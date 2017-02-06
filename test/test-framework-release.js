@@ -67,7 +67,7 @@ function test_controller_functions(next) {
 	utils.request(url, ['get'], function(error, data, code, headers) {
 		error && assert.ok(false, 'test_controller_functions: ' + error.toString());
 		assert.ok(code === 404, 'controller: statusCode ' + code);
-		assert.ok(headers['etag'] === '123456:1', 'controller: setModified(etag)');
+		assert.ok(headers['etag'] === '1234561', 'controller: setModified(etag)');
 		assert.ok(headers['last-modified'].toString().indexOf('1984') !== -1, 'controller: setModified(date)');
 		assert.ok(headers['expires'].toString().indexOf('1984') !== -1, 'controller: setExpires(date)');
 		next();
@@ -458,10 +458,10 @@ function test_routing(next) {
 	});
 
 	async.await('get', function(complete) {
-		utils.request(url + 'get/?name=total&age=30', ['get'], function(error, data, code, headers) {
+		utils.request(url + 'get/?name=total&age=30&page=30', ['get'], function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '{"name":"total","age":"30"}', 'get');
+			assert(data === '{"name":"total","age":"30","page":30}', 'get');
 			complete();
 		});
 	});
@@ -479,7 +479,7 @@ function test_routing(next) {
 		utils.request(url + 'schema-filter/', ['post'], 'EMPTY', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '[{"name":"age","error":"The field \\"age\\" is required.","path":"filter.age"}]', 'schema filter');
+			assert(data === '[{"name":"age","error":"The field \\"age\\" is invalid.","path":"filter.age"}]', 'schema filter');
 			complete();
 		});
 	});
@@ -512,10 +512,10 @@ function test_routing(next) {
 	});
 
 	async.await('post-xml', function(complete) {
-		utils.request(url + 'post/xml/', ['xml', 'post'], '<root><name>total.js</name></root>', function(error, data, code, headers) {
+		utils.request(url + 'post/xml/', ['xml', 'post'], '<root><name>total.js</name><page>20</page></root>', function(error, data, code, headers) {
 			if (error)
 				throw error;
-			assert(data === '{"root.name":"total.js","type":"xml"}', 'post-xml');
+			assert(data === '{"root.name":"total.js","root.page":20,"type":"xml"}', 'post-xml');
 			complete();
 		});
 	});
@@ -615,6 +615,15 @@ function test_routing(next) {
 			if (error)
 				throw error;
 			assert(code === 404, 'regexp routing (NO)');
+			complete();
+		});
+	});
+
+	async.await('components routing', function(complete) {
+		utils.request(url + 'components/contactform/', ['get'], function(error, data, code, headers) {
+			if (error)
+				throw error;
+			assert(data === 'CONTACTFORM COMPONENTS', 'components: routing');
 			complete();
 		});
 	});
@@ -877,6 +886,7 @@ framework.on('load', function() {
 	assert.ok(F.config['custom-config2'] === '2YES', 'custom configuration 2');
 	assert.ok(RESOURCE('default', 'name-root').length > 0, 'custom resource mapping 1');
 	assert.ok(RESOURCE('default', 'name-theme').length > 0, 'custom resource mapping 2');
+	assert.ok(F.global.newslettercomponent, 'components: inline <script type="text/totaljs"> --> newsletter');
 
 	var sa = F.sitemap_navigation();
 	var sb = F.sitemap_navigation('b');

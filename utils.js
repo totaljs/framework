@@ -1,4 +1,4 @@
-// Copyright 2012-2016 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2017 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,20 +21,20 @@
 
 /**
  * @module FrameworkUtils
- * @version 2.3.0
+ * @version 2.4.0
  */
 
 'use strict';
 
 const Dns = require('dns');
-const parser = require('url');
-const qs = require('querystring');
-const http = require('http');
-const https = require('https');
-const path = require('path');
-const fs = require('fs');
-const events = require('events');
-const crypto = require('crypto');
+const Url = require('url');
+const Qs = require('querystring');
+const Http = require('http');
+const Https = require('https');
+const Path = require('path');
+const Fs = require('fs');
+const Events = require('events');
+const Crypto = require('crypto');
 
 if (!global.framework_utils)
 	global.framework_utils = exports;
@@ -50,12 +50,14 @@ const regexpDiacritics = /[^\u0000-\u007e]/g;
 const regexpXML = /\w+\=\".*?\"/g;
 const regexpDECODE = /&#?[a-z0-9]+;/g;
 const regexpPARAM = /\{{2}[^}\n]*\}{2}/g;
-const regexpINTEGER = /[\-0-9]+/g;
-const regexpFLOAT = /[\-0-9\.\,]+/g;
+const regexpINTEGER = /(^\-|\s-)?[0-9]+/g;
+const regexpFLOAT = /(^\-|\s-)?[0-9\.\,]+/g;
 const regexpALPHA = /^[A-Za-z0-9]+$/;
 const regexpSEARCH = /[^a-zA-Zá-žÁ-Ž\d\s:]/g;
 const regexpDECRYPT = /\-|\_/g;
 const regexpENCRYPT = /\/|\+/g;
+const regexpUNICODE = /\\u([\d\w]{4})/gi;
+const regexpTERMINAL = /[\w\S]+/g;
 const SOUNDEX = { a: '', e: '', i: '', o: '', u: '', b: 1, f: 1, p: 1, v: 1, c: 2, g: 2, j: 2, k: 2, q: 2, s: 2, x: 2, z: 2, d: 3, t: 3, l: 4, m: 5, n: 5, r: 6 };
 const ENCODING = 'utf8';
 const NEWLINE = '\r\n';
@@ -67,6 +69,7 @@ const STREAM_READONLY = { flags: 'r' };
 const STREAM_END = { end: false };
 const ALPHA_INDEX = { '&lt': '<', '&gt': '>', '&quot': '"', '&apos': '\'', '&amp': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': '\'', '&amp;': '&' };
 const EMPTYARRAY = [];
+const NODEVERSION = parseFloat(process.version.toString().replace('v', '').replace(/\./g, ''));
 
 Object.freeze(EMPTYARRAY);
 
@@ -93,6 +96,7 @@ var CONTENTTYPES = {
 	'dtd': 'application/xml-dtd',
 	'eps': 'application/postscript',
 	'exe': 'application/octet-stream',
+	'flac': 'audio/x-flac',
 	'geojson': 'application/json',
 	'gif': 'image/gif',
 	'gzip': 'application/x-gzip',
@@ -271,7 +275,7 @@ exports.$$wait = function(fnValid, timeout, interval) {
  */
 exports.resolve = function(url, callback) {
 
-	var uri = parser.parse(url);
+	var uri = Url.parse(url);
 
 	if (!callback)
 		return dnscache[uri.host];
@@ -435,7 +439,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	if (callback === NOOP)
 		callback = null;
 
-	var options = { length: 0, timeout: 10000, evt: new events.EventEmitter(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
+	var options = { length: 0, timeout: 10000, evt: new Events.EventEmitter(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
 
@@ -525,7 +529,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 		method = 'GET';
 
 	if (typeof(data) !== 'string')
-		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
+		data = type === 1 ? JSON.stringify(data) : Qs.stringify(data);
 	else if (data[0] === '?')
 		data = data.substring(1);
 
@@ -544,11 +548,11 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	}
 
 	if (data.length) {
-		options.data = new Buffer(data, ENCODING);
+		options.data = exports.createBuffer(data, ENCODING);
 		headers['Content-Length'] = options.data.length;
 	}
 
-	var uri = parser.parse(url);
+	var uri = Url.parse(url);
 	uri.method = method;
 	uri.agent = false;
 	uri.headers = headers;
@@ -567,7 +571,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 function request_call(uri, options, counter) {
 
-	var connection = uri.protocol === 'https:' ? https : http;
+	var connection = uri.protocol === 'https:' ? Https : Http;
 	var req = options.post ? connection.request(uri, (res) => request_response(res, uri, options)) : connection.get(uri, (res) => request_response(res, uri, options));
 
 	if (!options.callback) {
@@ -626,7 +630,7 @@ function request_response(res, uri, options) {
 
 		options.redirect++;
 
-		var tmp = parser.parse(res.headers['location']);
+		var tmp = Url.parse(res.headers['location']);
 		tmp.headers = uri.headers;
 		tmp.agent = false;
 		tmp.method = uri.method;
@@ -696,11 +700,11 @@ exports.$$request = function(url, flags, data, cookies, headers, encoding, timeo
 };
 
 exports.btoa = function(str) {
-	return (str instanceof Buffer) ? str.toString('base64') : new Buffer(str.toString(), 'binary').toString('base64');
+	return (str instanceof Buffer) ? str.toString('base64') : exports.createBuffer(str.toString(), 'binary').toString('base64');
 };
 
 exports.atob = function(str) {
-	return new Buffer(str, 'base64').toString('binary');
+	return exports.createBuffer(str, 'base64').toString('binary');
 };
 
 /**
@@ -747,7 +751,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 
 	var method = 'GET';
 	var type = 0;
-	var options = { callback: callback, resolve: false, length: 0, evt: new events.EventEmitter(), timeout: timeout || 60000, post: false, encoding: encoding };
+	var options = { callback: callback, resolve: false, length: 0, evt: new Events.EventEmitter(), timeout: timeout || 60000, post: false, encoding: encoding };
 
 	if (headers)
 		headers = exports.extend({}, headers);
@@ -832,7 +836,7 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 	options.post = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
 
 	if (typeof(data) !== 'string')
-		data = type === 1 ? JSON.stringify(data) : qs.stringify(data);
+		data = type === 1 ? JSON.stringify(data) : Qs.stringify(data);
 	else if (data[0] === '?')
 		data = data.substring(1);
 
@@ -850,13 +854,13 @@ exports.download = function(url, flags, data, callback, cookies, headers, encodi
 			headers['Cookie'] = builder;
 	}
 
-	var uri = parser.parse(url);
+	var uri = Url.parse(url);
 	uri.method = method;
 	uri.agent = false;
 	uri.headers = headers;
 
 	if (data.length) {
-		options.data = new Buffer(data, ENCODING);
+		options.data = exports.createBuffer(data, ENCODING);
 		headers['Content-Length'] = options.data.length;
 	}
 
@@ -876,7 +880,7 @@ function download_call(uri, options) {
 
 	options.length = 0;
 
-	var connection = uri.protocol === 'https:' ? https : http;
+	var connection = uri.protocol === 'https:' ? Https : Http;
 	var req = options.post ? connection.request(uri, (res) => download_response(res, uri, options)) : connection.get(uri, (res) => download_response(res, uri, options));
 
 	if (!options.callback) {
@@ -929,7 +933,7 @@ function download_response(res, uri, options) {
 
 		options.redirect++;
 
-		var tmp = parser.parse(res.headers['location']);
+		var tmp = Url.parse(res.headers['location']);
 		tmp.headers = uri.headers;
 		tmp.agent = false;
 		tmp.method = uri.method;
@@ -998,7 +1002,7 @@ exports.$$download = function(url, flags, data, cookies, headers, encoding, time
 exports.send = function(name, stream, url, callback, cookies, headers, method, timeout) {
 
 	if (typeof(stream) === 'string')
-		stream = fs.createReadStream(stream, STREAM_READONLY);
+		stream = Fs.createReadStream(stream, STREAM_READONLY);
 
 	var BOUNDARY = '----totaljs' + Math.random().toString(16).substring(2);
 	var h = {};
@@ -1019,14 +1023,14 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 	h['Cache-Control'] = 'max-age=0';
 	h['Content-Type'] = 'multipart/form-data; boundary=' + BOUNDARY;
 
-	var e = new events.EventEmitter();
-	var uri = parser.parse(url);
+	var e = new Events.EventEmitter();
+	var uri = Url.parse(url);
 	var options = { protocol: uri.protocol, auth: uri.auth, method: method || 'POST', hostname: uri.hostname, port: uri.port, path: uri.path, agent: false, headers: h };
 	var responseLength = 0;
 
 	var response = function(res) {
 
-		res.body = new Buffer(0);
+		res.body = exports.createBufferSize();
 		res._bufferlength = 0;
 
 		res.on('data', function(chunk) {
@@ -1045,7 +1049,7 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 		});
 	};
 
-	var connection = options.protocol === 'https:' ? https : http;
+	var connection = options.protocol === 'https:' ? Https : Http;
 	var req = connection.request(options, response);
 
 	req.on('response', function(response) {
@@ -1167,7 +1171,7 @@ exports.noop = global.noop = global.NOOP = function() {};
 exports.httpStatus = function(code, addCode) {
 	if (addCode === undefined)
 		addCode = true;
-	return (addCode ? code + ': ' : '') + http.STATUS_CODES[code];
+	return (addCode ? code + ': ' : '') + Http.STATUS_CODES[code];
 };
 
 /**
@@ -1198,6 +1202,31 @@ exports.extend = function(target, source, rewrite) {
 	}
 
 	return target;
+};
+
+exports.extend_headers = function(first, second) {
+	var keys = Object.keys(first);
+	var headers = {};
+
+	var i = keys.length;
+	while (i--)
+		headers[keys[i]] = first[keys[i]];
+
+	keys = Object.keys(second);
+	i = keys.length;
+
+	while (i--)
+		headers[keys[i]] = second[keys[i]];
+
+	return headers;
+};
+
+exports.extend_headers2 = function(first, second) {
+	var keys = Object.keys(second);
+	var i = keys.length;
+	while (i--)
+		first[keys[i]] = second[keys[i]];
+	return first;
 };
 
 /**
@@ -1258,7 +1287,7 @@ exports.clone = function(obj, skip, skipFunctions) {
 	}
 
 	return o;
-}
+};
 
 /**
  * Copy values from object to object
@@ -1359,19 +1388,23 @@ exports.isRelative = function(url) {
  * @param {String} end
  * @param {Function(value, index)} callback
  */
-exports.streamer = function(beg, end, callback) {
+exports.streamer = function(beg, end, callback, skip) {
 
 	if (typeof(end) === 'function') {
+		skip = callback;
 		callback = end;
 		end = undefined;
 	}
 
 	var indexer = 0;
-	var buffer = new Buffer(0);
+	var buffer = exports.createBufferSize();
 
-	beg = new Buffer(beg, 'utf8');
+	if (skip === undefined)
+		skip = 0;
+
+	beg = exports.createBuffer(beg, 'utf8');
 	if (end)
-		end = new Buffer(end, 'utf8');
+		end = exports.createBuffer(end, 'utf8');
 
 	if (!end) {
 		var length = beg.length;
@@ -1387,7 +1420,12 @@ exports.streamer = function(beg, end, callback) {
 				return;
 
 			while (index !== -1) {
-				callback(buffer.toString('utf8', 0, index + length), indexer++);
+
+				if (skip)
+					skip--;
+				else
+					callback(buffer.toString('utf8', 0, index + length), indexer++);
+
 				buffer = buffer.slice(index + length);
 				index = buffer.indexOf(beg);
 				if (index === -1)
@@ -1423,7 +1461,12 @@ exports.streamer = function(beg, end, callback) {
 		}
 
 		while (bi !== -1) {
-			callback(buffer.toString('utf8', bi, ei + elength), indexer++);
+
+			if (skip)
+				skip--;
+			else
+				callback(buffer.toString('utf8', bi, ei + elength), indexer++);
+
 			buffer = buffer.slice(ei + elength);
 			is = false;
 			bi = buffer.indexOf(beg);
@@ -1448,7 +1491,6 @@ exports.encode = function(str) {
 		return '';
 
 	var type = typeof(str);
-
 	if (type !== 'string')
 		str = str.toString();
 
@@ -1466,7 +1508,6 @@ exports.decode = function(str) {
 		return '';
 
 	var type = typeof(str);
-
 	if (type !== 'string')
 		str = str.toString();
 
@@ -1492,25 +1533,14 @@ exports.parseInt = function(obj, def) {
 	if (obj == null)
 		return def || 0;
 	var type = typeof(obj);
-	if (type === 'number')
-		return obj;
-	return (type !== 'string' ? obj.toString() : obj).parseInt();
+	return type === 'number' ? obj : (type !== 'string' ? obj.toString() : obj).parseInt(def);
 };
 
 exports.parseBool = exports.parseBoolean = function(obj, def) {
-
 	if (obj == null)
 		return def === undefined ? false : def;
-
 	var type = typeof(obj);
-	if (type === 'boolean')
-		return obj;
-
-	if (type === 'number')
-		return obj > 0;
-
-	var str = type !== 'string' ? obj.toString() : obj;
-	return str.parseBool(def);
+	return type === 'boolean' ? obj : type === 'number' ? obj > 0 : (type !== 'string' ? obj.toString() : obj).parseBool(def);
 };
 
 /**
@@ -1520,16 +1550,10 @@ exports.parseBool = exports.parseBoolean = function(obj, def) {
  * @return {Number}
  */
 exports.parseFloat = function(obj, def) {
-
 	if (obj == null)
 		return def || 0;
-
 	var type = typeof(obj);
-	if (type === 'number')
-		return obj;
-
-	var str = type !== 'string' ? obj.toString() : obj;
-	return str.parseFloat(def);
+	return type === 'number' ? obj : (type !== 'string' ? obj.toString() : obj).parseFloat(def);
 };
 
 /**
@@ -1556,7 +1580,7 @@ exports.isRegExp = function(obj) {
  * @return {Boolean}
  */
 exports.isDate = function(obj) {
-	return obj instanceof Date && obj.getTime() > -1 ? true : false;
+	return obj instanceof Date && !isNaN(obj.getTime()) ? true : false;
 };
 
 /**
@@ -1589,7 +1613,7 @@ exports.isObject = function(value) {
 exports.getContentType = function(ext) {
 	if (ext[0] === '.')
 		ext = ext.substring(1);
-	return CONTENTTYPES[ext.toLowerCase()] || 'application/octet-stream';
+	return CONTENTTYPES[ext] || 'application/octet-stream';
 };
 
 /**
@@ -1598,8 +1622,17 @@ exports.getContentType = function(ext) {
  * @return {String}
  */
 exports.getExtension = function(filename) {
-	var index = filename.lastIndexOf('.');
-	return index !== -1 && filename.indexOf('/', index - 1) === -1 ? filename.substring(index + 1) : '';
+	var end = filename.length;
+	for (var i = filename.length; i > 1; i--) {
+		var c = filename[i];
+		if (c === ' ' || c === '?')
+			end = i;
+		else if (c === '.')
+			return filename.substring(i + 1, end);
+		else if (c === '/')
+			return '';
+	}
+	return '';
 };
 
 /**
@@ -1616,9 +1649,7 @@ exports.getName = function(path) {
 	if (index !== -1)
 		return path.substring(index + 1);
 	index = path.lastIndexOf('\\');
-	if (index !== -1)
-		return path.substring(index + 1);
-	return path;
+	return index === -1 ? path : path.substring(index + 1);
 };
 
 /**
@@ -1635,34 +1666,15 @@ exports.setContentType = function(ext, type) {
 		regexpSTATIC = new RegExp(tmp.substring(0, tmp.length - 1));
 	}
 
-	CONTENTTYPES[ext.toLowerCase()] = type;
+	CONTENTTYPES[ext] = type;
 	return true;
 };
 
-/**
- * Create eTag hash from text
- * @param {String} text
- * @param {String} version
- * @return {String}
- */
-exports.etag = function(text, version) {
-	var sum = 0;
-	var length = text.length;
-	for (var i = 0; i < length; i++)
-		sum += text.charCodeAt(i);
-	return sum.toString() + (version ? ':' + version : '');
-};
-
 exports.path = function(path, delimiter) {
-
 	if (!path)
 		path = '';
-
 	delimiter = delimiter || '/';
-	if (path[path.length - 1] === delimiter)
-		return path;
-
-	return path + delimiter;
+	return path[path.length - 1] === delimiter ? path : path + delimiter;
 };
 
 exports.join = function() {
@@ -1757,7 +1769,7 @@ function validate_builder_default(name, value, entity) {
 exports.validate_builder = function(model, error, schema, collection, path, index, fields, pluspath) {
 
 	var entity = collection[schema];
-	var prepare = entity.onValidate || framework.onValidate || NOOP;
+	var prepare = entity.onValidate || F.onValidate || NOOP;
 	var current = path === undefined ? '' : path + '.';
 	var properties = entity.properties;
 
@@ -1908,7 +1920,7 @@ exports.validate_builder = function(model, error, schema, collection, path, inde
  */
 exports.combine = function() {
 
-	var p = framework.directory;
+	var p = F.directory;
 
 	for (var i = 0, length = arguments.length; i < length; i++) {
 		var v = arguments[i];
@@ -2031,17 +2043,21 @@ exports.parseXML = function(xml) {
 	return obj;
 };
 
-exports.parseJSON = function(value) {
+exports.parseJSON = function(value, date) {
 	try {
-		return JSON.parse(value);
+		return JSON.parse(value, date ? jsonparser : undefined);
 	} catch(e) {
 		return null;
 	}
 };
 
 exports.parseQuery = function(value) {
-	return framework.onParseQuery(value);
+	return F.onParseQuery(value);
 };
+
+function jsonparser(key, value) {
+	return typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value;
+}
 
 /**
  * Get WebSocket frame
@@ -2055,7 +2071,7 @@ exports.getWebSocketFrame = function(code, message, type) {
 	var messageBuffer = getWebSocketFrameMessageBytes(code, message);
 	var messageLength = messageBuffer.length;
 	var lengthBuffer = getWebSocketFrameLengthBytes(messageLength);
-	var frameBuffer = new Buffer(1 + lengthBuffer.length + messageLength);
+	var frameBuffer = exports.createBufferSize(1 + lengthBuffer.length + messageLength);
 	frameBuffer[0] = 0x80 | type;
 	lengthBuffer.copy(frameBuffer, 1, 0, lengthBuffer.length);
 	messageBuffer.copy(frameBuffer, lengthBuffer.length + 1, 0, messageLength);
@@ -2075,7 +2091,7 @@ function getWebSocketFrameMessageBytes(code, message) {
 	var binary = message instanceof Int8Array;
 	var length = message.length;
 
-	var messageBuffer = new Buffer(length + index);
+	var messageBuffer = exports.createBufferSize(length + index);
 
 	for (var i = 0; i < length; i++) {
 		if (binary)
@@ -2103,20 +2119,20 @@ function getWebSocketFrameLengthBytes(length) {
 	var lengthBuffer = null;
 
 	if (length <= 125) {
-		lengthBuffer = new Buffer(1);
+		lengthBuffer = exports.createBufferSize(1);
 		lengthBuffer[0] = length;
 		return lengthBuffer;
 	}
 
 	if (length <= 65535) {
-		lengthBuffer = new Buffer(3);
+		lengthBuffer = exports.createBufferSize(3);
 		lengthBuffer[0] = 126;
 		lengthBuffer[1] = (length >> 8) & 255;
 		lengthBuffer[2] = (length) & 255;
 		return lengthBuffer;
 	}
 
-	lengthBuffer = new Buffer(9);
+	lengthBuffer = exports.createBufferSize(9);
 
 	lengthBuffer[0] = 127;
 	lengthBuffer[1] = 0x00;
@@ -2464,20 +2480,20 @@ Date.prototype.format = function(format, resource) {
 				return self.getFullYear().toString().substring(2);
 			case 'MMM':
 				var m = MONTHS[self.getMonth()];
-				return (framework ? framework.resource(resource, m) || m : m).substring(0, 3);
+				return (F.resource(resource, m) || m).substring(0, 3);
 			case 'MMMM':
 				var m = MONTHS[self.getMonth()];
-				return (framework ? framework.resource(resource, m) || m : m);
+				return (F.resource(resource, m) || m);
 			case 'MM':
 				return (self.getMonth() + 1).toString().padLeft(2, '0');
 			case 'M':
 				return (self.getMonth() + 1);
 			case 'ddd':
 				var m = DAYS[self.getDay()];
-				return (framework ? framework.resource(resource, m) || m : m).substring(0, 3);
+				return (F.resource(resource, m) || m).substring(0, 3);
 			case 'dddd':
 				var m = DAYS[self.getDay()];
-				return (framework ? framework.resource(resource, m) || m : m);
+				return (F.resource(resource, m) || m);
 			case 'dd':
 				return self.getDate().toString().padLeft(2, '0');
 			case 'd':
@@ -2502,14 +2518,9 @@ Date.prototype.format = function(format, resource) {
 				tmp.setHours(0, 0, 0);
 				tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
 				tmp = Math.ceil((((tmp - new Date(tmp.getFullYear(), 0, 1)) / 8.64e7) + 1) / 7);
-				if (key === 'ww')
-					return tmp.toString().padLeft(2, '0');
-				return tmp;
+				return key === 'ww' ? tmp.toString().padLeft(2, '0') : tmp;
 			case 'a':
-				var a = 'AM';
-				if (self.getHours() >= 12)
-					a = 'PM';
-				return a;
+				return self.getHours() >= 12 ? 'PM' : 'AM';
 		}
 	});
 };
@@ -2594,9 +2605,7 @@ String.prototype.endsWith = function(text, ignoreCase) {
 String.prototype.replacer = function(find, text) {
 	var self = this;
 	var beg = self.indexOf(find);
-	if (beg === -1)
-		return self;
-	return self.substring(0, beg) + text + self.substring(beg + find.length);
+	return beg === -1 ? self : (self.substring(0, beg) + text + self.substring(beg + find.length));
 };
 
 /**
@@ -2609,7 +2618,7 @@ String.prototype.hash = function(type, salt) {
 	var str = this;
 	if (salt)
 		str += salt;
-	switch ((type || '').toLowerCase()) {
+	switch (type) {
 		case 'md5':
 			return str.md5();
 		case 'sha1':
@@ -2647,29 +2656,138 @@ String.prototype.count = function(text) {
 	return count;
 };
 
-/**
- * Parse XML
- * @return {Object}
- */
 String.prototype.parseXML = function() {
-	return framework.onParseXML(this);
+	return F.onParseXML(this);
 };
 
-String.prototype.parseJSON = function() {
-	return exports.parseJSON(this);
+String.prototype.parseJSON = function(date) {
+	return exports.parseJSON(this, date);
 };
 
 String.prototype.parseQuery = function() {
 	return exports.parseQuery(this);
 };
 
-/**
- * Parse date from string
- * @return {Date}
- */
+String.prototype.parseTerminal = function(fields, fn, skip, take) {
+
+	var lines = this.split('\n');
+
+	if (typeof(fields) === 'function') {
+		take = skip;
+		skip = fn;
+		fn = fields;
+		parseTerminal2(lines, fn, skip, take);
+		return this;
+	}
+
+	if (skip === undefined)
+		skip = 0;
+	if (take === undefined)
+		take = lines.length;
+
+	var headers = [];
+	var indexer = 0;
+	var line = lines[0];
+
+	if (!line) {
+		line = lines[1];
+		skip++;
+	}
+
+	if (!line) {
+		line = lines[2];
+		skip++;
+	}
+
+	if (!line)
+		return this;
+
+	var fieldslength = fields.length;
+	var tmp;
+
+	for (var i = 0, length = fieldslength; i < length; i++) {
+		var field = fields[i];
+
+		var beg = -1;
+		var end = -1;
+		var type = typeof(field);
+
+		if (type === 'object' && field.test) {
+			tmp = line.match(field);
+			if (tmp) {
+				beg = tmp.index;
+				end = beg + tmp.toString().length;
+			} else {
+				beg = -1;
+				end = -1;
+			}
+		} else if (type === 'string') {
+			tmp = line.indexOf(field);
+			if (tmp === -1) {
+				beg = -1;
+				end = -1;
+			} else {
+				beg = tmp;
+				end = line.indexOf(' ', beg + field.length);
+			}
+		}
+
+		headers.push({ beg: beg, end: end });
+	}
+
+	for (var i = skip + 1, length = skip + 1 + take; i < length; i++) {
+
+		var line = lines[i];
+		if (!line)
+			continue;
+
+		var arr = [];
+		var is = false;
+		var beg;
+
+		for (var j = 0; j < fieldslength; j++) {
+			var header = headers[j];
+			if (header.beg !== -1) {
+				is = true;
+				beg = 0;
+
+				for (var k = header.beg; k > -1; k--) {
+					if (line[k] === ' ') {
+						beg = k + 1;
+						break;
+					}
+				}
+
+				arr.push(line.substring(beg, header.end === -1 ? undefined : header.end).trim());
+			} else
+				arr.push('');
+		}
+
+		is && fn(arr, indexer++, length, i);
+	}
+
+	return this;
+};
+
+function parseTerminal2(lines, fn, skip, take) {
+	var indexer = 0;
+
+	if (skip === undefined)
+		skip = 0;
+	if (take === undefined)
+		take = lines.length;
+
+	for (var i = skip, length = skip + take; i < length; i++) {
+		var line = lines[i];
+		if (!line)
+			continue;
+		var m = line.match(regexpTERMINAL);
+		m && fn(m, indexer++, length, i);
+	}
+}
+
 String.prototype.parseDate = function() {
 	var self = this.trim();
-
 	var lc = self.charCodeAt(self.length - 1);
 
 	// Classic date
@@ -2697,11 +2815,8 @@ String.prototype.parseDate = function() {
 
 	for (var i = 0; i < length; i++) {
 		var c = arr[0].charCodeAt(i);
-		if (c > 47 && c < 58)
+		if (c === 45 || c === 46 || (c > 47 && c < 58))
 			continue;
-		if (c === 45 || c === 46)
-			continue;
-
 		if (noTime)
 			return new Date(self);
 	}
@@ -2764,10 +2879,6 @@ String.prototype.parseDate = function() {
 	return new Date(parsed[0], parsed[1] - 1, parsed[2], parsed[3], parsed[4], parsed[5]);
 };
 
-/**
- * Parse expiration date
- * @return {Date}
- */
 String.prototype.parseDateExpiration = function() {
 	var self = this;
 
@@ -2776,16 +2887,12 @@ String.prototype.parseDateExpiration = function() {
 	var length = arr.length;
 
 	for (var i = 0; i < length; i += 2) {
-
 		var num = arr[i].parseInt();
 		if (num === 0)
 			continue;
-
-		var type = arr[i + 1] || '';
-		if (type === '')
-			continue;
-
-		dt = dt.add(type, num);
+		var type = arr[i + 1];
+		if (type)
+			dt = dt.add(type, num);
 	}
 
 	return dt;
@@ -2835,11 +2942,7 @@ String.prototype.parseConfig = function(def) {
 	for (var i = 0; i < length; i++) {
 
 		var str = arr[i];
-
-		if (!str || str[0] === '#')
-			continue;
-
-		if (str.substring(0, 2) === '//')
+		if (!str || str[0] === '#' || str.substring(0, 2) === '//')
 			continue;
 
 		index = str.indexOf(' :');
@@ -2879,7 +2982,7 @@ String.prototype.parseConfig = function(def) {
 				obj[name] = new Function('return ' + value)();
 				break;
 			case 'json':
-				obj[name] = value.parseJSON();
+				obj[name] = value.parseJSON(true);
 				break;
 			case 'env':
 			case 'environment':
@@ -2953,8 +3056,10 @@ String.prototype.urlDecode = function() {
 };
 
 String.prototype.params = function(obj) {
-	var formatted = this;
 
+	OBSOLETE('String.params()', 'The method is deprecated instead of it use F.viewCompile() or String.format().');
+
+	var formatted = this;
 	if (obj == null)
 		return formatted;
 
@@ -3058,23 +3163,23 @@ String.prototype.isJSON = function() {
 };
 
 String.prototype.isURL = function() {
-	return this.length <= 7 ? false : framework.validators.url.test(this);
+	return this.length <= 7 ? false : F.validators.url.test(this);
 };
 
 String.prototype.isZIP = function() {
-	return framework.validators.zip.test(this);
+	return F.validators.zip.test(this);
 };
 
 String.prototype.isEmail = function() {
-	return this.length <= 4 ? false : framework.validators.email.test(this);
+	return this.length <= 4 ? false : F.validators.email.test(this);
 };
 
 String.prototype.isPhone = function() {
-	return this.length < 6 ? false : framework.validators.phone.test(this);
+	return this.length < 6 ? false : F.validators.phone.test(this);
 };
 
 String.prototype.isUID = function() {
-	return this.length < 18 ? false : framework.validators.uid.test(this);
+	return this.length < 18 ? false : F.validators.uid.test(this);
 };
 
 String.prototype.parseInt = function(def) {
@@ -3085,12 +3190,12 @@ String.prototype.parseInt = function(def) {
 
 String.prototype.parseInt2 = function(def) {
 	var num = this.match(regexpINTEGER);
-	return num ? +num : def || 0;
+	return num ? +num[0] : def || 0;
 };
 
 String.prototype.parseFloat2 = function(def) {
 	var num = this.match(regexpFLOAT);
-	return num ? +num.toString().replace(/\,/g, '.') : def || 0;
+	return num ? +num[0].toString().replace(/\,/g, '.') : def || 0;
 };
 
 String.prototype.parseBool = String.prototype.parseBoolean = function() {
@@ -3106,9 +3211,14 @@ String.prototype.parseFloat = function(def) {
 	return isNaN(num) ? (def || 0) : num;
 };
 
-String.prototype.capitalize = function() {
+String.prototype.capitalize = function(first) {
+
+	if (first)
+		return this[0].toUpperCase() + this.substring(1);
+
 	var builder = '';
 	var c;
+
 	for (var i = 0, length = this.length; i < length; i++) {
 		var c = this[i - 1];
 		if (!c || (c === ' ' || c === '\t' || c === '\n'))
@@ -3117,8 +3227,10 @@ String.prototype.capitalize = function() {
 			c = this[i];
 		builder += c;
 	}
+
 	return builder;
 };
+
 
 String.prototype.toUnicode = function() {
 	var result = '';
@@ -3134,30 +3246,29 @@ String.prototype.toUnicode = function() {
 };
 
 String.prototype.fromUnicode = function() {
-	var str = this.replace(/\\u([\d\w]{4})/gi, (match, v) => String.fromCharCode(parseInt(v, 16)));
-	return unescape(str);
+	return unescape(this.replace(regexpUNICODE, (match, v) => String.fromCharCode(parseInt(v, 16))));
 };
 
 String.prototype.sha1 = function(salt) {
-	var hash = crypto.createHash('sha1');
+	var hash = Crypto.createHash('sha1');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
 String.prototype.sha256 = function(salt) {
-	var hash = crypto.createHash('sha256');
+	var hash = Crypto.createHash('sha256');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
 String.prototype.sha512 = function(salt) {
-	var hash = crypto.createHash('sha512');
+	var hash = Crypto.createHash('sha512');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
 
 String.prototype.md5 = function(salt) {
-	var hash = crypto.createHash('md5');
+	var hash = Crypto.createHash('md5');
 	hash.update(this + (salt || ''), ENCODING);
 	return hash.digest('hex');
 };
@@ -3200,7 +3311,7 @@ String.prototype.encrypt = function(key, isUnique) {
 		values[i] = String.fromCharCode(index ^ (key.charCodeAt(i % key_count) ^ random));
 	}
 
-	var hash = new Buffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(regexpENCRYPT, text => text === '+' ? '_' : '-');
+	var hash = exports.createBuffer(counter + '=' + values.join(''), ENCODING).toString('base64').replace(regexpENCRYPT, text => text === '+' ? '_' : '-');
 	index = hash.indexOf('=');
 	return index > 0 ? hash.substring(0, index) : hash;
 };
@@ -3215,7 +3326,7 @@ String.prototype.decrypt = function(key) {
 			values += '=';
 	}
 
-	values = new Buffer(values, 'base64').toString(ENCODING);
+	values = exports.createBuffer(values, 'base64').toString(ENCODING);
 
 	var index = values.indexOf('=');
 	if (index === -1)
@@ -3252,7 +3363,7 @@ String.prototype.base64ToFile = function(filename, callback) {
 	else
 		index++;
 
-	fs.writeFile(filename, self.substring(index), 'base64', callback || exports.noop);
+	Fs.writeFile(filename, self.substring(index), 'base64', callback || exports.noop);
 	return this;
 };
 
@@ -3265,7 +3376,7 @@ String.prototype.base64ToBuffer = function() {
 	else
 		index++;
 
-	return new Buffer(self.substring(index), 'base64');
+	return exports.createBuffer(self.substring(index), 'base64');
 };
 
 String.prototype.base64ContentType = function() {
@@ -3375,15 +3486,8 @@ String.prototype.slug = String.prototype.toSlug = String.prototype.toLinker = St
 			continue;
 		}
 
-		if (code > 47 && code < 58) {
+		if ((code > 47 && code < 58) || (code > 94 && code < 123))
 			builder += c;
-			continue;
-		}
-
-		if (code > 94 && code < 123) {
-			builder += c;
-			continue;
-		}
 	}
 	var l = builder.length - 1;
 	return builder[l] === '-' ? builder.substring(0, l) : builder;
@@ -3869,13 +3973,10 @@ Array.prototype.take = function(count) {
 Array.prototype.extend = function(obj, rewrite) {
 	var isFn = typeof(obj) === 'function';
 	for (var i = 0, length = this.length; i < length; i++) {
-
-		if (isFn) {
+		if (isFn)
 			this[i] = obj(this[i], i);
-			continue;
-		}
-
-		this[i] = exports.extend(this[i], obj, rewrite);
+		else
+			this[i] = exports.extend(this[i], obj, rewrite);
 	}
 	return this;
 };
@@ -4069,28 +4170,18 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 			break;
 	}
 
-	quicksort(self, function(a, b) {
+	shellsort(self, function(a, b) {
 
 		var va = name ? a[name] : a;
 		var vb = name ? b[name] : b;
 
 		// String
 		if (type === 1) {
-			if (va && vb)
-				return asc ? va.substring(0, maxlength).removeDiacritics().localeCompare(vb.substring(0, maxlength).removeDiacritics()) : vb.substring(0, maxlength).removeDiacritics().localeCompare(va.substring(0, maxlength).removeDiacritics());
-			return 0;
+			return va && vb ? (asc ? va.substring(0, maxlength).removeDiacritics().localeCompare(vb.substring(0, maxlength).removeDiacritics()) : vb.substring(0, maxlength).removeDiacritics().localeCompare(va.substring(0, maxlength).removeDiacritics())) : 0;
 		} else if (type === 2) {
-			if (va > vb)
-				return asc ? 1 : -1;
-			else if (va < vb)
-				return asc ? -1 : 1;
-			return 0;
+			return va > vb ? (asc ? 1 : -1) : va < vb ? (asc ? -1 : 1) : 0;
 		} else if (type === 3) {
-			if (va === true && vb === false)
-				return asc ? 1 : -1;
-			else if (va === false && vb === true)
-				return asc ? -1 : 1;
-			return 0;
+			return va === true && vb === false ? (asc ? 1 : -1) : va === false && vb === true ? (asc ? -1 : 1) : 0;
 		} else if (type === 4) {
 			if (!va || !vb)
 				return 0;
@@ -4098,13 +4189,10 @@ Array.prototype.quicksort = Array.prototype.orderBy = function(name, asc, maxlen
 				va = new Date(va);
 			if (!vb.getTime)
 				vb = new Date(vb);
-			if (va.getTime() > vb.getTime())
-				return asc ? 1 : -1;
-			else if (va.getTime() < vb.getTime())
-				return asc ? -1 : 1;
-			return 0;
+			var at = va.getTime();
+			var bt = vb.getTime();
+			return at > bt ? (asc ? 1 : -1) : at < bt ? (asc ? -1 : 1) : 0;
 		}
-
 		return 0;
 	});
 
@@ -4573,7 +4661,7 @@ function Async(owner) {
 	this.tasksTimeout = {};
 	this.isCanceled = false;
 
-	events.EventEmitter.call(this);
+	Events.EventEmitter.call(this);
 }
 
 Async.prototype = {
@@ -4587,7 +4675,7 @@ Async.prototype = {
 	}
 };
 
-Async.prototype.__proto__ = Object.create(events.EventEmitter.prototype, {
+Async.prototype.__proto__ = Object.create(Events.EventEmitter.prototype, {
 	constructor: {
 		value: Async,
 		enumberable: false
@@ -4678,56 +4766,34 @@ Async.prototype.complete = function(fn) {
 };
 
 Async.prototype.run = function(fn) {
-	var self = this;
-	self._isRunning = true;
-	fn && self.onComplete.push(fn);
-	self.refresh();
-	return self;
+	this._isRunning = true;
+	fn && this.onComplete.push(fn);
+	this.refresh();
+	return this;
 };
 
 Async.prototype.isRunning = function(name) {
-
-	var self = this;
-
 	if (!name)
-		return self._isRunning;
-
-	var task = self.tasksPending[name];
-	if (!task)
-		return false;
-
-	return task.isRunning === 1;
+		return this._isRunning;
+	var task = this.tasksPending[name];
+	return task ? task.isRunning === 1 : false;
 };
 
 Async.prototype.isWaiting = function(name) {
-	var self = this;
-
-	var task = self.tasksPending[name];
-	if (!task)
-		return false;
-
-	return task.isRunning === 0;
+	var task = this.tasksPending[name];
+	return task ? task.isRunning === 0 : false;
 };
 
 Async.prototype.isPending = function(name) {
-	var self = this;
-	var task = self.tasksPending[name];
-	if (!task)
-		return false;
-	return true;
+	return this.tasksPending[name] ? true : false;
 };
 
 Async.prototype.timeout = function(name, timeout) {
-
-	var self = this;
-
-	if (!timeout) {
-		self.tasksTimeout[name] = undefined;
-		return self;
-	}
-
-	self.tasksTimeout[name] = timeout;
-	return self;
+	if (timeout)
+		this.tasksTimeout[name] = timeout;
+	else
+		this.tasksTimeout[name] = undefined;
+	return this;
 };
 
 Async.prototype.refresh = function(name) {
@@ -4758,10 +4824,7 @@ Async.prototype.refresh = function(name) {
 			continue;
 		}
 
-		if (task.isRunning !== 0)
-			continue;
-
-		if (task.waiting && self.tasksPending[task.waiting])
+		if (task.isRunning !== 0 || (task.waiting && self.tasksPending[task.waiting]))
 			continue;
 
 		task.run();
@@ -4801,10 +4864,10 @@ function FileList() {
 }
 
 FileList.prototype.reset = function() {
-	var self = this;
-	self.file.length = 0;
-	self.directory.length = 0;
-	self.pendingDirectory.length = 0;
+	this.file.length = 0;
+	this.directory.length = 0;
+	this.pendingDirectory.length = 0;
+	return this;
 };
 
 FileList.prototype.walk = function(directory) {
@@ -4813,23 +4876,18 @@ FileList.prototype.walk = function(directory) {
 
 	if (directory instanceof Array) {
 		var length = directory.length;
-
 		for (var i = 0; i < length; i++)
 			self.pendingDirectory.push(directory[i]);
-
 		self.next();
 		return;
 	}
 
-	fs.readdir(directory, function(err, arr) {
-
+	Fs.readdir(directory, function(err, arr) {
 		if (err)
 			return self.next();
-
 		var length = arr.length;
 		for (var i = 0; i < length; i++)
-			self.pending.push(path.join(directory, arr[i]));
-
+			self.pending.push(Path.join(directory, arr[i]));
 		self.next();
 	});
 };
@@ -4837,7 +4895,7 @@ FileList.prototype.walk = function(directory) {
 FileList.prototype.stat = function(path) {
 	var self = this;
 
-	fs.stat(path, function(err, stats) {
+	Fs.stat(path, function(err, stats) {
 
 		if (err)
 			return self.next();
@@ -5133,16 +5191,14 @@ exports.parseTheme = function(value) {
 	if (index === -1)
 		return '';
 	value = value.substring(1, index);
-	if (value === '?')
-		return framework.config['default-theme'];
-	return value;
+	return value === '?' ? F.config['default-theme'] : value;
 };
 
 exports.set = function(obj, path, value) {
 	var cachekey = 'S+' + path;
 
-	if (framework.temporary.other[cachekey])
-		return framework.temporary.other[cachekey](obj, value);
+	if (F.temporary.other[cachekey])
+		return F.temporary.other[cachekey](obj, value);
 
 	var arr = path.split('.');
 	var builder = [];
@@ -5166,8 +5222,7 @@ exports.set = function(obj, path, value) {
 	}
 
 	var fn = (new Function('w', 'a', 'b', builder.join(';') + ';w.' + path.replace(/\'/, '\'') + '=a;return a'));
-	if (global.framework)
-		framework.temporary.other[cachekey] = fn;
+	F.temporary.other[cachekey] = fn;
 	fn(obj, value, path);
 };
 
@@ -5175,8 +5230,8 @@ exports.get = function(obj, path) {
 
 	var cachekey = 'G=' + path;
 
-	if (framework.temporary.other[cachekey])
-		return framework.temporary.other[cachekey](obj);
+	if (F.temporary.other[cachekey])
+		return F.temporary.other[cachekey](obj);
 
 	var arr = path.split('.');
 	var builder = [];
@@ -5192,8 +5247,7 @@ exports.get = function(obj, path) {
 	}
 
 	var fn = (new Function('w', builder.join(';') + ';return w.' + path.replace(/\'/, '\'')));
-	if (global.framework)
-		framework.temporary.other[cachekey] = fn;
+	F.temporary.other[cachekey] = fn;
 	return fn(obj);
 };
 
@@ -5202,109 +5256,31 @@ global.sync = global.SYNCHRONIZE = exports.sync;
 global.sync2 = exports.sync2;
 
 // =============================================
-// FAST QUICK SORT IMPLEMENTATION
+// SHELL SORT IMPLEMENTATION OF ALGORITHM
 // =============================================
 
-function swap(ary, a, b) {
-	var t = ary[a];
-	ary[a] = ary[b];
-	ary[b] = t;
-}
-
-function insertion_sort(ary, comparer) {
-	for(var i=1,l=ary.length;i<l;i++) {
-		var value = ary[i];
-		for(var j=i - 1;j>=0;j--) {
-			// if(ary[j] <= value)
-			if(comparer(value, ary[j], true))
-				break;
-			ary[j+1] = ary[j];
-		}
-		ary[j+1] = value;
-	}
-	return ary;
-}
-
-function inplace_quicksort_partition(ary, start, end, pivotIndex, comparer) {
-	var i = start, j = end;
-	var pivot = ary[pivotIndex];
-	while(true) {
-		while(comparer(pivot, ary[i])) {i++};
-		j--;
-		while(comparer(ary[j], pivot)) {j--};
-		if(!(i < j))
-			return i;
-		swap(ary,i,j);
-		i++;
-	}
-}
-
-function fast_quicksort(ary, comparer) {
-	var stack = [];
-	var entry = [0,ary.length,2 * Math.floor(Math.log(ary.length)/Math.log(2))];
-	stack.push(entry);
-	while(stack.length) {
-		entry = stack.pop();
-		var start = entry[0];
-		var end = entry[1];
-		var depth = entry[2];
-
-		if (!depth) {
-			ary = shell_sort_bound(ary, start, end, comparer);
-			continue;
-		}
-
-		depth--;
-
-		var pivot = Math.round((start + end) / 2);
-		var pivotNewIndex = inplace_quicksort_partition(ary,start,end, pivot, comparer);
-
-		if (end - pivotNewIndex > 16) {
-			entry = [pivotNewIndex,end,depth];
-			stack.push(entry);
-		}
-
-		if (pivotNewIndex - start > 16) {
-			entry = [start,pivotNewIndex,depth];
-			stack.push(entry);
+function _shellInsertionSort(list, length, gapSize, fn) {
+	var temp, i, j;
+	for (i = gapSize; i < length; i += gapSize ) {
+		j = i;
+		while(j > 0 && fn(list[j - gapSize], list[j]) === 1) {
+			temp = list[j];
+			list[j] = list[j - gapSize];
+			list[j - gapSize] = temp;
+			j -= gapSize;
 		}
 	}
+};
 
-	ary = insertion_sort(ary, comparer);
-	return ary;
-}
-
-function shell_sort_bound(ary, start, end, comparer) {
-	var inc = Math.round((start + end) / 2), i, j, t;
-	while (inc >= start) {
-		for (i = inc; i < end; i++) {
-			t = ary[i];
-			j = i;
-			while (j >= inc && comparer(ary[j - inc], t)) {
-				ary[j] = ary[j - inc];
-				j -= inc;
-			}
-			ary[j] = t;
-		}
-		inc = Math.round(inc / 2.2);
+function shellsort(arr, fn) {
+	var length = arr.length;
+	var gapSize = Math.floor(length / 2);
+	while(gapSize) {
+		_shellInsertionSort(arr, length, gapSize, fn);
+		gapSize = Math.floor(gapSize / 2);
 	}
-
-	return ary;
-}
-
-function comparer_asc(index, eq) {
-	return eq ? (index === 1 || index === 0 ? true : false) : index === 1;
-}
-
-function comparer_desc(index, eq) {
-	return eq ? (index === -1 || index === 0 ? true : false) : index === -1;
-}
-
-function quicksort(arr, comparer, desc) {
-	return fast_quicksort(arr, function(a, b, eq) {
-		return desc ? comparer_desc(comparer(a, b), eq) : comparer_asc(comparer(a, b), eq);
-	});
-}
+	return arr;
+};
 
 function Chunker(name, max) {
 	this.name = name;
@@ -5313,8 +5289,9 @@ function Chunker(name, max) {
 	this.filename = 'chunker_{0}-'.format(name);
 	this.stack = [];
 	this.flushing = 0;
-	if (global.framework)
-		this.filename = global.framework.path.temp(this.filename);
+	this.pages = 0;
+	this.count = 0;
+	this.filename = F.path.temp(this.filename);
 }
 
 Chunker.prototype.append = Chunker.prototype.write = function(obj) {
@@ -5322,9 +5299,13 @@ Chunker.prototype.append = Chunker.prototype.write = function(obj) {
 
 	self.stack.push(obj);
 
-	if (self.stack.length >= self.max) {
+	var tmp = self.stack.length;
+
+	if (tmp >= self.max) {
 		self.flushing++;
-		fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
+		self.pages++;
+		self.count += tmp;
+		Fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
 		self.stack = [];
 	}
 
@@ -5333,10 +5314,12 @@ Chunker.prototype.append = Chunker.prototype.write = function(obj) {
 
 Chunker.prototype.end = function() {
 	var self = this;
-
-	if (self.stack.length) {
+	var tmp = self.stack.length;
+	if (tmp) {
 		self.flushing++;
-		fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
+		self.pages++;
+		self.count += tmp;
+		Fs.writeFile(self.filename + (self.index++) + '.json', JSON.stringify(self.stack), () => self.flushing--);
 		self.stack = [];
 	}
 
@@ -5368,32 +5351,30 @@ Chunker.prototype.read = function(index, callback) {
 		return;
 	}
 
-	fs.readFile(self.filename + index + '.json', function(err, data) {
+	Fs.readFile(self.filename + index + '.json', function(err, data) {
 		if (err)
 			callback(null, EMPTYARRAY);
 		else
-			callback(null, data.toString('utf8').parseJSON());
+			callback(null, data.toString('utf8').parseJSON(true));
 	});
 	return self;
 };
 
 Chunker.prototype.clear = function() {
-	var self = this;
 	var files = [];
-	for (var i = 0; i < self.index; i++)
-		files.push(self.filename + i + '.json');
-	files.wait((filename, next) => fs.unlink(filename, next));
-	return self;
+	for (var i = 0; i < this.index; i++)
+		files.push(this.filename + i + '.json');
+	files.wait((filename, next) => Fs.unlink(filename, next));
+	return this;
 };
 
 Chunker.prototype.destroy = function() {
-	var self = this;
-	self.clear();
-	self.indexer = 0;
-	self.flushing = 0;
-	clearTimeout(self.flushing_timeout);
-	self.stack = null;
-	return self;
+	this.clear();
+	this.indexer = 0;
+	this.flushing = 0;
+	clearTimeout(this.flushing_timeout);
+	this.stack = null;
+	return this;
 };
 
 exports.chunker = function(name, max) {
@@ -5410,4 +5391,12 @@ exports.ObjectToArray = function(obj) {
 	return output;
 };
 
-!global.framework && require('./index');
+if (NODEVERSION > 699) {
+	exports.createBufferSize = (size) => Buffer.alloc(size || 0);
+	exports.createBuffer = (val, type) => Buffer.from(val || '', type);
+} else {
+	exports.createBufferSize = (size) => new Buffer(size || 0);
+	exports.createBuffer = (val, type) => new Buffer(val || '', type);
+}
+
+!global.F && require('./index');

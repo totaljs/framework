@@ -10,9 +10,9 @@ if (process.argv.indexOf('--minify') !== -1) {
     var options = {};
     options.fromString = true;
     options.mangle = true;
-    output = UglifyJS.minify(fs.readFileSync(path.join(process.cwd(), 'total.min.js')).toString('utf8'), options).code;
-    fs.writeFileSync(path.join(process.cwd(), 'total.min.js'), license + output);
-    fs.renameSync(path.join(process.cwd(), 'total.min.js'), path.join(process.cwd(), 'total.js'));
+    options.quote_style = 1;
+    output = fs.readFileSync(path.join(process.cwd(), 'total.js')).toString('utf8');
+    fs.writeFileSync(path.join(process.cwd(), 'total.js'), license + output);
     return;
 }
 
@@ -24,12 +24,14 @@ for (var i = 0, length = merge.length; i < length; i++) {
     var file = merge[i];
     var content = fs.readFileSync('../' + file).toString('utf8');
 
+    content = content.replace("!global.framework && require('./index');", '');
+
     switch (file) {
         case 'index.js':
             buffer.push(content);
             break;
         default:
-            buffer.push('(function(module){var exports=module.exports;global.framework_' + file.substring(0, file.length - 3) + '=module.exports;\n' + content + 'return module;})({ exports: {} });');
+            buffer.push('(function(module){var exports=module.exports;global.framework_' + file.substring(0, file.length - 3) + '=module.exports;\n' + content + 'return module;})({exports:{}});');
             break;
     }
 }

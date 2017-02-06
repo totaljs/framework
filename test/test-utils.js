@@ -121,6 +121,11 @@ function prototypeString() {
 	assert.ok(str.isJSON() === false, 'string.isJSON()');
 	assert.ok(JSON.parse(JSON.stringify(new Date())).isJSONDate(), 'string.isJSONDate()');
 
+	var dt = new Date();
+	var ts = dt.getTime();
+
+	assert.ok(JSON.stringify({ date: dt }).parseJSON(true).date.getTime() === ts, 'string.parseJSON(true) - problem with Date parsing');
+
 	str = 'google.sk';
 	assert.ok(str.isURL() === false, 'string.isURL(): ' + str);
 
@@ -159,6 +164,9 @@ function prototypeString() {
 
 	str = '   a  ';
 	assert.ok(str.parseInt() === 0, 'string.parseInt(): ' + str);
+
+	str = '   a  ';
+	assert.ok(str.parseInt(-1) === -1, 'string.parseInt(): ' + str + ' / default');
 
 	str = '';
 	assert.ok(str.parseInt() === 0, 'string.parseInt(): ' + str);
@@ -234,9 +242,6 @@ function prototypeString() {
 	var num = 12345;
 	assert.ok(num.padLeft(10) === '0000012345', 'number.padLeft(10): ' + num);
 	assert.ok(num.padRight(10) === '1234500000', 'number.padRight(10): ' + num);
-
-	str = 'Date: {{now | dd.MM.yyyy HH:mm:ss}}. Currency: {{number | 2}} and encoded: {{name}} and raw: {{!name}}';
-	assert.ok(str.params({now: new Date(), number: 23034.34, name: '<b>Peter</b>'}).length === 106, 'string.params(): ' + str);
 
 	str = 'Peter Širka Linker & - you known';
 	assert.ok(str.linker() === 'peter-sirka-linker-you-known', 'string.link(): ' + str);
@@ -444,15 +449,6 @@ function other() {
 
 	str = '.xFx';
 	assert.ok(utils.getContentType(str) === 'application/octet-stream', 'utils.getContentType(): ' + str);
-
-	str = 'logo.jpg';
-	assert.ok(utils.etag(str) === '800', 'utils.etag(): ' + str);
-
-	str = 'logo.jpg?=1';
-	assert.ok(utils.etag(str) === '973', 'utils.etag(): ' + str);
-
-	str = 'logo.jpg?=2';
-	assert.ok(utils.etag(str) === '974', 'utils.etag(): ' + str);
 
 	str = '/logo';
 	assert.ok(utils.path(str) === '/logo/', 'utils.path(): ' + str);

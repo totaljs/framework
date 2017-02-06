@@ -1,4 +1,4 @@
-// Copyright 2012-2016 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2017 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,12 +21,12 @@
 
 /**
  * @module FrameworkBuilders
- * @version 2.3.0
+ * @version 2.4.0
  */
 
 'use strict';
 
-const REQUIRED = 'The field "@" is required.';
+const REQUIRED = 'The field "@" is invalid.';
 const DEFAULT_SCHEMA = 'default';
 const SKIP = { $$schema: true, $$result: true, $$callback: true, $$async: true, $$index: true, $$repository: true, $$can: true, $$controller: true };
 const REGEXP_CLEAN_EMAIL = /\s/g;
@@ -35,6 +35,7 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
 const Qs = require('querystring');
 
 var schemas = {};
+var operations = {};
 var transforms = { pagination: {}, error: {}, transformbuilder: {}, restbuilder: {} };
 
 function SchemaBuilder(name) {
@@ -58,29 +59,25 @@ SchemaBuilder.prototype.get = function(name) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilder.prototype.create = function(name) {
-	var self = this;
-	self.collection[name] = new SchemaBuilderEntity(self, name);
-	return self.collection[name];
+	this.collection[name] = new SchemaBuilderEntity(this, name);
+	return this.collection[name];
 };
 
 /**
- * Remove an exist schema or group of schemas
+ * Removes an existing schema or group of schemas
  * @param {String} name Schema name, optional.
  * @return {SchemaBuilder}
  */
 SchemaBuilder.prototype.remove = function(name) {
-	var self = this;
-
-	if (!name) {
-		delete schemas[name];
-		self.collection = null;
-		return;
+	if (name) {
+		var schema = this.collection[name];
+		schema && schema.destroy();
+		schema = null;
+		delete this.collection[name];
+	} else {
+		delete schemas[this.name];
+		this.collection = null;
 	}
-
-	var schema = self.collection[name];
-	schema && schema.remove();
-	schema = null;
-	return self;
 };
 
 SchemaBuilder.prototype.destroy = function(name) {
@@ -104,7 +101,7 @@ function SchemaBuilderEntity(parent, name) {
 	this.constants;
 	this.onPrepare;
 	this.onDefault;
-	this.onValidate = framework.onValidate;
+	this.onValidate = F.onValidate;
 	this.onSave;
 	this.onGet;
 	this.onRemove;
@@ -144,11 +141,10 @@ SchemaBuilderEntity.prototype.allow = function(name) {
  */
 SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 
-	var self = this;
 	if (name instanceof Array) {
 		for (var i = 0, length = name.length; i < length; i++)
-			self.define(name[i], type, required, custom);
-		return self;
+			this.define(name[i], type, required, custom);
+		return this;
 	}
 
 	if (required !== undefined && typeof(required) !== 'boolean') {
@@ -159,25 +155,25 @@ SchemaBuilderEntity.prototype.define = function(name, type, required, custom) {
 	if (type instanceof SchemaBuilderEntity)
 		type = type.name;
 
-	self.schema[name] = self.$parse(name, type, required, custom);
-	switch (self.schema[name].type) {
+	this.schema[name] = this.$parse(name, type, required, custom);
+	switch (this.schema[name].type) {
 		case 7:
-			if (!self.dependencies)
-				self.dependencies = [];
-			self.dependencies.push(name);
+			if (!this.dependencies)
+				this.dependencies = [];
+			this.dependencies.push(name);
 			break;
 	}
 
-	self.fields = Object.keys(self.schema);
+	this.fields = Object.keys(this.schema);
 
 	if (!required)
-		return self;
+		return this;
 
-	if (self.properties == null)
-		self.properties = [];
+	if (this.properties == null)
+		this.properties = [];
 
-	self.properties.indexOf(name) === -1 && self.properties.push(name);
-	return self;
+	this.properties.indexOf(name) === -1 && this.properties.push(name);
+	return this;
 };
 
 /**
@@ -197,7 +193,6 @@ SchemaBuilderEntity.prototype.setPrimary = function(name) {
  * @return {Array|Object} Returns Array (with property names) if the model is undefined otherwise returns Object Name/Value.
  */
 SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
-	var self = this;
 
 	if (typeof(model) === 'boolean') {
 		var tmp = reverse;
@@ -215,9 +210,9 @@ SchemaBuilderEntity.prototype.filter = function(custom, model, reverse) {
 	else if (type === 'object')
 		isReg = framework_utils.isRegExp(custom);
 
-	for (var prop in self.schema) {
+	for (var prop in this.schema) {
 
-		var schema = self.schema[prop];
+		var schema = this.schema[prop];
 		if (!schema)
 			continue;
 
@@ -452,13 +447,11 @@ SchemaBuilderEntity.prototype.$parse = function(name, value, required, custom) {
 };
 
 SchemaBuilderEntity.prototype.getDependencies = function() {
-	var self = this;
 	var dependencies = [];
 
-	for (var name in self.schema) {
+	for (var name in this.schema) {
 
-		var type = self.schema[name];
-
+		var type = this.schema[name];
 		if (typeof(type) !== 'string')
 			continue;
 
@@ -466,7 +459,7 @@ SchemaBuilderEntity.prototype.getDependencies = function() {
 		if (isArray)
 			type = type.substring(1, type.length - 1);
 
-		var m = self.parent.get(type);
+		var m = this.parent.get(type);
 		m && dependencies.push({ name: name, isArray: isArray, schema: m });
 	}
 
@@ -480,20 +473,19 @@ SchemaBuilderEntity.prototype.getDependencies = function() {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setValidate = function(properties, fn) {
-	var self = this;
 
 	if (fn === undefined && properties instanceof Array) {
-		self.properties = properties;
-		return self;
+		this.properties = properties;
+		return this;
 	}
 
 	if (typeof(properties) !== 'function') {
-		self.properties = properties;
-		self.onValidate = fn;
+		this.properties = properties;
+		this.onValidate = fn;
 	} else
-		self.onValidate = properties;
+		this.onValidate = properties;
 
-	return self;
+	return this;
 };
 
 SchemaBuilderEntity.prototype.setPrefix = function(prefix) {
@@ -512,9 +504,8 @@ SchemaBuilderEntity.prototype.setResource = function(name) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setDefault = function(fn) {
-	var self = this;
-	self.onDefault = fn;
-	return self;
+	this.onDefault = fn;
+	return this;
 };
 
 /**
@@ -523,9 +514,8 @@ SchemaBuilderEntity.prototype.setDefault = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setPrepare = function(fn) {
-	var self = this;
-	self.onPrepare = fn;
-	return self;
+	this.onPrepare = fn;
+	return this;
 };
 
 /**
@@ -534,10 +524,9 @@ SchemaBuilderEntity.prototype.setPrepare = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setSave = function(fn, description) {
-	var self = this;
-	self.onSave = fn;
-	self.meta.save = description;
-	return self;
+	this.onSave = fn;
+	this.meta.save = description;
+	return this;
 };
 
 
@@ -547,9 +536,8 @@ SchemaBuilderEntity.prototype.setSave = function(fn, description) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setError = function(fn) {
-	var self = this;
-	self.onError = fn;
-	return self;
+	this.onError = fn;
+	return this;
 };
 
 /**
@@ -558,10 +546,9 @@ SchemaBuilderEntity.prototype.setError = function(fn) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = function(fn, description) {
-	var self = this;
-	self.onGet = fn;
-	self.meta.get = description;
-	return self;
+	this.onGet = fn;
+	this.meta.get = description;
+	return this;
 };
 
 /**
@@ -571,10 +558,9 @@ SchemaBuilderEntity.prototype.setGet = SchemaBuilderEntity.prototype.setRead = f
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
-	var self = this;
-	self.onQuery = fn;
-	self.meta.query = description;
-	return self;
+	this.onQuery = fn;
+	this.meta.query = description;
+	return this;
 };
 
 /**
@@ -584,10 +570,9 @@ SchemaBuilderEntity.prototype.setQuery = function(fn, description) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.setRemove = function(fn, description) {
-	var self = this;
-	self.onRemove = fn;
-	self.meta.remove = description;
-	return self;
+	this.onRemove = fn;
+	this.meta.remove = description;
+	return this;
 };
 
 /**
@@ -598,17 +583,16 @@ SchemaBuilderEntity.prototype.setRemove = function(fn, description) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.constant = function(name, value, description) {
-	var self = this;
 
 	if (value === undefined)
-		return self.constants ? self.constants[name] : undefined;
+		return this.constants ? this.constants[name] : undefined;
 
-	if (!self.constants)
-		self.constants = {};
+	if (!this.constants)
+		this.constants = {};
 
-	self.constants[name] = value;
-	self.meta['constant#' + name] = description;
-	return self;
+	this.constants[name] = value;
+	this.meta['constant#' + name] = description;
+	return this;
 };
 
 /**
@@ -619,19 +603,18 @@ SchemaBuilderEntity.prototype.constant = function(name, value, description) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addTransform = function(name, fn, description) {
-	var self = this;
 
 	if (typeof(name) === 'function') {
 		fn = name;
 		name = 'default';
 	}
 
-	if (!self.transforms)
-		self.transforms = {};
+	if (!this.transforms)
+		this.transforms = {};
 
-	self.transforms[name] = fn;
-	self.meta['transform#' + name] = description;
-	return self;
+	this.transforms[name] = fn;
+	this.meta['transform#' + name] = description;
+	return this;
 };
 
 /**
@@ -642,19 +625,18 @@ SchemaBuilderEntity.prototype.addTransform = function(name, fn, description) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addOperation = function(name, fn, description) {
-	var self = this;
 
 	if (typeof(name) === 'function') {
 		fn = name;
 		name = 'default';
 	}
 
-	if (!self.operations)
-		self.operations = {};
+	if (!this.operations)
+		this.operations = {};
 
-	self.operations[name] = fn;
-	self.meta['operation#' + name] = description;
-	return self;
+	this.operations[name] = fn;
+	this.meta['operation#' + name] = description;
+	return this;
 };
 
 /**
@@ -665,34 +647,31 @@ SchemaBuilderEntity.prototype.addOperation = function(name, fn, description) {
  * @return {SchemaBuilderEntity}
  */
 SchemaBuilderEntity.prototype.addWorkflow = function(name, fn, description) {
-	var self = this;
 
 	if (typeof(name) === 'function') {
 		fn = name;
 		name = 'default';
 	}
 
-	if (!self.workflows)
-		self.workflows = {};
+	if (!this.workflows)
+		this.workflows = {};
 
-	self.workflows[name] = fn;
-	self.meta['workflow#' + name] = description;
-	return self;
+	this.workflows[name] = fn;
+	this.meta['workflow#' + name] = description;
+	return this;
 };
 
 SchemaBuilderEntity.prototype.addHook = function(name, fn, description) {
 
-	var self = this;
+	if (!this.hooks)
+		this.hooks = {};
 
-	if (!self.hooks)
-		self.hooks = {};
+	if (!this.hooks[name])
+		this.hooks[name] = [];
 
-	if (!self.hooks[name])
-		self.hooks[name] = [];
-
-	self.hooks[name].push({ owner: framework.$owner(), fn: fn });
-	self.meta['hook#' + name] = description;
-	return self;
+	this.hooks[name].push({ owner: F.$owner(), fn: fn });
+	this.meta['hook#' + name] = description;
+	return this;
 };
 
 /**
@@ -705,21 +684,32 @@ SchemaBuilderEntity.prototype.find = function(name) {
 };
 
 /**
- * Destroy current entity
+ * Destroys current entity
  */
 SchemaBuilderEntity.prototype.destroy = function() {
-	var self = this;
-	delete self.parent.collection[self.name];
-	self.properties = null;
-	self.schema = null;
-	self.onDefault = null;
-	self.onValidate = null;
-	self.onSave = null;
-	self.onRead = null;
-	self.onRemove = null;
-	self.onQuery = null;
-	self.workflows = null;
-	self.transforms = null;
+	delete this.parent.collection[this.name];
+	this.properties = undefined;
+	this.schema = undefined;
+	this.onDefault = undefined;
+	this.onValidate = undefined;
+	this.onSave = undefined;
+	this.onRead = undefined;
+	this.onGet = undefined;
+	this.onRemove = undefined;
+	this.onQuery = undefined;
+	this.workflows = undefined;
+	this.operations = undefined;
+	this.transforms = undefined;
+	this.meta = undefined;
+	this.properties = undefined;
+	this.hooks = undefined;
+	this.constants = undefined;
+	this.onPrepare = undefined;
+	this.onError = undefined;
+	this.gcache = undefined;
+	this.dependencies = undefined;
+	this.fields = undefined;
+	this.fields_allow = undefined;
 };
 
 /**
@@ -989,7 +979,6 @@ SchemaBuilderEntity.prototype.query = function(helper, callback, controller) {
 SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourceName, builder, filter, path, index) {
 
 	var self = this;
-	var fn = self.onValidate;
 
 	if (builder === undefined) {
 		builder = new ErrorBuilder();
@@ -1028,7 +1017,7 @@ SchemaBuilderEntity.prototype.validate = function(model, resourcePrefix, resourc
 		var s = self.parent.collection[schema.raw];
 
 		if (!s) {
-			framework.error(new Error('Schema "' + schema.raw + '" not found (validation).'));
+			F.error(new Error('Schema "' + schema.raw + '" not found (validation).'));
 			continue;
 		}
 
@@ -1068,12 +1057,11 @@ SchemaBuilderEntity.prototype.$make = function(obj) {
 };
 
 SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
-	var self = this;
 	if (obj && typeof(obj.$save) === 'function')
 		callback(null, obj);
 	else
-		self.make(obj, (err, model) => callback(err, model));
-	return self;
+		this.make(obj, (err, model) => callback(err, model));
+	return this;
 };
 
 /**
@@ -1082,21 +1070,19 @@ SchemaBuilderEntity.prototype.$prepare = function(obj, callback) {
  */
 SchemaBuilderEntity.prototype.default = function() {
 
-	var self = this;
-	var obj = self.schema;
-
+	var obj = this.schema;
 	if (obj === null)
 		return null;
 
-	var defaults = self.onDefault;
-	var item = new self.CurrentSchemaInstance();
+	var defaults = this.onDefault;
+	var item = new this.CurrentSchemaInstance();
 
 	for (var property in obj) {
 
 		var type = obj[property];
 
 		if (defaults) {
-			var def = defaults(property, true, self.name);
+			var def = defaults(property, true, this.name);
 			if (def !== undefined) {
 				item[property] = def;
 				continue;
@@ -1133,9 +1119,9 @@ SchemaBuilderEntity.prototype.default = function() {
 				if (type.isArray) {
 					item[property] = [];
 				} else {
-					var tmp = self.find(type.raw);
+					var tmp = this.find(type.raw);
 					if (!tmp) {
-						framework.error(new Error('Schema: "' + property + '.' + type.raw + '" not found in "' + self.parent.name + '".'));
+						F.error(new Error('Schema: "' + property + '.' + type.raw + '" not found in "' + this.parent.name + '".'));
 						item[property] = null;
 					} else
 						item[property] = tmp.default();
@@ -1161,11 +1147,9 @@ SchemaBuilderEntity.prototype.default = function() {
  */
 SchemaBuilderEntity.prototype.make = function(model, filter, callback) {
 
-	var self = this;
-
 	if (typeof(model) === 'function') {
-		model.call(self, self);
-		return self;
+		model.call(this, this);
+		return this;
 	}
 
 	if (typeof(filter) === 'function') {
@@ -1174,10 +1158,10 @@ SchemaBuilderEntity.prototype.make = function(model, filter, callback) {
 		filter = tmp;
 	}
 
-	var output = self.prepare(model);
-	var builder = self.validate(output, undefined, undefined, undefined, filter);
+	var output = this.prepare(model);
+	var builder = this.validate(output, undefined, undefined, undefined, filter);
 	if (builder.hasError()) {
-		self.onError && self.onError(builder, model, 'make');
+		this.onError && this.onError(builder, model, 'make');
 		callback && callback(builder, null);
 		return output;
 	}
@@ -1193,10 +1177,11 @@ function autotrim(context, value) {
 }
 
 SchemaBuilderEntity.prototype.$onprepare = function(name, value, index, model) {
-	if (!this.onPrepare)
-		return value;
-	var val = this.onPrepare(name, value, index, model);
-	return val === undefined ? value : val;
+	if (this.onPrepare) {
+		var val = this.onPrepare(name, value, index, model);
+		return val === undefined ? value : val;
+	}
+	return value;
 };
 
 /**
@@ -1984,7 +1969,7 @@ SchemaBuilderEntity.prototype.clean = function(m) {
 
 // For async operations, because SUCCESS() returns singleton instance everytime
 function copy(obj) {
-	return framework.isSuccess(obj) ? { success: obj.success, value: obj.value } : obj;
+	return F.isSuccess(obj) ? { success: obj.success, value: obj.value } : obj;
 }
 
 function clone(obj) {
@@ -2089,20 +2074,18 @@ SchemaInstance.prototype.$async = function(callback, index) {
 
 SchemaInstance.prototype.$repository = function(name, value) {
 
-	var self = this;
-
-	if (self.$$repository === undefined) {
+	if (this.$$repository === undefined) {
 		if (value === undefined)
 			return undefined;
-		self.$$repository = {};
+		this.$$repository = {};
 	}
 
 	if (value !== undefined) {
-		self.$$repository[name] = value;
+		this.$$repository[name] = value;
 		return value;
 	}
 
-	return self.$$repository[name];
+	return this.$$repository[name];
 };
 
 SchemaInstance.prototype.$index = function(index) {
@@ -2190,67 +2173,60 @@ SchemaInstance.prototype.$next = function(type, name, helper) {
 };
 
 SchemaInstance.prototype.$exec = function(name, helper, callback) {
-	var self = this;
 
 	if (typeof(helper) === 'function') {
 		callback = helper;
 		helper = undefined;
 	}
 
-	var group = self.$$schema.parent.name;
-	var key = group !== 'default' ? group + '/' + self.$$schema.name : self.$$schema.name;
-	var workflow = framework.workflows[key + '#' + name] || framework.workflows[name];
+	var group = this.$$schema.parent.name;
+	var key = group !== 'default' ? group + '/' + this.$$schema.name : this.$$schema.name;
+	var workflow = F.workflows[key + '#' + name] || F.workflows[name];
 
 	if (workflow)
-		workflow(self, helper || EMPTYOBJECT, callback || NOOP);
+		workflow(this, helper || EMPTYOBJECT, callback || NOOP);
 	else
 		callback && callback(new ErrorBuilder().push('Workflow "' + name + '" not found in workflows.'));
 
-	return self;
+	return this;
 };
 
 SchemaInstance.prototype.$save = function(helper, callback) {
-	var self = this;
-
-	if (self.$$can && self.$$async)
-		self.$push('save', helper);
+	if (this.$$can && this.$$async)
+		this.$push('save', helper);
 	else
-		self.$$schema.save(self, helper, callback, self.$$controller);
-
-	return self;
+		this.$$schema.save(this, helper, callback, this.$$controller);
+	return this;
 };
 
 SchemaInstance.prototype.$query = function(helper, callback) {
-	var self = this;
 
-	if (self.$$can && self.$$async)
-		self.$push('query', helper);
+	if (this.$$can && this.$$async)
+		this.$push('query', helper);
 	else
-		self.$$schema.query(self, helper, callback, self.$$controller);
+		this.$$schema.query(this, helper, callback, this.$$controller);
 
-	return self;
+	return this;
 };
 
 SchemaInstance.prototype.$read = SchemaInstance.prototype.$get = function(helper, callback) {
-	var self = this;
 
-	if (self.$$can && self.$$async)
-		self.$push('get', helper);
+	if (this.$$can && this.$$async)
+		this.$push('get', helper);
 	else
-		self.$$schema.get(self, helper, callback, self.$$controller);
+		this.$$schema.get(this, helper, callback, this.$$controller);
 
-	return self;
+	return this;
 };
 
 SchemaInstance.prototype.$remove = function(helper, callback) {
-	var self = this;
 
-	if (self.$$can && self.$$async)
-		self.$push('remove', helper);
+	if (this.$$can && this.$$async)
+		this.$push('remove', helper);
 	else
-		self.$$schema.remove(helper, callback, self.$$controller);
+		this.$$schema.remove(helper, callback, this.$$controller);
 
-	return self;
+	return this;
 };
 
 SchemaInstance.prototype.$default = function() {
@@ -2262,47 +2238,43 @@ SchemaInstance.prototype.$destroy = function() {
 };
 
 SchemaInstance.prototype.$transform = function(name, helper, callback) {
-	var self = this;
 
-	if (self.$$can && self.$$async)
-		self.$push('transform', name, helper);
+	if (this.$$can && this.$$async)
+		this.$push('transform', name, helper);
 	else
-		self.$$schema.transform(name, self, helper, callback, undefined, self.$$controller);
+		this.$$schema.transform(name, this, helper, callback, undefined, this.$$controller);
 
-	return self;
+	return this;
 };
 
 SchemaInstance.prototype.$workflow = function(name, helper, callback) {
-	var self = this;
 
-	if (self.$$can && self.$$async)
-		self.$push('workflow', name, helper);
+	if (this.$$can && this.$$async)
+		this.$push('workflow', name, helper);
 	else
-		self.$$schema.workflow(name, self, helper, callback, undefined, self.$$controller);
+		this.$$schema.workflow(name, this, helper, callback, undefined, this.$$controller);
 
-	return self;
+	return this;
 };
 
 SchemaInstance.prototype.$hook = function(name, helper, callback) {
-	var self = this;
 
-	if (self.$$can && self.$$async)
-		self.$push('hook', name, helper);
+	if (this.$$can && this.$$async)
+		this.$push('hook', name, helper);
 	else
-		self.$$schema.hook(name, self, helper, callback, undefined, self.$$controller);
+		this.$$schema.hook(name, this, helper, callback, undefined, this.$$controller);
 
-	return self;
+	return this;
 };
 
 SchemaInstance.prototype.$operation = function(name, helper, callback) {
-	var self = this;
 
-	if (self.$$can && self.$$async)
-		self.$push('operation', name, helper);
+	if (this.$$can && this.$$async)
+		this.$push('operation', name, helper);
 	else
-		self.$$schema.operation(name, self, helper, callback, undefined, self.$$controller);
+		this.$$schema.operation(name, this, helper, callback, undefined, this.$$controller);
 
-	return self;
+	return this;
 };
 
 SchemaInstance.prototype.$clean = SchemaInstance.prototype.$plain = function() {
@@ -2341,8 +2313,8 @@ function ErrorBuilder(onResource) {
 	this.items = [];
 	this.transformName = transforms['error_default'];
 	this.onResource = onResource;
-	this.resourceName = framework.config['default-errorbuilder-resource-name'];
-	this.resourcePrefix = framework.config['default-errorbuilder-resource-prefix'] || '';
+	this.resourceName = F.config['default-errorbuilder-resource-name'];
+	this.resourcePrefix = F.config['default-errorbuilder-resource-prefix'] || '';
 	this.isResourceCustom = false;
 	this.count = 0;
 	this.replacer = [];
@@ -2352,8 +2324,7 @@ function ErrorBuilder(onResource) {
 	// Hidden: when the .push() contains a classic Error instance
 	// this.unexpected;
 
-	if (!onResource)
-		this._resource();
+	!onResource && this._resource();
 }
 
 /**
@@ -2414,18 +2385,12 @@ exports.newschema = function(group, name) {
 	if (!group)
 		group = DEFAULT_SCHEMA;
 
-	if (schemas[group] === undefined)
+	if (!schemas[group])
 		schemas[group] = new SchemaBuilder(group);
 
-	var schema;
-
-	if (name) {
-		schema = schemas[group].get(name);
-		if (!schema)
-			schema = schemas[group].create(name);
-	}
-
-	return schema;
+	var o = schemas[group].create(name);
+	o.owner = F.$owner();
+	return o;
 };
 
 /**
@@ -2621,7 +2586,7 @@ ErrorBuilder.prototype._resource = function() {
 
 ErrorBuilder.prototype._resource_handler = function(name) {
 	var self = this;
-	return typeof(framework) !== 'undefined' ? framework.resource(self.resourceName || 'default', self.resourcePrefix + name) : '';
+	return typeof(framework) !== 'undefined' ? F.resource(self.resourceName || 'default', self.resourcePrefix + name) : '';
 }
 
 ErrorBuilder.prototype.exception = function(message) {
@@ -2651,27 +2616,27 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
  */
 ErrorBuilder.prototype.push = function(name, error, path, index) {
 	var self = this;
-	self.isPrepared = false;
+	this.isPrepared = false;
 
 	if (name instanceof ErrorBuilder) {
 		if (name.hasError()) {
 			for (var i = 0, length = name.items.length; i < length; i++)
-				self.items.push(name.items[i]);
-			self.count = self.items.length;
+				this.items.push(name.items[i]);
+			this.count = this.items.length;
 		}
-		return self;
+		return this;
 	}
 
 	if (name instanceof Array) {
 		for (var i = 0, length = name.length; i < length; i++)
-			self.push(name[i], undefined, path, index);
-		return self;
+			this.push(name[i], undefined, path, index);
+		return this;
 	}
 
 	if (error instanceof Array) {
 		for (var i = 0, length = error.length; i < length; i++)
-			self.push(name, error[i], path, index);
-		return self;
+			this.push(name, error[i], path, index);
+		return this;
 	}
 
 	if (typeof(name) === 'object') {
@@ -2680,30 +2645,21 @@ ErrorBuilder.prototype.push = function(name, error, path, index) {
 		name = '';
 	}
 
-	if (!name && !error)
-		return self;
-
-	if (error === null)
-		return self;
+	if (error === null || (!name && !error))
+		return this;
 
 	if (!error)
 		error = '@';
 
 	if (error instanceof Error) {
 		// Why? The answer is in controller.callback(); It's a reason for throwing 500 - internal server error
-		self.unexpected = true;
+		this.unexpected = true;
 		error = error.toString();
 	}
 
-	self.items.push({
-		name: name,
-		error: typeof(error) === 'string' ? error : error.toString(),
-		path: path,
-		index: index
-	});
-
-	self.count = self.items.length;
-	return self;
+	this.items.push({ name: name, error: typeof(error) === 'string' ? error : error.toString(), path: path, index: index });
+	this.count = this.items.length;
+	return this;
 };
 
 /**
@@ -2712,10 +2668,9 @@ ErrorBuilder.prototype.push = function(name, error, path, index) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.remove = function(name) {
-	var self = this;
-	self.items = self.items.remove('name', name);
-	self.count = self.items.length;
-	return self;
+	this.items = this.items.remove('name', name);
+	this.count = this.items.length;
+	return this;
 };
 
 /**
@@ -2724,8 +2679,7 @@ ErrorBuilder.prototype.remove = function(name) {
  * @return {Boolean}
  */
 ErrorBuilder.prototype.hasError = function(name) {
-	var self = this;
-	return name ? self.items.findIndex('name', name) !== -1 : self.items.length > 0;
+	return name ? this.items.findIndex('name', name) !== -1 : this.items.length > 0;
 };
 
 /**
@@ -2734,9 +2688,8 @@ ErrorBuilder.prototype.hasError = function(name) {
  * @return {String}
  */
 ErrorBuilder.prototype.read = function(name) {
-	var self = this;
-	!self.isPrepared && self.prepare();
-	var error = self.items.findItem('name', name);
+	!this.isPrepared && this.prepare();
+	var error = this.items.findItem('name', name);
 	return error ? error.error : null;
 };
 
@@ -2745,10 +2698,9 @@ ErrorBuilder.prototype.read = function(name) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.clear = function() {
-	var self = this;
-	self.items = [];
-	self.count = 0;
-	return self;
+	this.items = [];
+	this.count = 0;
+	return this;
 };
 
 /**
@@ -2758,10 +2710,9 @@ ErrorBuilder.prototype.clear = function() {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.replace = function(search, newvalue) {
-	var self = this;
-	self.isPrepared = false;
-	self.replacer[search] = newvalue;
-	return self;
+	this.isPrepared = false;
+	this.replacer[search] = newvalue;
+	return this;
 };
 
 /**
@@ -2799,30 +2750,26 @@ ErrorBuilder.prototype.JSON = function(beautify, replacer) {
  */
 ErrorBuilder.prototype._prepare = function() {
 
-	var self = this;
+	if (!this.onResource)
+		return this;
 
-	if (!self.onResource)
-		return self;
+	var arr = this.items;
+	for (var i = 0, length = arr.length; i < length; i++) {
 
-	var errors = self.items;
-	var length = errors.length;
-
-	for (var i = 0; i < length; i++) {
-
-		var o = errors[i];
+		var o = arr[i];
 		if (o.error[0] !== '@')
 			continue;
 
 		if (o.error.length === 1)
-			o.error = self.onResource(o.name);
+			o.error = this.onResource(o.name);
 		else
-			o.error = self.onResource(o.error.substring(1));
+			o.error = this.onResource(o.error.substring(1));
 
 		if (!o.error)
 			o.error = REQUIRED.replace('@', o.name);
 	}
 
-	return self;
+	return this;
 };
 
 /**
@@ -2831,32 +2778,23 @@ ErrorBuilder.prototype._prepare = function() {
  * @return {Object}
  */
 ErrorBuilder.prototype._transform = function(name) {
-
-	var self = this;
-	var transformName = name || self.transformName;
-
-	if (!transformName)
-		return self.items;
-
-	var current = transforms['error'][transformName];
-	if (!current)
-		return self.items;
-
-	return current.call(self);
+	var transformName = name || this.transformName;
+	if (transformName) {
+		var current = transforms['error'][transformName];
+		return current ? current.call(this) : this.items;
+	}
+	return this.items;
 };
 
 ErrorBuilder.prototype.output = function() {
-	var self = this;
-
 	if (!this.transformName)
 		return this.json();
-
 	var current = transforms['error'][this.transformName];
-	if (!current)
-		return this.json();
-
-	this.prepare();
-	return current.call(this);
+	if (current) {
+		this.prepare();
+		return current.call(this);
+	}
+	return this.json();
 };
 
 /**
@@ -3055,34 +2993,33 @@ Pagination.removeTransform = function(name) {
  * @return {Pagination}
  */
 Pagination.prototype.refresh = function(items, page, max) {
-	var self = this;
 
-	self.page = Math.max(1, +page) - 1;
+	this.page = Math.max(1, +page) - 1;
 
-	if (self.page <= 0)
-		self.page = 0;
+	if (this.page <= 0)
+		this.page = 0;
 
-	self.items = Math.max(0, +items);
-	self.max = Math.max(1, +max);
-	self.skip = self.page * self.max;
-	self.count = Math.ceil(self.items / self.max);
-	self.take = Math.min(self.max, (self.items - self.skip));
+	this.items = Math.max(0, +items);
+	this.max = Math.max(1, +max);
+	this.skip = this.page * this.max;
+	this.count = Math.ceil(this.items / this.max);
+	this.take = Math.min(this.max, (this.items - this.skip));
 
-	self.lastPage = self.count;
-	self.firstPage = 1;
-	self.prevPage = self.page ? self.page : 1;
-	self.nextPage = self.page + 2 < self.count - 1 ? self.page + 2 : self.count;
+	this.lastPage = this.count;
+	this.firstPage = 1;
+	this.prevPage = this.page ? this.page : 1;
+	this.nextPage = this.page + 2 < this.count - 1 ? this.page + 2 : this.count;
 
-	self.isPrev = self.page > 0;
-	self.isNext = self.page < self.count - 1;
+	this.isPrev = this.page > 0;
+	this.isNext = this.page < this.count - 1;
 
-	self.isFirst = self.page === 0;
-	self.isLast = self.page === self.count - 1;
+	this.isFirst = this.page === 0;
+	this.isLast = this.page === this.count - 1;
 
-	self.visible = self.count > 1;
-	self.page++;
+	this.visible = this.count > 1;
+	this.page++;
 
-	return self;
+	return this;
 };
 
 /**
@@ -3091,9 +3028,8 @@ Pagination.prototype.refresh = function(items, page, max) {
  * @return {Pagination}
  */
 Pagination.prototype.setTransform = function(name) {
-	var self = this;
-	self._transform = name;
-	return self;
+	this._transform = name;
+	return this;
 };
 
 /**
@@ -3109,21 +3045,19 @@ Pagination.prototype.setTransform = function(name) {
  */
 Pagination.prototype.transform = function(name) {
 
-	var self = this;
-	var transformName = name || self.transformName;
-
+	var transformName = name || this.transformName;
 	if (!transformName)
 		throw new Error('A transformation of Pagination not found.');
 
 	var current = transforms['pagination'][transformName];
 	if (!current)
-		return self.render();
+		return this.render();
 
 	var param = [];
 	for (var i = 1; i < arguments.length; i++)
 		param.push(arguments[i]);
 
-	return current.apply(self, param);
+	return current.apply(this, param);
 };
 
 /**
@@ -3132,17 +3066,16 @@ Pagination.prototype.transform = function(name) {
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.prev = function(format) {
-	var self = this;
 	var page = 0;
 
-	format = format || self.format;
+	format = format || this.format;
 
-	if (self.isPrev)
-		page = self.page - 1;
+	if (this.isPrev)
+		page = this.page - 1;
 	else
-		page = self.count;
+		page = this.count;
 
-	return new Page(format.format(page, self.items, self.count), page, false, self.isPrev);
+	return new Page(format.format(page, this.items, this.count), page, false, this.isPrev);
 };
 
 /**
@@ -3151,17 +3084,16 @@ Pagination.prototype.prev = function(format) {
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.next = function(format) {
-	var self = this;
 	var page = 0;
 
-	format = format || self.format;
+	format = format || this.format;
 
-	if (self.isNext)
-		page = self.page + 1;
+	if (this.isNext)
+		page = this.page + 1;
 	else
 		page = 1;
 
-	return new Page(format.format(page, self.items, self.count), page, false, self.isNext);
+	return new Page(format.format(page, this.items, this.count), page, false, this.isNext);
 };
 
 /**
@@ -3170,10 +3102,9 @@ Pagination.prototype.next = function(format) {
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.last = function(format) {
-	var self = this;
-	var page = self.count;
-	format = format || self.format;
-	return new Page(format.format(page, self.items, self.count), page, false, self.count > 0);
+	var page = this.count;
+	format = format || this.format;
+	return new Page(format.format(page, this.items, this.count), page, false, this.count > 0);
 };
 
 /**
@@ -3182,10 +3113,9 @@ Pagination.prototype.last = function(format) {
  * @return {Object} Example: { url: String, page: Number, selected: Boolean }
  */
 Pagination.prototype.first = function(format) {
-	var self = this;
 	var page = 1;
-	format = format || self.format;
-	return new Page(format.format(page, self.items, self.count), page, false, self.count > 0);
+	format = format || this.format;
+	return new Page(format.format(page, this.items, this.count), page, false, this.count > 0);
 };
 
 /**
@@ -3273,19 +3203,18 @@ UrlBuilder.make = function(fn) {
  * return {UrlBuilder}
  */
 UrlBuilder.prototype.add = function(name, value) {
-	var self = this;
 
 	if (typeof(name) !== 'object') {
-		self.builder[name] = value;
-		return self;
+		this.builder[name] = value;
+		return this;
 	}
 
 	var arr = Object.keys(name);
 
 	for (var i = 0, length = arr.length; i < length; i++)
-		self.builder[arr[i]] = name[arr[i]];
+		this.builder[arr[i]] = name[arr[i]];
 
-	return self;
+	return this;
 };
 
 /**
@@ -3294,9 +3223,8 @@ UrlBuilder.prototype.add = function(name, value) {
  * @return {UrlBuilder}
  */
 UrlBuilder.prototype.remove = function(name) {
-	var self = this;
-	delete self.builder[name];
-	return self;
+	delete this.builder[name];
+	return this;
 };
 
 /**
@@ -3313,9 +3241,8 @@ UrlBuilder.prototype.read = function(name) {
  * @return {UrlBuilder}
  */
 UrlBuilder.prototype.clear = function() {
-	var self = this;
-	self.builder = {};
-	return self;
+	this.builder = {};
+	return this;
 };
 
 /**
@@ -3366,13 +3293,11 @@ UrlBuilder.prototype.hasValue = function(keys) {
 	if (keys === undefined)
 		return false;
 
-	var self = this;
-
 	if (typeof(keys) === 'string')
 		keys = [keys];
 
 	for (var i = 0; i < keys.length; i++) {
-		var val = self.builder[keys[i]];
+		var val = this.builder[keys[i]];
 		if (val == null)
 			return false;
 	}
@@ -3396,6 +3321,8 @@ UrlBuilder.prototype.toOne = function(keys, delimiter) {
 function TransformBuilder() {}
 
 TransformBuilder.transform = function(name, obj) {
+
+	OBSOLETE('TransformBuilder', 'Builders.TransformBuilder will be removed in next versions.');
 
 	var index = 2;
 
@@ -3443,9 +3370,10 @@ TransformBuilder.setDefaultTransform = function(name) {
 
 function async_queue(arr, callback) {
 	var item = arr.shift();
-	if (!item)
-		return callback();
-	item(() => async_queue(arr, callback));
+	if (item)
+		item(() => async_queue(arr, callback));
+	else
+		callback();
 };
 
 function async_wait(arr, onItem, onCallback, index) {
@@ -3458,7 +3386,7 @@ function async_wait(arr, onItem, onCallback, index) {
 
 function RESTBuilder(url) {
 	this.$url = url;
-	this.$headers = { 'User-Agent': 'Total.js/v' + framework.version_header, Accept: 'application/json, text/plain, text/plain, text/xml' };
+	this.$headers = { 'User-Agent': 'Total.js/v' + F.version_header, Accept: 'application/json, text/plain, text/plain, text/xml' };
 	this.$method = 'get';
 	this.$timeout = 10000;
 	this.$type = 0; // 0 = query, 1 = json, 2 = urlencode, 3 = raw
@@ -3480,7 +3408,7 @@ RESTBuilder.make = function(fn) {
 };
 
 /**
- * STATIC: Create a transformation
+ * STATIC: Creates a transformation
  * @param {String} name
  * @param {Function} fn
  * @param {Boolean} isDefault Default transformation for all RESTBuilders.
@@ -3503,15 +3431,18 @@ RESTBuilder.prototype.setTransform = function(name) {
 };
 
 RESTBuilder.prototype.url = function(url) {
+	if (url === undefined)
+		return this.$url;
 	this.$url = url;
 	return this;
 };
 
 RESTBuilder.prototype.maketransform = function(obj, data) {
-	if (!this.$transform)
-		return obj;
-	var fn = transforms['restbuilder'][this.$transform];
-	return fn ? fn(obj, data) : obj;
+	if (this.$transform) {
+		var fn = transforms['restbuilder'][this.$transform];
+		return fn ? fn(obj, data) : obj;
+	}
+	return obj;
 };
 
 RESTBuilder.prototype.$trasnformname
@@ -3528,11 +3459,11 @@ RESTBuilder.prototype.maxlength = function(number) {
 };
 
 RESTBuilder.prototype.auth = function(user, password) {
-	this.$headers['authorization'] = 'Basic ' + new Buffer(user + ':' + password).toString('base64');
+	this.$headers['authorization'] = 'Basic ' + framework_utils.createBuffer(user + ':' + password).toString('base64');
 	return this;
 };
 
-RESTBuilder.prototype.schema = function(group, schema) {
+RESTBuilder.prototype.schema = function(group, name) {
 	this.$schema = exports.getschema(group, name);
 	return this;
 };
@@ -3709,12 +3640,9 @@ RESTBuilder.prototype.rem = function(name) {
 RESTBuilder.prototype.stream = function(callback) {
 	var self = this;
 	var flags = self.$flags ? self.$flags : [self.$method];
-	var key;
 
 	if (!self.$flags) {
-
 		!self.$nodnscache && flags.push('dnscache');
-
 		switch (self.$type) {
 			case 1:
 				flags.push('json');
@@ -3723,7 +3651,6 @@ RESTBuilder.prototype.stream = function(callback) {
 				flags.push('xml');
 				break;
 		}
-
 		self.$flags = flags;
 	}
 
@@ -3758,7 +3685,7 @@ RESTBuilder.prototype.exec = function(callback) {
 
 	if (self.$cache_expire && !self.$nocache) {
 		key = '$rest_' + (self.$url + flags.join(',') + (self.$data ? Qs.stringify(self.$data) : '')).hash();
-		var data = framework.cache.read2(key);
+		var data = F.cache.read2(key);
 		if (data) {
 			var evt = new events.EventEmitter();
 
@@ -3774,8 +3701,14 @@ RESTBuilder.prototype.exec = function(callback) {
 
 	return U.request(self.$url, flags, self.$data, function(err, response, status, headers, hostname) {
 
+		var type = err ? '' : headers['content-type'];
 		var output = new RESTBuilderResponse();
-		output.json = response.isJSON() ? framework.onParseJSON(response) : null;
+
+		output.value = type.indexOf('/xml') === -1 ? response.isJSON() ? F.onParseJSON(response) : F.onParseQuery(response) : response.parseXML();
+
+		if (output.value == null)
+			output.value = EMPTYOBJECT;
+
 		output.response = response;
 		output.status = status;
 		output.headers = headers;
@@ -3786,19 +3719,19 @@ RESTBuilder.prototype.exec = function(callback) {
 		if (self.$schema) {
 
 			if (err)
-				return callback(err, null, output);
+				return callback(err, EMPTYOBJECT, output);
 
-			self.$schema.make(parsed, function(err, model) {
-				!err && key && framework.cache.add(key, output, self.$cache_expire);
-				callback(err, err ? null : self.maketransform(output.json, output), output);
+			self.$schema.make(self.maketransform(output.value, output), function(err, model) {
+				!err && key && F.cache.add(key, output, self.$cache_expire);
+				callback(err, err ? EMPTYOBJECT : model, output);
 				output.cache = true;
 			});
 
 			return;
 		}
 
-		!err && key && framework.cache.add(key, output, self.$cache_expire);
-		callback(err, self.maketransform(output.json, output), output);
+		!err && key && F.cache.add(key, output, self.$cache_expire);
+		callback(err, self.maketransform(output.value, output), output);
 		output.cache = true;
 
 	}, self.$cookies, self.$headers, undefined, self.$timeout);
@@ -3840,6 +3773,34 @@ function $decodeURIComponent(value) {
 	}
 };
 
+global.NEWOPERATION = function(name, fn) {
+	operations[name] = fn;
+	operations[name].$owner = F.$owner();
+};
+
+global.OPERATION = function(name, value, callback) {
+
+	if (callback === undefined) {
+		callback = value;
+		value = EMPTYOBJECT;
+	}
+
+	var fn = operations[name];
+	var error = new ErrorBuilder();
+	if (fn) {
+		fn(error, value, function(value) {
+			if (value instanceof Error) {
+				error.push(value);
+				value = EMPTYOBJECT;
+			}
+			callback(error.hasError() ? error : null, value);
+		});
+	} else {
+		error.push('Operation "{0}" not found.'.format(name));
+		callback(error, EMPTYOBJECT);
+	}
+};
+
 // ======================================================
 // EXPORTS
 // ======================================================
@@ -3859,8 +3820,25 @@ global.Page = Page;
 global.UrlBuilder = global.URLBuilder = UrlBuilder;
 global.SchemaBuilder = SchemaBuilder;
 
+// Uninstall owners
+exports.uninstall = function(owner) {
+
+	if (!owner)
+		return;
+
+	Object.keys(operations).forEach(function(key) {
+		if (operations[key].$owner === owner)
+			delete operations[key];
+	});
+
+	exports.eachschema(function(group, name, schema) {
+		schema.owner === owner && schema.destroy();
+	});
+};
+
 exports.restart = function() {
 	schemas = {};
+	operations = {};
 	Object.keys(transforms).forEach(function(key) {
 		if (key.indexOf('_') === -1)
 			transforms[key] = {};

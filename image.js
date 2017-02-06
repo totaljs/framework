@@ -1,4 +1,4 @@
-// Copyright 2012-2016 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2017 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 
 /**
  * @module FrameworkImage
- * @version 2.3.0
+ * @version 2.4.0
  */
 
 'use strict';
@@ -33,7 +33,7 @@ const spawn = child.spawn;
 const Fs = require('fs');
 const REGEXP_SVG = /(width=\"\d+\")+|(height=\"\d+\")+/g;
 const REGEXP_PATH = /\//g;
-const REGEXP_ARG = /\'/g;
+const REGEXP_ESCAPE = /\$\(.*?\)|\'/g;
 
 var CACHE = {};
 var middlewares = {};
@@ -201,7 +201,7 @@ Image.prototype.save = function(filename, callback, writer) {
 	filename = filename || self.filename || '';
 
 	var command = self.cmd(self.filename ? self.filename : '-', filename);
-	if (framework.isWindows)
+	if (F.isWindows)
 		command = command.replace(REGEXP_PATH, '\\');
 
 	var cmd = exec(command, function(err, stdout, stderr) {
@@ -303,9 +303,8 @@ Image.prototype.stream = function(type, writer) {
 	if (!type)
 		type = self.outputType;
 
-	// Possible vulnerability with self.filename.
-	// WTF?? I don't know why, but wrap(self.filename) doesn't work with spawn() - but it works with exec() and with another spawn in image.pipe()
-	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? self.filename : '-', (type ? type + ':' : '') + '-'));
+	var cmd = spawn(self.isIM ? 'convert' : 'gm', self.arg(self.filename ? wrap(self.filename) : '-', (type ? type + ':' : '') + '-'));
+
 	if (self.currentStream) {
 		if (self.currentStream instanceof Buffer)
 			cmd.stdin.end(self.currentStream);
@@ -314,12 +313,8 @@ Image.prototype.stream = function(type, writer) {
 	}
 
 	writer && writer(cmd.stdin);
-
 	var middleware = middlewares[type];
-	if (!middleware)
-		return cmd.stdout;
-
-	return cmd.stdout.pipe(middleware());
+	return middleware ? cmd.stdout.pipe(middleware()) : cmd.stdout;
 };
 
 Image.prototype.cmd = function(filenameFrom, filenameTo) {
@@ -394,9 +389,9 @@ Image.prototype.push = function(key, value, priority, encode) {
 
 	if (value != null) {
 		if (encode && typeof(value) === 'string')
-			cmd += wrap(value, true);
+			cmd += ' "' + value.replace(REGEXP_ESCAPE, '') + '"';
 		else
-			cmd += framework.isWindows ? ' "' + value + '"' : ' \'' + value + '\'';
+			cmd += ' ' + value;
 	}
 
 	var obj = CACHE[cmd];
@@ -630,11 +625,11 @@ Image.prototype.flop = function() {
 };
 
 Image.prototype.minify = function() {
-	return this.push('+profile', '*');
+	return this.push('+profile', '*', null, 10, true);
 };
 
 Image.prototype.grayscale = function() {
-	return this.push('-colorspace', 'Gray', 10);
+	return this.push('-colorspace', 'Gray', 10, true);
 };
 
 Image.prototype.bitdepth = function(value) {
@@ -658,7 +653,7 @@ Image.prototype.sepia = function() {
 };
 
 Image.prototype.watermark = function(filename, x, y, w, h) {
-	return this.push('-draw', 'image over {1},{2} {3},{4} \'{0}\''.format(filename, x || 0, y || 0, w || 0, h || 0), 6);
+	return this.push('-draw', 'image over {1},{2} {3},{4} \'{0}\''.format(filename, x || 0, y || 0, w || 0, h || 0), 6, true);
 };
 
 Image.prototype.make = function(fn) {
@@ -671,16 +666,7 @@ Image.prototype.command = function(key, value, priority, esc) {
 };
 
 function wrap(command, empty) {
-	var cmd = '';
-	if (framework.isWindows) {
-		for (var i = 0, length = command.length; i < length; i++)
-			cmd += command[i] === '\"' ? '\'' : command[i];
-		return (empty ? ' ' : '') + '"' + cmd + '"';
-	} else {
-		for (var i = 0, length = command.length; i < length; i++)
-			cmd += command[i] === '\'' ? '"' : command[i];
-		return (empty ? ' ' : '') + '\'' + cmd + '\'';
-	}
+	return (empty ? ' ' : '') + command.replace(REGEXP_ESCAPE, '');
 }
 
 exports.Image = Image;

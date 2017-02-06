@@ -1,4 +1,4 @@
-// Copyright 2012-2016 (c) Peter Širka <petersirka@gmail.com>
+// Copyright 2012-2017 (c) Peter Širka <petersirka@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -21,7 +21,7 @@
 
 /**
  * @module NoSQL
- * @version 2.3.0
+ * @version 2.4.0
  */
 
 'use strict';
@@ -108,9 +108,30 @@ Database.prototype.meta = function(name, value) {
 	return self;
 };
 
-Database.prototype.insert = function(doc) {
+Database.prototype.insert = function(doc, unique) {
 	var self = this;
-	var builder = new DatabaseBuilder2();
+	var builder;
+
+	if (unique) {
+		builder = self.one();
+		var callback;
+
+		builder.callback(function(err, d) {
+			if (d)
+				callback && callback(null, 0);
+			else
+				self.insert(doc).callback(callback);
+		});
+
+		builder.callback = function(fn) {
+			callback = fn;
+			return builder;
+		};
+
+		return builder;
+	}
+
+	builder = new DatabaseBuilder2();
 	var json = framework_builders.isSchema(doc) ? doc.$clean() : doc;
 	self.pending_append.push({ doc: JSON.stringify(json), builder: builder });
 	setImmediate(() => self.next(1));
@@ -119,23 +140,7 @@ Database.prototype.insert = function(doc) {
 };
 
 Database.prototype.upsert = function(doc) {
-	var self = this;
-	var builder = self.one();
-	var callback;
-
-	builder.callback(function(err, d) {
-		if (d)
-			callback && callback(null, 0);
-		else
-			self.insert(doc).callback(callback);
-	});
-
-	builder.callback = function(fn) {
-		callback = fn;
-		return builder;
-	};
-
-	return builder;
+	return this.insert(doc, true);
 };
 
 Database.prototype.update = function(doc, insert) {
@@ -155,7 +160,7 @@ Database.prototype.modify = function(doc, insert) {
 	if (!keys.length)
 		return builder;
 
-	self.pending_update.push({ builder: builder, doc: framework_builders.isSchema(doc) ? doc.$clean() : doc, count: 0, keys: keys, insert: insert });
+	self.pending_update.push({ builder: builder, doc: data, count: 0, keys: keys, insert: insert });
 	setImmediate(() => self.next(2));
 	return builder;
 };
@@ -646,9 +651,7 @@ Database.prototype.$reader = function() {
 		return self;
 	}
 
-	var index = 0;
 	var list = self.pending_reader.splice(0);
-
 	if (INMEMORY[self.name])
 		self.$reader2_inmemory('#', list, () => self.next(0));
 	else
@@ -956,7 +959,6 @@ Database.prototype.$views = function() {
 	}
 
 	var response = [];
-	var writers = [];
 
 	for (var i = 0; i < length; i++)
 		response.push({ response: [], name: views[i], builder: self.views[views[i]], count: 0, counter: 0 });
@@ -1112,7 +1114,6 @@ Database.prototype.$remove = function() {
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 
 		var json = JSON.parse(value.trim());
-		var is = false;
 		var removed = false;
 
 		for (var i = 0; i < length; i++) {
@@ -1176,7 +1177,6 @@ Database.prototype.$remove_inmemory = function() {
 
 		for (var j = 0, jl = data.length; j < jl; j++) {
 			var json = data[j];
-			var is = false;
 			var removed = false;
 
 			for (var i = 0; i < length; i++) {
@@ -1234,7 +1234,10 @@ Database.prototype.$drop = function() {
 		});
 	} catch (e) {}
 
-	remove.wait((filename, next) => Fs.unlink(filename, next), () => self.next(0), 5);
+	remove.wait((filename, next) => Fs.unlink(filename, next), function() {
+		self.next(0);
+		self.free();
+	}, 5);
 
 	Object.keys(self.inmemory).forEach(function(key) {
 		self.inmemory[key] = undefined;
@@ -1297,8 +1300,12 @@ DatabaseBuilder.prototype.$callback2 = function(err, response, count) {
 				item[join.field] = join.scalar ? scalar(join.items, join.scalar, join.scalarfield, join.a, join.b != null ? item[join.b] : undefined) : join.first ? findItem(join.items, join.a, item[join.b], join.scalar, join.scalarfield) : findItems(join.items, join.a, item[join.b]);
 			}
 		}
-	} else if (response)
-		response[join.field] = join.scalar ? scalar(join.items, join.scalar, join.scalarfield, join.a, join.b != null ? response[join.b] : undefined) : join.first ? findItem(join.items, join.a, response[join.b]) : findItems(join.items, join.a, response[join.b]);
+	} else if (response) {
+		for (var j = 0; j < jl; j++) {
+			var join = self.$join[keys[j]];
+			response[join.field] = join.scalar ? scalar(join.items, join.scalar, join.scalarfield, join.a, join.b != null ? response[join.b] : undefined) : join.first ? findItem(join.items, join.a, response[join.b], join.scalar, join.scalarfield) : findItems(join.items, join.a, response[join.b]);
+		}
+	}
 
 	self.$callback(err, response, count);
 	return self;
@@ -1874,7 +1881,7 @@ Counter.prototype.read = function(id, type, callback) {
 		single = true;
 	}
 
-	id && id.forEach(id => keys[id] = true);
+	id instanceof Array && id.forEach(id => keys[id] = true);
 	self.type = 2;
 
 	reader.on('error', function() {
@@ -1885,7 +1892,7 @@ Counter.prototype.read = function(id, type, callback) {
 	reader.on('data', framework_utils.streamer(NEWLINE, function(value, index) {
 		var index = value.indexOf('=');
 		var key = value.substring(0, index);
-		if (all || keys[key])
+		if (all || id === true || keys[key])
 			switch (type) {
 				case 0:
 					if (all)
@@ -2209,7 +2216,7 @@ Binary.prototype.insert = function(name, buffer, callback) {
 	}
 
 	if (typeof(buffer) === 'string')
-		buffer = new Buffer(buffer, 'base64');
+		buffer = framework_utils.createBuffer(buffer, 'base64');
 	else if (buffer.resume)
 		return self.insert_stream(null, name, type, buffer, callback);
 
@@ -2239,11 +2246,11 @@ Binary.prototype.insert = function(name, buffer, callback) {
 		dimension = { width: 0, height: 0 };
 
 	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, created: F.created };
-	var header = new Buffer(BINARY_HEADER_LENGTH);
+	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
-	var id = new Date().format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
+	var id = framework.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
 	var key = self.db.name + '#' + id;
 	var stream = Fs.createWriteStream(Path.join(self.directory, key + EXTENSION_BINARY));
 
@@ -2261,12 +2268,12 @@ Binary.prototype.insert_stream = function(id, name, type, stream, callback) {
 	self.check();
 
 	var h = { name: name, size: 0, type: type, width: 0, height: 0 };
-	var header = new Buffer(BINARY_HEADER_LENGTH);
+	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
 	if (!id)
-		id = new Date().format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
+		id = framework.datetime.format('yyMMddHHmm') + 'T' + framework_utils.GUID(5);
 
 	var key = self.db.name + '#' + id;
 	var writer = Fs.createWriteStream(framework_utils.join(self.directory, key + EXTENSION_BINARY));
@@ -2296,7 +2303,7 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 	}
 
 	if (typeof(buffer) === 'string')
-		buffer = new Buffer(buffer, 'base64');
+		buffer = framework_utils.createBuffer(buffer, 'base64');
 
 	if (buffer.resume)
 		return this.insert_stream(id, name, type, buffer, callback);
@@ -2328,11 +2335,13 @@ Binary.prototype.update = function(id, name, buffer, callback) {
 		dimension = { width: 0, height: 0 };
 
 	var h = { name: name, size: size, type: type, width: dimension.width, height: dimension.height, created: F.datetime };
-	var header = new Buffer(BINARY_HEADER_LENGTH);
+	var header = framework_utils.createBufferSize(BINARY_HEADER_LENGTH);
+	var key = self.db.name + '#' + id;
+
 	header.fill(' ');
 	header.write(JSON.stringify(h));
 
-	var stream = Fs.createWriteStream(framework_utils.join(self.directory, id + EXTENSION_BINARY));
+	var stream = Fs.createWriteStream(framework_utils.join(self.directory, key + EXTENSION_BINARY));
 	stream.write(header, 'binary');
 	stream.end(buffer);
 	CLEANUP(stream);
@@ -2355,7 +2364,7 @@ Binary.prototype.read = function(id, callback) {
 
 	stream.on('error', err => callback(err));
 	stream.on('data', function(buffer) {
-		var json = new Buffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '');
+		var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '');
 		stream = Fs.createReadStream(filename, { start: BINARY_HEADER_LENGTH });
 		callback(null, stream, JSON.parse(json));
 	});
@@ -2443,7 +2452,7 @@ Binary.prototype.all = function(callback) {
 			var stream = Fs.createReadStream(target + '/' + item, { start: 0, end: BINARY_HEADER_LENGTH - 1, encoding: 'binary' });
 
 			stream.on('data', function(buffer) {
-				var json = new Buffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON();
+				var json = framework_utils.createBuffer(buffer, 'binary').toString('utf8').replace(REG_CLEAN, '').parseJSON(true);
 				if (json) {
 					json.id = item.substring(l, item.length - le);
 					output.push(json);
@@ -2520,44 +2529,32 @@ function compare_not(doc, index, item) {
 
 function compare_eq_date(doc, index, item) {
 	var val = doc[item.name]
-	if (val)
-		return item.value === (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value === (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_lt_date(doc, index, item) {
 	var val = doc[item.name];
-	if (val)
-		return item.value < (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value < (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_gt_date(doc, index, item) {
 	var val = doc[item.name];
-	if (val)
-		return item.value > (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value > (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_eqlt_date(doc, index, item) {
 	var val = doc[item.name];
-	if (val)
-		return item.value <= (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value <= (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_eqgt_date(doc, index, item) {
 	var val = doc[item.name];
-	if (val)
-		return item.value >= (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value >= (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_not_date(doc, index, item) {
 	var val = doc[item.name];
-	if (val)
-		return item.value !== (val instanceof Date ? val : new Date(val));
-	return false;
+	return val ? item.value !== (val instanceof Date ? val : new Date(val)) : false;
 }
 
 function compare_likebeg(doc, index, item) {
@@ -2711,14 +2708,6 @@ function compare_eqgt_dtday(doc, index, item) {
 
 function compare_not_dtday(doc, index, item) {
 	return compare_datetype('day', '!=', item.value, doc[item.name]);
-}
-
-function scalar_group(obj) {
-	var keys = Object.keys(obj);
-	var output = [];
-	for (var i = 0, length = keys.length; i < length; i++)
-		output.push({ key: keys[i], count: obj[i] });
-	return output;
 }
 
 function errorhandling(err, builder, response) {

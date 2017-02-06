@@ -14,24 +14,28 @@ const options = {};
 // options.sleep = 3000;
 // options.debugger = 40894;
 
+require('total.js');
+
 const isDebugging = process.argv.indexOf('debugging') !== -1;
 const directory = process.cwd();
 const path = require('path');
-const VERSION = '6.0';
+const VERSION = '8.0';
 const TIME = 2000;
+const REG_CONFIGS = /configs\//g;
 const REG_FILES = /config\-debug|config\-release|config|versions|sitemap|dependencies|\.js|\.resource/i;
 const REG_THEMES = /\/themes\//i;
+const REG_COMPONENTS = /components\/.*?\.html/i;
 const REG_THEMES_INDEX = /themes(\/|\\)?[a-z0-9_.-]+(\/|\\)?index\.js/i;
 const REG_EXTENSION = /\.(js|resource|package)/i;
-
 var first = process.argv.indexOf('restart') === -1;
 
 process.on('uncaughtException', function(e) {
 	e.toString().indexOf('ESRCH') == -1 && console.log(e);
 });
 
+process.title = 'total: debug';
+
 function debug() {
-	require('total.js');
 	var port = parseInt(process.argv[process.argv.length - 1]);
 
 	if (!isNaN(port)) {
@@ -56,10 +60,10 @@ function debug() {
 
 function app() {
 	const fork = require('child_process').fork;
-	const utils = require('total.js/utils');
-	const directories = [directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes'];
-	const async = new utils.Async();
+	const directories = [directory + '/components', directory + '/controllers', directory + '/definitions', directory + '/isomorphic', directory + '/modules', directory + '/resources', directory + '/models', directory + '/source', directory + '/workers', directory + '/packages', directory + '/themes', directory + '/configs'];
+	const async = new U.Async();
 	const prefix = '---------------------------------> ';
+
 	var files = {};
 	var force = false;
 	var changes = [];
@@ -73,9 +77,7 @@ function app() {
 	var speed = TIME;
 
 	function onFilter(path, isDirectory) {
-		if (!isDirectory && REG_THEMES.test(path))
-			return REG_THEMES_INDEX.test(path);
-		return isDirectory ? true : REG_EXTENSION.test(path);
+		return !isDirectory && REG_THEMES.test(path) ? REG_THEMES_INDEX.test(path) : isDirectory ? true : REG_EXTENSION.test(path) || REG_COMPONENTS.test(path) || REG_CONFIGS.test(path);
 	}
 
 	function onIncrease(clear) {
@@ -98,7 +100,6 @@ function app() {
 		fs.readdir(directory, function(err, arr) {
 
 			var length = arr.length;
-
 			for (var i = 0; i < length; i++) {
 				var name = arr[i];
 				name !== 'debug.js' && REG_FILES.test(name) && f.push(name);
@@ -172,7 +173,7 @@ function app() {
 	}
 
 	function refresh_directory() {
-		utils.ls(directories, onComplete, onFilter);
+		U.ls(directories, onComplete, onFilter);
 	}
 
 	function restart() {
@@ -252,6 +253,7 @@ function app() {
 	function noop() {}
 
 	if (process.pid > 0) {
+
 		console.log(prefix + 'PID: ' + process.pid + ' (v' + VERSION + ')');
 		pid = path.join(directory, 'debug.pid');
 		fs.writeFileSync(pid, process.pid);
@@ -287,13 +289,11 @@ function run() {
 	}
 
 	var filename = path.join(directory, 'debug.pid');
-	if (!fs.existsSync(filename)) {
+	if (fs.existsSync(filename)) {
+		fs.unlinkSync(filename);
+		setTimeout(function() { app() }, 3000);
+	} else
 		app();
-		return;
-	}
-
-	fs.unlinkSync(filename);
-	setTimeout(function() { app() }, 3000);
 }
 
 run();

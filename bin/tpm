@@ -2,7 +2,7 @@
 
 'use strict';
 
-const VERSION = 'v2.2.0';
+const VERSION = 'v3.0.0';
 const PADDING = 120;
 
 const Fs = require('fs');
@@ -15,6 +15,7 @@ const Os = require('os');
 const EOF = Os.platform() === 'win32' ? '\r\n' : '\n';
 const REG_EMPTY = /\s/g;
 const isWindows = Os.platform().substring(0, 3).toLowerCase() === 'win';
+const NODEVERSION = parseFloat(process.version.toString().replace('v', '').replace(/\./g, ''));
 
 var $type = 0;
 var settings = {};
@@ -22,6 +23,15 @@ var colors = { reset: '\x1b[0m', underscore: '\x1b[4m', dim: '\x1b[33m', reverse
 
 var current_repository = 'default';
 var current_package = '';
+
+if (NODEVERSION > 699) {
+	global.createBufferSize = (size) => Buffer.alloc(size || 0);
+	global.createBuffer = (val, type) => Buffer.from(val || '', type);
+} else {
+	global.createBufferSize = (size) => new Buffer(size || 0);
+	global.createBuffer = (val, type) => new Buffer(val || '', type);
+}
+
 
 String.prototype.padRight = function(max, c) {
 	var self = this;
@@ -35,9 +45,9 @@ function Backup() {
 	this.filename = '';
 	this.pending = 0;
 
-	this.read = { key: new Buffer(0), value: new Buffer(0), status: 0 };
-	this.bufKey = new Buffer(':');
-	this.bufNew = new Buffer('\n');
+	this.read = { key: createBufferSize(), value: createBufferSize(), status: 0 };
+	this.bufKey = createBuffer(':');
+	this.bufNew = createBuffer('\n');
 
 	this.complete = function() {};
 	this.filter = () => true;
@@ -300,8 +310,8 @@ Backup.prototype.restoreValue = function(data) {
 	self.restoreFile(read.key.toString('utf8').replace(REG_EMPTY, ''), read.value.toString('utf8').replace(REG_EMPTY, ''));
 
 	read.status = 0;
-	read.value = new Buffer(0);
-	read.key = new Buffer(0);
+	read.value = createBufferSize();
+	read.key = createBufferSize();
 
 	self.restoreKey(data.slice(index + 1));
 };
@@ -364,7 +374,7 @@ Backup.prototype.restoreFile = function(key, value) {
 		p && self.createDirectory(p);
 	}
 
-	var buffer = new Buffer(value, 'base64');
+	var buffer = createBuffer(value, 'base64');
 	self.pending++;
 
 	Zlib.gunzip(buffer, function(err, data) {

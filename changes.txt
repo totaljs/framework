@@ -1,3 +1,76 @@
+======= 2.4.0
+
+- added: `components` more in docs
+- added: `X-Powered-By` header again with option to change/remove it in the framework config `default-xpoweredby   : Total.js`
+- added: `UPTODATE(type, url, [options], interval, [callback(err)])` more in docs
+- added: `F.on('uptodate', function(type, name) {})` new event for up-to-date dependencies
+- added: `F.stats.other.mail` with a count of sent emails
+- added: `F.stats.response.errorBuilder` with count of sent ErrorBuilders
+- added: `F.stats.response.image` with count of processed images via GM or IM
+- added: `F.stats.request.schema` with count of request to SchemaBuilder
+- added: `String.prototype.parseTerminal([fields], fn(values, index, count, realIndex), [skipLines], [takeLines])`
+- added: `TRACE(message, [name], [url], [ip])` is an alias for `F.trace()`
+- added: `F.config['trace-console']` (default: `true`) shows tracing on the console
+- added: `F.convert(name, type/function(val))` registers a new convertor (convertors uses QueryParser (GET/POST))
+- added: `F.convert(obj)` performs convertor for an object
+- added: `F.download(url, filename, [callback])` a new alias for `F.snapshot()`
+- added: `$$$([group], name)` for `GETSCHEMA([group], name)`
+- added: configuration files supports options for all dependencies `module#mymodulename    (Object)   : { name: 'A custom options for dependency' }`
+- added: `U.chunker()` added a new property `chunker.pages` with count of all stored pages
+- added: `U.chunker()` added a new property `chunker.count` with count of all stored items
+- added: `NEWOPERATION(name, fn(error, callback(response), value))` - registers a new operation (same as schemas)
+- added: `OPERATION('name', function(err, response))` - executes an operation (same as schemas)
+- added: `.flac` file extensions
+- added: a new method for `MailMessage` object `message.unsubscribe('your URL or email address')`
+
+- updated: new error message `The field "@" is invalid.`
+- updated: `NOSQL().insert(doc, [unique])`
+- updated: `quicksort` algorithm has been replaced for `shellsort` (increased performance of sorting about 10-15%)
+- updated: `NOSQL().counter.monthly(true, ...)` shows all stats by ID
+- updated: `NOSQL().counter.yearly(true, ...)` shows all stats by ID
+- updated: `dependencies` supports up-to-date features e.g. `module (1 day)   : https://......js`
+- updated: `F.findConnections([path])` a `path` argument is optional
+- updated: `U.streamer(beg, [end], function, [skip])` add a new argument `skip`
+- updated: deprecated methods in Node.js v7
+- updated: `String.parseJSON([date])` added `date` argument (date fields will be converted to `datetime`)
+- updated: `F.script()` can compile code to function e.g.: `F.script('next(a + b)')` returns a compiled function
+- updated: `String.captialize([onlyFirst])` add a new argument `onlyFirst`
+- updated: `F.onParseQuery(value, req)` add a new argument `req`
+- updated: `F.onParseXML(value, req)` add a new argument `req`
+- updated: `F.onParseJSON(value, req)` add a new argument `req`
+- updated: `RESTBuilder.url()` without argument returns a current URL
+- updated: `RESTBuilder.exec(function(err, value, response))` when the `error` exists the `value` is still `EMPTYOBJECT`
+- updated: addded a new argument `replacer` to `controller.send(message, [id], [blacklist], [replacer])` and `client.send(message, [raw], [replacer])`
+
+- removed: behaviours
+- removed: restrictions
+- removed: `TransformBuilder`
+- removed: `F.config['allow-compatibility']` (not used)
+- removed: `controller.date()` method has been useless
+- removed: dynamic view compilation through `.view()` method
+- removed: `contorller.proxy()` in WebSocket controller
+
+- fixed: JS minificator
+- fixed: global alias `I` for isomorphic code
+- fixed: streaming files in `debug` mode (removed cache)
+- fixed: (critical) a bug with authorization in WebSocket
+- fixed: `nosql_builder.join()` a problem with using `nosql_builder.first()` by @yexing (Xing Ye)
+- fixed: `String.parseInt2()` - a possible NaN value
+- fixed: `String.parseFloat2()` - a possible NaN value
+- fixed: `F.snapshot()`
+- fixed: HTML compression (a fixed problem with HTML comments)
+- fixed: restarting framework (missing cleaning of `F.temporary`)
+- fixed: `U.isDate()` a problem with older dates than 1970, reported by @docgit
+
+- improved: code
+- improved: memory consumption for static files
+- improved: CSS compression
+- improved: CPU and memory consumption
+- improved: performance
+- improved: updating of `F.datetime`
+- improved: `uninstall` dependencies
+- improved: installing 3rd-party dependencies (framework compares same contents)
+
 ======= 2.3.0
 
 - added: support for `/workflows` file (more in documentation)
@@ -78,7 +151,8 @@
 - updated: NoSQL embedded parser, dates are parsed as date object
 - updated: `Pagination.next()`, `Pagination.prev()`, `Pagination.last()` and `Pagination.first()` supports new arguments `.html([link_inner_html], [class_name])`
 - updated: `F.worker()` supports packages `F.worker('@eshop/myworker-script')`
-- update: `FrameworkImage` when the instance contains no command then `.minify()` method is performed automatically for preventing of empty response
+- updated: `FrameworkImage` when the instance contains no command then `.minify()` method is performed automatically for preventing of empty response
+- updated: `F.config['static-accepts']` removed dots from all extensions
 
 - improved: `@{href(key, value)}` performance
 - improved: Total Package Manager `$ tpm --help`
@@ -86,6 +160,7 @@
 
 - fixed: (critical) NoSQL `nosql.modify()` and problem with updating `undefined` values
 - fixed: (critical) security with GM and IM --> 10000x thanks for Luis Figueiredo <luisf@hexasoftware.com>
+- fixed: `Image.stream()` and `Image.pipe()`
 
 - renamed: `F.onLocate` renamed to __`F.onLocale`__
 
@@ -1206,7 +1281,7 @@ Framework loads modules, packages, models, definitions, controllers
 - added: controller.throw500(error)
 - added: controller.throw501([problem])
 - added: request.signature()
-- adedd: Builders.create(schemaName)
+- added: Builders.create(schemaName)
 - added: controller.exception
 - added: framework.onMail(address, subject, body, callback)
 - added: controller.mail(address, subject, viewName, [model], [callback])
