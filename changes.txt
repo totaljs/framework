@@ -1,4 +1,4 @@
-======= 2.4.0 (BETA)
+======= 2.4.0
 
 - added: `components` more in docs
 - added: `X-Powered-By` header again with option to change/remove it in the framework config `default-xpoweredby   : Total.js`
