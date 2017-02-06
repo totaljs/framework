@@ -3862,9 +3862,7 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 
 	F.temporary.internal[me._id] = name;
 	_controller = routeID;
-
 	_owner = type + '#' + name.replace(/\.package$/gi, '');
-	var tmp;
 
 	typeof(obj.install) === 'function' && obj.install(options || F.config[_owner], name);
 	me.processed = true;

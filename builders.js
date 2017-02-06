@@ -2615,7 +2615,6 @@ ErrorBuilder.prototype.add = function(name, error, path, index) {
  * @return {ErrorBuilder}
  */
 ErrorBuilder.prototype.push = function(name, error, path, index) {
-	var self = this;
 	this.isPrepared = false;
 
 	if (name instanceof ErrorBuilder) {
