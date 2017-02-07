@@ -1,3 +1,7 @@
+======= 2.5.0 (BETA)
+
+- updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
+
 ======= 2.4.0
 
 - added: `components` more in docs

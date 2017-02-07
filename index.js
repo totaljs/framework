@@ -2925,6 +2925,9 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		arr.forEach((item) => F.install('component', item.name, item.filename, undefined, undefined, undefined));
 	}
 
+	if (types && types.indexOf('service') === -1)
+		F.cache.stop();
+
 	F.$routesSort();
 
 	if (!types || types.indexOf('dependencies') !== -1)
@@ -9177,7 +9180,6 @@ FrameworkCache.prototype.load = function() {
 	Fs.readFile(F.path.temp((F.id ? 'i-' + F.id + '_' : '') + 'F.jsoncache'), function(err, data) {
 		if (err)
 			return;
-
 		try {
 			data = JSON.parse(data.toString('utf8'), (key, value) => typeof(value) === 'string' && value.isJSONDate() ? new Date(value) : value);
 			self.items = data;
