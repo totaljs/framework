@@ -1,4 +1,4 @@
-======= 2.5.0 (BETA)
+======= 2.4.1 (BETA)
 
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
 
