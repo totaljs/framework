@@ -13296,6 +13296,10 @@ WebSocketClient.prototype = {
 
 	set user(value) {
 		this.req.user = value;
+	},
+
+	get mobile() {
+		return this.req.mobile;
 	}
 };
 

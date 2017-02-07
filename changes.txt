@@ -1,5 +1,7 @@
 ======= 2.4.1 (BETA)
 
+- added: a property for WebSocket controller `controller.mobile`
+
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
 
 ======= 2.4.0
