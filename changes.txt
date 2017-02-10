@@ -5,6 +5,7 @@
 - added: `ON()` alias for `F.on()`
 
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
+- updated: Components (now don't have to have `html` body)
 
 ======= 2.4.0
 

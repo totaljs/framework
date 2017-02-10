@@ -3218,10 +3218,13 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		if (content.css)
 			F.components.css = true;
 
-		F.components.views[name] = '.' + F.path.temp('component_' + name);
-		F.components.has = true;
+		if (content.body) {
+			F.components.views[name] = '.' + F.path.temp('component_' + name));
+			Fs.writeFile(F.components.views[name].substring(1) + '.html', U.minifyHTML(content.body), NOOP);
+		} else
+			delete F.components.views[name];
 
-		Fs.writeFile(F.components.views[name].substring(1) + '.html', U.minifyHTML(content.body), NOOP);
+		F.components.has = true;
 
 		var link = F.config['static-url-components'];
 		F.components.version = F.datetime.getTime();
@@ -10205,7 +10208,6 @@ Controller.prototype.component = function(name, settings) {
 		}
 	}
 
-	F.error('Error: A component "{0}" doesn\'t exist.'.format(name), self.name, self.uri);
 	return '';
 };
 
