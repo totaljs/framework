@@ -3219,7 +3219,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			F.components.css = true;
 
 		if (content.body) {
-			F.components.views[name] = '.' + F.path.temp('component_' + name));
+			F.components.views[name] = '.' + F.path.temp('component_' + name);
 			Fs.writeFile(F.components.views[name].substring(1) + '.html', U.minifyHTML(content.body), NOOP);
 		} else
 			delete F.components.views[name];
