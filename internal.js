@@ -1954,16 +1954,12 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'user':
 		case 'config':
 		case 'controller':
-			if (view_is_assign(command))
-				return 'self.$set(' + command + ')';
-			return '$STRING(' + command + ').encode()';
+			return view_is_assign(command) ? 'self.$set(' + command + ')' : '$STRING(' + command + ').encode()';
 
 		case 'body':
 			if (view_is_assign(command))
 				return 'self.$set(' + command + ')';
-			if (command.lastIndexOf('.') === -1)
-				return 'output';
-			return '$STRING(' + command + ').encode()';
+			return command.lastIndexOf('.') === -1 ? 'output' : '$STRING(' + command + ').encode()';
 
 		case 'files':
 		case 'mobile':
@@ -2015,27 +2011,19 @@ function view_prepare(command, dynamicCommand, functions) {
 
 		case 'host':
 		case 'hostname':
-			if (command.indexOf('(') === -1)
-				return 'self.host()';
-			return 'self.' + command;
+			return command.indexOf('(') === -1 ? 'self.host()' : 'self.' + command;
 
 		case 'href':
-			if (command.indexOf('(') === -1)
-				return 'self.href()';
-			return 'self.' + command;
+			return command.indexOf('(') === -1 ? 'self.href()' : 'self.' + command;
 
 		case 'url':
-			if (command.indexOf('(') !== -1)
-				return 'self.$' + command;
-			return 'self.' + command;
+			return command.indexOf('(') === -1 ? 'self.' + command : 'self.$' + command;
 
 		case 'title':
 		case 'description':
 		case 'keywords':
 		case 'author':
-			if (command.indexOf('(') !== -1)
-				return 'self.$' + command;
-			return '(repository[\'$' + command + '\'] || \'\').toString().encode()';
+			return command.indexOf('(') === -1 ? '(repository[\'$' + command + '\'] || \'\').toString().encode()' : 'self.$' + command;
 
 		case 'title2':
 			return 'self.$' + command;;
@@ -2047,9 +2035,7 @@ function view_prepare(command, dynamicCommand, functions) {
 			return '(repository[\'$' + command.substring(1) + '\'] || \'\')';
 
 		case 'head':
-			if (command.indexOf('(') !== -1)
-				return 'self.$' + command;
-			return 'self.' + command + '()';
+			return command.indexOf('(') === -1 ? 'self.' + command + '()' : 'self.$' + command;
 
 		case 'sitemap_url':
 		case 'sitemap_name':
@@ -2058,20 +2044,17 @@ function view_prepare(command, dynamicCommand, functions) {
 
 		case 'sitemap':
 		case 'place':
-			if (command.indexOf('(') !== -1)
-				return 'self.$' + command;
-			return '(repository[\'$' + command + '\'] || \'\')';
+			return command.indexOf('(') === -1 ? '(repository[\'$' + command + '\'] || \'\')' : 'self.$' + command;
 
 		case 'meta':
-			if (command.indexOf('(') !== -1)
-				return 'self.$' + command;
-			return 'self.$meta()';
+			return command.indexOf('(') === -1 ? 'self.$meta()' : 'self.$' + command;
 
-		case 'js':
-		case 'script':
-		case 'css':
-		case 'favicon':
 		case 'import':
+		case 'components':
+		case 'favicon':
+		case 'js':
+		case 'css':
+		case 'script':
 		case 'absolute':
 			return 'self.$' + command + (command.indexOf('(') === -1 ? '()' : '');
 
@@ -2092,14 +2075,16 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'translate':
 			return 'self.' + command;
 		case 'json':
-		case 'image':
+		case 'sitemap_change':
+		case 'sitemap_replace':
+		case 'helper':
+		case 'view':
 		case 'layout':
+		case 'image':
 		case 'template':
 		case 'templateToggle':
-		case 'view':
 		case 'viewCompile':
 		case 'viewToggle':
-		case 'helper':
 		case 'download':
 		case 'selected':
 		case 'disabled':
@@ -2115,8 +2100,6 @@ function view_prepare(command, dynamicCommand, functions) {
 		case 'prefetch':
 		case 'prerender':
 		case 'prev':
-		case 'sitemap_change':
-		case 'sitemap_replace':
 			return 'self.$' + command;
 
 		case 'now':
