@@ -3,9 +3,12 @@
 - added: a property for WebSocket controller `controller.mobile`
 - added: `EMIT()` alias for `F.emit()`
 - added: `ON()` alias for `F.on()`
+- added: `controller.components()` adds script/css tag into the head
+- added: `@{components([group], [settings])}` renders all components together from selected group
 
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
 - updated: Components (now don't have to have `html` body)
+- updated: A component implementation can contain `exports.group = 'name';`
 
 ======= 2.4.0
 

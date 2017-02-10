@@ -10197,17 +10197,38 @@ Controller.prototype.getSchema = function() {
  * @return {String}
  */
 Controller.prototype.component = function(name, settings) {
-	var self = this;
 	var filename = F.components.views[name];
-
 	if (filename) {
-		var generator = framework_internal.viewEngine(name, filename, self);
+		var generator = framework_internal.viewEngine(name, filename, this);
 		if (generator) {
-			self.repository[REPOSITORY_COMPONENTS] = true;
-			return generator.call(self, self, self.repository, self.$model, self.session, self.query, self.body, self.url, F.global, F.helpers, self.user, self.config, F.functions, 0, self.outputPartial, self.req.cookie, self.req.files, self.req.mobile, settings || EMPTYOBJECT);
+			this.repository[REPOSITORY_COMPONENTS] = true;
+			return generator.call(this, this, this.repository, this.$model, this.session, this.query, this.body, this.url, F.global, F.helpers, this.user, this.config, F.functions, 0, this.outputPartial, this.req.cookie, this.req.files, this.req.mobile, settings || EMPTYOBJECT);
 		}
 	}
+	return '';
+};
 
+Controller.prototype.components = function() {
+	this.repository[REPOSITORY_COMPONENTS] = true;
+	return this;
+};
+
+Controller.prototype.$components = function(group, settings) {
+
+	if (group) {
+		var keys = Object.keys(F.components.instances);
+		var output = [];
+		for (var i = 0, length = keys.length; i < length; i++) {
+			var component = F.components.instances[keys[i]];
+			if (component.group === group) {
+				var tmp = this.component(keys[i], settings);
+				tmp && output.push(tmp);
+			}
+		}
+		return output.join('\n');
+	}
+
+	this.repository[REPOSITORY_COMPONENTS] = true;
 	return '';
 };
 
