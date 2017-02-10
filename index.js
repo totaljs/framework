@@ -671,7 +671,7 @@ function Framework() {
 	this.controllers = {};
 	this.dependencies = {};
 	this.isomorphic = {};
-	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null };
+	this.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '' };
 	this.convertors = [];
 	this.tests = [];
 	this.errors = [];
@@ -3738,6 +3738,7 @@ Framework.prototype.$restart = function() {
 		F.schedules = [];
 		F.isLoaded = false;
 		F.isRestarted = false;
+		F.components = { has: false, css: false, js: false, views: {}, instances: {}, version: null, links: '' };
 
 		F.routes = {
 			sitemap: null,
