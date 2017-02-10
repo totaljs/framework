@@ -1097,9 +1097,12 @@ Framework.prototype.schedule = function(date, repeat, fn) {
 
 	var type = typeof(date);
 
-	if (type === 'string')
+	if (type === 'string') {
 		date = date.parseDate();
-	else if (type === 'number')
+		if (repeat && date < F.datetime)
+			date = F.datetime.add(repeat);
+
+	} else if (type === 'number')
 		date = new Date(date);
 
 	var sum = date.getTime();
