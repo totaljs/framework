@@ -302,6 +302,14 @@ global.DB = global.DATABASE = function() {
 	return typeof(F.database) === 'object' ? F.database : F.database.apply(framework, arguments);
 };
 
+global.ON = function() {
+	return F.on.apply(F, arguments);
+};
+
+global.EMIT = function() {
+	return F.emit.apply(F, arguments);
+};
+
 global.CONFIG = function(name) {
 	return F.config[name];
 };

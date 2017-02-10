@@ -1,6 +1,8 @@
 ======= 2.4.1 (BETA)
 
 - added: a property for WebSocket controller `controller.mobile`
+- added: `EMIT()` alias for `F.emit()`
+- added: `ON()` alias for `F.on()`
 
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
 
