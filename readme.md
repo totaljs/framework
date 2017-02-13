@@ -33,7 +33,7 @@ $ npm install -g total.js
 - [Homepage](http://www.totaljs.com)
 - [__Get Started__](http://www.totaljs.com/get-started/)
 - [__Documentation__](http://docs.totaljs.com)
-- [__Chat with professional support__](https://messenger.totaljs.com)
+- [__Live chat with professional support__](https://messenger.totaljs.com)
 - [__HelpDesk with professional support__](https://helpdesk.totaljs.com)
 - [__Blogs__](https://blog.totaljs.com)
 - [__Membership__](https://my.totaljs.com)
