@@ -707,7 +707,7 @@ function regexp(number) {
 }
 
 function binary() {
-	this.binary(new Buffer('čťž'), 'text/plain', 'utf8');
+	this.binary(Buffer.from('čťž'), 'text/plain', 'utf8');
 }
 
 function mobile() {

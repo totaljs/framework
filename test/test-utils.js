@@ -631,17 +631,17 @@ function other() {
 		assert.ok(value.trim() === index.toString(), 'Streamer problem');
 	});
 
-	streamer(new Buffer('0'));
-	streamer(new Buffer('\n1\n2\n'));
-	streamer(new Buffer('3\n'));
-	streamer(new Buffer('4\n'));
+	streamer(Buffer.from('0'));
+	streamer(Buffer.from('\n1\n2\n'));
+	streamer(Buffer.from('3\n'));
+	streamer(Buffer.from('4\n'));
 
 	streamer = utils.streamer('<a>', '</a>', function(value, index) {
 		assert.ok(value.trim() === '<a>' + (index + 1) + '</a>', 'Streamer problem 2');
 	});
 
-	streamer(new Buffer('aaaa <a>1</a> adsklasdlajsdlas jd <a>2</a>'));
-	streamer(new Buffer('aaaa <a>3</a> adsklasdlajsdlas jd <a>4</a>'));
+	streamer(Buffer.from('aaaa <a>1</a> adsklasdlajsdlas jd <a>2</a>'));
+	streamer(Buffer.from('aaaa <a>3</a> adsklasdlajsdlas jd <a>4</a>'));
 }
 
 function onValidation(name, value, path) {
