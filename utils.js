@@ -3855,7 +3855,7 @@ Number.prototype.VAT = function(percentage, decimals, includedVAT) {
 	if (includedVAT === undefined)
 		includedVAT = true;
 
-	if (percentage === 0 || num === 0)
+	if (!percentage || !num)
 		return num;
 
 	return includedVAT ? (num / ((percentage / 100) + 1)).floor(decimals) : (num * ((percentage / 100) + 1)).floor(decimals);
