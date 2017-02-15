@@ -10,6 +10,8 @@
 - updated: Components (now don't have to have `html` body)
 - updated: A component implementation can contain `exports.group = 'name';`
 
+- fixed: routing with `upload` flag
+
 ======= 2.4.0
 
 - added: `components` more in docs
