@@ -621,7 +621,7 @@ exports.routeCompareFlags2 = function(req, route, membertype) {
 		return -1;
 
 	if (!route.isWEBSOCKET) {
-		if ((route.isXHR && !req.xhr) || (route.isMOBILE && !req.mobile) || (route.isROBOT && !req.robot))
+		if ((route.isXHR && !req.xhr) || (route.isMOBILE && !req.mobile) || (route.isROBOT && !req.robot) || (route.isUPLOAD && !req.$upload))
 			return 0;
 		var method = req.method;
 		if (route.method) {

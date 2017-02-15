@@ -6778,6 +6778,7 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 				break;
 			case 'data':
 				req.$flags += 'c';
+				req.$upload = true;
 				flags.push('upload');
 				break;
 			case '/xml':
@@ -6876,7 +6877,6 @@ Framework.prototype._request_continue = function(req, res, headers, protocol) {
 
 		case 'P':
 			if (F._request_check_POST) {
-
 				if (multipart) {
 
 					if (isCORS)
