@@ -8954,16 +8954,17 @@ Framework.prototype.worker = function(name, id, timeout, args) {
 		var self = this;
 		self.__timeout && clearTimeout(self.__timeout);
 		delete F.workers[self.__id];
-		fork.removeAllListeners();
-		fork = null;
+		if (fork) {
+			fork.removeAllListeners();
+			fork = null;
+		}
 	});
 
 	if (typeof(timeout) !== 'number')
 		return fork;
 
 	fork.__timeout = setTimeout(function() {
-		fork.kill();
-		fork = null;
+		fork && fork.kill('SIGKILL');
 	}, timeout);
 
 	return fork;
