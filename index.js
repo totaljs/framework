@@ -9146,6 +9146,10 @@ FrameworkPath.prototype.themes = function(filename) {
 	return U.combine(F.config['directory-themes'], filename);
 };
 
+FrameworkPath.prototype.components = function(filename) {
+	return U.combine(F.config['directory-components'], filename);
+};
+
 FrameworkPath.prototype.root = function(filename) {
 	var p = Path.join(directory, filename || '');
 	return F.isWindows ? p.replace(/\\/g, '/') : p;
