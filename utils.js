@@ -5399,4 +5399,5 @@ if (NODEVERSION > 699) {
 	exports.createBuffer = (val, type) => new Buffer(val || '', type);
 }
 
+global.WAIT = exports.wait;
 !global.F && require('./index');
