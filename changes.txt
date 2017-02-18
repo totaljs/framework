@@ -13,6 +13,8 @@
 - fixed: routing with `upload` flag
 - fixed: workers timeout
 
+- improved: mechanism of components
+
 ======= 2.4.0
 
 - added: `components` more in docs

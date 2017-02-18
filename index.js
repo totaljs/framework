@@ -73,7 +73,6 @@ const EMPTYREQUEST = { uri: {} };
 const SINGLETONS = {};
 const REPOSITORY_HEAD = '$head';
 const REPOSITORY_META = '$meta';
-const REPOSITORY_COMPONENTS = '$components';
 const REPOSITORY_META_TITLE = '$title';
 const REPOSITORY_META_DESCRIPTION = '$description';
 const REPOSITORY_META_KEYWORDS = '$keywords';
@@ -10209,16 +10208,13 @@ Controller.prototype.component = function(name, settings) {
 	var filename = F.components.views[name];
 	if (filename) {
 		var generator = framework_internal.viewEngine(name, filename, this);
-		if (generator) {
-			this.repository[REPOSITORY_COMPONENTS] = true;
+		if (generator)
 			return generator.call(this, this, this.repository, this.$model, this.session, this.query, this.body, this.url, F.global, F.helpers, this.user, this.config, F.functions, 0, this.outputPartial, this.req.cookie, this.req.files, this.req.mobile, settings || EMPTYOBJECT);
-		}
 	}
 	return '';
 };
 
 Controller.prototype.components = function() {
-	this.repository[REPOSITORY_COMPONENTS] = true;
 	return this;
 };
 
@@ -10237,7 +10233,6 @@ Controller.prototype.$components = function(group, settings) {
 		return output.join('\n');
 	}
 
-	this.repository[REPOSITORY_COMPONENTS] = true;
 	return '';
 };
 
@@ -11264,7 +11259,7 @@ Controller.prototype.head = function() {
 		// OBSOLETE: this is useless
 		// F.emit('controller-render-head', self);
 		var author = self.repository[REPOSITORY_META_AUTHOR] || self.config.author;
-		return (author ? '<meta name="author" content="' + author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '') + (self.repository[REPOSITORY_COMPONENTS] ? F.components.links : '');
+		return (author ? '<meta name="author" content="' + author + '" />' : '') + (self.repository[REPOSITORY_HEAD] || '');
 	}
 
 	var header = (self.repository[REPOSITORY_HEAD] || '');
@@ -11522,8 +11517,10 @@ Controller.prototype.$import = function() {
 			continue;
 		}
 
-		if (filename === 'components')
+		if (filename === 'components' && F.components.has) {
+			builder += F.components.links;
 			continue;
+		}
 
 		var extension = filename.substring(filename.lastIndexOf('.'));
 		var tag = filename[0] !== '!';

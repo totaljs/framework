@@ -47,6 +47,8 @@ const REG_BLOCK_BEG = /\@\{block.*?\}/gi;
 const REG_BLOCK_END = /\@\{end\}/gi;
 const REG_SKIP_1 = /\(\'|\"/;
 const REG_SKIP_2 = /\,(\s)?\w+/;
+const REG_HEAD = /\<\/head\>/i;
+const REG_COMPONENTS = /\@{(\s)?(component|components)(\s)?\(/i;
 const HTTPVERBS = { 'get': true, 'post': true, 'options': true, 'put': true, 'delete': true, 'patch': true, 'upload': true, 'head': true, 'trace': true, 'propfind': true };
 const RENDERNOW = ['self.$import(', 'self.route', 'self.$js(', 'self.$css(', 'self.$favicon(', 'self.$script(', '$STRING(self.resource(', '$STRING(self.RESOURCE(', 'self.translate(', 'language', 'self.sitemap_url(', 'self.sitemap_name('];
 const REG_NOTRANSLATE = /@\{notranslate\}/gi;
@@ -1596,7 +1598,6 @@ function view_parse(content, minify, filename, controller) {
 	var nocompressHTML = false;
 	var nocompressJS = false;
 	var nocompressCSS = false;
-	var hascomponents = content.indexOf('@{component(') !== -1;
 
 	content = content.replace(REG_NOCOMPRESS, function(text) {
 
@@ -1629,6 +1630,7 @@ function view_parse(content, minify, filename, controller) {
 
 	if (!nocompressJS)
 		content = compressJS(content, 0, filename);
+
 	if (!nocompressCSS)
 		content = compressCSS(content, 0, filename);
 
@@ -1643,6 +1645,22 @@ function view_parse(content, minify, filename, controller) {
 	var isFirst = false;
 	var pharse = '';
 	var txtindex = -1;
+	var index = 0;
+
+	if (REG_HEAD.test(content) !== -1 && REG_COMPONENTS.test(content)) {
+		index = content.indexOf('@{import(');
+		var add = true;
+		while (index !== -1) {
+			var str = content.substring(index, content.indexOf(')', index));
+			if (str.indexOf('components') !== -1) {
+				add = false;
+				break;
+			} else
+				index = content.indexOf('@{import(', index + str.length);
+		}
+		if (add)
+			content = content.replace(REG_HEAD, text => F.components.links + text);
+	}
 
 	function escaper(value) {
 
@@ -1674,10 +1692,11 @@ function view_parse(content, minify, filename, controller) {
 	if (!command)
 		builder += '+' + escaper(content);
 
+	index = 0;
+
 	var old = null;
 	var newCommand = '';
 	var tmp = '';
-	var index = 0;
 	var counter = 0;
 	var functions = [];
 	var functionsName = [];
