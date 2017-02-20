@@ -3234,8 +3234,17 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		if (content.install) {
 			try {
+				var filecomponent = F.path.temp('component-' + name + '.js');
 				_owner = type + '#' + name;
-				var obj = (new Function('var exports={};' + content.install + ';return exports;'))();
+				Fs.writeFileSync(filecomponent, content.install.trim());
+				obj = require(filecomponent);
+
+				(function(name, filename) {
+					setTimeout(function() {
+						delete require.cache[name];
+					}, 1000);
+				})(require.resolve(filecomponent), filecomponent);
+
 				obj.$owner = _owner;
 				_controller = '';
 				F.components.instances[name] = obj;
