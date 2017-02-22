@@ -13559,9 +13559,14 @@ WebSocketClient.prototype.send = function(message, raw, replacer) {
 		var data = this.type === 3 ? (raw ? message : JSON.stringify(message, replacer)) : (message || '').toString();
 		if (this.container.config['default-websocket-encodedecode'] === true && data)
 			data = encodeURIComponent(data);
-		this.socket.write(U.getWebSocketFrame(0, data, 0x01));
-	} else
-		message && this.socket.write(U.getWebSocketFrame(0, new Int8Array(message), 0x02));
+		data = U.getWebSocketFrame(0, data, 0x01);
+		this.socket.write(data);
+		this.size = data.length;
+	} else if (message) {
+		message = U.getWebSocketFrame(0, new Int8Array(message), 0x02);
+		this.socket.write(message);
+		this.size = message.length;
+	}
 
 	return this;
 };
