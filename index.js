@@ -2838,42 +2838,50 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 	}
 
 	var dependencies = [];
+	var operations = [];
 
 	if (!types || types.indexOf('modules') !== -1) {
-		dir = U.combine(targetdirectory, F.config['directory-modules']);
-		arr = [];
-		listing(dir, 0, arr, '.js');
-		arr.forEach((item) => dependencies.push(next => F.install('module', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+		operations.push(function(resume) {
+			dir = U.combine(targetdirectory, F.config['directory-modules']);
+			arr = [];
+			listing(dir, 0, arr, '.js');
+			arr.forEach((item) => dependencies.push(next => F.install('module', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+			resume();
+		});
 	}
 
 	if (!types || types.indexOf('isomorphic') !== -1) {
-		dir = U.combine(targetdirectory, F.config['directory-isomorphic']);
-		arr = [];
-		listing(dir, 0, arr, '.js');
-		arr.forEach((item) => dependencies.push(next => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+		operations.push(function(resume) {
+			dir = U.combine(targetdirectory, F.config['directory-isomorphic']);
+			arr = [];
+			listing(dir, 0, arr, '.js');
+			arr.forEach((item) => dependencies.push(next => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+			resume();
+		});
 	}
 
 	if (!types || types.indexOf('packages') !== -1) {
-		dir = U.combine(targetdirectory, F.config['directory-packages']);
-		arr = [];
-		listing(dir, 0, arr, '.package');
+		operations.push(function(resume) {
+			dir = U.combine(targetdirectory, F.config['directory-packages']);
+			arr = [];
+			listing(dir, 0, arr, '.package');
+			var dirtmp = U.$normalize(dir);
 
-		var dirtmp = U.$normalize(dir);
+			arr.forEach(function(item) {
 
-		arr.forEach(function(item) {
+				if (!item.is) {
+					dependencies.push(next => F.install('package', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next));
+					return resume();
+				}
 
-			if (item.is) {
 				U.ls(item.filename, function(files, directories) {
-
 					var dir = F.path.temp(item.name) + '.package';
 
-					if (!existsSync(dir))
-						Fs.mkdirSync(dir);
+					!existsSync(dir) && Fs.mkdirSync(dir);
 
 					for (var i = 0, length = directories.length; i < length; i++) {
 						var target = F.path.temp(U.$normalize(directories[i]).replace(dirtmp, '') + '/');
-						if (!existsSync(target))
-							Fs.mkdirSync(target);
+						!existsSync(target) && Fs.mkdirSync(target);
 					}
 
 					files.wait(function(filename, next) {
@@ -2882,70 +2890,87 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 						stream.on('end', next);
 					}, function() {
 						// Windows sometimes doesn't load package and delay solves the problem.
-						setTimeout(() => dependencies.push(next => F.install('package2', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)), 50);
+						setTimeout(function() {
+							resume();
+							dependencies.push(next => F.install('package2', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next));
+						}, 50);
 					});
 				});
-				return;
-			}
-
-			dependencies.push(next => F.install('package', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next));
+			});
 		});
 	}
 
 	if (!types || types.indexOf('models') !== -1) {
-		dir = U.combine(targetdirectory, F.config['directory-models']);
-		arr = [];
-		listing(dir, 0, arr);
-		arr.forEach((item) => dependencies.push(next => F.install('model', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+		operations.push(function(resume) {
+			dir = U.combine(targetdirectory, F.config['directory-models']);
+			arr = [];
+			listing(dir, 0, arr);
+			arr.forEach((item) => dependencies.push(next => F.install('model', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+			resume();
+		});
 	}
 
 	if (!types || types.indexOf('themes') !== -1) {
-		arr = [];
-		dir = U.combine(targetdirectory, F.config['directory-themes']);
-		listing(dir, 0, arr, undefined, true);
-		arr.forEach(function(item) {
-			var themeName = item.name;
-			var themeDirectory = Path.join(dir, themeName);
-			var filename = Path.join(themeDirectory, 'index.js');
-			F.themes[item.name] = U.path(themeDirectory);
-			F._length_themes++;
-			existsSync(filename) && dependencies.push(next => F.install('theme', item.name, filename, undefined, undefined, undefined, true, undefined, undefined, next));
-			/*
-			@TODO: FOR FUTURE VERSION
-			var components = [];
-			var components_dir = U.combine(targetdirectory, F.config['directory-themes'], themeName, F.config['directory-components']);
-			existsSync(components_dir) && listing(components_dir, 0, components, '.html', true);
-			components_dir && components.forEach((item) => F.install('component', themeName + '/' + item.name, item.filename, undefined, undefined, undefined));
-			*/
+		operations.push(function(resume) {
+			arr = [];
+			dir = U.combine(targetdirectory, F.config['directory-themes']);
+			listing(dir, 0, arr, undefined, true);
+			arr.forEach(function(item) {
+				var themeName = item.name;
+				var themeDirectory = Path.join(dir, themeName);
+				var filename = Path.join(themeDirectory, 'index.js');
+				F.themes[item.name] = U.path(themeDirectory);
+				F._length_themes++;
+				existsSync(filename) && dependencies.push(next => F.install('theme', item.name, filename, undefined, undefined, undefined, true, undefined, undefined, next));
+				/*
+				@TODO: FOR FUTURE VERSION
+				var components = [];
+				var components_dir = U.combine(targetdirectory, F.config['directory-themes'], themeName, F.config['directory-components']);
+				existsSync(components_dir) && listing(components_dir, 0, components, '.html', true);
+				components_dir && components.forEach((item) => F.install('component', themeName + '/' + item.name, item.filename, undefined, undefined, undefined));
+				*/
+			});
+			resume();
 		});
 	}
 
 	if (!types || types.indexOf('definitions') !== -1) {
-		dir = U.combine(targetdirectory, F.config['directory-definitions']);
-		arr = [];
-		listing(dir, 0, arr);
-		arr.forEach((item) => dependencies.push(next => F.install('definition', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+		operations.push(function(resume) {
+			dir = U.combine(targetdirectory, F.config['directory-definitions']);
+			arr = [];
+			listing(dir, 0, arr);
+			arr.forEach((item) => dependencies.push(next => F.install('definition', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+			resume();
+		});
 	}
 
 	if (!types || types.indexOf('controllers') !== -1) {
-		arr = [];
-		dir = U.combine(targetdirectory, F.config['directory-controllers']);
-		listing(dir, 0, arr);
-		arr.forEach((item) => dependencies.push(next => F.install('controller', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+		operations.push(function(resume) {
+			arr = [];
+			dir = U.combine(targetdirectory, F.config['directory-controllers']);
+			listing(dir, 0, arr);
+			arr.forEach((item) => dependencies.push(next => F.install('controller', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
+			resume();
+		});
 	}
 
 	if (!types || types.indexOf('components') !== -1) {
-		arr = [];
-		dir = U.combine(targetdirectory, F.config['directory-components']);
-		listing(dir, 0, arr, '.html');
-		arr.forEach((item) => dependencies.push(next => F.install('component', item.name, item.filename, undefined, undefined, undefined, undefined, undefined, undefined, next)));
+		operations.push(function(resume) {
+			arr = [];
+			dir = U.combine(targetdirectory, F.config['directory-components']);
+			listing(dir, 0, arr, '.html');
+			arr.forEach((item) => dependencies.push(next => F.install('component', item.name, item.filename, undefined, undefined, undefined, undefined, undefined, undefined, next)));
+			resume();
+		});
 	}
 
-	dependencies.async(function() {
-		types && types.indexOf('service') === -1 && F.cache.stop();
-		F.$routesSort();
-		(!types || types.indexOf('dependencies') !== -1) && F._configure_dependencies();
-		callback && callback();
+	operations.async(function() {
+		dependencies.async(function() {
+			types && types.indexOf('service') === -1 && F.cache.stop();
+			F.$routesSort();
+			(!types || types.indexOf('dependencies') !== -1) && F._configure_dependencies();
+			callback && callback();
+		});
 	});
 
 	return F;
