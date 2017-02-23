@@ -6,6 +6,7 @@
 - added: `controller.components()` adds script/css tag into the head
 - added: `@{components([group], [settings])}` renders all components together from selected group
 - added: a new alias `WAIT()` alias for `U.WAIT()`
+- added: `res.status(code)` for express middleware
 
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
 - updated: Components (now don't have to have `html` body)

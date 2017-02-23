@@ -529,7 +529,7 @@ function Framework() {
 
 	this.id = null;
 	this.version = 2410;
-	this.version_header = '2.4.1-3';
+	this.version_header = '2.4.1-4';
 	this.version_node = process.version.toString().replace('v', '').replace(/\./g, '').parseFloat();
 
 	this.config = {
@@ -13849,30 +13849,28 @@ http.ServerResponse.prototype.noCache = function() {
 	return self;
 };
 
-/**
- * Send
- * @param {Number} code Response status code, optional
- * @param {Object} body Body
- * @param {String} type Content-Type, optional
- * @return {Response}
- */
+// For express middleware
+http.ServerResponse.prototype.status = function(status) {
+	this.$statuscode = status;
+	return this;
+};
+
+// For express middleware
 http.ServerResponse.prototype.send = function(code, body, type) {
 
-	var self = this;
+	if (this.headersSent)
+		return this;
 
-	if (self.headersSent)
-		return self;
+	this.controller && this.controller.subscribe.success();
 
-	self.controller && self.controller.subscribe.success();
-
-	var res = self;
-	var req = self.req;
+	var res = this;
+	var req = this.req;
 	var contentType = type;
 	var isHEAD = req.method === 'HEAD';
 
 	if (body === undefined) {
 		body = code;
-		code = 200;
+		code = res.$statuscode || 200;
 	}
 
 	switch (typeof(body)) {
@@ -13922,19 +13920,17 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 		accept = 'gzip';
 
 	var compress = accept.indexOf('gzip') !== -1;
-
 	if (isHEAD) {
-		if (compress)
-			headers['Content-Encoding'] = 'gzip';
+		compress && (headers['Content-Encoding'] = 'gzip');
 		res.writeHead(200, headers);
 		res.end();
-		return self;
+		return res;
 	}
 
 	if (!compress) {
 		res.writeHead(code, headers);
 		res.end(body, ENCODING);
-		return self;
+		return res;
 	}
 
 	var buffer = U.createBuffer(body);
@@ -13951,7 +13947,7 @@ http.ServerResponse.prototype.send = function(code, body, type) {
 		res.end(data, ENCODING);
 	});
 
-	return self;
+	return res;
 };
 
 http.ServerResponse.prototype.throw400 = function(problem) {
