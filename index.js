@@ -305,6 +305,10 @@ global.ON = function() {
 	return F.on.apply(F, arguments);
 };
 
+global.OFF = function() {
+	return arguments.length > 1 ? F.removeListener.apply(F, arguments) : F.removeAllListeners.apply(F, arguments);
+};
+
 global.EMIT = function() {
 	return F.emit.apply(F, arguments);
 };

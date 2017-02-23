@@ -3,6 +3,7 @@
 - added: a property for WebSocket controller `controller.mobile`
 - added: `EMIT()` alias for `F.emit()`
 - added: `ON()` alias for `F.on()`
+- added: `OFF()` alias for `F.removeListener(eventName, listener)` or `F.removeAllListeners([eventName])`
 - added: `controller.components()` adds script/css tag into the head
 - added: `@{components([group], [settings])}` renders all components together from selected group
 - added: a new alias `WAIT()` alias for `U.WAIT()`
