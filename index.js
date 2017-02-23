@@ -3119,7 +3119,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 						}
 
 						F.temporary.versions[declaration] = hash;
-						F.install(type, id, filename, options, callback, undefined, undefined, true, uptodateName);
+						F.install(type, id, filename, options, callback, undefined, undefined, true, uptodateName, next);
 					});
 				});
 				return F;
@@ -8382,15 +8382,19 @@ Framework.prototype._configure_dependencies = function(arr, callback) {
 		}
 
 		if (type) {
-			if (interval)
-				dependencies.push({ priority: priority, fn: next => F.uptodate(type, url, options, interval, next) });
-			else
-				dependencies.push({ priority: priority, fn: next => F.install(type, url, options, undefined, undefined, undefined, undefined, undefined, undefined, next) });
+			(function(type, url, options, interval) {
+				if (interval)
+					dependencies.push({ priority: priority, fn: next => F.uptodate(type, url, options, interval, next) });
+				else
+					dependencies.push({ priority: priority, fn: next => F.install(type, url, options, undefined, undefined, undefined, undefined, undefined, undefined, next) });
+			})(type, url, options, interval);
 		}
 	}
 
 	dependencies.quicksort('priority', false);
-	dependencies.wait((item, next) => item.fn(next), callback);
+	dependencies.wait(function(item, next) {
+		item.fn(next);
+	}, callback);
 	return F;
 };
 
