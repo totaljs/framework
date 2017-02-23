@@ -2897,6 +2897,8 @@ Framework.prototype.$load = function(types, targetdirectory, callback) {
 					});
 				});
 			});
+
+			!arr.length && resume();
 		});
 	}
 
