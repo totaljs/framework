@@ -12,6 +12,7 @@
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
 - updated: Components (now don't have to have `html` body)
 - updated: A component implementation can contain `exports.group = 'name';`
+- updated: framework loads all dependencies in order
 
 - fixed: routing with `upload` flag
 - fixed: workers timeout

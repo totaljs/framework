@@ -2781,7 +2781,7 @@ Framework.prototype.modify = function(fn) {
  * Load framework
  * @return {Framework}
  */
-Framework.prototype.$load = function(types, targetdirectory) {
+Framework.prototype.$load = function(types, targetdirectory, callback) {
 
 	var arr = [];
 	var dir = '';
@@ -2837,18 +2837,20 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		F.temporary.internal.resources = [];
 	}
 
+	var dependencies = [];
+
 	if (!types || types.indexOf('modules') !== -1) {
 		dir = U.combine(targetdirectory, F.config['directory-modules']);
 		arr = [];
 		listing(dir, 0, arr, '.js');
-		arr.forEach((item) => F.install('module', item.name, item.filename, undefined, undefined, undefined, true));
+		arr.forEach((item) => dependencies.push(next => F.install('module', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
 	}
 
 	if (!types || types.indexOf('isomorphic') !== -1) {
 		dir = U.combine(targetdirectory, F.config['directory-isomorphic']);
 		arr = [];
 		listing(dir, 0, arr, '.js');
-		arr.forEach((item) => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true));
+		arr.forEach((item) => dependencies.push(next => F.install('isomorphic', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
 	}
 
 	if (!types || types.indexOf('packages') !== -1) {
@@ -2880,13 +2882,13 @@ Framework.prototype.$load = function(types, targetdirectory) {
 						stream.on('end', next);
 					}, function() {
 						// Windows sometimes doesn't load package and delay solves the problem.
-						setTimeout(() => F.install('package2', item.name, item.filename, undefined, undefined, undefined, true), 50);
+						setTimeout(() => dependencies.push(next => F.install('package2', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)), 50);
 					});
 				});
 				return;
 			}
 
-			F.install('package', item.name, item.filename, undefined, undefined, undefined, true);
+			dependencies.push(next => F.install('package', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next));
 		});
 	}
 
@@ -2894,7 +2896,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		dir = U.combine(targetdirectory, F.config['directory-models']);
 		arr = [];
 		listing(dir, 0, arr);
-		arr.forEach((item) => F.install('model', item.name, item.filename, undefined, undefined, undefined, true));
+		arr.forEach((item) => dependencies.push(next => F.install('model', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
 	}
 
 	if (!types || types.indexOf('themes') !== -1) {
@@ -2907,7 +2909,7 @@ Framework.prototype.$load = function(types, targetdirectory) {
 			var filename = Path.join(themeDirectory, 'index.js');
 			F.themes[item.name] = U.path(themeDirectory);
 			F._length_themes++;
-			existsSync(filename) && F.install('theme', item.name, filename, undefined, undefined, undefined, true);
+			existsSync(filename) && dependencies.push(next => F.install('theme', item.name, filename, undefined, undefined, undefined, true, undefined, undefined, next));
 			/*
 			@TODO: FOR FUTURE VERSION
 			var components = [];
@@ -2922,30 +2924,29 @@ Framework.prototype.$load = function(types, targetdirectory) {
 		dir = U.combine(targetdirectory, F.config['directory-definitions']);
 		arr = [];
 		listing(dir, 0, arr);
-		arr.forEach((item) => F.install('definition', item.name, item.filename, undefined, undefined, undefined, true));
+		arr.forEach((item) => dependencies.push(next => F.install('definition', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
 	}
 
 	if (!types || types.indexOf('controllers') !== -1) {
 		arr = [];
 		dir = U.combine(targetdirectory, F.config['directory-controllers']);
 		listing(dir, 0, arr);
-		arr.forEach((item) => F.install('controller', item.name, item.filename, undefined, undefined, undefined, true));
+		arr.forEach((item) => dependencies.push(next => F.install('controller', item.name, item.filename, undefined, undefined, undefined, true, undefined, undefined, next)));
 	}
 
 	if (!types || types.indexOf('components') !== -1) {
 		arr = [];
 		dir = U.combine(targetdirectory, F.config['directory-components']);
 		listing(dir, 0, arr, '.html');
-		arr.forEach((item) => F.install('component', item.name, item.filename, undefined, undefined, undefined));
+		arr.forEach((item) => dependencies.push(next => F.install('component', item.name, item.filename, undefined, undefined, undefined, undefined, undefined, undefined, next)));
 	}
 
-	if (types && types.indexOf('service') === -1)
-		F.cache.stop();
-
-	F.$routesSort();
-
-	if (!types || types.indexOf('dependencies') !== -1)
-		F._configure_dependencies();
+	dependencies.async(function() {
+		types && types.indexOf('service') === -1 && F.cache.stop();
+		F.$routesSort();
+		(!types || types.indexOf('dependencies') !== -1) && F._configure_dependencies();
+		callback && callback();
+	});
 
 	return F;
 };
@@ -2981,7 +2982,7 @@ Framework.prototype.$startup = function(callback) {
 	return this;
 };
 
-Framework.prototype.uptodate = function(type, url, options, interval, callback) {
+Framework.prototype.uptodate = function(type, url, options, interval, callback, next) {
 
 	if (typeof(options) === 'string' && typeof(interval) !== 'string') {
 		interval = options;
@@ -2998,7 +2999,7 @@ Framework.prototype.uptodate = function(type, url, options, interval, callback) 
 		err && obj.errors.push(err);
 		obj.name = name;
 		obj.callback && obj.callback(err, name);
-	});
+	}, undefined, undefined, undefined, undefined, next);
 	return F;
 };
 
@@ -3014,7 +3015,7 @@ Framework.prototype.uptodate = function(type, url, options, interval, callback) 
  * @param {String} uptodateName Internal, optional.
  * @return {Framework}
  */
-Framework.prototype.install = function(type, name, declaration, options, callback, internal, useRequired, skipEmit, uptodateName) {
+Framework.prototype.install = function(type, name, declaration, options, callback, internal, useRequired, skipEmit, uptodateName, next) {
 
 	var obj = null;
 
@@ -3068,6 +3069,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 					if (err) {
 						F.error(err, 'F.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
+						next && next();
 						callback && callback(err);
 						return;
 					}
@@ -3084,6 +3086,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 						var hash = md5.digest('hex');
 
 						if (F.temporary.versions[declaration] === hash) {
+							next && next();
 							callback && callback(null, uptodateName || name, true);
 							return;
 						}
@@ -3102,18 +3105,20 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 				if (err) {
 					F.error(err, 'F.install(\'{0}\', \'{1}\')'.format(type, declaration), null);
+					next && next();
 					callback && callback(err);
 				} else {
 
 					var hash = data.hash('md5');
 
 					if (F.temporary.versions[declaration] === hash) {
+						next && next();
 						callback && callback(null, uptodateName || name, true);
 						return;
 					}
 
 					F.temporary.versions[declaration] = hash;
-					F.install(type, name, data, options, callback, declaration, undefined, undefined, uptodateName);
+					F.install(type, name, data, options, callback, declaration, undefined, undefined, uptodateName, next);
 				}
 
 			});
@@ -3134,6 +3139,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		F.routes.middleware[name] = typeof(declaration) === 'function' ? declaration : eval(declaration);
 		F._length_middleware = Object.keys(F.routes.middleware).length;
 
+		next && next();
 		callback && callback(null, name);
 
 		key = type + '.' + name;
@@ -3165,6 +3171,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			F.emit('install', type, name);
 		}, 500);
 
+		next && next();
 		callback && callback(null, name);
 		return F;
 	}
@@ -3177,6 +3184,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			F.emit('install', type, name);
 		}, 500);
 
+		next && next();
 		callback && callback(null, name);
 		return F;
 	}
@@ -3189,6 +3197,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			F.emit('install', type, name);
 		}, 500);
 
+		next && next();
 		callback && callback(null, name);
 		return F;
 	}
@@ -3201,6 +3210,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			F.emit('install', type, name);
 		}, 500);
 
+		next && next();
 		callback && callback(null, name);
 		return F;
 	}
@@ -3278,6 +3288,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			F.emit('install', type, name);
 		}, 500);
 
+		next && next();
 		callback && callback(null, name);
 		return F;
 	}
@@ -3293,19 +3304,19 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 			var filename = Path.join(dir, 'index.js');
 			if (!existsSync(filename)) {
+				next && next();
 				callback && callback(null, name);
 				return;
 			}
 
 			F.install('module', id, filename, options, function(err) {
-
 				setTimeout(function() {
 					F.emit(type + '#' + name);
 					F.emit('install', type, name);
 				}, 500);
-
 				callback && callback(err, name);
-			}, internal, useRequired, true);
+			}, internal, useRequired, true, undefined);
+			next && next();
 		});
 
 		return F;
@@ -3324,6 +3335,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			F.emit('install', type, name);
 		}, 500);
 
+		next && next();
 		callback && callback(null, name);
 
 		(function(name, filename) {
@@ -3345,11 +3357,11 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			}, 500);
 			callback && callback(err, name);
 		}, internal, useRequired, true);
+		next && next();
 		return F;
 	}
 
 	var plus = F.id ? 'i-' + F.id + '_' : '';
-
 	if (type === 'view') {
 
 		var item = F.routes.views[name];
@@ -3371,6 +3383,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			F.emit('install', type, name);
 		}, 500);
 
+		next && next();
 		callback && callback(null, name);
 		return F;
 	}
@@ -3395,10 +3408,12 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		} catch (ex) {
 			F.error(ex, 'F.install(\'' + type + '\')', null);
+			next && next();
 			callback && callback(ex, name);
 			return F;
 		}
 
+		next && next();
 		callback && callback(null, name);
 
 		setTimeout(function() {
@@ -3436,6 +3451,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		} catch (ex) {
 			F.error(ex, 'F.install(\'' + type + '\')', null);
+			next && next();
 			callback && callback(ex, name);
 			return F;
 		}
@@ -3455,6 +3471,8 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 		F.map(framework_internal.preparePath(obj.url), tmp);
 		F.isomorphic[name] = obj;
 		Fs.writeFileSync(tmp, prepare_isomorphic(name, framework_internal.compile_javascript(content, '#' + name)));
+
+		next && next();
 		callback && callback(null, name);
 
 		setTimeout(function() {
@@ -3503,6 +3521,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		} catch (ex) {
 			F.error(ex, 'F.install(\'' + type + '\', \'' + name + '\')', null);
+			next && next();
 			callback && callback(ex, name);
 			return F;
 		}
@@ -3552,6 +3571,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			F.emit('install', type, name, obj);
 		}, 500);
 
+		next && next();
 		callback && callback(null, name);
 		return F;
 	}
@@ -3593,6 +3613,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 
 		} catch (ex) {
 			F.error(ex, 'F.install(\'' + type + '\', \'' + (name ? '' : internal) + '\')', null);
+			next && next();
 			callback && callback(ex, name);
 			return F;
 		}
@@ -3669,6 +3690,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			for (var i = 0, length = obj.dependencies.length; i < length; i++) {
 				if (!F.dependencies[type + '.' + obj.dependencies[i]]) {
 					F.temporary.dependencies[key] = { obj: obj, options: options, callback: callback, skipEmit: skipEmit };
+					next && next();
 					return F;
 				}
 			}
@@ -3682,6 +3704,7 @@ Framework.prototype.install = function(type, name, declaration, options, callbac
 			F.controllers[name] = obj;
 
 		F.install_prepare();
+		next && next();
 	}
 
 	return F;
@@ -6228,26 +6251,26 @@ Framework.prototype.load = function(debug, types, pwd) {
 		F.emit('init');
 		F.isLoaded = true;
 
-		setTimeout(function() {
+		F.$load(types, directory, function() {
+			setTimeout(function() {
 
-			try {
-				F.emit('load', F);
-				F.emit('ready', F);
-			} catch (err) {
-				F.error(err, 'F.on("load/ready")');
-			}
+				try {
+					F.emit('load', F);
+					F.emit('ready', F);
+				} catch (err) {
+					F.error(err, 'F.on("load/ready")');
+				}
 
-			F.removeAllListeners('load');
-			F.removeAllListeners('ready');
+				F.removeAllListeners('load');
+				F.removeAllListeners('ready');
 
-			// clear unnecessary items
-			delete F.tests;
-			delete F.test;
-			delete F.testing;
-			delete F.assert;
-		}, 500);
-
-		F.$load(types, directory);
+				// clear unnecessary items
+				delete F.tests;
+				delete F.test;
+				delete F.testing;
+				delete F.assert;
+			}, 500);
+		});
 	});
 
 	return F;
@@ -6290,92 +6313,93 @@ Framework.prototype.initialize = function(http, debug, options, restart) {
 	F.cache.init();
 	F.emit('init');
 
-	// clears static files
-	F.clear(function() {
-
-		F.$load(undefined, directory);
-
-		if (!port) {
-			if (F.config['default-port'] === 'auto') {
-				var envPort = +(process.env.PORT || '');
-				if (!isNaN(envPort))
-					port = envPort;
-			} else
-				port = F.config['default-port'];
-		}
-
-		F.port = port || 8000;
-
-		if (ip !== null) {
-			F.ip = ip || F.config['default-ip'] || '127.0.0.1';
-			if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
-				F.ip = undefined;
+	if (!port) {
+		if (F.config['default-port'] === 'auto') {
+			var envPort = +(process.env.PORT || '');
+			if (!isNaN(envPort))
+				port = envPort;
 		} else
+			port = F.config['default-port'];
+	}
+
+	F.port = port || 8000;
+
+	if (ip !== null) {
+		F.ip = ip || F.config['default-ip'] || '127.0.0.1';
+		if (F.ip === 'null' || F.ip === 'undefined' || F.ip === 'auto')
 			F.ip = undefined;
+	} else
+		F.ip = undefined;
 
-		if (F.ip == null)
-			F.ip = 'auto';
+	if (F.ip == null)
+		F.ip = 'auto';
 
-		if (F.server) {
-			F.server.removeAllListeners();
+	if (F.server) {
+		F.server.removeAllListeners();
 
-			Object.keys(F.connections).forEach(function(key) {
-				var item = F.connections[key];
-				if (!item)
-					return;
-				item.removeAllListeners();
-				item.close();
-			});
-
-			F.server.close();
-		}
-
-		if (options.https)
-			F.server = http.createServer(options.https, F.listener);
-		else
-			F.server = http.createServer(F.listener);
-
-		F.config['allow-performance'] && F.server.on('connection', function(socket) {
-			socket.setNoDelay(true);
-			socket.setKeepAlive(true, 10);
+		Object.keys(F.connections).forEach(function(key) {
+			var item = F.connections[key];
+			if (!item)
+				return;
+			item.removeAllListeners();
+			item.close();
 		});
 
-		F.config['allow-websocket'] && F.server.on('upgrade', F._upgrade);
-		F.server.listen(F.port, F.ip === 'auto' ? undefined : F.ip);
-		F.isLoaded = true;
+		F.server.close();
+	}
 
-		if (!process.connected || restart)
-			F.console();
+	if (options.https)
+		F.server = http.createServer(options.https, F.listener);
+	else
+		F.server = http.createServer(F.listener);
 
-		setTimeout(function() {
-			try {
-				F.emit('load', F);
-				F.emit('ready', F);
-			} catch (err) {
-				F.error(err, 'F.on("load/ready")');
+	F.config['allow-performance'] && F.server.on('connection', function(socket) {
+		socket.setNoDelay(true);
+		socket.setKeepAlive(true, 10);
+	});
+
+	F.config['allow-websocket'] && F.server.on('upgrade', F._upgrade);
+	F.server.listen(F.port, F.ip === 'auto' ? undefined : F.ip);
+
+	// clears static files
+	F.clear(function() {
+		F.$load(undefined, directory, function() {
+
+			F.isLoaded = true;
+
+			if (!process.connected || restart)
+				F.console();
+
+			setTimeout(function() {
+				try {
+					F.emit('load', F);
+					F.emit('ready', F);
+				} catch (err) {
+					F.error(err, 'F.on("load/ready")');
+				}
+
+				F.removeAllListeners('load');
+				F.removeAllListeners('ready');
+				options.package && INSTALL('package', options.package);
+			}, 500);
+
+			if (F.isTest) {
+				var sleep = options.sleep || options.delay || 1000;
+				global.TEST = true;
+				global.assert = require('assert');
+				setTimeout(() => F.test(true, options.tests || options.test), sleep);
+				return F;
 			}
 
-			F.removeAllListeners('load');
-			F.removeAllListeners('ready');
-			options.package && INSTALL('package', options.package);
-		}, 500);
-
-		if (F.isTest) {
-			var sleep = options.sleep || options.delay || 1000;
-			global.TEST = true;
-			global.assert = require('assert');
-			setTimeout(() => F.test(true, options.tests || options.test), sleep);
-			return F;
-		}
-
-		setTimeout(function() {
-			if (F.isTest)
-				return;
-			delete F.tests;
-			delete F.test;
-			delete F.testing;
-			delete F.assert;
-		}, 5000);
+			setTimeout(function() {
+				if (F.isTest)
+					return;
+				delete F.tests;
+				delete F.test;
+				delete F.testing;
+				delete F.assert;
+			}, 5000);
+		});
 	}, true);
 
 	return F;
@@ -8213,7 +8237,7 @@ Framework.prototype.sitemap_add = function (obj) {
     return F;
 };
 
-Framework.prototype._configure_dependencies = function(arr) {
+Framework.prototype._configure_dependencies = function(arr, callback) {
 
 	if (!arr || typeof(arr) === 'string') {
 		var filename = prepare_filename(arr || 'dependencies');
@@ -8229,6 +8253,7 @@ Framework.prototype._configure_dependencies = function(arr) {
 	var type;
 	var options;
 	var interval;
+	var dependencies = [];
 
 	for (var i = 0, length = arr.length; i < length; i++) {
 
@@ -8246,6 +8271,7 @@ Framework.prototype._configure_dependencies = function(arr) {
 
 		var key = str.substring(0, index).trim();
 		var url = str.substring(index + 2).trim();
+		var priority = 0;
 
 		options = undefined;
 		interval = undefined;
@@ -8269,61 +8295,75 @@ Framework.prototype._configure_dependencies = function(arr) {
 			case 'packages':
 			case 'pkg':
 				type = 'package';
+				priority = 9;
 				break;
 			case 'module':
 			case 'modules':
 				type = 'module';
+				priority = 10;
 				break;
 			case 'model':
 			case 'models':
 				type = 'model';
+				priority = 8;
 				break;
 			case 'source':
 			case 'sources':
 				type = 'source';
+				priority = 3;
 				break;
 			case 'controller':
 			case 'controllers':
 				type = 'controller';
+				priority = 4;
 				break;
 			case 'view':
 			case 'views':
+				priority = 3;
 				type = 'view';
 				break;
 			case 'version':
 			case 'versions':
+				priority = 3;
 				type = 'version';
 				break;
 			case 'config':
 			case 'configuration':
+				priority = 11;
 				type = 'config';
 				break;
 			case 'isomorphic':
 			case 'isomorphics':
+				priority = 6;
 				type = 'isomorphic';
 				break;
 			case 'definition':
 			case 'definitions':
+				priority = 5;
 				type = 'definition';
 				break;
 			case 'middleware':
 			case 'middlewares':
 				type = 'middleware';
+				priority = 4;
 				break;
 			case 'component':
 			case 'components':
+				priority = 7;
 				type = 'component';
 				break;
 		}
 
 		if (type) {
 			if (interval)
-				F.uptodate(type, url, options, interval);
+				dependencies.push({ priority: priority, fn: next => F.uptodate(type, url, options, interval, next) });
 			else
-				F.install(type, url, options);
+				dependencies.push({ priority: priority, fn: next => F.install(type, url, options, undefined, undefined, undefined, undefined, undefined, undefined, next) });
 		}
 	}
 
+	dependencies.quicksort('priority', false);
+	dependencies.wait((item, next) => item.fn(next), callback);
 	return F;
 };
 
