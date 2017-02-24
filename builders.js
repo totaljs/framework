@@ -2395,10 +2395,15 @@ exports.newschema = function(group, name) {
 
 /**
  * Remove a schema
+ * @param {String} group Optional
  * @param {String} name
  */
-exports.remove = function(name) {
-	delete schemas[name];
+exports.remove = function(group, name) {
+	if (name) {
+		var g = schemas[group || DEFAULT_SCHEMA];
+		g && g.remove(name);
+	} else
+		delete schemas[group];
 };
 
 /**
@@ -2466,16 +2471,11 @@ exports.validation = function(name, properties, fn) {
  * @return {ErrorBuilder}
  */
 exports.validate = function(name, model, resourcePrefix, resourceName) {
-
 	var schema = schemas[DEFAULT_SCHEMA];
 	if (schema === undefined)
 		return null;
-
 	schema = schema.get(name);
-	if (schema === undefined)
-		return null;
-
-	return schema.validate(model, resourcePrefix, resourceName);
+	return schema === undefined ? null : schema.validate(model, resourcePrefix, resourceName);
 };
 
 /**
@@ -2496,9 +2496,7 @@ exports.defaults = function(name) {
 	if (schemas[DEFAULT_SCHEMA] === undefined)
 		return null;
 	var schema = schemas[DEFAULT_SCHEMA].get(name);
-	if (schema === undefined)
-		return null;
-	return schema.default();
+	return schema === undefined ? null : schema.default();
 };
 
 /**
@@ -2511,15 +2509,11 @@ exports.prepare = function(name, model) {
 	if (schemas[DEFAULT_SCHEMA] === undefined)
 		return null;
 	var schema = schemas[DEFAULT_SCHEMA].get(name);
-	if (schema === undefined)
-		return null;
-	return schema.prepare(model);
+	return schema === undefined ? null : schema.prepare(model);
 };
 
 function isUndefined(value, def) {
-	if (value === undefined)
-		return def;
-	return value;
+	return value === undefined ? def : value;
 }
 
 // ======================================================

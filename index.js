@@ -3989,7 +3989,7 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 
 	var obj = null;
-	var k, v;
+	var k, v, tmp;
 
 	if (type === 'route' || type === 'web') {
 		k = typeof(name) === 'string' ? name.substring(0, 3) === 'id:' ? 'id' : 'urlraw' : 'execute';
@@ -4017,7 +4017,8 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 	}
 
 	if (type === 'schema') {
-		framework_builders.remove(name);
+		tmp = name.split('/');
+		tmp.length === 2 ? framework_builders.remove(tmp[0], tmp[1]) : framework_builders.remove(undefined, tmp[0]);
 	} else if (type === 'mapping') {
 		delete F.routes.mapping[name];
 	} else if (type === 'isomorphic') {
@@ -4033,8 +4034,6 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 		delete F.routes.middleware[name];
 		delete F.dependencies[type + '.' + name];
 		F._length_middleware = Object.keys(F.routes.middleware).length;
-
-		var tmp;
 
 		for (var i = 0, length = F.routes.web.length; i < length; i++) {
 			tmp = F.routes.web[i];
