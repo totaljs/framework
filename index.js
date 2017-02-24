@@ -2233,6 +2233,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 	var reg = null;
 	var regIndex = null;
 	var hash = url2.hash();
+	var urlraw = U.path(url2) + (isASTERIX ? '*' : '');
 
 	if (url.indexOf('{') !== -1) {
 
@@ -2388,6 +2389,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 
 	F.routes.websockets.push({
 		id: id,
+		urlraw: urlraw,
 		hash: hash,
 		controller: _controller ? _controller : 'unknown',
 		owner: _owner,
@@ -2460,6 +2462,7 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 	var wildcard = false;
 	var fixedfile = false;
 	var id = null;
+	var urlraw = fnValidation;
 
 	if (_flags) {
 		!flags && (flags = []);
@@ -2527,6 +2530,7 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 
 	F.routes.files.push({
 		id: id,
+		urlraw: urlraw,
 		controller: _controller ? _controller : 'unknown',
 		owner: _owner,
 		url: url,
@@ -3985,31 +3989,30 @@ Framework.prototype.install_make = function(key, name, obj, options, callback, s
 Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 
 	var obj = null;
-	var id = type + '#' + name;
-	var is = false;
 	var k, v;
 
 	if (type === 'route' || type === 'web') {
-		k = name.substring(0, 3) === 'id:' ? 'id' : 'urlraw';
-		v = k === 'id' ? name.substring(3).trim() : name;
+		k = typeof(name) === 'string' ? name.substring(0, 3) === 'id:' ? 'id' : 'urlraw' : 'execute';
+		v = k === 'execute' ? name : k === 'id' ? name.substring(3).trim() : name;
 		F.routes.web = F.routes.web.remove(k, v);
 		F.$routesSort();
 		return F;
 	}
 
+	var id = type + '#' + name;
+
 	if (type === 'websocket') {
-		k = name.substring(0, 3) === 'id:' ? 'id' : 'urlraw';
-		v = k === 'id' ? name.substring(3).trim() : name;
+		k = typeof(name) === 'string' ? name.substring(0, 3) === 'id:' ? 'id' : 'urlraw' : 'onInitialize';
+		v = k === 'onInitialize' ? name : k === 'id' ? name.substring(3).trim() : name;
 		F.routes.websockets = F.routes.websockets.remove(k, v);
 		F.$routesSort();
 		return F;
 	}
 
 	if (type === 'file') {
-		k = name.substring(0, 3) === 'id:' ? 'id' : 'urlraw';
-		v = k === 'id' ? name.substring(3).trim() : name;
+		k = typeof(name) === 'string' ? name.substring(0, 3) === 'id:' ? 'id' : 'urlraw' : 'execute';
+		v = k === 'execute' ? name : k === 'id' ? name.substring(3).trim() : name;
 		F.routes.files = F.routes.files.remove(k, v);
-		F.$routesSort();
 		return F;
 	}
 
