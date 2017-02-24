@@ -829,11 +829,6 @@ Framework.prototype.$owner = function() {
 	return _owner;
 };
 
-Framework.prototype.behaviour = function(url, flags) {
-	OBSOLETE('F.behaviour()', 'This functionality has been removed.');
-	return F;
-};
-
 Framework.prototype.isSuccess = function(obj) {
 	return obj === SUCCESSHELPER;
 };
@@ -904,13 +899,8 @@ Framework.prototype.useConfig = function(name) {
  */
 Framework.prototype.$routesSort = function(type) {
 
-	F.routes.web.sort(function(a, b) {
-		return a.priority > b.priority ? -1 : a.priority < b.priority ? 1 : 0;
-	});
-
-	F.routes.websockets.sort(function(a, b) {
-		return a.priority > b.priority ? -1 : a.priority < b.priority ? 1 : 0;
-	});
+	F.routes.web.sort((a, b) => a.priority > b.priority ? -1 : a.priority < b.priority ? 1 : 0);
+	F.routes.websockets.sort((a, b) => a.priority > b.priority ? -1 : a.priority < b.priority ? 1 : 0);
 
 	var cache = {};
 	var length = F.routes.web.length;
@@ -936,9 +926,7 @@ Framework.prototype.$routesSort = function(type) {
 	}
 
 	(!type || type === 1) && F.routes.web.forEach(function(route) {
-		var tmp = F.routes.web.findItem(function(item) {
-			return item.hash === route.hash && item !== route;
-		});
+		var tmp = F.routes.web.findItem(item => item.hash === route.hash && item !== route);
 		route.isUNIQUE = tmp == null;
 	});
 
@@ -1445,6 +1433,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 	var membertype = 0;
 	var isGENERATOR = false;
 	var description;
+	var id = null;
 
 	if (_flags) {
 		if (!flags)
@@ -1481,15 +1470,14 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 				continue;
 			}
 
-			// TODO: remove in future versions
-			if (first === '%') {
-				F.behaviour();
+			// ROUTE ientificator
+			if (flags[i].substring(0, 3) === 'id:') {
+				id = flags[i].substring(3).trim();
 				continue;
 			}
 
 			if (first === '#') {
-				if (!middleware)
-					middleware = [];
+				!middleware && (middleware = []);
 				middleware.push(flags[i].substring(1));
 				continue;
 			}
@@ -1795,6 +1783,7 @@ Framework.prototype.web = Framework.prototype.route = function(url, funcExecute,
 
 	F.routes.web.push({
 		hash: hash,
+		id: id,
 		name: name,
 		priority: priority,
 		sitemap: sitemap ? sitemap.id : '',
@@ -2132,8 +2121,7 @@ Framework.prototype.use = function(name, url, types, first) {
 			route = F.routes.web[i];
 			if (url && !route.url.join('/').startsWith(url))
 				continue;
-			if (!route.middleware)
-				route.middleware = [];
+			!route.middleware && (route.middleware = []);
 			merge_middleware(route.middleware, name, first);
 		}
 	}
@@ -2143,8 +2131,7 @@ Framework.prototype.use = function(name, url, types, first) {
 			route = F.routes.files[i];
 			if (url && !route.url.join('/').startsWith(url))
 				continue;
-			if (!route.middleware)
-				route.middleware = [];
+			!route.middleware && (route.middleware = []);
 			merge_middleware(route.middleware, name, first);
 		}
 	}
@@ -2154,8 +2141,7 @@ Framework.prototype.use = function(name, url, types, first) {
 			route = F.routes.websockets[i];
 			if (url && !route.url.join('/').startsWith(url))
 				continue;
-			if (!route.middleware)
-				route.middleware = [];
+			!route.middleware && (route.middleware = []);
 			merge_middleware(route.middleware, name, first);
 		}
 	}
@@ -2225,6 +2211,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 	var allow;
 	var options;
 	var protocols;
+	var id;
 
 	priority = url.count('/');
 
@@ -2315,6 +2302,11 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 			continue;
 		}
 
+		if (flag.substring(0, 3) === 'id:') {
+			id = flag.substring(3).trim();
+			continue;
+		}
+
 		// Middleware
 		if (flag[0] === '#') {
 			if (!middleware)
@@ -2395,6 +2387,7 @@ Framework.prototype.websocket = function(url, funcInitialize, flags, length) {
 		F._length_subdomain_websocket++;
 
 	F.routes.websockets.push({
+		id: id,
 		hash: hash,
 		controller: _controller ? _controller : 'unknown',
 		owner: _owner,
@@ -2466,10 +2459,10 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 	var url;
 	var wildcard = false;
 	var fixedfile = false;
+	var id = null;
 
 	if (_flags) {
-		if (!flags)
-			flags = [];
+		!flags && (flags = []);
 		_flags.forEach(function(flag) {
 			flags.indexOf(flag) === -1 && flags.push(flag);
 		});
@@ -2484,16 +2477,19 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 				continue;
 			}
 
+			if (flag.substring(0, 3) === 'id:') {
+				id = flag.substring(3).trim();
+				continue;
+			}
+
 			if (flag[0] === '#') {
-				if (!middleware)
-					middleware = [];
+				!middleware && (middleware = []);
 				middleware.push(flag.substring(1));
 			}
 
 			if (flag[0] === '.') {
 				flag = flag.substring(1).toLowerCase();
-				if (!extensions)
-					extensions = {};
+				!extensions && (extensions = {});
 				extensions[flag] = true;
 			}
 		}
@@ -2530,6 +2526,7 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 
 
 	F.routes.files.push({
+		id: id,
 		controller: _controller ? _controller : 'unknown',
 		owner: _owner,
 		url: url,
@@ -2542,10 +2539,7 @@ Framework.prototype.file = function(fnValidation, fnExecute, flags) {
 		options: options
 	});
 
-	F.routes.files.sort(function(a, b) {
-		return !a.url ? -1 : !b.url ? 1 : a.url.length > b.url.length ? -1 : 1;
-	});
-
+	F.routes.files.sort((a, b) => !a.url ? -1 : !b.url ? 1 : a.url.length > b.url.length ? -1 : 1);
 	F.emit('route', 'file', F.routes.files[F.routes.files.length - 1]);
 	F._length_files++;
 	return F;
@@ -3992,6 +3986,32 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 
 	var obj = null;
 	var id = type + '#' + name;
+	var is = false;
+	var k, v;
+
+	if (type === 'route' || type === 'web') {
+		k = name.substring(0, 3) === 'id:' ? 'id' : 'urlraw';
+		v = k === 'id' ? name.substring(3).trim() : name;
+		F.routes.web = F.routes.web.remove(k, v);
+		F.$routesSort();
+		return F;
+	}
+
+	if (type === 'websocket') {
+		k = name.substring(0, 3) === 'id:' ? 'id' : 'urlraw';
+		v = k === 'id' ? name.substring(3).trim() : name;
+		F.routes.websockets = F.routes.websockets.remove(k, v);
+		F.$routesSort();
+		return F;
+	}
+
+	if (type === 'file') {
+		k = name.substring(0, 3) === 'id:' ? 'id' : 'urlraw';
+		v = k === 'id' ? name.substring(3).trim() : name;
+		F.routes.files = F.routes.files.remove(k, v);
+		F.$routesSort();
+		return F;
+	}
 
 	if (type === 'schema') {
 		framework_builders.remove(name);
@@ -9607,7 +9627,6 @@ Subscribe.prototype.prepare = function(flags, url) {
 		auth(req, res, flags, function(isAuthorized, user) {
 
 			var hasRoles = length !== flags.length;
-
 			if (hasRoles)
 				req.$flags += flags.slice(length).join('');
 

@@ -13,6 +13,8 @@
 - updated: Components (now don't have to have `html` body)
 - updated: A component implementation can contain `exports.group = 'name';`
 - updated: framework loads all dependencies in order
+- updated: routes (web/websockets/files) can have an identificator in this form `F.route('/', ['id:custom_dentificator']);
+- updated: `UNINSTALL(type, url/id)` supports new types `web`, `websocket` and `file`, e.g. `UNINSTALL('web', 'id:custom_identificator')`
 
 - fixed: routing with `upload` flag
 - fixed: workers timeout
