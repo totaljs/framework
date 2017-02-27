@@ -939,6 +939,8 @@ Framework.prototype.$routesSort = function(type) {
 	return F;
 };
 
+Framework.prototype.parseComponent = parseComponent;
+
 Framework.prototype.script = function(body, value, callback) {
 
 	var fn;
