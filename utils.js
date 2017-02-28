@@ -442,7 +442,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var options = { length: 0, timeout: 10000, evt: new Events.EventEmitter(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
-	var measure = false;
 
 	if (headers)
 		headers = exports.extend({}, headers);
@@ -493,11 +492,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 					headers['Content-Type'] = 'text/xml';
 					!method && (method = 'POST');
 					type = 2;
-					break;
-
-				case 'length':
-				case 'measure':
-					measure = true;
 					break;
 
 				case 'get':
