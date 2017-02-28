@@ -539,13 +539,12 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			data.length && url.indexOf('?') === -1 && (url += '?' + data);
 			data = '';
 		}
+	}
 
-		if (measure && data.length) {
-			options.data = exports.createBuffer(data, ENCODING);
-			headers['Content-Length'] = options.data.length;
-		}
-	} else
-		options.data = data;
+	if (data) {
+		options.data = data instanceof Buffer ? buffer : exports.createBuffer(data, ENCODING);
+		headers['Content-Length'] = options.data.length;
+	}
 
 	if (cookies) {
 		var builder = '';
