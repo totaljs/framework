@@ -8104,6 +8104,12 @@ Framework.prototype.translate = function(language, text) {
  * @return {String}
  */
 Framework.prototype.translator = function(language, text) {
+
+	if (!text) {
+		text = language;
+		language = 'default';
+	}
+
 	return framework_internal.parseLocalization(text, language);
 };
 
