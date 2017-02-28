@@ -442,6 +442,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	var options = { length: 0, timeout: 10000, evt: new Events.EventEmitter(), encoding: typeof(encoding) !== 'string' ? ENCODING : encoding, callback: callback, post: false, redirect: 0 };
 	var method;
 	var type = 0;
+	var measure = false;
 
 	if (headers)
 		headers = exports.extend({}, headers);
@@ -479,21 +480,24 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'html':
 					headers['Content-Type'] = 'text/html';
 					break;
+				case 'raw':
+					type = 3;
+					headers['Content-Type'] = 'application/octet-stream';
+					break;
 				case 'json':
 					headers['Content-Type'] = 'application/json';
-
-					if (!method)
-						method = 'POST';
-
+					!method && (method = 'POST');
 					type = 1;
 					break;
 				case 'xml':
 					headers['Content-Type'] = 'text/xml';
-
-					if (!method)
-						method = 'POST';
-
+					!method && (method = 'POST');
 					type = 2;
+					break;
+
+				case 'length':
+				case 'measure':
+					measure = true;
 					break;
 
 				case 'get':
@@ -510,11 +514,8 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 				case 'put':
 				case 'delete':
 				case 'patch':
-
 					method = flags[i].toUpperCase();
-					if (!headers['Content-Type'])
-						headers['Content-Type'] = 'application/x-www-form-urlencoded';
-
+					!headers['Content-Type'] && (headers['Content-Type'] = 'application/x-www-form-urlencoded');
 					break;
 				case 'dnscache':
 					options.resolve = true;
@@ -528,16 +529,23 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 	else
 		method = 'GET';
 
-	if (typeof(data) !== 'string')
-		data = type === 1 ? JSON.stringify(data) : Qs.stringify(data);
-	else if (data[0] === '?')
-		data = data.substring(1);
+	if (type !== 3) {
+		if (typeof(data) !== 'string')
+			data = type === 1 ? JSON.stringify(data) : Qs.stringify(data);
+		else if (data[0] === '?')
+			data = data.substring(1);
 
-	if (!options.post) {
-		if (data.length && url.indexOf('?') === -1)
-			url += '?' + data;
-		data = '';
-	}
+		if (!options.post) {
+			data.length && url.indexOf('?') === -1 && (url += '?' + data);
+			data = '';
+		}
+
+		if (measure && data.length) {
+			options.data = exports.createBuffer(data, ENCODING);
+			headers['Content-Length'] = options.data.length;
+		}
+	} else
+		options.data = data;
 
 	if (cookies) {
 		var builder = '';
@@ -547,11 +555,6 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 			headers['Cookie'] = builder;
 	}
 
-	if (data.length) {
-		options.data = exports.createBuffer(data, ENCODING);
-		headers['Content-Length'] = options.data.length;
-	}
-
 	var uri = Url.parse(url);
 	uri.method = method;
 	uri.agent = false;
@@ -559,8 +562,7 @@ exports.request = function(url, flags, data, callback, cookies, headers, encodin
 
 	if (options.resolve) {
 		exports.resolve(url, function(err, u) {
-			if (!err)
-				uri.host = u.host;
+			!err && (uri.host = u.host);
 			request_call(uri, options);
 		});
 	} else
