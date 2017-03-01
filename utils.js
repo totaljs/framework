@@ -2095,11 +2095,10 @@ function getWebSocketFrameMessageBytes(code, message) {
 			messageBuffer[i + index] = message.charCodeAt(i);
 	}
 
-	if (!code)
-		return messageBuffer;
-
-	messageBuffer[0] = (code >> 8);
-	messageBuffer[1] = (code);
+	if (code) {
+		messageBuffer[0] = (code >> 8);
+		messageBuffer[1] = (code);
+	}
 
 	return messageBuffer;
 }
