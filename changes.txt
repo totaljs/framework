@@ -1,4 +1,4 @@
-======= 2.4.1 (BETA)
+======= 2.5.0 (BETA)
 
 - added: a property for WebSocket controller `controller.mobile`
 - added: `EMIT()` alias for `F.emit()`
