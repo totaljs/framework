@@ -2773,7 +2773,7 @@ Framework.prototype.modify = function(fn) {
 	if (!F.modificators)
 		F.modificators = [];
 	F.modificators.push(fn);
-	fn.$owner = owner;
+	fn.$owner = _owner;
 	return F;
 };
 
