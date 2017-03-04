@@ -4005,6 +4005,11 @@ Framework.prototype.uninstall = function(type, name, options, skipEmit) {
 
 	var id = type + '#' + name;
 
+	if (type === 'schedule') {
+		F.clearSchedule(name);
+		return F;
+	}
+
 	if (type === 'websocket') {
 		k = typeof(name) === 'string' ? name.substring(0, 3) === 'id:' ? 'id' : 'urlraw' : 'onInitialize';
 		v = k === 'onInitialize' ? name : k === 'id' ? name.substring(3).trim() : name;
