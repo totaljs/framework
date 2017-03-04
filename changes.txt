@@ -9,6 +9,7 @@
 - added: a new alias `WAIT()` alias for `U.WAIT()`
 - added: `res.status(code)` for express middleware
 - added: `F.clearSchedule(id)` for removing existing schedules
+- added: a support for WebSocket compression
 
 - updated: `F.load(debug, [types], [path])` supports a new type `service` which enables `F.on('service')`
 - updated: Components (now don't have to have `html` body)

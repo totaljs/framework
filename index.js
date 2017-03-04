@@ -82,6 +82,7 @@ const REPOSITORY_PLACE = '$place';
 const REPOSITORY_SITEMAP = '$sitemap';
 const ATTR_END = '"';
 const ETAG = '858';
+const CONCAT = [null, null];
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -508,6 +509,7 @@ var directory = U.$normalize(require.main ? Path.dirname(require.main.filename) 
 // F._service() changes the values below:
 var DATE_EXPIRES = new Date().add('y', 1).toUTCString();
 
+const WEBSOCKET_COMPRESS = U.createBuffer([0x00, 0x00, 0xFF, 0xFF]);
 const UIDGENERATOR = { date: new Date().format('yyMMddHHmm'), instance: 'abcdefghijklmnoprstuwxy'.split('').random().join('').substring(0, 3), index: 1 };
 const EMPTYBUFFER = U.createBufferSize(0);
 global.EMPTYBUFFER = EMPTYBUFFER;
@@ -2566,8 +2568,7 @@ Framework.prototype.localize = function(url, flags, minify) {
 
 	if (!minify) {
 		index = flags.indexOf('minify');
-		if (index === -1)
-			index = flags.indexOf('compress');
+		index === -1 && (index = flags.indexOf('compress'));
 		minify = index !== -1;
 		index !== -1 && flags.splice(index, 1);
 	}
@@ -7626,9 +7627,11 @@ Framework.prototype.testing = function(stop, callback) {
 	var response = function(res) {
 
 		res.on('data', function(chunk) {
-			if (this._buffer)
-				this._buffer = Buffer.concat([this._buffer, chunk]);
-			else
+			if (this._buffer) {
+				CONCAT[0] = this._buffer;
+				CONCAT[1] = chunk;
+				this._buffer = Buffer.concat(CONCAT);
+			} else
 				this._buffer = chunk;
 		});
 
@@ -9943,8 +9946,11 @@ Subscribe.prototype.doParsepost = function(chunk) {
 	if (req.buffer_exceeded)
 		return self;
 
-	if (!req.buffer_exceeded)
-		req.buffer_data = Buffer.concat([req.buffer_data, chunk]);
+	if (!req.buffer_exceeded) {
+		CONCAT[0] = req.buffer_data;
+		CONCAT[1] = chunk;
+		req.buffer_data = Buffer.concat(CONCAT);
+	}
 
 	if (req.buffer_data.length < self.route.length)
 		return self;
@@ -12964,7 +12970,9 @@ Controller.prototype.$memorize_prepare = function(key, expires, disabled, fnTo, 
 
 const NEWLINE = '\r\n';
 const SOCKET_RESPONSE = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {0}\r\n\r\n';
+const SOCKET_RESPONSE_COMPRESS = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {0}\r\nSec-WebSocket-Extensions: permessage-deflate\r\n\r\n';
 const SOCKET_RESPONSE_PROTOCOL = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {0}\r\nSec-WebSocket-Protocol: {1}\r\n\r\n';
+const SOCKET_RESPONSE_PROTOCOL_COMPRESS = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {0}\r\nSec-WebSocket-Protocol: {1}\r\nSec-WebSocket-Extensions: permessage-deflate\r\n\r\n';
 const SOCKET_RESPONSE_ERROR = 'HTTP/1.1 403 Forbidden\r\nConnection: close\r\nX-WebSocket-Reject-Reason: 403 Forbidden\r\n\r\n';
 const SOCKET_HASH = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 const SOCKET_ALLOW_VERSION = [13];
@@ -13467,9 +13475,10 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 	protocols = protocols || EMPTYARRAY;
 	allow = allow || EMPTYARRAY;
 
-	this.length = length;
+	var self = this;
+	self.length = length;
 
-	var origin = this.req.headers['origin'] || '';
+	var origin = self.req.headers['origin'] || '';
 	var length = allow.length;
 
 	if (length) {
@@ -13484,19 +13493,39 @@ WebSocketClient.prototype.prepare = function(flags, protocols, allow, length, ve
 	length = protocols.length;
 	if (length) {
 		for (var i = 0; i < length; i++) {
-			if (this.protocol.indexOf(protocols[i]) === -1)
+			if (self.protocol.indexOf(protocols[i]) === -1)
 				return false;
 		}
 	}
 
-	if (SOCKET_ALLOW_VERSION.indexOf(U.parseInt(this.req.headers['sec-websocket-version'])) === -1)
+	if (SOCKET_ALLOW_VERSION.indexOf(U.parseInt(self.req.headers['sec-websocket-version'])) === -1)
 		return false;
 
-	var header = protocols.length ? SOCKET_RESPONSE_PROTOCOL.format(this._request_accept_key(this.req), protocols.join(', ')) : SOCKET_RESPONSE.format(this._request_accept_key(this.req));
-	this.socket.write(U.createBuffer(header, 'binary'));
+	var compress = (self.req.headers['sec-websocket-extensions'] || '').indexOf('permessage-deflate') !== -1;
+	var header = protocols.length ? (compress ? SOCKET_RESPONSE_PROTOCOL_COMPRESS : SOCKET_RESPONSE_PROTOCOL).format(self._request_accept_key(self.req), protocols.join(', ')) : (compress ? SOCKET_RESPONSE_COMPRESS : SOCKET_RESPONSE).format(self._request_accept_key(self.req));
+	self.socket.write(U.createBuffer(header, 'binary'));
 
-	this._id = (this.ip || '').replace(/\./g, '') + U.GUID(20);
-	this.id = this._id;
+	if (compress) {
+		self.inflatepending = [];
+		self.inflatelock = false;
+		self.inflate = Zlib.createInflateRaw();
+		self.inflate.on('error', F.error());
+		self.inflate.on('data', function(data) {
+			self.inflatechunks.push(data);
+			self.inflatechunkslength += data.length;
+		});
+		self.deflatepending = [];
+		self.deflatelock = false;
+		self.deflate = Zlib.createDeflateRaw();
+		self.deflate.on('error', F.error())
+		self.deflate.on('data', function(data) {
+			self.deflatechunks.push(data);
+			self.deflatechunkslength += data.length;
+		});
+	}
+
+	self._id = Date.now() + U.GUID(5);
+	self.id = self._id;
 	return true;
 };
 
@@ -13509,10 +13538,6 @@ WebSocketClient.prototype.upgrade = function(container) {
 
 	var self = this;
 	self.container = container;
-
-	//self.socket.setTimeout(0);
-	//self.socket.setNoDelay(true);
-	//self.socket.setKeepAlive(true, 0);
 
 	self.socket.on('data', n => self._ondata(n));
 	self.socket.on('error', n => self._onerror(n));
@@ -13533,8 +13558,11 @@ WebSocketClient.prototype.upgrade = function(container) {
  */
 WebSocketClient.prototype._ondata = function(data) {
 
-	if (data)
-		this.buffer = Buffer.concat([this.buffer, data]);
+	if (data) {
+		CONCAT[0] = this.buffer;
+		CONCAT[1] = data;
+		this.buffer = Buffer.concat(CONCAT);
+	}
 
 	if (this.buffer.length > this.length) {
 		this.errors++;
@@ -13569,6 +13597,16 @@ WebSocketClient.prototype._ondata = function(data) {
 	}
 };
 
+function buffer_concat(buffers, length) {
+	var buffer = U.createBufferSize(length);
+	var offset = 0;
+	for (var i = 0, n = buffers.length; i < n; i++) {
+		buffers[i].copy(buffer, offset);
+		offset += buffers[i].length;
+	}
+	return buffer;
+}
+
 // MIT
 // Written by Jozef Gula
 WebSocketClient.prototype.parse = function() {
@@ -13587,17 +13625,62 @@ WebSocketClient.prototype.parse = function() {
 	var mask = U.createBufferSize(4);
 	this.buffer.copy(mask, 0, index, index + 4);
 
+	if (this.inflate) {
+		var buf = U.createBufferSize(length);
+		for (var i = 0; i < length; i++)
+			buf[i] = this.buffer[index + 4 + i] ^ mask[i % 4];
+		this.inflatepending.push(buf);
+		this.parseInflate();
+	} else {
+		if (this.type !== 1) {
+			var output = '';
+			for (var i = 0; i < length; i++)
+				output += String.fromCharCode(this.buffer[index + 4 + i] ^ mask[i % 4]);
+			this._decode(output);
+		} else {
+			var binary = U.createBufferSize(length);
+			for (var i = 0; i < length; i++)
+				binary[i] = this.buffer[index + 4 + i] ^ mask[i % 4];
+		}
+	}
+
+	this.buffer = this.buffer.slice(index + length + 4, this.buffer.length);
+	this.buffer.length >= 2 && U.getMessageLength(this.buffer, F.isLE) && this.parse();
+	return this;
+};
+
+WebSocketClient.prototype.parseInflate = function() {
+	var self = this;
+
+	if (self.inflatelock)
+		return;
+
+	var buf = self.inflatepending.shift();
+	if (!buf)
+		return;
+
+	self.inflatechunks = [];
+	self.inflatechunkslength = 0;
+	self.inflatelock = true;
+	self.inflate.write(buf);
+	self.inflate.write(U.createBuffer(WEBSOCKET_COMPRESS));
+	self.inflate.flush(function() {
+		var data = buffer_concat(self.inflatechunks, self.inflatechunkslength);
+		self.inflatechunks = null;
+		self.inflatelock = false;
+		self._decode(self.type === 1 ? data : data.toString(ENCODING));
+		self.parseInflate();
+	});
+};
+
+WebSocketClient.prototype._decode = function(data) {
 	// TEXT
 	if (this.type !== 1) {
-		var output = '';
-		for (var i = 0; i < length; i++)
-			output += String.fromCharCode(this.buffer[index + 4 + i] ^ mask[i % 4]);
-
 		// JSON
 		if (this.type === 3) {
 			try {
-				output = this.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output;
-				output.isJSON() && this.container.emit('message', this, F.onParseJSON(output, this.req));
+				this.container.config['default-websocket-encodedecode'] === true && (data = $decodeURIComponent(data));
+				data.isJSON() && this.container.emit('message', this, F.onParseJSON(data, this.req));
 			} catch (ex) {
 				if (DEBUG) {
 					this.errors++;
@@ -13605,17 +13688,9 @@ WebSocketClient.prototype.parse = function() {
 				}
 			}
 		} else
-			this.container.emit('message', this, this.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(output) : output);
-	} else {
-		var binary = U.createBufferSize(length);
-		for (var i = 0; i < length; i++)
-			binary[i] = this.buffer[index + 4 + i] ^ mask[i % 4];
+			this.container.emit('message', this, this.container.config['default-websocket-encodedecode'] === true ? $decodeURIComponent(data) : data);
+	} else
 		this.container.emit('message', this, new Uint8Array(binary).buffer);
-	}
-
-	this.buffer = this.buffer.slice(index + length + 4, this.buffer.length);
-	this.buffer.length >= 2 && U.getMessageLength(this.buffer, F.isLE) && this.parse();
-	return this;
 };
 
 WebSocketClient.prototype._onerror = function(err) {
@@ -13635,6 +13710,19 @@ WebSocketClient.prototype._onclose = function() {
 		return;
 	this.isClosed = true;
 	this._isClosed = true;
+
+	if (this.inflate) {
+		this.inflate.removeAllListeners();
+		this.inflate = null;
+		this.inflatechunks = null;
+	}
+
+	if (this.deflate) {
+		this.deflate.removeAllListeners();
+		this.deflate = null;
+		this.deflatechunks = null;
+	}
+
 	this.container._remove(this._id);
 	this.container._refresh();
 	this.container.emit('close', this);
@@ -13658,11 +13746,43 @@ WebSocketClient.prototype.send = function(message, raw, replacer) {
 		var data = this.type === 3 ? (raw ? message : JSON.stringify(message, replacer)) : (message || '').toString();
 		if (this.container.config['default-websocket-encodedecode'] === true && data)
 			data = encodeURIComponent(data);
-		this.socket.write(U.getWebSocketFrame(0, data, 0x01));
-	} else
-		message && this.socket.write(U.getWebSocketFrame(0, new Int8Array(message), 0x02));
+		if (this.deflate) {
+			this.deflatepending.push(U.createBuffer(data));
+			this.sendDeflate();
+		} else
+			this.socket.write(U.getWebSocketFrame(0, data, 0x01));
+	} else if (message) {
+		if (self.deflate) {
+			this.deflatepending.push(U.createBuffer(message));
+			this.sendDeflate();
+		} else
+			this.socket.write(U.getWebSocketFrame(0, new Int8Array(message), 0x02));
+	}
 
 	return this;
+};
+
+WebSocketClient.prototype.sendDeflate = function() {
+	var self = this;
+	if (self.deflatelock)
+		return;
+
+	var buf = self.deflatepending.shift();
+	if (!buf)
+		return;
+
+	self.deflatechunks = [];
+	self.deflatechunkslength = 0;
+	self.deflatelock = true;
+	self.deflate.write(self.type === 1 ? new Int8Array(buf) : buf);
+	self.deflate.flush(function() {
+		var data = buffer_concat(self.deflatechunks, self.deflatechunkslength);
+		data = data.slice(0, data.length - 4);
+		self.deflatelock = false;
+		self.deflatechunks = null;
+		self.socket.write(U.getWebSocketFrame(0, data, self.type === 1 ? 0x02 : 0x01, true));
+		self.sendDeflate();
+	});
 };
 
 /**
@@ -13670,10 +13790,10 @@ WebSocketClient.prototype.send = function(message, raw, replacer) {
  * @return {WebSocketClient}
  */
 WebSocketClient.prototype.ping = function() {
-	if (this.isClosed)
-		return this;
-	this.socket.write(U.getWebSocketFrame(0, '', 0x09));
-	this.$ping = false;
+	if (!this.isClosed) {
+		this.socket.write(U.getWebSocketFrame(0, '', 0x09));
+		this.$ping = false;
+	}
 	return this;
 };
 
@@ -13684,10 +13804,10 @@ WebSocketClient.prototype.ping = function() {
  * @return {WebSocketClient}
  */
 WebSocketClient.prototype.close = function(message, code) {
-	if (this.isClosed)
-		return this;
-	this.isClosed = true;
-	this.socket.end(U.getWebSocketFrame(code || 1000,  message ? encodeURIComponent(message) : '', 0x08));
+	if (!this.isClosed) {
+		this.isClosed = true;
+		this.socket.end(U.getWebSocketFrame(code || 1000,  message ? encodeURIComponent(message) : '', 0x08));
+	}
 	return this;
 };
 
@@ -13729,13 +13849,17 @@ Backup.prototype.restoreKey = function(data) {
 	var tmp = data;
 
 	if (read.status === 2) {
-		tmp = Buffer.concat([read.key, tmp]);
+		CONCAT[0] = read.key;
+		CONCAT[1] = tmp;
+		tmp = Buffer.concat(CONCAT);
 		index = tmp.indexOf(self.bufKey);
 	} else
 		index = tmp.indexOf(self.bufKey);
 
 	if (index === -1) {
-		read.key = Buffer.concat([read.key, data]);
+		CONCAT[0] = read.key;
+		CONCAT[1] = data;
+		read.key = Buffer.concat(CONCAT);
 		read.status = 2;
 		return;
 	}
@@ -13758,11 +13882,15 @@ Backup.prototype.restoreValue = function(data) {
 
 	var index = data.indexOf(self.bufNew);
 	if (index === -1) {
-		read.value = Buffer.concat([read.value, data]);
+		CONCAT[0] = read.value;
+		CONCAT[1] = data;
+		read.value = Buffer.concat(CONCAT);
 		return;
 	}
 
-	read.value = Buffer.concat([read.value, data.slice(0, index)]);
+	CONCAT[0] = read.value;
+	CONCAT[1] = data.slice(0, index);
+	read.value = Buffer.concat(CONCAT);
 	self.restoreFile(read.key.toString('utf8').replace(REG_EMPTY, ''), read.value.toString('utf8').replace(REG_EMPTY, ''));
 
 	read.status = 0;

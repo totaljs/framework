@@ -33,6 +33,7 @@ const Stream = require('stream');
 const ENCODING = 'utf8';
 const EMPTYARRAY = [];
 const EMPTYOBJECT = {};
+const CONCAT = [null, null];
 
 Object.freeze(EMPTYOBJECT);
 Object.freeze(EMPTYARRAY);
@@ -185,7 +186,9 @@ exports.parseMULTIPART = function(req, contentType, route, tmpDirectory, subscri
 		}
 
 		if (!tmp.$is) {
-			tmp.$data = Buffer.concat([tmp.$data, data]);
+			CONCAT[0] = tmp.$data;
+			CONCAT[1] = data;
+			tmp.$data = Buffer.concat(CONCAT);
 			return;
 		}
 

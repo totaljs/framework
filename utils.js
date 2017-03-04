@@ -35,6 +35,7 @@ const Path = require('path');
 const Fs = require('fs');
 const Events = require('events');
 const Crypto = require('crypto');
+const CONCAT = [null, null];
 
 if (!global.framework_utils)
 	global.framework_utils = exports;
@@ -657,9 +658,11 @@ function request_response(res, uri, options) {
 		var self = this;
 		if (options.max && self._bufferlength > options.max)
 			return;
-		if (self._buffer)
-			self._buffer = Buffer.concat([self._buffer, chunk]);
-		else
+		if (self._buffer) {
+			CONCAT[0] = self._buffer;
+			CONCAT[1] = chunk;
+			self._buffer = Buffer.concat(CONCAT);
+		} else
 			self._buffer = chunk;
 		self._bufferlength += chunk.length;
 		options.evt && options.evt.emit('data', chunk, options.length ? (self._bufferlength / options.length) * 100 : 0);
@@ -1029,7 +1032,9 @@ exports.send = function(name, stream, url, callback, cookies, headers, method, t
 		res._bufferlength = 0;
 
 		res.on('data', function(chunk) {
-			res.body = Buffer.concat([res.body, chunk]);
+			CONCAT[0] = res.body;
+			CONCAT[1] = chunk;
+			res.body = Buffer.concat(CONCAT);
 			res._bufferlength += chunk.length;
 			e.emit('data', chunk, responseLength ? (res._bufferlength / responseLength) * 100 : 0);
 		});
@@ -1408,7 +1413,9 @@ exports.streamer = function(beg, end, callback, skip) {
 			if (!chunk)
 				return;
 
-			buffer = Buffer.concat([buffer, chunk]);
+			CONCAT[0] = buffer;
+			CONCAT[1] = chunk;
+			buffer = Buffer.concat(CONCAT);
 
 			var index = buffer.indexOf(beg);
 			if (index === -1)
@@ -1440,7 +1447,9 @@ exports.streamer = function(beg, end, callback, skip) {
 		if (!chunk)
 			return;
 
-		buffer = Buffer.concat([buffer, chunk]);
+		CONCAT[0] = buffer;
+		CONCAT[1] = chunk;
+		buffer = Buffer.concat(CONCAT);
 
 		if (!is) {
 			bi = buffer.indexOf(beg);
