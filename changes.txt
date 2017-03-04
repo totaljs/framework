@@ -25,6 +25,7 @@
 - fixed: modificators by George Okojie Davis
 
 - improved: mechanism of components
+- improved: performance
 
 ======= 2.4.0
 
