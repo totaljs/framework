@@ -2071,14 +2071,14 @@ function jsonparser(key, value) {
  * @param {Hexa} type
  * @return {Buffer}
  */
-exports.getWebSocketFrame = function(code, message, type) {
+exports.getWebSocketFrame = function(code, message, type, compress) {
 	var messageBuffer = getWebSocketFrameMessageBytes(code, message);
-	var messageLength = messageBuffer.length;
-	var lengthBuffer = getWebSocketFrameLengthBytes(messageLength);
-	var frameBuffer = exports.createBufferSize(1 + lengthBuffer.length + messageLength);
+	var lengthBuffer = getWebSocketFrameLengthBytes(messageBuffer.length);
+	var frameBuffer = exports.createBufferSize(1 + lengthBuffer.length + messageBuffer.length);
 	frameBuffer[0] = 0x80 | type;
+	compress && (frameBuffer[0] |= 0x40);
 	lengthBuffer.copy(frameBuffer, 1, 0, lengthBuffer.length);
-	messageBuffer.copy(frameBuffer, lengthBuffer.length + 1, 0, messageLength);
+	messageBuffer.copy(frameBuffer, lengthBuffer.length + 1, 0, messageBuffer.length);
 	return frameBuffer;
 };
 
@@ -2092,7 +2092,7 @@ exports.getWebSocketFrame = function(code, message, type) {
 function getWebSocketFrameMessageBytes(code, message) {
 
 	var index = code ? 2 : 0;
-	var binary = message instanceof Int8Array;
+	var binary = message instanceof Int8Array || message instanceof Buffer;
 	var length = message.length;
 
 	var messageBuffer = exports.createBufferSize(length + index);
@@ -2105,8 +2105,8 @@ function getWebSocketFrameMessageBytes(code, message) {
 	}
 
 	if (code) {
-		messageBuffer[0] = (code >> 8);
-		messageBuffer[1] = (code);
+		messageBuffer[0] = code >> 8;
+		messageBuffer[1] = code;
 	}
 
 	return messageBuffer;
