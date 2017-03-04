@@ -1092,18 +1092,19 @@ Framework.prototype.schedule = function(date, repeat, fn) {
 
 	if (type === 'string') {
 		date = date.parseDate();
-		if (repeat && date < F.datetime)
-			date = F.datetime.add(repeat);
-
+		repeat && date < F.datetime && (date = F.datetime.add(repeat));
 	} else if (type === 'number')
 		date = new Date(date);
 
 	var sum = date.getTime();
+	repeat && (repeat = repeat.replace('each', '1'));
+	var id = U.GUID(5);
+	F.schedules.push({ expire: sum, fn: fn, repeat: repeat, owner: _owner, id: id });
+	return id;
+};
 
-	if (repeat)
-		repeat = repeat.replace('each', '1');
-
-	F.schedules.push({ expire: sum, fn: fn, repeat: repeat, owner: _owner });
+Framework.prototype.clearSchedule = function(id) {
+	F.schedules.remove('id', id);
 	return F;
 };
 
