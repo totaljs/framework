@@ -19,6 +19,7 @@
 - updated: `UNINSTALL(type, url/id/fn)` supports new types `web`, `websocket` and `file`, e.g. `UNINSTALL('web', 'id:custom_identificator')`
 - updated: `U.request()`, added a new flag: `raw` (sends raw data)
 - updated: `F.schedule()` returns an identificator
+- updated: `U.clone()` supports `buffer` properties
 
 - fixed: routing with `upload` flag
 - fixed: workers timeout

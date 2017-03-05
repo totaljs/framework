@@ -1275,6 +1275,14 @@ exports.clone = function(obj, skip, skipFunctions) {
 			continue;
 
 		var val = obj[m];
+
+		if (val instanceof Buffer) {
+			var copy = exports.createBufferSize(val.length);
+			val.copy(copy);
+			o[m] = copy;
+			continue;
+		}
+
 		var type = typeof(val);
 		if (type !== 'object' || val instanceof Date) {
 			if (skipFunctions && type === 'function')
@@ -1308,8 +1316,7 @@ exports.copy = function(source, target) {
 
 	while (i--) {
 		var key = keys[i];
-		if (target[key] !== undefined)
-			target[key] = exports.clone(source[key]);
+		target[key] !== undefined && (target[key] = exports.clone(source[key]));
 	}
 
 	return target;

@@ -642,6 +642,10 @@ function other() {
 
 	streamer(Buffer.from('aaaa <a>1</a> adsklasdlajsdlas jd <a>2</a>'));
 	streamer(Buffer.from('aaaa <a>3</a> adsklasdlajsdlas jd <a>4</a>'));
+
+	var a = { buf: Buffer.from('123456') };
+	assert.ok(U.clone(a).buf !== a, 'Cloning buffers');
+
 }
 
 function onValidation(name, value, path) {
